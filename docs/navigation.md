@@ -76,9 +76,22 @@ The five work item slots read the item through the query key `['projects', proje
 
 `project` is a `ProjectDto`, `sprint` and `sprints` are `SprintDto` and `SprintDto[]`.
 
+## Quick search
+
+`features/quickSearch`. One dialog to jump to an item, sprint or project, or to run an action.
+
+- **Opening it.** Press Ctrl+P (⌘P on macOS), click the search button next to the ShipLean mark, or, in the narrow strip (under 900px), the icon button after the project button. Pressing the shortcut while it is open puts the cursor back in the input and selects its text. The shortcut does nothing while another modal dialog is open. The browser's print dialog does not open.
+- **Nothing typed.** The dialog shows Recent items, then the actions. Recent items are the work items you opened, kept in this browser's local storage for the signed-in person (the latest five are shown). If storage is blocked, the list is empty and nothing else breaks.
+- **Results and keys.** Once you type, the dialog calls `GET /api/search` and groups the answer as Work items, Sprints and Projects, with the actions that match the text below. The open project's results come first in each group. ↑ ↓ move through the rows, ↵ opens the highlighted row and Esc closes the dialog. While a search runs the previous results stay, dimmed; a failed search shows an error with Retry, and the actions stay below it.
+- **Where each result opens.**
+  - An item opens in the item modal (`?item=KEY`) over the screen you are on. It opens its full item page instead on a Backlogs page, for an item of another project, and on an install-level page (profile, instance settings, new project, import start, authorize). The rule is `features/itemPeek/opensInModal.ts`, shared with `ItemLink`.
+  - A sprint opens its taskboard.
+  - A project opens its backlog.
+- **The actions.** Create epic, Create feature, Create story and Create bug open the matching backlog with the new item row (for a feature, the New feature dialog) open and the type picked, through `?new=` (`newItemPath` in `routes.ts`). The stories backlog opens in list mode. Go to Backlogs, Go to Boards and Go to Sprints open that page of the open project. Toggle theme switches between light and dark and saves the choice to your profile; it is hidden until your account (`/api/me`) has loaded, because the saved theme is not known before then. The project actions are left out when no project is open. There is no Create task, nor a generic Create work item: a task is always created under a parent, so create it from its parent's item page.
+
 ## The project picker
 
-Picking a project in the top bar goes to the same screen in that project (`features/shell/sameScreenIn.ts`): the route id, its params and its query are kept, with the new key. Four screens belong to one project's sprint or item, so they fall back: the Sprint taskboard, the Sprint backlog and Capacity go to All sprints (`sprints`), and a work item goes to the Stories backlog. An install-level page (profile, instance settings, new project, import start, authorize) or an unknown address also goes to the Stories backlog.
+The picker opens only from the project button in the side menu (tooltip "Switch project"). Ctrl/⌘+P opens quick search, not the picker, and opening quick search closes the picker. Picking a project in the top bar goes to the same screen in that project (`features/shell/sameScreenIn.ts`): the route id, its params and its query are kept, with the new key. Four screens belong to one project's sprint or item, so they fall back: the Sprint taskboard, the Sprint backlog and Capacity go to All sprints (`sprints`), and a work item goes to the Stories backlog. An install-level page (profile, instance settings, new project, import start, authorize) or an unknown address also goes to the Stories backlog.
 
 ## Testing
 

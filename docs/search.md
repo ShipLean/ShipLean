@@ -98,3 +98,7 @@ A removed item's own rows are dropped. Its comment and attachment rows are not: 
 - `SearchGroups` opens its own connection per call, so the ranker runs the project and sprint group queries concurrently.
 - The cosine cut-off (`SHIPLEAN_SEARCH_CUTOFF`) belongs to one model and pooling pair: e5-small int8 with mean pooling, where the spike measured 0.83 on the semantic leg alone. Against the real ranker (RRF with the lexical lists, boosts, 498-item corpus) the default is **0.84**: all-kinds top-5 is 0.93-0.96 from 0.82 to 0.85 and falls off a cliff above it (paraphrase top-5 0.93 at 0.85, 0.71 at 0.86, 0.36 at 0.87), so 0.84 keeps a full step of margin below the cliff (0.85 scores about the same), and below it the semantic lists flood the fusion (bodyOnly 0.79 at 0.80). Table and runs: `scripts/search-eval/RESULTS-hybrid.md`. Changing the model or the pooling means measuring the cut-off again.
 - Tests arrange rows with `SearchDocBuilder` (no events, no indexer) and write results shapes in `src/ShipLean.TestSupport/DtoFixtures/search/`.
+
+## Quick search
+
+The quick search dialog (`docs/navigation.md` § Quick search) calls `GET /api/search` in typing mode (`prefix=true`) with closed items included (`closed=true`). The client puts the open project's results first, keeping the server's order within each part. Besides the existing fields, the view carries `stateCategory` on items and `status` and `datesLabel` on sprints, which the dialog shows as the state dot and the sprint's dates. The query text is never logged or traced.
