@@ -1,4 +1,5 @@
 using System.Net;
+using Dapper;
 using System.Text.Json;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Persisted;
@@ -84,14 +85,22 @@ public class SearchEndpointApiTests : ApiFixture
     [Test]
     public async Task Search_WhenItemAndSprintMatch_ShouldSendStateCategoryAndSprintStatus()
     {
-        // The item is moved to Active (inProgress) and the sprint started three days ago, so neither field can pass at its default
-        // (proposed, past).
-        var item = await JourneyApi.CreateItemAsync(Api, SeedIds.Projects.Ship, "Okapi harness calibration");
+        // The item is moved to an inProgress state and the sprint started three days ago, so neither field can pass at its default
+        // (proposed, past). The empty project has no sprint for the new one to overlap.
+        var project = SeedIds.Projects.Empt;
+        Guid active;
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            active = await connection.QuerySingleAsync<Guid>(
+                "SELECT id FROM state WHERE project_id = @project AND type = 'story' AND category = 'inProgress' LIMIT 1", new { project });
+        }
+
+        var item = await JourneyApi.CreateItemAsync(Api, project, "Okapi harness calibration");
         using var moved = await Api.PatchJsonAsync(
             $"api/work-items/{item.Id}",
-            new JsonObject { ["expectedRevision"] = item.Revision, ["changes"] = new JsonObject { ["state"] = new JsonObject { ["value"] = SeedIds.States.Ship.StoryActive.ToString() } } });
+            new JsonObject { ["expectedRevision"] = item.Revision, ["changes"] = new JsonObject { ["state"] = new JsonObject { ["value"] = active.ToString() } } });
         moved.StatusCode.ShouldBe(HttpStatusCode.OK, await moved.Content.ReadAsStringAsync());
-        await JourneyApi.CreateSprintAsync(Api, SeedIds.Projects.Ship, "Sprint Okapi", "Okapi harness rollout", -3);
+        await JourneyApi.CreateSprintAsync(Api, project, "Sprint Okapi", "Okapi harness rollout", -3);
         await JourneyApi.ReindexAsync(Api);
 
         using var response = await Api.GetAsync("api/search?q=okapi&prefix=true&closed=true");
