@@ -1,0 +1,311 @@
+name: CI
+
+on:
+  # Pull requests only: a merge to main is the code its pull request already tested.
+  # main's image is built by docker-publish. Run it by hand on any branch with workflow_dispatch.
+  pull_request:
+    # Changes CI cannot see. Only top-level *.md: Markdown under src/ and db/ is test or app input.
+    # ci.yml itself is not listed, so a change to it still runs everything.
+    paths-ignore:
+      - '*.md'
+      - 'docs/**'
+      - '.github/workflows/docker-publish.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+# actions: write is the model cache and the uploaded reports. Fork pull requests
+# still cannot write the cache; GitHub drops that permission for them.
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  # GitHub-hosted runners. The repo is public, so these minutes are free.
+  build:
+    name: build, lint, typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Vitest --changed diffs against the pull request base. A default checkout is one
+          # commit deep and does not have that commit.
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: src/ShipLean.Client/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: src/ShipLean.Client/pnpm-lock.yaml
+      - run: dotnet build src/ShipLean.slnx --configuration Release
+      - run: pnpm install --frozen-lockfile
+        working-directory: src/ShipLean.Client
+      # A hand run (workflow_dispatch) has no base, so it runs the whole suite. package.json and
+      # vite.config.ts already make Vitest do that (--changed forceRerunTriggers). The lockfile and
+      # the token files do not: tokens.test.ts reads them with readFileSync, which the import graph misses.
+      - name: Format, lint, typecheck, vitest, build
+        working-directory: src/ShipLean.Client
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          pnpm run format:check && pnpm run lint && pnpm run typecheck
+          if [ "$EVENT_NAME" != "pull_request" ]; then
+            pnpm test
+          else
+            changed=$(git diff --name-only "$BASE_SHA")
+            if printf '%s\n' "$changed" | grep -Eq '^(src/ShipLean.Client/(pnpm-lock\.yaml|tsconfig\.json|src/styles/tokens\.css)|design/tokens\.css)$'; then
+              echo "Change is outside Vitest's import graph; running the full suite"
+              pnpm test
+            else
+              echo "Vitest --changed ${BASE_SHA}"
+              # pnpm forwards these arguments. A "--" before them is passed through to
+              # vitest, which then treats --changed as a file filter and runs everything.
+              pnpm test --changed "$BASE_SHA" --passWithNoTests
+            fi
+          fi
+          pnpm run build
+
+  unit:
+    name: unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet test src/ShipLean.UnitTest --configuration Release
+
+  api:
+    name: API tests
+    runs-on: ubuntu-latest
+    # SHIPLEAN_TEST_DB is unset, so the tests start a postgres:18 Testcontainers container.
+    # ubuntu-latest provides Docker, which Testcontainers uses.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      # The search embedding model: cached on the fetch script, its manifest and the model's metadata (the script
+      # checks every SHA-256 either way), then handed to the tests through the same variable the image sets.
+      # The files are public on Hugging Face; no token.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/shiplean-models
+          key: embedding-model-${{ hashFiles('scripts/fetch-embedding-model.sh', 'scripts/embedding-model.manifest', 'scripts/shiplean-model.json') }}
+      - run: |
+          scripts/fetch-embedding-model.sh "$HOME/.cache/shiplean-models/multilingual-e5-small"
+          echo "SHIPLEAN_EMBEDDINGS_MODEL_PATH=$HOME/.cache/shiplean-models/multilingual-e5-small" >> "$GITHUB_ENV"
+      # Each test class starts its own Kestrel host. Four workers matches the runner's 4 vCPUs.
+      # Search tests load the embedding model, so they stay in their own process.
+      # GitHub-hosted runners have 16 GB, so the 1 GiB heap cap the home runners needed is not set.
+      - run: dotnet build src/ShipLean.WebApi.Tests --configuration Release && dotnet build-server shutdown
+      - run: dotnet test src/ShipLean.WebApi.Tests --configuration Release --no-build --filter "FullyQualifiedName!~ShipLean.WebApi.Tests.Search." -- NUnit.NumberOfTestWorkers=4
+      - if: success() || failure()
+        run: dotnet test src/ShipLean.WebApi.Tests --configuration Release --no-build --filter "FullyQualifiedName~ShipLean.WebApi.Tests.Search." -- NUnit.NumberOfTestWorkers=4
+
+  component:
+    name: component tests
+    runs-on: ubuntu-latest
+    # Same image used to generate the committed screenshot snapshots. The
+    # GitHub-hosted runner image and this container ship different font
+    # packages even on matching Ubuntu versions, which is enough to break
+    # every screenshot assertion; running inside the image itself is what
+    # reliably matches.
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.0-resolute
+    defaults:
+      run:
+        working-directory: src/ShipLean.Client
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Playwright --only-changed diffs against the pull request base. A default checkout
+          # is one commit deep and does not have that commit.
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: src/ShipLean.Client/package.json
+      - run: pnpm install --frozen-lockfile
+      # Playwright's default is half the visible CPUs (2 on a 4-vCPU runner). Pin it.
+      # --only-changed follows what a spec's components import. The harness (playwright/),
+      # global CSS, and the CT config wrap every mount and are not in that graph, so a
+      # change to them runs the whole suite. A pull request that does not touch the client
+      # skips the run: the flag would otherwise still build the component bundle to find
+      # nothing. A hand run has no base and runs everything.
+      - name: Playwright component tests
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          # The job container runs as root and the checkout belongs to the runner, so Git
+          # treats the worktree as unsafe. `git diff` then exits 129 with "not a git
+          # repository". Playwright --only-changed invokes git too, so the exception is
+          # set on the step.
+          GIT_CONFIG_COUNT: "1"
+          GIT_CONFIG_KEY_0: safe.directory
+          GIT_CONFIG_VALUE_0: ${{ github.workspace }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" != "pull_request" ]; then
+            pnpm run test-ct --workers=2
+            exit 0
+          fi
+          changed=$(git diff --name-only "$BASE_SHA")
+          if printf '%s\n' "$changed" | grep -Eq '^src/ShipLean.Client/(playwright-ct\.config\.ts|playwright/|tsconfig\.json|package\.json|pnpm-lock\.yaml|src/index\.css|src/styles/)'; then
+            echo "Change is outside Playwright's component graph; running the full suite"
+            pnpm run test-ct --workers=2
+          elif printf '%s\n' "$changed" | grep -q '^src/ShipLean.Client/'; then
+            echo "Playwright --only-changed ${BASE_SHA}"
+            pnpm run test-ct --workers=2 --only-changed="$BASE_SHA"
+          else
+            echo "No files under src/ShipLean.Client changed; skipping component tests"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: src/ShipLean.Client/playwright-report/
+          retention-days: 14
+
+  acceptance:
+    name: acceptance (${{ matrix.group }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Shards are namespaces, so later work adds tests under these namespaces and never edits this file.
+        # They are grouped into two jobs because each job spends ~1.5 min on setup (client bundle, build,
+        # Chromium) for a few seconds of tests.
+        # Each shard still runs in its own `dotnet test`, so a test host's memory is what one shard needs.
+        # `Other` runs every test outside the listed namespaces (a new area's namespace lands there until it
+        # gets a shard), so nothing is silently skipped. A shard with no tests passes (dotnet test exits 0).
+        include:
+          - group: 1
+            shards: Harness Journeys Lanes.Shell Lanes.Backlog Lanes.Sprints Lanes.WorkItem
+          - group: 2
+            shards: Lanes.Board Lanes.BoardSettings Lanes.Taskboard Lanes.Settings Lanes.Import Other
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: src/ShipLean.Client/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: src/ShipLean.Client/pnpm-lock.yaml
+      # The tests serve the real bundle, so it is built first (into ShipLean.WebApi/wwwroot).
+      - run: pnpm install --frozen-lockfile && pnpm run build
+        working-directory: src/ShipLean.Client
+      - run: dotnet build src/ShipLean.AcceptanceTests --configuration Release
+      - run: pwsh src/ShipLean.AcceptanceTests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+      - name: dotnet test (${{ matrix.shards }})
+        env:
+          SHARDS: ${{ matrix.shards }}
+        # Every shard runs even after one fails; the step fails at the end, naming the failed shards.
+        # The trailing dot keeps Lanes.Board from also matching Lanes.BoardSettings.
+        run: |
+          failed=""
+          for shard in $SHARDS; do
+            if [ "$shard" = "Other" ]; then
+              filter=""
+              for ns in Harness Journeys Lanes.Shell Lanes.Backlog Lanes.Sprints Lanes.WorkItem Lanes.Board Lanes.BoardSettings Lanes.Taskboard Lanes.Settings Lanes.Import; do
+                filter="${filter:+$filter&}FullyQualifiedName!~ShipLean.AcceptanceTests.$ns."
+              done
+            else
+              filter="FullyQualifiedName~ShipLean.AcceptanceTests.$shard."
+            fi
+            echo "::group::$shard"
+            dotnet test src/ShipLean.AcceptanceTests --configuration Release --no-build --filter "$filter" || failed="$failed $shard"
+            echo "::endgroup::"
+          done
+          if [ -n "$failed" ]; then
+            echo "::error::Failed shards:$failed"
+            exit 1
+          fi
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces-${{ matrix.group }}
+          path: artifacts/playwright-traces/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  image:
+    name: docker image build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # GitHub-hosted runners have no persistent Docker layer cache. The container
+      # driver can export one to the Actions cache; the docker driver cannot.
+      # provenance and sbom must be off: the docker exporter (load: true) rejects attestations.
+      - uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: src/Dockerfile
+          push: false
+          load: true
+          provenance: false
+          sbom: false
+          tags: shiplean:ci
+          cache-from: type=gha,scope=app
+          cache-to: type=gha,scope=app,mode=max
+      - name: Check the model is in the image
+        # sha256sum runs as $APP_UID, so this also proves the files are readable by the app user.
+        run: docker run --rm --entrypoint sha256sum shiplean:ci /app/models/multilingual-e5-small/model.onnx /app/models/multilingual-e5-small/sentencepiece.bpe.model /app/models/multilingual-e5-small/shiplean-model.json
+      # Smoke: the image starts against a real Postgres and serves. Everything runs on one user-defined network and
+      # the checks come from a curl container on it. The app migrates once at startup and exits if Postgres is not
+      # ready yet, so the app restarts on failure (the restart loop plus curl's retries wait for Postgres; the health check on Postgres is for inspection).
+      - name: Smoke-test the image
+        env:
+          NET: shiplean-ci
+          CURL: curlimages/curl:8.11.1
+        run: |
+          set -eu
+          docker network create "$NET"
+          docker run -d --name ci-postgres --network "$NET" --network-alias postgres \
+            -e POSTGRES_DB=shiplean -e POSTGRES_PASSWORD=postgres \
+            --health-cmd "pg_isready -U postgres -d shiplean" --health-interval 2s --health-retries 30 \
+            postgres:18
+          docker run -d --name ci-app --network "$NET" --network-alias app --restart on-failure:20 \
+            -e "SHIPLEAN_DB_CONNECTION=Host=postgres;Port=5432;Database=shiplean;Username=postgres;Password=postgres" \
+            -e SHIPLEAN_ADMIN_EMAIL=admin@example.com \
+            -e SHIPLEAN_ADMIN_PASSWORD=smoke-test-password \
+            shiplean:ci
+          c() { docker run --rm --network "$NET" "$CURL" "$@"; }
+          health=$(c -sS --retry 30 --retry-connrefused --retry-delay 2 --retry-all-errors --fail http://app:8080/health)
+          echo "$health"
+          # Embeddings are on by default, so the image must load its baked-in model.
+          echo "$health" | grep -q '"search":{"mode":"semantic"' || { echo "expected search mode semantic in /health"; exit 1; }
+          login=$(c -sS --fail http://app:8080/login)
+          echo "$login" | grep -q '<div id="root">'
+          root=$(c -sS -o /dev/null -w '%{http_code} %{redirect_url}' http://app:8080/)
+          echo "GET / -> $root"
+          case "$root" in 302\ *'/login'*) ;; *) echo "expected a 302 to /login"; exit 1 ;; esac
+          c -sS --fail -X POST -H 'Content-Type: application/json' \
+            -d '{"email":"admin@example.com","password":"smoke-test-password"}' http://app:8080/api/auth/login
+          echo
+      - name: Show the app log
+        if: failure()
+        run: |
+          docker logs ci-app || true
+          docker logs ci-postgres || true
+      - name: Remove the smoke containers
+        if: always()
+        run: |
+          docker rm -f ci-app ci-postgres || true
+          docker network rm shiplean-ci || true

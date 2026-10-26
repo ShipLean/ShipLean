@@ -1,0 +1,12 @@
+.git
+**/bin
+**/obj
+**/node_modules
+**/.pnpm-store
+**/TestResults
+artifacts
+# Always built fresh by the frontend stage; a stale local build must not leak in.
+src/ShipLean.WebApi/wwwroot
+src/ShipLean.Client/playwright-report
+src/ShipLean.Client/test-results
+*:Zone.Identifier

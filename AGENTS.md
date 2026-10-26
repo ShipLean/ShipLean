@@ -32,7 +32,7 @@ Self-hosted lean planning tool (backlogs, boards, sprints, a sprint taskboard) b
 
 On the shared agent host run `source ~/.local/shiplean-env.sh` first and run every `dotnet test` through `shiplean-test` (one at a time, `timeout 300`).
 
-CI is expensive (about 6 jobs per push on shared home runners), so:
+CI runs on GitHub-hosted runners (about 6 jobs per pull request), so:
 
 - Verify locally before pushing; never push to see if CI passes. Batch work into few pushes.
 - Run only the tests your change touches (`--filter "FullyQualifiedName~<Class>"`, your feature's namespace, the spec next to your component). The full suite is only for shared contracts, the shell, schema/seed, CI or Dockerfiles. Never the full acceptance suite locally.
