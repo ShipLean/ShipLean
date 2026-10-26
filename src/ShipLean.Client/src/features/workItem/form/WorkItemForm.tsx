@@ -6,6 +6,7 @@ import { ApiRequestError } from '../../../api/client';
 import { isApiError } from '../../../api/client';
 import { conflictOf, type ConflictDto, type WorkItemDto } from '../../../api/workItems';
 import { showToast } from '../../../components/toastStore';
+import { useRememberItem } from '../../quickSearch/start/recent/useRememberItem';
 import { FeatureForm } from '../../feature/FeatureForm';
 import type { FeatureRegionProps } from '../../feature/FeatureRegionProps';
 import { WorkItemConflictBanner } from '../conflict/WorkItemConflictBanner';
@@ -46,6 +47,7 @@ export function WorkItemForm({
   discussion: ReactNode;
   side: ReactNode;
 }) {
+  useRememberItem(projectKey, item);
   const queryClient = useQueryClient();
   // The revision the draft is based on. A newer one arriving (another tab saved) replaces it only while the form is clean.
   const [base, setBase] = useState(item);
