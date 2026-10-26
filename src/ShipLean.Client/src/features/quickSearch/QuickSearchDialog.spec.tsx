@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/experimental-ct-react';
+import { expect, test } from '@playwright/experimental-ct-react';
 import { quickSearchDialogHarnessIds as harness } from './ct/harnessIds';
 import { QuickSearchDialogHarness } from './ct/QuickSearchDialogHarness';
 import { quickSearchTestIds as ids } from './testIds';
@@ -113,8 +113,7 @@ function results(over: Partial<QuickSearchResults> = {}): QuickSearchResults {
   };
 }
 
-const highlightedKey = (page: Page) =>
-  page.locator(`[data-testid="${ids.option}"][data-highlighted="true"]`);
+const highlightedRow = `[data-testid="${ids.option}"][data-highlighted="true"]`;
 
 test('Dialog_WhenOpened_ShouldFocusTheInputAsACombobox', async ({ mount, page }) => {
   await mount(<QuickSearchDialogHarness results={results()} />);
@@ -163,16 +162,16 @@ test('Dialog_WhenArrowKeysPressed_ShouldMoveAndWrapOverRowsSkippingHeaders', asy
 
   // Up from the first row wraps to the last, which is the action after three headers.
   await page.keyboard.press('ArrowUp');
-  await expect(highlightedKey(page)).toHaveAttribute('data-id', 'create-story');
+  await expect(page.locator(highlightedRow)).toHaveAttribute('data-id', 'create-story');
   await page.keyboard.press('ArrowDown');
-  await expect(highlightedKey(page)).toHaveAttribute('data-key', 'SHIP-41');
+  await expect(page.locator(highlightedRow)).toHaveAttribute('data-key', 'SHIP-41');
   for (let step = 0; step < 3; step += 1) await page.keyboard.press('ArrowDown');
-  await expect(highlightedKey(page)).toHaveAttribute('data-id', '/p/SHIP/sprints/24');
+  await expect(page.locator(highlightedRow)).toHaveAttribute('data-id', '/p/SHIP/sprints/24');
   await expect(page.getByTestId(ids.input)).toHaveAttribute(
     'aria-activedescendant',
-    (await highlightedKey(page).getAttribute('id')) ?? '',
+    (await page.locator(highlightedRow).getAttribute('id')) ?? '',
   );
-  await expect(highlightedKey(page)).toHaveCount(1);
+  await expect(page.locator(highlightedRow)).toHaveCount(1);
 });
 
 test('Dialog_WhenEnterOnAnItem_ShouldOpenItAndFinish', async ({ mount, page }) => {
@@ -187,7 +186,7 @@ test('Dialog_WhenEnterOnAnItem_ShouldOpenItAndFinish', async ({ mount, page }) =
 test('Dialog_WhenEnterOnASprint_ShouldRunItsOpenAndFinish', async ({ mount, page }) => {
   await mount(<QuickSearchDialogHarness results={results()} />);
   await page.getByTestId(ids.option).and(page.locator('[data-kind="sprint"]')).hover();
-  await expect(highlightedKey(page)).toHaveAttribute('data-kind', 'sprint');
+  await expect(page.locator(highlightedRow)).toHaveAttribute('data-kind', 'sprint');
   await page.keyboard.press('Enter');
   await expect(page.getByTestId(harness.ran)).toHaveText('/p/SHIP/sprints/24');
   await expect(page.getByTestId(harness.done)).toHaveText('1');
@@ -219,10 +218,10 @@ test('Dialog_WhenQueryChanges_ShouldHighlightTheFirstRow', async ({ mount, page 
   await mount(<QuickSearchDialogHarness results={results()} initialQuery="a" />);
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('ArrowDown');
-  await expect(highlightedKey(page)).toHaveAttribute('data-key', 'SHIP-130');
+  await expect(page.locator(highlightedRow)).toHaveAttribute('data-key', 'SHIP-130');
   await page.getByTestId(ids.input).press('End');
   await page.keyboard.type('b');
-  await expect(highlightedKey(page)).toHaveAttribute('data-key', 'SHIP-41');
+  await expect(page.locator(highlightedRow)).toHaveAttribute('data-key', 'SHIP-41');
 });
 
 test('Dialog_WhenMatchedInAComment_ShouldShowWhereItMatched', async ({ mount, page }) => {
