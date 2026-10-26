@@ -84,8 +84,9 @@ export function StoryRowHeader({
       </div>
     );
   }
+  // self-start: the card is only as tall as its content; a tall row shows the theme surface below it.
   return (
-    <div data-testid={ids.rowHeader} className={`${paper} grid gap-1 py-3 pl-3 pr-4`}>
+    <div data-testid={ids.rowHeader} className={`${paper} grid gap-1 self-start py-3 pl-3 pr-4`}>
       <CardLayer collapsed={false} />
       <div className="flex items-center gap-2 text-[length:var(--text-xs)] text-ink-muted">
         <RowToggle collapsed={false} onToggle={onToggle} label={parent.key} />
