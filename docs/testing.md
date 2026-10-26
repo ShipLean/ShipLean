@@ -33,6 +33,12 @@ it, and drop the clone at the end. Classes run in parallel; tests inside a class
   to control the build itself.
 - **Doubles** go through `ConfigureTestServices` (override it on the fixture). Production code has no test switches.
   Time is never frozen: the app uses `TimeProvider.System`, and a test compares times against the real clock (see `ExpectedLabels`).
+- **A stopped host is never collected.** ASP.NET's rate limiting middleware starts a timer for its endpoint limiter and
+  never disposes it. The timer is rooted for the life of the process, and through the limiter and the startup context it
+  keeps the whole app (DI container, routing, MVC caches) alive after the host is disposed: about 3.5 MB per test class,
+  so a full API run's managed heap grows to roughly 1.3 GB. Releasing references in the fixture doesn't help. Only
+  running fewer classes per process does (a `--filter` per step), so keep that in mind before capping the test heap
+  (`DOTNET_GCHeapHardLimit`) or moving the tests to a smaller runner.
 
 ## API tests
 

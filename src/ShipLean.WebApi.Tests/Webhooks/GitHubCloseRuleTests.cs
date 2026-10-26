@@ -52,8 +52,13 @@ public class GitHubCloseRuleTests : WebhookApiTest
     public async Task Delivery_WhenTheBodyIsOverTheCap_ShouldBeTooLarge()
     {
         var title = new string('x', WebhookServices.MaxBodyBytes);
+        // Kestrel refuses the body by its Content-Length and closes the connection. Sent straight away, the client can still
+        // be writing when it does and see a broken pipe instead of the 413; asking to continue first gets the 413 before
+        // any of the body is sent.
+        using var request = DeliveryRequest(WebhookDelivery.Github(GithubSecret, "opened", 11, title, Next()));
+        request.Headers.ExpectContinue = true;
 
-        using var response = await PostAsync(WebhookDelivery.Github(GithubSecret, "opened", 11, title, Next()));
+        using var response = await Client.SendAsync(request);
 
         response.StatusCode.ShouldBe(HttpStatusCode.RequestEntityTooLarge);
     }
