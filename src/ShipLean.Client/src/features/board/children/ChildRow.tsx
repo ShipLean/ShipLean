@@ -1,11 +1,10 @@
-import { Link } from 'react-router-dom';
 import { TypeIcon } from '../../../components/TypeIcon';
 import type { ChildSummaryDto } from '../../../api/workItems';
-import { routePath } from '../../../routes';
+import { ItemLink } from '../../itemPeek/ItemLink';
 import { boardTestIds as ids } from '../testIds';
 
 // One child: type, key, title (opens the item) and its state; closed ones are muted.
-export function ChildRow({ child, projectKey }: { child: ChildSummaryDto; projectKey: string }) {
+export function ChildRow({ child }: { child: ChildSummaryDto; projectKey?: string }) {
   const closed = child.state.category === 'completed' || child.state.category === 'removed';
   return (
     <li
@@ -18,12 +17,9 @@ export function ChildRow({ child, projectKey }: { child: ChildSummaryDto; projec
     >
       <TypeIcon type={child.type.id} />
       <span className="text-[length:var(--text-2xs)] text-ink-muted">{child.key}</span>
-      <Link
-        to={routePath('workItem', { key: projectKey, itemKey: child.key })}
-        className="min-w-0 flex-1 truncate"
-      >
+      <ItemLink itemKey={child.key} className="min-w-0 flex-1 truncate">
         {child.title}
-      </Link>
+      </ItemLink>
       <span data-testid={ids.childState} className="text-[length:var(--text-2xs)] text-ink-muted">
         {child.state.name}
       </span>

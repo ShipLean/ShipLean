@@ -1,9 +1,9 @@
 import type { ComponentProps } from 'react';
-import { Link } from 'react-router-dom';
 import { TypeIcon } from '../../../components/TypeIcon';
 import type { BoardViewDto, CardDto } from '../../../api/views';
 import type { WorkItemTypeId } from '../../../api/refs';
-import { routePath, type Level } from '../../../routes';
+import type { Level } from '../../../routes';
+import { ItemLink } from '../../itemPeek/ItemLink';
 import { boardTestIds as ids } from '../testIds';
 import { DropLine } from './DropLine';
 import { CardAssignee } from './CardAssignee';
@@ -20,7 +20,8 @@ export type CardSettings = Pick<BoardViewDto, 'styleRules' | 'cardFields' | 'ann
 
 export interface CardProps {
   card: CardDto;
-  projectKey: string;
+  /** Unused since titles became ItemLinks (they read the open route's project); kept so callers stay unchanged. */
+  projectKey?: string;
   level: Level;
   /** Compact: key, points, avatar and one line of title; Features and Epics keep their roll-ups. */
   compact: boolean;
@@ -42,7 +43,6 @@ export interface CardProps {
 // One card, full or compact. It draws only: dragging, keyboard moves and menus belong to whatever wraps it.
 export function Card({
   card,
-  projectKey,
   level,
   compact,
   settings,
@@ -85,16 +85,16 @@ export function Card({
         {showPoints ? <CardPoints card={card} level={level} /> : null}
         {compact && showAssignee ? <CardAssignee card={card} /> : null}
       </div>
-      <Link
-        data-testid={ids.cardTitle}
-        to={routePath('workItem', { key: projectKey, itemKey: card.key })}
+      <ItemLink
+        testId={ids.cardTitle}
+        itemKey={card.key}
         className={`leading-[1.35] font-medium ${compact ? 'line-clamp-1' : 'line-clamp-2'} ${
           inDone ? 'text-ink-muted' : 'text-ink'
         }`}
         style={ruleTitleStyle(rule)}
       >
         {card.title}
-      </Link>
+      </ItemLink>
       {compact ? null : (
         <>
           {/* Parent, roll-ups and assignee share a line; a line with nothing left in it is hidden, so the card closes up. */}

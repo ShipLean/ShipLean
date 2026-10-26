@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import type { ChildSummaryDto } from '../../../api/workItems';
+import { LocationProbe } from '../ct/LocationProbe';
 import { BoardHarness } from '../ct/BoardHarness';
 import { TOM, rollupBoard } from '../ct/fixtures';
 import { stubBoard } from '../ct/stubApi';
@@ -249,4 +250,22 @@ test('Board_WhenAnEpicHasNoFeatures_ShouldOfferNoFeaturesYet', async ({ mount, p
   await rollup(page, 'feature').click();
 
   await expect(page.getByTestId(ids.childAdd)).toHaveAttribute('data-type', 'feature');
+});
+
+test('Board_WhenChildClicked_ShouldOpenChildInModal', async ({ mount, page }) => {
+  await stubBoard(page, rollupBoard(), { level: 'features', children: () => CHILDREN });
+  await mount(
+    <>
+      <BoardHarness level="features" />
+      <LocationProbe />
+    </>,
+    features,
+  );
+  await rollup(page, 'story').click();
+
+  await page.getByTestId(ids.childRow).first().getByTestId('item-link').click();
+
+  await expect(page.getByTestId(ids.locationProbe)).toHaveText(
+    '/p/SHIP/boards/features?item=SHIP-141',
+  );
 });

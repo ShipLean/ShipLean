@@ -3,6 +3,7 @@ import type { CardDto } from '../../../api/views';
 import { componentTestIds } from '../../../components/testIds';
 import { boardTestIds as ids } from '../testIds';
 import { Card } from './Card';
+import { LocationProbe } from '../ct/LocationProbe';
 import { card, PROJECT, SETTINGS, TOM } from '../ct/fixtures';
 
 const route = { hooksConfig: { route: '/p/SHIP/boards/stories' } };
@@ -306,4 +307,42 @@ test('Card_WhenNothingIsLeftBelowTheTitle_ShouldLeaveNoEmptyLine', async ({ moun
         [...element.children].filter((child) => getComputedStyle(child).display !== 'none').length,
     );
   expect(rows).toBe(2);
+});
+
+const peekCard = card({
+  key: 'SHIP-158',
+  title: 'Saved filters',
+  parent: { id: 'f1', key: 'SHIP-103', type: { id: 'feature', name: 'Feature' }, title: 'Mobile' },
+});
+
+test('Card_WhenTitleClicked_ShouldOpenItemModal', async ({ mount, page }) => {
+  await mount(
+    <>
+      <Card card={peekCard} level="stories" compact={false} settings={SETTINGS} inDone={false} />
+      <LocationProbe />
+    </>,
+    route,
+  );
+
+  await page.getByTestId(ids.cardTitle).click();
+
+  await expect(page.getByTestId(ids.locationProbe)).toHaveText(
+    '/p/SHIP/boards/stories?item=SHIP-158',
+  );
+});
+
+test('CardParent_WhenClicked_ShouldOpenParentInModal', async ({ mount, page }) => {
+  await mount(
+    <>
+      <Card card={peekCard} level="stories" compact={false} settings={SETTINGS} inDone={false} />
+      <LocationProbe />
+    </>,
+    route,
+  );
+
+  await page.getByTestId(ids.cardParent).getByTestId('item-link').click();
+
+  await expect(page.getByTestId(ids.locationProbe)).toHaveText(
+    '/p/SHIP/boards/stories?item=SHIP-103',
+  );
 });
