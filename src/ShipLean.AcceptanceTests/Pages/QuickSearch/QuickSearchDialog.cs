@@ -37,6 +37,14 @@ public sealed class QuickSearchDialog(IPage page)
 #pragma warning restore AG0045, AG0046
     }
 
+    // The page's root element, which carries data-theme.
+#pragma warning disable AG0046
+    public ILocator Root => page.Locator("html");
+
+    // The focused element when it is not the document body: a control in the page.
+    public ILocator FocusedControl => page.Locator(":focus:not(body)");
+#pragma warning restore AG0046
+
     public async Task OpenWithShortcutAsync()
     {
         await page.Keyboard.PressAsync(Shortcut);
