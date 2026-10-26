@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import type { WorkItemDto } from '../../../api/workItems';
 import { TypeIcon } from '../../../components/TypeIcon';
 import { routePath } from '../../../routes';
+import { useInItemPeek } from '../../itemPeek/ItemPeekContext';
 import { workItemTestIds as ids } from '../testIds';
 import { fieldLabels, type DraftField } from './draft';
 import { inputClass } from './inputClasses';
@@ -30,6 +31,8 @@ export function FormHeader({
   onDiscard: () => void;
 }) {
   const dirty = changed.length > 0;
+  // The modal has its own close, so it has no way back.
+  const inModal = useInItemPeek();
   const who = (name: string | undefined) => name ?? 'Jira import';
   return (
     <section
@@ -37,13 +40,15 @@ export function FormHeader({
       className="grid gap-2 border-b border-edge bg-panel px-4 py-3"
     >
       <div className="flex items-center gap-2 text-[length:var(--text-sm)]">
-        <Link
-          data-testid={ids.back}
-          to={routePath('storiesBacklog', { key: projectKey })}
-          className="text-signal hover:underline"
-        >
-          ← Back to Stories backlog
-        </Link>
+        {inModal ? null : (
+          <Link
+            data-testid={ids.back}
+            to={routePath('storiesBacklog', { key: projectKey })}
+            className="text-signal hover:underline"
+          >
+            ← Back to Stories backlog
+          </Link>
+        )}
         <span
           data-testid={ids.meta}
           className="ml-auto text-[length:var(--text-xs)] text-ink-muted"

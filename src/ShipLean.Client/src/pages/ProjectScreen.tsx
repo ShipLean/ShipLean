@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { useParams } from 'react-router-dom';
 import type { ProjectDto } from '../api/projects';
+import { ItemPeekHost } from '../features/itemPeek/ItemPeekHost';
+import { UnsavedGuardHost } from '../features/workItem/form/UnsavedGuardHost';
 import { useScreenPresence } from '../realtime';
 import type { RouteId } from '../routes';
 import { projectByKeyQuery } from './projectQueries';
@@ -27,6 +29,8 @@ export function ProjectScreen({ routeId, testId, children }: ProjectScreenProps)
   return (
     <div data-testid={testId} className="p-4">
       {children(project.data)}
+      <UnsavedGuardHost />
+      <ItemPeekHost project={project.data} />
     </div>
   );
 }
