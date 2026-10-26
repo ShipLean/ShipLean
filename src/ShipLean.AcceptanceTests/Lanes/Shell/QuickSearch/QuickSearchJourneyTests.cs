@@ -61,9 +61,8 @@ public class QuickSearchJourneyTests : SeededAcceptanceTest
         var peek = new ItemPeekDialog(Page);
         var board = Links.Board("SHIP", "stories");
         await new ShellFrame(Page).OpenAsync(board);
-        // Opened with the side-menu button, so a control has focus to give back. Opened with the shortcut from a bare
-        // page, focus returns to the body, which is where it came from.
-        await search.OpenWithButtonAsync();
+        await search.SearchButton.FocusAsync();
+        await search.OpenWithShortcutAsync();
 
         await search.TypeAsync(SeedWord);
         await search.PickAsync("item", PasskeyItem);
@@ -73,8 +72,8 @@ public class QuickSearchJourneyTests : SeededAcceptanceTest
         await Expect(search.Dialog).ToHaveCountAsync(0);
         await peek.Close.ClickAsync();
         await peek.WaitClosedAsync();
-        // Catches focus left on the page body after the modal closes (the dialog's opener is gone).
-        await Expect(search.FocusedControl).ToHaveCountAsync(1);
+        // Catches focus left on the body after the modal closes: the modal's opener (quick search's input) is gone.
+        await Expect(search.SearchButton).ToBeFocusedAsync();
     }
 
     [Test]
@@ -161,6 +160,8 @@ public class QuickSearchJourneyTests : SeededAcceptanceTest
         await search.Input.ClearAsync();
 
         var rows = search.Option("item", "SHIP-141");
+        // Catches the kept query still showing search results instead of the recent items.
+        await Expect(search.Groups.First).ToHaveAttributeAsync("data-group", "recent");
         // Catches a stale title (the entry kept as first written).
         await Expect(search.Options.First).ToContainTextAsync(newTitle);
         // Catches a duplicate row (the renamed item added beside the old entry).
@@ -177,13 +178,14 @@ public class QuickSearchJourneyTests : SeededAcceptanceTest
         await search.Option("action", "toggle-theme").WaitForAsync();
 
         // The browser prefers light, so the toggle goes to dark.
-        await Page.RunAndWaitForApiAsync("/api/me/preferences/theme", "PUT", () => search.PickAsync("action", "toggle-theme"));
-        await Expect(search.Root).ToHaveAttributeAsync("data-theme", "dark");
+        var saved = await Page.RunAndWaitForApiAsync("/api/me/preferences/theme", "PUT", () => search.PickAsync("action", "toggle-theme"));
+        saved.Status.ShouldBe(204);
+        await Page.WaitForFunctionAsync("document.documentElement.dataset.theme === 'dark'");
 
         await Page.ReloadAsync();
         await new ShellFrame(Page).SideMenu.WaitForAsync();
         // Catches a toggle that only changes the page and never saves.
-        await Expect(search.Root).ToHaveAttributeAsync("data-theme", "dark");
+        await Page.WaitForFunctionAsync("document.documentElement.dataset.theme === 'dark'");
     }
 
     [Test]

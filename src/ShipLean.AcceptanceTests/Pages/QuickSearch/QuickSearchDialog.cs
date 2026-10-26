@@ -30,20 +30,11 @@ public sealed class QuickSearchDialog(IPage page)
     public ILocator Option(string kind, string keyOrId)
     {
         var attribute = kind is "item" or "project" ? "data-key" : "data-id";
-        // The contract (K6) names rows by data-key and data-id, which GetByTestId cannot select. The analyzers flag
-        // Locator and XPath for that reason, so this one place opts out.
-#pragma warning disable AG0045, AG0046
-        return Options.Locator($"xpath=self::*[@data-kind='{kind}' and @{attribute}='{keyOrId}']");
-#pragma warning restore AG0045, AG0046
-    }
-
-    // The page's root element, which carries data-theme.
+        // K6 names rows by data-kind, data-key and data-id, and GetByTestId cannot select on those.
 #pragma warning disable AG0046
-    public ILocator Root => page.Locator("html");
-
-    // The focused element when it is not the document body: a control in the page.
-    public ILocator FocusedControl => page.Locator(":focus:not(body)");
+        return page.Locator($"[data-testid='{QuickSearchTestIds.Option}'][data-kind='{kind}'][{attribute}='{keyOrId}']");
 #pragma warning restore AG0046
+    }
 
     public async Task OpenWithShortcutAsync()
     {
