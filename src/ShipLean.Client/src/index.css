@@ -144,15 +144,17 @@
   --color-muted: var(--paper-postit-muted);
 }
 
+/* A style rule sets --sheet-tint, --sheet-edge and --sheet-bar (see ruleCardStyle); hover and focus still win. */
 .paper-sheet {
-  background: var(--paper);
-  border-color: var(--paper-edge);
-  box-shadow: var(--paper-shadow);
+  background: var(--sheet-tint, var(--paper));
+  border-color: var(--sheet-edge, var(--paper-edge));
+  box-shadow: var(--sheet-bar, 0 0 #0000), var(--paper-shadow);
 }
 
 .paper-sheet:hover {
   border-color: var(--theme-accent);
   box-shadow:
+    var(--sheet-bar, 0 0 #0000),
     var(--paper-shadow),
     0 0 0 1px var(--theme-accent);
 }

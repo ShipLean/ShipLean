@@ -7,9 +7,11 @@ import type { RollupCountDto } from '../../../api/views';
 export const swatchVar = (swatch: Swatch) => `var(--color-${swatch})`;
 
 /**
- * The card's tint and left bar for a style rule colour; no colour, no tint. Paper-aware: the tint mixes into the
- * card's paper and the border into its paper edge (both set by `.paper`), falling back to the surface and border
- * tokens off paper. `tintPercent` is how much swatch tints the paper (post-its pass 12).
+ * The card's tint and left bar for a style rule colour; no colour, no tint. It returns custom properties, not the
+ * painted properties: `.paper-sheet` reads `--sheet-tint` (background), `--sheet-edge` (border) and `--sheet-bar`
+ * (the left bar, ahead of the shadow), so its hover ring and focus outline still win. Paper-aware: the tint mixes
+ * into the card's paper and the border into its paper edge (both set by `.paper`), falling back to the surface and
+ * border tokens off paper. `tintPercent` is how much swatch tints the paper (post-its pass 12).
  */
 export function ruleCardStyle(
   rule: StyleRuleJson | null,
@@ -18,10 +20,10 @@ export function ruleCardStyle(
   if (rule === null || rule.colour === null) return undefined;
   const colour = swatchVar(rule.colour);
   return {
-    background: `color-mix(in srgb, ${colour} ${tintPercent}%, var(--paper, var(--color-surface)))`,
-    borderColor: `color-mix(in srgb, ${colour} 40%, var(--paper-edge, var(--color-border)))`,
-    boxShadow: `inset 3px 0 0 ${colour}, var(--paper-shadow)`,
-  };
+    '--sheet-tint': `color-mix(in srgb, ${colour} ${tintPercent}%, var(--paper, var(--color-surface)))`,
+    '--sheet-edge': `color-mix(in srgb, ${colour} 40%, var(--paper-edge, var(--color-border)))`,
+    '--sheet-bar': `inset 3px 0 0 ${colour}`,
+  } as CSSProperties;
 }
 
 /** The title's weight, slant and underline for a style rule. */
