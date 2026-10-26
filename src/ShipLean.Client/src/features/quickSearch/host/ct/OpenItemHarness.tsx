@@ -1,10 +1,6 @@
 import { Route, Routes, useLocation } from 'react-router-dom';
 import { useOpenItem } from '../useOpenItem';
-
-export const openItemHarnessIds = {
-  open: 'ct-open-item-button',
-  location: 'ct-open-item-location',
-} as const;
+import { openItemHarnessIds } from './harnessIds';
 
 function Page() {
   const { pathname, search } = useLocation();
