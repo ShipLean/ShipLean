@@ -349,6 +349,7 @@ test('Taskboard_WhenDark_ShouldDrawStoryRowHeadersAsIndexCardsWithLightInk', asy
   const open = page.getByTestId(ids.row).nth(0);
   await expect.poll(() => background(open.getByTestId(ids.rowCard))).toBe(INDEX_PAPER);
   expect(await color(open.getByTestId(ids.rowTitle))).toBe(LIGHT_INK);
+  await expect(open.getByTestId(ids.rowHeader)).toHaveCSS('isolation', 'isolate');
 
   const collapsed = page.getByTestId(ids.row).nth(1);
   await expect(collapsed).toHaveAttribute('data-collapsed', 'true');
