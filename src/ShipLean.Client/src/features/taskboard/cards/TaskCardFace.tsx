@@ -4,6 +4,7 @@ import { Avatar } from '../../../components/Avatar';
 import { Chip } from '../../../components/Chip';
 import { TypeIcon } from '../../../components/TypeIcon';
 import { CardExtraFields } from '../../board/cards/CardExtraFields';
+import { ruleCardStyle } from '../../board/cards/cardStyle';
 import { taskboardTestIds as ids } from '../testIds';
 
 // What a task card shows when the board has no setting for tasks.
@@ -54,10 +55,10 @@ export function TaskCardFace({
       data-key={card.key}
       data-state={card.state.id}
       data-style-rule={rule?.id}
-      className="group relative grid gap-1 rounded-panel border border-edge bg-panel p-2 shadow-panel"
+      className="paper paper-postit paper-sheet group relative grid gap-1 rounded-[2px] border p-2"
       style={{
         ...style,
-        ...(rule?.colour ? { borderLeft: `3px solid var(--color-${rule.colour})` } : {}),
+        ...ruleCardStyle(rule ?? null, 12),
         fontWeight: rule?.bold ? 700 : undefined,
         fontStyle: rule?.italic ? 'italic' : undefined,
         textDecoration: rule?.underline ? 'underline' : undefined,

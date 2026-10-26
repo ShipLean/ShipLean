@@ -8,6 +8,9 @@ import { taskboardTestIds as ids } from '../testIds';
 import { PROJECT, SPRINT, SPRINTS, VIEW } from './fixtures';
 import { stubTaskboard } from './stubApi';
 
+const POSTIT_PAPER = 'rgb(255, 249, 211)';
+const POSTIT_MUTED = 'rgb(110, 93, 34)';
+
 const route = { hooksConfig: { route: '/p/SHIP/sprints/s24/taskboard' } };
 const slot = <TaskboardSlot project={PROJECT} sprint={SPRINT} sprints={SPRINTS} />;
 
@@ -181,8 +184,26 @@ test('Taskboard_WhenRuleColoursACard_ShouldBorderItAndColourItsTags', async ({ m
   const styled = page.locator(`[data-testid="${ids.card}"][data-style-rule="r1"]`);
   await expect(styled).toHaveCount(1);
   await expect(styled).toHaveCSS('font-weight', '700');
-  await expect(styled).toHaveCSS('border-left-width', '3px');
+  // A ruled post-it is tinted past the plain paper and keeps the 3px left bar (an inset shadow).
+  await expect(styled).not.toHaveCSS('background-color', POSTIT_PAPER);
+  await expect(styled).toHaveCSS('box-shadow', /3px 0px 0px 0px inset/);
   await expect(
     page.getByTestId(ids.cardTag).first().getByTestId(componentTestIds.chip),
   ).toHaveAttribute('data-tone', 'warn');
 });
+
+for (const theme of ['light', 'dark'] as const) {
+  test(`Taskboard_When${theme}Theme_ShouldDrawTaskCardsAsPostits`, async ({ mount, page }) => {
+    await stubTaskboard(page, VIEW);
+    await mount(slot, route);
+    await page.evaluate(
+      (value) => document.documentElement.setAttribute('data-theme', value),
+      theme,
+    );
+
+    const card = page.getByTestId(ids.card).first();
+    await expect(card).toHaveCSS('background-color', POSTIT_PAPER);
+    await expect(card).toHaveCSS('border-radius', '2px');
+    await expect(card.getByTestId(ids.cardKey)).toHaveCSS('color', POSTIT_MUTED);
+  });
+}
