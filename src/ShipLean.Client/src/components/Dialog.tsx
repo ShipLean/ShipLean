@@ -37,12 +37,16 @@ export function Dialog({
   useModalFocus(panel);
 
   // A click on the backdrop would move focus to the body, outside the trap; keep it where it is.
+  // A drag that starts in the panel (selecting text) and ends on the backdrop is not a click on the backdrop.
+  const pressedBackdrop = useRef(false);
   const keepFocus = (event: MouseEvent) => {
-    if (event.target === event.currentTarget) event.preventDefault();
+    pressedBackdrop.current = event.target === event.currentTarget;
+    if (pressedBackdrop.current) event.preventDefault();
   };
 
+  // A field inside that used Esc itself (closing a mention list, cancelling an add form) marks the event handled.
   const onKeyDown = (event: KeyboardEvent) => {
-    if (event.key === 'Escape') {
+    if (event.key === 'Escape' && !event.defaultPrevented) {
       event.stopPropagation();
       onClose();
     }
@@ -52,7 +56,7 @@ export function Dialog({
     <div
       onMouseDown={keepFocus}
       onClick={(event) => {
-        if (event.target === event.currentTarget) onBackdropClick?.();
+        if (event.target === event.currentTarget && pressedBackdrop.current) onBackdropClick?.();
       }}
       className="fixed inset-0 z-50 grid place-items-center p-4"
       style={{ background: 'color-mix(in srgb, var(--color-text) 45%, transparent)' }}

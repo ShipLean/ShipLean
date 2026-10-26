@@ -52,7 +52,11 @@ export function AddTaskForm({
           ref={input}
           onChange={(event) => setTitle(event.target.value)}
           onKeyDown={(event) => {
-            if (event.key === 'Escape') onClose();
+            if (event.key === 'Escape') {
+              event.preventDefault();
+              event.stopPropagation();
+              onClose();
+            }
           }}
         />
         <button

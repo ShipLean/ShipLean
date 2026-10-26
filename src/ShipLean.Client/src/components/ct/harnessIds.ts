@@ -5,4 +5,6 @@ export const harnessTestIds = {
   ctDialogFirst: 'ct-dialog-first',
   ctDialogLast: 'ct-dialog-last',
   ctDialogOutside: 'ct-dialog-outside',
+  ctDialogEscField: 'ct-dialog-esc-field',
+  ctDialogState: 'ct-dialog-state',
 } as const;
