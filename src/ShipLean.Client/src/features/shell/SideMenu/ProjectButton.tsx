@@ -24,7 +24,7 @@ export function ProjectButton({
       data-testid={ids.projectButton}
       aria-haspopup="dialog"
       aria-expanded={open}
-      title="Switch project (Ctrl+P)"
+      title="Switch project"
       className="mb-2 flex h-10 w-full items-center gap-2 rounded-panel border border-edge bg-panel px-2 text-left text-ink hover:border-signal aria-expanded:border-signal max-[900px]:mb-0 max-[900px]:w-auto"
       onClick={onClick}
     >

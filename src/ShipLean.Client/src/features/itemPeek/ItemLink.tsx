@@ -1,6 +1,7 @@
 import type { CSSProperties, MouseEvent, ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { matchRoute, routePath, type RouteId } from '../../routes';
+import { matchRoute, routePath } from '../../routes';
+import { opensInModal } from './opensInModal';
 import { itemPeekTestIds } from './testIds';
 import { useItemPeek } from './useItemPeek';
 
@@ -17,9 +18,6 @@ export interface ItemLinkProps {
   /** Called first; `preventDefault()` cancels opening the item. */
   onClick?: (event: MouseEvent<HTMLAnchorElement>) => void;
 }
-
-// The three Backlogs pages hard-navigate to the item page; everywhere else an item opens in the modal.
-const hardNavigates: readonly RouteId[] = ['storiesBacklog', 'featuresBacklog', 'epicsBacklog'];
 
 const isPlainLeftClick = (event: MouseEvent) =>
   event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
@@ -54,7 +52,7 @@ export function ItemLink({
         {children}
       </span>
     );
-  const opensModal = here !== undefined && !hardNavigates.includes(here.id) && openKey === key;
+  const opensModal = opensInModal(here, openKey, key);
 
   const click = (event: MouseEvent<HTMLAnchorElement>) => {
     onClick?.(event);

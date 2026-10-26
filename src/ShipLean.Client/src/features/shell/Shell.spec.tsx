@@ -30,7 +30,7 @@ test('Picker_WhenNoSearch_ShouldListRecentThenAllYourProjects', async ({ mount, 
   await stubShell(page, { recent: ['id-SHIP', 'id-MOB'] });
   await mount(<ShellHarness />, { hooksConfig: { route: '/p/SHIP/backlogs/stories' } });
   await expect(page.getByTestId(ids.projectButton)).toContainText('Shipping');
-  await page.keyboard.press('Control+p');
+  await page.getByTestId(ids.projectButton).click();
   await expect(page.getByTestId(ids.picker)).toBeVisible();
   await expect(page.getByTestId(ids.pickerGroup)).toHaveText(['Recent', 'All your projects']);
   const keys = await page
@@ -79,7 +79,7 @@ test('Picker_WhenPickedByKeyboardFromASprintPage_ShouldOpenAllSprintsThere', asy
   await stubShell(page, { sprints: [sprint({ id: 's24' })] });
   await mount(<ShellHarness />, { hooksConfig: { route: '/p/SHIP/sprints/s24/taskboard' } });
   await expect(page.getByTestId(ids.projectButton)).toContainText('Shipping');
-  await page.keyboard.press('Control+p');
+  await page.getByTestId(ids.projectButton).click();
   // Shipping (recent), then Mobile and Payments: down, down, up lands on the second.
   await expect(page.getByRole('option', { selected: true })).toHaveAttribute('data-key', 'SHIP');
   await page.keyboard.press('ArrowDown');
@@ -354,21 +354,9 @@ test('Picker_WhenEscapePressedAwayFromTheSearch_ShouldClose', async ({ mount, pa
   await expect(page.getByTestId(ids.picker)).toHaveCount(0);
 });
 
-test('Picker_WhenControlPPressedWhileOpen_ShouldFocusTheSearch', async ({ mount, page }) => {
+test('Picker_WhenControlPPressed_ShouldNotOpen', async ({ mount, page }) => {
   await stubShell(page);
   await mount(<ShellHarness />, { hooksConfig: { route: '/p/SHIP/backlogs/stories' } });
-  await page.getByTestId(ids.projectButton).click();
-  await page.getByTestId(ids.pickerNewProject).focus();
-  await page.keyboard.press('Control+p');
-  await expect(page.getByTestId(ids.pickerSearch)).toBeFocused();
-  await expect(page.getByTestId(ids.picker)).toBeVisible();
-});
-
-test('Picker_WhenControlPPressedInAModalDialog_ShouldNotOpen', async ({ mount, page }) => {
-  await stubShell(page);
-  await mount(<ShellHarness />, { hooksConfig: { route: '/p/SHIP/backlogs/stories' } });
-  await page.getByTestId(harness.openDialog).click();
-  await expect(page.getByTestId(harness.dialogBody)).toBeVisible();
   await page.keyboard.press('Control+p');
   await expect(page.getByTestId(ids.picker)).toHaveCount(0);
 });

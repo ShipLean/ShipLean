@@ -1,4 +1,4 @@
-import { Fragment, useId, useState, type KeyboardEvent, type Ref } from 'react';
+import { Fragment, useId, useState, type KeyboardEvent } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { matchRoute, routePath } from '../../../routes';
 import { sameScreenIn } from '../sameScreenIn';
@@ -10,11 +10,9 @@ import { pickerGroups } from './pickerList';
 // The searchable list of the projects you are in. Picking one opens the same screen there.
 export function ProjectPicker({
   currentKey,
-  searchRef,
   onClose,
 }: {
   currentKey: string | undefined;
-  searchRef: Ref<HTMLInputElement>;
   onClose: () => void;
 }) {
   const navigate = useNavigate();
@@ -72,7 +70,6 @@ export function ProjectPicker({
     >
       <div className="border-b border-edge p-2">
         <input
-          ref={searchRef}
           autoFocus
           type="search"
           role="combobox"
