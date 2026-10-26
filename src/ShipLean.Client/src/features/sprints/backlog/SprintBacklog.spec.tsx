@@ -7,6 +7,7 @@ import type { ChildSummaryDto, WorkItemDto } from '../../../api/workItems';
 import { componentTestIds } from '../../../components/testIds';
 import { ToastHost } from '../../../components/ToastHost';
 import { sprintsTestIds as ids } from '../testIds';
+import { AddressReadout } from './AddressReadout';
 import { SprintBacklog } from './SprintBacklog';
 
 const project: ProjectDto = {
@@ -694,4 +695,25 @@ test('SprintBacklog_WhenThePageScrollsWithAStateMenuOpen_ShouldCloseIt', async (
   await page.evaluate(() => window.scrollBy(0, 40));
 
   await expect(page.getByTestId(componentTestIds.stateMenuOption)).toHaveCount(0);
+});
+
+test('SprintBacklog_WhenStoryTitleClicked_ShouldOpenItemModal', async ({ mount, page }) => {
+  await stub(page);
+  await mount(
+    <>
+      <SprintBacklog project={project} sprint={sprint} />
+      <AddressReadout />
+    </>,
+    { hooksConfig: { route: '/p/SHIP/sprints/s24/backlog' } },
+  );
+
+  const first = page.getByTestId(ids.storyRow).first();
+  const link = first.getByRole('link');
+  await expect(link).toHaveAttribute('href', /\/p\/SHIP\/items\/SHIP-/);
+  await link.click();
+
+  await expect(page.getByTestId('address')).toHaveText(
+    /^\/p\/SHIP\/sprints\/s24\/backlog\?item=SHIP-/,
+  );
+  await expect(first.getByTestId(ids.rowToggle)).toHaveAttribute('aria-expanded', 'true');
 });

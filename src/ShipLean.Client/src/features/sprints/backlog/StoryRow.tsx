@@ -1,6 +1,7 @@
 import { Avatar } from '../../../components/Avatar';
 import { Chip } from '../../../components/Chip';
 import { TypeIcon } from '../../../components/TypeIcon';
+import { ItemLink } from '../../itemPeek/ItemLink';
 import { sprintsTestIds as ids } from '../testIds';
 import { RowStateMenu, type StateChanger } from './RowStateMenu';
 import { doneTaskCount, type SprintStory } from './sprintStories';
@@ -36,7 +37,9 @@ export function StoryRow({ entry, changer, open, onToggle }: StoryRowProps) {
             {open ? '▼' : '▶'}
           </button>
           <TypeIcon type={story.type.id} />
-          {story.title}
+          <ItemLink itemKey={story.key} className="text-inherit no-underline hover:underline">
+            {story.title}
+          </ItemLink>
         </span>
       </td>
       <td className="px-3 py-2 font-normal whitespace-nowrap text-ink-muted">{story.key}</td>

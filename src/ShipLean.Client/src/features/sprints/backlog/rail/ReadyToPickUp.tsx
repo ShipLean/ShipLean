@@ -1,4 +1,5 @@
 import { TypeIcon } from '../../../../components/TypeIcon';
+import { ItemLink } from '../../../itemPeek/ItemLink';
 import { sprintsTestIds as ids } from '../../testIds';
 import type { ReadyItem } from './railSummary';
 
@@ -29,7 +30,9 @@ export function ReadyToPickUp({ ready }: { ready: ReadyItem[] }) {
           >
             <TypeIcon type={item.type.id} />
             <span className="grid min-w-0">
-              {item.title}
+              <ItemLink itemKey={item.key} className="text-inherit no-underline hover:underline">
+                {item.title}
+              </ItemLink>
               <small className="truncate text-ink-muted">{sub}</small>
             </span>
           </div>

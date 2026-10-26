@@ -3,6 +3,7 @@ import type { CardDto, TaskboardViewDto } from '../../../api/views';
 import { Avatar } from '../../../components/Avatar';
 import { Chip } from '../../../components/Chip';
 import { TypeIcon } from '../../../components/TypeIcon';
+import { ItemLink } from '../../itemPeek/ItemLink';
 import { CardExtraFields } from '../../board/cards/CardExtraFields';
 import { taskboardTestIds as ids } from '../testIds';
 
@@ -71,7 +72,11 @@ export function TaskCardFace({
           {card.parent ? (
             <>
               <TypeIcon type={card.parent.type.id} />
-              {card.parent.title}
+              {preview ? (
+                card.parent.title
+              ) : (
+                <ItemLink itemKey={card.parent.key}>{card.parent.title}</ItemLink>
+              )}
             </>
           ) : (
             'No parent'
@@ -80,7 +85,15 @@ export function TaskCardFace({
       ) : null}
       <span className="flex items-start gap-1.5 text-[length:var(--text-sm)] text-ink">
         <TypeIcon type="task" />
-        <span data-testid={id(ids.cardTitle)}>{card.title}</span>
+        <span data-testid={id(ids.cardTitle)}>
+          {preview ? (
+            card.title
+          ) : (
+            <ItemLink itemKey={card.key} className="text-inherit no-underline hover:underline">
+              {card.title}
+            </ItemLink>
+          )}
+        </span>
       </span>
       <span className="flex items-center gap-1.5 text-[length:var(--text-xs)] text-ink-muted">
         {fields.showKey ? <span data-testid={id(ids.cardKey)}>{card.key}</span> : null}
