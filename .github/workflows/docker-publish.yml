@@ -1,0 +1,52 @@
+name: Build & Publish Docker Image
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  docker:
+    # Forks must not try to push the upstream image.
+    if: github.repository == 'ShipLean/ShipLean'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+
+      # GitHub-hosted runners have no persistent Docker layer cache. The container
+      # driver can export one to the Actions cache; the docker driver cannot.
+      # provenance stays off so the push is a normal image, not an attestation.
+      - uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
+
+      # GITHUB_TOKEN is enough. GHCR rejects an uppercase namespace, so the image
+      # name is lowercase even though the org login is ShipLean.
+      # The first push creates the package as private. Visibility is not inherited
+      # from the public repo, and this token cannot change it: set the package to
+      # public once in its settings so anonymous pulls work. No PAT is required.
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: src/Dockerfile
+          push: true
+          provenance: false
+          sbom: false
+          # Stamped into the assembly so /health reports which commit is running.
+          build-args: |
+            SOURCE_COMMIT=${{ github.sha }}
+          tags: |
+            ghcr.io/shiplean/shiplean:latest
+            ghcr.io/shiplean/shiplean:${{ github.sha }}
+          cache-from: type=gha,scope=app
+          cache-to: type=gha,scope=app,mode=max

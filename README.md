@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://github.com/joeldickson/ShipLean">
+  <a href="https://github.com/ShipLean/ShipLean">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="design/logo/shiplean-logo-on-dark.svg">
       <img alt="ShipLean" src="design/logo/shiplean-logo-on-light.svg" height="64">
@@ -12,9 +12,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/joeldickson/ShipLean/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/joeldickson/ShipLean/actions/workflows/ci.yml/badge.svg"></a>
-  <a href="https://github.com/joeldickson/ShipLean/actions/workflows/docker-publish.yml"><img alt="Docker image" src="https://github.com/joeldickson/ShipLean/actions/workflows/docker-publish.yml/badge.svg"></a>
-  <a href="https://github.com/joeldickson/ShipLean/pkgs/container/shiplean"><img alt="ghcr.io/joeldickson/shiplean" src="https://img.shields.io/badge/ghcr.io-joeldickson%2Fshiplean-2563c9"></a>
+  <a href="https://github.com/ShipLean/ShipLean/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/ShipLean/ShipLean/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/ShipLean/ShipLean/actions/workflows/docker-publish.yml"><img alt="Docker image" src="https://github.com/ShipLean/ShipLean/actions/workflows/docker-publish.yml/badge.svg"></a>
+  <a href="https://github.com/ShipLean/ShipLean/pkgs/container/shiplean"><img alt="ghcr.io/shiplean/shiplean" src="https://img.shields.io/badge/ghcr.io-shiplean%2Fshiplean-2563c9"></a>
 </p>
 
 ---
@@ -53,12 +53,12 @@ A **project** owns a team, a backlog, boards and sprints; access is checked per 
 
 ## Run it
 
-The published image is `ghcr.io/joeldickson/shiplean` (`latest` and one tag per commit on `main`). It serves the API and the SPA on port 8080 and applies the database schema and migrations at startup.
+The published image is `ghcr.io/shiplean/shiplean` (`latest` and one tag per commit on `main`). It serves the API and the SPA on port 8080 and applies the database schema and migrations at startup.
 
 The quickest way up is the compose file, which adds a `postgres:18` service and the volumes:
 
 ```bash
-git clone https://github.com/joeldickson/ShipLean.git
+git clone https://github.com/ShipLean/ShipLean.git
 cd ShipLean
 SHIPLEAN_ADMIN_EMAIL=you@example.com SHIPLEAN_ADMIN_PASSWORD='choose-one' \
   docker compose -f src/docker-compose.yml up --build

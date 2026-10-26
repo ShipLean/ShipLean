@@ -27,7 +27,8 @@ COPY src/ShipLean.WebApi/ShipLean.WebApi.csproj src/ShipLean.WebApi/
 COPY src/ShipLean.Application/ShipLean.Application.csproj src/ShipLean.Application/
 COPY src/ShipLean.Core/ShipLean.Core.csproj src/ShipLean.Core/
 COPY src/ShipLean.Contracts/ShipLean.Contracts.csproj src/ShipLean.Contracts/
-# The NuGet cache mount (shared by id across images) is empty on a fresh builder and warm on the home runners.
+# The NuGet cache mount is empty on a fresh builder. GitHub Actions keeps the
+# restore layer via the Actions cache; the mount itself does not survive the job.
 RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \
     dotnet restore src/ShipLean.WebApi -r linux-x64
 COPY src/ ./src/
@@ -52,6 +53,8 @@ RUN --mount=type=cache,id=models,target=/cache \
     && chmod -R a+rX /models
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
+# Links the GHCR package to this repo when the image is published.
+LABEL org.opencontainers.image.source="https://github.com/ShipLean/ShipLean"
 # curl: the HEALTHCHECK below calls GET /health with it.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
