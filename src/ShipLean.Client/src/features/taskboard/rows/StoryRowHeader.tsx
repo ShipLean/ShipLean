@@ -59,7 +59,7 @@ export function StoryRowHeader({
   const states = parentStates.find((s) => s.type === parent.type.id)?.states ?? [];
   const tasks = parent.rollups.find((r) => r.type === 'task');
   const total = tasks ? tasks.open + tasks.closed : 0;
-  const paper = `paper relative isolate${parent.type.id === 'bug' ? ' paper-bug' : ''}`;
+  const paper = `paper relative isolate ${parent.type.id === 'bug' ? 'paper-bug' : ''}`;
   if (collapsed) {
     return (
       <div
