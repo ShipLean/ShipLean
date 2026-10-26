@@ -32,6 +32,8 @@ builder.Services.AddSerilog((services, logger) =>
     {
         logger.WriteTo.Seq(seqUrl, apiKey: configuration["SHIPLEAN_SEQ_API_KEY"]);
     }
+
+    ShipLean.WebApi.Infrastructure.Telemetry.TelemetryLogging.AddOtlpSink(logger, configuration);
 }, preserveStaticLogger: true);
 
 Assembly[] moduleAssemblies = [ApiMarker.Assembly, ApplicationMarker.Assembly];

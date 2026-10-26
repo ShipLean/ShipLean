@@ -20,4 +20,7 @@ public interface IPresenceTracker
     // Takes a user's connections on this instance off every screen of the project (they were removed from it),
     // publishing the new lists.
     Task RemoveUserAsync(Guid projectId, Guid userId);
+
+    // How many screens have someone of this instance on them (a metric, so a cheap read, not a snapshot).
+    int ScreenCount { get; }
 }

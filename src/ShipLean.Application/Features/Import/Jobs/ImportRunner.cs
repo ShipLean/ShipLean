@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using ShipLean.Core.Telemetry;
 
 namespace ShipLean.Application.Features.Import.Jobs;
 
@@ -53,6 +54,8 @@ public sealed class ImportRunner(IServiceScopeFactory scopes, ImportQueue queue,
     // An exception out of a BackgroundService would stop the host, so a job that blows up is logged and the next one runs.
     private async Task RunOneAsync(Guid jobId, CancellationToken stoppingToken)
     {
+        using var activity = ShipLeanActivities.Source.StartActivity("import.job");
+        activity?.SetTag("shiplean.import.job_id", jobId);
         try
         {
             await using var scope = scopes.CreateAsyncScope();
@@ -60,6 +63,7 @@ public sealed class ImportRunner(IServiceScopeFactory scopes, ImportQueue queue,
         }
         catch (Exception failed) when (failed is not OperationCanceledException)
         {
+            activity?.SetStatus(System.Diagnostics.ActivityStatusCode.Error);
             logger.LogError(failed, "Import job {JobId} could not run", jobId);
             await FailRunningAsync(jobId);
         }

@@ -1,3 +1,6 @@
+using ShipLean.Core.Telemetry;
+using ShipLean.WebApi.Infrastructure.Telemetry;
+
 namespace ShipLean.WebApi.Realtime;
 
 // With presence in Redis: every Period, refreshes this instance's heartbeat (a key that expires after Ttl) and takes
@@ -40,6 +43,8 @@ public sealed class PresenceHeartbeat(RedisRealtime redis, RedisPresenceTracker 
 
     public async Task BeatAsync()
     {
+        // Every 15 seconds for ever: TracingServices samples this span, and the Redis calls under it, out.
+        using var activity = ShipLeanActivities.Source.StartActivity(TraceSampling.HeartbeatSpan);
         var database = await redis.DatabaseAsync();
         // Alive before listed, so no instance ever sees this one listed without a heartbeat.
         await database.StringSetAsync(redis.AliveKey(redis.InstanceId), "1", timing.Ttl);

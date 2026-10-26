@@ -15,6 +15,14 @@ services:
       # http://seq:5341 on arrnet.
       - SHIPLEAN_SEQ_URL=${SHIPLEAN_SEQ_URL:-}
       - SHIPLEAN_SEQ_API_KEY=${SHIPLEAN_SEQ_API_KEY:-}
+      # OpenTelemetry (docs/observability.md): nothing is exported until the endpoint is set. To see traces, metrics and
+      # logs locally, start the otel profile (docker compose -f src/docker-compose.yml --profile otel up --build), uncomment the endpoint line
+      # (and the protocol line) and open http://127.0.0.1:18888.
+      # - OTEL_EXPORTER_OTLP_ENDPOINT=http://aspire-dashboard:18889
+      # - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+      # - OTEL_SERVICE_NAME=shiplean
+      # - OTEL_RESOURCE_ATTRIBUTES=deployment.environment=local
+      # - OTEL_EXPORTER_OTLP_HEADERS=x-api-key=...
       # Attachments and profile photos; the volume keeps them across container rebuilds. Set one of the two below
       # instead to keep them in Postgres or S3 (README configuration). To try S3 locally, start the rustfs profile
       # (docker compose -f src/docker-compose.yml --profile rustfs up --build) and uncomment the S3 line.
@@ -85,6 +93,18 @@ services:
     entrypoint: ["/bin/sh", "-c", "curl -fsS --aws-sigv4 aws:amz:us-east-1:s3 --user \"shiplean:$${SHIPLEAN_S3_SECRET_KEY}\" -X PUT http://rustfs:9000/shiplean || true"]
     environment:
       - SHIPLEAN_S3_SECRET_KEY=${SHIPLEAN_S3_SECRET_KEY:-shiplean-secret}
+
+  # Optional local OpenTelemetry viewer: only with --profile otel. OTLP in on 18889 (gRPC), UI on 18888, both bound to
+  # loopback on the host. Anonymous access is for local use only; never expose these ports.
+  aspire-dashboard:
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:9.5
+    profiles: ["otel"]
+    environment:
+      - DASHBOARD__FRONTEND__AUTHMODE=Unsecured
+      - DASHBOARD__OTLP__AUTHMODE=Unsecured
+    ports:
+      - "127.0.0.1:18888:18888"
+      - "127.0.0.1:18889:18889"
 
 networks:
   default:

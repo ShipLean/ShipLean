@@ -26,6 +26,8 @@ public sealed class PresenceTracker(IProjectEvents events) : IPresenceTracker
     // connection id -> (project -> the screen it is on)
     private readonly ConcurrentDictionary<string, Dictionary<Guid, string>> _current = new();
 
+    public int ScreenCount => _screens.Values.Count(screen => !screen.Retired && screen.Connections.Count > 0);
+
     public async Task JoinAsync(string connectionId, Guid userId, Guid projectId, string screenId)
     {
         var previous = SetCurrent(connectionId, projectId, screenId);
