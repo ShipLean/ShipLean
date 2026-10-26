@@ -404,3 +404,30 @@ test('Taskboard_WhenUnparentedRow_ShouldNotDrawACard', async ({ mount, page }) =
   await expect(page.getByTestId(ids.row).nth(2).getByTestId(ids.rowCard)).toHaveCount(0);
   await expect(page.getByTestId(ids.rowCard)).toHaveCount(2);
 });
+
+test('Taskboard_WhenRowIsTallerThanItsHeader_ShouldKeepTheIndexCardToItsContent', async ({
+  mount,
+  page,
+}) => {
+  const first = VIEW.rows[0]!;
+  const [newCell, ...otherCells] = first.cells;
+  const sample = newCell!.tasks[0]!;
+  const many = [1, 2, 3, 4, 5].map((n) => ({ ...sample, id: `t-many-${n}`, key: `SHIP-90${n}` }));
+  const tallView: TaskboardViewDto = {
+    ...VIEW,
+    rows: [
+      { ...first, cells: [{ ...newCell!, tasks: many }, ...otherCells] },
+      ...VIEW.rows.slice(1),
+    ],
+  };
+  await stubTaskboard(page, tallView);
+  await mount(slot, route);
+
+  const row = page.getByTestId(ids.row).nth(0);
+  await expect(row.getByTestId(ids.cell).nth(0).getByTestId(ids.card)).toHaveCount(5);
+  const rowBox = (await row.boundingBox())!;
+  const headerBox = (await row.getByTestId(ids.rowHeader).boundingBox())!;
+  const stateBox = (await row.getByTestId(ids.rowState).boundingBox())!;
+  expect(headerBox.height).toBeLessThan(rowBox.height / 2);
+  expect(headerBox.y + headerBox.height - (stateBox.y + stateBox.height)).toBeLessThan(24);
+});
