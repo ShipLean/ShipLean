@@ -18,5 +18,18 @@ test('ItemLink_WhenNoProjectKey_ShouldDefaultToTheOpenRoutesProject', () => {
 
 test('ItemLink_WhenNotOnAProjectRoute_ShouldUseTheGivenKeyOrRenderPlainText', () => {
   expect(render('/', { projectKey: 'PAY' })).toContain('href="/p/PAY/items/SHIP-12"');
-  expect(render('/', {})).toBe('Pay');
+  expect(render('/', {})).toBe('<span data-testid="item-link" data-item-key="SHIP-12">Pay</span>');
+});
+
+test('ItemLink_WhenPlainText_ShouldKeepTestIdClassAndStyle', () => {
+  const html = renderToStaticMarkup(
+    <MemoryRouter initialEntries={['/']}>
+      <ItemLink itemKey="SHIP-12" testId="mine" className="k" style={{ color: 'red' }}>
+        Pay
+      </ItemLink>
+    </MemoryRouter>,
+  );
+  expect(html).toContain('data-testid="mine"');
+  expect(html).toContain('class="k"');
+  expect(html).toContain('style="color:red"');
 });

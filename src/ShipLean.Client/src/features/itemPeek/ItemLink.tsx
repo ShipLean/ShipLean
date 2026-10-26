@@ -42,7 +42,18 @@ export function ItemLink({
   const here = matchRoute(pathname, search);
   const openKey = here !== undefined && 'key' in here.params ? here.params.key : undefined;
   const key = projectKey ?? openKey;
-  if (key === undefined) return <>{children}</>;
+  if (key === undefined)
+    return (
+      <span
+        data-testid={testId ?? itemPeekTestIds.link}
+        data-item-key={itemKey}
+        className={className}
+        style={style}
+        title={title}
+      >
+        {children}
+      </span>
+    );
   const opensModal = here !== undefined && !hardNavigates.includes(here.id) && openKey === key;
 
   const click = (event: MouseEvent<HTMLAnchorElement>) => {
