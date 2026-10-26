@@ -203,3 +203,80 @@ svg text { fill: var(--color-muted); font: 10px var(--font-sans); }
   .side .me > span:not(.av) { display: none; }
   .user-menu { top: calc(100% - 4px); bottom: auto; left: auto; width: 240px; }
 }
+
+/* The page theme's own surface, kept for the row-header backdrop once a card swaps in paper tokens. */
+:root { --theme-surface: var(--color-surface); }
+
+/* Paper cards (issue #3, design/README.md "Paper cards"): stories, features and epics are white index cards, bugs are
+   pink, tasks are yellow post-its, the same in both themes. Inside a card the light theme's tokens apply, so ink on
+   paper; the theme shows only in the edge, shadow and hover/focus ring. A style rule tints the paper and keeps a 3px
+   left bar. The Taskboard story/bug row header is drawn as an inset index card. */
+:root .card[data-key],
+:root .rowh:not(.orphan):not(.person) {
+  --paper: var(--paper-index);
+  --paper-muted: #52627c;
+  --paper-edge: color-mix(in srgb, var(--paper), var(--paper-edge-mix) var(--paper-edge-amount));
+  --color-surface: var(--paper);
+  --color-surface-2: color-mix(in srgb, var(--paper), #1c2638 8%);
+  --color-border: color-mix(in srgb, var(--paper), #1c2638 18%);
+  --color-text: #1c2638;
+  --color-muted: var(--paper-muted);
+  --color-accent: #2563c9;
+  --color-accent-fg: #ffffff;
+  --color-accent-soft: #dae6fb;
+  --color-ok: #3f8a3a;
+  --color-warn: #b7701b;
+  --color-info: #1d7fb8;
+  --color-danger: #c2353b;
+  --color-purple: #6f45bf;
+  --type-epic: #d0731c;
+  --type-feature: #7b4fc9;
+  --type-story: #2f7fd8;
+  --type-bug: #cc3d3d;
+  --type-task: #b07f0e;
+  --rule-blocked: var(--color-danger);
+  --rule-spike: color-mix(in oklch, var(--color-danger) 40%, var(--color-accent));
+  color: var(--color-text);
+}
+:root .card[data-key][data-type="bug"],
+:root .rowh:has(.ti.bug) { --paper: var(--paper-bug); }
+/* Taskboard cards are all tasks: post-its. */
+:root article.card[data-key] {
+  --paper: var(--paper-postit);
+  --paper-muted: var(--paper-postit-muted);
+  --paper-edge: color-mix(in srgb, var(--paper), var(--paper-postit-edge-mix) var(--paper-postit-edge-amount));
+  border-radius: 2px;
+}
+
+:root .card[data-key] {
+  background: var(--paper);
+  border-color: var(--paper-edge);
+  box-shadow: var(--paper-shadow);
+}
+/* Hover and focus use the page accent so the ring reads against the board around the card. */
+:root .card[data-key]:hover { border-color: var(--theme-accent); box-shadow: var(--paper-shadow), 0 0 0 1px var(--theme-accent); }
+:root .card[data-key]:focus-visible { outline-color: var(--theme-accent); }
+:root .card[data-key].done-col { opacity: .82; }
+
+/* Style rules tint the paper and keep the left bar. */
+:root article.card[data-key].styled { background: color-mix(in srgb, var(--rule) 12%, var(--paper)); border-color: color-mix(in srgb, var(--rule) 45%, var(--paper-edge)); border-left-color: var(--rule); }
+:root .card[data-key].rule-blocked { background: color-mix(in srgb, var(--rule-blocked) 10%, var(--paper)); border-color: color-mix(in srgb, var(--rule-blocked) 40%, var(--paper-edge)); box-shadow: inset 3px 0 0 var(--rule-blocked), var(--paper-shadow); }
+:root .card[data-key].rule-spike { background: color-mix(in srgb, var(--rule-spike) 10%, var(--paper)); border-color: color-mix(in srgb, var(--rule-spike) 40%, var(--paper-edge)); box-shadow: inset 3px 0 0 var(--rule-spike), var(--paper-shadow); }
+
+/* Taskboard: the story (or bug) row header is the story's index card, inset in its sticky cell. */
+:root .rowh:not(.orphan):not(.person) {
+  background: var(--theme-surface);
+  padding: 12px 16px 12px 12px;
+}
+:root .rowh.collapsed:not(.orphan):not(.person) { padding: 8px 14px 8px 10px; }
+:root .rowh:not(.orphan):not(.person)::before {
+  content: "";
+  position: absolute;
+  inset: 5px 8px 5px 5px;
+  z-index: -1;
+  background: var(--paper);
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--paper-shadow);
+}
+:root .rowh.collapsed:not(.orphan):not(.person)::before { inset: 3px 6px 3px 3px; }

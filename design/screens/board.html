@@ -285,7 +285,7 @@
     const who = `<button class="take" type="button" data-assign="${c.key}" aria-haspopup="menu" title="${c.assignee ? people[c.assignee].name + ' · change' : 'Unassigned · work is pulled, assign to take it'}">${av(c.assignee)}</button>`;
     const tags = c.tags.map(t => `<span class="tag" style="--tag: var(${TAG_COLOUR[t] || '--color-muted'})">${esc(t)}</span>`).join('');
     const parent = `<div class="pr">${c.parent ? `${tIcon('feature')}<span class="n">${esc(c.parent)}</span>` : '<span class="n">No parent</span>'}${ann}${who}</div>`;
-    return `<div class="card${rule ? ' ' + rule.cls : ''}${colOf(c).id === 'done' ? ' done-col' : ''}" data-key="${c.key}" draggable="true" tabindex="0"
+    return `<div class="card${rule ? ' ' + rule.cls : ''}${colOf(c).id === 'done' ? ' done-col' : ''}" data-type="${c.type}" data-key="${c.key}" draggable="true" tabindex="0"
         aria-label="${c.key} ${esc(c.title)}, ${state}${rule ? ', ' + rule.name : ''}" title="${rule ? `Style rule: ${rule.name} · ` : ''}State ${state}">
       <div class="r1">${tIcon(c.type)}<span class="key">${c.key}</span>${pts}${view.compact ? who : ''}</div>
       <div class="ttl">${esc(c.title)}</div>

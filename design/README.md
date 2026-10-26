@@ -138,7 +138,7 @@ Classes (in `src/ShipLean.Client/src/index.css`, unlayered so they beat Tailwind
 - `.paper` is the scope. It sets `--paper` and `--paper-edge`, and re-declares the light theme's colour and type tokens, so `bg-panel`, `text-ink`, `border-edge`, chips, avatars and buttons inside a card resolve to paper and light ink.
 - `.paper-bug` and `.paper-postit` go with `.paper` and pick the paper (the post-it also takes its muted text and warm edge).
 - `.paper-sheet` draws the sheet on the element: paper background, edge, shadow, and an accent border and 1px ring on hover and accent outline on focus. It wins over `bg-panel` and `border-edge` on the same element; keep `border` for the width.
-- `ruleCardStyle(rule, tintPercent = 9)` tints a card by a style rule colour in paper terms; post-its pass 12.
+- `ruleCardStyle(rule, tintPercent = 9)` tints a card by a style rule colour in paper terms; post-its pass 12. It sets `--sheet-tint` (background), `--sheet-edge` (border) and `--sheet-bar` (the 3px left bar, an inset shadow), which `.paper-sheet` reads; without them the sheet falls back to plain paper.
 
 ## Decisions these screens encode
 
@@ -350,6 +350,10 @@ These were decided while reviewing the Taskboard on 2026-10-24.
 
 **Still open:**
 - The Sprint backlog screen doesn't list unparented tasks yet. They could go in a last "No parent" group there too.
+
+## Paper cards decision
+
+Decided in [issue #3](https://github.com/ShipLean/ShipLean/issues/3), and drawn on the Board, Features/Epics board and Taskboard screens (tokens above). Cards are paper in both themes, not themed surfaces: white index cards for stories, features and epics, pink for bugs, yellow post-its for tasks (paler than a stock canary so text stays easy to read), with the same light-theme ink in dark mode. A style rule tints the paper and keeps the 3px left bar. The task's type icon stays on its post-it. On the Taskboard the story or bug row header is drawn as an inset index card; the Unparented row and the People rows stay plain.
 
 ## Taskboard patterns (`screens/taskboard.html`)
 
