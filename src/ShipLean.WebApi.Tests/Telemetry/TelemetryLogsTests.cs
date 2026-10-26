@@ -1,13 +1,11 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Serilog;
-using Serilog.Debugging;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.WebApi.Infrastructure.Telemetry;
 
@@ -21,10 +19,7 @@ public class TelemetryLogsTests : ApiFixture
 {
     private const string EndpointKey = "OTEL_EXPORTER_OTLP_ENDPOINT";
     private const string ProtocolKey = "OTEL_EXPORTER_OTLP_PROTOCOL";
-    private readonly TaskCompletionSource<byte[]> _traceSeen = new(TaskCreationOptions.RunContinuationsAsynchronously);
-    private WebApplication? _receiver;
-    private ActivityListener? _listener;
-    private byte[] _expectedTraceId = [];
+    private Running? _running;
     private string? _previousEndpoint;
     private string? _previousProtocol;
 
@@ -33,36 +28,20 @@ public class TelemetryLogsTests : ApiFixture
 
     protected override async Task BeforeHostStartAsync()
     {
-        // The receiver speaks only HTTP, so any POST to /v1/logs is a Serilog OTLP batch.
-        var builder = WebApplication.CreateSlimBuilder();
-        builder.WebHost.UseUrls("http://127.0.0.1:0");
-        _receiver = builder.Build();
-        _receiver.MapPost("/v1/logs", async (HttpRequest request) =>
-        {
-            using var body = new MemoryStream();
-            await request.Body.CopyToAsync(body);
-            var bytes = body.ToArray();
-            if (_expectedTraceId.Length > 0 && bytes.AsSpan().IndexOf(_expectedTraceId) >= 0)
-            {
-                _traceSeen.TrySetResult(bytes);
-            }
-
-            return Results.Ok();
-        });
-        await _receiver.StartAsync();
-        var address = _receiver.Urls.First();
+        var receiver = await Receiver.StartAsync();
 
         // The server only starts an Activity per request when something listens; the OTel tracing pipeline is empty here.
-        _listener = new ActivityListener
+        var listener = new ActivityListener
         {
             ShouldListenTo = source => source.Name == "Microsoft.AspNetCore",
             Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
         };
-        ActivitySource.AddActivityListener(_listener);
+        ActivitySource.AddActivityListener(listener);
+        _running = new Running(receiver, listener);
 
         _previousEndpoint = Environment.GetEnvironmentVariable(EndpointKey);
         _previousProtocol = Environment.GetEnvironmentVariable(ProtocolKey);
-        Environment.SetEnvironmentVariable(EndpointKey, address);
+        Environment.SetEnvironmentVariable(EndpointKey, receiver.Address);
         Environment.SetEnvironmentVariable(ProtocolKey, "http/protobuf");
     }
 
@@ -70,88 +49,125 @@ public class TelemetryLogsTests : ApiFixture
     {
         Environment.SetEnvironmentVariable(EndpointKey, _previousEndpoint);
         Environment.SetEnvironmentVariable(ProtocolKey, _previousProtocol);
-        await Task.CompletedTask;
-    }
-
-    [OneTimeTearDown]
-    public async Task DisposeReceiverAsync()
-    {
-        _listener?.Dispose();
-        if (_receiver is not null)
+        if (_running is not null)
         {
-            await _receiver.DisposeAsync();
+            await _running.StopAsync();
         }
     }
 
     [Test]
     public async Task Log_WhenWrittenInsideRequest_ShouldReachOtlpReceiverWithRequestTraceId()
     {
-        var traceId = ActivityTraceId.CreateRandom();
-        _expectedTraceId = Convert.FromHexString(traceId.ToHexString());
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/test-controller/log-probe");
-        request.Headers.Add("traceparent", $"00-{traceId.ToHexString()}-{ActivitySpanId.CreateRandom().ToHexString()}-01");
+        var response = await Client.GetAsync("/api/test-controller/log-probe");
+        var traceId = (await response.Content.ReadAsStringAsync()).Trim('"');
+        var expected = Convert.FromHexString(traceId);
 
-        (await Client.SendAsync(request)).EnsureSuccessStatusCode();
-        var finished = await Task.WhenAny(_traceSeen.Task, Task.Delay(TimeSpan.FromSeconds(30)));
-
-        finished.ShouldBe(_traceSeen.Task);
-        (await _traceSeen.Task).ShouldNotBeEmpty();
+        // The OTLP log record carries the trace id as 16 raw bytes.
+        var batch = await _running!.Receiver.WaitForBatchAsync(body => body.AsSpan().IndexOf(expected) >= 0);
+        batch.ShouldNotBeNull();
     }
 
     [Test]
-    public void AddOtlpSink_WhenEndpointSetToDeadAddress_ShouldCreateASinkThatReportsFailure()
+    public async Task AddOtlpSink_WhenEndpointSet_ShouldPostLogsToTheLogsPath()
     {
-        var failures = new StringWriter();
-        SelfLog.Enable(failures);
-        try
+        await using var receiver = await Receiver.StartAsync();
+        var set = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
-            var set = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                [EndpointKey] = "http://127.0.0.1:1",
-                [ProtocolKey] = "http/protobuf",
-            }).Build();
-            using (var logger = new LoggerConfiguration().AddOtlpSink(set).CreateLogger())
-            {
-                logger.Warning("nobody home");
-            }
+            [EndpointKey] = receiver.Address,
+            [ProtocolKey] = "http/protobuf",
+        }).Build();
 
-            failures.ToString().ShouldNotBeEmpty();
-        }
-        finally
+        using (var logger = new LoggerConfiguration().AddOtlpSink(set).CreateLogger())
         {
-            SelfLog.Disable();
+            logger.Warning("somebody home");
         }
+
+        (await receiver.WaitForBatchAsync(body => body.AsSpan().IndexOf("somebody home"u8) >= 0)).ShouldNotBeNull();
     }
 
     [Test]
-    public void AddOtlpSink_WhenEndpointUnset_ShouldNotCreateASink()
+    public async Task AddOtlpSink_WhenEndpointUnset_ShouldNotAddASink()
     {
-        var failures = new StringWriter();
-        SelfLog.Enable(failures);
-        try
+        await using var receiver = await Receiver.StartAsync();
+        var unset = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
-            var unset = new ConfigurationBuilder().AddInMemoryCollection().Build();
-            using (var logger = new LoggerConfiguration().AddOtlpSink(unset).CreateLogger())
-            {
-                logger.Warning("nothing listens");
-            }
+            [ProtocolKey] = "http/protobuf",
+            ["OTEL_EXPORTER_OTLP_HEADERS"] = "x-key=abc",
+        }).Build();
 
-            failures.ToString().ShouldBeEmpty();
-        }
-        finally
+        using (var logger = new LoggerConfiguration().AddOtlpSink(unset).CreateLogger())
         {
-            SelfLog.Disable();
+            logger.Warning("nothing listens");
+        }
+
+        receiver.Count.ShouldBe(0);
+    }
+
+    // Not IDisposable on purpose: it is stopped from AfterHostStopAsync, after the host's last log flush.
+    private sealed class Running(Receiver receiver, ActivityListener listener)
+    {
+        public Receiver Receiver => receiver;
+
+        public async Task StopAsync()
+        {
+            listener.Dispose();
+            await receiver.DisposeAsync();
         }
     }
 
-    [Route("api/test-controller/log-probe")]
-    public sealed class LogProbeTestController(ILogger<LogProbeTestController> logger) : ControllerBase
+    // An in-process OTLP/HTTP receiver: keeps the body of every POST to /v1/logs.
+    private sealed class Receiver : IAsyncDisposable
     {
-        [HttpGet]
-        public IActionResult Get()
+        private readonly WebApplication _app;
+        private readonly ConcurrentQueue<byte[]> _bodies = new();
+
+        private Receiver(WebApplication app) => _app = app;
+
+        public string Address => _app.Urls.First();
+
+        public int Count => _bodies.Count;
+
+        public static async Task<Receiver> StartAsync()
         {
-            logger.LogWarning("probe inside request");
-            return Ok(Activity.Current!.TraceId.ToHexString());
+            var builder = WebApplication.CreateSlimBuilder();
+            builder.WebHost.UseUrls("http://127.0.0.1:0");
+            var app = builder.Build();
+            var receiver = new Receiver(app);
+            app.MapPost("/v1/logs", async (HttpRequest request) =>
+            {
+                using var body = new MemoryStream();
+                await request.Body.CopyToAsync(body);
+                receiver._bodies.Enqueue(body.ToArray());
+                return Results.Ok();
+            });
+            await app.StartAsync();
+            return receiver;
         }
+
+        // Waits for the sink's periodic batch (a couple of seconds) to deliver a matching body.
+        public async Task<byte[]?> WaitForBatchAsync(Func<byte[], bool> matches)
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(100));
+            try
+            {
+                while (await timer.WaitForNextTickAsync(timeout.Token))
+                {
+                    var found = _bodies.FirstOrDefault(matches);
+                    if (found is not null)
+                    {
+                        return found;
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                return null;
+            }
+
+            return null;
+        }
+
+        public ValueTask DisposeAsync() => _app.DisposeAsync();
     }
 }

@@ -30,7 +30,9 @@ public static class TelemetryLogging
         return logger.WriteTo.OpenTelemetry(options =>
         {
             // Over HTTP the exporter appends the signal path to the base endpoint; the log sink wants it spelled out.
-            options.Endpoint = http ? $"{endpoint.TrimEnd('/')}/{LogsPath}" : endpoint;
+            // Only the logs endpoint is set, so the sink never posts spans (the OTel tracer provider owns those).
+            options.Endpoint = null;
+            options.LogsEndpoint = http ? $"{endpoint.TrimEnd('/')}/{LogsPath}" : endpoint;
             options.Protocol = http ? OtlpProtocol.HttpProtobuf : OtlpProtocol.Grpc;
             foreach (var header in headers)
             {
