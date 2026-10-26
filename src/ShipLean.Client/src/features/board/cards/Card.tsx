@@ -69,9 +69,9 @@ export function Card({
       data-compact={compact}
       data-flashing={flashing}
       data-rule={card.styleRuleId ?? undefined}
-      className={`relative grid gap-1 rounded-control border border-edge bg-panel px-2 py-1.5 text-[length:var(--text-sm)] ${
-        flashing ? 'board-card-flash' : ''
-      }`}
+      className={`relative grid gap-1 paper paper-sheet rounded-control border border-edge bg-panel px-2 py-1.5 text-[length:var(--text-sm)] ${
+        card.type.id === 'bug' ? 'paper-bug' : ''
+      } ${flashing ? 'board-card-flash' : ''}`}
       style={{ ...ruleCardStyle(rule), ...frame?.style }}
     >
       {dropBefore ? <DropLine above /> : null}
