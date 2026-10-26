@@ -19,6 +19,7 @@ export const taskboardTestIds = {
   columnCount: 'taskboard-column-count',
   row: 'taskboard-row',
   rowHeader: 'taskboard-row-header',
+  rowCard: 'taskboard-row-card',
   rowToggle: 'taskboard-row-toggle',
   rowTitle: 'taskboard-row-title',
   rowState: 'taskboard-row-state',

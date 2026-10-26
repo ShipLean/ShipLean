@@ -325,3 +325,63 @@ test('Taskboard_WhenGroupingChanged_ShouldKeepTheOtherSavedKeys', async ({ mount
   await expect.poll(() => server.puts.length).toBe(1);
   expect(server.puts[0]).toEqual({ groupBy: 'people', other: 7 });
 });
+
+const LIGHT_INK = 'rgb(28, 38, 56)';
+const INDEX_PAPER = 'rgb(255, 255, 255)';
+const BUG_PAPER = 'rgb(255, 224, 229)';
+
+const setDark = (page: Page) =>
+  page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
+
+const background = (locator: ReturnType<Page['getByTestId']>) =>
+  locator.evaluate((el) => getComputedStyle(el).backgroundColor);
+const color = (locator: ReturnType<Page['getByTestId']>) =>
+  locator.evaluate((el) => getComputedStyle(el).color);
+
+test('Taskboard_WhenDark_ShouldDrawStoryRowHeadersAsIndexCardsWithLightInk', async ({
+  mount,
+  page,
+}) => {
+  await stubTaskboard(page, VIEW);
+  await mount(slot, route);
+  await setDark(page);
+
+  const open = page.getByTestId(ids.row).nth(0);
+  await expect.poll(() => background(open.getByTestId(ids.rowCard))).toBe(INDEX_PAPER);
+  expect(await color(open.getByTestId(ids.rowTitle))).toBe(LIGHT_INK);
+
+  const collapsed = page.getByTestId(ids.row).nth(1);
+  await expect(collapsed).toHaveAttribute('data-collapsed', 'true');
+  await expect.poll(() => background(collapsed.getByTestId(ids.rowCard))).toBe(INDEX_PAPER);
+  expect(await color(collapsed.getByTestId(ids.rowTitle))).toBe(LIGHT_INK);
+});
+
+test('Taskboard_WhenDarkAndRowIsABug_ShouldDrawAPinkCard', async ({ mount, page }) => {
+  const first = VIEW.rows[0]!;
+  const bugView: TaskboardViewDto = {
+    ...VIEW,
+    rows: [
+      {
+        ...first,
+        parent: first.parent && { ...first.parent, type: { id: 'bug', name: 'Bug' } },
+      },
+      ...VIEW.rows.slice(1),
+    ],
+  };
+  await stubTaskboard(page, bugView);
+  await mount(slot, route);
+  await setDark(page);
+
+  const row = page.getByTestId(ids.row).nth(0);
+  await expect.poll(() => background(row.getByTestId(ids.rowCard))).toBe(BUG_PAPER);
+  expect(await color(row.getByTestId(ids.rowTitle))).toBe(LIGHT_INK);
+});
+
+test('Taskboard_WhenUnparentedRow_ShouldNotDrawACard', async ({ mount, page }) => {
+  await stubTaskboard(page, VIEW);
+  await mount(slot, route);
+
+  await expect(page.getByTestId(ids.row).nth(2)).toHaveAttribute('data-row', 'unparented');
+  await expect(page.getByTestId(ids.row).nth(2).getByTestId(ids.rowCard)).toHaveCount(0);
+  await expect(page.getByTestId(ids.rowCard)).toHaveCount(2);
+});
