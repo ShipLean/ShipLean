@@ -73,8 +73,10 @@ public abstract class WebhookApiTest : ApiFixture
 
     protected static LinkDto UrlLink(WorkItemDto item) => item.Links.ShouldHaveSingleItem();
 
-    protected Task<HttpResponseMessage> PostAsync(WebhookDelivery delivery)
-        => Client.SendAsync(delivery.WithHeader(TestAuthentication.UserHeader, TestAuthentication.AnonymousValue).ToRequest());
+    protected Task<HttpResponseMessage> PostAsync(WebhookDelivery delivery) => Client.SendAsync(DeliveryRequest(delivery));
+
+    protected static HttpRequestMessage DeliveryRequest(WebhookDelivery delivery)
+        => delivery.WithHeader(TestAuthentication.UserHeader, TestAuthentication.AnonymousValue).ToRequest();
 
     protected async Task<WebhookResultDto> DeliverAsync(WebhookDelivery delivery)
     {
