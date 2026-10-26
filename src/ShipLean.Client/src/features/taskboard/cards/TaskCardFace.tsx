@@ -82,8 +82,12 @@ export function TaskCardFace({
         <TypeIcon type="task" />
         <span data-testid={id(ids.cardTitle)}>{card.title}</span>
       </span>
-      <span className="flex items-center gap-1.5 text-[length:var(--text-xs)] text-ink-muted">
-        {fields.showKey ? <span data-testid={id(ids.cardKey)}>{card.key}</span> : null}
+      <span className="flex flex-wrap items-center gap-1.5 text-[length:var(--text-xs)] text-ink-muted">
+        {fields.showKey ? (
+          <span data-testid={id(ids.cardKey)} className="whitespace-nowrap">
+            {card.key}
+          </span>
+        ) : null}
         {fields.showTags
           ? card.tags.map((tag) => (
               <span key={tag.name} data-testid={id(ids.cardTag)} data-tone={tag.colour ?? 'muted'}>
@@ -99,7 +103,7 @@ export function TaskCardFace({
           <button
             type="button"
             data-testid={id(ids.cardPickUp)}
-            className="hidden h-5 items-center rounded-full border border-signal bg-panel px-[7px] text-[length:var(--text-2xs)] font-semibold text-signal group-focus-within:inline-flex group-hover:inline-flex"
+            className="hidden h-5 items-center rounded-full border border-signal bg-panel px-[7px] text-[length:var(--text-2xs)] font-semibold whitespace-nowrap text-signal group-focus-within:inline-flex group-hover:inline-flex"
             onClick={pickUp}
           >
             Pick up

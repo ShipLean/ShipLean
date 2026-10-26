@@ -31,7 +31,7 @@ export function TaskCell({
       data-testid={ids.cell}
       data-row={rowId}
       data-state={stateId}
-      className="grid content-start gap-2 border-l border-edge bg-sunken p-2 data-[over=true]:bg-signal-soft"
+      className="grid grid-cols-[minmax(0,1fr)] content-start gap-2 border-l border-edge bg-sunken p-2 data-[over=true]:bg-signal-soft"
     >
       {cards.map((card) => (
         <TaskCard key={card.id} card={card} rowId={rowId} view={view} showParent={showParent} />
