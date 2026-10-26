@@ -17,7 +17,9 @@ public class ItemFormPeekTests : SeededAcceptanceTest
         var peek = new ItemPeekDialog(Page);
         await screen.OpenAsync("SHIP", "SHIP-141");
 
-        await Page.Locator($"[data-testid='{WorkItemTestIds.TaskOpen}'][data-item-key='SHIP-172']").ClickAsync();
+        await Page.GetByTestId(WorkItemTestIds.TaskOpen)
+            .Filter(new LocatorFilterOptions { HasTextString = "UI: saved card picker" })
+            .ClickAsync();
 
         await peek.WaitOpenAsync("SHIP-172");
         await Expect(peek.Title).ToHaveValueAsync("UI: saved card picker");

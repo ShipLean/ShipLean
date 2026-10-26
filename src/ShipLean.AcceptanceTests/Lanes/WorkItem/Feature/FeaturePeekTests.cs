@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using ShipLean.AcceptanceTests.Harness;
 using ShipLean.AcceptanceTests.Pages.Feature;
 using ShipLean.AcceptanceTests.Pages.ItemPeek;
 using ShipLean.AcceptanceTests.Pages.WorkItem;
