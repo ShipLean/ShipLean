@@ -121,7 +121,7 @@ export function QuickSearchDialog({
         if (event.target === event.currentTarget && pressedScrim.current) onClose();
       }}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 max-[899px]:items-start max-[899px]:p-2"
-      style={{ background: 'color-mix(in srgb, var(--color-text) 35%, transparent)' }}
+      style={{ background: 'var(--scrim)' }}
     >
       <div
         ref={panel}
@@ -131,7 +131,7 @@ export function QuickSearchDialog({
         aria-label="Quick search"
         tabIndex={-1}
         onKeyDown={onPanelKeyDown}
-        style={{ boxShadow: 'var(--shadow-dialog, var(--shadow-panel))' }}
+        style={{ boxShadow: 'var(--shadow-dialog)' }}
         className="flex max-h-[calc(100dvh-96px)] w-[min(640px,100vw-32px)] flex-col overflow-hidden rounded-frame border border-edge bg-panel max-[899px]:max-h-[calc(100dvh-16px)] max-[899px]:w-[calc(100vw-16px)]"
       >
         <div className="relative flex h-[46px] flex-none items-center gap-2.5 border-b border-edge px-3.5">

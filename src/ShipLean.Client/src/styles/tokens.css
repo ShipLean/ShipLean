@@ -36,6 +36,8 @@
   --color-danger: #c2353b;
   --color-purple: #6f45bf;
   --shadow-raised: 0 1px 2px rgb(16 24 40 / 0.08), 0 4px 12px -6px rgb(16 24 40 / 0.12);
+  --shadow-dialog: 0 24px 56px -16px rgb(16 24 40 / 0.35), 0 2px 6px rgb(16 24 40 / 0.08);
+  --scrim: rgb(28 38 56 / 0.28);
 
   /* Paper cards: the same in both themes (see design/README.md). Only the edge, shadow and ring follow the theme. */
   --paper-index: #ffffff; /* story, feature, epic */
@@ -121,6 +123,8 @@
     --color-danger: #f08a8f;
     --color-purple: #b79cf5;
     --shadow-raised: 0 1px 2px rgb(0 0 0 / 0.4), 0 6px 16px -8px rgb(0 0 0 / 0.6);
+    --shadow-dialog: 0 28px 64px -16px rgb(0 0 0 / 0.75), 0 2px 6px rgb(0 0 0 / 0.4);
+    --scrim: rgb(5 9 16 / 0.55);
     --paper-edge-mix: #000000;
     --paper-edge-amount: 28%;
     --paper-postit-edge-mix: #000000;
@@ -158,6 +162,8 @@
   --color-danger: #f08a8f;
   --color-purple: #b79cf5;
   --shadow-raised: 0 1px 2px rgb(0 0 0 / 0.4), 0 6px 16px -8px rgb(0 0 0 / 0.6);
+  --shadow-dialog: 0 28px 64px -16px rgb(0 0 0 / 0.75), 0 2px 6px rgb(0 0 0 / 0.4);
+  --scrim: rgb(5 9 16 / 0.55);
   --paper-edge-mix: #000000;
   --paper-edge-amount: 28%;
   --paper-postit-edge-mix: #000000;
