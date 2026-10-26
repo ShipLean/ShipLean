@@ -16,7 +16,9 @@ public class TaskboardPeekTests : SeededAcceptanceTest
     {
         var board = new SprintTaskboard(Page);
         await board.OpenAsync("SHIP", SeedIds.Sprints.Sprint24);
-        var title = board.TaskCard("SHIP-172").GetByTestId(TaskboardTestIds.CardTitle);
+        var title = board.TaskCard("SHIP-172")
+            .GetByTestId(TaskboardTestIds.CardTitle)
+            .GetByTestId(ItemPeekTestIds.Link);
         var text = (await title.InnerTextAsync()).Trim();
 
         await title.ClickAsync();
