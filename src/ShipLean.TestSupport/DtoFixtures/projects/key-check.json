@@ -1,0 +1,4 @@
+{
+  "taken": { "key": "SHIP", "available": false, "reason": "takenByAnotherProject", "alternatives": ["SHIA", "SHIB", "SHIC"] },
+  "free": { "key": "CSH", "available": true, "reason": null, "alternatives": [] }
+}

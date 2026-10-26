@@ -1,0 +1,4 @@
+{
+  "name": "Checkout", "key": "CSH", "copyFromProjectId": "00000002-0000-4000-8000-000000000001", "memberEmails": ["priya@shiplean.local"],
+  "workingDays": [1, 2, 3, 4, 5], "firstSprint": { "name": "Sprint 1", "startDate": "2026-10-26", "endDate": "2026-11-08", "goal": "" }
+}

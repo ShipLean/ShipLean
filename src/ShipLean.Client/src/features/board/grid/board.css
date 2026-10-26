@@ -1,0 +1,29 @@
+/* A teammate changed the board's settings: the column headers ring warn for a moment. */
+@keyframes board-header-flash {
+  0%,
+  30% {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-warn) 45%, transparent);
+  }
+  100% {
+    box-shadow: none;
+  }
+}
+
+.board-header-flash {
+  animation: board-header-flash 1.8s ease-out;
+}
+
+/* A teammate moved the card: it rings warn for a moment. */
+@keyframes board-card-flash {
+  0%,
+  30% {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-warn) 45%, transparent);
+  }
+  100% {
+    box-shadow: none;
+  }
+}
+
+.board-card-flash {
+  animation: board-card-flash 1.8s ease-out;
+}

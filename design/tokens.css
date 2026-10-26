@@ -1,0 +1,151 @@
+/*
+ * ShipLean design tokens: "Nord Frost" palette (deepened), compact density.
+ * Inter for all text; light and dark themes.
+ * Source of truth for colour, type, spacing and density. Mirrored in tokens.json.
+ * See design/README.md for usage rules.
+ *
+ * Theming:
+ *   - Light is the default.
+ *   - Follows the OS (prefers-color-scheme) unless overridden.
+ *   - Force a theme with <html data-theme="light"> or <html data-theme="dark">.
+ * Density:
+ *   - Compact is the default. <html data-density="comfortable"> loosens it.
+ */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+:root {
+  color-scheme: light;
+
+  /* Colour: light */
+  --color-bg: #e8eef7;          /* page background */
+  --color-surface: #f7f9fd;     /* bars, cards, tables, inputs */
+  --color-surface-2: #dfe7f3;   /* table headers, section rows, progress track */
+  --color-border: #cdd9ea;
+  --color-text: #1c2638;
+  --color-muted: #52627c;       /* secondary text, meta, icons */
+  --color-accent: #2563c9;      /* primary actions, focus, selection, progress */
+  --color-accent-fg: #ffffff;   /* text on accent */
+  --color-accent-soft: #dae6fb; /* selected/pressed backgrounds, row hover */
+  --color-ok: #3f8a3a;
+  --color-warn: #b7701b;
+  --color-info: #1d7fb8;
+  --color-danger: #c2353b;
+  --color-purple: #6f45bf;
+  --shadow-raised: 0 1px 2px rgb(16 24 40 / .08), 0 4px 12px -6px rgb(16 24 40 / .12);
+
+  /* Typography: Inter everywhere */
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, monospace;
+  --text-2xs: 10.5px;  /* overlines, status labels */
+  --text-xs: 11px;     /* meta, table headers */
+  --text-sm: 12px;     /* controls, table cells */
+  --text-base: 13px;   /* body */
+  --text-md: 14px;     /* section headings */
+  --text-lg: 18px;     /* page / screen titles */
+  --leading: 1.45;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  /* Shape & space (4px grid) */
+  --radius-xs: 3px;    /* type icons */
+  --radius-sm: 6px;    /* buttons, inputs */
+  --radius-md: 8px;    /* tables, panels */
+  --radius-lg: 10px;   /* app frame, modals */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+
+  /* Density: compact (default) */
+  --bar-height: 38px;      /* top app bar */
+  --control-height: 28px;  /* buttons, inputs, selects */
+  --row-height: 32px;      /* table / list rows */
+  --rail-width: 280px;     /* right-hand summary rail */
+  --sidebar-width: 216px;  /* left side menu: project picker + navigation */
+  --dialog-width: 680px;   /* wide dialogs (sprint end) */
+
+  /* Work item types: a separate palette from the UI colours above. Use only on type icons. */
+  --type-epic: #d0731c;
+  --type-feature: #7b4fc9;
+  --type-story: #2f7fd8;
+  --type-bug: #cc3d3d;
+  --type-task: #c9951a;
+
+  /* Charts (validated for CVD separation against --color-surface) */
+  --chart-committed: #16a089;
+  --chart-completed: #2563c9;
+}
+
+:root[data-density="comfortable"] {
+  --bar-height: 44px;
+  --control-height: 32px;
+  --row-height: 38px;
+  --rail-width: 320px;
+  --sidebar-width: 248px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --color-bg: #171e2d;
+    --color-surface: #1f2839;
+    --color-surface-2: #29344a;
+    --color-border: #334058;
+    --color-text: #eef2f8;
+    --color-muted: #a0aec6;
+    --color-accent: #5cc8f0;
+    --color-accent-fg: #06192a;
+    --color-accent-soft: #163a57;
+    --color-ok: #9fdc8a;
+    --color-warn: #f4cf72;
+    --color-info: #7aa7f5;
+    --color-danger: #f08a8f;
+    --color-purple: #b79cf5;
+    --shadow-raised: 0 1px 2px rgb(0 0 0 / .4), 0 6px 16px -8px rgb(0 0 0 / .6);
+    --type-epic: #f0a35a;
+    --type-feature: #a989f0;
+    --type-story: #5aa5f5;
+    --type-bug: #f07070;
+    --type-task: #e6b84a;
+    --chart-committed: #1fa88c;
+    --chart-completed: #3b82e0;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-bg: #171e2d;
+  --color-surface: #1f2839;
+  --color-surface-2: #29344a;
+  --color-border: #334058;
+  --color-text: #eef2f8;
+  --color-muted: #a0aec6;
+  --color-accent: #5cc8f0;
+  --color-accent-fg: #06192a;
+  --color-accent-soft: #163a57;
+  --color-ok: #9fdc8a;
+  --color-warn: #f4cf72;
+  --color-info: #7aa7f5;
+  --color-danger: #f08a8f;
+  --color-purple: #b79cf5;
+  --shadow-raised: 0 1px 2px rgb(0 0 0 / .4), 0 6px 16px -8px rgb(0 0 0 / .6);
+  --type-epic: #f0a35a;
+  --type-feature: #a989f0;
+  --type-story: #5aa5f5;
+  --type-bug: #f07070;
+  --type-task: #e6b84a;
+  --chart-committed: #1fa88c;
+  --chart-completed: #3b82e0;
+}
+
+/* State category → colour. States are custom per project, so colour follows the category, never the name. */
+:root {
+  --state-proposed: var(--color-muted);
+  --state-in-progress: var(--color-info);
+  --state-resolved: var(--color-warn);
+  --state-completed: var(--color-ok);
+  --state-removed: var(--color-danger);
+}

@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Stories board (reference)</title>
+<!--
+  Reference Stories board: Boards › Stories. The Kanban board for the Stories level (User Stories and Bugs).
+  Open directly in a browser. Uses ../tokens.css, shiplean.css and shared.js only; no build step.
+  Columns are not states: each column maps to a state per type (Ready means New for a User Story and Triaged
+  for a Bug). Ready is split into Doing and Done sub-columns. Headers show the count against the WIP limit
+  (4/5), in danger when over; the WIP count covers both halves of a split column and every swimlane.
+  ⓘ on a column shows its state per type and its definition of done (markdown, edited in Board settings).
+  Swimlanes: Expedite (criteria Priority = 1) above the Default lane; ▼ collapses a lane.
+  Cards: type icon, key, points (warn ? when unestimated), title, parent Feature, child roll-up (☑ 2/4 tasks),
+  tags in the board's tag colours, and the assignee, or a dashed avatar because work is pulled, not
+  pre-assigned. Card style rules, first match wins: tag Blocked tints the card pink, tag Spike purple.
+  Working: drag a card to another column or sub-column; the state follows the column's mapping and a toast
+  says so. Pull rule: dropping an unassigned card into a column mapped to an In Progress state assigns it to
+  you. Over-WIP drops are allowed; the header turns danger. Drop on a card to put it just above (reorder
+  within a column too). Dropping into the other lane writes the lane's criteria (Expedite sets Priority 1,
+  leaving it sets Priority 2). From the keyboard, focus a card and press Alt+←/→ to change column and
+  Alt+↑/↓ to reorder. Click the avatar to assign or unassign. + New item adds a card at the top of New.
+  Done shows the 4 most recent with Show older. Filter: keyword, people (or Unassigned) and sprint; WIP
+  counts ignore the filter. Swimlanes and Cards (Full / Compact) are per-user view toggles.
+  The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot). It also
+  simulates real time: a teammate moving a card (it slides across and flashes), a board settings change
+  from a teammate, and a dropped connection.
+-->
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="shiplean.css">
+<script src="shared.js"></script>
+<style>
+:root {
+  /* Style rule and tag tints, derived from tokens: Spike is a purple between danger and accent. */
+  --rule-blocked: var(--color-danger);
+  --rule-spike: color-mix(in oklch, var(--color-danger) 40%, var(--color-accent));
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --rule-spike: color-mix(in oklch, var(--color-danger) 55%, var(--color-accent)); } }
+:root[data-theme="dark"] { --rule-spike: color-mix(in oklch, var(--color-danger) 55%, var(--color-accent)); }
+[hidden] { display: none !important; }
+
+/* Toolbar extras */
+.sep { width: 1px; height: 20px; background: var(--color-border); }
+.fbar { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; padding: 6px var(--space-4); background: var(--color-bg); border-bottom: 1px solid var(--color-border); flex: none; font-size: var(--text-sm); }
+.fbar .field[type=search] { width: 200px; }
+.who { display: inline-flex; align-items: center; gap: 2px; }
+.who button { display: inline-grid; place-items: center; height: 26px; min-width: 26px; padding: 0 3px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; color: var(--color-muted); font-size: var(--text-sm); }
+.who button:hover { background: var(--color-surface-2); }
+.who button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+.who button[aria-pressed="true"] .av { box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-accent); }
+.who button.un { display: inline-flex; gap: 5px; padding: 0 8px 0 3px; }
+.who button.un[aria-pressed="true"] { background: var(--color-accent-soft); color: var(--color-text); font-weight: var(--weight-semibold); }
+.banner { display: flex; gap: var(--space-2); align-items: center; padding: 6px var(--space-4); font-size: var(--text-sm); border-bottom: 1px solid var(--color-border); background: var(--color-surface); flex: none; }
+.banner.warn { border-left: 3px solid var(--color-warn); background: color-mix(in srgb, var(--color-warn) 12%, var(--color-surface)); }
+.banner.ok { border-left: 3px solid var(--color-ok); background: color-mix(in srgb, var(--color-ok) 12%, var(--color-surface)); }
+
+/* Board: one grid template shared by the header and every lane, so the columns line up */
+.board { flex: 1; min-height: 0; overflow: auto; background: var(--color-bg); }
+.bwrap { min-width: 1120px; padding: 0 var(--space-4) var(--space-4); }
+.bgrid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); column-gap: var(--space-2); }
+.bhead { position: sticky; top: 0; z-index: 4; padding: var(--space-2) 0 6px; background: var(--color-bg); }
+.colh { display: grid; gap: 2px; align-content: start; min-width: 0; padding: 5px 6px 5px var(--space-2); background: var(--color-surface); border: 1px solid var(--color-border); border-top: 2px solid var(--color-border); border-radius: var(--radius-sm); }
+.colh.is-split { grid-column: span 2; }
+.colh.over { border-top-color: var(--color-danger); background: color-mix(in srgb, var(--color-danger) 6%, var(--color-surface)); }
+.colh.flash { animation: hflash 1.8s ease-out; }
+@keyframes hflash { 0%, 30% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-warn) 45%, transparent); } 100% { box-shadow: none; } }
+.colh .top { display: flex; align-items: center; gap: 6px; min-width: 0; height: 20px; }
+.colh .nm { font-size: var(--text-sm); font-weight: var(--weight-semibold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wip { font-size: var(--text-xs); font-weight: var(--weight-medium); font-variant-numeric: tabular-nums; color: var(--color-muted); white-space: nowrap; }
+.wip.over { height: 18px; padding: 0 6px; border-radius: 999px; display: inline-flex; align-items: center; background: color-mix(in srgb, var(--color-danger) 18%, transparent); color: var(--color-danger); font-weight: var(--weight-semibold); }
+.colh .map { font-size: var(--text-2xs); color: var(--color-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; height: 16px; line-height: 16px; }
+.subh { display: grid; grid-template-columns: 1fr 1fr; column-gap: var(--space-2); font-size: var(--text-2xs); color: var(--color-muted); height: 16px; line-height: 16px; }
+.subh span + span { padding-left: var(--space-2); border-left: 1px solid var(--color-border); }
+.subh b { color: var(--color-text); font-weight: var(--weight-semibold); font-variant-numeric: tabular-nums; }
+
+/* Swimlanes */
+.lane + .lane { margin-top: var(--space-2); }
+.lane-h { display: flex; align-items: center; gap: var(--space-2); height: 28px; padding: 0 var(--space-1); font-size: var(--text-sm); position: sticky; left: 0; }
+.lane-h .bar { width: 3px; height: 16px; border-radius: 2px; background: var(--lane, var(--color-border)); }
+.lane-h b { font-weight: var(--weight-semibold); }
+.lane-h .ib { width: 20px; height: 20px; }
+.cell { display: flex; flex-direction: column; gap: 6px; min-width: 0; min-height: 64px; padding: 6px; border-radius: var(--radius-sm); background: color-mix(in srgb, var(--color-surface-2) 55%, transparent); transition: background .1s; }
+.lane.expedite .cell { background: color-mix(in srgb, var(--color-warn) 7%, color-mix(in srgb, var(--color-surface-2) 55%, transparent)); }
+.cell.sub-done { background: color-mix(in srgb, var(--color-surface-2) 30%, transparent); border: 1px dashed var(--color-border); }
+.cell.over { background: var(--color-accent-soft); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--color-accent) 55%, transparent); }
+.cell.drop-end::after { content: ""; display: block; height: 2px; border-radius: 1px; background: var(--color-accent); }
+.cell .more { justify-content: center; height: 24px; font-size: var(--text-xs); color: var(--color-muted); }
+.addc { justify-content: flex-start; height: 26px; padding: 0 6px; font-size: var(--text-xs); color: var(--color-muted); border: 1px dashed var(--color-border); background: transparent; }
+.addc:hover { color: var(--color-text); }
+.add-field { display: grid; gap: 4px; }
+.add-field .field { width: 100%; }
+.add-field .xs { color: var(--color-muted); }
+
+/* Cards */
+.card { position: relative; display: grid; gap: 4px; padding: 6px 8px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); box-shadow: 0 1px 1px rgb(16 24 40 / .04); cursor: grab; font-size: var(--text-sm); }
+.card:hover { border-color: color-mix(in srgb, var(--color-accent) 50%, var(--color-border)); }
+.card:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+.card.dragging { opacity: .4; }
+.card.drop-before::before { content: ""; position: absolute; left: 0; right: 0; top: -5px; height: 2px; border-radius: 1px; background: var(--color-accent); }
+.card.rule-blocked { background: color-mix(in srgb, var(--rule-blocked) 9%, var(--color-surface)); border-color: color-mix(in srgb, var(--rule-blocked) 40%, var(--color-border)); box-shadow: inset 3px 0 0 var(--rule-blocked); }
+.card.rule-spike { background: color-mix(in srgb, var(--rule-spike) 10%, var(--color-surface)); border-color: color-mix(in srgb, var(--rule-spike) 40%, var(--color-border)); box-shadow: inset 3px 0 0 var(--rule-spike); }
+.card.flash { animation: flash 1.8s ease-out; z-index: 2; }
+@keyframes flash { 0%, 30% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-warn) 45%, transparent); background: color-mix(in srgb, var(--color-warn) 18%, var(--color-surface)); } 100% { } }
+.card.moving { z-index: 5; }
+.card .r1 { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.card .r1 .key { font-size: var(--text-2xs); }
+.card .r1 .take { margin-left: 2px; }
+.cpts { margin-left: auto; min-width: 20px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--color-surface-2); font-size: var(--text-xs); font-weight: var(--weight-semibold); font-variant-numeric: tabular-nums; text-align: center; line-height: 18px; }
+.cpts.unest { color: var(--color-warn); background: color-mix(in srgb, var(--color-warn) 16%, transparent); }
+.card .ttl { font-weight: var(--weight-medium); line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.card.done-col .ttl { color: var(--color-muted); }
+.card .pr { display: flex; align-items: center; gap: 5px; min-width: 0; font-size: var(--text-xs); color: var(--color-muted); }
+.card .pr .ti { width: 14px; height: 14px; font-size: 8px; }
+.card .pr .n { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ann { flex: none; font-size: var(--text-2xs); font-variant-numeric: tabular-nums; color: var(--color-muted); white-space: nowrap; }
+.ann.ok { color: var(--color-ok); }
+.card .ft { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.tag { display: inline-flex; align-items: center; height: 16px; padding: 0 6px; border-radius: var(--radius-xs); font-size: var(--text-2xs); font-weight: var(--weight-medium); white-space: nowrap; color: var(--color-text); background: color-mix(in srgb, var(--tag, var(--color-muted)) 20%, transparent); }
+.take { flex: none; padding: 0; border: 0; background: none; border-radius: 50%; cursor: pointer; display: inline-grid; }
+.take:hover .av { box-shadow: 0 0 0 2px var(--color-accent-soft); }
+.take:hover .av.none { border-color: var(--color-accent); background: var(--color-accent-soft); }
+.take:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+.card .av.none { border-color: color-mix(in srgb, var(--color-muted) 70%, transparent); }
+.compact .card { gap: 2px; }
+.compact .card .ttl { -webkit-line-clamp: 1; }
+
+/* Popovers: definition of done, assignee menu */
+.bpop { position: fixed; z-index: 45; width: 290px; display: grid; gap: var(--space-2); padding: var(--space-3); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: 0 12px 32px rgb(0 0 0 / .18); font-size: var(--text-sm); }
+.bpop h3 { margin: 0; font-size: var(--text-md); font-weight: var(--weight-semibold); }
+.bpop .md ul { margin: 0; padding-left: 18px; display: grid; gap: 2px; }
+.bpop .maps { display: grid; grid-template-columns: auto 1fr; gap: 4px 8px; align-items: center; }
+.bpop .maps > span:nth-child(odd) { display: inline-flex; gap: 6px; align-items: center; color: var(--color-muted); }
+.bpop footer { display: flex; align-items: center; gap: var(--space-2); padding-top: var(--space-2); border-top: 1px solid var(--color-border); font-size: var(--text-xs); color: var(--color-muted); }
+.bpop.menu { width: 220px; padding: var(--space-1); gap: 0; }
+.bpop.menu .overline { padding: 6px var(--space-2) 4px; }
+.bpop.menu button { display: flex; align-items: center; gap: var(--space-2); height: 30px; padding: 0 var(--space-2); border: 0; border-radius: var(--radius-sm); background: transparent; cursor: pointer; text-align: left; font-size: var(--text-sm); }
+.bpop.menu button:hover, .bpop.menu button[aria-checked="true"] { background: var(--color-accent-soft); }
+.toast { max-width: 760px; }
+</style>
+</head>
+<body>
+<div id="appbar"></div>
+<div class="toolbar">
+  <div class="seg" role="group" aria-label="Board level"><button type="button" aria-pressed="false" data-level="Epics">Epics</button><button type="button" aria-pressed="false" data-level="Features">Features</button><button type="button" aria-pressed="true">Stories</button></div>
+  <span class="sm muted" id="summary"></span>
+  <span class="spacer"></span>
+  <label class="check" title="Expedite (Priority = 1) above the Default lane"><input type="checkbox" id="optLanes" checked> Swimlanes</label>
+  <div class="seg" role="group" aria-label="Cards"><button type="button" data-cards="full" aria-pressed="true">Full cards</button><button type="button" data-cards="compact" aria-pressed="false">Compact</button></div>
+  <span class="sep"></span>
+  <button class="btn" type="button" id="btnFilter" aria-expanded="false">Filter</button>
+  <a class="btn" href="board-settings.html" title="Columns, swimlanes, card fields, styles, tag colours, annotations, card reordering">⚙ Board settings</a>
+</div>
+<div class="fbar" id="fbar" hidden>
+  <input class="field" type="search" id="fq" placeholder="Filter by keyword or key" aria-label="Filter by keyword">
+  <span class="who" id="fwho" role="group" aria-label="People"></span>
+  <select class="field" id="fsprint" aria-label="Sprint"><option value="">Any sprint</option><option value="s24">Sprint 24</option><option value="s25">Sprint 25</option><option value="none">Backlog (no sprint)</option></select>
+  <button class="btn ghost" type="button" id="fclear">Clear</button>
+  <span class="spacer"></span><span class="xs muted" id="fcount"></span>
+</div>
+<div id="banners"></div>
+<div class="board" id="board"><div class="bwrap" id="bwrap"></div></div>
+
+<script>
+(() => {
+  const { ME, people, items, doneItems, tasks, stateCategory, tIcon, av, esc, toast } = SL;
+  document.getElementById('appbar').outerHTML = SL.appBar('boards');
+  const $ = id => document.getElementById(id);
+  stateCategory.Triaged = 'proposed'; // page-local: this project's Bug workflow has a custom Triaged state (category Proposed)
+
+  /* Board config (Board settings › Columns). Each column maps to one state per type on this board. */
+  const COLS = [
+    { id: 'new', name: 'New', map: { story: 'New', bug: 'New' },
+      dod: '- Title says who it is for and why\n- Linked to a parent **Feature**' },
+    { id: 'ready', name: 'Ready', wip: 8, split: true, map: { story: 'New', bug: 'Triaged' },
+      dod: '- Acceptance criteria written and agreed\n- Estimated in story points\n- No open questions for the product owner\n- Bugs: **repro steps** and severity set' },
+    { id: 'prog', name: 'In progress', wip: 5, map: { story: 'Active', bug: 'Active' },
+      dod: '- Code and tests pushed on a branch\n- Tasks exist for the remaining work\n- Draft PR open and linked' },
+    { id: 'review', name: 'In review', wip: 2, map: { story: 'Resolved', bug: 'Resolved' },
+      dod: '- PR approved by one reviewer\n- CI green\n- Deployed to staging behind its flag' },
+    { id: 'done', name: 'Done', map: { story: 'Closed', bug: 'Closed' },
+      dod: '- Acceptance criteria checked on staging\n- Released, or flag on in production\n- Changelog updated' },
+  ];
+  // Tracks are what cards sit in: a split column has a Doing and a Done track (board_column_done).
+  const TRACKS = [{ id: 'new', col: 'new' }, { id: 'ready-doing', col: 'ready', sub: 'Doing' }, { id: 'ready-done', col: 'ready', sub: 'Done' }, { id: 'prog', col: 'prog' }, { id: 'review', col: 'review' }, { id: 'done', col: 'done' }];
+  const LANES = [
+    { id: 'expedite', name: 'Expedite', criteria: 'Priority = 1', color: '--color-warn', test: c => c.priority === 1 },
+    { id: 'default', name: 'Default lane', isDefault: true },
+  ];
+  const DONE_N = 4; // Done shows the most recent N per lane, then Show older
+  // Tag colours belong to the board; values are token names, never raw colours.
+  const TAG_COLOUR = { Payments: '--chart-committed', Mobile: '--color-info', 'Feedback Ticket': '--color-warn', 'Tech debt': '--color-muted', Security: '--color-ok', Blocked: '--rule-blocked', Spike: '--rule-spike' };
+  // Card style rules (Board settings › Styles): first match wins.
+  const STYLE_RULES = [
+    { name: 'Blocked', cls: 'rule-blocked', when: c => c.tags.includes('Blocked') },
+    { name: 'Spike', cls: 'rule-spike', when: c => c.tags.includes('Spike') },
+  ];
+
+  /* Page-local sample: a few extra Sprint 24/25 items, plus each card's position, priority and tags. */
+  const extra = [
+    ['149', 'bug', 'Passkey button hidden on small screens', 'Mobile sign-in', 2, 's24', 'ana'],
+    ['146', 'story', 'Show card brand on saved cards', 'Checkout v2', 2, 's24', 'tom'],
+    ['148', 'story', 'Delete a saved card from the account page', 'Checkout v2', 3, 's24', 'sam'],
+    ['152', 'story', 'Feature flag for passkey rollout', 'Mobile sign-in', 1, 's24', 'mei'],
+    ['157', 'story', 'Spike: compare card vault providers', 'Checkout v2', 2, 's25', null],
+  ].map(([n, type, title, parent, points, sprint, assignee]) => ({ key: 'SHIP-' + n, type, title, parent, points, sprint, assignee }));
+  const extraTasks = { 'SHIP-149': [1, 2], 'SHIP-146': [2, 2], 'SHIP-148': [2, 3], 'SHIP-152': [1, 1], 'SHIP-157': [0, 1] };
+  // [key, track, priority, tags] in column_order. Done is newest first.
+  const layout = [
+    ['SHIP-149', 'prog', 1, ['Mobile']],
+    ['SHIP-160', 'ready-done', 1, ['Feedback Ticket']],
+    ['SHIP-170', 'new', 2, ['Security']],
+    ['SHIP-165', 'new', 3, []],
+    ['SHIP-166', 'new', 3, []],
+    ['SHIP-163', 'new', 3, ['Tech debt']],
+    ['SHIP-156', 'new', 3, []],
+    ['SHIP-157', 'ready-doing', 2, ['Spike']],
+    ['SHIP-147', 'ready-doing', 2, []],
+    ['SHIP-162', 'ready-doing', 3, ['Tech debt']],
+    ['SHIP-151', 'ready-done', 2, ['Mobile']],
+    ['SHIP-153', 'ready-done', 2, ['Mobile']],
+    ['SHIP-158', 'ready-done', 2, ['Payments', 'Feedback Ticket']],
+    ['SHIP-141', 'prog', 2, ['Payments']],
+    ['SHIP-129', 'prog', 2, ['Mobile', 'Blocked']],
+    ['SHIP-144', 'prog', 2, []],
+    ['SHIP-146', 'review', 2, ['Payments']],
+    ['SHIP-148', 'review', 2, ['Payments']],
+    ['SHIP-152', 'review', 2, ['Mobile']],
+    ['SHIP-150', 'done', 2, []],
+    ['SHIP-138', 'done', 2, ['Payments']],
+    ['SHIP-131', 'done', 2, ['Security']],
+    ['SHIP-126', 'done', 2, []],
+    ['SHIP-124', 'done', 2, ['Payments']],
+    ['SHIP-120', 'done', 2, []],
+    ['SHIP-118', 'done', 2, ['Mobile']],
+  ];
+  const source = [...items, ...doneItems, ...extra];
+  const cards = layout.map(([key, track, priority, tags]) => ({ ...source.find(i => i.key === key), track, priority, tags: [...tags] }));
+  let nextKey = 171;
+
+  const TRACK = id => TRACKS.find(t => t.id === id);
+  const COL = id => COLS.find(c => c.id === id);
+  const colOf = c => COL(TRACK(c.track).col);
+  const stateOf = c => colOf(c).map[c.type];
+  const laneOf = c => (view.lanes ? LANES.find(l => !l.isDefault && l.test(c)) || LANES.find(l => l.isDefault) : { id: 'all', isDefault: true });
+  const trackLabel = t => COL(t.col).name + (t.sub ? ` · ${t.sub}` : '');
+  const countCol = id => cards.filter(c => TRACK(c.track).col === id).length;
+  const overWip = col => col.wip && countCol(col.id) > col.wip;
+  const roll = c => {
+    if (extraTasks[c.key]) return extraTasks[c.key];
+    const t = tasks[c.key]; if (!t) return null;
+    return [t.filter(x => stateCategory[x[1]] === 'completed').length, t.length];
+  };
+  const first = p => people[p].name.split(' ')[0];
+
+  const view = { lanes: true, compact: false, collapsed: new Set(), showOlder: false, adding: false, q: '', who: new Set(), sprint: '', filterOpen: false };
+  const filtering = () => !!(view.q || view.who.size || view.sprint);
+  const passes = c => {
+    if (view.q) { const q = view.q.toLowerCase(); if (!c.title.toLowerCase().includes(q) && !c.key.toLowerCase().includes(q) && !c.tags.some(t => t.toLowerCase().includes(q))) return false; }
+    if (view.who.size && !view.who.has(c.assignee || '')) return false;
+    if (view.sprint && (view.sprint === 'none' ? c.sprint : c.sprint !== view.sprint)) return false;
+    return true;
+  };
+
+  /* Rendering */
+  const mdLite = s => '<ul>' + s.split('\n').map(l => `<li>${esc(l.replace(/^- /, '')).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')}</li>`).join('') + '</ul>';
+  const mapText = col => (col.map.story === col.map.bug ? `State ${col.map.story}` : `Story ${col.map.story} · Bug ${col.map.bug}`);
+
+  function colHead(col) {
+    const n = countCol(col.id), over = overWip(col);
+    const wipTitle = col.wip ? `${n} cards, WIP limit ${col.wip}${col.split ? ' (Doing and Done together)' : ''}${over ? '. Over the limit' : ''}` : `${n} cards, no WIP limit`;
+    const sub = col.split
+      ? `<div class="subh" title="${mapText(col)}">${TRACKS.filter(t => t.col === col.id).map(t => `<span>${t.sub} <b>${cards.filter(c => c.track === t.id).length}</b></span>`).join('')}</div>`
+      : `<div class="map" title="Dragging a card here sets this state">${mapText(col)}</div>`;
+    return `<div class="colh${col.split ? ' is-split' : ''}${over ? ' over' : ''}" data-col="${col.id}">
+      <div class="top"><span class="nm">${col.name}</span><span class="wip${over ? ' over' : ''}" title="${wipTitle}">${col.wip ? `${n}/${col.wip}` : n}</span><span class="spacer"></span>
+      <button class="ib" type="button" data-dod="${col.id}" aria-haspopup="dialog" aria-label="${col.name}: state per type and definition of done">ⓘ</button></div>${sub}</div>`;
+  }
+
+  function cardHtml(c) {
+    const rule = STYLE_RULES.find(r => r.when(c));
+    const r = roll(c), state = stateOf(c);
+    const pts = c.points == null ? '<span class="cpts unest" title="Not estimated">?</span>' : `<span class="cpts" title="Story points">${c.points}</span>`;
+    const ann = r ? `<span class="ann${r[0] === r[1] ? ' ok' : ''}" title="${r[0]} of ${r[1]} tasks closed">☑ ${r[0]}/${r[1]}</span>` : '';
+    const who = `<button class="take" type="button" data-assign="${c.key}" aria-haspopup="menu" title="${c.assignee ? people[c.assignee].name + ' · change' : 'Unassigned · work is pulled, assign to take it'}">${av(c.assignee)}</button>`;
+    const tags = c.tags.map(t => `<span class="tag" style="--tag: var(${TAG_COLOUR[t] || '--color-muted'})">${esc(t)}</span>`).join('');
+    const parent = `<div class="pr">${c.parent ? `${tIcon('feature')}<span class="n">${esc(c.parent)}</span>` : '<span class="n">No parent</span>'}${ann}${who}</div>`;
+    return `<div class="card${rule ? ' ' + rule.cls : ''}${colOf(c).id === 'done' ? ' done-col' : ''}" data-key="${c.key}" draggable="true" tabindex="0"
+        aria-label="${c.key} ${esc(c.title)}, ${state}${rule ? ', ' + rule.name : ''}" title="${rule ? `Style rule: ${rule.name} · ` : ''}State ${state}">
+      <div class="r1">${tIcon(c.type)}<span class="key">${c.key}</span>${pts}${view.compact ? who : ''}</div>
+      <div class="ttl">${esc(c.title)}</div>
+      ${view.compact ? '' : `${parent}${tags ? `<div class="ft">${tags}</div>` : ''}`}
+    </div>`;
+  }
+
+  function cellHtml(lane, t, list) {
+    let shown = list.filter(passes), more = '';
+    if (t.col === 'done' && shown.length > DONE_N) {
+      if (!view.showOlder) { more = `<button class="btn ghost more" type="button" data-older>Show ${shown.length - DONE_N} older</button>`; shown = shown.slice(0, DONE_N); }
+      else more = '<button class="btn ghost more" type="button" data-older>Show recent only</button>';
+    }
+    let add = '';
+    if (t.id === 'new' && lane.isDefault) {
+      add = view.adding
+        ? `<div class="add-field"><input class="field" id="addTitle" placeholder="Title, then Enter" aria-label="New item title"><span class="xs">User Story · goes in at the top of New</span></div>`
+        : '<button class="btn addc" type="button" data-add>+ New item</button>';
+    }
+    return `<div class="cell${t.sub === 'Done' ? ' sub-done' : ''}" data-track="${t.id}" data-lane="${lane.id}" aria-label="${trackLabel(t)}">${add}${shown.map(cardHtml).join('')}${more}</div>`;
+  }
+
+  function laneHtml(lane, list) {
+    const collapsed = view.collapsed.has(lane.id);
+    const pts = list.filter(c => colOf(c).id !== 'done').reduce((a, c) => a + (c.points || 0), 0);
+    const head = lane.id === 'all' ? '' : `<div class="lane-h">
+        <button class="ib" type="button" data-lane-toggle="${lane.id}" aria-expanded="${!collapsed}" aria-label="${collapsed ? 'Expand' : 'Collapse'} ${lane.name}">${collapsed ? '▶' : '▼'}</button>
+        <span class="bar" style="--lane: var(${lane.color || '--color-border'})"></span><b>${lane.name}</b>
+        ${lane.criteria ? `<span class="chip" title="Swimlane criteria: cards matching this go in the lane">${lane.criteria}</span>` : '<span class="xs muted">everything else</span>'}
+        <span class="xs muted">${list.length} ${list.length === 1 ? 'card' : 'cards'} · ${pts} pts open</span></div>`;
+    if (collapsed) return `<section class="lane ${lane.id}">${head}</section>`;
+    return `<section class="lane ${lane.id}">${head}<div class="bgrid">${TRACKS.map(t => cellHtml(lane, t, list.filter(c => c.track === t.id))).join('')}</div></section>`;
+  }
+
+  function render(o = {}) {
+    const before = o.flip ? new Map([...document.querySelectorAll('.card')].map(el => [el.dataset.key, el.getBoundingClientRect()])) : null;
+    const lanes = view.lanes ? LANES : [{ id: 'all', isDefault: true }];
+    $('bwrap').className = 'bwrap' + (view.compact ? ' compact' : '');
+    $('bwrap').innerHTML = `<div class="bhead bgrid">${COLS.map(colHead).join('')}</div>` +
+      lanes.map(l => laneHtml(l, cards.filter(c => laneOf(c).id === l.id))).join('');
+    const open = cards.filter(c => colOf(c).id !== 'done');
+    $('summary').textContent = `${open.length} open · ${open.reduce((a, c) => a + (c.points || 0), 0)} pts`;
+    renderFilter();
+    if (before) {
+      document.querySelectorAll('.card').forEach(el => {
+        const a = before.get(el.dataset.key); if (!a) return;
+        const b = el.getBoundingClientRect(), dx = a.left - b.left, dy = a.top - b.top;
+        if (!dx && !dy) return;
+        if (el.dataset.key === o.flip) el.classList.add('moving');
+        el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: el.dataset.key === o.flip ? 520 : 260, easing: 'cubic-bezier(.2,.7,.2,1)' })
+          .onfinish = () => el.classList.remove('moving');
+      });
+    }
+    if (o.flash) document.querySelector(`.card[data-key="${o.flash}"]`)?.classList.add('flash');
+    if (o.flashCol) document.querySelector(`.colh[data-col="${o.flashCol}"]`)?.classList.add('flash');
+    if (o.focus) document.querySelector(`.card[data-key="${o.focus}"]`)?.focus();
+    if (view.adding) wireAdd();
+  }
+
+  function renderFilter() {
+    $('fbar').hidden = !view.filterOpen;
+    $('btnFilter').setAttribute('aria-expanded', view.filterOpen);
+    const n = [view.q, view.who.size, view.sprint].filter(Boolean).length;
+    $('btnFilter').textContent = n ? `Filter (${n})` : 'Filter';
+    $('fwho').innerHTML = '<span class="sm muted" style="margin-right:4px">People</span>' + Object.keys(people).map(p => `<button type="button" data-who="${p}" aria-pressed="${view.who.has(p)}" title="${people[p].name}">${av(p)}</button>`).join('') +
+      `<button type="button" class="un" data-who="" aria-pressed="${view.who.has('')}">${av(null)}Unassigned</button>`;
+    const shown = cards.filter(passes).length;
+    $('fcount').textContent = filtering() ? `Showing ${shown} of ${cards.length} cards · WIP counts include hidden cards` : '';
+  }
+
+  /* Moving a card: the column changes and the state follows the column's mapping for the card's type. */
+  function move(key, trackId, laneId, beforeKey, actor = ME) {
+    const c = cards.find(x => x.key === key);
+    const from = { track: c.track, lane: laneOf(c).id, state: stateOf(c), idx: cards.indexOf(c) };
+    const t = TRACK(trackId);
+    cards.splice(from.idx, 1);
+    let idx;
+    if (beforeKey && beforeKey !== key) idx = cards.findIndex(x => x.key === beforeKey);
+    else if (t.col === 'done' && from.track !== trackId) idx = cards.findIndex(x => x.track === trackId); // newest first
+    else idx = -1;
+    cards.splice(idx < 0 ? cards.length : idx, 0, c);
+    c.track = trackId;
+    let laneChanged = false;
+    if (view.lanes && laneId && laneId !== from.lane) {
+      laneChanged = true;
+      if (laneId === 'expedite') c.priority = 1; else if (c.priority === 1) c.priority = 2;
+    }
+    const state = stateOf(c);
+    let pulled = false;
+    if (!c.assignee && stateCategory[state] === 'in-progress') { c.assignee = actor; pulled = true; }
+    return { c, t, from, state, pulled, laneChanged, moved: from.track !== trackId, reordered: cards.indexOf(c) !== from.idx };
+  }
+
+  function describe(r, actor) {
+    const col = COL(r.t.col), bits = [];
+    if (r.moved) bits.push(`<b>${r.c.key}</b> → ${trackLabel(r.t)} (${r.state === r.from.state ? `state stays ${r.state}` : `state ${r.state}`})`);
+    else if (!r.laneChanged) bits.push(`<b>${r.c.key}</b> reordered in ${trackLabel(r.t)}`);
+    const laneMsg = r.c.priority === 1 ? 'Expedite (Priority 1)' : 'Default lane (Priority 2)';
+    if (!r.moved && r.laneChanged) bits.push(`<b>${r.c.key}</b> → ${laneMsg}`);
+    else if (r.laneChanged) bits.push(`lane ${laneMsg}`);
+    if (r.pulled) bits.push(actor === ME ? 'assigned to you' : `assigned to ${first(actor)}`);
+    if (r.moved && overWip(col)) bits.push(`<b>${col.name} is over its WIP limit (${countCol(col.id)}/${col.wip})</b>`);
+    return (r.pulled ? av(actor) + ' ' : '') + bits.join(' · ');
+  }
+
+  /* Drag and drop */
+  const board = $('board');
+  let dragKey = null;
+  const clearDrop = () => board.querySelectorAll('.drop-before, .drop-end, .cell.over').forEach(el => el.classList.remove('drop-before', 'drop-end', 'over'));
+  const beforeCard = (cell, y) => [...cell.querySelectorAll('.card:not(.dragging)')].find(el => { const r = el.getBoundingClientRect(); return y < r.top + r.height / 2; });
+  board.addEventListener('dragstart', e => {
+    const el = e.target.closest('.card'); if (!el) return;
+    dragKey = el.dataset.key; closePop();
+    e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragKey);
+    requestAnimationFrame(() => el.classList.add('dragging'));
+  });
+  board.addEventListener('dragend', () => { dragKey = null; board.querySelectorAll('.dragging').forEach(el => el.classList.remove('dragging')); clearDrop(); });
+  board.addEventListener('dragover', e => {
+    const cell = e.target.closest('.cell'); if (!cell || !dragKey) return;
+    e.preventDefault(); e.dataTransfer.dropEffect = 'move'; clearDrop();
+    cell.classList.add('over');
+    const b = beforeCard(cell, e.clientY); b ? b.classList.add('drop-before') : cell.classList.add('drop-end');
+  });
+  board.addEventListener('drop', e => {
+    const cell = e.target.closest('.cell'); if (!cell || !dragKey) return;
+    e.preventDefault();
+    const key = dragKey, b = beforeCard(cell, e.clientY);
+    clearDrop();
+    const r = move(key, cell.dataset.track, cell.dataset.lane, b?.dataset.key);
+    if (!r.moved && !r.laneChanged && !r.reordered) { render(); return; }
+    render({ flash: r.pulled ? key : null });
+    toast(describe(r, ME));
+  });
+
+  /* Keyboard: Alt+←/→ changes column (sub-columns count), Alt+↑/↓ reorders within the cell. */
+  board.addEventListener('keydown', e => {
+    const el = e.target.closest('.card'); if (!el || e.target !== el) return;
+    const c = cards.find(x => x.key === el.dataset.key);
+    if (e.key === 'Enter') { toast(`Opens <b>${c.key}</b> in the work item form`); return; }
+    if (!e.altKey) return;
+    const ti = TRACKS.findIndex(t => t.id === c.track), lane = laneOf(c).id;
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      const nt = TRACKS[ti + (e.key === 'ArrowRight' ? 1 : -1)]; if (!nt) return;
+      e.preventDefault();
+      const r = move(c.key, nt.id, lane, null); render({ focus: c.key }); toast(describe(r, ME));
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      const sib = cards.filter(x => x.track === c.track && laneOf(x).id === lane && passes(x));
+      const i = sib.indexOf(c), j = i + (e.key === 'ArrowDown' ? 1 : -1); if (j < 0 || j >= sib.length) return;
+      e.preventDefault();
+      const target = e.key === 'ArrowDown' ? sib[j + 1]?.key : sib[j].key;
+      const r = move(c.key, c.track, lane, target); render({ focus: c.key }); toast(describe(r, ME));
+    }
+  });
+
+  /* Popovers: definition of done and the assignee menu */
+  const pop = document.createElement('div'); pop.className = 'bpop'; pop.hidden = true; pop.setAttribute('role', 'dialog'); document.body.append(pop);
+  let popFor = null;
+  function openPop(anchor, html, cls) {
+    pop.className = 'bpop' + (cls ? ' ' + cls : ''); pop.innerHTML = html; pop.hidden = false; popFor = anchor;
+    const r = anchor.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight;
+    pop.style.left = Math.max(8, Math.min(r.right - w, innerWidth - w - 8)) + 'px';
+    pop.style.top = (r.bottom + h + 8 > innerHeight ? r.top - h - 4 : r.bottom + 4) + 'px';
+  }
+  function closePop() { pop.hidden = true; popFor = null; }
+  function dodPop(btn) {
+    const col = COL(btn.dataset.dod);
+    openPop(btn, `<h3>${col.name}</h3>
+      <div class="overline">State per type</div>
+      <div class="maps"><span>${tIcon('story')} User Story</span><span>${SL.st(col.map.story)}</span><span>${tIcon('bug')} Bug</span><span>${SL.st(col.map.bug)}</span></div>
+      ${col.wip ? `<div class="xs muted">WIP limit ${col.wip}${col.split ? ', counting Doing and Done' : ''}. Over the limit is allowed; the header turns red.</div>` : ''}
+      ${col.split ? '<div class="xs muted">Split: <b>Doing</b> is being worked on, <b>Done</b> is ready to be pulled into the next column. Both keep the same state.</div>' : ''}
+      <div class="overline">Definition of done</div><div class="md">${mdLite(col.dod)}</div>
+      <footer>Markdown<span class="spacer"></span><a href="board-settings.html">Edit in Board settings</a></footer>`);
+  }
+  function assignPop(btn) {
+    const c = cards.find(x => x.key === btn.dataset.assign);
+    const opt = (p, label) => `<button type="button" role="menuitemradio" aria-checked="${(c.assignee || '') === p}" data-pick="${p}">${av(p || null)}${label}</button>`;
+    openPop(btn, `<span class="overline">Assign ${c.key}</span>${Object.keys(people).map(p => opt(p, people[p].name + (p === ME ? ' <span class="muted">(you)</span>' : ''))).join('')}${opt('', 'Unassigned')}`, 'menu');
+    pop.setAttribute('role', 'menu');
+    pop.onclick = e => {
+      const b = e.target.closest('[data-pick]'); if (!b) return;
+      const p = b.dataset.pick || null; closePop();
+      if (p === c.assignee) return;
+      c.assignee = p; render({ flash: c.key });
+      toast(p ? `${av(p)} <b>${c.key}</b> assigned to ${p === ME ? 'you' : people[p].name}` : `<b>${c.key}</b> unassigned`);
+    };
+  }
+  document.addEventListener('click', e => {
+    if (!pop.hidden && !pop.contains(e.target) && !(popFor && popFor.contains(e.target))) closePop();
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !pop.hidden) { const a = popFor; closePop(); a?.focus(); } });
+
+  /* Board clicks */
+  board.addEventListener('click', e => {
+    const d = e.target.closest('[data-dod]'); if (d) { if (popFor === d) closePop(); else { pop.onclick = null; pop.setAttribute('role', 'dialog'); dodPop(d); } return; }
+    const a = e.target.closest('[data-assign]'); if (a) { if (popFor === a) closePop(); else assignPop(a); return; }
+    const l = e.target.closest('[data-lane-toggle]'); if (l) { const id = l.dataset.laneToggle; view.collapsed.has(id) ? view.collapsed.delete(id) : view.collapsed.add(id); render(); return; }
+    if (e.target.closest('[data-older]')) { view.showOlder = !view.showOlder; render(); return; }
+    if (e.target.closest('[data-add]')) { view.adding = true; render(); return; }
+    const c = e.target.closest('.card'); if (c) toast(`Opens <b>${c.dataset.key}</b> in the work item form`);
+  });
+
+  function wireAdd() {
+    const t = $('addTitle'); t.focus();
+    t.onkeydown = e => {
+      if (e.key === 'Escape') { view.adding = false; render(); return; }
+      if (e.key !== 'Enter' || !t.value.trim()) return;
+      const c = { key: 'SHIP-' + nextKey++, type: 'story', title: t.value.trim(), parent: null, points: null, sprint: null, assignee: null, priority: 2, track: 'new', tags: [] };
+      const i = cards.findIndex(x => x.track === 'new' && laneOf(x).isDefault);
+      cards.splice(i < 0 ? cards.length : i, 0, c);
+      render({ flash: c.key }); toast(`<b>${c.key}</b> added at the top of New (state New)`);
+    };
+  }
+
+  /* Toolbar */
+  document.querySelectorAll('[data-level]').forEach(b => { b.onclick = () => { location.href = b.dataset.level === 'Epics' ? 'features-board.html?level=epics' : 'features-board.html'; }; });
+  $('optLanes').onchange = e => { view.lanes = e.target.checked; render(); };
+  document.querySelectorAll('[data-cards]').forEach(b => {
+    b.onclick = () => { view.compact = b.dataset.cards === 'compact'; document.querySelectorAll('[data-cards]').forEach(x => x.setAttribute('aria-pressed', x === b)); render(); };
+  });
+  $('btnFilter').onclick = () => { view.filterOpen = !view.filterOpen; render(); if (view.filterOpen) $('fq').focus(); };
+  $('fq').oninput = e => { view.q = e.target.value.trim(); render(); };
+  $('fsprint').onchange = e => { view.sprint = e.target.value; render(); };
+  $('fwho').onclick = e => { const b = e.target.closest('[data-who]'); if (!b) return; const p = b.dataset.who; view.who.has(p) ? view.who.delete(p) : view.who.add(p); render(); };
+  $('fclear').onclick = () => { view.q = ''; view.sprint = ''; view.who.clear(); $('fq').value = ''; $('fsprint').value = ''; render(); };
+
+  /* Real-time simulations (Preview panel) */
+  const scripted = [{ who: 'tom', key: 'SHIP-158', to: 'prog' }, { who: 'mei', key: 'SHIP-152', to: 'done' }, { who: 'ana', key: 'SHIP-149', to: 'review' }, { who: 'sam', key: 'SHIP-147', to: 'ready-done' }];
+  function teammateMove() {
+    const s = scripted.find(x => cards.find(c => c.key === x.key).track !== x.to);
+    if (!s) { toast('No more scripted moves; reload to replay'); return; }
+    const c = cards.find(x => x.key === s.key);
+    const r = move(s.key, s.to, laneOf(c).id, null, s.who);
+    render({ flip: s.key, flash: s.key });
+    toast(`${av(s.who)} ${people[s.who].name} moved ` + describe(r, s.who).replace(/^<span class="av"[^>]*>[^<]*<\/span> /, ''));
+  }
+  function settingsChanged() {
+    const col = COL('review'); col.wip = col.wip === 2 ? 3 : 2;
+    render({ flashCol: 'review' });
+    toast(`${av('ana')} Ana Costa set the In review WIP limit to ${col.wip} (Board settings)`);
+  }
+  const rtBanner = html => { $('banners').innerHTML = html; };
+  function dropConnection() {
+    SL.setLive(false);
+    rtBanner(`<div class="banner warn">Live updates paused. Moves still save; retrying in 5s.<span class="spacer"></span><button class="btn" type="button" id="retry">Retry now</button></div>`);
+    const back = () => {
+      clearTimeout(timer); SL.setLive(true);
+      rtBanner(`<div class="banner ok">Back online. Board refreshed with 3 changes from while you were away.</div>`);
+      setTimeout(() => rtBanner(''), 3500);
+    };
+    const timer = setTimeout(back, 5000);
+    $('banners').onclick = e => { if (e.target.id === 'retry') back(); };
+  }
+
+  render();
+  SL.preview([
+    { label: 'Teammate moves a card', run: teammateMove },
+    { label: 'Teammate edits settings', run: settingsChanged },
+    { label: 'Drop connection', run: dropConnection },
+  ]);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,127 @@
+{
+  "columns": [
+    {
+      "id": "col-new",
+      "name": "New",
+      "wipLimit": null,
+      "split": false,
+      "definitionOfDone": "- Title says who it is for and why\n- Linked to a parent **Feature**",
+      "stateMappings": [
+        { "type": "story", "stateId": "00000003-0000-4000-8001-000000000301" },
+        { "type": "bug", "stateId": "00000003-0000-4000-8001-000000000401" }
+      ]
+    },
+    {
+      "id": "col-ready",
+      "name": "Ready",
+      "wipLimit": 8,
+      "split": true,
+      "definitionOfDone": "- Acceptance criteria written and agreed\n- Estimated in story points\n- No open questions for the product owner\n- Bugs: **repro steps** and severity set",
+      "stateMappings": [
+        { "type": "story", "stateId": "00000003-0000-4000-8001-000000000301" },
+        { "type": "bug", "stateId": "00000003-0000-4000-8001-000000000402" }
+      ]
+    },
+    {
+      "id": "col-in-progress",
+      "name": "In progress",
+      "wipLimit": 5,
+      "split": false,
+      "definitionOfDone": "- Code and tests pushed on a branch\n- Tasks exist for the remaining work\n- Draft PR open and linked",
+      "stateMappings": [
+        { "type": "story", "stateId": "00000003-0000-4000-8001-000000000302" },
+        { "type": "bug", "stateId": "00000003-0000-4000-8001-000000000403" }
+      ]
+    },
+    {
+      "id": "col-in-review",
+      "name": "In review",
+      "wipLimit": 2,
+      "split": false,
+      "definitionOfDone": "- PR approved by one reviewer\n- CI green\n- Deployed to staging behind its flag",
+      "stateMappings": [
+        { "type": "story", "stateId": "00000003-0000-4000-8001-000000000303" },
+        { "type": "bug", "stateId": "00000003-0000-4000-8001-000000000404" }
+      ]
+    },
+    {
+      "id": "col-done",
+      "name": "Done",
+      "wipLimit": null,
+      "split": false,
+      "definitionOfDone": "- Acceptance criteria checked on staging\n- Released, or flag on in production\n- Changelog updated",
+      "stateMappings": [
+        { "type": "story", "stateId": "00000003-0000-4000-8001-000000000304" },
+        { "type": "bug", "stateId": "00000003-0000-4000-8001-000000000405" }
+      ]
+    }
+  ],
+  "swimlanes": [
+    {
+      "id": "lane-expedite",
+      "name": "Expedite",
+      "colour": "warn",
+      "kind": "criteria",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          { "field": "priority", "op": "=", "value": 1 }
+        ]
+      }
+    },
+    {
+      "id": "lane-default",
+      "name": "Default lane",
+      "colour": null,
+      "kind": "default",
+      "criteria": null
+    }
+  ],
+  "cardFields": [
+    { "type": "story", "showKey": true, "showAssignee": true, "showTags": true, "showPoints": true, "showEmptyFields": false, "extraFields": ["parent", "priority", "sprint"] },
+    { "type": "bug", "showKey": true, "showAssignee": true, "showTags": true, "showPoints": true, "showEmptyFields": false, "extraFields": ["parent", "severity", "priority"] }
+  ],
+  "styleRules": [
+    {
+      "id": "rule-blocked",
+      "name": "Blocked",
+      "enabled": true,
+      "colour": "danger",
+      "bold": false,
+      "italic": false,
+      "underline": false,
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          { "field": "tags", "op": "contains", "value": "Blocked" }
+        ]
+      }
+    },
+    {
+      "id": "rule-spike",
+      "name": "Spike",
+      "enabled": true,
+      "colour": "purple",
+      "bold": false,
+      "italic": false,
+      "underline": false,
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          { "field": "tags", "op": "contains", "value": "Spike" }
+        ]
+      }
+    }
+  ],
+  "tagColours": [
+    { "tag": "Payments", "colour": "accent" },
+    { "tag": "Mobile", "colour": "info" },
+    { "tag": "Feedback Ticket", "colour": "warn" },
+    { "tag": "Tech debt", "colour": "muted" },
+    { "tag": "Security", "colour": "ok" },
+    { "tag": "Blocked", "colour": "danger" },
+    { "tag": "Spike", "colour": "purple" }
+  ],
+  "annotations": { "tasks": true, "stories": false, "bugs": false, "features": false },
+  "cardReordering": "changesBacklogOrder"
+}

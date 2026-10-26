@@ -1,0 +1,47 @@
+{
+  "object_kind": "merge_request",
+  "event_type": "merge_request",
+  "user": { "id": 1, "name": "Administrator", "username": "root", "email": "[REDACTED]" },
+  "project": {
+    "id": 1,
+    "name": "Storefront",
+    "description": "",
+    "web_url": "https://gitlab.example.com/acme/shop/storefront",
+    "git_ssh_url": "git@gitlab.example.com:acme/shop/storefront.git",
+    "git_http_url": "https://gitlab.example.com/acme/shop/storefront.git",
+    "namespace": "Shop",
+    "visibility_level": 0,
+    "path_with_namespace": "acme/shop/storefront",
+    "default_branch": "main"
+  },
+  "repository": {
+    "name": "Storefront",
+    "url": "git@gitlab.example.com:acme/shop/storefront.git",
+    "homepage": "https://gitlab.example.com/acme/shop/storefront"
+  },
+  "object_attributes": {
+    "id": 99,
+    "iid": 7,
+    "target_branch": "main",
+    "source_branch": "fix/rate-grid",
+    "source_project_id": 1,
+    "author_id": 1,
+    "assignee_ids": [],
+    "title": "Fix the rate grid rounding",
+    "created_at": "2026-10-24 08:12:40 UTC",
+    "updated_at": "2026-10-25 09:30:00 UTC",
+    "milestone_id": null,
+    "state": "merged",
+    "merge_status": "can_be_merged",
+    "target_project_id": 1,
+    "description": "Rounds half up, as the rate grid shows it.",
+    "url": "https://gitlab.example.com/acme/shop/storefront/-/merge_requests/7",
+    "work_in_progress": false,
+    "draft": false,
+    "action": "merge",
+    "last_commit": { "id": "da1560886d4f094c3e6c9ef40349f7d38b5d27d7", "message": "Round half up\n" },
+    "labels": []
+  },
+  "labels": [],
+  "changes": {}
+}

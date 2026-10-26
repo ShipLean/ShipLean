@@ -1,0 +1,51 @@
+{
+  "self": "{{base}}/rest/api/{{v}}/project/10040",
+  "id": "10040",
+  "key": "PLATFORM",
+  "name": "Platform Team",
+  "projectTypeKey": "software",
+  "simplified": false,
+  "style": "classic",
+  "isPrivate": false,
+  "avatarUrls": {},
+  "description": "Search, API gateway and audit.",
+  "lead": {
+    "accountId": "5b10a2844c20165700ede21g",
+    "displayName": "Priya Shah",
+    "emailAddress": "priya.shah@acme.io",
+    "active": true,
+    "self": "{{base}}/rest/api/{{v}}/user?accountId=5b10a2844c20165700ede21g"
+  },
+  "issueTypes": [
+    {
+      "id": "10000",
+      "name": "Epic",
+      "subtask": false,
+      "description": "Epic"
+    },
+    {
+      "id": "10001",
+      "name": "Story",
+      "subtask": false,
+      "description": "Story"
+    },
+    {
+      "id": "10002",
+      "name": "Task",
+      "subtask": false,
+      "description": "Task"
+    },
+    {
+      "id": "10003",
+      "name": "Sub-task",
+      "subtask": true,
+      "description": "Sub-task"
+    },
+    {
+      "id": "10004",
+      "name": "Bug",
+      "subtask": false,
+      "description": "Bug"
+    }
+  ]
+}

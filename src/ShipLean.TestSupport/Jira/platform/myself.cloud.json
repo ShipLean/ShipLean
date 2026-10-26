@@ -1,0 +1,9 @@
+{
+  "accountId": "5b10a2844c20165700ede21g",
+  "displayName": "Priya Shah",
+  "emailAddress": "priya.shah@acme.io",
+  "active": true,
+  "self": "{{base}}/rest/api/{{v}}/user?accountId=5b10a2844c20165700ede21g",
+  "timeZone": "Asia/Bangkok",
+  "locale": "en_GB"
+}

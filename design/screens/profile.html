@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Your profile (reference)</title>
+<!--
+  Reference profile page: ShipLean › Your profile, opened from the user menu (the signed-in user at the bottom
+  of the side menu: Your profile, Instance settings for admins, Sign out).
+  Open directly in a browser. Uses ../tokens.css, shiplean.css and shared.js only; no build step.
+  Everything here is yours alone; nothing changes for anyone else except your name and avatar.
+    Profile: display name, an optional photo (Upload / Replace / Remove, cropped to a circle) and a colour (the
+      same identity colours used everywhere: behind your initials, or behind the photo while it loads), with a
+      live preview of how you look on a card and in the presence stack. Save in the panel. ?photo opens with one.
+      Email is read-only: it's what you sign in with, and only an instance admin changes it.
+    Appearance: theme (OS / Light / Dark) and density (Compact / Comfortable). Applies straight away and is
+      stored on your account, so it follows you to another browser.
+    Password: current, new and confirm, with live checks. Changing it signs out your other sessions.
+    Your projects: each project you're in with your role. Leave asks first; the only admin of a project can't.
+    Sessions and saved views: sign out everywhere else; reset the column, lane and filter choices ShipLean
+      remembers per board and backlog.
+  The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot).
+-->
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="shiplean.css">
+<script src="shared.js"></script>
+<style>
+[hidden] { display: none !important; }
+.head { display: flex; gap: var(--space-3); align-items: center; padding: var(--space-3) var(--space-4); background: var(--color-surface); border-bottom: 1px solid var(--color-border); flex: none; flex-wrap: wrap; }
+.head h1 { margin: 0; font-size: var(--text-lg); font-weight: var(--weight-semibold); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn.primary:disabled:hover { filter: none; }
+.btn.danger { color: var(--color-danger); border-color: color-mix(in srgb, var(--color-danger) 45%, var(--color-border)); }
+.content { flex: 1; min-height: 0; overflow: auto; padding: var(--space-4); background: var(--color-bg); }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); align-items: start; max-width: 1120px; }
+.col { display: grid; gap: var(--space-3); align-content: start; }
+.panel { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.panel > header { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; min-height: 44px; padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-border); }
+.panel > header h2 { margin: 0; font-size: var(--text-md); font-weight: var(--weight-semibold); }
+.panel > header .meta { font-size: var(--text-xs); color: var(--color-muted); }
+.panel table.list { background: transparent; }
+.panel table.list th { position: static; }
+.pfoot { display: flex; gap: var(--space-2); align-items: center; padding: var(--space-2) var(--space-3); border-top: 1px solid var(--color-border); background: var(--color-bg); border-radius: 0 0 var(--radius-md) var(--radius-md); font-size: var(--text-xs); color: var(--color-muted); }
+.form { display: grid; grid-template-columns: 130px minmax(0, 1fr); }
+.form > .lbl, .form > .ctl { padding: 10px var(--space-3); border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.form > .lbl { font-size: var(--text-sm); font-weight: var(--weight-medium); color: var(--color-muted); padding-top: 15px; }
+.form > .ctl { display: grid; gap: 6px; justify-items: start; align-content: start; font-size: var(--text-sm); min-width: 0; }
+.form > :nth-last-child(-n+2) { border-bottom: 0; }
+.hint { font-size: var(--text-xs); color: var(--color-muted); }
+.w-md { width: 280px; max-width: 100%; }
+.readonly { display: inline-flex; align-items: center; height: var(--control-height); padding: 0 10px; border: 1px dashed var(--color-border); border-radius: var(--radius-sm); background: var(--color-bg); color: var(--color-muted); font-size: var(--text-sm); }
+.idrow { display: flex; gap: var(--space-3); align-items: center; padding: var(--space-3); border-bottom: 1px solid var(--color-border); }
+.av.big { width: 48px; height: 48px; font-size: 17px; }
+.idrow b { display: block; font-size: var(--text-md); }
+.idrow .muted { font-size: var(--text-sm); }
+.swatches { display: flex; gap: 6px; flex-wrap: wrap; }
+.swatches button { width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; padding: 0; cursor: pointer; box-shadow: inset 0 0 0 2px var(--color-surface); }
+.swatches button[aria-pressed="true"] { border-color: var(--color-text); }
+.swatches button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+.lookfor { display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap; padding: 6px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-bg); font-size: var(--text-xs); color: var(--color-muted); }
+.minicard { display: inline-flex; gap: 6px; align-items: center; padding: 4px 8px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); font-size: var(--text-xs); }
+.presence-demo { display: inline-flex; }
+.presence-demo .av { margin-left: -4px; box-shadow: 0 0 0 2px var(--color-bg); }
+.presence-demo .av:first-child { margin-left: 0; }
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: var(--text-sm); }
+.checks li::before { content: "✓"; display: inline-block; width: 16px; color: var(--color-ok); font-weight: 700; }
+.checks li.no { color: var(--color-muted); }
+.checks li.no::before { content: "○"; color: var(--color-muted); font-weight: 400; }
+.dirty-t { color: var(--color-warn); font-weight: var(--weight-semibold); }
+.acts { display: grid; gap: 0; }
+.acts > div { display: flex; gap: var(--space-3); align-items: center; padding: 10px var(--space-3); border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.acts > div:last-child { border-bottom: 0; }
+.acts .tx { flex: 1; min-width: 0; font-size: var(--text-sm); }
+.acts .tx b { display: block; font-weight: var(--weight-semibold); }
+.acts .tx span { font-size: var(--text-xs); color: var(--color-muted); }
+tr.confirm td { height: auto; padding: 8px var(--space-3); background: color-mix(in srgb, var(--color-warn) 10%, var(--color-surface)); font-size: var(--text-sm); }
+@media (max-width: 1000px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 600px) { .form { grid-template-columns: minmax(0, 1fr); } .form > .lbl { padding-bottom: 0; border-bottom: 0; } }
+</style>
+</head>
+<body>
+<div id="appbar"></div>
+<section class="head" aria-label="Your profile">
+  <h1>Your profile</h1>
+  <span class="sm muted">Only you see these settings. Your name and avatar show wherever your work does.</span>
+</section>
+<main class="content"><div class="grid" id="grid"></div></main>
+
+<script>
+(() => {
+  const { ME, instance, people, projects, esc, toast } = SL;
+  document.getElementById('appbar').outerHTML = SL.appBar('profile');
+  const $ = id => document.getElementById(id);
+  const root = document.documentElement;
+  const me = people[ME];
+  // Identity colours (the same set the sample avatars use). Same in both themes, like covers.
+  const COLOURS = ['#2f7fd8', '#16a089', '#7b4fc9', '#c9611a', '#b83d7a', '#3f7d5a', '#5a5fc9', '#8a5a2b', '#a3416b', '#52627c'];
+  // A sample uploaded photo (a drawn portrait standing in for a real one), used by the Preview action.
+  const SAMPLE_PHOTO = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#d9a77b"/><circle cx="32" cy="26" r="13" fill="#7a4a2c"/><circle cx="32" cy="28" r="10" fill="#f1c9a5"/><path d="M10 64c2-14 11-20 22-20s20 6 22 20z" fill="#2f5d8a"/></svg>');
+  const P0 = { name: me.name, color: me.color, photo: null };
+  const S = { p: { ...P0 }, theme: root.dataset.theme || 'os', density: root.dataset.density || 'compact', cur: '', nw: '', cf: '', leaving: null };
+  // Your memberships. SHIP: you're its only admin, so you can't leave it.
+  const mine = [
+    { key: 'SHIP', role: 'Admin', joined: 'Mar 2025', onlyAdmin: true },
+    { key: 'MOB', role: 'Admin', joined: 'Apr 2025' },
+    { key: 'PAY', role: 'Member', joined: 'Mar 2025' },
+    { key: 'DATA', role: 'Member', joined: 'Jun 2025' },
+    { key: 'OPS', role: 'Member', joined: 'Mar 2025' },
+    { key: 'PART', role: 'Member', joined: 'Jan 2026' },
+  ];
+  const initials = n => n.trim().split(/\s+/).map(w => w[0] || '').join('').slice(0, 2).toUpperCase() || '?';
+  // With a photo, the colour sits behind it (shown while it loads, or if it can't); without one, initials on the colour.
+  const avStyle = p => (p.photo ? `background:${p.color} url('${p.photo}') center/cover` : `background:${p.color}`);
+  const avHtml = (cls = '') => `<span class="av ${cls}" style="${avStyle(S.p)}">${S.p.photo ? '' : esc(initials(S.p.name))}</span>`;
+
+  function render() {
+    const focus = document.activeElement?.id, caret = document.activeElement?.selectionStart;
+    const dirty = S.p.name !== P0.name || S.p.color !== P0.color || S.p.photo !== P0.photo, nameOk = S.p.name.trim().length > 0;
+    const rules = [[S.cur.length > 0, 'Current password entered'], [S.nw.length >= 10, 'At least 10 characters'], [S.nw.length > 0 && S.nw !== S.cur, 'Different from the current one'], [S.nw.length > 0 && S.nw === S.cf, 'Both match']];
+    const pwOk = rules.every(r => r[0]);
+    $('grid').innerHTML = `
+      <div class="col">
+        <section class="panel"><header><h2>Profile</h2></header>
+          <div class="idrow">${avHtml('big')}<span><b>${esc(S.p.name || '—')}</b><span class="muted">${esc(me.email)} · instance admin</span></span></div>
+          <div class="form">
+            <label class="lbl" for="dname">Display name</label><div class="ctl"><input class="field w-md" id="dname" value="${esc(S.p.name)}" autocomplete="name">${nameOk ? '' : '<span class="hint" style="color:var(--color-danger)">Enter a name</span>'}<span class="hint">Shown on cards, comments, history and @mentions. Your initials come from it.</span></div>
+            <span class="lbl">Photo</span><div class="ctl"><div class="row"><label class="btn" for="phFile">${S.p.photo ? 'Replace photo' : 'Upload photo'}</label><input type="file" id="phFile" accept="image/png,image/jpeg,image/webp" hidden>${S.p.photo ? '<button class="btn ghost" type="button" id="phRemove">Remove</button>' : ''}</div>
+              <span class="hint">Optional. PNG, JPEG or WebP up to 2 MB, cropped to a circle. It shows at 20px on cards, so a close-up of your face works best. Without one, your initials show on your colour.</span></div>
+            <span class="lbl">Colour</span><div class="ctl"><div class="swatches" role="group" aria-label="Avatar colour">${COLOURS.map(c => `<button type="button" data-color="${c}" style="background:${c}" aria-pressed="${S.p.color === c}" aria-label="Colour ${c}"></button>`).join('')}</div>
+              <span class="hint">${S.p.photo ? 'Behind your photo while it loads, and wherever it can\'t be shown.' : 'Behind your initials.'}</span>
+              <div class="lookfor">How others see you <span class="minicard"><span class="ti story">S</span><span class="key">SHIP-141</span> Pay with saved card ${avHtml()}</span><span class="presence-demo">${avHtml()}<span class="av" style="background:${people.tom.color}">TO</span><span class="av" style="background:${people.mei.color}">ML</span></span></div></div>
+            <span class="lbl">Email</span><div class="ctl"><span class="readonly">${esc(me.email)}</span><span class="hint">You sign in with this. Only an instance admin can change it.</span></div>
+          </div>
+          <div class="pfoot">${dirty ? '<span class="dirty-t">Unsaved changes</span>' : 'Saved'}<span class="spacer"></span><button class="btn" type="button" id="pDiscard"${dirty ? '' : ' disabled'}>Discard</button><button class="btn primary" type="button" id="pSave"${dirty && nameOk ? '' : ' disabled'}>Save</button></div>
+        </section>
+
+        <section class="panel"><header><h2>Password</h2><span class="meta">Changing it signs out your other sessions</span></header>
+          <div class="form">
+            <label class="lbl" for="pcur">Current</label><div class="ctl"><input class="field w-md" id="pcur" type="password" autocomplete="current-password" value="${esc(S.cur)}"></div>
+            <label class="lbl" for="pnew">New</label><div class="ctl"><input class="field w-md" id="pnew" type="password" autocomplete="new-password" value="${esc(S.nw)}"></div>
+            <label class="lbl" for="pcf">Confirm new</label><div class="ctl"><input class="field w-md" id="pcf" type="password" autocomplete="new-password" value="${esc(S.cf)}">
+              <ul class="checks">${rules.map(([ok, t]) => `<li class="${ok ? '' : 'no'}">${t}</li>`).join('')}</ul></div>
+          </div>
+          <div class="pfoot">Forgot it? Another instance admin can reset it.<span class="spacer"></span><button class="btn primary" type="button" id="pwGo"${pwOk ? '' : ' disabled'}>Change password</button></div>
+        </section>
+      </div>
+
+      <div class="col">
+        <section class="panel"><header><h2>Appearance</h2><span class="meta">Applies straight away, on every browser you use</span></header>
+          <div class="form">
+            <span class="lbl">Theme</span><div class="ctl"><div class="seg" role="group" aria-label="Theme">${[['os', 'Match my OS'], ['light', 'Light'], ['dark', 'Dark']].map(([k, l]) => `<button type="button" data-theme-pick="${k}" aria-pressed="${S.theme === k}">${l}</button>`).join('')}</div></div>
+            <span class="lbl">Density</span><div class="ctl"><div class="seg" role="group" aria-label="Density">${[['compact', 'Compact'], ['comfortable', 'Comfortable']].map(([k, l]) => `<button type="button" data-density="${k}" aria-pressed="${S.density === k}">${l}</button>`).join('')}</div>
+              <span class="hint">Compact fits more rows on backlogs and boards. Comfortable gives rows, controls and the side menu more room.</span></div>
+          </div>
+        </section>
+
+        <section class="panel"><header><h2>Your projects</h2><span class="meta">${mine.length} · admins add people from Project settings › Members</span></header>
+          <table class="list"><thead><tr><th style="width:70px">Key</th><th>Name</th><th style="width:90px">Role</th><th style="width:90px">Joined</th><th style="width:90px"></th></tr></thead>
+          <tbody>${mine.map(m => { const p = projects.find(x => x.key === m.key); return `<tr class="item"><td><span class="pkey${m.key === SL.PROJECT ? '' : ' alt'}">${m.key}</span></td><td>${esc(p.name)}</td><td>${m.role === 'Admin' ? '<span class="chip accent">Admin</span>' : '<span class="sm">Member</span>'}</td><td class="sm muted">${m.joined}</td>
+            <td class="num">${m.onlyAdmin ? '<span class="xs muted" title="Make someone else an Admin first">Only admin</span>' : `<button class="btn ghost" type="button" data-leave="${m.key}">Leave</button>`}</td></tr>
+            ${S.leaving === m.key ? `<tr class="confirm"><td colspan="5"><div class="row"><span>Leave <b>${m.key} · ${esc(p.name)}</b>? You lose access straight away. Items assigned to you stay assigned.</span><span class="spacer"></span><button class="btn" type="button" data-leave-cancel>Cancel</button><button class="btn danger" type="button" data-leave-go="${m.key}">Leave</button></div></td></tr>` : ''}`; }).join('')}</tbody></table>
+        </section>
+
+        <section class="panel"><header><h2>Sessions and saved views</h2></header><div class="acts">
+          <div><span class="tx"><b>Sign out everywhere else</b><span>Ends every other session, such as a browser you forgot to sign out of. This one stays signed in.</span></span><button class="btn" type="button" id="outOthers">Sign out others</button></div>
+          <div><span class="tx"><b>Reset saved views</b><span>Forgets the columns, lanes, toggles and last filters ShipLean remembers for you on each board and backlog.</span></span><button class="btn" type="button" id="resetViews">Reset</button></div>
+          <div><span class="tx"><b>Sign out</b><span>Of ${esc(instance.name)} on this browser.</span></span><a class="btn" href="signin.html?state=signed-out">Sign out</a></div>
+        </div></section>
+      </div>`;
+    if (focus && $(focus)) { $(focus).focus(); try { if (caret != null) $(focus).setSelectionRange(caret, caret); } catch {} }
+  }
+
+  const grid = $('grid');
+  grid.addEventListener('input', e => {
+    const t = e.target;
+    if (t.id === 'dname') S.p.name = t.value;
+    else if (t.id === 'pcur') S.cur = t.value;
+    else if (t.id === 'pnew') S.nw = t.value;
+    else if (t.id === 'pcf') S.cf = t.value;
+    else return;
+    render();
+  });
+  grid.addEventListener('change', e => {
+    const f = e.target.id === 'phFile' && e.target.files[0]; if (!f) return;
+    if (f.size > 2 * 1024 * 1024) return toast('That photo is over 2 MB. Pick a smaller one');
+    const r = new FileReader(); r.onload = () => { S.p.photo = r.result; render(); }; r.readAsDataURL(f);
+  });
+  grid.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.color) { S.p.color = b.dataset.color; return render(); }
+    if (b.dataset.themePick) { S.theme = b.dataset.themePick; if (S.theme === 'os') delete root.dataset.theme; else root.dataset.theme = S.theme; document.querySelectorAll('.preview [data-theme-set]').forEach(x => x.setAttribute('aria-pressed', x.dataset.themeSet === S.theme)); return render(); }
+    if (b.dataset.density) { S.density = b.dataset.density; if (S.density === 'compact') delete root.dataset.density; else root.dataset.density = S.density; return render(); }
+    if (b.dataset.leave) { S.leaving = b.dataset.leave; return render(); }
+    if (b.hasAttribute('data-leave-cancel')) { S.leaving = null; return render(); }
+    if (b.dataset.leaveGo) { const k = b.dataset.leaveGo; mine.splice(mine.findIndex(m => m.key === k), 1); S.leaving = null; toast(`You left <b>${k}</b>`); return render(); }
+    if (b.id === 'pSave') { Object.assign(P0, S.p); me.name = S.p.name; me.color = S.p.color; me.initials = initials(S.p.name); document.querySelectorAll('.side .me .av, .user-menu .who .av').forEach(a => { a.style.cssText = avStyle(S.p); a.textContent = S.p.photo ? '' : me.initials; }); document.querySelector('.side .me > span:nth-child(2)').textContent = me.name; toast('Profile saved. Everyone sees the change straight away'); return render(); }
+    if (b.id === 'phRemove') { S.p.photo = null; return render(); }
+    if (b.id === 'pDiscard') { S.p = { ...P0 }; return render(); }
+    if (b.id === 'pwGo') { S.cur = S.nw = S.cf = ''; toast('Password changed. Your other sessions are signed out'); return render(); }
+    if (b.id === 'outOthers') return toast('Signed out of 2 other sessions');
+    if (b.id === 'resetViews') return toast('Saved views reset. Boards and backlogs open with their defaults');
+  });
+  if (new URLSearchParams(location.search).has('photo')) S.p.photo = P0.photo = SAMPLE_PHOTO; // ?photo: a saved photo
+  render();
+  SL.preview([
+    { label: 'With a photo', run: () => { S.p.photo = S.p.photo ? null : SAMPLE_PHOTO; render(); } },
+    { label: 'Leave a project', run: () => { S.leaving = 'PAY'; render(); } },
+  ]);
+})();
+</script>
+</body>
+</html>

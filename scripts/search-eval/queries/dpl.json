@@ -1,0 +1,131 @@
+[
+  {
+    "id": "dpl-q01",
+    "text": "DPL-3",
+    "kind": "exactKey",
+    "expected": [
+      "dpl-003"
+    ]
+  },
+  {
+    "id": "dpl-q02",
+    "text": "dpl64",
+    "kind": "exactKey",
+    "expected": [
+      "dpl-064"
+    ]
+  },
+  {
+    "id": "dpl-q03",
+    "text": "lineage",
+    "kind": "titleWord",
+    "expected": [
+      "dpl-073"
+    ]
+  },
+  {
+    "id": "dpl-q04",
+    "text": "watermarks",
+    "kind": "titleWord",
+    "expected": [
+      "dpl-024"
+    ]
+  },
+  {
+    "id": "dpl-q05",
+    "text": "special characters look garbled when finance opens the download in a spreadsheet",
+    "kind": "paraphrase",
+    "expected": [
+      "dpl-052"
+    ]
+  },
+  {
+    "id": "dpl-q06",
+    "text": "the first dashboard load on Monday morning is painfully slow",
+    "kind": "paraphrase",
+    "expected": [
+      "dpl-031"
+    ]
+  },
+  {
+    "id": "dpl-q07",
+    "text": "renaming a column upstream makes records vanish without any warning",
+    "kind": "paraphrase",
+    "expected": [
+      "dpl-012"
+    ]
+  },
+  {
+    "id": "dpl-q08",
+    "text": "why a thousands separator makes raw values ambiguous",
+    "kind": "bodyOnly",
+    "expected": [
+      "dpl-056"
+    ]
+  },
+  {
+    "id": "dpl-q09",
+    "text": "nobody had ever looked at that line on the monthly cost report",
+    "kind": "bodyOnly",
+    "expected": [
+      "dpl-059"
+    ]
+  },
+  {
+    "id": "dpl-q10",
+    "text": "merge join spills hash batches to temporary files",
+    "kind": "bodyOnly",
+    "expected": [
+      "dpl-085"
+    ]
+  },
+  {
+    "id": "dpl-q11",
+    "text": "pg_repack",
+    "kind": "commentOnly",
+    "expected": [
+      "dpl-085"
+    ]
+  },
+  {
+    "id": "dpl-q12",
+    "text": "Kerberos ticket expiry",
+    "kind": "commentOnly",
+    "expected": [
+      "dpl-063"
+    ]
+  },
+  {
+    "id": "dpl-q13",
+    "text": "dedup",
+    "kind": "prefix",
+    "expected": [
+      "dpl-015"
+    ]
+  },
+  {
+    "id": "dpl-q14",
+    "text": "compac",
+    "kind": "prefix",
+    "expected": [
+      "dpl-087",
+      "dpl-091"
+    ]
+  },
+  {
+    "id": "dpl-q15",
+    "text": "Zeitzone nach der Zeitumstellung falsch",
+    "kind": "nonEnglish",
+    "expected": [
+      "dpl-023"
+    ]
+  },
+  {
+    "id": "dpl-q16",
+    "text": "exportar el informe mensual a Excel con coma decimal",
+    "kind": "nonEnglish",
+    "expected": [
+      "dpl-057"
+    ]
+  }
+]

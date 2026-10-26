@@ -1,0 +1,102 @@
+{
+  "revisions": [
+    {
+      "row": { "workItemId": "00000005-0000-4000-8001-000000000141", "workItemKey": "SHIP-141", "rev": 1, "changedBy": "00000001-0000-4000-8000-000000000006", "changedAt": "2026-10-09T14:00:00Z", "originalSystem": null, "importJobId": null },
+      "changes": [
+        { "field": "title", "from": null, "to": "Pay with saved card", "fromLabel": null, "toLabel": null },
+        { "field": "type", "from": null, "to": "story", "fromLabel": null, "toLabel": null },
+        { "field": "state", "from": null, "to": "00000003-0000-4000-8001-000000000301", "fromLabel": null, "toLabel": "New" },
+        { "field": "priority", "from": null, "to": 3, "fromLabel": null, "toLabel": null },
+        { "field": "tags", "from": [], "to": ["Checkout"], "fromLabel": null, "toLabel": null },
+        { "field": "description", "from": null, "to": "As a returning customer, I want to pay with a card I saved before, so I don't have to type the number again.", "fromLabel": null, "toLabel": null }
+      ]
+    },
+    {
+      "row": { "workItemId": "00000005-0000-4000-8001-000000000141", "workItemKey": "SHIP-141", "rev": 2, "changedBy": "00000001-0000-4000-8000-000000000006", "changedAt": "2026-10-12T16:15:00Z", "originalSystem": null, "importJobId": null },
+      "changes": [
+        { "field": "priority", "from": 3, "to": 2, "fromLabel": null, "toLabel": null },
+        { "field": "points", "from": null, "to": 3, "fromLabel": null, "toLabel": null }
+      ]
+    },
+    {
+      "row": { "workItemId": "00000005-0000-4000-8001-000000000141", "workItemKey": "SHIP-141", "rev": 3, "changedBy": "00000001-0000-4000-8000-000000000002", "changedAt": "2026-10-13T10:30:00Z", "originalSystem": null, "importJobId": null },
+      "changes": [
+        { "field": "parent", "from": null, "to": "00000005-0000-4000-8001-000000000101", "fromLabel": null, "toLabel": "Checkout v2" },
+        { "field": "description", "from": "As a returning customer, I want to pay with a card I saved before, so I don't have to type the number again.", "to": "As a returning customer, I want to pay with a card I saved before, so I don't have to type the number again.\n\nCards live in the **vault service** as tokens; we never see the card number. Show the brand, the last four digits and the expiry from `GET /cards`.\n\n- Default to the card used last\n- Expired cards are shown but can't be picked\n- Fall back to the new-card form if the vault is down", "fromLabel": null, "toLabel": null },
+        { "field": "acceptanceCriteria", "from": [], "to": [
+          { "text": "Saved cards show brand, last four digits and expiry", "done": true },
+          { "text": "The card used last is selected by default", "done": true },
+          { "text": "Expired cards are greyed out and can't be selected", "done": false },
+          { "text": "Paying with a saved card skips the card form and goes straight to Review", "done": false },
+          { "text": "If the vault is unavailable, the new-card form shows with a notice", "done": false }
+        ], "fromLabel": null, "toLabel": null },
+        { "field": "links", "from": [], "to": [
+          { "type": "predecessor", "workItemId": "00000005-0000-4000-8001-000000000120", "key": "SHIP-120", "url": null, "title": null },
+          { "type": "successor", "workItemId": "00000005-0000-4000-8001-000000000158", "key": "SHIP-158", "url": null, "title": null },
+          { "type": "related", "workItemId": "00000005-0000-4000-8001-000000000144", "key": "SHIP-144", "url": null, "title": null },
+          { "type": "url", "workItemId": null, "key": null, "url": "https://wiki.example.com/payments/card-vault", "title": "Card vault API notes" }
+        ], "fromLabel": null, "toLabel": null }
+      ]
+    },
+    {
+      "row": { "workItemId": "00000005-0000-4000-8001-000000000141", "workItemKey": "SHIP-141", "rev": 4, "changedBy": "00000001-0000-4000-8000-000000000004", "changedAt": "2026-10-15T11:02:00Z", "originalSystem": null, "importJobId": null },
+      "changes": [
+        { "field": "points", "from": 3, "to": 5, "fromLabel": null, "toLabel": null },
+        { "field": "tags", "from": ["Checkout"], "to": ["Checkout", "PCI"], "fromLabel": null, "toLabel": null }
+      ]
+    },
+    {
+      "row": { "workItemId": "00000005-0000-4000-8001-000000000141", "workItemKey": "SHIP-141", "rev": 5, "changedBy": "00000001-0000-4000-8000-000000000003", "changedAt": "2026-10-16T15:40:00Z", "originalSystem": null, "importJobId": null },
+      "changes": [
+        { "field": "sprint", "from": null, "to": "00000004-0000-4000-8001-000000000024", "fromLabel": null, "toLabel": "Sprint 24" }
+      ]
+    },
+    {
+      "row": { "workItemId": "00000005-0000-4000-8001-000000000141", "workItemKey": "SHIP-141", "rev": 6, "changedBy": "00000001-0000-4000-8000-000000000002", "changedAt": "2026-10-19T09:12:00Z", "originalSystem": null, "importJobId": null },
+      "changes": [
+        { "field": "state", "from": "00000003-0000-4000-8001-000000000301", "to": "00000003-0000-4000-8001-000000000302", "fromLabel": "New", "toLabel": "Active" },
+        { "field": "assignee", "from": null, "to": "00000001-0000-4000-8000-000000000002", "fromLabel": null, "toLabel": "Priya Shah" }
+      ]
+    },
+    {
+      "row": { "workItemId": "00000005-0000-4000-8001-000000000158", "workItemKey": "SHIP-158", "rev": 2, "changedBy": "00000001-0000-4000-8000-000000000003", "changedAt": "2026-10-20T10:00:00Z", "originalSystem": null, "importJobId": null },
+      "changes": [
+        { "field": "title", "from": "Gift card balance", "to": "Gift card balance check", "fromLabel": null, "toLabel": null },
+        { "field": "description", "from": null, "to": "Let a customer check a gift card's balance before checkout.", "fromLabel": null, "toLabel": null }
+      ]
+    },
+    {
+      "row": { "workItemId": "00000005-0000-4000-8001-000000000153", "workItemKey": "SHIP-153", "rev": 1, "changedBy": "00000001-0000-4000-8000-000000000005", "changedAt": "2026-09-28T17:45:00Z", "originalSystem": "jira", "importJobId": "00000006-0000-4000-8000-000000000003" },
+      "changes": [
+        { "field": "title", "from": null, "to": "Crash when biometric prompt is cancelled", "fromLabel": null, "toLabel": null },
+        { "field": "type", "from": null, "to": "bug", "fromLabel": null, "toLabel": null },
+        { "field": "state", "from": null, "to": "00000003-0000-4000-8001-000000000401", "fromLabel": null, "toLabel": "New" },
+        { "field": "priority", "from": null, "to": 2, "fromLabel": null, "toLabel": null },
+        { "field": "points", "from": null, "to": 2, "fromLabel": null, "toLabel": null },
+        { "field": "severity", "from": null, "to": 3, "fromLabel": null, "toLabel": null },
+        { "field": "description", "from": null, "to": "The app closes when someone cancels the Face ID prompt during passkey sign-in. iOS only; Android handles the cancel and returns to the sign-in screen.", "fromLabel": null, "toLabel": null },
+        { "field": "reproSteps", "from": null, "to": "1. Sign in with a passkey on iOS 18.1\n2. Lock and unlock the app so the biometric prompt shows\n3. Tap **Cancel** on the Face ID prompt\n\n**Expected:** back to the sign-in screen with the password option.\n**Actual:** the app closes. Crash log attached (app 4.12.0, build 881).", "fromLabel": null, "toLabel": null }
+      ]
+    },
+    {
+      "row": { "workItemId": "00000005-0000-4000-8001-000000000153", "workItemKey": "SHIP-153", "rev": 2, "changedBy": "00000001-0000-4000-8000-000000000005", "changedAt": "2026-09-30T11:20:00Z", "originalSystem": "jira", "importJobId": "00000006-0000-4000-8000-000000000003" },
+      "changes": [
+        { "field": "priority", "from": 2, "to": 1, "fromLabel": null, "toLabel": null },
+        { "field": "tags", "from": [], "to": ["Crash", "iOS"], "fromLabel": null, "toLabel": null }
+      ]
+    },
+    {
+      "row": { "workItemId": "00000005-0000-4000-8001-000000000153", "workItemKey": "SHIP-153", "rev": 3, "changedBy": null, "changedAt": "2026-10-05T08:30:00Z", "originalSystem": null, "importJobId": "00000006-0000-4000-8000-000000000003" },
+      "changes": [
+        { "field": "points", "from": 2, "to": 3, "fromLabel": null, "toLabel": null }
+      ]
+    },
+    {
+      "row": { "workItemId": "00000005-0000-4000-8001-000000000153", "workItemKey": "SHIP-153", "rev": 4, "changedBy": "00000001-0000-4000-8000-000000000006", "changedAt": "2026-10-22T14:05:00Z", "originalSystem": null, "importJobId": null },
+      "changes": [
+        { "field": "sprint", "from": null, "to": "00000004-0000-4000-8001-000000000025", "fromLabel": null, "toLabel": "Sprint 25" },
+        { "field": "severity", "from": 3, "to": 2, "fromLabel": null, "toLabel": null }
+      ]
+    }
+  ]
+}

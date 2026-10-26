@@ -1,0 +1,181 @@
+[
+  {
+    "id": "10000",
+    "name": "Epic",
+    "subtask": false,
+    "statuses": [
+      {
+        "id": "10005",
+        "name": "To Do",
+        "statusCategory": {
+          "key": "new",
+          "name": "To Do"
+        }
+      },
+      {
+        "id": "3",
+        "name": "In Progress",
+        "statusCategory": {
+          "key": "indeterminate",
+          "name": "In Progress"
+        }
+      },
+      {
+        "id": "10004",
+        "name": "Done",
+        "statusCategory": {
+          "key": "done",
+          "name": "Done"
+        }
+      }
+    ]
+  },
+  {
+    "id": "10001",
+    "name": "Story",
+    "subtask": false,
+    "statuses": [
+      {
+        "id": "10000",
+        "name": "Backlog",
+        "statusCategory": {
+          "key": "new",
+          "name": "To Do"
+        }
+      },
+      {
+        "id": "10001",
+        "name": "Selected for Development",
+        "statusCategory": {
+          "key": "new",
+          "name": "To Do"
+        }
+      },
+      {
+        "id": "3",
+        "name": "In Progress",
+        "statusCategory": {
+          "key": "indeterminate",
+          "name": "In Progress"
+        }
+      },
+      {
+        "id": "10002",
+        "name": "In Review",
+        "statusCategory": {
+          "key": "indeterminate",
+          "name": "In Progress"
+        }
+      },
+      {
+        "id": "10003",
+        "name": "Waiting for Vendor",
+        "statusCategory": {
+          "key": "indeterminate",
+          "name": "In Progress"
+        }
+      },
+      {
+        "id": "10004",
+        "name": "Done",
+        "statusCategory": {
+          "key": "done",
+          "name": "Done"
+        }
+      }
+    ]
+  },
+  {
+    "id": "10004",
+    "name": "Bug",
+    "subtask": false,
+    "statuses": [
+      {
+        "id": "10000",
+        "name": "Backlog",
+        "statusCategory": {
+          "key": "new",
+          "name": "To Do"
+        }
+      },
+      {
+        "id": "3",
+        "name": "In Progress",
+        "statusCategory": {
+          "key": "indeterminate",
+          "name": "In Progress"
+        }
+      },
+      {
+        "id": "10004",
+        "name": "Done",
+        "statusCategory": {
+          "key": "done",
+          "name": "Done"
+        }
+      }
+    ]
+  },
+  {
+    "id": "10002",
+    "name": "Task",
+    "subtask": false,
+    "statuses": [
+      {
+        "id": "10005",
+        "name": "To Do",
+        "statusCategory": {
+          "key": "new",
+          "name": "To Do"
+        }
+      },
+      {
+        "id": "3",
+        "name": "In Progress",
+        "statusCategory": {
+          "key": "indeterminate",
+          "name": "In Progress"
+        }
+      },
+      {
+        "id": "10004",
+        "name": "Done",
+        "statusCategory": {
+          "key": "done",
+          "name": "Done"
+        }
+      }
+    ]
+  },
+  {
+    "id": "10003",
+    "name": "Sub-task",
+    "subtask": true,
+    "statuses": [
+      {
+        "id": "10005",
+        "name": "To Do",
+        "statusCategory": {
+          "key": "new",
+          "name": "To Do"
+        }
+      },
+      {
+        "id": "3",
+        "name": "In Progress",
+        "statusCategory": {
+          "key": "indeterminate",
+          "name": "In Progress"
+        }
+      },
+      {
+        "id": "10004",
+        "name": "Done",
+        "statusCategory": {
+          "key": "done",
+          "name": "Done"
+        }
+      }
+    ]
+  }
+]

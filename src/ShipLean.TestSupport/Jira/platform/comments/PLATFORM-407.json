@@ -1,0 +1,34 @@
+{
+  "startAt": 0,
+  "maxResults": 50,
+  "total": 1,
+  "comments": [
+    {
+      "id": "30701",
+      "author": {
+        "accountId": "5b109f2e9729b51b54ef34d1",
+        "displayName": "Mei Lin",
+        "emailAddress": "mei.lin@acme.io",
+        "active": true,
+        "self": "{{base}}/rest/api/{{v}}/user?accountId=5b109f2e9729b51b54ef34d1"
+      },
+      "body": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Going with a token bucket; the decision note is on the subtask."
+              }
+            ]
+          }
+        ]
+      },
+      "created": "2026-10-08T15:05:00.000+0000",
+      "updated": "2026-10-08T15:05:00.000+0000"
+    }
+  ]
+}

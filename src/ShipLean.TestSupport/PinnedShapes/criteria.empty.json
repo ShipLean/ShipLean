@@ -1,0 +1,8 @@
+{
+  "match": "all",
+  "clauses": [
+    { "field": "points", "op": "isEmpty", "value": null },
+    { "field": "sprint", "op": "isNotEmpty", "value": null },
+    { "field": "tags", "op": "isEmpty", "value": null }
+  ]
+}

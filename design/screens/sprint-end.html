@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Sprint end (reference)</title>
+<!--
+  Reference Sprint end dialog, as seen on Mon 2 Nov after Sprint 24 ended.
+  Open directly in a browser. Uses ../tokens.css, shiplean.css and shared.js only; no build step.
+  There is no "close sprint" action: status comes from the dates. The dialog opens the first time a member
+  opens a Sprints or Backlog screen after a sprint's end date while the sprint still holds stories or bugs
+  whose state category isn't Completed. Anyone on the team can apply it; once applied it is gone for everyone
+  (real-time). "Decide later" leaves a banner on the sprint until someone does.
+  Each unfinished item defaults to the next sprint. Moving writes an ordinary sprint_id change; open tasks
+  move with their story and closed tasks stay, so the ended sprint's committed / completed history is intact.
+  Working: per-item destination, Set all, live total for the next sprint against its team capacity, Apply,
+  Decide later (shows the banner), Esc closes.
+  The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot).
+-->
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="shiplean.css">
+<script src="shared.js"></script>
+<style>
+.head { padding: var(--space-3) var(--space-4); background: var(--color-surface); border-bottom: 1px solid var(--color-border); flex: none; }
+.head h1 { margin: 0; font-size: var(--text-lg); font-weight: var(--weight-semibold); display: flex; gap: var(--space-2); align-items: center; }
+.banner { display: none; gap: var(--space-2); align-items: center; padding: var(--space-2) var(--space-4); background: color-mix(in srgb, var(--color-warn) 16%, var(--color-surface)); border-bottom: 1px solid var(--color-border); font-size: var(--text-sm); flex: none; }
+.banner.show { display: flex; }
+.ro { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-3); align-items: center; padding: var(--space-2) 0; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.ro .meta { display: flex; gap: var(--space-2); align-items: center; margin-top: 2px; }
+.ro select { width: 220px; }
+</style>
+</head>
+<body>
+<div id="appbar"></div>
+<section class="head">
+  <h1>Sprint 24 <span class="chip">Ended</span></h1>
+  <div class="sm muted">Mon 19 Oct – Fri 30 Oct · Goal: Customers can check out with a saved card; passkey sign-in behind a flag.</div>
+</section>
+<div class="banner" id="banner"><span><b>Sprint 24 has 2 unfinished items.</b> Decide where they go.</span><button class="btn" type="button" id="reopen">Review</button></div>
+<div class="toolbar"><div id="tabs"></div></div>
+<div class="scroll">
+  <table class="list">
+    <thead><tr><th>Title</th><th style="width:96px">Key</th><th style="width:120px">State</th><th style="width:90px">Assigned</th><th class="num" style="width:56px">Pts</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+</div>
+
+<div class="backdrop" id="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgTitle">
+  <div class="dialog">
+    <header>
+      <div><h2 id="dlgTitle">Sprint 24 ended on Fri 30 Oct</h2><div class="sm muted" id="dlgSub"></div></div>
+      <span class="spacer"></span><button class="ib" type="button" data-close aria-label="Close">✕</button>
+    </header>
+    <div class="body">
+      <div id="unfinished"></div>
+      <div class="row"><span class="sm muted">Set all to</span><button class="btn" type="button" data-all="s25">Sprint 25</button><button class="btn" type="button" data-all="backlog">Top of backlog</button><button class="btn" type="button" data-all="stay">Leave in Sprint 24</button></div>
+      <div class="callout" id="after"></div>
+      <div class="callout"><b>History stays as it was</b>Sprint 24 keeps 21 committed / 10 completed for velocity, because both come from revisions at its end date. Open tasks move with their story; closed tasks stay in Sprint 24.</div>
+    </div>
+    <footer><span class="xs muted">Anyone on the team can do this. Once applied, it's done for everyone.</span><span class="spacer"></span><button class="btn" type="button" data-later>Decide later</button><button class="btn primary" type="button" id="apply">Apply</button></footer>
+  </div>
+</div>
+
+<script>
+(() => {
+  const { items, sprints, tasks, stateCategory, teamCapacity, committed, tIcon, st, av, esc, toast } = SL;
+  document.getElementById('appbar').outerHTML = SL.appBar('sprints');
+  document.getElementById('tabs').outerHTML = SL.sprintTabs('backlog');
+
+  // Two weeks on: by Fri 30 Oct, SHIP-141 was finished; SHIP-129 and SHIP-144 were not.
+  const sprintItems = items.filter(i => i.sprint === 's24').map(i => ({ ...i, state: i.key === 'SHIP-141' ? 'Closed' : i.state }));
+  const unfinished = sprintItems.filter(i => stateCategory[i.state] !== 'completed');
+  const choice = Object.fromEntries(unfinished.map(i => [i.key, 's25']));
+  const s25 = sprints.find(s => s.id === 's25');
+
+  document.getElementById('rows').innerHTML = sprintItems.map(i => `<tr class="item"><td><div class="title-cell">${tIcon(i.type)}<span class="t">${esc(i.title)}</span></div></td>
+    <td class="key">${i.key}</td><td>${st(i.state)}</td><td>${av(i.assignee)}</td><td class="pts">${i.points}</td></tr>`).join('');
+
+  const done = sprintItems.filter(i => stateCategory[i.state] === 'completed').reduce((a, i) => a + i.points, 0);
+  const total = sprintItems.reduce((a, i) => a + i.points, 0);
+  const left = unfinished.reduce((a, i) => a + i.points, 0);
+  document.getElementById('dlgSub').textContent = `${done} of ${total} committed points completed · ${unfinished.length} items unfinished (${left} pts)`;
+
+  const box = document.getElementById('unfinished');
+  box.innerHTML = unfinished.map(i => {
+    const t = tasks[i.key] || [], open = t.filter(x => stateCategory[x[1]] !== 'completed').length;
+    return `<div class="ro"><div><div class="title-cell">${tIcon(i.type)}<span class="key">${i.key}</span><span class="t">${esc(i.title)}</span></div>
+      <div class="meta">${st(i.state)}<span class="chip">${i.points} pts</span><span class="chip">${open} of ${t.length} tasks open</span>${av(i.assignee)}</div></div>
+      <select class="field" data-key="${i.key}" aria-label="Where ${i.key} goes"><option value="s25">Move to Sprint 25</option><option value="backlog">Back to top of backlog</option><option value="stay">Leave in Sprint 24</option></select></div>`;
+  }).join('');
+
+  function update() {
+    box.querySelectorAll('select').forEach(sel => { sel.value = choice[sel.dataset.key]; });
+    const moved = unfinished.filter(i => choice[i.key] === 's25').reduce((a, i) => a + i.points, 0);
+    const now = committed('s25') + moved, cap = teamCapacity(s25), over = now > cap;
+    const el = document.getElementById('after');
+    el.className = 'callout' + (over ? ' warn' : '');
+    el.innerHTML = `<b>Sprint 25 after this: ${now} / ${cap} pts</b>${over ? `${now - cap} over team capacity. A warning only; nothing is blocked.` : `${cap - now} pts of room left.`}`;
+  }
+  box.addEventListener('change', e => { const s = e.target.closest('select'); if (s) { choice[s.dataset.key] = s.value; update(); } });
+  document.querySelectorAll('[data-all]').forEach(b => b.onclick = () => { unfinished.forEach(i => { choice[i.key] = b.dataset.all; }); update(); });
+
+  const dlg = document.getElementById('dlg'), banner = document.getElementById('banner');
+  const show = () => { dlg.style.display = ''; banner.classList.remove('show'); box.querySelector('select')?.focus(); };
+  const later = () => { dlg.style.display = 'none'; banner.classList.add('show'); };
+  dlg.querySelector('[data-close]').onclick = later;
+  dlg.querySelector('[data-later]').onclick = later;
+  dlg.addEventListener('click', e => { if (e.target === dlg) later(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && dlg.style.display !== 'none') later(); });
+  document.getElementById('reopen').onclick = show;
+  document.getElementById('apply').onclick = () => {
+    dlg.style.display = 'none';
+    const n = unfinished.filter(i => choice[i.key] !== 'stay').length;
+    toast(`Moved ${n} item${n === 1 ? '' : 's'} out of Sprint 24`);
+  };
+  update();
+  SL.preview([{ label: 'Reopen dialog', run: show }]);
+})();
+</script>
+</body>
+</html>

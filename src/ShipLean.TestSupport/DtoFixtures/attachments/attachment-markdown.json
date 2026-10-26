@@ -1,0 +1,78 @@
+{
+  "markdownView": {
+    "attachment": {
+      "id": "00000009-0000-4000-8001-000000000003",
+      "workItemId": "00000005-0000-4000-8001-000000000141",
+      "name": "vault-notes.md",
+      "contentType": "text/markdown",
+      "sizeBytes": 2310,
+      "uploadedBy": {
+        "id": "00000001-0000-4000-8000-000000000004",
+        "name": "Mei Lin",
+        "initials": "ML",
+        "avatarColour": "#7b4fc9",
+        "photoUrl": null
+      },
+      "createdAt": "2026-10-24T08:30:00+00:00",
+      "createdLabel": "24 Oct",
+      "downloadUrl": "/api/attachments/00000009-0000-4000-8001-000000000003/content",
+      "kind": "markdown",
+      "replacedCount": 2,
+      "agentName": "Claude Code (claude.ai)",
+      "via": "attach_file"
+    },
+    "workItem": {
+      "id": "00000005-0000-4000-8001-000000000141",
+      "key": "SHIP-141",
+      "title": "Saved card picker",
+      "type": {
+        "id": "story",
+        "name": "User Story"
+      }
+    },
+    "markdown": "# Vault notes\n\n## Tokens\n\nSee ![diagram](saved-card-picker.png).\n",
+    "html": "<h1 id=\"vault-notes\">Vault notes</h1>\n<h2 id=\"tokens\">Tokens</h2>\n<figure data-md-image=\"attached\"><img src=\"/api/attachments/00000009-0000-4000-8001-000000000001/content\" alt=\"diagram\"><figcaption>saved-card-picker.png</figcaption></figure>\n",
+    "outline": [
+      {
+        "level": 1,
+        "text": "Vault notes",
+        "anchor": "vault-notes"
+      },
+      {
+        "level": 2,
+        "text": "Tokens",
+        "anchor": "tokens"
+      }
+    ],
+    "images": [
+      {
+        "src": "saved-card-picker.png",
+        "status": "attached",
+        "attachmentId": "00000009-0000-4000-8001-000000000001"
+      }
+    ],
+    "siblings": [
+      {
+        "id": "00000009-0000-4000-8001-000000000004",
+        "workItemId": "00000005-0000-4000-8001-000000000141",
+        "name": "rollout-plan.md",
+        "contentType": "text/markdown",
+        "sizeBytes": 980,
+        "uploadedBy": {
+          "id": "00000001-0000-4000-8000-000000000004",
+          "name": "Mei Lin",
+          "initials": "ML",
+          "avatarColour": "#7b4fc9",
+          "photoUrl": null
+        },
+        "createdAt": "2026-10-24T08:30:00+00:00",
+        "createdLabel": "24 Oct",
+        "downloadUrl": "/api/attachments/00000009-0000-4000-8001-000000000004/content",
+        "kind": "markdown",
+        "replacedCount": 0,
+        "agentName": null,
+        "via": null
+      }
+    ]
+  }
+}

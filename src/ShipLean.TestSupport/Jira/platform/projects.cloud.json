@@ -1,0 +1,31 @@
+{
+  "self": "{{base}}/rest/api/3/project/search",
+  "maxResults": 50,
+  "startAt": 0,
+  "total": 2,
+  "isLast": true,
+  "values": [
+    {
+      "self": "{{base}}/rest/api/{{v}}/project/10040",
+      "id": "10040",
+      "key": "PLATFORM",
+      "name": "Platform Team",
+      "projectTypeKey": "software",
+      "simplified": false,
+      "style": "classic",
+      "isPrivate": false,
+      "avatarUrls": {}
+    },
+    {
+      "self": "{{base}}/rest/api/{{v}}/project/10041",
+      "id": "10041",
+      "key": "INFRA",
+      "name": "Infrastructure",
+      "projectTypeKey": "software",
+      "simplified": false,
+      "style": "classic",
+      "isPrivate": false,
+      "avatarUrls": {}
+    }
+  ]
+}

@@ -1,0 +1,747 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Project settings (reference)</title>
+<!--
+  Reference Project settings: SHIP › Settings, for the Storefront project.
+  Open directly in a browser. Uses ../tokens.css, shiplean.css and shared.js only; no build step.
+  A tab list on the left (General, States, Members, Sprints & forecast, Integrations) and one draft of the
+  whole project's settings. Every edit is held until Save; the header shows how many changes are unsaved
+  (click it for the list), tabs and types with changes get a dot, changed rows get a warn edge, and Discard
+  puts everything back. Ctrl/⌘+S saves. Validation is inline; Save with errors jumps to the first one.
+  Working:
+    General: edit the name and description; the project key SHIP is read-only (locked, with why); the next
+      item number SHIP-184 is information only; toggle working days Mon–Sun (at least one).
+    States (opens here, on Bug, to show the custom state): pick a type, then rename a state in place, change
+      its category (the dot's colour follows the category, never the name), drag ⠿ to reorder (or Alt+↑/↓
+      on the grip), + Add state, and the ⋯ menu (Rename, Move up, Move down, Delete). Deleting a state that
+      has items asks where to move them first; the last Proposed or Completed state can't be deleted. Names
+      must be unique per type, and every type needs a Proposed and a Completed state. Bug has a custom state,
+      Triaged (Proposed) and a custom Task state In review (Resolved), as on the Taskboard. The board column each state maps to is shown; a new state shows Not mapped.
+    Members: change a role, remove someone (staged, with Undo), + Add member searches people on this server.
+      The last admin can't be removed or made a Member.
+    Sprints & forecast: link to All sprints; sprint length shows the current behaviour (copy the last
+      sprint's length); the velocity window and override update the forecast velocity and the history table.
+    Integrations: the Jira connection summary, Test connection, and a link to Jira import.
+  Open on another tab with #general, #members, #sprints or #integrations.
+  The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot). It also
+  shows a blocked delete, the last-admin rule and the read-only view a non-admin member gets.
+-->
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="shiplean.css">
+<script src="shared.js"></script>
+<style>
+[hidden] { display: none !important; }
+.head { display: flex; gap: var(--space-3); align-items: center; padding: var(--space-3) var(--space-4); background: var(--color-surface); border-bottom: 1px solid var(--color-border); flex: none; flex-wrap: wrap; position: relative; }
+.head h1 { margin: 0; font-size: var(--text-lg); font-weight: var(--weight-semibold); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn.primary:disabled:hover { filter: none; }
+.btn.danger { color: var(--color-danger); border-color: color-mix(in srgb, var(--color-danger) 45%, var(--color-border)); }
+.saved { display: inline-flex; gap: 6px; align-items: center; font-size: var(--text-sm); color: var(--color-muted); }
+.saved i { font-style: normal; color: var(--color-ok); font-weight: var(--weight-semibold); }
+.dirty { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 9px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--color-warn) 20%, transparent); font-size: var(--text-xs); font-weight: var(--weight-semibold); cursor: pointer; }
+.dirty::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--color-warn); }
+.dirty:focus-visible { outline: 2px solid var(--color-accent); }
+.errsum { font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--color-danger); }
+.changes { position: absolute; top: calc(100% - 6px); right: var(--space-4); z-index: 30; width: 340px; padding: var(--space-2); display: grid; gap: 2px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-raised); }
+.changes button { display: flex; gap: var(--space-2); align-items: baseline; padding: 4px 6px; border: 0; border-radius: var(--radius-sm); background: transparent; text-align: left; font-size: var(--text-sm); cursor: pointer; }
+.changes button:hover { background: var(--color-accent-soft); }
+.changes button span:first-child { flex: none; width: 74px; font-size: var(--text-xs); color: var(--color-muted); }
+
+.sbody { flex: 1; min-height: 0; display: grid; grid-template-columns: 200px minmax(0, 1fr); }
+.stabs { display: flex; flex-direction: column; gap: 2px; padding: var(--space-3) var(--space-2); background: var(--color-surface); border-right: 1px solid var(--color-border); overflow: auto; }
+.stab { display: flex; align-items: center; gap: var(--space-2); height: 30px; padding: 0 var(--space-2); border-radius: var(--radius-sm); color: var(--color-muted); font-size: var(--text-base); font-weight: var(--weight-medium); text-decoration: none; }
+.stab:hover { background: var(--color-surface-2); color: var(--color-text); }
+.stab[aria-current="page"] { background: var(--color-accent-soft); color: var(--color-text); font-weight: var(--weight-semibold); }
+.stab:focus-visible { outline: 2px solid var(--color-accent); outline-offset: -1px; }
+.stab .meta { margin-left: auto; font-size: var(--text-xs); font-weight: var(--weight-regular); color: var(--color-muted); }
+.stabs .foot { margin-top: auto; padding: var(--space-2); font-size: var(--text-xs); color: var(--color-muted); }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-warn); flex: none; }
+.dot.err { background: var(--color-danger); }
+.dot:empty:not(.on) { display: none; }
+
+.content { overflow: auto; padding: var(--space-4); display: grid; gap: var(--space-4); align-content: start; background: var(--color-bg); }
+.panel { max-width: 1000px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.panel > header { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; min-height: 44px; padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-border); }
+.panel > header h2 { margin: 0; font-size: var(--text-md); font-weight: var(--weight-semibold); }
+.panel table.list { background: transparent; }
+.panel table.list th { position: static; }
+.pfoot { padding: var(--space-2) var(--space-3); border-top: 1px solid var(--color-border); background: var(--color-bg); border-radius: 0 0 var(--radius-md) var(--radius-md); font-size: var(--text-xs); color: var(--color-muted); }
+.form { display: grid; grid-template-columns: 180px minmax(0, 1fr); }
+.form > .lbl, .form > .ctl { padding: 10px var(--space-3); border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.form > .lbl { font-size: var(--text-sm); font-weight: var(--weight-medium); color: var(--color-muted); padding-top: 15px; }
+.form > .ctl { display: grid; gap: 5px; justify-items: start; align-content: start; font-size: var(--text-sm); }
+.form > :nth-last-child(-n+2) { border-bottom: 0; }
+.hint { font-size: var(--text-xs); color: var(--color-muted); max-width: 620px; }
+.err { font-size: var(--text-xs); font-weight: var(--weight-medium); color: var(--color-danger); }
+.err:empty { display: none; }
+.field[aria-invalid="true"], .name-in[aria-invalid="true"], .seg[aria-invalid="true"] { border-color: var(--color-danger); }
+.w-md { width: 320px; max-width: 100%; }
+.w-lg { width: 520px; max-width: 100%; }
+.num-in { width: 64px; text-align: right; font-variant-numeric: tabular-nums; }
+.locked { display: inline-flex; align-items: center; gap: var(--space-2); height: var(--control-height); padding: 0 10px 0 8px; border: 1px dashed var(--color-border); border-radius: var(--radius-sm); background: var(--color-bg); color: var(--color-muted); font-size: var(--text-xs); cursor: not-allowed; }
+.locked svg { width: 12px; height: 12px; }
+.qnote { padding: 6px 10px; border: 1px dashed var(--color-border); border-radius: var(--radius-sm); font-size: var(--text-xs); color: var(--color-muted); max-width: 620px; }
+.qnote b { color: var(--color-text); }
+
+/* States */
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) 270px; gap: var(--space-4); align-items: start; max-width: 1180px; }
+.cols .panel { max-width: none; }
+.stack { display: grid; gap: var(--space-3); align-content: start; }
+.typeseg button { gap: 6px; }
+.typeseg button .n { font-size: var(--text-2xs); color: var(--color-muted); font-variant-numeric: tabular-nums; }
+.typeseg .dot { margin-left: -2px; }
+.sub { display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; padding: var(--space-2) var(--space-3) 0; font-size: var(--text-sm); color: var(--color-muted); }
+.sub b { color: var(--color-text); }
+.type-err { margin: var(--space-2) var(--space-3) 0; padding: 6px 10px; border-left: 3px solid var(--color-danger); background: color-mix(in srgb, var(--color-danger) 10%, var(--color-surface)); border-radius: var(--radius-xs); }
+table.states td { font-size: var(--text-sm); }
+table.states td.grip { width: 22px; padding: 0 0 0 4px; }
+.grip-btn { width: 22px; height: 22px; border: 0; background: none; color: var(--color-muted); cursor: grab; border-radius: var(--radius-xs); opacity: .45; }
+tr.srow:hover .grip-btn, .grip-btn:focus-visible { opacity: 1; background: var(--color-surface-2); }
+tr.srow.dragging { opacity: .4; }
+tr.srow.drop-before td { box-shadow: inset 0 2px 0 var(--color-accent); }
+tr.srow.drop-after td { box-shadow: inset 0 -2px 0 var(--color-accent); }
+tr.changed td:first-child { box-shadow: inset 3px 0 0 var(--color-warn); }
+tr.srow.drop-before.changed td:first-child { box-shadow: inset 3px 0 0 var(--color-warn), inset 0 2px 0 var(--color-accent); }
+.namecell { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.namecell .st { flex: none; }
+.name-in { flex: none; field-sizing: content; min-width: 72px; max-width: 220px; height: 24px; padding: 0 6px; border: 1px solid transparent; border-radius: var(--radius-sm); background: transparent; font-size: var(--text-base); font-weight: var(--weight-medium); }
+.name-in:hover { border-color: var(--color-border); background: var(--color-surface); }
+.name-in:focus { outline: 2px solid var(--color-accent); outline-offset: -1px; border-color: transparent; background: var(--color-surface); }
+.was { font-size: var(--text-xs); color: var(--color-muted); white-space: nowrap; }
+.cat-sel, .role-sel { height: 24px; padding: 0 4px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); font-size: var(--text-sm); cursor: pointer; }
+.cell-err { padding-left: 20px; }
+.notmapped { color: var(--color-warn); font-weight: var(--weight-medium); }
+tr.inline td { height: auto; padding: var(--space-2) var(--space-3) var(--space-2) 34px; background: color-mix(in srgb, var(--color-warn) 10%, var(--color-surface)); font-size: var(--text-sm); }
+tr.inline .row { gap: 6px; }
+tr.inline .acts { display: inline-flex; gap: 6px; margin-left: auto; }
+tr.inline select { height: var(--control-height); }
+.legend { display: grid; gap: 7px; padding: var(--space-3); }
+.legend > div { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: var(--space-2); font-size: var(--text-xs); color: var(--color-muted); align-items: baseline; }
+.legend .st { font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--color-text); }
+.menu { position: fixed; z-index: 45; min-width: 150px; padding: 4px; display: grid; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-raised); }
+.menu button { height: 28px; padding: 0 8px; border: 0; border-radius: var(--radius-sm); background: transparent; text-align: left; font-size: var(--text-sm); cursor: pointer; }
+.menu button:hover:not(:disabled) { background: var(--color-accent-soft); }
+.menu button:disabled { color: var(--color-muted); cursor: default; opacity: .6; }
+.menu .danger { color: var(--color-danger); }
+.menu hr { margin: 4px 2px; border: 0; border-top: 1px solid var(--color-border); }
+
+/* Members */
+.who { display: flex; align-items: center; gap: var(--space-2); }
+.av.neutral { background: var(--color-surface-2); color: var(--color-text); }
+tr.gone td { color: var(--color-muted); }
+tr.gone .who b { text-decoration: line-through; font-weight: var(--weight-regular); }
+.addwrap { position: relative; }
+.addwrap .field { width: 280px; }
+.pop { position: absolute; top: calc(100% + 4px); right: 0; z-index: 30; width: 300px; padding: 4px; display: grid; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-raised); }
+.pop button { display: flex; align-items: center; gap: var(--space-2); height: 34px; padding: 0 8px; border: 0; border-radius: var(--radius-sm); background: transparent; text-align: left; font-size: var(--text-sm); cursor: pointer; }
+.pop button:hover, .pop button.hi { background: var(--color-accent-soft); }
+.pop button span:last-child { margin-left: auto; font-size: var(--text-xs); color: var(--color-muted); }
+.pop .none { padding: var(--space-2); font-size: var(--text-sm); color: var(--color-muted); }
+
+/* Sprints & forecast */
+.vgrid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; }
+.vsum { padding: var(--space-3); border-left: 1px solid var(--color-border); background: var(--color-bg); display: grid; gap: var(--space-2); align-content: start; border-radius: 0 0 var(--radius-md) 0; }
+.vsum table.list { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
+.vsum table.list td { height: 26px; font-size: var(--text-sm); }
+.vsum tr.out td { color: var(--color-muted); }
+.banner { display: flex; gap: var(--space-2); align-items: center; max-width: 1000px; padding: 8px var(--space-3); border: 1px solid var(--color-border); border-left: 3px solid var(--color-info); border-radius: var(--radius-sm); background: var(--color-surface); font-size: var(--text-sm); }
+.ro .grip-btn, .ro [data-menu] { visibility: hidden; }
+.ro .field:disabled, .ro .cat-sel:disabled, .ro .role-sel:disabled, .ro .name-in:disabled { background: var(--color-bg); color: var(--color-muted); cursor: default; }
+.ro .seg button:disabled { cursor: default; }
+dl.facts { display: grid; grid-template-columns: 180px minmax(0, 1fr); margin: 0; }
+@media (max-width: 1100px) { .cols, .vgrid { grid-template-columns: minmax(0, 1fr); } .vsum { border-left: 0; border-top: 1px solid var(--color-border); } }
+@media (max-width: 900px) { .sbody { grid-template-columns: minmax(0, 1fr); } .stabs { flex-direction: row; flex-wrap: wrap; border-right: 0; border-bottom: 1px solid var(--color-border); } .stabs .foot { display: none; } .form { grid-template-columns: minmax(0, 1fr); } .form > .lbl { padding-bottom: 0; border-bottom: 0; } }
+</style>
+</head>
+<body>
+<div id="appbar"></div>
+<section class="head" aria-label="Project settings">
+  <h1>Project settings</h1>
+  <span class="sm muted">Storefront · changes apply to everyone in the project</span>
+  <span class="spacer"></span>
+  <span id="status" class="row"></span>
+  <button class="btn" type="button" id="btnDiscard">Discard</button>
+  <button class="btn primary" type="button" id="btnSave" title="Save (Ctrl+S)">Save</button>
+  <div class="changes" id="changesPop" role="dialog" aria-label="Unsaved changes" hidden></div>
+</section>
+<div class="sbody">
+  <nav class="stabs" id="tabs" aria-label="Settings sections"></nav>
+  <main class="content" id="content"></main>
+</div>
+<div class="menu" id="menu" role="menu" hidden></div>
+
+<script>
+(() => {
+  const { ME, people, items, doneItems, tasks, epics, features, sprints, history, tIcon, av, esc, toast } = SL;
+  document.getElementById('appbar').outerHTML = SL.appBar('settings');
+  const $ = id => document.getElementById(id);
+  const clone = o => JSON.parse(JSON.stringify(o));
+  const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+
+  const TABS = [['general', 'General'], ['states', 'States'], ['members', 'Members'], ['sprints', 'Sprints & forecast'], ['integrations', 'Integrations']];
+  const TYPES = [['epic', 'Epic', 'Epics board'], ['feature', 'Feature', 'Features board'], ['story', 'User Story', 'Stories board'], ['bug', 'Bug', 'Stories board'], ['task', 'Task', 'Taskboard']];
+  const typeLabel = t => TYPES.find(x => x[0] === t)[1];
+  const CATS = { proposed: 'Proposed', 'in-progress': 'In Progress', resolved: 'Resolved', completed: 'Completed', removed: 'Removed' };
+  const CAT_HELP = {
+    proposed: 'Not started. New items start in the first one.',
+    'in-progress': 'Being worked on. Moving an unassigned item here assigns it to you.',
+    resolved: 'Done, waiting to be checked. Still open for burndown and velocity.',
+    completed: 'Done. Counts towards velocity and burndown.',
+    removed: 'Dropped. Hidden from backlogs and boards, never counted.',
+  };
+  const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const NEXT_NUMBER = 184; // project.next_item_number, read-only here
+  const LOCK = '<svg viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="5.5" width="8" height="5.5" rx="1.2" fill="currentColor"/><path d="M4 5.5V4a2 2 0 0 1 4 0v1.5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>';
+
+  /* States: the Agile defaults for every type, plus one custom Bug state (page-local sample). col = the board column mapped to it. */
+  const AGILE = [['New', 'proposed'], ['Active', 'in-progress'], ['Resolved', 'resolved'], ['Closed', 'completed'], ['Removed', 'removed']];
+  const statesFor = t => {
+    // Stories board columns (board.html): New · Ready · In progress · In review · Done. The Taskboard's columns are the Task states.
+    const STORY_COLS = { New: 'New', Active: 'In progress', Resolved: 'In review', Closed: 'Done' };
+    const l = AGILE.map(([name, cat]) => ({ id: `${t}-${name.toLowerCase()}`, name, cat, col: cat === 'removed' ? null : (t === 'story' || t === 'bug') ? STORY_COLS[name] : name }));
+    if (t === 'bug') l.splice(1, 0, { id: 'bug-triaged', name: 'Triaged', cat: 'proposed', col: 'Ready', custom: true });
+    if (t === 'task') l.splice(2, 0, { id: 'task-in review', name: 'In review', cat: 'resolved', col: 'In review', custom: true });
+    return l;
+  };
+
+  /* How many work items sit in each state, from the shared sample data. */
+  const base = {};
+  const bump = (t, s) => { const k = `${t}-${s.toLowerCase()}`; base[k] = (base[k] || 0) + 1; };
+  [...items, ...doneItems].forEach(i => bump(i.type, i.state));
+  epics.forEach(e => bump('epic', e.state));
+  features.forEach(f => bump('feature', f.state));
+  Object.values(tasks).flat().forEach(([, s]) => bump('task', s));
+
+  /* Members (page-local role and joined date) and other people on this ShipLean server. */
+  const META = { priya: ['Admin', '3 Mar 2025'], tom: ['Member', '3 Mar 2025'], mei: ['Member', '12 Jun 2025'], sam: ['Member', '1 Sep 2025'], ana: ['Member', '6 Jan 2026'] };
+  const OTHERS = [['jo', 'Jo Nguyen'], ['lars', 'Lars Berg'], ['kofi', 'Kofi Mensah'], ['rina', 'Rina Sato'], ['dev', 'Dev Patel'], ['hana', 'Hana Novak']]
+    .map(([id, name]) => ({ id, name, initials: name.split(' ').map(w => w[0]).join('') }));
+  const personOf = id => people[id] || OTHERS.find(o => o.id === id);
+  const emailOf = id => personOf(id).name.toLowerCase().replace(' ', '.') + '@storefront.example';
+  const avatar = id => (people[id] ? av(id) : `<span class="av neutral" title="${esc(personOf(id).name)}">${personOf(id).initials}</span>`);
+  const openCount = {};
+  const isOpen = s => !['Closed', 'Removed'].includes(s);
+  items.forEach(i => { if (i.assignee && isOpen(i.state)) openCount[i.assignee] = (openCount[i.assignee] || 0) + 1; });
+  Object.values(tasks).flat().forEach(([, s, a]) => { if (a && isOpen(s)) openCount[a] = (openCount[a] || 0) + 1; });
+
+  let saved = {
+    name: 'Storefront',
+    description: 'The customer-facing web shop: checkout, sign-in and reports for merchants.',
+    days: [true, true, true, true, true, false, false],
+    states: Object.fromEntries(TYPES.map(([t]) => [t, statesFor(t)])),
+    moves: {}, // deleted state id → state id its items move to on save
+    members: Object.keys(people).map(id => ({ id, role: META[id][0], joined: META[id][1] })),
+    window: '3', override: '',
+  };
+  let d = clone(saved);
+  const tabIds = TABS.map(t => t[0]);
+  const view = { tab: tabIds.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'states', type: 'bug', deleting: null, moveTo: '', fresh: new Set(), tried: false, readOnly: false, memberMsg: null, addQ: '', addHi: 0, menuFor: null };
+  let seq = 0, dragId = null;
+
+  /* ---------- Derived: counts, validation, the list of unsaved changes ---------- */
+  const countOf = id => (base[id] || 0) + Object.entries(d.moves).filter(([, to]) => to === id).reduce((a, [f]) => a + (base[f] || 0), 0);
+  const findState = id => { for (const [t] of TYPES) { const s = d.states[t].find(x => x.id === id); if (s) return [t, s]; } return [null, null]; };
+  const savedState = id => { for (const [t] of TYPES) { const s = saved.states[t].find(x => x.id === id); if (s) return s; } return null; };
+  const activeMembers = () => d.members.filter(m => !m.removed);
+  const dayText = days => (days.join() === 'true,true,true,true,true,false,false' ? 'Mon–Fri' : DAYS.filter((_, i) => days[i]).join(' ') || 'none');
+  const completedHist = history.map(h => h[2]);
+  const windowN = () => Math.min(Math.max(parseInt(d.window, 10) || 3, 1), completedHist.length);
+  const calcVelocity = () => { const w = completedHist.slice(-windowN()); return Math.round(w.reduce((a, v) => a + v, 0) / w.length); };
+
+  function errors() {
+    const e = {};
+    if (!d.name.trim()) e.name = 'Name is required.';
+    else if (d.name.trim().length > 60) e.name = 'Keep the name to 60 characters or fewer.';
+    if (!d.days.some(Boolean)) e.days = 'Pick at least one working day.';
+    TYPES.forEach(([t, label]) => {
+      const l = d.states[t];
+      l.forEach(s => {
+        const n = s.name.trim(), k = 'state:' + s.id;
+        if (!n) { if (!view.fresh.has(s.id) || view.tried) e[k] = 'Give the state a name.'; }
+        else if (n.length > 30) e[k] = 'Keep it to 30 characters or fewer.';
+        else { const dup = l.find(o => o !== s && o.name.trim().toLowerCase() === n.toLowerCase()); if (dup) e[k] = `Another ${label} state is already called ${dup.name.trim()}.`; }
+      });
+      if (!l.some(s => s.cat === 'proposed')) e['type:' + t] = `${label} needs a Proposed state: new items start in the first one.`;
+      else if (!l.some(s => s.cat === 'completed')) e['type:' + t] = `${label} needs a Completed state: velocity and burndown count it.`;
+    });
+    const w = d.window.trim();
+    if (!/^\d+$/.test(w) || +w < 1 || +w > 10) e.window = 'Enter a whole number of sprints from 1 to 10.';
+    const o = d.override.trim();
+    if (o && (!/^\d+$/.test(o) || +o < 1 || +o > 999)) e.override = 'Enter a whole number of points, or leave it blank to use the calculated velocity.';
+    return e;
+  }
+  const tabOfErr = k => (k === 'name' || k === 'days' ? 'general' : k.startsWith('state:') || k.startsWith('type:') ? 'states' : 'sprints');
+  const typeOfErr = k => (k.startsWith('type:') ? k.slice(5) : k.startsWith('state:') ? findState(k.slice(6))[0] : null);
+
+  function changes() {
+    const c = [], s = saved;
+    const add = (tab, text, type, id) => c.push({ tab, text, type, id });
+    if (d.name !== s.name) add('general', `Name: ${s.name} → ${d.name || '(empty)'}`);
+    if (d.description !== s.description) add('general', 'Description edited');
+    if (d.days.join() !== s.days.join()) add('general', `Working days: ${dayText(s.days)} → ${dayText(d.days)}`);
+    TYPES.forEach(([t, label]) => {
+      const a = s.states[t], b = d.states[t], now = new Set(b.map(x => x.id)), was = new Set(a.map(x => x.id));
+      b.forEach(x => {
+        const o = a.find(y => y.id === x.id);
+        if (!o) { add('states', `${label}: added ${x.name.trim() || 'a new state'} (${CATS[x.cat]})`, t, x.id); return; }
+        if (o.name !== x.name) add('states', `${label}: renamed ${o.name} → ${x.name || '(empty)'}`, t, x.id);
+        if (o.cat !== x.cat) add('states', `${label}: ${x.name} moved to ${CATS[x.cat]}`, t, x.id);
+      });
+      a.forEach(o => {
+        if (now.has(o.id)) return;
+        const to = d.moves[o.id];
+        add('states', `${label}: deleted ${o.name}${to ? `, ${plural(base[o.id] || 0, 'item')} move to ${b.find(x => x.id === to)?.name}` : ''}`, t);
+      });
+      if (a.filter(x => now.has(x.id)).map(x => x.id).join() !== b.filter(x => was.has(x.id)).map(x => x.id).join()) add('states', `${label}: states reordered`, t);
+    });
+    d.members.forEach(m => {
+      const o = s.members.find(x => x.id === m.id), nm = personOf(m.id).name;
+      if (!o) { if (!m.removed) add('members', `Add ${nm} as ${m.role}`, null, m.id); return; }
+      if (m.removed) add('members', `Remove ${nm}`, null, m.id);
+      else if (o.role !== m.role) add('members', `${nm}: ${o.role} → ${m.role}`, null, m.id);
+    });
+    if (d.window !== s.window) add('sprints', `Velocity window: last ${s.window} → last ${d.window || '?'} sprints`);
+    if (d.override !== s.override) add('sprints', d.override ? `Velocity override: ${d.override} pts` : 'Velocity override cleared');
+    return c;
+  }
+
+  /* ---------- Header: dirty indicator, Save, Discard ---------- */
+  function renderHead() {
+    const ch = changes(), errs = Object.keys(errors()).length;
+    $('status').innerHTML = ch.length
+      ? `<button class="dirty" type="button" id="btnChanges" aria-expanded="${!$('changesPop').hidden}" title="Show unsaved changes">${plural(ch.length, 'unsaved change')} ▾</button>${errs ? `<span class="errsum">${plural(errs, 'error')} to fix</span>` : ''}`
+      : '<span class="saved"><i>✓</i> All changes saved</span>';
+    $('btnSave').disabled = !ch.length; $('btnDiscard').disabled = !ch.length;
+    $('btnSave').hidden = $('btnDiscard').hidden = view.readOnly;
+    if (!ch.length) $('changesPop').hidden = true;
+    if (!$('changesPop').hidden) $('changesPop').innerHTML = `<span class="overline" style="padding:2px 6px">Not saved yet</span>` + ch.map((c, i) => `<button type="button" data-goto="${i}"><span>${TABS.find(t => t[0] === c.tab)[1]}</span><span>${esc(c.text)}</span></button>`).join('');
+  }
+
+  function renderNav() {
+    const ch = changes(), errs = Object.keys(errors());
+    const meta = { states: `${Object.values(d.states).flat().filter(s => !savedState(s.id) || s.custom).length} custom`, members: activeMembers().length, integrations: 'Jira' };
+    $('tabs').innerHTML = TABS.map(([id, label]) => {
+      const err = errs.some(k => tabOfErr(k) === id), dirty = ch.some(c => c.tab === id);
+      return `<a class="stab" href="#${id}" data-tab="${id}"${id === view.tab ? ' aria-current="page"' : ''}>${label}${err ? '<span class="dot err on" title="Has errors"></span>' : dirty ? '<span class="dot on" title="Unsaved changes"></span>' : ''}<span class="meta">${meta[id] ?? ''}</span></a>`;
+    }).join('') + `<div class="foot">Only project admins can change these settings. Members see them read-only.</div>`;
+  }
+
+  /* Update errors, dots and changed marks in place, so typing never loses focus. */
+  function refresh() {
+    const errs = errors(), ch = changes();
+    document.querySelectorAll('[data-err]').forEach(el => { el.textContent = errs[el.dataset.err] || ''; });
+    document.querySelectorAll('[data-field]').forEach(f => f.setAttribute('aria-invalid', !!errs[f.dataset.field]));
+    document.querySelectorAll('[data-tdot]').forEach(el => {
+      const t = el.dataset.tdot, err = Object.keys(errs).some(k => typeOfErr(k) === t), dirty = ch.some(c => c.type === t);
+      el.className = 'dot' + (err ? ' err on' : dirty ? ' on' : '');
+    });
+    const changedIds = new Set(ch.map(c => c.id).filter(Boolean));
+    document.querySelectorAll('tr[data-row]').forEach(r => r.classList.toggle('changed', changedIds.has(r.dataset.row)));
+    if (view.tab === 'sprints') renderVelocity();
+    renderHead(); renderNav();
+  }
+
+  function render() {
+    const c = $('content');
+    c.classList.toggle('ro', view.readOnly);
+    c.innerHTML = (view.readOnly ? `<div class="banner">You're a member of Storefront, not an admin, so these settings are read-only. Ask ${av('priya')} <b>Priya Shah</b> to change them.</div>` : '') + ({ general, states, members, sprints: sprintsTab, integrations })[view.tab]();
+    if (view.readOnly) c.querySelectorAll('input, select, textarea, button').forEach(el => { el.disabled = true; });
+    refresh();
+  }
+
+  /* ---------- General ---------- */
+  function general() {
+    return `<section class="panel" aria-label="Project">
+      <header><h2>Project</h2></header>
+      <div class="form">
+        <label class="lbl" for="fName">Name</label>
+        <div class="ctl"><input class="field w-md" id="fName" data-bind="name" data-field="name" value="${esc(d.name)}" maxlength="80" autocomplete="off"><div class="err" data-err="name"></div>
+          <div class="hint">Shown in the project picker and page titles. You can change it at any time.</div></div>
+        <label class="lbl" for="fDesc">Description</label>
+        <div class="ctl"><textarea class="field w-lg" id="fDesc" data-bind="description" rows="2">${esc(d.description)}</textarea></div>
+        <div class="lbl">Project key</div>
+        <div class="ctl"><span class="locked" title="The project key can't be changed">${LOCK}<span class="pkey">SHIP</span>Read-only</span>
+          <div class="hint">Set when the project was created and can never change, so <code>SHIP-123</code> keeps pointing at the same item in links, commits, chat and docs. Keys are 2–4 uppercase letters (A–Z), unique on this ShipLean server.</div></div>
+        <div class="lbl">Next item number</div>
+        <div class="ctl"><span class="row"><span class="mono" style="font-weight:600">SHIP-${NEXT_NUMBER}</span><span class="chip">Information only</span></span>
+          <div class="hint">The next work item gets this key, whether it's created here or imported. Numbers are never reused, even after an item is deleted.</div></div>
+        <div class="lbl">Created</div>
+        <div class="ctl"><span class="row">3 Mar 2025 by ${av('priya')} Priya Shah</span></div>
+      </div>
+    </section>
+    <section class="panel" aria-label="Working days">
+      <header><h2>Working days</h2><span class="sm muted" id="dayCount">${plural(d.days.filter(Boolean).length, 'day')} a week</span></header>
+      <div class="form">
+        <div class="lbl">Days</div>
+        <div class="ctl"><div class="seg" role="group" aria-label="Working days" data-field="days">${DAYS.map((n, i) => `<button type="button" data-day="${i}" aria-pressed="${d.days[i]}">${n}</button>`).join('')}</div>
+          <div class="err" data-err="days"></div>
+          <div class="hint">Used for working days left in a sprint, the days on the burndown, and the start of a new sprint (the next working day after the last one).</div></div>
+      </div>
+    </section>`;
+  }
+
+  /* ---------- States ---------- */
+  function states() {
+    const t = view.type, l = d.states[t], label = typeLabel(t), board = TYPES.find(x => x[0] === t)[2];
+    const firstProposed = l.find(s => s.cat === 'proposed');
+    const seg = `<div class="seg typeseg" role="group" aria-label="Work item type">${TYPES.map(([id, nm]) => `<button type="button" data-type="${id}" aria-pressed="${id === t}">${tIcon(id)}${nm}<span class="n">${d.states[id].length}</span><span data-tdot="${id}"></span></button>`).join('')}</div>`;
+    const rows = l.map((s, i) => {
+      const old = savedState(s.id), cnt = countOf(s.id), incoming = cnt - (base[s.id] || 0);
+      const colCell = s.cat === 'removed' ? '<span class="muted">Hidden (Removed)</span>'
+        : t === 'task' ? `${esc(s.name.trim() || 'New column')}${old ? '' : ' <span class="muted xs">· new column</span>'}`
+        : s.col ? esc(s.col) : `<span class="notmapped">Not mapped</span> · <a href="board-settings.html" title="Map a column to it in Board settings">Map</a>`;
+      let html = `<tr class="item srow" data-row="${s.id}" data-id="${s.id}">
+        <td class="grip"><button class="grip-btn" type="button" data-grip="${s.id}" aria-label="Reorder ${esc(s.name)}: drag, or Alt+↑/↓" title="Drag to reorder (Alt+↑/↓)">⠿</button></td>
+        <td class="num muted" style="width:26px">${i + 1}</td>
+        <td><div class="namecell"><span class="st ${s.cat}" title="${CATS[s.cat]}"></span><input class="name-in" data-sname="${s.id}" data-field="state:${s.id}" value="${esc(s.name)}" aria-label="State name" maxlength="40" placeholder="Name the state" autocomplete="off">
+          ${s === firstProposed ? '<span class="chip" title="New items start here">start</span>' : ''}${s.custom && old ? '<span class="chip">custom</span>' : ''}${!old ? '<span class="chip accent">new</span>' : ''}${old && old.name !== s.name ? `<span class="was">was ${esc(old.name)}</span>` : ''}</div>
+          <div class="err cell-err" data-err="state:${s.id}"></div></td>
+        <td style="width:150px"><select class="cat-sel" data-scat="${s.id}" aria-label="Category of ${esc(s.name)}">${Object.entries(CATS).map(([k, v]) => `<option value="${k}"${k === s.cat ? ' selected' : ''}>${v}</option>`).join('')}</select></td>
+        <td class="num" style="width:64px" title="${incoming ? `${base[s.id] || 0} now, ${incoming} more moving here on save` : `${cnt} work items in this state`}">${cnt ? `<a href="backlog.html">${cnt}</a>` : '<span class="muted">0</span>'}${incoming ? `<span class="muted xs"> +${incoming}</span>` : ''}</td>
+        <td style="width:170px">${colCell}</td>
+        <td style="width:34px"><button class="ib" type="button" data-menu="${s.id}" aria-haspopup="menu" aria-label="More for ${esc(s.name)}">⋯</button></td></tr>`;
+      if (view.deleting === s.id) html += deleteRow(t, s, cnt);
+      return html;
+    }).join('');
+    return `<div class="cols">
+      <section class="panel" aria-label="States">
+        <header>${seg}<span class="spacer"></span><button class="btn" type="button" data-act="add-state">+ Add state</button></header>
+        <div class="sub">${tIcon(t)}<span><b>${label}</b> · ${plural(l.length, 'state')} · ${plural(l.reduce((a, s) => a + countOf(s.id), 0), 'item')}</span><span class="spacer"></span><span class="xs">The order is the order in state menus${t === 'task' ? ' and of the Taskboard columns' : ''}.</span></div>
+        <div class="err type-err" data-err="type:${t}"></div>
+        <table class="list states">
+          <thead><tr><th></th><th class="num">#</th><th>State</th><th>Category</th><th class="num">Items</th><th>${t === 'task' ? 'Taskboard column' : 'Column on the ' + board}</th><th></th></tr></thead>
+          <tbody id="srows">${rows}</tbody>
+        </table>
+        <div class="pfoot">New ${label === 'User Story' ? 'user stories' : label.toLowerCase() + (label.endsWith('s') ? 'es' : 's')} start in the first Proposed state${firstProposed ? `: <b style="color:var(--color-text)">${esc(firstProposed.name)}</b>` : ''}. Changes reach open boards and backlogs for everyone when you save.</div>
+      </section>
+      <aside class="stack">
+        <section class="panel" aria-label="Categories"><header><h2>Categories</h2></header>
+          <div class="legend">${Object.entries(CATS).map(([k, v]) => `<div><span class="st ${k}">${v}</span><span>${CAT_HELP[k]}</span></div>`).join('')}</div>
+          <div class="pfoot">A state's colour comes from its category, so every project's boards read the same way.</div></section>
+        <div class="callout"><b>Boards map columns to states</b>Each board column maps to one state per type, so one column can mean Triaged for bugs and Active for stories. Set this in <a href="board-settings.html">Board settings</a>. A state with no column doesn't appear on that board.</div>
+        <div class="callout"><b>Renaming is safe</b>Colours, burndown, velocity, the forecast and Jira import follow the category, and board columns follow the state itself, so a rename only changes the label.</div>
+      </aside>
+    </div>`;
+  }
+
+  function deleteRow(t, s, cnt) {
+    const l = d.states[t];
+    const only = (s.cat === 'proposed' || s.cat === 'completed') && l.filter(x => x.cat === s.cat).length === 1;
+    if (only) return `<tr class="inline"><td colspan="7"><div class="row"><span><b>${esc(s.name)}</b> is the only ${CATS[s.cat]} state for ${typeLabel(t)}, so it can't be deleted. Add another ${CATS[s.cat]} state first, or rename this one.</span><span class="spacer"></span><button class="btn" type="button" data-act="del-cancel">OK</button></div></td></tr>`;
+    return `<tr class="inline"><td colspan="7"><div class="row">
+      <span><b>${plural(cnt, 'item')}</b> ${cnt === 1 ? 'is' : 'are'} in ${esc(s.name)}. Move ${cnt === 1 ? 'it' : 'them'} to</span>
+      <select class="field" id="moveTo" aria-label="Move items to">${l.filter(x => x !== s).map(x => `<option value="${x.id}"${x.id === view.moveTo ? ' selected' : ''}>${esc(x.name || 'unnamed state')} (${CATS[x.cat]})</option>`).join('')}</select>
+      <span>and delete it.</span>
+      <span class="acts"><button class="btn danger" type="button" data-act="del-confirm">Move and delete</button><button class="btn ghost" type="button" data-act="del-cancel">Cancel</button></span></div></td></tr>`;
+  }
+
+  function startDelete(id) {
+    const [t, s] = findState(id), cnt = countOf(id), l = d.states[t];
+    const only = (s.cat === 'proposed' || s.cat === 'completed') && l.filter(x => x.cat === s.cat).length === 1;
+    if (!only && cnt === 0) return doDelete(id, null);
+    const pick = l.find(x => x !== s && x.cat === s.cat) || l.find(x => x !== s && x.cat === 'proposed') || l.find(x => x !== s);
+    view.deleting = id; view.moveTo = pick?.id || ''; render();
+  }
+  function doDelete(id, to) {
+    const [t, s] = findState(id), cnt = countOf(id);
+    d.states[t] = d.states[t].filter(x => x.id !== id);
+    if (to) { Object.keys(d.moves).forEach(f => { if (d.moves[f] === id) d.moves[f] = to; }); if (savedState(id)) d.moves[id] = to; }
+    view.deleting = null; view.fresh.delete(id);
+    const toName = to ? findState(to)[1].name : '';
+    toast(to ? `${esc(s.name || 'State')} will be deleted on save · ${plural(cnt, 'item')} move to ${esc(toName)}` : `${esc(s.name || 'State')} will be deleted on save`);
+    render();
+  }
+  function moveState(id, delta) {
+    const l = d.states[view.type], i = l.findIndex(x => x.id === id), j = i + delta;
+    if (j < 0 || j >= l.length) return false;
+    const [s] = l.splice(i, 1); l.splice(j, 0, s); return true;
+  }
+  function addState() {
+    const l = d.states[view.type], id = 'new-' + ++seq;
+    const at = l.findIndex(s => s.cat === 'removed');
+    l.splice(at < 0 ? l.length : at, 0, { id, name: '', cat: 'in-progress', col: null, custom: true });
+    view.fresh.add(id); render();
+    document.querySelector(`[data-sname="${id}"]`)?.focus();
+  }
+
+  /* ---------- Members ---------- */
+  function members() {
+    const act = activeMembers(), admins = act.filter(m => m.role === 'Admin').length;
+    const rows = d.members.map(m => {
+      const p = personOf(m.id), msg = view.memberMsg?.id === m.id ? view.memberMsg.text : '';
+      return `<tr class="item${m.removed ? ' gone' : ''}" data-row="${m.id}">
+        <td><span class="who">${avatar(m.id)}<b style="font-weight:500">${esc(p.name)}</b>${m.id === ME ? '<span class="muted sm">(you)</span>' : ''}${m.added ? '<span class="chip accent">Joins on save</span>' : ''}${m.removed ? '<span class="chip danger">Removed on save</span>' : ''}</span></td>
+        <td class="muted sm">${emailOf(m.id)}</td>
+        <td style="width:120px"><select class="role-sel" data-role="${m.id}" aria-label="Role for ${esc(p.name)}"${m.removed ? ' disabled' : ''}>${['Admin', 'Member'].map(r => `<option${r === m.role ? ' selected' : ''}>${r}</option>`).join('')}</select></td>
+        <td class="sm" style="width:110px">${m.added ? '<span class="muted">today</span>' : m.joined}</td>
+        <td class="num sm" style="width:90px">${openCount[m.id] || '<span class="muted">0</span>'}</td>
+        <td style="width:80px;text-align:right">${m.removed ? `<button class="btn ghost" type="button" data-undo="${m.id}" style="height:24px">Undo</button>` : `<button class="ib" type="button" data-remove="${m.id}" aria-label="Remove ${esc(p.name)}" title="Remove from Storefront">✕</button>`}</td></tr>`
+        + (msg ? `<tr class="inline"><td colspan="6" style="padding-left:40px"><span class="err" style="font-size:var(--text-sm)">${msg}</span></td></tr>` : '');
+    }).join('');
+    return `<section class="panel" aria-label="Members">
+      <header><h2>Members</h2><span class="sm muted">${act.length === 1 ? '1 person' : act.length + ' people'} · ${plural(admins, 'admin')}</span><span class="spacer"></span>
+        <div class="addwrap"><input class="field" id="addQ" type="search" placeholder="+ Add member: search name or email" aria-label="Add member" autocomplete="off" value="${esc(view.addQ)}"><div class="pop" id="addPop" hidden></div></div></header>
+      <table class="list">
+        <thead><tr><th>Member</th><th>Email</th><th>Role</th><th>Joined</th><th class="num">Open items</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div class="pfoot">Admins change project settings and manage members; everyone can plan, edit work and use the boards. A project always keeps at least one admin. Removing someone keeps their name in history, and their open items stay assigned until someone else picks them up.</div>
+    </section>`;
+  }
+  function drawAddPop() {
+    const pop = $('addPop'); if (!pop) return;
+    const q = view.addQ.trim().toLowerCase();
+    const inProject = new Set(d.members.map(m => m.id));
+    const list = OTHERS.filter(o => !inProject.has(o.id) && (!q || o.name.toLowerCase().includes(q) || emailOf(o.id).includes(q))).slice(0, 5);
+    view.addList = list; view.addHi = Math.min(view.addHi, Math.max(list.length - 1, 0));
+    pop.innerHTML = list.length ? list.map((o, i) => `<button type="button" data-add="${o.id}" class="${i === view.addHi ? 'hi' : ''}">${avatar(o.id)}<span>${esc(o.name)}</span><span>${emailOf(o.id)}</span></button>`).join('')
+      : `<div class="none">${q ? `Nobody on this server matches “${esc(view.addQ)}”.` : 'Everyone on this server is already a member.'}</div>`;
+    pop.hidden = false;
+  }
+  function addMember(id) {
+    d.members.push({ id, role: 'Member', added: true });
+    view.addQ = ''; view.memberMsg = null; render();
+    toast(`${avatar(id)} ${esc(personOf(id).name)} joins Storefront as a Member when you save`);
+  }
+  function removeMember(id) {
+    const m = d.members.find(x => x.id === id), admins = activeMembers().filter(x => x.role === 'Admin');
+    if (m.role === 'Admin' && admins.length === 1) {
+      view.memberMsg = { id, text: `${esc(personOf(id).name)} is the only admin, so they can't be removed. Make someone else an admin first.` };
+      render(); toast('Blocked: a project needs at least one admin'); return;
+    }
+    view.memberMsg = null;
+    if (m.added) d.members = d.members.filter(x => x !== m); else m.removed = true;
+    render(); toast(`${esc(personOf(id).name)} will be removed when you save`);
+  }
+
+  /* ---------- Sprints & forecast ---------- */
+  function sprintsTab() {
+    const last = sprints[sprints.length - 1], cur = sprints.find(s => s.status === 'current');
+    const wd = d.days.filter(Boolean).length * 2;
+    return `<section class="panel" aria-label="Sprints">
+      <header><h2>Sprints</h2><span class="spacer"></span><a class="btn" href="sprints.html">All sprints →</a></header>
+      <div class="form">
+        <div class="lbl">Sprints</div>
+        <div class="ctl"><span>${sprints.length} sprints · <b>${cur.name}</b> is current (${cur.start} – ${cur.end}) · the last one, ${last.name}, ends ${last.end}</span>
+          <div class="hint">Add, rename, re-date and delete sprints in All sprints. Past, current and future come from the dates.</div></div>
+        <div class="lbl">Sprint length</div>
+        <div class="ctl"><span><b>Copy the last sprint's length</b> · now 2 weeks, ${wd} working days (${last.name}, ${last.start} – ${last.end})</span>
+          <div class="hint">The New sprint form starts on the next working day after the last sprint and gives it the same length. Change the dates there for a one-off.</div>
+          <div class="qnote"><b>Open question.</b> Whether to add a fixed sprint length setting (<code>sprint_length_days</code>) instead. Drawn here as the current behaviour, with nothing to set.</div></div>
+      </div>
+    </section>
+    <section class="panel" aria-label="Velocity and forecast">
+      <header><h2>Velocity and forecast</h2><span class="sm muted">Used by the Planning forecast, the velocity line on All sprints and the Capacity sense check</span></header>
+      <div class="vgrid">
+        <div class="form" style="align-content:start">
+          <label class="lbl" for="fWin">Velocity window</label>
+          <div class="ctl"><span class="row">Average the last <input class="field num-in" id="fWin" data-bind="window" data-field="window" value="${esc(d.window)}" inputmode="numeric" autocomplete="off"> ended sprints</span>
+            <div class="err" data-err="window"></div><div class="hint" id="winHint"></div></div>
+          <label class="lbl" for="fOv">Velocity override</label>
+          <div class="ctl"><span class="row"><input class="field num-in" id="fOv" data-bind="override" data-field="override" value="${esc(d.override)}" inputmode="numeric" autocomplete="off"> pts <button class="btn ghost" type="button" data-act="clear-ov" id="btnClearOv">Use calculated</button></span>
+            <div class="err" data-err="override"></div><div class="hint">Leave it blank to use the calculated velocity. The Override button on Planning sets this same value.</div></div>
+        </div>
+        <div class="vsum" id="vsum"></div>
+      </div>
+    </section>`;
+  }
+  function renderVelocity() {
+    const el = $('vsum'); if (!el) return;
+    const n = windowN(), calc = calcVelocity(), ov = /^\d+$/.test(d.override.trim()) && +d.override > 0 ? +d.override : null;
+    const inWin = history.slice(-n).map(h => h[0]);
+    $('fOv').placeholder = String(calc);
+    $('btnClearOv').hidden = !d.override;
+    $('winHint').textContent = (+d.window > completedHist.length ? `Only ${completedHist.length} sprints have ended, so it averages all ${completedHist.length}. ` : '') + 'Completed points per ended sprint (stories and bugs in a Completed state). 3 is the default.';
+    el.innerHTML = `<div class="kpis"><div class="kpi"><div class="v">${ov ?? calc} <small>pts</small></div><div class="l">Forecast velocity${ov ? ' · override' : ''}</div></div>
+        ${ov ? `<div class="kpi"><div class="v" style="color:var(--color-muted)">${calc}</div><div class="l">Calculated</div></div>` : ''}</div>
+      <div class="xs muted">${ov ? `The forecast uses your ${ov} pts instead of the calculated ${calc}.` : `Average completed over ${inWin[0]}${inWin.length > 1 ? ' – ' + inWin[inWin.length - 1].replace('Sprint ', '') : ''}.`}</div>
+      <table class="list"><thead><tr><th>Sprint</th><th class="num">Committed</th><th class="num">Completed</th><th class="num">In window</th></tr></thead>
+        <tbody>${history.slice().reverse().map(h => `<tr class="${inWin.includes(h[0]) ? '' : 'out'}"><td>${h[0]}</td><td class="num">${h[1]}</td><td class="num pts">${h[2]}</td><td class="num">${inWin.includes(h[0]) ? '✓' : '—'}</td></tr>`).join('')}</tbody></table>`;
+  }
+
+  /* ---------- Integrations ---------- */
+  function integrations() {
+    return `<section class="panel" aria-label="Jira">
+      <header><h2>Jira</h2><span class="chip ok">Connected</span><span class="spacer"></span><button class="btn" type="button" data-act="test-jira" id="btnTest">Test connection</button><a class="btn primary" href="import.html">Open Jira import</a></header>
+      <div class="form">
+        <div class="lbl">Site</div><div class="ctl"><span><b>storefront.atlassian.net</b> <span class="muted">· Jira Cloud</span></span></div>
+        <div class="lbl">Signed in as</div><div class="ctl"><span>priya.shah@storefront.example · API token saved, encrypted at rest</span><span class="hint" id="testedAt">Last checked 21 Sep 2026, 14:02</span></div>
+        <div class="lbl">Imported from</div><div class="ctl"><span class="row">Jira project <code>STORE</code> → <span class="pkey">SHIP</span> <span class="muted">· issue numbers kept, so STORE-118 became SHIP-118</span></span></div>
+        <div class="lbl">Last import</div><div class="ctl"><span>21 Sep 2026 by Priya Shah · 118 issues, 6 sprints, 212 comments · <span style="color:var(--color-ok);font-weight:600">0 errors</span></span>
+          <div class="hint">Running the import again updates the items it matched last time instead of creating duplicates.</div></div>
+        <div class="lbl">Linked items</div><div class="ctl"><span>118 work items keep a link to their Jira issue.</span></div>
+      </div>
+      <div class="pfoot">The Jira connection is shared by every project on this ShipLean server. Change it, or import another Jira project, in <a href="import.html">Jira import</a>.</div>
+    </section>`;
+  }
+
+  /* ---------- Save / Discard ---------- */
+  function save() {
+    if (view.readOnly) return;
+    const ch = changes(); if (!ch.length) return;
+    view.tried = true;
+    const errs = errors(), keys = Object.keys(errs);
+    if (keys.length) {
+      view.tab = tabOfErr(keys[0]); const t = typeOfErr(keys[0]); if (t) view.type = t;
+      window.history.replaceState(null, '', '#' + view.tab);
+      render(); document.querySelector('[aria-invalid="true"]')?.focus();
+      toast(`Fix ${plural(keys.length, 'error')} before saving`); return;
+    }
+    Object.entries(d.moves).forEach(([f, to]) => { base[to] = (base[to] || 0) + (base[f] || 0); delete base[f]; });
+    d.moves = {};
+    d.members = d.members.filter(m => !m.removed).map(m => { if (m.added) { delete m.added; m.joined = '24 Oct 2026'; } return m; });
+    view.fresh.clear(); view.tried = false; view.deleting = null; view.memberMsg = null;
+    saved = clone(d);
+    $('changesPop').hidden = true;
+    toast(`Saved ${plural(ch.length, 'change')}${ch.some(c => c.tab === 'states') ? ' · open boards and backlogs update for everyone' : ''}`);
+    render();
+  }
+  function discard() {
+    const n = changes().length; if (!n) return;
+    d = clone(saved); view.fresh.clear(); view.tried = false; view.deleting = null; view.memberMsg = null; view.addQ = '';
+    $('changesPop').hidden = true; render(); toast(`Discarded ${plural(n, 'change')}`);
+  }
+  $('btnSave').onclick = save;
+  $('btnDiscard').onclick = discard;
+  $('status').addEventListener('click', e => { if (!e.target.closest('#btnChanges')) return; e.stopPropagation(); $('changesPop').hidden = !$('changesPop').hidden; renderHead(); });
+  $('changesPop').addEventListener('click', e => {
+    const b = e.target.closest('[data-goto]'); if (!b) return;
+    const c = changes()[+b.dataset.goto]; view.tab = c.tab; if (c.type) view.type = c.type;
+    $('changesPop').hidden = true; window.history.replaceState(null, '', '#' + c.tab); render();
+  });
+  document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); save(); } });
+  window.addEventListener('beforeunload', e => { if (changes().length) { e.preventDefault(); e.returnValue = ''; } });
+  window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (tabIds.includes(h) && h !== view.tab) { view.tab = h; render(); } });
+  $('tabs').addEventListener('click', e => {
+    const a = e.target.closest('[data-tab]'); if (!a) return;
+    e.preventDefault(); view.tab = a.dataset.tab; window.history.replaceState(null, '', '#' + view.tab); render();
+  });
+
+  /* ---------- Row menu (States) ---------- */
+  const menu = $('menu');
+  function openMenu(btn, id) {
+    const l = d.states[view.type], i = l.findIndex(x => x.id === id);
+    view.menuFor = id;
+    menu.innerHTML = `<button type="button" role="menuitem" data-m="rename">Rename</button><button type="button" role="menuitem" data-m="up"${i === 0 ? ' disabled' : ''}>Move up</button><button type="button" role="menuitem" data-m="down"${i === l.length - 1 ? ' disabled' : ''}>Move down</button><hr><button type="button" role="menuitem" class="danger" data-m="delete">Delete…</button>`;
+    const r = btn.getBoundingClientRect();
+    menu.hidden = false; menu.style.top = r.bottom + 4 + 'px'; menu.style.left = r.right - menu.offsetWidth + 'px';
+    menu.querySelector('button:not(:disabled)').focus();
+  }
+  const closeMenu = () => { menu.hidden = true; view.menuFor = null; };
+  menu.addEventListener('click', e => {
+    const b = e.target.closest('[data-m]'); if (!b || b.disabled) return;
+    const id = view.menuFor, [, s] = findState(id); closeMenu();
+    if (b.dataset.m === 'rename') { const inp = document.querySelector(`[data-sname="${id}"]`); inp.focus(); inp.select(); }
+    else if (b.dataset.m === 'up' || b.dataset.m === 'down') { moveState(id, b.dataset.m === 'up' ? -1 : 1); render(); toast(`Moved ${esc(s.name)} ${b.dataset.m}`); }
+    else startDelete(id);
+  });
+  document.addEventListener('click', e => {
+    if (!menu.hidden && !menu.contains(e.target) && !e.target.closest('[data-menu]')) closeMenu();
+    if (!e.target.closest('.changes') && !e.target.closest('#btnChanges') && !$('changesPop').hidden) { $('changesPop').hidden = true; renderHead(); }
+    if (!e.target.closest('.addwrap') && $('addPop')) $('addPop').hidden = true;
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeMenu(); $('changesPop').hidden = true; if ($('addPop')) $('addPop').hidden = true; renderHead(); } });
+
+  /* ---------- Content events ---------- */
+  const content = $('content');
+  content.addEventListener('click', e => {
+    const t = e.target;
+    const typeBtn = t.closest('[data-type]'); if (typeBtn) { view.type = typeBtn.dataset.type; view.deleting = null; render(); return; }
+    const day = t.closest('[data-day]');
+    if (day) { const i = +day.dataset.day; d.days[i] = !d.days[i]; day.setAttribute('aria-pressed', d.days[i]); $('dayCount').textContent = `${plural(d.days.filter(Boolean).length, 'day')} a week`; refresh(); return; }
+    const m = t.closest('[data-menu]'); if (m) { e.stopPropagation(); menu.hidden || view.menuFor !== m.dataset.menu ? openMenu(m, m.dataset.menu) : closeMenu(); return; }
+    const act = t.closest('[data-act]')?.dataset.act;
+    if (act === 'add-state') return addState();
+    if (act === 'del-cancel') { view.deleting = null; render(); return; }
+    if (act === 'del-confirm') return doDelete(view.deleting, $('moveTo').value);
+    if (act === 'clear-ov') { d.override = ''; $('fOv').value = ''; refresh(); toast('Velocity override cleared · the forecast uses the calculated velocity'); return; }
+    if (act === 'test-jira') {
+      const b = $('btnTest'); b.disabled = true; b.textContent = 'Testing…';
+      setTimeout(() => { b.disabled = false; b.textContent = 'Test connection'; $('testedAt').textContent = 'Last checked just now · OK'; toast('Jira connection OK · storefront.atlassian.net answered in 240 ms'); }, 600);
+      return;
+    }
+    const rm = t.closest('[data-remove]'); if (rm) return removeMember(rm.dataset.remove);
+    const un = t.closest('[data-undo]'); if (un) { d.members.find(x => x.id === un.dataset.undo).removed = false; render(); toast(`Kept ${esc(personOf(un.dataset.undo).name)}`); return; }
+    const ad = t.closest('[data-add]'); if (ad) return addMember(ad.dataset.add);
+  });
+  content.addEventListener('input', e => {
+    const t = e.target;
+    if (t.dataset.bind) { d[t.dataset.bind] = t.value; refresh(); return; }
+    if (t.dataset.sname) { findState(t.dataset.sname)[1].name = t.value; refresh(); return; }
+    if (t.id === 'addQ') { view.addQ = t.value; view.addHi = 0; drawAddPop(); }
+  });
+  content.addEventListener('focusin', e => { if (e.target.id === 'addQ') drawAddPop(); });
+  content.addEventListener('focusout', e => {
+    const id = e.target.dataset?.sname;
+    if (id && view.fresh.has(id)) { view.fresh.delete(id); refresh(); }
+  });
+  content.addEventListener('change', e => {
+    const t = e.target;
+    if (t.dataset.scat) {
+      const [, s] = findState(t.dataset.scat); s.cat = t.value; render();
+      toast(`${esc(s.name || 'State')} is now ${CATS[s.cat]}: its colour and roll-ups follow${s.cat === 'removed' ? ', and its items drop off backlogs and boards' : ''}`);
+    } else if (t.dataset.role) {
+      const m = d.members.find(x => x.id === t.dataset.role);
+      if (m.role === 'Admin' && t.value === 'Member' && activeMembers().filter(x => x.role === 'Admin').length === 1) {
+        view.memberMsg = { id: m.id, text: `${esc(personOf(m.id).name)} is the only admin. Make someone else an admin before changing this.` };
+        render(); toast('Blocked: a project needs at least one admin'); return;
+      }
+      m.role = t.value; view.memberMsg = null; render();
+      toast(`${esc(personOf(m.id).name)} will be ${m.role === 'Admin' ? 'an Admin' : 'a Member'} when you save`);
+    } else if (t.id === 'moveTo') view.moveTo = t.value;
+  });
+  content.addEventListener('keydown', e => {
+    const t = e.target;
+    if (t.id === 'addQ') {
+      const list = view.addList || [];
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); view.addHi = (view.addHi + (e.key === 'ArrowDown' ? 1 : -1) + list.length) % Math.max(list.length, 1); drawAddPop(); }
+      else if (e.key === 'Enter' && list[view.addHi]) { e.preventDefault(); addMember(list[view.addHi].id); $('addQ')?.focus(); }
+      return;
+    }
+    if (t.dataset.grip && e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+      e.preventDefault(); const id = t.dataset.grip;
+      if (moveState(id, e.key === 'ArrowUp' ? -1 : 1)) { render(); document.querySelector(`[data-grip="${id}"]`).focus(); toast(`Moved ${esc(findState(id)[1].name)} ${e.key === 'ArrowUp' ? 'up' : 'down'}`); }
+      return;
+    }
+    if (t.dataset.sname && e.key === 'Enter') t.blur();
+  });
+
+  /* Drag to reorder: the grip arms the row, the drop line shows above or below the target row. */
+  content.addEventListener('mousedown', e => { const g = e.target.closest('[data-grip]'); if (g && !view.readOnly) g.closest('tr').draggable = true; });
+  content.addEventListener('dragstart', e => {
+    const tr = e.target.closest('tr.srow'); if (!tr) return;
+    dragId = tr.dataset.id; tr.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragId);
+  });
+  const clearDrop = () => content.querySelectorAll('.drop-before, .drop-after').forEach(r => r.classList.remove('drop-before', 'drop-after'));
+  content.addEventListener('dragover', e => {
+    const tr = e.target.closest('tr.srow'); if (!dragId || !tr) return;
+    e.preventDefault(); clearDrop();
+    if (tr.dataset.id === dragId) return;
+    const r = tr.getBoundingClientRect(); tr.classList.add(e.clientY < r.top + r.height / 2 ? 'drop-before' : 'drop-after');
+  });
+  content.addEventListener('drop', e => {
+    const tr = e.target.closest('tr.srow'); if (!dragId || !tr) return;
+    e.preventDefault();
+    const before = tr.classList.contains('drop-before'), targetId = tr.dataset.id;
+    if (targetId === dragId || (!before && !tr.classList.contains('drop-after'))) return;
+    const l = d.states[view.type], from = l.findIndex(x => x.id === dragId), [s] = l.splice(from, 1);
+    let to = l.findIndex(x => x.id === targetId); if (!before) to += 1;
+    l.splice(to, 0, s); dragId = null; render();
+    toast(`Moved ${esc(s.name)} to position ${to + 1}`);
+  });
+  content.addEventListener('dragend', e => { const tr = e.target.closest('tr'); if (tr) { tr.draggable = false; tr.classList.remove('dragging'); } dragId = null; clearDrop(); });
+
+  render();
+
+  SL.preview([
+    { label: 'Blocked delete', run: () => { view.tab = 'states'; view.type = 'story'; window.history.replaceState(null, '', '#states'); render(); startDelete('story-active'); } },
+    { label: 'Last admin', run: () => { view.tab = 'members'; window.history.replaceState(null, '', '#members'); render(); removeMember(ME); } },
+    { label: 'Member view', run: () => { view.readOnly = !view.readOnly; render(); toast(view.readOnly ? 'Viewing as a member: read-only' : 'Viewing as an admin'); } },
+  ]);
+})();
+</script>
+</body>
+</html>

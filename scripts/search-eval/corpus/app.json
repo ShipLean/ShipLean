@@ -1,0 +1,2230 @@
+{
+  "project": {
+    "ref": "app",
+    "key": "APP",
+    "name": "Northpath Mobile",
+    "description": "The Northpath mobile app for iOS and Android: sign-in and session handling, account and profile management, and push and in-app notifications, plus the platform work that keeps releases fast, accessible and stable."
+  },
+  "sprints": [
+    {
+      "ref": "app-s1",
+      "name": "Sprint 1 - Sign-in foundations",
+      "goal": "People can create an account, sign in with a password and stay signed in across restarts",
+      "startDate": "2026-06-01",
+      "endDate": "2026-06-12"
+    },
+    {
+      "ref": "app-s2",
+      "name": "Sprint 2 - Social, biometrics and push plumbing",
+      "goal": "Apple and Google sign-in, biometric unlock and reliable device registration all work on both platforms",
+      "startDate": "2026-06-15",
+      "endDate": "2026-06-26"
+    },
+    {
+      "ref": "app-s3",
+      "name": "Sprint 3 - Recovery and control",
+      "goal": "Password reset, account deletion and notification preferences are usable without contacting support",
+      "startDate": "2026-06-29",
+      "endDate": "2026-07-10"
+    },
+    {
+      "ref": "app-s4",
+      "name": "Sprint 4 - Reliability and polish",
+      "goal": "Fix the sign-out races, duplicate pushes and slow cold start before the public release",
+      "startDate": "2026-07-13",
+      "endDate": "2026-07-24"
+    }
+  ],
+  "items": [
+    {
+      "ref": "app-001",
+      "type": "epic",
+      "title": "Sign-in and session",
+      "description": "Everything that stands between a person opening Northpath for the first time and reaching their home feed: credentials, social identity providers, biometric unlock, two-factor codes and the lifetime of the session afterwards. Support tickets about locked-out users are the largest single category we receive, so this epic aims to make sign-in boring, quick and recoverable on both iOS and Android.\n\nThe metrics we judge it by are the share of installs that reach the home feed within two minutes, the number of sign-in related support contacts per thousand active users, and the fraction of sessions that end involuntarily.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "auth"
+      ],
+      "state": "Active",
+      "sprintRef": "app-s1",
+      "comments": []
+    },
+    {
+      "ref": "app-002",
+      "type": "feature",
+      "title": "Email and password sign-in",
+      "description": "The classic credential flow: a form, validation that explains itself, and a clear response when the server says no. This feature covers the happy path and the small comforts around it, such as remembering the last email address and letting people peek at what they typed.\n\nDesign has agreed that the screen stays quiet: no illustrations above the fold, one primary action, and error text in plain language that says what to do next rather than quoting a status code. Both platforms share the copy through the string tables.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "auth",
+        "forms"
+      ],
+      "state": "Active",
+      "parentRef": "app-001",
+      "sprintRef": "app-s1",
+      "comments": []
+    },
+    {
+      "ref": "app-003",
+      "type": "story",
+      "title": "Sign-in screen with email and password",
+      "description": "A single screen with an email field, a password field and a primary button. Validation runs as the person leaves each field, not on every keystroke, and server errors appear inline above the button rather than in a dialog. The screen must work with the on-screen keyboard open on a small phone without hiding the button.\n\nThe same screen is reused inside the re-authentication sheet that appears before sensitive actions, with the email field locked and a different title, so it should be built as a component with a mode parameter rather than copied.",
+      "acceptanceCriteria": [
+        "Email is validated for shape when the field loses focus",
+        "A wrong password shows one inline message and keeps the typed email",
+        "The button is reachable with the keyboard open on a 5-inch screen",
+        "Pressing return on the password field submits the form"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "auth",
+        "forms"
+      ],
+      "state": "Closed",
+      "parentRef": "app-002",
+      "sprintRef": "app-s1",
+      "comments": [
+        {
+          "ref": "app-c01",
+          "body": "Shipped behind the new-login flag in the first beta, flag removed after a week without regressions.",
+          "archived": false
+        },
+        {
+          "ref": "app-c02",
+          "body": "Design asked for the error to sit directly above the button; done, and the layout is stable when it appears.",
+          "archived": false
+        },
+        {
+          "ref": "app-c03",
+          "body": "Old note: use a dialog for server errors. Superseded by the inline decision above.",
+          "archived": true
+        }
+      ]
+    },
+    {
+      "ref": "app-004",
+      "type": "story",
+      "title": "Show or hide password toggle",
+      "description": "Add an eye icon at the end of the password field that reveals the typed characters while it is toggled on. The state resets whenever the screen is left so a revealed password never survives a trip to the app switcher. Screen readers announce the toggle as a switch with a clear on and off state.\n\nResearch with nine participants showed that most people mistype long passwords on a phone and abandon after two failures, which is why a visible-text option beats a confirm-password field here.",
+      "acceptanceCriteria": [
+        "Tapping the icon toggles between masked and visible text",
+        "The field is masked again after the app goes to the background",
+        "The control has an accessible name and state"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "auth",
+        "forms",
+        "a11y"
+      ],
+      "state": "Closed",
+      "parentRef": "app-002",
+      "sprintRef": "app-s1",
+      "comments": []
+    },
+    {
+      "ref": "app-005",
+      "type": "story",
+      "title": "Remember the last used email on the sign-in screen",
+      "description": "When a person returns to the sign-in screen after signing out, prefill the email field with the address they used last time and put focus on the password field. Nothing sensitive is stored: only the address, kept in ordinary preferences and cleared when they choose Use a different account. Shared-device users asked for the clear option in research.\n\nThe preference lives only on the device; signing in from a new phone starts empty, and uninstalling the app clears it. Legal checked that a bare email address held locally needs no consent banner.",
+      "acceptanceCriteria": [
+        "The last email is prefilled after sign-out",
+        "A link clears it and focuses the email field",
+        "The password is never stored by this feature"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "auth",
+        "forms"
+      ],
+      "state": "Closed",
+      "parentRef": "app-002",
+      "sprintRef": "app-s1",
+      "comments": []
+    },
+    {
+      "ref": "app-006",
+      "type": "bug",
+      "title": "Sign-in button stays disabled after autofill from the password manager",
+      "description": "When the password manager fills both fields in one go, the form never learns that the values changed and the Sign in button stays grey until the person types a character. It happens with the system keychain suggestion on iOS and with third-party managers on Android, and it makes the app look broken to people who rely on autofill.\n\nThe same defect had a cousin in the reset form, where the Send link button also waited for a key event; both forms now share the fix. Add a UI test that fills fields programmatically without simulating keystrokes so the regression cannot return.",
+      "acceptanceCriteria": [
+        "The button enables as soon as both fields hold valid values, however they were filled"
+      ],
+      "reproSteps": "1. Install a password manager and save credentials for Northpath.\n2. Open the app signed out and tap the email field.\n3. Accept the suggested credentials.\n4. Observe that both fields are filled but the button is still disabled.",
+      "tags": [
+        "auth",
+        "forms",
+        "autofill"
+      ],
+      "state": "Closed",
+      "parentRef": "app-002",
+      "sprintRef": "app-s1",
+      "comments": [
+        {
+          "ref": "app-c04",
+          "body": "Root cause: we only listened for key events. Switched the form model to observe field value changes instead.",
+          "archived": false
+        },
+        {
+          "ref": "app-c05",
+          "body": "Verified on iOS 17 with the system keychain and on a Pixel with two third-party managers.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "app-007",
+      "type": "task",
+      "title": "Write the copy for too many sign-in attempts",
+      "description": "Product and support agreed that after five failed attempts in ten minutes the server answers with a temporary lock. The app needs friendly wording for the lock message, including how long to wait and a link to the reset flow. Copy goes through the localisation pipeline in all launch languages.\n\nWording was reviewed by support, who asked that the message never say the account is locked, since that frightens people, but rather that sign-in is paused for a few minutes for their protection and that resetting the password ends the pause at once.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "auth",
+        "copy"
+      ],
+      "state": "Closed",
+      "parentRef": "app-006",
+      "sprintRef": "app-s1",
+      "comments": []
+    },
+    {
+      "ref": "app-008",
+      "type": "feature",
+      "title": "Password reset",
+      "description": "Self-service recovery for people who have forgotten their password: ask for a link, follow it, choose a new password and land back in the app signed in. It must never reveal whether an address has an account.\n\nReset is where people who have been away for months end up, so it also has to explain gently when a link has expired or was already used, and offer to send a new one with a single tap.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "auth",
+        "recovery"
+      ],
+      "state": "Active",
+      "parentRef": "app-001",
+      "sprintRef": "app-s2",
+      "comments": []
+    },
+    {
+      "ref": "app-009",
+      "type": "story",
+      "title": "Request a reset link by email",
+      "description": "From the sign-in screen a link called Forgot your password opens a screen with one email field. Submitting always shows the same confirmation, whether or not the address belongs to an account, so the endpoint cannot be used to discover who has signed up. The server sends an email with a single-use link that lasts thirty minutes.\n\nDelivery matters as much as the screen: the sender domain is authenticated, the subject line is the same in every language so it is easy to find, and the message contains no attachments or images that would trigger spam filters.",
+      "acceptanceCriteria": [
+        "The confirmation text is identical for known and unknown addresses",
+        "Repeated requests within a minute are throttled with a visible countdown",
+        "The reset email arrives in the language of the app"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "auth",
+        "recovery"
+      ],
+      "state": "Closed",
+      "parentRef": "app-008",
+      "sprintRef": "app-s2",
+      "comments": []
+    },
+    {
+      "ref": "app-010",
+      "type": "story",
+      "title": "Passwort zurücksetzen per E-Mail-Link",
+      "description": "Nutzerinnen und Nutzer, die ihr Passwort vergessen haben, sollen auf dem Anmeldebildschirm einen Link zum Zurücksetzen anfordern können. Nach Eingabe der E-Mail-Adresse erscheint immer dieselbe Bestätigung, damit niemand herausfinden kann, ob ein Konto existiert. Der Link in der E-Mail ist nur einmal gültig und läuft nach dreißig Minuten ab. Beim Öffnen des Links soll die App direkt den Bildschirm für das neue Passwort zeigen und die Person danach automatisch anmelden.",
+      "acceptanceCriteria": [
+        "Die Bestätigung ist für bekannte und unbekannte Adressen gleich",
+        "Der Link funktioniert nur einmal",
+        "Nach dem Setzen des neuen Passworts ist die Person angemeldet"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "auth",
+        "recovery",
+        "i18n"
+      ],
+      "state": "Active",
+      "parentRef": "app-008",
+      "sprintRef": "app-s3",
+      "comments": [
+        {
+          "ref": "app-c06",
+          "body": "Übersetzung vom Team in Berlin gegengelesen; der Hinweistext zur Gültigkeit des Links wurde noch gekürzt.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "app-011",
+      "type": "bug",
+      "title": "Reset link opens the browser instead of the app",
+      "description": "Tapping the link in the password reset email opens the mobile browser and shows a plain web page that says to open the app, instead of going straight to the new-password screen. People then have to copy the code by hand, and many give up. The behaviour differs by mail client, which makes it hard to pin down, and it is worst when the link is opened from inside a webview embedded in the mail app.\n\nSupport collected about forty reports in the last month, almost all from iOS users reading mail in the system Mail app or in Gmail. On Android the link opens the app correctly most of the time, but a handful of Samsung users see a chooser dialog that lists the browser first.\n\nThe team suspects the association files that tell the operating systems which links belong to the app. The iOS file is served by our CDN and on some edge nodes it answers with a redirect to the marketing site, and iOS refuses to treat a redirected association file as valid. The Android digital asset links file is correct but lists only the release signing certificate, so builds signed with the upload key from the beta channel never verify.\n\nA further wrinkle: the reset email contains a tracking wrapper around the link, and the wrapper itself is a different host that the app does not claim. Until we either unwrap the link in the email or add the tracking host to the app's claimed domains, some clients will always go through the browser first.",
+      "acceptanceCriteria": [
+        "Tapping the reset link in Mail, Gmail and Outlook opens the app on the new-password screen",
+        "The association file answers with 200 and no redirect on every CDN edge",
+        "The Android asset links file lists both the release and the beta signing certificates",
+        "Links in emails are unwrapped or the tracking host is claimed by the app"
+      ],
+      "reproSteps": "1. Request a password reset from a signed-out iPhone with the Northpath app installed.\n2. Open the system Mail app and tap the link in the message.\n3. Observe that Safari opens with the open-the-app page.\n4. Long-press the same link and choose Open in Northpath; this works, which shows the app can handle it.\n5. Repeat on an Android phone with the beta build and note that the chooser appears.",
+      "tags": [
+        "auth",
+        "recovery",
+        "deeplink",
+        "ios",
+        "android"
+      ],
+      "state": "Active",
+      "parentRef": "app-008",
+      "sprintRef": "app-s3",
+      "comments": [
+        {
+          "ref": "app-c07",
+          "body": "The apple-app-site-association file returns a 301 from the Frankfurt edge only. Purge did not help; opened a ticket with the CDN vendor.",
+          "archived": false
+        },
+        {
+          "ref": "app-c08",
+          "body": "Beta builds are signed with the upload key, so verification can never succeed there. Release is fine.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "app-012",
+      "type": "task",
+      "title": "Expire reset tokens after thirty minutes",
+      "description": "Reset tokens are currently valid for a day. Reduce the lifetime to thirty minutes, make them single use and invalidate any earlier outstanding token when a new one is requested. Add a nightly cleanup of expired rows so the table does not grow without bound.\n\nShort lifetimes raise a usability risk, since mail sometimes arrives late. The expired-link screen therefore offers a new request pre-filled with the address, which keeps the thirty-minute limit from becoming a source of support tickets.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "auth",
+        "recovery",
+        "backend"
+      ],
+      "state": "Closed",
+      "parentRef": "app-009",
+      "sprintRef": "app-s2",
+      "comments": []
+    },
+    {
+      "ref": "app-013",
+      "type": "feature",
+      "title": "Biometric unlock",
+      "description": "Let people unlock the app with Face ID, Touch ID or the Android fingerprint and face APIs after the first full sign-in. Biometrics unlock a stored session; they never replace the password for the initial sign-in and are never sent to our servers.\n\nProduct wants the option offered at the moment of highest motivation, right after a successful sign-in on a device, and never again on a screen the person did not ask for. Declining is remembered for ninety days.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "auth",
+        "biometrics"
+      ],
+      "state": "Active",
+      "parentRef": "app-001",
+      "sprintRef": "app-s2",
+      "comments": []
+    },
+    {
+      "ref": "app-014",
+      "type": "story",
+      "title": "Unlock with Face ID or fingerprint",
+      "description": "After a successful password sign-in offer to enable biometric unlock. When enabled, opening the app after it has been in the background for more than a minute shows a lock screen that asks for the biometric. The session token stays in secure storage and is released only by a successful scan. Turning the option off in settings deletes the biometric-bound key.\n\nSecurity review requires that the key is created with user presence required and that adding a new biometric invalidates it, which is the behaviour the re-enrolment story later turns into a friendly explanation.",
+      "acceptanceCriteria": [
+        "A prompt offers biometric unlock after the first password sign-in",
+        "The lock screen appears after one minute in the background",
+        "Disabling the option removes the key and returns to password sign-in"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "auth",
+        "biometrics"
+      ],
+      "state": "Closed",
+      "parentRef": "app-013",
+      "sprintRef": "app-s2",
+      "comments": [
+        {
+          "ref": "app-c09",
+          "body": "Security review passed with one note: the lock screen must hide content in the app switcher snapshot.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "app-015",
+      "type": "story",
+      "title": "Fall back to the device passcode after three failed scans",
+      "description": "If the biometric fails three times in a row the lock screen offers the device passcode or pattern instead of leaving the person stuck. After five total failures the app signs the session out and asks for the password. This follows the platform guidance for fallbacks and keeps the number of attempts bounded.\n\nThe counts are held in memory only; killing the app resets them, which is acceptable because the platform enforces its own lockout after repeated failures and we do not want to build a second one on top.",
+      "acceptanceCriteria": [
+        "Three failed scans show a passcode option",
+        "Five failures end the session and show the password screen",
+        "Cancelling the system prompt returns to the lock screen, not the home feed"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "auth",
+        "biometrics"
+      ],
+      "state": "Active",
+      "parentRef": "app-013",
+      "sprintRef": "app-s3",
+      "comments": [
+        {
+          "ref": "app-c10",
+          "body": "Android's fallback prompt differs by manufacturer; testing on four vendors before merging.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "app-016",
+      "type": "bug",
+      "title": "Biometric prompt appears twice when the app resumes",
+      "description": "Returning to the app from the background shows the biometric dialog, and a moment after a successful scan it appears again. The second prompt sometimes cannot be dismissed on Android and blocks the home feed. It seems to be triggered by both the lifecycle resume callback and the activity focus callback.\n\nA temporary workaround, a flag that ignores a second request within two seconds, exists on a branch but was rejected as a patch over the symptom. The cleaner fix is one owner for the lock state that both callbacks ask.",
+      "acceptanceCriteria": [
+        "Exactly one prompt per resume on both platforms"
+      ],
+      "reproSteps": "1. Enable biometric unlock.\n2. Send the app to the background for two minutes.\n3. Bring it back and scan your finger.\n4. Watch the prompt return a second time.",
+      "tags": [
+        "auth",
+        "biometrics",
+        "android"
+      ],
+      "state": "Active",
+      "parentRef": "app-013",
+      "sprintRef": "app-s3",
+      "comments": [
+        {
+          "ref": "app-c11",
+          "body": "Reproduced on a Pixel 7 and a Galaxy S22, not on iOS. Both callbacks call the same unlock helper without a guard.",
+          "archived": false
+        },
+        {
+          "ref": "app-c12",
+          "body": "Android only; iOS fires the resume callback once.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "app-017",
+      "type": "story",
+      "title": "Ask to re-enable unlock after enrolled fingerprints change",
+      "description": "When someone adds or removes a fingerprint or face in the system settings, the platform invalidates keys bound to the old biometric set. Today the app then fails silently with an unreadable error and falls back to the password screen every time. We want to detect that state and explain it.\n\nThe lock screen should say that the biometrics on the phone changed and that, for safety, unlock must be set up again. A button signs the person in with their password and then re-enrols with the current biometrics. The old key is deleted before the new one is created, so we never hold two.\n\nOn iOS the invalidated state surfaces as a changed domain state in the keychain access control, while on Android it is a key permanently invalidated exception when the cipher is initialised. Both must map to the same internal outcome so the screens do not need to know which platform they run on.\n\nWe also want a gentle nudge rather than a nag: show the explanation once per change, then keep the password screen with a small link to set up unlock again from settings. Analytics should count how often the case happens so we can judge how common it is for our users, who often share family tablets that several people enrol on.",
+      "acceptanceCriteria": [
+        "The lock screen explains that the phone biometrics changed",
+        "A single button signs in with the password and re-enrols",
+        "The stale key is deleted before a new one is created",
+        "The explanation shows once per change and then becomes a settings link",
+        "Both platforms map the invalidated state to one internal result"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "auth",
+        "biometrics"
+      ],
+      "state": "New",
+      "parentRef": "app-013",
+      "sprintRef": "app-s4",
+      "comments": []
+    },
+    {
+      "ref": "app-018",
+      "type": "feature",
+      "title": "Social sign-in",
+      "description": "Sign-in with Apple and Google so people can start without inventing another password. Each provider returns an identity token that our server verifies before creating or finding the account.\n\nBoth providers hand over a signed token containing a stable subject identifier; we store that identifier, not the email, as the key for the link, because people change their email address at the provider.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "auth",
+        "social"
+      ],
+      "state": "Active",
+      "parentRef": "app-001",
+      "sprintRef": "app-s2",
+      "comments": []
+    },
+    {
+      "ref": "app-019",
+      "type": "story",
+      "title": "Sign in with Apple",
+      "description": "Add the Sign in with Apple button on iOS, required because we offer other third-party sign-in. Handle the case where the person hides their email and receives a private relay address, and ask for the name only on the first authorisation, since Apple sends it once.\n\nThe button has to be as prominent as other sign-in options. Review flagged an earlier mock-up in which the Apple button was smaller and below the fold, which can be grounds for rejection.",
+      "acceptanceCriteria": [
+        "The button follows Apple's human interface guidelines",
+        "First-time sign-in creates an account with the name supplied",
+        "Hidden-email users get an account with the relay address"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "auth",
+        "social",
+        "ios"
+      ],
+      "state": "Closed",
+      "parentRef": "app-018",
+      "sprintRef": "app-s2",
+      "comments": []
+    },
+    {
+      "ref": "app-020",
+      "type": "story",
+      "title": "Sign in with Google",
+      "description": "Add the Google button on both platforms using the official SDKs. The server verifies the identity token audience against our client ids and rejects tokens older than five minutes. Accounts match on the verified email when one exists already, after the person confirms with their password.\n\nOn Android the account chooser needs Play services; devices without them hide the button and show the password form only. The decision is made at runtime, never by device model.",
+      "acceptanceCriteria": [
+        "Tapping the button opens the Google account chooser",
+        "Server rejects tokens with the wrong audience",
+        "An existing email account asks for the password before linking"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "auth",
+        "social"
+      ],
+      "state": "Closed",
+      "parentRef": "app-018",
+      "sprintRef": "app-s2",
+      "comments": []
+    },
+    {
+      "ref": "app-021",
+      "type": "bug",
+      "title": "Apple relay address saved instead of the contact email",
+      "description": "People who chose to hide their email end up with a private relay address as their account email, and the welcome message and receipts are sent there. That is correct for the relay, but the account settings screen displays it as if it were the real address and offers no way to add a real contact address. Support cannot reach these users by any other means.\n\nThe fix includes a one-off migration that marks existing relay addresses so that the settings screen can explain them, and a small email to affected people asking whether they would like to add a regular address.",
+      "acceptanceCriteria": [
+        "The settings screen labels a relay address as private",
+        "People can add a verified contact address"
+      ],
+      "reproSteps": "1. Sign in with Apple and choose Hide My Email.\n2. Open Account settings.\n3. Notice the address ends in privaterelay.appleid.com with no option to add another.",
+      "tags": [
+        "auth",
+        "social",
+        "ios"
+      ],
+      "state": "Resolved",
+      "parentRef": "app-018",
+      "sprintRef": "app-s3",
+      "comments": [
+        {
+          "ref": "app-c13",
+          "body": "Support template for contacting relay users is ready; copy approved by legal.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "app-022",
+      "type": "story",
+      "title": "Link a social identity to an existing account",
+      "description": "A signed-in person should be able to attach Apple or Google to their account from settings so they can sign in either way later. Linking requires a fresh password check. Unlinking the last remaining method is refused so nobody locks themselves out.\n\nMerging two existing accounts is explicitly out of scope; if the provider identity already belongs to another account the screen says so and suggests contacting support, who have a documented manual procedure.",
+      "acceptanceCriteria": [
+        "Settings lists linked providers with an unlink action",
+        "Linking asks for the current password",
+        "The last sign-in method cannot be removed"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "auth",
+        "social"
+      ],
+      "state": "New",
+      "parentRef": "app-018",
+      "sprintRef": "app-s4",
+      "comments": []
+    },
+    {
+      "ref": "app-023",
+      "type": "story",
+      "title": "Sign in with Facebook",
+      "description": "Add a Facebook button next to the others. Dropped after research showed under two percent of our audience would use it and the SDK adds a large tracking footprint we do not want in the app.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "auth",
+        "social"
+      ],
+      "state": "Removed",
+      "parentRef": "app-018",
+      "comments": []
+    },
+    {
+      "ref": "app-024",
+      "type": "feature",
+      "title": "Session handling",
+      "description": "How long a sign-in lasts and where its secrets live: access tokens, refresh tokens, device records and the controls people have to end sessions.\n\nSecurity chose rotating refresh tokens with reuse detection. The design is sound, but it puts the burden on the client to be disciplined about concurrency, which several stories under this feature make visible.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "auth",
+        "session"
+      ],
+      "state": "Active",
+      "parentRef": "app-001",
+      "sprintRef": "app-s1",
+      "comments": []
+    },
+    {
+      "ref": "app-025",
+      "type": "story",
+      "title": "Stay signed in across app restarts",
+      "description": "Store the session so that quitting and reopening the app lands on the home feed without another sign-in. Access tokens live fifteen minutes and are renewed with a refresh token that lasts thirty days of inactivity. If renewal fails with a definite rejection, clear the session and show the sign-in screen with a short explanation.\n\nThe session record includes the device name, so the later list of devices can show something friendlier than a random identifier. Name defaults to the model and can be changed in settings.",
+      "acceptanceCriteria": [
+        "Restarting the app keeps the person signed in",
+        "Thirty days of inactivity ends the session",
+        "A rejected refresh shows the sign-in screen with an explanation"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "auth",
+        "session"
+      ],
+      "state": "Closed",
+      "parentRef": "app-024",
+      "sprintRef": "app-s1",
+      "comments": [
+        {
+          "ref": "app-c14",
+          "body": "Thirty-day inactivity limit confirmed with security; not extended with use.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "app-026",
+      "type": "bug",
+      "title": "Users are signed out at random after the phone has been asleep",
+      "description": "A steady trickle of reports say people open the app after a few hours and find themselves on the sign-in screen even though they used it that morning. Server logs show a refresh token rejected as already used, followed by revocation of the whole token family, which is the intended response to token theft but here is triggered by our own client.\n\nThe client fires several requests as soon as the app wakes: the home feed, the unread count, and the device registration. All three notice at the same moment that the access token expired, and each one independently calls the refresh endpoint. The first call succeeds and rotates the refresh token. The other two present the old token and the server treats that as reuse.\n\nThe fix belongs in the client's request layer. Concurrent callers must share one in-flight refresh and wait for its result, then retry with the new access token. A mutex around the refresh call is enough on iOS where the networking layer is a single actor, but on Android there are two HTTP clients, one for images and one for the API, and only the API client has the interceptor.\n\nTwo parallel requests each spending the same single-use refresh token is the exact pattern in every one of the reported cases. We also want a short grace window on the server, about ten seconds, during which a just-rotated token is still accepted once more and returns the same new pair, so that a flaky network that loses the first response does not kill the session either.",
+      "acceptanceCriteria": [
+        "Concurrent requests share one refresh call",
+        "A request that waited retries once with the new token",
+        "The server accepts a just-rotated token for ten seconds",
+        "No sign-out occurs in a soak test of 200 wake-ups"
+      ],
+      "reproSteps": "1. Sign in and leave the app in the background until the access token has expired (fifteen minutes is enough).\n2. Bring the app to the foreground on a good connection.\n3. Watch the log: three refresh calls leave within 50 ms of each other.\n4. The app shows the sign-in screen; the server log shows token family revoked.",
+      "tags": [
+        "auth",
+        "session",
+        "bug"
+      ],
+      "state": "Active",
+      "parentRef": "app-024",
+      "sprintRef": "app-s4",
+      "comments": [
+        {
+          "ref": "app-c15",
+          "body": "Adding a log line with the caller name showed the feed, the unread count and the device registration all refreshing within the same frame.",
+          "archived": false
+        },
+        {
+          "ref": "app-c16",
+          "body": "Product asked whether we could simply lengthen the access token instead. No: it hides the race and widens the theft window.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "app-027",
+      "type": "story",
+      "title": "Sign out of all devices",
+      "description": "One button in security settings that revokes every refresh token for the account, including the current one, after a password prompt. Other devices see the sign-in screen the next time they try to renew. The confirmation lists how many devices will be signed out.\n\nAfter the call succeeds the current device is signed out last, so that a failure partway does not leave the person in an unclear state. The server returns the list of revoked sessions for the confirmation screen.",
+      "acceptanceCriteria": [
+        "The action requires the password",
+        "All refresh tokens are revoked",
+        "The confirmation shows the device count"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "auth",
+        "session"
+      ],
+      "state": "New",
+      "parentRef": "app-024",
+      "sprintRef": "app-s4",
+      "comments": []
+    },
+    {
+      "ref": "app-028",
+      "type": "task",
+      "title": "Move tokens from preferences to the secure keychain",
+      "description": "Tokens are currently saved in plain shared preferences on Android and in user defaults on iOS, which is below the bar set by the security review. Move both to the platform secure stores, migrate existing sessions on first launch so nobody is signed out, and delete the old copies afterwards.\n\nThe migration code is a one-time path guarded by a stored marker. Once the oldest supported version is past the point where plain storage was used the whole path can be deleted, and a calendar reminder is set for it.",
+      "acceptanceCriteria": [
+        "Tokens are stored only in the keychain or keystore-backed storage",
+        "Existing sessions survive the migration",
+        "Old entries are removed"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "auth",
+        "session",
+        "security"
+      ],
+      "state": "Closed",
+      "parentRef": "app-025",
+      "sprintRef": "app-s2",
+      "comments": [
+        {
+          "ref": "app-c17",
+          "body": "Migration tested from the last three releases. Users on versions older than that will sign in again, which we accepted.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "app-029",
+      "type": "story",
+      "title": "List of signed-in devices",
+      "description": "Show every device with a live session: model name, approximate location from the last IP, and when it was last active. Each row has a remove button that revokes just that session. The current device is marked and cannot be removed from this list.\n\nApproximate location comes from the last request IP through a lookup that is accurate to city level at best; the screen says approximate so that nobody assumes more precision than there is.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "auth",
+        "session"
+      ],
+      "state": "New",
+      "parentRef": "app-024",
+      "sprintRef": "app-s4",
+      "comments": []
+    },
+    {
+      "ref": "app-030",
+      "type": "feature",
+      "title": "Two-factor verification",
+      "description": "A second proof at sign-in for people who turn it on: a code from an authenticator app, or a text message when they have no app. Backup codes cover lost phones.\n\nEnrolment is voluntary for now. Sensitive actions such as changing the email will require a fresh code for accounts that have it enabled, which keeps the benefit visible to the people who opted in.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "auth",
+        "2fa"
+      ],
+      "state": "Active",
+      "parentRef": "app-001",
+      "sprintRef": "app-s3",
+      "comments": []
+    },
+    {
+      "ref": "app-031",
+      "type": "story",
+      "title": "Authenticator app codes for two-factor sign-in",
+      "description": "Let people enrol an authenticator app by scanning a QR code or typing the secret. At sign-in a second screen asks for the six-digit code and accepts the previous and next code to absorb clock drift. Enrolment is confirmed by entering one valid code before it is switched on.",
+      "acceptanceCriteria": [
+        "The QR code and the plain secret are both shown",
+        "Enrolment finishes only after a valid code",
+        "Codes from one step before and after are accepted",
+        "Five wrong codes lock the attempt for a minute"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "auth",
+        "2fa"
+      ],
+      "state": "Active",
+      "parentRef": "app-030",
+      "sprintRef": "app-s3",
+      "comments": [
+        {
+          "ref": "app-c18",
+          "body": "QR scanning needs camera permission; the typed secret path works without it and is the default on tablets without cameras.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "app-032",
+      "type": "story",
+      "title": "Text message code as a fallback",
+      "description": "If someone has no authenticator app they can receive the six-digit code by text message. Numbers are verified at enrolment. Because text messages can be intercepted the setting screen says so and recommends the app, but the option stays available.\n\nRate limits protect the budget as well as the person: no more than five messages per number per hour and fifty per day across the service for a single account, with a visible message when the limit is reached.",
+      "acceptanceCriteria": [
+        "A phone number is verified before it is used",
+        "A code expires after five minutes",
+        "A resend link appears after thirty seconds"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "auth",
+        "2fa",
+        "sms"
+      ],
+      "state": "Closed",
+      "parentRef": "app-030",
+      "sprintRef": "app-s2",
+      "comments": []
+    },
+    {
+      "ref": "app-033",
+      "type": "bug",
+      "title": "One-time code is not picked up automatically on Android 14",
+      "description": "On Android 14 the six-digit text message code no longer fills in on its own and people must switch apps to read it. The SMS retriever API still works on older versions, so the break is specific to the new release and to the way our hash is appended to the message.\n\nThe retriever needs an eleven character hash derived from the signing certificate to appear at the end of the message, and the beta signing key differs from the release key, so the hash must be computed per build type.",
+      "acceptanceCriteria": [
+        "The code fills automatically on Android 12, 13 and 14"
+      ],
+      "reproSteps": "1. Enrol a phone number on an Android 14 device.\n2. Sign in with the account.\n3. Wait for the text message.\n4. The code field stays empty although the message arrived.",
+      "tags": [
+        "auth",
+        "2fa",
+        "android",
+        "sms"
+      ],
+      "state": "Active",
+      "parentRef": "app-030",
+      "sprintRef": "app-s4",
+      "comments": []
+    },
+    {
+      "ref": "app-034",
+      "type": "task",
+      "title": "Generate and store backup codes",
+      "description": "Create ten single-use backup codes when two-factor is switched on, show them once with a copy and a save-to-files action, and keep only salted hashes server-side. Regenerating invalidates the previous set. A used code is crossed off on the settings screen.\n\nSupport asked for a way to confirm identity when a person has lost both their phone and their codes. The agreed process is manual, with a waiting period of seven days and notices to the account email, and not part of this task.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "auth",
+        "2fa",
+        "backend"
+      ],
+      "state": "New",
+      "parentRef": "app-031",
+      "sprintRef": "app-s4",
+      "comments": []
+    },
+    {
+      "ref": "app-035",
+      "type": "epic",
+      "title": "Accounts and profile",
+      "description": "Give every person a home for their identity inside Northpath: a profile they can edit, security settings they can understand, the right to leave and take their data with them, and a way to hold more than one account on a single phone. This epic is where privacy commitments become screens.\n\nSeveral store policies and privacy regulations meet in this epic, so each story carries a note of the rule it satisfies, and legal reviews the wording of every screen that mentions data before it ships.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "accounts"
+      ],
+      "state": "Active",
+      "sprintRef": "app-s1",
+      "comments": []
+    },
+    {
+      "ref": "app-036",
+      "type": "feature",
+      "title": "Profile editing",
+      "description": "Display name, avatar, language and time zone: the small facts that make the app feel like it belongs to the person using it.\n\nProfile data is shown to other members, so each field has a visibility rule stated on the screen. The defaults are conservative: the name and avatar are visible to people in shared conversations only.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "accounts",
+        "profile"
+      ],
+      "state": "Active",
+      "parentRef": "app-035",
+      "sprintRef": "app-s1",
+      "comments": []
+    },
+    {
+      "ref": "app-037",
+      "type": "story",
+      "title": "Edit display name and avatar",
+      "description": "A profile screen where people can change the name shown to others and pick a photo from the library or take one with the camera. The change is saved on tapping Done and the previous values come back if they cancel. Names are limited to fifty characters and may contain any script, including emoji, but not leading or trailing spaces.\n\nAvatars are held to the content policy; automated screening runs after upload and replaces a rejected picture with the default, notifying the person with the reason and a way to appeal.",
+      "acceptanceCriteria": [
+        "Name and photo can be changed and saved",
+        "Cancel restores the previous values",
+        "Names over fifty characters are refused with a counter"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "accounts",
+        "profile"
+      ],
+      "state": "Closed",
+      "parentRef": "app-036",
+      "sprintRef": "app-s1",
+      "comments": []
+    },
+    {
+      "ref": "app-038",
+      "type": "story",
+      "title": "Crop the avatar to a circle before upload",
+      "description": "Before the photo is uploaded show a square crop frame with a circular mask, pinch to zoom and drag to reposition. The cropped result is resized to 512 by 512 pixels on the device so we never upload a twelve megapixel original just to show a thumbnail. Rotation from the camera metadata is applied first.\n\nOn low-memory devices decoding the original can fail, so the crop screen downsamples while decoding and falls back to a smaller target if allocation still fails. Failure shows a friendly message, not a crash.",
+      "acceptanceCriteria": [
+        "Pinch and drag move the photo under a circular mask",
+        "The uploaded file is 512 by 512",
+        "Orientation metadata is respected"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "accounts",
+        "profile",
+        "images"
+      ],
+      "state": "Closed",
+      "parentRef": "app-036",
+      "sprintRef": "app-s2",
+      "comments": []
+    },
+    {
+      "ref": "app-039",
+      "type": "bug",
+      "title": "Avatar upload fails for photos taken in the high-efficiency format",
+      "description": "Choosing a photo that was taken with the iPhone camera set to high efficiency ends with a generic Something went wrong message, and nothing is uploaded. JPEG and PNG pictures work. The server rejects the file because its content type is not on the allow list, and the client sends the original bytes instead of the re-encoded crop when the crop step is skipped for small images.",
+      "acceptanceCriteria": [
+        "Pictures in any format the platform can decode upload successfully",
+        "The client always sends the re-encoded JPEG"
+      ],
+      "reproSteps": "1. On an iPhone set Camera > Formats to High Efficiency.\n2. Take a photo and open Edit profile in Northpath.\n3. Choose the photo.\n4. The upload ends with an error toast.",
+      "tags": [
+        "accounts",
+        "profile",
+        "images",
+        "ios"
+      ],
+      "state": "Closed",
+      "parentRef": "app-036",
+      "sprintRef": "app-s2",
+      "comments": [
+        {
+          "ref": "app-c19",
+          "body": "Fixed by always passing the image through the crop pipeline, even when the picture is already small.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "app-040",
+      "type": "story",
+      "title": "Choose a language and time zone",
+      "description": "Let people override the language and time zone the app takes from the phone. The choices apply to dates in the feed, to emails and to notification timing. Changing the language reloads visible screens without restarting the app and falls back to English for strings that are not translated yet.",
+      "acceptanceCriteria": [
+        "A picker lists the supported languages and all time zones",
+        "The interface changes without a restart",
+        "Untranslated strings fall back to English"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "accounts",
+        "profile",
+        "i18n"
+      ],
+      "state": "Active",
+      "parentRef": "app-036",
+      "sprintRef": "app-s3",
+      "comments": []
+    },
+    {
+      "ref": "app-041",
+      "type": "task",
+      "title": "Shrink avatars on the server and serve them from the CDN",
+      "description": "Generate 64, 128 and 512 pixel variants when an avatar arrives, store them with long cache headers under a content hash and serve them from the CDN. Delete variants of replaced pictures after seven days. The app asks for the size that matches its screen density.\n\nCache invalidation is by URL: the content hash in the file name means a replaced avatar simply gets a new address and the old one expires naturally, avoiding any purge calls to the CDN.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "accounts",
+        "images",
+        "backend"
+      ],
+      "state": "Closed",
+      "parentRef": "app-038",
+      "sprintRef": "app-s2",
+      "comments": []
+    },
+    {
+      "ref": "app-042",
+      "type": "feature",
+      "title": "Account security settings",
+      "description": "The screens where people change what protects their account: password, email address and the places they are signed in.\n\nEvery action here is a moment where an attacker with a stolen phone would try to take over an account, so each one asks for the password again unless it was entered in the last five minutes.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "accounts",
+        "security"
+      ],
+      "state": "Active",
+      "parentRef": "app-035",
+      "sprintRef": "app-s2",
+      "comments": []
+    },
+    {
+      "ref": "app-043",
+      "type": "story",
+      "title": "Change the password from settings",
+      "description": "A form with the current password and the new password twice. Strength is shown as a meter based on length and a list of common passwords, not on arbitrary composition rules. On success all other sessions are signed out and the person stays signed in on this device.\n\nThe new password may not equal any of the last five, and the server compares hashes rather than storing readable history. The error explains the rule without saying which earlier password matched.",
+      "acceptanceCriteria": [
+        "The current password must be correct",
+        "The meter flags the hundred thousand most common passwords",
+        "Other sessions are revoked after a change"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "accounts",
+        "security"
+      ],
+      "state": "Closed",
+      "parentRef": "app-042",
+      "sprintRef": "app-s2",
+      "comments": []
+    },
+    {
+      "ref": "app-044",
+      "type": "story",
+      "title": "Change the email address with verification",
+      "description": "People can enter a new address, which becomes active only after they click the confirmation sent to it. Until then the old address stays in use and receives a notice that a change was requested, with a link to cancel it. The request expires after twenty-four hours.\n\nThe confirmation link opens the app if it is installed and a web page otherwise, with identical results. Changing the email also updates the address for receipts and does not touch the sign-in methods linked from providers.",
+      "acceptanceCriteria": [
+        "The new address is confirmed through an emailed link",
+        "The old address is notified and can cancel",
+        "Unconfirmed requests expire after a day"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "accounts",
+        "security"
+      ],
+      "state": "Active",
+      "parentRef": "app-042",
+      "sprintRef": "app-s3",
+      "comments": [
+        {
+          "ref": "app-c20",
+          "body": "Open question: do pending changes block a second request? Decision: yes, one at a time, with a cancel link.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "app-045",
+      "type": "bug",
+      "title": "Changing the email logs out other devices without any warning",
+      "description": "After a confirmed email change, every other device finds itself on the sign-in screen with no explanation. The change revokes sessions as a side effect of rotating the account identifier in the token claims. Nothing in the settings screen mentions that this will happen, and two beta testers thought their account had been hacked.\n\nTwo designs are possible: keep sessions alive across the change by moving the claims to a stable account identifier, or keep the revocation and say so. Security prefers the first; whichever is chosen, the confusion has to go.",
+      "acceptanceCriteria": [
+        "The settings screen warns that other devices will be signed out, or sessions survive the change",
+        "The sign-in screen explains why a session ended"
+      ],
+      "reproSteps": "1. Sign in on two phones.\n2. On phone one change the email address and confirm the link.\n3. Open the app on phone two.\n4. It lands on sign-in without a message.",
+      "tags": [
+        "accounts",
+        "security"
+      ],
+      "state": "New",
+      "parentRef": "app-042",
+      "sprintRef": "app-s4",
+      "comments": []
+    },
+    {
+      "ref": "app-046",
+      "type": "feature",
+      "title": "Account deletion",
+      "description": "Letting people leave. Deleting an account removes personal data and cancels anything tied to it, in a way the person can understand and, for a short window, undo.\n\nThe tone matters here as much as the mechanics. Copy is written to be factual and kind, avoids guilt, and says clearly what will happen and when, so that nobody has to guess what pressing a button does.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "accounts",
+        "privacy"
+      ],
+      "state": "Active",
+      "parentRef": "app-035",
+      "sprintRef": "app-s3",
+      "comments": []
+    },
+    {
+      "ref": "app-047",
+      "type": "story",
+      "title": "Delete my account and data from inside the app",
+      "description": "A Delete account action at the bottom of settings opens a screen that lists exactly what will be removed and what we must keep for legal reasons, such as invoices for seven years. The person confirms by typing their password, then sees a final summary with the date the deletion will complete.\n\nBehind the screen the server marks the account as pending deletion, revokes every session, stops all outgoing email and push, and enqueues the purge job described in the grace period story. Support can see the state but not the personal data.\n\nThe flow has to be reachable without contacting support. Many privacy regulations give people a right to erasure, and the stores have their own rules as well, so the deletion must be fully self-service. The export of personal data is offered first on the same screen, as a download that arrives by email within a day.\n\nApple's App Store review guideline requires that any app which lets people create an account also lets them start deleting it from inside the app, not by sending them to a web page or asking them to write to support. Our last submission was warned about this, and the next one will be rejected if the option is missing. The Google Play data deletion declaration says the same and requires a web link as well, which the marketing site will host.\n\nOne more rule: if the person has an active subscription bought through a store, we cannot cancel it ourselves. The screen must say so plainly and link to the store's subscription settings before they confirm.",
+      "acceptanceCriteria": [
+        "Delete account is reachable from settings without contacting support",
+        "The screen lists what is removed and what is retained, and why",
+        "The password is required to confirm",
+        "Active store subscriptions are called out with a link to manage them",
+        "A data export is offered before deletion",
+        "Sessions, email and push stop immediately"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "accounts",
+        "privacy",
+        "compliance"
+      ],
+      "state": "Active",
+      "parentRef": "app-046",
+      "sprintRef": "app-s3",
+      "comments": [
+        {
+          "ref": "app-c21",
+          "body": "Legal confirmed the seven year invoice retention and signed off the wording in the list of retained data.",
+          "archived": false
+        },
+        {
+          "ref": "app-c22",
+          "body": "Play console asked for a public URL as well; the web team will add a page that mirrors the in-app flow.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "app-048",
+      "type": "story",
+      "title": "Fourteen day grace period before deletion",
+      "description": "Deletion is not instant. For fourteen days after confirming, the account is dormant and signing in shows an offer to restore it. After that the purge job removes the personal data. Reminder emails go out on day seven and on day thirteen.\n\nDuring the grace period the account is invisible to others, and their content shows as from a former member only after the purge. Support cannot extend the window, but they can restore on request until it ends.",
+      "acceptanceCriteria": [
+        "Signing in during the window offers to restore the account",
+        "Reminders are sent on days seven and thirteen",
+        "Restoring brings back the account unchanged"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "accounts",
+        "privacy"
+      ],
+      "state": "Active",
+      "parentRef": "app-046",
+      "sprintRef": "app-s3",
+      "comments": [
+        {
+          "ref": "app-c23",
+          "body": "Fourteen days chosen to match the longest billing cycle on monthly plans.",
+          "archived": false
+        },
+        {
+          "ref": "app-c24",
+          "body": "Earlier idea of thirty days was dropped as too long for stores' policies.",
+          "archived": true
+        }
+      ]
+    },
+    {
+      "ref": "app-049",
+      "type": "task",
+      "title": "Nightly job that purges accounts past their grace period",
+      "description": "Find accounts whose deletion date has passed, delete personal rows in dependency order, replace the person on shared content with a placeholder called Former member and write an audit record that contains no personal data. The job is idempotent and resumes after a crash.\n\nEvery table that holds personal data registers a purge handler with the job, and a test fails if a new table with an account column has none. The audit record keeps only the hashed account id and the date.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "accounts",
+        "privacy",
+        "backend"
+      ],
+      "state": "New",
+      "parentRef": "app-048",
+      "sprintRef": "app-s4",
+      "comments": []
+    },
+    {
+      "ref": "app-050",
+      "type": "bug",
+      "title": "A closed account still receives marketing push messages",
+      "description": "Two people who had asked for deletion reported that campaign messages still reached their phones. The audience for campaigns is built from the device table, and the deletion flow revokes sessions but does not remove device registrations, so the push gateway still has a valid token for each of them.\n\nThe audience query is shared with other campaigns, so the filter goes in the shared query, not in this campaign. A regression test creates a deletion-pending account and asserts that it is absent from every audience.",
+      "acceptanceCriteria": [
+        "Device registrations are removed when deletion is requested",
+        "Campaign audiences exclude accounts pending deletion"
+      ],
+      "reproSteps": "1. Create an account, register a device for push, then request deletion.\n2. Send a campaign to all registered devices.\n3. The deleted account's phone receives it.",
+      "tags": [
+        "accounts",
+        "privacy",
+        "push"
+      ],
+      "state": "Active",
+      "parentRef": "app-046",
+      "sprintRef": "app-s4",
+      "comments": [
+        {
+          "ref": "app-c25",
+          "body": "Found while testing the audience query: pending-deletion accounts are not filtered out there either, so fix both places.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "app-051",
+      "type": "feature",
+      "title": "Several accounts on one phone",
+      "description": "Some people keep a personal and a shared household account. Let them stay signed in to more than one and switch without typing credentials again.\n\nTechnically the largest risk is cache isolation: two accounts must never see each other's cached feed, drafts or search history, which implies separate storage namespaces from the very first release of the feature.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "accounts",
+        "multi"
+      ],
+      "state": "New",
+      "parentRef": "app-035",
+      "sprintRef": "app-s4",
+      "comments": []
+    },
+    {
+      "ref": "app-052",
+      "type": "story",
+      "title": "Switch between two signed-in accounts",
+      "description": "Long-press the profile picture in the tab bar to see the signed-in accounts and switch with a tap. Each account keeps its own tokens, caches and notification settings. The limit is three accounts per device to bound storage.\n\nNotifications for inactive accounts arrive as badge counts on the switcher only; delivering their pushes would require several tokens per device, which the platforms do not support in a straightforward way.",
+      "acceptanceCriteria": [
+        "Long-press opens the account switcher",
+        "Each account has its own session and cache",
+        "A fourth account is refused with an explanation"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "accounts",
+        "multi"
+      ],
+      "state": "New",
+      "parentRef": "app-051",
+      "sprintRef": "app-s4",
+      "comments": []
+    },
+    {
+      "ref": "app-053",
+      "type": "feature",
+      "title": "Onboarding",
+      "description": "The first minute: what a new person sees before the home feed, and how we ask for the permissions the app needs.\n\nA short, skippable path with at most three steps. Anything not required to reach the home feed is deferred until the person has a reason to care, and every deferred step has a place in settings.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "accounts",
+        "onboarding"
+      ],
+      "state": "Active",
+      "parentRef": "app-035",
+      "sprintRef": "app-s1",
+      "comments": []
+    },
+    {
+      "ref": "app-054",
+      "type": "story",
+      "title": "Welcome carousel",
+      "description": "Three cards introduce the app with an illustration and one sentence each, a Skip link at the top and a Get started button on the last card. Reduced motion settings turn the slide transitions into fades. The carousel is shown once per installation.\n\nIllustrations come from the design system as vector assets so they stay sharp on every density, and each card has alternative text describing its message rather than its picture.",
+      "acceptanceCriteria": [
+        "Three cards with skip and get started",
+        "Reduced motion replaces slides with fades",
+        "Shown once per installation"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "onboarding",
+        "ux"
+      ],
+      "state": "Closed",
+      "parentRef": "app-053",
+      "sprintRef": "app-s1",
+      "comments": []
+    },
+    {
+      "ref": "app-055",
+      "type": "bug",
+      "title": "Carousel page dots overlap the button on small phones",
+      "description": "On phones with a screen shorter than 700 points the page indicator dots sit on top of the Get started button and swallow taps, so the final card cannot be completed without using Skip. It comes from a fixed bottom margin that ignores the safe area.\n\nFixing the margin exposed a second problem on foldable devices where the safe area changes when the screen is unfolded; the layout now recomputes on configuration change instead of caching the first measurement.",
+      "acceptanceCriteria": [
+        "Dots and button never overlap on any supported screen height"
+      ],
+      "reproSteps": "1. Run the app on an iPhone SE or a small Android device.\n2. Go to the last card of the welcome carousel.\n3. Tap the button; the dots receive the tap.",
+      "tags": [
+        "onboarding",
+        "ux",
+        "layout"
+      ],
+      "state": "Closed",
+      "parentRef": "app-053",
+      "sprintRef": "app-s1",
+      "comments": []
+    },
+    {
+      "ref": "app-056",
+      "type": "story",
+      "title": "Skip onboarding for people who already had an account",
+      "description": "If a person signs in and the server says they have used the app before, go straight to the home feed. The welcome carousel and permission prompts only appear for accounts created on this device or never seen by it.\n\nThe server flag is the source of truth, not a local marker, because a reinstall wipes local state and would otherwise show the carousel again to long-standing members who are signing in on a new phone.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "onboarding"
+      ],
+      "state": "Active",
+      "parentRef": "app-053",
+      "sprintRef": "app-s3",
+      "comments": [
+        {
+          "ref": "app-c26",
+          "body": "Edge case: a person signs in on a new phone for the first time; server flag says seen, so they skip the carousel but still get the permission prompts.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "app-057",
+      "type": "epic",
+      "title": "Notifications",
+      "description": "Tell people what matters, when it matters, and nothing else. This epic covers how a message gets from our servers to a lock screen, how people control what they receive, and what happens when they tap one. Opt-in rates and uninstall rates after a bad week of notifications are the numbers we watch.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "notifications"
+      ],
+      "state": "Active",
+      "sprintRef": "app-s1",
+      "comments": []
+    },
+    {
+      "ref": "app-058",
+      "type": "feature",
+      "title": "Push delivery",
+      "description": "The plumbing: device registration, the gateways for Apple and Google, silent updates and the handling of tokens that go stale.\n\nDelivery is measured end to end: accepted by the gateway, delivered to the device, opened. The gaps between those numbers tell us whether a problem is ours, the gateway's, or the manufacturer's power management.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "notifications",
+        "push"
+      ],
+      "state": "Active",
+      "parentRef": "app-057",
+      "sprintRef": "app-s1",
+      "comments": []
+    },
+    {
+      "ref": "app-059",
+      "type": "story",
+      "title": "Register the device token with the server",
+      "description": "After sign-in send the platform push token with the app version, locale and time zone. The server stores one row per device and account. Registration repeats whenever the token changes and when the app version changes, and is removed on sign-out so a shared phone stops receiving someone else's messages.\n\nRegistration carries the time zone and locale so that scheduling and wording can be decided on the server. It runs on a background thread with exponential backoff and never blocks the sign-in completion.",
+      "acceptanceCriteria": [
+        "A token is registered after sign-in",
+        "The row is updated when the token or version changes",
+        "Sign-out removes the registration"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "notifications",
+        "push"
+      ],
+      "state": "Closed",
+      "parentRef": "app-058",
+      "sprintRef": "app-s1",
+      "comments": []
+    },
+    {
+      "ref": "app-060",
+      "type": "story",
+      "title": "Silent push to refresh the feed in the background",
+      "description": "Send a content-available message when new items arrive so the feed is warm when the person opens the app. The handler must finish within the platform's time limit, fetch only the delta since the last sync and respect low-power mode by skipping the work.\n\nPlatform limits are strict: a few silent messages per hour are honoured on iOS and none after the user has force-quit the app. The feed therefore always refreshes on open as well and treats the silent push as an optimisation.",
+      "acceptanceCriteria": [
+        "A silent push triggers a delta fetch",
+        "Low-power mode skips the fetch",
+        "The handler completes in under ten seconds"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "notifications",
+        "push",
+        "background"
+      ],
+      "state": "Closed",
+      "parentRef": "app-058",
+      "sprintRef": "app-s2",
+      "comments": []
+    },
+    {
+      "ref": "app-061",
+      "type": "bug",
+      "title": "Las notificaciones push no llegan en algunos teléfonos Android",
+      "description": "Varios usuarios con teléfonos Android de distintas marcas informan de que dejaron de recibir notificaciones push, aunque los permisos están activados y la aplicación está instalada. En los registros del servidor el mensaje se entrega a Firebase sin errores, pero el teléfono nunca lo muestra. El problema aparece sobre todo después de unos días sin abrir la aplicación y parece depender del modelo del dispositivo. El equipo de soporte ha comprobado que reinstalar la aplicación lo arregla durante un tiempo.",
+      "acceptanceCriteria": [
+        "Las notificaciones llegan aunque la aplicación no se haya abierto en una semana",
+        "Se documentan los ajustes de ahorro de batería que afectan a la entrega"
+      ],
+      "reproSteps": "1. Instalar la aplicación en un teléfono Android y activar las notificaciones.\n2. No abrir la aplicación durante tres días.\n3. Enviar una notificación de prueba desde el panel.\n4. El teléfono no muestra nada, aunque el servidor registra la entrega.",
+      "tags": [
+        "notifications",
+        "push",
+        "android",
+        "i18n"
+      ],
+      "state": "Active",
+      "parentRef": "app-058",
+      "sprintRef": "app-s3",
+      "comments": [
+        {
+          "ref": "app-c27",
+          "body": "Los casos más frecuentes son teléfonos Xiaomi con el permiso de inicio automático desactivado: el sistema mata el servicio de mensajería y no lo vuelve a levantar. Hay que guiar al usuario a ese ajuste.",
+          "archived": false
+        },
+        {
+          "ref": "app-c28",
+          "body": "Confirmed with two Xiaomi devices in the lab. Granting the autostart permission fixes delivery; the in-app help page needs a screenshot per vendor.",
+          "archived": false
+        },
+        {
+          "ref": "app-c29",
+          "body": "Prueba en un Samsung con ahorro de batería activado: las notificaciones llegan, así que no es un problema general de Android.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "app-062",
+      "type": "bug",
+      "title": "Push token is not refreshed after a reinstall from backup",
+      "description": "Restoring a phone from a backup brings back the app's stored token, which the platform no longer honours. The server keeps sending to a dead token and the person receives nothing until they sign out and in again. We should treat a delivery rejection of this kind as a signal to drop the row and re-register on next launch.\n\nThe rejection codes differ by gateway: an unregistered token on Android and a bad device token on iOS. A table in the sender code maps both to the same delete action so the rule is written once.",
+      "acceptanceCriteria": [
+        "Rejected tokens are deleted server-side",
+        "The app re-registers on every cold start if its stored token differs from the platform's"
+      ],
+      "reproSteps": "1. Sign in and register for push.\n2. Back up the phone and restore it to another device.\n3. Open the app on the new device and send a test push.\n4. Nothing arrives.",
+      "tags": [
+        "notifications",
+        "push"
+      ],
+      "state": "Closed",
+      "parentRef": "app-058",
+      "sprintRef": "app-s2",
+      "comments": []
+    },
+    {
+      "ref": "app-063",
+      "type": "task",
+      "title": "Migrate to the HTTP v1 API of the Firebase messaging service",
+      "description": "The legacy send endpoint is being switched off. Move the gateway to the v1 API with short-lived OAuth credentials from the service account, adapt payload shapes (notification, data, apns and android blocks) and keep the batching so a campaign of a million devices still finishes in minutes.\n\nA canary sends five percent of traffic through the new path for two days before the switch. Error rates and delivery counts are compared against the old path in the same dashboard to avoid surprises on cutover day.",
+      "acceptanceCriteria": [
+        "All sends use the v1 endpoint",
+        "Credentials are refreshed automatically",
+        "Batch throughput is at least as high as before"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "notifications",
+        "push",
+        "backend"
+      ],
+      "state": "Closed",
+      "parentRef": "app-059",
+      "sprintRef": "app-s2",
+      "comments": [
+        {
+          "ref": "app-c30",
+          "body": "Cutover done on a Tuesday morning; no incidents in the first week.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "app-064",
+      "type": "bug",
+      "title": "Duplicate notifications when two accounts share a device",
+      "description": "When someone signs out of one account and into another on the same phone, messages for both accounts arrive for a while. Both registrations point to the same platform token, and sign-out only deletes the registration if the request reaches the server before the network drops.\n\nThe issue is most visible with the household accounts that people create so that partners can share a tablet. One person signs out, the other signs in, and for a day or two both receive each other's alerts, which is a privacy problem as well as an annoyance. A few testers received a notification titled with the other person's name.\n\nThe server currently allows the same token under many accounts. The simplest rule is that a token belongs to at most one account at a time: registering it for account B removes it from account A. Edge case: the account switcher keeps several signed-in accounts on a phone by design, and there each switch must move the token to the active one, with the inactive accounts receiving their messages only as in-app items on next open.\n\nThe client side also needs a retry. If the sign-out request fails, queue the unregistration and send it when connectivity returns, using the old account's refresh token that we still hold for exactly that purpose. Without the queue we depend on the registration being replaced by the next sign-in, which does not happen if the next sign-in is on a different phone.\n\nAnother source of duplicates deserves a note: the notification service extension on iOS and the foreground message handler on Android can both post a local notification for the same remote message when the app is in the foreground. We found the collapse identifier unset, so the system never merges them.",
+      "acceptanceCriteria": [
+        "A push token is registered to one account at a time",
+        "Failed sign-out unregistrations are retried when online",
+        "Local and remote copies of the same message are merged by a collapse identifier",
+        "The account switcher moves the token on every switch"
+      ],
+      "reproSteps": "1. Sign in as account A on a phone and allow notifications.\n2. Sign out and sign in as account B on the same phone.\n3. Trigger a notification for A from the dashboard.\n4. The phone displays it although A is signed out.\n5. Trigger one for B; it is displayed as well, sometimes twice.",
+      "tags": [
+        "notifications",
+        "push",
+        "privacy"
+      ],
+      "state": "Active",
+      "parentRef": "app-058",
+      "sprintRef": "app-s4",
+      "comments": [
+        {
+          "ref": "app-c31",
+          "body": "Counted 61 devices with one token under two or more accounts in production last night.",
+          "archived": false
+        },
+        {
+          "ref": "app-c32",
+          "body": "First idea was to clear tokens on sign-out only; replaced by the one-account-per-token rule.",
+          "archived": true
+        }
+      ]
+    },
+    {
+      "ref": "app-065",
+      "type": "feature",
+      "title": "Notification preferences",
+      "description": "Controls that let people decide which messages interrupt them and when.\n\nDefaults protect people from noise: new categories start off unless they are transactional, and the settings screen shows what a category will send with a sample message, so choices are informed rather than guessed.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "notifications",
+        "settings"
+      ],
+      "state": "Active",
+      "parentRef": "app-057",
+      "sprintRef": "app-s2",
+      "comments": []
+    },
+    {
+      "ref": "app-066",
+      "type": "story",
+      "title": "Per-category notification toggles",
+      "description": "A settings screen listing categories such as Comments, Mentions, Reminders and Product news, each with separate switches for push and email. Defaults are on for transactional categories and off for product news. The screen reads the current system permission and shows a button to open system settings when push is disabled there.\n\nChanges save immediately with a small confirmation instead of a Save button, and failures roll the switch back with a message. Server-side the preferences are one row per account and category, which keeps the sender query simple.",
+      "acceptanceCriteria": [
+        "Every category has a push and an email switch",
+        "Product news defaults to off",
+        "A banner links to system settings when push is blocked"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "notifications",
+        "settings"
+      ],
+      "state": "Closed",
+      "parentRef": "app-065",
+      "sprintRef": "app-s2",
+      "comments": [
+        {
+          "ref": "app-c33",
+          "body": "Category names approved by content design. Product news stays off by default after the legal review.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "app-067",
+      "type": "story",
+      "title": "Quiet hours",
+      "description": "People can choose a daily window, for example 22:00 to 07:00, during which push messages are held and delivered together as a short summary when the window ends. Urgent security alerts, such as a new sign-in from an unknown device, ignore the window. The setting is stored on the server, because the sender decides when to deliver, not the phone.\n\nThe summary groups held messages by category and shows how many there were. If more than twenty accumulate, the summary says so and the inbox keeps the rest. Tapping the summary opens the in-app inbox.\n\nThe window is evaluated in the person's time zone, which the app sends with every registration. People who travel will see the window move with the phone when the time zone setting is on automatic, and stay where it is when they have fixed one in their profile.\n\nThe hardest part is time arithmetic. Twice a year the clocks change, and a window from 22:00 to 07:00 is eight hours long on most nights, nine on the night the clocks go back and seven on the night they go forward. Daylight saving transitions must not make the window end early, double-deliver the summary or skip it, so all comparisons use the zone rules from the time zone database rather than adding hours to a timestamp. A test must cover the night of a clock change in two hemispheres, plus a zone that changes by thirty minutes.\n\nHeld messages are stored for at most forty-eight hours; after that they are dropped from the summary and remain only in the inbox.",
+      "acceptanceCriteria": [
+        "A daily window can be set with start and end times",
+        "Held messages arrive as one grouped summary after the window",
+        "Security alerts bypass the window",
+        "Windows crossing midnight work",
+        "The summary is correct on nights when the clocks change"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "notifications",
+        "settings",
+        "timezone"
+      ],
+      "state": "Active",
+      "parentRef": "app-065",
+      "sprintRef": "app-s3",
+      "comments": [
+        {
+          "ref": "app-c34",
+          "body": "Design review: allow different windows for weekdays and weekends later, not in this story.",
+          "archived": false
+        },
+        {
+          "ref": "app-c35",
+          "body": "Backend will schedule with the zone name, never a fixed offset.",
+          "archived": false
+        },
+        {
+          "ref": "app-c36",
+          "body": "Weekends handled in a later story, as agreed in design review.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "app-068",
+      "type": "story",
+      "title": "Mute a single conversation for a day",
+      "description": "From a conversation's menu choose Mute for one day, one week or until I turn it back on. Muted conversations still collect items in the inbox, without a badge or a push. A small bell with a line through it shows the state in the conversation header.\n\nMute state lives on the server so that it applies to every device and to email as well. The duration choices are relative to the server clock to avoid trouble with phones whose clocks are wrong.",
+      "acceptanceCriteria": [
+        "Three mute durations are offered",
+        "Muted conversations produce no push or badge",
+        "The header shows the muted state"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "notifications",
+        "settings"
+      ],
+      "state": "New",
+      "parentRef": "app-065",
+      "sprintRef": "app-s4",
+      "comments": []
+    },
+    {
+      "ref": "app-069",
+      "type": "bug",
+      "title": "Quiet hours ignore the time zone of a traveller",
+      "description": "A person who flew from London to Singapore still gets silenced from 22:00 London time, which is the middle of the Singapore afternoon, and then receives messages at night local time. The server uses the time zone captured at the first registration, and later registrations do not update it when the value is unchanged from the app's point of view.\n\nA test needs a fake clock and a table of zone changes, because the bug only shows when the registration time zone differs from the evaluation time zone, which unit tests rarely set up on their own.",
+      "acceptanceCriteria": [
+        "The zone is updated on each launch if the phone's zone changed",
+        "Fixed profile zones are honoured"
+      ],
+      "reproSteps": "1. Set quiet hours from 22:00 to 07:00 in a London time zone.\n2. Change the phone to Singapore time and open the app.\n3. Check the registration: the zone is still Europe/London.",
+      "tags": [
+        "notifications",
+        "settings",
+        "timezone"
+      ],
+      "state": "New",
+      "parentRef": "app-065",
+      "sprintRef": "app-s4",
+      "comments": []
+    },
+    {
+      "ref": "app-070",
+      "type": "story",
+      "title": "Email digest instead of push",
+      "description": "For categories where people do not want interruptions offer a daily or weekly email that lists everything they missed. The digest links into the app and is skipped on days with nothing new. Unsubscribing from the digest does not change push settings.\n\nThe first version sends at a fixed local hour chosen by the person, defaulting to eight in the morning, and groups items by conversation. Open rates will tell us whether a second slot in the evening is worth building.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "notifications",
+        "email"
+      ],
+      "state": "New",
+      "parentRef": "app-065",
+      "sprintRef": "app-s4",
+      "comments": []
+    },
+    {
+      "ref": "app-071",
+      "type": "feature",
+      "title": "In-app notification centre",
+      "description": "A place inside the app where past notifications live, so nothing is lost when a lock screen message is swiped away.\n\nThe inbox is also the safety net for every other notification feature: when push is blocked, held by quiet hours or muted, the item still appears here, which is why its reliability matters more than its looks.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "notifications",
+        "inbox"
+      ],
+      "state": "Active",
+      "parentRef": "app-057",
+      "sprintRef": "app-s1",
+      "comments": []
+    },
+    {
+      "ref": "app-072",
+      "type": "story",
+      "title": "Inbox list with an unread badge",
+      "description": "A bell icon in the top bar opens a chronological list of notifications with an unread dot per row and a numeric badge on the icon. The list pages in batches of thirty and refreshes when the app returns to the foreground. Rows group by day with sticky headers.\n\nThe list is fed by a cursor-based endpoint so that items arriving while the person scrolls do not shift the page boundaries. Empty and error states have their own illustrations and a retry action.",
+      "acceptanceCriteria": [
+        "The bell shows the unread count",
+        "The list loads thirty items at a time",
+        "Unread rows have a visible marker"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "notifications",
+        "inbox"
+      ],
+      "state": "Closed",
+      "parentRef": "app-071",
+      "sprintRef": "app-s1",
+      "comments": [
+        {
+          "ref": "app-c37",
+          "body": "Sticky day headers needed a custom layout on Android; shipped with a known minor flicker on very old devices.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "app-073",
+      "type": "story",
+      "title": "Mark everything as read",
+      "description": "A text button at the top of the inbox marks all notifications as read with one request, updates the badge immediately and offers an undo toast for five seconds. The request is idempotent so a retry after a lost response is harmless.\n\nMarking read is optimistic: the interface updates at once and the request follows. On failure the unread dots return and a toast explains, which is rare enough to accept the brief flicker.",
+      "acceptanceCriteria": [
+        "One tap clears all unread markers",
+        "An undo toast is shown for five seconds"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "notifications",
+        "inbox"
+      ],
+      "state": "Closed",
+      "parentRef": "app-071",
+      "sprintRef": "app-s2",
+      "comments": []
+    },
+    {
+      "ref": "app-074",
+      "type": "bug",
+      "title": "The unread count on the bell never goes back to zero",
+      "description": "After reading every item the little red number stays at 1 until the app is force-closed. The badge is computed from a cached count that is decremented when a row is opened, but items that arrive while the inbox is open are added to the list without incrementing the cache, so the arithmetic drifts below the real total and then clamps at one.\n\nThe same counter drives the icon badge on the home screen. Both are now set from the server's number, and the app updates the system badge whenever the count changes, including when it arrives in a silent push.",
+      "acceptanceCriteria": [
+        "The badge always equals the server's unread count after a read"
+      ],
+      "reproSteps": "1. Open the inbox with three unread items.\n2. While it is open, have a colleague trigger a fourth.\n3. Read all four.\n4. The bell still shows 1 after leaving the screen.",
+      "tags": [
+        "notifications",
+        "inbox",
+        "bug"
+      ],
+      "state": "Closed",
+      "parentRef": "app-071",
+      "sprintRef": "app-s2",
+      "comments": [
+        {
+          "ref": "app-c38",
+          "body": "Replaced the local counter by the count the server returns with every inbox response.",
+          "archived": false
+        },
+        {
+          "ref": "app-c39",
+          "body": "Server count includes archived items by mistake; tracked separately and fixed in the same release.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "app-075",
+      "type": "story",
+      "title": "Swipe a notification away to dismiss it",
+      "description": "Swiping a row to the left reveals Dismiss, which archives it from the inbox without marking siblings as read. Archived items can be found again under a filter called Dismissed for thirty days. Haptic feedback confirms the action on supported devices.\n\nSwipe gestures are not discoverable by themselves, so the first time the inbox opens a row nudges sideways to hint at the action. Accessibility users get the same action from the custom actions menu.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "notifications",
+        "inbox",
+        "ux"
+      ],
+      "state": "New",
+      "parentRef": "app-071",
+      "sprintRef": "app-s4",
+      "comments": []
+    },
+    {
+      "ref": "app-076",
+      "type": "story",
+      "title": "Open the related screen when a notification is tapped",
+      "description": "Every notification carries a destination, for example a conversation, a reminder or the security page, and tapping it from the lock screen, the notification shade or the inbox should land exactly there with the back stack set up so Back goes to the home feed.\n\nThe destination travels as a path in the payload and the app resolves it through the same router used for links from emails. Unknown paths open the inbox rather than failing, so old app versions degrade gracefully when the server learns new destinations.\n\nCold start is the tricky case. When the app is not running the tap launches it with the payload attached to the launch intent on Android and the launch options on iOS. The router must wait until the session has been restored before navigating, otherwise the person briefly sees the home feed and then jumps.\n\nWe agreed on a small contract with the backend: every payload has a version number, a path and an optional fallback title. Version two adds a thread anchor so a tap on a comment notification scrolls to the comment itself rather than to the top of the conversation.\n\nUniversal links on iOS and app links on Android are used for tapping the same destinations from emails and messages, and share the router, but need their own tests because the entry points differ. Analytics records the source of every deep link entry as push, email or inbox so that product can see which channel actually brings people back.",
+      "acceptanceCriteria": [
+        "Tapping a push opens the destination with a sensible back stack",
+        "Unknown paths open the inbox",
+        "Cold start waits for the session before navigating",
+        "Comment notifications scroll to the comment",
+        "The entry source is recorded for analytics"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "notifications",
+        "deeplink",
+        "routing"
+      ],
+      "state": "Active",
+      "parentRef": "app-071",
+      "sprintRef": "app-s3",
+      "comments": [
+        {
+          "ref": "app-c40",
+          "body": "Router spec drafted in the shared doc; version 2 payload sample attached there.",
+          "archived": false
+        },
+        {
+          "ref": "app-c41",
+          "body": "Open question on deep links from emails opened in an in-app browser; routed to the same handler for now.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "app-077",
+      "type": "bug",
+      "title": "Tapping a notification while signed out loses the destination",
+      "description": "If the session has expired when a notification is tapped, the app shows the sign-in screen and, after a successful sign-in, lands on the home feed instead of the screen the notification pointed to. The pending destination is held only in memory of the launch screen, which is destroyed during the sign-in flow.\n\nA related edge case is a destination that belongs to a different account than the one now signing in. Those are discarded with a short message, because showing someone else's thread would be a privacy slip.",
+      "acceptanceCriteria": [
+        "The pending destination survives sign-in",
+        "A destination for another account is discarded"
+      ],
+      "reproSteps": "1. Sign out of the app on a phone that has a pending notification.\n2. Tap the notification from the lock screen.\n3. Sign in.\n4. The home feed appears, not the destination.",
+      "tags": [
+        "notifications",
+        "deeplink",
+        "auth"
+      ],
+      "state": "Active",
+      "parentRef": "app-071",
+      "sprintRef": "app-s3",
+      "comments": [
+        {
+          "ref": "app-c42",
+          "body": "Related to the router work in the notification destination story; shares the pending destination store.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "app-078",
+      "type": "feature",
+      "title": "Rich and transactional messages",
+      "description": "Messages that carry more than a line of text, and the emails that sit alongside push.\n\nAnything richer than a line of text increases the chance of a failure on the device, so each item here has a plain fallback and is switched on gradually by a remote flag.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "notifications",
+        "email"
+      ],
+      "state": "New",
+      "parentRef": "app-057",
+      "sprintRef": "app-s4",
+      "comments": []
+    },
+    {
+      "ref": "app-079",
+      "type": "story",
+      "title": "Show an image in the push notification",
+      "description": "Attach a small picture to messages that have one, using the notification service extension on iOS and the big picture style on Android. If the download takes longer than the platform's budget the message is delivered without the picture rather than not at all.\n\nImages are served at the size of the notification, not the original, and cached by the extension for an hour. Only pictures from our own CDN are accepted; the sender refuses third-party addresses.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "notifications",
+        "push",
+        "images"
+      ],
+      "state": "New",
+      "parentRef": "app-078",
+      "sprintRef": "app-s4",
+      "comments": [
+        {
+          "ref": "app-c43",
+          "body": "Waiting on design for the aspect ratio of the preview image.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "app-080",
+      "type": "story",
+      "title": "Reply or archive from the lock screen",
+      "description": "Two action buttons on conversation notifications: Reply opens an inline text field and sends the message without launching the app, Archive removes the conversation from the inbox. Actions need the device to be unlocked when the account has biometric unlock enabled.\n\nInline reply sends through the same endpoint as the app with an idempotency key, and shows a failure notification if it does not go through, so that a message is never lost without the sender noticing.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "notifications",
+        "push",
+        "ux"
+      ],
+      "state": "New",
+      "parentRef": "app-078",
+      "sprintRef": "app-s4",
+      "comments": []
+    },
+    {
+      "ref": "app-081",
+      "type": "story",
+      "title": "Weekly summary email",
+      "description": "A Monday email listing the past week's activity. Removed from scope when the digest story covered the need with less machinery; the weekly cadence can be an option there if the data shows demand.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "notifications",
+        "email"
+      ],
+      "state": "Removed",
+      "parentRef": "app-078",
+      "comments": []
+    },
+    {
+      "ref": "app-082",
+      "type": "task",
+      "title": "Shared template for transactional emails",
+      "description": "One layout with a header, a body slot and a footer for receipts, reset links and security notices. It must render in dark mode, pass the plain-text alternative check and keep images optional, since many clients block them by default.\n\nTemplates are tested by rendering them to images with a headless browser in light and dark mode and comparing them against stored references, which caught two unreadable colour pairs in the first draft.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "notifications",
+        "email",
+        "backend"
+      ],
+      "state": "Active",
+      "parentRef": "app-070",
+      "sprintRef": "app-s3",
+      "comments": []
+    },
+    {
+      "ref": "app-083",
+      "type": "epic",
+      "title": "Platform quality and release",
+      "description": "The unglamorous work that decides whether people keep the app: how fast it starts, whether it survives bad networks, whether everyone can use it, and how we ship builds and learn what they do. Items here are chosen from crash reports, store reviews and the accessibility audit.\n\nTargets for the quarter are a crash-free rate of 99.7 percent, a median cold start below one and a half seconds on the reference phone and an accessibility audit with no open severe findings.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "quality"
+      ],
+      "state": "Active",
+      "sprintRef": "app-s1",
+      "comments": []
+    },
+    {
+      "ref": "app-084",
+      "type": "feature",
+      "title": "Performance and stability",
+      "description": "Startup time, memory use, crash-free sessions and behaviour without a connection.\n\nThe reference device is a mid-range phone released four years ago. Measurements on flagship hardware flatter us and are not accepted as evidence for closing a performance item.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "quality",
+        "performance"
+      ],
+      "state": "Active",
+      "parentRef": "app-083",
+      "sprintRef": "app-s1",
+      "comments": []
+    },
+    {
+      "ref": "app-085",
+      "type": "bug",
+      "title": "Cold start takes more than four seconds on older phones",
+      "description": "Opening the app from a fully closed state on devices that are three or four years old shows a white launch screen for four to six seconds before the sign-in or home screen appears. Store reviews call it laggy and the median cold start on our mid-range reference phone has doubled since the spring.\n\nA profile on the reference device shows the main thread busy for most of that time: loading a custom font family with six weights, decoding the splash illustration at full resolution, running two database migrations on every launch even when nothing changed, and creating the dependency graph eagerly.\n\nThe launch budget we agreed is one and a half seconds to the first interactive frame on the reference device. To get there each of those items needs its own treatment: fonts load lazily with a system fallback, the illustration ships at the right size, the migration check reads a stored version number and exits, and the graph is built on demand.\n\nThe largest single block in the trace is not on that list. The analytics SDK is initialised synchronously on the main thread inside the application start hook, and it opens its own database, reads a device profile and starts a network reachability monitor before returning. This one call takes about nine hundred milliseconds on the reference phone. It can be moved to a background queue because nothing needs an analytics event before the first screen is drawn; events fired earlier are buffered by a thin wrapper.\n\nWe will track the result with a startup metric reported from release builds so the number is visible after every release rather than only when somebody complains.",
+      "acceptanceCriteria": [
+        "Median cold start on the reference device is under 1.5 seconds",
+        "A startup metric is reported from release builds",
+        "No migration work runs on launch when the schema is current"
+      ],
+      "reproSteps": "1. Install a release build on the reference device (a four-year-old mid-range phone).\n2. Force-stop the app.\n3. Start it and time how long the launch screen shows.\n4. Repeat five times and take the median.",
+      "tags": [
+        "quality",
+        "performance",
+        "startup"
+      ],
+      "state": "Active",
+      "parentRef": "app-084",
+      "sprintRef": "app-s4",
+      "comments": [
+        {
+          "ref": "app-c44",
+          "body": "The font family is 1.8 MB and decodes eagerly; a lazy load with system fallback saves about 400 ms on its own.",
+          "archived": false
+        },
+        {
+          "ref": "app-c45",
+          "body": "Do the font work first, it is the cheapest win and easy to verify on the trace.",
+          "archived": false
+        },
+        {
+          "ref": "app-c46",
+          "body": "Reference phone: median 5.1 s before the work, target 1.5 s.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "app-086",
+      "type": "bug",
+      "title": "App crashes when the phone is rotated on the settings screen",
+      "description": "Rotating a phone while the settings screen is open ends in a crash on Android. The activity is recreated, the preferences fragment tries to restore a dialog that holds a reference to the destroyed view, and the fragment manager throws. It affects every version since the settings redesign and made up about three percent of crash reports.\n\nBesides the settings screen, a sweep of every dialog in the app found two more with the same pattern; they are fixed here, and a lint check now flags dialogs that hold view references in fields.",
+      "acceptanceCriteria": [
+        "Rotation never crashes any settings screen"
+      ],
+      "reproSteps": "1. Open Settings on an Android phone.\n2. Tap Notifications to open the nested dialog.\n3. Rotate the phone.\n4. The app closes.",
+      "tags": [
+        "quality",
+        "crash",
+        "android"
+      ],
+      "state": "Closed",
+      "parentRef": "app-084",
+      "sprintRef": "app-s1",
+      "comments": [
+        {
+          "ref": "app-c47",
+          "body": "Fixed by moving the dialog state into the view model and recreating the dialog from it.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "app-087",
+      "type": "task",
+      "title": "Add a crash reporting SDK to both apps",
+      "description": "Integrate a crash reporter with symbol upload from the CI build so stack traces are readable. Attach the app version, the signed-in account id as a hash and the last ten navigation breadcrumbs. Personal data never goes into reports, and the reporter respects the analytics opt-out in settings.\n\nAlerts go to the team channel when a new crash group affects more than twenty sessions, and a weekly report lists the top five groups by affected users so that stability work is chosen from data.",
+      "acceptanceCriteria": [
+        "Crashes appear with symbolicated stack traces",
+        "Reports contain no names, emails or tokens",
+        "Opting out disables reporting"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "quality",
+        "crash"
+      ],
+      "state": "Closed",
+      "parentRef": "app-086",
+      "sprintRef": "app-s1",
+      "comments": []
+    },
+    {
+      "ref": "app-088",
+      "type": "story",
+      "title": "Show a banner when there is no connection",
+      "description": "A slim banner under the top bar appears after the network has been unavailable for three seconds and disappears when it returns. While offline the feed shows cached content with its age, writes are queued and the queue length is visible in the banner. The reachability signal must come from actual request failures as well as the platform callback, since captive portals report connectivity while blocking traffic.\n\nCached content is kept for up to a week and cleared on sign-out. Queued writes are limited to a hundred and survive app restarts, and each one carries an idempotency key so a retry after reconnection never creates a duplicate on the server.\n\nThe banner must be announced to screen readers politely, not as an alert, and must not cover the sign-in form, where the reason for failure is shown inline instead. Product asked for a retry button; we decided against it because the app retries by itself, and a button implies that waiting will not help.\n\nA cheap check we want in the test plan is a flight-mode toggle during a feed refresh, during an upload and during a sign-in. The outcome must be a visible state in all three and never a spinner that runs forever. A final edge case is a connection that works but is extremely slow: after fifteen seconds the banner switches to a slow-connection wording instead of claiming there is no network.",
+      "acceptanceCriteria": [
+        "A banner appears after three seconds without connectivity",
+        "Cached content shows its age",
+        "Queued writes use idempotency keys",
+        "Screen readers hear the banner as a polite announcement",
+        "A slow connection shows its own wording after fifteen seconds"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "quality",
+        "offline",
+        "ux"
+      ],
+      "state": "New",
+      "parentRef": "app-084",
+      "sprintRef": "app-s4",
+      "comments": [
+        {
+          "ref": "app-c48",
+          "body": "Pending: confirm with design whether the banner replaces the top bar title or sits beneath.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "app-089",
+      "type": "bug",
+      "title": "Memory keeps growing while scrolling a long notification list",
+      "description": "Scrolling through several hundred notifications grows the app's memory by about 300 MB and never gives it back, until the system kills the app. Heap snapshots show thousands of row view models alive long after their rows left the screen, and avatar bitmaps retained through them.\n\nThe issue appeared when the swipe actions were added to the inbox and it only affects the inbox, not the feed. The rows are recycled by the list, but each recycled row creates a fresh view model and registers it with an observer that is never removed.\n\nWe need a reproduction that does not depend on a person scrolling for ten minutes, so the first task is a scripted scroll in the UI test harness that records memory every fifty rows. The fix will be verified by the plateau of that graph rather than by feel.\n\nWhile in the area the image cache should get a hard byte limit; right now it is limited by item count only, and the larger avatars of the new profile screen make that limit meaningless.\n\nOnce the leak is fixed, we also want a guard against it returning. The harness test fails the build if memory after the third pass exceeds the first pass by more than twenty megabytes, which leaves room for normal allocator noise.\n\nA related complaint came from the same store review that started this: the app was killed in the background more often than competing apps. Lower resident memory directly helps with that, because the system picks processes to kill by how much they hold.",
+      "acceptanceCriteria": [
+        "Memory plateaus during repeated scrolling of 800 rows",
+        "Each row's observer is removed on recycle",
+        "The image cache has a byte limit"
+      ],
+      "reproSteps": "1. Seed an account with 800 notifications.\n2. Open the inbox and scroll to the bottom and back to the top three times.\n3. Observe memory in the profiler: it only goes up.",
+      "tags": [
+        "quality",
+        "performance",
+        "inbox"
+      ],
+      "state": "Active",
+      "parentRef": "app-084",
+      "sprintRef": "app-s3",
+      "comments": [
+        {
+          "ref": "app-c49",
+          "body": "Instruments pointed at a retain cycle between the row view model and its swipe gesture recogniser; the Android side leaks through a listener registered in onBind and never removed.",
+          "archived": false
+        },
+        {
+          "ref": "app-c50",
+          "body": "A scripted scroll test is in the harness now; baseline graph attached to the pull request.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "app-090",
+      "type": "feature",
+      "title": "Accessibility",
+      "description": "Making the app usable with screen readers, large text, switch control and strong contrast needs. Based on the third-party audit completed in the spring.\n\nThe audit listed thirty-one findings, nine of them severe. Each is linked to a story or bug here, and the audit firm will repeat the review on the build that closes the last severe one.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "quality",
+        "a11y"
+      ],
+      "state": "Active",
+      "parentRef": "app-083",
+      "sprintRef": "app-s2",
+      "comments": []
+    },
+    {
+      "ref": "app-091",
+      "type": "story",
+      "title": "Screen reader labels and order on the sign-in form",
+      "description": "Every control on the sign-in and reset screens needs an accessible name, role and state, and focus must move in the order people expect: email, password, show password, sign in, forgot password, social buttons. Errors are announced when they appear, and the focus moves to the first field with a problem after a failed submit.\n\nThe audit found that the password toggle was announced as an unlabelled button, that the social buttons were read as images with a file name, and that after a wrong password the focus stayed on the button, so people using a screen reader never heard the message above it.\n\nFor the fix we use semantic grouping so that the form reads as a form with a heading. Decorative graphics are hidden from assistive technology. Every announcement is written once in the string table and translated, rather than composed in code, so the wording is correct in all launch languages.\n\nA test checklist runs the flow with VoiceOver on iOS and TalkBack on Android and records the spoken output next to the screen. Another pass covers external keyboard navigation on tablets and Chromebooks, where Tab and Enter must work without touching the screen.\n\nLooking ahead, the same checklist applies to every new screen. A pull request template now includes three questions: does every control have a name, does the focus order match the reading order, and is every state change announced? Reviewers tick them, and the template links to the recorded VoiceOver and TalkBack sessions as examples of what good sounds like.",
+      "acceptanceCriteria": [
+        "All controls have names, roles and states",
+        "Focus order matches reading order",
+        "Errors are announced and focus moves to the first problem",
+        "Decorative images are hidden from assistive technology",
+        "The flow works with an external keyboard"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "quality",
+        "a11y",
+        "auth"
+      ],
+      "state": "Closed",
+      "parentRef": "app-090",
+      "sprintRef": "app-s2",
+      "comments": [
+        {
+          "ref": "app-c51",
+          "body": "Audit items 4, 7 and 9 closed by this story.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "app-092",
+      "type": "story",
+      "title": "Support larger system text sizes",
+      "description": "Layouts must adapt to the largest accessibility font sizes without clipping or overlapping. Rows grow vertically, the tab bar switches to icon-over-label with a cap, and primary buttons wrap their text onto two lines instead of truncating. Fixed heights are replaced by constraints that depend on content.\n\nWe test at the default size, at the largest standard size and at the largest accessibility size on both platforms with the same set of ten reference screens. Screenshots are compared by eye in the first round, then become golden images in the second.\n\nThe notification inbox is the hardest screen because each row has a title, a time and a two line preview. At the largest sizes the time moves under the title and the preview shrinks to one line with a Show more control. Dynamic type on iOS and font scale on Android behave differently above 200 percent, so the cap for non-text elements such as the badge is set explicitly.\n\nMinimum touch targets of 44 by 44 points hold at every size. Text in images is not allowed; the welcome carousel illustration texts become real labels.\n\nFinally the design system gets a new rule: components specify their behaviour at three text scales in the component library, and a component is not complete until all three states exist. This moves the work from one-off fixes in screens to the shared parts, and stops the same defect being fixed ten times.",
+      "acceptanceCriteria": [
+        "No clipped or overlapping text at the largest accessibility size",
+        "Primary buttons wrap instead of truncating",
+        "Touch targets are at least 44 by 44 points",
+        "Ten reference screens have golden images"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "quality",
+        "a11y",
+        "layout"
+      ],
+      "state": "Active",
+      "parentRef": "app-090",
+      "sprintRef": "app-s3",
+      "comments": []
+    },
+    {
+      "ref": "app-093",
+      "type": "bug",
+      "title": "Focus order skips the forgot-password link",
+      "description": "Using a keyboard or a switch device, Tab moves from the password field straight to the Sign in button and the Forgot your password link is never focused. The link is laid out before the button visually but added to the hierarchy after it, and the focus order follows the hierarchy.\n\nA sweep of the other screens with a keyboard found two more where visual and focus order differ. The shared form layout now takes its focus order from the same list as the visual order, so they cannot diverge.",
+      "acceptanceCriteria": [
+        "Tab visits the link between the password field and the button"
+      ],
+      "reproSteps": "1. Connect a hardware keyboard to an Android tablet.\n2. Open the sign-in screen.\n3. Press Tab repeatedly.\n4. The link is never highlighted.",
+      "tags": [
+        "quality",
+        "a11y",
+        "auth"
+      ],
+      "state": "Closed",
+      "parentRef": "app-090",
+      "sprintRef": "app-s2",
+      "comments": []
+    },
+    {
+      "ref": "app-094",
+      "type": "story",
+      "title": "High contrast theme",
+      "description": "A separate theme with stronger colours for people with low vision. Removed after the audit showed the standard theme already meets the AA contrast ratio everywhere, and the system high contrast switch is respected by the standard theme.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "quality",
+        "a11y"
+      ],
+      "state": "Removed",
+      "parentRef": "app-090",
+      "comments": []
+    },
+    {
+      "ref": "app-095",
+      "type": "feature",
+      "title": "Release and analytics",
+      "description": "Getting builds to testers and users safely, and learning what happens after they arrive.\n\nThe goal is a boring release train: a weekly candidate, a staged rollout and an obvious way back. Everything that makes shipping scary gets automated or deleted.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "release"
+      ],
+      "state": "Active",
+      "parentRef": "app-083",
+      "sprintRef": "app-s1",
+      "comments": []
+    },
+    {
+      "ref": "app-096",
+      "type": "story",
+      "title": "Weekly release train with staged rollout",
+      "description": "Replace ad hoc releases with a fixed weekly cadence: a release candidate is cut every Monday, tested through the week and rolled out in stages on Thursday. The train leaves on time with whatever is ready; unfinished work waits for the next one. This gives support and marketing a date they can plan around and keeps changes small enough to reason about.",
+      "acceptanceCriteria": [
+        "A candidate is cut every Monday",
+        "Rollout starts on Thursday at one percent",
+        "Unfinished work never delays the train"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "release",
+        "process"
+      ],
+      "state": "Closed",
+      "parentRef": "app-095",
+      "sprintRef": "app-s1",
+      "comments": []
+    },
+    {
+      "ref": "app-097",
+      "type": "task",
+      "title": "Set up beta distribution for both platforms",
+      "description": "Stand up the internal and external beta tracks so every merge to the main branch produces a build testers can install within half an hour. CI signs the iOS build with a distribution profile held in the secret store and the Android build with the upload key, then uploads and posts the link in the team channel.\n\nTesters are organised in two groups: the staff group, who receive every build, and a public group that receives weekly candidates. Each build shows the commit and the date in the settings footer, which saves a lot of back and forth with testers about which version they run.\n\nRelease notes are generated from merged pull request titles, grouped by area, and edited by hand before the weekly candidate goes out. Rollbacks are handled by promoting the previous build rather than rebuilding it.\n\nA staged rollout of the store release starts at one percent and moves to ten, fifty and one hundred percent over a week, pausing automatically if the crash-free rate drops below the agreed threshold. The thresholds are part of the checklist the release manager follows, and the dashboard that shows them is linked from the channel topic.\n\nOne caution from the previous project: store review times are not under our control, so the release checklist starts the review on Tuesday for a Thursday rollout, and hotfixes use the expedited path only when a security problem or a crash affecting more than one percent of sessions is confirmed.",
+      "acceptanceCriteria": [
+        "Every merge to main yields an installable beta within thirty minutes",
+        "Staff and public tester groups exist",
+        "The build number and commit show in the settings footer",
+        "Staged rollout pauses below the crash-free threshold"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "release",
+        "ci"
+      ],
+      "state": "Closed",
+      "parentRef": "app-096",
+      "sprintRef": "app-s1",
+      "comments": []
+    },
+    {
+      "ref": "app-098",
+      "type": "task",
+      "title": "Analytics events for the sign-in funnel",
+      "description": "Instrument the steps from opening the app to reaching the home feed so we can see where people drop: screen shown, field focused, submit pressed, error returned, and success. Every event carries the platform, app version and flow variant but never the email address or any token.\n\nEvent names follow a verb-object convention and are defined in one table that generates the constants for both platforms and the schema for the warehouse, which prevents the two apps drifting apart. A lint step rejects events not in the table.\n\nThe errors event needs a coarse reason from a fixed list: wrong credentials, network, locked, two-factor required, unknown. Free-form messages are not allowed because they leak details and explode the number of distinct values.\n\nFunnels are built in the dashboard for password, Apple, Google and biometric entries separately, since the drop-off points differ. Consent is read before any event is sent; people who opted out of analytics produce only anonymous, aggregated counters of crashes, and nothing else.\n\nThe first report we promised is the share of people who reach the home feed within two minutes of installing, split by entry method. Product will use it to decide whether the reset flow or the social buttons deserve the next sprint.\n\nData quality gets its own check: a nightly job compares the number of submit events with the number of sign-in requests the server saw, per platform and version. A gap above two percent opens an issue automatically, because a quiet instrumentation bug can mislead the team for weeks before anyone notices it.",
+      "acceptanceCriteria": [
+        "All funnel steps emit events with platform and version",
+        "Event names come from one generated table",
+        "Errors use a fixed list of reasons",
+        "Opted-out users send no analytics events",
+        "A dashboard shows the funnel per entry method"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "release",
+        "analytics",
+        "auth"
+      ],
+      "state": "Active",
+      "parentRef": "app-003",
+      "sprintRef": "app-s3",
+      "comments": []
+    },
+    {
+      "ref": "app-099",
+      "type": "story",
+      "title": "Ask people on very old versions to upgrade",
+      "description": "When the server decides that the app version is below the minimum it supports, the app shows a full-screen message with an Update button that opens the store page and no way past it. A softer dismissible prompt appears when a recommended version is available. The decision comes from a small config endpoint called on launch with a short timeout, and a failed call never blocks the app.\n\nThe messages are plain: what changed, why it matters, and that their data is safe. Security fixes are named as the reason when they are the reason. We do not use the forced screen for design changes or features.\n\nTo avoid locking out people with no store access, the check is skipped for builds in the beta tracks and for versions released in the last seven days, which the store may not have rolled out to the person yet.\n\nIn the config the minimum and recommended versions are set per platform, and a kill-switch can disable the check altogether if we ever publish a bad minimum by mistake. The wording for both screens is translated into all launch languages before the first release that contains this story.\n\nWe also considered a server-driven approach that gates single features instead of the whole app. It was set aside as too large for this story, but the config endpoint is shaped so that a list of feature gates can be added later without changing the apps that already call it.",
+      "acceptanceCriteria": [
+        "An unsupported version sees a blocking update screen",
+        "A recommended update shows a dismissible prompt",
+        "A failed config call never blocks the app",
+        "Beta builds and fresh releases skip the check",
+        "A kill-switch disables the check"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "release",
+        "ux"
+      ],
+      "state": "New",
+      "parentRef": "app-095",
+      "sprintRef": "app-s4",
+      "comments": []
+    },
+    {
+      "ref": "app-100",
+      "type": "story",
+      "title": "Tablet layout with a side navigation rail",
+      "description": "Two-pane layout for tablets with a navigation rail. Removed from this cycle by product: tablets are under two percent of sessions, and the phone layout scales acceptably on them for now.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "release",
+        "layout"
+      ],
+      "state": "Removed",
+      "parentRef": "app-095",
+      "comments": []
+    },
+    {
+      "ref": "app-101",
+      "type": "task",
+      "title": "Extract and translate all user-visible strings",
+      "description": "Move hard-coded strings in both apps into the string tables, add plural forms where counts appear and send the files to the translation vendor for German, Spanish, French and Japanese. Reject new hard-coded strings in review with a lint rule. Dates and numbers use the platform formatters with the person's locale, never hand-built patterns.\n\nThe vendor returns strings within two working days. Context screenshots are attached to each key so that translators can see where a word appears, which settled arguments about the meaning of Mute and Hold.",
+      "acceptanceCriteria": [
+        "No visible hard-coded strings remain",
+        "Plurals are handled in all four languages",
+        "A lint rule blocks new hard-coded strings"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "release",
+        "i18n"
+      ],
+      "state": "Closed",
+      "parentRef": "app-096",
+      "sprintRef": "app-s2",
+      "comments": []
+    }
+  ]
+}

@@ -1,0 +1,119 @@
+{
+  "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+  "id": "10407",
+  "self": "{{base}}/rest/api/{{v}}/issue/10407",
+  "key": "PLATFORM-407",
+  "fields": {
+    "summary": "Rate limit the public API",
+    "issuetype": {
+      "id": "10001",
+      "name": "Story",
+      "subtask": false
+    },
+    "status": {
+      "id": "3",
+      "name": "In Progress",
+      "statusCategory": {
+        "key": "indeterminate",
+        "name": "In Progress"
+      }
+    },
+    "priority": {
+      "name": "High"
+    },
+    "description": {
+      "type": "doc",
+      "version": 1,
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Per-key limits with a 429 and a Retry-After header."
+            }
+          ]
+        }
+      ]
+    },
+    "assignee": {
+      "accountId": "5b109f2e9729b51b54ef34d1",
+      "displayName": "Mei Lin",
+      "emailAddress": "mei.lin@acme.io",
+      "active": true,
+      "self": "{{base}}/rest/api/{{v}}/user?accountId=5b109f2e9729b51b54ef34d1"
+    },
+    "reporter": {
+      "accountId": "5b10a2844c20165700ede21g",
+      "displayName": "Priya Shah",
+      "emailAddress": "priya.shah@acme.io",
+      "active": true,
+      "self": "{{base}}/rest/api/{{v}}/user?accountId=5b10a2844c20165700ede21g"
+    },
+    "labels": [
+      "api"
+    ],
+    "components": [
+      {
+        "name": "Gateway"
+      }
+    ],
+    "created": "2026-09-12T10:00:00.000+0000",
+    "updated": "2026-10-22T09:00:00.000+0000",
+    "customfield_10016": 8,
+    "customfield_10020": [
+      {
+        "id": 112,
+        "name": "Platform Sprint 12",
+        "state": "active",
+        "startDate": "2026-09-28T01:00:00.000Z",
+        "endDate": "2026-10-26T10:00:00.000Z",
+        "goal": "Show relevance scores in the admin console"
+      }
+    ],
+    "parent": null,
+    "issuelinks": [
+      {
+        "id": "20407",
+        "type": {
+          "name": "Blocks",
+          "inward": "is blocked by",
+          "outward": "blocks"
+        },
+        "outwardIssue": {
+          "key": "PLATFORM-411"
+        }
+      }
+    ],
+    "attachment": [],
+    "customfield_10028": 21
+  },
+  "changelog": {
+    "startAt": 0,
+    "maxResults": 1,
+    "total": 1,
+    "histories": [
+      {
+        "id": "1",
+        "author": {
+          "accountId": "5b109f2e9729b51b54ef34d1",
+          "displayName": "Mei Lin",
+          "emailAddress": "mei.lin@acme.io",
+          "active": true,
+          "self": "{{base}}/rest/api/{{v}}/user?accountId=5b109f2e9729b51b54ef34d1"
+        },
+        "created": "2026-10-05T09:00:00.000+0000",
+        "items": [
+          {
+            "field": "status",
+            "fieldtype": "jira",
+            "from": null,
+            "fromString": "Backlog",
+            "to": null,
+            "toString": "In Progress"
+          }
+        ]
+      }
+    ]
+  }
+}

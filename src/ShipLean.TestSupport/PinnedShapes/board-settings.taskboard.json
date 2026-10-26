@@ -1,0 +1,64 @@
+{
+  "columns": [],
+  "swimlanes": [],
+  "cardFields": [
+    { "type": "task", "showKey": true, "showAssignee": true, "showTags": true, "showPoints": false, "showEmptyFields": false, "extraFields": ["parent"] },
+    { "type": "story", "showKey": true, "showAssignee": true, "showTags": false, "showPoints": true, "showEmptyFields": false, "extraFields": ["state"] },
+    { "type": "bug", "showKey": true, "showAssignee": true, "showTags": false, "showPoints": true, "showEmptyFields": false, "extraFields": ["state"] }
+  ],
+  "styleRules": [
+    {
+      "id": "rule-blocked",
+      "name": "Blocked",
+      "enabled": true,
+      "colour": "danger",
+      "bold": false,
+      "italic": false,
+      "underline": false,
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          { "field": "tags", "op": "contains", "value": "Blocked" }
+        ]
+      }
+    },
+    {
+      "id": "rule-priority-1",
+      "name": "Priority 1",
+      "enabled": true,
+      "colour": "warn",
+      "bold": true,
+      "italic": false,
+      "underline": false,
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          { "field": "priority", "op": "=", "value": 1 }
+        ]
+      }
+    },
+    {
+      "id": "rule-waiting-on-review",
+      "name": "Waiting on review",
+      "enabled": false,
+      "colour": "info",
+      "bold": false,
+      "italic": false,
+      "underline": false,
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          { "field": "stateCategory", "op": "=", "value": "resolved" },
+          { "field": "assignee", "op": "=", "value": "@me" }
+        ]
+      }
+    }
+  ],
+  "tagColours": [
+    { "tag": "Blocked", "colour": "danger" },
+    { "tag": "Spike", "colour": "info" },
+    { "tag": "Tech debt", "colour": "warn" }
+  ],
+  "annotations": { "tasks": true, "stories": false, "bugs": false, "features": false },
+  "cardReordering": null
+}

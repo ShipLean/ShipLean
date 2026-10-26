@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Sprint Taskboard (reference)</title>
+<!--
+  Reference Sprint Taskboard: Sprints › Sprint 24 › Taskboard.
+  Open directly in a browser. Uses ../tokens.css, shiplean.css and shared.js only; no build step.
+  Rows are the sprint's stories and bugs in backlog order, then an Unparented row; columns are the project's
+  Task states in order (Removed left out). SHIP has a custom "In review" Task state in the Resolved category.
+  Working: drag a card to another column (state) or row (parent), or Alt+arrows on a focused card; Pick up on
+  unassigned cards (assigns you, moves to the first In Progress state); + Task quick add; the "All tasks done"
+  prompt on a row; collapse rows (Completed stories start collapsed); Group by Stories / People; the face filter;
+  Settings (Fields, Styles, Tag colours), which updates the board live.
+    ?view=people        opens grouped by People
+    ?dialog=settings    opens the Taskboard settings dialog (&pane=styles|tags for another section)
+  The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot).
+-->
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="shiplean.css">
+<script src="shared.js"></script>
+<style>
+/* Slim sprint header: the Taskboard gives its height to the board (no KPIs, burndown or goal) */
+.sprint-head { display: flex; align-items: center; gap: var(--space-2) var(--space-3); flex-wrap: wrap; padding: var(--space-2) var(--space-4); background: var(--color-surface); border-bottom: 1px solid var(--color-border); flex: none; }
+.picker { display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0; background: none; font-size: var(--text-md); font-weight: var(--weight-semibold); cursor: pointer; }
+.picker span { font-size: var(--text-xs); color: var(--color-muted); }
+
+/* Toolbar face filter */
+.faces { display: inline-flex; align-items: center; gap: 2px; padding: 2px; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-surface); }
+.face { display: inline-grid; place-items: center; padding: 0; border: 2px solid transparent; border-radius: 50%; background: none; cursor: pointer; opacity: .55; }
+.face[aria-pressed="true"] { border-color: var(--color-accent); opacity: 1; }
+.faces.none-on .face { opacity: 1; }
+.face:focus-visible, .card:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+
+/* Board grid: row header + one column per Task state */
+.board { flex: 1; min-height: 0; overflow: auto; }
+.tb { display: grid; grid-template-columns: 268px repeat(var(--cols), minmax(176px, 1fr)); min-width: calc(268px + var(--cols) * 176px); }
+.tb > * { min-width: 0; }
+.colh { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 var(--space-3); background: var(--color-surface); border-bottom: 1px solid var(--color-border); border-right: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); font-size: var(--text-sm); font-weight: var(--weight-semibold); }
+.colh .n { color: var(--color-muted); font-weight: var(--weight-medium); font-variant-numeric: tabular-nums; }
+.colh.first { left: 0; z-index: 4; gap: 4px; color: var(--color-muted); font-size: var(--text-xs); font-weight: var(--weight-medium); }
+.rowh { position: sticky; left: 0; z-index: 2; display: grid; gap: 6px; align-content: start; padding: var(--space-2) var(--space-3) var(--space-2) var(--space-2); background: var(--color-surface); border-bottom: 1px solid var(--color-border); border-right: 1px solid var(--color-border); }
+.rowh .top { display: flex; align-items: center; gap: 6px; }
+.rowh .ttl { padding-left: 28px; font-weight: var(--weight-medium); line-height: 1.3; overflow-wrap: anywhere; }
+.rowh .meta { display: flex; align-items: center; gap: 8px; padding-left: 28px; flex-wrap: wrap; }
+.rowh .hint { padding-left: 28px; color: var(--color-muted); font-size: var(--text-xs); }
+.rowh.collapsed { grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; padding-block: 5px; }
+.rowh.collapsed .t1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: var(--weight-medium); }
+.rowh.orphan { background: color-mix(in srgb, var(--color-surface-2) 45%, var(--color-surface)); }
+.who { display: flex; align-items: center; gap: 8px; font-weight: var(--weight-medium); }
+.prog { display: inline-flex; align-items: center; gap: 6px; color: var(--color-muted); font-size: var(--text-xs); font-variant-numeric: tabular-nums; }
+.prog .bar { position: relative; width: 44px; height: 4px; overflow: hidden; border-radius: 2px; background: var(--color-surface-2); }
+.prog .bar i { position: absolute; inset: 0 auto 0 0; background: var(--color-ok); }
+.stsel { display: inline-flex; align-items: center; gap: 2px; }
+.stsel .st { width: 7px; overflow: hidden; gap: 0; }
+.stsel select { height: 22px; padding: 0 2px; border: 1px solid transparent; border-radius: var(--radius-sm); background: transparent; font-size: var(--text-sm); cursor: pointer; }
+.stsel select:hover, .stsel select:focus { border-color: var(--color-border); background: var(--color-surface); }
+.suggest { display: flex; align-items: center; gap: 6px; margin-left: 28px; padding: 4px 6px 4px 8px; border: 1px solid color-mix(in srgb, var(--color-ok) 45%, var(--color-border)); border-radius: var(--radius-sm); background: color-mix(in srgb, var(--color-ok) 10%, var(--color-surface)); font-size: var(--text-xs); }
+.cell { display: flex; flex-direction: column; gap: 6px; min-height: 64px; padding: var(--space-2); border-bottom: 1px solid var(--color-border); border-right: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); transition: background .12s; }
+.cell.over { background: color-mix(in srgb, var(--color-accent-soft) 70%, transparent); box-shadow: inset 0 0 0 2px var(--color-accent); }
+.cell.thin { min-height: 0; padding-block: 6px; }
+.cnt { color: var(--color-muted); font-size: var(--text-xs); font-variant-numeric: tabular-nums; }
+
+/* Task card */
+.card { position: relative; display: grid; gap: 5px; padding: 6px 8px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); box-shadow: 0 1px 1px rgb(16 24 40 / .04); cursor: grab; }
+.card:hover { border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-border)); }
+.card.dragging { opacity: .4; }
+.card.styled { border-left: 3px solid var(--rule); padding-left: 6px; background: color-mix(in srgb, var(--rule) 9%, var(--color-surface)); }
+.card.bold .title { font-weight: var(--weight-semibold); }
+.card .ct { display: flex; gap: 6px; align-items: flex-start; line-height: 1.3; }
+.card .ct .ti { margin-top: 1px; }
+.card .title { overflow-wrap: anywhere; }
+.card .cm { display: flex; align-items: center; gap: 6px; min-height: 20px; flex-wrap: wrap; }
+.card .cm .pts { margin-left: auto; color: var(--color-muted); font-size: var(--text-xs); }
+.card .par { display: flex; gap: 5px; align-items: center; overflow: hidden; color: var(--color-muted); font-size: var(--text-xs); white-space: nowrap; text-overflow: ellipsis; }
+.card .par .ti { width: 12px; height: 12px; font-size: 7px; }
+.tag { display: inline-flex; align-items: center; height: 18px; padding: 0 6px; border-radius: var(--radius-xs); background: color-mix(in srgb, var(--tag, var(--color-muted)) 18%, transparent); font-size: var(--text-2xs); font-weight: var(--weight-semibold); white-space: nowrap; }
+.pick { display: none; align-items: center; height: 20px; padding: 0 7px; border: 1px solid var(--color-accent); border-radius: 999px; background: var(--color-surface); color: var(--color-accent); font-size: var(--text-2xs); font-weight: var(--weight-semibold); cursor: pointer; }
+.card:hover .pick, .card:focus-within .pick { display: inline-flex; }
+.card:hover .av.none.pickable, .card:focus-within .av.none.pickable { display: none; }
+.card.flash { animation: flash 1.6s ease-out; }
+@keyframes flash { 0%, 30% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 55%, transparent); } 100% { box-shadow: 0 1px 1px rgb(16 24 40 / .04); } }
+.add { align-self: flex-start; height: 22px; padding: 0 6px; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--color-muted); font-size: var(--text-xs); font-weight: var(--weight-medium); cursor: pointer; opacity: 0; }
+.cell:hover .add, .add:focus-visible, .cell.empty-row .add { opacity: 1; }
+.add:hover { background: var(--color-surface-2); color: var(--color-text); }
+.quick { width: 100%; }
+
+/* Taskboard settings dialog */
+.backdrop[hidden] { display: none; }
+.dialog.settings { width: min(880px, 100%); }
+.settings .cols { flex: 1; display: grid; grid-template-columns: 180px minmax(0, 1fr); min-height: 0; overflow: hidden; }
+.settings nav { display: grid; align-content: start; gap: 2px; padding: var(--space-3) var(--space-2); background: var(--color-bg); border-right: 1px solid var(--color-border); }
+.settings nav .overline { padding: 6px 8px 2px; }
+.settings nav button { padding: 5px 8px; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--color-muted); text-align: left; font-size: var(--text-sm); font-weight: var(--weight-medium); cursor: pointer; }
+.settings nav button[aria-current="true"] { background: var(--color-accent-soft); color: var(--color-text); }
+.settings nav button:disabled { cursor: default; opacity: .55; }
+.settings .pane { display: grid; align-content: start; gap: var(--space-3); min-height: 360px; padding: var(--space-3) var(--space-4); overflow: auto; }
+.settings .pane p.hint { color: var(--color-muted); font-size: var(--text-sm); margin: 0; }
+.fgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-4); }
+.fgrid fieldset { display: grid; gap: 6px; margin: 0; padding: var(--space-2) var(--space-3) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.fgrid legend { display: flex; gap: 6px; align-items: center; padding: 0 4px; font-size: var(--text-sm); font-weight: var(--weight-semibold); }
+.fgrid .check { color: var(--color-text); }
+.rule { display: grid; gap: var(--space-2); padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.rule .rh { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto auto; gap: var(--space-2); align-items: center; }
+.sw { display: inline-block; width: 28px; height: 20px; border: 1px solid var(--color-border); border-radius: var(--radius-xs); background: var(--sw); }
+.crit { display: grid; grid-template-columns: 40px minmax(0, 1fr) minmax(0, 120px) minmax(0, 1fr) auto; gap: var(--space-2); align-items: center; padding-left: 26px; }
+.crit .andor { color: var(--color-muted); font-size: var(--text-xs); font-weight: var(--weight-semibold); text-align: right; }
+.tc { display: grid; grid-template-columns: minmax(0, 160px) auto minmax(0, 1fr) auto; gap: var(--space-2); align-items: center; }
+.swatches { display: inline-flex; gap: 4px; }
+.swatches button { width: 20px; height: 20px; padding: 0; border: 2px solid transparent; border-radius: 50%; background: var(--sw); cursor: pointer; }
+.swatches button[aria-pressed="true"] { border-color: var(--color-text); }
+@media (max-width: 900px) {
+  .board { flex: none; max-height: 80vh; }
+  .settings .cols { grid-template-columns: minmax(0, 1fr); }
+  .settings nav { grid-auto-flow: column; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--color-border); }
+  .crit { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding-left: 0; }
+  .crit .andor { text-align: left; }
+}
+</style>
+</head>
+<body>
+<div id="appbar"></div>
+<section class="sprint-head" aria-label="Sprint 24">
+  <button class="picker" type="button" aria-haspopup="listbox" title="Switch sprint">Sprint 24 <span>▾</span></button>
+  <span class="chip accent">Current</span>
+  <span class="sm muted">Mon 19 Oct – Fri 30 Oct · <b style="color:var(--color-text)">5 working days left</b></span>
+  <span class="spacer"></span>
+  <a class="sm" href="sprints.html">All sprints</a>
+</section>
+<div class="toolbar">
+  <div id="tabs"></div>
+  <span class="spacer"></span>
+  <span class="xs muted">Group by</span>
+  <div class="seg" role="group" aria-label="Group by" id="groupSeg">
+    <button type="button" data-g="stories" aria-pressed="true">Stories</button><button type="button" data-g="people" aria-pressed="false">People</button>
+  </div>
+  <div class="faces none-on" id="faces" role="group" aria-label="Show tasks for"></div>
+  <button class="btn" type="button">Filter</button>
+  <button class="btn" type="button" id="openSettings">⚙ Settings</button>
+  <button class="btn primary" type="button">+ Add story or bug</button>
+</div>
+<div class="board"><div class="tb" id="board" role="grid" aria-label="Taskboard"></div></div>
+
+<div class="backdrop" id="settings" hidden>
+  <div class="dialog settings" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <header><h2 id="settingsTitle">Taskboard settings</h2><span class="chip">Storefront · SHIP</span><span class="spacer"></span><button class="ib" type="button" data-close aria-label="Close">✕</button></header>
+    <div class="cols">
+      <nav aria-label="Settings sections">
+        <div class="overline">Cards</div>
+        <button type="button" data-pane="fields" aria-current="true">Fields</button>
+        <button type="button" data-pane="styles">Styles</button>
+        <button type="button" data-pane="tags">Tag colours</button>
+        <div class="overline">Board</div>
+        <button type="button" disabled title="The Taskboard's columns are the Task states, edited in Project settings">Columns · from Task states</button>
+      </nav>
+      <div class="pane" id="pane"></div>
+    </div>
+    <footer><span class="xs muted">Saved for everyone on the project. Open Taskboards update straight away.</span><span class="spacer"></span><button class="btn" type="button" data-close>Cancel</button><button class="btn primary" type="button" data-close>Save</button></footer>
+  </div>
+</div>
+
+<script>
+(() => {
+  const { ME, people, stateCategory, states, items, tasks, unparentedTasks, tIcon, av, esc, toast } = SL;
+  document.getElementById('appbar').outerHTML = SL.appBar('sprints');
+  document.getElementById('tabs').outerHTML = SL.sprintTabs('taskboard');
+  const params = new URLSearchParams(location.search);
+  const cat = s => stateCategory[s] || 'proposed';
+  const columns = states.task.filter(s => cat(s) !== 'removed');
+  const ORPHAN = 'unparented';
+  const toTask = parent => ([title, state, assignee, key, points, tags, priority]) => ({ key, parent, title, state, assignee, points, tags, priority });
+  const seed = () => ({
+    parents: items.filter(i => i.sprint === 's24').map(i => ({ ...i })),
+    tasks: [...Object.entries(tasks).flatMap(([parent, list]) => list.map(toTask(parent))), ...unparentedTasks.map(toTask(null))],
+  });
+
+  // Card settings: Card Field Setting, Card Style Rule and Tag Colour rows for the Taskboard.
+  const swatch = { danger: 'var(--color-danger)', warn: 'var(--color-warn)', ok: 'var(--color-ok)', info: 'var(--color-info)', accent: 'var(--color-accent)', muted: 'var(--color-muted)' };
+  const S = {
+    ...seed(), nextKey: 184,
+    group: params.get('view') === 'people' ? 'people' : 'stories', filter: new Set(), dismissed: new Set(), adding: null,
+    collapsed: new Set(items.filter(i => i.sprint === 's24' && cat(i.state) === 'completed').map(i => i.key)),
+    taskFields: { key: true, tags: true, points: false, assigned: true, parent: true, empty: false },
+    parentFields: { key: true, points: true, state: true, assigned: true, annotation: true },
+    rules: [
+      { name: 'Blocked', color: 'danger', bold: false, enabled: true, criteria: [['', 'Tags', 'contains', 'Blocked']], test: t => t.tags.includes('Blocked') },
+      { name: 'Priority 1', color: 'warn', bold: true, enabled: true, criteria: [['', 'Priority', '=', '1']], test: t => t.priority === 1 },
+      { name: 'Waiting on review', color: 'info', bold: false, enabled: false, criteria: [['', 'State category', '=', 'Resolved'], ['AND', 'Assigned to', '=', '@Me']], test: t => cat(t.state) === 'resolved' && t.assignee === ME },
+    ],
+    tagColors: { Blocked: 'danger', Spike: 'info', 'Tech debt': 'warn' },
+  };
+  const board = document.getElementById('board');
+
+  const parentOf = t => S.parents.find(p => p.key === t.parent);
+  const rowOf = t => (S.group === 'stories' ? t.parent || ORPHAN : t.assignee || 'none');
+  const rowsList = () => (S.group === 'stories' ? [...S.parents.map(p => p.key), ORPHAN] : ['none', ...Object.keys(people)]);
+  const visible = t => !S.filter.size || S.filter.has(t.assignee || 'none');
+  const ruleFor = t => S.rules.find(r => r.enabled && r.test(t));
+
+  function card(t) {
+    const f = S.taskFields, r = ruleFor(t), pickable = !t.assignee && cat(t.state) === 'proposed';
+    const pick = pickable ? `<button class="pick" type="button" data-pick="${t.key}">Pick up</button>` : '';
+    const tags = f.tags ? t.tags.map(g => `<span class="tag" style="--tag:${swatch[S.tagColors[g]] || 'var(--color-muted)'}">${esc(g)}</span>`).join('') : '';
+    const pts = f.points && (t.points != null || f.empty) ? `<span class="pts" title="Task points are informational">${t.points ?? '–'}</span>` : '';
+    const p = parentOf(t);
+    const par = S.group === 'people' && f.parent ? `<div class="par">${p ? `${tIcon(p.type)}<span>${esc(p.title)}</span>` : '<span>No parent</span>'}</div>` : '';
+    return `<article class="card${r ? ' styled' : ''}${r && r.bold ? ' bold' : ''}"${r ? ` style="--rule:${swatch[r.color]}" title="Style: ${esc(r.name)}"` : ''} draggable="true" tabindex="0" data-key="${t.key}" aria-label="${esc(t.title)}, ${t.state}">
+      ${par}<div class="ct">${tIcon('task')}<span class="title">${esc(t.title)}</span></div>
+      <div class="cm">${f.key ? `<span class="key">${t.key}</span>` : ''}${tags}<span class="spacer"></span>${pts}${pick}${f.assigned ? (t.assignee ? av(t.assignee) : `<span class="av none${pickable ? ' pickable' : ''}" title="Unassigned"></span>`) : ''}</div>
+    </article>`;
+  }
+
+  function render() {
+    board.style.setProperty('--cols', columns.length);
+    const shown = S.tasks.filter(visible), rows = rowsList();
+    const rowShown = row => S.group === 'stories' || !S.filter.size || S.filter.has(row);
+    let h = `<div class="colh first">${S.group === 'stories' ? `<button class="ib" type="button" id="toggleAll" title="Collapse or expand all rows">${rows.every(r => S.collapsed.has(r)) ? '▶' : '▼'}</button>Story / bug` : 'Person'}</div>`;
+    h += columns.map(c => `<div class="colh"><span class="st ${cat(c)}">${c}</span><span class="n">${shown.filter(t => t.state === c && rowShown(rowOf(t))).length}</span></div>`).join('');
+    for (const row of rows) {
+      if (!rowShown(row)) continue;
+      const rowTasks = shown.filter(t => rowOf(t) === row), collapsed = S.group === 'stories' && S.collapsed.has(row);
+      h += S.group === 'people' ? personCell(row, rowTasks.length) : row === ORPHAN ? orphanCell(collapsed) : parentCell(S.parents.find(p => p.key === row), collapsed);
+      h += columns.map((c, ci) => {
+        const ts = rowTasks.filter(t => t.state === c);
+        if (collapsed) return `<div class="cell thin" data-row="${row}" data-col="${c}"><span class="cnt">${ts.length || ''}</span></div>`;
+        const first = S.group === 'stories' && ci === 0;
+        const add = !first ? '' : S.adding === row ? '<input class="field quick" id="quick" placeholder="Task title, then Enter" aria-label="New task title">' : `<button class="add" type="button" data-add="${row}">+ Task</button>`;
+        const empty = first && !S.tasks.some(t => rowOf(t) === row);
+        return `<div class="cell${empty ? ' empty-row' : ''}" data-row="${row}" data-col="${c}">${ts.map(card).join('')}${add}</div>`;
+      }).join('');
+    }
+    board.innerHTML = h;
+    faces();
+    if (S.adding) document.getElementById('quick')?.focus();
+  }
+
+  function parentCell(p, collapsed) {
+    const f = S.parentFields, ts = S.tasks.filter(t => t.parent === p.key), done = ts.filter(t => cat(t.state) === 'completed').length;
+    const toggle = `<button class="ib" type="button" data-collapse="${p.key}" aria-expanded="${!collapsed}" aria-label="${collapsed ? 'Expand' : 'Collapse'} ${p.key}">${collapsed ? '▶' : '▼'}</button>`;
+    if (collapsed) return `<div class="rowh collapsed">${toggle}${tIcon(p.type)}<span class="t1" title="${esc(p.title)}">${esc(p.title)}</span><span class="st ${cat(p.state)}">${p.state}</span></div>`;
+    const stSel = `<span class="stsel"><span class="st ${cat(p.state)}"></span><select data-pstate="${p.key}" aria-label="State of ${p.key}">${states.story.map(n => `<option${n === p.state ? ' selected' : ''}>${n}</option>`).join('')}</select></span>`;
+    const prog = ts.length ? `<span class="prog" title="${done} of ${ts.length} tasks in a Completed state">☑ ${done}/${ts.length}<span class="bar"><i style="width:${Math.round(done / ts.length * 100)}%"></i></span></span>` : '<span class="prog">No tasks yet</span>';
+    // All tasks done: offer to move the story on, never do it automatically.
+    const suggest = ts.length && done === ts.length && !['resolved', 'completed', 'removed'].includes(cat(p.state)) && !S.dismissed.has(p.key);
+    return `<div class="rowh">
+      <div class="top">${toggle}${tIcon(p.type)}${f.key ? `<span class="key">${p.key}</span>` : ''}<span class="spacer"></span>${f.points ? `<span class="pts" title="Story points">${p.points} pts</span>` : ''}</div>
+      <div class="ttl">${esc(p.title)}</div>
+      <div class="meta">${f.state ? stSel : ''}${f.assigned ? av(p.assignee) : ''}${f.annotation ? prog : ''}</div>
+      ${suggest ? `<div class="suggest"><b>All tasks done.</b><span class="spacer"></span><button class="btn primary" style="height:22px;padding:0 7px;font-size:var(--text-xs)" type="button" data-resolve="${p.key}">Move to Resolved</button><button class="ib" type="button" data-dismiss="${p.key}" aria-label="Dismiss">✕</button></div>` : ''}
+    </div>`;
+  }
+
+  // Tasks with no story or bug. Always the last row, so there's somewhere to drop or add one.
+  function orphanCell(collapsed) {
+    const n = S.tasks.filter(t => !t.parent).length;
+    const toggle = `<button class="ib" type="button" data-collapse="${ORPHAN}" aria-expanded="${!collapsed}" aria-label="${collapsed ? 'Expand' : 'Collapse'} unparented tasks">${collapsed ? '▶' : '▼'}</button>`;
+    if (collapsed) return `<div class="rowh orphan collapsed">${toggle}${tIcon('task')}<span class="t1">Unparented</span><span class="cnt">${n}</span></div>`;
+    return `<div class="rowh orphan">
+      <div class="top">${toggle}${tIcon('task')}<span class="key">No parent</span><span class="spacer"></span><span class="cnt">${n} task${n === 1 ? '' : 's'}</span></div>
+      <div class="ttl">Unparented</div>
+      <div class="hint">Tasks with no story or bug. They carry no sprint points. Drag one onto a row to give it a parent.</div>
+    </div>`;
+  }
+
+  // People rows: who's on what. A task count only, never points or anything compared with capacity.
+  function personCell(row, n) {
+    const label = row === 'none' ? '<span class="av none"></span>Unassigned' : `${av(row)}${people[row].name}${row === ME ? ' <span class="muted">(you)</span>' : ''}`;
+    const sub = row === 'none' ? (n ? `${n} ready or waiting` : 'Nothing waiting') : (n ? `${n} task${n === 1 ? '' : 's'} in this sprint` : 'No tasks in this sprint');
+    return `<div class="rowh"><div class="who">${label}</div><div class="hint">${sub}</div></div>`;
+  }
+
+  function faces() {
+    const el = document.getElementById('faces');
+    el.classList.toggle('none-on', !S.filter.size);
+    el.innerHTML = Object.keys(people).map(p => `<button class="face" type="button" data-face="${p}" aria-pressed="${S.filter.has(p)}" title="${people[p].name}">${av(p)}</button>`).join('') +
+      `<button class="face" type="button" data-face="none" aria-pressed="${S.filter.has('none')}" title="Unassigned"><span class="av none"></span></button>`;
+  }
+
+  function flash(key) {
+    const el = board.querySelector(`[data-key="${key}"]`);
+    if (el) { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
+  }
+
+  // One write path for drag, keyboard, Pick up and teammates' moves. who = the person making the change.
+  function move(key, row, col, who = ME, beforeKey = null) {
+    const t = S.tasks.find(x => x.key === key); if (!t) return;
+    const msgs = [];
+    if (S.group === 'stories' && row !== (t.parent || ORPHAN)) { t.parent = row === ORPHAN ? null : row; msgs.push(t.parent ? `moved under ${t.parent}` : 'parent removed'); }
+    if (S.group === 'people') { const a = row === 'none' ? null : row; if (a !== t.assignee) { t.assignee = a; msgs.push(a ? `assigned to ${a === ME ? 'you' : people[a].name}` : 'unassigned'); } }
+    if (col !== t.state) { t.state = col; msgs.push(`→ ${col}`); }
+    // Auto-assign on pick-up: moving an unassigned task into an In Progress state assigns whoever moved it.
+    if (!t.assignee && cat(t.state) === 'in-progress') { t.assignee = who; msgs.push(who === ME ? 'assigned to you' : 'picked up'); }
+    S.tasks.splice(S.tasks.indexOf(t), 1);
+    const bi = beforeKey ? S.tasks.findIndex(x => x.key === beforeKey) : -1;
+    bi >= 0 ? S.tasks.splice(bi, 0, t) : S.tasks.push(t);
+    if (S.group === 'stories') S.collapsed.delete(t.parent || ORPHAN);
+    render(); flash(key);
+    if (msgs.length) toast(`${av(who)} ${who === ME ? '' : esc(people[who].name) + ': '}“${esc(t.title)}” ${esc(msgs.join(' · '))}`);
+  }
+
+  // Drag and drop: a cell sets column (state) and row (parent, or assignee when grouped by People).
+  let dragKey = null;
+  board.addEventListener('dragstart', e => { const c = e.target.closest('.card'); if (!c) return; dragKey = c.dataset.key; c.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragKey); });
+  board.addEventListener('dragend', e => { e.target.closest('.card')?.classList.remove('dragging'); board.querySelectorAll('.over').forEach(x => x.classList.remove('over')); dragKey = null; });
+  board.addEventListener('dragover', e => { const cell = e.target.closest('.cell'); if (!cell || !dragKey) return; e.preventDefault(); board.querySelectorAll('.over').forEach(x => x !== cell && x.classList.remove('over')); cell.classList.add('over'); });
+  board.addEventListener('drop', e => {
+    const cell = e.target.closest('.cell'); if (!cell || !dragKey) return; e.preventDefault();
+    const before = e.target.closest('.card');
+    move(dragKey, cell.dataset.row, cell.dataset.col, ME, before && before.dataset.key !== dragKey ? before.dataset.key : null);
+  });
+
+  board.addEventListener('keydown', e => {
+    if (e.target.id === 'quick') {
+      if (e.key === 'Enter' && e.target.value.trim()) {
+        const t = { key: 'SHIP-' + S.nextKey++, parent: S.adding === ORPHAN ? null : S.adding, title: e.target.value.trim(), state: columns[0], assignee: null, points: null, tags: [], priority: 2 };
+        S.tasks.push(t); render(); flash(t.key); toast(`Added ${t.key}${t.parent ? ' to ' + t.parent : ' with no parent'}`);
+      } else if (e.key === 'Escape') { S.adding = null; render(); }
+      return;
+    }
+    // Keyboard moves: Alt+←/→ changes column, Alt+↑/↓ changes row.
+    const c = e.target.closest('.card'); if (!c || !e.altKey) return;
+    const t = S.tasks.find(x => x.key === c.dataset.key), rows = rowsList();
+    let ci = columns.indexOf(t.state), ri = rows.indexOf(rowOf(t));
+    if (e.key === 'ArrowLeft') ci = Math.max(0, ci - 1); else if (e.key === 'ArrowRight') ci = Math.min(columns.length - 1, ci + 1);
+    else if (e.key === 'ArrowUp') ri = Math.max(0, ri - 1); else if (e.key === 'ArrowDown') ri = Math.min(rows.length - 1, ri + 1); else return;
+    e.preventDefault(); move(t.key, rows[ri], columns[ci]); board.querySelector(`[data-key="${t.key}"]`)?.focus();
+  });
+  board.addEventListener('focusout', e => {
+    if (e.target.id === 'quick' && !e.target.value.trim()) setTimeout(() => { if (document.activeElement?.id !== 'quick') { S.adding = null; render(); } }, 0);
+  });
+
+  board.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.id === 'toggleAll') { const rows = rowsList(); rows.every(r => S.collapsed.has(r)) ? S.collapsed.clear() : rows.forEach(r => S.collapsed.add(r)); render(); }
+    else if (b.dataset.collapse) { S.collapsed.has(b.dataset.collapse) ? S.collapsed.delete(b.dataset.collapse) : S.collapsed.add(b.dataset.collapse); render(); }
+    else if (b.dataset.pick) { const t = S.tasks.find(x => x.key === b.dataset.pick); move(t.key, S.group === 'stories' ? rowOf(t) : ME, columns.find(c => cat(c) === 'in-progress')); }
+    else if (b.dataset.add) { S.adding = b.dataset.add; render(); }
+    else if (b.dataset.resolve) { const p = S.parents.find(x => x.key === b.dataset.resolve); p.state = states.story.find(s => cat(s) === 'resolved'); render(); toast(`${av(ME)} ${p.key} → ${p.state}`); }
+    else if (b.dataset.dismiss) { S.dismissed.add(b.dataset.dismiss); render(); }
+  });
+  board.addEventListener('change', e => {
+    const sel = e.target.closest('[data-pstate]'); if (!sel) return;
+    const p = S.parents.find(x => x.key === sel.dataset.pstate); p.state = sel.value;
+    if (!p.assignee && cat(p.state) === 'in-progress') p.assignee = ME;
+    if (cat(p.state) === 'completed') S.collapsed.add(p.key);
+    render(); toast(`${av(ME)} ${p.key} → ${p.state}`);
+  });
+
+  document.getElementById('faces').addEventListener('click', e => {
+    const b = e.target.closest('[data-face]'); if (!b) return;
+    S.filter.has(b.dataset.face) ? S.filter.delete(b.dataset.face) : S.filter.add(b.dataset.face); render();
+  });
+  const groupSeg = document.getElementById('groupSeg');
+  const setGroup = g => { S.group = g; S.adding = null; groupSeg.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x.dataset.g === g)); render(); };
+  groupSeg.addEventListener('click', e => { const b = e.target.closest('[data-g]'); if (b) setGroup(b.dataset.g); });
+
+  // ---------- Settings dialog (live: changes update the board) ----------
+  const dlg = document.getElementById('settings'), pane = document.getElementById('pane');
+  let paneId = 'fields';
+  const fieldLabels = {
+    task: [['key', 'Key (SHIP-123)'], ['assigned', 'Assigned to'], ['tags', 'Tags'], ['points', 'Story points (informational)'], ['parent', 'Parent story (People grouping)'], ['empty', 'Show empty fields']],
+    parent: [['key', 'Key'], ['points', 'Story points'], ['state', 'State'], ['assigned', 'Assigned to'], ['annotation', 'Task progress ☑ done/total']],
+  };
+  const sel = (opts, v) => `<select class="field">${opts.map(o => `<option${o === v ? ' selected' : ''}>${o}</option>`).join('')}</select>`;
+  function renderPane() {
+    dlg.querySelectorAll('nav [data-pane]').forEach(b => b.setAttribute('aria-current', b.dataset.pane === paneId));
+    if (paneId === 'fields') {
+      const box = (kind, attr, f) => fieldLabels[kind].map(([k, l]) => `<label class="check"><input type="checkbox" ${attr}="${k}"${f[k] ? ' checked' : ''}> ${l}</label>`).join('');
+      pane.innerHTML = `<p class="hint">Choose what shows on each card on this Taskboard. Fields are edited on the card or in the work item form.</p>
+        <div class="fgrid">
+          <fieldset><legend>${tIcon('task')} Task cards</legend>${box('task', 'data-tf', S.taskFields)}<button class="btn" type="button" style="justify-self:start;margin-top:4px">+ Add field (up to 10)</button></fieldset>
+          <fieldset><legend>${tIcon('story')}${tIcon('bug')} Story and bug cards (row headers)</legend>${box('parent', 'data-pf', S.parentFields)}<button class="btn" type="button" style="justify-self:start;margin-top:4px">+ Add field (up to 10)</button></fieldset>
+        </div>`;
+    } else if (paneId === 'styles') {
+      pane.innerHTML = `<p class="hint">Style rules make task cards that need attention stand out. When a card matches more than one rule, the first rule wins. Drag ⠿ to reorder.</p>
+        <div><button class="btn" type="button">+ Add styling rule</button></div>
+        ${S.rules.map((r, i) => `<div class="rule">
+          <div class="rh"><span class="muted" title="Drag to reorder" style="cursor:grab">⠿</span><input class="field" value="${esc(r.name)}" aria-label="Rule name">
+            <span class="sw" style="--sw:${swatch[r.color]}" title="Colour: ${r.color}"></span>
+            <label class="check"><input type="checkbox" data-bold="${i}"${r.bold ? ' checked' : ''}> <b>B</b></label>
+            <label class="check"><input type="checkbox" data-rule="${i}"${r.enabled ? ' checked' : ''}> Enabled</label></div>
+          ${r.criteria.map(([andor, f, op, v]) => `<div class="crit"><span class="andor">${andor || 'Where'}</span>${sel(['Tags', 'Priority', 'State category', 'State', 'Assigned to', 'Story points', 'Title'], f)}${sel(['=', '≠', 'contains', 'not contains', '>', '<'], op)}<input class="field" value="${esc(v)}" aria-label="Value"><button class="ib" type="button" aria-label="Remove clause">✕</button></div>`).join('')}
+          <div class="crit"><span></span><button class="btn ghost" type="button" style="justify-self:start">+ Add criteria</button></div>
+        </div>`).join('')}`;
+    } else {
+      pane.innerHTML = `<p class="hint">Tag colours apply on this Taskboard only. Tags without a colour show in the neutral style.</p>
+        ${Object.entries(S.tagColors).map(([tag, c]) => `<div class="tc"><input class="field" value="${esc(tag)}" aria-label="Tag"><span class="tag" style="--tag:${swatch[c]}">${esc(tag)}</span>
+          <span class="swatches" role="group" aria-label="Colour for ${esc(tag)}">${Object.keys(swatch).map(k => `<button type="button" style="--sw:${swatch[k]}" data-tag="${esc(tag)}" data-c="${k}" aria-pressed="${k === c}" title="${k}"></button>`).join('')}</span>
+          <button class="ib" type="button" aria-label="Remove">✕</button></div>`).join('')}
+        <div><button class="btn" type="button">+ Add tag colour</button></div>`;
+    }
+  }
+  const openSettings = () => { dlg.hidden = false; renderPane(); };
+  document.getElementById('openSettings').onclick = openSettings;
+  dlg.addEventListener('click', e => {
+    if (e.target === dlg || e.target.closest('[data-close]')) { dlg.hidden = true; return; }
+    const nav = e.target.closest('[data-pane]'); if (nav) { paneId = nav.dataset.pane; renderPane(); return; }
+    const sw = e.target.closest('[data-tag]'); if (sw) { S.tagColors[sw.dataset.tag] = sw.dataset.c; renderPane(); render(); }
+  });
+  pane.addEventListener('change', e => {
+    const el = e.target;
+    if (el.dataset.tf) S.taskFields[el.dataset.tf] = el.checked;
+    else if (el.dataset.pf) S.parentFields[el.dataset.pf] = el.checked;
+    else if (el.dataset.rule) S.rules[+el.dataset.rule].enabled = el.checked;
+    else if (el.dataset.bold) S.rules[+el.dataset.bold].bold = el.checked;
+    else return;
+    render();
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !dlg.hidden) dlg.hidden = true; });
+
+  // Teammates' moves, as they'd arrive over the real-time connection. They carry state and parent, never a row.
+  const script = [['SHIP-173', 'tom', 'Active'], ['SHIP-178', 'sam', 'In review'], ['SHIP-176', 'ana', 'Active'], ['SHIP-172', 'mei', 'In review']];
+  let step = 0;
+  const teammate = () => {
+    const [key, who, col] = script[step++ % script.length], t = S.tasks.find(x => x.key === key); if (!t) return;
+    const g = S.group; S.group = 'stories'; move(key, t.parent || ORPHAN, col, who); S.group = g;
+    if (g === 'people') { render(); flash(key); }
+  };
+  const reset = () => { Object.assign(S, seed()); S.nextKey = 184; S.filter.clear(); S.dismissed.clear(); S.adding = null; step = 0; render(); toast('Board reset'); };
+
+  setGroup(S.group);
+  if (params.get('dialog') === 'settings') { paneId = ['fields', 'styles', 'tags'].includes(params.get('pane')) ? params.get('pane') : 'fields'; openSettings(); }
+  SL.preview([{ label: "Teammate's move", run: teammate }, { label: 'Settings', run: openSettings }, { label: 'Reset', run: reset }]);
+})();
+</script>
+</body>
+</html>

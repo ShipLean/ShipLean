@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Sprint backlog (reference)</title>
+<!--
+  Reference Sprint backlog: Sprints › Sprint 24 › Backlog.
+  Open directly in a browser. Uses ../tokens.css, shiplean.css and shared.js only; no build step.
+  The sprint's stories and bugs in backlog_order with their tasks underneath. Work is not pre-assigned:
+  people pull it during the sprint, and assignment records who is on it and who did what.
+  Working: expand/collapse a story (▼), Show tasks, change a state with its menu. Moving an unassigned item
+  into an In Progress state assigns it to you (decision: auto-assign on pick-up). The rail recomputes:
+  Ready to pick up (unassigned, not started), In progress now (who's on what), Points by state category.
+  The burndown is points remaining (committed minus Completed-category points), read from revisions.
+  The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot).
+-->
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="shiplean.css">
+<script src="shared.js"></script>
+<style>
+.sprint-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-4); padding: var(--space-3) var(--space-4); background: var(--color-surface); border-bottom: 1px solid var(--color-border); flex: none; }
+.picker { display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0; background: none; font-size: var(--text-lg); font-weight: var(--weight-semibold); cursor: pointer; }
+.picker span { font-size: var(--text-xs); color: var(--color-muted); }
+.goal { display: flex; gap: var(--space-2); align-items: baseline; margin-top: var(--space-2); max-width: 760px; }
+.burn { padding: 6px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+.burn header { display: flex; justify-content: space-between; gap: var(--space-2); font-size: var(--text-sm); font-weight: var(--weight-semibold); }
+tr.parent-row td { font-weight: var(--weight-medium); }
+tr.child td { background: color-mix(in srgb, var(--color-surface-2) 35%, var(--color-surface)); font-size: var(--text-sm); }
+tr.child td:first-child { padding-left: 34px; }
+tr.child.hidden { display: none; }
+.state-sel { height: 24px; padding: 0 4px; border: 1px solid transparent; border-radius: var(--radius-sm); background: transparent; font-size: var(--text-sm); cursor: pointer; }
+.state-sel:hover, .state-sel:focus { border-color: var(--color-border); background: var(--color-surface); }
+.stcell { display: inline-flex; align-items: center; gap: 2px; }
+.stcell .st { width: 7px; overflow: hidden; gap: 0; }
+.people { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 6px 8px; align-items: center; font-size: var(--text-sm); }
+.people .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ready { display: grid; gap: 6px; font-size: var(--text-sm); }
+.ready .title-cell { align-items: flex-start; }
+.ready small { display: block; color: var(--color-muted); }
+@media (max-width: 900px) { .sprint-head { grid-template-columns: minmax(0, 1fr); } }
+</style>
+</head>
+<body>
+<div id="appbar"></div>
+<section class="sprint-head" aria-label="Sprint 24">
+  <div>
+    <div class="row">
+      <button class="picker" type="button" aria-haspopup="listbox" title="Switch sprint">Sprint 24 <span>▾</span></button>
+      <span class="chip accent">Current</span>
+      <a class="sm" href="sprints.html">All sprints</a>
+    </div>
+    <div class="sm muted">Mon 19 Oct – Fri 30 Oct · <b style="color:var(--color-text)">5 working days left</b></div>
+    <div class="goal"><span class="overline">Goal</span><span>Customers can check out with a saved card; passkey sign-in behind a flag.</span><button class="btn ghost" type="button">Edit</button></div>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><div class="v" id="kCommitted"></div><div class="l">Committed / team capacity · <a href="capacity.html">edit</a></div></div>
+    <div class="kpi"><div class="v" id="kDone"></div><div class="l">Completed</div></div>
+    <div class="burn">
+      <header><span>Burndown</span><span class="muted" style="font-weight:500" id="kLeft"></span></header>
+      <svg id="burn" viewBox="0 0 232 74" width="232" height="74" role="img" aria-label="Burndown: story points remaining per working day against the ideal line"></svg>
+    </div>
+  </div>
+</section>
+<div class="toolbar">
+  <div id="tabs"></div>
+  <span class="spacer"></span>
+  <label class="check"><input type="checkbox" id="optTasks" checked> Show tasks</label>
+  <button class="btn" type="button">Filter</button>
+  <button class="btn primary" type="button">+ Add story or bug</button>
+</div>
+<div class="split">
+  <div class="scroll">
+    <table class="list">
+      <thead><tr><th>Title</th><th style="width:96px">Key</th><th style="width:130px">State</th><th style="width:90px">Assigned</th><th style="width:80px">Tasks</th><th class="num" style="width:56px">Pts</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+  <aside class="rail">
+    <section><div class="overline">Ready to pick up</div><p class="hint">Unassigned and not started, in backlog order.</p><div class="ready" id="ready"></div></section>
+    <section><div class="overline">In progress now</div><p class="hint">Who's working on what right now.</p><div class="people" id="active"></div></section>
+    <section><div class="overline">Points by state</div><div class="row" id="byState"></div><p class="hint">Grouped by state category, so custom states still roll up.</p></section>
+  </aside>
+</div>
+
+<script>
+(() => {
+  const { ME, people, stateCategory, items, tasks, sprints, teamCapacity, tIcon, st, av, esc, toast } = SL;
+  document.getElementById('appbar').outerHTML = SL.appBar('sprints');
+  document.getElementById('tabs').outerHTML = SL.sprintTabs('backlog');
+  const sprint = sprints.find(s => s.id === 's24');
+  const stories = items.filter(i => i.sprint === 's24').map(i => ({ ...i, tasks: (tasks[i.key] || []).map(([title, state, assignee]) => ({ title, state, assignee })) }));
+  const open = new Set(stories.map(s => s.key));
+  const body = document.getElementById('rows'), optTasks = document.getElementById('optTasks');
+
+  const stateSel = (state, id, states = SL.states.story) => `<span class="stcell">${st(state)}<select class="state-sel" data-id="${id}" aria-label="State">${states.map(s => `<option${s === state ? ' selected' : ''}>${s}</option>`).join('')}</select></span>`;
+
+  function render() {
+    body.innerHTML = stories.map((s, si) => {
+      const done = s.tasks.filter(t => stateCategory[t.state] === 'completed').length;
+      return `<tr class="item parent-row"><td><div class="title-cell"><button class="ib" type="button" data-open="${s.key}" aria-expanded="${open.has(s.key)}">${open.has(s.key) ? '▼' : '▶'}</button>${tIcon(s.type)}<span class="t">${esc(s.title)}</span></div></td>
+        <td class="key">${s.key}</td><td>${stateSel(s.state, si)}</td><td>${av(s.assignee)}</td>
+        <td><span class="chip${done === s.tasks.length ? ' ok' : ''}">☑ ${done}/${s.tasks.length}</span></td><td class="pts">${s.points}</td></tr>` +
+        s.tasks.map((t, ti) => `<tr class="item child${open.has(s.key) && optTasks.checked ? '' : ' hidden'}"><td><div class="title-cell">${tIcon('task')}<span class="t">${esc(t.title)}</span></div></td>
+          <td></td><td>${stateSel(t.state, si + '.' + ti, SL.states.task)}</td><td>${av(t.assignee)}</td><td></td><td class="pts muted" style="font-weight:400" title="Task points are informational; sprint totals count stories and bugs">—</td></tr>`).join('');
+    }).join('');
+    rail(); kpis();
+  }
+
+  function rail() {
+    const ready = [], active = {};
+    stories.forEach(s => {
+      if (!s.assignee && stateCategory[s.state] === 'proposed') ready.push({ t: s.type, title: s.title, sub: s.key });
+      if (s.assignee && stateCategory[s.state] === 'in-progress') (active[s.assignee] ??= []).push(s.key);
+      s.tasks.forEach(t => {
+        if (!t.assignee && stateCategory[t.state] === 'proposed') ready.push({ t: 'task', title: t.title, sub: s.title });
+        if (t.assignee && stateCategory[t.state] === 'in-progress') (active[t.assignee] ??= []).push(t.title);
+      });
+    });
+    document.getElementById('ready').innerHTML = ready.length ? ready.map(r => `<div class="title-cell">${tIcon(r.t)}<span>${esc(r.title)}<small>${esc(r.sub)}</small></span></div>`).join('') : '<span class="muted sm">Nothing waiting.</span>';
+    document.getElementById('active').innerHTML = Object.keys(people).map(p => {
+      const a = active[p] || [];
+      return `${av(p)}<span class="nm">${people[p].name}${p === ME ? ' <span class="muted">(you)</span>' : ''}</span><span class="muted xs" title="${esc(a.join(', '))}">${a.length ? a.length + ' active' : '—'}</span>`;
+    }).join('');
+    const by = {};
+    stories.forEach(s => { by[stateCategory[s.state]] = (by[stateCategory[s.state]] || 0) + s.points; });
+    const label = { proposed: 'Proposed', 'in-progress': 'In progress', resolved: 'Resolved', completed: 'Completed' };
+    document.getElementById('byState').innerHTML = Object.keys(label).map(k => `<span class="chip${k === 'completed' ? ' ok' : ''}"><span class="st ${k}"></span>${label[k]} ${by[k] || 0}</span>`).join('');
+  }
+
+  function kpis() {
+    const committed = stories.reduce((a, s) => a + s.points, 0);
+    const done = stories.filter(s => stateCategory[s.state] === 'completed').reduce((a, s) => a + s.points, 0);
+    document.getElementById('kCommitted').innerHTML = `${committed} <small>/ ${teamCapacity(sprint)} pts</small>`;
+    document.getElementById('kDone').innerHTML = `${done} <small>pts</small>`;
+    document.getElementById('kLeft').textContent = `${committed - done} pts left`;
+  }
+
+  body.addEventListener('click', e => {
+    const b = e.target.closest('[data-open]'); if (!b) return;
+    open.has(b.dataset.open) ? open.delete(b.dataset.open) : open.add(b.dataset.open); render();
+  });
+  body.addEventListener('change', e => {
+    const sel = e.target.closest('.state-sel'); if (!sel) return;
+    const [si, ti] = sel.dataset.id.split('.');
+    const w = ti === undefined ? stories[+si] : stories[+si].tasks[+ti];
+    w.state = sel.value;
+    // Auto-assign on pick-up: moving an unassigned item into an In Progress state assigns it to you.
+    if (!w.assignee && stateCategory[w.state] === 'in-progress') { w.assignee = ME; toast(`${av(ME)} Picked up “${esc(w.title)}” · assigned to you`); }
+    render();
+  });
+  optTasks.onchange = render;
+  render();
+
+  // Burndown: remaining points at the end of each working day vs the ideal line.
+  (() => {
+    const svg = document.getElementById('burn'), W = 232, H = 74, L = 24, R = 6, T = 6, B = 16, total = 21;
+    const NS = 'http://www.w3.org/2000/svg', mk = (tag, a) => { const el = document.createElementNS(NS, tag); for (const k in a) el.setAttribute(k, a[k]); svg.append(el); return el; };
+    const days = ['M', 'T', 'W', 'T', 'F', 'M', 'T', 'W', 'T', 'F'], actual = [21, 21, 18, 18, 16];
+    const x = i => L + i * (W - L - R) / 9, y = v => T + (1 - v / total) * (H - T - B);
+    mk('line', { x1: L, y1: H - B, x2: W - R, y2: H - B, stroke: 'var(--color-border)' });
+    mk('line', { x1: x(0), y1: y(total), x2: x(9), y2: y(0), stroke: 'var(--color-muted)', 'stroke-width': 1.5, 'stroke-dasharray': '3 3' });
+    mk('polyline', { points: actual.map((v, i) => `${x(i)},${y(v)}`).join(' '), fill: 'none', stroke: 'var(--chart-completed)', 'stroke-width': 2, 'stroke-linejoin': 'round' });
+    days.forEach((d, i) => { mk('text', { x: x(i), y: H - 4, 'text-anchor': 'middle' }).textContent = d; });
+    mk('text', { x: 2, y: y(total) + 3 }).textContent = total;
+    actual.forEach((v, i) => {
+      mk('circle', { cx: x(i), cy: y(v), r: 3, fill: 'var(--chart-completed)', stroke: 'var(--color-surface)', 'stroke-width': 2 });
+      SL.hover(mk('rect', { x: x(i) - 10, y: 0, width: 20, height: H, fill: 'transparent' }), `Day ${i + 1}: ${v} pts left (ideal ${Math.round((total - total * i / 9) * 10) / 10})`);
+    });
+  })();
+
+  SL.preview();
+})();
+</script>
+</body>
+</html>

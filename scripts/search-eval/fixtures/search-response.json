@@ -1,0 +1,44 @@
+{
+  "query": "login broken",
+  "semantic": true,
+  "projects": [{"key": "DEMO", "name": "Demo", "url": "/p/DEMO/backlogs/stories"}],
+  "sprints": [
+    {
+      "name": "Sprint 3",
+      "goal": "Fix sign-in",
+      "startDate": "2026-01-05",
+      "endDate": "2026-01-16",
+      "projectKey": "DEMO",
+      "url": "/p/DEMO/sprints/00000000-0000-0000-0000-000000000003/taskboard"
+    }
+  ],
+  "items": [
+    {
+      "key": "DEMO-4",
+      "title": "Sign-in fails after password reset",
+      "type": "bug",
+      "state": "Active",
+      "projectKey": "DEMO",
+      "parentPath": [
+        "DEMO-2"
+      ],
+      "matchedIn": "title",
+      "snippet": "Sign-in fails after password reset",
+      "url": "/p/DEMO/items/DEMO-4",
+      "attachment": null
+    },
+    {
+      "key": "DEMO-2",
+      "title": "Account access",
+      "type": "feature",
+      "state": "Active",
+      "projectKey": "DEMO",
+      "parentPath": [],
+      "matchedIn": "description",
+      "snippet": "\u2026users cannot log in\u2026",
+      "url": "/p/DEMO/items/DEMO-2",
+      "attachment": null
+    }
+  ],
+  "more": false
+}

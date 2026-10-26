@@ -1,0 +1,8 @@
+{
+  "displayName": "Priya Shah",
+  "emailAddress": "priya.shah@acme.io",
+  "active": true,
+  "self": "{{base}}/rest/api/2/user?username=priya.shah",
+  "name": "priya.shah",
+  "key": "JIRAUSER10100"
+}

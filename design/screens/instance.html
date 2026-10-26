@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Instance settings (reference)</title>
+<!--
+  Reference Instance settings: ShipLean › Instance settings, for the whole install (single tenant).
+  Open directly in a browser. Uses ../tokens.css, shiplean.css and shared.js only; no build step.
+  Reached from the user menu (the signed-in user at the bottom of the side menu); only instance admins see it.
+  The side menu keeps the project you came from, so you can go straight back.
+  Tabs on the left (#general, #users, #projects, or ?tab= for screenshots). Users opens by default.
+    General: instance name (shown on the sign-in page), base URL (checked against the address you're using),
+      who can create projects (Everyone / Instance admins), and sign-in facts that aren't settings in v1.
+      General is one draft with Save, like Project settings.
+    Users: everyone on the install with role, status, projects and last sign-in. Each action applies straight
+      away and is confirmed with a toast: + Add user (gives a one-time password, shown once), Reset password,
+      Make admin / Remove admin, Unlock, Disable / Enable, and Set up sign-in for people Jira import created.
+      Guards: you can't disable yourself or drop your own admin rights, and one active admin always remains.
+      There is no delete: people's names stay on history and comments, so disable instead.
+      ShipLean sends no email in v1, so the admin hands over one-time passwords.
+    Projects: every project on the install, including ones you're not in, with members, admins, items and last
+      activity. A project with no active admin is flagged. Join as admin adds you to a project's Members.
+  The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot). It shows a base
+  URL mismatch and what a non-admin gets at this address.
+-->
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="shiplean.css">
+<script src="shared.js"></script>
+<style>
+[hidden] { display: none !important; }
+.head { display: flex; gap: var(--space-3); align-items: center; padding: var(--space-3) var(--space-4); background: var(--color-surface); border-bottom: 1px solid var(--color-border); flex: none; flex-wrap: wrap; }
+.head h1 { margin: 0; font-size: var(--text-lg); font-weight: var(--weight-semibold); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn.danger { color: var(--color-danger); border-color: color-mix(in srgb, var(--color-danger) 45%, var(--color-border)); }
+.sbody { flex: 1; min-height: 0; display: grid; grid-template-columns: 200px minmax(0, 1fr); }
+.stabs { display: flex; flex-direction: column; gap: 2px; padding: var(--space-3) var(--space-2); background: var(--color-surface); border-right: 1px solid var(--color-border); overflow: auto; }
+.stab { display: flex; align-items: center; gap: var(--space-2); height: 30px; padding: 0 var(--space-2); border-radius: var(--radius-sm); color: var(--color-muted); font-size: var(--text-base); font-weight: var(--weight-medium); text-decoration: none; }
+.stab:hover { background: var(--color-surface-2); color: var(--color-text); }
+.stab[aria-current="page"] { background: var(--color-accent-soft); color: var(--color-text); font-weight: var(--weight-semibold); }
+.stab .meta { margin-left: auto; font-size: var(--text-xs); font-weight: var(--weight-regular); color: var(--color-muted); }
+.stab .meta.warn { color: var(--color-warn); font-weight: var(--weight-semibold); }
+.stabs .foot { margin-top: auto; padding: var(--space-2); font-size: var(--text-xs); color: var(--color-muted); }
+.content { overflow: auto; padding: var(--space-4); display: grid; gap: var(--space-3); align-content: start; background: var(--color-bg); }
+.panel { max-width: 1120px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.panel > header { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; min-height: 44px; padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-border); }
+.panel > header h2 { margin: 0; font-size: var(--text-md); font-weight: var(--weight-semibold); }
+.panel > header .meta { font-size: var(--text-xs); color: var(--color-muted); }
+.panel table.list { background: transparent; }
+.panel table.list th { position: static; }
+.pfoot { display: flex; gap: var(--space-2); align-items: center; padding: var(--space-2) var(--space-3); border-top: 1px solid var(--color-border); background: var(--color-bg); border-radius: 0 0 var(--radius-md) var(--radius-md); font-size: var(--text-xs); color: var(--color-muted); }
+.form { display: grid; grid-template-columns: 190px minmax(0, 1fr); }
+.form > .lbl, .form > .ctl { padding: 10px var(--space-3); border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.form > .lbl { font-size: var(--text-sm); font-weight: var(--weight-medium); color: var(--color-muted); padding-top: 15px; }
+.form > .ctl { display: grid; gap: 5px; justify-items: start; align-content: start; font-size: var(--text-sm); }
+.form > :nth-last-child(-n+2) { border-bottom: 0; }
+.form .changed { box-shadow: inset 3px 0 0 var(--color-warn); }
+.hint { font-size: var(--text-xs); color: var(--color-muted); max-width: 640px; }
+.ok-t { font-size: var(--text-xs); color: var(--color-ok); font-weight: var(--weight-medium); }
+.warn-t { font-size: var(--text-xs); color: var(--color-warn); font-weight: var(--weight-medium); }
+.w-md { width: 340px; max-width: 100%; }
+dl.facts { display: grid; grid-template-columns: 190px minmax(0, 1fr); margin: 0; font-size: var(--text-sm); }
+dl.facts dt, dl.facts dd { margin: 0; padding: 8px var(--space-3); border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+dl.facts dt { color: var(--color-muted); font-weight: var(--weight-medium); }
+dl.facts > :nth-last-child(-n+2) { border-bottom: 0; }
+.who { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
+.who > span:last-child { display: grid; line-height: 1.25; min-width: 0; }
+.who small { color: var(--color-muted); font-size: var(--text-xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.av.off { filter: grayscale(1); opacity: .55; }
+tr.disabled td { color: var(--color-muted); }
+.status { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-sm); white-space: nowrap; }
+.status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--color-ok); flex: none; }
+.status.attn::before { background: var(--color-warn); }
+.status.bad::before { background: var(--color-danger); }
+.status.off::before { background: var(--color-muted); }
+.status small { color: var(--color-muted); font-size: var(--text-xs); }
+td .sub { display: block; font-size: var(--text-xs); color: var(--color-muted); }
+.av-stack { display: inline-flex; }
+.av-stack .av { width: 20px; height: 20px; margin-left: -4px; box-shadow: 0 0 0 2px var(--color-surface); }
+.av-stack .av:first-child { margin-left: 0; }
+tr.flag td:first-child { box-shadow: inset 3px 0 0 var(--color-warn); }
+.menu { position: fixed; z-index: 45; min-width: 190px; padding: 4px; display: grid; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-raised); }
+.menu button { display: grid; height: auto; min-height: 28px; padding: 4px 8px; border: 0; border-radius: var(--radius-sm); background: transparent; text-align: left; font-size: var(--text-sm); cursor: pointer; }
+.menu button:hover:not(:disabled) { background: var(--color-accent-soft); }
+.menu button:disabled { color: var(--color-muted); cursor: default; }
+.menu button small { font-size: var(--text-2xs); color: var(--color-muted); }
+.menu .danger { color: var(--color-danger); }
+.menu hr { margin: 4px 2px; border: 0; border-top: 1px solid var(--color-border); }
+.otp { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3); border: 1px dashed var(--color-accent); border-radius: var(--radius-md); background: color-mix(in srgb, var(--color-accent-soft) 50%, var(--color-surface)); }
+.otp code { flex: 1; font-size: 20px; font-weight: var(--weight-semibold); letter-spacing: .08em; color: var(--color-text); }
+.dialog { width: min(520px, 100%); }
+.dialog .body .form { grid-template-columns: 110px minmax(0, 1fr); margin: 0 calc(-1 * var(--space-4)); }
+.projpick { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px var(--space-3); }
+.projpick label { display: flex; gap: 6px; align-items: center; font-size: var(--text-sm); }
+.projpick input { accent-color: var(--color-accent); margin: 0; }
+.banner { display: flex; gap: var(--space-2); align-items: center; max-width: 1120px; padding: 8px var(--space-3); border: 1px solid var(--color-border); border-left: 3px solid var(--color-info); border-radius: var(--radius-sm); background: var(--color-surface); font-size: var(--text-sm); }
+.banner.warn { border-left-color: var(--color-warn); }
+.denied { max-width: 520px; margin: var(--space-5) auto; display: grid; gap: var(--space-2); justify-items: center; text-align: center; padding: var(--space-5); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.denied h2 { margin: 0; font-size: var(--text-md); }
+.denied p { margin: 0; font-size: var(--text-sm); color: var(--color-muted); }
+@media (max-width: 900px) { .sbody { grid-template-columns: minmax(0, 1fr); } .stabs { flex-direction: row; flex-wrap: wrap; border-right: 0; border-bottom: 1px solid var(--color-border); } .stabs .foot { display: none; } .form, dl.facts { grid-template-columns: minmax(0, 1fr); } .form > .lbl { padding-bottom: 0; border-bottom: 0; } .panel { overflow-x: auto; } }
+</style>
+</head>
+<body>
+<div id="appbar"></div>
+<section class="head" aria-label="Instance settings">
+  <h1>Instance settings</h1>
+  <span class="sm muted" id="sub"></span>
+  <span class="spacer"></span>
+  <span class="chip">Instance admins only</span>
+</section>
+<div class="sbody" id="sbody">
+  <nav class="stabs" id="tabs" aria-label="Instance settings sections"></nav>
+  <main class="content" id="content"></main>
+</div>
+<div class="menu" id="menu" role="menu" hidden></div>
+
+<script>
+(() => {
+  const { ME, instance, people, projects, av, esc, toast } = SL;
+  document.getElementById('appbar').outerHTML = SL.appBar('instance');
+  const $ = id => document.getElementById(id);
+  $('sub').textContent = `${instance.name} · applies to everyone on this install`;
+
+  // Everyone else on the install, beyond the five SHIP people.
+  [['lee', 'Lee Park', 'LP', '#3f7d5a'], ['dana', 'Dana Whitfield', 'DW', '#8a5a2b'], ['ravi', 'Ravi Menon', 'RM', '#5a5fc9'], ['jo', 'Jo Becker', 'JB', '#a3416b']]
+    .forEach(([id, name, initials, color]) => { people[id] ??= { name, initials, color, email: id + '@larkspur.dev' }; });
+
+  // status: active | otp (one-time password not used yet) | locked | nopw (from Jira import) | disabled
+  const users = [
+    { id: 'priya', admin: true, status: 'active', projects: ['SHIP', 'PAY', 'MOB', 'DATA', 'OPS', 'PART'], last: 'Now', added: '2 Mar 2025 · first admin' },
+    { id: 'tom', admin: true, status: 'active', projects: ['SHIP', 'PAY', 'OPS'], last: 'Today 09:12', added: '2 Mar 2025' },
+    { id: 'mei', admin: false, status: 'active', projects: ['SHIP', 'DATA'], last: 'Yesterday', added: '9 Mar 2025' },
+    { id: 'sam', admin: false, status: 'locked', until: '11:47', projects: ['SHIP', 'MOB'], last: '3 days ago', added: '9 Mar 2025' },
+    { id: 'ana', admin: false, status: 'active', projects: ['SHIP', 'PART'], last: 'Today 08:40', added: '14 Apr 2025' },
+    { id: 'ravi', admin: false, status: 'otp', projects: ['PAY'], last: 'Never', added: '23 Oct by Tom Okafor' },
+    { id: 'dana', admin: false, status: 'nopw', projects: ['PART'], last: 'Never', added: '22 Oct by Jira import' },
+    { id: 'jo', admin: false, status: 'active', projects: ['MOB'], last: '2 weeks ago', added: '1 Jun 2025' },
+    { id: 'lee', admin: false, wasAdmin: true, status: 'disabled', projects: ['OPS'], last: '2 months ago', added: '2 Mar 2025 · disabled 30 Aug' },
+  ];
+  // Every project on the install. mine = your role, or null when you're not in it.
+  const allProjects = [
+    { key: 'SHIP', name: 'Storefront', members: 5, admins: ['priya'], items: 184, active: 'Now', mine: 'Admin' },
+    { key: 'PAY', name: 'Payments', members: 8, admins: ['tom'], items: 2264, active: 'Today', mine: 'Member' },
+    { key: 'MOB', name: 'Mobile App', members: 6, admins: ['sam', 'priya'], items: 1301, active: 'Today', mine: 'Admin' },
+    { key: 'DATA', name: 'Data Platform', members: 4, admins: ['mei'], items: 412, active: 'Yesterday', mine: 'Member' },
+    { key: 'OPS', name: 'Internal Tools', members: 3, admins: ['lee'], items: 96, active: '3 weeks ago', mine: 'Member' },
+    { key: 'PART', name: 'Partner Portal', members: 7, admins: ['ana'], items: 655, active: 'Today', mine: 'Member' },
+    { key: 'CORE', name: 'Core Platform', members: 2, admins: ['ravi'], items: 0, active: '20 Oct', mine: null },
+    { key: 'HR', name: 'People Ops', members: 3, admins: ['jo'], items: 58, active: '4 days ago', mine: null },
+  ];
+  const u = id => users.find(x => x.id === id);
+  const activeAdmins = () => users.filter(x => x.admin && x.status !== 'disabled');
+  const noActiveAdmin = p => p.admins.every(a => u(a)?.status === 'disabled');
+
+  const G0 = { name: instance.name, url: instance.baseUrl, create: 'everyone' };
+  const S = { tab: new URLSearchParams(location.search).get('tab') || (location.hash || '#users').slice(1), q: '', filter: 'all', g: { ...G0 }, here: instance.baseUrl, denied: false, dialog: null };
+
+  const statusCell = x => ({
+    active: '<span class="status">Active</span>',
+    otp: '<span class="status attn">One-time password <small>not used yet</small></span>',
+    locked: `<span class="status bad">Locked <small>until ${x.until}</small></span>`,
+    nopw: '<span class="status attn">Can\'t sign in yet <small>no password</small></span>',
+    disabled: '<span class="status off">Disabled</span>',
+  })[x.status];
+  const attention = x => ['otp', 'locked', 'nopw'].includes(x.status);
+
+  function tabs() {
+    const n = users.filter(attention).length, flagged = allProjects.filter(noActiveAdmin).length;
+    const t = (id, label, meta, warn) => `<a class="stab" href="#${id}"${S.tab === id ? ' aria-current="page"' : ''}>${label}${meta != null ? `<span class="meta${warn ? ' warn' : ''}">${meta}</span>` : ''}</a>`;
+    $('tabs').innerHTML = t('general', 'General', JSON.stringify(S.g) !== JSON.stringify(G0) ? '●' : null, true) + t('users', 'Users', n ? `${users.length} · ${n} ⚠` : users.length, !!n) + t('projects', 'Projects', flagged ? `${allProjects.length} · ${flagged} ⚠` : allProjects.length, !!flagged)
+      + `<div class="foot">ShipLean 1.0.0<br>Single install, self-hosted</div>`;
+  }
+
+  function viewGeneral() {
+    const g = S.g, dirty = JSON.stringify(g) !== JSON.stringify(G0);
+    const urlOk = g.url.replace(/\/$/, '') === S.here, https = g.url.startsWith('https://');
+    const ch = k => (g[k] !== G0[k] ? ' changed' : '');
+    return `<section class="panel"><header><h2>General</h2></header><div class="form">
+        <label class="lbl${ch('name')}" for="gname">Name</label><div class="ctl"><input class="field w-md" id="gname" value="${esc(g.name)}"><span class="hint">Shown on the sign-in page and in the browser tab, so people know which ShipLean they're on.</span></div>
+        <label class="lbl${ch('url')}" for="gurl">Base URL</label><div class="ctl"><input class="field w-md mono" id="gurl" value="${esc(g.url)}" spellcheck="false">
+          ${!https ? '<span class="warn-t">⚠ Use https: sign-in cookies are only sent securely over https.</span>' : urlOk ? '<span class="ok-t">✓ Matches the address you\'re using now</span>' : `<span class="warn-t">⚠ You're using ${esc(S.here)}. Links ShipLean builds will point somewhere else.</span>`}
+          <span class="hint">For links ShipLean builds outside the browser: copied work item links, the sign-in link you hand to new users, and links back from Jira import.</span></div>
+        <span class="lbl${ch('create')}">Who can create projects</span><div class="ctl"><div class="seg" role="group" aria-label="Who can create projects">
+            <button type="button" data-create="everyone" aria-pressed="${g.create === 'everyone'}">Everyone</button><button type="button" data-create="admins" aria-pressed="${g.create === 'admins'}">Instance admins only</button></div>
+          <span class="hint">${g.create === 'everyone' ? 'Anyone signed in sees + New project in the project picker and becomes the new project\'s Admin.' : 'Only instance admins see + New project. Others are told who to ask.'} Project keys are unique across the install either way.</span></div>
+      </div>
+      <div class="pfoot">${dirty ? '<span class="warn-t">Unsaved changes</span>' : 'Saved'}<span class="spacer"></span><button class="btn" type="button" id="gDiscard"${dirty ? '' : ' disabled'}>Discard</button><button class="btn primary" type="button" id="gSave"${dirty ? '' : ' disabled'}>Save</button></div></section>
+      <section class="panel"><header><h2>Sign-in</h2><span class="meta">Fixed in v1, shown so admins can answer questions</span></header><dl class="facts">
+        <dt>How people sign in</dt><dd>Email and password. No sign-up: an admin adds each person on Users.</dd>
+        <dt>Forgotten passwords</dt><dd>ShipLean sends no email. An admin resets the password and hands over the one-time password.</dd>
+        <dt>Sessions</dt><dd>Stay signed in for 14 days after you last used ShipLean. Changing or resetting a password signs out every other session.</dd>
+        <dt>Lockout</dt><dd>10 wrong passwords in a row lock the account for 15 minutes. Admins can unlock sooner on Users.</dd>
+        <dt>First admin</dt><dd><code>SHIPLEAN_ADMIN_EMAIL</code> and <code>SHIPLEAN_ADMIN_PASSWORD</code> on first boot. Later admins are made here.</dd>
+      </dl></section>`;
+  }
+
+  function viewUsers() {
+    const q = S.q.trim().toLowerCase();
+    const list = users.filter(x => (!q || people[x.id].name.toLowerCase().includes(q) || people[x.id].email.includes(q))
+      && (S.filter === 'all' || (S.filter === 'attn' ? attention(x) : S.filter === 'disabled' ? x.status === 'disabled' : x.status !== 'disabled')));
+    const n = users.filter(attention).length;
+    const rows = list.map(x => `<tr class="item${x.status === 'disabled' ? ' disabled' : ''}">
+        <td><span class="who"><span class="av${x.status === 'disabled' ? ' off' : ''}" style="background:${people[x.id].color}">${people[x.id].initials}</span><span><b>${esc(people[x.id].name)}${x.id === ME ? ' <span class="xs muted">(you)</span>' : ''}</b><small>${esc(people[x.id].email)}</small></span></span></td>
+        <td>${x.admin ? '<span class="chip accent">Admin</span>' : '<span class="sm muted">User</span>'}</td>
+        <td>${statusCell(x)}</td>
+        <td class="xs mono" style="min-width:170px">${x.projects.join(' · ')}</td>
+        <td class="sm">${x.last}<span class="sub">added ${esc(x.added)}</span></td>
+        <td class="num" style="white-space:nowrap">${x.status === 'locked' ? `<button class="btn" type="button" data-act="unlock" data-u="${x.id}">Unlock</button>` : x.status === 'nopw' ? `<button class="btn" type="button" data-act="setup" data-u="${x.id}">Set up sign-in</button>` : ''}
+          <button class="ib" type="button" data-menu="${x.id}" aria-label="Actions for ${esc(people[x.id].name)}" aria-haspopup="menu">⋯</button></td></tr>`).join('');
+    return `${n ? `<div class="banner warn"><b>${n} people need you.</b><span class="muted">Locked accounts, one-time passwords not used yet, and people Jira import added who can't sign in yet.</span><span class="spacer"></span><button class="btn" type="button" data-filter="attn">Show them</button></div>` : ''}
+      <section class="panel"><header><h2>Users</h2><span class="meta">${users.length} people · ${activeAdmins().length} active admins</span><span class="spacer"></span>
+        <input class="field" type="search" id="uq" placeholder="Search name or email" value="${esc(S.q)}" style="width:220px" aria-label="Search users">
+        <div class="seg" role="group" aria-label="Show">${[['all', 'All'], ['active', 'Active'], ['attn', `Needs attention ${n}`], ['disabled', 'Disabled']].map(([k, l]) => `<button type="button" data-filter="${k}" aria-pressed="${S.filter === k}">${l}</button>`).join('')}</div>
+        <button class="btn primary" type="button" id="addUser">+ Add user</button></header>
+        <table class="list"><thead><tr><th style="width:230px">Person</th><th style="width:76px">Role</th><th style="width:230px">Status</th><th style="min-width:170px">Projects</th><th style="width:210px">Last sign-in</th><th style="width:150px"></th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="6" class="muted sm" style="text-align:center">Nobody matches.</td></tr>'}</tbody></table>
+        <div class="pfoot">Changes here apply straight away. There's no delete: a person's name stays on history and comments, so disable them instead.</div></section>`;
+  }
+
+  function viewProjects() {
+    const flagged = allProjects.filter(noActiveAdmin);
+    return `${flagged.map(p => `<div class="banner warn"><b>${p.key} · ${esc(p.name)} has no active admin.</b><span class="muted">Its only admin, ${esc(people[p.admins[0]].name)}, is disabled. Nobody can change its settings or members until someone is made admin.</span><span class="spacer"></span><button class="btn" type="button" data-join="${p.key}">Join as admin</button></div>`).join('')}
+      <section class="panel"><header><h2>Projects</h2><span class="meta">${allProjects.length} on this install · keys are unique across all of them</span><span class="spacer"></span><a class="btn" href="new-project.html">+ New project</a></header>
+        <table class="list"><thead><tr><th style="width:70px">Key</th><th>Name</th><th class="num" style="width:80px">Members</th><th style="width:150px">Admins</th><th class="num" style="width:90px">Work items</th><th style="width:120px">Last activity</th><th style="width:110px">You</th><th style="width:130px"></th></tr></thead>
+        <tbody>${allProjects.map(p => `<tr class="item${noActiveAdmin(p) ? ' flag' : ''}"><td><span class="pkey${p.key === SL.PROJECT ? '' : ' alt'}">${p.key}</span></td><td>${esc(p.name)}</td><td class="num">${p.members}</td>
+          <td><span class="row" style="gap:6px"><span class="av-stack">${p.admins.map(a => `<span class="av${u(a)?.status === 'disabled' ? ' off' : ''}" style="background:${people[a].color}" title="${esc(people[a].name)}${u(a)?.status === 'disabled' ? ' (disabled)' : ''}">${people[a].initials}</span>`).join('')}</span>${noActiveAdmin(p) ? '<span class="warn-t">none active</span>' : ''}</span></td>
+          <td class="num">${p.items.toLocaleString('en-GB')}</td><td class="sm">${p.active}</td>
+          <td class="sm">${p.mine ? (p.mine === 'Admin' ? '<span class="chip accent">Admin</span>' : 'Member') : '<span class="muted">Not a member</span>'}</td>
+          <td class="num">${p.mine === 'Admin' ? `<a class="btn ghost" href="settings.html#members">Settings</a>` : `<button class="btn" type="button" data-join="${p.key}">Join as admin</button>`}</td></tr>`).join('')}</tbody></table>
+        <div class="pfoot">Instance admins see every project here, but open one only by joining it. Joining adds you to its Members, where everyone in the project can see it.</div></section>`;
+  }
+
+  function viewDialog() {
+    const d = S.dialog; if (!d) return '';
+    const name = d.u ? esc(people[d.u].name) : '';
+    let head, body, foot;
+    if (d.kind === 'add' && !d.otp) {
+      head = 'Add user';
+      body = `<div class="form">
+          <label class="lbl" for="nEmail">Email</label><div class="ctl"><input class="field" style="width:100%" id="nEmail" type="email" value="${esc(d.email)}" placeholder="name@larkspur.dev"><span class="hint">What they sign in with. Must be unique.</span></div>
+          <label class="lbl" for="nName">Name</label><div class="ctl"><input class="field" style="width:100%" id="nName" value="${esc(d.name)}"></div>
+          <span class="lbl">Role</span><div class="ctl"><label class="check" style="color:var(--color-text)"><input type="checkbox" id="nAdmin"${d.admin ? ' checked' : ''}> Instance admin</label><span class="hint">Can open Instance settings. Doesn't give access to any project.</span></div>
+          <span class="lbl">Projects</span><div class="ctl"><div class="projpick">${projects.map(p => `<label><input type="checkbox" data-np="${p.key}"${d.projects.includes(p.key) ? ' checked' : ''}><span class="mono xs">${p.key}</span> ${esc(p.name)}</label>`).join('')}</div><span class="hint">Added as Member. Only projects you're an Admin of can be ticked in the real app.</span></div>
+        </div>`;
+      foot = `<span class="spacer"></span><button class="btn" type="button" data-close>Cancel</button><button class="btn primary" type="button" id="nGo"${d.email.includes('@') && d.name.trim() ? '' : ' disabled'}>Add user</button>`;
+    } else if (d.otp) {
+      head = d.kind === 'add' ? `${esc(d.name)} is added` : `New one-time password for ${name}`;
+      body = `<div class="otp"><code>${d.otp}</code><button class="btn" type="button" data-copy>Copy</button></div>
+        <p class="sm" style="margin:0">Shown once. ShipLean doesn't send email, so hand it to ${d.kind === 'add' ? esc(d.name.split(' ')[0]) : name} yourself, with the sign-in link:</p>
+        <div class="row"><code>${esc(S.g.url)}/login</code><button class="btn ghost" type="button" data-copy>Copy link</button></div>
+        <p class="hint" style="margin:0">They choose their own password the first time they sign in. Until then their status shows <b>One-time password, not used yet</b>.</p>`;
+      foot = `<span class="spacer"></span><button class="btn primary" type="button" data-close>Done</button>`;
+    } else if (d.kind === 'reset' || d.kind === 'setup') {
+      head = d.kind === 'setup' ? `Set up sign-in for ${name}` : `Reset ${name}'s password?`;
+      body = d.kind === 'setup'
+        ? `<p class="sm" style="margin:0">${name} was added by Jira import (matched to their Jira account by email) and has no password yet. Their work items, comments and history already show their name.</p><p class="sm" style="margin:0">This gives you a one-time password to hand over.</p>`
+        : `<p class="sm" style="margin:0">This signs ${name} out everywhere and gives you a one-time password to hand over. Their current password stops working straight away.</p>`;
+      foot = `<span class="spacer"></span><button class="btn" type="button" data-close>Cancel</button><button class="btn primary" type="button" id="rGo">${d.kind === 'setup' ? 'Create one-time password' : 'Reset password'}</button>`;
+    } else if (d.kind === 'disable') {
+      head = `Disable ${name}?`;
+      body = `<p class="sm" style="margin:0">${name} is signed out everywhere and can't sign in. They stay a member of ${u(d.u).projects.length} projects, and their name stays on work items, comments and history. Items assigned to them stay assigned; nothing is moved.</p>
+        ${allProjects.filter(p => p.admins.length === 1 && p.admins[0] === d.u).map(p => `<div class="callout warn"><b>${p.key} would have no active admin</b>Make someone else an Admin of ${esc(p.name)} first, or join it as admin from Projects.</div>`).join('')}`;
+      foot = `<span class="spacer"></span><button class="btn" type="button" data-close>Cancel</button><button class="btn danger" type="button" id="dGo">Disable</button>`;
+    }
+    return `<div class="backdrop" data-close-bg><div class="dialog" role="dialog" aria-modal="true" aria-label="${head.replace(/<[^>]+>/g, '')}"><header><h2>${head}</h2><span class="spacer"></span><button class="ib" type="button" data-close aria-label="Close">✕</button></header><div class="body">${body}</div><footer>${foot}</footer></div></div>`;
+  }
+
+  function render() {
+    S.tab = ['general', 'users', 'projects'].includes(S.tab) ? S.tab : 'users';
+    if (S.denied) {
+      $('tabs').hidden = true; $('sbody').style.gridTemplateColumns = 'minmax(0, 1fr)';
+      $('content').innerHTML = `<div class="denied"><h2>Instance settings are for instance admins</h2><p>You're signed in as Mei Lin, who isn't one. Ask ${instance.admins.map(a => esc(people[a].name)).join(' or ')} if you need something changed. The user menu doesn't show this page to you; this is what the address gives you if you type it.</p><a class="btn" href="backlog.html">Back to SHIP</a></div>`;
+      return;
+    }
+    $('tabs').hidden = false; $('sbody').style.gridTemplateColumns = '';
+    tabs();
+    const focus = document.activeElement?.id, caret = document.activeElement?.selectionStart;
+    $('content').innerHTML = (S.tab === 'general' ? viewGeneral() : S.tab === 'users' ? viewUsers() : viewProjects()) + viewDialog();
+    if (focus && $(focus)) { $(focus).focus(); try { if (caret != null) $(focus).setSelectionRange(caret, caret); } catch {} }
+  }
+
+  const otp = () => Array.from({ length: 3 }, () => Array.from({ length: 4 }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random() * 32)]).join('')).join('-');
+  const menu = $('menu');
+  function openMenu(id, anchor) {
+    const x = u(id), me = id === ME, lastAdmin = x.admin && activeAdmins().length === 1;
+    const item = (act, label, why, cls = '') => `<button type="button" role="menuitem" data-act="${act}" data-u="${id}"${why ? ' disabled' : ''} class="${cls}">${label}${why ? `<small>${why}</small>` : ''}</button>`;
+    menu.innerHTML = [
+      x.status === 'disabled' ? '' : item('reset', x.status === 'nopw' ? 'Set up sign-in…' : 'Reset password…', me ? 'Change your own on Your profile' : ''),
+      x.status === 'locked' ? item('unlock', 'Unlock') : '',
+      x.admin ? item('demote', 'Remove admin', me ? "You can't remove your own admin rights" : lastAdmin ? 'The last active admin' : '') : item('promote', 'Make admin', x.status === 'disabled' ? 'Enable them first' : ''),
+      '<hr>',
+      x.status === 'disabled' ? item('enable', 'Enable') : item('disable', 'Disable…', me ? "You can't disable yourself" : lastAdmin ? 'The last active admin' : '', 'danger'),
+    ].join('');
+    const r = anchor.getBoundingClientRect();
+    menu.hidden = false;
+    menu.style.top = Math.min(r.bottom + 4, innerHeight - menu.offsetHeight - 8) + 'px';
+    menu.style.left = Math.max(8, r.right - menu.offsetWidth) + 'px';
+    menu.querySelector('button:not(:disabled)')?.focus();
+  }
+
+  function act(a, id) {
+    const x = u(id), n = people[id].name;
+    menu.hidden = true;
+    if (a === 'reset' || a === 'setup') { S.dialog = { kind: x.status === 'nopw' ? 'setup' : 'reset', u: id }; }
+    else if (a === 'unlock') { x.status = 'active'; delete x.until; toast(`Unlocked <b>${n}</b>. They can sign in again now`); }
+    else if (a === 'promote') { x.admin = true; toast(`<b>${n}</b> is now an instance admin`); }
+    else if (a === 'demote') { x.admin = false; toast(`<b>${n}</b> is no longer an instance admin`); }
+    else if (a === 'disable') { S.dialog = { kind: 'disable', u: id }; }
+    else if (a === 'enable') { x.status = 'active'; toast(`Enabled <b>${n}</b>. Their old password works again`); }
+    render();
+  }
+
+  const content = $('content');
+  content.addEventListener('click', e => {
+    const b = e.target.closest('button, [data-close-bg]'); if (!b) return;
+    if (b.matches('[data-close-bg]') && e.target !== b) return;
+    if (b.dataset.menu) { e.stopPropagation(); return openMenu(b.dataset.menu, b); }
+    if (b.dataset.act) return act(b.dataset.act, b.dataset.u);
+    if (b.dataset.filter) { S.filter = b.dataset.filter; return render(); }
+    if (b.dataset.create) { S.g.create = b.dataset.create; return render(); }
+    if (b.dataset.join) { const p = allProjects.find(x => x.key === b.dataset.join); p.mine = 'Admin'; if (!p.admins.includes(ME)) p.admins.push(ME); toast(`You're now an Admin of <b>${p.key}</b>. It shows in its Members list`); return render(); }
+    if (b.id === 'addUser') { S.dialog = { kind: 'add', email: '', name: '', admin: false, projects: [] }; render(); return $('nEmail').focus(); }
+    if (b.id === 'nGo') {
+      const d = S.dialog, id = d.email.split('@')[0].toLowerCase().replace(/[^a-z]/g, '') || 'new';
+      people[id] = { name: d.name.trim(), initials: d.name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase(), color: '#52627c', email: d.email.trim() };
+      users.push({ id, admin: d.admin, status: 'otp', projects: d.projects, last: 'Never', added: 'today by Priya Shah' });
+      d.otp = otp(); return render();
+    }
+    if (b.id === 'rGo') { const d = S.dialog; u(d.u).status = 'otp'; d.otp = otp(); return render(); }
+    if (b.id === 'dGo') { u(S.dialog.u).status = 'disabled'; toast(`Disabled <b>${people[S.dialog.u].name}</b> and signed them out`); S.dialog = null; return render(); }
+    if (b.hasAttribute('data-copy')) return toast('Copied');
+    if (b.hasAttribute('data-close') || b.matches('[data-close-bg]')) { S.dialog = null; return render(); }
+    if (b.id === 'gSave') { Object.assign(G0, S.g); instance.name = S.g.name; $('sub').textContent = `${instance.name} · applies to everyone on this install`; toast('Instance settings saved'); return render(); }
+    if (b.id === 'gDiscard') { S.g = { ...G0 }; return render(); }
+  });
+  content.addEventListener('input', e => {
+    const t = e.target;
+    if (t.id === 'uq') { S.q = t.value; render(); }
+    else if (t.id === 'gname') { S.g.name = t.value; render(); }
+    else if (t.id === 'gurl') { S.g.url = t.value.trim(); render(); }
+    else if (t.id === 'nEmail') { S.dialog.email = t.value; render(); }
+    else if (t.id === 'nName') { S.dialog.name = t.value; render(); }
+  });
+  content.addEventListener('change', e => {
+    const t = e.target;
+    if (t.id === 'nAdmin') S.dialog.admin = t.checked;
+    else if (t.dataset.np) { const d = S.dialog; d.projects = t.checked ? [...d.projects, t.dataset.np] : d.projects.filter(k => k !== t.dataset.np); }
+  });
+  menu.addEventListener('click', e => { const b = e.target.closest('[data-act]'); if (b && !b.disabled) act(b.dataset.act, b.dataset.u); });
+  document.addEventListener('click', e => { if (!menu.contains(e.target)) menu.hidden = true; });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { menu.hidden = true; if (S.dialog) { S.dialog = null; render(); } } });
+  addEventListener('hashchange', () => { S.tab = location.hash.slice(1); render(); });
+  render();
+
+  SL.preview([
+    { label: 'Base URL mismatch', run: () => { S.here = 'http://10.0.4.12:8080'; location.hash = 'general'; S.tab = 'general'; render(); } },
+    { label: 'As a non-admin', run: () => { S.denied = !S.denied; render(); } },
+  ]);
+})();
+</script>
+</body>
+</html>

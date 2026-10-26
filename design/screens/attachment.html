@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Markdown attachment (reference)</title>
+<!--
+  Reference Markdown attachment viewer (#2): Backlogs › SHIP-101 › design-v0.2.md, opened from a Feature's Attachments.
+  Open directly in a browser. Uses ../tokens.css, shiplean.css and shared.js only; no build step.
+  An attached .md opens rendered on its own page under the work item, with a linkable URL. Images resolve against
+  the same work item's attachments; external image URLs never render and show a placeholder instead. SVG is
+  sanitised. Attachments have no version history: uploading the same name again replaces the file and soft-deletes
+  the old copy (only the description keeps revisions). Other types stay download-only.
+  Working: Rendered / Source, Download, Replace… (pick a file), the outline, the other Markdown files.
+  ?view=source opens the source. The "Preview" panel bottom-left is a review aid (hide it with ?shot).
+-->
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="shiplean.css">
+<script src="shared.js"></script>
+<style>
+[hidden] { display: none !important; }
+.doc-head { flex: none; display: grid; gap: 4px; padding: var(--space-2) var(--space-4) var(--space-3); background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.back { color: var(--color-muted); text-decoration: none; font-size: var(--text-sm); display: inline-flex; align-items: center; gap: 6px; }
+.back:hover { color: var(--color-accent); text-decoration: underline; }
+.doc-title { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.doc-title h1 { margin: 0; font: var(--weight-semibold) var(--text-lg)/1.3 var(--font-mono); }
+.ext.md { display: inline-grid; place-items: center; width: 22px; height: 18px; font: 700 8px/1 var(--font-mono); color: var(--color-text); border: 1px solid var(--color-border); border-radius: var(--radius-xs); background: var(--color-surface-2); flex: none; }
+.wi-split { grid-template-columns: minmax(0, 1fr) calc(var(--rail-width) + 72px); }
+.wi-main { background: var(--color-surface); }
+.doc { max-width: 760px; padding: var(--space-4) var(--space-5) var(--space-5); font-size: var(--text-md); line-height: 1.6; }
+.doc h1 { font-size: 22px; margin: 0 0 4px; letter-spacing: -.01em; }
+.doc h2 { font-size: var(--text-md); margin: 22px 0 6px; padding-bottom: 4px; border-bottom: 1px solid var(--color-border); scroll-margin-top: var(--space-4); }
+.doc p { margin: 0 0 10px; }
+.doc .lede { color: var(--color-muted); }
+.doc table { border-collapse: collapse; margin: 4px 0 12px; font-size: var(--text-base); }
+.doc th, .doc td { padding: 5px 12px; border: 1px solid var(--color-border); text-align: left; }
+.doc th { background: var(--color-surface-2); font-size: var(--text-sm); }
+.doc td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.doc pre { margin: 4px 0 12px; padding: 10px 12px; border-radius: var(--radius-md); background: var(--color-bg); border: 1px solid var(--color-border); font: var(--text-sm)/1.55 var(--font-mono); overflow-x: auto; }
+.doc code { font-size: var(--text-sm); padding: 0 4px; border-radius: var(--radius-xs); background: var(--color-surface-2); }
+.doc pre code { padding: 0; background: none; }
+figure.img { margin: 4px 0 12px; display: grid; gap: 4px; width: fit-content; max-width: 100%; }
+figure.img > div { padding: 10px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg); }
+figure.img figcaption { display: flex; gap: 6px; align-items: center; font-size: var(--text-xs); color: var(--color-muted); }
+.no-img { display: flex; gap: var(--space-2); align-items: center; width: fit-content; max-width: 100%; margin: 4px 0 12px; padding: var(--space-2) var(--space-3); border: 1px dashed var(--color-border); border-radius: var(--radius-md); background: var(--color-bg); font-size: var(--text-xs); color: var(--color-muted); }
+.src-view { margin: var(--space-4) var(--space-5); padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg); font: var(--text-sm)/1.6 var(--font-mono); white-space: pre-wrap; max-width: 860px; }
+svg text { fill: currentColor; }
+.wi-side { gap: var(--space-4); }
+.sec-h2 { display: flex; align-items: center; gap: 6px; min-height: 22px; }
+.cnt { font-size: var(--text-xs); color: var(--color-muted); }
+.toc { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font-size: var(--text-sm); }
+.toc a { display: block; padding: 2px var(--space-2); border-left: 2px solid transparent; color: var(--color-text); text-decoration: none; }
+.toc a:hover { color: var(--color-accent); }
+.toc a[aria-current="true"] { border-left-color: var(--color-accent); background: var(--color-accent-soft); }
+.lst { list-style: none; margin: 0; padding: 0; display: grid; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+.lst > li { display: flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 6px 0 var(--space-2); border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); font-size: var(--text-sm); }
+.lst > li:first-child { border-top: 0; }
+.lst > li[aria-current="page"] { background: var(--color-accent-soft); }
+.lst .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text); text-decoration: none; }
+.lst a.t:hover { color: var(--color-accent); text-decoration: underline; }
+.lst .meta { font-size: var(--text-xs); color: var(--color-muted); white-space: nowrap; }
+.lst .ok { color: var(--color-ok); font-weight: var(--weight-semibold); width: 14px; text-align: center; }
+.lst .no { color: var(--color-danger); font-weight: var(--weight-semibold); width: 14px; text-align: center; }
+@media (max-width: 900px) { .wi-split { grid-template-columns: minmax(0, 1fr); } }
+</style>
+</head>
+<body>
+<div id="appbar"></div>
+<section class="doc-head" aria-label="Attachment header">
+  <a class="back" href="feature.html">← <span class="ti feature">F</span>SHIP-101 Checkout v2</a>
+  <div class="doc-title">
+    <span class="ext md">MD</span>
+    <h1>design-v0.2.md</h1>
+    <span class="xs muted">14 KB · uploaded by Claude Code (agent) through <code>attach_markdown</code>, Sat 24 Oct, 11:20 · replaced twice</span>
+    <span class="spacer"></span>
+    <div class="seg" role="group" aria-label="View"><button type="button" data-view="rendered" aria-pressed="true">Rendered</button><button type="button" data-view="source" aria-pressed="false">Source</button></div>
+    <button class="btn" type="button" id="download">Download</button>
+    <label class="btn" for="replaceFile" tabindex="0">Replace…</label>
+    <input type="file" id="replaceFile" accept=".md,text/markdown" hidden>
+  </div>
+</section>
+<div class="split wi-split">
+  <div class="scroll wi-main" id="main">
+    <article class="doc" id="rendered">
+      <h1>Checkout v2: design v0.2</h1>
+      <p class="lede">Second round. v0.1's questions are answered inline; the big change is keeping card tokens in the vault.</p>
+      <h2 id="approach">1. Approach</h2>
+      <p>Saved cards never touch our database. Checkout asks the vault for the customer's tokens and hands the chosen token to the payment provider, so the storefront stays out of PCI scope.</p>
+      <figure class="img">
+        <div>
+          <svg width="480" height="140" viewBox="0 0 480 140" role="img" aria-label="Checkout asks the card vault for tokens, then sends the chosen token to the payment provider">
+            <g font-size="11">
+              <rect x="10" y="50" width="110" height="40" rx="6" fill="var(--color-surface)" stroke="var(--color-border)"/>
+              <text x="65" y="74" text-anchor="middle">Checkout</text>
+              <rect x="185" y="50" width="110" height="40" rx="6" fill="var(--color-accent-soft)" stroke="var(--color-accent)"/>
+              <text x="240" y="74" text-anchor="middle" font-weight="600">Card vault</text>
+              <rect x="360" y="50" width="110" height="40" rx="6" fill="var(--color-surface)" stroke="var(--color-border)"/>
+              <text x="415" y="74" text-anchor="middle">Payment provider</text>
+              <path d="M120 64 H185 M295 64 H360" stroke="var(--color-muted)" stroke-width="1.5" fill="none"/>
+              <path d="M185 78 H120 M360 78 H295" stroke="var(--color-muted)" stroke-width="1.5" fill="none" stroke-dasharray="3 3"/>
+              <text x="152" y="40" text-anchor="middle" font-size="9.5" fill="var(--color-muted)">GET /cards</text>
+              <text x="152" y="104" text-anchor="middle" font-size="9.5" fill="var(--color-muted)">tokens</text>
+              <text x="327" y="40" text-anchor="middle" font-size="9.5" fill="var(--color-muted)">charge(token)</text>
+              <text x="327" y="104" text-anchor="middle" font-size="9.5" fill="var(--color-muted)">result</text>
+            </g>
+          </svg>
+        </div>
+        <figcaption><span>▣</span><code>![](payment-flow.svg)</code> · attached to SHIP-101 · sanitised SVG</figcaption>
+      </figure>
+      <h2 id="budget">2. Conversion by step</h2>
+      <table>
+        <thead><tr><th>Step</th><th>Today (mobile)</th><th>Target</th><th>Owner</th></tr></thead>
+        <tbody>
+          <tr><td>Address</td><td class="num">84%</td><td class="num">88%</td><td>Address autocomplete (SHIP-144)</td></tr>
+          <tr><td>Payment</td><td class="num">71%</td><td class="num">80%</td><td>Saved cards (SHIP-141)</td></tr>
+          <tr><td>Paid</td><td class="num">43%</td><td class="num">50%</td><td>Everything above</td></tr>
+        </tbody>
+      </table>
+      <h2 id="picker">3. The saved-card picker</h2>
+      <p>Radio rows rather than cards, so it still works with six or more saved cards. Each row shows what the vault returns and nothing else:</p>
+      <pre><code>GET /cards
+[{ "token": "tok_8Fq2", "brand": "visa", "last4": "4242", "expiry": "08/27" }]</code></pre>
+      <div class="no-img"><span>⊘</span><span><b>External image not shown:</b> <code>https://i.imgur.com/r8Kd2.png</code>. Images must be attached to SHIP-101.</span></div>
+      <h2 id="open">4. Open questions</h2>
+      <p>Should an expired card be hidden, or shown greyed out with a prompt to update it?</p>
+    </article>
+    <pre class="src-view" id="source" hidden></pre>
+  </div>
+  <aside class="rail wi-side" aria-label="About this file">
+    <section>
+      <span class="overline">On this page</span>
+      <ul class="toc" id="toc">
+        <li><a href="#approach" aria-current="true">1. Approach</a></li>
+        <li><a href="#budget">2. Conversion by step</a></li>
+        <li><a href="#picker">3. The saved-card picker</a></li>
+        <li><a href="#open">4. Open questions</a></li>
+      </ul>
+    </section>
+    <section>
+      <div class="sec-h2"><span class="overline">Images in this file</span><span class="cnt">1 of 2 shown</span></div>
+      <ul class="lst">
+        <li><span class="ok">✓</span><span class="t">payment-flow.svg</span><span class="meta">attached</span></li>
+        <li><span class="no">⊘</span><span class="t" title="https://i.imgur.com/r8Kd2.png">i.imgur.com/r8Kd2.png</span><span class="meta">external</span></li>
+      </ul>
+      <p class="hint">Attach the missing image to SHIP-101 and change the link to its file name. External images never render.</p>
+    </section>
+    <section>
+      <span class="overline">Replacing this file</span>
+      <div class="callout"><b>No version history for attachments</b>Uploading another <code>design-v0.2.md</code> replaces this one, and the old copy is soft-deleted. Only the Feature's description keeps revisions.</div>
+    </section>
+    <section>
+      <span class="overline">Markdown on SHIP-101</span>
+      <ul class="lst">
+        <li aria-current="page"><span class="ext md">MD</span><span class="t">design-v0.2.md</span><span class="meta">14 KB</span></li>
+        <li><span class="ext md">MD</span><a class="t" href="#" data-other="plan-2026-10-11.md">plan-2026-10-11.md</a><span class="meta">9 KB</span></li>
+        <li><span class="ext md">MD</span><a class="t" href="#" data-other="brief-saved-cards.md">brief-saved-cards.md</a><span class="meta">4 KB</span></li>
+      </ul>
+    </section>
+  </aside>
+</div>
+
+<script>
+(() => {
+  const { toast, esc } = SL;
+  const $ = id => document.getElementById(id);
+  document.getElementById('appbar').outerHTML = SL.appBar('backlogs');
+  const SOURCE = `# Checkout v2: design v0.2
+
+Second round. v0.1's questions are answered inline; the big change is keeping card tokens in the vault.
+
+## 1. Approach
+
+Saved cards never touch our database. Checkout asks the vault for the customer's tokens and hands the chosen token to the payment provider, so the storefront stays out of PCI scope.
+
+![](payment-flow.svg)
+
+## 2. Conversion by step
+
+| Step | Today (mobile) | Target | Owner |
+|---|---|---|---|
+| Address | 84% | 88% | Address autocomplete (SHIP-144) |
+| Payment | 71% | 80% | Saved cards (SHIP-141) |
+| Paid | 43% | 50% | Everything above |
+
+## 3. The saved-card picker
+
+Radio rows rather than cards, so it still works with six or more saved cards. Each row shows what the vault returns and nothing else:
+
+\`\`\`
+GET /cards
+[{ "token": "tok_8Fq2", "brand": "visa", "last4": "4242", "expiry": "08/27" }]
+\`\`\`
+
+![](https://i.imgur.com/r8Kd2.png)
+
+## 4. Open questions
+
+Should an expired card be hidden, or shown greyed out with a prompt to update it?`;
+  $('source').textContent = SOURCE;
+
+  function setView(v) {
+    $('rendered').hidden = v !== 'rendered'; $('source').hidden = v !== 'source';
+    document.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed', b.dataset.view === v));
+  }
+  if (new URLSearchParams(location.search).get('view') === 'source') setView('source');
+
+  document.addEventListener('click', e => {
+    const v = e.target.closest('[data-view]'); if (v) { setView(v.dataset.view); return; }
+    const a = e.target.closest('.toc a'); if (a) { document.querySelectorAll('.toc a').forEach(x => x.setAttribute('aria-current', x === a)); return; }
+    const o = e.target.closest('[data-other]'); if (o) { e.preventDefault(); toast(`Opens ${esc(o.dataset.other)} rendered`); return; }
+    if (e.target.closest('#download')) toast('Downloading design-v0.2.md');
+  });
+  $('replaceFile').addEventListener('change', e => {
+    const f = e.target.files[0]; if (!f) return;
+    toast(f.name === 'design-v0.2.md' ? 'Replaced design-v0.2.md. The old copy is soft-deleted.' : `Uploaded as ${esc(f.name)}: a different name adds a new attachment`);
+    e.target.value = '';
+  });
+
+  SL.preview([{ label: 'Source', run: () => setView('source') }, { label: 'Rendered', run: () => setView('rendered') }]);
+})();
+</script>
+</body>
+</html>

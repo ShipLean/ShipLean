@@ -1,0 +1,46 @@
+using ShipLean.Contracts.Persisted;
+using ShipLean.Contracts.Refs;
+
+namespace ShipLean.Contracts.WorkItems;
+
+// Every stored field of a work item, by id: what the store reads back and what the rules see as "before". Live links only.
+public sealed record WorkItemSnapshot(
+    Guid Id,
+    Guid ProjectId,
+    int Number,
+    string Key,
+    WorkItemTypeId Type,
+    string Title,
+    string Description,
+    IReadOnlyList<ChecklistItem> AcceptanceCriteria,
+    string ReproSteps,
+    int? Severity,
+    Guid StateId,
+    Guid? AssigneeId,
+    Guid? SprintId,
+    int Priority,
+    decimal? Points,
+    string BacklogOrder,
+    Guid? ParentId,
+    WorkItemTypeId? ParentType,
+    IReadOnlyList<string> Tags,
+    string? ColumnId,
+    bool ColumnDone,
+    string? LaneId,
+    string? ColumnOrder,
+    OriginalSystemDto? OriginalSystem,
+    int Revision,
+    Guid? CreatedBy,
+    DateTimeOffset CreatedAt,
+    Guid? ChangedBy,
+    DateTimeOffset ChangedAt,
+    DateTimeOffset StateChangedAt,
+    IReadOnlyList<LinkSnapshot> Links,
+    string Goal = "",
+    string StatusLine = "",
+    DateTimeOffset? StatusVerifiedAt = null,
+    Guid? StatusVerifiedBy = null,
+    string? StatusVerifiedAgent = null,
+    string? StatusVerifiedVia = null,
+    string? Slug = null,
+    DateOnly? StartedOn = null);

@@ -1,0 +1,105 @@
+{
+  "workItemCreated": {
+    "type": "workItemCreated",
+    "projectId": "00000002-0000-4000-8000-000000000001",
+    "clientId": "tab-7f3a91c2",
+    "id": "00000005-0000-4000-8001-000000000141",
+    "key": "SHIP-141",
+    "workItemType": "story",
+    "parentId": "00000005-0000-4000-8001-000000000101"
+  },
+  "workItemUpdated": {
+    "type": "workItemUpdated",
+    "projectId": "00000002-0000-4000-8000-000000000001",
+    "clientId": "tab-7f3a91c2",
+    "id": "00000005-0000-4000-8001-000000000141",
+    "revision": 4,
+    "fields": ["title", "storyPoints"],
+    "pulled": false
+  },
+  "workItemMoved": {
+    "type": "workItemMoved",
+    "projectId": "00000002-0000-4000-8000-000000000001",
+    "clientId": "tab-7f3a91c2",
+    "id": "00000005-0000-4000-8001-000000000141",
+    "revision": 5,
+    "columnId": "col-in-progress",
+    "done": false,
+    "laneId": "lane-default",
+    "columnOrder": "00000003",
+    "stateId": "00000003-0000-4000-8001-000000000302",
+    "parentId": "00000005-0000-4000-8001-000000000101"
+  },
+  "workItemReordered": {
+    "type": "workItemReordered",
+    "projectId": "00000002-0000-4000-8000-000000000001",
+    "clientId": null,
+    "id": "00000005-0000-4000-8001-000000000141",
+    "backlogOrder": "00000012"
+  },
+  "workItemRemoved": {
+    "type": "workItemRemoved",
+    "projectId": "00000002-0000-4000-8000-000000000001",
+    "clientId": "tab-7f3a91c2",
+    "id": "00000005-0000-4000-8001-000000000141",
+    "parentId": "00000005-0000-4000-8001-000000000101"
+  },
+  "boardSettingsChanged": {
+    "type": "boardSettingsChanged",
+    "projectId": "00000002-0000-4000-8000-000000000001",
+    "clientId": "tab-7f3a91c2",
+    "boardId": "00000007-0000-4000-8001-000000000001",
+    "sections": ["columns", "styleRules"]
+  },
+  "sprintChanged": {
+    "type": "sprintChanged",
+    "projectId": "00000002-0000-4000-8000-000000000001",
+    "clientId": "tab-7f3a91c2",
+    "sprintId": "00000004-0000-4000-8001-000000000024"
+  },
+  "statesChanged": {
+    "type": "statesChanged",
+    "projectId": "00000002-0000-4000-8000-000000000001",
+    "clientId": "tab-7f3a91c2"
+  },
+  "projectChanged": {
+    "type": "projectChanged",
+    "projectId": "00000002-0000-4000-8000-000000000001",
+    "clientId": null
+  },
+  "presenceChanged": {
+    "type": "presenceChanged",
+    "projectId": "00000002-0000-4000-8000-000000000001",
+    "clientId": null,
+    "screenId": "storiesBoard",
+    "userIds": ["0199f000-0000-7000-8000-000000000001", "00000001-0000-4000-8000-000000000002"],
+    "sequence": 42
+  },
+  "importProgress": {
+    "type": "importProgress",
+    "projectId": "00000002-0000-4000-8000-000000000003",
+    "clientId": null,
+    "jobId": "00000006-0000-4000-8000-000000000001",
+    "percent": 40,
+    "state": "running",
+    "message": "Importing work items"
+  },
+  "commentsChanged": {
+    "type": "commentsChanged",
+    "projectId": "00000002-0000-4000-8000-000000000001",
+    "clientId": "tab-7f3a91c2",
+    "workItemId": "00000005-0000-4000-8001-000000000141"
+  },
+  "attachmentsChanged": {
+    "type": "attachmentsChanged",
+    "projectId": "00000002-0000-4000-8000-000000000001",
+    "clientId": "tab-7f3a91c2",
+    "workItemId": "00000005-0000-4000-8001-000000000141"
+  },
+  "linksChanged": {
+    "type": "linksChanged",
+    "projectId": "00000002-0000-4000-8000-000000000001",
+    "clientId": "tab-7f3a91c2",
+    "workItemId": "00000005-0000-4000-8001-000000000101"
+  }
+}

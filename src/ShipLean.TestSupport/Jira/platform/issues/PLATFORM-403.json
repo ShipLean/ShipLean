@@ -1,0 +1,102 @@
+{
+  "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+  "id": "10403",
+  "self": "{{base}}/rest/api/{{v}}/issue/10403",
+  "key": "PLATFORM-403",
+  "fields": {
+    "summary": "Search relevance overhaul",
+    "issuetype": {
+      "id": "10000",
+      "name": "Epic",
+      "subtask": false
+    },
+    "status": {
+      "id": "3",
+      "name": "In Progress",
+      "statusCategory": {
+        "key": "indeterminate",
+        "name": "In Progress"
+      }
+    },
+    "priority": {
+      "name": "High"
+    },
+    "description": {
+      "type": "doc",
+      "version": 1,
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Rework ranking so the catalogue search answers in under 200 ms."
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Covers indexing, rate limits and the audit trail."
+            }
+          ]
+        }
+      ]
+    },
+    "assignee": {
+      "accountId": "5b10a2844c20165700ede21g",
+      "displayName": "Priya Shah",
+      "emailAddress": "priya.shah@acme.io",
+      "active": true,
+      "self": "{{base}}/rest/api/{{v}}/user?accountId=5b10a2844c20165700ede21g"
+    },
+    "reporter": {
+      "accountId": "5b10a2844c20165700ede21g",
+      "displayName": "Priya Shah",
+      "emailAddress": "priya.shah@acme.io",
+      "active": true,
+      "self": "{{base}}/rest/api/{{v}}/user?accountId=5b10a2844c20165700ede21g"
+    },
+    "labels": [
+      "search"
+    ],
+    "components": [],
+    "created": "2026-08-03T08:00:00.000+0000",
+    "updated": "2026-10-20T10:30:00.000+0000",
+    "customfield_10016": null,
+    "customfield_10020": null,
+    "parent": null,
+    "issuelinks": [],
+    "attachment": []
+  },
+  "changelog": {
+    "startAt": 0,
+    "maxResults": 1,
+    "total": 1,
+    "histories": [
+      {
+        "id": "1",
+        "author": {
+          "accountId": "5b10a2844c20165700ede21g",
+          "displayName": "Priya Shah",
+          "emailAddress": "priya.shah@acme.io",
+          "active": true,
+          "self": "{{base}}/rest/api/{{v}}/user?accountId=5b10a2844c20165700ede21g"
+        },
+        "created": "2026-08-03T08:05:00.000+0000",
+        "items": [
+          {
+            "field": "status",
+            "fieldtype": "jira",
+            "from": null,
+            "fromString": "To Do",
+            "to": null,
+            "toString": "In Progress"
+          }
+        ]
+      }
+    ]
+  }
+}

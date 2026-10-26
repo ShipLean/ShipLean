@@ -1,0 +1,1245 @@
+{
+  "boardId": "00000007-0000-4000-8001-000000000001",
+  "projectId": "00000002-0000-4000-8000-000000000001",
+  "level": "stories",
+  "openCount": 12,
+  "openPoints": 55,
+  "columns": [
+    {
+      "id": "col-new",
+      "name": "New",
+      "wipLimit": null,
+      "count": 3,
+      "hiddenCount": 0,
+      "overLimit": false,
+      "split": false,
+      "doingCount": 0,
+      "doneCount": 0,
+      "definitionOfDone": "- Title says who it is for and why\n- Linked to a parent **Feature**",
+      "definitionOfDoneHtml": "<ul><li>Title says who it is for and why</li><li>Linked to a parent <b>Feature</b></li></ul>",
+      "states": [
+        {
+          "type": "story",
+          "state": {
+            "id": "00000003-0000-4000-8001-000000000301",
+            "name": "New",
+            "category": "proposed"
+          }
+        },
+        {
+          "type": "bug",
+          "state": {
+            "id": "00000003-0000-4000-8001-000000000401",
+            "name": "New",
+            "category": "proposed"
+          }
+        }
+      ]
+    },
+    {
+      "id": "col-ready",
+      "name": "Ready",
+      "wipLimit": 8,
+      "count": 3,
+      "hiddenCount": 1,
+      "overLimit": false,
+      "split": true,
+      "doingCount": 2,
+      "doneCount": 1,
+      "definitionOfDone": "- Acceptance criteria written and agreed\n- Estimated in story points\n- No open questions for the product owner\n- Bugs: **repro steps** and severity set",
+      "definitionOfDoneHtml": "<ul><li>Acceptance criteria written and agreed</li><li>Estimated in story points</li><li>No open questions for the product owner</li><li>Bugs: <b>repro steps</b> and severity set</li></ul>",
+      "states": [
+        {
+          "type": "story",
+          "state": {
+            "id": "00000003-0000-4000-8001-000000000301",
+            "name": "New",
+            "category": "proposed"
+          }
+        },
+        {
+          "type": "bug",
+          "state": {
+            "id": "00000003-0000-4000-8001-000000000402",
+            "name": "Triaged",
+            "category": "proposed"
+          }
+        }
+      ]
+    },
+    {
+      "id": "col-in-progress",
+      "name": "In progress",
+      "wipLimit": 5,
+      "count": 3,
+      "hiddenCount": 0,
+      "overLimit": false,
+      "split": false,
+      "doingCount": 0,
+      "doneCount": 0,
+      "definitionOfDone": "- Code and tests pushed on a branch\n- Tasks exist for the remaining work\n- Draft PR open and linked",
+      "definitionOfDoneHtml": "<ul><li>Code and tests pushed on a branch</li><li>Tasks exist for the remaining work</li><li>Draft PR open and linked</li></ul>",
+      "states": [
+        {
+          "type": "story",
+          "state": {
+            "id": "00000003-0000-4000-8001-000000000302",
+            "name": "Active",
+            "category": "inProgress"
+          }
+        },
+        {
+          "type": "bug",
+          "state": {
+            "id": "00000003-0000-4000-8001-000000000403",
+            "name": "Active",
+            "category": "inProgress"
+          }
+        }
+      ]
+    },
+    {
+      "id": "col-in-review",
+      "name": "In review",
+      "wipLimit": 2,
+      "count": 3,
+      "hiddenCount": 0,
+      "overLimit": true,
+      "split": false,
+      "doingCount": 0,
+      "doneCount": 0,
+      "definitionOfDone": "- PR approved by one reviewer\n- CI green\n- Deployed to staging behind its flag",
+      "definitionOfDoneHtml": "<ul><li>PR approved by one reviewer</li><li>CI green</li><li>Deployed to staging behind its flag</li></ul>",
+      "states": [
+        {
+          "type": "story",
+          "state": {
+            "id": "00000003-0000-4000-8001-000000000303",
+            "name": "Resolved",
+            "category": "resolved"
+          }
+        },
+        {
+          "type": "bug",
+          "state": {
+            "id": "00000003-0000-4000-8001-000000000404",
+            "name": "Resolved",
+            "category": "resolved"
+          }
+        }
+      ]
+    },
+    {
+      "id": "col-done",
+      "name": "Done",
+      "wipLimit": null,
+      "count": 5,
+      "hiddenCount": 0,
+      "overLimit": false,
+      "split": false,
+      "doingCount": 0,
+      "doneCount": 0,
+      "definitionOfDone": "- Acceptance criteria checked on staging\n- Released, or flag on in production\n- Changelog updated",
+      "definitionOfDoneHtml": "<ul><li>Acceptance criteria checked on staging</li><li>Released, or flag on in production</li><li>Changelog updated</li></ul>",
+      "states": [
+        {
+          "type": "story",
+          "state": {
+            "id": "00000003-0000-4000-8001-000000000304",
+            "name": "Closed",
+            "category": "completed"
+          }
+        },
+        {
+          "type": "bug",
+          "state": {
+            "id": "00000003-0000-4000-8001-000000000405",
+            "name": "Closed",
+            "category": "completed"
+          }
+        }
+      ]
+    }
+  ],
+  "lanes": [
+    {
+      "id": "lane-expedite",
+      "name": "Expedite",
+      "colour": "warn",
+      "kind": "criteria",
+      "criteriaText": "Priority = 1",
+      "epic": null,
+      "acceptsDrops": true,
+      "cardCount": 1,
+      "openPoints": 0,
+      "cells": [
+        {
+          "columnId": "col-new",
+          "doneHalf": false,
+          "cards": [],
+          "olderCount": 0,
+          "olderCursor": null
+        },
+        {
+          "columnId": "col-ready",
+          "doneHalf": false,
+          "cards": [],
+          "olderCount": 0,
+          "olderCursor": null
+        },
+        {
+          "columnId": "col-ready",
+          "doneHalf": true,
+          "cards": [],
+          "olderCount": 0,
+          "olderCursor": null
+        },
+        {
+          "columnId": "col-in-progress",
+          "doneHalf": false,
+          "cards": [
+            {
+              "id": "00000005-0000-4000-8001-000000000149",
+              "key": "SHIP-149",
+              "type": {
+                "id": "bug",
+                "name": "Bug"
+              },
+              "title": "Passkey button hidden on small screens",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000403",
+                "name": "Active",
+                "category": "inProgress"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000006",
+                "name": "Ana Costa",
+                "initials": "AC",
+                "avatarColour": "#b83d7a",
+                "photoUrl": null
+              },
+              "points": null,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000102",
+                "key": "SHIP-102",
+                "type": {
+                  "id": "feature",
+                  "name": "Feature"
+                },
+                "title": "Mobile sign-in"
+              },
+              "tags": [
+                {
+                  "name": "Mobile",
+                  "colour": "info"
+                }
+              ],
+              "rollups": [
+                {
+                  "type": "task",
+                  "open": 1,
+                  "closed": 1
+                }
+              ],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [
+                {
+                  "fieldId": "severity",
+                  "label": "Severity",
+                  "text": "2 - High"
+                },
+                {
+                  "fieldId": "priority",
+                  "label": "Priority",
+                  "text": "1"
+                }
+              ],
+              "revision": 1
+            }
+          ],
+          "olderCount": 0,
+          "olderCursor": null
+        },
+        {
+          "columnId": "col-in-review",
+          "doneHalf": false,
+          "cards": [],
+          "olderCount": 0,
+          "olderCursor": null
+        },
+        {
+          "columnId": "col-done",
+          "doneHalf": false,
+          "cards": [],
+          "olderCount": 0,
+          "olderCursor": null
+        }
+      ]
+    },
+    {
+      "id": "lane-default",
+      "name": "Default lane",
+      "colour": null,
+      "kind": "default",
+      "criteriaText": null,
+      "epic": null,
+      "acceptsDrops": true,
+      "cardCount": 16,
+      "openPoints": 55,
+      "cells": [
+        {
+          "columnId": "col-new",
+          "doneHalf": false,
+          "cards": [
+            {
+              "id": "00000005-0000-4000-8001-000000000170",
+              "key": "SHIP-170",
+              "type": {
+                "id": "story",
+                "name": "User Story"
+              },
+              "title": "SSO via Okta",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000301",
+                "name": "New",
+                "category": "proposed"
+              },
+              "assignee": null,
+              "points": 13,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000102",
+                "key": "SHIP-102",
+                "type": {
+                  "id": "feature",
+                  "name": "Feature"
+                },
+                "title": "Mobile sign-in"
+              },
+              "tags": [
+                {
+                  "name": "Security",
+                  "colour": "ok"
+                }
+              ],
+              "rollups": [
+                {
+                  "type": "task",
+                  "open": 0,
+                  "closed": 0
+                }
+              ],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [
+                {
+                  "fieldId": "priority",
+                  "label": "Priority",
+                  "text": "2"
+                },
+                {
+                  "fieldId": "sprint",
+                  "label": "Sprint",
+                  "text": null
+                }
+              ],
+              "revision": 1
+            },
+            {
+              "id": "00000005-0000-4000-8001-000000000165",
+              "key": "SHIP-165",
+              "type": {
+                "id": "story",
+                "name": "User Story"
+              },
+              "title": "Weekly digest email",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000301",
+                "name": "New",
+                "category": "proposed"
+              },
+              "assignee": null,
+              "points": 8,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000103",
+                "key": "SHIP-103",
+                "type": {
+                  "id": "feature",
+                  "name": "Feature"
+                },
+                "title": "Reporting"
+              },
+              "tags": [],
+              "rollups": [],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [
+                {
+                  "fieldId": "priority",
+                  "label": "Priority",
+                  "text": "3"
+                },
+                {
+                  "fieldId": "sprint",
+                  "label": "Sprint",
+                  "text": null
+                }
+              ],
+              "revision": 1
+            },
+            {
+              "id": "00000005-0000-4000-8001-000000000163",
+              "key": "SHIP-163",
+              "type": {
+                "id": "story",
+                "name": "User Story"
+              },
+              "title": "Audit log retention setting",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000301",
+                "name": "New",
+                "category": "proposed"
+              },
+              "assignee": null,
+              "points": 3,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000104",
+                "key": "SHIP-104",
+                "type": {
+                  "id": "feature",
+                  "name": "Feature"
+                },
+                "title": "Ops hygiene"
+              },
+              "tags": [
+                {
+                  "name": "Tech debt",
+                  "colour": "muted"
+                }
+              ],
+              "rollups": [],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [
+                {
+                  "fieldId": "priority",
+                  "label": "Priority",
+                  "text": "3"
+                },
+                {
+                  "fieldId": "sprint",
+                  "label": "Sprint",
+                  "text": null
+                }
+              ],
+              "revision": 1
+            }
+          ],
+          "olderCount": 0,
+          "olderCursor": null
+        },
+        {
+          "columnId": "col-ready",
+          "doneHalf": false,
+          "cards": [
+            {
+              "id": "00000005-0000-4000-8001-000000000157",
+              "key": "SHIP-157",
+              "type": {
+                "id": "story",
+                "name": "User Story"
+              },
+              "title": "Spike: compare card vault providers",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000301",
+                "name": "New",
+                "category": "proposed"
+              },
+              "assignee": null,
+              "points": 2,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000101",
+                "key": "SHIP-101",
+                "type": {
+                  "id": "feature",
+                  "name": "Feature"
+                },
+                "title": "Checkout v2"
+              },
+              "tags": [
+                {
+                  "name": "Spike",
+                  "colour": "purple"
+                }
+              ],
+              "rollups": [
+                {
+                  "type": "task",
+                  "open": 1,
+                  "closed": 0
+                }
+              ],
+              "offerDone": false,
+              "styleRuleId": "rule-spike",
+              "extraFields": [
+                {
+                  "fieldId": "priority",
+                  "label": "Priority",
+                  "text": "2"
+                },
+                {
+                  "fieldId": "sprint",
+                  "label": "Sprint",
+                  "text": "Sprint 25"
+                }
+              ],
+              "revision": 1
+            },
+            {
+              "id": "00000005-0000-4000-8001-000000000147",
+              "key": "SHIP-147",
+              "type": {
+                "id": "story",
+                "name": "User Story"
+              },
+              "title": "Export sprint report to CSV",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000301",
+                "name": "New",
+                "category": "proposed"
+              },
+              "assignee": null,
+              "points": 5,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000103",
+                "key": "SHIP-103",
+                "type": {
+                  "id": "feature",
+                  "name": "Feature"
+                },
+                "title": "Reporting"
+              },
+              "tags": [],
+              "rollups": [],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [
+                {
+                  "fieldId": "priority",
+                  "label": "Priority",
+                  "text": "2"
+                },
+                {
+                  "fieldId": "sprint",
+                  "label": "Sprint",
+                  "text": "Sprint 25"
+                }
+              ],
+              "revision": 1
+            }
+          ],
+          "olderCount": 0,
+          "olderCursor": null
+        },
+        {
+          "columnId": "col-ready",
+          "doneHalf": true,
+          "cards": [
+            {
+              "id": "00000005-0000-4000-8001-000000000151",
+              "key": "SHIP-151",
+              "type": {
+                "id": "story",
+                "name": "User Story"
+              },
+              "title": "Remember device for 30 days",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000301",
+                "name": "New",
+                "category": "proposed"
+              },
+              "assignee": null,
+              "points": 5,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000102",
+                "key": "SHIP-102",
+                "type": {
+                  "id": "feature",
+                  "name": "Feature"
+                },
+                "title": "Mobile sign-in"
+              },
+              "tags": [
+                {
+                  "name": "Mobile",
+                  "colour": "info"
+                }
+              ],
+              "rollups": [],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [
+                {
+                  "fieldId": "priority",
+                  "label": "Priority",
+                  "text": "2"
+                },
+                {
+                  "fieldId": "sprint",
+                  "label": "Sprint",
+                  "text": "Sprint 25"
+                }
+              ],
+              "revision": 1
+            }
+          ],
+          "olderCount": 0,
+          "olderCursor": null
+        },
+        {
+          "columnId": "col-in-progress",
+          "doneHalf": false,
+          "cards": [
+            {
+              "id": "00000005-0000-4000-8001-000000000141",
+              "key": "SHIP-141",
+              "type": {
+                "id": "story",
+                "name": "User Story"
+              },
+              "title": "Pay with saved card",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000302",
+                "name": "Active",
+                "category": "inProgress"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000002",
+                "name": "Priya Shah",
+                "initials": "PS",
+                "avatarColour": "#2f7fd8",
+                "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"
+              },
+              "points": 5,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000101",
+                "key": "SHIP-101",
+                "type": {
+                  "id": "feature",
+                  "name": "Feature"
+                },
+                "title": "Checkout v2"
+              },
+              "tags": [
+                {
+                  "name": "Payments",
+                  "colour": "accent"
+                }
+              ],
+              "rollups": [
+                {
+                  "type": "task",
+                  "open": 3,
+                  "closed": 0
+                }
+              ],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [
+                {
+                  "fieldId": "priority",
+                  "label": "Priority",
+                  "text": "2"
+                },
+                {
+                  "fieldId": "sprint",
+                  "label": "Sprint",
+                  "text": "Sprint 24"
+                }
+              ],
+              "revision": 7
+            },
+            {
+              "id": "00000005-0000-4000-8001-000000000129",
+              "key": "SHIP-129",
+              "type": {
+                "id": "story",
+                "name": "User Story"
+              },
+              "title": "Sign in with passkey",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000302",
+                "name": "Active",
+                "category": "inProgress"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000005",
+                "name": "Sam Rivera",
+                "initials": "SR",
+                "avatarColour": "#c9611a",
+                "photoUrl": null
+              },
+              "points": 8,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000102",
+                "key": "SHIP-102",
+                "type": {
+                  "id": "feature",
+                  "name": "Feature"
+                },
+                "title": "Mobile sign-in"
+              },
+              "tags": [
+                {
+                  "name": "Mobile",
+                  "colour": "info"
+                },
+                {
+                  "name": "Blocked",
+                  "colour": "danger"
+                }
+              ],
+              "rollups": [
+                {
+                  "type": "task",
+                  "open": 2,
+                  "closed": 2
+                }
+              ],
+              "offerDone": false,
+              "styleRuleId": "rule-blocked",
+              "extraFields": [
+                {
+                  "fieldId": "priority",
+                  "label": "Priority",
+                  "text": "2"
+                },
+                {
+                  "fieldId": "sprint",
+                  "label": "Sprint",
+                  "text": "Sprint 24"
+                }
+              ],
+              "revision": 4
+            }
+          ],
+          "olderCount": 0,
+          "olderCursor": null
+        },
+        {
+          "columnId": "col-in-review",
+          "doneHalf": false,
+          "cards": [
+            {
+              "id": "00000005-0000-4000-8001-000000000146",
+              "key": "SHIP-146",
+              "type": {
+                "id": "story",
+                "name": "User Story"
+              },
+              "title": "Show card brand on saved cards",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000303",
+                "name": "Resolved",
+                "category": "resolved"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000003",
+                "name": "Tom Okafor",
+                "initials": "TO",
+                "avatarColour": "#16a089",
+                "photoUrl": null
+              },
+              "points": 2,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000101",
+                "key": "SHIP-101",
+                "type": {
+                  "id": "feature",
+                  "name": "Feature"
+                },
+                "title": "Checkout v2"
+              },
+              "tags": [
+                {
+                  "name": "Payments",
+                  "colour": "accent"
+                }
+              ],
+              "rollups": [
+                {
+                  "type": "task",
+                  "open": 0,
+                  "closed": 2
+                }
+              ],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [
+                {
+                  "fieldId": "priority",
+                  "label": "Priority",
+                  "text": "2"
+                },
+                {
+                  "fieldId": "sprint",
+                  "label": "Sprint",
+                  "text": "Sprint 24"
+                }
+              ],
+              "revision": 1
+            },
+            {
+              "id": "00000005-0000-4000-8001-000000000148",
+              "key": "SHIP-148",
+              "type": {
+                "id": "story",
+                "name": "User Story"
+              },
+              "title": "Delete a saved card from the account page",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000303",
+                "name": "Resolved",
+                "category": "resolved"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000005",
+                "name": "Sam Rivera",
+                "initials": "SR",
+                "avatarColour": "#c9611a",
+                "photoUrl": null
+              },
+              "points": 3,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000101",
+                "key": "SHIP-101",
+                "type": {
+                  "id": "feature",
+                  "name": "Feature"
+                },
+                "title": "Checkout v2"
+              },
+              "tags": [
+                {
+                  "name": "Payments",
+                  "colour": "accent"
+                }
+              ],
+              "rollups": [
+                {
+                  "type": "task",
+                  "open": 0,
+                  "closed": 3
+                }
+              ],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [
+                {
+                  "fieldId": "priority",
+                  "label": "Priority",
+                  "text": "2"
+                },
+                {
+                  "fieldId": "sprint",
+                  "label": "Sprint",
+                  "text": "Sprint 24"
+                }
+              ],
+              "revision": 1
+            },
+            {
+              "id": "00000005-0000-4000-8001-000000000152",
+              "key": "SHIP-152",
+              "type": {
+                "id": "story",
+                "name": "User Story"
+              },
+              "title": "Feature flag for passkey rollout",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000303",
+                "name": "Resolved",
+                "category": "resolved"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000004",
+                "name": "Mei Lin",
+                "initials": "ML",
+                "avatarColour": "#7b4fc9",
+                "photoUrl": null
+              },
+              "points": 1,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000102",
+                "key": "SHIP-102",
+                "type": {
+                  "id": "feature",
+                  "name": "Feature"
+                },
+                "title": "Mobile sign-in"
+              },
+              "tags": [
+                {
+                  "name": "Mobile",
+                  "colour": "info"
+                }
+              ],
+              "rollups": [
+                {
+                  "type": "task",
+                  "open": 0,
+                  "closed": 1
+                }
+              ],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [
+                {
+                  "fieldId": "priority",
+                  "label": "Priority",
+                  "text": "2"
+                },
+                {
+                  "fieldId": "sprint",
+                  "label": "Sprint",
+                  "text": "Sprint 24"
+                }
+              ],
+              "revision": 1
+            }
+          ],
+          "olderCount": 0,
+          "olderCursor": null
+        },
+        {
+          "columnId": "col-done",
+          "doneHalf": false,
+          "cards": [
+            {
+              "id": "00000005-0000-4000-8001-000000000150",
+              "key": "SHIP-150",
+              "type": {
+                "id": "story",
+                "name": "User Story"
+              },
+              "title": "Order confirmation email",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000304",
+                "name": "Closed",
+                "category": "completed"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000006",
+                "name": "Ana Costa",
+                "initials": "AC",
+                "avatarColour": "#b83d7a",
+                "photoUrl": null
+              },
+              "points": 3,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000101",
+                "key": "SHIP-101",
+                "type": {
+                  "id": "feature",
+                  "name": "Feature"
+                },
+                "title": "Checkout v2"
+              },
+              "tags": [],
+              "rollups": [
+                {
+                  "type": "task",
+                  "open": 0,
+                  "closed": 1
+                }
+              ],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [
+                {
+                  "fieldId": "priority",
+                  "label": "Priority",
+                  "text": "2"
+                },
+                {
+                  "fieldId": "sprint",
+                  "label": "Sprint",
+                  "text": "Sprint 24"
+                }
+              ],
+              "revision": 1
+            },
+            {
+              "id": "00000005-0000-4000-8001-000000000138",
+              "key": "SHIP-138",
+              "type": {
+                "id": "bug",
+                "name": "Bug"
+              },
+              "title": "Totals wrong when coupon removed",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000405",
+                "name": "Closed",
+                "category": "completed"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000003",
+                "name": "Tom Okafor",
+                "initials": "TO",
+                "avatarColour": "#16a089",
+                "photoUrl": null
+              },
+              "points": 2,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000101",
+                "key": "SHIP-101",
+                "type": {
+                  "id": "feature",
+                  "name": "Feature"
+                },
+                "title": "Checkout v2"
+              },
+              "tags": [
+                {
+                  "name": "Payments",
+                  "colour": "accent"
+                }
+              ],
+              "rollups": [
+                {
+                  "type": "task",
+                  "open": 0,
+                  "closed": 1
+                }
+              ],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [
+                {
+                  "fieldId": "severity",
+                  "label": "Severity",
+                  "text": "3 - Medium"
+                },
+                {
+                  "fieldId": "priority",
+                  "label": "Priority",
+                  "text": "2"
+                }
+              ],
+              "revision": 1
+            },
+            {
+              "id": "00000005-0000-4000-8001-000000000131",
+              "key": "SHIP-131",
+              "type": {
+                "id": "story",
+                "name": "User Story"
+              },
+              "title": "Rate limiting on login",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000304",
+                "name": "Closed",
+                "category": "completed"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000004",
+                "name": "Mei Lin",
+                "initials": "ML",
+                "avatarColour": "#7b4fc9",
+                "photoUrl": null
+              },
+              "points": 3,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000104",
+                "key": "SHIP-104",
+                "type": {
+                  "id": "feature",
+                  "name": "Feature"
+                },
+                "title": "Ops hygiene"
+              },
+              "tags": [
+                {
+                  "name": "Security",
+                  "colour": "ok"
+                }
+              ],
+              "rollups": [],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [
+                {
+                  "fieldId": "priority",
+                  "label": "Priority",
+                  "text": "2"
+                },
+                {
+                  "fieldId": "sprint",
+                  "label": "Sprint",
+                  "text": "Sprint 23"
+                }
+              ],
+              "revision": 1
+            },
+            {
+              "id": "00000005-0000-4000-8001-000000000126",
+              "key": "SHIP-126",
+              "type": {
+                "id": "bug",
+                "name": "Bug"
+              },
+              "title": "Wrong currency on receipts",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000405",
+                "name": "Closed",
+                "category": "completed"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000006",
+                "name": "Ana Costa",
+                "initials": "AC",
+                "avatarColour": "#b83d7a",
+                "photoUrl": null
+              },
+              "points": 2,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000103",
+                "key": "SHIP-103",
+                "type": {
+                  "id": "feature",
+                  "name": "Feature"
+                },
+                "title": "Reporting"
+              },
+              "tags": [],
+              "rollups": [],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [
+                {
+                  "fieldId": "severity",
+                  "label": "Severity",
+                  "text": "3 - Medium"
+                },
+                {
+                  "fieldId": "priority",
+                  "label": "Priority",
+                  "text": "2"
+                }
+              ],
+              "revision": 1
+            }
+          ],
+          "olderCount": 1,
+          "olderCursor": "done-00000005-0000-4000-8001-000000000126"
+        }
+      ]
+    }
+  ],
+  "styleRules": [
+    {
+      "id": "rule-blocked",
+      "name": "Blocked",
+      "enabled": true,
+      "colour": "danger",
+      "bold": false,
+      "italic": false,
+      "underline": false,
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "tags",
+            "op": "contains",
+            "value": "Blocked"
+          }
+        ]
+      }
+    },
+    {
+      "id": "rule-spike",
+      "name": "Spike",
+      "enabled": true,
+      "colour": "purple",
+      "bold": false,
+      "italic": false,
+      "underline": false,
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "tags",
+            "op": "contains",
+            "value": "Spike"
+          }
+        ]
+      }
+    }
+  ],
+  "cardFields": [
+    {
+      "type": "story",
+      "showKey": true,
+      "showAssignee": true,
+      "showTags": true,
+      "showPoints": true,
+      "showEmptyFields": false,
+      "extraFields": [
+        "parent",
+        "priority",
+        "sprint"
+      ]
+    },
+    {
+      "type": "bug",
+      "showKey": true,
+      "showAssignee": true,
+      "showTags": true,
+      "showPoints": true,
+      "showEmptyFields": false,
+      "extraFields": [
+        "parent",
+        "severity",
+        "priority"
+      ]
+    }
+  ],
+  "annotations": {
+    "tasks": true,
+    "stories": false,
+    "bugs": false,
+    "features": false
+  }
+}

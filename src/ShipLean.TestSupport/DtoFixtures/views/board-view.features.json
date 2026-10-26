@@ -1,0 +1,732 @@
+{
+  "boardId": "00000007-0000-4000-8001-000000000002",
+  "projectId": "00000002-0000-4000-8000-000000000001",
+  "level": "features",
+  "openCount": 6,
+  "openPoints": 67,
+  "columns": [
+    {
+      "id": "col-new",
+      "name": "New",
+      "wipLimit": null,
+      "count": 1,
+      "hiddenCount": 0,
+      "overLimit": false,
+      "split": false,
+      "doingCount": 0,
+      "doneCount": 0,
+      "definitionOfDone": "- Problem and the outcome we want, in one paragraph\n- Linked to an **Epic**",
+      "definitionOfDoneHtml": "<ul><li>Problem and the outcome we want, in one paragraph</li><li>Linked to an <b>Epic</b></li></ul>",
+      "states": [
+        {
+          "type": "feature",
+          "state": {
+            "id": "00000003-0000-4000-8001-000000000201",
+            "name": "New",
+            "category": "proposed"
+          }
+        }
+      ]
+    },
+    {
+      "id": "col-shaping",
+      "name": "Shaping",
+      "wipLimit": null,
+      "count": 2,
+      "hiddenCount": 0,
+      "overLimit": false,
+      "split": false,
+      "doingCount": 0,
+      "doneCount": 0,
+      "definitionOfDone": "- Stories split out and estimated\n- Fits in about three sprints\n- Open questions listed on the item",
+      "definitionOfDoneHtml": "<ul><li>Stories split out and estimated</li><li>Fits in about three sprints</li><li>Open questions listed on the item</li></ul>",
+      "states": [
+        {
+          "type": "feature",
+          "state": {
+            "id": "00000003-0000-4000-8001-000000000201",
+            "name": "New",
+            "category": "proposed"
+          }
+        }
+      ]
+    },
+    {
+      "id": "col-in-progress",
+      "name": "In progress",
+      "wipLimit": 3,
+      "count": 3,
+      "hiddenCount": 0,
+      "overLimit": false,
+      "split": false,
+      "doingCount": 0,
+      "doneCount": 0,
+      "definitionOfDone": "- Stories are being pulled into sprints\n- Behind a feature flag",
+      "definitionOfDoneHtml": "<ul><li>Stories are being pulled into sprints</li><li>Behind a feature flag</li></ul>",
+      "states": [
+        {
+          "type": "feature",
+          "state": {
+            "id": "00000003-0000-4000-8001-000000000202",
+            "name": "Active",
+            "category": "inProgress"
+          }
+        }
+      ]
+    },
+    {
+      "id": "col-releasing",
+      "name": "Releasing",
+      "wipLimit": 2,
+      "count": 0,
+      "hiddenCount": 0,
+      "overLimit": false,
+      "split": false,
+      "doingCount": 0,
+      "doneCount": 0,
+      "definitionOfDone": "- Every story and bug closed\n- Rolling out behind its flag",
+      "definitionOfDoneHtml": "<ul><li>Every story and bug closed</li><li>Rolling out behind its flag</li></ul>",
+      "states": [
+        {
+          "type": "feature",
+          "state": {
+            "id": "00000003-0000-4000-8001-000000000203",
+            "name": "Resolved",
+            "category": "resolved"
+          }
+        }
+      ]
+    },
+    {
+      "id": "col-done",
+      "name": "Done",
+      "wipLimit": null,
+      "count": 0,
+      "hiddenCount": 0,
+      "overLimit": false,
+      "split": false,
+      "doingCount": 0,
+      "doneCount": 0,
+      "definitionOfDone": "- Flag on for everyone\n- Outcome measured and noted on the item",
+      "definitionOfDoneHtml": "<ul><li>Flag on for everyone</li><li>Outcome measured and noted on the item</li></ul>",
+      "states": [
+        {
+          "type": "feature",
+          "state": {
+            "id": "00000003-0000-4000-8001-000000000204",
+            "name": "Closed",
+            "category": "completed"
+          }
+        }
+      ]
+    }
+  ],
+  "lanes": [
+    {
+      "id": "epic-00000005-0000-4000-8001-000000000090",
+      "name": "Checkout conversion",
+      "colour": null,
+      "kind": "epic",
+      "criteriaText": null,
+      "epic": {
+        "id": "00000005-0000-4000-8001-000000000090",
+        "key": "SHIP-90",
+        "type": {
+          "id": "epic",
+          "name": "Epic"
+        },
+        "title": "Checkout conversion"
+      },
+      "acceptsDrops": true,
+      "cardCount": 2,
+      "openPoints": 20,
+      "cells": [
+        {
+          "columnId": "col-new",
+          "doneHalf": false,
+          "cards": [
+            {
+              "id": "00000005-0000-4000-8001-000000000106",
+              "key": "SHIP-106",
+              "type": {
+                "id": "feature",
+                "name": "Feature"
+              },
+              "title": "Order tracking page",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000201",
+                "name": "New",
+                "category": "proposed"
+              },
+              "assignee": null,
+              "points": null,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000090",
+                "key": "SHIP-90",
+                "type": {
+                  "id": "epic",
+                  "name": "Epic"
+                },
+                "title": "Checkout conversion"
+              },
+              "tags": [],
+              "rollups": [
+                {
+                  "type": "story",
+                  "open": 2,
+                  "closed": 0
+                }
+              ],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [],
+              "revision": 1
+            }
+          ],
+          "olderCount": 0,
+          "olderCursor": null
+        },
+        {
+          "columnId": "col-shaping",
+          "doneHalf": false,
+          "cards": [],
+          "olderCount": 0,
+          "olderCursor": null
+        },
+        {
+          "columnId": "col-in-progress",
+          "doneHalf": false,
+          "cards": [
+            {
+              "id": "00000005-0000-4000-8001-000000000101",
+              "key": "SHIP-101",
+              "type": {
+                "id": "feature",
+                "name": "Feature"
+              },
+              "title": "Checkout v2",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000202",
+                "name": "Active",
+                "category": "inProgress"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000002",
+                "name": "Priya Shah",
+                "initials": "PS",
+                "avatarColour": "#2f7fd8",
+                "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"
+              },
+              "points": 20,
+              "childPoints": 31,
+              "sumWarn": true,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000090",
+                "key": "SHIP-90",
+                "type": {
+                  "id": "epic",
+                  "name": "Epic"
+                },
+                "title": "Checkout conversion"
+              },
+              "tags": [
+                {
+                  "name": "Payments",
+                  "colour": "accent"
+                }
+              ],
+              "rollups": [
+                {
+                  "type": "story",
+                  "open": 5,
+                  "closed": 3
+                },
+                {
+                  "type": "bug",
+                  "open": 1,
+                  "closed": 1
+                }
+              ],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [],
+              "revision": 12
+            }
+          ],
+          "olderCount": 0,
+          "olderCursor": null
+        },
+        {
+          "columnId": "col-releasing",
+          "doneHalf": false,
+          "cards": [],
+          "olderCount": 0,
+          "olderCursor": null
+        },
+        {
+          "columnId": "col-done",
+          "doneHalf": false,
+          "cards": [],
+          "olderCount": 0,
+          "olderCursor": null
+        }
+      ]
+    },
+    {
+      "id": "epic-00000005-0000-4000-8001-000000000091",
+      "name": "Account security",
+      "colour": null,
+      "kind": "epic",
+      "criteriaText": null,
+      "epic": {
+        "id": "00000005-0000-4000-8001-000000000091",
+        "key": "SHIP-91",
+        "type": {
+          "id": "epic",
+          "name": "Epic"
+        },
+        "title": "Account security"
+      },
+      "acceptsDrops": true,
+      "cardCount": 1,
+      "openPoints": 21,
+      "cells": [
+        {
+          "columnId": "col-new",
+          "doneHalf": false,
+          "cards": [],
+          "olderCount": 0,
+          "olderCursor": null
+        },
+        {
+          "columnId": "col-shaping",
+          "doneHalf": false,
+          "cards": [],
+          "olderCount": 0,
+          "olderCursor": null
+        },
+        {
+          "columnId": "col-in-progress",
+          "doneHalf": false,
+          "cards": [
+            {
+              "id": "00000005-0000-4000-8001-000000000102",
+              "key": "SHIP-102",
+              "type": {
+                "id": "feature",
+                "name": "Feature"
+              },
+              "title": "Mobile sign-in",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000202",
+                "name": "Active",
+                "category": "inProgress"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000005",
+                "name": "Sam Rivera",
+                "initials": "SR",
+                "avatarColour": "#c9611a",
+                "photoUrl": null
+              },
+              "points": 21,
+              "childPoints": 20,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000091",
+                "key": "SHIP-91",
+                "type": {
+                  "id": "epic",
+                  "name": "Epic"
+                },
+                "title": "Account security"
+              },
+              "tags": [
+                {
+                  "name": "Mobile",
+                  "colour": "info"
+                }
+              ],
+              "rollups": [
+                {
+                  "type": "story",
+                  "open": 6,
+                  "closed": 1
+                },
+                {
+                  "type": "bug",
+                  "open": 1,
+                  "closed": 0
+                }
+              ],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [],
+              "revision": 1
+            }
+          ],
+          "olderCount": 0,
+          "olderCursor": null
+        },
+        {
+          "columnId": "col-releasing",
+          "doneHalf": false,
+          "cards": [],
+          "olderCount": 0,
+          "olderCursor": null
+        },
+        {
+          "columnId": "col-done",
+          "doneHalf": false,
+          "cards": [],
+          "olderCount": 0,
+          "olderCursor": null
+        }
+      ]
+    },
+    {
+      "id": "epic-00000005-0000-4000-8001-000000000092",
+      "name": "Insights for merchants",
+      "colour": null,
+      "kind": "epic",
+      "criteriaText": null,
+      "epic": {
+        "id": "00000005-0000-4000-8001-000000000092",
+        "key": "SHIP-92",
+        "type": {
+          "id": "epic",
+          "name": "Epic"
+        },
+        "title": "Insights for merchants"
+      },
+      "acceptsDrops": true,
+      "cardCount": 2,
+      "openPoints": 21,
+      "cells": [
+        {
+          "columnId": "col-new",
+          "doneHalf": false,
+          "cards": [],
+          "olderCount": 0,
+          "olderCursor": null
+        },
+        {
+          "columnId": "col-shaping",
+          "doneHalf": false,
+          "cards": [
+            {
+              "id": "00000005-0000-4000-8001-000000000108",
+              "key": "SHIP-108",
+              "type": {
+                "id": "feature",
+                "name": "Feature"
+              },
+              "title": "Dashboard widgets",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000201",
+                "name": "New",
+                "category": "proposed"
+              },
+              "assignee": null,
+              "points": 8,
+              "childPoints": 5,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000103",
+                "key": "SHIP-103",
+                "type": {
+                  "id": "feature",
+                  "name": "Feature"
+                },
+                "title": "Reporting"
+              },
+              "tags": [],
+              "rollups": [
+                {
+                  "type": "story",
+                  "open": 2,
+                  "closed": 0
+                }
+              ],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [],
+              "revision": 1
+            }
+          ],
+          "olderCount": 0,
+          "olderCursor": null
+        },
+        {
+          "columnId": "col-in-progress",
+          "doneHalf": false,
+          "cards": [
+            {
+              "id": "00000005-0000-4000-8001-000000000103",
+              "key": "SHIP-103",
+              "type": {
+                "id": "feature",
+                "name": "Feature"
+              },
+              "title": "Reporting",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000202",
+                "name": "Active",
+                "category": "inProgress"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000006",
+                "name": "Ana Costa",
+                "initials": "AC",
+                "avatarColour": "#b83d7a",
+                "photoUrl": null
+              },
+              "points": 13,
+              "childPoints": 21,
+              "sumWarn": true,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000092",
+                "key": "SHIP-92",
+                "type": {
+                  "id": "epic",
+                  "name": "Epic"
+                },
+                "title": "Insights for merchants"
+              },
+              "tags": [],
+              "rollups": [
+                {
+                  "type": "story",
+                  "open": 2,
+                  "closed": 0
+                },
+                {
+                  "type": "feature",
+                  "open": 1,
+                  "closed": 0
+                }
+              ],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [],
+              "revision": 1
+            }
+          ],
+          "olderCount": 0,
+          "olderCursor": null
+        },
+        {
+          "columnId": "col-releasing",
+          "doneHalf": false,
+          "cards": [],
+          "olderCount": 0,
+          "olderCursor": null
+        },
+        {
+          "columnId": "col-done",
+          "doneHalf": false,
+          "cards": [],
+          "olderCount": 0,
+          "olderCursor": null
+        }
+      ]
+    },
+    {
+      "id": "epic-00000005-0000-4000-8001-000000000093",
+      "name": "Platform health",
+      "colour": null,
+      "kind": "epic",
+      "criteriaText": null,
+      "epic": {
+        "id": "00000005-0000-4000-8001-000000000093",
+        "key": "SHIP-93",
+        "type": {
+          "id": "epic",
+          "name": "Epic"
+        },
+        "title": "Platform health"
+      },
+      "acceptsDrops": true,
+      "cardCount": 1,
+      "openPoints": 5,
+      "cells": [
+        {
+          "columnId": "col-new",
+          "doneHalf": false,
+          "cards": [],
+          "olderCount": 0,
+          "olderCursor": null
+        },
+        {
+          "columnId": "col-shaping",
+          "doneHalf": false,
+          "cards": [
+            {
+              "id": "00000005-0000-4000-8001-000000000104",
+              "key": "SHIP-104",
+              "type": {
+                "id": "feature",
+                "name": "Feature"
+              },
+              "title": "Ops hygiene",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000201",
+                "name": "New",
+                "category": "proposed"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000003",
+                "name": "Tom Okafor",
+                "initials": "TO",
+                "avatarColour": "#16a089",
+                "photoUrl": null
+              },
+              "points": 5,
+              "childPoints": 3,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000093",
+                "key": "SHIP-93",
+                "type": {
+                  "id": "epic",
+                  "name": "Epic"
+                },
+                "title": "Platform health"
+              },
+              "tags": [
+                {
+                  "name": "Tech debt",
+                  "colour": "muted"
+                }
+              ],
+              "rollups": [
+                {
+                  "type": "story",
+                  "open": 1,
+                  "closed": 1
+                }
+              ],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [],
+              "revision": 1
+            }
+          ],
+          "olderCount": 0,
+          "olderCursor": null
+        },
+        {
+          "columnId": "col-in-progress",
+          "doneHalf": false,
+          "cards": [],
+          "olderCount": 0,
+          "olderCursor": null
+        },
+        {
+          "columnId": "col-releasing",
+          "doneHalf": false,
+          "cards": [],
+          "olderCount": 0,
+          "olderCursor": null
+        },
+        {
+          "columnId": "col-done",
+          "doneHalf": false,
+          "cards": [],
+          "olderCount": 0,
+          "olderCursor": null
+        }
+      ]
+    },
+    {
+      "id": "lane-no-epic",
+      "name": "No Epic",
+      "colour": null,
+      "kind": "noEpic",
+      "criteriaText": null,
+      "epic": null,
+      "acceptsDrops": true,
+      "cardCount": 0,
+      "openPoints": 0,
+      "cells": [
+        {
+          "columnId": "col-new",
+          "doneHalf": false,
+          "cards": [],
+          "olderCount": 0,
+          "olderCursor": null
+        },
+        {
+          "columnId": "col-shaping",
+          "doneHalf": false,
+          "cards": [],
+          "olderCount": 0,
+          "olderCursor": null
+        },
+        {
+          "columnId": "col-in-progress",
+          "doneHalf": false,
+          "cards": [],
+          "olderCount": 0,
+          "olderCursor": null
+        },
+        {
+          "columnId": "col-releasing",
+          "doneHalf": false,
+          "cards": [],
+          "olderCount": 0,
+          "olderCursor": null
+        },
+        {
+          "columnId": "col-done",
+          "doneHalf": false,
+          "cards": [],
+          "olderCount": 0,
+          "olderCursor": null
+        }
+      ]
+    }
+  ],
+  "styleRules": [
+    {
+      "id": "rule-blocked",
+      "name": "Blocked",
+      "enabled": true,
+      "colour": "danger",
+      "bold": false,
+      "italic": false,
+      "underline": false,
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "tags",
+            "op": "contains",
+            "value": "Blocked"
+          }
+        ]
+      }
+    }
+  ],
+  "cardFields": [
+    {
+      "type": "feature",
+      "showKey": true,
+      "showAssignee": true,
+      "showTags": true,
+      "showPoints": true,
+      "showEmptyFields": false,
+      "extraFields": [
+        "parent"
+      ]
+    }
+  ],
+  "annotations": {
+    "tasks": false,
+    "stories": true,
+    "bugs": true,
+    "features": true
+  }
+}

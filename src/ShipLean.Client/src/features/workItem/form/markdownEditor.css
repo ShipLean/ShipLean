@@ -1,0 +1,30 @@
+/* Point the editor's chrome and syntax colours at the design tokens, so light, dark and the OS
+   reach it without the preview stylesheet. */
+.work-item-markdown.w-md-editor {
+  width: 100%;
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: none;
+  --md-editor-font-family: var(--font-mono);
+  --md-editor-background-color: var(--color-surface);
+  --md-editor-box-shadow-color: var(--color-border);
+  --color-fg-default: var(--color-text);
+  --color-canvas-default: var(--color-surface);
+  --color-border-default: var(--color-border);
+  --color-neutral-muted: var(--color-surface-2);
+  --color-accent-fg: var(--color-accent);
+  --color-danger-fg: var(--color-danger);
+  --color-prettylights-syntax-comment: var(--color-muted);
+  --color-prettylights-syntax-constant: var(--color-accent);
+  --color-prettylights-syntax-markup-bold: var(--color-text);
+  --color-prettylights-syntax-entity: var(--color-purple);
+  --color-prettylights-syntax-markup-deleted-text: var(--color-danger);
+}
+
+.work-item-markdown .w-md-editor-toolbar {
+  background-color: var(--color-surface-2);
+  border-bottom-color: var(--color-border);
+}

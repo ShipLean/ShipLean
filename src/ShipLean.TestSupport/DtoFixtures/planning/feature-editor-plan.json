@@ -1,0 +1,195 @@
+{
+  "feature": {
+    "title": "The richer Feature editor: fields, attachments, links",
+    "goal": "A Feature carries its goal, status, attachments and links in one editor.",
+    "description": "The Feature editor grows from a title and description into the place a feature is run from.\n\n## Contracts\n\n**C1 — Feature fields.** goal, status_line, slug and started_on on the Feature, read and written by the API.\n\n**C2 — Attachments.** list, upload, replace by name and remove, on the Feature.\n\n**C3 — Links.** a link has a title, a kind and a target; the server resolves its preview.\n\n**C4 — Editor shell.** one panel per lane, each loading its own data.\n"
+  },
+  "shared_branch": "feat/2-feature-editor",
+  "common_brief": "You are one implementer on the Feature editor plan, working alone in your own worktree.\n\n## Rules\n\n- Read your brief and the Contracts section of the Feature first.\n- Commit small; push to the shared branch after each green step.\n- If a contract is wrong, stop and report. Never work around it.\n\n## Report\n\nReport with report_task when you are done, blocked or partial.\n",
+  "plan_markdown": "# Feature editor plan\n\nWave 0.1 and 0.2: Agent 0 ships the contracts and the skeleton. Wave 1: lanes F, A and L run side by side. Wave 2: the cross-lane journey.\n",
+  "stories": [
+    {
+      "title": "Wave 0.1: server contracts (Agent 0)",
+      "wave": "0.1",
+      "description": "Agent 0's server half: the contracts every lane builds on.",
+      "tasks": [
+        {
+          "title": "S0a: Feature fields contract",
+          "brief": "## S0a: Feature fields contract\n\n**Goal:** the Feature's goal, status line and slug on the API.\n\n**Owns:** the files for feature fields contract.\n\n**Tests:** one API or component test that proves feature fields contract works.\n\nStand-in brief for the fixture.",
+          "model": "strong",
+          "context_k": 45
+        },
+        {
+          "title": "S0b: Attachment contract",
+          "brief": "## S0b: Attachment contract\n\n**Goal:** attachments listed and uploaded on the Feature.\n\n**Owns:** the files for attachment contract.\n\n**Tests:** one API or component test that proves attachment contract works.\n\nStand-in brief for the fixture.",
+          "model": "strong",
+          "context_k": 50
+        },
+        {
+          "title": "S0d: Link preview contract",
+          "brief": "## S0d: Link preview contract\n\n**Goal:** link titles and previews resolved on the server.\n\n**Owns:** the files for link preview contract.\n\n**Tests:** one API or component test that proves link preview contract works.\n\nStand-in brief for the fixture.",
+          "model": "strong",
+          "context_k": 40
+        }
+      ]
+    },
+    {
+      "title": "Wave 0.2: client skeleton (Agent 0)",
+      "wave": "0.2",
+      "description": "Agent 0's client half: the editor shell and the data hooks.",
+      "tasks": [
+        {
+          "title": "S0c: Editor skeleton",
+          "brief": "## S0c: Editor skeleton\n\n**Goal:** the editor page with empty panels for every lane.\n\n**Owns:** the files for editor skeleton.\n\n**Tests:** one API or component test that proves editor skeleton works.\n\nStand-in brief for the fixture.",
+          "model": "strong",
+          "context_k": 55
+        }
+      ]
+    },
+    {
+      "title": "Wave 1 · Lane F: Feature fields, status and Log",
+      "wave": "1",
+      "lane": "F",
+      "description": "Lane F: the Feature's own fields, its status and its Log. Runs alongside A and L.",
+      "tasks": [
+        {
+          "title": "F1: Goal field",
+          "brief": "## F1: Goal field\n\n**Goal:** the goal edits in place and saves.\n\n**Owns:** the files for goal field.\n\n**Tests:** one API or component test that proves goal field works.\n\nStand-in brief for the fixture.",
+          "model": "fast",
+          "context_k": 30
+        },
+        {
+          "title": "F2: Status line",
+          "brief": "## F2: Status line\n\n**Goal:** the status line shows and edits.\n\n**Owns:** the files for status line.\n\n**Tests:** one API or component test that proves status line works.\n\nStand-in brief for the fixture.",
+          "model": "fast",
+          "context_k": 30
+        },
+        {
+          "title": "F3: Started-on date",
+          "brief": "## F3: Started-on date\n\n**Goal:** the started-on date picks and saves in UTC.\n\n**Owns:** the files for started-on date.\n\n**Tests:** one API or component test that proves started-on date works.\n\nStand-in brief for the fixture.",
+          "model": "fast",
+          "context_k": 25
+        },
+        {
+          "title": "F4: Log panel",
+          "brief": "## F4: Log panel\n\n**Goal:** the Log lists comments and revisions newest first.\n\n**Owns:** the files for log panel.\n\n**Tests:** one API or component test that proves log panel works.\n\nStand-in brief for the fixture.",
+          "model": "strong",
+          "context_k": 60
+        },
+        {
+          "title": "F5: Slug and title",
+          "brief": "## F5: Slug and title\n\n**Goal:** the slug follows the title until it is edited.\n\n**Owns:** the files for slug and title.\n\n**Tests:** one API or component test that proves slug and title works.\n\nStand-in brief for the fixture.",
+          "model": "fast",
+          "context_k": 35
+        }
+      ]
+    },
+    {
+      "title": "Wave 1 · Lane A: Attachments and images",
+      "wave": "1",
+      "lane": "A",
+      "description": "Lane A: attachments and images on the Feature. Runs alongside F and L.",
+      "tasks": [
+        {
+          "title": "A1: Attachment list",
+          "brief": "## A1: Attachment list\n\n**Goal:** the attachment list shows name, size and uploader.\n\n**Owns:** the files for attachment list.\n\n**Tests:** one API or component test that proves attachment list works.\n\nStand-in brief for the fixture.",
+          "model": "fast",
+          "context_k": 30
+        },
+        {
+          "title": "A2: Upload",
+          "brief": "## A2: Upload\n\n**Goal:** a file uploads with progress and appears in the list.\n\n**Owns:** the files for upload.\n\n**Tests:** one API or component test that proves upload works.\n\nStand-in brief for the fixture.",
+          "model": "strong",
+          "context_k": 55
+        },
+        {
+          "title": "A3: Paste an image",
+          "brief": "## A3: Paste an image\n\n**Goal:** a pasted image uploads and lands in the description.\n\n**Owns:** the files for paste an image.\n\n**Tests:** one API or component test that proves paste an image works.\n\nStand-in brief for the fixture.",
+          "model": "strong",
+          "context_k": 50
+        },
+        {
+          "title": "A4: Replace by name",
+          "brief": "## A4: Replace by name\n\n**Goal:** uploading a file with an existing name replaces it.\n\n**Owns:** the files for replace by name.\n\n**Tests:** one API or component test that proves replace by name works.\n\nStand-in brief for the fixture.",
+          "model": "fast",
+          "context_k": 35
+        },
+        {
+          "title": "A5: Download",
+          "brief": "## A5: Download\n\n**Goal:** each attachment downloads with its own name.\n\n**Owns:** the files for download.\n\n**Tests:** one API or component test that proves download works.\n\nStand-in brief for the fixture.",
+          "model": "fast",
+          "context_k": 25
+        },
+        {
+          "title": "A6: Remove",
+          "brief": "## A6: Remove\n\n**Goal:** an attachment is removed after a confirm.\n\n**Owns:** the files for remove.\n\n**Tests:** one API or component test that proves remove works.\n\nStand-in brief for the fixture.",
+          "model": "fast",
+          "context_k": 30
+        },
+        {
+          "title": "A7: Image preview",
+          "brief": "## A7: Image preview\n\n**Goal:** an image attachment opens in a preview.\n\n**Owns:** the files for image preview.\n\n**Tests:** one API or component test that proves image preview works.\n\nStand-in brief for the fixture.",
+          "model": "fast",
+          "context_k": 40
+        }
+      ]
+    },
+    {
+      "title": "Wave 1 · Lane L: Links and previews",
+      "wave": "1",
+      "lane": "L",
+      "description": "Lane L: links on the Feature and their previews. Runs alongside F and A.",
+      "tasks": [
+        {
+          "title": "L1: Link list",
+          "brief": "## L1: Link list\n\n**Goal:** the link list shows title, kind and target.\n\n**Owns:** the files for link list.\n\n**Tests:** one API or component test that proves link list works.\n\nStand-in brief for the fixture.",
+          "model": "fast",
+          "context_k": 30
+        },
+        {
+          "title": "L2: Add a link",
+          "brief": "## L2: Add a link\n\n**Goal:** a URL or a work item key adds a link.\n\n**Owns:** the files for add a link.\n\n**Tests:** one API or component test that proves add a link works.\n\nStand-in brief for the fixture.",
+          "model": "strong",
+          "context_k": 50
+        },
+        {
+          "title": "L3: Link preview",
+          "brief": "## L3: Link preview\n\n**Goal:** a link shows the preview the server resolved.\n\n**Owns:** the files for link preview.\n\n**Tests:** one API or component test that proves link preview works.\n\nStand-in brief for the fixture.",
+          "model": "strong",
+          "context_k": 55
+        },
+        {
+          "title": "L4: Edit a link title",
+          "brief": "## L4: Edit a link title\n\n**Goal:** a link's title edits in place.\n\n**Owns:** the files for edit a link title.\n\n**Tests:** one API or component test that proves edit a link title works.\n\nStand-in brief for the fixture.",
+          "model": "fast",
+          "context_k": 25
+        },
+        {
+          "title": "L5: Remove a link",
+          "brief": "## L5: Remove a link\n\n**Goal:** a link is removed after a confirm.\n\n**Owns:** the files for remove a link.\n\n**Tests:** one API or component test that proves remove a link works.\n\nStand-in brief for the fixture.",
+          "model": "fast",
+          "context_k": 25
+        },
+        {
+          "title": "L6: Pull request links",
+          "brief": "## L6: Pull request links\n\n**Goal:** a pull request link shows its state.\n\n**Owns:** the files for pull request links.\n\n**Tests:** one API or component test that proves pull request links works.\n\nStand-in brief for the fixture.",
+          "model": "fast",
+          "context_k": 40
+        }
+      ]
+    },
+    {
+      "title": "Wave 2: cross-lane journey, screenshots, README",
+      "wave": "2",
+      "description": "One journey across every lane, the page screenshots and the README section.",
+      "tasks": [
+        {
+          "title": "W2: Cross-lane journey",
+          "brief": "## W2: Cross-lane journey\n\n**Goal:** one journey edits fields, attaches a file and adds a link.\n\n**Owns:** the files for cross-lane journey.\n\n**Tests:** one API or component test that proves cross-lane journey works.\n\nStand-in brief for the fixture.",
+          "model": "strong",
+          "context_k": 60
+        }
+      ]
+    }
+  ]
+}

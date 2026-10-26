@@ -1,0 +1,154 @@
+[
+  {
+    "id": "tool-q01",
+    "text": "TOOL-49",
+    "kind": "exactKey",
+    "expected": [
+      "tool-049"
+    ]
+  },
+  {
+    "id": "tool-q02",
+    "text": "tool37",
+    "kind": "exactKey",
+    "expected": [
+      "tool-037"
+    ]
+  },
+  {
+    "id": "tool-q03",
+    "text": "freeze",
+    "kind": "titleWord",
+    "expected": [
+      "tool-043",
+      "tool-044"
+    ]
+  },
+  {
+    "id": "tool-q04",
+    "text": "preview",
+    "kind": "titleWord",
+    "expected": [
+      "tool-071",
+      "tool-072",
+      "tool-073",
+      "tool-074",
+      "tool-075"
+    ]
+  },
+  {
+    "id": "tool-q05",
+    "text": "what do we do if the release contains a schema change and we need to go back to the previous version",
+    "kind": "paraphrase",
+    "expected": [
+      "tool-037"
+    ]
+  },
+  {
+    "id": "tool-q06",
+    "text": "the login tool slows down when the identity provider tells it to poll less often",
+    "kind": "paraphrase",
+    "expected": [
+      "tool-097"
+    ]
+  },
+  {
+    "id": "tool-q07",
+    "text": "tombstone written beside each candidate before the compactor deletes it",
+    "kind": "bodyOnly",
+    "expected": [
+      "tool-004"
+    ]
+  },
+  {
+    "id": "tool-q08",
+    "text": "generated protocol buffer stubs make a schema edit select consumer tests",
+    "kind": "bodyOnly",
+    "expected": [
+      "tool-018"
+    ]
+  },
+  {
+    "id": "tool-q09",
+    "text": "server_idle_timeout on the pooler for the migration pool only",
+    "kind": "bodyOnly",
+    "expected": [
+      "tool-049"
+    ]
+  },
+  {
+    "id": "tool-q10",
+    "text": "entropy-based detection false positives on base64 fixtures",
+    "kind": "commentOnly",
+    "expected": [
+      "tool-027"
+    ]
+  },
+  {
+    "id": "tool-q11",
+    "text": "revert pairs show up as two entries",
+    "kind": "commentOnly",
+    "expected": [
+      "tool-042"
+    ]
+  },
+  {
+    "id": "tool-q12",
+    "text": "quarant",
+    "kind": "prefix",
+    "expected": [
+      "tool-019"
+    ]
+  },
+  {
+    "id": "tool-q13",
+    "text": "migrat",
+    "kind": "prefix",
+    "expected": [
+      "tool-047",
+      "tool-048",
+      "tool-049",
+      "tool-050"
+    ]
+  },
+  {
+    "id": "tool-q14",
+    "text": "ย้ายข้อมูลค้างเพราะล็อกตาราง",
+    "kind": "nonEnglish",
+    "expected": [
+      "tool-051"
+    ]
+  },
+  {
+    "id": "tool-q15",
+    "text": "ログの保存期間を短くしたい",
+    "kind": "nonEnglish",
+    "expected": [
+      "tool-088"
+    ]
+  },
+  {
+    "id": "tool-q16",
+    "text": "Cache geht beim Wechseln des Branches verloren",
+    "kind": "nonEnglish",
+    "expected": [
+      "tool-033"
+    ]
+  },
+  {
+    "id": "tool-q17",
+    "text": "revertir automáticamente un despliegue cuando suben los errores",
+    "kind": "nonEnglish",
+    "expected": [
+      "tool-037"
+    ]
+  },
+  {
+    "id": "tool-q18",
+    "text": "build queue gets long every evening",
+    "kind": "nonEnglish",
+    "expected": [
+      "tool-016"
+    ]
+  }
+]

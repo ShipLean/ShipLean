@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · New project (reference)</title>
+<!--
+  Reference New project page: ShipLean › New project, opened from "+ New project" in the project picker.
+  Open directly in a browser. Uses ../tokens.css, shiplean.css and shared.js only; no build step.
+  The key is the one thing here that can't be changed later, so it gets the most room:
+    - Suggested from the name while you haven't typed your own: one word → its first 4 letters (Storefront → STOR),
+      several words → their initials (Customer Support Hub → CSH). A suggestion that's taken is skipped.
+    - Typing forces uppercase. Live checks: 2 to 4 characters, letters A to Z only, not used by another project.
+      A key used by a project you're in names it; one used by a project you're not in says only "another project",
+      so the page doesn't reveal other teams' names.
+    - "Other free keys" offers up to three alternatives when you want something else.
+    - The rail shows what work item keys will look like (CSH-1) and says the key is permanent.
+  Start from: ShipLean defaults, or copy settings (states, board and Taskboard settings, working days, velocity
+  window) from a project you're in. Work items, sprints, members and the Jira connection are never copied.
+  Members: you're the Admin and can't be removed here; add people on this install now or later.
+  Working days and Sprint 1 (optional, on by default): start date, length, and the resulting dates.
+  Create opens the new project's empty Stories backlog (backlog.html?empty).
+  The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot). It types a taken
+  key, a key taken by a project you're not in, and shows the page for someone who isn't allowed to create projects.
+-->
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="shiplean.css">
+<script src="shared.js"></script>
+<style>
+[hidden] { display: none !important; }
+.head { display: flex; gap: var(--space-3); align-items: center; padding: var(--space-3) var(--space-4); background: var(--color-surface); border-bottom: 1px solid var(--color-border); flex: none; flex-wrap: wrap; }
+.head h1 { margin: 0; font-size: var(--text-lg); font-weight: var(--weight-semibold); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn.primary:disabled:hover { filter: none; }
+.content { flex: 1; min-height: 0; overflow: auto; padding: var(--space-4); background: var(--color-bg); }
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--space-4); align-items: start; max-width: 1180px; }
+.stack { display: grid; gap: var(--space-3); align-content: start; }
+.rail-stack { position: sticky; top: 0; }
+.panel { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.panel > header { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; min-height: 44px; padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-border); }
+.panel > header h2 { margin: 0; font-size: var(--text-md); font-weight: var(--weight-semibold); }
+.panel > header .meta { font-size: var(--text-xs); color: var(--color-muted); }
+.panel .pad { padding: var(--space-3); display: grid; gap: var(--space-2); }
+.form { display: grid; grid-template-columns: 150px minmax(0, 1fr); }
+.form > .lbl, .form > .ctl { padding: 10px var(--space-3); border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.form > .lbl { font-size: var(--text-sm); font-weight: var(--weight-medium); color: var(--color-muted); padding-top: 15px; }
+.form > .ctl { display: grid; gap: 6px; justify-items: start; align-content: start; font-size: var(--text-sm); }
+.form > :nth-last-child(-n+2) { border-bottom: 0; }
+.hint { font-size: var(--text-xs); color: var(--color-muted); max-width: 620px; }
+.w-md { width: 340px; max-width: 100%; }
+.w-lg { width: 520px; max-width: 100%; }
+.keyin { font: var(--weight-semibold) var(--text-md)/1 var(--font-mono); letter-spacing: .06em; width: 96px !important; text-transform: uppercase; }
+.keyin.bad { border-color: var(--color-danger); }
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: var(--text-sm); }
+.checks li::before { content: "✓"; display: inline-block; width: 16px; color: var(--color-ok); font-weight: 700; }
+.checks li.no { color: var(--color-danger); }
+.checks li.no::before { content: "✕"; color: var(--color-danger); }
+.alts { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-size: var(--text-xs); color: var(--color-muted); }
+.alts button { height: 22px; padding: 0 7px; border: 1px solid var(--color-border); border-radius: var(--radius-xs); background: var(--color-surface); font: var(--weight-semibold) var(--text-xs)/1 var(--font-mono); letter-spacing: .04em; cursor: pointer; }
+.alts button:hover { border-color: var(--color-accent); background: var(--color-accent-soft); }
+.lockline { display: inline-flex; gap: 6px; align-items: center; font-size: var(--text-xs); color: var(--color-warn); font-weight: var(--weight-medium); }
+.opts { display: grid; gap: var(--space-2); padding: var(--space-3); }
+.opt { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 2px var(--space-2); padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-sm); cursor: pointer; font-size: var(--text-sm); }
+.opt:has(input:checked) { border-color: var(--color-accent); background: color-mix(in srgb, var(--color-accent-soft) 55%, var(--color-surface)); }
+.opt input { accent-color: var(--color-accent); margin: 2px 0 0; }
+.opt b { font-weight: var(--weight-semibold); }
+.opt .d { grid-column: 2; color: var(--color-muted); font-size: var(--text-xs); }
+.opt .x { grid-column: 2; display: grid; gap: 6px; margin-top: 4px; }
+.copylist { margin: 0; padding-left: 16px; font-size: var(--text-xs); color: var(--color-muted); columns: 2; column-gap: var(--space-4); }
+.copylist b { color: var(--color-text); font-weight: var(--weight-medium); }
+table.list { background: transparent; }
+table.list th { position: static; }
+.who { display: flex; align-items: center; gap: var(--space-2); }
+.who small { color: var(--color-muted); font-size: var(--text-xs); }
+.role-sel { height: 24px; padding: 0 4px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); font-size: var(--text-sm); }
+.addwrap { position: relative; }
+.addwrap .field { width: 280px; }
+.pop { position: absolute; top: calc(100% + 4px); left: 0; z-index: 30; width: 300px; padding: 4px; display: grid; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-raised); }
+.pop button { display: flex; align-items: center; gap: var(--space-2); height: 34px; padding: 0 8px; border: 0; border-radius: var(--radius-sm); background: transparent; text-align: left; font-size: var(--text-sm); cursor: pointer; }
+.pop button:hover { background: var(--color-accent-soft); }
+.pop .none { padding: 8px; font-size: var(--text-xs); color: var(--color-muted); }
+.days { display: inline-flex; gap: 4px; }
+.days button { width: 38px; height: var(--control-height); border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-muted); font-size: var(--text-sm); cursor: pointer; }
+.days button[aria-pressed="true"] { background: var(--color-accent-soft); border-color: var(--color-accent); color: var(--color-text); font-weight: var(--weight-semibold); }
+.sprintline { display: flex; gap: var(--space-2); align-items: center; padding: 6px 10px; border-radius: var(--radius-sm); background: var(--color-bg); border: 1px solid var(--color-border); font-size: var(--text-sm); }
+.keycard { display: grid; gap: var(--space-2); padding: var(--space-3); }
+.keybig { display: flex; align-items: center; gap: var(--space-2); }
+.keybig .pkey { height: 28px; min-width: 52px; padding: 0 8px; font-size: var(--text-md); letter-spacing: .04em; }
+.keybig .pkey.empty { background: var(--color-surface-2); color: var(--color-muted); }
+.keybig b { font-size: var(--text-md); }
+.ex { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px var(--space-3); font-size: var(--text-sm); }
+.ex .k { font-family: var(--font-mono); font-weight: var(--weight-semibold); }
+.ex .t { color: var(--color-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.callout ul { margin: 4px 0 0; padding-left: 16px; }
+.blocked { max-width: 560px; margin: var(--space-5) auto; text-align: center; display: grid; gap: var(--space-2); justify-items: center; padding: var(--space-5); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.blocked h2 { margin: 0; font-size: var(--text-md); }
+.blocked p { margin: 0; font-size: var(--text-sm); color: var(--color-muted); }
+@media (max-width: 1100px) { .cols { grid-template-columns: minmax(0, 1fr); } .rail-stack { position: static; } }
+@media (max-width: 900px) { .form { grid-template-columns: minmax(0, 1fr); } .form > .lbl { padding-bottom: 0; border-bottom: 0; } .copylist { columns: 1; } }
+</style>
+</head>
+<body>
+<div id="appbar"></div>
+<section class="head" aria-label="New project">
+  <h1>New project</h1>
+  <span class="sm muted">A project is one team: its own backlog, boards, sprints and members</span>
+  <span class="spacer"></span>
+  <span class="sm muted" id="headHint"></span>
+  <a class="btn" href="backlog.html">Cancel</a>
+  <button class="btn primary" type="button" id="btnCreate">Create project</button>
+</section>
+<main class="content" id="content"></main>
+
+<script>
+(() => {
+  const { ME, instance, people, projects, av, esc, toast } = SL;
+  document.getElementById('appbar').outerHTML = SL.appBar('new-project');
+  const $ = id => document.getElementById(id);
+
+  // Keys in use on this install. Projects you're in show their name; others only that they exist.
+  const mine = Object.fromEntries(projects.map(p => [p.key, p.name]));
+  const notMine = ['CORE', 'NEXT', 'HR', 'LEGL', 'CUST'];
+  const taken = k => (mine[k] ? `taken by <b>${esc(mine[k])}</b>` : notMine.includes(k) ? 'taken by another project' : '');
+  // Everyone on this install (the five SHIP people plus others), for + Add people.
+  const others = [['lee', 'Lee Park', 'LP', '#3f7d5a'], ['dana', 'Dana Whitfield', 'DW', '#8a5a2b'], ['ravi', 'Ravi Menon', 'RM', '#5a5fc9'], ['jo', 'Jo Becker', 'JB', '#a3416b']];
+  others.forEach(([id, name, initials, color]) => { people[id] ??= { name, initials, color, email: id + '@larkspur.dev' }; });
+
+  const S = { name: 'Customer Support Hub', key: '', keyEdited: false, desc: '', from: 'defaults', copyFrom: 'SHIP',
+    members: [[ME, 'Admin'], ['mei', 'Member']], q: '', days: [1, 1, 1, 1, 1, 0, 0], sprint: true, start: '2026-10-26', weeks: 2, blocked: false };
+
+  // Name → candidate keys, best first: initials for several words, the first 4 letters for one.
+  function candidates(name) {
+    const w = name.split(/[^A-Za-z]+/).filter(Boolean).map(x => x.toUpperCase());
+    if (!w.length) return [];
+    const c = [];
+    if (w.length > 1) c.push(w.map(x => x[0]).join('').slice(0, 4));
+    c.push(w[0].slice(0, 4));
+    if (w.length > 1) c.push(w[0].slice(0, 2) + w[1].slice(0, 2), w[0][0] + w[1].slice(0, 3));
+    if (w.length > 2) c.push(w[0][0] + w[1][0] + w[2].slice(0, 2));
+    c.push(w[0].slice(0, 3), w.join('').slice(0, 4));
+    return [...new Set(c)].filter(k => k.length >= 2 && k.length <= 4 && !taken(k));
+  }
+  const suggestion = () => candidates(S.name)[0] || '';
+  if (!S.keyEdited) S.key = suggestion();
+  function keyCheck() {
+    const k = S.key, len = k.length >= 2 && k.length <= 4, letters = /^[A-Z]+$/.test(k), t = taken(k);
+    return { len, letters, unique: !t, t, ok: len && letters && !t };
+  }
+
+  const fmt = d => d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+  function sprintDates() {
+    const start = new Date(S.start + 'T12:00'), end = new Date(start);
+    end.setDate(end.getDate() + S.weeks * 7 - 1);
+    while (!S.days[(end.getDay() + 6) % 7] && end > start) end.setDate(end.getDate() - 1); // end on a working day
+    let n = 0; for (const d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) if (S.days[(d.getDay() + 6) % 7]) n++;
+    return { start, end, n };
+  }
+
+  function viewForm() {
+    const kc = keyCheck(), sug = suggestion(), alts = candidates(S.name).filter(k => k !== S.key).slice(0, 3);
+    const copy = projects.find(p => p.key === S.copyFrom);
+    const sd = sprintDates();
+    const memberRows = S.members.map(([id, role]) => `<tr class="item"><td><span class="who">${av(id)}<span><b>${esc(people[id].name)}</b>${id === ME ? ' <small>(you)</small>' : ''}<br><small>${esc(people[id].email)}</small></span></span></td>
+      <td style="width:130px">${id === ME ? '<span class="chip accent">Admin</span>' : `<select class="role-sel" data-role="${id}" aria-label="Role for ${esc(people[id].name)}"><option${role === 'Member' ? ' selected' : ''}>Member</option><option${role === 'Admin' ? ' selected' : ''}>Admin</option></select>`}</td>
+      <td style="width:40px" class="num">${id === ME ? '' : `<button class="ib" type="button" data-rm="${id}" aria-label="Remove ${esc(people[id].name)}">✕</button>`}</td></tr>`).join('');
+    return `<div class="cols">
+      <div class="stack">
+        <section class="panel"><header><h2>Project</h2></header><div class="form">
+          <label class="lbl" for="pname">Name</label><div class="ctl"><input class="field w-md" id="pname" value="${esc(S.name)}" autocomplete="off"><span class="hint">You can rename it any time in Project settings.</span></div>
+          <label class="lbl" for="pkey">Key</label><div class="ctl">
+            <div class="row"><input class="field keyin${kc.ok ? '' : ' bad'}" id="pkey" value="${esc(S.key)}" maxlength="6" spellcheck="false" autocomplete="off" aria-describedby="keyChecks">
+              ${S.key !== sug && sug ? `<button class="btn ghost" type="button" data-key="${sug}">Use suggestion <b class="mono">${sug}</b></button>` : sug ? `<span class="xs muted">Suggested from the name</span>` : ''}
+              <span class="lockline"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path fill="currentColor" d="M5 7V5a3 3 0 0 1 6 0v2h1a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h1Zm1.5 0h3V5a1.5 1.5 0 0 0-3 0v2Z"/></svg>Can't be changed after the project is created</span></div>
+            <ul class="checks" id="keyChecks">
+              <li class="${kc.len ? '' : 'no'}">2 to 4 characters</li>
+              <li class="${kc.letters ? '' : 'no'}">Letters A to Z only, no digits</li>
+              <li class="${kc.unique ? '' : 'no'}">${kc.unique ? 'Not used by another project' : `<b class="mono">${esc(S.key)}</b> is ${kc.t}`}</li></ul>
+            ${alts.length ? `<div class="alts">Other free keys ${alts.map(k => `<button type="button" data-key="${k}">${k}</button>`).join('')}</div>` : ''}
+          </div>
+          <label class="lbl" for="pdesc">Description</label><div class="ctl"><textarea class="field w-lg" id="pdesc" rows="2" placeholder="Optional: what this team works on">${esc(S.desc)}</textarea></div>
+        </div></section>
+
+        <section class="panel"><header><h2>Start from</h2><span class="meta">States and board settings; everything can be changed later</span></header><div class="opts" role="radiogroup" aria-label="Start from">
+          <label class="opt"><input type="radio" name="from" value="defaults"${S.from === 'defaults' ? ' checked' : ''}><b>ShipLean defaults</b>
+            <span class="d">States New · Active · Resolved · Closed · Removed for every type, the default columns on each board, no swimlanes or style rules. Velocity window: last 3 sprints.</span></label>
+          <label class="opt"><input type="radio" name="from" value="copy"${S.from === 'copy' ? ' checked' : ''}><b>Copy settings from a project you're in</b>
+            <span class="d">For a team that should work the same way as another.</span>
+            ${S.from === 'copy' ? `<span class="x"><select class="field" id="copyFrom" style="width:260px" aria-label="Project to copy from">${projects.map(p => `<option value="${p.key}"${p.key === S.copyFrom ? ' selected' : ''}>${p.key} · ${esc(p.name)}</option>`).join('')}</select>
+              <ul class="copylist"><li><b>States</b> for every type${copy.key === 'SHIP' ? ' (Bug Triaged, Task In review)' : ''}</li><li><b>Board settings</b> for Epics, Features and Stories</li><li><b>Taskboard settings</b></li><li><b>Working days</b> and the <b>velocity window</b></li></ul>
+              <span class="hint">Never copied: work items, sprints, members, the Jira connection.</span></span>` : ''}</label>
+        </div></section>
+
+        <section class="panel"><header><h2>Members</h2><span class="meta">${S.members.length} · more can be added later in Project settings</span><span class="spacer"></span>
+          <div class="addwrap"><input class="field" id="addq" type="search" placeholder="+ Add people on ${esc(instance.name)}" value="${esc(S.q)}" autocomplete="off" aria-label="Add people">
+            <div class="pop" id="addpop" hidden></div></div></header>
+          <table class="list"><tbody>${memberRows}</tbody></table>
+        </section>
+
+        <section class="panel"><header><h2>Working days and Sprint 1</h2></header><div class="form">
+          <span class="lbl">Working days</span><div class="ctl"><div class="days" role="group" aria-label="Working days">${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d, i) => `<button type="button" data-day="${i}" aria-pressed="${!!S.days[i]}">${d}</button>`).join('')}</div>
+            <span class="hint">Burndown and sprint dates skip the other days.</span></div>
+          <span class="lbl">First sprint</span><div class="ctl">
+            <label class="check" style="color:var(--color-text)"><input type="checkbox" id="mkSprint"${S.sprint ? ' checked' : ''}> Create Sprint 1</label>
+            ${S.sprint ? `<div class="row"><label class="sm muted" for="sstart">Starts</label><input class="field" type="date" id="sstart" value="${S.start}">
+              <span class="sm muted">for</span><div class="seg" role="group" aria-label="Sprint length">${[1, 2, 3, 4].map(w => `<button type="button" data-weeks="${w}" aria-pressed="${S.weeks === w}">${w} wk</button>`).join('')}</div></div>
+              <div class="sprintline"><b>Sprint 1</b><span>${fmt(sd.start)} – ${fmt(sd.end)}</span><span class="muted">· ${sd.n} working days</span></div>
+              <span class="hint">New sprints copy the length of the one before. Capacity is entered later on the sprint's Capacity tab.</span>`
+              : '<span class="hint">The backlog works without sprints. Create Sprint 1 from Sprints › All sprints when you\'re ready.</span>'}
+          </div>
+        </div></section>
+      </div>
+
+      <div class="stack rail-stack">
+        <section class="panel"><header><h2>Work item keys</h2></header><div class="keycard">
+          <div class="keybig"><span class="pkey${kc.ok ? '' : ' empty'}">${esc(S.key || '?')}</span><b>${esc(S.name || 'Untitled')}</b></div>
+          <div class="ex">${kc.ok ? `<span class="k">${S.key}-1</span><span class="t">your first work item</span><span class="k">${S.key}-2</span><span class="t">the next, and so on</span><span class="k">${S.key}-142</span><span class="t">in links, commits and chat</span>` : '<span class="t" style="grid-column:1/-1">Fix the key to see work item keys.</span>'}</div>
+        </div></section>
+        <div class="callout warn"><b>The key is permanent</b>It's part of every work item key and every link to one, so ShipLean never changes it. Pick something people will happily say out loud.</div>
+        <div class="callout"><b>After you create it</b><ul><li>You're its Admin.</li><li>It opens on the empty Stories backlog.</li><li>Coming from Jira? <a href="import.html">Import from Jira</a> creates the project and keeps issue numbers.</li></ul></div>
+      </div>
+    </div>`;
+  }
+
+  const viewBlocked = () => `<div class="blocked"><h2>Only instance admins can create projects here</h2>
+      <p>${esc(instance.name)} is set so that new projects come from an admin. Ask ${instance.admins.map(a => esc(people[a].name)).join(' or ')}, and tell them the name and key you'd like.</p>
+      <div class="row" style="justify-content:center"><a class="btn" href="backlog.html">Back to SHIP</a></div></div>`;
+
+  function render() {
+    const focus = document.activeElement?.id, caret = document.activeElement?.selectionStart;
+    if (!S.keyEdited) S.key = suggestion();
+    $('content').innerHTML = S.blocked ? viewBlocked() : viewForm();
+    const kc = keyCheck(), ok = kc.ok && S.name.trim();
+    $('btnCreate').hidden = S.blocked;
+    $('btnCreate').disabled = !ok;
+    $('btnCreate').textContent = kc.ok ? `Create ${S.key}` : 'Create project';
+    $('headHint').textContent = S.blocked ? '' : !S.name.trim() ? 'Give the project a name' : kc.ok ? '' : 'Fix the key to continue';
+    if (focus && $(focus)) { $(focus).focus(); if (caret != null && $(focus).setSelectionRange) try { $(focus).setSelectionRange(caret, caret); } catch {} }
+    drawPop();
+  }
+
+  function drawPop() {
+    const pop = $('addpop'); if (!pop) return;
+    const q = S.q.trim().toLowerCase();
+    if (!q) { pop.hidden = true; return; }
+    const ids = Object.keys(people).filter(id => !S.members.some(m => m[0] === id) && (people[id].name.toLowerCase().includes(q) || people[id].email.includes(q)));
+    pop.innerHTML = ids.length ? ids.map(id => `<button type="button" data-add="${id}">${av(id)}<span>${esc(people[id].name)} <span class="xs muted">${esc(people[id].email)}</span></span></button>`).join('') : `<div class="none">Nobody on ${esc(instance.name)} matches. An instance admin adds new people.</div>`;
+    pop.hidden = false;
+  }
+
+  const content = $('content');
+  content.addEventListener('input', e => {
+    const t = e.target;
+    if (t.id === 'pname') { S.name = t.value; render(); }
+    else if (t.id === 'pkey') { S.key = t.value.toUpperCase().trim(); S.keyEdited = S.key !== ''; render(); }
+    else if (t.id === 'pdesc') S.desc = t.value;
+    else if (t.id === 'addq') { S.q = t.value; drawPop(); }
+  });
+  content.addEventListener('change', e => {
+    const t = e.target;
+    if (t.name === 'from') { S.from = t.value; render(); }
+    else if (t.id === 'copyFrom') { S.copyFrom = t.value; render(); }
+    else if (t.dataset.role) { S.members.find(m => m[0] === t.dataset.role)[1] = t.value; }
+    else if (t.id === 'mkSprint') { S.sprint = t.checked; render(); }
+    else if (t.id === 'sstart') { S.start = t.value || S.start; render(); }
+  });
+  content.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.key) { S.key = b.dataset.key; S.keyEdited = b.dataset.key !== suggestion(); render(); }
+    else if (b.dataset.day) { const i = +b.dataset.day; if (S.days[i] && S.days.filter(Boolean).length === 1) return toast('Keep at least one working day'); S.days[i] = S.days[i] ? 0 : 1; render(); }
+    else if (b.dataset.weeks) { S.weeks = +b.dataset.weeks; render(); }
+    else if (b.dataset.add) { S.members.push([b.dataset.add, 'Member']); S.q = ''; render(); $('addq').focus(); }
+    else if (b.dataset.rm) { S.members = S.members.filter(m => m[0] !== b.dataset.rm); render(); }
+  });
+  $('btnCreate').onclick = () => {
+    toast(`Created <b>${S.key}</b> · ${esc(S.name)}. Opening its backlog`);
+    setTimeout(() => { location.href = 'backlog.html?empty'; }, 1100);
+  };
+  render();
+
+  SL.preview([
+    { label: 'Taken key (yours)', run: () => { S.blocked = false; S.key = 'PAY'; S.keyEdited = true; render(); } },
+    { label: 'Taken key (not yours)', run: () => { S.blocked = false; S.key = 'CORE'; S.keyEdited = true; render(); } },
+    { label: 'Copy from SHIP', run: () => { S.blocked = false; S.from = 'copy'; render(); } },
+    { label: 'Not allowed to create', run: () => { S.blocked = !S.blocked; render(); } },
+  ]);
+})();
+</script>
+</body>
+</html>

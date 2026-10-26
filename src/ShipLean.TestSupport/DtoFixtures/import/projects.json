@@ -1,0 +1,25 @@
+[
+  {
+    "key": "PLATFORM",
+    "name": "Platform Team",
+    "issueCount": 1342,
+    "importedAs": null
+  },
+  {
+    "key": "INFRA",
+    "name": "Infrastructure",
+    "issueCount": 1077,
+    "importedAs": null
+  },
+  {
+    "key": "MOBILE",
+    "name": "Mobile App",
+    "issueCount": 1284,
+    "importedAs": {
+      "projectKey": "MOB",
+      "jobId": "00000006-0000-4000-8000-000000000001",
+      "finishedAt": "2026-10-22T09:14:00+00:00",
+      "finishedLabel": "22 Oct"
+    }
+  }
+]

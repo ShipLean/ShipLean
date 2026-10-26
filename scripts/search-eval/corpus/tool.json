@@ -1,0 +1,2209 @@
+{
+  "project": {
+    "ref": "tool",
+    "key": "TOOL",
+    "name": "Platform Tools",
+    "description": "Internal engineering tools at a mid-sized software company: the continuous integration pipeline and runner fleet, deploys and releases, cloud infrastructure and secrets, and the observability and command-line tools engineers use every day. Some tickets are written in German, Spanish, Thai and Japanese by the teams that own them."
+  },
+  "sprints": [
+    {
+      "ref": "tool-s1",
+      "name": "Sprint 1 - Faster pipelines",
+      "goal": "Median time to green falls under fifteen minutes through caching, bigger runner capacity and test selection in shadow mode",
+      "startDate": "2026-10-05",
+      "endDate": "2026-10-16"
+    },
+    {
+      "ref": "tool-s2",
+      "name": "Sprint 2 - Safe deploys",
+      "goal": "Canary rollouts with automatic reversal, a deploy bot with approvals and gated migrations work for the first services",
+      "startDate": "2026-10-19",
+      "endDate": "2026-10-30"
+    },
+    {
+      "ref": "tool-s3",
+      "name": "Sprint 3 - Infrastructure as code and secrets",
+      "goal": "Drift is reported nightly, pipelines use short-lived credentials and preview environments exist for pull requests",
+      "startDate": "2026-11-02",
+      "endDate": "2026-11-13"
+    },
+    {
+      "ref": "tool-s4",
+      "name": "Sprint 4 - Observability and clean-up",
+      "goal": "Logs are sampled and traced across queues, pages route to owners and the command-line tool works on every platform",
+      "startDate": "2026-11-16",
+      "endDate": "2026-11-27"
+    }
+  ],
+  "items": [
+    {
+      "ref": "tool-001",
+      "type": "epic",
+      "title": "Continuous integration pipeline",
+      "description": "The pipeline that every engineer waits on dozens of times a day: checkout, build, test, lint and publish. Median time from push to a green check is currently just over twenty-two minutes, and the slowest tenth of runs take more than fifty. This epic collects the work that brings the median under ten minutes without making the results less trustworthy.\n\nWe judge it by three numbers on the pipeline dashboard: median and p90 time to green, the share of red runs that turn out to be infrastructure rather than code, and the number of reruns per merged change. Individual features below each own one of the levers: caching, runner capacity, test selection and pre-merge checks.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "ci"
+      ],
+      "state": "Active",
+      "sprintRef": "tool-s1",
+      "comments": []
+    },
+    {
+      "ref": "tool-002",
+      "type": "feature",
+      "title": "Remote build cache",
+      "description": "Share build outputs between runners so that a step whose inputs have not changed is skipped rather than repeated. Today every job starts from a cold workspace and recompiles the world, which accounts for roughly half of the pipeline's wall-clock time.\n\nThe cache is a content-addressed store in object storage behind a small HTTP front end. Entries are immutable once written, keyed by a hash of the step's inputs, and evicted by last use. The feature covers the key scheme, eviction, integrity guarantees and the metrics needed to see whether it is working.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "ci",
+        "cache"
+      ],
+      "state": "Active",
+      "parentRef": "tool-001",
+      "sprintRef": "tool-s1",
+      "comments": []
+    },
+    {
+      "ref": "tool-003",
+      "type": "story",
+      "title": "Content-addressed cache keys for build steps",
+      "description": "Derive the cache key for each build step from a hash of everything the step reads: the source files it lists, the toolchain version, the relevant environment variables and the keys of the steps it depends on. Two runs with the same inputs must produce the same key on any runner, regardless of checkout path or username.\n\nPaths are normalised to be relative to the repository root before hashing, and file modification times are ignored. Environment variables are only included if the step declares them, so an unrelated variable such as the runner hostname never changes a key.",
+      "acceptanceCriteria": [
+        "The same commit built on two different runners produces identical keys",
+        "Changing a comment-only file the step does not list leaves the key unchanged",
+        "Bumping the compiler version changes every key that uses it",
+        "The key and its inputs are printed in the job log at debug level"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "ci",
+        "cache"
+      ],
+      "state": "Closed",
+      "parentRef": "tool-002",
+      "sprintRef": "tool-s1",
+      "comments": [
+        {
+          "ref": "tool-c01",
+          "body": "Merged. The key printout turned out to be the most useful part when people ask why a step reran.",
+          "archived": false
+        },
+        {
+          "ref": "tool-c02",
+          "body": "Follow-up: lockfile hashing is order-sensitive on Windows runners, tracked separately once we have any.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-004",
+      "type": "story",
+      "title": "Evict stale cache entries by last-use time",
+      "description": "The cache bucket grows by roughly forty gigabytes a week and nothing ever leaves it. Add an eviction pass that removes entries not read for fourteen days, while never removing an entry that a currently running job has announced it is about to read.\n\nThe front end records a last-read timestamp in object metadata whenever it serves a hit. A nightly compactor lists entries, applies the age cutoff and deletes in batches of a thousand. Deletion must be resumable: if the compactor is killed halfway, the next pass picks up where it stopped instead of starting over from the beginning of a very large listing.\n\nReading metadata for millions of objects is slow, so the compactor keeps its own index of key, size and last read in a small embedded database that is refreshed from the bucket inventory report once a day rather than by listing.\n\nOne subtlety found while testing against a copy of production: if the compactor is stopped between reading the index and deleting, the object may have been read again in the meantime. The compactor therefore writes a tombstone file beside each candidate before deleting it, and the front end refuses to serve an object that has a tombstone, treating it as a miss. Tombstones older than an hour with the object still present are removed by the next pass, which restores the entry.\n\nCapacity planning note: with the fourteen day cutoff the steady-state size is estimated at about 520 GB, and the bucket lifecycle rule that moves untouched objects to cold storage after thirty days becomes redundant, so it is removed in the same change to avoid two systems deleting the same data.",
+      "acceptanceCriteria": [
+        "Entries unread for 14 days are removed by the nightly pass",
+        "An entry read during the pass is never deleted",
+        "A pass killed halfway resumes without relisting the whole bucket",
+        "Bucket size is graphed and levels off within two weeks"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "ci",
+        "cache",
+        "storage"
+      ],
+      "state": "Closed",
+      "parentRef": "tool-002",
+      "sprintRef": "tool-s1",
+      "comments": []
+    },
+    {
+      "ref": "tool-005",
+      "type": "bug",
+      "title": "Cache entry written by a cancelled job is reused as complete",
+      "description": "After a job is cancelled while uploading its outputs, the next job that computes the same key gets a cache hit and then fails with confusing errors, because the archive it downloads is truncated. The failures look like flaky tests or a corrupt toolchain and have wasted real debugging time on at least three occasions.\n\nThe front end accepts a multipart upload and makes the object visible as soon as the first part lands. A cancelled job leaves the object behind with only the parts that arrived. Entries must only become visible once the full upload is committed, and a checksum should be verified on read as a second line of defence.\n\nCancellation is more common than it sounds: the pipeline cancels superseded runs on the same branch whenever a newer push arrives, so any developer who pushes twice in a minute can leave a partial entry behind.\n\nA second source of the same symptom is the retry wrapper around the upload client. When the wrapper retries a failed part it reuses the upload identifier, but if the first attempt had actually reached the server the retry can append the same part twice. The archive then has the correct length but the wrong content, so a length check alone would not have caught it. Verifying the SHA-256 recorded in the manifest on every download closes both cases.\n\nFor the purge of existing entries we wrote a one-off script that walks the bucket, downloads only the last megabyte of each archive and checks for a valid end-of-archive marker; entries that fail are deleted and counted. About 0.4 percent of entries were bad, concentrated in the week the proxy timeouts were worst.",
+      "acceptanceCriteria": [
+        "An upload cancelled midway is never served as a hit",
+        "A download whose checksum does not match the manifest is treated as a miss and logged",
+        "Retrying a part cannot duplicate content in the archive"
+      ],
+      "reproSteps": "1. Start a job that produces an archive larger than 500 MB.\n2. Cancel the run while the upload step is at around 30 percent.\n3. Push again so a new run computes the same cache key.\n4. The new run reports a cache hit, downloads a short archive, and fails during extraction with unexpected end of file.",
+      "tags": [
+        "ci",
+        "cache",
+        "data-integrity"
+      ],
+      "state": "Closed",
+      "parentRef": "tool-002",
+      "sprintRef": "tool-s1",
+      "comments": [
+        {
+          "ref": "tool-c03",
+          "body": "Reproduced with the 600 MB toolchain bundle; the object is visible after cancellation with two of five parts.",
+          "archived": false
+        },
+        {
+          "ref": "tool-c04",
+          "body": "Fixed by committing the manifest last and checking it on read. Old truncated entries were purged by hand.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-006",
+      "type": "task",
+      "title": "Add hit-rate gauge to the cache dashboard",
+      "description": "Publish the cache hit rate per pipeline step as a gauge and chart it on the pipeline dashboard, split by branch type (default branch, pull request, release). Include the bytes served from cache so that we can estimate network savings. The numbers come from the front end's access log, aggregated once a minute.\n\nThe dashboard panel should show the last seven days by default and allow a drill-down to a single step, since the aggregate hides the one slow step that matters. Alert thresholds are deliberately not part of this task; we want a few weeks of data before deciding what a bad hit rate looks like.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "ci",
+        "cache",
+        "metrics"
+      ],
+      "state": "Closed",
+      "parentRef": "tool-003",
+      "sprintRef": "tool-s1",
+      "comments": []
+    },
+    {
+      "ref": "tool-007",
+      "type": "bug",
+      "title": "Cache upload times out on large artifacts behind the proxy",
+      "description": "Uploads of archives bigger than about two gigabytes fail after exactly one hundred and twenty seconds with a gateway timeout, even though bytes are flowing. The same upload succeeds when run from a laptop on the office network, so the corporate egress proxy is the likely culprit.\n\nThe proxy applies an idle timeout to the connection, and our client sends one large part at a time with no progress until the part completes. Smaller parts or periodic keep-alive requests should avoid the problem. We need to confirm which and write down the part size so that nobody changes it back.",
+      "acceptanceCriteria": [],
+      "reproSteps": "Upload a 3 GB archive from any runner in the ci-west pool with the default part size of 512 MB. The request fails at 120 s with a 504 from the egress proxy.",
+      "tags": [
+        "ci",
+        "cache",
+        "network"
+      ],
+      "state": "Closed",
+      "parentRef": "tool-002",
+      "sprintRef": "tool-s2",
+      "comments": [
+        {
+          "ref": "tool-c05",
+          "body": "Dropping the part size to 64 MB makes the failure disappear in a quick test, but throughput halves. Trying 128 MB next.",
+          "archived": false
+        },
+        {
+          "ref": "tool-c06",
+          "body": "With 128 MB parts the 3 GB upload completes in 41 seconds and the proxy stays quiet. Throughput is within ten percent of the old setting.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-008",
+      "type": "feature",
+      "title": "Self-hosted runner fleet",
+      "description": "Run jobs on machines we control rather than on rented capacity, so that builds can reach internal registries, use warm caches on local disks and not queue behind other companies' work. The fleet is a pool of virtual machines created from a golden image and registered with the scheduler when they boot.\n\nThis feature owns the lifecycle of those machines: how many exist, what is installed on them, how they are cleaned between jobs, and how we notice when one is unhealthy.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "ci",
+        "runners"
+      ],
+      "state": "Active",
+      "parentRef": "tool-001",
+      "sprintRef": "tool-s1",
+      "comments": []
+    },
+    {
+      "ref": "tool-009",
+      "type": "story",
+      "title": "Autoscale runners from queue depth",
+      "description": "The fleet is a fixed forty machines. At ten in the morning the queue is empty, at three in the afternoon jobs wait twelve minutes for a machine, and at night thirty of the forty sit idle. Scale the pool between ten and eighty machines based on the number of queued jobs and how long the oldest has been waiting.\n\nThe scaler runs every thirty seconds, reads the queue from the scheduler API and adjusts the desired size of the instance group. It scales out quickly (up to ten machines per cycle) and scales in slowly (one machine per five minutes, and only machines that have been idle for at least ten minutes). A machine that is running a job is never terminated.\n\nBoot time matters: a machine from the golden image needs about ninety seconds to register, so the scaler should look slightly ahead by adding capacity when the queue is growing, not only when it is already long. We keep a small warm pool of five machines overnight so that the first push of the morning does not wait for a boot.\n\nCost guardrails are part of the story. The scaler refuses to exceed the configured maximum, emits a metric whenever it is pinned at the maximum, and posts to the infra channel if the maximum has been reached for more than twenty minutes, since that usually means a runaway workflow rather than real demand.\n\nRejected alternatives: scaling on CPU utilisation of the fleet (lags the queue badly), and per-job ephemeral machines (boot cost per job is too high for our many short jobs). A prediction model using the previous week's pattern was discussed and postponed; the simple rule-based scaler may be good enough, and the usage graphs will tell us.",
+      "acceptanceCriteria": [
+        "Pool size follows queue depth between 10 and 80 machines",
+        "A machine running a job is never terminated by scale-in",
+        "Five warm machines remain overnight",
+        "Reaching the maximum for 20 minutes posts to the infra channel",
+        "Median queue wait at peak is under 90 seconds"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "ci",
+        "runners",
+        "scaling"
+      ],
+      "state": "Active",
+      "parentRef": "tool-008",
+      "sprintRef": "tool-s1",
+      "comments": [
+        {
+          "ref": "tool-c07",
+          "body": "Staging run with the scaler in dry-run mode shows it would have grown the pool to 52 at the 15:00 peak last Tuesday.",
+          "archived": false
+        },
+        {
+          "ref": "tool-c08",
+          "body": "Scale-in cooldown made configurable after it was too eager in the first trial.",
+          "archived": false
+        },
+        {
+          "ref": "tool-c09",
+          "body": "Graph of pool size against queue depth for one week is pinned to the top of the thread.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-010",
+      "type": "story",
+      "title": "Weekly golden image build for runners",
+      "description": "Build a new runner image every Sunday night with the latest operating system patches, toolchains and the language package caches pre-seeded. The image is tested by booting one machine from it and running the smoke pipeline before the pool is switched over. Keep the three most recent images so that a bad one can be rolled back by changing a single variable.\n\nThe build is itself a pipeline job that runs on a small dedicated machine, never on the pool it is replacing. It records package versions in a manifest stored next to the image so that when a job starts failing after a switch, comparing two manifests shows what changed in minutes rather than hours.",
+      "acceptanceCriteria": [
+        "A new image is built and smoke-tested every Sunday",
+        "The pool switches to the new image only after the smoke pipeline passes",
+        "The previous two images remain available for rollback"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "ci",
+        "runners",
+        "images"
+      ],
+      "state": "Closed",
+      "parentRef": "tool-008",
+      "sprintRef": "tool-s1",
+      "comments": []
+    },
+    {
+      "ref": "tool-011",
+      "type": "bug",
+      "title": "Runners fill their disks and jobs fail with no space left on device",
+      "description": "Roughly twice a week a runner reports no space left on device in the middle of a job. The job is retried on another machine and succeeds, so the failure looks like noise, but each occurrence costs a developer ten minutes and masks genuine problems in the failure statistics.\n\nLooking at an affected machine shows the docker data directory using almost the entire two hundred gigabyte volume. Images and build layers accumulate because nothing prunes them, and the workspace cleanup step only removes the checkout directory.\n\nPruning on every job would destroy the warm layers that make builds fast, so the policy needs to be smarter: keep layers used in the last three days, prune the rest when the volume passes seventy percent, and always prune dangling images.\n\nWhile investigating we also found that the test containers write their coverage output into a bind-mounted directory that is never removed, which adds around a gigabyte per day on busy machines. Cleanup of that directory belongs in the same fix.\n\nA final cause is specific to the nightly integration job: it starts a database container with a named volume and relies on the pipeline's post-step to remove it. When the job is cancelled the post-step is skipped and the volume survives. The cleanup script now removes volumes whose names start with ci-it- and that are older than a day, which accounts for the stubborn few gigabytes that remained after the other fixes.\n\nWe also changed the machine sizing: the data volume is now 300 GB for the pool used by the monorepo, which gives the pruning policy more room and means the seventy percent threshold is reached about every third day instead of daily.",
+      "acceptanceCriteria": [
+        "No runner reports a full disk for two weeks",
+        "Layers used in the last three days survive cleanup",
+        "Bind-mounted coverage directories are removed after each job",
+        "Orphaned ci-it- volumes older than a day are deleted"
+      ],
+      "reproSteps": "1. Pick a runner that has been up for more than a week (df -h /var/lib/docker shows over 90 percent).\n2. Queue a job that pulls a large base image.\n3. The pull fails with no space left on device and the job is marked failed.",
+      "tags": [
+        "ci",
+        "runners",
+        "disk"
+      ],
+      "state": "Resolved",
+      "parentRef": "tool-008",
+      "sprintRef": "tool-s2",
+      "comments": [
+        {
+          "ref": "tool-c10",
+          "body": "Checked eight machines: the median docker directory is 171 GB, the biggest single consumer is untagged intermediate layers.",
+          "archived": false
+        },
+        {
+          "ref": "tool-c11",
+          "body": "Deployed the cleanup script through the image; disk alerts have been quiet for six days.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-012",
+      "type": "task",
+      "title": "Prune docker layers older than three days on idle runners",
+      "description": "Add a systemd timer to the runner image that runs the layer pruning script when the volume passes seventy percent and the machine has no job. The script keeps layers used within three days and always removes dangling images. Log the number of bytes reclaimed.\n\nThe script must be safe to run while the machine is registering for work, so it takes the same lock file the agent uses before accepting a job. A dry-run flag prints what would be removed, which is how the first rollout was checked on three machines before the timer was enabled everywhere.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "ci",
+        "runners",
+        "disk"
+      ],
+      "state": "Closed",
+      "parentRef": "tool-011",
+      "sprintRef": "tool-s2",
+      "comments": []
+    },
+    {
+      "ref": "tool-013",
+      "type": "task",
+      "title": "Alert when free disk on a runner drops below 15 percent",
+      "description": "Create a monitoring rule that pages the infra channel, not the on-call, when any runner's data volume has less than fifteen percent free for ten minutes. Include the machine name and the three biggest directories in the message if the agent can supply them.\n\nRoute to the infra channel with a link to the machine page. Pages at night are not wanted for this; the autoscaler will usually replace a sick machine before anyone wakes up, so the alert is for daytime visibility and for catching a pattern across many machines.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "ci",
+        "runners",
+        "monitoring"
+      ],
+      "state": "Closed",
+      "parentRef": "tool-011",
+      "sprintRef": "tool-s2",
+      "comments": []
+    },
+    {
+      "ref": "tool-014",
+      "type": "story",
+      "title": "Label runners by architecture and GPU",
+      "description": "Add scheduler labels for arm64 and for the two machines with a graphics card so that jobs can target them. Removed because the arm64 and GPU work is moving to the shared cluster team's pool and we no longer operate those machines.\n\nOriginal scope also included a label for machines with extra memory, which is still wanted and is tracked under the memory sizing work instead. Nothing was built before this was removed, so there is nothing to clean up.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "ci",
+        "runners"
+      ],
+      "state": "Removed",
+      "parentRef": "tool-008",
+      "sprintRef": "tool-s1",
+      "comments": []
+    },
+    {
+      "ref": "tool-015",
+      "type": "bug",
+      "title": "Los despliegues de la noche fallan por falta de memoria en el runner",
+      "description": "Desde la semana pasada, el trabajo nocturno que empaqueta la aplicación y la despliega en el entorno de pruebas termina casi todas las noches con el error \"Killed\" y el código de salida 137. Durante el día el mismo trabajo funciona sin problemas, así que al principio pensamos que era un fallo puntual de la red.\n\nAl revisar las métricas de la máquina vimos que a las dos de la madrugada coinciden tres trabajos pesados en el mismo runner: el empaquetado, la compilación completa del repositorio de la web y el análisis estático. Cada uno reserva varios gigas y el kernel termina el proceso más grande, que casi siempre es el empaquetado.\n\nPropuestas: limitar la concurrencia a dos trabajos en las máquinas de 16 GB, escalonar los horarios de los trabajos programados y, a medio plazo, mover el análisis estático a su propio grupo de máquinas con más memoria.",
+      "acceptanceCriteria": [
+        "El trabajo nocturno termina en verde durante una semana seguida",
+        "Ninguna máquina de 16 GB ejecuta más de dos trabajos pesados a la vez"
+      ],
+      "reproSteps": "1. Programar el empaquetado, la compilación de la web y el análisis estático a las 02:00.\n2. Esperar a que el planificador los asigne al mismo runner.\n3. El empaquetado termina con el código 137 y el registro del kernel muestra el aviso de memoria agotada.",
+      "tags": [
+        "ci",
+        "runners",
+        "memoria"
+      ],
+      "state": "Active",
+      "parentRef": "tool-008",
+      "sprintRef": "tool-s2",
+      "comments": []
+    },
+    {
+      "ref": "tool-016",
+      "type": "bug",
+      "title": "夕方になるとCIの待ち行列が長くなる",
+      "description": "平日の17時から19時ごろにかけて、ジョブの待ち時間が急に伸びる現象が続いています。朝は数秒で始まるジョブが、この時間帯には10分以上待たされることがあり、帰宅前に修正を確認したい開発者から不満が出ています。\n\n調べたところ、この時間帯は各チームがその日の作業をまとめてプッシュするため、短いジョブが一斉に投入されます。ランナーの台数は固定で、自動拡張の仕組みもまだ動いていないため、待ち行列がそのまま延びてしまいます。さらに、夜間用の予備マシンが17時に停止される設定になっているのも原因の一つでした。\n\nまず予備マシンの停止時刻を21時に変更し、次に待ち行列の長さに応じた台数調整が入るまでの暫定措置として、夕方だけ台数を増やす予約スケジュールを入れる予定です。\n\n参考として、先週の17時から19時までの待ちジョブ数と待ち時間の推移を、グラフにしてこのチケットに添付する予定です。",
+      "acceptanceCriteria": [
+        "17時から19時の平均待ち時間が2分以内になる",
+        "予備マシンの停止時刻が21時に変更されている"
+      ],
+      "reproSteps": "1. 平日の夕方17時30分に、複数のリポジトリから同時にプッシュする。\n2. スケジューラーの画面でキューにあるジョブ数を確認する。\n3. 先頭のジョブが10分以上開始されない。",
+      "tags": [
+        "ci",
+        "runners",
+        "待ち時間"
+      ],
+      "state": "New",
+      "parentRef": "tool-008",
+      "sprintRef": "tool-s2",
+      "comments": [
+        {
+          "ref": "tool-c12",
+          "body": "先週の記録では、18時10分に待ちジョブが94件まで増えていました。",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-017",
+      "type": "feature",
+      "title": "Test selection and flaky test handling",
+      "description": "Most pull requests touch a handful of files yet trigger the entire test suite, which takes eighteen minutes on its own. Separately, a small set of unreliable tests fails often enough that people have learned to press rerun without reading the output. This feature attacks both: run less when less is enough, and stop unreliable tests from eroding trust in the signal.\n\nThe two halves of this feature share a data source: every test result, with its attempts and its duration, is stored per commit. The selection service uses it to learn which tests are slow and which never fail, and the quarantine rule uses it to find tests that fail and recover. Keeping one store avoids two inconsistent views of the same suite.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "ci",
+        "tests"
+      ],
+      "state": "Active",
+      "parentRef": "tool-001",
+      "sprintRef": "tool-s1",
+      "comments": []
+    },
+    {
+      "ref": "tool-018",
+      "type": "story",
+      "title": "Run only tests affected by the changed paths",
+      "description": "Build a dependency map from source paths to test targets so that a pull request which changes only the billing module runs the billing tests and the tests of everything that depends on billing, instead of the whole suite. The default branch and release branches always run everything.\n\nThe map is generated from the build graph on every merge to the default branch and stored beside the cache. On a pull request the pipeline asks the map service for the set of targets reachable from the changed files, then passes that set to the test runner.\n\nSafety comes before speed. If the map is older than a day, if the change touches a file the map does not know, or if the change modifies the build configuration itself, the pipeline falls back to the full suite and says so in the job summary. A false negative, where a broken test is skipped and merges, is far worse than a slow run, so the service errs on the side of selecting more.\n\nRollout is gradual: first the selection is computed and logged but the full suite still runs, and a comparison job reports every test that failed in the full run but was not selected. We turn selection on for a repository only after a month of zero misses.\n\nGenerated code needs a special rule. The protocol buffer stubs are produced from schema files, and a change to a schema file affects every consumer of the generated types even though no source file in those consumers changed. The map treats the schema directory as a root with edges to every generated target, so that editing a schema selects the consumers' tests. Without that rule our first shadow run missed the contract tests entirely.",
+      "acceptanceCriteria": [
+        "A change confined to one module selects that module and its dependants",
+        "Config and unknown file changes fall back to the full suite with a visible note",
+        "Shadow mode reports every full-suite failure that selection would have missed",
+        "Schema directory changes select all generated consumers"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "ci",
+        "tests",
+        "speed"
+      ],
+      "state": "Active",
+      "parentRef": "tool-017",
+      "sprintRef": "tool-s1",
+      "comments": [
+        {
+          "ref": "tool-c13",
+          "body": "The shadow job is running on three repositories; zero misses in the first nine days.",
+          "archived": false
+        },
+        {
+          "ref": "tool-c14",
+          "body": "Build graph export takes four minutes on the monorepo. Moved it to run in parallel with the cache upload so it adds nothing to the merge pipeline.",
+          "archived": false
+        },
+        {
+          "ref": "tool-c15",
+          "body": "Proposal to drop the one-month shadow period was rejected; keep it.",
+          "archived": true
+        }
+      ]
+    },
+    {
+      "ref": "tool-019",
+      "type": "story",
+      "title": "Quarantine flaky tests automatically",
+      "description": "When a test fails and then passes on retry in the same run, record it. After three such events in seven days the test moves to a quarantine list: it still runs and still reports, but its failure no longer fails the build. A ticket is opened for the owning team with the failure history, and the test leaves quarantine only when its owner marks it fixed and it passes fifty consecutive runs.\n\nThe quarantine list is a plain file in the repository so that adding and removing entries is reviewed like any other change.",
+      "acceptanceCriteria": [
+        "Three retry-then-pass events in seven days quarantines a test",
+        "A quarantined test still runs and reports",
+        "A ticket with the failure history is opened for the owning team",
+        "The list is a reviewed file in the repository"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "ci",
+        "tests",
+        "flaky"
+      ],
+      "state": "Closed",
+      "parentRef": "tool-017",
+      "sprintRef": "tool-s1",
+      "comments": [
+        {
+          "ref": "tool-c16",
+          "body": "Initial idea was to skip quarantined tests entirely. Dropped: skipping hides regressions in exactly the tests that matter.",
+          "archived": true
+        },
+        {
+          "ref": "tool-c17",
+          "body": "Live on the web repo. Eleven tests quarantined in the first week, six of them already fixed.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-020",
+      "type": "bug",
+      "title": "Date tests fail only between 23:00 and 01:00 UTC",
+      "description": "Several date-handling tests fail on runs that start late in the evening UTC and pass at any other time. They build an expected value from the local date and compare it with a value produced by the code under test using UTC, so for two hours a day the two disagree by one day.\n\nThe fix is to inject a fixed clock into the code under test and stop reading the system clock in the tests. We should also add a lint rule that rejects direct calls to the system clock in test files so that the pattern does not come back.",
+      "acceptanceCriteria": [],
+      "reproSteps": "Set the runner clock to 23:30 UTC and run the invoices test group. The statement-period tests report an expected date one day earlier than the actual.",
+      "tags": [
+        "ci",
+        "tests",
+        "flaky"
+      ],
+      "state": "Closed",
+      "parentRef": "tool-017",
+      "sprintRef": "tool-s1",
+      "comments": [
+        {
+          "ref": "tool-c18",
+          "body": "Fixed in the invoices group; the lint rule found nine more offenders, all fixed in one sweep.",
+          "archived": false
+        },
+        {
+          "ref": "tool-c19",
+          "body": "Not a runner clock problem; the test used the machine's local zone while the code used UTC.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-021",
+      "type": "bug",
+      "title": "Test report merges double-count retried tests",
+      "description": "When the runner retries a failed test, the XML report contains both the failed and the passed attempt, and the report merger counts them as two tests. The test count on the pull request summary jumps by a few and the pass-rate chart shows phantom failures. The merger should keep only the last attempt per test identifier and record the number of attempts as a property.\n\nThe same defect affects the duration totals: a test retried twice contributes three times its runtime, so the slowest-tests chart on the dashboard lists retried tests as the slowest in the suite. Fixing the merger fixes both numbers, and a regression test should feed it a report with a retry and assert the counts.",
+      "acceptanceCriteria": [],
+      "reproSteps": "Run a suite with one deliberately flaky test and retries enabled. Compare the totals on the summary with the number of tests in the suite.",
+      "tags": [
+        "ci",
+        "tests",
+        "reporting"
+      ],
+      "state": "New",
+      "parentRef": "tool-017",
+      "sprintRef": "tool-s2",
+      "comments": []
+    },
+    {
+      "ref": "tool-022",
+      "type": "task",
+      "title": "Retry failed tests once and record both results",
+      "description": "Configure the test runner to retry each failed test a single time and write both attempts to the report with an attempt number. This is the input for the quarantine rule, so the attempt number must survive the report merger.\n\nThe runner flag differs between the unit and integration suites; the integration suite also needs its database reset between attempts, otherwise the second attempt fails for a different reason and the record is misleading. Both suites should write the attempt number into the same XML attribute.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "ci",
+        "tests"
+      ],
+      "state": "Closed",
+      "parentRef": "tool-019",
+      "sprintRef": "tool-s1",
+      "comments": []
+    },
+    {
+      "ref": "tool-023",
+      "type": "story",
+      "title": "Coverage gate comments on the pull request instead of failing",
+      "description": "A hard coverage threshold made people write meaningless tests to get past it. Replace it with a comment on the pull request that shows the change in coverage for the files touched, highlights uncovered new lines and links to the full report. The check passes regardless of the number, but reviewers see it.\n\nThe comment is edited in place on each push rather than adding a new one, and collapses when coverage on touched files has not dropped. We tried posting only when coverage fell, but people then assumed a missing comment meant a missing check, so the comment is always present and short when there is nothing to say.",
+      "acceptanceCriteria": [
+        "A comment lists coverage change per touched file",
+        "Uncovered new lines are highlighted in the diff view",
+        "The check never blocks a merge on the number alone"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "ci",
+        "coverage"
+      ],
+      "state": "Closed",
+      "parentRef": "tool-017",
+      "sprintRef": "tool-s2",
+      "comments": [
+        {
+          "ref": "tool-c20",
+          "body": "Reviewers say the per-file table is the useful part; the total percentage is ignored.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-024",
+      "type": "feature",
+      "title": "Pre-merge checks",
+      "description": "Fast checks that run before the expensive pipeline: commit message format, formatting, secret scanning and licence headers. They must finish within a minute so that obvious mistakes are reported before anyone has gone for coffee.\n\nThese checks run on a tiny dedicated runner pool with no cache, so they start within seconds even when the main pool is busy. Anything that needs the build output does not belong here; the rule of thumb is a minute of wall-clock time, and the pipeline dashboard shows each check's duration to keep us honest.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "ci",
+        "lint"
+      ],
+      "state": "Active",
+      "parentRef": "tool-001",
+      "sprintRef": "tool-s1",
+      "comments": []
+    },
+    {
+      "ref": "tool-025",
+      "type": "story",
+      "title": "Enforce commit message format",
+      "description": "Require commit messages to start with a type and scope, such as fix(billing): or chore(ci):, because the changelog generator reads them. The check runs on the pull request title for squash merges and on each commit otherwise, and the failure message shows a valid example rather than quoting the rule.\n\nA pre-commit hook gives the same feedback earlier for people who install it, but the server check is the one that counts because hooks are optional. The two share a single configuration file so that they cannot disagree about what a valid scope is, and the scope list is read from the service catalogue.",
+      "acceptanceCriteria": [
+        "Pull request titles that do not match the format fail with an example",
+        "Merge commits and reverts generated by the tooling are exempt"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "ci",
+        "lint"
+      ],
+      "state": "Closed",
+      "parentRef": "tool-024",
+      "sprintRef": "tool-s1",
+      "comments": [
+        {
+          "ref": "tool-c21",
+          "body": "Check ran on 212 pull request titles last week; 9 failed, all fixed on the first edit.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-026",
+      "type": "bug",
+      "title": "Formatter check takes four minutes because it reinstalls its toolchain",
+      "description": "The formatting job downloads and installs the formatter on every run, and the download is intermittently slow. The tool should be baked into the runner image or restored from the cache. Target is under thirty seconds for a typical change.\n\nThe fix was to bake the formatter into the image and pin its version in the repository configuration, so the check fails clearly if the version on the runner is not the one the project expects. Typical duration for a small change is now eleven seconds, down from nearly four minutes at worst.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "ci",
+        "lint",
+        "speed"
+      ],
+      "state": "Closed",
+      "parentRef": "tool-024",
+      "sprintRef": "tool-s1",
+      "comments": []
+    },
+    {
+      "ref": "tool-027",
+      "type": "story",
+      "title": "Block commits containing credentials",
+      "description": "Scan the diff of every pull request for strings that look like access keys, private key blocks and connection strings with passwords, and fail the check with the file and line. A baseline file lists known false positives so the check starts clean on the existing code. Findings must never print the matched value, only its location and type, because job logs are readable by many people.\n\nPatterns are maintained in a rules file with a test case per rule: one string that must match and one near miss that must not. Adding a pattern without both cases fails the rules repository's own pipeline. Scanning the full history of existing repositories is out of scope here and handled by a separate one-off audit.",
+      "acceptanceCriteria": [
+        "Access keys, private key headers and password connection strings are detected",
+        "The log shows file, line and rule but never the secret",
+        "A reviewed baseline file suppresses known false positives"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "ci",
+        "security"
+      ],
+      "state": "Active",
+      "parentRef": "tool-024",
+      "sprintRef": "tool-s2",
+      "comments": [
+        {
+          "ref": "tool-c22",
+          "body": "Entropy-based detection produced forty false positives on the first run over the repository, mostly base64 test fixtures. Going with pattern rules only for now.",
+          "archived": false
+        },
+        {
+          "ref": "tool-c23",
+          "body": "The log redaction is covered by a test that plants a fake key and greps the output.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-028",
+      "type": "task",
+      "title": "Add an allowlist comment syntax for intentional test keys",
+      "description": "Let authors mark a line with a trailing comment that names the rule and a reason, so test fixtures with fake keys do not need baseline entries. The scanner records every use of the marker in a report.\n\nMarkers are only honoured in test and fixture directories, and a marker anywhere else fails the check with a message explaining why. The report of marker usage is reviewed monthly by the security group, who occasionally find a real credential that was dressed up as a fake one.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "ci",
+        "security"
+      ],
+      "state": "New",
+      "parentRef": "tool-027",
+      "sprintRef": "tool-s2",
+      "comments": []
+    },
+    {
+      "ref": "tool-029",
+      "type": "feature",
+      "title": "Dependency updates",
+      "description": "Keep third-party libraries current without anyone spending a day on it each month. A bot opens small pull requests, the pipeline tests them, and low-risk updates merge on their own.\n\nThe goal is that nobody has to remember to update anything, and that a vulnerability fix reaches production within two working days. Success is measured by the median age of dependencies across repositories, which is currently fourteen months for the oldest quarter of them.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "ci",
+        "dependencies"
+      ],
+      "state": "New",
+      "parentRef": "tool-001",
+      "sprintRef": "tool-s2",
+      "comments": []
+    },
+    {
+      "ref": "tool-030",
+      "type": "story",
+      "title": "Dependency bot opens grouped weekly pull requests",
+      "description": "Configure the update bot to group patch and minor updates of the same ecosystem into one weekly pull request per repository, keep major version bumps separate with a label, and respect an ignore list for packages we deliberately hold back.\n\nGrouping is by ecosystem and by whether the package is a runtime or development dependency, because a failure in a development tool update should never hold back a runtime security patch. The pull request description lists each package with its old and new version and a link to the release notes.",
+      "acceptanceCriteria": [
+        "One grouped pull request per ecosystem per week",
+        "Major updates arrive separately and are labelled",
+        "Held-back packages are listed with the reason"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "ci",
+        "dependencies"
+      ],
+      "state": "New",
+      "parentRef": "tool-029",
+      "sprintRef": "tool-s2",
+      "comments": []
+    },
+    {
+      "ref": "tool-031",
+      "type": "bug",
+      "title": "Lockfile changes alone trigger the full test suite",
+      "description": "A pull request that only changes the lockfile maps to every target because the impact map treats it as a build configuration file. Updates should run the full suite once, but a lockfile that only bumps a development tool should not. The map needs finer rules for this file.\n\nThe impact map could parse the lockfile and select only the targets that use packages whose resolved version changed. That is the right long-term answer but needs a parser per ecosystem; as a first step the map treats development-only lockfile changes as a lint-only change and everything else as full suite.\n\nA stopgap is a path filter in the pipeline configuration that lets lockfile-only changes skip the end-to-end suite when the package manager's own audit step reports that only development packages changed.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "ci",
+        "dependencies",
+        "tests"
+      ],
+      "state": "New",
+      "parentRef": "tool-029",
+      "sprintRef": "tool-s2",
+      "comments": []
+    },
+    {
+      "ref": "tool-032",
+      "type": "task",
+      "title": "Document how to hold back a package",
+      "description": "Write a short page in the engineering handbook that explains the ignore list, how to record why a package is held back and who reviews the list each quarter.\n\nInclude an example entry, the format of the reason field and a note that holding back a package for more than two quarters needs a ticket for removing the constraint, with the reviewer named in the entry. Link the page from the bot's pull request template.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "docs"
+      ],
+      "state": "New",
+      "parentRef": "tool-031",
+      "sprintRef": "tool-s2",
+      "comments": []
+    },
+    {
+      "ref": "tool-033",
+      "type": "bug",
+      "title": "Build-Cache wird bei jedem Branchwechsel verworfen",
+      "description": "Wenn man auf der Entwicklungsmaschine zwischen zwei Branches wechselt und danach den Build startet, wird der gesamte Cache neu aufgebaut, obwohl sich nur wenige Dateien unterscheiden. Der Build dauert dann wieder fast eine halbe Stunde statt weniger Minuten.\n\nDie Ursache liegt im Schlüssel: Er enthält den Namen des aktuellen Branches, und damit gilt jeder Branch als eigener Cache. Gedacht war das ursprünglich, um Konflikte bei parallelen Builds zu vermeiden. Seit die Einträge unveränderlich sind, ist das nicht mehr nötig. Der Branchname muss aus der Schlüsselberechnung entfernt werden, und der Schlüssel soll nur noch vom Inhalt der Eingabedateien abhängen.",
+      "acceptanceCriteria": [
+        "Ein Branchwechsel ohne Dateiänderungen führt zu 100 Prozent Cache-Treffern",
+        "Der Branchname taucht nicht mehr im Schlüssel auf"
+      ],
+      "reproSteps": "1. Auf Branch A bauen, bis der Cache gefüllt ist.\n2. Auf Branch B wechseln, der sich nur in einer Dokumentationsdatei unterscheidet.\n3. Den Build starten: alle Schritte laufen neu, die Trefferquote liegt bei null.",
+      "tags": [
+        "ci",
+        "cache",
+        "deutsch"
+      ],
+      "state": "Active",
+      "parentRef": "tool-002",
+      "sprintRef": "tool-s2",
+      "comments": [
+        {
+          "ref": "tool-c24",
+          "body": "Bestätigt: Nach dem Entfernen des Branchnamens im Test-Setup lag die Trefferquote bei 96 Prozent.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-034",
+      "type": "epic",
+      "title": "Deploys and releases",
+      "description": "Getting a merged change in front of customers safely and without ceremony. At the moment a deploy is a half-hour ritual: pick a time, ask in chat whether anyone objects, run a script, watch graphs, and hope. Two incidents last quarter came from deploys that nobody was watching.\n\nThis epic builds the machinery that makes shipping routine: gradual rollouts with automatic reversal, release notes written by the tooling, migrations that cannot lock production, and a chat bot that tells everyone what is happening and lets the right people approve it.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "deploy"
+      ],
+      "state": "Active",
+      "sprintRef": "tool-s2",
+      "comments": []
+    },
+    {
+      "ref": "tool-035",
+      "type": "feature",
+      "title": "Canary deploys",
+      "description": "Send a small slice of real traffic to the new version first, compare it against the old version, and only continue if it behaves. The feature covers the traffic splitting, the comparison rules and the reversal when they fail.\n\nA canary is only as good as the comparison behind it, so the work here is half traffic management and half statistics. Both halves have to be explainable to a tired engineer at night, which is why every decision the system makes is written down with the numbers it saw.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "deploy",
+        "canary"
+      ],
+      "state": "Active",
+      "parentRef": "tool-034",
+      "sprintRef": "tool-s2",
+      "comments": []
+    },
+    {
+      "ref": "tool-036",
+      "type": "story",
+      "title": "Staged traffic weights for canary rollouts",
+      "description": "Roll out in steps of one, five, twenty-five and a hundred percent of traffic, with a configurable pause at each step. The pause defaults to ten minutes for the first two steps and five minutes afterwards. A deploy can be promoted early or aborted by anyone in the release group using the chat bot.\n\nWeights are applied by the ingress layer, which supports weighted backends natively. The deploy tool updates the weights through its API and waits for the change to be acknowledged before starting the timer.",
+      "acceptanceCriteria": [
+        "Traffic moves through 1, 5, 25 and 100 percent",
+        "Pause length per step is configurable per service",
+        "A deploy can be promoted or aborted from chat"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "deploy",
+        "canary"
+      ],
+      "state": "Closed",
+      "parentRef": "tool-035",
+      "sprintRef": "tool-s2",
+      "comments": [
+        {
+          "ref": "tool-c25",
+          "body": "Confirmed on staging: weights change takes about eight seconds to be acknowledged by all ingress pods.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-037",
+      "type": "story",
+      "title": "Automatic rollback on error budget burn",
+      "description": "During a canary, compare the new version's error rate and latency with the stable version over a sliding window. If the new version burns more than its share of the error budget, or the ninety-fifth percentile latency is worse by more than twenty percent for three consecutive minutes, roll back to the previous version without waiting for a human.\n\nThe comparison needs enough traffic to mean anything. At one percent weight a quiet service may see only a few requests a minute, so the decision rule has a minimum sample size and falls back to a longer window with a warning when traffic is too thin. Services with very low traffic are marked as manual and keep the old process.\n\nReversal must be fast and boring. It resets the weights to zero for the canary, keeps the failed version's pods for thirty minutes so that logs can be collected, and writes a record of why the decision was made, with the numbers, to the deploy log and the chat channel.\n\nHealth checks that the service itself reports as unhealthy are a separate and immediate trigger, independent of the budget rules, because a crash loop does not need statistics to detect.\n\nEdge case from the design review: a deploy that includes a database migration cannot simply be reversed, because the old version may not understand the new schema. Services with a migration in the release are therefore marked forward-only for the first step. The rule is that migrations in a release must be backward compatible for one version, enforced by the migration gate, so that the previous binary can still run against the new schema until the canary is complete.",
+      "acceptanceCriteria": [
+        "A canary exceeding its error budget share is reversed automatically",
+        "P95 latency worse by 20 percent for three minutes triggers reversal",
+        "Thin traffic uses a longer window and warns",
+        "The decision and its numbers are written to the deploy log and chat",
+        "Releases with migrations are forward-only until the migration gate certifies compatibility"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "deploy",
+        "canary",
+        "reliability"
+      ],
+      "state": "Active",
+      "parentRef": "tool-035",
+      "sprintRef": "tool-s2",
+      "comments": [
+        {
+          "ref": "tool-c26",
+          "body": "Replay of last month's two incidents through the rule: both would have been reversed within four minutes.",
+          "archived": false
+        },
+        {
+          "ref": "tool-c27",
+          "body": "We should alert on rollbacks happening too often too, otherwise a flapping check just trains people to ignore it.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-038",
+      "type": "bug",
+      "title": "Canary users bounce between versions on every request",
+      "description": "The ingress picks the backend independently for each request, so a single user can see the old interface on one page load and the new one on the next, and in the worst cases a form submission goes to a version that has a different field set. Sessions need affinity for the duration of the canary, keyed by a hash of the session cookie rather than the client address, which is unreliable behind mobile carrier proxies.",
+      "acceptanceCriteria": [],
+      "reproSteps": "Open the staging site with a canary at 50 percent and click through three pages. The footer version number alternates between builds.",
+      "tags": [
+        "deploy",
+        "canary",
+        "ingress"
+      ],
+      "state": "New",
+      "parentRef": "tool-035",
+      "sprintRef": "tool-s2",
+      "comments": []
+    },
+    {
+      "ref": "tool-039",
+      "type": "task",
+      "title": "Build a canary comparison dashboard",
+      "description": "A single page that shows the canary and stable versions side by side: request rate, error rate, latency percentiles and the current step of the rollout. It is the page linked from the chat message when a canary starts.\n\nUse the same panels that the automatic comparison reads, so that a human looking at the page sees exactly what the rollback rule sees. A shaded band marks the step boundaries, and a vertical line marks the moment the canary started so that preexisting problems are not blamed on it.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "deploy",
+        "canary",
+        "dashboards"
+      ],
+      "state": "Closed",
+      "parentRef": "tool-036",
+      "sprintRef": "tool-s2",
+      "comments": []
+    },
+    {
+      "ref": "tool-040",
+      "type": "task",
+      "title": "Write the manual override runbook for failed rollbacks",
+      "description": "Describe what to do when the automatic reversal itself does not complete: how to force the weights, how to find the last good version, who can approve skipping the checks. Keep it to one page with commands that can be pasted.\n\nTest the runbook by following it with someone who has not seen it, in the test environment, with a deliberately stuck rollback. Fix anything they stumble over before merging. The runbook is linked from the rollback chat message so it is at hand when needed.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "deploy",
+        "docs"
+      ],
+      "state": "New",
+      "parentRef": "tool-037",
+      "sprintRef": "tool-s3",
+      "comments": []
+    },
+    {
+      "ref": "tool-041",
+      "type": "feature",
+      "title": "Release trains and changelogs",
+      "description": "Services ship on a predictable cadence, with human-readable notes assembled from the changes rather than typed at the last minute. Includes version numbering, freeze windows, and the approvals needed for sensitive releases.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "deploy",
+        "release"
+      ],
+      "state": "Active",
+      "parentRef": "tool-034",
+      "sprintRef": "tool-s2",
+      "comments": []
+    },
+    {
+      "ref": "tool-042",
+      "type": "story",
+      "title": "Generate release notes from commit messages",
+      "description": "Group the commits between two tags by type, drop chores, link each entry to its pull request and write a markdown file plus a short summary for the chat channel. Breaking changes, marked in the commit footer, are listed first with their explanation.\n\nRelease notes for customer-facing services are reviewed by the product team before they go out, so the generator also writes a draft in the format the product team uses, with entries under headings for new, improved and fixed. Internal-only changes are left out unless marked.",
+      "acceptanceCriteria": [
+        "Entries are grouped by type with links to pull requests",
+        "Breaking changes appear first",
+        "A short summary is posted in chat when a release is cut"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "deploy",
+        "release",
+        "docs"
+      ],
+      "state": "Closed",
+      "parentRef": "tool-041",
+      "sprintRef": "tool-s2",
+      "comments": [
+        {
+          "ref": "tool-c28",
+          "body": "Trial on the payments service produced a clean page. The only complaint was that revert pairs show up as two entries; handling them next.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-043",
+      "type": "story",
+      "title": "Deploy freeze calendar",
+      "description": "Maintain a calendar of windows in which production deploys are blocked: end-of-quarter accounting runs, public holidays and big customer events. The deploy tool reads the calendar and refuses to start during a freeze unless a release manager supplies an override with a reason. The calendar is a file in the repository so that changes are reviewed, and the next three freezes are shown in the chat bot's status message.\n\nOverrides are intentionally a little awkward: they need a second release manager to confirm in chat. In the first quarter we expect a handful, mostly security fixes during end-of-quarter freezes, and the weekly report keeps the number visible without turning each one into a debate.",
+      "acceptanceCriteria": [
+        "Deploys during a freeze are refused with the reason and end date",
+        "An override requires a release manager and a written reason",
+        "Overrides are listed in the weekly report"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "deploy",
+        "release",
+        "calendar"
+      ],
+      "state": "Closed",
+      "parentRef": "tool-041",
+      "sprintRef": "tool-s2",
+      "comments": [
+        {
+          "ref": "tool-c29",
+          "body": "Override count for the quarter so far: two, both security patches.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-044",
+      "type": "bug",
+      "title": "Freeze window ends an hour early after daylight saving changes",
+      "description": "The calendar stores window boundaries as local times without a zone, and the deploy tool interprets them in the zone of the machine it runs on. The machine runs in UTC, so a freeze that should end at midnight in the head office zone ended at 23:00 in the week the clocks changed. Store boundaries with an explicit zone name and convert once.\n\nThe corrected tool shows the window boundaries in both UTC and the head office zone in its status output, which would have made the original mistake visible at a glance. A test uses the zone database for the week of the clock change in both hemispheres to make sure nothing regresses.",
+      "acceptanceCriteria": [],
+      "reproSteps": "Add a freeze ending 00:00 on the first Sunday after the clocks change. Ask the tool for the status at 23:30 local time that evening; it reports the freeze as over.",
+      "tags": [
+        "deploy",
+        "release",
+        "calendar"
+      ],
+      "state": "Closed",
+      "parentRef": "tool-041",
+      "sprintRef": "tool-s2",
+      "comments": []
+    },
+    {
+      "ref": "tool-045",
+      "type": "story",
+      "title": "Automatic semantic version bump on release",
+      "description": "Decide the next version number from the commit types since the last tag: a breaking footer bumps major, a feature bumps minor and fixes bump patch. The release job writes the number into the package manifests, tags the commit and refuses to proceed if the tag already exists.\n\nPre-release builds get a suffix with the build number and are never promoted automatically. A repository can override the rule with an explicit version in a file for the cases where an external contract dictates the number, such as a client library that must match the server's major version.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "deploy",
+        "release"
+      ],
+      "state": "Closed",
+      "parentRef": "tool-041",
+      "sprintRef": "tool-s3",
+      "comments": []
+    },
+    {
+      "ref": "tool-046",
+      "type": "story",
+      "title": "Bereitstellung in der Produktion nur nach Freigabe durch zwei Personen",
+      "description": "Sensible Dienste, etwa die Abrechnung und die Benutzerverwaltung, dürfen nur dann in die Produktion ausgeliefert werden, wenn zwei verschiedene Personen die Freigabe erteilt haben. Eine davon muss aus dem Team stammen, das den Dienst betreibt; die andere darf nicht der Autor der Änderung sein.\n\nDie Freigabe erfolgt über den Chat-Bot mit einer Schaltfläche, die Name, Zeitpunkt und Version festhält. Wird die Version nach der Freigabe geändert, verfällt sie und muss erneut eingeholt werden. Das Protokoll der Freigaben wird ein Jahr lang aufbewahrt, weil die Revision es regelmäßig sehen möchte.",
+      "acceptanceCriteria": [
+        "Ohne zwei unterschiedliche Freigaben startet die Bereitstellung nicht",
+        "Eine Änderung der Version nach der Freigabe macht sie ungültig"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "deploy",
+        "release",
+        "deutsch"
+      ],
+      "state": "New",
+      "parentRef": "tool-041",
+      "sprintRef": "tool-s3",
+      "comments": []
+    },
+    {
+      "ref": "tool-047",
+      "type": "feature",
+      "title": "Database migration gating",
+      "description": "Schema changes are the riskiest part of a deploy because they run against live data and cannot always be undone. Put checks in front of them: a dry run against a recent copy, a time budget, and rules about what a migration may do while the service is serving traffic.\n\nThe key idea is that a migration is a deploy of its own with its own safety checks, not a side effect of starting a new version. Splitting expand and contract steps across releases is the discipline that makes rollbacks possible, and this feature enforces it rather than hoping reviewers remember.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "deploy",
+        "database"
+      ],
+      "state": "Active",
+      "parentRef": "tool-034",
+      "sprintRef": "tool-s2",
+      "comments": []
+    },
+    {
+      "ref": "tool-048",
+      "type": "story",
+      "title": "Dry-run migrations against a masked copy of production",
+      "description": "Before a deploy that includes a migration, restore last night's masked snapshot into a scratch database, apply the migration, and report how long it took and which locks it took. If it takes longer than the configured budget, or takes an exclusive lock on a table with more than a million rows, the deploy is blocked with an explanation.\n\nWhy a masked copy and not production itself: running a candidate migration against the real database would take real locks, and a dry run on an empty schema tells us nothing about duration. The snapshot is restored nightly into a pool of scratch instances that are destroyed after use, and the restore itself is checked against row counts so that a half-restored copy never produces reassuring numbers.\n\nWhat the report contains: wall-clock time for each statement, the lock mode each statement acquired and for how long, the number of rows rewritten, and the peak growth of the write-ahead log, which is what actually hurts replicas. Statements that rewrite a whole table are flagged even when they are fast on the copy, because the production table is about nine times bigger and rewriting scales with size while the copy's timing does not.\n\nRules applied to the report are kept in a small policy file. A statement that adds a column with a volatile default, creates an index without the concurrent option on a large table, or renames a column that the previous release still reads, blocks the deploy. The block message includes the rewritten statement that would have been acceptable, for example creating the index concurrently, so that the author does not have to look it up.\n\nKnown gap: the masked snapshot has different data distribution from production because masking replaces values, so queries that depend on selectivity, such as backfills using an indexed predicate, can be much slower for real. Backfills are therefore excluded from the time budget and must be run as separate batched jobs with their own throttling.",
+      "acceptanceCriteria": [
+        "The migration is applied to a masked snapshot before deploy",
+        "Duration and lock types are reported",
+        "Exceeding the time budget blocks the deploy"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "deploy",
+        "database"
+      ],
+      "state": "Active",
+      "parentRef": "tool-047",
+      "sprintRef": "tool-s2",
+      "comments": [
+        {
+          "ref": "tool-c30",
+          "body": "The masked snapshot is eleven hours old at worst. Good enough for lock and duration estimates.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-049",
+      "type": "bug",
+      "title": "Migration job keeps its lock after the pod is evicted",
+      "description": "Migrations take an advisory lock so that only one runs at a time. When the node running the migration pod is drained, the pod is killed, but the database session stays open for the length of the server's idle timeout, which is eight hours. The next deploy waits on a lock held by a process that no longer exists and eventually fails with a timeout.\n\nWe saw this twice in the last month, both times during node maintenance. The operators fixed it by terminating the stale session by hand, which requires database admin rights that most engineers do not have.\n\nOptions discussed: a short keepalive timeout on the migration connection so that dead sessions are dropped within a minute; storing the lock in a table with a lease that the owner renews; or running migrations from a dedicated job with a disruption budget that prevents eviction. The first is the smallest change and addresses the symptom directly. The second is more robust against network partitions. We are starting with the first and will revisit.\n\nFor diagnosis, the deploy tool should print who holds the lock and since when, taken from the lock table rather than from a guess. The message at the moment is a bare timeout, which sends people to the wrong place.\n\nOne detail worth keeping: the connection pooler in front of the database holds server connections open after the client disappears, so the keepalive has to be set on the pooler's server-side connection, not only on the client. The setting is called server_idle_timeout and we apply it to the migration pool only, since the application pools legitimately keep long idle connections.",
+      "acceptanceCriteria": [
+        "A migration pod killed mid-run releases its lock within two minutes",
+        "The deploy tool names the holder of a lock it is waiting on",
+        "Only the migration pool uses the short idle timeout"
+      ],
+      "reproSteps": "1. Start a migration that takes at least ten minutes in the scratch environment.\n2. Drain the node the migration pod runs on.\n3. Start another deploy: it waits for the advisory lock and times out after thirty minutes.",
+      "tags": [
+        "deploy",
+        "database",
+        "reliability"
+      ],
+      "state": "Active",
+      "parentRef": "tool-047",
+      "sprintRef": "tool-s3",
+      "comments": [
+        {
+          "ref": "tool-c31",
+          "body": "Confirmed on the pooler: the server connection stays in the active state long after the client socket is gone.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-050",
+      "type": "task",
+      "title": "Add a script to list and release stale migration locks",
+      "description": "A small command in the internal CLI that shows advisory locks held by sessions with no matching running pod and offers to terminate them after confirmation. It needs a restricted database role created for this purpose only.\n\nThe command prints a table of lock holders with the session start time and the last query, and asks the person to type the name of the service before terminating anything. It logs who ran it. The restricted role can terminate sessions of the migration user and nobody else.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "deploy",
+        "database",
+        "cli"
+      ],
+      "state": "New",
+      "parentRef": "tool-049",
+      "sprintRef": "tool-s3",
+      "comments": []
+    },
+    {
+      "ref": "tool-051",
+      "type": "bug",
+      "title": "การย้ายฐานข้อมูลค้างเมื่อมีการล็อกตาราง",
+      "description": "เมื่อเช้าการดีพลอยบริการสมาชิกค้างอยู่ที่ขั้นตอนย้ายฐานข้อมูลนานกว่าสี่สิบนาที ทั้งที่ปกติใช้เวลาไม่ถึงหนึ่งนาที เมื่อเข้าไปดูพบว่าคำสั่งเพิ่มคอลัมน์ในตารางที่มีข้อมูลหลายล้านแถวกำลังรอล็อกจากธุรกรรมรายงานที่รันค้างอยู่ตั้งแต่เมื่อคืน และระหว่างที่รอ คำขอใหม่ทั้งหมดที่เข้ามาอ่านตารางนั้นก็ถูกบล็อกไปด้วย ทำให้เว็บไซต์ช้าลงอย่างเห็นได้ชัด\n\nข้อเสนอคือให้ตั้งเวลารอล็อกสูงสุดสำหรับงานย้ายฐานข้อมูลไว้ที่ห้าวินาที ถ้าล็อกไม่ได้ให้ยกเลิกและลองใหม่ภายหลังแทนที่จะรอไปเรื่อย ๆ และให้เครื่องมือดีพลอยแสดงชื่อธุรกรรมที่กำลังถือล็อกอยู่ด้วย",
+      "acceptanceCriteria": [
+        "งานย้ายฐานข้อมูลยกเลิกเองถ้ารอล็อกเกินห้าวินาที",
+        "ข้อความแจ้งข้อผิดพลาดระบุธุรกรรมที่ถือล็อกอยู่"
+      ],
+      "reproSteps": "1. เปิดธุรกรรมรายงานที่อ่านตารางสมาชิกแล้วปล่อยค้างไว้\n2. สั่งดีพลอยที่มีการเพิ่มคอลัมน์ในตารางสมาชิก\n3. ขั้นตอนย้ายฐานข้อมูลค้างและเว็บไซต์เริ่มช้า",
+      "tags": [
+        "deploy",
+        "database",
+        "ภาษาไทย"
+      ],
+      "state": "New",
+      "parentRef": "tool-047",
+      "sprintRef": "tool-s3",
+      "comments": []
+    },
+    {
+      "ref": "tool-052",
+      "type": "feature",
+      "title": "Deploy bot in chat",
+      "description": "One place where everybody can see what is deploying, approve what needs approval and stop what has gone wrong. The bot reports; the deploy tool does the work.\n\nThe bot is deliberately thin. It listens for events from the deploy tool and posts or edits messages, and it receives button presses and forwards them as commands, checking permissions against the release group. Anything cleverer goes in the deploy tool, where it can be tested without a chat platform.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "deploy",
+        "chat"
+      ],
+      "state": "Active",
+      "parentRef": "tool-034",
+      "sprintRef": "tool-s2",
+      "comments": []
+    },
+    {
+      "ref": "tool-053",
+      "type": "story",
+      "title": "Deploy status message that updates in place",
+      "description": "Post a single message when a deploy starts and edit it as it proceeds, showing the service, version, step, canary comparison summary and who started it. When the deploy finishes the message is edited to the final result with the duration, and a reaction is added so that the channel history can be scanned at a glance.\n\nThe message layout was agreed with three teams: a header line with service and version, a one-line progress bar for the rollout steps, and a footer with who started the deploy. Colour is used sparingly because the platform renders it differently in dark mode; the result reaction does the heavy lifting.",
+      "acceptanceCriteria": [
+        "One message per deploy, edited in place",
+        "Final state shows result and duration",
+        "Failed deploys include a link to the log"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "deploy",
+        "chat"
+      ],
+      "state": "Closed",
+      "parentRef": "tool-052",
+      "sprintRef": "tool-s2",
+      "comments": [
+        {
+          "ref": "tool-c32",
+          "body": "Dark mode rendering checked on desktop and mobile clients.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-054",
+      "type": "story",
+      "title": "Approve or abort a deploy with buttons in the message",
+      "description": "Add Promote and Abort buttons to the status message. Clicking checks the person against the release group for the service, records the decision in the deploy log and updates the message. Pressing a button on a deploy that has already moved on shows a polite explanation.\n\nBecause anyone in the channel can see the buttons, the click handler is the only place permission is enforced, and it checks the current release group membership on every click instead of caching it. The refusal message is private to the person who clicked so the channel does not fill with explanations.",
+      "acceptanceCriteria": [
+        "Only release group members can press the buttons",
+        "Decisions are recorded with name and time",
+        "Stale buttons explain themselves"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "deploy",
+        "chat"
+      ],
+      "state": "Closed",
+      "parentRef": "tool-052",
+      "sprintRef": "tool-s2",
+      "comments": [
+        {
+          "ref": "tool-c33",
+          "body": "Old idea: allow approval by reacting with an emoji. Dropped because reactions cannot be restricted to a group.",
+          "archived": true
+        }
+      ]
+    },
+    {
+      "ref": "tool-055",
+      "type": "bug",
+      "title": "Bot posts a new message instead of editing when the thread is older than a day",
+      "description": "Long canaries that pause overnight on a freeze boundary lose their message because the chat platform stops accepting edits after twenty-four hours. The bot then posts a fresh message in the channel and the old one stays stuck at the last step. The bot should post a new message that links back to the original and mark the original as superseded.\n\nA related problem is that edits to a message trigger no notification, so a rollout that moves from a pause to a failure silently updates text that nobody is looking at. For state changes that matter, the bot adds a short reply in the thread so that followers are notified.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "deploy",
+        "chat"
+      ],
+      "state": "New",
+      "parentRef": "tool-052",
+      "sprintRef": "tool-s3",
+      "comments": []
+    },
+    {
+      "ref": "tool-056",
+      "type": "story",
+      "title": "แจ้งเตือนในแชทเมื่อดีพลอยล้มเหลว",
+      "description": "เมื่อการดีพลอยล้มเหลวหรือถูกย้อนกลับอัตโนมัติ ให้บอตส่งข้อความเข้าช่องแชทของทีมที่เป็นเจ้าของบริการนั้นทันที โดยระบุชื่อบริการ เวอร์ชัน ขั้นตอนที่ล้มเหลว สาเหตุโดยย่อ และลิงก์ไปยังบันทึกการดีพลอย ไม่ต้องรอให้ใครเข้าไปเปิดหน้าสถานะเอง\n\nข้อความต้องไม่รบกวนเกินไป ถ้าบริการเดียวกันล้มเหลวซ้ำภายในสิบนาที ให้ตอบต่อในเธรดเดิมแทนการโพสต์ใหม่ และต้องไม่แท็กทุกคนในช่อง แท็กเฉพาะผู้ที่กดเริ่มดีพลอยและเวรประจำของทีม",
+      "acceptanceCriteria": [
+        "ล้มเหลวหรือย้อนกลับแล้วมีข้อความเข้าช่องของทีมเจ้าของบริการ",
+        "ความล้มเหลวซ้ำภายในสิบนาทีตอบในเธรดเดิม"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "deploy",
+        "chat",
+        "ภาษาไทย"
+      ],
+      "state": "Active",
+      "parentRef": "tool-052",
+      "sprintRef": "tool-s3",
+      "comments": []
+    },
+    {
+      "ref": "tool-057",
+      "type": "epic",
+      "title": "Infrastructure and environments",
+      "description": "The cloud accounts, networks, clusters and secrets that everything else runs on, plus the environments engineers use to try things before customers see them. Today most of it was built by hand over four years: three people know where things are, and a console click made last spring is the only record of why one subnet is shaped the way it is.\n\nThe aim is that every resource exists because a reviewed file says so, that credentials are short-lived and rotate without anyone remembering to do it, and that a throwaway copy of the whole stack can be created for a branch and removed without leaving a bill behind.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "infra"
+      ],
+      "state": "Active",
+      "sprintRef": "tool-s3",
+      "comments": []
+    },
+    {
+      "ref": "tool-058",
+      "type": "feature",
+      "title": "Infrastructure as code",
+      "description": "Describe cloud resources in versioned modules, review changes like code, and detect when reality has drifted from the description. Covers the shared module library, the state backend, and the policies that every resource must satisfy.\n\nEverything under this feature relies on one rule: the code is the source of truth, and the console is for looking. Exceptions during incidents are allowed and expected, but they must be written back to code within a working day, and the drift report is how we notice when that did not happen.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "infra",
+        "terraform"
+      ],
+      "state": "Active",
+      "parentRef": "tool-057",
+      "sprintRef": "tool-s3",
+      "comments": []
+    },
+    {
+      "ref": "tool-059",
+      "type": "story",
+      "title": "Private module registry with versioned releases",
+      "description": "Publish the shared infrastructure modules (network, database, service account, queue) to an internal registry with semantic versions, so that consumers pin a version and upgrade deliberately. Each module has an example directory that is applied in a test account on every release candidate, and a changelog generated from its commits.",
+      "acceptanceCriteria": [
+        "Modules are published with semantic versions",
+        "Consumers pin a version in their configuration",
+        "Example directories are applied in the test account before release"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "infra",
+        "terraform"
+      ],
+      "state": "Closed",
+      "parentRef": "tool-058",
+      "sprintRef": "tool-s3",
+      "comments": [
+        {
+          "ref": "tool-c34",
+          "body": "Registry is a static site on object storage, which is all we need for now. Authentication uses the same tokens as the package registry.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-060",
+      "type": "story",
+      "title": "Detect configuration drift between code and the live accounts",
+      "description": "Once a night, run a plan for every stack in read-only mode and report any difference between the code and what actually exists. Differences are grouped by cause: a resource changed by hand, a resource deleted outside the process, or a provider default that changed after an upgrade. Each report goes to the channel of the owning team with the resource address and a one-line diff.\n\nThe job runs with a role that can read everything and change nothing. It must never apply, even by accident, so the role has no write permissions at all and the job refuses to run if the role it assumed has any.\n\nNoise is the main threat. Some attributes change constantly without meaning anything, such as autoscaling desired counts and rotated certificate arns. A per-stack ignore list, kept in the repository and reviewed, names these attributes. A report with nothing but ignored drift is not sent, so that silence means everything matches.\n\nCost of the plan runs matters too: sixty stacks at two minutes each, serially, would overrun the night. Stacks are planned eight at a time on the runner pool, and the pool's scaler treats the job as low priority so that it never competes with morning builds.\n\nFindings are also stored as rows in a small table so the weekly review can see how many drifts were fixed in code, how many were reverted in the console, and how many were left standing, which tells us whether the process is working or being routed around. Accounts with the most hand edits get a short chat with their team rather than a stricter policy, since the usual cause is an emergency fix at night that nobody wrote back to code.",
+      "acceptanceCriteria": [
+        "Every stack is planned read-only each night",
+        "Findings go to the owning team's channel with resource address and diff",
+        "A role with any write permission makes the job refuse to run",
+        "Ignored attributes are listed per stack and reviewed",
+        "A report with only ignored drift is not sent"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "infra",
+        "terraform",
+        "drift"
+      ],
+      "state": "Active",
+      "parentRef": "tool-058",
+      "sprintRef": "tool-s3",
+      "comments": [
+        {
+          "ref": "tool-c35",
+          "body": "First run found 41 drifts across 60 stacks; 29 are the autoscaling desired count and go on the ignore list.",
+          "archived": false
+        },
+        {
+          "ref": "tool-c36",
+          "body": "One real find: a security group rule opened to the whole internet by hand during an incident and never closed. Closed and written into code.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-061",
+      "type": "bug",
+      "title": "State lock left behind when a plan job is cancelled",
+      "description": "When a pipeline run applying infrastructure is cancelled, the state lock stays in place and every later run fails with a message that the state is locked by someone. The lock record names the cancelled job, but people have started forcing the unlock without checking, which is exactly the situation the lock exists to prevent.\n\nThe job should trap the cancellation signal and release its own lock, and the unlock helper should refuse to run when the lock owner is a job that is still running.",
+      "acceptanceCriteria": [],
+      "reproSteps": "Start an apply on a stack that takes a few minutes, cancel the pipeline run from the UI, and start a new run for the same stack. It reports the state as locked and names the cancelled run.",
+      "tags": [
+        "infra",
+        "terraform"
+      ],
+      "state": "Active",
+      "parentRef": "tool-058",
+      "sprintRef": "tool-s3",
+      "comments": [
+        {
+          "ref": "tool-c37",
+          "body": "Three forced unlocks in the last month, one of them while the job was still running.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-062",
+      "type": "task",
+      "title": "Make the unlock helper check the owner job status",
+      "description": "Before forcing an unlock, the helper looks up the job named in the lock record through the pipeline API and refuses if its state is running or queued.\n\nEdge cases: the pipeline API can be unreachable, in which case the helper refuses and says why rather than guessing, and a job that has been running for over six hours is treated as hung and the helper asks for a second confirmation. The helper is part of the internal command-line tool.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "infra",
+        "terraform",
+        "cli"
+      ],
+      "state": "New",
+      "parentRef": "tool-061",
+      "sprintRef": "tool-s3",
+      "comments": []
+    },
+    {
+      "ref": "tool-063",
+      "type": "story",
+      "title": "Require owner and cost-centre tags on every resource",
+      "description": "Reject any plan that creates a taggable resource without an owner and a cost centre. The policy runs during the plan stage and prints the list of offenders with their addresses. A default tag block in the shared provider configuration supplies the values for most stacks so authors rarely need to think about it.\n\nEnforcement starts in warning mode for two weeks so that teams see what would fail. The backfill is a one-off script that reads the cloud inventory, proposes tags from the team that created each resource according to the audit log, and opens pull requests against the owning stacks for review.",
+      "acceptanceCriteria": [
+        "Plans with untagged resources fail with a list",
+        "Default tags come from the provider configuration",
+        "Existing resources are backfilled before enforcement starts"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "infra",
+        "policy",
+        "cost"
+      ],
+      "state": "New",
+      "parentRef": "tool-058",
+      "sprintRef": "tool-s3",
+      "comments": [
+        {
+          "ref": "tool-c38",
+          "body": "Cost centre values come from the team directory; a typo list showed four teams spelled in two ways.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-064",
+      "type": "feature",
+      "title": "Secrets management",
+      "description": "Credentials that applications and pipelines use should be short-lived, issued on demand and rotated by machines. Nobody should have to copy a password into a chat message or a file again.\n\nSuccess is measured by the number of long-lived credentials still in existence, which the inventory job counts weekly. The count was one hundred and thirty-eight when this feature started. The target is under ten, all of them with a written reason and an owner.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "infra",
+        "security"
+      ],
+      "state": "Active",
+      "parentRef": "tool-057",
+      "sprintRef": "tool-s3",
+      "comments": []
+    },
+    {
+      "ref": "tool-065",
+      "type": "story",
+      "title": "Rotate database passwords on a schedule",
+      "description": "Every ninety days, create a new password for each service account, store it in the secrets service, let services pick it up on their next connection and remove the old one after a grace period. The rotation is logged and a failure pages the platform on-call, because services that miss the change lose access to their database.\n\nRotation uses the dual-user pattern: two database roles per service alternate, so there is always one valid credential while the other is being replaced. This avoids the brief window of failed connections that a single role would cause, and it means a failed rotation leaves the previous credential intact.",
+      "acceptanceCriteria": [
+        "Each service account password changes every 90 days",
+        "Services reconnect with the new password without a restart",
+        "The old password stops working after a grace period of one hour"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "infra",
+        "security",
+        "database"
+      ],
+      "state": "Closed",
+      "parentRef": "tool-064",
+      "sprintRef": "tool-s3",
+      "comments": [
+        {
+          "ref": "tool-c39",
+          "body": "First live rotation went through for the reporting service with no failed connections in the logs.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-066",
+      "type": "story",
+      "title": "Short-lived cloud credentials for pipelines",
+      "description": "Replace the long-lived access keys stored as pipeline variables with tokens that are exchanged at job start for credentials valid for one hour. The exchange uses the job's signed identity token and a trust policy that names the repository and branch allowed to assume each role, so that a pull request from a fork can never reach production roles.\n\nRoles are narrow. Each deploy target has its own role with permissions limited to what the deploy needs, and the plan roles used for drift detection have read-only access. The module library gains a role module that takes a repository, a branch pattern and a list of policies, and produces the trust relationship, so that nobody writes trust documents by hand.\n\nMigration happens repository by repository. For each one we add the role, switch the pipeline to the exchange step, run for a week with the old key still present but unused, and then revoke the key. The audit log shows whether the old key was touched; if it was, something still depends on it and we find out before revoking.\n\nDebugging is the usual pain. When the trust policy rejects an exchange, the cloud provider's error is a generic access denied. The exchange step therefore prints the claims of the identity token (repository, ref, workflow) at debug level, never the token itself, so that engineers can compare them with the policy.\n\nLifetimes: one hour covers all normal jobs, but the nightly full integration run can take ninety minutes. Rather than lengthen every token, the long job calls the exchange step a second time midway, which the pipeline template supports through a refresh-credentials step that repeats the exchange and exports the new values to the remaining steps.",
+      "acceptanceCriteria": [
+        "No pipeline variable holds a long-lived cloud access key after migration",
+        "Trust policies name repository and branch, and forks cannot assume roles",
+        "A role module generates the trust relationship",
+        "Debug output shows token claims but never the token",
+        "Jobs longer than an hour can refresh credentials midway"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "infra",
+        "security",
+        "ci"
+      ],
+      "state": "Active",
+      "parentRef": "tool-064",
+      "sprintRef": "tool-s3",
+      "comments": [
+        {
+          "ref": "tool-c40",
+          "body": "Eleven of fourteen repositories migrated; the remaining three need the role module extended for cross-account access.",
+          "archived": false
+        },
+        {
+          "ref": "tool-c41",
+          "body": "The audit log showed the old key still used by a forgotten cron job on a build server. Moved it to the new scheme before revoking.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-067",
+      "type": "bug",
+      "title": "Services keep serving with an old secret after rotation",
+      "description": "After a rotation some pods continue to use the previous password for hours because the client library caches the secret in memory and only re-reads it on restart. Connections fail once the grace period ends. The library should re-fetch on an authentication failure and retry the connection once, and it should refresh in the background every ten minutes.\n\nThe grace period was lengthened from an hour to four while the library fix rolls out, and returns to one hour when every service runs the new version. Services that still cache are found by a query over the connection logs for authentication failures that stop after a restart.",
+      "acceptanceCriteria": [],
+      "reproSteps": "Rotate the staging password, wait for the grace period to end, and watch the orders service logs. Every new connection reports an authentication failure until the pod is restarted.",
+      "tags": [
+        "infra",
+        "security"
+      ],
+      "state": "Closed",
+      "parentRef": "tool-064",
+      "sprintRef": "tool-s3",
+      "comments": [
+        {
+          "ref": "tool-c42",
+          "body": "Library fix released in version 4.2; services need a rebuild to pick it up.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-068",
+      "type": "task",
+      "title": "Add rotation status to the platform dashboard",
+      "description": "Show the age of each service account password and the result of the last rotation. Anything older than a hundred days is highlighted in red.\n\nThe panel reads from the rotation log table rather than asking the secrets service, so that it keeps working when the service is down, which is when people most want to know the state. The red highlight links to the manual rotation procedure.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "infra",
+        "security",
+        "dashboards"
+      ],
+      "state": "New",
+      "parentRef": "tool-065",
+      "sprintRef": "tool-s3",
+      "comments": []
+    },
+    {
+      "ref": "tool-069",
+      "type": "story",
+      "title": "Warnung 30 Tage vor dem Ablauf von Zertifikaten",
+      "description": "Zertifikate für interne Dienste laufen zurzeit unbemerkt ab, und niemand merkt es, bis ein Dienst nicht mehr erreichbar ist. Letzten Monat hat uns das einen halben Vormittag gekostet, weil das Zertifikat der Paketverwaltung abgelaufen war.\n\nEin täglicher Prüfauftrag soll alle bekannten Endpunkte abfragen, das Ablaufdatum lesen und 30, 14 und 3 Tage vorher eine Nachricht in den Kanal des zuständigen Teams senden. Die Liste der Endpunkte wird aus den Infrastrukturdateien erzeugt, damit neue Dienste automatisch geprüft werden. Zertifikate, die von der automatischen Erneuerung verwaltet werden, werden ebenfalls geprüft, denn auch die Erneuerung kann stillschweigend ausfallen.",
+      "acceptanceCriteria": [
+        "Eine Nachricht erscheint 30, 14 und 3 Tage vor Ablauf",
+        "Die Endpunktliste wird aus den Infrastrukturdateien erzeugt"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "infra",
+        "security",
+        "deutsch"
+      ],
+      "state": "New",
+      "parentRef": "tool-064",
+      "sprintRef": "tool-s4",
+      "comments": []
+    },
+    {
+      "ref": "tool-070",
+      "type": "task",
+      "title": "秘密情報のローテーション手順書を作成する",
+      "description": "データベースのパスワードやAPIキーの更新手順を、一箇所にまとめた手順書として書き起こします。自動ローテーションが失敗した場合に、当番のエンジニアが手作業で安全に実施できることが目的です。\n\n含める内容は、対象の一覧、更新の順番（新しい値の発行、サービス側の反映確認、古い値の失効）、確認用のコマンド、そして失敗したときの戻し方です。値そのものをチャットや課題票に貼らないこと、手順の途中で記録を残すことも明記します。\n\n手順書は社内の技術文書サイトに置き、四半期に一度、実際に手順どおり実施して内容を確認します。確認した日付と担当者は文書の末尾に記録します。",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "infra",
+        "security",
+        "docs",
+        "日本語"
+      ],
+      "state": "New",
+      "parentRef": "tool-065",
+      "sprintRef": "tool-s4",
+      "comments": []
+    },
+    {
+      "ref": "tool-071",
+      "type": "feature",
+      "title": "Preview environments",
+      "description": "A full copy of a service and its dependencies for every pull request, reachable at a predictable address, created in a few minutes and removed when the pull request closes.\n\nThe previous staging environment was shared by everyone, so a broken change blocked all testing for hours. Isolated environments remove that queue, at the price of needing disciplined cleanup, which is why expiry and orphan sweeping are first-class stories and not afterthoughts.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "infra",
+        "environments"
+      ],
+      "state": "Active",
+      "parentRef": "tool-057",
+      "sprintRef": "tool-s3",
+      "comments": []
+    },
+    {
+      "ref": "tool-072",
+      "type": "story",
+      "title": "Create a preview environment for each pull request",
+      "description": "When a pull request is opened with the preview label, create a namespace in the shared cluster, deploy the service from the branch image, seed a small database from the fixture dump and publish it at pr-NNN.preview.internal. A comment on the pull request links to it and is updated when the environment is ready.\n\nResources are limited. Each environment gets a quota of two CPUs and four gigabytes of memory in total, small database instances and no access to production data of any kind. Dependencies that are heavy, such as the search cluster, are shared from a common preview pool with a prefix per environment.\n\nCreation must be idempotent: pushing a new commit upgrades the existing deployment instead of creating another, and re-running the job after a partial failure completes the missing steps.\n\nSeeding takes longer than everything else combined. The fixture dump is restored from a template database that is cloned with a file-level copy, which takes about eight seconds compared with four minutes for a logical restore. The template is rebuilt nightly from the latest anonymised fixtures.\n\nAccess control: the address is only reachable from the office network and the VPN, and the single sign-on integration is switched to a test identity provider with fake accounts so that reviewers can log in with a known user. Nothing about the preview should be able to send email or push notifications to real people, so outbound mail is routed to a mail catcher that shows the messages in a web page.",
+      "acceptanceCriteria": [
+        "Opening a pull request with the label creates a reachable environment",
+        "A comment links to the environment and updates when ready",
+        "Pushing a commit upgrades the existing deployment",
+        "Environments are limited to 2 CPUs and 4 GB",
+        "Outbound mail goes to a mail catcher"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "infra",
+        "environments",
+        "ci"
+      ],
+      "state": "Active",
+      "parentRef": "tool-071",
+      "sprintRef": "tool-s3",
+      "comments": [
+        {
+          "ref": "tool-c43",
+          "body": "Cloning a template database by file copy brought creation time from nine minutes to under three.",
+          "archived": false
+        },
+        {
+          "ref": "tool-c44",
+          "body": "Reviewers love the mail catcher; asked if we can keep messages for the whole life of the environment.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-073",
+      "type": "bug",
+      "title": "Preview addresses stop resolving after the DNS cache refreshes",
+      "description": "New preview hostnames resolve for a few minutes and then fail on the office network. The wildcard record exists, but the resolver in the office negatively caches the first lookup, which happens before the ingress has been created, and keeps the failed answer for the length of the zone's minimum time to live, one hour. Lower the negative caching time on the preview zone to thirty seconds.\n\nThe wildcard record points at the cluster's internal load balancer. The permanent fix also pre-creates the specific hostname record as soon as the pull request is labelled, before the ingress exists, so the first lookup already finds an answer and nothing negative is ever cached.",
+      "acceptanceCriteria": [],
+      "reproSteps": "Open a pull request with the preview label, run nslookup against its hostname immediately and again after the environment is ready. The second lookup still returns NXDOMAIN.",
+      "tags": [
+        "infra",
+        "environments",
+        "dns"
+      ],
+      "state": "Resolved",
+      "parentRef": "tool-071",
+      "sprintRef": "tool-s3",
+      "comments": []
+    },
+    {
+      "ref": "tool-074",
+      "type": "story",
+      "title": "Expire preview environments after seven days of inactivity",
+      "description": "Environments cost money while they sit unused. Delete any preview with no deploy and no request for seven days, after posting a warning on the pull request one day before. A comment from the author saying keep extends the life by a week.\n\nActivity means a deploy or a request from a real person; health checks and the bot's own probes are excluded, or nothing would ever expire. The sweep reads request counts from the ingress metrics and falls back to the latest deploy time if metrics are missing.",
+      "acceptanceCriteria": [
+        "Inactive environments are deleted after seven days",
+        "A warning is posted a day earlier",
+        "The keep command extends the life by one week"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "infra",
+        "environments",
+        "cost"
+      ],
+      "state": "Active",
+      "parentRef": "tool-071",
+      "sprintRef": "tool-s4",
+      "comments": [
+        {
+          "ref": "tool-c45",
+          "body": "Warning text agreed with the author community: short, one line, with the exact command to keep the environment.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-075",
+      "type": "task",
+      "title": "Delete orphaned preview namespaces for closed pull requests",
+      "description": "Write a sweep that lists preview namespaces, checks the state of the matching pull request and removes the namespaces whose pull request is closed or merged. Run it hourly as a backstop for missed webhooks.\n\nThe sweep deletes in a loop with a pause between namespaces to avoid hammering the API server, and refuses to delete more than twenty namespaces in a single run without a manual flag, a safeguard against a bug in the pull request lookup removing everything.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "infra",
+        "environments"
+      ],
+      "state": "Closed",
+      "parentRef": "tool-074",
+      "sprintRef": "tool-s4",
+      "comments": []
+    },
+    {
+      "ref": "tool-076",
+      "type": "story",
+      "title": "ลบสภาพแวดล้อมตัวอย่างที่ไม่ได้ใช้งานโดยอัตโนมัติ",
+      "description": "สภาพแวดล้อมตัวอย่างที่สร้างให้แต่ละคำขอรวมโค้ดยังคงอยู่แม้ไม่มีใครเข้าใช้งานมานานแล้ว ทำให้เปลืองทรัพยากรของคลัสเตอร์และค่าใช้จ่ายโดยไม่จำเป็น เมื่อเดือนที่แล้วพบว่ามีสภาพแวดล้อมค้างอยู่กว่าสามสิบแห่งที่ไม่มีใครแตะต้องเกินสองสัปดาห์\n\nระบบควรตรวจสอบการใช้งานทุกคืน หากสภาพแวดล้อมไม่มีการดีพลอยหรือคำขอเข้าใช้เป็นเวลาเจ็ดวัน ให้ลบทิ้งหลังแจ้งเตือนในคำขอรวมโค้ดล่วงหน้าหนึ่งวัน และผู้เขียนสามารถขอต่ออายุได้ด้วยการตอบกลับสั้น ๆ ในคำขอเดียวกัน",
+      "acceptanceCriteria": [
+        "สภาพแวดล้อมที่ไม่มีการใช้งานเจ็ดวันถูกลบ",
+        "มีการแจ้งเตือนล่วงหน้าหนึ่งวัน"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "infra",
+        "environments",
+        "ภาษาไทย"
+      ],
+      "state": "New",
+      "parentRef": "tool-071",
+      "sprintRef": "tool-s4",
+      "comments": []
+    },
+    {
+      "ref": "tool-077",
+      "type": "bug",
+      "title": "ステージング環境のディスク使用量が急に増える",
+      "description": "ステージング環境のデータベースサーバーで、毎週火曜の夜にディスク使用量が30GBほど跳ね上がり、水曜の朝には元に戻るという動きが見られます。先週は容量が90パーセントを超えて警告が出ました。\n\n火曜の夜は、本番のデータを匿名化して複製する定期処理が動いています。処理の途中で一時テーブルが大量に作られ、完了後に削除されるため、使用量が一時的に増えて戻っているようです。ただし、処理が失敗した週には一時テーブルが残ってしまうことがあり、その場合は手動で消すまで容量が戻りません。\n\n対策として、一時テーブルを専用の領域に作る、失敗時にも後片付けを行う、容量が80パーセントを超えたら匿名化処理を開始しない、の三点を検討しています。\n\n調査には、処理の実行前後でテーブルごとの容量を記録するスクリプトを使います。結果は週ごとに比較し、増加の大半がどのテーブルによるものかを確認してから対策の優先順位を決めます。",
+      "acceptanceCriteria": [
+        "火曜夜の処理後に使用量が元の水準に戻る",
+        "処理が失敗しても一時テーブルが残らない"
+      ],
+      "reproSteps": "1. 火曜の22時に匿名化処理を実行する。\n2. 処理中にディスク使用量のグラフを確認する。\n3. 処理を途中で停止すると、一時テーブルが残り使用量が戻らない。",
+      "tags": [
+        "infra",
+        "environments",
+        "日本語"
+      ],
+      "state": "Active",
+      "parentRef": "tool-071",
+      "sprintRef": "tool-s4",
+      "comments": []
+    },
+    {
+      "ref": "tool-078",
+      "type": "feature",
+      "title": "Cloud cost control",
+      "description": "Stop paying for capacity nobody is using, and find out about cost surprises in days rather than at the end of the month.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "infra",
+        "cost"
+      ],
+      "state": "Active",
+      "parentRef": "tool-057",
+      "sprintRef": "tool-s4",
+      "comments": []
+    },
+    {
+      "ref": "tool-079",
+      "type": "story",
+      "title": "Shut down idle development machines overnight",
+      "description": "Development virtual machines run around the clock although they are used for eight hours. Stop machines that have had no login and no CPU activity for two hours after seven in the evening, and start them again on demand through the internal CLI. A machine tagged keep-alive is skipped.\n\nA stopped machine keeps its disk, so the saving is the compute portion only, around seventy percent of the machine's cost. The start command waits for the machine to answer on its management port before reporting success, because starting without waiting led to people connecting too early and assuming it was broken.",
+      "acceptanceCriteria": [
+        "Idle machines stop after 19:00",
+        "The CLI can start a stopped machine in under two minutes",
+        "Machines tagged keep-alive are never stopped"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "infra",
+        "cost"
+      ],
+      "state": "Closed",
+      "parentRef": "tool-078",
+      "sprintRef": "tool-s4",
+      "comments": [
+        {
+          "ref": "tool-c46",
+          "body": "Savings in the first month: 19 percent of the development machine bill.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-080",
+      "type": "story",
+      "title": "Daily spend alerts per team",
+      "description": "Compare yesterday's spend of each team's tagged resources with the trailing four-week average, and post to the team channel when it is more than thirty percent higher and above a minimum amount. The message names the three services responsible for the increase.\n\nThe first version uses a simple comparison with the trailing average and a minimum absolute amount so that tiny teams do not generate noise for pocket-change differences. Seasonal spikes, such as end-of-month batch work, can be registered in advance by the team to suppress the alert for named days.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "infra",
+        "cost",
+        "alerts"
+      ],
+      "state": "New",
+      "parentRef": "tool-078",
+      "sprintRef": "tool-s4",
+      "comments": []
+    },
+    {
+      "ref": "tool-081",
+      "type": "bug",
+      "title": "Jobs lost when spot instances are reclaimed without warning handling",
+      "description": "Runners built on discounted interruptible instances are reclaimed by the provider with a two-minute notice. Our agent ignores the notice, so the job running on the machine dies and is reported as a failure, not a retryable infrastructure event. The agent should poll the metadata endpoint for the interruption notice, stop accepting new jobs, mark the running job as interrupted so the scheduler requeues it, and exit cleanly.\n\nThe agent already has a drain mode that stops it from taking new jobs, used during image switches, so reacting to the notice mostly means entering that mode and reporting the running job as interrupted. The scheduler requeues interrupted jobs at the front of the queue, since they have waited once already.",
+      "acceptanceCriteria": [],
+      "reproSteps": "Use the provider's fault injection to send an interruption notice to a runner that is executing a long job. The job is reported as failed after the machine disappears.",
+      "tags": [
+        "infra",
+        "cost",
+        "runners"
+      ],
+      "state": "New",
+      "parentRef": "tool-078",
+      "sprintRef": "tool-s4",
+      "comments": []
+    },
+    {
+      "ref": "tool-082",
+      "type": "epic",
+      "title": "Observability and developer experience",
+      "description": "Make it quick to find out what the systems are doing and what to do when they misbehave, and make the everyday tools pleasant. Engineers currently juggle three log viewers, two ways of paging someone and a command-line tool whose help text was last accurate two years ago.\n\nWork here is judged by how quickly an on-call engineer can go from an alert to a cause: time to first useful log line, time to the right runbook, and the share of pages that were duplicates or noise.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "observability"
+      ],
+      "state": "Active",
+      "sprintRef": "tool-s4",
+      "comments": []
+    },
+    {
+      "ref": "tool-083",
+      "type": "feature",
+      "title": "Logging and tracing",
+      "description": "Structured logs from every service in one searchable place, with request traces that follow a call across services, kept for as long as we need and no longer.\n\nSearch speed matters more than anything else here: an engineer in the middle of an incident should get results in under three seconds for a request identifier lookup over the last day. Hot storage therefore holds seven days, and older entries are moved to cheaper storage with slower queries.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "observability",
+        "logging"
+      ],
+      "state": "Active",
+      "parentRef": "tool-082",
+      "sprintRef": "tool-s4",
+      "comments": []
+    },
+    {
+      "ref": "tool-084",
+      "type": "story",
+      "title": "Sample verbose debug logs at the collector",
+      "description": "Debug logging from the gateway produces about four terabytes a month, ninety percent of it from successful health checks and cache hits that nobody has ever searched for. Introduce sampling at the collector so that routine entries are kept at one in fifty while everything at warning or above, and every entry belonging to a trace that ended in an error, is kept in full.\n\nSampling a trace consistently is the hard part. If each service decides independently, the surviving fragments rarely line up. The collector therefore decides by hashing the trace identifier, so that every service keeps or drops the same traces, and a tail rule keeps traces whose root span reports an error even when the head decision would have dropped them. The tail rule needs the collector to hold spans in memory for up to thirty seconds before deciding, which is why the collectors move to larger instances with a memory limit and a drop-oldest policy under pressure.\n\nFields that make an entry interesting are configured per service in a rules file: status codes of five hundred and above, durations over a second, and any entry containing the word retry. The rules file is validated in the pipeline by replaying a day of sample logs through the new rules and printing how many entries each would keep.\n\nA quiet failure mode to guard against: if the collector crashes and restarts, in-memory spans are lost, and traces that were about to be kept disappear. We accept that loss but count it, with a metric of spans dropped on restart, so that a crash loop is visible instead of looking like reduced traffic.\n\nBilling impact is expected to be a reduction of about sixty percent of ingest volume, which should pay for the larger collectors several times over.",
+      "acceptanceCriteria": [
+        "Routine entries are kept at one in fifty",
+        "Warnings, errors and traces with an error root are kept in full",
+        "All services keep or drop the same traces",
+        "Per-service rules are validated by replaying sample logs",
+        "Spans lost on collector restart are counted in a metric"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "observability",
+        "logging",
+        "cost"
+      ],
+      "state": "Active",
+      "parentRef": "tool-083",
+      "sprintRef": "tool-s4",
+      "comments": [
+        {
+          "ref": "tool-c47",
+          "body": "Replay of Tuesday's logs through the draft rules keeps 38 percent of entries, within the estimate.",
+          "archived": false
+        },
+        {
+          "ref": "tool-c48",
+          "body": "Memory per collector peaks at 11 GB with the 30 second tail window; instance type bumped.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-085",
+      "type": "story",
+      "title": "Propagate trace identifiers through queue messages",
+      "description": "Traces break at every queue. A request enters the gateway, enqueues a message, and the worker that handles it starts a fresh trace, so the story of one order is spread across unrelated entries. Carry the trace and span identifiers in message headers, and make the shared worker library read them and start its span as a child of the producer's span.\n\nThe standard header format is used so that third-party libraries understand it. Workers that pull messages in batches create one span per message, linked to the batch span, because a single parent cannot describe a batch.\n\nRetries must keep the original trace, with the retry count as an attribute, so that a message that failed three times shows up as one trace with four attempts and not four separate ones.\n\nDead-letter queues are the exception that surprised us during testing. A message is moved to the dead-letter queue by the broker itself, and the broker does not copy custom headers when it dead-letters after the visibility timeout expires, only when the consumer rejects explicitly. Messages that die by timeout therefore lose their trace. Workers now write the trace identifiers into the message body envelope as a fallback and the replay tool reads either location.\n\nRollout order matters: producers first, because workers that find no header simply start a new trace, which is today's behaviour, while a worker deployed before producers would add nothing. Each service moves to the new library version in the order given in the epic's checklist.",
+      "acceptanceCriteria": [
+        "Workers continue the producer's trace",
+        "Batches create linked spans per message",
+        "Retries keep the original trace with an attempt count",
+        "Dead-lettered messages keep their trace identifiers",
+        "Trace headers use the standard format"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "observability",
+        "tracing",
+        "queues"
+      ],
+      "state": "New",
+      "parentRef": "tool-083",
+      "sprintRef": "tool-s4",
+      "comments": []
+    },
+    {
+      "ref": "tool-086",
+      "type": "bug",
+      "title": "Log lines appear out of order because collectors use receive time",
+      "description": "Entries from the same request show up in the wrong order in the viewer when two services log within a few milliseconds of each other. The collector stamps entries with the time it received them, so network jitter reorders them. Use the timestamp set by the emitter, and only fall back to receive time when the emitter's is missing or more than ten minutes away from it.\n\nA secondary symptom is entries dated slightly in the future when an emitter's clock is ahead, which makes the viewer's live tail jump. Clamping emitter timestamps to the receive time plus a small tolerance fixes that without trusting a wildly wrong clock.",
+      "acceptanceCriteria": [],
+      "reproSteps": "Make a request that passes through the gateway and the orders service and search for its request id. Entries from the orders service sometimes appear before the gateway's first entry.",
+      "tags": [
+        "observability",
+        "logging"
+      ],
+      "state": "Active",
+      "parentRef": "tool-083",
+      "sprintRef": "tool-s4",
+      "comments": [
+        {
+          "ref": "tool-c49",
+          "body": "Clock drift on two build servers was 40 seconds; time synchronisation was misconfigured there.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-087",
+      "type": "task",
+      "title": "Add an emitter timestamp field to the shared logging library",
+      "description": "The library already writes time, but under a field name that the collector does not read. Rename it to the agreed field and keep the old one for one release.\n\nMixed-mode logging, in which some services emit the new field and some the old, must work for the length of the migration, so the collector looks for the new field first and falls back to the old one, counting how often it falls back as a progress measure.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "observability",
+        "logging"
+      ],
+      "state": "New",
+      "parentRef": "tool-086",
+      "sprintRef": "tool-s4",
+      "comments": []
+    },
+    {
+      "ref": "tool-088",
+      "type": "story",
+      "title": "ログの保持期間を90日に短縮する",
+      "description": "現在、すべてのサービスのログは1年間保持されていますが、実際に検索されるのは直近の2週間分がほとんどで、30日より古い記録を開くことはほぼありません。保管費用が月ごとに増えているため、保持期間を90日に短縮します。\n\nただし、監査対象の記録（決済と認証に関するもの）は法令上の理由から1年間の保持が必要なので、別のバケットに分け、従来どおりの期間を維持します。移行は、まず新しい保持設定を監査対象外のログにだけ適用し、1か月様子を見てから古いデータを削除する順で進めます。削除の前に、利用者に告知を出すことも手順に含めます。\n\n保持期間の設定はインフラのコードで管理し、変更はレビューを経て適用します。削除対象の件数と容量は、実行前に一覧で確認できるようにします。",
+      "acceptanceCriteria": [
+        "監査対象外のログが90日で削除される",
+        "決済と認証の記録は1年間保持される",
+        "削除前に告知が行われる"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "observability",
+        "logging",
+        "cost",
+        "日本語"
+      ],
+      "state": "New",
+      "parentRef": "tool-083",
+      "sprintRef": "tool-s4",
+      "comments": [
+        {
+          "ref": "tool-c50",
+          "body": "費用の試算では、短縮後は保管料がおよそ半分になる見込みです。",
+          "archived": false
+        },
+        {
+          "ref": "tool-c51",
+          "body": "監査対象のログを分けるバケットは、決済チームと認証チームの両方の承認を得てから作成します。",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-089",
+      "type": "story",
+      "title": "Archive search results to a shared notebook",
+      "description": "Removed: engineers asked for a button to save search results into a notebook. The log viewer vendor ships an equivalent feature, so we will not build our own.\n\nThe vendor feature can export a saved search into a shared notebook. Engineers who asked for it were shown the vendor's version in a demo and agreed it was enough. No code was written for the original idea.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "observability",
+        "logging"
+      ],
+      "state": "Removed",
+      "parentRef": "tool-083",
+      "sprintRef": "tool-s4",
+      "comments": []
+    },
+    {
+      "ref": "tool-090",
+      "type": "feature",
+      "title": "On-call tooling",
+      "description": "The tools that wake someone up, tell them what is wrong, and help them fix it, with the aim that a page contains enough information to act on.\n\nMost of what makes a page painful is missing context, not missing technology. A good page names the service, says what the alert measures, shows the graph, and links to the runbook, so the first five minutes are spent acting rather than hunting for these.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "observability",
+        "oncall"
+      ],
+      "state": "Active",
+      "parentRef": "tool-082",
+      "sprintRef": "tool-s4",
+      "comments": []
+    },
+    {
+      "ref": "tool-091",
+      "type": "story",
+      "title": "Route pages by service ownership",
+      "description": "Pages currently go to a single rotation for everything, so the person on call at three in the morning is asked about services they have never seen. Read ownership from the service catalogue and route each alert to the rotation of the owning team, with the platform rotation as a fallback for anything unowned.\n\nThe catalogue entry for a service lists the owning team, the escalation policy and the severity mapping. Alerts carry a service label set by the monitoring rules; an alert without the label is routed to the platform rotation and annotated as unowned, which gives a natural pressure to fix missing labels.\n\nEscalation: if the primary does not acknowledge within ten minutes, page the secondary; after another ten, page the team lead; for severity one, page the incident commander rotation immediately in parallel.\n\nHoliday and leave handling is separate. The on-call calendar shows who is covering, and the routing tool must read overrides from it, so a swap agreed in the calendar changes who receives the page without anyone editing the routing rules.\n\nMigration approach: run the new routing in shadow for two weeks, sending a silent copy to the new target and comparing it with who actually handled the page. Where the copy would have gone to a different person than the one who ended up resolving it, the catalogue entry is likely wrong, and we fix the catalogue before cutting over.\n\nOne restriction to remember: alert rules created through the old interface cannot carry labels, so they are migrated to the rules repository first, and the interface is made read-only afterwards.",
+      "acceptanceCriteria": [
+        "Alerts go to the rotation of the owning team",
+        "Unowned alerts go to the platform rotation and are annotated",
+        "Escalation follows 10 minute steps; severity one pages the incident commander at once",
+        "Calendar overrides change the recipient",
+        "Shadow mode compares routing with who resolved the page"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "observability",
+        "oncall"
+      ],
+      "state": "New",
+      "parentRef": "tool-090",
+      "sprintRef": "tool-s4",
+      "comments": [
+        {
+          "ref": "tool-c52",
+          "body": "Service catalogue completeness is 83 percent; the missing entries are mostly old batch jobs.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-092",
+      "type": "story",
+      "title": "Attach the matching runbook to every page",
+      "description": "Alerts carry a runbook link field; most are empty. Add a check to the rules repository that fails when a paging alert has no runbook link or the link returns an error, and ship a template runbook with the sections symptom, impact, first checks and escalation.\n\nThe check fetches each link with a short timeout and accepts only an ordinary successful response, so a runbook that has been moved gets noticed. The template includes a section on how to tell whether the problem is customer-visible, because that decides how urgent everything else is.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "observability",
+        "oncall",
+        "docs"
+      ],
+      "state": "New",
+      "parentRef": "tool-090",
+      "sprintRef": "tool-s4",
+      "comments": [
+        {
+          "ref": "tool-c53",
+          "body": "Of 214 paging alerts, 61 have a working runbook link today.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-093",
+      "type": "bug",
+      "title": "The same incident pages three people through three alert rules",
+      "description": "A database failover triggers separate alerts from the service, the queue consumer and the synthetic checks, each paging the on-call. Group alerts that share a service label and fire within five minutes into a single page, with the others listed as related in its description. Grouping must never delay a severity one page.\n\nGrouping should be visible in the page itself: the first alert becomes the page title, the others are listed beneath with times, and acknowledging the page acknowledges all of them. If an alert joins a group after acknowledgement, a note is added to the existing incident rather than paging again.",
+      "acceptanceCriteria": [],
+      "reproSteps": "Trigger a database failover in staging with paging enabled. Three pages arrive within two minutes.",
+      "tags": [
+        "observability",
+        "oncall",
+        "alerts"
+      ],
+      "state": "New",
+      "parentRef": "tool-090",
+      "sprintRef": "tool-s4",
+      "comments": [
+        {
+          "ref": "tool-c54",
+          "body": "Last quarter's failover paged four people from separate rules within ninety seconds.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-094",
+      "type": "story",
+      "title": "Guía de recuperación tras una caída del clúster",
+      "description": "Escribir y ensayar una guía paso a paso para levantar de nuevo la plataforma cuando el clúster principal deja de responder por completo. La última vez que ocurrió, la recuperación llevó más de tres horas porque cada persona recordaba una parte distinta del orden correcto: primero la red y los certificados, después la base de datos, luego los servicios de identidad y, por último, las aplicaciones.\n\nLa guía debe incluir los comandos exactos, quién puede ejecutarlos, cómo comprobar que cada fase ha terminado y qué hacer si una fase falla. Una vez al trimestre se hará un simulacro en el entorno de pruebas con un cronómetro, y el resultado se anotará al final del documento.",
+      "acceptanceCriteria": [
+        "La guía cubre las cuatro fases con comandos exactos",
+        "Se realiza un simulacro trimestral con tiempo medido"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "observability",
+        "oncall",
+        "docs",
+        "español"
+      ],
+      "state": "New",
+      "parentRef": "tool-090",
+      "sprintRef": "tool-s4",
+      "comments": []
+    },
+    {
+      "ref": "tool-095",
+      "type": "story",
+      "title": "Build a mobile app for the on-call rotation",
+      "description": "Removed. The paging vendor's own app covers acknowledging and escalating, and a custom client would need its own release process.\n\nThe decision was made after a short review of what a client would have to do: push notifications that bypass silent mode, secure authentication, offline handling and an app store release process. The vendor's app already provides these, and our users are already familiar with it.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "observability",
+        "oncall"
+      ],
+      "state": "Removed",
+      "parentRef": "tool-090",
+      "sprintRef": "tool-s4",
+      "comments": []
+    },
+    {
+      "ref": "tool-096",
+      "type": "feature",
+      "title": "Internal command-line tool",
+      "description": "One command for the things engineers do every day: log in to the cloud, open a shell in a service, start a stopped development machine, tail logs and check a deploy.\n\nThe tool is a single binary with subcommands, distributed through the package manager. It talks to the same internal APIs as the dashboards and holds no state of its own beyond the cached tokens and a small completion cache, so that reinstalling it is always safe.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "cli",
+        "developer-experience"
+      ],
+      "state": "Active",
+      "parentRef": "tool-082",
+      "sprintRef": "tool-s4",
+      "comments": []
+    },
+    {
+      "ref": "tool-097",
+      "type": "story",
+      "title": "Single sign-on login that works in a terminal without a browser",
+      "description": "The tool's login command opens a browser tab and listens on a local port for the callback. That fails over remote shells and inside containers where there is no browser and no way to reach the port. Support the device authorisation flow: the tool prints a short code and a URL, the person approves on any device, and the tool polls until it receives a token.\n\nTokens are stored in the operating system's secure store where one exists and in a file with owner-only permissions otherwise. The refresh token lasts a working week; the access token lasts an hour and is renewed silently, so people see a login prompt about once a week.\n\nCommands run in scripts need a non-interactive path. A service identity can be supplied by an environment variable holding a short-lived token, and the tool never prompts when it is set, failing with a clear error if the token is expired.\n\nThe polling interval comes from the server, and the tool must obey the slow-down response by adding five seconds to its interval, since ignoring it leads to rate limiting that looks like a hang. We found this in testing when two engineers behind the same office address were both polling at one-second intervals and the identity provider started returning errors for both.\n\nLogout removes stored tokens and calls the revocation endpoint. A command to show who you are logged in as, with the expiry time, makes support questions easy to answer.\n\nTesting matrix for the release: macOS with the keychain, Linux with and without a secret service daemon, Windows with the credential manager, and a minimal container image with only a home directory. The file fallback prints a one-time notice that tokens are stored unencrypted with owner-only permissions.",
+      "acceptanceCriteria": [
+        "Login works over SSH and in containers using a printed code",
+        "Tokens are stored in the secure store or an owner-only file",
+        "Scripts can authenticate with an environment variable token",
+        "The tool honours the slow-down response while polling",
+        "Logout revokes the token"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "cli",
+        "developer-experience",
+        "security"
+      ],
+      "state": "New",
+      "parentRef": "tool-096",
+      "sprintRef": "tool-s4",
+      "comments": [
+        {
+          "ref": "tool-c55",
+          "body": "Device flow works from a container in the test setup; waiting on the identity team to enable the slow-down response in the staging provider.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-098",
+      "type": "story",
+      "title": "Shell completion for commands and service names",
+      "description": "Generate completion scripts for bash, zsh and fish, including dynamic completion of service names fetched from the catalogue and cached for ten minutes so that tab presses are instant.\n\nCompletion data for services is fetched with a hidden subcommand that returns plain lines, so shells that cannot run the binary still work with a static list. Failures in the fetch fall back silently to the cached list, since an error message in the middle of typing is worse than a stale suggestion.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "cli",
+        "developer-experience"
+      ],
+      "state": "Closed",
+      "parentRef": "tool-096",
+      "sprintRef": "tool-s4",
+      "comments": [
+        {
+          "ref": "tool-c56",
+          "body": "Zsh completion for service names works; fish still needs its own quoting rules.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-099",
+      "type": "bug",
+      "title": "Colour codes appear as raw text in the Windows terminal",
+      "description": "The status table shows sequences such as an escape bracket followed by numbers around every cell in the older Windows console. The tool should detect whether the output is a terminal that supports colour, honour the no-colour environment variable, and enable virtual terminal processing where the console allows it.\n\nThe no-colour convention is a plain environment variable with any non-empty value, and the tool should also turn colour off automatically when output is redirected to a file or a pipe. Tests run the status command with each combination and compare against golden outputs.",
+      "acceptanceCriteria": [],
+      "reproSteps": "Run the status command in the legacy Windows console host (not the newer terminal application). The table is full of literal escape sequences.",
+      "tags": [
+        "cli",
+        "windows"
+      ],
+      "state": "New",
+      "parentRef": "tool-096",
+      "sprintRef": "tool-s4",
+      "comments": [
+        {
+          "ref": "tool-c57",
+          "body": "Reproduced in the legacy console only. The new terminal renders colours correctly.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "tool-100",
+      "type": "task",
+      "title": "Update the help text and add examples for every command",
+      "description": "Go through each command and make sure the description, flags and one realistic example are accurate. Add a test that fails when a command has no example.\n\nExamples should use the fake service names from the sandbox catalogue so that people can paste them and see something useful. The test reads the command definitions and fails for a missing example, which has already found three undocumented flags.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "cli",
+        "docs"
+      ],
+      "state": "New",
+      "parentRef": "tool-099",
+      "sprintRef": "tool-s4",
+      "comments": []
+    },
+    {
+      "ref": "tool-101",
+      "type": "story",
+      "title": "Self-update check on every invocation",
+      "description": "Removed. Checking for a new version on each run slowed the tool and annoyed people in scripts. Updates now arrive through the package manager and a weekly notice in chat.\n\nThe weekly chat notice lists the newest version and a link to the changelog. Nothing in this item shipped, so no code needs reverting. A short note in the handbook explains how to upgrade through the package manager.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "cli"
+      ],
+      "state": "Removed",
+      "parentRef": "tool-096",
+      "sprintRef": "tool-s4",
+      "comments": []
+    }
+  ]
+}

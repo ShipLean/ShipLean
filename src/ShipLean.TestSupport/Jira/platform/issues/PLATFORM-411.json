@@ -1,0 +1,93 @@
+{
+  "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+  "id": "10411",
+  "self": "{{base}}/rest/api/{{v}}/issue/10411",
+  "key": "PLATFORM-411",
+  "fields": {
+    "summary": "Renew the search provider licence",
+    "issuetype": {
+      "id": "10001",
+      "name": "Story",
+      "subtask": false
+    },
+    "status": {
+      "id": "10003",
+      "name": "Waiting for Vendor",
+      "statusCategory": {
+        "key": "indeterminate",
+        "name": "In Progress"
+      }
+    },
+    "priority": {
+      "name": "Medium"
+    },
+    "description": {
+      "type": "doc",
+      "version": 1,
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Procurement is waiting on the vendor quote."
+            }
+          ]
+        }
+      ]
+    },
+    "assignee": {
+      "accountId": "712020:6a1e7c0b-52a0-4f27-9c0e-3c1f0a5b7d11",
+      "displayName": "Sam Rivera",
+      "emailAddress": "sam.rivera@acme.io",
+      "active": true,
+      "self": "{{base}}/rest/api/{{v}}/user?accountId=712020:6a1e7c0b-52a0-4f27-9c0e-3c1f0a5b7d11"
+    },
+    "reporter": {
+      "accountId": "5b10a2844c20165700ede21g",
+      "displayName": "Priya Shah",
+      "emailAddress": "priya.shah@acme.io",
+      "active": true,
+      "self": "{{base}}/rest/api/{{v}}/user?accountId=5b10a2844c20165700ede21g"
+    },
+    "labels": [
+      "vendor"
+    ],
+    "components": [],
+    "created": "2026-09-20T09:30:00.000+0000",
+    "updated": "2026-10-19T08:00:00.000+0000",
+    "customfield_10016": 2,
+    "customfield_10020": null,
+    "parent": null,
+    "issuelinks": [],
+    "attachment": []
+  },
+  "changelog": {
+    "startAt": 0,
+    "maxResults": 1,
+    "total": 1,
+    "histories": [
+      {
+        "id": "1",
+        "author": {
+          "accountId": "712020:6a1e7c0b-52a0-4f27-9c0e-3c1f0a5b7d11",
+          "displayName": "Sam Rivera",
+          "emailAddress": "sam.rivera@acme.io",
+          "active": true,
+          "self": "{{base}}/rest/api/{{v}}/user?accountId=712020:6a1e7c0b-52a0-4f27-9c0e-3c1f0a5b7d11"
+        },
+        "created": "2026-10-19T08:00:00.000+0000",
+        "items": [
+          {
+            "field": "status",
+            "fieldtype": "jira",
+            "from": null,
+            "fromString": "Backlog",
+            "to": null,
+            "toString": "Waiting for Vendor"
+          }
+        ]
+      }
+    ]
+  }
+}

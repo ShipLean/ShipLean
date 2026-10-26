@@ -1,0 +1,17 @@
+export const criteriaTestIds = {
+  builder: 'criteria-builder',
+  match: 'criteria-match',
+  matchAll: 'criteria-match-all',
+  matchAny: 'criteria-match-any',
+  clause: 'criteria-clause',
+  field: 'criteria-field',
+  op: 'criteria-op',
+  value: 'criteria-value',
+  inOption: 'criteria-in-option',
+  inNone: 'criteria-in-none',
+  remove: 'criteria-remove',
+  add: 'criteria-add',
+  error: 'criteria-error',
+  documentError: 'criteria-document-error',
+  chips: 'criteria-chips',
+} as const;

@@ -1,0 +1,52 @@
+namespace ShipLean.TestSupport.TestIds;
+
+public static class PagesTestIds
+{
+    public const string NotFound = "page-not-found";
+    public const string LoadFailed = "page-load-failed";
+    public const string BacklogPage = "page-backlog";
+    public const string WorkItemPage = "page-work-item";
+    public const string AttachmentPage = "page-attachment";
+    public const string BoardPage = "page-board";
+    public const string SprintsPage = "page-sprints";
+    public const string SprintBacklogPage = "page-sprint-backlog";
+    public const string TaskboardPage = "page-taskboard";
+    public const string CapacityPage = "page-capacity";
+    public const string ImportPage = "page-import";
+    public const string ProjectSettingsPage = "page-project-settings";
+    public const string NewProjectPage = "page-new-project";
+    public const string InstanceSettingsPage = "page-instance-settings";
+    public const string ProfilePage = "page-profile";
+    public const string SlotAttachment = "slot-attachment";
+    public const string SlotBoard = "slot-board";
+    public const string SlotBoardSettings = "slot-boardSettings";
+    public const string SlotCapacity = "slot-capacity";
+    public const string SlotDiscussion = "slot-discussion";
+    public const string SlotForm = "slot-form";
+    public const string SlotImportRun = "slot-importRun";
+    public const string SlotImportStepper = "slot-importStepper";
+    public const string SlotInstanceGeneral = "slot-instanceGeneral";
+    public const string SlotInstanceIntegrations = "slot-instanceIntegrations";
+    public const string SlotInstanceProjects = "slot-instanceProjects";
+    public const string SlotInstanceUsers = "slot-instanceUsers";
+    public const string SlotLevelBacklog = "slot-levelBacklog";
+    public const string SlotLinks = "slot-links";
+    public const string SlotListMode = "slot-listMode";
+    public const string SlotNewProject = "slot-newProject";
+    public const string SlotNewSprintRail = "slot-newSprintRail";
+    public const string SlotPlanningMode = "slot-planningMode";
+    public const string SlotProfileAccount = "slot-profileAccount";
+    public const string SlotProfileIdentity = "slot-profileIdentity";
+    public const string SlotSettingsDraft = "slot-settingsDraft";
+    public const string SlotSettingsIntegrations = "slot-settingsIntegrations";
+    public const string SlotSettingsStates = "slot-settingsStates";
+    public const string SlotSide = "slot-side";
+    public const string SlotSprintBacklog = "slot-sprintBacklog";
+    public const string SlotSprintEndPrompt = "slot-sprintEndPrompt";
+    public const string SlotSprintsList = "slot-sprintsList";
+    public const string SlotTaskboard = "slot-taskboard";
+    public const string SlotTaskboardSettings = "slot-taskboardSettings";
+    public const string SlotTasks = "slot-tasks";
+    public const string SlotTreeMode = "slot-treeMode";
+    public const string SlotSprintGoalEdit = "slot-sprintGoalEdit";
+}

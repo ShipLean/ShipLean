@@ -1,0 +1,48 @@
+{
+  "request": {
+    "requestId": "0000000d-0000-4000-8001-000000000001",
+    "clientName": "Claude Code",
+    "clientHost": "claude.ai",
+    "verified": true,
+    "redirectHost": "claude.ai",
+    "requestedScopes": ["shiplean:read", "shiplean:write"],
+    "localhostOnly": false
+  },
+  "unverifiedRequest": {
+    "requestId": "0000000d-0000-4000-8001-000000000002",
+    "clientName": "Test Agent",
+    "clientHost": null,
+    "verified": false,
+    "redirectHost": "127.0.0.1",
+    "requestedScopes": ["shiplean:read"],
+    "localhostOnly": true
+  },
+  "decision": { "allow": true, "scopes": ["shiplean:read", "shiplean:write"] },
+  "denial": { "allow": false, "scopes": [] },
+  "result": { "redirectUrl": "https://claude.ai/api/mcp/auth_callback?code=c0de&state=st-1&iss=https%3A%2F%2Fship.example.test" },
+  "connected": [
+    {
+      "id": "0000000d-0000-4000-8001-000000000003",
+      "clientName": "Claude Code",
+      "clientHost": "claude.ai",
+      "verified": true,
+      "scopes": ["shiplean:read", "shiplean:write"],
+      "connectedAt": "2026-10-24T09:00:00+00:00",
+      "lastUsedAt": "2026-10-24T09:30:00+00:00",
+      "connectedLabel": "2h ago",
+      "lastUsedLabel": "1h ago"
+    },
+    {
+      "id": "0000000d-0000-4000-8001-000000000004",
+      "clientName": "Test Agent",
+      "clientHost": null,
+      "verified": false,
+      "scopes": ["shiplean:read"],
+      "connectedAt": "2026-10-23T09:00:00+00:00",
+      "lastUsedAt": null,
+      "connectedLabel": "Yesterday",
+      "lastUsedLabel": null
+    }
+  ],
+  "mcpUrl": { "mcpUrl": "https://ship.example.test/mcp" }
+}

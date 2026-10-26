@@ -1,0 +1,2065 @@
+{
+  "project": {
+    "ref": "shop",
+    "key": "SHOP",
+    "name": "Hearthside Shop",
+    "description": "An online homeware shop: basket and checkout, card and wallet payments, and the order life from confirmation to returns."
+  },
+  "sprints": [
+    {
+      "ref": "shop-s1",
+      "name": "Sprint 1 - First payments",
+      "goal": "A shopper can pay by card with strong authentication and never be charged twice",
+      "startDate": "2026-03-02",
+      "endDate": "2026-03-13"
+    },
+    {
+      "ref": "shop-s2",
+      "name": "Sprint 2 - Delivery and confirmation",
+      "goal": "Address entry, delivery dates and order confirmation emails work end to end",
+      "startDate": "2026-03-16",
+      "endDate": "2026-03-27"
+    },
+    {
+      "ref": "shop-s3",
+      "name": "Sprint 3 - Offers and reconciliation",
+      "goal": "Voucher codes behave predictably and finance can reconcile settlements each morning",
+      "startDate": "2026-03-30",
+      "endDate": "2026-04-10"
+    },
+    {
+      "ref": "shop-s4",
+      "name": "Sprint 4 - Dispatch and tracking",
+      "goal": "Warehouse prints labels, shoppers see tracking, and the last-unit oversell is closed",
+      "startDate": "2026-04-13",
+      "endDate": "2026-04-24"
+    }
+  ],
+  "items": [
+    {
+      "ref": "shop-001",
+      "type": "epic",
+      "title": "Checkout redesign",
+      "description": "Replace the three-page checkout with a single guided flow that keeps the basket, delivery choice and payment visible together. Abandonment at the delivery step is our biggest drop-off, so the flow has to feel short on a phone as well as on a desktop.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "checkout"
+      ],
+      "state": "Active",
+      "sprintRef": "shop-s1",
+      "comments": []
+    },
+    {
+      "ref": "shop-002",
+      "type": "feature",
+      "title": "Basket and cart",
+      "description": "Everything about the basket before the shopper starts paying: adding lines, changing quantities, remembering the basket between visits and showing honest totals.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "checkout",
+        "cart"
+      ],
+      "state": "Active",
+      "parentRef": "shop-001",
+      "sprintRef": "shop-s1",
+      "comments": []
+    },
+    {
+      "ref": "shop-003",
+      "type": "story",
+      "title": "Add a product to the basket from the listing page",
+      "description": "Shoppers should be able to drop an item in the basket straight from a category listing without opening the product page. A small toast confirms the add and offers a link to the basket.",
+      "acceptanceCriteria": [
+        "Tapping the add button puts one unit in the basket",
+        "A toast names the product and shows the new line count",
+        "Out-of-stock products show a disabled button with a notify-me link"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "cart",
+        "ux"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-002",
+      "sprintRef": "shop-s1",
+      "comments": []
+    },
+    {
+      "ref": "shop-004",
+      "type": "story",
+      "title": "Quantity stepper on basket lines",
+      "description": "Replace the free-text quantity box with plus and minus buttons that respect the per-order limit configured on each product.",
+      "acceptanceCriteria": [
+        "Minus at quantity one removes the line after a confirmation",
+        "Plus stops at the product's per-order limit and explains why",
+        "Totals recalculate without a full page reload"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "cart"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-002",
+      "sprintRef": "shop-s1",
+      "comments": []
+    },
+    {
+      "ref": "shop-005",
+      "type": "bug",
+      "title": "Setting quantity to zero leaves a ghost line in the basket",
+      "description": "Typing 0 into the quantity box keeps the line visible with a price of 0.00, and the checkout button stays enabled, so an order can be placed with an empty line.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Add any product to the basket.\n2. Open the basket and type 0 in the quantity box.\n3. Press Enter.\n4. The line stays, showing a zero subtotal, and Proceed to checkout is still active.",
+      "tags": [
+        "cart",
+        "bug"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-002",
+      "sprintRef": "shop-s1",
+      "comments": [
+        {
+          "ref": "shop-c01",
+          "body": "Root cause is the quantity handler only validating on blur. Fixed by treating 0 as a remove and covering it with a test. The new stepper from the quantity story makes the box read-only anyway.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-006",
+      "type": "story",
+      "title": "Merge the guest basket into the account basket on sign-in",
+      "description": "A shopper who builds a basket while signed out and then signs in currently loses it, or worse, sees the older saved basket instead. Combine both baskets, summing quantities and capping at stock.",
+      "acceptanceCriteria": [
+        "Items from both baskets are present after sign-in",
+        "Duplicate products sum their quantities up to available stock",
+        "A banner tells the shopper that baskets were combined"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "cart",
+        "accounts"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-002",
+      "sprintRef": "shop-s2",
+      "comments": [
+        {
+          "ref": "shop-c02",
+          "body": "Product asked whether we should prefer the newer price when the same product was priced differently in the two baskets. Decision: always reprice from the catalogue at merge time, never trust a stored price.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-007",
+      "type": "task",
+      "title": "Add basket merge endpoint",
+      "description": "Server side operation that takes the guest basket token and the account id and returns the merged basket. Idempotent so a retry after a timeout does not double quantities.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "cart",
+        "api"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-006",
+      "sprintRef": "shop-s2",
+      "comments": []
+    },
+    {
+      "ref": "shop-008",
+      "type": "story",
+      "title": "Save for later shelf under the basket",
+      "description": "Let shoppers park a line in a save-for-later shelf instead of deleting it. Parked lines are not counted in totals and survive sign-out.",
+      "acceptanceCriteria": [
+        "Move to saved removes the line from totals",
+        "Moving back restores the previous quantity",
+        "Saved lines persist for ninety days"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "cart"
+      ],
+      "state": "New",
+      "parentRef": "shop-002",
+      "comments": []
+    },
+    {
+      "ref": "shop-009",
+      "type": "bug",
+      "title": "Basket badge in the header shows a stale count after removing an item",
+      "description": "The little number on the basket icon keeps the old count until the next navigation. On slow phones this makes shoppers think the removal failed, so they press remove twice.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Add three products.\n2. Open the basket drawer and remove one.\n3. The header badge still reads 3 until you click anything else.",
+      "tags": [
+        "cart",
+        "bug",
+        "ux"
+      ],
+      "state": "Resolved",
+      "parentRef": "shop-002",
+      "sprintRef": "shop-s3",
+      "comments": []
+    },
+    {
+      "ref": "shop-010",
+      "type": "feature",
+      "title": "Delivery address and shipping options",
+      "description": "Collect an address, validate it, and let the shopper choose between the delivery methods available for that destination, with a clear promised date for each.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "checkout",
+        "shipping"
+      ],
+      "state": "Active",
+      "parentRef": "shop-001",
+      "sprintRef": "shop-s2",
+      "comments": []
+    },
+    {
+      "ref": "shop-011",
+      "type": "story",
+      "title": "Address autocomplete from a lookup service",
+      "description": "Suggest full addresses as the shopper types the first line, filling city, region and postcode on selection. Fall back to manual entry whenever the lookup is down.",
+      "acceptanceCriteria": [
+        "Typing three characters shows up to five suggestions",
+        "Choosing a suggestion fills every address field",
+        "If the lookup times out the form behaves as plain manual entry"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "shipping",
+        "ux"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-010",
+      "sprintRef": "shop-s2",
+      "comments": [
+        {
+          "ref": "shop-c03",
+          "body": "The lookup vendor rate-limits at ten requests per second per key, so the client debounces keystrokes by 250 ms. Worth remembering if we ever raise the suggestion count.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-012",
+      "type": "bug",
+      "title": "Postcode field rejects valid UK postcodes with a space in the middle",
+      "description": "Entering SW1A 1AA fails validation with 'enter a valid postcode' while SW1A1AA passes. Several customers abandoned here according to support.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Start checkout as a guest.\n2. Choose United Kingdom.\n3. Enter SW1A 1AA in the postcode field.\n4. Validation error appears on blur.",
+      "tags": [
+        "shipping",
+        "bug",
+        "validation"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-010",
+      "sprintRef": "shop-s2",
+      "comments": [
+        {
+          "ref": "shop-c04",
+          "body": "The regex anchored the inward code directly after the outward code. We now strip all whitespace, validate, then reinsert a single space before saving.",
+          "archived": false
+        },
+        {
+          "ref": "shop-c39",
+          "body": "Support macro now tells people to remove the space as a workaround until the fix ships.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-013",
+      "type": "story",
+      "title": "Show delivery methods with promised delivery dates",
+      "description": "For each shipping method display the price and an expected arrival range computed from the warehouse cut-off time and the carrier's transit estimate.",
+      "acceptanceCriteria": [
+        "Each method shows a date range, not a day count",
+        "Orders placed after the cut-off roll to the next working day",
+        "Bank holidays are skipped"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "shipping"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-010",
+      "sprintRef": "shop-s2",
+      "comments": []
+    },
+    {
+      "ref": "shop-014",
+      "type": "task",
+      "title": "Configure warehouse cut-off times per fulfilment site",
+      "description": "Add a settings table keyed by site with the daily cut-off and the working weekdays, plus a seed for the two current sites.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "shipping",
+        "config"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-013",
+      "sprintRef": "shop-s2",
+      "comments": []
+    },
+    {
+      "ref": "shop-015",
+      "type": "task",
+      "title": "Import the bank holiday calendar",
+      "description": "Load national holidays for the four countries we ship to and expose them to the promised-date calculation. Refresh yearly by a scheduled job.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "shipping"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-013",
+      "sprintRef": "shop-s2",
+      "comments": []
+    },
+    {
+      "ref": "shop-016",
+      "type": "story",
+      "title": "Click and collect from a local store",
+      "description": "Offer collection at a partner shop for orders under a weight limit, with the collection code shown on the confirmation page and in the email.",
+      "acceptanceCriteria": [
+        "Only stores within 40 km of the postcode are offered",
+        "Collection code is a six character string",
+        "Orders over 20 kg do not offer collection"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "shipping"
+      ],
+      "state": "New",
+      "parentRef": "shop-010",
+      "comments": [
+        {
+          "ref": "shop-c23",
+          "body": "Store partners want a ten-minute heads-up before a customer arrives. Probably a text message when the order is ready.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-017",
+      "type": "bug",
+      "title": "Shipping quote missing for Channel Islands addresses",
+      "description": "Addresses in Jersey and Guernsey get no delivery methods at all, so the shopper sees an empty list and cannot continue.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Choose United Kingdom as country.\n2. Enter postcode JE2 3AB.\n3. The shipping options area is blank.",
+      "tags": [
+        "shipping",
+        "bug"
+      ],
+      "state": "Active",
+      "parentRef": "shop-010",
+      "sprintRef": "shop-s4",
+      "comments": [
+        {
+          "ref": "shop-c05",
+          "body": "Carrier table has no zone for the JE and GY prefixes. Finance needs to confirm whether VAT applies before we add prices, so this is blocked on them rather than on engineering.",
+          "archived": false
+        },
+        {
+          "ref": "shop-c38",
+          "body": "Customer in Jersey called twice about this.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-018",
+      "type": "feature",
+      "title": "Single-page checkout layout",
+      "description": "Bring address, delivery and payment onto one scrolling page with a sticky order summary, replacing the old three-step wizard.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "checkout",
+        "ux"
+      ],
+      "state": "Active",
+      "parentRef": "shop-001",
+      "sprintRef": "shop-s3",
+      "comments": []
+    },
+    {
+      "ref": "shop-019",
+      "type": "story",
+      "title": "Sticky order summary with running totals",
+      "description": "The summary stays visible while the shopper fills in the form, collapsing to a single total bar on narrow screens.",
+      "acceptanceCriteria": [
+        "Summary stays in view on desktop while scrolling",
+        "On phones it collapses into a bar with an expand control",
+        "Discounts and delivery appear as separate lines"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "checkout",
+        "ux"
+      ],
+      "state": "Active",
+      "parentRef": "shop-018",
+      "sprintRef": "shop-s3",
+      "comments": [
+        {
+          "ref": "shop-c24",
+          "body": "Design review: on small screens the discount line was being hidden behind the collapsed bar. Always show discounts even when collapsed.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-020",
+      "type": "story",
+      "title": "Guest checkout without creating an account",
+      "description": "Let a shopper buy with just an email address. After the order we offer to turn the details into an account with one tap.",
+      "acceptanceCriteria": [
+        "No password is requested before payment",
+        "The order email contains a create-account link",
+        "Guest orders appear in the account if the same email registers later"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "checkout",
+        "accounts"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-018",
+      "sprintRef": "shop-s2",
+      "comments": [
+        {
+          "ref": "shop-c48",
+          "body": "Marketing wants an opt-in checkbox for the newsletter on the guest form, unticked by default.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-021",
+      "type": "bug",
+      "title": "Browser back button from payment loses the delivery selection",
+      "description": "Going back from the card form returns to the address block with the shipping method reset, forcing the shopper to pick it again.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Fill in the address and choose Express delivery.\n2. Move on to the card section.\n3. Press the browser Back button.\n4. Delivery shows Standard again.",
+      "tags": [
+        "checkout",
+        "bug"
+      ],
+      "state": "New",
+      "parentRef": "shop-018",
+      "comments": [
+        {
+          "ref": "shop-c28",
+          "body": "Looks like the selection lives in component state and not in the URL. Moving it to the query string would also fix refresh.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-022",
+      "type": "story",
+      "title": "Keyboard and screen reader pass over the checkout form",
+      "description": "Walk through the whole form with a keyboard and a screen reader, fixing focus order, missing labels and error announcements.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "checkout",
+        "a11y"
+      ],
+      "state": "Active",
+      "parentRef": "shop-018",
+      "sprintRef": "shop-s4",
+      "comments": []
+    },
+    {
+      "ref": "shop-023",
+      "type": "story",
+      "title": "Wallet buttons for one-tap express checkout",
+      "description": "Show Apple Pay and Google Pay buttons at the top of the basket for supported browsers, skipping the form entirely when the wallet supplies address and contact.",
+      "acceptanceCriteria": [
+        "Buttons only render on supporting browsers",
+        "The wallet's shipping address is validated by the same rules",
+        "Cancelling the sheet returns to the basket unchanged"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "checkout",
+        "payments"
+      ],
+      "state": "New",
+      "parentRef": "shop-018",
+      "comments": [
+        {
+          "ref": "shop-c27",
+          "body": "Apple's domain verification file must be served from the root with no redirect. Easy to forget when the shop sits behind the CDN.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-024",
+      "type": "epic",
+      "title": "Payments platform",
+      "description": "Move all card and alternative payment handling behind a provider-neutral layer so that we can add methods, handle failure cleanly and reconcile with finance each morning.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "payments"
+      ],
+      "state": "Active",
+      "sprintRef": "shop-s1",
+      "comments": []
+    },
+    {
+      "ref": "shop-025",
+      "type": "feature",
+      "title": "Card payments and strong authentication",
+      "description": "Accept debit and credit cards, including the extra authentication step required in Europe, with clear messages for every kind of decline.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "payments",
+        "cards"
+      ],
+      "state": "Active",
+      "parentRef": "shop-024",
+      "sprintRef": "shop-s1",
+      "comments": []
+    },
+    {
+      "ref": "shop-026",
+      "type": "story",
+      "title": "Hosted card fields inside the checkout page",
+      "description": "Embed the provider's hosted fields so card numbers never touch our servers, styled to match the rest of the page.",
+      "acceptanceCriteria": [
+        "Card number, expiry and security code are provider iframes",
+        "Field validation errors appear inline in our styling",
+        "Our servers only ever receive a payment token"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "payments",
+        "pci"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-025",
+      "sprintRef": "shop-s1",
+      "comments": [
+        {
+          "ref": "shop-c47",
+          "body": "Styling of the hosted fields is limited to a short list of properties, so the focus ring colour cannot match our brand exactly.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-027",
+      "type": "story",
+      "title": "Handle the bank challenge step for strong customer authentication",
+      "description": "When the issuer requires an extra approval, open the challenge in a modal and resume the order when it completes, or return a clear failure if it is abandoned.",
+      "acceptanceCriteria": [
+        "Challenge opens in a modal on desktop and a full-screen sheet on phones",
+        "Success resumes order creation automatically",
+        "Closing the challenge leaves the basket intact and shows a retry message"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "payments",
+        "cards"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-025",
+      "sprintRef": "shop-s1",
+      "comments": [
+        {
+          "ref": "shop-c06",
+          "body": "QA found that one test issuer responds with a frictionless flow but a pending status for up to forty seconds. We poll the payment intent for a minute before giving up. That polling window is what keeps those customers from seeing a spurious failure.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-028",
+      "type": "bug",
+      "title": "Customer charged twice when the confirm button is tapped twice",
+      "description": "On a slow connection a second tap on Pay now creates a second payment and therefore a duplicate order. Two customers were refunded manually last week.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Throttle the network to Slow 3G.\n2. Fill in a valid test card.\n3. Tap Pay now twice quickly.\n4. Two orders appear in the admin list with different numbers.",
+      "tags": [
+        "payments",
+        "bug",
+        "urgent"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-025",
+      "sprintRef": "shop-s1",
+      "comments": [
+        {
+          "ref": "shop-c07",
+          "body": "Fix has two layers: the button disables itself on first press, and the order create call carries an idempotency key derived from the basket version so the server collapses repeats. Keep both; the client side alone is not enough when the page is reloaded mid-request.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-029",
+      "type": "task",
+      "title": "Idempotency keys on payment creation",
+      "description": "Generate a key from basket id and basket version, send it to the provider and store it on the order so retries find the existing payment.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "payments",
+        "api"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-028",
+      "sprintRef": "shop-s1",
+      "comments": []
+    },
+    {
+      "ref": "shop-030",
+      "type": "bug",
+      "title": "Generic error shown for every declined card",
+      "description": "All declines show 'something went wrong', even when the issuer said insufficient funds or an expired card. Shoppers retry the same card repeatedly.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Pay with the test card that always declines for insufficient funds.\n2. The red banner reads 'something went wrong' with no hint.",
+      "tags": [
+        "payments",
+        "bug",
+        "ux"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-025",
+      "sprintRef": "shop-s2",
+      "comments": [
+        {
+          "ref": "shop-c26",
+          "body": "Support shared the top three complaint phrases; none mention the decline code, which confirms the generic message is the issue.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-031",
+      "type": "story",
+      "title": "Map provider decline codes to friendly messages",
+      "description": "Translate the dozen most common decline codes to short, actionable messages and log the raw code for support.",
+      "acceptanceCriteria": [
+        "Insufficient funds says to try another card",
+        "Expired card asks for a new expiry date",
+        "Unknown codes fall back to a neutral message and are logged"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "payments",
+        "ux"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-025",
+      "sprintRef": "shop-s2",
+      "comments": []
+    },
+    {
+      "ref": "shop-032",
+      "type": "story",
+      "title": "Pay with a saved card",
+      "description": "Returning customers can store a card as a provider token and choose it at checkout with only the security code re-entered.",
+      "acceptanceCriteria": [
+        "Only the last four digits and brand are displayed",
+        "Removing a saved card deletes the token at the provider",
+        "A card that needs authentication again triggers the challenge"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "payments",
+        "accounts"
+      ],
+      "state": "Resolved",
+      "parentRef": "shop-025",
+      "sprintRef": "shop-s3",
+      "comments": []
+    },
+    {
+      "ref": "shop-033",
+      "type": "feature",
+      "title": "Alternative payment methods",
+      "description": "Bank transfer, wallets and buy-now-pay-later options for markets where cards are not the default.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "payments"
+      ],
+      "state": "Active",
+      "parentRef": "shop-024",
+      "sprintRef": "shop-s3",
+      "comments": []
+    },
+    {
+      "ref": "shop-034",
+      "type": "story",
+      "title": "PayPal as a payment option",
+      "description": "Redirect to PayPal for approval and return to a confirmation step. Refunds issued in our admin should flow back through the same rail.",
+      "acceptanceCriteria": [
+        "Shopper returns to the order page after approving",
+        "Cancelling at PayPal returns to the basket",
+        "Refunds go back to PayPal, not to a card"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "payments"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-033",
+      "sprintRef": "shop-s2",
+      "comments": []
+    },
+    {
+      "ref": "shop-035",
+      "type": "story",
+      "title": "Instalments via a buy-now-pay-later partner",
+      "description": "Offer split payments for baskets between 50 and 1500 pounds, showing the instalment schedule before the shopper confirms.",
+      "acceptanceCriteria": [
+        "Option only appears inside the eligible basket range",
+        "Schedule shows each date and amount",
+        "Declined eligibility falls back to the other methods without losing the form"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "payments"
+      ],
+      "state": "New",
+      "parentRef": "shop-033",
+      "comments": [
+        {
+          "ref": "shop-c29",
+          "body": "The partner needs a sandbox agreement signed before they give us credentials. Legal have the draft.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-036",
+      "type": "story",
+      "title": "SEPA direct debit for euro customers",
+      "description": "Collect a mandate with the IBAN, store it with the provider and show the mandate text required by regulation.",
+      "acceptanceCriteria": [
+        "Mandate text is displayed before confirmation",
+        "Orders wait for the debit to clear before shipping",
+        "Failed debits notify the shopper by email"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "payments",
+        "eu"
+      ],
+      "state": "Removed",
+      "parentRef": "shop-033",
+      "comments": [
+        {
+          "ref": "shop-c08",
+          "body": "Dropping this for now. Less than two percent of our European orders would use it and the clearing delay conflicts with next-day dispatch. Revisit if we open a euro warehouse.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-037",
+      "type": "bug",
+      "title": "Cancelling at PayPal leaves the basket locked",
+      "description": "If the shopper closes the PayPal window, the basket stays flagged as being paid and every edit is refused for fifteen minutes.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Choose PayPal at checkout.\n2. In the popup, close the window without approving.\n3. Back on the page try to change a quantity: an error says the basket is being paid.",
+      "tags": [
+        "payments",
+        "bug",
+        "cart"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-033",
+      "sprintRef": "shop-s2",
+      "comments": []
+    },
+    {
+      "ref": "shop-038",
+      "type": "feature",
+      "title": "Daily reconciliation with finance",
+      "description": "Produce a morning report that matches provider settlement lines to orders so finance can close the previous day without spreadsheets.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "payments",
+        "finance"
+      ],
+      "state": "Active",
+      "parentRef": "shop-024",
+      "sprintRef": "shop-s3",
+      "comments": []
+    },
+    {
+      "ref": "shop-039",
+      "type": "story",
+      "title": "Import the provider settlement file each morning",
+      "description": "Download the settlement CSV from the provider at 06:00, parse it and attach every line to the order and payment it belongs to.",
+      "acceptanceCriteria": [
+        "Each settlement line links to exactly one payment",
+        "Unmatched lines are listed on a review screen",
+        "The import can be re-run for a given date without duplicates"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "finance",
+        "payments"
+      ],
+      "state": "Active",
+      "parentRef": "shop-038",
+      "sprintRef": "shop-s3",
+      "comments": [
+        {
+          "ref": "shop-c37",
+          "body": "The provider publishes settlement files at 05:30 UTC, but occasionally late. Retry until 09:00 before alerting.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-040",
+      "type": "task",
+      "title": "Parse the settlement CSV with its quirky quoting",
+      "description": "The provider quotes numbers with thousands separators and sometimes wraps whole rows in extra quotes. Build a tolerant parser with fixtures for the oddities seen so far.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "finance"
+      ],
+      "state": "Active",
+      "parentRef": "shop-039",
+      "sprintRef": "shop-s3",
+      "comments": [
+        {
+          "ref": "shop-c09",
+          "body": "One more oddity: refunds arrive as negative amounts in a separate column, never in the amount column. Handled in the fixture file called refund-column.csv.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-041",
+      "type": "story",
+      "title": "Mismatch report for finance",
+      "description": "List every day's orders whose captured amount differs from the settled amount, grouped by cause such as fees, partial refunds and currency rounding.",
+      "acceptanceCriteria": [
+        "Report groups by cause",
+        "Each row links to the order",
+        "CSV export available"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "finance"
+      ],
+      "state": "New",
+      "parentRef": "shop-038",
+      "comments": []
+    },
+    {
+      "ref": "shop-042",
+      "type": "bug",
+      "title": "Settled amount is one penny off on orders with a percentage discount",
+      "description": "Orders with a 15 percent code settle a penny lower than the sum of line totals, producing noise in the mismatch list every day.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Create a basket of 3 items at 9.99 each.\n2. Apply the 15% code.\n3. Our total shows 25.47 while the provider captured 25.46.",
+      "tags": [
+        "payments",
+        "bug",
+        "finance"
+      ],
+      "state": "Active",
+      "parentRef": "shop-038",
+      "sprintRef": "shop-s4",
+      "comments": [
+        {
+          "ref": "shop-c10",
+          "body": "We round each line after the discount; the provider rounds the total once. Pick one rule and apply it in both places. Banker's rounding is not the problem here, it is the order of operations.",
+          "archived": false
+        },
+        {
+          "ref": "shop-c50",
+          "body": "Finance suggest we freeze the rule in a short note so the next provider migration keeps it.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-043",
+      "type": "feature",
+      "title": "Refunds and chargebacks",
+      "description": "Let support refund a payment in full or in part, and record chargebacks raised by banks so they link to the order.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "payments",
+        "support"
+      ],
+      "state": "New",
+      "parentRef": "shop-024",
+      "comments": []
+    },
+    {
+      "ref": "shop-044",
+      "type": "story",
+      "title": "Partial refund from the order screen",
+      "description": "Support can refund one or more lines, or an arbitrary amount, with a reason, and the shopper gets an email.",
+      "acceptanceCriteria": [
+        "Cannot refund more than was captured",
+        "Reason is mandatory",
+        "Shopper email lists what was refunded"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "support",
+        "payments"
+      ],
+      "state": "Resolved",
+      "parentRef": "shop-043",
+      "sprintRef": "shop-s4",
+      "comments": []
+    },
+    {
+      "ref": "shop-045",
+      "type": "story",
+      "title": "Record chargebacks against the order",
+      "description": "Receive the dispute webhook, mark the order disputed and attach the evidence deadline so support does not miss it.",
+      "acceptanceCriteria": [
+        "Webhook creates a dispute record",
+        "Order shows a disputed badge",
+        "A reminder fires three days before the evidence deadline"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "payments",
+        "support"
+      ],
+      "state": "New",
+      "parentRef": "shop-043",
+      "comments": [
+        {
+          "ref": "shop-c35",
+          "body": "Evidence deadlines vary by card scheme between seven and twenty-one days; store the date from the webhook rather than computing it.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-046",
+      "type": "story",
+      "title": "Verify webhook signatures from the payment provider",
+      "description": "Reject any callback whose signature header does not match the shared secret, and rotate the secret without downtime.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "payments",
+        "security"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-025",
+      "sprintRef": "shop-s1",
+      "comments": [
+        {
+          "ref": "shop-c11",
+          "body": "Rotation works by accepting two secrets for a window. Remember the old secret must be removed from configuration afterwards, otherwise rotation protects nothing.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-047",
+      "type": "epic",
+      "title": "Orders and fulfilment",
+      "description": "The life of an order after payment: confirmation, packing, dispatch, tracking and returns. The goal is that shoppers never need to email us to ask where something is.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "orders"
+      ],
+      "state": "Active",
+      "sprintRef": "shop-s2",
+      "comments": []
+    },
+    {
+      "ref": "shop-048",
+      "type": "feature",
+      "title": "Order confirmation",
+      "description": "Immediately after payment the shopper sees a confirmation page and receives an email that matches it.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "orders",
+        "email"
+      ],
+      "state": "Active",
+      "parentRef": "shop-047",
+      "sprintRef": "shop-s2",
+      "comments": []
+    },
+    {
+      "ref": "shop-049",
+      "type": "story",
+      "title": "Confirmation page with order number and summary",
+      "description": "Show the order number, items, delivery details and a clear next-steps list. Reloading the page must not create anything new.",
+      "acceptanceCriteria": [
+        "Order number is shown prominently",
+        "Summary matches the basket as paid",
+        "Reload does not re-trigger analytics purchase events"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "orders"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-048",
+      "sprintRef": "shop-s2",
+      "comments": []
+    },
+    {
+      "ref": "shop-050",
+      "type": "story",
+      "title": "Order confirmation email",
+      "description": "Send an email within a minute of payment containing the summary, delivery estimate and a link to manage the order.",
+      "acceptanceCriteria": [
+        "Sent within 60 seconds of payment",
+        "Includes itemised totals with tax",
+        "Link opens the order without signing in, for a limited time"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "email",
+        "orders"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-048",
+      "sprintRef": "shop-s2",
+      "comments": [
+        {
+          "ref": "shop-c12",
+          "body": "Magic-link orders expire after seven days. Support wanted thirty but security preferred shorter, we settled on seven with a resend option.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-051",
+      "type": "bug",
+      "title": "Confirmation email shows prices without VAT for business customers",
+      "description": "Customers with a VAT number see net prices in the email but gross prices on the site, which has confused several accountants.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Register a business account with a valid VAT number.\n2. Place an order.\n3. Compare the email totals with the confirmation page.",
+      "tags": [
+        "email",
+        "bug",
+        "tax"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-048",
+      "sprintRef": "shop-s3",
+      "comments": [
+        {
+          "ref": "shop-c30",
+          "body": "Customer success confirmed three accountants wrote in about this. Fixed by using the same price formatter as the site.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-052",
+      "type": "story",
+      "title": "Correo de confirmación de pedido en español",
+      "description": "Los clientes de España y Latinoamérica deben recibir el correo de confirmación en español, con los importes en su moneda y el plazo de entrega estimado. El idioma se elige según la configuración de la cuenta o, si no existe, la del navegador.",
+      "acceptanceCriteria": [
+        "El asunto y el cuerpo están traducidos",
+        "Los importes usan el formato local",
+        "Si falta la traducción se envía en inglés"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "email",
+        "i18n"
+      ],
+      "state": "Active",
+      "parentRef": "shop-048",
+      "sprintRef": "shop-s4",
+      "comments": [
+        {
+          "ref": "shop-c13",
+          "body": "Falta revisar la traducción del texto legal sobre el derecho de desistimiento; pedimos una revisión a una persona nativa antes de publicar.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-053",
+      "type": "feature",
+      "title": "Warehouse picking and dispatch",
+      "description": "Give the warehouse a queue of paid orders, pick lists in shelf order, and a dispatch step that books the courier and prints the label.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "orders",
+        "warehouse"
+      ],
+      "state": "Active",
+      "parentRef": "shop-047",
+      "sprintRef": "shop-s3",
+      "comments": []
+    },
+    {
+      "ref": "shop-054",
+      "type": "story",
+      "title": "Pick list sorted by shelf location",
+      "description": "Group the lines of a batch of orders by aisle and bay so the picker walks the floor once.",
+      "acceptanceCriteria": [
+        "Lines are ordered by aisle then bay",
+        "Multi-order batches show which order each unit belongs to",
+        "Pick list prints on A4 and on the handheld screen"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "warehouse"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-053",
+      "sprintRef": "shop-s3",
+      "comments": [
+        {
+          "ref": "shop-c33",
+          "body": "Warehouse trial on Tuesday went well; pickers asked for the bay labels to be bigger on the handheld.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-055",
+      "type": "story",
+      "title": "Print courier labels at dispatch",
+      "description": "When a parcel is marked packed, book the courier through their API and print the label and customs form where needed.",
+      "acceptanceCriteria": [
+        "One label per parcel",
+        "International parcels include a customs declaration",
+        "Failed bookings show a retry option and keep the order packed"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "warehouse",
+        "shipping"
+      ],
+      "state": "Active",
+      "parentRef": "shop-053",
+      "sprintRef": "shop-s3",
+      "comments": []
+    },
+    {
+      "ref": "shop-056",
+      "type": "task",
+      "title": "Courier API client with retry and backoff",
+      "description": "Wrap the courier booking endpoint with timeouts, exponential backoff and a circuit breaker so a courier outage does not block the packing bench.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "warehouse",
+        "api"
+      ],
+      "state": "Active",
+      "parentRef": "shop-055",
+      "sprintRef": "shop-s3",
+      "comments": [
+        {
+          "ref": "shop-c14",
+          "body": "The courier's sandbox returns tracking numbers that are only eight digits, but production ones are twelve. Do not size a column or a regex from sandbox data.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-057",
+      "type": "bug",
+      "title": "Label booked with the wrong weight for multi-parcel orders",
+      "description": "When an order is split across two parcels, both labels carry the total order weight, so the courier surcharges us for overweight parcels.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Create an order of 3 items that does not fit in one box.\n2. Pack it as two parcels at the bench.\n3. Both labels show the combined weight.",
+      "tags": [
+        "warehouse",
+        "bug"
+      ],
+      "state": "Active",
+      "parentRef": "shop-053",
+      "sprintRef": "shop-s4",
+      "comments": [
+        {
+          "ref": "shop-c34",
+          "body": "Courier invoice shows eleven surcharges last month, all multi-parcel.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-058",
+      "type": "story",
+      "title": "Back-order handling when stock runs out after payment",
+      "description": "If a unit disappears between payment and picking, offer the shopper a wait, a substitute or a refund rather than silently cancelling.",
+      "acceptanceCriteria": [
+        "Shopper is emailed within an hour with the three options",
+        "Order is held, not cancelled, while waiting for a reply",
+        "No reply after five days triggers a refund"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "orders",
+        "warehouse"
+      ],
+      "state": "New",
+      "parentRef": "shop-053",
+      "comments": []
+    },
+    {
+      "ref": "shop-059",
+      "type": "feature",
+      "title": "Tracking and delivery notifications",
+      "description": "Show tracking events in the account and email the shopper at key moments.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "orders",
+        "email"
+      ],
+      "state": "Active",
+      "parentRef": "shop-047",
+      "sprintRef": "shop-s4",
+      "comments": []
+    },
+    {
+      "ref": "shop-060",
+      "type": "story",
+      "title": "Tracking timeline on the order page",
+      "description": "Display courier events as a vertical timeline with the latest at the top, translating courier jargon into plain wording.",
+      "acceptanceCriteria": [
+        "Events refresh every few minutes while the page is open",
+        "Unknown statuses show the courier's text unchanged",
+        "Delivered shows the date and any signature name"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "orders"
+      ],
+      "state": "Active",
+      "parentRef": "shop-059",
+      "sprintRef": "shop-s4",
+      "comments": [
+        {
+          "ref": "shop-c22",
+          "body": "Early idea was to show a map with the courier's van, but only one courier provides coordinates. Shelved.",
+          "archived": true
+        }
+      ]
+    },
+    {
+      "ref": "shop-061",
+      "type": "story",
+      "title": "Dispatch notification email",
+      "description": "Email when the parcel leaves the warehouse, with the tracking link and the expected date.",
+      "acceptanceCriteria": [
+        "Sent when the label is scanned by the courier",
+        "Contains tracking number and link",
+        "Not sent for click and collect orders"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "email",
+        "orders"
+      ],
+      "state": "New",
+      "parentRef": "shop-059",
+      "comments": []
+    },
+    {
+      "ref": "shop-062",
+      "type": "bug",
+      "title": "Tracking link in the email opens the courier home page",
+      "description": "Links for one courier lose the tracking number because a percent sign gets double-encoded.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Dispatch an order with the Northway courier.\n2. Click the tracking link in the dispatch email.\n3. The courier site opens without a number filled in.",
+      "tags": [
+        "email",
+        "bug"
+      ],
+      "state": "Resolved",
+      "parentRef": "shop-059",
+      "sprintRef": "shop-s4",
+      "comments": []
+    },
+    {
+      "ref": "shop-063",
+      "type": "feature",
+      "title": "Returns and exchanges",
+      "description": "Self-service returns inside the 30 day window, from request through to the refund, without emailing support.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "orders",
+        "returns"
+      ],
+      "state": "New",
+      "parentRef": "shop-047",
+      "comments": [
+        {
+          "ref": "shop-c49",
+          "body": "Need a decision on who pays for return postage before the label story can be sized.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-064",
+      "type": "story",
+      "title": "Shopper requests a return from the order page",
+      "description": "Pick the lines, choose a reason, and receive a prepaid label by email.",
+      "acceptanceCriteria": [
+        "Only delivered orders inside thirty days offer the button",
+        "Reason list is configurable",
+        "Prepaid label is generated immediately"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "returns"
+      ],
+      "state": "New",
+      "parentRef": "shop-063",
+      "comments": [
+        {
+          "ref": "shop-c31",
+          "body": "Policy question for ops: do we refund original shipping on a change of mind return? Currently the answer is no.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-065",
+      "type": "story",
+      "title": "Warehouse inspects returned goods and triggers the refund",
+      "description": "A returns bench screen records condition, restocks sellable units and fires the refund automatically.",
+      "acceptanceCriteria": [
+        "Condition is recorded per unit",
+        "Sellable units go back to stock",
+        "Refund fires only after inspection"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "returns",
+        "warehouse"
+      ],
+      "state": "New",
+      "parentRef": "shop-063",
+      "comments": []
+    },
+    {
+      "ref": "shop-066",
+      "type": "bug",
+      "title": "Returned units are added to stock twice",
+      "description": "Receiving a return increments the stock level both from the inspection screen and from the nightly sync, inflating availability.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Receive a return of two units.\n2. Mark them restockable.\n3. Next morning the product shows four extra units.",
+      "tags": [
+        "returns",
+        "bug",
+        "stock"
+      ],
+      "state": "New",
+      "parentRef": "shop-063",
+      "comments": [
+        {
+          "ref": "shop-c32",
+          "body": "Suspect the nightly stock sync recomputes from the movements ledger and the inspection screen also writes a movement.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-067",
+      "type": "epic",
+      "title": "Discounts and promotions",
+      "description": "Voucher codes, automatic offers and free-shipping thresholds, with rules that marketing can configure without a developer.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "promotions"
+      ],
+      "state": "Active",
+      "sprintRef": "shop-s3",
+      "comments": []
+    },
+    {
+      "ref": "shop-068",
+      "type": "feature",
+      "title": "Voucher codes",
+      "description": "Single-use and multi-use codes with minimum spend, expiry and product restrictions.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "promotions"
+      ],
+      "state": "Active",
+      "parentRef": "shop-067",
+      "sprintRef": "shop-s3",
+      "comments": []
+    },
+    {
+      "ref": "shop-069",
+      "type": "story",
+      "title": "Apply a voucher code in the basket",
+      "description": "A field below the totals accepts a code and shows the saving immediately, or a specific reason why it does not apply.",
+      "acceptanceCriteria": [
+        "Valid code shows the saving as its own line",
+        "Expired code says it expired and when",
+        "Only one code at a time unless marked stackable"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "promotions",
+        "cart"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-068",
+      "sprintRef": "shop-s3",
+      "comments": [
+        {
+          "ref": "shop-c36",
+          "body": "A stackable flag exists on the data model already from the first prototype, but the screen treats every code as exclusive.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-070",
+      "type": "bug",
+      "title": "Voucher codes are case sensitive",
+      "description": "SPRING10 works but spring10 says invalid, which generates support tickets whenever someone types it from a printed flyer.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Open the basket.\n2. Enter spring10 in the voucher field.\n3. Error: this code is not valid.",
+      "tags": [
+        "promotions",
+        "bug"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-068",
+      "sprintRef": "shop-s3",
+      "comments": []
+    },
+    {
+      "ref": "shop-071",
+      "type": "bug",
+      "title": "Gutschein wird bei Bestellungen mit Versandkostenfreiheit nicht angewendet",
+      "description": "Wenn der Warenkorb bereits die Grenze für kostenlosen Versand erreicht, wird ein eingegebener Gutscheincode ohne Fehlermeldung ignoriert. Der Kunde sieht den Rabatt nicht und bezahlt den vollen Preis.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Lege Waren im Wert von 80 Euro in den Warenkorb.\n2. Gib den Code WILLKOMMEN5 ein.\n3. Der Rabatt erscheint nicht, es gibt auch keine Meldung.",
+      "tags": [
+        "promotions",
+        "bug",
+        "i18n"
+      ],
+      "state": "Active",
+      "parentRef": "shop-068",
+      "sprintRef": "shop-s4",
+      "comments": [
+        {
+          "ref": "shop-c15",
+          "body": "Reproduziert auf dem Testsystem. Die Regel für kostenlosen Versand überschreibt die Gutscheinprüfung, weil beide denselben Rabattschlüssel benutzen.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-072",
+      "type": "story",
+      "title": "Rules for combining offers",
+      "description": "Define which promotions may stack, with a priority order, so that a voucher plus an automatic offer plus free shipping behaves predictably.",
+      "acceptanceCriteria": [
+        "Priority list editable by marketing",
+        "Preview shows the final price for a sample basket",
+        "Conflicts are resolved by priority, not by creation time"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "promotions"
+      ],
+      "state": "Active",
+      "parentRef": "shop-068",
+      "sprintRef": "shop-s4",
+      "comments": [
+        {
+          "ref": "shop-c16",
+          "body": "Marketing asked for a 'never go below cost' guard. It belongs here: a floor price per product that no combination of discounts can breach.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-073",
+      "type": "story",
+      "title": "Free shipping threshold banner",
+      "description": "Show how much more the shopper needs to spend to unlock free delivery, updating live as the basket changes.",
+      "acceptanceCriteria": [
+        "Banner shows remaining amount",
+        "Banner disappears once unlocked",
+        "Threshold is per destination country"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "promotions",
+        "shipping"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-068",
+      "sprintRef": "shop-s3",
+      "comments": []
+    },
+    {
+      "ref": "shop-074",
+      "type": "story",
+      "title": "Gift cards purchasable as products",
+      "description": "Sell electronic gift cards delivered by email on a chosen date, redeemable as a payment method at checkout.",
+      "acceptanceCriteria": [
+        "Buyer picks amount, recipient and delivery date",
+        "Recipient receives a code on that date",
+        "Balance can be split with another method"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "promotions",
+        "payments"
+      ],
+      "state": "Removed",
+      "parentRef": "shop-068",
+      "comments": [
+        {
+          "ref": "shop-c17",
+          "body": "Parked indefinitely: legal want a breakage policy and the finance team do not want a liability on the books this year.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-075",
+      "type": "epic",
+      "title": "Reliability and performance",
+      "description": "Make the shop fast, observable and boring in production, especially on sale days.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "platform"
+      ],
+      "state": "Active",
+      "sprintRef": "shop-s1",
+      "comments": []
+    },
+    {
+      "ref": "shop-076",
+      "type": "feature",
+      "title": "Page speed",
+      "description": "Bring the checkout pages to a good score on mid-range phones over a mobile connection.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "platform",
+        "performance"
+      ],
+      "state": "Active",
+      "parentRef": "shop-075",
+      "sprintRef": "shop-s2",
+      "comments": [
+        {
+          "ref": "shop-c25",
+          "body": "Lighthouse on a mid-range Android phone gave 46 for the payment section. Target is 80.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-077",
+      "type": "story",
+      "title": "Serve responsive product images in modern formats",
+      "description": "Generate several widths of each product photo and let the browser choose, using a compact format where supported.",
+      "acceptanceCriteria": [
+        "Listing pages download less than 1.5 MB of images",
+        "Width variants are generated on upload",
+        "Original is kept for the zoom view"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "performance"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-076",
+      "sprintRef": "shop-s2",
+      "comments": []
+    },
+    {
+      "ref": "shop-078",
+      "type": "story",
+      "title": "Cache category pages at the edge for sixty seconds",
+      "description": "Put a short edge cache in front of category listings, purged when a product in the category changes.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "performance"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-076",
+      "sprintRef": "shop-s2",
+      "comments": []
+    },
+    {
+      "ref": "shop-079",
+      "type": "bug",
+      "title": "Category filter is slow with more than four facets selected",
+      "description": "Choosing brand, size, colour, price and rating together takes over six seconds because each facet runs its own count query.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Open the Women's shoes category.\n2. Select a brand, a size, a colour and a price band.\n3. Wait for the grid to refresh: it takes 6-8 seconds.",
+      "tags": [
+        "performance",
+        "bug"
+      ],
+      "state": "New",
+      "parentRef": "shop-076",
+      "comments": []
+    },
+    {
+      "ref": "shop-080",
+      "type": "feature",
+      "title": "Observability for the order path",
+      "description": "Trace an order from basket to dispatch so that on-call can see which step is failing.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "platform",
+        "ops"
+      ],
+      "state": "Active",
+      "parentRef": "shop-075",
+      "sprintRef": "shop-s3",
+      "comments": []
+    },
+    {
+      "ref": "shop-081",
+      "type": "story",
+      "title": "Correlation id carried through every service call",
+      "description": "Create an id when the basket is created and pass it through payment, stock and courier calls and into every log line.",
+      "acceptanceCriteria": [
+        "Id appears in all log lines for the order",
+        "Id is returned in support-facing error pages",
+        "Dashboards can filter on it"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "ops"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-080",
+      "sprintRef": "shop-s3",
+      "comments": []
+    },
+    {
+      "ref": "shop-082",
+      "type": "story",
+      "title": "Alert when payment success rate drops",
+      "description": "Page the on-call engineer if the share of successful payments over ten minutes falls below ninety percent, excluding declines caused by the shopper.",
+      "acceptanceCriteria": [
+        "Alert excludes issuer declines",
+        "Quiet at night when volume is under ten per hour",
+        "Links to the dashboard in the page text"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "ops",
+        "payments"
+      ],
+      "state": "New",
+      "parentRef": "shop-080",
+      "comments": []
+    },
+    {
+      "ref": "shop-083",
+      "type": "bug",
+      "title": "Two shoppers can buy the last unit of a product",
+      "description": "Stock is checked when adding to the basket but not decremented until payment succeeds, so the final unit can be sold twice at peak.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Set a product to stock level 1.\n2. In two browsers add it to the basket.\n3. Pay in both. Both succeed.",
+      "tags": [
+        "stock",
+        "bug",
+        "urgent"
+      ],
+      "state": "Active",
+      "parentRef": "shop-080",
+      "sprintRef": "shop-s4",
+      "comments": [
+        {
+          "ref": "shop-c18",
+          "body": "Proposal: reserve stock for ten minutes at the start of payment and release it on failure or timeout. Reservations must survive an app restart, so they live in the database rather than in memory.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-084",
+      "type": "story",
+      "title": "Load test the checkout for the autumn sale",
+      "description": "Script a realistic mix of browsing, basket and payment traffic at three times last year's peak and record where it breaks.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "performance",
+        "ops"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-076",
+      "sprintRef": "shop-s1",
+      "comments": [
+        {
+          "ref": "shop-c19",
+          "body": "The first run saturated the database connection pool at roughly 400 concurrent checkouts. Raising the pool and adding a read replica for listings got us past 1500.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-085",
+      "type": "story",
+      "title": "Remove the old three-page checkout templates",
+      "description": "Once the single-page flow is live for everyone, delete the legacy templates, routes and their tests.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "checkout",
+        "cleanup"
+      ],
+      "state": "New",
+      "parentRef": "shop-018",
+      "comments": []
+    },
+    {
+      "ref": "shop-086",
+      "type": "story",
+      "title": "Cookie consent banner copy review",
+      "description": "Legal want the wording of the consent dialog updated for the new analytics provider.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "legal"
+      ],
+      "state": "Removed",
+      "parentRef": "shop-076",
+      "comments": []
+    },
+    {
+      "ref": "shop-087",
+      "type": "story",
+      "title": "Wish list shared by link",
+      "description": "Let a shopper share a read-only wish list with friends.",
+      "acceptanceCriteria": [
+        "Link shows items and current prices",
+        "Purchases mark the item as bought without naming the buyer"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "accounts"
+      ],
+      "state": "Removed",
+      "parentRef": "shop-068",
+      "comments": []
+    },
+    {
+      "ref": "shop-088",
+      "type": "story",
+      "title": "Product reviews shown on the product page",
+      "description": "Show star ratings and a handful of recent reviews under the description, with moderation before anything is public.",
+      "acceptanceCriteria": [
+        "Only verified buyers can review",
+        "Reviews appear after approval",
+        "Average rating shown in listings"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "catalogue"
+      ],
+      "state": "New",
+      "parentRef": "shop-068",
+      "comments": []
+    },
+    {
+      "ref": "shop-089",
+      "type": "bug",
+      "title": "VAT on digital gift items applied at the wrong country rate",
+      "description": "A download purchased from Germany by a French customer is charged German rate instead of the customer's country rate.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Set shipping country to France with a German billing profile.\n2. Add a digital item.\n3. Tax line shows 19%, expected 20%.",
+      "tags": [
+        "tax",
+        "bug"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-025",
+      "sprintRef": "shop-s3",
+      "comments": []
+    },
+    {
+      "ref": "shop-090",
+      "type": "bug",
+      "title": "Currency switcher resets the basket to pounds",
+      "description": "Changing the currency on the basket page recalculates totals but the checkout still charges in pounds, so the card statement does not match what the shopper saw.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Open the basket and switch the currency to euros.\n2. Proceed to payment.\n3. The payment sheet shows pounds.",
+      "tags": [
+        "payments",
+        "bug",
+        "i18n"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-033",
+      "sprintRef": "shop-s3",
+      "comments": []
+    },
+    {
+      "ref": "shop-091",
+      "type": "bug",
+      "title": "Invoice PDF cuts off long product names",
+      "description": "Names longer than 60 characters overflow the table and are clipped in the PDF, hiding the size and colour suffix.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Order a product with a very long name.\n2. Download the invoice from the order page.\n3. The name is truncated mid-word.",
+      "tags": [
+        "orders",
+        "bug"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-048",
+      "sprintRef": "shop-s3",
+      "comments": []
+    },
+    {
+      "ref": "shop-092",
+      "type": "story",
+      "title": "Sequential invoice numbers with no gaps",
+      "description": "Tax rules require unbroken numbering. Allocate numbers from a database sequence inside the payment-captured transaction.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "finance",
+        "tax"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-048",
+      "sprintRef": "shop-s2",
+      "comments": [
+        {
+          "ref": "shop-c20",
+          "body": "Gaps will appear if a transaction rolls back after taking the number. Use a gap-free counter table with a row lock instead of a native sequence.",
+          "archived": true
+        }
+      ]
+    },
+    {
+      "ref": "shop-093",
+      "type": "story",
+      "title": "Spike: event bus between orders and warehouse",
+      "description": "Compare a message queue with polling the orders table for the warehouse integration.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "spike",
+        "warehouse"
+      ],
+      "state": "Closed",
+      "parentRef": "shop-053",
+      "sprintRef": "shop-s1",
+      "comments": [
+        {
+          "ref": "shop-c21",
+          "body": "Polling every five seconds was good enough at current volume; the queue was dropped as extra moving parts. Comment kept for the record.",
+          "archived": true
+        }
+      ]
+    },
+    {
+      "ref": "shop-094",
+      "type": "bug",
+      "title": "Add-to-basket toast covers the cookie banner on first visit",
+      "description": "On a first visit the confirmation toast renders underneath the consent banner, so the shopper never sees that the product was added and taps the button again.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Open a listing in a private window.\n2. Press the add button on any product.\n3. The toast is hidden behind the consent banner; the basket now has two units after a second tap.",
+      "tags": [
+        "cart",
+        "bug",
+        "ux"
+      ],
+      "state": "New",
+      "parentRef": "shop-002",
+      "comments": [
+        {
+          "ref": "shop-c40",
+          "body": "Maybe simply raise the toast z-index, but then it would cover the banner's accept button. Probably move the toast to the top on mobile.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-095",
+      "type": "task",
+      "title": "Schema for saved-for-later lines",
+      "description": "Add a table for parked lines with account id, product, quantity and parked-at, and a nightly purge past ninety days.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "cart",
+        "api"
+      ],
+      "state": "New",
+      "parentRef": "shop-008",
+      "comments": [
+        {
+          "ref": "shop-c41",
+          "body": "Keep the parked quantity separate from live stock checks; a parked line must never reserve anything.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-096",
+      "type": "task",
+      "title": "Register the shop domain with the wallet providers",
+      "description": "Both wallet vendors need a domain association step before their buttons appear in production.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "payments"
+      ],
+      "state": "New",
+      "parentRef": "shop-023",
+      "comments": [
+        {
+          "ref": "shop-c42",
+          "body": "Needs a DNS change as well as the file, so ask platform to schedule it.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-097",
+      "type": "task",
+      "title": "Design the dispatch email template",
+      "description": "Table-based layout tested in the major mail clients, with a plain text alternative.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "email"
+      ],
+      "state": "New",
+      "parentRef": "shop-061",
+      "comments": []
+    },
+    {
+      "ref": "shop-098",
+      "type": "bug",
+      "title": "Payment alert fires during planned provider maintenance",
+      "description": "The provider publishes maintenance windows, but our alert has no way to mute itself, so on-call is paged for an outage everyone already knows about.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Wait for a published maintenance window.\n2. Success rate drops to zero for twenty minutes.\n3. The pager goes off.",
+      "tags": [
+        "ops",
+        "bug"
+      ],
+      "state": "New",
+      "parentRef": "shop-080",
+      "comments": [
+        {
+          "ref": "shop-c43",
+          "body": "Could subscribe to the provider's status feed and mute automatically while an incident is open.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-099",
+      "type": "story",
+      "title": "Order history list with filters",
+      "description": "Show past orders in the account with filters for date range and status, and a re-order button that refills the basket.",
+      "acceptanceCriteria": [
+        "Filters combine",
+        "Re-order skips discontinued products and says so",
+        "List loads in pages of twenty"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "orders",
+        "accounts"
+      ],
+      "state": "Active",
+      "parentRef": "shop-059",
+      "sprintRef": "shop-s4",
+      "comments": [
+        {
+          "ref": "shop-c44",
+          "body": "Pagination by cursor, not by page number, since new orders arrive while the list is open.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-100",
+      "type": "task",
+      "title": "Re-order button ignores the size option",
+      "description": "Pressing re-order on an order with a size-variant product adds the default size instead of the one purchased.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Order a pair of shoes in size 42.\n2. Open the order from history and press Re-order.\n3. The basket holds size 38.",
+      "tags": [
+        "orders",
+        "bug"
+      ],
+      "state": "New",
+      "parentRef": "shop-099",
+      "comments": [
+        {
+          "ref": "shop-c45",
+          "body": "The variant id is stored on the order line but the re-order endpoint only reads the product id.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "shop-101",
+      "type": "story",
+      "title": "Evaluate a basic fraud score before capture",
+      "description": "Try the provider's risk score on the last month of orders and report how many genuine orders it would have held for review.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "payments",
+        "spike"
+      ],
+      "state": "New",
+      "parentRef": "shop-043",
+      "comments": [
+        {
+          "ref": "shop-c46",
+          "body": "Held orders would add a manual review queue; ask support whether they can staff it.",
+          "archived": false
+        }
+      ]
+    }
+  ]
+}

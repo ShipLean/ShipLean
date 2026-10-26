@@ -1,0 +1,7 @@
+{
+  "sprints": [
+    { "sprintId": "00000004-0000-4000-8001-000000000025", "name": "Sprint 25", "room": 21, "fromCapacity": false, "lastItemId": "00000005-0000-4000-8001-000000000141", "itemCount": 6, "points": 20, "unestimatedCount": 1 },
+    { "sprintId": "00000004-0000-4000-8001-000000000026", "name": "Sprint 26", "room": 18, "fromCapacity": true, "lastItemId": "00000005-0000-4000-8001-000000000147", "itemCount": 3, "points": 16, "unestimatedCount": 0 },
+    { "sprintId": null, "name": "Sprint 27", "room": 21, "fromCapacity": false, "lastItemId": null, "itemCount": 0, "points": 0, "unestimatedCount": 0 }
+  ]
+}

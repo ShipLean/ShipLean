@@ -1,0 +1,18 @@
+{
+  "rollover": {
+    "sprint": { "id": "00000004-0000-4000-8001-000000000023", "name": "Sprint 23", "status": "past" }, "status": "pending",
+    "items": [
+      { "workItemId": "00000005-0000-4000-8001-000000000141", "key": "SHIP-141", "title": "Saved card checkout", "type": "story",
+        "state": { "id": "00000003-0000-4000-8001-000000000302", "name": "Active", "category": "inProgress" },
+        "assignee": { "id": "00000001-0000-4000-8000-000000000002", "name": "Priya Shah", "initials": "PS", "avatarColour": "#2f7fd8", "photoUrl": null },
+        "points": 3, "openTasks": 2, "totalTasks": 4, "defaultTargetSprintId": "00000004-0000-4000-8001-000000000024" },
+      { "workItemId": "00000005-0000-4000-8001-000000000142", "key": "SHIP-142", "title": "Passkey sign-in", "type": "bug",
+        "state": { "id": "00000003-0000-4000-8001-000000000401", "name": "New", "category": "proposed" }, "assignee": null,
+        "points": null, "openTasks": 0, "totalTasks": 0, "defaultTargetSprintId": null }
+    ],
+    "nextSprint": { "id": "00000004-0000-4000-8001-000000000024", "name": "Sprint 24", "status": "current" }, "nextSprintCapacity": 23, "nextSprintPoints": 15
+  },
+  "request": { "moves": [{ "workItemId": "00000005-0000-4000-8001-000000000141", "targetSprintId": "00000004-0000-4000-8001-000000000024" }, { "workItemId": "00000005-0000-4000-8001-000000000142", "targetSprintId": null }] },
+  "create": { "name": "Sprint 27", "startDate": "2026-12-01", "endDate": "2026-12-14", "goal": "" },
+  "update": { "name": null, "startDate": null, "endDate": null, "goal": "Ship it" }
+}

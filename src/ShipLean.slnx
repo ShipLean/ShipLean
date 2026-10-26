@@ -1,0 +1,10 @@
+<Solution>
+  <Project Path="ShipLean.AcceptanceTests/ShipLean.AcceptanceTests.csproj" />
+  <Project Path="ShipLean.Application/ShipLean.Application.csproj" />
+  <Project Path="ShipLean.Contracts/ShipLean.Contracts.csproj" />
+  <Project Path="ShipLean.Core/ShipLean.Core.csproj" />
+  <Project Path="ShipLean.TestSupport/ShipLean.TestSupport.csproj" />
+  <Project Path="ShipLean.UnitTest/ShipLean.UnitTest.csproj" />
+  <Project Path="ShipLean.WebApi/ShipLean.WebApi.csproj" />
+  <Project Path="ShipLean.WebApi.Tests/ShipLean.WebApi.Tests.csproj" />
+</Solution>

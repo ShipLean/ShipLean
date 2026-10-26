@@ -1,0 +1,6 @@
+{
+  "match": "all",
+  "clauses": [
+    { "field": "priority", "op": "=", "value": 1 }
+  ]
+}

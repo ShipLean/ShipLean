@@ -1,0 +1,7 @@
+{
+  "match": "all",
+  "clauses": [
+    { "field": "type", "op": "=", "value": "bug" },
+    { "field": "tags", "op": "contains", "value": "Customer" }
+  ]
+}

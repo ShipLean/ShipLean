@@ -1,0 +1,54 @@
+[
+  { "id": "id", "label": "ID", "kind": "workItem", "appliesTo": ["epic", "feature", "story", "bug", "task"], "nullable": false, "usedIn": ["criteria"], "ops": ["=", "<>", "in"], "values": null },
+  { "id": "key", "label": "Key", "kind": "text", "appliesTo": ["epic", "feature", "story", "bug", "task"], "nullable": false, "usedIn": ["criteria"], "ops": ["=", "<>", "contains", "notContains"], "values": null },
+  { "id": "title", "label": "Title", "kind": "text", "appliesTo": ["epic", "feature", "story", "bug", "task"], "nullable": false, "usedIn": ["criteria", "history"], "ops": ["=", "<>", "contains", "notContains"], "values": null },
+  { "id": "type", "label": "Work item type", "kind": "type", "appliesTo": ["epic", "feature", "story", "bug", "task"], "nullable": false, "usedIn": ["criteria", "history"], "ops": ["=", "<>", "in"], "values": [
+    { "value": "epic", "label": "Epic" },
+    { "value": "feature", "label": "Feature" },
+    { "value": "story", "label": "User Story" },
+    { "value": "bug", "label": "Bug" },
+    { "value": "task", "label": "Task" }
+  ] },
+  { "id": "state", "label": "State", "kind": "state", "appliesTo": ["epic", "feature", "story", "bug", "task"], "nullable": false, "usedIn": ["criteria", "cardField", "history"], "ops": ["=", "<>", "in"], "values": null },
+  { "id": "stateCategory", "label": "State category", "kind": "stateCategory", "appliesTo": ["epic", "feature", "story", "bug", "task"], "nullable": false, "usedIn": ["criteria"], "ops": ["=", "<>", "in"], "values": [
+    { "value": "proposed", "label": "Proposed" },
+    { "value": "inProgress", "label": "In Progress" },
+    { "value": "resolved", "label": "Resolved" },
+    { "value": "completed", "label": "Completed" },
+    { "value": "removed", "label": "Removed" }
+  ] },
+  { "id": "assignee", "label": "Assigned to", "kind": "user", "appliesTo": ["epic", "feature", "story", "bug", "task"], "nullable": true, "usedIn": ["criteria", "history"], "ops": ["=", "<>", "in", "isEmpty", "isNotEmpty"], "values": null },
+  { "id": "priority", "label": "Priority", "kind": "number", "appliesTo": ["epic", "feature", "story", "bug", "task"], "nullable": false, "usedIn": ["criteria", "cardField", "history"], "ops": ["=", "<>", ">", "<", "in"], "values": [
+    { "value": 1, "label": "1" },
+    { "value": 2, "label": "2" },
+    { "value": 3, "label": "3" },
+    { "value": 4, "label": "4" }
+  ] },
+  { "id": "points", "label": "Story points", "kind": "points", "appliesTo": ["epic", "feature", "story", "bug", "task"], "nullable": true, "usedIn": ["criteria", "history"], "ops": ["=", "<>", ">", "<", "in", "isEmpty", "isNotEmpty"], "values": null },
+  { "id": "tags", "label": "Tags", "kind": "tags", "appliesTo": ["epic", "feature", "story", "bug", "task"], "nullable": false, "usedIn": ["criteria", "history"], "ops": ["contains", "notContains", "isEmpty", "isNotEmpty"], "values": null },
+  { "id": "sprint", "label": "Sprint", "kind": "sprint", "appliesTo": ["story", "bug", "task"], "nullable": true, "usedIn": ["criteria", "cardField", "history"], "ops": ["=", "<>", "in", "isEmpty", "isNotEmpty"], "values": null },
+  { "id": "parent", "label": "Parent", "kind": "workItem", "appliesTo": ["feature", "story", "bug", "task"], "nullable": true, "usedIn": ["criteria", "cardField", "history"], "ops": ["=", "<>", "in", "isEmpty", "isNotEmpty"], "values": null },
+  { "id": "epic", "label": "Epic", "kind": "workItem", "appliesTo": ["feature"], "nullable": true, "usedIn": ["criteria"], "ops": ["=", "<>", "in", "isEmpty", "isNotEmpty"], "values": null },
+  { "id": "severity", "label": "Severity", "kind": "number", "appliesTo": ["bug"], "nullable": true, "usedIn": ["criteria", "cardField", "history"], "ops": ["=", "<>", ">", "<", "in", "isEmpty", "isNotEmpty"], "values": [
+    { "value": 1, "label": "1 - Critical" },
+    { "value": 2, "label": "2 - High" },
+    { "value": 3, "label": "3 - Medium" },
+    { "value": 4, "label": "4 - Low" }
+  ] },
+  { "id": "description", "label": "Description", "kind": "markdown", "appliesTo": ["epic", "feature", "story", "bug", "task"], "nullable": true, "usedIn": ["history"], "ops": [], "values": null },
+  { "id": "acceptanceCriteria", "label": "Acceptance criteria", "kind": "checklist", "appliesTo": ["story"], "nullable": false, "usedIn": ["history"], "ops": [], "values": null },
+  { "id": "reproSteps", "label": "Repro steps", "kind": "markdown", "appliesTo": ["bug"], "nullable": true, "usedIn": ["history"], "ops": [], "values": null },
+  { "id": "goal", "label": "Goal", "kind": "text", "appliesTo": ["feature"], "nullable": true, "usedIn": ["history"], "ops": [], "values": null },
+  { "id": "statusLine", "label": "Status", "kind": "text", "appliesTo": ["feature"], "nullable": true, "usedIn": ["history"], "ops": [], "values": null },
+  { "id": "statusVerifiedAt", "label": "Status verified", "kind": "date", "appliesTo": ["feature"], "nullable": true, "usedIn": ["history"], "ops": [], "values": null },
+  { "id": "links", "label": "Links", "kind": "links", "appliesTo": ["epic", "feature", "story", "bug", "task"], "nullable": false, "usedIn": ["history"], "ops": [], "values": null },
+  { "id": "createdAt", "label": "Created", "kind": "date", "appliesTo": ["epic", "feature", "story", "bug", "task"], "nullable": false, "usedIn": ["criteria", "cardField"], "ops": [">", "<"], "values": null },
+  { "id": "createdBy", "label": "Created by", "kind": "user", "appliesTo": ["epic", "feature", "story", "bug", "task"], "nullable": true, "usedIn": ["criteria", "cardField"], "ops": ["=", "<>", "in", "isEmpty", "isNotEmpty"], "values": null },
+  { "id": "changedAt", "label": "Changed", "kind": "date", "appliesTo": ["epic", "feature", "story", "bug", "task"], "nullable": false, "usedIn": ["criteria", "cardField"], "ops": [">", "<"], "values": null },
+  { "id": "changedBy", "label": "Changed by", "kind": "user", "appliesTo": ["epic", "feature", "story", "bug", "task"], "nullable": true, "usedIn": ["criteria", "cardField"], "ops": ["=", "<>", "in", "isEmpty", "isNotEmpty"], "values": null },
+  { "id": "originalSystem", "label": "Original system", "kind": "text", "appliesTo": ["epic", "feature", "story", "bug", "task"], "nullable": true, "usedIn": ["criteria"], "ops": ["=", "<>", "isEmpty", "isNotEmpty"], "values": [
+    { "value": "jira", "label": "Jira" }
+  ] },
+  { "id": "originalSystemId", "label": "Original system ID", "kind": "text", "appliesTo": ["epic", "feature", "story", "bug", "task"], "nullable": true, "usedIn": ["criteria"], "ops": ["=", "<>", "contains", "notContains", "isEmpty", "isNotEmpty"], "values": null },
+  { "id": "originalUrl", "label": "Original URL", "kind": "text", "appliesTo": ["epic", "feature", "story", "bug", "task"], "nullable": true, "usedIn": [], "ops": [], "values": null }
+]

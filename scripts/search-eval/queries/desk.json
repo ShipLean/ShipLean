@@ -1,0 +1,143 @@
+[
+  {
+    "id": "desk-q01",
+    "text": "DESK-49",
+    "kind": "exactKey",
+    "expected": [
+      "desk-049"
+    ]
+  },
+  {
+    "id": "desk-q02",
+    "text": "desk41",
+    "kind": "exactKey",
+    "expected": [
+      "desk-041"
+    ]
+  },
+  {
+    "id": "desk-q03",
+    "text": "calendar",
+    "kind": "titleWord",
+    "expected": [
+      "desk-029",
+      "desk-031",
+      "desk-035",
+      "desk-036"
+    ]
+  },
+  {
+    "id": "desk-q04",
+    "text": "survey",
+    "kind": "titleWord",
+    "expected": [
+      "desk-082",
+      "desk-083",
+      "desk-085",
+      "desk-087"
+    ]
+  },
+  {
+    "id": "desk-q05",
+    "text": "the countdown for the deadline does not stop when we are waiting for the supplier to answer",
+    "kind": "paraphrase",
+    "expected": [
+      "desk-049"
+    ]
+  },
+  {
+    "id": "desk-q06",
+    "text": "people are asked to rate their experience a second time after we put the case back in progress",
+    "kind": "paraphrase",
+    "expected": [
+      "desk-084"
+    ]
+  },
+  {
+    "id": "desk-q07",
+    "text": "the canned reply is signed by the previous owner instead of whoever is handling it now",
+    "kind": "paraphrase",
+    "expected": [
+      "desk-066"
+    ]
+  },
+  {
+    "id": "desk-q08",
+    "text": "closed a day early because the age calculation read the timestamp in local time just after Auckland midnight",
+    "kind": "bodyOnly",
+    "expected": [
+      "desk-051"
+    ]
+  },
+  {
+    "id": "desk-q09",
+    "text": "reminder when a regional holiday subscription has not changed for ninety days",
+    "kind": "bodyOnly",
+    "expected": [
+      "desk-031"
+    ]
+  },
+  {
+    "id": "desk-q10",
+    "text": "indicator that someone is viewing a ticket expires after eight seconds so an abandoned browser tab does not block colleagues",
+    "kind": "bodyOnly",
+    "expected": [
+      "desk-075"
+    ]
+  },
+  {
+    "id": "desk-q11",
+    "text": "Okta group sync removed skill tag",
+    "kind": "commentOnly",
+    "expected": [
+      "desk-017"
+    ]
+  },
+  {
+    "id": "desk-q12",
+    "text": "smart quotes became question marks in Outlook 2013",
+    "kind": "commentOnly",
+    "expected": [
+      "desk-068"
+    ]
+  },
+  {
+    "id": "desk-q13",
+    "text": "escal",
+    "kind": "prefix",
+    "expected": [
+      "desk-038",
+      "desk-041",
+      "desk-042",
+      "desk-043",
+      "desk-044"
+    ]
+  },
+  {
+    "id": "desk-q14",
+    "text": "dupli",
+    "kind": "prefix",
+    "expected": [
+      "desk-094",
+      "desk-095",
+      "desk-097",
+      "desk-098"
+    ]
+  },
+  {
+    "id": "desk-q15",
+    "text": "respuesta automática para pedir la devolución del dinero al cliente",
+    "kind": "nonEnglish",
+    "expected": [
+      "desk-055"
+    ]
+  },
+  {
+    "id": "desk-q16",
+    "text": "Sonderzeichen im Betreff der E-Mail kaputt",
+    "kind": "nonEnglish",
+    "expected": [
+      "desk-069"
+    ]
+  }
+]

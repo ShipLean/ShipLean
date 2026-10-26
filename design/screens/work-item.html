@@ -1,0 +1,702 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Work item (reference)</title>
+<!--
+  Reference work item form: Backlogs › SHIP-141, one work item with its discussion, history and links.
+  Open directly in a browser. Uses ../tokens.css, shiplean.css and shared.js only; no build step.
+  ?key=SHIP-153 opens the Bug variant (repro steps and severity instead of acceptance criteria, imported from Jira).
+  The form isn't real time (issue #1 says "later"): you edit, then Save. Every field edit marks the form dirty,
+  puts a dot on the changed field and enables Save / Discard in the header (Ctrl+S saves). A save writes one
+  revision with each field's from → to, and it appears at the top of History.
+  Working: edit the title in place; copy the key; State menu grouped by state category (with the project's custom
+  states); Assignee menu (empty = unassigned, because work is pulled); Sprint; Story points; Priority 1–4; Parent
+  picker (Features under their Epic, searchable, showing the Epic › Feature path); Tags (Enter adds, ✕ removes);
+  Description view/edit (markdown); Acceptance criteria checklist (tick, add, remove) or Repro steps + Severity;
+  Links (+ Add link with a type select, ✕ removes). Moving an unassigned item into an In Progress state assigns it
+  to you, with a toast (decision 3).
+  Tasks, comments and attachments are their own records, so they save straight away and aren't part of Save:
+  change a task's state, + Add task, post a comment (@ suggests people, Ctrl+Enter posts), + Attach a file.
+  The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot). "Teammate saved
+  first" simulates a 409: someone saved a newer revision while you were editing, so your Save is refused and an
+  inline banner lists what they changed, with Reload theirs or Re-apply mine. It also switches story and bug.
+-->
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="shiplean.css">
+<script src="shared.js"></script>
+<style>
+[hidden] { display: none !important; }
+/* Header: stays put while the body scrolls */
+.wi-head { flex: none; display: grid; gap: 2px; padding: var(--space-2) var(--space-4); background: var(--color-surface); border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); position: sticky; top: 0; z-index: 6; }
+.wi-top { display: flex; align-items: center; gap: var(--space-2); min-height: 20px; }
+.back { color: var(--color-muted); text-decoration: none; font-size: var(--text-sm); }
+.back:hover { color: var(--color-accent); text-decoration: underline; }
+.wi-title { display: flex; align-items: center; gap: var(--space-2); min-height: 36px; }
+.ident { display: inline-flex; align-items: center; gap: 6px; flex: none; }
+.ident .key { font-size: var(--text-sm); color: var(--color-text); }
+.title-in { flex: 1; min-width: 0; height: 34px; margin-left: 2px; padding: 0 6px; border: 1px solid transparent; border-radius: var(--radius-sm); background: transparent; font-size: var(--text-lg); font-weight: var(--weight-semibold); }
+.title-in:hover { border-color: var(--color-border); }
+.title-in:focus { outline: 2px solid var(--color-accent); outline-offset: -1px; border-color: transparent; background: var(--color-surface); }
+.save-state { display: inline-flex; align-items: center; gap: 6px; max-width: 360px; font-size: var(--text-sm); color: var(--color-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.save-state .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--color-warn); flex: none; }
+.save-state.dirty { color: var(--color-text); }
+.btn:disabled { opacity: .45; cursor: default; filter: none; }
+
+/* Field strip */
+.fields { flex: none; display: flex; flex-wrap: nowrap; padding: 0 var(--space-2); background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.fcell { flex: none; display: grid; align-content: center; gap: 2px; min-height: 54px; padding: 6px var(--space-3) 6px var(--space-2); border-right: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.fcell:last-child { border-right: 0; }
+.fcell.grow { flex: 1 1 0; min-width: 200px; }
+.fcell.shrink { flex: 0 1 auto; min-width: 150px; }
+.fcell.shrink .fbtn { overflow: hidden; }
+.lbl { font-size: var(--text-2xs); font-weight: var(--weight-semibold); color: var(--color-muted); text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
+.fbtn { display: inline-flex; align-items: center; gap: 6px; height: var(--control-height); max-width: 100%; position: relative; left: -6px; padding: 0 6px; border: 1px solid transparent; border-radius: var(--radius-sm); background: transparent; font-size: var(--text-sm); cursor: pointer; white-space: nowrap; }
+.fbtn:hover, .fbtn[aria-expanded="true"] { border-color: var(--color-border); background: var(--color-surface); }
+.fbtn:focus-visible, .fsel:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+.fbtn .car { font-size: var(--text-2xs); color: var(--color-muted); }
+.fbtn .path { overflow: hidden; text-overflow: ellipsis; color: var(--color-muted); }
+.fsel { height: var(--control-height); position: relative; left: -6px; padding: 0 4px; border: 1px solid transparent; border-radius: var(--radius-sm); background: transparent; font-size: var(--text-sm); cursor: pointer; }
+.fsel:hover { border-color: var(--color-border); background: var(--color-surface); }
+.fin { width: 64px; text-align: right; font-variant-numeric: tabular-nums; }
+.fin::placeholder { color: var(--color-warn); font-weight: var(--weight-semibold); }
+.prio { height: var(--control-height); }
+.prio button { width: 26px; justify-content: center; padding: 0; font-variant-numeric: tabular-nums; }
+.tags { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.tags .chip { padding-right: 2px; }
+.tags .chip .ib { width: 16px; height: 16px; font-size: var(--text-2xs); }
+.tag-in { width: 96px; height: 20px; padding: 0 8px; border: 1px dashed var(--color-border); border-radius: 999px; background: transparent; font-size: var(--text-xs); }
+.tag-in:focus { outline: 2px solid var(--color-accent); outline-offset: -1px; border-style: solid; }
+/* A changed field gets an accent dot after its label until it's saved */
+[data-f].changed > .lbl::after, [data-f].changed > .sec-h h2::after, [data-f].changed > .sec-h2 .overline::after, .sev-row.changed > label::after { content: ""; display: inline-block; width: 6px; height: 6px; margin-left: 6px; border-radius: 50%; background: var(--color-accent); vertical-align: middle; }
+
+/* Menus (state, assignee, parent, @mention) */
+.pop-wrap { position: relative; display: inline-flex; min-width: 0; }
+.menu { position: absolute; top: calc(100% + 4px); left: -6px; z-index: 30; min-width: 220px; max-height: 360px; overflow: auto; padding: var(--space-1); display: grid; gap: 1px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-raised); }
+.menu.wide { width: 320px; }
+.menu .grp { display: flex; align-items: center; gap: 6px; padding: 6px var(--space-2) 2px; font-size: var(--text-2xs); font-weight: var(--weight-semibold); color: var(--color-muted); text-transform: uppercase; letter-spacing: .05em; }
+.menu .grp.epic { text-transform: none; letter-spacing: 0; font-size: var(--text-xs); }
+.menu .opt { display: flex; align-items: center; gap: var(--space-2); height: 28px; padding: 0 var(--space-2); border: 0; border-radius: var(--radius-sm); background: none; font-size: var(--text-sm); text-align: left; cursor: pointer; white-space: nowrap; }
+.menu .opt:hover, .menu .opt.hi { background: var(--color-accent-soft); }
+.menu .opt .tick { margin-left: auto; color: var(--color-accent); font-weight: var(--weight-semibold); }
+.menu .opt .key { margin-left: auto; }
+.menu .opt .tick + .key, .menu .opt .key + .tick { margin-left: 6px; }
+.menu .msearch { padding: var(--space-1); }
+.menu .msearch .field { width: 100%; }
+.menu .foot { padding: 6px var(--space-2) 2px; margin-top: 2px; border-top: 1px solid var(--color-border); font-size: var(--text-xs); color: var(--color-muted); white-space: normal; }
+.menu .none { padding: var(--space-2); font-size: var(--text-sm); color: var(--color-muted); }
+
+/* 409 banner */
+.conflict-b { flex: none; display: grid; gap: var(--space-2); padding: var(--space-2) var(--space-4); background: color-mix(in srgb, var(--color-warn) 12%, var(--color-surface)); border-bottom: 1px solid var(--color-border); border-left: 3px solid var(--color-warn); font-size: var(--text-sm); }
+.cb-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
+.cb-cols ul { margin: 2px 0 0; padding-left: 16px; display: grid; gap: 2px; }
+
+/* Body: main column and side column scroll on their own */
+.wi-split { grid-template-columns: minmax(0, 1fr) calc(var(--rail-width) + 72px); }
+.wi-main { background: var(--color-surface); }
+.sec { display: grid; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.sec:last-child { border-bottom: 0; }
+.sec-h { display: flex; align-items: center; gap: var(--space-2); min-height: 24px; }
+.sec-h h2 { margin: 0; font-size: var(--text-md); font-weight: var(--weight-semibold); }
+.sec-h .seg { height: 24px; }
+.sec-h .seg button { font-size: var(--text-xs); padding: 0 8px; }
+.btn.tiny { height: 22px; padding: 0 7px; font-size: var(--text-xs); }
+.md { max-width: 780px; font-size: var(--text-base); }
+.md p { margin: 0 0 6px; }
+.md ul, .md ol { margin: 0 0 6px; padding-left: 20px; }
+.md li { margin: 1px 0; }
+.md > :last-child { margin-bottom: 0; }
+.md code, .crit code { padding: 0 4px; border-radius: var(--radius-xs); background: var(--color-surface-2); font-size: var(--text-xs); }
+.mention { padding: 0 3px; border-radius: var(--radius-xs); background: var(--color-accent-soft); color: var(--color-text); font-weight: var(--weight-medium); white-space: nowrap; }
+.wikey { font-family: var(--font-mono); font-size: var(--text-xs); text-decoration: none; }
+.wikey:hover { color: var(--color-accent); text-decoration: underline; }
+.md-edit { display: grid; gap: 4px; max-width: 780px; }
+.md-edit textarea { width: 100%; min-height: 150px; font-family: var(--font-mono); font-size: var(--text-xs); line-height: 1.55; }
+.empty-line { font-size: var(--text-sm); color: var(--color-muted); }
+.checklist { list-style: none; margin: 0; padding: 0; display: grid; border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+.checklist li { display: flex; align-items: center; gap: var(--space-2); min-height: 30px; padding: 0 var(--space-2); border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.checklist li:first-child { border-top: 0; }
+.checklist li.add { background: var(--color-bg); }
+.checklist li.add .field { flex: 1; height: 24px; border-style: dashed; background: transparent; }
+.crit { flex: 1; display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); cursor: pointer; }
+.crit input { accent-color: var(--color-accent); margin: 0; }
+.crit.done span { color: var(--color-muted); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--color-muted) 60%, transparent); }
+.rm { opacity: 0; }
+li:hover > .rm, li:focus-within > .rm, tr:hover .rm { opacity: 1; }
+.sev-row { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.sev-row label { font-size: var(--text-sm); font-weight: var(--weight-medium); }
+.sev-row .field { width: 150px; }
+.box { border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+.box table.list th { position: static; }
+.box table.list tr:last-child td { border-bottom: 0; }
+.box tr.add td { background: var(--color-accent-soft); }
+.box tr.add .field { height: 24px; }
+.state-sel { height: 24px; padding: 0 4px; border: 1px solid transparent; border-radius: var(--radius-sm); background: transparent; font-size: var(--text-sm); cursor: pointer; }
+.state-sel:hover, .state-sel:focus { border-color: var(--color-border); background: var(--color-surface); }
+.stcell { display: inline-flex; align-items: center; gap: 2px; }
+.stcell .st { width: 7px; overflow: hidden; gap: 0; }
+.comments { list-style: none; margin: 0; padding: 0; display: grid; max-width: 780px; }
+.cm { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: var(--space-2); padding: var(--space-2) 0; border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.cm:first-child { border-top: 0; padding-top: 0; }
+.cm-h { display: flex; align-items: baseline; gap: var(--space-2); font-size: var(--text-sm); }
+.cm-h b { font-weight: var(--weight-semibold); }
+.cm.fresh { animation: flash 1.8s ease-out; }
+.cm-new { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: var(--space-2); max-width: 780px; padding-top: var(--space-2); }
+.cm-new .pop-wrap { display: block; }
+.cm-new textarea { width: 100%; min-height: 56px; }
+.cm-new .menu { top: 100%; left: 0; }
+
+/* Side column */
+.wi-side { gap: var(--space-4); }
+.sec-h2 { display: flex; align-items: center; gap: 6px; min-height: 22px; }
+.cnt { font-size: var(--text-xs); color: var(--color-muted); font-variant-numeric: tabular-nums; }
+.lst { list-style: none; margin: 0; padding: 0; display: grid; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+.lst > li { display: flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 4px 0 var(--space-2); border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); font-size: var(--text-sm); }
+.lst > li:first-child { border-top: 0; }
+.lst > li.lgrp { min-height: 22px; background: color-mix(in srgb, var(--color-surface-2) 50%, var(--color-surface)); font-size: var(--text-2xs); font-weight: var(--weight-semibold); color: var(--color-muted); text-transform: uppercase; letter-spacing: .05em; }
+.lst .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lst a.t { color: var(--color-text); text-decoration: none; }
+.lst a.t:hover { color: var(--color-accent); text-decoration: underline; }
+.lst a.key { text-decoration: none; }
+.lst a.key:hover { color: var(--color-accent); text-decoration: underline; }
+.lst .ext { width: 16px; text-align: center; color: var(--color-muted); flex: none; }
+.lst .meta { font-size: var(--text-xs); color: var(--color-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.lst > li.fresh { animation: flash 1.8s ease-out; }
+.linkform { display: grid; gap: 6px; padding: var(--space-2); background: var(--color-surface); border: 1px solid var(--color-accent); border-radius: var(--radius-md); }
+.linkform .field { width: 100%; }
+.linkform .err { font-size: var(--text-xs); color: var(--color-danger); }
+.revs { list-style: none; margin: 0; padding: 0; display: grid; }
+.rev { position: relative; padding: 0 0 var(--space-3) 30px; }
+.rev::before { content: ""; position: absolute; left: 10px; top: 22px; bottom: 2px; width: 1px; background: var(--color-border); }
+.rev:last-child { padding-bottom: 0; }
+.rev:last-child::before { display: none; }
+.revno { position: absolute; left: 0; top: 0; width: 21px; height: 20px; display: grid; place-items: center; border: 1px solid var(--color-border); border-radius: var(--radius-xs); background: var(--color-surface); font: var(--weight-semibold) var(--text-2xs)/1 var(--font-mono); color: var(--color-muted); }
+.rev.fresh .revno { border-color: var(--color-accent); background: var(--color-accent-soft); color: var(--color-text); }
+.rev.fresh .rev-h { animation: flash 1.8s ease-out; border-radius: var(--radius-xs); }
+.rev-h { display: flex; align-items: center; gap: 6px; min-height: 20px; font-size: var(--text-sm); flex-wrap: wrap; }
+.rev-h b { font-weight: var(--weight-medium); }
+.rev-h .chip { height: 16px; font-size: var(--text-2xs); }
+.av.sys { background: var(--color-surface-2); color: var(--color-text); }
+.diffs { list-style: none; margin: 2px 0 0; padding: 0; display: grid; gap: 1px; font-size: var(--text-xs); }
+.diffs .f { color: var(--color-muted); margin-right: 4px; }
+.diffs b { font-weight: var(--weight-semibold); }
+.note { font-size: var(--text-xs); color: var(--color-muted); margin-top: 2px; }
+.ext-ref { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: var(--text-sm); }
+.ext-ref a { font-family: var(--font-mono); font-size: var(--text-sm); font-weight: var(--weight-semibold); }
+@keyframes flash { 0%, 30% { background: color-mix(in srgb, var(--color-warn) 22%, transparent); } 100% { background: transparent; } }
+@media (max-width: 900px) {
+  .wi-split { grid-template-columns: minmax(0, 1fr); }
+  .cb-cols { grid-template-columns: minmax(0, 1fr); }
+  .wi-top, .wi-title { flex-wrap: wrap; }
+  .wi-top .spacer { display: none; }
+  .title-in { flex-basis: 100%; order: 5; margin-left: -6px; }
+  .box { overflow-x: auto; }
+  .fields { flex-wrap: wrap; }
+  .fcell, .fcell.shrink { border-right: 0; max-width: 100%; }
+}
+</style>
+</head>
+<body>
+<div id="appbar"></div>
+<section class="wi-head" aria-label="Work item header">
+  <div class="wi-top">
+    <a class="back" href="backlog.html" id="back">← Back to Stories backlog</a>
+    <span class="spacer"></span>
+    <span class="xs muted" id="meta"></span>
+  </div>
+  <div class="wi-title">
+    <span class="ident" id="ident"></span>
+    <input class="title-in" id="title" aria-label="Title" autocomplete="off">
+    <span class="save-state" id="saveState" role="status"></span>
+    <button class="btn" type="button" id="discard">Discard</button>
+    <button class="btn primary" type="button" id="save" title="Save (Ctrl+S)">Save</button>
+  </div>
+</section>
+<div class="fields" id="fields" aria-label="Fields"></div>
+<div id="banner"></div>
+<div class="split wi-split">
+  <div class="scroll wi-main" id="main"></div>
+  <aside class="rail wi-side" id="side" aria-label="Links, attachments and history"></aside>
+</div>
+<input type="file" id="file" multiple hidden>
+
+<script>
+(() => {
+  const { ME, people, sprints, items, doneItems, features, epics, esc, tIcon, av, toast } = SL;
+  const $ = id => document.getElementById(id);
+  const KEY = new URLSearchParams(location.search).get('key') === 'SHIP-153' ? 'SHIP-153' : 'SHIP-141';
+  document.getElementById('appbar').outerHTML = SL.appBar('backlogs').replace('<b>SHIP-141</b>', `<b>${KEY}</b>`);
+  const clone = o => JSON.parse(JSON.stringify(o));
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+  /* States are custom per project and per type, each with a category. Bug "Triaged" and Task "In review" are SHIP's own. */
+  const CAT_LABEL = { proposed: 'Proposed', 'in-progress': 'In Progress', resolved: 'Resolved', completed: 'Completed', removed: 'Removed' };
+  const STATES = {
+    story: [['proposed', ['New']], ['in-progress', ['Active']], ['resolved', ['Resolved']], ['completed', ['Closed']], ['removed', ['Removed']]],
+    bug: [['proposed', ['New', 'Triaged']], ['in-progress', ['Active']], ['resolved', ['Resolved']], ['completed', ['Closed']]],
+    task: [['proposed', ['New']], ['in-progress', ['Active']], ['resolved', ['In review']], ['completed', ['Closed']], ['removed', ['Removed']]],
+  };
+  const catOf = (type, s) => (STATES[type] ? STATES[type].find(([, n]) => n.includes(s))?.[0] : SL.stateCategory[s]) || 'proposed';
+  const stH = (type, s) => `<span class="st ${catOf(type, s)}">${esc(s)}</span>`;
+  const typeName = { story: 'User Story', bug: 'Bug', task: 'Task', feature: 'Feature', epic: 'Epic' };
+  const SEVERITIES = ['1 - Critical', '2 - High', '3 - Medium', '4 - Low'];
+  const LINK_TYPES = [['predecessor', 'Predecessor'], ['successor', 'Successor'], ['blocked-by', 'Blocked by'], ['related', 'Related'], ['duplicate', 'Duplicate'], ['url', 'External URL']];
+  const linkLabel = t => LINK_TYPES.find(x => x[0] === t)[1];
+
+  /* Everything the link and parent pickers can find. */
+  const allItems = [...items, ...doneItems, { key: 'SHIP-161', type: 'bug', title: 'App closes after Face ID cancel', state: 'Removed' },
+    ...features.map(f => ({ ...f, type: 'feature' })), ...epics.map(e => ({ ...e, type: 'epic' }))];
+  const find = k => allItems.find(i => i.key === k);
+  const featurePath = key => { const out = []; let x = find(key); while (x) { out.unshift(x); x = x.parent ? find(x.parent) : null; } return out; };
+  const keyLink = k => (k === 'SHIP-141' || k === 'SHIP-153') && k !== KEY ? `<a class="wikey key" href="work-item.html?key=${k}">${k}</a>` : `<a class="wikey key" href="#" data-goto="${k}">${k}</a>`;
+
+  /* The two sample work items. rev = the revision this form loaded. theirs = what a teammate saves first (Preview). */
+  const V = {
+    'SHIP-141': {
+      rev: 6, priority: 2, parent: 'SHIP-101', tags: ['Checkout', 'PCI'],
+      description: 'As a returning customer, I want to pay with a card I saved before, so I don\'t have to type the number again.\n\nCards live in the **vault service** as tokens; we never see the card number. Show the brand, the last four digits and the expiry from `GET /cards`.\n\n- Default to the card used last\n- Expired cards are shown but can\'t be picked\n- Fall back to the new-card form if the vault is down',
+      criteria: [[true, 'Saved cards show brand, last four digits and expiry'], [true, 'The card used last is selected by default'], [false, 'Expired cards are greyed out and can\'t be selected'], [false, 'Paying with a saved card skips the card form and goes straight to Review'], [false, 'If the vault is unavailable, the new-card form shows with a notice']],
+      taskKeys: ['SHIP-142', 'SHIP-143', 'SHIP-145'],
+      links: [{ type: 'predecessor', key: 'SHIP-120' }, { type: 'successor', key: 'SHIP-158' }, { type: 'related', key: 'SHIP-144' }, { type: 'url', url: 'https://wiki.example.com/payments/card-vault', title: 'Card vault API notes' }],
+      attachments: [['saved-card-picker.png', 421888, 'mei', 'Fri 23 Oct'], ['vault-api-contract.pdf', 1258291, 'tom', 'Thu 22 Oct']],
+      comments: [
+        ['tom', 'Thu 22 Oct, 10:14', 'Card vault API is on staging now. @Priya Shah the tokenised lookup returns `brand`, `last4` and `expiry`, nothing else.'],
+        ['mei', 'Fri 23 Oct, 16:02', 'Picker designs attached. Going with radio rows rather than cards so it still works with six or more saved cards.'],
+        ['priya', 'Fri 23 Oct, 17:30', '@Mei Lin looks good. I\'ll pick up the E2E test once the picker lands. Expired-card handling depends on SHIP-158 for the error copy.'],
+      ],
+      history: [
+        { rev: 6, by: 'priya', when: 'Mon 19 Oct, 09:12', changes: [['state', 'New', 'Active'], ['assignee', null, 'priya']] },
+        { rev: 5, by: 'tom', when: 'Fri 16 Oct, 15:40', changes: [['sprint', null, 's24']] },
+        { rev: 4, by: 'mei', when: 'Thu 15 Oct, 11:02', changes: [['points', 3, 5], ['tags', ['Checkout'], ['Checkout', 'PCI']]] },
+        { rev: 3, by: 'priya', when: 'Tue 13 Oct, 10:30', changes: [['parent', null, 'SHIP-101'], ['criteria', null, null]] },
+        { rev: 2, by: 'ana', when: 'Mon 12 Oct, 16:15', changes: [['priority', 3, 2], ['points', null, 3]] },
+        { rev: 1, by: 'ana', when: 'Fri 9 Oct, 14:00', changes: [], note: 'Created as User Story in New' },
+      ],
+      theirs: { by: 'mei', changes: f => ({ points: (f.points ?? 0) + 3, tags: f.tags.includes('Needs design') ? f.tags : [...f.tags, 'Needs design'] }) },
+    },
+    'SHIP-153': {
+      rev: 4, priority: 1, parent: 'SHIP-102', tags: ['Crash', 'iOS'], severity: '2 - High',
+      description: 'The app closes when someone cancels the Face ID prompt during passkey sign-in. iOS only; Android handles the cancel and returns to the sign-in screen.',
+      repro: '1. Sign in with a passkey on iOS 18.1\n2. Lock and unlock the app so the biometric prompt shows\n3. Tap **Cancel** on the Face ID prompt\n\n**Expected:** back to the sign-in screen with the password option.\n**Actual:** the app closes. Crash log attached (app 4.12.0, build 881).',
+      taskKeys: [],
+      links: [{ type: 'related', key: 'SHIP-129' }, { type: 'duplicate', key: 'SHIP-161' }, { type: 'url', url: 'https://crash.example.com/ios/881-4471', title: 'Crash report 881-4471' }],
+      attachments: [['crash-881-4471.ips', 88064, 'sam', 'Mon 28 Sep'], ['face-id-cancel.mp4', 15518924, 'sam', 'Mon 28 Sep']],
+      comments: [
+        ['sam', 'Mon 28 Sep, 17:50', 'Only on iOS. The `LAContext` error comes back as `userCancel` and we treat it as fatal.'],
+        ['ana', 'Thu 22 Oct, 14:08', '@Sam Rivera could this be the same handling we fixed in SHIP-118? Moved it into Sprint 25 so it ships with remember-device.'],
+      ],
+      history: [
+        { rev: 4, by: 'ana', when: 'Thu 22 Oct, 14:05', changes: [['sprint', null, 's25'], ['severity', '3 - Medium', '2 - High']] },
+        { rev: 3, by: null, when: 'Mon 5 Oct, 08:30', changes: [['points', 2, 3]], note: 'Re-run of import job #3 matched PLATFORM-412 and updated it' },
+        { rev: 2, by: 'sam', jira: true, when: 'Wed 30 Sep, 11:20', changes: [['priority', 2, 1], ['tags', [], ['Crash', 'iOS']]] },
+        { rev: 1, by: 'sam', jira: true, when: 'Mon 28 Sep, 17:45', changes: [], note: 'Created in Jira as Bug in New' },
+      ],
+      external: { system: 'Jira', key: 'PLATFORM-412', url: 'https://jira.example.com/browse/PLATFORM-412', host: 'jira.example.com', imported: 'Mon 5 Oct' },
+      theirs: { by: 'mei', changes: f => ({ severity: '1 - Critical', points: (f.points ?? 0) + 2 }) },
+    },
+  };
+  const v = V[KEY], base = items.find(i => i.key === KEY), type = base.type;
+
+  const initial = { title: base.title, state: base.state, assignee: base.assignee, sprint: base.sprint, points: base.points, priority: v.priority, parent: v.parent, tags: v.tags, description: v.description,
+    ...(type === 'story' ? { criteria: v.criteria.map(([done, text]) => ({ done, text })) } : { repro: v.repro, severity: v.severity }), links: v.links };
+  let saved = { rev: v.rev, form: clone(initial) };   // the revision this form is based on
+  let server = { rev: v.rev, form: clone(initial) };  // what the server holds now (moves ahead when a teammate saves)
+  let draft = clone(initial);
+  const revs = v.history.map(r => ({ ...r }));
+  const tasks = (SL.tasks[KEY] || []).map(([title, state, assignee, key], i) => ({ key: key || v.taskKeys[i], title, state, assignee }));
+  const comments = v.comments.map(([by, when, body]) => ({ by, when, body }));
+  const attachments = v.attachments.map(([name, size, by, when]) => ({ name, size, by, when }));
+  const ui = { mode: { description: 'view', repro: 'view' }, addingLink: false, linkType: 'related', linkErr: '', addingTask: false };
+  let nextKey = 171;
+
+  /* Field names, value formatting and from → to diffs (used by History, the save state and the 409 banner). */
+  const sprintName = id => sprints.find(s => s.id === id)?.name || 'Backlog';
+  const FIELDS = {
+    title: ['Title'], state: ['State'], assignee: ['Assignee', p => (p ? people[p].name : 'Unassigned')], sprint: ['Sprint', sprintName],
+    points: ['Story points', p => p ?? 'none'], priority: ['Priority'], parent: ['Parent', k => (k ? find(k).title : 'none')], tags: ['Tags'],
+    description: ['Description'], criteria: ['Acceptance criteria'], repro: ['Repro steps'], severity: ['Severity'], links: ['Links'],
+  };
+  const label = f => FIELDS[f][0];
+  const changedFields = (a, b) => Object.keys(b).filter(f => !same(a[f], b[f]));
+  const addRem = (from, to, k, show) => [...to.filter(x => !from.some(y => k(y) === k(x))).map(x => `+ ${show(x)}`), ...from.filter(x => !to.some(y => k(y) === k(x))).map(x => `− ${show(x)}`)].join(', ') || 'reordered';
+  function diffHtml(f, from, to) {
+    if (from === null && to === null) return 'edited';
+    if (f === 'tags') return addRem(from, to, t => t, t => `<b>${esc(t)}</b>`);
+    if (f === 'links') return addRem(from, to, l => l.type + (l.key || l.url), l => `${linkLabel(l.type)} <b>${esc(l.key || l.title || l.url)}</b>`);
+    if (f === 'criteria') {
+      const met = c => c.filter(x => x.done).length;
+      return from.length === to.length && from.every((c, i) => c.text === to[i].text) ? `<span class="muted">${met(from)}/${from.length} met</span> → <b>${met(to)}/${to.length} met</b>` : 'edited';
+    }
+    if (f === 'description' || f === 'repro') return 'edited';
+    if (f === 'title') return `→ <b>${esc(to)}</b>`;
+    const fmt = FIELDS[f][1] || (x => x);
+    return `<span class="muted">${esc(fmt(from))}</span> → <b>${esc(fmt(to))}</b>`;
+  }
+
+  /* A small markdown subset: paragraphs, - and 1. lists, **bold**, `code`, @mentions and work item keys. */
+  const mentionRe = new RegExp('@(' + Object.values(people).map(p => p.name).join('|') + ')', 'g');
+  const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(mentionRe, '<span class="mention">$&</span>').replace(/\bSHIP-\d+\b/g, k => keyLink(k));
+  function md(src) {
+    // Line by line: a run of "- " lines is a list, a run of "1. " lines is a numbered list, other runs are paragraphs.
+    const kind = l => (!l.trim() ? 'gap' : /^- /.test(l) ? 'ul' : /^\d+\. /.test(l) ? 'ol' : 'p');
+    const runs = [];
+    (src || '').trim().split('\n').forEach(l => { const k = kind(l), last = runs[runs.length - 1]; if (last && last.k === k && k !== 'gap') last.lines.push(l); else runs.push({ k, lines: [l] }); });
+    return runs.map(({ k, lines }) => k === 'gap' ? ''
+      : k === 'p' ? `<p>${lines.map(inline).join('<br>')}</p>`
+      : `<${k}>${lines.map(l => `<li>${inline(l.replace(/^(- |\d+\. )/, ''))}</li>`).join('')}</${k}>`).join('');
+  }
+  const size = b => (b >= 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB');
+
+  /* Header */
+  function renderHead() {
+    $('ident').innerHTML = `${tIcon(type)}<span class="sm muted">${typeName[type]}</span><span class="key">${KEY}</span><button class="ib" type="button" id="copyKey" title="Copy ${KEY}" aria-label="Copy key">⧉</button>`;
+    if (document.activeElement !== $('title')) $('title').value = draft.title;
+    const last = revs[0];
+    const created = revs[revs.length - 1];
+    $('meta').innerHTML = `Created by ${created.by ? people[created.by].name : 'Jira import'}, ${created.when.split(',')[0]} · Changed by ${last.by ? people[last.by].name : 'Jira import'}, ${last.when} · revision ${saved.rev}`;
+  }
+  function refreshDirty() {
+    const dirty = changedFields(saved.form, draft), s = $('saveState');
+    $('save').disabled = !dirty.length; $('discard').hidden = !dirty.length;
+    s.classList.toggle('dirty', !!dirty.length);
+    s.innerHTML = dirty.length ? `<span class="dot"></span>Unsaved: ${dirty.map(label).join(', ')}` : `Saved · revision ${saved.rev}`;
+    s.title = dirty.length ? `Unsaved changes to ${dirty.map(label).join(', ')}` : '';
+    document.querySelectorAll('[data-f]').forEach(el => el.classList.toggle('changed', dirty.includes(el.dataset.f)));
+  }
+
+  /* Field strip */
+  function renderFields() {
+    const d = draft, path = featurePath(d.parent), feat = path[path.length - 1];
+    const sprintOpts = [['', 'Backlog'], ...sprints.filter(s => s.status !== 'past').map(s => [s.id, s.name + (s.status === 'current' ? ' (current)' : '')])];
+    $('fields').innerHTML = `
+      <div class="fcell" data-f="state"><span class="lbl">State</span><span class="pop-wrap"><button class="fbtn" type="button" data-menu="state" aria-haspopup="menu" aria-expanded="false">${stH(type, d.state)}<span class="car">▾</span></button></span></div>
+      <div class="fcell" data-f="assignee" style="min-width:150px"><span class="lbl">Assignee</span><span class="pop-wrap"><button class="fbtn" type="button" data-menu="assignee" aria-haspopup="menu" aria-expanded="false"${d.assignee ? '' : ' title="Unassigned: work is pulled. Moving it to an In Progress state assigns whoever moved it."'}>${av(d.assignee)}<span class="${d.assignee ? '' : 'muted'}">${d.assignee ? people[d.assignee].name : 'Unassigned'}</span><span class="car">▾</span></button></span></div>
+      <div class="fcell" data-f="sprint"><label class="lbl" for="fSprint">Sprint</label><select class="fsel" id="fSprint">${sprintOpts.map(([id, n]) => `<option value="${id}"${(d.sprint || '') === id ? ' selected' : ''}>${n}</option>`).join('')}</select></div>
+      <div class="fcell" data-f="points"><label class="lbl" for="fPoints">Story points</label><input class="field fin" id="fPoints" type="number" min="0" step="1" inputmode="numeric" value="${d.points ?? ''}" placeholder="?" title="${d.points == null ? 'Not estimated: counts as 0 in the forecast' : ''}"></div>
+      <div class="fcell" data-f="priority"><span class="lbl">Priority</span><div class="seg prio" role="group" aria-label="Priority, 1 is highest">${[1, 2, 3, 4].map(p => `<button type="button" data-prio="${p}" aria-pressed="${d.priority === p}">${p}</button>`).join('')}</div></div>
+      <div class="fcell shrink" data-f="parent" style="max-width:420px"><span class="lbl">Parent</span><span class="pop-wrap"><button class="fbtn" type="button" data-menu="parent" aria-haspopup="menu" aria-expanded="false" title="${esc(path.map(p => p.title).join(' › '))}">${feat
+        ? `<span class="path">${path.slice(0, -1).map(p => esc(p.title) + ' ›').join(' ')}</span>${tIcon('feature')}<span>${esc(feat.title)}</span>` : '<span class="muted">No parent</span>'}<span class="car">▾</span></button></span></div>
+      <div class="fcell grow" data-f="tags"><span class="lbl">Tags</span><div class="tags">${d.tags.map((t, i) => `<span class="chip">${esc(t)}<button class="ib" type="button" data-untag="${i}" aria-label="Remove tag ${esc(t)}">✕</button></span>`).join('')}<input class="tag-in" id="tagIn" placeholder="+ Add tag" aria-label="Add tag"></div></div>`;
+  }
+
+  /* Menus */
+  let openName = null;
+  function closeMenu() {
+    document.querySelectorAll('.menu').forEach(m => m.remove());
+    document.querySelectorAll('[data-menu][aria-expanded="true"]').forEach(b => b.setAttribute('aria-expanded', 'false'));
+    openName = null;
+  }
+  const tick = on => (on ? '<span class="tick">✓</span>' : '');
+  function parentOptions(q) {
+    const ql = q.trim().toLowerCase();
+    const walk = (pk, depth) => features.filter(f => f.parent === pk).flatMap(f => [{ f, depth }, ...walk(f.key, depth + 1)]);
+    const html = epics.map(e => {
+      const list = walk(e.key, 0).filter(({ f }) => !ql || [f.title, f.key, e.title].some(s => s.toLowerCase().includes(ql)));
+      if (!list.length) return '';
+      return `<div class="grp epic">${tIcon('epic')}${esc(e.title)}</div>` + list.map(({ f, depth }) =>
+        `<button class="opt" type="button" role="menuitemradio" aria-checked="${draft.parent === f.key}" data-pick-parent="${f.key}" style="padding-left:${22 + depth * 16}px">${tIcon('feature')}<span>${esc(f.title)}</span><span class="key">${f.key}</span>${tick(draft.parent === f.key)}</button>`).join('');
+    }).join('');
+    return (ql ? '' : `<button class="opt" type="button" data-pick-parent=""><span class="muted">No parent</span>${tick(!draft.parent)}</button>`) + (html || '<div class="none">No feature matches</div>');
+  }
+  const MENUS = {
+    state: () => STATES[type].map(([cat, names]) => `<div class="grp">${CAT_LABEL[cat]}</div>` + names.map(n =>
+      `<button class="opt" type="button" role="menuitemradio" aria-checked="${n === draft.state}" data-pick-state="${n}"><span class="st ${cat}">${n}</span>${tick(n === draft.state)}</button>`).join('')).join('')
+      + '<div class="foot">States for each type are set per project in Settings. The colour follows the category.</div>',
+    assignee: () => `<button class="opt" type="button" data-pick-assignee="">${av(null)}<span class="muted">Unassigned</span>${tick(!draft.assignee)}</button>`
+      + Object.entries(people).map(([id, p]) => `<button class="opt" type="button" data-pick-assignee="${id}">${av(id)}${p.name}${id === ME ? ' <span class="muted">(you)</span>' : ''}${tick(draft.assignee === id)}</button>`).join('')
+      + '<div class="foot">Work is pulled: leave it unassigned until someone starts it.</div>',
+    parent: () => `<div class="msearch"><input class="field" id="parentQ" placeholder="Search features or epics" aria-label="Search features"></div><div id="parentList" style="display:grid;gap:1px">${parentOptions('')}</div><div class="foot">A user story or bug sits under a Feature.</div>`,
+  };
+  function openMenu(btn) {
+    const name = btn.dataset.menu, was = openName === name;
+    closeMenu(); if (was) return;
+    openName = name; btn.setAttribute('aria-expanded', 'true');
+    const m = document.createElement('div');
+    m.className = 'menu' + (name === 'parent' ? ' wide' : ''); m.setAttribute('role', 'menu');
+    m.innerHTML = MENUS[name]();
+    btn.parentElement.append(m);
+    (m.querySelector('input') || m.querySelector('[aria-checked="true"]') || m.querySelector('.opt'))?.focus();
+  }
+
+  function setState(n) {
+    draft.state = n;
+    // Decision 3: moving an unassigned item into an In Progress state assigns it to whoever moved it.
+    if (!draft.assignee && catOf(type, n) === 'in-progress') { draft.assignee = ME; toast(`${av(ME)} Assigned to you: moving it to ${esc(n)} picks it up`); }
+    closeMenu(); renderFields(); refreshDirty();
+  }
+
+  /* Main column */
+  function mdSection(f, title, emptyText) {
+    const editing = ui.mode[f] === 'edit';
+    return `<header class="sec-h"><h2>${title}</h2><span class="spacer"></span><div class="seg" role="group" aria-label="${title} mode"><button type="button" data-mode="${f}:view" aria-pressed="${!editing}">View</button><button type="button" data-mode="${f}:edit" aria-pressed="${editing}">Edit</button></div></header>
+      ${editing ? `<div class="md-edit"><textarea class="field" data-edit="${f}" aria-label="${title} (markdown)">${esc(draft[f])}</textarea><span class="xs muted">Markdown: **bold**, \`code\`, - lists, 1. steps, @mention, SHIP-123 links</span></div>`
+        : (draft[f].trim() ? `<div class="md">${md(draft[f])}</div>` : `<span class="empty-line">${emptyText}</span>`)}`;
+  }
+  function renderCriteria() {
+    const c = draft.criteria, met = c.filter(x => x.done).length;
+    return `<header class="sec-h"><h2>Acceptance criteria</h2><span class="chip${met === c.length && c.length ? ' ok' : ''}">${met}/${c.length} met</span></header>
+      <ul class="checklist">${c.map((x, i) => `<li><label class="crit${x.done ? ' done' : ''}"><input type="checkbox" data-crit="${i}"${x.done ? ' checked' : ''}><span>${inline(x.text)}</span></label><button class="ib rm" type="button" data-crit-rm="${i}" aria-label="Remove criterion">✕</button></li>`).join('')}
+        <li class="add"><input class="field" id="critNew" placeholder="+ Add a criterion, then Enter" aria-label="Add a criterion"></li></ul>`;
+  }
+  function renderTasks() {
+    const done = tasks.filter(t => catOf('task', t.state) === 'completed').length;
+    const opts = STATES.task.flatMap(([, n]) => n);
+    const row = t => `<tr class="item"><td><div class="title-cell">${tIcon('task')}<span class="t">${esc(t.title)}</span></div></td><td>${keyLink(t.key)}</td>
+      <td><span class="stcell">${stH('task', t.state)}<select class="state-sel" data-task="${t.key}" aria-label="State of ${t.key}">${opts.map(s => `<option${s === t.state ? ' selected' : ''}>${s}</option>`).join('')}</select></span></td>
+      <td>${av(t.assignee)}</td><td class="pts muted" style="font-weight:400" title="Task points are for information; sprint totals count stories and bugs">—</td></tr>`;
+    return `<header class="sec-h"><h2>Tasks</h2><span class="chip${tasks.length && done === tasks.length ? ' ok' : ''}">☑ ${done}/${tasks.length}</span><span class="xs muted">Each task is its own work item and saves straight away</span><span class="spacer"></span><button class="btn tiny" type="button" id="addTask">+ Add task</button></header>
+      <div class="box"><table class="list"><thead><tr><th>Title</th><th style="width:90px">Key</th><th style="width:130px">State</th><th style="width:76px">Assigned</th><th class="num" style="width:48px">Pts</th></tr></thead><tbody>
+      ${tasks.map(row).join('')}
+      ${ui.addingTask ? `<tr class="add"><td colspan="5"><div class="row" style="flex-wrap:nowrap">${tIcon('task')}<input class="field" id="taskTitle" style="flex:1" placeholder="Task title, then Enter" aria-label="Task title"><button class="btn primary" type="button" id="taskGo">Add</button><button class="btn ghost" type="button" id="taskX">Esc</button></div></td></tr>` : ''}
+      ${!tasks.length && !ui.addingTask ? '<tr><td colspan="5" class="muted sm" style="text-align:center;height:48px">No tasks yet. Break it down when someone picks it up.</td></tr>' : ''}
+      </tbody></table></div>`;
+  }
+  function renderDiscussion() {
+    return `<header class="sec-h"><h2>Discussion</h2><span class="cnt">${comments.length}</span></header>
+      <ol class="comments">${comments.map(c => `<li class="cm${c.fresh ? ' fresh' : ''}">${av(c.by)}<div><div class="cm-h"><b>${people[c.by].name}</b><span class="xs muted">${c.when}</span></div><div class="md">${md(c.body)}</div></div></li>`).join('')}</ol>
+      <div class="cm-new">${av(ME)}<div style="display:grid;gap:6px"><span class="pop-wrap"><textarea class="field" id="cmText" placeholder="Add a comment. Type @ to mention someone" aria-label="New comment"></textarea></span>
+        <div class="row"><span class="xs muted">Markdown and @mentions · Ctrl+Enter posts · comments post straight away, not with Save</span><span class="spacer"></span><button class="btn primary" type="button" id="cmPost" disabled>Comment</button></div></div></div>`;
+  }
+  function renderMain() {
+    const keep = $('main').scrollTop;
+    $('main').innerHTML = `<section class="sec" data-f="description">${mdSection('description', 'Description', 'No description yet. Edit to add one.')}</section>
+      ${type === 'story' ? `<section class="sec" data-f="criteria">${renderCriteria()}</section>`
+        : `<section class="sec" data-f="repro">${mdSection('repro', 'Repro steps', 'No repro steps yet.')}
+          <div class="sev-row" data-f="severity"><label for="fSev">Severity</label><select class="field" id="fSev">${SEVERITIES.map(s => `<option${s === draft.severity ? ' selected' : ''}>${s}</option>`).join('')}</select><span class="xs muted">How bad it is for the people it hits. Priority is when we fix it.</span></div></section>`}
+      <section class="sec" id="tasksSec">${renderTasks()}</section>
+      <section class="sec" id="discSec">${renderDiscussion()}</section>`;
+    $('main').scrollTop = keep;
+    comments.forEach(c => { c.fresh = false; });
+  }
+
+  /* Side column */
+  function renderLinks() {
+    const rows = LINK_TYPES.map(([t, lbl]) => {
+      const list = draft.links.map((l, i) => ({ l, i })).filter(x => x.l.type === t);
+      if (!list.length) return '';
+      return `<li class="lgrp">${lbl}</li>` + list.map(({ l, i }) => {
+        if (t === 'url') return `<li${l.fresh ? ' class="fresh"' : ''}><span class="ext">↗</span><a class="t" href="${esc(l.url)}" target="_blank" rel="noopener" title="${esc(l.url)}">${esc(l.title || l.url)}</a><span class="meta">${esc(new URL(l.url).host)}</span><button class="ib rm" type="button" data-link-rm="${i}" aria-label="Remove link">✕</button></li>`;
+        const x = find(l.key);
+        return `<li${l.fresh ? ' class="fresh"' : ''}>${tIcon(x.type)}${keyLink(l.key)}<span class="t" title="${esc(x.title)}">${esc(x.title)}</span><span class="st ${catOf(x.type, x.state)}" title="${esc(x.state)}"></span><button class="ib rm" type="button" data-link-rm="${i}" aria-label="Remove link">✕</button></li>`;
+      }).join('');
+    }).join('');
+    const targets = allItems.filter(i => i.key !== KEY && !tasks.some(t => t.key === i.key)).sort((a, b) => +a.key.split('-')[1] - +b.key.split('-')[1]);
+    const form = ui.addingLink ? `<div class="linkform">
+        <select class="field" id="lType" aria-label="Link type">${LINK_TYPES.map(([t, l]) => `<option value="${t}"${t === ui.linkType ? ' selected' : ''}>${l}</option>`).join('')}</select>
+        ${ui.linkType === 'url' ? '<input class="field" id="lUrl" type="url" placeholder="https://" aria-label="URL"><input class="field" id="lTitle" placeholder="Title (optional)" aria-label="Link title">'
+          : `<select class="field" id="lKey" aria-label="Work item">${targets.map(i => `<option value="${i.key}">${i.key} · ${esc(i.title)}</option>`).join('')}</select>`}
+        ${ui.linkErr ? `<span class="err">${ui.linkErr}</span>` : ''}
+        <div class="row"><button class="btn primary" type="button" id="lAdd">Add link</button><button class="btn ghost" type="button" id="lCancel">Cancel</button><span class="spacer"></span><span class="xs muted">Saved with the form</span></div></div>` : '';
+    return `<div class="sec-h2"><span class="overline">Links</span><span class="cnt">${draft.links.length}</span><span class="spacer"></span><button class="btn ghost tiny" type="button" id="addLink">+ Add link</button></div>
+      ${form}${draft.links.length ? `<ul class="lst">${rows}</ul>` : '<span class="empty-line">No links.</span>'}`;
+  }
+  const revHtml = r => `<li class="rev${r.fresh ? ' fresh' : ''}"><span class="revno" title="Revision ${r.rev}">${r.rev}</span>
+      <div class="rev-h">${r.by ? `${av(r.by)}<b>${people[r.by].name}</b>` : '<span class="av sys" title="Jira import">⇪</span><b>Jira import</b>'}<span class="xs muted">${r.when}</span>${r.jira ? '<span class="chip">from Jira</span>' : ''}</div>
+      ${r.note ? `<div class="note">${esc(r.note)}</div>` : ''}
+      ${r.changes.length ? `<ul class="diffs">${r.changes.map(([f, a, b]) => `<li><span class="f">${label(f)}</span>${diffHtml(f, a, b)}</li>`).join('')}</ul>` : ''}</li>`;
+  function renderSide() {
+    const keep = $('side').scrollTop;
+    $('side').innerHTML = `<section data-f="links">${renderLinks()}</section>
+      <section><div class="sec-h2"><span class="overline">Attachments</span><span class="cnt">${attachments.length}</span><span class="spacer"></span><label class="btn ghost tiny" for="file" tabindex="0" id="attach">+ Attach</label></div>
+        ${attachments.length ? `<ul class="lst">${attachments.map((a, i) => `<li${a.fresh ? ' class="fresh"' : ''}><span class="ext">▤</span><a class="t" href="#" data-att="${i}" title="${esc(a.name)} · ${people[a.by].name}, ${a.when}">${esc(a.name)}</a><span class="meta">${size(a.size)}</span><button class="ib rm" type="button" data-att-rm="${i}" aria-label="Remove ${esc(a.name)}">✕</button></li>`).join('')}</ul>` : '<span class="empty-line">No attachments.</span>'}</section>
+      <section><div class="sec-h2"><span class="overline">History</span><span class="cnt">${revs.length} revisions</span></div>
+        <p class="hint">Every save is one revision, newest first. Velocity and burndown read State and Story points from this trail.</p>
+        <ol class="revs">${revs.map(revHtml).join('')}</ol></section>
+      ${v.external ? `<section><div class="sec-h2"><span class="overline">Imported from Jira</span></div>
+        <div class="ext-ref"><span class="ext">⇪</span><a href="${v.external.url}" target="_blank" rel="noopener">${v.external.key} ↗</a><span class="spacer"></span><span class="xs muted">${v.external.host}</span></div>
+        <p class="hint">Imported by import job #3 on ${v.external.imported}. Re-running the import matches on this reference and updates ${KEY} instead of making a copy.</p></section>` : ''}`;
+    $('side').scrollTop = keep;
+    revs.forEach(r => { r.fresh = false; }); draft.links.forEach(l => { delete l.fresh; }); attachments.forEach(a => { a.fresh = false; });
+  }
+
+  function renderAll() { renderHead(); renderFields(); renderMain(); renderSide(); refreshDirty(); }
+
+  /* Save, Discard and the 409 */
+  function save() {
+    const dirty = changedFields(saved.form, draft);
+    if (!dirty.length) return;
+    if (!draft.title.trim()) { toast('A work item needs a title'); $('title').focus(); return; }
+    if (server.rev > saved.rev) { showConflict(); return; }
+    const r = { rev: saved.rev + 1, by: ME, when: 'Just now', changes: dirty.map(f => [f, clone(saved.form[f]), clone(draft[f])]), fresh: true };
+    revs.unshift(r);
+    saved = { rev: r.rev, form: clone(draft) }; server = clone(saved);
+    $('banner').innerHTML = '';
+    renderAll();
+    toast(`Saved ${KEY} · revision ${r.rev}`);
+  }
+  function discard() { draft = clone(saved.form); $('title').value = draft.title; renderAll(); toast('Changes discarded'); }
+
+  function teammateSavedFirst() {
+    if (server.rev > saved.rev) { showConflict(); return; }
+    // With nothing unsaved, make one edit first (Priority) so there's something of yours to keep or drop.
+    if (!changedFields(saved.form, draft).length) { draft.priority = draft.priority === 1 ? 2 : 1; renderFields(); refreshDirty(); }
+    const theirs = Object.fromEntries(Object.entries(v.theirs.changes(saved.form)).filter(([f, to]) => !same(saved.form[f], to)));
+    const entry = { rev: saved.rev + 1, by: v.theirs.by, when: 'Just now', changes: Object.entries(theirs).map(([f, to]) => [f, clone(saved.form[f]), clone(to)]) };
+    server = { rev: entry.rev, form: { ...clone(saved.form), ...clone(theirs) }, entry };
+    save(); // the server answers 409: revision moved on
+  }
+  function showConflict() {
+    const e = server.entry, who = people[e.by].name, mine = changedFields(saved.form, draft);
+    $('banner').innerHTML = `<div class="conflict-b" role="alert">
+      <div><b>${who} saved ${KEY} first, so your save didn't go through.</b> <span class="muted">You were editing revision ${saved.rev}; it's now at revision ${server.rev}. Nothing you typed is lost.</span></div>
+      <div class="cb-cols">
+        <div><span class="overline">Changed by them</span><ul>${e.changes.map(([f, a, b]) => `<li>${label(f)} ${diffHtml(f, a, b)} <span class="muted">by ${who}, revision ${e.rev}</span>${mine.includes(f) ? ' <span class="chip warn">you changed this too</span>' : ''}</li>`).join('')}</ul></div>
+        <div><span class="overline">Your unsaved changes</span><ul>${mine.map(f => `<li>${label(f)} ${diffHtml(f, saved.form[f], draft[f])}</li>`).join('')}</ul></div>
+      </div>
+      <div class="row"><button class="btn" type="button" data-cf="theirs">Reload theirs</button><button class="btn primary" type="button" data-cf="mine">Re-apply mine</button><span class="xs muted">Re-apply puts your changes on top of revision ${server.rev}, and yours win where you both changed a field. Then Save.</span></div></div>`;
+  }
+  function resolve(keepMine) {
+    const mine = changedFields(saved.form, draft), mineVals = Object.fromEntries(mine.map(f => [f, clone(draft[f])]));
+    revs.unshift({ ...server.entry, fresh: true });
+    saved = { rev: server.rev, form: clone(server.form) };
+    draft = keepMine ? { ...clone(server.form), ...mineVals } : clone(server.form);
+    server = clone(saved);
+    $('banner').innerHTML = ''; $('title').value = draft.title;
+    renderAll();
+    toast(keepMine ? `Your ${mine.length === 1 ? 'change is' : mine.length + ' changes are'} back on top of revision ${saved.rev}. Save to keep ${mine.length === 1 ? 'it' : 'them'}.` : `Reloaded revision ${saved.rev}. Your changes were dropped.`);
+  }
+
+  /* Events */
+  $('title').addEventListener('input', e => { draft.title = e.target.value; refreshDirty(); });
+  $('title').addEventListener('keydown', e => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') { e.target.value = draft.title = saved.form.title; refreshDirty(); e.target.blur(); } });
+  $('save').onclick = save;
+  $('discard').onclick = discard;
+  $('back').addEventListener('click', e => { if (changedFields(saved.form, draft).length) { e.preventDefault(); toast('You have unsaved changes: Save or Discard first'); } });
+  $('banner').addEventListener('click', e => { const b = e.target.closest('[data-cf]'); if (b) resolve(b.dataset.cf === 'mine'); });
+
+  document.addEventListener('click', e => {
+    const t = e.target;
+    if (t.closest('#copyKey')) { try { navigator.clipboard?.writeText(KEY).catch(() => {}); } catch { /* file:// may block the clipboard */ } toast(`Copied ${KEY}`); return; }
+    const mb = t.closest('[data-menu]'); if (mb) { e.stopPropagation(); openMenu(mb); return; }
+    const ps = t.closest('[data-pick-state]'); if (ps) { setState(ps.dataset.pickState); return; }
+    const pa = t.closest('[data-pick-assignee]'); if (pa) { draft.assignee = pa.dataset.pickAssignee || null; closeMenu(); renderFields(); refreshDirty(); return; }
+    const pp = t.closest('[data-pick-parent]'); if (pp) { draft.parent = pp.dataset.pickParent || null; closeMenu(); renderFields(); refreshDirty(); return; }
+    if (t.closest('.menu')) return;
+    if (openName) closeMenu();
+    const pr = t.closest('[data-prio]'); if (pr) { draft.priority = +pr.dataset.prio; renderFields(); refreshDirty(); return; }
+    const ut = t.closest('[data-untag]'); if (ut) { draft.tags = draft.tags.filter((_, i) => i !== +ut.dataset.untag); renderFields(); refreshDirty(); return; }
+    const md_ = t.closest('[data-mode]'); if (md_) { const [f, m] = md_.dataset.mode.split(':'); ui.mode[f] = m; renderMain(); refreshDirty(); if (m === 'edit') $('main').querySelector(`[data-edit="${f}"]`)?.focus(); return; }
+    const cr = t.closest('[data-crit-rm]'); if (cr) { draft.criteria = draft.criteria.filter((_, i) => i !== +cr.dataset.critRm); renderMain(); refreshDirty(); return; }
+    const go = t.closest('[data-goto]'); if (go) { e.preventDefault(); toast(`Opens the ${go.dataset.goto} form`); return; }
+    const at = t.closest('[data-att]'); if (at) { e.preventDefault(); toast(`Downloading ${esc(attachments[+at.dataset.att].name)}`); return; }
+    const ar = t.closest('[data-att-rm]'); if (ar) { const a = attachments.splice(+ar.dataset.attRm, 1)[0]; renderSide(); refreshDirty(); toast(`Removed ${esc(a.name)}`); return; }
+    const lr = t.closest('[data-link-rm]'); if (lr) { draft.links = draft.links.filter((_, i) => i !== +lr.dataset.linkRm); renderSide(); refreshDirty(); return; }
+    if (t.closest('#addLink')) { ui.addingLink = !ui.addingLink; ui.linkErr = ''; renderSide(); refreshDirty(); return; }
+    if (t.closest('#lCancel')) { ui.addingLink = false; renderSide(); refreshDirty(); return; }
+    if (t.closest('#lAdd')) { addLink(); return; }
+    if (t.closest('#addTask')) { ui.addingTask = true; renderMain(); refreshDirty(); $('taskTitle').focus(); return; }
+    if (t.closest('#taskX')) { ui.addingTask = false; renderMain(); refreshDirty(); return; }
+    if (t.closest('#taskGo')) { addTask(); return; }
+    if (t.closest('#cmPost')) { postComment(); }
+  });
+
+  function addLink() {
+    const type_ = ui.linkType;
+    let l;
+    if (type_ === 'url') {
+      const url = $('lUrl').value.trim();
+      if (!/^https?:\/\/[^\s/]+\.[^\s]+/.test(url)) { ui.linkErr = 'Enter a full URL starting with https://'; renderSide(); refreshDirty(); $('lUrl').value = url; $('lUrl').focus(); return; }
+      l = { type: 'url', url, title: $('lTitle').value.trim() };
+    } else {
+      const key = $('lKey').value;
+      if (draft.links.some(x => x.type === type_ && x.key === key)) { ui.linkErr = `${key} is already linked as ${linkLabel(type_)}`; renderSide(); refreshDirty(); return; }
+      l = { type: type_, key };
+    }
+    draft.links = [...draft.links, { ...l, fresh: true }]; // renderSide() flashes the new row, then drops the flag
+    ui.addingLink = false; ui.linkErr = '';
+    renderSide(); refreshDirty();
+    toast(`${linkLabel(l.type)} link added. Save to keep it.`);
+  }
+  function addTask() {
+    const title = $('taskTitle').value.trim(); if (!title) return;
+    const t = { key: 'SHIP-' + nextKey++, title, state: 'New', assignee: null };
+    tasks.push(t); renderMain(); refreshDirty(); $('taskTitle').focus();
+    toast(`${t.key} added under ${KEY}`);
+  }
+  function postComment() {
+    const ta = $('cmText'), body = ta.value.trim(); if (!body) return;
+    comments.push({ by: ME, when: 'Just now', body, fresh: true });
+    $('discSec').innerHTML = renderDiscussion();
+    const n = (body.match(mentionRe) || []).length;
+    toast(n ? `Comment posted · ${n === 1 ? body.match(mentionRe)[0].slice(1) + ' is' : n + ' people are'} notified` : 'Comment posted');
+    comments.forEach(c => { c.fresh = false; });
+  }
+
+  document.addEventListener('input', e => {
+    const t = e.target;
+    if (t.id === 'fPoints') { draft.points = t.value === '' ? null : Math.max(0, Math.round(+t.value)); refreshDirty(); return; }
+    if (t.dataset.edit) { draft[t.dataset.edit] = t.value; refreshDirty(); return; }
+    if (t.id === 'parentQ') { $('parentList').innerHTML = parentOptions(t.value); return; }
+    if (t.id === 'cmText') { $('cmPost').disabled = !t.value.trim(); mentionSuggest(t); }
+  });
+  document.addEventListener('change', e => {
+    const t = e.target;
+    if (t.id === 'fSprint') { draft.sprint = t.value || null; refreshDirty(); return; }
+    if (t.id === 'fSev') { draft.severity = t.value; refreshDirty(); return; }
+    if (t.dataset.crit) { draft.criteria = draft.criteria.map((c, i) => (i === +t.dataset.crit ? { ...c, done: t.checked } : c)); renderMain(); refreshDirty(); return; }
+    if (t.id === 'lType') { ui.linkType = t.value; ui.linkErr = ''; renderSide(); refreshDirty(); return; }
+    if (t.dataset.task) {
+      const task = tasks.find(x => x.key === t.dataset.task); task.state = t.value;
+      if (!task.assignee && catOf('task', task.state) === 'in-progress') { task.assignee = ME; toast(`${av(ME)} Picked up “${esc(task.title)}” · assigned to you`); }
+      else toast(`${task.key} is now ${esc(task.state)}`);
+      $('tasksSec').innerHTML = renderTasks(); return;
+    }
+    if (t.id === 'file') {
+      [...t.files].forEach(f => attachments.push({ name: f.name, size: f.size, by: ME, when: 'Just now', fresh: true }));
+      if (t.files.length) toast(t.files.length === 1 ? `Uploaded ${esc(t.files[0].name)} (${size(t.files[0].size)})` : `Uploaded ${t.files.length} files`);
+      t.value = ''; renderSide(); refreshDirty();
+    }
+  });
+  document.addEventListener('keydown', e => {
+    const t = e.target;
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); save(); return; }
+    if (e.key === 'Escape' && openName) { const b = document.querySelector('[data-menu][aria-expanded="true"]'); closeMenu(); b?.focus(); return; }
+    if (t.id === 'tagIn' && e.key === 'Enter') {
+      const tag = t.value.trim(); if (!tag) return;
+      if (!draft.tags.some(x => x.toLowerCase() === tag.toLowerCase())) draft.tags = [...draft.tags, tag];
+      renderFields(); refreshDirty(); $('tagIn').focus(); return;
+    }
+    if (t.id === 'tagIn' && e.key === 'Backspace' && !t.value && draft.tags.length) { draft.tags = draft.tags.slice(0, -1); renderFields(); refreshDirty(); $('tagIn').focus(); return; }
+    if (t.id === 'critNew' && e.key === 'Enter') {
+      const text = t.value.trim(); if (!text) return;
+      draft.criteria = [...draft.criteria, { done: false, text }]; renderMain(); refreshDirty(); $('critNew').focus(); return;
+    }
+    if (t.id === 'taskTitle') { if (e.key === 'Enter') addTask(); if (e.key === 'Escape') { ui.addingTask = false; renderMain(); refreshDirty(); } return; }
+    if (t.id === 'attach' && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); $('file').click(); return; }
+    if (t.id === 'cmText') {
+      const m = document.querySelector('.mention-menu');
+      if (m && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) { e.preventDefault(); const o = [...m.querySelectorAll('.opt')], i = o.findIndex(x => x.classList.contains('hi')); o.forEach(x => x.classList.remove('hi')); o[(i + (e.key === 'ArrowDown' ? 1 : -1) + o.length) % o.length].classList.add('hi'); return; }
+      if (m && (e.key === 'Enter' || e.key === 'Tab')) { e.preventDefault(); pickMention(m.querySelector('.opt.hi').dataset.mention); return; }
+      if (m && e.key === 'Escape') { m.remove(); return; }
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); postComment(); }
+    }
+  });
+
+  /* @mention suggestions in the comment box */
+  function mentionSuggest(ta) {
+    document.querySelector('.mention-menu')?.remove();
+    const q = ta.value.slice(0, ta.selectionStart).match(/(^|\s)@([A-Za-z]*)$/); if (!q) return;
+    const ql = q[2].toLowerCase(), hits = Object.entries(people).filter(([, p]) => p.name.toLowerCase().split(' ').some(w => w.startsWith(ql)));
+    if (!hits.length) return;
+    const m = document.createElement('div'); m.className = 'menu mention-menu'; m.setAttribute('role', 'listbox');
+    m.innerHTML = '<div class="grp">Mention</div>' + hits.map(([id, p], i) => `<button class="opt${i ? '' : ' hi'}" type="button" data-mention="${id}">${av(id)}${p.name}</button>`).join('');
+    m.addEventListener('mousedown', e => { const o = e.target.closest('[data-mention]'); if (o) { e.preventDefault(); pickMention(o.dataset.mention); } });
+    ta.parentElement.append(m);
+  }
+  function pickMention(id) {
+    const ta = $('cmText'), pos = ta.selectionStart, before = ta.value.slice(0, pos).replace(/@([A-Za-z]*)$/, `@${people[id].name} `);
+    ta.value = before + ta.value.slice(pos); ta.focus(); ta.selectionStart = ta.selectionEnd = before.length;
+    document.querySelector('.mention-menu')?.remove(); $('cmPost').disabled = false;
+  }
+
+  renderAll();
+  SL.preview([
+    { label: 'Teammate saved first', run: teammateSavedFirst },
+    { label: KEY === 'SHIP-141' ? 'Bug variant (SHIP-153)' : 'Story variant (SHIP-141)', run: () => { const p = new URLSearchParams(location.search); if (KEY === 'SHIP-141') p.set('key', 'SHIP-153'); else p.delete('key'); location.search = p.toString(); } },
+  ]);
+})();
+</script>
+</body>
+</html>

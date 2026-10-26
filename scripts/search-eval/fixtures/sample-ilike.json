@@ -1,0 +1,181 @@
+{
+  "label": "ilike",
+  "queries": {
+    "sample-q01": [],
+    "sample-q02": [
+      [
+        "sample-009",
+        null
+      ]
+    ],
+    "sample-q03": [
+      [
+        "sample-020",
+        null
+      ],
+      [
+        "sample-018",
+        null
+      ],
+      [
+        "sample-014",
+        null
+      ],
+      [
+        "sample-006",
+        null
+      ],
+      [
+        "sample-003",
+        null
+      ],
+      [
+        "sample-001",
+        null
+      ]
+    ],
+    "sample-q04": [
+      [
+        "sample-002",
+        null
+      ]
+    ],
+    "sample-q05": [
+      [
+        "sample-020",
+        null
+      ],
+      [
+        "sample-015",
+        null
+      ],
+      [
+        "sample-014",
+        null
+      ],
+      [
+        "sample-006",
+        null
+      ]
+    ],
+    "sample-q06": [
+      [
+        "sample-009",
+        null
+      ],
+      [
+        "sample-008",
+        null
+      ]
+    ],
+    "sample-q07": [
+      [
+        "sample-011",
+        null
+      ]
+    ],
+    "sample-q08": [
+      [
+        "sample-004",
+        null
+      ]
+    ],
+    "sample-q09": [],
+    "sample-q10": [
+      [
+        "sample-020",
+        null
+      ],
+      [
+        "sample-018",
+        null
+      ],
+      [
+        "sample-017",
+        null
+      ],
+      [
+        "sample-016",
+        null
+      ],
+      [
+        "sample-015",
+        null
+      ],
+      [
+        "sample-014",
+        null
+      ],
+      [
+        "sample-013",
+        null
+      ],
+      [
+        "sample-012",
+        null
+      ],
+      [
+        "sample-011",
+        null
+      ],
+      [
+        "sample-008",
+        null
+      ],
+      [
+        "sample-007",
+        null
+      ],
+      [
+        "sample-006",
+        null
+      ],
+      [
+        "sample-005",
+        null
+      ],
+      [
+        "sample-004",
+        null
+      ],
+      [
+        "sample-003",
+        null
+      ],
+      [
+        "sample-002",
+        null
+      ],
+      [
+        "sample-001",
+        null
+      ]
+    ],
+    "sample-q11": [
+      [
+        "sample-019",
+        null
+      ]
+    ],
+    "sample-q12": [
+      [
+        "sample-017",
+        null
+      ]
+    ]
+  },
+  "latencyMs": {
+    "sample-q01": 0,
+    "sample-q02": 0,
+    "sample-q03": 0,
+    "sample-q04": 0,
+    "sample-q05": 0,
+    "sample-q06": 0,
+    "sample-q07": 0,
+    "sample-q08": 0,
+    "sample-q09": 0,
+    "sample-q10": 0,
+    "sample-q11": 0,
+    "sample-q12": 0
+  }
+}

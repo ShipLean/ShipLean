@@ -1,0 +1,7 @@
+# One file per line: <name in the model directory> <url> <sha256>. Blank lines and # comments are skipped.
+# A url of the form local:<path> is read from beside this manifest.
+# Pinned: intfloat/multilingual-e5-small @ 614241f622f53c4eeff9890bdc4f31cfecc418b3 (the repo's own int8 ONNX export,
+# built for AVX512-VNNI but run by onnxruntime on any x86-64 CPU).
+model.onnx https://huggingface.co/intfloat/multilingual-e5-small/resolve/614241f622f53c4eeff9890bdc4f31cfecc418b3/onnx/model_qint8_avx512_vnni.onnx dd476dd0c2514e9b9be83aeb3853fac0763e0bdf4a71645407587d77c48a2d88
+sentencepiece.bpe.model https://huggingface.co/intfloat/multilingual-e5-small/resolve/614241f622f53c4eeff9890bdc4f31cfecc418b3/sentencepiece.bpe.model cfc8146abe2a0488e9e2a0c56de7952f7c11ab059eca145a0a727afce0db2865
+shiplean-model.json local:shiplean-model.json 5f39bd53cd554009d08dd3612e3083d3e8206f5c2f7ce02662f64e560b8bfa9f

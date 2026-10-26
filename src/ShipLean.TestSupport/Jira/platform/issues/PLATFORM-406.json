@@ -1,0 +1,145 @@
+{
+  "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+  "id": "10406",
+  "self": "{{base}}/rest/api/{{v}}/issue/10406",
+  "key": "PLATFORM-406",
+  "fields": {
+    "summary": "Search times out above 500 requests per second",
+    "issuetype": {
+      "id": "10004",
+      "name": "Bug",
+      "subtask": false
+    },
+    "status": {
+      "id": "10004",
+      "name": "Done",
+      "statusCategory": {
+        "key": "done",
+        "name": "Done"
+      }
+    },
+    "priority": {
+      "name": "Highest"
+    },
+    "description": {
+      "type": "doc",
+      "version": 1,
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Seen in the load test: p99 climbs to 12 s and the gateway returns 504."
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Screenshot of the dashboard attached."
+            }
+          ]
+        }
+      ]
+    },
+    "assignee": {
+      "accountId": "5b10ac8d82e05b22cc7d4ef5",
+      "displayName": "Tom Okafor",
+      "emailAddress": "tom.okafor@acme.io",
+      "active": true,
+      "self": "{{base}}/rest/api/{{v}}/user?accountId=5b10ac8d82e05b22cc7d4ef5"
+    },
+    "reporter": {
+      "accountId": "712020:6a1e7c0b-52a0-4f27-9c0e-3c1f0a5b7d11",
+      "displayName": "Sam Rivera",
+      "emailAddress": "sam.rivera@acme.io",
+      "active": true,
+      "self": "{{base}}/rest/api/{{v}}/user?accountId=712020:6a1e7c0b-52a0-4f27-9c0e-3c1f0a5b7d11"
+    },
+    "labels": [
+      "performance"
+    ],
+    "components": [
+      {
+        "name": "Search API"
+      }
+    ],
+    "created": "2026-09-01T07:20:00.000+0000",
+    "updated": "2026-09-10T12:00:00.000+0000",
+    "customfield_10016": 2,
+    "customfield_10020": [
+      {
+        "id": 111,
+        "name": "Platform Sprint 11",
+        "state": "closed",
+        "startDate": "2026-08-31T01:00:00.000Z",
+        "endDate": "2026-09-28T10:00:00.000Z",
+        "goal": "Ship the scoring service behind a flag"
+      }
+    ],
+    "parent": null,
+    "issuelinks": [],
+    "attachment": [
+      {
+        "id": "10601",
+        "filename": "load-test-dashboard.png",
+        "mimeType": "image/png",
+        "size": 73,
+        "content": "{{base}}/rest/api/3/attachment/content/10601",
+        "created": "2026-09-01T07:20:00.000+0000"
+      }
+    ]
+  },
+  "changelog": {
+    "startAt": 0,
+    "maxResults": 2,
+    "total": 2,
+    "histories": [
+      {
+        "id": "1",
+        "author": {
+          "accountId": "5b10ac8d82e05b22cc7d4ef5",
+          "displayName": "Tom Okafor",
+          "emailAddress": "tom.okafor@acme.io",
+          "active": true,
+          "self": "{{base}}/rest/api/{{v}}/user?accountId=5b10ac8d82e05b22cc7d4ef5"
+        },
+        "created": "2026-09-02T08:00:00.000+0000",
+        "items": [
+          {
+            "field": "status",
+            "fieldtype": "jira",
+            "from": null,
+            "fromString": "Backlog",
+            "to": null,
+            "toString": "In Progress"
+          }
+        ]
+      },
+      {
+        "id": "2",
+        "author": {
+          "accountId": "5b10ac8d82e05b22cc7d4ef5",
+          "displayName": "Tom Okafor",
+          "emailAddress": "tom.okafor@acme.io",
+          "active": true,
+          "self": "{{base}}/rest/api/{{v}}/user?accountId=5b10ac8d82e05b22cc7d4ef5"
+        },
+        "created": "2026-09-10T12:00:00.000+0000",
+        "items": [
+          {
+            "field": "status",
+            "fieldtype": "jira",
+            "from": null,
+            "fromString": "In Progress",
+            "to": null,
+            "toString": "Done"
+          }
+        ]
+      }
+    ]
+  }
+}

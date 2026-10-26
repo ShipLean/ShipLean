@@ -1,0 +1,134 @@
+[
+  {
+    "id": "app-q01",
+    "text": "APP-47",
+    "kind": "exactKey",
+    "expected": [
+      "app-047"
+    ]
+  },
+  {
+    "id": "app-q02",
+    "text": "app85",
+    "kind": "exactKey",
+    "expected": [
+      "app-085"
+    ]
+  },
+  {
+    "id": "app-q03",
+    "text": "keychain",
+    "kind": "titleWord",
+    "expected": [
+      "app-028"
+    ]
+  },
+  {
+    "id": "app-q04",
+    "text": "avatar",
+    "kind": "titleWord",
+    "expected": [
+      "app-037",
+      "app-038",
+      "app-039",
+      "app-041"
+    ]
+  },
+  {
+    "id": "app-q05",
+    "text": "users keep getting kicked out after the phone has been asleep",
+    "kind": "paraphrase",
+    "expected": [
+      "app-026"
+    ]
+  },
+  {
+    "id": "app-q06",
+    "text": "tapping the email link to choose a new password launches Safari rather than the app",
+    "kind": "paraphrase",
+    "expected": [
+      "app-011"
+    ]
+  },
+  {
+    "id": "app-q07",
+    "text": "the red dot on the bell never clears",
+    "kind": "paraphrase",
+    "expected": [
+      "app-074"
+    ]
+  },
+  {
+    "id": "app-q08",
+    "text": "clocks changing for daylight saving",
+    "kind": "bodyOnly",
+    "expected": [
+      "app-067"
+    ]
+  },
+  {
+    "id": "app-q09",
+    "text": "analytics SDK initialised on the main thread at startup",
+    "kind": "bodyOnly",
+    "expected": [
+      "app-085"
+    ]
+  },
+  {
+    "id": "app-q10",
+    "text": "local and remote copy of the same message merged by collapse identifier",
+    "kind": "bodyOnly",
+    "expected": [
+      "app-064"
+    ]
+  },
+  {
+    "id": "app-q11",
+    "text": "Xiaomi autostart permission",
+    "kind": "commentOnly",
+    "expected": [
+      "app-061"
+    ]
+  },
+  {
+    "id": "app-q12",
+    "text": "retain cycle swipe gesture recogniser",
+    "kind": "commentOnly",
+    "expected": [
+      "app-089"
+    ]
+  },
+  {
+    "id": "app-q13",
+    "text": "biomet",
+    "kind": "prefix",
+    "expected": [
+      "app-013",
+      "app-016"
+    ]
+  },
+  {
+    "id": "app-q14",
+    "text": "authen",
+    "kind": "prefix",
+    "expected": [
+      "app-031"
+    ]
+  },
+  {
+    "id": "app-q15",
+    "text": "las notificaciones no llegan al teléfono",
+    "kind": "nonEnglish",
+    "expected": [
+      "app-061"
+    ]
+  },
+  {
+    "id": "app-q16",
+    "text": "Passwort vergessen, Link zum Zurücksetzen",
+    "kind": "nonEnglish",
+    "expected": [
+      "app-010"
+    ]
+  }
+]

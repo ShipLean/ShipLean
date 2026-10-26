@@ -1,0 +1,109 @@
+{
+  "id": "00000005-0000-4000-8001-000000000100",
+  "projectId": "00000002-0000-4000-8000-000000000001",
+  "key": "SHIP-100",
+  "number": 100,
+  "type": {
+    "id": "feature",
+    "name": "Feature"
+  },
+  "title": "Checkout v2",
+  "description": "Rebuild checkout around **saved cards** and a single review step.\n\nWe keep the vault integration as it is and replace the page flow.",
+  "descriptionHtml": "<p>Rebuild checkout around <strong>saved cards</strong> and a single review step.</p>\n<p>We keep the vault integration as it is and replace the page flow.</p>\n",
+  "acceptanceCriteria": [],
+  "reproSteps": "",
+  "reproStepsHtml": "",
+  "severity": null,
+  "state": {
+    "id": "00000003-0000-4000-8001-000000000202",
+    "name": "Active",
+    "category": "inProgress"
+  },
+  "assignee": {
+    "id": "00000001-0000-4000-8000-000000000002",
+    "name": "Priya Shah",
+    "initials": "PS",
+    "avatarColour": "#2f7fd8",
+    "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"
+  },
+  "createdBy": {
+    "id": "00000001-0000-4000-8000-000000000006",
+    "name": "Ana Costa",
+    "initials": "AC",
+    "avatarColour": "#b83d7a",
+    "photoUrl": null
+  },
+  "changedBy": {
+    "id": "00000001-0000-4000-8000-000000000002",
+    "name": "Priya Shah",
+    "initials": "PS",
+    "avatarColour": "#2f7fd8",
+    "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"
+  },
+  "sprint": {
+    "id": "00000004-0000-4000-8001-000000000024",
+    "name": "Sprint 24",
+    "status": "current"
+  },
+  "priority": 2,
+  "points": 5,
+  "parent": null,
+  "tags": [],
+  "position": {
+    "columnId": "col-in-progress",
+    "done": false,
+    "laneId": "lane-default",
+    "columnOrder": "00000003"
+  },
+  "backlogOrder": "00000012",
+  "links": [],
+  "children": [
+    {
+      "id": "00000005-0000-4000-8001-000000000141",
+      "key": "SHIP-141",
+      "type": {
+        "id": "story",
+        "name": "User Story"
+      },
+      "title": "Pay with saved card",
+      "state": {
+        "id": "00000003-0000-4000-8001-000000000302",
+        "name": "Active",
+        "category": "inProgress"
+      },
+      "assignee": {
+        "id": "00000001-0000-4000-8000-000000000002",
+        "name": "Priya Shah",
+        "initials": "PS",
+        "avatarColour": "#2f7fd8",
+        "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"
+      },
+      "points": 5
+    }
+  ],
+  "originalSystem": null,
+  "revision": 6,
+  "createdAt": "2026-10-09T14:00:00+00:00",
+  "createdAtLabel": "9 Oct",
+  "changedAt": "2026-10-19T09:12:00+00:00",
+  "changedAtLabel": "19 Oct",
+  "goal": "Returning customers pay in two taps instead of five.",
+  "statusLine": "Saved cards work end to end on staging; Apple Pay waits on the merchant account.",
+  "statusVerified": {
+    "at": "2026-10-22T09:30:00+00:00",
+    "atLabel": "22 Oct",
+    "stale": false,
+    "by": {
+      "id": "00000001-0000-4000-8000-000000000002",
+      "name": "Priya Shah",
+      "initials": "PS",
+      "avatarColour": "#2f7fd8",
+      "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"
+    },
+    "agent": "Claude Code (claude.ai)",
+    "via": "set_status"
+  },
+  "slug": "checkout-v2",
+  "startedOn": "2026-10-12",
+  "startedLabel": "12 Oct"
+}

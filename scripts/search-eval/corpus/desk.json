@@ -1,0 +1,2181 @@
+{
+  "project": {
+    "ref": "desk",
+    "key": "DESK",
+    "name": "Harbor Desk",
+    "description": "The Harbor Desk support platform: email, form and chat intake with routing, SLA policies and timers on business-hours calendars, macros and canned replies, and the agent workspace with satisfaction surveys and reporting."
+  },
+  "sprints": [
+    {
+      "ref": "desk-s1",
+      "name": "Sprint 1 - Intake you can trust",
+      "goal": "Email threading, auto-reply handling and routing explanations are in place and the first calendars are editable",
+      "startDate": "2026-12-07",
+      "endDate": "2026-12-18"
+    },
+    {
+      "ref": "desk-s2",
+      "name": "Sprint 2 - Clocks that tell the truth",
+      "goal": "Time zone and holiday handling are correct and the first warnings reach assignees",
+      "startDate": "2026-12-21",
+      "endDate": "2027-01-01"
+    },
+    {
+      "ref": "desk-s3",
+      "name": "Sprint 3 - Escalation and replies",
+      "goal": "Escalation, pause rules, placeholders and the survey flow work end to end for a pilot brand",
+      "startDate": "2027-01-04",
+      "endDate": "2027-01-15"
+    },
+    {
+      "ref": "desk-s4",
+      "name": "Sprint 4 - Cleaner data, fewer duplicates",
+      "goal": "Merge tools, reconciliation and the remaining routing and reporting gaps are ready for general release",
+      "startDate": "2027-01-18",
+      "endDate": "2027-01-29"
+    }
+  ],
+  "items": [
+    {
+      "ref": "desk-001",
+      "type": "epic",
+      "title": "Ticket intake and routing",
+      "description": "Every request that reaches Harbor Desk arrives through some door: a shared mailbox, a web form on the help centre, the chat widget, or an agent typing it up on behalf of a caller. This epic covers turning each of those into a clean ticket with the right requester, the right queue and a sensible first assignee, without an agent having to touch it by hand.\n\nToday roughly a fifth of tickets are re-routed at least once, and most of those re-routes happen because the first rule that matched was a keyword rule written two years ago. We want routing that is explainable (an agent can see why a ticket landed where it did), testable (an admin can dry-run a rule against last week's tickets) and fair (workload and skills are both considered).\n\nThe measures we will watch are the share of tickets that reach the correct queue first time, the median time from arrival to first assignment, and the number of tickets that sit unassigned for more than fifteen minutes during staffed hours. Anything that makes intake slower than the current baseline is a regression even if it looks tidier.\n\nOut of scope for this epic: the SLA timers that start when a ticket is created (see the SLA epic), and the reply tooling agents use afterwards. Intake only has to hand over a well-formed ticket with the correct priority hint and tags, and to record in the audit trail which rule produced each decision.\n\nWe are also treating spam and auto-replies as part of intake. A ticket created from an out-of-office message is worse than no ticket, because it starts clocks and pollutes reports. Loop detection, bounce handling and sender allow-lists therefore live under this epic rather than being left to the mail server.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "intake",
+        "routing"
+      ],
+      "state": "Active",
+      "sprintRef": "desk-s1",
+      "comments": []
+    },
+    {
+      "ref": "desk-002",
+      "type": "feature",
+      "title": "Email-to-ticket channel",
+      "description": "Support addresses are still the busiest door into the desk, so the mail pipeline has to be dependable above all else. The feature covers receiving mail from the shared mailboxes, matching replies to existing tickets, storing attachments and inline images, and refusing mail that should never become a ticket.\n\nThreading is the part that causes most trouble. We match on the reference token in the subject first, then on the In-Reply-To and References headers, and only then on a heuristic that compares the sender and a normalised subject within a seven day window. When several rules disagree the explicit token wins and the disagreement is logged so we can tune the heuristic later.\n\nAttachments follow the same philosophy of being predictable. Each file is virus-scanned before the ticket is visible to agents, stored in object storage with the ticket id in its key, and shown with its scanned status. Files that fail the scan are quarantined and the agent sees a placeholder that explains what happened.\n\nInline images are rewritten to stable URLs so that a reply quoted months later still renders. Signature logos, which are the same image attached to hundreds of messages, are de-duplicated by content hash so they do not drown the attachment list.\n\nLarge files need a policy of their own. Mail relays cap messages at around thirty megabytes, but customers still send screen recordings. Attachments larger than 25 MB are replaced with a signed download link that expires after 14 days, and the ticket keeps a note of the original file name and size so an agent can ask the customer to resend if the link has lapsed. The same limit applies to outgoing replies so agents are not surprised by bounces.\n\nFinally the channel must degrade gracefully. If the parser fails on a message we keep the raw source, create a minimal ticket flagged for manual review and alert the on-call engineer; losing a customer email is the one failure we cannot accept.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "email",
+        "intake",
+        "attachments"
+      ],
+      "state": "Active",
+      "parentRef": "desk-001",
+      "sprintRef": "desk-s1",
+      "comments": []
+    },
+    {
+      "ref": "desk-003",
+      "type": "story",
+      "title": "Match inbound replies to the right ticket by reference token",
+      "description": "Customers reply to notification emails from their phones, forward them to colleagues and edit the subject line, so the thread has to be recovered from more than one signal. The matcher should read the reference token placed in the subject and in a hidden header first, fall back to the standard threading headers, and only then try the sender-and-subject heuristic.\n\nWhen two signals point at different tickets the token wins, but we record both candidates on the audit trail so support leads can see how often the heuristic would have been wrong. A reply that matches a closed ticket older than thirty days should open a new ticket that links back to the old one rather than reopening it.",
+      "acceptanceCriteria": [
+        "A reply carrying a valid token is attached to that ticket regardless of subject edits",
+        "A reply with only threading headers is attached to the ticket those headers name",
+        "A reply to a ticket closed more than thirty days ago creates a linked new ticket",
+        "Disagreeing signals are written to the audit trail with both candidate ticket ids"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "email",
+        "threading"
+      ],
+      "state": "Closed",
+      "parentRef": "desk-002",
+      "sprintRef": "desk-s1",
+      "comments": [
+        {
+          "ref": "desk-c01",
+          "body": "Heuristic window stays at seven days for now; we will revisit once the audit data shows how often it fires.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-004",
+      "type": "task",
+      "title": "Add the Message-Id and References columns to the inbound mail table",
+      "description": "The matcher needs to look up earlier messages by their header values, which we do not currently store in a queryable form. Add Message-Id, In-Reply-To and References columns with an index on the first, backfill the last ninety days from the raw mail archive, and make the importer write them for new mail. Keep the backfill idempotent so it can be re-run after an interruption without producing duplicate rows, and run it in batches small enough not to lock the table during staffed hours.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "email",
+        "database"
+      ],
+      "state": "Closed",
+      "parentRef": "desk-003",
+      "sprintRef": "desk-s1",
+      "comments": []
+    },
+    {
+      "ref": "desk-005",
+      "type": "bug",
+      "title": "Auto-reply and out-of-office messages create new tickets",
+      "description": "When a customer is away their mail system answers every notification we send, and each answer was being turned into a brand new ticket. One requester on holiday produced forty-one tickets in a weekend and started forty-one first-response timers, which then breached on Monday morning and showed up in the escalation queue as if forty-one people had been ignored.\n\nThe importer must recognise automatic replies using the Auto-Submitted header, the Precedence header, common vendor headers and a short list of subject patterns, and drop them or attach them silently to the existing ticket without notifying anyone. We also want a counter in the dashboard so we can see how many automatic messages are being swallowed.\n\nThe first fix is deliberately conservative, because dropping a real message is worse than creating one extra ticket.",
+      "acceptanceCriteria": [
+        "Messages marked Auto-Submitted are never turned into tickets",
+        "The dashboard shows how many automatic messages were ignored today"
+      ],
+      "reproSteps": "1. Create a ticket from a test address that has an auto-responder enabled.\n2. Wait for the notification email to be delivered.\n3. Observe that the auto-responder reply arrives and creates a second ticket.\n4. Repeat; each notification generates another ticket.",
+      "tags": [
+        "email",
+        "spam",
+        "sla"
+      ],
+      "state": "Closed",
+      "parentRef": "desk-002",
+      "sprintRef": "desk-s1",
+      "comments": [
+        {
+          "ref": "desk-c02",
+          "body": "Confirmed the loop: our own out-of-office handling answered theirs for six rounds before the rate limit tripped.",
+          "archived": false
+        },
+        {
+          "ref": "desk-c03",
+          "body": "Added a hard cap of three automatic messages per sender per hour as a backstop.",
+          "archived": false
+        },
+        {
+          "ref": "desk-c04",
+          "body": "Header list taken from what we saw in the last month of mail; subject patterns are only the last resort.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-006",
+      "type": "story",
+      "title": "Quarantine attachments that fail the virus scan",
+      "description": "Files are scanned after the message is parsed but before agents can see the ticket. A file that fails the scan must never be downloadable, yet the agent needs to know that something was removed and why, so the ticket shows a placeholder with the file name, size and the scanner verdict.\n\nQuarantined files are kept for thirty days in a separate bucket that only security staff can read, then deleted. The customer is not told automatically because many infected attachments come from compromised accounts; instead the agent gets a macro they can choose to send.",
+      "acceptanceCriteria": [
+        "An infected file is replaced by a placeholder on the ticket",
+        "Quarantined files are deleted after thirty days",
+        "Only the security group can download a quarantined file"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "attachments",
+        "security"
+      ],
+      "state": "Resolved",
+      "parentRef": "desk-002",
+      "sprintRef": "desk-s2",
+      "comments": [
+        {
+          "ref": "desk-c05",
+          "body": "Security wants the quarantine bucket in a separate account; ticket raised with platform.",
+          "archived": false
+        },
+        {
+          "ref": "desk-c06",
+          "body": "Placeholder wording approved by support leads.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-007",
+      "type": "task",
+      "title": "Wire the scanner verdict into the attachment placeholder component",
+      "description": "The attachment list already renders thumbnails and download links. Add a state for scanned-failed that shows the shield icon, the file name and the scanner message, with no link. Cover the new state in the component tests and in one end-to-end test that uploads the standard EICAR test string and checks the placeholder text. The design team supplied the shield glyph in both light and dark variants; use the token rather than a hard-coded colour so the placeholder follows the theme.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "attachments",
+        "frontend"
+      ],
+      "state": "Closed",
+      "parentRef": "desk-006",
+      "sprintRef": "desk-s2",
+      "comments": []
+    },
+    {
+      "ref": "desk-008",
+      "type": "story",
+      "title": "Replace oversized attachments with expiring download links",
+      "description": "Relays reject large messages and agents regularly paste screen recordings into replies, which then bounce with an unhelpful error. When an outgoing or incoming file crosses the size limit it should be swapped for a link to the object store.\n\nThe link is signed, tied to the ticket, and valid for a fixed period. Agents see the original file name and size in the ticket timeline and can regenerate a link after it lapses. The limit is a setting per brand rather than a constant, because one brand serves customers on slow mobile connections and wants a lower ceiling.",
+      "acceptanceCriteria": [
+        "Files above the brand's limit become signed links",
+        "Agents can regenerate an expired link from the timeline",
+        "The limit is configurable per brand"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "attachments",
+        "email"
+      ],
+      "state": "Active",
+      "parentRef": "desk-002",
+      "sprintRef": "desk-s3",
+      "comments": [
+        {
+          "ref": "desk-c07",
+          "body": "Brand limit defaults to twenty-five megabytes; the slow-connection brand will start at ten.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-009",
+      "type": "bug",
+      "title": "Inline signature logos fill the attachment list",
+      "description": "Every message from certain corporate customers carries the same company logo as an attachment, so a long ticket shows hundreds of identical thumbnails and the real attachments are hard to find. Agents have started collapsing the whole panel, which hides genuine evidence such as screenshots.\n\nThe parser should hash image content and keep a single stored copy per ticket, listing the logo once with a count. Small images referenced by Content-ID in the HTML body should be treated as inline and kept out of the list entirely unless the agent asks to see them.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Open ticket with more than fifty messages from a customer whose signature has a logo.\n2. Expand the attachments panel.\n3. Observe the same thumbnail repeated once per message.",
+      "tags": [
+        "attachments",
+        "email",
+        "ux"
+      ],
+      "state": "Active",
+      "parentRef": "desk-002",
+      "sprintRef": "desk-s2",
+      "comments": [
+        {
+          "ref": "desk-c08",
+          "body": "Customer success confirmed this is the same issue behind two escalations last month.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-010",
+      "type": "task",
+      "title": "Content-hash inline images during parsing",
+      "description": "Compute a SHA-256 over each image part, look it up in the per-ticket hash table and store only the first copy. Record the number of times the hash was seen so the panel can show a count badge. Add a fixture with ten identical logos plus two different screenshots and assert that three entries come out. Keep the hash table small by scoping it to a single ticket, and drop entries once a ticket is solved for thirty days, since nobody scrolls that far back.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "attachments"
+      ],
+      "state": "Active",
+      "parentRef": "desk-009",
+      "sprintRef": "desk-s2",
+      "comments": []
+    },
+    {
+      "ref": "desk-011",
+      "type": "story",
+      "title": "Keep the raw message when parsing fails",
+      "description": "A malformed MIME structure used to make the importer throw and the message vanish. Instead we store the raw source in the archive, create a minimal ticket whose body says the message could not be read, flag it for manual review and page the on-call engineer if more than five such failures occur within ten minutes. Agents should be able to download the raw source from the ticket to forward it to engineering. The review flag shows in the lead dashboard next to the spam queue, and clears itself when an agent marks the ticket as read. The alert text should name the mailbox so on-call knows which connector to inspect.",
+      "acceptanceCriteria": [
+        "A failed parse creates a flagged ticket with the raw source attached",
+        "More than five failures in ten minutes pages on-call"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "email",
+        "reliability"
+      ],
+      "state": "New",
+      "parentRef": "desk-002",
+      "sprintRef": "desk-s4",
+      "comments": []
+    },
+    {
+      "ref": "desk-012",
+      "type": "feature",
+      "title": "Routing rules and assignment",
+      "description": "Routing decides which queue a ticket enters and who sees it first. The current engine is a flat list of conditions evaluated top to bottom, with no way to see which rule fired or to test a change before it goes live. This feature rebuilds the editor, the evaluation order and the assignment strategies so that admins can reason about their rules and agents can trust where tickets land.\n\nRules are made of conditions on channel, requester organisation, language, keywords, tags and custom fields, and they carry actions: set queue, set priority, add tags, assign to a group or a person. A ticket is evaluated against every enabled rule in order, later rules may override earlier ones, and the final result is stored with the list of rules that contributed.\n\nAssignment strategies are applied after the queue is known. Round-robin hands out tickets in turn among agents who are online, load-balanced prefers the agent with the fewest open tickets, and skill-based filters by the skill tags on the ticket before applying either of the other two. An agent who is away, on a break or at their concurrency limit is skipped. If nobody qualifies the ticket stays in the queue and is flagged as unassigned.\n\nA dry-run mode replays the last seven days of tickets through a draft rule set and reports how many would have moved, which queues gain and lose volume and which tickets would have no matching rule. Admins can then publish the draft or discard it. Every publish writes an entry to the audit trail with the author and a diff.\n\nSkills deserve a note. Agents carry skill tags such as billing, api or accessibility, and those tags are synchronised from the identity provider so that a leaver or a team move takes effect the same day. The sync job is deliberately conservative: it only removes a tag when the group membership has been absent for two consecutive runs, which avoids flapping during directory maintenance.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "routing",
+        "assignment"
+      ],
+      "state": "Active",
+      "parentRef": "desk-001",
+      "sprintRef": "desk-s1",
+      "comments": []
+    },
+    {
+      "ref": "desk-013",
+      "type": "story",
+      "title": "Rule editor shows which rule fired for a ticket",
+      "description": "Agents and admins ask the same question every week: why did this ticket land here? The ticket sidebar should list the rules that matched, in order, with the action each one performed and the final value that won. A rule that matched but was overridden is shown struck through with the name of the rule that overrode it.\n\nThe data is already stored by the engine; this story is about surfacing it, linking each entry to the rule editor, and keeping the panel readable when more than ten rules fire.\n\nThe panel should also work for tickets created before the trail existed. For those it shows a short message and a link to documentation rather than an empty list, so agents do not think the feature is broken.",
+      "acceptanceCriteria": [
+        "The sidebar lists matched rules in evaluation order",
+        "Overridden actions are shown struck through with the overriding rule named",
+        "Each entry links to its rule in the editor"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "routing",
+        "ux"
+      ],
+      "state": "Closed",
+      "parentRef": "desk-012",
+      "sprintRef": "desk-s1",
+      "comments": [
+        {
+          "ref": "desk-c09",
+          "body": "Panel collapses to the first five rules with a show-all link when more than ten fire.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-014",
+      "type": "task",
+      "title": "Persist the contributing rule ids with every routing decision",
+      "description": "Add a routing_decisions table keyed by ticket id holding an ordered array of rule ids and the action each applied. Write it inside the same transaction that assigns the queue so the two cannot disagree. Expose it through the ticket API as routingTrail and include it in the export. Backfilling old tickets is not needed; only decisions made after release are recorded, and the panel shows a plain message for older tickets saying that no trail exists.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "routing",
+        "database"
+      ],
+      "state": "Closed",
+      "parentRef": "desk-013",
+      "sprintRef": "desk-s1",
+      "comments": []
+    },
+    {
+      "ref": "desk-015",
+      "type": "story",
+      "title": "Dry-run a draft rule set against last week's tickets",
+      "description": "Before publishing a rule change an admin can replay the previous seven days of tickets through the draft and get a report: how many tickets would have moved, which queues gain and lose volume, and which tickets would not match any rule. Nothing is written to real tickets.\n\nThe replay runs as a background job because a busy desk has tens of thousands of tickets a week, and the report is stored so it can be shared in a review. A timeout of ten minutes applies, after which a partial report is shown with the proportion that was covered.\n\nBecause replaying changes nothing, it is safe to run often, and we expect admins to use it as a habit before each publish. The report should therefore be quick to read: a summary with three numbers at the top, then the queue movements as a small table, then the tickets that matched nothing as a list capped at fifty with a download link for the rest. A saved report shows the date range and the rule set version it was run against, so two reports can be compared side by side during a review meeting.",
+      "acceptanceCriteria": [
+        "A draft can be replayed over the previous seven days",
+        "The report lists tickets that would change queue",
+        "Replays never modify live tickets",
+        "A partial report states the share of tickets covered"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "routing",
+        "admin"
+      ],
+      "state": "Active",
+      "parentRef": "desk-012",
+      "sprintRef": "desk-s2",
+      "comments": [
+        {
+          "ref": "desk-c10",
+          "body": "Ten minute timeout is a guess; we will measure on production-sized data.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-016",
+      "type": "task",
+      "title": "Build the replay worker that evaluates rules without side effects",
+      "description": "Extract the rule evaluator into a pure function that takes a ticket snapshot and a rule set and returns the decision, then call it from the replay worker over a streaming cursor. The worker must not send notifications, start timers or write to the audit trail. Add a property test that live evaluation and replay give identical results on the same snapshot. Throttle the cursor so the replay never uses more than one database connection, otherwise a large replay competes with live traffic during the morning peak.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "routing"
+      ],
+      "state": "Active",
+      "parentRef": "desk-015",
+      "sprintRef": "desk-s2",
+      "comments": []
+    },
+    {
+      "ref": "desk-017",
+      "type": "bug",
+      "title": "Tickets assigned to agents who are offline",
+      "description": "Overnight tickets were being handed to agents whose presence showed offline, so they waited until the morning even though other agents in another region were online. The assignment step reads presence from a cache that is refreshed every five minutes, and a deploy empties the cache; until it refills, everyone looks offline and the evaluator falls back to the last assignee in the list.\n\nThe fallback is wrong. If presence is unknown the strategy should treat the cache as unavailable and either read presence directly or leave the ticket unassigned and flagged, never assign to an arbitrary person.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Restart the web nodes so the presence cache is empty.\n2. Submit a new ticket in the Billing queue within the first minute.\n3. Observe that it is assigned to the last agent alphabetically, who is offline.",
+      "tags": [
+        "assignment",
+        "presence"
+      ],
+      "state": "Closed",
+      "parentRef": "desk-012",
+      "sprintRef": "desk-s2",
+      "comments": [
+        {
+          "ref": "desk-c11",
+          "body": "Root cause found: the cache returns an empty set, not null, so the code never knew it was cold. Okta group sync removed the agent's skill tag overnight, which is why the Billing queue had only one eligible person.",
+          "archived": false
+        },
+        {
+          "ref": "desk-c12",
+          "body": "Fix ships with a warm-up step in the deploy script as well.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-018",
+      "type": "story",
+      "title": "Skill-based assignment with synchronised skill tags",
+      "description": "Agents carry skill tags such as billing, api or accessibility. Tickets arrive with required skills derived from the form or a rule, and assignment should pick only among agents who hold every required skill. If nobody does, relax to the single most important skill and flag the ticket so a lead can see that the match was partial.\n\nSkill tags are synchronised from the identity provider groups every hour. A tag is removed only after the membership has been missing for two consecutive runs.",
+      "acceptanceCriteria": [
+        "Assignment filters by required skill tags",
+        "A partial match is flagged on the ticket",
+        "A tag is removed only after two consecutive runs without the group"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "assignment",
+        "skills"
+      ],
+      "state": "Active",
+      "parentRef": "desk-012",
+      "sprintRef": "desk-s3",
+      "comments": [
+        {
+          "ref": "desk-c13",
+          "body": "Two consecutive runs avoids flapping when the directory is under maintenance.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-019",
+      "type": "task",
+      "title": "Write the hourly group-to-skill synchronisation job",
+      "description": "Read the group memberships from the directory API, map groups to skill tags using the admin-defined table, and diff against the stored tags. Keep a missed-runs counter per tag so removal needs two consecutive absences. Log every add and remove with the agent id so a lead can answer why somebody stopped receiving billing tickets. The directory API pages its results at two hundred groups, so handle the continuation token, and make the whole job safe to run twice in a row without double counting a missed run.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "skills",
+        "sync"
+      ],
+      "state": "New",
+      "parentRef": "desk-018",
+      "sprintRef": "desk-s3",
+      "comments": []
+    },
+    {
+      "ref": "desk-020",
+      "type": "story",
+      "title": "Load-balanced assignment respects concurrency limits",
+      "description": "Each agent has a concurrency limit for live channels and a looser one for email. The load-balanced strategy should count only the tickets that currently demand attention, which means tickets in New or Open, and ignore those waiting on the customer. An agent at the limit is skipped, and when everyone is at the limit the ticket stays in the queue. Counting must happen inside the same transaction as the assignment, otherwise two simultaneous tickets can both see room for one more and push an agent over the limit. Limits are edited on the agent profile by leads only.",
+      "acceptanceCriteria": [
+        "Tickets waiting on the customer are excluded from the load count",
+        "Agents at their limit are skipped"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "assignment",
+        "capacity"
+      ],
+      "state": "Resolved",
+      "parentRef": "desk-012",
+      "sprintRef": "desk-s3",
+      "comments": []
+    },
+    {
+      "ref": "desk-021",
+      "type": "bug",
+      "title": "Round-robin pointer resets to the first agent after every deploy",
+      "description": "The round-robin strategy keeps its position in process memory, so each deployment starts again from the first agent. On days with several deploys the people at the top of the roster received noticeably more tickets, and two agents complained that their numbers looked unfair in the weekly report.\n\nThe pointer should live in the database next to the queue and be advanced inside the assignment transaction. The rota is used for fairness reports at the end of each month, and a skewed pointer makes the report look as if the desk favours a few people. A migration should seed the pointer from the last assignment in each queue.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Note which agent received the last ticket in the queue.\n2. Redeploy the application.\n3. Create a new ticket in the same queue.\n4. Observe that it goes to the first agent in the list again.",
+      "tags": [
+        "assignment",
+        "fairness"
+      ],
+      "state": "Closed",
+      "parentRef": "desk-012",
+      "sprintRef": "desk-s2",
+      "comments": [
+        {
+          "ref": "desk-c14",
+          "body": "Pointer now stored per queue; migration seeds it from the latest assignment.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-022",
+      "type": "story",
+      "title": "Spam filter score visible and tunable per brand",
+      "description": "Each inbound message gets a spam score from the upstream filter. Admins want to see the score on the ticket and set a threshold per brand: below it the message becomes a ticket, between thresholds it goes to a review queue, above it it is discarded with a log entry. The review queue is emptied by leads once a day. The scores come from the upstream filter as a number between zero and ten; the console explains what each band typically contains with a few real, anonymised examples so admins can choose thresholds sensibly.",
+      "acceptanceCriteria": [
+        "The score is displayed on the ticket",
+        "Two thresholds per brand control ticket, review and discard"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "spam",
+        "intake"
+      ],
+      "state": "New",
+      "parentRef": "desk-002",
+      "sprintRef": "desk-s4",
+      "comments": []
+    },
+    {
+      "ref": "desk-023",
+      "type": "feature",
+      "title": "Web form and chat intake",
+      "description": "The help centre form and the chat widget produce structured data that email cannot: the product, the account id, the operating system and often a screenshot. This feature makes sure that structure reaches the ticket as custom fields rather than being flattened into the body, and that a chat that turns into a ticket keeps the whole transcript.\n\nForms are configured per brand with conditional fields, so choosing Billing reveals the invoice number field and choosing API reveals the endpoint and status code fields. Required fields are enforced on the client and again on the server, and the server response lists every failing field, not just the first.\n\nChat sessions that end without resolution are converted to tickets with the transcript as the first public comment. Visitors who are signed in are matched to their requester record; anonymous ones are matched by email once they provide it.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "forms",
+        "chat"
+      ],
+      "state": "Active",
+      "parentRef": "desk-001",
+      "sprintRef": "desk-s2",
+      "comments": [
+        {
+          "ref": "desk-c15",
+          "body": "Chat vendor's webhook retries for an hour; make ticket creation idempotent.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-024",
+      "type": "story",
+      "title": "Conditional fields on the contact form",
+      "description": "Choosing a category on the form should reveal the fields relevant to it and hide the rest. The configuration lives in the admin console, where each field has a visibility rule referencing the value of another field. Hidden fields are not submitted, and required rules apply only to fields that are visible. Rules can chain, so a field revealed by one answer may itself reveal another. Guard against loops in the admin console by rejecting a rule that depends on its own field, directly or through others.",
+      "acceptanceCriteria": [
+        "A field with a visibility rule appears only when the rule holds",
+        "Hidden fields are not submitted",
+        "Server validation ignores required rules for hidden fields"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "forms"
+      ],
+      "state": "Closed",
+      "parentRef": "desk-023",
+      "sprintRef": "desk-s2",
+      "comments": []
+    },
+    {
+      "ref": "desk-025",
+      "type": "bug",
+      "title": "Form validation reports only the first missing field",
+      "description": "The server returned a single error for the first failing field, so a person who skipped three required fields fixed one, resubmitted, saw the next error, and so on. Support saw an increase in abandoned submissions on the mobile layout where the error scrolled out of view. Return all failures in one response as a list of field names and messages, and have the client scroll to the first failing field and move focus there so keyboard and screen reader users are not left behind.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Open the contact form and choose Billing.\n2. Leave invoice number, amount and email empty.\n3. Submit.\n4. Observe that only the email error is shown.",
+      "tags": [
+        "forms",
+        "ux"
+      ],
+      "state": "Closed",
+      "parentRef": "desk-023",
+      "sprintRef": "desk-s2",
+      "comments": [
+        {
+          "ref": "desk-c16",
+          "body": "Error summary now sits at the top of the form and receives focus.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-026",
+      "type": "story",
+      "title": "Convert an unresolved chat into a ticket with the transcript",
+      "description": "When a visitor closes the chat before an agent has resolved the question, or when the agent chooses to continue by email, the conversation becomes a ticket. The whole transcript is stored as the first public comment with timestamps and speaker names, the visitor receives an email confirming the ticket number, and the chat tag is added so reports can separate these tickets from direct email. If the visitor was signed in, the ticket is created under their requester record; otherwise the form in the chat asks for an email address before the conversation ends and the transcript is held until it arrives.",
+      "acceptanceCriteria": [
+        "The transcript appears as the first public comment",
+        "The visitor receives a confirmation email with the ticket number"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "chat",
+        "tickets"
+      ],
+      "state": "Active",
+      "parentRef": "desk-023",
+      "sprintRef": "desk-s3",
+      "comments": [
+        {
+          "ref": "desk-c17",
+          "body": "Visitors who closed the window without an email get no confirmation, which is acceptable.",
+          "archived": false
+        },
+        {
+          "ref": "desk-c18",
+          "body": "Archived note: first design stored transcripts as attachments; replaced by a comment.",
+          "archived": true
+        }
+      ]
+    },
+    {
+      "ref": "desk-027",
+      "type": "task",
+      "title": "Store chat speaker names and timestamps in the transcript renderer",
+      "description": "The renderer currently prints only message text. Add the display name, a local-time stamp in the viewer's zone and a visual distinction between agent, visitor and system messages. Include a snapshot test with a transcript that crosses midnight. Check the transcript on a narrow phone layout as well, because the speaker label and time wrap badly when names are long, and make sure copying the transcript keeps the line breaks.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "chat",
+        "frontend"
+      ],
+      "state": "New",
+      "parentRef": "desk-026",
+      "sprintRef": "desk-s3",
+      "comments": []
+    },
+    {
+      "ref": "desk-028",
+      "type": "epic",
+      "title": "SLA policies and timers",
+      "description": "Service level agreements are the promise the desk makes to its customers: a first response within a stated time and a resolution within another, counted in business hours that differ by plan and by region. This epic owns the policy definitions, the clocks that run against them, and everything that happens when a clock gets close to expiring or expires.\n\nThe clocks are harder than they look. They must stop when the ticket is waiting on the customer, keep running when it is waiting on our own engineers, respect each customer's calendar and holidays, and survive a change of priority halfway through a ticket. A recalculation must never silently grant a ticket extra time; if the new target is earlier than the old one the clock jumps forward and the event is recorded.\n\nCustomers on the premium plan have contractual remedies when a target is missed, so accuracy matters in both directions. A false breach causes an unwarranted credit; a missed breach causes an unhappy account manager and a dispute. Finance reviews the monthly breach list, and the numbers on it must match what the dashboard showed on the day.\n\nEscalation is how the desk reacts before a breach: a warning at seventy-five percent, a manager notification at ninety, and an automatic bump in priority after expiry. Each step is configurable per policy and each step is visible in the ticket timeline so that nobody is surprised by a message sent in their name.\n\nWe will measure the epic by the proportion of breaches that were predicted at least thirty minutes ahead, the number of disputed breaches per month, and the drift between timer values and an independent recalculation from the audit trail, which should be zero.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "sla",
+        "timers"
+      ],
+      "state": "Active",
+      "sprintRef": "desk-s1",
+      "comments": []
+    },
+    {
+      "ref": "desk-029",
+      "type": "feature",
+      "title": "Business-hours calendars",
+      "description": "Every SLA target is counted in business time, so every policy points at a calendar: a set of weekly opening periods in a time zone, plus a list of exceptions for holidays and special closures. A ticket's clock advances only inside opening periods of the calendar attached to its policy.\n\nThe editor shows the week as a grid, accepts more than one period per day for split shifts, and previews the next twenty exceptions. Calendars are versioned, and a ticket remembers which version it started under so that editing hours next month cannot change a deadline that was promised last week.\n\nTime zones are the usual trap. Each calendar has a zone, daylight saving changes are applied by the zone rules rather than by hand, and the clock engine converts to UTC only at the edges. A period that falls into the skipped hour in spring or the repeated hour in autumn is handled explicitly and covered by tests for Sydney, London and New York.\n\nHolidays arrive from two sources. Admins can add them manually, and they can subscribe a calendar to a regional public-holiday feed, an iCalendar URL that is fetched nightly. Observed dates that are shifted to a following Monday are imported as the shifted date, and the feed's own name for the day is kept as the label so agents recognise it in the timeline.\n\nFinally, calendars are shared between policies but owned by one team. Deleting a calendar that a policy still uses is refused, and the error names the policies in the way, so nobody discovers the problem when a clock stops advancing.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "calendar",
+        "sla",
+        "timezone"
+      ],
+      "state": "Active",
+      "parentRef": "desk-028",
+      "sprintRef": "desk-s1",
+      "comments": []
+    },
+    {
+      "ref": "desk-030",
+      "type": "story",
+      "title": "Weekly opening periods editor with split shifts",
+      "description": "The grid editor should let an admin drag across a day to create a period, add a second period on the same day for a lunch gap, copy a day to others, and see the total weekly hours. Overlapping periods on one day are merged on save. The editor works in the calendar's own time zone and shows that zone prominently so nobody edits hours thinking they are in their own. Keyboard users need an alternative to dragging, so each day also has an add-period button with start and end fields. Saving validates that the end is after the start and that periods stay within a single day.",
+      "acceptanceCriteria": [
+        "Several periods can be defined on one day",
+        "A day can be copied to other days",
+        "Overlapping periods are merged on save",
+        "The calendar's time zone is shown at the top of the editor"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "calendar",
+        "admin"
+      ],
+      "state": "Closed",
+      "parentRef": "desk-029",
+      "sprintRef": "desk-s1",
+      "comments": [
+        {
+          "ref": "desk-c19",
+          "body": "Dragging works but touch devices need the button alternative; added.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-031",
+      "type": "story",
+      "title": "Subscribe a calendar to a public holiday feed",
+      "description": "Typing holidays by hand each year is how mistakes creep in. A calendar can subscribe to an iCalendar feed URL, which is fetched every night, parsed for all-day events and merged with the manual exceptions. Where the feed marks an observed date, we import the observed date as the closure and keep the feed's label.\n\nThe import reports how many holidays were added, changed or removed, and failures such as a certificate error or an unparsable file raise an admin notification without disturbing the existing exceptions. Manual exceptions always win over the feed on the same date.\n\nImplementation notes. Feeds from different countries disagree about whether an all-day event ends on the same date or the following one, so the parser normalises to inclusive dates before storing. We deliberately ignore events with a time of day, because those represent partial closures that the weekly grid already models. The regional feed in the pilot supports the Lunar New Year observance moved to the following Monday, which is the case that prompted the story, and a test fixture exists for it. Fetches send a conditional request using the stored validator so an unchanged feed costs almost nothing, and a feed that has not changed for ninety days raises a gentle reminder that it may be abandoned.\n\nRollout plan. The first release only reads one feed per calendar and exposes the import report; multiple feeds per calendar, which some multinational customers will want, come later. If a feed disappears, its imported holidays are kept for ninety days and shown with a warning so an expired subscription does not suddenly open the desk on a public holiday. Administrators can pin a single imported day to protect it from being overwritten by a later import, and the import report records who pinned it and why.",
+      "acceptanceCriteria": [
+        "A calendar can subscribe to an iCalendar URL",
+        "Observed dates replace the nominal date",
+        "Manual exceptions override the feed",
+        "Fetch failures notify admins without removing existing exceptions"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "calendar",
+        "holidays",
+        "import"
+      ],
+      "state": "Active",
+      "parentRef": "desk-029",
+      "sprintRef": "desk-s2",
+      "comments": [
+        {
+          "ref": "desk-c20",
+          "body": "Feed from the pilot region uses non-inclusive end dates; normaliser handles it, fixture added.",
+          "archived": false
+        },
+        {
+          "ref": "desk-c21",
+          "body": "The pilot region publishes the feed over HTTP with a redirect; client follows up to three redirects.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-032",
+      "type": "task",
+      "title": "Normalise all-day event end dates to inclusive",
+      "description": "iCalendar encodes the end of an all-day event as the day after it finishes. Convert on parse so the stored exception covers exactly the closure days, and add tests with one-day, three-day and month-boundary events. Document the conversion in a comment next to the parser with a one-line example, because the rule surprises everyone the first time they read raw feed data.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "calendar",
+        "import"
+      ],
+      "state": "Closed",
+      "parentRef": "desk-031",
+      "sprintRef": "desk-s2",
+      "comments": []
+    },
+    {
+      "ref": "desk-033",
+      "type": "bug",
+      "title": "Deadline moves by an hour after the clocks change in spring",
+      "description": "A ticket created on the Friday before daylight saving started in London had a resolution deadline that moved one hour later on the Monday, and the dashboard showed the timer gaining time. The engine computed the deadline once in local time and stored it without an offset, then re-read it using the new offset.\n\nDeadlines must be stored in UTC and derived from calendar periods by the zone rules at calculation time. The engine should recompute only when the policy or priority changes, never because the zone offset moved.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Set the calendar to Europe/London, Monday to Friday 09:00-17:30.\n2. Create a ticket at 16:00 on the Friday before the clocks go forward with a four business hour target.\n3. Open the ticket on Monday and note the deadline.\n4. Compare with the value shown on Friday; it has moved by an hour.",
+      "tags": [
+        "timezone",
+        "sla",
+        "dst"
+      ],
+      "state": "Closed",
+      "parentRef": "desk-029",
+      "sprintRef": "desk-s2",
+      "comments": [
+        {
+          "ref": "desk-c22",
+          "body": "Reproduced with a fixed clock in the test; deadline moved by exactly sixty minutes.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-034",
+      "type": "bug",
+      "title": "Tickets from Sydney customers breach a day early",
+      "description": "Customers whose calendar is set to Australia/Sydney reported breaches on tickets that still had hours remaining. The deadline was being compared with the current time in the server's zone instead of UTC, so around the Sydney midnight the comparison was off by up to a day.\n\nThe scheduled job that evaluates timers every minute loads deadlines as local times because of a cast in the query. Once fixed, add a regression test that freezes the clock at 23:30 UTC and 00:30 UTC and checks the Sydney calendar both times.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Configure a calendar in Australia/Sydney.\n2. Create a ticket at 08:00 Sydney time with a one day target.\n3. Let the evaluator run past midnight UTC.\n4. Observe that the ticket is marked breached even though it has about nine hours left.",
+      "tags": [
+        "timezone",
+        "sla"
+      ],
+      "state": "Resolved",
+      "parentRef": "desk-029",
+      "sprintRef": "desk-s3",
+      "comments": [
+        {
+          "ref": "desk-c23",
+          "body": "The cast to local time was introduced during a performance rewrite last year.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-035",
+      "type": "story",
+      "title": "Version calendars so edits do not change promised deadlines",
+      "description": "When an admin changes opening hours the change should apply to tickets created afterwards. Existing tickets keep the version of the calendar they started under until their policy or priority changes. The ticket sidebar shows the calendar name and version so an agent explaining a deadline to a customer can point to the exact hours that apply. Versions are immutable once saved. A scheduled change can be created in advance with an effective date, which lets an admin prepare next season's hours without touching what applies today.",
+      "acceptanceCriteria": [
+        "Each save creates a new calendar version",
+        "Open tickets keep their original version",
+        "The ticket sidebar shows the calendar version"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "calendar",
+        "versioning"
+      ],
+      "state": "New",
+      "parentRef": "desk-029",
+      "sprintRef": "desk-s4",
+      "comments": [
+        {
+          "ref": "desk-c24",
+          "body": "Scheduled changes are out of scope for the first release; versions only.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-036",
+      "type": "story",
+      "title": "Refuse to delete a calendar that a policy still uses",
+      "description": "Deleting a calendar silently left policies pointing at nothing, and their clocks stopped. The delete action must fail with a message that lists every policy referencing the calendar, with links, and offer to reassign them to another calendar in a single step. The same guard applies to archiving a calendar and to changing its time zone while policies still point at it, since both would silently alter deadlines on open tickets.",
+      "acceptanceCriteria": [
+        "Deleting a referenced calendar is refused",
+        "The error lists the referencing policies",
+        "Policies can be reassigned in bulk"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "calendar",
+        "admin"
+      ],
+      "state": "Closed",
+      "parentRef": "desk-029",
+      "sprintRef": "desk-s2",
+      "comments": []
+    },
+    {
+      "ref": "desk-037",
+      "type": "task",
+      "title": "Add timezone fixtures for Sydney, London and New York transitions",
+      "description": "Create fixtures covering the skipped hour in spring and the repeated hour in autumn for the three zones, with periods that straddle the transition. Use them in the clock engine tests so every period calculation is checked on both sides of the change. The fixtures are plain JSON with the zone, the period definition and the expected UTC instants, so they can be reused by the dashboard tests that display deadlines.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "timezone",
+        "tests"
+      ],
+      "state": "Closed",
+      "parentRef": "desk-033",
+      "sprintRef": "desk-s2",
+      "comments": []
+    },
+    {
+      "ref": "desk-038",
+      "type": "feature",
+      "title": "Breach alerts and escalation",
+      "description": "An SLA is only useful if people hear about trouble while there is still time to act. This feature sends warnings as a clock approaches its target, notifies managers when a ticket is at risk and raises the priority after a target is missed, with every step configurable per policy.\n\nThe default ladder has three rungs. At seventy-five percent of the target the assignee receives an in-app warning. At ninety percent the team lead is notified by email and chat. After expiry the ticket's priority is raised one level, it moves to the escalation queue, and a note is added to the timeline saying which policy and which target were missed.\n\nNotifications must be rate-limited and de-duplicated. A manager should never get twelve emails because twelve tickets from one customer crossed the line in the same minute; instead they receive a digest with a count and links. Quiet hours are respected for non-urgent rungs, and weekend coverage is decided by the calendar of the receiving team rather than the customer.\n\nEscalation targets come from a roster. The roster holds who is on call for each queue and brand, supports overrides for leave, and falls back to the head of support if nobody is listed. A rota change takes effect immediately for new escalations but does not re-notify tickets already escalated.\n\nWe also need an honest view of what happened afterwards. Every breach gets a reason code chosen by the assignee or lead, such as waiting on vendor, staffing, misrouted or customer unreachable, and a monthly report groups breaches by reason. Without the reason the numbers describe the problem but never point at a remedy.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "escalation",
+        "alerts",
+        "sla"
+      ],
+      "state": "Active",
+      "parentRef": "desk-028",
+      "sprintRef": "desk-s2",
+      "comments": []
+    },
+    {
+      "ref": "desk-039",
+      "type": "story",
+      "title": "Warn the assignee at seventy-five percent of the target",
+      "description": "When a clock crosses the warning threshold the assignee receives an in-app notification with the ticket, the target and the time remaining. The warning is sent once per target and is cancelled if the clock stops before it is delivered. A ticket without an assignee warns the queue's lead instead. The percentage is stored in the policy step and defaults to seventy-five. Warnings for the resolution clock and the first response clock are independent, and each can be switched off by the policy owner.",
+      "acceptanceCriteria": [
+        "A warning is sent once at the configured percentage",
+        "A warning is not sent if the clock stopped",
+        "Unassigned tickets warn the queue lead"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "alerts",
+        "sla"
+      ],
+      "state": "Closed",
+      "parentRef": "desk-038",
+      "sprintRef": "desk-s2",
+      "comments": []
+    },
+    {
+      "ref": "desk-040",
+      "type": "story",
+      "title": "Digest notifications for managers instead of one email per ticket",
+      "description": "A burst of at-risk tickets must produce a single digest per manager per five minutes: the count, the customers affected and a link to a filtered view. Urgent items bypass the batching. Managers can choose email, chat or both in their preferences and set quiet hours that suppress non-urgent digests. The digest groups by customer organisation first so a manager can see at a glance when one account is behind. Include the oldest ticket's age and a link that opens the filtered view with the same grouping.",
+      "acceptanceCriteria": [
+        "Alerts within five minutes are batched into one digest",
+        "Urgent alerts are sent immediately",
+        "Quiet hours suppress non-urgent digests"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "alerts",
+        "notifications"
+      ],
+      "state": "Active",
+      "parentRef": "desk-038",
+      "sprintRef": "desk-s3",
+      "comments": [
+        {
+          "ref": "desk-c25",
+          "body": "Chat digests post to the lead's channel as one message with a thread of tickets.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-041",
+      "type": "story",
+      "title": "Raise priority and move to the escalation queue after a breach",
+      "description": "After a target expires the ticket's priority increases by one level, never above urgent. It moves to the escalation queue, its assignee keeps ownership, and a timeline note records which policy and target were missed. Raising the priority recomputes later targets, and as the stricter value can already lie in the past, the engine records that fact instead of breaching again immediately. Make the bump idempotent: a ticket that was already raised after an earlier breach is not raised again for a later target unless the policy says so, and the timeline shows both events.",
+      "acceptanceCriteria": [
+        "Priority rises by one level after a breach",
+        "The ticket moves to the escalation queue",
+        "The timeline notes the missed target"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "escalation",
+        "priority"
+      ],
+      "state": "Active",
+      "parentRef": "desk-038",
+      "sprintRef": "desk-s3",
+      "comments": []
+    },
+    {
+      "ref": "desk-042",
+      "type": "task",
+      "title": "Add the escalation step table and its admin screen",
+      "description": "Each policy owns an ordered list of steps with a trigger (percentage or after-expiry), an action (notify, raise priority, reassign) and a target (assignee, lead, roster entry). Create the table, the API and the admin screen with drag to reorder, and seed the default three-step ladder for existing policies in a migration. Reordering steps changes behaviour for open tickets only at their next evaluation; steps already fired are never fired again, and the screen explains this beneath the list.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "escalation",
+        "admin"
+      ],
+      "state": "Active",
+      "parentRef": "desk-041",
+      "sprintRef": "desk-s3",
+      "comments": []
+    },
+    {
+      "ref": "desk-043",
+      "type": "bug",
+      "title": "Escalation emails sent twice when two nodes evaluate the same ticket",
+      "description": "Since the evaluator was scaled to two nodes some managers receive each escalation email twice. Both nodes pick the ticket in the same minute, both see the threshold crossed and both enqueue a notification because the sent flag is written after the email is queued, not before.\n\nClaim the step with a conditional update that records the step id and ticket id, and enqueue only if the update affected a row. The duplicate notifications were harmless for email but created two chat messages and two pages for on-call staff, which is how the problem was noticed. Add a metric counting claims lost to the other node.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Run two evaluator nodes against the same database.\n2. Create a ticket with a one minute target.\n3. Wait for the 90 percent step to fire.\n4. Observe two identical emails to the team lead.",
+      "tags": [
+        "escalation",
+        "notifications",
+        "concurrency"
+      ],
+      "state": "Closed",
+      "parentRef": "desk-038",
+      "sprintRef": "desk-s3",
+      "comments": [
+        {
+          "ref": "desk-c26",
+          "body": "Claim query is a single conditional insert; no extra locking required.",
+          "archived": false
+        },
+        {
+          "ref": "desk-c27",
+          "body": "Archived: first idea was a distributed lock around the evaluator, dropped as too heavy.",
+          "archived": true
+        }
+      ]
+    },
+    {
+      "ref": "desk-044",
+      "type": "bug",
+      "title": "Escalated ticket loses its original assignee when the roster is empty",
+      "description": "If nobody was listed on the roster for a queue the escalation step reassigned the ticket to a null user, and the ticket vanished from every agent's personal view while staying in the queue. The fallback to the head of support exists in the design but was not implemented for the reassign action. An empty roster is a configuration mistake, so the admin console should also warn when a queue has no escalation contact, and the fallback must write a timeline note naming the head of support.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Remove all entries from the roster of the Billing queue.\n2. Let a Billing ticket breach so the reassign step fires.\n3. Look for the ticket under My tickets for the former assignee; it is gone.",
+      "tags": [
+        "escalation",
+        "roster"
+      ],
+      "state": "Active",
+      "parentRef": "desk-038",
+      "sprintRef": "desk-s4",
+      "comments": [
+        {
+          "ref": "desk-c28",
+          "body": "Added an admin warning for queues with no roster entries.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-045",
+      "type": "story",
+      "title": "Breach reason codes and the monthly breach report",
+      "description": "When a ticket breaches the assignee or the lead must choose a reason code before the ticket can be solved: waiting on vendor, staffing, misrouted, customer unreachable or other with a note. A monthly report groups breaches by reason, by queue and by customer plan, and exports to CSV for finance. Reason codes are a short list owned by the support lead and can be edited, but a code already used on a breach cannot be deleted, only hidden, so old reports remain readable.\n\nThe monthly report is also the place where patterns show up. For that reason the grouping view lets a lead pivot reason codes against queue and plan, and flags combinations that are unusually frequent compared with the previous three months. Any breach with the reason other must carry a note of at least ten characters, so the category does not turn into a bin. The CSV export keeps the notes, quoted properly, so spreadsheet users do not lose line breaks.",
+      "acceptanceCriteria": [
+        "A breached ticket cannot be solved without a reason code",
+        "The monthly report groups breaches by reason, queue and plan",
+        "The report exports to CSV"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "reporting",
+        "sla"
+      ],
+      "state": "New",
+      "parentRef": "desk-038",
+      "sprintRef": "desk-s4",
+      "comments": [
+        {
+          "ref": "desk-c29",
+          "body": "Finance wants the reason code in the CSV as text, not an id.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-046",
+      "type": "feature",
+      "title": "SLA pause and resume states",
+      "description": "Not every minute a ticket spends open counts against us. When we are waiting for the customer to answer the clock should pause, and when we are waiting for a supplier or an internal engineering team it should continue. This feature defines which states stop which clocks and makes the pauses visible and auditable.\n\nThe state model has Pending for waiting on the customer, On hold for internal or vendor waits, and Solved. Pending pauses both the first-response and resolution clocks. On hold pauses nothing unless the policy explicitly says so, because many contracts count supplier delays against us. The setting is per policy and shown in plain words on the policy page.\n\nThe timeline shows each pause with its start, end and duration, so a customer asking why a deadline moved can be answered with evidence. A pause that lasts longer than the auto-close window triggers the reminder and close sequence described in the closing feature.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "sla",
+        "states"
+      ],
+      "state": "Active",
+      "parentRef": "desk-028",
+      "sprintRef": "desk-s2",
+      "comments": []
+    },
+    {
+      "ref": "desk-047",
+      "type": "story",
+      "title": "Pause both clocks while a ticket is waiting on the customer",
+      "description": "Setting a ticket to Pending stops the first-response and resolution clocks, and the next customer reply restarts them with the remaining time unchanged. The timeline records the pause. If the ticket is edited by an agent without a customer reply the clock stays stopped. The pause is recorded as a pair of events rather than a flag, so reports can total the paused time per ticket and reconcile it against the deadline shown to the customer.",
+      "acceptanceCriteria": [
+        "Pending stops both clocks",
+        "A customer reply restarts them with the same remaining time",
+        "Pauses appear in the timeline"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "sla",
+        "states"
+      ],
+      "state": "Closed",
+      "parentRef": "desk-046",
+      "sprintRef": "desk-s2",
+      "comments": []
+    },
+    {
+      "ref": "desk-048",
+      "type": "story",
+      "title": "Policy option: count On hold time against the SLA",
+      "description": "Some contracts say that supplier delays are our problem. The policy gets a switch labelled in plain words, Time on hold counts towards the target, off by default. When on, the On hold state leaves the clocks running. Changing the switch affects only tickets created after the change. Show the effect in the policy preview: with the switch on, a worked example displays a ticket parked for a day and how much of the target it consumed.",
+      "acceptanceCriteria": [
+        "A policy can choose whether On hold pauses the clock",
+        "The switch applies to new tickets only"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "sla",
+        "policy"
+      ],
+      "state": "Resolved",
+      "parentRef": "desk-046",
+      "sprintRef": "desk-s3",
+      "comments": [
+        {
+          "ref": "desk-c30",
+          "body": "Default stays off; two enterprise contracts will be switched on after legal confirms wording.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-049",
+      "type": "bug",
+      "title": "SLA clock keeps running while the ticket is on hold awaiting the vendor",
+      "description": "Support leads noticed that tickets parked while we wait for the hardware vendor kept losing time, and some breached for reasons outside our control. The cause was the state mapping: On hold was grouped with Open in the clock engine, so only Pending was treated as a pause.\n\nFor policies that exclude supplier time the mapping must stop the clock in On hold too. The audit trail should say which state caused each pause so that the numbers in the monthly report can be reconciled afterwards. Existing breaches caused by the bug have to be listed and reviewed by finance before credits are issued.\n\nReconciliation. Finance has asked for a list of every breach in the last quarter where the ticket was in On hold at any point, together with the minutes spent there, so that credits already paid can be assessed. Produce it as a CSV from the audit trail and tag the affected tickets so they can be filtered. The fix itself should ship behind the policy option, which is off for contracts that deliberately count supplier delays against us.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Use a policy with the option Time on hold counts towards the target switched off.\n2. Create a ticket and set it to On hold with the reason Waiting for supplier.\n3. Wait two business hours.\n4. Observe that the remaining time has dropped by two hours.",
+      "tags": [
+        "sla",
+        "states",
+        "vendor"
+      ],
+      "state": "Active",
+      "parentRef": "desk-046",
+      "sprintRef": "desk-s3",
+      "comments": [
+        {
+          "ref": "desk-c31",
+          "body": "Eighteen breaches in the last quarter look affected; list sent to finance for review.",
+          "archived": false
+        },
+        {
+          "ref": "desk-c32",
+          "body": "Mapping table now documented next to the state definitions.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-050",
+      "type": "story",
+      "title": "Pause when waiting on the customer but not when the customer is only cc'd",
+      "description": "A message from someone merely copied on the thread is not the requester answering. Replies from cc'd addresses must not restart a paused clock unless the address is on the organisation's list of approved contacts. Agents see an indication that a reply came from a non-requester and can choose to treat it as the customer's answer. The approved-contacts list is maintained per organisation, and a link on the ticket lets an agent add the sender with one click after confirming who they are.",
+      "acceptanceCriteria": [
+        "A cc'd reply does not restart the clock",
+        "Approved contacts can restart the clock",
+        "Agents can override on a per reply basis"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "sla",
+        "email"
+      ],
+      "state": "New",
+      "parentRef": "desk-046",
+      "sprintRef": "desk-s4",
+      "comments": []
+    },
+    {
+      "ref": "desk-051",
+      "type": "bug",
+      "title": "Awaiting-customer tickets auto-close too early",
+      "description": "Tickets in Pending were closed by the nightly sweep before the configured number of days had passed. The reminder was sent on day three as designed, but the close followed on day four instead of day seven. Customers on slow replies found their cases closed while they were gathering logs, and some reopened with an angry message.\n\nThe sweep decides using the last update timestamp, which is touched whenever any field changes, including automated tags. Every automated change therefore pushed the age calculation around. It should use the timestamp of the last public message or state change into Pending.\n\nA second problem sits in the second half of the job. The nightly sweep compares against updated_at in the server's local zone rather than UTC, so tickets touched just after midnight in Auckland were swept a day early. The fix needs to read the timestamp as UTC, compute the age in whole days using the ticket's calendar zone, and only then compare with the threshold. Add a test with a ticket updated at 23:50 UTC and another at 00:10 UTC to prove the boundary behaves the same on both sides.\n\nRollout notes. We will reopen tickets closed by the sweep in the last fourteen days, tag them auto-closed-early and send a short apology macro. Support leads asked that the reopening leave the assignee unchanged and not restart any clock; both are covered in the migration script. The job also gets a dry-run flag that prints which tickets it would close and why, so the first live night after the release can be checked against the list.",
+      "acceptanceCriteria": [
+        "The sweep measures age from the last public message or Pending transition",
+        "Automated tag changes do not affect the age",
+        "Tickets closed early in the last fourteen days are reopened and tagged"
+      ],
+      "reproSteps": "1. Put a ticket into Pending with auto-close set to seven days.\n2. Add an automated tag on day three so that updated_at changes.\n3. Run the nightly sweep on day four.\n4. Observe that the ticket is closed.",
+      "tags": [
+        "autoclose",
+        "sweep",
+        "timezone"
+      ],
+      "state": "Active",
+      "parentRef": "desk-046",
+      "sprintRef": "desk-s3",
+      "comments": [
+        {
+          "ref": "desk-c33",
+          "body": "Reopened batch of 212 tickets; assignee and clocks were left untouched.",
+          "archived": false
+        },
+        {
+          "ref": "desk-c34",
+          "body": "Seven-day setting verified in staging after the fix; sweep now ignores automated tags.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-052",
+      "type": "task",
+      "title": "Add a dry-run flag to the nightly sweep",
+      "description": "Print the ticket id, age, threshold and reason for every ticket the sweep would close, without changing any data. Write the output to the job log and to a downloadable file so support leads can review it the morning after the first live run. Include the sweep's configured threshold in the first line of the output so a reader can see at once whether the run used the expected settings.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "autoclose",
+        "ops"
+      ],
+      "state": "Active",
+      "parentRef": "desk-051",
+      "sprintRef": "desk-s3",
+      "comments": []
+    },
+    {
+      "ref": "desk-053",
+      "type": "epic",
+      "title": "Macros and canned replies",
+      "description": "Agents answer the same twenty questions all day, and macros are how the desk keeps those answers accurate, polite and quick. A macro is a reusable reply plus optional actions: set a status, add tags, change the priority, assign to a group. This epic covers the library where macros live, the placeholders that personalise them, and the safeguards that stop a wrong macro from reaching a customer.\n\nThe library has grown to more than six hundred macros, many duplicated, some out of date and a few that contradict the refund policy. Agents say they can never find the right one, so they paste from their own notes, which defeats the purpose. Search, folders, usage statistics and an expiry review are the response.\n\nPlaceholders turn a template into a message that sounds written for the person: the requester's first name, the ticket number, the agent's name and signature, the next business day in the customer's zone. Every placeholder needs a defined behaviour when its value is missing, because a reply that begins with Hi , is worse than a generic greeting.\n\nLanguage is the other axis. Roughly a quarter of tickets are not in English, and macros are maintained per language with a fallback chain. A macro that exists only in English must say so before it is sent to a Spanish speaker, not after.\n\nGovernance matters because macros speak for the company. Edits to shared macros are reviewed, the previous version is kept, and the audit trail shows who changed what. Sensitive macros, such as those quoting refund amounts or legal wording, can be locked so only a lead may edit them.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "macros",
+        "templates"
+      ],
+      "state": "Active",
+      "sprintRef": "desk-s2",
+      "comments": []
+    },
+    {
+      "ref": "desk-054",
+      "type": "feature",
+      "title": "Macro library",
+      "description": "The library is the screen agents open when they want to reply quickly. It must be searchable by title, body text and tag, grouped into folders that reflect how the desk thinks about its work, and ranked by how often and how recently each macro is used by the person searching.\n\nEach macro carries an owner, a language, a brand, an optional expiry date and usage counts for the last ninety days. Macros whose expiry has passed are hidden from the picker and listed in a review queue for their owner. Macros not used in six months are proposed for archiving by a monthly job.\n\nCreating a macro from an existing reply is a single click: the agent chooses a title and a folder, and the body is cleaned of the customer's name and ticket-specific details. The cleaning is a suggestion, because replacing names automatically has occasionally removed a legitimate word, and the agent confirms before saving.\n\nThe picker inside the ticket reply box shows the top matches as the agent types, previews the rendered text with the current ticket's values, and warns when a macro was written for a different language than the ticket.\n\nUsage statistics are shown to owners only, as counts per macro and per agent, and never as a league table of agents. A monthly digest lists the ten most used macros, the ten most likely to be stale and any that were edited since the last review. Import and export are supported as JSON so that a brand can be set up from another brand's library, with a preview that warns about missing placeholders or unsupported languages before anything is created.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "macros",
+        "library",
+        "search"
+      ],
+      "state": "Active",
+      "parentRef": "desk-053",
+      "sprintRef": "desk-s2",
+      "comments": []
+    },
+    {
+      "ref": "desk-055",
+      "type": "story",
+      "title": "Macro de respuesta para solicitudes de reembolso en español",
+      "description": "Una parte importante de los clientes de la tienda escribe en español y espera una respuesta en su idioma. Este macro debe redactar una respuesta cortés que confirme la recepción de la solicitud de reembolso, indique el plazo de cinco días hábiles para la devolución del dinero y pida el número de pedido si no aparece en el mensaje.\n\nEl texto debe usar el nombre del cliente y la firma del agente, y cambiar el tratamiento según la marca. Antes de publicarlo, una persona de habla hispana del equipo de Madrid revisará el tono y la ortografía.",
+      "acceptanceCriteria": [
+        "El macro inserta el nombre del cliente y la firma del agente",
+        "El plazo de cinco días hábiles aparece en el texto"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "macros",
+        "español",
+        "refunds"
+      ],
+      "state": "Active",
+      "parentRef": "desk-054",
+      "sprintRef": "desk-s3",
+      "comments": [
+        {
+          "ref": "desk-c35",
+          "body": "Revisión del tono pendiente con el equipo de Madrid.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-056",
+      "type": "story",
+      "title": "Folder structure and ownership for macros",
+      "description": "Macros are grouped into folders such as Billing, Account access, Shipping and Escalations. Each folder has an owner team that approves changes, and a macro lives in exactly one folder. Moving a macro keeps its usage history. A breadcrumb in the picker shows the folder so two macros with similar titles can be told apart. Folder permissions are inherited from the owner team but a lead can allow another team to propose edits, which then wait for the owner's approval before they are published.",
+      "acceptanceCriteria": [
+        "A macro belongs to exactly one folder",
+        "Moving a macro keeps its usage counts",
+        "The picker shows the folder name"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "macros",
+        "library"
+      ],
+      "state": "Active",
+      "parentRef": "desk-054",
+      "sprintRef": "desk-s1",
+      "comments": []
+    },
+    {
+      "ref": "desk-057",
+      "type": "story",
+      "title": "Rank picker results by the searching agent's own usage",
+      "description": "Search results in the reply box should favour what this agent uses. Score each macro by text relevance, then boost by how many times the agent has used it in the last thirty days with a decay for older use. New macros get a short grace boost so they are not buried. Provide the score breakdown in a debug panel for admins. The boost for agents' own usage should never push an irrelevant macro above a clear title match, so cap the boost at the equivalent of one extra matching word.",
+      "acceptanceCriteria": [
+        "Results combine text relevance with the agent's recent usage",
+        "New macros receive a temporary boost"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "macros",
+        "search",
+        "ranking"
+      ],
+      "state": "Active",
+      "parentRef": "desk-054",
+      "sprintRef": "desk-s3",
+      "comments": [
+        {
+          "ref": "desk-c36",
+          "body": "Debug panel shows text score, usage boost and grace boost separately.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-058",
+      "type": "task",
+      "title": "Record a usage event each time a macro is applied",
+      "description": "Write a macro_usage row with macro id, agent id, ticket id and time when the agent sends a reply that used a macro, not merely when they insert it. Add a nightly rollup into thirty and ninety day counters, and an index on agent and time for the ranking query. Do not count previews or drafts that were discarded; the event is written when the message is actually sent, in the same transaction as the comment.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "macros",
+        "database"
+      ],
+      "state": "Closed",
+      "parentRef": "desk-057",
+      "sprintRef": "desk-s2",
+      "comments": []
+    },
+    {
+      "ref": "desk-059",
+      "type": "story",
+      "title": "Expiry dates and a review queue for outdated macros",
+      "description": "A macro can carry an expiry date, for instance when it quotes a seasonal offer. After expiry it disappears from the picker and appears in the owner's review queue with options to extend, edit or archive. The owner is emailed a week before expiry. Macros without an expiry are reviewed once a year anyway. The review queue also shows how often each expiring macro was used in the last ninety days, which helps owners decide quickly between extending and archiving.",
+      "acceptanceCriteria": [
+        "Expired macros vanish from the picker",
+        "The owner is emailed seven days before expiry",
+        "Owners can extend, edit or archive from the review queue"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "macros",
+        "governance"
+      ],
+      "state": "New",
+      "parentRef": "desk-054",
+      "sprintRef": "desk-s4",
+      "comments": []
+    },
+    {
+      "ref": "desk-060",
+      "type": "story",
+      "title": "Create a macro from an existing reply with suggested clean-up",
+      "description": "From any public reply an agent can choose Save as macro. The dialog proposes a title, a folder and a cleaned body in which the customer's name, order numbers and dates are replaced by placeholders. Each replacement is highlighted so the agent can accept or revert it individually before the macro is saved. Detected personal details are limited to names, order numbers, dates and email addresses; anything else is left alone, and the agent sees a reminder to check the text before saving.",
+      "acceptanceCriteria": [
+        "Save as macro is offered on public replies",
+        "Replacements are highlighted and individually revertible"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "macros",
+        "ux"
+      ],
+      "state": "Active",
+      "parentRef": "desk-054",
+      "sprintRef": "desk-s2",
+      "comments": []
+    },
+    {
+      "ref": "desk-061",
+      "type": "bug",
+      "title": "Macro search ignores accented characters",
+      "description": "Searching for devolucion finds nothing although the macro is titled Devolución, and the same happens for German umlauts and French accents. The search index lowercases but does not fold accents, so queries typed on keyboards without dead keys never match. Fold accents on both sides, keep the original in the display, and add tests for Spanish, German and French titles. Fold on the server using the database's unaccent facility or an equivalent, rather than in the browser, so the macro API and the picker agree and imports from older exports are searchable too.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Create a macro titled Devolución de pedido.\n2. In the reply box type devolucion without the accent.\n3. Observe that the macro is not offered.",
+      "tags": [
+        "macros",
+        "search",
+        "i18n"
+      ],
+      "state": "Closed",
+      "parentRef": "desk-054",
+      "sprintRef": "desk-s2",
+      "comments": [
+        {
+          "ref": "desk-c37",
+          "body": "Unaccent extension is already installed; no new dependency.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-062",
+      "type": "bug",
+      "title": "Archived macros still appear in the reply picker",
+      "description": "Macros that a lead archived last month were still suggested to agents, and one of them quoted a discontinued warranty. The picker queries a cached list that is refreshed hourly and does not subscribe to archive events. The archive action must invalidate the cache for the brand immediately, and the query should filter on status as a second guard. Cache invalidation should be scoped to the brand rather than global, since several brands share the service and a global flush causes a short spike in database load.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Archive a macro as a lead.\n2. As an agent open a ticket and start typing the macro title.\n3. The archived macro is still suggested for up to an hour.",
+      "tags": [
+        "macros",
+        "cache"
+      ],
+      "state": "Closed",
+      "parentRef": "desk-054",
+      "sprintRef": "desk-s1",
+      "comments": [
+        {
+          "ref": "desk-c38",
+          "body": "Cache key now includes the brand id; archive action publishes an invalidation event.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-063",
+      "type": "feature",
+      "title": "Macro variables and placeholders",
+      "description": "Placeholders make a template read as if it were written for one person. The supported set covers the requester, the ticket, the agent, the organisation and the time: first name, full name, ticket number, subject, agent name and signature, organisation name, plan, and the next business day in the requester's zone.\n\nEach placeholder has a fallback. If the first name is missing the greeting becomes Hello, the same way for every brand, instead of leaving a gap. A placeholder that cannot be resolved at all, for example the plan of a requester without an organisation, is highlighted in the preview and blocks sending until the agent fixes it, so that a literal curly-brace token never reaches a customer.\n\nThe editor offers autocomplete when typing a double brace, shows the sample value from the current ticket in a side panel and warns when a macro uses a placeholder that is not available on the channels it targets. Conditional blocks can show a paragraph only for certain plans or languages, and are validated when the macro is saved.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "macros",
+        "placeholders"
+      ],
+      "state": "Active",
+      "parentRef": "desk-053",
+      "sprintRef": "desk-s2",
+      "comments": []
+    },
+    {
+      "ref": "desk-064",
+      "type": "story",
+      "title": "Placeholder autocomplete and live preview in the macro editor",
+      "description": "Typing a double brace opens a list of available placeholders with a short description and a sample value drawn from a ticket the author picks. The preview pane renders the macro with that ticket and marks unresolved placeholders in red. The author can switch the preview between languages without leaving the editor. Choosing the sample ticket remembers the last five used, and an empty state explains that the preview needs a ticket to show real values instead of showing an empty pane.",
+      "acceptanceCriteria": [
+        "Typing double braces opens an autocomplete list",
+        "The preview marks unresolved placeholders",
+        "The preview language can be switched"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "macros",
+        "editor"
+      ],
+      "state": "Closed",
+      "parentRef": "desk-063",
+      "sprintRef": "desk-s2",
+      "comments": []
+    },
+    {
+      "ref": "desk-065",
+      "type": "story",
+      "title": "Block sending when a placeholder cannot be resolved",
+      "description": "If any placeholder in the final reply has no value and no fallback, the Send button is disabled and a message under the editor names the placeholder and where it appears. The agent can type the value by hand or remove the sentence. Internal notes are exempt because they never reach customers. Offer a quick fix button that opens the missing field on the requester so an agent can fill it in without leaving the reply, then re-run the check automatically.",
+      "acceptanceCriteria": [
+        "Send is disabled while a placeholder is unresolved",
+        "The message names the placeholder",
+        "Internal notes are not blocked"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "macros",
+        "safety"
+      ],
+      "state": "Resolved",
+      "parentRef": "desk-063",
+      "sprintRef": "desk-s3",
+      "comments": [
+        {
+          "ref": "desk-c39",
+          "body": "Accessibility review asked for the error text to be linked to the editor with aria-describedby.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-066",
+      "type": "bug",
+      "title": "Macro signs the reply with the previous assignee after reassignment",
+      "description": "A ticket was reassigned from Dana to Mehmet and Mehmet then applied the thanks-for-waiting macro. The message went out with Dana's name and photo in the signature, and the customer asked who they were now talking to. The agent placeholder resolves from the ticket's assignee at the time the macro is opened, and the reply box keeps that value when the assignee changes under it.\n\nResolve the agent placeholder from the person sending the reply at the moment of sending, not from the ticket field, and re-render when the author changes.\n\nTest plan. Add a unit test that renders the same macro with two different senders and asserts that the signature changes, an integration test where the assignee changes between opening and sending the draft, and a check that internal notes keep using the author of the note. While in the code, audit the other agent placeholders, such as the agent's first name and role, because they share the same lookup and probably have the same flaw.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Open a ticket assigned to Agent A and start a reply with a macro that includes the signature.\n2. In another tab reassign the ticket to Agent B.\n3. Agent B opens the draft and sends it.\n4. The email is signed with Agent A.",
+      "tags": [
+        "macros",
+        "placeholders",
+        "assignment"
+      ],
+      "state": "Active",
+      "parentRef": "desk-063",
+      "sprintRef": "desk-s3",
+      "comments": [
+        {
+          "ref": "desk-c40",
+          "body": "Reproduced with two browsers; the draft keeps the first agent's name until it is re-rendered.",
+          "archived": false
+        },
+        {
+          "ref": "desk-c41",
+          "body": "Also seen with the first-name placeholder in the greeting.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-067",
+      "type": "story",
+      "title": "Per-agent signature block available as a placeholder",
+      "description": "Each agent can maintain a signature with name, role and optional photo, shown to them in the settings page and available to macros through a signature placeholder. The default signature is added to replies that do not use a macro. Brands can force a corporate layout so agent text appears inside a fixed frame. Photos are cropped to a circle at upload and stored at two sizes; if an agent has no photo the initials are used, and the email falls back to text only for clients that block images.",
+      "acceptanceCriteria": [
+        "Agents can edit their own signature",
+        "Macros can include the signature placeholder",
+        "Brands can enforce a layout around the agent's text"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "macros",
+        "signature"
+      ],
+      "state": "Closed",
+      "parentRef": "desk-063",
+      "sprintRef": "desk-s2",
+      "comments": []
+    },
+    {
+      "ref": "desk-068",
+      "type": "bug",
+      "title": "Macro body renders odd characters in some mail clients",
+      "description": "Several customers using older desktop clients reported replies full of stray symbols where punctuation should be. The messages looked fine in the web view and on mobile. Support could reproduce it only by sending to one specific test mailbox, which is why it took a month to be reported properly.\n\nThe outgoing message declared a charset header that did not match the encoding of the body part. Always encode the text part as UTF-8 and declare it, and add a send-and-inspect test that reads the raw MIME.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Apply the shipping delay macro to a ticket created from the legacy test mailbox.\n2. Send the reply.\n3. Open the received message in the legacy desktop client and look at the quotation marks.",
+      "tags": [
+        "macros",
+        "email",
+        "encoding"
+      ],
+      "state": "Closed",
+      "parentRef": "desk-063",
+      "sprintRef": "desk-s1",
+      "comments": [
+        {
+          "ref": "desk-c42",
+          "body": "Customer's client was Outlook 2013; the Windows-1252 smart quotes turned into question marks because the part was declared as ASCII.",
+          "archived": false
+        },
+        {
+          "ref": "desk-c43",
+          "body": "Fixed by always declaring utf-8 on the text part; re-tested against the legacy mailbox.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-069",
+      "type": "bug",
+      "title": "Umlaute im Betreff der Antwort-E-Mail werden falsch dargestellt",
+      "description": "Wenn ein Kunde eine Anfrage mit einem Umlaut im Betreff schreibt, zum Beispiel über die Rückerstattung einer Bestellung, erscheint der Betreff in unserer Antwort als wirre Zeichenfolge. Der Fehler tritt nur bei Antworten auf, die über ein Makro gesendet werden, nicht bei normalen Antworten.\n\nDie Betreffzeile muss nach RFC 2047 kodiert werden, bevor sie in den Header geschrieben wird. Bitte einen Test mit den Buchstaben ä, ö, ü und ß ergänzen.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Ticket mit dem Betreff \"Rückerstattung für Bestellung\" anlegen.\n2. Eine Antwort mit einem Makro senden.\n3. Die empfangene E-Mail öffnen und den Betreff lesen.",
+      "tags": [
+        "makros",
+        "deutsch",
+        "encoding"
+      ],
+      "state": "Active",
+      "parentRef": "desk-063",
+      "sprintRef": "desk-s4",
+      "comments": [
+        {
+          "ref": "desk-c44",
+          "body": "Betreff wird mit dem Standardmodul kodiert; Fehler lag im eigenen Header-Builder.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-070",
+      "type": "task",
+      "title": "Add MIME inspection to the outbound email tests",
+      "description": "Write a helper that captures the raw message handed to the mail transport and exposes the headers and decoded parts, then use it in the encoding tests for the macro send path. Cover plain text, HTML with a text alternative and a message with a non-ASCII subject. Keep the helper in the shared test project so the notification tests can use it too, and decode quoted-printable and base64 parts automatically so assertions read naturally.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "email",
+        "tests"
+      ],
+      "state": "Resolved",
+      "parentRef": "desk-068",
+      "sprintRef": "desk-s1",
+      "comments": []
+    },
+    {
+      "ref": "desk-071",
+      "type": "story",
+      "title": "Conditional blocks in macros based on plan or language",
+      "description": "An author can wrap a paragraph in an if block that tests the requester's plan, the ticket language or the brand. The editor validates nesting and unknown fields when saving and shows which blocks will appear in the preview for the chosen ticket. Blocks that evaluate to nothing leave no stray blank lines in the sent message. Conditions use a small expression syntax with equals, not equals and in; the editor offers a form for building them so authors do not have to learn the syntax.",
+      "acceptanceCriteria": [
+        "An if block can test plan, language or brand",
+        "Invalid blocks are rejected on save",
+        "No blank lines remain when a block is skipped"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "macros",
+        "templates"
+      ],
+      "state": "New",
+      "parentRef": "desk-063",
+      "sprintRef": "desk-s4",
+      "comments": []
+    },
+    {
+      "ref": "desk-072",
+      "type": "story",
+      "title": "Fallback value for each placeholder when data is missing",
+      "description": "Authors choose a fallback for every placeholder in the macro, for example Hello instead of Hello, plus the first name. Brand-level defaults apply when the macro is silent. The fallback is shown in the editor next to the placeholder and used by the preview when the sample ticket lacks the value. Fallbacks are stored per language, because a greeting that works in English may not exist in another language and an empty value must never be inserted silently.",
+      "acceptanceCriteria": [
+        "Each placeholder can define a fallback",
+        "Brand defaults apply when the macro has none"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "macros",
+        "placeholders"
+      ],
+      "state": "Closed",
+      "parentRef": "desk-063",
+      "sprintRef": "desk-s2",
+      "comments": []
+    },
+    {
+      "ref": "desk-073",
+      "type": "task",
+      "title": "Document the placeholder list and fallbacks in the admin guide",
+      "description": "Add a table of every supported placeholder, the field it reads, its default fallback and the channels where it is available. Include three worked examples with the rendered output and a section on conditional blocks once they ship. Link the guide from the editor help panel, and review the examples with a content designer so tone matches the style guide.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "docs"
+      ],
+      "state": "Removed",
+      "parentRef": "desk-072",
+      "sprintRef": "desk-s2",
+      "comments": []
+    },
+    {
+      "ref": "desk-074",
+      "type": "epic",
+      "title": "Agent workspace and customer satisfaction",
+      "description": "The workspace is where agents spend their day, so small frictions multiply quickly. This epic gathers the work on the inbox, the collision handling when two people open the same ticket, the satisfaction survey that closes the loop with customers, the dashboards leads use to run the desk, and the clean-up of duplicate customers and tickets.\n\nThe inbox should make it obvious what to do next. It sorts by the nearest SLA target, shows the reason a ticket is highlighted, and keeps the keyboard shortcuts of the old interface because agents notice every lost one. Views are shareable and leads can pin a view for the whole team.\n\nCustomer satisfaction is measured by a one-question survey after a ticket is solved, with a comment box. The survey must be sent once per solved ticket, to the requester, in their language, and never when the ticket was solved by merging into another. Low scores open a follow-up task for the team lead within an hour.\n\nReporting turns all of this into numbers the business reads: first response time, resolution time, backlog, breaches and satisfaction, cut by queue, brand, plan and agent. The numbers must agree with what the SLA engine says, and every chart links to the list of tickets behind it.\n\nDuplicates cost real time. The same person writes from two addresses, a ticket is created twice from a form and an email, and an agent answers one while a colleague answers the other. Merge tools, duplicate suggestions and a clear history are the response.\n\nFor delivery we are working in vertical slices so each sprint gives agents something visible: first the collision indicator, then the survey rules, then the reconciliation of dashboards against the SLA engine, and finally the merge tools. Each slice ships behind a setting for one pilot brand before it is switched on everywhere.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "workspace",
+        "csat",
+        "reporting"
+      ],
+      "state": "Active",
+      "sprintRef": "desk-s3",
+      "comments": []
+    },
+    {
+      "ref": "desk-075",
+      "type": "feature",
+      "title": "Agent inbox and collision detection",
+      "description": "The inbox is a list of tickets with a preview pane, sorted by default by the nearest SLA target. It supports saved views with filters on queue, status, priority, tags and requester organisation, and leads can pin a view for the team. Bulk actions let an agent select a page of tickets and apply a macro, a tag or a status change.\n\nKeyboard shortcuts are non-negotiable for the people who live in this screen, so the old bindings remain and new ones are added only where nothing clashes. A cheat sheet opens with the question mark key.\n\nCollision detection prevents two agents from answering the same ticket. When an agent opens a ticket the other viewers see a small indicator with a name, and when somebody starts typing a reply the indicator changes to show a draft in progress. The viewing indicator times out after eight seconds of inactivity so a forgotten browser tab does not lock out colleagues, and the draft indicator persists for two minutes after the last keystroke.\n\nIf an agent tries to send while another draft exists, the interface asks whether to send anyway, shows the other draft read-only and offers to merge the texts. Sending anyway is allowed because a stuck draft must never block a customer from receiving an answer; the second reply is marked in the timeline as sent concurrently.\n\nThe preview pane loads the first two messages and the last three, with the middle collapsed, since very long threads were making the page slow. Expanding is a click away and remembers its state while the ticket stays open.\n\nPerformance budget: the inbox must render a hundred rows in under one second on the reference laptop, and updates from the server arrive over a socket so rows reorder without a refresh. Row heights stay fixed to avoid the list jumping while someone reads.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "inbox",
+        "collision",
+        "ux"
+      ],
+      "state": "Active",
+      "parentRef": "desk-074",
+      "sprintRef": "desk-s3",
+      "comments": [
+        {
+          "ref": "desk-c45",
+          "body": "Pilot brand will run collision detection for two weeks before general release.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-076",
+      "type": "story",
+      "title": "Saved views with team pinning",
+      "description": "Agents can save the current filters and sort as a named view. Leads can pin a view to the team's sidebar so everyone sees the same queue definitions, and unpin or reorder pinned views. Personal views stay private. Renaming a view updates the links shared in chat. Pinned views show the number of tickets in each, refreshed every minute, with an amber badge when any ticket in the view is close to its target.",
+      "acceptanceCriteria": [
+        "Filters and sort can be saved as a named view",
+        "Leads can pin views for the team",
+        "Renaming a view keeps shared links working"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "inbox",
+        "views"
+      ],
+      "state": "Closed",
+      "parentRef": "desk-075",
+      "sprintRef": "desk-s3",
+      "comments": [
+        {
+          "ref": "desk-c46",
+          "body": "Pinned views limited to ten per team to keep the sidebar usable.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-077",
+      "type": "story",
+      "title": "Bulk apply a macro to selected tickets",
+      "description": "With a page of tickets selected an agent can apply a macro, tag, priority or state in one action. A confirmation lists the count and shows the macro text. Bulk replies are sent individually with each ticket's placeholders resolved, and any ticket that cannot resolve a placeholder is skipped and listed in the result. Cap a bulk action at two hundred tickets and run it as a background job with a progress bar, so a mistaken selection can be cancelled before it finishes.",
+      "acceptanceCriteria": [
+        "A macro can be applied to a selection",
+        "Tickets with unresolved placeholders are skipped and listed"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "inbox",
+        "macros",
+        "bulk"
+      ],
+      "state": "Active",
+      "parentRef": "desk-075",
+      "sprintRef": "desk-s4",
+      "comments": []
+    },
+    {
+      "ref": "desk-078",
+      "type": "bug",
+      "title": "Draft indicator stays after the other agent closes the tab",
+      "description": "Agents reported that a ticket kept showing a colleague as writing a reply long after they had gone home, and nobody dared to answer. The presence socket closes without sending a leave event when the browser is killed, and the server relied on that event to clear the draft flag. Use the heartbeat expiry for clearing instead, and add a test that simulates an abrupt disconnect. The bug affected busy mornings the most, when many agents open tickets in quick succession and browsers are closed without warning on shared kiosks.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. As Agent A open a ticket and start typing a reply.\n2. Kill the browser process without closing the tab.\n3. As Agent B open the same ticket.\n4. Agent A still appears as writing, minutes later.",
+      "tags": [
+        "collision",
+        "presence"
+      ],
+      "state": "Active",
+      "parentRef": "desk-075",
+      "sprintRef": "desk-s3",
+      "comments": [
+        {
+          "ref": "desk-c47",
+          "body": "Heartbeat interval agreed at five seconds with a fifteen second expiry.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-079",
+      "type": "task",
+      "title": "Expire draft indicators from the heartbeat, not the leave event",
+      "description": "Store a last-seen timestamp per ticket and agent, refreshed by the socket heartbeat, and compute presence by comparing with the clock. Remove the code that relied on leave events and keep the event only as a fast path to clear the indicator sooner. Choose the heartbeat interval and the expiry together: a five second beat with a fifteen second expiry is enough to tolerate one lost packet without flicker.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "collision",
+        "presence"
+      ],
+      "state": "Active",
+      "parentRef": "desk-078",
+      "sprintRef": "desk-s3",
+      "comments": []
+    },
+    {
+      "ref": "desk-080",
+      "type": "story",
+      "title": "Keep the first two and last three messages open in long threads",
+      "description": "Threads with hundreds of messages made the ticket page crawl. Render the first two and the last three expanded and collapse the rest behind a counter. Expanding is remembered for the session, and search within the ticket expands the matches automatically so evidence is never hidden. Collapsed ranges show the date span and the number of messages they hide, and can be expanded in pages of twenty for the very longest threads.",
+      "acceptanceCriteria": [
+        "Long threads load first two and last three messages",
+        "In-ticket search expands matching messages"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "inbox",
+        "performance"
+      ],
+      "state": "Closed",
+      "parentRef": "desk-075",
+      "sprintRef": "desk-s2",
+      "comments": []
+    },
+    {
+      "ref": "desk-081",
+      "type": "bug",
+      "title": "Keyboard shortcut for next ticket does nothing inside the reply box",
+      "description": "Pressing the shortcut for the next ticket while the cursor is in the reply editor types a character instead of moving on. The old interface accepted a modifier combination in every context, and the new editor captures keys before the global handler sees them. Register the shortcut on the capture phase when a modifier is held and leave plain keys to the editor. Also check the shortcut on the non-English keyboard layouts the team uses, since the modifier combination clashes with an accented character on one of them.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Open the inbox and select a ticket.\n2. Click into the reply box.\n3. Press the next-ticket shortcut.\n4. A character appears in the editor and the view does not change.",
+      "tags": [
+        "shortcuts",
+        "ux"
+      ],
+      "state": "Closed",
+      "parentRef": "desk-075",
+      "sprintRef": "desk-s2",
+      "comments": [
+        {
+          "ref": "desk-c48",
+          "body": "Fixed by registering the handler on capture; plain keys still go to the editor.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-082",
+      "type": "feature",
+      "title": "CSAT surveys",
+      "description": "After a ticket is solved the requester receives a one-question survey asking how satisfied they were, with a five-point scale and an optional comment. The answer is attached to the ticket and to the agent who solved it, and feeds the satisfaction charts.\n\nThe survey is sent once per solved ticket, to the requester only, in the ticket's language, and a day after the solve so people have time to confirm the answer worked. It is not sent for tickets solved by a merge, for tickets created by agents on behalf of a caller unless the caller has an email address, or for requesters who have unsubscribed from surveys. A reopened ticket that is solved again keeps its original rating slot instead of sending a second request.\n\nResponses are anonymised in the aggregate reports shown to the whole desk, but leads can open an individual response. A score of one or two creates a follow-up task for the team lead due within the hour, and the task shows the ticket, the customer's comment and the agent. The follow-up is closed with a short note saying what was done.\n\nSurveys must be accessible: the scale works with a keyboard and screen reader, the links in the email do not require a login and the page is readable on a phone without zooming. Reports compare the response rate by channel, because chat customers answer far more often than email customers and a blended number misleads.\n\nSurvey wording belongs to the brand, within a few guard rails: one question, no leading text, and the unsubscribe link always present. Translations are provided for the languages the desk supports, and an untranslated brand falls back to English with a note to the admin.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "csat",
+        "survey"
+      ],
+      "state": "Active",
+      "parentRef": "desk-074",
+      "sprintRef": "desk-s3",
+      "comments": []
+    },
+    {
+      "ref": "desk-083",
+      "type": "story",
+      "title": "Send the survey a day after the ticket is solved",
+      "description": "A solved ticket schedules the survey for twenty-four hours later. If the ticket is reopened before then the survey is cancelled. The send uses the requester's language and the brand's sender address, and the link opens a page that records the answer with one click from the email. The delay is a brand setting with a minimum of one hour, because some brands solve tickets in the evening and prefer the survey to arrive the next morning.",
+      "acceptanceCriteria": [
+        "The survey is scheduled for 24 hours after solving",
+        "Reopening cancels a pending survey",
+        "One click in the email records the score"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "csat",
+        "email"
+      ],
+      "state": "Active",
+      "parentRef": "desk-082",
+      "sprintRef": "desk-s3",
+      "comments": []
+    },
+    {
+      "ref": "desk-084",
+      "type": "bug",
+      "title": "CSAT request fires again when a solved ticket is reopened and re-solved",
+      "description": "A customer wrote in furious that they had been asked to rate their experience twice for the same problem, a few days apart. The ticket had been solved, reopened because the fix did not hold, and solved again; each solve scheduled a survey and neither checked for an earlier request.\n\nTrack the survey per ticket and reuse it. If the first request was already answered, the second solve sends nothing. If it was sent but unanswered, the reminder wording is allowed once, never a fresh survey.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Solve a test ticket and wait for the survey email.\n2. Reopen the ticket by replying as the customer.\n3. Solve it again.\n4. A second survey email arrives for the same ticket.",
+      "tags": [
+        "csat",
+        "reopen"
+      ],
+      "state": "Active",
+      "parentRef": "desk-082",
+      "sprintRef": "desk-s3",
+      "comments": [
+        {
+          "ref": "desk-c49",
+          "body": "Reproduced; the second solve ignores the survey table entirely.",
+          "archived": false
+        },
+        {
+          "ref": "desk-c50",
+          "body": "Archived: initial idea to delete the survey row on reopen, rejected because it loses the answer.",
+          "archived": true
+        }
+      ]
+    },
+    {
+      "ref": "desk-085",
+      "type": "story",
+      "title": "Skip the survey for tickets solved by merging into another",
+      "description": "A ticket merged into another is closed administratively and the customer has not been helped by that act. Customers should not be asked to rate their experience for such tickets; only the surviving ticket qualifies once it is solved. The merge action marks the source ticket as survey-exempt and the reports show how many tickets were excluded for that reason. When the surviving ticket is solved the survey goes out as usual, so the customer is still asked once about the whole problem and not once per fragment.",
+      "acceptanceCriteria": [
+        "A merged source ticket never triggers a survey",
+        "Reports count tickets excluded because of a merge"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "csat",
+        "merge"
+      ],
+      "state": "Active",
+      "parentRef": "desk-082",
+      "sprintRef": "desk-s4",
+      "comments": []
+    },
+    {
+      "ref": "desk-086",
+      "type": "story",
+      "title": "Open a follow-up task for the lead on scores of one or two",
+      "description": "Low scores create a task due within one hour for the team lead of the queue, containing a link to the ticket, the score and the customer's comment. The lead closes the task with a note, and the note is visible on the ticket so the solving agent can learn from it. Tasks escalate to the head of support if they are still open after four hours. The task title includes the score and a short excerpt of the comment, so the lead can decide from the task list whether to act first on the angriest cases.",
+      "acceptanceCriteria": [
+        "Scores 1 and 2 create a task due in an hour",
+        "Closing the task needs a note",
+        "Tasks open after four hours escalate"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "csat",
+        "tasks"
+      ],
+      "state": "Closed",
+      "parentRef": "desk-082",
+      "sprintRef": "desk-s3",
+      "comments": [
+        {
+          "ref": "desk-c51",
+          "body": "Four hour escalation goes to the head of support, not the lead's manager.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-087",
+      "type": "story",
+      "title": "Survey page accessible by keyboard and screen reader",
+      "description": "The rating control is a radio group with visible focus, labelled options and a live region announcing the saved answer. The page uses sufficient contrast, works at 200 percent zoom and does not rely on colour alone. Verify with two screen readers and add automated checks to the end-to-end suite. Include the unsubscribe page in the audit, because it is rarely tested and is the only page some customers ever see from us.",
+      "acceptanceCriteria": [
+        "The scale is a labelled radio group",
+        "The saved answer is announced",
+        "The page works at 200 percent zoom"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "csat",
+        "accessibility"
+      ],
+      "state": "New",
+      "parentRef": "desk-082",
+      "sprintRef": "desk-s4",
+      "comments": []
+    },
+    {
+      "ref": "desk-088",
+      "type": "feature",
+      "title": "Reporting dashboards",
+      "description": "Leads run the desk from a handful of charts: tickets created and solved per day, backlog by age, first response and resolution time, breaches by reason and satisfaction by queue. Each chart can be filtered by brand, queue, plan, channel and agent, and every point links to the ticket list behind it.\n\nThe charts must reconcile with the SLA engine. A breach counted on the dashboard is a breach on the ticket, with the same timestamp, and the monthly finance export is generated from the same query rather than rebuilt in a spreadsheet. Disagreement between the two has caused arguments, so a daily job compares them and posts any difference to the leads' channel.\n\nData is refreshed every five minutes, with the time of the last refresh shown on each chart. Heavy aggregates are precomputed overnight and incremental updates apply during the day.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "reporting",
+        "dashboard"
+      ],
+      "state": "Active",
+      "parentRef": "desk-074",
+      "sprintRef": "desk-s3",
+      "comments": []
+    },
+    {
+      "ref": "desk-089",
+      "type": "story",
+      "title": "Backlog by age chart with drill-through to tickets",
+      "description": "Show open tickets grouped by age bands of under a day, one to three days, three to seven days and older, stacked by queue. Clicking a segment opens the inbox with the matching filter applied. The chart excludes tickets in Pending, since they are waiting on the customer, unless the lead switches the option on. Use colours that remain distinguishable for people with colour blindness and add the count as a label on each segment for those who prefer numbers to shapes.",
+      "acceptanceCriteria": [
+        "Open tickets are grouped into four age bands",
+        "Clicking a segment opens the filtered inbox",
+        "Pending tickets are excluded by default"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "reporting",
+        "backlog"
+      ],
+      "state": "Resolved",
+      "parentRef": "desk-088",
+      "sprintRef": "desk-s3",
+      "comments": []
+    },
+    {
+      "ref": "desk-090",
+      "type": "story",
+      "title": "Daily reconciliation between dashboard breaches and the SLA engine",
+      "description": "A scheduled job recomputes breaches for the previous day from the audit trail and compares the count and ticket ids with the dashboard tables. Any difference is posted to the leads' channel with the ticket ids and the likely cause. The job also stores the result so the trend of discrepancies can be charted. Keep the comparison tolerant of tickets still in flight at midnight: anything with a change in the last ten minutes of the window is compared on the following day instead.",
+      "acceptanceCriteria": [
+        "The previous day's breaches are recomputed from the audit trail",
+        "Differences are posted with ticket ids"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "reporting",
+        "sla",
+        "quality"
+      ],
+      "state": "Active",
+      "parentRef": "desk-088",
+      "sprintRef": "desk-s4",
+      "comments": []
+    },
+    {
+      "ref": "desk-091",
+      "type": "bug",
+      "title": "First response time chart counts automatic replies as the first response",
+      "description": "Median first response time looked excellent because the acknowledgement email counts as a response. The chart should consider only the first public comment by an agent, ignoring messages sent by automations and the system. Existing history needs to be recomputed, and the chart should be labelled to say what it counts. The chart legend now says first human reply, and the tooltip on each point shows how many tickets contributed so thin days are not mistaken for trends.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Create a ticket by email and note the automatic acknowledgement.\n2. Wait an hour before an agent replies.\n3. Look at the ticket's first response time on the dashboard; it shows seconds.",
+      "tags": [
+        "reporting",
+        "metrics"
+      ],
+      "state": "Closed",
+      "parentRef": "desk-088",
+      "sprintRef": "desk-s3",
+      "comments": [
+        {
+          "ref": "desk-c52",
+          "body": "Recomputed history shows median first response moving from 40 seconds to 2.6 hours, which matches what leads expect.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-092",
+      "type": "task",
+      "title": "Backfill first response time from the first agent comment",
+      "description": "Write a one-off script that walks tickets in batches of five hundred and recomputes first response time from the first public comment authored by a human agent. Keep the old column for a release for comparison and drop it afterwards. Log the number of tickets whose value changed by more than an hour. Run it outside staffed hours on a replica, writing results to a new column, and swap the dashboard query only after the numbers are spot-checked against ten tickets by hand.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "reporting",
+        "backfill"
+      ],
+      "state": "Active",
+      "parentRef": "desk-091",
+      "sprintRef": "desk-s3",
+      "comments": []
+    },
+    {
+      "ref": "desk-093",
+      "type": "story",
+      "title": "Export the monthly breach list for finance as CSV",
+      "description": "Finance needs the list of breaches with ticket id, customer, plan, target, time of breach, time of resolution and reason code, for any calendar month. The export is produced from the same query as the dashboard and signed with a checksum row so changes after delivery can be spotted. The checksum row lets finance detect edits, but the file itself is not secret; it is delivered through the existing report page with the same access controls as other exports.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "reporting",
+        "finance"
+      ],
+      "state": "Removed",
+      "parentRef": "desk-088",
+      "sprintRef": "desk-s4",
+      "comments": []
+    },
+    {
+      "ref": "desk-094",
+      "type": "feature",
+      "title": "Customer merge and duplicates",
+      "description": "Customers appear twice for dull reasons: a work and a personal address, a typo, a form filled in by someone else. This feature finds likely duplicate people and tickets and gives agents a safe, reversible way to merge them.\n\nSuggestions come from matching email domains and names, phone numbers and organisation, and they are always suggestions; an agent confirms each merge. A merge moves tickets, comments and notes to the surviving record, keeps the other address as an alias so incoming mail still matches, and writes a history entry that can be used to undo the merge within thirty days.\n\nTicket merges follow the same rules: the source ticket's comments are copied into the target in order with a marker, the source is closed and linked, and satisfaction surveys are suppressed for the source.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "merge",
+        "duplicates",
+        "customers"
+      ],
+      "state": "Active",
+      "parentRef": "desk-074",
+      "sprintRef": "desk-s4",
+      "comments": []
+    },
+    {
+      "ref": "desk-095",
+      "type": "story",
+      "title": "Suggest duplicate requesters by name, domain and phone",
+      "description": "A nightly job scores pairs of requesters in the same organisation using name similarity, shared phone numbers and mail alias patterns, and lists those above a threshold under a Possible duplicates tab. Agents can dismiss a suggestion so it does not return, and dismissals are visible to other agents. Thresholds start conservative so that few false suggestions appear, and the tab shows why each pair was suggested so agents learn to trust or distrust the signals.",
+      "acceptanceCriteria": [
+        "Pairs above the threshold appear in a duplicates tab",
+        "Dismissed pairs do not return"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "duplicates",
+        "customers"
+      ],
+      "state": "New",
+      "parentRef": "desk-094",
+      "sprintRef": "desk-s4",
+      "comments": []
+    },
+    {
+      "ref": "desk-096",
+      "type": "story",
+      "title": "Merge requesters and keep the old address as an alias",
+      "description": "Merging moves tickets, comments, notes and tags to the surviving requester and records the other email address as an alias, so replies sent from it are matched to the survivor. The merge screen previews counts before confirming and supports undo for thirty days from the history entry. Aliases are unique across the desk: if the address is already claimed by another requester, the merge stops and explains who holds it.",
+      "acceptanceCriteria": [
+        "Tickets and notes move to the surviving requester",
+        "The old address becomes an alias",
+        "A merge can be undone for thirty days"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "merge",
+        "customers"
+      ],
+      "state": "Active",
+      "parentRef": "desk-094",
+      "sprintRef": "desk-s4",
+      "comments": []
+    },
+    {
+      "ref": "desk-097",
+      "type": "bug",
+      "title": "Merging two tickets duplicates attachments in the target",
+      "description": "After merging a ticket into another every attachment appeared twice on the target. The merge copied comments with their files and then the attachment list was rebuilt by a second pass that added the same files again. The second pass should be removed, and the copy should preserve the original upload time so the list stays in chronological order. The same defect affected inline images, which were also duplicated, so the regression test should cover both file attachments and inline content.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Create two tickets, one with a PDF attached.\n2. Merge the ticket with the PDF into the other.\n3. Open the target; the PDF is listed twice.",
+      "tags": [
+        "merge",
+        "attachments"
+      ],
+      "state": "Closed",
+      "parentRef": "desk-094",
+      "sprintRef": "desk-s3",
+      "comments": [
+        {
+          "ref": "desk-c53",
+          "body": "Fixed in the merge service; regression test covers inline images.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-098",
+      "type": "bug",
+      "title": "Duplicate suggestions never include requesters with a plus address",
+      "description": "Addresses such as name+billing@example.com are normalised for matching only on the local part before the plus sign when comparing against the same domain, but the candidate query joins on the raw address, so the pair is never generated. Normalise once when storing and use the stored value in the join. Once fixed, rerun the nightly job over the whole requester table, since pairs that were never generated will not appear on their own.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Create two requesters, a@example.com and a+billing@example.com.\n2. Run the duplicate job manually.\n3. Check the suggestions; the pair is absent.",
+      "tags": [
+        "duplicates",
+        "email"
+      ],
+      "state": "Active",
+      "parentRef": "desk-094",
+      "sprintRef": "desk-s4",
+      "comments": []
+    },
+    {
+      "ref": "desk-099",
+      "type": "task",
+      "title": "Normalise requester email addresses once when stored",
+      "description": "Add a normalised_email column that lowercases, trims and strips plus tags for providers known to support them, backfill it and index it. Update the duplicate suggestion and alias lookups to use it and leave the original address untouched for display and sending. Providers differ about plus tags, so keep a short list of domains where stripping is safe and leave all other addresses unchanged apart from case.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "duplicates",
+        "database"
+      ],
+      "state": "New",
+      "parentRef": "desk-098",
+      "sprintRef": "desk-s4",
+      "comments": []
+    },
+    {
+      "ref": "desk-100",
+      "type": "task",
+      "title": "Write the undo script for requester merges",
+      "description": "Given a merge history id, restore the moved tickets, comments and notes to the original requester, remove the alias if no other record claims it and mark the history entry as undone. Run it in a transaction and refuse if the survivor has since been merged again. Write the script so it can run in dry-run mode first and print the objects it would restore; support staff will use it on real customer records.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "merge",
+        "scripts"
+      ],
+      "state": "New",
+      "parentRef": "desk-096",
+      "sprintRef": "desk-s4",
+      "comments": []
+    },
+    {
+      "ref": "desk-101",
+      "type": "story",
+      "title": "Experiment with automatic sentiment tagging of incoming tickets",
+      "description": "Try a small classifier that tags incoming messages as calm, frustrated or angry so leads can prioritise. The first experiment is offline only, comparing its labels with agent judgement on five hundred past tickets. If agreement is poor the idea is dropped; nothing is shown to customers or agents until the numbers justify it. Record the agreement figures per language, because a classifier that works well in English can be unusable in others, and the desk serves several languages.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "experiment",
+        "sentiment"
+      ],
+      "state": "Removed",
+      "parentRef": "desk-088",
+      "sprintRef": "desk-s4",
+      "comments": [
+        {
+          "ref": "desk-c54",
+          "body": "Dropped for now: the team does not want sentiment labels shown to agents.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "desk-102",
+      "type": "story",
+      "title": "Retire the legacy macro importer",
+      "description": "The old importer reads macros from a CSV export of the previous help desk. All brands have been migrated, so the importer, its tests and the admin page can be deleted. Keep the migration notes in the wiki. Before removing the code, check the access logs to confirm nobody has opened the admin page in ninety days, and delete the stored upload files in the same release.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "macros",
+        "cleanup"
+      ],
+      "state": "Removed",
+      "parentRef": "desk-054",
+      "comments": []
+    },
+    {
+      "ref": "desk-103",
+      "type": "story",
+      "title": "Spam review queue for borderline messages",
+      "description": "Messages scoring between the review and discard thresholds land in a queue where a lead can release them as tickets or confirm them as spam. The queue shows the sender, subject, score and the reason the filter gave. Released messages train the filter's allow-list for the sender. Messages in the queue are kept for fourteen days and then deleted, so spam cannot accumulate without limit and personal data is not held longer than needed.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "spam",
+        "review"
+      ],
+      "state": "New",
+      "parentRef": "desk-002",
+      "comments": []
+    }
+  ]
+}

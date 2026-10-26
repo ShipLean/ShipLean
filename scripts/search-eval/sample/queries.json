@@ -1,0 +1,14 @@
+[
+  {"id": "sample-q01", "text": "DEMO-4", "kind": "exactKey", "expected": ["sample-004"]},
+  {"id": "sample-q02", "text": "postcode", "kind": "titleWord", "expected": ["sample-009"]},
+  {"id": "sample-q03", "text": "can't check out with my visa", "kind": "paraphrase", "expected": ["sample-002"]},
+  {"id": "sample-q04", "text": "3-D Secure", "kind": "bodyOnly", "expected": ["sample-002"]},
+  {"id": "sample-q05", "text": "mail relay abuse", "kind": "commentOnly", "expected": ["sample-007"]},
+  {"id": "sample-q06", "text": "deliv", "kind": "prefix", "expected": ["sample-008", "sample-009"]},
+  {"id": "sample-q07", "text": "Rechnung bezahlen", "kind": "nonEnglish", "expected": ["sample-011"]},
+  {"id": "sample-q08", "text": "voucher", "kind": "bodyOnly", "expected": ["sample-004"]},
+  {"id": "sample-q09", "text": "demo15", "kind": "exactKey", "expected": ["sample-015"]},
+  {"id": "sample-q10", "text": "can't log in again", "kind": "paraphrase", "expected": ["sample-014"]},
+  {"id": "sample-q11", "text": "cancelar pedido", "kind": "nonEnglish", "expected": ["sample-019"]},
+  {"id": "sample-q12", "text": "cart merge session", "kind": "commentOnly", "expected": ["sample-020"]}
+]

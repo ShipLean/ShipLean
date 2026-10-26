@@ -1,0 +1,4 @@
+[
+  { "user": { "id": "0199f000-0000-7000-8000-000000000001", "name": "Joel Dickson", "initials": "JD", "avatarColour": "#5b6b8c", "photoUrl": null }, "email": "joel@shiplean.local", "role": "admin", "status": "active" },
+  { "user": { "id": "00000001-0000-4000-8000-000000000002", "name": "Priya Shah", "initials": "PS", "avatarColour": "#2f7fd8", "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1" }, "email": "priya@shiplean.local", "role": "member", "status": "active" }
+]

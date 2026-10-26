@@ -1,0 +1,5241 @@
+{
+  "me": "0199f000-0000-7000-8000-000000000001",
+  "cases": [
+    {
+      "name": "expedite: priority 1 matches",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "priority",
+            "op": "=",
+            "value": 1
+          }
+        ]
+      },
+      "item": {
+        "priority": 1
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "expedite: priority 2 does not match",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "priority",
+            "op": "=",
+            "value": 1
+          }
+        ]
+      },
+      "item": {
+        "priority": 2
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "blocked: tag matches ignoring case",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "tags",
+            "op": "contains",
+            "value": "Blocked"
+          }
+        ]
+      },
+      "item": {
+        "tags": [
+          "Mobile",
+          "blocked"
+        ]
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "blocked: tags without it do not match",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "tags",
+            "op": "contains",
+            "value": "Blocked"
+          }
+        ]
+      },
+      "item": {
+        "tags": [
+          "Mobile"
+        ]
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "spike: contains is a whole tag",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "tags",
+            "op": "contains",
+            "value": "Spike"
+          }
+        ]
+      },
+      "item": {
+        "tags": [
+          "Spiked"
+        ]
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "customer bugs: both clauses hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "type",
+            "op": "=",
+            "value": "bug"
+          },
+          {
+            "field": "tags",
+            "op": "contains",
+            "value": "Customer"
+          }
+        ]
+      },
+      "item": {
+        "type": "bug",
+        "tags": [
+          "Customer"
+        ]
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "customer bugs: a story fails the type clause",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "type",
+            "op": "=",
+            "value": "bug"
+          },
+          {
+            "field": "tags",
+            "op": "contains",
+            "value": "Customer"
+          }
+        ]
+      },
+      "item": {
+        "type": "story",
+        "tags": [
+          "Customer"
+        ]
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "any: second clause is enough",
+      "criteria": {
+        "match": "any",
+        "clauses": [
+          {
+            "field": "priority",
+            "op": "=",
+            "value": 1
+          },
+          {
+            "field": "tags",
+            "op": "contains",
+            "value": "Feedback Ticket"
+          },
+          {
+            "field": "parent",
+            "op": "=",
+            "value": "00000005-0000-4000-8001-000000000101"
+          }
+        ]
+      },
+      "item": {
+        "priority": 3,
+        "tags": [
+          "Feedback Ticket"
+        ],
+        "parent": "00000005-0000-4000-8001-000000000102"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "any: parent clause is enough",
+      "criteria": {
+        "match": "any",
+        "clauses": [
+          {
+            "field": "priority",
+            "op": "=",
+            "value": 1
+          },
+          {
+            "field": "tags",
+            "op": "contains",
+            "value": "Feedback Ticket"
+          },
+          {
+            "field": "parent",
+            "op": "=",
+            "value": "00000005-0000-4000-8001-000000000101"
+          }
+        ]
+      },
+      "item": {
+        "priority": 3,
+        "tags": [],
+        "parent": "00000005-0000-4000-8001-000000000101"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "any: no clause holds",
+      "criteria": {
+        "match": "any",
+        "clauses": [
+          {
+            "field": "priority",
+            "op": "=",
+            "value": 1
+          },
+          {
+            "field": "tags",
+            "op": "contains",
+            "value": "Feedback Ticket"
+          },
+          {
+            "field": "parent",
+            "op": "=",
+            "value": "00000005-0000-4000-8001-000000000101"
+          }
+        ]
+      },
+      "item": {
+        "priority": 3,
+        "tags": [],
+        "parent": null
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "empty: no points, a sprint, no tags",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "points",
+            "op": "isEmpty",
+            "value": null
+          },
+          {
+            "field": "sprint",
+            "op": "isNotEmpty",
+            "value": null
+          },
+          {
+            "field": "tags",
+            "op": "isEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "points": null,
+        "sprint": "00000004-0000-4000-8001-000000000024",
+        "tags": []
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "empty: points set",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "points",
+            "op": "isEmpty",
+            "value": null
+          },
+          {
+            "field": "sprint",
+            "op": "isNotEmpty",
+            "value": null
+          },
+          {
+            "field": "tags",
+            "op": "isEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "points": 3,
+        "sprint": "00000004-0000-4000-8001-000000000024",
+        "tags": []
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "empty: no sprint",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "points",
+            "op": "isEmpty",
+            "value": null
+          },
+          {
+            "field": "sprint",
+            "op": "isNotEmpty",
+            "value": null
+          },
+          {
+            "field": "tags",
+            "op": "isEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "points": null,
+        "sprint": null,
+        "tags": []
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "in: listed assignee, sprint and priority",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "assignee",
+            "op": "in",
+            "value": [
+              "00000001-0000-4000-8000-000000000002",
+              "00000001-0000-4000-8000-000000000004",
+              null
+            ]
+          },
+          {
+            "field": "sprint",
+            "op": "in",
+            "value": [
+              "00000004-0000-4000-8001-000000000024",
+              "00000004-0000-4000-8001-000000000025"
+            ]
+          },
+          {
+            "field": "priority",
+            "op": "in",
+            "value": [
+              1,
+              2
+            ]
+          }
+        ]
+      },
+      "item": {
+        "assignee": "00000001-0000-4000-8000-000000000002",
+        "sprint": "00000004-0000-4000-8001-000000000025",
+        "priority": 2
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "in: null element matches an unassigned item",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "assignee",
+            "op": "in",
+            "value": [
+              "00000001-0000-4000-8000-000000000002",
+              "00000001-0000-4000-8000-000000000004",
+              null
+            ]
+          },
+          {
+            "field": "sprint",
+            "op": "in",
+            "value": [
+              "00000004-0000-4000-8001-000000000024",
+              "00000004-0000-4000-8001-000000000025"
+            ]
+          },
+          {
+            "field": "priority",
+            "op": "in",
+            "value": [
+              1,
+              2
+            ]
+          }
+        ]
+      },
+      "item": {
+        "assignee": null,
+        "sprint": "00000004-0000-4000-8001-000000000024",
+        "priority": 1
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "in: assignee not listed",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "assignee",
+            "op": "in",
+            "value": [
+              "00000001-0000-4000-8000-000000000002",
+              "00000001-0000-4000-8000-000000000004",
+              null
+            ]
+          },
+          {
+            "field": "sprint",
+            "op": "in",
+            "value": [
+              "00000004-0000-4000-8001-000000000024",
+              "00000004-0000-4000-8001-000000000025"
+            ]
+          },
+          {
+            "field": "priority",
+            "op": "in",
+            "value": [
+              1,
+              2
+            ]
+          }
+        ]
+      },
+      "item": {
+        "assignee": "00000001-0000-4000-8000-000000000005",
+        "sprint": "00000004-0000-4000-8001-000000000024",
+        "priority": 1
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "in: sprint not listed",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "assignee",
+            "op": "in",
+            "value": [
+              "00000001-0000-4000-8000-000000000002",
+              "00000001-0000-4000-8000-000000000004",
+              null
+            ]
+          },
+          {
+            "field": "sprint",
+            "op": "in",
+            "value": [
+              "00000004-0000-4000-8001-000000000024",
+              "00000004-0000-4000-8001-000000000025"
+            ]
+          },
+          {
+            "field": "priority",
+            "op": "in",
+            "value": [
+              1,
+              2
+            ]
+          }
+        ]
+      },
+      "item": {
+        "assignee": "00000001-0000-4000-8000-000000000004",
+        "sprint": "00000004-0000-4000-8001-000000000023",
+        "priority": 1
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "not-equal: other type, state and user",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "type",
+            "op": "<>",
+            "value": "bug"
+          },
+          {
+            "field": "state",
+            "op": "<>",
+            "value": "00000003-0000-4000-8001-000000000304"
+          },
+          {
+            "field": "assignee",
+            "op": "<>",
+            "value": "00000001-0000-4000-8000-000000000005"
+          }
+        ]
+      },
+      "item": {
+        "type": "story",
+        "state": "00000003-0000-4000-8001-000000000302",
+        "assignee": "00000001-0000-4000-8000-000000000002"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "not-equal: unassigned item passes the user clause",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "type",
+            "op": "<>",
+            "value": "bug"
+          },
+          {
+            "field": "state",
+            "op": "<>",
+            "value": "00000003-0000-4000-8001-000000000304"
+          },
+          {
+            "field": "assignee",
+            "op": "<>",
+            "value": "00000001-0000-4000-8000-000000000005"
+          }
+        ]
+      },
+      "item": {
+        "type": "story",
+        "state": "00000003-0000-4000-8001-000000000302",
+        "assignee": null
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "not-equal: the excluded state",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "type",
+            "op": "<>",
+            "value": "bug"
+          },
+          {
+            "field": "state",
+            "op": "<>",
+            "value": "00000003-0000-4000-8001-000000000304"
+          },
+          {
+            "field": "assignee",
+            "op": "<>",
+            "value": "00000001-0000-4000-8000-000000000005"
+          }
+        ]
+      },
+      "item": {
+        "type": "story",
+        "state": "00000003-0000-4000-8001-000000000304",
+        "assignee": "00000001-0000-4000-8000-000000000002"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "not-equal: the excluded user",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "type",
+            "op": "<>",
+            "value": "bug"
+          },
+          {
+            "field": "state",
+            "op": "<>",
+            "value": "00000003-0000-4000-8001-000000000304"
+          },
+          {
+            "field": "assignee",
+            "op": "<>",
+            "value": "00000001-0000-4000-8000-000000000005"
+          }
+        ]
+      },
+      "item": {
+        "type": "story",
+        "state": "00000003-0000-4000-8001-000000000302",
+        "assignee": "00000001-0000-4000-8000-000000000005"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "numeric: inside the ranges",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "points",
+            "op": ">",
+            "value": 3
+          },
+          {
+            "field": "points",
+            "op": "<",
+            "value": 13
+          },
+          {
+            "field": "priority",
+            "op": "<",
+            "value": 3
+          },
+          {
+            "field": "createdAt",
+            "op": ">",
+            "value": "2026-10-01T00:00:00Z"
+          }
+        ]
+      },
+      "item": {
+        "points": 5,
+        "priority": 2,
+        "createdAt": "2026-10-10T08:00:00Z"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "numeric: points on the boundary",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "points",
+            "op": ">",
+            "value": 3
+          },
+          {
+            "field": "points",
+            "op": "<",
+            "value": 13
+          },
+          {
+            "field": "priority",
+            "op": "<",
+            "value": 3
+          },
+          {
+            "field": "createdAt",
+            "op": ">",
+            "value": "2026-10-01T00:00:00Z"
+          }
+        ]
+      },
+      "item": {
+        "points": 3,
+        "priority": 2,
+        "createdAt": "2026-10-10T08:00:00Z"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "numeric: an empty field never matches",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "points",
+            "op": ">",
+            "value": 3
+          },
+          {
+            "field": "points",
+            "op": "<",
+            "value": 13
+          },
+          {
+            "field": "priority",
+            "op": "<",
+            "value": 3
+          },
+          {
+            "field": "createdAt",
+            "op": ">",
+            "value": "2026-10-01T00:00:00Z"
+          }
+        ]
+      },
+      "item": {
+        "points": null,
+        "priority": 2,
+        "createdAt": "2026-10-10T08:00:00Z"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "text: contains, notContains and original id",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "title",
+            "op": "contains",
+            "value": "checkout"
+          },
+          {
+            "field": "tags",
+            "op": "notContains",
+            "value": "Tech debt"
+          },
+          {
+            "field": "originalSystemId",
+            "op": "contains",
+            "value": "PLATFORM-"
+          }
+        ]
+      },
+      "item": {
+        "title": "Checkout redesign",
+        "tags": [
+          "Mobile"
+        ],
+        "originalSystemId": "PLATFORM-412"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "text: title match ignores case",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "title",
+            "op": "contains",
+            "value": "checkout"
+          },
+          {
+            "field": "tags",
+            "op": "notContains",
+            "value": "Tech debt"
+          },
+          {
+            "field": "originalSystemId",
+            "op": "contains",
+            "value": "PLATFORM-"
+          }
+        ]
+      },
+      "item": {
+        "title": "CHECKOUT redesign",
+        "tags": [],
+        "originalSystemId": "PLATFORM-1"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "text: excluded tag present",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "title",
+            "op": "contains",
+            "value": "checkout"
+          },
+          {
+            "field": "tags",
+            "op": "notContains",
+            "value": "Tech debt"
+          },
+          {
+            "field": "originalSystemId",
+            "op": "contains",
+            "value": "PLATFORM-"
+          }
+        ]
+      },
+      "item": {
+        "title": "Checkout redesign",
+        "tags": [
+          "Tech debt"
+        ],
+        "originalSystemId": "PLATFORM-412"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "waiting on review: category and me",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "stateCategory",
+            "op": "=",
+            "value": "resolved"
+          },
+          {
+            "field": "assignee",
+            "op": "=",
+            "value": "@me"
+          }
+        ]
+      },
+      "item": {
+        "stateCategory": "resolved",
+        "assignee": "0199f000-0000-7000-8000-000000000001"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "waiting on review: someone else's",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "stateCategory",
+            "op": "=",
+            "value": "resolved"
+          },
+          {
+            "field": "assignee",
+            "op": "=",
+            "value": "@me"
+          }
+        ]
+      },
+      "item": {
+        "stateCategory": "resolved",
+        "assignee": "00000001-0000-4000-8000-000000000002"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "equal: unassigned never equals a user",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "assignee",
+            "op": "=",
+            "value": "00000001-0000-4000-8000-000000000002"
+          }
+        ]
+      },
+      "item": {
+        "assignee": null
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "not equal: matches an empty field",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "assignee",
+            "op": "<>",
+            "value": "00000001-0000-4000-8000-000000000002"
+          }
+        ]
+      },
+      "item": {
+        "assignee": null
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "isNotEmpty: a tag list with a tag",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "tags",
+            "op": "isNotEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "tags": [
+          "x"
+        ]
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "equal: text is case-insensitive",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "key",
+            "op": "=",
+            "value": "ship-141"
+          }
+        ]
+      },
+      "item": {
+        "key": "SHIP-141"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "equal: number against number",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "severity",
+            "op": "=",
+            "value": 2
+          }
+        ]
+      },
+      "item": {
+        "severity": 2
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "all: two clauses, one fails",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "priority",
+            "op": "=",
+            "value": 1
+          },
+          {
+            "field": "type",
+            "op": "=",
+            "value": "bug"
+          }
+        ]
+      },
+      "item": {
+        "priority": 1,
+        "type": "story"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "any: two clauses, one holds",
+      "criteria": {
+        "match": "any",
+        "clauses": [
+          {
+            "field": "priority",
+            "op": "=",
+            "value": 1
+          },
+          {
+            "field": "type",
+            "op": "=",
+            "value": "bug"
+          }
+        ]
+      },
+      "item": {
+        "priority": 2,
+        "type": "bug"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "invalid: unknown field",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "colour",
+            "op": "=",
+            "value": "red"
+          }
+        ]
+      },
+      "item": {},
+      "valid": false,
+      "matches": null
+    },
+    {
+      "name": "invalid: field not usable in criteria",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "description",
+            "op": "=",
+            "value": "x"
+          }
+        ]
+      },
+      "item": {},
+      "valid": false,
+      "matches": null
+    },
+    {
+      "name": "invalid: operator the field does not allow",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "priority",
+            "op": "contains",
+            "value": "1"
+          }
+        ]
+      },
+      "item": {},
+      "valid": false,
+      "matches": null
+    },
+    {
+      "name": "invalid: contains on a user",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "assignee",
+            "op": "contains",
+            "value": "00000001-0000-4000-8000-000000000002"
+          }
+        ]
+      },
+      "item": {},
+      "valid": false,
+      "matches": null
+    },
+    {
+      "name": "invalid: number given a word",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "priority",
+            "op": "=",
+            "value": "high"
+          }
+        ]
+      },
+      "item": {},
+      "valid": false,
+      "matches": null
+    },
+    {
+      "name": "invalid: user given a non-id",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "assignee",
+            "op": "=",
+            "value": "Priya"
+          }
+        ]
+      },
+      "item": {},
+      "valid": false,
+      "matches": null
+    },
+    {
+      "name": "invalid: type given an unknown type",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "type",
+            "op": "=",
+            "value": "epic2"
+          }
+        ]
+      },
+      "item": {},
+      "valid": false,
+      "matches": null
+    },
+    {
+      "name": "invalid: in given a scalar",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "priority",
+            "op": "in",
+            "value": 1
+          }
+        ]
+      },
+      "item": {},
+      "valid": false,
+      "matches": null
+    },
+    {
+      "name": "invalid: in given an empty list",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "priority",
+            "op": "in",
+            "value": []
+          }
+        ]
+      },
+      "item": {},
+      "valid": false,
+      "matches": null
+    },
+    {
+      "name": "invalid: isEmpty given a value",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "points",
+            "op": "isEmpty",
+            "value": 3
+          }
+        ]
+      },
+      "item": {},
+      "valid": false,
+      "matches": null
+    },
+    {
+      "name": "invalid: equal given null",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "priority",
+            "op": "=",
+            "value": null
+          }
+        ]
+      },
+      "item": {},
+      "valid": false,
+      "matches": null
+    },
+    {
+      "name": "invalid: date given a number",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "createdAt",
+            "op": ">",
+            "value": 5
+          }
+        ]
+      },
+      "item": {},
+      "valid": false,
+      "matches": null
+    },
+    {
+      "name": "invalid: no clauses",
+      "criteria": {
+        "match": "all",
+        "clauses": []
+      },
+      "item": {},
+      "valid": false,
+      "matches": null
+    },
+    {
+      "name": "text: not-equal ignores case, same key",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "key",
+            "op": "<>",
+            "value": "ship-141"
+          }
+        ]
+      },
+      "item": {
+        "key": "SHIP-141"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "text: not-equal, other key",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "key",
+            "op": "<>",
+            "value": "ship-141"
+          }
+        ]
+      },
+      "item": {
+        "key": "SHIP-142"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "text: notContains, word absent",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "title",
+            "op": "notContains",
+            "value": "spike"
+          }
+        ]
+      },
+      "item": {
+        "title": "Checkout redesign"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "text: notContains, word present ignoring case",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "title",
+            "op": "notContains",
+            "value": "spike"
+          }
+        ]
+      },
+      "item": {
+        "title": "SPIKE: try the new queue"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "text: notContains matches a null field",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "originalSystemId",
+            "op": "notContains",
+            "value": "PLATFORM-"
+          }
+        ]
+      },
+      "item": {
+        "originalSystemId": null
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "text: notContains matches a missing field",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "originalSystemId",
+            "op": "notContains",
+            "value": "PLATFORM-"
+          }
+        ]
+      },
+      "item": {},
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "text: contains never matches a null field",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "originalSystemId",
+            "op": "contains",
+            "value": "PLATFORM-"
+          }
+        ]
+      },
+      "item": {
+        "originalSystemId": null
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "text: isEmpty on a null field",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "originalSystemId",
+            "op": "isEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "originalSystemId": null
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "text: isEmpty on a set field",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "originalSystemId",
+            "op": "isEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "originalSystemId": "PLATFORM-1"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "text: isNotEmpty on a set field",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "originalSystemId",
+            "op": "isNotEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "originalSystemId": "PLATFORM-1"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "text: isNotEmpty on a null field",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "originalSystemId",
+            "op": "isNotEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "originalSystemId": null
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "number: not-equal, other value",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "severity",
+            "op": "<>",
+            "value": 2
+          }
+        ]
+      },
+      "item": {
+        "severity": 3
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "number: not-equal, same value",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "severity",
+            "op": "<>",
+            "value": 2
+          }
+        ]
+      },
+      "item": {
+        "severity": 2
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "number: not-equal matches an empty field",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "severity",
+            "op": "<>",
+            "value": 2
+          }
+        ]
+      },
+      "item": {
+        "severity": null
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "number: greater-than, above",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "severity",
+            "op": ">",
+            "value": 2
+          }
+        ]
+      },
+      "item": {
+        "severity": 3
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "number: greater-than, equal",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "severity",
+            "op": ">",
+            "value": 2
+          }
+        ]
+      },
+      "item": {
+        "severity": 2
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "number: greater-than never matches an empty field",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "severity",
+            "op": ">",
+            "value": 2
+          }
+        ]
+      },
+      "item": {
+        "severity": null
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "number: isEmpty on null",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "severity",
+            "op": "isEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "severity": null
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "number: isEmpty on a value",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "severity",
+            "op": "isEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "severity": 3
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "points: equals a decimal",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "points",
+            "op": "=",
+            "value": 2.5
+          }
+        ]
+      },
+      "item": {
+        "points": 2.5
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "points: differs from a decimal",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "points",
+            "op": "=",
+            "value": 2.5
+          }
+        ]
+      },
+      "item": {
+        "points": 2
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "points: 3 equals 3.0",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "points",
+            "op": "=",
+            "value": 3
+          }
+        ]
+      },
+      "item": {
+        "points": 3.0
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "points: 3.0 equals 3",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "points",
+            "op": "=",
+            "value": 3.0
+          }
+        ]
+      },
+      "item": {
+        "points": 3
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "points: in with decimals",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "points",
+            "op": "in",
+            "value": [
+              2.5,
+              5
+            ]
+          }
+        ]
+      },
+      "item": {
+        "points": 2.5
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "points: in with decimals, not listed",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "points",
+            "op": "in",
+            "value": [
+              2.5,
+              5
+            ]
+          }
+        ]
+      },
+      "item": {
+        "points": 3
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "points: greater-than a decimal, equal",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "points",
+            "op": ">",
+            "value": 2.5
+          }
+        ]
+      },
+      "item": {
+        "points": 2.5
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "points: greater-than a decimal, above",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "points",
+            "op": ">",
+            "value": 2.5
+          }
+        ]
+      },
+      "item": {
+        "points": 3
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "date: less-than, earlier",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "createdAt",
+            "op": "<",
+            "value": "2026-10-10T08:00:00Z"
+          }
+        ]
+      },
+      "item": {
+        "createdAt": "2026-10-10T07:59:59Z"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "date: less-than, same instant",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "createdAt",
+            "op": "<",
+            "value": "2026-10-10T08:00:00Z"
+          }
+        ]
+      },
+      "item": {
+        "createdAt": "2026-10-10T08:00:00Z"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "date: less-than compares instants across offsets",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "createdAt",
+            "op": "<",
+            "value": "2026-10-10T02:00:00Z"
+          }
+        ]
+      },
+      "item": {
+        "createdAt": "2026-10-10T08:00:00+07:00"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "date: greater-than compares instants across offsets",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "createdAt",
+            "op": ">",
+            "value": "2026-10-10T02:00:00Z"
+          }
+        ]
+      },
+      "item": {
+        "createdAt": "2026-10-10T08:00:00+07:00"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "date: a value with an offset, item in Z",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "changedAt",
+            "op": ">",
+            "value": "2026-10-10T08:00:00+07:00"
+          }
+        ]
+      },
+      "item": {
+        "changedAt": "2026-10-10T01:00:01Z"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "state: equals, same state",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "state",
+            "op": "=",
+            "value": "00000003-0000-4000-8001-000000000302"
+          }
+        ]
+      },
+      "item": {
+        "state": "00000003-0000-4000-8001-000000000302"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "state: equals, other state",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "state",
+            "op": "=",
+            "value": "00000003-0000-4000-8001-000000000302"
+          }
+        ]
+      },
+      "item": {
+        "state": "00000003-0000-4000-8001-000000000303"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "state: in, listed",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "state",
+            "op": "in",
+            "value": [
+              "00000003-0000-4000-8001-000000000302",
+              "00000003-0000-4000-8001-000000000303"
+            ]
+          }
+        ]
+      },
+      "item": {
+        "state": "00000003-0000-4000-8001-000000000303"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "state: in, not listed",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "state",
+            "op": "in",
+            "value": [
+              "00000003-0000-4000-8001-000000000302",
+              "00000003-0000-4000-8001-000000000303"
+            ]
+          }
+        ]
+      },
+      "item": {
+        "state": "00000003-0000-4000-8001-000000000304"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "stateCategory: not-equal, other category",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "stateCategory",
+            "op": "<>",
+            "value": "completed"
+          }
+        ]
+      },
+      "item": {
+        "stateCategory": "inProgress"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "stateCategory: not-equal, same category",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "stateCategory",
+            "op": "<>",
+            "value": "completed"
+          }
+        ]
+      },
+      "item": {
+        "stateCategory": "completed"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "stateCategory: in, listed",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "stateCategory",
+            "op": "in",
+            "value": [
+              "proposed",
+              "inProgress"
+            ]
+          }
+        ]
+      },
+      "item": {
+        "stateCategory": "inProgress"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "stateCategory: in, not listed",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "stateCategory",
+            "op": "in",
+            "value": [
+              "proposed",
+              "inProgress"
+            ]
+          }
+        ]
+      },
+      "item": {
+        "stateCategory": "resolved"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "type: in, listed",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "type",
+            "op": "in",
+            "value": [
+              "bug",
+              "task"
+            ]
+          }
+        ]
+      },
+      "item": {
+        "type": "task"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "type: in, not listed",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "type",
+            "op": "in",
+            "value": [
+              "bug",
+              "task"
+            ]
+          }
+        ]
+      },
+      "item": {
+        "type": "story"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "sprint: equals",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "sprint",
+            "op": "=",
+            "value": "00000004-0000-4000-8001-000000000024"
+          }
+        ]
+      },
+      "item": {
+        "sprint": "00000004-0000-4000-8001-000000000024"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "sprint: equals never matches an empty sprint",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "sprint",
+            "op": "=",
+            "value": "00000004-0000-4000-8001-000000000024"
+          }
+        ]
+      },
+      "item": {
+        "sprint": null
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "sprint: not-equal, other sprint",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "sprint",
+            "op": "<>",
+            "value": "00000004-0000-4000-8001-000000000024"
+          }
+        ]
+      },
+      "item": {
+        "sprint": "00000004-0000-4000-8001-000000000025"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "sprint: not-equal matches an empty sprint",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "sprint",
+            "op": "<>",
+            "value": "00000004-0000-4000-8001-000000000024"
+          }
+        ]
+      },
+      "item": {
+        "sprint": null
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "sprint: not-equal, same sprint",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "sprint",
+            "op": "<>",
+            "value": "00000004-0000-4000-8001-000000000024"
+          }
+        ]
+      },
+      "item": {
+        "sprint": "00000004-0000-4000-8001-000000000024"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "sprint: isEmpty on a null sprint",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "sprint",
+            "op": "isEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "sprint": null
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "sprint: isEmpty on a sprint",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "sprint",
+            "op": "isEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "sprint": "00000004-0000-4000-8001-000000000024"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "workItem: not-equal, other parent",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "parent",
+            "op": "<>",
+            "value": "00000005-0000-4000-8001-000000000101"
+          }
+        ]
+      },
+      "item": {
+        "parent": "00000005-0000-4000-8001-000000000102"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "workItem: not-equal matches no parent",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "parent",
+            "op": "<>",
+            "value": "00000005-0000-4000-8001-000000000101"
+          }
+        ]
+      },
+      "item": {
+        "parent": null
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "workItem: not-equal, same parent",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "parent",
+            "op": "<>",
+            "value": "00000005-0000-4000-8001-000000000101"
+          }
+        ]
+      },
+      "item": {
+        "parent": "00000005-0000-4000-8001-000000000101"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "workItem: in, listed",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "parent",
+            "op": "in",
+            "value": [
+              "00000005-0000-4000-8001-000000000101",
+              "00000005-0000-4000-8001-000000000102"
+            ]
+          }
+        ]
+      },
+      "item": {
+        "parent": "00000005-0000-4000-8001-000000000102"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "workItem: in, not listed",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "parent",
+            "op": "in",
+            "value": [
+              "00000005-0000-4000-8001-000000000101",
+              "00000005-0000-4000-8001-000000000102"
+            ]
+          }
+        ]
+      },
+      "item": {
+        "parent": "00000005-0000-4000-8001-000000000103"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "workItem: in with null matches no parent",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "parent",
+            "op": "in",
+            "value": [
+              "00000005-0000-4000-8001-000000000101",
+              null
+            ]
+          }
+        ]
+      },
+      "item": {
+        "parent": null
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "workItem: in without null does not match no parent",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "parent",
+            "op": "in",
+            "value": [
+              "00000005-0000-4000-8001-000000000101",
+              "00000005-0000-4000-8001-000000000102"
+            ]
+          }
+        ]
+      },
+      "item": {
+        "parent": null
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "workItem: isEmpty on no parent",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "parent",
+            "op": "isEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "parent": null
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "workItem: isNotEmpty on a parent",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "parent",
+            "op": "isNotEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "parent": "00000005-0000-4000-8001-000000000101"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "workItem: isNotEmpty on no parent",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "parent",
+            "op": "isNotEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "parent": null
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "epic: equals, the derived epic of a feature",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "epic",
+            "op": "=",
+            "value": "00000005-0000-4000-8001-000000000090"
+          }
+        ]
+      },
+      "item": {
+        "type": "feature",
+        "epic": "00000005-0000-4000-8001-000000000090"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "epic: equals, another epic",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "epic",
+            "op": "=",
+            "value": "00000005-0000-4000-8001-000000000090"
+          }
+        ]
+      },
+      "item": {
+        "type": "feature",
+        "epic": "00000005-0000-4000-8001-000000000091"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "epic: isEmpty, a feature under no epic",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "epic",
+            "op": "isEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "type": "feature",
+        "epic": null
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "epic: in, listed",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "epic",
+            "op": "in",
+            "value": [
+              "00000005-0000-4000-8001-000000000090",
+              "00000005-0000-4000-8001-000000000091"
+            ]
+          }
+        ]
+      },
+      "item": {
+        "type": "feature",
+        "epic": "00000005-0000-4000-8001-000000000091"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "id: equals",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "id",
+            "op": "=",
+            "value": "00000005-0000-4000-8001-000000000101"
+          }
+        ]
+      },
+      "item": {
+        "id": "00000005-0000-4000-8001-000000000101"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "id: in, not listed",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "id",
+            "op": "in",
+            "value": [
+              "00000005-0000-4000-8001-000000000101",
+              "00000005-0000-4000-8001-000000000102"
+            ]
+          }
+        ]
+      },
+      "item": {
+        "id": "00000005-0000-4000-8001-000000000103"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "user: isEmpty on an unassigned item",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "assignee",
+            "op": "isEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "assignee": null
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "user: isEmpty on an assigned item",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "assignee",
+            "op": "isEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "assignee": "00000001-0000-4000-8000-000000000002"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "user: isNotEmpty on an assigned item",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "assignee",
+            "op": "isNotEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "assignee": "00000001-0000-4000-8000-000000000002"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "user: isNotEmpty on an unassigned item",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "assignee",
+            "op": "isNotEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "assignee": null
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "user: @me inside in, item is me",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "assignee",
+            "op": "in",
+            "value": [
+              "@me",
+              "00000001-0000-4000-8000-000000000002"
+            ]
+          }
+        ]
+      },
+      "item": {
+        "assignee": "0199f000-0000-7000-8000-000000000001"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "user: @me inside in, item is the other user",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "assignee",
+            "op": "in",
+            "value": [
+              "@me",
+              "00000001-0000-4000-8000-000000000002"
+            ]
+          }
+        ]
+      },
+      "item": {
+        "assignee": "00000001-0000-4000-8000-000000000002"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "user: @me inside in, item is a third user",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "assignee",
+            "op": "in",
+            "value": [
+              "@me",
+              "00000001-0000-4000-8000-000000000002"
+            ]
+          }
+        ]
+      },
+      "item": {
+        "assignee": "00000001-0000-4000-8000-000000000003"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "user: not-equal @me, item is me",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "assignee",
+            "op": "<>",
+            "value": "@me"
+          }
+        ]
+      },
+      "item": {
+        "assignee": "0199f000-0000-7000-8000-000000000001"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "user: not-equal @me, item is another user",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "assignee",
+            "op": "<>",
+            "value": "@me"
+          }
+        ]
+      },
+      "item": {
+        "assignee": "00000001-0000-4000-8000-000000000002"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "user: not-equal @me matches an unassigned item",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "assignee",
+            "op": "<>",
+            "value": "@me"
+          }
+        ]
+      },
+      "item": {
+        "assignee": null
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "user: createdBy equals @me",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "createdBy",
+            "op": "=",
+            "value": "@me"
+          }
+        ]
+      },
+      "item": {
+        "createdBy": "0199f000-0000-7000-8000-000000000001"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "tags: isNotEmpty on an empty list",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "tags",
+            "op": "isNotEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "tags": []
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "tags: isEmpty on an empty list",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "tags",
+            "op": "isEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "tags": []
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "tags: notContains ignores case, tag present",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "tags",
+            "op": "notContains",
+            "value": "blocked"
+          }
+        ]
+      },
+      "item": {
+        "tags": [
+          "Mobile",
+          "BLOCKED"
+        ]
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "tags: notContains, tag absent",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "tags",
+            "op": "notContains",
+            "value": "blocked"
+          }
+        ]
+      },
+      "item": {
+        "tags": [
+          "Mobile"
+        ]
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "tags: notContains matches an empty list",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "tags",
+            "op": "notContains",
+            "value": "blocked"
+          }
+        ]
+      },
+      "item": {
+        "tags": []
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "invalid: priority equals a decimal",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "priority",
+            "op": "=",
+            "value": 1.5
+          }
+        ]
+      },
+      "item": {},
+      "valid": false,
+      "matches": null
+    },
+    {
+      "name": "invalid: in with a wrongly typed element",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "priority",
+            "op": "in",
+            "value": [
+              1,
+              "x"
+            ]
+          }
+        ]
+      },
+      "item": {},
+      "valid": false,
+      "matches": null
+    },
+    {
+      "name": "invalid: in with null on a non-nullable field",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "priority",
+            "op": "in",
+            "value": [
+              1,
+              null
+            ]
+          }
+        ]
+      },
+      "item": {},
+      "valid": false,
+      "matches": null
+    },
+    {
+      "name": "invalid: in with only null on a non-nullable field",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "priority",
+            "op": "in",
+            "value": [
+              null
+            ]
+          }
+        ]
+      },
+      "item": {},
+      "valid": false,
+      "matches": null
+    },
+    {
+      "name": "invalid: stateCategory in a different case",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "stateCategory",
+            "op": "=",
+            "value": "Resolved"
+          }
+        ]
+      },
+      "item": {},
+      "valid": false,
+      "matches": null
+    },
+    {
+      "name": "priority: greater-than, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "priority",
+            "op": ">",
+            "value": 2
+          }
+        ]
+      },
+      "item": {
+        "priority": 3
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "priority: greater-than, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "priority",
+            "op": ">",
+            "value": 2
+          }
+        ]
+      },
+      "item": {
+        "priority": 2
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "priority: not-equal, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "priority",
+            "op": "<>",
+            "value": 1
+          }
+        ]
+      },
+      "item": {
+        "priority": 2
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "priority: not-equal, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "priority",
+            "op": "<>",
+            "value": 1
+          }
+        ]
+      },
+      "item": {
+        "priority": 1
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "priority: less-than, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "priority",
+            "op": "<",
+            "value": 3
+          }
+        ]
+      },
+      "item": {
+        "priority": 2
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "priority: less-than, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "priority",
+            "op": "<",
+            "value": 3
+          }
+        ]
+      },
+      "item": {
+        "priority": 4
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "points: not-equal, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "points",
+            "op": "<>",
+            "value": 3
+          }
+        ]
+      },
+      "item": {
+        "points": 5
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "points: not-equal, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "points",
+            "op": "<>",
+            "value": 3
+          }
+        ]
+      },
+      "item": {
+        "points": 3
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "points: not-equal matches an empty field",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "points",
+            "op": "<>",
+            "value": 3
+          }
+        ]
+      },
+      "item": {
+        "points": null
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "points: less-than, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "points",
+            "op": "<",
+            "value": 5
+          }
+        ]
+      },
+      "item": {
+        "points": 3
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "points: less-than, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "points",
+            "op": "<",
+            "value": 5
+          }
+        ]
+      },
+      "item": {
+        "points": 5
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "points: less-than never matches an empty field",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "points",
+            "op": "<",
+            "value": 5
+          }
+        ]
+      },
+      "item": {
+        "points": null
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "points: isNotEmpty, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "points",
+            "op": "isNotEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "points": 3
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "points: isNotEmpty, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "points",
+            "op": "isNotEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "points": null
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "points: in with null matches an empty field",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "points",
+            "op": "in",
+            "value": [
+              2.5,
+              null
+            ]
+          }
+        ]
+      },
+      "item": {
+        "points": null
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "severity: less-than, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "severity",
+            "op": "<",
+            "value": 3
+          }
+        ]
+      },
+      "item": {
+        "severity": 2
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "severity: less-than, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "severity",
+            "op": "<",
+            "value": 3
+          }
+        ]
+      },
+      "item": {
+        "severity": 3
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "severity: isNotEmpty, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "severity",
+            "op": "isNotEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "severity": 1
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "severity: isNotEmpty, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "severity",
+            "op": "isNotEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "severity": null
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "key: contains, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "key",
+            "op": "contains",
+            "value": "141"
+          }
+        ]
+      },
+      "item": {
+        "key": "SHIP-141"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "key: contains, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "key",
+            "op": "contains",
+            "value": "141"
+          }
+        ]
+      },
+      "item": {
+        "key": "SHIP-142"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "key: notContains, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "key",
+            "op": "notContains",
+            "value": "141"
+          }
+        ]
+      },
+      "item": {
+        "key": "SHIP-142"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "key: notContains, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "key",
+            "op": "notContains",
+            "value": "141"
+          }
+        ]
+      },
+      "item": {
+        "key": "SHIP-141"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "title: equals ignoring case, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "title",
+            "op": "=",
+            "value": "checkout redesign"
+          }
+        ]
+      },
+      "item": {
+        "title": "Checkout Redesign"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "title: equals ignoring case, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "title",
+            "op": "=",
+            "value": "checkout redesign"
+          }
+        ]
+      },
+      "item": {
+        "title": "Checkout redesigned"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "title: not-equal, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "title",
+            "op": "<>",
+            "value": "checkout redesign"
+          }
+        ]
+      },
+      "item": {
+        "title": "Another title"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "title: not-equal, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "title",
+            "op": "<>",
+            "value": "checkout redesign"
+          }
+        ]
+      },
+      "item": {
+        "title": "CHECKOUT REDESIGN"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "title: contains is a substring, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "title",
+            "op": "contains",
+            "value": "out red"
+          }
+        ]
+      },
+      "item": {
+        "title": "Checkout redesign"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "title: contains is a substring, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "title",
+            "op": "contains",
+            "value": "out red"
+          }
+        ]
+      },
+      "item": {
+        "title": "Checkout"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "title: contains treats % as text",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "title",
+            "op": "contains",
+            "value": "100%"
+          }
+        ]
+      },
+      "item": {
+        "title": "Reach 100% of users"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "title: contains does not treat % as a wildcard",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "title",
+            "op": "contains",
+            "value": "1%0"
+          }
+        ]
+      },
+      "item": {
+        "title": "Reach 100 of users"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "originalSystem: equals ignoring case, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "originalSystem",
+            "op": "=",
+            "value": "JIRA"
+          }
+        ]
+      },
+      "item": {
+        "originalSystem": "jira"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "originalSystem: equals ignoring case, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "originalSystem",
+            "op": "=",
+            "value": "JIRA"
+          }
+        ]
+      },
+      "item": {
+        "originalSystem": null
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "originalSystem: not-equal matches an empty field",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "originalSystem",
+            "op": "<>",
+            "value": "jira"
+          }
+        ]
+      },
+      "item": {
+        "originalSystem": null
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "originalSystem: isEmpty, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "originalSystem",
+            "op": "isEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "originalSystem": null
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "originalSystem: isEmpty, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "originalSystem",
+            "op": "isEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "originalSystem": "jira"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "originalSystem: isNotEmpty, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "originalSystem",
+            "op": "isNotEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "originalSystem": "jira"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "originalSystem: isNotEmpty, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "originalSystem",
+            "op": "isNotEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "originalSystem": null
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "originalSystemId: equals ignoring case, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "originalSystemId",
+            "op": "=",
+            "value": "platform-412"
+          }
+        ]
+      },
+      "item": {
+        "originalSystemId": "PLATFORM-412"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "originalSystemId: equals ignoring case, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "originalSystemId",
+            "op": "=",
+            "value": "platform-412"
+          }
+        ]
+      },
+      "item": {
+        "originalSystemId": "PLATFORM-413"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "originalSystemId: not-equal matches an empty field",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "originalSystemId",
+            "op": "<>",
+            "value": "PLATFORM-412"
+          }
+        ]
+      },
+      "item": {
+        "originalSystemId": null
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "type: equals, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "type",
+            "op": "=",
+            "value": "bug"
+          }
+        ]
+      },
+      "item": {
+        "type": "bug"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "type: equals, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "type",
+            "op": "=",
+            "value": "bug"
+          }
+        ]
+      },
+      "item": {
+        "type": "task"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "type: not-equal, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "type",
+            "op": "<>",
+            "value": "bug"
+          }
+        ]
+      },
+      "item": {
+        "type": "story"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "type: not-equal, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "type",
+            "op": "<>",
+            "value": "bug"
+          }
+        ]
+      },
+      "item": {
+        "type": "bug"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "state: not-equal, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "state",
+            "op": "<>",
+            "value": "00000003-0000-4000-8001-000000000302"
+          }
+        ]
+      },
+      "item": {
+        "state": "00000003-0000-4000-8001-000000000303"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "state: not-equal, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "state",
+            "op": "<>",
+            "value": "00000003-0000-4000-8001-000000000302"
+          }
+        ]
+      },
+      "item": {
+        "state": "00000003-0000-4000-8001-000000000302"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "stateCategory: equals, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "stateCategory",
+            "op": "=",
+            "value": "resolved"
+          }
+        ]
+      },
+      "item": {
+        "stateCategory": "resolved"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "stateCategory: equals, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "stateCategory",
+            "op": "=",
+            "value": "resolved"
+          }
+        ]
+      },
+      "item": {
+        "stateCategory": "completed"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "assignee: equals, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "assignee",
+            "op": "=",
+            "value": "00000001-0000-4000-8000-000000000002"
+          }
+        ]
+      },
+      "item": {
+        "assignee": "00000001-0000-4000-8000-000000000002"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "assignee: equals, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "assignee",
+            "op": "=",
+            "value": "00000001-0000-4000-8000-000000000002"
+          }
+        ]
+      },
+      "item": {
+        "assignee": "00000001-0000-4000-8000-000000000003"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "assignee: equals compares ids ignoring hex case",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "assignee",
+            "op": "=",
+            "value": "00000001-0000-4000-8000-000000000002"
+          }
+        ]
+      },
+      "item": {
+        "assignee": "00000001-0000-4000-8000-000000000002"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "assignee: @me equals, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "assignee",
+            "op": "=",
+            "value": "@me"
+          }
+        ]
+      },
+      "item": {
+        "assignee": "0199f000-0000-7000-8000-000000000001"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "assignee: @me equals, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "assignee",
+            "op": "=",
+            "value": "@me"
+          }
+        ]
+      },
+      "item": {
+        "assignee": null
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "createdBy: equals, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "createdBy",
+            "op": "=",
+            "value": "00000001-0000-4000-8000-000000000002"
+          }
+        ]
+      },
+      "item": {
+        "createdBy": "00000001-0000-4000-8000-000000000002"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "createdBy: equals, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "createdBy",
+            "op": "=",
+            "value": "00000001-0000-4000-8000-000000000002"
+          }
+        ]
+      },
+      "item": {
+        "createdBy": "00000001-0000-4000-8000-000000000003"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "createdBy: not-equal matches an empty field",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "createdBy",
+            "op": "<>",
+            "value": "00000001-0000-4000-8000-000000000002"
+          }
+        ]
+      },
+      "item": {
+        "createdBy": null
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "createdBy: in, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "createdBy",
+            "op": "in",
+            "value": [
+              "00000001-0000-4000-8000-000000000002",
+              "00000001-0000-4000-8000-000000000003"
+            ]
+          }
+        ]
+      },
+      "item": {
+        "createdBy": "00000001-0000-4000-8000-000000000003"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "createdBy: in, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "createdBy",
+            "op": "in",
+            "value": [
+              "00000001-0000-4000-8000-000000000002",
+              "00000001-0000-4000-8000-000000000003"
+            ]
+          }
+        ]
+      },
+      "item": {
+        "createdBy": "0199f000-0000-7000-8000-000000000001"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "createdBy: isEmpty, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "createdBy",
+            "op": "isEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "createdBy": null
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "createdBy: isEmpty, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "createdBy",
+            "op": "isEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "createdBy": "00000001-0000-4000-8000-000000000002"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "changedBy: equals @me, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "changedBy",
+            "op": "=",
+            "value": "@me"
+          }
+        ]
+      },
+      "item": {
+        "changedBy": "0199f000-0000-7000-8000-000000000001"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "changedBy: equals @me, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "changedBy",
+            "op": "=",
+            "value": "@me"
+          }
+        ]
+      },
+      "item": {
+        "changedBy": "00000001-0000-4000-8000-000000000002"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "changedBy: isNotEmpty, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "changedBy",
+            "op": "isNotEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "changedBy": "00000001-0000-4000-8000-000000000002"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "changedBy: isNotEmpty, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "changedBy",
+            "op": "isNotEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "changedBy": null
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "createdAt: greater-than, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "createdAt",
+            "op": ">",
+            "value": "2026-10-10T08:00:00Z"
+          }
+        ]
+      },
+      "item": {
+        "createdAt": "2026-10-10T08:00:01Z"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "createdAt: greater-than, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "createdAt",
+            "op": ">",
+            "value": "2026-10-10T08:00:00Z"
+          }
+        ]
+      },
+      "item": {
+        "createdAt": "2026-10-10T08:00:00Z"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "changedAt: less-than, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "changedAt",
+            "op": "<",
+            "value": "2026-10-10T08:00:00Z"
+          }
+        ]
+      },
+      "item": {
+        "changedAt": "2026-10-09T08:00:00Z"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "changedAt: less-than, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "changedAt",
+            "op": "<",
+            "value": "2026-10-10T08:00:00Z"
+          }
+        ]
+      },
+      "item": {
+        "changedAt": "2026-10-11T08:00:00Z"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "sprint: in, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "sprint",
+            "op": "in",
+            "value": [
+              "00000004-0000-4000-8001-000000000024",
+              "00000004-0000-4000-8001-000000000025"
+            ]
+          }
+        ]
+      },
+      "item": {
+        "sprint": "00000004-0000-4000-8001-000000000025"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "sprint: in, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "sprint",
+            "op": "in",
+            "value": [
+              "00000004-0000-4000-8001-000000000024",
+              "00000004-0000-4000-8001-000000000025"
+            ]
+          }
+        ]
+      },
+      "item": {
+        "sprint": null
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "sprint: isNotEmpty, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "sprint",
+            "op": "isNotEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "sprint": "00000004-0000-4000-8001-000000000024"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "sprint: isNotEmpty, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "sprint",
+            "op": "isNotEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "sprint": null
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "parent: equals, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "parent",
+            "op": "=",
+            "value": "00000005-0000-4000-8001-000000000101"
+          }
+        ]
+      },
+      "item": {
+        "parent": "00000005-0000-4000-8001-000000000101"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "parent: equals, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "parent",
+            "op": "=",
+            "value": "00000005-0000-4000-8001-000000000101"
+          }
+        ]
+      },
+      "item": {
+        "parent": null
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "epic: not-equal, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "epic",
+            "op": "<>",
+            "value": "00000005-0000-4000-8001-000000000090"
+          }
+        ]
+      },
+      "item": {
+        "type": "feature",
+        "epic": "00000005-0000-4000-8001-000000000091"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "epic: not-equal, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "epic",
+            "op": "<>",
+            "value": "00000005-0000-4000-8001-000000000090"
+          }
+        ]
+      },
+      "item": {
+        "type": "feature",
+        "epic": "00000005-0000-4000-8001-000000000090"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "epic: not-equal matches a feature under no epic",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "epic",
+            "op": "<>",
+            "value": "00000005-0000-4000-8001-000000000090"
+          }
+        ]
+      },
+      "item": {
+        "type": "feature",
+        "epic": null
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "epic: isNotEmpty, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "epic",
+            "op": "isNotEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "type": "feature",
+        "epic": "00000005-0000-4000-8001-000000000090"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "epic: isNotEmpty, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "epic",
+            "op": "isNotEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "type": "feature",
+        "epic": null
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "epic: in with null matches a feature under no epic",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "epic",
+            "op": "in",
+            "value": [
+              "00000005-0000-4000-8001-000000000090",
+              null
+            ]
+          }
+        ]
+      },
+      "item": {
+        "type": "feature",
+        "epic": null
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "epic: equals never matches a feature under no epic",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "epic",
+            "op": "=",
+            "value": "00000005-0000-4000-8001-000000000090"
+          }
+        ]
+      },
+      "item": {
+        "type": "feature",
+        "epic": null
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "id: not-equal, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "id",
+            "op": "<>",
+            "value": "00000005-0000-4000-8001-000000000101"
+          }
+        ]
+      },
+      "item": {
+        "id": "00000005-0000-4000-8001-000000000102"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "id: not-equal, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "id",
+            "op": "<>",
+            "value": "00000005-0000-4000-8001-000000000101"
+          }
+        ]
+      },
+      "item": {
+        "id": "00000005-0000-4000-8001-000000000101"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "tags: contains never matches a missing field",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "tags",
+            "op": "contains",
+            "value": "Blocked"
+          }
+        ]
+      },
+      "item": {},
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "tags: notContains matches a missing field",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "tags",
+            "op": "notContains",
+            "value": "Blocked"
+          }
+        ]
+      },
+      "item": {},
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "tags: isEmpty matches a missing field",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "tags",
+            "op": "isEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {},
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "tags: contains is an exact tag, not a substring of the value",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "tags",
+            "op": "contains",
+            "value": "Blocked by API"
+          }
+        ]
+      },
+      "item": {
+        "tags": [
+          "Blocked"
+        ]
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "invalid: priority greater-than a decimal",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "priority",
+            "op": ">",
+            "value": 1.5
+          }
+        ]
+      },
+      "item": {},
+      "valid": false,
+      "matches": null
+    },
+    {
+      "name": "invalid: priority less-than beyond Int32",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "priority",
+            "op": "<",
+            "value": 3000000000
+          }
+        ]
+      },
+      "item": {},
+      "valid": false,
+      "matches": null
+    },
+    {
+      "name": "invalid: severity greater-than a decimal",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "severity",
+            "op": ">",
+            "value": 2.5
+          }
+        ]
+      },
+      "item": {},
+      "valid": false,
+      "matches": null
+    },
+    {
+      "name": "invalid: points equals a value beyond the column",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "points",
+            "op": "=",
+            "value": 1e+30
+          }
+        ]
+      },
+      "item": {},
+      "valid": false,
+      "matches": null
+    },
+    {
+      "name": "invalid: points greater-than a value beyond the column",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "points",
+            "op": ">",
+            "value": 1e+30
+          }
+        ]
+      },
+      "item": {},
+      "valid": false,
+      "matches": null
+    },
+    {
+      "name": "invalid: points equals more than two decimals",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "points",
+            "op": "=",
+            "value": 1.005
+          }
+        ]
+      },
+      "item": {},
+      "valid": false,
+      "matches": null
+    },
+    {
+      "name": "invalid: points equals one more than the column holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "points",
+            "op": "=",
+            "value": 10000
+          }
+        ]
+      },
+      "item": {},
+      "valid": false,
+      "matches": null
+    },
+    {
+      "name": "invalid: priority in a list with a decimal",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "priority",
+            "op": "in",
+            "value": [
+              1,
+              1.5
+            ]
+          }
+        ]
+      },
+      "item": {},
+      "valid": false,
+      "matches": null
+    },
+    {
+      "name": "number: priority less-than the Int32 maximum",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "priority",
+            "op": "<",
+            "value": 2147483647
+          }
+        ]
+      },
+      "item": {
+        "priority": 2
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "points: the largest value the column holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "points",
+            "op": "=",
+            "value": 9999.99
+          }
+        ]
+      },
+      "item": {
+        "points": 9999.99
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "points: two decimals compare exactly",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "points",
+            "op": ">",
+            "value": 0.07
+          }
+        ]
+      },
+      "item": {
+        "points": 0.08
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "invalid: user given a braced guid",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "assignee",
+            "op": "=",
+            "value": "{0199f000-0000-7000-8000-000000000001}"
+          }
+        ]
+      },
+      "item": {},
+      "valid": false,
+      "matches": null
+    },
+    {
+      "name": "invalid: workItem given a guid without dashes",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "parent",
+            "op": "=",
+            "value": "0000000500004000800100000000000a"
+          }
+        ]
+      },
+      "item": {},
+      "valid": false,
+      "matches": null
+    },
+    {
+      "name": "invalid: date greater-than with no offset",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "createdAt",
+            "op": ">",
+            "value": "2026-01-01T00:00:00"
+          }
+        ]
+      },
+      "item": {},
+      "valid": false,
+      "matches": null
+    },
+    {
+      "name": "invalid: date less-than that is only a day",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "createdAt",
+            "op": "<",
+            "value": "2026-01-01"
+          }
+        ]
+      },
+      "item": {},
+      "valid": false,
+      "matches": null
+    },
+    {
+      "name": "date: greater-than with a Z offset",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "createdAt",
+            "op": ">",
+            "value": "2026-01-01T00:00:00Z"
+          }
+        ]
+      },
+      "item": {
+        "createdAt": "2026-01-02T00:00:00Z"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "points: in takes numbers",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "points",
+            "op": "in",
+            "value": [
+              3,
+              5
+            ]
+          }
+        ]
+      },
+      "item": {
+        "points": 5
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "points: in, not listed",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "points",
+            "op": "in",
+            "value": [
+              3,
+              5
+            ]
+          }
+        ]
+      },
+      "item": {
+        "points": 8
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "points: isEmpty on a value",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "points",
+            "op": "isEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "points": 8
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "user: guid compares ignoring hex case, upper-case item",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "assignee",
+            "op": "=",
+            "value": "0199f000-0000-7000-8000-000000000001"
+          }
+        ]
+      },
+      "item": {
+        "assignee": "0199F000-0000-7000-8000-000000000001"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "user: guid compares ignoring hex case, upper-case value",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "assignee",
+            "op": "=",
+            "value": "0199F000-0000-7000-8000-000000000001"
+          }
+        ]
+      },
+      "item": {
+        "assignee": "0199f000-0000-7000-8000-000000000001"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "user: guid in compares ignoring hex case",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "assignee",
+            "op": "in",
+            "value": [
+              "0199F000-0000-7000-8000-000000000001"
+            ]
+          }
+        ]
+      },
+      "item": {
+        "assignee": "0199f000-0000-7000-8000-000000000001"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "changedBy: not-equal, other user",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "changedBy",
+            "op": "<>",
+            "value": "00000001-0000-4000-8000-000000000002"
+          }
+        ]
+      },
+      "item": {
+        "changedBy": "00000001-0000-4000-8000-000000000003"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "changedBy: not-equal, same user",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "changedBy",
+            "op": "<>",
+            "value": "00000001-0000-4000-8000-000000000002"
+          }
+        ]
+      },
+      "item": {
+        "changedBy": "00000001-0000-4000-8000-000000000002"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "changedBy: in, listed",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "changedBy",
+            "op": "in",
+            "value": [
+              "00000001-0000-4000-8000-000000000002",
+              "00000001-0000-4000-8000-000000000003"
+            ]
+          }
+        ]
+      },
+      "item": {
+        "changedBy": "00000001-0000-4000-8000-000000000003"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "changedBy: in, not listed",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "changedBy",
+            "op": "in",
+            "value": [
+              "00000001-0000-4000-8000-000000000002"
+            ]
+          }
+        ]
+      },
+      "item": {
+        "changedBy": "00000001-0000-4000-8000-000000000003"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "changedBy: isEmpty, empty",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "changedBy",
+            "op": "isEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "changedBy": null
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "changedBy: isEmpty, on a user",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "changedBy",
+            "op": "isEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "changedBy": "00000001-0000-4000-8000-000000000002"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "createdBy: isNotEmpty, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "createdBy",
+            "op": "isNotEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "createdBy": "00000001-0000-4000-8000-000000000002"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "createdBy: isNotEmpty, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "createdBy",
+            "op": "isNotEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "createdBy": null
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "severity: in, listed",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "severity",
+            "op": "in",
+            "value": [
+              1,
+              3
+            ]
+          }
+        ]
+      },
+      "item": {
+        "severity": 3
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "severity: in, not listed",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "severity",
+            "op": "in",
+            "value": [
+              1,
+              3
+            ]
+          }
+        ]
+      },
+      "item": {
+        "severity": 2
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "severity: in, an empty field",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "severity",
+            "op": "in",
+            "value": [
+              1,
+              3
+            ]
+          }
+        ]
+      },
+      "item": {
+        "severity": null
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "parent: isEmpty, holds",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "parent",
+            "op": "isEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "parent": null
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "parent: isEmpty, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "parent",
+            "op": "isEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "parent": "00000005-0000-4000-8001-000000000101"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "tags: isEmpty, does not hold",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "tags",
+            "op": "isEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "tags": [
+          "Blocked"
+        ]
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "tags: isEmpty, an empty list",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "tags",
+            "op": "isEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "tags": []
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "epic: a feature under a feature under an epic",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "epic",
+            "op": "=",
+            "value": "00000005-0000-4000-8001-000000000092"
+          }
+        ]
+      },
+      "item": {
+        "type": "feature",
+        "parent": "00000005-0000-4000-8001-000000000103",
+        "epic": "00000005-0000-4000-8001-000000000092"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "epic: a feature under a feature, another epic",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "epic",
+            "op": "=",
+            "value": "00000005-0000-4000-8001-000000000090"
+          }
+        ]
+      },
+      "item": {
+        "type": "feature",
+        "parent": "00000005-0000-4000-8001-000000000103",
+        "epic": "00000005-0000-4000-8001-000000000092"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "epic: a story under a feature under a feature under an epic",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "epic",
+            "op": "=",
+            "value": "00000005-0000-4000-8001-000000000092"
+          }
+        ]
+      },
+      "item": {
+        "type": "story",
+        "parent": "00000005-0000-4000-8001-000000000108",
+        "epic": "00000005-0000-4000-8001-000000000092"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "epic: a story under a feature, the epic above the feature",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "epic",
+            "op": "=",
+            "value": "00000005-0000-4000-8001-000000000090"
+          }
+        ]
+      },
+      "item": {
+        "type": "story",
+        "parent": "00000005-0000-4000-8001-000000000101",
+        "epic": "00000005-0000-4000-8001-000000000090"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "epic: a story under a feature, another epic",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "epic",
+            "op": "=",
+            "value": "00000005-0000-4000-8001-000000000091"
+          }
+        ]
+      },
+      "item": {
+        "type": "story",
+        "parent": "00000005-0000-4000-8001-000000000101",
+        "epic": "00000005-0000-4000-8001-000000000090"
+      },
+      "valid": true,
+      "matches": false
+    },
+    {
+      "name": "epic: a story under a feature, isNotEmpty",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "epic",
+            "op": "isNotEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "type": "story",
+        "parent": "00000005-0000-4000-8001-000000000101",
+        "epic": "00000005-0000-4000-8001-000000000090"
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "epic: an epic itself has none",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "epic",
+            "op": "isEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "type": "epic",
+        "epic": null
+      },
+      "valid": true,
+      "matches": true
+    },
+    {
+      "name": "epic: a story with no parent has none",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "epic",
+            "op": "isEmpty",
+            "value": null
+          }
+        ]
+      },
+      "item": {
+        "type": "story",
+        "epic": null
+      },
+      "valid": true,
+      "matches": true
+    }
+  ]
+}

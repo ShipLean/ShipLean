@@ -1,0 +1,542 @@
+{
+  "conflict": {
+    "error": "This work item was changed by someone else.",
+    "code": "conflict",
+    "current": {
+      "id": "00000005-0000-4000-8001-000000000141",
+      "projectId": "00000002-0000-4000-8000-000000000001",
+      "key": "SHIP-141",
+      "number": 141,
+      "type": {
+        "id": "story",
+        "name": "User Story"
+      },
+      "title": "Pay with saved card",
+      "description": "As a returning customer, I want to pay with a card I saved before, so I don't have to type the number again.\n\nCards live in the **vault service** as tokens; we never see the card number. Show the brand, the last four digits and the expiry from `GET /cards`.\n\n- Default to the card used last\n- Expired cards are shown but can't be picked\n- Fall back to the new-card form if the vault is down",
+      "descriptionHtml": "<p>As a returning customer, I want to pay with a card I saved before, so I don't have to type the number again.</p>\n<p>Cards live in the <strong>vault service</strong> as tokens; we never see the card number. Show the brand, the last four digits and the expiry from <code>GET /cards</code>.</p>\n<ul>\n<li>Default to the card used last</li>\n<li>Expired cards are shown but can't be picked</li>\n<li>Fall back to the new-card form if the vault is down</li>\n</ul>\n",
+      "acceptanceCriteria": [
+        {
+          "text": "Saved cards show brand, last four digits and expiry",
+          "done": true
+        },
+        {
+          "text": "The card used last is selected by default",
+          "done": true
+        },
+        {
+          "text": "Expired cards are greyed out and can't be selected",
+          "done": false
+        },
+        {
+          "text": "Paying with a saved card skips the card form and goes straight to Review",
+          "done": false
+        },
+        {
+          "text": "If the vault is unavailable, the new-card form shows with a notice",
+          "done": false
+        }
+      ],
+      "reproSteps": "",
+      "reproStepsHtml": "",
+      "severity": null,
+      "state": {
+        "id": "00000003-0000-4000-8001-000000000302",
+        "name": "Active",
+        "category": "inProgress"
+      },
+      "assignee": {
+        "id": "00000001-0000-4000-8000-000000000002",
+        "name": "Priya Shah",
+        "initials": "PS",
+        "avatarColour": "#2f7fd8",
+        "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"
+      },
+      "createdBy": {
+        "id": "00000001-0000-4000-8000-000000000006",
+        "name": "Ana Costa",
+        "initials": "AC",
+        "avatarColour": "#b83d7a",
+        "photoUrl": null
+      },
+      "changedBy": {
+        "id": "00000001-0000-4000-8000-000000000004",
+        "name": "Mei Lin",
+        "initials": "ML",
+        "avatarColour": "#7b4fc9",
+        "photoUrl": null
+      },
+      "sprint": {
+        "id": "00000004-0000-4000-8001-000000000024",
+        "name": "Sprint 24",
+        "status": "current"
+      },
+      "priority": 2,
+      "points": 8,
+      "parent": {
+        "id": "00000005-0000-4000-8001-000000000101",
+        "key": "SHIP-101",
+        "type": {
+          "id": "feature",
+          "name": "Feature"
+        },
+        "title": "Checkout v2"
+      },
+      "tags": [
+        "Checkout",
+        "PCI",
+        "Needs design"
+      ],
+      "position": {
+        "columnId": "col-in-progress",
+        "done": false,
+        "laneId": "lane-default",
+        "columnOrder": "00000003"
+      },
+      "backlogOrder": "00000012",
+      "links": [
+        {
+          "id": "00000008-0000-4000-8001-000000000001",
+          "type": "predecessor",
+          "workItemId": "00000005-0000-4000-8001-000000000120",
+          "key": "SHIP-120",
+          "title": "Card vault token service",
+          "url": null,
+          "card": null,
+          "autoLinked": null
+        },
+        {
+          "id": "00000008-0000-4000-8001-000000000002",
+          "type": "successor",
+          "workItemId": "00000005-0000-4000-8001-000000000158",
+          "key": "SHIP-158",
+          "title": "Gift card balance check",
+          "url": null,
+          "card": null,
+          "autoLinked": null
+        },
+        {
+          "id": "00000008-0000-4000-8001-000000000003",
+          "type": "related",
+          "workItemId": "00000005-0000-4000-8001-000000000144",
+          "key": "SHIP-144",
+          "title": "Order summary redesign",
+          "url": null,
+          "card": null,
+          "autoLinked": null
+        },
+        {
+          "id": "00000008-0000-4000-8001-000000000004",
+          "type": "url",
+          "workItemId": null,
+          "key": null,
+          "title": "Card vault API notes",
+          "url": "https://wiki.example.com/payments/card-vault",
+          "card": null,
+          "autoLinked": null
+        }
+      ],
+      "children": [
+        {
+          "id": "00000005-0000-4000-8001-000000000142",
+          "key": "SHIP-142",
+          "type": {
+            "id": "task",
+            "name": "Task"
+          },
+          "title": "Saved card picker component",
+          "state": {
+            "id": "00000003-0000-4000-8001-000000000502",
+            "name": "Active",
+            "category": "inProgress"
+          },
+          "assignee": {
+            "id": "00000001-0000-4000-8000-000000000004",
+            "name": "Mei Lin",
+            "initials": "ML",
+            "avatarColour": "#7b4fc9",
+            "photoUrl": null
+          },
+          "points": null
+        },
+        {
+          "id": "00000005-0000-4000-8001-000000000143",
+          "key": "SHIP-143",
+          "type": {
+            "id": "task",
+            "name": "Task"
+          },
+          "title": "Fetch tokenised cards from the vault",
+          "state": {
+            "id": "00000003-0000-4000-8001-000000000504",
+            "name": "Closed",
+            "category": "completed"
+          },
+          "assignee": {
+            "id": "00000001-0000-4000-8000-000000000003",
+            "name": "Tom Okafor",
+            "initials": "TO",
+            "avatarColour": "#16a089",
+            "photoUrl": null
+          },
+          "points": null
+        },
+        {
+          "id": "00000005-0000-4000-8001-000000000145",
+          "key": "SHIP-145",
+          "type": {
+            "id": "task",
+            "name": "Task"
+          },
+          "title": "End-to-end test for the saved card path",
+          "state": {
+            "id": "00000003-0000-4000-8001-000000000501",
+            "name": "New",
+            "category": "proposed"
+          },
+          "assignee": {
+            "id": "00000001-0000-4000-8000-000000000002",
+            "name": "Priya Shah",
+            "initials": "PS",
+            "avatarColour": "#2f7fd8",
+            "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"
+          },
+          "points": null
+        }
+      ],
+      "originalSystem": null,
+      "revision": 7,
+      "createdAt": "2026-10-09T14:00:00+00:00",
+      "createdAtLabel": "9 Oct",
+      "changedAt": "2026-10-23T16:02:00+00:00",
+      "changedAtLabel": "Yesterday",
+      "goal": "",
+      "statusLine": "",
+      "statusVerified": null,
+      "slug": null,
+      "startedOn": null,
+      "startedLabel": null
+    },
+    "theirChanges": [
+      {
+        "rev": 7,
+        "changedBy": {
+          "id": "00000001-0000-4000-8000-000000000004",
+          "name": "Mei Lin",
+          "initials": "ML",
+          "avatarColour": "#7b4fc9",
+          "photoUrl": null
+        },
+        "changedAt": "2026-10-23T16:02:00+00:00",
+        "changedAtLabel": "Yesterday",
+        "origin": "user",
+        "changes": [
+          {
+            "field": "points",
+            "from": 5,
+            "to": 8,
+            "fromLabel": null,
+            "toLabel": null
+          },
+          {
+            "field": "tags",
+            "from": [
+              "Checkout",
+              "PCI"
+            ],
+            "to": [
+              "Checkout",
+              "PCI",
+              "Needs design"
+            ],
+            "fromLabel": null,
+            "toLabel": null
+          }
+        ],
+        "agentName": "Claude Code (claude.ai)",
+        "webhook": null
+      }
+    ]
+  },
+  "history": {
+    "revisions": [
+      {
+        "rev": 6,
+        "changedBy": {
+          "id": "00000001-0000-4000-8000-000000000002",
+          "name": "Priya Shah",
+          "initials": "PS",
+          "avatarColour": "#2f7fd8",
+          "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"
+        },
+        "changedAt": "2026-10-19T09:12:00+00:00",
+        "changedAtLabel": "19 Oct",
+        "origin": "user",
+        "changes": [
+          {
+            "field": "state",
+            "from": "00000003-0000-4000-8001-000000000301",
+            "to": "00000003-0000-4000-8001-000000000302",
+            "fromLabel": "New",
+            "toLabel": "Active"
+          },
+          {
+            "field": "assignee",
+            "from": null,
+            "to": "00000001-0000-4000-8000-000000000002",
+            "fromLabel": null,
+            "toLabel": "Priya Shah"
+          }
+        ],
+        "agentName": "Claude Code (claude.ai)",
+        "webhook": null
+      },
+      {
+        "rev": 5,
+        "changedBy": {
+          "id": "00000001-0000-4000-8000-000000000003",
+          "name": "Tom Okafor",
+          "initials": "TO",
+          "avatarColour": "#16a089",
+          "photoUrl": null
+        },
+        "changedAt": "2026-10-16T15:40:00+00:00",
+        "changedAtLabel": "16 Oct",
+        "origin": "user",
+        "changes": [
+          {
+            "field": "sprint",
+            "from": null,
+            "to": "00000004-0000-4000-8001-000000000024",
+            "fromLabel": null,
+            "toLabel": "Sprint 24"
+          }
+        ],
+        "agentName": null,
+        "webhook": null
+      },
+      {
+        "rev": 4,
+        "changedBy": {
+          "id": "00000001-0000-4000-8000-000000000004",
+          "name": "Mei Lin",
+          "initials": "ML",
+          "avatarColour": "#7b4fc9",
+          "photoUrl": null
+        },
+        "changedAt": "2026-10-15T11:02:00+00:00",
+        "changedAtLabel": "15 Oct",
+        "origin": "user",
+        "changes": [
+          {
+            "field": "points",
+            "from": 3,
+            "to": 5,
+            "fromLabel": null,
+            "toLabel": null
+          },
+          {
+            "field": "tags",
+            "from": [
+              "Checkout"
+            ],
+            "to": [
+              "Checkout",
+              "PCI"
+            ],
+            "fromLabel": null,
+            "toLabel": null
+          }
+        ],
+        "agentName": null,
+        "webhook": null
+      },
+      {
+        "rev": 3,
+        "changedBy": {
+          "id": "00000001-0000-4000-8000-000000000002",
+          "name": "Priya Shah",
+          "initials": "PS",
+          "avatarColour": "#2f7fd8",
+          "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"
+        },
+        "changedAt": "2026-10-13T10:30:00+00:00",
+        "changedAtLabel": "13 Oct",
+        "origin": "user",
+        "changes": [
+          {
+            "field": "parent",
+            "from": null,
+            "to": "00000005-0000-4000-8001-000000000101",
+            "fromLabel": null,
+            "toLabel": "Checkout v2"
+          },
+          {
+            "field": "description",
+            "from": "As a returning customer, I want to pay with a card I saved before, so I don't have to type the number again.",
+            "to": "As a returning customer, I want to pay with a card I saved before, so I don't have to type the number again.\n\nCards live in the **vault service** as tokens; we never see the card number. Show the brand, the last four digits and the expiry from `GET /cards`.\n\n- Default to the card used last\n- Expired cards are shown but can't be picked\n- Fall back to the new-card form if the vault is down",
+            "fromLabel": null,
+            "toLabel": null
+          },
+          {
+            "field": "acceptanceCriteria",
+            "from": [],
+            "to": [
+              {
+                "text": "Saved cards show brand, last four digits and expiry",
+                "done": true
+              },
+              {
+                "text": "The card used last is selected by default",
+                "done": true
+              },
+              {
+                "text": "Expired cards are greyed out and can't be selected",
+                "done": false
+              },
+              {
+                "text": "Paying with a saved card skips the card form and goes straight to Review",
+                "done": false
+              },
+              {
+                "text": "If the vault is unavailable, the new-card form shows with a notice",
+                "done": false
+              }
+            ],
+            "fromLabel": null,
+            "toLabel": null
+          },
+          {
+            "field": "links",
+            "from": [],
+            "to": [
+              {
+                "type": "predecessor",
+                "workItemId": "00000005-0000-4000-8001-000000000120",
+                "key": "SHIP-120",
+                "url": null,
+                "title": null
+              },
+              {
+                "type": "successor",
+                "workItemId": "00000005-0000-4000-8001-000000000158",
+                "key": "SHIP-158",
+                "url": null,
+                "title": null
+              },
+              {
+                "type": "related",
+                "workItemId": "00000005-0000-4000-8001-000000000144",
+                "key": "SHIP-144",
+                "url": null,
+                "title": null
+              },
+              {
+                "type": "url",
+                "workItemId": null,
+                "key": null,
+                "url": "https://wiki.example.com/payments/card-vault",
+                "title": "Card vault API notes"
+              }
+            ],
+            "fromLabel": null,
+            "toLabel": null
+          }
+        ],
+        "agentName": null,
+        "webhook": null
+      },
+      {
+        "rev": 2,
+        "changedBy": {
+          "id": "00000001-0000-4000-8000-000000000006",
+          "name": "Ana Costa",
+          "initials": "AC",
+          "avatarColour": "#b83d7a",
+          "photoUrl": null
+        },
+        "changedAt": "2026-10-12T16:15:00+00:00",
+        "changedAtLabel": "12 Oct",
+        "origin": "user",
+        "changes": [
+          {
+            "field": "priority",
+            "from": 3,
+            "to": 2,
+            "fromLabel": null,
+            "toLabel": null
+          },
+          {
+            "field": "points",
+            "from": null,
+            "to": 3,
+            "fromLabel": null,
+            "toLabel": null
+          }
+        ],
+        "agentName": null,
+        "webhook": null
+      },
+      {
+        "rev": 1,
+        "changedBy": {
+          "id": "00000001-0000-4000-8000-000000000006",
+          "name": "Ana Costa",
+          "initials": "AC",
+          "avatarColour": "#b83d7a",
+          "photoUrl": null
+        },
+        "changedAt": "2026-10-09T14:00:00+00:00",
+        "changedAtLabel": "9 Oct",
+        "origin": "user",
+        "changes": [
+          {
+            "field": "title",
+            "from": null,
+            "to": "Pay with saved card",
+            "fromLabel": null,
+            "toLabel": null
+          },
+          {
+            "field": "type",
+            "from": null,
+            "to": "story",
+            "fromLabel": null,
+            "toLabel": null
+          },
+          {
+            "field": "state",
+            "from": null,
+            "to": "00000003-0000-4000-8001-000000000301",
+            "fromLabel": null,
+            "toLabel": "New"
+          },
+          {
+            "field": "priority",
+            "from": null,
+            "to": 3,
+            "fromLabel": null,
+            "toLabel": null
+          },
+          {
+            "field": "tags",
+            "from": [],
+            "to": [
+              "Checkout"
+            ],
+            "fromLabel": null,
+            "toLabel": null
+          },
+          {
+            "field": "description",
+            "from": null,
+            "to": "As a returning customer, I want to pay with a card I saved before, so I don't have to type the number again.",
+            "fromLabel": null,
+            "toLabel": null
+          }
+        ],
+        "agentName": null,
+        "webhook": null
+      }
+    ]
+  }
+}

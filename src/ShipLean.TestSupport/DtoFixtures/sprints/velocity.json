@@ -1,0 +1,9 @@
+{
+  "window": 3,
+  "sprints": [
+    { "sprintId": "00000004-0000-4000-8001-000000000021", "sprintName": "Sprint 21", "committed": 20, "completed": 20 },
+    { "sprintId": "00000004-0000-4000-8001-000000000022", "sprintName": "Sprint 22", "committed": 24, "completed": 22 },
+    { "sprintId": "00000004-0000-4000-8001-000000000023", "sprintName": "Sprint 23", "committed": 23, "completed": 21 }
+  ],
+  "average": 21, "override": null
+}

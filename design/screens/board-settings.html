@@ -1,0 +1,741 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Board settings (reference)</title>
+<!--
+  Reference Board settings: Boards › Stories › Settings.
+  Open directly in a browser. Uses ../tokens.css, shiplean.css and shared.js only; no build step.
+  The same dialog shell as the Taskboard settings (taskboard.html), opened over a dimmed Stories board.
+  The board behind is a simple placeholder drawn from the saved settings, so Save visibly updates it.
+  Nav: CARDS (Fields, Styles, Tag colours, Annotations) and BOARD (Columns, Swimlanes, Card reordering).
+  Changes are held in the dialog until Save; the footer says which sections have unsaved changes. Save
+  publishes BoardSettingsChanged, so every open board updates. Cancel drops the changes and closes.
+  Working:
+  - Columns: rename, WIP limit, Split into Doing / Done, Definition of done (markdown, with the header
+    preview), a state per work item type for each column (columns are not states), drag ⠿ (or Alt+↑/↓) to
+    reorder the middle columns, + Add column, delete (blocked, with the reason, while cards are in it).
+    Every state of every type must be on some column: unmapped ones show as a warn callout with a quick fix.
+    Columns match board.html. The Preview action "Unmap Triaged" shows the warning for a state that isn't on any column.
+  - Swimlanes: drag to reorder, colour, name, Criteria (field · operator · value, All or Any) or Manual,
+    with "Where cards go" showing first match wins. The default lane can't be deleted.
+  - Fields: per type (User Story / Bug), core fields plus up to 10 extra fields, with a live card preview.
+  - Styles: ordered rules (first match wins), colour, bold / italic / underline title, Enabled, criteria,
+    with preview cards showing which rule won.
+  - Tag colours: a swatch row per tag. Annotations: child roll-ups, with an example card. Card reordering: two options.
+    ?pane=columns|swimlanes|fields|styles|tags|annotations|reordering   opens a section (default columns)
+  The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot). It also
+  simulates a stale save (someone else saved these settings while you were editing).
+-->
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="shiplean.css">
+<script src="shared.js"></script>
+<style>
+[hidden] { display: none !important; }
+.nowrap { flex-wrap: nowrap; }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn:disabled:hover { background: var(--color-surface); }
+.btn.primary:disabled:hover { background: var(--color-accent); filter: none; }
+
+/* Placeholder board behind the dialog (drawn from the saved settings) */
+.board { flex: 1; min-height: 0; overflow: auto; }
+.kb { display: grid; grid-template-columns: repeat(var(--cols), minmax(170px, 1fr)); min-width: calc(var(--cols) * 170px); }
+.kb > * { min-width: 0; }
+.kb .colh { position: sticky; top: 0; z-index: 2; display: grid; gap: 2px; padding: 6px var(--space-3); background: var(--color-surface); border-bottom: 1px solid var(--color-border); border-right: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.kb .colh .nm { display: flex; align-items: center; gap: 6px; font-size: var(--text-sm); font-weight: var(--weight-semibold); }
+.kb .colh .n { color: var(--color-muted); font-weight: var(--weight-medium); font-variant-numeric: tabular-nums; }
+.kb .colh .n.over { color: var(--color-danger); }
+.kb .colh .dd { display: grid; grid-template-columns: 1fr 1fr; font-size: var(--text-2xs); color: var(--color-muted); }
+.kb .lane { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; height: 28px; padding: 0 var(--space-3); background: var(--color-surface-2); border-bottom: 1px solid var(--color-border); font-size: var(--text-xs); font-weight: var(--weight-semibold); }
+.kb .lane .cnt { color: var(--color-muted); font-weight: var(--weight-medium); }
+.kb .cell { display: flex; flex-direction: column; gap: 6px; min-height: 52px; padding: var(--space-2); border-bottom: 1px solid var(--color-border); border-right: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.kb .more { color: var(--color-muted); font-size: var(--text-xs); }
+
+/* Cards: same look as the Taskboard task card (style rules tint the card and change the title) */
+.card { display: grid; gap: 5px; padding: 6px 8px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); box-shadow: 0 1px 1px rgb(16 24 40 / .04); font-size: var(--text-sm); }
+.card.styled { border-left: 3px solid var(--rule); padding-left: 6px; background: color-mix(in srgb, var(--rule) 9%, var(--color-surface)); }
+.card .ct { display: flex; gap: 6px; align-items: flex-start; line-height: 1.3; }
+.card .ct .ti { margin-top: 1px; }
+.card .title { overflow-wrap: anywhere; }
+.card .cm { display: flex; align-items: center; gap: 6px; min-height: 20px; flex-wrap: wrap; }
+.card .cm .pts { margin-left: auto; color: var(--color-muted); font-size: var(--text-xs); }
+.card .cf { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 6px; font-size: var(--text-xs); }
+.card .cf .l { color: var(--color-muted); }
+.card .cf .v { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tag { display: inline-flex; align-items: center; height: 18px; padding: 0 6px; border-radius: var(--radius-xs); background: color-mix(in srgb, var(--tag, var(--color-muted)) 18%, transparent); font-size: var(--text-2xs); font-weight: var(--weight-semibold); white-space: nowrap; }
+.ann { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 6px; border: 0; border-radius: 999px; background: var(--color-surface-2); color: var(--color-text); font-size: var(--text-2xs); font-weight: var(--weight-medium); font-variant-numeric: tabular-nums; cursor: pointer; }
+.ann .ti { width: 12px; height: 12px; font-size: 7px; }
+.ann-list { display: grid; gap: 3px; padding-top: 4px; border-top: 1px dashed var(--color-border); font-size: var(--text-xs); }
+.ann-list div { display: flex; gap: 6px; align-items: center; }
+.ann-list .st { margin-left: auto; font-size: var(--text-2xs); }
+
+/* Settings dialog: the Taskboard settings shell, wider for the column → state matrix */
+.dialog.settings { width: min(1080px, 100%); height: min(760px, calc(100dvh - 32px)); }
+.settings .cols { flex: 1; display: grid; grid-template-columns: 180px minmax(0, 1fr); min-height: 0; overflow: hidden; }
+.settings nav { display: grid; align-content: start; gap: 2px; padding: var(--space-3) var(--space-2); background: var(--color-bg); border-right: 1px solid var(--color-border); }
+.settings nav .overline { padding: 6px 8px 2px; }
+.settings nav button { display: flex; align-items: center; gap: 6px; padding: 5px 8px; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--color-muted); text-align: left; font-size: var(--text-sm); font-weight: var(--weight-medium); cursor: pointer; }
+.settings nav button[aria-current="true"] { background: var(--color-accent-soft); color: var(--color-text); }
+.settings nav button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: -2px; }
+.settings nav .dd { width: 6px; height: 6px; border-radius: 50%; background: var(--color-accent); flex: none; }
+.settings nav .wn { display: inline-grid; place-items: center; width: 14px; height: 14px; border-radius: 50%; background: color-mix(in srgb, var(--color-warn) 28%, transparent); color: var(--color-text); font: 700 9px/1 var(--font-sans); flex: none; }
+.settings nav .n { margin-left: auto; font-size: var(--text-xs); font-weight: var(--weight-regular); font-variant-numeric: tabular-nums; }
+.settings .pane { display: grid; align-content: start; gap: var(--space-3); min-height: 360px; padding: var(--space-3) var(--space-4); overflow: auto; }
+.settings .pane p.hint { color: var(--color-muted); font-size: var(--text-sm); margin: 0; }
+.settings > footer .dirty { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-xs); font-weight: var(--weight-semibold); white-space: nowrap; }
+.settings > footer .dirty::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--color-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 22%, transparent); }
+.chip.warn.as-btn { border: 0; cursor: pointer; color: var(--color-text); }
+.with-pv { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: var(--space-4); align-items: start; }
+.pv-col { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.pv-col > * { flex: none; }
+.pv-col .pv-cap { margin: 0; font-size: var(--text-xs); color: var(--color-muted); }
+.pv-col .pv-cap b { color: var(--color-text); font-weight: var(--weight-semibold); }
+.callout.ok { border-left-color: var(--color-ok); }
+.callout.warn { background: color-mix(in srgb, var(--color-warn) 9%, var(--color-surface)); }
+.callout .fix { display: flex; gap: var(--space-3); align-items: center; }
+.callout .fix > div { flex: 1; min-width: 0; }
+.box { border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+.box > header { display: flex; align-items: center; gap: var(--space-2); padding: 6px var(--space-3); border-bottom: 1px solid var(--color-border); font-size: var(--text-sm); font-weight: var(--weight-semibold); }
+.box > footer { display: flex; align-items: center; gap: var(--space-2); padding: 6px var(--space-3); border-top: 1px solid var(--color-border); background: var(--color-bg); }
+.box table.list th { background: var(--color-surface); }
+.box table.list tr:last-child > td { border-bottom: 0; }
+
+/* Columns table */
+table.list td.grip { width: 24px; padding: 0 0 0 4px; }
+.grip-btn { width: 20px; height: 22px; padding: 0; border: 0; background: none; color: var(--color-muted); cursor: grab; border-radius: var(--radius-xs); }
+.grip-btn:hover { background: var(--color-surface-2); color: var(--color-text); }
+.grip-btn:focus-visible { outline: 2px solid var(--color-accent); }
+.lock { display: inline-grid; place-items: center; width: 20px; color: var(--color-border); font-size: 8px; }
+.dragging { opacity: .4; }
+.rule.drop-before { box-shadow: inset 0 2px 0 var(--color-accent); }
+.rule.drop-after { box-shadow: inset 0 -2px 0 var(--color-accent); }
+tr.drop-before > td { box-shadow: inset 0 2px 0 var(--color-accent); }
+tr.drop-after > td { box-shadow: inset 0 -2px 0 var(--color-accent); }
+.rule.flash, tr.flash > td { animation: flash 1.6s ease-out; }
+@keyframes flash { 0%, 30% { background: var(--color-accent-soft); } 100% { background: transparent; } }
+tr.sub > td { height: auto; padding: var(--space-2) var(--space-3) var(--space-3); background: var(--color-bg); }
+.msg-row > td { height: auto !important; padding: 0 var(--space-3) var(--space-2) !important; }
+table.list td input.field, table.list td select.field { height: 26px; width: 100%; }
+.num-in { width: 56px !important; text-align: right; font-variant-numeric: tabular-nums; }
+.stcell { display: inline-flex; align-items: center; gap: 4px; width: 100%; }
+.stcell .st { width: 7px; overflow: hidden; gap: 0; flex: none; }
+.state-sel { flex: 1; min-width: 0; height: 26px; padding: 0 4px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); font-size: var(--text-sm); cursor: pointer; }
+.state-sel:focus { outline: 2px solid var(--color-accent); outline-offset: -1px; }
+.th-type { display: inline-flex; align-items: center; gap: 6px; }
+.th-type .cnt.bad { color: var(--color-warn); font-weight: var(--weight-semibold); }
+.over { color: var(--color-danger); font-weight: var(--weight-semibold); }
+.dod { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: var(--space-3); }
+.dod label { display: grid; gap: 4px; font-size: var(--text-xs); color: var(--color-muted); }
+.dod textarea { width: 100%; font-family: var(--font-mono); font-size: var(--text-sm); line-height: 1.5; }
+.dod-pv { padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); font-size: var(--text-sm); }
+.dod-pv .colhead { display: flex; align-items: center; gap: 6px; padding-bottom: 6px; margin-bottom: 6px; border-bottom: 1px solid var(--color-border); font-weight: var(--weight-semibold); }
+.md ul { margin: 0; padding-left: 18px; }
+.md p { margin: 0 0 4px; }
+
+/* Rule boxes (lanes and styles), as on the Taskboard */
+.rule { display: grid; gap: var(--space-2); padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+.rule.off { background: var(--color-bg); }
+.rule .rh { display: flex; gap: var(--space-2); align-items: center; }
+.rule .rh .field { flex: 1; min-width: 0; }
+.rule .rh .check { color: var(--color-text); }
+.rule .note { padding-left: 28px; color: var(--color-muted); font-size: var(--text-xs); }
+.sw { display: inline-block; flex: none; width: 28px; height: 20px; padding: 0; border: 1px solid var(--color-border); border-radius: var(--radius-xs); background: var(--sw); cursor: pointer; }
+.sw.none, .swatches button.none { background: linear-gradient(135deg, transparent 44%, var(--color-muted) 44% 56%, transparent 56%), var(--color-surface); }
+.sw:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+.crit { display: grid; grid-template-columns: 40px minmax(0, 1fr) minmax(0, 120px) minmax(0, 1fr) auto; gap: var(--space-2); align-items: center; padding-left: 26px; }
+.crit .andor { color: var(--color-muted); font-size: var(--text-xs); font-weight: var(--weight-semibold); text-align: right; }
+.crit-foot { display: flex; align-items: center; gap: var(--space-2); padding-left: 74px; }
+.crit-foot .seg { height: 24px; }
+.crit-foot .seg button { padding: 0 8px; font-size: var(--text-xs); }
+.swatches { display: inline-flex; gap: 4px; }
+.swatches button { width: 20px; height: 20px; padding: 0; border: 2px solid transparent; border-radius: 50%; background: var(--sw); cursor: pointer; }
+.swatches button[aria-pressed="true"] { border-color: var(--color-text); }
+.swatches button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+.palpop { position: fixed; z-index: 45; display: grid; gap: var(--space-2); padding: var(--space-2); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-raised); }
+.tc { display: grid; grid-template-columns: minmax(0, 170px) 64px auto minmax(0, 1fr) auto; gap: var(--space-2); align-items: center; min-height: 32px; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.tc:last-child { border-bottom: 0; }
+.tc .tag { justify-self: start; }
+
+/* Fields, annotations, reordering */
+.fgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3); align-items: start; }
+.fgrid fieldset { display: grid; gap: 6px; margin: 0; padding: var(--space-2) var(--space-3) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.fgrid legend { display: flex; gap: 6px; align-items: center; padding: 0 4px; font-size: var(--text-sm); font-weight: var(--weight-semibold); }
+.fgrid .check { color: var(--color-text); white-space: normal; }
+.fgrid .check.off { color: var(--color-muted); cursor: default; }
+.xf { display: flex; align-items: center; gap: 6px; height: 26px; font-size: var(--text-sm); }
+.radio { display: flex; gap: var(--space-2); align-items: flex-start; padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); cursor: pointer; }
+.radio:has(input:checked) { border-color: var(--color-accent); background: color-mix(in srgb, var(--color-accent-soft) 45%, transparent); }
+.radio input { accent-color: var(--color-accent); margin: 3px 0 0; }
+.radio b { display: block; font-size: var(--text-sm); font-weight: var(--weight-semibold); }
+.radio span { font-size: var(--text-sm); color: var(--color-muted); }
+.where { display: grid; }
+.w-it { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; gap: 8px; align-items: start; padding: 6px var(--space-3); border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); font-size: var(--text-sm); }
+.w-it:last-child { border-bottom: 0; }
+.w-it .ti { margin-top: 1px; }
+.w-it .meta { display: block; font-size: var(--text-2xs); color: var(--color-muted); }
+.lane-chip { display: inline-flex; align-items: center; gap: 5px; height: 20px; padding: 0 7px; border-radius: 999px; background: var(--color-surface-2); font-size: var(--text-xs); font-weight: var(--weight-medium); white-space: nowrap; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--sw, transparent); border: 1px solid color-mix(in srgb, var(--color-text) 18%, transparent); flex: none; }
+/* Keep the review-aid Preview panel clear of the dialog footer. */
+.preview { bottom: 4px; }
+@media (max-width: 900px) {
+  .board { flex: none; max-height: 60vh; }
+  .settings .cols { grid-template-columns: minmax(0, 1fr); }
+  .settings nav { grid-auto-flow: column; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--color-border); }
+  .settings nav .overline { display: none; }
+  .settings nav .n { margin-left: 2px; }
+  .settings nav button { white-space: nowrap; }
+  .with-pv, .dod { grid-template-columns: minmax(0, 1fr); }
+  .box { overflow-x: auto; }
+  .box table.list { min-width: 760px; }
+  .crit { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding-left: 0; }
+  .crit .andor { text-align: left; }
+  .crit-foot { padding-left: 0; }
+}
+</style>
+</head>
+<body>
+<div id="appbar"></div>
+<div class="toolbar">
+  <div class="seg" role="group" aria-label="Board level"><button type="button" aria-pressed="false">Epics</button><button type="button" aria-pressed="false">Features</button><button type="button" aria-pressed="true">Stories</button></div>
+  <span class="spacer"></span>
+  <button class="btn" type="button">Filter</button>
+  <button class="btn" type="button" id="openSettings">⚙ Settings</button>
+  <button class="btn primary" type="button">+ New work item</button>
+</div>
+<div class="board" aria-hidden="true"><div class="kb" id="board"></div></div>
+
+<div class="backdrop" id="settings">
+  <div class="dialog settings" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <header><h2 id="settingsTitle">Stories board settings</h2><span class="chip">Storefront · SHIP</span><span class="spacer"></span><button class="ib" type="button" data-close aria-label="Close">✕</button></header>
+    <div class="cols">
+      <nav aria-label="Settings sections" id="nav"></nav>
+      <div class="pane" id="pane"></div>
+    </div>
+    <footer id="foot"></footer>
+  </div>
+</div>
+<div class="palpop" id="palpop" role="dialog" aria-label="Pick a colour" hidden></div>
+
+<script>
+(() => {
+  const { people, items, tasks, sprints, tIcon, av, esc, toast } = SL;
+  document.getElementById('appbar').outerHTML = SL.appBar('boards');
+  const $ = id => document.getElementById(id);
+  const dlg = $('settings'), pane = $('pane');
+  const clone = o => JSON.parse(JSON.stringify(o));
+
+  /* Types on this board and their states. States are per project; "Triaged" is a custom Bug state (Proposed). */
+  const TYPES = [{ id: 'story', name: 'User Story' }, { id: 'bug', name: 'Bug' }];
+  const STATES = {
+    story: [['New', 'proposed'], ['Active', 'in-progress'], ['Resolved', 'resolved'], ['Closed', 'completed'], ['Removed', 'removed']],
+    bug: [['New', 'proposed'], ['Triaged', 'proposed'], ['Active', 'in-progress'], ['Resolved', 'resolved'], ['Closed', 'completed'], ['Removed', 'removed']],
+  };
+  const CUSTOM = { bug: ['Triaged'] };
+  const inState = { bug: { Triaged: 2 } }; // cards currently in a state, for the unmapped callout
+  const catOf = (type, s) => STATES[type].find(x => x[0] === s)?.[1] || 'proposed';
+  const typeName = t => TYPES.find(x => x.id === t).name;
+
+  /* Colours: the semantic token set, the same swatches as the Taskboard. */
+  const SWATCH = { danger: 'var(--color-danger)', warn: 'var(--color-warn)', ok: 'var(--color-ok)', info: 'var(--color-info)', accent: 'var(--color-accent)', muted: 'var(--color-muted)' };
+  const SWNAME = { danger: 'Red', warn: 'Amber', ok: 'Green', info: 'Blue', accent: 'Accent', muted: 'Grey' };
+  const swName = c => (c ? SWNAME[c] : 'None');
+
+  /* Sample cards: Stories-level items with page-local priority, tags and severity. */
+  const EXT = {
+    'SHIP-129': { priority: 1, tags: ['Blocked', 'Security'] },
+    'SHIP-144': { priority: 2, tags: ['Spike'] },
+    'SHIP-160': { priority: 1, tags: ['Customer'], severity: '2 - High' },
+    'SHIP-153': { priority: 2, tags: ['Customer'], severity: '3 - Medium' },
+    'SHIP-158': { priority: 3, tags: ['Feedback Ticket'] },
+    'SHIP-141': { priority: 2, tags: ['Checkout'] },
+    'SHIP-162': { priority: 3, tags: ['Tech debt'], lane: 'l4' },
+  };
+  const ALL = items.map(i => ({ priority: 2, tags: [], ...i, ...(EXT[i.key] || {}), createdBy: 'mei', createdAt: '12 Oct', changedBy: 'tom', changedAt: '22 Oct' }));
+  const CARDS = Object.fromEntries(ALL.filter(i => EXT[i.key]).map(i => [i.key, i]));
+  const TAGS = [['Checkout', 9], ['Customer', 6], ['Tech debt', 5], ['Feedback Ticket', 4], ['Blocked', 3], ['Security', 3], ['Spike', 2], ['Design', 2], ['Performance', 1]]; // most used first
+
+  /* Extra card fields from the fixed field list. */
+  const EXTRA = { parent: 'Parent', priority: 'Priority', sprint: 'Sprint', state: 'State', severity: 'Severity', createdBy: 'Created by', createdAt: 'Created', changedBy: 'Changed by', changedAt: 'Changed' };
+  const extraFor = t => Object.keys(EXTRA).filter(k => k !== 'severity' || t === 'bug');
+  const MAX_EXTRA = 10;
+  const fieldVal = (it, k) => {
+    if (k === 'sprint') return sprints.find(s => s.id === it.sprint)?.name ?? null;
+    if (k === 'createdBy' || k === 'changedBy') return it[k] ? people[it[k]].name : null;
+    return it[k] ?? null;
+  };
+
+  /* Criteria: the shared field · operator · value primitive (swimlanes, styles and filters). */
+  const allStates = [...new Set(Object.values(STATES).flat().filter(s => s[1] !== 'removed').map(s => s[0]))];
+  const FIELDS = {
+    tags: { label: 'Tags', ops: ['contains', 'not contains'], values: TAGS.map(t => [t[0], t[0]]), get: i => i.tags || [] },
+    priority: { label: 'Priority', ops: ['=', '≠'], values: [['1', '1'], ['2', '2'], ['3', '3'], ['4', '4']], get: i => String(i.priority) },
+    type: { label: 'Work item type', ops: ['=', '≠'], values: TYPES.map(t => [t.id, t.name]), get: i => i.type },
+    state: { label: 'State', ops: ['=', '≠'], values: allStates.map(s => [s, s]), get: i => i.state },
+    assignee: { label: 'Assigned to', ops: ['=', '≠'], values: [...Object.entries(people).map(([id, p]) => [id, p.name]), ['', 'Unassigned']], get: i => i.assignee ?? '' },
+    parent: { label: 'Parent', ops: ['=', '≠'], values: SL.features.map(f => [f.title, f.title]), get: i => i.parent },
+  };
+  const test = (i, c) => {
+    const v = FIELDS[c.field].get(i);
+    if (c.field === 'tags') return v.includes(c.value) === (c.op === 'contains');
+    return (v === c.value) === (c.op === '=');
+  };
+  const passes = (i, o) => o.clauses.length > 0 && (o.match === 'all' ? o.clauses.every(c => test(i, c)) : o.clauses.some(c => test(i, c)));
+
+  /* Board settings (what Save writes). */
+  const S = {
+    columns: [
+      { id: 'c1', name: 'New', wip: null, split: false, dod: '- Title says who it is for and why\n- Linked to a parent **Feature**', map: { story: 'New', bug: 'New' }, cards: 5 },
+      { id: 'c2', name: 'Ready', wip: 8, split: true, dod: '- Acceptance criteria written and agreed\n- Estimated in story points\n- No open questions for the product owner\n- Bugs: **repro steps** and severity set', map: { story: 'New', bug: 'Triaged' }, cards: 7 },
+      { id: 'c3', name: 'In progress', wip: 5, split: false, dod: '- Code and tests pushed on a branch\n- Tasks exist for the remaining work\n- Draft PR open and linked', map: { story: 'Active', bug: 'Active' }, cards: 4 },
+      { id: 'c4', name: 'In review', wip: 2, split: false, dod: '- PR approved by one reviewer\n- CI green\n- Deployed to staging behind its flag', map: { story: 'Resolved', bug: 'Resolved' }, cards: 3 },
+      { id: 'c5', name: 'Done', wip: null, split: false, dod: '- Acceptance criteria checked on staging\n- Released, or flag on in production\n- Changelog updated', map: { story: 'Closed', bug: 'Closed' }, cards: 7 },
+    ],
+    lanes: [
+      { id: 'l1', name: 'Expedite', color: 'danger', mode: 'criteria', match: 'any', clauses: [{ field: 'priority', op: '=', value: '1' }] },
+      { id: 'l2', name: 'Customer bugs', color: 'warn', mode: 'criteria', match: 'all', clauses: [{ field: 'type', op: '=', value: 'bug' }, { field: 'tags', op: 'contains', value: 'Customer' }] },
+      { id: 'l3', name: 'Standard', color: null, mode: 'default', match: 'all', clauses: [], def: true },
+      { id: 'l4', name: 'Tech debt', color: 'muted', mode: 'manual', match: 'all', clauses: [] },
+    ],
+    fields: {
+      story: { assigned: true, key: true, tags: true, empty: false, points: true, extra: ['parent', 'priority', 'sprint'] },
+      bug: { assigned: true, key: true, tags: true, empty: false, points: true, extra: ['parent', 'severity', 'priority'] },
+    },
+    styles: [
+      { id: 'r1', name: 'Blocked', enabled: true, color: 'danger', bold: false, italic: false, underline: false, match: 'all', clauses: [{ field: 'tags', op: 'contains', value: 'Blocked' }] },
+      { id: 'r2', name: 'Spike', enabled: true, color: 'info', bold: false, italic: false, underline: false, match: 'all', clauses: [{ field: 'tags', op: 'contains', value: 'Spike' }] },
+      { id: 'r3', name: 'Expedite', enabled: true, color: null, bold: true, italic: false, underline: false, match: 'all', clauses: [{ field: 'priority', op: '=', value: '1' }] },
+    ],
+    tags: { Blocked: 'danger', Spike: 'info', Customer: 'ok', 'Feedback Ticket': 'warn', Security: 'danger', Checkout: 'accent', 'Tech debt': 'muted', Design: null, Performance: null },
+    annotations: { tasks: true, stories: false, bugs: false },
+    reorder: 'backlog',
+  };
+  let saved = clone(S);
+  let seq = 10;
+
+  /* Sections, grouped like the Taskboard settings. */
+  const NAV = [
+    ['Cards', [['fields', 'Fields'], ['styles', 'Styles'], ['tags', 'Tag colours'], ['annotations', 'Annotations']]],
+    ['Board', [['columns', 'Columns'], ['swimlanes', 'Swimlanes'], ['reordering', 'Card reordering']]],
+  ];
+  const KEY = { fields: 'fields', styles: 'styles', tags: 'tags', annotations: 'annotations', columns: 'columns', swimlanes: 'lanes', reordering: 'reorder' };
+  const LABEL = Object.fromEntries(NAV.flatMap(g => g[1]));
+  const COUNT = { columns: () => S.columns.length, swimlanes: () => S.lanes.length, styles: () => S.styles.length };
+  const params = new URLSearchParams(location.search);
+  const view = { pane: LABEL[params.get('pane')] ? params.get('pane') : 'columns', dod: 'c3', blocked: null, ftype: 'story', annOpen: false, stale: false, conflict: false, flash: null };
+
+  const isDirty = id => JSON.stringify(S[KEY[id]]) !== JSON.stringify(saved[KEY[id]]);
+  const dirtyPanes = () => NAV.flatMap(g => g[1]).filter(([id]) => isDirty(id));
+
+  /* Validation: every non-Removed state of every type must be on some column. */
+  const unmapped = () => TYPES.flatMap(t => STATES[t.id].filter(([s, c]) => c !== 'removed' && !S.columns.some(col => col.map[t.id] === s)).map(([s]) => ({ type: t.id, state: s })));
+  const mappedCount = t => { const need = STATES[t].filter(s => s[1] !== 'removed'); return [need.filter(([s]) => S.columns.some(c => c.map[t] === s)).length, need.length]; };
+  function fixFor(u) {
+    // Remap a column whose state for this type has the same category and is also on another column, so no new gap opens.
+    const cat = catOf(u.type, u.state);
+    const cands = S.columns.filter(c => catOf(u.type, c.map[u.type]) === cat && S.columns.filter(o => o.map[u.type] === c.map[u.type]).length > 1);
+    return cands[cands.length - 1] || null;
+  }
+
+  /* Card markup (preview and board). C = which settings to draw with: the dialog's working copy or the saved ones. */
+  const firstRule = (it, C) => C.styles.find(r => r.enabled && passes(it, r));
+  const tagChip = (t, C = S) => `<span class="tag"${C.tags[t] ? ` style="--tag:${SWATCH[C.tags[t]]}"` : ''}>${esc(t)}</span>`;
+  function card(it, opt = {}, C = S) {
+    const f = C.fields[it.type], r = firstRule(it, C);
+    const ts = r ? `${r.bold ? 'font-weight:600;' : ''}${r.italic ? 'font-style:italic;' : ''}${r.underline ? 'text-decoration:underline;' : ''}` : '';
+    const rows = opt.compact ? '' : f.extra.map(k => {
+      const v = fieldVal(it, k);
+      if (v == null && !f.empty) return '';
+      return `<div class="cf"><span class="l">${EXTRA[k]}</span><span class="v${v == null ? ' muted' : ''}">${v == null ? '–' : esc(v)}</span></div>`;
+    }).join('');
+    const kids = tasks[it.key] || [], done = kids.filter(t => t[1] === 'Closed').length;
+    const ann = C.annotations.tasks && kids.length && !opt.compact ? `<div class="cm"><button class="ann" type="button" data-ann aria-expanded="${!!opt.openTasks}" title="Tasks: ${done} of ${kids.length} done">${tIcon('task')} ${done}/${kids.length} tasks</button></div>` +
+      (opt.openTasks ? `<div class="ann-list">${kids.map(([t, s]) => `<div>${tIcon('task')}<span>${esc(t)}</span>${SL.st(s)}</div>`).join('')}</div>` : '') : '';
+    const who = f.assigned ? (it.assignee ? av(it.assignee) : (f.empty ? '<span class="av none" title="Unassigned"></span>' : '')) : '';
+    const pts = f.points && (it.points != null || f.empty) ? `<span class="pts" title="Story points">${it.points ?? '–'}</span>` : '';
+    const tags = f.tags ? it.tags.map(t => tagChip(t, C)).join('') : '';
+    return `<article class="card${r?.color ? ' styled' : ''}"${r?.color ? ` style="--rule:${SWATCH[r.color]}"` : ''}${r ? ` title="Style: ${esc(r.name)}"` : ''}>
+      <div class="ct">${tIcon(it.type)}<span class="title" style="${ts}">${esc(it.title)}</span></div>${rows}${ann}
+      <div class="cm">${f.key ? `<span class="key">${it.key}</span>` : ''}${tags}<span class="spacer"></span>${pts}${who}</div></article>`;
+  }
+
+  /* ---------- Placeholder board, drawn from the saved settings ---------- */
+  const laneOf = (it, C = S) => C.lanes.find(l => l.mode === 'criteria' && passes(it, l)) || C.lanes.find(l => l.id === it.lane && l.mode === 'manual') || C.lanes.find(l => l.def);
+  function renderBoard() {
+    const C = saved, b = $('board');
+    b.style.setProperty('--cols', C.columns.length);
+    const colOf = it => C.columns.find(c => c.map[it.type] === it.state);
+    let h = C.columns.map((c, i) => {
+      const n = ALL.filter(it => colOf(it) === c).length, fixed = i === 0 || i === C.columns.length - 1;
+      return `<div class="colh"><div class="nm">${esc(c.name)}<span class="n${!fixed && c.wip && n > c.wip ? ' over' : ''}">${n}${!fixed && c.wip ? '/' + c.wip : ''}</span>${c.dod.trim() ? '<span class="muted xs" title="Definition of done">ⓘ</span>' : ''}</div>${c.split ? '<div class="dd"><span>Doing</span><span>Done</span></div>' : ''}</div>`;
+    }).join('');
+    C.lanes.forEach(l => {
+      const inLane = ALL.filter(it => laneOf(it, C) === l);
+      h += `<div class="lane"><span class="dot" style="--sw:${l.color ? SWATCH[l.color] : 'transparent'}"></span>${esc(l.name)}<span class="cnt">${inLane.length}</span></div>`;
+      h += C.columns.map(c => {
+        const cs = inLane.filter(it => colOf(it) === c);
+        return `<div class="cell">${cs.slice(0, 2).map(it => card(it, { compact: true }, C)).join('')}${cs.length > 2 ? `<span class="more">+${cs.length - 2} more</span>` : ''}</div>`;
+      }).join('');
+    });
+    b.innerHTML = h;
+  }
+
+  /* ---------- Shared bits ---------- */
+  const sel = (opts, v, attr) => `<select class="field" ${attr}>${opts.map(([k, l]) => `<option value="${esc(k)}"${k === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
+  const chk = (on, attr, label, extra = '') => `<label class="check${extra}"><input type="checkbox" ${attr}${on ? ' checked' : ''}> ${label}</label>`;
+  const grip = (label, fixed) => fixed ? '<span class="lock" title="The first and last columns stay in place">●</span>' : `<button class="grip-btn" type="button" data-grip aria-label="Move ${esc(label)}. Drag, or Alt+Up and Alt+Down">⠿</button>`;
+  const swBtn = (c, attr, label) => `<button class="sw${c ? '' : ' none'}" type="button" ${attr} style="--sw:${c ? SWATCH[c] : 'transparent'}" aria-label="${esc(label)}: ${swName(c)}" title="Colour: ${swName(c)}"></button>`;
+  const md = s => {
+    const lines = s.split('\n').filter(l => l.trim());
+    if (!lines.length) return '<span class="muted">No definition of done. The column header shows no ⓘ.</span>';
+    const inl = t => esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`(.+?)`/g, '<code>$1</code>');
+    let h = '', inList = false;
+    lines.forEach(l => {
+      const m = l.match(/^\s*[-*]\s+(.*)/);
+      if (m) { if (!inList) { h += '<ul>'; inList = true; } h += `<li>${inl(m[1])}</li>`; }
+      else { if (inList) { h += '</ul>'; inList = false; } h += `<p>${inl(l)}</p>`; }
+    });
+    return h + (inList ? '</ul>' : '');
+  };
+  // Criteria clauses, laid out like the Taskboard's (Where / AND / OR), with All or Any for the group.
+  const crit = (kind, idx, o) => `<div data-crit="${kind}|${idx}" style="display:grid;gap:var(--space-2)">
+      ${o.clauses.map((c, i) => `<div class="crit"><span class="andor">${i ? (o.match === 'all' ? 'AND' : 'OR') : 'Where'}</span>
+        ${sel(Object.entries(FIELDS).map(([k, f]) => [k, f.label]), c.field, `data-cf="${i}" aria-label="Field"`)}
+        ${sel(FIELDS[c.field].ops.map(x => [x, x]), c.op, `data-co="${i}" aria-label="Operator"`)}
+        ${sel(FIELDS[c.field].values, c.value, `data-cv="${i}" aria-label="Value"`)}
+        <button class="ib" type="button" data-cx="${i}" aria-label="Remove clause">✕</button></div>`).join('')}
+      <div class="crit-foot"><button class="btn ghost" type="button" data-cadd>+ Add criteria</button>${o.clauses.length > 1 ? `<span class="xs muted">Match</span><div class="seg" role="group" aria-label="Match"><button type="button" data-cm="all" aria-pressed="${o.match === 'all'}">All</button><button type="button" data-cm="any" aria-pressed="${o.match === 'any'}">Any</button></div>` : ''}</div></div>`;
+  const critObj = el => { const c = el.closest('[data-crit]'); if (!c) return null; const [k, i] = c.dataset.crit.split('|'); return (k === 'lane' ? S.lanes : S.styles)[+i]; };
+
+  /* ---------- Columns ---------- */
+  const cardsCell = (c, fixed) => {
+    const over = !fixed && c.wip && c.cards > c.wip;
+    return `<span class="${over ? 'over' : ''}" title="${c.cards} cards now${!fixed && c.wip ? `, WIP limit ${c.wip}${over ? ': over the limit' : ''}` : ''}">${c.cards}${!fixed && c.wip ? `<span class="muted"> / ${c.wip}</span>` : ''}</span>`;
+  };
+  const stSel = (type, s, i) => `<span class="stcell"><span class="st ${catOf(type, s)}"></span><select class="state-sel" data-map="${i}" data-type="${type}" aria-label="${typeName(type)} state for column ${esc(S.columns[i].name)}">${STATES[type].filter(x => x[1] !== 'removed').map(([n]) => `<option${n === s ? ' selected' : ''} value="${n}">${n}${(CUSTOM[type] || []).includes(n) ? ' (custom)' : ''}</option>`).join('')}</select></span>`;
+  const dodLabel = c => { const n = c.dod.split('\n').filter(l => l.trim()).length; return n ? `${n} item${n > 1 ? 's' : ''}` : 'Add'; };
+
+  function columnsPane() {
+    const um = unmapped(), last = S.columns.length - 1;
+    const calls = um.map(u => {
+      const fx = fixFor(u), n = inState[u.type]?.[u.state] || 0, custom = (CUSTOM[u.type] || []).includes(u.state);
+      return `<div class="callout warn"><div class="fix"><div>
+          <b>${typeName(u.type)} state ${esc(u.state)} isn't on any column: cards in it would disappear from the board.</b>
+          <span class="muted">${custom ? `${esc(u.state)} is a custom ${typeName(u.type)} state in the Proposed category. ` : ''}${n ? `${n} ${typeName(u.type).toLowerCase()}s are in it now.` : 'No cards are in it now, but any that move into it would vanish.'} Pick it for a column in the ${typeName(u.type)} column below.</span></div>
+          ${fx ? `<button class="btn" type="button" data-fix="${u.type}|${u.state}|${fx.id}">Map ${esc(fx.name)} to ${esc(u.state)} for ${typeName(u.type).toLowerCase()}s</button>` : `<button class="btn" type="button" data-fixadd="${u.type}|${u.state}">+ Add a column for ${esc(u.state)}</button>`}</div></div>`;
+    }).join('');
+    const rows = S.columns.map((c, i) => {
+      const fixed = i === 0 || i === last;
+      let h = `<tr class="item${view.flash === c.id ? ' flash' : ''}" data-row="${i}" data-list="columns">
+        <td class="grip">${grip(c.name, fixed)}</td>
+        <td><div class="row nowrap"><input class="field" data-col="${i}" data-k="name" value="${esc(c.name)}" aria-label="Column name" style="min-width:80px">${i === 0 ? '<span class="chip">First</span>' : ''}${i === last ? '<span class="chip">Last</span>' : ''}</div></td>
+        <td>${fixed ? '<span class="muted" title="The first and last columns have no WIP limit">–</span>' : `<input class="field num-in" type="number" min="1" data-col="${i}" data-k="wip" value="${c.wip ?? ''}" placeholder="None" aria-label="WIP limit for ${esc(c.name)}">`}</td>
+        <td>${fixed ? '<span class="muted" title="The first and last columns can\'t be split">–</span>' : chk(c.split, `data-split="${i}"`, 'Doing / Done')}</td>
+        <td>${stSel('story', c.map.story, i)}</td><td>${stSel('bug', c.map.bug, i)}</td>
+        <td class="num cards">${cardsCell(c, fixed)}</td>
+        <td><button class="btn ghost" type="button" data-dod="${c.id}" aria-expanded="${view.dod === c.id}" style="height:24px;padding:0 6px"><span class="dodl">${dodLabel(c)}</span> <span class="muted">${view.dod === c.id ? '▴' : '▾'}</span></button></td>
+        <td><button class="ib" type="button" data-delcol="${i}"${fixed ? ' aria-disabled="true" style="opacity:.35"' : ''} aria-label="Delete column ${esc(c.name)}" title="${fixed ? 'The first and last columns can\'t be deleted' : 'Delete column'}">✕</button></td></tr>`;
+      if (view.blocked === c.id) h += `<tr class="msg-row"><td></td><td colspan="8"><div class="callout warn"><div class="fix"><div><b>${esc(c.name)} has ${c.cards} card${c.cards > 1 ? 's' : ''}, so it can't be deleted yet.</b><span class="muted">Move them to another column on the board first, then delete it. Deleting a column never changes a work item's state.</span></div><button class="ib" type="button" data-unblock aria-label="Dismiss">✕</button></div></div></td></tr>`;
+      if (view.dod === c.id) h += `<tr class="sub"><td></td><td colspan="8"><div class="dod">
+          <label>Definition of done for ${esc(c.name)} · markdown<textarea class="field" rows="4" data-col="${i}" data-k="dod" placeholder="- What has to be true before a card leaves this column">${esc(c.dod)}</textarea></label>
+          <div class="dod-pv"><div class="colhead">${esc(c.name)} <span class="muted xs" style="font-weight:400">${c.wip && !fixed ? `${c.cards}/${c.wip}` : ''}</span><span class="spacer"></span><span class="muted" title="Shown when you hover the ⓘ on the column header">ⓘ</span></div><div class="md" data-dodpv>${md(c.dod)}</div></div></div></td></tr>`;
+      return h;
+    }).join('');
+    const th = t => { const [a, b] = mappedCount(t); return `<span class="th-type">${tIcon(t)}${typeName(t)} <span class="cnt${a < b ? ' bad' : ''}" title="${a} of ${b} states are on a column">${a}/${b}</span></span>`; };
+    return `<p class="hint">Columns are not states. Each column maps to one state for each work item type on this board: dragging a card into a column sets that state, and a state changed elsewhere moves the card to the first column mapped to it.</p>
+      ${calls || '<div class="callout ok">Every state of every type is on a column.</div>'}
+      <div class="box"><table class="list">
+        <thead><tr><th style="width:24px"></th><th>Column</th><th style="width:72px">WIP limit</th><th style="width:118px">Split</th><th style="width:150px">${th('story')}</th><th style="width:150px">${th('bug')}</th><th class="num" style="width:56px">Cards</th><th style="width:82px">Done means</th><th style="width:30px"></th></tr></thead>
+        <tbody>${rows}</tbody></table>
+        <footer><button class="btn" type="button" id="addCol">+ Add column</button><span class="xs muted">New columns go in before ${esc(S.columns[last].name)}. Two columns can share a state. States in the Removed category never show on a board.</span></footer></div>`;
+  }
+
+  /* ---------- Swimlanes ---------- */
+  function swimlanesPane() {
+    const lanes = S.lanes.map((l, i) => `<div class="rule${view.flash === l.id ? ' flash' : ''}" data-row="${i}" data-list="lanes">
+        <div class="rh">${grip(l.name)}<input class="field" data-lane="${i}" value="${esc(l.name)}" aria-label="Lane name">${swBtn(l.color, `data-pal="lane|${i}"`, `Colour of ${l.name}`)}
+          ${l.def ? '<span class="chip" title="Takes every card no other lane takes">Default lane</span>' : `<div class="seg" role="group" aria-label="How cards get into ${esc(l.name)}" style="height:24px"><button type="button" data-lmode="${i}|criteria" aria-pressed="${l.mode === 'criteria'}">Criteria</button><button type="button" data-lmode="${i}|manual" aria-pressed="${l.mode === 'manual'}">Manual</button></div>`}
+          <button class="ib" type="button" data-dellane="${i}"${l.def ? ' aria-disabled="true" style="opacity:.35"' : ''} aria-label="Delete lane ${esc(l.name)}" title="${l.def ? 'The default lane can\'t be deleted' : 'Delete lane'}">✕</button></div>
+        ${l.def ? '<div class="note">Every card that no other lane takes. It can be renamed and moved, but not deleted.</div>' : l.mode === 'manual' ? '<div class="note">Holds the cards someone drags into it.</div>' : crit('lane', i, l)}</div>`).join('');
+    const where = Object.values(CARDS).map(it => {
+      const l = laneOf(it);
+      return `<div class="w-it">${tIcon(it.type)}<span>${esc(it.title)}<span class="meta"><span class="key">${it.key}</span> · P${it.priority}${it.tags.length ? ' · ' + it.tags.map(esc).join(', ') : ''}</span></span><span class="lane-chip"><span class="dot" style="--sw:${l.color ? SWATCH[l.color] : 'transparent'}"></span>${esc(l.name)}</span></div>`;
+    }).join('');
+    return `<p class="hint">Lanes split the board into rows. Criteria lanes are checked from the top and the first match wins. A card that matches none stays in the manual lane it was dragged to, or goes to the default lane. Drag ⠿ to reorder.</p>
+      <div class="with-pv"><div style="display:grid;gap:var(--space-2)"><div><button class="btn" type="button" id="addLane">+ Add lane</button></div>${lanes}
+        <p class="xs muted" style="margin:0">Deleting a lane moves its cards to the default lane.</p></div>
+      <aside class="pv-col"><div class="box"><header>Where cards go<span class="spacer"></span><span class="xs muted" style="font-weight:400">sample cards</span></header><div class="where">${where}</div></div>
+        <p class="pv-cap">SHIP-129 is Priority 1, so it lands in Expedite. SHIP-162 was dragged into Tech debt by hand.</p></aside></div>`;
+  }
+
+  /* ---------- Fields ---------- */
+  function fieldsPane() {
+    const t = view.ftype, f = S.fields[t];
+    const left = extraFor(t).filter(k => !f.extra.includes(k));
+    const full = f.extra.length >= MAX_EXTRA;
+    const sample = t === 'story' ? CARDS['SHIP-158'] : CARDS['SHIP-160'];
+    const core = [['key', `Key (${sample.key})`], ['assigned', 'Assigned to'], ['tags', 'Tags'], ['points', 'Story points'], ['empty', 'Show empty fields']];
+    return `<p class="hint">Choose what shows on each card on this board, per work item type. Fields are edited on the card or in the work item form.</p>
+      <div class="with-pv"><div style="display:grid;gap:var(--space-3)">
+        <div class="row"><div class="seg" role="group" aria-label="Work item type">${TYPES.map(x => `<button type="button" data-ftype="${x.id}" aria-pressed="${x.id === t}">${tIcon(x.id)}&nbsp;${x.name}</button>`).join('')}</div><span class="xs muted">Settings for ${typeName(t).toLowerCase()} cards</span></div>
+        <div class="fgrid">
+          <fieldset><legend>${tIcon(t)} Core fields</legend>${core.map(([k, l]) => chk(f[k], `data-ff="${k}"`, l)).join('')}</fieldset>
+          <fieldset><legend>Additional fields <span class="chip${full ? ' warn' : ''}" title="Up to ${MAX_EXTRA} per type">${f.extra.length} / ${MAX_EXTRA}</span></legend>
+            ${f.extra.map((k, i) => `<div class="xf"><span class="muted xs" style="width:12px">${i + 1}</span><span>${EXTRA[k]}</span><span class="spacer"></span><button class="ib" type="button" data-fup="${i}" aria-label="Move ${EXTRA[k]} up"${i ? '' : ' style="visibility:hidden"'}>↑</button><button class="ib" type="button" data-fx="${k}" aria-label="Remove ${EXTRA[k]}">✕</button></div>`).join('') || '<span class="muted sm">None yet</span>'}
+            <select class="field" id="addField" aria-label="Add a field" style="margin-top:4px"${full || !left.length ? ' disabled' : ''}><option value="">+ Add field (up to ${MAX_EXTRA})</option>${left.map(k => `<option value="${k}">${EXTRA[k]}</option>`).join('')}</select></fieldset>
+        </div></div>
+      <aside class="pv-col"><span class="overline">Preview · ${typeName(t)}</span>${card(sample)}
+        <p class="pv-cap">${sample.key} has no sprint and nobody assigned. Turn on Show empty fields to see the gaps. Style rules and tag colours apply too.</p></aside></div>`;
+  }
+
+  /* ---------- Styles ---------- */
+  function stylesPane() {
+    const rules = S.styles.map((r, i) => `<div class="rule${r.enabled ? '' : ' off'}${view.flash === r.id ? ' flash' : ''}" data-row="${i}" data-list="styles">
+        <div class="rh">${grip(r.name)}<input class="field" data-rule="${i}" value="${esc(r.name)}" aria-label="Rule name">${swBtn(r.color, `data-pal="rule|${i}"`, `Card colour for ${r.name}`)}
+          ${chk(r.bold, `data-fmt="${i}|bold" aria-label="Bold title"`, '<b>B</b>')}${chk(r.italic, `data-fmt="${i}|italic" aria-label="Italic title"`, '<i>I</i>')}${chk(r.underline, `data-fmt="${i}|underline" aria-label="Underlined title"`, '<u>U</u>')}
+          ${chk(r.enabled, `data-ren="${i}"`, 'Enabled')}<button class="ib" type="button" data-delrule="${i}" aria-label="Delete rule ${esc(r.name)}">✕</button></div>
+        ${crit('rule', i, r)}</div>`).join('');
+    return `<p class="hint">Style rules make cards that need attention stand out. When a card matches more than one rule, the first rule wins. Drag ⠿ to reorder.</p>
+      <div class="with-pv"><div style="display:grid;gap:var(--space-2)"><div><button class="btn" type="button" id="addRule">+ Add styling rule</button></div>${rules || '<p class="hint">No style rules. Cards use the plain style.</p>'}</div>
+      <aside class="pv-col" id="spv">${stylesPreview()}</aside></div>`;
+  }
+  function stylesPreview() {
+    return '<span class="overline">Preview · first match wins</span>' + ['SHIP-129', 'SHIP-144', 'SHIP-160', 'SHIP-141'].map(k => {
+      const it = CARDS[k], hits = S.styles.filter(r => r.enabled && passes(it, r));
+      const cap = hits.length ? `<b>${esc(hits[0].name)}</b>${hits.length > 1 ? ` wins. Also matches ${hits.slice(1).map(r => esc(r.name)).join(', ')}` : ''}` : 'No rule matches: plain card';
+      return `<div style="display:flex;flex-direction:column;gap:4px"><p class="pv-cap">${cap}</p>${card(it, { compact: true })}</div>`;
+    }).join('');
+  }
+
+  /* ---------- Tag colours ---------- */
+  function tagsPane() {
+    return `<p class="hint">Tag colours apply on this board, and the Stories backlog borrows them. Tags without a colour show in the neutral style.</p>
+      <div class="box" style="padding:0 var(--space-3)">${TAGS.map(([t, n]) => `<div class="tc">${tagChip(t)}<span class="xs muted">${n} item${n > 1 ? 's' : ''}</span>
+        <span class="swatches" role="group" aria-label="Colour for ${esc(t)}">${Object.keys(SWATCH).map(k => `<button type="button" style="--sw:${SWATCH[k]}" data-tag="${esc(t)}" data-c="${k}" aria-pressed="${S.tags[t] === k}" title="${SWNAME[k]}" aria-label="${SWNAME[k]}"></button>`).join('')}</span>
+        <span class="sm muted">${swName(S.tags[t])}</span>
+        <button class="ib" type="button" data-tag="${esc(t)}" data-c="" aria-label="Clear colour for ${esc(t)}" title="Clear colour"${S.tags[t] ? '' : ' style="visibility:hidden"'}>✕</button></div>`).join('')}</div>
+      <p class="xs muted" style="margin:0">Every tag used on a SHIP work item, most used first. A new tag appears here as soon as someone uses it.</p>`;
+  }
+
+  /* ---------- Annotations ---------- */
+  function annotationsPane() {
+    const a = S.annotations;
+    return `<p class="hint">Child roll-ups on cards: how many children are done out of how many. Click a roll-up on the board to see the children without leaving it.</p>
+      <div class="with-pv"><div class="fgrid" style="grid-template-columns:minmax(0,1fr)"><fieldset><legend>Roll-ups on cards</legend>
+        ${chk(a.tasks, 'data-an="tasks"', `${tIcon('task')} Tasks <span class="muted">· done tasks out of all tasks under a user story or bug</span>`)}
+        ${chk(false, 'data-an="stories" disabled', `${tIcon('story')} User stories <span class="muted">· no effect here: user stories and bugs have no story children</span>`, ' off')}
+        ${chk(false, 'data-an="bugs" disabled', `${tIcon('bug')} Bugs <span class="muted">· no effect here; turn it on in the Features board settings</span>`, ' off')}
+      </fieldset></div>
+      <aside class="pv-col"><span class="overline">Example · this board</span>${card(CARDS['SHIP-129'], { openTasks: view.annOpen })}
+        <p class="pv-cap">Click the roll-up to open the task list.</p>
+        <span class="overline" style="margin-top:var(--space-2)">On the Features board</span>
+        <article class="card"><div class="ct">${tIcon('feature')}<span class="title">Checkout v2</span></div>
+          <div class="cm"><span class="ann">${tIcon('story')} 3/5 stories</span><span class="ann">${tIcon('bug')} 1/2 bugs</span><span class="spacer"></span><span class="key">SHIP-101</span></div></article></aside></div>`;
+  }
+
+  /* ---------- Card reordering ---------- */
+  function reorderingPane() {
+    const r = (v, title, text) => `<label class="radio"><input type="radio" name="reorder" value="${v}"${S.reorder === v ? ' checked' : ''}><div><b>${title}</b><span>${text}</span></div></label>`;
+    return `<p class="hint">What happens when someone drags a card up or down inside a column.</p>
+      <div style="display:grid;gap:var(--space-2);max-width:620px">
+        ${r('backlog', 'Reordering cards changes backlog order', 'Dragging a card above another also moves it above that item in the Stories backlog, so the board and the backlog always agree.')}
+        ${r('keep', 'Cards keep backlog order (no reordering on the board)', 'Cards sort by backlog order inside each column. Dragging only changes the column or lane; to change the order, use the backlog.')}
+        <p class="xs muted" style="margin:0">Either way, moving a card to another column sets its state, and moving it to another lane sets its lane.</p></div>`;
+  }
+
+  const PANES = { columns: columnsPane, swimlanes: swimlanesPane, fields: fieldsPane, styles: stylesPane, tags: tagsPane, annotations: annotationsPane, reordering: reorderingPane };
+
+  /* ---------- Nav, pane and footer ---------- */
+  function renderChrome() {
+    const um = unmapped().length;
+    $('nav').innerHTML = NAV.map(([g, list]) => `<div class="overline">${g}</div>` + list.map(([id, label]) =>
+      `<button type="button" data-pane="${id}" aria-current="${view.pane === id}">${label}${isDirty(id) ? '<span class="dd" title="Unsaved changes"></span>' : ''}${id === 'columns' && um ? `<span class="wn" title="${um} state${um > 1 ? 's' : ''} not on any column">!</span>` : ''}${COUNT[id] ? `<span class="n">${COUNT[id]()}</span>` : ''}</button>`).join('')).join('');
+    const d = dirtyPanes().map(p => p[1]);
+    const list = d.length > 1 ? d.slice(0, -1).join(', ') + ' and ' + d[d.length - 1] : d[0];
+    $('foot').innerHTML = `${d.length ? `<span class="dirty" title="Unsaved changes in ${list}">Unsaved: ${d.length > 2 ? d.length + ' sections' : list}</span>` : ''}
+      ${um ? `<button class="chip warn as-btn" type="button" id="goWarn">${um} state${um > 1 ? 's' : ''} not on any column</button>` : ''}
+      <span class="xs muted">Saved for everyone on the project. Open boards update straight away.</span><span class="spacer"></span>
+      <button class="btn" type="button" id="cancel">Cancel</button><button class="btn primary" type="button" id="save"${d.length ? '' : ' disabled'}>Save</button>`;
+  }
+  function renderPane() {
+    const top = pane.scrollTop;
+    const conflict = view.conflict ? `<div class="callout warn"><div class="fix"><div><b>Tom Okafor saved these settings while you were editing.</b><span class="muted">He changed Tag colours (Design is now Green). Saving keeps his change and yours in the sections you edited; where you both changed the same section, yours wins.</span></div>
+        <button class="btn primary" type="button" id="mergeSave">Save with both</button><button class="btn" type="button" id="reload">Reload, drop mine</button></div></div>` : '';
+    pane.innerHTML = conflict + PANES[view.pane]();
+    pane.setAttribute('aria-label', LABEL[view.pane]);
+    pane.scrollTop = top;
+    view.flash = null;
+  }
+  const render = () => { renderChrome(); renderPane(); };
+
+  /* ---------- Events ---------- */
+  $('nav').addEventListener('click', e => { const b = e.target.closest('[data-pane]'); if (!b) return; view.pane = b.dataset.pane; pane.scrollTop = 0; render(); });
+
+  pane.addEventListener('input', e => {
+    const t = e.target, d = t.dataset;
+    if (t.type === 'checkbox' || t.type === 'radio' || t.tagName === 'SELECT') return;
+    if (d.col !== undefined) {
+      const c = S.columns[+d.col];
+      if (d.k === 'name') c.name = t.value;
+      if (d.k === 'wip') { c.wip = t.value ? Math.max(1, +t.value) : null; t.closest('tr').querySelector('.cards').innerHTML = cardsCell(c, false); }
+      if (d.k === 'dod') { c.dod = t.value; pane.querySelector('[data-dodpv]').innerHTML = md(c.dod); pane.querySelector(`[data-dod="${c.id}"] .dodl`).textContent = dodLabel(c); }
+    }
+    if (d.lane !== undefined) S.lanes[+d.lane].name = t.value;
+    if (d.rule !== undefined) { S.styles[+d.rule].name = t.value; $('spv').innerHTML = stylesPreview(); }
+    renderChrome(); // text edits keep focus: refresh the nav dots and footer only
+  });
+
+  pane.addEventListener('change', e => {
+    const t = e.target, d = t.dataset;
+    if (d.map !== undefined) { const c = S.columns[+d.map]; c.map[d.type] = t.value; toast(`${esc(c.name)} now means ${esc(t.value)} for ${typeName(d.type).toLowerCase()}s`); return render(); }
+    if (d.split !== undefined) { const c = S.columns[+d.split]; c.split = t.checked; toast(c.split ? `${esc(c.name)} split into Doing and Done` : `${esc(c.name)} is one column again`); return render(); }
+    if (d.ff) { S.fields[view.ftype][d.ff] = t.checked; return render(); }
+    if (t.id === 'addField' && t.value) { S.fields[view.ftype].extra.push(t.value); toast(`${EXTRA[t.value]} added to ${typeName(view.ftype).toLowerCase()} cards`); return render(); }
+    if (d.fmt) { const [i, k] = d.fmt.split('|'); S.styles[+i][k] = t.checked; return render(); }
+    if (d.ren !== undefined) { const r = S.styles[+d.ren]; r.enabled = t.checked; toast(`${esc(r.name)} rule ${r.enabled ? 'enabled' : 'disabled'}`); return render(); }
+    if (d.an) { S.annotations[d.an] = t.checked; view.annOpen = false; return render(); }
+    if (t.name === 'reorder') { S.reorder = t.value; return render(); }
+    const o = critObj(t);
+    if (o) {
+      const c = o.clauses[+(d.cf ?? d.co ?? d.cv)];
+      if (d.cf !== undefined) { c.field = t.value; c.op = FIELDS[c.field].ops[0]; c.value = FIELDS[c.field].values[0][0]; }
+      if (d.co !== undefined) c.op = t.value;
+      if (d.cv !== undefined) c.value = t.value;
+      render();
+    }
+  });
+
+  pane.addEventListener('click', e => {
+    const t = e.target, q = s => t.closest(s);
+    let b;
+    if ((b = q('[data-dod]'))) { view.dod = view.dod === b.dataset.dod ? null : b.dataset.dod; renderPane(); if (view.dod) pane.querySelector('textarea[data-k="dod"]')?.focus(); return; }
+    if ((b = q('[data-delcol]'))) {
+      const i = +b.dataset.delcol, c = S.columns[i];
+      if (b.getAttribute('aria-disabled')) return toast('The first and last columns can\'t be deleted');
+      if (c.cards) { view.blocked = c.id; return renderPane(); }
+      S.columns.splice(i, 1); view.blocked = null; render();
+      return toast(`${esc(c.name)} column removed. Save to apply it to the board`);
+    }
+    if (q('[data-unblock]')) { view.blocked = null; return renderPane(); }
+    if (t.id === 'addCol') {
+      const c = { id: 'c' + seq++, name: 'New column', wip: null, split: false, dod: '', map: { story: 'Active', bug: 'Active' }, cards: 0 };
+      S.columns.splice(S.columns.length - 1, 0, c); view.flash = c.id; render();
+      pane.querySelector(`[data-row="${S.columns.length - 2}"] input[data-k="name"]`)?.select();
+      return toast(`Column added before ${esc(S.columns[S.columns.length - 1].name)}`);
+    }
+    if ((b = q('[data-fix]'))) {
+      const [type, state, id] = b.dataset.fix.split('|'), c = S.columns.find(x => x.id === id);
+      c.map[type] = state; view.flash = id; render();
+      return toast(`${esc(c.name)} now means ${esc(state)} for ${typeName(type).toLowerCase()}s. Every state is on a column`);
+    }
+    if ((b = q('[data-fixadd]'))) {
+      const [type, state] = b.dataset.fixadd.split('|'), other = type === 'story' ? 'bug' : 'story';
+      const c = { id: 'c' + seq++, name: state, wip: null, split: false, dod: '', map: { [type]: state, [other]: STATES[other].find(s => s[1] === catOf(type, state))?.[0] || 'Active' }, cards: 0 };
+      S.columns.splice(S.columns.length - 1, 0, c); view.flash = c.id; render(); return toast(`${esc(state)} column added`);
+    }
+    if ((b = q('[data-lmode]'))) { const [i, m] = b.dataset.lmode.split('|'), l = S.lanes[+i]; if (l.mode === m) return; l.mode = m; if (m === 'criteria' && !l.clauses.length) l.clauses.push({ field: 'tags', op: 'contains', value: 'Blocked' }); return render(); }
+    if ((b = q('[data-dellane]'))) {
+      const i = +b.dataset.dellane, l = S.lanes[i];
+      if (l.def) return toast('The default lane can\'t be deleted: it holds every card no other lane takes');
+      S.lanes.splice(i, 1); render(); return toast(`${esc(l.name)} lane removed. Its cards move to ${esc(S.lanes.find(x => x.def).name)}`);
+    }
+    if (t.id === 'addLane') { const l = { id: 'l' + seq++, name: 'New lane', color: 'accent', mode: 'criteria', match: 'all', clauses: [{ field: 'tags', op: 'contains', value: 'Security' }] }; S.lanes.push(l); view.flash = l.id; render(); return toast('Lane added at the bottom'); }
+    if ((b = q('[data-ftype]'))) { view.ftype = b.dataset.ftype; return renderPane(); }
+    if ((b = q('[data-fx]'))) { const f = S.fields[view.ftype]; f.extra = f.extra.filter(k => k !== b.dataset.fx); return render(); }
+    if ((b = q('[data-fup]'))) { const f = S.fields[view.ftype], i = +b.dataset.fup; [f.extra[i - 1], f.extra[i]] = [f.extra[i], f.extra[i - 1]]; return render(); }
+    if ((b = q('[data-delrule]'))) { const [r] = S.styles.splice(+b.dataset.delrule, 1); render(); return toast(`${esc(r.name)} rule deleted`); }
+    if (t.id === 'addRule') { const r = { id: 'r' + seq++, name: 'New rule', enabled: true, color: 'ok', bold: false, italic: false, underline: false, match: 'all', clauses: [{ field: 'tags', op: 'contains', value: 'Customer' }] }; S.styles.push(r); view.flash = r.id; render(); return toast('Rule added at the bottom: it only applies when no rule above it matches'); }
+    if ((b = q('[data-tag]'))) { const tag = b.dataset.tag; S.tags[tag] = b.dataset.c || null; render(); return toast(`${esc(tag)} is now ${swName(S.tags[tag])}`); }
+    if (q('[data-ann]')) { view.annOpen = !view.annOpen; return renderPane(); }
+    const o = critObj(t);
+    if (o) {
+      if ((b = q('[data-cm]'))) { o.match = b.dataset.cm; return render(); }
+      if ((b = q('[data-cx]'))) { o.clauses.splice(+b.dataset.cx, 1); return render(); }
+      if (q('[data-cadd]')) { o.clauses.push({ field: 'state', op: '=', value: 'New' }); return render(); }
+    }
+    if ((b = q('[data-pal]'))) { e.stopPropagation(); return openPal(b); }
+    if (t.id === 'mergeSave') { S.tags.Design = 'ok'; view.conflict = false; view.stale = false; return doSave(); }
+    if (t.id === 'reload') { Object.assign(S, clone(saved)); S.tags.Design = 'ok'; saved = clone(S); view.conflict = false; view.stale = false; render(); renderBoard(); return toast('Reloaded the latest settings. Your changes were dropped'); }
+  });
+
+  /* Colour popover for lanes and style rules: the same swatches, plus None. */
+  const pal = $('palpop');
+  function openPal(btn) {
+    const [kind, i] = btn.dataset.pal.split('|'), o = (kind === 'lane' ? S.lanes : S.styles)[+i];
+    pal.innerHTML = `<span class="overline">${kind === 'lane' ? 'Lane colour' : 'Card colour'}</span><span class="swatches">${[null, ...Object.keys(SWATCH)].map(c => `<button type="button" class="${c ? '' : 'none'}" data-pc="${c || ''}" aria-pressed="${o.color === c}" style="--sw:${c ? SWATCH[c] : 'transparent'}" aria-label="${swName(c)}" title="${swName(c)}"></button>`).join('')}</span>`;
+    const r = btn.getBoundingClientRect();
+    pal.style.left = r.left + 'px'; pal.style.top = r.bottom + 6 + 'px'; pal.hidden = false;
+    pal.onclick = e => { const s = e.target.closest('[data-pc]'); if (!s) return; e.stopPropagation(); o.color = s.dataset.pc || null; pal.hidden = true; render(); toast(`${esc(o.name)} is now ${swName(o.color)}`); };
+    pal.querySelector('[aria-pressed="true"]')?.focus();
+  }
+  document.addEventListener('click', e => { if (!pal.hidden && !pal.contains(e.target)) pal.hidden = true; });
+  pane.addEventListener('scroll', () => { pal.hidden = true; });
+
+  /* Drag to reorder (columns, lanes, rules). The grip arms the row, so text in the inputs stays selectable. */
+  const LISTS = { columns: () => S.columns, lanes: () => S.lanes, styles: () => S.styles };
+  const bounds = list => list === 'columns' ? [1, S.columns.length - 2] : [0, LISTS[list]().length - 1];
+  let drag = null;
+  function move(list, from, to) {
+    const arr = LISTS[list](), [lo, hi] = bounds(list);
+    to = Math.max(lo, Math.min(hi, to));
+    if (to === from) return;
+    const [x] = arr.splice(from, 1); arr.splice(to, 0, x); view.flash = x.id; render();
+    toast(list === 'styles' ? `${esc(x.name)} is now rule ${to + 1}: first match wins` : `${esc(x.name)} ${list === 'columns' ? 'column' : 'lane'} moved to position ${to + 1}`);
+    pane.querySelector(`[data-list="${list}"][data-row="${to}"] [data-grip]`)?.focus();
+  }
+  const rowEl = el => el.closest('[data-row][data-list]');
+  pane.addEventListener('mousedown', e => { const g = e.target.closest('[data-grip]'); if (g) rowEl(g).draggable = true; });
+  pane.addEventListener('mouseup', () => pane.querySelectorAll('[draggable="true"]').forEach(r => { if (!r.classList.contains('dragging')) r.draggable = false; }));
+  pane.addEventListener('dragstart', e => {
+    const r = rowEl(e.target); if (!r || !r.draggable) return;
+    drag = { list: r.dataset.list, from: +r.dataset.row }; r.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', r.dataset.row);
+  });
+  const clearDrop = () => pane.querySelectorAll('.drop-before, .drop-after').forEach(x => x.classList.remove('drop-before', 'drop-after'));
+  const dropPos = (r, e) => { const b = r.getBoundingClientRect(); return e.clientY < b.top + b.height / 2 ? 'before' : 'after'; };
+  const target = e => drag && e.target.closest(`[data-row][data-list="${drag.list}"]`);
+  pane.addEventListener('dragover', e => { const r = target(e); if (!r) return; e.preventDefault(); clearDrop(); r.classList.add('drop-' + dropPos(r, e)); });
+  pane.addEventListener('drop', e => {
+    const r = target(e); if (!r) return; e.preventDefault();
+    const i = +r.dataset.row; let to = dropPos(r, e) === 'after' ? i + 1 : i; if (drag.from < to) to--;
+    const d = drag; drag = null; move(d.list, d.from, to);
+  });
+  pane.addEventListener('dragend', () => { drag = null; clearDrop(); pane.querySelectorAll('[draggable="true"]').forEach(r => { r.draggable = false; r.classList.remove('dragging'); }); });
+  pane.addEventListener('keydown', e => {
+    const g = e.target.closest('[data-grip]'); if (!g || !e.altKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+    e.preventDefault(); const r = rowEl(g); move(r.dataset.list, +r.dataset.row, +r.dataset.row + (e.key === 'ArrowUp' ? -1 : 1));
+  });
+
+  /* Open, close, save, cancel. */
+  const open = () => { dlg.hidden = false; render(); };
+  const close = () => { dlg.hidden = true; pal.hidden = true; };
+  function doSave() {
+    saved = clone(S); close(); renderBoard();
+    toast('Board settings saved. Everyone on the board sees the change now');
+  }
+  function cancel() {
+    const had = dirtyPanes().length;
+    Object.assign(S, clone(saved)); view.blocked = null; view.conflict = false; view.stale = false; close();
+    if (had) toast('Changes discarded. Back to the last saved settings');
+  }
+  const guardedClose = () => { if (dirtyPanes().length) toast('You have unsaved changes: Save or Cancel'); else close(); };
+  $('openSettings').onclick = open;
+  dlg.addEventListener('click', e => {
+    if (e.target === dlg || e.target.closest('[data-close]')) return guardedClose();
+    if (e.target.id === 'save') { if (view.stale) { view.conflict = true; pane.scrollTop = 0; return renderPane(); } return doSave(); }
+    if (e.target.id === 'cancel') return cancel();
+    if (e.target.id === 'goWarn') { view.pane = 'columns'; pane.scrollTop = 0; render(); }
+  });
+  document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; if (!pal.hidden) { pal.hidden = true; return; } if (!dlg.hidden) guardedClose(); });
+
+  renderBoard();
+  render();
+  SL.preview([
+    { label: 'Make edits', run: () => { if (dlg.hidden) open(); S.columns[2].wip = 4; S.styles[1].enabled = false; render(); toast('Two edits: In progress WIP 4, Spike rule disabled'); } },
+    { label: 'Unmap Triaged', run: () => { if (dlg.hidden) open(); view.pane = 'columns'; S.columns[1].map.bug = 'New'; render(); toast('Ready now maps bugs to New, so Triaged is on no column'); } },
+    { label: 'Stale save (409)', run: () => { if (dlg.hidden) open(); view.stale = true; S.columns[3].wip = 2; render(); toast('Tom saves Tag colours in the background. Now press Save'); } },
+  ]);
+})();
+</script>
+</body>
+</html>

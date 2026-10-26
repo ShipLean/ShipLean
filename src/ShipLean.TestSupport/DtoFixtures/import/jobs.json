@@ -1,0 +1,161 @@
+{
+  "running": {
+    "id": "00000006-0000-4000-8000-000000000002",
+    "jiraProjectKey": "PLATFORM",
+    "projectKey": "PLAT",
+    "projectId": "00000002-0000-4000-8000-000000000007",
+    "status": "running",
+    "progress": {
+      "percent": 62,
+      "step": "comments",
+      "message": "PLATFORM-1102: Jira timed out (504) reading the changelog",
+      "rerun": false,
+      "counts": {
+        "sprints": {
+          "done": 11,
+          "total": 11,
+          "failed": 0
+        },
+        "issues": {
+          "done": 1290,
+          "total": 1290,
+          "failed": 0
+        },
+        "comments": {
+          "done": 2287,
+          "total": 3912,
+          "failed": 0
+        },
+        "attachments": {
+          "done": 355,
+          "total": 641,
+          "failed": 1
+        },
+        "revisions": {
+          "done": 11420,
+          "total": 21406,
+          "failed": 1
+        }
+      },
+      "usersMatched": 18,
+      "usersCreated": 5,
+      "statesCreated": 2,
+      "rerunResult": null
+    },
+    "startedAt": "2026-10-24T14:02:05+00:00",
+    "startedLabel": "8m ago",
+    "finishedAt": null,
+    "finishedLabel": null,
+    "createdBy": {
+      "id": "00000001-0000-4000-8000-000000000002",
+      "name": "Priya Shah",
+      "initials": "PS",
+      "avatarColour": "#2f7fd8",
+      "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"
+    }
+  },
+  "finished": {
+    "id": "00000006-0000-4000-8000-000000000001",
+    "jiraProjectKey": "MOBILE",
+    "projectKey": "MOB",
+    "projectId": "00000002-0000-4000-8000-000000000003",
+    "status": "done",
+    "progress": {
+      "percent": 100,
+      "step": "finishing",
+      "message": "Import finished",
+      "rerun": false,
+      "counts": {
+        "sprints": {
+          "done": 9,
+          "total": 9,
+          "failed": 0
+        },
+        "issues": {
+          "done": 1284,
+          "total": 1284,
+          "failed": 0
+        },
+        "comments": {
+          "done": 2406,
+          "total": 2406,
+          "failed": 0
+        },
+        "attachments": {
+          "done": 388,
+          "total": 388,
+          "failed": 0
+        },
+        "revisions": {
+          "done": 12950,
+          "total": 12950,
+          "failed": 0
+        }
+      },
+      "usersMatched": 6,
+      "usersCreated": 0,
+      "statesCreated": 0,
+      "rerunResult": null
+    },
+    "startedAt": "2026-10-22T09:00:00+00:00",
+    "startedLabel": "22 Oct",
+    "finishedAt": "2026-10-22T09:14:00+00:00",
+    "finishedLabel": "22 Oct",
+    "createdBy": {
+      "id": "00000001-0000-4000-8000-000000000002",
+      "name": "Priya Shah",
+      "initials": "PS",
+      "avatarColour": "#2f7fd8",
+      "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"
+    }
+  },
+  "queuedRerun": {
+    "id": "00000006-0000-4000-8000-000000000003",
+    "jiraProjectKey": "PAYMENTS",
+    "projectKey": "PAY",
+    "projectId": null,
+    "status": "queued",
+    "progress": {
+      "percent": 0,
+      "step": null,
+      "message": "Queued",
+      "rerun": true,
+      "counts": {
+        "sprints": {
+          "done": 0,
+          "total": 0,
+          "failed": 0
+        },
+        "issues": {
+          "done": 0,
+          "total": 0,
+          "failed": 0
+        },
+        "comments": {
+          "done": 0,
+          "total": 0,
+          "failed": 0
+        },
+        "attachments": {
+          "done": 0,
+          "total": 0,
+          "failed": 0
+        },
+        "revisions": {
+          "done": 0,
+          "total": 0,
+          "failed": 0
+        }
+      },
+      "usersMatched": 0,
+      "usersCreated": 0,
+      "statesCreated": 0,
+      "rerunResult": null
+    },
+    "startedAt": "2026-10-24T14:09:30+00:00",
+    "startedLabel": "just now",
+    "finishedAt": null,
+    "finishedLabel": null,
+    "createdBy": null
+  }
+}

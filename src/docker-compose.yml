@@ -1,0 +1,100 @@
+# From the repository root: docker compose -f src/docker-compose.yml up --build
+services:
+  shiplean:
+    build:
+      context: ..
+      dockerfile: src/Dockerfile
+    ports:
+      - "${SHIPLEAN_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - SHIPLEAN_DB_CONNECTION=Host=postgres;Port=5432;Database=shiplean;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
+      # Console only until these are set; on the home stack Seq is
+      # http://seq:5341 on arrnet.
+      - SHIPLEAN_SEQ_URL=${SHIPLEAN_SEQ_URL:-}
+      - SHIPLEAN_SEQ_API_KEY=${SHIPLEAN_SEQ_API_KEY:-}
+      # Attachments and profile photos; the volume keeps them across container rebuilds. Set one of the two below
+      # instead to keep them in Postgres or S3 (README configuration). To try S3 locally, start the rustfs profile
+      # (docker compose -f src/docker-compose.yml --profile rustfs up --build) and uncomment the S3 line.
+      - SHIPLEAN_BLOB_ROOT=/data/blobs
+      # - SHIPLEAN_BLOB_DB_CONNECTION=Host=postgres;Port=5432;Database=shiplean;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
+      # - SHIPLEAN_BLOB_S3_CONNECTION=bucket=shiplean;serviceUrl=http://rustfs:9000;accessKey=shiplean;secretKey=${SHIPLEAN_S3_SECRET_KEY:-shiplean-secret};forcePathStyle=true
+      # First admin on first boot; remove both once they have signed in.
+      - SHIPLEAN_ADMIN_EMAIL=${SHIPLEAN_ADMIN_EMAIL:-}
+      - SHIPLEAN_ADMIN_PASSWORD=${SHIPLEAN_ADMIN_PASSWORD:-}
+      # The reverse proxy in front (cloudflared, Caddy, nginx). Forwarded client address and https are believed only from
+      # these addresses or CIDRs; anything else is treated as the client itself. The default is this compose network,
+      # which covers a proxy container on it and a proxy on the host (seen as the network's gateway). Behind Cloudflare
+      # without a tunnel, list Cloudflare's ranges instead and set the header to CF-Connecting-IP.
+      - SHIPLEAN_TRUSTED_PROXIES=${SHIPLEAN_TRUSTED_PROXIES:-172.31.250.0/24}
+      - SHIPLEAN_FORWARDED_FOR_HEADER=${SHIPLEAN_FORWARDED_FOR_HEADER:-}
+      # Jira import endpoints on a local address are refused unless the server owner allows them:
+      # - SHIPLEAN_JIRA_ALLOW_LOCAL_ENDPOINTS=true
+      # Only when more than one instance runs: the SignalR backplane (README configuration).
+      # - SHIPLEAN_REDIS_CONNECTION=redis:6379
+    volumes:
+      - shiplean-blobs:/data/blobs
+
+  postgres:
+    image: postgres:18
+    # UTC everywhere (.claude/skills/utc-everywhere). The flags win over whatever an existing volume's
+    # postgresql.conf says; TZ is the container's own zone.
+    command: ["postgres", "-c", "timezone=UTC", "-c", "log_timezone=UTC"]
+    environment:
+      - TZ=UTC
+      - POSTGRES_DB=shiplean
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "127.0.0.1:${SHIPLEAN_PG_PORT:-5432}:5432"
+    volumes:
+      # PostgreSQL 18 images keep the cluster under /var/lib/postgresql.
+      - shiplean-pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d shiplean"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Optional S3-compatible store for trying SHIPLEAN_BLOB_S3_CONNECTION: only with --profile rustfs. It is the server
+  # the S3 tests run against. rustfs-init makes the "shiplean" bucket once the server is ready.
+  rustfs:
+    image: ghcr.io/rustfs/rustfs:1.0.3
+    profiles: ["rustfs"]
+    environment:
+      - RUSTFS_ACCESS_KEY=shiplean
+      - RUSTFS_SECRET_KEY=${SHIPLEAN_S3_SECRET_KEY:-shiplean-secret}
+      - RUSTFS_VOLUMES=/data
+    ports:
+      - "127.0.0.1:${SHIPLEAN_S3_PORT:-9000}:9000"
+    volumes:
+      - shiplean-s3:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9000/health/ready"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  rustfs-init:
+    image: ghcr.io/rustfs/rustfs:1.0.3
+    profiles: ["rustfs"]
+    depends_on:
+      rustfs:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c", "curl -fsS --aws-sigv4 aws:amz:us-east-1:s3 --user \"shiplean:$${SHIPLEAN_S3_SECRET_KEY}\" -X PUT http://rustfs:9000/shiplean || true"]
+    environment:
+      - SHIPLEAN_S3_SECRET_KEY=${SHIPLEAN_S3_SECRET_KEY:-shiplean-secret}
+
+networks:
+  default:
+    # Pinned so SHIPLEAN_TRUSTED_PROXIES has a known default.
+    ipam:
+      config:
+        - subnet: 172.31.250.0/24
+          gateway: 172.31.250.1
+
+volumes:
+  shiplean-pgdata:
+  shiplean-blobs:
+  shiplean-s3:

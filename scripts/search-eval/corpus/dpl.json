@@ -1,0 +1,2037 @@
+{
+  "project": {
+    "ref": "dpl",
+    "key": "DPL",
+    "name": "Tidewater Data Platform",
+    "description": "The Tidewater data platform: ingestion pipelines from the orders database, billing vendor and partner files, curated tables and metrics, dashboards and scheduled reports, and the exports that deliver data to staff and partners, plus the observability, governance and storage work that keeps it trustworthy."
+  },
+  "sprints": [
+    {
+      "ref": "dpl-s1",
+      "name": "Sprint 1 - Connectors and change capture",
+      "goal": "Orders, billing and partner files land in the raw zone reliably, with checkpoints and rate limits",
+      "startDate": "2026-08-03",
+      "endDate": "2026-08-14"
+    },
+    {
+      "ref": "dpl-s2",
+      "name": "Sprint 2 - Quality, dashboards and first exports",
+      "goal": "Deduplication, the weekly sales dashboard, CSV exports and freshness monitors are in use by their first teams",
+      "startDate": "2026-08-17",
+      "endDate": "2026-08-28"
+    },
+    {
+      "ref": "dpl-s3",
+      "name": "Sprint 3 - Reports, partner delivery and cost",
+      "goal": "Scheduled reports reach inboxes on time, partner deliveries run with retries and replay, and storage growth is under control",
+      "startDate": "2026-08-31",
+      "endDate": "2026-09-11"
+    },
+    {
+      "ref": "dpl-s4",
+      "name": "Sprint 4 - Governance and polish",
+      "goal": "Masking, retention and audit logging are in place and the open locale and settlement items are finished",
+      "startDate": "2026-09-14",
+      "endDate": "2026-09-25"
+    }
+  ],
+  "items": [
+    {
+      "ref": "dpl-001",
+      "type": "epic",
+      "title": "Ingestion pipelines",
+      "description": "Everything that moves data from the systems that create it into the Tidewater warehouse: database change capture, vendor APIs, partner file drops and the scheduler that ties them together. Analysts currently wait until mid-morning for yesterday's numbers, and every source has its own half-documented script. This epic replaces those scripts with connectors that share retry, logging and schema handling.\n\nWe judge it by the share of sources landed before 06:00 UTC, the number of manual reruns per week, and the time it takes a new engineer to add a source.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "ingest"
+      ],
+      "state": "Active",
+      "sprintRef": "dpl-s1",
+      "comments": []
+    },
+    {
+      "ref": "dpl-002",
+      "type": "feature",
+      "title": "Source connectors",
+      "description": "A small connector framework and the first four concrete connectors: the orders database, the billing vendor API, partner SFTP drops and the marketing events stream. Each connector declares its schema, its cursor and its rate budget, and the framework takes care of paging, retries with backoff, checkpoints and structured logs.\n\nThe aim is that a new source is a configuration file plus a mapping, not a new service. Connectors run as short-lived jobs under the scheduler rather than as long-running daemons, which keeps memory predictable on the shared workers.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "ingest",
+        "connectors"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-001",
+      "sprintRef": "dpl-s1",
+      "comments": []
+    },
+    {
+      "ref": "dpl-003",
+      "type": "story",
+      "title": "Change capture from the orders database",
+      "description": "Read inserts, updates and deletes from the orders Postgres logical replication slot and land them in the raw zone as append-only change records. The connector keeps its position in a checkpoint table so a restart resumes exactly where it stopped, and it emits a heartbeat record every minute so that quiet tables do not look like a stalled pipeline.\n\nDeletes are written as tombstones carrying the primary key and the commit timestamp; the downstream merge step decides what to do with them. Large transactions are buffered on disk rather than in memory, because the month-end repricing job touches millions of rows in one commit.\n\nSchema changes in the source are the main risk. A new nullable column is passed through, but a changed type stops the connector and alerts the owner, because guessing a conversion would silently corrupt amounts. The same rule is described in the schema drift bug and the two should share the comparison code.\n\nThe connector exposes its replication lag as a metric: the difference between the commit time of the last record it has written and the current time. The alert threshold is ten minutes.\n\nOperational notes for whoever carries the pager. If the connector reports that the slot has fallen behind the retention of the write-ahead log, do not recreate the slot: that discards the position and forces a full resnapshot of the orders tables, which takes about nine hours and loads the primary. First check whether the raw zone writer is blocked, since that is the cause nine times out of ten.\n\nThe connector never reads from the replica, because logical decoding on the replica lags by minutes during the month-end repricing and the whole point of the story is a two-minute delivery.",
+      "acceptanceCriteria": [
+        "Changes from the orders database appear in the raw zone within two minutes of commit",
+        "A restart resumes from the stored checkpoint without gaps or repeats",
+        "Deletes arrive as tombstones with key and commit time",
+        "A transaction of five million rows does not push the worker over its memory limit"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "ingest",
+        "postgres"
+      ],
+      "state": "Closed",
+      "parentRef": "dpl-002",
+      "sprintRef": "dpl-s1",
+      "comments": [
+        {
+          "ref": "dpl-c01",
+          "body": "Replication slot is named tidewater_orders_raw. Do not drop it during maintenance or the checkpoint becomes meaningless.",
+          "archived": false
+        },
+        {
+          "ref": "dpl-c02",
+          "body": "Heartbeat interval settled at sixty seconds after the idle-table false alarms in staging.",
+          "archived": false
+        },
+        {
+          "ref": "dpl-c03",
+          "body": "Lag metric added; alert at ten minutes. Dashboards show it per connector.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "dpl-004",
+      "type": "task",
+      "title": "Create the replication slot and publication",
+      "description": "Create a publication that covers the orders, order_lines and refunds tables and a logical replication slot using the pgoutput plugin. Document the grants the connector role needs and add the slot to the list of objects that the database runbook must never clean up.\n\nThe publication is deliberately limited to three tables. The returns and loyalty tables belong to teams that have not agreed to be captured yet, and adding them later is a one-line change to the publication.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "ingest",
+        "postgres"
+      ],
+      "state": "Closed",
+      "parentRef": "dpl-003",
+      "sprintRef": "dpl-s1",
+      "comments": []
+    },
+    {
+      "ref": "dpl-005",
+      "type": "task",
+      "title": "Checkpoint table and resume logic",
+      "description": "A single row per connector holding the last confirmed log sequence number, written in the same transaction as the batch it covers. On start-up the connector reads the row and asks the slot to resume from that position, refusing to start if the stored position is ahead of the slot.\n\nWriting the position in the same transaction as the batch is what makes recovery boring. If the process dies between writing the batch and confirming the position to the slot, the next start simply sees the older position and the merge step discards the repeats.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "ingest"
+      ],
+      "state": "Closed",
+      "parentRef": "dpl-003",
+      "sprintRef": "dpl-s1",
+      "comments": []
+    },
+    {
+      "ref": "dpl-006",
+      "type": "task",
+      "title": "Spill large transactions to disk",
+      "description": "Buffer change records to a local file once a single transaction passes 200 MB, and stream them out after the commit record arrives. Delete the spill file only after the batch has been acknowledged by the raw zone writer.\n\nThe threshold is configurable per connector because the billing database, which has no giant transactions, should keep everything in memory and avoid the extra disk traffic.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "ingest",
+        "memory"
+      ],
+      "state": "Closed",
+      "parentRef": "dpl-003",
+      "sprintRef": "dpl-s1",
+      "comments": []
+    },
+    {
+      "ref": "dpl-007",
+      "type": "story",
+      "title": "Billing vendor API connector",
+      "description": "Pull invoices, payments and credit notes from the billing vendor's REST API using their incremental endpoint with an updated-since cursor. The connector pages through results with the continuation token the vendor returns, honours the Retry-After header, and stores raw JSON untouched so that mapping bugs can be fixed by replaying rather than refetching.\n\nOne caveat from the vendor's documentation shapes the design: their sandbox environment is capped at 40 requests per minute per tenant and answers with an unhelpful 503 instead of a 429 once that budget is spent. We test against the sandbox in CI, so the connector's rate limiter has to be configurable per environment and the sandbox profile must default to a budget of 30 per minute to leave headroom.\n\nCredit notes are the awkward part of the vendor's model: they are separate objects that reference an invoice and may arrive before the invoice has been updated. The mapping therefore links them by the vendor identifier rather than by arrival order, and the merge step tolerates a credit note with no invoice yet, parking it until the invoice appears.\n\nEvery request carries our correlation identifier in a header, which the vendor's support team can then look up in their logs when something looks wrong.\n\nMapping rules are kept in a separate file from the connector code so that finance analysts can propose changes to them in a pull request. Currency amounts are stored as integers in minor units with the currency code beside them, never as floating point values, and the vendor's rounding convention is documented in the mapping file with an example for each currency we trade in.\n\nPayments carry the invoice identifiers they settle as a list; the mapping explodes that list into one row per pair so that partial payments can be joined without array handling in every report.",
+      "acceptanceCriteria": [
+        "Invoices, payments and credit notes land in the raw zone with the vendor's own identifiers",
+        "The cursor advances only after a page is durably written",
+        "The rate budget is configurable per environment",
+        "Raw payloads are stored unmodified"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "ingest",
+        "rest",
+        "billing"
+      ],
+      "state": "Closed",
+      "parentRef": "dpl-002",
+      "sprintRef": "dpl-s1",
+      "comments": [
+        {
+          "ref": "dpl-c04",
+          "body": "Vendor confirmed the updated-since filter is inclusive, so we subtract nothing and rely on the merge to deduplicate.",
+          "archived": false
+        },
+        {
+          "ref": "dpl-c05",
+          "body": "Credit notes that arrive before their invoice are parked for up to seven days, then reported.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "dpl-008",
+      "type": "task",
+      "title": "Rate limiter with a per-environment budget",
+      "description": "A token bucket in front of every outbound call, sized from the connector configuration. Expose the remaining budget as a metric so the dashboards can show how close each source runs to its ceiling.\n\nThe limiter is shared by all connectors that talk to the same vendor, so that two jobs running at once cannot double the rate by accident.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "ingest",
+        "rest"
+      ],
+      "state": "Closed",
+      "parentRef": "dpl-007",
+      "sprintRef": "dpl-s1",
+      "comments": []
+    },
+    {
+      "ref": "dpl-009",
+      "type": "bug",
+      "title": "Billing connector hammers the vendor after a 429 response",
+      "description": "After the vendor answers 429 the connector sleeps for the Retry-After value but then resumes at full speed, burning the next budget window in a few seconds and triggering another 429. On busy days this repeats for hours and the run finishes late or not at all. The sleep happens in the paging loop, while the token bucket is not told that the window was exhausted, so it keeps handing out tokens it believes are available.\n\nThe fix is to drain the bucket when a 429 arrives and refill it only after the advertised delay has passed. We also need to cap the total time a run may spend backing off, so that a vendor outage fails the job visibly instead of occupying a worker all night.\n\nThe vendor's status page showed an incident on the same days, which is why nobody connected the lateness to our code at first. After the incident ended the pattern continued, and the access log showed bursts of fifty requests in under a second, each followed by a long gap.\n\nA second thing came out of the investigation: the paging loop treats any error response as retryable, including a 400 caused by a malformed cursor. A bad request should fail the run immediately with the response body in the log.",
+      "acceptanceCriteria": [
+        "After a 429 no request is sent before the Retry-After time has passed",
+        "The bucket is empty immediately after a 429 and refills at its normal rate",
+        "A run that spends more than 45 minutes backing off fails with a clear message",
+        "The run fails immediately on a 400 response with the body in the log"
+      ],
+      "reproSteps": "1. Point the connector at the vendor sandbox with the default budget.\n2. Start a full backfill of credit notes.\n3. Watch the request log when the first 429 appears.\n4. Observe a burst of requests right after the sleep ends, followed by another 429.",
+      "tags": [
+        "ingest",
+        "rest",
+        "bug"
+      ],
+      "state": "Closed",
+      "parentRef": "dpl-002",
+      "sprintRef": "dpl-s2",
+      "comments": [
+        {
+          "ref": "dpl-c06",
+          "body": "Reproduced with a fake server that answers 429 every 40th request; the burst is visible in the access log.",
+          "archived": false
+        },
+        {
+          "ref": "dpl-c07",
+          "body": "Bucket now drains on 429. Added the 45 minute ceiling from the criteria.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "dpl-010",
+      "type": "story",
+      "title": "Partner SFTP drop ingestion",
+      "description": "Three logistics partners deliver CSV files to an SFTP folder at unpredictable times. The connector polls the folder, downloads files that are stable for two consecutive polls, validates the header row against the registered layout, and moves processed files to an archive directory with the run identifier in the name.\n\nFiles that fail validation go to a quarantine folder and raise an alert that names the partner and the first offending line. Partners occasionally resend a file with the same name and different content, so the file checksum, not its name, decides whether it has been seen before.\n\nThe folder is shared with the partners through a gateway that applies its own permissions, so the connector's account can read and move files but not delete them. Archiving is therefore a move into a dated subfolder and never a delete.\n\nAn empty file with a valid header is a legitimate delivery, meaning no shipments that hour. It loads zero rows and marks the delivery as received, which keeps the freshness monitor honest.",
+      "acceptanceCriteria": [
+        "A file is picked up only after it stops growing",
+        "Header mismatches quarantine the file and alert the partner owner",
+        "A resent file with identical content is ignored and with different content is loaded again",
+        "Processed files are archived with the run identifier"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "ingest",
+        "sftp"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-002",
+      "sprintRef": "dpl-s3",
+      "comments": [
+        {
+          "ref": "dpl-c08",
+          "body": "Partner B uploads through a gateway that renames the file at the end of the transfer, so the stable-size check is enough for them.",
+          "archived": false
+        },
+        {
+          "ref": "dpl-c09",
+          "body": "Partner A sends a zero-row file with a valid header on days with no shipments; treated as a normal delivery.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "dpl-011",
+      "type": "task",
+      "title": "Checksum registry for delivered files",
+      "description": "Record the SHA-256 of every ingested file with partner, name and run identifier, and consult it before loading. Keep entries for 400 days so that a resend after year end is still recognised.\n\nA small table is enough: partner, file name, checksum, size, first seen, run identifier. Indexing on the checksum alone makes the lookup instant even after years of deliveries.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "ingest",
+        "sftp"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-010",
+      "sprintRef": "dpl-s3",
+      "comments": []
+    },
+    {
+      "ref": "dpl-012",
+      "type": "bug",
+      "title": "Schema drift in source tables causes silent row loss in the orders ingest",
+      "description": "When an upstream team renames a column the change-capture mapping does not fail; the renamed column simply arrives as null in the curated table and the rows that depend on it fall out of the joins later. Last month the refund reason column was renamed and about 2 percent of refunds disappeared from the finance report for nine days before anyone noticed.\n\nThe ingest should compare the incoming record shape with the registered schema on every batch. Unknown columns should be stored in an overflow map and raise a warning, and missing required columns should stop the batch and page the owner. Nothing may be dropped silently.\n\nA useful side effect would be a schema history table, so that when drift is found we can tell which day it started and replay only the affected range.\n\nDetection is the hard part and the schema history is the answer. Every distinct shape of a source table gets a hash and a first-seen time, so that comparing two days is a lookup. The alert includes a link to the history of that table.\n\nFor the cases where a rename is intentional, the owner can register a mapping from the old column to the new one, after which the ingest accepts both names and writes the value to a single curated column.",
+      "acceptanceCriteria": [
+        "A renamed or removed column stops the batch with an alert naming the table and column",
+        "New columns are kept in an overflow map and listed in a warning",
+        "A schema history row is written whenever the registered shape changes"
+      ],
+      "reproSteps": "1. In the staging orders database rename refunds.reason to refunds.reason_code.\n2. Run the change capture for ten minutes.\n3. Query the curated refunds table for rows where reason is null.\n4. Observe that every refund created after the rename has a null reason and no alert fired.",
+      "tags": [
+        "ingest",
+        "data-quality",
+        "bug"
+      ],
+      "state": "Closed",
+      "parentRef": "dpl-002",
+      "sprintRef": "dpl-s2",
+      "comments": [
+        {
+          "ref": "dpl-c10",
+          "body": "The nine-day gap was the weekly finance close; nobody looked at refund reasons in between.",
+          "archived": false
+        },
+        {
+          "ref": "dpl-c11",
+          "body": "Schema history table created. First entry is the shape from before the refund reason rename, which makes the incident easy to date.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "dpl-013",
+      "type": "task",
+      "title": "Registered schema comparison per batch",
+      "description": "Compare each batch to the registered schema before writing, classifying differences as added, removed, retyped or renamed-looking. Reject on removed or retyped required columns.\n\nThe comparison reports the difference as a list so that the alert can say exactly what changed rather than just that something did. A column that vanished while another appeared with the same type in the same position is reported as a likely rename.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "ingest",
+        "data-quality"
+      ],
+      "state": "Resolved",
+      "parentRef": "dpl-012",
+      "sprintRef": "dpl-s2",
+      "comments": []
+    },
+    {
+      "ref": "dpl-014",
+      "type": "feature",
+      "title": "Transformation and data quality",
+      "description": "The step between the raw zone and the curated tables: merging change records into current-state tables, removing duplicates, applying declared quality rules and keeping a record of what was rejected and why. Rules are written by analysts in version-controlled files and enforced by the pipeline.\n\nThe step is organised as three small stages that can each be tested on their own: merge, deduplicate and check. Each stage writes a row-count summary, so when a number is wrong we can see at which stage rows were gained or lost.\n\nAnalysts own the rules, the platform team owns the machinery, and the boundary between them is a version-controlled YAML file.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "quality",
+        "transform"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-001",
+      "sprintRef": "dpl-s2",
+      "comments": []
+    },
+    {
+      "ref": "dpl-015",
+      "type": "story",
+      "title": "Deduplicate events by idempotency key",
+      "description": "The marketing events stream is delivered at least once, so the same event can arrive several times, sometimes hours apart. Each event carries an idempotency key assigned by the producer. The transform keeps the first occurrence within a 72 hour window and counts the rest, writing the duplicate count to the run summary so that producers with unusual rates can be contacted.\n\nThe window is a trade-off: a longer one catches slow retries but needs a larger lookup table. Seventy-two hours covers every incident in the past year of incident reports.\n\nCounting the duplicates per producer turned out to be as valuable as removing them: one producer was resending roughly a fifth of its events because of a misconfigured timeout, which they fixed once we told them. The summary is therefore part of the deliverable and not an extra.",
+      "acceptanceCriteria": [
+        "Events with a repeated key inside 72 hours are loaded once",
+        "The run summary shows the duplicate count per producer",
+        "The lookup table stays below 40 GB"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "transform",
+        "events"
+      ],
+      "state": "Closed",
+      "parentRef": "dpl-014",
+      "sprintRef": "dpl-s2",
+      "comments": [
+        {
+          "ref": "dpl-c12",
+          "body": "Producer team confirms keys are never reused, so a key collision always means a retry.",
+          "archived": false
+        },
+        {
+          "ref": "dpl-c13",
+          "body": "Duplicate rate by producer after the first week: five of twelve producers are above one percent.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "dpl-016",
+      "type": "story",
+      "title": "Declarative data quality rules",
+      "description": "Let analysts declare checks in YAML next to the table definition: not-null, uniqueness, accepted values, ranges and referential checks against another table. Each rule has a severity. Errors quarantine the offending rows and fail the run when the rejected share passes a threshold; warnings only report.\n\nRejected rows are written to a side table with the rule name and the failing value so that the owning team can see exactly what was wrong without asking us to run a query for them.\n\nThresholds are expressed as a share of rows rather than a count, so that the same rule is meaningful for a table of a thousand rows and one of a hundred million. A rule can also carry an owner who is notified separately from the pipeline team.\n\nThe design deliberately avoids a rule language of our own: every check compiles to a query the warehouse can run, and the YAML only names the pattern and its parameters.\n\nA first set of fifteen rules covers the orders and billing tables, chosen by finance and operations from the incidents of the past year: negative quantities, shipment dates before order dates, currency codes outside the supported list, and invoice totals that do not equal the sum of their lines. Each rule lists the incident that motivated it in a comment, so the reason for a check is never lost when the author moves on.\n\nRules can be switched to warning for a defined period when they are introduced against historical data, with an expiry date after which they become errors unless extended.",
+      "acceptanceCriteria": [
+        "Rules are read from YAML next to the table definition",
+        "Error rules move failing rows to the rejects table with the rule name",
+        "A run fails when rejects exceed the configured share",
+        "Warnings appear in the summary but never block"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "quality",
+        "yaml"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-014",
+      "sprintRef": "dpl-s3",
+      "comments": [
+        {
+          "ref": "dpl-c14",
+          "body": "First draft had a custom expression language. Dropped in favour of named patterns with parameters.",
+          "archived": true
+        }
+      ]
+    },
+    {
+      "ref": "dpl-017",
+      "type": "task",
+      "title": "YAML rule parser and validator",
+      "description": "Parse the rule files, validate them against a schema and report errors with the file name and line, so that a typo cannot disable a check silently.\n\nUnknown rule types are an error, not a warning, and the error names the file, the line and the closest known rule name. A rule file that silently does nothing is worse than no file at all.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "quality"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-016",
+      "sprintRef": "dpl-s3",
+      "comments": []
+    },
+    {
+      "ref": "dpl-018",
+      "type": "bug",
+      "title": "Duplicate rows loaded when the scheduler fires twice at the end of daylight saving time",
+      "description": "On the night the clocks went back the 01:30 local schedule matched twice, and the nightly sales load started two runs for the same logical date. The merge step is idempotent for the final table, but the intermediate staging table has no uniqueness guard, so both runs appended and the daily totals were doubled for a few hours until the next compaction.\n\nThe scheduler stores the next run time in local time with the zone name, and the ambiguous hour is resolved by taking both interpretations. Run identifiers should come from the logical date plus the job name so that a second trigger for the same pair is refused rather than started.\n\nWe also need a guard in staging: loading a batch with a run identifier that already exists must fail before writing anything.\n\nThe first run completed normally and the second started eleven minutes later because the scheduler's next-run calculation landed on the repeated hour again. Both wrote to the staging table with different random run identifiers, so nothing in the table could tell them apart.\n\nA temporary workaround is in place: the staging load first checks whether rows for the logical date exist from another run and aborts if so. It must be replaced by the proper uniqueness guard described above, since the check races when two runs start in the same second.",
+      "acceptanceCriteria": [
+        "A second trigger for the same job and logical date is refused with a clear log line",
+        "Staging rejects a batch whose run identifier already exists",
+        "Schedules defined in a local zone fire exactly once across a clock change",
+        "The temporary staging check is removed once the uniqueness guard exists"
+      ],
+      "reproSteps": "1. Set the test clock to the last Sunday of October at 00:50 local time.\n2. Register a job scheduled for 01:30 in the Europe/Berlin zone.\n3. Advance the clock through the repeated hour.\n4. Observe two runs created with the same logical date and doubled staging rows.\n5. Check the staging table for rows carrying two different run identifiers for the same logical date.",
+      "tags": [
+        "scheduler",
+        "bug",
+        "timezone"
+      ],
+      "state": "Resolved",
+      "parentRef": "dpl-014",
+      "sprintRef": "dpl-s3",
+      "comments": [
+        {
+          "ref": "dpl-c15",
+          "body": "Production daily totals were corrected by the compaction at 04:00; the dashboards showed double values between 01:40 and 04:00.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "dpl-019",
+      "type": "feature",
+      "title": "Scheduling and orchestration",
+      "description": "The scheduler that decides when jobs run, in what order, and what happens when one fails. Today it is a cron table plus shell scripts with sleeps between steps. We want a dependency graph, backfills as a first-class command, and a clear place to look when something is late.\n\nThe scheduler also owns the calendar: business days, month-end processing windows and the freeze periods when nothing should change. Today these live in three people's heads and one wiki page that is out of date.\n\nThe outcome we want is that anybody can answer the question of why a report was late by opening the run page, without asking a person.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "scheduler"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-001",
+      "sprintRef": "dpl-s2",
+      "comments": []
+    },
+    {
+      "ref": "dpl-020",
+      "type": "story",
+      "title": "Job dependency graph",
+      "description": "Jobs declare the tables they read and write, and the scheduler derives the order from those declarations. A job starts when every upstream table has been refreshed for the same logical date. If an upstream job fails the downstream jobs wait and the run page shows which parent blocked them.\n\nCycles are rejected when the definitions are loaded, with the cycle spelled out in the error, so that nobody discovers a circular dependency at 03:00.\n\nThe graph is evaluated each minute. A job is eligible when all its upstream tables have a successful load for the same logical date; jobs with no upstream tables are eligible at their scheduled time. Jobs that are eligible but waiting for a worker slot are shown as queued, which was previously invisible and caused several panicked investigations.\n\nThe definition files are linted in CI so that a broken graph never reaches the scheduler.",
+      "acceptanceCriteria": [
+        "Jobs start only after upstream tables are fresh for the logical date",
+        "The run page names the parent that blocked a waiting job",
+        "Cycles are rejected at load time and listed in the error"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "scheduler",
+        "graph"
+      ],
+      "state": "Closed",
+      "parentRef": "dpl-019",
+      "sprintRef": "dpl-s2",
+      "comments": [
+        {
+          "ref": "dpl-c16",
+          "body": "Cycle detection uses a depth-first walk; the error prints the path in order.",
+          "archived": false
+        },
+        {
+          "ref": "dpl-c17",
+          "body": "Queued state is new on the run page and shows the position in the worker queue.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "dpl-021",
+      "type": "story",
+      "title": "Backfill command for a date range",
+      "description": "A command that reruns a job for a range of logical dates, in order, with a concurrency limit and a dry-run mode that prints what would run. Backfills use their own run identifiers tagged as backfills so that they never compete with the daily schedule for worker slots.\n\nWhen a range includes dates that already succeeded, the command asks before rerunning them unless told otherwise, because rewriting a closed finance period by accident is far more expensive than a slow prompt.\n\nBackfills have been the biggest source of incidents in the scheduler: a rerun of three months of data that started at the same time as the nightly run, filled the worker pool and delayed every morning report. Separate run identifiers and a separate slot budget are the structural fix, and the dry run is how people learn what they are about to do.\n\nFor a long backfill the command can be told to stop at the first failure or to continue, defaulting to stopping.\n\nLocking is worth stating explicitly. A backfill for a job and date takes the same lock as the scheduled run for that pair, so the two cannot write at the same time; if the scheduled run is active the backfill waits and says so. Backfills for different dates of the same job can run in parallel up to the concurrency limit, because the jobs write by logical date partition.\n\nThe command prints a final summary with the dates that succeeded, failed and were skipped, and writes the same to the run history so that a half-finished backfill can be resumed from where it stopped.",
+      "acceptanceCriteria": [
+        "A range of dates reruns in logical date order",
+        "Dry run prints the plan without starting anything",
+        "Backfills never take slots reserved for scheduled runs",
+        "Already successful dates require confirmation"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "scheduler",
+        "backfill"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-019",
+      "sprintRef": "dpl-s3",
+      "comments": []
+    },
+    {
+      "ref": "dpl-022",
+      "type": "task",
+      "title": "Dry-run planner",
+      "description": "Produce the list of job and date pairs that a backfill would start and print it as a table with estimated durations from the last ten runs.\n\nThe planner estimates duration from the median of the last ten successful runs of each job and shows the total wall-clock time assuming the configured concurrency, so that a backfill of six months can be judged before it is started.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "scheduler"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-021",
+      "sprintRef": "dpl-s3",
+      "comments": []
+    },
+    {
+      "ref": "dpl-023",
+      "type": "bug",
+      "title": "Geplante Läufe starten nach der Zeitumstellung in der falschen Zeitzone",
+      "description": "Nach der Umstellung auf Winterzeit werden Jobs, die in der Zeitzone Europe/Berlin geplant sind, eine Stunde zu früh gestartet. Die Ursache ist, dass der Scheduler die nächste Ausführung in UTC vorausberechnet und dabei den Versatz zum Zeitpunkt der Planung verwendet, nicht den zum Zeitpunkt der Ausführung. Betroffen sind vor allem die Berichte für die Finanzabteilung, die um sechs Uhr morgens Ortszeit fertig sein sollen.\n\nDie Berechnung muss die Zeitzonendatenbank bei jeder Planung neu abfragen und die nächste Ausführung in Ortszeit bestimmen, bevor sie in UTC umgerechnet wird. Ein Test soll beide Umstellungen in einem Jahr abdecken.",
+      "acceptanceCriteria": [
+        "Ein Job für 06:00 Europe/Berlin startet vor und nach der Umstellung um 06:00 Ortszeit",
+        "Ein Test deckt die Umstellung im Frühjahr und im Herbst ab"
+      ],
+      "reproSteps": "1. Einen Job für 06:00 Uhr Europe/Berlin anlegen.\n2. Die Testuhr auf Samstag vor der Umstellung auf Winterzeit stellen.\n3. Zwei Tage vorspulen und die geplanten Startzeiten ansehen.\n4. Der Job startet um 05:00 Uhr Ortszeit.",
+      "tags": [
+        "scheduler",
+        "timezone",
+        "bug",
+        "de"
+      ],
+      "state": "New",
+      "parentRef": "dpl-019",
+      "sprintRef": "dpl-s4",
+      "comments": [
+        {
+          "ref": "dpl-c18",
+          "body": "Hängt mit dem Fehler bei doppelten Läufen zur Zeitumstellung zusammen, aber hier geht es um die Berechnung, nicht um die Eindeutigkeit.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "dpl-024",
+      "type": "story",
+      "title": "Late-arriving data and watermarks",
+      "description": "Streams can deliver events hours after they happened. The transform tracks a watermark per source, the oldest event time it still expects, and holds daily aggregates open until the watermark passes the end of the day plus a configurable grace period. Events that arrive after the grace period go to a corrections table and trigger a recompute of only the affected partition.\n\nAnalysts can see the watermark for each source on the freshness page, which ends the daily argument over whether yesterday is complete yet.\n\nThe watermark is the minimum, across the partitions of the source, of the maximum event time seen so far, so that one idle partition cannot hold the whole stream back for ever: partitions with no events for an hour are excluded from the minimum and reported separately.\n\nCorrections are a small share of rows, but their recompute is partition-scoped, so even a full day of late data costs less than the original aggregate.\n\nAggregates are recomputed from the raw events of the partition, not patched, which keeps the logic simple and the results reproducible at the cost of some compute. A corrections run writes a new version of the partition and keeps the previous one for seven days, so that a report which was sent to a customer can be reproduced exactly as it was.\n\nThe freshness page shows two numbers for each source: the watermark and the age of the newest event, because they answer different questions and people confuse them.",
+      "acceptanceCriteria": [
+        "Aggregates stay open until the watermark passes the day plus grace",
+        "Events after the grace period land in the corrections table",
+        "The freshness page shows the watermark per source"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "transform",
+        "watermark"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-014",
+      "sprintRef": "dpl-s3",
+      "comments": [
+        {
+          "ref": "dpl-c19",
+          "body": "Grace period default is six hours; the marketing source asks for twelve.",
+          "archived": false
+        },
+        {
+          "ref": "dpl-c20",
+          "body": "Idle partitions are excluded from the watermark after an hour; the marketing source has two that are almost always idle.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "dpl-025",
+      "type": "story",
+      "title": "Marketing events stream connector",
+      "description": "Consume the marketing events topic through the managed streaming service and land batches of five minutes in the raw zone. Offsets are committed only after the batch file is durable, and consumer lag is exported as a metric.\n\nConsumer lag is the number that tells us whether we are keeping up. The alert fires when lag grows for thirty minutes in a row rather than on a single spike, because the topic has a daily peak when campaigns send.\n\nBatch files are named by the partition and the first and last offset they contain, which makes a replay of a window a matter of listing names.",
+      "acceptanceCriteria": [
+        "Batches of five minutes appear in the raw zone",
+        "Offsets are committed after the file is durable",
+        "Consumer lag is exported as a metric"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "ingest",
+        "streaming"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-002",
+      "sprintRef": "dpl-s3",
+      "comments": []
+    },
+    {
+      "ref": "dpl-026",
+      "type": "story",
+      "title": "Evaluate Kafka Connect for the connector framework",
+      "description": "Spike to compare our own connector framework with adopting Kafka Connect and its source plugins. Dropped because the operations team will not run a new cluster this year.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "ingest",
+        "spike"
+      ],
+      "state": "Removed",
+      "parentRef": "dpl-002",
+      "sprintRef": "dpl-s1",
+      "comments": []
+    },
+    {
+      "ref": "dpl-027",
+      "type": "bug",
+      "title": "Run summary JSON omits the finish time for cancelled jobs",
+      "description": "A cancelled job writes its summary before the cancellation handler sets the end timestamp, so the field is empty and the duration column in the run list shows a dash. Consumers that compute averages treat the missing value as zero and distort the figures.\n\nIt was noticed because the weekly average run time on the operations page dropped by a third after a week in which several long jobs had been cancelled. The cancelled runs were counted with zero duration.\n\nThe summary writer and the cancellation handler should agree on a single place where the end time is set.",
+      "acceptanceCriteria": [
+        "Cancelled runs record an end time",
+        "The duration column shows elapsed time for cancelled runs"
+      ],
+      "reproSteps": "1. Start a long job from the scheduler.\n2. Cancel it from the run page.\n3. Open the summary JSON and look at finishedAt.",
+      "tags": [
+        "scheduler",
+        "bug"
+      ],
+      "state": "Closed",
+      "parentRef": "dpl-019",
+      "sprintRef": "dpl-s2",
+      "comments": []
+    },
+    {
+      "ref": "dpl-028",
+      "type": "epic",
+      "title": "Reporting and dashboards",
+      "description": "The layer people actually look at: dashboards for sales, operations and finance, scheduled reports that arrive by email, and a shared catalogue of metric definitions so that two reports never disagree about what revenue means. Most requests that reach the data team are really requests for a number that someone already has in a different report.\n\nReporting has been built report by report over several years, and the result is a long tail of reports that nobody owns, three different revenue figures and a mailbox full of requests to explain why they differ. The work here is not to build more reports but to consolidate: fewer dashboards, one definition per metric and a delivery mechanism people can control themselves.\n\nSuccess means the monthly close needs no manual reconciliation between reports.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "reporting"
+      ],
+      "state": "Active",
+      "sprintRef": "dpl-s2",
+      "comments": []
+    },
+    {
+      "ref": "dpl-029",
+      "type": "feature",
+      "title": "Interactive dashboards",
+      "description": "Dashboards for the three audiences that matter most: the sales leads who check pipeline and bookings every morning, the operations team watching fulfilment, and finance during the monthly close. Every dashboard reads from the curated layer only, loads in under three seconds on a warm cache, and shows the time its data was last refreshed in the corner.\n\nEach dashboard has a named owner and a short description of the decision it supports. A dashboard that nobody can name a decision for does not get built. Design follows the same rules everywhere: the most important number first, consistent colours for the same measure on every page, and no more than eight tiles above the fold.\n\nPerformance is part of the feature, not an afterthought: the default view of each dashboard is warmed after every refresh.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "reporting",
+        "dashboards"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-028",
+      "sprintRef": "dpl-s2",
+      "comments": []
+    },
+    {
+      "ref": "dpl-030",
+      "type": "story",
+      "title": "Weekly sales dashboard",
+      "description": "A single page showing bookings, average deal size, win rate and pipeline coverage by region and week, with a comparison against the same week last year. Filters for region, product line and account owner apply to every tile at once, and the selected filters are kept in the URL so that a view can be shared in chat without screenshots.\n\nThe date picker defaults to the last complete week rather than the current partial one, which removes the Monday-morning question of why the numbers look low.\n\nThe sales leads asked for the dashboard to be the first thing they see on Monday, which is what led to the cold cache bug. Behind the scenes the tiles read from a single wide bookings view rather than from the base tables, refreshed at 05:30 UTC.\n\nWe agreed with the leads that the numbers on the dashboard are final only after the Tuesday close, and a small label says so until then.",
+      "acceptanceCriteria": [
+        "Tiles show bookings, deal size, win rate and coverage",
+        "Filters apply to all tiles and are stored in the URL",
+        "The default range is the last complete week",
+        "Each tile shows the refresh time of its data"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "reporting",
+        "sales"
+      ],
+      "state": "Closed",
+      "parentRef": "dpl-029",
+      "sprintRef": "dpl-s2",
+      "comments": [
+        {
+          "ref": "dpl-c21",
+          "body": "Sales leads asked for a toggle between bookings and recognised revenue; split into a later story.",
+          "archived": false
+        },
+        {
+          "ref": "dpl-c22",
+          "body": "Shared link behaviour verified with a filtered view sent through the team chat.",
+          "archived": false
+        },
+        {
+          "ref": "dpl-c23",
+          "body": "The label saying numbers are final after the Tuesday close was added at the sales leads' request.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "dpl-031",
+      "type": "bug",
+      "title": "Cold-cache latency on the weekly sales dashboard after the materialized view refresh",
+      "description": "First thing on Monday the sales dashboard takes 25 to 40 seconds to show its first tile, and then behaves normally for the rest of the day. The refresh of the bookings view runs at 05:30 and drops every cached query result that depended on it, so the first person in the office pays for rebuilding all of them at once. Four tiles run the same scan with different filters, which multiplies the cost.\n\nWe want the refresh job to warm the default view of each dashboard before it reports success, and the four heavy tiles to share one query that returns all their measures. A cache keyed by the filter set is already there; it only needs to be populated from the job instead of from the first visitor.\n\nIt would also help if the dashboard showed a clear loading state per tile, so that a slow tile does not leave the whole page looking frozen.\n\nMeasurements from last Monday: the first request after the refresh needed 38 seconds in total, of which 31 were the four heavy tiles running serially because the page issues them one after the other. Two of them scan the same year of data with only the grouping differing.\n\nThe warm-up job is the quick win. Merging the scans is the structural fix and also reduces the load on the warehouse during the working day.",
+      "acceptanceCriteria": [
+        "After the nightly refresh the default dashboard view loads in under three seconds",
+        "The four heavy tiles share a single query",
+        "Each tile shows its own loading state",
+        "The page issues the heavy tile queries in parallel, not one after the other"
+      ],
+      "reproSteps": "1. Open the sales dashboard after the 05:30 refresh has finished, with a browser that has never visited it.\n2. Measure the time until the first tile paints.\n3. Reload the page and measure again.\n4. Observe that the first load takes more than 25 seconds and the second takes under two.\n5. Repeat with the browser developer tools open and note that the four heavy tile requests run one after another.",
+      "tags": [
+        "reporting",
+        "performance",
+        "bug"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-029",
+      "sprintRef": "dpl-s3",
+      "comments": [
+        {
+          "ref": "dpl-c24",
+          "body": "Warm-up job added to the refresh DAG as its last step; it failed once in staging because the service account lacked the cache grant.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "dpl-032",
+      "type": "task",
+      "title": "Warm default dashboard queries after refresh",
+      "description": "At the end of the view refresh job, run the default query of each dashboard once so that the cache is populated before people arrive.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "reporting",
+        "performance"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-031",
+      "sprintRef": "dpl-s3",
+      "comments": []
+    },
+    {
+      "ref": "dpl-033",
+      "type": "story",
+      "title": "Row-level security for regional dashboards",
+      "description": "Regional managers should see only their own region on every dashboard, while the leadership group sees everything. The rule is expressed once, as a mapping from groups to region lists, and applied by the query layer to every table that has a region column. Dashboards must not need their own filter logic for this.\n\nThe mapping is read from the identity provider group claims at sign-in, so that when someone changes team their access follows within the hour and no one has to ask us.\n\nDashboards that embed a region in their own SQL, such as the older pipeline report, need to be rewritten to rely on the layer, or they would double-filter and show empty pages for managers with two regions. The migration list is part of this story, and each rewritten dashboard gets a test that checks a manager with two regions sees both.\n\nThe default-deny rule for people with no region claim was agreed with the security team.\n\nTesting is the risky part. Each dashboard gets an automated check that runs as three synthetic users, a single-region manager, a two-region manager and a user with no region, and compares the totals with the expected figures. The synthetic users are created by the test setup and removed at the end, never added to the real groups.\n\nPerformance matters as well: the filter is applied as a predicate on the base tables so the warehouse can prune partitions, rather than as a view that filters after the join, which was twice as slow in the prototype on the bookings table.",
+      "acceptanceCriteria": [
+        "A regional manager sees only their region on every dashboard",
+        "Leadership sees all regions",
+        "Changing a group in the identity provider changes access within an hour",
+        "Tables without a region column are unaffected"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "reporting",
+        "security"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-029",
+      "sprintRef": "dpl-s3",
+      "comments": [
+        {
+          "ref": "dpl-c25",
+          "body": "Open question: contractors with no region claim should see nothing, not everything. Agreed, default deny.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "dpl-034",
+      "type": "story",
+      "title": "Operations fulfilment dashboard",
+      "description": "Orders waiting, orders shipped late, carrier performance and warehouse backlog on one screen designed to be left on a wall display. Auto-refresh every five minutes without losing scroll position, large type, and a colour scheme that stays readable from across the room.\n\nThe wall display is in the warehouse office and is read by shift leads standing up, so the numbers must be legible without interaction. A colour is used only to mean late or over capacity. Anything that needs a mouse belongs on a different dashboard.\n\nThe backlog tile should show the trend of the last twelve hours as a plain sparkline, because the question the shift lead asks is whether it is getting better.",
+      "acceptanceCriteria": [
+        "Shows waiting, late and backlog counts",
+        "Refreshes every five minutes without a page reload",
+        "Readable from three metres on a 1080p display"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "reporting",
+        "operations"
+      ],
+      "state": "New",
+      "parentRef": "dpl-029",
+      "sprintRef": "dpl-s4",
+      "comments": []
+    },
+    {
+      "ref": "dpl-035",
+      "type": "bug",
+      "title": "Dashboard filter chips overflow on narrow screens",
+      "description": "When four or more filters are selected the chips run past the right edge of the page on a tablet and cannot be removed individually. The chip container needs to wrap and keep the remove button reachable.\n\nReported by a regional manager who uses a tablet in meetings. The chips are a flex container without wrapping, so the extra ones are simply clipped by the page edge. Also check the layout in the narrow desktop window case, because the same container is used there.",
+      "acceptanceCriteria": [
+        "Chips wrap to a second line instead of overflowing",
+        "Each chip keeps a reachable remove button"
+      ],
+      "reproSteps": "1. Open the sales dashboard on a tablet in portrait orientation.\n2. Select region, product line, owner and segment filters.\n3. Look at the filter bar.",
+      "tags": [
+        "reporting",
+        "ui",
+        "bug"
+      ],
+      "state": "Closed",
+      "parentRef": "dpl-029",
+      "sprintRef": "dpl-s2",
+      "comments": []
+    },
+    {
+      "ref": "dpl-036",
+      "type": "feature",
+      "title": "Scheduled reports",
+      "description": "Reports that arrive on their own: weekly summaries by email, month-end packs for finance and exception lists for the operations team. People subscribe themselves, choose a day and a format, and can unsubscribe with one click without writing to us.\n\nScheduled reports are the fastest way to reduce ad hoc requests, since most of what people ask for is a number they want every week. Delivery is by email with the content in the body, plus an attachment where the recipient needs the detail.\n\nThe rule for every scheduled report is that it must be possible to stop receiving it without writing to anyone. That rule is non-negotiable and shapes the subscription pages.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "reporting",
+        "email"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-028",
+      "sprintRef": "dpl-s2",
+      "comments": []
+    },
+    {
+      "ref": "dpl-037",
+      "type": "story",
+      "title": "Weekly summary email",
+      "description": "A plain-language email every Monday at 07:00 in the recipient's own time zone, with five headline numbers, the biggest movers since last week and links to the dashboards behind them. The email must make sense when read on a phone and survive being forwarded to someone without access, so the numbers appear in the body and not only as links.\n\nThe mover list is computed against the previous week with a minimum threshold, so that a region going from three deals to four does not show up as a one-third increase. The threshold is ten deals or five percent of the regional total, whichever is larger.\n\nThe subject line carries the single most important number, because many people read only the subject on their phone.",
+      "acceptanceCriteria": [
+        "Delivered at 07:00 recipient local time",
+        "Contains five headline numbers and the top movers",
+        "Numbers are in the body, not only behind links",
+        "Each email has a one-click unsubscribe link"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "reporting",
+        "email"
+      ],
+      "state": "Closed",
+      "parentRef": "dpl-036",
+      "sprintRef": "dpl-s3",
+      "comments": [
+        {
+          "ref": "dpl-c26",
+          "body": "Template reviewed by the sales leads; they asked for the movers list to come before the headline numbers, and we said no.",
+          "archived": false
+        },
+        {
+          "ref": "dpl-c27",
+          "body": "Original plan was a Friday send. Superseded after the survey.",
+          "archived": true
+        }
+      ]
+    },
+    {
+      "ref": "dpl-038",
+      "type": "bug",
+      "title": "PDF export truncates wide tables on the right edge",
+      "description": "Month-end packs rendered to PDF cut off any table wider than the page. Columns beyond the sixth are dropped without a warning, so a reader sees a table that looks complete but is missing its totals. The renderer takes the layout width from the screen view rather than the page size, and there is no handling for tables that do not fit.\n\nThe fix should scale or paginate wide tables horizontally, repeating the first column on each page, and fail loudly when it cannot fit a table at all. The totals column in particular must never be dropped.\n\nWhile in there, landscape orientation should be selectable per report because the finance pack has fourteen columns by design.\n\nOur first assumption was a font problem, because the missing columns started where the page width ended. The renderer prints the table into a box that is as wide as the browser window the report was designed in; the PDF page is simply a window onto the left part of it. Changing the page to landscape therefore helps for a few columns and not for fourteen.\n\nAnother detail to handle: very long cell values wrap inside the table in the browser but are clipped in the PDF, so wrapping needs the same treatment.",
+      "acceptanceCriteria": [
+        "Tables wider than the page are paginated with the first column repeated",
+        "The totals column is always present",
+        "A table that cannot fit raises an error instead of truncating",
+        "Landscape can be chosen per report",
+        "Long cell values wrap in the PDF exactly as they do on screen"
+      ],
+      "reproSteps": "1. Open the month-end revenue pack definition.\n2. Render it to PDF in portrait orientation.\n3. Count the columns in the PDF and compare with the on-screen table.\n4. Observe that the last eight columns, including Total, are missing.",
+      "tags": [
+        "reporting",
+        "pdf",
+        "bug"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-036",
+      "sprintRef": "dpl-s3",
+      "comments": [
+        {
+          "ref": "dpl-c28",
+          "body": "The cut-off is exactly at 595 points, A4 portrait width, which points at the screen width assumption.",
+          "archived": false
+        },
+        {
+          "ref": "dpl-c29",
+          "body": "Wrapping long cell values needs measuring text in the renderer; using the same font metrics file as the browser view.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "dpl-039",
+      "type": "task",
+      "title": "Horizontal pagination with a repeated first column",
+      "description": "Split tables into column groups that fit the page width, and print the first column on each page for orientation.\n\nLandscape pages fit about twelve narrow columns; beyond that the pagination applies. The first column is repeated and a small page marker such as 1 of 2 on the right makes it clear that more columns follow on the next page.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "reporting",
+        "pdf"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-038",
+      "sprintRef": "dpl-s3",
+      "comments": []
+    },
+    {
+      "ref": "dpl-040",
+      "type": "story",
+      "title": "Subscription management page",
+      "description": "A page where a person sees the reports they receive, changes the day and format, pauses delivery for a while, and unsubscribes from all of it at once. Pausing is for holidays: the subscription resumes by itself on the chosen date, and the person gets a short note on the day it restarts.\n\nThe page lives in the existing account settings area. Pausing is stored as a resume date, and a nightly job both reactivates and sends the note, so that there is only one place where the schedule is evaluated.\n\nUnsubscribe-all must also work from the link in the footer of every email, without signing in, using a signed token that is valid for ninety days.",
+      "acceptanceCriteria": [
+        "Lists every subscription with day and format",
+        "Pause with a resume date",
+        "Unsubscribe from everything with one action",
+        "A note is sent when a paused subscription resumes"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "reporting",
+        "email"
+      ],
+      "state": "New",
+      "parentRef": "dpl-036",
+      "sprintRef": "dpl-s4",
+      "comments": []
+    },
+    {
+      "ref": "dpl-041",
+      "type": "story",
+      "title": "Exception list for late shipments",
+      "description": "A daily email listing orders that are more than two days past their promised ship date, grouped by warehouse, sent only when the list is not empty. An empty report every morning teaches people to ignore the sender.\n\nThe list is sorted by days late, with the most overdue first, and includes the carrier and the last tracking event, because the first question the operations team asks is what the carrier says. Orders on a customer hold are excluded since they are not late in any meaningful sense.",
+      "acceptanceCriteria": [
+        "Sent only when at least one order is late",
+        "Grouped by warehouse",
+        "Includes order number, customer and days late"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "reporting",
+        "operations"
+      ],
+      "state": "Closed",
+      "parentRef": "dpl-036",
+      "sprintRef": "dpl-s3",
+      "comments": []
+    },
+    {
+      "ref": "dpl-042",
+      "type": "feature",
+      "title": "Metrics and semantic layer",
+      "description": "One definition for each business metric, written once and used everywhere: revenue, active customers, churn, average deal size. A metric names its source tables, its filters and its time grain. Dashboards, scheduled reports and exports ask the layer for the metric by name.\n\nThe semantic layer is a plain set of version-controlled definitions and a query function, not a separate product. A metric names its measure, its dimensions and the filters that always apply. The layer compiles that into SQL for the warehouse and caches the result by definition and parameters.\n\nOwners are named on each metric and are the people who sign off a change to it.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "metrics"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-028",
+      "sprintRef": "dpl-s2",
+      "comments": []
+    },
+    {
+      "ref": "dpl-043",
+      "type": "story",
+      "title": "Revenue metric definition",
+      "description": "Agree and implement the definition of recognised revenue: invoice lines in a posted state, net of credit notes, in the invoicing currency converted at the rate of the invoice date, excluding internal test accounts. The definition is documented next to the code with three worked examples that finance has signed off, and a test replays them.\n\nBecause the old reports each excluded something slightly different, the first release of this metric must be accompanied by a reconciliation showing the difference from every legacy figure, so that nobody is surprised by a drop at the next close.\n\nThe three worked examples are a plain invoice in euros, an invoice in dollars converted at the invoice date rate, and an invoice reduced by a credit note issued in the following month. Finance asked for the third because that is where every legacy report disagreed.\n\nInternal test accounts are identified by a flag on the account, not by an email domain, which was the old reports' guess and wrong for a handful of real customers.\n\nRounding rules were the last point of disagreement. Amounts are converted per invoice line and rounded to two decimals at the line level, then summed; the older finance workbook rounded the invoice total once, which produces differences of a few cents per thousand invoices. Finance chose line-level rounding because it matches what the billing system prints on the invoice itself.\n\nThe metric exposes the unrounded sum as a second measure for reconciliation work, clearly named so nobody puts it on a dashboard by mistake.",
+      "acceptanceCriteria": [
+        "Definition is in version control with three signed worked examples",
+        "A test reproduces the worked examples",
+        "A reconciliation against each legacy report is published"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "metrics",
+        "finance"
+      ],
+      "state": "Closed",
+      "parentRef": "dpl-042",
+      "sprintRef": "dpl-s2",
+      "comments": [
+        {
+          "ref": "dpl-c30",
+          "body": "Finance signed off examples one and two; example three involves a credit note across a month end and went to the controller.",
+          "archived": false
+        },
+        {
+          "ref": "dpl-c31",
+          "body": "Reconciliation shows the old marketing report excluded credit notes entirely, which explains most of its overstatement.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "dpl-044",
+      "type": "story",
+      "title": "Currency conversion table",
+      "description": "Daily exchange rates from the treasury feed, stored with their publication date, with a rule for weekends and holidays that carries the last published rate forward and marks the row as carried. Reports must be able to ask for the rate as of a date and get the same answer a year later.\n\nRates arrive from the treasury feed shortly after midday and are final for that date. Late corrections are rare but happen, so the table keeps the version history and a report can ask for the rate as it was when the report was run, which is what an audit needs.",
+      "acceptanceCriteria": [
+        "Rates are stored with publication date",
+        "Weekend and holiday dates carry the previous rate and are flagged",
+        "A rate lookup for a past date is stable over time"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "metrics",
+        "finance"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-042",
+      "sprintRef": "dpl-s3",
+      "comments": [
+        {
+          "ref": "dpl-c32",
+          "body": "Late corrections from treasury are rare, about twice a year, and always for a single currency.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "dpl-045",
+      "type": "bug",
+      "title": "Active customers metric counts accounts merged into another account",
+      "description": "Accounts merged by the support team keep their old identifier and still appear in the active customers count when they have orders from before the merge. The monthly figure was 3 percent higher than the finance headcount of customers. The metric should resolve identifiers through the merge table before counting distinct customers.\n\nThe finance team found it by comparing our figure to their own count of billing accounts. The difference was concentrated in months after the big account clean-up, when the support team merged several hundred duplicate customers.\n\nThe merge table records the merge date, so orders before and after the merge must both resolve to the surviving identifier, whatever the date of the order.",
+      "acceptanceCriteria": [
+        "Merged accounts count once under the surviving identifier",
+        "The monthly figure matches the finance count within 0.5 percent"
+      ],
+      "reproSteps": "1. Merge two test customers in the staging support tool.\n2. Place an order for each before the merge.\n3. Run the active customers metric for the month.\n4. Observe a count of two instead of one.",
+      "tags": [
+        "metrics",
+        "bug"
+      ],
+      "state": "Closed",
+      "parentRef": "dpl-042",
+      "sprintRef": "dpl-s3",
+      "comments": [
+        {
+          "ref": "dpl-c33",
+          "body": "Merge table is slowly changing, so the lookup uses the merge date, not the current mapping.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "dpl-046",
+      "type": "story",
+      "title": "Metric catalogue search page",
+      "description": "A searchable page listing every metric with its definition, owner, source tables and the dashboards that use it. Analysts currently ask in chat whether a metric exists; this page should answer that.\n\nThe page is read-only and generated from the metric definitions, so it cannot go out of date. Search covers names, descriptions and tags, and a result shows the owner and the five dashboards with the most views that use the metric.",
+      "acceptanceCriteria": [
+        "Search by name and by description text",
+        "Each entry lists owner and consuming dashboards"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "metrics",
+        "catalogue"
+      ],
+      "state": "New",
+      "parentRef": "dpl-042",
+      "sprintRef": "dpl-s4",
+      "comments": []
+    },
+    {
+      "ref": "dpl-047",
+      "type": "story",
+      "title": "Self-serve ad hoc query workspace",
+      "description": "A notebook-style workspace for analysts. Removed from scope: we decided to keep ad hoc work in the existing warehouse console rather than build another editor.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "reporting"
+      ],
+      "state": "Removed",
+      "parentRef": "dpl-029",
+      "sprintRef": "dpl-s1",
+      "comments": []
+    },
+    {
+      "ref": "dpl-048",
+      "type": "epic",
+      "title": "Exports and partner delivery",
+      "description": "Getting data out of the platform in the shape other people need it: self-service downloads for staff, scheduled files for partners and notifications that tell downstream systems a delivery is ready. Exports are where mistakes become visible to people outside the company, so correctness, encoding and traceability matter more here than anywhere else.\n\nExports are the product of the platform that customers and partners see. Early on they were scripts that somebody ran by hand on request; today they are a mix of cron jobs and one-off notebooks. The goal is a small number of well-understood delivery paths with the same logging, retries and replay behaviour everywhere.\n\nThe measure of success is the number of times in a quarter that an export has to be fixed or re-sent by hand.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "export"
+      ],
+      "state": "Active",
+      "sprintRef": "dpl-s3",
+      "comments": []
+    },
+    {
+      "ref": "dpl-049",
+      "type": "feature",
+      "title": "Self-service exports",
+      "description": "Any table or saved report can be downloaded as CSV or as an Excel workbook by anyone with access to it. Exports run in the background, appear in a personal downloads list and are removed after seven days. Large exports stream rather than build in memory, and every export is logged with who asked for it and which filters were applied.\n\nSelf-service means that people with access do not need to ask the data team for a file. The cost is that we must make exports safe by default: no personal data in a download unless the person already has access to it in the tool, a size limit that stops accidents, and a log entry for every file.\n\nAll of the exports share one writer library, so a fix to quoting or encoding applies to every format at once.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "export"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-048",
+      "sprintRef": "dpl-s2",
+      "comments": []
+    },
+    {
+      "ref": "dpl-050",
+      "type": "story",
+      "title": "CSV export from any table or report",
+      "description": "A download button on every table and report that queues a background export and notifies the person when the file is ready. Column order and names match what is on screen, dates are written in ISO format, and the filters in force are recorded in a header comment file packaged with the download so the recipient can see what the file contains.\n\nQuoting follows RFC 4180: fields with commas, quotes or line breaks are enclosed in double quotes with embedded quotes doubled. The writer is shared with the partner deliveries, which have been using it for two years without a quoting bug, so it is covered by the same tests.",
+      "acceptanceCriteria": [
+        "Export respects the current filters and column order",
+        "Dates are ISO formatted",
+        "A small manifest lists the filters applied",
+        "The person is notified when the file is ready"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "export",
+        "csv"
+      ],
+      "state": "Closed",
+      "parentRef": "dpl-049",
+      "sprintRef": "dpl-s2",
+      "comments": [
+        {
+          "ref": "dpl-c34",
+          "body": "Manifest is a second file in a zip, because adding comment rows to the CSV broke the partner importers.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "dpl-051",
+      "type": "task",
+      "title": "Background export queue",
+      "description": "Queue exports in a dedicated pool with a limit of four concurrent jobs and a per-person limit of two, so that one analyst cannot block everyone.\n\nThe queue is fair by person: each person gets at most two concurrent exports and the rest wait. Cancelled exports stop within a few seconds and release their slot.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "export"
+      ],
+      "state": "Closed",
+      "parentRef": "dpl-050",
+      "sprintRef": "dpl-s2",
+      "comments": []
+    },
+    {
+      "ref": "dpl-052",
+      "type": "bug",
+      "title": "Exported CSV shows broken characters for accented names when opened in Excel",
+      "description": "Customer names such as Zoë or Søren appear as garbled sequences when the CSV is opened directly in Excel on Windows, although the same file looks right in a text editor and in other tools. The file is correct UTF-8; Excel simply guesses a legacy code page unless the file starts with a byte order mark. Support has been telling people to use the import wizard, which most finance users do not know about.\n\nThe export should write a UTF-8 byte order mark for downloads started from the browser, while the partner deliveries, whose importers choke on it, must keep writing files without one. That means the setting belongs to the export profile rather than to the writer.\n\nA test should open the output in a strict reader and check the first three bytes for each profile.\n\nSupport collected eleven tickets with the same screenshot over the last two quarters. Opening the file through the Excel import wizard with UTF-8 selected shows the names correctly, which confirmed that the file itself was right. The Mac version of Excel guesses UTF-8 and was never affected, which delayed the diagnosis.\n\nPartner importers are strict about the first bytes and reject files starting with the mark, so the profile split is necessary and not a nicety.",
+      "acceptanceCriteria": [
+        "Browser downloads start with a UTF-8 byte order mark",
+        "Partner delivery files have no byte order mark",
+        "A test checks the first bytes of each profile",
+        "The download from the Mac version of Excel is unchanged"
+      ],
+      "reproSteps": "1. Export the customers table to CSV from the browser.\n2. Double-click the downloaded file on a Windows machine with Excel.\n3. Look at the name column for customers with accents.\n4. Observe garbled characters where the accents should be.",
+      "tags": [
+        "export",
+        "csv",
+        "bug",
+        "encoding"
+      ],
+      "state": "Closed",
+      "parentRef": "dpl-049",
+      "sprintRef": "dpl-s2",
+      "comments": [
+        {
+          "ref": "dpl-c35",
+          "body": "Confirmed with the finance desktop team that the mark fixes their Excel version.",
+          "archived": false
+        },
+        {
+          "ref": "dpl-c36",
+          "body": "Mac Excel is unaffected, which is why the engineering team never saw it on their own machines.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "dpl-053",
+      "type": "task",
+      "title": "Export profiles with a byte order mark flag",
+      "description": "Introduce profiles named browser and partner, each with encoding, mark, delimiter and line ending settings, and select one when an export is created.\n\nA profile is a small named record in configuration rather than code, so that adding a partner with unusual requirements does not need a release.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "export"
+      ],
+      "state": "Closed",
+      "parentRef": "dpl-052",
+      "sprintRef": "dpl-s2",
+      "comments": []
+    },
+    {
+      "ref": "dpl-054",
+      "type": "story",
+      "title": "Excel workbook export",
+      "description": "Produce a real workbook rather than a renamed CSV: typed cells, a frozen header row, column widths that fit the content and a second sheet holding the filter manifest. Numbers stay numbers and dates stay dates, so that formulas in the recipient's own sheets keep working.\n\nWorkbooks are limited to a million rows by the format itself; beyond that the export should split into numbered sheets and say so in the notification instead of silently stopping at the limit.\n\nThe finance team uses the workbook export for the monthly close, so formulas in their own sheets refer to our columns by position. Column order therefore must not change between releases without notice, and the contract is written down in the export profile.\n\nColumn widths are estimated from the first thousand rows, capped at sixty characters, because measuring all rows of a large export is expensive and gains nothing.",
+      "acceptanceCriteria": [
+        "Cells are typed and the header row is frozen",
+        "A manifest sheet lists the filters",
+        "Beyond one million rows the export continues on numbered sheets",
+        "The notification mentions the split"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "export",
+        "excel"
+      ],
+      "state": "Closed",
+      "parentRef": "dpl-049",
+      "sprintRef": "dpl-s3",
+      "comments": [
+        {
+          "ref": "dpl-c37",
+          "body": "Streaming writer keeps memory flat; a five million row test used about 300 MB.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "dpl-055",
+      "type": "task",
+      "title": "Streaming workbook writer",
+      "description": "Write rows to the workbook as they are read from the query cursor, so that memory does not grow with the size of the result.\n\nThe writer buffers one hundred rows and flushes them as they are read from the cursor. Shared strings are written inline to keep memory flat, at the cost of a slightly larger file.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "export",
+        "excel"
+      ],
+      "state": "Resolved",
+      "parentRef": "dpl-054",
+      "sprintRef": "dpl-s3",
+      "comments": []
+    },
+    {
+      "ref": "dpl-056",
+      "type": "bug",
+      "title": "Decimal separator wrong in exports for finance users in the Netherlands",
+      "description": "Amounts in CSV exports are always written with a decimal point. Finance users in the Amsterdam office open the files in a spreadsheet configured for Dutch regional settings, which reads 1234.50 as text or as a date and sums come out as zero. We have had three tickets this quarter and each time someone fixed the file by hand.\n\nThe export profile should carry a number format, and the browser profile should pick it from the person's locale preference. Partner deliveries stay locale independent. The delimiter must follow the format: when the decimal separator is a comma the field delimiter has to become a semicolon, or the columns will fall apart.\n\nThe cases that matter are the decimal comma in the Dutch locale together with a semicolon delimiter, and the thousands separator, which must not appear at all in raw exports because it makes values ambiguous.\n\nA dot-grouped number such as 1.234 is one thousand two hundred thirty-four in one setting and a little over one in the other, and nothing in the file says which was meant. Support cannot tell from a screenshot either.\n\nEven so, the safest long-term answer for finance is the Excel workbook export, where numbers are numbers and the locale does not matter at all.",
+      "acceptanceCriteria": [
+        "Browser exports use the number format of the person's locale preference",
+        "A decimal comma implies a semicolon delimiter",
+        "No thousands separator is written in raw exports",
+        "Partner profiles stay locale independent",
+        "A decimal comma export has been opened in a Dutch-locale spreadsheet and sums correctly"
+      ],
+      "reproSteps": "1. Set the profile locale to Dutch.\n2. Export the invoices table with an amount column.\n3. Open the CSV in a spreadsheet using Dutch regional settings.\n4. Observe amounts shown as text and a column total of zero.",
+      "tags": [
+        "export",
+        "csv",
+        "bug",
+        "locale"
+      ],
+      "state": "New",
+      "parentRef": "dpl-049",
+      "sprintRef": "dpl-s4",
+      "comments": []
+    },
+    {
+      "ref": "dpl-057",
+      "type": "story",
+      "title": "Exportar el informe mensual a Excel con formato local",
+      "description": "Las personas del equipo de Madrid necesitan descargar el informe mensual de ventas en un libro de Excel donde los importes usen la coma decimal y las fechas aparezcan como día, mes y año. Hoy tienen que reformatear las columnas a mano cada mes, lo que lleva casi una hora y provoca errores en las sumas.\n\nEl formato debe tomarse de la preferencia de idioma del usuario y aplicarse solo a la presentación; los valores internos siguen siendo numéricos. Además, el nombre del archivo debe incluir el mes y el año para que no se sobrescriban las descargas anteriores.\n\nEl formato local no debe cambiar los datos que se guardan en el almacén ni los que se envían a los socios: solo la presentación del archivo descargado desde el navegador. La preferencia de idioma se guarda en el perfil de cada persona y el valor predeterminado es el inglés.\n\nUna vez hecho para el español, el mismo mecanismo debería servir para el francés y el italiano sin cambios en el código, solo con la configuración de cada idioma.",
+      "acceptanceCriteria": [
+        "Los importes se muestran con coma decimal",
+        "Las fechas aparecen como día, mes y año",
+        "El nombre del archivo incluye el mes y el año"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "export",
+        "excel",
+        "es"
+      ],
+      "state": "New",
+      "parentRef": "dpl-049",
+      "sprintRef": "dpl-s4",
+      "comments": []
+    },
+    {
+      "ref": "dpl-058",
+      "type": "story",
+      "title": "Large export streaming without temporary files",
+      "description": "Exports over a few hundred megabytes currently build the whole file on local disk before uploading it, which fills the worker volume when two big jobs overlap. Stream the output straight to object storage with a multipart upload so that disk use stays constant.\n\nThe uploader holds only one part in memory at a time, of ten megabytes, and uploads the previous part while the next is being produced. A failure leaves the multipart upload open, which is why the clean-up bug has to be fixed together with this story.",
+      "acceptanceCriteria": [
+        "Disk use on the worker does not grow with export size",
+        "The file appears in storage only when complete",
+        "Failed exports leave nothing behind"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "export",
+        "storage"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-049",
+      "sprintRef": "dpl-s3",
+      "comments": []
+    },
+    {
+      "ref": "dpl-059",
+      "type": "bug",
+      "title": "Orphaned multipart uploads inflate the export bucket bill",
+      "description": "Storage costs for the exports bucket grew by a third in two months while the number of downloads stayed flat. Most of the growth is incomplete multipart uploads from exports that failed or were cancelled midway: the parts remain, invisible in the object listing, and are billed until someone aborts the upload.\n\nThere are two parts to the fix. First, the export worker must abort the upload in its failure and cancellation handlers; today it only deletes the local temporary file. Second, a lifecycle rule on the bucket should abort any multipart upload that is more than two days old, as a safety net for crashes that never reach a handler.\n\nThe cost report found about 1.4 TB of orphaned parts in the staging bucket alone, mostly from a load test, so it is worth checking the production bucket for a one-off clean-up with the abort-incomplete-uploads listing before the rule is enabled.\n\nTerraform shows the exports bucket created by hand two years ago, before the shared module, so it has no lifecycle rules at all. The staging bucket had 1.4 TB of orphaned parts left behind by a load test, and the production figure is expected to be much smaller but is still unknown until someone runs the listing.\n\nThe cost report that revealed all this is the one the platform team posts monthly; the growth showed up as a line called requests and storage for incomplete uploads that nobody had ever looked at.",
+      "acceptanceCriteria": [
+        "A failed or cancelled export aborts its multipart upload",
+        "A lifecycle rule aborts uploads older than two days in every exports bucket",
+        "Orphaned parts in production are listed and cleaned up once",
+        "The production bucket listing of incomplete uploads is attached to the ticket"
+      ],
+      "reproSteps": "1. Start an export of the largest table.\n2. Cancel it from the downloads list after the progress bar passes 30 percent.\n3. List incomplete multipart uploads on the exports bucket.\n4. Observe the cancelled upload still present with its parts.\n5. Repeat for an export that fails because of a permissions error, and note the same orphaned upload.",
+      "tags": [
+        "export",
+        "storage",
+        "bug",
+        "cost"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-049",
+      "sprintRef": "dpl-s3",
+      "comments": [
+        {
+          "ref": "dpl-c38",
+          "body": "The lifecycle rule is a Terraform change and needs to go through the platform team review.",
+          "archived": false
+        },
+        {
+          "ref": "dpl-c39",
+          "body": "Production listing shows far fewer orphaned parts than staging, but the bucket has none of the lifecycle rules.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "dpl-060",
+      "type": "task",
+      "title": "Bucket lifecycle rule for incomplete uploads",
+      "description": "Add an abort-incomplete-multipart-upload rule with a two day threshold to the Terraform module used for every exports bucket.\n\nThe rule is applied through the shared module, so every bucket created in the future gets it for free. Check the ones created by hand before the module existed, because they will not have it.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "export",
+        "terraform"
+      ],
+      "state": "New",
+      "parentRef": "dpl-059",
+      "sprintRef": "dpl-s3",
+      "comments": []
+    },
+    {
+      "ref": "dpl-061",
+      "type": "feature",
+      "title": "Partner delivery",
+      "description": "Scheduled deliveries of agreed files to partners: logistics get the shipping manifest by SFTP each hour, the payments processor receives the settlement file daily, and the analytics agency reads a nightly extract from a shared bucket. Every delivery is recorded and can be replayed.\n\nThe common thread in these deliveries is that somebody outside the company depends on them arriving, correctly formed, at a time that was agreed in a contract. Each delivery therefore has an owner, a documented format, a test file the partner has acknowledged and a replay procedure.\n\nThe delivery log is the single place to look for what was sent, when and to whom.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "export",
+        "partners"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-048",
+      "sprintRef": "dpl-s3",
+      "comments": []
+    },
+    {
+      "ref": "dpl-062",
+      "type": "story",
+      "title": "Hourly SFTP delivery of the shipping manifest",
+      "description": "Write the manifest file to the logistics partner's SFTP server every hour on the hour. The file is uploaded under a temporary name and renamed once complete so that the partner never reads a half-written file. The delivery log records the file name, size, checksum and time, and a failed upload retries three times with backoff before alerting.\n\nThe partner's server allows only five connections from our address, so the delivery reuses one connection for all of the hourly files instead of opening one per file. The connection is kept alive with a no-op every thirty seconds, because their firewall drops idle sessions after a minute.",
+      "acceptanceCriteria": [
+        "The file is renamed into place only after the upload is complete",
+        "The log records name, size, checksum and time",
+        "Three retries with backoff precede an alert"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "export",
+        "sftp"
+      ],
+      "state": "Closed",
+      "parentRef": "dpl-061",
+      "sprintRef": "dpl-s3",
+      "comments": [
+        {
+          "ref": "dpl-c40",
+          "body": "Partner confirmed they poll every five minutes and ignore files ending in .part.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "dpl-063",
+      "type": "bug",
+      "title": "SFTP delivery fails every morning after the overnight credential refresh",
+      "description": "The first manifest delivery after 06:00 fails with an authentication error and the following ones succeed. The service account that the delivery runs under receives a fresh ticket from the directory at 06:00, but the long-running delivery worker keeps using the cached one until the next retry succeeds. The alert fires because three retries are spent inside the expired window.\n\nThe worker should reload its credentials on an authentication failure before retrying, rather than waiting for the cache to expire.\n\nThe worker is a long-running process that loads the ticket-based credentials once at start-up and uses them for every connection. The directory issues a new ticket at 06:00 and the old one is invalid from then on, so the very first connection of the day always fails.\n\nThe alert threshold of three retries is reasonable; the problem is only that all three happen inside the same expired window. Reloading the credentials between attempts makes the second one succeed.",
+      "acceptanceCriteria": [
+        "An authentication failure triggers a credential reload before the next retry",
+        "The 06:00 delivery succeeds on its first or second attempt",
+        "The credential reload is covered by a test that expires the ticket mid-run"
+      ],
+      "reproSteps": "1. Leave the delivery worker running across 06:00.\n2. Look at the delivery log for the 06:00 manifest.\n3. Observe two authentication failures and then success on the third attempt.\n5. Wait for the third attempt and note that it succeeds without any change by an operator.",
+      "tags": [
+        "export",
+        "sftp",
+        "bug"
+      ],
+      "state": "Closed",
+      "parentRef": "dpl-061",
+      "sprintRef": "dpl-s3",
+      "comments": [
+        {
+          "ref": "dpl-c41",
+          "body": "Root cause: Kerberos ticket expiry on the service account; the worker reads the ticket cache once at start. Reloading on failure fixes it, a longer ticket lifetime was rejected by security.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "dpl-064",
+      "type": "story",
+      "title": "Daily settlement file to the payments processor",
+      "description": "Produce the settlement file in the processor's fixed-width format at 02:00 UTC, sign it with the company key and deliver it to their endpoint. The file includes a trailer line with a record count and a total so that the processor can reject truncated files, and the same totals are written to our own log for reconciliation the next morning.\n\nThe processor publishes a specification of about forty pages and a set of sample files. Golden file tests built from the samples catch layout slips, such as an amount field that is padded on the wrong side, before the processor does.\n\nIf the processor rejects a file we must be able to produce the previous day's file again byte for byte, which is another reason for the replay story.",
+      "acceptanceCriteria": [
+        "The file matches the processor's fixed-width specification",
+        "The trailer holds record count and total",
+        "The file is signed before delivery",
+        "Our log holds the same totals"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "export",
+        "finance"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-061",
+      "sprintRef": "dpl-s4",
+      "comments": [
+        {
+          "ref": "dpl-c42",
+          "body": "Processor sent three more sample files, including one with an empty trailer to test our handling of zero records.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "dpl-065",
+      "type": "task",
+      "title": "Fixed-width layout writer",
+      "description": "Implement the record layouts from the specification with padding and truncation rules, covered by golden file tests supplied by the processor.\n\nDates are written as eight digits without separators, amounts as integers in minor units padded with zeros, and text left-justified and padded with spaces. Characters outside the processor's allowed set are replaced and counted in the log so that we notice when a name contains something new.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "export",
+        "finance"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-064",
+      "sprintRef": "dpl-s4",
+      "comments": []
+    },
+    {
+      "ref": "dpl-066",
+      "type": "story",
+      "title": "Completion webhooks for downstream systems",
+      "description": "When a delivery or export finishes, post a small JSON message to each registered webhook with the dataset name, the logical date and the location of the file. Receivers verify a signature header, and failed posts retry for up to a day with growing delays.\n\nThe signature is an HMAC over the body with a secret that is distinct for each receiver and rotated every six months. A receiver that has not rotated still works for a week afterwards, because both secrets are accepted during the changeover.",
+      "acceptanceCriteria": [
+        "A JSON message is posted on completion",
+        "The message carries a verifiable signature",
+        "Failed posts retry for up to 24 hours"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "export",
+        "webhooks"
+      ],
+      "state": "New",
+      "parentRef": "dpl-061",
+      "sprintRef": "dpl-s4",
+      "comments": []
+    },
+    {
+      "ref": "dpl-067",
+      "type": "story",
+      "title": "Nightly extract to the analytics agency bucket",
+      "description": "Write the anonymised campaign extract to the agency's bucket each night using a role they grant us. Personal identifiers are replaced by the salted hash produced by the masking step, and the extract is validated against its schema before upload.\n\nThe agency receives only what they need for attribution: campaign, channel, a hashed customer token, day and conversion value. They have asked for a daily file of under 2 GB, compressed, in Parquet. Any change to the column set needs written agreement from them, so the schema is versioned and its version is part of the file name.",
+      "acceptanceCriteria": [
+        "Extract is written nightly to the agency bucket",
+        "Personal identifiers appear only as salted hashes",
+        "Schema validation passes before upload"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "export",
+        "partners"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-061",
+      "sprintRef": "dpl-s4",
+      "comments": []
+    },
+    {
+      "ref": "dpl-068",
+      "type": "story",
+      "title": "Delivery replay from the log",
+      "description": "Let an operator resend any past delivery from the log with one action, reproducing the original file from archived inputs rather than regenerating it from current data, since the source tables will have moved on.\n\nReplays use the archived input files and the code version recorded at the original run, not the current ones, which is the only way to reproduce a file byte for byte. The archive keeps ninety days of inputs.",
+      "acceptanceCriteria": [
+        "Replay resends the original bytes",
+        "The log shows who replayed and why"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "export",
+        "audit"
+      ],
+      "state": "New",
+      "parentRef": "dpl-061",
+      "sprintRef": "dpl-s4",
+      "comments": []
+    },
+    {
+      "ref": "dpl-069",
+      "type": "story",
+      "title": "Export to the legacy FTP server",
+      "description": "Removed: the legacy FTP server is being switched off by the vendor and the one partner using it has moved to the SFTP delivery.\n\nScoped out in the first planning session. The vendor announced end of life for the legacy FTP service for the end of the quarter, and the only partner using it confirmed that they had already moved to the SFTP route. Keeping the story open would only have confused the delivery list.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "export"
+      ],
+      "state": "Removed",
+      "parentRef": "dpl-061",
+      "sprintRef": "dpl-s2",
+      "comments": []
+    },
+    {
+      "ref": "dpl-070",
+      "type": "epic",
+      "title": "Platform reliability and governance",
+      "description": "The foundations that make the rest trustworthy: knowing when data is late or wrong, controlling who can see personal data, keeping storage affordable and keeping a record of every access. These are the questions auditors and on-call engineers ask, and we should be able to answer them without a week of digging.\n\nReliability here means more than uptime. A pipeline that is running but delivering wrong numbers is down as far as the business is concerned. This epic covers the checks that catch wrong or late data, the controls that stop the wrong people seeing it and the housekeeping that keeps the warehouse affordable.\n\nIt is also where the auditors' requests land, so every story must be explainable to someone who has never opened the code.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "platform"
+      ],
+      "state": "Active",
+      "sprintRef": "dpl-s4",
+      "comments": []
+    },
+    {
+      "ref": "dpl-071",
+      "type": "feature",
+      "title": "Observability and freshness",
+      "description": "Dashboards, monitors and alerts for the pipelines themselves. A person should be able to open one page and see which datasets are fresh, which are late, which are quarantined and which job is responsible, and on-call should be paged only for things that need a human.\n\nThe principle is that the platform tells us before our users do. Every curated table has an expected freshness and a named owner, every job has an expected duration, and a deviation from either is visible on one page without anyone running a query.\n\nAlerts are designed to be rare and actionable: each one says what is wrong, how long it has been wrong and where the runbook is.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "observability"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-070",
+      "sprintRef": "dpl-s2",
+      "comments": []
+    },
+    {
+      "ref": "dpl-072",
+      "type": "story",
+      "title": "Freshness monitors for curated tables",
+      "description": "Each curated table declares how stale it may become. A monitor compares the newest loaded timestamp with that limit and raises an alert when it is breached, naming the table, the limit, the age and the producing job. Tables that are late because a source holiday is in the calendar are marked expected-late instead of alerting.\n\nThe limit for most tables is one day plus the grace period of the sources. Tables that feed the morning reports have a stricter limit of 06:30 UTC, and an alert on those wakes on-call if they are still late at 07:00. The monitor reads the maximum load timestamp from a cheap metadata query rather than scanning the table.",
+      "acceptanceCriteria": [
+        "A breach alerts with table, limit, age and job",
+        "Holiday calendar entries suppress the alert and show expected-late",
+        "Limits live next to the table definition"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "observability",
+        "freshness"
+      ],
+      "state": "Closed",
+      "parentRef": "dpl-071",
+      "sprintRef": "dpl-s2",
+      "comments": [
+        {
+          "ref": "dpl-c43",
+          "body": "Holiday calendar is maintained by the data team for now; the Friday freeze calendar for deploys is a separate list and should not be merged with it.",
+          "archived": false
+        },
+        {
+          "ref": "dpl-c44",
+          "body": "Monitors run every ten minutes; faster adds load without helping.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "dpl-073",
+      "type": "story",
+      "title": "Column-level lineage view",
+      "description": "For any column show where it comes from and what depends on it, down to the source table and up to the dashboards that read it. The lineage is derived from the parsed SQL of the transformations, so that it cannot drift from the code.\n\nThe view is used before any change to a source column and in incident reviews, where the question is always which reports are affected.\n\nWhere the parser cannot resolve a column, for instance behind dynamic SQL, the lineage shows an explicit unknown edge instead of a gap, and the table definition check fails unless the author has declared the dependency by hand. A lineage graph that quietly has holes in it is worse than none.",
+      "acceptanceCriteria": [
+        "Any column shows its upstream sources",
+        "Any column shows downstream tables and dashboards",
+        "Lineage is derived from the transformation SQL"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "observability",
+        "lineage"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-071",
+      "sprintRef": "dpl-s3",
+      "comments": [
+        {
+          "ref": "dpl-c45",
+          "body": "Dynamic SQL in two legacy transformations is declared by hand until they are rewritten.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "dpl-074",
+      "type": "task",
+      "title": "SQL parser for column dependencies",
+      "description": "Parse transformation SQL into column-level dependencies, covering joins, aliases, window functions and common table expressions, and fail loudly on constructs it cannot resolve.\n\nThe first target is the SQL dialect we use for transformations; the parser does not need to cover everything the warehouse accepts. Unsupported constructs raise an error that names the file and line, so that authors can either rewrite the statement or declare the dependencies manually.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "lineage",
+        "sql"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-073",
+      "sprintRef": "dpl-s3",
+      "comments": []
+    },
+    {
+      "ref": "dpl-075",
+      "type": "bug",
+      "title": "Alert noise: the same stale table pages on-call every ten minutes",
+      "description": "When a freshness monitor breaches it re-alerts at every evaluation, so a table that is late for two hours produces twelve pages. On-call muted the channel last week and then missed a real incident. Alerts should fire once when the state changes, remind after an hour and again every four hours, and send a resolution message when the table recovers.\n\nThe channel had grown to three hundred unread messages by the time on-call muted it. The design of the state machine is intentionally simple: ok, breached and acknowledged, stored per monitor with the time of the last notification. An acknowledgement silences reminders for four hours but not the resolution message.",
+      "acceptanceCriteria": [
+        "A breach produces one alert, then reminders at one hour and every four hours",
+        "Recovery sends a resolution message"
+      ],
+      "reproSteps": "1. Stop the producing job for an orders table.\n2. Wait for the freshness limit to pass.\n3. Watch the alert channel for two hours.\n4. Observe an alert every ten minutes.",
+      "tags": [
+        "observability",
+        "alerts",
+        "bug"
+      ],
+      "state": "Closed",
+      "parentRef": "dpl-071",
+      "sprintRef": "dpl-s3",
+      "comments": [
+        {
+          "ref": "dpl-c46",
+          "body": "Implemented as a small state machine per monitor stored in the monitoring database.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "dpl-076",
+      "type": "story",
+      "title": "On-call runbook linked from every alert",
+      "description": "Every alert carries a link to a runbook page for that table and failure type, with the first three things to check and who owns the source.\n\nRunbook pages are short: a title, the symptoms, the three checks, a contact and links to the relevant dashboards. They live in the repository next to the monitors, and the alert text is generated from the same file so that they cannot disagree. A monitor without a runbook fails the definition check.",
+      "acceptanceCriteria": [
+        "Alerts include a runbook link",
+        "Runbook names the owner and first checks"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "observability",
+        "docs"
+      ],
+      "state": "Resolved",
+      "parentRef": "dpl-071",
+      "sprintRef": "dpl-s3",
+      "comments": []
+    },
+    {
+      "ref": "dpl-077",
+      "type": "feature",
+      "title": "Access control and governance",
+      "description": "Control over who can see personal data and a trustworthy record of who did. This covers masking of personal columns by default, retention limits that delete data when we have no reason to keep it, an audit log that cannot be edited by the people it describes, and role mapping from the identity provider.\n\nGovernance used to mean a spreadsheet kept by one person. This feature moves each of its rows into something the platform enforces: classification tags, masking, retention and the audit log. The test of success is that an auditor's question can be answered from the system within an hour.\n\nNone of it should slow analysts down who have a legitimate need; access requests go through the existing request form and are granted within a day.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "governance"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-070",
+      "sprintRef": "dpl-s3",
+      "comments": []
+    },
+    {
+      "ref": "dpl-078",
+      "type": "story",
+      "title": "Mask personal columns by default",
+      "description": "Columns tagged as personal data are masked for everyone except groups explicitly granted access. Masking shows a partial value for emails, hashes identifiers consistently so joins still work, and returns null for free-text fields. The tag lives on the column definition, so a new column cannot become visible by accident.\n\nMasking is applied in the query layer, not in the stored data, so a person who is granted access sees real values immediately and without a copy being made. The masked view of a table is the default view; the raw one is a separate object that only granted groups can select from.\n\nEvery grant has an expiry date and an owner who confirms it each quarter.",
+      "acceptanceCriteria": [
+        "Tagged columns are masked unless the group is granted access",
+        "Hashed identifiers still join across tables",
+        "Free-text personal fields return null when masked",
+        "A column without a tag in the personal schema fails validation"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "governance",
+        "privacy"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-077",
+      "sprintRef": "dpl-s3",
+      "comments": [
+        {
+          "ref": "dpl-c47",
+          "body": "Salt rotation is yearly; joins across a rotation boundary need the old salt kept readable by the masking service only.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "dpl-079",
+      "type": "task",
+      "title": "Consistent salted hash function",
+      "description": "Implement the keyed hash used for identifiers, with the key in the secrets manager and a documented rotation procedure.\n\nThe hash is an HMAC-SHA256 over the normalised identifier, truncated to 24 characters for readability in joins. Normalisation lowercases emails and strips whitespace, because the same person typed differently should hash to the same token.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "governance",
+        "privacy"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-078",
+      "sprintRef": "dpl-s3",
+      "comments": []
+    },
+    {
+      "ref": "dpl-080",
+      "type": "story",
+      "title": "Retention limits and scheduled deletion",
+      "description": "Each dataset declares how long it may be kept. A nightly job deletes expired partitions and records what it deleted. Deletion requests from customers are handled by a separate flow that finds the identifier through the lineage and removes or anonymises rows in every downstream table.\n\nLegal holds override the schedule: a dataset with an active hold is skipped and the skip is logged with the hold reference.",
+      "acceptanceCriteria": [
+        "Expired partitions are deleted nightly and logged",
+        "Datasets under legal hold are skipped and logged",
+        "Customer deletion reaches every downstream table"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "governance",
+        "retention"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-077",
+      "sprintRef": "dpl-s4",
+      "comments": []
+    },
+    {
+      "ref": "dpl-081",
+      "type": "story",
+      "title": "Audit log of data access",
+      "description": "Record every query against tagged tables with the person, the time, the tables and the row count. The log is written to a separate store that the platform team can append to but cannot modify, and is searchable by person and by table for the quarterly access review.\n\nThe log tables are partitioned by month and kept for seven years in cheap storage. The access review reads from a monthly summary rather than from the raw rows. Service accounts are logged like people, with the owning team recorded against them.",
+      "acceptanceCriteria": [
+        "Every query on tagged tables is logged",
+        "The log store is append-only for the platform team",
+        "Searchable by person and by table"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "governance",
+        "audit"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-077",
+      "sprintRef": "dpl-s3",
+      "comments": [
+        {
+          "ref": "dpl-c48",
+          "body": "Idea to log full query text. Dropped: the text can contain personal data itself.",
+          "archived": true
+        }
+      ]
+    },
+    {
+      "ref": "dpl-082",
+      "type": "bug",
+      "title": "Role mapping gives former team members access for a week after they move",
+      "description": "Group membership is synced from the identity provider once a week, so someone who moves from sales to finance keeps their old region access and gains the new one. Access reviews flagged six such cases. Sync should run hourly and removal should take effect immediately when the identity provider sends a group change event.\n\nThe incident was found in the quarterly review, not by an alert. The weekly sync job was originally written when team moves were rare; with the reorganisation this year there were forty-odd. Two of the six cases involved personal data in the finance schema, which is why this is a bug rather than an improvement.\n\nThe event stream from the identity provider already exists and is used by the intranet; subscribe to it rather than polling more often.",
+      "acceptanceCriteria": [
+        "Group removals take effect within an hour",
+        "Group change events apply immediately"
+      ],
+      "reproSteps": "1. Move a test user from the EMEA group to the finance group in the identity provider.\n2. Open a regional dashboard as that user.\n3. Observe the old EMEA data still visible.",
+      "tags": [
+        "governance",
+        "security",
+        "bug"
+      ],
+      "state": "Closed",
+      "parentRef": "dpl-077",
+      "sprintRef": "dpl-s3",
+      "comments": [
+        {
+          "ref": "dpl-c49",
+          "body": "Identity provider event stream is documented on the intranet team wiki; the topic name is the same in staging.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "dpl-083",
+      "type": "story",
+      "title": "Quarterly access review report",
+      "description": "Generate for each dataset owner a list of who has access and when they last used it, so the review is a ten minute task instead of a spreadsheet exercise.\n\nThe report is one table per dataset owner: person, group through which access is granted, last query date and number of queries in the quarter. People who have not used a dataset for ninety days are suggested for removal, and the owner confirms or declines with a single reply.",
+      "acceptanceCriteria": [
+        "One list per dataset owner",
+        "Shows last use per person"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "governance",
+        "audit"
+      ],
+      "state": "New",
+      "parentRef": "dpl-077",
+      "sprintRef": "dpl-s4",
+      "comments": []
+    },
+    {
+      "ref": "dpl-084",
+      "type": "feature",
+      "title": "Storage and cost",
+      "description": "Keeping the warehouse affordable without making anyone's life harder: partitioning large tables, compacting small files, finding tables that nobody reads and showing each team what their data costs.\n\nThe warehouse bill has doubled in a year while the number of active users has not. Most of the growth is storage that nobody looks at: raw files that were never compacted, partitions that should have expired and copies of tables made for an investigation two years ago.\n\nThe feature gives each team a view of what its data costs and the tools to shrink it safely.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "cost",
+        "storage"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-070",
+      "sprintRef": "dpl-s3",
+      "comments": []
+    },
+    {
+      "ref": "dpl-085",
+      "type": "bug",
+      "title": "Table bloat on the curated orders table slows the nightly merge",
+      "description": "The merge step for the orders table has gone from 12 minutes to 55 over three months. Dead tuples have piled up because the merge updates most rows daily and autovacuum cannot keep pace on a table of this size. Index size has doubled, and the plan for the merge join now spills to disk. A manual vacuum helps for a few days.\n\nWe should partition the table by order month so that the merge only touches recent partitions, and tune autovacuum for the hot ones, and measure the merge time before and after.\n\nNumbers from the run history: 12 minutes in July, 31 minutes in September, 55 minutes last week. Table size grew from 90 GB to 210 GB over the same period while the live row count rose by only ten percent. The nightly merge updates most rows that are less than a month old, and each update leaves a dead tuple behind.\n\nOne side observation from the plan output: the merge join now spills hash batches to temporary files in the database temp directory, which is why the volume alerts on the database host started firing at 03:00.",
+      "acceptanceCriteria": [
+        "The nightly merge for orders finishes in under 20 minutes",
+        "Only recent partitions are rewritten",
+        "Autovacuum settings are documented per partition class",
+        "Merge duration is measured and recorded before and after each step"
+      ],
+      "reproSteps": "1. Check the duration of the orders merge over the last 90 days in the run history.\n2. Compare dead tuple counts for the orders table before and after a manual vacuum.\n3. Note that the duration returns to the old trend within a week.\n5. Run EXPLAIN on the merge statement and note the hash batches spilling to temporary files.",
+      "tags": [
+        "storage",
+        "postgres",
+        "bug",
+        "performance"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-084",
+      "sprintRef": "dpl-s3",
+      "comments": [
+        {
+          "ref": "dpl-c50",
+          "body": "Rewriting the table online with pg_repack worked in staging and cut the size by 40 percent; we still need partitioning for the long term.",
+          "archived": false
+        },
+        {
+          "ref": "dpl-c51",
+          "body": "Autovacuum thresholds for the hot partitions set to 1 percent scale factor in staging; the merge time dropped by a third.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "dpl-086",
+      "type": "task",
+      "title": "Partition orders by order month",
+      "description": "Create the partitioned table, migrate in monthly slices during the quiet window and swap the names.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "storage",
+        "postgres"
+      ],
+      "state": "Active",
+      "parentRef": "dpl-085",
+      "sprintRef": "dpl-s3",
+      "comments": []
+    },
+    {
+      "ref": "dpl-087",
+      "type": "story",
+      "title": "Compact small files in the raw zone",
+      "description": "Streaming connectors write many small files, which makes reads slow and storage listing expensive. A nightly compaction merges files of a day into a few large ones and removes the originals only after the new file has been verified by its row count.\n\nThe compaction target is files of 256 MB to 1 GB, which is where the warehouse reads fastest. It runs after the nightly load and before the morning reports, writing into a new location and swapping the table pointer atomically. The old files stay for an hour for readers that have already planned against them.",
+      "acceptanceCriteria": [
+        "Daily files are merged into files of 256 MB or more",
+        "Originals are removed only after the row count matches"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "storage",
+        "compaction"
+      ],
+      "state": "Closed",
+      "parentRef": "dpl-084",
+      "sprintRef": "dpl-s2",
+      "comments": [
+        {
+          "ref": "dpl-c52",
+          "body": "First compaction of the marketing events day went from 41,000 files to 18.",
+          "archived": false
+        },
+        {
+          "ref": "dpl-c53",
+          "body": "Compaction target size changed from 128 MB to 256 MB after the read benchmarks.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "dpl-088",
+      "type": "story",
+      "title": "Warehouse cost per team dashboard",
+      "description": "Break the monthly warehouse bill down by team using query tags and storage ownership, and show the trend. The aim is not chargeback but awareness: teams that see their own line item tend to remove their own forgotten tables.\n\nQuery tags are set by the dashboards and scheduled reports so that cost can be attributed even though every query runs as the same service account. Interactive work is tagged with the person's team from the identity provider. Untagged cost is shown as its own line, which tends to encourage tagging.",
+      "acceptanceCriteria": [
+        "Cost per team per month with a trend",
+        "Storage and compute shown separately"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "cost",
+        "dashboards"
+      ],
+      "state": "New",
+      "parentRef": "dpl-084",
+      "sprintRef": "dpl-s4",
+      "comments": []
+    },
+    {
+      "ref": "dpl-089",
+      "type": "story",
+      "title": "Find unused tables",
+      "description": "List curated tables with no reads in 90 days together with their size and owner, and email the owners a monthly digest suggesting archival.",
+      "acceptanceCriteria": [
+        "Tables unread for 90 days are listed with size and owner",
+        "Owners receive a monthly digest"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "cost",
+        "storage"
+      ],
+      "state": "New",
+      "parentRef": "dpl-084",
+      "sprintRef": "dpl-s4",
+      "comments": []
+    },
+    {
+      "ref": "dpl-090",
+      "type": "story",
+      "title": "Bring back the old data catalogue",
+      "description": "Removed: replaced by the metric catalogue and lineage view, which cover what people actually used the old catalogue for.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "governance"
+      ],
+      "state": "Removed",
+      "parentRef": "dpl-077",
+      "sprintRef": "dpl-s2",
+      "comments": []
+    },
+    {
+      "ref": "dpl-091",
+      "type": "bug",
+      "title": "Compaction job deletes a day partition while a reader holds it",
+      "description": "The cleanup step removes originals immediately after compaction, so a long-running query that had already planned against the old files fails with a missing file error. Delay physical deletion by one hour after the swap so running queries can finish.\n\nIt was found when the quarterly finance report failed twice in a row at the same step. The failures lined up exactly with the compaction window, and the missing file named in the error was always one that compaction had just replaced.\n\nA grace period of an hour is a pragmatic answer; a proper snapshot isolation would be better but depends on a warehouse feature we do not have yet.",
+      "acceptanceCriteria": [
+        "Originals are kept for an hour after the swap",
+        "No reader sees a missing file error"
+      ],
+      "reproSteps": "1. Start a long query over yesterday's raw events.\n2. Trigger the compaction for that day.\n3. Wait for the query to read the next file.\n4. The query fails with a missing file error.",
+      "tags": [
+        "storage",
+        "compaction",
+        "bug"
+      ],
+      "state": "Closed",
+      "parentRef": "dpl-084",
+      "sprintRef": "dpl-s2",
+      "comments": []
+    },
+    {
+      "ref": "dpl-092",
+      "type": "story",
+      "title": "Runbook for restoring a dropped partition",
+      "description": "Document how to restore a partition from the daily snapshot and test the procedure against staging once per quarter.\n\nThe procedure has to be tested because a runbook that has never been run does not work. Each quarter someone who did not write it follows it on staging, records how long it took and fixes whatever was unclear.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "storage",
+        "docs"
+      ],
+      "state": "New",
+      "parentRef": "dpl-084",
+      "sprintRef": "dpl-s4",
+      "comments": []
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "connection": {
+    "id": "00000007-0000-4000-8000-000000000001",
+    "projectId": "00000002-0000-4000-8000-000000000001",
+    "baseUrl": "https://acme.atlassian.net",
+    "kind": "cloud",
+    "email": "priya.shah@acme.io",
+    "tokenLastFour": "3fA9",
+    "createdBy": {
+      "id": "00000001-0000-4000-8000-000000000002",
+      "name": "Priya Shah",
+      "initials": "PS",
+      "avatarColour": "#2f7fd8",
+      "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"
+    },
+    "createdAt": "2026-10-17T09:30:00+00:00",
+    "createdLabel": "17 Oct"
+  },
+  "dataCenter": {
+    "id": "00000007-0000-4000-8000-000000000002",
+    "projectId": "00000002-0000-4000-8000-000000000001",
+    "baseUrl": "https://jira.acme-internal.net",
+    "kind": "server",
+    "email": "",
+    "tokenLastFour": "k7Qe",
+    "createdBy": null,
+    "createdAt": "2026-10-03T08:00:00+00:00",
+    "createdLabel": "3 Oct"
+  },
+  "testOk": {
+    "ok": true,
+    "who": {
+      "displayName": "Priya Shah",
+      "email": "priya.shah@acme.io"
+    },
+    "message": null
+  },
+  "testFailed": {
+    "ok": false,
+    "who": null,
+    "message": "Jira refused the email and token. Check the email belongs to the account that created the token, and that the token has not expired."
+  }
+}

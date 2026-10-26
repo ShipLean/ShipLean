@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Features and Epics backlogs (reference)</title>
+<!--
+  Reference Features and Epics backlogs: the same ranked list one and two levels up, with roll-ups.
+  Open directly in a browser. Uses ../tokens.css, shiplean.css and shared.js only; no build step.
+  ?level=epics opens the Epics level. Planning mode is a Stories-level thing, so it isn't offered here.
+  Points show the item's own estimate with the sum of everything under it greyed beside it; Progress counts
+  child stories and bugs by state category, including those under nested Features.
+  + New work item at the Features level opens the New Feature dialog (#2): title, Epic, a slug suggested from the title
+  and checked live, Goal, start as Idea or Active, and a first Status line. ?dialog=new opens it. Checkout v2 opens
+  the Feature form (feature.html).
+  The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot).
+-->
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="shiplean.css">
+<script src="shared.js"></script>
+<style>
+table.list td.grip { width: 22px; padding: 0; color: var(--color-muted); text-align: center; }
+.prog { display: flex; align-items: center; gap: var(--space-2); }
+.bar3 { flex: 1; max-width: 140px; height: 6px; border-radius: 3px; background: var(--color-surface-2); overflow: hidden; display: flex; }
+.bar3 i { display: block; height: 100%; }
+.sigma { color: var(--color-muted); font-weight: var(--weight-regular); }
+.sigma.big { color: var(--color-warn); font-weight: var(--weight-semibold); }
+.nested { color: var(--color-muted); font-size: var(--text-xs); }
+a.t { color: inherit; text-decoration: none; }
+a.t:hover { color: var(--color-accent); text-decoration: underline; }
+.nf-grid { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: var(--space-3); align-items: start; font-size: var(--text-sm); }
+.nf-grid > label, .nf-grid > .lab { padding-top: 6px; font-weight: var(--weight-medium); }
+.nf-grid .field { width: 100%; }
+.nf-grid textarea.field { height: auto; min-height: 52px; padding: 6px 8px; resize: vertical; }
+.nf-grid .slug { font-family: var(--font-mono); font-size: var(--text-xs); }
+.nf-grid .ok { font-size: var(--text-xs); color: var(--color-ok); font-weight: var(--weight-semibold); }
+.nf-grid .bad { font-size: var(--text-xs); color: var(--color-danger); }
+.nf-grid .hint { font-size: var(--text-xs); color: var(--color-muted); }
+.stack { display: grid; gap: 3px; }
+</style>
+</head>
+<body>
+<div id="appbar"></div>
+<div class="toolbar">
+  <div class="seg" role="group" aria-label="Backlog level"><button type="button" id="lvEpics">Epics</button><button type="button" id="lvFeatures">Features</button><button type="button" onclick="location.href='backlog.html'">Stories</button></div>
+  <button class="btn primary" type="button" id="btnAdd">+ New work item</button>
+  <span class="spacer"></span>
+  <label class="check"><input type="checkbox"> Show parents</label>
+  <label class="check"><input type="checkbox"> Completed</label>
+  <button class="btn" type="button">Filter</button>
+  <button class="btn" type="button">Columns</button>
+</div>
+<div class="scroll">
+  <table class="list">
+    <thead id="head"></thead>
+    <tbody id="rows"></tbody>
+  </table>
+</div>
+
+<script>
+(() => {
+  const { items, doneItems, epics, features, stateCategory, tIcon, st, esc, toast } = SL;
+  const level = new URLSearchParams(location.search).get('level') === 'epics' ? 'epics' : 'features';
+  document.getElementById('appbar').outerHTML = SL.appBar('backlogs');
+  document.getElementById(level === 'epics' ? 'lvEpics' : 'lvFeatures').setAttribute('aria-pressed', 'true');
+  document.getElementById(level === 'epics' ? 'lvFeatures' : 'lvEpics').setAttribute('aria-pressed', 'false');
+  document.getElementById('lvEpics').onclick = () => { location.href = 'features.html?level=epics'; };
+  document.getElementById('lvFeatures').onclick = () => { location.href = 'features.html'; };
+  document.getElementById('btnAdd').onclick = () => (level === 'epics' ? toast('New Epic: Epics hold only Features') : newFeature());
+
+  const all = [...items, ...doneItems];
+  // Stories and bugs under a Feature, including those under its nested Features.
+  const under = f => [...all.filter(i => i.parent === f.title), ...features.filter(c => c.parent === f.key).flatMap(under)];
+  const featuresOf = e => features.filter(f => f.parent === e.key);
+  const ptsOf = list => list.reduce((a, i) => a + (i.points || 0), 0);
+  const byKey = k => [...epics, ...features].find(x => x.key === k);
+
+  const progress = list => {
+    const n = list.length || 1;
+    const done = list.filter(i => stateCategory[i.state] === 'completed').length;
+    const doing = list.filter(i => ['in-progress', 'resolved'].includes(stateCategory[i.state])).length;
+    return `<div class="prog"><span class="bar3" title="${done} done · ${doing} in progress · ${list.length - done - doing} not started">
+      <i style="width:${done / n * 100}%;background:var(--state-completed)"></i><i style="width:${doing / n * 100}%;background:var(--state-in-progress)"></i></span>
+      <span class="sm muted">${done} / ${list.length} done</span></div>`;
+  };
+  const points = (own, sum) => `${own} <span class="sigma${sum > own * 1.25 ? ' big' : ''}" title="Sum of everything under it">· Σ${sum}</span>`;
+
+  const head = level === 'epics'
+    ? ['', '#', 'Key', 'Title', 'State', 'Features', 'Pts', 'Progress (stories and bugs)']
+    : ['', '#', 'Key', 'Title', 'Parent', 'State', 'Pts', 'Progress (stories and bugs)'];
+  const widths = level === 'epics' ? [22, 32, 90, null, 110, 80, 110, 240] : [22, 32, 90, null, 190, 110, 110, 240];
+  document.getElementById('head').innerHTML = '<tr>' + head.map((h, i) => `<th${['#', 'Pts', 'Features'].includes(h) ? ' class="num"' : ''}${widths[i] ? ` style="width:${widths[i]}px"` : ''}>${h}</th>`).join('') + '</tr>';
+
+  const rows = level === 'epics'
+    ? epics.map((e, i) => {
+        const fs = featuresOf(e), nestedCount = fs.reduce((a, f) => a + features.filter(c => c.parent === f.key).length, 0), list = fs.flatMap(under);
+        return `<tr class="item"><td class="grip">⠿</td><td class="num muted sm">${i + 1}</td><td class="key">${e.key}</td>
+          <td><div class="title-cell">${tIcon('epic')}<span class="t">${esc(e.title)}</span></div></td><td>${st(e.state)}</td>
+          <td class="num">${fs.length + nestedCount}</td><td class="pts">${points(e.points, ptsOf(list))}</td><td>${progress(list)}</td></tr>`;
+      })
+    : features.map((f, i) => {
+        const p = byKey(f.parent), list = under(f), nested = features.includes(p);
+        return `<tr class="item"><td class="grip">⠿</td><td class="num muted sm">${i + 1}</td><td class="key">${f.key}</td>
+          <td><div class="title-cell">${tIcon('feature')}${f.key === 'SHIP-101' ? `<a class="t" href="feature.html">${esc(f.title)}</a>` : `<span class="t">${esc(f.title)}</span>`}</div></td>
+          <td><span class="parent">${tIcon(features.includes(p) ? 'feature' : 'epic')}${esc(p.title)}${nested ? ' <span class="nested">(nested)</span>' : ''}</span></td>
+          <td>${st(f.state)}</td><td class="pts">${points(f.points, ptsOf(list))}</td><td>${progress(list)}</td></tr>`;
+      });
+  document.getElementById('rows').innerHTML = rows.join('');
+
+  /* New Feature: the slug is the Feature's unique external key, suggested from the title until you edit it. */
+  const slugify = t => t.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
+  const taken = new Set(features.map(f => slugify(f.title)));
+  function newFeature() {
+    const bd = document.createElement('div');
+    bd.className = 'backdrop';
+    bd.innerHTML = `<div class="dialog" role="dialog" aria-modal="true" aria-labelledby="nfH" style="width:600px">
+      <header>${tIcon('feature')}<h2 id="nfH">New Feature</h2><span class="spacer"></span><button class="ib" type="button" data-close aria-label="Close">✕</button></header>
+      <div class="body"><div class="nf-grid">
+        <label for="nfTitle">Title</label><input class="field" id="nfTitle" value="Express checkout" autocomplete="off">
+        <label for="nfEpic">Epic</label><select class="field" id="nfEpic">${epics.map(e => `<option value="${e.key}">${esc(e.title)}</option>`).join('')}<option value="">No Epic</option></select>
+        <label for="nfSlug">Slug</label><div class="stack"><input class="field slug" id="nfSlug" autocomplete="off"><span id="nfSlugMsg"></span></div>
+        <label for="nfGoal">Goal</label><div class="stack"><textarea class="field" id="nfGoal" rows="2">Returning customers on mobile pay without leaving the product page.</textarea><span class="hint">The outcome, not the activity. One or two sentences.</span></div>
+        <span class="lab">Start as</span><div class="seg" role="group" aria-label="Start as" style="width:fit-content"><button type="button" data-start="Idea" aria-pressed="true">Idea</button><button type="button" data-start="Active" aria-pressed="false">Active</button></div>
+        <label for="nfStatus">Status</label><input class="field" id="nfStatus" placeholder="One honest line. Optional for an Idea." value="Nothing built yet; waiting on the payment provider's quote.">
+      </div></div>
+      <footer><span class="xs muted">Description, links and attachments come after it's created. Agents use <code>create_feature</code> with the same fields.</span><span class="spacer"></span><button class="btn" type="button" data-close>Cancel</button><button class="btn primary" type="button" id="nfCreate">Create Feature</button></footer>
+    </div>`;
+    document.body.append(bd);
+    const $ = id => bd.querySelector('#' + id);
+    let slugEdited = false;
+    const check = () => {
+      const s = $('nfSlug').value, ok = /^[a-z0-9]+(-[a-z0-9]+)*$/.test(s) && !taken.has(s);
+      $('nfSlugMsg').className = ok ? 'ok' : 'bad';
+      $('nfSlugMsg').textContent = !s ? 'A slug is required.' : taken.has(s) ? `In use by another Feature. Try ${s}-2.` : ok ? '✓ Free. Agents and imports find this Feature by it.' : 'Lowercase letters, digits and single hyphens.';
+      $('nfCreate').disabled = !ok || !$('nfTitle').value.trim();
+    };
+    const suggest = () => { if (!slugEdited) $('nfSlug').value = slugify($('nfTitle').value); check(); };
+    suggest();
+    $('nfTitle').addEventListener('input', suggest);
+    $('nfSlug').addEventListener('input', () => { slugEdited = true; check(); });
+    const close = () => { bd.remove(); document.getElementById('btnAdd').focus(); };
+    bd.addEventListener('click', e => {
+      if (e.target === bd || e.target.closest('[data-close]')) { close(); return; }
+      const st = e.target.closest('[data-start]'); if (st) bd.querySelectorAll('[data-start]').forEach(b => b.setAttribute('aria-pressed', b === st));
+      if (e.target.closest('#nfCreate')) { close(); toast(`SHIP-109 · ${esc($('nfTitle').value.trim())} created at the top of the Features backlog`); }
+    });
+    bd.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+    $('nfTitle').focus(); $('nfTitle').select();
+  }
+  if (level === 'features' && new URLSearchParams(location.search).get('dialog') === 'new') newFeature();
+
+  SL.preview([{ label: level === 'epics' ? 'Features level' : 'Epics level', run: () => { location.href = level === 'epics' ? 'features.html' : 'features.html?level=epics'; } }]);
+})();
+</script>
+</body>
+</html>

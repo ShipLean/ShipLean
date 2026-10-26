@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Stories backlog (reference)</title>
+<!--
+  Reference Stories backlog in List mode: the plain ranked backlog, next to Planning mode (planning.html).
+  Open directly in a browser. Uses ../tokens.css, shiplean.css and shared.js only; no build step.
+  Working: + New work item opens an inline row at the top (Enter adds, Esc closes); drag a row onto another
+  to put it just above (writes backlog_order); Show parents groups rows under their Epic and Feature, and
+  dropping a row on a Feature row makes that Feature its parent; Completed shows closed items; Filter opens
+  the criteria builder (field · operator · value, All or Any), and dragging is off while a filter is on;
+  Columns hides optional columns. ?tree opens it with parents shown.
+  The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot). It also
+  simulates the real-time states: a teammate's edit, a dropped connection and a 409 on a stale revision.
+-->
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="shiplean.css">
+<script src="shared.js"></script>
+<style>
+table.list td.grip { width: 22px; padding: 0; }
+.grip-btn { width: 22px; height: 22px; border: 0; background: none; color: var(--color-muted); cursor: grab; opacity: 0; border-radius: var(--radius-xs); }
+tr.item:hover .grip-btn, .grip-btn:focus-visible { opacity: 1; }
+.filtered .grip-btn { visibility: hidden; }
+tr.item.dragging { opacity: .4; }
+tr.item.drop-before td { box-shadow: inset 0 2px 0 var(--color-accent); }
+tr.par.over-drop td { box-shadow: inset 0 0 0 2px var(--color-accent); background: var(--color-accent-soft); }
+tr.item.flash td { animation: flash 1.8s ease-out; }
+@keyframes flash { 0%, 30% { background: color-mix(in srgb, var(--color-warn) 22%, transparent); } 100% { background: transparent; } }
+tr.item.done td { color: var(--color-muted); }
+tr.par td { height: 32px; background: var(--color-surface-2); font-weight: var(--weight-semibold); }
+tr.par.epic td { border-top: 1px solid var(--color-border); }
+tr.par .caret { width: 18px; }
+tr.add td { height: 44px; background: var(--color-accent-soft); }
+tr.add .field { height: 26px; }
+.unest { color: var(--color-warn); font-weight: var(--weight-semibold); }
+.indent { display: inline-block; flex: none; }
+.banner { display: flex; gap: var(--space-2); align-items: center; padding: 6px var(--space-4); font-size: var(--text-sm); border-bottom: 1px solid var(--color-border); background: var(--color-surface); flex: none; }
+.banner.info { border-left: 3px solid var(--color-info); }
+.banner.warn { border-left: 3px solid var(--color-warn); background: color-mix(in srgb, var(--color-warn) 12%, var(--color-surface)); }
+.banner.ok { border-left: 3px solid var(--color-ok); background: color-mix(in srgb, var(--color-ok) 12%, var(--color-surface)); }
+.fpanel { display: grid; gap: var(--space-2); padding: var(--space-3) var(--space-4); background: var(--color-bg); border-bottom: 1px solid var(--color-border); flex: none; }
+.clause { display: grid; grid-template-columns: 52px 150px 70px 200px 22px; gap: 6px; align-items: center; }
+.fchip { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 4px 0 8px; border-radius: 999px; background: var(--color-accent-soft); font-size: var(--text-xs); font-weight: var(--weight-medium); white-space: nowrap; }
+.fchip .ib { width: 18px; height: 18px; }
+.pop-wrap { position: relative; }
+.pop { position: absolute; top: calc(100% + 4px); right: 0; z-index: 30; width: 220px; padding: var(--space-2); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-raised); display: grid; gap: 4px; }
+.pop[hidden] { display: none; }
+.pop .check { color: var(--color-text); height: 24px; }
+.conflict { position: fixed; right: 20px; bottom: 20px; z-index: 40; width: 340px; display: grid; gap: var(--space-2); padding: var(--space-3); background: var(--color-surface); border: 1px solid var(--color-border); border-left: 3px solid var(--color-warn); border-radius: var(--radius-md); box-shadow: var(--shadow-raised); font-size: var(--text-sm); }
+.conflict[hidden] { display: none; }
+.empty-state { flex: 1; display: grid; place-content: center; justify-items: center; gap: var(--space-2); padding: var(--space-5); text-align: center; background: var(--color-surface); }
+.empty-state h2 { margin: 0; font-size: var(--text-md); }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div id="appbar"></div>
+<div class="toolbar">
+  <div class="seg" role="group" aria-label="Backlog level"><button type="button" aria-pressed="false" onclick="location.href='features.html?level=epics'">Epics</button><button type="button" aria-pressed="false" onclick="location.href='features.html'">Features</button><button type="button" aria-pressed="true">Stories</button></div>
+  <div class="seg" role="group" aria-label="Mode"><button type="button" aria-pressed="true" title="The plain ranked backlog">List</button><button type="button" aria-pressed="false" onclick="location.href='planning.html'">Planning</button></div>
+  <button class="btn primary" type="button" id="btnAdd">+ New work item</button>
+  <span id="chips" class="row"></span>
+  <span class="spacer"></span>
+  <label class="check"><input type="checkbox" id="optParents"> Show parents</label>
+  <label class="check"><input type="checkbox" id="optDone"> Completed</label>
+  <button class="btn" type="button" id="btnFilter" aria-expanded="false">Filter</button>
+  <span class="pop-wrap"><button class="btn" type="button" id="btnCols" aria-expanded="false">Columns</button><div class="pop" id="colPop" hidden></div></span>
+</div>
+<div id="fpanel" class="fpanel" hidden></div>
+<div id="banners"></div>
+<div class="scroll" id="scroll">
+  <table class="list">
+    <thead id="head"></thead>
+    <tbody id="rows"></tbody>
+  </table>
+</div>
+<div class="empty-state" id="empty" hidden>
+  <h2>No user stories yet</h2>
+  <p class="muted sm" style="max-width:420px;margin:0">Add the first one and it gets the key <code>SHIP-1</code>. Or bring a project over from Jira: issue numbers are kept, so <code>SHIP-123</code> in Jira stays <code>SHIP-123</code>.</p>
+  <div class="row"><button class="btn primary" type="button">+ New user story</button><a class="btn" href="#">Import from Jira</a></div>
+  <span class="xs muted">No sprints yet either. <a href="sprints.html">Create Sprint 1</a></span>
+</div>
+<div class="conflict" id="conflict" role="alert" hidden></div>
+
+<script>
+(() => {
+  const { items, doneItems, sprints, epics, features, people, featureByTitle, tIcon, st, av, esc, toast, stateCategory } = SL;
+  document.getElementById('appbar').outerHTML = SL.appBar('backlogs');
+  const $ = id => document.getElementById(id);
+  const body = $('rows'), optParents = $('optParents'), optDone = $('optDone');
+  const sprintName = id => sprints.find(s => s.id === id)?.name;
+  const view = { adding: false, filterOpen: false, colsOpen: false, empty: false, match: 'any', clauses: [], hidden: new Set(), collapsed: new Set() };
+  view.empty = new URLSearchParams(location.search).has('empty'); // ?empty opens the first-run state (where New project lands)
+  let nextKey = 184;
+
+  /* Columns: key and title can't be hidden. */
+  const COLS = [
+    { id: 'grip', label: '', w: 22 }, { id: 'rank', label: '#', w: 32, num: true }, { id: 'key', label: 'Key', w: 90 },
+    { id: 'title', label: 'Title' }, { id: 'parent', label: 'Parent', w: 170, opt: true }, { id: 'state', label: 'State', w: 110, opt: true },
+    { id: 'pts', label: 'Pts', w: 56, num: true, opt: true }, { id: 'sprint', label: 'Sprint', w: 100, opt: true }, { id: 'assignee', label: 'Assignee', w: 72, opt: true },
+  ];
+  const cols = () => COLS.filter(c => !view.hidden.has(c.id) && !(c.id === 'rank' && optParents.checked) && !(c.id === 'parent' && optParents.checked));
+
+  /* Filter: one group of clauses joined by All (AND) or Any (OR). Same Criteria shape as swimlanes and card styles. */
+  const FIELDS = {
+    type: { label: 'Work item type', values: [['story', 'User Story'], ['bug', 'Bug']], get: i => i.type },
+    state: { label: 'State', values: Object.keys(stateCategory).map(s => [s, s]), get: i => i.state },
+    parent: { label: 'Parent', values: features.map(f => [f.title, f.title]), get: i => i.parent },
+    sprint: { label: 'Sprint', values: [...sprints.filter(s => s.status !== 'past').map(s => [s.id, s.name]), ['', 'Backlog (none)']], get: i => i.sprint ?? '' },
+    assignee: { label: 'Assignee', values: [...Object.entries(people).map(([id, p]) => [id, p.name]), ['', 'Unassigned']], get: i => i.assignee ?? '' },
+  };
+  const valueLabel = c => FIELDS[c.field].values.find(v => v[0] === c.value)?.[1] ?? c.value;
+  const test = (i, c) => (FIELDS[c.field].get(i) === c.value) === (c.op === '=');
+  const passes = i => !view.clauses.length || (view.match === 'all' ? view.clauses.every(c => test(i, c)) : view.clauses.some(c => test(i, c)));
+  const filtering = () => view.clauses.length > 0;
+
+  const visible = () => {
+    const pool = optDone.checked ? [...items, ...doneItems] : items.filter(i => stateCategory[i.state] !== 'completed');
+    return pool.filter(passes);
+  };
+  const rankOf = it => items.filter(i => stateCategory[i.state] !== 'completed' || optDone.checked).indexOf(it) + 1;
+
+  const cell = (c, it, depth) => {
+    switch (c.id) {
+      case 'grip': return `<td class="grip"><button class="grip-btn" type="button" aria-label="Move ${it.key}" tabindex="${filtering() ? -1 : 0}">⠿</button></td>`;
+      case 'rank': return `<td class="num muted sm">${rankOf(it) || ''}</td>`;
+      case 'key': return `<td class="key">${it.key}</td>`;
+      case 'title': return `<td><div class="title-cell"><span class="indent" style="width:${depth * 18}px"></span>${tIcon(it.type)}<span class="t">${esc(it.title)}</span></div></td>`;
+      case 'parent': return `<td>${it.parent ? `<span class="parent">${tIcon('feature')}${esc(it.parent)}</span>` : '<span class="muted">–</span>'}</td>`;
+      case 'state': return `<td>${st(it.state)}</td>`;
+      case 'pts': return `<td class="pts">${it.points ?? '<span class="unest" title="Not estimated">?</span>'}</td>`;
+      case 'sprint': { const n = sprintName(it.sprint); return `<td>${n ? `<span class="chip${it.sprint === 's24' ? ' accent' : ''}">${n}</span>` : '<span class="muted">–</span>'}</td>`; }
+      case 'assignee': return `<td>${av(it.assignee)}</td>`;
+    }
+  };
+  const itemRow = (it, depth = 0) => `<tr class="item${stateCategory[it.state] === 'completed' ? ' done' : ''}" data-key="${it.key}"${filtering() ? '' : ' draggable="true"'}>${cols().map(c => cell(c, it, depth)).join('')}</tr>`;
+
+  const sumPts = list => list.reduce((a, i) => a + (i.points || 0), 0);
+  const parentRow = (p, type, depth, kids) => {
+    const n = cols().length, open = !view.collapsed.has(p.key);
+    return `<tr class="par ${type}" data-parent="${type === 'feature' ? esc(p.title) : ''}" data-pkey="${p.key}"><td colspan="${n}"><div class="title-cell">
+      <span class="indent" style="width:${depth * 18}px"></span><button class="ib caret" type="button" data-collapse="${p.key}" aria-expanded="${open}">${open ? '▼' : '▶'}</button>
+      ${tIcon(type)}<span class="key">${p.key}</span><span class="t">${esc(p.title)}</span>${st(p.state)}
+      <span class="spacer"></span><span class="muted sm">${kids.length} items · Σ ${sumPts(kids)} pts open</span></div></td></tr>`;
+  };
+
+  function treeHtml(list) {
+    let html = '';
+    const kidsOf = title => list.filter(i => i.parent === title);
+    const deepKids = f => [...kidsOf(f.title), ...features.filter(c => c.parent === f.key).flatMap(deepKids)];
+    const feature = (f, depth) => {
+      let h = parentRow(f, 'feature', depth, deepKids(f));
+      if (view.collapsed.has(f.key)) return h;
+      kidsOf(f.title).forEach(i => { h += itemRow(i, depth + 1); });
+      features.filter(c => c.parent === f.key).forEach(c => { h += feature(c, depth + 1); });
+      return h;
+    };
+    epics.forEach(e => {
+      const top = features.filter(f => f.parent === e.key);
+      html += parentRow(e, 'epic', 0, top.flatMap(deepKids));
+      if (!view.collapsed.has(e.key)) top.forEach(f => { html += feature(f, 1); });
+    });
+    const orphans = list.filter(i => !i.parent || !featureByTitle(i.parent));
+    if (orphans.length) {
+      html += `<tr class="par" data-parent=""><td colspan="${cols().length}"><div class="title-cell"><span class="caret" style="width:22px"></span><span class="muted">No parent</span><span class="spacer"></span><span class="muted sm">${orphans.length} items</span></div></td></tr>`;
+      orphans.forEach(i => { html += itemRow(i, 1); });
+    }
+    return html;
+  }
+
+  function addRow() {
+    const n = cols().length;
+    return `<tr class="add"><td colspan="${n}"><div class="row" style="flex-wrap:nowrap">
+      <select class="field" id="addType" aria-label="Type"><option value="story">User Story</option><option value="bug">Bug</option></select>
+      <input class="field" id="addTitle" style="flex:1" placeholder="Title, then Enter to add at the top" aria-label="Title">
+      <button class="btn primary" type="button" id="addGo">Add</button><button class="btn ghost" type="button" id="addX">Esc</button>
+      <span class="xs muted">Goes in at #1 with the next key</span></div></td></tr>`;
+  }
+
+  function renderChrome() {
+    $('head').innerHTML = '<tr>' + cols().map(c => `<th${c.num ? ' class="num"' : ''}${c.w ? ` style="width:${c.w}px"` : ''}>${c.label}</th>`).join('') + '</tr>';
+    $('chips').innerHTML = view.clauses.map((c, i) => `<span class="fchip">${i ? (view.match === 'all' ? 'and ' : 'or ') : ''}${FIELDS[c.field].label} ${c.op} ${esc(valueLabel(c))}<button class="ib" type="button" data-unclause="${i}" aria-label="Remove">✕</button></span>`).join('');
+    $('btnFilter').textContent = filtering() ? `Filter (${view.clauses.length})` : 'Filter';
+    $('btnFilter').setAttribute('aria-pressed', view.filterOpen);
+    $('fpanel').hidden = !view.filterOpen;
+    if (view.filterOpen) {
+      const sel = (opts, v, attr) => `<select class="field" ${attr}>${opts.map(([k, l]) => `<option value="${esc(k)}"${k === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
+      $('fpanel').innerHTML = `<div class="row"><b class="sm">Filter</b><span class="sm muted">Match</span>
+          <div class="seg" role="group" aria-label="Match"><button type="button" data-match="all" aria-pressed="${view.match === 'all'}">All</button><button type="button" data-match="any" aria-pressed="${view.match === 'any'}">Any</button></div>
+          <span class="spacer"></span><span class="xs muted">Fields come from the fixed field list</span></div>
+        ${view.clauses.map((c, i) => `<div class="clause"><span class="sm muted">${i ? (view.match === 'all' ? 'and' : 'or') : 'Where'}</span>
+          ${sel(Object.entries(FIELDS).map(([k, f]) => [k, f.label]), c.field, `data-cf="${i}" aria-label="Field"`)}
+          ${sel([['=', '='], ['≠', '≠']], c.op, `data-co="${i}" aria-label="Operator"`)}
+          ${sel(FIELDS[c.field].values, c.value, `data-cv="${i}" aria-label="Value"`)}
+          <button class="ib" type="button" data-unclause="${i}" aria-label="Remove clause">✕</button></div>`).join('')}
+        <div class="row"><button class="btn" type="button" id="addClause">+ Add clause</button>${view.clauses.length ? '<button class="btn ghost" type="button" id="clearF">Clear</button>' : ''}</div>`;
+    }
+    $('colPop').hidden = !view.colsOpen;
+    $('btnCols').setAttribute('aria-expanded', view.colsOpen);
+    $('colPop').innerHTML = `<span class="overline">Columns · Stories, just for you</span>` + COLS.filter(c => c.label && c.id !== 'rank').map(c =>
+      `<label class="check"><input type="checkbox" data-col="${c.id}"${view.hidden.has(c.id) ? '' : ' checked'}${c.opt ? '' : ' disabled'}> ${c.label}${c.opt ? '' : ' <span class="xs muted">always</span>'}</label>`).join('');
+    const banners = [];
+    if (filtering()) banners.push(`<div class="banner info">Reordering is off while a filter is on, because rank is relative to items you can't see. # shows each item's place in the full backlog.</div>`);
+    $('banners').innerHTML = banners.join('') + ($('banners').dataset.rt || '');
+  }
+
+  function render(flashKey) {
+    $('scroll').hidden = view.empty; $('empty').hidden = !view.empty;
+    renderChrome();
+    $('scroll').classList.toggle('filtered', filtering());
+    const list = visible();
+    let html = view.adding ? addRow() : '';
+    html += optParents.checked ? treeHtml(list) : list.map(i => itemRow(i)).join('');
+    if (!list.length) html += `<tr><td colspan="${cols().length}" class="muted sm" style="text-align:center;height:60px">Nothing matches this filter</td></tr>`;
+    body.innerHTML = html;
+    if (flashKey) body.querySelector(`[data-key="${flashKey}"]`)?.classList.add('flash');
+    if (view.adding) wireAdd();
+  }
+
+  function wireAdd() {
+    const t = $('addTitle');
+    const go = () => {
+      const title = t.value.trim(); if (!title) return;
+      const it = { key: 'SHIP-' + nextKey++, type: $('addType').value, title, parent: null, state: 'New', points: null, sprint: null, assignee: null };
+      items.unshift(it); render(it.key); $('addTitle').focus();
+      toast(`${it.key} added at the top`);
+    };
+    t.focus();
+    t.onkeydown = e => { if (e.key === 'Enter') go(); if (e.key === 'Escape') { view.adding = false; render(); } };
+    $('addGo').onclick = go; $('addX').onclick = () => { view.adding = false; render(); };
+  }
+
+  /* Toolbar */
+  $('btnAdd').onclick = () => { view.adding = true; view.empty = false; render(); };
+  optParents.onchange = optDone.onchange = () => render();
+  $('btnFilter').onclick = () => { view.filterOpen = !view.filterOpen; if (view.filterOpen && !view.clauses.length) view.clauses.push({ field: 'type', op: '=', value: 'bug' }); render(); };
+  $('btnCols').onclick = e => { e.stopPropagation(); view.colsOpen = !view.colsOpen; renderChrome(); };
+  $('colPop').addEventListener('click', e => e.stopPropagation());
+  $('colPop').addEventListener('change', e => { const c = e.target.dataset.col; if (!c) return; e.target.checked ? view.hidden.delete(c) : view.hidden.add(c); render(); });
+  document.addEventListener('click', () => { if (view.colsOpen) { view.colsOpen = false; renderChrome(); } });
+  document.addEventListener('click', e => {
+    const un = e.target.closest('[data-unclause]'); if (un) { view.clauses.splice(+un.dataset.unclause, 1); render(); return; }
+    const m = e.target.closest('[data-match]'); if (m) { view.match = m.dataset.match; render(); return; }
+    if (e.target.id === 'addClause') { view.clauses.push({ field: 'state', op: '=', value: 'New' }); render(); return; }
+    if (e.target.id === 'clearF') { view.clauses = []; render(); }
+  });
+  $('fpanel').addEventListener('change', e => {
+    const d = e.target.dataset;
+    if (d.cf) { const c = view.clauses[d.cf]; c.field = e.target.value; c.value = FIELDS[c.field].values[0][0]; }
+    if (d.co) view.clauses[d.co].op = e.target.value;
+    if (d.cv) view.clauses[d.cv].value = e.target.value;
+    render();
+  });
+  body.addEventListener('click', e => {
+    const c = e.target.closest('[data-collapse]'); if (!c) return;
+    view.collapsed.has(c.dataset.collapse) ? view.collapsed.delete(c.dataset.collapse) : view.collapsed.add(c.dataset.collapse); render();
+  });
+
+  /* Drag: onto a row = put it just above (and, in tree mode, take that row's parent); onto a Feature row = make it the parent. */
+  let dragKey = null;
+  const clearDrop = () => body.querySelectorAll('.drop-before, .over-drop').forEach(el => el.classList.remove('drop-before', 'over-drop'));
+  body.addEventListener('dragstart', e => { const tr = e.target.closest('tr.item'); if (!tr || filtering()) return; dragKey = tr.dataset.key; tr.classList.add('dragging'); e.dataTransfer.setData('text/plain', dragKey); });
+  body.addEventListener('dragend', () => { dragKey = null; body.querySelectorAll('.dragging').forEach(el => el.classList.remove('dragging')); clearDrop(); });
+  body.addEventListener('dragover', e => {
+    if (!dragKey) return;
+    const tr = e.target.closest(optParents.checked ? 'tr.item, tr.par[data-parent]' : 'tr.item'); if (!tr) return;
+    e.preventDefault(); clearDrop(); tr.classList.add(tr.classList.contains('item') ? 'drop-before' : 'over-drop');
+  });
+  body.addEventListener('drop', e => {
+    if (!dragKey) return;
+    const tr = e.target.closest('tr.item, tr.par[data-parent]'); if (!tr) return; e.preventDefault();
+    const it = items.find(i => i.key === dragKey); if (!it) return;
+    if (tr.classList.contains('par')) {
+      const to = tr.dataset.parent || null;
+      if (it.parent === to) return;
+      it.parent = to; render(it.key);
+      toast(to ? `${it.key} moved under ${esc(to)}` : `${it.key} no longer has a parent`);
+      return;
+    }
+    const target = items.find(i => i.key === tr.dataset.key); if (!target || target === it) return;
+    const reparent = optParents.checked && target.parent !== it.parent;
+    items.splice(items.indexOf(it), 1); items.splice(items.indexOf(target), 0, it);
+    if (reparent) it.parent = target.parent;
+    render(it.key);
+    toast(reparent ? `${it.key} moved under ${esc(target.parent || 'No parent')}` : `${it.key} reordered`);
+  });
+
+  /* Real-time simulations (Preview panel) */
+  const rtBanner = html => { $('banners').dataset.rt = html; renderChrome(); };
+  function teammateEdit() {
+    const it = items.find(i => i.key === 'SHIP-160'); it.points = 3; render(it.key);
+    toast(`${av('tom')} Tom Okafor set SHIP-160 to 3 pts`);
+  }
+  function dropConnection() {
+    SL.setLive(false);
+    rtBanner(`<div class="banner warn">Live updates paused. Changes still save; retrying in 5s. <span class="spacer"></span><button class="btn" type="button" id="retry">Retry now</button></div>`);
+    const back = () => {
+      clearTimeout(timer); SL.setLive(true);
+      rtBanner(`<div class="banner ok">Back online. Backlog refreshed with 2 changes from while you were away.</div>`);
+      setTimeout(() => rtBanner(''), 3500);
+    };
+    const timer = setTimeout(back, 5000);
+    $('banners').onclick = e => { if (e.target.id === 'retry') back(); };
+  }
+  function conflict() {
+    const c = $('conflict');
+    c.innerHTML = `<b>SHIP-158 changed while you were editing</b>
+      <span class="muted">${av('sam')} Sam Rivera set Points to <b>5</b> (revision 7). Your edit, <b>2</b> pts, wasn't saved.</span>
+      <div class="row"><button class="btn primary" type="button" data-c="mine">Use mine (2)</button><button class="btn" type="button" data-c="theirs">Keep 5</button></div>`;
+    c.hidden = false;
+    const it = items.find(i => i.key === 'SHIP-158'); it.points = 5; render(it.key);
+    c.onclick = e => {
+      const b = e.target.closest('[data-c]'); if (!b) return;
+      if (b.dataset.c === 'mine') { it.points = 2; render(it.key); toast('SHIP-158 saved as 2 pts (revision 8)'); } else toast('Kept 5 pts');
+      c.hidden = true;
+    };
+  }
+
+  if (new URLSearchParams(location.search).has('tree')) optParents.checked = true; // ?tree opens with parents shown
+  render();
+  SL.preview([
+    { label: 'Teammate edit', run: teammateEdit },
+    { label: 'Drop connection', run: dropConnection },
+    { label: '409 conflict', run: conflict },
+    { label: 'Example filter', run: () => { view.filterOpen = true; view.match = 'any'; view.clauses = [{ field: 'type', op: '=', value: 'bug' }, { field: 'parent', op: '=', value: 'Mobile sign-in' }]; render(); } },
+    { label: 'Empty project', run: () => { view.empty = !view.empty; render(); } },
+  ]);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Capacity (reference)</title>
+<!--
+  Reference Capacity tab: Sprints › Sprint 24 › Capacity.
+  Open directly in a browser. Uses ../tokens.css, shiplean.css and shared.js only; no build step.
+  Each person enters how many points they can contribute this sprint (Sprint Capacity.capacity_points),
+  with an optional note. The numbers are only added up: the team total is compared with what the sprint has
+  committed, and with velocity as a sense check. Nobody's number is compared with work assigned to them.
+  A sprint with no entries plans against velocity.
+  Working: edit any number and the totals, bar and messages update; Copy from Sprint 23; Clear (back to velocity).
+  The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot).
+-->
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="shiplean.css">
+<script src="shared.js"></script>
+<style>
+.head { display: flex; gap: var(--space-3); align-items: center; padding: var(--space-3) var(--space-4); background: var(--color-surface); border-bottom: 1px solid var(--color-border); flex: none; flex-wrap: wrap; }
+.picker { display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0; background: none; font-size: var(--text-lg); font-weight: var(--weight-semibold); cursor: pointer; }
+.picker span { font-size: var(--text-xs); color: var(--color-muted); }
+.wrap { flex: 1; min-height: 0; overflow: auto; padding: var(--space-4); }
+.panel { max-width: 1040px; display: grid; grid-template-columns: minmax(0, 1fr) 300px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); overflow: hidden; }
+.panel table.list th { position: static; }
+.panel input.num-in { width: 70px; text-align: right; font-variant-numeric: tabular-nums; }
+.panel input.note-in { width: 100%; }
+.who { display: flex; gap: var(--space-2); align-items: center; }
+tfoot td { height: 40px; padding: 0 var(--space-2); font-weight: var(--weight-semibold); background: var(--color-surface-2); }
+.sum { padding: var(--space-3) var(--space-4); border-left: 1px solid var(--color-border); display: grid; gap: var(--space-3); align-content: start; background: var(--color-bg); }
+.sum .kpis { gap: var(--space-4); }
+#room b.over { color: var(--color-danger); }
+@media (max-width: 900px) { .panel { grid-template-columns: minmax(0, 1fr); } .sum { border-left: 0; border-top: 1px solid var(--color-border); } }
+</style>
+</head>
+<body>
+<div id="appbar"></div>
+<section class="head" aria-label="Sprint 24">
+  <button class="picker" type="button" aria-haspopup="listbox" title="Switch sprint">Sprint 24 <span>▾</span></button>
+  <span class="chip accent">Current</span>
+  <span class="sm muted">Mon 19 Oct – Fri 30 Oct</span>
+  <div id="tabs"></div>
+  <span class="spacer"></span>
+  <button class="btn" type="button" id="copyBtn">Copy from Sprint 23</button>
+  <button class="btn" type="button" id="clearBtn" title="Remove all entries; plan against velocity">Clear</button>
+  <button class="btn" type="button">+ Add member</button>
+</section>
+<div class="wrap">
+  <div class="panel">
+    <div style="overflow-x:auto">
+      <table class="list">
+        <thead><tr><th>Member</th><th class="num" style="width:130px">Capacity (pts)</th><th>Note</th></tr></thead>
+        <tbody id="rows"></tbody>
+        <tfoot><tr><td>Team capacity</td><td class="num" id="total"></td><td class="xs muted" style="font-weight:400">The sum of the column above. Planning uses only this number.</td></tr></tfoot>
+      </table>
+    </div>
+    <aside class="sum" aria-label="Sprint 24 as a whole">
+      <div class="overline">Sprint 24 as a whole</div>
+      <div class="kpis">
+        <div class="kpi"><div class="v" id="kCap"></div><div class="l">Team capacity</div></div>
+        <div class="kpi"><div class="v" id="kCommitted"></div><div class="l">Committed</div></div>
+        <div class="kpi"><div class="v" id="kVel"></div><div class="l">Velocity (last 3)</div></div>
+      </div>
+      <div class="cap" id="bar"><i></i></div>
+      <div class="sm" id="room"></div>
+      <div class="callout" id="sense"></div>
+    </aside>
+  </div>
+</div>
+
+<script>
+(() => {
+  const { VELOCITY, people, sprints, committed, av, esc, toast } = SL;
+  document.getElementById('appbar').outerHTML = SL.appBar('sprints');
+  document.getElementById('tabs').outerHTML = SL.sprintTabs('capacity');
+  const s24 = sprints.find(s => s.id === 's24'), s23 = sprints.find(s => s.id === 's23');
+  const notes = { sam: 'Off Thu–Fri', ana: 'Part-time this sprint' };
+  const COMMITTED = committed('s24');
+  const body = document.getElementById('rows');
+
+  function rows(values) {
+    body.innerHTML = Object.keys(people).map(p => `<tr><td><div class="who">${av(p)}${people[p].name}</div></td>
+      <td class="num"><input class="field num-in" type="number" min="0" max="60" inputmode="numeric" data-p="${p}" value="${values[p] ?? ''}" placeholder="—" aria-label="Capacity points for ${people[p].name}"></td>
+      <td><input class="field note-in" value="${esc(notes[p] || '')}" placeholder="Optional, e.g. Off Thu–Fri" aria-label="Note for ${people[p].name}"></td></tr>`).join('');
+    update();
+  }
+
+  function update() {
+    const vals = [...body.querySelectorAll('.num-in')].map(i => i.value === '' ? null : Math.max(0, +i.value || 0));
+    const entered = vals.some(v => v !== null);
+    const total = vals.reduce((a, v) => a + (v || 0), 0);
+    const cap = entered ? total : VELOCITY;
+    document.getElementById('total').textContent = entered ? total : '— (velocity ' + VELOCITY + ')';
+    document.getElementById('kCap').textContent = cap;
+    document.getElementById('kCommitted').textContent = COMMITTED;
+    document.getElementById('kVel').textContent = VELOCITY;
+    const bar = document.getElementById('bar');
+    bar.className = 'cap' + (COMMITTED > cap ? ' over' : entered ? '' : ' velocity');
+    bar.firstElementChild.style.width = Math.min(100, COMMITTED / (cap || 1) * 100) + '%';
+    document.getElementById('room').innerHTML = COMMITTED > cap
+      ? `<b class="over">${COMMITTED - cap} pts over</b> what the team can take on. A warning only; nothing is blocked.`
+      : `<b>${cap - COMMITTED} pts</b> of room left in the sprint.`;
+    const diff = (cap - VELOCITY) / VELOCITY, sense = document.getElementById('sense');
+    sense.className = 'callout' + (Math.abs(diff) > .1 ? ' warn' : '');
+    sense.innerHTML = !entered ? '<b>No capacity entered</b>Planning uses velocity (21) for this sprint.'
+      : Math.abs(diff) <= .1 ? '<b>In line with velocity</b>Within 10% of the last three sprints.'
+      : diff > 0 ? `<b>${Math.round(diff * 100)}% above velocity</b>The team usually completes about ${VELOCITY}. Worth a second look.`
+      : `<b>${Math.round(-diff * 100)}% below velocity</b>Expected when people are away. Plan less than usual.`;
+  }
+
+  body.addEventListener('input', update);
+  document.getElementById('copyBtn').onclick = () => { rows(s23.capacity); toast('Copied capacity from Sprint 23'); };
+  document.getElementById('clearBtn').onclick = () => { rows({}); toast('Cleared. Sprint 24 now plans against velocity'); };
+  rows(s24.capacity);
+  SL.preview();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · All sprints (reference)</title>
+<!--
+  Reference All sprints screen: Sprints › All sprints.
+  Open directly in a browser. Uses ../tokens.css, shiplean.css and shared.js only; no build step.
+  Sprints are a flat list per project (no release folders). Past / current / future is worked out from the
+  dates, never stored. Committed and completed points for past sprints come from the revision history at each
+  sprint's end date; velocity is the average completed over the last three.
+  Team capacity is the sum of members' entries; a sprint with none plans against velocity.
+  Working: chart hover; New sprint form with defaults (next number, starts the next working day after the
+  last sprint, same length), overlap check, Create adds the row.
+  The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot).
+-->
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="shiplean.css">
+<script src="shared.js"></script>
+<style>
+.head { display: flex; gap: var(--space-3); align-items: center; padding: var(--space-3) var(--space-4); background: var(--color-surface); border-bottom: 1px solid var(--color-border); flex: none; }
+.head h1 { margin: 0; font-size: var(--text-lg); font-weight: var(--weight-semibold); }
+.main { padding: var(--space-4); display: grid; gap: var(--space-4); align-content: start; }
+.card { border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); overflow: hidden; }
+.card > header { display: flex; gap: var(--space-3); align-items: center; padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-border); flex-wrap: wrap; }
+.card > header h2 { margin: 0; font-size: var(--text-md); font-weight: var(--weight-semibold); }
+.legend { display: flex; gap: var(--space-3); font-size: var(--text-xs); color: var(--color-muted); }
+.legend span { display: inline-flex; gap: 5px; align-items: center; }
+.legend i { width: 10px; height: 10px; border-radius: 2px; }
+.card table.list th { position: static; }
+.card table.list td:nth-child(-n+3) { white-space: nowrap; }
+tr.current td { background: color-mix(in srgb, var(--color-accent-soft) 45%, transparent); }
+.form { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-2) var(--space-3); align-items: center; }
+.form label { font-size: var(--text-sm); color: var(--color-muted); }
+.form .field { width: 100%; }
+.form .check { white-space: normal; align-items: flex-start; }
+.form .check input { margin-top: 2px; }
+.err { color: var(--color-danger); font-size: var(--text-sm); }
+</style>
+</head>
+<body>
+<div id="appbar"></div>
+<section class="head"><h1>Sprints</h1><span class="sm muted">Storefront · 8 sprints</span><span class="spacer"></span><a class="btn" href="planning.html">Plan sprints</a></section>
+<div class="split">
+  <div class="scroll">
+    <div class="main">
+      <div class="card">
+        <header><h2>Velocity</h2><span class="sm muted">Committed vs completed points, last 5 sprints</span><span class="spacer"></span>
+          <div class="legend"><span><i style="background:var(--chart-committed)"></i>Committed</span><span><i style="background:var(--chart-completed)"></i>Completed</span></div></header>
+        <div style="padding:var(--space-2) var(--space-3)"><svg id="vel" viewBox="0 0 760 180" width="100%" style="max-height:220px;display:block" role="img" aria-label="Committed and completed story points for Sprints 19 to 23; velocity 21"></svg></div>
+      </div>
+      <div class="card">
+        <div style="overflow-x:auto">
+          <table class="list">
+            <thead><tr><th>Sprint</th><th>Dates</th><th>Status</th><th>Goal</th><th class="num">Team capacity</th><th class="num">Committed</th><th class="num">Completed</th></tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <aside class="rail">
+    <section>
+      <div class="overline">New sprint</div>
+      <form class="form" id="newSprint">
+        <label for="ns-name">Name</label><input class="field" id="ns-name" value="Sprint 27">
+        <label for="ns-start">Start</label><input class="field" id="ns-start" type="date" value="2026-11-30">
+        <label for="ns-end">End</label><input class="field" id="ns-end" type="date" value="2026-12-11">
+        <label for="ns-goal">Goal</label><textarea class="field" id="ns-goal" rows="2" placeholder="Optional"></textarea>
+        <span></span><label class="check"><input type="checkbox" id="ns-copy" checked> Copy each member's capacity from Sprint 25</label>
+        <span></span><span class="err" id="ns-err" role="alert"></span>
+        <span></span><div class="row"><span class="spacer"></span><button class="btn primary" type="submit">Create sprint</button></div>
+      </form>
+      <p class="hint">Defaults: the next number, starting the next working day after the last sprint, the same length as it (2 weeks). Overlapping dates are rejected.</p>
+    </section>
+  </aside>
+</div>
+
+<script>
+(() => {
+  const { VELOCITY, sprints, history, committed, teamCapacity, esc, toast, hover } = SL;
+  document.getElementById('appbar').outerHTML = SL.appBar('sprints');
+  const list = [...sprints].reverse(); // newest first
+  const body = document.getElementById('rows');
+
+  function render() {
+    body.innerHTML = list.map(s => {
+      const tc = teamCapacity(s);
+      const com = s.status === 'past' ? s.committed : committed(s.id);
+      const done = s.status === 'past' ? s.completed : s.status === 'current' ? `${s.completed} so far` : '—';
+      const status = { past: '<span class="chip">Past</span>', current: '<span class="chip accent">Current</span>', future: '<span class="chip">Future</span>' }[s.status];
+      return `<tr class="item${s.status === 'current' ? ' current' : ''}"><td><a href="${s.status === 'current' ? 'sprint-backlog.html' : '#'}" style="font-weight:600;color:inherit;text-decoration:none">${s.name}</a></td>
+        <td class="sm">${s.start} – ${s.end}</td><td>${status}</td><td class="sm muted">${s.goal ? esc(s.goal) : '<i>No goal yet</i>'}</td>
+        <td class="pts">${tc == null ? `<span class="muted" style="font-weight:400">${VELOCITY} · velocity</span>` : s.note ? `<span title="${esc(s.note)}" style="text-decoration:underline dotted;cursor:help">${tc}</span>` : tc}</td>
+        <td class="pts">${com || '—'}</td><td class="pts">${done}</td></tr>`;
+    }).join('');
+  }
+  render();
+
+  document.getElementById('newSprint').addEventListener('submit', e => {
+    e.preventDefault();
+    const start = document.getElementById('ns-start').value, end = document.getElementById('ns-end').value, err = document.getElementById('ns-err');
+    if (!start || !end || end < start) { err.textContent = 'End must be on or after the start.'; return; }
+    if (start <= '2026-11-27') { err.textContent = 'Overlaps Sprint 26 (16 Nov – 27 Nov).'; return; }
+    err.textContent = '';
+    const name = document.getElementById('ns-name').value.trim() || 'Sprint 27';
+    const fmt = d => new Date(d + 'T00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    list.unshift({ id: 'new', name, start: fmt(start), end: fmt(end), status: 'future', goal: document.getElementById('ns-goal').value.trim(), capacity: document.getElementById('ns-copy').checked ? { ...sprints.find(s => s.id === 's25').capacity } : {} });
+    render(); toast(`Created ${esc(name)}`);
+  });
+
+  // Velocity chart: grouped bars, one y-scale, velocity reference line.
+  (() => {
+    const svg = document.getElementById('vel'), W = 760, H = 180, L = 30, B = 22, T = 16;
+    const NS = 'http://www.w3.org/2000/svg', mk = (tag, a) => { const el = document.createElementNS(NS, tag); for (const k in a) el.setAttribute(k, a[k]); svg.append(el); return el; };
+    const max = 25, y = v => T + (1 - v / max) * (H - T - B), gw = (W - L) / history.length, bw = 30;
+    [0, 10, 20].forEach(v => { mk('line', { x1: L, y1: y(v), x2: W, y2: y(v), stroke: 'var(--color-border)', 'stroke-width': v ? .6 : 1 }); mk('text', { x: L - 6, y: y(v) + 3, 'text-anchor': 'end' }).textContent = v; });
+    mk('line', { x1: L, y1: y(VELOCITY), x2: W, y2: y(VELOCITY), stroke: 'var(--color-muted)', 'stroke-dasharray': '4 3' });
+    mk('text', { x: L + 4, y: y(VELOCITY) - 4 }).textContent = `velocity ${VELOCITY} (last 3)`;
+    const bar = (x, v, color, label) => {
+      const r = 4;
+      mk('path', { d: `M${x},${y(0)} V${y(v) + r} Q${x},${y(v)} ${x + r},${y(v)} H${x + bw - r} Q${x + bw},${y(v)} ${x + bw},${y(v) + r} V${y(0)} Z`, fill: color });
+      hover(mk('rect', { x: x - 2, y: T, width: bw + 4, height: H - T - B, fill: 'transparent' }), label);
+    };
+    history.forEach(([n, c, d], i) => {
+      const cx = L + gw * i + gw / 2;
+      bar(cx - bw - 1, c, 'var(--chart-committed)', `${n}: ${c} committed`);
+      bar(cx + 1, d, 'var(--chart-completed)', `${n}: ${d} completed`);
+      mk('text', { x: cx, y: H - 6, 'text-anchor': 'middle' }).textContent = n;
+      if (i === history.length - 1) {
+        mk('text', { x: cx - bw / 2 - 1, y: y(c) - 4, 'text-anchor': 'middle' }).textContent = c;
+        mk('text', { x: cx + bw / 2 + 1, y: y(d) - 4, 'text-anchor': 'middle' }).textContent = d;
+      }
+    });
+  })();
+
+  SL.preview();
+})();
+</script>
+</body>
+</html>

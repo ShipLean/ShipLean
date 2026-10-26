@@ -1,0 +1,355 @@
+{
+  "project": {
+    "ref": "sample",
+    "key": "DEMO",
+    "name": "Demo Shop",
+    "description": "A tiny shop used to test the eval tooling."
+  },
+  "sprints": [
+    {
+      "ref": "sample-s1",
+      "name": "Sprint 1",
+      "goal": "Customers can pay with a card",
+      "startDate": "2026-01-05",
+      "endDate": "2026-01-16"
+    },
+    {
+      "ref": "sample-s2",
+      "name": "Sprint 2",
+      "goal": "Order emails and receipts",
+      "startDate": "2026-01-19",
+      "endDate": "2026-01-30"
+    }
+  ],
+  "items": [
+    {
+      "ref": "sample-001",
+      "type": "epic",
+      "title": "Online checkout",
+      "description": "Everything a shopper needs to turn a full basket into a paid order.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "checkout"
+      ],
+      "state": "Active",
+      "comments": []
+    },
+    {
+      "ref": "sample-002",
+      "type": "feature",
+      "title": "Card payments",
+      "description": "Accept credit and debit cards through the payment provider, including 3-D Secure challenges.",
+      "acceptanceCriteria": [
+        "A valid card completes the order",
+        "A declined card shows the reason"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "payments"
+      ],
+      "state": "Active",
+      "parentRef": "sample-001",
+      "sprintRef": "sample-s1",
+      "comments": []
+    },
+    {
+      "ref": "sample-003",
+      "type": "story",
+      "title": "Pay with a saved card",
+      "description": "Returning shoppers pick a card they stored before and confirm with their security code.",
+      "acceptanceCriteria": [
+        "Saved cards are listed by last four digits"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "payments",
+        "accounts"
+      ],
+      "state": "Closed",
+      "parentRef": "sample-002",
+      "sprintRef": "sample-s1",
+      "comments": [
+        {
+          "ref": "sample-c003-1",
+          "body": "We agreed to store only the provider token, never the card number.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "sample-004",
+      "type": "bug",
+      "title": "Basket total wrong after removing a coupon",
+      "description": "The total still shows the discounted price after the shopper removes the voucher code.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Add two items.\n2. Apply a voucher.\n3. Remove the voucher.\n4. The total stays reduced.",
+      "tags": [
+        "basket"
+      ],
+      "state": "Active",
+      "parentRef": "sample-002",
+      "sprintRef": "sample-s1",
+      "comments": []
+    },
+    {
+      "ref": "sample-005",
+      "type": "task",
+      "title": "Call the provider sandbox from CI",
+      "description": "Add a nightly job that places a test payment against the sandbox.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "ci"
+      ],
+      "state": "New",
+      "parentRef": "sample-003",
+      "comments": []
+    },
+    {
+      "ref": "sample-006",
+      "type": "feature",
+      "title": "Order confirmation emails",
+      "description": "Send an email with the order summary within a minute of payment.",
+      "acceptanceCriteria": [
+        "The email lists every line item"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "email"
+      ],
+      "state": "Active",
+      "parentRef": "sample-001",
+      "sprintRef": "sample-s2",
+      "comments": []
+    },
+    {
+      "ref": "sample-007",
+      "type": "story",
+      "title": "Resend a lost receipt",
+      "description": "A shopper who cannot find the message can ask for it again from their order page.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "email",
+        "accounts"
+      ],
+      "state": "New",
+      "parentRef": "sample-006",
+      "sprintRef": "sample-s2",
+      "comments": [
+        {
+          "ref": "sample-c007-1",
+          "body": "Rate limit this to three sends an hour to avoid abuse of the mail relay.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "sample-008",
+      "type": "feature",
+      "title": "Delivery estimates",
+      "description": "Show the expected arrival date for each shipping method before the shopper pays.",
+      "acceptanceCriteria": [
+        "Estimates skip weekends"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "delivery"
+      ],
+      "state": "New",
+      "parentRef": "sample-001",
+      "comments": []
+    },
+    {
+      "ref": "sample-009",
+      "type": "bug",
+      "title": "Postcode field rejects spaces",
+      "description": "UK postcodes such as SW1A 1AA are refused at the delivery step.",
+      "acceptanceCriteria": [],
+      "reproSteps": "Enter SW1A 1AA as the postcode and press Continue.",
+      "tags": [
+        "delivery"
+      ],
+      "state": "Resolved",
+      "parentRef": "sample-008",
+      "comments": []
+    },
+    {
+      "ref": "sample-010",
+      "type": "story",
+      "title": "Gift wrap option",
+      "description": "Offer paper and a card message for an extra fee.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "delivery"
+      ],
+      "state": "Removed",
+      "parentRef": "sample-008",
+      "comments": [
+        {
+          "ref": "sample-c010-1",
+          "body": "Dropped: the warehouse cannot do it this year.",
+          "archived": true
+        }
+      ]
+    },
+    {
+      "ref": "sample-011",
+      "type": "story",
+      "title": "Zahlung mit Rechnung",
+      "description": "Kunden in Deutschland können auf Rechnung bezahlen und erhalten 14 Tage Zeit.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "payments"
+      ],
+      "state": "New",
+      "parentRef": "sample-002",
+      "comments": []
+    },
+    {
+      "ref": "sample-012",
+      "type": "task",
+      "title": "Add a spinner while the payment is processing",
+      "description": "The pay button should be disabled and show progress until the provider answers.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "payments"
+      ],
+      "state": "Active",
+      "parentRef": "sample-004",
+      "comments": []
+    },
+    {
+      "ref": "sample-013",
+      "type": "epic",
+      "title": "Customer accounts",
+      "description": "Shoppers keep their details, orders and saved cards in one place.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "accounts"
+      ],
+      "state": "Active",
+      "comments": []
+    },
+    {
+      "ref": "sample-014",
+      "type": "feature",
+      "title": "Sign-in and password reset",
+      "description": "Email and password sign-in, with a reset link for people who forgot theirs.",
+      "acceptanceCriteria": [
+        "A reset link works once"
+      ],
+      "reproSteps": "",
+      "tags": [
+        "accounts",
+        "security"
+      ],
+      "state": "Active",
+      "parentRef": "sample-013",
+      "sprintRef": "sample-s2",
+      "comments": []
+    },
+    {
+      "ref": "sample-015",
+      "type": "bug",
+      "title": "Password reset link expires immediately",
+      "description": "The emailed link says it has expired even when it is opened seconds after arriving.",
+      "acceptanceCriteria": [],
+      "reproSteps": "1. Request a reset.\n2. Open the link straight away.\n3. The page reports an expired token.",
+      "tags": [
+        "security"
+      ],
+      "state": "Active",
+      "parentRef": "sample-014",
+      "sprintRef": "sample-s2",
+      "comments": [
+        {
+          "ref": "sample-c015-1",
+          "body": "The server clock and the token issuer disagree by about an hour, which looks like a time zone slip.",
+          "archived": false
+        }
+      ]
+    },
+    {
+      "ref": "sample-016",
+      "type": "story",
+      "title": "Remember me on this device",
+      "description": "Keep the shopper signed in for thirty days when they tick the box.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "accounts"
+      ],
+      "state": "New",
+      "parentRef": "sample-014",
+      "comments": []
+    },
+    {
+      "ref": "sample-017",
+      "type": "task",
+      "title": "Rotate session cookies on sign-in",
+      "description": "Issue a fresh cookie when the shopper authenticates so an old one cannot be reused.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "security"
+      ],
+      "state": "New",
+      "parentRef": "sample-016",
+      "comments": []
+    },
+    {
+      "ref": "sample-018",
+      "type": "feature",
+      "title": "Order history",
+      "description": "A list of past orders with status, totals and a link to each receipt.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "accounts"
+      ],
+      "state": "New",
+      "parentRef": "sample-013",
+      "comments": []
+    },
+    {
+      "ref": "sample-019",
+      "type": "story",
+      "title": "Cancelar un pedido antes del envío",
+      "description": "El cliente puede cancelar un pedido mientras todavía no haya salido del almacén.",
+      "acceptanceCriteria": [],
+      "reproSteps": "",
+      "tags": [
+        "accounts"
+      ],
+      "state": "New",
+      "parentRef": "sample-018",
+      "comments": []
+    },
+    {
+      "ref": "sample-020",
+      "type": "bug",
+      "title": "Order list is empty for guests who check out",
+      "description": "Guests see no orders after paying, even though the confirmation email arrived.",
+      "acceptanceCriteria": [],
+      "reproSteps": "Check out as a guest, then open the order list.",
+      "tags": [
+        "accounts"
+      ],
+      "state": "Closed",
+      "parentRef": "sample-018",
+      "comments": [
+        {
+          "ref": "sample-c020-1",
+          "body": "Only happens when the guest session cookie was issued before the cart merge ran.",
+          "archived": false
+        }
+      ]
+    }
+  ]
+}

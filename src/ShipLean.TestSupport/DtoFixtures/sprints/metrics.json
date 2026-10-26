@@ -1,0 +1,8 @@
+{
+  "sprintId": "00000004-0000-4000-8001-000000000024", "committed": 24, "completed": 9.5, "remaining": 14.5,
+  "burndown": [
+    { "date": "2026-10-20", "remaining": 24, "ideal": 24 },
+    { "date": "2026-10-21", "remaining": 21, "ideal": 21.33 },
+    { "date": "2026-10-22", "remaining": 14.5, "ideal": 18.67 }
+  ]
+}

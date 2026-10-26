@@ -1,0 +1,83 @@
+{
+  "columns": [
+    {
+      "id": "col-new",
+      "name": "New",
+      "wipLimit": null,
+      "split": false,
+      "definitionOfDone": "- Why it matters, and how we will know it worked",
+      "stateMappings": [
+        { "type": "epic", "stateId": "00000003-0000-4000-8001-000000000101" }
+      ]
+    },
+    {
+      "id": "col-in-progress",
+      "name": "In progress",
+      "wipLimit": 3,
+      "split": false,
+      "definitionOfDone": "- Features split out and ranked\n- At least one Feature in progress",
+      "stateMappings": [
+        { "type": "epic", "stateId": "00000003-0000-4000-8001-000000000102" }
+      ]
+    },
+    {
+      "id": "col-rolling-out",
+      "name": "Rolling out",
+      "wipLimit": null,
+      "split": false,
+      "definitionOfDone": "- Every Feature resolved or closed",
+      "stateMappings": [
+        { "type": "epic", "stateId": "00000003-0000-4000-8001-000000000103" }
+      ]
+    },
+    {
+      "id": "col-done",
+      "name": "Done",
+      "wipLimit": null,
+      "split": false,
+      "definitionOfDone": "- Outcome reviewed with stakeholders",
+      "stateMappings": [
+        { "type": "epic", "stateId": "00000003-0000-4000-8001-000000000104" }
+      ]
+    }
+  ],
+  "swimlanes": [
+    {
+      "id": "lane-default",
+      "name": "Default lane",
+      "colour": null,
+      "kind": "default",
+      "criteria": null
+    }
+  ],
+  "cardFields": [
+    { "type": "epic", "showKey": true, "showAssignee": true, "showTags": true, "showPoints": true, "showEmptyFields": false, "extraFields": [] }
+  ],
+  "styleRules": [
+    {
+      "id": "rule-blocked",
+      "name": "Blocked",
+      "enabled": true,
+      "colour": "danger",
+      "bold": false,
+      "italic": false,
+      "underline": false,
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          { "field": "tags", "op": "contains", "value": "Blocked" }
+        ]
+      }
+    }
+  ],
+  "tagColours": [
+    { "tag": "Payments", "colour": "accent" },
+    { "tag": "Mobile", "colour": "info" },
+    { "tag": "Feedback Ticket", "colour": "warn" },
+    { "tag": "Tech debt", "colour": "muted" },
+    { "tag": "Security", "colour": "ok" },
+    { "tag": "Blocked", "colour": "danger" }
+  ],
+  "annotations": { "tasks": false, "stories": true, "bugs": true, "features": true },
+  "cardReordering": "changesBacklogOrder"
+}

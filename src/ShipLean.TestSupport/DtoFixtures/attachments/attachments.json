@@ -1,0 +1,82 @@
+{
+  "attachments": [
+    {
+      "id": "00000009-0000-4000-8001-000000000001",
+      "workItemId": "00000005-0000-4000-8001-000000000141",
+      "name": "saved-card-picker.png",
+      "contentType": "image/png",
+      "sizeBytes": 421888,
+      "uploadedBy": {
+        "id": "00000001-0000-4000-8000-000000000004",
+        "name": "Mei Lin",
+        "initials": "ML",
+        "avatarColour": "#7b4fc9",
+        "photoUrl": null
+      },
+      "createdAt": "2026-10-23T16:00:00+00:00",
+      "createdLabel": "23 Oct",
+      "downloadUrl": "/api/attachments/00000009-0000-4000-8001-000000000001/content",
+      "kind": "image",
+      "replacedCount": 0,
+      "agentName": null,
+      "via": null
+    },
+    {
+      "id": "00000009-0000-4000-8001-000000000002",
+      "workItemId": "00000005-0000-4000-8001-000000000141",
+      "name": "vault-api-contract.pdf",
+      "contentType": "application/pdf",
+      "sizeBytes": 1258291,
+      "uploadedBy": null,
+      "createdAt": "2026-10-22T09:00:00+00:00",
+      "createdLabel": "22 Oct",
+      "downloadUrl": "/api/attachments/00000009-0000-4000-8001-000000000002/content",
+      "kind": "file",
+      "replacedCount": 0,
+      "agentName": null,
+      "via": null
+    },
+    {
+      "id": "00000009-0000-4000-8001-000000000003",
+      "workItemId": "00000005-0000-4000-8001-000000000141",
+      "name": "vault-notes.md",
+      "contentType": "text/markdown",
+      "sizeBytes": 2310,
+      "uploadedBy": {
+        "id": "00000001-0000-4000-8000-000000000004",
+        "name": "Mei Lin",
+        "initials": "ML",
+        "avatarColour": "#7b4fc9",
+        "photoUrl": null
+      },
+      "createdAt": "2026-10-24T08:30:00+00:00",
+      "createdLabel": "24 Oct",
+      "downloadUrl": "/api/attachments/00000009-0000-4000-8001-000000000003/content",
+      "kind": "markdown",
+      "replacedCount": 2,
+      "agentName": "Claude Code (claude.ai)",
+      "via": "attach_file"
+    },
+    {
+      "id": "00000009-0000-4000-8001-000000000004",
+      "workItemId": "00000005-0000-4000-8001-000000000141",
+      "name": "rollout-plan.md",
+      "contentType": "text/markdown",
+      "sizeBytes": 980,
+      "uploadedBy": {
+        "id": "00000001-0000-4000-8000-000000000004",
+        "name": "Mei Lin",
+        "initials": "ML",
+        "avatarColour": "#7b4fc9",
+        "photoUrl": null
+      },
+      "createdAt": "2026-10-24T08:30:00+00:00",
+      "createdLabel": "24 Oct",
+      "downloadUrl": "/api/attachments/00000009-0000-4000-8001-000000000004/content",
+      "kind": "markdown",
+      "replacedCount": 0,
+      "agentName": null,
+      "via": null
+    }
+  ]
+}

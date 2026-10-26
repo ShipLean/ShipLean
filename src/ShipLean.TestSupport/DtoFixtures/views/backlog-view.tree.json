@@ -1,0 +1,483 @@
+{
+  "projectId": "00000002-0000-4000-8000-000000000001",
+  "level": "stories",
+  "mode": "tree",
+  "totalCount": 10,
+  "rows": [
+    {
+      "kind": "group",
+      "id": "00000005-0000-4000-8001-000000000090",
+      "key": "SHIP-90",
+      "type": {
+        "id": "epic",
+        "name": "Epic"
+      },
+      "title": "Checkout conversion",
+      "state": {
+        "id": "00000003-0000-4000-8001-000000000102",
+        "name": "Active",
+        "category": "inProgress"
+      },
+      "assignee": null,
+      "points": 40,
+      "childPoints": null,
+      "sumWarn": false,
+      "sprint": null,
+      "parent": null,
+      "depth": 0,
+      "rank": null,
+      "tags": [],
+      "rollups": [
+        {
+          "type": "feature",
+          "open": 3,
+          "closed": 0
+        },
+        {
+          "type": "story",
+          "open": 9,
+          "closed": 4
+        },
+        {
+          "type": "bug",
+          "open": 2,
+          "closed": 1
+        }
+      ],
+      "revision": 1
+    },
+    {
+      "kind": "group",
+      "id": "00000005-0000-4000-8001-000000000101",
+      "key": "SHIP-101",
+      "type": {
+        "id": "feature",
+        "name": "Feature"
+      },
+      "title": "Checkout v2",
+      "state": {
+        "id": "00000003-0000-4000-8001-000000000202",
+        "name": "Active",
+        "category": "inProgress"
+      },
+      "assignee": {
+        "id": "00000001-0000-4000-8000-000000000002",
+        "name": "Priya Shah",
+        "initials": "PS",
+        "avatarColour": "#2f7fd8",
+        "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"
+      },
+      "points": 20,
+      "childPoints": 31,
+      "sumWarn": true,
+      "sprint": null,
+      "parent": {
+        "id": "00000005-0000-4000-8001-000000000090",
+        "key": "SHIP-90",
+        "type": {
+          "id": "epic",
+          "name": "Epic"
+        },
+        "title": "Checkout conversion"
+      },
+      "depth": 1,
+      "rank": null,
+      "tags": [
+        {
+          "name": "Payments",
+          "colour": "accent"
+        }
+      ],
+      "rollups": [
+        {
+          "type": "story",
+          "open": 5,
+          "closed": 3
+        },
+        {
+          "type": "bug",
+          "open": 1,
+          "closed": 1
+        }
+      ],
+      "revision": 1
+    },
+    {
+      "kind": "item",
+      "id": "00000005-0000-4000-8001-000000000141",
+      "key": "SHIP-141",
+      "type": {
+        "id": "story",
+        "name": "User Story"
+      },
+      "title": "Pay with saved card",
+      "state": {
+        "id": "00000003-0000-4000-8001-000000000302",
+        "name": "Active",
+        "category": "inProgress"
+      },
+      "assignee": {
+        "id": "00000001-0000-4000-8000-000000000002",
+        "name": "Priya Shah",
+        "initials": "PS",
+        "avatarColour": "#2f7fd8",
+        "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"
+      },
+      "points": 5,
+      "childPoints": null,
+      "sumWarn": false,
+      "sprint": {
+        "id": "00000004-0000-4000-8001-000000000024",
+        "name": "Sprint 24",
+        "status": "current"
+      },
+      "parent": {
+        "id": "00000005-0000-4000-8001-000000000101",
+        "key": "SHIP-101",
+        "type": {
+          "id": "feature",
+          "name": "Feature"
+        },
+        "title": "Checkout v2"
+      },
+      "depth": 2,
+      "rank": 1,
+      "tags": [
+        {
+          "name": "Payments",
+          "colour": "accent"
+        }
+      ],
+      "rollups": [],
+      "revision": 1
+    },
+    {
+      "kind": "item",
+      "id": "00000005-0000-4000-8001-000000000144",
+      "key": "SHIP-144",
+      "type": {
+        "id": "story",
+        "name": "User Story"
+      },
+      "title": "Address autocomplete",
+      "state": {
+        "id": "00000003-0000-4000-8001-000000000302",
+        "name": "Active",
+        "category": "inProgress"
+      },
+      "assignee": {
+        "id": "00000001-0000-4000-8000-000000000004",
+        "name": "Mei Lin",
+        "initials": "ML",
+        "avatarColour": "#7b4fc9",
+        "photoUrl": null
+      },
+      "points": 3,
+      "childPoints": null,
+      "sumWarn": false,
+      "sprint": {
+        "id": "00000004-0000-4000-8001-000000000024",
+        "name": "Sprint 24",
+        "status": "current"
+      },
+      "parent": {
+        "id": "00000005-0000-4000-8001-000000000101",
+        "key": "SHIP-101",
+        "type": {
+          "id": "feature",
+          "name": "Feature"
+        },
+        "title": "Checkout v2"
+      },
+      "depth": 2,
+      "rank": 2,
+      "tags": [],
+      "rollups": [],
+      "revision": 1
+    },
+    {
+      "kind": "group",
+      "id": "00000005-0000-4000-8001-000000000092",
+      "key": "SHIP-92",
+      "type": {
+        "id": "epic",
+        "name": "Epic"
+      },
+      "title": "Insights for merchants",
+      "state": {
+        "id": "00000003-0000-4000-8001-000000000101",
+        "name": "New",
+        "category": "proposed"
+      },
+      "assignee": null,
+      "points": 30,
+      "childPoints": null,
+      "sumWarn": false,
+      "sprint": null,
+      "parent": null,
+      "depth": 0,
+      "rank": null,
+      "tags": [],
+      "rollups": [
+        {
+          "type": "feature",
+          "open": 3,
+          "closed": 0
+        },
+        {
+          "type": "story",
+          "open": 5,
+          "closed": 0
+        }
+      ],
+      "revision": 1
+    },
+    {
+      "kind": "group",
+      "id": "00000005-0000-4000-8001-000000000103",
+      "key": "SHIP-103",
+      "type": {
+        "id": "feature",
+        "name": "Feature"
+      },
+      "title": "Reporting",
+      "state": {
+        "id": "00000003-0000-4000-8001-000000000202",
+        "name": "Active",
+        "category": "inProgress"
+      },
+      "assignee": {
+        "id": "00000001-0000-4000-8000-000000000006",
+        "name": "Ana Costa",
+        "initials": "AC",
+        "avatarColour": "#b83d7a",
+        "photoUrl": null
+      },
+      "points": 13,
+      "childPoints": 21,
+      "sumWarn": true,
+      "sprint": null,
+      "parent": {
+        "id": "00000005-0000-4000-8001-000000000092",
+        "key": "SHIP-92",
+        "type": {
+          "id": "epic",
+          "name": "Epic"
+        },
+        "title": "Insights for merchants"
+      },
+      "depth": 1,
+      "rank": null,
+      "tags": [],
+      "rollups": [
+        {
+          "type": "story",
+          "open": 2,
+          "closed": 0
+        },
+        {
+          "type": "feature",
+          "open": 1,
+          "closed": 0
+        }
+      ],
+      "revision": 1
+    },
+    {
+      "kind": "item",
+      "id": "00000005-0000-4000-8001-000000000147",
+      "key": "SHIP-147",
+      "type": {
+        "id": "story",
+        "name": "User Story"
+      },
+      "title": "Export sprint report to CSV",
+      "state": {
+        "id": "00000003-0000-4000-8001-000000000301",
+        "name": "New",
+        "category": "proposed"
+      },
+      "assignee": null,
+      "points": 5,
+      "childPoints": null,
+      "sumWarn": false,
+      "sprint": {
+        "id": "00000004-0000-4000-8001-000000000025",
+        "name": "Sprint 25",
+        "status": "future"
+      },
+      "parent": {
+        "id": "00000005-0000-4000-8001-000000000103",
+        "key": "SHIP-103",
+        "type": {
+          "id": "feature",
+          "name": "Feature"
+        },
+        "title": "Reporting"
+      },
+      "depth": 2,
+      "rank": 3,
+      "tags": [],
+      "rollups": [],
+      "revision": 1
+    },
+    {
+      "kind": "group",
+      "id": "00000005-0000-4000-8001-000000000108",
+      "key": "SHIP-108",
+      "type": {
+        "id": "feature",
+        "name": "Feature"
+      },
+      "title": "Dashboard widgets",
+      "state": {
+        "id": "00000003-0000-4000-8001-000000000201",
+        "name": "New",
+        "category": "proposed"
+      },
+      "assignee": null,
+      "points": 8,
+      "childPoints": 5,
+      "sumWarn": false,
+      "sprint": null,
+      "parent": {
+        "id": "00000005-0000-4000-8001-000000000103",
+        "key": "SHIP-103",
+        "type": {
+          "id": "feature",
+          "name": "Feature"
+        },
+        "title": "Reporting"
+      },
+      "depth": 2,
+      "rank": null,
+      "tags": [],
+      "rollups": [
+        {
+          "type": "story",
+          "open": 2,
+          "closed": 0
+        }
+      ],
+      "revision": 1
+    },
+    {
+      "kind": "item",
+      "id": "00000005-0000-4000-8001-000000000156",
+      "key": "SHIP-156",
+      "type": {
+        "id": "story",
+        "name": "User Story"
+      },
+      "title": "Dashboard: cycle time widget",
+      "state": {
+        "id": "00000003-0000-4000-8001-000000000301",
+        "name": "New",
+        "category": "proposed"
+      },
+      "assignee": null,
+      "points": 8,
+      "childPoints": null,
+      "sumWarn": false,
+      "sprint": null,
+      "parent": {
+        "id": "00000005-0000-4000-8001-000000000108",
+        "key": "SHIP-108",
+        "type": {
+          "id": "feature",
+          "name": "Feature"
+        },
+        "title": "Dashboard widgets"
+      },
+      "depth": 3,
+      "rank": 4,
+      "tags": [],
+      "rollups": [],
+      "revision": 1
+    },
+    {
+      "kind": "noParentGroup",
+      "id": "00000000-0000-0000-0000-000000000000",
+      "key": "",
+      "type": null,
+      "title": "No parent",
+      "state": null,
+      "assignee": null,
+      "points": null,
+      "childPoints": 5,
+      "sumWarn": false,
+      "sprint": null,
+      "parent": null,
+      "depth": 0,
+      "rank": null,
+      "tags": [],
+      "rollups": [
+        {
+          "type": "story",
+          "open": 1,
+          "closed": 0
+        }
+      ],
+      "revision": 0
+    },
+    {
+      "kind": "item",
+      "id": "00000005-0000-4000-8001-000000000184",
+      "key": "SHIP-184",
+      "type": {
+        "id": "story",
+        "name": "User Story"
+      },
+      "title": "Rename Sprint to Iteration in exports",
+      "state": {
+        "id": "00000003-0000-4000-8001-000000000301",
+        "name": "New",
+        "category": "proposed"
+      },
+      "assignee": null,
+      "points": 5,
+      "childPoints": null,
+      "sumWarn": false,
+      "sprint": null,
+      "parent": null,
+      "depth": 1,
+      "rank": 5,
+      "tags": [],
+      "rollups": [],
+      "revision": 1
+    }
+  ],
+  "sections": [],
+  "tagColours": [
+    {
+      "tag": "Payments",
+      "colour": "accent"
+    },
+    {
+      "tag": "Mobile",
+      "colour": "info"
+    },
+    {
+      "tag": "Feedback Ticket",
+      "colour": "warn"
+    },
+    {
+      "tag": "Tech debt",
+      "colour": "muted"
+    },
+    {
+      "tag": "Security",
+      "colour": "ok"
+    },
+    {
+      "tag": "Blocked",
+      "colour": "danger"
+    },
+    {
+      "tag": "Spike",
+      "colour": "purple"
+    }
+  ],
+  "forecast": null,
+  "velocity": null
+}

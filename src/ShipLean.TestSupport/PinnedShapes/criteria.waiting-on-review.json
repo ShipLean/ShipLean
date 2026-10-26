@@ -1,0 +1,7 @@
+{
+  "match": "all",
+  "clauses": [
+    { "field": "stateCategory", "op": "=", "value": "resolved" },
+    { "field": "assignee", "op": "=", "value": "@me" }
+  ]
+}

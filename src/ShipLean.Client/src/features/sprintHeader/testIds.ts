@@ -1,0 +1,15 @@
+export const sprintHeaderTestIds = {
+  header: 'sprint-header-root',
+  picker: 'sprint-header-picker',
+  dates: 'sprint-header-dates',
+  timeLeft: 'sprint-header-time-left',
+  allSprints: 'sprint-header-all-sprints',
+  goal: 'sprint-header-goal',
+  goalEdit: 'sprint-header-goal-edit',
+  tabs: 'sprint-header-tabs',
+  tabBacklog: 'sprint-header-tab-backlog',
+  tabTaskboard: 'sprint-header-tab-taskboard',
+  tabCapacity: 'sprint-header-tab-capacity',
+  pickerList: 'sprint-header-picker-list',
+  pickerOption: 'sprint-header-picker-option',
+} as const;

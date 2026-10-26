@@ -1,0 +1,703 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Feature form (reference)</title>
+<!--
+  Reference Feature form (#2): Backlogs › Features › SHIP-101, the work item form for a Feature, made richer.
+  Open directly in a browser. Uses ../tokens.css, shiplean.css and shared.js only; no build step.
+  The field strip swaps Sprint, Points and Priority for Epic, Slug and Started. A status band under the strip holds
+  the state, one honest Status line and Verified at; Blocked needs Blocked by, Parked needs a reason and what would
+  revive it. Goal sits above the Description (markdown, with revision history). Images in the description resolve
+  against this Feature's attachments; external image URLs never render. Links are a main-column section of cards:
+  GitHub and GitLab links show live state, links ShipLean can't reach show agent-reported state, other pages get an
+  Open Graph card or a fallback. The rail holds Attachments (grouped by what opening them does) and History.
+  Like the story form, fields wait for Save (one revision); links, attachments and log entries save straight away.
+  Working: State menu (Blocked/Parked open the band editor with the required field), Edit status, Still true,
+  Save/Discard, Description View/Edit with paste-to-attach and an external-image warning, + Add link (paste a URL:
+  GitHub, gitlab.example.com, a private host or any public page), drop files anywhere to attach, Log (Ctrl+Enter),
+  ⋯ on a log entry marks it superseded, a Markdown attachment opens attachment.html.
+  ?band=blocked|parked|edit, ?menu=state, ?edit, ?drop and ?addlink=og|github|private open those states.
+  The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot).
+-->
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="shiplean.css">
+<script src="shared.js"></script>
+<style>
+[hidden] { display: none !important; }
+/* Header and field strip: as on the story form */
+.wi-head { flex: none; display: grid; gap: 2px; padding: var(--space-2) var(--space-4); background: var(--color-surface); border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.wi-top { display: flex; align-items: center; gap: var(--space-2); min-height: 20px; }
+.back { color: var(--color-muted); text-decoration: none; font-size: var(--text-sm); }
+.back:hover { color: var(--color-accent); text-decoration: underline; }
+.wi-title { display: flex; align-items: center; gap: var(--space-2); min-height: 36px; }
+.ident { display: inline-flex; align-items: center; gap: 6px; flex: none; }
+.ident .key { font-size: var(--text-sm); color: var(--color-text); }
+.title-in { flex: 1; min-width: 0; height: 34px; margin-left: 2px; padding: 0 6px; border: 1px solid transparent; border-radius: var(--radius-sm); background: transparent; font-size: var(--text-lg); font-weight: var(--weight-semibold); }
+.title-in:hover { border-color: var(--color-border); }
+.title-in:focus { outline: 2px solid var(--color-accent); outline-offset: -1px; border-color: transparent; background: var(--color-surface); }
+.save-state { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-sm); color: var(--color-muted); white-space: nowrap; }
+.save-state .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--color-warn); flex: none; }
+.save-state.dirty { color: var(--color-text); }
+.btn:disabled { opacity: .45; cursor: default; filter: none; }
+.btn.tiny { height: 22px; padding: 0 7px; font-size: var(--text-xs); }
+.fields { flex: none; display: flex; padding: 0 var(--space-2); background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.fcell { flex: none; display: grid; align-content: center; gap: 2px; min-height: 54px; padding: 6px var(--space-3) 6px var(--space-2); border-right: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.fcell:last-child { border-right: 0; }
+.fcell.grow { flex: 1 1 0; min-width: 160px; }
+.lbl { font-size: var(--text-2xs); font-weight: var(--weight-semibold); color: var(--color-muted); text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
+.fbtn { display: inline-flex; align-items: center; gap: 6px; height: var(--control-height); position: relative; left: -6px; padding: 0 6px; border: 1px solid transparent; border-radius: var(--radius-sm); background: transparent; font-size: var(--text-sm); cursor: pointer; white-space: nowrap; }
+.fbtn:hover, .fbtn[aria-expanded="true"] { border-color: var(--color-border); background: var(--color-surface); }
+.fbtn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+.fbtn .car { font-size: var(--text-2xs); color: var(--color-muted); }
+.fval { font-size: var(--text-sm); white-space: nowrap; }
+.slug { font-family: var(--font-mono); font-size: var(--text-xs); padding: 1px 6px; border-radius: var(--radius-xs); background: var(--color-surface-2); }
+.tags { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.tag-in { width: 96px; height: 20px; padding: 0 8px; border: 1px dashed var(--color-border); border-radius: 999px; background: transparent; font-size: var(--text-xs); }
+[data-f].changed > .lbl::after { content: ""; display: inline-block; width: 6px; height: 6px; margin-left: 6px; border-radius: 50%; background: var(--color-accent); vertical-align: middle; }
+.pop-wrap { position: relative; display: inline-flex; }
+.menu { position: absolute; top: calc(100% + 4px); left: -6px; z-index: 30; min-width: 270px; padding: var(--space-1); display: grid; gap: 1px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-raised); }
+.menu .grp { padding: 6px var(--space-2) 2px; font-size: var(--text-2xs); font-weight: var(--weight-semibold); color: var(--color-muted); text-transform: uppercase; letter-spacing: .05em; }
+.menu .opt { display: flex; align-items: center; gap: var(--space-2); height: 28px; padding: 0 var(--space-2); border: 0; border-radius: var(--radius-sm); background: none; font-size: var(--text-sm); text-align: left; cursor: pointer; white-space: nowrap; }
+.menu .opt:hover, .menu .opt:focus-visible { background: var(--color-accent-soft); outline: 0; }
+.menu .opt .need { margin-left: auto; font-size: var(--text-2xs); color: var(--color-muted); }
+.menu .opt .tick { margin-left: auto; color: var(--color-accent); font-weight: var(--weight-semibold); }
+.menu .foot { padding: 6px var(--space-2) 2px; margin-top: 2px; border-top: 1px solid var(--color-border); font-size: var(--text-xs); color: var(--color-muted); white-space: normal; }
+
+/* Status band: the state, one honest line and when it was last confirmed true */
+.band { flex: none; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--space-3); align-items: center; padding: var(--space-2) var(--space-4); background: var(--color-surface); border-bottom: 1px solid var(--color-border); border-left: 3px solid var(--state-in-progress); }
+.band.proposed { border-left-color: var(--state-proposed); }
+.band.completed { border-left-color: var(--state-completed); }
+.band.blocked { border-left-color: var(--color-danger); background: color-mix(in srgb, var(--color-danger) 6%, var(--color-surface)); }
+.band.parked { border-left-color: var(--color-muted); background: color-mix(in srgb, var(--color-surface-2) 55%, var(--color-surface)); }
+.band.editing { grid-template-columns: minmax(0, 1fr); border-left-color: var(--color-accent); background: var(--color-surface); }
+.stbig { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; background: var(--color-surface-2); font-size: var(--text-sm); font-weight: var(--weight-semibold); }
+.band .line { display: grid; gap: 1px; min-width: 0; }
+.band .txt { font-size: var(--text-md); font-weight: var(--weight-medium); }
+.band .txt.none { color: var(--color-muted); font-weight: var(--weight-regular); }
+.band .meta { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-size: var(--text-xs); color: var(--color-muted); }
+.band .acts { display: flex; gap: 6px; }
+.why { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 2px var(--space-3); margin: 3px 0 2px; font-size: var(--text-sm); }
+.why dt { color: var(--color-muted); font-size: var(--text-xs); padding-top: 1px; }
+.why dd { margin: 0; display: flex; align-items: center; gap: 6px; }
+.vchip { display: inline-flex; align-items: center; gap: 4px; height: 18px; padding: 0 7px; border-radius: 999px; font-size: var(--text-2xs); font-weight: var(--weight-semibold); }
+.vchip.ok { background: color-mix(in srgb, var(--color-ok) 18%, transparent); }
+.vchip.stale { background: color-mix(in srgb, var(--color-warn) 22%, transparent); }
+.ed-grid { display: grid; grid-template-columns: 150px minmax(0, 1fr) 150px; gap: var(--space-2) var(--space-3); align-items: start; max-width: 1000px; }
+.ed-grid .f { display: grid; gap: 3px; }
+.ed-grid .f.wide { grid-column: 2 / 4; }
+.ed-grid .field { width: 100%; }
+.ed-grid textarea.field { height: auto; min-height: 44px; padding: 5px 8px; resize: vertical; }
+.ed-acts { display: flex; gap: 6px; align-items: center; grid-column: 2 / 4; }
+.req { color: var(--color-danger); }
+.err { font-size: var(--text-xs); color: var(--color-danger); }
+.field.bad { border-color: var(--color-danger); }
+.hintline { font-size: var(--text-xs); color: var(--color-muted); }
+
+/* Main column */
+.wi-split { grid-template-columns: minmax(0, 1fr) calc(var(--rail-width) + 72px); }
+.wi-main { background: var(--color-surface); position: relative; }
+.sec { display: grid; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.sec:last-child { border-bottom: 0; }
+.sec-h { display: flex; align-items: center; gap: var(--space-2); min-height: 24px; }
+.sec-h h2 { margin: 0; font-size: var(--text-md); font-weight: var(--weight-semibold); }
+.sec-h .seg { height: 24px; }
+.sec-h .seg button { font-size: var(--text-xs); padding: 0 8px; }
+.cnt { font-size: var(--text-xs); color: var(--color-muted); font-variant-numeric: tabular-nums; }
+.goal { padding: var(--space-3) var(--space-4); border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.goal p { margin: 2px 0 0; max-width: 780px; font-size: var(--text-md); line-height: 1.5; }
+.md { max-width: 780px; font-size: var(--text-base); }
+.md p { margin: 0 0 6px; }
+.md h3 { margin: 10px 0 4px; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .05em; color: var(--color-muted); }
+.md h3:first-child { margin-top: 0; }
+.md ul { margin: 0 0 6px; padding-left: 20px; }
+.md ul.tl { list-style: none; padding-left: 2px; }
+.md ul.tl li { display: flex; gap: 6px; align-items: baseline; }
+.md ul.tl input { margin: 0; accent-color: var(--color-accent); }
+.md code { padding: 0 4px; border-radius: var(--radius-xs); background: var(--color-surface-2); font-size: var(--text-xs); }
+.md table { border-collapse: collapse; margin: 2px 0 8px; font-size: var(--text-sm); }
+.md th, .md td { padding: 4px 10px; border: 1px solid var(--color-border); text-align: left; }
+.md th { background: var(--color-surface-2); font-weight: var(--weight-semibold); font-size: var(--text-xs); }
+.md a { text-decoration: none; }
+.md a:hover { text-decoration: underline; }
+figure.img { margin: 4px 0 10px; display: grid; gap: 4px; width: fit-content; max-width: 100%; }
+figure.img > div { padding: 10px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg); }
+figure.img figcaption { display: flex; gap: 6px; align-items: center; font-size: var(--text-xs); color: var(--color-muted); }
+.img-ph { display: grid; place-items: center; width: 320px; height: 120px; color: var(--color-muted); font-size: var(--text-xs); background: repeating-linear-gradient(135deg, var(--color-surface-2) 0 8px, var(--color-bg) 8px 16px); border-radius: var(--radius-sm); }
+.no-img { display: flex; gap: var(--space-2); align-items: center; width: fit-content; max-width: 100%; margin: 4px 0 10px; padding: var(--space-2) var(--space-3); border: 1px dashed var(--color-border); border-radius: var(--radius-md); background: var(--color-bg); font-size: var(--text-xs); color: var(--color-muted); }
+svg text { fill: currentColor; }
+.md-edit { display: grid; gap: 6px; max-width: 780px; }
+.md-edit textarea { width: 100%; height: 280px; padding: 8px 10px; font-family: var(--font-mono); font-size: var(--text-xs); line-height: 1.6; resize: vertical; }
+.uprow { display: flex; align-items: center; gap: var(--space-2); padding: 6px var(--space-2); border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-bg); font-size: var(--text-xs); }
+.uprow progress { width: 120px; height: 6px; accent-color: var(--color-accent); }
+.lint { display: flex; align-items: flex-start; gap: var(--space-2); padding: 6px var(--space-2); border: 1px solid var(--color-border); border-left: 3px solid var(--color-warn); border-radius: var(--radius-sm); background: var(--color-surface); font-size: var(--text-xs); }
+.box { border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+.box table.list th { position: static; }
+.box table.list tr:last-child td { border-bottom: 0; }
+
+/* Links: work items as rows, URLs as cards two across */
+.lcards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); max-width: 920px; }
+.lcards > .lgroup, .lcards > .lst, .lcards > .linkform { grid-column: 1 / -1; }
+.lgroup { font-size: var(--text-2xs); font-weight: var(--weight-semibold); color: var(--color-muted); text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; }
+.lc { position: relative; display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; gap: 3px var(--space-2); align-items: center; padding: 7px var(--space-2); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: var(--text-sm); color: var(--color-text); text-decoration: none; }
+.lc:hover { border-color: color-mix(in srgb, var(--color-accent) 50%, var(--color-border)); }
+.lc .fav { width: 16px; height: 16px; border-radius: var(--radius-xs); display: grid; place-items: center; font: 700 8px/1 var(--font-sans); background: var(--color-surface-2); color: var(--color-text); border: 1px solid var(--color-border); }
+.lc .fav.none { background: transparent; border-style: dashed; color: var(--color-muted); }
+.lc .t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: var(--weight-medium); }
+.lc .t .num { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-muted); font-weight: var(--weight-regular); margin-right: 4px; }
+.lc .sub { grid-column: 2 / -1; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-size: var(--text-xs); color: var(--color-muted); min-width: 0; }
+.lc .note { grid-column: 2 / -1; font-size: var(--text-xs); }
+.lc .note::before { content: "“"; color: var(--color-muted); }
+.lc .note::after { content: "”"; color: var(--color-muted); }
+.lc .rm { position: absolute; top: 4px; right: 4px; opacity: 0; background: var(--color-surface); }
+.lc:hover .rm, .lc:focus-within .rm { opacity: 1; }
+.ps { display: inline-flex; align-items: center; height: 18px; padding: 0 7px; border-radius: 999px; font-size: var(--text-2xs); font-weight: var(--weight-semibold); white-space: nowrap; background: var(--color-surface-2); }
+.ps.open { background: color-mix(in srgb, var(--color-ok) 20%, transparent); }
+.ps.merged { background: color-mix(in srgb, var(--color-purple) 22%, transparent); }
+.ps.closed { background: color-mix(in srgb, var(--color-danger) 18%, transparent); }
+.src { display: inline-flex; align-items: center; gap: 4px; }
+.src.live::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--color-ok); }
+.src.agent::before { content: ""; width: 6px; height: 6px; border-radius: 50%; border: 1.5px solid var(--color-warn); }
+.lc.og { grid-template-columns: 16px minmax(0, 1fr) 96px; }
+.lc .thumb { grid-row: 1 / span 3; grid-column: 3; width: 96px; height: 60px; border-radius: var(--radius-sm); border: 1px solid var(--color-border); background: linear-gradient(160deg, var(--color-accent-soft), var(--color-surface-2)); display: grid; place-items: center; overflow: hidden; }
+.lc .thumb i { width: 60%; height: 50%; border-radius: var(--radius-xs); background: var(--color-surface); box-shadow: var(--shadow-raised); }
+.lc .desc { grid-column: 2 / 3; font-size: var(--text-xs); color: var(--color-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.lc.og .sub, .lc.og .note { grid-column: 2 / 3; }
+.linkform { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-2) var(--space-3); padding: var(--space-3); background: var(--color-surface); border: 1px solid var(--color-accent); border-radius: var(--radius-md); }
+.linkform > * { grid-column: 1 / -1; }
+.linkform .half { grid-column: auto; }
+.linkform label { display: grid; gap: 3px; font-size: var(--text-xs); color: var(--color-muted); font-weight: var(--weight-medium); }
+.linkform .field { width: 100%; }
+.linkform .lc { background: var(--color-bg); max-width: 452px; }
+.fetching { display: flex; align-items: center; gap: 6px; font-size: var(--text-xs); color: var(--color-muted); }
+.fetching .ok { color: var(--color-ok); font-weight: var(--weight-semibold); }
+
+/* Log */
+.comments { list-style: none; margin: 0; padding: 0; display: grid; max-width: 780px; }
+.cm { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: var(--space-2); padding: var(--space-2) 0; border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.cm:first-child { border-top: 0; padding-top: 0; }
+.cm-h { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); flex-wrap: wrap; }
+.cm-h b { font-weight: var(--weight-semibold); }
+.cm-h .ib { margin-left: auto; opacity: 0; }
+.cm:hover .cm-h .ib, .cm:focus-within .cm-h .ib { opacity: 1; }
+.cm .md { font-size: var(--text-sm); }
+.cm.superseded .md { color: var(--color-muted); }
+.cm.superseded .md p { text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--color-muted) 55%, transparent); }
+.cm.fresh { animation: flash 1.8s ease-out; }
+.av.agent { background: var(--color-surface-2); color: var(--color-text); border: 1px solid var(--color-border); }
+.chip.agent { height: 16px; font-size: var(--text-2xs); background: color-mix(in srgb, var(--color-purple) 16%, transparent); }
+.cm-new { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: var(--space-2); max-width: 780px; padding-top: var(--space-2); }
+.cm-new textarea { width: 100%; min-height: 44px; height: auto; padding: 6px 8px; }
+
+/* Side column */
+.wi-side { gap: var(--space-4); }
+.sec-h2 { display: flex; align-items: center; gap: 6px; min-height: 22px; }
+.lst { list-style: none; margin: 0; padding: 0; display: grid; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+.lst > li { display: flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 6px 0 var(--space-2); border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); font-size: var(--text-sm); }
+.lst > li:first-child { border-top: 0; }
+.lst > li.lgrp { min-height: 22px; background: color-mix(in srgb, var(--color-surface-2) 50%, var(--color-surface)); font-size: var(--text-2xs); font-weight: var(--weight-semibold); color: var(--color-muted); text-transform: uppercase; letter-spacing: .05em; }
+.lst > li.lgrp .how { margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: var(--weight-regular); }
+.lst .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text); text-decoration: none; }
+.lst a.t:hover { color: var(--color-accent); text-decoration: underline; }
+.lst .ext { width: 18px; text-align: center; color: var(--color-muted); flex: none; font-size: var(--text-xs); }
+.ext.md { font: 700 8px/1 var(--font-mono); color: var(--color-text); border: 1px solid var(--color-border); border-radius: var(--radius-xs); padding: 2px 0; background: var(--color-surface-2); }
+.lst .meta { font-size: var(--text-xs); color: var(--color-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.lst > li.fresh { animation: flash 1.8s ease-out; }
+.revs { list-style: none; margin: 0; padding: 0; display: grid; }
+.rev { position: relative; padding: 0 0 var(--space-3) 30px; }
+.rev::before { content: ""; position: absolute; left: 10px; top: 22px; bottom: 2px; width: 1px; background: var(--color-border); }
+.rev:last-child { padding-bottom: 0; }
+.rev:last-child::before { display: none; }
+.revno { position: absolute; left: 0; top: 0; width: 21px; height: 20px; display: grid; place-items: center; border: 1px solid var(--color-border); border-radius: var(--radius-xs); background: var(--color-surface); font: var(--weight-semibold) var(--text-2xs)/1 var(--font-mono); color: var(--color-muted); }
+.rev.fresh .revno { border-color: var(--color-accent); background: var(--color-accent-soft); color: var(--color-text); }
+.rev-h { display: flex; align-items: center; gap: 6px; min-height: 20px; font-size: var(--text-sm); flex-wrap: wrap; }
+.rev-h b { font-weight: var(--weight-medium); }
+.diffs { list-style: none; margin: 2px 0 0; padding: 0; display: grid; gap: 1px; font-size: var(--text-xs); }
+.diffs .f { color: var(--color-muted); margin-right: 4px; }
+.diffs b { font-weight: var(--weight-semibold); }
+
+/* Drop overlay */
+.drop { position: fixed; inset: 12px; z-index: 35; display: grid; place-items: center; border: 2px dashed var(--color-accent); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--color-accent-soft) 85%, transparent); }
+.drop-card { width: 540px; max-width: calc(100% - 32px); display: grid; gap: 10px; padding: var(--space-4); border-radius: var(--radius-lg); background: var(--color-surface); border: 1px solid var(--color-border); box-shadow: var(--shadow-raised); }
+.drop-card h3 { margin: 0; font-size: var(--text-md); }
+.drop-card ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.drop-card li { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: var(--space-2); align-items: center; padding: 6px var(--space-2); border: 1px solid var(--color-border); border-radius: var(--radius-sm); font-size: var(--text-sm); }
+.drop-card li .out { display: block; font-size: var(--text-xs); color: var(--color-muted); }
+.drop-card li.replace { border-color: color-mix(in srgb, var(--color-warn) 55%, var(--color-border)); background: color-mix(in srgb, var(--color-warn) 8%, var(--color-surface)); }
+@keyframes flash { 0%, 30% { background: color-mix(in srgb, var(--color-warn) 22%, transparent); } 100% { background: transparent; } }
+@media (max-width: 900px) {
+  .wi-split { grid-template-columns: minmax(0, 1fr); }
+  .wi-top, .wi-title { flex-wrap: wrap; }
+  .title-in { flex-basis: 100%; order: 5; margin-left: -6px; }
+  .fields { flex-wrap: wrap; }
+  .fcell { border-right: 0; }
+  .band { grid-template-columns: minmax(0, 1fr); }
+  .lcards, .ed-grid, .linkform { grid-template-columns: minmax(0, 1fr); }
+  .ed-grid .f.wide, .ed-acts { grid-column: auto; }
+  .box { overflow-x: auto; }
+}
+</style>
+</head>
+<body>
+<div id="appbar"></div>
+<section class="wi-head" aria-label="Feature header">
+  <div class="wi-top">
+    <a class="back" href="features.html" id="back">← Back to Features backlog</a>
+    <span class="spacer"></span>
+    <span class="xs muted" id="meta"></span>
+  </div>
+  <div class="wi-title">
+    <span class="ident"><span class="ti feature">F</span><span class="sm muted">Feature</span><span class="key">SHIP-101</span><button class="ib" type="button" id="copyKey" title="Copy SHIP-101" aria-label="Copy key">⧉</button></span>
+    <input class="title-in" id="title" aria-label="Title" autocomplete="off">
+    <span class="save-state" id="saveState" role="status"></span>
+    <button class="btn" type="button" id="discard">Discard</button>
+    <button class="btn primary" type="button" id="save" title="Save (Ctrl+S)">Save</button>
+  </div>
+</section>
+<div class="fields" id="fields" aria-label="Fields"></div>
+<div id="band" aria-label="Status"></div>
+<div class="split wi-split">
+  <div class="scroll wi-main" id="main"></div>
+  <aside class="rail wi-side" id="side" aria-label="Attachments and history"></aside>
+</div>
+<div class="drop" id="drop" hidden><div class="drop-card" id="dropCard"></div></div>
+<input type="file" id="file" multiple hidden>
+
+<script>
+(() => {
+  const { ME, people, items, doneItems, epics, esc, tIcon, av, toast } = SL;
+  const $ = id => document.getElementById(id);
+  const params = new URLSearchParams(location.search);
+  document.getElementById('appbar').outerHTML = SL.appBar('backlogs');
+  const clone = o => JSON.parse(JSON.stringify(o));
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  const KEY = 'SHIP-101', TODAY = 'Sun 25 Oct', GITLAB_HOST = 'gitlab.example.com';
+
+  /* The default Feature workflow (#2). Colour follows the category: Blocked and Parked are In Progress like Active;
+     the status band, not the dot, tells them apart. Boards colour them with card style rules. */
+  const STATES = [['proposed', 'Proposed', [['Idea', 'notebook, not backlog']]],
+    ['in-progress', 'In Progress', [['Active', ''], ['Blocked', 'needs Blocked by'], ['Parked', 'needs a reason']]],
+    ['completed', 'Completed', [['Done', '']]]];
+  const catOf = s => STATES.find(([, , list]) => list.some(([n]) => n === s))[0];
+  const stH = s => `<span class="st ${catOf(s)}">${esc(s)}</span>`;
+  const agent = { name: 'Claude Code', initials: 'AI' };
+  const who = id => (id === 'agent' ? agent : people[id]);
+  const avH = id => (id === 'agent' ? `<span class="av agent" title="Agent token: ${agent.name}">AI</span>` : av(id));
+  const whoH = id => (id === 'agent' ? `${agent.name} <span class="chip agent">Agent</span>` : esc(people[id].name));
+
+  /* Fields that wait for Save. verified = days since Status was last confirmed. */
+  const initial = {
+    title: 'Checkout v2', state: 'Active', epic: 'SHIP-90', tags: ['Checkout', 'Mobile'],
+    goal: 'Returning customers pay in two taps, so mobile checkout conversion goes from 61% to 68% by the end of Q4.',
+    status: 'Saved cards are on staging; Apple Pay and the confirmation email shipped. Load testing waits on the vault rate limit.',
+    verified: { days: 2, when: 'Fri 23 Oct, 18:02', by: 'agent', via: 'set_status' },
+    blockedBy: null, blockedSince: null, parkedWhy: '', parkedRevive: '',
+    description: '### Key facts\n- Cards live in the **vault** as tokens; we never store a card number.\n- Most mobile drop-off is at Payment, so saved cards go first:\n\n![](checkout-funnel.png)\n\n### Decisions\n| Decision | Why | When |\n|---|---|---|\n| Tokens stay in the vault | Keeps us out of PCI scope | Fri 2 Oct |\n| Radio rows, not cards, in the picker | Still works with six or more saved cards | Fri 23 Oct |\n\n### Next\n- [x] Apple Pay button\n- [ ] Saved card picker (SHIP-141)\n- [ ] Gift card balance check, after SHIP-141',
+  };
+  const VARIANTS = {
+    blocked: { state: 'Blocked', status: 'Load testing stopped: the vault returns 429 above 40 requests a second.', blockedBy: { person: 'tom', text: 'Vault rate limit (acme/storefront#421)' }, blockedSince: 'Wed 21 Oct', verified: { days: 1, when: 'Sat 24 Oct, 09:15', by: 'priya', via: '' } },
+    parked: { state: 'Parked', status: 'Saved cards shipped; the rest waits until passkey sign-in is out.', parkedWhy: 'Mobile sign-in needs the whole team for two sprints.', parkedRevive: 'Sprint 26 planning, or mobile conversion dropping below 58%.', verified: { days: 19, when: 'Tue 6 Oct, 16:40', by: 'agent', via: 'set_status' } },
+  };
+  if (VARIANTS[params.get('band')]) Object.assign(initial, VARIANTS[params.get('band')]);
+  let saved = { rev: 9, form: clone(initial) };
+  let draft = clone(initial);
+
+  const revs = [
+    { rev: 9, by: 'agent', when: 'Fri 23 Oct, 18:02', changes: [['status', 'Saved cards in review; Apple Pay shipped.', initial.status], ['verified', null, 'Fri 23 Oct']] },
+    { rev: 8, by: 'priya', when: 'Thu 22 Oct, 09:41', changes: [['description', null, null]] },
+    { rev: 7, by: 'priya', when: 'Mon 19 Oct, 10:05', changes: [['state', 'Blocked', 'Active'], ['blockedBy', 'Vault team (Tom Okafor)', null]] },
+    { rev: 6, by: 'agent', when: 'Wed 14 Oct, 17:30', changes: [['state', 'Active', 'Blocked'], ['blockedBy', null, 'Vault team (Tom Okafor), since Wed 14 Oct']] },
+    { rev: 1, by: 'ana', when: 'Mon 21 Sep, 10:00', changes: [], note: 'Created as Feature in Idea' },
+  ];
+  const children = [...items, ...doneItems].filter(i => i.parent === 'Checkout v2');
+  const links = [
+    { kind: 'item', type: 'Related', key: 'SHIP-129' },
+    { kind: 'github', what: 'pull request', repo: 'acme/storefront', num: '#418', title: 'Saved card picker', state: 'Merged', author: 'priya-s', src: 'live', url: 'https://github.com/acme/storefront/pull/418' },
+    { kind: 'github', what: 'issue', repo: 'acme/storefront', num: '#421', title: 'Vault returns 429 under load', state: 'Open', src: 'live', note: 'Blocks load testing the picker', url: 'https://github.com/acme/storefront/issues/421' },
+    { kind: 'gitlab', what: 'merge request', repo: 'payments/vault', num: '!57', title: 'Raise the per-merchant rate limit', state: 'Draft', src: 'live', url: 'https://gitlab.example.com/payments/vault/-/merge_requests/57' },
+    { kind: 'private', host: 'git.internal.example', num: '!212', title: 'Card token cache', state: 'Merged', src: 'agent', reported: '3 h ago', url: 'https://git.internal.example/payments/token-cache/-/merge_requests/212' },
+    { kind: 'og', host: 'web.dev', title: 'Payment and address form best practices', desc: 'Well-designed forms help users be more productive and convert. Get the details right and payment and address forms are faster to fill in.', url: 'https://web.dev/articles/payment-and-address-form-best-practices' },
+    { kind: 'fallback', host: 'grafana.example.net', title: 'Checkout funnel dashboard', why: 'sign-in page', note: 'Mobile conversion by step, daily', url: 'https://grafana.example.net/d/checkout' },
+  ];
+  // kind: md opens rendered, image previews, file downloads.
+  const attachments = [
+    { name: 'design-v0.2.md', kind: 'md', size: '14 KB' }, { name: 'plan-2026-10-11.md', kind: 'md', size: '9 KB' }, { name: 'brief-saved-cards.md', kind: 'md', size: '4 KB' },
+    { name: 'checkout-funnel.png', kind: 'image', size: '88 KB' }, { name: 'payment-flow.svg', kind: 'image', size: '12 KB' },
+    { name: 'funnel-oct.csv', kind: 'file', size: '31 KB' }, { name: 'kickoff.pptx', kind: 'file', size: '2.1 MB' },
+  ];
+  const log = [
+    { by: 'agent', when: 'Fri 23 Oct, 18:02', via: true, body: 'Saved card picker is on staging behind `checkout_v2_cards`. Load test stopped at 40 rps: the vault returns 429 (acme/storefront#421). Status updated.' },
+    { by: 'priya', when: 'Thu 22 Oct, 09:40', body: 'Going with radio rows for the picker; reasoning in design-v0.2.md §3.' },
+    { by: 'agent', when: 'Sun 11 Oct, 21:15', via: true, superseded: { by: 'priya', when: 'Thu 22 Oct' }, body: 'Broke the work into 8 stories → plan-2026-10-11.md. Estimate: two sprints, address autocomplete first.' },
+  ];
+  const ui = { bandEdit: params.get('band') === 'edit', descMode: params.has('edit') ? 'edit' : 'view', linkForm: params.get('addlink') || null, linkUrl: '', linkTitle: '', linkNote: '', uploads: [] };
+  if (ui.bandEdit) { draft.state = 'Blocked'; draft.blockedSince = TODAY; draft.status = 'Load testing stopped: the vault returns 429 above 40 requests a second.'; }
+
+  /* Field names and from → to (History and the save state). */
+  const FIELDS = { title: 'Title', state: 'State', epic: 'Epic', tags: 'Tags', goal: 'Goal', status: 'Status', verified: 'Verified at', blockedBy: 'Blocked by', blockedSince: 'Blocked since', parkedWhy: 'Parked reason', parkedRevive: 'Revive when', description: 'Description' };
+  const changedFields = (a, b) => Object.keys(b).filter(f => !same(a[f], b[f]));
+  const blockedText = b => (b ? [b.person && people[b.person].name, b.text].filter(Boolean).join(', ') : '');
+  const fmt = v => (v == null || v === '' ? 'none' : typeof v === 'object' ? blockedText(v) || v.when || 'none' : v);
+  const diffHtml = (f, from, to) => (f === 'description' || f === 'goal' ? 'edited' : `${from == null ? '' : `<span class="muted">${esc(fmt(from))}</span> → `}<b>${esc(fmt(to))}</b>`);
+
+  /* Markdown subset: ### headings, - lists, - [ ] task lists, | tables |, ![](images), **bold**, `code`, keys. */
+  const imgAttached = n => attachments.find(a => a.name === n && a.kind === 'image');
+  const SAMPLE_IMG = {
+    'checkout-funnel.png': `<svg width="440" height="128" viewBox="0 0 440 128" role="img" aria-label="Mobile sessions reaching each checkout step in October">
+      <text x="0" y="11" font-size="10" font-weight="600">Mobile sessions reaching each step, October</text>
+      ${[['Cart', 100], ['Address', 84], ['Payment', 71], ['Review', 49], ['Paid', 43]].map(([s, v], i) => `<text x="0" y="${34 + i * 19}" font-size="10">${s}</text><rect x="60" y="${25 + i * 19}" width="${v * 3}" height="12" rx="2" fill="${s === 'Payment' || s === 'Review' ? 'var(--chart-completed)' : 'var(--chart-committed)'}" opacity="${s === 'Payment' || s === 'Review' ? 1 : .55}"/><text x="${66 + v * 3}" y="${34 + i * 19}" font-size="10">${v}%</text>`).join('')}
+      <text x="250" y="91" font-size="10" fill="var(--color-muted)">← −22 points from Payment</text></svg>`,
+  };
+  function imageHtml(src) {
+    if (/^https?:/i.test(src)) return `<div class="no-img"><span>⊘</span><span><b>External image not shown:</b> <code>${esc(src)}</code>. Attach the file to this Feature instead.</span></div>`;
+    if (!imgAttached(src)) return `<div class="no-img"><span>⊘</span><span><b>${esc(src)}</b> isn't attached to ${KEY}.</span></div>`;
+    return `<figure class="img"><div>${SAMPLE_IMG[src] || `<div class="img-ph">${esc(src)}</div>`}</div><figcaption><span>▣</span><code>![](${esc(src)})</code> · attached to ${KEY}</figcaption></figure>`;
+  }
+  const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\b(acme\/storefront#\d+)\b/g, '<a href="#">$1</a>').replace(/\b(SHIP-\d+)\b/g, '<a class="wikey key" href="#">$1</a>')
+    .replace(/\b([\w-]+\.md)\b/g, m => (attachments.some(a => a.name === m) ? `<a href="attachment.html?name=${m}">${m}</a>` : m));
+  function md(src) {
+    const kind = l => (!l.trim() ? 'gap' : /^###\s/.test(l) ? 'h' : /^!\[\]\(.+\)$/.test(l.trim()) ? 'img' : /^\|/.test(l) ? 'table' : /^- \[[ x]\] /.test(l) ? 'tl' : /^- /.test(l) ? 'ul' : 'p');
+    const runs = [];
+    (src || '').trim().split('\n').forEach(l => { const k = kind(l), last = runs[runs.length - 1]; if (last && last.k === k && !['gap', 'h', 'img'].includes(k)) last.lines.push(l); else runs.push({ k, lines: [l] }); });
+    const cells = l => l.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+    return runs.map(({ k, lines }) => {
+      if (k === 'gap') return '';
+      if (k === 'h') return `<h3>${inline(lines[0].replace(/^###\s/, ''))}</h3>`;
+      if (k === 'img') return imageHtml(lines[0].trim().slice(4, -1));
+      if (k === 'table') { const [h, , ...body] = lines; return `<table><thead><tr>${cells(h).map(c => `<th>${inline(c)}</th>`).join('')}</tr></thead><tbody>${body.map(r => `<tr>${cells(r).map(c => `<td>${inline(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`; }
+      if (k === 'tl') return `<ul class="tl">${lines.map(l => `<li><input type="checkbox" disabled${l[3] === 'x' ? ' checked' : ''}>${inline(l.slice(6))}</li>`).join('')}</ul>`;
+      if (k === 'ul') return `<ul>${lines.map(l => `<li>${inline(l.slice(2))}</li>`).join('')}</ul>`;
+      return `<p>${lines.map(inline).join('<br>')}</p>`;
+    }).join('');
+  }
+  const externalImages = src => (src || '').split('\n').map((l, i) => [i + 1, (l.match(/!\[\]\((https?:[^)]+)\)/i) || [])[1]]).filter(([, u]) => u);
+
+  /* Header */
+  function renderHead() {
+    if (document.activeElement !== $('title')) $('title').value = draft.title;
+    const r = revs[0];
+    $('meta').innerHTML = `Created by Ana Costa, Mon 21 Sep · Changed by ${esc(who(r.by).name)}${r.by === 'agent' ? ' (agent)' : ''}, ${r.when} · revision ${saved.rev}`;
+  }
+  function refreshDirty() {
+    const dirty = changedFields(saved.form, draft), s = $('saveState');
+    $('save').disabled = !dirty.length; $('discard').hidden = !dirty.length;
+    s.classList.toggle('dirty', !!dirty.length);
+    s.innerHTML = dirty.length ? `<span class="dot"></span>Unsaved: ${dirty.length > 2 ? dirty.length + ' fields' : dirty.map(f => FIELDS[f]).join(', ')}` : `Saved · revision ${saved.rev}`;
+    document.querySelectorAll('[data-f]').forEach(el => el.classList.toggle('changed', dirty.includes(el.dataset.f)));
+  }
+
+  /* Field strip */
+  function renderFields() {
+    const epic = epics.find(e => e.key === draft.epic), done = children.filter(c => c.state === 'Closed').length;
+    $('fields').innerHTML = `
+      <div class="fcell" data-f="state"><span class="lbl">State</span><span class="pop-wrap"><button class="fbtn" type="button" id="stateBtn" aria-haspopup="menu" aria-expanded="false">${stH(draft.state)}<span class="car">▾</span></button></span></div>
+      <div class="fcell" data-f="epic"><label class="lbl" for="fEpic">Epic</label><select class="fbtn" id="fEpic" style="padding-right:2px">${epics.map(e => `<option value="${e.key}"${e.key === draft.epic ? ' selected' : ''}>${esc(e.title)}</option>`).join('')}</select></div>
+      <div class="fcell"><span class="lbl">Slug</span><span class="fval" title="Unique in the project. Agents and imports find this Feature by it."><span class="slug">checkout-v2</span></span></div>
+      <div class="fcell"><span class="lbl">Started</span><span class="fval">Mon 21 Sep</span></div>
+      <div class="fcell"><span class="lbl">Stories and bugs</span><span class="fval">${done} of ${children.length} closed</span></div>
+      <div class="fcell grow" data-f="tags"><span class="lbl">Tags</span><div class="tags">${draft.tags.map((t, i) => `<span class="chip">${esc(t)}<button class="ib" type="button" data-untag="${i}" aria-label="Remove tag ${esc(t)}" style="width:16px;height:16px">✕</button></span>`).join('')}<input class="tag-in" id="tagIn" placeholder="+ Add tag" aria-label="Add tag"></div></div>`;
+    void epic;
+  }
+  function openStateMenu() {
+    closeMenu();
+    const btn = $('stateBtn'); btn.setAttribute('aria-expanded', 'true');
+    const m = document.createElement('div'); m.className = 'menu'; m.setAttribute('role', 'menu');
+    m.innerHTML = STATES.map(([cat, label, list]) => `<div class="grp">${label}</div>` + list.map(([n, need]) =>
+      `<button class="opt" type="button" role="menuitemradio" aria-checked="${n === draft.state}" data-pick-state="${n}"><span class="st ${cat}">${n}</span>${n === draft.state ? '<span class="tick">✓</span>' : need ? `<span class="need">${need}</span>` : n === 'Done' ? `<span class="need">${children.filter(c => c.state !== 'Closed').length} stories and bugs open</span>` : ''}</button>`).join('')).join('')
+      + '<div class="foot">The default Feature workflow. Change it per project in Settings. The dot follows the category; the status band shows Blocked and Parked.</div>';
+    btn.parentElement.append(m);
+    m.querySelector('[aria-checked="true"]')?.focus();
+  }
+  function closeMenu() { document.querySelectorAll('.menu').forEach(m => m.remove()); $('stateBtn')?.setAttribute('aria-expanded', 'false'); }
+  function pickState(n) {
+    closeMenu();
+    draft.state = n;
+    if (n === 'Blocked' && !draft.blockedSince) draft.blockedSince = TODAY;
+    if (n !== 'Blocked') { draft.blockedBy = saved.form.state === 'Blocked' && n === 'Blocked' ? draft.blockedBy : null; draft.blockedSince = null; }
+    if (n !== 'Parked') { draft.parkedWhy = ''; draft.parkedRevive = ''; }
+    ui.bandEdit = n === 'Blocked' || n === 'Parked' || ui.bandEdit;
+    if (n === 'Done' && children.some(c => c.state !== 'Closed')) toast(`${children.filter(c => c.state !== 'Closed').length} stories and bugs are still open under ${KEY}`);
+    renderFields(); renderBand(); refreshDirty();
+    if (ui.bandEdit) (document.querySelector('#band .field.bad') || $('bLine'))?.focus();
+  }
+
+  /* Status band */
+  const missing = () => (draft.state === 'Blocked' && !blockedText(draft.blockedBy) ? 'Blocked needs Blocked by.' : draft.state === 'Parked' && !draft.parkedWhy.trim() ? 'Parked needs a reason.' : '');
+  function renderBand() {
+    const d = draft, cat = catOf(d.state), cls = d.state === 'Blocked' ? 'blocked' : d.state === 'Parked' ? 'parked' : cat;
+    if (ui.bandEdit) {
+      const err = missing();
+      $('band').className = 'band editing';
+      $('band').innerHTML = `<div class="ed-grid">
+        <div class="f"><span class="lbl">State</span>${stH(d.state)}</div>
+        ${d.state === 'Blocked' ? `<div class="f"><label class="lbl" for="bBy">Blocked by <span class="req">*</span></label><input class="field${err ? ' bad' : ''}" id="bBy" list="peopleList" value="${esc(blockedText(d.blockedBy))}" placeholder="A person, a team or a thing: “Tom Okafor, vault rate limit”" autocomplete="off">${err ? `<span class="err">${err}</span>` : '<span class="hintline">Pick a person to notify them, or type anything.</span>'}</div>
+          <div class="f"><label class="lbl" for="bSince">Since</label><input class="field" id="bSince" value="${esc(d.blockedSince || TODAY)}"></div>`
+        : d.state === 'Parked' ? `<div class="f"><label class="lbl" for="pWhy">Why parked <span class="req">*</span></label><input class="field${err ? ' bad' : ''}" id="pWhy" value="${esc(d.parkedWhy)}" placeholder="What stopped it">${err ? `<span class="err">${err}</span>` : ''}</div>
+          <div class="f"><label class="lbl" for="pRevive">Revive when</label><input class="field" id="pRevive" value="${esc(d.parkedRevive)}" placeholder="What would bring it back"></div>`
+        : '<div class="f" style="grid-column:2/4"></div>'}
+        <div class="f wide"><label class="lbl" for="bLine">Status · one honest line</label><textarea class="field" id="bLine" rows="2">${esc(d.status)}</textarea><span class="hintline">Saving sets Verified at to now. The old line stays in History.</span></div>
+        <div class="ed-acts"><button class="btn" type="button" id="bDone">Done editing</button><span class="xs muted">Save in the header writes it with any other changes.</span></div>
+      </div><datalist id="peopleList">${Object.values(people).map(p => `<option value="${esc(p.name)}">`).join('')}</datalist>`;
+      return;
+    }
+    const v = d.verified, stale = v.days > 14;
+    const age = v.days === 0 ? 'just now' : v.days === 1 ? '1 day ago' : `${v.days} days ago`;
+    $('band').className = `band ${cls}`;
+    $('band').innerHTML = `<span class="stbig">${stH(d.state)}</span>
+      <div class="line">
+        <span class="txt${d.status ? '' : ' none'}">${d.status ? esc(d.status) : 'No status yet. One honest line: where it is and what\'s next.'}</span>
+        ${d.state === 'Blocked' ? `<dl class="why"><dt>Blocked by</dt><dd>${d.blockedBy?.person ? av(d.blockedBy.person) : ''}${esc(blockedText(d.blockedBy))}${d.blockedSince ? ` <span class="muted">· since ${esc(d.blockedSince)}</span>` : ''}</dd></dl>` : ''}
+        ${d.state === 'Parked' ? `<dl class="why"><dt>Why parked</dt><dd>${esc(d.parkedWhy)}</dd><dt>Revive when</dt><dd>${esc(d.parkedRevive || '—')}</dd></dl>` : ''}
+        <span class="meta"><span class="vchip ${stale ? 'stale' : 'ok'}" title="${stale ? 'Not confirmed for over two weeks' : ''}">${stale ? '⚠' : '✓'} Verified ${age}</span>${esc(v.when)} · ${v.by === 'agent' ? `${agent.name} (agent)` : esc(people[v.by].name)}${v.via ? ` through <code>${v.via}</code>` : ''}</span>
+      </div>
+      <div class="acts"><button class="btn" type="button" id="stillTrue" title="Confirms the status is still true and bumps Verified at">✓ Still true</button><button class="btn" type="button" id="editStatus">Edit status</button></div>`;
+  }
+  function readBand() {
+    const g = id => $(id)?.value ?? null;
+    if ($('bBy')) { const t = g('bBy').trim(), p = Object.entries(people).find(([, x]) => x.name === t); draft.blockedBy = t ? (p ? { person: p[0], text: '' } : { person: null, text: t }) : null; draft.blockedSince = g('bSince').trim() || TODAY; }
+    if ($('pWhy')) { draft.parkedWhy = g('pWhy'); draft.parkedRevive = g('pRevive'); }
+    if ($('bLine')) draft.status = g('bLine').trim();
+  }
+
+  /* Main column */
+  const linkCard = (l, i, preview) => {
+    if (l.kind === 'item') return '';
+    const rm = preview ? '' : `<button class="ib rm" type="button" data-unlink="${i}" aria-label="Remove link">✕</button>`;
+    const note = l.note ? `<span class="note">${esc(l.note)}</span>` : '';
+    if (l.kind === 'github' || l.kind === 'gitlab' || (l.kind === 'private' && l.src === 'agent')) {
+      const host = l.kind === 'github' ? 'GH' : l.kind === 'gitlab' ? 'GL' : 'MR';
+      const where = l.kind === 'private' ? esc(l.host) : `${esc(l.repo)}${l.what === 'issue' ? ' · issue' : ''}${l.author ? ` · ${esc(l.author)}` : ''}`;
+      const src = l.src === 'agent' ? `<span class="src agent" title="${esc(l.host)} isn't reachable from ShipLean. An agent reported this state.">reported by ${agent.name} · ${esc(l.reported)}</span>` : `<span class="src live" title="Live from the ${l.kind === 'github' ? 'GitHub' : 'GitLab'} API">live${preview ? '' : ' · 4 min ago'}</span>`;
+      return `<a class="lc" href="${esc(l.url)}" target="_blank" rel="noopener"><span class="fav">${host}</span><span class="t"><span class="num">${esc(l.num)}</span>${esc(l.title)}</span><span class="ps ${l.state.toLowerCase()}">${esc(l.state)}</span><span class="sub">${l.kind === 'gitlab' ? `${GITLAB_HOST} · ` : ''}${where} · ${src}</span>${note}${rm}</a>`;
+    }
+    if (l.kind === 'og') return `<a class="lc og" href="${esc(l.url)}" target="_blank" rel="noopener"><span class="fav">${esc(l.host[0].toUpperCase())}</span><span class="t">${esc(l.title)}</span><span class="thumb" aria-hidden="true"><i></i></span><span class="desc">${esc(l.desc)}</span><span class="sub">${esc(l.host)} · Open Graph</span>${note}${rm}</a>`;
+    return `<a class="lc" href="${esc(l.url)}" target="_blank" rel="noopener" title="No preview: ${esc(l.why || 'not reachable')}"><span class="fav none">◌</span><span class="t">${esc(l.title)}</span><span></span><span class="sub">${esc(l.host)} · no preview${l.why ? ` (${esc(l.why)})` : ''}</span>${note}${rm}</a>`;
+  };
+  function classify(raw) {
+    let u; try { u = new URL(raw.trim()); } catch { return null; }
+    let m;
+    if (u.hostname === 'github.com' && (m = u.pathname.match(/^\/([^/]+\/[^/]+)\/(pull|issues)\/(\d+)/))) {
+      const t = { 418: ['Saved card picker', 'Merged'], 421: ['Vault returns 429 under load', 'Open'], 433: ['Gift card balance lookup', 'Open'] }[m[3]] || [`${m[2] === 'pull' ? 'Pull request' : 'Issue'} #${m[3]}`, 'Open'];
+      return { kind: 'github', what: m[2] === 'pull' ? 'pull request' : 'issue', repo: m[1], num: '#' + m[3], title: t[0], state: t[1], author: m[2] === 'pull' ? 'priya-s' : null, src: 'live' };
+    }
+    if (u.hostname === GITLAB_HOST && (m = u.pathname.match(/^\/(.+?)\/-\/(merge_requests|issues)\/(\d+)/))) return { kind: 'gitlab', what: m[2] === 'issues' ? 'issue' : 'merge request', repo: m[1], num: (m[2] === 'issues' ? '#' : '!') + m[3], title: `Merge request !${m[3]}`, state: 'Open', src: 'live' };
+    if (/(^|\.)internal(\.|$)|^localhost$|^(10|127)\.|^192\.168\./.test(u.hostname)) return { kind: 'fallback', host: u.hostname, private: true, title: '', why: 'private address' };
+    const slug = u.pathname.split('/').filter(Boolean).pop() || u.hostname;
+    const title = u.hostname === 'web.dev' ? 'Payment and address form best practices' : slug.replace(/[-_]+/g, ' ').replace(/\.\w+$/, '').replace(/^\w/, c => c.toUpperCase());
+    return { kind: 'og', host: u.hostname.replace(/^www\./, ''), title, desc: u.hostname === 'web.dev' ? links[5].desc : `${title}: the page's Open Graph description shows here.` };
+  }
+  const previewCard = c => linkCard({ ...c, title: ui.linkTitle || c.title || 'Untitled link', note: ui.linkNote, url: ui.linkUrl }, -1, true);
+  function linkFormHtml() {
+    const c = ui.linkUrl ? classify(ui.linkUrl) : null;
+    const state = !ui.linkUrl ? '<span class="fetching">Paste a URL. GitHub and GitLab links stay live; other pages get a preview card.</span>'
+      : !c ? '<span class="err">That isn\'t a URL.</span>'
+      : c.kind === 'github' ? `<span class="fetching"><span class="ok">✓</span>GitHub ${c.what} · state stays live</span>`
+      : c.kind === 'gitlab' ? `<span class="fetching"><span class="ok">✓</span>GitLab ${c.what} on ${GITLAB_HOST} · state stays live</span>`
+      : c.kind === 'og' ? '<span class="fetching"><span class="ok">✓</span>Preview fetched · 0.4 s</span>'
+      : `<div class="callout warn"><b>No preview for this host</b><code>${esc(c.host)}</code> resolves to a private address. Previews only reach public addresses unless an instance admin allow-lists the host. An agent that can reach it can report its title and state with <code>report_link_state</code>.</div>`;
+    const prev = c ? `<div id="lPrev">${previewCard(c)}</div>` : '';
+    const typed = c && (c.kind === 'github' || c.kind === 'gitlab');
+    return `<div class="linkform" id="linkForm">
+      <label>URL<input class="field" id="lUrl" value="${esc(ui.linkUrl)}" placeholder="https://" autocomplete="off"></label>
+      ${state}${prev}
+      <label class="half"><span>Title${c && c.kind === 'fallback' ? ' <span class="req">*</span>' : ''}</span><input class="field" id="lTitle" value="${esc(ui.linkTitle || (typed ? '' : c?.title || ''))}" placeholder="${typed ? `${esc(c.title)} (follows ${c.kind === 'github' ? 'GitHub' : 'GitLab'})` : 'Title'}"></label>
+      <label class="half">Note (one line, optional)<input class="field" id="lNote" value="${esc(ui.linkNote)}" placeholder="Why this link matters"></label>
+      <div class="row"><button class="btn primary" type="button" id="lAdd"${c ? '' : ' disabled'}>Add link</button><button class="btn ghost" type="button" id="lCancel">Cancel</button><span class="spacer"></span><span class="xs muted">Previews are fetched by the server: public addresses only, 5 s and 1 MB caps, no cookies.</span></div>
+    </div>`;
+  }
+  function renderMain() {
+    const d = draft, ext = externalImages(d.description);
+    const itemLinks = links.map((l, i) => [l, i]).filter(([l]) => l.kind === 'item');
+    const code = links.map((l, i) => [l, i]).filter(([l]) => ['github', 'gitlab', 'private'].includes(l.kind));
+    const pages = links.map((l, i) => [l, i]).filter(([l]) => ['og', 'fallback'].includes(l.kind));
+    const find = k => [...items, ...doneItems].find(i => i.key === k);
+    $('main').innerHTML = `
+      <div class="goal" data-f="goal"><span class="lbl">Goal</span><p>${esc(d.goal)}</p></div>
+      <section class="sec" data-f="description">
+        <div class="sec-h"><h2>Description</h2><span class="xs muted">Key facts, decisions, next steps · ${saved.rev} revisions</span><span class="spacer"></span><div class="seg" role="group" aria-label="Description mode"><button type="button" data-desc="view" aria-pressed="${ui.descMode === 'view'}">View</button><button type="button" data-desc="edit" aria-pressed="${ui.descMode === 'edit'}">Edit</button></div></div>
+        ${ui.descMode === 'view' ? `<div class="md">${md(d.description)}</div>` : `<div class="md-edit">
+          <textarea class="field" id="descIn" aria-label="Description (Markdown)">${esc(d.description)}</textarea>
+          <span class="hintline">Markdown. Paste or drop an image to attach it to ${KEY} and insert it here.</span>
+          ${ui.uploads.map(u => `<div class="uprow"><span>▣</span><span class="mono xs">${esc(u.name)}</span><span class="muted">${u.pct < 100 ? `pasted · attaching to ${KEY}` : 'attached'}</span><span class="spacer"></span><progress value="${u.pct}" max="100"></progress><span class="muted">${u.pct}%</span></div>`).join('')}
+          ${ext.map(([n, u]) => `<div class="lint"><span>⚠</span><span>Line ${n}: <code>${esc(new URL(u).hostname)}</code> is an external image and won't render. Attach the file to this Feature instead.</span></div>`).join('')}
+        </div>`}
+      </section>
+      <section class="sec" id="linksSec">
+        <div class="sec-h"><h2>Links</h2><span class="cnt">${links.length}</span><span class="xs muted">Work items and URLs. Code links show live state. Links save straight away.</span><span class="spacer"></span><button class="btn tiny" type="button" id="addLink">+ Add link</button></div>
+        <div class="lcards">
+          ${ui.linkForm ? linkFormHtml() : ''}
+          ${itemLinks.length ? `<span class="lgroup">Work items</span><ul class="lst">${itemLinks.map(([l]) => { const w = find(l.key); return `<li>${tIcon(w.type)}<span class="key">${w.key}</span><a class="t" href="#">${esc(w.title)}</a><span class="xs muted">${l.type}</span></li>`; }).join('')}</ul>` : ''}
+          ${code.length ? `<span class="lgroup">Code</span>${code.map(([l, i]) => linkCard(l, i)).join('')}` : ''}
+          ${pages.length ? `<span class="lgroup">Pages</span>${pages.map(([l, i]) => linkCard(l, i)).join('')}` : ''}
+        </div>
+      </section>
+      <section class="sec">
+        <div class="sec-h"><h2>Stories and bugs</h2><span class="chip">${children.filter(c => c.state === 'Closed').length}/${children.length} closed</span><span class="xs muted">The to-dos. Each is its own work item and saves straight away.</span><span class="spacer"></span><button class="btn tiny" type="button" id="addChild">+ User story</button><button class="btn tiny" type="button" id="addBug">+ Bug</button></div>
+        <div class="box"><table class="list"><thead><tr><th>Title</th><th style="width:90px">Key</th><th style="width:110px">Sprint</th><th style="width:110px">State</th><th style="width:70px">Assigned</th></tr></thead><tbody>
+          ${children.map(c => `<tr class="item"><td><div class="title-cell">${tIcon(c.type)}<a class="t" href="${c.key === 'SHIP-141' ? 'work-item.html' : '#'}" style="color:inherit;text-decoration:none">${esc(c.title)}</a></div></td><td class="key">${c.key}</td><td class="sm muted">${c.sprint ? SL.sprints.find(s => s.id === c.sprint).name : 'Backlog'}</td><td>${SL.st(c.state)}</td><td>${av(c.assignee)}</td></tr>`).join('')}
+        </tbody></table></div>
+      </section>
+      <section class="sec">
+        <div class="sec-h"><h2>Log</h2><span class="cnt">${log.length}</span><span class="xs muted">Dated entries, newest first. Agents add one after every session.</span></div>
+        <ul class="comments">${log.map((c, i) => `<li class="cm${c.superseded ? ' superseded' : ''}${c.fresh ? ' fresh' : ''}">${avH(c.by)}<div>
+          <div class="cm-h"><b>${whoH(c.by)}</b><span class="xs muted">${c.when}${c.via ? ' · via MCP' : ''}</span>${c.superseded ? `<span class="chip warn" title="Kept for the record. Marked by ${esc(people[c.superseded.by].name)}, ${c.superseded.when}">Superseded</span>` : ''}<button class="ib" type="button" data-supersede="${i}" title="${c.superseded ? 'Unmark superseded' : 'Mark superseded: kept, struck through'}" aria-label="Entry options">⋯</button></div>
+          <div class="md"><p>${inline(c.body)}</p></div></div></li>`).join('')}</ul>
+        <div class="cm-new">${av(ME)}<textarea class="field" id="logIn" placeholder="Add a log entry. Markdown, @ to mention, Ctrl+Enter posts"></textarea></div>
+      </section>`;
+    if (ui.descMode === 'edit') wireDesc();
+  }
+
+  /* Side column */
+  function renderSide() {
+    const group = (kind, label, how) => { const list = attachments.map((a, i) => [a, i]).filter(([a]) => a.kind === kind); return list.length ? `<li class="lgrp">${label}<span class="how">${how}</span></li>` + list.map(([a, i]) => `<li${a.fresh ? ' class="fresh"' : ''}><span class="ext${kind === 'md' ? ' md' : ''}">${kind === 'md' ? 'MD' : kind === 'image' ? '▣' : '▤'}</span><a class="t" href="${kind === 'md' ? `attachment.html?name=${encodeURIComponent(a.name)}` : '#'}" data-att="${i}">${esc(a.name)}</a><span class="meta">${a.size}</span></li>`).join('') : ''; };
+    $('side').innerHTML = `
+      <section><div class="sec-h2"><span class="overline">Attachments</span><span class="cnt">${attachments.length}</span><span class="spacer"></span><label class="btn ghost tiny" for="file" tabindex="0">+ Attach</label></div>
+        <ul class="lst">${group('md', 'Markdown', 'opens rendered')}${group('image', 'Images', 'preview')}${group('file', 'Files', 'download')}</ul>
+        <p class="hint">Same name again replaces the file; the old copy is soft-deleted. Up to 25 MB a file, 250 MB a Feature.</p></section>
+      <section><div class="sec-h2"><span class="overline">History</span><span class="cnt">${revs[0].rev} revisions</span></div>
+        <ul class="revs">${revs.map(r => `<li class="rev${r.fresh ? ' fresh' : ''}"><span class="revno">${r.rev}</span><div class="rev-h">${avH(r.by)}<b>${esc(who(r.by).name)}</b><span class="xs muted">${r.when}</span></div>
+          ${r.note ? `<div class="xs muted">${esc(r.note)}</div>` : ''}<ul class="diffs">${r.changes.map(([f, a, b]) => `<li><span class="f">${FIELDS[f]}</span>${diffHtml(f, a, b)}</li>`).join('')}</ul></li>`).join('')}</ul></section>`;
+  }
+
+  /* Save writes one revision. Writing or confirming the status bumps Verified at. */
+  function save() {
+    readBand();
+    const err = missing();
+    if (err) { ui.bandEdit = true; renderBand(); toast(err); return; }
+    const dirty = changedFields(saved.form, draft);
+    if (!dirty.length) return;
+    if (dirty.some(f => ['state', 'status', 'blockedBy', 'parkedWhy', 'parkedRevive'].includes(f))) draft.verified = { days: 0, when: `${TODAY}, now`, by: ME, via: '' };
+    const changes = changedFields(saved.form, draft).map(f => [f, f === 'verified' ? null : saved.form[f], f === 'verified' ? TODAY : draft[f]]);
+    revs.forEach(r => { r.fresh = false; });
+    revs.unshift({ rev: saved.rev + 1, by: ME, when: `${TODAY}, now`, changes, fresh: true });
+    saved = { rev: saved.rev + 1, form: clone(draft) };
+    ui.bandEdit = false;
+    renderAll();
+    toast(`Saved ${KEY} · revision ${saved.rev}`);
+  }
+  function stillTrue() {
+    draft.verified = saved.form.verified = { days: 0, when: `${TODAY}, now`, by: ME, via: '' };
+    revs.forEach(r => { r.fresh = false; });
+    revs.unshift({ rev: saved.rev + 1, by: ME, when: `${TODAY}, now`, changes: [['verified', null, TODAY]], fresh: true });
+    saved.rev += 1;
+    renderAll();
+    toast('Status confirmed · Verified at is now');
+  }
+  function discard() { draft = clone(saved.form); ui.bandEdit = false; renderAll(); toast('Changes discarded'); }
+  function renderAll() { renderHead(); renderFields(); renderBand(); renderMain(); renderSide(); refreshDirty(); }
+
+  /* Description editor: paste an image to attach it here */
+  let shotNo = 0;
+  function attachPasted(name) {
+    const ta = $('descIn'), at = ta.selectionStart ?? ta.value.length;
+    ta.value = ta.value.slice(0, at) + `\n![](${name})\n` + ta.value.slice(at);
+    draft.description = ta.value;
+    const u = { name, pct: 12 }; ui.uploads.push(u);
+    renderMain(); refreshDirty();
+    const tick = setInterval(() => { u.pct = Math.min(100, u.pct + 22); if (u.pct === 100) { clearInterval(tick); attachments.push({ name, kind: 'image', size: '214 KB', fresh: true }); renderSide(); } if (ui.descMode === 'edit') { const sel = $('descIn').selectionStart; renderMain(); $('descIn').setSelectionRange(sel, sel); } }, 450);
+  }
+  function wireDesc() {
+    const ta = $('descIn');
+    ta.addEventListener('input', () => { draft.description = ta.value; refreshDirty(); const pos = ta.selectionStart, had = document.querySelectorAll('.lint').length; if (externalImages(ta.value).length !== had) { renderMain(); $('descIn').focus(); $('descIn').setSelectionRange(pos, pos); } });
+    ta.addEventListener('paste', e => {
+      const f = [...(e.clipboardData?.files || [])].find(x => x.type.startsWith('image/'));
+      if (!f) return;
+      e.preventDefault();
+      attachPasted(`screenshot-2026-10-25-14${String(12 + shotNo++).padStart(2, '0')}.png`);
+    });
+  }
+
+  /* Dropping files anywhere attaches them. Each file's outcome is shown first. */
+  const kindOf = n => (/\.md$/i.test(n) ? 'md' : /\.(png|jpe?g|gif|webp|svg)$/i.test(n) ? 'image' : 'file');
+  function dropCard(names) {
+    $('dropCard').innerHTML = `<h3>Drop to attach to ${KEY}</h3>${names.length ? `<ul>${names.map(n => { const k = kindOf(n), exists = attachments.some(a => a.name === n); return `<li class="${exists ? 'replace' : ''}"><span class="ext${k === 'md' ? ' md' : ''}">${k === 'md' ? 'MD' : k === 'image' ? '▣' : '▤'}</span><span><span class="mono xs">${esc(n)}</span><span class="out">${exists ? 'Replaces the existing file. The old copy is soft-deleted.' : k === 'md' ? 'Markdown attachment, opens rendered' : k === 'image' ? `Image, previews in the app. Use it as <code>![](${esc(n)})</code>` : 'File, download only'}</span></span><span class="chip${exists ? ' warn' : ''}">${exists ? 'Replace' : 'New'}</span></li>`; }).join('')}</ul>` : '<p class="sm muted" style="margin:0">Markdown opens rendered, images preview, anything else downloads.</p>'}<span class="xs muted">Up to 25 MB a file and 250 MB a Feature.</span>`;
+    $('drop').hidden = false;
+  }
+  function attachFiles(names) {
+    names.forEach(n => { const i = attachments.findIndex(a => a.name === n); const a = { name: n, kind: kindOf(n), size: '1 KB', fresh: true }; if (i >= 0) attachments[i] = a; else attachments.push(a); });
+    renderSide();
+    toast(names.length === 1 ? `Attached ${esc(names[0])}` : `Attached ${names.length} files`);
+  }
+  let dragDepth = 0;
+  document.addEventListener('dragenter', e => { if (![...(e.dataTransfer?.types || [])].includes('Files')) return; e.preventDefault(); dragDepth++; dropCard([]); });
+  document.addEventListener('dragover', e => { if ([...(e.dataTransfer?.types || [])].includes('Files')) e.preventDefault(); });
+  document.addEventListener('dragleave', () => { if (--dragDepth <= 0) { dragDepth = 0; $('drop').hidden = true; } });
+  document.addEventListener('drop', e => { e.preventDefault(); dragDepth = 0; $('drop').hidden = true; const names = [...(e.dataTransfer?.files || [])].map(f => f.name); if (names.length) attachFiles(names); });
+  $('drop').addEventListener('click', () => { $('drop').hidden = true; });
+
+  /* Events */
+  $('save').addEventListener('click', save);
+  $('discard').addEventListener('click', discard);
+  $('title').addEventListener('input', e => { draft.title = e.target.value; refreshDirty(); });
+  $('back').addEventListener('click', e => { if (changedFields(saved.form, draft).length) { e.preventDefault(); toast('You have unsaved changes: Save or Discard first'); } });
+  $('file').addEventListener('change', e => { const names = [...e.target.files].map(f => f.name); if (names.length) attachFiles(names); e.target.value = ''; });
+  document.addEventListener('click', e => {
+    const t = e.target;
+    if (t.closest('#stateBtn')) { if (document.querySelector('.menu')) closeMenu(); else openStateMenu(); return; }
+    const ps = t.closest('[data-pick-state]'); if (ps) { pickState(ps.dataset.pickState); return; }
+    if (!t.closest('.menu')) closeMenu();
+    if (t.closest('#copyKey')) { toast(`Copied ${KEY}`); return; }
+    if (t.closest('#editStatus')) { ui.bandEdit = true; renderBand(); $('bLine').focus(); return; }
+    if (t.closest('#stillTrue')) { stillTrue(); return; }
+    if (t.closest('#bDone')) { readBand(); const err = missing(); if (err) { renderBand(); toast(err); return; } ui.bandEdit = false; renderBand(); refreshDirty(); return; }
+    const dm = t.closest('[data-desc]'); if (dm) { ui.descMode = dm.dataset.desc; renderMain(); if (ui.descMode === 'edit') $('descIn').focus(); return; }
+    if (t.closest('#addLink')) { ui.linkForm = 'new'; ui.linkUrl = ui.linkTitle = ui.linkNote = ''; renderMain(); $('lUrl').focus(); return; }
+    if (t.closest('#lCancel')) { ui.linkForm = null; renderMain(); return; }
+    if (t.closest('#lAdd')) {
+      const c = classify(ui.linkUrl), title = $('lTitle').value.trim(), note = $('lNote').value.trim();
+      if (!c) return;
+      if (c.kind === 'fallback' && !title) { $('lTitle').classList.add('bad'); $('lTitle').focus(); toast('This host has no preview: give the link a title'); return; }
+      links.push({ ...c, title: title || c.title, note, url: ui.linkUrl });
+      ui.linkForm = null; renderMain(); toast('Link added');
+      return;
+    }
+    const ul = t.closest('[data-unlink]'); if (ul) { e.preventDefault(); links.splice(+ul.dataset.unlink, 1); renderMain(); toast('Link removed'); return; }
+    const sp = t.closest('[data-supersede]'); if (sp) { const c = log[+sp.dataset.supersede]; c.superseded = c.superseded ? null : { by: ME, when: TODAY }; renderMain(); toast(c.superseded ? 'Marked superseded. It stays in the Log.' : 'No longer superseded'); return; }
+    const ut = t.closest('[data-untag]'); if (ut) { draft.tags = draft.tags.filter((_, i) => i !== +ut.dataset.untag); renderFields(); refreshDirty(); return; }
+    const at = t.closest('[data-att]'); if (at && attachments[+at.dataset.att].kind !== 'md') { e.preventDefault(); const a = attachments[+at.dataset.att]; toast(a.kind === 'image' ? `Opens a preview of ${esc(a.name)}` : `Downloading ${esc(a.name)}`); return; }
+    if (t.closest('#addChild') || t.closest('#addBug')) { toast(`New ${t.closest('#addBug') ? 'bug' : 'user story'} under ${KEY}`); return; }
+  });
+  document.addEventListener('input', e => {
+    if (e.target.id === 'lTitle' || e.target.id === 'lNote') { ui[e.target.id === 'lTitle' ? 'linkTitle' : 'linkNote'] = e.target.value; const c = classify(ui.linkUrl); if (c && $('lPrev')) $('lPrev').innerHTML = previewCard(c); return; }
+    if (e.target.id === 'lUrl') { ui.linkUrl = e.target.value; const pos = e.target.selectionStart; renderMain(); $('lUrl').focus(); $('lUrl').setSelectionRange(pos, pos); return; }
+    if (['bBy', 'bSince', 'pWhy', 'pRevive', 'bLine'].includes(e.target.id)) { readBand(); refreshDirty(); const ok = !missing(); e.target.classList.toggle('bad', !ok && ['bBy', 'pWhy'].includes(e.target.id)); }
+  });
+  document.addEventListener('change', e => { if (e.target.id === 'fEpic') { draft.epic = e.target.value; refreshDirty(); } });
+  document.addEventListener('keydown', e => {
+    if (e.target.id === 'tagIn' && e.key === 'Enter' && e.target.value.trim()) { draft.tags = [...draft.tags, e.target.value.trim()]; renderFields(); refreshDirty(); $('tagIn').focus(); return; }
+    if (e.target.id === 'logIn' && e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target.value.trim()) { log.unshift({ by: ME, when: `${TODAY}, now`, body: e.target.value.trim(), fresh: true }); renderMain(); toast('Log entry added'); return; }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); save(); return; }
+    if (e.key === 'Escape') { closeMenu(); $('drop').hidden = true; }
+  });
+
+  renderAll();
+
+  /* Screenshot states */
+  if (params.get('menu') === 'state') openStateMenu();
+  if (params.has('drop')) dropCard(['design-v0.2.md', 'brief-gift-cards.md', 'picker-on-ios.png', 'funnel-nov.csv']);
+  if (params.has('edit')) {
+    draft.description = draft.description.replace('![](checkout-funnel.png)\n', '![](checkout-funnel.png)\n\n![](screenshot-2026-10-25-1412.png)\n\n![](https://i.imgur.com/r8Kd2.png)\n');
+    ui.uploads = [{ name: 'screenshot-2026-10-25-1412.png', pct: 68 }];
+    renderMain(); refreshDirty();
+  }
+  if (ui.linkForm) {
+    ui.linkUrl = { og: 'https://web.dev/articles/payment-and-address-form-best-practices', github: 'https://github.com/acme/storefront/pull/433', private: 'https://git.internal.example/payments/token-cache/-/merge_requests/240' }[ui.linkForm] || '';
+    if (ui.linkForm === 'private') ui.linkTitle = 'Token cache: evict on card delete';
+    if (ui.linkForm === 'og') ui.linkNote = 'Autofill attributes for the address form';
+    renderMain();
+    setTimeout(() => $('linksSec').scrollIntoView({ block: 'start' })); // after shared.js moves the page into the shell
+  }
+  if (ui.bandEdit) refreshDirty();
+
+  SL.preview([
+    { label: 'Blocked', run: () => { location.search = '?band=blocked'; } },
+    { label: 'Parked (stale)', run: () => { location.search = '?band=parked'; } },
+    { label: 'Paste a screenshot', run: () => { if (ui.descMode !== 'edit') { ui.descMode = 'edit'; renderMain(); } attachPasted(`screenshot-2026-10-25-14${String(12 + shotNo++).padStart(2, '0')}.png`); } },
+    { label: 'Drop files', run: () => dropCard(['design-v0.2.md', 'brief-gift-cards.md', 'picker-on-ios.png', 'funnel-nov.csv']) },
+  ]);
+})();
+</script>
+</body>
+</html>

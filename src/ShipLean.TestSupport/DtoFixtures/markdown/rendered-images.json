@@ -1,0 +1,46 @@
+{
+  "attachments": [
+    {
+      "id": "00000009-0000-4000-8001-000000000001",
+      "workItemId": "00000005-0000-4000-8001-000000000141",
+      "name": "saved-card-picker.png",
+      "contentType": "image/png",
+      "sizeBytes": 421888,
+      "uploadedBy": {
+        "id": "00000001-0000-4000-8000-000000000004",
+        "name": "Mei Lin",
+        "initials": "ML",
+        "avatarColour": "#7b4fc9",
+        "photoUrl": null
+      },
+      "createdAt": "2026-10-23T16:00:00+00:00",
+      "createdLabel": "23 Oct",
+      "downloadUrl": "/api/attachments/00000009-0000-4000-8001-000000000001/content",
+      "kind": "image",
+      "replacedCount": 0,
+      "agentName": null,
+      "via": null
+    }
+  ],
+  "rendered": {
+    "markdown": "# Mockups\n\n![Saved card picker](saved-card-picker.png)\n\n![Logo](https://example.com/logo.png)\n\n![Gone](gone.png)\n",
+    "html": "<h1 id=\"mockups\">Mockups</h1>\n<figure data-md-image=\"attached\"><img src=\"/api/attachments/00000009-0000-4000-8001-000000000001/content\" alt=\"Saved card picker\"><figcaption>saved-card-picker.png</figcaption></figure>\n<p><span data-md-image=\"external\" data-src=\"https://example.com/logo.png\">External image not shown</span></p>\n<p><span data-md-image=\"missing\">gone.png</span></p>\n",
+    "images": [
+      {
+        "src": "saved-card-picker.png",
+        "status": "attached",
+        "attachmentId": "00000009-0000-4000-8001-000000000001"
+      },
+      {
+        "src": "https://example.com/logo.png",
+        "status": "external",
+        "attachmentId": null
+      },
+      {
+        "src": "gone.png",
+        "status": "missing",
+        "attachmentId": null
+      }
+    ]
+  }
+}

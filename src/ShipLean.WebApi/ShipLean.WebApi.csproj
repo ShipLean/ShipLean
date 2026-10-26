@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <PackageReference Include="Agoda.IoC.NetCore" Version="1.1.144" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="10.0.13" />
+    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.23.0" />
+    <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.23.0" />
+    <PackageReference Include="ModelContextProtocol.AspNetCore" Version="2.3.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+    <PackageReference Include="Serilog.Sinks.Seq" Version="9.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ShipLean.Core\ShipLean.Core.csproj" />
+    <ProjectReference Include="..\ShipLean.Application\ShipLean.Application.csproj" />
+    <ProjectReference Include="..\ShipLean.Contracts\ShipLean.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Features\Mcp\Planning\Guide\*.md" LogicalName="planning-guide/%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,50 @@
+{
+  "request": {
+    "files": [
+      {
+        "name": "saved-card-picker.png",
+        "sizeBytes": 421888,
+        "contentType": "image/png"
+      },
+      {
+        "name": "huge.zip",
+        "sizeBytes": 30000000,
+        "contentType": "application/zip"
+      },
+      {
+        "name": "vault-notes.md",
+        "sizeBytes": 2400,
+        "contentType": "text/markdown"
+      },
+      {
+        "name": "last.bin",
+        "sizeBytes": 9000000,
+        "contentType": "application/octet-stream"
+      }
+    ]
+  },
+  "response": {
+    "files": [
+      {
+        "name": "saved-card-picker.png",
+        "outcome": "add",
+        "message": ""
+      },
+      {
+        "name": "huge.zip",
+        "outcome": "tooLarge",
+        "message": "huge.zip is over the 25 MB limit for a file."
+      },
+      {
+        "name": "vault-notes.md",
+        "outcome": "replace",
+        "message": "Replaces the file of the same name."
+      },
+      {
+        "name": "last.bin",
+        "outcome": "overTotal",
+        "message": "last.bin would take the work item over its 250 MB limit."
+      }
+    ]
+  }
+}

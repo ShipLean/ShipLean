@@ -1,0 +1,103 @@
+@import 'tailwindcss';
+@import './styles/tokens.css';
+
+/* Playwright CT bundles each spec's components through its own virtual
+   entry modules, which automatic content detection doesn't reliably walk —
+   force an explicit scan of the whole source tree so utility classes used
+   only in component files aren't silently dropped from CT builds. */
+@source './**/*.{ts,tsx}';
+
+/* The design tokens (styles/tokens.css) are the one source. These names give Tailwind utilities (bg-panel, text-ink,
+   border-edge, rounded-panel…) a path to them; `inline` makes a utility read the token directly, so light, dark and
+   density switches reach it. The names differ from the tokens' own because a theme variable that shares a token's
+   name would point at itself. */
+@theme inline {
+  --color-canvas: var(--color-bg);
+  --color-panel: var(--color-surface);
+  --color-sunken: var(--color-surface-2);
+  --color-edge: var(--color-border);
+  --color-ink: var(--color-text);
+  --color-ink-muted: var(--color-muted);
+  --color-signal: var(--color-accent);
+  --color-signal-ink: var(--color-accent-fg);
+  --color-signal-soft: var(--color-accent-soft);
+  --color-good: var(--color-ok);
+  --color-caution: var(--color-warn);
+  --color-notice: var(--color-info);
+  --color-alert: var(--color-danger);
+  --color-label-purple: var(--color-purple);
+
+  --color-type-epic: var(--type-epic);
+  --color-type-feature: var(--type-feature);
+  --color-type-story: var(--type-story);
+  --color-type-bug: var(--type-bug);
+  --color-type-task: var(--type-task);
+
+  --color-state-proposed: var(--state-proposed);
+  --color-state-in-progress: var(--state-in-progress);
+  --color-state-resolved: var(--state-resolved);
+  --color-state-completed: var(--state-completed);
+  --color-state-removed: var(--state-removed);
+
+  --radius-control: var(--radius-sm);
+  --radius-panel: var(--radius-md);
+  --radius-frame: var(--radius-lg);
+
+  --shadow-panel: var(--shadow-raised);
+}
+
+/* Inter ships as @fontsource-variable/inter (family "Inter Variable"), replacing the token file's "Inter". */
+:root {
+  --font-sans: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+@layer base {
+  body {
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: var(--leading);
+  }
+
+  button {
+    cursor: pointer;
+  }
+}
+
+/* Tailwind v4 only lets @apply reference true utilities, so classes meant
+   to be composed into other component classes are declared with @utility. */
+@utility panel {
+  @apply bg-panel border border-edge rounded-panel;
+}
+
+@layer components {
+  .page-title {
+    font-size: var(--text-lg);
+    font-weight: var(--weight-semibold);
+    color: var(--color-text);
+  }
+
+  .field {
+    @apply bg-panel border border-edge rounded-control px-2 text-ink placeholder:text-ink-muted
+           focus:outline-none focus:ring-1 focus:ring-signal;
+    height: var(--control-height);
+    font-size: var(--text-sm);
+  }
+
+  .btn-signal {
+    @apply inline-flex items-center justify-center gap-1.5 bg-signal text-signal-ink rounded-control px-3
+           font-medium transition-colors hover:bg-signal/85
+           focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal;
+    height: var(--control-height);
+    font-size: var(--text-sm);
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center rounded-control border border-edge px-3
+           font-medium text-ink-muted transition-colors hover:text-ink hover:bg-sunken
+           focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal;
+    height: var(--control-height);
+    font-size: var(--text-sm);
+  }
+}

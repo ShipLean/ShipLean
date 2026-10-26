@@ -1,0 +1,58 @@
+{
+  "errors": [
+    {
+      "id": "00000008-0000-4000-8000-000000000001",
+      "step": "attachments",
+      "entity": "attachment",
+      "sourceKey": "PLATFORM-1051 / flame-graph.zip",
+      "message": "Jira answered 403 for the attachment",
+      "resolution": "pending"
+    },
+    {
+      "id": "00000008-0000-4000-8000-000000000002",
+      "step": "revisions",
+      "entity": "issue",
+      "sourceKey": "PLATFORM-1102",
+      "message": "Jira timed out (504) reading the changelog",
+      "resolution": "skipped"
+    },
+    {
+      "id": "00000008-0000-4000-8000-000000000003",
+      "step": "comments",
+      "entity": "comment",
+      "sourceKey": "PLATFORM-980 / 44012",
+      "message": "Comment body is empty",
+      "resolution": "retried"
+    }
+  ],
+  "log": [
+    {
+      "id": 1,
+      "loggedAt": "2026-10-24T14:02:05+00:00",
+      "timeLabel": "14:02:05",
+      "level": "info",
+      "message": "Queued the import of PLATFORM"
+    },
+    {
+      "id": 2,
+      "loggedAt": "2026-10-24T14:02:09+00:00",
+      "timeLabel": "14:02:09",
+      "level": "info",
+      "message": "Created 2 states: In Review, Waiting for Vendor"
+    },
+    {
+      "id": 3,
+      "loggedAt": "2026-10-24T14:07:41+00:00",
+      "timeLabel": "14:07:41",
+      "level": "warning",
+      "message": "PLATFORM-1051: attachment flame-graph.zip is over 25 MB, skipped"
+    },
+    {
+      "id": 4,
+      "loggedAt": "2026-10-24T14:08:02+00:00",
+      "timeLabel": "14:08:02",
+      "level": "error",
+      "message": "PLATFORM-1102: Jira timed out (504) reading the changelog"
+    }
+  ]
+}

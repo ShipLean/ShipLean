@@ -1,0 +1,65 @@
+{
+  "userRefs": [
+    { "id": "0199f000-0000-7000-8000-000000000001", "name": "Joel Dickson", "initials": "JD", "avatarColour": "#5b6b8c", "photoUrl": null },
+    { "id": "00000001-0000-4000-8000-000000000002", "name": "Priya Shah", "initials": "PS", "avatarColour": "#2f7fd8", "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1" },
+    { "id": "00000001-0000-4000-8000-000000000003", "name": "Tom Okafor", "initials": "TO", "avatarColour": "#16a089", "photoUrl": null },
+    { "id": "00000001-0000-4000-8000-000000000004", "name": "Mei Lin", "initials": "ML", "avatarColour": "#7b4fc9", "photoUrl": null },
+    { "id": "00000001-0000-4000-8000-000000000005", "name": "Sam Rivera", "initials": "SR", "avatarColour": "#c9611a", "photoUrl": null },
+    { "id": "00000001-0000-4000-8000-000000000006", "name": "Ana Costa", "initials": "AC", "avatarColour": "#b83d7a", "photoUrl": null }
+  ],
+  "stateRefs": {
+    "epic": [
+      { "id": "00000003-0000-4000-8001-000000000101", "name": "New", "category": "proposed" },
+      { "id": "00000003-0000-4000-8001-000000000102", "name": "Active", "category": "inProgress" },
+      { "id": "00000003-0000-4000-8001-000000000103", "name": "Resolved", "category": "resolved" },
+      { "id": "00000003-0000-4000-8001-000000000104", "name": "Closed", "category": "completed" },
+      { "id": "00000003-0000-4000-8001-000000000105", "name": "Removed", "category": "removed" }
+    ],
+    "feature": [
+      { "id": "00000003-0000-4000-8001-000000000201", "name": "New", "category": "proposed" },
+      { "id": "00000003-0000-4000-8001-000000000202", "name": "Active", "category": "inProgress" },
+      { "id": "00000003-0000-4000-8001-000000000203", "name": "Resolved", "category": "resolved" },
+      { "id": "00000003-0000-4000-8001-000000000204", "name": "Closed", "category": "completed" },
+      { "id": "00000003-0000-4000-8001-000000000205", "name": "Removed", "category": "removed" }
+    ],
+    "story": [
+      { "id": "00000003-0000-4000-8001-000000000301", "name": "New", "category": "proposed" },
+      { "id": "00000003-0000-4000-8001-000000000302", "name": "Active", "category": "inProgress" },
+      { "id": "00000003-0000-4000-8001-000000000303", "name": "Resolved", "category": "resolved" },
+      { "id": "00000003-0000-4000-8001-000000000304", "name": "Closed", "category": "completed" },
+      { "id": "00000003-0000-4000-8001-000000000305", "name": "Removed", "category": "removed" }
+    ],
+    "bug": [
+      { "id": "00000003-0000-4000-8001-000000000401", "name": "New", "category": "proposed" },
+      { "id": "00000003-0000-4000-8001-000000000402", "name": "Triaged", "category": "proposed" },
+      { "id": "00000003-0000-4000-8001-000000000403", "name": "Active", "category": "inProgress" },
+      { "id": "00000003-0000-4000-8001-000000000404", "name": "Resolved", "category": "resolved" },
+      { "id": "00000003-0000-4000-8001-000000000405", "name": "Closed", "category": "completed" },
+      { "id": "00000003-0000-4000-8001-000000000406", "name": "Removed", "category": "removed" }
+    ],
+    "task": [
+      { "id": "00000003-0000-4000-8001-000000000501", "name": "New", "category": "proposed" },
+      { "id": "00000003-0000-4000-8001-000000000502", "name": "Active", "category": "inProgress" },
+      { "id": "00000003-0000-4000-8001-000000000503", "name": "In review", "category": "resolved" },
+      { "id": "00000003-0000-4000-8001-000000000504", "name": "Closed", "category": "completed" },
+      { "id": "00000003-0000-4000-8001-000000000505", "name": "Removed", "category": "removed" }
+    ]
+  },
+  "sprintRefs": [
+    { "id": "00000004-0000-4000-8001-000000000019", "name": "Sprint 19", "status": "past" },
+    { "id": "00000004-0000-4000-8001-000000000020", "name": "Sprint 20", "status": "past" },
+    { "id": "00000004-0000-4000-8001-000000000021", "name": "Sprint 21", "status": "past" },
+    { "id": "00000004-0000-4000-8001-000000000022", "name": "Sprint 22", "status": "past" },
+    { "id": "00000004-0000-4000-8001-000000000023", "name": "Sprint 23", "status": "past" },
+    { "id": "00000004-0000-4000-8001-000000000024", "name": "Sprint 24", "status": "current" },
+    { "id": "00000004-0000-4000-8001-000000000025", "name": "Sprint 25", "status": "future" },
+    { "id": "00000004-0000-4000-8001-000000000026", "name": "Sprint 26", "status": "future" }
+  ],
+  "typeRefs": [
+    { "id": "epic", "name": "Epic" },
+    { "id": "feature", "name": "Feature" },
+    { "id": "story", "name": "User Story" },
+    { "id": "bug", "name": "Bug" },
+    { "id": "task", "name": "Task" }
+  ]
+}

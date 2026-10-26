@@ -1,0 +1,11 @@
+{
+  "withField": {
+    "error": "That slug is already used by another Feature in this project.",
+    "code": "slug_taken",
+    "field": "slug"
+  },
+  "withoutField": {
+    "error": "That attachment is not a Markdown file.",
+    "code": "not_markdown"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "match": "any",
+  "clauses": [
+    { "field": "priority", "op": "=", "value": 1 },
+    { "field": "tags", "op": "contains", "value": "Feedback Ticket" },
+    { "field": "parent", "op": "=", "value": "00000005-0000-4000-8001-000000000101" }
+  ]
+}

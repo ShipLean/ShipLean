@@ -1,0 +1,20 @@
+// navItem, navDot, navWarning, navDisabledHint and footerWarning are prefixes: the pane's id follows after a dash (settings-nav-columns).
+export const settingsDialogTestIds = {
+  nav: 'settings-nav',
+  navItem: 'settings-nav-item',
+  navDot: 'settings-nav-dot',
+  navWarning: 'settings-nav-warning',
+  navDisabledHint: 'settings-nav-disabled-hint',
+  paneBody: 'settings-pane-body',
+  paneWarning: 'settings-pane-warning',
+  footerDirty: 'settings-footer-dirty',
+  footerError: 'settings-footer-error',
+  footerRetry: 'settings-footer-retry',
+  footerWarning: 'settings-footer-warning',
+  immediateNote: 'settings-immediate-note',
+  save: 'settings-save',
+  cancel: 'settings-cancel',
+  closeGuard: 'settings-close-guard',
+  closeGuardSave: 'settings-close-guard-save',
+  closeGuardDiscard: 'settings-close-guard-discard',
+} as const;

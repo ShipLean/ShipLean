@@ -1,0 +1,216 @@
+{
+  "issueTypes": [
+    {
+      "jiraType": "Epic",
+      "count": 24,
+      "target": "feature",
+      "note": "Epics become Features, so stories can sit under them",
+      "isNewSinceLastRun": false
+    },
+    {
+      "jiraType": "Story",
+      "count": 612,
+      "target": "story",
+      "note": null,
+      "isNewSinceLastRun": false
+    },
+    {
+      "jiraType": "Bug",
+      "count": 287,
+      "target": "bug",
+      "note": null,
+      "isNewSinceLastRun": false
+    },
+    {
+      "jiraType": "Task",
+      "count": 341,
+      "target": "story",
+      "note": "A User Story, so it can sit under a Feature",
+      "isNewSinceLastRun": false
+    },
+    {
+      "jiraType": "Sub-task",
+      "count": 78,
+      "target": "task",
+      "note": "Stays under its story or bug",
+      "isNewSinceLastRun": false
+    }
+  ],
+  "statuses": [
+    {
+      "jiraType": "Story",
+      "jiraStatus": "Backlog",
+      "jiraCategory": "new",
+      "count": 210,
+      "targetState": "New",
+      "targetCategory": "proposed",
+      "createsState": false,
+      "isNewSinceLastRun": false
+    },
+    {
+      "jiraType": "Story",
+      "jiraStatus": "Selected for Development",
+      "jiraCategory": "new",
+      "count": 48,
+      "targetState": "Selected for Development",
+      "targetCategory": "proposed",
+      "createsState": true,
+      "isNewSinceLastRun": false
+    },
+    {
+      "jiraType": "Story",
+      "jiraStatus": "In Review",
+      "jiraCategory": "indeterminate",
+      "count": 22,
+      "targetState": "In Review",
+      "targetCategory": "inProgress",
+      "createsState": true,
+      "isNewSinceLastRun": false
+    },
+    {
+      "jiraType": "Story",
+      "jiraStatus": "Waiting for Vendor",
+      "jiraCategory": "indeterminate",
+      "count": 9,
+      "targetState": "Waiting for Vendor",
+      "targetCategory": "inProgress",
+      "createsState": true,
+      "isNewSinceLastRun": true
+    },
+    {
+      "jiraType": "Story",
+      "jiraStatus": "Done",
+      "jiraCategory": "done",
+      "count": 280,
+      "targetState": "Closed",
+      "targetCategory": "completed",
+      "createsState": false,
+      "isNewSinceLastRun": false
+    },
+    {
+      "jiraType": "Bug",
+      "jiraStatus": "Closed",
+      "jiraCategory": "done",
+      "count": 190,
+      "targetState": "Closed",
+      "targetCategory": "completed",
+      "createsState": false,
+      "isNewSinceLastRun": false
+    }
+  ],
+  "users": [
+    {
+      "jiraAccountId": "5b10a2844c20165700ede21g",
+      "name": "Priya Shah",
+      "email": "priya.shah@acme.io",
+      "references": 402,
+      "resolution": "matched",
+      "user": {
+        "id": "00000001-0000-4000-8000-000000000002",
+        "name": "Priya Shah",
+        "initials": "PS",
+        "avatarColour": "#2f7fd8",
+        "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"
+      },
+      "isBot": false,
+      "isNewSinceLastRun": false
+    },
+    {
+      "jiraAccountId": "712020:0c4f9d3e-8b27-41aa-b6f5-7e2d19c8a340",
+      "name": "Dana Whitfield",
+      "email": "dana.whitfield@acme.io",
+      "references": 214,
+      "resolution": "create",
+      "user": null,
+      "isBot": false,
+      "isNewSinceLastRun": false
+    },
+    {
+      "jiraAccountId": "712020:7a1b4c6d-1f0e-4a52-8c3b-9d2e5f6a7b80",
+      "name": "Jo Becker",
+      "email": null,
+      "references": 41,
+      "resolution": "jiraImportUser",
+      "user": null,
+      "isBot": false,
+      "isNewSinceLastRun": true
+    },
+    {
+      "jiraAccountId": "712020:2e9c8b7a-6d5f-4e3a-9b1c-0a8f7e6d5c4b",
+      "name": "Lee Park",
+      "email": "lee.park@acme.io",
+      "references": 7,
+      "resolution": "existing",
+      "user": {
+        "id": "00000001-0000-4000-8000-000000000003",
+        "name": "Tom Okafor",
+        "initials": "TO",
+        "avatarColour": "#d9822b",
+        "photoUrl": null
+      },
+      "isBot": false,
+      "isNewSinceLastRun": false
+    },
+    {
+      "jiraAccountId": "557058:f58131cb-b67d-43c7-b30d-6b58d40bd077",
+      "name": "Automation for Jira",
+      "email": null,
+      "references": 12,
+      "resolution": "jiraImportUser",
+      "user": null,
+      "isBot": true,
+      "isNewSinceLastRun": false
+    }
+  ],
+  "fields": {
+    "storyPointsFieldId": "customfield_10016",
+    "candidates": [
+      {
+        "fieldId": "customfield_10016",
+        "name": "Story point estimate",
+        "populated": 1104,
+        "missing": 14
+      },
+      {
+        "fieldId": "customfield_10028",
+        "name": "Story Points (classic)",
+        "populated": 547,
+        "missing": 571
+      }
+    ],
+    "includeComponents": true,
+    "includeComments": true,
+    "includeAttachments": true,
+    "includeChangelog": true
+  },
+  "totals": {
+    "issues": 1118,
+    "comments": 3912,
+    "attachments": 644,
+    "revisions": 21406,
+    "sprints": 11,
+    "people": 23
+  },
+  "warnings": [
+    {
+      "severity": "warning",
+      "section": "fields",
+      "message": "14 open stories and bugs have no story points. They import unestimated and show as ?."
+    },
+    {
+      "severity": "warning",
+      "section": "fields",
+      "message": "3 attachments are over the 25 MB limit and will be skipped."
+    },
+    {
+      "severity": "info",
+      "section": "statuses",
+      "message": "3 custom states will be created: Selected for Development, In Review, Waiting for Vendor."
+    },
+    {
+      "severity": "warning",
+      "section": "users",
+      "message": "1 hides their email in Jira, so their work goes to Jira import unless you pick someone."
+    }
+  ]
+}

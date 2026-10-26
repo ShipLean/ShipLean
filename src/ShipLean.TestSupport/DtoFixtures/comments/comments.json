@@ -1,0 +1,47 @@
+{
+  "comments": [
+    {
+      "id": "00000008-0000-4000-8001-000000000001",
+      "workItemId": "00000005-0000-4000-8001-000000000141",
+      "author": { "id": "00000001-0000-4000-8000-000000000003", "name": "Tom Okafor", "initials": "TO", "avatarColour": "#16a089", "photoUrl": null },
+      "body": "Card vault API is on staging now. @Priya Shah the tokenised lookup returns `brand`, `last4` and `expiry`, nothing else.",
+      "bodyHtml": "<p>Card vault API is on staging now. @Priya Shah the tokenised lookup returns <code>brand</code>, <code>last4</code> and <code>expiry</code>, nothing else.</p>\n",
+      "createdAt": "2026-10-22T10:14:00+00:00",
+      "createdLabel": "22 Oct",
+      "editedAt": null,
+      "editedLabel": null,
+      "agentName": null,
+      "superseded": null
+    },
+    {
+      "id": "00000008-0000-4000-8001-000000000002",
+      "workItemId": "00000005-0000-4000-8001-000000000141",
+      "author": { "id": "00000001-0000-4000-8000-000000000004", "name": "Mei Lin", "initials": "ML", "avatarColour": "#7b4fc9", "photoUrl": null },
+      "body": "Picker designs attached. Going with radio rows rather than cards so it still works with six or more saved cards.",
+      "bodyHtml": "<p>Picker designs attached. Going with radio rows rather than cards so it still works with six or more saved cards.</p>\n",
+      "createdAt": "2026-10-23T16:02:00+00:00",
+      "createdLabel": "23 Oct",
+      "editedAt": "2026-10-23T16:10:00+00:00",
+      "editedLabel": "23 Oct",
+      "agentName": null,
+      "superseded": null
+    },
+    {
+      "id": "00000008-0000-4000-8001-000000000003",
+      "workItemId": "00000005-0000-4000-8001-000000000141",
+      "author": null,
+      "body": "Imported from Jira: the old flow kept the last four digits only.",
+      "bodyHtml": "<p>Imported from Jira: the old flow kept the last four digits only.</p>\n",
+      "createdAt": "2026-10-23T17:30:00+00:00",
+      "createdLabel": "23 Oct",
+      "editedAt": null,
+      "editedLabel": null,
+      "agentName": null,
+      "superseded": {
+        "at": "2026-10-24T09:00:00+00:00",
+        "atLabel": "24 Oct",
+        "by": { "id": "00000001-0000-4000-8000-000000000003", "name": "Tom Okafor", "initials": "TO", "avatarColour": "#16a089", "photoUrl": null }
+      }
+    }
+  ]
+}

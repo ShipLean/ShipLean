@@ -1,0 +1,1743 @@
+{
+  "sprintId": "00000004-0000-4000-8001-000000000024",
+  "boardId": "00000007-0000-4000-8001-000000000004",
+  "columns": [
+    {
+      "state": {
+        "id": "00000003-0000-4000-8001-000000000501",
+        "name": "New",
+        "category": "proposed"
+      },
+      "count": 3
+    },
+    {
+      "state": {
+        "id": "00000003-0000-4000-8001-000000000502",
+        "name": "Active",
+        "category": "inProgress"
+      },
+      "count": 3
+    },
+    {
+      "state": {
+        "id": "00000003-0000-4000-8001-000000000503",
+        "name": "In review",
+        "category": "resolved"
+      },
+      "count": 1
+    },
+    {
+      "state": {
+        "id": "00000003-0000-4000-8001-000000000504",
+        "name": "Closed",
+        "category": "completed"
+      },
+      "count": 6
+    }
+  ],
+  "rows": [
+    {
+      "parent": {
+        "id": "00000005-0000-4000-8001-000000000141",
+        "key": "SHIP-141",
+        "type": {
+          "id": "story",
+          "name": "User Story"
+        },
+        "title": "Pay with saved card",
+        "state": {
+          "id": "00000003-0000-4000-8001-000000000302",
+          "name": "Active",
+          "category": "inProgress"
+        },
+        "assignee": {
+          "id": "00000001-0000-4000-8000-000000000002",
+          "name": "Priya Shah",
+          "initials": "PS",
+          "avatarColour": "#2f7fd8",
+          "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"
+        },
+        "points": 5,
+        "childPoints": null,
+        "sumWarn": false,
+        "parent": {
+          "id": "00000005-0000-4000-8001-000000000101",
+          "key": "SHIP-101",
+          "type": {
+            "id": "feature",
+            "name": "Feature"
+          },
+          "title": "Checkout v2"
+        },
+        "tags": [
+          {
+            "name": "Payments",
+            "colour": "accent"
+          }
+        ],
+        "rollups": [
+          {
+            "type": "task",
+            "open": 3,
+            "closed": 0
+          }
+        ],
+        "offerDone": false,
+        "styleRuleId": null,
+        "extraFields": [],
+        "revision": 7
+      },
+      "offerResolve": false,
+      "cells": [
+        {
+          "stateId": "00000003-0000-4000-8001-000000000501",
+          "tasks": [
+            {
+              "id": "00000005-0000-4000-8001-000000000173",
+              "key": "SHIP-173",
+              "type": {
+                "id": "task",
+                "name": "Task"
+              },
+              "title": "E2E test",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000501",
+                "name": "New",
+                "category": "proposed"
+              },
+              "assignee": null,
+              "points": 1,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000141",
+                "key": "SHIP-141",
+                "type": {
+                  "id": "story",
+                  "name": "User Story"
+                },
+                "title": "Pay with saved card"
+              },
+              "tags": [],
+              "rollups": [],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [],
+              "revision": 1
+            }
+          ]
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000502",
+          "tasks": [
+            {
+              "id": "00000005-0000-4000-8001-000000000172",
+              "key": "SHIP-172",
+              "type": {
+                "id": "task",
+                "name": "Task"
+              },
+              "title": "UI: saved card picker",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000502",
+                "name": "Active",
+                "category": "inProgress"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000004",
+                "name": "Mei Lin",
+                "initials": "ML",
+                "avatarColour": "#7b4fc9",
+                "photoUrl": null
+              },
+              "points": 2,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000141",
+                "key": "SHIP-141",
+                "type": {
+                  "id": "story",
+                  "name": "User Story"
+                },
+                "title": "Pay with saved card"
+              },
+              "tags": [],
+              "rollups": [],
+              "offerDone": false,
+              "styleRuleId": "rule-priority-1",
+              "extraFields": [],
+              "revision": 1
+            }
+          ]
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000503",
+          "tasks": [
+            {
+              "id": "00000005-0000-4000-8001-000000000171",
+              "key": "SHIP-171",
+              "type": {
+                "id": "task",
+                "name": "Task"
+              },
+              "title": "API: tokenised card lookup",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000503",
+                "name": "In review",
+                "category": "resolved"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000002",
+                "name": "Priya Shah",
+                "initials": "PS",
+                "avatarColour": "#2f7fd8",
+                "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"
+              },
+              "points": 2,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000141",
+                "key": "SHIP-141",
+                "type": {
+                  "id": "story",
+                  "name": "User Story"
+                },
+                "title": "Pay with saved card"
+              },
+              "tags": [],
+              "rollups": [],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [],
+              "revision": 1
+            }
+          ]
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000504",
+          "tasks": []
+        }
+      ]
+    },
+    {
+      "parent": {
+        "id": "00000005-0000-4000-8001-000000000138",
+        "key": "SHIP-138",
+        "type": {
+          "id": "bug",
+          "name": "Bug"
+        },
+        "title": "Totals wrong when coupon removed",
+        "state": {
+          "id": "00000003-0000-4000-8001-000000000405",
+          "name": "Closed",
+          "category": "completed"
+        },
+        "assignee": {
+          "id": "00000001-0000-4000-8000-000000000003",
+          "name": "Tom Okafor",
+          "initials": "TO",
+          "avatarColour": "#16a089",
+          "photoUrl": null
+        },
+        "points": 2,
+        "childPoints": null,
+        "sumWarn": false,
+        "parent": {
+          "id": "00000005-0000-4000-8001-000000000101",
+          "key": "SHIP-101",
+          "type": {
+            "id": "feature",
+            "name": "Feature"
+          },
+          "title": "Checkout v2"
+        },
+        "tags": [
+          {
+            "name": "Payments",
+            "colour": "accent"
+          }
+        ],
+        "rollups": [
+          {
+            "type": "task",
+            "open": 0,
+            "closed": 1
+          }
+        ],
+        "offerDone": false,
+        "styleRuleId": null,
+        "extraFields": [],
+        "revision": 1
+      },
+      "offerResolve": false,
+      "cells": [
+        {
+          "stateId": "00000003-0000-4000-8001-000000000501",
+          "tasks": []
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000502",
+          "tasks": []
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000503",
+          "tasks": []
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000504",
+          "tasks": [
+            {
+              "id": "00000005-0000-4000-8001-000000000174",
+              "key": "SHIP-174",
+              "type": {
+                "id": "task",
+                "name": "Task"
+              },
+              "title": "Fix and regression test",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000504",
+                "name": "Closed",
+                "category": "completed"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000003",
+                "name": "Tom Okafor",
+                "initials": "TO",
+                "avatarColour": "#16a089",
+                "photoUrl": null
+              },
+              "points": 2,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000138",
+                "key": "SHIP-138",
+                "type": {
+                  "id": "bug",
+                  "name": "Bug"
+                },
+                "title": "Totals wrong when coupon removed"
+              },
+              "tags": [],
+              "rollups": [],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [],
+              "revision": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "parent": {
+        "id": "00000005-0000-4000-8001-000000000144",
+        "key": "SHIP-144",
+        "type": {
+          "id": "story",
+          "name": "User Story"
+        },
+        "title": "Address autocomplete",
+        "state": {
+          "id": "00000003-0000-4000-8001-000000000302",
+          "name": "Active",
+          "category": "inProgress"
+        },
+        "assignee": {
+          "id": "00000001-0000-4000-8000-000000000004",
+          "name": "Mei Lin",
+          "initials": "ML",
+          "avatarColour": "#7b4fc9",
+          "photoUrl": null
+        },
+        "points": 3,
+        "childPoints": null,
+        "sumWarn": false,
+        "parent": {
+          "id": "00000005-0000-4000-8001-000000000101",
+          "key": "SHIP-101",
+          "type": {
+            "id": "feature",
+            "name": "Feature"
+          },
+          "title": "Checkout v2"
+        },
+        "tags": [],
+        "rollups": [
+          {
+            "type": "task",
+            "open": 0,
+            "closed": 2
+          }
+        ],
+        "offerDone": false,
+        "styleRuleId": null,
+        "extraFields": [],
+        "revision": 3
+      },
+      "offerResolve": true,
+      "cells": [
+        {
+          "stateId": "00000003-0000-4000-8001-000000000501",
+          "tasks": []
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000502",
+          "tasks": []
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000503",
+          "tasks": []
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000504",
+          "tasks": [
+            {
+              "id": "00000005-0000-4000-8001-000000000175",
+              "key": "SHIP-175",
+              "type": {
+                "id": "task",
+                "name": "Task"
+              },
+              "title": "Provider spike",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000504",
+                "name": "Closed",
+                "category": "completed"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000004",
+                "name": "Mei Lin",
+                "initials": "ML",
+                "avatarColour": "#7b4fc9",
+                "photoUrl": null
+              },
+              "points": 1,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000144",
+                "key": "SHIP-144",
+                "type": {
+                  "id": "story",
+                  "name": "User Story"
+                },
+                "title": "Address autocomplete"
+              },
+              "tags": [
+                {
+                  "name": "Spike",
+                  "colour": "purple"
+                }
+              ],
+              "rollups": [],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [],
+              "revision": 1
+            },
+            {
+              "id": "00000005-0000-4000-8001-000000000176",
+              "key": "SHIP-176",
+              "type": {
+                "id": "task",
+                "name": "Task"
+              },
+              "title": "Wire into the address form",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000504",
+                "name": "Closed",
+                "category": "completed"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000003",
+                "name": "Tom Okafor",
+                "initials": "TO",
+                "avatarColour": "#16a089",
+                "photoUrl": null
+              },
+              "points": 2,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000144",
+                "key": "SHIP-144",
+                "type": {
+                  "id": "story",
+                  "name": "User Story"
+                },
+                "title": "Address autocomplete"
+              },
+              "tags": [],
+              "rollups": [],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [],
+              "revision": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "parent": {
+        "id": "00000005-0000-4000-8001-000000000129",
+        "key": "SHIP-129",
+        "type": {
+          "id": "story",
+          "name": "User Story"
+        },
+        "title": "Sign in with passkey",
+        "state": {
+          "id": "00000003-0000-4000-8001-000000000302",
+          "name": "Active",
+          "category": "inProgress"
+        },
+        "assignee": {
+          "id": "00000001-0000-4000-8000-000000000005",
+          "name": "Sam Rivera",
+          "initials": "SR",
+          "avatarColour": "#c9611a",
+          "photoUrl": null
+        },
+        "points": 8,
+        "childPoints": null,
+        "sumWarn": false,
+        "parent": {
+          "id": "00000005-0000-4000-8001-000000000102",
+          "key": "SHIP-102",
+          "type": {
+            "id": "feature",
+            "name": "Feature"
+          },
+          "title": "Mobile sign-in"
+        },
+        "tags": [
+          {
+            "name": "Mobile",
+            "colour": "info"
+          },
+          {
+            "name": "Blocked",
+            "colour": "danger"
+          }
+        ],
+        "rollups": [
+          {
+            "type": "task",
+            "open": 2,
+            "closed": 2
+          }
+        ],
+        "offerDone": false,
+        "styleRuleId": "rule-blocked",
+        "extraFields": [],
+        "revision": 4
+      },
+      "offerResolve": false,
+      "cells": [
+        {
+          "stateId": "00000003-0000-4000-8001-000000000501",
+          "tasks": [
+            {
+              "id": "00000005-0000-4000-8001-000000000179",
+              "key": "SHIP-179",
+              "type": {
+                "id": "task",
+                "name": "Task"
+              },
+              "title": "Fallback to password",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000501",
+                "name": "New",
+                "category": "proposed"
+              },
+              "assignee": null,
+              "points": 2,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000129",
+                "key": "SHIP-129",
+                "type": {
+                  "id": "story",
+                  "name": "User Story"
+                },
+                "title": "Sign in with passkey"
+              },
+              "tags": [
+                {
+                  "name": "Blocked",
+                  "colour": "danger"
+                }
+              ],
+              "rollups": [],
+              "offerDone": false,
+              "styleRuleId": "rule-blocked",
+              "extraFields": [],
+              "revision": 1
+            }
+          ]
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000502",
+          "tasks": [
+            {
+              "id": "00000005-0000-4000-8001-000000000178",
+              "key": "SHIP-178",
+              "type": {
+                "id": "task",
+                "name": "Task"
+              },
+              "title": "WebAuthn sign-in",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000502",
+                "name": "Active",
+                "category": "inProgress"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000005",
+                "name": "Sam Rivera",
+                "initials": "SR",
+                "avatarColour": "#c9611a",
+                "photoUrl": null
+              },
+              "points": 3,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000129",
+                "key": "SHIP-129",
+                "type": {
+                  "id": "story",
+                  "name": "User Story"
+                },
+                "title": "Sign in with passkey"
+              },
+              "tags": [],
+              "rollups": [],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [],
+              "revision": 1
+            }
+          ]
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000503",
+          "tasks": []
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000504",
+          "tasks": [
+            {
+              "id": "00000005-0000-4000-8001-000000000177",
+              "key": "SHIP-177",
+              "type": {
+                "id": "task",
+                "name": "Task"
+              },
+              "title": "WebAuthn registration",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000504",
+                "name": "Closed",
+                "category": "completed"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000005",
+                "name": "Sam Rivera",
+                "initials": "SR",
+                "avatarColour": "#c9611a",
+                "photoUrl": null
+              },
+              "points": 3,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000129",
+                "key": "SHIP-129",
+                "type": {
+                  "id": "story",
+                  "name": "User Story"
+                },
+                "title": "Sign in with passkey"
+              },
+              "tags": [],
+              "rollups": [],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [],
+              "revision": 1
+            },
+            {
+              "id": "00000005-0000-4000-8001-000000000180",
+              "key": "SHIP-180",
+              "type": {
+                "id": "task",
+                "name": "Task"
+              },
+              "title": "Feature flag",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000504",
+                "name": "Closed",
+                "category": "completed"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000006",
+                "name": "Ana Costa",
+                "initials": "AC",
+                "avatarColour": "#b83d7a",
+                "photoUrl": null
+              },
+              "points": 1,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000129",
+                "key": "SHIP-129",
+                "type": {
+                  "id": "story",
+                  "name": "User Story"
+                },
+                "title": "Sign in with passkey"
+              },
+              "tags": [],
+              "rollups": [],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [],
+              "revision": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "parent": {
+        "id": "00000005-0000-4000-8001-000000000150",
+        "key": "SHIP-150",
+        "type": {
+          "id": "story",
+          "name": "User Story"
+        },
+        "title": "Order confirmation email",
+        "state": {
+          "id": "00000003-0000-4000-8001-000000000304",
+          "name": "Closed",
+          "category": "completed"
+        },
+        "assignee": {
+          "id": "00000001-0000-4000-8000-000000000006",
+          "name": "Ana Costa",
+          "initials": "AC",
+          "avatarColour": "#b83d7a",
+          "photoUrl": null
+        },
+        "points": 3,
+        "childPoints": null,
+        "sumWarn": false,
+        "parent": {
+          "id": "00000005-0000-4000-8001-000000000101",
+          "key": "SHIP-101",
+          "type": {
+            "id": "feature",
+            "name": "Feature"
+          },
+          "title": "Checkout v2"
+        },
+        "tags": [],
+        "rollups": [
+          {
+            "type": "task",
+            "open": 0,
+            "closed": 1
+          }
+        ],
+        "offerDone": false,
+        "styleRuleId": null,
+        "extraFields": [],
+        "revision": 1
+      },
+      "offerResolve": false,
+      "cells": [
+        {
+          "stateId": "00000003-0000-4000-8001-000000000501",
+          "tasks": []
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000502",
+          "tasks": []
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000503",
+          "tasks": []
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000504",
+          "tasks": [
+            {
+              "id": "00000005-0000-4000-8001-000000000181",
+              "key": "SHIP-181",
+              "type": {
+                "id": "task",
+                "name": "Task"
+              },
+              "title": "Email template",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000504",
+                "name": "Closed",
+                "category": "completed"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000006",
+                "name": "Ana Costa",
+                "initials": "AC",
+                "avatarColour": "#b83d7a",
+                "photoUrl": null
+              },
+              "points": 1,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000150",
+                "key": "SHIP-150",
+                "type": {
+                  "id": "story",
+                  "name": "User Story"
+                },
+                "title": "Order confirmation email"
+              },
+              "tags": [],
+              "rollups": [],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [],
+              "revision": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "parent": null,
+      "offerResolve": false,
+      "cells": [
+        {
+          "stateId": "00000003-0000-4000-8001-000000000501",
+          "tasks": [
+            {
+              "id": "00000005-0000-4000-8001-000000000182",
+              "key": "SHIP-182",
+              "type": {
+                "id": "task",
+                "name": "Task"
+              },
+              "title": "Rotate staging TLS certificates",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000501",
+                "name": "New",
+                "category": "proposed"
+              },
+              "assignee": null,
+              "points": null,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": null,
+              "tags": [
+                {
+                  "name": "Tech debt",
+                  "colour": "muted"
+                }
+              ],
+              "rollups": [],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [],
+              "revision": 1
+            }
+          ]
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000502",
+          "tasks": [
+            {
+              "id": "00000005-0000-4000-8001-000000000183",
+              "key": "SHIP-183",
+              "type": {
+                "id": "task",
+                "name": "Task"
+              },
+              "title": "Update the on-call runbook",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000502",
+                "name": "Active",
+                "category": "inProgress"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000003",
+                "name": "Tom Okafor",
+                "initials": "TO",
+                "avatarColour": "#16a089",
+                "photoUrl": null
+              },
+              "points": null,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": null,
+              "tags": [],
+              "rollups": [],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [],
+              "revision": 1
+            }
+          ]
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000503",
+          "tasks": []
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000504",
+          "tasks": []
+        }
+      ]
+    }
+  ],
+  "peopleRows": [
+    {
+      "person": null,
+      "taskCount": 3,
+      "cells": [
+        {
+          "stateId": "00000003-0000-4000-8001-000000000501",
+          "tasks": [
+            {
+              "id": "00000005-0000-4000-8001-000000000173",
+              "key": "SHIP-173",
+              "type": {
+                "id": "task",
+                "name": "Task"
+              },
+              "title": "E2E test",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000501",
+                "name": "New",
+                "category": "proposed"
+              },
+              "assignee": null,
+              "points": 1,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000141",
+                "key": "SHIP-141",
+                "type": {
+                  "id": "story",
+                  "name": "User Story"
+                },
+                "title": "Pay with saved card"
+              },
+              "tags": [],
+              "rollups": [],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [],
+              "revision": 1
+            },
+            {
+              "id": "00000005-0000-4000-8001-000000000179",
+              "key": "SHIP-179",
+              "type": {
+                "id": "task",
+                "name": "Task"
+              },
+              "title": "Fallback to password",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000501",
+                "name": "New",
+                "category": "proposed"
+              },
+              "assignee": null,
+              "points": 2,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000129",
+                "key": "SHIP-129",
+                "type": {
+                  "id": "story",
+                  "name": "User Story"
+                },
+                "title": "Sign in with passkey"
+              },
+              "tags": [
+                {
+                  "name": "Blocked",
+                  "colour": "danger"
+                }
+              ],
+              "rollups": [],
+              "offerDone": false,
+              "styleRuleId": "rule-blocked",
+              "extraFields": [],
+              "revision": 1
+            },
+            {
+              "id": "00000005-0000-4000-8001-000000000182",
+              "key": "SHIP-182",
+              "type": {
+                "id": "task",
+                "name": "Task"
+              },
+              "title": "Rotate staging TLS certificates",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000501",
+                "name": "New",
+                "category": "proposed"
+              },
+              "assignee": null,
+              "points": null,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": null,
+              "tags": [
+                {
+                  "name": "Tech debt",
+                  "colour": "muted"
+                }
+              ],
+              "rollups": [],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [],
+              "revision": 1
+            }
+          ]
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000502",
+          "tasks": []
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000503",
+          "tasks": []
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000504",
+          "tasks": []
+        }
+      ]
+    },
+    {
+      "person": {
+        "id": "00000001-0000-4000-8000-000000000002",
+        "name": "Priya Shah",
+        "initials": "PS",
+        "avatarColour": "#2f7fd8",
+        "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"
+      },
+      "taskCount": 1,
+      "cells": [
+        {
+          "stateId": "00000003-0000-4000-8001-000000000501",
+          "tasks": []
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000502",
+          "tasks": []
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000503",
+          "tasks": [
+            {
+              "id": "00000005-0000-4000-8001-000000000171",
+              "key": "SHIP-171",
+              "type": {
+                "id": "task",
+                "name": "Task"
+              },
+              "title": "API: tokenised card lookup",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000503",
+                "name": "In review",
+                "category": "resolved"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000002",
+                "name": "Priya Shah",
+                "initials": "PS",
+                "avatarColour": "#2f7fd8",
+                "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"
+              },
+              "points": 2,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000141",
+                "key": "SHIP-141",
+                "type": {
+                  "id": "story",
+                  "name": "User Story"
+                },
+                "title": "Pay with saved card"
+              },
+              "tags": [],
+              "rollups": [],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [],
+              "revision": 1
+            }
+          ]
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000504",
+          "tasks": []
+        }
+      ]
+    },
+    {
+      "person": {
+        "id": "00000001-0000-4000-8000-000000000003",
+        "name": "Tom Okafor",
+        "initials": "TO",
+        "avatarColour": "#16a089",
+        "photoUrl": null
+      },
+      "taskCount": 3,
+      "cells": [
+        {
+          "stateId": "00000003-0000-4000-8001-000000000501",
+          "tasks": []
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000502",
+          "tasks": [
+            {
+              "id": "00000005-0000-4000-8001-000000000183",
+              "key": "SHIP-183",
+              "type": {
+                "id": "task",
+                "name": "Task"
+              },
+              "title": "Update the on-call runbook",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000502",
+                "name": "Active",
+                "category": "inProgress"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000003",
+                "name": "Tom Okafor",
+                "initials": "TO",
+                "avatarColour": "#16a089",
+                "photoUrl": null
+              },
+              "points": null,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": null,
+              "tags": [],
+              "rollups": [],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [],
+              "revision": 1
+            }
+          ]
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000503",
+          "tasks": []
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000504",
+          "tasks": [
+            {
+              "id": "00000005-0000-4000-8001-000000000174",
+              "key": "SHIP-174",
+              "type": {
+                "id": "task",
+                "name": "Task"
+              },
+              "title": "Fix and regression test",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000504",
+                "name": "Closed",
+                "category": "completed"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000003",
+                "name": "Tom Okafor",
+                "initials": "TO",
+                "avatarColour": "#16a089",
+                "photoUrl": null
+              },
+              "points": 2,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000138",
+                "key": "SHIP-138",
+                "type": {
+                  "id": "bug",
+                  "name": "Bug"
+                },
+                "title": "Totals wrong when coupon removed"
+              },
+              "tags": [],
+              "rollups": [],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [],
+              "revision": 1
+            },
+            {
+              "id": "00000005-0000-4000-8001-000000000176",
+              "key": "SHIP-176",
+              "type": {
+                "id": "task",
+                "name": "Task"
+              },
+              "title": "Wire into the address form",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000504",
+                "name": "Closed",
+                "category": "completed"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000003",
+                "name": "Tom Okafor",
+                "initials": "TO",
+                "avatarColour": "#16a089",
+                "photoUrl": null
+              },
+              "points": 2,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000144",
+                "key": "SHIP-144",
+                "type": {
+                  "id": "story",
+                  "name": "User Story"
+                },
+                "title": "Address autocomplete"
+              },
+              "tags": [],
+              "rollups": [],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [],
+              "revision": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "person": {
+        "id": "00000001-0000-4000-8000-000000000004",
+        "name": "Mei Lin",
+        "initials": "ML",
+        "avatarColour": "#7b4fc9",
+        "photoUrl": null
+      },
+      "taskCount": 2,
+      "cells": [
+        {
+          "stateId": "00000003-0000-4000-8001-000000000501",
+          "tasks": []
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000502",
+          "tasks": [
+            {
+              "id": "00000005-0000-4000-8001-000000000172",
+              "key": "SHIP-172",
+              "type": {
+                "id": "task",
+                "name": "Task"
+              },
+              "title": "UI: saved card picker",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000502",
+                "name": "Active",
+                "category": "inProgress"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000004",
+                "name": "Mei Lin",
+                "initials": "ML",
+                "avatarColour": "#7b4fc9",
+                "photoUrl": null
+              },
+              "points": 2,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000141",
+                "key": "SHIP-141",
+                "type": {
+                  "id": "story",
+                  "name": "User Story"
+                },
+                "title": "Pay with saved card"
+              },
+              "tags": [],
+              "rollups": [],
+              "offerDone": false,
+              "styleRuleId": "rule-priority-1",
+              "extraFields": [],
+              "revision": 1
+            }
+          ]
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000503",
+          "tasks": []
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000504",
+          "tasks": [
+            {
+              "id": "00000005-0000-4000-8001-000000000175",
+              "key": "SHIP-175",
+              "type": {
+                "id": "task",
+                "name": "Task"
+              },
+              "title": "Provider spike",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000504",
+                "name": "Closed",
+                "category": "completed"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000004",
+                "name": "Mei Lin",
+                "initials": "ML",
+                "avatarColour": "#7b4fc9",
+                "photoUrl": null
+              },
+              "points": 1,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000144",
+                "key": "SHIP-144",
+                "type": {
+                  "id": "story",
+                  "name": "User Story"
+                },
+                "title": "Address autocomplete"
+              },
+              "tags": [
+                {
+                  "name": "Spike",
+                  "colour": "purple"
+                }
+              ],
+              "rollups": [],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [],
+              "revision": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "person": {
+        "id": "00000001-0000-4000-8000-000000000005",
+        "name": "Sam Rivera",
+        "initials": "SR",
+        "avatarColour": "#c9611a",
+        "photoUrl": null
+      },
+      "taskCount": 2,
+      "cells": [
+        {
+          "stateId": "00000003-0000-4000-8001-000000000501",
+          "tasks": []
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000502",
+          "tasks": [
+            {
+              "id": "00000005-0000-4000-8001-000000000178",
+              "key": "SHIP-178",
+              "type": {
+                "id": "task",
+                "name": "Task"
+              },
+              "title": "WebAuthn sign-in",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000502",
+                "name": "Active",
+                "category": "inProgress"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000005",
+                "name": "Sam Rivera",
+                "initials": "SR",
+                "avatarColour": "#c9611a",
+                "photoUrl": null
+              },
+              "points": 3,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000129",
+                "key": "SHIP-129",
+                "type": {
+                  "id": "story",
+                  "name": "User Story"
+                },
+                "title": "Sign in with passkey"
+              },
+              "tags": [],
+              "rollups": [],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [],
+              "revision": 1
+            }
+          ]
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000503",
+          "tasks": []
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000504",
+          "tasks": [
+            {
+              "id": "00000005-0000-4000-8001-000000000177",
+              "key": "SHIP-177",
+              "type": {
+                "id": "task",
+                "name": "Task"
+              },
+              "title": "WebAuthn registration",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000504",
+                "name": "Closed",
+                "category": "completed"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000005",
+                "name": "Sam Rivera",
+                "initials": "SR",
+                "avatarColour": "#c9611a",
+                "photoUrl": null
+              },
+              "points": 3,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000129",
+                "key": "SHIP-129",
+                "type": {
+                  "id": "story",
+                  "name": "User Story"
+                },
+                "title": "Sign in with passkey"
+              },
+              "tags": [],
+              "rollups": [],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [],
+              "revision": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "person": {
+        "id": "00000001-0000-4000-8000-000000000006",
+        "name": "Ana Costa",
+        "initials": "AC",
+        "avatarColour": "#b83d7a",
+        "photoUrl": null
+      },
+      "taskCount": 2,
+      "cells": [
+        {
+          "stateId": "00000003-0000-4000-8001-000000000501",
+          "tasks": []
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000502",
+          "tasks": []
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000503",
+          "tasks": []
+        },
+        {
+          "stateId": "00000003-0000-4000-8001-000000000504",
+          "tasks": [
+            {
+              "id": "00000005-0000-4000-8001-000000000180",
+              "key": "SHIP-180",
+              "type": {
+                "id": "task",
+                "name": "Task"
+              },
+              "title": "Feature flag",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000504",
+                "name": "Closed",
+                "category": "completed"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000006",
+                "name": "Ana Costa",
+                "initials": "AC",
+                "avatarColour": "#b83d7a",
+                "photoUrl": null
+              },
+              "points": 1,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000129",
+                "key": "SHIP-129",
+                "type": {
+                  "id": "story",
+                  "name": "User Story"
+                },
+                "title": "Sign in with passkey"
+              },
+              "tags": [],
+              "rollups": [],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [],
+              "revision": 1
+            },
+            {
+              "id": "00000005-0000-4000-8001-000000000181",
+              "key": "SHIP-181",
+              "type": {
+                "id": "task",
+                "name": "Task"
+              },
+              "title": "Email template",
+              "state": {
+                "id": "00000003-0000-4000-8001-000000000504",
+                "name": "Closed",
+                "category": "completed"
+              },
+              "assignee": {
+                "id": "00000001-0000-4000-8000-000000000006",
+                "name": "Ana Costa",
+                "initials": "AC",
+                "avatarColour": "#b83d7a",
+                "photoUrl": null
+              },
+              "points": 1,
+              "childPoints": null,
+              "sumWarn": false,
+              "parent": {
+                "id": "00000005-0000-4000-8001-000000000150",
+                "key": "SHIP-150",
+                "type": {
+                  "id": "story",
+                  "name": "User Story"
+                },
+                "title": "Order confirmation email"
+              },
+              "tags": [],
+              "rollups": [],
+              "offerDone": false,
+              "styleRuleId": null,
+              "extraFields": [],
+              "revision": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "parentStates": [
+    {
+      "type": "story",
+      "states": [
+        {
+          "id": "00000003-0000-4000-8001-000000000301",
+          "name": "New",
+          "category": "proposed"
+        },
+        {
+          "id": "00000003-0000-4000-8001-000000000302",
+          "name": "Active",
+          "category": "inProgress"
+        },
+        {
+          "id": "00000003-0000-4000-8001-000000000303",
+          "name": "Resolved",
+          "category": "resolved"
+        },
+        {
+          "id": "00000003-0000-4000-8001-000000000304",
+          "name": "Closed",
+          "category": "completed"
+        },
+        {
+          "id": "00000003-0000-4000-8001-000000000305",
+          "name": "Removed",
+          "category": "removed"
+        }
+      ]
+    },
+    {
+      "type": "bug",
+      "states": [
+        {
+          "id": "00000003-0000-4000-8001-000000000401",
+          "name": "New",
+          "category": "proposed"
+        },
+        {
+          "id": "00000003-0000-4000-8001-000000000402",
+          "name": "Triaged",
+          "category": "proposed"
+        },
+        {
+          "id": "00000003-0000-4000-8001-000000000403",
+          "name": "Active",
+          "category": "inProgress"
+        },
+        {
+          "id": "00000003-0000-4000-8001-000000000404",
+          "name": "Resolved",
+          "category": "resolved"
+        },
+        {
+          "id": "00000003-0000-4000-8001-000000000405",
+          "name": "Closed",
+          "category": "completed"
+        },
+        {
+          "id": "00000003-0000-4000-8001-000000000406",
+          "name": "Removed",
+          "category": "removed"
+        }
+      ]
+    }
+  ],
+  "styleRules": [
+    {
+      "id": "rule-blocked",
+      "name": "Blocked",
+      "enabled": true,
+      "colour": "danger",
+      "bold": false,
+      "italic": false,
+      "underline": false,
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "tags",
+            "op": "contains",
+            "value": "Blocked"
+          }
+        ]
+      }
+    },
+    {
+      "id": "rule-priority-1",
+      "name": "Priority 1",
+      "enabled": true,
+      "colour": "warn",
+      "bold": true,
+      "italic": false,
+      "underline": false,
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "priority",
+            "op": "=",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "rule-waiting-on-review",
+      "name": "Waiting on review",
+      "enabled": false,
+      "colour": "info",
+      "bold": false,
+      "italic": false,
+      "underline": false,
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          {
+            "field": "stateCategory",
+            "op": "=",
+            "value": "resolved"
+          },
+          {
+            "field": "assignee",
+            "op": "=",
+            "value": "@me"
+          }
+        ]
+      }
+    }
+  ],
+  "cardFields": [
+    {
+      "type": "task",
+      "showKey": true,
+      "showAssignee": true,
+      "showTags": true,
+      "showPoints": false,
+      "showEmptyFields": false,
+      "extraFields": [
+        "parent"
+      ]
+    },
+    {
+      "type": "story",
+      "showKey": true,
+      "showAssignee": true,
+      "showTags": false,
+      "showPoints": true,
+      "showEmptyFields": false,
+      "extraFields": [
+        "state"
+      ]
+    },
+    {
+      "type": "bug",
+      "showKey": true,
+      "showAssignee": true,
+      "showTags": false,
+      "showPoints": true,
+      "showEmptyFields": false,
+      "extraFields": [
+        "state"
+      ]
+    }
+  ],
+  "annotations": {
+    "tasks": true,
+    "stories": false,
+    "bugs": false,
+    "features": false
+  }
+}

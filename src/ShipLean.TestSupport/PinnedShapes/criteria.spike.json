@@ -1,0 +1,6 @@
+{
+  "match": "all",
+  "clauses": [
+    { "field": "tags", "op": "contains", "value": "Spike" }
+  ]
+}

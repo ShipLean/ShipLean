@@ -1,0 +1,9 @@
+{
+  "match": "all",
+  "clauses": [
+    { "field": "points", "op": ">", "value": 3 },
+    { "field": "points", "op": "<", "value": 13 },
+    { "field": "priority", "op": "<", "value": 3 },
+    { "field": "createdAt", "op": ">", "value": "2026-10-01T00:00:00Z" }
+  ]
+}

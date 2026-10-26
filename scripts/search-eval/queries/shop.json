@@ -1,0 +1,134 @@
+[
+  {
+    "id": "shop-q01",
+    "text": "SHOP-27",
+    "kind": "exactKey",
+    "expected": [
+      "shop-027"
+    ]
+  },
+  {
+    "id": "shop-q02",
+    "text": "shop83",
+    "kind": "exactKey",
+    "expected": [
+      "shop-083"
+    ]
+  },
+  {
+    "id": "shop-q03",
+    "text": "postcode",
+    "kind": "titleWord",
+    "expected": [
+      "shop-012"
+    ]
+  },
+  {
+    "id": "shop-q04",
+    "text": "voucher",
+    "kind": "titleWord",
+    "expected": [
+      "shop-069",
+      "shop-070"
+    ]
+  },
+  {
+    "id": "shop-q05",
+    "text": "customer charged twice",
+    "kind": "paraphrase",
+    "expected": [
+      "shop-028"
+    ]
+  },
+  {
+    "id": "shop-q06",
+    "text": "shopper cannot finish paying on a phone with a wallet",
+    "kind": "paraphrase",
+    "expected": [
+      "shop-023"
+    ]
+  },
+  {
+    "id": "shop-q07",
+    "text": "two buyers get the same last item",
+    "kind": "paraphrase",
+    "expected": [
+      "shop-083"
+    ]
+  },
+  {
+    "id": "shop-q08",
+    "text": "iframe",
+    "kind": "bodyOnly",
+    "expected": [
+      "shop-026"
+    ]
+  },
+  {
+    "id": "shop-q09",
+    "text": "circuit breaker",
+    "kind": "bodyOnly",
+    "expected": [
+      "shop-056"
+    ]
+  },
+  {
+    "id": "shop-q10",
+    "text": "page is reloaded mid-request",
+    "kind": "commentOnly",
+    "expected": [
+      "shop-028"
+    ]
+  },
+  {
+    "id": "shop-q11",
+    "text": "ten-minute heads-up before a customer arrives",
+    "kind": "commentOnly",
+    "expected": [
+      "shop-016"
+    ]
+  },
+  {
+    "id": "shop-q12",
+    "text": "never go below cost",
+    "kind": "commentOnly",
+    "expected": [
+      "shop-072"
+    ]
+  },
+  {
+    "id": "shop-q13",
+    "text": "sett",
+    "kind": "prefix",
+    "expected": [
+      "shop-039",
+      "shop-040"
+    ]
+  },
+  {
+    "id": "shop-q14",
+    "text": "refu",
+    "kind": "prefix",
+    "expected": [
+      "shop-043",
+      "shop-044",
+      "shop-034"
+    ]
+  },
+  {
+    "id": "shop-q15",
+    "text": "confirmación de pedido",
+    "kind": "nonEnglish",
+    "expected": [
+      "shop-052"
+    ]
+  },
+  {
+    "id": "shop-q16",
+    "text": "Gutschein",
+    "kind": "nonEnglish",
+    "expected": [
+      "shop-071"
+    ]
+  }
+]

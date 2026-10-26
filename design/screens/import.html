@@ -1,0 +1,684 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Jira import (reference)</title>
+<!--
+  Reference Jira import: imports ONE Jira project into ONE ShipLean project (never a whole Jira instance).
+  Open directly in a browser. Uses ../tokens.css, shiplean.css and shared.js only; no build step.
+  A stepper across the top: 1 Connection · 2 Jira project · 3 Project key · 4 Mapping · 5 Run, with Back / Next
+  in the footer. Each step shows a one-line summary under its name, and any step can be clicked. Opens on Mapping.
+  Working:
+  - Connection: pick a saved connection or start a new one, Jira Cloud (email + API token) or Data Center
+    (personal access token). The token is masked and encrypted at rest. Test connection shows success or failure.
+  - Jira project: search by key or name, pick one. Service management projects can't be imported. A project
+    that was imported before re-runs that job (its key is fixed).
+  - Project key: suggested from the Jira key with digits removed, trimmed to 4 letters (PLATFORM → PLAT; DATAENG
+    → DATA, which is taken). Edit it and it's checked live: 2–4 letters A–Z, no digits, unique (SHIP is taken).
+    The example shows issue numbers kept and the next number. Target: a new project or an existing empty one.
+  - Mapping: warnings first (each links to its section). Issue types → ShipLean types with counts; changing one
+    regroups the Statuses table, which maps each Jira status to an existing state or creates a custom state with
+    a category taken from Jira's status category. Users matched by email, unmatched ones listed with a choice.
+    Fields: story points field picker (changes the "no story points" count), and optional comments, attachments,
+    changelog and components.
+  - Run: Start import animates per-entity progress and a live log. Errors land in an error log with Retry (one
+    keeps failing and offers Skip). The outcome says what landed. Re-runs match on External Ref and update.
+    Import jobs lists earlier jobs with Re-run.
+  ?step=1..5 opens a step; ?run=done|errors opens Run already finished.
+  The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot). It jumps to each
+  step, makes the connection test fail and runs the import with errors.
+-->
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="shiplean.css">
+<script src="shared.js"></script>
+<style>
+[hidden] { display: none !important; }
+.imp-head { display: grid; gap: var(--space-2); padding: var(--space-3) var(--space-4) var(--space-2); background: var(--color-surface); border-bottom: 1px solid var(--color-border); flex: none; }
+.imp-head h1 { margin: 0; font-size: var(--text-lg); font-weight: var(--weight-semibold); }
+.stepper { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-2); }
+.stepper button { width: 100%; display: grid; grid-template-columns: 22px minmax(0, 1fr); column-gap: var(--space-2); align-items: center; padding: 5px var(--space-2); border: 1px solid transparent; border-radius: var(--radius-sm); background: transparent; text-align: left; cursor: pointer; position: relative; }
+.stepper button:hover { background: var(--color-surface-2); }
+.stepper button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+.stepper button[aria-current="step"] { background: var(--color-accent-soft); }
+.stepper .n { grid-row: span 2; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--color-border); background: var(--color-surface); font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--color-muted); }
+.stepper .ok .n { background: var(--color-surface-2); color: var(--color-ok); border-color: transparent; }
+.stepper .bad .n { color: var(--color-danger); border-color: var(--color-danger); }
+.stepper [aria-current="step"] .n { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-fg); }
+.stepper .l { font-size: var(--text-sm); font-weight: var(--weight-semibold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stepper .s { font-size: var(--text-xs); color: var(--color-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stepper .bad .s { color: var(--color-danger); }
+.stepper .warn .s { color: var(--color-warn); }
+
+.content { flex: 1; min-height: 0; overflow: auto; padding: var(--space-3) var(--space-4) var(--space-4); display: flex; flex-direction: column; gap: var(--space-3); }
+.content > * { flex: none; }
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-3); align-items: start; }
+.cols.wide-r { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); }
+.cols.form { grid-template-columns: minmax(0, 560px) minmax(0, 1fr); }
+.stack { display: grid; gap: var(--space-3); align-content: start; min-width: 0; }
+.card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; min-width: 0; }
+.card > header { display: flex; align-items: center; gap: var(--space-2); min-height: 38px; padding: 6px var(--space-3); border-bottom: 1px solid var(--color-border); flex-wrap: wrap; }
+.card > header h2 { margin: 0; font-size: var(--text-md); font-weight: var(--weight-semibold); }
+.card > header .meta { font-size: var(--text-xs); color: var(--color-muted); }
+.card .pad { padding: var(--space-3); display: grid; gap: var(--space-3); }
+.card table.list { background: transparent; }
+.card table.list th { background: var(--color-surface); }
+.card table.list tr:last-child td { border-bottom: 0; }
+.card.flash { animation: flash 1.6s ease-out; }
+@keyframes flash { 0%, 35% { box-shadow: 0 0 0 2px var(--color-accent); } 100% { box-shadow: 0 0 0 0 transparent; } }
+table.list td.arrow, table.list th.arrow { width: 20px; padding: 0; text-align: center; color: var(--color-muted); font-size: var(--text-sm); vertical-align: middle; }
+table.list td.note { font-size: var(--text-xs); color: var(--color-muted); line-height: 1.35; padding-top: 4px; padding-bottom: 4px; }
+table.list td.note.warn { color: var(--color-warn); }
+table.list tr.grp td { height: 30px; background: var(--color-surface-2); font-size: var(--text-sm); font-weight: var(--weight-semibold); }
+table.list tr.grp .from { font-weight: var(--weight-regular); color: var(--color-muted); font-size: var(--text-xs); margin-left: 4px; }
+table.list tr.sel td { background: var(--color-accent-soft); }
+table.list tr.off td { color: var(--color-muted); }
+table.list td.num, table.list th.num { font-variant-numeric: tabular-nums; }
+.cell { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.mini { height: 26px; padding: 0 6px; font-size: var(--text-sm); }
+select.mini { padding-right: 2px; width: 100%; }
+.cell select.mini { flex: 1; min-width: 0; }
+td.nw { white-space: nowrap; }
+.jcat { font-size: var(--text-xs); color: var(--color-muted); white-space: nowrap; }
+.newchip { height: 18px; font-size: var(--text-2xs); }
+.av.jira { background: var(--color-surface-2); color: var(--color-text); box-shadow: inset 0 0 0 1px var(--color-border); }
+
+.warns { display: grid; background: var(--color-surface); border: 1px solid var(--color-border); border-left: 3px solid var(--color-warn); border-radius: var(--radius-md); }
+.warns > header { display: flex; align-items: center; gap: var(--space-3); padding: 6px var(--space-3); border-bottom: 1px solid var(--color-border); flex-wrap: wrap; }
+.warns > header h2 { margin: 0; font-size: var(--text-md); }
+.warns ul { list-style: none; margin: 0; padding: 4px 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.warns li { display: flex; align-items: center; gap: var(--space-2); min-height: 28px; padding: 2px var(--space-3); font-size: var(--text-sm); }
+.warns li .ic { width: 14px; text-align: center; flex: none; font-size: var(--text-xs); }
+.warns li.w .ic { color: var(--color-warn); }
+.warns li.i .ic { color: var(--color-info); }
+.warns li .tx { flex: 1; min-width: 0; }
+.warns li a { font-size: var(--text-xs); white-space: nowrap; }
+.tot { display: inline-flex; gap: var(--space-3); font-size: var(--text-xs); color: var(--color-muted); flex-wrap: wrap; }
+.tot b { color: var(--color-text); font-weight: var(--weight-semibold); font-variant-numeric: tabular-nums; }
+
+.frm { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: var(--space-2) var(--space-3); align-items: center; }
+.frm > label { font-size: var(--text-sm); color: var(--color-muted); }
+.frm .help { grid-column: 2; margin-top: -4px; font-size: var(--text-xs); color: var(--color-muted); }
+.frm .field { width: 100%; }
+.saved { display: grid; gap: 6px; }
+.saved label { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; gap: 2px var(--space-2); align-items: center; padding: 6px var(--space-2); border: 1px solid var(--color-border); border-radius: var(--radius-sm); cursor: pointer; font-size: var(--text-sm); }
+.saved label:has(input:checked) { border-color: var(--color-accent); background: var(--color-accent-soft); }
+.saved input { accent-color: var(--color-accent); margin: 0; }
+.saved small { grid-column: 2 / span 2; color: var(--color-muted); font-size: var(--text-xs); }
+.result { display: flex; gap: var(--space-2); align-items: flex-start; padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm); font-size: var(--text-sm); border: 1px solid var(--color-border); }
+.result.ok { border-left: 3px solid var(--color-ok); background: color-mix(in srgb, var(--color-ok) 10%, var(--color-surface)); }
+.result.fail { border-left: 3px solid var(--color-danger); background: color-mix(in srgb, var(--color-danger) 10%, var(--color-surface)); }
+.result .ic { font-weight: 700; }
+.result.ok .ic { color: var(--color-ok); } .result.fail .ic { color: var(--color-danger); }
+.token { display: flex; gap: var(--space-2); align-items: center; }
+.token .field { flex: 1; }
+.lock { font-size: var(--text-xs); color: var(--color-muted); white-space: nowrap; }
+
+.keyin { font: var(--weight-semibold) var(--text-md)/1 var(--font-mono); letter-spacing: .06em; width: 110px !important; text-transform: uppercase; }
+.keyin.bad { border-color: var(--color-danger); }
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: var(--text-sm); }
+.checks li::before { content: "✓"; display: inline-block; width: 16px; color: var(--color-ok); font-weight: 700; }
+.checks li.no { color: var(--color-danger); }
+.checks li.no::before { content: "✕"; color: var(--color-danger); }
+.ex { display: grid; grid-template-columns: auto 20px auto; gap: 6px var(--space-2); align-items: center; justify-content: start; font-family: var(--font-mono); font-size: var(--text-sm); }
+.ex .to { color: var(--color-muted); text-align: center; font-family: var(--font-sans); }
+.ex b { font-weight: var(--weight-semibold); }
+mark { background: color-mix(in srgb, var(--color-warn) 30%, transparent); color: inherit; border-radius: 2px; }
+
+.ent { display: grid; grid-template-columns: 90px minmax(0, 1fr) minmax(150px, auto); gap: 6px var(--space-3); align-items: center; font-size: var(--text-sm); }
+.ent .c { text-align: right; font-variant-numeric: tabular-nums; color: var(--color-muted); white-space: nowrap; }
+.ent .c b { color: var(--color-text); font-weight: var(--weight-semibold); }
+.big { display: flex; align-items: baseline; gap: var(--space-2); }
+.big .v { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.cap.ok > i { background: var(--color-ok); }
+.log { list-style: none; margin: 0; padding: var(--space-1) 0; height: 248px; overflow: auto; font-size: var(--text-sm); }
+.log li { display: grid; grid-template-columns: 62px 14px minmax(0, 1fr); gap: 6px; padding: 2px var(--space-3); line-height: 1.4; }
+.log time { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-muted); padding-top: 1px; }
+.log .ic { font-size: var(--text-xs); text-align: center; color: var(--color-muted); }
+.log li.ok .ic { color: var(--color-ok); } .log li.err .ic { color: var(--color-danger); } .log li.warn .ic { color: var(--color-warn); }
+.log li.err span:last-child { color: var(--color-danger); }
+.outcome { display: flex; gap: var(--space-3); align-items: center; padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); flex-wrap: wrap; }
+.outcome.ok { border-left: 3px solid var(--color-ok); background: color-mix(in srgb, var(--color-ok) 10%, var(--color-surface)); }
+.outcome.warn { border-left: 3px solid var(--color-warn); background: color-mix(in srgb, var(--color-warn) 12%, var(--color-surface)); }
+.outcome .tx { flex: 1; min-width: 240px; font-size: var(--text-sm); }
+.outcome .tx b { display: block; font-size: var(--text-md); }
+
+.foot { display: flex; align-items: center; gap: var(--space-2); min-height: 48px; padding: var(--space-2) var(--space-4); background: var(--color-surface); border-top: 1px solid var(--color-border); flex: none; }
+.foot .hint { font-size: var(--text-sm); color: var(--color-muted); }
+.foot .hint.warn { color: var(--color-warn); }
+.btn[disabled] { opacity: .5; cursor: not-allowed; }
+.spin { display: inline-block; width: 11px; height: 11px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (max-width: 1100px) { .cols, .cols.wide-r, .cols.form { grid-template-columns: minmax(0, 1fr); } .warns ul { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 900px) { .stepper .s, .stepper .l { display: none; } .stepper button { grid-template-columns: 22px; justify-content: center; } .content { overflow: visible; } .card { overflow-x: auto; } .frm { grid-template-columns: minmax(0, 1fr); } .frm .help { grid-column: 1; } }
+</style>
+</head>
+<body>
+<div id="appbar"></div>
+<section class="imp-head" aria-label="Jira import">
+  <div class="row"><h1>Import from Jira</h1><span class="muted sm">One Jira project into one ShipLean project. Nothing is written back to Jira.</span></div>
+  <ol class="stepper" id="stepper" aria-label="Import steps"></ol>
+</section>
+<main class="content" id="content"></main>
+<footer class="foot" id="foot"></footer>
+
+<script>
+(() => {
+  const { people, stateCategory, projects, tIcon, av, esc, toast } = SL;
+  document.getElementById('appbar').outerHTML = SL.appBar('import');
+  const $ = id => document.getElementById(id);
+  const n = x => x.toLocaleString('en-GB');
+  const params = new URLSearchParams(location.search);
+
+  /* ---------- Page-local sample data: the Jira side ---------- */
+  const CONNS = [
+    { id: 'acme', type: 'cloud', url: 'https://acme.atlassian.net', email: 'priya.shah@acme.io', tail: '3fA9', used: 'Used by 2 imports · last used 2 days ago' },
+    { id: 'dc', type: 'dc', url: 'https://jira.acme-internal.net', email: '', tail: 'k7Qe', used: 'Data Center · last used 3 weeks ago' },
+  ];
+  const JPROJECTS = [
+    { key: 'PLATFORM', name: 'Platform Team', kind: 'Software', lead: 'Dana Whitfield', issues: 1342, updated: '2 hours ago', high: 1388 },
+    { key: 'INFRA', name: 'Infrastructure', kind: 'Software', lead: 'Ravi Menon', issues: 1077, updated: 'Today', high: 1120 },
+    { key: 'MOBILE', name: 'Mobile App', kind: 'Software', lead: 'Tom Okafor', issues: 1284, updated: 'Yesterday', high: 1301, imported: 'MOB', when: '2 days ago' },
+    { key: 'DATAENG', name: 'Data Engineering', kind: 'Software', lead: 'Mei Lin', issues: 811, updated: '5 days ago', high: 846 },
+    { key: 'WEB2', name: 'Web Storefront (legacy)', kind: 'Software', lead: 'Priya Shah', issues: 2903, updated: '3 days ago', high: 3010 },
+    { key: 'PAYMENTS', name: 'Payments', kind: 'Software', lead: 'Sam Rivera', issues: 2210, updated: '6 days ago', high: 2264, imported: 'PAY', when: '3 weeks ago' },
+    { key: 'QA1', name: 'QA Automation', kind: 'Software', lead: 'Sam Rivera', issues: 640, updated: '4 days ago', high: 655 },
+    { key: 'DS', name: 'Design System', kind: 'Software', lead: 'Ana Costa', issues: 389, updated: '2 weeks ago', high: 402 },
+    { key: 'SEC', name: 'Security', kind: 'Software', lead: 'Lee Park', issues: 156, updated: '1 week ago', high: 160 },
+    { key: 'MKT', name: 'Marketing Requests', kind: 'Business', lead: 'Jo Becker', issues: 214, updated: 'Today', high: 230 },
+    { key: 'HELP', name: 'IT Help Desk', kind: 'Service management', lead: 'Ravi Menon', issues: 9310, updated: 'Today', high: 9502, unsupported: true },
+    { key: 'ARCH2019', name: 'Archive 2019', kind: 'Software', lead: '—', issues: 4122, updated: 'Mar 2020', high: 4200 },
+  ];
+  // Empty ShipLean projects you could import into instead of creating a new one.
+  const EMPTY = [{ key: 'CORE', name: 'Core Platform', created: 'created 20 Oct' }, { key: 'NEXT', name: 'Next Gen', created: 'created 2 Oct' }];
+  const TAKEN = Object.fromEntries([...projects.map(p => [p.key, p.name]), ...EMPTY.map(p => [p.key, p.name])]);
+
+  // PLATFORM's issue types and statuses (Jira status categories: To Do, In Progress, Done).
+  const JTYPES = [
+    { id: 'Epic', count: 24, opts: ['feature', 'epic', 'skip'], def: 'feature', why: 'Epics become Features, so stories can sit under them' },
+    { id: 'Story', count: 612, opts: ['story', 'bug', 'skip'], def: 'story' },
+    { id: 'Bug', count: 287, opts: ['bug', 'story', 'skip'], def: 'bug' },
+    { id: 'Task', count: 341, opts: ['story', 'bug', 'skip'], def: 'story', why: 'A User Story, so it can sit under a Feature' },
+    { id: 'Sub-task', count: 78, opts: ['task', 'skip'], def: 'task', why: 'Stays under its story or bug' },
+  ];
+  const JSTATUS = {
+    Epic: [['To Do', 'To Do', 6], ['In Progress', 'In Progress', 9], ['Done', 'Done', 9]],
+    Story: [['Backlog', 'To Do', 210], ['Selected for Development', 'To Do', 48], ['In Progress', 'In Progress', 37], ['In Review', 'In Progress', 22], ['Done', 'Done', 280], ["Won't Do", 'Done', 15]],
+    Bug: [['Open', 'To Do', 64], ['In Progress', 'In Progress', 12], ['Ready for QA', 'In Progress', 9], ['Closed', 'Done', 190], ["Won't Fix", 'Done', 12]],
+    Task: [['To Do', 'To Do', 120], ['In Progress', 'In Progress', 18], ['Done', 'Done', 203]],
+    'Sub-task': [['To Do', 'To Do', 20], ['In Progress', 'In Progress', 6], ['Done', 'Done', 52]],
+  };
+  const JCAT = { 'To Do': 'proposed', 'In Progress': 'in-progress', Done: 'completed' };
+  const CATS = [['proposed', 'Proposed'], ['in-progress', 'In Progress'], ['resolved', 'Resolved'], ['completed', 'Completed'], ['removed', 'Removed']];
+  // The ShipLean project's seeded states per type (Agile defaults). Colour follows the category.
+  const STATES = { epic: ['New', 'Active', 'Resolved', 'Closed', 'Removed'], feature: ['New', 'Active', 'Resolved', 'Closed', 'Removed'], story: ['New', 'Active', 'Resolved', 'Closed', 'Removed'], bug: ['New', 'Active', 'Resolved', 'Closed'], task: ['New', 'Active', 'Closed', 'Removed'] };
+  const DEF_STATE = { 'To Do': 'New', Backlog: 'New', Open: 'New', 'In Progress': 'Active', 'Ready for QA': 'Resolved', Done: 'Closed', Closed: 'Closed', "Won't Do": 'Removed', "Won't Fix": 'Removed' };
+  const TYPE_NAME = { epic: 'Epic', feature: 'Feature', story: 'User Story', bug: 'Bug', task: 'Task', skip: "Don't import" };
+  const TYPE_ORDER = ['epic', 'feature', 'story', 'bug', 'task'];
+
+  // People referenced in PLATFORM (assignees, reporters, commenters): 23, 18 matched by email.
+  const MATCHED = [['priya', 'priya.shah@acme.io', 402], ['tom', 'tom.okafor@acme.io', 288], ['mei', 'mei.lin@acme.io', 251], ['sam', 'sam.rivera@acme.io', 196], ['ana', 'ana.costa@acme.io', 133]];
+  const UNMATCHED = [
+    { id: 'dana', name: 'Dana Whitfield', email: 'dana.whitfield@acme.io', refs: 214, def: 'create' },
+    { id: 'ravi', name: 'Ravi Menon', email: 'ravi.menon@acme.io', refs: 96, def: 'create' },
+    { id: 'jo', name: 'Jo Becker', email: '', refs: 41, def: 'import', hidden: true },
+    { id: 'lee', name: 'Lee Park', email: 'lee.park@acme.io', refs: 7, def: 'create' },
+    { id: 'bot', name: 'Automation for Jira', email: '', refs: 12, def: 'import', bot: true },
+  ];
+  const SP_FIELDS = [['customfield_10016', 'Story point estimate', 1104, 14], ['customfield_10028', 'Story Points (classic)', 547, 571]];
+
+  /* ---------- State ---------- */
+  const S = {
+    step: Math.min(5, Math.max(1, +params.get('step') || 4)),
+    conn: 'acme', ctype: 'cloud', url: CONNS[0].url, email: CONNS[0].email, replacing: false, test: 'ok', failNext: false,
+    jira: 'PLATFORM', q: '', target: 'new', name: 'Platform Team', key: 'PLAT', keyEdited: false, existing: 'CORE',
+    typeMap: Object.fromEntries(JTYPES.map(t => [t.id, t.def])), statusMap: {}, userMap: Object.fromEntries(UNMATCHED.map(u => [u.id, u.def])),
+    sp: 'customfield_10016', inc: { components: true, comments: true, attachments: true, changelog: true }, showMatched: false,
+    run: { phase: 'ready', p: 0, errors: [], log: [], withErrors: false, rerun: false, started: '' },
+    jobs: [{ jira: 'MOBILE', key: 'MOB', when: '2 days ago', items: 1284, errs: 0 }, { jira: 'PAYMENTS', key: 'PAY', when: '3 weeks ago', items: 2210, errs: 0 }],
+  };
+  const jp = () => JPROJECTS.find(p => p.key === S.jira);
+  const suggest = k => k.replace(/[^A-Z]/gi, '').toUpperCase().slice(0, 4);
+
+  /* ---------- Derived ---------- */
+  function keyCheck() {
+    const p = jp();
+    if (p.imported) return { key: p.imported, ok: true, locked: 'rerun' };
+    if (S.target === 'existing') return { key: S.existing, ok: true, locked: 'existing' };
+    const k = S.key;
+    const len = k.length >= 2 && k.length <= 4, letters = /^[A-Z]*$/.test(k) && k.length > 0, unique = !TAKEN[k];
+    return { key: k, len, letters, unique, ok: len && letters && unique };
+  }
+  const targetKey = () => keyCheck().key;
+  // Statuses grouped by the ShipLean type their Jira type maps to (Story + Task both land on User Story).
+  function statusGroups() {
+    const g = {};
+    JTYPES.forEach(t => {
+      const to = S.typeMap[t.id]; if (to === 'skip') return;
+      const grp = g[to] ??= { from: [], rows: {} };
+      grp.from.push(t.id);
+      JSTATUS[t.id].forEach(([name, cat, c]) => { const r = grp.rows[name] ??= { name, cat, count: 0 }; r.count += c; });
+    });
+    return TYPE_ORDER.filter(t => g[t]).map(t => ({ type: t, from: g[t].from, rows: Object.values(g[t].rows) }));
+  }
+  function statusPick(type, row) {
+    const k = type + '|' + row.name;
+    if (S.statusMap[k]) return S.statusMap[k];
+    // Known Jira names map to a seeded state; a seeded state missing on this type falls back to one with the same category.
+    // Anything else (Selected for Development, In Review) becomes a custom state.
+    let state = DEF_STATE[row.name];
+    if (state && !STATES[type].includes(state)) state = STATES[type].find(s => stateCategory[s] === JCAT[row.cat]);
+    return state ? { state } : { state: '__new', cat: JCAT[row.cat] };
+  }
+  const customStates = () => statusGroups().flatMap(g => g.rows.filter(r => statusPick(g.type, r).state === '__new').map(r => ({ type: g.type, name: r.name })));
+  const importedIssues = () => JTYPES.filter(t => S.typeMap[t.id] !== 'skip').reduce((a, t) => a + t.count, 0);
+  const usersToCreate = () => UNMATCHED.filter(u => S.userMap[u.id] === 'create').length;
+
+  function warnings() {
+    const w = [];
+    const sp = SP_FIELDS.find(f => f[0] === S.sp);
+    w.push({ k: 'w', t: `<b>${n(sp[3])}</b> open stories and bugs have no story points. They import unestimated and show as <b>?</b>.`, to: 'secFields' });
+    const skipped = JTYPES.filter(t => S.typeMap[t.id] === 'skip');
+    if (skipped.length) w.push({ k: 'w', t: `<b>${n(skipped.reduce((a, t) => a + t.count, 0))}</b> issues won't be imported (${skipped.map(t => t.id).join(', ')} set to Don't import).`, to: 'secTypes' });
+    if (S.typeMap.Epic === 'epic') w.push({ k: 'w', t: `Epics hold only Features: <b>388</b> stories and bugs linked to an Epic import with no parent.`, to: 'secTypes' });
+    const cs = customStates();
+    if (cs.length) w.push({ k: 'i', t: `<b>${cs.length}</b> custom state${cs.length > 1 ? 's' : ''} will be created: ${cs.map(c => esc(c.name)).join(', ')}.`, to: 'secStatus' });
+    const hiddenLeft = UNMATCHED.filter(u => u.hidden && S.userMap[u.id] === 'import').length;
+    w.push({ k: hiddenLeft ? 'w' : 'i', t: `<b>${usersToCreate()}</b> users will be created${hiddenLeft ? `; <b>${hiddenLeft}</b> hides their email in Jira, so their work goes to “Jira import” unless you pick someone` : ''}.`, to: 'secUsers' });
+    w.push({ k: 'i', t: `<b>212</b> issues were in more than one sprint. Each lands in its last sprint; earlier ones stay in Revisions.`, to: 'secFields' });
+    if (S.inc.attachments) w.push({ k: 'w', t: `<b>3</b> attachments are over the 25 MB limit and will be skipped.`, to: 'secFields' });
+    if (!S.inc.changelog) w.push({ k: 'w', t: `Changelog is off: velocity and burndown for past sprints will start empty.`, to: 'secFields' });
+    return w;
+  }
+
+  /* ---------- Stepper and footer ---------- */
+  const STEPS = ['Connection', 'Jira project', 'Project key', 'Mapping', 'Run'];
+  function stepInfo(i) {
+    const kc = keyCheck(), r = S.run;
+    switch (i) {
+      case 1: return S.test === 'ok' ? { s: S.url.replace(/^https?:\/\//, ''), c: 'ok' } : S.test === 'fail' ? { s: 'Connection failed', c: 'bad' } : { s: 'Not tested yet', c: '' };
+      case 2: return { s: `${jp().key} · ${n(jp().issues)} issues`, c: 'ok' };
+      case 3: return kc.ok ? { s: `${kc.key} · ${kc.locked === 'rerun' ? 're-run of an earlier import' : kc.locked === 'existing' ? 'existing empty project' : 'new project'}`, c: 'ok' } : { s: 'Fix the project key', c: 'bad' };
+      case 4: { const w = warnings().filter(x => x.k === 'w').length; return { s: `${n(importedIssues())} issues · ${w} warning${w === 1 ? '' : 's'}`, c: w ? 'ok warn' : 'ok' }; }
+      case 5: return r.phase === 'running' ? { s: `Running · ${Math.round(r.p * 100)}%`, c: '' } : r.phase === 'done' ? { s: r.errors.length ? `Done · ${r.errors.length} error${r.errors.length > 1 ? 's' : ''}` : 'Done', c: r.errors.length ? 'ok warn' : 'ok' } : { s: 'Not started', c: '' };
+    }
+  }
+  function renderStepper() {
+    $('stepper').innerHTML = STEPS.map((l, i) => {
+      const inf = stepInfo(i + 1), cur = S.step === i + 1;
+      const mark = inf.c.includes('bad') ? '!' : inf.c.includes('ok') && !cur ? '✓' : i + 1;
+      return `<li><button type="button" data-step="${i + 1}" class="${inf.c}"${cur ? ' aria-current="step"' : ''}><span class="n">${mark}</span><span class="l">${i + 1} · ${l}</span><span class="s" title="${esc(inf.s)}">${esc(inf.s)}</span></button></li>`;
+    }).join('');
+  }
+  function renderFoot() {
+    const kc = keyCheck(), r = S.run;
+    let hint = '', next = '';
+    if (S.step === 1) { hint = S.test === 'ok' ? 'Connection works.' : 'Test the connection to continue.'; next = `<button class="btn primary" type="button" data-go="2"${S.test === 'ok' ? '' : ' disabled'}>Next: Jira project</button>`; }
+    if (S.step === 2) { hint = `${jp().key} · ${esc(jp().name)} selected.`; next = `<button class="btn primary" type="button" data-go="3">Next: Project key</button>`; }
+    if (S.step === 3) { hint = kc.ok ? `Imports into <b>${kc.key}</b>.` : 'Fix the project key to continue.'; next = `<button class="btn primary" type="button" data-go="4"${kc.ok ? '' : ' disabled'}>Next: Mapping</button>`; }
+    if (S.step === 4) { const w = warnings().filter(x => x.k === 'w').length; hint = w ? `${w} warnings. None of them block the run.` : 'Ready to run.'; next = `<button class="btn primary" type="button" data-go="5">Next: Run</button>`; }
+    if (S.step === 5) {
+      hint = r.phase === 'ready' ? `${n(importedIssues())} issues from ${jp().key} into ${kc.key}.` : r.phase === 'running' ? 'Importing. You can leave this page; the job keeps running.' : 'Finished. Run it again any time to pick up changes from Jira.';
+      next = r.phase === 'ready' ? `<button class="btn primary" type="button" id="start"${kc.ok && S.test === 'ok' ? '' : ' disabled'}>Start import</button>`
+        : r.phase === 'running' ? `<button class="btn" type="button" id="stop">Stop after this batch</button>`
+        : `<button class="btn" type="button" id="rerunThis">Re-run</button><a class="btn primary" href="backlog.html">Open ${kc.key} backlog</a>`;
+    }
+    $('foot').innerHTML = `<button class="btn" type="button" data-go="${S.step - 1}"${S.step === 1 || r.phase === 'running' ? ' disabled' : ''}>Back</button><span class="hint">${hint}</span><span class="spacer"></span>${next}`;
+  }
+
+  /* ---------- Step 1: Connection ---------- */
+  function viewConnection() {
+    const saved = CONNS.find(c => c.id === S.conn);
+    const tokenRow = saved && !S.replacing
+      ? `<div class="token"><input class="field" type="password" value="••••••••••••••••" disabled aria-label="API token (saved)"><span class="lock">ends ${saved.tail} · encrypted at rest</span><button class="btn" type="button" id="replace">Replace</button></div>`
+      : `<div class="token"><input class="field" type="password" id="token" placeholder="${S.ctype === 'cloud' ? 'Paste an API token' : 'Paste a personal access token'}" autocomplete="off"></div>`;
+    const res = S.test === 'testing' ? `<div class="result"><span class="spin"></span><span>Connecting to ${esc(S.url)}…</span></div>`
+      : S.test === 'ok' ? `<div class="result ok"><span class="ic">✓</span><span><b>Connected as Priya Shah</b> (${esc(S.email || 'personal access token')}) · ${S.ctype === 'cloud' ? 'Jira Cloud' : 'Jira Data Center 9.12'} · 42 projects you can browse</span></div>`
+      : S.test === 'fail' ? `<div class="result fail"><span class="ic">✕</span><span><b>401 Unauthorized: Jira rejected the token.</b> Check the email belongs to the account that created the token, and that the token hasn't expired. <a href="#">Create an API token in Atlassian</a></span></div>` : '';
+    return `<div class="cols form">
+      <section class="card"><header><h2>Jira site</h2><span class="meta">Read-only access. ShipLean never writes to Jira.</span></header>
+        <div class="pad"><div class="frm">
+          <label>Deployment</label><div class="seg" role="group" aria-label="Deployment"><button type="button" data-ctype="cloud" aria-pressed="${S.ctype === 'cloud'}">Jira Cloud</button><button type="button" data-ctype="dc" aria-pressed="${S.ctype === 'dc'}">Jira Server / Data Center</button></div>
+          <label for="url">Base URL</label><input class="field" id="url" value="${esc(S.url)}" placeholder="https://your-site.atlassian.net">
+          ${S.ctype === 'cloud' ? `<label for="email">Email</label><input class="field" id="email" value="${esc(S.email)}" placeholder="you@company.com">` : ''}
+          <label>${S.ctype === 'cloud' ? 'API token' : 'Personal access token'}</label>${tokenRow}
+          <span class="help">Stored encrypted at rest and never shown again. Admins can remove it in Settings.</span>
+          <span></span><label class="check"><input type="checkbox" checked> Save this connection for later imports</label>
+          <span></span><div class="row"><button class="btn primary" type="button" id="test">Test connection</button></div>
+        </div>${res}</div>
+      </section>
+      <div class="stack">
+        <section class="card"><header><h2>Saved connections</h2><span class="meta">${CONNS.length} on this instance</span></header>
+          <div class="pad saved">${CONNS.map(c => `<label><input type="radio" name="conn" value="${c.id}"${S.conn === c.id ? ' checked' : ''}><b>${esc(c.url.replace(/^https?:\/\//, ''))}</b><span class="xs muted">${c.type === 'cloud' ? 'Cloud' : 'Data Center'}</span><small>${c.email ? esc(c.email) + ' · ' : 'Personal access token · '}${esc(c.used)}</small></label>`).join('')}
+            <label><input type="radio" name="conn" value="new"${S.conn === 'new' ? ' checked' : ''}><b>+ New connection</b><span></span><small>Another Jira site or account</small></label></div>
+        </section>
+        <div class="callout"><b>What the import reads</b>Projects you can browse, their issues, comments, attachments, changelog, sprints and the people on them. It imports one project at a time, never the whole Jira site.</div>
+      </div></div>`;
+  }
+
+  /* ---------- Step 2: Jira project ---------- */
+  function viewProject() {
+    const q = S.q.trim().toLowerCase();
+    const mk = t => { const i = q ? t.toLowerCase().indexOf(q) : -1; return i < 0 ? esc(t) : esc(t.slice(0, i)) + '<mark>' + esc(t.slice(i, i + q.length)) + '</mark>' + esc(t.slice(i + q.length)); };
+    const list = JPROJECTS.filter(p => !q || p.key.toLowerCase().includes(q) || p.name.toLowerCase().includes(q));
+    const p = jp();
+    return `<section class="card"><header><h2>Pick one Jira project</h2><span class="meta">${q ? `${list.length} match${list.length === 1 ? '' : 'es'}` : `${JPROJECTS.length} of 42 you can browse`} · acme.atlassian.net</span><span class="spacer"></span>
+        <input class="field" type="search" id="jq" value="${esc(S.q)}" placeholder="Search by key or name" style="width:260px" aria-label="Search Jira projects"></header>
+      <table class="list"><thead><tr><th style="width:34px"></th><th style="width:110px">Key</th><th>Name</th><th style="width:150px">Type</th><th style="width:150px">Lead</th><th class="num" style="width:80px">Issues</th><th style="width:120px">Last updated</th><th style="width:210px">In ShipLean</th></tr></thead>
+      <tbody id="jrows">${list.length ? list.map(x => `<tr class="item${x.key === S.jira ? ' sel' : ''}${x.unsupported ? ' off' : ''}" data-jp="${x.key}" style="cursor:${x.unsupported ? 'not-allowed' : 'pointer'}">
+          <td><input type="radio" name="jp" ${x.key === S.jira ? 'checked' : ''}${x.unsupported ? ' disabled' : ''} aria-label="${esc(x.name)}" style="accent-color:var(--color-accent)"></td>
+          <td class="key" style="color:var(--color-text)">${mk(x.key)}</td><td>${mk(x.name)}</td><td class="sm muted">${x.kind}</td><td class="sm">${esc(x.lead)}</td>
+          <td class="num">${n(x.issues)}</td><td class="sm muted">${x.updated}</td>
+          <td>${x.imported ? `<span class="chip accent">Imported → ${x.imported}</span> <span class="xs muted">${x.when}</span>` : x.unsupported ? '<span class="xs muted">Service projects aren\'t supported</span>' : ''}</td></tr>`).join('')
+        : `<tr><td colspan="8" class="muted sm" style="text-align:center;height:60px">No Jira project matches “${esc(S.q)}”</td></tr>`}</tbody></table></section>
+      ${p.imported ? `<div class="callout"><b>${p.key} was imported into ${p.imported} ${p.when}.</b>Continuing re-runs that job: items are matched on External Ref and updated, and anything new in Jira is added. The key stays ${p.imported}.</div>` : ''}`;
+  }
+
+  /* ---------- Step 3: Project key ---------- */
+  function viewKey() {
+    const p = jp(), kc = keyCheck(), sug = suggest(p.key), k = kc.key || '…';
+    const ex = `<div class="ex"><span>${p.key}-123</span><span class="to">→</span><b>${esc(k)}-123</b><span>${p.key}-1</span><span class="to">→</span><b>${esc(k)}-1</b><span>${p.key}-${p.high}</span><span class="to">→</span><b>${esc(k)}-${p.high}</b></div>`;
+    let form;
+    if (kc.locked === 'rerun') form = `<div class="pad"><div class="frm"><label>Project key</label><div class="row"><span class="pkey" style="height:24px;font-size:var(--text-sm);padding:0 8px">${kc.key}</span><span class="sm muted">Fixed: this is a re-run of the ${p.key} import.</span></div></div></div>`;
+    else form = `<div class="pad"><div class="frm">
+        <label>Import into</label><div class="seg" role="group" aria-label="Target"><button type="button" data-target="new" aria-pressed="${S.target === 'new'}">A new project</button><button type="button" data-target="existing" aria-pressed="${S.target === 'existing'}">An existing empty project</button></div>
+        ${S.target === 'new' ? `
+        <label for="pname">Project name</label><input class="field" id="pname" value="${esc(S.name)}">
+        <label for="pkey">Project key</label><div class="row"><input class="field keyin${kc.ok ? '' : ' bad'}" id="pkey" value="${esc(S.key)}" maxlength="10" spellcheck="false" aria-describedby="keyChecks" autocomplete="off">
+          ${S.key !== sug ? `<button class="btn ghost" type="button" id="useSug">Use suggestion <b class="mono">${sug}</b></button>` : `<span class="xs muted">Suggested from <span class="mono">${p.key}</span>: digits removed, first 4 letters</span>`}</div>
+        <span></span><ul class="checks" id="keyChecks">
+          <li class="${kc.len ? '' : 'no'}">2 to 4 characters</li>
+          <li class="${kc.letters ? '' : 'no'}">Uppercase letters A to Z only, no digits</li>
+          <li class="${kc.unique ? '' : 'no'}">${kc.unique ? 'Not used by another project' : `<b class="mono">${esc(S.key)}</b> is taken by ${esc(TAKEN[S.key])}`}</li></ul>`
+        : `<label for="exist">Project</label><select class="field" id="exist">${EMPTY.map(e => `<option value="${e.key}"${S.existing === e.key ? ' selected' : ''}>${e.key} · ${e.name} (empty, ${e.created})</option>`).join('')}</select>
+        <span class="help">Only empty projects you administer are listed. The project keeps its key.</span>`}
+      </div></div>`;
+    return `<div class="cols form">
+      <section class="card"><header><h2>Target project</h2><span class="meta">Importing ${p.key} · ${esc(p.name)}</span></header>${form}</section>
+      <div class="stack">
+        <section class="card"><header><h2>Issue numbers are kept</h2></header><div class="pad">${ex}
+          <div class="sm">The highest imported number is <span class="mono">${p.key}-${p.high}</span>, so the next item created in ShipLean is <b class="mono">${esc(k)}-${p.high + 1}</b>. Gaps from issues deleted or moved in Jira stay as gaps.</div></div></section>
+        <div class="callout warn"><b>The key can't change after the project is created.</b>Every work item key (${esc(k)}-123) and every link to it depends on it. Jira keys can be up to 10 characters and include digits; ShipLean keys are 2 to 4 letters.</div>
+      </div></div>`;
+  }
+
+  /* ---------- Step 4: Mapping ---------- */
+  const typeSel = t => `<span class="cell">${S.typeMap[t.id] === 'skip' ? '<span class="ti" style="background:var(--color-surface-2);color:var(--color-muted)">–</span>' : tIcon(S.typeMap[t.id])}
+    <select class="field mini" data-type="${t.id}" aria-label="ShipLean type for Jira ${t.id}">${t.opts.map(o => `<option value="${o}"${S.typeMap[t.id] === o ? ' selected' : ''}>${TYPE_NAME[o]}</option>`).join('')}</select></span>`;
+  function typeNote(t) {
+    const v = S.typeMap[t.id];
+    if (v === 'skip') return [`${n(t.count)} issues skipped${t.id === 'Story' || t.id === 'Bug' ? '; their sub-tasks are skipped too' : ''}`, 'warn'];
+    if (t.id === 'Epic' && v === 'epic') return ['Epics hold only Features, so stories linked to an Epic lose their parent', 'warn'];
+    if (v !== t.def) return [`Imported as ${TYPE_NAME[v]}`, ''];
+    return [t.why || '', ''];
+  }
+  function viewMapping() {
+    const w = warnings(), groups = statusGroups(), sp = SP_FIELDS.find(f => f[0] === S.sp);
+    const warnsHtml = `<section class="warns" aria-label="Warnings"><header><h2>Review before the run</h2>
+        <span class="tot"><span><b>${n(importedIssues())}</b> issues</span><span><b>${S.inc.comments ? '3,912' : '0'}</b> comments</span><span><b>${S.inc.attachments ? '641' : '0'}</b> attachments</span><span><b>${S.inc.changelog ? '21,406' : '0'}</b> revisions</span><span><b>11</b> sprints</span><span><b>23</b> people</span></span>
+        <span class="spacer"></span><span class="xs muted">Warnings don't block the run.</span></header>
+      <ul>${w.map(x => `<li class="${x.k}"><span class="ic">${x.k === 'w' ? '▲' : 'ⓘ'}</span><span class="tx">${x.t}</span><a href="#${x.to}" data-jump="${x.to}">Review</a></li>`).join('')}</ul></section>`;
+
+    const types = `<section class="card" id="secTypes"><header><h2>Issue types</h2><span class="meta">${JTYPES.length} in ${jp().key}</span></header>
+      <table class="list"><thead><tr><th>Jira type</th><th class="num" style="width:64px">Issues</th><th class="arrow"></th><th style="width:176px">ShipLean type</th><th>Note</th></tr></thead><tbody>
+      ${JTYPES.map(t => { const [note, cls] = typeNote(t); return `<tr class="item"><td class="nw">${t.id}</td><td class="num">${n(t.count)}</td><td class="arrow">→</td><td>${typeSel(t)}</td><td class="note ${cls}">${esc(note)}</td></tr>`; }).join('')}
+      </tbody></table></section>`;
+
+    const userAction = u => `<select class="field mini" data-user="${u.id}" aria-label="What to do with ${esc(u.name)}">
+        ${u.hidden || u.bot ? '' : `<option value="create"${S.userMap[u.id] === 'create' ? ' selected' : ''}>Create user (invite by email)</option>`}
+        <option value="import"${S.userMap[u.id] === 'import' ? ' selected' : ''}>Attribute to “Jira import”</option>
+        <optgroup label="Same person as">${Object.entries(people).map(([id, p]) => `<option value="${id}"${S.userMap[u.id] === id ? ' selected' : ''}>${p.name}</option>`).join('')}</optgroup></select>`;
+    const users = `<section class="card" id="secUsers"><header><h2>Users</h2><span class="meta">23 people · 18 matched by email · ${UNMATCHED.length} not in ShipLean</span><span class="spacer"></span>
+        <button class="btn ghost" type="button" id="toggleMatched" aria-expanded="${S.showMatched}">${S.showMatched ? 'Hide matched' : 'Show matched'}</button></header>
+      <table class="list"><thead><tr><th>Jira user</th><th class="num" style="width:56px">Items</th><th style="width:220px">In ShipLean</th></tr></thead><tbody>
+      ${UNMATCHED.map(u => `<tr class="item"><td><span class="cell"><span class="av jira">${u.bot ? '⚙' : u.name.split(' ').map(x => x[0]).join('')}</span><span style="min-width:0"><span>${esc(u.name)}</span> <span class="xs ${u.hidden ? '' : 'muted'}" style="${u.hidden ? 'color:var(--color-warn)' : ''}">${u.bot ? 'automation account' : u.hidden ? 'email hidden in Jira' : esc(u.email)}</span></span></span></td>
+        <td class="num">${n(u.refs)}</td><td>${userAction(u)}</td></tr>`).join('')}
+      ${S.showMatched ? MATCHED.map(([id, email, refs]) => `<tr class="item"><td><span class="cell"><span class="av jira">${people[id].initials}</span>${esc(people[id].name)} <span class="xs muted">${email}</span></span></td><td class="num">${refs}</td><td><span class="cell">${av(id)}<span class="sm">${people[id].name}</span><span class="chip ok newchip">email match</span></span></td></tr>`).join('') + `<tr><td colspan="3" class="xs muted">and 13 more matched by email</td></tr>` : ''}
+      </tbody></table></section>`;
+
+    const catSel = (k, cat) => `<select class="field mini" data-cat="${esc(k)}" aria-label="Category for the new state">${CATS.map(([v, l]) => `<option value="${v}"${cat === v ? ' selected' : ''}>${l}</option>`).join('')}</select>`;
+    const status = `<section class="card" id="secStatus"><header><h2>Statuses → States</h2><span class="meta">Per ShipLean type. A new state takes its category from Jira's status category.</span></header>
+      <table class="list"><thead><tr><th>Jira status</th><th style="width:78px">Jira category</th><th class="num" style="width:54px">Issues</th><th class="arrow"></th><th style="width:196px">ShipLean state</th><th style="width:128px">Category</th></tr></thead><tbody>
+      ${groups.map(g => `<tr class="grp"><td colspan="6"><span class="cell">${tIcon(g.type)}${TYPE_NAME[g.type]}<span class="from">from Jira ${g.from.join(', ')} · ${g.rows.length} statuses</span></span></td></tr>` +
+        g.rows.map(r => {
+          const pick = statusPick(g.type, r), k = g.type + '|' + r.name, isNew = pick.state === '__new';
+          const cat = isNew ? pick.cat : stateCategory[pick.state];
+          return `<tr class="item"><td>${esc(r.name)}${isNew ? ' <span class="chip accent newchip">new state</span>' : ''}</td><td class="jcat">${r.cat}</td><td class="num">${n(r.count)}</td><td class="arrow">→</td>
+            <td><span class="cell"><span class="st ${cat}" style="gap:0"></span><select class="field mini" data-status="${esc(k)}" aria-label="ShipLean state for ${esc(r.name)}">
+              ${STATES[g.type].map(s => `<option${pick.state === s ? ' selected' : ''}>${s}</option>`).join('')}<option value="__new"${isNew ? ' selected' : ''}>+ Create new state</option></select></span></td>
+            <td>${isNew ? catSel(k, pick.cat) : `<span class="st ${cat}">${CATS.find(c => c[0] === cat)[1]}</span>`}</td></tr>`;
+        }).join('')).join('')}
+      </tbody></table></section>`;
+
+    const FIELDS = [
+      { j: 'Summary', s: 'Title', c: '1,342' },
+      { j: 'Description', s: 'Description', note: 'Atlassian rich text converted to Markdown' },
+      { j: 'Story points', s: 'Story points', sp: true },
+      { j: 'Priority', s: 'Priority (1 to 4)', note: 'Highest, High → 1, 2 · Medium → 3 · Low, Lowest → 4' },
+      { j: 'Labels', s: 'Tags', c: '38 labels', note: 'On 906 issues' },
+      { j: 'Components', s: 'Tags', c: '6', opt: 'components', note: 'Each component becomes a tag with its name' },
+      { j: 'Sprint', s: 'Sprints', c: '11 sprints', note: '212 issues were in more than one sprint: each lands in its last one, earlier ones stay in Revisions', warnNote: false },
+      { j: 'Epic Link / parent', s: 'Parent', c: '1,104', note: 'Follows the issue type mapping (Epic → Feature)' },
+      { j: 'Issue links', s: 'Links', c: '467', note: 'blocks → blocked-by · relates → related · duplicates → duplicate · 23 to other Jira projects → external URL' },
+      { j: 'Assignee, Reporter', s: 'Assigned to, Created by', note: 'Through the Users mapping above' },
+      { j: 'Comments', s: 'Comments', c: '3,912', opt: 'comments' },
+      { j: 'Attachments', s: 'Attachments', c: '644 · 1.8 GB', opt: 'attachments', note: '3 over 25 MB are skipped', warnNote: true },
+      { j: 'Changelog', s: 'Revisions', c: '21,406', opt: 'changelog', note: 'Velocity and burndown read past sprints from it' },
+      { j: '(every issue)', s: 'External Ref', c: '1,342', note: 'jira · PLATFORM-123 · link back. Re-runs match on it' },
+    ];
+    const fields = `<section class="card" id="secFields"><header><h2>Fields</h2><span class="meta">Fixed field list, no custom fields in v1</span></header>
+      <table class="list"><thead><tr><th style="width:170px">Jira</th><th class="arrow"></th><th style="width:330px">ShipLean</th><th style="width:120px">In ${jp().key}</th><th>Note</th><th style="width:64px">Import</th></tr></thead><tbody>
+      ${FIELDS.map(f => {
+        const off = f.opt && !S.inc[f.opt];
+        const ship = f.sp ? `<span class="cell"><select class="field mini" id="spField" aria-label="Story points field">${SP_FIELDS.map(([id, label, set]) => `<option value="${id}"${S.sp === id ? ' selected' : ''}>${label} · ${id}</option>`).join('')}</select></span>` : f.s;
+        const note = f.sp ? `<span style="color:var(--color-warn)">${n(sp[3])} open stories and bugs have none: they import unestimated</span>` : esc(f.note || '');
+        return `<tr class="item${off ? ' off' : ''}"><td>${f.j}</td><td class="arrow">→</td><td>${ship}</td><td class="sm muted">${f.sp ? n(sp[2]) + ' set' : f.c || ''}</td><td class="note${f.warnNote && !off ? ' warn' : ''}">${note}</td>
+          <td>${f.opt ? `<label class="check"><input type="checkbox" data-inc="${f.opt}"${S.inc[f.opt] ? ' checked' : ''}> ${S.inc[f.opt] ? 'Yes' : 'No'}</label>` : '<span class="xs muted">Always</span>'}</td></tr>`;
+      }).join('')}
+      </tbody></table></section>`;
+
+    return warnsHtml + `<div class="cols wide-r"><div class="stack">${types}${users}</div><div class="stack">${status}</div></div>` + fields;
+  }
+
+  /* ---------- Step 5: Run ---------- */
+  const TOTALS = () => ({ issues: importedIssues(), comments: S.inc.comments ? 3912 : 0, attachments: S.inc.attachments ? 641 : 0, revisions: S.inc.changelog ? 21406 : 0 });
+  const LAG = { issues: 0, comments: .08, attachments: .14, revisions: .2 }; // later entities start a little after issues
+  function counts() {
+    const t = TOTALS(), r = S.run, out = {};
+    Object.keys(t).forEach(k => {
+      const frac = r.phase === 'done' ? 1 : Math.max(0, Math.min(1, (r.p - LAG[k]) / (1 - LAG[k])));
+      const failed = r.errors.filter(e => e.ent === k).length;
+      out[k] = { done: Math.round(t[k] * frac) - (r.phase === 'done' ? failed : 0), total: t[k], failed };
+    });
+    return out;
+  }
+  function viewRun() {
+    const r = S.run, c = counts(), kc = keyCheck(), p = jp();
+    const label = { issues: 'Issues', comments: 'Comments', attachments: 'Attachments', revisions: 'Revisions' };
+    const overall = r.phase === 'done' ? 1 : r.p;
+    const outcome = r.phase !== 'done' ? '' : r.errors.length
+      ? `<div class="outcome warn"><div class="tx"><b>Finished with ${r.errors.length} error${r.errors.length > 1 ? 's' : ''}</b>${n(c.issues.done)} of ${n(c.issues.total)} issues imported into ${kc.key} in ${r.took}. Retry the errors below, or re-run later: only what's missing or changed is touched.</div><button class="btn" type="button" id="csv">Download error log (CSV)</button><a class="btn primary" href="backlog.html">Open ${kc.key} backlog</a></div>`
+      : `<div class="outcome ok"><div class="tx"><b>${r.rerun ? 'Re-run finished' : 'Import finished'}</b>${r.rerun ? `Matched ${n(c.issues.total)} items on External Ref: 37 updated, ${n(c.issues.total - 37)} unchanged, none duplicated. 2 issues new in Jira were added.` : `${n(c.issues.done)} issues imported into ${kc.key} in ${r.took}. The next new item is ${kc.key}-${p.high + 1}.`}</div><a class="btn primary" href="backlog.html">Open ${kc.key} backlog</a></div>`;
+    const errs = r.errors.length ? `<section class="card"><header><h2>Errors</h2><span class="meta">${r.errors.length} item${r.errors.length > 1 ? 's' : ''} didn't import. Everything else did.</span><span class="spacer"></span>${r.phase === 'done' ? '<button class="btn" type="button" id="retryAll">Retry all</button>' : ''}</header>
+        <table class="list"><thead><tr><th style="width:116px">Jira issue</th><th style="width:84px">What</th><th>Error</th><th style="width:120px"></th></tr></thead><tbody>
+        ${r.errors.map((e, i) => `<tr class="item"><td class="key" style="color:var(--color-text)">${e.key}</td><td class="sm">${label[e.ent].replace(/s$/, '')}</td><td class="sm" style="line-height:1.35">${esc(e.msg)}</td>
+          <td style="text-align:right">${e.busy ? '<span class="spin" style="color:var(--color-muted)"></span>' : r.phase === 'done' ? `${e.tries ? `<button class="btn ghost" type="button" data-skip="${i}">Skip</button>` : ''}<button class="btn" type="button" data-retry="${i}">Retry</button>` : ''}</td></tr>`).join('')}
+        </tbody></table></section>` : '';
+    const jobs = [...S.jobs];
+    return `<div class="cols">
+      <div class="stack">
+        ${r.phase === 'ready' ? `<section class="card"><header><h2>Ready to import</h2></header><div class="pad">
+            <div class="ex" style="font-size:var(--text-md)"><b>${p.key}</b><span class="to">→</span><b>${kc.key}</b></div>
+            <div class="tot"><span><b>${n(TOTALS().issues)}</b> issues</span><span><b>${n(TOTALS().comments)}</b> comments</span><span><b>${n(TOTALS().attachments)}</b> attachments</span><span><b>${n(TOTALS().revisions)}</b> revisions</span><span><b>11</b> sprints</span><span><b>${usersToCreate()}</b> new users</span><span><b>${customStates().length}</b> new states</span></div>
+            <div class="sm muted">Takes about 15 minutes for a project this size. You can leave the page; the job keeps running and anyone on this screen sees its progress.</div>
+            <div class="row"><button class="btn primary" type="button" id="start2">Start import</button><button class="btn ghost" type="button" data-go="4">Back to mapping</button></div></div></section>` : ''}
+        ${r.phase !== 'ready' ? `<section class="card"><header><h2>${r.rerun ? 'Re-run' : 'Progress'}</h2><span class="meta">${p.key} → ${kc.key} · started ${r.started}</span><span class="spacer"></span>${r.phase === 'running' ? '<span class="chip accent"><span class="spin" style="width:9px;height:9px"></span> Running</span>' : r.errors.length ? '<span class="chip warn">Done with errors</span>' : '<span class="chip ok">Done</span>'}</header>
+          <div class="pad"><div class="big"><span class="v">${Math.round(overall * 100)}%</span><span class="sm muted">${r.phase === 'running' ? `about ${Math.max(1, Math.round((1 - overall) * (r.rerun ? 2 : 13)))} min left` : r.took}</span></div>
+            <div class="cap${r.phase === 'done' && !r.errors.length ? ' ok' : ''}"><i style="width:${overall * 100}%"></i></div>
+            <div class="ent">${Object.keys(c).map(k => `<span>${label[k]}</span><div class="cap${c[k].done >= c[k].total && c[k].total ? ' ok' : ''}"><i style="width:${c[k].total ? c[k].done / c[k].total * 100 : 0}%"></i></div><span class="c"><b>${n(c[k].done)}</b> / ${n(c[k].total)}${c[k].failed ? ` · <span style="color:var(--color-danger)">${c[k].failed} failed</span>` : ''}</span>`).join('')}
+              <span>Sprints</span><div class="cap${r.p > .1 || r.phase === 'done' ? ' ok' : ''}"><i style="width:${r.p > .1 || r.phase === 'done' ? 100 : r.p * 1000}%"></i></div><span class="c"><b>${r.p > .1 || r.phase === 'done' ? 11 : Math.round(r.p * 110)}</b> / 11</span>
+            </div></div></section>` : ''}
+        ${outcome}${errs}
+      </div>
+      <div class="stack">
+        ${r.phase !== 'ready' ? `<section class="card"><header><h2>Live log</h2><span class="meta">${r.log.length} entries</span></header><ol class="log" id="log" aria-live="polite">${r.log.map(l => `<li class="${l.k}"><time>${l.t}</time><span class="ic">${l.k === 'ok' ? '✓' : l.k === 'err' ? '✕' : l.k === 'warn' ? '▲' : '·'}</span><span>${l.m}</span></li>`).join('')}</ol></section>` : ''}
+        <div class="callout"><b>Re-runnable</b>Every imported item keeps an External Ref (<span class="mono">jira · ${p.key}-123</span>). Running the import again matches on it and updates those items instead of creating duplicates; issues new in Jira are added. Nothing edited only in ShipLean is deleted.</div>
+        <section class="card"><header><h2>Import jobs</h2><span class="meta">${jobs.length} on this instance</span></header>
+          <table class="list"><thead><tr><th>Job</th><th>Last run</th><th class="num">Items</th><th style="width:76px"></th></tr></thead><tbody>
+          ${jobs.map((j, i) => `<tr class="item"><td><span class="mono">${j.jira}</span> <span class="muted">→</span> <span class="pkey alt" style="height:18px">${j.key}</span></td>
+            <td class="sm">Last run ${j.when}${j.errs ? ` · <span style="color:var(--color-warn)">${j.errs} errors</span>` : ''}</td><td class="num">${n(j.items)}</td>
+            <td style="text-align:right"><button class="btn" type="button" data-rerun="${i}"${r.phase === 'running' ? ' disabled' : ''}>Re-run</button></td></tr>`).join('')}
+          </tbody></table></section>
+      </div></div>`;
+  }
+
+  /* ---------- Run simulation ---------- */
+  let timer = null;
+  const clock = (() => { let s = 14 * 3600 + 2 * 60 + 5; return () => { s += 7 + Math.floor(Math.random() * 9); const h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, x = s % 60; return [h, m, x].map(v => String(v).padStart(2, '0')).join(':'); }; })();
+  const ERRS = [
+    { at: .38, key: 'PLATFORM-877', ent: 'attachments', msg: 'design-review.mov is 41 MB (limit 25 MB)', sticky: true },
+    { at: .61, key: 'PLATFORM-1102', ent: 'revisions', msg: 'Jira timed out (504) reading the changelog' },
+    { at: .83, key: 'PLATFORM-1290', ent: 'comments', msg: 'Rate limited by Jira (429)' },
+  ];
+  function script() {
+    const p = jp(), k = keyCheck().key, cs = customStates(), uc = usersToCreate();
+    if (S.run.rerun) return [
+      [.02, 'ok', `Re-run of ${p.key} → ${k}: matching on External Ref`], [.12, 'ok', 'Sprints: 11 matched, none changed'],
+      [.4, '', `Issues ${p.key}-1 to ${p.key}-600: 18 updated, 582 unchanged`], [.75, '', `Issues ${p.key}-601 to ${p.key}-${p.high}: 19 updated, 2 new in Jira added`],
+      [.92, '', 'Revisions: 214 new changes appended'], [.99, 'ok', `Re-run finished: nothing duplicated`],
+    ];
+    return [
+      [.01, 'ok', keyCheck().locked === 'existing' ? `Using empty project ${k}` : `Created project ${k} · ${esc(S.name)}`],
+      [.03, 'ok', cs.length ? `Created ${cs.length} custom state${cs.length > 1 ? 's' : ''}: ${cs.map(c => `${esc(c.name)} (${TYPE_NAME[c.type]})`).join(', ')}` : 'All statuses mapped to existing states'],
+      [.05, 'ok', `Matched 18 users by email${uc ? `, created ${uc} and sent invites` : ''}`],
+      [.08, 'ok', 'Imported 11 sprints (Sprint 1 to Sprint 11)'],
+      [.2, '', `Issues ${p.key}-1 to ${p.key}-300 imported`], [.35, '', `Issues ${p.key}-301 to ${p.key}-700 imported`],
+      [.5, '', `Issues ${p.key}-701 to ${p.key}-1100 imported`], [.66, '', `Issues ${p.key}-1101 to ${p.key}-${p.high} imported`],
+      [.7, 'ok', 'Parents linked: 1,104 (Epic Link and parent)'], [.74, 'ok', 'Issue links: 444 inside the project, 23 kept as external URLs'],
+      [.8, '', 'Comments: 3,900 of 3,912 imported'], [.9, '', 'Revisions: replaying the changelog'],
+      [.97, 'ok', `Next item number set to ${k}-${p.high + 1}`], [.99, 'ok', 'External Refs written for every item'],
+    ];
+  }
+  function startRun({ withErrors = false, rerun = false, instant = false } = {}) {
+    clearInterval(timer);
+    S.run = { phase: 'running', p: 0, errors: [], log: [], withErrors, rerun, started: clock().slice(0, 5), took: rerun ? '1m 52s' : '12m 41s' };
+    const steps = script(); let si = 0;
+    const tick = () => {
+      S.run.p = Math.min(1, S.run.p + 0.018);
+      while (si < steps.length && steps[si][0] <= S.run.p) { S.run.log.push({ t: clock(), k: steps[si][1], m: steps[si][2] }); si++; }
+      if (withErrors) ERRS.forEach(e => { if (e.at <= S.run.p && !S.run.errors.some(x => x.key === e.key)) { S.run.errors.push({ ...e, tries: 0 }); S.run.log.push({ t: clock(), k: 'err', m: `${e.key}: ${esc(e.msg)}` }); } });
+      if (S.run.p >= 1) {
+        clearInterval(timer); S.run.phase = 'done';
+        S.run.log.push({ t: clock(), k: S.run.errors.length ? 'warn' : 'ok', m: S.run.errors.length ? `Finished with ${S.run.errors.length} errors` : 'Finished' });
+        const job = { jira: jp().key, key: keyCheck().key, when: 'just now', items: importedIssues() - S.run.errors.filter(e => e.ent === 'issues').length, errs: S.run.errors.length };
+        S.jobs = [job, ...S.jobs.filter(j => j.jira !== job.jira)];
+        if (!instant) toast(S.run.errors.length ? `Import finished with ${S.run.errors.length} errors` : `${rerun ? 'Re-run' : 'Import'} finished · ${keyCheck().key}`);
+      }
+      if (!instant) render();
+    };
+    if (instant) { while (S.run.phase === 'running') tick(); render(); }
+    else { timer = setInterval(tick, 110); render(); }
+  }
+
+  /* ---------- Render + events ---------- */
+  function render() {
+    renderStepper(); renderFoot();
+    const c = $('content'), log = $('log'), stick = !log || log.scrollTop + log.clientHeight >= log.scrollHeight - 4, top = c.scrollTop;
+    c.innerHTML = [, viewConnection, viewProject, viewKey, viewMapping, viewRun][S.step]();
+    c.scrollTop = top;
+    const nl = $('log'); if (nl && stick) nl.scrollTop = nl.scrollHeight;
+  }
+  const go = s => { if (s < 1 || s > 5) return; S.step = s; render(); $('content').scrollTop = 0; };
+
+  $('stepper').addEventListener('click', e => { const b = e.target.closest('[data-step]'); if (b) go(+b.dataset.step); });
+  document.addEventListener('click', e => {
+    const t = e.target;
+    const g = t.closest('[data-go]'); if (g && !g.disabled) return go(+g.dataset.go);
+    if (t.closest('#test')) {
+      S.test = 'testing'; render();
+      return setTimeout(() => { const bad = S.failNext || !/^https?:\/\/\S+\.\S+/.test(S.url); S.failNext = false; S.test = bad ? 'fail' : 'ok'; render(); toast(bad ? 'Connection failed: 401 Unauthorized' : 'Connected to ' + esc(S.url.replace(/^https?:\/\//, ''))); }, 900);
+    }
+    if (t.closest('#replace')) { S.replacing = true; S.test = 'idle'; render(); $('token')?.focus(); return; }
+    const ct = t.closest('[data-ctype]'); if (ct) { S.ctype = ct.dataset.ctype; S.test = 'idle'; if (S.conn !== 'new') { S.conn = 'new'; S.url = ''; S.email = ''; } render(); return; }
+    const jr = t.closest('[data-jp]');
+    if (jr) {
+      const p = JPROJECTS.find(x => x.key === jr.dataset.jp);
+      if (p.unsupported) return toast(`${p.key} is a service management project: those can't be imported`);
+      S.jira = p.key; S.name = p.name; if (!S.keyEdited) S.key = suggest(p.key);
+      S.run = { phase: 'ready', p: 0, errors: [], log: [], started: '' }; render();
+      return toast(p.imported ? `${p.key} was imported into ${p.imported} before: continuing re-runs that job` : `Picked <b>${p.key}</b> · ${esc(p.name)} · key ${S.key}${S.keyEdited ? "" : " (suggested)"}${TAKEN[S.key] ? ' (taken)' : ''}`);
+    }
+    const tg = t.closest('[data-target]'); if (tg) { S.target = tg.dataset.target; render(); return; }
+    if (t.closest('#useSug')) { S.key = suggest(jp().key); S.keyEdited = false; render(); return; }
+    const j = t.closest('[data-jump]');
+    if (j) { e.preventDefault(); const sec = $(j.dataset.jump); sec.scrollIntoView({ behavior: 'smooth', block: 'start' }); sec.classList.remove('flash'); void sec.offsetWidth; sec.classList.add('flash'); return; }
+    if (t.closest('#toggleMatched')) { S.showMatched = !S.showMatched; render(); return; }
+    if (t.closest('#start') || t.closest('#start2')) return startRun();
+    if (t.closest('#stop')) { clearInterval(timer); S.run.phase = 'done'; S.run.log.push({ t: clock(), k: 'warn', m: 'Stopped after the current batch. Re-run to continue where it left off.' }); render(); return toast('Import stopped. Items already imported stay; Re-run picks up the rest'); }
+    if (t.closest('#rerunThis')) { toast(`Re-running ${jp().key} → ${keyCheck().key}: matching on External Ref`); return startRun({ rerun: true }); }
+    const rr = t.closest('[data-rerun]');
+    if (rr) {
+      const job = S.jobs[+rr.dataset.rerun];
+      if (job.jira === jp().key) { toast(`Re-running ${job.jira} → ${job.key}: matching on External Ref`); return startRun({ rerun: true }); }
+      return toast(`Re-running <b>${job.jira} → ${job.key}</b>: ${n(job.items)} items matched on External Ref, 37 changed in Jira will update`);
+    }
+    const rt = t.closest('[data-retry]');
+    if (rt) {
+      const er = S.run.errors[+rt.dataset.retry]; er.busy = true; render();
+      return setTimeout(() => {
+        er.busy = false;
+        if (er.sticky) { er.tries++; S.run.log.push({ t: clock(), k: 'err', m: `${er.key}: retry failed, still over the limit` }); toast(`${er.key} still fails: the file is over the limit. Skip it or raise the limit`); }
+        else { S.run.errors.splice(S.run.errors.indexOf(er), 1); S.run.log.push({ t: clock(), k: 'ok', m: `${er.key}: retried, imported` }); toast(`${er.key} imported on retry`); }
+        S.jobs[0].errs = S.run.errors.length; render();
+      }, 700);
+    }
+    if (t.closest('#retryAll')) { S.run.errors.forEach((er, i) => setTimeout(() => document.querySelector(`[data-retry="${S.run.errors.indexOf(er)}"]`)?.click(), i * 50)); return; }
+    const sk = t.closest('[data-skip]');
+    if (sk) { const er = S.run.errors.splice(+sk.dataset.skip, 1)[0]; S.run.log.push({ t: clock(), k: 'warn', m: `${er.key}: skipped by Priya Shah` }); S.jobs[0].errs = S.run.errors.length; render(); return toast(`Skipped the attachment on ${er.key}. The issue itself is imported`); }
+    if (t.closest('#csv')) return toast('Downloaded import-errors-PLATFORM.csv');
+  });
+  document.addEventListener('change', e => {
+    const t = e.target;
+    if (t.name === 'conn') {
+      S.conn = t.value; S.replacing = false;
+      const c = CONNS.find(x => x.id === t.value);
+      if (c) { S.ctype = c.type; S.url = c.url; S.email = c.email; S.test = 'idle'; toast(`Using the saved connection to ${c.url.replace(/^https?:\/\//, '')}. Test it to continue`); }
+      else { S.url = ''; S.email = ''; S.test = 'idle'; }
+      return render();
+    }
+    if (t.dataset.type) { S.typeMap[t.dataset.type] = t.value; render(); return toast(`Jira ${t.dataset.type} → ${TYPE_NAME[t.value]}. Statuses regrouped`); }
+    if (t.dataset.status) {
+      const [type, name] = t.dataset.status.split('|'), row = statusGroups().find(g => g.type === type).rows.find(r => r.name === name);
+      S.statusMap[t.dataset.status] = t.value === '__new' ? { state: '__new', cat: JCAT[row.cat] } : { state: t.value };
+      render(); return toast(t.value === '__new' ? `Will create the state “${esc(name)}” on ${TYPE_NAME[type]} (${CATS.find(c => c[0] === JCAT[row.cat])[1]})` : `${esc(name)} → ${t.value} on ${TYPE_NAME[type]}`);
+    }
+    if (t.dataset.cat) { S.statusMap[t.dataset.cat] = { state: '__new', cat: t.value }; render(); return toast(`Category set to ${CATS.find(c => c[0] === t.value)[1]}`); }
+    if (t.dataset.user) { S.userMap[t.dataset.user] = t.value; render(); const u = UNMATCHED.find(x => x.id === t.dataset.user); return toast(t.value === 'create' ? `${u.name} will be created and invited` : t.value === 'import' ? `${u.name}'s work goes to “Jira import”` : `${u.name} is ${people[t.value].name} in ShipLean`); }
+    if (t.id === 'spField') { S.sp = t.value; render(); const f = SP_FIELDS.find(x => x[0] === t.value); return toast(`Story points from ${f[1]} (${f[0]}): ${n(f[3])} open items without points`); }
+    if (t.dataset.inc) { S.inc[t.dataset.inc] = t.checked; render(); return toast(`${t.dataset.inc[0].toUpperCase() + t.dataset.inc.slice(1)} ${t.checked ? 'will be imported' : 'left out'}`); }
+    if (t.id === 'exist') { S.existing = t.value; render(); }
+  });
+  document.addEventListener('input', e => {
+    const t = e.target;
+    if (t.id === 'url') { S.url = t.value; if (S.test !== 'idle') { S.test = 'idle'; renderStepper(); renderFoot(); const r = document.querySelector('.result'); r && r.remove(); } }
+    if (t.id === 'email') S.email = t.value;
+    if (t.id === 'pname') { S.name = t.value; }
+    if (t.id === 'jq') { S.q = t.value; const pos = t.selectionStart; render(); const q = $('jq'); q.focus(); q.setSelectionRange(pos, pos); }
+    if (t.id === 'pkey') {
+      const pos = t.selectionStart; S.key = t.value.toUpperCase(); S.keyEdited = true; render();
+      const k = $('pkey'); k.focus(); k.setSelectionRange(pos, pos);
+    }
+  });
+
+  render();
+  if (S.step === 5 && params.get('run')) startRun({ withErrors: params.get('run') === 'errors', instant: true });
+
+  SL.preview([
+    ...STEPS.map((l, i) => ({ label: `${i + 1} ${l}`, run: () => go(i + 1) })),
+    { label: 'Connection fails', run: () => { go(1); S.failNext = true; document.getElementById('test').click(); } },
+    { label: 'Run with errors', run: () => { go(5); startRun({ withErrors: true }); } },
+  ]);
+})();
+</script>
+</body>
+</html>

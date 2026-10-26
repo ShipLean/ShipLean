@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Planning (reference)</title>
+<!--
+  Reference Planning screen: the Stories backlog in Planning mode.
+  Open directly in a browser. Uses ../tokens.css, shiplean.css and shared.js only; no build step.
+  The current and future sprints are stacked above the Backlog. Every section is the same backlog_order,
+  filtered by sprint_id, so rank is the same everywhere.
+  Working: drag a row into another section (writes sprint_id), drop on a row to put it just above
+  (also writes backlog_order), drop on a section header to change only the sprint; Alt+↑/↓ on a focused
+  grip does the same from the keyboard; ▼ collapses a section; Forecast toggle; List/Planning switch.
+  The forecast walks the Backlog in order into each future sprint's remaining room (team capacity −
+  committed), then into later sprints at velocity.
+  The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot).
+-->
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="shiplean.css">
+<script src="shared.js"></script>
+<style>
+table.list td.fc { width: 92px; font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--color-accent); white-space: nowrap; }
+table.list tr.fc-line td { border-bottom: 2px solid var(--color-accent); }
+table.list td.grip { width: 22px; padding: 0; }
+.grip-btn { width: 22px; height: 22px; border: 0; background: none; color: var(--color-muted); cursor: grab; opacity: 0; border-radius: var(--radius-xs); }
+tr.item:hover .grip-btn, .grip-btn:focus-visible { opacity: 1; }
+.grip-btn:focus-visible { outline: 2px solid var(--color-accent); }
+tr.item[draggable] { cursor: grab; }
+tr.item.dragging { opacity: .4; }
+tr.item.drop-before td { box-shadow: inset 0 2px 0 var(--color-accent); }
+tr.item.flash td { animation: flash 1.8s ease-out; }
+@keyframes flash { 0%, 30% { background: color-mix(in srgb, var(--color-warn) 22%, transparent); } 100% { background: transparent; } }
+tr.sec td { height: 40px; padding: 0 var(--space-2); background: var(--color-surface-2); border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
+tr.sec.backlog td { background: color-mix(in srgb, var(--color-accent-soft) 70%, var(--color-surface)); }
+tr.sec.over-drop td { box-shadow: inset 0 0 0 2px var(--color-accent); }
+.sec-h { display: flex; gap: var(--space-2); align-items: center; }
+.sec-h b { font-size: var(--text-md); font-weight: var(--weight-semibold); }
+.sec-cap { display: inline-flex; gap: var(--space-2); align-items: center; font-size: var(--text-sm); white-space: nowrap; }
+.sec-cap .cap { width: 120px; }
+.sec-cap .over { color: var(--color-danger); font-weight: var(--weight-semibold); }
+tr.empty td { height: 52px; text-align: center; color: var(--color-muted); font-size: var(--text-sm); border: 1px dashed var(--color-border); }
+tr.empty.over-drop td { background: var(--color-accent-soft); color: var(--color-text); }
+tr.newsprint td { height: 40px; }
+</style>
+</head>
+<body>
+<div id="appbar"></div>
+<div class="toolbar">
+  <div class="seg" role="group" aria-label="Backlog level"><button type="button" aria-pressed="false" onclick="location.href='features.html?level=epics'">Epics</button><button type="button" aria-pressed="false" onclick="location.href='features.html'">Features</button><button type="button" aria-pressed="true">Stories</button></div>
+  <div class="seg" role="group" aria-label="Mode"><button type="button" aria-pressed="false" title="The plain ranked backlog" onclick="location.href='backlog.html'">List</button><button type="button" aria-pressed="true">Planning</button></div>
+  <button class="btn primary" type="button">+ New work item</button>
+  <span class="spacer"></span>
+  <label class="check"><input type="checkbox" id="optForecast" checked> Forecast</label>
+  <button class="btn" type="button">Filter</button>
+</div>
+<div class="scroll">
+  <table class="list">
+    <thead><tr><th>Forecast</th><th></th><th class="num" style="width:32px">#</th><th style="width:90px">Key</th><th>Title</th><th style="width:170px">Parent</th><th style="width:110px">State</th><th class="num" style="width:56px">Pts</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+</div>
+
+<script>
+(() => {
+  const { VELOCITY, sprints, items, committed, teamCapacity, tIcon, st, av, esc, toast } = SL;
+  document.getElementById('appbar').outerHTML = SL.appBar('backlogs');
+  const body = document.getElementById('rows');
+  const optForecast = document.getElementById('optForecast');
+  const planning = sprints.filter(s => s.status !== 'past');
+  const collapsed = new Set();
+  const nameOf = id => sprints.find(s => s.id === id)?.name ?? 'Backlog';
+
+  function forecast() {
+    // Walk unplanned items in order into each future sprint's remaining room, then later sprints at velocity.
+    const marks = new Map();
+    const buckets = planning.filter(s => s.status === 'future').map(s => { const full = teamCapacity(s) ?? VELOCITY; return { name: s.name, full, room: full - committed(s.id) }; });
+    let next = 27, b = 0, last = null;
+    for (const it of items.filter(i => !i.sprint)) {
+      while (true) {
+        if (!buckets[b]) buckets[b] = { name: 'Sprint ' + next++, full: VELOCITY, room: VELOCITY };
+        // An item bigger than a whole sprint still lands in an empty one.
+        if (it.points <= buckets[b].room || buckets[b].room === buckets[b].full) { buckets[b].room -= it.points; break; }
+        if (last) marks.set(last, buckets[b].name);
+        last = null; b++;
+      }
+      last = it.key;
+    }
+    if (last) marks.set(last, buckets[b].name);
+    return marks;
+  }
+
+  const row = (it, i, mark) => `<tr class="item${mark ? ' fc-line' : ''}" draggable="true" data-key="${it.key}" data-sec="${it.sprint ?? ''}">
+    <td class="fc">${mark ? '→ ' + mark : ''}</td>
+    <td class="grip"><button class="grip-btn" type="button" aria-label="Move ${it.key} (Alt+↑/↓)">⠿</button></td>
+    <td class="num muted sm">${i + 1}</td><td class="key">${it.key}</td>
+    <td><div class="title-cell">${tIcon(it.type)}<span class="t">${esc(it.title)}</span></div></td>
+    <td><span class="parent">${tIcon('feature')}${esc(it.parent)}</span></td>
+    <td>${st(it.state)}</td><td class="pts">${it.points}</td></tr>`;
+
+  const toggle = (id, label) => `<button class="ib" type="button" data-toggle="${id}" aria-expanded="${!collapsed.has(id)}" aria-label="Collapse ${label}">${collapsed.has(id) ? '▶' : '▼'}</button>`;
+
+  function render(focusKey) {
+    const marks = optForecast.checked ? forecast() : new Map();
+    let html = '';
+    for (const s of planning) {
+      const rows = items.filter(i => i.sprint === s.id), c = committed(s.id), tc = teamCapacity(s), cap = tc ?? VELOCITY, over = c > cap;
+      html += `<tr class="sec" data-sec="${s.id}"><td colspan="8"><div class="sec-h">
+        ${toggle(s.id, s.name)}<b>${s.name}</b>${s.status === 'current' ? '<span class="chip accent">Current</span>' : ''}
+        <span class="sm muted">${s.start} – ${s.end} · ${rows.length} items</span><span class="spacer"></span>
+        <span class="sec-cap"><span class="cap ${over ? 'over' : tc == null ? 'velocity' : ''}"><i style="width:${Math.min(100, c / cap * 100)}%"></i></span>
+          <span><b>${c}</b> / ${cap} pts</span>${tc == null ? '<span class="chip warn" title="Nobody has entered capacity for this sprint yet">velocity</span>' : ''}
+          ${over ? `<span class="over">+${c - cap} over</span>` : `<span class="muted">${cap - c} free</span>`}</span>
+        <a class="btn ghost" href="${s.status === 'current' ? 'sprint-backlog.html' : 'capacity.html'}">${s.status === 'current' ? 'Open sprint' : 'Capacity'}</a></div></td></tr>`;
+      if (collapsed.has(s.id)) continue;
+      if (!rows.length) html += `<tr class="empty" data-sec="${s.id}"><td colspan="8">Drag stories or bugs here to plan ${s.name}</td></tr>`;
+      rows.forEach((it, i) => { html += row(it, i, null); });
+    }
+    html += `<tr class="newsprint"><td colspan="8"><a class="btn ghost" href="sprints.html">+ Create sprint</a></td></tr>`;
+    const bl = items.filter(i => !i.sprint), blPts = bl.reduce((a, i) => a + i.points, 0);
+    html += `<tr class="sec backlog" data-sec=""><td colspan="8"><div class="sec-h">
+      ${toggle('', 'Backlog')}<b>Backlog</b><span class="sm muted">${bl.length} items · ${blPts} pts</span><span class="spacer"></span>
+      ${optForecast.checked ? `<span class="sm">Forecast at velocity <b>${VELOCITY}</b> <span class="muted">(average of last 3 sprints: 20 · 22 · 21)</span></span><button class="btn" type="button">Override</button>` : ''}
+    </div></td></tr>`;
+    if (!collapsed.has('')) bl.forEach((it, i) => { html += row(it, i, marks.get(it.key)); });
+    body.innerHTML = html;
+    if (focusKey) body.querySelector(`[data-key="${focusKey}"] .grip-btn`)?.focus();
+  }
+
+  function move(it, toSprint, beforeKey, afterKey) {
+    const from = it.sprint;
+    it.sprint = toSprint;
+    if (beforeKey || afterKey) {
+      items.splice(items.indexOf(it), 1);
+      const at = items.findIndex(i => i.key === (beforeKey || afterKey));
+      items.splice(beforeKey ? at : at + 1, 0, it);
+    }
+    return from;
+  }
+  const announce = (it, from) => toast(it.sprint === from ? `${it.key} reordered` : `${it.key} → ${nameOf(it.sprint)}`);
+
+  body.addEventListener('click', e => {
+    const t = e.target.closest('[data-toggle]'); if (!t) return;
+    const id = t.dataset.toggle; collapsed.has(id) ? collapsed.delete(id) : collapsed.add(id); render();
+  });
+
+  // Drag and drop
+  let dragKey = null;
+  const clearDrop = () => body.querySelectorAll('.drop-before, .over-drop').forEach(el => el.classList.remove('drop-before', 'over-drop'));
+  body.addEventListener('dragstart', e => { const tr = e.target.closest('tr.item'); if (!tr) return; dragKey = tr.dataset.key; tr.classList.add('dragging'); e.dataTransfer.setData('text/plain', dragKey); e.dataTransfer.effectAllowed = 'move'; });
+  body.addEventListener('dragend', () => { dragKey = null; body.querySelectorAll('.dragging').forEach(el => el.classList.remove('dragging')); clearDrop(); });
+  body.addEventListener('dragover', e => {
+    const tr = e.target.closest('tr.item, tr.sec, tr.empty'); if (!tr || !dragKey) return;
+    e.preventDefault(); clearDrop(); tr.classList.add(tr.classList.contains('item') ? 'drop-before' : 'over-drop');
+  });
+  body.addEventListener('drop', e => {
+    const tr = e.target.closest('tr.item, tr.sec, tr.empty'); if (!tr || !dragKey) return; e.preventDefault();
+    const it = items.find(i => i.key === dragKey);
+    const onRow = tr.classList.contains('item') && tr.dataset.key !== it.key;
+    const from = move(it, tr.dataset.sec || null, onRow ? tr.dataset.key : null, null);
+    render(); announce(it, from);
+  });
+
+  // Keyboard: Alt+↑/↓ on a grip moves past the neighbouring row, crossing into the next section at the ends.
+  body.addEventListener('keydown', e => {
+    if (!e.altKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') || !e.target.closest('.grip-btn')) return;
+    e.preventDefault();
+    const tr = e.target.closest('tr.item'), it = items.find(i => i.key === tr.dataset.key);
+    const rows = [...body.querySelectorAll('tr.item, tr.sec, tr.empty')];
+    const idx = rows.indexOf(tr), up = e.key === 'ArrowUp';
+    const n = rows[idx + (up ? -1 : 1)]; if (!n) return;
+    let from;
+    if (n.classList.contains('item')) from = move(it, n.dataset.sec || null, up ? n.dataset.key : null, up ? null : n.dataset.key);
+    else if (up) { // above a section header: join the end of the previous section
+      const prev = rows.slice(0, rows.indexOf(n)).reverse().find(r => r.classList.contains('item') || r.classList.contains('sec') || r.classList.contains('empty'));
+      if (!prev) return;
+      from = prev.classList.contains('item') ? move(it, prev.dataset.sec || null, null, prev.dataset.key) : move(it, prev.dataset.sec || null);
+    } else { // below a section header: join the top of the next section
+      const nx = rows[rows.indexOf(n) + 1];
+      from = nx?.classList.contains('item') ? move(it, nx.dataset.sec || null, nx.dataset.key, null) : move(it, n.dataset.sec || null);
+    }
+    render(it.key); announce(it, from);
+  });
+
+  optForecast.onchange = () => render();
+  render();
+
+  SL.preview([
+    { label: 'Simulate teammate move', run: () => {
+      const it = items.find(i => i.key === 'SHIP-158'); it.sprint = 's25'; render();
+      body.querySelector('[data-key="SHIP-158"]')?.classList.add('flash');
+      toast(`${av('mei')} Mei Lin moved SHIP-158 to Sprint 25`);
+    } },
+  ]);
+})();
+</script>
+</body>
+</html>

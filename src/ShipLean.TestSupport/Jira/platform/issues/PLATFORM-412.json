@@ -1,0 +1,147 @@
+{
+  "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+  "id": "10412",
+  "self": "{{base}}/rest/api/{{v}}/issue/10412",
+  "key": "PLATFORM-412",
+  "fields": {
+    "summary": "Migrate the audit log to Postgres",
+    "issuetype": {
+      "id": "10001",
+      "name": "Story",
+      "subtask": false
+    },
+    "status": {
+      "id": "3",
+      "name": "In Progress",
+      "statusCategory": {
+        "key": "indeterminate",
+        "name": "In Progress"
+      }
+    },
+    "priority": {
+      "name": "High"
+    },
+    "description": {
+      "type": "doc",
+      "version": 1,
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "The audit log moves off the document store."
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Dana owns the cut-over plan."
+            }
+          ]
+        }
+      ]
+    },
+    "assignee": {
+      "accountId": "712020:0c4f9d3e-8b27-41aa-b6f5-7e2d19c8a340",
+      "displayName": "Dana Whitfield",
+      "active": true,
+      "self": "{{base}}/rest/api/{{v}}/user?accountId=712020:0c4f9d3e-8b27-41aa-b6f5-7e2d19c8a340"
+    },
+    "reporter": {
+      "accountId": "5b10a2844c20165700ede21g",
+      "displayName": "Priya Shah",
+      "emailAddress": "priya.shah@acme.io",
+      "active": true,
+      "self": "{{base}}/rest/api/{{v}}/user?accountId=5b10a2844c20165700ede21g"
+    },
+    "labels": [
+      "migration",
+      "audit"
+    ],
+    "components": [
+      {
+        "name": "Audit"
+      }
+    ],
+    "created": "2026-09-25T10:00:00.000+0000",
+    "updated": "2026-10-23T11:00:00.000+0000",
+    "customfield_10016": 5,
+    "customfield_10020": [
+      {
+        "id": 112,
+        "name": "Platform Sprint 12",
+        "state": "active",
+        "startDate": "2026-09-28T01:00:00.000Z",
+        "endDate": "2026-10-26T10:00:00.000Z",
+        "goal": "Show relevance scores in the admin console"
+      }
+    ],
+    "parent": null,
+    "issuelinks": [
+      {
+        "id": "20412",
+        "type": {
+          "name": "Relates",
+          "inward": "relates to",
+          "outward": "relates to"
+        },
+        "outwardIssue": {
+          "key": "PLATFORM-407"
+        }
+      }
+    ],
+    "attachment": []
+  },
+  "changelog": {
+    "startAt": 0,
+    "maxResults": 2,
+    "total": 2,
+    "histories": [
+      {
+        "id": "1",
+        "author": {
+          "accountId": "5b10a2844c20165700ede21g",
+          "displayName": "Priya Shah",
+          "emailAddress": "priya.shah@acme.io",
+          "active": true,
+          "self": "{{base}}/rest/api/{{v}}/user?accountId=5b10a2844c20165700ede21g"
+        },
+        "created": "2026-09-25T10:05:00.000+0000",
+        "items": [
+          {
+            "field": "assignee",
+            "fieldtype": "jira",
+            "from": null,
+            "fromString": null,
+            "to": null,
+            "toString": "Dana Whitfield"
+          }
+        ]
+      },
+      {
+        "id": "2",
+        "author": {
+          "accountId": "712020:0c4f9d3e-8b27-41aa-b6f5-7e2d19c8a340",
+          "displayName": "Dana Whitfield",
+          "active": true,
+          "self": "{{base}}/rest/api/{{v}}/user?accountId=712020:0c4f9d3e-8b27-41aa-b6f5-7e2d19c8a340"
+        },
+        "created": "2026-10-12T09:00:00.000+0000",
+        "items": [
+          {
+            "field": "status",
+            "fieldtype": "jira",
+            "from": null,
+            "fromString": "Backlog",
+            "to": null,
+            "toString": "In Progress"
+          }
+        ]
+      }
+    ]
+  }
+}

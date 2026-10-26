@@ -1,0 +1,8 @@
+{
+  "match": "all",
+  "clauses": [
+    { "field": "title", "op": "contains", "value": "checkout" },
+    { "field": "tags", "op": "notContains", "value": "Tech debt" },
+    { "field": "originalSystemId", "op": "contains", "value": "PLATFORM-" }
+  ]
+}

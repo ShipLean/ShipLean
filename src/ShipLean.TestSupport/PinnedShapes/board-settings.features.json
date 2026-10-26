@@ -1,0 +1,93 @@
+{
+  "columns": [
+    {
+      "id": "col-new",
+      "name": "New",
+      "wipLimit": null,
+      "split": false,
+      "definitionOfDone": "- Problem and the outcome we want, in one paragraph\n- Linked to an **Epic**",
+      "stateMappings": [
+        { "type": "feature", "stateId": "00000003-0000-4000-8001-000000000201" }
+      ]
+    },
+    {
+      "id": "col-shaping",
+      "name": "Shaping",
+      "wipLimit": null,
+      "split": false,
+      "definitionOfDone": "- Stories split out and estimated\n- Fits in about three sprints\n- Open questions listed on the item",
+      "stateMappings": [
+        { "type": "feature", "stateId": "00000003-0000-4000-8001-000000000201" }
+      ]
+    },
+    {
+      "id": "col-in-progress",
+      "name": "In progress",
+      "wipLimit": 3,
+      "split": false,
+      "definitionOfDone": "- Stories are being pulled into sprints\n- Behind a feature flag",
+      "stateMappings": [
+        { "type": "feature", "stateId": "00000003-0000-4000-8001-000000000202" }
+      ]
+    },
+    {
+      "id": "col-releasing",
+      "name": "Releasing",
+      "wipLimit": 2,
+      "split": false,
+      "definitionOfDone": "- Every story and bug closed\n- Rolling out behind its flag",
+      "stateMappings": [
+        { "type": "feature", "stateId": "00000003-0000-4000-8001-000000000203" }
+      ]
+    },
+    {
+      "id": "col-done",
+      "name": "Done",
+      "wipLimit": null,
+      "split": false,
+      "definitionOfDone": "- Flag on for everyone\n- Outcome measured and noted on the item",
+      "stateMappings": [
+        { "type": "feature", "stateId": "00000003-0000-4000-8001-000000000204" }
+      ]
+    }
+  ],
+  "swimlanes": [
+    {
+      "id": "lane-default",
+      "name": "Default lane",
+      "colour": null,
+      "kind": "default",
+      "criteria": null
+    }
+  ],
+  "cardFields": [
+    { "type": "feature", "showKey": true, "showAssignee": true, "showTags": true, "showPoints": true, "showEmptyFields": false, "extraFields": ["parent"] }
+  ],
+  "styleRules": [
+    {
+      "id": "rule-blocked",
+      "name": "Blocked",
+      "enabled": true,
+      "colour": "danger",
+      "bold": false,
+      "italic": false,
+      "underline": false,
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          { "field": "tags", "op": "contains", "value": "Blocked" }
+        ]
+      }
+    }
+  ],
+  "tagColours": [
+    { "tag": "Payments", "colour": "accent" },
+    { "tag": "Mobile", "colour": "info" },
+    { "tag": "Feedback Ticket", "colour": "warn" },
+    { "tag": "Tech debt", "colour": "muted" },
+    { "tag": "Security", "colour": "ok" },
+    { "tag": "Blocked", "colour": "danger" }
+  ],
+  "annotations": { "tasks": false, "stories": true, "bugs": true, "features": true },
+  "cardReordering": "changesBacklogOrder"
+}

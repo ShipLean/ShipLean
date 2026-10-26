@@ -1,0 +1,113 @@
+{
+  "id": "00000005-0000-4000-8001-000000000153",
+  "projectId": "00000002-0000-4000-8000-000000000001",
+  "key": "SHIP-153",
+  "number": 153,
+  "type": {
+    "id": "bug",
+    "name": "Bug"
+  },
+  "title": "Crash when biometric prompt is cancelled",
+  "description": "The app closes when someone cancels the Face ID prompt during passkey sign-in. iOS only; Android handles the cancel and returns to the sign-in screen.",
+  "descriptionHtml": "<p>The app closes when someone cancels the Face ID prompt during passkey sign-in. iOS only; Android handles the cancel and returns to the sign-in screen.</p>\n",
+  "acceptanceCriteria": [],
+  "reproSteps": "1. Sign in with a passkey on iOS 18.1\n2. Lock and unlock the app so the biometric prompt shows\n3. Tap **Cancel** on the Face ID prompt\n\n**Expected:** back to the sign-in screen with the password option.\n**Actual:** the app closes. Crash log attached (app 4.12.0, build 881).",
+  "reproStepsHtml": "<ol>\n<li>Sign in with a passkey on iOS 18.1</li>\n<li>Lock and unlock the app so the biometric prompt shows</li>\n<li>Tap <strong>Cancel</strong> on the Face ID prompt</li>\n</ol>\n<p><strong>Expected:</strong> back to the sign-in screen with the password option.\n<strong>Actual:</strong> the app closes. Crash log attached (app 4.12.0, build 881).</p>\n",
+  "severity": 2,
+  "state": {
+    "id": "00000003-0000-4000-8001-000000000402",
+    "name": "Triaged",
+    "category": "proposed"
+  },
+  "assignee": null,
+  "createdBy": {
+    "id": "00000001-0000-4000-8000-000000000005",
+    "name": "Sam Rivera",
+    "initials": "SR",
+    "avatarColour": "#c9611a",
+    "photoUrl": null
+  },
+  "changedBy": {
+    "id": "00000001-0000-4000-8000-000000000006",
+    "name": "Ana Costa",
+    "initials": "AC",
+    "avatarColour": "#b83d7a",
+    "photoUrl": null
+  },
+  "sprint": {
+    "id": "00000004-0000-4000-8001-000000000025",
+    "name": "Sprint 25",
+    "status": "future"
+  },
+  "priority": 1,
+  "points": 3,
+  "parent": {
+    "id": "00000005-0000-4000-8001-000000000102",
+    "key": "SHIP-102",
+    "type": {
+      "id": "feature",
+      "name": "Feature"
+    },
+    "title": "Passkey sign-in"
+  },
+  "tags": [
+    "Crash",
+    "iOS"
+  ],
+  "position": {
+    "columnId": "col-ready",
+    "done": false,
+    "laneId": "lane-expedite",
+    "columnOrder": "00000001"
+  },
+  "backlogOrder": "00000004",
+  "links": [
+    {
+      "id": "00000008-0000-4000-8001-000000000011",
+      "type": "related",
+      "workItemId": "00000005-0000-4000-8001-000000000129",
+      "key": "SHIP-129",
+      "title": "Remember this device",
+      "url": null,
+      "card": null,
+      "autoLinked": null
+    },
+    {
+      "id": "00000008-0000-4000-8001-000000000012",
+      "type": "duplicate",
+      "workItemId": "00000005-0000-4000-8001-000000000161",
+      "key": "SHIP-161",
+      "title": "App closes on Face ID cancel",
+      "url": null,
+      "card": null,
+      "autoLinked": null
+    },
+    {
+      "id": "00000008-0000-4000-8001-000000000013",
+      "type": "url",
+      "workItemId": null,
+      "key": null,
+      "title": "Crash report 881-4471",
+      "url": "https://crash.example.com/ios/881-4471",
+      "card": null,
+      "autoLinked": null
+    }
+  ],
+  "children": [],
+  "originalSystem": {
+    "system": "jira",
+    "id": "PLATFORM-412",
+    "url": "https://jira.example.com/browse/PLATFORM-412"
+  },
+  "revision": 4,
+  "createdAt": "2026-09-28T17:45:00+00:00",
+  "createdAtLabel": "28 Sep",
+  "changedAt": "2026-10-22T14:05:00+00:00",
+  "changedAtLabel": "22 Oct",
+  "goal": "",
+  "statusLine": "",
+  "statusVerified": null,
+  "slug": null,
+  "startedOn": null,
+  "startedLabel": null
+}

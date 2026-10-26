@@ -1,0 +1,14 @@
+{
+  "general": { "name": "Storefront", "description": "The customer-facing storefront.", "workingDays": [1, 2, 3, 4, 5] },
+  "members": [
+    { "email": "joel@shiplean.local", "role": "admin" },
+    { "email": "priya@shiplean.local", "role": "member" }
+  ],
+  "sprints": { "velocityWindow": 3, "velocityOverride": null },
+  "states": {
+    "add": [{ "id": "00000003-0000-4000-8001-000000000601", "type": "bug", "name": "Triaged", "category": "proposed" }],
+    "update": [],
+    "reorder": [],
+    "remove": []
+  }
+}

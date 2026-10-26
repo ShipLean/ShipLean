@@ -1,0 +1,10 @@
+{
+  "settings": { "name": "ShipLean at Acme", "baseUrl": "https://shiplean.acme.test", "projectCreation": "admins" },
+  "projects": [
+    {
+      "id": "00000002-0000-4000-8000-000000000007", "key": "ARCH", "name": "Legacy Billing", "memberCount": 2,
+      "admins": [{ "id": "00000001-0000-4000-8000-000000000009", "name": "Lee Park", "initials": "LP", "avatarColour": "#3f7d5a", "photoUrl": null }],
+      "hasActiveAdmin": false, "itemCount": 5, "yourRole": null
+    }
+  ]
+}

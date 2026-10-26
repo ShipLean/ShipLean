@@ -1,0 +1,143 @@
+{
+  "label": "sample-semantic",
+  "queries": {
+    "sample-q01": [
+      [
+        "sample-004",
+        0.85
+      ],
+      [
+        "sample-001",
+        0.58
+      ]
+    ],
+    "sample-q02": [
+      [
+        "sample-009",
+        0.85
+      ],
+      [
+        "sample-001",
+        0.58
+      ]
+    ],
+    "sample-q03": [
+      [
+        "sample-002",
+        0.85
+      ],
+      [
+        "sample-001",
+        0.58
+      ]
+    ],
+    "sample-q04": [
+      [
+        "sample-002",
+        0.85
+      ],
+      [
+        "sample-001",
+        0.58
+      ]
+    ],
+    "sample-q05": [
+      [
+        "sample-007",
+        0.85
+      ],
+      [
+        "sample-001",
+        0.58
+      ]
+    ],
+    "sample-q06": [
+      [
+        "sample-008",
+        0.85
+      ],
+      [
+        "sample-009",
+        0.82
+      ],
+      [
+        "sample-001",
+        0.58
+      ]
+    ],
+    "sample-q07": [
+      [
+        "sample-011",
+        0.85
+      ],
+      [
+        "sample-001",
+        0.58
+      ]
+    ],
+    "sample-q08": [
+      [
+        "sample-004",
+        0.85
+      ],
+      [
+        "sample-001",
+        0.58
+      ]
+    ],
+    "sample-q09": [
+      [
+        "sample-015",
+        0.85
+      ],
+      [
+        "sample-001",
+        0.58
+      ]
+    ],
+    "sample-q10": [
+      [
+        "sample-014",
+        0.85
+      ],
+      [
+        "sample-001",
+        0.58
+      ]
+    ],
+    "sample-q11": [
+      [
+        "sample-019",
+        0.85
+      ],
+      [
+        "sample-001",
+        0.58
+      ]
+    ],
+    "sample-q12": [
+      [
+        "sample-020",
+        0.85
+      ],
+      [
+        "sample-001",
+        0.58
+      ]
+    ]
+  },
+  "latencyMs": {
+    "sample-q01": 0,
+    "sample-q02": 0,
+    "sample-q03": 0,
+    "sample-q04": 0,
+    "sample-q05": 0,
+    "sample-q06": 0,
+    "sample-q07": 0,
+    "sample-q08": 0,
+    "sample-q09": 0,
+    "sample-q10": 0,
+    "sample-q11": 0,
+    "sample-q12": 0
+  }
+}

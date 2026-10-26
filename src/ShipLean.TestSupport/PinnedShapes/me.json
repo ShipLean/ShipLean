@@ -1,0 +1,28 @@
+{
+  "me": {
+    "id": "0199f000-0000-7000-8000-000000000001",
+    "name": "Joel Dickson",
+    "email": "joel@shiplean.local",
+    "initials": "JD",
+    "avatarColour": "#5b6b8c",
+    "photoUrl": null,
+    "isInstanceAdmin": true,
+    "status": "active",
+    "hasProjects": true,
+    "canCreateProjects": true,
+    "theme": "os",
+    "density": "compact"
+  },
+  "users": [
+    { "id": "00000001-0000-4000-8000-000000000002", "name": "Priya Shah", "email": "priya@shiplean.local", "initials": "PS", "avatarColour": "#2f7fd8", "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1", "isInstanceAdmin": false, "status": "active" },
+    { "id": "00000001-0000-4000-8000-000000000007", "name": "Ravi Menon", "email": "ravi@shiplean.local", "initials": "RM", "avatarColour": "#5a5fc9", "photoUrl": null, "isInstanceAdmin": false, "status": "oneTimePassword" },
+    { "id": "00000001-0000-4000-8000-000000000010", "name": "Jo Becker", "email": "jo@shiplean.local", "initials": "JB", "avatarColour": "#a3416b", "photoUrl": null, "isInstanceAdmin": false, "status": "locked" },
+    { "id": "00000001-0000-4000-8000-000000000008", "name": "Dana Whitfield", "email": "dana@shiplean.local", "initials": "DW", "avatarColour": "#8a5a2b", "photoUrl": null, "isInstanceAdmin": false, "status": "noPassword" },
+    { "id": "00000001-0000-4000-8000-000000000009", "name": "Lee Park", "email": "lee@shiplean.local", "initials": "LP", "avatarColour": "#3f7d5a", "photoUrl": null, "isInstanceAdmin": false, "status": "disabled" }
+  ],
+  "preferences": [
+    { "key": "theme", "json": "dark" },
+    { "key": "density", "json": "comfortable" },
+    { "key": "recentProjects", "json": ["00000002-0000-4000-8000-000000000001", "00000002-0000-4000-8000-000000000003"] }
+  ]
+}
