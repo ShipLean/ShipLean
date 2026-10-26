@@ -209,7 +209,9 @@ jobs:
       - run: pnpm install --frozen-lockfile && pnpm run build
         working-directory: src/ShipLean.Client
       - run: dotnet build src/ShipLean.AcceptanceTests --configuration Release
-      - run: pwsh src/ShipLean.AcceptanceTests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+      # No --with-deps: the runner image already has Chromium's libraries, and the extra apt packages (fonts, xvfb)
+      # sometimes took over 10 minutes from a slow Ubuntu mirror. These tests are headless and take no screenshots.
+      - run: pwsh src/ShipLean.AcceptanceTests/bin/Release/net10.0/playwright.ps1 install chromium
       - name: dotnet test (${{ matrix.shards }})
         env:
           SHARDS: ${{ matrix.shards }}
