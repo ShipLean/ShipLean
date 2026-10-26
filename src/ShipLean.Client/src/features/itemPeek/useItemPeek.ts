@@ -15,6 +15,8 @@ export interface ItemPeek {
 interface PeekState {
   itemPeek: true;
   itemPeekDepth: number;
+  // The page under the modal already had `item` in its address (a shared link), so Back would land on a modal.
+  itemPeekLanded: boolean;
 }
 
 const peekDepth = (state: unknown): number => {
@@ -22,12 +24,16 @@ const peekDepth = (state: unknown): number => {
   return mark?.itemPeek === true && typeof mark.itemPeekDepth === 'number' ? mark.itemPeekDepth : 0;
 };
 
+const peekLanded = (state: unknown): boolean =>
+  (state as Partial<PeekState> | null)?.itemPeekLanded === true;
+
 export function useItemPeek(): ItemPeek {
   const { pathname, search, state } = useLocation();
   const navigate = useNavigate();
   const raw = new URLSearchParams(search).get('item');
   const itemKey = raw === null || raw === '' ? undefined : raw;
   const depth = peekDepth(state);
+  const landed = peekLanded(state);
 
   const open = useCallback(
     (key: string) => {
@@ -35,14 +41,18 @@ export function useItemPeek(): ItemPeek {
       if (query.get('item') === key) return;
       const was = query.has('item') ? depth : 0;
       query.set('item', key);
-      const next: PeekState = { itemPeek: true, itemPeekDepth: was + 1 };
+      const next: PeekState = {
+        itemPeek: true,
+        itemPeekDepth: was + 1,
+        itemPeekLanded: query.has('item') ? depth === 0 || landed : false,
+      };
       void navigate({ pathname, search: `?${query.toString()}` }, { state: next });
     },
-    [navigate, pathname, search, depth],
+    [navigate, pathname, search, depth, landed],
   );
 
   const close = useCallback(() => {
-    if (depth > 0) {
+    if (depth > 0 && !landed) {
       void navigate(-depth);
       return;
     }
@@ -50,7 +60,7 @@ export function useItemPeek(): ItemPeek {
     query.delete('item');
     const rest = query.toString();
     void navigate({ pathname, search: rest === '' ? '' : `?${rest}` }, { replace: true });
-  }, [navigate, pathname, search, depth]);
+  }, [navigate, pathname, search, depth, landed]);
 
   return { itemKey, open, close };
 }
