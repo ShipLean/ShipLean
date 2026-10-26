@@ -30,6 +30,27 @@ describe('mapSearchView', () => {
     ]);
   });
 
+  it('mapSearchView_WhenSprintsFromTwoProjects_ShouldPutTheCurrentProjectFirst', () => {
+    const [sprint] = view.sprints;
+    const pay = {
+      ...sprint,
+      url: '/p/PAY/sprints/pay-1/taskboard',
+      projectKey: 'PAY',
+      status: 'ended',
+    };
+    const ship = { ...sprint, projectKey: 'SHIP', status: 'current' };
+    const dto = { ...view, sprints: [pay, ship] } as SearchViewDto;
+    const group = mapSearchView(dto, { ...context, currentKey: 'SHIP' }).groups.find(
+      (g) => g.id === 'sprints',
+    );
+    expect(group?.rows[0]).toMatchObject({
+      id: ship.url,
+      current: true,
+      datesLabel: sprint.datesLabel,
+    });
+    expect(group?.rows[1]).toMatchObject({ id: pay.url, current: false });
+  });
+
   it('mapSearchView_WhenMatchedInACommentOrAttachment_ShouldSayWhere', () => {
     const rows = items(view, undefined);
     expect(rows.find((r) => r.id === 'SHIP-31')).toMatchObject({

@@ -55,6 +55,7 @@ test('SearchResults_WhenTypingFast_ShouldSendOneRequest', async ({ mount, page }
   await page.getByTestId(ids.input).pressSequentially('export', { delay: 20 });
   await expect(page.getByTestId(ids.list)).toContainText('Export a board to CSV');
   expect(urls).toHaveLength(1);
+  expect(urls.map((u) => new URL(u).searchParams.get('q'))).toEqual(['export']);
 });
 
 test('SearchResults_WhenAnOlderAnswerArrivesLate_ShouldKeepTheNewerResults', async ({
@@ -65,6 +66,12 @@ test('SearchResults_WhenAnOlderAnswerArrivesLate_ShouldKeepTheNewerResults', asy
   let release: () => void = () => undefined;
   const held = new Promise<void>((resolve) => (release = resolve));
   let calls = 0;
+  const isExp = (request: { url(): string }) =>
+    new URL(request.url()).searchParams.get('q') === 'exp';
+  const firstEnded = Promise.race([
+    page.waitForEvent('requestfinished', isExp),
+    page.waitForEvent('requestfailed', isExp),
+  ]);
   await page.route('**/api/search*', async (r) => {
     const q = new URL(r.request().url()).searchParams.get('q') ?? '';
     calls += 1;
@@ -86,7 +93,7 @@ test('SearchResults_WhenAnOlderAnswerArrivesLate_ShouldKeepTheNewerResults', asy
   await page.getByTestId(ids.input).fill('export');
   await expect(page.getByTestId(ids.list)).toContainText('Export a board to CSV');
   release();
-  await page.waitForTimeout(300);
+  await firstEnded;
   // Fails when the late answer replaces the newer one: PAY-5 would show.
   await expect(page.locator(`[data-testid="${ids.option}"][data-key="PAY-5"]`)).toHaveCount(0);
   await expect(page.locator(`[data-testid="${ids.option}"][data-key="SHIP-12"]`)).toHaveCount(1);
@@ -106,6 +113,7 @@ test('SearchResults_WhenSearching_ShouldKeepThePreviousResultsDimmed', async ({ 
   await page.getByTestId(ids.input).fill('export');
   await expect(page.getByTestId(ids.list)).toContainText('Export a board to CSV');
   await page.getByTestId(ids.input).fill('exports');
+  await expect.poll(() => calls).toBe(2);
   await expect(page.getByTestId(ids.loading)).toBeVisible();
   // Fails when the results are cleared while the next query runs.
   await expect(page.getByTestId(ids.list)).toContainText('Export a board to CSV');
@@ -151,7 +159,7 @@ test('SearchResults_WhenSprintPicked_ShouldNavigateToItsTaskboard', async ({ mou
   await stubSearch(page);
   await mount(<SearchSourceHarness />, route);
   await page.getByTestId(ids.input).fill('export');
-  await page.getByText('Sprint 24').click();
+  await page.locator(`[data-testid="${ids.option}"][data-id="${fixture.sprints[0].url}"]`).click();
   await expect(page.getByTestId(harness.location)).toHaveText(
     '/p/SHIP/sprints/00000004-0000-4000-8001-000000000019/taskboard',
   );
