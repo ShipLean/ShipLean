@@ -23,41 +23,44 @@ export function EpicField({
 }) {
   return (
     <FieldCell label="Epic" field="parent" changed={changed} className="max-w-[420px] shrink">
-      <div className="flex items-center gap-2">
-        <FieldMenu
-          buttonTestId={ids.stripEpic}
-          buttonLabel="Epic"
-          button={
-            value ? (
-              <>
-                <TypeIcon type={value.type.id} />
-                <span className="truncate">{value.title}</span>
-              </>
-            ) : (
-              <span className="text-ink-muted">No epic</span>
-            )
-          }
-        >
-          {(close) => (
-            <ParentCandidates
-              projectId={projectId}
-              itemId={itemId}
-              types={parentTypesOf('feature')}
-              value={value}
-              onPick={(parent) => {
-                onChange(parent);
-                close();
-              }}
-            />
-          )}
-        </FieldMenu>
+      <div className="flex min-w-0 items-center gap-2">
+        <div className="min-w-0 [&>span]:max-w-full [&_button]:max-w-full">
+          <FieldMenu
+            buttonTestId={ids.stripEpic}
+            buttonLabel="Epic"
+            button={
+              value ? (
+                <>
+                  <TypeIcon type={value.type.id} />
+                  <span className="truncate">{value.title}</span>
+                </>
+              ) : (
+                <span className="text-ink-muted">No epic</span>
+              )
+            }
+          >
+            {(close) => (
+              <ParentCandidates
+                projectId={projectId}
+                itemId={itemId}
+                types={parentTypesOf('feature')}
+                value={value}
+                onPick={(parent) => {
+                  onChange(parent);
+                  close();
+                }}
+              />
+            )}
+          </FieldMenu>
+        </div>
         {value ? (
           <ItemLink
             testId={ids.epicOpen}
             itemKey={value.key}
             title="Open epic"
-            className="text-[length:var(--text-xs)] text-signal hover:underline"
+            className="shrink-0 text-[length:var(--text-xs)] text-signal hover:underline"
           >
+            <span className="sr-only">Open epic </span>
             {value.key}
           </ItemLink>
         ) : null}

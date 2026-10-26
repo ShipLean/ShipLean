@@ -17,14 +17,19 @@ public class FeaturePeekTests : SeededAcceptanceTest
         var strip = new FeatureStripPanel(Page);
         var peek = new ItemPeekDialog(Page);
         await screen.OpenAsync("SHIP", "SHIP-101");
-        var link = strip.ChildTitles.First;
-        var key = await link.GetAttributeAsync("data-item-key");
-        key.ShouldNotBeNull();
+        const string key = "SHIP-141";
+        var link = strip.ChildTitles.And(Page.Locator($"[data-item-key='{key}']"));
 
         await link.ClickAsync();
 
         await peek.WaitOpenAsync(key);
         await Expect(Page).ToHaveURLAsync(new Regex($@"/p/SHIP/items/SHIP-101\?item={key}$"));
+        await Expect(strip.Slug).ToBeAttachedAsync();
+
+        await Page.GoBackAsync();
+
+        await peek.WaitClosedAsync();
+        await Expect(Page).ToHaveURLAsync(new Regex(@"/p/SHIP/items/SHIP-101$"));
         await Expect(strip.Slug).ToBeAttachedAsync();
     }
 }
