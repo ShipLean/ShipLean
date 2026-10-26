@@ -61,7 +61,9 @@ public class QuickSearchJourneyTests : SeededAcceptanceTest
         var peek = new ItemPeekDialog(Page);
         var board = Links.Board("SHIP", "stories");
         await new ShellFrame(Page).OpenAsync(board);
-        await search.OpenWithShortcutAsync();
+        // Opened with the side-menu button, so a control has focus to give back. Opened with the shortcut from a bare
+        // page, focus returns to the body, which is where it came from.
+        await search.OpenWithButtonAsync();
 
         await search.TypeAsync(SeedWord);
         await search.PickAsync("item", PasskeyItem);
@@ -155,8 +157,10 @@ public class QuickSearchJourneyTests : SeededAcceptanceTest
         await peek.Close.ClickAsync();
         await peek.WaitClosedAsync();
         await search.OpenWithShortcutAsync();
+        // Quick search keeps the last query while closed, so clear it to see the recent items.
+        await search.Input.ClearAsync();
 
-        var rows = search.Options.Filter(new() { HasText = "SHIP-141" });
+        var rows = search.Option("item", "SHIP-141");
         // Catches a stale title (the entry kept as first written).
         await Expect(search.Options.First).ToContainTextAsync(newTitle);
         // Catches a duplicate row (the renamed item added beside the old entry).
