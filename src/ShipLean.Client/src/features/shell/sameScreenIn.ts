@@ -20,6 +20,10 @@ export function sameScreenIn(route: MatchedRoute | undefined, key: string): stri
     case 'workItemAttachment':
       return routePath('storiesBacklog', { key });
     default:
-      return routePath(route.id, { ...route.params, key } as RouteParams[RouteId], route.query);
+      // The open item belongs to the old project, so it is dropped.
+      return routePath(route.id, { ...route.params, key } as RouteParams[RouteId], {
+        ...route.query,
+        item: undefined,
+      });
   }
 }
