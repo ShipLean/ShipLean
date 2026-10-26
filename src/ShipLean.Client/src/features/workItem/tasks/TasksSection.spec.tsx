@@ -53,13 +53,14 @@ test('TasksSection_WhenNoTasks_ShouldSayBreakItDown', async ({ mount, page }) =>
   await expect(screen.getByTestId(ids.tasksCount)).toHaveText('0/0');
 });
 
-test('TasksSection_WhenTaskTitleOpened_ShouldGoToTheTask', async ({ mount, page }) => {
+test('TaskRow_WhenTitleClicked_ShouldOpenTaskModal', async ({ mount, page }) => {
   await stubApi(page, withTasks);
   const screen = await mount(<WorkItemDetailsHarness itemKey="SHIP-141" />, route);
 
   await screen.getByTestId(ids.taskOpen).nth(1).click();
 
-  await expect(screen.getByTestId(harness.location)).toHaveText('/p/SHIP/items/SHIP-143');
+  await expect(screen.getByTestId(harness.location)).toHaveText('/p/SHIP/items/SHIP-141');
+  await expect(screen.getByTestId(harness.search)).toHaveText('?item=SHIP-143');
 });
 
 test('TasksSection_WhenTaskAdded_ShouldCreateItUnderTheItemWithoutDirtyingTheForm', async ({

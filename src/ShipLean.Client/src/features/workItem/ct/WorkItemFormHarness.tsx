@@ -62,6 +62,7 @@ export function WorkItemFormHarness({
         refetch
       </button>
       <output data-testid={harness.location}>{location.pathname}</output>
+      <output data-testid={harness.search}>{location.search}</output>
       <ToastHost />
     </>
   );

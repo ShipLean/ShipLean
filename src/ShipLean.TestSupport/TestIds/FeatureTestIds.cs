@@ -111,4 +111,5 @@ public static class FeatureTestIds
     public const string AddLinkSubmit = "feature-add-link-submit";
     public const string AddLinkCancel = "feature-add-link-cancel";
     public const string AddLinkError = "feature-add-link-error";
+    public const string EpicOpen = "feature-epic-open";
 }

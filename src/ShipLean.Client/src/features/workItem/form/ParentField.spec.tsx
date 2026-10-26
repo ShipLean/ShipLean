@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import { story } from '../ct/fixtures';
 import { stubApi } from '../ct/stubApi';
+import { workItemHarnessIds as harness } from '../ct/harnessIds';
 import { WorkItemFormHarness } from '../ct/WorkItemFormHarness';
 import { workItemTestIds as ids } from '../testIds';
 
@@ -33,4 +34,22 @@ test('ParentField_WhenFeatureIsUnderAnEpic_ShouldShowEpicThenFeature', async ({ 
   await expect(options.nth(2)).not.toContainText('›');
   await screen.getByTestId(ids.parentSearch).fill('payments');
   await expect(options).toHaveCount(2);
+});
+
+test('ParentField_WhenOpenClicked_ShouldOpenParentModal', async ({ mount, page }) => {
+  await stubApi(page, { ...story, parent: epic });
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-141" />, route);
+
+  await screen.getByTestId(ids.parentOpen).click();
+
+  await expect(screen.getByTestId(harness.location)).toHaveText('/p/SHIP/items/SHIP-141');
+  await expect(screen.getByTestId(harness.search)).toHaveText('?item=SHIP-100');
+});
+
+test('ParentField_WhenNoParent_ShouldNotOfferOpen', async ({ mount, page }) => {
+  await stubApi(page, story);
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-141" />, route);
+
+  await expect(screen.getByTestId(ids.parentButton)).toBeVisible();
+  await expect(screen.getByTestId(ids.parentOpen)).toHaveCount(0);
 });

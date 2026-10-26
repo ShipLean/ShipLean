@@ -1,8 +1,7 @@
-import { Link } from 'react-router-dom';
 import type { ChildSummaryDto } from '../../../api/workItems';
 import { Avatar } from '../../../components/Avatar';
 import { TypeIcon } from '../../../components/TypeIcon';
-import { routePath } from '../../../routes';
+import { ItemLink } from '../../itemPeek/ItemLink';
 import { selectClass } from '../form/inputClasses';
 import { workItemTestIds as ids } from '../testIds';
 import { useProjectStates } from '../workItemApi';
@@ -31,13 +30,14 @@ export function TaskRow({
       className="flex items-center gap-2 border-t border-edge px-2 py-1.5 text-[length:var(--text-sm)] first:border-t-0"
     >
       <TypeIcon type="task" />
-      <Link
-        data-testid={ids.taskOpen}
-        to={routePath('workItem', { key: project.key, itemKey: task.key })}
+      <ItemLink
+        testId={ids.taskOpen}
+        projectKey={project.key}
+        itemKey={task.key}
         className="min-w-0 flex-1 truncate hover:text-signal hover:underline"
       >
         {task.title}
-      </Link>
+      </ItemLink>
       <span data-testid={ids.taskKey} className="w-20 shrink-0 text-ink-muted">
         {task.key}
       </span>
