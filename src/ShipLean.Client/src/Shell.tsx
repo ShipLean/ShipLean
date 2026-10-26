@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import { ToastHost } from './components/ToastHost';
 import { useProjectRealtime } from './realtime';
+import { QuickSearchProvider } from './features/quickSearch/host/QuickSearchProvider';
 import { SideMenu } from './features/shell/SideMenu/SideMenu';
 import { Crumbs } from './features/shell/TopBar/Crumbs';
 import { useAppearanceOnLoad } from './features/shell/useAppearanceOnLoad';
@@ -18,22 +19,24 @@ export function Shell() {
   useRememberProject(onProjectRoute ? project : undefined);
   useProjectRealtime(onProjectRoute ? key : undefined);
   return (
-    <div className="flex h-dvh bg-canvas text-ink max-[900px]:h-auto max-[900px]:min-h-dvh max-[900px]:flex-col">
-      <SideMenu />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header
-          data-testid={appTestIds.shellTopBar}
-          className="flex h-(--bar-height) flex-none items-center gap-3 border-b border-edge bg-panel px-4"
-        >
-          <Crumbs />
-          <span className="flex-1" />
-          <TopBarRealtime />
-        </header>
-        <main data-testid={appTestIds.shellMain} className="min-h-0 flex-1 overflow-auto">
-          <Outlet />
-        </main>
+    <QuickSearchProvider>
+      <div className="flex h-dvh bg-canvas text-ink max-[900px]:h-auto max-[900px]:min-h-dvh max-[900px]:flex-col">
+        <SideMenu />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header
+            data-testid={appTestIds.shellTopBar}
+            className="flex h-(--bar-height) flex-none items-center gap-3 border-b border-edge bg-panel px-4"
+          >
+            <Crumbs />
+            <span className="flex-1" />
+            <TopBarRealtime />
+          </header>
+          <main data-testid={appTestIds.shellMain} className="min-h-0 flex-1 overflow-auto">
+            <Outlet />
+          </main>
+        </div>
+        <ToastHost />
       </div>
-      <ToastHost />
-    </div>
+    </QuickSearchProvider>
   );
 }

@@ -3,6 +3,7 @@ import {
   crumbTrail,
   isInstanceLevel,
   matchRoute,
+  newItemPath,
   routeIds,
   routePath,
   type RouteId,
@@ -178,4 +179,28 @@ test('routes_WhenInstallRouteHasItem_ShouldDropIt', () => {
 test('routes_WhenItemIsEmpty_ShouldDropIt', () => {
   expect(matchRoute('/p/SHIP/boards/stories', '?item=')?.query).toEqual({});
   expect(routePath('storiesBoard', { key: 'SHIP' }, { item: '' })).toBe('/p/SHIP/boards/stories');
+});
+
+test('newItemPath_WhenEachKind_ShouldBuildTheBacklogAddress', () => {
+  expect(newItemPath('SHIP', 'epic')).toBe('/p/SHIP/backlogs/epics?new=epic');
+  expect(newItemPath('SHIP', 'feature')).toBe('/p/SHIP/backlogs/features?new=feature');
+  expect(newItemPath('SHIP', 'story')).toBe('/p/SHIP/backlogs/stories?new=story');
+  expect(newItemPath('SHIP', 'bug')).toBe('/p/SHIP/backlogs/stories?new=bug');
+  expect(newItemPath('A B', 'bug')).toBe('/p/A%20B/backlogs/stories?new=bug');
+});
+
+test('routes_WhenBacklogHasNew_ShouldStillMatchAndKeepIt', () => {
+  for (const [path, kind] of [
+    ['/p/SHIP/backlogs/stories', 'bug'],
+    ['/p/SHIP/backlogs/features', 'feature'],
+    ['/p/SHIP/backlogs/epics', 'epic'],
+  ] as const) {
+    const matched = matchRoute(path, `?new=${kind}&mode=tree`);
+    expect(matched?.query, path).toEqual({ new: kind, mode: 'tree' });
+  }
+});
+
+test('routes_WhenNewIsNotAKind_ShouldDropIt', () => {
+  expect(matchRoute('/p/SHIP/backlogs/stories', '?new=task')?.query).toEqual({});
+  expect(matchRoute('/p/SHIP/boards/stories', '?new=story')?.query).toEqual({});
 });

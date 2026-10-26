@@ -1,0 +1,85 @@
+{
+  "query": "export",
+  "semantic": true,
+  "projects": [
+    { "key": "SHIP", "name": "ShipLean", "url": "/p/SHIP/backlogs/stories" },
+    { "key": "PAY", "name": "Payments", "url": "/p/PAY/backlogs/stories" }
+  ],
+  "sprints": [
+    {
+      "name": "Sprint 24",
+      "goal": "Stabilise the export",
+      "startDate": "2026-10-19",
+      "endDate": "2026-11-01",
+      "status": "current",
+      "datesLabel": "19 Oct – 1 Nov",
+      "projectKey": "SHIP",
+      "url": "/p/SHIP/sprints/00000004-0000-4000-8001-000000000019/taskboard"
+    },
+    {
+      "name": "Sprint 25",
+      "goal": "Export to PDF",
+      "startDate": "2026-11-02",
+      "endDate": "2026-11-15",
+      "status": "future",
+      "datesLabel": "2 Nov – 15 Nov",
+      "projectKey": "SHIP",
+      "url": "/p/SHIP/sprints/00000004-0000-4000-8001-000000000020/taskboard"
+    }
+  ],
+  "items": [
+    {
+      "key": "SHIP-12",
+      "title": "Export a board to CSV",
+      "type": "story",
+      "state": "Active",
+      "stateCategory": "inProgress",
+      "projectKey": "SHIP",
+      "parentPath": ["SHIP-2", "SHIP-7"],
+      "matchedIn": "title",
+      "snippet": "Export a board to CSV",
+      "url": "/p/SHIP/items/SHIP-12",
+      "attachment": null
+    },
+    {
+      "key": "SHIP-31",
+      "title": "Fix the nightly job",
+      "type": "bug",
+      "state": "New",
+      "stateCategory": "proposed",
+      "projectKey": "SHIP",
+      "parentPath": ["SHIP-2"],
+      "matchedIn": "comment",
+      "snippet": "The export fails on the late crossing.",
+      "url": "/p/SHIP/items/SHIP-31",
+      "attachment": null
+    },
+    {
+      "key": "SHIP-48",
+      "title": "Quarterly numbers",
+      "type": "feature",
+      "state": "Closed",
+      "stateCategory": "completed",
+      "projectKey": "SHIP",
+      "parentPath": [],
+      "matchedIn": "attachment",
+      "snippet": "export of all rows",
+      "url": "/p/SHIP/items/SHIP-48",
+      "attachment": "q3-export.csv"
+    },
+    {
+      "key": "PAY-5",
+      "title": "Ledger rounding",
+      "type": "task",
+      "state": "Resolved",
+      "stateCategory": "resolved",
+      "projectKey": "PAY",
+      "parentPath": ["PAY-1", "PAY-2", "PAY-3"],
+      "matchedIn": "description",
+      "snippet": "Rounds on export",
+      "url": "/p/PAY/items/PAY-5",
+      "attachment": null
+    }
+  ],
+  "more": true
+}

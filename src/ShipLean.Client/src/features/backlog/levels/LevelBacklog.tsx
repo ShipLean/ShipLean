@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import type { ProjectDto } from '../../../api/projects';
+import type { NewItemKind } from '../../../routes';
+import { useNewItemFromLink } from '../useNewItemFromLink';
 import { FilterButton } from '../filter/FilterButton';
 import { FilterPanel } from '../filter/FilterPanel';
 import { NewFeatureDialog } from '../newFeature/NewFeatureDialog';
@@ -9,6 +11,9 @@ import type { LevelBacklogLevel, LevelColumnId } from './levelColumns';
 import { LevelPicker } from './LevelPicker';
 import { LevelTable } from './LevelTable';
 import { useLevelBacklog } from './useLevelBacklog';
+
+const FEATURE_KINDS: readonly NewItemKind[] = ['feature'];
+const EPIC_KINDS: readonly NewItemKind[] = ['epic'];
 
 // The Features or Epics backlog: the shared toolbar (with the level picker), the filter, and one row per Feature or Epic
 // with its progress, points and, on Epics, its Features count.
@@ -21,6 +26,10 @@ export function LevelBacklog({
 }) {
   const state = useLevelBacklog(project, level);
   const [newFeatureOpen, setNewFeatureOpen] = useState(false);
+  useNewItemFromLink(level === 'features' ? FEATURE_KINDS : EPIC_KINDS, (kind) => {
+    if (kind === 'feature') setNewFeatureOpen(true);
+    else state.setAdding(true);
+  });
   const { backlog, view, refused, criteria, lists } = state;
 
   if ((backlog.isError && refused === null) || view.failed) {

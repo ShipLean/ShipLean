@@ -1,0 +1,21 @@
+export const quickSearchTestIds = {
+  dialog: 'quick-search-dialog',
+  input: 'quick-search-input',
+  list: 'quick-search-list',
+  group: 'quick-search-group',
+  // Acceptance tests find a row by the text of optionKey (an item's or project's key) or optionLabel (an item's title,
+  // a sprint's or project's name, an action's label). CT specs also use data-kind, data-key and data-id (create-epic,
+  // create-feature, create-story, create-bug, go-backlogs, go-boards, go-sprints, toggle-theme; a sprint's address).
+  option: 'quick-search-option',
+  optionKey: 'quick-search-option-key',
+  optionLabel: 'quick-search-option-label',
+  match: 'quick-search-match',
+  where: 'quick-search-where',
+  loading: 'quick-search-loading',
+  error: 'quick-search-error',
+  retry: 'quick-search-retry',
+  none: 'quick-search-none',
+  footer: 'quick-search-footer',
+  note: 'quick-search-note',
+  scrim: 'quick-search-scrim',
+} as const;

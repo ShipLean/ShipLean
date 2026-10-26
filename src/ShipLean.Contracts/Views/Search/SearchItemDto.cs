@@ -9,6 +9,7 @@ public sealed record SearchItemDto(
     string Title,
     WorkItemTypeId Type,
     string State,
+    StateCategory StateCategory,
     string ProjectKey,
     IReadOnlyList<string> ParentPath,
     SearchMatchedIn MatchedIn,

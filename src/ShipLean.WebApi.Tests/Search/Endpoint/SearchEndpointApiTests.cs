@@ -1,9 +1,14 @@
 using System.Net;
+using Dapper;
 using System.Text.Json;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Persisted;
 using ShipLean.Contracts.Views.Search;
+using System.Text.Json.Nodes;
+using ShipLean.Contracts.Refs;
+using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
+using ShipLean.WebApi.Tests.Search.Journeys;
 
 namespace ShipLean.WebApi.Tests.Search.Endpoint;
 
@@ -75,6 +80,39 @@ public class SearchEndpointApiTests : ApiFixture
         using var response = await Api.GetAsync($"api/search?q=login&{types}");
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+    }
+
+    [Test]
+    public async Task Search_WhenItemAndSprintMatch_ShouldSendStateCategoryAndSprintStatus()
+    {
+        // The item is moved to an inProgress state and the sprint started three days ago, so neither field can pass at its default
+        // (proposed, past). The empty project has no sprint for the new one to overlap.
+        var project = SeedIds.Projects.Empt;
+        Guid active;
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            active = await connection.QuerySingleAsync<Guid>(
+                "SELECT id FROM state WHERE project_id = @project AND type = 'story' AND category = 'inProgress' LIMIT 1", new { project });
+        }
+
+        var item = await JourneyApi.CreateItemAsync(Api, project, "Okapi harness calibration");
+        using var moved = await Api.PatchJsonAsync(
+            $"api/work-items/{item.Id}",
+            new JsonObject { ["expectedRevision"] = item.Revision, ["changes"] = new JsonObject { ["state"] = new JsonObject { ["value"] = active.ToString() } } });
+        moved.StatusCode.ShouldBe(HttpStatusCode.OK, await moved.Content.ReadAsStringAsync());
+        await JourneyApi.CreateSprintAsync(Api, project, "Sprint Okapi", "Okapi harness rollout", -3);
+        await JourneyApi.ReindexAsync(Api);
+
+        using var response = await Api.GetAsync("api/search?q=okapi&prefix=true&closed=true");
+
+        var text = await response.Content.ReadAsStringAsync();
+        response.StatusCode.ShouldBe(HttpStatusCode.OK, text);
+        using var json = JsonDocument.Parse(text);
+        var hit = json.RootElement.GetProperty("items").EnumerateArray().Single(i => i.GetProperty("key").GetString() == item.Key);
+        hit.GetProperty("stateCategory").GetString().ShouldBe("inProgress");
+        var sprint = json.RootElement.GetProperty("sprints").EnumerateArray().Single(s => s.GetProperty("name").GetString() == "Sprint Okapi");
+        sprint.GetProperty("status").GetString().ShouldBe("current");
+        sprint.GetProperty("datesLabel").GetString().ShouldNotBeNullOrWhiteSpace();
     }
 
     private async Task<ApiError> ErrorAsync(string url, HttpStatusCode status)

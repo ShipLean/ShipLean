@@ -23,6 +23,7 @@
 //     /p/:key/sprints/:sprintId/taskboard   ?settings=   (the Taskboard settings dialog's section)
 //     /p/:key/import              Jira import
 //     /p/:key/settings/:tab       tab: general | states | members | sprints | integrations
+//   The three backlogs also take ?new=epic|feature|story|bug: the new-item row (or dialog) open with that type, see newItemPath.
 //   Every project-level route also takes ?item=<itemKey>: that work item open in a modal over the screen.
 //
 // A route id is also the screen id presence is reported by. Ids and paths are stable: later work mounts pages on
@@ -33,6 +34,10 @@ export type BacklogMode = (typeof backlogModes)[number];
 
 // The backlog level a backlog or board shows.
 export type Level = 'stories' | 'features' | 'epics';
+
+// The types a Create action can start; tasks are made under a parent, so they have no link.
+export const NEW_ITEM_KINDS = ['epic', 'feature', 'story', 'bug'] as const;
+export type NewItemKind = (typeof NEW_ITEM_KINDS)[number];
 
 export const projectSettingsTabs = [
   'general',
@@ -86,6 +91,8 @@ export interface RouteQuery {
   request?: string;
   // A work item open in a modal over a project page (its key, like SHIP-12). Only project-level routes carry it.
   item?: string;
+  // The backlogs open their new-item row (or dialog) with this type, then drop it from the address.
+  new?: NewItemKind;
 }
 
 interface RouteDef<I extends RouteId> {
@@ -127,19 +134,19 @@ const routeDefs: { [I in RouteId]: RouteDef<I> } = {
   },
   storiesBacklog: {
     pattern: '/p/:key/backlogs/stories',
-    query: ['mode', 'item'],
+    query: ['mode', 'item', 'new'],
     installLevel: false,
     crumbs: (_p, q) => withMode(['Backlogs', 'Stories'], q),
   },
   featuresBacklog: {
     pattern: '/p/:key/backlogs/features',
-    query: ['mode', 'item'],
+    query: ['mode', 'item', 'new'],
     installLevel: false,
     crumbs: (_p, q) => withMode(['Backlogs', 'Features'], q),
   },
   epicsBacklog: {
     pattern: '/p/:key/backlogs/epics',
-    query: ['mode', 'item'],
+    query: ['mode', 'item', 'new'],
     installLevel: false,
     crumbs: (_p, q) => withMode(['Backlogs', 'Epics'], q),
   },
@@ -287,6 +294,9 @@ function parseQuery(def: AnyDef, search: string): RouteQuery {
     if (name === 'mode') {
       const mode = oneOf(backlogModes, value);
       if (mode !== undefined) query.mode = mode;
+    } else if (name === 'new') {
+      const kind = oneOf(NEW_ITEM_KINDS, value);
+      if (kind !== undefined) query.new = kind;
     } else query[name] = value;
   }
   return query;
@@ -321,4 +331,16 @@ export function crumbTrail<I extends RouteId>(
   const def = routeDefs[id] as unknown as RouteDef<I>;
   const root = def.installLevel ? 'ShipLean' : (params as ProjectParams).key;
   return [root, ...def.crumbs(params, query)];
+}
+
+const NEW_ITEM_BACKLOG = {
+  epic: 'epicsBacklog',
+  feature: 'featuresBacklog',
+  story: 'storiesBacklog',
+  bug: 'storiesBacklog',
+} as const satisfies Record<NewItemKind, RouteId>;
+
+// The backlog that creates an item of this kind: the Create actions in quick search link here.
+export function newItemPath(key: string, kind: NewItemKind): string {
+  return routePath(NEW_ITEM_BACKLOG[kind], { key }, { new: kind });
 }

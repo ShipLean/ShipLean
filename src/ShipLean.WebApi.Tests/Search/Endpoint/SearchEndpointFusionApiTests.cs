@@ -66,7 +66,7 @@ public class SearchEndpointFusionApiTests : ApiFixture
 
         var root = await ReadAsync(response);
         var item = root.GetProperty("items")[0];
-        item.EnumerateObject().Select(p => p.Name).ShouldBe(["key", "title", "type", "state", "projectKey", "parentPath", "matchedIn", "snippet", "url", "attachment"]);
+        item.EnumerateObject().Select(p => p.Name).ShouldBe(["key", "title", "type", "state", "stateCategory", "projectKey", "parentPath", "matchedIn", "snippet", "url", "attachment"]);
         item.GetProperty("key").GetString().ShouldBe(items.InBoth.Key);
         item.GetProperty("title").GetString().ShouldBe("Fusion both");
         item.GetProperty("type").GetString().ShouldBe("story");
@@ -81,7 +81,7 @@ public class SearchEndpointFusionApiTests : ApiFixture
         attached.GetProperty("attachment").GetString().ShouldBe("spec.pdf");
 
         var sprint = root.GetProperty("sprints")[0];
-        sprint.EnumerateObject().Select(p => p.Name).ShouldBe(["name", "goal", "startDate", "endDate", "projectKey", "url"]);
+        sprint.EnumerateObject().Select(p => p.Name).ShouldBe(["name", "goal", "startDate", "endDate", "status", "datesLabel", "projectKey", "url"]);
         sprint.GetProperty("name").GetString().ShouldBe("Sprint 23");
         sprint.GetProperty("startDate").GetString().ShouldBe("2026-10-12");
         sprint.GetProperty("endDate").GetString().ShouldBe("2026-10-25");

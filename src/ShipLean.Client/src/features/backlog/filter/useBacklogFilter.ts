@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ApiRequestError } from '../../../api/client';
 import type { CriteriaJson } from '../../../api/persisted';
 import type { ProjectDto } from '../../../api/projects';
+import type { WorkItemTypeId } from '../../../api/refs';
 import type { BacklogRowDto, BacklogViewDto } from '../../../api/views';
 import { newClause } from '../../../criteria/defaultClause';
 import type { CriteriaClause } from '../../../api/persisted';
@@ -43,7 +44,21 @@ export function useBacklogFilter(
   { level, columns, defaultClause }: BacklogFilterOptions = STORIES,
 ) {
   const [includeCompleted, setIncludeCompleted] = useState(false);
-  const [adding, setAdding] = useState(false);
+  const [adding, setAddingOpen] = useState(false);
+  const [addType, setAddType] = useState<WorkItemTypeId>('story');
+  // Counts the requests to open the row on a type, so the row can apply one even when the type is the one asked for.
+  const [addRequest, setAddRequest] = useState(0);
+  // Closing the row forgets a type a link picked, so the toolbar button opens it on User Story again.
+  const setAdding = useCallback((open: boolean) => {
+    setAddingOpen(open);
+    if (!open) setAddType('story');
+  }, []);
+  // Opens the row with a type picked (or switches the open one).
+  const openAdd = (type: WorkItemTypeId) => {
+    setAddType(type);
+    setAddRequest((count) => count + 1);
+    setAddingOpen(true);
+  };
   const [criteria, setCriteria] = useState<CriteriaJson>(NO_CRITERIA);
   const [filterOpen, setFilterOpen] = useState(false);
   const [filter, setFilter] = useState('');
@@ -82,7 +97,10 @@ export function useBacklogFilter(
     includeCompleted,
     setIncludeCompleted,
     adding,
+    addType,
+    addRequest,
     setAdding,
+    openAdd,
     criteria,
     setCriteria,
     filterOpen,
