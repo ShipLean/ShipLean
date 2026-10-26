@@ -3,7 +3,11 @@ using System.Text.Json;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Persisted;
 using ShipLean.Contracts.Views.Search;
+using System.Text.Json.Nodes;
+using ShipLean.Contracts.Refs;
+using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
+using ShipLean.WebApi.Tests.Search.Journeys;
 
 namespace ShipLean.WebApi.Tests.Search.Endpoint;
 
@@ -75,6 +79,31 @@ public class SearchEndpointApiTests : ApiFixture
         using var response = await Api.GetAsync($"api/search?q=login&{types}");
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+    }
+
+    [Test]
+    public async Task Search_WhenItemAndSprintMatch_ShouldSendStateCategoryAndSprintStatus()
+    {
+        // The item is moved to Active (inProgress) and the sprint started three days ago, so neither field can pass at its default
+        // (proposed, past).
+        var item = await JourneyApi.CreateItemAsync(Api, SeedIds.Projects.Ship, "Okapi harness calibration");
+        using var moved = await Api.PatchJsonAsync(
+            $"api/work-items/{item.Id}",
+            new JsonObject { ["expectedRevision"] = item.Revision, ["changes"] = new JsonObject { ["state"] = new JsonObject { ["value"] = SeedIds.States.Ship.StoryActive.ToString() } } });
+        moved.StatusCode.ShouldBe(HttpStatusCode.OK, await moved.Content.ReadAsStringAsync());
+        await JourneyApi.CreateSprintAsync(Api, SeedIds.Projects.Ship, "Sprint Okapi", "Okapi harness rollout", -3);
+        await JourneyApi.ReindexAsync(Api);
+
+        using var response = await Api.GetAsync("api/search?q=okapi&prefix=true&closed=true");
+
+        var text = await response.Content.ReadAsStringAsync();
+        response.StatusCode.ShouldBe(HttpStatusCode.OK, text);
+        using var json = JsonDocument.Parse(text);
+        var hit = json.RootElement.GetProperty("items").EnumerateArray().Single(i => i.GetProperty("key").GetString() == item.Key);
+        hit.GetProperty("stateCategory").GetString().ShouldBe("inProgress");
+        var sprint = json.RootElement.GetProperty("sprints").EnumerateArray().Single(s => s.GetProperty("name").GetString() == "Sprint Okapi");
+        sprint.GetProperty("status").GetString().ShouldBe("current");
+        sprint.GetProperty("datesLabel").GetString().ShouldNotBeNullOrWhiteSpace();
     }
 
     private async Task<ApiError> ErrorAsync(string url, HttpStatusCode status)
