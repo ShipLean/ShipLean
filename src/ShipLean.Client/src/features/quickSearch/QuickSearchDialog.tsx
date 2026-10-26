@@ -72,11 +72,16 @@ export function QuickSearchDialog({
     onDone();
   };
 
-  const onKeyDown = (event: KeyboardEvent) => {
+  const onPanelKeyDown = (event: KeyboardEvent) => {
     if (event.key === 'Escape' && !event.defaultPrevented) {
       event.stopPropagation();
       onClose();
-    } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+    }
+  };
+
+  // Only the input moves the highlight and picks: Enter on the Retry button must press Retry.
+  const onInputKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault();
       if (rows.length === 0) return;
       const step = event.key === 'ArrowDown' ? 1 : -1;
@@ -125,12 +130,9 @@ export function QuickSearchDialog({
         aria-modal="true"
         aria-label="Quick search"
         tabIndex={-1}
-        onKeyDown={onKeyDown}
-        style={{
-          width: 'min(640px, 100vw - 32px)',
-          boxShadow: 'var(--shadow-dialog, var(--shadow-panel))',
-        }}
-        className="flex max-h-[calc(100dvh-96px)] flex-col overflow-hidden rounded-frame border border-edge bg-panel max-[899px]:w-full max-[899px]:max-h-[calc(100dvh-16px)]"
+        onKeyDown={onPanelKeyDown}
+        style={{ boxShadow: 'var(--shadow-dialog, var(--shadow-panel))' }}
+        className="flex max-h-[calc(100dvh-96px)] w-[min(640px,100vw-32px)] flex-col overflow-hidden rounded-frame border border-edge bg-panel max-[899px]:max-h-[calc(100dvh-16px)] max-[899px]:w-[calc(100vw-16px)]"
       >
         <div className="relative flex h-[46px] flex-none items-center gap-2.5 border-b border-edge px-3.5">
           <svg
@@ -161,6 +163,7 @@ export function QuickSearchDialog({
             placeholder="Search work items, sprints and projects"
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
+            onKeyDown={onInputKeyDown}
             className="min-w-0 flex-1 bg-transparent text-[length:var(--text-md)] text-ink outline-none placeholder:text-ink-muted"
           />
           <kbd className="rounded-xs border border-edge bg-canvas px-1.5 font-mono text-[length:var(--text-2xs)] text-ink-muted">
@@ -184,12 +187,17 @@ export function QuickSearchDialog({
               role="alert"
               className="mb-1 flex items-center gap-3 rounded-control border border-edge bg-sunken px-3 py-2 text-[length:var(--text-sm)]"
             >
-              <span className="flex-1 text-ink">Search failed.</span>
+              <span className="flex-1">
+                <span className="block text-ink">Search didn't respond.</span>
+                <span className="block text-[length:var(--text-xs)] text-ink-muted">
+                  Your query is kept. Actions below still work.
+                </span>
+              </span>
               {results.retry ? (
                 <button
                   type="button"
                   data-testid={ids.retry}
-                  className="btn-signal h-7"
+                  className="btn-ghost"
                   onClick={results.retry}
                 >
                   Retry

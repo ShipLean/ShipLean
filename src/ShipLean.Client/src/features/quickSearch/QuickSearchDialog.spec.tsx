@@ -251,19 +251,52 @@ test('Dialog_WhenLoading_ShouldShowTheBarAndKeepTheRows', async ({ mount, page }
   await expect(page.getByTestId(harness.opened)).toHaveText('SHIP-41');
 });
 
+const errorResults = () =>
+  results({ groups: [actionsGroup], status: 'error', retry: nothing, note: null });
+
 test('Dialog_WhenError_ShouldOfferRetryAndKeepTheActions', async ({ mount, page }) => {
-  await mount(
-    <QuickSearchDialogHarness
-      results={results({ groups: [actionsGroup], status: 'error', retry: nothing })}
-      initialQuery="sign"
-    />,
-  );
-  await expect(page.getByTestId(ids.error)).toBeVisible();
-  await expect(page.getByTestId(ids.retry)).toBeVisible();
+  await mount(<QuickSearchDialogHarness results={errorResults()} initialQuery="sign" />);
+  await expect(page.getByTestId(ids.error)).toContainText("Search didn't respond.");
   await expect(page.getByTestId(ids.option)).toHaveCount(1);
   await expect(page.getByTestId(ids.option)).toHaveAttribute('data-id', 'create-story');
   // An error is not "nothing matches".
   await expect(page.getByTestId(ids.none)).toHaveCount(0);
+
+  // Retry calls retry and neither picks a row nor finishes.
+  await page.getByTestId(ids.retry).click();
+  await expect(page.getByTestId(harness.retried)).toHaveText('1');
+  await expect(page.getByTestId(harness.done)).toHaveText('0');
+  await expect(page.getByTestId(harness.closed)).toHaveText('0');
+});
+
+// Fails if Enter is handled on the whole panel: it would pick the highlighted action instead of pressing Retry.
+test('Dialog_WhenEnterOnRetry_ShouldRetryAndNotPickTheRow', async ({ mount, page }) => {
+  await mount(<QuickSearchDialogHarness results={errorResults()} initialQuery="sign" />);
+  await expect(page.getByTestId(ids.input)).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.getByTestId(ids.retry)).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.getByTestId(harness.retried)).toHaveText('1');
+  await expect(page.getByTestId(harness.done)).toHaveText('0');
+  await expect(page.getByTestId(harness.ran)).toHaveText('');
+});
+
+// Fails if the highlight is only reset when the query changes.
+test('Dialog_WhenRowListChanges_ShouldHighlightTheFirstRow', async ({ mount, page }) => {
+  const component = await mount(
+    <QuickSearchDialogHarness results={results()} initialQuery="sign" />,
+  );
+  await page.keyboard.press('ArrowDown');
+  await expect(page.locator(highlightedRow)).toHaveAttribute('data-key', 'SHIP-97');
+  await component.update(
+    <QuickSearchDialogHarness
+      results={results({ groups: [{ ...itemsGroup, rows: itemsGroup.rows.slice(1) }] })}
+      initialQuery="sign"
+    />,
+  );
+  await expect(page.getByTestId(ids.option)).toHaveCount(2);
+  await expect(page.getByTestId(harness.query)).toHaveText('sign');
+  await expect(page.locator(highlightedRow)).toHaveAttribute('data-key', 'SHIP-97');
 });
 
 test('Dialog_WhenNothingMatches_ShouldSayWhatWasSearched', async ({ mount, page }) => {
@@ -290,4 +323,12 @@ test('Dialog_WhenNarrow_ShouldHideTheKeyHints', async ({ mount, page }) => {
   await page.setViewportSize({ width: 600, height: 800 });
   await expect(page.getByTestId(ids.footer).getByText('move')).toBeHidden();
   await expect(page.getByTestId(ids.note)).toBeVisible();
+});
+
+test('Dialog_WhenOnAPhone_ShouldLeaveAnEightPixelGutter', async ({ mount, page }) => {
+  await page.setViewportSize({ width: 375, height: 700 });
+  await mount(<QuickSearchDialogHarness results={results()} />);
+  const box = await page.getByTestId(ids.dialog).boundingBox();
+  expect(box?.x).toBe(8);
+  expect(box?.width).toBe(359);
 });

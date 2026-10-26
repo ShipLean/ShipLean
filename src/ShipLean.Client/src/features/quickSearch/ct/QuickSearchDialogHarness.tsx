@@ -16,6 +16,7 @@ export function QuickSearchDialogHarness({
   const [opened, setOpened] = useState<string[]>([]);
   const [closed, setClosed] = useState(0);
   const [done, setDone] = useState(0);
+  const [retried, setRetried] = useState(0);
   const [ran, setRan] = useState<string[]>([]);
   // Spec data cannot carry handlers across the mount boundary: every sprint, project and action records its id.
   const record = (row: QuickSearchRow): QuickSearchRow => {
@@ -27,6 +28,7 @@ export function QuickSearchDialogHarness({
   const shown = results;
   const recorded: QuickSearchResults = {
     ...shown,
+    retry: shown.retry ? () => setRetried((count) => count + 1) : null,
     groups: shown.groups.map((group) => ({ ...group, rows: group.rows.map(record) })),
   };
   return (
@@ -35,6 +37,7 @@ export function QuickSearchDialogHarness({
       <span data-testid={ids.closed}>{closed}</span>
       <span data-testid={ids.done}>{done}</span>
       <span data-testid={ids.query}>{query}</span>
+      <span data-testid={ids.retried}>{retried}</span>
       <span data-testid={ids.ran}>{ran.join(',')}</span>
       <QuickSearchDialog
         query={query}
