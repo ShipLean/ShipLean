@@ -33,6 +33,20 @@ describe('buildActions', () => {
     expect(labels).not.toContain('Create work item');
   });
 
+  it('buildActions_WhenGoToRowsRun_ShouldNavigateToTheirPages', () => {
+    const navigate = vi.fn();
+    const toggleTheme = vi.fn();
+    const rows = buildActions(context({ navigate, toggleTheme }));
+    rows.filter((r) => r.id.startsWith('go-')).forEach((r) => r.run());
+    expect(navigate.mock.calls).toEqual([
+      ['/p/SHIP/backlogs/stories'],
+      ['/p/SHIP/boards/stories'],
+      ['/p/SHIP/sprints'],
+    ]);
+    rows.find((r) => r.id === 'toggle-theme')?.run();
+    expect(toggleTheme).toHaveBeenCalledTimes(1);
+  });
+
   it('buildActions_WhenNoProject_ShouldOfferOnlyToggleTheme', () => {
     const rows = buildActions(context({ projectKey: undefined }));
     expect(rows.map((r) => r.id)).toEqual(['toggle-theme']);

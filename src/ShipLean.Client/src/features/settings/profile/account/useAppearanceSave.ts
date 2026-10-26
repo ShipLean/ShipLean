@@ -39,12 +39,16 @@ export function useAppearanceSave({ onRefused }: { onRefused?: () => void } = {}
     },
     onError: (error, { key, value }, context) => {
       setRefusal(errorText(error, 'That choice could not be saved.'));
-      onRefused?.();
       const current = queryClient.getQueryData<MeDto>(meKey);
-      if (current === undefined || context?.before === undefined || current[key] !== value) return;
-      const restored = { ...current, [key]: context.before } as MeDto;
-      queryClient.setQueryData(meKey, restored);
-      applyAppearance(restored.theme, restored.density);
+      try {
+        if (current !== undefined && context?.before !== undefined && current[key] === value) {
+          const restored = { ...current, [key]: context.before } as MeDto;
+          queryClient.setQueryData(meKey, restored);
+          applyAppearance(restored.theme, restored.density);
+        }
+      } finally {
+        onRefused?.();
+      }
     },
     onSettled: () => {
       if (queryClient.isMutating({ mutationKey: APPEARANCE_KEY }) <= 1) {
