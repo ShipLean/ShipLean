@@ -156,3 +156,68 @@ test('OpenItem_WhenOnABacklog_ShouldOpenTheFullPage', async ({ mount, page }) =>
   await page.getByTestId(openItem.open).click();
   await expect(page.getByTestId(openItem.location)).toHaveText('/p/SHIP/items/SHIP-9');
 });
+
+test('QuickSearch_WhenOpenedFromThePicker_ShouldRefocusTheProjectButtonOnEscape', async ({
+  mount,
+  page,
+}) => {
+  await stubSearch(page);
+  await mount(<ShellHarness />, at(board));
+  // A keypress before the shell has loaded can beat its listener.
+  await expect(page.getByTestId(shell.projectButton)).toContainText('Shipping');
+  await page.getByTestId(shell.projectButton).click();
+  await expect(page.getByTestId(shell.picker)).toBeVisible();
+  await page.keyboard.press('Control+p');
+  await expect(page.getByTestId(ids.dialog)).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId(ids.dialog)).toHaveCount(0);
+  // Fails on focus left on body: the dialog took the picker's search input as its opener, and that input is gone.
+  await expect(page.getByTestId(shell.projectButton)).toBeFocused();
+});
+
+test('QuickSearch_WhenClosed_ShouldNotRunTheSources', async ({ mount, page }) => {
+  await stubShell(page);
+  let searches = 0;
+  await page.route('**/api/search*', (route) => {
+    searches += 1;
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(searchView),
+    });
+  });
+  await mount(<ShellHarness />, at(board));
+  // A keypress before the shell has loaded can beat its listener.
+  await expect(page.getByTestId(shell.projectButton)).toContainText('Shipping');
+  await page.keyboard.type('export');
+  await expect(page.getByTestId(ids.dialog)).toHaveCount(0);
+  // Fails on a source that searches while the dialog is closed. The request is sent ahead of any later open.
+  await page.keyboard.press('Control+p');
+  await page.getByTestId(ids.input).fill('export');
+  await expect.poll(() => searches).toBe(1);
+});
+
+test('QuickSearch_WhenReopened_ShouldReadTheSourcesAgain', async ({ mount, page }) => {
+  await stubShell(page);
+  let searches = 0;
+  await page.route('**/api/search*', (route) => {
+    searches += 1;
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(searchView),
+    });
+  });
+  await mount(<ShellHarness />, at(board));
+  // A keypress before the shell has loaded can beat its listener.
+  await expect(page.getByTestId(shell.projectButton)).toContainText('Shipping');
+  await page.keyboard.press('Control+p');
+  await page.getByTestId(ids.input).fill('export');
+  await expect.poll(() => searches).toBe(1);
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId(ids.dialog)).toHaveCount(0);
+  await page.keyboard.press('Control+p');
+  await expect(page.getByTestId(ids.input)).toHaveValue('export');
+  // Fails on a source that serves the old answer from a cache when the dialog opens again.
+  await expect.poll(() => searches).toBe(2);
+});

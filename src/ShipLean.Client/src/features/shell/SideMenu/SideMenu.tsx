@@ -39,6 +39,20 @@ export function SideMenu() {
     return () => document.removeEventListener('mousedown', close);
   }, [picking]);
 
+  // The shortcut opens quick search in the same render that puts the picker away, and the dialog takes focus's way back
+  // from whatever has it then. Moving focus to the project button first (capture runs ahead of the shortcut's own
+  // listener) leaves it a control that stays.
+  useEffect(() => {
+    if (!picking) return;
+    const onShortcut = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === 'p') {
+        button.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', onShortcut, true);
+    return () => window.removeEventListener('keydown', onShortcut, true);
+  }, [picking]);
+
   const closePicker = () => {
     setPicking(false);
     button.current?.focus();
