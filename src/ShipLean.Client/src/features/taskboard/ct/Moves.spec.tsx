@@ -177,11 +177,16 @@ test('Taskboard_WhenAltArrowPressed_ShouldMoveTheFocusedCardAndKeepFocus', async
   await page.keyboard.press('Alt+ArrowRight');
   await expect.poll(() => server.moves.length).toBe(1);
   expect(server.moves[0]).toMatchObject({ taskId: 'id-SHIP-172', stateId: 't-closed', row: null });
+  // The old card in Active can still be the focused one until the board re-renders: wait for it to land before the next key.
+  const keyIn = (column: number) =>
+    cell(page, 0, column).getByTestId(ids.cardKey).filter({ hasText: 'SHIP-172' });
+  await expect(keyIn(2)).toBeVisible();
   await expect(card(page, 'SHIP-172')).toBeFocused();
 
   await page.keyboard.press('Alt+ArrowLeft');
   await expect.poll(() => server.moves.length).toBe(2);
   expect(server.moves[1]).toMatchObject({ stateId: 't-active' });
+  await expect(keyIn(1)).toBeVisible();
   await expect(card(page, 'SHIP-172')).toBeFocused();
 
   await page.keyboard.press('Alt+ArrowDown');

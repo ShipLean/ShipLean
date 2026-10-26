@@ -14,6 +14,10 @@ Progress and reports belong in ShipLean: `report_task` for your report, `comment
 
 Work only in your own worktree, on a branch of your own created from the shared branch {{shared_branch}}. Commit small, and start every commit message with your task's key. Pull with rebase from the shared branch, then push HEAD to it; if the push is rejected, pull with rebase again and push. A conflict only in files you own: resolve it and continue. Any other conflict: abort the rebase and report blocked with the files. Never force-push, never amend, never reset pushed history. Push after each green step.
 
+## Pull requests
+
+**IF YOU OPEN A PULL REQUEST OR MERGE REQUEST, PUT YOUR STORY KEY AND YOUR TASK KEY IN ITS TITLE, FOR EXAMPLE "SHIP-12 SHIP-15: WHAT IT DOES".** ShipLean links the PR to every Story, Task or Bug whose key is in the title and closes it when the PR merges. The Story stays open until then, so a PR without its key never closes it. Your Story key is on your task's parent; read it with `get_work_item`.
+
 ## Rules
 
 - If the other side of a contract is wrong, fix your side or stop and report. Never compensate: no hardcoded lists, no catching an error the contract does not allow, no fallbacks.
