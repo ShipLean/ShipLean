@@ -1,18 +1,20 @@
 using Agoda.IoC.Core;
 using Dapper;
 using Npgsql;
+using ShipLean.Application.Sprints;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Mcp;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Search;
 using ShipLean.Contracts.Views.Search;
+using ShipLean.Core;
 
 namespace ShipLean.Application.Features.Search.Query;
 
 // What GET /api/search does: the project check first, then the ranker, then the view model with its links.
 [RegisterPerRequest]
-public sealed class SearchViews(IProjectAccess access, ISearchRanker ranker, NpgsqlDataSource dataSource)
+public sealed class SearchViews(IProjectAccess access, ISearchRanker ranker, NpgsqlDataSource dataSource, TimeProvider clock)
 {
     public async Task<SearchViewDto> SearchAsync(SearchRequest request, CancellationToken cancellationToken)
     {
@@ -31,12 +33,13 @@ public sealed class SearchViews(IProjectAccess access, ISearchRanker ranker, Npg
         var results = await ranker.SearchAsync(
             new SearchQuery(text, projectIds, ParseTypes(request.Types) is { Count: > 0 } types ? types : null, null, request.Closed, request.Prefix, request.Limit),
             cancellationToken);
+        var today = SprintLabels.Today(clock);
         // The view builds every link; an empty base URL leaves the relative SPA path (the patterns in McpOpenUrls).
         return new SearchViewDto(
             text,
             results.Semantic,
             [.. results.Projects.Select(p => new SearchProjectDto(p.Key, p.Name, McpOpenUrls.Backlog("", p.Key, "stories")))],
-            [.. results.Sprints.Select(s => new SearchSprintDto(s.Name, s.Goal, s.StartDate, s.EndDate, s.ProjectKey, UrlFor(s)))],
+            [.. results.Sprints.Select(s => ToSprint(s, today))],
             [.. results.Items.Select(ToItem)],
             results.More);
     }
@@ -77,6 +80,7 @@ public sealed class SearchViews(IProjectAccess access, ISearchRanker ranker, Npg
         item.Title,
         item.Type,
         item.State,
+        item.StateCategory,
         item.ProjectKey,
         item.ParentPath,
         MatchedIn(item.MatchedIn),
@@ -94,5 +98,14 @@ public sealed class SearchViews(IProjectAccess access, ISearchRanker ranker, Npg
         _ => throw new InvalidOperationException($"An item cannot match in {field}."),
     };
 
-    private static string UrlFor(SearchResultSprint sprint) => McpOpenUrls.Taskboard("", sprint.ProjectKey, sprint.Id);
+    // Status and label are computed as SprintRow.ToDto does, so a sprint reads the same here as on the sprints screen.
+    private static SearchSprintDto ToSprint(SearchResultSprint sprint, DateOnly today) => new(
+        sprint.Name,
+        sprint.Goal,
+        sprint.StartDate,
+        sprint.EndDate,
+        SprintLabels.Phase(sprint.StartDate, sprint.EndDate, today).ToStatus(),
+        SprintLabels.Dates(sprint.StartDate, sprint.EndDate, today),
+        sprint.ProjectKey,
+        McpOpenUrls.Taskboard("", sprint.ProjectKey, sprint.Id));
 }
