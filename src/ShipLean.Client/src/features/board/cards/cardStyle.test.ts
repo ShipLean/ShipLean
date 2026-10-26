@@ -16,8 +16,19 @@ const rule = (overrides: Partial<StyleRuleJson>): StyleRuleJson => ({
 
 describe('cardStyle', () => {
   it('ruleCardStyle_WhenRuleHasColour_ShouldTintFromThatToken', () => {
-    expect(ruleCardStyle(rule({}))?.boxShadow).toBe('inset 3px 0 0 var(--color-danger)');
+    expect(ruleCardStyle(rule({}))).toEqual({
+      background: 'color-mix(in srgb, var(--color-danger) 9%, var(--paper, var(--color-surface)))',
+      borderColor:
+        'color-mix(in srgb, var(--color-danger) 40%, var(--paper-edge, var(--color-border)))',
+      boxShadow: 'inset 3px 0 0 var(--color-danger), var(--paper-shadow)',
+    });
     expect(ruleCardStyle(rule({ colour: 'purple' }))?.background).toContain('var(--color-purple)');
+  });
+
+  it('ruleCardStyle_WhenTintPercentGiven_ShouldUseItForTheBackground', () => {
+    expect(ruleCardStyle(rule({}), 12)?.background).toBe(
+      'color-mix(in srgb, var(--color-danger) 12%, var(--paper, var(--color-surface)))',
+    );
   });
 
   it('ruleCardStyle_WhenNoRuleOrNoColour_ShouldNotTint', () => {

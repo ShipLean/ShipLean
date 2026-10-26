@@ -37,6 +37,19 @@
   --color-purple: #6f45bf;
   --shadow-raised: 0 1px 2px rgb(16 24 40 / 0.08), 0 4px 12px -6px rgb(16 24 40 / 0.12);
 
+  /* Paper cards: the same in both themes (see design/README.md). Only the edge, shadow and ring follow the theme. */
+  --paper-index: #ffffff; /* story, feature, epic */
+  --paper-bug: #ffe0e5;
+  --paper-postit: #fff9d3; /* task */
+  --paper-postit-muted: #6e5d22; /* meta text on a post-it */
+  --paper-edge-mix: #1c2638; /* edge = paper mixed with this ... */
+  --paper-edge-amount: 15%; /* ... by this much */
+  --paper-postit-edge-mix: #a8860f;
+  --paper-postit-edge-amount: 38%;
+  --paper-shadow: 0 1px 2px rgb(16 24 40 / 0.1), 0 3px 8px -4px rgb(16 24 40 / 0.16);
+  /* The page accent, captured before a .paper scope overrides --color-accent. */
+  --theme-accent: var(--color-accent);
+
   /* Typography: Inter everywhere */
   --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, monospace;
@@ -108,6 +121,16 @@
     --color-danger: #f08a8f;
     --color-purple: #b79cf5;
     --shadow-raised: 0 1px 2px rgb(0 0 0 / 0.4), 0 6px 16px -8px rgb(0 0 0 / 0.6);
+    --paper-edge-mix: #000000;
+    --paper-edge-amount: 28%;
+    --paper-postit-edge-mix: #000000;
+    --paper-postit-edge-amount: 28%;
+    --paper-shadow: 0 1px 1px rgb(0 0 0 / 0.45), 0 8px 18px -8px rgb(0 0 0 / 0.85);
+    --paper-edge-mix: #000000;
+    --paper-edge-amount: 28%;
+    --paper-postit-edge-mix: #000000;
+    --paper-postit-edge-amount: 28%;
+    --paper-shadow: 0 1px 1px rgb(0 0 0 / 0.45), 0 8px 18px -8px rgb(0 0 0 / 0.85);
     --type-epic: #f0a35a;
     --type-feature: #a989f0;
     --type-story: #5aa5f5;
@@ -135,6 +158,11 @@
   --color-danger: #f08a8f;
   --color-purple: #b79cf5;
   --shadow-raised: 0 1px 2px rgb(0 0 0 / 0.4), 0 6px 16px -8px rgb(0 0 0 / 0.6);
+  --paper-edge-mix: #000000;
+  --paper-edge-amount: 28%;
+  --paper-postit-edge-mix: #000000;
+  --paper-postit-edge-amount: 28%;
+  --paper-shadow: 0 1px 1px rgb(0 0 0 / 0.45), 0 8px 18px -8px rgb(0 0 0 / 0.85);
   --type-epic: #f0a35a;
   --type-feature: #a989f0;
   --type-story: #5aa5f5;
