@@ -8,7 +8,7 @@ namespace ShipLean.WebApi.Infrastructure.Telemetry;
 
 // Every instrument of the ShipLean meter, in one place. Tags stay bounded: a tool name from the registered tools, an outcome, a source
 // kind. Never an item key, a user id, a project or free text.
-public sealed class ShipLeanMetrics : IJobMetrics
+public sealed class ShipLeanMetrics : IJobMetrics, IDisposable
 {
     private const string ImportSource = "jira";
 
@@ -47,4 +47,7 @@ public sealed class ShipLeanMetrics : IJobMetrics
         _searchIndexed.Add(indexed);
         Volatile.Write(ref _indexQueue, remaining);
     }
+
+    // The container disposes this with the host; a meter left alive would keep observing a provider that is gone.
+    public void Dispose() => _meter.Dispose();
 }
