@@ -1,8 +1,7 @@
-import { Link } from 'react-router-dom';
 import type { BacklogRowDto } from '../../../api/views';
 import { StateDot } from '../../../components/StateDot';
 import { TypeIcon } from '../../../components/TypeIcon';
-import { routePath } from '../../../routes';
+import { ItemLink } from '../../itemPeek/ItemLink';
 import { ParentCell } from '../list/ParentCell';
 import { backlogTestIds as ids } from '../testIds';
 import type { LevelColumnId } from './levelColumns';
@@ -29,12 +28,9 @@ export function LevelCell({
       return (
         <span className="inline-flex items-center gap-1.5">
           {row.type ? <TypeIcon type={row.type.id} /> : null}
-          <Link
-            data-testid={ids.title}
-            to={routePath('workItem', { key: projectKey, itemKey: row.key })}
-          >
+          <ItemLink testId={ids.title} projectKey={projectKey} itemKey={row.key}>
             {row.title}
-          </Link>
+          </ItemLink>
         </span>
       );
     case 'parent':

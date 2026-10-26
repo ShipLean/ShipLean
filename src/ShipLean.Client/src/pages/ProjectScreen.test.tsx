@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
-import { MemoryRouter } from 'react-router-dom';
+import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { beforeEach, expect, test, vi } from 'vitest';
 import type { RouteId } from '../routes';
 import { projectDto } from './pagesFixtures';
@@ -19,15 +19,22 @@ beforeEach(() => {
 test('projectScreen_WhenRendered_ShouldReportPresenceUnderItsRouteId', () => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   queryClient.setQueryData(['projects', 'by-key', ''], projectDto('SHIP'));
+  // The screen mounts the app's router blocker, which needs a data router.
+  const router = createMemoryRouter([
+    {
+      path: '*',
+      element: (
+        <ProjectScreen routeId="capacity" testId="x">
+          {() => null}
+        </ProjectScreen>
+      ),
+    },
+  ]);
   const root = createRoot(document.createElement('div'));
   act(() => {
     root.render(
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter>
-          <ProjectScreen routeId="capacity" testId="x">
-            {() => null}
-          </ProjectScreen>
-        </MemoryRouter>
+        <RouterProvider router={router} />
       </QueryClientProvider>,
     );
   });

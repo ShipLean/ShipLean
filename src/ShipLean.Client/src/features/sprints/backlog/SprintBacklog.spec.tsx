@@ -6,6 +6,9 @@ import type { StateCategory, UserRef } from '../../../api/refs';
 import type { ChildSummaryDto, WorkItemDto } from '../../../api/workItems';
 import { componentTestIds } from '../../../components/testIds';
 import { ToastHost } from '../../../components/ToastHost';
+import { itemPeekTestIds } from '../../itemPeek/testIds';
+import { boardTestIds } from '../../board/testIds';
+import { LocationProbe } from '../../board/ct/LocationProbe';
 import { sprintsTestIds as ids } from '../testIds';
 import { SprintBacklog } from './SprintBacklog';
 
@@ -694,4 +697,65 @@ test('SprintBacklog_WhenThePageScrollsWithAStateMenuOpen_ShouldCloseIt', async (
   await page.evaluate(() => window.scrollBy(0, 40));
 
   await expect(page.getByTestId(componentTestIds.stateMenuOption)).toHaveCount(0);
+});
+
+test('SprintBacklog_WhenStoryTitleClicked_ShouldOpenItemModal', async ({ mount, page }) => {
+  await stub(page);
+  await mount(
+    <>
+      <SprintBacklog project={project} sprint={sprint} />
+      <LocationProbe />
+    </>,
+    { hooksConfig: { route: '/p/SHIP/sprints/s24/backlog' } },
+  );
+
+  const first = page.getByTestId(ids.storyRow).first();
+  const link = first.getByRole('link');
+  await expect(link).toHaveAttribute('href', /\/p\/SHIP\/items\/SHIP-/);
+  await link.click();
+
+  await expect(page.getByTestId(boardTestIds.locationProbe)).toHaveText(
+    /^\/p\/SHIP\/sprints\/s24\/backlog\?item=SHIP-/,
+  );
+  await expect(first.getByTestId(ids.rowToggle)).toHaveAttribute('aria-expanded', 'true');
+});
+
+const backlogRoute = { hooksConfig: { route: '/p/SHIP/sprints/s24/backlog' } };
+
+test('SprintBacklog_WhenTaskTitleClicked_ShouldOpenItemModal', async ({ mount, page }) => {
+  await stub(page);
+  await mount(
+    <>
+      <SprintBacklog project={project} sprint={sprint} />
+      <LocationProbe />
+    </>,
+    backlogRoute,
+  );
+
+  await page
+    .getByTestId(ids.taskRow)
+    .filter({ hasText: 'SHIP-172' })
+    .getByTestId(itemPeekTestIds.link)
+    .click();
+
+  await expect(page.getByTestId(boardTestIds.locationProbe)).toHaveText(
+    '/p/SHIP/sprints/s24/backlog?item=SHIP-172',
+  );
+});
+
+test('SprintBacklog_WhenReadyItemClicked_ShouldOpenItemModal', async ({ mount, page }) => {
+  await stub(page);
+  await mount(
+    <>
+      <SprintBacklog project={project} sprint={sprint} />
+      <LocationProbe />
+    </>,
+    backlogRoute,
+  );
+
+  await page.getByTestId(ids.railReadyItem).getByTestId(itemPeekTestIds.link).click();
+
+  await expect(page.getByTestId(boardTestIds.locationProbe)).toHaveText(
+    '/p/SHIP/sprints/s24/backlog?item=SHIP-182',
+  );
 });

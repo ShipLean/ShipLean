@@ -24,6 +24,24 @@ test('Taskboard_WhenLoaded_ShouldShowStoryRowsWithUnparentedLast', async ({ moun
   await expect(page.getByTestId(ids.columnHeader)).toHaveCount(3);
 });
 
+test('Taskboard_WhenCardHasManyTags_ShouldStayInsideItsColumn', async ({ mount, page }) => {
+  // SHIP-47: the key, three tags, Pick up and the avatar were wider than a narrow column, so the card spilled into the next one.
+  const view = structuredClone(VIEW);
+  const card = view.rows[0].cells[0].tasks[0];
+  card.tags = ['search', 'pr-a', 'lane-a'].map((name) => ({ name, colour: null }));
+  await page.setViewportSize({ width: 900, height: 720 });
+  await stubTaskboard(page, view);
+  await mount(slot, route);
+
+  const cell = page.getByTestId(ids.cell).first();
+  const article = cell.getByTestId(ids.card);
+  await article.hover();
+  await expect(article.getByTestId(ids.cardPickUp)).toBeVisible();
+  const [cellBox, cardBox] = [await cell.boundingBox(), await article.boundingBox()];
+  expect(cardBox!.x + cardBox!.width).toBeLessThanOrEqual(cellBox!.x + cellBox!.width);
+  await expect(article.getByTestId(ids.cardKey)).toHaveCSS('white-space', 'nowrap');
+});
+
 test('Taskboard_WhenStoryCompleted_ShouldStartCollapsedAndExpandOnToggle', async ({
   mount,
   page,

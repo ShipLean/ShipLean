@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/experimental-ct-react';
 import type { LinkDto } from '../../../api/workItems';
 import { bug, story } from '../ct/fixtures';
 import { stubApi } from '../ct/stubApi';
+import { workItemHarnessIds as harness } from '../ct/harnessIds';
 import { WorkItemFormHarness } from '../ct/WorkItemFormHarness';
 import { workItemTestIds as ids } from '../testIds';
 
@@ -288,4 +289,14 @@ test('LinksEditor_WhenDiscarded_ShouldRestoreSavedLinks', async ({ mount, page }
   await screen.getByTestId(ids.discard).click();
 
   await expect(screen.getByTestId(ids.linkRow)).toHaveCount(2);
+});
+
+test('LinksEditor_WhenWorkItemLinkClicked_ShouldOpenItInModal', async ({ mount, page }) => {
+  await stubApi(page, linked);
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-141" realLinks />, route);
+
+  await screen.getByTestId(ids.linkRow).first().getByRole('link').click();
+
+  await expect(screen.getByTestId(harness.location)).toHaveText('/p/SHIP/items/SHIP-141');
+  await expect(screen.getByTestId(harness.search)).toHaveText(`?item=${related.key}`);
 });

@@ -155,4 +155,5 @@ public static class WorkItemTestIds
     public const string CommentSuperseded = "work-item-comment-superseded";
     public const string CommentVia = "work-item-comment-via";
     public const string CommentActionError = "work-item-comment-action-error";
+    public const string ParentOpen = "work-item-parent-open";
 }

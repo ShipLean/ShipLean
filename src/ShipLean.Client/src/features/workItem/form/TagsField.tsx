@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Chip } from '../../../components/Chip';
 import { workItemTestIds as ids } from '../testIds';
 import { FieldCell } from './FieldCell';
@@ -12,6 +12,7 @@ export function TagsField({
   changed: boolean;
   onChange: (tags: string[]) => void;
 }) {
+  const inputId = useId();
   const [text, setText] = useState('');
   const add = () => {
     const tag = text.trim();
@@ -19,13 +20,7 @@ export function TagsField({
     if (tag !== '' && !value.includes(tag)) onChange([...value, tag]);
   };
   return (
-    <FieldCell
-      label="Tags"
-      field="tags"
-      changed={changed}
-      htmlFor="work-item-tag-input"
-      className="grow"
-    >
+    <FieldCell label="Tags" field="tags" changed={changed} htmlFor={inputId} className="grow">
       <div data-testid={ids.tags} className="flex min-h-7 flex-wrap items-center gap-1">
         {value.map((tag) => (
           <Chip key={tag} onRemove={() => onChange(value.filter((t) => t !== tag))}>
@@ -33,7 +28,7 @@ export function TagsField({
           </Chip>
         ))}
         <input
-          id="work-item-tag-input"
+          id={inputId}
           data-testid={ids.tagInput}
           placeholder="+ Add tag"
           autoComplete="off"

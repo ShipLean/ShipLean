@@ -3,6 +3,7 @@ import { priya } from '../../workItem/ct/fixtures';
 import { stubApi } from '../../workItem/ct/stubApi';
 import { stubComments } from '../../workItem/ct/stubDetails';
 import { stubSide } from '../../workItem/ct/stubSide';
+import { workItemHarnessIds as harness } from '../../workItem/ct/harnessIds';
 import { WorkItemFormHarness } from '../../workItem/ct/WorkItemFormHarness';
 import { feature, stubFeature } from '../ct/stubFeature';
 import { featureTestIds as ids } from '../testIds';
@@ -48,4 +49,15 @@ test('StoriesAndBugs_WhenNone_ShouldShowEmptyState', async ({ mount, page }) => 
 
   await expect(screen.getByTestId(ids.childrenEmpty)).toBeVisible();
   await expect(screen.getByTestId(ids.childRow)).toHaveCount(0);
+});
+
+test('StoriesAndBugs_WhenChildClicked_ShouldOpenChildModal', async ({ mount, page }) => {
+  await stubAll(page, feature);
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-100" />, route);
+  const child = feature.children[0]!;
+
+  await screen.getByTestId(ids.childTitle).first().click();
+
+  await expect(screen.getByTestId(harness.location)).toHaveText('/p/SHIP/items/SHIP-100');
+  await expect(screen.getByTestId(harness.search)).toHaveText(`?item=${child.key}`);
 });

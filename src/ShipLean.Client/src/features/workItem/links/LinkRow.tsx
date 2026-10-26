@@ -1,7 +1,6 @@
-import { Link } from 'react-router-dom';
 import type { DraftLink } from '../form/draft';
 import { LinkCardBadge } from './LinkCardBadge';
-import { routePath } from '../../../routes';
+import { ItemLink } from '../../itemPeek/ItemLink';
 import { workItemTestIds as ids } from '../testIds';
 import { isWebUrl, linkTypeLabels } from './linkTypes';
 
@@ -38,12 +37,17 @@ export function LinkRow({
       )
     ) : (
       <>
-        <Link
-          to={routePath('workItem', { key: projectKey, itemKey: link.key ?? '' })}
-          className="font-semibold text-signal hover:underline"
-        >
-          {link.key}
-        </Link>
+        {link.key === null ? (
+          <span className="font-semibold">{link.key}</span>
+        ) : (
+          <ItemLink
+            projectKey={projectKey}
+            itemKey={link.key}
+            className="font-semibold text-signal hover:underline"
+          >
+            {link.key}
+          </ItemLink>
+        )}
         <span className="truncate" title={link.title ?? undefined}>
           {link.title}
         </span>

@@ -10,6 +10,11 @@ export function Dialog({
   children,
   footer,
   width,
+  tall,
+  testId,
+  closeTestId,
+  headerExtra,
+  onBackdropClick,
 }: {
   title: string;
   onClose: () => void;
@@ -17,18 +22,31 @@ export function Dialog({
   footer?: ReactNode;
   /** A CSS length; the dialog is never wider than the screen. Defaults to `var(--dialog-width)`. */
   width?: string;
+  /** Fills the screen's height instead of fitting its content. */
+  tall?: boolean;
+  /** Replaces `componentTestIds.dialog` / `dialogClose` for a dialog a test addresses on its own. */
+  testId?: string;
+  closeTestId?: string;
+  /** Shown in the header, before the close button. */
+  headerExtra?: ReactNode;
+  /** A click on the backdrop (outside the panel). Without it the backdrop does nothing. */
+  onBackdropClick?: () => void;
 }) {
   const panel = useRef<HTMLDivElement>(null);
   const titleId = useId();
   useModalFocus(panel);
 
   // A click on the backdrop would move focus to the body, outside the trap; keep it where it is.
+  // A drag that starts in the panel (selecting text) and ends on the backdrop is not a click on the backdrop.
+  const pressedBackdrop = useRef(false);
   const keepFocus = (event: MouseEvent) => {
-    if (event.target === event.currentTarget) event.preventDefault();
+    pressedBackdrop.current = event.target === event.currentTarget;
+    if (pressedBackdrop.current) event.preventDefault();
   };
 
+  // A field inside that used Esc itself (closing a mention list, cancelling an add form) marks the event handled.
   const onKeyDown = (event: KeyboardEvent) => {
-    if (event.key === 'Escape') {
+    if (event.key === 'Escape' && !event.defaultPrevented) {
       event.stopPropagation();
       onClose();
     }
@@ -37,19 +55,22 @@ export function Dialog({
   return createPortal(
     <div
       onMouseDown={keepFocus}
+      onClick={(event) => {
+        if (event.target === event.currentTarget && pressedBackdrop.current) onBackdropClick?.();
+      }}
       className="fixed inset-0 z-50 grid place-items-center p-4"
       style={{ background: 'color-mix(in srgb, var(--color-text) 45%, transparent)' }}
     >
       <div
         ref={panel}
-        data-testid={componentTestIds.dialog}
+        data-testid={testId ?? componentTestIds.dialog}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
         onKeyDown={onKeyDown}
         style={{ width: `min(${width ?? 'var(--dialog-width)'}, 100%)` }}
-        className="flex max-h-[calc(100dvh-32px)] flex-col overflow-hidden rounded-frame border border-edge bg-panel shadow-panel"
+        className={`flex max-h-[calc(100dvh-32px)] flex-col ${tall ? 'h-[calc(100dvh-32px)]' : ''}  overflow-hidden rounded-frame border border-edge bg-panel shadow-panel`}
       >
         <header className="flex items-start gap-2 border-b border-edge px-4 py-3">
           <h2
@@ -58,9 +79,10 @@ export function Dialog({
           >
             {title}
           </h2>
+          {headerExtra}
           <button
             type="button"
-            data-testid={componentTestIds.dialogClose}
+            data-testid={closeTestId ?? componentTestIds.dialogClose}
             aria-label="Close"
             className="text-ink-muted hover:text-ink"
             onClick={onClose}

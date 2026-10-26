@@ -16,4 +16,8 @@ public sealed class FeatureStripPanel(IPage page)
     public ILocator StripChildrenCount => page.GetByTestId(FeatureTestIds.StripChildrenCount);
 
     public ILocator ChildrenCount => page.GetByTestId(FeatureTestIds.ChildrenCount);
+
+    public ILocator EpicOpen => page.GetByTestId(FeatureTestIds.EpicOpen);
+
+    public ILocator ChildTitles => page.GetByTestId(FeatureTestIds.ChildTitle);
 }

@@ -23,6 +23,7 @@
 //     /p/:key/sprints/:sprintId/taskboard   ?settings=   (the Taskboard settings dialog's section)
 //     /p/:key/import              Jira import
 //     /p/:key/settings/:tab       tab: general | states | members | sprints | integrations
+//   Every project-level route also takes ?item=<itemKey>: that work item open in a modal over the screen.
 //
 // A route id is also the screen id presence is reported by. Ids and paths are stable: later work mounts pages on
 // them and does not rename them.
@@ -83,6 +84,8 @@ export interface RouteQuery {
   settings?: string;
   returnUrl?: string;
   request?: string;
+  // A work item open in a modal over a project page (its key, like SHIP-12). Only project-level routes carry it.
+  item?: string;
 }
 
 interface RouteDef<I extends RouteId> {
@@ -124,87 +127,87 @@ const routeDefs: { [I in RouteId]: RouteDef<I> } = {
   },
   storiesBacklog: {
     pattern: '/p/:key/backlogs/stories',
-    query: ['mode'],
+    query: ['mode', 'item'],
     installLevel: false,
     crumbs: (_p, q) => withMode(['Backlogs', 'Stories'], q),
   },
   featuresBacklog: {
     pattern: '/p/:key/backlogs/features',
-    query: ['mode'],
+    query: ['mode', 'item'],
     installLevel: false,
     crumbs: (_p, q) => withMode(['Backlogs', 'Features'], q),
   },
   epicsBacklog: {
     pattern: '/p/:key/backlogs/epics',
-    query: ['mode'],
+    query: ['mode', 'item'],
     installLevel: false,
     crumbs: (_p, q) => withMode(['Backlogs', 'Epics'], q),
   },
   workItem: {
     pattern: '/p/:key/items/:itemKey',
-    query: [],
+    query: ['item'],
     installLevel: false,
     crumbs: (p) => ['Backlogs', p.itemKey],
   },
   // The attachment crumb says "Attachment" until the page that knows the file's name replaces it.
   workItemAttachment: {
     pattern: '/p/:key/items/:itemKey/attachments/:attachmentId',
-    query: [],
+    query: ['item'],
     installLevel: false,
     crumbs: (p) => ['Backlogs', p.itemKey, 'Attachment'],
   },
   storiesBoard: {
     pattern: '/p/:key/boards/stories',
-    query: ['settings'],
+    query: ['settings', 'item'],
     installLevel: false,
     crumbs: (_p, q) => withSettings(['Boards', 'Stories'], q),
   },
   featuresBoard: {
     pattern: '/p/:key/boards/features',
-    query: ['settings'],
+    query: ['settings', 'item'],
     installLevel: false,
     crumbs: (_p, q) => withSettings(['Boards', 'Features'], q),
   },
   epicsBoard: {
     pattern: '/p/:key/boards/epics',
-    query: ['settings'],
+    query: ['settings', 'item'],
     installLevel: false,
     crumbs: (_p, q) => withSettings(['Boards', 'Epics'], q),
   },
   sprints: {
     pattern: '/p/:key/sprints',
-    query: [],
+    query: ['item'],
     installLevel: false,
     crumbs: () => ['Sprints', 'All sprints'],
   },
   // The sprint crumb says "Sprint" until the page that knows the sprint's name replaces it.
   sprintBacklog: {
     pattern: '/p/:key/sprints/:sprintId/backlog',
-    query: [],
+    query: ['item'],
     installLevel: false,
     crumbs: () => ['Sprints', 'Sprint', 'Backlog'],
   },
   taskboard: {
     pattern: '/p/:key/sprints/:sprintId/taskboard',
-    query: ['settings'],
+    query: ['settings', 'item'],
     installLevel: false,
     crumbs: (_p, q) => withSettings(['Sprints', 'Sprint', 'Taskboard'], q),
   },
   capacity: {
     pattern: '/p/:key/sprints/:sprintId/capacity',
-    query: [],
+    query: ['item'],
     installLevel: false,
     crumbs: () => ['Sprints', 'Sprint', 'Capacity'],
   },
   jiraImport: {
     pattern: '/p/:key/import',
-    query: [],
+    query: ['item'],
     installLevel: false,
     crumbs: () => ['Jira import'],
   },
   projectSettings: {
     pattern: '/p/:key/settings/:tab',
-    query: [],
+    query: ['item'],
     installLevel: false,
     crumbs: () => ['Settings'],
   },
@@ -242,7 +245,7 @@ export function routePath<I extends RouteId>(
   const search = new URLSearchParams();
   for (const name of def.query) {
     const value = query[name];
-    if (value !== undefined) search.set(name, value);
+    if (value !== undefined && !(name === 'item' && value === '')) search.set(name, value);
   }
   const text = search.toString();
   return text === '' ? path : `${path}?${text}`;
@@ -280,7 +283,7 @@ function parseQuery(def: AnyDef, search: string): RouteQuery {
   const query: RouteQuery = {};
   for (const name of def.query) {
     const value = raw.get(name);
-    if (value === null) continue;
+    if (value === null || (name === 'item' && value === '')) continue;
     if (name === 'mode') {
       const mode = oneOf(backlogModes, value);
       if (mode !== undefined) query.mode = mode;

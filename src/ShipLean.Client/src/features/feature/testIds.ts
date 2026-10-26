@@ -109,4 +109,5 @@ export const featureTestIds = {
   addLinkSubmit: 'feature-add-link-submit',
   addLinkCancel: 'feature-add-link-cancel',
   addLinkError: 'feature-add-link-error',
+  epicOpen: 'feature-epic-open',
 } as const;

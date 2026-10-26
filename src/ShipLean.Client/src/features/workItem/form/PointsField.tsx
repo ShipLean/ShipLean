@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { workItemTestIds as ids } from '../testIds';
 import { FieldCell } from './FieldCell';
 import { inputClass } from './inputClasses';
@@ -11,10 +12,11 @@ export function PointsField({
   changed: boolean;
   onChange: (points: number | null) => void;
 }) {
+  const inputId = useId();
   return (
-    <FieldCell label="Story points" field="points" changed={changed} htmlFor="work-item-points">
+    <FieldCell label="Story points" field="points" changed={changed} htmlFor={inputId}>
       <input
-        id="work-item-points"
+        id={inputId}
         data-testid={ids.points}
         type="number"
         min={0}

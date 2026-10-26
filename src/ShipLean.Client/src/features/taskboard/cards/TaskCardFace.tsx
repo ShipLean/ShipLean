@@ -3,6 +3,7 @@ import type { CardDto, TaskboardViewDto } from '../../../api/views';
 import { Avatar } from '../../../components/Avatar';
 import { Chip } from '../../../components/Chip';
 import { TypeIcon } from '../../../components/TypeIcon';
+import { ItemLink } from '../../itemPeek/ItemLink';
 import { CardExtraFields } from '../../board/cards/CardExtraFields';
 import { ruleCardStyle } from '../../board/cards/cardStyle';
 import { taskboardTestIds as ids } from '../testIds';
@@ -72,7 +73,13 @@ export function TaskCardFace({
           {card.parent ? (
             <>
               <TypeIcon type={card.parent.type.id} />
-              {card.parent.title}
+              {preview ? (
+                card.parent.title
+              ) : (
+                <ItemLink itemKey={card.parent.key} className="hover:underline">
+                  {card.parent.title}
+                </ItemLink>
+              )}
             </>
           ) : (
             'No parent'
@@ -81,10 +88,22 @@ export function TaskCardFace({
       ) : null}
       <span className="flex items-start gap-1.5 text-[length:var(--text-sm)] text-ink">
         <TypeIcon type="task" />
-        <span data-testid={id(ids.cardTitle)}>{card.title}</span>
+        <span data-testid={id(ids.cardTitle)}>
+          {preview ? (
+            card.title
+          ) : (
+            <ItemLink itemKey={card.key} className="text-inherit no-underline hover:underline">
+              {card.title}
+            </ItemLink>
+          )}
+        </span>
       </span>
-      <span className="flex items-center gap-1.5 text-[length:var(--text-xs)] text-ink-muted">
-        {fields.showKey ? <span data-testid={id(ids.cardKey)}>{card.key}</span> : null}
+      <span className="flex flex-wrap items-center gap-1.5 text-[length:var(--text-xs)] text-ink-muted">
+        {fields.showKey ? (
+          <span data-testid={id(ids.cardKey)} className="whitespace-nowrap">
+            {card.key}
+          </span>
+        ) : null}
         {fields.showTags
           ? card.tags.map((tag) => (
               <span key={tag.name} data-testid={id(ids.cardTag)} data-tone={tag.colour ?? 'muted'}>
@@ -100,7 +119,7 @@ export function TaskCardFace({
           <button
             type="button"
             data-testid={id(ids.cardPickUp)}
-            className="hidden h-5 items-center rounded-full border border-signal bg-panel px-[7px] text-[length:var(--text-2xs)] font-semibold text-signal group-focus-within:inline-flex group-hover:inline-flex"
+            className="hidden h-5 items-center rounded-full border border-signal bg-panel px-[7px] text-[length:var(--text-2xs)] font-semibold whitespace-nowrap text-signal group-focus-within:inline-flex group-hover:inline-flex"
             onClick={pickUp}
           >
             Pick up
