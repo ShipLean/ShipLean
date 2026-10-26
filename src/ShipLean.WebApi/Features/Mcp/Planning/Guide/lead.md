@@ -18,6 +18,10 @@ Contracts you build against. Only the conductor changes a contract; if you need 
 
 Your lane needs nothing from any other lane. Work on the shared branch {{shared_branch}}.
 
+## Pull requests
+
+**EVERY PULL REQUEST OR MERGE REQUEST YOU OR YOUR SUB-AGENTS OPEN MUST HAVE THE STORY KEY IN ITS TITLE, FOR EXAMPLE "SHIP-12: WHAT IT DOES".** ShipLean links a PR to each Story, Task or Bug whose key is in the title and closes it when the PR merges. Tasks close when their review passes, but nothing else waits for the merge, so the Story's key in the PR title is what lets the merge close the Story.
+
 ## What to do
 
 1. For each task, read its brief with `get_brief`, create a worktree on a branch of its own from the shared branch, and launch the wave's tasks at once, up to the conductor's cap, each as a background sub-agent on the model its description names. Then end your turn. A child's completion notification wakes you; do not build watchers or poll.
