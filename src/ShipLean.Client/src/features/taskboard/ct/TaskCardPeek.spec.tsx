@@ -1,8 +1,10 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import type { Page } from 'playwright';
 import { TaskboardSlot } from '../../../slots/TaskboardSlot';
+import { LocationProbe } from '../../board/ct/LocationProbe';
+import { boardTestIds } from '../../board/testIds';
+import { itemPeekTestIds } from '../../itemPeek/testIds';
 import { taskboardTestIds as ids } from '../testIds';
-import { AddressReadout } from './AddressReadout';
 import { PROJECT, SPRINT, SPRINTS, VIEW } from './fixtures';
 import { stubTaskboard } from './stubApi';
 
@@ -10,7 +12,7 @@ const route = { hooksConfig: { route: '/p/SHIP/sprints/s24/taskboard' } };
 const slot = (
   <>
     <TaskboardSlot project={PROJECT} sprint={SPRINT} sprints={SPRINTS} />
-    <AddressReadout />
+    <LocationProbe />
   </>
 );
 
@@ -23,11 +25,11 @@ test('TaskCard_WhenTitleClicked_ShouldOpenItemModal', async ({ mount, page }) =>
   await stubTaskboard(page, VIEW);
   await mount(slot, route);
 
-  const title = card(page, 'SHIP-173').getByTestId(ids.cardTitle);
-  await expect(title.getByRole('link')).toHaveAttribute('href', '/p/SHIP/items/SHIP-173');
-  await title.click();
+  const link = card(page, 'SHIP-173').getByTestId(ids.cardTitle).getByTestId(itemPeekTestIds.link);
+  await expect(link).toHaveAttribute('href', '/p/SHIP/items/SHIP-173');
+  await link.click();
 
-  await expect(page.getByTestId('address')).toHaveText(
+  await expect(page.getByTestId(boardTestIds.locationProbe)).toHaveText(
     '/p/SHIP/sprints/s24/taskboard?item=SHIP-173',
   );
 });
@@ -56,5 +58,34 @@ test('TaskCard_WhenDraggedFromTitle_ShouldMoveTheCardAndNotOpenItemModal', async
   await page.mouse.up();
 
   await expect.poll(() => server.moves.length).toBe(1);
-  await expect(page.getByTestId('address')).not.toContainText('item=');
+  await expect(page.getByTestId(boardTestIds.locationProbe)).toHaveText(
+    '/p/SHIP/sprints/s24/taskboard',
+  );
+});
+
+test('TaskCard_WhenParentClicked_ShouldOpenParentInModal', async ({ mount, page }) => {
+  await stubTaskboard(page, VIEW, { saved: { groupBy: 'people' } });
+  await mount(slot, route);
+
+  await card(page, 'SHIP-173')
+    .getByTestId(ids.cardParent)
+    .getByTestId(itemPeekTestIds.link)
+    .click();
+
+  await expect(page.getByTestId(boardTestIds.locationProbe)).toHaveText(
+    '/p/SHIP/sprints/s24/taskboard?item=SHIP-141',
+  );
+});
+
+test('StoryRowHeader_WhenCollapsedTitleClicked_ShouldOpenItemModal', async ({ mount, page }) => {
+  await stubTaskboard(page, VIEW);
+  await mount(slot, route);
+
+  const done = page.getByTestId(ids.row).nth(1);
+  await expect(done).toHaveAttribute('data-collapsed', 'true');
+  await done.getByTestId(ids.rowTitle).getByTestId(itemPeekTestIds.link).click();
+
+  await expect(page.getByTestId(boardTestIds.locationProbe)).toHaveText(
+    '/p/SHIP/sprints/s24/taskboard?item=SHIP-138',
+  );
 });

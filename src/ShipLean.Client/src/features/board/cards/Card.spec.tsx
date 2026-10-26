@@ -3,6 +3,7 @@ import type { CardDto } from '../../../api/views';
 import { componentTestIds } from '../../../components/testIds';
 import { boardTestIds as ids } from '../testIds';
 import { Card } from './Card';
+import { itemPeekTestIds } from '../../itemPeek/testIds';
 import { LocationProbe } from '../ct/LocationProbe';
 import { card, PROJECT, SETTINGS, TOM } from '../ct/fixtures';
 
@@ -340,9 +341,51 @@ test('CardParent_WhenClicked_ShouldOpenParentInModal', async ({ mount, page }) =
     route,
   );
 
-  await page.getByTestId(ids.cardParent).getByTestId('item-link').click();
+  await page.getByTestId(ids.cardParent).getByTestId(itemPeekTestIds.link).click();
 
   await expect(page.getByTestId(ids.locationProbe)).toHaveText(
     '/p/SHIP/boards/stories?item=SHIP-103',
+  );
+});
+
+test('Card_WhenLinkTitleIsOff_ShouldShowTheTitleAsPlainText', async ({ mount, page }) => {
+  await mount(
+    <Card
+      card={peekCard}
+      level="stories"
+      compact={false}
+      settings={SETTINGS}
+      inDone={false}
+      linkTitle={false}
+    />,
+    route,
+  );
+
+  await expect(page.getByTestId(ids.cardTitle)).toHaveText('Saved filters');
+  await expect(page.getByTestId(ids.cardTitle).getByRole('link')).toHaveCount(0);
+});
+
+test('Card_WhenProjectKeyIsAnotherProject_ShouldKeepParentAsFullPageLink', async ({
+  mount,
+  page,
+}) => {
+  await mount(
+    <>
+      <Card
+        card={peekCard}
+        projectKey="KEY"
+        level="stories"
+        compact={false}
+        settings={SETTINGS}
+        inDone={false}
+      />
+      <LocationProbe />
+    </>,
+    route,
+  );
+
+  await expect(page.getByTestId(ids.cardParent).getByTestId(itemPeekTestIds.link)).toHaveAttribute(
+    'href',
+    '/p/KEY/items/SHIP-103',
   );
 });

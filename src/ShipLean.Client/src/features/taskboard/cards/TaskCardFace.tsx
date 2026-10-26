@@ -75,7 +75,9 @@ export function TaskCardFace({
               {preview ? (
                 card.parent.title
               ) : (
-                <ItemLink itemKey={card.parent.key}>{card.parent.title}</ItemLink>
+                <ItemLink itemKey={card.parent.key} className="hover:underline">
+                  {card.parent.title}
+                </ItemLink>
               )}
             </>
           ) : (

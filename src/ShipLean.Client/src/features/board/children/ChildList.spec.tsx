@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import type { ChildSummaryDto } from '../../../api/workItems';
+import { itemPeekTestIds } from '../../itemPeek/testIds';
 import { LocationProbe } from '../ct/LocationProbe';
 import { BoardHarness } from '../ct/BoardHarness';
 import { TOM, rollupBoard } from '../ct/fixtures';
@@ -263,7 +264,7 @@ test('Board_WhenChildClicked_ShouldOpenChildInModal', async ({ mount, page }) =>
   );
   await rollup(page, 'story').click();
 
-  await page.getByTestId(ids.childRow).first().getByTestId('item-link').click();
+  await page.getByTestId(ids.childRow).first().getByTestId(itemPeekTestIds.link).click();
 
   await expect(page.getByTestId(ids.locationProbe)).toHaveText(
     '/p/SHIP/boards/features?item=SHIP-141',

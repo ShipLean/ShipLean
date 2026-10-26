@@ -12,6 +12,7 @@ import { RowToggle } from './RowToggle';
 
 /** The header card of a story or bug row: key, points, title, a state picker over the type's states, and the task roll-up. */
 export function StoryRowHeader({
+  projectKey,
   parent,
   parentStates,
   fields,
@@ -53,7 +54,11 @@ export function StoryRowHeader({
           data-testid={ids.rowTitle}
           className="flex-1 truncate text-[length:var(--text-sm)] text-ink"
         >
-          <ItemLink itemKey={parent.key} className="text-inherit no-underline hover:underline">
+          <ItemLink
+            itemKey={parent.key}
+            projectKey={projectKey}
+            className="text-inherit no-underline hover:underline"
+          >
             {parent.title}
           </ItemLink>
         </span>
@@ -75,6 +80,7 @@ export function StoryRowHeader({
       <ItemLink
         testId={ids.rowTitle}
         itemKey={parent.key}
+        projectKey={projectKey}
         className="text-[length:var(--text-sm)] text-ink"
       >
         {parent.title}

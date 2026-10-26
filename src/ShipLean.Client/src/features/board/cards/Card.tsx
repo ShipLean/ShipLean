@@ -20,8 +20,10 @@ export type CardSettings = Pick<BoardViewDto, 'styleRules' | 'cardFields' | 'ann
 
 export interface CardProps {
   card: CardDto;
-  /** Unused since titles became ItemLinks (they read the open route's project); kept so callers stay unchanged. */
+  /** The project the card's links open in; defaults to the open route's. A different key makes them plain full-page links. */
   projectKey?: string;
+  /** The title is a link to the item (default); false draws it as plain text (a settings preview). */
+  linkTitle?: boolean;
   level: Level;
   /** Compact: key, points, avatar and one line of title; Features and Epics keep their roll-ups. */
   compact: boolean;
@@ -43,6 +45,8 @@ export interface CardProps {
 // One card, full or compact. It draws only: dragging, keyboard moves and menus belong to whatever wraps it.
 export function Card({
   card,
+  projectKey,
+  linkTitle = true,
   level,
   compact,
   settings,
@@ -59,6 +63,9 @@ export function Card({
   const showAssignee = fields?.showAssignee ?? true;
   const showTags = fields?.showTags ?? true;
   const showPoints = fields?.showPoints ?? true;
+  const titleClass = `leading-[1.35] font-medium ${compact ? 'line-clamp-1' : 'line-clamp-2'} ${
+    inDone ? 'text-ink-muted' : 'text-ink'
+  }`;
   return (
     <article
       {...frame}
@@ -85,21 +92,26 @@ export function Card({
         {showPoints ? <CardPoints card={card} level={level} /> : null}
         {compact && showAssignee ? <CardAssignee card={card} /> : null}
       </div>
-      <ItemLink
-        testId={ids.cardTitle}
-        itemKey={card.key}
-        className={`leading-[1.35] font-medium ${compact ? 'line-clamp-1' : 'line-clamp-2'} ${
-          inDone ? 'text-ink-muted' : 'text-ink'
-        }`}
-        style={ruleTitleStyle(rule)}
-      >
-        {card.title}
-      </ItemLink>
+      {linkTitle ? (
+        <ItemLink
+          testId={ids.cardTitle}
+          itemKey={card.key}
+          projectKey={projectKey}
+          className={titleClass}
+          style={ruleTitleStyle(rule)}
+        >
+          {card.title}
+        </ItemLink>
+      ) : (
+        <span data-testid={ids.cardTitle} className={titleClass} style={ruleTitleStyle(rule)}>
+          {card.title}
+        </span>
+      )}
       {compact ? null : (
         <>
           {/* Parent, roll-ups and assignee share a line; a line with nothing left in it is hidden, so the card closes up. */}
           <div className="flex min-w-0 items-center gap-1.5 empty:hidden">
-            {card.parent ? <CardParent parent={card.parent} /> : null}
+            {card.parent ? <CardParent parent={card.parent} projectKey={projectKey} /> : null}
             <CardRollups
               rollups={card.rollups}
               annotations={settings.annotations}

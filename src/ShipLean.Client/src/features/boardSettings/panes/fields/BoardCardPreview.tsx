@@ -22,6 +22,7 @@ export function BoardCardPreview({
     <Card
       card={card}
       projectKey={PREVIEW_PROJECT_KEY}
+      linkTitle={false}
       level={level === 'taskboard' ? 'stories' : level}
       compact={false}
       settings={{ styleRules, cardFields, annotations: noAnnotations }}
