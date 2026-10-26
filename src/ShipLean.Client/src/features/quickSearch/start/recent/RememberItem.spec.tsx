@@ -1,5 +1,4 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import { meDto } from '../../../shell/shellFixtures';
 import { feature, stubFeature } from '../../../feature/ct/stubFeature';
 import { priya, story } from '../../../workItem/ct/fixtures';
 import { stubApi } from '../../../workItem/ct/stubApi';
@@ -8,8 +7,8 @@ import { stubSide } from '../../../workItem/ct/stubSide';
 import { WorkItemFormHarness } from '../../../workItem/ct/WorkItemFormHarness';
 import { workItemTestIds } from '../../../workItem/testIds';
 
-const me = meDto();
-const storageKey = `shiplean.quickSearch.recent.${me.id}`;
+// stubComments answers /api/me with the user it is given.
+const storageKey = `shiplean.quickSearch.recent.${priya.id}`;
 const route = (key: string) => ({ hooksConfig: { route: `/p/SHIP/items/${key}` } });
 
 type StubbedPage = Parameters<typeof stubApi>[0] &
@@ -18,9 +17,6 @@ type StubbedPage = Parameters<typeof stubApi>[0] &
   Parameters<typeof stubFeature>[0];
 
 async function stubAll(page: StubbedPage, item: Parameters<typeof stubApi>[1]) {
-  await page.route('**/api/me', (r) =>
-    r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(me) }),
-  );
   await stubApi(page, item);
   await stubSide(page, priya, [], []);
   await stubComments(page, priya, []);

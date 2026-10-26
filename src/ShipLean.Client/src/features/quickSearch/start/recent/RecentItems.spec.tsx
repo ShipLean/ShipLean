@@ -10,7 +10,7 @@ interface StubRoute {
 }
 interface Page {
   route(url: string, handler: (route: StubRoute) => Promise<void>): Promise<unknown>;
-  addInitScript(script: (arg: unknown) => void, arg?: unknown): Promise<unknown>;
+  evaluate(script: (arg: unknown) => void, arg?: unknown): Promise<unknown>;
 }
 
 const me: MeDto = meDto();
@@ -35,7 +35,7 @@ async function setUp(page: Page, entries: unknown[] | null) {
     }),
   );
   if (entries !== null) {
-    await page.addInitScript(
+    await page.evaluate(
       (arg) => {
         const { key, value } = arg as { key: string; value: string };
         window.localStorage.setItem(key, value);
@@ -68,7 +68,7 @@ test('Recent_WhenNoneYet_ShouldShowNoRecentGroup', async ({ mount, page }) => {
 
 test('Recent_WhenStorageIsBlocked_ShouldStillOpenTheDialog', async ({ mount, page }) => {
   await setUp(page, null);
-  await page.addInitScript(() => {
+  await page.evaluate(() => {
     Object.defineProperty(window, 'localStorage', {
       get() {
         throw new DOMException('blocked', 'SecurityError');
