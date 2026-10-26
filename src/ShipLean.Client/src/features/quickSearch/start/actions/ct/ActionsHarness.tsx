@@ -1,12 +1,12 @@
-import { useLocation } from 'react-router-dom';
+import { Route, Routes, useLocation } from 'react-router-dom';
 import { useSyncExternalStore } from 'react';
 import { getToasts, subscribeToasts } from '../../../../../components/toastStore';
 import { useActionSource } from '../../useActionSource';
 import { actionsHarnessIds as ids } from './harnessIds';
 
 // The real action source with a button per action, and the location and toasts written out for a test to read.
-// Mount it on /p/SHIP/... so the shell project resolves from the route.
-export function ActionsHarness() {
+// It sits under /p/:key/*, so mount it on /p/SHIP/... for the shell project to resolve from the route.
+function Panel() {
   const location = useLocation();
   const toasts = useSyncExternalStore(subscribeToasts, getToasts);
   const rows = useActionSource('').groups.flatMap((group) => group.rows);
@@ -22,5 +22,13 @@ export function ActionsHarness() {
         ) : null,
       )}
     </div>
+  );
+}
+
+export function ActionsHarness() {
+  return (
+    <Routes>
+      <Route path="/p/:key/*" element={<Panel />} />
+    </Routes>
   );
 }
