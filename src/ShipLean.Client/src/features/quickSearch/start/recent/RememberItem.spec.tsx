@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
+import type { ParentRefDto } from '../../../../api/workItems';
 import { feature, stubFeature } from '../../../feature/ct/stubFeature';
 import { priya, story } from '../../../workItem/ct/fixtures';
 import { stubApi } from '../../../workItem/ct/stubApi';
@@ -23,18 +24,33 @@ async function stubAll(page: StubbedPage, item: Parameters<typeof stubApi>[1]) {
   await stubFeature(page);
 }
 
-const storedKeys = (raw: string | null) =>
-  (JSON.parse(raw ?? '[]') as { key: string; title: string }[]).map((i) => [i.key, i.title]);
+const parsed = (raw: string | null) => JSON.parse(raw ?? '[]') as unknown;
 
 test('RememberItem_WhenAnItemLoads_ShouldStoreItFirst', async ({ mount, page }) => {
-  await stubAll(page, story);
+  const parent: ParentRefDto = {
+    id: 'w100',
+    key: 'SHIP-100',
+    type: { id: 'feature', name: 'Feature' },
+    title: 'Checkout',
+  };
+  await stubAll(page, { ...story, parent });
   const screen = await mount(<WorkItemFormHarness itemKey="SHIP-141" />, route('SHIP-141'));
   await expect(screen.getByTestId(workItemTestIds.title)).toHaveValue('Pay with saved card');
 
-  // Fails if the hook never runs, or stores before the user id is known (under another key).
+  // Fails if the hook never runs, stores before the user id is known (under another key), or stores extra fields.
   await expect
-    .poll(async () => storedKeys(await page.evaluate((k) => localStorage.getItem(k), storageKey)))
-    .toEqual([['SHIP-141', 'Pay with saved card']]);
+    .poll(async () => parsed(await page.evaluate((k) => localStorage.getItem(k), storageKey)))
+    .toEqual([
+      {
+        key: story.key,
+        title: story.title,
+        type: story.type.id,
+        state: story.state.name,
+        stateCategory: story.state.category,
+        parentPath: [parent.key],
+        projectKey: 'SHIP',
+      },
+    ]);
 });
 
 test('RememberItem_WhenAFeatureLoads_ShouldStoreItToo', async ({ mount, page }) => {
@@ -43,6 +59,16 @@ test('RememberItem_WhenAFeatureLoads_ShouldStoreItToo', async ({ mount, page }) 
 
   // Fails if the hook sits only on the plain form's layout and not on features.
   await expect
-    .poll(async () => storedKeys(await page.evaluate((k) => localStorage.getItem(k), storageKey)))
-    .toEqual([[feature.key, feature.title]]);
+    .poll(async () => parsed(await page.evaluate((k) => localStorage.getItem(k), storageKey)))
+    .toEqual([
+      {
+        key: feature.key,
+        title: feature.title,
+        type: feature.type.id,
+        state: feature.state.name,
+        stateCategory: feature.state.category,
+        parentPath: [],
+        projectKey: 'SHIP',
+      },
+    ]);
 });

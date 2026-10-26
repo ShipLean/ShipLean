@@ -63,15 +63,22 @@ test('readRecent_WhenStorageThrows_ShouldReturnEmpty', () => {
 });
 
 test('readRecent_WhenAnEntryIsMalformed_ShouldDropIt', () => {
-  const noTitle: Partial<QuickSearchItem> = { ...item(2) };
-  delete noTitle.title;
+  const without = (n: number, field: keyof QuickSearchItem) => {
+    const entry: Partial<QuickSearchItem> = { ...item(n) };
+    delete entry[field];
+    return entry;
+  };
   localStorage.setItem(
     'shiplean.quickSearch.recent.u1',
     JSON.stringify([
       item(1),
-      noTitle,
-      { ...item(3), type: 'saga' },
-      { ...item(4), parentPath: [1] },
+      without(2, 'title'),
+      without(3, 'key'),
+      without(4, 'projectKey'),
+      { ...item(5), type: 'saga' },
+      { ...item(6), state: 3 },
+      { ...item(7), stateCategory: 'bogus' },
+      { ...item(8), parentPath: [1] },
       null,
     ]),
   );
@@ -80,10 +87,14 @@ test('readRecent_WhenAnEntryIsMalformed_ShouldDropIt', () => {
 
   localStorage.setItem('shiplean.quickSearch.recent.u1', '{not json');
   expect(readRecent('u1')).toEqual([]);
+
+  localStorage.setItem('shiplean.quickSearch.recent.u1', '{}');
+  expect(readRecent('u1')).toEqual([]);
 });
 
 test('readRecent_WhenAnotherUser_ShouldNotSeeTheirItems', () => {
   rememberRecent('u1', item(1), { moveToFront: true });
 
+  expect(readRecent('u1')).toHaveLength(1);
   expect(readRecent('u2')).toEqual([]);
 });

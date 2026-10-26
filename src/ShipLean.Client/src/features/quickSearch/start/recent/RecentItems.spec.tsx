@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/experimental-ct-react';
 import type { MeDto } from '../../../../api/me';
 import { meDto } from '../../../shell/shellFixtures';
 import { quickSearchTestIds as ids } from '../../testIds';
+import { recentHarnessIds } from './ct/harnessIds';
 import { RecentHarness } from './ct/RecentHarness';
 
 // The part of Playwright's Page and Route this spec uses (the CT package does not re-export the types).
@@ -34,6 +35,12 @@ async function setUp(page: Page, entries: unknown[] | null) {
       body: JSON.stringify(me),
     }),
   );
+  await page.evaluate(
+    (arg) => {
+      window.localStorage.removeItem((arg as { key: string }).key);
+    },
+    { key: storageKey },
+  );
   if (entries !== null) {
     await page.evaluate(
       (arg) => {
@@ -48,6 +55,7 @@ async function setUp(page: Page, entries: unknown[] | null) {
 test('Recent_WhenNothingTyped_ShouldListTheLastFiveOpened', async ({ mount, page }) => {
   await setUp(page, [1, 2, 3, 4, 5, 6, 7].map(stored));
   await mount(<RecentHarness />);
+  await expect(page.getByTestId(recentHarnessIds.userId)).toHaveText(me.id);
 
   // Fails if the source shows all stored items instead of the first five.
   await expect(page.getByTestId(ids.option)).toHaveCount(5);
@@ -60,7 +68,9 @@ test('Recent_WhenNothingTyped_ShouldListTheLastFiveOpened', async ({ mount, page
 test('Recent_WhenNoneYet_ShouldShowNoRecentGroup', async ({ mount, page }) => {
   await setUp(page, null);
   await mount(<RecentHarness />);
+  await expect(page.getByTestId(recentHarnessIds.userId)).toHaveText(me.id);
 
+  // Fails if an empty Recent group is returned.
   await expect(page.getByTestId(ids.dialog)).toBeVisible();
   await expect(page.getByTestId(ids.note)).toHaveText('Recent items are kept in this browser');
   await expect(page.getByTestId(ids.group)).toHaveCount(0);
@@ -76,7 +86,9 @@ test('Recent_WhenStorageIsBlocked_ShouldStillOpenTheDialog', async ({ mount, pag
     });
   });
   await mount(<RecentHarness />);
+  await expect(page.getByTestId(recentHarnessIds.userId)).toHaveText(me.id);
 
+  // Fails if readRecent lets a storage error escape.
   await expect(page.getByTestId(ids.dialog)).toBeVisible();
   await expect(page.getByTestId(ids.group)).toHaveCount(0);
 });
