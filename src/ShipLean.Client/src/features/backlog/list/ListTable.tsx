@@ -39,6 +39,7 @@ export function ListTable({
   projectKey,
   adding,
   addType,
+  addRequest,
   onCloseAdd,
   dragDisabled,
   filtered,
@@ -52,6 +53,7 @@ export function ListTable({
   adding: boolean;
   // The type the new-item row opens with (User Story when left out).
   addType?: WorkItemTypeId;
+  addRequest?: number;
   onCloseAdd: () => void;
   // Reordering is off (a filter is on).
   dragDisabled: boolean;
@@ -101,6 +103,7 @@ export function ListTable({
                   columnCount={columns.length + 1}
                   onClose={onCloseAdd}
                   initialType={addType}
+                  request={addRequest}
                 />
               ) : null}
               {rows.map((row) => (

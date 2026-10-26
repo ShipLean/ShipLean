@@ -1,4 +1,4 @@
-import { act, useEffect } from 'react';
+import { act, StrictMode, useEffect, useSyncExternalStore } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, expect, test } from 'vitest';
@@ -60,4 +60,41 @@ test('useNewItemFromLink_WhenOtherQueries_ShouldKeepThem', () => {
 
   expect(seen.calls).toEqual(['story']);
   expect(seen.address).toBe('/p/SHIP/backlogs/stories?mode=tree&item=SHIP-1');
+});
+
+test('useNewItemFromLink_WhenRerenderedBeforeTheAddressChanges_ShouldCallOnKindOnce', () => {
+  // A store the callback pokes, so the page re-renders (with a fresh inline callback) while `new` is still in the address.
+  let version = 0;
+  const listeners = new Set<() => void>();
+  const bump = () => {
+    version += 1;
+    listeners.forEach((listener) => listener());
+  };
+
+  function Rerendering() {
+    useSyncExternalStore(
+      (listener) => {
+        listeners.add(listener);
+        return () => void listeners.delete(listener);
+      },
+      () => version,
+    );
+    useNewItemFromLink(ACCEPTS, (kind) => {
+      seen.calls.push(kind);
+      bump();
+    });
+    return null;
+  }
+
+  act(() => {
+    root.render(
+      <StrictMode>
+        <MemoryRouter initialEntries={['/p/SHIP/backlogs/stories?new=bug']}>
+          <Rerendering />
+        </MemoryRouter>
+      </StrictMode>,
+    );
+  });
+
+  expect(seen.calls).toEqual(['bug']);
 });

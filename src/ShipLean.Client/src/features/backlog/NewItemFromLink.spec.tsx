@@ -36,6 +36,24 @@ test('Stories_WhenAlreadyOpenAndNewBugArrives_ShouldOpenTheRow', async ({ mount,
   await expect(page.getByTestId('harness-location')).toHaveText('/p/SHIP/backlogs/stories');
 });
 
+test('Stories_WhenRowOpenOnBugAndNewStoryArrives_ShouldSwitchToStoryAndFocusTheTitle', async ({
+  mount,
+  page,
+}) => {
+  await stubBacklog(page, backlogView(ROWS));
+  await mount(<NewItemLinkHarness project={PROJECT} level="stories" kind="story" />, at('stories'));
+  await page.getByTestId(ids.newItem).click();
+  await expect(page.getByTestId(ids.addType)).toHaveValue('story');
+  await page.getByTestId(ids.addType).selectOption('bug');
+  await expect(page.getByTestId(ids.addType)).toHaveValue('bug');
+
+  await page.getByTestId('harness-link').click();
+
+  await expect(page.getByTestId(ids.addType)).toHaveValue('story');
+  await expect(page.getByTestId(ids.addTitle)).toBeFocused();
+  await expect(page.getByTestId('harness-location')).toHaveText('/p/SHIP/backlogs/stories');
+});
+
 test('Epics_WhenOpenedWithNewEpic_ShouldOpenTheEpicRow', async ({ mount, page }) => {
   await stubLevel(page, levelView('epics', EPIC_ROWS));
   await mount(
@@ -44,6 +62,7 @@ test('Epics_WhenOpenedWithNewEpic_ShouldOpenTheEpicRow', async ({ mount, page })
   );
 
   await expect(page.getByTestId(ids.addRow)).toBeVisible();
+  await expect(page.getByTestId(ids.addTitle)).toBeFocused();
   await expect(page.getByTestId('harness-location')).toHaveText('/p/SHIP/backlogs/epics');
 });
 
@@ -53,6 +72,23 @@ test('Features_WhenOpenedWithNewFeature_ShouldOpenTheNewFeatureDialog', async ({
     <NewItemLinkHarness project={PROJECT} level="features" kind="feature" />,
     at('features', '?new=feature'),
   );
+
+  await expect(page.getByTestId(ids.newFeatureTitle)).toBeVisible();
+  await expect(page.getByTestId('harness-location')).toHaveText('/p/SHIP/backlogs/features');
+});
+
+test('Features_WhenAlreadyOpenAndNewFeatureArrives_ShouldOpenTheDialog', async ({
+  mount,
+  page,
+}) => {
+  await stubLevel(page, levelView('features', FEATURE_ROWS));
+  await mount(
+    <NewItemLinkHarness project={PROJECT} level="features" kind="feature" />,
+    at('features'),
+  );
+  await expect(page.getByTestId(ids.newFeatureTitle)).toHaveCount(0);
+
+  await page.getByTestId('harness-link').click();
 
   await expect(page.getByTestId(ids.newFeatureTitle)).toBeVisible();
   await expect(page.getByTestId('harness-location')).toHaveText('/p/SHIP/backlogs/features');

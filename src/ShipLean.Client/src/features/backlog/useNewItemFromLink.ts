@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useEffectEvent, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NEW_ITEM_KINDS, type NewItemKind } from '../../routes';
 
@@ -12,17 +12,23 @@ export function useNewItemFromLink(
   accepts: readonly NewItemKind[],
   onKind: (kind: NewItemKind) => void,
 ) {
-  const { pathname, search, hash } = useLocation();
+  const { pathname, search, hash, key } = useLocation();
   const navigate = useNavigate();
   const raw = new URLSearchParams(search).get('new');
 
+  // The address change lands in a transition, so the page re-renders (and StrictMode re-runs effects) while `new` is
+  // still there. Each address, told apart by its key, is handled once.
+  const handled = useRef<string | null>(null);
+  const openKind = useEffectEvent(onKind);
+
   useEffect(() => {
-    if (raw === null) return;
+    if (raw === null || handled.current === key) return;
+    handled.current = key;
     const kind = NEW_ITEM_KINDS.find((k) => k === raw);
-    if (kind !== undefined && accepts.includes(kind)) onKind(kind);
+    if (kind !== undefined && accepts.includes(kind)) openKind(kind);
     const rest = new URLSearchParams(search);
     rest.delete('new');
     const text = rest.toString();
     void navigate({ pathname, search: text === '' ? '' : `?${text}`, hash }, { replace: true });
-  }, [raw, accepts, onKind, search, pathname, hash, navigate]);
+  }, [raw, key, accepts, search, pathname, hash, navigate]);
 }

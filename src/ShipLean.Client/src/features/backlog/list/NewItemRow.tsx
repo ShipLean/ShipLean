@@ -17,6 +17,7 @@ export function NewItemRow({
   columnCount,
   onClose,
   initialType = 'story',
+  request = 0,
 }: {
   projectId: string;
   projectKey: string;
@@ -24,17 +25,19 @@ export function NewItemRow({
   onClose: () => void;
   // The type picked when the row opens; a new one (a link to the other type) switches the row to it.
   initialType?: WorkItemTypeId;
+  // Counts the requests to open on a type; a new count applies initialType and refocuses, even when the type is the same.
+  request?: number;
 }) {
   const [type, setType] = useState<WorkItemTypeId>(initialType);
-  const [seenInitial, setSeenInitial] = useState(initialType);
-  if (initialType !== seenInitial) {
-    setSeenInitial(initialType);
+  const [seenRequest, setSeenRequest] = useState(request);
+  if (request !== seenRequest) {
+    setSeenRequest(request);
     setType(initialType);
   }
   const [title, setTitle] = useState('');
   const input = useRef<HTMLInputElement>(null);
   const create = useCreateWorkItem(projectId, projectKey);
-  useEffect(() => input.current?.focus(), [initialType]);
+  useEffect(() => input.current?.focus(), [request]);
 
   function add() {
     const text = title.trim();

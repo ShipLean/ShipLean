@@ -37,6 +37,7 @@ export function ListMode({ project }: { project: ProjectDto }) {
           projectKey={project.key}
           adding={state.adding}
           addType={state.addType}
+          addRequest={state.addRequest}
           onCloseAdd={() => state.setAdding(false)}
           dragDisabled={state.filtering}
           flashing={flashing}
