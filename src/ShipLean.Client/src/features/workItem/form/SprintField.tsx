@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import type { SprintRef } from '../../../api/refs';
 import { workItemTestIds as ids } from '../testIds';
 import { useProjectSprints } from '../workItemApi';
@@ -17,14 +18,15 @@ export function SprintField({
   changed: boolean;
   onChange: (sprint: SprintRef | null) => void;
 }) {
+  const selectId = useId();
   const sprints = useProjectSprints(projectId);
   const open = (sprints.data ?? []).filter((sprint) => sprint.status !== 'past');
   const options: SprintRef[] = [...open];
   if (value && !options.some((sprint) => sprint.id === value.id)) options.unshift(value);
   return (
-    <FieldCell label="Sprint" field="sprint" changed={changed} htmlFor="work-item-sprint">
+    <FieldCell label="Sprint" field="sprint" changed={changed} htmlFor={selectId}>
       <select
-        id="work-item-sprint"
+        id={selectId}
         data-testid={ids.sprint}
         className={selectClass}
         value={value?.id ?? BACKLOG}
