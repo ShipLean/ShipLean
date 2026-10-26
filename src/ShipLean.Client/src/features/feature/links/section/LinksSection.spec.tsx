@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import { priya } from '../../../workItem/ct/fixtures';
+import { workItemHarnessIds as harness } from '../../../workItem/ct/harnessIds';
 import { stubApi } from '../../../workItem/ct/stubApi';
 import { stubComments } from '../../../workItem/ct/stubDetails';
 import { stubSide } from '../../../workItem/ct/stubSide';
@@ -150,4 +151,14 @@ test('LinkCard_WhenEditNoteFails_ShouldKeepDraft', async ({ mount, page }) => {
 
   await card.getByTestId(ids.linkCardSave).click();
   await expect(card.getByTestId(ids.linkCardNote)).toContainText('my draft note');
+});
+
+test('WorkItemLinkRow_WhenClicked_ShouldOpenItemModal', async ({ mount, page }) => {
+  await stubAll(page, settled);
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-100" />, route);
+
+  await screen.getByTestId(ids.linkWorkItemRow).getByTestId('item-link').click();
+
+  await expect(screen.getByTestId(harness.location)).toHaveText('/p/SHIP/items/SHIP-100');
+  await expect(screen.getByTestId(harness.search)).toHaveText('?item=SHIP-142');
 });

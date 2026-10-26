@@ -35,3 +35,9 @@ test('sameScreenIn_WhenInstallLevelOrUnknown_ShouldOpenTheStoriesBacklog', () =>
   expect(sameScreenIn(matchRoute('/profile'), 'PAY')).toBe('/p/PAY/backlogs/stories');
   expect(sameScreenIn(undefined, 'PAY')).toBe('/p/PAY/backlogs/stories');
 });
+
+test('sameScreenIn_WhenAnItemIsOpenInAModal_ShouldDropTheItem', () => {
+  expect(sameScreenIn(matchRoute('/p/SHIP/boards/stories', '?item=SHIP-12'), 'PAY')).toBe(
+    '/p/PAY/boards/stories',
+  );
+});

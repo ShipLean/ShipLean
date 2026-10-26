@@ -4,6 +4,7 @@ import type { ProjectDto } from '../../../api/projects';
 import { ToastHost } from '../../../components/ToastHost';
 import { FormSlot } from '../../../slots/FormSlot';
 import { LinksSlot } from '../../../slots/LinksSlot';
+import { UnsavedGuardHost } from '../form/UnsavedGuardHost';
 import { workItemKey } from '../workItemApi';
 import { workItemHarnessIds as harness } from './harnessIds';
 
@@ -33,6 +34,7 @@ export function WorkItemFormHarness({
   const queryClient = useQueryClient();
   return (
     <>
+      <UnsavedGuardHost />
       <FormSlot
         project={project}
         itemKey={itemKey}
@@ -60,6 +62,7 @@ export function WorkItemFormHarness({
         refetch
       </button>
       <output data-testid={harness.location}>{location.pathname}</output>
+      <output data-testid={harness.search}>{location.search}</output>
       <ToastHost />
     </>
   );

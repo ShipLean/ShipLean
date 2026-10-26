@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import type { WorkItemDto } from '../../../api/workItems';
 import { workItemTestIds as ids } from '../testIds';
 import { workItemAttachmentsKey } from '../workItemApi';
@@ -29,6 +30,7 @@ export function ReproSection({
   onReproChange: (reproSteps: string) => void;
   onSeverityChange: (severity: number | null) => void;
 }) {
+  const severityId = useId();
   return (
     <div className="grid gap-3">
       <MarkdownSection
@@ -55,7 +57,7 @@ export function ReproSection({
       />
       <div data-field="severity" className="flex items-center gap-2">
         <label
-          htmlFor="work-item-severity"
+          htmlFor={severityId}
           className="flex items-center gap-1 text-[length:var(--text-sm)] font-semibold"
         >
           Severity
@@ -68,7 +70,7 @@ export function ReproSection({
           ) : null}
         </label>
         <select
-          id="work-item-severity"
+          id={severityId}
           data-testid={ids.severity}
           className={selectClass}
           value={severity ?? ''}

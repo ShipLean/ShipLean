@@ -149,4 +149,5 @@ export const workItemTestIds = {
   commentSuperseded: 'work-item-comment-superseded',
   commentVia: 'work-item-comment-via',
   commentActionError: 'work-item-comment-action-error',
+  parentOpen: 'work-item-parent-open',
 } as const;

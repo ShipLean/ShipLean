@@ -1,7 +1,6 @@
-import { Link } from 'react-router-dom';
 import type { WorkItemLinkRowDto } from '../../../../api/linkCards';
 import { TypeIcon } from '../../../../components/TypeIcon';
-import { routePath } from '../../../../routes';
+import { ItemLink } from '../../../itemPeek/ItemLink';
 import { linkTypeLabels } from '../../../workItem/links/linkTypes';
 import { featureTestIds as ids } from '../../testIds';
 
@@ -21,12 +20,13 @@ export function WorkItemLinkRow({
     >
       <TypeIcon type={row.itemType.id} />
       <span className="w-20 shrink-0 text-ink-muted">{row.key}</span>
-      <Link
-        to={routePath('workItem', { key: projectKey, itemKey: row.key })}
+      <ItemLink
+        projectKey={projectKey}
+        itemKey={row.key}
         className="min-w-0 flex-1 truncate hover:text-signal hover:underline"
       >
         {row.title}
-      </Link>
+      </ItemLink>
       <span className="shrink-0 text-ink-muted">{linkTypeLabels[row.type]}</span>
     </li>
   );

@@ -7,6 +7,8 @@ public sealed class FieldsStrip(IPage page)
 {
     public ILocator AssigneeButton => page.GetByTestId(WorkItemTestIds.AssigneeButton);
 
+    public ILocator ParentOpen => page.GetByTestId(WorkItemTestIds.ParentOpen);
+
     public async Task PickStateAsync(string name)
     {
         await page.GetByTestId(WorkItemTestIds.StateButton).ClickAsync();

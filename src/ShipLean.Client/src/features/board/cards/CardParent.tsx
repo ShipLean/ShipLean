@@ -1,9 +1,10 @@
 import type { ParentRefDto } from '../../../api/workItems';
 import { TypeIcon } from '../../../components/TypeIcon';
+import { ItemLink } from '../../itemPeek/ItemLink';
 import { boardTestIds as ids } from '../testIds';
 
 // The parent line: the parent's type icon, key and title (a Story's Feature, a Feature's Epic or parent Feature).
-export function CardParent({ parent }: { parent: ParentRefDto }) {
+export function CardParent({ parent, projectKey }: { parent: ParentRefDto; projectKey?: string }) {
   return (
     <div
       data-testid={ids.cardParent}
@@ -11,9 +12,9 @@ export function CardParent({ parent }: { parent: ParentRefDto }) {
       className="flex min-w-0 flex-1 items-center gap-[5px] text-[length:var(--text-xs)] text-ink-muted"
     >
       <TypeIcon type={parent.type.id} />
-      <span className="min-w-0 flex-1 truncate">
+      <ItemLink itemKey={parent.key} projectKey={projectKey} className="min-w-0 flex-1 truncate">
         {parent.key} {parent.title}
-      </span>
+      </ItemLink>
     </div>
   );
 }

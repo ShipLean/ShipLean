@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import { Dialog } from './Dialog';
+import { DialogEscHarness } from './ct/DialogEscHarness';
 import { DialogHarness } from './ct/DialogHarness';
 import { harnessTestIds as harness } from './ct/harnessIds';
 import { componentTestIds as ids } from './testIds';
@@ -61,4 +62,16 @@ test('Dialog_WhenWidthGiven_ShouldUseIt', async ({ mount, page }) => {
     </Dialog>,
   );
   await expect(page.getByTestId(ids.dialog)).toHaveCSS('width', '900px');
+});
+
+test('Dialog_WhenAFieldHandledEscape_ShouldNotClose', async ({ mount, page }) => {
+  await mount(<DialogEscHarness />);
+  const state = page.getByTestId(harness.ctDialogState);
+
+  await page.getByTestId(harness.ctDialogEscField).press('Escape');
+  await expect(page.getByTestId(ids.dialog)).toBeVisible();
+  await expect(state).toHaveText('open');
+
+  await page.getByTestId(ids.dialog).press('Escape');
+  await expect(state).toHaveText('closed');
 });

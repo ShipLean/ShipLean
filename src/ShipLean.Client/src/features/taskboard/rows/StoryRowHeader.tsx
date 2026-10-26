@@ -1,13 +1,12 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import type { BoardTypeStatesDto } from '../../../api/boards';
 import type { CardFieldSettingJson } from '../../../api/persisted';
 import type { CardDto } from '../../../api/views';
 import { Avatar } from '../../../components/Avatar';
+import { ItemLink } from '../../itemPeek/ItemLink';
 import { CardExtraFields } from '../../board/cards/CardExtraFields';
 import { StateDot } from '../../../components/StateDot';
 import { TypeIcon } from '../../../components/TypeIcon';
-import { routePath } from '../../../routes';
 import { taskboardTestIds as ids } from '../testIds';
 import { RowToggle } from './RowToggle';
 
@@ -55,7 +54,13 @@ export function StoryRowHeader({
           data-testid={ids.rowTitle}
           className="flex-1 truncate text-[length:var(--text-sm)] text-ink"
         >
-          {parent.title}
+          <ItemLink
+            itemKey={parent.key}
+            projectKey={projectKey}
+            className="text-inherit no-underline hover:underline"
+          >
+            {parent.title}
+          </ItemLink>
         </span>
         <StateDot category={parent.state.category} name={parent.state.name} />
       </div>
@@ -72,13 +77,14 @@ export function StoryRowHeader({
           <span data-testid={ids.rowPoints}>{parent.points ?? '–'} pts</span>
         ) : null}
       </div>
-      <Link
-        data-testid={ids.rowTitle}
-        to={routePath('workItem', { key: projectKey, itemKey: parent.key })}
+      <ItemLink
+        testId={ids.rowTitle}
+        itemKey={parent.key}
+        projectKey={projectKey}
         className="text-[length:var(--text-sm)] text-ink"
       >
         {parent.title}
-      </Link>
+      </ItemLink>
       <div className="flex items-center gap-2 text-[length:var(--text-xs)]">
         {fields.extraFields.includes('state') ? (
           <select

@@ -158,3 +158,24 @@ test('routes_WhenModeAndSettingsAreAbsent_ShouldDropTheExtraCrumb', () => {
 test('routes_WhenInstanceTabIsIntegrations_ShouldMatchIt', () => {
   expect(matchRoute('/instance/integrations')?.id).toBe('instanceSettings');
 });
+
+test('routes_WhenProjectRouteHasItem_ShouldRoundTripIt', () => {
+  expect(routePath('storiesBoard', { key: 'SHIP' }, { item: 'SHIP-12' })).toBe(
+    '/p/SHIP/boards/stories?item=SHIP-12',
+  );
+  expect(matchRoute('/p/SHIP/boards/stories', '?item=SHIP-12')?.query).toEqual({ item: 'SHIP-12' });
+  expect(
+    routePath('taskboard', { key: 'SHIP', sprintId: 's1' }, { settings: 'x', item: 'A-1' }),
+  ).toBe('/p/SHIP/sprints/s1/taskboard?settings=x&item=A-1');
+  expect(matchRoute('/p/SHIP/sprints/s1/taskboard', '?item=A-1')?.query).toEqual({ item: 'A-1' });
+});
+
+test('routes_WhenInstallRouteHasItem_ShouldDropIt', () => {
+  expect(routePath('login', {}, { item: 'SHIP-12' })).toBe('/login');
+  expect(matchRoute('/login', '?item=SHIP-12')?.query).toEqual({});
+});
+
+test('routes_WhenItemIsEmpty_ShouldDropIt', () => {
+  expect(matchRoute('/p/SHIP/boards/stories', '?item=')?.query).toEqual({});
+  expect(routePath('storiesBoard', { key: 'SHIP' }, { item: '' })).toBe('/p/SHIP/boards/stories');
+});
