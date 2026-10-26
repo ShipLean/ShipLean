@@ -16,17 +16,25 @@ export function NewItemRow({
   projectKey,
   columnCount,
   onClose,
+  initialType = 'story',
 }: {
   projectId: string;
   projectKey: string;
   columnCount: number;
   onClose: () => void;
+  // The type picked when the row opens; a new one (a link to the other type) switches the row to it.
+  initialType?: WorkItemTypeId;
 }) {
-  const [type, setType] = useState<WorkItemTypeId>('story');
+  const [type, setType] = useState<WorkItemTypeId>(initialType);
+  const [seenInitial, setSeenInitial] = useState(initialType);
+  if (initialType !== seenInitial) {
+    setSeenInitial(initialType);
+    setType(initialType);
+  }
   const [title, setTitle] = useState('');
   const input = useRef<HTMLInputElement>(null);
   const create = useCreateWorkItem(projectId, projectKey);
-  useEffect(() => input.current?.focus(), []);
+  useEffect(() => input.current?.focus(), [initialType]);
 
   function add() {
     const text = title.trim();

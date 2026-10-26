@@ -12,6 +12,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
+import type { WorkItemTypeId } from '../../../api/refs';
 import type { BacklogRowDto } from '../../../api/views';
 import { BACKLOG_COLUMNS, type BacklogColumnId } from '../backlogApi';
 import { backlogTestIds as ids } from '../testIds';
@@ -37,6 +38,7 @@ export function ListTable({
   projectId,
   projectKey,
   adding,
+  addType,
   onCloseAdd,
   dragDisabled,
   filtered,
@@ -48,6 +50,8 @@ export function ListTable({
   projectId: string;
   projectKey: string;
   adding: boolean;
+  // The type the new-item row opens with (User Story when left out).
+  addType?: WorkItemTypeId;
   onCloseAdd: () => void;
   // Reordering is off (a filter is on).
   dragDisabled: boolean;
@@ -96,6 +100,7 @@ export function ListTable({
                   projectKey={projectKey}
                   columnCount={columns.length + 1}
                   onClose={onCloseAdd}
+                  initialType={addType}
                 />
               ) : null}
               {rows.map((row) => (
