@@ -18,7 +18,7 @@ public class FeaturePeekTests : SeededAcceptanceTest
         var peek = new ItemPeekDialog(Page);
         await screen.OpenAsync("SHIP", "SHIP-101");
         const string key = "SHIP-141";
-        var link = strip.ChildTitles.And(Page.Locator($"[data-item-key='{key}']"));
+        var link = strip.ChildTitles.Filter(new() { HasText = "Pay with saved card" });
 
         await link.ClickAsync();
 
