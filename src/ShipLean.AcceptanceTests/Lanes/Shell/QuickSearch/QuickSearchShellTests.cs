@@ -35,7 +35,7 @@ public class QuickSearchShellTests : SeededAcceptanceTest
         await Expect(search.Dialog).ToBeVisibleAsync();
         await Expect(search.Input).ToBeFocusedAsync();
         // With nothing typed the dialog lists the actions. Catches a dialog that opens empty.
-        await Expect(search.Option("action", "create-bug")).ToBeVisibleAsync();
+        await Expect(search.Action("Create bug")).ToBeVisibleAsync();
     }
 
     [Test]

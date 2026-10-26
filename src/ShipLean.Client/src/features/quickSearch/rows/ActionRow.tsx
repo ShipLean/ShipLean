@@ -1,3 +1,5 @@
+import { quickSearchTestIds as ids } from '../testIds';
+
 export function ActionRow({
   glyph,
   label,
@@ -12,7 +14,9 @@ export function ActionRow({
       <span aria-hidden="true" className="text-center text-ink-muted">
         {glyph}
       </span>
-      <span className="min-w-0 truncate">{label}</span>
+      <span data-testid={ids.optionLabel} className="min-w-0 truncate">
+        {label}
+      </span>
       <span className="text-right text-[length:var(--text-xs)] text-ink-muted">{detail}</span>
     </>
   );

@@ -1,4 +1,5 @@
 import { ProjectKeyBadge } from '../../shell/ProjectKeyBadge';
+import { quickSearchTestIds as ids } from '../testIds';
 import { Match } from './Match';
 
 export function ProjectRow({
@@ -19,12 +20,14 @@ export function ProjectRow({
       <span aria-hidden="true" className="text-center text-ink-muted">
         ⌂
       </span>
-      <span className="min-w-0 truncate">
+      <span data-testid={ids.optionLabel} className="min-w-0 truncate">
         <Match text={name} query={query} />
       </span>
       <span className="flex items-center justify-end gap-2 text-[length:var(--text-xs)] text-ink-muted">
         <span>{detail}</span>
-        <ProjectKeyBadge current={current}>{projectKey}</ProjectKeyBadge>
+        <span data-testid={ids.optionKey}>
+          <ProjectKeyBadge current={current}>{projectKey}</ProjectKeyBadge>
+        </span>
       </span>
     </>
   );

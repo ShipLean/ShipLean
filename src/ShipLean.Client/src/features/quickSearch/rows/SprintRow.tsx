@@ -1,3 +1,4 @@
+import { quickSearchTestIds as ids } from '../testIds';
 import { Match } from './Match';
 
 export function SprintRow({
@@ -21,7 +22,9 @@ export function SprintRow({
         ◷
       </span>
       <span className="min-w-0 truncate">
-        <Match text={name} query={query} />
+        <span data-testid={ids.optionLabel}>
+          <Match text={name} query={query} />
+        </span>
         {goal === '' ? null : (
           <span className="text-ink-muted">
             {' · '}

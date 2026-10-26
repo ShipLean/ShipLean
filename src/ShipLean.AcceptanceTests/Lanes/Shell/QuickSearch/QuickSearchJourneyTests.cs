@@ -65,7 +65,7 @@ public class QuickSearchJourneyTests : SeededAcceptanceTest
         await search.OpenWithShortcutAsync();
 
         await search.TypeAsync(SeedWord);
-        await search.PickAsync("item", PasskeyItem);
+        await search.Item(PasskeyItem).ClickAsync();
 
         await Expect(Page).ToHaveURLAsync(new Regex($"{Regex.Escape(board)}\\?item={PasskeyItem}$"));
         await peek.WaitOpenAsync(PasskeyItem);
@@ -84,7 +84,7 @@ public class QuickSearchJourneyTests : SeededAcceptanceTest
         await search.OpenWithShortcutAsync();
 
         await search.TypeAsync(SeedWord);
-        await search.PickAsync("item", PasskeyItem);
+        await search.Item(PasskeyItem).ClickAsync();
 
         await Expect(Page).ToHaveURLAsync(new Regex($"{Regex.Escape(Links.WorkItem("SHIP", PasskeyItem))}$"));
         await Expect(Page.GetByTestId(WorkItemTestIds.Key)).ToHaveTextAsync(PasskeyItem);
@@ -100,7 +100,7 @@ public class QuickSearchJourneyTests : SeededAcceptanceTest
         await search.OpenWithShortcutAsync();
 
         await search.TypeAsync(PayWord);
-        await search.PickAsync("item", _payKey);
+        await search.Item(_payKey).ClickAsync();
 
         await Expect(Page).ToHaveURLAsync(new Regex($"{Regex.Escape(Links.WorkItem("PAY", _payKey))}$"));
         await Expect(Page.GetByTestId(WorkItemTestIds.Key)).ToHaveTextAsync(_payKey);
@@ -150,7 +150,7 @@ public class QuickSearchJourneyTests : SeededAcceptanceTest
         // Open it again from the page, so the item is fetched fresh, and close it.
         await search.OpenWithShortcutAsync();
         await search.TypeAsync("saved card");
-        await search.PickAsync("item", "SHIP-141");
+        await search.Item("SHIP-141").ClickAsync();
         await peek.WaitOpenAsync("SHIP-141");
         await Expect(peek.Title).ToHaveValueAsync(newTitle);
         await peek.Close.ClickAsync();
@@ -159,7 +159,7 @@ public class QuickSearchJourneyTests : SeededAcceptanceTest
         // Quick search keeps the last query while closed, so clear it to see the recent items.
         await search.Input.ClearAsync();
 
-        var rows = search.Option("item", "SHIP-141");
+        var rows = search.Item("SHIP-141");
         // Catches the kept query still showing search results instead of the recent items.
         await Expect(search.Groups.First).ToHaveAttributeAsync("data-group", "recent");
         // Catches a stale title (the entry kept as first written).
@@ -175,10 +175,10 @@ public class QuickSearchJourneyTests : SeededAcceptanceTest
         await new ShellFrame(Page).OpenAsync(ShellFrame.BacklogPath("SHIP"));
         await search.OpenWithShortcutAsync();
         // The toggle is offered once the saved theme has loaded.
-        await search.Option("action", "toggle-theme").WaitForAsync();
+        await search.Action("Toggle theme").WaitForAsync();
 
         // The browser prefers light, so the toggle goes to dark.
-        var saved = await Page.RunAndWaitForApiAsync("/api/me/preferences/theme", "PUT", () => search.PickAsync("action", "toggle-theme"));
+        var saved = await Page.RunAndWaitForApiAsync("/api/me/preferences/theme", "PUT", () => search.Action("Toggle theme").ClickAsync());
         saved.Status.ShouldBe(204);
         await Page.WaitForFunctionAsync("document.documentElement.dataset.theme === 'dark'");
 
@@ -196,7 +196,7 @@ public class QuickSearchJourneyTests : SeededAcceptanceTest
         await backlog.OpenAsync("SHIP");
         await search.OpenWithShortcutAsync();
 
-        await search.PickAsync("action", "create-bug");
+        await search.Action("Create bug").ClickAsync();
 
         // The page was already mounted, so this proves the backlog reacts to the new link. Catches a backlog that reads
         // the link only on first render, which would leave the row closed.
@@ -215,7 +215,7 @@ public class QuickSearchJourneyTests : SeededAcceptanceTest
 
         var taskboard = Links.Taskboard("SHIP", SeedIds.Sprints.Sprint24);
         await search.TypeAsync(SeedWord);
-        await search.PickAsync("sprint", taskboard);
+        await search.Sprint("Sprint 24").ClickAsync();
 
         await Expect(Page).ToHaveURLAsync(new Regex($"{Regex.Escape(taskboard)}$"));
     }

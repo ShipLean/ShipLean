@@ -3,9 +3,12 @@ export const quickSearchTestIds = {
   input: 'quick-search-input',
   list: 'quick-search-list',
   group: 'quick-search-group',
-  // The action ids (data-id): create-epic, create-feature, create-story, create-bug, go-backlogs, go-boards,
-  // go-sprints, toggle-theme. An item's or project's option has data-key, a sprint's data-id.
+  // Acceptance tests find a row by the text of optionKey (an item's or project's key) or optionLabel (an item's title,
+  // a sprint's or project's name, an action's label). CT specs also use data-kind, data-key and data-id (create-epic,
+  // create-feature, create-story, create-bug, go-backlogs, go-boards, go-sprints, toggle-theme; a sprint's address).
   option: 'quick-search-option',
+  optionKey: 'quick-search-option-key',
+  optionLabel: 'quick-search-option-label',
   match: 'quick-search-match',
   where: 'quick-search-where',
   loading: 'quick-search-loading',
