@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import { componentTestIds } from '../../components/testIds';
 import { realtimeTestIds } from '../realtime/testIds';
+import { quickSearchTestIds } from '../quickSearch/testIds';
 import { shellHarnessIds as harness } from './ct/harnessIds';
 import { ShellHarness } from './ct/ShellHarness';
 import { stubProxyInstance } from '../auth/authFixtures';
@@ -357,8 +358,16 @@ test('Picker_WhenEscapePressedAwayFromTheSearch_ShouldClose', async ({ mount, pa
 test('Picker_WhenControlPPressed_ShouldNotOpen', async ({ mount, page }) => {
   await stubShell(page);
   await mount(<ShellHarness />, { hooksConfig: { route: '/p/SHIP/backlogs/stories' } });
+  await expect(page.getByTestId(ids.projectButton)).toContainText('Shipping');
+  // Fails on an implementation that keeps the picker's own Ctrl+P shortcut: it would
+  // open the picker and move focus into its search, so the opener below is lost.
+  await page.getByTestId(ids.navBoards).focus();
   await page.keyboard.press('Control+p');
+  await expect(page.getByTestId(quickSearchTestIds.dialog)).toBeVisible();
   await expect(page.getByTestId(ids.picker)).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId(quickSearchTestIds.dialog)).toHaveCount(0);
+  await expect(page.getByTestId(ids.navBoards)).toBeFocused();
 });
 
 test('UserMenu_WhenSignOutFails_ShouldShowAToast', async ({ mount, page }) => {

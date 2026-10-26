@@ -44,9 +44,14 @@ test('QuickSearch_WhenControlPPressedWhileOpen_ShouldSelectTheInput', async ({ m
     input.setSelectionRange(3, 3);
     input.blur();
   });
+  await page.getByTestId(ids.input).evaluate((el: HTMLInputElement) => {
+    el.dataset.mark = '1';
+  });
   await page.keyboard.press('Control+p');
   await expect(page.getByTestId(ids.dialog)).toHaveCount(1);
   await expect(page.getByTestId(ids.input)).toBeFocused();
+  // A close and reopen would remount the input and lose the mark.
+  await expect(page.getByTestId(ids.input)).toHaveAttribute('data-mark', '1');
   const selected = await page
     .getByTestId(ids.input)
     .evaluate((input: HTMLInputElement) => [input.selectionStart, input.selectionEnd]);
@@ -60,6 +65,7 @@ test('QuickSearch_WhenControlPPressedInAModalDialog_ShouldNotOpen', async ({ mou
   await expect(page.getByTestId(shell.projectButton)).toContainText('Shipping');
   await page.getByTestId(harness.openDialog).click();
   await expect(page.getByTestId(harness.dialogBody)).toBeVisible();
+  // Fails on a listener that opens quick search over any open modal dialog.
   await page.keyboard.press('Control+p');
   await expect(page.getByTestId(ids.dialog)).toHaveCount(0);
 });
@@ -111,7 +117,7 @@ test('QuickSearch_WhenReopened_ShouldShowTheLastQuerySelected', async ({ mount, 
 test('QuickSearch_WhenSearchButtonClicked_ShouldOpen', async ({ mount, page }) => {
   await stubSearch(page);
   await mount(<ShellHarness />, at(board));
-  // A keypress before the shell has loaded can beat its listener.
+  // Wait for the shell to load.
   await expect(page.getByTestId(shell.projectButton)).toContainText('Shipping');
   const button = page.getByTestId(shell.searchButton);
   await expect(button).toHaveAttribute('aria-label', 'Quick search');
@@ -123,7 +129,7 @@ test('QuickSearch_WhenNarrow_ShouldOfferTheIconButton', async ({ mount, page }) 
   await stubSearch(page);
   await page.setViewportSize({ width: 800, height: 700 });
   await mount(<ShellHarness />, at(board));
-  // A keypress before the shell has loaded can beat its listener.
+  // Wait for the shell to load.
   await expect(page.getByTestId(shell.projectButton)).toContainText('Shipping');
   await expect(page.getByTestId(shell.searchButton)).toBeHidden();
   await page.getByTestId(shell.searchIconButton).click();
@@ -133,8 +139,9 @@ test('QuickSearch_WhenNarrow_ShouldOfferTheIconButton', async ({ mount, page }) 
 test('QuickSearch_WhenWide_ShouldHideTheIconButton', async ({ mount, page }) => {
   await stubSearch(page);
   await mount(<ShellHarness />, at(board));
-  // A keypress before the shell has loaded can beat its listener.
+  // Wait for the shell to load.
   await expect(page.getByTestId(shell.projectButton)).toContainText('Shipping');
+  // Fails on an icon button that shows at every width.
   await expect(page.getByTestId(shell.searchIconButton)).toBeHidden();
 });
 

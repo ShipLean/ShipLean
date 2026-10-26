@@ -63,7 +63,7 @@ export function SideMenu() {
           data-testid={ids.searchButton}
           aria-label="Quick search"
           title={`Quick search (${label})`}
-          className="flex h-[22px] items-center gap-1 rounded-control border border-edge bg-panel px-1.5 text-[length:var(--text-2xs)] text-ink-muted hover:border-signal hover:text-ink"
+          className="flex h-[22px] items-center gap-1 rounded-control border border-edge bg-panel px-1.5 font-mono text-[length:var(--text-2xs)] text-ink-muted hover:border-signal hover:text-ink"
           onClick={openQuickSearch}
         >
           <SearchIcon className="size-3" />
