@@ -36,8 +36,9 @@ For a real deployment point the endpoint at your collector (an OpenTelemetry Col
 - **Npgsql**: a child span per database command (Dapper goes through Npgsql). Parameter values are not recorded.
 - **StackExchange.Redis**: command spans, only when `SHIPLEAN_REDIS_CONNECTION` is set.
 - **HttpClient**: outgoing calls (Jira import, link unfurl, OIDC discovery, webhooks). The `Authorization` header and URL credentials are redacted.
-- **MCP**: one span per tool call, tagged `mcp.tool`, `shiplean.project`, `shiplean.agent_name` (when the caller is an agent that has one) and the outcome or error code.
-- **Background work**: spans from the `ShipLean` source around each import job, each search index batch and each presence heartbeat tick.
+- **MCP**: one `mcp.tool_call` span per tool call, tagged `mcp.tool`, `shiplean.project`, `shiplean.agent_name` (when the caller is an agent that has one), `shiplean.outcome` and `shiplean.error_code`. The SDK's own ModelContextProtocol source is subscribed too.
+- **Background work**: `import.job` and `search.index.round` spans from the `ShipLean` source. The presence heartbeat is sampled out (its spans and their Redis children are dropped), so the default sampler is replaced by a parent-based always-on one and `OTEL_TRACES_SAMPLER` is not honoured.
+- Only `/api`, `/mcp`, `/oauth` and `/.well-known` requests are traced.
 
 ## Metrics
 
@@ -50,7 +51,7 @@ The `ShipLean` meter:
 | `shiplean.mcp.tool_calls` | counter | `tool`, `outcome` |
 | `shiplean.mcp.tool_duration` | histogram | `tool`, `outcome` |
 | `shiplean.import.jobs` | counter | `source`, `outcome` |
-| `shiplean.import.items` | counter | |
+| `shiplean.import.items` | counter | `source` |
 | `shiplean.search.index_queue` | observable gauge | |
 | `shiplean.search.indexed` | counter | |
 | `shiplean.realtime.presence_screens` | observable gauge | |
