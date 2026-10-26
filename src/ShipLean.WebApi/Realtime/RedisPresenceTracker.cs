@@ -62,6 +62,14 @@ public sealed class RedisPresenceTracker(RedisRealtime redis, IProjectEvents eve
 
     private readonly ConcurrentDictionary<string, Local> _current = new();
 
+    public int ScreenCount => _current.Values.SelectMany(local =>
+    {
+        lock (local)
+        {
+            return local.Screens.ToList();
+        }
+    }).Distinct().Count();
+
     public async Task JoinAsync(string connectionId, Guid userId, Guid projectId, string screenId)
     {
         var previous = SetCurrent(connectionId, userId, projectId, screenId);

@@ -9,6 +9,7 @@ using ShipLean.Contracts.Import;
 using ShipLean.Contracts.Import.Jira;
 using ShipLean.Contracts.Persisted;
 using ShipLean.Contracts.Projects;
+using ShipLean.Contracts.Telemetry;
 
 namespace ShipLean.Application.Features.Import.Jobs;
 
@@ -18,7 +19,7 @@ namespace ShipLean.Application.Features.Import.Jobs;
 [RegisterPerRequest]
 public sealed class ImportJobRun(
     ImportJobRows rows, ImportQueue queue, ImportNotifier notifier, IJiraConnections connections, IJiraClient jira, IImportApplier applier,
-    IProjectFactory projects, IServiceProvider services, ILogger<ImportJobRun> logger)
+    IProjectFactory projects, IServiceProvider services, IJobMetrics metrics, ILogger<ImportJobRun> logger)
 {
     private static readonly IReadOnlyList<int> WorkingDays = [1, 2, 3, 4, 5];
 
@@ -309,6 +310,7 @@ public sealed class ImportJobRun(
         var stopped = progress with { Message = message, Counts = Counts(tally, await rows.PendingCountsAsync(job.Id, cancellationToken)) };
         await rows.LogAsync(job.Id, ImportLogLevel.Info, message, cancellationToken);
         await rows.FinishAsync(job.Id, ImportJobState.Stopped, stopped, cancellationToken);
+        Report("stopped", tally.Done);
         await Notify(projectId, job.Id, ImportJobState.Stopped, stopped);
     }
 
@@ -329,6 +331,7 @@ public sealed class ImportJobRun(
         };
         await rows.LogAsync(job.Id, open > 0 ? ImportLogLevel.Warning : ImportLogLevel.Info, message, cancellationToken);
         await rows.FinishAsync(job.Id, state, finished, cancellationToken);
+        Report(open > 0 ? "done_with_errors" : "done", tally.Done);
         await Notify(projectId, job.Id, state, finished);
     }
 
@@ -337,6 +340,7 @@ public sealed class ImportJobRun(
         var failed = progress with { Message = message };
         await rows.LogAsync(job.Id, ImportLogLevel.Error, message, CancellationToken.None);
         await rows.FinishAsync(job.Id, ImportJobState.Failed, failed, CancellationToken.None);
+        Report("failed", 0);
         await Notify((await rows.FindAsync(job.Id, CancellationToken.None))?.ProjectId, job.Id, ImportJobState.Failed, failed);
     }
 
@@ -344,6 +348,12 @@ public sealed class ImportJobRun(
     {
         await rows.SaveProgressAsync(jobId, progress, cancellationToken);
         await Notify(projectId, jobId, state, progress);
+    }
+
+    private void Report(string outcome, int items)
+    {
+        metrics.ImportJobFinished(outcome);
+        metrics.ImportItemsWritten(items);
     }
 
     private Task Notify(Guid? projectId, Guid jobId, ImportJobState state, ImportJobProgressJson progress) => notifier.NotifyAsync(projectId, jobId, state, progress);

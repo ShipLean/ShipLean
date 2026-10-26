@@ -7,5 +7,5 @@ namespace ShipLean.WebApi.Features.Mcp.Errors;
 public sealed class ToolErrorServices : IServiceModule
 {
     public void AddServices(IServiceCollection services, IConfiguration configuration)
-        => services.AddMcpServer().WithRequestFilters(filters => filters.AddCallToolFilter(next => ToolErrorFilter.Apply(ToolScopeFilter.Apply(next))));
+        => services.AddMcpServer().WithRequestFilters(filters => filters.AddCallToolFilter(next => ToolTraceFilter.Apply(ToolErrorFilter.Apply(ToolScopeFilter.Apply(next)))));
 }

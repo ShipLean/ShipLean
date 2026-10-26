@@ -5,6 +5,8 @@ using Microsoft.Extensions.Logging;
 using ShipLean.Application.Features.Search.Index.Wake;
 using ShipLean.Contracts.Events;
 using ShipLean.Contracts.Search;
+using ShipLean.Contracts.Telemetry;
+using ShipLean.Core.Telemetry;
 
 namespace ShipLean.Application.Features.Search.Index;
 
@@ -20,6 +22,7 @@ public sealed class SearchIndexHostedService(
     IServiceScopeFactory scopes,
     SearchWakeSources wake,
     SearchOptions options,
+    IJobMetrics metrics,
     ILogger<SearchIndexHostedService> logger) : IHostedService
 {
     private readonly Channel<ProjectEvent> _wakes = Channel.CreateUnbounded<ProjectEvent>();
@@ -112,6 +115,7 @@ public sealed class SearchIndexHostedService(
 
     private async Task RoundAsync(CancellationToken stopping)
     {
+        using var activity = ShipLeanActivities.Source.StartActivity("search.index.round");
         while (_wakes.Reader.TryRead(out var projectEvent))
         {
             _unmapped.Add(projectEvent);
@@ -130,7 +134,9 @@ public sealed class SearchIndexHostedService(
         }
 
         var full = !_firstPassDone;
-        await scope.ServiceProvider.GetRequiredService<ISearchIndexer>().RunPassAsync(full, stopping);
+        activity?.SetTag("shiplean.search.full", full);
+        var pass = await scope.ServiceProvider.GetRequiredService<ISearchIndexer>().RunPassAsync(full, stopping);
+        metrics.SearchPassFinished(pass.Embedded, pass.Remaining);
         _firstPassDone = true;
     }
 
