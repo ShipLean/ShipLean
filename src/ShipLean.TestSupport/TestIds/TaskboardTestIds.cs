@@ -22,6 +22,7 @@ public static class TaskboardTestIds
     public const string ColumnCount = "taskboard-column-count";
     public const string Row = "taskboard-row";
     public const string RowHeader = "taskboard-row-header";
+    public const string RowCard = "taskboard-row-card";
     public const string RowToggle = "taskboard-row-toggle";
     public const string RowTitle = "taskboard-row-title";
     public const string RowState = "taskboard-row-state";

@@ -47,7 +47,7 @@ test('Styles_WhenCardCarriesRule_ShouldTintAndBoldOnlyThatCard', async ({ mount,
 
   const plain = cardKeyed(page, 'SHIP-130');
   await expect(plain).not.toHaveAttribute('data-rule', /.+/);
-  await expect(plain).toHaveCSS('box-shadow', 'none');
+  await expect(plain).not.toHaveCSS('box-shadow', /inset/);
   await expect(plain.getByTestId(ids.cardTitle)).not.toHaveCSS('font-weight', '600');
 });
 
@@ -55,7 +55,7 @@ test('Styles_WhenRuleHasNoColour_ShouldOnlyChangeTheTitle', async ({ mount, page
   const rules = SETTINGS.styleRules.map((rule) => ({ ...rule, colour: null, italic: true }));
   await mount(<GridHarness view={{ ...view(), styleRules: rules }} />);
   const blocked = cardKeyed(page, 'SHIP-129');
-  await expect(blocked).toHaveCSS('box-shadow', 'none');
+  await expect(blocked).not.toHaveCSS('box-shadow', /inset/);
   await expect(blocked.getByTestId(ids.cardTitle)).toHaveCSS('font-style', 'italic');
 });
 

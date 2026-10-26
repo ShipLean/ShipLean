@@ -267,7 +267,7 @@
   function personCell(row, n) {
     const label = row === 'none' ? '<span class="av none"></span>Unassigned' : `${av(row)}${people[row].name}${row === ME ? ' <span class="muted">(you)</span>' : ''}`;
     const sub = row === 'none' ? (n ? `${n} ready or waiting` : 'Nothing waiting') : (n ? `${n} task${n === 1 ? '' : 's'} in this sprint` : 'No tasks in this sprint');
-    return `<div class="rowh"><div class="who">${label}</div><div class="hint">${sub}</div></div>`;
+    return `<div class="rowh person"><div class="who">${label}</div><div class="hint">${sub}</div></div>`;
   }
 
   function faces() {

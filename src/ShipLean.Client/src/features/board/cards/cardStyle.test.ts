@@ -16,8 +16,23 @@ const rule = (overrides: Partial<StyleRuleJson>): StyleRuleJson => ({
 
 describe('cardStyle', () => {
   it('ruleCardStyle_WhenRuleHasColour_ShouldTintFromThatToken', () => {
-    expect(ruleCardStyle(rule({}))?.boxShadow).toBe('inset 3px 0 0 var(--color-danger)');
-    expect(ruleCardStyle(rule({ colour: 'purple' }))?.background).toContain('var(--color-purple)');
+    expect(ruleCardStyle(rule({}))).toEqual({
+      '--sheet-tint':
+        'color-mix(in srgb, var(--color-danger) 9%, var(--paper, var(--color-surface)))',
+      '--sheet-edge':
+        'color-mix(in srgb, var(--color-danger) 40%, var(--paper-edge, var(--color-border)))',
+      '--sheet-bar': 'inset 3px 0 0 var(--color-danger)',
+    });
+    expect(ruleCardStyle(rule({ colour: 'purple' }))).toMatchObject({
+      '--sheet-bar': 'inset 3px 0 0 var(--color-purple)',
+    });
+  });
+
+  it('ruleCardStyle_WhenTintPercentGiven_ShouldUseItForTheTint', () => {
+    expect(ruleCardStyle(rule({}), 12)).toMatchObject({
+      '--sheet-tint':
+        'color-mix(in srgb, var(--color-danger) 12%, var(--paper, var(--color-surface)))',
+    });
   });
 
   it('ruleCardStyle_WhenNoRuleOrNoColour_ShouldNotTint', () => {

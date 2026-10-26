@@ -10,6 +10,19 @@ import { TypeIcon } from '../../../components/TypeIcon';
 import { taskboardTestIds as ids } from '../testIds';
 import { RowToggle } from './RowToggle';
 
+/** The index card drawn behind a header's content: inset in the cell, which stays the theme surface. */
+function CardLayer({ collapsed }: { collapsed: boolean }) {
+  return (
+    <span
+      aria-hidden
+      data-testid={ids.rowCard}
+      className={`pointer-events-none absolute -z-10 rounded-sm border border-[var(--paper-edge)] bg-[var(--paper)] shadow-[var(--paper-shadow)] ${
+        collapsed ? 'inset-[3px_6px_3px_3px]' : 'inset-[5px_8px_5px_5px]'
+      }`}
+    />
+  );
+}
+
 /** The header card of a story or bug row: key, points, title, a state picker over the type's states, and the task roll-up. */
 export function StoryRowHeader({
   projectKey,
@@ -45,9 +58,14 @@ export function StoryRowHeader({
   const states = parentStates.find((s) => s.type === parent.type.id)?.states ?? [];
   const tasks = parent.rollups.find((r) => r.type === 'task');
   const total = tasks ? tasks.open + tasks.closed : 0;
+  const paper = `paper relative isolate ${parent.type.id === 'bug' ? 'paper-bug' : ''}`;
   if (collapsed) {
     return (
-      <div data-testid={ids.rowHeader} className="flex items-center gap-2 px-2 py-2">
+      <div
+        data-testid={ids.rowHeader}
+        className={`${paper} flex items-center gap-2 py-2 pl-2.5 pr-3.5`}
+      >
+        <CardLayer collapsed />
         <RowToggle collapsed onToggle={onToggle} label={parent.key} />
         <TypeIcon type={parent.type.id} />
         <span
@@ -67,7 +85,8 @@ export function StoryRowHeader({
     );
   }
   return (
-    <div data-testid={ids.rowHeader} className="grid gap-1 px-2 py-2">
+    <div data-testid={ids.rowHeader} className={`${paper} grid gap-1 py-3 pl-3 pr-4`}>
+      <CardLayer collapsed={false} />
       <div className="flex items-center gap-2 text-[length:var(--text-xs)] text-ink-muted">
         <RowToggle collapsed={false} onToggle={onToggle} label={parent.key} />
         <TypeIcon type={parent.type.id} />

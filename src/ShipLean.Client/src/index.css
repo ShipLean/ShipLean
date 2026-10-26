@@ -101,3 +101,64 @@
     font-size: var(--text-sm);
   }
 }
+
+/* Paper cards (design/README.md, "Paper"). Declared after the layers, unlayered, so .paper-sheet wins over the
+   bg-panel and border-edge utilities on the same element. Paper is the same in both themes: inside .paper the light
+   theme's tokens apply, so every utility, chip and button in a card reads as ink on paper. The theme shows only in
+   the edge, shadow and hover/focus ring (--theme-accent is the page accent, captured on :root). */
+.paper {
+  --paper: var(--paper-index);
+  --paper-edge: color-mix(in srgb, var(--paper), var(--paper-edge-mix) var(--paper-edge-amount));
+  --color-surface: var(--paper);
+  --color-surface-2: color-mix(in srgb, var(--paper), #1c2638 8%);
+  --color-border: color-mix(in srgb, var(--paper), #1c2638 18%);
+  --color-text: #1c2638;
+  --color-muted: #52627c;
+  --color-accent: #2563c9;
+  --color-accent-fg: #ffffff;
+  --color-accent-soft: #dae6fb;
+  --color-ok: #3f8a3a;
+  --color-warn: #b7701b;
+  --color-info: #1d7fb8;
+  --color-danger: #c2353b;
+  --color-purple: #6f45bf;
+  --type-epic: #d0731c;
+  --type-feature: #7b4fc9;
+  --type-story: #2f7fd8;
+  --type-bug: #cc3d3d;
+  --type-task: #c9951a;
+  color: var(--color-text);
+}
+
+.paper-bug {
+  --paper: var(--paper-bug);
+}
+
+.paper-postit {
+  --paper: var(--paper-postit);
+  --paper-edge: color-mix(
+    in srgb,
+    var(--paper),
+    var(--paper-postit-edge-mix) var(--paper-postit-edge-amount)
+  );
+  --color-muted: var(--paper-postit-muted);
+}
+
+/* A style rule sets --sheet-tint, --sheet-edge and --sheet-bar (see ruleCardStyle); hover and focus still win. */
+.paper-sheet {
+  background: var(--sheet-tint, var(--paper));
+  border-color: var(--sheet-edge, var(--paper-edge));
+  box-shadow: var(--sheet-bar, 0 0 #0000), var(--paper-shadow);
+}
+
+.paper-sheet:hover {
+  border-color: var(--theme-accent);
+  box-shadow:
+    var(--sheet-bar, 0 0 #0000),
+    var(--paper-shadow),
+    0 0 0 1px var(--theme-accent);
+}
+
+.paper-sheet:focus-visible {
+  outline-color: var(--theme-accent);
+}

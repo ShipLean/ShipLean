@@ -389,3 +389,96 @@ test('Card_WhenProjectKeyIsAnotherProject_ShouldKeepParentAsFullPageLink', async
     '/p/KEY/items/SHIP-103',
   );
 });
+
+const STORY_PAPER = 'rgb(255, 255, 255)';
+const BUG_PAPER = 'rgb(255, 224, 229)';
+const LIGHT_ACCENT = 'rgb(37, 99, 201)';
+const DARK_ACCENT = 'rgb(92, 200, 240)';
+
+for (const theme of ['light', 'dark'] as const) {
+  const label = theme === 'dark' ? 'Dark' : 'Light';
+  const setTheme = (page: Parameters<Parameters<typeof test>[2]>[0]['page']) =>
+    page.evaluate((value) => document.documentElement.setAttribute('data-theme', value), theme);
+
+  test(`Card_When${label}_ShouldDrawStoryOnWhitePaperAndBugOnPinkPaper`, async ({
+    mount,
+    page,
+  }) => {
+    await mount(
+      <div>
+        <Card
+          card={card({ key: 'SHIP-1' })}
+          projectKey="SHIP"
+          level="stories"
+          compact={false}
+          settings={withBugs}
+          inDone={false}
+        />
+        <Card
+          card={card({ key: 'SHIP-2', type: { id: 'bug', name: 'Bug' } })}
+          projectKey="SHIP"
+          level="stories"
+          compact={false}
+          settings={withBugs}
+          inDone={false}
+        />
+      </div>,
+      route,
+    );
+    await setTheme(page);
+
+    await expect(page.locator('[data-key="SHIP-1"]')).toHaveCSS('background-color', STORY_PAPER);
+    await expect(page.locator('[data-key="SHIP-2"]')).toHaveCSS('background-color', BUG_PAPER);
+  });
+
+  test(`Card_When${label}AndInDone_ShouldStillBePaperWithMutedTitle`, async ({ mount, page }) => {
+    await mount(
+      <Card
+        card={card({ key: 'SHIP-3' })}
+        projectKey="SHIP"
+        level="stories"
+        compact={false}
+        settings={SETTINGS}
+        inDone
+      />,
+      route,
+    );
+    await setTheme(page);
+
+    await expect(page.getByTestId(ids.card)).toHaveCSS('background-color', STORY_PAPER);
+    await expect(page.getByTestId(ids.cardTitle)).toHaveCSS('color', 'rgb(82, 98, 124)');
+  });
+
+  test(`Card_When${label}AndStyleRule_ShouldTintPaperAndRingAccentOnHover`, async ({
+    mount,
+    page,
+  }) => {
+    await mount(
+      <Card
+        card={card({ key: 'SHIP-9', styleRuleId: 'rule-blocked' })}
+        projectKey="SHIP"
+        level="stories"
+        compact={false}
+        settings={SETTINGS}
+        inDone={false}
+      />,
+      route,
+    );
+    await setTheme(page);
+    const element = page.getByTestId(ids.card);
+
+    const background = await element.evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(background).not.toBe(STORY_PAPER);
+    expect(background).toMatch(/^(rgb|color)\(/);
+    await expect(element).toHaveCSS('box-shadow', /3px 0px 0px 0px inset/);
+
+    await element.hover();
+    await expect(element).toHaveCSS(
+      'border-top-color',
+      theme === 'dark' ? DARK_ACCENT : LIGHT_ACCENT,
+    );
+    // The rule's left bar stays under the ring.
+    await expect(element).toHaveCSS('box-shadow', /3px 0px 0px 0px inset/);
+    await expect(element).toHaveCSS('background-color', background);
+  });
+}
