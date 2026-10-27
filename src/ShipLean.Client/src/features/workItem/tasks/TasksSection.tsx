@@ -16,7 +16,7 @@ export function TasksSection({ project, itemKey }: { project: ProjectDto; itemKe
   const tasks = item.children.filter((child) => child.type.id === 'task');
   const done = tasks.filter((task) => task.state.category === 'completed').length;
   return (
-    <section data-testid={ids.tasks} aria-label="Tasks" className="grid gap-2">
+    <section data-testid={ids.tasks} aria-label="Tasks" className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2">
       <header className="flex items-center gap-2">
         <h2 className="text-[length:var(--text-md)] font-semibold">Tasks</h2>
         <span data-testid={ids.tasksCount}>
@@ -45,7 +45,7 @@ export function TasksSection({ project, itemKey }: { project: ProjectDto; itemKe
             No tasks yet. Break it down when someone picks it up.
           </p>
         ) : (
-          <ul className="m-0 grid list-none p-0">
+          <ul className="m-0 grid list-none grid-cols-[minmax(0,1fr)] p-0">
             {tasks.map((task) => (
               <TaskRow key={task.id} task={task} project={project} parentKey={itemKey} />
             ))}
