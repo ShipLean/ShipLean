@@ -2,10 +2,12 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
+using Microsoft.AspNetCore.Http.Features;
 using ModelContextProtocol;
 using ModelContextProtocol.Protocol;
 using Microsoft.Extensions.Options;
 using ModelContextProtocol.Server;
+using ShipLean.Application.Features.WorkItemDetails.Attachments;
 using ShipLean.Contracts.Errors;
 using ShipLean.WebApi.Features.Mcp.Scopes;
 
@@ -13,7 +15,7 @@ namespace ShipLean.WebApi.Features.Mcp.Transport;
 
 // The middleware that runs only for /mcp, after authentication and authorization (Program.cs branches here), so the caller
 // is a valid agent by now. Other methods than POST pass to the 405 controller. Before the SDK sees a POST it:
-//  - buffers the body, 1 MB at most (413), and hands the SDK a fresh copy;
+//  - buffers the body, up to one max-size attachment in base64 (413), and hands the SDK a fresh copy;
 //  - parses the message with the SDK's own reader and refuses anything that is not one valid JSON-RPC message (a batch, a
 //    malformed body, a tools/call the SDK could not bind) with 400, never passing it through;
 //  - for tools/call, checks the tool's scope against the token's and answers the 403 step-up before the tool runs, and marks
@@ -31,10 +33,17 @@ public static class McpPipeline
                 await next(context);
                 return;
             }
-            var body = await ReadBodyAsync(context.Request);
+            var maxBody = McpBodyLimit.BytesFor(context.RequestServices.GetRequiredService<AttachmentLimits>().MaxBytes);
+            // Kestrel's own default is 30 MB, under this cap for a 25 MB file, and it applies when the body is first read.
+            var kestrel = context.Features.Get<IHttpMaxRequestBodySizeFeature>();
+            if (kestrel is { IsReadOnly: false })
+            {
+                kestrel.MaxRequestBodySize = maxBody;
+            }
+            var body = await ReadBodyAsync(context.Request, maxBody);
             if (body is null)
             {
-                await Refuse(context.Response, StatusCodes.Status413PayloadTooLarge, context.RequestAborted, ApiException.Validation("The request is larger than 1 MB."));
+                await Refuse(context.Response, StatusCodes.Status413PayloadTooLarge, context.RequestAborted, ApiException.Validation(McpBodyLimit.TooLarge(maxBody)));
                 return;
             }
             context.Request.Body = new MemoryStream(body, writable: false);
@@ -103,9 +112,9 @@ public static class McpPipeline
     }
 
     // Null when the body is over the cap.
-    private static async Task<byte[]?> ReadBodyAsync(HttpRequest request)
+    private static async Task<byte[]?> ReadBodyAsync(HttpRequest request, long maxBodyBytes)
     {
-        if (request.ContentLength > AgentPolicy.MaxBodyBytes)
+        if (request.ContentLength > maxBodyBytes)
         {
             return null;
         }
@@ -115,7 +124,7 @@ public static class McpPipeline
         while ((read = await request.Body.ReadAsync(chunk, request.HttpContext.RequestAborted)) > 0)
         {
             await buffer.WriteAsync(chunk.AsMemory(0, read));
-            if (buffer.Length > AgentPolicy.MaxBodyBytes)
+            if (buffer.Length > maxBodyBytes)
             {
                 return null;
             }
