@@ -17,9 +17,10 @@ namespace ShipLean.WebApi.Features.Mcp.Transport;
 // lookups in a minute, but only for a bad token: a valid one always gets in). The token is checked on every request (IAgentTokens), and never logged. On
 // success the principal is the token's user, with the granted scopes as claims, and the request's agent is set.
 //
-// When SHIPLEAN_MCP_GATEWAY_EMAIL_HEADER is set and the request has no bearer, that header is the person: found or created
-// by email (no name, so a new user's name is the part before @ and a later call does not rename them), with every scope and
-// no agent. A blank, repeated or unusable header counts as no header. A bearer that does not validate is not rescued by the header.
+// When SHIPLEAN_MCP_GATEWAY_EMAIL_HEADER is set and the request carries that header, it is the person and any bearer is
+// ignored (it is the gateway's third-party token, not a ShipLean one): found or created by email (no name, so a new user's
+// name is the part before @ and a later call does not rename them), with every scope and no agent. A blank, repeated or
+// unusable header counts as no header, and the request falls back to the bearer check.
 public sealed class AgentBearerHandler(
     IOptionsMonitor<AuthenticationSchemeOptions> options,
     ILoggerFactory logger,
@@ -52,13 +53,19 @@ public sealed class AgentBearerHandler(
             return AuthenticateResult.Fail("Foreign origin.");
         }
 
+        // The gateway's header wins over any bearer: a gateway forwards its own identity provider's token, which is not ours.
+        if (gateway.EmailHeader is { } headerName && EmailFrom(headerName) is { } email)
+        {
+            return await AuthenticateGatewayAsync(email);
+        }
+
         var header = Request.Headers.Authorization.ToString();
         if (header.StartsWith(BearerPrefix, StringComparison.OrdinalIgnoreCase) && header[BearerPrefix.Length..].Trim() is { Length: > 0 } bearer)
         {
             return await AuthenticateBearerAsync(addresses, bearer);
         }
 
-        return await AuthenticateGatewayAsync();
+        return AuthenticateResult.NoResult();
     }
 
     private async Task<AuthenticateResult> AuthenticateBearerAsync(AgentAddresses addresses, string bearer)
@@ -74,14 +81,9 @@ public sealed class AgentBearerHandler(
         return AuthenticateResult.Success(new AuthenticationTicket(AgentClaims.For(agent), Scheme.Name));
     }
 
-    // No bearer. The header is the person only when the setting names one and the request carries a single usable email.
-    private async Task<AuthenticateResult> AuthenticateGatewayAsync()
+    // The header is the person: the setting names it and the request carries a single usable email.
+    private async Task<AuthenticateResult> AuthenticateGatewayAsync(string email)
     {
-        if (gateway.EmailHeader is not { } headerName || EmailFrom(headerName) is not { } email)
-        {
-            return AuthenticateResult.NoResult();
-        }
-
         var user = await directory.FindOrCreateAsync(email, null, Context.RequestAborted);
         if (user.Status == UserStatus.Disabled)
         {
