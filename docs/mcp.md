@@ -124,7 +124,7 @@ The tools the richer Feature editor added. Each slice that adds a tool appends i
 
 ### Upload URLs
 
-`attach_file` without `base64` checks the item (Member), the name and the content type, then issues a token and replies with the URL. The reply's `upload_url` is absolute, built from the instance's base URL like every other link the MCP returns.
+`attach_file` without `base64` checks the item (Member), the name and the content type, then issues a token and replies with the URL. The reply's `upload_url` is absolute, built like every other link the MCP returns. When `base_url` is set, that is the host. When it is blank, the host is the one the request came in on: the last `X-Forwarded-Host` from a trusted proxy (and `X-Forwarded-Proto` for the scheme), unless that name is a cluster service (`*.svc`). Otherwise it is the request's own host. `Request.Host` is not rewritten, so a redirect still uses the app's own host.
 
 - **Token:** 32 random bytes, base64url. Only its SHA-256 is stored (`transfer_token`, with the item, file name, content type, user, agent stamp and agent authorization). It lives 10 minutes.
 - **`PUT /api/uploads/{token}`** takes the raw bytes as the body, so `curl -T file.png '<url>'` needs no headers, cookie or bearer, and the `X-ShipLean-Client` guard doesn't apply. The content type given to `attach_file` wins over whatever the client sends. It is rate limited per client address (60 a minute).
