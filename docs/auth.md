@@ -74,9 +74,10 @@ Agents and webhooks have no browser session at the proxy. Tell the proxy not to 
 - `/oauth/revoke`
 - `/.well-known/`
 - `/api/uploads/`. The one-time URL token an agent got from `attach_file` is the proof ([`mcp.md`](mcp.md#upload-urls)); it works with `curl -T` and no header, so `CrossSiteWriteGuard` lets it through.
+- `/api/downloads/`. The short-lived URL token an agent got from `read_attachment` is the proof ([`mcp.md`](mcp.md#download-urls)); it is a GET, so `CrossSiteWriteGuard` does not apply.
 - `/api/webhooks/`, when webhooks are on. Each one proves the caller with its own shared secret ([`webhooks.md`](webhooks.md)). The sender must post JSON (for GitHub, set the content type to `application/json`), because proxy mode guards every write.
 
-ShipLean never reads the proxy identity on `/mcp`, `/api/uploads/`, `/oauth/token`, `/oauth/register` or `/oauth/revoke`. They keep their own bearer-token check, so a proxy header named `Authorization` can't be mistaken for an agent's token. A gateway that calls `/mcp` for someone it has already signed in is a different setting, `SHIPLEAN_MCP_GATEWAY_EMAIL_HEADER` ([`mcp.md`](mcp.md#who-gets-in)). `/oauth/authorize` is a browser page that needs the signed-in person, so it stays behind the proxy.
+ShipLean never reads the proxy identity on `/mcp`, `/api/uploads/`, `/api/downloads/`, `/oauth/token`, `/oauth/register` or `/oauth/revoke`. They keep their own bearer-token check, so a proxy header named `Authorization` can't be mistaken for an agent's token. A gateway that calls `/mcp` for someone it has already signed in is a different setting, `SHIPLEAN_MCP_GATEWAY_EMAIL_HEADER` ([`mcp.md`](mcp.md#who-gets-in)). `/oauth/authorize` is a browser page that needs the signed-in person, so it stays behind the proxy.
 
 A path the proxy skips can be reached by anyone. In token mode that's fine, because nobody can forge a token. In header mode it's only safe if the proxy strips the identity headers on those paths too.
 
