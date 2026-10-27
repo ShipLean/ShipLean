@@ -419,6 +419,29 @@ test('Taskboard_WhenOfferDismissed_ShouldHideItAndStayOnTheStoryState', async ({
   expect(server.patches).toHaveLength(0);
 });
 
+test('Taskboard_WhenOfferShown_ShouldKeepTheButtonLabelOnOneLineInsideTheCard', async ({
+  mount,
+  page,
+}) => {
+  await stubTaskboard(page, withOffer());
+  await mount(slot, route);
+
+  const button = page.getByTestId(ids.rowOfferResolve);
+  // Each line the label wraps onto adds a client rect.
+  const lines = await button.evaluate((el) => {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    return new Set([...range.getClientRects()].map((r) => Math.round(r.top))).size;
+  });
+  expect(lines).toBe(1);
+  const header = (await page
+    .getByTestId(ids.rowHeader)
+    .filter({ has: page.getByTestId(ids.rowOffer) })
+    .boundingBox())!;
+  const box = (await button.boundingBox())!;
+  expect(box.x + box.width).toBeLessThanOrEqual(header.x + header.width);
+});
+
 test('Taskboard_WhenMoveToResolvedRefused_ShouldSayWhy', async ({ mount, page }) => {
   await stubTaskboard(page, withOffer(), {
     patchAnswer: {
