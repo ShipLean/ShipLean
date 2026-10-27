@@ -24,6 +24,10 @@ public sealed class CaptureSupport(IServiceProvider services, AgentBaseUrl baseU
     public async Task<string> BaseUrlAsync(CancellationToken cancellationToken)
         => (await baseUrl.ReadAsync(Http.Request, cancellationToken)).Issuer;
 
+    // The agent authorization this call runs under, or null for a caller that has none (the gateway).
+    public Guid? AgentAuthorizationId()
+        => Guid.TryParse(Http.User.FindFirst(AgentClaims.AuthorizationClaim)?.Value, out var id) ? id : null;
+
     // The project an item key belongs to (its key prefix), for the result's `project` and open_url.
     public Task<ResolvedProject> ProjectOfAsync(ResolvedItem item, CancellationToken cancellationToken)
         => projects.ResolveAsync(item.Key[..item.Key.IndexOf('-')], forWrite: true, cancellationToken);

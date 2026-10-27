@@ -118,9 +118,21 @@ The tools the richer Feature editor added. Each slice that adds a tool appends i
 | `set_status` | write | Writes a Feature's status line (and optionally its state), stamps it verified by the caller via `set_status`, returns status, verified label and revision. |
 | `create_feature` | write | Creates a Feature from title and goal, with optional epic, slug (defaults to `Slugs.FromTitle`), status and state. |
 | `attach_markdown` | write | Attaches a `.md` file (name, content) to an item, stamped with the agent and `attach_markdown`; the same name replaces the old file. Its text is searchable. |
-| `attach_file` | write | Attaches any file sent as base64, stamped with the agent and `attach_file`. Checked against the per-file limit before anything is stored; the 1 MB `/mcp` body cap leaves about 700 KB, and bigger files go through the UI upload. `search` also matches Markdown attachment text and names the file in `attachment` (see Search). |
+| `attach_file` | write | Attaches any file, stamped with the agent and `attach_file`. **Without `base64` it returns an upload URL** (`upload_url`, `expires_at`, and the `command` `curl -T <file> '<url>'`) and attaches nothing yet; the agent runs the command in its shell and the bytes never pass through the model. With `base64` the file is sent in the call itself, so the 1 MB `/mcp` body cap (about 700 KB of file) applies to that mode only; use it for tiny files. Either way the per-file limit is checked before anything is kept, and the same name replaces the old file. `search` also matches Markdown attachment text and names the file in `attachment` (see Search). |
 | `report_link_state` | write | Reports the title and state (open, draft, merged, closed) of an address ShipLean can't read, as of a time. Applies to every link with that exact address in projects you are in; the card shows it as reported by the agent. `not_found` when no link matches. |
 | `link` | write | (Feature editor addition) `url` links take optional `title` and `note`, and go through the link-card checks: `link_invalid_url`, `link_duplicate`. A URL link no longer bumps the item's revision. |
+
+### Upload URLs
+
+`attach_file` without `base64` checks the item (Member), the name and the content type, then issues a token and replies with the URL. The reply's `upload_url` is absolute, built from the instance's base URL like every other link the MCP returns.
+
+- **Token:** 32 random bytes, base64url. Only its SHA-256 is stored (`transfer_token`, with the item, file name, content type, user, agent stamp and agent authorization). It lives 10 minutes.
+- **`PUT /api/uploads/{token}`** takes the raw bytes as the body, so `curl -T file.png '<url>'` needs no headers, cookie or bearer, and the `X-ShipLean-Client` guard doesn't apply. The content type given to `attach_file` wins over whatever the client sends. It is rate limited per client address (60 a minute).
+- **Runs as the user who asked for the URL.** Member is checked again on use, and the URL stops working if the agent is revoked, the user is disabled or the member is removed.
+- **Limits** are the web upload's: `SHIPLEAN_ATTACHMENT_MAX_BYTES` per file and the per-item total, enforced while the body streams (not the 1 MB `/mcp` cap); SVG is sanitised.
+- **One use.** The token is spent only after the attachment is stored, so a failed upload (too big, dropped connection, item full) can be retried with the same URL until it expires.
+- **Answers:** 200 with `{ id, name, sizeBytes, replaced }`. An unknown, expired, spent or no-longer-allowed token is 404, and the response never says which.
+- Behind a proxy, `/api/uploads/` must be skipped like `/mcp` ([`auth.md`](auth.md#paths-the-proxy-must-skip)).
 
 ## Adding a tool
 
