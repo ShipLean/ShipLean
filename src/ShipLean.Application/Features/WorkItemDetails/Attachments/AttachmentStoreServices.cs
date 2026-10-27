@@ -1,3 +1,4 @@
+using ShipLean.Application.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Contracts;

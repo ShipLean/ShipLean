@@ -43,7 +43,7 @@ internal sealed class AttachTools(
     }
 
     [McpServerTool(Name = "attach_file"), McpScope(McpScopes.Write)]
-    [Description("Attach any file to a work item. Leave base64 out. The call attaches nothing and returns upload_url, expires_at and a curl command (curl -T <file> '<url>'). Run that command in the shell so the bytes never pass through you. The URL is on the host the request came in on, works once, for 10 minutes, and accepts up to the attachment size limit (25 MB by default). Pass base64 only for a tiny file: that sends the bytes in this call, which is limited to 1 MB (about 700 KB of file). Attaching a name the item already has replaces that file.")]
+    [Description("Attach any file to a work item. For anything but a small file, leave base64 out: the call attaches nothing and returns upload_url, expires_at and a curl command (curl -T <file> '<url>'). Run that command in the shell so the bytes never pass through you. The URL is on the host the request came in on, works once, for 10 minutes, and accepts up to the attachment size limit (25 MB by default). With base64 the file is sent in the call itself and can be as large as an attachment (25 MB by default). Attaching a name the item already has replaces that file.")]
     public async Task<CallToolResult> AttachFile(
         [Description("The item's key, such as SHIP-12.")] string feature,
         [Description("The file name, such as diagram.png.")] string name,

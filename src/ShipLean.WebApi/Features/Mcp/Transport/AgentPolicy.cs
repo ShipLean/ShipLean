@@ -15,7 +15,4 @@ public static class AgentPolicy
     public const int WritesPerMinutePerUser = 120;
 
     public const int FailedLookupsPerMinutePerIp = 20;
-
-    // The largest request body the gate buffers.
-    public const int MaxBodyBytes = 1024 * 1024;
 }

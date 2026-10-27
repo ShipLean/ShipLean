@@ -33,7 +33,7 @@ All bodies are the usual `ApiError` JSON (`{ "error", "code" }`, plus `"field"` 
 | 403 `forbidden` | The tool's scope is not granted (the step-up) | `WWW-Authenticate: Bearer error="insufficient_scope", scope="<granted + required, sorted>", resource_metadata="..."` |
 | 405 | GET, HEAD, PUT, PATCH or DELETE (the transport is stateless: no stream, no session) | `Allow: POST` |
 | 400 | Any `POST` body that is not one valid JSON-RPC message, read the way the SDK reads it: a JSON array (the spec dropped batching), malformed JSON, a `tools/call` with no usable `name` | none |
-| 413 | Body over 1 MB | none |
+| 413 | Body over the cap: one attachment at the file limit, base64-encoded, plus 64 KB | none |
 | 429 `rate_limited` | A limit below | `Retry-After` on the lookup limit |
 
 The 405 comes from `McpMethodsController`, because the SDK maps only `POST` while `Stateless = true`. If `Stateless` is ever set false the SDK maps `GET` and `DELETE /mcp` itself and that route becomes ambiguous: remove the controller then.
@@ -60,7 +60,7 @@ The call-tool filter (`ToolScopeFilter`) is the backstop: it re-checks the scope
 
 - **Failed token lookups: 20 a minute per client network** (`AgentFailureLimiter`, fixed window, in memory; an IPv6 client is counted by its /64). The token is validated first: a valid token always gets in, and only a request whose token is invalid gets 429 once its network is over the limit, so someone behind a shared address cannot lock real agents out. The count is atomic and expired windows are dropped by a timer. It needs the real client address: behind a reverse proxy, list the proxy in `SHIPLEAN_TRUSTED_PROXIES` or every client shares the proxy's address.
 - **Writing tool calls: 120 a minute per user** (the `agent` rate-limit policy). A writing call is one whose required scope is not read, so a preview does not count. Reads are not limited.
-- **Body: 1 MB.**
+- **Body: one max attachment, base64-encoded, plus 64 KB** (`McpBodyLimit`). The default file limit is 25 MB, so the body cap is about 33.4 MB. The gate buffers that whole body. Kestrel's default of 30 MB is raised for `/mcp` only, up to the cap.
 
 The client address is the connection's, after forwarded headers (`docs/auth.md`, "Behind a proxy").
 
@@ -105,7 +105,7 @@ Agents on REST, not MCP, follow the same rule: progress, reports, decisions and 
 - titles (feature, story, task) are one line of at most 255 characters; `lane` and `model` are short words (letters, digits, `.`, `_`, `-`; at most 64), since they become tags and land in briefs;
 - a plan has at least one story; every task has a `title`, a `brief`, a `model` role and a `context_k` of at least 1, which is a warning over 100 and an error over 150;
 - at most 60 items (the Feature when new, the stories and the tasks);
-- sizes in UTF-8 bytes: a brief up to 10 KB, the common brief up to 64 KB, `plan_markdown` up to 200 KB, and descriptions within the Markdown render limit. All of it still has to fit `/mcp`'s 1 MB body.
+- sizes in UTF-8 bytes: a brief up to 10 KB, the common brief up to 64 KB, `plan_markdown` up to 200 KB, and descriptions within the Markdown render limit. A plan still has to fit in one `/mcp` body.
 
 **Markers** (`PlanMarkers`): comments start `Report · `, `Review · ` or `Retro · `, and links are titled `commit <sha7> <subject>` or `PR <title or url>`. A reviewer records each review round as a `Review · ` comment, and a lead closes its story with `update_progress` once every task has passed review, which is what moves the plan on to the next wave.
 
@@ -118,7 +118,7 @@ The tools the richer Feature editor added. Each slice that adds a tool appends i
 | `set_status` | write | Writes a Feature's status line (and optionally its state), stamps it verified by the caller via `set_status`, returns status, verified label and revision. |
 | `create_feature` | write | Creates a Feature from title and goal, with optional epic, slug (defaults to `Slugs.FromTitle`), status and state. |
 | `attach_markdown` | write | Attaches a `.md` file (name, content) to an item, stamped with the agent and `attach_markdown`; the same name replaces the old file. Its text is searchable. |
-| `attach_file` | write | Attaches any file, stamped with the agent and `attach_file`. **Without `base64` it returns an upload URL** (`upload_url`, `expires_at`, and the `command` `curl -T <file> '<url>'`) and attaches nothing yet; the agent runs the command in its shell and the bytes never pass through the model. With `base64` the file is sent in the call itself, so the 1 MB `/mcp` body cap (about 700 KB of file) applies to that mode only; use it for tiny files. Either way the per-file limit is checked before anything is kept, and the same name replaces the old file. `search` also matches Markdown attachment text and names the file in `attachment` (see Search). |
+| `attach_file` | write | Attaches any file, stamped with the agent and `attach_file`. **Without `base64` it returns an upload URL** (`upload_url`, `expires_at`, and the `command` `curl -T <file> '<url>'`) and attaches nothing yet; the agent runs the command in its shell and the bytes never pass through the model. With `base64` the file is sent in the call itself. The `/mcp` body cap is the per-file limit in base64 plus 64 KB, so a file the upload form accepts fits that way too. Either way the per-file limit is checked before anything is kept, and the same name replaces the old file. `search` also matches Markdown attachment text and names the file in `attachment` (see Search). |
 | `report_link_state` | write | Reports the title and state (open, draft, merged, closed) of an address ShipLean can't read, as of a time. Applies to every link with that exact address in projects you are in; the card shows it as reported by the agent. `not_found` when no link matches. |
 | `link` | write | (Feature editor addition) `url` links take optional `title` and `note`, and go through the link-card checks: `link_invalid_url`, `link_duplicate`. A URL link no longer bumps the item's revision. |
 
@@ -129,7 +129,7 @@ The tools the richer Feature editor added. Each slice that adds a tool appends i
 - **Token:** 32 random bytes, base64url. Only its SHA-256 is stored (`transfer_token`, with the item, file name, content type, user, agent stamp and agent authorization). It lives 10 minutes.
 - **`PUT /api/uploads/{token}`** takes the raw bytes as the body, so `curl -T file.png '<url>'` needs no headers, cookie or bearer, and the `X-ShipLean-Client` guard doesn't apply. The content type given to `attach_file` wins over whatever the client sends. It is rate limited per client address (60 a minute).
 - **Runs as the user who asked for the URL.** Member is checked again on use, and the URL stops working if the agent is revoked, the user is disabled or the member is removed.
-- **Limits** are the web upload's: `SHIPLEAN_ATTACHMENT_MAX_BYTES` per file and the per-item total, enforced while the body streams (not the 1 MB `/mcp` cap); SVG is sanitised.
+- **Limits** are the web upload's: `SHIPLEAN_ATTACHMENT_MAX_BYTES` per file and the per-item total, enforced while the body streams; SVG is sanitised. The `/mcp` body cap is that same per-file limit written as base64, plus 64 KB.
 - **One use.** The token is claimed before the body is read, so of two concurrent PUTs only one stores (the other is 404). If the upload then fails (too big, dropped connection, item full), the claim is released and the same URL can be retried until it expires.
 - **Answers:** 200 with `{ id, name, sizeBytes, replaced }`. An unknown, expired, spent or no-longer-allowed token is 404, and the response never says which.
 - Behind a proxy, `/api/uploads/` must be skipped like `/mcp` ([`auth.md`](auth.md#paths-the-proxy-must-skip)).

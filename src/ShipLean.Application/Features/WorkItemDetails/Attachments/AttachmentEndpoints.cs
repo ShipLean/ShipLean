@@ -1,3 +1,4 @@
+using ShipLean.Application.Storage;
 using Agoda.IoC.Core;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.WebUtilities;

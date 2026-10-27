@@ -1,3 +1,4 @@
+using ShipLean.Application.Storage;
 using Agoda.IoC.Core;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Attachments;
