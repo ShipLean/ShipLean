@@ -2,6 +2,7 @@ using Microsoft.Net.Http.Headers;
 using ShipLean.Application.Identity;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
+using ShipLean.WebApi.Features.WorkItemDetails.Attachments;
 
 namespace ShipLean.WebApi.Features.Auth;
 
@@ -9,12 +10,15 @@ namespace ShipLean.WebApi.Features.Auth;
 // cannot send: a JSON body, or the X-ShipLean-Client header the SPA's fetch wrapper puts on every request (a form can
 // set neither). Uploads and bodiless POSTs rely on the header. In password mode a request without the cookie carries no
 // ambient credentials, so there is nothing to forge; in proxy mode the proxy's session is one, so every write is checked.
+// The one exception is an agent's upload URL (/api/uploads): its token is the credential and no browser holds it, so a
+// plain `curl -T` has to get through.
 public static class CrossSiteWriteGuard
 {
     public static void Check(HttpRequest request)
     {
         if (HttpMethods.IsGet(request.Method) || HttpMethods.IsHead(request.Method) || HttpMethods.IsOptions(request.Method)
             || !request.Path.StartsWithSegments("/api")
+            || request.Path.StartsWithSegments(UploadServices.Path)
             || (!request.Cookies.ContainsKey(AuthServices.CookieName) && !ProxyMode(request))
             || request.Headers.ContainsKey(ClientHeader.Name)
             || IsJson(request.ContentType))

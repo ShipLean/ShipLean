@@ -30,7 +30,7 @@ Update the body as you learn; attachments hold the long form.
 
 Name research files `<topic>-<yyyy-mm-dd>.md`. A new round of the same document replaces it under the same name; the body and log keep history attachments do not.
 
-Read what is already there with `get_work_item` (attachments list) and `read_attachment` before you add more.
+Read what is already there with `get_work_item` (attachments list) and `read_attachment` before you add more. A pasted screenshot or any other non-Markdown file comes back as a `download_url` and a `curl -o <file> '<url>'` command: run it in the shell, then look at the saved file. The URL lasts 10 minutes, so fetch it when you need it.
 
 ## The log
 

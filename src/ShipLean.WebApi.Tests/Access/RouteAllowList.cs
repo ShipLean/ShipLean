@@ -15,6 +15,8 @@ public static class RouteAllowList
         new("POST", "api/auth/logout", "Ends the cookie session, valid or not."),
         new("GET", "api/auth/instance", "The sign-in page's instance name."),
         new("GET", "api/health", "Liveness probe."),
+        new("GET", "api/downloads/{token}", "An agent's curl has no session; the short-lived URL token is the proof, and every token that is not live is 404."),
+        new("PUT", "api/uploads/{token}", "An agent's curl has no session; the one-time URL token is the proof, and every token that is not live is 404."),
         new("POST", "api/webhooks/github", "GitHub delivers pull request events with no session; the shared secret's signature is the proof, and the endpoint is 404 while its secret is unset."),
         new("POST", "api/webhooks/gitlab", "GitLab delivers merge request events with no session; the shared secret token is the proof, and the endpoint is 404 while its secret is unset."),
     ];
@@ -48,7 +50,7 @@ public static class RouteAllowList
     // Allow-listed entries with a route parameter, other than the caller-owned and any-user routes below. A parameter usually means an
     // entity id, and an entity route needs a project (or instance) rule: it gets a sweep row, not an allow-list entry.
     public static IReadOnlyList<Entry> WithParameters(IEnumerable<Entry> entries)
-        => entries.Where(e => e.Template.Contains('{', StringComparison.Ordinal) && !CallerOwnedRoutes.Contains(e.Template) && !AnyUserRoutes.Contains(e.Template)).ToList();
+        => entries.Where(e => e.Template.Contains('{', StringComparison.Ordinal) && !CallerOwnedRoutes.Contains(e.Template) && !AnyUserRoutes.Contains(e.Template) && !TokenRoutes.Contains(e.Template)).ToList();
 
     // Routes whose parameter names a row that belongs to the caller (a preference, a connected agent, a pending
     // authorize request): the service answers not_found for anyone else's, and no project is involved.
@@ -61,6 +63,9 @@ public static class RouteAllowList
 
     // The parameter names any user, and every signed-in user may read it (v1: one organisation per instance); an unknown id is not_found.
     private static readonly string[] AnyUserRoutes = ["api/users/{id:guid}/photo"];
+
+    // The parameter is a secret token that is itself the credential; an unknown one is not_found.
+    private static readonly string[] TokenRoutes = ["api/downloads/{token}", "api/uploads/{token}"];
 
     public static bool Contains(IReadOnlyList<Entry> list, ApiAction action)
         => list.Any(e => e.Method == action.Method && e.Template == action.Template);

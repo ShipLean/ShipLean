@@ -1,5 +1,6 @@
 using System.Threading.RateLimiting;
 using ShipLean.Contracts;
+using ShipLean.WebApi.Infrastructure;
 
 namespace ShipLean.WebApi.Features.Agents.Clients;
 

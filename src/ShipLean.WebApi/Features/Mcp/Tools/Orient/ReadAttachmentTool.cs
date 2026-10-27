@@ -11,14 +11,15 @@ using ShipLean.WebApi.Features.Mcp.Contracts;
 using ShipLean.WebApi.Features.Mcp.Planning;
 using ShipLean.WebApi.Features.Mcp.Tools.Planning;
 using ShipLean.WebApi.Features.Mcp.Resolve;
+using ShipLean.WebApi.Features.Mcp.Tools.Capture;
 
 namespace ShipLean.WebApi.Features.Mcp.Tools.Orient;
 
 [McpServerToolType]
-internal sealed class ReadAttachmentTool(ItemResolver items, IAttachmentStore attachments, IAgentAddresses addresses)
+internal sealed class ReadAttachmentTool(ItemResolver items, IAttachmentStore attachments, IAgentAddresses addresses, ITransferTokens transfers, ICurrentUser currentUser, ICurrentAgent agent, CaptureSupport support)
 {
     [McpServerTool(Name = "read_attachment"), McpScope(McpScopes.Read)]
-    [Description("Read a Markdown attachment on a work item by name. Returns the text when it is at most 200 KB; larger Markdown files say so and give the UI link. Other files return their metadata and the UI link.")]
+    [Description("Read a Markdown attachment on a work item by name. Returns the text when it is at most 200 KB. For any other file (an image such as a pasted screenshot, a PDF) and for larger Markdown it returns metadata, the UI link and a short-lived download_url (10 minutes, reusable) with a curl command: run it in the shell to save the file (curl -o <file> '<url>'), then read it from disk; the bytes never pass through the model.")]
     public async Task<CallToolResult> ReadAttachmentAsync(
         [Description("The work item's key, such as SHIP-12.")] string item,
         [Description("The attachment file name, such as research-2026-10-26.md.")] string name,
@@ -58,8 +59,22 @@ internal sealed class ReadAttachmentTool(ItemResolver items, IAttachmentStore at
             tooLarge = true;
         }
 
+        string? downloadUrl = null;
+        string? command = null;
+        DateTimeOffset? expiresAt = null;
+        if (markdown is null)
+        {
+            var issued = await transfers.IssueAsync(
+                new NewTransfer(TransferKind.Download, resolved.Id, file.Id, file.Name, file.ContentType, currentUser.Id,
+                    support.AgentAuthorizationId(), AgentStamp.Of(agent) ?? "Agent"),
+                cancellationToken);
+            downloadUrl = $"{issuer.TrimEnd('/')}/api/downloads/{issued.Token}";
+            command = $"curl -o <file> '{downloadUrl}'";
+            expiresAt = issued.ExpiresAt;
+        }
+
         var result = new ReadAttachmentResult(
-            projectKey, openUrl, resolved.Key, file.Name, file.ContentType, file.SizeBytes, isMarkdown, markdown, tooLarge);
+            projectKey, openUrl, resolved.Key, file.Name, file.ContentType, file.SizeBytes, isMarkdown, markdown, tooLarge, downloadUrl, expiresAt, command);
         string summary;
         if (markdown is not null)
         {
@@ -67,11 +82,11 @@ internal sealed class ReadAttachmentTool(ItemResolver items, IAttachmentStore at
         }
         else if (tooLarge)
         {
-            summary = $"{file.Name} on {resolved.Key} is over 200 KB; open it in the UI.";
+            summary = $"{file.Name} on {resolved.Key} is over 200 KB. Download it within 10 minutes: {command}";
         }
         else
         {
-            summary = $"{file.Name} on {resolved.Key} is not Markdown; open it in the UI.";
+            summary = $"{file.Name} on {resolved.Key} is not Markdown. Download it within 10 minutes, with a file path in place of <file>: {command}";
         }
         return OrientReply.Of(result, summary);
     }

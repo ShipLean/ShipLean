@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 
-namespace ShipLean.WebApi.Features.Agents.Clients;
+namespace ShipLean.WebApi.Infrastructure;
 
 // The rate-limit partition of an anonymous caller. An IPv4 caller is its address; an IPv6 caller is its /64, since one
 // subscriber holds a whole /64 and could otherwise rotate through addresses to dodge the limit. Behind the proxy the

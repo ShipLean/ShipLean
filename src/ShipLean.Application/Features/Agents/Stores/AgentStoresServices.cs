@@ -17,5 +17,6 @@ public sealed class AgentStoresServices : IServiceModule
         services.AddSingleton<IOAuthCodes, OAuthCodes>();
         services.AddSingleton<IAgentTokens, AgentTokens>();
         services.AddSingleton<IAgentTokenIssuer, AgentTokenIssuer>();
+        services.AddSingleton<ITransferTokens, TransferTokens>();
     }
 }
