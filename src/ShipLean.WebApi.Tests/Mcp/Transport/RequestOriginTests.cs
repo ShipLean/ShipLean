@@ -1,8 +1,7 @@
 using System.Net;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using ShipLean.WebApi.Features.Auth.Proxy;
-using ShipLean.WebApi.Features.Mcp.Transport;
+using ShipLean.WebApi.Infrastructure;
 
 namespace ShipLean.WebApi.Tests.Mcp.Transport;
 

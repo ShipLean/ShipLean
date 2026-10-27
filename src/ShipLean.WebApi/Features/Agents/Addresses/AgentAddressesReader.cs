@@ -2,7 +2,8 @@ using Dapper;
 using Microsoft.AspNetCore.HttpOverrides;
 using Npgsql;
 using ShipLean.Contracts.Agents;
-using RequestOrigin = ShipLean.WebApi.Features.Mcp.Transport.RequestOrigin;
+using ShipLean.WebApi.Infrastructure;
+using RequestOrigin = ShipLean.WebApi.Infrastructure.RequestOrigin;
 
 namespace ShipLean.WebApi.Features.Agents.Addresses;
 

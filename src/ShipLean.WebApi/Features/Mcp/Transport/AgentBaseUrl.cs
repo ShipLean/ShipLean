@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Options;
 using Npgsql;
 using ShipLean.Contracts.Agents;
+using ShipLean.WebApi.Infrastructure;
 
 namespace ShipLean.WebApi.Features.Mcp.Transport;
 

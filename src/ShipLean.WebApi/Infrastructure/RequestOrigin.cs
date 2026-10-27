@@ -1,8 +1,7 @@
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Primitives;
-using ShipLean.WebApi.Features.Auth.Proxy;
 
-namespace ShipLean.WebApi.Features.Mcp.Transport;
+namespace ShipLean.WebApi.Infrastructure;
 
 // The origin to publish in a URL a caller opens from outside the cluster. request.Host is the address the last hop
 // dialed. The MCP gateway dials the service DNS, so that host does not resolve on a laptop. A trusted proxy names the

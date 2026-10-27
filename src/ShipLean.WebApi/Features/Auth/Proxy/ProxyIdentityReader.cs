@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Options;
 using Microsoft.Net.Http.Headers;
 using ShipLean.Application.Identity;
+using ShipLean.WebApi.Infrastructure;
 
 namespace ShipLean.WebApi.Features.Auth.Proxy;
 

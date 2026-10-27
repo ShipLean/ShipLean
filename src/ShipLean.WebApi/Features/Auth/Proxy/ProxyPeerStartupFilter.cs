@@ -1,3 +1,5 @@
+using ShipLean.WebApi.Infrastructure;
+
 namespace ShipLean.WebApi.Features.Auth.Proxy;
 
 // Records the raw TCP peer (ProxyPeer) on every request, ahead of the whole app pipeline and so ahead of
