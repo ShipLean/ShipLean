@@ -27,13 +27,14 @@ export function TaskRow({
     <li
       data-testid={ids.taskRow}
       data-key={task.key}
-      className="flex items-center gap-2 border-t border-edge px-2 py-1.5 text-[length:var(--text-sm)] first:border-t-0"
+      className="flex min-w-0 items-center gap-2 border-t border-edge px-2 py-1.5 text-[length:var(--text-sm)] first:border-t-0"
     >
       <TypeIcon type="task" />
       <ItemLink
         testId={ids.taskOpen}
         projectKey={project.key}
         itemKey={task.key}
+        title={task.title}
         className="min-w-0 flex-1 truncate hover:text-signal hover:underline"
       >
         {task.title}
