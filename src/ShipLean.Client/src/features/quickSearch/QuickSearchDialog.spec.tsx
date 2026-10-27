@@ -325,6 +325,35 @@ test('Dialog_WhenNarrow_ShouldHideTheKeyHints', async ({ mount, page }) => {
   await expect(page.getByTestId(ids.note)).toBeVisible();
 });
 
+// Fails if the panel sizes to its rows: it would shrink, and being centred, move its top edge too.
+test('Dialog_WhenRowsChange_ShouldKeepItsHeightAndPlace', async ({ mount, page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const component = await mount(<QuickSearchDialogHarness results={results()} />);
+  const before = await page.getByTestId(ids.dialog).boundingBox();
+  expect(before?.height).toBe(520);
+  await component.update(
+    <QuickSearchDialogHarness results={results({ groups: [actionsGroup] })} />,
+  );
+  await expect(page.getByTestId(ids.option)).toHaveCount(1);
+  expect(await page.getByTestId(ids.dialog).boundingBox()).toEqual(before);
+});
+
+test('Dialog_WhenTheWindowIsShort_ShouldShrinkToFitAndScrollTheList', async ({ mount, page }) => {
+  await page.setViewportSize({ width: 1440, height: 400 });
+  await mount(<QuickSearchDialogHarness results={results()} />);
+  const box = await page.getByTestId(ids.dialog).boundingBox();
+  expect(box?.height).toBe(400 - 96);
+  // The list's parent is the part that scrolls.
+  const overflows = await page.getByTestId(ids.list).evaluate((list) => {
+    const scroller = list.parentElement as HTMLElement;
+    return (
+      scroller.scrollHeight > scroller.clientHeight &&
+      getComputedStyle(scroller).overflowY === 'auto'
+    );
+  });
+  expect(overflows).toBe(true);
+});
+
 test('Dialog_WhenOnAPhone_ShouldLeaveAnEightPixelGutter', async ({ mount, page }) => {
   await page.setViewportSize({ width: 375, height: 700 });
   await mount(<QuickSearchDialogHarness results={results()} />);

@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace ShipLean.WebApi.Features.Auth.Proxy;
+namespace ShipLean.WebApi.Infrastructure;
 
 // The TCP peer that connected to this host, as a request feature. ProxyPeerStartupFilter captures it before
 // UseForwardedHeaders runs: for a trusted proxy that middleware rewrites Connection.RemoteIpAddress to the client the

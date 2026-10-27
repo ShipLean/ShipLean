@@ -9,8 +9,8 @@ public sealed record AgentAddresses(string Issuer, string Resource, bool BaseUrl
     public string ResourceMetadataUrl => Issuer + AgentUrls.ProtectedResourceMetadataPath + AgentUrls.McpPath;
 
     // Whether an Origin header names this server: the same scheme, host and port as the issuer. "null" and anything that is
-    // not an absolute http(s) origin is foreign. With no base_url the issuer is only the request's own Host, which a
-    // DNS-rebinding page controls, so no browser Origin can be verified and every one is foreign.
+    // not an absolute http(s) origin is foreign. With no base_url the issuer is the host the request came in on, which a
+    // direct caller controls, so no browser Origin can be verified and every one is foreign.
     public bool IsOwnOrigin(string origin)
         => BaseUrlSet
            && Uri.TryCreate(origin, UriKind.Absolute, out var given)

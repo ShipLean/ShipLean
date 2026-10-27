@@ -132,7 +132,8 @@ export function QuickSearchDialog({
         tabIndex={-1}
         onKeyDown={onPanelKeyDown}
         style={{ boxShadow: 'var(--shadow-dialog)' }}
-        className="flex max-h-[calc(100dvh-96px)] w-[min(640px,100vw-32px)] flex-col overflow-hidden rounded-frame border border-edge bg-panel max-[899px]:max-h-[calc(100dvh-16px)] max-[899px]:w-[calc(100vw-16px)]"
+        // A fixed height, so the panel doesn't jump as results arrive; a short window shrinks it and the list scrolls.
+        className="flex h-[min(520px,calc(100dvh-96px))] w-[min(640px,100vw-32px)] flex-col overflow-hidden rounded-frame border border-edge bg-panel max-[899px]:h-[min(520px,calc(100dvh-16px))] max-[899px]:w-[calc(100vw-16px)]"
       >
         <div className="relative flex h-[46px] flex-none items-center gap-2.5 border-b border-edge px-3.5">
           <svg
