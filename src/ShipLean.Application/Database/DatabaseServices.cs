@@ -1,4 +1,5 @@
 using ShipLean.Contracts;
+using Dapper;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -29,15 +30,23 @@ public sealed class DatabaseServices : IServiceModule
         => PinUtc(configuration[ConnectionKey]
            ?? throw new InvalidOperationException($"{ConnectionKey} is not set."));
 
-    private sealed class DatabaseMigrationService(IConfiguration configuration) : IHostedService
+    private sealed class DatabaseMigrationService(IConfiguration configuration, NpgsqlDataSource dataSource) : IHostedService
     {
-        public Task StartAsync(CancellationToken cancellationToken)
+        public async Task StartAsync(CancellationToken cancellationToken)
         {
             if (configuration.GetValue(MigrateKey, true))
             {
                 DatabaseMigrator.Apply(ConnectionString(configuration), includeSeed: false);
             }
-            return Task.CompletedTask;
+            // The required singleton is install data, not demo seed. Await it after migrations and before serving HTTP.
+            // A blank URL keeps the existing unconfigured/request-origin contract until an admin explicitly sets it.
+            await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+            await connection.ExecuteAsync(new CommandDefinition(
+                """
+                INSERT INTO instance_settings (name, base_url)
+                VALUES ('ShipLean', '')
+                ON CONFLICT (id) DO NOTHING
+                """, cancellationToken: cancellationToken));
         }
 
         public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
