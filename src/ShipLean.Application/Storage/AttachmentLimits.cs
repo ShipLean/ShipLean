@@ -1,4 +1,4 @@
-namespace ShipLean.Application.Features.WorkItemDetails.Attachments;
+namespace ShipLean.Application.Storage;
 
 // The most bytes one attachment may hold (SHIPLEAN_ATTACHMENT_MAX_BYTES, 25 MiB when not set; uploads and imports share it)
 // and the most live attachment bytes one work item may hold (SHIPLEAN_ATTACHMENT_MAX_ITEM_BYTES, 250 MiB when not set).
