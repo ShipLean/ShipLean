@@ -138,14 +138,14 @@ export function StoryRowHeader({
       {offerResolve && onMoveToResolved && !dismissed ? (
         <div
           data-testid={ids.rowOffer}
-          className="flex items-center gap-1.5 rounded-control border border-good bg-sunken px-2 py-1 text-[length:var(--text-xs)]"
+          className="flex flex-wrap items-center gap-1.5 rounded-control border border-good bg-sunken px-2 py-1 text-[length:var(--text-xs)]"
         >
-          <b>All tasks done.</b>
-          <span className="flex-1" />
+          {/* Compact controls that never break their labels; a narrow card wraps the buttons below the text. */}
+          <b className="whitespace-nowrap">All tasks done.</b>
           <button
             type="button"
             data-testid={ids.rowOfferResolve}
-            className="btn-signal"
+            className="btn-signal ml-auto h-[22px] whitespace-nowrap px-[7px] text-[length:var(--text-xs)]"
             onClick={onMoveToResolved}
           >
             Move story to Resolved
@@ -154,7 +154,7 @@ export function StoryRowHeader({
             type="button"
             data-testid={ids.rowOfferDismiss}
             aria-label="Dismiss"
-            className="btn-ghost"
+            className="btn-ghost h-[22px] px-1.5 text-[length:var(--text-xs)]"
             onClick={() => setDismissed(true)}
           >
             ✕
