@@ -9,7 +9,8 @@ using ShipLean.WebApi.Features.Mcp.Transport;
 
 namespace ShipLean.WebApi.Tests.Mcp.Transport;
 
-// /mcp with SHIPLEAN_MCP_GATEWAY_EMAIL_HEADER set: that header is the person. A bearer token still signs its own user in.
+// /mcp with SHIPLEAN_MCP_GATEWAY_EMAIL_HEADER set: that header is the person, whatever bearer comes with it. With no header a
+// bearer token still signs its own user in.
 [TestFixture]
 public class McpGatewayEmailTests : McpFixture
 {
@@ -89,28 +90,41 @@ public class McpGatewayEmailTests : McpFixture
     }
 
     [Test]
-    public async Task Mcp_WhenBearerValid_ShouldActAsTheTokenUser()
+    public async Task Mcp_WhenBearerValidAndNoHeader_ShouldActAsTheTokenUser()
     {
         var token = await TokenAsync(TestUser.Mei, ReadOnly);
 
-        var alone = await CallToolAsync(token, "probe_whoami");
-        var withHeader = await CallToolAsync(token, "probe_whoami", "{}", WithHeader(TestUser.Joel.Email));
+        var reply = await CallToolAsync(token, "probe_whoami");
 
-        alone.ResultText().ShouldBe($"{TestUser.Mei.Id}|Test Agent||False");
-        withHeader.ResultText().ShouldBe($"{TestUser.Mei.Id}|Test Agent||False");
+        reply.ResultText().ShouldBe($"{TestUser.Mei.Id}|Test Agent||False");
     }
 
     [Test]
-    public async Task Mcp_WhenBearerInvalid_ShouldStay401EvenWithHeader()
+    public async Task Mcp_WhenHeaderAndValidBearer_ShouldActAsTheHeaderPerson()
     {
-        const string email = "should.not.create@example.test";
+        var token = await TokenAsync(TestUser.Mei, ReadOnly);
 
-        var reply = await CallToolAsync("not-a-real-token", "probe_whoami", "{}", WithHeader(email));
+        var reply = await CallToolAsync(token, "probe_whoami", "{}", WithHeader(TestUser.Joel.Email));
+
+        reply.ResultText().ShouldBe($"{TestUser.Joel.Id}|||False");
+    }
+
+    [Test]
+    public async Task Mcp_WhenHeaderAndThirdPartyBearer_ShouldActAsTheHeaderPerson()
+    {
+        var reply = await CallToolAsync("third-party-identity-token", "probe_whoami", "{}", WithHeader(TestUser.Joel.Email));
+
+        reply.Status.ShouldBe(HttpStatusCode.OK);
+        reply.ResultText().ShouldBe($"{TestUser.Joel.Id}|||False");
+    }
+
+    [Test]
+    public async Task Mcp_WhenBearerInvalidAndHeaderUnusable_ShouldAnswerInvalidToken()
+    {
+        var reply = await CallToolAsync("not-a-real-token", "probe_whoami", "{}", WithHeader("not-an-email"));
 
         reply.Status.ShouldBe(HttpStatusCode.Unauthorized);
         reply.WwwAuthenticate.ShouldContain("error=\"invalid_token\"");
-        await using var connection = await OpenDatabaseAsync();
-        (await connection.ExecuteScalarAsync<int>("SELECT count(*)::int FROM app_user WHERE lower(email) = lower(@email)", new { email })).ShouldBe(0);
     }
 
     [TestCase(null)]
