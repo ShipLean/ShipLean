@@ -1,5 +1,5 @@
 using System.Net;
-using ShipLean.WebApi.Features.Agents.Clients;
+using ShipLean.WebApi.Infrastructure;
 
 namespace ShipLean.UnitTest.Agents.Clients;
 

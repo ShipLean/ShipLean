@@ -119,6 +119,22 @@ public class AttachUploadTests : McpFixture
     }
 
     [Test]
+    public async Task Upload_WhenTwoPutsRaceOnOneToken_ShouldStoreOneAndRefuseTheOther()
+    {
+        var path = await UploadPathAsync("race.bin");
+
+        var responses = await Task.WhenAll(Enumerable.Range(0, 2).Select(async _ =>
+        {
+            using var response = await PutAsync(path, new byte[1024]);
+            return response.StatusCode;
+        }));
+
+        responses.Order().ShouldBe([HttpStatusCode.OK, HttpStatusCode.NotFound]);
+        await using var connection = await OpenDatabaseAsync();
+        (await connection.ExecuteScalarAsync<int>("SELECT count(*)::int FROM attachment WHERE name = 'race.bin'")).ShouldBe(1);
+    }
+
+    [Test]
     public async Task Upload_WhenTokenUnknown_ShouldBeNotFound()
     {
         using var response = await PutAsync("/api/uploads/not-a-real-token", [1]);

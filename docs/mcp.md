@@ -130,7 +130,7 @@ The tools the richer Feature editor added. Each slice that adds a tool appends i
 - **`PUT /api/uploads/{token}`** takes the raw bytes as the body, so `curl -T file.png '<url>'` needs no headers, cookie or bearer, and the `X-ShipLean-Client` guard doesn't apply. The content type given to `attach_file` wins over whatever the client sends. It is rate limited per client address (60 a minute).
 - **Runs as the user who asked for the URL.** Member is checked again on use, and the URL stops working if the agent is revoked, the user is disabled or the member is removed.
 - **Limits** are the web upload's: `SHIPLEAN_ATTACHMENT_MAX_BYTES` per file and the per-item total, enforced while the body streams (not the 1 MB `/mcp` cap); SVG is sanitised.
-- **One use.** The token is spent only after the attachment is stored, so a failed upload (too big, dropped connection, item full) can be retried with the same URL until it expires.
+- **One use.** The token is claimed before the body is read, so of two concurrent PUTs only one stores (the other is 404). If the upload then fails (too big, dropped connection, item full), the claim is released and the same URL can be retried until it expires.
 - **Answers:** 200 with `{ id, name, sizeBytes, replaced }`. An unknown, expired, spent or no-longer-allowed token is 404, and the response never says which.
 - Behind a proxy, `/api/uploads/` must be skipped like `/mcp` ([`auth.md`](auth.md#paths-the-proxy-must-skip)).
 

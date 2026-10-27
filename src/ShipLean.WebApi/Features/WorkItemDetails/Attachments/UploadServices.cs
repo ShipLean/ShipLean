@@ -1,5 +1,6 @@
 using System.Threading.RateLimiting;
 using ShipLean.Contracts;
+using ShipLean.WebApi.Infrastructure;
 
 namespace ShipLean.WebApi.Features.WorkItemDetails.Attachments;
 
@@ -13,6 +14,6 @@ public sealed class UploadServices : IServiceModule
 
     public void AddServices(IServiceCollection services, IConfiguration configuration)
         => services.AddRateLimiter(options => options.AddPolicy(RateLimit, context => RateLimitPartition.GetFixedWindowLimiter(
-            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            ClientIpKey.For(context.Connection.RemoteIpAddress),
             _ => new FixedWindowRateLimiterOptions { PermitLimit = RequestsPerMinutePerIp, Window = TimeSpan.FromMinutes(1) })));
 }
