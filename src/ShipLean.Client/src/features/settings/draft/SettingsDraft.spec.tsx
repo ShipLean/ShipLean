@@ -37,7 +37,15 @@ const saved = (): ProjectSettingsDto => ({
   ],
   sprints: { velocityWindow: 3, velocityOverride: null },
   states: WORK_ITEM_TYPE_IDS.flatMap((type) => [
-    { id: `${type}-new`, type, name: 'New', category: 'proposed' as const, order: 1, itemCount: 0 },
+    {
+      id: `${type}-new`,
+      type,
+      name: 'New',
+      category: 'proposed' as const,
+      order: 1,
+      itemCount: 0,
+      startsAgent: false,
+    },
     {
       id: `${type}-done`,
       type,
@@ -45,6 +53,7 @@ const saved = (): ProjectSettingsDto => ({
       category: 'completed' as const,
       order: 2,
       itemCount: 0,
+      startsAgent: false,
     },
   ]),
 });

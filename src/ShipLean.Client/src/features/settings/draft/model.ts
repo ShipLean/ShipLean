@@ -286,7 +286,7 @@ export function sameSettings(a: ProjectSettingsDto, b: ProjectSettingsDto): bool
   const flat = (s: ProjectSettingsDto) =>
     JSON.stringify({
       ...s,
-      states: s.states.map((x) => [x.id, x.type, x.name, x.category, x.order]),
+      states: s.states.map((x) => [x.id, x.type, x.name, x.category, x.order, x.startsAgent]),
     });
   return flat(a) === flat(b);
 }

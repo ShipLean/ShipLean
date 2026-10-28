@@ -143,6 +143,12 @@ export function SettingsStates({ projectId }: { projectId: string }) {
             <th className="px-3 py-1 font-normal">Order</th>
             <th className="px-3 py-1 font-normal">State</th>
             <th className="px-3 py-1 font-normal">Category</th>
+            <th
+              className="px-3 py-1 text-center font-normal"
+              title="Moving an item into this state starts an agent session on it"
+            >
+              Starts an agent
+            </th>
             <th className="px-3 py-1 text-right font-normal">Items</th>
             <th className="px-3 py-1 font-normal">
               {type === 'task' ? 'Taskboard column' : `Column on the ${BOARD_OF[type]}`}
@@ -164,12 +170,15 @@ export function SettingsStates({ projectId }: { projectId: string }) {
                 blocked={deleteBlock(rows, row.id)}
                 onName={(name) => stage((c) => editState(c, saved, row.id, { name }))}
                 onCategory={(category) => stage((c) => editState(c, saved, row.id, { category }))}
+                onStartsAgent={(startsAgent) =>
+                  stage((c) => editState(c, saved, row.id, { startsAgent }))
+                }
                 onMove={(by) => stage((c) => moveState(c, saved, type, row.id, by))}
                 onDelete={() => startDelete(row.id)}
               />
               {deleting === row.id ? (
                 <tr>
-                  <td colSpan={6} className="p-0">
+                  <td colSpan={7} className="p-0">
                     <DeleteStateForm
                       row={row}
                       targets={rows.filter((r) => r.id !== row.id)}

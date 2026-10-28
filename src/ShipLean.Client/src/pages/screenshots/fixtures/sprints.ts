@@ -115,6 +115,7 @@ export const states: StateDto[] = ['story', 'bug', 'task'].flatMap((type) =>
     category,
     order,
     itemCount: 0,
+    startsAgent: false,
   })),
 );
 
