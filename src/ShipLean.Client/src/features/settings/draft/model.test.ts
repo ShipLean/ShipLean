@@ -6,7 +6,15 @@ import { changesBetween, parse, rebase, toDraft, toPut, validate } from './model
 const user = { id: 'u1', name: 'Joel', initials: 'J', avatarColour: '#5b6b8c', photoUrl: null };
 const statesOf = (): StateDto[] =>
   WORK_ITEM_TYPE_IDS.flatMap((type) => [
-    { id: `${type}-new`, type, name: 'New', category: 'proposed' as const, order: 1, itemCount: 0 },
+    {
+      id: `${type}-new`,
+      type,
+      name: 'New',
+      category: 'proposed' as const,
+      order: 1,
+      itemCount: 0,
+      startsAgent: false,
+    },
     {
       id: `${type}-done`,
       type,
@@ -14,6 +22,7 @@ const statesOf = (): StateDto[] =>
       category: 'completed' as const,
       order: 2,
       itemCount: 2,
+      startsAgent: false,
     },
   ]);
 const saved: ProjectSettingsDto = {
@@ -99,7 +108,13 @@ describe('settings draft model', () => {
       ...base,
       states: {
         add: [
-          { id: 's1', type: 'story' as const, name: 'Review', category: 'inProgress' as const },
+          {
+            id: 's1',
+            type: 'story' as const,
+            name: 'Review',
+            category: 'inProgress' as const,
+            startsAgent: false,
+          },
         ],
         update: [],
         reorder: [{ type: 'story' as const, stateIds: ['s1'] }],

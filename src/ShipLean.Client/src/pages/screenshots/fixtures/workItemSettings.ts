@@ -14,6 +14,7 @@ const states = (type: WorkItemTypeId, rows: Row[]): StateDto[] =>
     category,
     order: i + 1,
     itemCount,
+    startsAgent: false,
   }));
 
 const simple = (): Row[] => [

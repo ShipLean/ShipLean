@@ -51,7 +51,7 @@ public sealed partial class ProjectSettingsService
         var stateChanges = put.States with
         {
             Add = [],
-            Update = [.. put.States.Update ?? [], .. added.Select(a => new StateUpdate(a.Id, a.Name, a.Category))],
+            Update = [.. put.States.Update ?? [], .. added.Select(a => new StateUpdate(a.Id, a.Name, a.Category, a.StartsAgent))],
         };
         IReadOnlyList<Guid> removedUsers = [];
         var options = new WriteOptions(

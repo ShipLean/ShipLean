@@ -32,6 +32,7 @@ public sealed class InMemoryPlanning(TimeProvider? clock = null)
         public required string Name { get; set; }
         public required StateCategory Category { get; set; }
         public int Order { get; set; }
+        public bool StartsAgent { get; set; }
         public bool Archived { get; set; }
     }
 

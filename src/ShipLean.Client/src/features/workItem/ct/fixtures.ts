@@ -76,10 +76,42 @@ export const bug: WorkItemDto = {
 };
 
 export const states: StateDto[] = [
-  { id: 's-new', type: 'story', name: 'New', category: 'proposed', order: 1, itemCount: 0 },
-  { id: 's-active', type: 'story', name: 'Active', category: 'inProgress', order: 2, itemCount: 1 },
-  { id: 's-triaged', type: 'bug', name: 'Triaged', category: 'proposed', order: 1, itemCount: 1 },
-  { id: 's-t-new', type: 'task', name: 'To Do', category: 'proposed', order: 1, itemCount: 0 },
+  {
+    id: 's-new',
+    type: 'story',
+    name: 'New',
+    category: 'proposed',
+    order: 1,
+    itemCount: 0,
+    startsAgent: false,
+  },
+  {
+    id: 's-active',
+    type: 'story',
+    name: 'Active',
+    category: 'inProgress',
+    order: 2,
+    itemCount: 1,
+    startsAgent: false,
+  },
+  {
+    id: 's-triaged',
+    type: 'bug',
+    name: 'Triaged',
+    category: 'proposed',
+    order: 1,
+    itemCount: 1,
+    startsAgent: false,
+  },
+  {
+    id: 's-t-new',
+    type: 'task',
+    name: 'To Do',
+    category: 'proposed',
+    order: 1,
+    itemCount: 0,
+    startsAgent: false,
+  },
   {
     id: 's-t-active',
     type: 'task',
@@ -87,8 +119,17 @@ export const states: StateDto[] = [
     category: 'inProgress',
     order: 2,
     itemCount: 1,
+    startsAgent: false,
   },
-  { id: 's-t-done', type: 'task', name: 'Done', category: 'completed', order: 3, itemCount: 1 },
+  {
+    id: 's-t-done',
+    type: 'task',
+    name: 'Done',
+    category: 'completed',
+    order: 3,
+    itemCount: 1,
+    startsAgent: false,
+  },
 ];
 
 export const members: MemberDto[] = [

@@ -23,7 +23,7 @@ public sealed partial class StateCatalog(NpgsqlDataSource dataSource) : IStateCa
         await RequireProjectAsync(connection, null, projectId, cancellationToken);
         var rows = await connection.QueryAsync<StateRow>(new CommandDefinition(
             $"""
-            SELECT s.id, s.type, s.name, s.category, s.sort_order AS sortOrder, (SELECT count(*) FROM work_item w WHERE w.state_id = s.id)::int AS itemCount
+            SELECT s.id, s.type, s.name, s.category, s.sort_order AS sortOrder, (SELECT count(*) FROM work_item w WHERE w.state_id = s.id)::int AS itemCount, s.starts_agent AS startsAgent
             FROM state s
             WHERE s.project_id = @projectId AND s.archived_at IS NULL
             ORDER BY CASE s.type WHEN 'epic' THEN 1 WHEN 'feature' THEN 2 WHEN 'story' THEN 3 WHEN 'bug' THEN 4 ELSE 5 END, s.sort_order, s.name
@@ -47,7 +47,7 @@ public sealed partial class StateCatalog(NpgsqlDataSource dataSource) : IStateCa
         {
             for (var i = 0; i < Defaults.Length; i++)
             {
-                await InsertAsync(connection, transaction, Guid.CreateVersion7(), projectId, type, Defaults[i].Name, Defaults[i].Category, i + 1, cancellationToken);
+                await InsertAsync(connection, transaction, Guid.CreateVersion7(), projectId, type, Defaults[i].Name, Defaults[i].Category, i + 1, false, cancellationToken);
             }
         }
     }
@@ -64,7 +64,7 @@ public sealed partial class StateCatalog(NpgsqlDataSource dataSource) : IStateCa
         foreach (var state in source)
         {
             var id = Guid.CreateVersion7();
-            await InsertAsync(connection, transaction, id, toProjectId, state.TypeId, state.Name, state.CategoryId, state.SortOrder, cancellationToken);
+            await InsertAsync(connection, transaction, id, toProjectId, state.TypeId, state.Name, state.CategoryId, state.SortOrder, state.StartsAgent, cancellationToken);
             map[state.Id] = id;
         }
 
@@ -82,8 +82,8 @@ public sealed partial class StateCatalog(NpgsqlDataSource dataSource) : IStateCa
     }
 
     private static Task InsertAsync(
-        DbConnection connection, DbTransaction transaction, Guid id, Guid projectId, WorkItemTypeId type, string name, StateCategory category, int order, CancellationToken cancellationToken)
+        DbConnection connection, DbTransaction transaction, Guid id, Guid projectId, WorkItemTypeId type, string name, StateCategory category, int order, bool startsAgent, CancellationToken cancellationToken)
         => connection.ExecuteAsync(new CommandDefinition(
-            "INSERT INTO state (id, project_id, type, name, category, sort_order) VALUES (@id, @projectId, @type, @name, @category, @order)",
-            new { id, projectId, type = StateRow.TypeText(type), name, category = StateRow.CategoryText(category), order }, transaction, cancellationToken: cancellationToken));
+            "INSERT INTO state (id, project_id, type, name, category, sort_order, starts_agent) VALUES (@id, @projectId, @type, @name, @category, @order, @startsAgent)",
+            new { id, projectId, type = StateRow.TypeText(type), name, category = StateRow.CategoryText(category), order, startsAgent }, transaction, cancellationToken: cancellationToken));
 }

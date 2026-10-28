@@ -84,12 +84,60 @@ export const priya = user('u-priya', 'Priya Shah', 'PS');
 export const sam = user('u-sam', 'Sam Okoye', 'SO');
 
 export const states: StateDto[] = [
-  { id: 's1', type: 'story', name: 'New', category: 'proposed', order: 1, itemCount: 0 },
-  { id: 's2', type: 'story', name: 'Active', category: 'inProgress', order: 2, itemCount: 0 },
-  { id: 's3', type: 'story', name: 'Closed', category: 'completed', order: 3, itemCount: 0 },
-  { id: 's4', type: 'bug', name: 'New', category: 'proposed', order: 1, itemCount: 0 },
-  { id: 's5', type: 'bug', name: 'Closed', category: 'completed', order: 2, itemCount: 0 },
-  { id: 's6', type: 'task', name: 'To Do', category: 'proposed', order: 1, itemCount: 0 },
+  {
+    id: 's1',
+    type: 'story',
+    name: 'New',
+    category: 'proposed',
+    order: 1,
+    itemCount: 0,
+    startsAgent: false,
+  },
+  {
+    id: 's2',
+    type: 'story',
+    name: 'Active',
+    category: 'inProgress',
+    order: 2,
+    itemCount: 0,
+    startsAgent: false,
+  },
+  {
+    id: 's3',
+    type: 'story',
+    name: 'Closed',
+    category: 'completed',
+    order: 3,
+    itemCount: 0,
+    startsAgent: false,
+  },
+  {
+    id: 's4',
+    type: 'bug',
+    name: 'New',
+    category: 'proposed',
+    order: 1,
+    itemCount: 0,
+    startsAgent: false,
+  },
+  {
+    id: 's5',
+    type: 'bug',
+    name: 'Closed',
+    category: 'completed',
+    order: 2,
+    itemCount: 0,
+    startsAgent: false,
+  },
+  {
+    id: 's6',
+    type: 'task',
+    name: 'To Do',
+    category: 'proposed',
+    order: 1,
+    itemCount: 0,
+    startsAgent: false,
+  },
 ];
 
 export const members: MemberDto[] = [priya, sam].map((u) => ({
