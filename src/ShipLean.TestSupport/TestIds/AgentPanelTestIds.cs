@@ -23,6 +23,5 @@ public static class AgentPanelTestIds
     public const string ElicitationHint = "agent-panel-elicitation-hint";
     public const string Empty = "agent-panel-empty";
     public const string Earlier = "agent-panel-earlier";
-    public const string EarlierToggle = "agent-panel-earlier-toggle";
     public const string EarlierSession = "agent-panel-earlier-session";
 }
