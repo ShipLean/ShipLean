@@ -1,5 +1,5 @@
 [
-  { "id": "00000003-0000-4000-8001-000000000301", "type": "story", "name": "New", "category": "proposed", "order": 1, "itemCount": 12 },
-  { "id": "00000003-0000-4000-8001-000000000402", "type": "bug", "name": "Triaged", "category": "proposed", "order": 2, "itemCount": 2 },
-  { "id": "00000003-0000-4000-8001-000000000505", "type": "task", "name": "Removed", "category": "removed", "order": 5, "itemCount": 0 }
+  { "id": "00000003-0000-4000-8001-000000000301", "type": "story", "name": "New", "category": "proposed", "order": 1, "itemCount": 12, "startsAgent": false },
+  { "id": "00000003-0000-4000-8001-000000000402", "type": "bug", "name": "Triaged", "category": "proposed", "order": 2, "itemCount": 2, "startsAgent": true },
+  { "id": "00000003-0000-4000-8001-000000000505", "type": "task", "name": "Removed", "category": "removed", "order": 5, "itemCount": 0, "startsAgent": false }
 ]

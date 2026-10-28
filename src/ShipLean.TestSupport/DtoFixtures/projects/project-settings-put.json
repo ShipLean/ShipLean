@@ -6,7 +6,7 @@
   ],
   "sprints": { "velocityWindow": 3, "velocityOverride": null },
   "states": {
-    "add": [{ "id": "00000003-0000-4000-8001-000000000601", "type": "bug", "name": "Triaged", "category": "proposed" }],
+    "add": [{ "id": "00000003-0000-4000-8001-000000000601", "type": "bug", "name": "Triaged", "category": "proposed", "startsAgent": false }],
     "update": [],
     "reorder": [],
     "remove": []

@@ -92,12 +92,12 @@ public sealed class ShellReads(NpgsqlDataSource dataSource, ICurrentUser current
         var rows = await connection.QueryAsync<StateRow>(new CommandDefinition(
             """
             SELECT s.id, s.type, s.name, s.category, s.sort_order AS "order",
-                   (SELECT count(*) FROM work_item w WHERE w.state_id = s.id)::int AS itemCount
+                   (SELECT count(*) FROM work_item w WHERE w.state_id = s.id)::int AS itemCount, s.starts_agent AS startsAgent
             FROM state s WHERE s.project_id = @projectId AND s.archived_at IS NULL
             ORDER BY array_position(ARRAY['epic', 'feature', 'story', 'bug', 'task'], s.type), s.sort_order
             """,
             new { projectId }, cancellationToken: cancellationToken));
-        return [.. rows.Select(row => new StateDto(row.Id, Enum.Parse<WorkItemTypeId>(row.Type, true), row.Name, Enum.Parse<StateCategory>(row.Category, true), row.Order, row.ItemCount))];
+        return [.. rows.Select(row => new StateDto(row.Id, Enum.Parse<WorkItemTypeId>(row.Type, true), row.Name, Enum.Parse<StateCategory>(row.Category, true), row.Order, row.ItemCount, row.StartsAgent))];
     }
 
     private async Task<List<Guid>> RecentAsync(NpgsqlConnection connection, CancellationToken cancellationToken)
@@ -146,5 +146,5 @@ public sealed class ShellReads(NpgsqlDataSource dataSource, ICurrentUser current
             UserStatusRule.Parse(Status));
     }
 
-    private sealed record StateRow(Guid Id, string Type, string Name, string Category, int Order, int ItemCount);
+    private sealed record StateRow(Guid Id, string Type, string Name, string Category, int Order, int ItemCount, bool StartsAgent);
 }

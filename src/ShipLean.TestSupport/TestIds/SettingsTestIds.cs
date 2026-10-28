@@ -66,6 +66,7 @@ public static class SettingsTestIds
     public const string StateTypeError = "settings-state-type-error";
     public const string StateTypeDot = "settings-state-type-dot";
     public const string StateStart = "settings-state-start";
+    public const string StateStartsAgent = "settings-state-starts-agent";
     public const string StateColumn = "settings-state-column";
     public const string StateDeleteBlock = "settings-state-delete-block";
     public const string StateDeleteForm = "settings-state-delete-form";

@@ -17,7 +17,7 @@ public sealed class InMemoryStateCatalog(InMemoryPlanning world) : IStateCatalog
             world.Project(projectId);
             IReadOnlyList<StateDto> list = [.. world.States.Where(s => s.ProjectId == projectId && !s.Archived)
                 .OrderBy(s => Array.IndexOf(TypeOrder, s.Type)).ThenBy(s => s.Order)
-                .Select(s => new StateDto(s.Id, s.Type, s.Name, s.Category, s.Order, world.Items.Count(i => i.StateId == s.Id)))];
+                .Select(s => new StateDto(s.Id, s.Type, s.Name, s.Category, s.Order, world.Items.Count(i => i.StateId == s.Id), s.StartsAgent))];
             return Task.FromResult(list);
         }
     }
@@ -44,7 +44,7 @@ public sealed class InMemoryStateCatalog(InMemoryPlanning world) : IStateCatalog
             var map = new Dictionary<Guid, Guid>();
             foreach (var state in world.States.Where(s => s.ProjectId == fromProjectId && !s.Archived).ToList())
             {
-                var copy = new InMemoryPlanning.StateRow { Id = Guid.NewGuid(), ProjectId = toProjectId, Type = state.Type, Name = state.Name, Category = state.Category, Order = state.Order };
+                var copy = new InMemoryPlanning.StateRow { Id = Guid.NewGuid(), ProjectId = toProjectId, Type = state.Type, Name = state.Name, Category = state.Category, Order = state.Order, StartsAgent = state.StartsAgent };
                 world.States.Add(copy);
                 map[state.Id] = copy.Id;
             }
@@ -66,11 +66,11 @@ public sealed class InMemoryStateCatalog(InMemoryPlanning world) : IStateCatalog
                     throw ApiException.Validation("A state needs a name and an id that is not used yet.");
                 }
                 var order = live.Concat(added).Where(s => s.Type == add.Type).Select(s => s.Order).DefaultIfEmpty(0).Max() + 1;
-                added.Add(new InMemoryPlanning.StateRow { Id = add.Id, ProjectId = projectId, Type = add.Type, Name = add.Name.Trim(), Category = add.Category, Order = order });
+                added.Add(new InMemoryPlanning.StateRow { Id = add.Id, ProjectId = projectId, Type = add.Type, Name = add.Name.Trim(), Category = add.Category, Order = order, StartsAgent = add.StartsAgent });
             }
             var candidates = live.Concat(added).ToList();
             var touched = new HashSet<WorkItemTypeId>(added.Select(a => a.Type));
-            var updates = new List<(InMemoryPlanning.StateRow Row, string Name, StateCategory Category)>();
+            var updates = new List<(InMemoryPlanning.StateRow Row, string Name, StateCategory Category, bool? StartsAgent)>();
             foreach (var update in changes.Update)
             {
                 if (string.IsNullOrWhiteSpace(update.Name))
@@ -79,7 +79,7 @@ public sealed class InMemoryStateCatalog(InMemoryPlanning world) : IStateCatalog
                 }
                 var row = StateRow(candidates, [update.StateId]);
                 touched.Add(row.Type);
-                updates.Add((row, update.Name.Trim(), update.Category));
+                updates.Add((row, update.Name.Trim(), update.Category, update.StartsAgent));
             }
             foreach (var reorder in changes.Reorder)
             {
@@ -126,10 +126,11 @@ public sealed class InMemoryStateCatalog(InMemoryPlanning world) : IStateCatalog
             {
                 world.States.Add(row);
             }
-            foreach (var (row, name, category) in updates)
+            foreach (var (row, name, category, startsAgent) in updates)
             {
                 row.Name = name;
                 row.Category = category;
+                row.StartsAgent = startsAgent ?? row.StartsAgent;
             }
             foreach (var reorder in changes.Reorder)
             {
