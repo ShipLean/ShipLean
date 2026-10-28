@@ -90,7 +90,7 @@ public sealed class LinearReads(NpgsqlDataSource dataSource)
         var rows = (await connection.QueryAsync<LinearActivity>(new CommandDefinition(
             $"""
             SELECT {ActivityColumns} FROM agent_activity a JOIN agent_session s ON s.id = a.session_id
-            WHERE a.session_id = @sessionId AND s.connection_id = @connectionId
+            WHERE a.session_id = @sessionId AND s.connection_id = @connectionId AND a.replaced_at IS NULL
               AND (@after::uuid IS NULL OR (a.created_at, a.id) > (SELECT x.created_at, x.id FROM agent_activity x WHERE x.id = @after))
             ORDER BY a.created_at, a.id LIMIT @limit
             """,
@@ -102,7 +102,7 @@ public sealed class LinearReads(NpgsqlDataSource dataSource)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         return await connection.QuerySingleOrDefaultAsync<LinearActivity>(new CommandDefinition(
-            $"SELECT {ActivityColumns} FROM agent_activity a JOIN agent_session s ON s.id = a.session_id WHERE a.id = @activityId AND s.connection_id = @connectionId",
+            $"SELECT {ActivityColumns} FROM agent_activity a JOIN agent_session s ON s.id = a.session_id WHERE a.id = @activityId AND s.connection_id = @connectionId AND a.replaced_at IS NULL",
             new { activityId, connectionId }, cancellationToken: cancellationToken));
     }
 

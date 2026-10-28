@@ -29,7 +29,7 @@ public sealed class AgentPanelReader(NpgsqlDataSource dataSource, TimeProvider t
             """
             SELECT a.session_id AS sessionId, a.id, a.type, a.body, a.action, a.parameter, a.result, a.ephemeral, a.signal, a.created_at AS createdAt
             FROM agent_activity a JOIN agent_session s ON s.id = a.session_id
-            WHERE s.work_item_id = @workItemId
+            WHERE s.work_item_id = @workItemId AND a.replaced_at IS NULL
             ORDER BY a.created_at, a.id
             """,
             new { workItemId }, cancellationToken: cancellationToken))).ToLookup(a => a.SessionId);

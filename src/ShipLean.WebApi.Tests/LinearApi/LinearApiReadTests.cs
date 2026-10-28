@@ -202,11 +202,11 @@ public class LinearApiReadTests : ApiFixture
     [TestCase("relay_agentSessionUpdate", "{\"id\":\"00000000-0000-4000-8000-000000000001\",\"input\":{\"plan\":[]}}")]
     [TestCase("agentSessionUpdateExternalUrl", "{\"id\":\"00000000-0000-4000-8000-000000000001\",\"input\":{\"addedExternalUrls\":[{\"label\":\"PR\",\"url\":\"https://x.example/1\"}]}}")]
     [TestCase("createComment", "{\"input\":{\"issueId\":\"00000000-0000-4000-8000-000000000001\",\"body\":\"hi\"}}")]
-    public async Task Mutations_WhenTheDocumentIsTheSdksOrTheRelays_ShouldValidateAndReachTheMutationResolver(string document, string variables)
+    public async Task Mutations_WhenTheDocumentIsTheSdksOrTheRelays_ShouldValidateAndAnswerNotFoundForAnUnknownId(string document, string variables)
     {
         var (_, body) = await LinearGraphQl.PostAsync(Client, _world.TokenA, LinearGraphQl.Document(document), JsonNode.Parse(variables));
 
-        // C2 (SHIP-187) replaces the stubs; until then the document validates and the resolver says it is not there yet.
-        LinearGraphQl.ErrorCode(body).ShouldBe("NOT_IMPLEMENTED", body.ToJsonString());
+        // The ids name nothing: the document validated and the resolver answered as for any session or item that is not the connection's.
+        LinearGraphQl.ErrorCode(body).ShouldBe("NOT_FOUND", body.ToJsonString());
     }
 }

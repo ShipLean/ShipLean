@@ -36,13 +36,13 @@ public sealed class LinearApiServices : IServiceModule
             .AddResolver("Mutation", "commentCreate", LinearMutations.CommentCreate)
             .TryAddTypeInterceptor<LinearUnionResolution>()
             .UseField(LinearFieldDefaults.Middleware)
-            // The SDK's own issue and session documents select hundreds of fields (about 1500 by HotChocolate's cost count, which
-            // the default limit of 1000 would refuse). The limit is raised to leave room above them and still refuse a document
+            // The SDK's own issue and session documents select hundreds of fields (about 1400 by HotChocolate's cost count and 6
+            // levels deep; the default limit of 1000 would refuse them). The limits are raised to leave room above that and still refuse a document
             // built to be huge; the depth rule bounds nesting through the Issue -> Comment -> Issue cycles the schema has.
             .ModifyCostOptions(options => options.MaxFieldCost = MaxFieldCost)
             .AddMaxExecutionDepthRule(MaxExecutionDepth);
     }
 
-    private const int MaxFieldCost = 3000;
-    private const int MaxExecutionDepth = 12;
+    private const int MaxFieldCost = 5000;
+    private const int MaxExecutionDepth = 15;
 }

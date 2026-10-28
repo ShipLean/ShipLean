@@ -15,6 +15,8 @@ internal sealed class LinearApiWorld
     public const string RepoA = "https://github.com/ShipLean/ShipLean.git";
     public const string RepoB = "git@github.com:Other/Repo.git";
 
+    private AgentDispatchArrange _arranged = null!;
+
     public required Guid ConnectionA { get; init; }
     public required string NameA { get; init; }
     public required string TokenA { get; init; }
@@ -72,6 +74,7 @@ internal sealed class LinearApiWorld
 
         return new LinearApiWorld
         {
+            _arranged = arranged,
             ConnectionA = a.Connection.Id,
             NameA = a.Connection.Name,
             TokenA = a.CallbackToken!,
@@ -86,5 +89,22 @@ internal sealed class LinearApiWorld
             FirstActivityA = firstActivity,
             FirstCommentA = firstComment,
         };
+    }
+
+    // A session of connection A on an item of its own (one live session per item), for a test that moves it. `lastActivity`
+    // defaults to now.
+    public async Task<(Guid Session, Guid Item, string Key)> AddSessionAsync(
+        ApiClient api, NpgsqlConnection database, string state = "working", bool stopRequested = false, DateTimeOffset? lastActivity = null)
+    {
+        var item = await _arranged.CreateItemAsync(api);
+        var session = Guid.NewGuid();
+        var at = lastActivity ?? TimeProvider.System.GetUtcNow();
+        await database.ExecuteAsync(
+            """
+            INSERT INTO agent_session (id, work_item_id, connection_id, state, repo_url, base_branch, last_activity_at, stop_requested_at, created_by, created_at)
+            VALUES (@session, @item, @connection, @state, @repo, 'develop', @at, @stop, @joel, @at)
+            """,
+            new { session, item = item.Id, connection = ConnectionA, state, repo = RepoA, at, stop = stopRequested ? at : (DateTimeOffset?)null, joel = SeedIds.Users.Joel });
+        return (session, item.Id, item.Key);
     }
 }

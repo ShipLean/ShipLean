@@ -17,7 +17,7 @@ namespace ShipLean.Application.Features.AgentDispatch;
 // State follows the last activity (provider doc, Half 2): thought and action are working, an elicitation is input required, a
 // response is completed (canceled when Stop was requested, which is how an agent answers Stop) and an error is failed. A session
 // that has already ended keeps its state (the activity is stored all the same); a stale one moves again unless the item has since
-// started another session. An ephemeral activity (thought and action only) is deleted when the session's next activity arrives.
+// started another session. An ephemeral activity (thought and action only) is marked replaced (replaced_at, which every read leaves out) when the session's next activity arrives.
 // The body of a response or error is also posted as a comment, written as the user who started the session and stamped with the
 // connection name, so it never becomes a `prompted` webhook. The session changed event goes out after each commit.
 public sealed class AgentReports(
@@ -62,7 +62,7 @@ public sealed class AgentReports(
         }
 
         await connection.ExecuteAsync(new CommandDefinition(
-            "DELETE FROM agent_activity WHERE session_id = @sessionId AND ephemeral", new { sessionId = create.SessionId }, transaction, cancellationToken: cancellationToken));
+            "UPDATE agent_activity SET replaced_at = @now WHERE session_id = @sessionId AND ephemeral AND replaced_at IS NULL", new { sessionId = create.SessionId, now }, transaction, cancellationToken: cancellationToken));
         await connection.ExecuteAsync(new CommandDefinition(
             """
             INSERT INTO agent_activity (id, session_id, type, body, action, parameter, result, ephemeral, signal, created_at)
