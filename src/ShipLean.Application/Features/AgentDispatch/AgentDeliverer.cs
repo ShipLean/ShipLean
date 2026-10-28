@@ -16,6 +16,8 @@ namespace ShipLean.Application.Features.AgentDispatch;
 // ever a session's lowest pending row, so a session's rows go out strictly in seq order and two instances never send the same row.
 // webhookTimestamp and webhookId go into the body at send time and the signature covers exactly the bytes sent.
 // A 200 is sent; anything else (another status, a redirect, a timeout, no connection) is a failure and follows AgentDeliverySchedule.
+// Only a `created` that runs out of retries fails its session; a `prompted` that does is marked failed and logged, and the session carries on.
+// A send is at least once: a row whose "sent" mark could not be written is sent again, so receivers dedupe on Linear-Delivery (the relay does).
 // The hosted loop is AgentDeliveryService; tests drive a pass directly with their own clock.
 public sealed class AgentDeliverer(
     NpgsqlDataSource dataSource, IAgentConnections connections, IHttpClientFactory httpClients, AgentSessionNotifier notifier, TimeProvider time, ILogger<AgentDeliverer> logger)
@@ -157,7 +159,22 @@ public sealed class AgentDeliverer(
         return response.StatusCode == HttpStatusCode.OK ? null : $"The receiver answered {(int)response.StatusCode} {response.StatusCode}.";
     }
 
+    // The receiver has the delivery already, so a failed write is tried once more before it is left pending: left pending, the row is
+    // sent again, which is why receivers must dedupe on the Linear-Delivery header (the relay does).
     private async Task MarkSentAsync(AgentDeliveryRow row, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await WriteSentAsync(row, cancellationToken);
+        }
+        catch (Exception failed) when (failed is not OperationCanceledException)
+        {
+            logger.LogWarning(failed, "Could not record agent delivery {DeliveryId} as sent; trying once more", row.Id);
+            await WriteSentAsync(row, cancellationToken);
+        }
+    }
+
+    private async Task WriteSentAsync(AgentDeliveryRow row, CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await connection.ExecuteAsync(new CommandDefinition(
@@ -186,6 +203,20 @@ public sealed class AgentDeliverer(
             logger.LogWarning(
                 "Agent delivery {DeliveryId} ({Action}, try {Attempt}) to connection {Connection} ({ConnectionId}) failed: {Error} Trying again in {Wait}.",
                 row.Id, row.Action, attempts, connectionName, row.ConnectionId, error, wait);
+            return;
+        }
+
+        if (row.Action != "created")
+        {
+            // A follow-up the receiver never took is lost, but the session it was for is still running: only a `created` that
+            // never arrives fails the session, because then no agent ever heard of it.
+            await connection.ExecuteAsync(new CommandDefinition(
+                "UPDATE agent_delivery SET status = 'failed', attempts = @attempts, claimed_until = NULL, last_error = @error WHERE id = @id AND status = 'pending'",
+                new { id = row.Id, attempts, error }, cancellationToken: cancellationToken));
+            logger.LogWarning(
+                "Agent delivery {DeliveryId} ({Action}, try {Attempt}) to connection {Connection} ({ConnectionId}) failed for good: {Error} Session {SessionId} is left running.",
+                row.Id, row.Action, attempts, connectionName, row.ConnectionId, error, row.SessionId);
+            await notifier.ChangedAsync(row.SessionId);
             return;
         }
 

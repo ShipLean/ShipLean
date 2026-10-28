@@ -1,4 +1,5 @@
 using HotChocolate.AspNetCore;
+using Microsoft.AspNetCore.Mvc;
 using ShipLean.Contracts;
 
 namespace ShipLean.WebApi.Features.LinearApi;
@@ -11,6 +12,7 @@ public sealed class LinearApiEndpoints : IEndpointModule
     {
         endpoints.MapGraphQL(LinearApiPolicy.Path, LinearApiPolicy.SchemaName)
             .WithOptions(options => options.Tool.Enable = false)
+            .WithMetadata(new RequestSizeLimitAttribute(LinearApiPolicy.MaxRequestBytes))
             .RequireAuthorization(LinearApiPolicy.Name);
     }
 }

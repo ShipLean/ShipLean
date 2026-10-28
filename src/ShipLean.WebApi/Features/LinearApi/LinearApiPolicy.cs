@@ -12,4 +12,7 @@ public static class LinearApiPolicy
     public const string Path = "/linear/graphql";
 
     public const string SchemaName = "linear";
+
+    // The largest request body the endpoint reads; the SDK's own documents are a few KB and the largest input (an activity) is 64 KB.
+    public const long MaxRequestBytes = 256 * 1024;
 }

@@ -35,7 +35,7 @@ public sealed partial class WorkItemStore(
         await using (var connection = await dataSource.OpenConnectionAsync(cancellationToken))
         await using (var transaction = await connection.BeginTransactionAsync(cancellationToken))
         {
-            var scope = new WriteScope(connection, transaction, time.GetUtcNow(), options.Origin, options.Webhook, options.Via);
+            var scope = new WriteScope(connection, transaction, time.GetUtcNow(), options.Origin, options.Webhook, options.Via, options.Bulk);
             (result, var commit) = await body(scope);
             if (!commit)
             {
@@ -264,8 +264,8 @@ public sealed partial class WorkItemStore(
     private async Task InsertRevisionAsync(WriteScope scope, Guid id, int revision, IReadOnlyList<FieldChange> changes, CancellationToken cancellationToken)
         => await scope.Connection.ExecuteAsync(new CommandDefinition(
             """
-            INSERT INTO revision (work_item_id, rev, changed_by, changed_at, original_system, agent_name, webhook, changes)
-            VALUES (@id, @revision, @actor, @at, @originalSystem, @agentName, @webhook, @changes::jsonb)
+            INSERT INTO revision (work_item_id, rev, changed_by, changed_at, original_system, agent_name, webhook, bulk, changes)
+            VALUES (@id, @revision, @actor, @at, @originalSystem, @agentName, @webhook, @bulk, @changes::jsonb)
             """,
             new
             {
@@ -276,6 +276,7 @@ public sealed partial class WorkItemStore(
                 originalSystem = scope.Origin == RevisionOrigin.Jira ? "jira" : null,
                 agentName = AgentStamp.Of(currentAgent),
                 webhook = scope.Webhook,
+                bulk = scope.Bulk,
                 changes = JsonSerializer.Serialize(changes, PersistedJson.Options),
             },
             scope.Transaction,

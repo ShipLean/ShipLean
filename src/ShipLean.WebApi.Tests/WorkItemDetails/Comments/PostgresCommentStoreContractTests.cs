@@ -1,4 +1,3 @@
-using ShipLean.WebApi.Tests.AgentDispatch;
 using ShipLean.WebApi.Tests.Boards.Settings;
 using Npgsql;
 using ShipLean.Application.Database;
@@ -20,8 +19,6 @@ public class PostgresCommentStoreContractTests : CommentStoreContract
 {
     private ClonedDatabase _database = null!;
     private NpgsqlDataSource _dataSource = null!;
-
-    private RecordingAgentPrompts Prompts { get; } = new();
 
     [OneTimeSetUp]
     public async Task CreateDatabase()
@@ -49,28 +46,5 @@ public class PostgresCommentStoreContractTests : CommentStoreContract
     }
 
     private CommentStore CreateStore(Guid actorId, ICurrentAgent agent)
-        => new(_dataSource, new FixedCurrentUser(actorId), agent, new MarkdownRenderer(), TimeProvider.System, new DiscardingProjectEvents(), Prompts);
-
-    [Test]
-    public async Task Add_WhenWrittenByAPerson_ShouldTellAgentDispatchOnce()
-    {
-        var workItem = await ArrangeWorkItemAsync();
-
-        var person = await CreateStore(SeedIds.Users.Joel).AddAsync(workItem, new CommentCreate("Please also handle the empty case"));
-
-        Prompts.Comments.ShouldContain(person.Id);
-    }
-
-    [Test]
-    public async Task Add_WhenStampedByAnAgentOrAnOverride_ShouldNotTellAgentDispatch()
-    {
-        var workItem = await ArrangeWorkItemAsync();
-
-        var mcp = await CreateStore(SeedIds.Users.Joel, "Claude Code", "claude.ai", true).AddAsync(workItem, new CommentCreate("From an MCP agent"));
-        var relay = await CreateStore(SeedIds.Users.Joel).AddAsAgentAsync(workItem, new CommentCreate("From the relay"), "Relay", SeedIds.Users.Joel);
-
-        relay.AgentName.ShouldBe("Relay");
-        Prompts.Comments.ShouldNotContain(mcp.Id);
-        Prompts.Comments.ShouldNotContain(relay.Id);
-    }
+        => new(_dataSource, new FixedCurrentUser(actorId), agent, new MarkdownRenderer(), TimeProvider.System, new DiscardingProjectEvents());
 }

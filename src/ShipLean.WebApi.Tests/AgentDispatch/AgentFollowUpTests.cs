@@ -3,11 +3,16 @@ using System.Text.Json.Nodes;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
+using ShipLean.Application.Features.WorkItemDetails.Comments;
+using ShipLean.Application.Markdown;
+using ShipLean.Contracts;
 using ShipLean.Contracts.Comments;
 using ShipLean.Contracts.Errors;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
+using ShipLean.WebApi.Tests.Boards.Settings;
+using ShipLean.WebApi.Tests.WorkItems.Store;
 
 namespace ShipLean.WebApi.Tests.AgentDispatch;
 
@@ -100,6 +105,24 @@ public class AgentFollowUpTests : ApiFixture
         var written = await comments.AddAsAgentAsync(itemId, new CommentCreate("All done, PR is up"), "Relay", SeedIds.Users.Joel);
 
         written.AgentName.ShouldBe("Relay");
+        (await AgentDispatchArrange.DeliveriesAsync(database, itemId)).ShouldHaveSingleItem().Action.ShouldBe("created");
+        (await database.ExecuteScalarAsync<int>("SELECT count(*)::int FROM agent_activity WHERE session_id = @sessionId", new { sessionId })).ShouldBe(0);
+    }
+
+    [Test]
+    public async Task Comment_WhenAnMcpClientWithNoNameWritesIt_ShouldNeverQueuePrompted()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var (itemId, sessionId, _) = await OpenSessionAsync(database);
+        await using var scope = Host.Services.CreateAsyncScope();
+        // The store is what every MCP tool writes through; an unnamed client carries no agent stamp, so only the endpoint's hook can tell a person.
+        var store = new CommentStore(
+            scope.ServiceProvider.GetRequiredService<NpgsqlDataSource>(), new FixedCurrentUser(SeedIds.Users.Joel), AgentIdentity.None,
+            scope.ServiceProvider.GetRequiredService<MarkdownRenderer>(), TimeProvider.System, new DiscardingProjectEvents());
+
+        var written = await store.AddAsync(itemId, new CommentCreate("From an MCP client that did not give its name"));
+
+        written.AgentName.ShouldBeNull();
         (await AgentDispatchArrange.DeliveriesAsync(database, itemId)).ShouldHaveSingleItem().Action.ShouldBe("created");
         (await database.ExecuteScalarAsync<int>("SELECT count(*)::int FROM agent_activity WHERE session_id = @sessionId", new { sessionId })).ShouldBe(0);
     }

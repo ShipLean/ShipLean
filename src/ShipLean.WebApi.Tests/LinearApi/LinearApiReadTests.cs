@@ -1,4 +1,5 @@
 using System.Net;
+using Dapper;
 using System.Text.Json.Nodes;
 using ShipLean.TestSupport.Fixtures;
 
@@ -40,6 +41,20 @@ public class LinearApiReadTests : ApiFixture
         viewer["name"]!.GetValue<string>().ShouldBe(_world.NameA);
         viewer["app"]!.GetValue<bool>().ShouldBeTrue();
         viewer["createdAt"]!.GetValue<string>().ShouldNotBeNullOrEmpty();
+    }
+
+    [Test]
+    public async Task Issue_WhenTheOnlySessionEndedMoreThanADayAgo_ShouldBeNotFoundButWithinADayStillReads()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var (oldSession, _, oldKey) = await _world.AddSessionAsync(Api, database, "completed");
+        var (freshSession, _, freshKey) = await _world.AddSessionAsync(Api, database, "completed");
+        await database.ExecuteAsync("UPDATE agent_session SET ended_at = now() - interval '25 hours' WHERE id = @oldSession", new { oldSession });
+        await database.ExecuteAsync("UPDATE agent_session SET ended_at = now() - interval '23 hours' WHERE id = @freshSession", new { freshSession });
+
+        (await ErrorCodeAsync(_world.TokenA, "issue", new { id = oldKey })).ShouldBe("NOT_FOUND");
+        (await ErrorCodeAsync(_world.TokenA, "agentSession", new { id = oldSession })).ShouldBe("NOT_FOUND");
+        (await OkAsync(_world.TokenA, "issue", new { id = freshKey }))["issue"]!["identifier"]!.GetValue<string>().ShouldBe(freshKey);
     }
 
     [Test]

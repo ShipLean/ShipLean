@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Dapper;
 using Npgsql;
+using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Persisted;
 
 namespace ShipLean.Application.Features.LinearApi;
@@ -8,9 +9,16 @@ namespace ShipLean.Application.Features.LinearApi;
 // What an agent may read through /linear/graphql. Every method takes the calling connection's id and answers null (or an
 // empty page) for anything that is not one of that connection's sessions or an item one of them is about, so a resolver can
 // not leak another connection's data by forgetting a check. Reads only.
-public sealed class LinearReads(NpgsqlDataSource dataSource)
+public sealed class LinearReads(NpgsqlDataSource dataSource, TimeProvider time)
 {
-    private const string Owned = "EXISTS (SELECT 1 FROM agent_session s WHERE s.work_item_id = w.id AND s.connection_id = @connectionId)";
+    // A connection reaches an item only while it has a session there that is live or stale, or that ended within the last 24 hours
+    // (an agent finishing up after a response). Once that window is shut the item is NOT_FOUND to it.
+    private const string Reachable = "(s.state NOT IN ('completed', 'failed', 'canceled') OR coalesce(s.ended_at, s.last_activity_at) >= @since)";
+
+    private const string Owned = $"EXISTS (SELECT 1 FROM agent_session s WHERE s.work_item_id = w.id AND s.connection_id = @connectionId AND {Reachable})";
+
+    private DateTimeOffset Since => time.GetUtcNow() - AgentSessionAccess.EndedWindow;
+
 
     private const string IssueColumns =
         """
@@ -46,7 +54,7 @@ public sealed class LinearReads(NpgsqlDataSource dataSource)
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var row = await connection.QuerySingleOrDefaultAsync<IssueRow>(new CommandDefinition(
             $"SELECT {IssueColumns} {IssueFrom} WHERE (w.id = @id OR w.key = @key) AND {Owned}",
-            new { id = Guid.TryParse(idOrKey, out var parsed) ? parsed : Guid.Empty, key = idOrKey.Trim().ToUpperInvariant(), connectionId },
+            new { id = Guid.TryParse(idOrKey, out var parsed) ? parsed : Guid.Empty, key = idOrKey.Trim().ToUpperInvariant(), connectionId, since = Since },
             cancellationToken: cancellationToken));
         return row?.ToIssue();
     }
@@ -63,7 +71,7 @@ public sealed class LinearReads(NpgsqlDataSource dataSource)
               AND (@after::uuid IS NULL OR (c.created_at, c.id) > (SELECT a.created_at, a.id FROM comment a WHERE a.id = @after))
             ORDER BY c.created_at, c.id LIMIT @limit
             """,
-            new { workItemId, connectionId, after, limit = first + 1 }, cancellationToken: cancellationToken))).ToList();
+            new { workItemId, connectionId, after, limit = first + 1, since = Since }, cancellationToken: cancellationToken))).ToList();
         return new LinearCommentPage(
             [.. rows.Take(first).Select(r => new LinearComment(r.Id, r.IssueId, r.Body, r.CreatedAt, r.UpdatedAt, Person(r.AuthorId, r.AuthorName)))],
             rows.Count > first);
@@ -73,7 +81,7 @@ public sealed class LinearReads(NpgsqlDataSource dataSource)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         return (await connection.QuerySingleOrDefaultAsync<SessionRow>(new CommandDefinition(
-            $"{SessionSelect} AND s.id = @sessionId", new { sessionId, connectionId }, cancellationToken: cancellationToken)))?.ToSession();
+            $"{SessionSelect} AND s.id = @sessionId", new { sessionId, connectionId, since = Since }, cancellationToken: cancellationToken)))?.ToSession();
     }
 
     // The newest session of this connection on the item, for a query that names the item but no session.
@@ -81,7 +89,7 @@ public sealed class LinearReads(NpgsqlDataSource dataSource)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         return (await connection.QuerySingleOrDefaultAsync<SessionRow>(new CommandDefinition(
-            $"{SessionSelect} AND s.work_item_id = @workItemId ORDER BY s.created_at DESC LIMIT 1", new { workItemId, connectionId }, cancellationToken: cancellationToken)))?.ToSession();
+            $"{SessionSelect} AND s.work_item_id = @workItemId ORDER BY s.created_at DESC LIMIT 1", new { workItemId, connectionId, since = Since }, cancellationToken: cancellationToken)))?.ToSession();
     }
 
     public async Task<LinearActivityPage> ActivitiesAsync(Guid connectionId, Guid sessionId, int first, Guid? after, CancellationToken cancellationToken)
@@ -90,11 +98,11 @@ public sealed class LinearReads(NpgsqlDataSource dataSource)
         var rows = (await connection.QueryAsync<LinearActivity>(new CommandDefinition(
             $"""
             SELECT {ActivityColumns} FROM agent_activity a JOIN agent_session s ON s.id = a.session_id
-            WHERE a.session_id = @sessionId AND s.connection_id = @connectionId AND a.replaced_at IS NULL
+            WHERE a.session_id = @sessionId AND s.connection_id = @connectionId AND {Reachable} AND a.replaced_at IS NULL
               AND (@after::uuid IS NULL OR (a.created_at, a.id) > (SELECT x.created_at, x.id FROM agent_activity x WHERE x.id = @after))
             ORDER BY a.created_at, a.id LIMIT @limit
             """,
-            new { sessionId, connectionId, after, limit = first + 1 }, cancellationToken: cancellationToken))).ToList();
+            new { sessionId, connectionId, after, limit = first + 1, since = Since }, cancellationToken: cancellationToken))).ToList();
         return new LinearActivityPage([.. rows.Take(first)], rows.Count > first);
     }
 
@@ -102,8 +110,8 @@ public sealed class LinearReads(NpgsqlDataSource dataSource)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         return await connection.QuerySingleOrDefaultAsync<LinearActivity>(new CommandDefinition(
-            $"SELECT {ActivityColumns} FROM agent_activity a JOIN agent_session s ON s.id = a.session_id WHERE a.id = @activityId AND s.connection_id = @connectionId AND a.replaced_at IS NULL",
-            new { activityId, connectionId }, cancellationToken: cancellationToken));
+            $"SELECT {ActivityColumns} FROM agent_activity a JOIN agent_session s ON s.id = a.session_id WHERE a.id = @activityId AND s.connection_id = @connectionId AND {Reachable} AND a.replaced_at IS NULL",
+            new { activityId, connectionId, since = Since }, cancellationToken: cancellationToken));
     }
 
     // The repository the session was started with (issueRepositorySuggestions). A named session must be the connection's and be
@@ -120,9 +128,10 @@ public sealed class LinearReads(NpgsqlDataSource dataSource)
             """
             SELECT repo_url FROM agent_session
             WHERE work_item_id = @workItemId AND connection_id = @connectionId AND (@sessionId::uuid IS NULL OR id = @sessionId)
+              AND (state NOT IN ('completed', 'failed', 'canceled') OR coalesce(ended_at, last_activity_at) >= @since)
             ORDER BY created_at DESC LIMIT 1
             """,
-            new { workItemId = issue.Id, connectionId, sessionId }, cancellationToken: cancellationToken));
+            new { workItemId = issue.Id, connectionId, sessionId, since = Since }, cancellationToken: cancellationToken));
         return url is null ? LinearRepositoryLookup.NotFound : new LinearRepositoryLookup(true, LinearRepository.Parse(url));
     }
 
@@ -130,12 +139,12 @@ public sealed class LinearReads(NpgsqlDataSource dataSource)
         "a.id, a.session_id AS sessionId, a.type, a.body, a.action, a.parameter, a.result, a.ephemeral, a.signal, a.created_at AS createdAt";
 
     private const string SessionSelect =
-        """
+        $"""
         SELECT s.id, s.work_item_id AS workItemId, w.key AS itemKey, p.key AS projectKey, s.state, s.external_urls::text AS externalUrls,
                s.plan::text AS plan, s.last_activity_at AS lastActivityAt, s.created_at AS createdAt, s.ended_at AS endedAt,
                s.created_by AS creatorId, coalesce(u.name, '') AS creatorName
         FROM agent_session s JOIN work_item w ON w.id = s.work_item_id JOIN project p ON p.id = w.project_id JOIN app_user u ON u.id = s.created_by
-        WHERE s.connection_id = @connectionId
+        WHERE s.connection_id = @connectionId AND {Reachable}
         """;
 
     private static LinearPerson? Person(Guid? id, string? name) => id is { } value ? new LinearPerson(value, name ?? string.Empty) : null;

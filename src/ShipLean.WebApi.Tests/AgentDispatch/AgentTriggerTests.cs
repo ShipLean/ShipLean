@@ -1,9 +1,15 @@
+using System.Net;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Channels;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using ShipLean.Application.Features.AgentDispatch;
 using ShipLean.Contracts.Events;
+using ShipLean.Contracts.Projects;
+using ShipLean.WebApi.Features.ProjectSettings;
+using ShipLean.WebApi.Tests.Sprints.Api;
 using ShipLean.Contracts.Refs;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
@@ -201,7 +207,7 @@ public class AgentTriggerTests : ApiFixture
         await database.ExecuteAsync(
             "INSERT INTO import_job (id, connection_id, jira_project_key, project_key, project_id, status, progress) VALUES (@job, @connection, 'PLAT', 'EMPT', @project, 'running', '{}'::jsonb)",
             new { job, connection = jira, project = arranged.Project.Id });
-        await new RevisionBuilder(item).WithChangedBy(SeedIds.Users.Joel).WithChanges(StateChange).WithImport("jira", job).InsertAsync(database);
+        await new RevisionBuilder(item).WithChangedBy(SeedIds.Users.Joel).WithChanges(StateChangeTo(arranged.Flagged)).WithImport("jira", job).InsertAsync(database);
 
         await RunAsync(new WorkItemUpdated(arranged.Project.Id, item, 2, ["state"], false));
 
@@ -227,7 +233,7 @@ public class AgentTriggerTests : ApiFixture
         await using var database = await OpenDatabaseAsync();
         var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
         var item = await ArrangeItemInFlaggedStateAsync(database, arranged);
-        await new RevisionBuilder(item).WithChangedBy(null).WithChanges(StateChange).InsertAsync(database);
+        await new RevisionBuilder(item).WithChangedBy(null).WithChanges(StateChangeTo(arranged.Flagged)).InsertAsync(database);
 
         await RunAsync(new WorkItemMoved(arranged.Project.Id, item, 2, null, false, null, null, arranged.Flagged, null));
 
@@ -253,7 +259,7 @@ public class AgentTriggerTests : ApiFixture
         await using var database = await OpenDatabaseAsync();
         var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
         var item = await ArrangeItemInFlaggedStateAsync(database, arranged);
-        await new RevisionBuilder(item).WithChangedBy(SeedIds.Users.Joel).WithChanges(StateChange).WithChangedAt(TimeProvider.System.GetUtcNow().AddHours(-1)).InsertAsync(database);
+        await new RevisionBuilder(item).WithChangedBy(SeedIds.Users.Joel).WithChanges(StateChangeTo(arranged.Flagged)).WithChangedAt(TimeProvider.System.GetUtcNow().AddHours(-1)).InsertAsync(database);
 
         await RunAsync(new WorkItemMoved(arranged.Project.Id, item, 2, null, false, null, null, arranged.Flagged, null));
 
@@ -266,14 +272,67 @@ public class AgentTriggerTests : ApiFixture
         await using var database = await OpenDatabaseAsync();
         var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
         var item = await ArrangeItemInFlaggedStateAsync(database, arranged);
-        await new RevisionBuilder(item).WithChangedBy(SeedIds.Users.Priya).WithChanges(StateChange).InsertAsync(database);
+        await new RevisionBuilder(item).WithChangedBy(SeedIds.Users.Priya).WithChanges(StateChangeTo(arranged.Flagged)).InsertAsync(database);
 
         await RunAsync(new WorkItemUpdated(arranged.Project.Id, item, 2, ["state"], false));
 
         (await AgentDispatchArrange.SessionsAsync(database, item)).ShouldHaveSingleItem().CreatedBy.ShouldBe(SeedIds.Users.Priya);
     }
 
-    private const string StateChange = """[{"field":"state","from":"New","to":"Active"}]""";
+    [Test]
+    public async Task Trigger_WhenTheRevisionMovedTheItemIntoAnUnflaggedStateButItIsFlaggedNow_ShouldOpenNoSession()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
+        var item = await ArrangeItemInFlaggedStateAsync(database, arranged);
+        await new RevisionBuilder(item).WithChangedBy(SeedIds.Users.Joel).WithChanges(StateChangeTo(arranged.Unflagged)).InsertAsync(database);
+
+        await RunAsync(new WorkItemUpdated(arranged.Project.Id, item, 2, ["state"], false));
+
+        (await AgentDispatchArrange.SessionsAsync(database, item)).ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task Trigger_WhenAnAgentOrABulkWriteOrAWebhookMovedTheItem_ShouldOpenNoSession()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
+        foreach (var arrange in new Func<RevisionBuilder, RevisionBuilder>[] { r => r.WithAgent("Claude Code (claude.ai)"), r => r.WithBulk(), r => r.WithWebhook("GitHub acme/api#12") })
+        {
+            var item = await ArrangeItemInFlaggedStateAsync(database, arranged);
+            await arrange(new RevisionBuilder(item).WithChangedBy(SeedIds.Users.Joel).WithChanges(StateChangeTo(arranged.Flagged))).InsertAsync(database);
+
+            await RunAsync(new WorkItemUpdated(arranged.Project.Id, item, 2, ["state"], false));
+
+            (await AgentDispatchArrange.SessionsAsync(database, item)).ShouldBeEmpty();
+        }
+    }
+
+    [Test]
+    public async Task Settings_WhenRemovingAStateRemapsItemsIntoAFlaggedOne_ShouldOpenNoSession()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
+        var item = await arranged.CreateItemAsync(Api, arranged.Unflagged);
+        await HandledAsync<WorkItemCreated>(item.Id);
+        var wire = new JsonSerializerOptions(JsonSerializerDefaults.Web) { Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } };
+        var loaded = await Api.GetAsync<ProjectSettingsDto>($"api/projects/{arranged.Project.Id}/settings");
+        var request = new ProjectSettingsRequest(
+            new ProjectGeneralRequest(loaded.General.Key, loaded.General.Name, loaded.General.Description, loaded.General.WorkingDays),
+            [.. loaded.Members.Select(m => new MemberPut(m.Email, m.Role))],
+            loaded.Sprints,
+            new StateChanges([], [], [], [new StateRemove(arranged.Unflagged, arranged.Flagged)]));
+
+        using var response = await Api.PutJsonAsync($"api/projects/{arranged.Project.Id}/settings", JsonSerializer.SerializeToElement(request, wire));
+        response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+        await HandledAsync<WorkItemUpdated>(item.Id);
+
+        (await database.ExecuteScalarAsync<Guid>("SELECT state_id FROM work_item WHERE id = @id", new { id = item.Id })).ShouldBe(arranged.Flagged);
+        (await database.ExecuteScalarAsync<bool>("SELECT bulk FROM revision WHERE work_item_id = @id AND rev = 2", new { id = item.Id })).ShouldBeTrue();
+        (await AgentDispatchArrange.SessionsAsync(database, item.Id)).ShouldBeEmpty();
+    }
+
+    private static string StateChangeTo(Guid stateId) => $$"""[{"field":"state","from":"{{Guid.NewGuid()}}","to":"{{stateId}}"}]""";
 
     private static Task<Guid> ArrangeItemInFlaggedStateAsync(Npgsql.NpgsqlConnection database, AgentDispatchArrange arranged)
         => new WorkItemBuilder(arranged.Project.Id).WithState(arranged.Flagged).InsertAsync(database);

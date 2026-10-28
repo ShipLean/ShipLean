@@ -219,4 +219,24 @@ public class AgentSessionsReadTests : ApiFixture
         panel.Sessions.Single().StopRequested.ShouldBeTrue();
         panel.Sessions.Single().Activities.Select(a => (a.Type, a.Signal)).ShouldBe([("prompt", "stop")]);
     }
+
+    [Test]
+    public async Task Sessions_WhenASessionHasMoreThan200Activities_ShouldShowTheNewest200()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
+        var item = await arranged.CreateItemAsync(Api);
+        var start = TimeProvider.System.GetUtcNow().AddHours(-2);
+        var session = await InsertSessionAsync(database, arranged, item.Id, "working", start);
+        for (var i = 0; i < 205; i++)
+        {
+            await InsertActivityAsync(database, session, "thought", $"Step {i}", false, start.AddSeconds(i));
+        }
+
+        var activities = (await PanelAsync(item.Id)).Sessions.Single().Activities;
+
+        activities.Count.ShouldBe(200);
+        activities[0].Body.ShouldBe("Step 5");
+        activities[^1].Body.ShouldBe("Step 204");
+    }
 }

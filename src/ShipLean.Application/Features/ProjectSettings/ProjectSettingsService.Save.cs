@@ -70,7 +70,8 @@ public sealed partial class ProjectSettingsService
                     projectId,
                     new StateChanges([.. added.Select(a => a with { Name = a.Id.ToString() })], [], [], []),
                     transaction,
-                    token));
+                    token))
+        { Bulk = true };
         var outcome = await workItems.PatchManyAsync(moves.Patches, options, cancellationToken);
         if (outcome.Conflicts is { Count: > 0 } stale)
         {

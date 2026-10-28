@@ -6,11 +6,14 @@ using ShipLean.Core;
 
 namespace ShipLean.Application.Features.AgentDispatch;
 
-// Reads an item's sessions for the Agent panel: newest first, with their activities oldest first. Ephemeral activities are
+// Reads an item's sessions for the Agent panel: newest first, with their newest 200 activities each, oldest first. Ephemeral activities are
 // transient status lines: only the newest activity of the session can be one worth showing, so an ephemeral one that is
 // the newest is kept (alone) and every other is dropped. Times are labelled here, never in the browser.
 public sealed class AgentPanelReader(NpgsqlDataSource dataSource, TimeProvider time)
 {
+    // Only the newest this many activities of a session are read; a session with more shows its tail.
+    public const int MaxActivities = 200;
+
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
     public async Task<IReadOnlyList<AgentSessionDto>> SessionsAsync(Guid workItemId, CancellationToken cancellationToken)
@@ -27,12 +30,15 @@ public sealed class AgentPanelReader(NpgsqlDataSource dataSource, TimeProvider t
             new { workItemId }, cancellationToken: cancellationToken))).ToList();
         var activities = (await connection.QueryAsync<ActivityRow>(new CommandDefinition(
             """
-            SELECT a.session_id AS sessionId, a.id, a.type, a.body, a.action, a.parameter, a.result, a.ephemeral, a.signal, a.created_at AS createdAt
-            FROM agent_activity a JOIN agent_session s ON s.id = a.session_id
-            WHERE s.work_item_id = @workItemId AND a.replaced_at IS NULL
-            ORDER BY a.created_at, a.id
+            SELECT x.session_id AS sessionId, x.id, x.type, x.body, x.action, x.parameter, x.result, x.ephemeral, x.signal, x.created_at AS createdAt
+            FROM (
+                SELECT a.*, row_number() OVER (PARTITION BY a.session_id ORDER BY a.created_at DESC, a.id DESC) AS rn
+                FROM agent_activity a JOIN agent_session s ON s.id = a.session_id
+                WHERE s.work_item_id = @workItemId AND a.replaced_at IS NULL) x
+            WHERE x.rn <= @cap
+            ORDER BY x.created_at, x.id
             """,
-            new { workItemId }, cancellationToken: cancellationToken))).ToLookup(a => a.SessionId);
+            new { workItemId, cap = MaxActivities }, cancellationToken: cancellationToken))).ToLookup(a => a.SessionId);
 
         return sessions.Select(session => ToDto(session, activities[session.Id].ToList())).ToList();
     }
