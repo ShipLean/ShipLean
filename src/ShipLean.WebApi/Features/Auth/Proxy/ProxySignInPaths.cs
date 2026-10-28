@@ -6,7 +6,7 @@ namespace ShipLean.WebApi.Features.Auth.Proxy;
 // agent's bearer), so a proxy token header named Authorization can't be mistaken for one. The proxy is told to skip them.
 public static class ProxySignInPaths
 {
-    public static IReadOnlyList<PathString> Skipped { get; } = ["/mcp", "/oauth/token", "/oauth/register", "/oauth/revoke", UploadServices.Path, DownloadServices.Path];
+    public static IReadOnlyList<PathString> Skipped { get; } = ["/mcp", "/linear/graphql", "/oauth/token", "/oauth/register", "/oauth/revoke", UploadServices.Path, DownloadServices.Path];
 
     public static bool IsSkipped(PathString path) => Skipped.Any(path.StartsWithSegments);
 }

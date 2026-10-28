@@ -1,4 +1,4 @@
-import type { ProjectDto } from '../../../api/projects';
+import type { AgentConnectionOption, ProjectDto } from '../../../api/projects';
 import { settingsTestIds } from '../testIds';
 import { FieldErrorText } from './FieldErrorText';
 import { Panel } from './Panel';
@@ -8,7 +8,11 @@ import { WorkingDays } from './WorkingDays';
 const input =
   'h-7 w-full max-w-md rounded-control border border-edge bg-panel px-2 text-[length:var(--text-sm)] text-ink disabled:opacity-60';
 
-export function GeneralTab({ project, ...tab }: TabProps & { project: ProjectDto }) {
+export function GeneralTab({
+  project,
+  agentConnections,
+  ...tab
+}: TabProps & { project: ProjectDto; agentConnections: AgentConnectionOption[] }) {
   const { draft, setDraft, readOnly, errors } = tab;
   return (
     <>
@@ -57,6 +61,58 @@ export function GeneralTab({ project, ...tab }: TabProps & { project: ProjectDto
             {project.key}-{project.nextItemNumber}
           </span>
         </div>
+      </Panel>
+      <Panel title="Agent">
+        <label className="grid gap-1 text-[length:var(--text-sm)] font-medium text-ink">
+          Agent connection
+          <select
+            data-testid={settingsTestIds.generalAgentConnection}
+            className={input}
+            value={draft.agentConnectionId}
+            disabled={readOnly}
+            onChange={(e) => setDraft((d) => ({ ...d, agentConnectionId: e.target.value }))}
+          >
+            <option value="">None</option>
+            {agentConnections.map((c) => (
+              <option key={c.id} value={c.id} disabled={c.archived}>
+                {c.archived ? `${c.name} (archived)` : c.name}
+              </option>
+            ))}
+          </select>
+          <FieldErrorText errors={errors} field="agentConnectionId" />
+          <span className="font-normal text-ink-muted">
+            Where items go when they enter a state that starts an agent. An instance admin adds
+            connections in Instance settings.
+          </span>
+        </label>
+        <label className="grid gap-1 text-[length:var(--text-sm)] font-medium text-ink">
+          Repository URL
+          <input
+            data-testid={settingsTestIds.generalRepoUrl}
+            className={`${input} font-mono`}
+            value={draft.repoUrl}
+            placeholder="https://github.com/org/repo.git"
+            spellCheck={false}
+            autoComplete="off"
+            disabled={readOnly}
+            onChange={(e) => setDraft((d) => ({ ...d, repoUrl: e.target.value }))}
+          />
+          <FieldErrorText errors={errors} field="repoUrl" />
+        </label>
+        <label className="grid gap-1 text-[length:var(--text-sm)] font-medium text-ink">
+          Base branch
+          <input
+            data-testid={settingsTestIds.generalRepoBaseBranch}
+            className={`${input} font-mono`}
+            value={draft.repoBaseBranch}
+            placeholder="main"
+            spellCheck={false}
+            autoComplete="off"
+            disabled={readOnly}
+            onChange={(e) => setDraft((d) => ({ ...d, repoBaseBranch: e.target.value }))}
+          />
+          <FieldErrorText errors={errors} field="repoBaseBranch" />
+        </label>
       </Panel>
       <Panel title="Working days">
         <WorkingDays {...tab} />

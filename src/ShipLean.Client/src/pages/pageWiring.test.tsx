@@ -165,24 +165,35 @@ test('instanceSettingsSlots_ShouldMountTheSlotOfTheTabOnly', () => {
     instanceUsers: undefined,
     instanceProjects: undefined,
     instanceIntegrations: undefined,
+    instanceAgents: undefined,
   });
   expect(instanceSettingsSlots('users')).toEqual({
     instanceGeneral: undefined,
     instanceUsers: { tab: 'users' },
     instanceProjects: undefined,
     instanceIntegrations: undefined,
+    instanceAgents: undefined,
   });
   expect(instanceSettingsSlots('projects')).toEqual({
     instanceGeneral: undefined,
     instanceUsers: undefined,
     instanceProjects: { tab: 'projects' },
     instanceIntegrations: undefined,
+    instanceAgents: undefined,
   });
   expect(instanceSettingsSlots('integrations')).toEqual({
     instanceGeneral: undefined,
     instanceUsers: undefined,
     instanceProjects: undefined,
     instanceIntegrations: { tab: 'integrations' },
+    instanceAgents: undefined,
+  });
+  expect(instanceSettingsSlots('agents')).toEqual({
+    instanceGeneral: undefined,
+    instanceUsers: undefined,
+    instanceProjects: undefined,
+    instanceIntegrations: undefined,
+    instanceAgents: { tab: 'agents' },
   });
   expect(InstanceGeneralSlot).toBeDefined();
 });

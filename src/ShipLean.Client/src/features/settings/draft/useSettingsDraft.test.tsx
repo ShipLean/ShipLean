@@ -24,11 +24,28 @@ const user = (id: string) => ({
   photoUrl: null,
 });
 const loaded: ProjectSettingsDto = {
-  general: { key: 'SHIP', name: 'Storefront', description: '', workingDays: [1, 2, 3, 4, 5] },
+  general: {
+    key: 'SHIP',
+    name: 'Storefront',
+    description: '',
+    workingDays: [1, 2, 3, 4, 5],
+    agentConnectionId: null,
+    repoUrl: null,
+    repoBaseBranch: null,
+    agentConnections: [],
+  },
   members: [{ user: user('joel'), email: 'joel@x', role: 'admin', status: 'active' }],
   sprints: { velocityWindow: 3, velocityOverride: null },
   states: WORK_ITEM_TYPE_IDS.flatMap((type) => [
-    { id: `${type}-new`, type, name: 'New', category: 'proposed' as const, order: 1, itemCount: 0 },
+    {
+      id: `${type}-new`,
+      type,
+      name: 'New',
+      category: 'proposed' as const,
+      order: 1,
+      itemCount: 0,
+      startsAgent: false,
+    },
     {
       id: `${type}-done`,
       type,
@@ -36,6 +53,7 @@ const loaded: ProjectSettingsDto = {
       category: 'completed' as const,
       order: 2,
       itemCount: 0,
+      startsAgent: false,
     },
   ]),
 };
@@ -97,7 +115,10 @@ test('rebase_WhenOnlyItemCountsChangedWhileDirty_ShouldTakeTheCountsWithoutTheSt
     );
   render(loaded);
   act(() => seen.hook?.setDraft((d) => ({ ...d, name: 'Storefront Plus' })));
-  render({ ...loaded, states: loaded.states.map((s) => ({ ...s, itemCount: 9 })) });
+  render({
+    ...loaded,
+    states: loaded.states.map((s) => ({ ...s, itemCount: 9, startsAgent: false })),
+  });
   expect(seen.hook?.stale).toBe(false);
   expect(seen.hook?.draft.name).toBe('Storefront Plus');
 });

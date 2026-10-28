@@ -1,0 +1,79 @@
+    query agentActivity($id: String!) {
+  agentActivity(id: $id) {
+    ...AgentActivity
+  }
+}
+    fragment AgentActivity on AgentActivity {
+  __typename
+  signal
+  sourceMetadata
+  signalMetadata
+  agentSession {
+    id
+  }
+  content {
+    ... on AgentActivityActionContent {
+      ...AgentActivityActionContent
+    }
+    ... on AgentActivityElicitationContent {
+      ...AgentActivityElicitationContent
+    }
+    ... on AgentActivityErrorContent {
+      ...AgentActivityErrorContent
+    }
+    ... on AgentActivityPromptContent {
+      ...AgentActivityPromptContent
+    }
+    ... on AgentActivityResponseContent {
+      ...AgentActivityResponseContent
+    }
+    ... on AgentActivityThoughtContent {
+      ...AgentActivityThoughtContent
+    }
+  }
+  updatedAt
+  sourceComment {
+    id
+  }
+  archivedAt
+  createdAt
+  id
+  user {
+    id
+  }
+  ephemeral
+}
+fragment AgentActivityPromptContent on AgentActivityPromptContent {
+  __typename
+  body
+  title
+  type
+}
+fragment AgentActivityResponseContent on AgentActivityResponseContent {
+  __typename
+  body
+  type
+}
+fragment AgentActivityThoughtContent on AgentActivityThoughtContent {
+  __typename
+  body
+  type
+}
+fragment AgentActivityActionContent on AgentActivityActionContent {
+  __typename
+  action
+  parameter
+  result
+  type
+}
+fragment AgentActivityElicitationContent on AgentActivityElicitationContent {
+  __typename
+  body
+  type
+}
+fragment AgentActivityErrorContent on AgentActivityErrorContent {
+  __typename
+  reasonCode
+  body
+  type
+}

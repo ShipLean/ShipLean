@@ -50,6 +50,15 @@ export interface StateDto {
   category: StateCategory;
   order: number;
   itemCount: number;
+  /** Moving an item into this state opens an agent session. */
+  startsAgent: boolean;
+}
+
+/** A connection a project admin can pick; `archived` marks the project's own choice after it was archived. */
+export interface AgentConnectionOption {
+  id: string;
+  name: string;
+  archived: boolean;
 }
 
 export interface ProjectGeneralSettings {
@@ -57,6 +66,11 @@ export interface ProjectGeneralSettings {
   name: string;
   description: string;
   workingDays: number[];
+  agentConnectionId: string | null;
+  repoUrl: string | null;
+  /** As saved: null means main. */
+  repoBaseBranch: string | null;
+  agentConnections: AgentConnectionOption[];
 }
 
 export interface ProjectForecastSettings {
@@ -75,6 +89,10 @@ export interface ProjectGeneralPut {
   name: string;
   description: string;
   workingDays: number[];
+  /** Null (or blank text) clears the agent fields. */
+  agentConnectionId: string | null;
+  repoUrl: string | null;
+  repoBaseBranch: string | null;
 }
 
 export interface MemberPut {
@@ -113,6 +131,8 @@ export interface StateAdd {
   type: WorkItemTypeId;
   name: string;
   category: StateCategory;
+  /** Absent means false: only a flagged new state sends it. */
+  startsAgent?: boolean;
 }
 
 /** Rename and/or recategorise; the state keeps its id and items. */
@@ -120,6 +140,8 @@ export interface StateUpdate {
   stateId: string;
   name: string;
   category: StateCategory;
+  /** Left out = unchanged. */
+  startsAgent?: boolean;
 }
 
 export interface StateReorder {

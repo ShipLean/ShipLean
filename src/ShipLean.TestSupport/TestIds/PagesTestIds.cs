@@ -27,6 +27,7 @@ public static class PagesTestIds
     public const string SlotImportStepper = "slot-importStepper";
     public const string SlotInstanceGeneral = "slot-instanceGeneral";
     public const string SlotInstanceIntegrations = "slot-instanceIntegrations";
+    public const string SlotInstanceAgents = "slot-instanceAgents";
     public const string SlotInstanceProjects = "slot-instanceProjects";
     public const string SlotInstanceUsers = "slot-instanceUsers";
     public const string SlotLevelBacklog = "slot-levelBacklog";

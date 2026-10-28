@@ -14,6 +14,7 @@ const states = (type: WorkItemTypeId, rows: Row[]): StateDto[] =>
     category,
     order: i + 1,
     itemCount,
+    startsAgent: false,
   }));
 
 const simple = (): Row[] => [
@@ -31,6 +32,10 @@ export const projectSettings: ProjectSettingsDto = {
     name: SHELL_PROJECT.name,
     description: '',
     workingDays: SHELL_PROJECT.workingDays,
+    agentConnectionId: null,
+    repoUrl: null,
+    repoBaseBranch: null,
+    agentConnections: [],
   },
   members: SHELL_MEMBERS,
   sprints: { velocityWindow: 3, velocityOverride: null },

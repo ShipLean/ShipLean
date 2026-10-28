@@ -1,0 +1,13 @@
+    mutation updateAgentSession($id: String!, $input: AgentSessionUpdateInput!) {
+  agentSessionUpdate(id: $id, input: $input) {
+    ...AgentSessionPayload
+  }
+}
+    fragment AgentSessionPayload on AgentSessionPayload {
+  __typename
+  agentSession {
+    id
+  }
+  lastSyncId
+  success
+}

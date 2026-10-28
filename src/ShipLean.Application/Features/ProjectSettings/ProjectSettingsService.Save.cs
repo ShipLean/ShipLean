@@ -32,7 +32,7 @@ public sealed partial class ProjectSettingsService
             throw ApiException.Validation("A project's key never changes.");
         }
 
-        var general = CheckGeneral(put.General);
+        var general = await CheckAgentAsync(KeepUnprovided(CheckGeneral(put.General), current), current.AgentConnectionId, cancellationToken);
         CheckForecast(put.Sprints);
         var members = await ResolveMembersAsync(put.Members, cancellationToken);
         var moves = await PlanMovesAsync(projectId, put.States, cancellationToken);
@@ -51,7 +51,7 @@ public sealed partial class ProjectSettingsService
         var stateChanges = put.States with
         {
             Add = [],
-            Update = [.. put.States.Update ?? [], .. added.Select(a => new StateUpdate(a.Id, a.Name, a.Category))],
+            Update = [.. put.States.Update ?? [], .. added.Select(a => new StateUpdate(a.Id, a.Name, a.Category, a.StartsAgent))],
         };
         IReadOnlyList<Guid> removedUsers = [];
         var options = new WriteOptions(
@@ -70,7 +70,8 @@ public sealed partial class ProjectSettingsService
                     projectId,
                     new StateChanges([.. added.Select(a => a with { Name = a.Id.ToString() })], [], [], []),
                     transaction,
-                    token));
+                    token))
+        { Bulk = true };
         var outcome = await workItems.PatchManyAsync(moves.Patches, options, cancellationToken);
         if (outcome.Conflicts is { Count: > 0 } stale)
         {
@@ -102,7 +103,32 @@ public sealed partial class ProjectSettingsService
             throw ApiException.Validation("A project needs at least one working day, Monday (1) to Sunday (7).");
         }
 
-        return new ProjectGeneralPut(general.Name.Trim(), general.Description ?? string.Empty, days);
+        return new ProjectGeneralPut(
+            general.Name.Trim(), general.Description ?? string.Empty, days, general.AgentConnectionId, ProjectAgentRules.RepoUrl(general.RepoUrl), ProjectAgentRules.BaseBranch(general.RepoBaseBranch), general.Provided);
+    }
+
+    // An agent field the body left out keeps its saved value (already valid, so it is not checked again).
+    private static ProjectGeneralPut KeepUnprovided(ProjectGeneralPut general, ProjectRow current)
+        => general with
+        {
+            AgentConnectionId = general.Provided.HasFlag(ProvidedAgentFields.Connection) ? general.AgentConnectionId : current.AgentConnectionId,
+            RepoUrl = general.Provided.HasFlag(ProvidedAgentFields.RepoUrl) ? general.RepoUrl : current.RepoUrl,
+            RepoBaseBranch = general.Provided.HasFlag(ProvidedAgentFields.RepoBaseBranch) ? general.RepoBaseBranch : current.RepoBaseBranch,
+            Provided = ProvidedAgentFields.All,
+        };
+
+    // A connection can be picked only while it is not archived; keeping the one already chosen is always allowed.
+    private async Task<ProjectGeneralPut> CheckAgentAsync(ProjectGeneralPut general, Guid? saved, CancellationToken cancellationToken)
+    {
+        if (general.AgentConnectionId is not { } id || id == saved)
+        {
+            return general;
+        }
+
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        var live = await connection.ExecuteScalarAsync<bool>(new CommandDefinition(
+            "SELECT EXISTS (SELECT 1 FROM agent_connection WHERE id = @id AND archived_at IS NULL)", new { id }, cancellationToken: cancellationToken));
+        return live ? general : throw ApiException.Validation("Pick an agent connection that is not archived.", "agentConnectionId");
     }
 
     private static void CheckForecast(ProjectForecastSettings forecast)
@@ -207,10 +233,12 @@ public sealed partial class ProjectSettingsService
         var updated = await transaction.Connection!.ExecuteAsync(new CommandDefinition(
             """
             UPDATE project SET name = @name, description = @description, working_days = @days::smallint[],
-                               velocity_window = @window, velocity_override = @override, updated_at = @now
+                               velocity_window = @window, velocity_override = @override, updated_at = @now,
+                               agent_connection_id = @agentConnectionId, repo_url = @repoUrl, repo_base_branch = @repoBaseBranch
             WHERE id = @projectId
             """,
-            new { projectId, name = general.Name, description = general.Description, days = general.WorkingDays.ToArray(), window = forecast.VelocityWindow, @override = forecast.VelocityOverride, now = clock.GetUtcNow() },
+            new { projectId, name = general.Name, description = general.Description, days = general.WorkingDays.ToArray(), window = forecast.VelocityWindow, @override = forecast.VelocityOverride,
+                general.AgentConnectionId, general.RepoUrl, general.RepoBaseBranch, now = clock.GetUtcNow() },
             transaction, cancellationToken: cancellationToken));
         if (updated == 0)
         {

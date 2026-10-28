@@ -32,6 +32,8 @@ internal sealed class RecordingCommentStore : ICommentStore
 
     public Task<CommentDto> AddAsync(Guid workItemId, CommentCreate create, CancellationToken cancellationToken = default) => throw new NotSupportedException();
 
+    public Task<CommentDto> AddAsAgentAsync(Guid workItemId, CommentCreate create, string agentName, Guid authorId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+
     public Task<CommentDto> EditAsync(Guid id, CommentEdit edit, CancellationToken cancellationToken = default) => throw new NotSupportedException();
 
     public Task<CommentDto> SupersedeAsync(Guid id, CancellationToken cancellationToken = default) => throw new NotSupportedException();

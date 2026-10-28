@@ -1,0 +1,13 @@
+    mutation agentSessionUpdateExternalUrl($id: String!, $input: AgentSessionUpdateExternalUrlInput!) {
+  agentSessionUpdateExternalUrl(id: $id, input: $input) {
+    ...AgentSessionPayload
+  }
+}
+    fragment AgentSessionPayload on AgentSessionPayload {
+  __typename
+  agentSession {
+    id
+  }
+  lastSyncId
+  success
+}

@@ -136,7 +136,8 @@ public sealed partial class SprintStore
                     {
                         throw new RolloverTasksChangedException();
                     }
-                });
+                })
+            { Bulk = true };
 
             WriteManyOutcome outcome;
             try

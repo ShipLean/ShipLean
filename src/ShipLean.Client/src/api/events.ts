@@ -19,6 +19,7 @@ export const PROJECT_EVENT_TYPES = [
   'commentsChanged',
   'attachmentsChanged',
   'linksChanged',
+  'agentSessionChanged',
 ] as const;
 export type ProjectEventType = (typeof PROJECT_EVENT_TYPES)[number];
 
@@ -109,6 +110,11 @@ export interface LinksChanged extends ProjectEventBase<'linksChanged'> {
   workItemId: string;
 }
 
+export interface AgentSessionChanged extends ProjectEventBase<'agentSessionChanged'> {
+  workItemId: string;
+  sessionId: string;
+}
+
 export type ProjectEvent =
   | WorkItemCreated
   | WorkItemUpdated
@@ -123,4 +129,5 @@ export type ProjectEvent =
   | ImportProgress
   | CommentsChanged
   | AttachmentsChanged
-  | LinksChanged;
+  | LinksChanged
+  | AgentSessionChanged;

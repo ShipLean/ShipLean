@@ -20,6 +20,7 @@ export function StateRow({
   blocked,
   onName,
   onCategory,
+  onStartsAgent,
   onMove,
   onDelete,
 }: {
@@ -36,6 +37,7 @@ export function StateRow({
   blocked: string | undefined;
   onName(name: string): void;
   onCategory(category: StateCategory): void;
+  onStartsAgent(startsAgent: boolean): void;
   onMove(by: -1 | 1): void;
   onDelete(): void;
 }) {
@@ -133,6 +135,16 @@ export function StateRow({
             </option>
           ))}
         </select>
+      </td>
+      <td className="px-3 py-2 text-center">
+        <input
+          type="checkbox"
+          data-testid={settingsTestIds.stateStartsAgent}
+          aria-label={`Starts an agent: ${row.name}`}
+          checked={row.startsAgent}
+          disabled={readOnly}
+          onChange={(e) => onStartsAgent(e.target.checked)}
+        />
       </td>
       <td
         data-testid={settingsTestIds.stateItems}

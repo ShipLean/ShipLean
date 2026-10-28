@@ -1,0 +1,1 @@
+Raw operation documents from @linear/sdk (linear/linear packages/sdk/src/_generated_documents.ts at commit 618a737a4e6aa279b7853c650f79f209a5142bbc), posted verbatim by the LinearApi tests. `relay_*` files are the agent-relay's own documents (hand-written). Regenerate with scripts/linear-schema-extract.py.

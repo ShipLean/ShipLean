@@ -1,10 +1,10 @@
 {
-  "general": { "key": "SHIP", "name": "Storefront", "description": "The customer-facing storefront.", "workingDays": [1, 2, 3, 4, 5] },
+  "general": { "key": "SHIP", "name": "Storefront", "description": "The customer-facing storefront.", "workingDays": [1, 2, 3, 4, 5], "agentConnectionId": "0199f000-0000-7000-8000-00000000a001", "repoUrl": "https://github.com/ShipLean/ShipLean.git", "repoBaseBranch": null, "agentConnections": [{ "id": "0199f000-0000-7000-8000-00000000a001", "name": "Home relay", "archived": false }] },
   "members": [
     { "user": { "id": "0199f000-0000-7000-8000-000000000001", "name": "Joel Dickson", "initials": "JD", "avatarColour": "#5b6b8c", "photoUrl": null }, "email": "joel@shiplean.local", "role": "admin", "status": "active" }
   ],
   "sprints": { "velocityWindow": 3, "velocityOverride": 21 },
   "states": [
-    { "id": "00000003-0000-4000-8001-000000000301", "type": "story", "name": "New", "category": "proposed", "order": 1, "itemCount": 12 }
+    { "id": "00000003-0000-4000-8001-000000000301", "type": "story", "name": "New", "category": "proposed", "order": 1, "itemCount": 12, "startsAgent": false }
   ]
 }

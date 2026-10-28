@@ -22,7 +22,7 @@ public class SchemaTests
     {
         string[] expected =
         [
-            "app_user", "attachment", "board", "comment", "data_protection_key", "import_error", "import_job", "import_log",
+            "agent_activity", "agent_connection", "agent_delivery", "agent_session", "app_user", "attachment", "board", "comment", "data_protection_key", "import_error", "import_job", "import_log",
             "import_mapping", "instance_settings", "jira_connection", "link_state", "mcp_capture_plan_apply", "oauth_authorization", "oauth_client", "oauth_code",
             "oauth_request", "oauth_token", "project", "project_member", "revision", "search_doc", "sprint",
             "sprint_capacity", "state", "transfer_token", "user_preference", "webhook_delivery", "work_item", "work_item_link",

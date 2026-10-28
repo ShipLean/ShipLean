@@ -21,14 +21,31 @@ const priya = {
 };
 
 const saved = (): ProjectSettingsDto => ({
-  general: { key: 'SHIP', name: 'Storefront', description: 'Shop', workingDays: [1, 2, 3, 4, 5] },
+  general: {
+    key: 'SHIP',
+    name: 'Storefront',
+    description: 'Shop',
+    workingDays: [1, 2, 3, 4, 5],
+    agentConnectionId: null,
+    repoUrl: null,
+    repoBaseBranch: null,
+    agentConnections: [{ id: 'c-1', name: 'Home relay', archived: false }],
+  },
   members: [
     { user: joel, email: 'joel@shiplean.local', role: 'admin', status: 'active' },
     { user: priya, email: 'priya@shiplean.local', role: 'member', status: 'active' },
   ],
   sprints: { velocityWindow: 3, velocityOverride: null },
   states: WORK_ITEM_TYPE_IDS.flatMap((type) => [
-    { id: `${type}-new`, type, name: 'New', category: 'proposed' as const, order: 1, itemCount: 0 },
+    {
+      id: `${type}-new`,
+      type,
+      name: 'New',
+      category: 'proposed' as const,
+      order: 1,
+      itemCount: 0,
+      startsAgent: false,
+    },
     {
       id: `${type}-done`,
       type,
@@ -36,6 +53,7 @@ const saved = (): ProjectSettingsDto => ({
       category: 'completed' as const,
       order: 2,
       itemCount: 0,
+      startsAgent: false,
     },
   ]),
 });
@@ -115,6 +133,27 @@ test('Draft_WhenSaved_ShouldSendEveryTabInOneRequest', async ({ mount, page }) =
     { email: 'priya@shiplean.local', role: 'admin' },
   ]);
   expect(puts[0].sprints).toEqual({ velocityWindow: 3, velocityOverride: 21.5 });
+});
+
+test('Draft_WhenAgentFieldsEdited_ShouldSendThemWithGeneral', async ({ mount, page }) => {
+  const puts = await stub(page);
+  const view = await mount(<SettingsDraftHarness role="admin" />, {
+    hooksConfig: { route: '/p/SHIP/settings/general' },
+  });
+  await expect(view.getByTestId(ids.generalRepoBaseBranch)).toHaveAttribute('placeholder', 'main');
+  await view.getByTestId(ids.generalAgentConnection).selectOption('c-1');
+  await view.getByTestId(ids.generalRepoUrl).fill(' https://github.com/ShipLean/ShipLean.git ');
+  await view.getByTestId(ids.save).click();
+
+  await expect(view.getByTestId(ids.unsaved)).toHaveCount(0);
+  expect(puts[0].general).toEqual({
+    name: 'Storefront',
+    description: 'Shop',
+    workingDays: [1, 2, 3, 4, 5],
+    agentConnectionId: 'c-1',
+    repoUrl: 'https://github.com/ShipLean/ShipLean.git',
+    repoBaseBranch: null,
+  });
 });
 
 test('Draft_WhenNoWorkingDay_ShouldJumpToTheFieldWithoutSaving', async ({ mount, page }) => {

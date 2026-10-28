@@ -21,7 +21,7 @@ const st = (
   category: StateDto['category'],
   order: number,
   itemCount = 0,
-): StateDto => ({ id, type: 'story', name, category, order, itemCount });
+): StateDto => ({ id, type: 'story', name, category, order, itemCount, startsAgent: false });
 const saved = [
   st('a', 'New', 'proposed', 1, 2),
   st('b', 'Active', 'inProgress', 2, 3),
@@ -39,6 +39,41 @@ describe('stateModel', () => {
   it('editState_WhenPutBackAsSaved_ShouldDropTheChange', () => {
     const renamed = editState(none(), saved, 'b', { name: 'Doing' });
     expect(editState(renamed, saved, 'b', { name: 'Active' }).update).toEqual([]);
+  });
+
+  it('editState_WhenFlagged_ShouldStageTheFlagAndShowItOnTheRow', () => {
+    const flagged = editState(none(), saved, 'b', { startsAgent: true });
+    expect(flagged.update).toEqual([
+      { stateId: 'b', name: 'Active', category: 'inProgress', startsAgent: true },
+    ]);
+    expect(rowsOf(saved, flagged, 'story').find((r) => r.id === 'b')?.startsAgent).toBe(true);
+    expect(rowsOf(saved, flagged, 'story').find((r) => r.id === 'a')?.startsAgent).toBe(false);
+  });
+
+  it('editState_WhenFlagPutBackAsSaved_ShouldDropTheChange', () => {
+    const flagged = editState(none(), saved, 'b', { startsAgent: true });
+    expect(editState(flagged, saved, 'b', { startsAgent: false }).update).toEqual([]);
+  });
+
+  it('editState_WhenFlaggedStateRenamed_ShouldKeepTheFlagStaged', () => {
+    const flagged = editState(none(), saved, 'b', { startsAgent: true });
+    const renamed = editState(flagged, saved, 'b', { name: 'Doing' });
+    expect(renamed.update).toEqual([
+      { stateId: 'b', name: 'Doing', category: 'inProgress', startsAgent: true },
+    ]);
+  });
+
+  it('editState_WhenAddedStateFlagged_ShouldFlagTheAdd', () => {
+    const added = addState(none(), saved, {
+      id: 'n',
+      type: 'story',
+      name: 'Ready',
+      category: 'proposed',
+    });
+    expect(added.add).toEqual([{ id: 'n', type: 'story', name: 'Ready', category: 'proposed' }]);
+    expect(editState(added, saved, 'n', { startsAgent: true }).add).toMatchObject([
+      { id: 'n', startsAgent: true },
+    ]);
   });
 
   it('moveState_WhenMovedDown_ShouldStageOrder', () => {

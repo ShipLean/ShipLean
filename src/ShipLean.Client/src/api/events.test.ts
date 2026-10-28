@@ -8,6 +8,7 @@ import {
   type CommentsChanged,
   type AttachmentsChanged,
   type LinksChanged,
+  type AgentSessionChanged,
   type PresenceChanged,
   type ProjectChanged,
   type ProjectEvent,
@@ -67,6 +68,7 @@ const examples = {
   commentsChanged: typed<CommentsChanged>()(events.commentsChanged),
   attachmentsChanged: typed<AttachmentsChanged>()(events.attachmentsChanged),
   linksChanged: typed<LinksChanged>()(events.linksChanged),
+  agentSessionChanged: typed<AgentSessionChanged>()(events.agentSessionChanged),
 };
 
 // Compile-time: every union member is covered by a case, so a new event type fails the typecheck until it is handled.
@@ -86,6 +88,7 @@ function typeOf(event: ProjectEvent): string {
     case 'commentsChanged':
     case 'attachmentsChanged':
     case 'linksChanged':
+    case 'agentSessionChanged':
       return event.type;
   }
 }

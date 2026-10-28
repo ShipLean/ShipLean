@@ -224,6 +224,10 @@ public sealed class ImportApplierTests : ApiFixture
     {
         var itemId = (await ApplyStoryChainAsync()).Id;
         var seen = new List<CommentsChanged>();
+        // One subscription sees both: the bus gives each subscriber its own queue and pump, so a marker on a second subscriber
+        // could arrive before this one has handled the comments event. Within one pump delivery is in order, so the marker
+        // (published after the apply) arriving means every comments event has been seen. Waiting for it is not a sleep.
+        var marker = new TaskCompletionSource();
         using var subscription = Host.Services.GetRequiredService<IProjectEvents>().Subscribe(SeedIds.Projects.Empt, projectEvent =>
         {
             if (projectEvent is CommentsChanged changed)
@@ -233,22 +237,15 @@ public sealed class ImportApplierTests : ApiFixture
                     seen.Add(changed);
                 }
             }
-
-            return Task.CompletedTask;
-        });
-
-        await WithApplierAsync((applier, run, _) => applier.ApplyCommentsAsync(run, Story, itemId));
-        // Delivery is off the publishing call: a later event of ours arrives after the comments one, so waiting for it is not a sleep.
-        var marker = new TaskCompletionSource();
-        using var done = Host.Services.GetRequiredService<IProjectEvents>().Subscribe(SeedIds.Projects.Empt, projectEvent =>
-        {
-            if (projectEvent is ProjectChanged)
+            else if (projectEvent is ProjectChanged)
             {
                 marker.TrySetResult();
             }
 
             return Task.CompletedTask;
         });
+
+        await WithApplierAsync((applier, run, _) => applier.ApplyCommentsAsync(run, Story, itemId));
         await Host.Services.GetRequiredService<IProjectEvents>().PublishAsync(new ProjectChanged(SeedIds.Projects.Empt));
         using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         await using var _ = deadline.Token.Register(() => marker.TrySetCanceled());

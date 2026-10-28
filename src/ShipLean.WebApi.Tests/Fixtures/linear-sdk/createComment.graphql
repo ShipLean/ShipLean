@@ -1,0 +1,13 @@
+    mutation createComment($input: CommentCreateInput!) {
+  commentCreate(input: $input) {
+    ...CommentPayload
+  }
+}
+    fragment CommentPayload on CommentPayload {
+  __typename
+  comment {
+    id
+  }
+  lastSyncId
+  success
+}

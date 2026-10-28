@@ -1,4 +1,4 @@
-import type { StateChanges, StateDto } from '../../../api/projects';
+import type { StateChanges, StateDto, StateUpdate } from '../../../api/projects';
 import type { StateCategory, WorkItemTypeId } from '../../../api/refs';
 import { TYPE_LABELS } from './categories';
 
@@ -8,6 +8,8 @@ export interface StateRowModel {
   type: WorkItemTypeId;
   name: string;
   category: StateCategory;
+  /** Moving an item here opens an agent session. */
+  startsAgent: boolean;
   /** Items in the state now (from the server). */
   itemCount: number;
   /** Items that other deleted states move here on Save. */
@@ -46,6 +48,7 @@ export function rowsOf(saved: StateDto[], changes: StateChanges, type: WorkItemT
         type,
         name: update?.name ?? s.name,
         category: update?.category ?? s.category,
+        startsAgent: update?.startsAgent ?? s.startsAgent,
         itemCount: s.itemCount,
         incoming: incoming.get(s.id) ?? 0,
         fresh: false,
@@ -58,6 +61,7 @@ export function rowsOf(saved: StateDto[], changes: StateChanges, type: WorkItemT
       type,
       name: a.name,
       category: a.category,
+      startsAgent: a.startsAgent ?? false,
       itemCount: 0,
       incoming: incoming.get(a.id) ?? 0,
       fresh: true,
@@ -132,26 +136,30 @@ export function addState(
   return setOrder(added, saved, add.type, ids);
 }
 
-/** Renames and/or recategorises a state; an edit that puts it back as saved drops the change. */
+/** Renames, recategorises and/or flags a state; an edit that puts it back as saved drops the change. */
 export function editState(
   changes: StateChanges,
   saved: StateDto[],
   id: string,
-  edit: { name?: string; category?: StateCategory },
+  edit: { name?: string; category?: StateCategory; startsAgent?: boolean },
 ): StateChanges {
   if (changes.add.some((a) => a.id === id)) {
     return { ...changes, add: changes.add.map((a) => (a.id === id ? { ...a, ...edit } : a)) };
   }
   const was = saved.find((s) => s.id === id);
   if (was === undefined) return changes;
-  const now = changes.update.find((u) => u.stateId === id) ?? {
+  const now: StateUpdate = changes.update.find((u) => u.stateId === id) ?? {
     stateId: id,
     name: was.name,
     category: was.category,
   };
-  const next = { ...now, ...edit };
+  const { startsAgent, ...rest } = { ...now, ...edit };
+  // The flag travels only while it differs from the saved one: a rename never touches it.
+  const next: StateUpdate =
+    startsAgent === undefined || startsAgent === was.startsAgent ? rest : { ...rest, startsAgent };
   const others = changes.update.filter((u) => u.stateId !== id);
-  const unchanged = next.name === was.name && next.category === was.category;
+  const unchanged =
+    next.name === was.name && next.category === was.category && next.startsAgent === undefined;
   return { ...changes, update: unchanged ? others : [...others, next] };
 }
 
@@ -252,9 +260,18 @@ export function rebaseStates(
     if (now === undefined || was === undefined) return [];
     const name = u.name === was.name ? now.name : u.name;
     const category = u.category === was.category ? now.category : u.category;
-    return name === now.name && category === now.category
+    const startsAgent =
+      u.startsAgent === undefined || u.startsAgent === now.startsAgent ? undefined : u.startsAgent;
+    return name === now.name && category === now.category && startsAgent === undefined
       ? []
-      : [{ stateId: u.stateId, name, category }];
+      : [
+          {
+            stateId: u.stateId,
+            name,
+            category,
+            ...(startsAgent === undefined ? {} : { startsAgent }),
+          },
+        ];
   });
 
   const removing = new Set(changes.remove.filter((r) => live.has(r.stateId)).map((r) => r.stateId));

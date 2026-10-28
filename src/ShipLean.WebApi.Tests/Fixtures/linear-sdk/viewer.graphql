@@ -1,0 +1,41 @@
+    query viewer {
+  viewer {
+    ...User
+  }
+}
+    fragment User on User {
+  __typename
+  description
+  avatarUrl
+  createdIssueCount
+  avatarBackgroundColor
+  statusUntilAt
+  statusEmoji
+  initials
+  updatedAt
+  lastSeen
+  timezone
+  disableReason
+  statusLabel
+  archivedAt
+  createdAt
+  id
+  gitHubUserId
+  displayName
+  email
+  name
+  title
+  url
+  active
+  isAssignable
+  isMentionable
+  guest
+  admin
+  owner
+  app
+  isMe
+  supportsAgentSessions
+  canAccessAnyPublicTeam
+  calendarHash
+  inviteHash
+}

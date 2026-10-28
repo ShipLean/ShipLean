@@ -18,7 +18,16 @@ const { SettingsDraftContext } = await import('../draft/LoadedSettings');
 const { toDraft } = await import('../draft/model');
 
 const settings: ProjectSettingsDto = {
-  general: { key: 'SHIP', name: 'Storefront', description: '', workingDays: [1] },
+  general: {
+    key: 'SHIP',
+    name: 'Storefront',
+    description: '',
+    workingDays: [1],
+    agentConnectionId: null,
+    repoUrl: null,
+    repoBaseBranch: null,
+    agentConnections: [],
+  },
   members: [],
   sprints: { velocityWindow: 3, velocityOverride: null },
   states: [],
