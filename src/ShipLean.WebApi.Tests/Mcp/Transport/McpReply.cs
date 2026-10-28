@@ -22,4 +22,11 @@ public sealed record McpReply(HttpStatusCode Status, HttpResponseHeaders Headers
     public bool IsToolError() => Json().GetProperty("result").TryGetProperty("isError", out var flag) && flag.GetBoolean();
 
     public string ResultText() => Json().GetProperty("result").GetProperty("content")[0].GetProperty("text").GetString()!;
+
+    // Every text block of a tools/call result, in order: all that a client showing the model only text gets.
+    public IReadOnlyList<string> Texts()
+        => Json().GetProperty("result").GetProperty("content").EnumerateArray().Select(block => block.GetProperty("text").GetString()!).ToList();
+
+    // The result as such a client reads it: the JSON in the last text block.
+    public JsonElement TextJson() => JsonDocument.Parse(Texts()[^1]).RootElement.Clone();
 }

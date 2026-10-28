@@ -32,11 +32,8 @@ public sealed class CaptureSupport(IServiceProvider services, AgentBaseUrl baseU
     public Task<ResolvedProject> ProjectOfAsync(ResolvedItem item, CancellationToken cancellationToken)
         => projects.ResolveAsync(item.Key[..item.Key.IndexOf('-')], forWrite: true, cancellationToken);
 
-    public static CallToolResult Reply(McpResult result, string summary) => new()
-    {
-        Content = [new TextContentBlock { Text = summary }],
-        StructuredContent = JsonSerializer.SerializeToElement(result, result.GetType()),
-    };
+    public static CallToolResult Reply(McpResult result, string summary)
+        => McpToolResult.Of(JsonSerializer.SerializeToElement(result, result.GetType()), summary);
 
     public static WorkItemTypeId ParseType(string? text, string field)
         => new string((text ?? string.Empty).Where(char.IsLetter).ToArray()).ToLowerInvariant() switch

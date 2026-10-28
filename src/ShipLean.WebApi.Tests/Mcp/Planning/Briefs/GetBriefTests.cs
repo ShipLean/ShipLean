@@ -41,6 +41,19 @@ public class GetBriefTests : McpFixture
     }
 
     [Test]
+    public async Task GetBrief_WhenClientReadsOnlyText_ShouldGiveTheSummaryThenTheMarkdownThenTheJson()
+    {
+        var task = _keys.Tasks.Values.First();
+        var reply = await CallToolAsync(await TokenAsync(TestUser.Joel, ReadOnly), "get_brief", $$"""{"item":"{{task}}"}""");
+
+        var texts = reply.Texts();
+        texts.Count.ShouldBe(3);
+        texts[0].ShouldBe($"The brief for {task}; the Markdown follows.");
+        texts[1].ShouldBe(reply.Structured().GetProperty("markdown").GetString());
+        JsonElement.DeepEquals(reply.TextJson(), reply.Structured()).ShouldBeTrue();
+    }
+
+    [Test]
     public async Task GetBrief_Task_ShouldFillEveryBriefPlaceholder()
     {
         var plan = PlanFixture.FeatureEditor;

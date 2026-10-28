@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Feature board (reference)</title>
+<!--
+  Reference Feature board: Backlogs › SHIP-101 › Feature board, opened from "Task board" in the Feature's Stories and bugs header.
+  The sprint Taskboard's grid scoped to one Feature: rows are the Feature's stories and bugs in any sprint (or the Backlog),
+  columns are the project's Task states (Removed left out), cards are their tasks. A parent Feature gets one board section
+  per Feature in its tree, indented by depth, its own stories first. Grouped by People it is one grid for the whole tree.
+  Open directly in a browser. Uses ../tokens.css, shiplean.css and shared.js only; no build step.
+  Working: drag a card to another column (state) or row (parent; any story in the tree, or a person when grouped by People);
+  collapse rows and Feature sections; Group by Stories / People; the face filter. Moves never change a sprint.
+    ?key=SHIP-103       a parent Feature (Reporting, with Dashboard widgets under it)
+    ?view=people        opens grouped by People
+  The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot).
+-->
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="shiplean.css">
+<script src="shared.js"></script>
+<style>
+/* Feature header: identity, state, and the roll-up for the whole tree */
+.fb-head { flex: none; display: grid; gap: 6px; padding: var(--space-2) var(--space-4) var(--space-3); background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.fb-head .back { color: var(--color-muted); font-size: var(--text-sm); text-decoration: none; justify-self: start; }
+.fb-head .back:hover { color: var(--color-accent); text-decoration: underline; }
+.fb-title { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.fb-title .key { font-size: var(--text-sm); color: var(--color-text); }
+.fb-title h1 { margin: 0; font-size: var(--text-lg); font-weight: var(--weight-semibold); }
+.fb-stats { display: flex; align-items: center; gap: 6px 18px; flex-wrap: wrap; font-size: var(--text-sm); color: var(--color-muted); }
+.fb-stats b { color: var(--color-text); font-variant-numeric: tabular-nums; }
+.bigbar { position: relative; display: inline-block; width: 160px; height: 6px; overflow: hidden; border-radius: 3px; background: var(--color-surface-2); vertical-align: middle; }
+.bigbar i { position: absolute; inset: 0 auto 0 0; background: var(--color-ok); }
+.sprint-pill { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px; border-radius: 999px; background: var(--color-surface-2); color: var(--color-text); font-size: var(--text-xs); white-space: nowrap; }
+.sprint-pill.cur { background: var(--color-accent-soft); }
+.sprint-pill.none { border: 1px dashed var(--color-border); background: transparent; color: var(--color-muted); }
+.jump { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.jump a { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-surface); color: var(--color-text); font-size: var(--text-xs); text-decoration: none; }
+.jump a:hover { border-color: var(--color-accent); }
+.mini { position: relative; width: 34px; height: 4px; overflow: hidden; border-radius: 2px; background: var(--color-surface-2); }
+.mini i { position: absolute; inset: 0 auto 0 0; background: var(--color-ok); }
+
+/* Toolbar face filter (as on the Taskboard) */
+.faces { display: inline-flex; align-items: center; gap: 2px; padding: 2px; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-surface); }
+.face { display: inline-grid; place-items: center; padding: 0; border: 2px solid transparent; border-radius: 50%; background: none; cursor: pointer; opacity: .55; }
+.face[aria-pressed="true"] { border-color: var(--color-accent); opacity: 1; }
+.faces.none-on .face { opacity: 1; }
+.face:focus-visible, .card:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+
+/* Feature sections: one board per Feature in the tree */
+.board { flex: 1; min-height: 0; overflow: auto; }
+.fsec + .fsec { border-top: 1px solid var(--color-border); }
+.fsec-h { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 40px; padding: 6px var(--space-4) 6px calc(var(--space-3) + var(--depth, 0) * 22px); border-bottom: 1px solid var(--color-border); border-left: 3px solid var(--type-feature); background: color-mix(in srgb, var(--type-feature) 7%, var(--color-surface)); }
+.fsec-h.direct { border-left-color: var(--color-border); background: var(--color-surface); }
+.fsec-h .t { font-size: var(--text-md); font-weight: var(--weight-semibold); }
+.fsec-h.direct .t { font-size: var(--text-sm); }
+.fsec-h .path, .fsec-h .open { color: var(--color-muted); font-size: var(--text-xs); text-decoration: none; }
+.fsec-h .open:hover { color: var(--color-accent); text-decoration: underline; }
+.fsec-empty { padding: var(--space-2) var(--space-4) var(--space-3) calc(var(--space-4) + 28px + var(--depth, 0) * 22px); background: var(--color-surface); color: var(--color-muted); font-size: var(--text-sm); }
+
+/* Board grid: row header + one column per Task state (the Taskboard's) */
+.tb { display: grid; grid-template-columns: 268px repeat(var(--cols), minmax(176px, 1fr)); min-width: calc(268px + var(--cols) * 176px); }
+.tb > * { min-width: 0; }
+.colh { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 var(--space-3); background: var(--color-surface); border-bottom: 1px solid var(--color-border); border-right: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); font-weight: var(--weight-medium); }
+.colh .n { color: var(--color-muted); font-weight: var(--weight-medium); font-variant-numeric: tabular-nums; }
+.colh.first { left: 0; z-index: 4; gap: 4px; color: var(--color-muted); font-size: var(--text-xs); font-weight: var(--weight-medium); }
+.rowh { position: sticky; left: 0; z-index: 2; display: grid; gap: 6px; align-content: start; padding: var(--space-2) var(--space-3) var(--space-2) var(--space-2); background: var(--color-surface); border-bottom: 1px solid var(--color-border); border-right: 1px solid var(--color-border); }
+.rowh .top { display: flex; align-items: center; gap: 6px; }
+.rowh .ttl { padding-left: 28px; font-weight: var(--weight-medium); line-height: 1.3; overflow-wrap: anywhere; }
+.rowh .meta { display: flex; align-items: center; gap: 8px; padding-left: 28px; flex-wrap: wrap; }
+.rowh .hint { padding-left: 28px; color: var(--color-muted); font-size: var(--text-xs); }
+.rowh.collapsed { grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; padding-block: 5px; }
+.rowh.collapsed .t1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: var(--weight-medium); }
+.who { display: flex; align-items: center; gap: 8px; font-weight: var(--weight-medium); }
+.prog { display: inline-flex; align-items: center; gap: 6px; color: var(--color-muted); font-size: var(--text-xs); font-variant-numeric: tabular-nums; }
+.prog .bar { position: relative; width: 44px; height: 4px; overflow: hidden; border-radius: 2px; background: var(--color-surface-2); }
+.prog .bar i { position: absolute; inset: 0 auto 0 0; background: var(--color-ok); }
+.stsel { display: inline-flex; align-items: center; gap: 2px; }
+.stsel .st { width: 7px; overflow: hidden; gap: 0; }
+.stsel select { height: 22px; padding: 0 2px; border: 1px solid transparent; border-radius: var(--radius-sm); background: transparent; font-size: var(--text-sm); cursor: pointer; }
+.stsel select:hover, .stsel select:focus { border-color: var(--color-border); background: var(--color-surface); }
+.cell { display: flex; flex-direction: column; gap: 6px; min-height: 64px; padding: var(--space-2); border-bottom: 1px solid var(--color-border); border-right: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); transition: background .12s; }
+.cell.over { background: color-mix(in srgb, var(--color-accent-soft) 70%, transparent); box-shadow: inset 0 0 0 2px var(--color-accent); }
+.cell.thin { min-height: 0; padding-block: 6px; }
+.cnt { color: var(--color-muted); font-size: var(--text-xs); font-variant-numeric: tabular-nums; }
+
+/* Task card (the Taskboard's) */
+.card { position: relative; display: grid; gap: 5px; padding: 6px 8px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); box-shadow: 0 1px 1px rgb(16 24 40 / .04); cursor: grab; }
+.card:hover { border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-border)); }
+.card.dragging { opacity: .4; }
+.card.styled { border-left: 3px solid var(--rule); padding-left: 6px; background: color-mix(in srgb, var(--rule) 9%, var(--color-surface)); }
+.card.bold .title { font-weight: var(--weight-semibold); }
+.card .ct { display: flex; gap: 6px; align-items: flex-start; line-height: 1.3; }
+.card .ct .ti { margin-top: 1px; }
+.card .title { overflow-wrap: anywhere; }
+.card .cm { display: flex; align-items: center; gap: 6px; min-height: 20px; flex-wrap: wrap; }
+.card .par { display: flex; gap: 5px; align-items: center; overflow: hidden; color: var(--color-muted); font-size: var(--text-xs); white-space: nowrap; text-overflow: ellipsis; }
+.card .par .ti { width: 12px; height: 12px; font-size: 7px; }
+.card .par span { overflow: hidden; text-overflow: ellipsis; }
+.card.flash { animation: flash 1.6s ease-out; }
+@keyframes flash { 0%, 30% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 55%, transparent); } 100% { box-shadow: 0 1px 1px rgb(16 24 40 / .04); } }
+.tag { display: inline-flex; align-items: center; height: 18px; padding: 0 6px; border-radius: var(--radius-xs); background: color-mix(in srgb, var(--tag, var(--color-muted)) 18%, transparent); font-size: var(--text-2xs); font-weight: var(--weight-semibold); white-space: nowrap; }
+.add { align-self: flex-start; height: 22px; padding: 0 6px; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--color-muted); font-size: var(--text-xs); font-weight: var(--weight-medium); cursor: pointer; opacity: 0; }
+.cell:hover .add, .add:focus-visible, .cell.empty-row .add { opacity: 1; }
+.add:hover { background: var(--color-surface-2); color: var(--color-text); }
+@media (max-width: 900px) { .board { flex: none; max-height: 80vh; } }
+</style>
+</head>
+<body>
+<div id="appbar"></div>
+<section class="fb-head" id="head" aria-label="Feature"></section>
+<div class="toolbar">
+  <span class="spacer"></span>
+  <span class="xs muted">Group by</span>
+  <div class="seg" role="group" aria-label="Group by" id="groupSeg">
+    <button type="button" data-g="stories" aria-pressed="true">Stories</button><button type="button" data-g="people" aria-pressed="false">People</button>
+  </div>
+  <div class="faces none-on" id="faces" role="group" aria-label="Show tasks for"></div>
+  <a class="btn" href="taskboard.html?dialog=settings" title="The Feature board uses the Taskboard's card settings">⚙ Settings</a>
+  <button class="btn primary" type="button">+ Add story or bug</button>
+</div>
+<div class="board" id="board" role="region" aria-label="Feature board"></div>
+
+<script>
+(() => {
+  const { ME, people, stateCategory, states, sprints, items, doneItems, tasks, features, tIcon, av, esc, toast } = SL;
+  document.getElementById('appbar').outerHTML = SL.appBar('backlogs');
+  const params = new URLSearchParams(location.search);
+  const cat = s => stateCategory[s] || 'proposed';
+  const columns = states.task.filter(s => cat(s) !== 'removed');
+  const KEY = features.some(f => f.key === params.get('key')) ? params.get('key') : 'SHIP-101';
+
+  // Tasks under stories outside Sprint 24 (shared.js only has Sprint 24's). Same shape as SL.tasks.
+  const moreTasks = {
+    'SHIP-147': [['CSV writer for sprint data', 'New', 'ana', 'SHIP-185', 2, [], 2], ['Download button on Sprints', 'New', null, 'SHIP-186', 1, [], 2]],
+    'SHIP-156': [['Cycle time query', 'New', null, 'SHIP-187', 2, ['Spike'], 2]],
+    'SHIP-126': [['Fix currency on receipts', 'Closed', 'ana', 'SHIP-188', 1, [], 2]],
+    'SHIP-124': [['Merchant validation', 'Closed', 'tom', 'SHIP-164', 2, [], 2]],
+  };
+
+  // The tree in order: the Feature, then the Features under it depth first. Stories: open in backlog order, then closed.
+  const tree = [];
+  (function walk(key, depth) { tree.push({ ...features.find(f => f.key === key), depth }); features.filter(f => f.parent === key).forEach(f => walk(f.key, depth + 1)); })(KEY, 0);
+  const storiesOf = f => [...items, ...doneItems].filter(i => i.parent === f.title).sort((a, b) => (cat(a.state) === 'completed') - (cat(b.state) === 'completed'));
+  const toTask = parent => ([title, state, assignee, key, points, tags, priority]) => ({ key, parent, title, state, assignee, points, tags, priority });
+  const seed = () => ({
+    parents: tree.flatMap(f => storiesOf(f).map(s => ({ ...s, feature: f.key }))),
+    tasks: Object.entries({ ...tasks, ...moreTasks }).flatMap(([parent, list]) => list.map(toTask(parent))),
+  });
+
+  // Card settings are the Taskboard's (one settings document per project).
+  const swatch = { danger: 'var(--color-danger)', warn: 'var(--color-warn)', info: 'var(--color-info)' };
+  const rules = [{ name: 'Blocked', color: 'danger', test: t => t.tags.includes('Blocked') }, { name: 'Priority 1', color: 'warn', bold: true, test: t => t.priority === 1 }];
+  const tagColors = { Blocked: 'danger', Spike: 'info', 'Tech debt': 'warn' };
+  const S = {
+    ...seed(), group: params.get('view') === 'people' ? 'people' : 'stories', filter: new Set(),
+    collapsed: new Set(), closedSections: new Set(),
+  };
+  S.tasks = S.tasks.filter(t => S.parents.some(p => p.key === t.parent));
+  S.parents.filter(p => cat(p.state) === 'completed').forEach(p => S.collapsed.add(p.key));
+  const board = document.getElementById('board');
+
+  const parentOf = t => S.parents.find(p => p.key === t.parent);
+  const featureOf = key => tree.find(f => f.key === key);
+  const visible = t => !S.filter.size || S.filter.has(t.assignee || 'none');
+  const ruleFor = t => rules.find(r => r.test(t));
+  const sprintName = id => sprints.find(s => s.id === id)?.name;
+  const pill = id => !id ? '<span class="sprint-pill none" title="Not in a sprint">Backlog</span>'
+    : `<span class="sprint-pill${sprints.find(s => s.id === id).status === 'current' ? ' cur' : ''}" title="${sprints.find(s => s.id === id).status === 'current' ? 'Current sprint' : sprintName(id)}">◷ ${sprintName(id)}</span>`;
+  const rollup = keys => {
+    const ps = S.parents.filter(p => keys.includes(p.feature)), ts = S.tasks.filter(t => ps.some(p => p.key === t.parent)), done = x => cat(x.state) === 'completed';
+    return { stories: ps.length, closed: ps.filter(done).length, pts: ps.reduce((a, p) => a + p.points, 0), ptsDone: ps.filter(done).reduce((a, p) => a + p.points, 0), tasks: ts.length, tasksDone: ts.filter(done).length,
+      sprints: [...new Set(ps.map(p => p.sprint))].sort((a, b) => (a === null) - (b === null) || String(a).localeCompare(String(b))) };
+  };
+
+  function head() {
+    const f = tree[0], r = rollup(tree.map(x => x.key));
+    const jump = tree.length > 1 ? `<div class="jump"><span class="xs muted">Jump to</span>${tree.map(x => { const rr = rollup([x.key]); return `<a href="#sec-${x.key}">${tIcon('feature')}<span class="key">${x.key}</span>${esc(x.title)}<span class="mini"><i style="width:${rr.stories ? Math.round(rr.closed / rr.stories * 100) : 0}%"></i></span></a>`; }).join('')}</div>` : '';
+    document.getElementById('head').innerHTML = `
+      <a class="back" href="${KEY === 'SHIP-101' ? 'feature.html' : '#'}">← ${f.key} ${esc(f.title)}</a>
+      <div class="fb-title">${tIcon('feature')}<span class="key">${f.key}</span><h1>${esc(f.title)}</h1><span class="chip">${SL.st(f.state)}</span>${tree.length > 1 ? `<span class="chip accent">${tree.length - 1} Feature${tree.length > 2 ? 's' : ''} under it</span>` : ''}<span class="spacer"></span><span class="xs muted">Feature board</span></div>
+      <div class="fb-stats">
+        <span><b>${r.closed}</b> of <b>${r.stories}</b> stories and bugs closed</span>
+        <span><span class="bigbar"><i style="width:${r.pts ? Math.round(r.ptsDone / r.pts * 100) : 0}%"></i></span> <b>${r.ptsDone}</b>/<b>${r.pts}</b> pts</span>
+        <span>Tasks <b>${r.tasksDone}</b>/<b>${r.tasks}</b></span>
+        <span class="row" style="gap:4px">${r.sprints.map(pill).join('')}</span>
+      </div>${jump}`;
+  }
+
+  function card(t) {
+    const r = ruleFor(t), p = parentOf(t), multi = tree.length > 1;
+    const tags = t.tags.map(g => `<span class="tag" style="--tag:${swatch[tagColors[g]] || 'var(--color-muted)'}">${esc(g)}</span>`).join('');
+    const par = S.group === 'people' ? `<div class="par">${multi ? `${tIcon('feature')}<span>${esc(featureOf(p.feature).title)}</span><span>›</span>` : ''}${tIcon(p.type)}<span>${esc(p.title)}</span></div>` : '';
+    return `<article class="card${r ? ' styled' : ''}${r && r.bold ? ' bold' : ''}"${r ? ` style="--rule:${swatch[r.color]}" title="Style: ${esc(r.name)}"` : ''} draggable="true" tabindex="0" data-key="${t.key}" aria-label="${esc(t.title)}, ${t.state}">
+      ${par}<div class="ct">${tIcon('task')}<span class="title">${esc(t.title)}</span></div>
+      <div class="cm"><span class="key">${t.key}</span>${tags}<span class="spacer"></span>${t.assignee ? av(t.assignee) : '<span class="av none" title="Unassigned"></span>'}</div>
+    </article>`;
+  }
+
+  function colHeads(shown, first) {
+    return `<div class="colh first">${first}</div>` + columns.map(c => `<div class="colh"><span class="st ${cat(c)}">${c}</span><span class="n">${shown.filter(t => t.state === c).length}</span></div>`).join('');
+  }
+
+  function storyHead(p, collapsed) {
+    const ts = S.tasks.filter(t => t.parent === p.key), done = ts.filter(t => cat(t.state) === 'completed').length;
+    const toggle = `<button class="ib" type="button" data-collapse="${p.key}" aria-expanded="${!collapsed}" aria-label="${collapsed ? 'Expand' : 'Collapse'} ${p.key}">${collapsed ? '▶' : '▼'}</button>`;
+    if (collapsed) return `<div class="rowh collapsed">${toggle}${tIcon(p.type)}<span class="t1" title="${esc(p.title)} · ${p.sprint ? sprintName(p.sprint) : 'Backlog'}">${esc(p.title)}</span><span class="st ${cat(p.state)}">${p.state}</span></div>`;
+    const stSel = `<span class="stsel"><span class="st ${cat(p.state)}"></span><select data-pstate="${p.key}" aria-label="State of ${p.key}">${states.story.filter(s => cat(s) !== 'removed').map(n => `<option${n === p.state ? ' selected' : ''}>${n}</option>`).join('')}</select></span>`;
+    const prog = ts.length ? `<span class="prog" title="${done} of ${ts.length} tasks in a Completed state">☑ ${done}/${ts.length}<span class="bar"><i style="width:${Math.round(done / ts.length * 100)}%"></i></span></span>` : '<span class="prog">No tasks yet</span>';
+    return `<div class="rowh">
+      <div class="top">${toggle}${tIcon(p.type)}<span class="key">${p.key}</span>${pill(p.sprint)}<span class="spacer"></span><span class="pts" title="Story points">${p.points} pts</span></div>
+      <div class="ttl">${esc(p.title)}</div>
+      <div class="meta">${stSel}${av(p.assignee)}${prog}</div>
+    </div>`;
+  }
+
+  function storyGrid(parents) {
+    const shown = S.tasks.filter(visible).filter(t => parents.some(p => p.key === t.parent));
+    let h = colHeads(shown, 'Story / bug');
+    for (const p of parents) {
+      const collapsed = S.collapsed.has(p.key), rowTasks = shown.filter(t => t.parent === p.key);
+      h += storyHead(p, collapsed);
+      h += columns.map((c, ci) => {
+        const ts = rowTasks.filter(t => t.state === c);
+        if (collapsed) return `<div class="cell thin" data-row="${p.key}" data-col="${c}"><span class="cnt">${ts.length || ''}</span></div>`;
+        const empty = ci === 0 && !S.tasks.some(t => t.parent === p.key);
+        return `<div class="cell${empty ? ' empty-row' : ''}" data-row="${p.key}" data-col="${c}">${ts.map(card).join('')}${ci === 0 ? '<button class="add" type="button">+ Task</button>' : ''}</div>`;
+      }).join('');
+    }
+    return `<div class="tb" style="--cols:${columns.length}" role="grid">${h}</div>`;
+  }
+
+  function sectionHead(f, direct) {
+    const r = rollup([f.key]), closed = S.closedSections.has(f.key);
+    const toggle = `<button class="ib" type="button" data-section="${f.key}" aria-expanded="${!closed}" aria-label="${closed ? 'Expand' : 'Collapse'} ${f.key}">${closed ? '▶' : '▼'}</button>`;
+    const prog = `<span class="prog">${r.closed}/${r.stories} stories<span class="bar"><i style="width:${r.stories ? Math.round(r.closed / r.stories * 100) : 0}%"></i></span></span><span class="prog">${r.ptsDone}/${r.pts} pts</span>`;
+    if (direct) return `<div class="fsec-h direct">${toggle}<span class="t">Directly under ${f.key}</span>${prog}</div>`;
+    const parent = f.depth > 1 ? `<span class="path">in ${f.parent} ${esc(featureOf(f.parent).title)}</span>` : '';
+    return `<div class="fsec-h" style="--depth:${f.depth - 1}">${toggle}${tIcon('feature')}<span class="key">${f.key}</span><span class="t">${esc(f.title)}</span>${parent}${SL.st(f.state)}${prog}<span class="spacer"></span><a class="open" href="${f.key === 'SHIP-101' ? 'feature.html' : '#'}">Open Feature ↗</a></div>`;
+  }
+
+  function personHead(row, n, nf) {
+    const label = row === 'none' ? '<span class="av none"></span>Unassigned' : `${av(row)}${people[row].name}${row === ME ? ' <span class="muted">(you)</span>' : ''}`;
+    return `<div class="rowh person"><div class="who">${label}</div><div class="hint">${n} task${n === 1 ? '' : 's'}${tree.length > 1 ? ` · ${nf} Feature${nf === 1 ? '' : 's'}` : ''}</div></div>`;
+  }
+
+  function peopleGrid() {
+    const shown = S.tasks.filter(visible);
+    const rows = ['none', ...Object.keys(people).sort((a, b) => people[a].name.localeCompare(people[b].name))].filter(r => shown.some(t => (t.assignee || 'none') === r));
+    let h = colHeads(shown, 'Person');
+    for (const row of rows) {
+      const ts = shown.filter(t => (t.assignee || 'none') === row);
+      h += personHead(row, ts.length, new Set(ts.map(t => parentOf(t).feature)).size);
+      h += columns.map(c => `<div class="cell" data-row="${row}" data-col="${c}">${ts.filter(t => t.state === c).map(card).join('')}</div>`).join('');
+    }
+    return `<div class="tb" style="--cols:${columns.length}" role="grid">${h}</div>`;
+  }
+
+  function render() {
+    head();
+    if (S.group === 'people') { board.innerHTML = peopleGrid(); faces(); return; }
+    board.innerHTML = tree.map((f, i) => {
+      const parents = S.parents.filter(p => p.feature === f.key);
+      if (i === 0 && tree.length === 1) return `<section class="fsec" id="sec-${f.key}">${storyGrid(parents)}</section>`;
+      if (i === 0 && !parents.length) return '';
+      const body = S.closedSections.has(f.key) ? '' : parents.length ? storyGrid(parents) : `<p class="fsec-empty" style="--depth:${f.depth - 1}">No stories or bugs yet.</p>`;
+      return `<section class="fsec" id="sec-${f.key}">${sectionHead(f, i === 0)}${body}</section>`;
+    }).join('');
+    faces();
+  }
+
+  function faces() {
+    const el = document.getElementById('faces');
+    el.classList.toggle('none-on', !S.filter.size);
+    el.innerHTML = Object.keys(people).map(p => `<button class="face" type="button" data-face="${p}" aria-pressed="${S.filter.has(p)}" title="${people[p].name}">${av(p)}</button>`).join('') +
+      `<button class="face" type="button" data-face="none" aria-pressed="${S.filter.has('none')}" title="Unassigned"><span class="av none"></span></button>`;
+  }
+
+  function flash(key) {
+    const el = board.querySelector(`[data-key="${key}"]`);
+    if (el) { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
+  }
+
+  // The Taskboard's move: column writes state, row writes parent (Stories) or assignee (People). Never the sprint.
+  function move(key, row, col, beforeKey = null) {
+    const t = S.tasks.find(x => x.key === key); if (!t) return;
+    const msgs = [];
+    if (S.group === 'stories' && row !== t.parent) { t.parent = row; msgs.push(`moved under ${row}`); }
+    if (S.group === 'people') { const a = row === 'none' ? null : row; if (a !== t.assignee) { t.assignee = a; msgs.push(a ? `assigned to ${a === ME ? 'you' : people[a].name}` : 'unassigned'); } }
+    if (col !== t.state) { t.state = col; msgs.push(`→ ${col}`); }
+    if (!t.assignee && cat(t.state) === 'in-progress') { t.assignee = ME; msgs.push('assigned to you'); }
+    S.tasks.splice(S.tasks.indexOf(t), 1);
+    const bi = beforeKey ? S.tasks.findIndex(x => x.key === beforeKey) : -1;
+    bi >= 0 ? S.tasks.splice(bi, 0, t) : S.tasks.push(t);
+    if (S.group === 'stories') S.collapsed.delete(t.parent);
+    render(); flash(key);
+    if (msgs.length) toast(`“${esc(t.title)}” ${esc(msgs.join(' · '))}`);
+  }
+
+  let dragKey = null;
+  board.addEventListener('dragstart', e => { const c = e.target.closest('.card'); if (!c) return; dragKey = c.dataset.key; c.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
+  board.addEventListener('dragend', () => { dragKey = null; board.querySelectorAll('.dragging, .over').forEach(x => x.classList.remove('dragging', 'over')); });
+  board.addEventListener('dragover', e => { const cell = e.target.closest('.cell'); if (!cell || !dragKey) return; e.preventDefault(); board.querySelectorAll('.over').forEach(x => x !== cell && x.classList.remove('over')); cell.classList.add('over'); });
+  board.addEventListener('drop', e => {
+    const cell = e.target.closest('.cell'); if (!cell || !dragKey) return; e.preventDefault();
+    const before = e.target.closest('.card');
+    move(dragKey, cell.dataset.row, cell.dataset.col, before && before.dataset.key !== dragKey ? before.dataset.key : null);
+  });
+  board.addEventListener('click', e => {
+    const c = e.target.closest('[data-collapse]'); if (c) { const k = c.dataset.collapse; S.collapsed.has(k) ? S.collapsed.delete(k) : S.collapsed.add(k); render(); return; }
+    const s = e.target.closest('[data-section]'); if (s) { const k = s.dataset.section; S.closedSections.has(k) ? S.closedSections.delete(k) : S.closedSections.add(k); render(); }
+  });
+  board.addEventListener('change', e => {
+    const sel = e.target.closest('[data-pstate]'); if (!sel) return;
+    const p = S.parents.find(x => x.key === sel.dataset.pstate); p.state = sel.value;
+    if (cat(p.state) === 'completed') S.collapsed.add(p.key);
+    render(); toast(`${p.key} → ${esc(p.state)}`);
+  });
+  document.getElementById('faces').addEventListener('click', e => {
+    const f = e.target.closest('[data-face]'); if (!f) return;
+    S.filter.has(f.dataset.face) ? S.filter.delete(f.dataset.face) : S.filter.add(f.dataset.face); render();
+  });
+  const setGroup = g => { S.group = g; document.querySelectorAll('#groupSeg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.g === g)); render(); };
+  document.getElementById('groupSeg').addEventListener('click', e => { const b = e.target.closest('[data-g]'); if (b) setGroup(b.dataset.g); });
+  const reset = () => { Object.assign(S, seed()); S.tasks = S.tasks.filter(t => S.parents.some(p => p.key === t.parent)); S.filter.clear(); S.closedSections.clear(); render(); toast('Board reset'); };
+
+  setGroup(S.group);
+  SL.preview([{ label: KEY === 'SHIP-101' ? 'Parent Feature' : 'Leaf Feature', run: () => { location.search = KEY === 'SHIP-101' ? '?key=SHIP-103' : ''; } }, { label: 'Reset', run: reset }]);
+})();
+</script>
+</body>
+</html>

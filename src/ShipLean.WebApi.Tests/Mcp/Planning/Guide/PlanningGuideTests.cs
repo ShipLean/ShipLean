@@ -24,6 +24,20 @@ public class PlanningGuideTests : McpFixture
     }
 
     [Test]
+    public async Task PlanningGuide_WhenClientReadsOnlyText_ShouldGiveTheSummaryThenTheMarkdownThenTheJson()
+    {
+        var token = await TokenAsync(TestUser.Joel, ReadOnly);
+
+        var reply = await CallToolAsync(token, "planning_guide", """{"part":"work"}""");
+
+        var texts = reply.Texts();
+        texts.Count.ShouldBe(3);
+        texts[0].ShouldBe("The work part of the planning guide; the Markdown follows.");
+        texts[1].ShouldBe(PlanGuide.Read(PlanGuidePart.Work));
+        reply.TextJson().GetProperty("markdown").GetString().ShouldBe(texts[1]);
+    }
+
+    [Test]
     public async Task PlanningGuide_EachPart_ShouldReturnThatFile()
     {
         var token = await TokenAsync(TestUser.Joel, ReadOnly);

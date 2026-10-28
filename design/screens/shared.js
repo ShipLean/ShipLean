@@ -115,6 +115,7 @@
     'board-settings': [],
     'work-item': ['mei'],
     feature: ['ana'],
+    'feature-board': ['mei'],
     attachment: [],
     settings: [],
     import: [],
@@ -150,7 +151,7 @@
     backlog: ['Backlogs', 'Stories'], planning: ['Backlogs', 'Stories', 'Planning'], features: ['Backlogs', new URLSearchParams(location.search).get('level') === 'epics' ? 'Epics' : 'Features'],
     'sprint-backlog': ['Sprints', 'Sprint 24', 'Backlog'], capacity: ['Sprints', 'Sprint 24', 'Capacity'], sprints: ['Sprints', 'All sprints'], 'sprint-end': ['Sprints', 'Sprint 24'],
     taskboard: ['Sprints', 'Sprint 24', 'Taskboard'], board: ['Boards', 'Stories'], 'features-board': ['Boards', new URLSearchParams(location.search).get('level') === 'epics' ? 'Epics' : 'Features'], 'board-settings': ['Boards', 'Stories', 'Settings'],
-    'work-item': ['Backlogs', 'SHIP-141'], feature: ['Backlogs', 'Features', 'SHIP-101'], attachment: ['Backlogs', 'SHIP-101', 'design-v0.2.md'], settings: ['Settings'], import: ['Jira import'],
+    'work-item': ['Backlogs', 'SHIP-141'], feature: ['Backlogs', 'Features', 'SHIP-101'], 'feature-board': ['Backlogs', new URLSearchParams(location.search).get('key') || 'SHIP-101', 'Feature board'], attachment: ['Backlogs', 'SHIP-101', 'design-v0.2.md'], settings: ['Settings'], import: ['Jira import'],
     'new-project': ['New project'], instance: ['Instance settings'], profile: ['Your profile'],
   };
   // Pages that belong to the install or to you, not to a project: the breadcrumb starts at ShipLean and there's no Live dot.

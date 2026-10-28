@@ -5,11 +5,12 @@ using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Mcp;
+using ShipLean.WebApi.Features.Mcp.Transport;
 
 namespace ShipLean.WebApi.Features.Mcp.Errors;
 
 // Wraps every tool call. An ApiException a tool throws (a tool never catches it) becomes an error result in the McpError
-// shape: IsError, the McpError as structured content, and its message as the one line of text. Anything else becomes
+// shape: IsError, the McpError as the result, and its message as the summary line (McpToolResult). Anything else becomes
 // internal_error with the fixed message and is logged; cancellation and protocol errors pass through to the SDK.
 public static class ToolErrorFilter
 {
@@ -36,11 +37,6 @@ public static class ToolErrorFilter
     public static CallToolResult Result(ApiException exception)
     {
         var error = McpError.Create(exception.Code, exception.Message, exception.Field, exception.Candidates);
-        return new CallToolResult
-        {
-            IsError = true,
-            Content = [new TextContentBlock { Text = error.Error.Message }],
-            StructuredContent = JsonSerializer.SerializeToElement(error),
-        };
+        return McpToolResult.Of(JsonSerializer.SerializeToElement(error), error.Error.Message, isError: true);
     }
 }
