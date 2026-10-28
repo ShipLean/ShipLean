@@ -174,20 +174,8 @@ public sealed class PullRequestSync(NpgsqlDataSource dataSource, IWorkItemStore 
             new { id }, cancellationToken: cancellationToken));
     }
 
-    // Retries a stale revision with the item's current one. False when every attempt was stale.
-    private async Task<bool> PatchAsync(Guid id, int revision, WorkItemChanges changes, WriteOptions options, CancellationToken cancellationToken)
-    {
-        for (var attempt = 0; attempt < Attempts; attempt++)
-        {
-            var outcome = await store.PatchAsync(id, new WorkItemPatch(revision, changes), options, cancellationToken);
-            if (outcome.Written is not null)
-            {
-                return true;
-            }
-            revision = outcome.Conflict!.Current.Revision;
-        }
-        return false;
-    }
+    private Task<bool> PatchAsync(Guid id, int revision, WorkItemChanges changes, WriteOptions options, CancellationToken cancellationToken)
+        => LinkWrites.PatchAsync(store, id, revision, changes, options, cancellationToken);
 
     private static string Db<T>(T value) where T : struct, Enum => System.Text.Json.JsonNamingPolicy.CamelCase.ConvertName(value.ToString());
 

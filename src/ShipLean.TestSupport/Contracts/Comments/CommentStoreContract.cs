@@ -60,9 +60,10 @@ public abstract class CommentStoreContract
     {
         var workItem = await ArrangeWorkItemAsync();
 
-        var added = await CreateStore(Joel).AddAsAgentAsync(workItem, new CommentCreate("Done: **merged**"), "Relay");
+        var added = await CreateStore(Joel).AddAsAgentAsync(workItem, new CommentCreate("Done: **merged**"), "Relay", Priya);
 
         added.AgentName.ShouldBe("Relay");
+        added.Author.ShouldNotBeNull().Id.ShouldBe(Priya);
         added.BodyHtml.ShouldContain("<strong>merged</strong>");
         var listed = await CreateStore(Joel).ListAsync(workItem);
         listed.Select(c => c.AgentName).ShouldBe(["Relay"]);

@@ -67,7 +67,7 @@ public class PostgresCommentStoreContractTests : CommentStoreContract
         var workItem = await ArrangeWorkItemAsync();
 
         var mcp = await CreateStore(SeedIds.Users.Joel, "Claude Code", "claude.ai", true).AddAsync(workItem, new CommentCreate("From an MCP agent"));
-        var relay = await CreateStore(SeedIds.Users.Joel).AddAsAgentAsync(workItem, new CommentCreate("From the relay"), "Relay");
+        var relay = await CreateStore(SeedIds.Users.Joel).AddAsAgentAsync(workItem, new CommentCreate("From the relay"), "Relay", SeedIds.Users.Joel);
 
         relay.AgentName.ShouldBe("Relay");
         Prompts.Comments.ShouldNotContain(mcp.Id);

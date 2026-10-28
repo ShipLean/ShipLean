@@ -105,7 +105,7 @@ public sealed class ShipLeanHost : IAsyncDisposable
             // No background webhook sending: a test that creates sessions reads the outbox as queued, and one about sending drives AgentDeliverer itself.
             builder.ConfigureTestServices(services =>
             {
-                foreach (var descriptor in services.Where(d => d.ServiceType == typeof(IHostedService) && d.ImplementationType == typeof(AgentDeliveryService)).ToList())
+                foreach (var descriptor in services.Where(d => d.ServiceType == typeof(IHostedService) && (d.ImplementationType == typeof(AgentDeliveryService) || d.ImplementationType == typeof(AgentStaleService))).ToList())
                 {
                     services.Remove(descriptor);
                 }

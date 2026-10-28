@@ -22,5 +22,8 @@ public sealed class AgentDispatchServices : IServiceModule
         services.AddHostedService<AgentDeliveryService>();
         services.AddSingleton<AgentPrompter>();
         services.AddSingleton<IAgentPrompts>(sp => sp.GetRequiredService<AgentPrompter>());
+        services.AddSingleton<AgentStaleSweeper>();
+        services.AddHostedService<AgentStaleService>();
+        services.AddScoped<IAgentReports, AgentReports>();
     }
 }

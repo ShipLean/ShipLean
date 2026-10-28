@@ -11,8 +11,9 @@ public interface ICommentStore
 
     // Like AddAsync, for a comment an agent wrote (a connection's response, error or commentCreate through the Linear-compatible
     // endpoint): agentName is stored as the comment's agent stamp, and a stamped comment never becomes a `prompted` webhook.
-    // Only trusted server code calls this; it is not reachable from a request body.
-    Task<CommentDto> AddAsAgentAsync(Guid workItemId, CommentCreate create, string agentName, CancellationToken cancellationToken = default);
+    // A bearer request has no signed-in user, so the caller names the author (the user who started the session). Only trusted
+    // server code calls this; it is not reachable from a request body.
+    Task<CommentDto> AddAsAgentAsync(Guid workItemId, CommentCreate create, string agentName, Guid authorId, CancellationToken cancellationToken = default);
 
     // Author only. Throws NotFound for an unknown or archived comment, Forbidden for anyone else, Validation for a blank or too long body.
     Task<CommentDto> EditAsync(Guid id, CommentEdit edit, CancellationToken cancellationToken = default);

@@ -11,7 +11,4 @@ internal static class LinearErrors
 
     public static GraphQLException Invalid(string message)
         => new(ErrorBuilder.New().SetMessage(message).SetCode("INVALID_INPUT").SetExtension("type", "invalid input").SetExtension("userError", true).Build());
-
-    public static GraphQLException NotAvailable(string operation)
-        => new(ErrorBuilder.New().SetMessage($"{operation} is not available on this server yet.").SetCode("NOT_IMPLEMENTED").Build());
 }

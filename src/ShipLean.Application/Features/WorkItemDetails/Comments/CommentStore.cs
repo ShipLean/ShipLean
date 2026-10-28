@@ -36,16 +36,16 @@ public sealed class CommentStore(
     }
 
     public Task<CommentDto> AddAsync(Guid workItemId, CommentCreate create, CancellationToken cancellationToken = default)
-        => AddStampedAsync(workItemId, create, AgentStamp.Of(currentAgent), cancellationToken);
+        => AddStampedAsync(workItemId, create, AgentStamp.Of(currentAgent), currentUser.Id, cancellationToken);
 
-    public Task<CommentDto> AddAsAgentAsync(Guid workItemId, CommentCreate create, string agentName, CancellationToken cancellationToken = default)
+    public Task<CommentDto> AddAsAgentAsync(Guid workItemId, CommentCreate create, string agentName, Guid authorId, CancellationToken cancellationToken = default)
         => string.IsNullOrWhiteSpace(agentName)
             ? throw new ArgumentException("An agent comment needs an agent name.", nameof(agentName))
-            : AddStampedAsync(workItemId, create, agentName, cancellationToken);
+            : AddStampedAsync(workItemId, create, agentName, authorId, cancellationToken);
 
     // A comment with no agent stamp is a person's and, after commit, may start a `prompted` webhook; a stamped one (an MCP agent's
     // too) never does.
-    private async Task<CommentDto> AddStampedAsync(Guid workItemId, CommentCreate create, string? agentName, CancellationToken cancellationToken)
+    private async Task<CommentDto> AddStampedAsync(Guid workItemId, CommentCreate create, string? agentName, Guid authorId, CancellationToken cancellationToken)
     {
         var body = RequireBody(create?.Body);
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
@@ -57,7 +57,7 @@ public sealed class CommentStore(
             INSERT INTO comment (id, work_item_id, author_id, body, created_at, updated_at, agent_name)
             VALUES (@id, @workItemId, @authorId, @body, @now, @now, @agentName)
             """,
-            new { id, workItemId, authorId = currentUser.Id, body, now, agentName },
+            new { id, workItemId, authorId, body, now, agentName },
             cancellationToken: cancellationToken));
         var added = await ReadAsync(connection, id, cancellationToken);
         await PublishChangedAsync(connection, workItemId, cancellationToken);

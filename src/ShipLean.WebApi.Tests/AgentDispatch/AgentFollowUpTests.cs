@@ -97,7 +97,7 @@ public class AgentFollowUpTests : ApiFixture
         await using var scope = Host.Services.CreateAsyncScope();
         var comments = scope.ServiceProvider.GetRequiredService<ICommentStore>();
 
-        var written = await comments.AddAsAgentAsync(itemId, new CommentCreate("All done, PR is up"), "Relay");
+        var written = await comments.AddAsAgentAsync(itemId, new CommentCreate("All done, PR is up"), "Relay", SeedIds.Users.Joel);
 
         written.AgentName.ShouldBe("Relay");
         (await AgentDispatchArrange.DeliveriesAsync(database, itemId)).ShouldHaveSingleItem().Action.ShouldBe("created");
