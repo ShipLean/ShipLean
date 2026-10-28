@@ -101,5 +101,12 @@
     "projectId": "00000002-0000-4000-8000-000000000001",
     "clientId": "tab-7f3a91c2",
     "workItemId": "00000005-0000-4000-8001-000000000101"
+  },
+  "agentSessionChanged": {
+    "type": "agentSessionChanged",
+    "projectId": "00000002-0000-4000-8000-000000000001",
+    "clientId": null,
+    "workItemId": "00000005-0000-4000-8001-000000000141",
+    "sessionId": "00000009-0000-4000-8000-000000000001"
   }
 }
