@@ -29,6 +29,19 @@ public class McpToolRulesTests
     }
 
     [Test]
+    public void ToolResults_ShouldAllBeBuiltByMcpToolResult()
+    {
+        McpToolScan.HandBuiltToolResults(typeof(ApiMarker).Assembly, McpToolScan.WholeAssembly).ShouldBeEmpty();
+    }
+
+    [Test]
+    public void Guard_WhenReplyHelperBuildsContentByHand_ShouldFail()
+    {
+        McpToolScan.HandBuiltToolResults(typeof(McpToolRulesTests).Assembly, Fixtures)
+            .ShouldBe([$"{Fixtures}.Results.HandBuiltReply"]);
+    }
+
+    [Test]
     public void Guard_WhenToolLacksScope_ShouldFail()
     {
         McpToolScan.ToolsWithoutScope(typeof(McpToolRulesTests).Assembly, Fixtures)

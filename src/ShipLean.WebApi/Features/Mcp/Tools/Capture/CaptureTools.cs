@@ -65,7 +65,7 @@ internal sealed class CaptureTools(
             resolved.Key, McpOpenUrls.Backlog(url, resolved.Key, "stories"), false,
             [.. planned.Select(p => new PreviewItem(CaptureSupport.TypeName(p.Type), p.Title, p.ParentKey, p.SprintName, p.Points))],
             envelope.Seal(PlanKind, resolved.Id, new CapturePlan(planned)), (int)PlanEnvelope.Lifetime.TotalMinutes);
-        return CaptureSupport.Reply(preview, $"Preview of {planned.Count} items for {resolved.Key}; nothing is created yet. Call capture_work again with the plan to create them.");
+        return CaptureSupport.Reply(preview, $"Preview of {planned.Count} items for {resolved.Key}; nothing is created yet. Call capture_work again with the `plan` value from the JSON below to create them.");
     }
 
     [McpServerTool(Name = "break_down"), McpScope(McpScopes.Write)]

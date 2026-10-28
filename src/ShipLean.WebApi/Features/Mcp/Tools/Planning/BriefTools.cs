@@ -46,7 +46,7 @@ internal sealed class BriefTools(ItemResolver items, IPlanReads plans, IAttachme
         {
             result = await TaskBriefAsync(tree, itemId, projectKey, openUrl, resolved.Key, prefix, cancellationToken);
         }
-        return PlanningReply.Of(result, $"The brief for {resolved.Key}.");
+        return PlanningReply.Of(result, $"The brief for {resolved.Key}; the Markdown follows.", result.Markdown);
     }
 
     private static Guid? StoryId(PlanTree tree, Guid itemId)

@@ -145,7 +145,7 @@ Write the plan, then put it in the backlog with `capture_plan`. The plan review 
 
 A plan has at most 60 items (stories plus tasks, plus the Feature when it is new). A task brief is at most 10 KB, the common brief at most 64 KB and `plan_markdown` at most 200 KB. `context_k` over 150 is an error and over 100 a warning. A wave without lanes holds one Story, and lane names are unique within a wave. An error in the preview names the field; fix it and preview again.
 
-1. Call `capture_plan` without `plan`. That is a preview: it shows the stories, the item count and any warnings about the plan's shape, and it returns a `plan` token that expires after `expires_in_minutes`.
+1. Call `capture_plan` without `plan`. That is a preview: it shows the stories, the item count and any warnings about the plan's shape, and it returns a `plan` token that expires after `expires_in_minutes`. The token is the `plan` value in the result's JSON: copy it verbatim.
 2. Have a reviewer from a different model family than the author review the plan, using the `plan_reviewer` part. Give it the plan document, the common brief, the task briefs and the preview. Apply its findings, note which you rejected and why, and preview again after any change.
 3. Apply by calling `capture_plan` with exactly the same arguments plus that `plan`. Changed arguments are refused, so change nothing between the last preview and the apply.
 

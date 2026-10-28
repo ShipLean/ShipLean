@@ -1,10 +1,12 @@
 using System.Reflection;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using ShipLean.WebApi.Features.Mcp.Contracts;
+using ShipLean.WebApi.Features.Mcp.Transport;
 
 namespace ShipLean.UnitTest.Architecture.Mcp;
 
-// The three rules every MCP tool follows, as scans over the types of one namespace. The scope and internal rules scan
+// The rules every MCP tool follows, as scans over the types of one namespace. The scope and internal rules scan
 // the whole WebApi assembly and the data-access rule ShipLean.WebApi.Features.Mcp.Tools; the self-tests scan fixture types in this assembly that break each rule.
 public static class McpToolScan
 {
@@ -41,6 +43,18 @@ public static class McpToolScan
         => TypesIn(assembly, namespacePrefix)
             .Where(type => type.GetCustomAttribute<McpServerToolTypeAttribute>() is not null)
             .Where(type => type.IsPublic || type.IsNestedPublic || type.IsNestedFamily || type.IsNestedFamORAssem)
+            .Select(type => type.FullName!)
+            .Order(StringComparer.Ordinal)
+            .ToList();
+
+    // Every type other than McpToolResult that builds tool-result content by hand: it refers to CallToolResult and to a
+    // content block type, so its result could leave out the JSON block a text-only client needs.
+    public static IReadOnlyList<string> HandBuiltToolResults(Assembly assembly, string namespacePrefix)
+        => TypesIn(assembly, namespacePrefix)
+            .Where(type => type != typeof(McpToolResult) && type.DeclaringType != typeof(McpToolResult))
+            .Where(type => TypeReferences.Of(type) is var referenced
+                && referenced.Contains(typeof(CallToolResult))
+                && referenced.Any(r => r.IsSubclassOf(typeof(ContentBlock))))
             .Select(type => type.FullName!)
             .Order(StringComparer.Ordinal)
             .ToList();

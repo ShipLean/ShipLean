@@ -92,6 +92,6 @@ internal sealed class CapturePlanTools(
             previewStories.Count + previewStories.Sum(s => s.Tasks) + (target is null ? 1 : 0),
             [.. findings.Where(f => f.Severity == PlanFindingSeverity.Warning).Select(f => new PlanWarning(f.Field, f.Message))],
             envelope.Seal(PlanKind, resolved.Id, new CapturePlanSeal(CapturePlanDigest.Of(input), target?.Id, Guid.NewGuid())), (int)PlanEnvelope.Lifetime.TotalMinutes);
-        return PlanningReply.Of(preview, $"Preview of the plan for {resolved.Key}; nothing is created yet. Call capture_plan again with the same arguments and the plan to create it.");
+        return PlanningReply.Of(preview, $"Preview of the plan for {resolved.Key}; nothing is created yet. Call capture_plan again with the same arguments and the `plan` value from the JSON below to create it.");
     }
 }

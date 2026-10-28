@@ -64,9 +64,13 @@ The call-tool filter (`ToolScopeFilter`) is the backstop: it re-checks the scope
 
 The client address is the connection's, after forwarded headers (`docs/auth.md`, "Behind a proxy").
 
+## Tool results
+
+Every tool result, errors included, is built by `McpToolResult.Of`. `content` is text blocks in this order: one summary line, then the Markdown the result is about (only `get_brief` and `planning_guide`), then the result serialized as JSON. `structuredContent` is the same JSON object. A client that shows the model only `content` still gets the whole result: a preview's `plan` token, item keys, tags, a brief, `plan_status`'s waves. This is the spec's backwards-compatible shape ([Structured Content](https://modelcontextprotocol.io/specification/2025-06-18/server/tools#structured-content)); the cost is that a client showing both copies reads the result twice. A summary line that leads to a second call names what it needs from the JSON, as a preview names its `plan` value. `McpToolRulesTests` fails for any type other than `McpToolResult` that builds tool-result content.
+
 ## Tool errors
 
-A tool throws `ApiException` and never catches it. The call-tool filter turns it into a result with `isError: true`, `structuredContent` = `McpError` (`{ "ok": false, "error": { "code", "message", "field", "candidates" } }`, `field` and `candidates` from `ApiException.Field` and `.Candidates`) and the message as the one line of text. Any other exception becomes `internal_error` with the fixed message and is logged; the detail never reaches the agent. A missing scope is not a tool error: it is the HTTP 403 above.
+A tool throws `ApiException` and never catches it. The call-tool filter turns it into a result with `isError: true`, `structuredContent` = `McpError` (`{ "ok": false, "error": { "code", "message", "field", "candidates" } }`, `field` and `candidates` from `ApiException.Field` and `.Candidates`), the message as the summary line and the `McpError` as the JSON block. Any other exception becomes `internal_error` with the fixed message and is logged; the detail never reaches the agent. A missing scope is not a tool error: it is the HTTP 403 above.
 
 ## Search
 
@@ -148,8 +152,8 @@ The tools the richer Feature editor added. Each slice that adds a tool appends i
 
 1. A class marked `[McpServerToolType]`, **internal**, under `Features/Mcp/Tools/<Area>/`, with `[McpScope]` on each tool or on the class.
 2. No Dapper and no Npgsql in the tool: it calls the contracts (`IWorkItemStore`, `IProjectAccess`, ...) or a read in `Application/Features/Mcp/<Area>/`.
-3. Do not catch `ApiException`.
+3. Do not catch `ApiException`. Return the result through your area's reply helper (`WorkReply`, `PlanningReply`, ...), which calls `McpToolResult.Of`; never build a `CallToolResult` by hand.
 4. A sweep-rows file `WebApi.Tests/Mcp/<Area>/<Area>McpRows.cs` implementing `IMcpSweepRows`, with a row per tool. `McpAccessSweepTests` fails for a tool without one, and calls each row as Joel; a row's arguments name an entity in the seeded `PART` project (Joel is not a member), and the call must answer `not_found`.
 5. Tests go through `McpTestClient` and `ShipLeanHost.IssueAgentToken`. A tool that only the tests need is registered through `ConfigureTestServices` (`services.AddMcpServer().WithTools<T>()`), never in production code.
 
-The server also sends `instructions` (naming rules, previews, errors): `McpServerServices.Instructions`.
+The server also sends `instructions` (naming rules, previews, errors, the result shape, how to run a captured plan, and that these tools are the only way in): `McpServerServices.Instructions`.

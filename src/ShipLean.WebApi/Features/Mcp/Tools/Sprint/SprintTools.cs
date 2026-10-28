@@ -108,7 +108,7 @@ internal sealed class SprintTools(
             resolved.Key, url, head.Name, false, room, source, alreadyIn, [.. fill.Selected.Select(Line)], points,
             [.. fill.Left.Take(NextShown).Select(Line)], warnings,
             false, envelope.Seal(PlanKind, resolved.Id, new PlanSprintPlan(target.Id, sealedItems)), (int)PlanEnvelope.Lifetime.TotalMinutes);
-        return SprintReply.Of(preview, $"Preview: {fill.Selected.Count} items ({points} points) into {head.Name}, room {room}. Nothing moved yet; call plan_sprint again with the plan to apply it.");
+        return SprintReply.Of(preview, $"Preview: {fill.Selected.Count} items ({points} points) into {head.Name}, room {room}. Nothing moved yet; call plan_sprint again with the `plan` value from the JSON below to apply it.");
     }
 
     [McpServerTool(Name = "end_sprint"), McpScope(McpScopes.Plan, PreviewScope = McpScopes.Read)]
@@ -199,7 +199,7 @@ internal sealed class SprintTools(
         var preview = new EndSprintResult(
             resolved.Key, url, head.Name, false, lines, movedPoints, warnings,
             envelope.Seal(EndKind, resolved.Id, new EndSprintPlan(sprintId, destination, endToday, moves)), (int)PlanEnvelope.Lifetime.TotalMinutes);
-        return SprintReply.Of(preview, $"Preview: {lines.Count} unfinished items ({movedPoints} points) of {head.Name} would move to {targetName}. Nothing moved yet; call end_sprint again with the plan to apply it.");
+        return SprintReply.Of(preview, $"Preview: {lines.Count} unfinished items ({movedPoints} points) of {head.Name} would move to {targetName}. Nothing moved yet; call end_sprint again with the `plan` value from the JSON below to apply it.");
     }
 
     [McpServerTool(Name = "create_sprint"), McpScope(McpScopes.Plan)]

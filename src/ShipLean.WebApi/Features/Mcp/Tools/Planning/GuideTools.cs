@@ -37,6 +37,6 @@ internal sealed class GuideTools(ProjectResolver projects, IProjectAccess access
             resolved?.Key, resolved is null ? issuer : McpOpenUrls.Backlog(issuer, resolved.Key, "features"),
             wanted.WireName(), PlanGuide.Read(wanted), Enum.GetValues<PlanGuidePart>().Select(p => p.WireName()).ToList(),
             newest.Select(l => new PlanLesson(l.Feature, l.Retro, l.Text)).ToList());
-        return PlanningReply.Of(result, $"The {result.Part} part of the planning guide.");
+        return PlanningReply.Of(result, $"The {result.Part} part of the planning guide; the Markdown follows.", result.Markdown);
     }
 }
