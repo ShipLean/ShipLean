@@ -26,4 +26,12 @@ public sealed class AgentSessionController(AgentSessionEndpoints endpoints, IOpt
     [ProducesResponseType<ApiError>(StatusCodes.Status404NotFound)]
     public Task<AgentStartAvailabilityDto> Availability(Guid id, CancellationToken cancellationToken)
         => endpoints.AvailabilityAsync(id, cancellationToken);
+
+    // Stop: the agent is told to stop and the session stays live until it answers.
+    [HttpPost("stop")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ApiError>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ApiError>(StatusCodes.Status409Conflict)]
+    public async Task<NoContentResult> Stop(Guid id, CancellationToken cancellationToken)
+        => await NoContentAfter(endpoints.StopAsync(id, RequestOrigin.Of(Request, forwarding.Value), cancellationToken));
 }

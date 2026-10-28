@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using ShipLean.Application.Features.AgentDispatch;
@@ -12,5 +13,14 @@ public class AgentDispatchHostTests : ApiFixture
     public void Host_ShouldRunTheAgentDispatchSubscriber()
     {
         Host.Services.GetServices<IHostedService>().OfType<AgentDispatchSubscriber>().ShouldHaveSingleItem();
+    }
+
+    [Test]
+    public void AddServices_ShouldRegisterTheDeliveryService()
+    {
+        var services = new ServiceCollection();
+        new AgentDispatchServices().AddServices(services, new ConfigurationBuilder().Build());
+
+        services.ShouldContain(d => d.ServiceType == typeof(IHostedService) && d.ImplementationType == typeof(AgentDeliveryService));
     }
 }

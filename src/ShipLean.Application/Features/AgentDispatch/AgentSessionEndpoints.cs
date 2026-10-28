@@ -5,7 +5,7 @@ using ShipLean.Contracts.Errors;
 namespace ShipLean.Application.Features.AgentDispatch;
 
 // The item-level agent routes. Every one needs Member on the item's project, checked before anything else.
-public sealed class AgentSessionEndpoints(IProjectAccess access, ICurrentUser currentUser, AgentSessionStarter starter)
+public sealed class AgentSessionEndpoints(IProjectAccess access, ICurrentUser currentUser, AgentSessionStarter starter, AgentPrompter prompter)
 {
     public async Task<AgentStartAvailabilityDto> AvailabilityAsync(Guid workItemId, CancellationToken cancellationToken)
     {
@@ -26,5 +26,16 @@ public sealed class AgentSessionEndpoints(IProjectAccess access, ICurrentUser cu
             { Block: { } block } => throw ApiException.Validation(AgentStartMessages.For(block)),
             _ => throw ApiException.Internal(),
         };
+    }
+
+    // Stop: sends the agent a `prompted` with signal "stop". The session stays live until the agent answers (or 10 minutes pass).
+    // A second Stop on a session already stopping changes nothing. No live session is a Conflict (409).
+    public async Task StopAsync(Guid workItemId, string requestOrigin, CancellationToken cancellationToken)
+    {
+        await access.RequireAsync(ProjectItem.WorkItem, workItemId, ProjectRole.Member, cancellationToken);
+        if (await prompter.StopAsync(workItemId, currentUser.Id, requestOrigin, cancellationToken) == AgentPromptOutcome.NoLiveSession)
+        {
+            throw ApiException.Conflict("No agent session is running on this item.");
+        }
     }
 }

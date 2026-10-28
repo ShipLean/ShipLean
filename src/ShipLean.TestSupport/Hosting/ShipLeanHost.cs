@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using ShipLean.Application.Features.AgentDispatch;
 using ShipLean.Application.Features.Search.Index;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
@@ -97,6 +98,14 @@ public sealed class ShipLeanHost : IAsyncDisposable
             builder.ConfigureTestServices(services =>
             {
                 foreach (var descriptor in services.Where(d => d.ServiceType == typeof(IHostedService) && d.ImplementationType == typeof(SearchIndexHostedService)).ToList())
+                {
+                    services.Remove(descriptor);
+                }
+            });
+            // No background webhook sending: a test that creates sessions reads the outbox as queued, and one about sending drives AgentDeliverer itself.
+            builder.ConfigureTestServices(services =>
+            {
+                foreach (var descriptor in services.Where(d => d.ServiceType == typeof(IHostedService) && d.ImplementationType == typeof(AgentDeliveryService)).ToList())
                 {
                     services.Remove(descriptor);
                 }
