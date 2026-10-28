@@ -1,0 +1,235 @@
+    query issue_comments($id: String!, $after: String, $before: String, $filter: CommentFilter, $first: Int, $includeArchived: Boolean, $last: Int, $orderBy: PaginationOrderBy) {
+  issue(id: $id) {
+    comments(
+      after: $after
+      before: $before
+      filter: $filter
+      first: $first
+      includeArchived: $includeArchived
+      last: $last
+      orderBy: $orderBy
+    ) {
+      ...CommentConnection
+    }
+  }
+}
+    fragment ActorBot on ActorBot {
+  __typename
+  avatarUrl
+  subType
+  id
+  name
+  userDisplayName
+  type
+}
+fragment Comment on Comment {
+  __typename
+  agentSession {
+    id
+  }
+  url
+  reactionData
+  reactions {
+    ...Reaction
+  }
+  resolvingCommentId
+  documentContentId
+  initiativeId
+  initiativeUpdateId
+  issueId
+  parentId
+  projectId
+  projectUpdateId
+  botActor {
+    ...ActorBot
+  }
+  resolvingComment {
+    id
+  }
+  body
+  documentContent {
+    ...DocumentContent
+  }
+  syncedWith {
+    ...ExternalEntityInfo
+  }
+  externalThread {
+    ...SyncedExternalThread
+  }
+  externalUser {
+    id
+  }
+  initiative {
+    id
+  }
+  initiativeUpdate {
+    id
+  }
+  issue {
+    id
+  }
+  updatedAt
+  parent {
+    id
+  }
+  project {
+    id
+  }
+  projectUpdate {
+    id
+  }
+  quotedText
+  archivedAt
+  createdAt
+  editedAt
+  resolvedAt
+  id
+  resolvingUser {
+    id
+  }
+  user {
+    id
+  }
+}
+fragment SyncedExternalThread on SyncedExternalThread {
+  __typename
+  url
+  name
+  displayName
+  type
+  subType
+  id
+  isPersonalIntegrationRequired
+  isPersonalIntegrationConnected
+  isConnected
+}
+fragment WelcomeMessage on WelcomeMessage {
+  __typename
+  updatedAt
+  archivedAt
+  createdAt
+  title
+  id
+  updatedBy {
+    id
+  }
+  enabled
+}
+fragment Reaction on Reaction {
+  __typename
+  comment {
+    id
+  }
+  externalUser {
+    id
+  }
+  initiativeUpdate {
+    id
+  }
+  issue {
+    id
+  }
+  updatedAt
+  emoji
+  projectUpdate {
+    id
+  }
+  archivedAt
+  createdAt
+  id
+  user {
+    id
+  }
+}
+fragment AiPromptRules on AiPromptRules {
+  __typename
+  updatedAt
+  archivedAt
+  createdAt
+  id
+  updatedBy {
+    id
+  }
+}
+fragment ExternalEntityInfo on ExternalEntityInfo {
+  __typename
+  metadata {
+    ... on ExternalEntityInfoGithubMetadata {
+      ...ExternalEntityInfoGithubMetadata
+    }
+    ... on ExternalEntityInfoJiraMetadata {
+      ...ExternalEntityInfoJiraMetadata
+    }
+    ... on ExternalEntitySlackMetadata {
+      ...ExternalEntitySlackMetadata
+    }
+  }
+  service
+  id
+}
+fragment ExternalEntityInfoGithubMetadata on ExternalEntityInfoGithubMetadata {
+  __typename
+  number
+  owner
+  repo
+}
+fragment ExternalEntityInfoJiraMetadata on ExternalEntityInfoJiraMetadata {
+  __typename
+  issueTypeId
+  projectId
+  issueKey
+}
+fragment ExternalEntitySlackMetadata on ExternalEntitySlackMetadata {
+  __typename
+  messageUrl
+  channelId
+  channelName
+  isFromSlack
+}
+fragment DocumentContent on DocumentContent {
+  __typename
+  aiPromptRules {
+    ...AiPromptRules
+  }
+  content
+  contentState
+  document {
+    id
+  }
+  initiative {
+    id
+  }
+  issue {
+    id
+  }
+  updatedAt
+  projectMilestone {
+    id
+  }
+  project {
+    id
+  }
+  restoredAt
+  archivedAt
+  createdAt
+  id
+  welcomeMessage {
+    ...WelcomeMessage
+  }
+}
+fragment CommentConnection on CommentConnection {
+  __typename
+  nodes {
+    ...Comment
+  }
+  pageInfo {
+    ...PageInfo
+  }
+}
+fragment PageInfo on PageInfo {
+  __typename
+  startCursor
+  endCursor
+  hasPreviousPage
+  hasNextPage
+}

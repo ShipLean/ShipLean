@@ -1,0 +1,51 @@
+    query agentSession($id: String!) {
+  agentSession(id: $id) {
+    ...AgentSession
+  }
+}
+    fragment AgentSession on AgentSession {
+  __typename
+  plan
+  externalLinks {
+    ...AgentSessionExternalLink
+  }
+  sourceMetadata
+  externalLink
+  url
+  slugId
+  appUser {
+    id
+  }
+  sourceComment {
+    id
+  }
+  comment {
+    id
+  }
+  status
+  context
+  creator {
+    id
+  }
+  issue {
+    id
+  }
+  updatedAt
+  summary
+  dismissedAt
+  archivedAt
+  createdAt
+  endedAt
+  startedAt
+  id
+  dismissedBy {
+    id
+  }
+  externalUrls
+  type
+}
+fragment AgentSessionExternalLink on AgentSessionExternalLink {
+  __typename
+  label
+  url
+}

@@ -1,0 +1,13 @@
+    mutation createAgentActivity($input: AgentActivityCreateInput!) {
+  agentActivityCreate(input: $input) {
+    ...AgentActivityPayload
+  }
+}
+    fragment AgentActivityPayload on AgentActivityPayload {
+  __typename
+  agentActivity {
+    id
+  }
+  lastSyncId
+  success
+}

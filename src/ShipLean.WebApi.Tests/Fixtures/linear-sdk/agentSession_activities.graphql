@@ -1,0 +1,105 @@
+    query agentSession_activities($id: String!, $after: String, $before: String, $filter: AgentActivityFilter, $first: Int, $includeArchived: Boolean, $last: Int, $orderBy: PaginationOrderBy) {
+  agentSession(id: $id) {
+    activities(
+      after: $after
+      before: $before
+      filter: $filter
+      first: $first
+      includeArchived: $includeArchived
+      last: $last
+      orderBy: $orderBy
+    ) {
+      ...AgentActivityConnection
+    }
+  }
+}
+    fragment AgentActivity on AgentActivity {
+  __typename
+  signal
+  sourceMetadata
+  signalMetadata
+  agentSession {
+    id
+  }
+  content {
+    ... on AgentActivityActionContent {
+      ...AgentActivityActionContent
+    }
+    ... on AgentActivityElicitationContent {
+      ...AgentActivityElicitationContent
+    }
+    ... on AgentActivityErrorContent {
+      ...AgentActivityErrorContent
+    }
+    ... on AgentActivityPromptContent {
+      ...AgentActivityPromptContent
+    }
+    ... on AgentActivityResponseContent {
+      ...AgentActivityResponseContent
+    }
+    ... on AgentActivityThoughtContent {
+      ...AgentActivityThoughtContent
+    }
+  }
+  updatedAt
+  sourceComment {
+    id
+  }
+  archivedAt
+  createdAt
+  id
+  user {
+    id
+  }
+  ephemeral
+}
+fragment AgentActivityPromptContent on AgentActivityPromptContent {
+  __typename
+  body
+  title
+  type
+}
+fragment AgentActivityResponseContent on AgentActivityResponseContent {
+  __typename
+  body
+  type
+}
+fragment AgentActivityThoughtContent on AgentActivityThoughtContent {
+  __typename
+  body
+  type
+}
+fragment AgentActivityActionContent on AgentActivityActionContent {
+  __typename
+  action
+  parameter
+  result
+  type
+}
+fragment AgentActivityElicitationContent on AgentActivityElicitationContent {
+  __typename
+  body
+  type
+}
+fragment AgentActivityErrorContent on AgentActivityErrorContent {
+  __typename
+  reasonCode
+  body
+  type
+}
+fragment AgentActivityConnection on AgentActivityConnection {
+  __typename
+  nodes {
+    ...AgentActivity
+  }
+  pageInfo {
+    ...PageInfo
+  }
+}
+fragment PageInfo on PageInfo {
+  __typename
+  startCursor
+  endCursor
+  hasPreviousPage
+  hasNextPage
+}
