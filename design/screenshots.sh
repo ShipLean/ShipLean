@@ -45,6 +45,8 @@ declare -A variants=(
   [feature-link-private]="feature.html?addlink=private"
   [attachment-source]="attachment.html?view=source"
   [features-new]="features.html?dialog=new"
+  [feature-board-parent]="feature-board.html?key=SHIP-103"
+  [feature-board-people]="feature-board.html?key=SHIP-103&view=people"
 )
 
 names=("$@")

@@ -26,6 +26,7 @@ The screens here are reference designs for every page of the v1 domain model: **
 | `screens/sprints.html` | **All sprints**: the flat sprint list, the velocity chart and the New sprint form. |
 | `screens/sprint-end.html` | **Sprint end**: the dialog for unfinished work once a sprint's end date has passed. |
 | `screens/taskboard.html` | **Sprint Taskboard**: the sprint's stories and bugs × Task states, Group by Stories / People, and the Taskboard settings dialog. `?view=people` and `?dialog=settings[&pane=styles\|tags]` open those states. |
+| `screens/feature-board.html` | **Feature board**: the Taskboard grid for one Feature's stories and bugs in any sprint, opened from **Task board** on the Feature form. A parent Feature gets one board section per Feature in its tree. `?key=SHIP-103` opens a parent Feature, `?view=people` groups by People. |
 | `screens/signin.html` | **Sign in**: cookie sign-in with no side menu, plus the states after it. `?state=error\|change\|signed-out\|ended\|no-projects`. |
 | `screens/new-project.html` | **New project**: name, the permanent key (suggested, checked live, with free alternatives), start from defaults or another project's settings, members, working days and Sprint 1. |
 | `screens/instance.html` | **Instance settings** (instance admins only): General (name, base URL, who can create projects), Users (add, reset password, unlock, admin, disable) and Projects (every project, Join as admin). `?tab=general\|users\|projects`. |
@@ -75,6 +76,9 @@ Open any screen and use the **Preview** panel (bottom left) to switch the theme.
 | Taskboard | ![Taskboard, light](screens/taskboard.light.png) | ![Taskboard, dark](screens/taskboard.dark.png) |
 | Taskboard · People | ![Taskboard grouped by People, light](screens/taskboard-people.light.png) | ![Taskboard grouped by People, dark](screens/taskboard-people.dark.png) |
 | Taskboard settings · Fields | ![Taskboard settings, Fields, light](screens/taskboard-settings.light.png) | ![Taskboard settings, Fields, dark](screens/taskboard-settings.dark.png) |
+| Feature board | ![Feature board, light](screens/feature-board.light.png) | ![Feature board, dark](screens/feature-board.dark.png) |
+| Feature board · parent Feature | ![Feature board for a parent Feature, light](screens/feature-board-parent.light.png) | ![Feature board for a parent Feature, dark](screens/feature-board-parent.dark.png) |
+| Feature board · People | ![Feature board grouped by People, light](screens/feature-board-people.light.png) | ![Feature board grouped by People, dark](screens/feature-board-people.dark.png) |
 | User menu | ![User menu, light](screens/user-menu.light.png) | ![User menu, dark](screens/user-menu.dark.png) |
 | Sign in | ![Sign in, light](screens/signin.light.png) | ![Sign in, dark](screens/signin.dark.png) |
 | Sign in · failed | ![Sign in failed, light](screens/signin-error.light.png) | ![Sign in failed, dark](screens/signin-error.dark.png) |
@@ -266,6 +270,7 @@ These come from [#2](https://github.com/joeldickson/ShipLean/issues/2) and the r
 - **The story form, one level up.** Same header, Save model, field strip and History. The strip swaps Sprint, Story points and Priority for **Epic**, **Slug** (the Feature's unique external key, shown read-only), **Started** and the stories-and-bugs count.
 - **Status band:** state pill, the status line, `✓ Verified 2 days ago` (amber `⚠` after 14 days), who set it and whether through an MCP tool. **Still true** confirms it without editing (one revision, Verified at only). **Edit status** opens the band editor; picking Blocked or Parked opens it with the required field focused.
 - **Main column:** Goal, Description (View/Edit; pasting an image attaches it and inserts `![](name)`), Links, Stories and bugs (the to-dos, each its own work item), then the **Log**: the Discussion, newest first, with agent entries marked `Agent · via MCP`. **⋯ → Mark superseded** strikes an entry through and keeps it.
+- **Task board** (right of the Stories and bugs header) opens the Feature board for this Feature and the Features under it.
 - **Links section:** work item links as rows, then URL cards grouped Code and Pages. A card shows the number, title, live state chip (Open, Draft, Merged, Closed), where it lives and where the state came from (`live · 4 min ago` or `reported by <agent> · 3 h ago`), plus the optional one-line note. **+ Add link** takes a pasted URL and shows the preview it will get before adding.
 - **Attachments rail:** grouped by what opening them does: Markdown (opens rendered), Images (preview), Files (download). Dropping files anywhere on the form shows each file's outcome first; a name that already exists is flagged **Replace**.
 - **New Feature** (`features.html?dialog=new`): Title, Epic, Slug (suggested from the title until edited, checked live), Goal, Start as Idea or Active, and a first Status line. `create_feature` takes the same fields.
@@ -365,6 +370,26 @@ Decided in [issue #3](https://github.com/ShipLean/ShipLean/issues/3), and drawn 
 - **Toolbar:** sprint tabs, **Group by** Stories / People, the face filter (people plus Unassigned; hides other cards), Filter, **⚙ Settings** and **+ Add story or bug**.
 - **Settings dialog** (same shell as Board settings; Card Field Setting, Card Style Rule and Tag Colour rows stored against the Taskboard): **Fields** for task cards and for the story/bug row headers; **Styles** as ordered rules (first match wins) with a colour, bold and Criteria clauses; **Tag colours** from the semantic token set. **Columns** is shown disabled, pointing at Task states. Changes apply to the board straight away.
 - **Real time:** a teammate's move animates into place with a highlight and a toast naming who did what. Remote events carry state and parent, never a row. A stale write (409 on `revision`) snaps the card back and refetches it.
+
+## Feature board decisions
+
+These were decided while reviewing the Feature board on 2026-10-28.
+
+1. **A Feature board is the Taskboard scoped to a Feature, not a sprint.** Rows are the Feature's stories and bugs in any sprint or the Backlog. Columns are the Task states, as on the Taskboard. It reuses the Taskboard's grid, row headers, cards and card settings (Fields, Styles, Tag colours); there is no second settings document.
+2. **The entry point is Task board, right-aligned in the Stories and bugs header** on the Feature form. The page is called **Feature board**.
+3. **A parent Feature gets one board section per Feature in its tree**, depth first and indented by depth, with its own stories first ("Directly under …"). The page header rolls up the whole tree, and jump chips go to each section.
+4. **Grouped by People, it is one grid for the whole tree,** not one per section, so it answers "who's on what" in one place. On a tree with more than one Feature, each card shows Feature › story above its title.
+5. **Same editing as the Taskboard:** drag between cells, + Task and the state select. **A move never changes a sprint**: the column writes the state, the row writes the parent (any story or bug in the tree) or the assignee.
+6. **Closed stories and bugs start collapsed,** as on the Taskboard.
+7. **No sprint filter.** Each row header shows a sprint pill (the current sprint tinted, `Backlog` dashed), and the header lists the sprints the tree spans.
+8. **No Unparented row.** A Feature board holds only tasks that have a story or bug in the tree.
+
+## Feature board patterns (`screens/feature-board.html`)
+
+- **Header:** ← back to the Feature, type icon, key, title and state, `N Features under it` on a parent, then the roll-up for the tree: stories and bugs closed, points closed (bar), tasks closed and the sprints it spans.
+- **Toolbar:** Group by Stories / People, the face filter, ⚙ Settings (the Taskboard's dialog) and + Add story or bug (added under this Feature). No sprint tabs.
+- **Sections** (parent Feature only): a header with ▼ collapse, type icon, key, title, `in <parent>` when nested two deep, state, `closed/total stories`, `closed/total pts` and Open Feature ↗. Each section has its own column headers, sticky while it scrolls. A Feature with no stories or bugs yet shows one line.
+- **Row header:** the Taskboard's story card plus the sprint pill after the key. A story with no tasks still gets a row, showing `No tasks yet` and + Task.
 
 ## Account and admin decisions
 

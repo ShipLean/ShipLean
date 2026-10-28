@@ -534,7 +534,7 @@ svg text { fill: currentColor; }
         </div>
       </section>
       <section class="sec">
-        <div class="sec-h"><h2>Stories and bugs</h2><span class="chip">${children.filter(c => c.state === 'Closed').length}/${children.length} closed</span><span class="xs muted">The to-dos. Each is its own work item and saves straight away.</span><span class="spacer"></span><button class="btn tiny" type="button" id="addChild">+ User story</button><button class="btn tiny" type="button" id="addBug">+ Bug</button></div>
+        <div class="sec-h"><h2>Stories and bugs</h2><span class="chip">${children.filter(c => c.state === 'Closed').length}/${children.length} closed</span><span class="xs muted">The to-dos. Each is its own work item and saves straight away.</span><span class="spacer"></span><button class="btn tiny" type="button" id="addChild">+ User story</button><button class="btn tiny" type="button" id="addBug">+ Bug</button><a class="btn tiny" href="feature-board.html" title="The Taskboard for this Feature's stories and bugs">▦ Task board</a></div>
         <div class="box"><table class="list"><thead><tr><th>Title</th><th style="width:90px">Key</th><th style="width:110px">Sprint</th><th style="width:110px">State</th><th style="width:70px">Assigned</th></tr></thead><tbody>
           ${children.map(c => `<tr class="item"><td><div class="title-cell">${tIcon(c.type)}<a class="t" href="${c.key === 'SHIP-141' ? 'work-item.html' : '#'}" style="color:inherit;text-decoration:none">${esc(c.title)}</a></div></td><td class="key">${c.key}</td><td class="sm muted">${c.sprint ? SL.sprints.find(s => s.id === c.sprint).name : 'Backlog'}</td><td>${SL.st(c.state)}</td><td>${av(c.assignee)}</td></tr>`).join('')}
         </tbody></table></div>
