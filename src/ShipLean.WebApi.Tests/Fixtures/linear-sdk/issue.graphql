@@ -1,0 +1,228 @@
+    query issue($id: String!) {
+  issue(id: $id) {
+    ...Issue
+  }
+}
+    fragment ActorBot on ActorBot {
+  __typename
+  avatarUrl
+  subType
+  id
+  name
+  userDisplayName
+  type
+}
+fragment User on User {
+  __typename
+  description
+  avatarUrl
+  createdIssueCount
+  avatarBackgroundColor
+  statusUntilAt
+  statusEmoji
+  initials
+  updatedAt
+  lastSeen
+  timezone
+  disableReason
+  statusLabel
+  archivedAt
+  createdAt
+  id
+  gitHubUserId
+  displayName
+  email
+  name
+  title
+  url
+  active
+  isAssignable
+  isMentionable
+  guest
+  admin
+  owner
+  app
+  isMe
+  supportsAgentSessions
+  canAccessAnyPublicTeam
+  calendarHash
+  inviteHash
+}
+fragment Reaction on Reaction {
+  __typename
+  comment {
+    id
+  }
+  externalUser {
+    id
+  }
+  initiativeUpdate {
+    id
+  }
+  issue {
+    id
+  }
+  updatedAt
+  emoji
+  projectUpdate {
+    id
+  }
+  archivedAt
+  createdAt
+  id
+  user {
+    id
+  }
+}
+fragment Issue on Issue {
+  __typename
+  trashed
+  reactionData
+  labelIds
+  integrationSourceType
+  url
+  identifier
+  priorityLabel
+  previousIdentifiers
+  reactions {
+    ...Reaction
+  }
+  customerTicketCount
+  sharedAccess {
+    ...IssueSharedAccess
+  }
+  branchName
+  delegate {
+    id
+  }
+  botActor {
+    ...ActorBot
+  }
+  sourceComment {
+    id
+  }
+  cycle {
+    id
+  }
+  dueDate
+  estimate
+  syncedWith {
+    ...ExternalEntityInfo
+  }
+  externalUserCreator {
+    id
+  }
+  asksExternalUserRequester {
+    id
+  }
+  asksRequester {
+    id
+  }
+  description
+  title
+  number
+  lastAppliedTemplate {
+    id
+  }
+  updatedAt
+  boardOrder
+  sortOrder
+  prioritySortOrder
+  subIssueSortOrder
+  parent {
+    id
+  }
+  priority
+  projectMilestone {
+    id
+  }
+  project {
+    id
+  }
+  recurringIssueTemplate {
+    id
+  }
+  team {
+    id
+  }
+  archivedAt
+  createdAt
+  startedTriageAt
+  triagedAt
+  addedToCycleAt
+  addedToProjectAt
+  addedToTeamAt
+  autoArchivedAt
+  autoClosedAt
+  canceledAt
+  completedAt
+  startedAt
+  slaStartedAt
+  slaBreachesAt
+  slaHighRiskAt
+  slaMediumRiskAt
+  snoozedUntilAt
+  slaType
+  id
+  assignee {
+    id
+  }
+  creator {
+    id
+  }
+  snoozedBy {
+    id
+  }
+  favorite {
+    id
+  }
+  state {
+    id
+  }
+  inheritsSharedAccess
+}
+fragment ExternalEntityInfo on ExternalEntityInfo {
+  __typename
+  metadata {
+    ... on ExternalEntityInfoGithubMetadata {
+      ...ExternalEntityInfoGithubMetadata
+    }
+    ... on ExternalEntityInfoJiraMetadata {
+      ...ExternalEntityInfoJiraMetadata
+    }
+    ... on ExternalEntitySlackMetadata {
+      ...ExternalEntitySlackMetadata
+    }
+  }
+  service
+  id
+}
+fragment IssueSharedAccess on IssueSharedAccess {
+  __typename
+  disallowedIssueFields
+  sharedWithCount
+  sharedWithUsers {
+    ...User
+  }
+  viewerHasOnlySharedAccess
+  isShared
+}
+fragment ExternalEntityInfoGithubMetadata on ExternalEntityInfoGithubMetadata {
+  __typename
+  number
+  owner
+  repo
+}
+fragment ExternalEntityInfoJiraMetadata on ExternalEntityInfoJiraMetadata {
+  __typename
+  issueTypeId
+  projectId
+  issueKey
+}
+fragment ExternalEntitySlackMetadata on ExternalEntitySlackMetadata {
+  __typename
+  messageUrl
+  channelId
+  channelName
+  isFromSlack
+}

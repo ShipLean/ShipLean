@@ -1,0 +1,7 @@
+mutation agentSessionUpdate($id: String!, $input: AgentSessionUpdateInput!) {
+  agentSessionUpdate(id: $id, input: $input) {
+    success
+    lastSyncId
+    agentSession { id }
+  }
+}

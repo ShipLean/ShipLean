@@ -1,0 +1,21 @@
+    query issueRepositorySuggestions($agentSessionId: String, $candidateRepositories: [CandidateRepository!]!, $issueId: String!) {
+  issueRepositorySuggestions(
+    agentSessionId: $agentSessionId
+    candidateRepositories: $candidateRepositories
+    issueId: $issueId
+  ) {
+    ...RepositorySuggestionsPayload
+  }
+}
+    fragment RepositorySuggestion on RepositorySuggestion {
+  __typename
+  confidence
+  hostname
+  repositoryFullName
+}
+fragment RepositorySuggestionsPayload on RepositorySuggestionsPayload {
+  __typename
+  suggestions {
+    ...RepositorySuggestion
+  }
+}

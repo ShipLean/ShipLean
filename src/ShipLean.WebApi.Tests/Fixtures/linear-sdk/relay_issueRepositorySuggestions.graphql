@@ -1,0 +1,5 @@
+query issueRepositorySuggestions($issueId: String!, $agentSessionId: String, $candidateRepositories: [CandidateRepository!]!) {
+  issueRepositorySuggestions(issueId: $issueId, agentSessionId: $agentSessionId, candidateRepositories: $candidateRepositories) {
+    suggestions { repositoryFullName hostname confidence }
+  }
+}

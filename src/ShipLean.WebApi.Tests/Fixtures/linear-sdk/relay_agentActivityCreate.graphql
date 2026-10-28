@@ -1,0 +1,7 @@
+mutation agentActivityCreate($input: AgentActivityCreateInput!) {
+  agentActivityCreate(input: $input) {
+    success
+    lastSyncId
+    agentActivity { id }
+  }
+}
