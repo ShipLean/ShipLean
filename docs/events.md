@@ -35,6 +35,7 @@ JSON objects, camelCase, enums as camelCase strings, nothing omitted. Every even
 | `commentsChanged` | `workItemId` | a comment on the work item is added, edited or archived |
 | `attachmentsChanged` | `workItemId` | an attachment on the work item is added or archived |
 | `linksChanged` | `workItemId` | a link on the work item is added, edited or archived, or a link card's state or preview is refreshed |
+| `agentSessionChanged` | `workItemId`, `sessionId` | an agent session on the work item opens, changes state or gets an activity, a link or a plan, or a prompt (a comment, Stop) is queued for it (`AgentSessionNotifier`; background writers publish with `clientId: null`) |
 
 Pinned by `src/ShipLean.TestSupport/DtoFixtures/events/events.json` (one example per type), C# types in `src/ShipLean.Contracts/Events/`, TypeScript twin in `src/ShipLean.Client/src/api/events.ts`.
 

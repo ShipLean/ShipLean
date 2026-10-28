@@ -11,6 +11,7 @@ public sealed class AgentDispatchServices : IServiceModule
     {
         services.AddSingleton<AgentSessionStarter>();
         services.AddSingleton<AgentTrigger>();
+        services.AddSingleton<AgentPanelReader>();
         services.AddSingleton<AgentSessionEndpoints>();
         services.AddHostedService<AgentDispatchSubscriber>();
 
