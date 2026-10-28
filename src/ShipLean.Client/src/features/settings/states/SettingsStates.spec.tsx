@@ -35,7 +35,16 @@ const otherTypes = (): StateDto[] =>
   ]);
 
 const saved = (): ProjectSettingsDto => ({
-  general: { key: 'SHIP', name: 'Storefront', description: '', workingDays: [1, 2, 3, 4, 5] },
+  general: {
+    key: 'SHIP',
+    name: 'Storefront',
+    description: '',
+    workingDays: [1, 2, 3, 4, 5],
+    agentConnectionId: null,
+    repoUrl: null,
+    repoBaseBranch: null,
+    agentConnections: [],
+  },
   members: [{ user: joel, email: 'joel@shiplean.local', role: 'admin', status: 'active' }],
   sprints: { velocityWindow: 3, velocityOverride: null },
   states: [

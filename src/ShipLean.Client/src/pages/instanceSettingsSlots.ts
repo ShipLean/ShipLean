@@ -1,5 +1,6 @@
 import type { InstanceSettingsTab } from '../routes';
 import type { InstanceGeneralSlotProps } from '../slots/InstanceGeneralSlot';
+import type { InstanceAgentsSlotProps } from '../slots/InstanceAgentsSlot';
 import type { InstanceIntegrationsSlotProps } from '../slots/InstanceIntegrationsSlot';
 import type { InstanceProjectsSlotProps } from '../slots/InstanceProjectsSlot';
 import type { InstanceUsersSlotProps } from '../slots/InstanceUsersSlot';
@@ -9,6 +10,7 @@ export interface InstanceSettingsSlots {
   instanceUsers?: InstanceUsersSlotProps;
   instanceProjects?: InstanceProjectsSlotProps;
   instanceIntegrations?: InstanceIntegrationsSlotProps;
+  instanceAgents?: InstanceAgentsSlotProps;
 }
 
 // Each instance settings tab has its own slot.
@@ -18,5 +20,6 @@ export function instanceSettingsSlots(tab: InstanceSettingsTab): InstanceSetting
     instanceUsers: tab === 'users' ? { tab } : undefined,
     instanceProjects: tab === 'projects' ? { tab } : undefined,
     instanceIntegrations: tab === 'integrations' ? { tab } : undefined,
+    instanceAgents: tab === 'agents' ? { tab } : undefined,
   };
 }

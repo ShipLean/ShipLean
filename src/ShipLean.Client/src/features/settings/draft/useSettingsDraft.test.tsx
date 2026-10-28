@@ -24,7 +24,16 @@ const user = (id: string) => ({
   photoUrl: null,
 });
 const loaded: ProjectSettingsDto = {
-  general: { key: 'SHIP', name: 'Storefront', description: '', workingDays: [1, 2, 3, 4, 5] },
+  general: {
+    key: 'SHIP',
+    name: 'Storefront',
+    description: '',
+    workingDays: [1, 2, 3, 4, 5],
+    agentConnectionId: null,
+    repoUrl: null,
+    repoBaseBranch: null,
+    agentConnections: [],
+  },
   members: [{ user: user('joel'), email: 'joel@x', role: 'admin', status: 'active' }],
   sprints: { velocityWindow: 3, velocityOverride: null },
   states: WORK_ITEM_TYPE_IDS.flatMap((type) => [

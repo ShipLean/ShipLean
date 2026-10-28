@@ -6,6 +6,7 @@ using ShipLean.TestSupport.AccessSweep;
 using ShipLean.TestSupport.Blobs;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
+using ShipLean.WebApi.Tests.Instance.AgentConnections;
 
 namespace ShipLean.WebApi.Tests.Access;
 
@@ -20,6 +21,22 @@ public class AllowedSweepTests : ApiFixture
 
     [OneTimeSetUp]
     public Task PutSeedAttachmentBlobs() => SeedAttachmentBlobs.PutAllAsync(Host.Services.GetRequiredService<IBlobStore>());
+
+    // The seed has no agent connection, and the instance rows for them need one to find (the 404 check): see AgentConnectionSweepIds.
+    [OneTimeSetUp]
+    public async Task InsertSweepAgentConnections()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        foreach (var id in new[] { AgentConnectionSweepIds.Live, AgentConnectionSweepIds.ToArchive })
+        {
+            await Dapper.SqlMapper.ExecuteAsync(connection,
+                """
+                INSERT INTO agent_connection (id, type, name, receiver_url, signing_secret_protected, signing_secret_last4, callback_token_hash, callback_token_last4, created_at, updated_at)
+                VALUES (@id, 'linear-compatible', @name, 'https://relay.example.com/hook', 'x', 'xxxx', @hash, 'xxxx', now(), now())
+                """,
+                new { id, name = $"Sweep {id}", hash = id.ToByteArray() });
+        }
+    }
 
     [TestCaseSource(typeof(SweepCalls), nameof(SweepCalls.AllRows))]
     public async Task AccessSweep_WhenAllowed_ShouldPassAccess(AccessSweepRow row)
