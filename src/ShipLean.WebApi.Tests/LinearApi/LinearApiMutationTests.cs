@@ -155,15 +155,99 @@ public class LinearApiMutationTests : ApiFixture
     }
 
     [Test]
-    public async Task AgentActivityCreate_WhenTheSessionHasEnded_ShouldKeepItsState()
+    public async Task AgentActivityCreate_WhenTheSessionHasEnded_ShouldBeRefusedAndKeepItsState()
     {
         await using var database = await OpenDatabaseAsync();
         var (session, _, _) = await _world.AddSessionAsync(Api, database);
         await ActivityAsync(session, new { type = "response", body = "Done" });
 
-        await ActivityAsync(session, new { type = "thought", body = "One more thing" });
+        var code = await ErrorCodeAsync("createAgentActivity", new { input = new { agentSessionId = session, content = new { type = "thought", body = "One more thing" } } });
 
+        code.ShouldBe("INVALID_INPUT");
         (await StateAsync(database, session)).State.ShouldBe("completed");
+        (await database.ExecuteScalarAsync<int>("SELECT count(*)::int FROM agent_activity WHERE session_id = @session", new { session })).ShouldBe(1);
+    }
+
+    [Test]
+    public async Task AgentActivityCreate_WhenTheSameActivityIdIsRetriedAfterTheSessionEnded_ShouldStillSucceed()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var (session, _, _) = await _world.AddSessionAsync(Api, database);
+        var id = Guid.NewGuid();
+        var variables = new { input = new { id, agentSessionId = session, content = new { type = "response", body = "Done" } } };
+        await OkAsync("createAgentActivity", variables);
+
+        var retried = await OkAsync("createAgentActivity", variables);
+
+        retried["agentActivityCreate"]!["agentActivity"]!["id"]!.GetValue<string>().ShouldBe(id.ToString());
+    }
+
+    [Test]
+    public async Task AgentSessionUpdate_WhenTheSessionHasEnded_ShouldBeRefused()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var (session, _, _) = await _world.AddSessionAsync(Api, database, "completed");
+
+        var code = await ErrorCodeAsync("updateAgentSession", new { id = session, input = new { plan = new[] { new { content = "x", status = "pending" } } } });
+
+        code.ShouldBe("INVALID_INPUT");
+    }
+
+    [Test]
+    public async Task CommentCreate_WhenTheSessionEndedMoreThanADayAgo_ShouldBeNotFoundButWithinADayStillWorks()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var (oldSession, _, oldKey) = await _world.AddSessionAsync(Api, database, "completed");
+        var (freshSession, _, freshKey) = await _world.AddSessionAsync(Api, database, "completed");
+        await database.ExecuteAsync("UPDATE agent_session SET ended_at = now() - interval '25 hours' WHERE id = @oldSession", new { oldSession });
+        await database.ExecuteAsync("UPDATE agent_session SET ended_at = now() - interval '23 hours' WHERE id = @freshSession", new { freshSession });
+
+        (await ErrorCodeAsync("createComment", new { input = new { issueId = oldKey, body = "Late" } })).ShouldBe("NOT_FOUND");
+        (await OkAsync("createComment", new { input = new { issueId = freshKey, body = "Just in time" } }))["commentCreate"]!["success"]!.GetValue<bool>().ShouldBeTrue();
+    }
+
+    [Test]
+    public async Task AgentSessionUpdate_WhenThePlanOrTheUrlsAreTooLong_ShouldBeInvalidInput()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var (session, _, _) = await _world.AddSessionAsync(Api, database);
+
+        var plan = await ErrorCodeAsync("updateAgentSession", new { id = session, input = new { plan = Enumerable.Range(0, 101).Select(i => new { content = $"Step {i}", status = "pending" }) } });
+        var urls = await ErrorCodeAsync(
+            "updateAgentSession",
+            new { id = session, input = new { externalUrls = Enumerable.Range(0, 51).Select(i => new { label = "PR", url = $"https://github.com/ShipLean/ShipLean/pull/{i}" }) } });
+
+        plan.ShouldBe("INVALID_INPUT");
+        urls.ShouldBe("INVALID_INPUT");
+    }
+
+    [Test]
+    public async Task AgentActivityCreate_WhenTheBodyIsOver64KB_ShouldBeInvalidInput()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var (session, _, _) = await _world.AddSessionAsync(Api, database);
+
+        var code = await ErrorCodeAsync("createAgentActivity", new { input = new { agentSessionId = session, content = new { type = "thought", body = new string('x', 64 * 1024 + 1) } } });
+
+        code.ShouldBe("INVALID_INPUT");
+    }
+
+    [Test]
+    public async Task AgentActivityCreate_WhenAStaleSessionsItemHasAnotherLiveSession_ShouldKeepTheActivityAndStayStale()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var (session, item, _) = await _world.AddSessionAsync(Api, database, "stale", lastActivity: Now.AddHours(-2));
+        await database.ExecuteAsync(
+            """
+            INSERT INTO agent_session (id, work_item_id, connection_id, state, repo_url, base_branch, last_activity_at, created_by, created_at)
+            VALUES (gen_random_uuid(), @item, @connection, 'submitted', 'https://github.com/ShipLean/ShipLean.git', 'develop', now(), (SELECT created_by FROM agent_session WHERE id = @session), now())
+            """,
+            new { item, session, connection = _world.ConnectionA });
+
+        await ActivityAsync(session, new { type = "thought", body = "Back, too late" });
+
+        (await StateAsync(database, session)).State.ShouldBe("stale");
+        (await database.ExecuteScalarAsync<int>("SELECT count(*)::int FROM agent_activity WHERE session_id = @session", new { session })).ShouldBe(1);
     }
 
     [Test]
@@ -364,6 +448,20 @@ public class LinearApiMutationTests : ApiFixture
         (await StateAsync(database, silent)).State.ShouldBe("stale");
         (await StateAsync(database, recent)).State.ShouldBe("working");
         (await StateAsync(database, waiting)).State.ShouldBe("inputRequired");
+    }
+
+    [Test]
+    public async Task Sweep_WhenASubmittedSessionWasNeverAnswered_ShouldMarkItStaleAndFreeTheSlot()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var (silent, item, _) = await _world.AddSessionAsync(Api, database, "submitted", lastActivity: Now.AddMinutes(-31));
+        var (fresh, _, _) = await _world.AddSessionAsync(Api, database, "submitted", lastActivity: Now.AddMinutes(-5));
+
+        await Host.Services.GetRequiredService<AgentStaleSweeper>().SweepAsync(CancellationToken.None);
+
+        (await StateAsync(database, silent)).State.ShouldBe("stale");
+        (await StateAsync(database, fresh)).State.ShouldBe("submitted");
+        (await database.ExecuteScalarAsync<int>("SELECT count(*)::int FROM agent_session WHERE work_item_id = @item AND state IN ('submitted', 'working', 'inputRequired')", new { item })).ShouldBe(0);
     }
 
     [Test]

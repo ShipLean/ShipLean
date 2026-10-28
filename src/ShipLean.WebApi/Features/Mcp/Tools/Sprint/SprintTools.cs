@@ -251,7 +251,7 @@ internal sealed class SprintTools(
         }
 
         var changes = new WorkItemChanges { Sprint = new FieldSet<Guid?>(plan.SprintId) };
-        var outcome = await store.PatchManyAsync([.. snapshots.Select(s => (s.Id, new WorkItemPatch(s.Revision, changes)))], WriteOptions.User, cancellationToken);
+        var outcome = await store.PatchManyAsync([.. snapshots.Select(s => (s.Id, new WorkItemPatch(s.Revision, changes)))], WriteOptions.User with { Bulk = true }, cancellationToken);
         if (outcome.Conflicts is { Count: > 0 } stale)
         {
             throw ApiException.Conflict($"{string.Join(", ", stale.Select(c => c.Current.Key))} changed since the preview, so nothing was moved. Preview again, then apply the new plan.");

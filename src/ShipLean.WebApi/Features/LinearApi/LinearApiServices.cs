@@ -1,3 +1,4 @@
+using HotChocolate.AspNetCore;
 using HotChocolate.Types;
 using Microsoft.AspNetCore.Authentication;
 using ShipLean.Contracts;
@@ -40,7 +41,9 @@ public sealed class LinearApiServices : IServiceModule
             // levels deep; the default limit of 1000 would refuse them). The limits are raised to leave room above that and still refuse a document
             // built to be huge; the depth rule bounds nesting through the Issue -> Comment -> Issue cycles the schema has.
             .ModifyCostOptions(options => options.MaxFieldCost = MaxFieldCost)
-            .AddMaxExecutionDepthRule(MaxExecutionDepth);
+            .AddMaxExecutionDepthRule(MaxExecutionDepth)
+            // One operation per request: a batch (an array of operations) multiplies the work a 256 KB body can ask for.
+            .ModifyServerOptions(options => options.Batching = AllowedBatching.None);
     }
 
     private const int MaxFieldCost = 5000;

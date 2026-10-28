@@ -144,7 +144,7 @@ public class AgentDeliveryTests : ApiFixture
     }
 
     [Test]
-    public async Task RunDue_WhenPromptedKeepFailing_ShouldRetryAfterOneMinuteOneHourAndSixHoursThenFailTheSession()
+    public async Task RunDue_WhenPromptedKeepFailing_ShouldRetryAfterOneMinuteOneHourAndSixHoursThenFailTheDeliveryButNotTheSession()
     {
         await using var database = await OpenDatabaseAsync();
         var (_, _, sessionId) = await OpenSessionAsync(database);
@@ -165,7 +165,7 @@ public class AgentDeliveryTests : ApiFixture
 
         var rows = await RowsAsync(database, sessionId);
         (rows[1].Status, rows[1].Attempts).ShouldBe(("failed", 4));
-        (await StateAsync(database, sessionId)).ShouldBe("failed");
+        (await StateAsync(database, sessionId)).ShouldBe("submitted");
     }
 
     [Test]

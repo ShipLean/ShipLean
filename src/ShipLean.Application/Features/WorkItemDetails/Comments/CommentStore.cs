@@ -2,7 +2,6 @@ using Dapper;
 using Npgsql;
 using ShipLean.Application.Markdown;
 using ShipLean.Contracts;
-using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Comments;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Events;
@@ -19,8 +18,7 @@ public sealed class CommentStore(
     ICurrentAgent currentAgent,
     MarkdownRenderer renderer,
     TimeProvider clock,
-    IProjectEvents events,
-    IAgentPrompts agentPrompts) : ICommentStore
+    IProjectEvents events) : ICommentStore
 {
     private static readonly string SelectLive = $"SELECT {CommentRow.Columns} {CommentRow.From} WHERE c.id = @id AND c.archived_at IS NULL";
 
@@ -43,8 +41,7 @@ public sealed class CommentStore(
             ? throw new ArgumentException("An agent comment needs an agent name.", nameof(agentName))
             : AddStampedAsync(workItemId, create, agentName, authorId, cancellationToken);
 
-    // A comment with no agent stamp is a person's and, after commit, may start a `prompted` webhook; a stamped one (an MCP agent's
-    // too) never does.
+    // Never starts a `prompted` webhook: only CommentEndpoints (a person's session) does that, so MCP tools, imports and agent writes never prompt.
     private async Task<CommentDto> AddStampedAsync(Guid workItemId, CommentCreate create, string? agentName, Guid authorId, CancellationToken cancellationToken)
     {
         var body = RequireBody(create?.Body);
@@ -61,11 +58,6 @@ public sealed class CommentStore(
             cancellationToken: cancellationToken));
         var added = await ReadAsync(connection, id, cancellationToken);
         await PublishChangedAsync(connection, workItemId, cancellationToken);
-        if (agentName is null)
-        {
-            await agentPrompts.CommentAddedAsync(id, cancellationToken);
-        }
-
         return added;
     }
 

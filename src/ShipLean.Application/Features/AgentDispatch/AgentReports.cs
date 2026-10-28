@@ -16,8 +16,8 @@ namespace ShipLean.Application.Features.AgentDispatch;
 //
 // State follows the last activity (provider doc, Half 2): thought and action are working, an elicitation is input required, a
 // response is completed (canceled when Stop was requested, which is how an agent answers Stop) and an error is failed. A session
-// that has already ended keeps its state (the activity is stored all the same); a stale one moves again unless the item has since
-// started another session. An ephemeral activity (thought and action only) is marked replaced (replaced_at, which every read leaves out) when the session's next activity arrives.
+// that has ended refuses further activities and updates (validation: "has ended"); a stale one moves again unless the item has since
+// started another session (and if a start wins the race for the live slot, the activity is kept and the session stays stale). An ephemeral activity (thought and action only) is marked replaced (replaced_at, which every read leaves out) when the session's next activity arrives.
 // The body of a response or error is also posted as a comment, written as the user who started the session and stamped with the
 // connection name, so it never becomes a `prompted` webhook. The session changed event goes out after each commit.
 public sealed class AgentReports(
@@ -33,6 +33,11 @@ public sealed class AgentReports(
     private const string Elicitation = "elicitation";
     private const string Response = "response";
     private const string Error = "error";
+
+    // Linear sends nothing near these; they bound what a connection can make the database hold.
+    public const int MaxActivityText = 64 * 1024;
+    public const int MaxPlanSteps = 100;
+    public const int MaxExternalUrls = 50;
 
     private static readonly string[] Types = [Thought, Action, Elicitation, Response, Error];
     private static readonly string[] PlanStatuses = ["pending", "inProgress", "completed", "canceled"];
@@ -61,6 +66,7 @@ public sealed class AgentReports(
             }
         }
 
+        RequireNotEnded(session);
         await connection.ExecuteAsync(new CommandDefinition(
             "UPDATE agent_activity SET replaced_at = @now WHERE session_id = @sessionId AND ephemeral AND replaced_at IS NULL", new { sessionId = create.SessionId, now }, transaction, cancellationToken: cancellationToken));
         await connection.ExecuteAsync(new CommandDefinition(
@@ -89,6 +95,7 @@ public sealed class AgentReports(
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         var session = await LockAsync(connection, transaction, reporter, sessionId, cancellationToken);
+        RequireNotEnded(session);
 
         var before = Parse(session.ExternalUrls);
         var urls = (change.ExternalUrls ?? before).ToList();
@@ -105,6 +112,10 @@ public sealed class AgentReports(
             }
         }
         urls.RemoveAll(u => change.Removed?.Contains(u.Url) == true);
+        if (urls.Count > MaxExternalUrls)
+        {
+            throw ApiException.Validation($"A session can have at most {MaxExternalUrls} external URLs.", "externalUrls");
+        }
         var plan = change.Plan is null ? session.Plan : JsonSerializer.Serialize(change.Plan.Select(p => new { content = p.Content, status = p.Status }), Json);
 
         await connection.ExecuteAsync(new CommandDefinition(
@@ -130,13 +141,14 @@ public sealed class AgentReports(
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var session = await connection.QuerySingleOrDefaultAsync<SessionOnItem>(new CommandDefinition(
-            """
+            $"""
             SELECT s.work_item_id AS workItemId, s.created_by AS createdBy
             FROM agent_session s JOIN work_item w ON w.id = s.work_item_id
             WHERE s.connection_id = @connectionId AND (w.id = @id OR w.key = @key)
+              AND (s.state NOT IN {AgentSessionStates.TerminalSql} OR coalesce(s.ended_at, s.last_activity_at) >= @since)
             ORDER BY s.created_at DESC LIMIT 1
             """,
-            new { connectionId = reporter.ConnectionId, id = Guid.TryParse(issue, out var parsed) ? parsed : Guid.Empty, key = issue.Trim().ToUpperInvariant() },
+            new { since = time.GetUtcNow() - AgentSessionAccess.EndedWindow, connectionId = reporter.ConnectionId, id = Guid.TryParse(issue, out var parsed) ? parsed : Guid.Empty, key = issue.Trim().ToUpperInvariant() },
             cancellationToken: cancellationToken)) ?? throw ApiException.NotFound("Issue not found.");
         var added = await comments.AddAsAgentAsync(session.WorkItemId, new CommentCreate(body), reporter.Name, session.CreatedBy, cancellationToken);
         return new AgentComment(added.Id, added.WorkItemId, added.Body, added.CreatedAt);
@@ -169,18 +181,39 @@ public sealed class AgentReports(
         };
         var ended = AgentSessionStates.IsTerminal(next) ? now : (DateTimeOffset?)null;
         // A stale session whose item has started another one stays stale (the unique index allows one live session), but still records the activity time.
-        var moved = await connection.ExecuteAsync(new CommandDefinition(
-            $"""
-            UPDATE agent_session SET state = @next, last_activity_at = @now, ended_at = @ended
-            WHERE id = @id
-              AND (state <> 'stale' OR @next NOT IN ('working', 'inputRequired')
-                   OR NOT EXISTS (SELECT 1 FROM agent_session o WHERE o.work_item_id = @workItemId AND o.id <> @id AND o.state IN {AgentSessionStates.LiveSql}))
-            """,
-            new { id = create.SessionId, workItemId = session.WorkItemId, next, now, ended }, transaction, cancellationToken: cancellationToken));
+        // A concurrent start can still take the live slot between that check and this update (the unique index refuses the revival):
+        // the activity is kept and the session stays stale. A savepoint keeps the refusal from poisoning the transaction.
+        var moved = 0;
+        await transaction.SaveAsync("move", cancellationToken);
+        try
+        {
+            moved = await connection.ExecuteAsync(new CommandDefinition(
+                $"""
+                UPDATE agent_session SET state = @next, last_activity_at = @now, ended_at = @ended
+                WHERE id = @id
+                  AND (state <> 'stale' OR @next NOT IN ('working', 'inputRequired')
+                       OR NOT EXISTS (SELECT 1 FROM agent_session o WHERE o.work_item_id = @workItemId AND o.id <> @id AND o.state IN {AgentSessionStates.LiveSql}))
+                """,
+                new { id = create.SessionId, workItemId = session.WorkItemId, next, now, ended }, transaction, cancellationToken: cancellationToken));
+        }
+        catch (PostgresException refused) when (refused.SqlState == PostgresErrorCodes.UniqueViolation)
+        {
+            await transaction.RollbackAsync("move", cancellationToken);
+        }
+
         if (moved == 0)
         {
             await connection.ExecuteAsync(new CommandDefinition(
                 "UPDATE agent_session SET last_activity_at = @now WHERE id = @id", new { id = create.SessionId, now }, transaction, cancellationToken: cancellationToken));
+        }
+    }
+
+    // An ended session takes no more activities or updates; the relay posts its final response while the session is still live.
+    private static void RequireNotEnded(LockedSession session)
+    {
+        if (AgentSessionStates.IsTerminal(session.State))
+        {
+            throw ApiException.Validation("This agent session has ended.", "agentSessionId");
         }
     }
 
@@ -224,6 +257,10 @@ public sealed class AgentReports(
         {
             throw ApiException.Validation("Only a thought or an action can be ephemeral.", "ephemeral");
         }
+        if (new[] { create.Body, create.Action, create.Parameter, create.Result }.Any(t => t?.Length > MaxActivityText))
+        {
+            throw ApiException.Validation($"An activity's text can be at most {MaxActivityText:N0} characters.", "content");
+        }
         if (create.Type == Action ? string.IsNullOrWhiteSpace(create.Action) : string.IsNullOrWhiteSpace(create.Body))
         {
             throw ApiException.Validation(create.Type == Action ? "An action needs an action." : $"A {create.Type} needs a body.", "content");
@@ -236,6 +273,14 @@ public sealed class AgentReports(
         if (bad is not null)
         {
             throw ApiException.Validation($"'{bad.Url}' is not an http or https URL.", "externalUrls");
+        }
+        if ((change.Plan ?? []).Count > MaxPlanSteps)
+        {
+            throw ApiException.Validation($"A plan can have at most {MaxPlanSteps} steps.", "plan");
+        }
+        if ((change.ExternalUrls ?? []).Count > MaxExternalUrls || (change.Added ?? []).Count > MaxExternalUrls)
+        {
+            throw ApiException.Validation($"A session can have at most {MaxExternalUrls} external URLs.", "externalUrls");
         }
         if ((change.Plan ?? []).Any(s => string.IsNullOrWhiteSpace(s.Content) || !PlanStatuses.Contains(s.Status)))
         {

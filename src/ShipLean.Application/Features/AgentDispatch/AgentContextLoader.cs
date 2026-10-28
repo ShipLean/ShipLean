@@ -8,7 +8,8 @@ using ShipLean.Contracts.Persisted;
 
 namespace ShipLean.Application.Features.AgentDispatch;
 
-// Maps an item's rows onto the renderer's plain input. Reads only; the session id and creation time are the caller's.
+// Maps an item's rows onto the renderer's plain input. A comment's author is a name only (no email leaves for the receiver; the creator's does,
+// for the relay's allow-list). Reads only; the session id and creation time are the caller's.
 internal sealed class AgentContextLoader(NpgsqlDataSource dataSource)
 {
     public async Task<AgentContextInput> LoadAsync(
@@ -37,7 +38,7 @@ internal sealed class AgentContextLoader(NpgsqlDataSource dataSource)
             new { workItemId }, cancellationToken: cancellationToken))).ToList();
         var comments = (await connection.QueryAsync<AgentCommentRow>(new CommandDefinition(
             """
-            SELECT c.id, c.author_id AS authorId, coalesce(u.name, '') AS authorName, coalesce(u.email, '') AS authorEmail, c.created_at AS createdAt, c.body
+            SELECT c.id, c.author_id AS authorId, coalesce(u.name, '') AS authorName, c.created_at AS createdAt, c.body
             FROM comment c LEFT JOIN app_user u ON u.id = c.author_id
             WHERE c.work_item_id = @workItemId AND c.archived_at IS NULL
             ORDER BY c.created_at, c.id
@@ -61,7 +62,7 @@ internal sealed class AgentContextLoader(NpgsqlDataSource dataSource)
             new AgentItemInput(item.Id.ToString(), item.Key, item.Title, Blank(item.Description), Url(item.Key), JsonSerializer.Deserialize<string[]>(item.Tags, PersistedJson.Options) ?? [], [.. criteria.Select(c => new AgentCriterionInput(c.Text, c.Done))]),
             parent is null ? null : Related(parent),
             feature is null ? null : Related(feature),
-            [.. comments.Select(c => new AgentCommentInput(c.Id.ToString(), new AgentUserInput(c.AuthorId?.ToString() ?? string.Empty, c.AuthorName, c.AuthorEmail), c.CreatedAt, c.Body))],
+            [.. comments.Select(c => new AgentCommentInput(c.Id.ToString(), new AgentUserInput(c.AuthorId?.ToString() ?? string.Empty, c.AuthorName, string.Empty), c.CreatedAt, c.Body))],
             null);
     }
 

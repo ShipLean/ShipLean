@@ -13,6 +13,9 @@ public sealed class RevisionBuilder(Guid workItemId)
     private string _changes = "[]";
     private string? _originalSystem;
     private Guid? _importJobId;
+    private string? _webhook;
+    private string? _agentName;
+    private bool _bulk;
 
     public RevisionBuilder WithRev(int rev)
     {
@@ -45,13 +48,31 @@ public sealed class RevisionBuilder(Guid workItemId)
         return this;
     }
 
+    public RevisionBuilder WithWebhook(string webhook)
+    {
+        _webhook = webhook;
+        return this;
+    }
+
+    public RevisionBuilder WithAgent(string agentName)
+    {
+        _agentName = agentName;
+        return this;
+    }
+
+    public RevisionBuilder WithBulk()
+    {
+        _bulk = true;
+        return this;
+    }
+
     // Inserts the revision and returns its revision number. Does not touch work_item.revision.
     public async Task<int> InsertAsync(NpgsqlConnection connection)
     {
         await connection.ExecuteAsync(
             """
-            INSERT INTO revision (work_item_id, rev, changed_by, changed_at, original_system, import_job_id, changes)
-            VALUES (@workItemId, @rev, @changedBy::uuid, coalesce(@changedAt::timestamptz, now()), @originalSystem::text, @importJobId::uuid, @changes::jsonb)
+            INSERT INTO revision (work_item_id, rev, changed_by, changed_at, original_system, import_job_id, webhook, agent_name, bulk, changes)
+            VALUES (@workItemId, @rev, @changedBy::uuid, coalesce(@changedAt::timestamptz, now()), @originalSystem::text, @importJobId::uuid, @webhook::text, @agentName::text, @bulk, @changes::jsonb)
             """,
             new
             {
@@ -61,6 +82,9 @@ public sealed class RevisionBuilder(Guid workItemId)
                 changedAt = _changedAt?.ToUniversalTime(),
                 originalSystem = _originalSystem,
                 importJobId = _importJobId,
+                webhook = _webhook,
+                agentName = _agentName,
+                bulk = _bulk,
                 changes = _changes,
             });
         return _rev;

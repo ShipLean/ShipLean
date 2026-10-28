@@ -2,15 +2,16 @@ using Agoda.IoC.Core;
 using Dapper;
 using Npgsql;
 using ShipLean.Contracts;
+using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Comments;
 using ShipLean.Contracts.Errors;
 
 namespace ShipLean.Application.Features.WorkItemDetails.Comments;
 
-// What the comment endpoints do: the access check first, then the store. Any member reads and writes comments; editing is
+// What the comment endpoints do: the access check first, then the store; a comment added here is a person's and may prompt a live agent session. Any member reads and writes comments; editing is
 // the author's (the store enforces it), and archiving is the author's or a project admin's.
 [RegisterPerRequest]
-public sealed class CommentEndpoints(IProjectAccess access, ICommentStore store, ICurrentUser currentUser, NpgsqlDataSource dataSource)
+public sealed class CommentEndpoints(IProjectAccess access, ICommentStore store, ICurrentUser currentUser, NpgsqlDataSource dataSource, IAgentPrompts agentPrompts)
 {
     public async Task<IReadOnlyList<CommentDto>> ListAsync(Guid workItemId, CancellationToken cancellationToken)
     {
@@ -21,7 +22,10 @@ public sealed class CommentEndpoints(IProjectAccess access, ICommentStore store,
     public async Task<CommentDto> AddAsync(Guid workItemId, CommentCreate create, CancellationToken cancellationToken)
     {
         await access.RequireAsync(ProjectItem.WorkItem, workItemId, ProjectRole.Member, cancellationToken);
-        return await store.AddAsync(workItemId, create, cancellationToken);
+        var added = await store.AddAsync(workItemId, create, cancellationToken);
+        // The one place a comment can prompt a session: a person writing through the app's own endpoint (the hook never throws).
+        await agentPrompts.CommentAddedAsync(added.Id, cancellationToken);
+        return added;
     }
 
     public async Task<CommentDto> EditAsync(Guid id, CommentEdit edit, CancellationToken cancellationToken)

@@ -17,6 +17,10 @@ public sealed record WriteOptions(Func<DbTransaction, CancellationToken, Task>? 
 
     public string? Webhook { get; private init; }
 
+    // True for a write that moves many items at once on one person's behalf (settings save, sprint rollover, backlog move): its
+    // revisions are marked bulk and never start an agent session.
+    public bool Bulk { get; init; }
+
     // webhook: "GitHub acme/api#12".
     public static WriteOptions FromWebhook(string webhook, Func<DbTransaction, CancellationToken, Task>? inTransaction = null)
         => new(inTransaction, RevisionOrigin.Webhook) { Webhook = webhook };

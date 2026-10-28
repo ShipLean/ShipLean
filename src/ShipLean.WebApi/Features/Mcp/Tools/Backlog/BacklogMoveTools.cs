@@ -68,7 +68,7 @@ internal sealed class BacklogMoveTools(
         {
             var outcome = await store.PatchManyAsync(
                 [.. changing.Select(s => (s.Item.Id, new WorkItemPatch(s.Expected, new WorkItemChanges { Sprint = new FieldSet<Guid?>(target?.Id) })))],
-                WriteOptions.User, cancellationToken);
+                WriteOptions.User with { Bulk = true }, cancellationToken);
             if (outcome.Conflicts is { Count: > 0 } conflicts)
             {
                 throw ApiException.Conflict(Describe(conflicts));
