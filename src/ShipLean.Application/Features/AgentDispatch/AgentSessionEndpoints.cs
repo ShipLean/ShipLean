@@ -5,11 +5,25 @@ using ShipLean.Contracts.Errors;
 namespace ShipLean.Application.Features.AgentDispatch;
 
 // The item-level agent routes. Every one needs Member on the item's project, checked before anything else.
-public sealed class AgentSessionEndpoints(IProjectAccess access, ICurrentUser currentUser, AgentSessionStarter starter, AgentPrompter prompter)
+public sealed class AgentSessionEndpoints(IProjectAccess access, ICurrentUser currentUser, AgentSessionStarter starter, AgentPrompter prompter, AgentPanelReader panel)
 {
+    // The whole Agent panel in one response: sessions newest first, and whether Start agent works.
+    public async Task<AgentPanelDto> SessionsAsync(Guid workItemId, CancellationToken cancellationToken)
+    {
+        await access.RequireAsync(ProjectItem.WorkItem, workItemId, ProjectRole.Member, cancellationToken);
+        var availability = await AvailabilityCoreAsync(workItemId, cancellationToken);
+        var sessions = await panel.SessionsAsync(workItemId, cancellationToken);
+        return new AgentPanelDto(sessions.Count > 0 || availability.Reason is not AgentStartBlock.NoConnection, availability, sessions);
+    }
+
     public async Task<AgentStartAvailabilityDto> AvailabilityAsync(Guid workItemId, CancellationToken cancellationToken)
     {
         await access.RequireAsync(ProjectItem.WorkItem, workItemId, ProjectRole.Member, cancellationToken);
+        return await AvailabilityCoreAsync(workItemId, cancellationToken);
+    }
+
+    private async Task<AgentStartAvailabilityDto> AvailabilityCoreAsync(Guid workItemId, CancellationToken cancellationToken)
+    {
         var plan = await starter.PlanAsync(workItemId, cancellationToken);
         return plan.Block is { } block ? new AgentStartAvailabilityDto(false, block, AgentStartMessages.For(block)) : new AgentStartAvailabilityDto(true, null, string.Empty);
     }

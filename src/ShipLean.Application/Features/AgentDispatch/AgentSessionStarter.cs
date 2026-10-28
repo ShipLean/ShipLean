@@ -11,7 +11,7 @@ namespace ShipLean.Application.Features.AgentDispatch;
 // AgentContextRenderer. The partial unique index ux_agent_session_live decides a race, so a second starter finds the item
 // taken and writes nothing. Nothing is sent here: the delivery service sends the outbox. An archived connection counts as no connection.
 public sealed class AgentSessionStarter(
-    NpgsqlDataSource dataSource, IProjectAgentSettings projectSettings, IAgentConnections connections, TimeProvider time)
+    NpgsqlDataSource dataSource, IProjectAgentSettings projectSettings, IAgentConnections connections, AgentSessionNotifier notifier, TimeProvider time)
 {
     private readonly AgentContextLoader _loader = new(dataSource);
 
@@ -77,6 +77,7 @@ public sealed class AgentSessionStarter(
             """,
             new { id = Guid.CreateVersion7(), sessionId, body, now }, transaction, cancellationToken: cancellationToken));
         await transaction.CommitAsync(cancellationToken);
+        await notifier.ChangedAsync(sessionId);
         return new AgentStartOutcome(sessionId, null);
     }
 }

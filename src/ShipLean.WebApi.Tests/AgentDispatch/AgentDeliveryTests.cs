@@ -43,7 +43,7 @@ public class AgentDeliveryTests : ApiFixture
             Host.Services.GetRequiredService<NpgsqlDataSource>(),
             Host.Services.GetRequiredService<IAgentConnections>(),
             factory ?? new StubHttpClientFactory((receiver ?? _receiver).Client()),
-            new AgentSessionNotifier(NullLogger<AgentSessionNotifier>.Instance),
+            Host.Services.GetRequiredService<AgentSessionNotifier>(),
             _clock,
             NullLogger<AgentDeliverer>.Instance);
 
