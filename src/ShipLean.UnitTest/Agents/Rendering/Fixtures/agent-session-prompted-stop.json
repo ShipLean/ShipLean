@@ -1,0 +1,77 @@
+{
+  "action": "prompted",
+  "type": "AgentSessionEvent",
+  "createdAt": "2026-10-28T11:00:00.000Z",
+  "organizationId": "a1c4e7f0-2b36-4d58-9e71-6f0b3d8c5a24",
+  "appUserId": "c7e9a1b3-5d24-4f68-9a0c-2e4b6d8f0a21",
+  "oauthClientId": "c7e9a1b3-5d24-4f68-9a0c-2e4b6d8f0a21",
+  "agentSession": {
+    "id": "1e3f5a7c-9d02-4b46-8e68-0a2c4e6f8b19",
+    "appUserId": "c7e9a1b3-5d24-4f68-9a0c-2e4b6d8f0a21",
+    "organizationId": "a1c4e7f0-2b36-4d58-9e71-6f0b3d8c5a24",
+    "createdAt": "2026-10-28T09:30:00.000Z",
+    "updatedAt": "2026-10-28T09:30:00.000Z",
+    "status": "pending",
+    "type": "commentThread",
+    "creatorId": "3f2a6c1e-8d41-4b7a-9a52-0c6d1e7b4f10",
+    "creator": {
+      "id": "3f2a6c1e-8d41-4b7a-9a52-0c6d1e7b4f10",
+      "name": "Joel Dickson",
+      "email": "joel@example.com"
+    },
+    "issueId": "c0d5b8a3-6e21-4a97-8f44-1b7e2c9d0a65",
+    "issue": {
+      "id": "c0d5b8a3-6e21-4a97-8f44-1b7e2c9d0a65",
+      "identifier": "SHIP-182",
+      "title": "Agent context renderer",
+      "description": "Render the item, its parent and its comments into Linear's AgentSessionEvent.\n\nKeep it pure.\n\n## Acceptance criteria\n- [x] Golden output for a full item\n- [ ] XML is escaped",
+      "teamId": "a1c4e7f0-2b36-4d58-9e71-6f0b3d8c5a24",
+      "team": {
+        "id": "a1c4e7f0-2b36-4d58-9e71-6f0b3d8c5a24",
+        "key": "SHIP",
+        "name": "ShipLean"
+      },
+      "url": "https://shiplean.example.com/projects/SHIP/items/SHIP-182",
+      "labels": [
+        {
+          "id": "backend",
+          "name": "backend"
+        },
+        {
+          "id": "agents",
+          "name": "agents"
+        }
+      ],
+      "parent": {
+        "id": "e4a7c1d9-3f58-4b20-a6d3-9c1e5b7f0824",
+        "identifier": "SHIP-181",
+        "title": "Moving an item into a pickup state starts an agent session",
+        "description": "Comments and Stop go to the same session.",
+        "url": "https://shiplean.example.com/projects/SHIP/items/SHIP-181"
+      },
+      "project": {
+        "id": "9d3b6f12-7a40-4c85-b1e6-5e8a2d4c7f09",
+        "name": "Agent dispatch v1",
+        "url": "https://shiplean.example.com/projects/SHIP/items/SHIP-178"
+      }
+    }
+  },
+  "guidance": [],
+  "agentActivity": {
+    "id": "a3c5e7f9-1b46-4d80-8c2e-6a8c0e2b4d37",
+    "agentSessionId": "1e3f5a7c-9d02-4b46-8e68-0a2c4e6f8b19",
+    "content": {
+      "type": "prompt",
+      "body": ""
+    },
+    "createdAt": "2026-10-28T11:00:00.000Z",
+    "updatedAt": "2026-10-28T11:00:00.000Z",
+    "userId": "3f2a6c1e-8d41-4b7a-9a52-0c6d1e7b4f10",
+    "user": {
+      "id": "3f2a6c1e-8d41-4b7a-9a52-0c6d1e7b4f10",
+      "name": "Joel Dickson",
+      "email": "joel@example.com"
+    },
+    "signal": "stop"
+  }
+}
