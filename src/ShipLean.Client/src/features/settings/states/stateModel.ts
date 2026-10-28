@@ -61,7 +61,7 @@ export function rowsOf(saved: StateDto[], changes: StateChanges, type: WorkItemT
       type,
       name: a.name,
       category: a.category,
-      startsAgent: a.startsAgent,
+      startsAgent: a.startsAgent ?? false,
       itemCount: 0,
       incoming: incoming.get(a.id) ?? 0,
       fresh: true,
@@ -125,7 +125,7 @@ export function addState(
   saved: StateDto[],
   add: { id: string; type: WorkItemTypeId; name: string; category: StateCategory },
 ): StateChanges {
-  const added = { ...changes, add: [...changes.add, { startsAgent: false, ...add }] };
+  const added = { ...changes, add: [...changes.add, add] };
   const ids = rowsOf(saved, added, add.type)
     .map((r) => r.id)
     .filter((id) => id !== add.id);

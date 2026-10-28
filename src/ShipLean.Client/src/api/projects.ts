@@ -131,7 +131,8 @@ export interface StateAdd {
   type: WorkItemTypeId;
   name: string;
   category: StateCategory;
-  startsAgent: boolean;
+  /** Absent means false: only a flagged new state sends it. */
+  startsAgent?: boolean;
 }
 
 /** Rename and/or recategorise; the state keeps its id and items. */

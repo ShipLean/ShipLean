@@ -25,13 +25,7 @@ function FakeStates() {
               ...d.states,
               add: [
                 ...d.states.add,
-                {
-                  id: 'new-state',
-                  type: 'story',
-                  name: 'Review',
-                  category: 'inProgress',
-                  startsAgent: false,
-                },
+                { id: 'new-state', type: 'story', name: 'Review', category: 'inProgress' },
               ],
             },
           }))

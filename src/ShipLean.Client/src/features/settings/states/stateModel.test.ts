@@ -70,7 +70,7 @@ describe('stateModel', () => {
       name: 'Ready',
       category: 'proposed',
     });
-    expect(added.add).toMatchObject([{ id: 'n', startsAgent: false }]);
+    expect(added.add).toEqual([{ id: 'n', type: 'story', name: 'Ready', category: 'proposed' }]);
     expect(editState(added, saved, 'n', { startsAgent: true }).add).toMatchObject([
       { id: 'n', startsAgent: true },
     ]);
