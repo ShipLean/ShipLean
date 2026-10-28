@@ -239,6 +239,37 @@ public static class SettingsTestIds
     public const string IntegrationsDiscard = "integrations-discard";
     public const string IntegrationsSave = "integrations-save";
 
+    // SHIP-178 agent connections (instance Agents tab) and the project's agent fields
+    public const string AgentsPanel = "agents-panel";
+    public const string AgentsRow = "agents-row";
+    public const string AgentsName = "agents-name";
+    public const string AgentsUrl = "agents-url";
+    public const string AgentsSecretLast4 = "agents-secret-last4";
+    public const string AgentsTokenLast4 = "agents-token-last4";
+    public const string AgentsArchivedBadge = "agents-archived-badge";
+    public const string AgentsEmpty = "agents-empty";
+    public const string AgentsAdd = "agents-add";
+    public const string AgentsEdit = "agents-edit";
+    public const string AgentsRegenerateSecret = "agents-regenerate-secret";
+    public const string AgentsRegenerateToken = "agents-regenerate-token";
+    public const string AgentsArchive = "agents-archive";
+    public const string AgentsConfirm = "agents-confirm";
+    public const string AgentsConfirmCancel = "agents-confirm-cancel";
+    public const string AgentsFormName = "agents-form-name";
+    public const string AgentsFormUrl = "agents-form-url";
+    public const string AgentsFormSave = "agents-form-save";
+    public const string AgentsFormCancel = "agents-form-cancel";
+    public const string AgentsFieldError = "agents-field-error";
+    public const string AgentsActionError = "agents-action-error";
+    public const string AgentsShownOnce = "agents-shown-once";
+    public const string AgentsShownOnceClose = "agents-shown-once-close";
+    public const string AgentsShownSecret = "agents-shown-secret";
+    public const string AgentsShownToken = "agents-shown-token";
+    public const string AgentsShownCopy = "agents-shown-copy";
+    public const string AgentsShownDone = "agents-shown-done";
+    public const string GeneralAgentConnection = "settings-general-agent-connection";
+    public const string GeneralRepoUrl = "settings-general-repo-url";
+    public const string GeneralRepoBaseBranch = "settings-general-repo-base-branch";
     // Profile, proxy mode
     public const string ProfileNameReadOnly = "settings-profile-name-read-only";
     public const string ProfileEmailSource = "settings-profile-email-source";

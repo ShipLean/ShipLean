@@ -1,6 +1,6 @@
 using ShipLean.Contracts.Agents;
 
-namespace ShipLean.Application.Features.Agents.Connections;
+namespace ShipLean.Application.Features.Instance.AgentConnections;
 
 // An agent_connection row without its callback token hash; Dapper maps the columns onto the constructor by name.
 internal sealed record AgentConnectionRow(

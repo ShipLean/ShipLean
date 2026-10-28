@@ -156,6 +156,10 @@ test('routes_WhenModeAndSettingsAreAbsent_ShouldDropTheExtraCrumb', () => {
   expect(crumbTrail('epicsBoard', project)).toEqual(['SHIP', 'Boards', 'Epics']);
 });
 
+test('routes_WhenInstanceTabIsAgents_ShouldMatchIt', () => {
+  expect(matchRoute('/instance/agents')?.id).toBe('instanceSettings');
+});
+
 test('routes_WhenInstanceTabIsIntegrations_ShouldMatchIt', () => {
   expect(matchRoute('/instance/integrations')?.id).toBe('instanceSettings');
 });

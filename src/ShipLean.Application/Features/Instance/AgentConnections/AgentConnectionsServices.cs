@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Agents;
 
-namespace ShipLean.Application.Features.Agents.Connections;
+namespace ShipLean.Application.Features.Instance.AgentConnections;
 
 public sealed class AgentConnectionsServices : IServiceModule
 {

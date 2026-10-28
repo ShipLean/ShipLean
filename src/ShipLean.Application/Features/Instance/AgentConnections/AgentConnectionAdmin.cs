@@ -5,7 +5,7 @@ using ShipLean.Contracts;
 using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Errors;
 
-namespace ShipLean.Application.Features.Agents.Connections;
+namespace ShipLean.Application.Features.Instance.AgentConnections;
 
 // What an instance admin does to connections (the caller is checked by [InstanceAdmin] on the controller). A signing secret
 // goes in encrypted and a callback token as its hash; each comes out once, in the answer to the call that made it.

@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using ShipLean.Application.Features.Agents.Connections;
+using ShipLean.Application.Features.Instance.AgentConnections;
 using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Errors;
 using ShipLean.WebApi.Features.Auth;

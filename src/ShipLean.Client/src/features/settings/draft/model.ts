@@ -27,6 +27,11 @@ export interface SettingsDraft {
   description: string;
   /** ISO weekdays, ascending. */
   workingDays: number[];
+  /** The chosen agent connection's id; empty for none. */
+  agentConnectionId: string;
+  repoUrl: string;
+  /** Empty means the default, main. */
+  repoBaseBranch: string;
   members: DraftMember[];
   velocityWindow: string;
   velocityOverride: string;
@@ -37,6 +42,9 @@ export interface SettingsDraft {
 export type DraftField =
   | 'name'
   | 'workingDays'
+  | 'agentConnectionId'
+  | 'repoUrl'
+  | 'repoBaseBranch'
   | 'velocityWindow'
   | 'velocityOverride'
   | `state-${string}`
@@ -64,6 +72,9 @@ export function toDraft(settings: ProjectSettingsDto): SettingsDraft {
     name: settings.general.name,
     description: settings.general.description,
     workingDays: [...settings.general.workingDays].sort((a, b) => a - b),
+    agentConnectionId: settings.general.agentConnectionId ?? '',
+    repoUrl: settings.general.repoUrl ?? '',
+    repoBaseBranch: settings.general.repoBaseBranch ?? '',
     members: settings.members.map((m) => ({
       email: m.email,
       user: m.user,
@@ -164,6 +175,9 @@ export function toPut(draft: SettingsDraft, parsed: ParsedDraft): ProjectSetting
       name: draft.name.trim(),
       description: draft.description,
       workingDays: draft.workingDays,
+      agentConnectionId: draft.agentConnectionId === '' ? null : draft.agentConnectionId,
+      repoUrl: draft.repoUrl.trim() === '' ? null : draft.repoUrl.trim(),
+      repoBaseBranch: draft.repoBaseBranch.trim() === '' ? null : draft.repoBaseBranch.trim(),
     },
     members: draft.members.filter((m) => !m.removed).map((m) => ({ email: m.email, role: m.role })),
     sprints: {
@@ -208,6 +222,9 @@ export function rebase(
       name: mine('name'),
       description: mine('description'),
       workingDays: mine('workingDays'),
+      agentConnectionId: mine('agentConnectionId'),
+      repoUrl: mine('repoUrl'),
+      repoBaseBranch: mine('repoBaseBranch'),
       velocityWindow: mine('velocityWindow'),
       velocityOverride: mine('velocityOverride'),
       members,
@@ -228,6 +245,13 @@ export function changesBetween(
     changes.push({ tab: 'general', label: 'Description' });
   if (base.workingDays.join() !== draft.workingDays.join()) {
     changes.push({ tab: 'general', label: 'Working days' });
+  }
+  if (base.agentConnectionId !== draft.agentConnectionId) {
+    changes.push({ tab: 'general', label: 'Agent connection' });
+  }
+  if (base.repoUrl !== draft.repoUrl) changes.push({ tab: 'general', label: 'Repository' });
+  if (base.repoBaseBranch !== draft.repoBaseBranch) {
+    changes.push({ tab: 'general', label: 'Base branch' });
   }
   for (const member of draft.members) {
     const saved = base.members.find((m) => m.user.id === member.user.id);

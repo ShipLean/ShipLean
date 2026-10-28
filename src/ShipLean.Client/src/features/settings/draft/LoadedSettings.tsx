@@ -125,7 +125,13 @@ export function LoadedSettings({
               A teammate saved these settings; your edits were kept on top of theirs.
             </div>
           ) : null}
-          {tab === 'general' && <GeneralTab project={project} {...tabProps} />}
+          {tab === 'general' && (
+            <GeneralTab
+              project={project}
+              agentConnections={settings.general.agentConnections}
+              {...tabProps}
+            />
+          )}
           {tab === 'members' && <MembersTab {...tabProps} changedMembers={changedMembers} />}
           {tab === 'sprints' && <SprintsTab project={project} {...tabProps} />}
           <SettingsDraftContext.Provider value={{ settings, focus: focusRequest, ...tabProps }}>

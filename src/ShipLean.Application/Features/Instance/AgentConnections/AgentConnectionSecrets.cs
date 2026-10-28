@@ -3,7 +3,7 @@ using Agoda.IoC.Core;
 using Microsoft.AspNetCore.DataProtection;
 using ShipLean.Contracts.Errors;
 
-namespace ShipLean.Application.Features.Agents.Connections;
+namespace ShipLean.Application.Features.Instance.AgentConnections;
 
 // The signing secret at rest: ASP.NET Data Protection (keys are in Postgres) under a purpose of its own, so no other
 // protector (sign-in cookie, Jira, integrations) can open one. The callback token is never decrypted: only its hash is stored.

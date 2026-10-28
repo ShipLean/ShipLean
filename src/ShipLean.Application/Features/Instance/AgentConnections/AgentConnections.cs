@@ -2,7 +2,7 @@ using Dapper;
 using Npgsql;
 using ShipLean.Contracts.Agents;
 
-namespace ShipLean.Application.Features.Agents.Connections;
+namespace ShipLean.Application.Features.Instance.AgentConnections;
 
 // IAgentConnections over agent_connection. Only GetAsync and FindActiveByCallbackTokenHashAsync decrypt the signing secret.
 public sealed class AgentConnections(NpgsqlDataSource dataSource, AgentConnectionSecrets secrets) : IAgentConnections

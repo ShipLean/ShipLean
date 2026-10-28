@@ -17,7 +17,16 @@ const statesOf = (): StateDto[] =>
     },
   ]);
 const saved: ProjectSettingsDto = {
-  general: { key: 'SHIP', name: 'Storefront', description: 'd', workingDays: [5, 1, 2] },
+  general: {
+    key: 'SHIP',
+    name: 'Storefront',
+    description: 'd',
+    workingDays: [5, 1, 2],
+    agentConnectionId: null,
+    repoUrl: null,
+    repoBaseBranch: null,
+    agentConnections: [],
+  },
   members: [{ user, email: 'joel@x.test', role: 'admin', status: 'active' }],
   sprints: { velocityWindow: 3, velocityOverride: null },
   states: statesOf(),
