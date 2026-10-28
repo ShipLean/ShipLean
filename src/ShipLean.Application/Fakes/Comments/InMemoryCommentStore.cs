@@ -47,13 +47,21 @@ public sealed class InMemoryCommentStore(ICurrentUser currentUser, MarkdownRende
     }
 
     public Task<CommentDto> AddAsync(Guid workItemId, CommentCreate create, CancellationToken cancellationToken = default)
+        => Add(workItemId, create, AgentStamp.Of(currentAgent));
+
+    public Task<CommentDto> AddAsAgentAsync(Guid workItemId, CommentCreate create, string agentName, CancellationToken cancellationToken = default)
+        => string.IsNullOrWhiteSpace(agentName)
+            ? throw new ArgumentException("An agent comment needs an agent name.", nameof(agentName))
+            : Add(workItemId, create, agentName);
+
+    private Task<CommentDto> Add(Guid workItemId, CommentCreate create, string? agentName)
     {
         var body = RequireBody(create.Body);
         lock (_gate)
         {
             RequireWorkItem(workItemId);
             var now = time.GetUtcNow();
-            var entry = new Entry(Guid.NewGuid(), workItemId, currentUser.Id, body, now, _entries.Count) { AgentName = AgentStamp.Of(currentAgent) };
+            var entry = new Entry(Guid.NewGuid(), workItemId, currentUser.Id, body, now, _entries.Count) { AgentName = agentName };
             _entries.Add(entry);
             return Task.FromResult(ToDto(entry));
         }

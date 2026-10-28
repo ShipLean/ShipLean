@@ -56,6 +56,19 @@ public abstract class CommentStoreContract
     }
 
     [Test]
+    public async Task AddAsAgent_WhenGivenAName_ShouldStampItAndKeepTheCaller()
+    {
+        var workItem = await ArrangeWorkItemAsync();
+
+        var added = await CreateStore(Joel).AddAsAgentAsync(workItem, new CommentCreate("Done: **merged**"), "Relay");
+
+        added.AgentName.ShouldBe("Relay");
+        added.BodyHtml.ShouldContain("<strong>merged</strong>");
+        var listed = await CreateStore(Joel).ListAsync(workItem);
+        listed.Select(c => c.AgentName).ShouldBe(["Relay"]);
+    }
+
+    [Test]
     public async Task Add_WhenBodyIsBlank_ShouldBeValidation()
     {
         var workItem = await ArrangeWorkItemAsync();

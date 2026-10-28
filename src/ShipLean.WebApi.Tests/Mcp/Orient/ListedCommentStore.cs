@@ -20,6 +20,8 @@ internal sealed class ListedCommentStore : ICommentStore
         return Task.FromResult(comment);
     }
 
+    public Task<CommentDto> AddAsAgentAsync(Guid workItemId, CommentCreate create, string agentName, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+
     public Task<CommentDto> EditAsync(Guid id, CommentEdit edit, CancellationToken cancellationToken = default) => throw new NotSupportedException();
 
     public Task<CommentDto> SupersedeAsync(Guid id, CancellationToken cancellationToken = default) => throw new NotSupportedException();

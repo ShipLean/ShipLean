@@ -2,6 +2,7 @@ using Dapper;
 using Npgsql;
 using ShipLean.Application.Markdown;
 using ShipLean.Contracts;
+using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Comments;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Events;
@@ -18,7 +19,8 @@ public sealed class CommentStore(
     ICurrentAgent currentAgent,
     MarkdownRenderer renderer,
     TimeProvider clock,
-    IProjectEvents events) : ICommentStore
+    IProjectEvents events,
+    IAgentPrompts agentPrompts) : ICommentStore
 {
     private static readonly string SelectLive = $"SELECT {CommentRow.Columns} {CommentRow.From} WHERE c.id = @id AND c.archived_at IS NULL";
 
@@ -33,7 +35,17 @@ public sealed class CommentStore(
         return [.. rows.Select(r => r.ToDto(renderer, clock))];
     }
 
-    public async Task<CommentDto> AddAsync(Guid workItemId, CommentCreate create, CancellationToken cancellationToken = default)
+    public Task<CommentDto> AddAsync(Guid workItemId, CommentCreate create, CancellationToken cancellationToken = default)
+        => AddStampedAsync(workItemId, create, AgentStamp.Of(currentAgent), cancellationToken);
+
+    public Task<CommentDto> AddAsAgentAsync(Guid workItemId, CommentCreate create, string agentName, CancellationToken cancellationToken = default)
+        => string.IsNullOrWhiteSpace(agentName)
+            ? throw new ArgumentException("An agent comment needs an agent name.", nameof(agentName))
+            : AddStampedAsync(workItemId, create, agentName, cancellationToken);
+
+    // A comment with no agent stamp is a person's and, after commit, may start a `prompted` webhook; a stamped one (an MCP agent's
+    // too) never does.
+    private async Task<CommentDto> AddStampedAsync(Guid workItemId, CommentCreate create, string? agentName, CancellationToken cancellationToken)
     {
         var body = RequireBody(create?.Body);
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
@@ -45,10 +57,15 @@ public sealed class CommentStore(
             INSERT INTO comment (id, work_item_id, author_id, body, created_at, updated_at, agent_name)
             VALUES (@id, @workItemId, @authorId, @body, @now, @now, @agentName)
             """,
-            new { id, workItemId, authorId = currentUser.Id, body, now, agentName = AgentStamp.Of(currentAgent) },
+            new { id, workItemId, authorId = currentUser.Id, body, now, agentName },
             cancellationToken: cancellationToken));
         var added = await ReadAsync(connection, id, cancellationToken);
         await PublishChangedAsync(connection, workItemId, cancellationToken);
+        if (agentName is null)
+        {
+            await agentPrompts.CommentAddedAsync(id, cancellationToken);
+        }
+
         return added;
     }
 
