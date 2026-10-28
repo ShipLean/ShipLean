@@ -9,6 +9,7 @@ using ShipLean.Contracts;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.WebApi.Features.Auth;
+using ShipLean.WebApi.Features.LinearApi;
 using ShipLean.WebApi.Infrastructure;
 using ShipLean.WebApi.Realtime;
 
@@ -25,13 +26,13 @@ public class ModuleScanTests : ApiFixture
         modules.Select(m => m.GetType()).ShouldContain(typeof(HealthEndpoints));
     }
 
-    // Feature endpoints are controllers; IEndpointModule is only for what MVC does not map (health, the sign-in page, the hub).
+    // Feature endpoints are controllers; IEndpointModule is only for what MVC does not map (health, the sign-in page, the hub, the Linear-compatible GraphQL endpoint).
     [Test]
     public void Scan_WhenEndpointModulesFound_ShouldBeOnlyTheNonMvcEndpoints()
     {
         var modules = ModuleScan.Find<IEndpointModule>([ApiMarker.Assembly, ApplicationMarker.Assembly]);
 
-        modules.Select(m => m.GetType()).ShouldBe([typeof(HealthEndpoints), typeof(LoginPageEndpoints), typeof(RealtimeEndpoints)], ignoreOrder: true);
+        modules.Select(m => m.GetType()).ShouldBe([typeof(HealthEndpoints), typeof(LoginPageEndpoints), typeof(RealtimeEndpoints), typeof(LinearApiEndpoints)], ignoreOrder: true);
     }
 
     [Test]
