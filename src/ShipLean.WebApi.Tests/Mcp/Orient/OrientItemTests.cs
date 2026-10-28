@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Contracts;
@@ -77,6 +78,17 @@ public class OrientItemTests : McpFixture
         // The word searches below read search_doc. A full pass indexes the items above (real work_item rows, so the full sync keeps them).
         using var reindexed = await Api.ActingAs(TestUser.Joel).PostJsonAsync("api/admin/search/reindex?full=true");
         reindexed.EnsureSuccessStatusCode();
+    }
+
+    [Test]
+    public async Task GetWorkItem_WhenClientReadsOnlyText_ShouldCarryTheWholeItemAsJson()
+    {
+        var reply = await CallToolAsync(await TokenAsync(TestUser.Joel, ReadOnly), "get_work_item", $$"""{"key":"{{_storyKey}}"}""");
+
+        var item = reply.TextJson();
+        JsonElement.DeepEquals(item, reply.Structured()).ShouldBeTrue();
+        item.GetProperty("tags").EnumerateArray().Select(t => t.GetString()).ShouldBe(["payments"]);
+        item.GetProperty("children").GetArrayLength().ShouldBe(2);
     }
 
     [Test]

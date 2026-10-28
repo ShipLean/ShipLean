@@ -17,7 +17,13 @@ public sealed class McpServerServices : IServiceModule
         + "again with that plan to apply exactly it. A tool error comes back as {ok:false, error:{code, message, field, "
         + "candidates}}: when the code is ambiguous, pick one of the candidates and call again. For the full flow from idea to "
         + "done, call planning_guide with part work; before you break down a feature or epic for several agents, call "
-        + "planning_guide.";
+        + "planning_guide. To run a captured plan, call get_brief on the Feature for its waves, then get_brief on each task "
+        + "and give that brief to the agent doing it, and have each agent call report_task when it is done. "
+        + "Every result is one summary line, then the Markdown for a brief or a guide part, then a JSON object with the full "
+        + "result (the same object as the structured content). If you see only the summary line, your client is hiding the "
+        + "rest: do not search saved output, transcripts or ShipLean's source for it; tell the person, and carry on with the "
+        + "tools whose summary line has what you need. Agents reach ShipLean only through these tools; there is no API token, "
+        + "CLI or header to use instead.";
 
     public void AddServices(IServiceCollection services, IConfiguration configuration)
         => services.AddMcpServer(options => options.ServerInstructions = Instructions);
