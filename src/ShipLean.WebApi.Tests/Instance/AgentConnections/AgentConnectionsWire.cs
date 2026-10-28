@@ -24,7 +24,7 @@ internal static class AgentConnectionsWire
     public static async Task<AgentConnectionIssuedDto> CreateAsync(ApiClient api, string name, string url = "https://relay.example.com/hook")
         => (await ReadAsync<AgentConnectionIssuedDto>(await api.PostJsonAsync(Route, new { name, receiverUrl = url }))).Value;
 
-    public static async Task<AgentConnection?> FindByTokenAsync(ShipLeanHost host, string token)
+    public static async Task<AgentConnectionIdentity?> FindByTokenAsync(ShipLeanHost host, string token)
     {
         await using var scope = host.Services.CreateAsyncScope();
         return await scope.ServiceProvider.GetRequiredService<IAgentConnections>().FindActiveByCallbackTokenHashAsync(IAgentConnections.HashCallbackToken(token));

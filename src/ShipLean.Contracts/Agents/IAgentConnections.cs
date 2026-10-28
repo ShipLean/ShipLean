@@ -17,6 +17,7 @@ public interface IAgentConnections
     // signs); null when there is none. Throws ApiException.NotConfigured when the saved secret can no longer be decrypted.
     Task<AgentConnection?> GetAsync(Guid id, CancellationToken cancellationToken = default);
 
-    // The live (not archived) connection whose callback token hashes to this, or null. Hash with HashCallbackToken.
-    Task<AgentConnection?> FindActiveByCallbackTokenHashAsync(byte[] tokenHash, CancellationToken cancellationToken = default);
+    // The live (not archived) connection whose callback token hashes to this, or null. Hash with HashCallbackToken. It
+    // never decrypts the signing secret, so it works with a lost key ring; use GetAsync for the secret.
+    Task<AgentConnectionIdentity?> FindActiveByCallbackTokenHashAsync(byte[] tokenHash, CancellationToken cancellationToken = default);
 }

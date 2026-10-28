@@ -24,7 +24,7 @@ public sealed class AgentConnectionAdmin(NpgsqlDataSource dataSource, AgentConne
         var now = clock.GetUtcNow();
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await RequireFreeNameAsync(connection, name, null, cancellationToken);
-        await connection.ExecuteAsync(new CommandDefinition(
+        await WriteNamedAsync(connection, new CommandDefinition(
             """
             INSERT INTO agent_connection (id, type, name, receiver_url, signing_secret_protected, signing_secret_last4, callback_token_hash, callback_token_last4,
                                           created_by, created_at, updated_by, updated_at)
@@ -45,7 +45,7 @@ public sealed class AgentConnectionAdmin(NpgsqlDataSource dataSource, AgentConne
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await RequireLiveAsync(connection, id, cancellationToken);
         await RequireFreeNameAsync(connection, name, id, cancellationToken);
-        await connection.ExecuteAsync(new CommandDefinition(
+        await WriteNamedAsync(connection, new CommandDefinition(
             "UPDATE agent_connection SET name = @name, receiver_url = @url, updated_by = @userId, updated_at = @now WHERE id = @id",
             new { id, name, url, userId = currentUser.Id, now = clock.GetUtcNow() }, cancellationToken: cancellationToken));
         return await ReadAsync(connection, id, cancellationToken);
@@ -106,6 +106,19 @@ public sealed class AgentConnectionAdmin(NpgsqlDataSource dataSource, AgentConne
             && uri.Fragment.Length == 0
             && (uri.Scheme == Uri.UriSchemeHttps || (uri.Scheme == Uri.UriSchemeHttp && uri.IsLoopback));
         return ok ? text : throw ApiException.Validation("The receiver URL must be an https address, or an http address on localhost, with no credentials.", "receiverUrl");
+    }
+
+    // The free-name check above can lose a race; the unique index then has the last word.
+    private static async Task WriteNamedAsync(NpgsqlConnection connection, CommandDefinition command)
+    {
+        try
+        {
+            await connection.ExecuteAsync(command);
+        }
+        catch (PostgresException e) when (e.SqlState == PostgresErrorCodes.UniqueViolation && e.ConstraintName == "ux_agent_connection_name")
+        {
+            throw ApiException.Validation("Another connection already has that name.", "name");
+        }
     }
 
     private static async Task RequireFreeNameAsync(NpgsqlConnection connection, string name, Guid? except, CancellationToken cancellationToken)

@@ -18,7 +18,7 @@ internal static partial class ProjectAgentRules
         {
             return null;
         }
-        if (text.Length > MaxUrl || text.Any(c => char.IsWhiteSpace(c) || char.IsControl(c)) || !(IsUrl(text) || ScpForm().IsMatch(text)))
+        if (text.Length > MaxUrl || text[0] == '-' || text.Any(c => char.IsWhiteSpace(c) || char.IsControl(c)) || !(IsUrl(text) || ScpForm().IsMatch(text)))
         {
             throw ApiException.Validation("The repository must be a git address: https://host/org/repo, ssh://git@host/org/repo or git@host:org/repo.", "repoUrl");
         }
@@ -33,7 +33,7 @@ internal static partial class ProjectAgentRules
             return null;
         }
         if (text.Length > MaxBranch || !BranchName().IsMatch(text) || text.Contains("..", StringComparison.Ordinal) || text.Contains("//", StringComparison.Ordinal)
-            || text.EndsWith('/') || text.EndsWith('.') || text.EndsWith(".lock", StringComparison.Ordinal))
+            || text.EndsWith('/') || text.EndsWith('.') || text.Split('/').Any(part => part.EndsWith(".lock", StringComparison.Ordinal)))
         {
             throw ApiException.Validation("The base branch must be a git branch name, such as main or release/1.2.", "repoBaseBranch");
         }
@@ -44,9 +44,10 @@ internal static partial class ProjectAgentRules
         => Uri.TryCreate(text, UriKind.Absolute, out var uri)
            && (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == "ssh")
            && uri.Host.Length > 0 && uri.Query.Length == 0 && uri.Fragment.Length == 0
+           && !uri.Host.StartsWith('-')
            && (uri.Scheme == "ssh" ? !uri.UserInfo.Contains(':') : uri.UserInfo.Length == 0);
 
-    [GeneratedRegex(@"^[A-Za-z0-9._-]+@[A-Za-z0-9.-]+:[A-Za-z0-9._~/-]+$")]
+    [GeneratedRegex(@"^[A-Za-z0-9._-]+@[A-Za-z0-9][A-Za-z0-9.-]*:[A-Za-z0-9._~/-]+$")]
     private static partial Regex ScpForm();
 
     [GeneratedRegex(@"^[A-Za-z0-9][A-Za-z0-9._/-]*$")]

@@ -32,7 +32,7 @@ public sealed partial class ProjectSettingsService
             throw ApiException.Validation("A project's key never changes.");
         }
 
-        var general = await CheckAgentAsync(CheckGeneral(put.General), current.AgentConnectionId, cancellationToken);
+        var general = await CheckAgentAsync(KeepUnprovided(CheckGeneral(put.General), current), current.AgentConnectionId, cancellationToken);
         CheckForecast(put.Sprints);
         var members = await ResolveMembersAsync(put.Members, cancellationToken);
         var moves = await PlanMovesAsync(projectId, put.States, cancellationToken);
@@ -103,8 +103,18 @@ public sealed partial class ProjectSettingsService
         }
 
         return new ProjectGeneralPut(
-            general.Name.Trim(), general.Description ?? string.Empty, days, general.AgentConnectionId, ProjectAgentRules.RepoUrl(general.RepoUrl), ProjectAgentRules.BaseBranch(general.RepoBaseBranch));
+            general.Name.Trim(), general.Description ?? string.Empty, days, general.AgentConnectionId, ProjectAgentRules.RepoUrl(general.RepoUrl), ProjectAgentRules.BaseBranch(general.RepoBaseBranch), general.Provided);
     }
+
+    // An agent field the body left out keeps its saved value (already valid, so it is not checked again).
+    private static ProjectGeneralPut KeepUnprovided(ProjectGeneralPut general, ProjectRow current)
+        => general with
+        {
+            AgentConnectionId = general.Provided.HasFlag(ProvidedAgentFields.Connection) ? general.AgentConnectionId : current.AgentConnectionId,
+            RepoUrl = general.Provided.HasFlag(ProvidedAgentFields.RepoUrl) ? general.RepoUrl : current.RepoUrl,
+            RepoBaseBranch = general.Provided.HasFlag(ProvidedAgentFields.RepoBaseBranch) ? general.RepoBaseBranch : current.RepoBaseBranch,
+            Provided = ProvidedAgentFields.All,
+        };
 
     // A connection can be picked only while it is not archived; keeping the one already chosen is always allowed.
     private async Task<ProjectGeneralPut> CheckAgentAsync(ProjectGeneralPut general, Guid? saved, CancellationToken cancellationToken)

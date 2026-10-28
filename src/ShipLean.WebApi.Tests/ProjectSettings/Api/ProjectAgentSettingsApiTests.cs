@@ -105,6 +105,75 @@ public class ProjectAgentSettingsApiTests : ApiFixture
     }
 
     [Test]
+    public async Task Settings_WhenAgentFieldsLeftOutOfTheBody_ShouldKeepTheSavedValues()
+    {
+        var project = await ArrangeAsync();
+        var connectionId = await NewConnectionAsync("Kept relay");
+        using var first = await PutAsync(project, Request(await LoadAsync(project), connectionId, "https://github.com/ShipLean/ShipLean.git", "dev"));
+        first.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var loaded = await LoadAsync(project);
+        var body = JsonSerializer.SerializeToNode(Request(loaded, null, null, null), WireOptions)!;
+        var general = body["general"]!.AsObject();
+        general.Remove("agentConnectionId");
+        general.Remove("repoUrl");
+        general.Remove("repoBaseBranch");
+        general["name"] = "Renamed without agent fields";
+
+        using var response = await Api.PutJsonAsync($"api/projects/{project.Id}/settings", body);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+        var reloaded = await LoadAsync(project);
+        reloaded.General.Name.ShouldBe("Renamed without agent fields");
+        reloaded.General.AgentConnectionId.ShouldBe(connectionId);
+        reloaded.General.RepoUrl.ShouldBe("https://github.com/ShipLean/ShipLean.git");
+        reloaded.General.RepoBaseBranch.ShouldBe("dev");
+    }
+
+    [Test]
+    public async Task Settings_WhenOnlySomeAgentFieldsSent_ShouldChangeThoseAndKeepTheRest()
+    {
+        var project = await ArrangeAsync();
+        var connectionId = await NewConnectionAsync("Partly kept relay");
+        using var first = await PutAsync(project, Request(await LoadAsync(project), connectionId, "https://github.com/ShipLean/ShipLean.git", "dev"));
+        first.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var body = JsonSerializer.SerializeToNode(Request(await LoadAsync(project), null, null, null), WireOptions)!;
+        var general = body["general"]!.AsObject();
+        general.Remove("agentConnectionId");
+        general.Remove("repoBaseBranch");
+        general["repoUrl"] = null;
+
+        using var response = await Api.PutJsonAsync($"api/projects/{project.Id}/settings", body);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+        var reloaded = await LoadAsync(project);
+        reloaded.General.AgentConnectionId.ShouldBe(connectionId);
+        reloaded.General.RepoUrl.ShouldBeNull();
+        reloaded.General.RepoBaseBranch.ShouldBe("dev");
+    }
+
+    [Test]
+    public async Task Settings_WhenAgentFieldsExplicitlyNull_ShouldClearThem()
+    {
+        var project = await ArrangeAsync();
+        var connectionId = await NewConnectionAsync("Nulled relay");
+        using var first = await PutAsync(project, Request(await LoadAsync(project), connectionId, "https://github.com/ShipLean/ShipLean.git", "dev"));
+        first.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var body = JsonSerializer.SerializeToNode(Request(await LoadAsync(project), null, null, null), WireOptions)!;
+        var general = body["general"]!.AsObject();
+        general["agentConnectionId"] = null;
+        general["repoUrl"] = null;
+        general["repoBaseBranch"] = null;
+
+        using var response = await Api.PutJsonAsync($"api/projects/{project.Id}/settings", body);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+        var reloaded = await LoadAsync(project);
+        reloaded.General.AgentConnectionId.ShouldBeNull();
+        reloaded.General.RepoUrl.ShouldBeNull();
+        reloaded.General.RepoBaseBranch.ShouldBeNull();
+    }
+
+    [Test]
     public async Task Settings_WhenConnectionArchived_ShouldNotBePickableButKeepTheCurrentChoice()
     {
         var project = await ArrangeAsync();
@@ -142,6 +211,10 @@ public class ProjectAgentSettingsApiTests : ApiFixture
     [TestCase("http://github.com/ShipLean/ShipLean")]
     [TestCase("https://user:secret@github.com/ShipLean/ShipLean")]
     [TestCase("https://github.com/ShipLean/ShipLean?x=1")]
+    [TestCase("-oProxyCommand=x@host:org/repo")]
+    [TestCase("--upload-pack=x https://github.com/ShipLean/ShipLean")]
+    [TestCase("git@-host:org/repo")]
+    [TestCase("ssh://git@-host/org/repo")]
     public async Task Settings_WhenRepoUrlInvalid_ShouldBeValidationOnThatField(string url)
     {
         var project = await ArrangeAsync();
@@ -159,6 +232,7 @@ public class ProjectAgentSettingsApiTests : ApiFixture
     [TestCase("has space")]
     [TestCase("ends/")]
     [TestCase("topic.lock")]
+    [TestCase("feature.lock/work")]
     public async Task Settings_WhenBaseBranchInvalid_ShouldBeValidationOnThatField(string branch)
     {
         var project = await ArrangeAsync();

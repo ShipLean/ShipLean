@@ -4,7 +4,7 @@ using ShipLean.Contracts.Agents;
 
 namespace ShipLean.Application.Features.Instance.AgentConnections;
 
-// IAgentConnections over agent_connection. Only GetAsync and FindActiveByCallbackTokenHashAsync decrypt the signing secret.
+// IAgentConnections over agent_connection. Only GetAsync decrypts the signing secret.
 public sealed class AgentConnections(NpgsqlDataSource dataSource, AgentConnectionSecrets secrets) : IAgentConnections
 {
     public async Task<IReadOnlyList<AgentConnectionDto>> ListAsync(CancellationToken cancellationToken = default)
@@ -23,13 +23,13 @@ public sealed class AgentConnections(NpgsqlDataSource dataSource, AgentConnectio
         return row is null ? null : With(row);
     }
 
-    public async Task<AgentConnection?> FindActiveByCallbackTokenHashAsync(byte[] tokenHash, CancellationToken cancellationToken = default)
+    public async Task<AgentConnectionIdentity?> FindActiveByCallbackTokenHashAsync(byte[] tokenHash, CancellationToken cancellationToken = default)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-        var row = await connection.QuerySingleOrDefaultAsync<AgentConnectionRow>(new CommandDefinition(
-            $"SELECT {AgentConnectionRow.Columns} FROM agent_connection WHERE callback_token_hash = @tokenHash AND archived_at IS NULL LIMIT 1",
+        var row = await connection.QuerySingleOrDefaultAsync<AgentConnectionIdentity>(new CommandDefinition(
+            $"SELECT id, name, type FROM agent_connection WHERE callback_token_hash = @tokenHash AND archived_at IS NULL LIMIT 1",
             new { tokenHash }, cancellationToken: cancellationToken));
-        return row is null ? null : With(row);
+        return row;
     }
 
     private AgentConnection With(AgentConnectionRow row)

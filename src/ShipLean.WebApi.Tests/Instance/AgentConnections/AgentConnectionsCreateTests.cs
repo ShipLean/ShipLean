@@ -47,6 +47,64 @@ public class AgentConnectionsCreateTests : ApiFixture
     }
 
     [Test]
+    public async Task AgentConnections_WhenCreatedOrRegenerated_ShouldNotBeCacheable()
+    {
+        using var created = await Api.PostJsonAsync(AgentConnectionsWire.Route, new { name = "No store", receiverUrl = "https://relay.example.com/hook" });
+        var id = (await AgentConnectionsWire.ReadAsync<AgentConnectionIssuedDto>(created)).Value.Connection.Id;
+        using var secret = await Api.PostJsonAsync($"{AgentConnectionsWire.Route}/{id}/regenerate-secret");
+        using var token = await Api.PostJsonAsync($"{AgentConnectionsWire.Route}/{id}/regenerate-token");
+
+        foreach (var response in new[] { created, secret, token })
+        {
+            response.Headers.CacheControl!.NoStore.ShouldBeTrue();
+        }
+    }
+
+    [Test]
+    public void AgentConnectionIssuedDto_WhenPrinted_ShouldShowOnlyTheConnectionId()
+    {
+        var dto = new AgentConnectionIssuedDto(
+            new AgentConnectionDto(Guid.NewGuid(), AgentConnectionTypes.LinearCompatible, "Printed", "https://relay.example.com/hook", "cret", "oken", DateTimeOffset.UnixEpoch, DateTimeOffset.UnixEpoch, null),
+            "plain-signing-secret", "plain-callback-token");
+
+        var text = dto.ToString();
+
+        text.ShouldContain(dto.Connection.Id.ToString());
+        text.ShouldNotContain("plain-signing-secret");
+        text.ShouldNotContain("plain-callback-token");
+    }
+
+    [Test]
+    public async Task AgentConnections_WhenSameNameCreatedConcurrently_ShouldAcceptOneAndRefuseTheRestAsValidation()
+    {
+        var calls = Enumerable.Range(0, 6)
+            .Select(_ => Api.PostJsonAsync(AgentConnectionsWire.Route, new { name = "Racing name", receiverUrl = "https://relay.example.com/hook" }))
+            .ToArray();
+        var responses = await Task.WhenAll(calls);
+
+        responses.Count(r => r.StatusCode == HttpStatusCode.OK).ShouldBe(1);
+        foreach (var response in responses.Where(r => r.StatusCode != HttpStatusCode.OK))
+        {
+            (await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.BadRequest)).Field.ShouldBe("name");
+        }
+    }
+
+    [Test]
+    public async Task AgentConnections_WhenSigningSecretCannotBeDecrypted_ShouldFailGetAsNotConfiguredButStillAuthenticateByToken()
+    {
+        var issued = await AgentConnectionsWire.CreateAsync(Api, "Lost key ring");
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            await Dapper.SqlMapper.ExecuteAsync(connection, "UPDATE agent_connection SET signing_secret_protected = 'not-protected-data' WHERE id = @id", new { id = issued.Connection.Id });
+        }
+
+        var thrown = await Should.ThrowAsync<ApiException>(() => AgentConnectionsWire.GetAsync(Host, issued.Connection.Id));
+
+        thrown.Code.ShouldBe(ApiErrorCodes.NotConfigured);
+        (await AgentConnectionsWire.FindByTokenAsync(Host, issued.CallbackToken!))!.Id.ShouldBe(issued.Connection.Id);
+    }
+
+    [Test]
     public async Task AgentConnections_WhenReceiverIsHttpOnLocalhost_ShouldBeAccepted()
     {
         var issued = await AgentConnectionsWire.CreateAsync(Api, "Local relay", "http://localhost:5100/hook");

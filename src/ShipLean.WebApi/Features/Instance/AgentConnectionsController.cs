@@ -25,6 +25,7 @@ public sealed class AgentConnectionsController(IAgentConnections connections, Ag
     public Task<IReadOnlyList<AgentConnectionDto>> List(CancellationToken cancellationToken) => connections.ListAsync(cancellationToken);
 
     [HttpPost]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     [ProducesResponseType<AgentConnectionIssuedDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ApiError>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ApiError>(StatusCodes.Status403Forbidden)]
@@ -39,6 +40,7 @@ public sealed class AgentConnectionsController(IAgentConnections connections, Ag
     public Task<AgentConnectionDto> Update(Guid id, AgentConnectionPut body, CancellationToken cancellationToken) => admin.UpdateAsync(id, body, cancellationToken);
 
     [HttpPost("{id:guid}/regenerate-secret")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     [ProducesResponseType<AgentConnectionIssuedDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ApiError>(StatusCodes.Status403Forbidden)]
     [ProducesResponseType<ApiError>(StatusCodes.Status404NotFound)]
@@ -46,6 +48,7 @@ public sealed class AgentConnectionsController(IAgentConnections connections, Ag
     public Task<AgentConnectionIssuedDto> RegenerateSecret(Guid id, CancellationToken cancellationToken) => admin.RegenerateSecretAsync(id, cancellationToken);
 
     [HttpPost("{id:guid}/regenerate-token")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     [ProducesResponseType<AgentConnectionIssuedDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ApiError>(StatusCodes.Status403Forbidden)]
     [ProducesResponseType<ApiError>(StatusCodes.Status404NotFound)]
