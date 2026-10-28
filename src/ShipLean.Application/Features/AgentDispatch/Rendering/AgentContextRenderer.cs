@@ -27,21 +27,24 @@ public static class AgentContextRenderer
 
     public static JsonObject RenderCreated(AgentContextInput input)
     {
-        var body = Envelope("created", input, input.SessionCreatedAt);
+        var body = Envelope("created", input, input.SessionCreatedAt, AgentSessionStatuses.Pending, input.SessionCreatedAt);
         body["promptContext"] = AgentPromptContext.Render(input);
         return body;
     }
 
-    public static JsonObject RenderPrompted(AgentContextInput input, AgentPromptInput prompt)
+    // sessionStatus is the session's Linear status when the prompt was sent (AgentSessionStatuses) and sessionUpdatedAt when it
+    // last changed; the defaults are a pending session updated by the prompt itself.
+    public static JsonObject RenderPrompted(
+        AgentContextInput input, AgentPromptInput prompt, string sessionStatus = AgentSessionStatuses.Pending, DateTimeOffset? sessionUpdatedAt = null)
     {
-        var body = Envelope("prompted", input, prompt.CreatedAt);
+        var body = Envelope("prompted", input, prompt.CreatedAt, sessionStatus, sessionUpdatedAt ?? prompt.CreatedAt);
         body["agentActivity"] = Activity(input, prompt);
         return body;
     }
 
     public static string ToJson(JsonObject body) => body.ToJsonString(Indented);
 
-    private static JsonObject Envelope(string action, AgentContextInput input, DateTimeOffset at) => new()
+    private static JsonObject Envelope(string action, AgentContextInput input, DateTimeOffset at, string status, DateTimeOffset updatedAt) => new()
     {
         ["action"] = action,
         ["type"] = EventType,
@@ -49,18 +52,18 @@ public static class AgentContextRenderer
         ["organizationId"] = input.Project.Id,
         ["appUserId"] = input.AppUserId,
         ["oauthClientId"] = input.AppUserId,
-        ["agentSession"] = Session(input),
+        ["agentSession"] = Session(input, status, updatedAt),
         ["guidance"] = new JsonArray(),
     };
 
-    private static JsonObject Session(AgentContextInput input) => new()
+    private static JsonObject Session(AgentContextInput input, string status, DateTimeOffset updatedAt) => new()
     {
         ["id"] = input.SessionId,
         ["appUserId"] = input.AppUserId,
         ["organizationId"] = input.Project.Id,
         ["createdAt"] = Time(input.SessionCreatedAt),
-        ["updatedAt"] = Time(input.SessionCreatedAt),
-        ["status"] = "pending",
+        ["updatedAt"] = Time(updatedAt),
+        ["status"] = AgentSessionStatuses.Require(status),
         ["type"] = "commentThread",
         ["creatorId"] = input.Creator.Id,
         ["creator"] = User(input.Creator),
@@ -125,7 +128,8 @@ public static class AgentContextRenderer
         return activity;
     }
 
-    private static JsonObject User(AgentUserInput user) => new() { ["id"] = user.Id, ["name"] = user.Name, ["email"] = user.Email };
+    // ShipLean has no page for another person, so UserChildWebhookPayload.url (String!) is empty.
+    private static JsonObject User(AgentUserInput user) => new() { ["id"] = user.Id, ["name"] = user.Name, ["email"] = user.Email, ["url"] = string.Empty };
 
     private static string Time(DateTimeOffset at) => at.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", CultureInfo.InvariantCulture);
 }

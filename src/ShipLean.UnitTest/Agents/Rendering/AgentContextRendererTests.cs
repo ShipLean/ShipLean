@@ -49,6 +49,40 @@ public sealed class AgentContextRendererTests
     }
 
     [Test]
+    public void RenderPrompted_WhenItemIsMinimalAndSessionIsActive_ShouldMatchGolden()
+    {
+        var body = AgentContextRenderer.RenderPrompted(
+            AgentContextSamples.Minimal(), AgentContextSamples.PromptComment(), AgentSessionStatuses.Active, AgentContextSamples.Created.AddMinutes(10));
+
+        GoldenFor("agent-session-prompted-minimal", body).ShouldBe(Actual(body));
+    }
+
+    [Test]
+    public void RenderPrompted_WhenStatusGiven_ShouldCarryItAndTheUpdateTimeOnTheSession()
+    {
+        var body = AgentContextRenderer.RenderPrompted(
+            AgentContextSamples.Full(), AgentContextSamples.PromptComment(), AgentSessionStatuses.AwaitingInput, AgentContextSamples.Created.AddMinutes(30));
+
+        body["agentSession"]!["status"]!.GetValue<string>().ShouldBe("awaitingInput");
+        body["agentSession"]!["updatedAt"]!.GetValue<string>().ShouldBe("2026-10-28T10:00:00.000Z");
+    }
+
+    [Test]
+    public void RenderPrompted_WhenStatusIsUnknown_ShouldThrow()
+    {
+        Should.Throw<ArgumentOutOfRangeException>(
+            () => AgentContextRenderer.RenderPrompted(AgentContextSamples.Full(), AgentContextSamples.PromptComment(), "running"));
+    }
+
+    [Test]
+    public void RenderCreated_ShouldGiveEveryUserAnUrlString()
+    {
+        var body = AgentContextRenderer.RenderCreated(AgentContextSamples.Full());
+
+        body["agentSession"]!["creator"]!["url"]!.GetValue<string>().ShouldBe(string.Empty);
+    }
+
+    [Test]
     public void RenderCreated_WhenTextIsXmlHostile_ShouldProduceWellFormedPromptContextWithoutInjectedElements()
     {
         var body = AgentContextRenderer.RenderCreated(AgentContextSamples.Hostile());
