@@ -1,5 +1,5 @@
 import type { BoardTypeStatesDto } from '../../../api/boards';
-import type { StateRef } from '../../../api/refs';
+import type { SprintRef, StateRef } from '../../../api/refs';
 import type { TaskboardRowDto, TaskboardViewDto } from '../../../api/views';
 import { passesFaces } from '../grid/faceFilter';
 import { gridColumns } from '../grid/gridColumns';
@@ -37,7 +37,7 @@ export function StoryRow({
   projectKey: string;
   projectId: string;
   scope: TaskboardScope;
-  row: TaskboardRowDto;
+  row: TaskboardRowDto & { sprint?: SprintRef | null };
   columns: { state: StateRef }[];
   parentStates: BoardTypeStatesDto[];
   view: Pick<TaskboardViewDto, 'styleRules' | 'cardFields' | 'annotations'>;
@@ -64,6 +64,7 @@ export function StoryRow({
         <StoryRowHeader
           projectKey={projectKey}
           parent={row.parent}
+          sprint={row.sprint}
           parentStates={parentStates}
           fields={fields}
           showProgress={view.annotations.tasks}

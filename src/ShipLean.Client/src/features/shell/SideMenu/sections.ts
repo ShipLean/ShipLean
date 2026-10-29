@@ -7,6 +7,7 @@ export const backlogsRoutes: readonly RouteId[] = [
   'epicsBacklog',
   'workItem',
   'workItemAttachment',
+  'featureBoard',
 ];
 export const boardsRoutes: readonly RouteId[] = ['storiesBoard', 'featuresBoard', 'epicsBoard'];
 export const sprintsRoutes: readonly RouteId[] = [

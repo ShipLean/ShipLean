@@ -15,6 +15,7 @@
 //     /p/:key/backlogs/epics      ?mode=            (the Epics level)
 //     /p/:key/items/:itemKey      one work item, itemKey like SHIP-141
 //     /p/:key/items/:itemKey/attachments/:attachmentId   one attachment of that item, opened on its own page
+//     /p/:key/items/:itemKey/board   ?settings=   (the Feature board of a Feature; the Taskboard settings dialog's section)
 //     /p/:key/boards/stories      ?settings=        (the board settings dialog's section, closed when absent)
 //     /p/:key/boards/features     ?settings=
 //     /p/:key/boards/epics        ?settings=
@@ -75,6 +76,7 @@ export interface RouteParams {
   epicsBacklog: ProjectParams;
   workItem: ProjectParams & { itemKey: string };
   workItemAttachment: ProjectParams & { itemKey: string; attachmentId: string };
+  featureBoard: ProjectParams & { itemKey: string };
   storiesBoard: ProjectParams;
   featuresBoard: ProjectParams;
   epicsBoard: ProjectParams;
@@ -168,6 +170,12 @@ const routeDefs: { [I in RouteId]: RouteDef<I> } = {
     query: ['item'],
     installLevel: false,
     crumbs: (p) => ['Backlogs', p.itemKey, 'Attachment'],
+  },
+  featureBoard: {
+    pattern: '/p/:key/items/:itemKey/board',
+    query: ['settings', 'item'],
+    installLevel: false,
+    crumbs: (p, q) => withSettings(['Backlogs', p.itemKey, 'Feature board'], q),
   },
   storiesBoard: {
     pattern: '/p/:key/boards/stories',

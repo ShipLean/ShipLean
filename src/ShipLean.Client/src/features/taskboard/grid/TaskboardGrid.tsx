@@ -1,4 +1,4 @@
-import type { UserRef } from '../../../api/refs';
+import type { SprintRef, UserRef } from '../../../api/refs';
 import type { TaskboardRowDto } from '../../../api/views';
 import { StateDot } from '../../../components/StateDot';
 import { PersonRow } from '../rows/PersonRow';
@@ -29,7 +29,7 @@ export function TaskboardGrid({
   scope: TaskboardScope;
   view: TaskboardGridView;
   /** The story rows this grid draws: all of `view.rows`, or a subset (a section of the Feature board). The column counts are theirs. */
-  rows: TaskboardRowDto[];
+  rows: (TaskboardRowDto & { sprint?: SprintRef | null })[];
   grouping: TaskboardGrouping;
   faces: ReadonlySet<string>;
   me: UserRef | undefined;

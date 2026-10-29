@@ -1,0 +1,15 @@
+export const featureBoardTestIds = {
+  loading: 'feature-board-loading',
+  loadFailed: 'feature-board-load-failed',
+  header: 'feature-board-header',
+  back: 'feature-board-back',
+  key: 'feature-board-key',
+  title: 'feature-board-title',
+  state: 'feature-board-state',
+  featuresUnder: 'feature-board-features-under',
+  stories: 'feature-board-stories',
+  points: 'feature-board-points',
+  pointsBar: 'feature-board-points-bar',
+  tasks: 'feature-board-tasks',
+  sprints: 'feature-board-sprints',
+} as const;

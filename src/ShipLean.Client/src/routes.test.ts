@@ -64,6 +64,12 @@ const samples: {
     path: '/p/SHIP/items/SHIP-101/attachments/a%201',
     crumbs: ['SHIP', 'Backlogs', 'SHIP-101', 'Attachment'],
   },
+  featureBoard: {
+    params: { key: 'SHIP', itemKey: 'SHIP-101' },
+    query: { settings: 'fields' },
+    path: '/p/SHIP/items/SHIP-101/board?settings=fields',
+    crumbs: ['SHIP', 'Backlogs', 'SHIP-101', 'Feature board', 'Settings'],
+  },
   storiesBoard: {
     params: project,
     query: { settings: 'columns' },

@@ -66,7 +66,11 @@ export function AddStoryBox({
         data-testid={ids.addStoryTitle}
         aria-label="Title"
         className="field flex-1"
-        placeholder="Title, then Enter to add to this sprint"
+        placeholder={
+          scope.kind === 'sprint'
+            ? 'Title, then Enter to add to this sprint'
+            : 'Title, then Enter to add under this Feature'
+        }
         value={title}
         onChange={(event) => setTitle(event.target.value)}
         onKeyDown={onKeyDown}
