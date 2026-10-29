@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Contracts;
+using ShipLean.Contracts.Holidays;
 using ShipLean.Contracts.Sprints;
 
 namespace ShipLean.Application.Features.Sprints;
@@ -12,5 +13,6 @@ public sealed class SprintStoreServices : IServiceModule
     {
         services.AddScoped<ISprintStore, SprintStore>();
         services.AddScoped<ISprintCapacityRecompute, SprintCapacityRecompute>();
+        services.AddScoped<IHolidaysChanged, SprintHolidaysChanged>();
     }
 }

@@ -48,7 +48,7 @@ public sealed class PostgresProjectFactoryContractTests : ProjectFactoryContract
     {
         var user = new SettableCurrentUser { Id = actorId };
         var boards = new BoardSettingsStore(_dataSource, TimeProvider.System, new InMemoryCriteriaEvaluator(user), new DiscardingProjectEvents());
-        var sprints = new SprintStore(_dataSource, TimeProvider.System, new DiscardingProjectEvents(), new ThrowingWorkItemStore(), new InMemoryPublicHolidays(), new SprintMetrics(_dataSource, TimeProvider.System));
+        var sprints = new SprintStore(_dataSource, TimeProvider.System, new DiscardingProjectEvents(), new ThrowingWorkItemStore(), new InMemoryPublicHolidays(), new SprintMetrics(_dataSource, TimeProvider.System), new SprintCapacityRecompute(_dataSource, TimeProvider.System, new InMemoryPublicHolidays()));
         return new ProjectFactory(_dataSource, TimeProvider.System, user, boards, sprints, new StateCatalog(_dataSource));
     }
 
