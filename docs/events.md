@@ -26,7 +26,7 @@ JSON objects, camelCase, enums as camelCase strings, nothing omitted. Every even
 | `workItemMoved` | `id`, `revision`, `columnId`, `done`, `laneId`, `columnOrder`, `stateId`, `parentId` | a card is moved on a board or the taskboard (`columnId` is `null` on the taskboard, where `columnOrder` orders the card within its state and parent cell; `columnOrder` is `null` when the card left its board) |
 | `workItemReordered` | `id`, `backlogOrder` | a backlog reorder |
 | `workItemRemoved` | `id`, `parentId` | a work item enters the Removed state |
-| `boardSettingsChanged` | `boardId`, `sections` | board settings are saved (`sections` = top-level properties changed) |
+| `boardSettingsChanged` | `boardId`, `sections` | board settings are saved (`sections` = top-level properties changed: `columns`, `swimlanes`, `styleRules`, `cardFields`, `tagColours`, `annotations`, `cardReordering`, `transitions`), or a project-states Save repaired a board's transitions (`sections` = `["transitions"]`) |
 | `sprintChanged` | `sprintId` | a sprint, its capacity or its rollover changes |
 | `statesChanged` | none | the project's states change |
 | `projectChanged` | none | project settings, members or the forecast change |
