@@ -110,4 +110,12 @@ export const boardSettingsTestIds = {
   transitionAddTo: 'board-settings-transition-add-to',
   transitionAdd: 'board-settings-transition-add',
   transitionAddRefusal: 'board-settings-transition-add-refusal',
+  actionRow: 'board-settings-action-row',
+  actionPrompt: 'board-settings-action-prompt',
+  actionPromptError: 'board-settings-action-prompt-error',
+  actionPreview: 'board-settings-action-preview',
+  actionConnection: 'board-settings-action-connection',
+  actionRemove: 'board-settings-action-remove',
+  actionAdd: 'board-settings-action-add',
+  actionLastHint: 'board-settings-action-last-hint',
 } as const;
