@@ -220,7 +220,27 @@
         "bugs": true,
         "features": false
       },
-      "cardReordering": "changesBacklogOrder"
+      "cardReordering": "changesBacklogOrder",
+      "transitions": [
+        {
+          "id": "tr-new-in-progress",
+          "type": "story",
+          "from": { "stateId": "00000003-0000-4000-8001-000000000301", "name": "New" },
+          "to": { "stateId": "00000003-0000-4000-8001-000000000302", "name": "In progress" },
+          "actions": [
+            { "id": "act-agent", "kind": "agent", "prompt": "Implement the story.", "connectionId": null }
+          ]
+        },
+        {
+          "id": "tr-any-done",
+          "type": "bug",
+          "from": null,
+          "to": { "stateId": "00000003-0000-4000-8001-000000000403", "name": "In progress" },
+          "actions": [
+            { "id": "act-agent-2", "kind": "agent", "prompt": "", "connectionId": "00000009-0000-4000-8001-000000000001" }
+          ]
+        }
+      ]
     },
     "updatedAt": "2026-10-24T09:30:00+00:00",
     "states": [

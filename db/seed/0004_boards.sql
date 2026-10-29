@@ -128,7 +128,8 @@ VALUES
     { "tag": "Spike", "colour": "purple" }
   ],
   "annotations": { "tasks": true, "stories": false, "bugs": false, "features": false },
-  "cardReordering": "changesBacklogOrder"
+  "cardReordering": "changesBacklogOrder",
+  "transitions": []
 }'::jsonb),
   ('00000007-0000-4000-8001-000000000002', (SELECT id FROM project WHERE key = 'SHIP'), 'features', '{
   "columns": [
@@ -221,7 +222,8 @@ VALUES
     { "tag": "Blocked", "colour": "danger" }
   ],
   "annotations": { "tasks": false, "stories": true, "bugs": true, "features": true },
-  "cardReordering": "changesBacklogOrder"
+  "cardReordering": "changesBacklogOrder",
+  "transitions": []
 }'::jsonb),
   ('00000007-0000-4000-8001-000000000003', (SELECT id FROM project WHERE key = 'SHIP'), 'epics', '{
   "columns": [
@@ -304,7 +306,8 @@ VALUES
     { "tag": "Blocked", "colour": "danger" }
   ],
   "annotations": { "tasks": false, "stories": true, "bugs": true, "features": true },
-  "cardReordering": "changesBacklogOrder"
+  "cardReordering": "changesBacklogOrder",
+  "transitions": []
 }'::jsonb),
   ('00000007-0000-4000-8001-000000000004', (SELECT id FROM project WHERE key = 'SHIP'), 'taskboard', '{
   "columns": [],
@@ -368,7 +371,8 @@ VALUES
     { "tag": "Tech debt", "colour": "warn" }
   ],
   "annotations": { "tasks": true, "stories": false, "bugs": false, "features": false },
-  "cardReordering": null
+  "cardReordering": null,
+  "transitions": []
 }'::jsonb);
 
 -- The other projects: one column per non-Removed state of the level's type (Stories: the story states, bugs mapped to the
@@ -401,7 +405,8 @@ SELECT format('00000007-0000-4000-80%s-%s', lpad(p.number::text, 2, '0'), lpad(l
            'styleRules', '[]'::jsonb,
            'tagColours', '[]'::jsonb,
            'annotations', ship.settings -> 'annotations',
-           'cardReordering', ship.settings -> 'cardReordering')
+           'cardReordering', ship.settings -> 'cardReordering',
+           'transitions', '[]'::jsonb)
 FROM (VALUES ('PAY', 2), ('MOB', 3), ('DATA', 4), ('OPS', 5), ('PART', 6)) AS p (key, number)
 JOIN project ON project.key = p.key
 CROSS JOIN (VALUES ('stories', 1, 'story'), ('features', 2, 'feature'), ('epics', 3, 'epic'), ('taskboard', 4, 'task')) AS l (level, digit, main_type)

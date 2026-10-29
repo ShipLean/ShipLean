@@ -295,7 +295,8 @@ public class WorkItemRulesTests : PostgresWorkItemStoreTestBase
             [],
             [],
             new CardAnnotationsJson(false, false, false, false),
-            null);
+            null,
+            []);
         await ExecuteAsync(
             "INSERT INTO board (id, project_id, level, settings) VALUES (@id, @projectId, @level, @settings::jsonb)",
             new { id = Guid.NewGuid(), projectId = project.ProjectId, level, settings = JsonSerializer.Serialize(settings, PersistedJson.Options) });

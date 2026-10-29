@@ -31,6 +31,25 @@ public sealed class InMemoryBoardSettingsStoreContractTests : BoardSettingsStore
         return Task.CompletedTask;
     }
 
+    protected override Task ArrangeArchivedStateAsync(Guid projectId, WorkItemTypeId type, Guid stateId)
+    {
+        _store.ArchiveState(projectId, type, stateId);
+        return Task.CompletedTask;
+    }
+
+    protected override Task<Guid> ArrangeConnectionAsync(bool archived)
+    {
+        var id = Guid.NewGuid();
+        _store.AddConnection(id, archived);
+        return Task.FromResult(id);
+    }
+
+    protected override Task ArchiveConnectionAsync(Guid connectionId)
+    {
+        _store.AddConnection(connectionId, archived: true);
+        return Task.CompletedTask;
+    }
+
     protected override Task ArrangeCardInColumnAsync(Guid boardId, string columnId)
     {
         _store.MarkColumnHoldsCards(boardId, columnId);

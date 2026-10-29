@@ -60,5 +60,6 @@
     { "tag": "Tech debt", "colour": "warn" }
   ],
   "annotations": { "tasks": true, "stories": false, "bugs": false, "features": false },
-  "cardReordering": null
+  "cardReordering": null,
+  "transitions": []
 }

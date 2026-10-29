@@ -72,7 +72,8 @@ SELECT format('00000007-0000-4000-80%s-%s', lpad(p.number::text, 2, '0'), lpad(l
            'styleRules', '[]'::jsonb,
            'tagColours', '[]'::jsonb,
            'annotations', ship.settings -> 'annotations',
-           'cardReordering', ship.settings -> 'cardReordering')
+           'cardReordering', ship.settings -> 'cardReordering',
+           'transitions', '[]'::jsonb)
 FROM (VALUES ('ARCH', 7), ('EMPT', 8)) AS p (key, number)
 JOIN project ON project.key = p.key
 CROSS JOIN (VALUES ('stories', 1, 'story'), ('features', 2, 'feature'), ('epics', 3, 'epic'), ('taskboard', 4, 'task')) AS l (level, digit, main_type)
