@@ -217,7 +217,7 @@ public sealed class InMemorySprintStore(InMemoryPlanning world, IPublicHolidays?
         var velocityDefault = Math.Min(CapacityPoints.Largest, decimal.Round(fallback, 1, MidpointRounding.AwayFromZero));
         return new SprintCapacityDto(
             sprint.Id, members, members.Sum(m => m.Points), sprint.Velocity, velocityDefault, calendar.WorkingDays, calendar.DefaultDays,
-            calendar.Holidays, project.HolidayCountry, sprint.End < world.Today);
+            calendar.HolidayDtos(), project.HolidayCountry, sprint.End < world.Today);
     }
 
     private SprintRef Ref(InMemoryPlanning.SprintRow sprint) => new(sprint.Id, sprint.Name, SprintLabels.Phase(sprint.Start, sprint.End, world.Today).ToStatus());

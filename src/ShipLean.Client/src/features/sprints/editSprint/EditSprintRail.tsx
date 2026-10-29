@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { ApiRequestError } from '../../../api/client';
 import type { SprintDto, SprintUpdate } from '../../../api/sprints';
 import { SprintForm, type SprintFormIds, type SprintFormValues } from '../form/SprintForm';
@@ -32,6 +32,15 @@ export function EditSprintRail({ projectId, sprint, onDone }: EditSprintRailProp
   const update = useUpdateSprint(projectId, sprint.id);
   // Only what the person has typed: the rest follows the sprint, so a refetch under the open form is not lost.
   const [edited, setEdited] = useState<Partial<SprintFormValues>>({});
+  // What the person started from. A key typed back to it is not a change, so a teammate's edit to it is not overwritten.
+  const [base] = useState<SprintFormValues>(() => ({
+    name: sprint.name,
+    startDate: sprint.startDate,
+    endDate: sprint.endDate,
+    goal: sprint.goal,
+  }));
+  const nameRef = useRef<HTMLInputElement>(null);
+  useEffect(() => nameRef.current?.focus(), []);
   const [rangeError, setRangeError] = useState(false);
   const ended = sprint.status === 'past';
   const form: SprintFormValues = {
@@ -50,11 +59,13 @@ export function EditSprintRail({ projectId, sprint, onDone }: EditSprintRailProp
       return;
     }
     const name = form.name.trim();
+    const changed = (field: keyof SprintFormValues) =>
+      edited[field] !== undefined && form[field] !== base[field];
     const changes: SprintUpdate = {
-      name: name === sprint.name ? null : name,
-      startDate: form.startDate === sprint.startDate ? null : form.startDate,
-      endDate: form.endDate === sprint.endDate ? null : form.endDate,
-      goal: form.goal === sprint.goal ? null : form.goal,
+      name: changed('name') && name !== base.name ? name : null,
+      startDate: changed('startDate') ? form.startDate : null,
+      endDate: changed('endDate') ? form.endDate : null,
+      goal: changed('goal') ? form.goal : null,
     };
     if (Object.values(changes).every((value) => value === null)) {
       onDone();
@@ -89,6 +100,7 @@ export function EditSprintRail({ projectId, sprint, onDone }: EditSprintRailProp
         idPrefix={`edit-sprint-${sprint.id}`}
         ids={EDIT_SPRINT_IDS}
         values={form}
+        nameRef={nameRef}
         onChange={change}
         onSubmit={submit}
         submitLabel="Save"

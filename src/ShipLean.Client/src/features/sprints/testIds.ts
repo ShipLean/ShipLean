@@ -77,6 +77,7 @@ export const sprintsTestIds = {
   capacityRemove: 'sprints-capacity-remove',
   capacityAdd: 'sprints-capacity-add',
   capacityVelocity: 'sprints-capacity-velocity',
+  capacityVelocityError: 'sprints-capacity-velocity-error',
   capacityCalendar: 'sprints-capacity-calendar',
   capacityHolidays: 'sprints-capacity-holidays',
   capacityNoCountry: 'sprints-capacity-no-country',

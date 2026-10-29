@@ -1,5 +1,3 @@
-using ShipLean.Contracts.Holidays;
-
 namespace ShipLean.Contracts.Sprints;
 
 // Members lists only the entered rows (a member with no entry is absent, and the sprint falls back to velocity); TeamTotal is the sum of their Points.
@@ -15,6 +13,6 @@ public sealed record SprintCapacityDto(
     decimal VelocityDefault,
     int WorkingDays,
     int DefaultDays,
-    IReadOnlyList<PublicHolidayDto> Holidays,
+    IReadOnlyList<CapacityHolidayDto> Holidays,
     string? HolidayCountry,
     bool Ended);

@@ -27,7 +27,6 @@ const small = 'text-[length:var(--text-xs)] text-ink-muted';
 export function CapacityRow({ line, shape, readOnly, onChange, onRemove }: CapacityRowProps) {
   const { user, row, points } = line;
   const isDefault = row.days === '';
-  const shownDays = isDefault ? `${shape.defaultDays}` : row.days;
   return (
     <tr data-testid={ids.capacityRow} className="border-t border-edge">
       <td className={cell}>
@@ -40,10 +39,10 @@ export function CapacityRow({ line, shape, readOnly, onChange, onRemove }: Capac
         <div className="flex flex-col items-end gap-0.5">
           {readOnly ? (
             <>
+              {/* A null days is "the default" of the calendar when it was stored; today's calendar may not match, so no number. */}
               <span data-testid={ids.capacityDays} className="tabular-nums">
-                {shownDays}
+                {isDefault ? 'default' : row.days}
               </span>
-              {isDefault ? <span className={small}>default</span> : null}
             </>
           ) : (
             <>
@@ -56,7 +55,8 @@ export function CapacityRow({ line, shape, readOnly, onChange, onRemove }: Capac
                 step={0.5}
                 inputMode="decimal"
                 aria-label={`Days available for ${user.name}`}
-                value={shownDays}
+                placeholder={`${shape.defaultDays}`}
+                value={row.days}
                 onChange={(event) => onChange({ ...row, days: event.target.value })}
               />
               {isDefault ? (

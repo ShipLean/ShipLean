@@ -29,7 +29,8 @@ public class CapacityHolidayTests : SeededAcceptanceTest
 
         // Everyone on the default days: (W - 1) / W of an equal share each.
         var expected = Share(40, seeded.Length, defaultDays, workingDays);
-        await Expect(capacity.Days(seeded[0].Member)).ToHaveValueAsync($"{defaultDays}");
+        await Expect(capacity.Days(seeded[0].Member)).ToHaveValueAsync("");
+        await Expect(capacity.Days(seeded[0].Member)).ToHaveAttributeAsync("placeholder", $"{defaultDays}");
         await Expect(capacity.Points(seeded[0].Member)).ToHaveTextAsync($"{expected:0.##}");
         await Expect(capacity.Total).ToHaveTextAsync($"{expected * seeded.Length:0.##}");
 

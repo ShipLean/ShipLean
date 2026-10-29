@@ -63,6 +63,27 @@ export type TouchedRows = Readonly<Record<string, TouchedRow>>;
 const sameRow = (a: DraftRow, b: DraftRow) =>
   a.present === b.present && a.days === b.days && a.note === b.note;
 
+const normalised = (row: DraftRow): DraftRow => (row.present ? row : BLANK);
+
+/** Whether the form differs from what the server holds: a row typed back to its original, or a Clear on an empty table, is not a change. */
+export function rowsDiffer(server: CapacityDraft, draft: CapacityDraft): boolean {
+  return [...new Set([...Object.keys(server), ...Object.keys(draft)])].some(
+    (userId) => !sameRow(normalised(rowOf(server, userId)), normalised(rowOf(draft, userId))),
+  );
+}
+
+/** A velocity text the user typed, and the server's text it was typed over. */
+export interface TouchedVelocity {
+  text: string;
+  base: string;
+}
+
+/** Whether a teammate has changed the velocity since the user started typing in the box. */
+export const velocityChangedUnderneath = (
+  touched: TouchedVelocity | null,
+  serverText: string,
+): boolean => touched !== null && touched.base !== serverText;
+
 /** The server's rows with the user's changed rows laid over them: what the table shows and what a save sends. */
 export function layOver(server: CapacityDraft, touched: TouchedRows): CapacityDraft {
   return {
@@ -156,7 +177,12 @@ export function memberPoints(
   const { workingDays, defaultDays } = shape;
   if (workingDays === 0 || members === 0) return 0;
   const effectiveDays = Math.min(days ?? defaultDays, workingDays);
-  const points = Math.round((velocity * effectiveDays * 100) / (members * workingDays)) / 100;
+  // Whole numbers throughout, so the half-cent cases round as the server's decimal does (velocity has at most two
+  // decimals, days are halves): points = v100 * d2 / (2 * members * workingDays) hundredths, half up.
+  const v100 = Math.round(velocity * 100);
+  const d2 = Math.round(effectiveDays * 2);
+  const den = 2 * members * workingDays;
+  const points = Math.floor((2 * v100 * d2 + den) / (2 * den)) / 100;
   return Math.min(points, LARGEST_CAPACITY);
 }
 

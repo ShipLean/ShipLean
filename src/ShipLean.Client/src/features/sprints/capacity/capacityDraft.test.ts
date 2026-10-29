@@ -7,6 +7,8 @@ import {
   draftTotals,
   effectiveDaysOf,
   memberPoints,
+  rowsDiffer,
+  velocityChangedUnderneath,
   parseDays,
   parseVelocity,
   tableMembers,
@@ -64,6 +66,12 @@ test('memberPoints_WhenResultNeedsRounding_ShouldRoundHalfAwayFromZeroToTwoDecim
   expect(memberPoints(10, 3, 10, shape)).toBe(3.33);
   expect(memberPoints(0.05, 1, 5, shape)).toBe(0.03);
   expect(memberPoints(1, 8, 10, shape)).toBe(0.13);
+});
+
+test('memberPoints_WhenResultIsAHalfCent_ShouldRoundUpLikeTheServersDecimal', () => {
+  const sixDays = { workingDays: 6, defaultDays: 6 };
+  expect(memberPoints(5.1, 1, 0.5, sixDays)).toBe(0.43);
+  expect(memberPoints(0.3, 1, 1.5, sixDays)).toBe(0.08);
 });
 
 test('memberPoints_WhenOverTheLimit_ShouldCapAtLargest', () => {
@@ -204,4 +212,24 @@ test('toPut_WhenTheTableIsEmpty_ShouldSendNoMembersAndLeaveVelocityWhenBlank', (
   expect(toPut(members, { a: row('', '', false) }, '28', shape)).toEqual({
     put: { velocity: 28, members: [] },
   });
+});
+
+const rowOfDays = (days: string, present = true) => ({ present, days, note: '' });
+
+test('rowsDiffer_WhenARowIsTypedBackOrAnAbsentRowStaysAbsent_ShouldBeFalse', () => {
+  expect(rowsDiffer({ u1: rowOfDays('5') }, { u1: rowOfDays('5') })).toBe(false);
+  expect(rowsDiffer({}, { u1: rowOfDays('', false) })).toBe(false);
+  expect(rowsDiffer({}, {})).toBe(false);
+});
+
+test('rowsDiffer_WhenARowIsAddedRemovedOrEdited_ShouldBeTrue', () => {
+  expect(rowsDiffer({}, { u1: rowOfDays('') })).toBe(true);
+  expect(rowsDiffer({ u1: rowOfDays('') }, { u1: rowOfDays('', false) })).toBe(true);
+  expect(rowsDiffer({ u1: rowOfDays('5') }, { u1: rowOfDays('6') })).toBe(true);
+});
+
+test('velocityChangedUnderneath_WhenTheServerTextMovedOnFromTheBase_ShouldBeTrue', () => {
+  expect(velocityChangedUnderneath(null, '30')).toBe(false);
+  expect(velocityChangedUnderneath({ text: '31', base: '30' }, '30')).toBe(false);
+  expect(velocityChangedUnderneath({ text: '31', base: '30' }, '28')).toBe(true);
 });

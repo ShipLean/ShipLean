@@ -80,6 +80,7 @@ public static class SprintsTestIds
     public const string CapacityRemove = "sprints-capacity-remove";
     public const string CapacityAdd = "sprints-capacity-add";
     public const string CapacityVelocity = "sprints-capacity-velocity";
+    public const string CapacityVelocityError = "sprints-capacity-velocity-error";
     public const string CapacityCalendar = "sprints-capacity-calendar";
     public const string CapacityHolidays = "sprints-capacity-holidays";
     public const string CapacityNoCountry = "sprints-capacity-no-country";

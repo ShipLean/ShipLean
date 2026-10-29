@@ -34,10 +34,12 @@ export interface SprintUpdate {
   goal: string | null;
 }
 
-/** A national public holiday on a calendar date (C#: ShipLean.Contracts.Holidays.PublicHolidayDto). */
-export interface PublicHolidayDto {
+/** A public holiday inside a sprint (C#: ShipLean.Contracts.Sprints.CapacityHolidayDto). */
+export interface CapacityHolidayDto {
   date: string;
   name: string;
+  /** The server-formatted day, e.g. "Thu 25 Dec". */
+  label: string;
 }
 
 export interface MemberCapacityDto {
@@ -64,7 +66,7 @@ export interface SprintCapacityDto {
   /** W minus the holidays on working days. */
   defaultDays: number;
   /** The country's holidays inside the sprint that fall on working weekdays. */
-  holidays: PublicHolidayDto[];
+  holidays: CapacityHolidayDto[];
   holidayCountry: string | null;
   /** An ended sprint's capacity is read-only. */
   ended: boolean;
