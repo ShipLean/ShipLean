@@ -9,7 +9,7 @@ using ShipLean.TestSupport.Hosting;
 
 namespace ShipLean.WebApi.Tests.AgentDispatch;
 
-// Start agent and its availability probe. Every test arranges a project of its own and an item that is not in a flagged state.
+// Start agent and its availability probe. Every test arranges a project of its own and an item that no transition covers.
 [TestFixture]
 public class AgentStartApiTests : ApiFixture
 {

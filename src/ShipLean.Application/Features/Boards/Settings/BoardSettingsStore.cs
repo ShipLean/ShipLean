@@ -33,7 +33,9 @@ public sealed class BoardSettingsStore(NpgsqlDataSource dataSource, TimeProvider
         var (merged, mergedSections) = BoardSections.Merge(current, put.BasedOn, put.Settings);
         var states = await LiveStatesAsync(connection, transaction, board.ProjectId, cancellationToken);
         var level = ParseLevel(board.Level);
-        BoardSettingsValidation.Check(level, merged, states, criteria);
+        BoardSettingsValidation.Check(level, merged, states, criteria, current.Transitions);
+        await CheckConnectionsAsync(connection, transaction, merged, current, cancellationToken);
+        merged = merged with { Transitions = TransitionStates.Normalize(merged.Transitions, await AllStatesAsync(connection, transaction, board.ProjectId, cancellationToken)) };
         await CheckRemovedColumnsAsync(connection, transaction, board, level, current, merged, cancellationToken);
         var now = clock.GetUtcNow();
         await connection.ExecuteAsync(new CommandDefinition(
@@ -41,7 +43,7 @@ public sealed class BoardSettingsStore(NpgsqlDataSource dataSource, TimeProvider
             new { id = boardId, json = JsonSerializer.Serialize(merged, PersistedJson.Options), now }, transaction, cancellationToken: cancellationToken));
         var saved = await ToDtoAsync(connection, transaction, board with { Settings = JsonSerializer.Serialize(merged, PersistedJson.Options), UpdatedAt = now }, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-        var changed = BoardSections.Changed(current, merged);
+        var changed = BoardSettingsSections.Changed(current, merged);
         if (changed.Count > 0)
         {
             await events.PublishAsync(new BoardSettingsChanged(board.ProjectId, boardId, changed));
@@ -100,6 +102,34 @@ public sealed class BoardSettingsStore(NpgsqlDataSource dataSource, TimeProvider
         return rows
             .GroupBy(r => Enum.Parse<WorkItemTypeId>(r.Type, true))
             .ToDictionary(g => g.Key, g => g.Select(r => new StateRef(r.Id, r.Name, Enum.Parse<StateCategory>(r.Category, true))).ToList());
+    }
+
+    // Every state of the project, archived ones too: what TransitionStates.Normalize reads.
+    private static async Task<List<TransitionState>> AllStatesAsync(DbConnection connection, DbTransaction transaction, Guid projectId, CancellationToken cancellationToken)
+    {
+        var rows = await connection.QueryAsync<(Guid Id, string Type, string Name, bool Archived)>(new CommandDefinition(
+            "SELECT id, type, name, archived_at IS NOT NULL AS archived FROM state WHERE project_id = @projectId",
+            new { projectId }, transaction, cancellationToken: cancellationToken));
+        return [.. rows.Select(r => new TransitionState(r.Id, Enum.Parse<WorkItemTypeId>(r.Type, true), r.Name, r.Archived))];
+    }
+
+    // A connection named by an action must exist and not be archived, unless the action already saved it.
+    private static async Task CheckConnectionsAsync(DbConnection connection, DbTransaction transaction, BoardSettingsJson merged, BoardSettingsJson current, CancellationToken cancellationToken)
+    {
+        var saved = current.Transitions.SelectMany(t => t.Actions).Where(a => a.ConnectionId is not null).Select(a => (a.Id, a.ConnectionId)).ToHashSet();
+        var ids = merged.Transitions.SelectMany(t => t.Actions)
+            .Where(a => a.ConnectionId is not null && !saved.Contains((a.Id, a.ConnectionId)))
+            .Select(a => a.ConnectionId!.Value).Distinct().ToArray();
+        if (ids.Length == 0)
+        {
+            return;
+        }
+        var live = await connection.ExecuteScalarAsync<int>(new CommandDefinition(
+            "SELECT count(*)::int FROM agent_connection WHERE id = ANY(@ids) AND archived_at IS NULL", new { ids }, transaction, cancellationToken: cancellationToken));
+        if (live != ids.Length)
+        {
+            throw ApiException.Validation("Pick an agent connection that is not archived.");
+        }
     }
 
     private static async Task CheckRemovedColumnsAsync(

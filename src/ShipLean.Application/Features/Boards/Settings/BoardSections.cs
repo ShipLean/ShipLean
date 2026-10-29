@@ -12,6 +12,9 @@ internal static class BoardSections
     {
         BoardSettingsValidation.CheckWellFormed(basedOn, "basedOn");
         BoardSettingsValidation.CheckWellFormed(mine, "settings");
+        // A missing transitions section (a client from before it existed) is no change: the stored one is kept.
+        basedOn = basedOn with { Transitions = basedOn.Transitions ?? [] };
+        mine = mine with { Transitions = mine.Transitions ?? basedOn.Transitions };
         var currentNode = ToNode(current);
         var baseNode = ToNode(basedOn);
         var mineNode = ToNode(mine);
@@ -37,14 +40,6 @@ internal static class BoardSections
         {
             throw ApiException.Validation("The board settings are not a document.");
         }
-    }
-
-    // The sections (top-level property names) where two documents differ.
-    public static IReadOnlyList<string> Changed(BoardSettingsJson before, BoardSettingsJson after)
-    {
-        var beforeNode = ToNode(before);
-        var afterNode = ToNode(after);
-        return [.. beforeNode.Where(p => !JsonNode.DeepEquals(p.Value, afterNode[p.Key])).Select(p => p.Key)];
     }
 
     private static JsonObject ToNode(BoardSettingsJson settings)

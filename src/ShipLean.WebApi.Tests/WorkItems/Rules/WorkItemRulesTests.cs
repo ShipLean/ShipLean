@@ -14,7 +14,7 @@ namespace ShipLean.WebApi.Tests.WorkItems.Rules;
 [TestFixture]
 public class WorkItemRulesTests : PostgresWorkItemStoreTestBase
 {
-    private WorkItemStore RealStore() => Arrangement.CreateStore(new WorkItemRules(), Actor);
+    private WorkItemStore RealStore() => Arrangement.CreateStore(new WorkItemRules(TimeProvider.System), Actor);
 
     private static WorkItemChanges StateOf(ArrangedProject project, WorkItemTypeId type, StateCategory category)
         => new() { State = new(project.StateId(type, category)) };
@@ -295,7 +295,8 @@ public class WorkItemRulesTests : PostgresWorkItemStoreTestBase
             [],
             [],
             new CardAnnotationsJson(false, false, false, false),
-            null);
+            null,
+            []);
         await ExecuteAsync(
             "INSERT INTO board (id, project_id, level, settings) VALUES (@id, @projectId, @level, @settings::jsonb)",
             new { id = Guid.NewGuid(), projectId = project.ProjectId, level, settings = JsonSerializer.Serialize(settings, PersistedJson.Options) });

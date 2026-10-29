@@ -45,7 +45,7 @@ internal static class BoardDefaultSettings
         var expanded = level != BoardLevel.Stories;
         return new BoardSettingsJson(
             json, [lane], [CardFields(primary), .. types.Skip(1).Select(CardFields)],
-            [], [], new CardAnnotationsJson(Tasks: !expanded, Stories: expanded, Bugs: expanded, Features: expanded), CardReordering.ChangesBacklogOrder);
+            [], [], new CardAnnotationsJson(Tasks: !expanded, Stories: expanded, Bugs: expanded, Features: expanded), CardReordering.ChangesBacklogOrder, []);
     }
 
     // The k-th state of a category goes to the k-th column of that category; a state with no column left (Bug Triaged after Bug New
@@ -101,7 +101,7 @@ internal static class BoardDefaultSettings
             new CardFieldSettingJson(WorkItemTypeId.Story, true, true, false, true, false, [FieldIds.State]),
             new CardFieldSettingJson(WorkItemTypeId.Bug, true, true, false, true, false, [FieldIds.State]),
         ],
-        [], [], new CardAnnotationsJson(Tasks: true, Stories: false, Bugs: false, Features: false), null);
+        [], [], new CardAnnotationsJson(Tasks: true, Stories: false, Bugs: false, Features: false), null, []);
 
     private static CardFieldSettingJson CardFields(WorkItemTypeId type) => type switch
     {

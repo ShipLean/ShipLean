@@ -25,7 +25,6 @@ const featureStates: StateDto[] = [
     category: 'proposed',
     order: 1,
     itemCount: 0,
-    startsAgent: false,
   },
   {
     id: 's-active',
@@ -34,7 +33,6 @@ const featureStates: StateDto[] = [
     category: 'inProgress',
     order: 2,
     itemCount: 1,
-    startsAgent: false,
   },
   {
     id: 's-blocked',
@@ -43,7 +41,6 @@ const featureStates: StateDto[] = [
     category: 'inProgress',
     order: 3,
     itemCount: 0,
-    startsAgent: false,
   },
 ];
 

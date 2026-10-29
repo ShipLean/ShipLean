@@ -161,6 +161,30 @@ export interface BoardSettingsJson {
   tagColours: TagColourJson[];
   annotations: CardAnnotationsJson;
   cardReordering: CardReordering | null;
+  transitions: TransitionJson[];
+}
+
+/** A state a transition names: the id it was saved with and the name it had then. */
+export interface StateRefJson {
+  stateId: string;
+  name: string;
+}
+
+/** One thing a transition does. kind is 'agent' (send to an agent); connectionId null = the project's connection. */
+export interface ActionJson {
+  id: string;
+  kind: 'agent';
+  prompt: string;
+  connectionId: string | null;
+}
+
+/** from null = any state. Invalid (derived, never stored) when a from/to id is not among that type's states in context.states, which holds every non-archived state whatever its category. */
+export interface TransitionJson {
+  id: string;
+  type: WorkItemTypeId;
+  from: StateRefJson | null;
+  to: StateRefJson;
+  actions: ActionJson[];
 }
 
 export interface ChecklistItem {

@@ -1,4 +1,4 @@
-# Connecting an agent
+# Connecting an agent and sending work to one
 
 How a person connects an AI agent (Claude Code, Cursor, Claude Desktop) to ShipLean, and what the server does behind it. The transport and tools are in [`mcp.md`](mcp.md). Code: `src/ShipLean.WebApi/Features/Agents/{Clients,Authorize,Tokens}`, stores in `src/ShipLean.Application/Features/Agents/Stores`.
 
@@ -74,3 +74,21 @@ Tokens are checked on every call against the person, so these also cut every age
 A stamp change ends the authorization for good: consenting again creates a fresh one.
 
 **Changing `base_url` disconnects every agent.** Tokens are bound to the `/mcp` URL as their audience, so after the change they no longer match and each agent has to reconnect.
+
+## Sending an item to an agent (board Automations)
+
+An item reaches a connected agent through a **transition** stored in the board settings of the Stories or Features board (the Automations tab; Epics and the Taskboard have none). There is no per-state "Starts an agent" flag any more. A transition names a type (a Stories board carries story and bug, the Features board feature), a `from` state or Any state, a `to` state, and one or more **Send to agent** actions. An action has a prompt (up to 20,000 characters) and an optional connection that overrides the project's. The board settings JSON holds them as `transitions`; the pinned shape is in `src/ShipLean.TestSupport/PinnedShapes/board-settings.*.json`.
+
+When a transition fires, `AgentTrigger` opens one session through the same starter as the panel's Start agent. The prompt goes into the delivered `promptContext` inside `<guidance>` and into the envelope's `guidance` array, beside the item, its parent and feature and the repository. Code: `src/ShipLean.Application/Features/AgentDispatch/AgentTrigger.cs`.
+
+**What is sent.** The whole item goes inline in the Linear `promptContext` (description with acceptance criteria, links, children, the full ancestor chain, comments, attachments), so agent-relay needs no ShipLean access and no change. `<guidance>` holds the transition's prompt (also the envelope's `guidance` array, as a Linear `Team` rule). Markdown attachments are inlined in upload order up to 200 KB in all, counted as sent (the XML-escaped UTF-8 size); the first that does not fit, and every one after it, an unreadable one and every non-Markdown file are listed as links. agent-relay refuses a body over 1 MiB, so if the serialized `created` body passes about 900 KB the starter sends every attachment as a link, and if that is still too big it drops the oldest comments and says how many in `<guidance>`.
+
+Rules and gates:
+
+- Only a person's state change counts: a `WorkItemUpdated` whose fields include `state`. An item **created** into a state fires nothing. An import, a webhook, a named MCP agent and a bulk write (a states Save moving items, a rollover) fire nothing, and neither does a revision older than five minutes.
+- A transition matches on the item's type and the move's from and to. When an exact `from` and an Any transition both match, only the exact one runs. One move opens at most one session, from the first Send to agent action of the transition that won.
+- Invalid transitions never fire. A transition is Invalid when a state it names was removed or archived. It is kept, flagged Invalid in the Automations tab, and becomes valid again when a state with the same name is added back: a project-states Save re-binds transitions by state name and publishes `boardSettingsChanged` (with `transitions`) for each board it repaired.
+- The usual starter gates still apply: the project needs a connection (or the action's own) and a repository, and an item with a live session starts nothing. A blocked start is logged and the panel's Start agent remains the manual route.
+- The person who moved the item is the session's creator.
+
+**Sprint rule (related, not an agent feature).** A story or bug with no sprint that a person moves from a Proposed state to an In progress state goes into the sprint running today (UTC) and the write carries the notice `sprinted`. It runs in the same write as the move, so a transition into an In progress state fires on an item that already has its sprint.

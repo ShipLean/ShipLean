@@ -63,8 +63,10 @@ internal static class MetricsSql
         """;
 
     // Every story and bug that was committed, added, completed or carried over in one sprint (@sprintId, @projectId). at_start,
-    // at_last and at_end are the sprint the item sat in at 00:00 on the first day, at 00:00 on the last day and at the end of it;
-    // end_state is its state category at the end of the last day.
+    // at_last and at_end are the sprint the item sat in at 00:00 on the first day, at 00:00 on the last working day on or
+    // before the end, and at the end of the last calendar day. A two-week sprint that starts on Monday ends on Sunday, and
+    // the rollover happens on the Friday, so "carried" has to see that Friday. end_state is the category at the end of the
+    // last calendar day.
     public const string Items = $$"""
         WITH {{History}}
         SELECT * FROM (
@@ -81,10 +83,16 @@ internal static class MetricsSql
                     AND coalesce(end_state.category, '') NOT IN ('completed', 'removed')
                     AND NOT {{CompletedFor}}) AS carried
             FROM sprint sp
+            JOIN project proj ON proj.id = sp.project_id
             JOIN work_item w ON w.project_id = sp.project_id AND w.type IN ('story', 'bug')
+            LEFT JOIN LATERAL (
+                SELECT coalesce(max(g.day::date), sp.end_date) AS day
+                FROM generate_series((sp.end_date - 6)::timestamp, sp.end_date::timestamp, interval '1 day') AS g(day)
+                WHERE extract(isodow FROM g.day)::smallint = ANY (proj.working_days)
+            ) last_work ON true
             LEFT JOIN LATERAL (SELECT m.sprint_id FROM mv m WHERE m.item_id = w.id AND m.changed_at <= (sp.start_date::timestamp AT TIME ZONE 'UTC')
                                ORDER BY m.changed_at DESC, m.rev DESC LIMIT 1) at_start ON true
-            LEFT JOIN LATERAL (SELECT m.sprint_id FROM mv m WHERE m.item_id = w.id AND m.changed_at <= (sp.end_date::timestamp AT TIME ZONE 'UTC')
+            LEFT JOIN LATERAL (SELECT m.sprint_id FROM mv m WHERE m.item_id = w.id AND m.changed_at <= (last_work.day::timestamp AT TIME ZONE 'UTC')
                                ORDER BY m.changed_at DESC, m.rev DESC LIMIT 1) at_last ON true
             LEFT JOIN LATERAL (SELECT m.sprint_id FROM mv m WHERE m.item_id = w.id AND m.changed_at < ((sp.end_date + 1)::timestamp AT TIME ZONE 'UTC')
                                ORDER BY m.changed_at DESC, m.rev DESC LIMIT 1) at_end ON true

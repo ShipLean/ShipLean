@@ -14,6 +14,7 @@ export const pagesTestIds = {
   projectSettingsPage: 'page-project-settings',
   newProjectPage: 'page-new-project',
   instanceSettingsPage: 'page-instance-settings',
+  instanceSettingsTab: 'page-instance-settings-tab',
   profilePage: 'page-profile',
   slotAttachment: 'slot-attachment',
   slotBoard: 'slot-board',

@@ -183,3 +183,15 @@ for (const failing of ['by-key', 'sprints'] as const) {
     await expect(page.getByTestId(pagesTestIds.loadFailed)).toHaveCount(0);
   });
 }
+
+test('InstanceSettings_WhenOpened_ShouldLinkEveryTabAndMarkTheCurrentOne', async ({
+  mount,
+  page,
+}) => {
+  await stubProjectApi(page);
+  await mount(<AppRoutes />, { hooksConfig: { route: '/instance/users' } });
+  const tabs = page.getByTestId(pagesTestIds.instanceSettingsTab);
+  await expect(tabs).toHaveText(['General', 'Users', 'Projects', 'Integrations', 'Agents']);
+  await expect(tabs.nth(4)).toHaveAttribute('href', '/instance/agents');
+  await expect(tabs.nth(1)).toHaveAttribute('aria-current', 'page');
+});

@@ -107,7 +107,6 @@ const stateRow = (id: string, type: StateDto['type'], name: string, order: numbe
   category: order === 1 ? 'proposed' : order === 2 ? 'inProgress' : 'completed',
   order,
   itemCount: 0,
-  startsAgent: false,
 });
 export const workItemStates: StateDto[] = [
   stateRow('s-new', 'story', 'New', 1),

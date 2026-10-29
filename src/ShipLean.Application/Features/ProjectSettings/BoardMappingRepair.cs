@@ -3,19 +3,28 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Dapper;
 using ShipLean.Contracts.Persisted;
+using ShipLean.Contracts.Refs;
 
 namespace ShipLean.Application.Features.ProjectSettings;
 
-// A removed state must not stay mapped to a board column: its mapping points at the state its items moved to.
+// A removed state must not stay mapped to a board column: its mapping points at the state its items moved to. The Stories and
+// Features boards' transitions are normalised against the project's final states in the same pass, so renames, removals,
+// adds and re-adds all take effect on the names the save ends with. Returns the boards it wrote, with the sections that changed:
+// a hook cannot publish, so the caller publishes BoardSettingsChanged once the transaction commits.
 internal static class BoardMappingRepair
 {
-    public static async Task RunAsync(DbTransaction transaction, Guid projectId, IReadOnlyDictionary<Guid, Guid> moved, CancellationToken cancellationToken)
+    public static async Task<IReadOnlyList<(Guid BoardId, IReadOnlyList<string> Sections)>> RunAsync(DbTransaction transaction, Guid projectId, IReadOnlyDictionary<Guid, Guid> moved, CancellationToken cancellationToken)
     {
         var connection = transaction.Connection!;
-        var boards = await connection.QueryAsync<(Guid Id, string Settings)>(new CommandDefinition(
-            "SELECT id, settings::text AS settings FROM board WHERE project_id = @projectId ORDER BY id FOR UPDATE",
-            new { projectId }, transaction, cancellationToken: cancellationToken));
-        foreach (var (id, text) in boards)
+        var boards = (await connection.QueryAsync<(Guid Id, string Level, string Settings)>(new CommandDefinition(
+            "SELECT id, level, settings::text AS settings FROM board WHERE project_id = @projectId ORDER BY id FOR UPDATE",
+            new { projectId }, transaction, cancellationToken: cancellationToken))).ToList();
+        var states = (await connection.QueryAsync<(Guid Id, string Type, string Name, bool Archived)>(new CommandDefinition(
+            "SELECT id, type, name, archived_at IS NOT NULL AS archived FROM state WHERE project_id = @projectId",
+            new { projectId }, transaction, cancellationToken: cancellationToken)))
+            .Select(s => new TransitionState(s.Id, Enum.Parse<WorkItemTypeId>(s.Type, ignoreCase: true), s.Name, s.Archived)).ToList();
+        var touched = new List<(Guid BoardId, IReadOnlyList<string> Sections)>();
+        foreach (var (id, level, text) in boards)
         {
             var settings = JsonSerializer.Deserialize<BoardSettingsJson>(text, PersistedJson.Options)!;
             var changed = false;
@@ -31,18 +40,25 @@ internal static class BoardMappingRepair
                 columns.Add(column with { StateMappings = mappings });
             }
 
+            var transitions = level is "stories" or "features" ? TransitionStates.Normalize(settings.Transitions, states) : settings.Transitions;
+            changed |= !JsonEqual(transitions, settings.Transitions);
+
             if (changed)
             {
+                var repaired = settings with { Columns = columns, Swimlanes = lanes, StyleRules = rules, Transitions = transitions };
                 await connection.ExecuteAsync(new CommandDefinition(
                     "UPDATE board SET settings = @settings::jsonb, updated_at = now() WHERE id = @id",
-                    new { id, settings = JsonSerializer.Serialize(settings with { Columns = columns, Swimlanes = lanes, StyleRules = rules }, PersistedJson.Options) }, transaction, cancellationToken: cancellationToken));
+                    new { id, settings = JsonSerializer.Serialize(repaired, PersistedJson.Options) }, transaction, cancellationToken: cancellationToken));
+                touched.Add((id, BoardSettingsSections.Changed(settings, repaired)));
             }
         }
+
+        return touched;
     }
 
     private static readonly HashSet<string> StateFields = [.. FieldIds.All.Where(f => f.Kind == FieldKind.State).Select(f => f.Id)];
 
-    private static bool JsonEqual(CriteriaJson? a, CriteriaJson? b)
+    private static bool JsonEqual<T>(T a, T b)
         => JsonSerializer.Serialize(a, PersistedJson.Options) == JsonSerializer.Serialize(b, PersistedJson.Options);
 
     private static CriteriaJson Remap(CriteriaJson criteria, IReadOnlyDictionary<Guid, Guid> moved)

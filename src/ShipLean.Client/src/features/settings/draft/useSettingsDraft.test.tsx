@@ -44,7 +44,6 @@ const loaded: ProjectSettingsDto = {
       category: 'proposed' as const,
       order: 1,
       itemCount: 0,
-      startsAgent: false,
     },
     {
       id: `${type}-done`,
@@ -53,7 +52,6 @@ const loaded: ProjectSettingsDto = {
       category: 'completed' as const,
       order: 2,
       itemCount: 0,
-      startsAgent: false,
     },
   ]),
 };
@@ -117,7 +115,7 @@ test('rebase_WhenOnlyItemCountsChangedWhileDirty_ShouldTakeTheCountsWithoutTheSt
   act(() => seen.hook?.setDraft((d) => ({ ...d, name: 'Storefront Plus' })));
   render({
     ...loaded,
-    states: loaded.states.map((s) => ({ ...s, itemCount: 9, startsAgent: false })),
+    states: loaded.states.map((s) => ({ ...s, itemCount: 9 })),
   });
   expect(seen.hook?.stale).toBe(false);
   expect(seen.hook?.draft.name).toBe('Storefront Plus');

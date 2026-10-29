@@ -83,7 +83,6 @@ export const states: StateDto[] = [
     category: 'proposed',
     order: 1,
     itemCount: 0,
-    startsAgent: false,
   },
   {
     id: 's-active',
@@ -92,7 +91,6 @@ export const states: StateDto[] = [
     category: 'inProgress',
     order: 2,
     itemCount: 1,
-    startsAgent: false,
   },
   {
     id: 's-triaged',
@@ -101,7 +99,6 @@ export const states: StateDto[] = [
     category: 'proposed',
     order: 1,
     itemCount: 1,
-    startsAgent: false,
   },
   {
     id: 's-t-new',
@@ -110,7 +107,6 @@ export const states: StateDto[] = [
     category: 'proposed',
     order: 1,
     itemCount: 0,
-    startsAgent: false,
   },
   {
     id: 's-t-active',
@@ -119,7 +115,6 @@ export const states: StateDto[] = [
     category: 'inProgress',
     order: 2,
     itemCount: 1,
-    startsAgent: false,
   },
   {
     id: 's-t-done',
@@ -128,7 +123,6 @@ export const states: StateDto[] = [
     category: 'completed',
     order: 3,
     itemCount: 1,
-    startsAgent: false,
   },
 ];
 
