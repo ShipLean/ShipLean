@@ -42,6 +42,7 @@ public class SprintEndAppliedTests : SeededAcceptanceTest
             Headers = Headers,
         });
         login.Ok.ShouldBeTrue();
+        await context.Tracing.StartAsync(new TracingStartOptions { Screenshots = true, Snapshots = true });
         var tomPage = await context.NewPageAsync();
         var tom = new SprintEndPrompt(tomPage);
         await tom.OpenAsync("SHIP");
@@ -53,7 +54,17 @@ public class SprintEndAppliedTests : SeededAcceptanceTest
         applied.Ok.ShouldBeTrue(await applied.TextAsync());
 
         await Expect(joel.Dialog).ToHaveCountAsync(0);
-        await Expect(tom.Done).ToBeVisibleAsync();
+        try
+        {
+            await Expect(tom.Done).ToBeVisibleAsync();
+        }
+        catch
+        {
+            // Diagnostic (SHIP-89 CI): keep Tom's side of the failure next to Joel's trace.
+            Directory.CreateDirectory(Path.Combine(RepoPaths.ArtifactsDirectory, "playwright-traces"));
+            await context.Tracing.StopAsync(new TracingStopOptions { Path = Path.Combine(RepoPaths.ArtifactsDirectory, "playwright-traces", "SprintEndApplied-tom.zip") });
+            throw;
+        }
         await Expect(tom.Apply).ToHaveCountAsync(0);
         await tom.DoneClose.ClickAsync();
         await Expect(tom.Dialog).ToHaveCountAsync(0);
