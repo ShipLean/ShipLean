@@ -98,4 +98,27 @@ public static class BoardSettingsTestIds
     public const string ReorderingPane = "pane-reordering";
     public const string ReorderingChangesBacklog = "board-settings-reordering-changes-backlog";
     public const string ReorderingKeepsBacklog = "board-settings-reordering-keeps-backlog";
+
+    public const string AutomationsPane = "pane-automations";
+    public const string AutomationsEmpty = "board-settings-automations-empty";
+    public const string AutomationsNotStored = "board-settings-automations-not-stored";
+    public const string TransitionRow = "board-settings-transition-row";
+    public const string TransitionLabel = "board-settings-transition-label";
+    public const string TransitionInvalid = "board-settings-transition-invalid";
+    public const string TransitionInvalidReason = "board-settings-transition-invalid-reason";
+    public const string TransitionSummary = "board-settings-transition-summary";
+    public const string TransitionDelete = "board-settings-transition-delete";
+    public const string TransitionAddType = "board-settings-transition-add-type";
+    public const string TransitionAddFrom = "board-settings-transition-add-from";
+    public const string TransitionAddTo = "board-settings-transition-add-to";
+    public const string TransitionAdd = "board-settings-transition-add";
+    public const string TransitionAddRefusal = "board-settings-transition-add-refusal";
+    public const string ActionRow = "board-settings-action-row";
+    public const string ActionPrompt = "board-settings-action-prompt";
+    public const string ActionPromptError = "board-settings-action-prompt-error";
+    public const string ActionPreview = "board-settings-action-preview";
+    public const string ActionConnection = "board-settings-action-connection";
+    public const string ActionRemove = "board-settings-action-remove";
+    public const string ActionAdd = "board-settings-action-add";
+    public const string ActionLastHint = "board-settings-action-last-hint";
 }
