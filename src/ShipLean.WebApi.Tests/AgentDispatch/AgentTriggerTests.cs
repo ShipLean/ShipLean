@@ -128,6 +128,59 @@ public class AgentTriggerTests : ApiFixture
     }
 
     [Test]
+    public async Task Move_WhenAnExactTransitionHasNoAgentAction_ShouldStillRunTheAnyTransition()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
+        await AgentDispatchArrange.AddTransitionAsync(database, arranged.Project.Id, WorkItemTypeId.Story, null, arranged.Active, "From anywhere.");
+        var exact = await AgentDispatchArrange.AddTransitionAsync(
+            database, arranged.Project.Id, WorkItemTypeId.Story, arranged.Project.State(WorkItemTypeId.Story, "New"), arranged.Active, "From new.");
+        await database.ExecuteAsync(
+            "UPDATE board SET settings = jsonb_set(settings, '{transitions}', (SELECT jsonb_agg(CASE WHEN t->>'id' = @id THEN jsonb_set(t, '{actions}', '[]') ELSE t END) FROM jsonb_array_elements(settings->'transitions') t)) WHERE project_id = @project AND level = 'stories'",
+            new { id = exact.Id, project = arranged.Project.Id });
+        var item = await arranged.CreateItemAsync(Api);
+
+        await AgentDispatchArrange.MoveAsync(Api, item.Id, item.Revision, arranged.Active);
+        await HandledAsync<WorkItemUpdated>(item.Id);
+
+        var delivery = (await AgentDispatchArrange.DeliveriesAsync(database, item.Id)).ShouldHaveSingleItem();
+        AgentDispatchArrange.BodyOf(delivery)["promptContext"]!.GetValue<string>().ShouldContain("From anywhere.");
+    }
+
+    [Test]
+    public async Task Move_WhenAFeatureTransitionMatchesOnTheFeaturesBoard_ShouldOpenASession()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
+        var active = arranged.Project.State(WorkItemTypeId.Feature, "Active");
+        await AgentDispatchArrange.AddTransitionAsync(database, arranged.Project.Id, WorkItemTypeId.Feature, arranged.Project.State(WorkItemTypeId.Feature, "New"), active, "Plan the feature.");
+        var item = await arranged.CreateItemAsync(Api, type: "feature");
+
+        await AgentDispatchArrange.MoveAsync(Api, item.Id, item.Revision, active);
+        await HandledAsync<WorkItemUpdated>(item.Id);
+
+        var delivery = (await AgentDispatchArrange.DeliveriesAsync(database, item.Id)).ShouldHaveSingleItem();
+        AgentDispatchArrange.BodyOf(delivery)["promptContext"]!.GetValue<string>().ShouldContain("Plan the feature.");
+    }
+
+    [TestCase("epic")]
+    [TestCase("task")]
+    public async Task Move_WhenTheItemIsAnEpicOrATask_ShouldOpenNoSession(string type)
+    {
+        await using var database = await OpenDatabaseAsync();
+        var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
+        await AgentDispatchArrange.AddTransitionAsync(database, arranged.Project.Id, WorkItemTypeId.Story, null, arranged.Active);
+        await AgentDispatchArrange.AddTransitionAsync(database, arranged.Project.Id, WorkItemTypeId.Feature, null, arranged.Project.State(WorkItemTypeId.Feature, "Active"));
+        var item = await arranged.CreateItemAsync(Api, type: type);
+        var active = arranged.Project.State(Enum.Parse<WorkItemTypeId>(type, ignoreCase: true), "Active");
+
+        await AgentDispatchArrange.MoveAsync(Api, item.Id, item.Revision, active);
+        await HandledAsync<WorkItemUpdated>(item.Id);
+
+        (await AgentDispatchArrange.SessionsAsync(database, item.Id)).ShouldBeEmpty();
+    }
+
+    [Test]
     public async Task Move_WhenAnAnyTransitionMatches_ShouldFireFromAnyState()
     {
         await using var database = await OpenDatabaseAsync();

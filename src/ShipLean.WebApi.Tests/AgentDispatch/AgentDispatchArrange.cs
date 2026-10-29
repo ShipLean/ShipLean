@@ -43,8 +43,8 @@ internal sealed class AgentDispatchArrange
         return new AgentDispatchArrange(project, connectionId);
     }
 
-    // Writes one transition with a single Send to agent action into the Stories board settings of a project (the type's own board is the
-    // only one the arranged project has). fromStateId null means Any state; connectionId null means the project's. Names are read from the
+    // Writes one transition with a single Send to agent action into the settings of the type's board (Stories for Story and Bug, Features for
+    // Feature; the Features board row is added, empty, when the project lacks it). fromStateId null means Any state; connectionId null means the project's. Names are read from the
     // state rows, so the stored refs are what the client would save. Returns the transition so a test can name its id.
     public static async Task<TransitionJson> AddTransitionAsync(
         NpgsqlConnection database, Guid projectId, WorkItemTypeId type, Guid? fromStateId, Guid toStateId, string prompt = "Do the thing.", Guid? connectionId = null)
@@ -54,22 +54,31 @@ internal sealed class AgentDispatchArrange
         var transition = new TransitionJson(
             Guid.NewGuid().ToString("N"), type, fromStateId is { } from ? await RefAsync(from) : null, await RefAsync(toStateId),
             [new ActionJson(Guid.NewGuid().ToString("N"), "agent", prompt, connectionId)]);
-        var json = await database.ExecuteScalarAsync<string>("SELECT settings::text FROM board WHERE project_id = @projectId AND level = 'stories'", new { projectId })
-            ?? throw new InvalidOperationException("The project has no Stories board.");
+        var level = TransitionStates.BoardLevel(type) ?? throw new InvalidOperationException($"{type} has no board with Automations.");
+        var json = await database.ExecuteScalarAsync<string>("SELECT settings::text FROM board WHERE project_id = @projectId AND level = @level", new { projectId, level });
+        if (json is null)
+        {
+            var stories = await database.ExecuteScalarAsync<string>("SELECT settings::text FROM board WHERE project_id = @projectId AND level = 'stories'", new { projectId })
+                ?? throw new InvalidOperationException("The project has no Stories board to copy.");
+            var empty = JsonSerializer.Deserialize<BoardSettingsJson>(stories, PersistedJson.Options)! with { Columns = [], Transitions = [] };
+            json = JsonSerializer.Serialize(empty, PersistedJson.Options);
+            await database.ExecuteAsync(
+                "INSERT INTO board (id, project_id, level, settings) VALUES (@boardId, @projectId, @level, @json::jsonb)", new { boardId = Guid.NewGuid(), projectId, level, json });
+        }
         var settings = JsonSerializer.Deserialize<BoardSettingsJson>(json, PersistedJson.Options)!;
         settings = settings with { Transitions = [.. settings.Transitions, transition] };
         await database.ExecuteAsync(
-            "UPDATE board SET settings = @settings::jsonb WHERE project_id = @projectId AND level = 'stories'",
-            new { projectId, settings = JsonSerializer.Serialize(settings, PersistedJson.Options) });
+            "UPDATE board SET settings = @settings::jsonb WHERE project_id = @projectId AND level = @level",
+            new { projectId, level, settings = JsonSerializer.Serialize(settings, PersistedJson.Options) });
         return transition;
     }
 
-    public async Task<(Guid Id, string Key, int Revision)> CreateItemAsync(ApiClient api, Guid? stateId = null)
+    public async Task<(Guid Id, string Key, int Revision)> CreateItemAsync(ApiClient api, Guid? stateId = null, string type = "story")
     {
         var body = new JsonObject
         {
             ["projectId"] = Project.Id,
-            ["type"] = "story",
+            ["type"] = type,
             ["title"] = "Add the thing",
             ["changes"] = stateId is null ? null : new JsonObject { ["state"] = new JsonObject { ["value"] = stateId } },
         };

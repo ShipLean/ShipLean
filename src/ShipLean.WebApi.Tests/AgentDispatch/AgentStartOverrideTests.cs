@@ -64,7 +64,7 @@ public class AgentStartOverrideTests : ApiFixture
         var item = await arranged.CreateItemAsync(Api);
         var other = await NewConnectionAsync();
 
-        var outcome = await Starter.StartAsync(item.Id, ShipLean.TestSupport.SeedIds.Users.Joel, null, other, "Do the <thing>.", CancellationToken.None);
+        var outcome = await Starter.StartAsync(item.Id, ShipLean.TestSupport.SeedIds.Users.Joel, null, other, "Do the <thing>.", null, CancellationToken.None);
 
         outcome.SessionId.ShouldNotBeNull();
         var session = (await AgentDispatchArrange.SessionsAsync(database, item.Id)).ShouldHaveSingleItem();
@@ -83,7 +83,7 @@ public class AgentStartOverrideTests : ApiFixture
         var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
         var item = await arranged.CreateItemAsync(Api);
 
-        await Starter.StartAsync(item.Id, ShipLean.TestSupport.SeedIds.Users.Joel, null, null, "  ", CancellationToken.None);
+        await Starter.StartAsync(item.Id, ShipLean.TestSupport.SeedIds.Users.Joel, null, null, "  ", null, CancellationToken.None);
 
         var body = AgentDispatchArrange.BodyOf((await AgentDispatchArrange.DeliveriesAsync(database, item.Id)).ShouldHaveSingleItem());
         body["appUserId"]!.GetValue<string>().ShouldBe(arranged.ConnectionId.ToString());
