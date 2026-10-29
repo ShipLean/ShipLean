@@ -183,12 +183,14 @@ test('Tree_WhenDroppedOnAGroupWithNoStories_ShouldShowTheRowRightUnderItAtOnce',
   await dragOntoGroup(page, 'SHIP-144', 'Receipts');
 
   await expect.poll(() => server.patches.length).toBe(1);
-  const seen = await sequence(page);
-  expect(seen.slice(seen.indexOf('SHIP-110'), seen.indexOf('SHIP-110') + 3)).toEqual([
-    'SHIP-110',
-    'SHIP-144',
-    'SHIP-102',
-  ]);
+  // The request is recorded in the drop turn. The optimistic row paints on the next commit, so wait for it.
+  await expect
+    .poll(async () => {
+      const seen = await sequence(page);
+      const at = seen.indexOf('SHIP-110');
+      return seen.slice(at, at + 3);
+    })
+    .toEqual(['SHIP-110', 'SHIP-144', 'SHIP-102']);
   release();
 });
 

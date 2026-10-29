@@ -5,7 +5,8 @@ namespace ShipLean.WebApi.Features.Mcp.Tools.Status;
 
 // ByType is the work tree roll-up under the item, one entry per child type that has any, at any depth. PointsDone and
 // PointsTotal add the Story and Bug entries (null when none is estimated). OpenChildren lists up to 100 of the OpenTotal
-// open descendants, with the sprint each is in.
+// open descendants, with the sprint each is in and the key of its parent (a task's story). BoardUrl is the Feature board,
+// set only when the item is a Feature.
 internal sealed record FeatureProgressResult(
     string? Project,
     string OpenUrl,
@@ -17,7 +18,8 @@ internal sealed record FeatureProgressResult(
     [property: JsonPropertyName("points_done")] decimal? PointsDone,
     [property: JsonPropertyName("points_total")] decimal? PointsTotal,
     [property: JsonPropertyName("open_total")] int OpenTotal,
-    [property: JsonPropertyName("open_children")] IReadOnlyList<FeatureProgressResult.OpenChild> OpenChildren) : McpResult(Project, OpenUrl)
+    [property: JsonPropertyName("open_children")] IReadOnlyList<FeatureProgressResult.OpenChild> OpenChildren,
+    [property: JsonPropertyName("board_url")] string? BoardUrl = null) : McpResult(Project, OpenUrl)
 {
     internal sealed record TypeProgress(
         [property: JsonPropertyName("type")] string Type,
@@ -31,6 +33,7 @@ internal sealed record FeatureProgressResult(
         [property: JsonPropertyName("key")] string Key,
         [property: JsonPropertyName("title")] string Title,
         [property: JsonPropertyName("type")] string Type,
+        [property: JsonPropertyName("parent")] string? Parent,
         [property: JsonPropertyName("state")] string State,
         [property: JsonPropertyName("sprint")] string? Sprint,
         [property: JsonPropertyName("assignee")] string? Assignee,

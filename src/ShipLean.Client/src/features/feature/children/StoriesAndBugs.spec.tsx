@@ -61,3 +61,14 @@ test('StoriesAndBugs_WhenChildClicked_ShouldOpenChildModal', async ({ mount, pag
   await expect(screen.getByTestId(harness.location)).toHaveText('/p/SHIP/items/SHIP-100');
   await expect(screen.getByTestId(harness.search)).toHaveText(`?item=${child.key}`);
 });
+
+test('StoriesAndBugs_ShouldLinkToTheFeatureBoard', async ({ mount, page }) => {
+  await stubAll(page, feature);
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-100" />, route);
+
+  const link = screen.getByTestId(ids.taskBoardLink);
+  await expect(link).toHaveText('Task board');
+  await link.click();
+
+  await expect(screen.getByTestId(harness.location)).toHaveText('/p/SHIP/items/SHIP-100/board');
+});

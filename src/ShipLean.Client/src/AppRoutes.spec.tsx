@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
+import { FEATURE_VIEW } from './features/featureBoard/ct/fixtures';
+import { stubFeatureBoard } from './features/featureBoard/ct/stubFeatureBoard';
 import { AppRoutes } from './AppRoutes';
 import { meDto, stubInstance, stubJson } from './features/auth/authFixtures';
 import { agentsTestIds } from './features/agents/testIds';
@@ -52,6 +54,10 @@ const scaffolds: Record<RouteId, { path: string; testId: string }> = {
     path: '/p/SHIP/items/SHIP-101/attachments/a1',
     testId: pagesTestIds.attachmentPage,
   },
+  featureBoard: {
+    path: '/p/SHIP/items/SHIP-101/board',
+    testId: pagesTestIds.featureBoardPage,
+  },
   storiesBoard: { path: '/p/SHIP/boards/stories', testId: pagesTestIds.boardPage },
   featuresBoard: { path: '/p/SHIP/boards/features', testId: pagesTestIds.boardPage },
   epicsBoard: { path: '/p/SHIP/boards/epics', testId: pagesTestIds.boardPage },
@@ -104,6 +110,20 @@ test('Taskboard_WhenSettingsInQuery_ShouldPassSectionToSlot', async ({ mount, pa
   });
   await expect(page.getByTestId(pagesTestIds.slotTaskboard)).toBeVisible();
   await expect(page.getByTestId(pagesTestIds.slotTaskboardSettings)).toBeVisible();
+});
+
+test('FeatureBoard_WhenSettingsInQuery_ShouldMountTheFeatureBoardSlots', async ({
+  mount,
+  page,
+}) => {
+  await stubProjectApi(page);
+  await stubFeatureBoard(page, FEATURE_VIEW);
+  await mount(<AppRoutes />, {
+    hooksConfig: { route: '/p/SHIP/items/SHIP-101/board?settings=fields' },
+  });
+  await expect(page.getByTestId(pagesTestIds.slotFeatureBoard)).toBeVisible();
+  await expect(page.getByTestId(pagesTestIds.slotTaskboardSettings)).toBeVisible();
+  await expect(page.getByRole('dialog')).toBeVisible();
 });
 
 test('Backlog_WhenModeInQuery_ShouldMountThatModesSlot', async ({ mount, page }) => {

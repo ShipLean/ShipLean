@@ -11,6 +11,7 @@ using ShipLean.Contracts.Refs;
 using ShipLean.WebApi.Features.Mcp.Contracts;
 using ShipLean.WebApi.Features.Mcp.Resolve;
 using ShipLean.WebApi.Features.Mcp.Tools.Capture;
+using ShipLean.WebApi.Infrastructure;
 using Microsoft.Net.Http.Headers;
 
 namespace ShipLean.WebApi.Features.Mcp.Tools.Attach;
@@ -43,7 +44,7 @@ internal sealed class AttachTools(
     }
 
     [McpServerTool(Name = "attach_file"), McpScope(McpScopes.Write)]
-    [Description("Attach any file to a work item. For anything but a small file, leave base64 out: the call attaches nothing and returns upload_url, expires_at and a curl command (curl -T <file> '<url>'). Run that command in the shell so the bytes never pass through you. The URL is on the host the request came in on, works once, for 10 minutes, and accepts up to the attachment size limit (25 MB by default). With base64 the file is sent in the call itself and can be as large as an attachment (25 MB by default). Attaching a name the item already has replaces that file.")]
+    [Description("Attach any file to a work item. For anything but a small file, leave base64 out: the call attaches nothing and returns upload_url, expires_at and a curl command (curl -T <file> '<url>'). Run that command in the shell so the bytes never pass through you. The URL is on the host the request came in on, works once, for 10 minutes, and accepts up to the attachment size limit (25 MB by default). If base_url is blank and the request arrived on a cluster service name, the call fails: send base64 instead. With base64 the file is sent in the call itself and can be as large as an attachment (25 MB by default). Attaching a name the item already has replaces that file.")]
     public async Task<CallToolResult> AttachFile(
         [Description("The item's key, such as SHIP-12.")] string feature,
         [Description("The file name, such as diagram.png.")] string name,
@@ -79,12 +80,19 @@ internal sealed class AttachTools(
             throw ApiException.Validation("content_type must be a content type such as image/png.", "content_type");
         }
 
+        var baseUrl = await support.BaseUrlAsync(cancellationToken);
+        if (RequestOrigin.HostIsClusterService(baseUrl))
+        {
+            throw ApiException.Validation(
+                "There is no upload URL: the only host available is a cluster service name, which a laptop cannot open. Send the file as base64, or ask an admin to set base_url to the public origin.",
+                "base64");
+        }
+
         var issued = await transfers.IssueAsync(
             new NewTransfer(TransferKind.Upload, resolved.Id, null, cleanName, contentType.Trim(), currentUser.Id,
                 support.AgentAuthorizationId(), AgentStamp.Of(agent) ?? "Agent"),
             cancellationToken);
         var project = await support.ProjectOfAsync(resolved, cancellationToken);
-        var baseUrl = await support.BaseUrlAsync(cancellationToken);
         var url = $"{baseUrl.TrimEnd('/')}/api/uploads/{issued.Token}";
         var command = $"curl -T <file> '{url}'";
         var result = new UploadUrlResult(project.Key, McpOpenUrls.WorkItem(baseUrl, project.Key, resolved.Key), resolved.Key, cleanName, url, issued.ExpiresAt, command);

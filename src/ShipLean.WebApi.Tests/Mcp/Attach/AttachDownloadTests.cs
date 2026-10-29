@@ -199,6 +199,36 @@ public class AttachDownloadTests : McpFixture
         await ExpectNotFoundCodeAsync(response);
     }
 
+    [Test]
+    public async Task ReadAttachment_WhenDialedHostIsClusterService_ShouldRefuseTheDownloadUrl()
+    {
+        await AttachAsync("cluster.png", "image/png", PngBytes);
+        await using var connection = await OpenDatabaseAsync();
+        var saved = await connection.QuerySingleAsync<string>("SELECT base_url FROM instance_settings");
+        try
+        {
+            // The token is bound to the host it was issued for. Issue it for the service name, then clear base_url so
+            // the call has only that name, which a laptop cannot open.
+            const string service = "http://non-prod.shiplean.svc:8080";
+            await connection.ExecuteAsync("UPDATE instance_settings SET base_url = @service", new { service });
+            var token = await TokenAsync(TestUser.Joel, ReadWrite);
+            await connection.ExecuteAsync("UPDATE instance_settings SET base_url = ''");
+
+            var reply = await CallToolAsync(token, "read_attachment", $$"""{"item":"{{_featureKey}}","name":"cluster.png"}""", request =>
+            {
+                request.Headers.Host = "non-prod.shiplean.svc:8080";
+            });
+
+            reply.IsToolError().ShouldBeTrue();
+            reply.Structured().GetProperty("error").GetProperty("message").GetString()!.ShouldContain("base_url");
+            (await connection.ExecuteScalarAsync<int>("SELECT count(*)::int FROM transfer_token WHERE kind = 'download' AND name = 'cluster.png'")).ShouldBe(0);
+        }
+        finally
+        {
+            await connection.ExecuteAsync("UPDATE instance_settings SET base_url = @saved", new { saved });
+        }
+    }
+
     private async Task<Guid> AttachAsync(string name, string contentType, byte[] bytes)
     {
         await using var scope = Host.Services.CreateAsyncScope();

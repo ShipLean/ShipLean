@@ -12,14 +12,16 @@ namespace ShipLean.WebApi.Features.Mcp.Transport;
 // every token. Read on every call, never cached: changing base_url disconnects agents. When base_url is blank the origin
 // is the host the request came in on (RequestOrigin), not the service DNS the last hop dialed.
 [RegisterSingleton]
-public sealed class AgentBaseUrl(NpgsqlDataSource dataSource, IOptions<ForwardedHeadersOptions> forwarding)
+public sealed class AgentBaseUrl(NpgsqlDataSource dataSource, IOptions<ForwardedHeadersOptions> forwarding, PublicOrigin origins)
 {
     public async Task<AgentAddresses> ReadAsync(HttpRequest request, CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var baseUrl = await connection.QuerySingleOrDefaultAsync<string>(
             new CommandDefinition("SELECT base_url FROM instance_settings", cancellationToken: cancellationToken));
+        var blank = string.IsNullOrWhiteSpace(baseUrl);
         var requestOrigin = RequestOrigin.Of(request, forwarding.Value);
-        return new AgentAddresses(AgentUrls.Issuer(baseUrl, requestOrigin), AgentUrls.Resource(baseUrl, requestOrigin), !string.IsNullOrWhiteSpace(baseUrl));
+        origins.Note(blank, blank ? RequestOrigin.ClusterFallback(request, forwarding.Value) : null);
+        return new AgentAddresses(AgentUrls.Issuer(baseUrl, requestOrigin), AgentUrls.Resource(baseUrl, requestOrigin), !blank);
     }
 }

@@ -4,6 +4,7 @@ import { settingsTestIds } from '../testIds';
 import { Panel } from '../draft/Panel';
 import { AccessState } from './AccessState';
 import { BaseUrlCheck } from './BaseUrlCheck';
+import { PublicOriginNotice } from './PublicOriginNotice';
 import { CreationField } from './CreationField';
 import { useInstanceSettings, useSaveInstanceSettings } from './instanceApi';
 import { errorText, pruneEdit, type SettingsEdit } from './model';
@@ -64,6 +65,7 @@ function GeneralForm({ saved }: { saved: InstanceSettingsDto }) {
             onChange={(e) => change({ baseUrl: e.target.value })}
           />
           <BaseUrlCheck baseUrl={draft.baseUrl} origin={window.location.origin} />
+          <PublicOriginNotice baseUrl={saved.baseUrl} />
           <span className="font-normal text-ink-muted">
             For links ShipLean builds outside the browser: copied work item links, the sign-in link
             you hand to new users, and links back from Jira import.

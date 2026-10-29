@@ -35,8 +35,10 @@ COPY src/ ./src/
 COPY db/ ./db/
 COPY --from=frontend /source/src/ShipLean.WebApi/wwwroot/ ./src/ShipLean.WebApi/wwwroot/
 # Analyzers off here: CI already builds every project with them on and warnings as errors.
+# No --no-restore: a cached restore layer does not contain the packages (they live in the mount,
+# and the mount does not survive the job), so publish has to restore when the mount is empty.
 RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \
-    dotnet publish src/ShipLean.WebApi -c Release -r linux-x64 --self-contained false --no-restore -o /app -p:SourceRevisionId=$SOURCE_COMMIT -p:RunAnalyzers=false
+    dotnet publish src/ShipLean.WebApi -c Release -r linux-x64 --self-contained false -o /app -p:SourceRevisionId=$SOURCE_COMMIT -p:RunAnalyzers=false
 
 # Stage 3: the search embedding model (intfloat/multilingual-e5-small, int8 ONNX). Debian, not alpine: the fetch
 # script needs curl, flock and sha256sum. A cache mount's files are not in the layer, so the model is copied out in

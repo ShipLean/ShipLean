@@ -10,6 +10,7 @@ export const featureTestIds = {
   links: 'feature-links',
   addLink: 'feature-add-link',
   storiesAndBugs: 'feature-stories-and-bugs',
+  taskBoardLink: 'feature-task-board-link',
   log: 'feature-log',
   attachmentsRail: 'feature-attachments-rail',
   dropZone: 'feature-drop-zone',

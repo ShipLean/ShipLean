@@ -27,6 +27,10 @@ public static class McpOpenUrls
     public static string Taskboard(string baseUrl, string projectKey, Guid sprintId)
         => Join(baseUrl, $"/p/{Segment(projectKey)}/sprints/{sprintId}/taskboard");
 
+    // The Feature board: the Taskboard scoped to one Feature.
+    public static string FeatureBoard(string baseUrl, string projectKey, string itemKey)
+        => Join(baseUrl, $"/p/{Segment(projectKey)}/items/{Segment(itemKey)}/board");
+
     // The planning view of the stories backlog.
     public static string Planning(string baseUrl, string projectKey)
         => Backlog(baseUrl, projectKey, "stories", "planning");

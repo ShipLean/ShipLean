@@ -1,60 +1,62 @@
-import type { UserRef } from '../../../api/refs';
-import type { TaskboardViewDto } from '../../../api/views';
+import type { SprintRef, UserRef } from '../../../api/refs';
+import type { TaskboardRowDto } from '../../../api/views';
 import { StateDot } from '../../../components/StateDot';
 import { PersonRow } from '../rows/PersonRow';
 import { StoryRow } from '../rows/StoryRow';
 import type { TaskboardGrouping } from '../taskboardApi';
+import type { TaskboardGridView } from '../taskboardGridView';
+import type { TaskboardScope } from '../taskboardScope';
 import { taskboardTestIds as ids } from '../testIds';
-import { TaskboardDnd } from '../moves/TaskboardDnd';
 import { passesFaces, UNASSIGNED_FACE } from './faceFilter';
-import { gridColumns } from './gridColumns';
+import { gridColumns, gridMinWidth } from './gridColumns';
 
-/** The column headers and the rows of one grouping. */
+/** The column headers and the rows of one grouping. It sits inside a TaskboardDnd. */
 export function TaskboardGrid({
   projectKey,
   projectId,
-  sprintId,
+  scope,
   view,
+  rows,
   grouping,
   faces,
   me,
   isCollapsed,
   onToggle,
   onSetState,
-  onLanded,
+  label = 'Taskboard',
 }: {
   projectKey: string;
   projectId: string;
-  sprintId: string;
-  view: TaskboardViewDto;
+  scope: TaskboardScope;
+  view: TaskboardGridView;
+  /** The story rows this grid draws: all of `view.rows`, or a subset (a section of the Feature board). The column counts are theirs. */
+  rows: (TaskboardRowDto & { sprint?: SprintRef | null })[];
   grouping: TaskboardGrouping;
   faces: ReadonlySet<string>;
   me: UserRef | undefined;
   isCollapsed: (rowId: string, completed: boolean) => boolean;
   onToggle: (rowId: string, completed: boolean) => void;
   onSetState: (parentId: string, key: string, revision: number, stateId: string) => void;
-  /** A card landed in this row: open it. */
-  onLanded: (rowId: string) => void;
+  /** The grid's accessible name; a page with several grids gives each its own. */
+  label?: string;
 }) {
   // The face filter works on the loaded view: it is the same GET's data and the endpoint has no assignee filter.
   const shownIn = (stateId: string) =>
-    (grouping === 'stories' ? view.rows : view.peopleRows)
+    (grouping === 'stories' ? rows : view.peopleRows)
       .flatMap((row) => row.cells)
       .filter((cell) => cell.stateId === stateId)
       .flatMap((cell) => cell.tasks)
       .filter((card) => passesFaces(card, faces)).length;
   return (
-    <TaskboardDnd
-      projectId={projectId}
-      sprintId={sprintId}
-      view={view}
-      grouping={grouping}
-      me={me}
-      onLanded={onLanded}
-    >
-      <div data-testid={ids.grid} role="grid" aria-label="Taskboard" className="overflow-x-auto">
+    <>
+      <div
+        data-testid={ids.grid}
+        role="grid"
+        aria-label={label}
+        style={{ minWidth: gridMinWidth(view.columns.length) }}
+      >
         <div
-          className="grid bg-panel text-[length:var(--text-sm)]"
+          className="sticky top-0 z-10 grid bg-panel text-[length:var(--text-sm)]"
           style={{ gridTemplateColumns: gridColumns(view.columns.length) }}
         >
           <div className="px-2 py-2 text-[length:var(--text-xs)] text-ink-muted">
@@ -68,13 +70,13 @@ export function TaskboardGrid({
             >
               <StateDot category={column.state.category} name={column.state.name} />
               <span data-testid={ids.columnCount} className="text-ink-muted">
-                {faces.size === 0 ? column.count : shownIn(column.state.id)}
+                {shownIn(column.state.id)}
               </span>
             </div>
           ))}
         </div>
         {grouping === 'stories'
-          ? view.rows.map((row) => {
+          ? rows.map((row) => {
               const completed = row.parent?.state.category === 'completed';
               const id = row.parent?.id ?? 'unparented';
               return (
@@ -82,7 +84,7 @@ export function TaskboardGrid({
                   key={id}
                   projectKey={projectKey}
                   projectId={projectId}
-                  sprintId={sprintId}
+                  scope={scope}
                   row={row}
                   columns={view.columns}
                   parentStates={view.parentStates}
@@ -110,6 +112,6 @@ export function TaskboardGrid({
                 />
               ))}
       </div>
-    </TaskboardDnd>
+    </>
   );
 }
