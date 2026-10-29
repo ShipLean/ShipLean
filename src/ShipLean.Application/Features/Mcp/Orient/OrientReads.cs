@@ -6,6 +6,7 @@ using ShipLean.Contracts.Criteria;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Persisted;
 using ShipLean.Core;
+using ShipLean.Core.Sprints;
 
 namespace ShipLean.Application.Features.Mcp.Orient;
 
