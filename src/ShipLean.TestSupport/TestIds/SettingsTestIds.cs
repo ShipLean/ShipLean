@@ -24,6 +24,9 @@ public static class SettingsTestIds
     public const string GeneralDescription = "settings-general-description";
     public const string GeneralKey = "settings-general-key";
     public const string GeneralNextNumber = "settings-general-next-number";
+    public const string HolidaysPanel = "settings-holidays-panel";
+    public const string HolidayCountry = "settings-holiday-country";
+    public const string HolidaysUnavailable = "settings-holidays-unavailable";
     public const string WorkingDays = "settings-working-days";
     public const string WorkingDay1 = "settings-working-day-1";
     public const string WorkingDay2 = "settings-working-day-2";

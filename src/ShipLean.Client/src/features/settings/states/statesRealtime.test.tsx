@@ -26,6 +26,7 @@ const settings: ProjectSettingsDto = {
     agentConnectionId: null,
     repoUrl: null,
     repoBaseBranch: null,
+    holidayCountry: null,
     agentConnections: [],
   },
   members: [],

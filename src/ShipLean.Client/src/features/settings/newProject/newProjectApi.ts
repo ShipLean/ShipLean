@@ -44,7 +44,7 @@ export const firstSprintKey = (workingDays: number[], range?: { start: string; e
   ] as const;
 
 /**
- * Sprint 1 as the server would start it: today or the next working day, two weeks long. With the typed start and end
+ * The first sprint as the server would start it: today or the next working day, two weeks long. With the typed start and end
  * the name follows them (the quarter and number depend on the start); the last answer stays while the next loads.
  */
 export function useFirstSprint(

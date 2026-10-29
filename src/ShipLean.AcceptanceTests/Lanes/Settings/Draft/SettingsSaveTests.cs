@@ -1,3 +1,4 @@
+using Npgsql;
 using ShipLean.AcceptanceTests.Harness;
 using ShipLean.AcceptanceTests.Pages.Settings;
 
@@ -39,5 +40,29 @@ public class SettingsSaveTests : SeededAcceptanceTest
         await settings.TabMembers.ClickAsync();
         await Expect(settings.MemberRows).ToHaveCountAsync(7);
         await Expect(settings.RoleOf("lee@shiplean.local")).ToHaveValueAsync("admin");
+    }
+
+    [Test]
+    public async Task Settings_WhenCountryPicked_ShouldSaveItAndShowItAfterReload()
+    {
+        await using (var connection = new NpgsqlConnection(ConnectionString))
+        {
+            await connection.OpenAsync();
+            await using var command = new NpgsqlCommand("INSERT INTO holiday_country (code, name) VALUES ('NZ', 'New Zealand') ON CONFLICT DO NOTHING", connection);
+            await command.ExecuteNonQueryAsync();
+        }
+
+        var settings = new SettingsDraftPage(Page);
+        await settings.OpenAsync();
+        await Expect(settings.HolidayCountry).ToHaveValueAsync("");
+        await settings.HolidayCountry.SelectOptionAsync("NZ");
+        await Expect(settings.Unsaved).ToContainTextAsync("1 unsaved change");
+
+        var response = await settings.SaveAsync();
+        response.Ok.ShouldBeTrue();
+        await Expect(settings.Unsaved).ToHaveCountAsync(0);
+
+        await Page.ReloadAsync();
+        await Expect(settings.HolidayCountry).ToHaveValueAsync("NZ");
     }
 }

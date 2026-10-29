@@ -18,7 +18,7 @@ public class NewProjectFirstRunJourneyTests : SeededAcceptanceTest
         var picker = new PickerPicks(Page);
         await picker.Frame.OpenAsync(Links.Backlog("SHIP"));
 
-        // 1. New project, from the picker; Create Sprint 1 stays on.
+        // 1. New project, from the picker; Create the first sprint stays on.
         await picker.Frame.OpenPickerAsync();
         await Page.GetByTestId(ShellTestIds.PickerNewProject).ClickAsync();
         var form = new NewProjectPage(Page);

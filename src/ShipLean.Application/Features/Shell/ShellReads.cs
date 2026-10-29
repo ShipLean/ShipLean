@@ -24,7 +24,7 @@ public sealed class ShellReads(NpgsqlDataSource dataSource, ICurrentUser current
         p.id, p.key, p.name, p.description, m.role AS roleText,
         (SELECT count(*) FROM project_member x WHERE x.project_id = p.id AND x.archived_at IS NULL)::int AS memberCount,
         array_to_string(p.working_days, ',') AS workingDays, p.velocity_window AS velocityWindow, p.velocity_override AS velocityOverride,
-        p.next_item_number AS nextItemNumber
+        p.next_item_number AS nextItemNumber, p.holiday_country::text AS holidayCountry
         """;
 
     private const string MyMembership = "JOIN project_member m ON m.project_id = p.id AND m.user_id = @me AND m.archived_at IS NULL";
@@ -117,11 +117,11 @@ public sealed class ShellReads(NpgsqlDataSource dataSource, ICurrentUser current
 
     private sealed record ProjectRow(
         Guid Id, string Key, string Name, string Description, string RoleText, int MemberCount, string WorkingDays,
-        int VelocityWindow, decimal? VelocityOverride, int NextItemNumber)
+        int VelocityWindow, decimal? VelocityOverride, int NextItemNumber, string? HolidayCountry)
     {
         public ProjectRole Role => Enum.Parse<ProjectRole>(RoleText, true);
 
-        public ProjectDto ToDto() => new(Id, Key, Name, Description, Role, MemberCount, [.. WorkingDays.Split(',').Select(int.Parse).Order()], VelocityWindow, VelocityOverride, NextItemNumber);
+        public ProjectDto ToDto() => new(Id, Key, Name, Description, Role, MemberCount, [.. WorkingDays.Split(',').Select(int.Parse).Order()], VelocityWindow, VelocityOverride, NextItemNumber, HolidayCountry);
     }
 
     private sealed record SprintRow(Guid Id, string Name, string StartDate, string EndDate, string Goal, string? RolloverStatus)

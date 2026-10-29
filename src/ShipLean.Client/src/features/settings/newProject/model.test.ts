@@ -54,11 +54,13 @@ describe('blocker', () => {
     );
   });
   test('blocker_WhenSprintWithoutDates_ShouldAsk', () => {
-    expect(blocker({ ...ready, end: '' }, true, 'Sprint 1')).toBe('Pick the dates of Sprint 1');
+    expect(blocker({ ...ready, end: '' }, true, 'Sprint 1')).toBe(
+      'Pick the dates of the first sprint',
+    );
   });
   test('blocker_WhenSprintEndsBeforeStart_ShouldRefuse', () => {
     expect(blocker({ ...ready, end: '2026-10-01' }, true, 'Sprint 1')).toBe(
-      'Sprint 1 cannot end before it starts',
+      'The first sprint cannot end before it starts',
     );
   });
   test('blocker_WhenNoSprintAndNoDates_ShouldBeNull', () => {
@@ -115,7 +117,7 @@ describe('withSprintDefaults', () => {
   });
   test('blocker_WhenSprintNameNotLoaded_ShouldAskForDates', () => {
     expect(blocker({ ...emptyForm, name: 'X', sprint: true }, true, undefined)).toBe(
-      'Pick the dates of Sprint 1',
+      'Pick the dates of the first sprint',
     );
   });
 });

@@ -34,6 +34,7 @@ export const projectSettings: ProjectSettingsDto = {
     agentConnectionId: null,
     repoUrl: null,
     repoBaseBranch: null,
+    holidayCountry: null,
     agentConnections: [],
   },
   members: SHELL_MEMBERS,

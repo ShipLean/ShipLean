@@ -1,5 +1,6 @@
 import type { AgentConnectionOption, ProjectDto } from '../../../api/projects';
 import { settingsTestIds } from '../testIds';
+import { HolidaysPanel } from './HolidaysPanel';
 import { FieldErrorText } from './FieldErrorText';
 import { Panel } from './Panel';
 import type { TabProps } from './tabProps';
@@ -117,6 +118,7 @@ export function GeneralTab({
       <Panel title="Working days">
         <WorkingDays {...tab} />
       </Panel>
+      <HolidaysPanel {...tab} />
     </>
   );
 }

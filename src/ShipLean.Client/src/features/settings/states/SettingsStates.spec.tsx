@@ -50,6 +50,7 @@ const saved = (): ProjectSettingsDto => ({
     agentConnectionId: null,
     repoUrl: null,
     repoBaseBranch: null,
+    holidayCountry: null,
     agentConnections: [],
   },
   members: [{ user: joel, email: 'joel@shiplean.local', role: 'admin', status: 'active' }],

@@ -29,6 +29,8 @@ public sealed class SettingsDraftPage(IPage page)
 
     public ILocator SprintNaming => page.GetByTestId(SettingsTestIds.SprintNaming);
 
+    public ILocator HolidayCountry => page.GetByTestId(SettingsTestIds.HolidayCountry);
+
     public ILocator VelocityWindow => page.GetByTestId(SettingsTestIds.VelocityWindow);
 
     private static readonly string[] WorkingDayIds =
