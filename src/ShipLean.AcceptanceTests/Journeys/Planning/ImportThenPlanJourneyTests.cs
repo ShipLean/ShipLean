@@ -46,11 +46,15 @@ public class ImportThenPlanJourneyTests : SeededAcceptanceTest
         var planning = new PlanningBacklog(Page);
         await dragging.ShowWholePageAsync();
         await planning.OpenAsync(ProjectKey);
-        // Platform Sprint 12 ended on 26 Oct 2026 with unfinished stories, so the wrap-up dialog covers planning
-        // from the next day on. Setting it aside is what lets the journey create the next sprint.
+        // Platform Sprint 12 ended on 26 Oct 2026. PLAT-412 is still in it, and planning only lists the backlog
+        // and sprints that have not ended, so the wrap-up has to put PLAT-412 on the backlog before it can be planned.
         var wrapUp = new SprintEndPrompt(Page);
         await Expect(wrapUp.Dialog).ToBeVisibleAsync();
-        await wrapUp.Later.ClickAsync();
+        await wrapUp.DestinationOf("PLAT-412").SelectOptionAsync("backlog");
+        var applied = await Page.RunAndWaitForResponseAsync(
+            () => wrapUp.Apply.ClickAsync(),
+            r => r.Request.Method == "POST" && r.Url.Contains("/rollover", StringComparison.Ordinal));
+        applied.Ok.ShouldBeTrue(await applied.TextAsync());
         await Expect(wrapUp.Dialog).ToBeHiddenAsync();
         var created = await Page.RunAndWaitForResponseAsync(
             () => Page.GetByTestId(BacklogTestIds.PlanningCreateSprint).ClickAsync(),
