@@ -2,6 +2,7 @@ using Dapper;
 using Npgsql;
 using ShipLean.Application.Features.AgentDispatch.Rendering;
 using ShipLean.Contracts.Agents;
+using ShipLean.Contracts.Blobs;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Projects;
 
@@ -11,9 +12,9 @@ namespace ShipLean.Application.Features.AgentDispatch;
 // AgentContextRenderer. The partial unique index ux_agent_session_live decides a race, so a second starter finds the item
 // taken and writes nothing. Nothing is sent here: the delivery service sends the outbox. An archived connection counts as no connection.
 public sealed class AgentSessionStarter(
-    NpgsqlDataSource dataSource, IProjectAgentSettings projectSettings, IAgentConnections connections, AgentSessionNotifier notifier, TimeProvider time)
+    NpgsqlDataSource dataSource, IProjectAgentSettings projectSettings, IAgentConnections connections, AgentSessionNotifier notifier, TimeProvider time, IBlobStore blobs)
 {
-    private readonly AgentContextLoader _loader = new(dataSource);
+    private readonly AgentContextLoader _loader = new(dataSource, blobs);
 
     public async Task<AgentStartPlan> PlanAsync(Guid workItemId, Guid? connectionId, string? prompt, CancellationToken cancellationToken)
     {
