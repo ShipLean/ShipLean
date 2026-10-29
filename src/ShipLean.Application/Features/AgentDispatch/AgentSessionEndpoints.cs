@@ -32,7 +32,7 @@ public sealed class AgentSessionEndpoints(IProjectAccess access, ICurrentUser cu
     public async Task<AgentSessionStartedDto> StartAsync(Guid workItemId, string requestOrigin, CancellationToken cancellationToken)
     {
         await access.RequireAsync(ProjectItem.WorkItem, workItemId, ProjectRole.Member, cancellationToken);
-        var outcome = await starter.StartAsync(workItemId, currentUser.Id, requestOrigin, null, null, cancellationToken);
+        var outcome = await starter.StartAsync(workItemId, currentUser.Id, requestOrigin, null, null, null, cancellationToken);
         return outcome switch
         {
             { SessionId: { } id } => new AgentSessionStartedDto(id, AgentSessionStates.Submitted),

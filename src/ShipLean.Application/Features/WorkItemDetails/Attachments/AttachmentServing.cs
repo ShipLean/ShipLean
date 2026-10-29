@@ -1,3 +1,5 @@
+using ShipLean.Contracts.Attachments;
+
 namespace ShipLean.Application.Features.WorkItemDetails.Attachments;
 
 // Whether a stored file is one a browser may show in place. Only the image types qualify, judged by the stored type and never

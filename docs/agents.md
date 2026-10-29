@@ -81,6 +81,8 @@ An item reaches a connected agent through a **transition** stored in the board s
 
 When a transition fires, `AgentTrigger` opens one session through the same starter as the panel's Start agent. The prompt goes into the delivered `promptContext` inside `<guidance>` and into the envelope's `guidance` array, beside the item, its parent and feature and the repository. Code: `src/ShipLean.Application/Features/AgentDispatch/AgentTrigger.cs`.
 
+**What is sent.** The whole item goes inline in the Linear `promptContext` (description with acceptance criteria, links, children, the full ancestor chain, comments, attachments), so agent-relay needs no ShipLean access and no change. `<guidance>` holds the transition's prompt (also the envelope's `guidance` array, as a Linear `Team` rule). Markdown attachments are inlined in upload order up to 200 KB in all, counted as sent (the XML-escaped UTF-8 size); the first that does not fit, and every one after it, an unreadable one and every non-Markdown file are listed as links. agent-relay refuses a body over 1 MiB, so if the serialized `created` body passes about 900 KB the starter sends every attachment as a link, and if that is still too big it drops the oldest comments and says how many in `<guidance>`.
+
 Rules and gates:
 
 - Only a person's state change counts: a `WorkItemUpdated` whose fields include `state`. An item **created** into a state fires nothing. An import, a webhook, a named MCP agent and a bulk write (a states Save moving items, a rollover) fire nothing, and neither does a revision older than five minutes.

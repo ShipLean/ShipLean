@@ -3,7 +3,7 @@ using Dapper;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using ShipLean.Application.Features.AgentDispatch.Rendering;
-using ShipLean.Application.Features.WorkItems;
+using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Events;
 using ShipLean.Contracts.Persisted;
 using ShipLean.Contracts.Refs;
@@ -39,11 +39,18 @@ public sealed class AgentTrigger(NpgsqlDataSource dataSource, AgentSessionStarte
         var (creator, transition, action) = match;
 
         var outcome = await starter.StartAsync(
-            updated.Id, creator, null, action.ConnectionId, action.Prompt, cancellationToken,
-            new AgentTransitionInput(transition.From?.Name ?? "Any", transition.To.Name));
+            updated.Id, creator, null, action.ConnectionId, action.Prompt,
+            new AgentTransitionInput(transition.From?.Name ?? "Any", transition.To.Name), cancellationToken);
         if (outcome.Block is { } block)
         {
-            logger.LogDebug("No agent session for work item {WorkItemId}: {Block}", updated.Id, block);
+            if (block == AgentStartBlock.LiveSession)
+            {
+                logger.LogDebug("No agent session for work item {WorkItemId}: {Block}", updated.Id, block);
+            }
+            else
+            {
+                logger.LogWarning("No agent session for work item {WorkItemId}: {Block}", updated.Id, block);
+            }
         }
     }
 
@@ -72,8 +79,8 @@ public sealed class AgentTrigger(NpgsqlDataSource dataSource, AgentSessionStarte
         }
 
         var (from, to) = move;
-        var type = WorkItemTypes.Parse(row.Type);
-        if (WorkItemTypes.BoardLevel(type) is not { } level)
+        var type = Enum.Parse<WorkItemTypeId>(row.Type, ignoreCase: true);
+        if (TransitionStates.BoardLevel(type) is not { } level)
         {
             return null;
         }
@@ -95,13 +102,15 @@ public sealed class AgentTrigger(NpgsqlDataSource dataSource, AgentSessionStarte
         var states = (await connection.QueryAsync<StateRow>(new CommandDefinition(
             "SELECT id, type, name, archived_at IS NOT NULL AS archived FROM state WHERE project_id = @projectId",
             new { projectId = updated.ProjectId }, cancellationToken: cancellationToken)))
-            .Select(s => new TransitionState(s.Id, WorkItemTypes.Parse(s.Type), s.Name, s.Archived)).ToList();
+            .Select(s => new TransitionState(s.Id, Enum.Parse<WorkItemTypeId>(s.Type, ignoreCase: true), s.Name, s.Archived)).ToList();
         var live = states.Where(s => !s.Archived).ToList();
         var matching = TransitionStates.Normalize(board.Transitions, states)
             .Where(t => t.Type == type && t.To.StateId == to && (t.From is null || t.From.StateId == from) && TransitionStates.IsValid(t, live))
             .ToList();
-        var transition = matching.FirstOrDefault(t => t.From is not null) ?? matching.FirstOrDefault();
-        return transition?.Actions.FirstOrDefault(a => a.Kind == AgentKind) is { } action ? (row.ChangedBy!.Value, transition, action) : null;
+        // Only a transition with a Send to agent action competes: an exact from without one must not silence Any.
+        var withAgent = matching.Where(t => t.Actions.Any(a => a.Kind == AgentKind)).ToList();
+        var transition = withAgent.FirstOrDefault(t => t.From is not null) ?? withAgent.FirstOrDefault();
+        return transition?.Actions.First(a => a.Kind == AgentKind) is { } action ? (row.ChangedBy!.Value, transition, action) : null;
     }
 
     private static (Guid From, Guid To)? StateChange(string changes)

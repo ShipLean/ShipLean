@@ -128,9 +128,68 @@ public class AgentContextDetailsTests : ApiFixture
         attachments.Sum(a => Encoding.UTF8.GetByteCount(a.Value)).ShouldBeLessThanOrEqualTo(200 * 1024);
     }
 
+    [TestCase("attachments/never-stored", TestName = "Start_WhenAMarkdownBlobIsMissing_ShouldStartAndListEverythingAsLinks")]
+    [TestCase("../climbs-out", TestName = "Start_WhenTheBlobStoreThrows_ShouldStartAndListEverythingAsLinks")]
+    public async Task Start_WhenABlobCannotBeRead(string storageRef)
+    {
+        await using var database = await OpenDatabaseAsync();
+        var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
+        var item = await arranged.CreateItemAsync(Api);
+        var itemUrl = $"api/work-items/{item.Id}/attachments";
+        await AttachmentUploads.UploadAsync(Client, itemUrl, "broken.md", "text/markdown", Encoding.UTF8.GetBytes("gone"));
+        await AttachmentUploads.UploadAsync(Client, itemUrl, "fine.md", "text/markdown", Encoding.UTF8.GetBytes("fine text"));
+        await database.ExecuteAsync("UPDATE attachment SET storage_ref = @storageRef WHERE work_item_id = @id AND name = 'broken.md'", new { storageRef, id = item.Id });
+
+        var document = await StartAndParseAsync(database, item.Id);
+
+        var attachments = document.Descendants("attachment").ToList();
+        attachments.Select(a => a.Attribute("name")!.Value).ShouldBe(["broken.md", "fine.md"]);
+        attachments.ShouldAllBe(a => a.Value.Length == 0 && a.Attribute("url")!.Value.Contains("/attachments/"));
+    }
+
+    [Test]
+    public async Task Start_WhenAnEscapeHeavyAttachmentFitsTheRawCapOnly_ShouldCountItEscapedAndLinkIt()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
+        var item = await arranged.CreateItemAsync(Api);
+        await AttachmentUploads.UploadAsync(Client, $"api/work-items/{item.Id}/attachments", "angles.md", "text/markdown", Encoding.UTF8.GetBytes(new string('<', 190 * 1024)));
+
+        var document = await StartAndParseAsync(database, item.Id);
+
+        document.Descendants("attachment").Single().Value.ShouldBeEmpty();
+        var body = (await AgentDispatchArrange.DeliveriesAsync(database, item.Id)).ShouldHaveSingleItem().Body;
+        Encoding.UTF8.GetByteCount(body).ShouldBeLessThan(1024 * 1024);
+    }
+
+    [Test]
+    public async Task Start_WhenTheBodyWouldPassTheRelayLimit_ShouldSendAttachmentsAsLinksAndDropTheOldestComments()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
+        var item = await arranged.CreateItemAsync(Api);
+        await AttachmentUploads.UploadAsync(Client, $"api/work-items/{item.Id}/attachments", "notes.md", "text/markdown", Encoding.UTF8.GetBytes(new string('n', 150 * 1024)));
+        var long_ = new string('<', 20 * 1024);
+        for (var ago = 10; ago >= 1; ago--)
+        {
+            await AddCommentAsync(database, item.Id, $"{ago}h {long_}", archived: false, ago: ago);
+        }
+
+        var document = await StartAndParseAsync(database, item.Id);
+
+        var body = (await AgentDispatchArrange.DeliveriesAsync(database, item.Id)).ShouldHaveSingleItem().Body;
+        Encoding.UTF8.GetByteCount(body).ShouldBeLessThan(1024 * 1024);
+        document.Descendants("attachment").Single().Value.ShouldBeEmpty();
+        var comments = document.Descendants("comment").Select(c => c.Value).ToList();
+        comments.ShouldNotBeEmpty();
+        comments.Count.ShouldBeLessThan(10);
+        comments[^1].ShouldStartWith("1h ");
+        document.Descendants("guidance").Single().Value.ShouldContain("oldest comment");
+    }
+
     private async Task<XDocument> StartAndParseAsync(Npgsql.NpgsqlConnection database, Guid itemId)
     {
-        var outcome = await Starter.StartAsync(itemId, SeedIds.Users.Joel, "https://planner.test", null, null, CancellationToken.None);
+        var outcome = await Starter.StartAsync(itemId, SeedIds.Users.Joel, "https://planner.test", null, null, null, CancellationToken.None);
         outcome.SessionId.ShouldNotBeNull();
         var body = AgentDispatchArrange.BodyOf((await AgentDispatchArrange.DeliveriesAsync(database, itemId)).ShouldHaveSingleItem());
         return XDocument.Parse("<root>" + body["promptContext"]!.GetValue<string>() + "</root>");

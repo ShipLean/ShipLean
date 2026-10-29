@@ -1,9 +1,9 @@
 using System.Text;
 using System.Text.Json;
 using Dapper;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 using ShipLean.Application.Features.AgentDispatch.Rendering;
-using ShipLean.Application.Features.WorkItemDetails.Attachments;
 using ShipLean.Contracts.Attachments;
 using ShipLean.Contracts.Blobs;
 using ShipLean.Contracts.Errors;
@@ -14,9 +14,10 @@ namespace ShipLean.Application.Features.AgentDispatch;
 
 // Maps an item's rows onto the renderer's plain input. A comment's author is a name only (no email leaves for the receiver; the creator's does,
 // for the relay's allow-list). Reads only; the session id and creation time are the caller's.
-// Markdown attachments are read through the blob store, in upload order, up to InlineAttachmentBytes in all (UTF-8 bytes); the first one that does
-// not fit, and every attachment after it, is left as a link. Without a blob store (a follow-up prompt, which sends no promptContext) all are links.
-internal sealed class AgentContextLoader(NpgsqlDataSource dataSource, IBlobStore? blobs = null)
+// Markdown attachments are read through the blob store, in upload order, up to InlineAttachmentBytes in all, counted as they will be sent (UTF-8 bytes
+// of the XML-escaped text); the first one that does not fit, and every attachment after it, is left as a link. One that cannot be read (missing or
+// failing blob) is a warning in the log, and it and the rest are links too. Without a blob store (a follow-up prompt, which sends no promptContext) all are links.
+internal sealed class AgentContextLoader(NpgsqlDataSource dataSource, IBlobStore? blobs = null, ILogger? logger = null)
 {
     public const int InlineAttachmentBytes = 200 * 1024;
 
@@ -122,20 +123,43 @@ internal sealed class AgentContextLoader(NpgsqlDataSource dataSource, IBlobStore
             string? text = null;
             if (!full && AttachmentKinds.Of(row.Name, row.ContentType) == AttachmentKind.Markdown)
             {
-                var bytes = row.SizeBytes <= remaining ? await ReadAsync(row.StorageRef, remaining, cancellationToken) : null;
-                if (bytes is null)
+                var decoded = row.SizeBytes <= remaining ? await TryReadAsync(row, remaining, cancellationToken) : null;
+                if (decoded is null)
                 {
                     full = true;
                 }
                 else
                 {
-                    remaining -= bytes.Length;
-                    text = Encoding.UTF8.GetString(bytes);
+                    var sent = Encoding.UTF8.GetByteCount(AgentXml.Escape(decoded));
+                    if (sent > remaining)
+                    {
+                        full = true;
+                    }
+                    else
+                    {
+                        remaining -= sent;
+                        text = decoded;
+                    }
                 }
             }
             result.Add(new AgentAttachmentInput(row.Name, row.ContentType, row.SizeBytes, url(row), text));
         }
         return result;
+    }
+
+    // The attachment's text, or null when it is missing, longer than limit bytes or unreadable (logged, not thrown, so the session still starts).
+    private async Task<string?> TryReadAsync(AgentAttachmentRow row, int limit, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var bytes = await ReadAsync(row.StorageRef, limit, cancellationToken);
+            return bytes is null ? null : Encoding.UTF8.GetString(bytes);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger?.LogWarning(exception, "Attachment {AttachmentId} could not be read for the agent context; it is sent as a link", row.Id);
+            return null;
+        }
     }
 
     // The blob's bytes, or null when it is missing or longer than limit.
