@@ -9,13 +9,23 @@ namespace ShipLean.AcceptanceTests.Lanes.Board.Lanes;
 public class BoardLanesTests : SeededAcceptanceTest
 {
     [Test]
-    public async Task FeaturesBoard_WhenLanesByEpic_ShouldPersistPerUser()
+    public async Task FeaturesBoard_WhenLaneChosen_ShouldPersistPerUser()
     {
         var board = new BoardScreen(Page);
         var lanes = new BoardLanes(Page);
         await board.OpenAsync("SHIP", "features");
         await Expect(board.Card("SHIP-101")).ToBeVisibleAsync();
+        await Expect(lanes.Option("Swimlanes")).ToHaveAttributeAsync("aria-pressed", "true");
+        await Expect(lanes.Lanes).ToHaveCountAsync(2);
+        await Expect(BoardScreen.LaneName(lanes.Lanes.First)).ToHaveTextAsync("Expedite");
+
+        await lanes.ChooseAsync("None");
         await Expect(lanes.Lanes).ToHaveCountAsync(1);
+
+        await lanes.ChooseAsync("Swimlanes");
+        await Page.ReloadAsync();
+        await Expect(lanes.Option("Swimlanes")).ToHaveAttributeAsync("aria-pressed", "true");
+        await Expect(BoardScreen.LaneName(lanes.Lanes.First)).ToHaveTextAsync("Expedite");
 
         await lanes.ChooseAsync("By Epic");
 
@@ -24,6 +34,6 @@ public class BoardLanesTests : SeededAcceptanceTest
         await Page.ReloadAsync();
         await Expect(lanes.Option("By Epic")).ToHaveAttributeAsync("aria-pressed", "true");
         await Expect(lanes.Lanes.Nth(1)).ToBeVisibleAsync();
-        (await BoardLanes.LanesSeenByTomAsync(Page, BaseUrl, SeedIds.Boards.ShipFeatures)).ShouldBe(1);
+        (await BoardLanes.LanesSeenByTomAsync(Page, BaseUrl, SeedIds.Boards.ShipFeatures)).ShouldBe(2);
     }
 }

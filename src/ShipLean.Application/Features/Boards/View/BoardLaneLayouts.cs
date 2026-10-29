@@ -8,8 +8,8 @@ using ShipLean.Contracts.WorkItems;
 
 namespace ShipLean.Application.Features.Boards.View;
 
-// Decides which lanes a board shows for the current user: the stored lanes on Stories (unless they switched lanes off), the
-// generated Epic lanes on Features (when they chose By Epic), otherwise one lane.
+// Decides which lanes a board shows for the current user. Stories and Features show their stored swimlanes unless the user
+// turned them off ("off" or "none"). Features can instead show one lane per Epic ("epic"). Anything else is one lane.
 [RegisterPerRequest]
 public sealed class BoardLaneLayouts(BoardReads reads)
 {
@@ -17,12 +17,13 @@ public sealed class BoardLaneLayouts(BoardReads reads)
     {
         var preference = await reads.LanePreferenceAsync(board.Id, cancellationToken);
         var stored = board.Settings.Swimlanes;
+        var collapsed = preference is "off" or "none";
         switch (board.Level)
         {
-            case BoardLevel.Stories when preference != "off" && stored.Count > 0:
-                return new LaneLayout(LaneMode.Stored, await StoredAsync(board, cancellationToken));
             case BoardLevel.Features when preference == "epic":
                 return ByEpic(epics);
+            case BoardLevel.Stories or BoardLevel.Features when !collapsed && stored.Count > 0:
+                return new LaneLayout(LaneMode.Stored, await StoredAsync(board, cancellationToken));
             default:
                 return new LaneLayout(LaneMode.Single, [Single(stored)]);
         }

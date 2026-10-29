@@ -12,6 +12,7 @@ import {
   epicsBoard,
   featuresBoardByEpic,
   featuresBoardNoLanes,
+  featuresBoardSwimlanes,
   storiesBoardForSettings,
   storiesSettings,
 } from './fixtures/boards';
@@ -61,9 +62,9 @@ pageShots([
     shell: true,
     arrange: async (page) => {
       await stubShell(page);
-      await stubBoard(page, featuresBoardNoLanes(), {
+      await stubBoard(page, featuresBoardSwimlanes(), {
         level: 'features',
-        preferences: { [LANES]: 'none' },
+        preferences: { [LANES]: 'on' },
       });
     },
     ready: (page) => expect(card(page, 'SHIP-113')).toBeVisible(),

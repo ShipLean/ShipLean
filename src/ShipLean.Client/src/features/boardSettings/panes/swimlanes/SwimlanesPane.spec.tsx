@@ -187,9 +187,18 @@ test('SwimlanesPane_WhenDefaultLaneDeleted_ShouldRefuseAndKeepIt', async ({ moun
   await expect(page.getByTestId(ids.laneRow)).toHaveCount(3);
 });
 
-test('SwimlanesPane_WhenFeaturesBoard_ShouldSayThereAreNoStoredLanes', async ({ mount, page }) => {
+test('SwimlanesPane_WhenFeaturesBoard_ShouldEditTheStoredLanes', async ({ mount, page }) => {
   await stubBoard(page, 'features');
   await mountLanes(mount, 'features');
+
+  await expect(page.getByTestId(ids.lanesNotStored)).toHaveCount(0);
+  await expect(page.getByTestId(ids.laneRow)).toHaveCount(3);
+  await expect(page.getByTestId(ids.laneName).first()).toHaveValue('Expedite');
+});
+
+test('SwimlanesPane_WhenEpicsBoard_ShouldSayThereAreNoStoredLanes', async ({ mount, page }) => {
+  await stubBoard(page, 'epics');
+  await mountLanes(mount, 'epics');
 
   await expect(page.getByTestId(ids.lanesNotStored)).toContainText('no stored lanes');
   await expect(page.getByTestId(ids.laneRow)).toHaveCount(0);

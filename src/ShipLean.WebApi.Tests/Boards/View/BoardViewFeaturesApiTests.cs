@@ -4,6 +4,7 @@ using ShipLean.Contracts.Views;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Fixtures;
+using ShipLean.TestSupport.Hosting;
 
 namespace ShipLean.WebApi.Tests.Boards.View;
 
@@ -14,12 +15,29 @@ public class BoardViewFeaturesApiTests : ApiFixture
     private static readonly Guid Features = SeedIds.Boards.ShipFeatures;
 
     [Test]
-    public async Task FeaturesBoard_WhenNoLanePreference_ShouldHoldEveryCardInOneLane()
+    public async Task FeaturesBoard_WhenNoLanePreference_ShouldResolveStoredSwimlanes()
     {
         var board = await Api.BoardAsync(Features);
 
+        board.Lanes.Select(l => l.Id).ShouldBe(["lane-expedite", "lane-default"]);
+        board.Lane("lane-expedite").Kind.ShouldBe(BoardLaneKind.Criteria);
+        board.Lane("lane-expedite").CriteriaText.ShouldBe("Priority = 1");
+        board.Lane("lane-expedite").Cells.SelectMany(c => c.Cards).ShouldBeEmpty();
+        board.Lane("lane-default").Kind.ShouldBe(BoardLaneKind.Default);
+        board.Cards().Select(c => c.Key).ShouldBe(["SHIP-104", "SHIP-108", "SHIP-101", "SHIP-102", "SHIP-103"], ignoreOrder: true);
+    }
+
+    [Test]
+    public async Task FeaturesBoard_WhenLanesNone_ShouldHoldEveryCardInOneLane()
+    {
+        var priya = Api.ActingAs(TestUser.Priya);
+        await priya.SetLanePreferenceAsync(Features, "none");
+
+        var board = await priya.BoardAsync(Features);
+
         board.Lanes.Select(l => l.Kind).ShouldBe([BoardLaneKind.Default]);
         board.Cards().Select(c => c.Key).ShouldBe(["SHIP-104", "SHIP-108", "SHIP-101", "SHIP-102", "SHIP-103"], ignoreOrder: true);
+        (await Api.BoardAsync(Features)).Lanes.Select(l => l.Id).ShouldBe(["lane-expedite", "lane-default"]);
     }
 
     [Test]

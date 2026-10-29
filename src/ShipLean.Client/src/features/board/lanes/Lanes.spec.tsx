@@ -49,18 +49,47 @@ test('Lanes_WhenFeaturesByEpicChosen_ShouldSaveEpicAndRefetch', async ({ mount, 
     preferences: { 'view:board-lanes:b-stories': 'none' },
   });
   await mount(<BoardHarness level="features" />, features);
-  const byEpic = page.getByTestId(ids.lanesOption).filter({ hasText: 'By Epic' });
-  await expect(byEpic).toHaveAttribute('aria-pressed', 'false');
+  const option = (label: string) => page.getByTestId(ids.lanesOption).filter({ hasText: label });
+  await expect(option('None')).toHaveAttribute('aria-pressed', 'true');
+  await expect(option('Swimlanes')).toHaveAttribute('aria-pressed', 'false');
+  await expect(option('By Epic')).toHaveAttribute('aria-pressed', 'false');
   const reads = server.reads.length;
 
-  await byEpic.click();
+  await option('By Epic').click();
 
-  await expect(byEpic).toHaveAttribute('aria-pressed', 'true');
+  await expect(option('By Epic')).toHaveAttribute('aria-pressed', 'true');
   expect(server.preferenceWrites).toEqual([{ key: LANES, value: 'epic' }]);
   await expect.poll(() => server.reads.length).toBeGreaterThan(reads);
 
-  await page.getByTestId(ids.lanesOption).filter({ hasText: 'None' }).click();
+  await option('None').click();
   await expect.poll(() => server.preferenceWrites.at(-1)).toEqual({ key: LANES, value: 'none' });
+});
+
+test('Lanes_WhenFeaturesSwimlanesChosen_ShouldSaveOnAndRefetch', async ({ mount, page }) => {
+  const server = await stubBoard(page, featuresBoard(), {
+    level: 'features',
+    preferences: { [LANES]: 'none' },
+  });
+  await mount(<BoardHarness level="features" />, features);
+  const reads = server.reads.length;
+
+  await page.getByTestId(ids.lanesOption).filter({ hasText: 'Swimlanes' }).click();
+
+  await expect.poll(() => server.preferenceWrites).toEqual([{ key: LANES, value: 'on' }]);
+  await expect(page.getByTestId(ids.lanesOption).filter({ hasText: 'Swimlanes' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await expect.poll(() => server.reads.length).toBeGreaterThan(reads);
+});
+
+test('Lanes_WhenFeaturesHasNoSavedChoice_ShouldOpenWithSwimlanes', async ({ mount, page }) => {
+  await stubBoard(page, featuresBoard(), { level: 'features' });
+  await mount(<BoardHarness level="features" />, features);
+  await expect(page.getByTestId(ids.lanesOption).filter({ hasText: 'Swimlanes' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
 });
 
 test('Lanes_WhenByEpicWasSaved_ShouldOpenByEpic', async ({ mount, page }) => {

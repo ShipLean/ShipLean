@@ -185,6 +185,18 @@ VALUES
   ],
   "swimlanes": [
     {
+      "id": "lane-expedite",
+      "name": "Expedite",
+      "colour": "warn",
+      "kind": "criteria",
+      "criteria": {
+        "match": "all",
+        "clauses": [
+          { "field": "priority", "op": "=", "value": 1 }
+        ]
+      }
+    },
+    {
       "id": "lane-default",
       "name": "Default lane",
       "colour": null,
