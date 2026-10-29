@@ -64,8 +64,8 @@ public static class AgentContextRenderer
             ["body"] = input.Guidance,
             ["origin"] = new JsonObject
             {
-                ["type"] = "team",
-                ["team"] = new JsonObject { ["id"] = input.Project.Id, ["key"] = input.Project.Key, ["name"] = input.Project.Name },
+                ["type"] = "Team",
+                ["team"] = new JsonObject { ["id"] = input.Project.Id, ["key"] = input.Project.Key, ["name"] = input.Project.Name, ["displayName"] = input.Project.Name },
             },
         });
 
