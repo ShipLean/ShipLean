@@ -51,8 +51,8 @@ test('sprints_ShouldTypeTheFixtures', () => {
     'current',
     'future',
   ]);
-  expect(typed<SprintCapacityDto>()(capacity.capacity).teamTotal).toBe(11);
-  expect(typed<SprintCapacityPut>()(capacity.put).members).toHaveLength(1);
+  expect(typed<SprintCapacityDto>()(capacity.capacity).teamTotal).toBe(21);
+  expect(typed<SprintCapacityPut>()(capacity.put).members).toHaveLength(2);
   expect(typed<SprintMetricsDto>()(metrics).burndown).toHaveLength(3);
   expect(typed<VelocityDto>()(velocity).average).toBe(21);
   expect(typed<ForecastDto>()(forecast).sprints).toHaveLength(3);

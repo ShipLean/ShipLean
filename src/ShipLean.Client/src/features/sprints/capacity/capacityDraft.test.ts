@@ -3,6 +3,15 @@ import type { MemberDto } from '../../../api/projects';
 import type { UserRef } from '../../../api/refs';
 import { draftOf, draftTotal, toPut } from './capacityDraft';
 
+const EMPTY_EXTRAS = {
+  velocity: null,
+  velocityDefault: 0,
+  workingDays: 10,
+  defaultDays: 10,
+  holidays: [],
+  holidayCountry: null,
+  ended: false,
+};
 const user = (id: string, name: string): UserRef => ({
   id,
   name,
@@ -18,7 +27,8 @@ test('draftOf_WhenCapacityEntered_ShouldFillThoseMembersOnly', () => {
   const draft = draftOf({
     sprintId: 's',
     teamTotal: 5,
-    members: [{ user: user('a', 'Ana'), points: 5, note: 'Off Fri' }],
+    ...EMPTY_EXTRAS,
+    members: [{ user: user('a', 'Ana'), days: null, points: 5, note: 'Off Fri' }],
   });
   expect(draft).toEqual({ a: { points: '5', note: 'Off Fri' } });
 });
@@ -42,7 +52,7 @@ test('draftTotal_WhenZeroEntered_ShouldCountAsEntered', () => {
 
 test('toPut_WhenBlankRows_ShouldLeaveThemOutAndTrimNotes', () => {
   expect(toPut(members, { a: { points: '2.5', note: '  away ' } })).toEqual({
-    put: [{ userId: 'a', points: 2.5, note: 'away' }],
+    put: [{ userId: 'a', days: 2.5, note: 'away' }],
   });
 });
 
@@ -57,7 +67,7 @@ test('toPut_WhenNegativeTooPreciseOrNotANumber_ShouldNameTheMember', () => {
 test('draftTotal_WhenARowBelongsToSomeoneWhoLeft_ShouldLeaveItOutLikeThePut', () => {
   const draft = { a: { points: '3', note: '' }, gone: { points: '9', note: '' } };
   expect(draftTotal(members, draft)).toEqual({ total: 3, entered: true });
-  expect(toPut(members, draft)).toEqual({ put: [{ userId: 'a', points: 3, note: null }] });
+  expect(toPut(members, draft)).toEqual({ put: [{ userId: 'a', days: 3, note: null }] });
   expect(draftTotal(members, { gone: { points: '9', note: '' } })).toEqual({
     total: 0,
     entered: false,

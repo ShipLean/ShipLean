@@ -43,8 +43,15 @@ export const sprintsWithGoals: SprintDto[] = SHELL_SPRINTS.map((s) => ({
 
 const capacityOf = (sprintId: string, total: number | null): SprintCapacityDto => ({
   sprintId,
-  members: total === null ? [] : [{ user: priya, points: total, note: null }],
+  members: total === null ? [] : [{ user: priya, days: null, points: total, note: null }],
   teamTotal: total ?? 0,
+  velocity: null,
+  velocityDefault: 0,
+  workingDays: 10,
+  defaultDays: 10,
+  holidays: [],
+  holidayCountry: null,
+  ended: false,
 });
 
 const velocity: VelocityDto = {
@@ -257,6 +264,7 @@ export async function stubSprintBacklog(page: Page) {
 
 const entry = (user: UserRef, points: number, note: string | null): MemberCapacityDto => ({
   user,
+  days: null,
   points,
   note,
 });
@@ -271,6 +279,13 @@ const capacitySprint24: SprintCapacityDto = {
     entry(ana, 3, 'Part-time this sprint'),
   ],
   teamTotal: 23,
+  velocity: null,
+  velocityDefault: 0,
+  workingDays: 10,
+  defaultDays: 10,
+  holidays: [],
+  holidayCountry: null,
+  ended: false,
 };
 
 export async function stubCapacity(page: Page) {
