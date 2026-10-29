@@ -1,6 +1,7 @@
 import type { BoardLevel, BoardTypeStatesDto, BoardWarningDto } from '../../api/boards';
 import type { BoardSettingsJson } from '../../api/persisted';
 import type { PaneGroup } from '../../components/SettingsDialog/types';
+import { AutomationsPane } from './panes/AutomationsPane';
 import { AnnotationsPane } from './panes/AnnotationsPane';
 import { CardReorderingPane } from './panes/CardReorderingPane';
 import { ColumnsPane, columnsWarning } from './panes/ColumnsPane';
@@ -29,6 +30,7 @@ export const boardPaneIds = [
   'columns',
   'swimlanes',
   'reordering',
+  'automations',
 ] as const;
 export type BoardPaneId = (typeof boardPaneIds)[number];
 
@@ -66,6 +68,21 @@ export const boardPaneGroups: BoardPaneGroup[] = [
         sections: ['cardReordering'],
         component: CardReorderingPane,
       },
+      {
+        id: 'automations',
+        label: 'Automations',
+        sections: ['transitions'],
+        component: AutomationsPane,
+      },
     ],
   },
 ];
+
+/** The groups of a board level: Epics has no automations. */
+export function boardPaneGroupsFor(level: BoardLevel): BoardPaneGroup[] {
+  if (level !== 'epics') return boardPaneGroups;
+  return boardPaneGroups.map((group) => ({
+    ...group,
+    panes: group.panes.filter((pane) => pane.id !== 'automations'),
+  }));
+}

@@ -1,7 +1,7 @@
 import type { BoardLevel } from '../../api/boards';
 import { Dialog } from '../../components/Dialog';
 import { BoardSettingsView } from './BoardSettingsView';
-import { boardPaneGroups, DEFAULT_BOARD_PANE } from './panes';
+import { boardPaneGroupsFor, DEFAULT_BOARD_PANE } from './panes';
 import { boardSettingsTestIds } from './testIds';
 import { useBoardOfLevel } from './useBoardOfLevel';
 
@@ -54,7 +54,7 @@ export function BoardSettingsDialog({
       boardId={boardId}
       title={title}
       width={width}
-      groups={boardPaneGroups}
+      groups={boardPaneGroupsFor(level)}
       apply="onSave"
       section={section}
       defaultSection={DEFAULT_BOARD_PANE}
