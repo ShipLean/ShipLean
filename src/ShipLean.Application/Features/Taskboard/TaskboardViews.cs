@@ -26,39 +26,14 @@ public sealed class TaskboardViews(IProjectAccess access, IBoardSettingsStore bo
         var rollups = await tree.RollupsAsync(projectId, parentIds, null, cancellationToken);
         var byId = await cards.BuildAsync([.. parents, .. taskRows], rollups, board.Settings, cancellationToken);
 
-        var states = board.States.First(s => s.Type == WorkItemTypeId.Task).States.Where(s => s.Category != StateCategory.Removed).ToList();
+        var states = TaskboardGrid.TaskStates(board);
         var taskCards = taskRows.Select(row => byId[row.Id]).ToList();
-        var rows = parents.Select(parent => Row(parent, taskCards.Where(t => t.Parent?.Id == parent.Id).ToList(), states, byId)).ToList();
-        rows.Add(new TaskboardRowDto(null, false, Cells(taskCards.Where(t => t.Parent is null).ToList(), states)));
+        var rows = parents.Select(parent => TaskboardGrid.Row(parent, taskCards.Where(t => t.Parent?.Id == parent.Id).ToList(), states, byId)).ToList();
+        rows.Add(new TaskboardRowDto(null, false, TaskboardGrid.Cells(taskCards.Where(t => t.Parent is null).ToList(), states)));
 
-        var parentStates = board.States.Where(s => s.Type is WorkItemTypeId.Story or WorkItemTypeId.Bug)
-            .Select(s => s with { States = [.. s.States.Where(state => state.Category != StateCategory.Removed)] }).ToList();
         return new TaskboardViewDto(
-            sprintId, board.Id,
-            [.. states.Select(state => new TaskboardColumnDto(state, taskCards.Count(t => t.State.Id == state.Id)))],
-            rows, PeopleRows(InRowOrder(taskCards, parentIds), states), parentStates, board.Settings.StyleRules, board.Settings.CardFields, board.Settings.Annotations);
+            sprintId, board.Id, TaskboardGrid.Columns(states, taskCards),
+            rows, TaskboardGrid.PeopleRows(TaskboardGrid.InRowOrder(taskCards, parentIds), states), TaskboardGrid.ParentStates(board),
+            board.Settings.StyleRules, board.Settings.CardFields, board.Settings.Annotations);
     }
-
-    // OfferResolve: the row has tasks, all closed, and its parent hasn't reached Resolved.
-    private static TaskboardRowDto Row(StackRowDto parent, List<CardDto> rowTasks, List<StateRef> states, IReadOnlyDictionary<Guid, CardDto> byId)
-    {
-        var offer = rowTasks.Count > 0 && rowTasks.All(t => t.State.Category == StateCategory.Completed) && parent.State.Category is StateCategory.Proposed or StateCategory.InProgress;
-        return new TaskboardRowDto(byId[parent.Id], offer, Cells(rowTasks, states));
-    }
-
-    // A People cell mixes parents, so its tasks go in parent row order (the Unparented row's last) and then in cell order.
-    private static List<CardDto> InRowOrder(List<CardDto> taskCards, List<Guid> parentIds)
-        => [.. taskCards.OrderBy(t => t.Parent is { } parent ? parentIds.IndexOf(parent.Id) : parentIds.Count)];
-
-    // Unassigned first, then the people who have tasks, by name.
-    private static List<TaskboardPersonRowDto> PeopleRows(List<CardDto> taskCards, List<StateRef> states)
-    {
-        var people = taskCards.Where(t => t.Assignee is not null).GroupBy(t => t.Assignee!.Id)
-            .Select(g => g.ToList()).OrderBy(g => g[0].Assignee!.Name, StringComparer.OrdinalIgnoreCase).ThenBy(g => g[0].Assignee!.Id).ToList();
-        var unassigned = taskCards.Where(t => t.Assignee is null).ToList();
-        return [new TaskboardPersonRowDto(null, unassigned.Count, Cells(unassigned, states)), .. people.Select(g => new TaskboardPersonRowDto(g[0].Assignee, g.Count, Cells(g, states)))];
-    }
-
-    private static List<TaskboardCellDto> Cells(List<CardDto> rowTasks, List<StateRef> states)
-        => [.. states.Select(state => new TaskboardCellDto(state.Id, [.. rowTasks.Where(t => t.State.Id == state.Id)]))];
 }
