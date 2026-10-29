@@ -53,8 +53,21 @@ public static class AgentContextRenderer
         ["appUserId"] = input.AppUserId,
         ["oauthClientId"] = input.AppUserId,
         ["agentSession"] = Session(input, status, updatedAt),
-        ["guidance"] = new JsonArray(),
+        ["guidance"] = Guidance(input),
     };
+
+    // Linear's GuidanceRuleWebhookPayload { body, origin }: one rule, from the project (team).
+    private static JsonArray Guidance(AgentContextInput input) => string.IsNullOrWhiteSpace(input.Guidance)
+        ? new JsonArray()
+        : new JsonArray(new JsonObject
+        {
+            ["body"] = input.Guidance,
+            ["origin"] = new JsonObject
+            {
+                ["type"] = "team",
+                ["team"] = new JsonObject { ["id"] = input.Project.Id, ["key"] = input.Project.Key, ["name"] = input.Project.Name },
+            },
+        });
 
     private static JsonObject Session(AgentContextInput input, string status, DateTimeOffset updatedAt) => new()
     {

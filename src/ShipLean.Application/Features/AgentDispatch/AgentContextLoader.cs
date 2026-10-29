@@ -13,7 +13,7 @@ namespace ShipLean.Application.Features.AgentDispatch;
 internal sealed class AgentContextLoader(NpgsqlDataSource dataSource)
 {
     public async Task<AgentContextInput> LoadAsync(
-        Guid workItemId, Guid sessionId, DateTimeOffset createdAt, Guid connectionId, Guid creatorId, AgentRepositoryInput repository, string? fallbackBaseUrl, CancellationToken cancellationToken)
+        Guid workItemId, Guid sessionId, DateTimeOffset createdAt, Guid connectionId, Guid creatorId, AgentRepositoryInput repository, string? fallbackBaseUrl, string? guidance, CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var item = await connection.QuerySingleOrDefaultAsync<AgentItemRow>(new CommandDefinition(
@@ -63,7 +63,8 @@ internal sealed class AgentContextLoader(NpgsqlDataSource dataSource)
             parent is null ? null : Related(parent),
             feature is null ? null : Related(feature),
             [.. comments.Select(c => new AgentCommentInput(c.Id.ToString(), new AgentUserInput(c.AuthorId?.ToString() ?? string.Empty, c.AuthorName, string.Empty), c.CreatedAt, c.Body))],
-            null);
+            null,
+            guidance);
     }
 
     private static string? Blank(string value) => string.IsNullOrWhiteSpace(value) ? null : value;
