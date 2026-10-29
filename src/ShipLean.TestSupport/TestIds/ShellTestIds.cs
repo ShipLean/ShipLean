@@ -8,6 +8,7 @@ public static class ShellTestIds
     public const string SearchIconButton = "shell-search-icon-button";
     public const string NavBacklogs = "shell-nav-backlogs";
     public const string NavBoards = "shell-nav-boards";
+    public const string NavLevel = "shell-nav-level";
     public const string NavSprints = "shell-nav-sprints";
     public const string NavCurrentSprint = "shell-nav-current-sprint";
     public const string NavAllSprints = "shell-nav-all-sprints";

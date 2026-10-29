@@ -28,7 +28,7 @@ public class LevelBacklogTests : SeededAcceptanceTest
         // Insights for merchants (SHIP-92) has Reporting and, inside it, Dashboard widgets.
         await Expect(backlog.FeatureCount("SHIP-92")).ToHaveTextAsync("2");
         await Expect(backlog.FeatureCount("SHIP-90")).ToHaveTextAsync("1");
-        await Expect(backlog.LevelOptions.Nth(0)).ToHaveAttributeAsync("aria-pressed", "true");
+        await Expect(backlog.Level("Epics")).ToHaveAttributeAsync("aria-current", "page");
     }
 
     [Test]
@@ -41,7 +41,7 @@ public class LevelBacklogTests : SeededAcceptanceTest
         await Expect(backlog.PointsSum("SHIP-101")).ToHaveTextAsync("· Σ26");
         await Expect(backlog.PointsSum("SHIP-101")).ToHaveAttributeAsync("data-warn", "true");
 
-        await backlog.LevelOptions.Nth(0).ClickAsync();
+        await backlog.Level("Epics").ClickAsync();
         await Expect(backlog.PointsSum("SHIP-91")).ToHaveTextAsync("· Σ32");
         await Expect(backlog.PointsSum("SHIP-91")).ToHaveAttributeAsync("data-warn", "false");
     }

@@ -3,12 +3,14 @@ import { boardTestIds as ids } from '../testIds';
 
 const FEATURE_OPTIONS = [
   { id: 'none', label: 'None' },
+  { id: 'on', label: 'Swimlanes' },
   { id: 'epic', label: 'By Epic' },
 ] as const;
 
-// The lane choice of the signed-in user: swimlanes on or off on Stories, no lanes or one lane per Epic on Features.
-// The Epics board has no lanes to choose. A Stories board that shows one lane and has swimlanes on has no stored lanes:
-// the toggle would change nothing, so it is left out (it stays when the user has turned lanes off, to turn them on).
+// The lane choice of the signed-in user. Stories is a checkbox: swimlanes on, or off. Features is three ways: one lane,
+// the board's stored swimlanes (the default), or one lane per Epic. The Epics board has no lanes to choose. A Stories
+// board that shows one lane and has swimlanes on has no stored lanes: the toggle would change nothing, so it is left
+// out (it stays when the user has turned lanes off, to turn them on).
 export function LanesSwitch({
   level,
   laneCount,
@@ -36,7 +38,8 @@ export function LanesSwitch({
     );
   }
   if (level === 'epics') return null;
-  const byEpic = value === 'epic';
+  // No saved choice is swimlanes on, the same default as Stories. "none" and "off" are the one-lane view.
+  const choice = value === 'epic' ? 'epic' : value === 'none' || value === 'off' ? 'none' : 'on';
   return (
     <div
       role="group"
@@ -49,11 +52,9 @@ export function LanesSwitch({
           type="button"
           data-testid={ids.lanesOption}
           data-option={option.id}
-          aria-pressed={byEpic === (option.id === 'epic')}
+          aria-pressed={choice === option.id}
           className={`h-7 px-3 font-medium ${
-            byEpic === (option.id === 'epic')
-              ? 'bg-signal-soft text-ink'
-              : 'text-ink-muted hover:text-ink'
+            choice === option.id ? 'bg-signal-soft text-ink' : 'text-ink-muted hover:text-ink'
           }`}
           onClick={() => onChoose(option.id)}
         >

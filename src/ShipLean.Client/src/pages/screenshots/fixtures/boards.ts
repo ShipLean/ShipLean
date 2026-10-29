@@ -172,6 +172,38 @@ const BLOCKED_RULE = styleRule(
 
 const f = FEATURE_CARDS;
 
+/** The Features board with stored swimlanes on: Expedite (priority 1) above the default lane. */
+export function featuresBoardSwimlanes(): BoardViewDto {
+  const plain = featuresBoardNoLanes();
+  const rest = plain.lanes[0]!;
+  return {
+    ...plain,
+    lanes: [
+      lane({
+        id: 'lane-expedite',
+        name: 'Expedite',
+        kind: 'criteria',
+        criteriaText: 'Priority = 1',
+        colour: 'warn',
+        cardCount: 1,
+        openPoints: 0,
+        cells: cells({ 'col-new': [f.s106] }),
+      }),
+      {
+        ...rest,
+        cardCount: 12,
+        cells: cells({
+          'col-new': [f.s109],
+          'col-shaping': [f.s107, f.s108, f.s104],
+          'col-prog': [f.s101, f.s102, f.s103],
+          'col-rel': [f.s111],
+          'col-done': [f.s112, f.s105, f.s110, f.s113],
+        }),
+      },
+    ],
+  };
+}
+
 /**
  * The Features board with no lanes (one default lane). `confirm` puts SHIP-102 in Releasing, one Alt+→ from Done, the
  * move the Done confirm dialog interrupts.

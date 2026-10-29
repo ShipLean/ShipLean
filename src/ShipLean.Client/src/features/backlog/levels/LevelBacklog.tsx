@@ -8,7 +8,6 @@ import { NewFeatureDialog } from '../newFeature/NewFeatureDialog';
 import { backlogTestIds as ids } from '../testIds';
 import { BacklogToolbar } from '../toolbar/BacklogToolbar';
 import type { LevelBacklogLevel, LevelColumnId } from './levelColumns';
-import { LevelPicker } from './LevelPicker';
 import { LevelTable } from './LevelTable';
 import { useLevelBacklog } from './useLevelBacklog';
 
@@ -61,7 +60,6 @@ export function LevelBacklog({
         includeCompleted={state.includeCompleted}
         onIncludeCompletedChange={state.setIncludeCompleted}
         columns={{ options: state.specs, hidden: view.hidden, onChange: view.setHidden }}
-        options={() => <LevelPicker projectKey={project.key} level={level} />}
         filter={() => (
           <FilterButton
             criteria={criteria}

@@ -10,7 +10,7 @@ import { useLanePickLists } from './swimlanes/useLanePickLists';
 const DEFAULT_REFUSAL =
   "The default lane can't be deleted: it takes every card no other lane takes. Rename it or move it instead.";
 
-/** Stories board lanes: checked from the top, the first criteria match wins; a card that matches none goes to the default lane. */
+/** Stories and Features board lanes: checked from the top, the first criteria match wins; a card that matches none goes to the default lane. */
 export function SwimlanesPane({
   draft,
   onChange,
@@ -22,14 +22,11 @@ export function SwimlanesPane({
   const [dragFrom, setDragFrom] = useState<number>();
   const setLanes = (swimlanes: SwimlaneJson[]) => onChange({ ...draft, swimlanes });
 
-  if (context.level !== 'stories') {
+  if (context.level === 'epics') {
     return (
       <div data-testid={ids.swimlanesPane}>
         <p data-testid={ids.lanesNotStored} className="m-0 text-ink-muted">
-          The {context.level === 'features' ? 'Features' : 'Epics'} board has no stored lanes.
-          {context.level === 'features'
-            ? ' Show it by Epic from the board itself.'
-            : ' It always shows one lane.'}
+          The Epics board has no stored lanes. It always shows one lane.
         </p>
       </div>
     );

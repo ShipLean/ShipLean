@@ -5,6 +5,7 @@ export const shellTestIds = {
   searchIconButton: 'shell-search-icon-button',
   navBacklogs: 'shell-nav-backlogs',
   navBoards: 'shell-nav-boards',
+  navLevel: 'shell-nav-level',
   navSprints: 'shell-nav-sprints',
   navCurrentSprint: 'shell-nav-current-sprint',
   navAllSprints: 'shell-nav-all-sprints',

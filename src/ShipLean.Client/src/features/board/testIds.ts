@@ -56,8 +56,6 @@ export const boardTestIds = {
   doneConfirmMove: 'board-done-confirm-move',
   cardOffer: 'board-card-offer',
   cardMoveToDone: 'board-card-move-to-done',
-  levelSwitch: 'board-level-switch',
-  levelOption: 'board-level-option',
   settingsOpen: 'board-settings-open',
   lanesToggle: 'board-lanes-toggle',
   lanesOption: 'board-lanes-option',

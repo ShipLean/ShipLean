@@ -68,8 +68,6 @@ public static class BacklogTestIds
     public const string PlanningOverrideClear = "backlog-planning-override-clear";
     public const string PlanningOverrideCancel = "backlog-planning-override-cancel";
     public const string PlanningOverrideError = "backlog-planning-override-error";
-    public const string LevelPicker = "backlog-level-picker";
-    public const string LevelOption = "backlog-level-option";
     public const string LevelProgress = "backlog-level-progress";
     public const string LevelProgressDone = "backlog-level-progress-done";
     public const string LevelProgressText = "backlog-level-progress-text";

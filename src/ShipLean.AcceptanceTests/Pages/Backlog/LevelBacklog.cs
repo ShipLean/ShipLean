@@ -4,14 +4,14 @@ using ShipLean.TestSupport.TestIds;
 
 namespace ShipLean.AcceptanceTests.Pages.Backlog;
 
-// The Features or Epics backlog: the level picker, the rows and their roll-up cells.
+// The Features or Epics backlog: the side-menu level links, the rows and their roll-up cells.
 public sealed class LevelBacklog(IPage page)
 {
     public ILocator Toolbar => page.GetByTestId(BacklogTestIds.Toolbar);
 
     public ILocator Rows => page.GetByTestId(BacklogTestIds.Row);
 
-    public ILocator LevelOptions => page.GetByTestId(BacklogTestIds.LevelOption);
+    public ILocator Level(string name) => page.GetByTestId(ShellTestIds.NavLevel).Filter(new() { HasText = name });
 
     // The row of a work item, by key (the cells' text runs together, so the rank sits right before the key).
     public ILocator Row(string key) => Rows.Filter(new() { HasTextRegex = new Regex($"{key}(?!\\d)") });

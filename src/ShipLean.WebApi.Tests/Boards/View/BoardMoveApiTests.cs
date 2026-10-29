@@ -188,6 +188,17 @@ public class BoardMoveApiTests : ApiFixture
     }
 
     [Test]
+    public async Task BoardMove_WhenFeatureDroppedIntoExpedite_ShouldSetPriority()
+    {
+        await Api.SetLanePreferenceAsync(SeedIds.Boards.ShipFeatures, "on");
+        var result = await WrittenAsync(await MoveAsync(SeedIds.Boards.ShipFeatures, SeedIds.WorkItems.Ship101, 1, "col-in-progress", lane: "lane-expedite"));
+
+        result.Changes.Select(c => c.Field).ShouldContain("priority");
+        (await ScalarAsync<int>("SELECT priority::int FROM work_item WHERE id = @id", new { id = SeedIds.WorkItems.Ship101 })).ShouldBe(1);
+        (await Api.BoardAsync(SeedIds.Boards.ShipFeatures)).Lane("lane-expedite").Cells.SelectMany(c => c.Cards).Select(c => c.Key).ShouldContain("SHIP-101");
+    }
+
+    [Test]
     public async Task BoardMove_WhenCardIsAnotherLevel_ShouldBeValidationError()
     {
         using var response = await MoveAsync(SeedIds.Boards.ShipStories, SeedIds.WorkItems.Ship101, 1, "col-new");

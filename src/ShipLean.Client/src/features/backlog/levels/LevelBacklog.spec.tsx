@@ -1,9 +1,7 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import type { Page } from 'playwright';
+import { Link } from 'react-router-dom';
 import { EPIC_ROWS, FEATURE_ROWS, levelView } from '../ct/levelFixtures';
-import { backlogView, ROWS } from '../ct/fixtures';
-import { stubBacklog } from '../ct/stubApi';
-import { ListMode } from '../list/ListMode';
 import { LevelHarness } from '../ct/LevelHarness';
 import { LevelSlotHarness } from '../ct/LevelSlotHarness';
 import { PROJECT } from '../ct/fixtures';
@@ -87,20 +85,6 @@ test('Levels_WhenEpicsLoaded_ShouldShowTheFeaturesCountInPlaceOfParent', async (
   ]);
   await expect(page.getByTestId(ids.levelFeatureCount)).toHaveText('2');
   await expect(page.getByTestId(ids.levelProgressText)).toHaveText('0 / 4 done');
-});
-
-test('Levels_WhenOnEachLevel_ShouldPressItsOptionAndNavigateOnPick', async ({ mount, page }) => {
-  await stubLevel(page, levelView('features', FEATURE_ROWS));
-  await mount(<LevelHarness project={PROJECT} level="features" />, features);
-
-  const options = page.getByTestId(ids.levelOption);
-  await expect(options).toHaveText(['Epics', 'Features', 'Stories']);
-  await expect(options.nth(1)).toHaveAttribute('aria-pressed', 'true');
-  await expect(options.nth(0)).toHaveAttribute('aria-pressed', 'false');
-  await options.nth(0).click();
-  await expect(page.getByTestId('harness-location')).toHaveText('/p/SHIP/backlogs/epics');
-  await options.nth(2).click();
-  await expect(page.getByTestId('harness-location')).toHaveText('/p/SHIP/backlogs/stories');
 });
 
 test('Levels_WhenColumnsSaved_ShouldHideThemPerLevelAndKeepKeyAndTitle', async ({
@@ -211,12 +195,18 @@ test('Levels_WhenLevelSwitchedByTheAddress_ShouldStartFreshAndShowNoOldRows', as
     );
   }
   await page.route('**/api/me/preferences/**', (route) => route.fulfill({ status: 204 }));
-  await mount(<LevelSlotHarness project={PROJECT} />, features);
+  await mount(
+    <>
+      <Link to="/p/SHIP/backlogs/epics">To epics</Link>
+      <LevelSlotHarness project={PROJECT} />
+    </>,
+    features,
+  );
   await expect(page.getByTestId(ids.row)).toHaveCount(3);
   await page.getByTestId(ids.completedToggle).check();
   await expect.poll(() => reads.at(-1)).toContain('includeCompleted=true');
 
-  await page.locator(`[data-testid="${ids.levelOption}"][data-level="epics"]`).click();
+  await page.getByRole('link', { name: 'To epics' }).click();
   await expect.poll(() => reads.some((read) => read.includes('/epics'))).toBe(true);
 
   // The new level reads with its own defaults and shows nothing of the old one while it loads.
@@ -229,20 +219,4 @@ test('Levels_WhenLevelSwitchedByTheAddress_ShouldStartFreshAndShowNoOldRows', as
   await expect(page.getByTestId(ids.row)).toHaveCount(EPIC_ROWS.length);
   await expect(page.getByTestId(ids.completedToggle)).not.toBeChecked();
   expect(await headers(page)).toContain('features');
-});
-
-test('Levels_WhenStoriesBacklogShown_ShouldOfferThePickerWithStoriesPressed', async ({
-  mount,
-  page,
-}) => {
-  await stubBacklog(page, backlogView(ROWS));
-  await mount(<ListMode project={PROJECT} />, {
-    hooksConfig: { route: '/p/SHIP/backlogs/stories' },
-  });
-
-  const option = (level: string) =>
-    page.locator(`[data-testid="${ids.levelOption}"][data-level="${level}"]`);
-  await expect(option('stories')).toHaveAttribute('aria-pressed', 'true');
-  await expect(option('features')).toHaveAttribute('aria-pressed', 'false');
-  await expect(option('epics')).toHaveAttribute('aria-pressed', 'false');
 });

@@ -7,6 +7,7 @@ import { ProjectPicker } from '../ProjectPicker/ProjectPicker';
 import { shellTestIds as ids } from '../testIds';
 import { UserMenu } from '../UserMenu/UserMenu';
 import { useShellProject } from '../useShellProject';
+import { LevelsSubmenu } from './LevelsSubmenu';
 import { NavItem } from './NavItem';
 import { ProjectButton } from './ProjectButton';
 import { backlogsRoutes, boardsRoutes, sprintsRoutes } from './sections';
@@ -111,6 +112,9 @@ export function SideMenu() {
           >
             Backlogs
           </NavItem>
+          {is(backlogsRoutes) ? (
+            <LevelsSubmenu section="backlogs" projectKey={key} route={route} />
+          ) : null}
           <NavItem
             icon="▦"
             testId={ids.navBoards}
@@ -119,6 +123,9 @@ export function SideMenu() {
           >
             Boards
           </NavItem>
+          {is(boardsRoutes) ? (
+            <LevelsSubmenu section="boards" projectKey={key} route={route} />
+          ) : null}
           <NavItem
             icon="◷"
             testId={ids.navSprints}

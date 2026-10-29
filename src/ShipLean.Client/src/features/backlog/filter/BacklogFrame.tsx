@@ -4,7 +4,6 @@ import { BACKLOG_COLUMNS, type BacklogColumnId } from '../backlogApi';
 import { ReorderConflict } from '../drag/ReorderConflict';
 import type { useReorder } from '../drag/useReorder';
 import { EmptyBacklog } from '../list/EmptyBacklog';
-import { LevelPicker } from '../levels/LevelPicker';
 import { backlogTestIds as ids } from '../testIds';
 import { BacklogToolbar } from '../toolbar/BacklogToolbar';
 import { FilterButton } from './FilterButton';
@@ -43,7 +42,6 @@ export function BacklogFrame({
       includeCompleted={state.includeCompleted}
       onIncludeCompletedChange={state.setIncludeCompleted}
       columns={{ options: BACKLOG_COLUMNS, hidden: view.hidden, onChange: view.setHidden }}
-      options={() => <LevelPicker projectKey={project.key} level="stories" />}
       filter={() => (
         <FilterButton
           criteria={criteria}

@@ -65,8 +65,6 @@ export const backlogTestIds = {
   planningOverrideClear: 'backlog-planning-override-clear',
   planningOverrideCancel: 'backlog-planning-override-cancel',
   planningOverrideError: 'backlog-planning-override-error',
-  levelPicker: 'backlog-level-picker',
-  levelOption: 'backlog-level-option',
   levelProgress: 'backlog-level-progress',
   levelProgressDone: 'backlog-level-progress-done',
   levelProgressText: 'backlog-level-progress-text',
