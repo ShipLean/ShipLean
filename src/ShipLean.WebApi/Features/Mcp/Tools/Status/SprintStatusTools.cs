@@ -24,7 +24,7 @@ internal sealed class SprintStatusTools(
     TimeProvider clock)
 {
     [McpServerTool(Name = "sprint_status"), McpScope(McpScopes.Read)]
-    [Description("The stand-up picture for a sprint: goal, dates, days left, points committed, completed and remaining against the team's capacity, the burndown trend, every item by state with who has it, the blocked items (tagged Blocked or waiting on an open blocked-by link) and tasks with no story. Use it for 'how is the sprint going?'.")]
+    [Description("The stand-up picture for a sprint: goal, dates, days left, points committed, completed and remaining against the team's capacity (its velocity, working days and each member's days), the burndown trend, every item by state with who has it, the blocked items (tagged Blocked or waiting on an open blocked-by link) and tasks with no story. Use it for 'how is the sprint going?'.")]
     public async Task<CallToolResult> SprintStatus(
         [Description("The project key, such as SHIP. Leave out for the most recent project.")] string? project = null,
         [Description("current, next, or a sprint name. Defaults to current.")] string sprint = "current",
@@ -57,7 +57,8 @@ internal sealed class SprintStatusTools(
             head.Name, head.Goal, head.StartDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), head.EndDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
             running ? head.EndDate.DayNumber - today.DayNumber : null, timeLabel,
             sprintMetrics.Committed, sprintMetrics.Completed, sprintMetrics.Remaining,
-            capacity.Members.Count > 0 ? capacity.TeamTotal : null, trend, burndown, states, blocked, unparented);
+            capacity.Members.Count > 0 ? capacity.TeamTotal : null, capacity.Velocity, capacity.WorkingDays,
+            [.. capacity.Members.Select(m => new SprintStatusResult.CapacityMember(m.User.Name, m.Days ?? capacity.DefaultDays, m.Points))], trend, burndown, states, blocked, unparented);
         return StatusReply.Of(result, $"{head.Name} ({resolvedProject.Key}): {timeLabel}. {sprintMetrics.Completed} of {sprintMetrics.Committed} points done, {blocked.Count} blocked.");
     }
 

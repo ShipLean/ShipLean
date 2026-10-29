@@ -3,6 +3,7 @@ using Dapper;
 using Npgsql;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Events;
+using ShipLean.Contracts.Holidays;
 using ShipLean.Contracts.Sprints;
 using ShipLean.Contracts.WorkItems;
 using ShipLean.Core;
@@ -17,7 +18,7 @@ namespace ShipLean.Application.Features.Sprints;
 // existing project, such as the Jira import, must not join: it would run the overlap and name checks unserialised against
 // a concurrent create. It must call without a transaction, or take the project lock itself first.
 // Never call IWorkItemStore while holding this lock or a sprint row lock (the work item store locks the project first).
-public sealed partial class SprintStore(NpgsqlDataSource dataSource, TimeProvider clock, IProjectEvents events, IWorkItemStore workItems) : ISprintStore
+public sealed partial class SprintStore(NpgsqlDataSource dataSource, TimeProvider clock, IProjectEvents events, IWorkItemStore workItems, IPublicHolidays holidays, ISprintMetrics metrics) : ISprintStore
 {
     private static readonly string SelectSprint = $"SELECT {SprintRow.Columns} FROM sprint WHERE id = @id AND archived_at IS NULL";
     private static readonly string SelectSprintForUpdate = SelectSprint + " FOR UPDATE";

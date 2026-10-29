@@ -9,5 +9,8 @@ namespace ShipLean.Application.Features.Sprints;
 public sealed class SprintStoreServices : IServiceModule
 {
     public void AddServices(IServiceCollection services, IConfiguration configuration)
-        => services.AddScoped<ISprintStore, SprintStore>();
+    {
+        services.AddScoped<ISprintStore, SprintStore>();
+        services.AddScoped<ISprintCapacityRecompute, SprintCapacityRecompute>();
+    }
 }
