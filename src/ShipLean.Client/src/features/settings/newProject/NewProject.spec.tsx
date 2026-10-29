@@ -391,3 +391,38 @@ test('NewProject_WhenStartTyped_ShouldAskForTheNameThatFollowsIt', async ({ moun
     endDate: '2027-01-15',
   });
 });
+
+test('NewProject_WhenTheNameForTypedDatesIsStillLoading_ShouldKeepCreateOff', async ({
+  mount,
+  page,
+}) => {
+  const { created } = await stub(page);
+  let release = () => {};
+  const held = new Promise<void>((resolve) => (release = resolve));
+  await page.route('**/api/projects/first-sprint**', async (route) => {
+    const url = new URL(route.request().url());
+    const start = url.searchParams.get('start');
+    if (start !== null) await held;
+    return route.fulfill({
+      json: {
+        name: start === null ? '2026 Q4 Sprint 3' : '2027 Q1 Sprint 1',
+        startDate: start ?? '2026-10-26',
+        endDate: url.searchParams.get('end') ?? '2026-11-08',
+        goal: '',
+      },
+    });
+  });
+  const view = await mount(<NewProject />);
+  await view.getByTestId(ids.newProjectName).fill('Customer Support Hub');
+  await expect(view.getByTestId(ids.newProjectCreate)).toBeEnabled();
+
+  await view.getByTestId(ids.newProjectSprintStart).fill('2027-01-04');
+  await view.getByTestId(ids.newProjectSprintEnd).fill('2027-01-15');
+  await expect(view.getByTestId(ids.newProjectCreate)).toBeDisabled();
+
+  release();
+  await expect(view.getByTestId(ids.newProjectCreate)).toBeEnabled();
+  await view.getByTestId(ids.newProjectCreate).click();
+  await expect.poll(() => created.length).toBe(1);
+  expect(created[0].firstSprint).toMatchObject({ name: '2027 Q1 Sprint 1' });
+});

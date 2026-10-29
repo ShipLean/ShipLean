@@ -36,6 +36,11 @@ export function NewSprintRail({ projectId }: { projectId: string }) {
   const end = useDebouncedValue(typed?.endDate ?? '', NAME_PAUSE_MS);
   const range = { start, end };
   const suggestion = useSuggestedSprintName(projectId, range, edited !== null && !nameTouched);
+  // The name follows the dates, so until the suggestion for the typed range has arrived Create would send the old one.
+  const nameStale =
+    edited !== null &&
+    !nameTouched &&
+    (start !== typed?.startDate || end !== typed?.endDate || suggestion.isFetching);
   const form =
     typed && edited !== null && !nameTouched && suggestion.data
       ? { ...typed, name: suggestion.data.name }
@@ -43,7 +48,7 @@ export function NewSprintRail({ projectId }: { projectId: string }) {
 
   function submit(event: FormEvent) {
     event.preventDefault();
-    if (!form || create.isPending) return;
+    if (!form || create.isPending || nameStale) return;
     if (form.startDate === '' || form.endDate === '' || form.endDate < form.startDate) {
       setRangeError(true);
       return;
@@ -99,13 +104,13 @@ export function NewSprintRail({ projectId }: { projectId: string }) {
           onChange={(field, value) => edit(field)(value)}
           onSubmit={submit}
           submitLabel="Create sprint"
-          pending={create.isPending}
+          pending={create.isPending || nameStale}
           error={error}
         />
       )}
       <p className="m-0 text-[length:var(--text-xs)] text-ink-muted">
-        Defaults: the next number, starting on the first working day after the last sprint, the same
-        length as it. Overlapping dates are rejected.
+        Defaults: the next name in the project's sprint naming, starting on the first working day
+        after the last sprint, the same length as it. Overlapping dates are rejected.
       </p>
     </aside>
   );

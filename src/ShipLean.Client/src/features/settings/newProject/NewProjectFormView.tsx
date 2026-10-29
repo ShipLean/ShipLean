@@ -52,6 +52,11 @@ export function NewProjectFormView({ me }: { me: MeDto }) {
   );
 
   const available = keyIsWellFormed(key) && check?.available === true;
+  // The sprint's name follows the typed dates: until the name for them has arrived Create would send the old one.
+  const nameStale =
+    form.sprint &&
+    typed.datesEdited &&
+    (typed.start !== start || typed.end !== end || firstSprint.isFetching);
   const hint = blocker(form, available, firstSprint.data?.name);
   const failure = create.error instanceof ApiRequestError ? create.error.message : undefined;
 
@@ -75,7 +80,7 @@ export function NewProjectFormView({ me }: { me: MeDto }) {
         <button
           type="button"
           data-testid={ids.newProjectCreate}
-          disabled={hint !== null || create.isPending}
+          disabled={hint !== null || nameStale || create.isPending}
           className="h-8 rounded-control bg-signal px-3 text-[length:var(--text-sm)] font-medium text-signal-ink disabled:opacity-50"
           onClick={() => create.mutate(toCreate(form, firstSprint.data?.name))}
         >
