@@ -81,7 +81,7 @@ public class SprintNamingAndCapacityJourneyTests : SeededAcceptanceTest
         }
 
         await capacity.Days(away).FillAsync(DaysAway.ToString(System.Globalization.CultureInfo.InvariantCulture));
-        await Expect(capacity.Days(present)).ToHaveValueAsync($"{defaultDays}");
+        await Expect(capacity.Days(present)).ToHaveAttributeAsync("placeholder", $"{defaultDays}");
         await Expect(capacity.DefaultMarker(present)).ToBeVisibleAsync();
         await Expect(capacity.Points(present)).ToHaveTextAsync($"{Share(Velocity, 2, defaultDays, workingDays):0.##}");
         await Expect(capacity.Points(away)).ToHaveTextAsync($"{Share(Velocity, 2, DaysAway, workingDays):0.##}");
@@ -103,7 +103,7 @@ public class SprintNamingAndCapacityJourneyTests : SeededAcceptanceTest
         longerDefault.ShouldBe(longerDays - 1);
         await capacity.OpenAsync(ProjectKey, nextSprint);
         await Expect(capacity.Calendar).ToHaveTextAsync(new Regex($@"^{longerDays} working days · 1 public holiday \(AU\)"));
-        await Expect(capacity.Days(present)).ToHaveValueAsync($"{longerDefault}");
+        await Expect(capacity.Days(present)).ToHaveAttributeAsync("placeholder", $"{longerDefault}");
         await Expect(capacity.DefaultMarker(present)).ToBeVisibleAsync();
         await Expect(capacity.Days(away)).ToHaveValueAsync($"{DaysAway:0.#}");
         await Expect(capacity.Reset(away)).ToBeVisibleAsync();
