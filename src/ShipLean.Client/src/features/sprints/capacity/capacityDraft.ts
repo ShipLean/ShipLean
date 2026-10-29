@@ -123,7 +123,8 @@ export function toPut(
       };
     }
     const note = row.note.trim();
-    put.push({ userId: member.user.id, points, note: note === '' ? null : note });
+    // TODO: the Capacity tab (SHIP-241) replaces the points input with days and a velocity box; until then the typed number goes out as days.
+    put.push({ userId: member.user.id, days: points, note: note === '' ? null : note });
   }
   return { put };
 }

@@ -4,7 +4,7 @@ using ShipLean.Contracts.Mcp;
 namespace ShipLean.WebApi.Features.Mcp.Tools.Status;
 
 // Dates are yyyy-MM-dd. DaysLeft is set only while the sprint is running. Capacity is the team's entered total (null when
-// none is entered). Trend compares the last burndown point with the ideal line: ahead, on_track or behind.
+// none is entered); Velocity and WorkingDays are the sprint's stored velocity (null on an old points-only sprint) and its working-day count. Trend compares the last burndown point with the ideal line: ahead, on_track or behind.
 internal sealed record SprintStatusResult(
     string? Project,
     string OpenUrl,
@@ -18,12 +18,21 @@ internal sealed record SprintStatusResult(
     [property: JsonPropertyName("completed")] decimal Completed,
     [property: JsonPropertyName("remaining")] decimal Remaining,
     [property: JsonPropertyName("capacity")] decimal? Capacity,
+    [property: JsonPropertyName("velocity")] decimal? Velocity,
+    [property: JsonPropertyName("working_days")] int WorkingDays,
+    [property: JsonPropertyName("capacity_members")] IReadOnlyList<SprintStatusResult.CapacityMember> CapacityMembers,
     [property: JsonPropertyName("trend")] string? Trend,
     [property: JsonPropertyName("burndown")] IReadOnlyList<SprintStatusResult.BurndownEntry> Burndown,
     [property: JsonPropertyName("states")] IReadOnlyList<SprintStatusResult.StateGroup> States,
     [property: JsonPropertyName("blocked")] IReadOnlyList<SprintStatusResult.StatusItem> Blocked,
     [property: JsonPropertyName("unparented_tasks")] IReadOnlyList<SprintStatusResult.StatusItem> UnparentedTasks) : McpResult(Project, OpenUrl)
 {
+    // Days is what the member has (their typed days, else the sprint's default); Points is their share of the capacity.
+    internal sealed record CapacityMember(
+        [property: JsonPropertyName("name")] string Name,
+        [property: JsonPropertyName("days")] decimal Days,
+        [property: JsonPropertyName("points")] decimal Points);
+
     internal sealed record BurndownEntry(
         [property: JsonPropertyName("date")] string Date,
         [property: JsonPropertyName("remaining")] decimal Remaining,

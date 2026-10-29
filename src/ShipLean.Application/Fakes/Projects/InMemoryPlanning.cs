@@ -47,7 +47,8 @@ public sealed class InMemoryPlanning(TimeProvider? clock = null)
         public DateOnly End { get; set; }
         public string Goal { get; set; } = string.Empty;
         public RolloverStatus? Rollover { get; set; }
-        internal Dictionary<Guid, (decimal Points, string? Note, bool Archived)> Capacity { get; } = [];
+        public decimal? Velocity { get; set; }
+        internal Dictionary<Guid, (decimal Points, string? Note, bool Archived, decimal? Days)> Capacity { get; } = [];
     }
 
     internal sealed class ItemRow
@@ -231,7 +232,7 @@ public sealed class InMemoryPlanning(TimeProvider? clock = null)
             var sprint = this.Sprint(sprintId);
             var user = AddUser($"Member {Users.Count + 1}", $"member{Users.Count + 1}@example.test");
             this.Project(sprint.ProjectId).Members[user] = ProjectRole.Member;
-            sprint.Capacity[user] = (points, null, false);
+            sprint.Capacity[user] = (points, null, false, null);
         }
     }
 
@@ -304,6 +305,38 @@ public sealed class InMemoryPlanning(TimeProvider? clock = null)
         lock (Gate)
         {
             this.Project(projectId).SprintNaming = naming;
+        }
+    }
+
+    // The country whose holidays the project's sprints skip (null = None); the holidays themselves live in the IPublicHolidays the fake store is given.
+    public void SetHolidayCountry(Guid projectId, string? code)
+    {
+        lock (Gate)
+        {
+            this.Project(projectId).HolidayCountry = code?.ToUpperInvariant();
+        }
+    }
+
+    public void SetWorkingDays(Guid projectId, IEnumerable<int> days)
+    {
+        lock (Gate)
+        {
+            this.Project(projectId).WorkingDays = [.. days.Order()];
+        }
+    }
+
+    // A sprint's stored capacity as the save left it (velocity null: an old points-only sprint), for arranging past states.
+    public void SetStoredCapacity(Guid sprintId, decimal? velocity, IEnumerable<(Guid UserId, decimal? Days, decimal Points)> rows)
+    {
+        lock (Gate)
+        {
+            var sprint = this.Sprint(sprintId);
+            sprint.Velocity = velocity;
+            sprint.Capacity.Clear();
+            foreach (var (userId, days, points) in rows)
+            {
+                sprint.Capacity[userId] = (points, null, false, days);
+            }
         }
     }
 }

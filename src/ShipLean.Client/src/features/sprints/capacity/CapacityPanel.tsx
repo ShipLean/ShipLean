@@ -100,7 +100,7 @@ export function CapacityPanel({ project, sprint, sprints }: CapacityPanelProps) 
       return;
     }
     save.mutate(
-      { members: result.put },
+      { velocity: null, members: result.put },
       {
         onSuccess: () => setTouched({}),
         onError: (error) =>

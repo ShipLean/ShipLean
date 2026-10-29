@@ -35,6 +35,7 @@ const people = [user('u1', 'Priya'), user('u2', 'Tom'), user('u3', 'Mei')];
 const members = people.map((u) => ({ user: u, email: '', role: 'member', status: 'active' }));
 const entry = (index: number, points: number, note: string | null = null): MemberCapacityDto => ({
   user: people[index]!,
+  days: null,
   points,
   note,
 });
@@ -42,6 +43,13 @@ const capacityOf = (sprintId: string, rows: MemberCapacityDto[]): SprintCapacity
   sprintId,
   members: rows,
   teamTotal: rows.reduce((sum, row) => sum + row.points, 0),
+  velocity: null,
+  velocityDefault: 0,
+  workingDays: 10,
+  defaultDays: 10,
+  holidays: [],
+  holidayCountry: null,
+  ended: false,
 });
 const velocity: VelocityDto = { window: 3, sprints: [], average: 20, override: null };
 
@@ -118,7 +126,8 @@ async function stubApi(
       's24',
       body.members.map((m) => ({
         user: people.find((p) => p.id === m.userId)!,
-        points: m.points,
+        days: m.days,
+        points: m.days ?? 0,
         note: m.note,
       })),
     );
@@ -245,9 +254,10 @@ test('Capacity_WhenATeammateSavesWhileFormIsDirty_ShouldKeepTheirRowInTheSave', 
   await page.getByTestId(ids.capacitySave).click();
   await expect.poll(() => stub.puts.length).toBe(1);
   expect(stub.puts[0]).toEqual({
+    velocity: null,
     members: [
-      { userId: 'u1', points: 3, note: null },
-      { userId: 'u2', points: 8, note: null },
+      { userId: 'u1', days: 3, note: null },
+      { userId: 'u2', days: 8, note: null },
     ],
   });
 });
@@ -268,14 +278,17 @@ test('Capacity_WhenATeammateChangesARowYouChanged_ShouldSayWhoAndKeepYours', asy
   await expect(points(page, 1)).toHaveValue('4');
   await page.getByTestId(ids.capacitySave).click();
   await expect.poll(() => stub.puts.length).toBe(1);
-  expect(stub.puts[0]).toEqual({ members: [{ userId: 'u2', points: 4, note: null }] });
+  expect(stub.puts[0]).toEqual({
+    velocity: null,
+    members: [{ userId: 'u2', days: 4, note: null }],
+  });
 });
 
 test('Capacity_WhenCopiedFromASprintWithAFormerMember_ShouldNotCountThemInTheTotalOrSaveThem', async ({
   mount,
   page,
 }) => {
-  const former = { user: user('u9', 'Former'), points: 9, note: null };
+  const former = { user: user('u9', 'Former'), days: null, points: 9, note: null };
   const stub = await stubApi(page, {
     previous: capacityOf('s23', [entry(0, 6), entry(1, 5), entry(2, 4), former]),
   });
@@ -344,10 +357,11 @@ test('Capacity_WhenCopied_ShouldFillEveryRowFromThePreviousSprintThenSave', asyn
   await page.getByTestId(ids.capacitySave).click();
   await expect.poll(() => stub.puts.length).toBe(1);
   expect(stub.puts[0]).toEqual({
+    velocity: null,
     members: [
-      { userId: 'u1', points: 6, note: 'Off Fri' },
-      { userId: 'u2', points: 5, note: null },
-      { userId: 'u3', points: 4, note: null },
+      { userId: 'u1', days: 6, note: 'Off Fri' },
+      { userId: 'u2', days: 5, note: null },
+      { userId: 'u3', days: 4, note: null },
     ],
   });
   await expect(page.getByTestId(ids.capacitySave)).toBeDisabled();
@@ -377,7 +391,7 @@ test('Capacity_WhenCleared_ShouldSaveAnEmptySetAndPlanAgainstVelocity', async ({
   await page.getByTestId(ids.capacitySave).click();
 
   await expect.poll(() => stub.puts.length).toBe(1);
-  expect(stub.puts[0]).toEqual({ members: [] });
+  expect(stub.puts[0]).toEqual({ velocity: null, members: [] });
 });
 
 test('Capacity_WhenSavedBlankAndNotesOnly_ShouldSendOnlyRowsWithPoints', async ({
@@ -390,7 +404,10 @@ test('Capacity_WhenSavedBlankAndNotesOnly_ShouldSendOnlyRowsWithPoints', async (
   await points(page, 2).fill('0');
   await page.getByTestId(ids.capacitySave).click();
   await expect.poll(() => stub.puts.length).toBe(1);
-  expect(stub.puts[0]).toEqual({ members: [{ userId: 'u3', points: 0, note: null }] });
+  expect(stub.puts[0]).toEqual({
+    velocity: null,
+    members: [{ userId: 'u3', days: 0, note: null }],
+  });
 });
 
 test('Capacity_WhenPointsInvalid_ShouldNameTheMemberAndNotSave', async ({ mount, page }) => {
