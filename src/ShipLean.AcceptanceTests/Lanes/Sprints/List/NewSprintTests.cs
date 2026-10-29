@@ -22,11 +22,9 @@ public class NewSprintTests : SeededAcceptanceTest
             expectedStart = expectedStart.AddDays(1);
         }
 
+        // The same calendar length as the last sprint. Only the start moves onto a working day; the end is not clipped,
+        // so a sprint that follows a Sunday end lands on a Sunday too.
         var expectedEnd = expectedStart.AddDays(last.End.DayNumber - last.Start.DayNumber);
-        while (!Weekday(expectedEnd))
-        {
-            expectedEnd = expectedEnd.AddDays(-1);
-        }
 
         var sprints = new AllSprints(Page);
         await sprints.OpenAsync("SHIP");
@@ -34,7 +32,7 @@ public class NewSprintTests : SeededAcceptanceTest
         await Expect(sprints.Name).ToHaveValueAsync("Sprint 27");
         await Expect(sprints.Start).ToHaveValueAsync(expectedStart.ToString("yyyy-MM-dd"));
         await Expect(sprints.End).ToHaveValueAsync(expectedEnd.ToString("yyyy-MM-dd"));
-        (expectedEnd.DayNumber - expectedStart.DayNumber).ShouldBeInRange(last.End.DayNumber - last.Start.DayNumber - 2, last.End.DayNumber - last.Start.DayNumber);
+        (expectedEnd.DayNumber - expectedStart.DayNumber).ShouldBe(last.End.DayNumber - last.Start.DayNumber);
 
         var created = await sprints.CreateAsync(SeedIds.Projects.Ship.ToString());
         created.Ok.ShouldBeTrue();

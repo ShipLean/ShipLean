@@ -5,6 +5,7 @@ using ShipLean.AcceptanceTests.Lanes.Import.Run;
 using ShipLean.AcceptanceTests.Pages.Backlog;
 using ShipLean.AcceptanceTests.Pages.Board;
 using ShipLean.AcceptanceTests.Pages.Import;
+using ShipLean.AcceptanceTests.Pages.Sprints;
 using ShipLean.TestSupport.Jira;
 using ShipLean.TestSupport.TestIds;
 
@@ -45,6 +46,12 @@ public class ImportThenPlanJourneyTests : SeededAcceptanceTest
         var planning = new PlanningBacklog(Page);
         await dragging.ShowWholePageAsync();
         await planning.OpenAsync(ProjectKey);
+        // Platform Sprint 12 ended on 26 Oct 2026 with unfinished stories, so the wrap-up dialog covers planning
+        // from the next day on. Setting it aside is what lets the journey create the next sprint.
+        var wrapUp = new SprintEndPrompt(Page);
+        await Expect(wrapUp.Dialog).ToBeVisibleAsync();
+        await wrapUp.Later.ClickAsync();
+        await Expect(wrapUp.Dialog).ToBeHiddenAsync();
         var created = await Page.RunAndWaitForResponseAsync(
             () => Page.GetByTestId(BacklogTestIds.PlanningCreateSprint).ClickAsync(),
             r => r.Request.Method == "POST" && new Uri(r.Url).AbsolutePath.EndsWith("/sprints", StringComparison.Ordinal));
