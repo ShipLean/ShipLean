@@ -23,6 +23,7 @@ export const taskboardTestIds = {
   rowToggle: 'taskboard-row-toggle',
   rowTitle: 'taskboard-row-title',
   rowState: 'taskboard-row-state',
+  rowSprint: 'taskboard-row-sprint',
   rowPoints: 'taskboard-row-points',
   rowProgress: 'taskboard-row-progress',
   rowCount: 'taskboard-row-count',

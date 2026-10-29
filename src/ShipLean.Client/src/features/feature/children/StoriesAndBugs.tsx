@@ -1,4 +1,6 @@
+import { Link } from 'react-router-dom';
 import { Chip } from '../../../components/Chip';
+import { routePath } from '../../../routes';
 import { useChildEvents } from '../../workItem/tasks/useChildEvents';
 import type { FeatureRegionProps } from '../FeatureRegionProps';
 import { featureTestIds as ids } from '../testIds';
@@ -22,6 +24,14 @@ export function StoriesAndBugs({ item, projectKey }: FeatureRegionProps) {
         <span className="text-[length:var(--text-xs)] text-ink-muted">
           Each is its own work item
         </span>
+        <span className="flex-1" />
+        <Link
+          data-testid={ids.taskBoardLink}
+          to={routePath('featureBoard', { key: projectKey, itemKey: item.key })}
+          className="text-[length:var(--text-sm)] hover:text-signal hover:underline"
+        >
+          Task board
+        </Link>
       </header>
       <div className="rounded-control border border-edge bg-panel">
         {children.length === 0 ? (
