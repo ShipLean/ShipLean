@@ -30,6 +30,29 @@ public class CreateSprintTests : SprintFixture
     }
 
     [Test]
+    public async Task CreateSprint_WhenProjectNamesByQuarter_ShouldNameFromTheStartDateAndKeepAPrefixOnNumber()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var token = await TokenAsync(TestUser.Joel, ReadWritePlan);
+        var one = await CallToolAsync(token, "create_sprint", """{"project":"EMPT"}""");
+        one.Structured().GetProperty("sprint").GetString().ShouldBe("Sprint 1");
+        await connection.ExecuteAsync("UPDATE project SET sprint_naming = 'yearQuarterNumber' WHERE id = @project", new { project = SeedIds.Projects.Empt });
+
+        var first = await CallToolAsync(token, "create_sprint", """{"project":"EMPT","start_date":"2031-05-12","end_date":"2031-05-25"}""");
+
+        first.IsToolError().ShouldBeFalse(first.Body);
+        first.Structured().GetProperty("sprint").GetString().ShouldBe("2031 Q2 Sprint 3");
+
+        await connection.ExecuteAsync("UPDATE project SET sprint_naming = 'number' WHERE id = @project", new { project = SeedIds.Projects.Empt });
+        await AddSprintAsync("Team A 41", 5000, 5013);
+
+        var next = await CallToolAsync(token, "create_sprint", """{"project":"EMPT"}""");
+
+        next.IsToolError().ShouldBeFalse(next.Body);
+        next.Structured().GetProperty("sprint").GetString().ShouldBe("Team A 42");
+    }
+
+    [Test]
     public async Task CreateSprint_WhenWriteTokenOnly_ShouldAnswer403()
     {
         var token = await TokenAsync(TestUser.Joel, ReadWrite);

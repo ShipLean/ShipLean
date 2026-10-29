@@ -56,6 +56,49 @@ public class ProjectSettingsApiTests : ApiFixture
         => (await ApiClient.ReadApiErrorAsync(response, status)).Code.ShouldBe(code);
 
     [Test]
+    public async Task Settings_WhenSprintNamingChanged_ShouldRoundTrip()
+    {
+        var project = await ArrangeAsync();
+        var loaded = await LoadAsync(project);
+        loaded.Sprints.SprintNaming.ShouldBe(SprintNaming.Number);
+
+        using var response = await PutAsync(project, Request(loaded, r => r with { Sprints = r.Sprints with { SprintNaming = SprintNaming.YearQuarterNumber } }));
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+        (await LoadAsync(project)).Sprints.SprintNaming.ShouldBe(SprintNaming.YearQuarterNumber);
+        await using var connection = await OpenDatabaseAsync();
+        (await connection.QuerySingleAsync<string>("SELECT sprint_naming FROM project WHERE id = @id", new { id = project.Id })).ShouldBe("yearQuarterNumber");
+    }
+
+    [Test]
+    public async Task Settings_WhenSprintNamingLeftOutOfTheBody_ShouldKeepTheSavedValue()
+    {
+        var project = await ArrangeAsync();
+        using var set = await PutAsync(project, Request(await LoadAsync(project), r => r with { Sprints = r.Sprints with { SprintNaming = SprintNaming.YearQuarterNumber } }));
+        set.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var body = System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(Request(await LoadAsync(project)), WireOptions))!;
+        body["sprints"]!.AsObject().Remove("sprintNaming");
+
+        using var response = await Api.PutJsonAsync($"api/projects/{project.Id}/settings", JsonSerializer.SerializeToElement(body));
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+        (await LoadAsync(project)).Sprints.SprintNaming.ShouldBe(SprintNaming.YearQuarterNumber);
+    }
+
+    [Test]
+    public async Task Settings_WhenSprintNamingIsNotAConvention_ShouldBeRefused()
+    {
+        var project = await ArrangeAsync();
+        var body = System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(Request(await LoadAsync(project)), WireOptions))!;
+        body["sprints"]!["sprintNaming"] = "bogus";
+
+        using var response = await Api.PutJsonAsync($"api/projects/{project.Id}/settings", JsonSerializer.SerializeToElement(body));
+
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        (await LoadAsync(project)).Sprints.SprintNaming.ShouldBe(SprintNaming.Number);
+    }
+
+    [Test]
     public async Task Settings_WhenLoadedAndSavedUnchanged_ShouldRoundTrip()
     {
         var project = await ArrangeAsync();
