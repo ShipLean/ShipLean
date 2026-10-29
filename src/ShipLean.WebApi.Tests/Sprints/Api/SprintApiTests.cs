@@ -85,6 +85,30 @@ public class SprintApiTests : ApiFixture
     }
 
     [Test]
+    public async Task Sprint_WhenMovedToEndInThePast_ShouldBeRefused()
+    {
+        var upcoming = await CreateAsync("Upcoming sprint to move back", 1500);
+
+        using var past = await Api.PatchJsonAsync($"api/sprints/{upcoming.Id}", new SprintUpdate(null, Today.AddDays(-4000), Today.AddDays(-3990), null));
+
+        var error = await ApiClient.ReadApiErrorAsync(past, HttpStatusCode.BadRequest);
+        error.Code.ShouldBe(ApiErrorCodes.Validation);
+        error.Error.ShouldBe("A sprint can't be moved to end in the past.");
+    }
+
+    [Test]
+    public async Task Capacity_WhenPutWithMembersAndNoVelocity_ShouldBeRefused()
+    {
+        var created = await CreateAsync("Capacity without velocity", 1800);
+
+        using var response = await Api.PutJsonAsync($"api/sprints/{created.Id}/capacity", new SprintCapacityPut([new MemberCapacityPut(SeedIds.Users.Tom, 5, null)], null));
+
+        var error = await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.BadRequest);
+        error.Code.ShouldBe(ApiErrorCodes.Validation);
+        error.Error.ShouldBe("Capacity needs a velocity.");
+    }
+
+    [Test]
     public async Task Capacity_WhenPut_ShouldComputePointsRoundTripAndPublishSprintChanged()
     {
         var created = await CreateAsync("Capacity sprint", 900);
