@@ -31,6 +31,14 @@ public static class TransitionStates
         return result;
     }
 
+    // The board level whose settings hold a type's transitions; null for types that have no Automations (Epic, Task).
+    public static string? BoardLevel(WorkItemTypeId type) => type switch
+    {
+        WorkItemTypeId.Story or WorkItemTypeId.Bug => "stories",
+        WorkItemTypeId.Feature => "features",
+        _ => null,
+    };
+
     // Valid: the to state, and the from state when there is one, are live states of the transition's type. Pass live states only.
     public static bool IsValid(TransitionJson transition, IReadOnlyCollection<TransitionState> liveStates)
     {
