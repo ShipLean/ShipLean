@@ -34,6 +34,7 @@ export const pagesTestIds = {
   slotListMode: 'slot-listMode',
   slotNewProject: 'slot-newProject',
   slotNewSprintRail: 'slot-newSprintRail',
+  slotEditSprintRail: 'slot-editSprintRail',
   slotPlanningMode: 'slot-planningMode',
   slotProfileAccount: 'slot-profileAccount',
   slotProfileIdentity: 'slot-profileIdentity',

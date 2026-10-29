@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { ProjectDto } from '../../api/projects';
 import type { SprintDto } from '../../api/sprints';
 import { routePath } from '../../routes';
+import { EditSprintRailSlot } from '../../slots/EditSprintRailSlot';
 import { SprintGoalEditSlot } from '../../slots/SprintGoalEditSlot';
 import { SprintGoal } from './SprintGoal';
 import { SprintPicker } from './SprintPicker';
@@ -23,6 +25,8 @@ export interface SprintHeaderProps {
 
 export function SprintHeader({ variant, project, sprint, sprints, tab }: SprintHeaderProps) {
   const slim = variant === 'slim';
+  // The sprint whose Edit sprint rail is open; moving to another sprint closes it.
+  const [editingId, setEditingId] = useState<string | null>(null);
   const picker = <SprintPicker project={project} sprint={sprint} sprints={sprints} tab={tab} />;
   const chip = <SprintStatusChip status={sprint.status} />;
   const allSprints = (
@@ -70,7 +74,15 @@ export function SprintHeader({ variant, project, sprint, sprints, tab }: SprintH
             sprint={sprint}
             sprints={sprints}
             Editor={SprintGoalEditSlot}
+            onEditSprint={() => setEditingId(sprint.id)}
           />
+          {editingId === sprint.id ? (
+            <EditSprintRailSlot
+              project={project}
+              sprint={sprint}
+              onDone={() => setEditingId(null)}
+            />
+          ) : null}
           <SprintTabs project={project} sprint={sprint} tab={tab} />
         </>
       )}

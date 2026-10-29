@@ -27,6 +27,18 @@ public sealed class AllSprints(IPage page)
 
     public ILocator Error => page.GetByTestId(SprintsTestIds.NewSprintError);
 
+    public ILocator EditRail => page.GetByTestId(SprintsTestIds.EditSprint);
+
+    public ILocator EditEnd => page.GetByTestId(SprintsTestIds.EditSprintEnd);
+
+    public ILocator EditError => page.GetByTestId(SprintsTestIds.EditSprintError);
+
+    public ILocator EditButtonOf(string sprintName) => RowOf(sprintName).GetByTestId(SprintsTestIds.RowEdit);
+
+    // Presses Save on the Edit sprint rail and returns the PATCH response.
+    public Task<IResponse> SaveEditAsync(Guid sprintId) =>
+        page.RunAndWaitForApiAsync($"/api/sprints/{sprintId}", "PATCH", () => page.GetByTestId(SprintsTestIds.EditSprintSubmit).ClickAsync());
+
     public async Task OpenAsync(string projectKey)
     {
         await page.GotoAsync(Links.Sprints(projectKey));

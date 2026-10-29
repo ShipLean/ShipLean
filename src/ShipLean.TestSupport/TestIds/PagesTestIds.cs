@@ -37,6 +37,7 @@ public static class PagesTestIds
     public const string SlotListMode = "slot-listMode";
     public const string SlotNewProject = "slot-newProject";
     public const string SlotNewSprintRail = "slot-newSprintRail";
+    public const string SlotEditSprintRail = "slot-editSprintRail";
     public const string SlotPlanningMode = "slot-planningMode";
     public const string SlotProfileAccount = "slot-profileAccount";
     public const string SlotProfileIdentity = "slot-profileIdentity";

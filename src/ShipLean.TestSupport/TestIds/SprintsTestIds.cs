@@ -25,6 +25,17 @@ public static class SprintsTestIds
     public const string NewSprintSubmit = "sprints-new-sprint-submit";
     public const string NewSprintLoadError = "sprints-new-sprint-load-error";
     public const string NewSprintError = "sprints-new-sprint-error";
+    public const string EditSprint = "sprints-edit-sprint";
+    public const string EditSprintName = "sprints-edit-sprint-name";
+    public const string EditSprintStart = "sprints-edit-sprint-start";
+    public const string EditSprintEnd = "sprints-edit-sprint-end";
+    public const string EditSprintGoal = "sprints-edit-sprint-goal";
+    public const string EditSprintSubmit = "sprints-edit-sprint-submit";
+    public const string EditSprintCancel = "sprints-edit-sprint-cancel";
+    public const string EditSprintError = "sprints-edit-sprint-error";
+    public const string EditSprintDatesHint = "sprints-edit-sprint-dates-hint";
+    public const string EditSprintOpen = "sprints-edit-sprint-open";
+    public const string RowEdit = "sprints-list-row-edit";
     public const string Backlog = "sprints-backlog";
     public const string BacklogLoadError = "sprints-backlog-load-error";
     public const string KpiCommitted = "sprints-backlog-kpi-committed";
