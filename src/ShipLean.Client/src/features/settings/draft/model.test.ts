@@ -13,7 +13,6 @@ const statesOf = (): StateDto[] =>
       category: 'proposed' as const,
       order: 1,
       itemCount: 0,
-      startsAgent: false,
     },
     {
       id: `${type}-done`,
@@ -22,7 +21,6 @@ const statesOf = (): StateDto[] =>
       category: 'completed' as const,
       order: 2,
       itemCount: 2,
-      startsAgent: false,
     },
   ]);
 const saved: ProjectSettingsDto = {
@@ -113,7 +111,6 @@ describe('settings draft model', () => {
             type: 'story' as const,
             name: 'Review',
             category: 'inProgress' as const,
-            startsAgent: false,
           },
         ],
         update: [],
