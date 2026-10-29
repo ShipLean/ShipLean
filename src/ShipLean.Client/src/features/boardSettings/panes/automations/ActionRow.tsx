@@ -26,6 +26,7 @@ export function ActionRow({
   const blank = action.prompt.trim() === '';
   const tooLong = action.prompt.length > MAX_PROMPT_LENGTH;
   const rendered = useRenderedMarkdown(action.prompt, !blank && !tooLong);
+  const ready = connections.status === 'ready';
   const known =
     action.connectionId === null || connections.options.some((o) => o.id === action.connectionId);
   return (
@@ -70,7 +71,7 @@ export function ActionRow({
           <select
             data-testid={ids.actionConnection}
             className="field"
-            disabled={readOnly}
+            disabled={readOnly || !ready}
             value={action.connectionId ?? ''}
             onChange={(event) =>
               onChange({
@@ -90,7 +91,13 @@ export function ActionRow({
               </option>
             ))}
             {known ? null : (
-              <option value={action.connectionId ?? ''}>Unavailable connection</option>
+              <option value={action.connectionId ?? ''}>
+                {connections.status === 'loading'
+                  ? 'Loading…'
+                  : connections.status === 'error'
+                    ? "Couldn't load connections"
+                    : 'Unavailable connection'}
+              </option>
             )}
           </select>
         </label>

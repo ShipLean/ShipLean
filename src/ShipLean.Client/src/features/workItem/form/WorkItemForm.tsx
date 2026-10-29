@@ -2,11 +2,13 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 // Capitalised bindings get their own import declarations: specs import this module's constants, and Playwright CT's
 // loader declares a capitalised binding twice when one declaration mixes it with others.
+import type { ProjectDto } from '../../../api/projects';
 import { ApiRequestError } from '../../../api/client';
 import { isApiError } from '../../../api/client';
 import { conflictOf, type ConflictDto, type WorkItemDto } from '../../../api/workItems';
 import { showToast } from '../../../components/toastStore';
 import { useRememberItem } from '../../quickSearch/start/recent/useRememberItem';
+import { AgentPanel } from '../../agentPanel/AgentPanel';
 import { FeatureForm } from '../../feature/FeatureForm';
 import type { FeatureRegionProps } from '../../feature/FeatureRegionProps';
 import { WorkItemConflictBanner } from '../conflict/WorkItemConflictBanner';
@@ -34,19 +36,20 @@ export const TITLE_REQUIRED_MESSAGE = 'A work item needs a title.';
 // Sections can hold Save for a confirmation through useBeforeSave.
 export function WorkItemForm({
   item,
-  projectKey,
+  project,
   links,
   tasks,
   discussion,
   side,
 }: {
   item: WorkItemDto;
-  projectKey: string;
+  project: ProjectDto;
   links: ReactNode;
   tasks: ReactNode;
   discussion: ReactNode;
   side: ReactNode;
 }) {
+  const projectKey = project.key;
   useRememberItem(projectKey, item);
   const queryClient = useQueryClient();
   // The revision the draft is based on. A newer one arriving (another tab saved) replaces it only while the form is clean.
@@ -259,6 +262,7 @@ export function WorkItemForm({
               header={header}
               banners={banners}
               description={description}
+              agent={<AgentPanel project={project} itemKey={item.key} />}
             />
           ) : (
             <>

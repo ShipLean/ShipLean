@@ -10,7 +10,7 @@ using ShipLean.TestSupport.TestIds;
 
 namespace ShipLean.AcceptanceTests.Journeys.Agents;
 
-// Joel moves a story into a state that starts an agent. The agent (a stub receiver: nothing listens, the host never sends)
+// Joel moves a story into the state a board transition sends to an agent. The agent (a stub receiver: nothing listens, the host never sends)
 // reports back through the Linear-compatible GraphQL endpoint with its callback token. The panel on the item shows what it
 // said, and Stop queues the stop signal for the receiver.
 [TestFixture]
@@ -70,7 +70,7 @@ public class AgentPanelJourneyTests : SeededAcceptanceTest
             WHERE id = '{projectId}';
             """);
 
-        // 1. A new story moved into the flagged state opens a session.
+        // 1. A new story moved into the transition's target state opens a session.
         var item = await ApiAsync("POST", "/api/work-items", new { projectId, type = "story", title = "Add the thing" });
         var itemId = item.GetProperty("id").GetGuid();
         await ApiAsync("PATCH", $"/api/work-items/{itemId}", new

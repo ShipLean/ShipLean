@@ -18,10 +18,10 @@ export function transitionTypesFor(level: BoardLevel): WorkItemTypeId[] {
 export const newTransitionId = () => `tr-${crypto.randomUUID().slice(0, 8)}`;
 export const newActionId = () => `act-${crypto.randomUUID().slice(0, 8)}`;
 
-/** The states of one type a transition can name: the live ones, in state order. */
+/** The states of one type a transition can name: every one in context.states (the server already left out archived ones), in state order. */
 export function liveStatesOf(states: BoardTypeStatesDto[], type: WorkItemTypeId): StateRef[] {
   const entry = states.find((s) => s.type === type);
-  return (entry?.states ?? []).filter((s) => s.category !== 'removed');
+  return entry?.states ?? [];
 }
 
 const sameRef = (a: StateRefJson | null, b: StateRefJson | null) => a?.stateId === b?.stateId;

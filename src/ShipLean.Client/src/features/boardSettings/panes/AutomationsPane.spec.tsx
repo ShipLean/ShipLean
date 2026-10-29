@@ -11,7 +11,7 @@ const story = {
   new: { id: 's-new', name: 'New', category: 'proposed' },
   idea: { id: 's-idea', name: 'Idea', category: 'proposed' },
   active: { id: 's-active', name: 'Active', category: 'inProgress' },
-  gone: { id: 's-gone', name: 'Gone', category: 'removed' },
+  dropped: { id: 's-dropped', name: 'Dropped', category: 'removed' },
 } as const;
 const bug = {
   new: { id: 'b-new', name: 'New', category: 'proposed' },
@@ -198,7 +198,8 @@ test('AutomationsPane_WhenStateWasRemoved_ShouldMarkTheRowInvalidWithTheReason',
     board('stories', [
       transition('t1', story.new, story.idea),
       transition('t2', null, { id: 's-deleted', name: 'Review' }),
-      transition('t3', story.gone, story.active),
+      transition('t3', { id: 's-gone', name: 'Gone' }, story.active),
+      transition('t4', story.dropped, story.active),
     ]),
   );
   await mountDialog(mount, 'stories');
@@ -212,6 +213,8 @@ test('AutomationsPane_WhenStateWasRemoved_ShouldMarkTheRowInvalidWithTheReason',
   await expect(rows.nth(2).getByTestId(ids.transitionInvalidReason)).toContainText(
     'Gone was removed',
   );
+  // a Removed-category state the server still lists is live, so the transition naming it is valid
+  await expect(rows.nth(3).getByTestId(ids.transitionInvalid)).toHaveCount(0);
 });
 
 test('AutomationsPane_WhenSaved_ShouldPutTheTransitionsAndKeepTheRest', async ({ mount, page }) => {
@@ -262,7 +265,7 @@ test('AutomationsPane_WhenReadOnly_ShouldDisableEveryControl', async ({ mount, p
   await expect(page.getByTestId(ids.transitionAddType)).toBeDisabled();
   await expect(page.getByTestId(ids.actionPrompt)).toHaveAttribute('readonly', '');
   await expect(page.getByTestId(ids.actionConnection)).toBeDisabled();
-  await expect(page.getByTestId(ids.actionAdd)).toBeDisabled();
+  await expect(page.getByTestId(ids.actionAdd)).toHaveCount(0);
   await expect(page.getByTestId(ids.actionRemove)).toBeDisabled();
 });
 
@@ -330,9 +333,60 @@ test('AutomationsPane_WhenActionRemoved_ShouldKeepTheLastOne', async ({ mount, p
   await expect(page.getByTestId(ids.actionRemove)).toBeDisabled();
   await expect(page.getByTestId(ids.actionLastHint)).toBeVisible();
 
+  // Send to agent is the only action kind and one runs per transition, so no second one is offered
+  await expect(page.getByTestId(ids.actionAdd)).toHaveCount(0);
+});
+
+test('AutomationsPane_WhenTransitionHasNoAction_ShouldOfferAddSendToAgent', async ({
+  mount,
+  page,
+}) => {
+  await stubBoard(
+    page,
+    board('stories', [{ ...transition('t1', story.new, story.idea), actions: [] }]),
+  );
+  await mountDialog(mount, 'stories');
+  await expect(page.getByTestId(ids.actionAdd)).toBeVisible();
   await page.getByTestId(ids.actionAdd).click();
-  await expect(page.getByTestId(ids.actionRow)).toHaveCount(2);
-  await expect(page.getByTestId(ids.actionRemove).first()).toBeEnabled();
+  await expect(page.getByTestId(ids.actionRow)).toHaveCount(1);
+  await expect(page.getByTestId(ids.actionAdd)).toHaveCount(0);
+});
+
+const withConnection = (): TransitionJson => {
+  const t = transition('t1', story.new, story.idea);
+  return { ...t, actions: [{ ...t.actions[0], connectionId: CONN_B }] };
+};
+
+test('AutomationsPane_WhenConnectionsAreLoading_ShouldDisableTheSelectAndShowLoading', async ({
+  mount,
+  page,
+}) => {
+  await stubBoard(page, board('stories', [withConnection()]));
+  await page.route(`**/api/projects/${PROJECT_ID}/settings`, () => new Promise(() => undefined));
+  await mountDialog(mount, 'stories');
+
+  const select = page.getByTestId(ids.actionConnection);
+  await expect(select).toBeDisabled();
+  await expect(select.locator('option:checked')).toHaveText('Loading…');
+});
+
+test('AutomationsPane_WhenConnectionsFailToLoad_ShouldKeepTheSavedConnectionAndSaveIt', async ({
+  mount,
+  page,
+}) => {
+  const puts = await stubBoard(page, board('stories', [withConnection()]));
+  await page.route(`**/api/projects/${PROJECT_ID}/settings`, (route) =>
+    route.fulfill({ status: 500, json: { error: 'boom' } }),
+  );
+  await mountDialog(mount, 'stories');
+
+  const select = page.getByTestId(ids.actionConnection);
+  await expect(select.locator('option:checked')).toHaveText("Couldn't load connections");
+  await expect(select).toBeDisabled();
+  await page.getByTestId(ids.actionPrompt).fill('edited');
+  await page.getByTestId(dialogIds.save).click();
+  await expect.poll(() => puts.length).toBe(1);
+  expect(puts[0].settings.transitions[0].actions[0].connectionId).toBe(CONN_B);
 });
 
 test('AutomationsPane_WhenPromptOver20000Characters_ShouldShowTheLimitMessage', async ({
