@@ -9,6 +9,7 @@ namespace ShipLean.Application.Features.Holidays;
 public sealed class HolidayRefreshService(HolidayRefresher refresher, HolidayRefreshQueue queue, TimeProvider clock, ILogger<HolidayRefreshService> logger) : IHostedService
 {
     private static readonly TimeSpan Interval = TimeSpan.FromDays(1);
+    private static readonly TimeSpan RetryInterval = TimeSpan.FromMinutes(30);
 
     private CancellationTokenSource? _stopping;
     private Task _loop = Task.CompletedTask;
@@ -40,6 +41,8 @@ public sealed class HolidayRefreshService(HolidayRefresher refresher, HolidayRef
         }
     }
 
+    private static DateTimeOffset Min(DateTimeOffset a, DateTimeOffset b) => a < b ? a : b;
+
     private async Task RunAsync(CancellationToken stopping)
     {
         var due = DateTimeOffset.MinValue;
@@ -49,16 +52,20 @@ public sealed class HolidayRefreshService(HolidayRefresher refresher, HolidayRef
             {
                 if (clock.GetUtcNow() >= due)
                 {
-                    await refresher.RefreshAllAsync(stopping);
-                    due = clock.GetUtcNow() + Interval;
+                    var succeeded = await refresher.RefreshAllAsync(stopping);
+                    due = clock.GetUtcNow() + (succeeded ? Interval : RetryInterval);
                     continue;
                 }
 
                 using var wait = CancellationTokenSource.CreateLinkedTokenSource(stopping);
-                wait.CancelAfter(due - clock.GetUtcNow());
+                wait.CancelAfter(TimeSpan.Zero > due - clock.GetUtcNow() ? TimeSpan.Zero : due - clock.GetUtcNow());
                 try
                 {
-                    await refresher.RefreshCountryAsync(await queue.ReadAsync(wait.Token), stopping);
+                    // A failed single-country refresh (a newly picked country) retries with the next full run, soon rather than a day away.
+                    if (await refresher.TryRefreshCountryAsync(await queue.ReadAsync(wait.Token), stopping) is null)
+                    {
+                        due = Min(due, clock.GetUtcNow() + RetryInterval);
+                    }
                 }
                 catch (OperationCanceledException) when (!stopping.IsCancellationRequested)
                 {
