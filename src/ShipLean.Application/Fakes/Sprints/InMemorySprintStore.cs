@@ -34,6 +34,11 @@ public sealed class InMemorySprintStore(InMemoryPlanning world) : ISprintStore
             var name = update.Name ?? sprint.Name;
             var start = update.StartDate ?? sprint.Start;
             var end = update.EndDate ?? sprint.End;
+            if ((start != sprint.Start || end != sprint.End) && sprint.End < world.Today)
+            {
+                throw ApiException.Validation("An ended sprint's dates can't change.");
+            }
+
             Check(world, sprint.ProjectId, id, name, start, end);
             sprint.Name = name.Trim();
             sprint.Start = start;

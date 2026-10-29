@@ -71,6 +71,20 @@ public class SprintApiTests : ApiFixture
     }
 
     [Test]
+    public async Task Sprint_WhenEndedAndItsDatesChange_ShouldBeRefusedButRenameWorks()
+    {
+        var ended = await CreateAsync("Long ended sprint", -3000);
+
+        using var moved = await Api.PatchJsonAsync($"api/sprints/{ended.Id}", new SprintUpdate(null, null, ended.EndDate.AddDays(1), null));
+        using var renamed = await Api.PatchJsonAsync($"api/sprints/{ended.Id}", new SprintUpdate("Long ended sprint, renamed", ended.StartDate, ended.EndDate, null));
+
+        var error = await ApiClient.ReadApiErrorAsync(moved, HttpStatusCode.BadRequest);
+        error.Code.ShouldBe(ApiErrorCodes.Validation);
+        error.Error.ShouldBe("An ended sprint's dates can't change.");
+        renamed.StatusCode.ShouldBe(HttpStatusCode.OK, await renamed.Content.ReadAsStringAsync());
+    }
+
+    [Test]
     public async Task Capacity_WhenPut_ShouldRoundTripAndPublishSprintChanged()
     {
         var created = await CreateAsync("Capacity sprint", 900);

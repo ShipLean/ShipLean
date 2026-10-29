@@ -57,6 +57,11 @@ public sealed partial class SprintStore(NpgsqlDataSource dataSource, TimeProvide
         var name = (update.Name ?? sprint.Name).Trim();
         var start = update.StartDate ?? sprint.Start;
         var end = update.EndDate ?? sprint.End;
+        if ((start != sprint.Start || end != sprint.End) && sprint.End < SprintLabels.Today(clock))
+        {
+            throw ApiException.Validation("An ended sprint's dates can't change.");
+        }
+
         await CheckAsync(connection, transaction, sprint.ProjectId, id, name, start, end, cancellationToken);
         await connection.ExecuteAsync(new CommandDefinition(
             "UPDATE sprint SET name = @name, start_date = @start, end_date = @end, goal = @goal, updated_at = @now WHERE id = @id",
