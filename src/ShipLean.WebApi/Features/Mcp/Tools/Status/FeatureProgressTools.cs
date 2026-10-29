@@ -23,7 +23,7 @@ internal sealed class FeatureProgressTools(
     private const int MaxOpenChildren = 100;
 
     [McpServerTool(Name = "feature_progress"), McpScope(McpScopes.Read)]
-    [Description("How a feature or epic is going: how many stories, bugs, tasks and nested features under it are open and closed, the points done against the total, and the open ones with their state and the sprint they are in. The same numbers the Features board shows. Use it for 'how is the Payments epic going?'.")]
+    [Description("How a feature or epic is going: how many stories, bugs, tasks and nested features under it are open and closed, the points done against the total, and the open ones (tasks included, listed with their story as parent) with their state and the sprint they are in, plus the Feature board link for a feature. The same numbers the Features board shows. Use it for 'how is the Payments epic going?'.")]
     public async Task<CallToolResult> FeatureProgress(
         [Description("The key of the epic or feature, such as SHIP-12.")] string item,
         CancellationToken cancellationToken = default)
@@ -39,16 +39,19 @@ internal sealed class FeatureProgressTools(
             .ToList();
         var pointed = rollups.Where(r => r.Type is WorkItemTypeId.Story or WorkItemTypeId.Bug && r.TotalPoints is not null).ToList();
         var open = descendants.Where(d => d.State.Category != StateCategory.Completed).ToList();
+        var keys = descendants.ToDictionary(d => d.Id, d => d.Key);
+        keys[resolved.Id] = resolved.Key;
         var openChildren = open
             .Take(MaxOpenChildren)
-            .Select(d => new FeatureProgressResult.OpenChild(d.Key, d.Title, Word(d.Type.Id), d.State.Name, d.Sprint?.Name, d.Assignee?.Name, d.Points))
+            .Select(d => new FeatureProgressResult.OpenChild(d.Key, d.Title, Word(d.Type.Id), d.ParentId is { } p && keys.TryGetValue(p, out var parentKey) ? parentKey : null, d.State.Name, d.Sprint?.Name, d.Assignee?.Name, d.Points))
             .ToList();
 
         var result = new FeatureProgressResult(
             head.ProjectKey, McpOpenUrls.WorkItem(issuer, head.ProjectKey, resolved.Key),
             resolved.Key, head.Title, head.Type, head.State, byType,
             pointed.Count > 0 ? pointed.Sum(r => Done(r) ?? 0) : null, pointed.Count > 0 ? pointed.Sum(r => r.TotalPoints ?? 0) : null,
-            open.Count, openChildren);
+            open.Count, openChildren,
+            string.Equals(head.Type, nameof(WorkItemTypeId.Feature), StringComparison.OrdinalIgnoreCase) ? McpOpenUrls.FeatureBoard(issuer, head.ProjectKey, resolved.Key) : null);
         var closed = rollups.Sum(r => r.Closed);
         return StatusReply.Of(result, $"{resolved.Key} {head.Title}: {closed} of {closed + rollups.Sum(r => r.Open)} items under it are done, {open.Count} open.");
     }
