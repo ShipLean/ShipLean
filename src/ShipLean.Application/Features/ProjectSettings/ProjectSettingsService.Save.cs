@@ -54,6 +54,7 @@ public sealed partial class ProjectSettingsService
             Update = [.. put.States.Update ?? [], .. added.Select(a => new StateUpdate(a.Id, a.Name, a.Category, a.StartsAgent))],
         };
         IReadOnlyList<Guid> removedUsers = [];
+        IReadOnlyList<(Guid BoardId, IReadOnlyList<string> Sections)> touchedBoards = [];
         var options = new WriteOptions(
             async (transaction, token) =>
             {
@@ -61,7 +62,7 @@ public sealed partial class ProjectSettingsService
                 removedUsers = await WriteMembersAsync(transaction, projectId, members, token);
                 await RefuseLateItemsAsync(transaction, stateChanges, moves, token);
                 await states.ApplyAsync(projectId, stateChanges, transaction, token);
-                await BoardMappingRepair.RunAsync(transaction, projectId, moves.Targets, token);
+                touchedBoards = await BoardMappingRepair.RunAsync(transaction, projectId, moves.Targets, token);
             },
             RevisionOrigin.User,
             added.Count == 0
@@ -82,6 +83,11 @@ public sealed partial class ProjectSettingsService
         if (HasStateChanges(put.States))
         {
             await events.PublishAsync(new StatesChanged(projectId));
+        }
+
+        foreach (var (boardId, sections) in touchedBoards)
+        {
+            await events.PublishAsync(new BoardSettingsChanged(projectId, boardId, sections));
         }
 
         return new SettingsSaveResult(await GetAsync(projectId, cancellationToken), removedUsers);
