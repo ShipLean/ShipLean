@@ -26,16 +26,20 @@ import {
   draftTotals,
   layOver,
   parseVelocity,
+  roundPoints,
   rowOf,
+  rowsDiffer,
   shapeOf,
   tableMembers,
   toPut,
   touchAll,
   touchRow,
+  velocityChangedUnderneath,
   velocityTextOf,
   type CapacityDraft,
   type DraftRow,
   type TouchedRows,
+  type TouchedVelocity,
 } from './capacityDraft';
 import { previousSprint } from './previousSprint';
 
@@ -67,7 +71,7 @@ export function CapacityPanel({ project, sprint, sprints }: CapacityPanelProps) 
   });
   const save = useSaveSprintCapacity(project.id, sprint.id);
   const [touched, setTouched] = useState<TouchedRows>({});
-  const [velocityTyped, setVelocityTyped] = useState<string | null>(null);
+  const [velocityTouched, setVelocityTouched] = useState<TouchedVelocity | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
 
   const failed = members.isError || capacity.isError || metrics.isError || velocity.isError;
@@ -87,22 +91,37 @@ export function CapacityPanel({ project, sprint, sprints }: CapacityPanelProps) 
   const ended = stored.ended;
   const server = draftOf(stored);
   const draft = layOver(server, touched);
-  const velocityText = velocityTyped ?? velocityTextOf(stored);
+  const serverVelocityText = velocityTextOf(stored);
+  const velocityText = velocityTouched?.text ?? serverVelocityText;
   const typedVelocity = parseVelocity(velocityText);
   const worked = draftTotals(members.data, draft, typedVelocity, shape);
   const inTable = tableMembers(members.data, draft);
+  // An old sprint with points but no velocity: until a velocity is typed there is nothing to recompute from, so the
+  // stored points and total stand (planning still uses them).
+  const pointsOnly =
+    !ended && stored.velocity === null && stored.members.length > 0 && typedVelocity === undefined;
+  const storedPoints = (userId: string) => stored.members.find((m) => m.user.id === userId)?.points;
   const lines: CapacityLine[] = ended
     ? stored.members.map((m) => ({ user: m.user, row: rowOf(server, m.user.id), points: m.points }))
     : inTable.map((m) => ({
         user: m.user,
         row: rowOf(draft, m.user.id),
-        points: worked.points[m.user.id],
+        points: pointsOnly ? storedPoints(m.user.id) : worked.points[m.user.id],
       }));
   const entered = ended ? stored.members.length > 0 : worked.entered;
-  const total = ended ? stored.teamTotal : worked.total;
+  const pointsOnlyTotal =
+    Object.keys(touched).length === 0
+      ? stored.teamTotal
+      : roundPoints(lines.reduce((sum, line) => sum + (line.points ?? 0), 0));
+  const total = ended ? stored.teamTotal : pointsOnly ? pointsOnlyTotal : worked.total;
   const planned = velocity.data.override ?? velocity.data.average;
   const overridden = velocity.data.override !== null;
   const clashes = changedUnderneath(members.data, server, touched);
+  const velocityClash = velocityChangedUnderneath(velocityTouched, serverVelocityText);
+  const typeVelocity = (text: string) => {
+    setVelocityTouched({ text, base: velocityTouched?.base ?? serverVelocityText });
+    setProblem(null);
+  };
   const editRow = (userId: string, row: DraftRow) => {
     setTouched(touchRow(touched, server, userId, row));
     setProblem(null);
@@ -126,7 +145,7 @@ export function CapacityPanel({ project, sprint, sprints }: CapacityPanelProps) 
     save.mutate(result.put, {
       onSuccess: () => {
         setTouched({});
-        setVelocityTyped(null);
+        setVelocityTouched(null);
       },
       onError: (error) =>
         setProblem(error instanceof ApiRequestError ? error.message : 'The save failed.'),
@@ -146,14 +165,14 @@ export function CapacityPanel({ project, sprint, sprints }: CapacityPanelProps) 
           addable={members.data.filter((m) => !inTable.includes(m)).map((m) => m.user)}
           previousName={previous?.name}
           copyBlocked={copyBlocked}
-          dirty={Object.keys(touched).length > 0 || velocityTyped !== null}
+          dirty={rowsDiffer(server, draft) || velocityText !== serverVelocityText}
           saving={save.isPending}
           onAdd={(userId) => editRow(userId, { present: true, days: '', note: '' })}
           onCopy={() => {
             if (!previousCapacity.data || !previous) return;
             editAll(draftOf(previousCapacity.data, shape.workingDays));
             if (previousCapacity.data.velocity !== null) {
-              setVelocityTyped(`${previousCapacity.data.velocity}`);
+              typeVelocity(`${previousCapacity.data.velocity}`);
             }
             showToast(`Copied capacity from ${previous.name}`, { tone: 'ok' });
           }}
@@ -164,9 +183,11 @@ export function CapacityPanel({ project, sprint, sprints }: CapacityPanelProps) 
           onSave={onSave}
         />
       )}
-      {clashes.length === 0 ? null : (
+      {clashes.length === 0 && !velocityClash ? null : (
         <p data-testid={ids.capacityConflict} role="status" className="m-0 text-caution">
-          {`${clashes.map((m) => m.user.name).join(', ')} changed capacity while you were editing. Saving replaces their numbers with yours.`}
+          {clashes.length === 0
+            ? 'A teammate changed the velocity while you were editing. Saving replaces it with yours.'
+            : `${clashes.map((m) => m.user.name).join(', ')} changed capacity${velocityClash ? ' and the velocity' : ''} while you were editing. Saving replaces their numbers with yours.`}
         </p>
       )}
       {problem === null ? null : (
@@ -182,10 +203,8 @@ export function CapacityPanel({ project, sprint, sprints }: CapacityPanelProps) 
             velocityText={velocityText}
             velocityInvalid={velocityText.trim() !== '' && typedVelocity === undefined}
             readOnly={ended}
-            onVelocity={(text) => {
-              setVelocityTyped(text);
-              setProblem(null);
-            }}
+            needsVelocity={pointsOnly}
+            onVelocity={typeVelocity}
           />
           <CapacityTable
             lines={lines}
@@ -201,6 +220,7 @@ export function CapacityPanel({ project, sprint, sprints }: CapacityPanelProps) 
           sprintName={sprint.name}
           total={total}
           entered={entered}
+          pointsOnly={pointsOnly}
           committed={metrics.data.committed}
           velocity={planned}
           typedVelocity={ended ? (stored.velocity ?? undefined) : typedVelocity}

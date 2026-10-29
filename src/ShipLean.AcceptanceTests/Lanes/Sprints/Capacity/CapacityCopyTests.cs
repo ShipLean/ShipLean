@@ -29,7 +29,11 @@ public class CapacityCopyTests : SeededAcceptanceTest
         await Expect(capacity.Rows).ToHaveCountAsync(previous.Length);
         foreach (var entry in previous)
         {
-            await Expect(capacity.Days(entry.Member)).ToHaveValueAsync($"{entry.Days ?? defaultDays:0.#}");
+            await Expect(capacity.Days(entry.Member)).ToHaveValueAsync(entry.Days is { } typed ? $"{typed:0.#}" : "");
+            if (entry.Days is null)
+            {
+                await Expect(capacity.Days(entry.Member)).ToHaveAttributeAsync("placeholder", $"{defaultDays}");
+            }
         }
 
         // The seeded sprints carry no velocity, so the one the team types is saved with the days.

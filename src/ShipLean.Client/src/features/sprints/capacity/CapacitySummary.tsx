@@ -8,6 +8,8 @@ interface CapacitySummaryProps {
   sprintName: string;
   total: number;
   entered: boolean;
+  /** Old points with no velocity, and none typed yet. */
+  pointsOnly: boolean;
   committed: number;
   /** The project's override, else the average of the last sprints: what planning falls back to, and the history. */
   velocity: number;
@@ -23,6 +25,7 @@ export function CapacitySummary({
   sprintName,
   total,
   entered,
+  pointsOnly,
   committed,
   velocity,
   typedVelocity,
@@ -67,6 +70,8 @@ export function CapacitySummary({
         typed={typedVelocity}
         velocity={velocity}
         overridden={overridden}
+        pointsOnly={pointsOnly}
+        entered={entered}
       />
     </aside>
   );

@@ -235,6 +235,94 @@ test('Capacity_WhenAnOldPointsOnlySprintHasNoVelocity_ShouldLeaveTheVelocityBoxE
   expect(stub.puts).toEqual([]);
 });
 
+test('Capacity_WhenAnOldPointsOnlySprintHasNoVelocityTyped_ShouldShowTheStoredPointsAndSayAVelocityIsNeeded', async ({
+  mount,
+  page,
+}) => {
+  await stubApi(page, {
+    current: capacityOf('s24', [entry(0, 6), entry(1, 4)], { velocity: null }),
+  });
+  await mount(<CapacityPanel project={project} sprint={sprint} sprints={sprints} />);
+  await expect(rowPoints(page, 0)).toHaveText('6');
+  await expect(rowPoints(page, 1)).toHaveText('4');
+  await expect(page.getByTestId(ids.capacityTotal)).toHaveText('10');
+  await expect(page.getByTestId(ids.capacityKpiCapacity)).toHaveText('10');
+  await expect(page.locator('#capacity-velocity-hint')).toHaveText(
+    'Enter a velocity to recompute these points',
+  );
+  await expect(page.getByTestId(ids.capacityCallout)).toContainText('Points only');
+
+  await velocityBox(page).fill('20');
+  await expect(rowPoints(page, 0)).toHaveText('10');
+  await expect(page.getByTestId(ids.capacityTotal)).toHaveText('20');
+  await expect(page.locator('#capacity-velocity-hint')).toHaveText(
+    'Assumes everyone is in for every working day',
+  );
+});
+
+test('Capacity_WhenDaysAreClearedAndRetyped_ShouldKeepOnlyWhatIsTyped', async ({ mount, page }) => {
+  await stubApi(page, { current: capacityOf('s24', [entry(0, 9)], { defaultDays: 9 }) });
+  await mount(<CapacityPanel project={project} sprint={sprint} sprints={sprints} />);
+  await expect(days(page, 0)).toHaveValue('');
+  await expect(days(page, 0)).toHaveAttribute('placeholder', '9');
+  await days(page, 0).fill('4');
+  await days(page, 0).press('Backspace');
+  await expect(days(page, 0)).toHaveValue('');
+  await expect(page.getByTestId(ids.capacityDaysDefault)).toHaveCount(1);
+  await days(page, 0).pressSequentially('5');
+  await expect(days(page, 0)).toHaveValue('5');
+});
+
+test('Capacity_WhenATeammateChangesTheVelocityYouTypedOver_ShouldSayItAndKeepYours', async ({
+  mount,
+  page,
+}) => {
+  const stub = await stubApi(page, { current: capacityOf('s24', [entry(0, 5)]) });
+  await mount(<CapacityPanel project={project} sprint={sprint} sprints={sprints} />);
+  await velocityBox(page).fill('31');
+  await expect(page.getByTestId(ids.capacityConflict)).toHaveCount(0);
+
+  stub.setCurrent(capacityOf('s24', [entry(0, 5)], { velocity: 28 }));
+  await refetchOnFocus(page);
+
+  await expect(page.getByTestId(ids.capacityConflict)).toContainText('changed the velocity');
+  await expect(velocityBox(page)).toHaveValue('31');
+});
+
+test('Capacity_WhenTheFormMatchesTheServer_ShouldKeepSaveDisabled', async ({ mount, page }) => {
+  await stubApi(page, { current: capacityOf('s24', [entry(0, 5)]) });
+  await mount(<CapacityPanel project={project} sprint={sprint} sprints={sprints} />);
+  await velocityBox(page).fill('31');
+  await expect(save(page)).toBeEnabled();
+  await velocityBox(page).fill('30');
+  await expect(save(page)).toBeDisabled();
+  await days(page, 0).fill('4');
+  await expect(save(page)).toBeEnabled();
+  await days(page, 0).fill('');
+  await expect(save(page)).toBeDisabled();
+});
+
+test('Capacity_WhenClearedOnAnEmptyTable_ShouldKeepSaveDisabled', async ({ mount, page }) => {
+  await stubApi(page);
+  await mount(<CapacityPanel project={project} sprint={sprint} sprints={sprints} />);
+  await page.getByTestId(ids.capacityClear).click();
+  await expect(save(page)).toBeDisabled();
+});
+
+test('Capacity_WhenVelocityIsInvalid_ShouldGiveTheReasonAndDescribeTheBoxWithIt', async ({
+  mount,
+  page,
+}) => {
+  await stubApi(page);
+  await mount(<CapacityPanel project={project} sprint={sprint} sprints={sprints} />);
+  await expect(page.getByTestId(ids.capacityVelocityError)).toHaveCount(0);
+  await velocityBox(page).fill('1.234');
+  await expect(page.getByTestId(ids.capacityVelocityError)).toHaveText(
+    'Zero or more, up to 9999.99, two decimals at most.',
+  );
+  await expect(velocityBox(page)).toHaveAttribute('aria-describedby', /capacity-velocity-error/);
+});
+
 test('Capacity_WhenTypedVelocityFarFromTheHistory_ShouldWarnEitherWayButNotAtTheEdge', async ({
   mount,
   page,
@@ -296,7 +384,8 @@ test('Capacity_WhenDaysAreTheDefault_ShouldShowItWithAMarkerAndResetAfterAnEdit'
     current: capacityOf('s24', [entry(0, 9), entry(1, 9, 6)], { defaultDays: 9, velocity: 18 }),
   });
   await mount(<CapacityPanel project={project} sprint={sprint} sprints={sprints} />);
-  await expect(days(page, 0)).toHaveValue('9');
+  await expect(days(page, 0)).toHaveValue('');
+  await expect(days(page, 0)).toHaveAttribute('placeholder', '9');
   await expect(page.getByTestId(ids.capacityDaysDefault)).toHaveCount(1);
   await expect(days(page, 1)).toHaveValue('6');
   await expect(page.getByTestId(ids.capacityDaysReset)).toHaveCount(1);
@@ -307,7 +396,8 @@ test('Capacity_WhenDaysAreTheDefault_ShouldShowItWithAMarkerAndResetAfterAnEdit'
   await expect(page.getByTestId(ids.capacityDaysDefault)).toHaveCount(0);
   await expect(page.getByTestId(ids.capacityDaysReset)).toHaveCount(2);
   await page.getByTestId(ids.capacityDaysReset).first().click();
-  await expect(days(page, 0)).toHaveValue('9');
+  await expect(days(page, 0)).toHaveValue('');
+  await expect(days(page, 0)).toHaveAttribute('placeholder', '9');
   await expect(page.getByTestId(ids.capacityDaysDefault)).toHaveCount(1);
 });
 
@@ -322,7 +412,8 @@ test('Capacity_WhenSprintSwitchedAfterAnEdit_ShouldDropTheEditAndDisableSave', a
 
   await slot.update(<CapacitySlot project={project} sprint={sprints[2]!} sprints={sprints} />);
 
-  await expect(days(page, 0)).toHaveValue('10');
+  await expect(days(page, 0)).toHaveValue('');
+  await expect(days(page, 0)).toHaveAttribute('placeholder', '10');
   await expect(save(page)).toBeDisabled();
   expect(stub.puts).toEqual([]);
 });
@@ -478,7 +569,8 @@ test('Capacity_WhenCopied_ShouldFillDaysNotesAndVelocityFromThePreviousSprintThe
   await expect(velocityBox(page)).toHaveValue('36');
   await expect(page.getByTestId(ids.capacityRow)).toHaveCount(3);
   await expect(days(page, 0)).toHaveValue('6');
-  await expect(days(page, 1)).toHaveValue('10');
+  await expect(days(page, 1)).toHaveValue('');
+  await expect(days(page, 1)).toHaveAttribute('placeholder', '10');
   // A typed 12 days in a ten-day sprint comes down to the working days.
   await expect(days(page, 2)).toHaveValue('10');
   await expect(page.getByTestId(ids.capacityNote).first()).toHaveValue('Off Fri');
@@ -597,7 +689,8 @@ test('Capacity_WhenTheCountryHasHolidays_ShouldSayHowManyAndNameThem', async ({ 
     '10 working days · 1 public holiday (NZ)',
   );
   await expect(page.getByTestId(ids.capacityHolidays)).toHaveText('Labour Day (Mon 26 Oct)');
-  await expect(days(page, 0)).toHaveValue('9');
+  await expect(days(page, 0)).toHaveValue('');
+  await expect(days(page, 0)).toHaveAttribute('placeholder', '9');
   await expect(rowPoints(page, 0)).toHaveText('27');
   await expect(page.getByTestId(ids.capacityNoCountry)).toHaveCount(0);
 });
@@ -642,7 +735,8 @@ test('Capacity_WhenTheSprintHasEnded_ShouldShowStoredDaysAndPointsWithNoInputs',
   await expect(page.getByTestId(ids.capacitySave)).toHaveCount(0);
   await expect(velocityBox(page)).toHaveText('30');
   await expect(days(page, 0)).toHaveText('8');
-  await expect(days(page, 1)).toHaveText('10');
+  await expect(days(page, 1)).toHaveText('default');
+  await expect(velocityBox(page)).toHaveAttribute('aria-labelledby', 'capacity-velocity-label');
   await expect(rowPoints(page, 0)).toHaveText('12.5');
   await expect(page.getByTestId(ids.capacityNote).first()).toHaveText('Off Fri');
   await expect(page.getByTestId(ids.capacityTotal)).toHaveText('30');
@@ -682,4 +776,18 @@ test('Capacity_WhenNarrow_ShouldStackTheSummaryBelowAndNeverScrollThePage', asyn
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
   expect(overflow).toBeLessThanOrEqual(0);
+});
+
+test('Capacity_WhenThereIsNoVelocityHistoryButCapacityIsEntered_ShouldNotSayNoCapacityEntered', async ({
+  mount,
+  page,
+}) => {
+  await stubApi(page, {
+    current: capacityOf('s24', [entry(0, 10)]),
+    velocity: { ...velocity, average: 0 },
+  });
+  await mount(<CapacityPanel project={project} sprint={sprint} sprints={sprints} />);
+  await expect(page.getByTestId(ids.capacityRow)).toHaveCount(1);
+  await expect(page.getByTestId(ids.capacityCallout)).not.toContainText('No capacity entered');
+  await expect(page.getByTestId(ids.capacityCallout)).toContainText('No velocity history');
 });

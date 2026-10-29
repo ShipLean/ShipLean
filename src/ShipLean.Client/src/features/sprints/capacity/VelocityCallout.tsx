@@ -7,14 +7,26 @@ export function VelocityCallout({
   typed,
   velocity,
   overridden,
+  pointsOnly,
+  entered,
 }: {
   comparison: VelocityComparison;
   typed: number | undefined;
   /** The history: the project's override, else the recent sprints' average. */
   velocity: number;
   overridden: boolean;
+  /** Old points with no velocity: there is nothing to compare until one is typed. */
+  pointsOnly: boolean;
+  /** The table has rows: "No capacity entered" must not show then. */
+  entered: boolean;
 }) {
-  const [tone, title, text] = describe(comparison, typed, velocity, overridden);
+  const [tone, title, text] = pointsOnly
+    ? ([
+        'info',
+        'Points only',
+        'This sprint has points but no velocity. Enter a velocity to recompute them.',
+      ] as const)
+    : describe(comparison, typed, velocity, overridden, entered);
   return (
     <div
       data-testid={ids.capacityCallout}
@@ -35,9 +47,19 @@ function describe(
   typed: number | undefined,
   velocity: number,
   overridden: boolean,
+  entered: boolean,
 ): ['info' | 'warn', string, string] {
   switch (comparison.kind) {
     case 'none':
+      if (entered) {
+        return typed === undefined
+          ? ['info', 'No velocity typed', 'Enter a velocity to compare it with recent sprints.']
+          : [
+              'info',
+              'No velocity history',
+              'There are no earlier sprints to compare this velocity with.',
+            ];
+      }
       return [
         'info',
         'No capacity entered',
