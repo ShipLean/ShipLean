@@ -7,6 +7,8 @@ using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Application.Features.WorkItems;
 using ShipLean.Contracts;
+using ShipLean.Contracts.Boards;
+using ShipLean.Contracts.Persisted;
 using ShipLean.Contracts.Projects;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.WorkItems;
@@ -145,6 +147,36 @@ public class ProjectSettingsAtomicSaveTests : ApiFixture
             "SELECT w.state_id, s.archived_at IS NOT NULL FROM work_item w JOIN state s ON s.id = w.state_id WHERE w.id = @bystander", new { bystander });
         row.Archived.ShouldBeFalse();
         row.StateId.ShouldBe(newState);
+    }
+
+    // a board save lands between the plan and the states transaction, naming a state by its old name: the states save normalises it.
+    [Test]
+    public async Task Settings_WhenABoardSaveRacesAStatesSave_ShouldLeaveTransitionsWithCurrentNames()
+    {
+        var project = await ArrangeAsync();
+        var active = project.State(WorkItemTypeId.Story, "Active");
+        var request = await RequestAsync(project, new StateChanges([], [new StateUpdate(active, "Doing", StateCategory.InProgress)], [], []));
+        _beforePatchMany = async () =>
+        {
+            Guid boardId;
+            await using (var other = await OpenDatabaseAsync())
+            {
+                boardId = await other.ExecuteScalarAsync<Guid>("SELECT id FROM board WHERE project_id = @id AND level = 'stories'", new { id = project.Id });
+            }
+
+            using var got = await Api.GetAsync($"api/boards/{boardId}/settings");
+            var board = JsonSerializer.Deserialize<BoardSettingsDto>(await got.Content.ReadAsStringAsync(), PersistedJson.Options)!;
+            var transition = new TransitionJson("t1", WorkItemTypeId.Story, null, new StateRefJson(active, "Active"), [new ActionJson("a1", "agent", "Go", null)]);
+            using var saved = await Api.PutJsonAsync($"api/boards/{board.Id}/settings", JsonSerializer.SerializeToNode(new BoardSettingsPut(board.Settings, board.Settings with { Transitions = [transition] }), PersistedJson.Options));
+            saved.StatusCode.ShouldBe(HttpStatusCode.OK, await saved.Content.ReadAsStringAsync());
+        };
+
+        using var response = await PutAsync(project, request);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+        await using var check = await OpenDatabaseAsync();
+        var settings = JsonSerializer.Deserialize<BoardSettingsJson>(await check.ExecuteScalarAsync<string>("SELECT settings::text FROM board WHERE project_id = @id", new { id = project.Id }) ?? "", PersistedJson.Options)!;
+        settings.Transitions.Single().To.ShouldBe(new StateRefJson(active, "Doing"));
     }
 
     // delete Active and re-add "Active", items going to the new one (one ApplyAsync accepts this).
