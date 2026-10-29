@@ -22,6 +22,7 @@ public sealed class InMemoryPlanning(TimeProvider? clock = null)
         public int VelocityWindow { get; set; } = 3;
         public SprintNamingConvention SprintNaming { get; set; } = SprintNamingConvention.Number;
         public decimal? VelocityOverride { get; set; }
+        public string? HolidayCountry { get; set; }
         public int NextItemNumber { get; set; } = 1;
         internal Dictionary<Guid, ProjectRole> Members { get; } = [];
     }

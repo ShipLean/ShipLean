@@ -1,5 +1,5 @@
 {
-  "general": { "name": "Storefront", "description": "The customer-facing storefront.", "workingDays": [1, 2, 3, 4, 5], "agentConnectionId": "0199f000-0000-7000-8000-00000000a001", "repoUrl": "https://github.com/ShipLean/ShipLean.git", "repoBaseBranch": "main" },
+  "general": { "name": "Storefront", "description": "The customer-facing storefront.", "workingDays": [1, 2, 3, 4, 5], "agentConnectionId": "0199f000-0000-7000-8000-00000000a001", "repoUrl": "https://github.com/ShipLean/ShipLean.git", "repoBaseBranch": "main", "holidayCountry": "NZ" },
   "members": [
     { "email": "joel@shiplean.local", "role": "admin" },
     { "email": "priya@shiplean.local", "role": "member" }
