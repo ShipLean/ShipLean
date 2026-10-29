@@ -30,7 +30,7 @@ public sealed class AgentTrigger(NpgsqlDataSource dataSource, AgentSessionStarte
             return;
         }
 
-        var outcome = await starter.StartAsync(workItemId, creator, null, cancellationToken);
+        var outcome = await starter.StartAsync(workItemId, creator, null, null, null, cancellationToken);
         if (outcome.Block is { } block)
         {
             logger.LogDebug("No agent session for work item {WorkItemId}: {Block}", workItemId, block);

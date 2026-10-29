@@ -47,7 +47,14 @@ internal static class AgentPromptContext
             xml.Append("</primary-directive-thread>\n");
         }
 
-        xml.Append("<guidance/>\n");
+        if (string.IsNullOrWhiteSpace(input.Guidance))
+        {
+            xml.Append("<guidance/>\n");
+        }
+        else
+        {
+            xml.Append("<guidance>").Append(AgentXml.Escape(input.Guidance)).Append("</guidance>\n");
+        }
         xml.Append("<repository url=\"").Append(AgentXml.Escape(input.Repository.Url))
             .Append("\" base-ref=\"").Append(AgentXml.Escape(input.Repository.BaseRef)).Append("\"/>");
         return xml.ToString();

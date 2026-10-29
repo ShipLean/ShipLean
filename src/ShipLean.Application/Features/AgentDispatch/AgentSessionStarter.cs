@@ -15,14 +15,16 @@ public sealed class AgentSessionStarter(
 {
     private readonly AgentContextLoader _loader = new(dataSource);
 
-    public async Task<AgentStartPlan> PlanAsync(Guid workItemId, CancellationToken cancellationToken)
+    public async Task<AgentStartPlan> PlanAsync(Guid workItemId, Guid? connectionId, string? prompt, CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var projectId = await connection.QuerySingleOrDefaultAsync<Guid?>(new CommandDefinition(
             "SELECT project_id FROM work_item WHERE id = @workItemId", new { workItemId }, cancellationToken: cancellationToken))
             ?? throw ApiException.NotFound("That work item was not found.");
         var settings = await projectSettings.GetAsync(projectId, cancellationToken);
-        var agent = settings.ConnectionId is { } id ? await connections.GetAsync(id, cancellationToken) : null;
+        // connectionId overrides the project's connection for every check below; a blank prompt is no prompt.
+        prompt = string.IsNullOrWhiteSpace(prompt) ? null : prompt;
+        var agent = (connectionId ?? settings.ConnectionId) is { } id ? await connections.GetAsync(id, cancellationToken) : null;
         if (agent is null || agent.ArchivedAt is not null)
         {
             return new AgentStartPlan(AgentStartBlock.NoConnection, Guid.Empty, string.Empty, string.Empty);
@@ -37,14 +39,16 @@ public sealed class AgentSessionStarter(
             $"SELECT EXISTS (SELECT 1 FROM agent_session WHERE work_item_id = @workItemId AND state IN {AgentSessionStates.LiveSql})",
             new { workItemId }, cancellationToken: cancellationToken));
         return live
-            ? new AgentStartPlan(AgentStartBlock.LiveSession, agent.Id, settings.RepoUrl, settings.BaseBranch)
-            : new AgentStartPlan(null, agent.Id, settings.RepoUrl, settings.BaseBranch);
+            ? new AgentStartPlan(AgentStartBlock.LiveSession, agent.Id, settings.RepoUrl, settings.BaseBranch, prompt)
+            : new AgentStartPlan(null, agent.Id, settings.RepoUrl, settings.BaseBranch, prompt);
     }
 
-    // fallbackBaseUrl is the origin of the request, for an instance that has not set its base URL.
-    public async Task<AgentStartOutcome> StartAsync(Guid workItemId, Guid creatorId, string? fallbackBaseUrl, CancellationToken cancellationToken)
+    // fallbackBaseUrl is the origin of the request, for an instance that has not set its base URL. connectionId and prompt: see PlanAsync;
+    // the prompt goes to the agent as guidance and the session stores the connection it ran with.
+    public async Task<AgentStartOutcome> StartAsync(
+        Guid workItemId, Guid creatorId, string? fallbackBaseUrl, Guid? connectionId, string? prompt, CancellationToken cancellationToken)
     {
-        var plan = await PlanAsync(workItemId, cancellationToken);
+        var plan = await PlanAsync(workItemId, connectionId, prompt, cancellationToken);
         if (plan.Block is { } block)
         {
             return new AgentStartOutcome(null, block);
@@ -53,7 +57,7 @@ public sealed class AgentSessionStarter(
         var sessionId = Guid.CreateVersion7();
         var now = time.GetUtcNow();
         var input = await _loader.LoadAsync(
-            workItemId, sessionId, now, plan.ConnectionId, creatorId, new AgentRepositoryInput(plan.RepoUrl, plan.BaseBranch), fallbackBaseUrl, cancellationToken);
+            workItemId, sessionId, now, plan.ConnectionId, creatorId, new AgentRepositoryInput(plan.RepoUrl, plan.BaseBranch), fallbackBaseUrl, plan.Prompt, cancellationToken);
         var body = AgentContextRenderer.RenderCreated(input).ToJsonString();
 
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);

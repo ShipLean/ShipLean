@@ -24,7 +24,7 @@ public sealed class AgentSessionEndpoints(IProjectAccess access, ICurrentUser cu
 
     private async Task<AgentStartAvailabilityDto> AvailabilityCoreAsync(Guid workItemId, CancellationToken cancellationToken)
     {
-        var plan = await starter.PlanAsync(workItemId, cancellationToken);
+        var plan = await starter.PlanAsync(workItemId, null, null, cancellationToken);
         return plan.Block is { } block ? new AgentStartAvailabilityDto(false, block, AgentStartMessages.For(block)) : new AgentStartAvailabilityDto(true, null, string.Empty);
     }
 
@@ -32,7 +32,7 @@ public sealed class AgentSessionEndpoints(IProjectAccess access, ICurrentUser cu
     public async Task<AgentSessionStartedDto> StartAsync(Guid workItemId, string requestOrigin, CancellationToken cancellationToken)
     {
         await access.RequireAsync(ProjectItem.WorkItem, workItemId, ProjectRole.Member, cancellationToken);
-        var outcome = await starter.StartAsync(workItemId, currentUser.Id, requestOrigin, cancellationToken);
+        var outcome = await starter.StartAsync(workItemId, currentUser.Id, requestOrigin, null, null, cancellationToken);
         return outcome switch
         {
             { SessionId: { } id } => new AgentSessionStartedDto(id, AgentSessionStates.Submitted),
