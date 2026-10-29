@@ -166,6 +166,7 @@ public static class SettingsTestIds
     public const string InstanceUrlMatch = "settings-instance-url-match";
     public const string InstanceUrlMismatch = "settings-instance-url-mismatch";
     public const string InstanceUrlInsecure = "settings-instance-url-insecure";
+    public const string InstancePublicOrigin = "settings-instance-public-origin";
     public const string InstanceCreationEveryone = "settings-instance-creation-everyone";
     public const string InstanceCreationAdmins = "settings-instance-creation-admins";
     public const string InstanceSave = "settings-instance-save";
