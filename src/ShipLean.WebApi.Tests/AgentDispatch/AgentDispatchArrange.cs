@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using Dapper;
 using Npgsql;
 using ShipLean.Contracts;
+using ShipLean.Contracts.Persisted;
 using ShipLean.Contracts.Refs;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Hosting;
@@ -13,8 +14,9 @@ using ShipLean.WebApi.Tests.ProjectSettings.Api;
 
 namespace ShipLean.WebApi.Tests.AgentDispatch;
 
-// A project of its own for one test, with Joel as its admin: New and Active states per type, "Active" flagged as starting
-// an agent, a live connection and a repository (each can be left out). Items are written through the API, so the real events fire.
+// A project of its own for one test, with Joel as its admin: New, Active and Resolved states per type, a live connection and a
+// repository (each can be left out), and no transitions until a test adds one with AddTransitionAsync. Items are written through
+// the API, so the real events fire.
 internal sealed class AgentDispatchArrange
 {
     private AgentDispatchArrange(ArrangedProject project, Guid? connectionId)
@@ -27,19 +29,39 @@ internal sealed class AgentDispatchArrange
 
     public Guid? ConnectionId { get; }
 
-    public Guid Flagged => Project.State(WorkItemTypeId.Story, "Active");
+    public Guid Active => Project.State(WorkItemTypeId.Story, "Active");
 
-    public Guid Unflagged => Project.State(WorkItemTypeId.Story, "Resolved");
+    public Guid Resolved => Project.State(WorkItemTypeId.Story, "Resolved");
 
     public static async Task<AgentDispatchArrange> CreateAsync(NpgsqlConnection database, ApiClient api, bool connection = true, bool repository = true)
     {
         var project = await ArrangedProject.CreateAsync(database, (SeedIds.Users.Joel, ProjectRole.Admin));
-        await database.ExecuteAsync("UPDATE state SET starts_agent = true WHERE id = @id", new { id = project.State(WorkItemTypeId.Story, "Active") });
         Guid? connectionId = connection ? (await AgentConnectionsWire.CreateAsync(api, $"Relay {Guid.NewGuid():N}")).Connection.Id : null;
         await database.ExecuteAsync(
             "UPDATE project SET agent_connection_id = @connectionId, repo_url = @repo, repo_base_branch = 'develop' WHERE id = @id",
             new { id = project.Id, connectionId, repo = repository ? "https://github.com/ShipLean/ShipLean.git" : null });
         return new AgentDispatchArrange(project, connectionId);
+    }
+
+    // Writes one transition with a single Send to agent action into the Stories board settings of a project (the type's own board is the
+    // only one the arranged project has). fromStateId null means Any state; connectionId null means the project's. Names are read from the
+    // state rows, so the stored refs are what the client would save. Returns the transition so a test can name its id.
+    public static async Task<TransitionJson> AddTransitionAsync(
+        NpgsqlConnection database, Guid projectId, WorkItemTypeId type, Guid? fromStateId, Guid toStateId, string prompt = "Do the thing.", Guid? connectionId = null)
+    {
+        async Task<StateRefJson> RefAsync(Guid id) => new(id, await database.ExecuteScalarAsync<string>("SELECT name FROM state WHERE id = @id", new { id })
+            ?? throw new InvalidOperationException($"No state {id}."));
+        var transition = new TransitionJson(
+            Guid.NewGuid().ToString("N"), type, fromStateId is { } from ? await RefAsync(from) : null, await RefAsync(toStateId),
+            [new ActionJson(Guid.NewGuid().ToString("N"), "agent", prompt, connectionId)]);
+        var json = await database.ExecuteScalarAsync<string>("SELECT settings::text FROM board WHERE project_id = @projectId AND level = 'stories'", new { projectId })
+            ?? throw new InvalidOperationException("The project has no Stories board.");
+        var settings = JsonSerializer.Deserialize<BoardSettingsJson>(json, PersistedJson.Options)!;
+        settings = settings with { Transitions = [.. settings.Transitions, transition] };
+        await database.ExecuteAsync(
+            "UPDATE board SET settings = @settings::jsonb WHERE project_id = @projectId AND level = 'stories'",
+            new { projectId, settings = JsonSerializer.Serialize(settings, PersistedJson.Options) });
+        return transition;
     }
 
     public async Task<(Guid Id, string Key, int Revision)> CreateItemAsync(ApiClient api, Guid? stateId = null)

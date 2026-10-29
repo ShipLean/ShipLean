@@ -45,8 +45,10 @@ public sealed class AgentSessionStarter(
 
     // fallbackBaseUrl is the origin of the request, for an instance that has not set its base URL. connectionId and prompt: see PlanAsync;
     // the prompt goes to the agent as guidance and the session stores the connection it ran with.
+    // transition is the move that fired an automation, carried in the context; null for a person's Start agent.
     public async Task<AgentStartOutcome> StartAsync(
-        Guid workItemId, Guid creatorId, string? fallbackBaseUrl, Guid? connectionId, string? prompt, CancellationToken cancellationToken)
+        Guid workItemId, Guid creatorId, string? fallbackBaseUrl, Guid? connectionId, string? prompt, CancellationToken cancellationToken,
+        AgentTransitionInput? transition = null)
     {
         var plan = await PlanAsync(workItemId, connectionId, prompt, cancellationToken);
         if (plan.Block is { } block)
@@ -57,7 +59,7 @@ public sealed class AgentSessionStarter(
         var sessionId = Guid.CreateVersion7();
         var now = time.GetUtcNow();
         var input = await _loader.LoadAsync(
-            workItemId, sessionId, now, plan.ConnectionId, creatorId, new AgentRepositoryInput(plan.RepoUrl, plan.BaseBranch), fallbackBaseUrl, plan.Prompt, cancellationToken);
+            workItemId, sessionId, now, plan.ConnectionId, creatorId, new AgentRepositoryInput(plan.RepoUrl, plan.BaseBranch), fallbackBaseUrl, plan.Prompt, cancellationToken) with { Transition = transition };
         var body = AgentContextRenderer.RenderCreated(input).ToJsonString();
 
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);

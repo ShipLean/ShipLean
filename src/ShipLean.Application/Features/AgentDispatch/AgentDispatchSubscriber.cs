@@ -14,7 +14,7 @@ public sealed class AgentDispatchSubscriber(IProjectEvents events, AgentTrigger 
     {
         _subscription = events.Subscribe(null, async projectEvent =>
         {
-            if (projectEvent is not (WorkItemCreated or WorkItemMoved or WorkItemUpdated))
+            if (projectEvent is not WorkItemUpdated)
             {
                 return;
             }
