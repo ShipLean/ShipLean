@@ -1,12 +1,13 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { taskboardKey } from '../taskboard/taskboardApi';
+import { scopeId, type TaskboardScope } from '../taskboard/taskboardScope';
 
 /**
  * A save puts the document the server returned into the project's board settings cache (a manual write; a plain
  * fetch is not one). This tab drops its own `boardSettingsChanged` event, so that write refreshes the open Taskboard.
  */
-export function useRefreshTaskboardOnSave(projectId: string, sprintId: string) {
+export function useRefreshTaskboardOnSave(projectId: string, scope: TaskboardScope) {
   const queryClient = useQueryClient();
   useEffect(
     () =>
@@ -20,9 +21,10 @@ export function useRefreshTaskboardOnSave(projectId: string, sprintId: string) {
           event.action.type === 'success' &&
           event.action.manual
         ) {
-          void queryClient.invalidateQueries({ queryKey: taskboardKey(projectId, sprintId) });
+          void queryClient.invalidateQueries({ queryKey: taskboardKey(projectId, scope) });
         }
       }),
-    [queryClient, projectId, sprintId],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the scope's kind and id, not its object identity
+    [queryClient, projectId, scope.kind, scopeId(scope)],
   );
 }

@@ -11,9 +11,11 @@ import {
 } from '@dnd-kit/core';
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 import type { UserRef } from '../../../api/refs';
-import type { CardDto, TaskboardViewDto } from '../../../api/views';
+import type { CardDto } from '../../../api/views';
 import { TaskCardFace } from '../cards/TaskCardFace';
 import type { TaskboardGrouping } from '../taskboardApi';
+import type { TaskboardGridView } from '../taskboardGridView';
+import type { TaskboardScope } from '../taskboardScope';
 import { dropRequest, keyboardTarget, pickUpRequest, type DropTarget } from './moveRequests';
 import { undoOf } from './applyMove';
 import { TaskboardMovesContext, type TaskboardMoves } from './TaskboardMovesContext';
@@ -44,10 +46,10 @@ interface DropData {
   cardId?: string;
 }
 
-/** Drag and drop, Alt + arrows and Pick up for the cards inside it. A move shows at once and is sent to the Taskboard moves endpoint. */
+/** Drag and drop, Alt + arrows and Pick up for the cards inside it; the page wraps its grids in it once, so a card can move between them. A move shows at once and is sent to the scope's moves endpoint. */
 export function TaskboardDnd({
   projectId,
-  sprintId,
+  scope,
   view,
   grouping,
   me,
@@ -55,8 +57,8 @@ export function TaskboardDnd({
   children,
 }: {
   projectId: string;
-  sprintId: string;
-  view: TaskboardViewDto;
+  scope: TaskboardScope;
+  view: TaskboardGridView;
   grouping: TaskboardGrouping;
   /** The signed-in user; Pick up assigns them. */
   me: UserRef | undefined;
@@ -65,7 +67,7 @@ export function TaskboardDnd({
   children: ReactNode;
 }) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
-  const send = useTaskboardMove(projectId, sprintId, grouping);
+  const send = useTaskboardMove(projectId, scope, grouping);
   const [dragging, setDragging] = useState<CardDto | null>(null);
   const focusKey = useRef<string | null>(null);
   const startId = view.columns.find((column) => column.state.category === 'inProgress')?.state.id;

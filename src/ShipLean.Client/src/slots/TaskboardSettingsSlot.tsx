@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import type { ProjectDto } from '../api/projects';
 import type { SprintDto } from '../api/sprints';
 import { pagesTestIds } from '../features/pages/testIds';
+import type { TaskboardScope } from '../features/taskboard/taskboardScope';
 import { TaskboardSettingsDialog } from '../features/taskboardSettings/TaskboardSettingsDialog';
 import { useRefreshTaskboardOnSave } from '../features/taskboardSettings/useRefreshTaskboardOnSave';
 
@@ -21,7 +23,11 @@ export function TaskboardSettingsSlot({
   onSectionChange,
   onClose,
 }: TaskboardSettingsSlotProps) {
-  useRefreshTaskboardOnSave(project.id, sprint.id);
+  const scope = useMemo<TaskboardScope>(
+    () => ({ kind: 'sprint', sprintId: sprint.id }),
+    [sprint.id],
+  );
+  useRefreshTaskboardOnSave(project.id, scope);
   return (
     <div data-testid={pagesTestIds.slotTaskboardSettings} className="min-h-px">
       {section === undefined ? null : (
