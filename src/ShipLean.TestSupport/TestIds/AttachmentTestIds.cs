@@ -29,4 +29,14 @@ public static class AttachmentTestIds
     public const string LoadFailedDownload = "attachment-load-failed-download";
     public const string NoHistory = "attachment-no-history";
     public const string ReplaceError = "attachment-replace-error";
+
+    // SHIP-198 edit
+    public const string Edit = "attachment-edit";
+    public const string Editor = "attachment-editor";
+    public const string EditorInput = "attachment-editor-input";
+    public const string EditorPasting = "attachment-editor-pasting";
+    public const string EditorPasteError = "attachment-editor-paste-error";
+    public const string Save = "attachment-save";
+    public const string Cancel = "attachment-cancel";
+    public const string SaveError = "attachment-save-error";
 }
