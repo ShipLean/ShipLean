@@ -3,7 +3,7 @@ using ShipLean.TestSupport.TestIds;
 
 namespace ShipLean.AcceptanceTests.Pages.Taskboard;
 
-// Moving cards on the sprint Taskboard: drag, Pick up, Move to Resolved, and the toast a refused move leaves.
+// Moving cards on the sprint Taskboard or a Feature board (same grid, its own moves endpoint): drag, Pick up, Move to Resolved, and the toast a refused move leaves.
 public sealed class TaskboardMoves(IPage page)
 {
     // The column of each Task state in the seeded Storefront project, left to right.
@@ -13,7 +13,9 @@ public sealed class TaskboardMoves(IPage page)
     public const int ClosedColumn = 3;
 
     private static bool IsMovePost(IResponse r) =>
-        r.Request.Method == "POST" && new Uri(r.Url).AbsolutePath.EndsWith("/taskboard/moves", StringComparison.Ordinal);
+        r.Request.Method == "POST"
+        && (new Uri(r.Url).AbsolutePath.EndsWith("/taskboard/moves", StringComparison.Ordinal)
+            || new Uri(r.Url).AbsolutePath.EndsWith("/feature-board/moves", StringComparison.Ordinal));
 
     public ILocator Toasts => page.GetByTestId(ComponentTestIds.ToastHost).GetByTestId(ComponentTestIds.Toast);
 

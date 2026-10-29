@@ -26,6 +26,7 @@ public static class TaskboardTestIds
     public const string RowToggle = "taskboard-row-toggle";
     public const string RowTitle = "taskboard-row-title";
     public const string RowState = "taskboard-row-state";
+    public const string RowSprint = "taskboard-row-sprint";
     public const string RowPoints = "taskboard-row-points";
     public const string RowProgress = "taskboard-row-progress";
     public const string RowCount = "taskboard-row-count";
@@ -42,6 +43,7 @@ public static class TaskboardTestIds
     public const string CardPoints = "taskboard-card-points";
     public const string CardAssignee = "taskboard-card-assignee";
     public const string CardParent = "taskboard-card-parent";
+    public const string CardParentFeature = "taskboard-card-parent-feature";
     public const string CardPickUp = "taskboard-card-pick-up";
     public const string AddTask = "taskboard-add-task";
     public const string TaskBox = "taskboard-task-box";

@@ -12,6 +12,7 @@ public static class FeatureTestIds
     public const string Links = "feature-links";
     public const string AddLink = "feature-add-link";
     public const string StoriesAndBugs = "feature-stories-and-bugs";
+    public const string TaskBoardLink = "feature-task-board-link";
     public const string Log = "feature-log";
     public const string AttachmentsRail = "feature-attachments-rail";
     public const string DropZone = "feature-drop-zone";
