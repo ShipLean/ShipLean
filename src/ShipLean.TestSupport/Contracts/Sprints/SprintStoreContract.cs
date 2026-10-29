@@ -112,6 +112,21 @@ public abstract class SprintStoreContract
     }
 
     [Test]
+    public async Task Update_WhenNewEndIsBeforeToday_ShouldRefuseButAllowEndingToday()
+    {
+        var store = CreateStore();
+        var project = await ArrangeProjectAsync();
+        var running = await store.CreateAsync(project, Sprint("Running", -5), null);
+
+        var past = await Should.ThrowAsync<ApiException>(() => store.UpdateAsync(running.Id, new SprintUpdate(null, null, Today.AddDays(-1), null)));
+        var today = await store.UpdateAsync(running.Id, new SprintUpdate(null, null, Today, null));
+
+        past.Code.ShouldBe(ApiErrorCodes.Validation);
+        past.Message.ShouldBe("A sprint can't be moved to end in the past.");
+        today.EndDate.ShouldBe(Today);
+    }
+
+    [Test]
     public async Task Update_WhenSprintEnded_ShouldStillRenameAndKeepSentDatesUnchanged()
     {
         var store = CreateStore();

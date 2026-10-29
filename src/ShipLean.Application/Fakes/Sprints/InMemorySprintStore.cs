@@ -44,6 +44,11 @@ public sealed class InMemorySprintStore(InMemoryPlanning world, IPublicHolidays?
                 throw ApiException.Validation("An ended sprint's dates can't change.");
             }
 
+            if (end != sprint.End && end < world.Today)
+            {
+                throw ApiException.Validation("A sprint can't be moved to end in the past.");
+            }
+
             Check(world, sprint.ProjectId, id, name, start, end);
             sprint.Name = name.Trim();
             sprint.Start = start;
