@@ -149,6 +149,7 @@ test('persisted_ShouldTypeEveryFixture', () => {
     expectAll(
       [
         ...board.cardFields.map((field) => field.type),
+        ...board.transitions.map((transition) => transition.type),
         ...board.columns.flatMap((column) => column.stateMappings.map((mapping) => mapping.type)),
       ],
       WORK_ITEM_TYPE_IDS,

@@ -33,6 +33,44 @@ public sealed class AgentContextRendererTests
     }
 
     [Test]
+    public void RenderCreated_WhenThereIsAPrompt_ShouldMatchGolden()
+    {
+        var body = AgentContextRenderer.RenderCreated(AgentContextSamples.FullWithPrompt());
+
+        GoldenFor("agent-session-created-guidance", body).ShouldBe(Actual(body));
+    }
+
+    [Test]
+    public void RenderCreated_WhenThePromptIsXmlHostile_ShouldMatchGolden()
+    {
+        var body = AgentContextRenderer.RenderCreated(AgentContextSamples.MinimalWithHostilePrompt());
+
+        GoldenFor("agent-session-created-guidance-hostile", body).ShouldBe(Actual(body));
+    }
+
+    [Test]
+    public void RenderCreated_WhenThePromptIsXmlHostile_ShouldKeepItInsideOneGuidanceElement()
+    {
+        var body = AgentContextRenderer.RenderCreated(AgentContextSamples.MinimalWithHostilePrompt());
+
+        var document = XDocument.Parse("<root>" + body["promptContext"]!.GetValue<string>() + "</root>");
+
+        document.Descendants("injected").ShouldBeEmpty();
+        document.Descendants("repository").Count().ShouldBe(1);
+        document.Descendants("guidance").Single().Value.ShouldContain("</guidance><injected/>");
+        body["guidance"]!.AsArray().Single()!["body"]!.GetValue<string>().ShouldContain("</guidance><injected/>");
+    }
+
+    [Test]
+    public void RenderCreated_WhenThereIsNoPrompt_ShouldSendEmptyGuidance()
+    {
+        var body = AgentContextRenderer.RenderCreated(AgentContextSamples.Full());
+
+        body["guidance"]!.AsArray().ShouldBeEmpty();
+        body["promptContext"]!.GetValue<string>().ShouldContain("<guidance/>");
+    }
+
+    [Test]
     public void RenderPrompted_WhenPersonComments_ShouldMatchGolden()
     {
         var body = AgentContextRenderer.RenderPrompted(AgentContextSamples.Full(), AgentContextSamples.PromptComment());

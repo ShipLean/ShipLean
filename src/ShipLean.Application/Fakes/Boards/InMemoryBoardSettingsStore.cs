@@ -16,6 +16,8 @@ public sealed class InMemoryBoardSettingsStore(TimeProvider time, ICriteriaEvalu
     private readonly Dictionary<Guid, InMemoryBoard> _boards = [];
     private readonly Dictionary<Guid, Dictionary<WorkItemTypeId, List<StateRef>>> _states = [];
     private readonly HashSet<(Guid BoardId, string ColumnId)> _columnsWithCards = [];
+    private readonly Dictionary<Guid, bool> _connections = [];
+    private readonly List<(Guid ProjectId, TransitionState State)> _archived = [];
 
     public void AddProject(Guid projectId, IReadOnlyDictionary<WorkItemTypeId, IReadOnlyList<StateRef>> statesByType)
     {
@@ -31,6 +33,27 @@ public sealed class InMemoryBoardSettingsStore(TimeProvider time, ICriteriaEvalu
         {
             var byType = _states.GetValueOrDefault(projectId) ?? throw new InvalidOperationException("Unknown project.");
             byType[type] = [.. byType.GetValueOrDefault(type) ?? [], state];
+        }
+    }
+
+    // Archives a state the way the state catalog does: it is no longer live, but a stored transition may still name it.
+    public void ArchiveState(Guid projectId, WorkItemTypeId type, Guid stateId)
+    {
+        lock (_gate)
+        {
+            var byType = _states.GetValueOrDefault(projectId) ?? throw new InvalidOperationException("Unknown project.");
+            var state = byType[type].Single(s => s.Id == stateId);
+            byType[type] = [.. byType[type].Where(s => s.Id != stateId)];
+            _archived.Add((projectId, new TransitionState(state.Id, type, state.Name, true)));
+        }
+    }
+
+    // Says an agent connection exists (archived or not); a transition action can name only the live ones it has not saved already.
+    public void AddConnection(Guid id, bool archived = false)
+    {
+        lock (_gate)
+        {
+            _connections[id] = archived;
         }
     }
 
@@ -56,7 +79,9 @@ public sealed class InMemoryBoardSettingsStore(TimeProvider time, ICriteriaEvalu
         {
             var board = Find(boardId);
             var (merged, mergedSections) = BoardSections.Merge(board.Settings, put.BasedOn, put.Settings);
-            BoardSettingsValidation.Check(board.Level, merged, _states.GetValueOrDefault(board.ProjectId) ?? [], criteria);
+            BoardSettingsValidation.Check(board.Level, merged, _states.GetValueOrDefault(board.ProjectId) ?? [], criteria, board.Settings.Transitions);
+            CheckConnections(merged, board.Settings);
+            merged = merged with { Transitions = TransitionStates.Normalize(merged.Transitions, AllStates(board.ProjectId)) };
             var kept = merged.Columns.Select(c => c.Id).ToHashSet();
             var lost = board.Settings.Columns.Where(c => !kept.Contains(c.Id) && _columnsWithCards.Contains((boardId, c.Id))).ToList();
             if (lost.Count > 0)
@@ -96,6 +121,21 @@ public sealed class InMemoryBoardSettingsStore(TimeProvider time, ICriteriaEvalu
                 .Select(b => new BoardSummaryDto(b.Id, b.Level, b.Level.ToString()))
                 .ToList();
             return Task.FromResult(boards);
+        }
+    }
+
+    private List<TransitionState> AllStates(Guid projectId)
+        => [.. (_states.GetValueOrDefault(projectId) ?? []).SelectMany(p => p.Value.Select(s => new TransitionState(s.Id, p.Key, s.Name, false))),
+            .. _archived.Where(a => a.ProjectId == projectId).Select(a => a.State)];
+
+    private void CheckConnections(BoardSettingsJson merged, BoardSettingsJson current)
+    {
+        var saved = current.Transitions.SelectMany(t => t.Actions).Where(a => a.ConnectionId is not null).Select(a => (a.Id, a.ConnectionId)).ToHashSet();
+        var unusable = merged.Transitions.SelectMany(t => t.Actions)
+            .Where(a => a.ConnectionId is { } id && !saved.Contains((a.Id, a.ConnectionId)) && (!_connections.TryGetValue(id, out var archived) || archived));
+        if (unusable.Any())
+        {
+            throw ApiException.Validation("Pick an agent connection that is not archived.");
         }
     }
 

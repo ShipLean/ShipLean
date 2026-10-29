@@ -1,3 +1,4 @@
+using System.Text.Json;
 using ShipLean.Contracts.Boards;
 using ShipLean.Contracts.Criteria;
 using ShipLean.Contracts.Errors;
@@ -10,8 +11,13 @@ namespace ShipLean.Application.Features.Boards.Settings;
 internal static class BoardSettingsValidation
 {
     public const int MaxExtraFields = 10;
+    public const int MaxPromptLength = 20_000;
+    public const string AgentActionKind = "agent";
 
-    public static void Check(BoardLevel level, BoardSettingsJson settings, IReadOnlyDictionary<WorkItemTypeId, List<StateRef>> statesByType, ICriteriaEvaluator criteria)
+    // stored: the transitions the board holds now. One of them, sent back unchanged, may still name an archived state.
+    public static void Check(
+        BoardLevel level, BoardSettingsJson settings, IReadOnlyDictionary<WorkItemTypeId, List<StateRef>> statesByType, ICriteriaEvaluator criteria,
+        IReadOnlyList<TransitionJson> stored)
     {
         foreach (var lane in settings.Swimlanes.Where(l => l.Criteria is not null))
         {
@@ -25,6 +31,7 @@ internal static class BoardSettingsValidation
         {
             CheckExtraFields(fields);
         }
+        CheckTransitions(level, settings.Transitions, stored, statesByType);
         if (level == BoardLevel.Taskboard)
         {
             return;
@@ -45,6 +52,11 @@ internal static class BoardSettingsValidation
         {
             throw Malformed(what);
         }
+        // Transitions may be missing (a client from before they existed): the merge then keeps the stored ones.
+        if (settings.Transitions is not null && !settings.Transitions.All(TransitionWellFormed))
+        {
+            throw Malformed(what);
+        }
         var wellFormed =
             settings.Columns.All(c => c is not null && c.Id is not null && c.Name is not null && c.DefinitionOfDone is not null
                 && c.StateMappings is not null && c.StateMappings.All(m => m is not null))
@@ -58,11 +70,97 @@ internal static class BoardSettingsValidation
         }
     }
 
+    private static bool TransitionWellFormed(TransitionJson? t)
+        => t is not null && t.Id is not null && t.To is not null && t.To.Name is not null && (t.From is null || t.From.Name is not null)
+            && t.Actions is not null && t.Actions.All(a => a is not null && a.Id is not null && a.Kind is not null && a.Prompt is not null);
+
     private static bool CriteriaWellFormed(CriteriaJson criteria)
         => criteria.Clauses is not null && criteria.Clauses.All(c => c is not null && c.Field is not null);
 
     private static ApiException Malformed(string what)
         => ApiException.Validation($"The {what} board settings are missing a required list or value.");
+
+    // The rules on the transitions of the merged document. A transition equal to the stored one with the same id may keep archived
+    // states; a new or edited one must name live states of its type. Connections are checked by the store (they need a read).
+    private static void CheckTransitions(
+        BoardLevel level, IReadOnlyList<TransitionJson> transitions, IReadOnlyList<TransitionJson> stored, IReadOnlyDictionary<WorkItemTypeId, List<StateRef>> statesByType)
+    {
+        var allowed = level switch
+        {
+            BoardLevel.Stories => new[] { WorkItemTypeId.Story, WorkItemTypeId.Bug },
+            BoardLevel.Features => [WorkItemTypeId.Feature],
+            _ => Array.Empty<WorkItemTypeId>(),
+        };
+        if (allowed.Length == 0 && transitions.Count > 0)
+        {
+            throw ApiException.Validation($"A {level} board has no transitions.");
+        }
+        var ids = new HashSet<string>();
+        var actionIds = new HashSet<string>();
+        var keys = new HashSet<(WorkItemTypeId, Guid?, Guid)>();
+        foreach (var transition in transitions)
+        {
+            if (string.IsNullOrWhiteSpace(transition.Id))
+            {
+                throw ApiException.Validation("A transition needs an id.");
+            }
+            if (!ids.Add(transition.Id))
+            {
+                throw ApiException.Validation("Two transitions share an id.");
+            }
+            if (!allowed.Contains(transition.Type))
+            {
+                throw ApiException.Validation($"A {transition.Type} transition does not belong on a {level} board.");
+            }
+            if (transition.From is not null && transition.From.StateId == transition.To.StateId)
+            {
+                throw ApiException.Validation("A transition cannot go from a state to the same state.");
+            }
+            if (!keys.Add((transition.Type, transition.From?.StateId, transition.To.StateId)))
+            {
+                throw ApiException.Validation($"A {transition.Type} transition from {transition.From?.Name ?? "Any state"} to {transition.To.Name} is listed twice.");
+            }
+            CheckActions(transition, actionIds);
+            // Only a ref that differs from the stored transition's must be live: editing a prompt of an Invalid transition saves.
+            var before = stored.FirstOrDefault(t => t.Id == transition.Id);
+            var live = statesByType.GetValueOrDefault(transition.Type) ?? [];
+            var changedRefs = new[] { (Now: transition.From, Was: before?.From), (Now: (StateRefJson?)transition.To, Was: before?.To) }
+                .Where(r => r.Now is not null && (before is null || r.Now != r.Was))
+                .Select(r => r.Now!);
+            var missing = changedRefs.FirstOrDefault(state => live.All(s => s.Id != state.StateId));
+            if (missing is not null)
+            {
+                throw ApiException.Validation($"{missing.Name} is not a live {transition.Type} state.");
+            }
+        }
+    }
+
+    private static void CheckActions(TransitionJson transition, HashSet<string> actionIds)
+    {
+        if (transition.Actions.Count == 0)
+        {
+            throw ApiException.Validation("A transition needs at least one action.");
+        }
+        foreach (var action in transition.Actions)
+        {
+            if (string.IsNullOrWhiteSpace(action.Id))
+            {
+                throw ApiException.Validation("An action needs an id.");
+            }
+            if (!actionIds.Add(action.Id))
+            {
+                throw ApiException.Validation("Two actions share an id.");
+            }
+            if (action.Kind != AgentActionKind)
+            {
+                throw ApiException.Validation($"{action.Kind} is not an action a transition can run.");
+            }
+            if (action.Prompt.Length > MaxPromptLength)
+            {
+                throw ApiException.Validation($"A prompt is at most {MaxPromptLength:N0} characters.");
+            }
+        }
+    }
 
     private static void CheckCriteria(string what, CriteriaJson json, ICriteriaEvaluator evaluator)
     {

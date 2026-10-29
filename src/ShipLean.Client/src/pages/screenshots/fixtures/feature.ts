@@ -60,7 +60,6 @@ const stateRow = (
   category,
   order,
   itemCount: 0,
-  startsAgent: false,
 });
 // Ids as the Feature fixture's state (…0202, Active) has them.
 const featureStates: StateDto[] = [

@@ -10,7 +10,7 @@ using ShipLean.TestSupport.TestIds;
 
 namespace ShipLean.AcceptanceTests.Journeys.Agents;
 
-// Joel moves a story into a state that starts an agent. The agent (a stub receiver: nothing listens, the host never sends)
+// Joel moves a story into the state a board transition sends to an agent. The agent (a stub receiver: nothing listens, the host never sends)
 // reports back through the Linear-compatible GraphQL endpoint with its callback token. The panel on the item shows what it
 // said, and Stop queues the stop signal for the receiver.
 [TestFixture]
@@ -55,18 +55,22 @@ public class AgentPanelJourneyTests : SeededAcceptanceTest
     {
         var projectId = SeedIds.Projects.Ship;
 
-        // Arrange: a connection (its token is the agent's), a repository, and "Active" starting an agent.
+        // Arrange: a connection (its token is the agent's), a repository, and a transition into "Active" with a Send to agent action.
         var connection = await ApiAsync("POST", "/api/instance/agent-connections", new { name = "Relay", receiverUrl = "https://relay.example.com/hook" });
         var token = connection.GetProperty("callbackToken").GetString()!;
         await ExecuteAsync(
             $"""
-            UPDATE state SET starts_agent = true WHERE id = '{SeedIds.States.Ship.StoryActive}';
+            UPDATE board SET settings = jsonb_set(settings, ARRAY['transitions'], jsonb_build_array(jsonb_build_object(
+                'id', 'to-active', 'type', 'story', 'from', NULL,
+                'to', (SELECT jsonb_build_object('stateId', s.id, 'name', s.name) FROM state s WHERE s.id = '{SeedIds.States.Ship.StoryActive}'),
+                'actions', jsonb_build_array(jsonb_build_object('id', 'send', 'kind', 'agent', 'prompt', 'Do the thing.', 'connectionId', NULL)))))
+            WHERE project_id = '{projectId}' AND level = 'stories';
             UPDATE project SET agent_connection_id = '{connection.GetProperty("connection").GetProperty("id").GetString()}',
                                repo_url = 'https://github.com/ShipLean/ShipLean.git', repo_base_branch = 'develop'
             WHERE id = '{projectId}';
             """);
 
-        // 1. A new story moved into the flagged state opens a session.
+        // 1. A new story moved into the transition's target state opens a session.
         var item = await ApiAsync("POST", "/api/work-items", new { projectId, type = "story", title = "Add the thing" });
         var itemId = item.GetProperty("id").GetGuid();
         await ApiAsync("PATCH", $"/api/work-items/{itemId}", new

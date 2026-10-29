@@ -81,8 +81,8 @@ export function GeneralTab({
           </select>
           <FieldErrorText errors={errors} field="agentConnectionId" />
           <span className="font-normal text-ink-muted">
-            Where items go when they enter a state that starts an agent. An instance admin adds
-            connections in Instance settings.
+            Where items sent to an agent go. An instance admin adds connections in Instance
+            settings.
           </span>
         </label>
         <label className="grid gap-1 text-[length:var(--text-sm)] font-medium text-ink">

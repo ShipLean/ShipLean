@@ -87,6 +87,7 @@ public class BoardSettingsApiTests : ApiFixture
         yield return Malformed("styleRuleCriteriaNull", b => b["settings"]!["styleRules"]!.AsArray().Add(new JsonObject { ["id"] = "r", ["name"] = "R", ["enabled"] = true, ["bold"] = false, ["italic"] = false, ["underline"] = false, ["criteria"] = null }));
         yield return Malformed("basedOnColumnsNull", b => b["basedOn"]!["columns"] = null);
         yield return Malformed("basedOnStateMappingsNull", b => b["basedOn"]!["columns"]![0]!["stateMappings"] = null);
+        yield return Malformed("transitionActionsNull", b => b["settings"]!["transitions"]!.AsArray().Add(new JsonObject { ["id"] = "t", ["type"] = "story", ["from"] = null, ["to"] = new JsonObject { ["stateId"] = Guid.NewGuid(), ["name"] = "X" }, ["actions"] = null }));
         yield return Malformed("basedOnSwimlanesMissing", b => b["basedOn"]!.AsObject().Remove("swimlanes"));
     }
 
@@ -102,6 +103,80 @@ public class BoardSettingsApiTests : ApiFixture
         using var response = await Api.PutJsonAsync($"api/boards/{board.Id}/settings", body);
 
         (await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.BadRequest)).Code.ShouldBe(ApiErrorCodes.Validation);
+    }
+
+    [Test]
+    public async Task SettingsApi_WhenPutHasNoTransitions_ShouldKeepTheStoredOnes()
+    {
+        var board = await GetAsync(SeedIds.Boards.ShipStories);
+        var story = board.States.Single(s => s.Type == ShipLean.Contracts.Refs.WorkItemTypeId.Story).States.Where(s => s.Category != ShipLean.Contracts.Refs.StateCategory.Removed).ToList();
+        var transition = new TransitionJson("t1", ShipLean.Contracts.Refs.WorkItemTypeId.Story, null, new StateRefJson(story[1].Id, story[1].Name), [new ActionJson("a1", "agent", "Go.", null)]);
+        using var saved = await PutAsync(board.Id, board.Settings, board.Settings with { Transitions = [transition] });
+        await ReadResultAsync(saved);
+        var body = JsonSerializer.SerializeToNode(new BoardSettingsPut(board.Settings, board.Settings with { TagColours = [new TagColourJson("Urgent", Swatch.Danger)] }), PersistedJson.Options)!.AsObject();
+        body["basedOn"]!.AsObject().Remove("transitions");
+        body["settings"]!.AsObject().Remove("transitions");
+
+        using var response = await Api.PutJsonAsync($"api/boards/{board.Id}/settings", body);
+
+        var result = await ReadResultAsync(response);
+        result.Board.Settings.Transitions.Select(t => t.Id).ShouldBe(["t1"]);
+        result.Board.Settings.TagColours.Select(t => t.Tag).ShouldBe(["Urgent"]);
+    }
+
+    [Test]
+    public async Task SettingsApi_WhenOnlyThePromptOfAnInvalidTransitionIsEdited_ShouldSave()
+    {
+        var board = await GetAsync(SeedIds.Boards.ShipStories);
+        var story = board.States.Single(s => s.Type == ShipLean.Contracts.Refs.WorkItemTypeId.Story).States.Where(s => s.Category != ShipLean.Contracts.Refs.StateCategory.Removed).ToList();
+        // From names a state that is not live: the transition is Invalid.
+        var invalid = new TransitionJson("t1", ShipLean.Contracts.Refs.WorkItemTypeId.Story, new StateRefJson(Guid.NewGuid(), "Gone"), new StateRefJson(story[1].Id, story[1].Name), [new ActionJson("a1", "agent", "Go.", null)]);
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            await connection.ExecuteAsync(
+                "UPDATE board SET settings = @json::jsonb WHERE id = @id",
+                new { id = board.Id, json = JsonSerializer.Serialize(board.Settings with { Transitions = [invalid] }, PersistedJson.Options) });
+        }
+        var stored = (await GetAsync(board.Id)).Settings;
+        var edited = invalid with { Actions = [invalid.Actions[0] with { Prompt = "Go, then report." }] };
+
+        using var response = await PutAsync(board.Id, stored, stored with { Transitions = [edited] });
+
+        var result = await ReadResultAsync(response);
+        result.Board.Settings.Transitions.Single().Actions.Single().Prompt.ShouldBe("Go, then report.");
+    }
+
+    [Test]
+    public async Task SettingsApi_WhenAnInvalidTransitionIsGivenAStateThatIsNotLive_ShouldBe400()
+    {
+        var board = await GetAsync(SeedIds.Boards.ShipStories);
+        var transition = new TransitionJson("t1", ShipLean.Contracts.Refs.WorkItemTypeId.Story, null, new StateRefJson(Guid.NewGuid(), "Gone"), [new ActionJson("a1", "agent", "Go.", null)]);
+
+        using var response = await PutAsync(board.Id, board.Settings, board.Settings with { Transitions = [transition] });
+
+        (await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.BadRequest)).Code.ShouldBe(ApiErrorCodes.Validation);
+    }
+
+    [Test]
+    public async Task SettingsApi_WhenActionIdsAreDuplicatedOrEmpty_ShouldBe400()
+    {
+        var board = await GetAsync(SeedIds.Boards.ShipStories);
+        var story = board.States.Single(s => s.Type == ShipLean.Contracts.Refs.WorkItemTypeId.Story).States.Where(s => s.Category != ShipLean.Contracts.Refs.StateCategory.Removed).ToList();
+        TransitionJson Make(string id, Guid from, string actionId)
+            => new(id, ShipLean.Contracts.Refs.WorkItemTypeId.Story, new StateRefJson(from, "x"), new StateRefJson(story[1].Id, story[1].Name), [new ActionJson(actionId, "agent", "Go.", null)]);
+        var cases = new[]
+        {
+            new[] { Make("t1", story[0].Id, "a1"), Make("t2", story[2].Id, "a1") },
+            new[] { Make("t1", story[0].Id, "") },
+            new[] { Make("", story[0].Id, "a1") },
+        };
+
+        foreach (var transitions in cases)
+        {
+            using var response = await PutAsync(board.Id, board.Settings, board.Settings with { Transitions = transitions });
+
+            (await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.BadRequest)).Code.ShouldBe(ApiErrorCodes.Validation);
+        }
     }
 
     [Test]

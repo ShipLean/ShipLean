@@ -17,7 +17,7 @@ public class WorkItemRulesBoardLockTests : PostgresWorkItemStoreTestBase
     [Test]
     public async Task Patch_WhenBoardPutHoldsTheBoard_ShouldWaitForItAndSeeItsColumns()
     {
-        var store = Arrangement.CreateStore(new WorkItemRules(), Actor);
+        var store = Arrangement.CreateStore(new WorkItemRules(TimeProvider.System), Actor);
         var project = await Arrangement.ArrangeProjectAsync();
         var story = await CreateAsync(store, project, WorkItemTypeId.Story, "Story");
         Written(await store.MoveAsync(story.Id, new MoveTarget(1, project.ColumnId(1), false, null, null, null), WriteOptions.User));

@@ -8,7 +8,8 @@ namespace ShipLean.Application.Features.Projects;
 // state is a bug, so it throws). In lane and style-rule criteria, State clauses are remapped, and ids the copy has no state for
 // are dropped (criteria validation checks only value types, so a rule can name a deleted state); Sprint and WorkItem clauses
 // point at the source's own sprints and items, so they are dropped. A clause left with nothing to match is dropped, and a
-// lane or style rule whose clauses all went is dropped too, since an empty "all" would match every card.
+// lane or style rule whose clauses all went is dropped too, since an empty "all" would match every card. A transition's
+// state refs are remapped the same way, and one naming a state the copy lacks is dropped.
 internal static class StateIdRemap
 {
     private static readonly Dictionary<string, FieldKind> Kinds = FieldIds.All.ToDictionary(f => f.Id, f => f.Kind);
@@ -19,7 +20,24 @@ internal static class StateIdRemap
             Columns = [.. settings.Columns.Select(c => c with { StateMappings = [.. c.StateMappings.Select(m => m with { StateId = Map(map, m.StateId) })] })],
             Swimlanes = [.. settings.Swimlanes.Select(l => l.Criteria is null ? l : Lane(l, map)).OfType<SwimlaneJson>()],
             StyleRules = [.. settings.StyleRules.Select(r => Rule(r, map)).OfType<StyleRuleJson>()],
+            Transitions = [.. settings.Transitions.Select(t => Transition(t, map)).OfType<TransitionJson>()],
         };
+
+    // A transition naming a state the copy has no state for (an archived one, which a copy leaves behind) is dropped.
+    private static TransitionJson? Transition(TransitionJson transition, IReadOnlyDictionary<Guid, Guid> map)
+    {
+        if (!map.TryGetValue(transition.To.StateId, out var to))
+        {
+            return null;
+        }
+        if (transition.From is null)
+        {
+            return transition with { To = transition.To with { StateId = to } };
+        }
+        return map.TryGetValue(transition.From.StateId, out var from)
+            ? transition with { To = transition.To with { StateId = to }, From = transition.From with { StateId = from } }
+            : null;
+    }
 
     private static SwimlaneJson? Lane(SwimlaneJson lane, IReadOnlyDictionary<Guid, Guid> map)
         => Criteria(lane.Criteria!, map) is { } criteria ? lane with { Criteria = criteria } : null;

@@ -12,18 +12,20 @@ import { FeatureFieldsStrip } from './strip/FeatureFieldsStrip';
 import { featureTestIds as ids } from './testIds';
 
 // The Feature's layout (feature.html): the header, the field strip and the status band across the full width, then the
-// main column (Goal, Description, Links, Stories and bugs, Log) beside the rail (Attachments, History), all inside the
+// main column (Goal, Description, Links, Stories and bugs, Agent, Log) beside the rail (Attachments, History), all inside the
 // drop zone. The work item form owns the draft and Save and hands in its header, banners and Description.
 export function FeatureForm({
   region,
   header,
   banners,
   description,
+  agent,
 }: {
   region: FeatureRegionProps;
   header: ReactNode;
   banners: ReactNode;
   description: ReactNode;
+  agent: ReactNode;
 }) {
   return (
     <FeatureDropZone {...region}>
@@ -41,6 +43,7 @@ export function FeatureForm({
             {description}
             <FeatureLinksSection {...region} />
             <StoriesAndBugs {...region} />
+            {agent}
             <FeatureLog {...region} />
           </div>
           <aside

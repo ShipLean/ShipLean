@@ -63,7 +63,6 @@ export const settingsTestIds = {
   stateTypeError: 'settings-state-type-error',
   stateTypeDot: 'settings-state-type-dot',
   stateStart: 'settings-state-start',
-  stateStartsAgent: 'settings-state-starts-agent',
   stateColumn: 'settings-state-column',
   stateDeleteBlock: 'settings-state-delete-block',
   stateDeleteForm: 'settings-state-delete-form',

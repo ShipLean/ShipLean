@@ -78,15 +78,16 @@ public class AgentTriggerTests : ApiFixture
     };
 
     [Test]
-    public async Task Move_WhenIntoAFlaggedState_ShouldOpenOneSessionAndQueueOneCreatedDelivery()
+    public async Task Move_WhenATransitionMatches_ShouldOpenOneSessionWithItsPromptAndQueueOneCreatedDelivery()
     {
         await using var database = await OpenDatabaseAsync();
         var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
+        await AgentDispatchArrange.AddTransitionAsync(database, arranged.Project.Id, WorkItemTypeId.Story, arranged.Project.State(WorkItemTypeId.Story, "New"), arranged.Active, "Plan the <work>.");
         var item = await arranged.CreateItemAsync(Api);
         await HandledAsync<WorkItemCreated>(item.Id);
         (await AgentDispatchArrange.SessionsAsync(database, item.Id)).ShouldBeEmpty();
 
-        await AgentDispatchArrange.MoveAsync(Api, item.Id, item.Revision, arranged.Flagged);
+        await AgentDispatchArrange.MoveAsync(Api, item.Id, item.Revision, arranged.Active);
         await HandledAsync<WorkItemUpdated>(item.Id);
 
         var session = (await AgentDispatchArrange.SessionsAsync(database, item.Id)).ShouldHaveSingleItem();
@@ -101,41 +102,215 @@ public class AgentTriggerTests : ApiFixture
         body["action"]!.GetValue<string>().ShouldBe("created");
         body["type"]!.GetValue<string>().ShouldBe("AgentSessionEvent");
         body["appUserId"]!.GetValue<string>().ShouldBe(arranged.ConnectionId.Value.ToString());
-        body["webhookTimestamp"].ShouldBeNull();
-        body["webhookId"].ShouldBeNull();
         body["agentSession"]!["id"]!.GetValue<string>().ShouldBe(session.Id.ToString());
-        body["agentSession"]!["creator"]!["email"]!.GetValue<string>().ShouldNotBeNullOrEmpty();
         body["agentSession"]!["issue"]!["identifier"]!.GetValue<string>().ShouldBe(item.Key);
-        body["agentSession"]!["issue"]!["url"]!.GetValue<string>().ShouldEndWith($"/p/{arranged.Project.Key}/items/{item.Key}");
         var prompt = body["promptContext"]!.GetValue<string>();
         prompt.ShouldContain("https://github.com/ShipLean/ShipLean.git");
-        prompt.ShouldContain("develop");
+        prompt.ShouldContain("Plan the &lt;work&gt;.");
     }
 
     [Test]
-    public async Task Create_WhenIntoAFlaggedState_ShouldOpenOneSession()
+    public async Task Move_WhenAnExactAndAnAnyTransitionBothMatch_ShouldRunOnlyTheExactOne()
     {
         await using var database = await OpenDatabaseAsync();
         var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
-
-        var item = await arranged.CreateItemAsync(Api, arranged.Flagged);
-        await HandledAsync<WorkItemCreated>(item.Id);
-
-        (await AgentDispatchArrange.SessionsAsync(database, item.Id)).ShouldHaveSingleItem().State.ShouldBe("submitted");
-        (await AgentDispatchArrange.DeliveriesAsync(database, item.Id)).ShouldHaveSingleItem().Action.ShouldBe("created");
-    }
-
-    [Test]
-    public async Task Move_WhenIntoAnUnflaggedState_ShouldOpenNoSession()
-    {
-        await using var database = await OpenDatabaseAsync();
-        var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
+        await AgentDispatchArrange.AddTransitionAsync(database, arranged.Project.Id, WorkItemTypeId.Story, null, arranged.Active, "From anywhere.");
+        await AgentDispatchArrange.AddTransitionAsync(database, arranged.Project.Id, WorkItemTypeId.Story, arranged.Project.State(WorkItemTypeId.Story, "New"), arranged.Active, "From new.");
         var item = await arranged.CreateItemAsync(Api);
 
-        await AgentDispatchArrange.MoveAsync(Api, item.Id, item.Revision, arranged.Unflagged);
+        await AgentDispatchArrange.MoveAsync(Api, item.Id, item.Revision, arranged.Active);
+        await HandledAsync<WorkItemUpdated>(item.Id);
+
+        var delivery = (await AgentDispatchArrange.DeliveriesAsync(database, item.Id)).ShouldHaveSingleItem();
+        var prompt = AgentDispatchArrange.BodyOf(delivery)["promptContext"]!.GetValue<string>();
+        prompt.ShouldContain("From new.");
+        prompt.ShouldNotContain("From anywhere.");
+    }
+
+    [Test]
+    public async Task Move_WhenAnExactTransitionHasNoAgentAction_ShouldStillRunTheAnyTransition()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
+        await AgentDispatchArrange.AddTransitionAsync(database, arranged.Project.Id, WorkItemTypeId.Story, null, arranged.Active, "From anywhere.");
+        var exact = await AgentDispatchArrange.AddTransitionAsync(
+            database, arranged.Project.Id, WorkItemTypeId.Story, arranged.Project.State(WorkItemTypeId.Story, "New"), arranged.Active, "From new.");
+        await database.ExecuteAsync(
+            "UPDATE board SET settings = jsonb_set(settings, '{transitions}', (SELECT jsonb_agg(CASE WHEN t->>'id' = @id THEN jsonb_set(t, '{actions}', '[]') ELSE t END) FROM jsonb_array_elements(settings->'transitions') t)) WHERE project_id = @project AND level = 'stories'",
+            new { id = exact.Id, project = arranged.Project.Id });
+        var item = await arranged.CreateItemAsync(Api);
+
+        await AgentDispatchArrange.MoveAsync(Api, item.Id, item.Revision, arranged.Active);
+        await HandledAsync<WorkItemUpdated>(item.Id);
+
+        var delivery = (await AgentDispatchArrange.DeliveriesAsync(database, item.Id)).ShouldHaveSingleItem();
+        AgentDispatchArrange.BodyOf(delivery)["promptContext"]!.GetValue<string>().ShouldContain("From anywhere.");
+    }
+
+    [Test]
+    public async Task Move_WhenAFeatureTransitionMatchesOnTheFeaturesBoard_ShouldOpenASession()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
+        var active = arranged.Project.State(WorkItemTypeId.Feature, "Active");
+        await AgentDispatchArrange.AddTransitionAsync(database, arranged.Project.Id, WorkItemTypeId.Feature, arranged.Project.State(WorkItemTypeId.Feature, "New"), active, "Plan the feature.");
+        var item = await arranged.CreateItemAsync(Api, type: "feature");
+
+        await AgentDispatchArrange.MoveAsync(Api, item.Id, item.Revision, active);
+        await HandledAsync<WorkItemUpdated>(item.Id);
+
+        var delivery = (await AgentDispatchArrange.DeliveriesAsync(database, item.Id)).ShouldHaveSingleItem();
+        AgentDispatchArrange.BodyOf(delivery)["promptContext"]!.GetValue<string>().ShouldContain("Plan the feature.");
+    }
+
+    [TestCase("epic")]
+    [TestCase("task")]
+    public async Task Move_WhenTheItemIsAnEpicOrATask_ShouldOpenNoSession(string type)
+    {
+        await using var database = await OpenDatabaseAsync();
+        var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
+        await AgentDispatchArrange.AddTransitionAsync(database, arranged.Project.Id, WorkItemTypeId.Story, null, arranged.Active);
+        await AgentDispatchArrange.AddTransitionAsync(database, arranged.Project.Id, WorkItemTypeId.Feature, null, arranged.Project.State(WorkItemTypeId.Feature, "Active"));
+        var item = await arranged.CreateItemAsync(Api, type: type);
+        var active = arranged.Project.State(Enum.Parse<WorkItemTypeId>(type, ignoreCase: true), "Active");
+
+        await AgentDispatchArrange.MoveAsync(Api, item.Id, item.Revision, active);
         await HandledAsync<WorkItemUpdated>(item.Id);
 
         (await AgentDispatchArrange.SessionsAsync(database, item.Id)).ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task Move_WhenAnAnyTransitionMatches_ShouldFireFromAnyState()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
+        await AgentDispatchArrange.AddTransitionAsync(database, arranged.Project.Id, WorkItemTypeId.Story, null, arranged.Active, "From anywhere.");
+        var item = await arranged.CreateItemAsync(Api, arranged.Resolved);
+
+        await AgentDispatchArrange.MoveAsync(Api, item.Id, item.Revision, arranged.Active);
+        await HandledAsync<WorkItemUpdated>(item.Id);
+
+        var delivery = (await AgentDispatchArrange.DeliveriesAsync(database, item.Id)).ShouldHaveSingleItem();
+        AgentDispatchArrange.BodyOf(delivery)["promptContext"]!.GetValue<string>().ShouldContain("From anywhere.");
+    }
+
+    [Test]
+    public async Task Move_WhenTheTransitionIsInvalid_ShouldOpenNoSession()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
+        await AgentDispatchArrange.AddTransitionAsync(database, arranged.Project.Id, WorkItemTypeId.Story, arranged.Resolved, arranged.Active);
+        var item = await arranged.CreateItemAsync(Api, arranged.Resolved);
+        await HandledAsync<WorkItemCreated>(item.Id);
+        await database.ExecuteAsync("UPDATE state SET archived_at = now() WHERE id = @id", new { id = arranged.Resolved });
+
+        await AgentDispatchArrange.MoveAsync(Api, item.Id, item.Revision, arranged.Active);
+        await HandledAsync<WorkItemUpdated>(item.Id);
+
+        (await AgentDispatchArrange.SessionsAsync(database, item.Id)).ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task Move_WhenNoTransitionMatches_ShouldOpenNoSession()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
+        await AgentDispatchArrange.AddTransitionAsync(database, arranged.Project.Id, WorkItemTypeId.Story, null, arranged.Resolved);
+        var item = await arranged.CreateItemAsync(Api);
+
+        await AgentDispatchArrange.MoveAsync(Api, item.Id, item.Revision, arranged.Active);
+        await HandledAsync<WorkItemUpdated>(item.Id);
+
+        (await AgentDispatchArrange.SessionsAsync(database, item.Id)).ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task Create_WhenIntoAStateATransitionTargets_ShouldOpenNoSession()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
+        await AgentDispatchArrange.AddTransitionAsync(database, arranged.Project.Id, WorkItemTypeId.Story, null, arranged.Active);
+
+        var item = await arranged.CreateItemAsync(Api, arranged.Active);
+        await HandledAsync<WorkItemCreated>(item.Id);
+
+        (await AgentDispatchArrange.SessionsAsync(database, item.Id)).ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task Move_WhenTheTransitionIsForABugAndTheItemIsAStory_ShouldOpenNoSession()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
+        await AgentDispatchArrange.AddTransitionAsync(database, arranged.Project.Id, WorkItemTypeId.Bug, null, arranged.Project.State(WorkItemTypeId.Bug, "Active"));
+        var item = await arranged.CreateItemAsync(Api);
+
+        await AgentDispatchArrange.MoveAsync(Api, item.Id, item.Revision, arranged.Active);
+        await HandledAsync<WorkItemUpdated>(item.Id);
+
+        (await AgentDispatchArrange.SessionsAsync(database, item.Id)).ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task Move_WhenAColumnDragChangesTheState_ShouldOpenASession()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
+        await AgentDispatchArrange.AddTransitionAsync(database, arranged.Project.Id, WorkItemTypeId.Story, arranged.Project.State(WorkItemTypeId.Story, "New"), arranged.Active);
+        var item = await arranged.CreateItemAsync(Api);
+        var boardId = await database.ExecuteScalarAsync<Guid>("SELECT id FROM board WHERE project_id = @id AND level = 'stories'", new { id = arranged.Project.Id });
+
+        using var response = await Api.PostJsonAsync($"api/boards/{boardId}/moves", new { itemId = item.Id, expectedRevision = item.Revision, columnId = "col-doing", done = false });
+        response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+        await HandledAsync<WorkItemUpdated>(item.Id);
+
+        (await database.ExecuteScalarAsync<Guid>("SELECT state_id FROM work_item WHERE id = @id", new { id = item.Id })).ShouldBe(arranged.Active);
+        (await AgentDispatchArrange.SessionsAsync(database, item.Id)).ShouldHaveSingleItem().State.ShouldBe("submitted");
+    }
+
+    [Test]
+    public async Task Trigger_WhenAReorderIsPublishedAfterAStateMove_ShouldOpenNoSecondSession()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
+        await AgentDispatchArrange.AddTransitionAsync(database, arranged.Project.Id, WorkItemTypeId.Story, null, arranged.Active);
+        var item = await arranged.CreateItemAsync(Api);
+        var moved = await AgentDispatchArrange.MoveAsync(Api, item.Id, item.Revision, arranged.Active);
+        await HandledAsync<WorkItemUpdated>(item.Id);
+        await database.ExecuteAsync("UPDATE agent_session SET state = 'completed', ended_at = now() WHERE work_item_id = @id", new { id = item.Id });
+
+        // A re-order inside the column publishes a move that names the revision of the earlier state change.
+        await RunAsync(new WorkItemMoved(arranged.Project.Id, item.Id, moved.Revision, "col-doing", false, null, null, arranged.Active, null));
+
+        (await AgentDispatchArrange.SessionsAsync(database, item.Id)).ShouldHaveSingleItem();
+    }
+
+    [Test]
+    public async Task Move_WhenASessionIsLive_ShouldNotOpenAnotherUntilItEnds()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
+        await AgentDispatchArrange.AddTransitionAsync(database, arranged.Project.Id, WorkItemTypeId.Story, null, arranged.Active);
+        var item = await arranged.CreateItemAsync(Api);
+        var moved = await AgentDispatchArrange.MoveAsync(Api, item.Id, item.Revision, arranged.Active);
+        await HandledAsync<WorkItemUpdated>(item.Id);
+        var out1 = await AgentDispatchArrange.MoveAsync(Api, item.Id, moved.Revision, arranged.Resolved);
+        await HandledAsync<WorkItemUpdated>(item.Id);
+
+        var in2 = await AgentDispatchArrange.MoveAsync(Api, item.Id, out1.Revision, arranged.Active);
+        await HandledAsync<WorkItemUpdated>(item.Id);
+
+        (await AgentDispatchArrange.SessionsAsync(database, item.Id)).ShouldHaveSingleItem();
+        (await AgentDispatchArrange.DeliveriesAsync(database, item.Id)).ShouldHaveSingleItem();
+        await database.ExecuteAsync("UPDATE agent_session SET state = 'completed', ended_at = now() WHERE work_item_id = @id", new { id = item.Id });
+        var out2 = await AgentDispatchArrange.MoveAsync(Api, item.Id, in2.Revision, arranged.Resolved);
+        await HandledAsync<WorkItemUpdated>(item.Id);
+
+        await AgentDispatchArrange.MoveAsync(Api, item.Id, out2.Revision, arranged.Active);
+        await HandledAsync<WorkItemUpdated>(item.Id);
+
+        (await AgentDispatchArrange.SessionsAsync(database, item.Id)).Count.ShouldBe(2);
     }
 
     [TestCase(false, true)]
@@ -144,9 +319,10 @@ public class AgentTriggerTests : ApiFixture
     {
         await using var database = await OpenDatabaseAsync();
         var arranged = await AgentDispatchArrange.CreateAsync(database, Api, connection, repository);
+        await AgentDispatchArrange.AddTransitionAsync(database, arranged.Project.Id, WorkItemTypeId.Story, null, arranged.Active);
         var item = await arranged.CreateItemAsync(Api);
 
-        await AgentDispatchArrange.MoveAsync(Api, item.Id, item.Revision, arranged.Flagged);
+        await AgentDispatchArrange.MoveAsync(Api, item.Id, item.Revision, arranged.Active);
         await HandledAsync<WorkItemUpdated>(item.Id);
 
         (await AgentDispatchArrange.SessionsAsync(database, item.Id)).ShouldBeEmpty();
@@ -158,39 +334,14 @@ public class AgentTriggerTests : ApiFixture
     {
         await using var database = await OpenDatabaseAsync();
         var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
+        await AgentDispatchArrange.AddTransitionAsync(database, arranged.Project.Id, WorkItemTypeId.Story, null, arranged.Active);
         await database.ExecuteAsync("UPDATE agent_connection SET archived_at = now() WHERE id = @id", new { id = arranged.ConnectionId });
         var item = await arranged.CreateItemAsync(Api);
 
-        await AgentDispatchArrange.MoveAsync(Api, item.Id, item.Revision, arranged.Flagged);
+        await AgentDispatchArrange.MoveAsync(Api, item.Id, item.Revision, arranged.Active);
         await HandledAsync<WorkItemUpdated>(item.Id);
 
         (await AgentDispatchArrange.SessionsAsync(database, item.Id)).ShouldBeEmpty();
-    }
-
-    [Test]
-    public async Task Move_WhenASessionIsLive_ShouldNotOpenAnotherUntilItEnds()
-    {
-        await using var database = await OpenDatabaseAsync();
-        var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
-        var item = await arranged.CreateItemAsync(Api);
-        var moved = await AgentDispatchArrange.MoveAsync(Api, item.Id, item.Revision, arranged.Flagged);
-        await HandledAsync<WorkItemUpdated>(item.Id);
-        var out1 = await AgentDispatchArrange.MoveAsync(Api, item.Id, moved.Revision, arranged.Unflagged);
-        await HandledAsync<WorkItemUpdated>(item.Id);
-
-        var in2 = await AgentDispatchArrange.MoveAsync(Api, item.Id, out1.Revision, arranged.Flagged);
-        await HandledAsync<WorkItemUpdated>(item.Id);
-
-        (await AgentDispatchArrange.SessionsAsync(database, item.Id)).ShouldHaveSingleItem();
-        (await AgentDispatchArrange.DeliveriesAsync(database, item.Id)).ShouldHaveSingleItem();
-        await database.ExecuteAsync("UPDATE agent_session SET state = 'completed', ended_at = now() WHERE work_item_id = @id", new { id = item.Id });
-        var out2 = await AgentDispatchArrange.MoveAsync(Api, item.Id, in2.Revision, arranged.Unflagged);
-        await HandledAsync<WorkItemUpdated>(item.Id);
-
-        await AgentDispatchArrange.MoveAsync(Api, item.Id, out2.Revision, arranged.Flagged);
-        await HandledAsync<WorkItemUpdated>(item.Id);
-
-        (await AgentDispatchArrange.SessionsAsync(database, item.Id)).Count.ShouldBe(2);
     }
 
     [Test]
@@ -198,7 +349,8 @@ public class AgentTriggerTests : ApiFixture
     {
         await using var database = await OpenDatabaseAsync();
         var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
-        var item = await ArrangeItemInFlaggedStateAsync(database, arranged);
+        await AgentDispatchArrange.AddTransitionAsync(database, arranged.Project.Id, WorkItemTypeId.Story, null, arranged.Active);
+        var item = await ArrangeItemAsync(database, arranged);
         var job = Guid.NewGuid();
         var jira = Guid.NewGuid();
         await database.ExecuteAsync(
@@ -207,7 +359,7 @@ public class AgentTriggerTests : ApiFixture
         await database.ExecuteAsync(
             "INSERT INTO import_job (id, connection_id, jira_project_key, project_key, project_id, status, progress) VALUES (@job, @connection, 'PLAT', 'EMPT', @project, 'running', '{}'::jsonb)",
             new { job, connection = jira, project = arranged.Project.Id });
-        await new RevisionBuilder(item).WithChangedBy(SeedIds.Users.Joel).WithChanges(StateChangeTo(arranged.Flagged)).WithImport("jira", job).InsertAsync(database);
+        await new RevisionBuilder(item).WithChangedBy(SeedIds.Users.Joel).WithChanges(StateChangeTo(arranged.Active)).WithImport("jira", job).InsertAsync(database);
 
         await RunAsync(new WorkItemUpdated(arranged.Project.Id, item, 2, ["state"], false));
 
@@ -219,7 +371,8 @@ public class AgentTriggerTests : ApiFixture
     {
         await using var database = await OpenDatabaseAsync();
         var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
-        var item = await ArrangeItemInFlaggedStateAsync(database, arranged);
+        await AgentDispatchArrange.AddTransitionAsync(database, arranged.Project.Id, WorkItemTypeId.Story, null, arranged.Active);
+        var item = await ArrangeItemAsync(database, arranged);
         await database.ExecuteAsync("UPDATE work_item SET original_system = 'jira', original_system_id = 'ABC-1' WHERE id = @item", new { item });
 
         await RunAsync(new WorkItemCreated(arranged.Project.Id, item, "X-1", WorkItemTypeId.Story, null));
@@ -232,10 +385,11 @@ public class AgentTriggerTests : ApiFixture
     {
         await using var database = await OpenDatabaseAsync();
         var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
-        var item = await ArrangeItemInFlaggedStateAsync(database, arranged);
-        await new RevisionBuilder(item).WithChangedBy(null).WithChanges(StateChangeTo(arranged.Flagged)).InsertAsync(database);
+        await AgentDispatchArrange.AddTransitionAsync(database, arranged.Project.Id, WorkItemTypeId.Story, null, arranged.Active);
+        var item = await ArrangeItemAsync(database, arranged);
+        await new RevisionBuilder(item).WithChangedBy(null).WithChanges(StateChangeTo(arranged.Active)).InsertAsync(database);
 
-        await RunAsync(new WorkItemMoved(arranged.Project.Id, item, 2, null, false, null, null, arranged.Flagged, null));
+        await RunAsync(new WorkItemUpdated(arranged.Project.Id, item, 2, ["state"], false));
 
         (await AgentDispatchArrange.SessionsAsync(database, item)).ShouldBeEmpty();
     }
@@ -245,7 +399,8 @@ public class AgentTriggerTests : ApiFixture
     {
         await using var database = await OpenDatabaseAsync();
         var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
-        var item = await ArrangeItemInFlaggedStateAsync(database, arranged);
+        await AgentDispatchArrange.AddTransitionAsync(database, arranged.Project.Id, WorkItemTypeId.Story, null, arranged.Active);
+        var item = await ArrangeItemAsync(database, arranged);
         await new RevisionBuilder(item).WithChangedBy(SeedIds.Users.Joel).WithChanges("""[{"field":"title","from":"a","to":"b"}]""").InsertAsync(database);
 
         await RunAsync(new WorkItemUpdated(arranged.Project.Id, item, 2, ["title"], false));
@@ -258,21 +413,23 @@ public class AgentTriggerTests : ApiFixture
     {
         await using var database = await OpenDatabaseAsync();
         var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
-        var item = await ArrangeItemInFlaggedStateAsync(database, arranged);
-        await new RevisionBuilder(item).WithChangedBy(SeedIds.Users.Joel).WithChanges(StateChangeTo(arranged.Flagged)).WithChangedAt(TimeProvider.System.GetUtcNow().AddHours(-1)).InsertAsync(database);
+        await AgentDispatchArrange.AddTransitionAsync(database, arranged.Project.Id, WorkItemTypeId.Story, null, arranged.Active);
+        var item = await ArrangeItemAsync(database, arranged);
+        await new RevisionBuilder(item).WithChangedBy(SeedIds.Users.Joel).WithChanges(StateChangeTo(arranged.Active)).WithChangedAt(TimeProvider.System.GetUtcNow().AddHours(-1)).InsertAsync(database);
 
-        await RunAsync(new WorkItemMoved(arranged.Project.Id, item, 2, null, false, null, null, arranged.Flagged, null));
+        await RunAsync(new WorkItemUpdated(arranged.Project.Id, item, 2, ["state"], false));
 
         (await AgentDispatchArrange.SessionsAsync(database, item)).ShouldBeEmpty();
     }
 
     [Test]
-    public async Task Trigger_WhenAPersonChangedTheStateIntoAFlaggedOne_ShouldOpenASessionForThem()
+    public async Task Trigger_WhenAPersonChangedTheStateIntoATargetState_ShouldOpenASessionForThem()
     {
         await using var database = await OpenDatabaseAsync();
         var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
-        var item = await ArrangeItemInFlaggedStateAsync(database, arranged);
-        await new RevisionBuilder(item).WithChangedBy(SeedIds.Users.Priya).WithChanges(StateChangeTo(arranged.Flagged)).InsertAsync(database);
+        await AgentDispatchArrange.AddTransitionAsync(database, arranged.Project.Id, WorkItemTypeId.Story, null, arranged.Active);
+        var item = await ArrangeItemAsync(database, arranged);
+        await new RevisionBuilder(item).WithChangedBy(SeedIds.Users.Priya).WithChanges(StateChangeTo(arranged.Active)).InsertAsync(database);
 
         await RunAsync(new WorkItemUpdated(arranged.Project.Id, item, 2, ["state"], false));
 
@@ -280,12 +437,13 @@ public class AgentTriggerTests : ApiFixture
     }
 
     [Test]
-    public async Task Trigger_WhenTheRevisionMovedTheItemIntoAnUnflaggedStateButItIsFlaggedNow_ShouldOpenNoSession()
+    public async Task Trigger_WhenTheRevisionMovedTheItemIntoAnUntargetedStateButItIsTargetedNow_ShouldOpenNoSession()
     {
         await using var database = await OpenDatabaseAsync();
         var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
-        var item = await ArrangeItemInFlaggedStateAsync(database, arranged);
-        await new RevisionBuilder(item).WithChangedBy(SeedIds.Users.Joel).WithChanges(StateChangeTo(arranged.Unflagged)).InsertAsync(database);
+        await AgentDispatchArrange.AddTransitionAsync(database, arranged.Project.Id, WorkItemTypeId.Story, null, arranged.Active);
+        var item = await ArrangeItemAsync(database, arranged);
+        await new RevisionBuilder(item).WithChangedBy(SeedIds.Users.Joel).WithChanges(StateChangeTo(arranged.Resolved)).InsertAsync(database);
 
         await RunAsync(new WorkItemUpdated(arranged.Project.Id, item, 2, ["state"], false));
 
@@ -297,10 +455,11 @@ public class AgentTriggerTests : ApiFixture
     {
         await using var database = await OpenDatabaseAsync();
         var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
+        await AgentDispatchArrange.AddTransitionAsync(database, arranged.Project.Id, WorkItemTypeId.Story, null, arranged.Active);
         foreach (var arrange in new Func<RevisionBuilder, RevisionBuilder>[] { r => r.WithAgent("Claude Code (claude.ai)"), r => r.WithBulk(), r => r.WithWebhook("GitHub acme/api#12") })
         {
-            var item = await ArrangeItemInFlaggedStateAsync(database, arranged);
-            await arrange(new RevisionBuilder(item).WithChangedBy(SeedIds.Users.Joel).WithChanges(StateChangeTo(arranged.Flagged))).InsertAsync(database);
+            var item = await ArrangeItemAsync(database, arranged);
+            await arrange(new RevisionBuilder(item).WithChangedBy(SeedIds.Users.Joel).WithChanges(StateChangeTo(arranged.Active))).InsertAsync(database);
 
             await RunAsync(new WorkItemUpdated(arranged.Project.Id, item, 2, ["state"], false));
 
@@ -309,11 +468,12 @@ public class AgentTriggerTests : ApiFixture
     }
 
     [Test]
-    public async Task Settings_WhenRemovingAStateRemapsItemsIntoAFlaggedOne_ShouldOpenNoSession()
+    public async Task Settings_WhenRemovingAStateRemapsItemsIntoATargetedOne_ShouldOpenNoSession()
     {
         await using var database = await OpenDatabaseAsync();
         var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
-        var item = await arranged.CreateItemAsync(Api, arranged.Unflagged);
+        await AgentDispatchArrange.AddTransitionAsync(database, arranged.Project.Id, WorkItemTypeId.Story, null, arranged.Active);
+        var item = await arranged.CreateItemAsync(Api, arranged.Resolved);
         await HandledAsync<WorkItemCreated>(item.Id);
         var wire = new JsonSerializerOptions(JsonSerializerDefaults.Web) { Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } };
         var loaded = await Api.GetAsync<ProjectSettingsDto>($"api/projects/{arranged.Project.Id}/settings");
@@ -321,21 +481,21 @@ public class AgentTriggerTests : ApiFixture
             new ProjectGeneralRequest(loaded.General.Key, loaded.General.Name, loaded.General.Description, loaded.General.WorkingDays),
             [.. loaded.Members.Select(m => new MemberPut(m.Email, m.Role))],
             loaded.Sprints,
-            new StateChanges([], [], [], [new StateRemove(arranged.Unflagged, arranged.Flagged)]));
+            new StateChanges([], [], [], [new StateRemove(arranged.Resolved, arranged.Active)]));
 
         using var response = await Api.PutJsonAsync($"api/projects/{arranged.Project.Id}/settings", JsonSerializer.SerializeToElement(request, wire));
         response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
         await HandledAsync<WorkItemUpdated>(item.Id);
 
-        (await database.ExecuteScalarAsync<Guid>("SELECT state_id FROM work_item WHERE id = @id", new { id = item.Id })).ShouldBe(arranged.Flagged);
+        (await database.ExecuteScalarAsync<Guid>("SELECT state_id FROM work_item WHERE id = @id", new { id = item.Id })).ShouldBe(arranged.Active);
         (await database.ExecuteScalarAsync<bool>("SELECT bulk FROM revision WHERE work_item_id = @id AND rev = 2", new { id = item.Id })).ShouldBeTrue();
         (await AgentDispatchArrange.SessionsAsync(database, item.Id)).ShouldBeEmpty();
     }
 
     private static string StateChangeTo(Guid stateId) => $$"""[{"field":"state","from":"{{Guid.NewGuid()}}","to":"{{stateId}}"}]""";
 
-    private static Task<Guid> ArrangeItemInFlaggedStateAsync(Npgsql.NpgsqlConnection database, AgentDispatchArrange arranged)
-        => new WorkItemBuilder(arranged.Project.Id).WithState(arranged.Flagged).InsertAsync(database);
+    private static Task<Guid> ArrangeItemAsync(Npgsql.NpgsqlConnection database, AgentDispatchArrange arranged)
+        => new WorkItemBuilder(arranged.Project.Id).WithState(arranged.Active).InsertAsync(database);
 
     private Task RunAsync(ProjectEvent projectEvent) => Host.Services.GetRequiredService<AgentTrigger>().HandleAsync(projectEvent, CancellationToken.None);
 }

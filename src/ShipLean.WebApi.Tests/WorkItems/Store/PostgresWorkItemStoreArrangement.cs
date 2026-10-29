@@ -100,7 +100,8 @@ public sealed class PostgresWorkItemStoreArrangement : IAsyncDisposable
             [],
             [],
             new CardAnnotationsJson(false, false, false, false),
-            null);
+            null,
+            []);
     }
 
     private static async Task InsertImportJobAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, ArrangedProject project)

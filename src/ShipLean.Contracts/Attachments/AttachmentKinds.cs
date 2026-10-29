@@ -1,13 +1,11 @@
-using ShipLean.Contracts.Attachments;
-
-namespace ShipLean.Application.Features.WorkItemDetails.Attachments;
+namespace ShipLean.Contracts.Attachments;
 
 // Which AttachmentKind a file is, from its extension or content type.
-internal static class AttachmentKinds
+public static class AttachmentKinds
 {
     private static readonly string[] ImageExtensions = [".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"];
 
-    internal static readonly string[] ImageTypes = ["image/png", "image/jpeg", "image/gif", "image/webp", "image/svg+xml"];
+    public static readonly string[] ImageTypes = ["image/png", "image/jpeg", "image/gif", "image/webp", "image/svg+xml"];
 
     public static AttachmentKind Of(string name, string contentType)
     {

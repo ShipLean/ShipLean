@@ -42,6 +42,7 @@ const settings = (
   tagColours,
   annotations: { tasks: true, stories: true, bugs: true, features: true },
   cardReordering: null,
+  transitions: [],
 });
 
 const outcome = (s: BoardSettingsJson, key: string, level: BoardLevel = 'stories') =>

@@ -66,7 +66,7 @@ public sealed class AgentPrompter(NpgsqlDataSource dataSource, AgentSessionNotif
         }
 
         var input = await _loader.LoadAsync(
-            workItemId, session.Id, session.CreatedAt, session.ConnectionId, session.CreatedBy, new AgentRepositoryInput(session.RepoUrl, session.BaseBranch), fallbackBaseUrl, cancellationToken);
+            workItemId, session.Id, session.CreatedAt, session.ConnectionId, session.CreatedBy, new AgentRepositoryInput(session.RepoUrl, session.BaseBranch), fallbackBaseUrl, null, cancellationToken);
 
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         var locked = await connection.QuerySingleOrDefaultAsync<LockedSession>(new CommandDefinition(

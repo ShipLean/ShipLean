@@ -65,6 +65,31 @@ public sealed class PostgresBoardSettingsStoreContractTests : BoardSettingsStore
         await InsertStateAsync(connection, projectId, type, state, order);
     }
 
+    protected override async Task ArrangeArchivedStateAsync(Guid projectId, WorkItemTypeId type, Guid stateId)
+    {
+        await using var connection = await _database.OpenAsync();
+        await connection.ExecuteAsync("UPDATE state SET archived_at = now() WHERE id = @stateId AND project_id = @projectId", new { stateId, projectId });
+    }
+
+    protected override async Task<Guid> ArrangeConnectionAsync(bool archived)
+    {
+        var id = Guid.NewGuid();
+        await using var connection = await _database.OpenAsync();
+        await connection.ExecuteAsync(
+            """
+            INSERT INTO agent_connection (id, type, name, receiver_url, signing_secret_protected, signing_secret_last4, callback_token_hash, callback_token_last4, created_at, updated_at, archived_at)
+            VALUES (@id, 'linear-compatible', @name, 'https://agent.example/hook', 'protected', 'abcd', @hash, 'wxyz', now(), now(), CASE WHEN @archived THEN now() END)
+            """,
+            new { id, name = "Connection " + id, archived, hash = id.ToByteArray() });
+        return id;
+    }
+
+    protected override async Task ArchiveConnectionAsync(Guid connectionId)
+    {
+        await using var connection = await _database.OpenAsync();
+        await connection.ExecuteAsync("UPDATE agent_connection SET archived_at = now() WHERE id = @connectionId", new { connectionId });
+    }
+
     protected override async Task ArrangeCardInColumnAsync(Guid boardId, string columnId)
     {
         await using var connection = await _database.OpenAsync();

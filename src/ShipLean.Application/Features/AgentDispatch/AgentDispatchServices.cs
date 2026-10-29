@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Agents;
+using ShipLean.Contracts.Blobs;
 
 namespace ShipLean.Application.Features.AgentDispatch;
 
@@ -9,6 +10,7 @@ public sealed class AgentDispatchServices : IServiceModule
 {
     public void AddServices(IServiceCollection services, IConfiguration configuration)
     {
+        services.AddSingleton(sp => new Lazy<IBlobStore>(sp.GetRequiredService<IBlobStore>));
         services.AddSingleton<AgentSessionStarter>();
         services.AddSingleton<AgentTrigger>();
         services.AddSingleton<AgentPanelReader>();

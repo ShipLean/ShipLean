@@ -25,7 +25,7 @@ public sealed partial class StateCatalog
         var live = (await connection.QueryAsync<StateRow>(new CommandDefinition(
             $"SELECT {StateRow.Columns} FROM state s WHERE s.project_id = @projectId AND s.archived_at IS NULL ORDER BY s.sort_order, s.name",
             new { projectId }, transaction, cancellationToken: cancellationToken)))
-            .Select(r => new StateDraft(r.Id, r.TypeId, r.Name, r.CategoryId, r.SortOrder, isNew: false, startsAgent: r.StartsAgent)).ToList();
+            .Select(r => new StateDraft(r.Id, r.TypeId, r.Name, r.CategoryId, r.SortOrder, isNew: false)).ToList();
         var plan = await PlanAsync(connection, transaction, live, changes, cancellationToken);
         await WriteAsync(connection, transaction, projectId, plan, cancellationToken);
     }
@@ -52,7 +52,7 @@ public sealed partial class StateCatalog
             }
 
             var order = drafts.Where(d => d.Type == add.Type).Select(d => d.Order).DefaultIfEmpty(0).Max() + 1;
-            drafts.Add(new StateDraft(add.Id, add.Type, add.Name.Trim(), add.Category, order, isNew: true, startsAgent: add.StartsAgent));
+            drafts.Add(new StateDraft(add.Id, add.Type, add.Name.Trim(), add.Category, order, isNew: true));
             touched.Add(add.Type);
             renumber.Add(add.Type);
         }
@@ -67,7 +67,6 @@ public sealed partial class StateCatalog
             var draft = Find(drafts, update.StateId);
             draft.Name = update.Name.Trim();
             draft.Category = update.Category;
-            draft.StartsAgent = update.StartsAgent ?? draft.StartsAgent;
             touched.Add(draft.Type);
         }
 
@@ -161,14 +160,14 @@ public sealed partial class StateCatalog
             "UPDATE state SET name = id::text WHERE id = ANY(@ids)", new { ids = renamed.Select(d => d.Id).ToArray() }, transaction, cancellationToken: cancellationToken));
         foreach (var draft in plan.Remaining.Where(d => d.IsNew))
         {
-            await InsertAsync(connection, transaction, draft.Id, projectId, draft.Type, draft.Name, draft.Category, draft.Order, draft.StartsAgent, cancellationToken);
+            await InsertAsync(connection, transaction, draft.Id, projectId, draft.Type, draft.Name, draft.Category, draft.Order, cancellationToken);
         }
 
         foreach (var draft in plan.Remaining.Where(d => d.Changed))
         {
             await connection.ExecuteAsync(new CommandDefinition(
-                "UPDATE state SET name = @name, category = @category, sort_order = @order, starts_agent = @startsAgent, updated_at = now() WHERE id = @id",
-                new { id = draft.Id, name = draft.Name, category = StateRow.CategoryText(draft.Category), order = draft.Order, startsAgent = draft.StartsAgent }, transaction, cancellationToken: cancellationToken));
+                "UPDATE state SET name = @name, category = @category, sort_order = @order, updated_at = now() WHERE id = @id",
+                new { id = draft.Id, name = draft.Name, category = StateRow.CategoryText(draft.Category), order = draft.Order }, transaction, cancellationToken: cancellationToken));
         }
     }
 }

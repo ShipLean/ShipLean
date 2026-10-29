@@ -21,6 +21,15 @@ public abstract class BoardSettingsStoreContract
     // A new live state of the type in the project.
     protected abstract Task ArrangeStateAsync(Guid projectId, WorkItemTypeId type, StateRef state);
 
+    // Archives a state of the project (a state removed in Project settings).
+    protected abstract Task ArrangeArchivedStateAsync(Guid projectId, WorkItemTypeId type, Guid stateId);
+
+    // Archives an existing agent connection.
+    protected abstract Task ArchiveConnectionAsync(Guid connectionId);
+
+    // An agent connection; archived when asked.
+    protected abstract Task<Guid> ArrangeConnectionAsync(bool archived);
+
     // Makes the column hold at least one card, so it cannot be removed.
     protected abstract Task ArrangeCardInColumnAsync(Guid boardId, string columnId);
 
@@ -418,6 +427,174 @@ public abstract class BoardSettingsStoreContract
         {
             (await PutFailureAsync(board, board.Settings with { CardFields = board.Settings.CardFields.Select(f => f.Type == WorkItemTypeId.Story ? wrong : f).ToList() })).ShouldBe(ApiErrorCodes.Validation);
         }
+    }
+
+    private static StateRefJson Ref(StateRef state) => new(state.Id, state.Name);
+
+    private static TransitionJson Transition(string id, WorkItemTypeId type, StateRef? from, StateRef to, Guid? connectionId = null, string prompt = "Do it.")
+        => new(id, type, from is null ? null : Ref(from), Ref(to), [new ActionJson(id + "-a", "agent", prompt, connectionId)]);
+
+    private static List<StateRef> Live(BoardSettingsDto board, WorkItemTypeId type)
+        => board.States.Single(s => s.Type == type).States.Where(s => s.Category != StateCategory.Removed).ToList();
+
+    [Test]
+    public async Task Put_WhenTransitionsAreValid_ShouldSaveAndReturnThem()
+    {
+        var (board, _) = await ArrangeStoriesAsync();
+        var story = Live(board, WorkItemTypeId.Story);
+        var bug = Live(board, WorkItemTypeId.Bug);
+        var edited = board.Settings with { Transitions = [Transition("t1", WorkItemTypeId.Story, story[0], story[1]), Transition("t2", WorkItemTypeId.Bug, null, bug[1])] };
+
+        var result = await Store.PutAsync(board.Id, new BoardSettingsPut(board.Settings, edited));
+
+        BoardContractSupport.Text(result.Board.Settings).ShouldBe(BoardContractSupport.Text(edited));
+        BoardContractSupport.Text((await Store.GetAsync(board.Id)).Settings).ShouldBe(BoardContractSupport.Text(edited));
+    }
+
+    [Test]
+    public async Task Put_WhenTransitionsMissing_ShouldKeepTheStoredOnes()
+    {
+        var (board, _) = await ArrangeStoriesAsync();
+        var story = Live(board, WorkItemTypeId.Story);
+        var saved = board.Settings with { Transitions = [Transition("t1", WorkItemTypeId.Story, story[0], story[1])] };
+        await Store.PutAsync(board.Id, new BoardSettingsPut(board.Settings, saved));
+        var old = board.Settings with { Transitions = null! };
+
+        var result = await Store.PutAsync(board.Id, new BoardSettingsPut(old, old with { TagColours = [new TagColourJson("Urgent", Swatch.Danger)] }));
+
+        result.Board.Settings.Transitions.Select(t => t.Id).ShouldBe(["t1"]);
+        result.Board.Settings.TagColours.Count.ShouldBe(1);
+    }
+
+    [Test]
+    public async Task Put_WhenTransitionGoesFromAStateToItself_ShouldBeValidation()
+    {
+        var (board, _) = await ArrangeStoriesAsync();
+        var story = Live(board, WorkItemTypeId.Story);
+
+        (await PutFailureAsync(board, board.Settings with { Transitions = [Transition("t1", WorkItemTypeId.Story, story[1], story[1])] })).ShouldBe(ApiErrorCodes.Validation);
+    }
+
+    [Test]
+    public async Task Put_WhenTransitionIsListedTwice_ShouldBeValidation()
+    {
+        var (board, _) = await ArrangeStoriesAsync();
+        var story = Live(board, WorkItemTypeId.Story);
+        var twice = new[] { Transition("t1", WorkItemTypeId.Story, null, story[1]), Transition("t2", WorkItemTypeId.Story, null, story[1]) };
+
+        (await PutFailureAsync(board, board.Settings with { Transitions = twice })).ShouldBe(ApiErrorCodes.Validation);
+    }
+
+    [Test]
+    public async Task Put_WhenTransitionTypeIsNotOnTheBoard_ShouldBeValidation()
+    {
+        var (board, _) = await ArrangeStoriesAsync();
+        var feature = BoardContractSupport.StandardStates()[WorkItemTypeId.Feature];
+
+        (await PutFailureAsync(board, board.Settings with { Transitions = [Transition("t1", WorkItemTypeId.Feature, null, feature[1])] })).ShouldBe(ApiErrorCodes.Validation);
+    }
+
+    [TestCase(BoardLevel.Epics, WorkItemTypeId.Epic)]
+    [TestCase(BoardLevel.Taskboard, WorkItemTypeId.Task)]
+    public async Task Put_WhenBoardHasNoTransitions_ShouldBeValidation(BoardLevel level, WorkItemTypeId type)
+    {
+        var (_, board, states) = await ArrangeBoardAsync(level);
+
+        (await PutFailureAsync(board, board.Settings with { Transitions = [Transition("t1", type, null, states[type][1])] })).ShouldBe(ApiErrorCodes.Validation);
+    }
+
+    [Test]
+    public async Task Put_WhenPromptIsTooLong_ShouldBeValidation()
+    {
+        var (board, _) = await ArrangeStoriesAsync();
+        var story = Live(board, WorkItemTypeId.Story);
+        var exactly = board.Settings with { Transitions = [Transition("t1", WorkItemTypeId.Story, null, story[1], prompt: new string('x', 20_000))] };
+        var over = board.Settings with { Transitions = [Transition("t1", WorkItemTypeId.Story, null, story[1], prompt: new string('x', 20_001))] };
+
+        (await PutFailureAsync(board, over)).ShouldBe(ApiErrorCodes.Validation);
+        (await Store.PutAsync(board.Id, new BoardSettingsPut(board.Settings, exactly))).Board.Settings.Transitions.Count.ShouldBe(1);
+    }
+
+    [Test]
+    public async Task Put_WhenTransitionHasNoActions_ShouldBeValidation()
+    {
+        var (board, _) = await ArrangeStoriesAsync();
+        var story = Live(board, WorkItemTypeId.Story);
+
+        (await PutFailureAsync(board, board.Settings with { Transitions = [Transition("t1", WorkItemTypeId.Story, null, story[1]) with { Actions = [] }] })).ShouldBe(ApiErrorCodes.Validation);
+    }
+
+    [Test]
+    public async Task Put_WhenNewTransitionNamesAnArchivedState_ShouldBeValidation()
+    {
+        var (board, projectId) = await ArrangeStoriesAsync();
+        var spare = new StateRef(Guid.NewGuid(), "Spare", StateCategory.Proposed);
+        await ArrangeStateAsync(projectId, WorkItemTypeId.Story, spare);
+        await ArrangeArchivedStateAsync(projectId, WorkItemTypeId.Story, spare.Id);
+        var story = Live(board, WorkItemTypeId.Story);
+
+        (await PutFailureAsync(board, board.Settings with { Transitions = [Transition("t1", WorkItemTypeId.Story, story[0], spare)] })).ShouldBe(ApiErrorCodes.Validation);
+    }
+
+    [Test]
+    public async Task Put_WhenSavingColumnsWhileAnUnchangedInvalidTransitionExists_ShouldSave()
+    {
+        var (board, projectId) = await ArrangeStoriesAsync();
+        var spare = new StateRef(Guid.NewGuid(), "Spare", StateCategory.Proposed);
+        await ArrangeStateAsync(projectId, WorkItemTypeId.Story, spare);
+        var story = Live(board, WorkItemTypeId.Story);
+        var withTransition = (await Store.PutAsync(board.Id, new BoardSettingsPut(board.Settings, board.Settings with { Transitions = [Transition("t1", WorkItemTypeId.Story, story[0], spare)] }))).Board;
+        await ArrangeArchivedStateAsync(projectId, WorkItemTypeId.Story, spare.Id);
+        var edited = withTransition.Settings with { Columns = Replace(withTransition.Settings.Columns, 1, withTransition.Settings.Columns[1] with { WipLimit = 4 }) };
+
+        var result = await Store.PutAsync(board.Id, new BoardSettingsPut(withTransition.Settings, edited));
+
+        result.Board.Settings.Columns[1].WipLimit.ShouldBe(4);
+        result.Board.Settings.Transitions.Single().To.StateId.ShouldBe(spare.Id);
+    }
+
+    [Test]
+    public async Task Put_WhenAStateWasReAddedUnderTheSameName_ShouldRebindTheTransition()
+    {
+        var (board, projectId) = await ArrangeStoriesAsync();
+        var spare = new StateRef(Guid.NewGuid(), "Spare", StateCategory.Proposed);
+        await ArrangeStateAsync(projectId, WorkItemTypeId.Story, spare);
+        var story = Live(board, WorkItemTypeId.Story);
+        var saved = (await Store.PutAsync(board.Id, new BoardSettingsPut(board.Settings, board.Settings with { Transitions = [Transition("t1", WorkItemTypeId.Story, story[0], spare)] }))).Board;
+        await ArrangeArchivedStateAsync(projectId, WorkItemTypeId.Story, spare.Id);
+        var back = new StateRef(Guid.NewGuid(), "SPARE", StateCategory.Proposed);
+        await ArrangeStateAsync(projectId, WorkItemTypeId.Story, back);
+
+        var result = await Store.PutAsync(board.Id, new BoardSettingsPut(saved.Settings, saved.Settings with { TagColours = [new TagColourJson("Urgent", Swatch.Danger)] }));
+
+        var transition = result.Board.Settings.Transitions.Single();
+        transition.To.ShouldBe(new StateRefJson(back.Id, "SPARE"));
+        transition.Id.ShouldBe("t1");
+    }
+
+    [Test]
+    public async Task Put_WhenActionNamesAnArchivedOrUnknownConnection_ShouldBeValidation()
+    {
+        var (board, _) = await ArrangeStoriesAsync();
+        var story = Live(board, WorkItemTypeId.Story);
+        var archived = await ArrangeConnectionAsync(archived: true);
+
+        (await PutFailureAsync(board, board.Settings with { Transitions = [Transition("t1", WorkItemTypeId.Story, null, story[1], archived)] })).ShouldBe(ApiErrorCodes.Validation);
+        (await PutFailureAsync(board, board.Settings with { Transitions = [Transition("t1", WorkItemTypeId.Story, null, story[1], Guid.NewGuid())] })).ShouldBe(ApiErrorCodes.Validation);
+    }
+
+    [Test]
+    public async Task Put_WhenAnActionKeepsAConnectionThatWasArchivedAfterSaving_ShouldSave()
+    {
+        var (board, _) = await ArrangeStoriesAsync();
+        var story = Live(board, WorkItemTypeId.Story);
+        var connection = await ArrangeConnectionAsync(archived: false);
+        var saved = (await Store.PutAsync(board.Id, new BoardSettingsPut(board.Settings, board.Settings with { Transitions = [Transition("t1", WorkItemTypeId.Story, null, story[1], connection)] }))).Board;
+        await ArchiveConnectionAsync(connection);
+
+        var result = await Store.PutAsync(board.Id, new BoardSettingsPut(saved.Settings, saved.Settings with { TagColours = [new TagColourJson("Urgent", Swatch.Danger)] }));
+
+        result.Board.Settings.Transitions.Single().Actions.Single().ConnectionId.ShouldBe(connection);
     }
 
     private static List<BoardColumnJson> Replace(IReadOnlyList<BoardColumnJson> columns, int index, BoardColumnJson column)

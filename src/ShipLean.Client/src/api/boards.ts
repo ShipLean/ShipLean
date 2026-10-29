@@ -17,6 +17,7 @@ export const BOARD_SECTIONS = [
   'tagColours',
   'annotations',
   'cardReordering',
+  'transitions',
 ] as const satisfies readonly (keyof BoardSettingsJson)[];
 export type BoardSection = (typeof BOARD_SECTIONS)[number];
 

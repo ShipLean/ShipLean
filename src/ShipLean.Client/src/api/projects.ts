@@ -50,8 +50,6 @@ export interface StateDto {
   category: StateCategory;
   order: number;
   itemCount: number;
-  /** Moving an item into this state opens an agent session. */
-  startsAgent: boolean;
 }
 
 /** A connection a project admin can pick; `archived` marks the project's own choice after it was archived. */
@@ -131,8 +129,6 @@ export interface StateAdd {
   type: WorkItemTypeId;
   name: string;
   category: StateCategory;
-  /** Absent means false: only a flagged new state sends it. */
-  startsAgent?: boolean;
 }
 
 /** Rename and/or recategorise; the state keeps its id and items. */
@@ -140,8 +136,6 @@ export interface StateUpdate {
   stateId: string;
   name: string;
   category: StateCategory;
-  /** Left out = unchanged. */
-  startsAgent?: boolean;
 }
 
 export interface StateReorder {
