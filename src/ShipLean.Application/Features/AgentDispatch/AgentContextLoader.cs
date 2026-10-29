@@ -17,7 +17,7 @@ namespace ShipLean.Application.Features.AgentDispatch;
 // Markdown attachments are read through the blob store, in upload order, up to InlineAttachmentBytes in all, counted as they will be sent (UTF-8 bytes
 // of the XML-escaped text); the first one that does not fit, and every attachment after it, is left as a link. One that cannot be read (missing or
 // failing blob) is a warning in the log, and it and the rest are links too. Without a blob store (a follow-up prompt, which sends no promptContext) all are links.
-internal sealed class AgentContextLoader(NpgsqlDataSource dataSource, IBlobStore? blobs = null, ILogger? logger = null)
+internal sealed class AgentContextLoader(NpgsqlDataSource dataSource, Lazy<IBlobStore>? blobs = null, ILogger? logger = null)
 {
     public const int InlineAttachmentBytes = 200 * 1024;
 
@@ -165,7 +165,7 @@ internal sealed class AgentContextLoader(NpgsqlDataSource dataSource, IBlobStore
     // The blob's bytes, or null when it is missing or longer than limit.
     private async Task<byte[]?> ReadAsync(string storageRef, int limit, CancellationToken cancellationToken)
     {
-        var blob = await blobs!.GetAsync(storageRef, cancellationToken);
+        var blob = await blobs!.Value.GetAsync(storageRef, cancellationToken);
         if (blob is null)
         {
             return null;

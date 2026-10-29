@@ -12,8 +12,10 @@ namespace ShipLean.Application.Features.AgentDispatch;
 // Opens an agent session: one transaction inserts the session (submitted) and its `created` delivery, rendered by
 // AgentContextRenderer. The partial unique index ux_agent_session_live decides a race, so a second starter finds the item
 // taken and writes nothing. Nothing is sent here: the delivery service sends the outbox. An archived connection counts as no connection.
+// The blob store is lazy: this starter is built at startup (AgentDispatchSubscriber), and making a folder store then
+// would stop the host when its folder is not writable, before any attachment is read.
 public sealed class AgentSessionStarter(
-    NpgsqlDataSource dataSource, IProjectAgentSettings projectSettings, IAgentConnections connections, AgentSessionNotifier notifier, TimeProvider time, IBlobStore blobs, ILogger<AgentSessionStarter> logger)
+    NpgsqlDataSource dataSource, IProjectAgentSettings projectSettings, IAgentConnections connections, AgentSessionNotifier notifier, TimeProvider time, Lazy<IBlobStore> blobs, ILogger<AgentSessionStarter> logger)
 {
     // agent-relay refuses a body over 1 MiB (413, then retries until the session fails), so the body is kept under this.
     private const int MaxBodyBytes = 900_000;
