@@ -142,6 +142,102 @@ public class FeatureBoardReadApiTests : ApiFixture
     }
 
     [Test]
+    public async Task FeatureBoard_WhenSectionHasOpenAndClosedStories_ShouldListOpenBeforeClosed()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var feature = await Item("feature", "Open then closed").InsertAsync(connection);
+        var closed = await Item("story", "Closed first").WithParent(feature).WithStateNamed("Closed").InsertAsync(connection);
+        var openLater = await Item("bug", "Open later").WithParent(feature).InsertAsync(connection);
+        var openLast = await Item("story", "Open last").WithParent(feature).InsertAsync(connection);
+
+        var view = await ViewAsync(connection, feature);
+
+        var ids = view.Rows.Select(r => r.Parent.Id).ToList();
+        ids.ShouldBe([openLater, openLast, closed], ignoreOrder: true);
+        ids[^1].ShouldBe(closed);
+    }
+
+    [Test]
+    public async Task FeatureBoard_WhenTasksAreAssigned_ShouldListUnassignedFirstThenPeopleByName()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var feature = await Item("feature", "People order").InsertAsync(connection);
+        var story = await Item("story", "People story").WithParent(feature).InsertAsync(connection);
+        await Item("task", "By Tom").WithParent(story).WithAssignee(SeedIds.Users.Tom).InsertAsync(connection);
+        await Item("task", "By Priya").WithParent(story).WithAssignee(SeedIds.Users.Priya).InsertAsync(connection);
+        await Item("task", "By Mei").WithParent(story).WithAssignee(SeedIds.Users.Mei).InsertAsync(connection);
+        await Item("task", "Nobody").WithParent(story).InsertAsync(connection);
+
+        var view = await ViewAsync(connection, feature);
+
+        view.PeopleRows[0].Person.ShouldBeNull();
+        view.PeopleRows[0].TaskCount.ShouldBe(1);
+        var names = view.PeopleRows.Skip(1).Select(p => p.Person!.Name).ToList();
+        names.Count.ShouldBe(3);
+        names.ShouldBe([.. names.OrderBy(n => n, StringComparer.OrdinalIgnoreCase)]);
+        view.PeopleRows.Skip(1).Select(p => p.Person!.Id).ShouldBe([SeedIds.Users.Tom, SeedIds.Users.Priya, SeedIds.Users.Mei], ignoreOrder: true);
+    }
+
+    [Test]
+    public async Task FeatureBoard_WhenPeopleCellsMixStories_ShouldListTasksInRowOrder()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var feature = await Item("feature", "Mixed cell").InsertAsync(connection);
+        var closedStory = await Item("story", "Closed story").WithParent(feature).WithStateNamed("Closed").InsertAsync(connection);
+        var openStory = await Item("story", "Open story").WithParent(feature).InsertAsync(connection);
+        var closedTask = await Item("task", "Under closed").WithParent(closedStory).WithAssignee(SeedIds.Users.Tom).InsertAsync(connection);
+        var openTask = await Item("task", "Under open").WithParent(openStory).WithAssignee(SeedIds.Users.Tom).InsertAsync(connection);
+
+        var view = await ViewAsync(connection, feature);
+
+        view.Rows.Select(r => r.Parent.Id).ShouldBe([openStory, closedStory]);
+        var cell = view.PeopleRows.Single(p => p.Person?.Id == SeedIds.Users.Tom).Cells.Single(c => c.Tasks.Count == 2);
+        cell.Tasks.Select(t => t.Id).ShouldBe([openTask, closedTask]);
+    }
+
+    [Test]
+    public async Task FeatureBoard_WhenFeatureHasNoStories_ShouldReturnAnEmptyBoard()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var feature = await Item("feature", "Empty feature").InsertAsync(connection);
+
+        var view = await ViewAsync(connection, feature);
+
+        view.Sections.Select(s => s.Id).ShouldBe([feature]);
+        view.Sections[0].StoriesTotal.ShouldBe(0);
+        view.Rows.ShouldBeEmpty();
+        view.Header.StoriesTotal.ShouldBe(0);
+        view.Header.TasksTotal.ShouldBe(0);
+        view.Header.PointsTotal.ShouldBeNull();
+        view.Header.AnyInBacklog.ShouldBeFalse();
+        view.Header.Sprints.ShouldBeEmpty();
+        view.PeopleRows.Single().Person.ShouldBeNull();
+        view.PeopleRows.Single().TaskCount.ShouldBe(0);
+    }
+
+    [Test]
+    public async Task FeatureBoard_WhenRemovedNestedFeatureHasTasksUnderLiftedStories_ShouldShowTheTasks()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var root = await Item("feature", "Removal tasks root").InsertAsync(connection);
+        var removed = await Item("feature", "Removed with tasks").WithParent(root).WithStateNamed("Removed").InsertAsync(connection);
+        var orphanStory = await Item("story", "Orphan with task").WithParent(removed).InsertAsync(connection);
+        var lifted = await Item("feature", "Lifted with tasks").WithParent(removed).InsertAsync(connection);
+        var liftedStory = await Item("story", "Lifted with task").WithParent(lifted).InsertAsync(connection);
+        var orphanTask = await Item("task", "Orphan task").WithParent(orphanStory).InsertAsync(connection);
+        var liftedTask = await Item("task", "Lifted task").WithParent(liftedStory).InsertAsync(connection);
+
+        var view = await ViewAsync(connection, root);
+
+        view.Rows.Single(r => r.Parent.Id == orphanStory).FeatureId.ShouldBe(root);
+        view.Rows.Single(r => r.Parent.Id == liftedStory).FeatureId.ShouldBe(lifted);
+        view.Rows.Single(r => r.Parent.Id == orphanStory).Cells.SelectMany(c => c.Tasks).Select(t => t.Id).ShouldBe([orphanTask]);
+        view.Rows.Single(r => r.Parent.Id == liftedStory).Cells.SelectMany(c => c.Tasks).Select(t => t.Id).ShouldBe([liftedTask]);
+        view.Header.TasksTotal.ShouldBe(2);
+        view.PeopleRows.Sum(p => p.TaskCount).ShouldBe(2);
+    }
+
+    [Test]
     public async Task FeatureBoard_WhenKeyIsAStory_ShouldBeNotFound()
     {
         await using var connection = await OpenDatabaseAsync();

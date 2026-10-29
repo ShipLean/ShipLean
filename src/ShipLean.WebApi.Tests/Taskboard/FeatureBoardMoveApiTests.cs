@@ -2,8 +2,10 @@ using System.Net;
 using Dapper;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Taskboard;
+using ShipLean.Contracts.Views;
 using ShipLean.Contracts.WorkItems;
 using ShipLean.TestSupport;
+using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Fixtures;
 
 namespace ShipLean.WebApi.Tests.Taskboard;
@@ -30,14 +32,68 @@ public class FeatureBoardMoveApiTests : ApiFixture
     {
         await using var connection = await OpenDatabaseAsync();
         var board = await FeatureBoardMoveArrangement.InsertAsync(connection, "Reparent move");
-        var sprintBefore = await connection.ExecuteScalarAsync<Guid?>("SELECT sprint_id FROM work_item WHERE id = @id", new { id = board.StoryTaskOne });
+        var ownSprint = await TaskboardArrangement.InsertSprintAsync(connection, SeedIds.Projects.Ship, "Reparent own sprint", 1300);
+        ownSprint.ShouldNotBe(board.NestedSprint);
+        var task = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("task").WithTitle("Sprinted task").WithParent(board.Story).WithSprint(ownSprint).InsertAsync(connection);
 
-        var result = await MoveAsync(board.Feature, new(board.StoryTaskOne, 1, SeedIds.States.Ship.TaskNew, new(TaskboardGrouping.Stories, board.NestedStory), null));
+        var result = await MoveAsync(board.Feature, new(task, 1, SeedIds.States.Ship.TaskNew, new(TaskboardGrouping.Stories, board.NestedStory), null));
 
         result.ParentId.ShouldBe(board.NestedStory);
-        (await connection.ExecuteScalarAsync<Guid?>("SELECT parent_id FROM work_item WHERE id = @id", new { id = board.StoryTaskOne })).ShouldBe(board.NestedStory);
-        (await connection.ExecuteScalarAsync<Guid?>("SELECT sprint_id FROM work_item WHERE id = @id", new { id = board.StoryTaskOne })).ShouldBe(sprintBefore);
-        sprintBefore.ShouldBeNull();
+        (await connection.ExecuteScalarAsync<Guid?>("SELECT parent_id FROM work_item WHERE id = @id", new { id = task })).ShouldBe(board.NestedStory);
+        (await connection.ExecuteScalarAsync<Guid?>("SELECT sprint_id FROM work_item WHERE id = @id", new { id = task })).ShouldBe(ownSprint);
+    }
+
+    [Test]
+    public async Task FeatureBoardMove_WhenDroppedAboveACard_ShouldPersistCellOrder()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var board = await FeatureBoardMoveArrangement.InsertAsync(connection, "Order move");
+
+        await MoveAsync(board.Feature, new(board.StoryTaskTwo, 1, SeedIds.States.Ship.TaskNew, null, board.StoryTaskOne));
+
+        var view = await Api.GetAsync<FeatureBoardViewDto>($"api/projects/{SeedIds.Projects.Ship}/work-items/by-key/{await KeyAsync(connection, board.Feature)}/feature-board");
+        var row = view.Rows.Single(r => r.Parent.Id == board.Story);
+        row.Cells.Single(c => c.StateId == SeedIds.States.Ship.TaskNew).Tasks.Select(t => t.Id).ShouldBe([board.StoryTaskTwo, board.StoryTaskOne]);
+    }
+
+    [Test]
+    public async Task FeatureBoardMove_WhenDroppedOnTheUnassignedRow_ShouldClearTheAssignee()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var board = await FeatureBoardMoveArrangement.InsertAsync(connection, "Unassign move");
+        await connection.ExecuteAsync("UPDATE work_item SET assigned_to = @user WHERE id = @id", new { user = SeedIds.Users.Priya, id = board.StoryTaskOne });
+
+        await MoveAsync(board.Feature, new(board.StoryTaskOne, 1, SeedIds.States.Ship.TaskActive, new(TaskboardGrouping.People, null), null));
+
+        (await connection.ExecuteScalarAsync<Guid?>("SELECT assigned_to FROM work_item WHERE id = @id", new { id = board.StoryTaskOne })).ShouldBeNull();
+        (await connection.ExecuteScalarAsync<Guid>("SELECT state_id FROM work_item WHERE id = @id", new { id = board.StoryTaskOne })).ShouldBe(SeedIds.States.Ship.TaskActive);
+    }
+
+    [Test]
+    public async Task FeatureBoardMove_WhenTheTargetIsABug_ShouldReparentToIt()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var board = await FeatureBoardMoveArrangement.InsertAsync(connection, "Bug target move");
+
+        var result = await MoveAsync(board.Feature, new(board.StoryTaskOne, 1, SeedIds.States.Ship.TaskNew, new(TaskboardGrouping.Stories, board.Bug), null));
+
+        result.ParentId.ShouldBe(board.Bug);
+        (await connection.ExecuteScalarAsync<Guid?>("SELECT parent_id FROM work_item WHERE id = @id", new { id = board.StoryTaskOne })).ShouldBe(board.Bug);
+    }
+
+    [Test]
+    public async Task FeatureBoardMove_WhenTheStorySitsUnderARemovedNestedFeature_ShouldMoveItsTaskAndAcceptItAsTarget()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var board = await FeatureBoardMoveArrangement.InsertAsync(connection, "Removed nested move");
+        await connection.ExecuteAsync("UPDATE work_item SET state_id = @removed WHERE id = @id", new { removed = SeedIds.States.Ship.FeatureRemoved, id = board.NestedFeature });
+
+        var column = await MoveAsync(board.Feature, new(board.NestedTask, 1, SeedIds.States.Ship.TaskClosed, null, null));
+        var reparent = await MoveAsync(board.Feature, new(board.StoryTaskOne, 1, SeedIds.States.Ship.TaskNew, new(TaskboardGrouping.Stories, board.NestedStory), null));
+
+        column.ParentId.ShouldBe(board.NestedStory);
+        reparent.ParentId.ShouldBe(board.NestedStory);
+        (await connection.ExecuteScalarAsync<Guid>("SELECT state_id FROM work_item WHERE id = @id", new { id = board.NestedTask })).ShouldBe(SeedIds.States.Ship.TaskClosed);
     }
 
     [Test]
@@ -123,6 +179,8 @@ public class FeatureBoardMoveApiTests : ApiFixture
         last.OfferResolve.ShouldBeTrue();
         last.ParentId.ShouldBe(board.Story);
     }
+
+    private static Task<string> KeyAsync(Npgsql.NpgsqlConnection connection, Guid id) => connection.ExecuteScalarAsync<string>("SELECT key FROM work_item WHERE id = @id", new { id })!;
 
     private async Task<TaskboardMoveResultDto> MoveAsync(Guid featureId, TaskboardMoveRequest request)
     {

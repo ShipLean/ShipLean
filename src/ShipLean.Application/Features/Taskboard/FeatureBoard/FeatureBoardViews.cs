@@ -29,10 +29,10 @@ public sealed class FeatureBoardViews(
 
         var descendants = await tree.DescendantsAsync(projectId, root.Id, null, cancellationToken);
         var layout = FeatureBoardTree.Layout(root, descendants);
-        var rowOrder = layout.SelectMany(s => s.StoryIds.Select(id => (Section: s.Id, Story: id))).ToList();
-        var storyIds = rowOrder.Select(r => r.Story).ToList();
-
         var stack = (await tree.StackAsync(projectId, StackLevel.Requirement, null, true, cancellationToken)).ToDictionary(r => r.Id);
+        // A story removed between the two reads is skipped rather than failing the board.
+        var rowOrder = layout.SelectMany(s => s.StoryIds.Select(id => (Section: s.Id, Story: id))).Where(r => stack.ContainsKey(r.Story)).ToList();
+        var storyIds = rowOrder.Select(r => r.Story).ToList();
         var parents = storyIds.Select(id => stack[id]).ToList();
         var taskRows = await tasks.ForParentsAsync(projectId, storyIds, null, cancellationToken);
         var rollups = await tree.RollupsAsync(projectId, storyIds, null, cancellationToken);
@@ -40,16 +40,18 @@ public sealed class FeatureBoardViews(
 
         var states = TaskboardGrid.TaskStates(board);
         var taskCards = taskRows.Select(row => byId[row.Id]).ToList();
+        var tasksByParent = taskCards.Where(t => t.Parent is not null).ToLookup(t => t.Parent!.Id);
         var rows = rowOrder.Select(r =>
         {
             var parent = stack[r.Story];
-            var rowTasks = taskCards.Where(t => t.Parent?.Id == parent.Id).ToList();
+            var rowTasks = tasksByParent[parent.Id].ToList();
             return new FeatureBoardRowDto(byId[parent.Id], TaskboardGrid.OfferResolve(parent, rowTasks), TaskboardGrid.Cells(rowTasks, states), r.Section, parent.Sprint);
         }).ToList();
 
+        var rowsBySection = rows.ToLookup(r => r.FeatureId);
         return new FeatureBoardViewDto(
             root.Id, board.Id, await HeaderAsync(projectId, root, layout.Count - 1, rows, taskCards, cancellationToken),
-            TaskboardGrid.Columns(states, taskCards), [.. layout.Select(s => Section(s, rows))], rows,
+            TaskboardGrid.Columns(states, taskCards), [.. layout.Select(s => Section(s, rowsBySection[s.Id]))], rows,
             TaskboardGrid.PeopleRows(TaskboardGrid.InRowOrder(taskCards, storyIds), states), TaskboardGrid.ParentStates(board),
             board.Settings.StyleRules, board.Settings.CardFields, board.Settings.Annotations);
     }
@@ -70,9 +72,9 @@ public sealed class FeatureBoardViews(
             [.. byStart.Select(id => sprints.First(s => s.Id == id))], rows.Any(r => r.Sprint is null));
     }
 
-    private static FeatureBoardSectionDto Section(FeatureBoardSection section, List<FeatureBoardRowDto> rows)
+    private static FeatureBoardSectionDto Section(FeatureBoardSection section, IEnumerable<FeatureBoardRowDto> sectionRows)
     {
-        var own = rows.Where(r => r.FeatureId == section.Id).Select(r => r.Parent).ToList();
+        var own = sectionRows.Select(r => r.Parent).ToList();
         var (closed, pointsClosed, pointsTotal) = Counts(own);
         return new FeatureBoardSectionDto(section.Id, section.Key, section.Title, section.State, section.Depth, section.ParentFeature, closed, own.Count, pointsClosed, pointsTotal);
     }

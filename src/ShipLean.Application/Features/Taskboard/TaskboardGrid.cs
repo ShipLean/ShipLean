@@ -29,7 +29,12 @@ internal static class TaskboardGrid
 
     // A People cell mixes parents, so its tasks go in parent row order (tasks without a parent last) and then in cell order.
     public static IReadOnlyList<CardDto> InRowOrder(IReadOnlyList<CardDto> taskCards, IReadOnlyList<Guid> parentIds)
-        => [.. taskCards.OrderBy(t => t.Parent is { } parent ? ((List<Guid>)[.. parentIds]).IndexOf(parent.Id) : parentIds.Count)];
+    {
+        var position = new Dictionary<Guid, int>();
+        foreach (var id in parentIds)
+            position.TryAdd(id, position.Count);
+        return [.. taskCards.OrderBy(t => t.Parent is { } parent && position.TryGetValue(parent.Id, out var index) ? index : parentIds.Count)];
+    }
 
     // Unassigned first, then the people who have tasks, by name.
     public static IReadOnlyList<TaskboardPersonRowDto> PeopleRows(IReadOnlyList<CardDto> taskCards, IReadOnlyList<StateRef> states)
