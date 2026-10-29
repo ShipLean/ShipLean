@@ -2,7 +2,6 @@ using System.Data.Common;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Dapper;
-using ShipLean.Application.Features.Boards.Settings;
 using ShipLean.Contracts.Persisted;
 using ShipLean.Contracts.Refs;
 
@@ -50,7 +49,7 @@ internal static class BoardMappingRepair
                 await connection.ExecuteAsync(new CommandDefinition(
                     "UPDATE board SET settings = @settings::jsonb, updated_at = now() WHERE id = @id",
                     new { id, settings = JsonSerializer.Serialize(repaired, PersistedJson.Options) }, transaction, cancellationToken: cancellationToken));
-                touched.Add((id, BoardSections.Changed(settings, repaired)));
+                touched.Add((id, BoardSettingsSections.Changed(settings, repaired)));
             }
         }
 
