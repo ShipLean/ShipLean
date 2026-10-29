@@ -16,6 +16,7 @@ The address of every screen is in `src/ShipLean.Client/src/routes.ts` (ids, path
 | Project | `storiesBacklog`, `featuresBacklog`, `epicsBacklog` | `/p/:key/backlogs/{stories,features,epics}` | `mode` (list, planning, tree) |
 | Project | `workItem` | `/p/:key/items/:itemKey` | |
 | Project | `workItemAttachment` | `/p/:key/items/:itemKey/attachments/:attachmentId` | |
+| Project | `featureBoard` | `/p/:key/items/:itemKey/board` | `?settings=` |
 | Project | `storiesBoard`, `featuresBoard`, `epicsBoard` | `/p/:key/boards/{stories,features,epics}` | `settings` |
 | Project | `sprints` | `/p/:key/sprints` | |
 | Project | `sprintBacklog`, `capacity` | `/p/:key/sprints/:sprintId/{backlog,capacity}` | |
@@ -62,6 +63,8 @@ The five work item slots read the item through the query key `['projects', proje
 | `boardSettings` | Boards | `{ project, level, section: string \| undefined, onSectionChange(section), onClose() }`; the slot renders `BoardSettingsDialog({ projectId: project.id, level, section, onSectionChange, onClose })`, which finds the board's id by level itself (through `['projects', projectId, 'boards']`) |
 | `taskboard` | Taskboard | `{ project, sprint, sprints }` |
 | `taskboardSettings` | Taskboard | `{ project, sprint, sprints, section, onSectionChange, onClose }` |
+| `featureBoard` | Feature board | `{ project, itemKey }` |
+| `featureBoardSettings` | Feature board | `{ project, itemKey, section, onSectionChange, onClose }` (the Taskboard's dialog) |
 | `sprintsList`, `newSprintRail` | Sprints | `{ project, sprints }` |
 | `capacity` | Capacity | `{ project, sprint, sprints }` |
 | `sprintBacklog` | Sprint backlog | `{ project, sprint, sprints }` |

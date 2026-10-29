@@ -1,5 +1,5 @@
 // The Taskboard's write shapes. C#: ShipLean.Contracts.Taskboard. The read model (TaskboardViewDto) is in api/views.ts.
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../api/client';
 import type { WorkItemTypeId } from '../../api/refs';
@@ -13,6 +13,7 @@ import {
 import { showToast } from '../../components/toastStore';
 import { registerInvalidation } from '../../realtime';
 import { fetchPreference, preferenceKey } from '../../queries/shared';
+import { scopeId, type TaskboardScope } from './taskboardScope';
 
 export type TaskboardGrouping = 'stories' | 'people';
 
@@ -40,17 +41,31 @@ export interface TaskboardMoveResultDto {
 
 export const taskboardPath = (sprintId: string): string => `/api/sprints/${sprintId}/taskboard`;
 
-export const taskboardMovesPath = (sprintId: string): string => `${taskboardPath(sprintId)}/moves`;
+export const taskboardMovesPath = (scope: TaskboardScope): string =>
+  scope.kind === 'sprint'
+    ? `${taskboardPath(scope.sprintId)}/moves`
+    : `/api/work-items/${scope.featureId}/feature-board/moves`;
 
-export const taskboardKey = (projectId: string, sprintId: string) =>
-  ['projects', projectId, 'taskboard', sprintId] as const;
+/** The query key of the board's view: the Taskboard's for a sprint, the Feature board's for a Feature. */
+export const taskboardKey = (projectId: string, scope: TaskboardScope) =>
+  [
+    'projects',
+    projectId,
+    scope.kind === 'sprint' ? 'taskboard' : 'feature-board',
+    scopeId(scope),
+  ] as const;
 
 /** The key of the Taskboard's move mutations: while one is in flight the board is not refetched (the last move to settle does that). */
-export const taskboardMoveKey = (projectId: string, sprintId: string) =>
-  ['projects', projectId, 'taskboard-move', sprintId] as const;
+export const taskboardMoveKey = (projectId: string, scope: TaskboardScope) =>
+  [
+    'projects',
+    projectId,
+    scope.kind === 'sprint' ? 'taskboard-move' : 'feature-board-move',
+    scopeId(scope),
+  ] as const;
 
-// The events that change what the Taskboard shows. Own writes invalidate directly (a tab ignores its own events).
-const TASKBOARD_EVENTS = [
+// The events that change what a board (the Taskboard or the Feature board) shows. Own writes invalidate directly (a tab ignores its own events).
+export const TASKBOARD_EVENTS = [
   'workItemCreated',
   'workItemUpdated',
   'workItemMoved',
@@ -64,24 +79,24 @@ const TASKBOARD_EVENTS = [
 /** The Taskboard read model, refetched on the project's work item, sprint, state and board settings events. */
 export function useTaskboard(projectId: string, sprintId: string) {
   const queryClient = useQueryClient();
+  const scope = useMemo<TaskboardScope>(() => ({ kind: 'sprint', sprintId }), [sprintId]);
   useEffect(() => {
     const refetch = () => {
       // A refetch now would show the board without the move still on its way: the last move to settle refetches.
-      if (queryClient.isMutating({ mutationKey: taskboardMoveKey(projectId, sprintId) }) > 0)
-        return;
-      void queryClient.invalidateQueries({ queryKey: taskboardKey(projectId, sprintId) });
+      if (queryClient.isMutating({ mutationKey: taskboardMoveKey(projectId, scope) }) > 0) return;
+      void queryClient.invalidateQueries({ queryKey: taskboardKey(projectId, scope) });
     };
     const unregister = TASKBOARD_EVENTS.map((type) => registerInvalidation(type, refetch));
     return () => unregister.forEach((off) => off());
-  }, [projectId, sprintId, queryClient]);
+  }, [projectId, scope, queryClient]);
   return useQuery({
-    queryKey: taskboardKey(projectId, sprintId),
+    queryKey: taskboardKey(projectId, scope),
     queryFn: () => api.get<TaskboardViewDto>(taskboardPath(sprintId)),
   });
 }
 
-/** Creates a work item in this sprint's Taskboard: a task under a story or bug (or none), or a story or bug in the sprint. */
-export function useCreateOnTaskboard(projectId: string, sprintId: string) {
+/** Creates a work item on a board: a task under its row's story or bug, or a story or bug put in the sprint (sprint scope) or under the Feature (Feature scope). Nothing created on a Feature board is put in a sprint. */
+export function useCreateOnTaskboard(projectId: string, scope: TaskboardScope) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (create: { type: WorkItemTypeId; title: string; parentId: string | null }) =>
@@ -89,12 +104,13 @@ export function useCreateOnTaskboard(projectId: string, sprintId: string) {
         projectId,
         type: create.type,
         title: create.title,
-        parentId: create.parentId,
-        // A task under a story belongs to the sprint through its parent; the others are put in it.
-        sprintId: create.parentId === null ? sprintId : null,
+        // A story or bug added on a Feature board goes under the Feature.
+        parentId: create.parentId ?? (scope.kind === 'feature' ? scope.featureId : null),
+        // A task under a story belongs to the sprint through its parent; a story or bug is put in the board's sprint.
+        sprintId: create.parentId === null && scope.kind === 'sprint' ? scope.sprintId : null,
         changes: null,
       } satisfies WorkItemCreate),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: taskboardKey(projectId, sprintId) }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: taskboardKey(projectId, scope) }),
   });
 }
 
@@ -116,7 +132,7 @@ const NO_CHANGES: WorkItemChanges = {
 };
 
 /** Sets a story's or bug's state from its row header. */
-export function useSetParentState(projectId: string, sprintId: string) {
+export function useSetParentState(projectId: string, scope: TaskboardScope) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (change: { id: string; key: string; revision: number; stateId: string }) =>
@@ -131,7 +147,7 @@ export function useSetParentState(projectId: string, sprintId: string) {
           : `${change.key} could not change state.`,
         { tone: 'warn' },
       ),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: taskboardKey(projectId, sprintId) }),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: taskboardKey(projectId, scope) }),
   });
 }
 

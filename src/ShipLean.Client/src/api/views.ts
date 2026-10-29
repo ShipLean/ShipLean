@@ -154,6 +154,61 @@ export interface TaskboardViewDto {
   annotations: CardAnnotationsJson;
 }
 
+/** A taskboard row that always has a parent, plus its section (featureId) and the story's sprint (null = Backlog). */
+export interface FeatureBoardRowDto {
+  parent: CardDto;
+  offerResolve: boolean;
+  cells: TaskboardCellDto[];
+  featureId: string;
+  sprint: SprintRef | null;
+}
+
+/** depth 0 is the board's Feature; parentFeature is set from depth 2. Counts cover the section's own rows; points are null when none has any. */
+export interface FeatureBoardSectionDto {
+  id: string;
+  key: string;
+  title: string;
+  state: StateRef;
+  depth: number;
+  parentFeature: ParentRefDto | null;
+  storiesClosed: number;
+  storiesTotal: number;
+  pointsClosed: number | null;
+  pointsTotal: number | null;
+}
+
+/** The tree's roll-up, counted from the rows. sprints are ordered by start date. */
+export interface FeatureBoardHeaderDto {
+  id: string;
+  key: string;
+  title: string;
+  state: StateRef;
+  featuresUnder: number;
+  storiesClosed: number;
+  storiesTotal: number;
+  pointsClosed: number | null;
+  pointsTotal: number | null;
+  tasksClosed: number;
+  tasksTotal: number;
+  sprints: SprintRef[];
+  anyInBacklog: boolean;
+}
+
+/** GET of a Feature's board: rows are flat (section then row order); peopleRows cover the whole tree. */
+export interface FeatureBoardViewDto {
+  featureId: string;
+  boardId: string;
+  header: FeatureBoardHeaderDto;
+  columns: TaskboardColumnDto[];
+  sections: FeatureBoardSectionDto[];
+  rows: FeatureBoardRowDto[];
+  peopleRows: TaskboardPersonRowDto[];
+  parentStates: BoardTypeStatesDto[];
+  styleRules: StyleRuleJson[];
+  cardFields: CardFieldSettingJson[];
+  annotations: CardAnnotationsJson;
+}
+
 /** type and state are null on the noParentGroup row. Group rollups and childPoints count the filtered children. */
 export interface BacklogRowDto {
   kind: BacklogRowKind;

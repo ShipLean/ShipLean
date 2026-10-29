@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { BoardTypeStatesDto } from '../../../api/boards';
+import type { SprintRef } from '../../../api/refs';
 import type { CardFieldSettingJson } from '../../../api/persisted';
 import type { CardDto } from '../../../api/views';
 import { Avatar } from '../../../components/Avatar';
@@ -9,6 +10,7 @@ import { StateDot } from '../../../components/StateDot';
 import { TypeIcon } from '../../../components/TypeIcon';
 import { taskboardTestIds as ids } from '../testIds';
 import { RowToggle } from './RowToggle';
+import { SprintPill } from './SprintPill';
 
 /** The index card drawn behind a header's content: inset in the cell, which stays the theme surface. */
 function CardLayer({ collapsed }: { collapsed: boolean }) {
@@ -27,6 +29,7 @@ function CardLayer({ collapsed }: { collapsed: boolean }) {
 export function StoryRowHeader({
   projectKey,
   parent,
+  sprint,
   parentStates,
   fields,
   showProgress,
@@ -38,6 +41,8 @@ export function StoryRowHeader({
 }: {
   projectKey: string;
   parent: CardDto;
+  /** The story's sprint on a Feature board (null = Backlog), drawn after the key. Undefined on the Taskboard: no pill. */
+  sprint?: SprintRef | null;
   parentStates: BoardTypeStatesDto[];
   /** The Taskboard's Fields settings for this story or bug. */
   fields: Pick<
@@ -92,6 +97,7 @@ export function StoryRowHeader({
         <RowToggle collapsed={false} onToggle={onToggle} label={parent.key} />
         <TypeIcon type={parent.type.id} />
         {fields.showKey ? <span>{parent.key}</span> : null}
+        {sprint === undefined ? null : <SprintPill sprint={sprint} />}
         <span className="flex-1" />
         {fields.showPoints && (parent.points !== null || fields.showEmptyFields) ? (
           <span data-testid={ids.rowPoints}>{parent.points ?? '–'} pts</span>

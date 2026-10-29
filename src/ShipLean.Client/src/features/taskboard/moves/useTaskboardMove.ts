@@ -1,7 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRef } from 'react';
 import { api } from '../../../api/client';
-import type { TaskboardViewDto } from '../../../api/views';
 import { conflictOf } from '../../../api/workItems';
 import { showToast } from '../../../components/toastStore';
 import {
@@ -12,6 +11,8 @@ import {
   type TaskboardMoveRequest,
   type TaskboardMoveResultDto,
 } from '../taskboardApi';
+import { scopeId, type TaskboardScope } from '../taskboardScope';
+import type { TaskboardGridView } from '../taskboardGridView';
 import { applyMove, offerResolveOn, revisionOf, withRevision, type AppliedMove } from './applyMove';
 
 interface Sent {
@@ -27,16 +28,23 @@ interface Sent {
  * when it is sent (the previous move of that card has written the new one). A move the server refuses puts that card
  * back, says so in a toast and leaves other moves on their way alone. The board is refetched when the last move settles.
  */
-export function useTaskboardMove(projectId: string, sprintId: string, grouping: TaskboardGrouping) {
+export function useTaskboardMove(
+  projectId: string,
+  scope: TaskboardScope,
+  grouping: TaskboardGrouping,
+) {
   const queryClient = useQueryClient();
-  const queryKey = taskboardKey(projectId, sprintId);
+  const queryKey = taskboardKey(projectId, scope);
   const inFlight = useRef(0);
   const mutation = useMutation({
-    mutationKey: taskboardMoveKey(projectId, sprintId),
-    scope: { id: `taskboard-move:${sprintId}` },
+    mutationKey: taskboardMoveKey(projectId, scope),
+    scope: { id: `taskboard-move:${scopeId(scope)}` },
     mutationFn: ({ request }: Sent) => {
-      const held = revisionOf(queryClient.getQueryData<TaskboardViewDto>(queryKey), request.taskId);
-      return api.post<TaskboardMoveResultDto>(taskboardMovesPath(sprintId), {
+      const held = revisionOf(
+        queryClient.getQueryData<TaskboardGridView>(queryKey),
+        request.taskId,
+      );
+      return api.post<TaskboardMoveResultDto>(taskboardMovesPath(scope), {
         ...request,
         expectedRevision: held ?? request.expectedRevision,
       });
@@ -44,26 +52,26 @@ export function useTaskboardMove(projectId: string, sprintId: string, grouping: 
     onMutate: async ({ applied }) => {
       inFlight.current += 1;
       await queryClient.cancelQueries({ queryKey });
-      queryClient.setQueryData<TaskboardViewDto>(queryKey, (view) =>
+      queryClient.setQueryData<TaskboardGridView>(queryKey, (view) =>
         view ? applyMove(view, grouping, applied) : view,
       );
     },
     onSuccess: (result, { request, key, applied }) => {
       const { parentId, offerResolve, written } = result;
-      queryClient.setQueryData<TaskboardViewDto>(queryKey, (view) => {
+      queryClient.setQueryData<TaskboardGridView>(queryKey, (view) => {
         if (!view) return view;
         const updated = withRevision(view, request.taskId, written.revision);
         return offerResolve && parentId ? offerResolveOn(updated, parentId) : updated;
       });
       const column = queryClient
-        .getQueryData<TaskboardViewDto>(queryKey)
+        .getQueryData<TaskboardGridView>(queryKey)
         ?.columns.find((c) => c.state.id === applied.stateId);
       showToast(column ? `${key} moved to ${column.state.name}.` : `${key} moved.`, {
         tone: 'ok',
       });
     },
     onError: (error, { key, undo }) => {
-      queryClient.setQueryData<TaskboardViewDto>(queryKey, (view) =>
+      queryClient.setQueryData<TaskboardGridView>(queryKey, (view) =>
         view ? applyMove(view, grouping, undo) : view,
       );
       showToast(

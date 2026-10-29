@@ -1,8 +1,9 @@
 import type { BoardTypeStatesDto } from '../../../api/boards';
-import type { StateRef } from '../../../api/refs';
+import type { SprintRef, StateRef } from '../../../api/refs';
 import type { TaskboardRowDto, TaskboardViewDto } from '../../../api/views';
 import { passesFaces } from '../grid/faceFilter';
 import { gridColumns } from '../grid/gridColumns';
+import type { TaskboardScope } from '../taskboardScope';
 import { taskboardTestIds as ids } from '../testIds';
 import { AddTaskBox } from './AddTaskBox';
 import { CollapsedCell } from './CollapsedCell';
@@ -23,7 +24,7 @@ const ALL_FIELDS = {
 export function StoryRow({
   projectKey,
   projectId,
-  sprintId,
+  scope,
   row,
   columns,
   parentStates,
@@ -35,8 +36,8 @@ export function StoryRow({
 }: {
   projectKey: string;
   projectId: string;
-  sprintId: string;
-  row: TaskboardRowDto;
+  scope: TaskboardScope;
+  row: TaskboardRowDto & { sprint?: SprintRef | null };
   columns: { state: StateRef }[];
   parentStates: BoardTypeStatesDto[];
   view: Pick<TaskboardViewDto, 'styleRules' | 'cardFields' | 'annotations'>;
@@ -63,6 +64,7 @@ export function StoryRow({
         <StoryRowHeader
           projectKey={projectKey}
           parent={row.parent}
+          sprint={row.sprint}
           parentStates={parentStates}
           fields={fields}
           showProgress={view.annotations.tasks}
@@ -94,11 +96,7 @@ export function StoryRow({
             showParent={false}
           >
             {index === 0 ? (
-              <AddTaskBox
-                projectId={projectId}
-                sprintId={sprintId}
-                parentId={row.parent?.id ?? null}
-              />
+              <AddTaskBox projectId={projectId} scope={scope} parentId={row.parent?.id ?? null} />
             ) : null}
           </TaskCell>
         );

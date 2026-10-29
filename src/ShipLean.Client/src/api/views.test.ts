@@ -2,9 +2,10 @@ import { expect, test } from 'vitest';
 import backlogTree from '../../../ShipLean.TestSupport/DtoFixtures/views/backlog-view.tree.json';
 import boardFeatures from '../../../ShipLean.TestSupport/DtoFixtures/views/board-view.features.json';
 import boardStories from '../../../ShipLean.TestSupport/DtoFixtures/views/board-view.stories.json';
+import featureBoard from '../../../ShipLean.TestSupport/DtoFixtures/views/feature-board-view.json';
 import taskboard from '../../../ShipLean.TestSupport/DtoFixtures/views/taskboard-view.json';
 import { BACKLOG_MODES, BACKLOG_ROW_KINDS, BOARD_LANE_KINDS } from './views';
-import type { BacklogViewDto, BoardViewDto, TaskboardViewDto } from './views';
+import type { BacklogViewDto, BoardViewDto, FeatureBoardViewDto, TaskboardViewDto } from './views';
 
 // Literal unions widened to their base type, recursively: what a JSON import looks like.
 type DeepWiden<T> = T extends string
@@ -40,6 +41,7 @@ test('views_ShouldTypeEveryFixture', () => {
   const features = typed<BoardViewDto>()(boardFeatures);
   const tasks = typed<TaskboardViewDto>()(taskboard);
   const backlog = typed<BacklogViewDto>()(backlogTree);
+  const feature = typed<FeatureBoardViewDto>()(featureBoard);
 
   for (const lane of [...stories.lanes, ...features.lanes])
     expect(BOARD_LANE_KINDS).toContain(lane.kind);
@@ -55,4 +57,9 @@ test('views_ShouldTypeEveryFixture', () => {
   expect(tasks.rows.at(-1)?.parent).toBeNull();
   expect(tasks.peopleRows[0]?.person).toBeNull();
   expect(backlog.rows.some((row) => row.depth === 3)).toBe(true);
+  expect(feature.sections.map((section) => section.depth)).toEqual([0, 1, 2]);
+  expect(feature.rows.every((row) => feature.sections.some((s) => s.id === row.featureId))).toBe(
+    true,
+  );
+  expect(feature.rows.some((row) => row.sprint === null)).toBe(true);
 });

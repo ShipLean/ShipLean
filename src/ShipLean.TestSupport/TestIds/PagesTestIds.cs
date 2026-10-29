@@ -11,6 +11,7 @@ public static class PagesTestIds
     public const string SprintsPage = "page-sprints";
     public const string SprintBacklogPage = "page-sprint-backlog";
     public const string TaskboardPage = "page-taskboard";
+    public const string FeatureBoardPage = "page-feature-board";
     public const string CapacityPage = "page-capacity";
     public const string ImportPage = "page-import";
     public const string ProjectSettingsPage = "page-project-settings";
@@ -46,6 +47,7 @@ public static class PagesTestIds
     public const string SlotSprintBacklog = "slot-sprintBacklog";
     public const string SlotSprintEndPrompt = "slot-sprintEndPrompt";
     public const string SlotSprintsList = "slot-sprintsList";
+    public const string SlotFeatureBoard = "slot-featureBoard";
     public const string SlotTaskboard = "slot-taskboard";
     public const string SlotTaskboardSettings = "slot-taskboardSettings";
     public const string SlotTasks = "slot-tasks";

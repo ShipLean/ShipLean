@@ -7,6 +7,7 @@ import { ItemLink } from '../../itemPeek/ItemLink';
 import { CardExtraFields } from '../../board/cards/CardExtraFields';
 import { ruleCardStyle } from '../../board/cards/cardStyle';
 import { taskboardTestIds as ids } from '../testIds';
+import { useCardFeatures } from './CardFeatureContext';
 
 // What a task card shows when the board has no setting for tasks.
 const ALL_FIELDS = {
@@ -46,6 +47,7 @@ export function TaskCardFace({
   const fields = view.cardFields.find((f) => f.type === 'task') ?? ALL_FIELDS;
   const rule = view.styleRules.find((r) => r.id === card.styleRuleId);
   const id = (testId: string) => (preview ? undefined : testId);
+  const feature = useCardFeatures()?.get(card.parent?.id ?? '');
   return (
     <article
       ref={articleRef}
@@ -72,6 +74,13 @@ export function TaskCardFace({
         >
           {card.parent ? (
             <>
+              {feature ? (
+                <>
+                  <TypeIcon type="feature" />
+                  <span data-testid={id(ids.cardParentFeature)}>{feature.title}</span>
+                  <span aria-hidden>›</span>
+                </>
+              ) : null}
               <TypeIcon type={card.parent.type.id} />
               {preview ? (
                 card.parent.title
