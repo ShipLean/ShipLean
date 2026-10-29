@@ -12,6 +12,9 @@ internal static class BoardSections
     {
         BoardSettingsValidation.CheckWellFormed(basedOn, "basedOn");
         BoardSettingsValidation.CheckWellFormed(mine, "settings");
+        // A missing transitions section (a client from before it existed) is no change: the stored one is kept.
+        basedOn = basedOn with { Transitions = basedOn.Transitions ?? [] };
+        mine = mine with { Transitions = mine.Transitions ?? basedOn.Transitions };
         var currentNode = ToNode(current);
         var baseNode = ToNode(basedOn);
         var mineNode = ToNode(mine);

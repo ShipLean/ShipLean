@@ -15,6 +15,7 @@ export function emptySettings(): BoardSettingsJson {
     tagColours: [],
     annotations: { tasks: true, stories: true, bugs: true, features: true },
     cardReordering: null,
+    transitions: [],
   };
 }
 

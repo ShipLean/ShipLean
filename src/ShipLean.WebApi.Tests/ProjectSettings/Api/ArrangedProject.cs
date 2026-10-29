@@ -57,7 +57,7 @@ internal sealed class ArrangedProject
             new("col-doing", "Doing", null, false, "", [new(WorkItemTypeId.Story, project.State(WorkItemTypeId.Story, "Active")), new(WorkItemTypeId.Bug, project.State(WorkItemTypeId.Bug, "Active"))]),
         ];
         var settings = new BoardSettingsJson(
-            columns, [new SwimlaneJson("lane-default", "Everything else", null, SwimlaneKind.Default, null)], [], [], [], new CardAnnotationsJson(false, false, false, false), null);
+            columns, [new SwimlaneJson("lane-default", "Everything else", null, SwimlaneKind.Default, null)], [], [], [], new CardAnnotationsJson(false, false, false, false), null, []);
         await connection.ExecuteAsync(
             "INSERT INTO board (id, project_id, level, settings) VALUES (@boardId, @id, 'stories', @settings::jsonb)",
             new { boardId = Guid.NewGuid(), id, settings = JsonSerializer.Serialize(settings, PersistedJson.Options) });

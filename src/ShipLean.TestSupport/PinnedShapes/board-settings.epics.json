@@ -79,5 +79,6 @@
     { "tag": "Blocked", "colour": "danger" }
   ],
   "annotations": { "tasks": false, "stories": true, "bugs": true, "features": true },
-  "cardReordering": "changesBacklogOrder"
+  "cardReordering": "changesBacklogOrder",
+  "transitions": []
 }

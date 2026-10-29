@@ -123,5 +123,6 @@
     { "tag": "Spike", "colour": "purple" }
   ],
   "annotations": { "tasks": true, "stories": false, "bugs": false, "features": false },
-  "cardReordering": "changesBacklogOrder"
+  "cardReordering": "changesBacklogOrder",
+  "transitions": []
 }
