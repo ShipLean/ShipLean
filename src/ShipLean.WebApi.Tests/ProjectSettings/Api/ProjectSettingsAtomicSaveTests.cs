@@ -180,6 +180,23 @@ public class ProjectSettingsAtomicSaveTests : ApiFixture
     }
 
     // delete Active and re-add "Active", items going to the new one (one ApplyAsync accepts this).
+    // An SPA cached from before the deploy still sends v1's startsAgent flag on state adds and updates; it is ignored, not refused.
+    [Test]
+    public async Task Settings_WhenAnOldClientSendsStartsAgentOnAStateAddAndUpdate_ShouldSave()
+    {
+        var project = await ArrangeAsync();
+        var active = project.State(WorkItemTypeId.Story, "Active");
+        var changes = new StateChanges([new StateAdd(Guid.NewGuid(), WorkItemTypeId.Story, "Reviewing", StateCategory.InProgress)], [new StateUpdate(active, "Doing", StateCategory.InProgress)], [], []);
+        var body = JsonSerializer.SerializeToNode(await RequestAsync(project, changes), WireOptions)!;
+        body["states"]!["add"]![0]!["startsAgent"] = true;
+        body["states"]!["update"]![0]!["startsAgent"] = true;
+
+        using var response = await Api.PutJsonAsync($"api/projects/{project.Id}/settings", body);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+        (await LiveStatesAsync(project)).ShouldContain(s => s.Id == active && s.Name == "Doing");
+    }
+
     [Test]
     public async Task Settings_WhenStateDeletedIntoNewStateOfTheSameName_ShouldSave()
     {

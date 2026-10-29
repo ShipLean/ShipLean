@@ -5,6 +5,7 @@ using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Persisted;
 using ShipLean.Contracts.Projects;
+using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Sprints;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
@@ -101,6 +102,36 @@ public class ProjectCreationApiTests : ApiFixture
         copied.StyleRules.ShouldNotContain(r => r.Name == "Gone rule");
         var copiedLive = await connection.ExecuteScalarAsync<Guid>("SELECT id FROM state WHERE project_id = @id AND type = 'story' AND name = 'Active'", new { id = created.Id });
         Guids(JsonSerializer.Serialize(copied.StyleRules.Single(r => r.Name == "Mixed rule"))).ShouldBe([copiedLive]);
+    }
+
+    [Test]
+    public async Task Create_WhenCopiedBoardHasTransitions_ShouldBindThemToTheCopiesStatesAndDropOneNamingAnArchivedState()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        Task<Guid> StateAsync(Guid project, string name) => connection.ExecuteScalarAsync<Guid>("SELECT id FROM state WHERE project_id = @project AND type = 'story' AND name = @name", new { project, name });
+        var (sourceNew, sourceActive, sourceResolved) = (await StateAsync(SeedIds.Projects.Ship, "New"), await StateAsync(SeedIds.Projects.Ship, "Active"), await StateAsync(SeedIds.Projects.Ship, "Resolved"));
+        var text = await connection.ExecuteScalarAsync<string>("SELECT settings::text FROM board WHERE project_id = @id AND level = 'stories'", new { id = SeedIds.Projects.Ship });
+        var settings = JsonSerializer.Deserialize<BoardSettingsJson>(text!, PersistedJson.Options)!;
+        ActionJson[] Actions(string id) => [new ActionJson(id, "agent", "Go.", null)];
+        var archived = new StateRefJson(Guid.NewGuid(), "Gone");
+        var transitions = new[]
+        {
+            new TransitionJson("t-valid", WorkItemTypeId.Story, new StateRefJson(sourceNew, "New"), new StateRefJson(sourceActive, "Active"), Actions("a1")),
+            new TransitionJson("t-any", WorkItemTypeId.Story, null, new StateRefJson(sourceResolved, "Resolved"), Actions("a2")),
+            new TransitionJson("t-archived", WorkItemTypeId.Story, archived, new StateRefJson(sourceActive, "Active"), Actions("a3")),
+        };
+        await connection.ExecuteAsync("UPDATE board SET settings = @json::jsonb WHERE project_id = @id AND level = 'stories'", new { id = SeedIds.Projects.Ship, json = JsonSerializer.Serialize(settings with { Transitions = transitions }, PersistedJson.Options) });
+
+        var created = await CreateAsync(Request(NextKey(), SeedIds.Projects.Ship));
+
+        var copied = JsonSerializer.Deserialize<BoardSettingsJson>(
+            (await connection.ExecuteScalarAsync<string>("SELECT settings::text FROM board WHERE project_id = @id AND level = 'stories'", new { id = created.Id }))!, PersistedJson.Options)!;
+        var (copyNew, copyActive, copyResolved) = (await StateAsync(created.Id, "New"), await StateAsync(created.Id, "Active"), await StateAsync(created.Id, "Resolved"));
+        copied.Transitions.Select(t => t.Id).ShouldBe(["t-valid", "t-any"]);
+        copied.Transitions[0].From.ShouldBe(new StateRefJson(copyNew, "New"));
+        copied.Transitions[0].To.ShouldBe(new StateRefJson(copyActive, "Active"));
+        copied.Transitions[1].From.ShouldBeNull();
+        copied.Transitions[1].To.ShouldBe(new StateRefJson(copyResolved, "Resolved"));
     }
 
     [Test]

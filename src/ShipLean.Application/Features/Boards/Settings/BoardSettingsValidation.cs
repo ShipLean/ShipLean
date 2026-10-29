@@ -96,9 +96,14 @@ internal static class BoardSettingsValidation
             throw ApiException.Validation($"A {level} board has no transitions.");
         }
         var ids = new HashSet<string>();
+        var actionIds = new HashSet<string>();
         var keys = new HashSet<(WorkItemTypeId, Guid?, Guid)>();
         foreach (var transition in transitions)
         {
+            if (string.IsNullOrWhiteSpace(transition.Id))
+            {
+                throw ApiException.Validation("A transition needs an id.");
+            }
             if (!ids.Add(transition.Id))
             {
                 throw ApiException.Validation("Two transitions share an id.");
@@ -115,21 +120,22 @@ internal static class BoardSettingsValidation
             {
                 throw ApiException.Validation($"A {transition.Type} transition from {transition.From?.Name ?? "Any state"} to {transition.To.Name} is listed twice.");
             }
-            CheckActions(transition);
-            var unchanged = stored.FirstOrDefault(t => t.Id == transition.Id) is { } before && Json(before) == Json(transition);
-            if (!unchanged)
+            CheckActions(transition, actionIds);
+            // Only a ref that differs from the stored transition's must be live: editing a prompt of an Invalid transition saves.
+            var before = stored.FirstOrDefault(t => t.Id == transition.Id);
+            var live = statesByType.GetValueOrDefault(transition.Type) ?? [];
+            var changedRefs = new[] { (Now: transition.From, Was: before?.From), (Now: (StateRefJson?)transition.To, Was: before?.To) }
+                .Where(r => r.Now is not null && (before is null || r.Now != r.Was))
+                .Select(r => r.Now!);
+            var missing = changedRefs.FirstOrDefault(state => live.All(s => s.Id != state.StateId));
+            if (missing is not null)
             {
-                var live = statesByType.GetValueOrDefault(transition.Type) ?? [];
-                var missing = new[] { transition.From, transition.To }.OfType<StateRefJson>().FirstOrDefault(state => live.All(s => s.Id != state.StateId));
-                if (missing is not null)
-                {
-                    throw ApiException.Validation($"{missing.Name} is not a live {transition.Type} state.");
-                }
+                throw ApiException.Validation($"{missing.Name} is not a live {transition.Type} state.");
             }
         }
     }
 
-    private static void CheckActions(TransitionJson transition)
+    private static void CheckActions(TransitionJson transition, HashSet<string> actionIds)
     {
         if (transition.Actions.Count == 0)
         {
@@ -137,6 +143,14 @@ internal static class BoardSettingsValidation
         }
         foreach (var action in transition.Actions)
         {
+            if (string.IsNullOrWhiteSpace(action.Id))
+            {
+                throw ApiException.Validation("An action needs an id.");
+            }
+            if (!actionIds.Add(action.Id))
+            {
+                throw ApiException.Validation("Two actions share an id.");
+            }
             if (action.Kind != AgentActionKind)
             {
                 throw ApiException.Validation($"{action.Kind} is not an action a transition can run.");
@@ -147,8 +161,6 @@ internal static class BoardSettingsValidation
             }
         }
     }
-
-    private static string Json(TransitionJson transition) => JsonSerializer.Serialize(transition, PersistedJson.Options);
 
     private static void CheckCriteria(string what, CriteriaJson json, ICriteriaEvaluator evaluator)
     {

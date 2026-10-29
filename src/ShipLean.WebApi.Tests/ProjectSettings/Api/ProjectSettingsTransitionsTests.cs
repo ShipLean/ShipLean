@@ -147,6 +147,26 @@ public class ProjectSettingsTransitionsTests : ApiFixture
         (await IsValidAsync(project)).ShouldBeTrue();
     }
 
+    // The save's bulk remap of a removed state's items is not a person starting them: the sprint rule skips it.
+    [Test]
+    public async Task Settings_WhenARemovedStatesItemsMoveFromProposedToInProgress_ShouldLeaveThemWithoutASprint()
+    {
+        var (project, _) = await ArrangeAsync();
+        var proposed = project.State(WorkItemTypeId.Story, "New");
+        var inProgress = project.State(WorkItemTypeId.Story, "Active");
+        await using var connection = await OpenDatabaseAsync();
+        var today = DateOnly.FromDateTime(TimeProvider.System.GetUtcNow().UtcDateTime);
+        await connection.ExecuteAsync(
+            "INSERT INTO sprint (id, project_id, name, start_date, end_date) VALUES (@id, @projectId, 'Current', @start, @end)",
+            new { id = Guid.NewGuid(), projectId = project.Id, start = today.AddDays(-3), end = today.AddDays(3) });
+        var item = await new ShipLean.TestSupport.Builders.WorkItemBuilder(project.Id).WithType("story").WithState(proposed).InsertAsync(connection);
+
+        await SaveAsync(project, new StateChanges([new StateAdd(Guid.NewGuid(), WorkItemTypeId.Story, "Backlog", StateCategory.Proposed)], [], [], [new StateRemove(proposed, inProgress)]));
+
+        (await connection.ExecuteScalarAsync<Guid>("SELECT state_id FROM work_item WHERE id = @item", new { item })).ShouldBe(inProgress);
+        (await connection.ExecuteScalarAsync<Guid?>("SELECT sprint_id FROM work_item WHERE id = @item", new { item })).ShouldBeNull();
+    }
+
     [Test]
     public async Task Settings_WhenTransitionsChange_ShouldPublishBoardSettingsChangedOncePerTouchedBoard()
     {

@@ -43,7 +43,7 @@ public sealed class BoardSettingsStore(NpgsqlDataSource dataSource, TimeProvider
             new { id = boardId, json = JsonSerializer.Serialize(merged, PersistedJson.Options), now }, transaction, cancellationToken: cancellationToken));
         var saved = await ToDtoAsync(connection, transaction, board with { Settings = JsonSerializer.Serialize(merged, PersistedJson.Options), UpdatedAt = now }, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-        var changed = BoardSections.Changed(current, merged);
+        var changed = BoardSettingsSections.Changed(current, merged);
         if (changed.Count > 0)
         {
             await events.PublishAsync(new BoardSettingsChanged(board.ProjectId, boardId, changed));
