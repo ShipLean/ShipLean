@@ -62,3 +62,57 @@ export const FEATURE_BOARD_VIEW: FeatureBoardViewDto = {
   cardFields: TASKBOARD_VIEW.cardFields,
   annotations: TASKBOARD_VIEW.annotations,
 };
+
+// The same stories under a parent Feature: Reporting (SHIP-103) with two of its own, Dashboard widgets (SHIP-104) with the
+// other three, and Chart types (SHIP-105) under that with none yet.
+const OWN = rows.slice(0, 2).map((row) => ({ ...row, featureId: 'f-reporting' }));
+const WIDGETS = rows.slice(2).map((row) => ({ ...row, featureId: 'f-widgets' }));
+const counts = (list: FeatureBoardRowDto[]) => ({
+  storiesClosed: list.filter((r) => r.parent.state.category === 'completed').length,
+  storiesTotal: list.length,
+  pointsClosed: list
+    .filter((r) => r.parent.state.category === 'completed')
+    .reduce((n, r) => n + (r.parent.points ?? 0), 0),
+  pointsTotal: list.reduce((n, r) => n + (r.parent.points ?? 0), 0),
+});
+const section = (
+  id: string,
+  key: string,
+  title: string,
+  depth: number,
+  list: FeatureBoardRowDto[],
+) => ({
+  id,
+  key,
+  title,
+  state: ACTIVE,
+  depth,
+  parentFeature:
+    depth < 2
+      ? null
+      : {
+          id: 'f-widgets',
+          key: 'SHIP-104',
+          type: { id: 'feature' as const, name: 'Feature' },
+          title: 'Dashboard widgets',
+        },
+  ...counts(list),
+});
+
+export const FEATURE_BOARD_PARENT_VIEW: FeatureBoardViewDto = {
+  ...FEATURE_BOARD_VIEW,
+  featureId: 'f-reporting',
+  header: {
+    ...FEATURE_BOARD_VIEW.header,
+    id: 'f-reporting',
+    key: 'SHIP-103',
+    title: 'Reporting',
+    featuresUnder: 2,
+  },
+  sections: [
+    section('f-reporting', 'SHIP-103', 'Reporting', 0, OWN),
+    section('f-widgets', 'SHIP-104', 'Dashboard widgets', 1, WIDGETS),
+    section('f-charts', 'SHIP-105', 'Chart types', 2, []),
+  ],
+  rows: [...OWN, ...WIDGETS],
+};

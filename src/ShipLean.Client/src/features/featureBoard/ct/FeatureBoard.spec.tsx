@@ -5,7 +5,7 @@ import { PROJECT } from '../../taskboard/ct/fixtures';
 import { taskboardTestIds as ids } from '../../taskboard/testIds';
 import { FeatureBoardSlot } from '../../../slots/FeatureBoardSlot';
 import { featureBoardTestIds as boardIds } from '../testIds';
-import { FEATURE_ID, FEATURE_KEY, FEATURE_VIEW } from './fixtures';
+import { FEATURE_ID, FEATURE_KEY, FEATURE_VIEW, PARENT_KEY, PARENT_VIEW } from './fixtures';
 import { stubFeatureBoard } from './stubFeatureBoard';
 
 const route = { hooksConfig: { route: `/p/SHIP/items/${FEATURE_KEY}/board` } };
@@ -114,4 +114,143 @@ test('FeatureBoard_WhenNotAFeature_ShouldShowNotFound', async ({ mount, page }) 
 
   await expect(page.getByTestId(pagesTestIds.notFound)).toBeVisible();
   await expect(page.getByTestId(pagesTestIds.slotFeatureBoard)).toHaveCount(0);
+});
+
+const parentRoute = { hooksConfig: { route: `/p/SHIP/items/${PARENT_KEY}/board` } };
+const parentSlot = <FeatureBoardSlot project={PROJECT} itemKey={PARENT_KEY} />;
+const people = { saved: { groupBy: 'people' } };
+
+test('FeatureBoard_WhenAParentFeature_ShouldDrawOneSectionPerFeatureInOrderAndIndented', async ({
+  mount,
+  page,
+}) => {
+  await stubFeatureBoard(page, PARENT_VIEW);
+  await mount(parentSlot, parentRoute);
+
+  const sections = page.getByTestId(boardIds.section);
+  await expect(sections).toHaveCount(3);
+  await expect(sections.nth(0)).toHaveAttribute('data-section', PARENT_KEY);
+  await expect(sections.nth(0).getByTestId(boardIds.sectionTitle)).toHaveText(
+    `Directly under ${PARENT_KEY}`,
+  );
+  await expect(sections.nth(1).getByTestId(boardIds.sectionTitle)).toHaveText('Dashboard widgets');
+  await expect(sections.nth(1).getByTestId(boardIds.sectionIn)).toHaveCount(0);
+  await expect(sections.nth(2).getByTestId(boardIds.sectionIn)).toHaveText(
+    'in SHIP-104 Dashboard widgets',
+  );
+  await expect(sections.nth(1).getByTestId(boardIds.sectionStories)).toHaveText('0/1 stories');
+  await expect(sections.nth(1).getByTestId(boardIds.sectionPoints)).toHaveText('0/5 pts');
+  await expect(sections.nth(1).getByTestId(boardIds.sectionOpen)).toHaveAttribute(
+    'href',
+    /\/items\/SHIP-104$/,
+  );
+  const indent = (i: number) =>
+    sections
+      .nth(i)
+      .getByTestId(boardIds.sectionHeader)
+      .evaluate((el) => parseFloat(getComputedStyle(el).paddingLeft));
+  expect(await indent(2)).toBeGreaterThan(await indent(1));
+  expect(await indent(1)).toBeGreaterThanOrEqual(await indent(0));
+  // The Feature with no stories shows one line, not a grid; each other section has its own column headers.
+  await expect(sections.nth(2).getByTestId(boardIds.sectionEmpty)).toHaveText(
+    'No stories or bugs yet.',
+  );
+  await expect(sections.nth(2).getByTestId(ids.grid)).toHaveCount(0);
+  await expect(page.getByTestId(ids.grid)).toHaveCount(2);
+  await expect(sections.nth(1).getByTestId(ids.columnHeader)).toHaveCount(3);
+  await expect(page.getByTestId(boardIds.featuresUnder)).toHaveText('2 Features under it');
+});
+
+test('FeatureBoard_WhenTheBoardsFeatureHasNoStoriesOfItsOwn_ShouldLeaveOutItsSection', async ({
+  mount,
+  page,
+}) => {
+  const [, widgets] = PARENT_VIEW.rows;
+  await stubFeatureBoard(page, { ...PARENT_VIEW, rows: [widgets] });
+  await mount(parentSlot, parentRoute);
+
+  const sections = page.getByTestId(boardIds.section);
+  await expect(sections).toHaveCount(2);
+  await expect(sections.nth(0)).toHaveAttribute('data-section', 'SHIP-104');
+  await expect(page.getByTestId(boardIds.jumpChip)).toHaveCount(2);
+});
+
+test('FeatureBoard_WhenAJumpChipIsClicked_ShouldScrollToItsSection', async ({ mount, page }) => {
+  await page.setViewportSize({ width: 1280, height: 320 });
+  await stubFeatureBoard(page, PARENT_VIEW);
+  await mount(parentSlot, parentRoute);
+
+  const chips = page.getByTestId(boardIds.jumpChip);
+  await expect(chips).toHaveCount(3);
+  await expect(chips.nth(1).getByTestId(boardIds.jumpBar)).toHaveAttribute('data-percent', '0');
+  const target = page.getByTestId(boardIds.section).nth(2);
+  await expect(target).not.toBeInViewport();
+  await chips.nth(2).click();
+  await expect(target).toBeInViewport();
+});
+
+test('FeatureBoard_WhenASectionIsCollapsed_ShouldHideItsGridAndKeepItsHeader', async ({
+  mount,
+  page,
+}) => {
+  await stubFeatureBoard(page, PARENT_VIEW);
+  await mount(parentSlot, parentRoute);
+
+  const section = page.getByTestId(boardIds.section).nth(1);
+  await expect(section.getByTestId(ids.row)).toHaveCount(1);
+  await section.getByTestId(boardIds.sectionToggle).click();
+  await expect(section.getByTestId(ids.row)).toHaveCount(0);
+  await expect(section.getByTestId(boardIds.sectionHeader)).toBeVisible();
+  await expect(page.getByTestId(ids.grid)).toHaveCount(1);
+  await section.getByTestId(boardIds.sectionToggle).click();
+  await expect(section.getByTestId(ids.row)).toHaveCount(1);
+});
+
+test('FeatureBoard_WhenCardDroppedOnAnotherSectionsRow_ShouldPostThatStoryAsTheTarget', async ({
+  mount,
+  page,
+}) => {
+  const server = await stubFeatureBoard(page, PARENT_VIEW);
+  await mount(parentSlot, parentRoute);
+
+  const sections = page.getByTestId(boardIds.section);
+  const from = sections.nth(0).getByTestId(ids.card).first();
+  const to = sections.nth(1).getByTestId(ids.cell).nth(1);
+  await drag(page, from, to);
+
+  await expect.poll(() => server.featureMoves.length).toBe(1);
+  expect(server.featureMoves[0]).toMatchObject({
+    stateId: 't-active',
+    row: { grouping: 'stories', target: PARENT_VIEW.rows[1].parent.id },
+  });
+});
+
+test('FeatureBoard_WhenGroupedByPeopleOnAParent_ShouldShowOneGridWithFeatureAndStory', async ({
+  mount,
+  page,
+}) => {
+  await stubFeatureBoard(page, PARENT_VIEW, people);
+  await mount(parentSlot, parentRoute);
+
+  await expect(page.getByTestId(ids.grid)).toHaveCount(1);
+  await expect(page.getByTestId(boardIds.section)).toHaveCount(0);
+  const priya = page.getByTestId(ids.row).filter({ hasText: 'Priya Shah' });
+  await expect(priya.getByTestId(ids.rowCount)).toHaveText('2 tasks · 2 Features');
+  const parents = priya.getByTestId(ids.cardParent);
+  await expect(parents).toHaveCount(2);
+  await expect(parents.nth(0).getByTestId(ids.cardParentFeature)).toHaveText('Dashboard widgets');
+  await expect(parents.nth(1).getByTestId(ids.cardParentFeature)).toHaveText('Reporting');
+  await expect(parents.nth(0)).toContainText('Resize widgets');
+});
+
+test('FeatureBoard_WhenGroupedByPeopleOnALeaf_ShouldShowTheStoryAloneAndNoFeatureCount', async ({
+  mount,
+  page,
+}) => {
+  await stubFeatureBoard(page, FEATURE_VIEW, people);
+  await mount(slot, route);
+
+  await expect(page.getByTestId(ids.cardParentFeature)).toHaveCount(0);
+  await expect(page.getByTestId(ids.cardParent).first()).toBeVisible();
+  await expect(page.getByTestId(ids.rowCount).first()).not.toContainText('Feature');
 });
