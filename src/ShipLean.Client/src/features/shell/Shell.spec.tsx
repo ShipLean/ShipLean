@@ -179,6 +179,29 @@ test('SideMenu_WhenInSprints_ShouldListTheCurrentSprintAndAllSprints', async ({ 
   await expect(page.getByTestId(ids.navSprints)).toHaveAttribute('aria-current', 'page');
 });
 
+test('SideMenu_WhenInBacklogsOrBoards_ShouldListTheThreeLevelsAndMarkTheCurrentOne', async ({
+  mount,
+  page,
+}) => {
+  await stubShell(page);
+  await mount(<ShellHarness />, { hooksConfig: { route: '/p/SHIP/backlogs/features' } });
+  const levels = page.getByTestId(ids.navLevel);
+  await expect(levels).toHaveText(['Epics', 'Features', 'Stories']);
+  await expect(levels.nth(0)).toHaveAttribute('href', '/p/SHIP/backlogs/epics');
+  await expect(levels.nth(1)).toHaveAttribute('aria-current', 'page');
+  await expect(levels.nth(2)).toHaveAttribute('href', '/p/SHIP/backlogs/stories');
+  await levels.nth(2).click();
+  await expect(levels.nth(2)).toHaveAttribute('aria-current', 'page');
+});
+
+test('SideMenu_WhenOnABoard_ShouldLinkTheBoardLevels', async ({ mount, page }) => {
+  await stubShell(page);
+  await mount(<ShellHarness />, { hooksConfig: { route: '/p/SHIP/boards/stories' } });
+  const levels = page.getByTestId(ids.navLevel);
+  await expect(levels.nth(0)).toHaveAttribute('href', '/p/SHIP/boards/epics');
+  await expect(levels.nth(2)).toHaveAttribute('aria-current', 'page');
+});
+
 test('SideMenu_WhenNotInSprints_ShouldHideTheSprintItems', async ({ mount, page }) => {
   await stubShell(page);
   await mount(<ShellHarness />, { hooksConfig: { route: '/p/SHIP/boards/stories' } });

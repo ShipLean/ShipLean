@@ -9,7 +9,6 @@ import { useBoardLanes } from '../lanes/boardPreferences';
 import { LanesSwitch } from '../lanes/LanesSwitch';
 import { boardTestIds as ids } from '../testIds';
 import { CardsSwitch } from '../toolbar/CardsSwitch';
-import { LevelSwitch } from '../toolbar/LevelSwitch';
 import { SettingsOpener } from '../toolbar/SettingsOpener';
 
 // The rows over the grid: the level switch, what is open, the lane and Full / Compact choices, Filter and Board
@@ -17,7 +16,6 @@ import { SettingsOpener } from '../toolbar/SettingsOpener';
 export function BoardToolbar({
   view,
   projectId,
-  projectKey,
   boardId,
   level,
   compact,
@@ -27,7 +25,6 @@ export function BoardToolbar({
 }: {
   view: BoardViewDto;
   projectId: string;
-  projectKey: string;
   boardId: string;
   level: Level;
   compact: boolean;
@@ -43,7 +40,6 @@ export function BoardToolbar({
         data-testid={ids.toolbar}
         className="flex flex-none flex-wrap items-center gap-2 border-b border-edge py-2 text-[length:var(--text-sm)]"
       >
-        <LevelSwitch projectKey={projectKey} level={level} />
         <span data-testid={ids.summary} className="text-ink-muted tabular-nums">
           {view.openCount} open · {view.openPoints} pts
         </span>
