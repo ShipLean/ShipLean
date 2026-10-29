@@ -3,14 +3,31 @@ using ShipLean.TestSupport.TestIds;
 
 namespace ShipLean.AcceptanceTests.Pages.Sprints;
 
-// The Capacity page: a row per member, the team total and the sprint as a whole.
+// The Capacity page: the velocity, a row per member in the table (days, capacity, note), the team total and the sprint as a whole.
 public sealed class CapacityPage(IPage page)
 {
     public ILocator Rows => page.GetByTestId(SprintsTestIds.CapacityRow);
 
     public ILocator Row(string member) => Rows.Filter(new() { HasText = member });
 
+    // The member's computed capacity (read-only text).
     public ILocator Points(string member) => Row(member).GetByTestId(SprintsTestIds.CapacityPoints);
+
+    public ILocator Days(string member) => Row(member).GetByTestId(SprintsTestIds.CapacityDays);
+
+    public ILocator DefaultMarker(string member) => Row(member).GetByTestId(SprintsTestIds.CapacityDaysDefault);
+
+    public ILocator Reset(string member) => Row(member).GetByTestId(SprintsTestIds.CapacityDaysReset);
+
+    public ILocator Remove(string member) => Row(member).GetByTestId(SprintsTestIds.CapacityRemove);
+
+    public ILocator Velocity => page.GetByTestId(SprintsTestIds.CapacityVelocity);
+
+    public ILocator Calendar => page.GetByTestId(SprintsTestIds.CapacityCalendar);
+
+    public ILocator Add => page.GetByTestId(SprintsTestIds.CapacityAdd);
+
+    public ILocator Empty => page.GetByTestId(SprintsTestIds.CapacityEmpty);
 
     public ILocator Note(string member) => Row(member).GetByTestId(SprintsTestIds.CapacityNote);
 
