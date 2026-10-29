@@ -3,6 +3,7 @@ using ShipLean.Contracts;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Sprints;
 using ShipLean.Core;
+using ShipLean.Core.Sprints;
 
 namespace ShipLean.Application.Fakes.Projects;
 
@@ -19,6 +20,7 @@ public sealed class InMemoryPlanning(TimeProvider? clock = null)
         public string Description { get; set; } = string.Empty;
         internal List<int> WorkingDays { get; set; } = [1, 2, 3, 4, 5];
         public int VelocityWindow { get; set; } = 3;
+        public SprintNamingConvention SprintNaming { get; set; } = SprintNamingConvention.Number;
         public decimal? VelocityOverride { get; set; }
         public int NextItemNumber { get; set; } = 1;
         internal Dictionary<Guid, ProjectRole> Members { get; } = [];
@@ -293,6 +295,14 @@ public sealed class InMemoryPlanning(TimeProvider? clock = null)
         lock (Gate)
         {
             this.Project(projectId).VelocityOverride = value;
+        }
+    }
+
+    public void SetSprintNaming(Guid projectId, SprintNamingConvention naming)
+    {
+        lock (Gate)
+        {
+            this.Project(projectId).SprintNaming = naming;
         }
     }
 }

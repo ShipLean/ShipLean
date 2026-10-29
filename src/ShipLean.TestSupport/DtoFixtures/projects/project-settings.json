@@ -3,7 +3,7 @@
   "members": [
     { "user": { "id": "0199f000-0000-7000-8000-000000000001", "name": "Joel Dickson", "initials": "JD", "avatarColour": "#5b6b8c", "photoUrl": null }, "email": "joel@shiplean.local", "role": "admin", "status": "active" }
   ],
-  "sprints": { "velocityWindow": 3, "velocityOverride": 21 },
+  "sprints": { "velocityWindow": 3, "velocityOverride": 21, "sprintNaming": "number" },
   "states": [
     { "id": "00000003-0000-4000-8001-000000000301", "type": "story", "name": "New", "category": "proposed", "order": 1, "itemCount": 12 }
   ]

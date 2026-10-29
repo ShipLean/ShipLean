@@ -4,6 +4,7 @@ using ShipLean.Contracts;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Sprints;
 using ShipLean.Core;
+using ShipLean.Core.Sprints;
 
 namespace ShipLean.Application.Fakes.Metrics;
 
@@ -48,7 +49,11 @@ public sealed partial class InMemorySprintMetrics(InMemoryPlanning world) : ISpr
                     var full = capacity ?? used;
                     return new Bucket(s.Id, s.Name, full, capacity is not null, full - world.CountedItems(s.Id).Sum(i => i.Points ?? 0));
                 }).ToList();
-            var number = NextSprintNumber(projectId);
+            var all = world.Sprints.Where(s => s.ProjectId == projectId).OrderBy(s => s.Start).ToList();
+            var last = all.Count == 0 ? null : all[^1];
+            var names = new SprintNameSequence(
+                world.Project(projectId).SprintNaming, all.Select(s => s.Name),
+                last is null ? world.Today : last.End.AddDays(1), last is null ? SprintStart.FirstSprintDays : last.End.DayNumber - last.Start.DayNumber + 1, NextSprintNumber(projectId));
             var backlog = world.Items.Where(i => i.ProjectId == projectId && i.SprintId is null && i.Counts()
                 && world.States.Single(s => s.Id == i.StateId).Category is not (StateCategory.Completed or StateCategory.Removed));
             var at = 0;
@@ -59,7 +64,7 @@ public sealed partial class InMemorySprintMetrics(InMemoryPlanning world) : ISpr
                 {
                     if (at == buckets.Count)
                     {
-                        buckets.Add(new Bucket(null, $"Sprint {number++}", used, false, used));
+                        buckets.Add(new Bucket(null, names.Next(), used, false, used));
                     }
                     var bucket = buckets[at];
                     // With no velocity a sprint has no room to fill, so each item gets a sprint to itself.

@@ -4,7 +4,7 @@
     { "email": "joel@shiplean.local", "role": "admin" },
     { "email": "priya@shiplean.local", "role": "member" }
   ],
-  "sprints": { "velocityWindow": 3, "velocityOverride": null },
+  "sprints": { "velocityWindow": 3, "velocityOverride": null, "sprintNaming": "number" },
   "states": {
     "add": [{ "id": "00000003-0000-4000-8001-000000000601", "type": "bug", "name": "Triaged", "category": "proposed" }],
     "update": [],

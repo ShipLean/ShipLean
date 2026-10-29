@@ -34,6 +34,7 @@ public sealed partial class ProjectSettingsService
 
         var general = await CheckAgentAsync(KeepUnprovided(CheckGeneral(put.General), current), current.AgentConnectionId, cancellationToken);
         CheckForecast(put.Sprints);
+        put = put with { Sprints = put.Sprints with { SprintNaming = put.Sprints.SprintNaming ?? current.Forecast.SprintNaming } };
         var members = await ResolveMembersAsync(put.Members, cancellationToken);
         var moves = await PlanMovesAsync(projectId, put.States, cancellationToken);
 
@@ -144,6 +145,11 @@ public sealed partial class ProjectSettingsService
             throw ApiException.Validation("The velocity window is at least one sprint.");
         }
 
+        if (forecast.SprintNaming is { } naming && !Enum.IsDefined(naming))
+        {
+            throw ApiException.Validation("Pick a sprint naming convention from the list.", "sprintNaming");
+        }
+
         if (forecast.VelocityOverride is { } points && (points is < 0 or > LargestOverride || decimal.Round(points, 2) != points))
         {
             throw ApiException.Validation("The velocity override is zero or more points, with at most two decimal places.");
@@ -239,11 +245,12 @@ public sealed partial class ProjectSettingsService
         var updated = await transaction.Connection!.ExecuteAsync(new CommandDefinition(
             """
             UPDATE project SET name = @name, description = @description, working_days = @days::smallint[],
-                               velocity_window = @window, velocity_override = @override, updated_at = @now,
+                               velocity_window = @window, velocity_override = @override, sprint_naming = @naming, updated_at = @now,
                                agent_connection_id = @agentConnectionId, repo_url = @repoUrl, repo_base_branch = @repoBaseBranch
             WHERE id = @projectId
             """,
             new { projectId, name = general.Name, description = general.Description, days = general.WorkingDays.ToArray(), window = forecast.VelocityWindow, @override = forecast.VelocityOverride,
+                naming = forecast.SprintNaming == SprintNaming.YearQuarterNumber ? "yearQuarterNumber" : "number",
                 general.AgentConnectionId, general.RepoUrl, general.RepoBaseBranch, now = clock.GetUtcNow() },
             transaction, cancellationToken: cancellationToken));
         if (updated == 0)

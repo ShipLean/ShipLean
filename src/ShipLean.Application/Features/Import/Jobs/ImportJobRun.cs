@@ -123,6 +123,7 @@ public sealed class ImportJobRun(
             var adopted = (job.CreatorId is { } actor ? await rows.FindAdoptableProjectAsync(job.ProjectKey, actor, cancellationToken) : null)
                 ?? throw ApiException.Conflict($"The key {job.ProjectKey} is already taken, and the project that has it is not an empty one that only {job.CreatorName ?? "the person who started this import"} administers.");
             await rows.SetProjectAsync(job.Id, adopted, cancellationToken);
+            await rows.UseNumberSprintNamingAsync(adopted, cancellationToken);
             await rows.LogAsync(job.Id, ImportLogLevel.Info, $"Carried on into the project {job.ProjectKey} that an earlier run created", cancellationToken);
             return adopted;
         }
@@ -130,6 +131,7 @@ public sealed class ImportJobRun(
         // No first sprint: Jira's own sprints are created by name, and a default "Sprint 1" would be adopted by a Jira sprint of that name.
         var created = await projects.CreateAsync(new ProjectCreate(target.Name ?? job.ProjectKey, job.ProjectKey, null, [], WorkingDays, null), cancellationToken);
         await rows.SetProjectAsync(job.Id, created.Id, cancellationToken);
+        await rows.UseNumberSprintNamingAsync(created.Id, cancellationToken);
         await rows.LogAsync(job.Id, ImportLogLevel.Info, $"Created the project {job.ProjectKey}", cancellationToken);
         return created.Id;
     }
