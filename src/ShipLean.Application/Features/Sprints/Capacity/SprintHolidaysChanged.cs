@@ -1,4 +1,5 @@
 using Dapper;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 using ShipLean.Contracts.Events;
 using ShipLean.Contracts.Holidays;
@@ -8,7 +9,7 @@ namespace ShipLean.Application.Features.Sprints;
 
 // IHolidaysChanged: when a country's holidays change, recomputes the capacity of each project that uses that country and tells
 // its open boards which sprints moved. Resolved from a fresh scope by the refresh job.
-public sealed class SprintHolidaysChanged(NpgsqlDataSource dataSource, ISprintCapacityRecompute recompute, IProjectEvents events) : IHolidaysChanged
+public sealed class SprintHolidaysChanged(NpgsqlDataSource dataSource, ISprintCapacityRecompute recompute, IProjectEvents events, ILogger<SprintHolidaysChanged> logger) : IHolidaysChanged
 {
     public async Task ChangedAsync(string countryCode, CancellationToken cancellationToken = default)
     {
@@ -18,9 +19,17 @@ public sealed class SprintHolidaysChanged(NpgsqlDataSource dataSource, ISprintCa
             new { countryCode }, cancellationToken: cancellationToken))).ToList();
         foreach (var projectId in projects)
         {
-            foreach (var sprintId in await recompute.RecomputeAsync(projectId, null, cancellationToken))
+            try
             {
-                await events.PublishAsync(new SprintChanged(projectId, sprintId));
+                foreach (var sprintId in await recompute.RecomputeAsync(projectId, null, cancellationToken))
+                {
+                    await events.PublishAsync(new SprintChanged(projectId, sprintId));
+                }
+            }
+            catch (Exception failed) when (failed is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
+            {
+                // One project's failure must not leave the others on stale capacity.
+                logger.LogError(failed, "Recomputing the capacity of project {ProjectId} after the {Country} holidays changed failed", projectId, countryCode);
             }
         }
     }

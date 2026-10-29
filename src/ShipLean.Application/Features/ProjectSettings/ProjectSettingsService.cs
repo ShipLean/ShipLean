@@ -1,5 +1,6 @@
 using Agoda.IoC.Core;
 using Dapper;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
@@ -19,7 +20,7 @@ namespace ShipLean.Application.Features.ProjectSettings;
 [RegisterPerRequest]
 public sealed partial class ProjectSettingsService(
     NpgsqlDataSource dataSource, TimeProvider clock, IProjectEvents events, IWorkItemStore workItems, IStateCatalog states, IUserDirectory users, ICurrentUser currentUser,
-    IPublicHolidays holidays, ISprintCapacityRecompute capacity)
+    IPublicHolidays holidays, ISprintCapacityRecompute capacity, ILogger<ProjectSettingsService> logger)
 {
     public async Task<ProjectSettingsDto> GetAsync(Guid projectId, CancellationToken cancellationToken = default)
     {
