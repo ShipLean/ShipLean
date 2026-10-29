@@ -9,7 +9,7 @@ export function AttachmentBody({
   view,
 }: {
   data: AttachmentMarkdownDto;
-  view: AttachmentView;
+  view: Exclude<AttachmentView, 'edit'>;
 }) {
   return view === 'rendered' ? (
     <article data-testid={ids.body} className="max-w-190 px-5 py-4 leading-relaxed">

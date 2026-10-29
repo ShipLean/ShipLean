@@ -1,13 +1,14 @@
 import { attachmentTestIds as ids } from '../testIds';
 
-export type AttachmentView = 'rendered' | 'source';
+export type AttachmentView = 'rendered' | 'source' | 'edit';
 
 const options = [
   { view: 'rendered', label: 'Rendered', testId: ids.rendered },
   { view: 'source', label: 'Source', testId: ids.source },
+  { view: 'edit', label: 'Edit', testId: ids.edit },
 ] as const;
 
-// Rendered / Source, a two-way switch.
+// Rendered / Source / Edit, a three-way switch.
 export function ViewToggle({
   view,
   onChange,

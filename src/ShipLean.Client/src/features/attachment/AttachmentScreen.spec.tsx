@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/experimental-ct-react';
 import type { AttachmentMarkdownDto } from '../../api/attachments';
 import { markdownView, stubFeature } from '../feature/ct/stubFeature';
 import { AttachmentHarness } from './ct/AttachmentHarness';
+import { harnessLocationTestId } from './ct/harnessIds';
 import { attachmentTestIds as ids } from './testIds';
 
 const itemKey = markdownView.workItem.key;
@@ -118,4 +119,51 @@ test('AttachmentPage_WhenReplaced_ShouldRefetch', async ({ mount, page }) => {
   await expect(screen.getByTestId(ids.body)).toContainText('Replaced body');
   expect(uploads).toBe(1);
   expect(reads).toBe(2);
+});
+
+test('AttachmentPage_WhenEditedAndSaved_ShouldUploadUnderSameNameAndMoveToNewCopy', async ({
+  mount,
+  page,
+}) => {
+  await stubFeature(page);
+  const saved = { ...markdownView.attachment, id: 'a-new', replacedCount: 3 };
+  let uploaded = '';
+  await page.route('**/api/work-items/*/attachments', (route) => {
+    uploaded = route.request().postData() ?? '';
+    return route.fulfill({
+      status: 201,
+      contentType: 'application/json',
+      body: JSON.stringify(saved),
+    });
+  });
+  const screen = await mount(<AttachmentHarness {...mountProps} />);
+  await expect(screen.getByTestId(ids.body)).toBeVisible();
+
+  await screen.getByTestId(ids.edit).click();
+  const input = screen.getByTestId(ids.editorInput);
+  await expect(input).toHaveValue(markdownView.markdown);
+  await expect(screen.getByTestId(ids.save)).toBeDisabled();
+  await input.fill('# Edited in place');
+  await screen.getByTestId(ids.save).click();
+
+  await expect(screen.getByTestId(harnessLocationTestId)).toHaveText(
+    `/p/SHIP/items/${itemKey}/attachments/a-new`,
+  );
+  await expect(screen.getByTestId(ids.editor)).toHaveCount(0);
+  await expect(screen.getByTestId(ids.body)).toBeVisible();
+  expect(uploaded).toContain(`filename="${markdownView.attachment.name}"`);
+  expect(uploaded).toContain('# Edited in place');
+});
+
+test('AttachmentPage_WhenEditCancelled_ShouldDropTheDraft', async ({ mount, page }) => {
+  await stubFeature(page);
+  const screen = await mount(<AttachmentHarness {...mountProps} />);
+
+  await screen.getByTestId(ids.edit).click();
+  await screen.getByTestId(ids.editorInput).fill('# Thrown away');
+  await screen.getByTestId(ids.cancel).click();
+
+  await expect(screen.getByTestId(ids.rendered)).toHaveAttribute('aria-pressed', 'true');
+  await screen.getByTestId(ids.edit).click();
+  await expect(screen.getByTestId(ids.editorInput)).toHaveValue(markdownView.markdown);
 });

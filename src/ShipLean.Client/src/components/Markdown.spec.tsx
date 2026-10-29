@@ -36,3 +36,26 @@ test('Markdown_WhenTableIsWiderThanItsContainer_ShouldScrollInsideIt', async ({ 
   expect(size.client).toBeLessThanOrEqual(300);
   expect(size.scroll).toBeGreaterThan(300);
 });
+
+test('Markdown_WhenMermaidBlock_ShouldDrawItAsADiagram', async ({ mount, page }) => {
+  await mount(
+    <Markdown
+      html={
+        '<pre><code class="language-mermaid">sequenceDiagram\n    participant U as Person\n    U-&gt;&gt;U: Hello\n</code></pre>'
+      }
+    />,
+  );
+  const markdown = page.getByTestId(ids.markdown);
+  await expect(markdown.locator('[data-md-diagram=mermaid] svg')).toBeVisible();
+  await expect(markdown.locator('[data-md-diagram=mermaid]')).toContainText('Person');
+  await expect(markdown.locator('code.language-mermaid')).toHaveCount(0);
+});
+
+test('Markdown_WhenMermaidBlockIsInvalid_ShouldKeepTheCodeAndSaySo', async ({ mount, page }) => {
+  await mount(
+    <Markdown html={'<pre><code class="language-mermaid">not a diagram at all</code></pre>'} />,
+  );
+  const markdown = page.getByTestId(ids.markdown);
+  await expect(markdown.locator('[data-md-diagram-error]')).toContainText('could not be drawn');
+  await expect(markdown.locator('code.language-mermaid')).toHaveText('not a diagram at all');
+});

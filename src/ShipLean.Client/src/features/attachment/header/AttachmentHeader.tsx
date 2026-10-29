@@ -3,27 +3,29 @@ import { BackToFeature } from '../BackToFeature';
 import { attachmentTestIds as ids } from '../testIds';
 import { attachmentMeta } from './attachmentMeta';
 import { ReplaceButton } from './ReplaceButton';
-import { useReplaceAttachment } from './useReplaceAttachment';
 import { ViewToggle, type AttachmentView } from './ViewToggle';
 
 // Back to the Feature, then the file's name and facts, with the toolbar: Rendered / Source, Download, Replace….
 export function AttachmentHeader({
-  projectId,
   projectKey,
   itemKey,
   data,
   view,
   onViewChange,
+  replacing,
+  replaceError,
+  onReplace,
 }: {
-  projectId: string;
   projectKey: string;
   itemKey: string;
   data: AttachmentMarkdownDto;
   view: AttachmentView;
   onViewChange: (view: AttachmentView) => void;
+  replacing: boolean;
+  replaceError: string | null;
+  onReplace: (file: File) => void;
 }) {
   const { attachment, workItem } = data;
-  const replace = useReplaceAttachment(projectId, attachment.id, workItem.id);
   return (
     <header className="grid gap-1 border-b border-edge bg-surface px-4 pt-2 pb-3">
       <BackToFeature projectKey={projectKey} itemKey={itemKey} title={workItem.title} />
@@ -47,18 +49,15 @@ export function AttachmentHeader({
         >
           Download
         </a>
-        <ReplaceButton
-          pending={replace.isPending}
-          onPick={(file) => replace.mutate({ file, currentName: attachment.name })}
-        />
+        <ReplaceButton pending={replacing} onPick={onReplace} />
       </div>
-      {replace.error ? (
+      {replaceError ? (
         <p
           data-testid={ids.replaceError}
           role="alert"
           className="m-0 text-[length:var(--text-sm)] text-alert"
         >
-          {replace.error.message}
+          {replaceError}
         </p>
       ) : null}
     </header>

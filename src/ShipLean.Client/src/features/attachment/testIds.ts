@@ -27,4 +27,14 @@ export const attachmentTestIds = {
   loadFailedDownload: 'attachment-load-failed-download',
   noHistory: 'attachment-no-history',
   replaceError: 'attachment-replace-error',
+
+  // SHIP-198 edit
+  edit: 'attachment-edit',
+  editor: 'attachment-editor',
+  editorInput: 'attachment-editor-input',
+  editorPasting: 'attachment-editor-pasting',
+  editorPasteError: 'attachment-editor-paste-error',
+  save: 'attachment-save',
+  cancel: 'attachment-cancel',
+  saveError: 'attachment-save-error',
 } as const;
