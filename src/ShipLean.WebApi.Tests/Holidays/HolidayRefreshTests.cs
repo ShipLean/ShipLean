@@ -1,5 +1,7 @@
 using System.Net;
+using Dapper;
 using ShipLean.Contracts.Holidays;
+using ShipLean.TestSupport;
 using Shouldly;
 
 namespace ShipLean.WebApi.Tests.Holidays;
@@ -96,5 +98,34 @@ public class HolidayRefreshTests : HolidayFeedFixture
 
         changed.ShouldBeTrue();
         (await StoredAsync("NZ")).ShouldBe([($"{ThisYear}-01-01 New Year's Day", false), ($"{ThisYear}-12-25 Christmas Day", false), ($"{ThisYear + 1}-01-01 New Year's Day", false)]);
+    }
+
+    [Test, Order(9)]
+    public async Task RefreshCountry_WhenFeedAnswersEmptyForBothYears_ShouldKeepTheStoredHolidaysAndReportNothing()
+    {
+        var before = await StoredAsync("NZ");
+        var notified = Changes.Codes.Count;
+        Feed.Respond($"/api/v3/PublicHolidays/{ThisYear}/NZ", "[]", "application/json");
+        Feed.Respond($"/api/v3/PublicHolidays/{ThisYear + 1}/NZ", "[]", "application/json");
+
+        var changed = await Refresher.RefreshCountryAsync("NZ", CancellationToken.None);
+
+        changed.ShouldBeFalse();
+        (await StoredAsync("NZ")).ShouldBe(before);
+        Changes.Codes.Count.ShouldBe(notified);
+    }
+
+    [Test, Order(10)]
+    public async Task RefreshAll_WhenAProjectUsesAnUntrackedCountry_ShouldTrackIt()
+    {
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            await connection.ExecuteAsync("UPDATE project SET holiday_country = 'AU' WHERE id = @id", new { id = SeedIds.Projects.Ship });
+        }
+
+        await Refresher.RefreshAllAsync(CancellationToken.None);
+
+        await using var check = await OpenDatabaseAsync();
+        (await check.ExecuteScalarAsync<bool>("SELECT tracked FROM holiday_country WHERE code = 'AU'")).ShouldBeTrue();
     }
 }

@@ -63,6 +63,12 @@ public sealed partial class SprintStore(NpgsqlDataSource dataSource, TimeProvide
             throw ApiException.Validation("An ended sprint's dates can't change.");
         }
 
+        if (end != sprint.End && end < SprintLabels.Today(clock))
+        {
+            // The recompute skips ended sprints, so a sprint moved into the past would keep its old capacity, locked.
+            throw ApiException.Validation("A sprint can't be moved to end in the past.");
+        }
+
         await CheckAsync(connection, transaction, sprint.ProjectId, id, name, start, end, cancellationToken);
         await connection.ExecuteAsync(new CommandDefinition(
             "UPDATE sprint SET name = @name, start_date = @start, end_date = @end, goal = @goal, updated_at = @now WHERE id = @id",

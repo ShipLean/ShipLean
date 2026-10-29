@@ -1,5 +1,6 @@
 using System.Data.Common;
 using Dapper;
+using Microsoft.Extensions.Logging;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Events;
@@ -44,7 +45,15 @@ public sealed partial class ProjectSettingsService
         if (general.HolidayCountry is { } country && country != current.HolidayCountry)
         {
             // Only marks the country tracked and queues its refresh for the background job: the save never waits on the feed.
-            await holidays.TrackAsync(country, cancellationToken);
+            // The settings are already committed, so a failure here must not fail the save: the daily job tracks every country a project uses.
+            try
+            {
+                await holidays.TrackAsync(country, cancellationToken);
+            }
+            catch (Exception failed) when (failed is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
+            {
+                logger.LogWarning(failed, "Tracking the holiday country {Country} of project {ProjectId} failed after the save; the daily refresh will pick it up", country, projectId);
+            }
         }
 
         return saved;

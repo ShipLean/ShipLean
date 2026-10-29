@@ -15,25 +15,34 @@ public sealed class HolidayRefresher(
     TimeProvider clock,
     ILogger<HolidayRefresher> logger)
 {
-    // The country list, then every tracked country. A failed country list does not stop the holidays.
-    public async Task RefreshAllAsync(CancellationToken cancellationToken)
+    // The country list, then every tracked country. A failed country list does not stop the holidays. Returns false when any fetch failed,
+    // so the job can retry soon instead of waiting a day.
+    public async Task<bool> RefreshAllAsync(CancellationToken cancellationToken)
     {
         if (!nager.Enabled)
         {
-            return;
+            return true;
         }
 
-        await RefreshCountriesAsync(cancellationToken);
+        var succeeded = await RefreshCountriesAsync(cancellationToken);
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        // A country picked in project settings is tracked by the request that picked it; this catches one whose tracking failed after the save.
+        // It reads project in SQL only: the job has no C# dependency on the Projects feature.
+        await connection.ExecuteAsync(new CommandDefinition(
+            "UPDATE holiday_country SET tracked = true WHERE code IN (SELECT holiday_country FROM project WHERE holiday_country IS NOT NULL) AND NOT tracked",
+            cancellationToken: cancellationToken));
         var tracked = (await connection.QueryAsync<string>(new CommandDefinition(
             "SELECT code::text FROM holiday_country WHERE tracked ORDER BY code", cancellationToken: cancellationToken))).ToList();
         foreach (var code in tracked)
         {
-            await RefreshCountryAsync(code, cancellationToken);
+            succeeded &= await TryRefreshCountryAsync(code, cancellationToken) is not null;
         }
+
+        return succeeded;
     }
 
-    public async Task RefreshCountriesAsync(CancellationToken cancellationToken)
+    // Returns whether the list was refreshed (or already empty of news); false when the fetch failed or came back empty.
+    public async Task<bool> RefreshCountriesAsync(CancellationToken cancellationToken)
     {
         try
         {
@@ -46,7 +55,7 @@ public sealed class HolidayRefresher(
             {
                 // An empty list is more likely a broken feed than a world with no countries: keep what is stored.
                 logger.LogWarning("The holiday feed listed no countries; keeping the stored list");
-                return;
+                return false;
             }
 
             await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
@@ -55,15 +64,21 @@ public sealed class HolidayRefresher(
                 INSERT INTO holiday_country (code, name) VALUES (@Code, @Name)
                 ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name WHERE holiday_country.name <> EXCLUDED.name
                 """, countries, cancellationToken: cancellationToken));
+            return true;
         }
         catch (Exception failed) when (failed is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
         {
             logger.LogWarning(failed, "Refreshing the holiday country list failed; keeping the stored list");
+            return false;
         }
     }
 
     // This year's and next year's national holidays for one country. Returns whether the stored holidays changed.
     public async Task<bool> RefreshCountryAsync(string countryCode, CancellationToken cancellationToken)
+        => await TryRefreshCountryAsync(countryCode, cancellationToken) ?? false;
+
+    // As RefreshCountryAsync, but null when the refresh failed, so a caller can tell a failure from "nothing changed".
+    public async Task<bool?> TryRefreshCountryAsync(string countryCode, CancellationToken cancellationToken)
     {
         if (!nager.Enabled)
         {
@@ -90,7 +105,7 @@ public sealed class HolidayRefresher(
         catch (Exception failed) when (failed is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
         {
             logger.LogWarning(failed, "Refreshing the holidays of {Country} failed; keeping the stored ones", countryCode);
-            return false;
+            return null;
         }
     }
 
@@ -104,6 +119,13 @@ public sealed class HolidayRefresher(
             SELECT date, name, archived_at IS NULL AS live FROM public_holiday
             WHERE country_code = @countryCode AND date >= @from AND date <= @to
             """, new { countryCode, from, to }, transaction, cancellationToken: cancellationToken))).ToList();
+        if (fetched.Count == 0 && existing.Any(h => h.Live))
+        {
+            // A feed that suddenly has no holidays at all is more likely broken than right: keep the stored ones and tell no one.
+            logger.LogWarning("The holiday feed returned no holidays for {Country} while some are stored; keeping the stored ones", countryCode);
+            return false;
+        }
+
         var wanted = fetched.Select(h => (h.Date, Name: h.Name!.Trim())).ToHashSet();
         var live = existing.Where(h => h.Live).Select(h => (h.Date, h.Name)).ToHashSet();
         var gone = live.Where(h => !wanted.Contains(h)).ToList();

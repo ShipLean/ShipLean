@@ -1,3 +1,4 @@
+using Dapper;
 using ShipLean.Contracts.Events;
 using ShipLean.Contracts.Import;
 using ShipLean.Contracts.Import.Jira;
@@ -122,5 +123,21 @@ public class ImportRunTests : ImportJobsFixture
 
         mapping.IssueTypes.ShouldAllBe(t => !t.IsNewSinceLastRun);
         mapping.Statuses.ShouldAllBe(s => !s.IsNewSinceLastRun);
+    }
+
+    [Test]
+    [Order(8)]
+    public async Task Import_WhenRerunAfterAnAdminChangedTheNaming_ShouldKeepTheirChoice()
+    {
+        await using (var database = await OpenDatabaseAsync())
+        {
+            await database.ExecuteAsync("UPDATE project SET sprint_naming = 'yearQuarterNumber' WHERE id = @_projectId", new { _projectId });
+        }
+
+        var queued = await PostJobAsync($"/api/import/jobs/{_jobId}/rerun", new { });
+        queued.Progress.Rerun.ShouldBeTrue();
+        await WaitForAsync(_jobId, j => j.Status == ImportJobState.Done && j.Progress.RerunResult is not null);
+
+        (await QueryAsync<string>("SELECT sprint_naming FROM project WHERE id = @_projectId", new { _projectId })).ShouldBe("yearQuarterNumber");
     }
 }
