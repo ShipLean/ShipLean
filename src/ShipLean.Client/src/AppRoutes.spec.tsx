@@ -123,6 +123,7 @@ test('FeatureBoard_WhenSettingsInQuery_ShouldMountTheFeatureBoardSlots', async (
   });
   await expect(page.getByTestId(pagesTestIds.slotFeatureBoard)).toBeVisible();
   await expect(page.getByTestId(pagesTestIds.slotTaskboardSettings)).toBeVisible();
+  await expect(page.getByRole('dialog')).toBeVisible();
 });
 
 test('Backlog_WhenModeInQuery_ShouldMountThatModesSlot', async ({ mount, page }) => {

@@ -38,7 +38,7 @@ export function FeatureBoardSections({
   onToggle: (rowId: string, completed: boolean) => void;
   onSetState: (parentId: string, key: string, revision: number, stateId: string) => void;
 }) {
-  const grid = (rows: FeatureBoardViewDto['rows']) => (
+  const grid = (rows: FeatureBoardViewDto['rows'], label: string) => (
     <TaskboardGrid
       projectKey={projectKey}
       projectId={projectId}
@@ -51,20 +51,25 @@ export function FeatureBoardSections({
       isCollapsed={isCollapsed}
       onToggle={onToggle}
       onSetState={onSetState}
+      label={label}
     />
   );
   const layout = featureBoardLayout(view);
-  if (grouping === 'people' || layout.length === 0) return grid(view.rows);
+  const boardName = `Feature board: ${view.header.key} ${view.header.title}`;
+  if (grouping === 'people' || layout.length === 0) return grid(view.rows, boardName);
   return (
     <>
       {layout.map(({ section, rows, direct, empty }) => {
         const closed = closedSections.has(section.id);
+        const name = direct ? `Directly under ${section.key}` : `${section.key} ${section.title}`;
+        const bodyId = `${sectionDomId(section.id)}-body`;
         return (
           <section
             key={section.id}
             id={sectionDomId(section.id)}
             data-testid={ids.section}
             data-section={section.key}
+            aria-label={name}
             className="border-t border-edge first:border-t-0"
           >
             <FeatureSectionHeader
@@ -72,10 +77,12 @@ export function FeatureBoardSections({
               section={section}
               direct={direct}
               collapsed={closed}
+              controls={closed ? undefined : bodyId}
               onToggle={() => onToggleSection(section.id)}
             />
             {closed ? null : empty ? (
               <p
+                id={bodyId}
                 data-testid={ids.sectionEmpty}
                 className="m-0 bg-panel py-2 pr-4 text-[length:var(--text-sm)] text-ink-muted"
                 style={{
@@ -85,7 +92,7 @@ export function FeatureBoardSections({
                 No stories or bugs yet.
               </p>
             ) : (
-              grid(rows)
+              <div id={bodyId}>{grid(rows, `${boardName} / ${name}`)}</div>
             )}
           </section>
         );

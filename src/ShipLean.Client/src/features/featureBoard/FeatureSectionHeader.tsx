@@ -14,12 +14,15 @@ export function FeatureSectionHeader({
   section,
   direct,
   collapsed,
+  controls,
   onToggle,
 }: {
   projectKey: string;
   section: FeatureBoardSectionDto;
   direct: boolean;
   collapsed: boolean;
+  /** The id of the body the toggle shows and hides; none while the body is not drawn. */
+  controls?: string;
   onToggle: () => void;
 }) {
   const stories = percent(section.storiesClosed, section.storiesTotal);
@@ -38,6 +41,7 @@ export function FeatureSectionHeader({
         type="button"
         data-testid={ids.sectionToggle}
         aria-expanded={!collapsed}
+        aria-controls={controls}
         aria-label={`${collapsed ? 'Expand' : 'Collapse'} ${section.key}`}
         className="cursor-pointer border-0 bg-transparent px-1 text-ink-muted"
         onClick={onToggle}

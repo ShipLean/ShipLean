@@ -189,6 +189,40 @@ test('FeatureBoard_WhenAJumpChipIsClicked_ShouldScrollToItsSection', async ({ mo
   await expect(target).toBeInViewport();
 });
 
+test('FeatureBoard_WhenTheBoardScrolls_ShouldKeepASectionsColumnHeadersAtTheTop', async ({
+  mount,
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 200 });
+  await stubFeatureBoard(page, PARENT_VIEW);
+  await mount(parentSlot, parentRoute);
+
+  const section = page.getByTestId(boardIds.section).nth(1);
+  const header = section.getByTestId(ids.columnHeader).first();
+  // Scroll the page until the section's own header is out of sight above the column headers.
+  const natural = (await header.boundingBox())!.y;
+  await page.evaluate((by) => window.scrollBy(0, by), natural + 20);
+  await expect(section.getByTestId(boardIds.sectionHeader)).not.toBeInViewport();
+  await expect.poll(async () => (await header.boundingBox())!.y).toBeCloseTo(0, 0);
+});
+
+test('FeatureBoard_WhenAParentFeature_ShouldNameEachGridAndPointEachToggleAtItsBody', async ({
+  mount,
+  page,
+}) => {
+  await stubFeatureBoard(page, PARENT_VIEW);
+  await mount(parentSlot, parentRoute);
+
+  const section = page.getByTestId(boardIds.section).nth(1);
+  const grid = section.getByTestId(ids.grid);
+  await expect(grid).toHaveAttribute('aria-label', /^Feature board: SHIP-103 Reporting \/ /);
+  const toggle = section.getByTestId(boardIds.sectionToggle);
+  const body = (await toggle.getAttribute('aria-controls'))!;
+  await expect(page.locator(`[id="${body}"]`).getByTestId(ids.grid)).toHaveCount(1);
+  await toggle.click();
+  await expect(toggle).not.toHaveAttribute('aria-controls', /.+/);
+});
+
 test('FeatureBoard_WhenASectionIsCollapsed_ShouldHideItsGridAndKeepItsHeader', async ({
   mount,
   page,

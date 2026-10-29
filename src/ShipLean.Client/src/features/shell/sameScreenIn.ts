@@ -7,7 +7,7 @@ import {
 } from '../../routes';
 
 // Where picking a project goes: the screen you are on, in that project (same route id, same query). A sprint's pages
-// fall back to All sprints (the sprint is another project's), a work item or its attachment to the Stories backlog, and
+// fall back to All sprints (the sprint is another project's), a work item, its attachment or its Feature board to the Stories backlog, and
 // anything that is not a project screen (an install-level page, an unknown address) to the Stories backlog too.
 export function sameScreenIn(route: MatchedRoute | undefined, key: string): string {
   if (route === undefined || isInstanceLevel(route.id)) return routePath('storiesBacklog', { key });
@@ -18,6 +18,7 @@ export function sameScreenIn(route: MatchedRoute | undefined, key: string): stri
       return routePath('sprints', { key });
     case 'workItem':
     case 'workItemAttachment':
+    case 'featureBoard':
       return routePath('storiesBacklog', { key });
     default:
       // The open item belongs to the old project, so it is dropped.
