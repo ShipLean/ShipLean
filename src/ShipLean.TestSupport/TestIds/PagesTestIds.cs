@@ -16,6 +16,7 @@ public static class PagesTestIds
     public const string ProjectSettingsPage = "page-project-settings";
     public const string NewProjectPage = "page-new-project";
     public const string InstanceSettingsPage = "page-instance-settings";
+    public const string InstanceSettingsTab = "page-instance-settings-tab";
     public const string ProfilePage = "page-profile";
     public const string SlotAttachment = "slot-attachment";
     public const string SlotBoard = "slot-board";
