@@ -1,7 +1,9 @@
-import type { BoardSettingsJson } from '../../../api/persisted';
+import type { BoardSettingsJson, TransitionJson } from '../../../api/persisted';
 import type { PaneProps } from '../../../components/SettingsDialog/types';
 import type { BoardSettingsContext } from '../panes';
 import { boardSettingsTestIds as ids } from '../testIds';
+import { ActionEditor } from './automations/ActionEditor';
+import { useAgentConnections } from './automations/useAgentConnections';
 import { AddTransitionForm } from './automations/AddTransitionForm';
 import { TransitionRow } from './automations/TransitionRow';
 import { invalidReason, transitionTypesFor } from './automations/transitionEdits';
@@ -14,6 +16,12 @@ export function AutomationsPane({
   context,
 }: PaneProps<BoardSettingsJson, BoardSettingsContext>) {
   const types = transitionTypesFor(context.level);
+  const connections = useAgentConnections(context.projectId);
+  const setTransition = (next: TransitionJson) =>
+    onChange({
+      ...draft,
+      transitions: draft.transitions.map((t) => (t.id === next.id ? next : t)),
+    });
   if (types.length === 0) {
     return (
       <div data-testid={ids.automationsPane}>
@@ -39,7 +47,8 @@ export function AutomationsPane({
       />
       {draft.transitions.length === 0 ? (
         <p data-testid={ids.automationsEmpty} className="m-0 text-ink-muted">
-          No transitions yet.
+          No transitions yet. A transition names a state change, such as New to Active. When a
+          person moves an item that way, its Send to agent actions run with the prompt you write.
         </p>
       ) : null}
       {draft.transitions.map((transition) => (
@@ -48,6 +57,14 @@ export function AutomationsPane({
           transition={transition}
           invalid={invalidReason(transition, context.states)}
           readOnly={readOnly}
+          actions={
+            <ActionEditor
+              transition={transition}
+              connections={connections}
+              readOnly={readOnly}
+              onChange={setTransition}
+            />
+          }
           onDelete={() =>
             onChange({
               ...draft,

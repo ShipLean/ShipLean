@@ -52,8 +52,28 @@ interface Routable {
   route(url: string, handler: (route: StubbedRoute) => Promise<void>): Promise<unknown>;
 }
 
+const CONN_A = '00000000-0000-4000-8000-0000000000c1';
+const CONN_B = '00000000-0000-4000-8000-0000000000c2';
+
+async function stubProject(page: Routable) {
+  await page.route(`**/api/projects/${PROJECT_ID}/settings`, (route) =>
+    route.fulfill({
+      json: {
+        general: {
+          agentConnectionId: CONN_A,
+          agentConnections: [
+            { id: CONN_A, name: 'Home agent', archived: false },
+            { id: CONN_B, name: 'Cloud agent', archived: false },
+          ],
+        },
+      },
+    }),
+  );
+}
+
 async function stubBoard(page: Routable, dto: BoardSettingsDto): Promise<BoardSettingsPut[]> {
   const puts: BoardSettingsPut[] = [];
+  await stubProject(page);
   await page.route(`**/api/projects/${PROJECT_ID}/boards`, (route) =>
     route.fulfill({ json: [{ id: BOARD_ID, level: dto.level, name: dto.level }] }),
   );
@@ -219,6 +239,7 @@ test('AutomationsPane_WhenSaved_ShouldPutTheTransitionsAndKeepTheRest', async ({
 
 test('AutomationsPane_WhenReadOnly_ShouldDisableEveryControl', async ({ mount, page }) => {
   const dto = board('stories', [transition('t1', story.new, story.idea, 'Review it\nmore')]);
+  await stubProject(page);
   await mount(
     <AutomationsPane
       draft={dto.settings}
@@ -239,4 +260,93 @@ test('AutomationsPane_WhenReadOnly_ShouldDisableEveryControl', async ({ mount, p
   await expect(page.getByTestId(ids.transitionAddFrom)).toBeDisabled();
   await expect(page.getByTestId(ids.transitionAddTo)).toBeDisabled();
   await expect(page.getByTestId(ids.transitionAddType)).toBeDisabled();
+  await expect(page.getByTestId(ids.actionPrompt)).toHaveAttribute('readonly', '');
+  await expect(page.getByTestId(ids.actionConnection)).toBeDisabled();
+  await expect(page.getByTestId(ids.actionAdd)).toBeDisabled();
+  await expect(page.getByTestId(ids.actionRemove)).toBeDisabled();
+});
+
+const withTwoActions = (): TransitionJson => ({
+  ...transition('t1', story.new, story.idea, 'first'),
+  actions: [
+    { id: 'a1', kind: 'agent', prompt: 'first', connectionId: null },
+    { id: 'a2', kind: 'agent', prompt: 'second', connectionId: null },
+  ],
+});
+
+test('AutomationsPane_WhenPromptEdited_ShouldPreviewTheServersRenderAndSave', async ({
+  mount,
+  page,
+}) => {
+  const puts = await stubBoard(page, board('stories', [transition('t1', story.new, story.idea)]));
+  await page.route('**/api/markdown/render', (route) => {
+    const { markdown } = route.request().postDataJSON() as { markdown: string };
+    return route.fulfill({ json: { markdown, html: `<p>rendered:${markdown}</p>` } });
+  });
+  await mountDialog(mount, 'stories');
+
+  await expect(page.getByTestId(ids.actionPreview)).toContainText('Nothing yet');
+  await page.getByTestId(ids.actionPrompt).fill('Review **it**');
+  await expect(page.getByTestId(ids.actionPreview)).toContainText('rendered:Review **it**');
+  await expect(page.getByTestId(ids.transitionSummary)).toHaveText('Send to agent: Review **it**');
+  await page.getByTestId(dialogIds.save).click();
+  await expect.poll(() => puts.length).toBe(1);
+  expect(puts[0].settings.transitions[0].actions[0].prompt).toBe('Review **it**');
+});
+
+test('AutomationsPane_WhenConnectionPickedAndCleared_ShouldSaveIdThenNull', async ({
+  mount,
+  page,
+}) => {
+  const puts = await stubBoard(page, board('stories', [transition('t1', story.new, story.idea)]));
+  await mountDialog(mount, 'stories');
+
+  const select = page.getByTestId(ids.actionConnection);
+  await expect(select.locator('option')).toHaveText([
+    'Project default (Home agent)',
+    'Home agent',
+    'Cloud agent',
+  ]);
+  await select.selectOption({ label: 'Cloud agent' });
+  await page.getByTestId(dialogIds.save).click();
+  await expect.poll(() => puts.length).toBe(1);
+  expect(puts[0].settings.transitions[0].actions[0].connectionId).toBe(CONN_B);
+
+  await select.selectOption({ label: 'Project default (Home agent)' });
+  await page.getByTestId(dialogIds.save).click();
+  await expect.poll(() => puts.length).toBe(2);
+  expect(puts[1].settings.transitions[0].actions[0].connectionId).toBeNull();
+});
+
+test('AutomationsPane_WhenActionRemoved_ShouldKeepTheLastOne', async ({ mount, page }) => {
+  await stubBoard(page, board('stories', [withTwoActions()]));
+  await mountDialog(mount, 'stories');
+
+  await expect(page.getByTestId(ids.actionRow)).toHaveCount(2);
+  await expect(page.getByTestId(ids.actionLastHint)).toHaveCount(0);
+  await page.getByTestId(ids.actionRemove).first().click();
+  await expect(page.getByTestId(ids.actionRow)).toHaveCount(1);
+  await expect(page.getByTestId(ids.actionPrompt)).toHaveValue('second');
+  await expect(page.getByTestId(ids.actionRemove)).toBeDisabled();
+  await expect(page.getByTestId(ids.actionLastHint)).toBeVisible();
+
+  await page.getByTestId(ids.actionAdd).click();
+  await expect(page.getByTestId(ids.actionRow)).toHaveCount(2);
+  await expect(page.getByTestId(ids.actionRemove).first()).toBeEnabled();
+});
+
+test('AutomationsPane_WhenPromptOver20000Characters_ShouldShowTheLimitMessage', async ({
+  mount,
+  page,
+}) => {
+  await stubBoard(page, board('stories', [transition('t1', story.new, story.idea)]));
+  await mountDialog(mount, 'stories');
+
+  await page.getByTestId(ids.actionPrompt).fill('x'.repeat(20_000));
+  await expect(page.getByTestId(ids.actionPromptError)).toHaveCount(0);
+  await page.getByTestId(ids.actionPrompt).fill('x'.repeat(20_001));
+  await expect(page.getByTestId(ids.actionPromptError)).toHaveText(
+    'A prompt is at most 20,000 characters. This one is 20,001.',
+  );
+  await expect(page.getByTestId(ids.actionPrompt)).toHaveAttribute('aria-invalid', 'true');
 });
