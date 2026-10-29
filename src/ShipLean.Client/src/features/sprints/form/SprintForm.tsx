@@ -1,4 +1,4 @@
-import type { FormEvent } from 'react';
+import type { FormEvent, Ref } from 'react';
 import type { SprintCreate } from '../../../api/sprints';
 
 /** The four fields a sprint is made of, as the form holds them (dates as `yyyy-MM-dd`). */
@@ -21,6 +21,8 @@ interface SprintFormProps {
   idPrefix: string;
   ids: SprintFormIds;
   values: SprintFormValues;
+  /** The Name input, for a form that takes focus when it opens. */
+  nameRef?: Ref<HTMLInputElement>;
   onChange: (field: keyof SprintFormValues, value: string) => void;
   onSubmit: (event: FormEvent) => void;
   submitLabel: string;
@@ -41,6 +43,7 @@ export function SprintForm({
   idPrefix,
   ids,
   values,
+  nameRef,
   onChange,
   onSubmit,
   submitLabel,
@@ -60,6 +63,7 @@ export function SprintForm({
       </label>
       <input
         id={`${idPrefix}-name`}
+        ref={nameRef}
         data-testid={ids.name}
         className="field w-full"
         value={values.name}

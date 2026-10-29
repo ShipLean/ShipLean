@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { ProjectDto } from '../../api/projects';
 import type { SprintDto } from '../../api/sprints';
@@ -27,6 +27,7 @@ export function SprintHeader({ variant, project, sprint, sprints, tab }: SprintH
   const slim = variant === 'slim';
   // The sprint whose Edit sprint rail is open; moving to another sprint closes it.
   const [editingId, setEditingId] = useState<string | null>(null);
+  const editSprintRef = useRef<HTMLButtonElement>(null);
   const picker = <SprintPicker project={project} sprint={sprint} sprints={sprints} tab={tab} />;
   const chip = <SprintStatusChip status={sprint.status} />;
   const allSprints = (
@@ -75,12 +76,17 @@ export function SprintHeader({ variant, project, sprint, sprints, tab }: SprintH
             sprints={sprints}
             Editor={SprintGoalEditSlot}
             onEditSprint={() => setEditingId(sprint.id)}
+            onEditGoal={() => setEditingId(null)}
+            editSprintRef={editSprintRef}
           />
           {editingId === sprint.id ? (
             <EditSprintRailSlot
               project={project}
               sprint={sprint}
-              onDone={() => setEditingId(null)}
+              onDone={() => {
+                setEditingId(null);
+                editSprintRef.current?.focus();
+              }}
             />
           ) : null}
           <SprintTabs project={project} sprint={sprint} tab={tab} />

@@ -173,3 +173,30 @@ test('SprintHeader_WhenPickerEscaped_ShouldCloseWithoutNavigating', async ({ mou
   await expect(page.getByTestId(ids.picker)).toBeFocused();
   await expect(page.getByTestId(harness.location)).toHaveText('/p/SHIP/sprints/s24/backlog');
 });
+
+test('SprintHeader_WhenTheRailIsCancelled_ShouldReturnFocusToEditSprint', async ({
+  mount,
+  page,
+}) => {
+  await mount(<SprintHeaderHarness {...props()} />);
+  await page.getByTestId(sprintsTestIds.editSprintOpen).click();
+  await expect(page.getByTestId(sprintsTestIds.editSprintName)).toBeFocused();
+
+  await page.getByTestId(sprintsTestIds.editSprintCancel).click();
+
+  await expect(page.getByTestId(sprintsTestIds.editSprintOpen)).toBeFocused();
+});
+
+test('SprintHeader_WhenTheGoalEditorOpensWithTheRailOpen_ShouldCloseTheRail', async ({
+  mount,
+  page,
+}) => {
+  await mount(<SprintHeaderHarness {...props()} />);
+  await page.getByTestId(sprintsTestIds.editSprintOpen).click();
+  await expect(page.getByTestId('slot-editSprintRail')).toHaveCount(1);
+
+  await page.getByTestId(ids.goalEdit).click();
+
+  await expect(page.getByTestId('slot-editSprintRail')).toHaveCount(0);
+  await expect(page.getByTestId('slot-sprintGoalEdit')).toHaveCount(1);
+});

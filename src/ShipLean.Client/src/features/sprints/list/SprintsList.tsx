@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { ProjectDto } from '../../../api/projects';
 import type { SprintDto } from '../../../api/sprints';
 import { EditSprintRailSlot } from '../../../slots/EditSprintRailSlot';
@@ -18,6 +18,7 @@ export function SprintsList({ project, sprints }: { project: ProjectDto; sprints
   const velocity = useVelocity(project.id).data;
   // The sprint whose Edit sprint rail is open above the table.
   const [editingId, setEditingId] = useState<string | null>(null);
+  const trigger = useRef<HTMLButtonElement | null>(null);
   const editing = sprints.find((sprint) => sprint.id === editingId);
   const planningVelocity =
     velocity === undefined ? undefined : (velocity.override ?? velocity.average);
@@ -25,7 +26,14 @@ export function SprintsList({ project, sprints }: { project: ProjectDto; sprints
     <div className="grid content-start gap-4">
       <VelocityCard projectId={project.id} />
       {editing === undefined ? null : (
-        <EditSprintRailSlot project={project} sprint={editing} onDone={() => setEditingId(null)} />
+        <EditSprintRailSlot
+          project={project}
+          sprint={editing}
+          onDone={() => {
+            setEditingId(null);
+            trigger.current?.focus();
+          }}
+        />
       )}
       <section className="overflow-x-auto rounded-md border border-edge bg-panel">
         <table data-testid={ids.list} className="w-full border-collapse text-left">
@@ -54,7 +62,10 @@ export function SprintsList({ project, sprints }: { project: ProjectDto; sprints
                 sprint={sprint}
                 figures={figures.get(sprint.id)}
                 velocity={planningVelocity}
-                onEdit={() => setEditingId(sprint.id)}
+                onEdit={(button) => {
+                  trigger.current = button;
+                  setEditingId(sprint.id);
+                }}
               />
             ))}
           </tbody>

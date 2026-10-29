@@ -12,7 +12,7 @@ interface SprintRowProps {
   /** What a sprint with no entered capacity plans against; undefined while it loads. */
   velocity: number | undefined;
   /** Opens the Edit sprint rail for this sprint. */
-  onEdit: () => void;
+  onEdit: (trigger: HTMLButtonElement) => void;
 }
 
 const STATUS_CHIP = {
@@ -87,7 +87,7 @@ export function SprintRow({ projectKey, sprint, figures, velocity, onEdit }: Spr
           data-testid={ids.rowEdit}
           aria-label={`Edit ${sprint.name}`}
           className="inline-flex h-7 items-center rounded-control border border-transparent bg-transparent px-2.5 text-[length:var(--text-sm)] font-medium text-ink hover:bg-signal-soft focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-signal"
-          onClick={onEdit}
+          onClick={(event) => onEdit(event.currentTarget)}
         >
           Edit
         </button>

@@ -137,3 +137,28 @@ test('EditSprintRail_WhenCancelled_ShouldFinishWithoutSaving', async ({ mount, p
   expect(done).toBe(1);
   expect(patched).toEqual([]);
 });
+
+test('EditSprintRail_WhenOpened_ShouldFocusTheName', async ({ mount, page }) => {
+  await mount(<EditSprintRail projectId="p1" sprint={future} onDone={() => {}} />);
+
+  await expect(page.getByTestId(ids.editSprintName)).toBeFocused();
+});
+
+test('EditSprintRail_WhenAKeyIsTypedBackAfterATeammateChangedIt_ShouldNotSendIt', async ({
+  mount,
+  page,
+}) => {
+  const patched = await stub(page, 's26');
+  const rail = await mount(<EditSprintRail projectId="p1" sprint={future} onDone={() => {}} />);
+  await page.getByTestId(ids.editSprintName).fill('Sprint 26b');
+  await page.getByTestId(ids.editSprintGoal).fill('New goal');
+
+  await rail.update(
+    <EditSprintRail projectId="p1" sprint={{ ...future, name: 'Renamed' }} onDone={() => {}} />,
+  );
+  await page.getByTestId(ids.editSprintName).fill('Sprint 26');
+  await page.getByTestId(ids.editSprintSubmit).click();
+
+  await expect.poll(() => patched.length).toBe(1);
+  expect(patched[0]).toEqual({ name: null, startDate: null, endDate: null, goal: 'New goal' });
+});
