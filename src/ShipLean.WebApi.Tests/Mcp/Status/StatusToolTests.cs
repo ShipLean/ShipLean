@@ -142,6 +142,28 @@ public class StatusToolTests : McpFixture
     }
 
     [Test]
+    public async Task SprintStatus_WhenSprintHasNoStoredVelocity_ShouldReportMemberDaysAsNull()
+    {
+        var token = await TokenAsync(TestUser.Joel, ReadOnly);
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            var beta = await connection.QuerySingleAsync<Guid>("SELECT id FROM sprint WHERE project_id = @project AND name = 'Orient Beta'", new { project = SeedIds.Projects.Ship });
+            await connection.ExecuteAsync("UPDATE sprint SET capacity_velocity = NULL WHERE id = @beta", new { beta });
+            await connection.ExecuteAsync("DELETE FROM sprint_capacity WHERE sprint_id = @beta", new { beta });
+            await connection.ExecuteAsync(
+                "INSERT INTO sprint_capacity (id, sprint_id, user_id, capacity_points, days) VALUES (@a, @beta, @priya, 10, NULL)",
+                new { a = Guid.NewGuid(), beta, priya = SeedIds.Users.Priya });
+        }
+
+        var status = (await CallToolAsync(token, "sprint_status", """{"project":"SHIP","sprint":"Orient Beta"}""")).Structured();
+
+        status.GetProperty("velocity").ValueKind.ShouldBe(JsonValueKind.Null);
+        var member = status.GetProperty("capacity_members").EnumerateArray().Single();
+        member.GetProperty("days").ValueKind.ShouldBe(JsonValueKind.Null);
+        member.GetProperty("points").GetDecimal().ShouldBe(10m);
+    }
+
+    [Test]
     public async Task SprintStatus_WhenSprintNameAmbiguous_ShouldListCandidates()
     {
         var token = await TokenAsync(TestUser.Joel, ReadOnly);

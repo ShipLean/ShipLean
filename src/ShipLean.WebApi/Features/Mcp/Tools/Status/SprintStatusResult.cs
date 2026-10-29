@@ -27,10 +27,10 @@ internal sealed record SprintStatusResult(
     [property: JsonPropertyName("blocked")] IReadOnlyList<SprintStatusResult.StatusItem> Blocked,
     [property: JsonPropertyName("unparented_tasks")] IReadOnlyList<SprintStatusResult.StatusItem> UnparentedTasks) : McpResult(Project, OpenUrl)
 {
-    // Days is what the member has (their typed days, else the sprint's default); Points is their share of the capacity.
+    // Days is what the member has (their typed days, else the sprint's default), null on an old points-only sprint (no stored velocity); Points is their share of the capacity.
     internal sealed record CapacityMember(
         [property: JsonPropertyName("name")] string Name,
-        [property: JsonPropertyName("days")] decimal Days,
+        [property: JsonPropertyName("days")] decimal? Days,
         [property: JsonPropertyName("points")] decimal Points);
 
     internal sealed record BurndownEntry(

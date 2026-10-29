@@ -58,7 +58,7 @@ internal sealed class SprintStatusTools(
             running ? head.EndDate.DayNumber - today.DayNumber : null, timeLabel,
             sprintMetrics.Committed, sprintMetrics.Completed, sprintMetrics.Remaining,
             capacity.Members.Count > 0 ? capacity.TeamTotal : null, capacity.Velocity, capacity.WorkingDays,
-            [.. capacity.Members.Select(m => new SprintStatusResult.CapacityMember(m.User.Name, m.Days ?? capacity.DefaultDays, m.Points))], trend, burndown, states, blocked, unparented);
+            [.. capacity.Members.Select(m => new SprintStatusResult.CapacityMember(m.User.Name, capacity.Velocity is null ? null : m.Days ?? capacity.DefaultDays, m.Points))], trend, burndown, states, blocked, unparented);
         return StatusReply.Of(result, $"{head.Name} ({resolvedProject.Key}): {timeLabel}. {sprintMetrics.Completed} of {sprintMetrics.Committed} points done, {blocked.Count} blocked.");
     }
 
