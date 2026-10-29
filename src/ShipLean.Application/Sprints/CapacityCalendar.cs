@@ -1,4 +1,6 @@
 using ShipLean.Contracts.Holidays;
+using ShipLean.Contracts.Sprints;
+using ShipLean.Core;
 using ShipLean.Core.Sprints;
 
 namespace ShipLean.Application.Sprints;
@@ -13,6 +15,8 @@ public sealed record CapacityCalendar(SprintDays Days, IReadOnlyList<PublicHolid
 
     // What a member's typed days count as: null is the default, a value above W is clamped to W.
     public decimal Effective(decimal? typed) => Math.Min(typed ?? DefaultDays, WorkingDays);
+
+    public IReadOnlyList<CapacityHolidayDto> HolidayDtos() => [.. Holidays.Select(h => new CapacityHolidayDto(h.Date, h.Name, DisplayDate.WeekdayDay(h.Date)))];
 
     public static IReadOnlyList<int> ParseWorkingDays(string days)
         => [.. days.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(d => int.Parse(d, System.Globalization.CultureInfo.InvariantCulture))];

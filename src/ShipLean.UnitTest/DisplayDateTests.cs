@@ -5,6 +5,13 @@ namespace ShipLean.UnitTest;
 [TestFixture]
 public class DisplayDateTests
 {
+    [TestCase("2026-12-25", "Fri 25 Dec")]
+    [TestCase("2099-01-07", "Wed 7 Jan")]
+    public void WeekdayDay_WhenDate_ReturnsWeekdayDayMonth(string day, string expected)
+    {
+        DisplayDate.WeekdayDay(DateOnly.Parse(day, System.Globalization.CultureInfo.InvariantCulture)).ShouldBe(expected);
+    }
+
     [Test]
     public void Format_WhenUtc_ReturnsMinutePrecisionUtcLabel()
     {

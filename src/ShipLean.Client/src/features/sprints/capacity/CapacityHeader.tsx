@@ -14,13 +14,6 @@ interface CapacityHeaderProps {
   onVelocity: (text: string) => void;
 }
 
-const holidayDate = new Intl.DateTimeFormat('en-GB', {
-  weekday: 'short',
-  day: 'numeric',
-  month: 'short',
-  timeZone: 'UTC',
-});
-
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
 
 /** The top of the panel: the team's velocity for the sprint, and the calendar its days come from. */
@@ -33,9 +26,7 @@ export function CapacityHeader({
   onVelocity,
 }: CapacityHeaderProps) {
   const { workingDays, holidays, holidayCountry } = capacity;
-  const names = holidays
-    .map((h) => `${h.name} (${holidayDate.format(new Date(`${h.date}T00:00:00Z`))})`)
-    .join(', ');
+  const names = holidays.map((h) => `${h.name} (${h.label})`).join(', ');
   return (
     <div className="grid gap-x-6 gap-y-3 border-b border-edge p-4 sm:grid-cols-[auto_minmax(0,1fr)]">
       <div className="grid gap-1">

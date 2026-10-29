@@ -7,6 +7,7 @@ using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Events;
 using ShipLean.Contracts.Sprints;
+using ShipLean.Core;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
 
@@ -124,7 +125,7 @@ public class SprintApiTests : ApiFixture
             response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
             var read = await response.ReadAsync<SprintCapacityDto>();
             read.HolidayCountry.ShouldBe("NZ");
-            read.Holidays.ShouldBe([new ShipLean.Contracts.Holidays.PublicHolidayDto(weekday, "Weekday holiday")]);
+            read.Holidays.ShouldBe([new CapacityHolidayDto(weekday, "Weekday holiday", DisplayDate.WeekdayDay(weekday))]);
             read.WorkingDays.ShouldBe(10);
             read.DefaultDays.ShouldBe(9);
             read.Members.Single().Points.ShouldBe(18m);

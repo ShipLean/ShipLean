@@ -75,6 +75,9 @@ public static class DisplayDate
         return new DateTimeOffset(midnight, offset).ToUniversalTime();
     }
 
+    // A calendar date with its weekday ("Thu 25 Dec"), for a holiday on a sprint's capacity screen.
+    public static string WeekdayDay(DateOnly day) => day.ToString("ddd d MMM", CultureInfo.InvariantCulture);
+
     // A calendar day as the UI prints it ("Cleared · JD, 19 Oct"): "19 Oct" this year, "2 Mar 2025" otherwise.
     public static string ShortDay(DateTimeOffset value, DateTimeOffset now, TimeZoneInfo zone)
     {

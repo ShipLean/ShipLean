@@ -272,7 +272,7 @@ public abstract class SprintStoreContract
         capacity.WorkingDays.ShouldBe(10);
         capacity.DefaultDays.ShouldBe(9);
         capacity.HolidayCountry.ShouldBe("NZ");
-        capacity.Holidays.ShouldBe([new PublicHolidayDto(new DateOnly(2099, 1, 7), "Midweek day")]);
+        capacity.Holidays.ShouldBe([new CapacityHolidayDto(new DateOnly(2099, 1, 7), "Midweek day", "Wed 7 Jan")]);
         capacity.Members.Single(m => m.User.Id == first).Points.ShouldBe(18m);
         capacity.Members.Single(m => m.User.Id == second).Points.ShouldBe(20m);
     }

@@ -10,7 +10,7 @@
     "velocityDefault": 28.5,
     "workingDays": 10,
     "defaultDays": 9,
-    "holidays": [{ "date": "2026-11-04", "name": "Mid-week holiday" }],
+    "holidays": [{ "date": "2026-11-04", "name": "Mid-week holiday", "label": "Wed 4 Nov" }],
     "holidayCountry": "NZ",
     "ended": false
   },

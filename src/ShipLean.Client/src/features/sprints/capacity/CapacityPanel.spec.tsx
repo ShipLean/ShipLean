@@ -589,7 +589,7 @@ test('Capacity_WhenTheCountryHasHolidays_ShouldSayHowManyAndNameThem', async ({ 
     current: capacityOf('s24', [entry(0, 27)], {
       defaultDays: 9,
       holidayCountry: 'NZ',
-      holidays: [{ date: '2026-10-26', name: 'Labour Day' }],
+      holidays: [{ date: '2026-10-26', name: 'Labour Day', label: 'Mon 26 Oct' }],
     }),
   });
   await mount(<CapacityPanel project={project} sprint={sprint} sprints={sprints} />);

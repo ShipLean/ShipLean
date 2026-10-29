@@ -134,6 +134,6 @@ public sealed partial class SprintStore
         var velocityDefault = Math.Min(LargestCapacity, decimal.Round(fallback, 1, MidpointRounding.AwayFromZero));
         return new SprintCapacityDto(
             sprint.Id, members, members.Sum(m => m.Points), stored, velocityDefault, calendar.WorkingDays, calendar.DefaultDays,
-            calendar.Holidays, project.HolidayCountry, sprint.End < SprintLabels.Today(clock));
+            calendar.HolidayDtos(), project.HolidayCountry, sprint.End < SprintLabels.Today(clock));
     }
 }
