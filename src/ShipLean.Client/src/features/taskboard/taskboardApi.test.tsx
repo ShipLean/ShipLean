@@ -1,8 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act } from 'react';
+import { act, useEffect } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import type { ProjectDto } from '../../api/projects';
+import type { WorkItemTypeId } from '../../api/refs';
 import { fakeConnection } from '../../realtime/testing/fakeConnection';
 
 const hub = fakeConnection();
@@ -18,11 +19,14 @@ vi.mock('../../api/client', async (original) => ({
       reads.count += 1;
       return {};
     }),
+    post: vi.fn(async (...args: unknown[]) => args.length && {}),
   },
 }));
 
 const { useProjectRealtime } = await import('../../realtime/useProjectRealtime');
-const { taskboardMoveKey, useTaskboard } = await import('./taskboardApi');
+const { api } = await import('../../api/client');
+const { taskboardKey, taskboardMoveKey, taskboardMovesPath, useCreateOnTaskboard, useTaskboard } =
+  await import('./taskboardApi');
 
 const projectId = '0199a000-0000-7000-8000-000000000012';
 const sprintId = 's24';
@@ -79,7 +83,7 @@ test('useTaskboard_WhenAMoveIsInFlight_ShouldNotRefetchOnATeammatesEvent', async
   const move = queryClient
     .getMutationCache()
     .build(queryClient, {
-      mutationKey: taskboardMoveKey(projectId, sprintId),
+      mutationKey: taskboardMoveKey(projectId, { kind: 'sprint', sprintId }),
       mutationFn: () => new Promise<void>((resolve) => (finish = resolve)),
     })
     .execute(undefined);
@@ -104,4 +108,76 @@ test('useTaskboard_WhenAMoveIsInFlight_ShouldNotRefetchOnATeammatesEvent', async
     pulled: false,
   });
   expect(reads.count).toBe(2);
+});
+
+const sprintScope = { kind: 'sprint', sprintId } as const;
+const featureScope = { kind: 'feature', featureId: 'f1' } as const;
+
+test('taskboardMovesPath_ShouldFollowTheScope', () => {
+  expect(taskboardMovesPath(sprintScope)).toBe('/api/sprints/s24/taskboard/moves');
+  expect(taskboardMovesPath(featureScope)).toBe('/api/work-items/f1/feature-board/moves');
+});
+
+test('taskboardKey_ShouldFollowTheScope', () => {
+  expect(taskboardKey(projectId, sprintScope)).toEqual([
+    'projects',
+    projectId,
+    'taskboard',
+    sprintId,
+  ]);
+  expect(taskboardKey(projectId, featureScope)).toEqual([
+    'projects',
+    projectId,
+    'feature-board',
+    'f1',
+  ]);
+  expect(taskboardMoveKey(projectId, sprintScope)).not.toEqual(
+    taskboardMoveKey(projectId, featureScope),
+  );
+});
+
+const created: { type: WorkItemTypeId; title: string; parentId: string | null }[] = [];
+function Creator({ scope }: { scope: typeof sprintScope | typeof featureScope }) {
+  const create = useCreateOnTaskboard(projectId, scope);
+  useEffect(() => {
+    for (const c of created) create.mutate(c);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once
+  }, []);
+  return null;
+}
+
+async function bodiesFor(scope: typeof sprintScope | typeof featureScope) {
+  const post = vi.mocked(api.post);
+  post.mockClear();
+  created.splice(
+    0,
+    created.length,
+    { type: 'task', title: 't', parentId: 'story-1' },
+    { type: 'story', title: 's', parentId: null },
+  );
+  const host = createRoot(document.createElement('div'));
+  act(() => {
+    host.render(
+      <QueryClientProvider client={queryClient}>
+        <Creator scope={scope} />
+      </QueryClientProvider>,
+    );
+  });
+  await act(() => vi.advanceTimersByTimeAsync(0));
+  act(() => host.unmount());
+  return post.mock.calls.map(([, body]) => body);
+}
+
+test('useCreateOnTaskboard_WhenSprintScope_ShouldPutAStoryInTheSprintAndATaskUnderItsStory', async () => {
+  expect(await bodiesFor(sprintScope)).toMatchObject([
+    { type: 'task', parentId: 'story-1', sprintId: null },
+    { type: 'story', parentId: null, sprintId },
+  ]);
+});
+
+test('useCreateOnTaskboard_WhenFeatureScope_ShouldPutAStoryUnderTheFeatureWithNoSprint', async () => {
+  expect(await bodiesFor(featureScope)).toMatchObject([
+    { type: 'task', parentId: 'story-1', sprintId: null },
+    { type: 'story', parentId: 'f1', sprintId: null },
+  ]);
 });

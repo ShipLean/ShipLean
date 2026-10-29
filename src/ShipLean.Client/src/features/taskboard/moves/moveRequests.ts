@@ -1,4 +1,5 @@
-import type { CardDto, TaskboardViewDto } from '../../../api/views';
+import type { CardDto } from '../../../api/views';
+import type { TaskboardGridView } from '../taskboardGridView';
 import type { TaskboardGrouping, TaskboardMoveRequest } from '../taskboardApi';
 import { UNASSIGNED, UNPARENTED } from './applyMove';
 
@@ -44,7 +45,7 @@ export function pickUpRequest(card: CardDto, stateId: string, meId: string): Tas
 
 /** Where Alt + an arrow key sends a card: the next column left or right, the next row up or down. Null at an edge or for any other key. */
 export function keyboardTarget(
-  view: TaskboardViewDto,
+  view: TaskboardGridView,
   grouping: TaskboardGrouping,
   card: CardDto,
   fromRowId: string,

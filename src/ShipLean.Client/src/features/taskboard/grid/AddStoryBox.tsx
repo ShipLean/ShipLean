@@ -2,6 +2,7 @@ import { useRef, useState, type KeyboardEvent } from 'react';
 import { ApiRequestError } from '../../../api/client';
 import type { WorkItemTypeId } from '../../../api/refs';
 import { useCreateOnTaskboard } from '../taskboardApi';
+import type { TaskboardScope } from '../taskboardScope';
 import { taskboardTestIds as ids } from '../testIds';
 
 const types: { id: WorkItemTypeId; label: string }[] = [
@@ -12,17 +13,17 @@ const types: { id: WorkItemTypeId; label: string }[] = [
 /** "+ Add story or bug": creates the item into this sprint and stays open for the next one. Esc closes it. */
 export function AddStoryBox({
   projectId,
-  sprintId,
+  scope,
   onClose,
 }: {
   projectId: string;
-  sprintId: string;
+  scope: TaskboardScope;
   onClose: () => void;
 }) {
   const [type, setType] = useState<WorkItemTypeId>('story');
   const [title, setTitle] = useState('');
   const input = useRef<HTMLInputElement>(null);
-  const create = useCreateOnTaskboard(projectId, sprintId);
+  const create = useCreateOnTaskboard(projectId, scope);
 
   function add() {
     const text = title.trim();

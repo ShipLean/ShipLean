@@ -1,22 +1,23 @@
 import { useRef, useState, type KeyboardEvent } from 'react';
 import { ApiRequestError } from '../../../api/client';
 import { useCreateOnTaskboard } from '../taskboardApi';
+import type { TaskboardScope } from '../taskboardScope';
 import { taskboardTestIds as ids } from '../testIds';
 
 /** "+ Task" in a row: a title box that creates a child task and stays open for the next one. Esc closes it. */
 export function AddTaskBox({
   projectId,
-  sprintId,
+  scope,
   parentId,
 }: {
   projectId: string;
-  sprintId: string;
+  scope: TaskboardScope;
   parentId: string | null;
 }) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState('');
   const input = useRef<HTMLInputElement>(null);
-  const create = useCreateOnTaskboard(projectId, sprintId);
+  const create = useCreateOnTaskboard(projectId, scope);
 
   function add() {
     const text = title.trim();

@@ -1,5 +1,6 @@
 import type { UserRef } from '../../../api/refs';
-import type { CardDto, TaskboardCellDto, TaskboardViewDto } from '../../../api/views';
+import type { CardDto, TaskboardCellDto } from '../../../api/views';
+import type { TaskboardGridView } from '../taskboardGridView';
 import type { TaskboardGrouping } from '../taskboardApi';
 
 /** Where a card lands: the destination row (a story or bug id, a person id, or a sentinel), column, and the card it goes above. */
@@ -65,11 +66,11 @@ function place<R extends Row>(
 }
 
 /** The view with the card already where the drop put it, in the rows of the grouping on screen. A destination row the view lacks leaves the view as it is. */
-export function applyMove(
-  view: TaskboardViewDto,
+export function applyMove<V extends TaskboardGridView>(
+  view: V,
   grouping: TaskboardGrouping,
   move: AppliedMove,
-): TaskboardViewDto {
+): V {
   const state = view.columns.find((column) => column.state.id === move.stateId)?.state;
   if (!state) return view;
   const moved =
@@ -103,10 +104,10 @@ export function applyMove(
             : null,
         );
   if (!moved) return view;
-  const rows = grouping === 'stories' ? (moved as TaskboardViewDto['rows']) : view.rows;
+  const rows = grouping === 'stories' ? (moved as TaskboardGridView['rows']) : view.rows;
   const peopleRows =
     grouping === 'people'
-      ? (moved as TaskboardViewDto['peopleRows']).map((row) => ({
+      ? (moved as TaskboardGridView['peopleRows']).map((row) => ({
           ...row,
           taskCount: row.cells.reduce((n, cell) => n + cell.tasks.length, 0),
         }))
@@ -126,7 +127,7 @@ export function applyMove(
 }
 
 /** Marks a story's row as offering Move to Resolved (the move response said so; the refetch has the last word). */
-export function offerResolveOn(view: TaskboardViewDto, parentId: string): TaskboardViewDto {
+export function offerResolveOn<V extends TaskboardGridView>(view: V, parentId: string): V {
   return {
     ...view,
     rows: view.rows.map((row) =>
@@ -136,11 +137,11 @@ export function offerResolveOn(view: TaskboardViewDto, parentId: string): Taskbo
 }
 
 /** Puts the revision the server wrote onto the card, so the next move of it names the right one. */
-export function withRevision(
-  view: TaskboardViewDto,
+export function withRevision<V extends TaskboardGridView>(
+  view: V,
   taskId: string,
   revision: number,
-): TaskboardViewDto {
+): V {
   const set = (cells: TaskboardCellDto[]) =>
     cells.map((cell) => ({
       ...cell,
@@ -154,7 +155,10 @@ export function withRevision(
 }
 
 /** The revision the board holds for a card, or undefined when it is not on the board. */
-export function revisionOf(view: TaskboardViewDto | undefined, taskId: string): number | undefined {
+export function revisionOf(
+  view: TaskboardGridView | undefined,
+  taskId: string,
+): number | undefined {
   return [...(view?.rows ?? []), ...(view?.peopleRows ?? [])]
     .flatMap((row) => row.cells)
     .flatMap((cell) => cell.tasks)
