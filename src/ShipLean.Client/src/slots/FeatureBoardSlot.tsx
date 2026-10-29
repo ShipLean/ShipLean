@@ -1,13 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { ProjectDto } from '../api/projects';
 import type { UserRef } from '../api/refs';
 import type { FeatureBoardViewDto } from '../api/views';
 import { useFeatureBoard } from '../features/featureBoard/featureBoardApi';
+import { featureBoardLayout, featureOfStory } from '../features/featureBoard/featureBoardLayout';
 import { FeatureBoardHeader } from '../features/featureBoard/FeatureBoardHeader';
 import { FeatureBoardSections } from '../features/featureBoard/FeatureBoardSections';
 import { featureBoardTestIds as boardIds } from '../features/featureBoard/testIds';
 import { pagesTestIds } from '../features/pages/testIds';
+import { CardFeatureContext } from '../features/taskboard/cards/CardFeatureContext';
 import { AddStoryBox } from '../features/taskboard/grid/AddStoryBox';
 import { TaskboardToolbar } from '../features/taskboard/grid/TaskboardToolbar';
 import { TaskboardDnd } from '../features/taskboard/moves/TaskboardDnd';
@@ -57,6 +59,8 @@ function LoadedBoard({
     photoUrl: meDto.photoUrl,
   };
   const [faces, setFaces] = useState<ReadonlySet<string>>(new Set());
+  // Section collapse is page state, by Feature id.
+  const [closedSections, setClosedSections] = useState<ReadonlySet<string>>(new Set());
   const [adding, setAdding] = useState(false);
   // Rows the user has opened or closed, by row id; every other row follows its default (a completed story starts collapsed).
   const [toggled, setToggled] = useState<ReadonlyMap<string, boolean>>(new Map());
@@ -73,11 +77,19 @@ function LoadedBoard({
     (rowId: string) => setToggled((current) => new Map(current).set(rowId, false)),
     [],
   );
+  const layout = useMemo(() => featureBoardLayout(view), [view]);
+  const features = useMemo(() => featureOfStory(view), [view]);
+  const toggleSection = (sectionId: string) =>
+    setClosedSections((current) => {
+      const next = new Set(current);
+      if (!next.delete(sectionId)) next.add(sectionId);
+      return next;
+    });
   const isCollapsed = (rowId: string, completed: boolean) => toggled.get(rowId) ?? completed;
 
   return (
     <div data-testid={pagesTestIds.slotFeatureBoard}>
-      <FeatureBoardHeader projectKey={project.key} header={view.header} />
+      <FeatureBoardHeader projectKey={project.key} header={view.header} sections={layout} />
       <TaskboardToolbar
         grouping={grouping}
         onGroupingChange={setGrouping}
@@ -94,31 +106,35 @@ function LoadedBoard({
           Loading the Feature board…
         </p>
       ) : (
-        <TaskboardDnd
-          projectId={project.id}
-          scope={scope}
-          view={view}
-          grouping={grouping}
-          me={me}
-          onLanded={onLanded}
-        >
-          <FeatureBoardSections
-            projectKey={project.key}
+        <CardFeatureContext.Provider value={features.size > 0 ? features : null}>
+          <TaskboardDnd
             projectId={project.id}
             scope={scope}
             view={view}
             grouping={grouping}
-            faces={faces}
             me={me}
-            isCollapsed={isCollapsed}
-            onToggle={(rowId, completed) =>
-              setToggled((current) => new Map(current).set(rowId, !isCollapsed(rowId, completed)))
-            }
-            onSetState={(id, key, revision, stateId) =>
-              setState.mutate({ id, key, revision, stateId })
-            }
-          />
-        </TaskboardDnd>
+            onLanded={onLanded}
+          >
+            <FeatureBoardSections
+              projectKey={project.key}
+              projectId={project.id}
+              scope={scope}
+              view={view}
+              grouping={grouping}
+              faces={faces}
+              me={me}
+              closedSections={closedSections}
+              onToggleSection={toggleSection}
+              isCollapsed={isCollapsed}
+              onToggle={(rowId, completed) =>
+                setToggled((current) => new Map(current).set(rowId, !isCollapsed(rowId, completed)))
+              }
+              onSetState={(id, key, revision, stateId) =>
+                setState.mutate({ id, key, revision, stateId })
+              }
+            />
+          </TaskboardDnd>
+        </CardFeatureContext.Provider>
       )}
     </div>
   );

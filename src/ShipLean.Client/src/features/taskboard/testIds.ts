@@ -40,6 +40,7 @@ export const taskboardTestIds = {
   cardPoints: 'taskboard-card-points',
   cardAssignee: 'taskboard-card-assignee',
   cardParent: 'taskboard-card-parent',
+  cardParentFeature: 'taskboard-card-parent-feature',
   cardPickUp: 'taskboard-card-pick-up',
   addTask: 'taskboard-add-task',
   taskBox: 'taskboard-task-box',

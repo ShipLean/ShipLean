@@ -3,6 +3,7 @@ import type { TaskboardPersonRowDto, TaskboardViewDto } from '../../../api/views
 import { Avatar } from '../../../components/Avatar';
 import { passesFaces } from '../grid/faceFilter';
 import { gridColumns } from '../grid/gridColumns';
+import { useCardFeatures } from '../cards/CardFeatureContext';
 import { taskboardTestIds as ids } from '../testIds';
 import { TaskCell } from './TaskCell';
 
@@ -21,6 +22,14 @@ export function PersonRow({
   meId: string | undefined;
 }) {
   const rowId = row.person?.id ?? 'unassigned';
+  const features = useCardFeatures();
+  const featureCount = features
+    ? new Set(
+        row.cells
+          .flatMap((c) => c.tasks)
+          .flatMap((t) => features.get(t.parent?.id ?? '')?.key ?? []),
+      ).size
+    : null;
   const label = row.taskCount === 1 ? 'task' : 'tasks';
   return (
     <div
@@ -40,6 +49,9 @@ export function PersonRow({
         </span>
         <span data-testid={ids.rowCount} className="text-[length:var(--text-xs)] text-ink-muted">
           {row.taskCount} {label}
+          {featureCount === null
+            ? ''
+            : ` · ${featureCount} ${featureCount === 1 ? 'Feature' : 'Features'}`}
         </span>
       </div>
       {columns.map((column) => (
