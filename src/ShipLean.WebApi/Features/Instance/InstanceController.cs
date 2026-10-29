@@ -14,7 +14,7 @@ namespace ShipLean.WebApi.Features.Instance;
 // POST /api/instance/projects/{id}/join    -> 204; the caller becomes the project's Admin
 [InstanceAdmin]
 [Route("api/instance")]
-public sealed class InstanceController(InstanceSettings settings, InstanceProjects projects) : ApiControllerBase
+public sealed class InstanceController(InstanceSettings settings, InstanceProjects projects, PublicOrigin origins) : ApiControllerBase
 {
     [HttpGet("settings")]
     [ProducesResponseType<InstanceSettingsDto>(StatusCodes.Status200OK)]
@@ -25,7 +25,16 @@ public sealed class InstanceController(InstanceSettings settings, InstanceProjec
     [ProducesResponseType<InstanceSettingsDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ApiError>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ApiError>(StatusCodes.Status403Forbidden)]
-    public Task<InstanceSettingsDto> PutSettings(InstanceSettingsDto body, CancellationToken cancellationToken) => settings.SaveAsync(body, cancellationToken);
+    public async Task<InstanceSettingsDto> PutSettings(InstanceSettingsDto body, CancellationToken cancellationToken)
+    {
+        var saved = await settings.SaveAsync(body, cancellationToken);
+        // A saved public origin is what agents open. A cluster service name stored as base_url is still not one.
+        if (!RequestOrigin.HostIsClusterService(saved.BaseUrl))
+        {
+            origins.Clear();
+        }
+        return saved;
+    }
 
     [HttpGet("projects")]
     [ProducesResponseType<IReadOnlyList<InstanceProjectDto>>(StatusCodes.Status200OK)]

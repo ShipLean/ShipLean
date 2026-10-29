@@ -128,7 +128,7 @@ The tools the richer Feature editor added. Each slice that adds a tool appends i
 
 ### Upload URLs
 
-`attach_file` without `base64` checks the item (Member), the name and the content type, then issues a token and replies with the URL. The reply's `upload_url` is absolute, built like every other link the MCP returns. When `base_url` is set, that is the host. When it is blank, the host is the one the request came in on: the last `X-Forwarded-Host` from a trusted proxy (and `X-Forwarded-Proto` for the scheme), unless that name is a cluster service (`*.svc`). Otherwise it is the request's own host. `Request.Host` is not rewritten, so a redirect still uses the app's own host.
+`attach_file` without `base64` checks the item (Member), the name and the content type, then issues a token and replies with the URL. The reply's `upload_url` is absolute, built like every other link the MCP returns. When `base_url` is set, that is the host. When it is blank, the host is the one the request came in on: the last `X-Forwarded-Host` from a trusted proxy (and `X-Forwarded-Proto` for the scheme), unless that name is a cluster service (`*.svc`). Otherwise it is the request's own host. If that host is still a cluster service name, the call fails and tells the agent to send `base64` or to set `base_url`. It does not return a URL a laptop cannot open. `Request.Host` is not rewritten, so a redirect still uses the app's own host. See [Behind a gateway](#behind-a-gateway).
 
 - **Token:** 32 random bytes, base64url. Only its SHA-256 is stored (`transfer_token`, with the item, file name, content type, user, agent stamp and agent authorization). It lives 10 minutes.
 - **`PUT /api/uploads/{token}`** takes the raw bytes as the body, so `curl -T file.png '<url>'` needs no headers, cookie or bearer, and the `X-ShipLean-Client` guard doesn't apply. The content type given to `attach_file` wins over whatever the client sends. It is rate limited per client address (60 a minute).
@@ -147,6 +147,18 @@ The tools the richer Feature editor added. Each slice that adds a tool appends i
 - **Runs as the user who asked for the URL.** Member is checked again on use; the URL stops working if the agent is revoked, the user is disabled or the member is removed.
 - **Answers:** the file, or 404 for an unknown or expired token, an attachment archived or replaced since the URL was issued, or a user no longer allowed. The response never says which.
 - Behind a proxy, `/api/downloads/` must be skipped like `/api/uploads/` ([`auth.md`](auth.md#paths-the-proxy-must-skip)).
+- The same cluster-service rule as `upload_url`: when the only host is `*.svc`, `read_attachment` fails instead of returning `download_url`, and the message names `base_url`.
+
+## Behind a gateway
+
+An MCP gateway that dials ShipLean on its in-cluster service name (`shiplean.<namespace>.svc`) does not, by itself, tell ShipLean the public host. Set `instance_settings.base_url` to that public origin. That is enough. Changing it changes the token audience, so every agent has to reconnect.
+
+To leave `base_url` blank, do both of these:
+
+1. Add the gateway's address to `SHIPLEAN_TRUSTED_PROXIES`. In a cluster the gateway is another pod, not loopback, so the default ignores what it sends.
+2. Have the gateway send `X-Forwarded-Host` (the public host) and `X-Forwarded-Proto` (`https`). The forwarded host must not itself be a `*.svc` name.
+
+If the dialed host is still `*.svc`, ShipLean logs one warning per process naming the cause (no `X-Forwarded-Host`, the peer is not in `SHIPLEAN_TRUSTED_PROXIES`, or the forwarded host is `*.svc`). `/health` reports `publicOrigin` as `unknown: set base_url`, and the instance settings General tab says the same. `attach_file` without `base64` and a `read_attachment` download URL fail. `open_url` still uses the cluster host until `base_url` is set.
 
 ## Adding a tool
 

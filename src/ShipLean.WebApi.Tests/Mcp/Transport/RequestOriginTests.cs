@@ -38,6 +38,45 @@ public class RequestOriginTests
         request.Headers["X-Forwarded-Proto"] = "https";
 
         RequestOrigin.Of(request, new ForwardedHeadersOptions()).ShouldBe("http://non-prod.shiplean.svc:8080");
+        RequestOrigin.ClusterFallback(request, new ForwardedHeadersOptions()).ShouldBe("X-Forwarded-Host non-prod.shiplean.svc.cluster.local is a cluster service name");
+    }
+
+    [Test]
+    public void Of_WhenPeerIsNotTrustedAndDialedHostIsClusterService_ShouldNameThePeer()
+    {
+        var request = Request("http://non-prod.shiplean.svc:8080", "203.0.113.8");
+        request.Headers["X-Forwarded-Host"] = "shiplean.agoda.is";
+        request.Headers["X-Forwarded-Proto"] = "https";
+
+        RequestOrigin.Of(request, new ForwardedHeadersOptions()).ShouldBe("http://non-prod.shiplean.svc:8080");
+        RequestOrigin.ClusterFallback(request, new ForwardedHeadersOptions()).ShouldBe("peer 203.0.113.8 is not in SHIPLEAN_TRUSTED_PROXIES");
+    }
+
+    [Test]
+    public void Of_WhenTrustedAndNoForwardedHost_ShouldNameTheMissingHeader()
+    {
+        var request = Request("http://non-prod.shiplean.svc:8080", "127.0.0.1");
+
+        RequestOrigin.Of(request, new ForwardedHeadersOptions()).ShouldBe("http://non-prod.shiplean.svc:8080");
+        RequestOrigin.ClusterFallback(request, new ForwardedHeadersOptions()).ShouldBe("no X-Forwarded-Host");
+    }
+
+    [Test]
+    public void ClusterFallback_WhenThePublicHostIsTrusted_ShouldBeNull()
+    {
+        var request = Request("http://non-prod.shiplean.svc:8080", "127.0.0.1");
+        request.Headers["X-Forwarded-Host"] = "shiplean.agoda.is";
+        request.Headers["X-Forwarded-Proto"] = "https";
+
+        RequestOrigin.ClusterFallback(request, new ForwardedHeadersOptions()).ShouldBeNull();
+    }
+
+    [TestCase("http://non-prod.shiplean.svc:8080", true)]
+    [TestCase("https://shiplean.agoda.is", false)]
+    [TestCase("", false)]
+    public void HostIsClusterService_ShouldMatchAClusterServiceName(string origin, bool cluster)
+    {
+        RequestOrigin.HostIsClusterService(origin).ShouldBe(cluster);
     }
 
     [Test]

@@ -62,6 +62,22 @@ test('General_WhenBaseUrlMatchesAddressInUse_ShouldConfirmIt', async ({ mount, p
   await expect(view.getByTestId(ids.instanceUrlMismatch)).toHaveCount(0);
 });
 
+test('General_WhenPublicOriginIsUnknown_ShouldSayToSetTheBaseUrl', async ({ mount, page }) => {
+  await page.route('**/api/instance/settings', async (route) =>
+    route.fulfill({
+      json: { name: 'Larkspur Engineering', baseUrl: '', projectCreation: 'everyone' },
+    }),
+  );
+  await page.route('**/api/health', async (route) =>
+    route.fulfill({
+      json: { status: 'ok', version: 'test', publicOrigin: 'unknown: set base_url' },
+    }),
+  );
+  const view = await mount(<InstanceGeneral />);
+
+  await expect(view.getByTestId(ids.instancePublicOrigin)).toBeVisible();
+});
+
 test('General_WhenBaseUrlIsNotHttps_ShouldWarnAboutCookies', async ({ mount, page }) => {
   await stub(page);
   const view = await mount(<InstanceGeneral />);
