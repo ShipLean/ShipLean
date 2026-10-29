@@ -27,6 +27,12 @@ public class ViewDtoTests
     }
 
     [Test]
+    public void FeatureBoardViewDto_WhenRoundTripped_ShouldMatchTheFixture()
+    {
+        BoardDtoFixture.SurvivesRoundTrip<FeatureBoardViewDto>(BoardDtoFixture.Read("views", "feature-board-view.json")).ShouldBeTrue();
+    }
+
+    [Test]
     public void BacklogViewDto_WhenTreeRoundTripped_ShouldMatchTheFixture()
     {
         BoardDtoFixture.SurvivesRoundTrip<BacklogViewDto>(BoardDtoFixture.Read("views", "backlog-view.tree.json")).ShouldBeTrue();
@@ -76,6 +82,23 @@ public class ViewDtoTests
         board.Rows.ShouldAllBe(r => r.Cells.Count == board.Columns.Count);
         board.Rows.Sum(r => r.Cells.Sum(c => c.Tasks.Count)).ShouldBe(board.PeopleRows.Sum(r => r.TaskCount));
         board.ParentStates.Select(s => s.Type).ShouldBe([WorkItemTypeId.Story, WorkItemTypeId.Bug]);
+        board.Rows.ShouldContain(r => r.OfferResolve);
+    }
+
+    [Test]
+    public void FeatureBoardFixture_ShouldHaveNoUnparentedRowAndSectionsMatchingRows()
+    {
+        var board = BoardDtoFixture.Read("views", "feature-board-view.json").Deserialize<FeatureBoardViewDto>(BoardDtoFixture.Options).ShouldNotBeNull();
+
+        board.Sections.Select(s => s.Depth).ShouldBe([0, 1, 2]);
+        board.Sections[2].ParentFeature.ShouldNotBeNull().Id.ShouldBe(board.Sections[1].Id);
+        board.Rows.Select(r => r.FeatureId).Distinct().ShouldBe(board.Sections.Select(s => s.Id));
+        board.Rows.ShouldAllBe(r => r.Cells.Count == board.Columns.Count);
+        board.Rows.Sum(r => r.Cells.Sum(c => c.Tasks.Count)).ShouldBe(board.PeopleRows.Sum(r => r.TaskCount));
+        board.PeopleRows[0].Person.ShouldBeNull();
+        board.Header.StoriesTotal.ShouldBe(board.Rows.Count);
+        board.Header.TasksTotal.ShouldBe(board.Columns.Sum(c => c.Count));
+        board.Header.AnyInBacklog.ShouldBe(board.Rows.Any(r => r.Sprint is null));
         board.Rows.ShouldContain(r => r.OfferResolve);
     }
 }

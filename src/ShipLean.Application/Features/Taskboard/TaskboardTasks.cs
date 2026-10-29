@@ -12,7 +12,11 @@ namespace ShipLean.Application.Features.Taskboard;
 [RegisterPerRequest]
 public sealed class TaskboardTasks(NpgsqlDataSource dataSource, TimeProvider time)
 {
-    public async Task<IReadOnlyList<StackRowDto>> ForSprintAsync(Guid projectId, Guid sprintId, IReadOnlyCollection<Guid> parentIds, CancellationToken cancellationToken)
+    public Task<IReadOnlyList<StackRowDto>> ForSprintAsync(Guid projectId, Guid sprintId, IReadOnlyCollection<Guid> parentIds, CancellationToken cancellationToken)
+        => ForParentsAsync(projectId, parentIds, sprintId, cancellationToken);
+
+    // The live tasks under the parents; with a sprint, also the unparented tasks scheduled into it.
+    public async Task<IReadOnlyList<StackRowDto>> ForParentsAsync(Guid projectId, IReadOnlyCollection<Guid> parentIds, Guid? sprintId, CancellationToken cancellationToken)
     {
         var sql =
             $"""
@@ -29,7 +33,7 @@ public sealed class TaskboardTasks(NpgsqlDataSource dataSource, TimeProvider tim
             LEFT JOIN app_user u ON u.id = w.assigned_to
             LEFT JOIN work_item p ON p.id = w.parent_id AND p.project_id = w.project_id
             WHERE w.project_id = @projectId AND w.type = 'task' AND s.category <> 'removed'
-              AND (w.parent_id = ANY(@parentIds) OR (w.parent_id IS NULL AND w.sprint_id = @sprintId))
+              AND (w.parent_id = ANY(@parentIds) OR (@sprintId::uuid IS NOT NULL AND w.parent_id IS NULL AND w.sprint_id = @sprintId))
             ORDER BY w.column_order NULLS LAST, w.id
             """;
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
