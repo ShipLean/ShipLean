@@ -1,5 +1,6 @@
 import { api, sendForm } from '../../api/client';
 import type { MeDto } from '../../api/me';
+import type { HolidayCountryDto } from '../../api/holidays';
 import type { ProjectSettingsDto, ProjectSettingsPut } from '../../api/projects';
 import type { UserRef } from '../../api/refs';
 
@@ -9,6 +10,11 @@ export const projectSettingsKey = (projectId: string) =>
 
 export const fetchProjectSettings = (projectId: string) =>
   api.get<ProjectSettingsDto>(`/api/projects/${encodeURIComponent(projectId)}/settings`);
+
+/** Every country the holiday feed has listed, by name; an empty list when the server has no holiday data. */
+export const holidayCountriesKey = ['holidays', 'countries'] as const;
+
+export const fetchHolidayCountries = () => api.get<HolidayCountryDto[]>('/api/holidays/countries');
 
 /** Exact email only: a partial address is a 404 (the server's message says so). */
 export const fetchUserByEmail = (email: string) =>

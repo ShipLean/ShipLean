@@ -33,6 +33,8 @@ export interface SettingsDraft {
   repoUrl: string;
   /** Empty means the default, main. */
   repoBaseBranch: string;
+  /** ISO code of the country whose public holidays the project skips; empty for None. */
+  holidayCountry: string;
   members: DraftMember[];
   velocityWindow: string;
   velocityOverride: string;
@@ -48,6 +50,7 @@ export type DraftField =
   | 'agentConnectionId'
   | 'repoUrl'
   | 'repoBaseBranch'
+  | 'holidayCountry'
   | 'velocityWindow'
   | 'velocityOverride'
   | `state-${string}`
@@ -78,6 +81,7 @@ export function toDraft(settings: ProjectSettingsDto): SettingsDraft {
     agentConnectionId: settings.general.agentConnectionId ?? '',
     repoUrl: settings.general.repoUrl ?? '',
     repoBaseBranch: settings.general.repoBaseBranch ?? '',
+    holidayCountry: settings.general.holidayCountry ?? '',
     members: settings.members.map((m) => ({
       email: m.email,
       user: m.user,
@@ -182,6 +186,7 @@ export function toPut(draft: SettingsDraft, parsed: ParsedDraft): ProjectSetting
       agentConnectionId: draft.agentConnectionId === '' ? null : draft.agentConnectionId,
       repoUrl: draft.repoUrl.trim() === '' ? null : draft.repoUrl.trim(),
       repoBaseBranch: draft.repoBaseBranch.trim() === '' ? null : draft.repoBaseBranch.trim(),
+      holidayCountry: draft.holidayCountry === '' ? null : draft.holidayCountry,
     },
     members: draft.members.filter((m) => !m.removed).map((m) => ({ email: m.email, role: m.role })),
     sprints: {
@@ -230,6 +235,7 @@ export function rebase(
       agentConnectionId: mine('agentConnectionId'),
       repoUrl: mine('repoUrl'),
       repoBaseBranch: mine('repoBaseBranch'),
+      holidayCountry: mine('holidayCountry'),
       velocityWindow: mine('velocityWindow'),
       velocityOverride: mine('velocityOverride'),
       sprintNaming: mine('sprintNaming'),
@@ -258,6 +264,9 @@ export function changesBetween(
   if (base.repoUrl !== draft.repoUrl) changes.push({ tab: 'general', label: 'Repository' });
   if (base.repoBaseBranch !== draft.repoBaseBranch) {
     changes.push({ tab: 'general', label: 'Base branch' });
+  }
+  if (base.holidayCountry !== draft.holidayCountry) {
+    changes.push({ tab: 'general', label: 'Public holidays' });
   }
   for (const member of draft.members) {
     const saved = base.members.find((m) => m.user.id === member.user.id);

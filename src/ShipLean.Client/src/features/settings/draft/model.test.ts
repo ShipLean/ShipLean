@@ -32,6 +32,7 @@ const saved: ProjectSettingsDto = {
     agentConnectionId: null,
     repoUrl: null,
     repoBaseBranch: null,
+    holidayCountry: null,
     agentConnections: [],
   },
   members: [{ user, email: 'joel@x.test', role: 'admin', status: 'active' }],
@@ -68,6 +69,23 @@ describe('settings draft model', () => {
       sprints: { ...saved.sprints, sprintNaming: 'yearQuarterNumber' as const },
     };
     expect(rebase(theirs, base, base, saved.states).draft.sprintNaming).toBe('yearQuarterNumber');
+  });
+
+  it('holidayCountry_WhenPickedOrCleared_ShouldBeAChangeAndAPutOfCodeOrNull', () => {
+    const base = toDraft(saved);
+    expect(base.holidayCountry).toBe('');
+    const draft = { ...base, holidayCountry: 'NZ' };
+    expect(changesBetween(base, draft, saved.states)).toEqual([
+      { tab: 'general', label: 'Public holidays' },
+    ]);
+    const result = parse(draft, saved.states);
+    if ('errors' in result) throw new Error('draft should parse');
+    expect(toPut(draft, result.parsed).general.holidayCountry).toBe('NZ');
+    expect(toPut(base, result.parsed).general.holidayCountry).toBeNull();
+    const latest = { ...saved, general: { ...saved.general, name: 'Theirs' } };
+    expect(rebase(latest, base, draft, saved.states).draft.holidayCountry).toBe('NZ');
+    const theirs = { ...saved, general: { ...saved.general, holidayCountry: 'AU' } };
+    expect(rebase(theirs, base, base, saved.states).draft.holidayCountry).toBe('AU');
   });
 
   it('validate_WhenNothingWrong_ShouldFindNothing', () => {

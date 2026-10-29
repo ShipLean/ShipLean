@@ -32,6 +32,7 @@ const loaded: ProjectSettingsDto = {
     agentConnectionId: null,
     repoUrl: null,
     repoBaseBranch: null,
+    holidayCountry: null,
     agentConnections: [],
   },
   members: [{ user: user('joel'), email: 'joel@x', role: 'admin', status: 'active' }],

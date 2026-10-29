@@ -5,7 +5,7 @@ import { WorkingDaysField } from './WorkingDaysField';
 
 export function SchedulePanel({ form, patch }: FormProps) {
   return (
-    <Panel title="Working days and Sprint 1">
+    <Panel title="Working days and first sprint">
       <div className="grid gap-1 text-[length:var(--text-sm)] text-ink-muted">
         Working days
         <WorkingDaysField form={form} patch={patch} />
@@ -18,7 +18,7 @@ export function SchedulePanel({ form, patch }: FormProps) {
           checked={form.sprint}
           onChange={(e) => patch({ sprint: e.target.checked })}
         />
-        Create Sprint 1
+        Create the first sprint
       </label>
       {form.sprint ? (
         <div className="flex items-center gap-2 text-[length:var(--text-sm)] text-ink-muted">
