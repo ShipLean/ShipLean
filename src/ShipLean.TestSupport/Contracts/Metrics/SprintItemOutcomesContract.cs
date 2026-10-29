@@ -127,6 +127,19 @@ public abstract class SprintItemOutcomesContract
     }
 
     [Test]
+    public async Task GetSprintItems_WhenMovedOnTheFridayBeforeASundayEnd_ShouldBeCarried()
+    {
+        var project = await ArrangeProjectAsync();
+        var end = new DateOnly(2026, 10, 25);
+        var start = end.AddDays(-13);
+        var sprint = await ArrangeSprintAsync(project, "Weekend tail", start, end);
+        var item = await ArrangeItemAsync(project, WorkItemTypeId.Story, 2, sprint, false, null);
+        await MoveItemAsync(item, null, new DateOnly(2026, 10, 23));
+
+        Flags(await OutcomeAsync(sprint, item)).ShouldBe((true, false, false, true));
+    }
+
+    [Test]
     public async Task GetSprintItems_WhenTaskOrBacklogItem_ShouldNotBeListed()
     {
         var (project, sprint, _, _) = await ArrangeSprintOnlyAsync();
