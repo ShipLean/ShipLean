@@ -4,93 +4,93 @@ ShipLean's house style is the **Nord Frost (deepened)** palette, Inter for all t
 
 The screens here are reference designs for every page of the v1 domain model: **Backlogs**, **Boards**, **Sprint backlog / planning**, **Sprint Taskboard**, the **work item form**, **Project settings** and **Jira import** ([#1](https://github.com/joeldickson/ShipLean/issues/1)). Each one is a single HTML file that opens directly in a browser, with no build step. Light and dark screenshots sit next to each file.
 
-| File | What it is |
-|---|---|
-| `tokens.css` | Source of truth: CSS custom properties for colour, type, space and density, plus light/dark theming, work item type colours, state category colours and chart colours. |
-| `tokens.json` | The same values in machine-readable form. |
-| `screens/shiplean.css` | Shared chrome and controls (side menu, project picker, top bar with presence, toolbar, buttons, list table, rail, dialog, chips, capacity bar). Tokens only. |
-| `screens/shared.js` | Shared sample data (project `SHIP`, five people, Sprints 21–26, Epics, Features and the Stories backlog, Sprint 24's tasks, each type's states, the projects list, who's viewing each screen) and helpers. Builds the side menu and top bar. Handles `?theme=` and `?shot`. |
-| `screens/backlog.html` | **Stories backlog, List mode**: the ranked backlog with add-at-top, tree mode (show parents), the filter builder and column options. Its Preview panel simulates the real-time states. |
-| `screens/features.html` | **Features and Epics backlogs** (`?level=epics`): the same list one and two levels up, with points and progress rolled up from the stories and bugs below. At the Features level, **+ New work item** opens the New Feature dialog (`?dialog=new`). |
-| `screens/board.html` | **Stories board**: Kanban columns mapped to states per type, WIP limits, a split Ready column, definition of done, Expedite and Default swimlanes, card style rules and tag colours, and the pull rule on drag. |
-| `screens/board-settings.html` | **Board settings** (Stories board): the settings dialog over the board, in the same shell as the Taskboard settings, with Columns (state mapping, WIP, split, definition of done), Swimlanes, Fields, Styles, Tag colours, Annotations and Card reordering. `?pane=` opens a section. |
-| `screens/features-board.html` | **Features and Epics boards** (`?level=epics`): the board one and two levels up, with child roll-ups on the cards, Lanes by Epic (`?lanes=epic`), the inline child list (`?open=SHIP-101`) and the confirm before Done with open children (`?confirm=SHIP-102`). |
-| `screens/work-item.html` | **Work item form**: one story (or a bug with `?key=SHIP-153`) with its fields, tasks, discussion, links, attachments and revision history, saved with Save. Its Preview panel simulates a 409 when a teammate saves first. |
-| `screens/feature.html` | **Feature form** ([#2](https://github.com/joeldickson/ShipLean/issues/2)): Checkout v2 with Goal, the status band (State, Status, Verified at, Blocked by, Parked reason), the description with inline images, Links as cards with live state, grouped attachments, the Log and History. `?band=blocked\|parked\|edit`, `?menu=state`, `?edit`, `?drop` and `?addlink=og\|github\|private` open those states. |
-| `screens/attachment.html` | **Markdown attachment**: an attached `.md` rendered on its own page under the work item, with its outline, which images resolved and the replace rule. `?view=source` shows the source. |
-| `screens/settings.html` | **Project settings**: General (locked project key, working days), States per type with categories, Members, Sprints & forecast (velocity window and override) and Integrations, with one Save for the whole page. |
-| `screens/import.html` | **Jira import**: one Jira project into one ShipLean project in five steps (Connection, Jira project, Project key, Mapping, Run), with progress, an error log and re-runs. `?step=1..5` and `?run=done\|errors` open those states. |
-| `screens/planning.html` | **Planning**: the Stories backlog in Planning mode, with sprint sections stacked above the Backlog. |
-| `screens/sprint-backlog.html` | **Sprint backlog**: inside one sprint, with tasks, burndown, Ready to pick up and In progress now. |
-| `screens/capacity.html` | **Capacity**: each person enters their points; only the team total is compared with the sprint. |
-| `screens/sprints.html` | **All sprints**: the flat sprint list, the velocity chart and the New sprint form. |
-| `screens/sprint-end.html` | **Sprint end**: the dialog for unfinished work once a sprint's end date has passed. |
-| `screens/taskboard.html` | **Sprint Taskboard**: the sprint's stories and bugs × Task states, Group by Stories / People, and the Taskboard settings dialog. `?view=people` and `?dialog=settings[&pane=styles\|tags]` open those states. |
-| `screens/feature-board.html` | **Feature board**: the Taskboard grid for one Feature's stories and bugs in any sprint, opened from **Task board** on the Feature form. A parent Feature gets one board section per Feature in its tree. `?key=SHIP-103` opens a parent Feature, `?view=people` groups by People. |
-| `screens/signin.html` | **Sign in**: cookie sign-in with no side menu, plus the states after it. `?state=error\|change\|signed-out\|ended\|no-projects`. |
-| `screens/new-project.html` | **New project**: name, the permanent key (suggested, checked live, with free alternatives), start from defaults or another project's settings, members, working days and Sprint 1. |
-| `screens/instance.html` | **Instance settings** (instance admins only): General (name, base URL, who can create projects), Users (add, reset password, unlock, admin, disable) and Projects (every project, Join as admin). `?tab=general\|users\|projects`. |
-| `screens/profile.html` | **Your profile**: display name, optional photo and avatar colour (`?photo` opens with a photo), theme and density, password, your projects (Leave), sessions and saved views. |
-| `screenshots.sh` | Regenerates `screens/<name>.<theme>.png` (1440×900, 2× scale) with headless Chrome. Variants (such as `taskboard-people`, `backlog-tree`, `work-item-bug`, `import-run`) shoot one screen in another state. |
-| `logo/` | The logo: the mark, the light and dark lockups, and PNG exports. See [Logo](#logo). |
+| File                          | What it is                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tokens.css`                  | Source of truth: CSS custom properties for colour, type, space and density, plus light/dark theming, work item type colours, state category colours and chart colours.                                                                                                                                                                                                                                        |
+| `tokens.json`                 | The same values in machine-readable form.                                                                                                                                                                                                                                                                                                                                                                     |
+| `screens/shiplean.css`        | Shared chrome and controls (side menu, project picker, top bar with presence, toolbar, buttons, list table, rail, dialog, chips, capacity bar). Tokens only.                                                                                                                                                                                                                                                  |
+| `screens/shared.js`           | Shared sample data (project `SHIP`, five people, Sprints 21–26, Epics, Features and the Stories backlog, Sprint 24's tasks, each type's states, the projects list, who's viewing each screen) and helpers. Builds the side menu and top bar. Handles `?theme=` and `?shot`.                                                                                                                                   |
+| `screens/backlog.html`        | **Stories backlog, List mode**: the ranked backlog with add-at-top, tree mode (show parents), the filter builder and column options. Its Preview panel simulates the real-time states.                                                                                                                                                                                                                        |
+| `screens/features.html`       | **Features and Epics backlogs** (`?level=epics`): the same list one and two levels up, with points and progress rolled up from the stories and bugs below. At the Features level, **+ New work item** opens the New Feature dialog (`?dialog=new`).                                                                                                                                                           |
+| `screens/board.html`          | **Stories board**: Kanban columns mapped to states per type, WIP limits, a split Ready column, definition of done, Expedite and Default swimlanes, card style rules and tag colours, and the pull rule on drag.                                                                                                                                                                                               |
+| `screens/board-settings.html` | **Board settings** (Stories board): the settings dialog over the board, in the same shell as the Taskboard settings, with Columns (state mapping, WIP, split, definition of done), Swimlanes, Fields, Styles, Tag colours, Annotations and Card reordering. `?pane=` opens a section.                                                                                                                         |
+| `screens/features-board.html` | **Features and Epics boards** (`?level=epics`): the board one and two levels up, with child roll-ups on the cards, Lanes by Epic (`?lanes=epic`), the inline child list (`?open=SHIP-101`) and the confirm before Done with open children (`?confirm=SHIP-102`).                                                                                                                                              |
+| `screens/work-item.html`      | **Work item form**: one story (or a bug with `?key=SHIP-153`) with its fields, tasks, discussion, links, attachments and revision history, saved with Save. Its Preview panel simulates a 409 when a teammate saves first.                                                                                                                                                                                    |
+| `screens/feature.html`        | **Feature form** ([#2](https://github.com/joeldickson/ShipLean/issues/2)): Checkout v2 with Goal, the status band (State, Status, Verified at, Blocked by, Parked reason), the description with inline images, Links as cards with live state, grouped attachments, the Log and History. `?band=blocked\|parked\|edit`, `?menu=state`, `?edit`, `?drop` and `?addlink=og\|github\|private` open those states. |
+| `screens/attachment.html`     | **Markdown attachment**: an attached `.md` rendered on its own page under the work item, with its outline, which images resolved and the replace rule. `?view=source` shows the source.                                                                                                                                                                                                                       |
+| `screens/settings.html`       | **Project settings**: General (locked project key, working days), States per type with categories, Members, Sprints & forecast (velocity window and override) and Integrations, with one Save for the whole page.                                                                                                                                                                                             |
+| `screens/import.html`         | **Jira import**: one Jira project into one ShipLean project in five steps (Connection, Jira project, Project key, Mapping, Run), with progress, an error log and re-runs. `?step=1..5` and `?run=done\|errors` open those states.                                                                                                                                                                             |
+| `screens/planning.html`       | **Planning**: the Stories backlog in Planning mode, with sprint sections stacked above the Backlog.                                                                                                                                                                                                                                                                                                           |
+| `screens/sprint-backlog.html` | **Sprint backlog**: inside one sprint, with tasks, burndown, Ready to pick up and In progress now.                                                                                                                                                                                                                                                                                                            |
+| `screens/capacity.html`       | **Capacity**: the team types a velocity for the sprint and each member's days available; capacity is velocity / people × days / working days, with public holidays lowering the default days. Only the team total is compared with the sprint.                                                                                                                                                                |
+| `screens/sprints.html`        | **All sprints**: the flat sprint list, the velocity chart and the New sprint form.                                                                                                                                                                                                                                                                                                                            |
+| `screens/sprint-end.html`     | **Sprint end**: the dialog for unfinished work once a sprint's end date has passed.                                                                                                                                                                                                                                                                                                                           |
+| `screens/taskboard.html`      | **Sprint Taskboard**: the sprint's stories and bugs × Task states, Group by Stories / People, and the Taskboard settings dialog. `?view=people` and `?dialog=settings[&pane=styles\|tags]` open those states.                                                                                                                                                                                                 |
+| `screens/feature-board.html`  | **Feature board**: the Taskboard grid for one Feature's stories and bugs in any sprint, opened from **Task board** on the Feature form. A parent Feature gets one board section per Feature in its tree. `?key=SHIP-103` opens a parent Feature, `?view=people` groups by People.                                                                                                                             |
+| `screens/signin.html`         | **Sign in**: cookie sign-in with no side menu, plus the states after it. `?state=error\|change\|signed-out\|ended\|no-projects`.                                                                                                                                                                                                                                                                              |
+| `screens/new-project.html`    | **New project**: name, the permanent key (suggested, checked live, with free alternatives), start from defaults or another project's settings, members, working days and Sprint 1.                                                                                                                                                                                                                            |
+| `screens/instance.html`       | **Instance settings** (instance admins only): General (name, base URL, who can create projects), Users (add, reset password, unlock, admin, disable) and Projects (every project, Join as admin). `?tab=general\|users\|projects`.                                                                                                                                                                            |
+| `screens/profile.html`        | **Your profile**: display name, optional photo and avatar colour (`?photo` opens with a photo), theme and density, password, your projects (Leave), sessions and saved views.                                                                                                                                                                                                                                 |
+| `screenshots.sh`              | Regenerates `screens/<name>.<theme>.png` (1440×900, 2× scale) with headless Chrome. Variants (such as `taskboard-people`, `backlog-tree`, `work-item-bug`, `import-run`) shoot one screen in another state.                                                                                                                                                                                                   |
+| `logo/`                       | The logo: the mark, the light and dark lockups, and PNG exports. See [Logo](#logo).                                                                                                                                                                                                                                                                                                                           |
 
 Open any screen and use the **Preview** panel (bottom left) to switch the theme. The panel is a review aid, not part of the design. `?theme=light|dark` forces a theme and `?shot` hides the panel.
 
-| Screen | Light | Dark |
-|---|---|---|
-| Stories backlog (List) | ![Stories backlog, light](screens/backlog.light.png) | ![Stories backlog, dark](screens/backlog.dark.png) |
-| Stories backlog · tree | ![Stories backlog with parents, light](screens/backlog-tree.light.png) | ![Stories backlog with parents, dark](screens/backlog-tree.dark.png) |
-| Features backlog | ![Features backlog, light](screens/features.light.png) | ![Features backlog, dark](screens/features.dark.png) |
-| Epics backlog | ![Epics backlog, light](screens/features-epics.light.png) | ![Epics backlog, dark](screens/features-epics.dark.png) |
-| Stories board | ![Stories board, light](screens/board.light.png) | ![Stories board, dark](screens/board.dark.png) |
-| Board settings · Columns | ![Board settings, Columns, light](screens/board-settings.light.png) | ![Board settings, Columns, dark](screens/board-settings.dark.png) |
-| Board settings · Styles | ![Board settings, Styles, light](screens/board-settings-styles.light.png) | ![Board settings, Styles, dark](screens/board-settings-styles.dark.png) |
-| Features board | ![Features board, light](screens/features-board.light.png) | ![Features board, dark](screens/features-board.dark.png) |
-| Features board · by Epic | ![Features board with lanes by Epic and a child list open, light](screens/features-board-lanes.light.png) | ![Features board with lanes by Epic and a child list open, dark](screens/features-board-lanes.dark.png) |
-| Features board · Done with open children | ![Confirm before moving to Done, light](screens/features-board-done-confirm.light.png) | ![Confirm before moving to Done, dark](screens/features-board-done-confirm.dark.png) |
-| Epics board | ![Epics board, light](screens/epics-board.light.png) | ![Epics board, dark](screens/epics-board.dark.png) |
-| Work item · story | ![Work item form, story, light](screens/work-item.light.png) | ![Work item form, story, dark](screens/work-item.dark.png) |
-| Work item · bug | ![Work item form, bug, light](screens/work-item-bug.light.png) | ![Work item form, bug, dark](screens/work-item-bug.dark.png) |
-| Feature form | ![Feature form, light](screens/feature.light.png) | ![Feature form, dark](screens/feature.dark.png) |
-| Feature · Blocked | ![Feature blocked, light](screens/feature-blocked.light.png) | ![Feature blocked, dark](screens/feature-blocked.dark.png) |
-| Feature · Parked, stale | ![Feature parked with a stale status, light](screens/feature-parked.light.png) | ![Feature parked with a stale status, dark](screens/feature-parked.dark.png) |
-| Feature · State menu | ![Feature state menu, light](screens/feature-state-menu.light.png) | ![Feature state menu, dark](screens/feature-state-menu.dark.png) |
-| Feature · Blocked needs Blocked by | ![Status editor with Blocked by required, light](screens/feature-status-edit.light.png) | ![Status editor with Blocked by required, dark](screens/feature-status-edit.dark.png) |
-| Feature · Edit description | ![Description editor with a pasted image and an external image warning, light](screens/feature-edit.light.png) | ![Description editor with a pasted image and an external image warning, dark](screens/feature-edit.dark.png) |
-| Feature · Drop files | ![Drop overlay with an outcome per file, light](screens/feature-drop.light.png) | ![Drop overlay with an outcome per file, dark](screens/feature-drop.dark.png) |
-| Feature · Add link, public page | ![Add link with an Open Graph preview, light](screens/feature-link-og.light.png) | ![Add link with an Open Graph preview, dark](screens/feature-link-og.dark.png) |
-| Feature · Add link, GitHub | ![Add link with a GitHub pull request card, light](screens/feature-link-github.light.png) | ![Add link with a GitHub pull request card, dark](screens/feature-link-github.dark.png) |
-| Feature · Add link, private host | ![Add link to a private host, light](screens/feature-link-private.light.png) | ![Add link to a private host, dark](screens/feature-link-private.dark.png) |
-| Markdown attachment | ![Markdown attachment rendered, light](screens/attachment.light.png) | ![Markdown attachment rendered, dark](screens/attachment.dark.png) |
-| Markdown attachment · source | ![Markdown attachment source, light](screens/attachment-source.light.png) | ![Markdown attachment source, dark](screens/attachment-source.dark.png) |
-| New Feature | ![New Feature dialog, light](screens/features-new.light.png) | ![New Feature dialog, dark](screens/features-new.dark.png) |
-| Project settings · States | ![Project settings, light](screens/settings.light.png) | ![Project settings, dark](screens/settings.dark.png) |
-| Jira import · Mapping | ![Jira import, Mapping, light](screens/import.light.png) | ![Jira import, Mapping, dark](screens/import.dark.png) |
-| Jira import · Project key | ![Jira import, Project key, light](screens/import-key.light.png) | ![Jira import, Project key, dark](screens/import-key.dark.png) |
-| Jira import · Run | ![Jira import, Run with errors, light](screens/import-run.light.png) | ![Jira import, Run with errors, dark](screens/import-run.dark.png) |
-| Planning | ![Planning, light](screens/planning.light.png) | ![Planning, dark](screens/planning.dark.png) |
-| Sprint backlog | ![Sprint backlog, light](screens/sprint-backlog.light.png) | ![Sprint backlog, dark](screens/sprint-backlog.dark.png) |
-| Capacity | ![Capacity, light](screens/capacity.light.png) | ![Capacity, dark](screens/capacity.dark.png) |
-| All sprints | ![All sprints, light](screens/sprints.light.png) | ![All sprints, dark](screens/sprints.dark.png) |
-| Sprint end | ![Sprint end, light](screens/sprint-end.light.png) | ![Sprint end, dark](screens/sprint-end.dark.png) |
-| Taskboard | ![Taskboard, light](screens/taskboard.light.png) | ![Taskboard, dark](screens/taskboard.dark.png) |
-| Taskboard · People | ![Taskboard grouped by People, light](screens/taskboard-people.light.png) | ![Taskboard grouped by People, dark](screens/taskboard-people.dark.png) |
-| Taskboard settings · Fields | ![Taskboard settings, Fields, light](screens/taskboard-settings.light.png) | ![Taskboard settings, Fields, dark](screens/taskboard-settings.dark.png) |
-| Feature board | ![Feature board, light](screens/feature-board.light.png) | ![Feature board, dark](screens/feature-board.dark.png) |
-| Feature board · parent Feature | ![Feature board for a parent Feature, light](screens/feature-board-parent.light.png) | ![Feature board for a parent Feature, dark](screens/feature-board-parent.dark.png) |
-| Feature board · People | ![Feature board grouped by People, light](screens/feature-board-people.light.png) | ![Feature board grouped by People, dark](screens/feature-board-people.dark.png) |
-| User menu | ![User menu, light](screens/user-menu.light.png) | ![User menu, dark](screens/user-menu.dark.png) |
-| Sign in | ![Sign in, light](screens/signin.light.png) | ![Sign in, dark](screens/signin.dark.png) |
-| Sign in · failed | ![Sign in failed, light](screens/signin-error.light.png) | ![Sign in failed, dark](screens/signin-error.dark.png) |
-| Sign in · one-time password | ![Choose your own password, light](screens/signin-change.light.png) | ![Choose your own password, dark](screens/signin-change.dark.png) |
-| Signed in · no projects | ![No projects yet, light](screens/signin-no-projects.light.png) | ![No projects yet, dark](screens/signin-no-projects.dark.png) |
-| New project | ![New project, light](screens/new-project.light.png) | ![New project, dark](screens/new-project.dark.png) |
-| Instance settings · Users | ![Instance settings, Users, light](screens/instance.light.png) | ![Instance settings, Users, dark](screens/instance.dark.png) |
-| Instance settings · General | ![Instance settings, General, light](screens/instance-general.light.png) | ![Instance settings, General, dark](screens/instance-general.dark.png) |
-| Instance settings · Projects | ![Instance settings, Projects, light](screens/instance-projects.light.png) | ![Instance settings, Projects, dark](screens/instance-projects.dark.png) |
-| Your profile | ![Your profile, light](screens/profile.light.png) | ![Your profile, dark](screens/profile.dark.png) |
-| Your profile · photo | ![Your profile with a photo, light](screens/profile-photo.light.png) | ![Your profile with a photo, dark](screens/profile-photo.dark.png) |
-| Taskboard settings · Styles | ![Taskboard settings, Styles, light](screens/taskboard-styles.light.png) | ![Taskboard settings, Styles, dark](screens/taskboard-styles.dark.png) |
+| Screen                                   | Light                                                                                                          | Dark                                                                                                         |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Stories backlog (List)                   | ![Stories backlog, light](screens/backlog.light.png)                                                           | ![Stories backlog, dark](screens/backlog.dark.png)                                                           |
+| Stories backlog · tree                   | ![Stories backlog with parents, light](screens/backlog-tree.light.png)                                         | ![Stories backlog with parents, dark](screens/backlog-tree.dark.png)                                         |
+| Features backlog                         | ![Features backlog, light](screens/features.light.png)                                                         | ![Features backlog, dark](screens/features.dark.png)                                                         |
+| Epics backlog                            | ![Epics backlog, light](screens/features-epics.light.png)                                                      | ![Epics backlog, dark](screens/features-epics.dark.png)                                                      |
+| Stories board                            | ![Stories board, light](screens/board.light.png)                                                               | ![Stories board, dark](screens/board.dark.png)                                                               |
+| Board settings · Columns                 | ![Board settings, Columns, light](screens/board-settings.light.png)                                            | ![Board settings, Columns, dark](screens/board-settings.dark.png)                                            |
+| Board settings · Styles                  | ![Board settings, Styles, light](screens/board-settings-styles.light.png)                                      | ![Board settings, Styles, dark](screens/board-settings-styles.dark.png)                                      |
+| Features board                           | ![Features board, light](screens/features-board.light.png)                                                     | ![Features board, dark](screens/features-board.dark.png)                                                     |
+| Features board · by Epic                 | ![Features board with lanes by Epic and a child list open, light](screens/features-board-lanes.light.png)      | ![Features board with lanes by Epic and a child list open, dark](screens/features-board-lanes.dark.png)      |
+| Features board · Done with open children | ![Confirm before moving to Done, light](screens/features-board-done-confirm.light.png)                         | ![Confirm before moving to Done, dark](screens/features-board-done-confirm.dark.png)                         |
+| Epics board                              | ![Epics board, light](screens/epics-board.light.png)                                                           | ![Epics board, dark](screens/epics-board.dark.png)                                                           |
+| Work item · story                        | ![Work item form, story, light](screens/work-item.light.png)                                                   | ![Work item form, story, dark](screens/work-item.dark.png)                                                   |
+| Work item · bug                          | ![Work item form, bug, light](screens/work-item-bug.light.png)                                                 | ![Work item form, bug, dark](screens/work-item-bug.dark.png)                                                 |
+| Feature form                             | ![Feature form, light](screens/feature.light.png)                                                              | ![Feature form, dark](screens/feature.dark.png)                                                              |
+| Feature · Blocked                        | ![Feature blocked, light](screens/feature-blocked.light.png)                                                   | ![Feature blocked, dark](screens/feature-blocked.dark.png)                                                   |
+| Feature · Parked, stale                  | ![Feature parked with a stale status, light](screens/feature-parked.light.png)                                 | ![Feature parked with a stale status, dark](screens/feature-parked.dark.png)                                 |
+| Feature · State menu                     | ![Feature state menu, light](screens/feature-state-menu.light.png)                                             | ![Feature state menu, dark](screens/feature-state-menu.dark.png)                                             |
+| Feature · Blocked needs Blocked by       | ![Status editor with Blocked by required, light](screens/feature-status-edit.light.png)                        | ![Status editor with Blocked by required, dark](screens/feature-status-edit.dark.png)                        |
+| Feature · Edit description               | ![Description editor with a pasted image and an external image warning, light](screens/feature-edit.light.png) | ![Description editor with a pasted image and an external image warning, dark](screens/feature-edit.dark.png) |
+| Feature · Drop files                     | ![Drop overlay with an outcome per file, light](screens/feature-drop.light.png)                                | ![Drop overlay with an outcome per file, dark](screens/feature-drop.dark.png)                                |
+| Feature · Add link, public page          | ![Add link with an Open Graph preview, light](screens/feature-link-og.light.png)                               | ![Add link with an Open Graph preview, dark](screens/feature-link-og.dark.png)                               |
+| Feature · Add link, GitHub               | ![Add link with a GitHub pull request card, light](screens/feature-link-github.light.png)                      | ![Add link with a GitHub pull request card, dark](screens/feature-link-github.dark.png)                      |
+| Feature · Add link, private host         | ![Add link to a private host, light](screens/feature-link-private.light.png)                                   | ![Add link to a private host, dark](screens/feature-link-private.dark.png)                                   |
+| Markdown attachment                      | ![Markdown attachment rendered, light](screens/attachment.light.png)                                           | ![Markdown attachment rendered, dark](screens/attachment.dark.png)                                           |
+| Markdown attachment · source             | ![Markdown attachment source, light](screens/attachment-source.light.png)                                      | ![Markdown attachment source, dark](screens/attachment-source.dark.png)                                      |
+| New Feature                              | ![New Feature dialog, light](screens/features-new.light.png)                                                   | ![New Feature dialog, dark](screens/features-new.dark.png)                                                   |
+| Project settings · States                | ![Project settings, light](screens/settings.light.png)                                                         | ![Project settings, dark](screens/settings.dark.png)                                                         |
+| Jira import · Mapping                    | ![Jira import, Mapping, light](screens/import.light.png)                                                       | ![Jira import, Mapping, dark](screens/import.dark.png)                                                       |
+| Jira import · Project key                | ![Jira import, Project key, light](screens/import-key.light.png)                                               | ![Jira import, Project key, dark](screens/import-key.dark.png)                                               |
+| Jira import · Run                        | ![Jira import, Run with errors, light](screens/import-run.light.png)                                           | ![Jira import, Run with errors, dark](screens/import-run.dark.png)                                           |
+| Planning                                 | ![Planning, light](screens/planning.light.png)                                                                 | ![Planning, dark](screens/planning.dark.png)                                                                 |
+| Sprint backlog                           | ![Sprint backlog, light](screens/sprint-backlog.light.png)                                                     | ![Sprint backlog, dark](screens/sprint-backlog.dark.png)                                                     |
+| Capacity                                 | ![Capacity, light](screens/capacity.light.png)                                                                 | ![Capacity, dark](screens/capacity.dark.png)                                                                 |
+| All sprints                              | ![All sprints, light](screens/sprints.light.png)                                                               | ![All sprints, dark](screens/sprints.dark.png)                                                               |
+| Sprint end                               | ![Sprint end, light](screens/sprint-end.light.png)                                                             | ![Sprint end, dark](screens/sprint-end.dark.png)                                                             |
+| Taskboard                                | ![Taskboard, light](screens/taskboard.light.png)                                                               | ![Taskboard, dark](screens/taskboard.dark.png)                                                               |
+| Taskboard · People                       | ![Taskboard grouped by People, light](screens/taskboard-people.light.png)                                      | ![Taskboard grouped by People, dark](screens/taskboard-people.dark.png)                                      |
+| Taskboard settings · Fields              | ![Taskboard settings, Fields, light](screens/taskboard-settings.light.png)                                     | ![Taskboard settings, Fields, dark](screens/taskboard-settings.dark.png)                                     |
+| Feature board                            | ![Feature board, light](screens/feature-board.light.png)                                                       | ![Feature board, dark](screens/feature-board.dark.png)                                                       |
+| Feature board · parent Feature           | ![Feature board for a parent Feature, light](screens/feature-board-parent.light.png)                           | ![Feature board for a parent Feature, dark](screens/feature-board-parent.dark.png)                           |
+| Feature board · People                   | ![Feature board grouped by People, light](screens/feature-board-people.light.png)                              | ![Feature board grouped by People, dark](screens/feature-board-people.dark.png)                              |
+| User menu                                | ![User menu, light](screens/user-menu.light.png)                                                               | ![User menu, dark](screens/user-menu.dark.png)                                                               |
+| Sign in                                  | ![Sign in, light](screens/signin.light.png)                                                                    | ![Sign in, dark](screens/signin.dark.png)                                                                    |
+| Sign in · failed                         | ![Sign in failed, light](screens/signin-error.light.png)                                                       | ![Sign in failed, dark](screens/signin-error.dark.png)                                                       |
+| Sign in · one-time password              | ![Choose your own password, light](screens/signin-change.light.png)                                            | ![Choose your own password, dark](screens/signin-change.dark.png)                                            |
+| Signed in · no projects                  | ![No projects yet, light](screens/signin-no-projects.light.png)                                                | ![No projects yet, dark](screens/signin-no-projects.dark.png)                                                |
+| New project                              | ![New project, light](screens/new-project.light.png)                                                           | ![New project, dark](screens/new-project.dark.png)                                                           |
+| Instance settings · Users                | ![Instance settings, Users, light](screens/instance.light.png)                                                 | ![Instance settings, Users, dark](screens/instance.dark.png)                                                 |
+| Instance settings · General              | ![Instance settings, General, light](screens/instance-general.light.png)                                       | ![Instance settings, General, dark](screens/instance-general.dark.png)                                       |
+| Instance settings · Projects             | ![Instance settings, Projects, light](screens/instance-projects.light.png)                                     | ![Instance settings, Projects, dark](screens/instance-projects.dark.png)                                     |
+| Your profile                             | ![Your profile, light](screens/profile.light.png)                                                              | ![Your profile, dark](screens/profile.dark.png)                                                              |
+| Your profile · photo                     | ![Your profile with a photo, light](screens/profile-photo.light.png)                                           | ![Your profile with a photo, dark](screens/profile-photo.dark.png)                                           |
+| Taskboard settings · Styles              | ![Taskboard settings, Styles, light](screens/taskboard-styles.light.png)                                       | ![Taskboard settings, Styles, dark](screens/taskboard-styles.dark.png)                                       |
 
 ## Logo
 
@@ -101,13 +101,13 @@ Open any screen and use the **Preview** panel (bottom left) to switch the theme.
 
 The brand assets are kept with the website in [ShipLean/shiplean.app](https://github.com/ShipLean/shiplean.app) (`design/brand/`); the files here are copies, so change them there first and copy them over. The mark is a boat: three backlog rows stacked as a sail, widening down to the hull, on the one brand gradient: `#16a089 → #2563c9` (teal to blue) in light and `#3dd6b5 → #5cc8f0` (mint to cyan) in dark. That gradient is for the mark only; the app's UI stays on the tokens above.
 
-| File | Use |
-|---|---|
-| `logo/shiplean-mark-light.svg` | The mark on light backgrounds: gradient square, white boat. |
-| `logo/shiplean-mark-dark.svg` | The mark on dark backgrounds: mint-to-cyan gradient, navy boat. |
+| File                                                                | Use                                                                                                                                                      |
+| ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `logo/shiplean-mark-light.svg`                                      | The mark on light backgrounds: gradient square, white boat.                                                                                              |
+| `logo/shiplean-mark-dark.svg`                                       | The mark on dark backgrounds: mint-to-cyan gradient, navy boat.                                                                                          |
 | `logo/shiplean-logo-on-light.svg`, `logo/shiplean-logo-on-dark.svg` | The mark with the **ShipLean** wordmark. The wordmark is live SVG text in Inter 700, so it needs Inter installed; outline it before sending it to print. |
-| `logo/shiplean-avatar-mark.png` | 512×512 PNG of the light mark, for avatars. |
-| `logo/favicon.svg` | One file that switches between the light and dark mark with the visitor's theme. `src/ShipLean.Client/public/favicon.svg` is a copy. |
+| `logo/shiplean-avatar-mark.png`                                     | 512×512 PNG of the light mark, for avatars.                                                                                                              |
+| `logo/favicon.svg`                                                  | One file that switches between the light and dark mark with the visitor's theme. `src/ShipLean.Client/public/favicon.svg` is a copy.                     |
 
 Leave clear space around the mark of at least half its width. Don't recolour, stretch or rotate it.
 
@@ -126,16 +126,16 @@ Leave clear space around the mark of at least half its width. Don't recolour, st
 
 Story, feature and epic cards are white index cards, bugs are pink, and tasks are yellow post-its. Paper never follows the theme: it is the same in light and dark, and the ink on it is always the light theme's ink. The theme only changes the card's edge, its shadow and the hover/focus ring (which uses the page's accent, `--theme-accent`, not the paper's).
 
-| Token | Value |
-|---|---|
-| `--paper-index` | `#ffffff` (story, feature, epic) |
-| `--paper-bug` | `#ffe0e5` |
-| `--paper-postit` | `#fff9d3` (task) |
-| `--paper-postit-muted` | `#6e5d22` (meta text on a post-it) |
-| `--paper-edge-mix`, `--paper-edge-amount` | edge = paper mixed with `#1c2638` 15% (light) or `#000000` 28% (dark) |
-| `--paper-postit-edge-mix`, `--paper-postit-edge-amount` | post-it edge: `#a8860f` 38% (light), `#000000` 28% (dark) |
-| `--paper-shadow` | the theme's card shadow |
-| `--theme-accent` | the page accent, captured on `:root` before `.paper` overrides `--color-accent` |
+| Token                                                   | Value                                                                           |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `--paper-index`                                         | `#ffffff` (story, feature, epic)                                                |
+| `--paper-bug`                                           | `#ffe0e5`                                                                       |
+| `--paper-postit`                                        | `#fff9d3` (task)                                                                |
+| `--paper-postit-muted`                                  | `#6e5d22` (meta text on a post-it)                                              |
+| `--paper-edge-mix`, `--paper-edge-amount`               | edge = paper mixed with `#1c2638` 15% (light) or `#000000` 28% (dark)           |
+| `--paper-postit-edge-mix`, `--paper-postit-edge-amount` | post-it edge: `#a8860f` 38% (light), `#000000` 28% (dark)                       |
+| `--paper-shadow`                                        | the theme's card shadow                                                         |
+| `--theme-accent`                                        | the page accent, captured on `:root` before `.paper` overrides `--color-accent` |
 
 Classes (in `src/ShipLean.Client/src/index.css`, unlayered so they beat Tailwind utilities):
 
@@ -149,7 +149,7 @@ Classes (in `src/ShipLean.Client/src/index.css`, unlayered so they beat Tailwind
 These were decided while reviewing the screens on 2026-10-24.
 
 1. **Planning layout: stacked sprint sections** (Jira style), not a side pane or sprint columns.
-2. **Capacity is planned for the team as a unit.** Each member enters their own points, but only `SUM(capacity_points)` for the sprint is compared with committed points and with velocity. Nothing compares a person with the work assigned to them, and there's no per-person load or over-allocation warning. A sprint with no entries plans against velocity.
+2. **Capacity is planned for the team as a unit.** The team types one velocity for the sprint and each member's days available (default: the sprint's working days minus the country's public holidays); a member's capacity is `velocity / people in the table × days / working days`, and only `SUM(capacity_points)` for the sprint is compared with committed points and with velocity. Nothing compares a person with the work assigned to them, and there's no per-person load or over-allocation warning. A sprint with no entries plans against velocity.
 3. **Work is pulled, not pre-assigned.** Assignment records who is working on something and, through revisions, who did what. **Moving an unassigned item into an In Progress state assigns it to whoever moved it.**
 4. **Unfinished work at sprint end: a roll-over prompt** where someone chooses a destination for each item, defaulting to the next sprint.
 5. **Sprint totals count stories and bugs only.** Points on tasks are shown for information. Capacity, burndown and velocity use the requirement level.
@@ -170,6 +170,7 @@ These were decided while reviewing the screens on 2026-10-24.
 **Proposed model addition:** an optional free-text `note` on Sprint Capacity ("Off Thu–Fri"), so a low sprint explains itself when velocity is read later.
 
 **Still open:**
+
 - Which sprint sections in Planning start collapsed. They're all expanded here.
 - Whether the sprint goal also shows on the Planning section headers. (The Taskboard has a slim header without it; see below.)
 - Sprint length: copy the last sprint's length (as drawn), or add a `sprint_length_days` project setting.
@@ -321,22 +322,22 @@ These come from [#2](https://github.com/joeldickson/ShipLean/issues/2) and the r
 
 - **Sprint header** (Sprint backlog, Capacity; the Taskboard uses a slim version): a sprint picker (`Sprint 24 ▾`), `Current` or `Ended` chip, dates, working days left, the goal with Edit, and a link to All sprints. Tabs underneath: **Backlog · Taskboard · Capacity**.
 - **Sprint backlog** (`screens/sprint-backlog.html`):
-  - KPIs: `committed / team capacity pts` (with an edit link to Capacity), completed points, and a **burndown** (points remaining against a dashed ideal line, read from revisions).
-  - The table lists stories and bugs in backlog order, with tasks expandable under each. State is changed in place from a compact menu. Task rows show `—` for points.
-  - The rail shows **Ready to pick up** (unassigned and not started, with the parent), **In progress now** (each member and how many items they have active, with no comparison to capacity) and **Points by state** (grouped by category).
+    - KPIs: `committed / team capacity pts` (with an edit link to Capacity), completed points, and a **burndown** (points remaining against a dashed ideal line, read from revisions).
+    - The table lists stories and bugs in backlog order, with tasks expandable under each. State is changed in place from a compact menu. Task rows show `—` for points.
+    - The rail shows **Ready to pick up** (unassigned and not started, with the parent), **In progress now** (each member and how many items they have active, with no comparison to capacity) and **Points by state** (grouped by category).
 - **Capacity** (`screens/capacity.html`):
-  - One row per member with a points field and an optional note. The footer total is the **team capacity**.
-  - The summary shows team capacity, committed and velocity, a bar, the room left (or how far over), and a sense check against velocity: in line within 10%, otherwise a warn callout.
-  - **Copy from Sprint 23** fills the numbers from the previous sprint; **Clear** goes back to velocity.
+    - One row per member with a points field and an optional note. The footer total is the **team capacity**.
+    - The summary shows team capacity, committed and velocity, a bar, the room left (or how far over), and a sense check against velocity: in line within 10%, otherwise a warn callout.
+    - **Copy from Sprint 23** fills the numbers from the previous sprint; **Clear** goes back to velocity.
 - **All sprints** (`screens/sprints.html`):
-  - The velocity chart shows committed vs completed for the last five sprints, with the velocity line.
-  - The table runs newest first, with Status computed from the dates. Team capacity shows `21 · velocity` when nobody has entered any, and a dotted underline when a member left a note.
-  - The **New sprint** rail form defaults to the next number, starts the next working day after the last sprint, and has the same length as it. The checkbox copies each member's capacity. Overlapping dates are rejected inline.
+    - The velocity chart shows committed vs completed for the last five sprints, with the velocity line.
+    - The table runs newest first, with Status computed from the dates. Team capacity shows `21 · velocity` when nobody has entered any, and a dotted underline when a member left a note.
+    - The **New sprint** rail form defaults to the next number, starts the next working day after the last sprint, and has the same length as it. The checkbox copies each member's capacity. Overlapping dates are rejected inline.
 - **Sprint end** (`screens/sprint-end.html`):
-  - It opens over the ended sprint the first time anyone opens a Sprints or Backlog screen after the end date, if stories or bugs whose state category isn't Completed are still in it.
-  - It lists each unfinished item with its state, points, open tasks and assignee, and a destination menu: **Move to Sprint 25** (default), **Back to top of backlog** or **Leave in Sprint 24**. **Set all to** buttons change every row at once.
-  - A live callout shows the next sprint's total against its team capacity, as a warning when it goes over. A second callout explains that the ended sprint's history doesn't change.
-  - **Apply** is done once for everyone, in real time. **Decide later** leaves a warn banner on the sprint with **Review**.
+    - It opens over the ended sprint the first time anyone opens a Sprints or Backlog screen after the end date, if stories or bugs whose state category isn't Completed are still in it.
+    - It lists each unfinished item with its state, points, open tasks and assignee, and a destination menu: **Move to Sprint 25** (default), **Back to top of backlog** or **Leave in Sprint 24**. **Set all to** buttons change every row at once.
+    - A live callout shows the next sprint's total against its team capacity, as a warning when it goes over. A second callout explains that the ended sprint's history doesn't change.
+    - **Apply** is done once for everyone, in real time. **Decide later** leaves a warn banner on the sprint with **Review**.
 
 ## Taskboard decisions
 
@@ -354,6 +355,7 @@ These were decided while reviewing the Taskboard on 2026-10-24.
 **Model change from decision 8:** issue #1's hierarchy table should read Task → parent User Story, Bug, or none.
 
 **Still open:**
+
 - The Sprint backlog screen doesn't list unparented tasks yet. They could go in a last "No parent" group there too.
 
 ## Paper cards decision
