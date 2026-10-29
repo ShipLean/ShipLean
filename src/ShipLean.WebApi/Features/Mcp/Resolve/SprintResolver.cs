@@ -1,6 +1,7 @@
 using Dapper;
 using Npgsql;
 using ShipLean.Application.Features.Mcp.Orient;
+using ShipLean.Core.Sprints;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
 

@@ -1,4 +1,4 @@
-namespace ShipLean.Application.Features.Mcp.Orient;
+namespace ShipLean.Core.Sprints;
 
 // What "the sprint running now" means in SQL, shared by SprintResolver ("current") and the project list: a sprint (aliased
 // s) that is not archived and whose dates take in @today (UTC). The caller binds @today and orders by start_date.

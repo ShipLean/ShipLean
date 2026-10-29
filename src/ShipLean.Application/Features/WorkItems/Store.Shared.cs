@@ -78,7 +78,7 @@ public sealed partial class WorkItemStore(
         WriteScope scope, WorkItemSnapshot? before, NewItem? created, ProposedChange proposed, WorkItemChanges? linkChanges, bool runRules, Guid? beforeItemId, CancellationToken cancellationToken)
     {
         linkChanges = WorkItemProposals.Clean(linkChanges);
-        var outcome = runRules ? await rules.ApplyAsync(before, proposed, ActorOf(scope), scope.Transaction, cancellationToken) : new RuleOutcome(proposed, []);
+        var outcome = runRules ? await rules.ApplyAsync(before, proposed with { Bulk = scope.Bulk }, ActorOf(scope), scope.Transaction, cancellationToken) : new RuleOutcome(proposed, []);
         var amended = outcome.AmendedChange;
         var finalScope = OrderScope.Of(amended);
         if (NeedsNewKey(before, proposed, amended, finalScope))
