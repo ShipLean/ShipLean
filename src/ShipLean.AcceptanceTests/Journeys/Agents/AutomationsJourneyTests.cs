@@ -3,6 +3,7 @@ using Npgsql;
 using ShipLean.AcceptanceTests.Harness;
 using ShipLean.AcceptanceTests.Pages.BoardSettings;
 using ShipLean.AcceptanceTests.Pages.Settings;
+using ShipLean.AcceptanceTests.Pages.WorkItem;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.TestIds;
 
@@ -103,6 +104,12 @@ public class AutomationsJourneyTests : SeededAcceptanceTest
         context.ShouldContain("Offline mode");
         context.ShouldContain(featureKey);
         body.GetProperty("guidance")[0].GetProperty("body").GetString()!.ShouldContain(Prompt);
+
+        // The feature's own page shows the session in its Agent panel.
+        await new WorkItemScreen(Page).OpenAsync("SHIP", featureKey);
+        var panel = Page.GetByTestId(AgentPanelTestIds.Panel);
+        await Expect(panel).ToBeVisibleAsync();
+        await Expect(panel.GetByTestId(AgentPanelTestIds.Connection)).ToHaveTextAsync("Relay");
 
         // 3. Removing Idea shows the transition as Invalid, and adding it back makes it valid.
         await states.OpenAsync();

@@ -32,7 +32,7 @@ export function WorkItemScreen({
     <WorkItemForm
       key={item.data.id}
       item={item.data}
-      projectKey={project.key}
+      project={project}
       links={links}
       tasks={tasks}
       discussion={discussion}

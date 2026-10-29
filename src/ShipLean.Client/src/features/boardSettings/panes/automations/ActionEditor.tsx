@@ -6,7 +6,8 @@ import type { AgentConnections } from './useAgentConnections';
 
 /**
  * A transition's actions. The last one can't be removed: the server wants at least one, so the button is disabled and
- * says why.
+ * says why. Send to agent is the only kind and the trigger runs one per transition, so no second one is offered while
+ * the transition has one.
  */
 export function ActionEditor({
   transition,
@@ -22,6 +23,7 @@ export function ActionEditor({
   const { actions } = transition;
   const set = (next: ActionJson[]) => onChange({ ...transition, actions: next });
   const only = actions.length <= 1;
+  const canAdd = !actions.some((a) => a.kind === 'agent');
   return (
     <div className="grid gap-2">
       {actions.map((action) => (
@@ -36,17 +38,22 @@ export function ActionEditor({
         />
       ))}
       <div className="flex items-center gap-2">
-        <button
-          type="button"
-          data-testid={ids.actionAdd}
-          disabled={readOnly}
-          className="h-6 rounded-control border border-edge px-2 text-[length:var(--text-sm)] hover:bg-sunken disabled:cursor-default disabled:opacity-35"
-          onClick={() =>
-            set([...actions, { id: newActionId(), kind: 'agent', prompt: '', connectionId: null }])
-          }
-        >
-          Add Send to agent action
-        </button>
+        {canAdd ? (
+          <button
+            type="button"
+            data-testid={ids.actionAdd}
+            disabled={readOnly}
+            className="h-6 rounded-control border border-edge px-2 text-[length:var(--text-sm)] hover:bg-sunken disabled:cursor-default disabled:opacity-35"
+            onClick={() =>
+              set([
+                ...actions,
+                { id: newActionId(), kind: 'agent', prompt: '', connectionId: null },
+              ])
+            }
+          >
+            Add Send to agent action
+          </button>
+        ) : null}
         {only ? (
           <span
             data-testid={ids.actionLastHint}

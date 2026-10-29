@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
+import { agentPanelTestIds } from '../agentPanel/testIds';
 import { componentTestIds } from '../../components/testIds';
 import { priya, story } from '../workItem/ct/fixtures';
 import { workItemHarnessIds as harness } from '../workItem/ct/harnessIds';
@@ -141,4 +142,29 @@ test('FeatureForm_WhenSaveRefusedOnAField_ShouldStillShowTheSaveError', async ({
   await expect(screen.getByTestId(workItemTestIds.saveError)).toHaveText(
     'A goal is at most 1,000 characters.',
   );
+});
+
+test('FeatureForm_WhenTheFeatureHasAnAgentSession_ShouldShowTheAgentPanelAboveTheLog', async ({
+  mount,
+  page,
+}) => {
+  await stubAll(page);
+  await page.route('**/api/work-items/*/agent-sessions', (route) =>
+    route.fulfill({
+      json: {
+        visible: true,
+        availability: { canStart: true, reason: null, message: '' },
+        sessions: [],
+      },
+    }),
+  );
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-100" />, route('SHIP-100'));
+
+  const main = screen.getByTestId(ids.main);
+  await expect(main.getByTestId(agentPanelTestIds.panel)).toBeVisible();
+  await expect(main.getByTestId(agentPanelTestIds.start)).toBeVisible();
+  const order = await page
+    .locator(inDocumentOrder([agentPanelTestIds.panel, ids.log]))
+    .evaluateAll((nodes) => nodes.map((node) => node.getAttribute('data-testid')));
+  expect(order).toEqual([agentPanelTestIds.panel, ids.log]);
 });

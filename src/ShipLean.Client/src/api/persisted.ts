@@ -178,7 +178,7 @@ export interface ActionJson {
   connectionId: string | null;
 }
 
-/** from null = any state. Invalid (never stored) when from/to is not a live state of `type` in context.states. */
+/** from null = any state. Invalid (derived, never stored) when a from/to id is not among that type's states in context.states, which holds every non-archived state whatever its category. */
 export interface TransitionJson {
   id: string;
   type: WorkItemTypeId;
