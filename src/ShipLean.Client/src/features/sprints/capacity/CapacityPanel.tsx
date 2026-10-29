@@ -99,7 +99,11 @@ export function CapacityPanel({ project, sprint, sprints }: CapacityPanelProps) 
   // An old sprint with points but no velocity: until a velocity is typed there is nothing to recompute from, so the
   // stored points and total stand (planning still uses them).
   const pointsOnly =
-    !ended && stored.velocity === null && stored.members.length > 0 && typedVelocity === undefined;
+    !ended &&
+    stored.velocity === null &&
+    stored.members.length > 0 &&
+    worked.entered &&
+    typedVelocity === undefined;
   const storedPoints = (userId: string) => stored.members.find((m) => m.user.id === userId)?.points;
   const lines: CapacityLine[] = ended
     ? stored.members.map((m) => ({ user: m.user, row: rowOf(server, m.user.id), points: m.points }))

@@ -791,3 +791,14 @@ test('Capacity_WhenThereIsNoVelocityHistoryButCapacityIsEntered_ShouldNotSayNoCa
   await expect(page.getByTestId(ids.capacityCallout)).not.toContainText('No capacity entered');
   await expect(page.getByTestId(ids.capacityCallout)).toContainText('No velocity history');
 });
+
+test('Capacity_WhenAPointsOnlySprintIsCleared_ShouldPlanAgainstVelocityNotShowStoredPoints', async ({
+  mount,
+  page,
+}) => {
+  await stubApi(page, { current: capacityOf('s24', [entry(0, 6)], { velocity: null }) });
+  await mount(<CapacityPanel project={project} sprint={sprint} sprints={sprints} />);
+  await page.getByTestId(ids.capacityClear).click();
+  await expect(page.getByTestId(ids.capacityCallout)).toContainText('No capacity entered');
+  await expect(page.getByTestId(ids.capacityEmpty)).toBeVisible();
+});
