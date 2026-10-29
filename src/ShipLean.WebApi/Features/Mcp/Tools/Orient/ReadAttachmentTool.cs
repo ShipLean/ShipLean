@@ -12,6 +12,7 @@ using ShipLean.WebApi.Features.Mcp.Planning;
 using ShipLean.WebApi.Features.Mcp.Tools.Planning;
 using ShipLean.WebApi.Features.Mcp.Resolve;
 using ShipLean.WebApi.Features.Mcp.Tools.Capture;
+using ShipLean.WebApi.Infrastructure;
 
 namespace ShipLean.WebApi.Features.Mcp.Tools.Orient;
 
@@ -64,6 +65,12 @@ internal sealed class ReadAttachmentTool(ItemResolver items, IAttachmentStore at
         DateTimeOffset? expiresAt = null;
         if (markdown is null)
         {
+            if (RequestOrigin.HostIsClusterService(issuer))
+            {
+                throw ApiException.Validation(
+                    "There is no download URL: the only host available is a cluster service name, which a laptop cannot open. Ask an admin to set base_url to the public origin.");
+            }
+
             var issued = await transfers.IssueAsync(
                 new NewTransfer(TransferKind.Download, resolved.Id, file.Id, file.Name, file.ContentType, currentUser.Id,
                     support.AgentAuthorizationId(), AgentStamp.Of(agent) ?? "Agent"),

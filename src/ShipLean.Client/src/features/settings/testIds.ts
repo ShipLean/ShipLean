@@ -163,6 +163,7 @@ export const settingsTestIds = {
   instanceUrlMatch: 'settings-instance-url-match',
   instanceUrlMismatch: 'settings-instance-url-mismatch',
   instanceUrlInsecure: 'settings-instance-url-insecure',
+  instancePublicOrigin: 'settings-instance-public-origin',
   instanceCreationEveryone: 'settings-instance-creation-everyone',
   instanceCreationAdmins: 'settings-instance-creation-admins',
   instanceSave: 'settings-instance-save',

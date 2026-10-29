@@ -13,7 +13,8 @@ public sealed class HealthEndpoints : IEndpointModule
     {
         var version = ApiMarker.Assembly
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "unknown";
-        IResult Health(IEmbedder embedder) => Results.Ok(new { status = "ok", version, search = SearchOf(embedder) });
+        IResult Health(IEmbedder embedder, PublicOrigin origins)
+            => Results.Ok(new HealthReport("ok", version, SearchOf(embedder), origins.HealthValue));
         endpoints.MapGet("/health", Health).AllowAnonymous();
         endpoints.MapGet("/api/health", Health).AllowAnonymous();
     }
