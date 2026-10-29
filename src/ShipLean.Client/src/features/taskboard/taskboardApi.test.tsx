@@ -3,7 +3,6 @@ import { act, useEffect } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import type { ProjectDto } from '../../api/projects';
-import type { WorkItemTypeId } from '../../api/refs';
 import { fakeConnection } from '../../realtime/testing/fakeConnection';
 
 const hub = fakeConnection();
@@ -136,32 +135,34 @@ test('taskboardKey_ShouldFollowTheScope', () => {
   );
 });
 
-const created: { type: WorkItemTypeId; title: string; parentId: string | null }[] = [];
-function Creator({ scope }: { scope: typeof sprintScope | typeof featureScope }) {
-  const create = useCreateOnTaskboard(projectId, scope);
-  useEffect(() => {
-    for (const c of created) create.mutate(c);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- once
-  }, []);
+type Create = ReturnType<typeof useCreateOnTaskboard>['mutate'];
+function Creator({
+  scope,
+  onReady,
+}: {
+  scope: typeof sprintScope | typeof featureScope;
+  onReady: (mutate: Create) => void;
+}) {
+  const { mutate } = useCreateOnTaskboard(projectId, scope);
+  useEffect(() => onReady(mutate), [mutate, onReady]);
   return null;
 }
 
 async function bodiesFor(scope: typeof sprintScope | typeof featureScope) {
   const post = vi.mocked(api.post);
   post.mockClear();
-  created.splice(
-    0,
-    created.length,
-    { type: 'task', title: 't', parentId: 'story-1' },
-    { type: 'story', title: 's', parentId: null },
-  );
+  let mutate: Create | null = null;
   const host = createRoot(document.createElement('div'));
   act(() => {
     host.render(
       <QueryClientProvider client={queryClient}>
-        <Creator scope={scope} />
+        <Creator scope={scope} onReady={(m) => (mutate = m)} />
       </QueryClientProvider>,
     );
+  });
+  act(() => {
+    mutate?.({ type: 'task', title: 't', parentId: 'story-1' });
+    mutate?.({ type: 'story', title: 's', parentId: null });
   });
   await act(() => vi.advanceTimersByTimeAsync(0));
   act(() => host.unmount());

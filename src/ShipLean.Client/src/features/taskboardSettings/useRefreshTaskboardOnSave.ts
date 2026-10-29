@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { taskboardKey } from '../taskboard/taskboardApi';
-import { scopeId, type TaskboardScope } from '../taskboard/taskboardScope';
+import type { TaskboardScope } from '../taskboard/taskboardScope';
 
 /**
  * A save puts the document the server returned into the project's board settings cache (a manual write; a plain
@@ -24,7 +24,6 @@ export function useRefreshTaskboardOnSave(projectId: string, scope: TaskboardSco
           void queryClient.invalidateQueries({ queryKey: taskboardKey(projectId, scope) });
         }
       }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- the scope's kind and id, not its object identity
-    [queryClient, projectId, scope.kind, scopeId(scope)],
+    [queryClient, projectId, scope],
   );
 }
