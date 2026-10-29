@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ApiRequestError } from '../../../api/client';
 import type { MeDto } from '../../../api/me';
 import { routePath } from '../../../routes';
+import { useDebouncedValue } from '../../workItem/form/description/useDebouncedValue';
 import { settingsTestIds as ids } from '../testIds';
 import { MembersPanel } from './MembersPanel';
 import {
@@ -14,7 +15,13 @@ import {
   withSprintDefaults,
   type NewProjectForm,
 } from './model';
-import { useCopySources, useCreateProject, useFirstSprint, useKeyCheck } from './newProjectApi';
+import {
+  TYPING_PAUSE_MS,
+  useCopySources,
+  useCreateProject,
+  useFirstSprint,
+  useKeyCheck,
+} from './newProjectApi';
 import { ProjectPanel } from './ProjectPanel';
 import { SchedulePanel } from './SchedulePanel';
 import { StartFromPanel } from './StartFromPanel';
@@ -22,7 +29,12 @@ import { StartFromPanel } from './StartFromPanel';
 export function NewProjectFormView({ me }: { me: MeDto }) {
   const navigate = useNavigate();
   const [typed, setForm] = useState<NewProjectForm>(emptyForm);
-  const firstSprint = useFirstSprint(typed.workingDays, typed.sprint);
+  const start = useDebouncedValue(typed.start, TYPING_PAUSE_MS);
+  const end = useDebouncedValue(typed.end, TYPING_PAUSE_MS);
+  // Once the dates are typed (and make a range) the suggested name follows them.
+  const range =
+    typed.datesEdited && start !== '' && end !== '' && end >= start ? { start, end } : undefined;
+  const firstSprint = useFirstSprint(typed.workingDays, typed.sprint, range);
   const form = withSprintDefaults(typed, firstSprint.data);
   const patch = (change: Partial<NewProjectForm>) => setForm((f) => ({ ...f, ...change }));
   const sources = useCopySources().data ?? [];

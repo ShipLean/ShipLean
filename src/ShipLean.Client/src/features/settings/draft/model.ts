@@ -2,6 +2,7 @@ import type {
   ProjectRole,
   ProjectSettingsDto,
   ProjectSettingsPut,
+  SprintNaming,
   StateChanges,
   StateDto,
 } from '../../../api/projects';
@@ -35,6 +36,8 @@ export interface SettingsDraft {
   members: DraftMember[];
   velocityWindow: string;
   velocityOverride: string;
+  /** How the next default sprint name is made; existing sprints keep theirs. */
+  sprintNaming: SprintNaming;
   states: StateChanges;
 }
 
@@ -85,6 +88,7 @@ export function toDraft(settings: ProjectSettingsDto): SettingsDraft {
     velocityWindow: String(settings.sprints.velocityWindow),
     velocityOverride:
       settings.sprints.velocityOverride === null ? '' : String(settings.sprints.velocityOverride),
+    sprintNaming: settings.sprints.sprintNaming ?? 'number',
     states: noStateChanges(),
   };
 }
@@ -183,6 +187,7 @@ export function toPut(draft: SettingsDraft, parsed: ParsedDraft): ProjectSetting
     sprints: {
       velocityWindow: parsed.velocityWindow,
       velocityOverride: parsed.velocityOverride,
+      sprintNaming: draft.sprintNaming,
     },
     states: draft.states,
   };
@@ -227,6 +232,7 @@ export function rebase(
       repoBaseBranch: mine('repoBaseBranch'),
       velocityWindow: mine('velocityWindow'),
       velocityOverride: mine('velocityOverride'),
+      sprintNaming: mine('sprintNaming'),
       members,
       states: rebaseStates(latest.states, baseStates, draft.states),
     },
@@ -269,6 +275,9 @@ export function changesBetween(
   }
   if (base.velocityOverride !== draft.velocityOverride) {
     changes.push({ tab: 'sprints', label: 'Velocity override' });
+  }
+  if (base.sprintNaming !== draft.sprintNaming) {
+    changes.push({ tab: 'sprints', label: 'Sprint naming' });
   }
   const { add, update, reorder, remove } = draft.states;
   for (const state of add) changes.push({ tab: 'states', label: `Add state ${state.name}` });

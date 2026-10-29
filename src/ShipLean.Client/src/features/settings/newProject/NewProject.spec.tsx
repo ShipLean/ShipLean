@@ -358,3 +358,36 @@ test('NewProject_WhenOneDateEdited_ShouldKeepTheOtherAsShown', async ({ mount, p
   await expect.poll(() => created.length).toBe(1);
   expect(created[0].firstSprint).toMatchObject({ startDate: '2026-10-27', endDate: '2026-11-08' });
 });
+
+test('NewProject_WhenStartTyped_ShouldAskForTheNameThatFollowsIt', async ({ mount, page }) => {
+  const { created } = await stub(page);
+  await page.route('**/api/projects/first-sprint**', (route) => {
+    const url = new URL(route.request().url());
+    const start = url.searchParams.get('start');
+    return route.fulfill({
+      json: {
+        name: start === '2027-01-04' ? '2027 Q1 Sprint 1' : '2026 Q4 Sprint 3',
+        startDate: start ?? '2026-10-26',
+        endDate: url.searchParams.get('end') ?? '2026-11-08',
+        goal: '',
+      },
+    });
+  });
+  const view = await mount(<NewProject />);
+  await view.getByTestId(ids.newProjectName).fill('Customer Support Hub');
+  await expect(view.getByTestId(ids.newProjectSprintEnd)).toHaveValue('2026-11-08');
+
+  const asked = page.waitForRequest('**/api/projects/first-sprint?*start=2027-01-04*');
+  await view.getByTestId(ids.newProjectSprintStart).fill('2027-01-04');
+  await view.getByTestId(ids.newProjectSprintEnd).fill('2027-01-15');
+  await asked;
+  await expect(view.getByTestId(ids.newProjectCreate)).toBeEnabled();
+  await view.getByTestId(ids.newProjectCreate).click();
+
+  await expect.poll(() => created.length).toBe(1);
+  expect(created[0].firstSprint).toMatchObject({
+    name: '2027 Q1 Sprint 1',
+    startDate: '2027-01-04',
+    endDate: '2027-01-15',
+  });
+});

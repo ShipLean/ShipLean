@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { ApiRequestError, api } from '../../../api/client';
 import type { KeyCheckDto, ProjectCreate, ProjectDto } from '../../../api/projects';
@@ -8,7 +8,7 @@ import { fetchMe, fetchProjects, meKey, projectsKey } from '../../../queries/sha
 import { keyIsWellFormed } from './model';
 
 // Waiting for a pause in typing; a test waits for the request, not for this.
-const TYPING_PAUSE_MS = 250;
+export const TYPING_PAUSE_MS = 250;
 
 export const keyCheckKey = (key: string, name: string) =>
   ['newProject', 'key-check', key, name] as const;
@@ -34,16 +34,33 @@ export function useKeyCheck(key: string, name: string) {
   return { check: settled ? query.data : undefined, pending: keyIsWellFormed(key) && !settled };
 }
 
-export const firstSprintKey = (workingDays: number[]) =>
-  ['newProject', 'first-sprint', workingDays.join(',')] as const;
+export const firstSprintKey = (workingDays: number[], range?: { start: string; end: string }) =>
+  [
+    'newProject',
+    'first-sprint',
+    workingDays.join(','),
+    range?.start ?? '',
+    range?.end ?? '',
+  ] as const;
 
-/** Sprint 1 as the server would start it: today or the next working day, two weeks long. */
-export function useFirstSprint(workingDays: number[], enabled: boolean) {
+/**
+ * Sprint 1 as the server would start it: today or the next working day, two weeks long. With the typed start and end
+ * the name follows them (the quarter and number depend on the start); the last answer stays while the next loads.
+ */
+export function useFirstSprint(
+  workingDays: number[],
+  enabled: boolean,
+  range?: { start: string; end: string },
+) {
+  const dates = range === undefined ? '' : `&start=${range.start}&end=${range.end}`;
   return useQuery({
-    queryKey: firstSprintKey(workingDays),
+    queryKey: firstSprintKey(workingDays, range),
     queryFn: () =>
-      api.get<SprintCreate>(`/api/projects/first-sprint?workingDays=${workingDays.join(',')}`),
+      api.get<SprintCreate>(
+        `/api/projects/first-sprint?workingDays=${workingDays.join(',')}${dates}`,
+      ),
     enabled: enabled && workingDays.length > 0,
+    placeholderData: keepPreviousData,
   });
 }
 

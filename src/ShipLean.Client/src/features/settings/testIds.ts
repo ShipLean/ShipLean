@@ -42,6 +42,8 @@ export const settingsTestIds = {
 
   sprintsPanel: 'settings-sprints-panel',
   sprintLength: 'settings-sprint-length',
+  sprintNaming: 'settings-sprint-naming',
+  sprintNamingHint: 'settings-sprint-naming-hint',
   velocityWindow: 'settings-velocity-window',
   velocityOverride: 'settings-velocity-override',
   velocityClear: 'settings-velocity-clear',

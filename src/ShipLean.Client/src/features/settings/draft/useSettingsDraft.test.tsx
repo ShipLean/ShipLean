@@ -35,7 +35,7 @@ const loaded: ProjectSettingsDto = {
     agentConnections: [],
   },
   members: [{ user: user('joel'), email: 'joel@x', role: 'admin', status: 'active' }],
-  sprints: { velocityWindow: 3, velocityOverride: null },
+  sprints: { velocityWindow: 3, velocityOverride: null, sprintNaming: 'number' },
   states: WORK_ITEM_TYPE_IDS.flatMap((type) => [
     {
       id: `${type}-new`,

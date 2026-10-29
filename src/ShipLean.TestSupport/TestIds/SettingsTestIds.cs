@@ -45,6 +45,8 @@ public static class SettingsTestIds
 
     public const string SprintsPanel = "settings-sprints-panel";
     public const string SprintLength = "settings-sprint-length";
+    public const string SprintNaming = "settings-sprint-naming";
+    public const string SprintNamingHint = "settings-sprint-naming-hint";
     public const string VelocityWindow = "settings-velocity-window";
     public const string VelocityOverride = "settings-velocity-override";
     public const string VelocityClear = "settings-velocity-clear";

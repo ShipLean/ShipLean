@@ -22,7 +22,9 @@ public class SettingsSaveTests : SeededAcceptanceTest
         await settings.RoleOf("lee@shiplean.local").SelectOptionAsync("admin");
         await settings.TabSprints.ClickAsync();
         await settings.VelocityWindow.FillAsync("4");
-        await Expect(settings.Unsaved).ToContainTextAsync("4 unsaved changes");
+        await Expect(settings.SprintNaming).ToHaveValueAsync("number");
+        await settings.SprintNaming.SelectOptionAsync("yearQuarterNumber");
+        await Expect(settings.Unsaved).ToContainTextAsync("5 unsaved changes");
 
         var response = await settings.SaveAsync();
         response.Ok.ShouldBeTrue();
@@ -30,6 +32,7 @@ public class SettingsSaveTests : SeededAcceptanceTest
 
         await Page.ReloadAsync();
         await Expect(settings.VelocityWindow).ToHaveValueAsync("4");
+        await Expect(settings.SprintNaming).ToHaveValueAsync("yearQuarterNumber");
         await settings.TabGeneral.ClickAsync();
         await Expect(settings.Name).ToHaveValueAsync("Storefront Plus");
         await Expect(settings.WorkingDay(6)).ToHaveAttributeAsync("aria-pressed", "true");

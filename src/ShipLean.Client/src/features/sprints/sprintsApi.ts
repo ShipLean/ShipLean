@@ -1,5 +1,11 @@
 import { useEffect } from 'react';
-import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { api } from '../../api/client';
 import type { WorkItemChanges, WorkItemDto } from '../../api/workItems';
 import type {
@@ -39,8 +45,15 @@ export const sprintCapacityKey = (projectId: string, sprintId: string) =>
 export const fetchVelocity = (projectId: string) =>
   api.get<VelocityDto>(`${projectPath(projectId)}/velocity`);
 
-export const fetchNextSprint = (projectId: string) =>
-  api.get<SprintCreate>(`${projectPath(projectId)}/sprints/next`);
+/** With a range, the name is the one a sprint with those dates would get. */
+export const fetchNextSprint = (projectId: string, range?: { start: string; end: string }) =>
+  api.get<SprintCreate>(
+    `${projectPath(projectId)}/sprints/next${
+      range === undefined
+        ? ''
+        : `?start=${encodeURIComponent(range.start)}&end=${encodeURIComponent(range.end)}`
+    }`,
+  );
 
 export const fetchSprintMetrics = (sprintId: string) =>
   api.get<SprintMetricsDto>(`/api/sprints/${encodeURIComponent(sprintId)}/metrics`);
@@ -128,6 +141,24 @@ export function useNextSprint(projectId: string) {
   return useQuery({
     queryKey: nextSprintKey(projectId),
     queryFn: () => fetchNextSprint(projectId),
+  });
+}
+
+/**
+ * The name the server would give a sprint with these dates. Off until the range is valid; the last answer stays
+ * while the next one loads, so the field does not blink.
+ */
+export function useSuggestedSprintName(
+  projectId: string,
+  range: { start: string; end: string },
+  enabled: boolean,
+) {
+  const valid = range.start !== '' && range.end !== '' && range.end >= range.start;
+  return useQuery({
+    queryKey: [...nextSprintKey(projectId), range.start, range.end],
+    queryFn: () => fetchNextSprint(projectId, range),
+    enabled: enabled && valid,
+    placeholderData: keepPreviousData,
   });
 }
 
