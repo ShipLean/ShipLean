@@ -17,6 +17,9 @@ test('sameScreenIn_WhenWorkItemRoute_ShouldFallBackToTheStoriesBacklog', () => {
   expect(sameScreenIn(matchRoute('/p/SHIP/items/SHIP-101/attachments/a1'), 'PAY')).toBe(
     '/p/PAY/backlogs/stories',
   );
+  expect(sameScreenIn(matchRoute('/p/SHIP/items/SHIP-101/board', '?settings=card'), 'PAY')).toBe(
+    '/p/PAY/backlogs/stories',
+  );
 });
 
 test('sameScreenIn_WhenProjectScreen_ShouldKeepTheScreenAndItsQuery', () => {
