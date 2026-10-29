@@ -28,6 +28,8 @@ public class StatusToolTests : McpFixture
     private string _doneBlockerKey = string.Empty;
     private string _looseTaskKey = string.Empty;
     private string _featureKey = string.Empty;
+    private string _openStoryKey = string.Empty;
+    private string _epicKey = string.Empty;
     private string _otherProjectKey = string.Empty;
 
     protected override bool WithProbeTools => false;
@@ -62,6 +64,8 @@ public class StatusToolTests : McpFixture
         var open = await new WorkItemBuilder(project).WithTitle("Open story").WithParent(_feature).WithSprint(_alpha).WithPoints(3).InsertAsync(connection);
         await new WorkItemBuilder(project).WithType("task").WithTitle("Open task").WithParent(open).InsertAsync(connection);
         _featureKey = await KeyAsync(connection, _feature);
+        _openStoryKey = await KeyAsync(connection, open);
+        _epicKey = await KeyAsync(connection, await new WorkItemBuilder(project).WithType("epic").WithTitle("Payments").InsertAsync(connection));
 
         var elsewhere = await new WorkItemBuilder(SeedIds.Projects.Part).WithType("feature").WithTitle("Not Joel's").InsertAsync(connection);
         _otherProjectKey = await KeyAsync(connection, elsewhere);
@@ -223,6 +227,19 @@ public class StatusToolTests : McpFixture
         open.Select(c => c.GetProperty("title").GetString()).ShouldBe(["Open story", "Open task"], ignoreOrder: true);
         open.Single(c => c.GetProperty("title").GetString() == "Open story").GetProperty("sprint").GetString().ShouldBe("Orient Alpha");
         progress.GetProperty("open_total").GetInt32().ShouldBe(2);
+        open.Single(c => c.GetProperty("title").GetString() == "Open story").GetProperty("parent").GetString().ShouldBe(_featureKey);
+        open.Single(c => c.GetProperty("title").GetString() == "Open task").GetProperty("parent").GetString().ShouldBe(_openStoryKey);
+        progress.GetProperty("board_url").GetString().ShouldEndWith($"/p/SHIP/items/{_featureKey}/board");
+    }
+
+    [Test]
+    public async Task FeatureProgress_WhenItemIsAnEpic_ShouldHaveNoBoardUrl()
+    {
+        var token = await TokenAsync(TestUser.Joel, ReadOnly);
+
+        var progress = (await CallToolAsync(token, "feature_progress", $$"""{"item":"{{_epicKey}}"}""")).Structured();
+
+        (!progress.TryGetProperty("board_url", out var boardUrl) || boardUrl.ValueKind == JsonValueKind.Null).ShouldBeTrue();
     }
 
     [Test]
