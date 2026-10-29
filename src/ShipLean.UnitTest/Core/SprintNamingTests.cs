@@ -1,3 +1,4 @@
+using ShipLean.Application.Features.Mcp.Sprint;
 using ShipLean.Core.Sprints;
 
 namespace ShipLean.UnitTest.Core;
@@ -104,5 +105,23 @@ public class SprintNamingTests
 
         names.Next().ShouldBe("2026 Q4 Sprint 4");
         names.Next().ShouldBe("2026 Q4 Sprint 5");
+    }
+
+    [Test]
+    public void Sequence_WhenAnExistingNameDiffersOnlyInCase_ShouldTreatItAsTaken()
+    {
+        var names = new SprintNameSequence(SprintNamingConvention.YearQuarterNumber, ["2026 q4 sprint 1"], new DateOnly(2026, 10, 1), 14, 1);
+
+        names.Next().ShouldBe("2026 Q4 Sprint 2");
+    }
+
+    [Test]
+    public void McpNext_WhenALiveNameDiffersOnlyInCase_ShouldTreatItAsTaken()
+    {
+        var number = SprintNames.Next(SprintNamingConvention.Number, new DateOnly(2026, 10, 29), 14, ["sprint 8", "sprint 9"], "sprint 8", 2);
+        var quarter = SprintNames.Next(SprintNamingConvention.YearQuarterNumber, new DateOnly(2026, 10, 1), 14, ["2026 q4 sprint 1"], "2026 q4 sprint 1", 1);
+
+        number.ShouldBe("sprint 10");
+        quarter.ShouldBe("2026 Q4 Sprint 2");
     }
 }

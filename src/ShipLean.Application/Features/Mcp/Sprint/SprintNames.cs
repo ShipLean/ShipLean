@@ -11,19 +11,21 @@ public static partial class SprintNames
     // Number keeps the latest name's prefix ("Team A 41" -> "Team A 42"); a name with no trailing number becomes "Sprint <count + 1>".
     public static string Next(SprintNamingConvention convention, DateOnly start, int lengthDays, IReadOnlyCollection<string> liveNames, string? lastName, int lastCount)
     {
+        // Case-insensitive, like the sprint name uniqueness in the database (lower(name)).
+        var taken = liveNames.ToHashSet(StringComparer.OrdinalIgnoreCase);
         var match = lastName is null ? null : TrailingNumber().Match(lastName.Trim());
         if (convention == SprintNamingConvention.Number && match is { Success: true })
         {
             var prefix = match.Groups[1].Value;
             var number = long.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture) + 1;
-            while (liveNames.Contains($"{prefix}{number.ToString(CultureInfo.InvariantCulture)}"))
+            while (taken.Contains($"{prefix}{number.ToString(CultureInfo.InvariantCulture)}"))
             {
                 number++;
             }
             return $"{prefix}{number.ToString(CultureInfo.InvariantCulture)}";
         }
 
-        return SprintNaming.Name(convention, start, lengthDays, liveNames.Contains, lastCount + 1);
+        return SprintNaming.Name(convention, start, lengthDays, taken.Contains, lastCount + 1);
     }
 
     [GeneratedRegex(@"^(.*?)(\d{1,9})$")]

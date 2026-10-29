@@ -38,7 +38,7 @@ public sealed class NextSprintDefaults(NpgsqlDataSource dataSource, TimeProvider
         }
 
         var names = sprints.Select(sprint => sprint.Name).ToList();
-        var name = SprintNaming.Name(SprintNaming.FromColumn(project.Naming), start, length, taken: names.Contains, SprintNaming.NextNumber(names));
+        var name = SprintNaming.Name(SprintNaming.FromColumn(project.Naming), start, length, taken: names.ToHashSet(StringComparer.OrdinalIgnoreCase).Contains, SprintNaming.NextNumber(names));
         return new SprintCreate(name, start, start.AddDays(length - 1), string.Empty);
     }
 
