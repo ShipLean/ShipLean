@@ -13,11 +13,12 @@ public sealed class ProjectSprintsController(ISprintStore store, NextSprintDefau
 {
     [HttpGet("next")]
     [ProducesResponseType<SprintCreate>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ApiError>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ApiError>(StatusCodes.Status404NotFound)]
-    public async Task<SprintCreate> Next(Guid id, CancellationToken cancellationToken)
+    public async Task<SprintCreate> Next(Guid id, [FromQuery] DateOnly? start, [FromQuery] DateOnly? end, CancellationToken cancellationToken)
     {
         await access.RequireAsync(id, ProjectRole.Member, cancellationToken);
-        return await defaults.GetAsync(id, cancellationToken);
+        return await defaults.GetAsync(id, start, end, cancellationToken);
     }
 
     [HttpPost]

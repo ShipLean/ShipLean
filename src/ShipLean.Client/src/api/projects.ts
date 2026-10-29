@@ -71,9 +71,14 @@ export interface ProjectGeneralSettings {
   agentConnections: AgentConnectionOption[];
 }
 
+/** How the project names the sprints it makes by default; changing it renames nothing. */
+export type SprintNaming = 'yearQuarterNumber' | 'number';
+
 export interface ProjectForecastSettings {
   velocityWindow: number;
   velocityOverride: number | null;
+  /** Always present on a read; a save that leaves it out keeps the saved value. */
+  sprintNaming?: SprintNaming;
 }
 
 export interface ProjectSettingsDto {

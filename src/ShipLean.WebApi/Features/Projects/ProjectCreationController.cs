@@ -31,5 +31,5 @@ public sealed class ProjectCreationController(IProjectFactory factory, ProjectCr
     [HttpGet("first-sprint")]
     [ProducesResponseType<SprintCreate>(StatusCodes.Status200OK)]
     [ProducesResponseType<ApiError>(StatusCodes.Status400BadRequest)]
-    public SprintCreate FirstSprint([FromQuery] string? workingDays) => firstSprint.Get(workingDays);
+    public SprintCreate FirstSprint([FromQuery] string? workingDays, [FromQuery] DateOnly? start, [FromQuery] DateOnly? end) => firstSprint.Get(workingDays, start, end);
 }

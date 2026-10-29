@@ -1,5 +1,6 @@
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Sprints;
+using ShipLean.Core.Sprints;
 using Shouldly;
 
 namespace ShipLean.TestSupport.Contracts.Metrics;
@@ -37,6 +38,9 @@ public abstract class SprintMetricsContract
     protected abstract Task SetPointsAsync(Guid itemId, decimal? points);
 
     protected abstract Task SetVelocityOverrideAsync(Guid projectId, decimal? value);
+
+    // The project names its default sprints this way (a project arranged here starts on Number).
+    protected abstract Task SetSprintNamingAsync(Guid projectId, SprintNamingConvention naming);
 
     private static DateOnly Today => DateOnly.FromDateTime(TimeProvider.System.GetUtcNow().UtcDateTime);
 
@@ -346,6 +350,27 @@ public abstract class SprintMetricsContract
         forecast.Sprints.Select(s => s.Room).ShouldAllBe(room => room == 10m);
         forecast.Sprints.Select(s => s.FromCapacity).ShouldAllBe(fromCapacity => !fromCapacity);
         forecast.Sprints.Select(s => s.LastItemId).ShouldBe(items.Select(id => (Guid?)id));
+    }
+
+    [Test]
+    public async Task Forecast_WhenProjectNamesByQuarter_ShouldNameEachSprintFromItsDerivedStart()
+    {
+        var project = await ArrangeProjectAsync();
+        await SetVelocityOverrideAsync(project, 10m);
+        await SetSprintNamingAsync(project, SprintNamingConvention.YearQuarterNumber);
+        // A 14-day sprint: the first added sprint starts the day after it ends and each next one a sprint length later.
+        await ArrangeSprintAsync(project, "Sprint 25", Today.AddDays(5), Today.AddDays(18));
+        for (var i = 0; i < 4; i++)
+        {
+            await ArrangeItemAsync(project, WorkItemTypeId.Story, 6, null, false, null);
+        }
+
+        var forecast = await CreateMetrics().GetForecastAsync(project);
+
+        var added = forecast.Sprints.Where(s => s.SprintId is null).Select(s => s.Name).ToList();
+        added.Count.ShouldBe(3);
+        added.ShouldBe([.. Enumerable.Range(0, 3).Select(i => SprintNaming.Name(SprintNamingConvention.YearQuarterNumber, Today.AddDays(19 + 14 * i), 14, _ => false, 1))]);
+        added.ShouldAllBe(name => name.Contains(" Q") && name.Contains(" Sprint "));
     }
 
     [Test]

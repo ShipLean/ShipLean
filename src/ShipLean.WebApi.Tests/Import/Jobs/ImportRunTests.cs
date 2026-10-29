@@ -65,6 +65,13 @@ public class ImportRunTests : ImportJobsFixture
     }
 
     [Test]
+    [Order(3)]
+    public async Task Import_WhenNewProject_ShouldNameSprintsByNumber()
+    {
+        (await QueryAsync<string>("SELECT sprint_naming FROM project WHERE id = @_projectId", new { _projectId })).ShouldBe("number");
+    }
+
+    [Test]
     [Order(4)]
     public async Task Import_WhenSprintsHandOverOnOneDay_ShouldLogTheShiftAsAWarning()
     {

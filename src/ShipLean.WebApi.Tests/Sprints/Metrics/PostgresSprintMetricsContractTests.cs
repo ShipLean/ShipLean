@@ -5,6 +5,7 @@ using ShipLean.Application.Features.Sprints.Metrics;
 using ShipLean.Contracts.Persisted;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Sprints;
+using ShipLean.Core.Sprints;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Contracts.Metrics;
 using ShipLean.WebApi.Tests.WorkItems.Store;
@@ -118,6 +119,12 @@ public sealed class PostgresSprintMetricsContractTests : SprintMetricsContract
     {
         await using var connection = await _arrangement.Database.OpenAsync();
         await connection.ExecuteAsync("UPDATE project SET velocity_override = @value WHERE id = @projectId", new { projectId, value });
+    }
+
+    protected override async Task SetSprintNamingAsync(Guid projectId, SprintNamingConvention naming)
+    {
+        await using var connection = await _arrangement.Database.OpenAsync();
+        await connection.ExecuteAsync("UPDATE project SET sprint_naming = @naming WHERE id = @projectId", new { projectId, naming = SprintNaming.ToColumn(naming) });
     }
 
     private static async Task MoveAsync(NpgsqlConnection connection, Guid itemId, Guid? toSprintId, DateOnly on)

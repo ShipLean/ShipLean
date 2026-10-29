@@ -6,6 +6,7 @@ using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Persisted;
 using ShipLean.Contracts.Sprints;
 using ShipLean.Core;
+using ShipLean.Core.Sprints;
 
 namespace ShipLean.Application.Features.Sprints.Metrics;
 
@@ -58,7 +59,11 @@ public sealed partial class SprintMetrics(NpgsqlDataSource dataSource, TimeProvi
             var full = s.Capacity ?? used;
             return new Bucket(s.Id, s.Name, full, s.Capacity is not null, full - s.Planned);
         }).ToList();
-        var number = NextSprintNumber(sprints);
+        var project = await LoadProjectAsync(connection, projectId, cancellationToken);
+        var last = sprints.Count == 0 ? null : sprints[^1];
+        var names = new SprintNameSequence(
+            SprintNaming.FromColumn(project.Naming), sprints.Select(sprint => sprint.Name),
+            last is null ? today : last.End.AddDays(1), last is null ? SprintStart.FirstSprintDays : last.End.DayNumber - last.Start.DayNumber + 1, NextSprintNumber(sprints));
         var at = 0;
         foreach (var item in backlog)
         {
@@ -67,7 +72,7 @@ public sealed partial class SprintMetrics(NpgsqlDataSource dataSource, TimeProvi
             {
                 if (at == buckets.Count)
                 {
-                    buckets.Add(new Bucket(null, $"Sprint {number++}", used, false, used));
+                    buckets.Add(new Bucket(null, names.Next(), used, false, used));
                 }
 
                 var bucket = buckets[at];
@@ -130,7 +135,7 @@ public sealed partial class SprintMetrics(NpgsqlDataSource dataSource, TimeProvi
         public DateOnly End => DateOnly.ParseExact(EndDate, "yyyy-MM-dd", CultureInfo.InvariantCulture);
     }
 
-    private sealed record ProjectInfo(int VelocityWindow, decimal? VelocityOverride, string WorkingDays)
+    private sealed record ProjectInfo(int VelocityWindow, decimal? VelocityOverride, string WorkingDays, string Naming)
     {
         public bool IsWorkingDay(DateOnly day) => WorkingDays.Split(',').Contains((day.DayOfWeek == DayOfWeek.Sunday ? 7 : (int)day.DayOfWeek).ToString(CultureInfo.InvariantCulture));
     }
@@ -142,9 +147,11 @@ public sealed partial class SprintMetrics(NpgsqlDataSource dataSource, TimeProvi
         public DateOnly Date => DateOnly.ParseExact(Day, "yyyy-MM-dd", CultureInfo.InvariantCulture);
     }
 
-    private sealed record ForecastSprintRow(Guid Id, string Name, string StartDate, decimal? Capacity, decimal Planned)
+    private sealed record ForecastSprintRow(Guid Id, string Name, string StartDate, string EndDate, decimal? Capacity, decimal Planned)
     {
         public DateOnly Start => DateOnly.ParseExact(StartDate, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+        public DateOnly End => DateOnly.ParseExact(EndDate, "yyyy-MM-dd", CultureInfo.InvariantCulture);
     }
 
     private sealed record BacklogRow(Guid Id, decimal? Points);

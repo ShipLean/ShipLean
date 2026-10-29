@@ -102,14 +102,15 @@ public sealed class ProjectFactory(NpgsqlDataSource dataSource, TimeProvider clo
         return [.. ids.Where(id => id != currentUser.Id).Distinct()];
     }
 
-    // The copied project's velocity window is kept; working days are the request's.
+    // The copied project's velocity window and sprint naming are kept; working days are the request's. A new project names sprints year, quarter and number.
     private async Task<int> InsertProjectAsync(
         DbConnection connection, DbTransaction transaction, Guid projectId, ProjectCreate create, short[] workingDays, CancellationToken cancellationToken)
     {
         var inserted = await connection.QuerySingleOrDefaultAsync<int?>(new CommandDefinition(
             """
-            INSERT INTO project (id, key, name, working_days, velocity_window, created_by, created_at, updated_at)
-            VALUES (@projectId, @key, @name, @workingDays, COALESCE((SELECT velocity_window FROM project WHERE id = @copyFrom), 3), @me, @now, @now)
+            INSERT INTO project (id, key, name, working_days, velocity_window, sprint_naming, created_by, created_at, updated_at)
+            VALUES (@projectId, @key, @name, @workingDays, COALESCE((SELECT velocity_window FROM project WHERE id = @copyFrom), 3),
+                    COALESCE((SELECT sprint_naming FROM project WHERE id = @copyFrom), 'yearQuarterNumber'), @me, @now, @now)
             ON CONFLICT (key) DO NOTHING
             RETURNING velocity_window
             """,
