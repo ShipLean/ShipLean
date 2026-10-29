@@ -39,7 +39,8 @@ public sealed partial class ProjectSettingsService
         var members = await ResolveMembersAsync(put.Members, cancellationToken);
         var moves = await PlanMovesAsync(projectId, put.States, cancellationToken);
 
-        var saved = await SaveAllAsync(projectId, put, general, members, moves, cancellationToken);
+        var capacityInputsChanged = string.Join(',', general.WorkingDays) != current.WorkingDays || general.HolidayCountry != current.HolidayCountry;
+        var saved = await SaveAllAsync(projectId, put, general, members, moves, capacityInputsChanged, cancellationToken);
         if (general.HolidayCountry is { } country && country != current.HolidayCountry)
         {
             // Only marks the country tracked and queues its refresh for the background job: the save never waits on the feed.
@@ -54,7 +55,7 @@ public sealed partial class ProjectSettingsService
     // names (their ids), and the hook gives them their real names with the other state changes. A failure anywhere rolls
     // everything back, so the same body can be sent again.
     private async Task<SettingsSaveResult> SaveAllAsync(
-        Guid projectId, ProjectSettingsPut put, ProjectGeneralPut general, List<(Guid UserId, ProjectRole Role)> members, StateMoves moves, CancellationToken cancellationToken)
+        Guid projectId, ProjectSettingsPut put, ProjectGeneralPut general, List<(Guid UserId, ProjectRole Role)> members, StateMoves moves, bool recomputeCapacity, CancellationToken cancellationToken)
     {
         var added = put.States.Add ?? [];
         var stateChanges = put.States with
@@ -63,11 +64,18 @@ public sealed partial class ProjectSettingsService
             Update = [.. put.States.Update ?? [], .. added.Select(a => new StateUpdate(a.Id, a.Name, a.Category))],
         };
         IReadOnlyList<Guid> removedUsers = [];
+        IReadOnlyList<Guid> recomputed = [];
         IReadOnlyList<(Guid BoardId, IReadOnlyList<string> Sections)> touchedBoards = [];
         var options = new WriteOptions(
             async (transaction, token) =>
             {
                 await WriteProjectAsync(transaction, projectId, general, put.Sprints, token);
+                if (recomputeCapacity)
+                {
+                    // After the project row is written: the recompute reads working days and country inside this transaction.
+                    recomputed = await capacity.RecomputeAsync(projectId, transaction, token);
+                }
+
                 removedUsers = await WriteMembersAsync(transaction, projectId, members, token);
                 await RefuseLateItemsAsync(transaction, stateChanges, moves, token);
                 await states.ApplyAsync(projectId, stateChanges, transaction, token);
@@ -89,6 +97,11 @@ public sealed partial class ProjectSettingsService
         }
 
         await events.PublishAsync(new ProjectChanged(projectId));
+        foreach (var sprintId in recomputed)
+        {
+            await events.PublishAsync(new SprintChanged(projectId, sprintId));
+        }
+
         if (HasStateChanges(put.States))
         {
             await events.PublishAsync(new StatesChanged(projectId));
