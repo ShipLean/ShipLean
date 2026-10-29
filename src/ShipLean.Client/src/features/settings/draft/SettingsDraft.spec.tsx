@@ -44,7 +44,6 @@ const saved = (): ProjectSettingsDto => ({
       category: 'proposed' as const,
       order: 1,
       itemCount: 0,
-      startsAgent: false,
     },
     {
       id: `${type}-done`,
@@ -53,7 +52,6 @@ const saved = (): ProjectSettingsDto => ({
       category: 'completed' as const,
       order: 2,
       itemCount: 0,
-      startsAgent: false,
     },
   ]),
 });

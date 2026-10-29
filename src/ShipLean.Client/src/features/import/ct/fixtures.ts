@@ -91,7 +91,6 @@ export const states: StateDto[] = [
     category: 'proposed',
     order: 1,
     itemCount: 0,
-    startsAgent: false,
   },
   {
     id: 's2',
@@ -100,7 +99,6 @@ export const states: StateDto[] = [
     category: 'inProgress',
     order: 2,
     itemCount: 0,
-    startsAgent: false,
   },
   {
     id: 's3',
@@ -109,7 +107,6 @@ export const states: StateDto[] = [
     category: 'completed',
     order: 3,
     itemCount: 0,
-    startsAgent: false,
   },
   {
     id: 's4',
@@ -118,7 +115,6 @@ export const states: StateDto[] = [
     category: 'proposed',
     order: 1,
     itemCount: 0,
-    startsAgent: false,
   },
   {
     id: 's5',
@@ -127,7 +123,6 @@ export const states: StateDto[] = [
     category: 'completed',
     order: 2,
     itemCount: 0,
-    startsAgent: false,
   },
   {
     id: 's6',
@@ -136,7 +131,6 @@ export const states: StateDto[] = [
     category: 'proposed',
     order: 1,
     itemCount: 0,
-    startsAgent: false,
   },
 ];
 

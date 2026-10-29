@@ -19,7 +19,7 @@ const st = (
   category: StateDto['category'],
   order: number,
   itemCount = 0,
-): StateDto => ({ id, type: 'story', name, category, order, itemCount, startsAgent: false });
+): StateDto => ({ id, type: 'story', name, category, order, itemCount });
 
 const otherTypes = (): StateDto[] =>
   (['epic', 'feature', 'bug', 'task'] as const).flatMap((type) => [
@@ -30,7 +30,6 @@ const otherTypes = (): StateDto[] =>
       category: 'proposed' as const,
       order: 1,
       itemCount: 0,
-      startsAgent: false,
     },
     {
       id: `${type}-done`,
@@ -39,7 +38,6 @@ const otherTypes = (): StateDto[] =>
       category: 'completed' as const,
       order: 2,
       itemCount: 0,
-      startsAgent: false,
     },
   ]);
 
@@ -157,32 +155,6 @@ test('States_WhenStateRenamed_ShouldKeepCategoryColour', async ({ mount, page })
   expect(puts[0]?.states.update).toEqual([
     { stateId: 's-active', name: 'Doing', category: 'inProgress' },
   ]);
-});
-
-test('States_WhenStartsAnAgentTicked_ShouldSendTheFlagOnly', async ({ mount, page }) => {
-  const puts = await stub(page);
-  const view = await mountAdmin(mount);
-  const row = view.getByTestId(ids.stateRow).nth(1);
-  await expect(row.getByTestId(ids.stateStartsAgent)).not.toBeChecked();
-
-  await row.getByTestId(ids.stateStartsAgent).check();
-
-  await expect(row.getByTestId(ids.stateStartsAgent)).toBeChecked();
-  await expect(view.getByTestId(ids.unsaved)).toContainText('1 unsaved change');
-  await view.getByTestId(ids.save).click();
-  await expect.poll(() => puts.length).toBe(1);
-  expect(puts[0]?.states.update).toEqual([
-    { stateId: 's-active', name: 'Active', category: 'inProgress', startsAgent: true },
-  ]);
-});
-
-test('States_WhenMember_ShouldShowTheStartsAgentBoxDisabled', async ({ mount, page }) => {
-  await stub(page);
-  const view = await mount(<StatesHarness role="member" />, {
-    hooksConfig: { route: '/p/SHIP/settings/states' },
-  });
-
-  await expect(view.getByTestId(ids.stateStartsAgent).first()).toBeDisabled();
 });
 
 test('States_WhenReordered_ShouldSendTheFullOrder', async ({ mount, page }) => {
