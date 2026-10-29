@@ -153,6 +153,31 @@ export const fetchProjectItems = (projectId: string) =>
 export const updateSprint = (sprintId: string, update: SprintUpdate) =>
   api.patch<SprintDto>(`/api/sprints/${encodeURIComponent(sprintId)}`, update);
 
+/**
+ * Saves the sprint's name, dates and goal. The sprint list feeds the header and the rows; new dates also move the
+ * burndown (metrics), the backlog's planning sections and the sprint items, so those are refetched directly (a tab
+ * ignores its own events).
+ */
+export function useUpdateSprint(projectId: string, sprintId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (update: SprintUpdate) => updateSprint(sprintId, update),
+    onSuccess: async (saved) => {
+      await Promise.all(
+        [
+          projectSprintsKey(projectId),
+          velocityKey(projectId),
+          sprintItemsKey(projectId),
+          backlogRootKey(projectId),
+          ['projects', projectId, 'sprint-metrics'],
+          ['projects', projectId, 'sprint-capacity'],
+        ].map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+      );
+      showToast(`Saved ${saved.name}`, { tone: 'ok' });
+    },
+  });
+}
+
 /** Refetches the Sprint backlog's items and figures when another tab or person changes a work item, the states or the order. */
 export function useSprintBacklogRealtime(projectId: string) {
   useSprintsRealtime(projectId);

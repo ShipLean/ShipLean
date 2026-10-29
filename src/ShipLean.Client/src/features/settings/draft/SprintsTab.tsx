@@ -23,7 +23,8 @@ export function SprintsTab({
           <span className="font-medium text-ink">Sprint length</span>
           <p className="text-ink-muted">
             A new sprint starts on the next working day after the last one and gets the same length.
-            Change its dates in All sprints for a one-off.
+            To change one sprint's dates, open All sprints and press Edit on its row, or use Edit
+            sprint in its header.
           </p>
         </div>
         <Link

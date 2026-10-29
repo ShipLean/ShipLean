@@ -11,6 +11,8 @@ interface SprintRowProps {
   figures: SprintFigures | undefined;
   /** What a sprint with no entered capacity plans against; undefined while it loads. */
   velocity: number | undefined;
+  /** Opens the Edit sprint rail for this sprint. */
+  onEdit: () => void;
 }
 
 const STATUS_CHIP = {
@@ -22,7 +24,7 @@ const STATUS_CHIP = {
 const NUMBER_CELL = 'px-3 py-2 text-right font-semibold tabular-nums';
 
 /** One sprint: its link to the backlog, dates, status, goal, team capacity (or velocity when none is entered), committed and completed points. */
-export function SprintRow({ projectKey, sprint, figures, velocity }: SprintRowProps) {
+export function SprintRow({ projectKey, sprint, figures, velocity, onEdit }: SprintRowProps) {
   const chip = STATUS_CHIP[sprint.status];
   const metrics = figures?.metrics;
   const capacity = figures?.capacity;
@@ -78,6 +80,17 @@ export function SprintRow({ projectKey, sprint, figures, velocity }: SprintRowPr
       </td>
       <td data-testid={ids.rowCompleted} className={NUMBER_CELL}>
         {completed}
+      </td>
+      <td className="px-3 py-2 text-right">
+        <button
+          type="button"
+          data-testid={ids.rowEdit}
+          aria-label={`Edit ${sprint.name}`}
+          className="inline-flex h-7 items-center rounded-control border border-transparent bg-transparent px-2.5 text-[length:var(--text-sm)] font-medium text-ink hover:bg-signal-soft focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-signal"
+          onClick={onEdit}
+        >
+          Edit
+        </button>
       </td>
     </tr>
   );

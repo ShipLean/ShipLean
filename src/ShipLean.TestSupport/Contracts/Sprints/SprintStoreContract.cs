@@ -81,6 +81,49 @@ public abstract class SprintStoreContract
     }
 
     [Test]
+    public async Task Update_WhenSprintEnded_ShouldRefuseADateChange()
+    {
+        var store = CreateStore();
+        var project = await ArrangeProjectAsync();
+        var ended = await store.CreateAsync(project, Sprint("Old", -40), null);
+
+        var start = await Should.ThrowAsync<ApiException>(() => store.UpdateAsync(ended.Id, new SprintUpdate(null, ended.StartDate.AddDays(1), null, null)));
+        var end = await Should.ThrowAsync<ApiException>(() => store.UpdateAsync(ended.Id, new SprintUpdate(null, null, ended.EndDate.AddDays(1), null)));
+
+        start.Code.ShouldBe(ApiErrorCodes.Validation);
+        start.Message.ShouldBe("An ended sprint's dates can't change.");
+        end.Code.ShouldBe(ApiErrorCodes.Validation);
+    }
+
+    [Test]
+    public async Task Update_WhenSprintEnded_ShouldStillRenameAndKeepSentDatesUnchanged()
+    {
+        var store = CreateStore();
+        var project = await ArrangeProjectAsync();
+        var ended = await store.CreateAsync(project, Sprint("Old", -40), null);
+
+        var renamed = await store.UpdateAsync(ended.Id, new SprintUpdate("Old, renamed", null, null, "done"));
+        var sameDates = await store.UpdateAsync(ended.Id, new SprintUpdate("Old, again", ended.StartDate, ended.EndDate, null));
+
+        renamed.Name.ShouldBe("Old, renamed");
+        renamed.Goal.ShouldBe("done");
+        sameDates.Name.ShouldBe("Old, again");
+        (sameDates.StartDate, sameDates.EndDate).ShouldBe((ended.StartDate, ended.EndDate));
+    }
+
+    [Test]
+    public async Task Update_WhenSprintIsCurrent_ShouldMoveItsEnd()
+    {
+        var store = CreateStore();
+        var project = await ArrangeProjectAsync();
+        var current = await store.CreateAsync(project, Sprint("Now", -3), null);
+
+        var moved = await store.UpdateAsync(current.Id, new SprintUpdate(null, null, current.EndDate.AddDays(3), null));
+
+        moved.EndDate.ShouldBe(current.EndDate.AddDays(3));
+    }
+
+    [Test]
     public async Task Capacity_WhenPut_ShouldSumTeam()
     {
         var store = CreateStore();
