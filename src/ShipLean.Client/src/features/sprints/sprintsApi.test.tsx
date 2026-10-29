@@ -106,17 +106,17 @@ test('useSprintsRealtime_WhenAnUnrelatedEventArrives_ShouldNotRefetch', async ()
   expect(reads.paths).toHaveLength(4);
 });
 
-test('useSprintsRealtime_WhenSprintChanged_ShouldRefetchOnlyThatSprintsFigures', async () => {
+test('useSprintsRealtime_WhenSprintChanged_ShouldRefetchThatSprintsFigures', async () => {
   await deliver({ type: 'sprintChanged', sprintId: 's1' });
   for (const suffix of ['/sprints', '/velocity', '/metrics', '/capacity']) {
     expect(reads_(suffix)).toBe(2);
   }
 });
 
-test('useSprintsRealtime_WhenAnotherSprintChanged_ShouldLeaveThisSprintsFiguresAlone', async () => {
+test('useSprintsRealtime_WhenAnotherSprintChanged_ShouldLeaveThisSprintsMetricsAloneButRefetchItsCapacity', async () => {
   await deliver({ type: 'sprintChanged', sprintId: 's2' });
   expect(reads_('/sprints')).toBe(2);
   expect(reads_('/velocity')).toBe(2);
   expect(reads_('/metrics')).toBe(1);
-  expect(reads_('/capacity')).toBe(1);
+  expect(reads_('/capacity')).toBe(2);
 });

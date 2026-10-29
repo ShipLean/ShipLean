@@ -78,7 +78,8 @@ const WIDE_FIGURE_EVENTS = [
 export function useSprintsRealtime(projectId: string) {
   const queryClient = useQueryClient();
   useEffect(() => {
-    // A sprint event names its sprint, so only that sprint's figures go stale; the others carry no sprint.
+    // A sprint event names its sprint, so only that sprint's metrics go stale. Capacity is refetched for every sprint: a
+    // sprint's calendar and velocity default also follow holidays and the sprint before it.
     const refetch = (sprintId?: string) => {
       void queryClient.invalidateQueries({ queryKey: projectSprintsKey(projectId) });
       void queryClient.invalidateQueries({ queryKey: velocityKey(projectId) });
@@ -88,12 +89,7 @@ export function useSprintsRealtime(projectId: string) {
             ? ['projects', projectId, 'sprint-metrics']
             : sprintMetricsKey(projectId, sprintId),
       });
-      void queryClient.invalidateQueries({
-        queryKey:
-          sprintId === undefined
-            ? ['projects', projectId, 'sprint-capacity']
-            : sprintCapacityKey(projectId, sprintId),
-      });
+      void queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'sprint-capacity'] });
     };
     const unregister = [
       registerInvalidation('sprintChanged', (event) => refetch(event.sprintId)),
