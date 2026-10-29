@@ -35,7 +35,7 @@ const saved = (): ProjectSettingsDto => ({
     { user: joel, email: 'joel@shiplean.local', role: 'admin', status: 'active' },
     { user: priya, email: 'priya@shiplean.local', role: 'member', status: 'active' },
   ],
-  sprints: { velocityWindow: 3, velocityOverride: null },
+  sprints: { velocityWindow: 3, velocityOverride: null, sprintNaming: 'number' },
   states: WORK_ITEM_TYPE_IDS.flatMap((type) => [
     {
       id: `${type}-new`,
@@ -130,7 +130,31 @@ test('Draft_WhenSaved_ShouldSendEveryTabInOneRequest', async ({ mount, page }) =
     { email: 'joel@shiplean.local', role: 'admin' },
     { email: 'priya@shiplean.local', role: 'admin' },
   ]);
-  expect(puts[0].sprints).toEqual({ velocityWindow: 3, velocityOverride: 21.5 });
+  expect(puts[0].sprints).toEqual({
+    velocityWindow: 3,
+    velocityOverride: 21.5,
+    sprintNaming: 'number',
+  });
+});
+
+test('Draft_WhenSprintNamingChanged_ShouldMarkTheTabAndSaveIt', async ({ mount, page }) => {
+  const puts = await stub(page);
+  const view = await mount(<SettingsDraftHarness role="admin" />, {
+    hooksConfig: { route: '/p/SHIP/settings/sprints' },
+  });
+  await expect(view.getByTestId(ids.sprintNaming)).toHaveValue('number');
+  await expect(view.getByTestId(ids.sprintNamingHint)).toContainText('keep their names');
+
+  await view.getByTestId(ids.sprintNaming).selectOption('yearQuarterNumber');
+  await expect(view.getByTestId(ids.unsaved)).toContainText('1 unsaved change');
+  await view.getByTestId(ids.sprintNaming).selectOption('number');
+  await expect(view.getByTestId(ids.unsaved)).toHaveCount(0);
+
+  await view.getByTestId(ids.sprintNaming).selectOption('yearQuarterNumber');
+  await view.getByTestId(ids.save).click();
+
+  await expect(view.getByTestId(ids.unsaved)).toHaveCount(0);
+  expect(puts[0].sprints.sprintNaming).toBe('yearQuarterNumber');
 });
 
 test('Draft_WhenAgentFieldsEdited_ShouldSendThemWithGeneral', async ({ mount, page }) => {

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import type { ProjectDto } from '../../../api/projects';
+import type { ProjectDto, SprintNaming } from '../../../api/projects';
 import { routePath } from '../../../routes';
 import { settingsTestIds } from '../testIds';
 import { FieldErrorText } from './FieldErrorText';
@@ -27,6 +27,30 @@ export function SprintsTab({
             sprint in its header.
           </p>
         </div>
+        <label className="grid gap-1 text-[length:var(--text-sm)] font-medium text-ink">
+          Sprint naming
+          <select
+            id="settings-field-sprintNaming"
+            data-testid={settingsTestIds.sprintNaming}
+            className="h-7 w-fit rounded-control border border-edge bg-panel px-1 text-[length:var(--text-sm)] text-ink disabled:opacity-60"
+            value={draft.sprintNaming}
+            disabled={readOnly}
+            onChange={(e) => {
+              const sprintNaming: SprintNaming =
+                e.target.value === 'yearQuarterNumber' ? 'yearQuarterNumber' : 'number';
+              setDraft((d) => ({ ...d, sprintNaming }));
+            }}
+          >
+            <option value="yearQuarterNumber">Year, quarter and number — 2026 Q4 Sprint 3</option>
+            <option value="number">Number only — Sprint 129</option>
+          </select>
+          <span
+            className="font-normal text-ink-muted"
+            data-testid={settingsTestIds.sprintNamingHint}
+          >
+            Existing sprints keep their names; this applies to the next sprint you create.
+          </span>
+        </label>
         <Link
           to={routePath('sprints', { key: project.key })}
           className="text-[length:var(--text-sm)] text-signal"

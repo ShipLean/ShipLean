@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using ShipLean.AcceptanceTests.Harness;
 using ShipLean.AcceptanceTests.Pages.Sprints;
 using ShipLean.TestSupport;
@@ -68,5 +69,26 @@ public class NewSprintTests : SeededAcceptanceTest
         await Expect(sprints.Error).ToHaveTextAsync("Sprints cannot overlap.");
         await Expect(sprints.Start).ToHaveValueAsync(running.End.ToString("yyyy-MM-dd"));
         await Expect(sprints.Rows).ToHaveCountAsync(before);
+    }
+
+    [Test]
+    [Order(3)]
+    public async Task Sprints_WhenProjectNamesByQuarter_ShouldSuggestYearQuarterAndNumberAndFollowTheDates()
+    {
+        await SprintDatabase.UseYearQuarterNamingAsync(ConnectionString, "SHIP");
+        var sprints = new AllSprints(Page);
+        await sprints.OpenAsync("SHIP");
+
+        await Expect(sprints.Name).ToHaveValueAsync(new Regex(@"^\d{4} Q[1-4] Sprint \d+$"));
+
+        // The name follows the dates while it is untouched: a start on the quarter's fourth day, two weeks long.
+        await sprints.End.FillAsync("2031-01-17");
+        await sprints.Start.FillAsync("2031-01-04");
+        await Expect(sprints.Name).ToHaveValueAsync("2031 Q1 Sprint 1");
+
+        await sprints.Name.FillAsync("Hardening");
+        await sprints.Start.FillAsync("2031-04-05");
+        await sprints.End.FillAsync("2031-04-18");
+        await Expect(sprints.Name).ToHaveValueAsync("Hardening");
     }
 }

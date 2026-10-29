@@ -35,7 +35,7 @@ const saved: ProjectSettingsDto = {
     agentConnections: [],
   },
   members: [{ user, email: 'joel@x.test', role: 'admin', status: 'active' }],
-  sprints: { velocityWindow: 3, velocityOverride: null },
+  sprints: { velocityWindow: 3, velocityOverride: null, sprintNaming: 'number' },
   states: statesOf(),
 };
 
@@ -45,6 +45,29 @@ describe('settings draft model', () => {
     expect(draft.workingDays).toEqual([1, 2, 5]);
     expect(draft.velocityOverride).toBe('');
     expect(changesBetween(draft, draft, saved.states)).toEqual([]);
+  });
+
+  it('toDraft_WhenSavedWithoutNaming_ShouldFallBackToNumber', () => {
+    const sprints = { velocityWindow: 3, velocityOverride: null };
+    expect(toDraft({ ...saved, sprints }).sprintNaming).toBe('number');
+  });
+
+  it('sprintNaming_WhenChanged_ShouldBeAChangeAPutAndSurviveARebase', () => {
+    const base = toDraft(saved);
+    const draft = { ...base, sprintNaming: 'yearQuarterNumber' as const };
+    expect(changesBetween(base, draft, saved.states)).toEqual([
+      { tab: 'sprints', label: 'Sprint naming' },
+    ]);
+    const result = parse(draft, saved.states);
+    if ('errors' in result) throw new Error('draft should parse');
+    expect(toPut(draft, result.parsed).sprints.sprintNaming).toBe('yearQuarterNumber');
+    const latest = { ...saved, general: { ...saved.general, name: 'Theirs' } };
+    expect(rebase(latest, base, draft, saved.states).draft.sprintNaming).toBe('yearQuarterNumber');
+    const theirs = {
+      ...saved,
+      sprints: { ...saved.sprints, sprintNaming: 'yearQuarterNumber' as const },
+    };
+    expect(rebase(theirs, base, base, saved.states).draft.sprintNaming).toBe('yearQuarterNumber');
   });
 
   it('validate_WhenNothingWrong_ShouldFindNothing', () => {
@@ -78,7 +101,11 @@ describe('settings draft model', () => {
     if ('errors' in result) throw new Error('draft should parse');
     const put = toPut(draft, result.parsed);
     expect(put.members).toEqual([]);
-    expect(put.sprints).toEqual({ velocityWindow: 3, velocityOverride: 12.5 });
+    expect(put.sprints).toEqual({
+      velocityWindow: 3,
+      velocityOverride: 12.5,
+      sprintNaming: 'number',
+    });
   });
 
   it('changesBetween_WhenEveryTabEdited_ShouldListOneChangePerEdit', () => {

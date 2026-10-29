@@ -1,9 +1,12 @@
 import { useState, type FormEvent } from 'react';
 import { ApiRequestError } from '../../../api/client';
 import type { SprintCreate } from '../../../api/sprints';
-import { useCreateSprint, useNextSprint } from '../sprintsApi';
+import { useDebouncedValue } from '../../workItem/form/description/useDebouncedValue';
+import { useCreateSprint, useNextSprint, useSuggestedSprintName } from '../sprintsApi';
 import { SprintForm, type SprintFormIds, type SprintFormValues } from '../form/SprintForm';
 import { sprintsTestIds as ids } from '../testIds';
+
+const NAME_PAUSE_MS = 250;
 
 const NEW_SPRINT_IDS: SprintFormIds = {
   name: ids.newSprintName,
@@ -17,7 +20,8 @@ const NEW_SPRINT_IDS: SprintFormIds = {
 /**
  * The New sprint form. It starts from the server's defaults (the next number, the first working day after the last
  * sprint, the last sprint's length); what the person types replaces them until the sprint is created, when the form
- * goes back to the defaults that now follow it. A refusal from the server (overlap, name taken) shows beside the button.
+ * goes back to the defaults that now follow it. While the name is untouched, changing the dates swaps in the name the
+ * server would give a sprint with them; once the person types a name it stays theirs. A refusal from the server (overlap, name taken) shows beside the button.
  */
 export function NewSprintRail({ projectId }: { projectId: string }) {
   const next = useNextSprint(projectId);
@@ -26,7 +30,16 @@ export function NewSprintRail({ projectId }: { projectId: string }) {
   // The form as the person has it once they touch it: it then stays put while the defaults refetch underneath.
   const [edited, setEdited] = useState<SprintCreate | null>(null);
   const [rangeError, setRangeError] = useState(false);
-  const form = edited ?? defaults;
+  const [nameTouched, setNameTouched] = useState(false);
+  const typed = edited ?? defaults;
+  const start = useDebouncedValue(typed?.startDate ?? '', NAME_PAUSE_MS);
+  const end = useDebouncedValue(typed?.endDate ?? '', NAME_PAUSE_MS);
+  const range = { start, end };
+  const suggestion = useSuggestedSprintName(projectId, range, edited !== null && !nameTouched);
+  const form =
+    typed && edited !== null && !nameTouched && suggestion.data
+      ? { ...typed, name: suggestion.data.name }
+      : typed;
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -35,13 +48,22 @@ export function NewSprintRail({ projectId }: { projectId: string }) {
       setRangeError(true);
       return;
     }
-    create.mutate({ ...form, name: form.name.trim() }, { onSuccess: () => setEdited(null) });
+    create.mutate(
+      { ...form, name: form.name.trim() },
+      {
+        onSuccess: () => {
+          setEdited(null);
+          setNameTouched(false);
+        },
+      },
+    );
   }
 
   const edit = (field: keyof SprintFormValues) => (value: string) => {
     if (!form) return;
     create.reset();
     setRangeError(false);
+    if (field === 'name') setNameTouched(true);
     setEdited({ ...form, [field]: value });
   };
 
