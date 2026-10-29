@@ -1,3 +1,5 @@
+using ShipLean.Application.Fakes.Holidays;
+using ShipLean.Application.Features.Sprints.Metrics;
 using System.Text.Json;
 using Dapper;
 using Npgsql;
@@ -46,7 +48,7 @@ public sealed class PostgresProjectFactoryContractTests : ProjectFactoryContract
     {
         var user = new SettableCurrentUser { Id = actorId };
         var boards = new BoardSettingsStore(_dataSource, TimeProvider.System, new InMemoryCriteriaEvaluator(user), new DiscardingProjectEvents());
-        var sprints = new SprintStore(_dataSource, TimeProvider.System, new DiscardingProjectEvents(), new ThrowingWorkItemStore());
+        var sprints = new SprintStore(_dataSource, TimeProvider.System, new DiscardingProjectEvents(), new ThrowingWorkItemStore(), new InMemoryPublicHolidays(), new SprintMetrics(_dataSource, TimeProvider.System));
         return new ProjectFactory(_dataSource, TimeProvider.System, user, boards, sprints, new StateCatalog(_dataSource));
     }
 
