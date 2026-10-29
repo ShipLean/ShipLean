@@ -66,6 +66,12 @@ test('memberPoints_WhenResultNeedsRounding_ShouldRoundHalfAwayFromZeroToTwoDecim
   expect(memberPoints(1, 8, 10, shape)).toBe(0.13);
 });
 
+test('memberPoints_WhenResultIsAHalfCent_ShouldRoundUpLikeTheServersDecimal', () => {
+  const sixDays = { workingDays: 6, defaultDays: 6 };
+  expect(memberPoints(5.1, 1, 0.5, sixDays)).toBe(0.43);
+  expect(memberPoints(0.3, 1, 1.5, sixDays)).toBe(0.08);
+});
+
 test('memberPoints_WhenOverTheLimit_ShouldCapAtLargest', () => {
   expect(memberPoints(9999.99, 1, 20, shape)).toBe(9999.99);
 });

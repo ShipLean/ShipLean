@@ -156,7 +156,12 @@ export function memberPoints(
   const { workingDays, defaultDays } = shape;
   if (workingDays === 0 || members === 0) return 0;
   const effectiveDays = Math.min(days ?? defaultDays, workingDays);
-  const points = Math.round((velocity * effectiveDays * 100) / (members * workingDays)) / 100;
+  // Whole numbers throughout, so the half-cent cases round as the server's decimal does (velocity has at most two
+  // decimals, days are halves): points = v100 * d2 / (2 * members * workingDays) hundredths, half up.
+  const v100 = Math.round(velocity * 100);
+  const d2 = Math.round(effectiveDays * 2);
+  const den = 2 * members * workingDays;
+  const points = Math.floor((2 * v100 * d2 + den) / (2 * den)) / 100;
   return Math.min(points, LARGEST_CAPACITY);
 }
 
