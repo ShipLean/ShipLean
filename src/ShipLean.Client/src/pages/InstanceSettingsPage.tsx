@@ -7,6 +7,7 @@ import { InstanceIntegrationsSlot } from '../slots/InstanceIntegrationsSlot';
 import { InstanceProjectsSlot } from '../slots/InstanceProjectsSlot';
 import { InstanceUsersSlot } from '../slots/InstanceUsersSlot';
 import { instanceSettingsSlots } from './instanceSettingsSlots';
+import { InstanceSettingsTabs } from './InstanceSettingsTabs';
 import { InstallScreen } from './InstallScreen';
 import { NotFoundState } from './NotFoundState';
 import { pageRouteIds } from './pageRouteIds';
@@ -22,6 +23,7 @@ export function InstanceSettingsPage() {
       routeId={pageRouteIds.instanceSettings}
       testId={pagesTestIds.instanceSettingsPage}
     >
+      <InstanceSettingsTabs active={tab} />
       {slots.instanceGeneral && <InstanceGeneralSlot {...slots.instanceGeneral} />}
       {slots.instanceUsers && <InstanceUsersSlot {...slots.instanceUsers} />}
       {slots.instanceProjects && <InstanceProjectsSlot {...slots.instanceProjects} />}
