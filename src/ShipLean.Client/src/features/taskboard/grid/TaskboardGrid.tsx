@@ -8,7 +8,7 @@ import type { TaskboardGridView } from '../taskboardGridView';
 import type { TaskboardScope } from '../taskboardScope';
 import { taskboardTestIds as ids } from '../testIds';
 import { passesFaces, UNASSIGNED_FACE } from './faceFilter';
-import { gridColumns } from './gridColumns';
+import { gridColumns, gridMinWidth } from './gridColumns';
 
 /** The column headers and the rows of one grouping. It sits inside a TaskboardDnd. */
 export function TaskboardGrid({
@@ -23,6 +23,7 @@ export function TaskboardGrid({
   isCollapsed,
   onToggle,
   onSetState,
+  label = 'Taskboard',
 }: {
   projectKey: string;
   projectId: string;
@@ -36,6 +37,8 @@ export function TaskboardGrid({
   isCollapsed: (rowId: string, completed: boolean) => boolean;
   onToggle: (rowId: string, completed: boolean) => void;
   onSetState: (parentId: string, key: string, revision: number, stateId: string) => void;
+  /** The grid's accessible name; a page with several grids gives each its own. */
+  label?: string;
 }) {
   // The face filter works on the loaded view: it is the same GET's data and the endpoint has no assignee filter.
   const shownIn = (stateId: string) =>
@@ -46,7 +49,12 @@ export function TaskboardGrid({
       .filter((card) => passesFaces(card, faces)).length;
   return (
     <>
-      <div data-testid={ids.grid} role="grid" aria-label="Taskboard" className="overflow-x-auto">
+      <div
+        data-testid={ids.grid}
+        role="grid"
+        aria-label={label}
+        style={{ minWidth: gridMinWidth(view.columns.length) }}
+      >
         <div
           className="sticky top-0 z-10 grid bg-panel text-[length:var(--text-sm)]"
           style={{ gridTemplateColumns: gridColumns(view.columns.length) }}

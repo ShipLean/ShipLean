@@ -20,3 +20,21 @@ test('TaskboardGrid_WhenGivenAllRows_ShouldCountEveryTask', async ({ mount, page
 
   await expect(page.getByTestId(ids.columnCount)).toHaveText(['2', '1', '2']);
 });
+
+test('TaskboardGrid_WhenItsScrollerScrolls_ShouldKeepTheColumnHeadersAtTheTop', async ({
+  mount,
+  page,
+}) => {
+  await page.setViewportSize({ width: 600, height: 500 });
+  await mount(<GridHarness rowIndexes={[0, 1, 2]} scrollerHeight={160} />, route);
+  const scroller = page.getByTestId('scroller');
+  const header = page.getByTestId(ids.columnHeader).first();
+
+  const top = (await scroller.boundingBox())!.y;
+  await scroller.evaluate((el) => el.scrollTo({ top: el.scrollHeight }));
+  await expect.poll(() => scroller.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+  await expect.poll(async () => (await header.boundingBox())!.y).toBeCloseTo(top, 0);
+
+  // Narrow: the same scroller scrolls sideways, so no column is lost.
+  expect(await scroller.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+});
