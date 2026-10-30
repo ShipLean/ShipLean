@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/experimental-ct-react';
 import type { ProjectDto } from '../../api/projects';
 import type { SprintDto } from '../../api/sprints';
 import { componentTestIds } from '../../components/testIds';
+import { sprintsTestIds } from '../sprints/testIds';
 import { SprintGoalHarness } from './ct/SprintGoalHarness';
 import { SprintHeaderHarness } from './ct/SprintHeaderHarness';
 import { sprintHeaderHarnessIds as harness } from './ct/harnessIds';
@@ -93,6 +94,21 @@ test('SprintHeader_WhenEditClicked_ShouldRenderGoalSlot', async ({ mount, page }
   await expect(page.getByTestId(ids.goalEdit)).toHaveCount(0);
 });
 
+test('SprintHeader_WhenEditSprintClickedThenCancelled_ShouldOpenAndCloseTheRail', async ({
+  mount,
+  page,
+}) => {
+  await mount(<SprintHeaderHarness {...props()} />);
+  await expect(page.getByTestId('slot-editSprintRail')).toHaveCount(0);
+
+  await page.getByTestId(sprintsTestIds.editSprintOpen).click();
+  await expect(page.getByTestId('slot-editSprintRail')).toHaveCount(1);
+  await expect(page.getByTestId(sprintsTestIds.editSprintName)).toHaveValue(/^Sprint/);
+
+  await page.getByTestId(sprintsTestIds.editSprintCancel).click();
+  await expect(page.getByTestId('slot-editSprintRail')).toHaveCount(0);
+});
+
 test('SprintHeader_WhenTabClicked_ShouldLinkToSprintTab', async ({ mount, page }) => {
   await mount(<SprintHeaderHarness {...props()} />, {
     hooksConfig: { route: '/p/SHIP/sprints/s24/backlog' },
@@ -156,4 +172,31 @@ test('SprintHeader_WhenPickerEscaped_ShouldCloseWithoutNavigating', async ({ mou
   await expect(page.getByTestId(ids.pickerList)).toHaveCount(0);
   await expect(page.getByTestId(ids.picker)).toBeFocused();
   await expect(page.getByTestId(harness.location)).toHaveText('/p/SHIP/sprints/s24/backlog');
+});
+
+test('SprintHeader_WhenTheRailIsCancelled_ShouldReturnFocusToEditSprint', async ({
+  mount,
+  page,
+}) => {
+  await mount(<SprintHeaderHarness {...props()} />);
+  await page.getByTestId(sprintsTestIds.editSprintOpen).click();
+  await expect(page.getByTestId(sprintsTestIds.editSprintName)).toBeFocused();
+
+  await page.getByTestId(sprintsTestIds.editSprintCancel).click();
+
+  await expect(page.getByTestId(sprintsTestIds.editSprintOpen)).toBeFocused();
+});
+
+test('SprintHeader_WhenTheGoalEditorOpensWithTheRailOpen_ShouldCloseTheRail', async ({
+  mount,
+  page,
+}) => {
+  await mount(<SprintHeaderHarness {...props()} />);
+  await page.getByTestId(sprintsTestIds.editSprintOpen).click();
+  await expect(page.getByTestId('slot-editSprintRail')).toHaveCount(1);
+
+  await page.getByTestId(ids.goalEdit).click();
+
+  await expect(page.getByTestId('slot-editSprintRail')).toHaveCount(0);
+  await expect(page.getByTestId('slot-sprintGoalEdit')).toHaveCount(1);
 });

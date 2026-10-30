@@ -4,12 +4,17 @@ using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Sprints;
 using ShipLean.Application.Sprints;
+using ShipLean.Application.Fakes.Holidays;
+using ShipLean.Contracts.Holidays;
 using ShipLean.Core;
+using ShipLean.Core.Sprints;
 
 namespace ShipLean.Application.Fakes.Sprints;
 
-public sealed class InMemorySprintStore(InMemoryPlanning world) : ISprintStore
+public sealed class InMemorySprintStore(InMemoryPlanning world, IPublicHolidays? holidays = null) : ISprintStore
 {
+    private readonly IPublicHolidays holidays = holidays ?? new InMemoryPublicHolidays();
+
     public Task<SprintDto> CreateAsync(Guid projectId, SprintCreate create, DbTransaction? transaction, CancellationToken cancellationToken = default)
         => Task.FromResult(Open(world, projectId, create));
 
@@ -34,6 +39,16 @@ public sealed class InMemorySprintStore(InMemoryPlanning world) : ISprintStore
             var name = update.Name ?? sprint.Name;
             var start = update.StartDate ?? sprint.Start;
             var end = update.EndDate ?? sprint.End;
+            if ((start != sprint.Start || end != sprint.End) && sprint.End < world.Today)
+            {
+                throw ApiException.Validation("An ended sprint's dates can't change.");
+            }
+
+            if (end != sprint.End && end < world.Today)
+            {
+                throw ApiException.Validation("A sprint can't be moved to end in the past.");
+            }
+
             Check(world, sprint.ProjectId, id, name, start, end);
             sprint.Name = name.Trim();
             sprint.Start = start;
@@ -43,37 +58,83 @@ public sealed class InMemorySprintStore(InMemoryPlanning world) : ISprintStore
         }
     }
 
-    public Task<SprintCapacityDto> GetCapacityAsync(Guid sprintId, CancellationToken cancellationToken = default)
+    public async Task<SprintCapacityDto> GetCapacityAsync(Guid sprintId, CancellationToken cancellationToken = default)
     {
+        var calendar = await CalendarAsync(world, holidays, sprintId, cancellationToken);
         lock (world.Gate)
         {
-            return Task.FromResult(Capacity(world.Sprint(sprintId)));
+            return Capacity(world.Sprint(sprintId), calendar);
         }
     }
 
-    public Task<SprintCapacityDto> PutCapacityAsync(Guid sprintId, SprintCapacityPut capacities, CancellationToken cancellationToken = default)
+    public async Task<SprintCapacityDto> PutCapacityAsync(Guid sprintId, SprintCapacityPut capacities, CancellationToken cancellationToken = default)
     {
+        if (capacities?.Members is null || capacities.Members.Any(m => m is null))
+        {
+            throw ApiException.Validation("Capacity needs its list of members.");
+        }
+
+        var calendar = await CalendarAsync(world, holidays, sprintId, cancellationToken);
         lock (world.Gate)
         {
             var sprint = world.Sprint(sprintId);
             var project = world.Project(sprint.ProjectId);
-            foreach (var row in capacities.Members)
+            if (sprint.End < world.Today)
             {
-                if (row.Points < 0 || !project.Members.ContainsKey(row.UserId))
-                {
-                    throw ApiException.Validation("Capacity is zero or more points for a member of the project.");
-                }
+                throw ApiException.Validation("An ended sprint's capacity can't change.");
             }
+            if (capacities.Members.Count > 0 && capacities.Velocity is null)
+            {
+                throw ApiException.Validation("Capacity needs a velocity.");
+            }
+            if (capacities.Velocity is < 0 or > CapacityPoints.Largest)
+            {
+                throw ApiException.Validation("Velocity is zero or more points, up to 9999.99.");
+            }
+            if (capacities.Velocity is { } velocity && decimal.Round(velocity, 2) != velocity)
+            {
+                throw ApiException.Validation("Velocity has at most two decimal places.");
+            }
+            if (capacities.Members.Any(m => m.Days is { } days && (days < 0 || days > calendar.WorkingDays || days * 2 != decimal.Truncate(days * 2))))
+            {
+                throw ApiException.Validation($"Days are between 0 and {calendar.WorkingDays}, in steps of half a day.");
+            }
+            if (capacities.Members.Select(m => m.UserId).Distinct().Count() != capacities.Members.Count)
+            {
+                throw ApiException.Validation("A member can only be listed once.");
+            }
+            if (capacities.Members.Any(m => !project.Members.ContainsKey(m.UserId)))
+            {
+                throw ApiException.Validation("Capacity can only be entered for members of the project.");
+            }
+            sprint.Velocity = capacities.Velocity ?? sprint.Velocity;
             foreach (var left in sprint.Capacity.Keys.Except(capacities.Members.Select(m => m.UserId)).ToList())
             {
-                sprint.Capacity[left] = (sprint.Capacity[left].Points, sprint.Capacity[left].Note, true);
+                sprint.Capacity[left] = (sprint.Capacity[left].Points, sprint.Capacity[left].Note, true, sprint.Capacity[left].Days);
             }
             foreach (var row in capacities.Members)
             {
-                sprint.Capacity[row.UserId] = (row.Points, row.Note, false);
+                var points = CapacityPoints.For(capacities.Velocity ?? 0m, capacities.Members.Count, calendar.Effective(row.Days), calendar.WorkingDays);
+                sprint.Capacity[row.UserId] = (points, row.Note, false, row.Days);
             }
-            return Task.FromResult(Capacity(sprint));
+            return Capacity(sprint, calendar);
         }
+    }
+
+    // The sprint's calendar: its working days and the holidays of the project's country on them.
+    public static async Task<CapacityCalendar> CalendarAsync(InMemoryPlanning world, IPublicHolidays holidays, Guid sprintId, CancellationToken cancellationToken)
+    {
+        DateOnly start;
+        DateOnly end;
+        string? country;
+        IReadOnlyList<int> workingDays;
+        lock (world.Gate)
+        {
+            var sprint = world.Sprint(sprintId);
+            var project = world.Project(sprint.ProjectId);
+            (start, end, country, workingDays) = (sprint.Start, sprint.End, project.HolidayCountry, [.. project.WorkingDays]);
+        }
+        return await CapacityCalendar.LoadAsync(holidays, country, workingDays, start, end, cancellationToken);
     }
 
     public Task<RolloverDto> GetRolloverAsync(Guid sprintId, CancellationToken cancellationToken = default)
@@ -147,10 +208,16 @@ public sealed class InMemorySprintStore(InMemoryPlanning world) : ISprintStore
             tasks.Count(t => world.States.Single(s => s.Id == t.StateId).Category is not (StateCategory.Completed or StateCategory.Removed)), tasks.Count, targetSprintId);
     }
 
-    private SprintCapacityDto Capacity(InMemoryPlanning.SprintRow sprint)
+    private SprintCapacityDto Capacity(InMemoryPlanning.SprintRow sprint, CapacityCalendar calendar)
     {
-        var members = sprint.Capacity.Where(c => !c.Value.Archived).Select(c => new MemberCapacityDto(world.Users[c.Key].User, c.Value.Points, c.Value.Note)).ToList();
-        return new SprintCapacityDto(sprint.Id, members, members.Sum(m => m.Points));
+        var members = sprint.Capacity.Where(c => !c.Value.Archived).Select(c => new MemberCapacityDto(world.Users[c.Key].User, c.Value.Days, c.Value.Points, c.Value.Note)).ToList();
+        var project = world.Project(sprint.ProjectId);
+        var previous = world.Sprints.Where(s => s.ProjectId == sprint.ProjectId && s.Velocity is not null && s.Start < sprint.Start).OrderByDescending(s => s.Start).FirstOrDefault()?.Velocity;
+        var fallback = previous ?? project.VelocityOverride ?? world.Velocity(sprint.ProjectId).Average;
+        var velocityDefault = Math.Min(CapacityPoints.Largest, decimal.Round(fallback, 1, MidpointRounding.AwayFromZero));
+        return new SprintCapacityDto(
+            sprint.Id, members, members.Sum(m => m.Points), sprint.Velocity, velocityDefault, calendar.WorkingDays, calendar.DefaultDays,
+            calendar.HolidayDtos(), project.HolidayCountry, sprint.End < world.Today);
     }
 
     private SprintRef Ref(InMemoryPlanning.SprintRow sprint) => new(sprint.Id, sprint.Name, SprintLabels.Phase(sprint.Start, sprint.End, world.Today).ToStatus());

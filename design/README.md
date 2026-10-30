@@ -22,7 +22,7 @@ The screens here are reference designs for every page of the v1 domain model: **
 | `screens/import.html` | **Jira import**: one Jira project into one ShipLean project in five steps (Connection, Jira project, Project key, Mapping, Run), with progress, an error log and re-runs. `?step=1..5` and `?run=done\|errors` open those states. |
 | `screens/planning.html` | **Planning**: the Stories backlog in Planning mode, with sprint sections stacked above the Backlog. |
 | `screens/sprint-backlog.html` | **Sprint backlog**: inside one sprint, with tasks, burndown, Ready to pick up and In progress now. |
-| `screens/capacity.html` | **Capacity**: each person enters their points; only the team total is compared with the sprint. |
+| `screens/capacity.html` | **Capacity**: the team types a velocity for the sprint and each member's days available; capacity is velocity / people × days / working days, with public holidays lowering the default days. Only the team total is compared with the sprint. |
 | `screens/sprints.html` | **All sprints**: the flat sprint list, the velocity chart and the New sprint form. |
 | `screens/sprint-end.html` | **Sprint end**: the dialog for unfinished work once a sprint's end date has passed. |
 | `screens/taskboard.html` | **Sprint Taskboard**: the sprint's stories and bugs × Task states, Group by Stories / People, and the Taskboard settings dialog. `?view=people` and `?dialog=settings[&pane=styles\|tags]` open those states. |
@@ -149,7 +149,7 @@ Classes (in `src/ShipLean.Client/src/index.css`, unlayered so they beat Tailwind
 These were decided while reviewing the screens on 2026-10-24.
 
 1. **Planning layout: stacked sprint sections** (Jira style), not a side pane or sprint columns.
-2. **Capacity is planned for the team as a unit.** Each member enters their own points, but only `SUM(capacity_points)` for the sprint is compared with committed points and with velocity. Nothing compares a person with the work assigned to them, and there's no per-person load or over-allocation warning. A sprint with no entries plans against velocity.
+2. **Capacity is planned for the team as a unit.** The team types one velocity for the sprint and each member's days available (default: the sprint's working days minus the country's public holidays); a member's capacity is `velocity / people in the table × days / working days`, and only `SUM(capacity_points)` for the sprint is compared with committed points and with velocity. Nothing compares a person with the work assigned to them, and there's no per-person load or over-allocation warning. A sprint with no entries plans against velocity.
 3. **Work is pulled, not pre-assigned.** Assignment records who is working on something and, through revisions, who did what. **Moving an unassigned item into an In Progress state assigns it to whoever moved it.**
 4. **Unfinished work at sprint end: a roll-over prompt** where someone chooses a destination for each item, defaulting to the next sprint.
 5. **Sprint totals count stories and bugs only.** Points on tasks are shown for information. Capacity, burndown and velocity use the requirement level.

@@ -7,6 +7,7 @@ using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Events;
 using ShipLean.Contracts.Sprints;
+using ShipLean.Core;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
 
@@ -71,18 +72,102 @@ public class SprintApiTests : ApiFixture
     }
 
     [Test]
-    public async Task Capacity_WhenPut_ShouldRoundTripAndPublishSprintChanged()
+    public async Task Sprint_WhenEndedAndItsDatesChange_ShouldBeRefusedButRenameWorks()
+    {
+        var ended = await CreateAsync("Long ended sprint", -3000);
+
+        using var moved = await Api.PatchJsonAsync($"api/sprints/{ended.Id}", new SprintUpdate(null, null, ended.EndDate.AddDays(1), null));
+        using var renamed = await Api.PatchJsonAsync($"api/sprints/{ended.Id}", new SprintUpdate("Long ended sprint, renamed", ended.StartDate, ended.EndDate, null));
+
+        var error = await ApiClient.ReadApiErrorAsync(moved, HttpStatusCode.BadRequest);
+        error.Code.ShouldBe(ApiErrorCodes.Validation);
+        error.Error.ShouldBe("An ended sprint's dates can't change.");
+        renamed.StatusCode.ShouldBe(HttpStatusCode.OK, await renamed.Content.ReadAsStringAsync());
+    }
+
+    [Test]
+    public async Task Sprint_WhenMovedToEndInThePast_ShouldBeRefused()
+    {
+        var upcoming = await CreateAsync("Upcoming sprint to move back", 1500);
+
+        using var past = await Api.PatchJsonAsync($"api/sprints/{upcoming.Id}", new SprintUpdate(null, Today.AddDays(-4000), Today.AddDays(-3990), null));
+
+        var error = await ApiClient.ReadApiErrorAsync(past, HttpStatusCode.BadRequest);
+        error.Code.ShouldBe(ApiErrorCodes.Validation);
+        error.Error.ShouldBe("A sprint can't be moved to end in the past.");
+    }
+
+    [Test]
+    public async Task Capacity_WhenPutWithMembersAndNoVelocity_ShouldBeRefused()
+    {
+        var created = await CreateAsync("Capacity without velocity", 1800);
+
+        using var response = await Api.PutJsonAsync($"api/sprints/{created.Id}/capacity", new SprintCapacityPut([new MemberCapacityPut(SeedIds.Users.Tom, 5, null)], null));
+
+        var error = await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.BadRequest);
+        error.Code.ShouldBe(ApiErrorCodes.Validation);
+        error.Error.ShouldBe("Capacity needs a velocity.");
+    }
+
+    [Test]
+    public async Task Capacity_WhenPut_ShouldComputePointsRoundTripAndPublishSprintChanged()
     {
         var created = await CreateAsync("Capacity sprint", 900);
         using var watch = Watch();
 
-        using var response = await Api.PutJsonAsync($"api/sprints/{created.Id}/capacity", new SprintCapacityPut([new MemberCapacityPut(SeedIds.Users.Priya, 6, "half day"), new MemberCapacityPut(SeedIds.Users.Tom, 4.5m, null)]));
+        using var response = await Api.PutJsonAsync($"api/sprints/{created.Id}/capacity", new SprintCapacityPut([new MemberCapacityPut(SeedIds.Users.Priya, null, "half day"), new MemberCapacityPut(SeedIds.Users.Tom, 5, null)], 30));
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
         var read = await Api.GetAsync<SprintCapacityDto>($"api/sprints/{created.Id}/capacity");
-        read.TeamTotal.ShouldBe(10.5m);
+        read.Velocity.ShouldBe(30m);
+        read.WorkingDays.ShouldBe(10);
+        read.TeamTotal.ShouldBe(22.5m);
+        read.Members.Single(m => m.User.Id == SeedIds.Users.Priya).Points.ShouldBe(15m);
         read.Members.Single(m => m.User.Id == SeedIds.Users.Priya).Note.ShouldBe("half day");
+        read.Members.Single(m => m.User.Id == SeedIds.Users.Tom).Days.ShouldBe(5m);
+        read.Members.Single(m => m.User.Id == SeedIds.Users.Tom).Points.ShouldBe(7.5m);
+        read.Ended.ShouldBeFalse();
         (await watch.NextAsync<SprintChanged>(e => e.SprintId == created.Id)).ProjectId.ShouldBe(SeedIds.Projects.Ship);
+    }
+
+    [Test]
+    public async Task Capacity_WhenProjectCountryHasHolidaysInTheSprint_ShouldLowerTheDefaultDays()
+    {
+        var created = await CreateAsync("Holiday sprint", 1000);
+        var days = Enumerable.Range(0, 14).Select(created.StartDate.AddDays).ToList();
+        var weekday = days.First(d => d.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday));
+        var weekend = days.First(d => d.DayOfWeek is DayOfWeek.Sunday);
+        await using var connection = await OpenDatabaseAsync();
+        await connection.ExecuteAsync("INSERT INTO holiday_country (code, name) VALUES ('NZ', 'New Zealand') ON CONFLICT (code) DO NOTHING");
+        await connection.ExecuteAsync(
+            "INSERT INTO public_holiday (country_code, date, name) VALUES ('NZ', @weekday, 'Weekday holiday'), ('NZ', @weekend, 'Sunday holiday') ON CONFLICT DO NOTHING", new { weekday, weekend });
+        await connection.ExecuteAsync("UPDATE project SET holiday_country = 'NZ' WHERE id = @id", new { id = SeedIds.Projects.Ship });
+        try
+        {
+            using var response = await Api.PutJsonAsync($"api/sprints/{created.Id}/capacity", new SprintCapacityPut([new MemberCapacityPut(SeedIds.Users.Priya, null, null)], 20));
+
+            response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+            var read = await response.ReadAsync<SprintCapacityDto>();
+            read.HolidayCountry.ShouldBe("NZ");
+            read.Holidays.ShouldBe([new CapacityHolidayDto(weekday, "Weekday holiday", DisplayDate.WeekdayDay(weekday))]);
+            read.WorkingDays.ShouldBe(10);
+            read.DefaultDays.ShouldBe(9);
+            read.Members.Single().Points.ShouldBe(18m);
+        }
+        finally
+        {
+            await connection.ExecuteAsync("UPDATE project SET holiday_country = NULL WHERE id = @id", new { id = SeedIds.Projects.Ship });
+        }
+    }
+
+    [Test]
+    public async Task Capacity_WhenSprintEnded_ShouldRefuseThePut()
+    {
+        using var response = await Api.PutJsonAsync($"api/sprints/{SeedIds.Sprints.Sprint19}/capacity", new SprintCapacityPut([new MemberCapacityPut(SeedIds.Users.Priya, null, null)], 30));
+
+        var error = await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.BadRequest);
+        error.Code.ShouldBe(ApiErrorCodes.Validation);
+        error.Error.ShouldBe("An ended sprint's capacity can't change.");
     }
 
     [Test]

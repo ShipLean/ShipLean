@@ -1,5 +1,11 @@
 import { useEffect } from 'react';
-import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { api } from '../../api/client';
 import type { WorkItemChanges, WorkItemDto } from '../../api/workItems';
 import type {
@@ -39,8 +45,15 @@ export const sprintCapacityKey = (projectId: string, sprintId: string) =>
 export const fetchVelocity = (projectId: string) =>
   api.get<VelocityDto>(`${projectPath(projectId)}/velocity`);
 
-export const fetchNextSprint = (projectId: string) =>
-  api.get<SprintCreate>(`${projectPath(projectId)}/sprints/next`);
+/** With a range, the name is the one a sprint with those dates would get. */
+export const fetchNextSprint = (projectId: string, range?: { start: string; end: string }) =>
+  api.get<SprintCreate>(
+    `${projectPath(projectId)}/sprints/next${
+      range === undefined
+        ? ''
+        : `?start=${encodeURIComponent(range.start)}&end=${encodeURIComponent(range.end)}`
+    }`,
+  );
 
 export const fetchSprintMetrics = (sprintId: string) =>
   api.get<SprintMetricsDto>(`/api/sprints/${encodeURIComponent(sprintId)}/metrics`);
@@ -65,7 +78,8 @@ const WIDE_FIGURE_EVENTS = [
 export function useSprintsRealtime(projectId: string) {
   const queryClient = useQueryClient();
   useEffect(() => {
-    // A sprint event names its sprint, so only that sprint's figures go stale; the others carry no sprint.
+    // A sprint event names its sprint, so only that sprint's metrics go stale. Capacity is refetched for every sprint: a
+    // sprint's calendar and velocity default also follow holidays and the sprint before it.
     const refetch = (sprintId?: string) => {
       void queryClient.invalidateQueries({ queryKey: projectSprintsKey(projectId) });
       void queryClient.invalidateQueries({ queryKey: velocityKey(projectId) });
@@ -75,12 +89,7 @@ export function useSprintsRealtime(projectId: string) {
             ? ['projects', projectId, 'sprint-metrics']
             : sprintMetricsKey(projectId, sprintId),
       });
-      void queryClient.invalidateQueries({
-        queryKey:
-          sprintId === undefined
-            ? ['projects', projectId, 'sprint-capacity']
-            : sprintCapacityKey(projectId, sprintId),
-      });
+      void queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'sprint-capacity'] });
     };
     const unregister = [
       registerInvalidation('sprintChanged', (event) => refetch(event.sprintId)),
@@ -131,6 +140,24 @@ export function useNextSprint(projectId: string) {
   });
 }
 
+/**
+ * The name the server would give a sprint with these dates. Off until the range is valid; the last answer stays
+ * while the next one loads, so the field does not blink.
+ */
+export function useSuggestedSprintName(
+  projectId: string,
+  range: { start: string; end: string },
+  enabled: boolean,
+) {
+  const valid = range.start !== '' && range.end !== '' && range.end >= range.start;
+  return useQuery({
+    queryKey: [...nextSprintKey(projectId), range.start, range.end],
+    queryFn: () => fetchNextSprint(projectId, range),
+    enabled: enabled && valid,
+    placeholderData: keepPreviousData,
+  });
+}
+
 /** Creates a sprint, then refreshes the list (and with it the defaults and every figure that follows the list). */
 export function useCreateSprint(projectId: string) {
   const queryClient = useQueryClient();
@@ -152,6 +179,31 @@ export const fetchProjectItems = (projectId: string) =>
 
 export const updateSprint = (sprintId: string, update: SprintUpdate) =>
   api.patch<SprintDto>(`/api/sprints/${encodeURIComponent(sprintId)}`, update);
+
+/**
+ * Saves the sprint's name, dates and goal. The sprint list feeds the header and the rows; new dates also move the
+ * burndown (metrics), the backlog's planning sections and the sprint items, so those are refetched directly (a tab
+ * ignores its own events).
+ */
+export function useUpdateSprint(projectId: string, sprintId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (update: SprintUpdate) => updateSprint(sprintId, update),
+    onSuccess: async (saved) => {
+      await Promise.all(
+        [
+          projectSprintsKey(projectId),
+          velocityKey(projectId),
+          sprintItemsKey(projectId),
+          backlogRootKey(projectId),
+          ['projects', projectId, 'sprint-metrics'],
+          ['projects', projectId, 'sprint-capacity'],
+        ].map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+      );
+      showToast(`Saved ${saved.name}`, { tone: 'ok' });
+    },
+  });
+}
 
 /** Refetches the Sprint backlog's items and figures when another tab or person changes a work item, the states or the order. */
 export function useSprintBacklogRealtime(projectId: string) {

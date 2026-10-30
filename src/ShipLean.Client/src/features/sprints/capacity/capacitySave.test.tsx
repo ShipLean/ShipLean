@@ -22,7 +22,18 @@ vi.mock('../../../api/client', async (original) => ({
 const { useSaveSprintCapacity } = await import('../sprintsApi');
 
 const projectId = 'p1';
-const saved: SprintCapacityDto = { sprintId: 's1', teamTotal: 0, members: [] };
+const saved: SprintCapacityDto = {
+  sprintId: 's1',
+  teamTotal: 0,
+  members: [],
+  velocity: null,
+  velocityDefault: 0,
+  workingDays: 10,
+  defaultDays: 10,
+  holidays: [],
+  holidayCountry: null,
+  ended: false,
+};
 let root: Root;
 let host: HTMLElement;
 
@@ -36,7 +47,7 @@ function Screen() {
     queryFn: () => api.get('/sprints'),
   });
   const save = useSaveSprintCapacity(projectId, 's1');
-  return <button type="button" onClick={() => save.mutate({ members: [] })} />;
+  return <button type="button" onClick={() => save.mutate({ velocity: null, members: [] })} />;
 }
 
 beforeEach(async () => {

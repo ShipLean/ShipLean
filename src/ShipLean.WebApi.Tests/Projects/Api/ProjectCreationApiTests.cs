@@ -32,6 +32,18 @@ public class ProjectCreationApiTests : ApiFixture
     }
 
     [Test]
+    public async Task Create_WhenNewOrCopied_ShouldNameSprintsByQuarterOrCopyTheSource()
+    {
+        await using var connection = await OpenDatabaseAsync();
+
+        var fresh = await CreateAsync(Request(NextKey()));
+        var copy = await CreateAsync(Request(NextKey(), SeedIds.Projects.Ship));
+
+        (await connection.QuerySingleAsync<string>("SELECT sprint_naming FROM project WHERE id = @id", new { id = fresh.Id })).ShouldBe("yearQuarterNumber");
+        (await connection.QuerySingleAsync<string>("SELECT sprint_naming FROM project WHERE id = @id", new { id = copy.Id })).ShouldBe("number");
+    }
+
+    [Test]
     public async Task Create_WhenCopiedFromProject_ShouldCopySettingsOnly()
     {
         await using var connection = await OpenDatabaseAsync();

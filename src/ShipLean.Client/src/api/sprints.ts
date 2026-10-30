@@ -34,8 +34,19 @@ export interface SprintUpdate {
   goal: string | null;
 }
 
+/** A public holiday inside a sprint (C#: ShipLean.Contracts.Sprints.CapacityHolidayDto). */
+export interface CapacityHolidayDto {
+  date: string;
+  name: string;
+  /** The server-formatted day, e.g. "Thu 25 Dec". */
+  label: string;
+}
+
 export interface MemberCapacityDto {
   user: UserRef;
+  /** What was typed; null means the sprint's `defaultDays`. */
+  days: number | null;
+  /** Stored capacity: velocity / members * days / workingDays, rounded to 2 decimals (half away from zero), at most 9999.99. */
   points: number;
   note: string | null;
 }
@@ -44,16 +55,33 @@ export interface SprintCapacityDto {
   sprintId: string;
   /** Only the entered rows: a member with no entry is absent and the sprint falls back to velocity. */
   members: MemberCapacityDto[];
+  /** The sum of the members' points. */
   teamTotal: number;
+  /** The stored velocity; null on an old points-only sprint. */
+  velocity: number | null;
+  /** What a new entry starts from: the latest earlier sprint's velocity, else the override, else the average, to 1 decimal. */
+  velocityDefault: number;
+  /** W: the sprint's dates on the project's working weekdays, holidays not removed. */
+  workingDays: number;
+  /** W minus the holidays on working days. */
+  defaultDays: number;
+  /** The country's holidays inside the sprint that fall on working weekdays. */
+  holidays: CapacityHolidayDto[];
+  holidayCountry: string | null;
+  /** An ended sprint's capacity is read-only. */
+  ended: boolean;
 }
 
 export interface MemberCapacityPut {
   userId: string;
-  points: number;
+  /** 0..workingDays in steps of 0.5; null means the sprint's default. */
+  days: number | null;
   note: string | null;
 }
 
 export interface SprintCapacityPut {
+  /** 0..9999.99, two decimals. Required when `members` is not empty. */
+  velocity: number | null;
   members: MemberCapacityPut[];
 }
 

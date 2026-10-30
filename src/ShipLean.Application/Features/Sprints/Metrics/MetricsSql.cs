@@ -129,7 +129,7 @@ internal static class MetricsSql
         """;
 
     public const string SelectProject =
-        "SELECT velocity_window AS velocityWindow, velocity_override AS velocityOverride, array_to_string(working_days, ',') AS workingDays FROM project WHERE id = @projectId";
+        "SELECT velocity_window AS velocityWindow, velocity_override AS velocityOverride, array_to_string(working_days, ',') AS workingDays, sprint_naming AS naming FROM project WHERE id = @projectId";
 
     public const string EndedSprints =
         """
@@ -146,7 +146,7 @@ internal static class MetricsSql
     // of the stories and bugs sitting in each now.
     public const string ForecastSprints =
         """
-        SELECT sp.id, sp.name, to_char(sp.start_date, 'YYYY-MM-DD') AS startDate,
+        SELECT sp.id, sp.name, to_char(sp.start_date, 'YYYY-MM-DD') AS startDate, to_char(sp.end_date, 'YYYY-MM-DD') AS endDate,
                (SELECT sum(c.capacity_points) FROM sprint_capacity c WHERE c.sprint_id = sp.id AND c.archived_at IS NULL)::numeric AS capacity,
                (SELECT coalesce(sum(w.story_points), 0) FROM work_item w
                  WHERE w.sprint_id = sp.id AND w.type IN ('story', 'bug'))::numeric AS planned

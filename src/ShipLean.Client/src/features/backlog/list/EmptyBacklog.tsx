@@ -44,7 +44,7 @@ export function EmptyBacklog({
         <span className="text-[length:var(--text-xs)] text-ink-muted">
           No sprints yet either.{' '}
           <Link data-testid={ids.emptySprint} to={routePath('sprints', { key: projectKey })}>
-            Create Sprint 1
+            Create a sprint
           </Link>
         </span>
       ) : null}

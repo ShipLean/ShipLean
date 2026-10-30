@@ -10,39 +10,38 @@ namespace ShipLean.AcceptanceTests.Lanes.Sprints.Capacity;
 public class CapacityCopyTests : SeededAcceptanceTest
 {
     [Test]
-    public async Task Capacity_WhenCopied_ShouldFillFromPreviousSprint()
+    public async Task Capacity_WhenCopied_ShouldFillTheTableFromPreviousSprint()
     {
         var previous = await EntriesAsync(Page, SeedIds.Sprints.Sprint23);
         previous.Length.ShouldBeGreaterThan(0);
-        var members = await MemberNamesAsync(Page, "SHIP");
+        var (_, defaultDays) = await CalendarAsync(Page, SeedIds.Sprints.Sprint24);
         var capacity = new CapacityPage(Page);
         await capacity.OpenAsync("SHIP", SeedIds.Sprints.Sprint24);
         await Expect(capacity.Copy).ToHaveTextAsync("Copy from Sprint 23");
 
-        // Empty the rows first, so what fills them has to come from the copy.
+        // Empty the table first, so what fills it has to come from the copy.
         await capacity.Clear.ClickAsync();
-        foreach (var member in members)
-        {
-            await Expect(capacity.Points(member)).ToHaveValueAsync(string.Empty);
-        }
+        await Expect(capacity.Rows).ToHaveCountAsync(0);
+        await Expect(capacity.Empty).ToContainTextAsync("No capacity entered: planning uses velocity");
 
         await capacity.Copy.ClickAsync();
 
+        await Expect(capacity.Rows).ToHaveCountAsync(previous.Length);
         foreach (var entry in previous)
         {
-            await Expect(capacity.Points(entry.Member)).ToHaveValueAsync($"{entry.Points:0.##}");
+            await Expect(capacity.Days(entry.Member)).ToHaveValueAsync(entry.Days is { } typed ? $"{typed:0.#}" : "");
+            if (entry.Days is null)
+            {
+                await Expect(capacity.Days(entry.Member)).ToHaveAttributeAsync("placeholder", $"{defaultDays}");
+            }
         }
 
-        foreach (var member in members.Except(previous.Select(e => e.Member)))
-        {
-            await Expect(capacity.Points(member)).ToHaveValueAsync(string.Empty);
-        }
-
-        await Expect(capacity.Total).ToHaveTextAsync($"{previous.Sum(e => e.Points):0.##}");
+        // The seeded sprints carry no velocity, so the one the team types is saved with the days.
+        await capacity.Velocity.FillAsync("30");
         (await capacity.SaveAsync(SeedIds.Sprints.Sprint24)).Ok.ShouldBeTrue();
         await Expect(capacity.SaveButton).ToBeDisabledAsync();
         var saved = await EntriesAsync(Page, SeedIds.Sprints.Sprint24);
-        saved.Select(e => (e.Member, e.Points))
-            .ShouldBe(previous.Select(e => (e.Member, e.Points)).ToArray(), ignoreOrder: true);
+        saved.Select(e => (e.Member, e.Days))
+            .ShouldBe(previous.Select(e => (e.Member, e.Days)).ToArray(), ignoreOrder: true);
     }
 }

@@ -203,10 +203,10 @@ internal sealed class SprintTools(
     }
 
     [McpServerTool(Name = "create_sprint"), McpScope(McpScopes.Plan)]
-    [Description("Create the next sprint. The name continues the last sprint's number, it starts the day after the last one ends and runs for the same length; each can be given instead. The goal is optional.")]
+    [Description("Create the next sprint. The name follows the project's naming convention ('2026 Q4 Sprint 3', or the last sprint's number plus one), it starts the day after the last one ends and runs for the same length; each can be given instead. The goal is optional.")]
     public async Task<CallToolResult> CreateSprint(
         [Description("The project key, such as SHIP. Needed when the user is in more than one project.")] string? project = null,
-        [Description("The sprint's name. Defaults to the last name with its number plus one.")] string? name = null,
+        [Description("The sprint's name. Defaults to the next name under the project's naming convention.")] string? name = null,
         [Description("First day, yyyy-MM-dd. Defaults to the day after the last sprint ends (today for a first sprint).")] string? start_date = null,
         [Description("Last day, yyyy-MM-dd. Defaults to the same length as the last sprint (14 days for a first sprint).")] string? end_date = null,
         [Description("What the sprint is for. Optional.")] string? goal = null,
@@ -222,7 +222,8 @@ internal sealed class SprintTools(
         var sprintName = name?.Trim();
         if (string.IsNullOrEmpty(sprintName))
         {
-            sprintName = last is null ? "Sprint 1" : SprintNames.Next(last.Name, last.Count);
+            var naming = await planReads.NamingAsync(resolved.Id, cancellationToken);
+            sprintName = SprintNames.Next(naming.Convention, start, end.DayNumber - start.DayNumber + 1, naming.LiveNames, last?.Name, last?.Count ?? 0);
         }
 
         var created = await sprintStore.CreateAsync(resolved.Id, new SprintCreate(sprintName, start, end, goal?.Trim() ?? string.Empty), null, cancellationToken);

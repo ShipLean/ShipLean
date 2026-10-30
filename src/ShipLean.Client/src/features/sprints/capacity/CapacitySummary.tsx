@@ -8,9 +8,13 @@ interface CapacitySummaryProps {
   sprintName: string;
   total: number;
   entered: boolean;
+  /** Old points with no velocity, and none typed yet. */
+  pointsOnly: boolean;
   committed: number;
-  /** The project's override, else the average of the last sprints. */
+  /** The project's override, else the average of the last sprints: what planning falls back to, and the history. */
   velocity: number;
+  /** The velocity typed for this sprint; undefined while the box is empty or invalid. */
+  typedVelocity: number | undefined;
   /** Whether `velocity` is the project's override rather than the average. */
   overridden: boolean;
   velocityWindow: number;
@@ -21,18 +25,17 @@ export function CapacitySummary({
   sprintName,
   total,
   entered,
+  pointsOnly,
   committed,
   velocity,
+  typedVelocity,
   overridden,
   velocityWindow,
 }: CapacitySummaryProps) {
   const capacity = entered ? total : velocity;
   const over = committed > capacity;
   return (
-    <aside
-      aria-label={`${sprintName} as a whole`}
-      className="grid content-start gap-3 border-t border-edge p-4 lg:w-80 lg:border-t-0 lg:border-l"
-    >
+    <aside aria-label={`${sprintName} as a whole`} className="panel grid content-start gap-3 p-4">
       <div className="text-[length:var(--text-xs)] font-semibold tracking-wide text-ink-muted uppercase">
         {sprintName} as a whole
       </div>
@@ -63,9 +66,12 @@ export function CapacitySummary({
         )}
       </div>
       <VelocityCallout
-        comparison={compareToVelocity(total, entered, velocity)}
+        comparison={compareToVelocity(typedVelocity, entered, velocity)}
+        typed={typedVelocity}
         velocity={velocity}
         overridden={overridden}
+        pointsOnly={pointsOnly}
+        entered={entered}
       />
     </aside>
   );

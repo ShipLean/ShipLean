@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using ShipLean.Application.Features.AgentDispatch;
+using ShipLean.Application.Features.Holidays;
 using ShipLean.Application.Features.Search.Index;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
@@ -98,6 +99,14 @@ public sealed class ShipLeanHost : IAsyncDisposable
             builder.ConfigureTestServices(services =>
             {
                 foreach (var descriptor in services.Where(d => d.ServiceType == typeof(IHostedService) && d.ImplementationType == typeof(SearchIndexHostedService)).ToList())
+                {
+                    services.Remove(descriptor);
+                }
+            });
+            // No holiday feed: the job would call the internet. A holiday test adds HolidayRefreshService back and points SHIPLEAN_HOLIDAYS_API_URL at a stub.
+            builder.ConfigureTestServices(services =>
+            {
+                foreach (var descriptor in services.Where(d => d.ServiceType == typeof(IHostedService) && d.ImplementationType == typeof(HolidayRefreshService)).ToList())
                 {
                     services.Remove(descriptor);
                 }

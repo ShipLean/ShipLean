@@ -21,6 +21,9 @@ export const settingsTestIds = {
   generalDescription: 'settings-general-description',
   generalKey: 'settings-general-key',
   generalNextNumber: 'settings-general-next-number',
+  holidaysPanel: 'settings-holidays-panel',
+  holidayCountry: 'settings-holiday-country',
+  holidaysUnavailable: 'settings-holidays-unavailable',
   workingDays: 'settings-working-days',
   workingDay1: 'settings-working-day-1',
   workingDay2: 'settings-working-day-2',
@@ -42,6 +45,8 @@ export const settingsTestIds = {
 
   sprintsPanel: 'settings-sprints-panel',
   sprintLength: 'settings-sprint-length',
+  sprintNaming: 'settings-sprint-naming',
+  sprintNamingHint: 'settings-sprint-naming-hint',
   velocityWindow: 'settings-velocity-window',
   velocityOverride: 'settings-velocity-override',
   velocityClear: 'settings-velocity-clear',

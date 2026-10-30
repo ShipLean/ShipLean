@@ -20,7 +20,7 @@ export interface NewProjectForm {
   /** yyyy-MM-dd, exactly as the date input holds it: the browser never reads it as a date. Used once the person has edited a date. */
   start: string;
   end: string;
-  /** Until a date is edited, Sprint 1 follows the server's defaults for the working days. */
+  /** Until a date is edited, the first sprint follows the server's defaults for the working days. */
   datesEdited: boolean;
 }
 
@@ -67,13 +67,13 @@ export function blocker(
   if (!keyAvailable) return 'Fix the key to continue';
   if (form.workingDays.length === 0) return 'Pick at least one working day';
   if (form.sprint && (sprintName === undefined || form.start === '' || form.end === ''))
-    return 'Pick the dates of Sprint 1';
-  if (form.sprint && form.end < form.start) return 'Sprint 1 cannot end before it starts';
+    return 'Pick the dates of the first sprint';
+  if (form.sprint && form.end < form.start) return 'The first sprint cannot end before it starts';
   if (form.from === 'copy' && form.copyFromId === null) return 'Pick a project to copy';
   return null;
 }
 
-/** The form with Sprint 1's dates filled from the server's defaults until the person edits one. */
+/** The form with the first sprint's dates filled from the server's defaults until the person edits one. */
 export function withSprintDefaults(
   form: NewProjectForm,
   defaults: SprintCreate | undefined,

@@ -81,7 +81,7 @@ test('useCapacityRealtime_WhenThisSprintChanged_ShouldRefetchItsCapacityNotTheMe
   expect(reads_('/members')).toBe(1);
 });
 
-test('useCapacityRealtime_WhenAnotherSprintChanged_ShouldLeaveThisCapacityAlone', async () => {
+test('useCapacityRealtime_WhenAnotherSprintChanged_ShouldRefetchThisCapacityToo', async () => {
   await deliver({ type: 'sprintChanged', sprintId: 's2' });
-  expect(reads_('/capacity')).toBe(1);
+  expect(reads_('/capacity')).toBe(2);
 });

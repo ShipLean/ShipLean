@@ -34,6 +34,8 @@ export interface ProjectDto {
   velocityWindow: number;
   velocityOverride: number | null;
   nextItemNumber: number;
+  /** ISO code of the country whose public holidays the project skips; null means None. Always present on a read. */
+  holidayCountry?: string | null;
 }
 
 export interface MemberDto {
@@ -68,12 +70,19 @@ export interface ProjectGeneralSettings {
   repoUrl: string | null;
   /** As saved: null means main. */
   repoBaseBranch: string | null;
+  /** ISO code of the country whose public holidays the project skips; null means None. */
+  holidayCountry: string | null;
   agentConnections: AgentConnectionOption[];
 }
+
+/** How the project names the sprints it makes by default; changing it renames nothing. */
+export type SprintNaming = 'yearQuarterNumber' | 'number';
 
 export interface ProjectForecastSettings {
   velocityWindow: number;
   velocityOverride: number | null;
+  /** Always present on a read; a save that leaves it out keeps the saved value. */
+  sprintNaming?: SprintNaming;
 }
 
 export interface ProjectSettingsDto {
@@ -87,10 +96,11 @@ export interface ProjectGeneralPut {
   name: string;
   description: string;
   workingDays: number[];
-  /** Null (or blank text) clears the agent fields. */
+  /** Null (or blank text) clears the agent fields and the holiday country (None). */
   agentConnectionId: string | null;
   repoUrl: string | null;
   repoBaseBranch: string | null;
+  holidayCountry: string | null;
 }
 
 export interface MemberPut {

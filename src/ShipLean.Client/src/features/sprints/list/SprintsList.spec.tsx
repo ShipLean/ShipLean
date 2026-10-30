@@ -60,10 +60,18 @@ const capacityOf = (sprintId: string, teamTotal: number | null): SprintCapacityD
       : [
           {
             user: { id: 'u1', name: 'Priya', initials: 'P', avatarColour: 'blue', photoUrl: null },
+            days: null,
             points: teamTotal,
             note: null,
           },
         ],
+  velocity: null,
+  velocityDefault: 0,
+  workingDays: 10,
+  defaultDays: 10,
+  holidays: [],
+  holidayCountry: null,
+  ended: false,
   teamTotal: teamTotal ?? 0,
 });
 

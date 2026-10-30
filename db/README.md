@@ -5,7 +5,7 @@ The app applies schema + migrations at startup (`SHIPLEAN_DB_MIGRATE`, default t
 
 Twenty tables, no others: `instance_settings` (one row), `app_user`, `user_preference`, `data_protection_key`, `project`,
 `project_member`, `state`, `work_item`, `work_item_link`, `sprint`, `sprint_capacity`, `board`, `comment`, `attachment`,
-`revision`, `jira_connection`, `import_job`, `import_mapping`, `import_error`, `import_log`.
+`revision`, `jira_connection`, `import_job`, `import_mapping`, `import_error`, `import_log`. Later migrations add more, such as `holiday_country` and `public_holiday` (public holidays by country, fetched by a background job).
 
 - Work item type is a `text` column (`epic|feature|story|bug|task`); tags are `work_item.tags text[]`.
 - Board columns, state mappings, swimlanes, card fields, style rules, tag colours and annotations live in `board.settings`
@@ -17,7 +17,7 @@ Twenty tables, no others: `instance_settings` (one row), `app_user`, `user_prefe
 - Enums are `text` + `CHECK` with the camelCase strings the persisted JSON uses.
 - `backlog_order` and `column_order` are `text COLLATE "C"` ranks; the seed uses zero-padded numbers.
 - Sprint status (past / current / future) is not stored: it is derived from the dates.
-- Nothing is hard-deleted: `archived_at` (comment, attachment, work_item_link, sprint, project_member, jira_connection) or the Removed state category.
+- Nothing is hard-deleted: `archived_at` (comment, attachment, work_item_link, sprint, project_member, jira_connection, public_holiday) or the Removed state category.
 
 ## Blobs (`blobs/`)
 

@@ -175,3 +175,79 @@ test('NewSprintRail_WhenDefaultsRefetchAfterAnEdit_ShouldKeepWhatThePersonHas', 
   await expect(page.getByTestId(ids.newSprintEnd)).toHaveValue('2026-12-11');
   await expect(page.getByTestId(ids.newSprintName)).toHaveValue('Sprint 27');
 });
+
+// GET next answers the defaults, or the name for the range it is asked about.
+async function stubNamed(page: Page, names: Record<string, string>): Promise<string[]> {
+  const asked: string[] = [];
+  await page.route('**/api/projects/p1/sprints/next**', (route) => {
+    const url = new URL(route.request().url());
+    const start = url.searchParams.get('start');
+    if (start === null) return route.fulfill({ json: sprint27 });
+    asked.push(`${start}..${url.searchParams.get('end')}`);
+    return route.fulfill({
+      json: { ...sprint27, name: names[start] ?? 'Unknown', startDate: start },
+    });
+  });
+  await page.route('**/api/projects/p1/sprints', (route) => route.fulfill({ json: [] }));
+  return asked;
+}
+
+test('NewSprintRail_WhenStartChangesAndNameUntouched_ShouldReplaceTheSuggestedName', async ({
+  mount,
+  page,
+}) => {
+  const asked = await stubNamed(page, { '2027-01-04': '2027 Q1 Sprint 1' });
+  await mount(<NewSprintRail projectId="p1" />);
+  await expect(page.getByTestId(ids.newSprintName)).toHaveValue('Sprint 27');
+
+  await page.getByTestId(ids.newSprintEnd).fill('2027-01-15');
+  await page.getByTestId(ids.newSprintStart).fill('2027-01-04');
+
+  await expect(page.getByTestId(ids.newSprintName)).toHaveValue('2027 Q1 Sprint 1');
+  expect(asked).toContain('2027-01-04..2027-01-15');
+});
+
+test('NewSprintRail_WhenNameTyped_ShouldKeepItThroughDateChanges', async ({ mount, page }) => {
+  const asked = await stubNamed(page, { '2027-01-04': '2027 Q1 Sprint 1' });
+  await mount(<NewSprintRail projectId="p1" />);
+  await expect(page.getByTestId(ids.newSprintName)).toHaveValue('Sprint 27');
+
+  await page.getByTestId(ids.newSprintName).fill('Hardening');
+  await page.getByTestId(ids.newSprintStart).fill('2027-01-04');
+
+  await expect(page.getByTestId(ids.newSprintStart)).toHaveValue('2027-01-04');
+  await expect(page.getByTestId(ids.newSprintName)).toHaveValue('Hardening');
+  expect(asked).toEqual([]);
+});
+
+test('NewSprintRail_WhenTheSuggestedNameIsStillLoading_ShouldKeepCreateOffUntilItArrives', async ({
+  mount,
+  page,
+}) => {
+  const posted: SprintCreate[] = [];
+  let release = () => {};
+  const held = new Promise<void>((resolve) => (release = resolve));
+  await page.route('**/api/projects/p1/sprints/next**', async (route) => {
+    const start = new URL(route.request().url()).searchParams.get('start');
+    if (start === null) return route.fulfill({ json: sprint27 });
+    await held;
+    return route.fulfill({ json: { ...sprint27, name: '2027 Q1 Sprint 1', startDate: start } });
+  });
+  await page.route('**/api/projects/p1/sprints', (route) => {
+    if (route.request().method() === 'POST') posted.push(route.request().postDataJSON());
+    return route.fulfill({ json: [] });
+  });
+  await mount(<NewSprintRail projectId="p1" />);
+  await expect(page.getByTestId(ids.newSprintName)).toHaveValue('Sprint 27');
+
+  await page.getByTestId(ids.newSprintStart).fill('2027-01-04');
+  await page.getByTestId(ids.newSprintEnd).fill('2027-01-15');
+  await expect(page.getByTestId(ids.newSprintSubmit)).toBeDisabled();
+
+  release();
+  await expect(page.getByTestId(ids.newSprintName)).toHaveValue('2027 Q1 Sprint 1');
+  await expect(page.getByTestId(ids.newSprintSubmit)).toBeEnabled();
+  await page.getByTestId(ids.newSprintSubmit).click();
+  await expect.poll(() => posted.length).toBe(1);
+  expect(posted[0]).toMatchObject({ name: '2027 Q1 Sprint 1', startDate: '2027-01-04' });
+});

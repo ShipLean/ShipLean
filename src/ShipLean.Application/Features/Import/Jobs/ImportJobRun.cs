@@ -155,6 +155,8 @@ public sealed class ImportJobRun(
 
         // The project is created only once Jira has answered, so a Jira that is down or refuses the token leaves no empty project behind.
         var projectId = job.ProjectId ?? await CreateProjectAsync(job, cancellationToken);
+        // A Jira-imported project names its next sprints by number, whether the run created it or the stepper did: its imported sprints are numbered.
+        await rows.UseNumberSprintNamingAsync(projectId, cancellationToken);
         await Notify(projectId, job.Id, ImportJobState.Running, progress);
         var tally = new Tally { Total = scan.Total, Sprints = scan.Sprints.Count };
 

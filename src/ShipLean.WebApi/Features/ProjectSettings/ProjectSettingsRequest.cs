@@ -14,5 +14,5 @@ public sealed record ProjectSettingsRequest(
     public ProjectSettingsPut ToPut()
         => General is null || Members is null || Sprints is null || States is null
             ? throw ApiException.Validation("The settings need General, Members, Sprints and States.")
-            : new ProjectSettingsPut(new ProjectGeneralPut(General.Name, General.Description, General.WorkingDays, General.AgentConnectionId, General.RepoUrl, General.RepoBaseBranch, General.Provided), Members, Sprints, States);
+            : new ProjectSettingsPut(new ProjectGeneralPut(General.Name, General.Description, General.WorkingDays, General.AgentConnectionId, General.RepoUrl, General.RepoBaseBranch, General.HolidayCountry, General.Provided), Members, Sprints, States);
 }

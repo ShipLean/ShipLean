@@ -3,6 +3,7 @@ using ShipLean.Contracts;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Sprints;
 using ShipLean.Core;
+using ShipLean.Core.Sprints;
 
 namespace ShipLean.Application.Fakes.Projects;
 
@@ -19,7 +20,9 @@ public sealed class InMemoryPlanning(TimeProvider? clock = null)
         public string Description { get; set; } = string.Empty;
         internal List<int> WorkingDays { get; set; } = [1, 2, 3, 4, 5];
         public int VelocityWindow { get; set; } = 3;
+        public SprintNamingConvention SprintNaming { get; set; } = SprintNamingConvention.Number;
         public decimal? VelocityOverride { get; set; }
+        public string? HolidayCountry { get; set; }
         public int NextItemNumber { get; set; } = 1;
         internal Dictionary<Guid, ProjectRole> Members { get; } = [];
     }
@@ -44,7 +47,8 @@ public sealed class InMemoryPlanning(TimeProvider? clock = null)
         public DateOnly End { get; set; }
         public string Goal { get; set; } = string.Empty;
         public RolloverStatus? Rollover { get; set; }
-        internal Dictionary<Guid, (decimal Points, string? Note, bool Archived)> Capacity { get; } = [];
+        public decimal? Velocity { get; set; }
+        internal Dictionary<Guid, (decimal Points, string? Note, bool Archived, decimal? Days)> Capacity { get; } = [];
     }
 
     internal sealed class ItemRow
@@ -228,7 +232,7 @@ public sealed class InMemoryPlanning(TimeProvider? clock = null)
             var sprint = this.Sprint(sprintId);
             var user = AddUser($"Member {Users.Count + 1}", $"member{Users.Count + 1}@example.test");
             this.Project(sprint.ProjectId).Members[user] = ProjectRole.Member;
-            sprint.Capacity[user] = (points, null, false);
+            sprint.Capacity[user] = (points, null, false, null);
         }
     }
 
@@ -293,6 +297,46 @@ public sealed class InMemoryPlanning(TimeProvider? clock = null)
         lock (Gate)
         {
             this.Project(projectId).VelocityOverride = value;
+        }
+    }
+
+    public void SetSprintNaming(Guid projectId, SprintNamingConvention naming)
+    {
+        lock (Gate)
+        {
+            this.Project(projectId).SprintNaming = naming;
+        }
+    }
+
+    // The country whose holidays the project's sprints skip (null = None); the holidays themselves live in the IPublicHolidays the fake store is given.
+    public void SetHolidayCountry(Guid projectId, string? code)
+    {
+        lock (Gate)
+        {
+            this.Project(projectId).HolidayCountry = code?.ToUpperInvariant();
+        }
+    }
+
+    public void SetWorkingDays(Guid projectId, IEnumerable<int> days)
+    {
+        lock (Gate)
+        {
+            this.Project(projectId).WorkingDays = [.. days.Order()];
+        }
+    }
+
+    // A sprint's stored capacity as the save left it (velocity null: an old points-only sprint), for arranging past states.
+    public void SetStoredCapacity(Guid sprintId, decimal? velocity, IEnumerable<(Guid UserId, decimal? Days, decimal Points)> rows)
+    {
+        lock (Gate)
+        {
+            var sprint = this.Sprint(sprintId);
+            sprint.Velocity = velocity;
+            sprint.Capacity.Clear();
+            foreach (var (userId, days, points) in rows)
+            {
+                sprint.Capacity[userId] = (points, null, false, days);
+            }
         }
     }
 }

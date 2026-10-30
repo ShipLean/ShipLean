@@ -3,6 +3,7 @@ using ShipLean.Application.Fakes.Sprints;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Projects;
+using ShipLean.Core.Sprints;
 
 namespace ShipLean.Application.Fakes.Projects;
 
@@ -32,6 +33,8 @@ public sealed partial class InMemoryProjectFactory(InMemoryPlanning world, ICurr
             // A copy keeps the source project's working days and ignores the ones in the request.
             project.WorkingDays = [.. (source?.WorkingDays ?? [.. create.WorkingDays]).Order()];
             project.VelocityWindow = source?.VelocityWindow ?? project.VelocityWindow;
+            project.SprintNaming = source?.SprintNaming ?? SprintNamingConvention.YearQuarterNumber;
+            project.HolidayCountry = source?.HolidayCountry;
             project.Members[currentUser.Id] = ProjectRole.Admin;
             foreach (var member in members.Where(m => m.Id != currentUser.Id))
             {
@@ -47,7 +50,7 @@ public sealed partial class InMemoryProjectFactory(InMemoryPlanning world, ICurr
             }
             return Task.FromResult(new ProjectDto(
                 id, project.Key, project.Name, project.Description, ProjectRole.Admin, project.Members.Count, project.WorkingDays,
-                project.VelocityWindow, project.VelocityOverride, project.NextItemNumber));
+                project.VelocityWindow, project.VelocityOverride, project.NextItemNumber, project.HolidayCountry));
         }
     }
 

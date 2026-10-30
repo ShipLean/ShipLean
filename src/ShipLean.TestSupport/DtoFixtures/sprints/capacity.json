@@ -2,10 +2,17 @@
   "capacity": {
     "sprintId": "00000004-0000-4000-8001-000000000024",
     "members": [
-      { "user": { "id": "00000001-0000-4000-8000-000000000002", "name": "Priya Shah", "initials": "PS", "avatarColour": "#2f7fd8", "photoUrl": null }, "points": 6, "note": null },
-      { "user": { "id": "00000001-0000-4000-8000-000000000004", "name": "Mei Chen", "initials": "MC", "avatarColour": "#c9772b", "photoUrl": null }, "points": 5, "note": "Away Friday" }
+      { "user": { "id": "00000001-0000-4000-8000-000000000002", "name": "Priya Shah", "initials": "PS", "avatarColour": "#2f7fd8", "photoUrl": null }, "days": null, "points": 13.5, "note": null },
+      { "user": { "id": "00000001-0000-4000-8000-000000000004", "name": "Mei Chen", "initials": "MC", "avatarColour": "#c9772b", "photoUrl": null }, "days": 5, "points": 7.5, "note": "Away Friday" }
     ],
-    "teamTotal": 11
+    "teamTotal": 21,
+    "velocity": 30,
+    "velocityDefault": 28.5,
+    "workingDays": 10,
+    "defaultDays": 9,
+    "holidays": [{ "date": "2026-11-04", "name": "Mid-week holiday", "label": "Wed 4 Nov" }],
+    "holidayCountry": "NZ",
+    "ended": false
   },
-  "put": { "members": [{ "userId": "00000001-0000-4000-8000-000000000002", "points": 6, "note": null }] }
+  "put": { "velocity": 30, "members": [{ "userId": "00000001-0000-4000-8000-000000000002", "days": null, "note": null }, { "userId": "00000001-0000-4000-8000-000000000004", "days": 5, "note": "Away Friday" }] }
 }

@@ -2,6 +2,7 @@ using ShipLean.Application.Fakes.Metrics;
 using ShipLean.Application.Fakes.Projects;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Sprints;
+using ShipLean.Core.Sprints;
 using ShipLean.TestSupport.Contracts.Metrics;
 
 namespace ShipLean.UnitTest.Contracts.Metrics;
@@ -61,6 +62,12 @@ public sealed class InMemorySprintMetricsContractTests : SprintMetricsContract
     protected override Task SetVelocityOverrideAsync(Guid projectId, decimal? value)
     {
         _world.SetVelocityOverride(projectId, value);
+        return Task.CompletedTask;
+    }
+
+    protected override Task SetSprintNamingAsync(Guid projectId, SprintNamingConvention naming)
+    {
+        _world.SetSprintNaming(projectId, naming);
         return Task.CompletedTask;
     }
 }

@@ -9,7 +9,7 @@ using ShipLean.WebApi.Tests.Sprints.Api;
 
 namespace ShipLean.WebApi.Tests.Projects.Api;
 
-// The New project form's Sprint 1, with the clock pinned to a Saturday (24 October 2026); one host per class, so every case reads the same day.
+// The New project form's first sprint, named for the year and quarter, with the clock pinned to a Saturday (24 October 2026); one host per class, so every case reads the same day.
 [TestFixture]
 public class FirstSprintApiTests : ApiFixture
 {
@@ -31,7 +31,25 @@ public class FirstSprintApiTests : ApiFixture
     {
         var sprint = await Api.GetAsync<SprintCreate>("api/projects/first-sprint?workingDays=6,7");
 
-        sprint.ShouldBe(new SprintCreate("Sprint 1", new DateOnly(2026, 10, 24), new DateOnly(2026, 11, 6), string.Empty));
+        sprint.ShouldBe(new SprintCreate("2026 Q4 Sprint 2", new DateOnly(2026, 10, 24), new DateOnly(2026, 11, 6), string.Empty));
+    }
+
+    [Test]
+    public async Task FirstSprint_WhenStartIsGiven_ShouldNameTheSprintAfterItsQuarter()
+    {
+        var q1 = await Api.GetAsync<SprintCreate>("api/projects/first-sprint?workingDays=1,2,3,4,5&start=2027-01-04");
+        var q2 = await Api.GetAsync<SprintCreate>("api/projects/first-sprint?workingDays=1,2,3,4,5&start=2027-04-19&end=2027-04-25");
+
+        q1.ShouldBe(new SprintCreate("2027 Q1 Sprint 1", new DateOnly(2027, 1, 4), new DateOnly(2027, 1, 17), string.Empty));
+        q2.ShouldBe(new SprintCreate("2027 Q2 Sprint 3", new DateOnly(2027, 4, 19), new DateOnly(2027, 4, 25), string.Empty));
+    }
+
+    [Test]
+    public async Task FirstSprint_WhenEndIsBeforeStart_ShouldBeRefused()
+    {
+        using var response = await Api.GetAsync("api/projects/first-sprint?workingDays=1&start=2027-01-10&end=2027-01-09");
+
+        (await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.BadRequest)).Code.ShouldBe(ApiErrorCodes.Validation);
     }
 
     [Test]

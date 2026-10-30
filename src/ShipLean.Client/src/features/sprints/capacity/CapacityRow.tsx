@@ -1,48 +1,117 @@
-import type { MemberDto } from '../../../api/projects';
+import type { UserRef } from '../../../api/refs';
 import { Avatar } from '../../../components/Avatar';
 import { sprintsTestIds as ids } from '../testIds';
-import type { DraftRow } from './capacityDraft';
+import type { CapacityShape, DraftRow } from './capacityDraft';
 
-interface CapacityRowProps {
-  member: MemberDto;
+/** One line of the table: who, and what the sprint holds for them. */
+export interface CapacityLine {
+  user: UserRef;
   row: DraftRow;
-  onChange: (row: DraftRow) => void;
+  /** Their capacity; undefined while the velocity or their days cannot be read. */
+  points: number | undefined;
 }
 
-/** One member: who, their points for this sprint, and a note that explains a low number. */
-export function CapacityRow({ member, row, onChange }: CapacityRowProps) {
-  const { user } = member;
+interface CapacityRowProps {
+  line: CapacityLine;
+  shape: CapacityShape;
+  /** An ended sprint: stored values as text, nothing to edit. */
+  readOnly: boolean;
+  onChange: (row: DraftRow) => void;
+  onRemove: () => void;
+}
+
+export const cell = 'px-3 py-1.5 align-middle';
+const small = 'text-[length:var(--text-xs)] text-ink-muted';
+
+/** One member: who, their days (the default until typed over), the capacity those days give and a note. */
+export function CapacityRow({ line, shape, readOnly, onChange, onRemove }: CapacityRowProps) {
+  const { user, row, points } = line;
+  const isDefault = row.days === '';
   return (
-    <tr data-testid={ids.capacityRow}>
-      <td>
-        <div className="flex items-center gap-2">
+    <tr data-testid={ids.capacityRow} className="border-t border-edge">
+      <td className={cell}>
+        <div className="flex min-w-0 items-center gap-2">
           <Avatar {...user} />
-          {user.name}
+          <span className="truncate">{user.name}</span>
         </div>
       </td>
-      <td className="num">
-        <input
-          data-testid={ids.capacityPoints}
-          className="field w-20 text-right tabular-nums"
-          type="number"
-          min={0}
-          step="any"
-          inputMode="decimal"
-          placeholder="—"
-          aria-label={`Capacity points for ${user.name}`}
-          value={row.points}
-          onChange={(event) => onChange({ ...row, points: event.target.value })}
-        />
+      <td className={cell}>
+        <div className="flex flex-col items-end gap-0.5">
+          {readOnly ? (
+            <>
+              {/* A null days is "the default" of the calendar when it was stored; today's calendar may not match, so no number. */}
+              <span data-testid={ids.capacityDays} className="tabular-nums">
+                {isDefault ? 'default' : row.days}
+              </span>
+            </>
+          ) : (
+            <>
+              <input
+                data-testid={ids.capacityDays}
+                className="field w-16 text-right tabular-nums"
+                type="number"
+                min={0}
+                max={shape.workingDays}
+                step={0.5}
+                inputMode="decimal"
+                aria-label={`Days available for ${user.name}`}
+                placeholder={`${shape.defaultDays}`}
+                value={row.days}
+                onChange={(event) => onChange({ ...row, days: event.target.value })}
+              />
+              {isDefault ? (
+                <span data-testid={ids.capacityDaysDefault} className={small}>
+                  default
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  data-testid={ids.capacityDaysReset}
+                  className="rounded-control text-[length:var(--text-xs)] text-signal underline"
+                  title={`Back to the default of ${shape.defaultDays} days`}
+                  aria-label={`Reset days for ${user.name} to the default`}
+                  onClick={() => onChange({ ...row, days: '' })}
+                >
+                  reset
+                </button>
+              )}
+            </>
+          )}
+        </div>
       </td>
-      <td>
-        <input
-          data-testid={ids.capacityNote}
-          className="field w-full"
-          placeholder="Optional, e.g. Off Thu–Fri"
-          aria-label={`Note for ${user.name}`}
-          value={row.note}
-          onChange={(event) => onChange({ ...row, note: event.target.value })}
-        />
+      <td className={`${cell} text-right tabular-nums`}>
+        <span data-testid={ids.capacityPoints}>{points ?? '—'}</span>
+        <span className="ml-1 text-ink-muted">pts</span>
+      </td>
+      <td className={cell}>
+        {readOnly ? (
+          <span data-testid={ids.capacityNote} className="text-ink-muted">
+            {row.note}
+          </span>
+        ) : (
+          <input
+            data-testid={ids.capacityNote}
+            className="field w-full"
+            placeholder="Optional, e.g. Off Thu–Fri"
+            aria-label={`Note for ${user.name}`}
+            value={row.note}
+            onChange={(event) => onChange({ ...row, note: event.target.value })}
+          />
+        )}
+      </td>
+      <td className={`${cell} text-center`}>
+        {readOnly ? null : (
+          <button
+            type="button"
+            data-testid={ids.capacityRemove}
+            className="inline-flex size-7 items-center justify-center rounded-control text-ink-muted hover:bg-signal-soft hover:text-ink"
+            title={`Remove ${user.name} from this sprint's capacity`}
+            aria-label={`Remove ${user.name}`}
+            onClick={onRemove}
+          >
+            ×
+          </button>
+        )}
       </td>
     </tr>
   );

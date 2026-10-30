@@ -141,8 +141,15 @@ const metrics: SprintMetricsDto = {
 
 const capacity = (total: number | null): SprintCapacityDto => ({
   sprintId: 's24',
-  members: total === null ? [] : [{ user: priya, points: total, note: null }],
+  members: total === null ? [] : [{ user: priya, days: null, points: total, note: null }],
   teamTotal: total ?? 0,
+  velocity: null,
+  velocityDefault: 0,
+  workingDays: 10,
+  defaultDays: 10,
+  holidays: [],
+  holidayCountry: null,
+  ended: false,
 });
 
 const states = ['story', 'bug', 'task'].flatMap((type) =>

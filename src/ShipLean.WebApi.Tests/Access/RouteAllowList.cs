@@ -33,6 +33,7 @@ public static class RouteAllowList
         new("POST", "api/projects", "Not project-scoped: creating a project is gated by the instance's project_creation rule, and a copy needs membership of the source."),
         new("GET", "api/projects/key-check", "Not project-scoped: says whether a key is free, never naming another project."),
         new("GET", "api/projects/first-sprint", "Not project-scoped: the dates of a new project's Sprint 1, computed from today and the working days asked for."),
+        new("GET", "api/holidays/countries", "The country list for the Public holidays dropdown; not project data."),
         new("GET", "api/me/preferences/{key}", "The caller's own preference."),
         new("PUT", "api/me/preferences/{key}", "The caller's own preference."),
         new("POST", "api/me/preferences/reset-views", "The caller's own preferences."),

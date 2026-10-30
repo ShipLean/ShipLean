@@ -43,8 +43,15 @@ export const sprintsWithGoals: SprintDto[] = SHELL_SPRINTS.map((s) => ({
 
 const capacityOf = (sprintId: string, total: number | null): SprintCapacityDto => ({
   sprintId,
-  members: total === null ? [] : [{ user: priya, points: total, note: null }],
+  members: total === null ? [] : [{ user: priya, days: null, points: total, note: null }],
   teamTotal: total ?? 0,
+  velocity: null,
+  velocityDefault: 0,
+  workingDays: 10,
+  defaultDays: 10,
+  holidays: [],
+  holidayCountry: null,
+  ended: false,
 });
 
 const velocity: VelocityDto = {
@@ -255,22 +262,36 @@ export async function stubSprintBacklog(page: Page) {
 
 // ---- Capacity (design/screens/capacity.html) ----
 
-const entry = (user: UserRef, points: number, note: string | null): MemberCapacityDto => ({
+const entry = (
+  user: UserRef,
+  points: number,
+  days: number | null,
+  note: string | null,
+): MemberCapacityDto => ({
   user,
+  days,
   points,
   note,
 });
 
+// Velocity 25 over five people is 5 points each for a full sprint; Sam's 8 days and Ana's 5 scale their share.
 const capacitySprint24: SprintCapacityDto = {
   sprintId: SPRINT_24,
   members: [
-    entry(priya, 6, null),
-    entry(tom, 5, null),
-    entry(mei, 5, null),
-    entry(sam, 4, 'Off Thu–Fri'),
-    entry(ana, 3, 'Part-time this sprint'),
+    entry(priya, 5, null, null),
+    entry(tom, 5, null, null),
+    entry(mei, 5, null, null),
+    entry(sam, 4, 8, 'Off Thu–Fri'),
+    entry(ana, 2.5, 5, 'Part-time this sprint'),
   ],
-  teamTotal: 23,
+  teamTotal: 21.5,
+  velocity: 25,
+  velocityDefault: 25,
+  workingDays: 10,
+  defaultDays: 10,
+  holidays: [],
+  holidayCountry: null,
+  ended: false,
 };
 
 export async function stubCapacity(page: Page) {

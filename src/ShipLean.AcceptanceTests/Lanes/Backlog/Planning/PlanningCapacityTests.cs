@@ -17,7 +17,7 @@ public class PlanningCapacityTests : SeededAcceptanceTest
         var put = await Page.Context.APIRequest.PutAsync($"/api/sprints/{SeedIds.Sprints.Sprint24}/capacity", new APIRequestContextOptions
         {
             Headers = new Dictionary<string, string> { ["X-ShipLean-Client"] = "arrange" },
-            DataObject = new { members = new[] { new { userId = SeedIds.Users.Joel, points = 10, note = (string?)null } } },
+            DataObject = new { velocity = 10, members = new[] { new { userId = SeedIds.Users.Joel, days = (decimal?)null, note = (string?)null } } },
         });
         put.Ok.ShouldBeTrue(await put.TextAsync());
 

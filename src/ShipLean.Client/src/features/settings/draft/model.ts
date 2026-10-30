@@ -2,6 +2,7 @@ import type {
   ProjectRole,
   ProjectSettingsDto,
   ProjectSettingsPut,
+  SprintNaming,
   StateChanges,
   StateDto,
 } from '../../../api/projects';
@@ -32,9 +33,13 @@ export interface SettingsDraft {
   repoUrl: string;
   /** Empty means the default, main. */
   repoBaseBranch: string;
+  /** ISO code of the country whose public holidays the project skips; empty for None. */
+  holidayCountry: string;
   members: DraftMember[];
   velocityWindow: string;
   velocityOverride: string;
+  /** How the next default sprint name is made; existing sprints keep theirs. */
+  sprintNaming: SprintNaming;
   states: StateChanges;
 }
 
@@ -45,6 +50,7 @@ export type DraftField =
   | 'agentConnectionId'
   | 'repoUrl'
   | 'repoBaseBranch'
+  | 'holidayCountry'
   | 'velocityWindow'
   | 'velocityOverride'
   | `state-${string}`
@@ -75,6 +81,7 @@ export function toDraft(settings: ProjectSettingsDto): SettingsDraft {
     agentConnectionId: settings.general.agentConnectionId ?? '',
     repoUrl: settings.general.repoUrl ?? '',
     repoBaseBranch: settings.general.repoBaseBranch ?? '',
+    holidayCountry: settings.general.holidayCountry ?? '',
     members: settings.members.map((m) => ({
       email: m.email,
       user: m.user,
@@ -85,6 +92,7 @@ export function toDraft(settings: ProjectSettingsDto): SettingsDraft {
     velocityWindow: String(settings.sprints.velocityWindow),
     velocityOverride:
       settings.sprints.velocityOverride === null ? '' : String(settings.sprints.velocityOverride),
+    sprintNaming: settings.sprints.sprintNaming ?? 'number',
     states: noStateChanges(),
   };
 }
@@ -178,11 +186,13 @@ export function toPut(draft: SettingsDraft, parsed: ParsedDraft): ProjectSetting
       agentConnectionId: draft.agentConnectionId === '' ? null : draft.agentConnectionId,
       repoUrl: draft.repoUrl.trim() === '' ? null : draft.repoUrl.trim(),
       repoBaseBranch: draft.repoBaseBranch.trim() === '' ? null : draft.repoBaseBranch.trim(),
+      holidayCountry: draft.holidayCountry === '' ? null : draft.holidayCountry,
     },
     members: draft.members.filter((m) => !m.removed).map((m) => ({ email: m.email, role: m.role })),
     sprints: {
       velocityWindow: parsed.velocityWindow,
       velocityOverride: parsed.velocityOverride,
+      sprintNaming: draft.sprintNaming,
     },
     states: draft.states,
   };
@@ -225,8 +235,10 @@ export function rebase(
       agentConnectionId: mine('agentConnectionId'),
       repoUrl: mine('repoUrl'),
       repoBaseBranch: mine('repoBaseBranch'),
+      holidayCountry: mine('holidayCountry'),
       velocityWindow: mine('velocityWindow'),
       velocityOverride: mine('velocityOverride'),
+      sprintNaming: mine('sprintNaming'),
       members,
       states: rebaseStates(latest.states, baseStates, draft.states),
     },
@@ -253,6 +265,9 @@ export function changesBetween(
   if (base.repoBaseBranch !== draft.repoBaseBranch) {
     changes.push({ tab: 'general', label: 'Base branch' });
   }
+  if (base.holidayCountry !== draft.holidayCountry) {
+    changes.push({ tab: 'general', label: 'Public holidays' });
+  }
   for (const member of draft.members) {
     const saved = base.members.find((m) => m.user.id === member.user.id);
     const memberId = member.user.id;
@@ -269,6 +284,9 @@ export function changesBetween(
   }
   if (base.velocityOverride !== draft.velocityOverride) {
     changes.push({ tab: 'sprints', label: 'Velocity override' });
+  }
+  if (base.sprintNaming !== draft.sprintNaming) {
+    changes.push({ tab: 'sprints', label: 'Sprint naming' });
   }
   const { add, update, reorder, remove } = draft.states;
   for (const state of add) changes.push({ tab: 'states', label: `Add state ${state.name}` });

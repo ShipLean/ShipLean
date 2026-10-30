@@ -37,6 +37,9 @@ public class NewProjectSprintJourneyTests : SeededAcceptanceTest
         created.Ok.ShouldBeTrue(await created.TextAsync());
         var projectId = (await created.JsonAsync())!.Value.GetProperty("id").GetGuid();
         await Expect(Page).ToHaveURLAsync(new Regex(Regex.Escape(Links.Backlog(ProjectKey)) + "$"));
+        var firstSprints = await Page.Context.APIRequest.GetAsync($"/api/projects/{projectId}/sprints");
+        firstSprints.Ok.ShouldBeTrue(await firstSprints.TextAsync());
+        var firstName = JsonDocument.Parse(await firstSprints.TextAsync()).RootElement.EnumerateArray().Single().GetProperty("name").GetString()!;
 
         // 2. Three stories on the backlog, then their points on their own pages.
         var backlog = new StoriesBacklog(Page);
@@ -63,7 +66,7 @@ public class NewProjectSprintJourneyTests : SeededAcceptanceTest
             saved.Ok.ShouldBeTrue(await saved.TextAsync());
         }
 
-        // 3. Plan: a second sprint, and all three stories into Sprint 1.
+        // 3. Plan: a second sprint, and all three stories into the first sprint (named by year and quarter).
         var planning = new PlanningBacklog(Page);
         var dragging = new PlanningDragging(Page);
         await dragging.ShowWholePageAsync();
@@ -73,16 +76,18 @@ public class NewProjectSprintJourneyTests : SeededAcceptanceTest
             "POST",
             () => Page.GetByTestId(BacklogTestIds.PlanningCreateSprint).ClickAsync());
         createSprint.Ok.ShouldBeTrue(await createSprint.TextAsync());
-        var sprint2 = (await createSprint.JsonAsync())!.Value.GetProperty("id").GetGuid().ToString();
-        await Expect(planning.Section("Sprint 2")).ToBeVisibleAsync();
+        var created2 = (await createSprint.JsonAsync())!.Value;
+        var sprint2 = created2.GetProperty("id").GetGuid().ToString();
+        var secondName = created2.GetProperty("name").GetString()!;
+        await Expect(planning.Section(secondName)).ToBeVisibleAsync();
         foreach (var story in stories)
         {
-            var moved = await dragging.DragOntoHeaderAsync(story.Key, "Sprint 1");
+            var moved = await dragging.DragOntoHeaderAsync(story.Key, firstName);
             moved.Ok.ShouldBeTrue(await moved.TextAsync());
-            await Expect(dragging.Toasts.First).ToContainTextAsync($"{story.Key} → Sprint 1");
+            await Expect(dragging.Toasts.First).ToContainTextAsync($"{story.Key} → {firstName}");
         }
 
-        await Expect(planning.Committed("Sprint 1")).ToHaveTextAsync(new Regex(@"^10 / "));
+        await Expect(planning.Committed(firstName)).ToHaveTextAsync(new Regex(@"^10 / "));
 
         // 4. The 5-point story to Active on the Stories board: pulled by Joel, and it stays after a reload.
         var big = stories[2];
@@ -105,7 +110,7 @@ public class NewProjectSprintJourneyTests : SeededAcceptanceTest
         var sprintsResponse = await Page.Context.APIRequest.GetAsync($"/api/projects/{projectId}/sprints");
         sprintsResponse.Ok.ShouldBeTrue(await sprintsResponse.TextAsync());
         var sprint1 = JsonDocument.Parse(await sprintsResponse.TextAsync()).RootElement.EnumerateArray()
-            .Single(s => s.GetProperty("name").GetString() == "Sprint 1").GetProperty("id").GetGuid();
+            .Single(s => s.GetProperty("name").GetString() == firstName).GetProperty("id").GetGuid();
 
         var taskboard = new SprintTaskboard(Page);
         var taskMoves = new TaskboardMoves(Page);
@@ -146,7 +151,7 @@ public class NewProjectSprintJourneyTests : SeededAcceptanceTest
         // 8. All sprints reports Sprint 1; Planning shows the two stories in Sprint 2.
         var all = new AllSprints(Page);
         await all.OpenAsync(ProjectKey);
-        var sprintRow = all.RowOf("Sprint 1");
+        var sprintRow = all.RowOf(firstName);
         await Expect(sprintRow.GetByTestId(SprintsTestIds.RowCommitted)).ToHaveTextAsync("10");
         await Expect(sprintRow.GetByTestId(SprintsTestIds.RowCompleted)).ToHaveTextAsync("5");
 

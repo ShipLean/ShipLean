@@ -48,4 +48,14 @@ public static class SprintDatabase
         await using var command = new NpgsqlCommand("UPDATE sprint_capacity SET archived_at = now() WHERE archived_at IS NULL", connection);
         (await command.ExecuteNonQueryAsync()).ShouldBeGreaterThan(0);
     }
+
+    // Switches a project to the Year, quarter and number convention (new projects start there; the seeded ones do not).
+    public static async Task UseYearQuarterNamingAsync(string connectionString, string projectKey)
+    {
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+        await using var command = new NpgsqlCommand("UPDATE project SET sprint_naming = 'yearQuarterNumber' WHERE key = @key", connection);
+        command.Parameters.AddWithValue("key", projectKey);
+        (await command.ExecuteNonQueryAsync()).ShouldBe(1);
+    }
 }

@@ -7,15 +7,24 @@ using ShipLean.Core.Sprints;
 
 namespace ShipLean.Application.Features.Projects;
 
-// The New project form's Sprint 1: starting today, or on the next working day, and lasting two weeks (the end is not clipped).
+// The New project form's first sprint: starting today, or on the next working day, and lasting two weeks (the end is not clipped).
+// A new project names its sprints year, quarter and number ("2026 Q4 Sprint 3"). Dates the form already has (start, and end)
+// replace those defaults and the name follows them.
 [RegisterPerRequest]
 public sealed class FirstSprintDefaults(TimeProvider clock)
 {
-    public SprintCreate Get(string? workingDays)
+    public SprintCreate Get(string? workingDays, DateOnly? typedStart = null, DateOnly? typedEnd = null)
     {
         var days = Parse(workingDays);
-        var start = SprintStart.OnWorkingDay(SprintLabels.Today(clock), days);
-        return new SprintCreate("Sprint 1", start, start.AddDays(SprintStart.FirstSprintDays - 1), string.Empty);
+        var start = typedStart ?? SprintStart.OnWorkingDay(SprintLabels.Today(clock), days);
+        var length = typedEnd is { } end ? end.DayNumber - start.DayNumber + 1 : SprintStart.FirstSprintDays;
+        if (length < 1)
+        {
+            throw ApiException.Validation("A sprint can't end before it starts.", "end");
+        }
+
+        var name = SprintNaming.Name(SprintNamingConvention.YearQuarterNumber, start, length, _ => false, 1);
+        return new SprintCreate(name, start, start.AddDays(length - 1), string.Empty);
     }
 
     private static List<int> Parse(string? workingDays)

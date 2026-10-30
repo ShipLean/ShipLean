@@ -333,6 +333,14 @@ public sealed class ImportJobRows(NpgsqlDataSource dataSource, TimeProvider cloc
         await connection.ExecuteAsync(new CommandDefinition("UPDATE import_job SET project_id = @projectId, updated_at = now() WHERE id = @jobId", new { jobId, projectId }, cancellationToken: cancellationToken));
     }
 
+    // A Jira-imported project keeps "Sprint N": its imported sprints are numbered that way. Only a project with no sprints yet (archived ones count) is set,
+    // so a re-run or resume never undoes an admin's later switch to another convention.
+    public async Task UseNumberSprintNamingAsync(Guid projectId, CancellationToken cancellationToken)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await connection.ExecuteAsync(new CommandDefinition("UPDATE project SET sprint_naming = 'number' WHERE id = @projectId AND NOT EXISTS (SELECT 1 FROM sprint WHERE project_id = @projectId)", new { projectId }, cancellationToken: cancellationToken));
+    }
+
     public async Task LogAsync(Guid jobId, ImportLogLevel level, string message, CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);

@@ -29,13 +29,14 @@ const saved = (): ProjectSettingsDto => ({
     agentConnectionId: null,
     repoUrl: null,
     repoBaseBranch: null,
+    holidayCountry: null,
     agentConnections: [{ id: 'c-1', name: 'Home relay', archived: false }],
   },
   members: [
     { user: joel, email: 'joel@shiplean.local', role: 'admin', status: 'active' },
     { user: priya, email: 'priya@shiplean.local', role: 'member', status: 'active' },
   ],
-  sprints: { velocityWindow: 3, velocityOverride: null },
+  sprints: { velocityWindow: 3, velocityOverride: null, sprintNaming: 'number' },
   states: WORK_ITEM_TYPE_IDS.flatMap((type) => [
     {
       id: `${type}-new`,
@@ -66,18 +67,29 @@ interface Routable {
   ): Promise<unknown>;
 }
 
+const COUNTRIES = [
+  { code: 'AU', name: 'Australia' },
+  { code: 'NZ', name: 'New Zealand' },
+];
+
 const stub = async (
   page: Routable,
   onPut?: (body: ProjectSettingsPut) => { status: number; json: unknown },
+  countries: { code: string; name: string }[] = COUNTRIES,
 ) => {
   const puts: ProjectSettingsPut[] = [];
+  let lastSaved: Partial<ProjectSettingsPut['general']> = {};
+  await page.route('**/api/holidays/countries', async (route) => {
+    await route.fulfill({ json: countries });
+  });
   await page.route(`**/api/projects/${PROJECT_ID}/settings`, async (route) => {
     if (route.request().method() === 'GET') {
-      await route.fulfill({ json: saved() });
+      await route.fulfill({ json: { ...saved(), general: { ...saved().general, ...lastSaved } } });
       return;
     }
     const body = route.request().postDataJSON() as ProjectSettingsPut;
     puts.push(body);
+    lastSaved = body.general;
     const answer = onPut?.(body);
     if (answer !== undefined) {
       await route.fulfill(answer);
@@ -130,7 +142,80 @@ test('Draft_WhenSaved_ShouldSendEveryTabInOneRequest', async ({ mount, page }) =
     { email: 'joel@shiplean.local', role: 'admin' },
     { email: 'priya@shiplean.local', role: 'admin' },
   ]);
-  expect(puts[0].sprints).toEqual({ velocityWindow: 3, velocityOverride: 21.5 });
+  expect(puts[0].sprints).toEqual({
+    velocityWindow: 3,
+    velocityOverride: 21.5,
+    sprintNaming: 'number',
+  });
+});
+
+test('Draft_WhenSprintNamingChanged_ShouldMarkTheTabAndSaveIt', async ({ mount, page }) => {
+  const puts = await stub(page);
+  const view = await mount(<SettingsDraftHarness role="admin" />, {
+    hooksConfig: { route: '/p/SHIP/settings/sprints' },
+  });
+  await expect(view.getByTestId(ids.sprintNaming)).toHaveValue('number');
+  await expect(view.getByTestId(ids.sprintNamingHint)).toContainText('keep their names');
+
+  await view.getByTestId(ids.sprintNaming).selectOption('yearQuarterNumber');
+  await expect(view.getByTestId(ids.unsaved)).toContainText('1 unsaved change');
+  await view.getByTestId(ids.sprintNaming).selectOption('number');
+  await expect(view.getByTestId(ids.unsaved)).toHaveCount(0);
+
+  await view.getByTestId(ids.sprintNaming).selectOption('yearQuarterNumber');
+  await view.getByTestId(ids.save).click();
+
+  await expect(view.getByTestId(ids.unsaved)).toHaveCount(0);
+  expect(puts[0].sprints.sprintNaming).toBe('yearQuarterNumber');
+});
+
+test('Draft_WhenCountryPicked_ShouldMarkGeneralAndSaveIt', async ({ mount, page }) => {
+  const puts = await stub(page);
+  const view = await mount(<SettingsDraftHarness role="admin" />, {
+    hooksConfig: { route: '/p/SHIP/settings/general' },
+  });
+  const country = view.getByTestId(ids.holidayCountry);
+  await expect(country).toHaveValue('');
+  await expect(country.locator('option')).toHaveText(['None', 'Australia', 'New Zealand']);
+  await expect(view.getByTestId(ids.holidaysUnavailable)).toHaveCount(0);
+
+  await country.selectOption('NZ');
+  await expect(view.getByTestId(ids.unsaved)).toContainText('1 unsaved change');
+  await country.selectOption('');
+  await expect(view.getByTestId(ids.unsaved)).toHaveCount(0);
+
+  await country.selectOption('NZ');
+  await view.getByTestId(ids.save).click();
+
+  await expect(view.getByTestId(ids.unsaved)).toHaveCount(0);
+  expect(puts[0].general.holidayCountry).toBe('NZ');
+  await expect(country).toHaveValue('NZ');
+
+  await country.selectOption('');
+  await view.getByTestId(ids.save).click();
+  await expect(view.getByTestId(ids.unsaved)).toHaveCount(0);
+  expect(puts[1].general.holidayCountry).toBeNull();
+});
+
+test('Draft_WhenNoCountryListed_ShouldSayHolidayDataIsUnavailable', async ({ mount, page }) => {
+  await stub(page, undefined, []);
+  const view = await mount(<SettingsDraftHarness role="admin" />, {
+    hooksConfig: { route: '/p/SHIP/settings/general' },
+  });
+
+  await expect(view.getByTestId(ids.holidaysUnavailable)).toHaveText(
+    "Holiday data isn't available on this server.",
+  );
+  await expect(view.getByTestId(ids.holidayCountry).locator('option')).toHaveText(['None']);
+});
+
+test('Draft_WhenReadOnly_ShouldDisableTheCountry', async ({ mount, page }) => {
+  await stub(page);
+  const view = await mount(<SettingsDraftHarness role="member" />, {
+    hooksConfig: { route: '/p/SHIP/settings/general' },
+  });
+
+  await expect(view.getByTestId(ids.holidayCountry)).toBeDisabled();
 });
 
 test('Draft_WhenAgentFieldsEdited_ShouldSendThemWithGeneral', async ({ mount, page }) => {
@@ -151,6 +236,7 @@ test('Draft_WhenAgentFieldsEdited_ShouldSendThemWithGeneral', async ({ mount, pa
     agentConnectionId: 'c-1',
     repoUrl: 'https://github.com/ShipLean/ShipLean.git',
     repoBaseBranch: null,
+    holidayCountry: null,
   });
 });
 

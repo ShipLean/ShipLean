@@ -42,7 +42,7 @@ public sealed class ProjectFactory(NpgsqlDataSource dataSource, TimeProvider clo
         var memberIds = await MemberIdsAsync(connection, transaction, create.MemberEmails ?? [], cancellationToken);
         var projectId = Guid.CreateVersion7();
         var workingDays = create.WorkingDays.Distinct().Order().Select(d => (short)d).ToArray();
-        var window = await InsertProjectAsync(connection, transaction, projectId, create, workingDays, cancellationToken);
+        var (window, holidayCountry) = await InsertProjectAsync(connection, transaction, projectId, create, workingDays, cancellationToken);
         var memberCount = await InsertMembersAsync(connection, transaction, projectId, memberIds, cancellationToken);
         IReadOnlyDictionary<Guid, Guid>? copiedIds = null;
         if (create.CopyFromProjectId is { } source)
@@ -60,7 +60,7 @@ public sealed class ProjectFactory(NpgsqlDataSource dataSource, TimeProvider clo
             await sprints.CreateAsync(projectId, first, transaction, cancellationToken);
         }
         await transaction.CommitAsync(cancellationToken);
-        return new ProjectDto(projectId, create.Key, create.Name.Trim(), string.Empty, ProjectRole.Admin, memberCount, [.. workingDays.Select(d => (int)d)], window, null, 1);
+        return new ProjectDto(projectId, create.Key, create.Name.Trim(), string.Empty, ProjectRole.Admin, memberCount, [.. workingDays.Select(d => (int)d)], window, null, 1, holidayCountry);
     }
 
     public async Task<KeyCheckDto> CheckKeyAsync(string key, string name, CancellationToken cancellationToken = default)
@@ -102,21 +102,25 @@ public sealed class ProjectFactory(NpgsqlDataSource dataSource, TimeProvider clo
         return [.. ids.Where(id => id != currentUser.Id).Distinct()];
     }
 
-    // The copied project's velocity window is kept; working days are the request's.
-    private async Task<int> InsertProjectAsync(
+    // The copied project's velocity window, sprint naming and holiday country are kept; working days are the request's. A new project names sprints year, quarter and number.
+    private async Task<(int Window, string? HolidayCountry)> InsertProjectAsync(
         DbConnection connection, DbTransaction transaction, Guid projectId, ProjectCreate create, short[] workingDays, CancellationToken cancellationToken)
     {
-        var inserted = await connection.QuerySingleOrDefaultAsync<int?>(new CommandDefinition(
+        var inserted = await connection.QuerySingleOrDefaultAsync<InsertedProject>(new CommandDefinition(
             """
-            INSERT INTO project (id, key, name, working_days, velocity_window, created_by, created_at, updated_at)
-            VALUES (@projectId, @key, @name, @workingDays, COALESCE((SELECT velocity_window FROM project WHERE id = @copyFrom), 3), @me, @now, @now)
+            INSERT INTO project (id, key, name, working_days, velocity_window, sprint_naming, holiday_country, created_by, created_at, updated_at)
+            VALUES (@projectId, @key, @name, @workingDays, COALESCE((SELECT velocity_window FROM project WHERE id = @copyFrom), 3),
+                    COALESCE((SELECT sprint_naming FROM project WHERE id = @copyFrom), 'yearQuarterNumber'),
+                    (SELECT holiday_country FROM project WHERE id = @copyFrom), @me, @now, @now)
             ON CONFLICT (key) DO NOTHING
-            RETURNING velocity_window
+            RETURNING velocity_window AS Window, holiday_country::text AS HolidayCountry
             """,
             new { projectId, key = create.Key, name = create.Name.Trim(), workingDays, copyFrom = create.CopyFromProjectId, me = currentUser.Id, now = clock.GetUtcNow() },
             transaction, cancellationToken: cancellationToken));
-        return inserted ?? throw ApiException.Conflict("That key is already taken.");
+        return inserted is null ? throw ApiException.Conflict("That key is already taken.") : (inserted.Window, inserted.HolidayCountry);
     }
+
+    private sealed record InsertedProject(int Window, string? HolidayCountry);
 
     private async Task<int> InsertMembersAsync(DbConnection connection, DbTransaction transaction, Guid projectId, IReadOnlyList<Guid> memberIds, CancellationToken cancellationToken)
     {

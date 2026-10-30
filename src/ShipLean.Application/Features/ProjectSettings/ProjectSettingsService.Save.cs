@@ -1,8 +1,10 @@
 using System.Data.Common;
 using Dapper;
+using Microsoft.Extensions.Logging;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Events;
+using ShipLean.Contracts.Holidays;
 using ShipLean.Contracts.Persisted;
 using ShipLean.Contracts.Projects;
 using ShipLean.Contracts.Refs;
@@ -32,12 +34,29 @@ public sealed partial class ProjectSettingsService
             throw ApiException.Validation("A project's key never changes.");
         }
 
-        var general = await CheckAgentAsync(KeepUnprovided(CheckGeneral(put.General), current), current.AgentConnectionId, cancellationToken);
+        var general = await CheckHolidayCountryAsync(await CheckAgentAsync(KeepUnprovided(CheckGeneral(put.General), current), current.AgentConnectionId, cancellationToken), current.HolidayCountry, cancellationToken);
         CheckForecast(put.Sprints);
+        put = put with { Sprints = put.Sprints with { SprintNaming = put.Sprints.SprintNaming ?? current.Forecast.SprintNaming } };
         var members = await ResolveMembersAsync(put.Members, cancellationToken);
         var moves = await PlanMovesAsync(projectId, put.States, cancellationToken);
 
-        return await SaveAllAsync(projectId, put, general, members, moves, cancellationToken);
+        var capacityInputsChanged = string.Join(',', general.WorkingDays) != current.WorkingDays || general.HolidayCountry != current.HolidayCountry;
+        var saved = await SaveAllAsync(projectId, put, general, members, moves, capacityInputsChanged, cancellationToken);
+        if (general.HolidayCountry is { } country && country != current.HolidayCountry)
+        {
+            // Only marks the country tracked and queues its refresh for the background job: the save never waits on the feed.
+            // The settings are already committed, so a failure here must not fail the save: the daily job tracks every country a project uses.
+            try
+            {
+                await holidays.TrackAsync(country, cancellationToken);
+            }
+            catch (Exception failed) when (failed is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
+            {
+                logger.LogWarning(failed, "Tracking the holiday country {Country} of project {ProjectId} failed after the save; the daily refresh will pick it up", country, projectId);
+            }
+        }
+
+        return saved;
     }
 
     // One transaction, the work item store's. Items can only move into a state that exists, and the store runs its patches
@@ -45,7 +64,7 @@ public sealed partial class ProjectSettingsService
     // names (their ids), and the hook gives them their real names with the other state changes. A failure anywhere rolls
     // everything back, so the same body can be sent again.
     private async Task<SettingsSaveResult> SaveAllAsync(
-        Guid projectId, ProjectSettingsPut put, ProjectGeneralPut general, List<(Guid UserId, ProjectRole Role)> members, StateMoves moves, CancellationToken cancellationToken)
+        Guid projectId, ProjectSettingsPut put, ProjectGeneralPut general, List<(Guid UserId, ProjectRole Role)> members, StateMoves moves, bool recomputeCapacity, CancellationToken cancellationToken)
     {
         var added = put.States.Add ?? [];
         var stateChanges = put.States with
@@ -54,11 +73,18 @@ public sealed partial class ProjectSettingsService
             Update = [.. put.States.Update ?? [], .. added.Select(a => new StateUpdate(a.Id, a.Name, a.Category))],
         };
         IReadOnlyList<Guid> removedUsers = [];
+        IReadOnlyList<Guid> recomputed = [];
         IReadOnlyList<(Guid BoardId, IReadOnlyList<string> Sections)> touchedBoards = [];
         var options = new WriteOptions(
             async (transaction, token) =>
             {
                 await WriteProjectAsync(transaction, projectId, general, put.Sprints, token);
+                if (recomputeCapacity)
+                {
+                    // After the project row is written: the recompute reads working days and country inside this transaction.
+                    recomputed = await capacity.RecomputeAsync(projectId, transaction, token);
+                }
+
                 removedUsers = await WriteMembersAsync(transaction, projectId, members, token);
                 await RefuseLateItemsAsync(transaction, stateChanges, moves, token);
                 await states.ApplyAsync(projectId, stateChanges, transaction, token);
@@ -80,6 +106,11 @@ public sealed partial class ProjectSettingsService
         }
 
         await events.PublishAsync(new ProjectChanged(projectId));
+        foreach (var sprintId in recomputed)
+        {
+            await events.PublishAsync(new SprintChanged(projectId, sprintId));
+        }
+
         if (HasStateChanges(put.States))
         {
             await events.PublishAsync(new StatesChanged(projectId));
@@ -110,7 +141,7 @@ public sealed partial class ProjectSettingsService
         }
 
         return new ProjectGeneralPut(
-            general.Name.Trim(), general.Description ?? string.Empty, days, general.AgentConnectionId, ProjectAgentRules.RepoUrl(general.RepoUrl), ProjectAgentRules.BaseBranch(general.RepoBaseBranch), general.Provided);
+            general.Name.Trim(), general.Description ?? string.Empty, days, general.AgentConnectionId, ProjectAgentRules.RepoUrl(general.RepoUrl), ProjectAgentRules.BaseBranch(general.RepoBaseBranch), general.HolidayCountry, general.Provided);
     }
 
     // An agent field the body left out keeps its saved value (already valid, so it is not checked again).
@@ -120,6 +151,7 @@ public sealed partial class ProjectSettingsService
             AgentConnectionId = general.Provided.HasFlag(ProvidedAgentFields.Connection) ? general.AgentConnectionId : current.AgentConnectionId,
             RepoUrl = general.Provided.HasFlag(ProvidedAgentFields.RepoUrl) ? general.RepoUrl : current.RepoUrl,
             RepoBaseBranch = general.Provided.HasFlag(ProvidedAgentFields.RepoBaseBranch) ? general.RepoBaseBranch : current.RepoBaseBranch,
+            HolidayCountry = general.Provided.HasFlag(ProvidedAgentFields.HolidayCountry) ? general.HolidayCountry : current.HolidayCountry,
             Provided = ProvidedAgentFields.All,
         };
 
@@ -137,11 +169,29 @@ public sealed partial class ProjectSettingsService
         return live ? general : throw ApiException.Validation("Pick an agent connection that is not archived.", "agentConnectionId");
     }
 
+    // A blank country is None. Anything else must be a country the feed has listed (the column references holiday_country); keeping
+    // the saved one is always allowed.
+    private async Task<ProjectGeneralPut> CheckHolidayCountryAsync(ProjectGeneralPut general, string? saved, CancellationToken cancellationToken)
+    {
+        var code = string.IsNullOrWhiteSpace(general.HolidayCountry) ? null : general.HolidayCountry.Trim().ToUpperInvariant();
+        if (code is not null && code != saved && !(await holidays.CountriesAsync(cancellationToken)).Any(c => c.Code == code))
+        {
+            throw ApiException.Validation("Pick a country from the list.", "holidayCountry");
+        }
+
+        return general with { HolidayCountry = code };
+    }
+
     private static void CheckForecast(ProjectForecastSettings forecast)
     {
         if (forecast.VelocityWindow < 1)
         {
             throw ApiException.Validation("The velocity window is at least one sprint.");
+        }
+
+        if (forecast.SprintNaming is { } naming && !Enum.IsDefined(naming))
+        {
+            throw ApiException.Validation("Pick a sprint naming convention from the list.", "sprintNaming");
         }
 
         if (forecast.VelocityOverride is { } points && (points is < 0 or > LargestOverride || decimal.Round(points, 2) != points))
@@ -239,12 +289,13 @@ public sealed partial class ProjectSettingsService
         var updated = await transaction.Connection!.ExecuteAsync(new CommandDefinition(
             """
             UPDATE project SET name = @name, description = @description, working_days = @days::smallint[],
-                               velocity_window = @window, velocity_override = @override, updated_at = @now,
-                               agent_connection_id = @agentConnectionId, repo_url = @repoUrl, repo_base_branch = @repoBaseBranch
+                               velocity_window = @window, velocity_override = @override, sprint_naming = @naming, updated_at = @now,
+                               agent_connection_id = @agentConnectionId, repo_url = @repoUrl, repo_base_branch = @repoBaseBranch, holiday_country = @holidayCountry::char(2)
             WHERE id = @projectId
             """,
             new { projectId, name = general.Name, description = general.Description, days = general.WorkingDays.ToArray(), window = forecast.VelocityWindow, @override = forecast.VelocityOverride,
-                general.AgentConnectionId, general.RepoUrl, general.RepoBaseBranch, now = clock.GetUtcNow() },
+                naming = forecast.SprintNaming == SprintNaming.YearQuarterNumber ? "yearQuarterNumber" : "number",
+                general.AgentConnectionId, general.RepoUrl, general.RepoBaseBranch, general.HolidayCountry, now = clock.GetUtcNow() },
             transaction, cancellationToken: cancellationToken));
         if (updated == 0)
         {
