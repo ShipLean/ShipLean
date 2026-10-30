@@ -18,6 +18,21 @@ test('NewFeatureDialog_WhenTitleTyped_ShouldSuggestSlug', async ({ mount, page }
   await expect(page.getByTestId(ids.newFeatureCreate)).toBeEnabled();
 });
 
+test('NewFeatureDialog_WhenSlugNoteAppears_ShouldNotMoveTheFieldsBelow', async ({
+  mount,
+  page,
+}) => {
+  await stubNewFeature(page);
+  await mount(<NewFeatureDialog project={PROJECT} onClose={() => undefined} />, hooks);
+  const goal = page.getByTestId(ids.newFeatureGoal);
+  const before = await goal.boundingBox();
+
+  await page.getByTestId(ids.newFeatureTitle).fill('Express checkout');
+  await expect(page.getByTestId(ids.newFeatureSlugNote)).toHaveAttribute('data-available', 'true');
+
+  expect((await goal.boundingBox())?.y).toBe(before?.y);
+});
+
 test('NewFeatureDialog_WhenSlugTaken_ShouldDisableCreate', async ({ mount, page }) => {
   await stubNewFeature(page, { taken: ['express-checkout'] });
   await mount(<NewFeatureDialog project={PROJECT} onClose={() => undefined} />, hooks);
