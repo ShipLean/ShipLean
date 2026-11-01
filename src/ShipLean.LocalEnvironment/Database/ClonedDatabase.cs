@@ -1,6 +1,6 @@
 using Npgsql;
 
-namespace ShipLean.TestSupport.Database;
+namespace ShipLean.LocalEnvironment.Database;
 
 // A database created for one test class. Disposing drops it, closing any connection still open.
 public sealed class ClonedDatabase : IAsyncDisposable

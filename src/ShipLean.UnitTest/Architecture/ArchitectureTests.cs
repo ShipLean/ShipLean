@@ -2,6 +2,8 @@ using System.Reflection;
 using ShipLean.Application;
 using ShipLean.Contracts;
 using ShipLean.Core;
+using ShipLean.LocalEnvironment;
+using ShipLean.LocalHost;
 using ShipLean.TestSupport;
 using ShipLean.WebApi;
 
@@ -44,6 +46,21 @@ public class ArchitectureTests
     {
         Production.SelectMany(a => AssemblyScan.ReferencesTo(a, "Microsoft.EntityFrameworkCore")).ShouldBeEmpty();
         ProductionProjectFiles().SelectMany(f => AssemblyScan.ProjectFileReferences(f, "EntityFrameworkCore")).ShouldBeEmpty();
+    }
+
+    [Test]
+    public void LocalEnvironment_ShouldNotReferenceTestFrameworks()
+    {
+        string[] forbidden = ["ShipLean.TestSupport", "NUnit", "Shouldly", "Microsoft.Playwright"];
+        Assembly[] assemblies = [typeof(RepoLayout).Assembly, typeof(LocalHostCli).Assembly];
+        string[] projectFiles =
+        [
+            Path.Combine(RepoLayout.Root, "src", "ShipLean.LocalEnvironment", "ShipLean.LocalEnvironment.csproj"),
+            Path.Combine(RepoLayout.Root, "src", "ShipLean.LocalHost", "ShipLean.LocalHost.csproj"),
+        ];
+
+        assemblies.SelectMany(a => AssemblyScan.ReferencesTo(a, forbidden)).ShouldBeEmpty();
+        projectFiles.SelectMany(f => AssemblyScan.ProjectFileReferences(f, forbidden.Append("Playwright").ToArray())).ShouldBeEmpty();
     }
 
     // The checks above are only worth having if they can fail. These run the same scans over the test assembly,

@@ -1,7 +1,7 @@
 using Npgsql;
 using ShipLean.Application.Database;
 
-namespace ShipLean.TestSupport.Database;
+namespace ShipLean.LocalEnvironment.Database;
 
 // A new, uniquely named database on the test server with db/schema, db/migrations and db/seed applied. Disposing
 // drops it, closing any connection still open. Each call builds from the scripts; the test harness adds template

@@ -2,7 +2,7 @@ using Dapper;
 using ShipLean.Application.Identity;
 using ShipLean.Contracts.Users;
 using ShipLean.TestSupport.Builders;
-using ShipLean.TestSupport.Database;
+using ShipLean.LocalEnvironment.Database;
 
 namespace ShipLean.WebApi.Tests.Users;
 

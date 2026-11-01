@@ -22,6 +22,7 @@
   <ItemGroup>
     <ProjectReference Include="..\ShipLean.WebApi\ShipLean.WebApi.csproj" />
     <ProjectReference Include="..\ShipLean.TestSupport\ShipLean.TestSupport.csproj" />
+    <ProjectReference Include="..\ShipLean.LocalHost\ShipLean.LocalHost.csproj" />
   </ItemGroup>
 
 </Project>

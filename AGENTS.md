@@ -20,6 +20,8 @@ Self-hosted lean planning tool (backlogs, boards, sprints, a sprint taskboard) b
 | `src/ShipLean.Application/` | Commands and queries per `Features/<Feature>/`, `Database/`, `Identity/`. Embeds `db/**` |
 | `src/ShipLean.Contracts/` | Interfaces, DTOs, events. `Features/<A>` reaches `Features/<B>` only through here |
 | `src/ShipLean.Core/` | Dependency-free helpers (`DisplayDate`) |
+| `src/ShipLean.LocalEnvironment/` | Testcontainers, database templates and named databases, AppHost (the real app on Kestrel, test or local profile). No test frameworks |
+| `src/ShipLean.LocalHost/` | Console host: a seeded ShipLean on a fixed port for F5, people and agents (docs/local-environment.md) |
 | `src/ShipLean.TestSupport/` | Fixtures, `SeedIds`, builders, test ids, pinned JSON shapes. Production never references it |
 | `src/ShipLean.WebApi.Tests/` | API tests: real app on Kestrel over a cloned Postgres database |
 | `src/ShipLean.AcceptanceTests/` | Playwright (.NET) against the built SPA. CI shards on namespaces `Harness`, `Journeys`, `Lanes.<Area>` |
@@ -45,6 +47,8 @@ shiplean-test src/ShipLean.WebApi.Tests --filter "FullyQualifiedName~HealthTests
 shiplean-test src/ShipLean.AcceptanceTests --filter "FullyQualifiedName~ShipLean.AcceptanceTests.Lanes.Board."
 cd src/ShipLean.Client && pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm test && pnpm run test-ct
 ```
+
+To check your work in a running app: `dotnet run --project src/ShipLean.LocalHost -- --database shiplean_<name> --port 0` (a name of your own, lowercase letters, digits and `_` only) and wait for `SHIPLEAN_LOCAL_URL=`.
 
 ## Links
 

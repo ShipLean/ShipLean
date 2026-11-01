@@ -4,7 +4,7 @@ using ShipLean.Application.Database;
 using ShipLean.Application.Features.Holidays;
 using ShipLean.Contracts.Holidays;
 using ShipLean.TestSupport.Contracts.Holidays;
-using ShipLean.TestSupport.Database;
+using ShipLean.LocalEnvironment.Database;
 
 namespace ShipLean.WebApi.Tests.Holidays;
 

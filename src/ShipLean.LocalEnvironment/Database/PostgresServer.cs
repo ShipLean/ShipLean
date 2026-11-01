@@ -1,7 +1,7 @@
 using Npgsql;
 using Testcontainers.PostgreSql;
 
-namespace ShipLean.TestSupport.Database;
+namespace ShipLean.LocalEnvironment.Database;
 
 // The Postgres server every test class shares. SHIPLEAN_TEST_DB (a connection string to a long-lived
 // server) wins; otherwise one postgres:18 container is started and reused across runs.

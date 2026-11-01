@@ -10,7 +10,7 @@ using ShipLean.Contracts.Persisted;
 using ShipLean.Contracts.Projects;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Contracts.Import;
-using ShipLean.TestSupport.Database;
+using ShipLean.LocalEnvironment.Database;
 using ShipLean.TestSupport.Hosting;
 using JiraWorld = ShipLean.WebApi.Tests.Import.Mapping.JiraWorld;
 

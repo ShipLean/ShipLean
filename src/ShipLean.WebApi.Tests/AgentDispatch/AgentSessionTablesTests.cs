@@ -1,7 +1,7 @@
 using Dapper;
 using Npgsql;
 using ShipLean.TestSupport;
-using ShipLean.TestSupport.Database;
+using ShipLean.LocalEnvironment.Database;
 
 namespace ShipLean.WebApi.Tests.AgentDispatch;
 

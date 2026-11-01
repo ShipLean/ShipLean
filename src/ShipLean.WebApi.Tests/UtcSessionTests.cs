@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
-using ShipLean.TestSupport.Database;
+using ShipLean.LocalEnvironment.Database;
 using ShipLean.TestSupport.Hosting;
 
 namespace ShipLean.WebApi.Tests;

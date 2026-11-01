@@ -2,7 +2,7 @@ using System.Globalization;
 using Npgsql;
 using ShipLean.Application.Database;
 
-namespace ShipLean.TestSupport.Database;
+namespace ShipLean.LocalEnvironment.Database;
 
 // Template databases and per-test-class clones.
 //
