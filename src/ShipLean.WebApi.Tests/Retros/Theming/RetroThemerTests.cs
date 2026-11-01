@@ -19,6 +19,8 @@ public sealed class RetroThemerTests : ApiFixture
 
     protected override Action<IServiceCollection>? ConfigureTestServices => RetroThemerServices.Register;
 
+    protected override IReadOnlyDictionary<string, string?> HostSettings => new Dictionary<string, string?> { [RetroThemerServices.AutoThemesKey] = "on" };
+
     private IRetroThemer Themer => Host.Services.GetRequiredService<IRetroThemer>();
 
     private FakeEmbedder Embedder => (FakeEmbedder)Host.Services.GetRequiredService<IEmbedder>();
@@ -84,7 +86,7 @@ public sealed class RetroThemerTests : ApiFixture
     public async Task Mode_WhenEmbedderNotSemantic_ShouldBePickAndDelegate()
     {
         var pick = Host.Services.GetRequiredService<PickRetroThemer>();
-        var themer = new RetroThemer(Host.Services.GetRequiredService<NpgsqlDataSource>(), new NoEmbedder("off"), pick);
+        var themer = new RetroThemer(Host.Services.GetRequiredService<NpgsqlDataSource>(), new NoEmbedder("off"), pick, true);
         var name = $"Picked {Guid.NewGuid():N}";
 
         var result = await themer.AssignAsync(new RetroThemeRequest(Project, "Sign-in fails", null, name, false), CancellationToken.None);
@@ -92,6 +94,25 @@ public sealed class RetroThemerTests : ApiFixture
         themer.Mode.ShouldBe(RetroThemeMode.Pick);
         result.SetBy.ShouldBe(RetroThemeSetBy.Agent);
         result.Embedding.ShouldBeNull();
+        (await NameAsync(result.ThemeId!.Value)).ShouldBe(name);
+    }
+
+    [Test]
+    public void Mode_WhenSwitchOnAndEmbedderSemantic_ShouldBeAuto()
+    {
+        Themer.Mode.ShouldBe(RetroThemeMode.Auto);
+    }
+
+    [Test]
+    public async Task Mode_WhenSwitchOffAndEmbedderSemantic_ShouldBePickAndHonourSuppliedTheme()
+    {
+        var themer = new RetroThemer(Host.Services.GetRequiredService<NpgsqlDataSource>(), Embedder, Host.Services.GetRequiredService<PickRetroThemer>(), false);
+        var name = $"Picked {Guid.NewGuid():N}";
+
+        var result = await themer.AssignAsync(new RetroThemeRequest(Project, "Sign-in fails", null, name, false), CancellationToken.None);
+
+        themer.Mode.ShouldBe(RetroThemeMode.Pick);
+        result.SetBy.ShouldBe(RetroThemeSetBy.Agent);
         (await NameAsync(result.ThemeId!.Value)).ShouldBe(name);
     }
 

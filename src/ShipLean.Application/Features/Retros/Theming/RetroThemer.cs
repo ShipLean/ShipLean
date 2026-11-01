@@ -5,25 +5,25 @@ using ShipLean.Contracts.Search;
 
 namespace ShipLean.Application.Features.Retros.Theming;
 
-// The production themer (C5, D9). When the embedder is semantic it clusters a point into the live theme whose centroid is
+// The production themer (C5, D9). When SHIPLEAN_RETRO_AUTO_THEMES is on and the embedder is semantic it clusters a point into the live theme whose centroid is
 // nearest by cosine similarity, if that is at least JoinThreshold, and otherwise starts a theme named from the point. It
-// returns the point's embedding for the writer to store. When the embedder is not semantic it delegates to PickRetroThemer.
+// returns the point's embedding for the writer to store. Otherwise (the switch is off, which is the default, or the embedder is not semantic) it delegates to PickRetroThemer.
 //
 // A theme an agent supplies in auto mode is ignored without a warning here; RetroLog adds that warning itself.
 // It never moves an existing point: assignment happens on insert only.
-public sealed class RetroThemer(NpgsqlDataSource dataSource, IEmbedder embedder, PickRetroThemer pick) : IRetroThemer
+public sealed class RetroThemer(NpgsqlDataSource dataSource, IEmbedder embedder, PickRetroThemer pick, bool autoEnabled) : IRetroThemer
 {
     // multilingual-e5-small cosines for retro text sit between 0.80 and 0.91, so only the narrow band 0.86-0.89 separates anything.
-    // Measured on retro-theme-fixture.json (33 points, 7 themes, pairwise): at 0.88, precision 45.5% and recall 24.2%; no
-    // threshold reaches 80% on both. TODO: this is the best passage-embedding F1 found, not an accepted threshold; replace it
-    // once a clustering approach reaches the 80% bar.
+    // Measured on retro-theme-fixture.json (33 points, 7 themes, pairwise): at 0.88, precision 45.5%, recall 24.2%, F1 about 32%;
+    // no threshold reaches 80% on both. 0.88 is the best F1 found, so it is the value used when auto themes are switched on.
+    // Auto clustering is off by default (SHIPLEAN_RETRO_AUTO_THEMES) because this quality is below the bar.
     public const float JoinThreshold = 0.88f;
 
     private const int NameAttempts = 5;
 
     public RetroThemeMode Mode => IsAuto ? RetroThemeMode.Auto : RetroThemeMode.Pick;
 
-    private bool IsAuto => embedder.Status.Mode == EmbedderMode.Semantic && embedder.ModelId is not null;
+    private bool IsAuto => autoEnabled && embedder.Status.Mode == EmbedderMode.Semantic && embedder.ModelId is not null;
 
     public static string PassageText(string text, string? rootCause)
         => string.IsNullOrWhiteSpace(rootCause) ? text : $"{text} — {rootCause}";
