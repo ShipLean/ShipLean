@@ -149,6 +149,8 @@ export interface SprintRetroDto {
 
 export interface RetroSearchDto {
   rows: RetroPointDto[];
+  /** Ids of returned rows that matched only through their retro's raw failure log. */
+  logMatchPointIds: string[];
   total: number;
   sprints: SprintRef[];
   themes: RetroThemeRefDto[];

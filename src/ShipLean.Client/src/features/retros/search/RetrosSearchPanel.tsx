@@ -45,8 +45,17 @@ export function RetrosSearchPanel({ project }: { project: ProjectDto }) {
   const query = queryOf(params);
   const result = useRetroSearch(project.id, query);
 
-  const write = (next: RetroSearchQuery, replace: boolean) =>
-    setParams(paramsOf(next, params), { replace });
+  // `point` is client-only: it rides along with `selected` and is dropped whenever the open retro changes otherwise.
+  const write = (next: RetroSearchQuery, replace: boolean, point?: string) =>
+    setParams(
+      (prev) => {
+        const written = paramsOf(next, prev);
+        written.delete('point');
+        if (point) written.set('point', point);
+        return written;
+      },
+      { replace },
+    );
   return (
     <RetroQueryState query={result}>
       {(search) => {
@@ -54,11 +63,12 @@ export function RetrosSearchPanel({ project }: { project: ProjectDto }) {
           project,
           query,
           search,
+          pointId: params.get('point') ?? undefined,
           // Changing a filter closes the open retro, which the new result may not hold; typing replaces the entry.
           change: (patch: Partial<RetroSearchQuery>) =>
             write({ ...query, selected: undefined, ...patch }, 'q' in patch),
-          select: (retroId: string | null) =>
-            write({ ...query, selected: retroId ?? undefined }, false),
+          select: (retroId: string | null, pointId?: string) =>
+            write({ ...query, selected: retroId ?? undefined }, false, pointId),
         };
         return (
           <div data-testid={ids.retrosSearchPanel} className="grid gap-4">
