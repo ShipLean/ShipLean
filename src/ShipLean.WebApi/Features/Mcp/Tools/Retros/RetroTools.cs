@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text.Json;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
+using ShipLean.Application.Features.Retros.Log;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Mcp;
@@ -37,7 +38,7 @@ internal sealed class RetroTools(ItemResolver items, ProjectResolver projects, S
         var compiled = new List<Guid>();
         foreach (var key in compiled_from ?? [])
         {
-            compiled.Add((await items.ResolveAsync(key, ProjectRole.Member, resolved.ProjectId, "compiled_from", cancellationToken)).Id);
+            compiled.Add(await CompiledAsync(key, resolved.ProjectId, cancellationToken));
         }
 
         var request = new RetroLogRequest(
@@ -72,14 +73,33 @@ internal sealed class RetroTools(ItemResolver items, ProjectResolver projects, S
             new RetroListRequest(resolvedProject.Id, resolvedSprint?.Id, resolvedFeature?.Id, ParseCategory(category), string.IsNullOrWhiteSpace(theme) ? null : theme, ParseSince(since)),
             cancellationToken);
 
+        var truncated = listed.Points.Count > RetroLog.MaxListed;
+        var points = listed.Points.Take(RetroLog.MaxListed).ToList();
         var result = new ListRetrospectivesResult(
-            resolvedProject.Key, McpOpenUrls.Sprints(await support.BaseUrlAsync(cancellationToken), resolvedProject.Key),
-            [.. listed.Points.Select(Line)], Name(listed.ThemeMode), [.. listed.Themes.Select(Theme)]);
-        return PlanningReply.Of(result, $"{listed.Points.Count} retrospective points in {resolvedProject.Key}.");
+            resolvedProject.Key, RetrosUrl(await support.BaseUrlAsync(cancellationToken), resolvedProject.Key),
+            [.. points.Select(Line)], Name(listed.ThemeMode), [.. listed.Themes.Select(Theme)], truncated);
+        return PlanningReply.Of(result, $"{points.Count} retrospective points in {resolvedProject.Key}{(truncated ? " (the newest 200 of more)" : string.Empty)}.");
     }
 
+    // A compiled_from key must be an item of the project: an unknown key or one from another project is a validation error on that argument.
+    private async Task<Guid> CompiledAsync(string key, Guid projectId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return (await items.ResolveAsync(key, ProjectRole.Member, projectId, "compiled_from", cancellationToken)).Id;
+        }
+        catch (ApiException ex) when (ex.Code == ApiErrorCodes.NotFound)
+        {
+            throw ApiException.Validation($"{key} is not an item in this project.", "compiled_from");
+        }
+    }
+
+    // TODO: McpOpenUrls (Contracts, not owned by this task) gets a Retros builder, and this goes.
+    private static string RetrosUrl(string baseUrl, string projectKey)
+        => $"{baseUrl.TrimEnd('/')}/p/{Uri.EscapeDataString(projectKey)}/retros";
+
     private static IReadOnlyList<RetroLogPoint> Points(IReadOnlyList<RetroPointInput>? points)
-        => [.. (points ?? []).Select(p => new RetroLogPoint(p.Text ?? string.Empty, p.Theme, null))];
+        => [.. (points ?? []).Select(p => new RetroLogPoint(p.Text ?? string.Empty, p.Theme, p.RootCause))];
 
     private static IReadOnlyList<RetroLogPoint> BadPoints(IReadOnlyList<RetroBadPointInput>? points)
         => [.. (points ?? []).Select(p => new RetroLogPoint(p.Text ?? string.Empty, p.Theme, p.RootCause))];
