@@ -40,10 +40,13 @@ public static class LocalHostRunner
             await app.DisposeAsync();
             throw;
         }
-        await output.WriteLineAsync($"ShipLean is running at {app.BaseUrl}");
-        await output.WriteLineAsync($"Sign in as {LocalSignIn.Email} / {LocalSignIn.Password}");
-        await output.WriteLineAsync($"SHIPLEAN_LOCAL_URL={app.BaseUrl}");
-        await output.WriteLineAsync("Press Ctrl+C to stop.");
+        // One write, so console logs from the indexer can't land between the lines an agent waits on.
+        var newLine = output.NewLine;
+        await output.WriteAsync(
+            $"ShipLean is running at {app.BaseUrl}{newLine}"
+            + $"Sign in as {LocalSignIn.Email} / {LocalSignIn.Password}{newLine}"
+            + $"SHIPLEAN_LOCAL_URL={app.BaseUrl}{newLine}"
+            + $"Press Ctrl+C to stop.{newLine}");
         return new LocalHostInstance(app);
     }
 
