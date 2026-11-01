@@ -38,7 +38,7 @@ internal sealed class WorkTools(
     public async Task<CallToolResult> FindWorkToPickUp(
         [Description("Project key such as SHIP. Leave out for the person's most recent project.")] string? project = null,
         [Description("current, next or a sprint name. Defaults to current.")] string? sprint = null,
-        [Description("Only this type: epic, feature, story, bug or task.")] string? type = null,
+        [Description("Only this type: epic, feature, story, bug, action or task.")] string? type = null,
         [Description("Only items under this parent, by key such as SHIP-12.")] string? parent = null,
         CancellationToken cancellationToken = default)
     {
@@ -210,7 +210,7 @@ internal sealed class WorkTools(
     // After closing a task: when it was the last open task of its story or bug, name the parent and the state to offer.
     private async Task<(bool Last, string? ParentKey, string? MoveParentTo)> ClosedLastTaskAsync(WorkItemSnapshot task, IReadOnlyList<StateDto> allStates, CancellationToken cancellationToken)
     {
-        if (task.Type != WorkItemTypeId.Task || task.ParentId is not { } parentId || task.ParentType is not (WorkItemTypeId.Story or WorkItemTypeId.Bug))
+        if (task.Type != WorkItemTypeId.Task || task.ParentId is not { } parentId || task.ParentType is not { } parentType || !WorkItemTypeRules.IsStoryLevel(parentType))
         {
             return (false, null, null);
         }
@@ -241,8 +241,9 @@ internal sealed class WorkTools(
             "feature" => WorkItemTypeId.Feature,
             "story" => WorkItemTypeId.Story,
             "bug" => WorkItemTypeId.Bug,
+            "action" or "actionitem" => WorkItemTypeId.Action,
             "task" => WorkItemTypeId.Task,
-            _ => throw ApiException.Validation($"\"{type}\" is not a work item type. Use epic, feature, story, bug or task.", "type"),
+            _ => throw ApiException.Validation($"\"{type}\" is not a work item type. Use epic, feature, story, bug, action or task.", "type"),
         };
     }
 

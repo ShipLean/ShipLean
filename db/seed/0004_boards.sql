@@ -13,7 +13,8 @@ VALUES
       "definitionOfDone": "- Title says who it is for and why\n- Linked to a parent **Feature**",
       "stateMappings": [
         { "type": "story", "stateId": "00000003-0000-4000-8001-000000000301" },
-        { "type": "bug", "stateId": "00000003-0000-4000-8001-000000000401" }
+        { "type": "bug", "stateId": "00000003-0000-4000-8001-000000000401" },
+        { "type": "action", "stateId": "00000003-0000-4000-8001-000000000601" }
       ]
     },
     {
@@ -24,7 +25,8 @@ VALUES
       "definitionOfDone": "- Acceptance criteria written and agreed\n- Estimated in story points\n- No open questions for the product owner\n- Bugs: **repro steps** and severity set",
       "stateMappings": [
         { "type": "story", "stateId": "00000003-0000-4000-8001-000000000301" },
-        { "type": "bug", "stateId": "00000003-0000-4000-8001-000000000402" }
+        { "type": "bug", "stateId": "00000003-0000-4000-8001-000000000402" },
+        { "type": "action", "stateId": "00000003-0000-4000-8001-000000000601" }
       ]
     },
     {
@@ -35,7 +37,8 @@ VALUES
       "definitionOfDone": "- Code and tests pushed on a branch\n- Tasks exist for the remaining work\n- Draft PR open and linked",
       "stateMappings": [
         { "type": "story", "stateId": "00000003-0000-4000-8001-000000000302" },
-        { "type": "bug", "stateId": "00000003-0000-4000-8001-000000000403" }
+        { "type": "bug", "stateId": "00000003-0000-4000-8001-000000000403" },
+        { "type": "action", "stateId": "00000003-0000-4000-8001-000000000602" }
       ]
     },
     {
@@ -46,7 +49,8 @@ VALUES
       "definitionOfDone": "- PR approved by one reviewer\n- CI green\n- Deployed to staging behind its flag",
       "stateMappings": [
         { "type": "story", "stateId": "00000003-0000-4000-8001-000000000303" },
-        { "type": "bug", "stateId": "00000003-0000-4000-8001-000000000404" }
+        { "type": "bug", "stateId": "00000003-0000-4000-8001-000000000404" },
+        { "type": "action", "stateId": "00000003-0000-4000-8001-000000000602" }
       ]
     },
     {
@@ -57,7 +61,8 @@ VALUES
       "definitionOfDone": "- Acceptance criteria checked on staging\n- Released, or flag on in production\n- Changelog updated",
       "stateMappings": [
         { "type": "story", "stateId": "00000003-0000-4000-8001-000000000304" },
-        { "type": "bug", "stateId": "00000003-0000-4000-8001-000000000405" }
+        { "type": "bug", "stateId": "00000003-0000-4000-8001-000000000405" },
+        { "type": "action", "stateId": "00000003-0000-4000-8001-000000000603" }
       ]
     }
   ],
@@ -84,7 +89,8 @@ VALUES
   ],
   "cardFields": [
     { "type": "story", "showKey": true, "showAssignee": true, "showTags": true, "showPoints": true, "showEmptyFields": false, "extraFields": ["parent", "priority", "sprint"] },
-    { "type": "bug", "showKey": true, "showAssignee": true, "showTags": true, "showPoints": true, "showEmptyFields": false, "extraFields": ["parent", "severity", "priority"] }
+    { "type": "bug", "showKey": true, "showAssignee": true, "showTags": true, "showPoints": true, "showEmptyFields": false, "extraFields": ["parent", "severity", "priority"] },
+    { "type": "action", "showKey": true, "showAssignee": true, "showTags": true, "showPoints": true, "showEmptyFields": false, "extraFields": ["parent", "priority", "sprint"] }
   ],
   "styleRules": [
     {
@@ -327,7 +333,8 @@ VALUES
   "cardFields": [
     { "type": "task", "showKey": true, "showAssignee": true, "showTags": true, "showPoints": false, "showEmptyFields": false, "extraFields": ["parent"] },
     { "type": "story", "showKey": true, "showAssignee": true, "showTags": false, "showPoints": true, "showEmptyFields": false, "extraFields": ["state"] },
-    { "type": "bug", "showKey": true, "showAssignee": true, "showTags": false, "showPoints": true, "showEmptyFields": false, "extraFields": ["state"] }
+    { "type": "bug", "showKey": true, "showAssignee": true, "showTags": false, "showPoints": true, "showEmptyFields": false, "extraFields": ["state"] },
+    { "type": "action", "showKey": true, "showAssignee": true, "showTags": false, "showPoints": true, "showEmptyFields": false, "extraFields": ["state"] }
   ],
   "styleRules": [
     {
@@ -387,8 +394,8 @@ VALUES
   "transitions": []
 }'::jsonb);
 
--- The other projects: one column per non-Removed state of the level's type (Stories: the story states, bugs mapped to the
--- bug state of the same name), one default lane, no style rules, no tag colours; card fields, annotations and card
+-- The other projects: one column per non-Removed state of the level's type (Stories: the story states, bugs and action items mapped to the
+-- bug state of the same name and the Action state of the nearest category at or below the column's), one default lane, no style rules, no tag colours; card fields, annotations and card
 -- reordering are SHIP's for the same level. The Taskboard keeps empty columns and swimlanes like SHIP's.
 INSERT INTO board (id, project_id, level, settings)
 SELECT format('00000007-0000-4000-80%s-%s', lpad(p.number::text, 2, '0'), lpad(l.digit::text, 12, '0'))::uuid,
@@ -406,10 +413,17 @@ SELECT format('00000007-0000-4000-80%s-%s', lpad(p.number::text, 2, '0'), lpad(l
                               THEN jsonb_build_array(
                                        jsonb_build_object('type', 'story', 'stateId', main.id),
                                        jsonb_build_object('type', 'bug', 'stateId', bug.id))
+                                   || jsonb_build_array(jsonb_build_object('type', 'action', 'stateId', act.id))
                               ELSE jsonb_build_array(jsonb_build_object('type', l.main_type, 'stateId', main.id)) END)
                       ORDER BY main.sort_order)
                FROM state main
                LEFT JOIN state bug ON bug.project_id = main.project_id AND bug.type = 'bug' AND bug.name = main.name
+               LEFT JOIN LATERAL (SELECT a.id FROM state a
+                                  WHERE a.project_id = main.project_id AND a.type = 'action' AND a.category <> 'removed'
+                                    AND (CASE a.category WHEN 'proposed' THEN 0 WHEN 'inProgress' THEN 1 WHEN 'resolved' THEN 2 ELSE 3 END)
+                                        <= (CASE main.category WHEN 'proposed' THEN 0 WHEN 'inProgress' THEN 1 WHEN 'resolved' THEN 2 ELSE 3 END)
+                                  ORDER BY (CASE a.category WHEN 'proposed' THEN 0 WHEN 'inProgress' THEN 1 WHEN 'resolved' THEN 2 ELSE 3 END) DESC, a.sort_order DESC
+                                  LIMIT 1) act ON true
                WHERE main.project_id = project.id AND main.type = l.main_type AND main.category <> 'removed') END,
            'swimlanes', CASE WHEN l.level = 'taskboard' THEN '[]'::jsonb ELSE
                jsonb_build_array(jsonb_build_object('id', 'lane-default', 'name', 'Default lane', 'colour', NULL::text, 'kind', 'default', 'criteria', NULL::jsonb)) END,

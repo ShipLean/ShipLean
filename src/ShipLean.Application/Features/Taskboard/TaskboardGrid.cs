@@ -12,9 +12,9 @@ internal static class TaskboardGrid
     public static IReadOnlyList<StateRef> TaskStates(BoardSettingsDto board)
         => [.. board.States.First(s => s.Type == WorkItemTypeId.Task).States.Where(s => s.Category != StateCategory.Removed)];
 
-    // The Story and Bug states for the row header's state picker, Removed left out.
+    // The story-level states for the row header's state picker, Removed left out.
     public static IReadOnlyList<BoardTypeStatesDto> ParentStates(BoardSettingsDto board)
-        => [.. board.States.Where(s => s.Type is WorkItemTypeId.Story or WorkItemTypeId.Bug)
+        => [.. board.States.Where(s => WorkItemTypeRules.IsStoryLevel(s.Type))
             .Select(s => s with { States = [.. s.States.Where(state => state.Category != StateCategory.Removed)] })];
 
     public static IReadOnlyList<TaskboardColumnDto> Columns(IReadOnlyList<StateRef> states, IReadOnlyList<CardDto> taskCards)

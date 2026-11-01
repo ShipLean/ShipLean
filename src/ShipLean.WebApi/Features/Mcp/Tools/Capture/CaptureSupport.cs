@@ -42,8 +42,9 @@ public sealed class CaptureSupport(IServiceProvider services, AgentBaseUrl baseU
             "feature" => WorkItemTypeId.Feature,
             "story" or "userstory" => WorkItemTypeId.Story,
             "bug" => WorkItemTypeId.Bug,
+            "action" or "actionitem" => WorkItemTypeId.Action,
             "task" => WorkItemTypeId.Task,
-            _ => throw ApiException.Validation($"\"{text}\" is not a work item type: use epic, feature, story, bug or task.", field),
+            _ => throw ApiException.Validation($"\"{text}\" is not a work item type: use epic, feature, story, bug, action or task.", field),
         };
 
     public static string TypeName(WorkItemTypeId type) => type.ToString().ToLowerInvariant();

@@ -37,7 +37,7 @@ internal sealed class SearchTool(
     public async Task<CallToolResult> SearchAsync(
         [Description("Words to look for, like \"checkout timeout\" (optional when you filter).")] string? words = null,
         [Description("Project key (optional: with words, every project you are in).")] string? project = null,
-        [Description("Work item type: epic, feature, story, bug or task.")] string? type = null,
+        [Description("Work item type: epic, feature, story, bug, action or task.")] string? type = null,
         [Description("A state name, like \"In progress\" (with words, needs project or parent).")] string? state = null,
         [Description("A person: me, a name or an email (with words, needs project or parent).")] string? assignee = null,
         [Description("A sprint: current, next or its name (with words, needs project or parent).")] string? sprint = null,
@@ -184,8 +184,12 @@ internal sealed class SearchTool(
         {
             return WorkItemTypeId.Story;
         }
+        if (wanted.Equals("actionitem", StringComparison.OrdinalIgnoreCase))
+        {
+            return WorkItemTypeId.Action;
+        }
         return Enum.TryParse<WorkItemTypeId>(wanted, true, out var parsed) && Enum.IsDefined(parsed)
             ? parsed
-            : throw ApiException.Validation($"\"{type}\" is not a work item type: use epic, feature, story, bug or task.", "type");
+            : throw ApiException.Validation($"\"{type}\" is not a work item type: use epic, feature, story, bug, action or task.", "type");
     }
 }

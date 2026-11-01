@@ -6,7 +6,7 @@ namespace ShipLean.WebApi.Features.Mcp.Tools.Capture;
 // One item an agent asks capture_work to create. Everything but type and title is optional.
 public sealed record CaptureItem
 {
-    [JsonPropertyName("type"), Description("epic, feature, story, bug or task.")]
+    [JsonPropertyName("type"), Description("epic, feature, story, bug, action or task.")]
     public string? Type { get; init; }
 
     [JsonPropertyName("title"), Description("A short title in the team's words.")]
