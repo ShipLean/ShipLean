@@ -78,7 +78,17 @@ public sealed class AppHost : IAsyncDisposable
             }
         });
         factory.UseKestrel(0);
-        factory.StartServer();
+        try
+        {
+            factory.StartServer();
+        }
+        catch
+        {
+            // A taken port ends up here. The framework has already disposed the half-started host (its container and so its
+            // background services); the factory is what is left to release.
+            factory.Dispose();
+            throw;
+        }
         var address = factory.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.First();
         return new AppHost(factory, $"http://127.0.0.1:{new Uri(address).Port}");
     }

@@ -94,6 +94,26 @@ public class AppHostTests
         stopping.IsCancellationRequested.ShouldBeTrue();
     }
 
+    [Test]
+    public void Start_WhenThePortIsInUse_ShouldThrowAndDisposeTheServicesThatStarted()
+    {
+        var recorder = new RecordingHostedService();
+        using var occupier = new TcpListener(IPAddress.Loopback, 0);
+        occupier.Start();
+        var port = ((IPEndPoint)occupier.LocalEndpoint).Port;
+
+        Should.Throw<IOException>(() => AppHost.Start(new AppHostOptions
+        {
+            ConnectionString = _database.ConnectionString,
+            Port = port,
+            // In front of the web server, which starts last; made by a factory so the container owns and disposes it.
+            ConfigureServices = services => services.Insert(0, ServiceDescriptor.Singleton<IHostedService>(_ => recorder)),
+        }));
+
+        recorder.Started.ShouldBeTrue();
+        recorder.Disposed.ShouldBeTrue();
+    }
+
     private static IReadOnlyList<Type> HostedServiceTypes(AppHost host)
         => host.Services.GetServices<IHostedService>().Select(service => service.GetType()).ToList();
 
