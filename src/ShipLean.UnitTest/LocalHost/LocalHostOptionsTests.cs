@@ -63,12 +63,27 @@ public class LocalHostOptionsTests
 
     [TestCase("sometimes")]
     [TestCase("3")]
+    [TestCase("1")]
+    [TestCase("fresh,keep")]
+    [TestCase(" keep")]
+    [TestCase("keep ")]
+    [TestCase("")]
     public void Parse_WhenDataIsUnknown_ShouldFail(string data)
     {
         var result = LocalHostOptionsParser.Parse(["--data", data]);
 
         result.Options.ShouldBeNull();
         result.Error!.ShouldContain("--data");
+    }
+
+    [TestCase("FRESH", LocalHostData.Fresh)]
+    [TestCase("Keep", LocalHostData.Keep)]
+    [TestCase("empty", LocalHostData.Empty)]
+    public void Parse_WhenDataDiffersOnlyInCase_ShouldAcceptIt(string data, LocalHostData expected)
+    {
+        var result = LocalHostOptionsParser.Parse(["--data", data]);
+
+        result.Options!.Data.ShouldBe(expected);
     }
 
     [Test]

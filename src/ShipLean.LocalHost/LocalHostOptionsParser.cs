@@ -43,7 +43,7 @@ public static class LocalHostOptionsParser
                     ? (options with { Port = port }, null)
                     : (options, $"--port must be a number from 0 to 65535, not '{value}'.");
             case "--data":
-                return Enum.TryParse<LocalHostData>(value, ignoreCase: true, out var data) && Enum.IsDefined(data)
+                return ParseData(value) is { } data
                     ? (options with { Data = data }, null)
                     : (options, $"--data must be fresh, keep or empty, not '{value}'.");
             default:
@@ -51,6 +51,20 @@ public static class LocalHostOptionsParser
                     ? (options with { Database = value }, null)
                     : (options, $"--database '{value}' is not a valid name: use shiplean_ then lowercase letters, digits and _.");
         }
+    }
+
+    // Only the three words: Enum.TryParse would also take "1" and "fresh,keep".
+    private static LocalHostData? ParseData(string value)
+    {
+        if (string.Equals(value, "fresh", StringComparison.OrdinalIgnoreCase))
+        {
+            return LocalHostData.Fresh;
+        }
+        if (string.Equals(value, "keep", StringComparison.OrdinalIgnoreCase))
+        {
+            return LocalHostData.Keep;
+        }
+        return string.Equals(value, "empty", StringComparison.OrdinalIgnoreCase) ? LocalHostData.Empty : null;
     }
 
     private static LocalHostParseResult Fail(string error) => new(null, error);
