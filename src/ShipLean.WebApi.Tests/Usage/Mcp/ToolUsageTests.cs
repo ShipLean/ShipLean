@@ -1,3 +1,4 @@
+using System.Net;
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Contracts.Usage;
 using ShipLean.TestSupport;
@@ -16,6 +17,9 @@ public class ToolUsageTests : McpFixture
     protected override bool WithProbeTools => false;
 
     private RecordingUsageEvents Usage => (RecordingUsageEvents)Host.Services.GetRequiredService<IUsageEvents>();
+
+    [SetUp]
+    public void ClearUsage() => Usage.Clear();
 
     private Task<UsageEvent> NextAsync(string source) => Usage.WaitForAsync(e => e.Source == source, Wait);
 
@@ -45,7 +49,7 @@ public class ToolUsageTests : McpFixture
     {
         var token = await TokenAsync(TestUser.Joel, ReadOnly);
 
-        await CallToolAsync(token, "get_work_item", """{"item":"SHIP-999999"}""");
+        await CallToolAsync(token, "get_work_item", """{"key":"SHIP-999999"}""");
 
         var tracked = await NextAsync("tool:get_work_item");
         tracked.Name.ShouldBe(UsageEventNames.WorkItemViewed);
@@ -67,16 +71,17 @@ public class ToolUsageTests : McpFixture
         tracked.ProjectCount.ShouldBe(0);
     }
 
+    // The gate in front of the SDK refuses a missing scope with HTTP 403 before any filter runs, so nothing is tracked.
+    // The filter's own forbidden answer is a backstop no real tool reaches (only test tools that disagree with the gate do).
     [Test]
-    public async Task ToolCall_WhenScopeRefused_ShouldTrackForbidden()
+    public async Task ToolCall_WhenGateRefusesScope_ShouldTrackNothing()
     {
         var token = await TokenAsync(TestUser.Joel, ReadOnly);
 
-        await CallToolAsync(token, "capture_work", """{"project":"SHIP","items":[{"type":"task","title":"Refused"}]}""");
+        var reply = await CallToolAsync(token, "capture_work", """{"project":"SHIP","plan":"not-a-real-plan"}""");
 
-        var tracked = await NextAsync("tool:capture_work");
-        tracked.Outcome.ShouldBe(UsageOutcome.Error);
-        tracked.ErrorCode.ShouldBe("forbidden");
+        reply.Status.ShouldBe(HttpStatusCode.Forbidden);
+        Usage.Events.ShouldBeEmpty();
     }
 
     [Test]
