@@ -11,7 +11,7 @@ public sealed class AnalyticsServices : IServiceModule
 
     public void AddServices(IServiceCollection services, IConfiguration configuration)
     {
-        services.AddSingleton<AnalyticsSettings>();
+        services.AddScoped<AnalyticsSettings>();
         services.AddSingleton<IAnalyticsSettingsReader, AnalyticsSettingsReader>();
         services.AddHttpClient(HttpClientName, client => client.Timeout = TimeSpan.FromSeconds(10))
             .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false, UseCookies = false });

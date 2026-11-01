@@ -29,5 +29,5 @@ public sealed class AnalyticsController(AnalyticsSettings settings) : ApiControl
     [HttpPost("test")]
     [ProducesResponseType<AnalyticsTestResultDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ApiError>(StatusCodes.Status403Forbidden)]
-    public Task<AnalyticsTestResultDto> Test(CancellationToken cancellationToken) => AnalyticsSettings.TestAsync(cancellationToken);
+    public Task<AnalyticsTestResultDto> Test(CancellationToken cancellationToken) => settings.TestAsync(cancellationToken);
 }
