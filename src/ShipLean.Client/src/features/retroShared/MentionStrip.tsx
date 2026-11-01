@@ -1,20 +1,25 @@
-import type { RetroMentionStripDto } from '../../api/retros';
 import { retroSharedTestIds as ids } from './testIds';
 
 /** Mentions per sprint as small bars, with a dashed line where a fix closed. Inline SVG, no chart library. */
 export function MentionStrip({
-  strip,
+  counts,
+  fixAt,
+  label,
   sprintNames,
   width = 96,
   height = 22,
 }: {
-  strip: RetroMentionStripDto;
-  /** The view's sprint names, aligned with `strip.counts`, for the bar tooltips. */
+  /** Mentions per sprint, one bar each. */
+  counts: readonly number[];
+  /** Index into `counts` of the bar a fix closed after, or null. */
+  fixAt: number | null;
+  /** What the strip counts, for the accessible name (the theme's name). */
+  label: string;
+  /** The view's sprint names, aligned with `counts`, for the bar tooltips. */
   sprintNames: readonly string[];
   width?: number;
   height?: number;
 }) {
-  const { counts, fixAt, theme } = strip;
   const max = Math.max(4, ...counts);
   const barWidth = width / counts.length;
   return (
@@ -24,7 +29,7 @@ export function MentionStrip({
       width={width}
       height={height}
       role="img"
-      aria-label={`${theme.name}: mentions per sprint ${counts.join(', ')}`}
+      aria-label={`${label}: mentions per sprint ${counts.join(', ')}`}
       className="block flex-none"
     >
       {counts.map((n, i) => {

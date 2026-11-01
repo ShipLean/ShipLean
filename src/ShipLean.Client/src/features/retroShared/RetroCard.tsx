@@ -4,10 +4,10 @@ import { TypeIcon } from '../../components/TypeIcon';
 import { RETRO_CATEGORIES } from '../../api/retros';
 import type { RetroCardDto, RetroFailureLogDto } from '../../api/retros';
 import { AuthorChip } from './AuthorChip';
+import { FeatureChip } from './FeatureChip';
+import { RetroCardCategory } from './RetroCardCategory';
 import { RetroLogSection } from './RetroLogSection';
-import { retroCategoryColours, retroCategoryLabels } from './retroCategories';
 import { retroSharedTestIds as ids } from './testIds';
-import { ThemeChip } from './ThemeChip';
 
 const roleLabels = { conductor: 'Conductor', subAgent: 'Sub-agent', person: 'Person' } as const;
 
@@ -18,8 +18,21 @@ const logSections: { key: keyof RetroFailureLogDto; label: string }[] = [
 ];
 
 /** One retro as the By work item view shows it: the item (or the sprint), who wrote it, its points by category, and the raw failure log collapsed. */
-export function RetroCard({ card }: { card: RetroCardDto }) {
-  const [logOpen, setLogOpen] = useState(false);
+export function RetroCard({
+  card,
+  highlightPointId,
+  logDefaultOpen = false,
+  hideEmptyCategories = false,
+}: {
+  card: RetroCardDto;
+  /** Search's selected retro: this point is highlighted in its category. */
+  highlightPointId?: string;
+  /** The raw failure log starts open instead of collapsed. */
+  logDefaultOpen?: boolean;
+  /** Leave out categories with no points instead of showing them with "—". */
+  hideEmptyCategories?: boolean;
+}) {
+  const [logOpen, setLogOpen] = useState(logDefaultOpen);
   const { workItem, sprint, failureLog } = card;
   const isFeature = workItem?.type.id === 'feature';
   const hasLog = logSections.some((s) => failureLog[s.key].length > 0);
@@ -27,10 +40,10 @@ export function RetroCard({ card }: { card: RetroCardDto }) {
     <article
       data-testid={ids.retroCard}
       data-feature={isFeature ? 'true' : 'false'}
-      className={`grid gap-2 rounded-md border border-edge bg-panel p-3 ${isFeature ? 'border-l-[3px] border-l-signal' : ''}`}
+      className={`@container grid gap-2 rounded-md border border-edge bg-panel p-3 ${isFeature ? 'border-l-[3px] border-l-signal' : ''}`}
     >
       <header className="flex flex-wrap items-center gap-1.5 text-[length:var(--text-sm)]">
-        {isFeature ? <Chip tone="accent">Feature</Chip> : null}
+        {isFeature ? <FeatureChip /> : null}
         {workItem ? (
           <>
             <TypeIcon type={workItem.type.id} />
@@ -48,48 +61,30 @@ export function RetroCard({ card }: { card: RetroCardDto }) {
         <AuthorChip author={card.author} />
         <Chip>{roleLabels[card.author.role]}</Chip>
       </header>
-      <div className="grid grid-cols-2 gap-3 min-[1100px]:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 @min-[480px]:grid-cols-2 @min-[760px]:grid-cols-4">
         {RETRO_CATEGORIES.map((category) => {
           const points = card.points.filter((p) => p.category === category);
+          if (hideEmptyCategories && points.length === 0) return null;
           return (
-            <section
+            <RetroCardCategory
               key={category}
-              data-category={category}
-              aria-label={retroCategoryLabels[category]}
-              className="min-w-0 border-l-2 pl-2"
-              style={{ borderColor: retroCategoryColours[category] }}
-            >
-              <div className="text-[length:var(--text-2xs)] font-semibold tracking-wide text-ink-muted uppercase">
-                {retroCategoryLabels[category]}
-              </div>
-              {points.length > 0 ? (
-                <ul className="m-0 mt-1 grid list-disc gap-1 pl-4 text-[length:var(--text-sm)]">
-                  {points.map((p) => (
-                    <li key={p.id}>
-                      {p.text}
-                      {category === 'wentBadly' && p.rootCause ? (
-                        <span className="block text-[length:var(--text-xs)] text-ink-muted">
-                          Root cause: {p.rootCause}
-                        </span>
-                      ) : null}
-                      <ThemeChip theme={p.theme} recurring={p.recurring} />
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <span className="text-[length:var(--text-xs)] text-ink-muted">-</span>
-              )}
-            </section>
+              category={category}
+              points={points}
+              highlightPointId={highlightPointId}
+            />
           );
         })}
       </div>
       {card.compiledFrom.length > 0 ? (
         <p className="m-0 flex flex-wrap items-center gap-1.5 text-[length:var(--text-xs)] text-ink-muted">
           Compiled from
-          {card.compiledFrom.map((item) => (
-            <span key={item.id} className="inline-flex items-center gap-1">
-              <TypeIcon type={item.type.id} />
-              <span className="font-mono">{item.key}</span>
+          {card.compiledFrom.map((item, i) => (
+            <span key={item.id}>
+              <span className="inline-flex items-center gap-1">
+                <TypeIcon type={item.type.id} />
+                <span className="font-mono">{item.key}</span>
+              </span>
+              {i < card.compiledFrom.length - 1 ? ',' : '.'}
             </span>
           ))}
         </p>

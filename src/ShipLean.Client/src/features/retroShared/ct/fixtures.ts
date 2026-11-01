@@ -1,5 +1,5 @@
-import sprintRetro from '../../../../ShipLean.TestSupport/DtoFixtures/retros/sprint-retro.json' with { type: 'json' };
-import type { RetroCardDto, RetroPointDto, SprintRetroDto } from '../../api/retros';
+import sprintRetro from '../../../../../ShipLean.TestSupport/DtoFixtures/retros/sprint-retro.json' with { type: 'json' };
+import type { RetroCardDto, RetroPointDto, SprintRetroDto } from '../../../api/retros';
 
 const view = sprintRetro as SprintRetroDto;
 

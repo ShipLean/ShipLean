@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
-import { StateDot } from '../../components/StateDot';
-import { Chip } from '../../components/Chip';
 import { TypeIcon } from '../../components/TypeIcon';
 import type { RetroPointDto } from '../../api/retros';
+import { ActionChip } from './ActionChip';
 import { AuthorChip } from './AuthorChip';
+import { FeatureChip } from './FeatureChip';
 import { retroSharedTestIds as ids } from './testIds';
 import { ThemeChip } from './ThemeChip';
 
@@ -11,9 +11,12 @@ import { ThemeChip } from './ThemeChip';
 export function PointRow({
   point,
   actions,
+  showTheme = true,
 }: {
   point: RetroPointDto;
   actions?: (point: RetroPointDto) => ReactNode;
+  /** False where a header above the row already names the theme (By category). Default true. */
+  showTheme?: boolean;
 }) {
   const { workItem, action } = point;
   return (
@@ -33,7 +36,7 @@ export function PointRow({
         </p>
       ) : null}
       <footer className="flex flex-wrap items-center gap-1.5 text-[length:var(--text-xs)] text-ink-muted">
-        {point.isFeature ? <Chip tone="accent">Feature</Chip> : null}
+        {point.isFeature ? <FeatureChip /> : null}
         {workItem ? (
           <>
             <TypeIcon type={workItem.type.id} />
@@ -43,18 +46,9 @@ export function PointRow({
           <span>Sprint</span>
         )}
         <AuthorChip author={point.author} />
-        <ThemeChip theme={point.theme} recurring={point.recurring} />
+        {showTheme ? <ThemeChip theme={point.theme} recurring={point.recurring} /> : null}
         <span className="flex-1" />
-        {action ? (
-          <span
-            title={action.title}
-            className="inline-flex h-5 items-center gap-1 rounded-xs border border-edge bg-panel px-1.5 whitespace-nowrap text-ink"
-          >
-            <TypeIcon type="action" />
-            <span className="font-mono">{action.key}</span>
-            <StateDot category={action.state.category} name={action.state.name} />
-          </span>
-        ) : null}
+        {action ? <ActionChip action={action} /> : null}
         {actions ? actions(point) : null}
       </footer>
     </article>

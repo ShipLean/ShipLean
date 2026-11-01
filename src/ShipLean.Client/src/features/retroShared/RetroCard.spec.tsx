@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import { componentTestIds } from '../../components/testIds';
-import { featureCard, sprintCard, subAgentCard } from './fixtures';
+import { CardWidthHarness } from './ct/CardWidthHarness';
+import { featureCard, sprintCard, subAgentCard } from './ct/fixtures';
 import { RetroCard } from './RetroCard';
 import { retroSharedTestIds as ids } from './testIds';
 
@@ -14,7 +15,7 @@ test('RetroCard_WhenFailureLogPresent_ShouldStartCollapsedAndExpandInOrder', asy
   await page.getByTestId(ids.retroCardLogToggle).click();
   const log = page.getByTestId(ids.retroCardLog);
   await expect(log).toBeVisible();
-  const headings = await log.locator('dt').allTextContents();
+  const headings = await log.locator('[data-log-section]').allTextContents();
   expect(headings).toEqual(['Blockers', 'Assumptions disproved', 'Friction']);
   await expect(log).toContainText(subAgentCard.failureLog.blockers[0]);
 });
@@ -36,6 +37,100 @@ test('RetroCard_WhenSprintLevelPersonRetro_ShouldShowSprintAndNoItem', async ({ 
   const card = page.getByTestId(ids.retroCard);
   await expect(card.getByText('Sprint', { exact: true })).toBeVisible();
   await expect(card.getByTestId(componentTestIds.typeIcon)).toHaveCount(0);
+});
+
+test('RetroCard_WhenContainerIsNarrow_ShouldStackCategoriesInOneColumn', async ({
+  mount,
+  page,
+}) => {
+  await mount(<CardWidthHarness card={subAgentCard} width={380} />);
+  const boxes = await page
+    .getByTestId(ids.retroCard)
+    .locator('section[data-category]')
+    .evaluateAll((els) => els.map((el) => el.getBoundingClientRect().x));
+  expect(boxes).toHaveLength(4);
+  expect(new Set(boxes).size).toBe(1);
+});
+
+test('RetroCard_WhenContainerIsWide_ShouldLayCategoriesInOneRow', async ({ mount, page }) => {
+  await mount(<CardWidthHarness card={subAgentCard} width={1000} />);
+  const tops = await page
+    .getByTestId(ids.retroCard)
+    .locator('section[data-category]')
+    .evaluateAll((els) => els.map((el) => el.getBoundingClientRect().y));
+  expect(new Set(tops).size).toBe(1);
+});
+
+test('RetroCard_WhenHighlightPointIdGiven_ShouldHighlightOnlyThatPoint', async ({
+  mount,
+  page,
+}) => {
+  const target = subAgentCard.points[1];
+  await mount(<RetroCard card={subAgentCard} highlightPointId={target.id} />);
+  const card = page.getByTestId(ids.retroCard);
+  await expect(card.locator('[data-highlighted="true"]')).toHaveCount(1);
+  await expect(card.locator(`[data-point-id="${target.id}"]`)).toHaveAttribute(
+    'data-highlighted',
+    'true',
+  );
+});
+
+test('RetroCard_WhenLogDefaultOpen_ShouldShowTheLogWithoutAClick', async ({ mount, page }) => {
+  await mount(<RetroCard card={subAgentCard} logDefaultOpen />);
+  await expect(page.getByTestId(ids.retroCardLog)).toBeVisible();
+  await expect(page.getByTestId(ids.retroCardLogToggle)).toHaveAttribute('aria-expanded', 'true');
+});
+
+test('RetroCard_WhenHideEmptyCategories_ShouldLeaveOutCategoriesWithNoPoints', async ({
+  mount,
+  page,
+}) => {
+  await mount(<RetroCard card={featureCard} hideEmptyCategories />);
+  const sections = page.getByTestId(ids.retroCard).locator('section[data-category]');
+  await expect(sections).toHaveCount(3);
+  await expect(page.getByTestId(ids.retroCard).locator('[data-category="notInPlan"]')).toHaveCount(
+    0,
+  );
+});
+
+test('RetroCard_WhenCategoryEmpty_ShouldShowAnEmDash', async ({ mount, page }) => {
+  await mount(<RetroCard card={featureCard} />);
+  await expect(
+    page.getByTestId(ids.retroCard).locator('section[data-category="notInPlan"]'),
+  ).toContainText('—');
+});
+
+test('RetroCard_WhenPointHasAction_ShouldLinkItsKeyAndStateToTheWorkItem', async ({
+  mount,
+  page,
+}) => {
+  const action = featureCard.points.find((p) => p.action)!.action!;
+  await mount(<RetroCard card={featureCard} />, {
+    hooksConfig: { route: '/p/SHIP/boards/stories' },
+  });
+  const chip = page.getByTestId(ids.retroCard).locator(`[data-item-key="${action.key}"]`);
+  await expect(chip).toHaveAttribute('href', `/p/SHIP/items/${action.key}`);
+  await expect(chip).toContainText(action.state.name);
+});
+
+test('RetroCard_WhenPointHasTheme_ShouldShowItAsAHashLineWithoutRecurringChip', async ({
+  mount,
+  page,
+}) => {
+  const point = featureCard.points.find((p) => p.theme)!;
+  await mount(<RetroCard card={{ ...featureCard, points: [{ ...point, recurring: true }] }} />);
+  const line = page.getByTestId(ids.retroThemeChip);
+  await expect(line).toHaveText(`# ${point.theme!.name}`);
+  await expect(page.getByTestId(ids.retroCard)).not.toContainText('Recurring');
+});
+
+test('RetroCard_WhenCompiledFrom_ShouldSeparateKeysWithCommasAndEndWithAPeriod', async ({
+  mount,
+  page,
+}) => {
+  await mount(<RetroCard card={featureCard} />);
+  const keys = featureCard.compiledFrom.map((i) => i.key).join(', ');
+  await expect(page.getByTestId(ids.retroCard)).toContainText(`Compiled from ${keys}.`);
 });
 
 for (const theme of ['light', 'dark'] as const) {

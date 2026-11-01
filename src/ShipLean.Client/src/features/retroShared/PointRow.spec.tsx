@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import { actionPoint, agentPoint, badPoint, goodPoint } from './fixtures';
+import { actionPoint, agentPoint, badPoint, goodPoint } from './ct/fixtures';
 import { PointRowActionsHarness } from './ct/PointRowActionsHarness';
 import { PointRow } from './PointRow';
 import { retroSharedTestIds as ids } from './testIds';
@@ -36,6 +36,28 @@ test('PointRow_WhenActionsGiven_ShouldRenderThemInTheFooter', async ({ mount, pa
 test('PointRow_WhenNoTheme_ShouldShowUnthemed', async ({ mount, page }) => {
   await mount(<PointRow point={{ ...goodPoint, theme: null }} />);
   await expect(page.getByTestId(ids.retroThemeChip)).toHaveText('Unthemed');
+});
+
+test('PointRow_WhenShowThemeFalse_ShouldLeaveTheThemeOut', async ({ mount, page }) => {
+  await mount(<PointRow point={goodPoint} showTheme={false} />);
+  await expect(page.getByTestId(ids.retroPointRow)).toBeVisible();
+  await expect(page.getByTestId(ids.retroThemeChip)).toHaveCount(0);
+});
+
+test('PointRow_WhenAgentWrote_ShouldDrawASquareCorneredTagNotAPill', async ({ mount, page }) => {
+  await mount(<PointRow point={agentPoint} />);
+  const tag = page.getByTestId(ids.retroAuthorChip).locator('[data-agent]');
+  await expect(tag).toHaveCSS('height', '18px');
+  await expect(tag).not.toHaveCSS('border-top-left-radius', '9999px');
+});
+
+test('PointRow_WhenPointHasAction_ShouldLinkTheActionToItsWorkItem', async ({ mount, page }) => {
+  await mount(<PointRow point={actionPoint} />, {
+    hooksConfig: { route: '/p/SHIP/boards/stories' },
+  });
+  await expect(
+    page.getByTestId(ids.retroPointRow).locator(`[data-item-key="${actionPoint.action!.key}"]`),
+  ).toHaveAttribute('href', `/p/SHIP/items/${actionPoint.action!.key}`);
 });
 
 for (const theme of ['light', 'dark'] as const) {
