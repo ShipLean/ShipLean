@@ -25,6 +25,7 @@ public class McpOpenUrlsTests
             ["featuresBacklog"] = McpOpenUrls.Backlog(Base, "SHIP", "features"),
             ["epicsBacklog"] = McpOpenUrls.Backlog(Base, "SHIP", "epics"),
             ["sprints"] = McpOpenUrls.Sprints(Base, "SHIP"),
+            ["retros"] = McpOpenUrls.Retros(Base, "SHIP"),
             ["sprintBacklog"] = McpOpenUrls.SprintBacklog(Base, "SHIP", Sprint),
             ["taskboard"] = McpOpenUrls.Taskboard(Base, "SHIP", Sprint),
             ["featureBoard"] = McpOpenUrls.FeatureBoard(Base, "SHIP", "SHIP-141"),

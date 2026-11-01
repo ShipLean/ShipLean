@@ -21,6 +21,9 @@ public static class McpOpenUrls
     public static string Sprints(string baseUrl, string projectKey)
         => Join(baseUrl, $"/p/{Segment(projectKey)}/sprints");
 
+    public static string Retros(string baseUrl, string projectKey)
+        => Join(baseUrl, $"/p/{Segment(projectKey)}/retros");
+
     public static string SprintBacklog(string baseUrl, string projectKey, Guid sprintId)
         => Join(baseUrl, $"/p/{Segment(projectKey)}/sprints/{sprintId}/backlog");
 

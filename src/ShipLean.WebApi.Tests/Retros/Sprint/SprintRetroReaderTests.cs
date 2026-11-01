@@ -1,6 +1,8 @@
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Dapper;
+using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
@@ -216,6 +218,40 @@ public sealed class SprintRetroReaderTests : ApiFixture
         retro.Kpis.RecurringThemes.ShouldBe(0);
         retro.Sprints.Count.ShouldBe(6);
         retro.Categories[0].Groups.Single().Recurring.ShouldBeFalse();
+    }
+
+    [Test]
+    public async Task Get_WhenActionClosedOnAGapDayAfterTheSprint_ShouldPlaceItInThatSprintLikeInsights()
+    {
+        await using var world = await WorldAsync();
+        await world.Connection.ExecuteAsync("UPDATE sprint SET start_date = @start WHERE id = @id", new { start = new DateOnly(2026, 3, 5), id = world.S5 });
+        var theme = await world.Seed.ThemeAsync("Review waits");
+        foreach (var sprint in new[] { world.S2, world.S3, world.S4 })
+        {
+            await world.MentionAsync(sprint, theme);
+        }
+        var fix = await world.ItemAsync("action");
+        await world.Seed.ActionAsync(new RetroSeedAction(fix, theme, RaisedSprintId: world.S4));
+        await RetroHistory.CompleteAsync(world.Connection, fix, RetroArrangement.Noon(2026, 3, 3));
+
+        var retro = await GetAsync(world.S4);
+        using var scope = Host.Services.CreateScope();
+        var insights = await scope.ServiceProvider.GetRequiredService<IRetroInsightsReader>().GetAsync(world.Project.Id, RetroRange.All, CancellationToken.None);
+
+        retro.ActionItems.Single().Impact.ShouldBe(RetroVerdict.TooEarly);
+        retro.Recurring.Single().FixAt.ShouldBe(3);
+        insights.Impact.Single().ClosedAt.ShouldBe(3);
+    }
+
+    [Test]
+    public async Task Get_WhenSprintIsArchivedAndHasNoEarlierLiveSprint_ShouldNotFail()
+    {
+        await using var world = await WorldAsync();
+        await world.Connection.ExecuteAsync("UPDATE sprint SET archived_at = now() WHERE id = @id", new { id = world.S1 });
+
+        using var response = await Api.GetAsync($"/api/sprints/{world.S1}/retro");
+
+        ((int)response.StatusCode).ShouldBeLessThan(500);
     }
 
     [Test]

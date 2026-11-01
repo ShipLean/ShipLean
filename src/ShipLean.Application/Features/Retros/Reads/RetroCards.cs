@@ -61,7 +61,7 @@ public sealed class RetroCards(NpgsqlDataSource dataSource, TimeProvider clock) 
     {
         var theme = point.ThemeId is { } themeId ? new RetroThemeRefDto(themeId, point.ThemeName!, ParseEnum<RetroTone>(point.ThemeTone!)) : null;
         RetroActionRefDto? action = null;
-        if (point.ActionId is { } actionId)
+        if (point.ActionId is { } actionId && point.ActionStateCategory != "removed")
         {
             var state = new StateRef(point.ActionStateId!.Value, point.ActionStateName!, ParseEnum<StateCategory>(point.ActionStateCategory!));
             var actionSprint = ToSprint(point.ActionSprintId, point.ActionSprintName, point.ActionSprintStart, point.ActionSprintEnd, today);

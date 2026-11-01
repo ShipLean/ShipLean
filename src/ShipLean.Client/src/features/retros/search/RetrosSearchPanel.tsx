@@ -75,7 +75,7 @@ export function RetrosSearchPanel({ project }: { project: ProjectDto }) {
             <div data-testid={pagesTestIds.slotRetroSearchFilters}>
               <SearchFilters {...props} />
             </div>
-            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,28rem)] gap-4">
+            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,380px)] gap-4">
               <SearchRows {...props} />
               <SelectedRetro {...props} />
             </div>

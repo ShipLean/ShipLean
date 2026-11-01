@@ -35,6 +35,20 @@ internal static class SprintRetroStore
                 new { projectId = sprint.ProjectId, start = sprint.Start, end = sprint.End, id = sprint.Id },
                 cancellationToken: cancellationToken))];
 
+    // The start of the next live sprint of the project after this one (same start_date, end_date, id order); null when there is none.
+    public static async Task<string?> NextStartAsync(NpgsqlConnection connection, SprintRow sprint, CancellationToken cancellationToken)
+        => await connection.QuerySingleOrDefaultAsync<string?>(
+            new CommandDefinition(
+                """
+                SELECT to_char(start_date, 'YYYY-MM-DD')
+                FROM sprint
+                WHERE project_id = @projectId AND archived_at IS NULL AND (start_date, end_date, id) > (@start::date, @end::date, @id)
+                ORDER BY start_date, end_date, id
+                LIMIT 1
+                """,
+                new { projectId = sprint.ProjectId, start = sprint.Start, end = sprint.End, id = sprint.Id },
+                cancellationToken: cancellationToken));
+
     public static async Task<IReadOnlyList<Guid>> RetroIdsAsync(NpgsqlConnection connection, Guid sprintId, CancellationToken cancellationToken)
         => [.. await connection.QueryAsync<Guid>(
             new CommandDefinition(
