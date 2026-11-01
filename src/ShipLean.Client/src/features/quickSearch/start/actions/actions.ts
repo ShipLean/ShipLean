@@ -1,4 +1,5 @@
-import { newItemPath, routePath } from '../../../../routes';
+import { newItemPath, routePath, type NewItemKind } from '../../../../routes';
+import { typeName } from '../../../../api/workItemTypes';
 import type { Theme } from '../../../../api/me';
 import type { QuickSearchRow } from '../../types';
 
@@ -22,11 +23,11 @@ export function buildActions(context: ActionContext, query = ''): ActionRow[] {
   const { projectKey: key, navigate } = context;
   const rows: ActionRow[] = [];
   if (key !== undefined) {
-    const create = (kind: 'epic' | 'feature' | 'story' | 'bug'): ActionRow => ({
+    const create = (kind: NewItemKind): ActionRow => ({
       kind: 'action',
       id: `create-${kind}`,
       glyph: '+',
-      label: `Create ${kind}`,
+      label: `Create ${typeName(kind)}`,
       detail: `in ${key}`,
       run: () => navigate(newItemPath(key, kind)),
     });
@@ -48,6 +49,7 @@ export function buildActions(context: ActionContext, query = ''): ActionRow[] {
       create('feature'),
       create('story'),
       create('bug'),
+      create('action'),
       goTo('go-backlogs', '☰', 'Go to Backlogs', 'storiesBacklog'),
       goTo('go-boards', '▦', 'Go to Boards', 'storiesBoard'),
       goTo('go-sprints', '◷', 'Go to Sprints', 'sprints'),

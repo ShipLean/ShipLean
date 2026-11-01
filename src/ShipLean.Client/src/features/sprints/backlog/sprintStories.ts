@@ -1,4 +1,5 @@
 import type { WorkItemDto } from '../../../api/workItems';
+import { isStoryLevel } from '../../../api/workItemTypes';
 
 export interface SprintStory {
   story: WorkItemDto;
@@ -6,7 +7,7 @@ export interface SprintStory {
   tasks: WorkItemDto[];
 }
 
-const isStoryOrBug = (item: WorkItemDto) => item.type.id === 'story' || item.type.id === 'bug';
+const isStoryOrBug = (item: WorkItemDto) => isStoryLevel(item.type.id);
 
 /**
  * A task belongs to the sprint in its own sprint field, whatever sprint its parent is in; rollover moves tasks by the

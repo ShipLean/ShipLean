@@ -7,13 +7,14 @@ import { FieldCell } from './FieldCell';
 import { FieldMenu } from './FieldMenu';
 import { ParentCandidates } from './ParentCandidates';
 
-// Epic <- Feature <- Feature | Story | Bug, and Story | Bug <- Task.
+// Epic <- Feature <- Feature | Story | Bug | Action item, and Story | Bug <- Task.
 export const parentTypesOf = (type: WorkItemTypeId): WorkItemTypeId[] => {
   switch (type) {
     case 'feature':
       return ['epic', 'feature'];
     case 'story':
     case 'bug':
+    case 'action':
       return ['feature'];
     case 'task':
       return ['story', 'bug'];

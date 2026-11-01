@@ -8,7 +8,7 @@ import { useTeammateChanges } from '../realtime/useTeammateChanges';
 import { useNewItemFromLink } from '../useNewItemFromLink';
 import { ListTable } from './ListTable';
 
-const STORY_KINDS: readonly NewItemKind[] = ['story', 'bug'];
+const STORY_KINDS: readonly NewItemKind[] = ['story', 'bug', 'action'];
 
 // The Stories backlog in list mode: the shared frame (toolbar, filter, first-run state) around the ranked rows (drag to
 // reorder) and the inline new-item row.
@@ -18,7 +18,7 @@ export function ListMode({ project }: { project: ProjectDto }) {
   const rows = state.rows.filter((row) => row.kind === 'item');
   const flashing = useTeammateChanges(project.id, rows);
   useReconnectSummary(state.queryKey);
-  useNewItemFromLink(STORY_KINDS, (kind) => state.openAdd(kind === 'bug' ? 'bug' : 'story'));
+  useNewItemFromLink(STORY_KINDS, (kind) => state.openAdd(kind));
 
   return (
     <BacklogFrame

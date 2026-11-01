@@ -5,7 +5,7 @@ import { doneTaskCount, sprintStories, unparentedTasks } from './sprintStories';
 
 const item = (
   key: string,
-  type: 'story' | 'bug' | 'task' | 'feature',
+  type: 'story' | 'bug' | 'action' | 'task' | 'feature',
   sprintId: string | null,
   options: { children?: string[]; parent?: string | null; category?: StateCategory } = {},
 ) =>
@@ -93,4 +93,9 @@ test('unparentedTasks lists a sprint task whose parent is not a story or bug of 
     item('T3', 'task', 's1', { parent: 'C' }),
   ];
   expect(unparentedTasks(items, 's1').map((t) => t.key)).toEqual(['T2', 'T3']);
+});
+
+test('sprintStories lists an action item of the sprint with the stories', () => {
+  const items = [item('A', 'story', 's1'), item('X', 'action', 's1'), item('Y', 'action', 's2')];
+  expect(sprintStories(items, 's1').map((s) => s.story.key)).toEqual(['A', 'X']);
 });

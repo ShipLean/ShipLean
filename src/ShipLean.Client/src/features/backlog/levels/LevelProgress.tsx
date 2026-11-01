@@ -1,10 +1,10 @@
 import type { BacklogRowDto } from '../../../api/views';
 import { backlogTestIds as ids } from '../testIds';
-import { countUnder } from './countUnder';
+import { countStoryLevelUnder } from './countUnder';
 
-// Progress over the stories and bugs under the row, nested Features' included: a bar of the closed share and "n / m done".
+// Progress over the story-level items under the row, nested Features' included: a bar of the closed share and "n / m done".
 export function LevelProgress({ row }: { row: BacklogRowDto }) {
-  const { closed, total } = countUnder(row, 'story', 'bug');
+  const { closed, total } = countStoryLevelUnder(row);
   return (
     <div data-testid={ids.levelProgress} className="flex items-center gap-[var(--space-2)]">
       <span
