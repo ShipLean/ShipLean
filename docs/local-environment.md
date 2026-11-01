@@ -32,7 +32,9 @@ If there is no client bundle in `src/ShipLean.WebApi/wwwroot`, one warning line 
 src/ShipLean.WebApi/wwwroot:` comes first. It tells you to run `pnpm run build`, or `pnpm run dev` on :3000 (see
 [The client](#the-client)). The API works without a bundle.
 
-The host stops on Ctrl+C or SIGTERM, and also when the app itself stops. Exit codes: 0 after a clean stop, 2 for bad
+The host stops on Ctrl+C or SIGTERM, and also when the app itself stops. Ctrl+C during startup (while an image is
+pulled or the database is built) ends the process at once, before the ready lines. Exit codes: 0 after a clean stop,
+which also covers the app stopping on its own (a background service crashing, for example; the log says why), 2 for bad
 arguments (the usage goes to stderr), 1 when startup fails (Docker not running, say).
 
 ## Options
@@ -49,13 +51,13 @@ dotnet run --project src/ShipLean.LocalHost -- [--port <n>] [--data fresh|keep|e
 | `--redis` | off | Start (or reuse) a Redis container and point the app at it, so realtime events go through Redis instead of in-process. Without it the app uses its in-process realtime. |
 
 A database name must be lowercase letters, digits and `_` only, start with `shiplean_`, and be at most 49 characters in
-all (`^shiplean_[a-z0-9_]{1,40}$`). Names that look like the test clean-up's own databases (`shiplean_f_<digits>_`,
-`shiplean_b_`, `shiplean_schema_` and `shiplean_seed_` followed by `_`) are refused. Hyphens are not allowed, so a worktree
+all (`shiplean_[a-z0-9_]{1,40}`). Names that start like the test clean-up's own databases are refused:
+`shiplean_f_<10 digits>_`, `shiplean_b_`, `shiplean_schema_` and `shiplean_seed_`. Hyphens are not allowed, so a worktree
 name needs its hyphens turned into underscores before it becomes a database name.
 
 Except with `--data empty`, the host puts the seed's attachment files into the app's blob store after it starts, so seeded
-attachments have their files. The store is the folder `src/ShipLean.WebApi/data/blobs` (gitignored), shared by every local
-run from that checkout.
+attachments have their files. The store is the folder `src/ShipLean.WebApi/data/blobs` (gitignored) unless `SHIPLEAN_BLOB_ROOT` is set, and
+it is shared by every local run from that checkout.
 
 ## What differs from production
 
