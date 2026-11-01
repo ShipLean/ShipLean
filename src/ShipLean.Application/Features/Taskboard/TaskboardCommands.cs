@@ -70,7 +70,7 @@ public sealed class TaskboardCommands(IProjectAccess access, IWorkItemStore stor
 
         if (request.Row is { Grouping: TaskboardGrouping.Stories, Target: null })
         {
-            throw ApiException.Validation("A task on the Feature board belongs to a story or bug.");
+            throw ApiException.Validation("A task on the Feature board belongs to a story-level item (a story, bug or action item).");
         }
 
         return await WriteAsync(connection, projectId, task, request, null, (grouping, target) => CheckFeatureRowAsync(connection, grouping, target, projectId, inTree, cancellationToken), cancellationToken);

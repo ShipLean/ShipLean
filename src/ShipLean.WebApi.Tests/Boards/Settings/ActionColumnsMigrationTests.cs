@@ -2,6 +2,8 @@ using System.Text.Json.Nodes;
 using Dapper;
 using Npgsql;
 using ShipLean.Application.Database;
+using ShipLean.Contracts.Persisted;
+using ShipLean.Contracts.Refs;
 using ShipLean.LocalEnvironment.Database;
 using ShipLean.TestSupport;
 
@@ -74,6 +76,33 @@ public class ActionColumnsMigrationTests
         var columns = (await SettingsAsync(connection))[SeedIds.Boards.ShipStories]["columns"]!.AsArray();
         columns.Select(c => c!["stateMappings"]!.AsArray().Single(m => m!["type"]!.GetValue<string>() == "action")!["stateId"]!.GetValue<Guid>())
             .ShouldBe([SeedIds.States.Ship.ActionNew, SeedIds.States.Ship.ActionActive, SeedIds.States.Ship.ActionActive, SeedIds.States.Ship.ActionClosed]);
+    }
+
+    [Test]
+    public async Task Migration_WhenTaskboardBugCardShowsSeverity_ShouldCopyTheActionCardFromStoryAndStillSave()
+    {
+        await using var database = await ShipLeanDatabase.CloneSeedAsync();
+        await using var connection = await database.OpenAsync();
+        var taskboard = (await connection.QueryAsync<Guid>("SELECT id FROM board WHERE level = 'taskboard' AND project_id = @p", new { p = SeedIds.Projects.Ship })).Single();
+        var settings = WithoutAction((await SettingsAsync(connection))[taskboard]);
+        foreach (var field in settings["cardFields"]!.AsArray().Where(f => f!["type"]!.GetValue<string>() == "bug"))
+        {
+            field!["extraFields"]!.AsArray().Add("severity");
+        }
+        await SaveAsync(connection, taskboard, settings);
+
+        await connection.ExecuteAsync(ReadScript());
+
+        var migrated = (await SettingsAsync(connection))[taskboard]["cardFields"]!.AsArray();
+        var action = migrated.Single(f => f!["type"]!.GetValue<string>() == "action")!;
+        action.ToJsonString().ShouldNotContain("severity");
+        migrated.Single(f => f!["type"]!.GetValue<string>() == "bug")!.ToJsonString().ShouldContain("severity");
+        foreach (var id in action["extraFields"]!.AsArray().Select(e => e!.GetValue<string>()))
+        {
+            var field = FieldIds.All.Single(f => f.Id == id);
+            field.UsedIn.ShouldContain(FieldUse.CardField);
+            field.AppliesTo.ShouldContain(WorkItemTypeId.Action);
+        }
     }
 
     private static async Task<Dictionary<Guid, JsonNode>> SettingsAsync(NpgsqlConnection connection)

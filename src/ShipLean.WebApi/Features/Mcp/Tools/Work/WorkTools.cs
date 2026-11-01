@@ -12,6 +12,7 @@ using ShipLean.Contracts.WorkItems.Reads.Tree;
 using ShipLean.WebApi.Features.Mcp.Contracts;
 using ShipLean.WebApi.Features.Mcp.Notes;
 using ShipLean.WebApi.Features.Mcp.Resolve;
+using ShipLean.WebApi.Features.Mcp.Tools.Capture;
 using ShipLean.WebApi.Features.Mcp.Transport;
 using ShipLean.WebApi.Features.Mcp.Writes;
 
@@ -44,7 +45,7 @@ internal sealed class WorkTools(
     {
         var resolvedProject = await projects.ResolveAsync(project, forWrite: false, cancellationToken);
         var resolvedSprint = await sprints.ResolveAsync(resolvedProject.Id, sprint ?? "current", cancellationToken: cancellationToken);
-        var wantedType = ParseType(type);
+        var wantedType = string.IsNullOrWhiteSpace(type) ? (WorkItemTypeId?)null : CaptureSupport.ParseType(type, "type");
         Guid? parentId = null;
         if (parent is not null)
         {
@@ -226,25 +227,6 @@ internal sealed class WorkTools(
             ? WorkStates.FirstOrDefault(allStates, parent.Type, StateCategory.Resolved)
             : null;
         return (true, parent.Key, offer?.Name);
-    }
-
-    private static WorkItemTypeId? ParseType(string? type)
-    {
-        if (string.IsNullOrWhiteSpace(type))
-        {
-            return null;
-        }
-
-        return type.Trim().ToLowerInvariant() switch
-        {
-            "epic" => WorkItemTypeId.Epic,
-            "feature" => WorkItemTypeId.Feature,
-            "story" => WorkItemTypeId.Story,
-            "bug" => WorkItemTypeId.Bug,
-            "action" or "actionitem" => WorkItemTypeId.Action,
-            "task" => WorkItemTypeId.Task,
-            _ => throw ApiException.Validation($"\"{type}\" is not a work item type. Use epic, feature, story, bug, action or task.", "type"),
-        };
     }
 
     private static string ProjectKey(string itemKey) => itemKey[..itemKey.LastIndexOf('-')];

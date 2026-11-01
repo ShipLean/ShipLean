@@ -75,6 +75,17 @@ public class WorkToolsTests : McpFixture
     }
 
     [Test]
+    public async Task FindWork_WhenTypeIsSpelledActionItem_ShouldListOnlyActions()
+    {
+        var action = await ArrangeAsync(b => b.WithType("action").WithTitle("Find action").WithSprint(_sprintId));
+        await ArrangeAsync(b => b.WithType("story").WithTitle("Find story beside the action").WithSprint(_sprintId));
+
+        var found = await CallAsync("find_work_to_pick_up", """{"project":"SHIP","type":"Action item","sprint":"Agent Work Sprint"}""");
+
+        Keys(found).ShouldBe([await KeyOfAsync(action)]);
+    }
+
+    [Test]
     public async Task PickUp_ShouldAssignMeAndStartFirstInProgress()
     {
         var story = await ArrangeAsync(b => b.WithType("story").WithTitle("Pick me").WithSprint(_sprintId));

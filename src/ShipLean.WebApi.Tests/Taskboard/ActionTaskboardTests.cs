@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json.Nodes;
 using Dapper;
 using ShipLean.Contracts.Refs;
+using ShipLean.Contracts.Taskboard;
 using ShipLean.Contracts.Views;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
@@ -11,10 +12,10 @@ namespace ShipLean.WebApi.Tests.Taskboard;
 
 // An action item in a sprint is a Taskboard row of its own, with tasks under it.
 [TestFixture]
-public class ActionItemTaskboardTests : ApiFixture
+public class ActionTaskboardTests : ApiFixture
 {
     [Test]
-    public async Task Grid_WhenActionItemInSprint_ShouldHaveRow()
+    public async Task Grid_WhenActionInSprint_ShouldHaveRow()
     {
         await using var connection = await OpenDatabaseAsync();
         var sprint = await TaskboardArrangement.InsertSprintAsync(connection, SeedIds.Projects.Ship, "Action row sprint", 1200);
@@ -30,7 +31,7 @@ public class ActionItemTaskboardTests : ApiFixture
     }
 
     [Test]
-    public async Task AddTask_WhenUnderActionItem_ShouldCreate()
+    public async Task AddTask_WhenUnderAction_ShouldCreate()
     {
         await using var connection = await OpenDatabaseAsync();
         var sprint = await TaskboardArrangement.InsertSprintAsync(connection, SeedIds.Projects.Ship, "Action add sprint", 1300);
@@ -52,7 +53,7 @@ public class ActionItemTaskboardTests : ApiFixture
     }
 
     [Test]
-    public async Task Move_WhenTaskUnderActionItem_ShouldMoveIt()
+    public async Task Move_WhenTaskUnderAction_ShouldMoveIt()
     {
         await using var connection = await OpenDatabaseAsync();
         var sprint = await TaskboardArrangement.InsertSprintAsync(connection, SeedIds.Projects.Ship, "Action move sprint", 1400);
@@ -60,9 +61,26 @@ public class ActionItemTaskboardTests : ApiFixture
         var task = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("task").WithTitle("Moving task").WithParent(action).InsertAsync(connection);
 
         using var response = await Api.PostWireAsync(
-            $"api/sprints/{sprint}/taskboard/moves", new ShipLean.Contracts.Taskboard.TaskboardMoveRequest(task, 1, SeedIds.States.Ship.TaskActive, null, null));
+            $"api/sprints/{sprint}/taskboard/moves", new TaskboardMoveRequest(task, 1, SeedIds.States.Ship.TaskActive, null, null));
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
         (await connection.ExecuteScalarAsync<Guid>("SELECT state_id FROM work_item WHERE id = @task", new { task })).ShouldBe(SeedIds.States.Ship.TaskActive);
+    }
+
+    [Test]
+    public async Task Move_WhenRowIsAnActionInTheSprint_ShouldReparentTheTaskToIt()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var sprint = await TaskboardArrangement.InsertSprintAsync(connection, SeedIds.Projects.Ship, "Action row move sprint", 1500);
+        var story = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("story").WithTitle("Story row").WithSprint(sprint).InsertAsync(connection);
+        var action = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("action").WithTitle("Action row").WithSprint(sprint).InsertAsync(connection);
+        var task = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("task").WithTitle("Task changing rows").WithParent(story).InsertAsync(connection);
+
+        using var response = await Api.PostWireAsync(
+            $"api/sprints/{sprint}/taskboard/moves",
+            new TaskboardMoveRequest(task, 1, SeedIds.States.Ship.TaskNew, new(TaskboardGrouping.Stories, action), null));
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+        (await connection.ExecuteScalarAsync<Guid>("SELECT parent_id FROM work_item WHERE id = @task", new { task })).ShouldBe(action);
     }
 }

@@ -182,7 +182,7 @@ public sealed class ImportMappingsTests
     }
 
     [Test]
-    public async Task Mapping_WhenAnyJiraType_ShouldNeverBecomeAnActionItem()
+    public async Task Mapping_WhenAnyJiraType_ShouldNeverBecomeAnAction()
     {
         var mapping = await Mappings(JiraWorld.Data([JiraWorld.Issue("PLAT-1", "Epic"), JiraWorld.Issue("PLAT-2"), JiraWorld.Issue("PLAT-3", "Bug"), JiraWorld.Issue("PLAT-4", "Sub-task")]))
             .SuggestAsync(Connection, JiraWorld.ProjectKey, null);

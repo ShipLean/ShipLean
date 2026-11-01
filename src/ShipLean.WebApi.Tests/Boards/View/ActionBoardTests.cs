@@ -13,10 +13,10 @@ namespace ShipLean.WebApi.Tests.Boards.View;
 
 // Action items on the SHIP boards: the seeded SHIP-89 (under Feature SHIP-104, state New, no sprint) and items the tests make.
 [TestFixture]
-public class ActionItemBoardTests : ApiFixture
+public class ActionBoardTests : ApiFixture
 {
     [Test]
-    public async Task StoriesBoard_WhenActionItem_ShouldShowInStateColumn()
+    public async Task StoriesBoard_WhenAction_ShouldShowInStateColumn()
     {
         using var created = await Api.PostJsonAsync("api/work-items", new JsonObject
         {
@@ -52,7 +52,7 @@ public class ActionItemBoardTests : ApiFixture
     }
 
     [Test]
-    public async Task FeaturesBoard_WhenActionItemUnderFeature_ShouldRollUpItsPoints()
+    public async Task FeaturesBoard_WhenActionUnderFeature_ShouldRollUpItsPoints()
     {
         await using var connection = await OpenDatabaseAsync();
         var feature = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("feature").WithTitle("Feature with an action item").WithBoardPosition("col-new").InsertAsync(connection);

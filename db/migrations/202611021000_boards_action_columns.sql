@@ -2,7 +2,7 @@
 -- board shows). On a stories board, the k-th column of a category gets the k-th Action state of that category (the rule
 -- BoardDefaultSettings.MapOther uses for a second type); a column left without one repeats the nearest earlier column's Action state,
 -- or the first live Action state (BoardDefaultSettings.FillGaps). A column's category is its Story state's. Stories and Taskboard
--- boards also gain an Action card-field setting copied from the Story one (Taskboard: the Bug one). A board that already has an
+-- boards also gain an Action card-field setting copied from the Story one (the Bug card can show severity, which an Action card cannot). A board that already has an
 -- Action mapping or card setting is left alone, so running the script again changes nothing. Nothing is deleted.
 DO $$
 DECLARE
@@ -23,7 +23,7 @@ BEGIN
           AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements(b.settings -> 'columns') col, jsonb_array_elements(col -> 'stateMappings') m WHERE m ->> 'type' = 'action')
     LOOP
         SELECT id INTO previous FROM state
-        WHERE project_id = board_row.project_id AND type = 'action' AND category <> 'removed'
+        WHERE project_id = board_row.project_id AND type = 'action' AND category <> 'removed' AND archived_at IS NULL
         ORDER BY CASE category WHEN 'proposed' THEN 0 WHEN 'inProgress' THEN 1 WHEN 'resolved' THEN 2 ELSE 3 END, sort_order LIMIT 1;
         IF previous IS NULL THEN
             CONTINUE;
@@ -38,7 +38,7 @@ BEGIN
             seen := COALESCE((category_count ->> story_category)::int, 0);
             category_count := category_count || jsonb_build_object(COALESCE(story_category, ''), seen + 1);
             SELECT id INTO picked FROM state
-            WHERE project_id = board_row.project_id AND type = 'action' AND category = story_category
+            WHERE project_id = board_row.project_id AND type = 'action' AND category = story_category AND archived_at IS NULL
             ORDER BY sort_order OFFSET seen LIMIT 1;
             previous := COALESCE(picked, previous);
             columns := columns || jsonb_build_array(jsonb_set(
@@ -52,7 +52,7 @@ END $$;
 UPDATE board b
 SET settings = jsonb_set(b.settings, '{cardFields}', (b.settings -> 'cardFields') || jsonb_build_array(
     (SELECT f || jsonb_build_object('type', 'action') FROM jsonb_array_elements(b.settings -> 'cardFields') f
-     WHERE f ->> 'type' = CASE WHEN b.level = 'stories' THEN 'story' ELSE 'bug' END LIMIT 1)))
+     WHERE f ->> 'type' = 'story' LIMIT 1)))
 WHERE b.level IN ('stories', 'taskboard')
   AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements(b.settings -> 'cardFields') f WHERE f ->> 'type' = 'action')
-  AND EXISTS (SELECT 1 FROM jsonb_array_elements(b.settings -> 'cardFields') f WHERE f ->> 'type' = CASE WHEN b.level = 'stories' THEN 'story' ELSE 'bug' END);
+  AND EXISTS (SELECT 1 FROM jsonb_array_elements(b.settings -> 'cardFields') f WHERE f ->> 'type' = 'story');

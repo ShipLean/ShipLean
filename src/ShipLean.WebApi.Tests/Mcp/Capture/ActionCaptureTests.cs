@@ -10,7 +10,7 @@ namespace ShipLean.WebApi.Tests.Mcp.Capture;
 
 // The action item type through the MCP tools, as Joel on SHIP: SHIP-104 is the seeded Feature of SHIP-89.
 [TestFixture]
-public class ActionItemCaptureTests : McpFixture
+public class ActionCaptureTests : McpFixture
 {
     protected override bool WithProbeTools => false;
 
@@ -31,7 +31,7 @@ public class ActionItemCaptureTests : McpFixture
     }
 
     [Test]
-    public async Task Capture_WhenTypeIsActionItemWithSpaces_ShouldCreateAnActionItem()
+    public async Task Capture_WhenTypeIsActionWithSpaces_ShouldCreateAnAction()
     {
         var token = await TokenAsync(TestUser.Joel, ReadWrite);
 
@@ -55,7 +55,7 @@ public class ActionItemCaptureTests : McpFixture
     }
 
     [Test]
-    public async Task BreakDown_WhenParentIsActionItem_ShouldCreateTasks()
+    public async Task BreakDown_WhenParentIsAction_ShouldCreateTasks()
     {
         var token = await TokenAsync(TestUser.Joel, ReadWrite);
 
@@ -68,7 +68,7 @@ public class ActionItemCaptureTests : McpFixture
     }
 
     [Test]
-    public async Task FeatureProgress_WhenFeatureHasActionItems_ShouldCountThemAndTheirPoints()
+    public async Task FeatureProgress_WhenFeatureHasActions_ShouldCountThemAndTheirPoints()
     {
         await using var connection = await OpenDatabaseAsync();
         var feature = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("feature").WithTitle("Progress feature").InsertAsync(connection);
