@@ -5,7 +5,8 @@ using ShipLean.TestSupport.TestIds;
 
 namespace ShipLean.AcceptanceTests.Lanes.Board.DoneConfirm;
 
-// Ops hygiene (SHIP-104) has three stories, two open (SHIP-162, SHIP-163); Tom closes them on the Stories board behind the page's back.
+// Ops hygiene (SHIP-104) has three stories, two open (SHIP-162, SHIP-163), and one open action item (SHIP-89); Tom closes them on the
+// Stories board behind the page's back.
 [TestFixture]
 public class BoardMoveToDoneOfferTests : SeededAcceptanceTest
 {
@@ -29,7 +30,13 @@ public class BoardMoveToDoneOfferTests : SeededAcceptanceTest
 
         await tom.MoveToColumnAsync(SeedIds.Boards.ShipStories, "SHIP-163", "col-done");
 
-        await Expect(BoardDoneConfirm.Offer(card)).ToContainTextAsync("All 3 closed");
+        // The action item is a child like the stories: while it is open, nothing is offered.
+        await Expect(card.GetByTestId(BoardTestIds.CardRollup).First).ToContainTextAsync("3/3");
+        await Expect(BoardDoneConfirm.Offer(card)).ToHaveCountAsync(0);
+
+        await tom.MoveToColumnAsync(SeedIds.Boards.ShipStories, "SHIP-89", "col-done");
+
+        await Expect(BoardDoneConfirm.Offer(card)).ToContainTextAsync("All 4 closed");
         await Expect(board.CellOfTitled("Ops hygiene")).ToHaveAttributeAsync("data-column", "col-new");
 
         var moved = await confirm.ClickAndWaitForMoveAsync(BoardDoneConfirm.MoveToDone(card));
