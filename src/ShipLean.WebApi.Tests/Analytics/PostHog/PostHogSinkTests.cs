@@ -1,9 +1,11 @@
 using System.Net;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using ShipLean.Application.Features.Analytics.PostHog;
 using ShipLean.Contracts.Analytics;
 using ShipLean.TestSupport.Analytics;
+using ShipLean.WebApi.Tests.Search.Ranking;
 
 namespace ShipLean.WebApi.Tests.Analytics.PostHog;
 
@@ -139,13 +141,32 @@ public sealed class PostHogSinkTests
     }
 
     [Test]
-    public async Task Send_WhenQuotaLimited_ShouldNotThrow()
+    public async Task Send_WhenQuotaLimitedTwice_ShouldLogOneWarning()
     {
+        CapturingLogger<PostHogSink> logger = new();
+        using var client = new HttpClient(_handler);
+        var quotaSink = new PostHogSink(client, logger);
         _handler.Respond(HttpStatusCode.OK, """{"status":1,"quota_limited":["events"]}""");
 
-        await _sink.SendAsync([UserEvent()], Target, CancellationToken.None);
+        await quotaSink.SendAsync([UserEvent()], Target, CancellationToken.None);
+        await quotaSink.SendAsync([UserEvent()], Target, CancellationToken.None);
+
+        _handler.Requests.Count.ShouldBe(2);
+        logger.Lines.Count(l => l.Level == LogLevel.Warning).ShouldBe(1);
+    }
+
+    [Test]
+    public async Task Send_WhenNotQuotaLimited_ShouldLogNoWarning()
+    {
+        CapturingLogger<PostHogSink> logger = new();
+        using var client = new HttpClient(_handler);
+        var plainSink = new PostHogSink(client, logger);
+        _handler.Respond(HttpStatusCode.OK, """{"status":1}""");
+
+        await plainSink.SendAsync([UserEvent()], Target, CancellationToken.None);
 
         _handler.Requests.Count.ShouldBe(1);
+        logger.Lines.Count(l => l.Level == LogLevel.Warning).ShouldBe(0);
     }
 
     [Test]
