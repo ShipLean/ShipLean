@@ -28,5 +28,5 @@ internal static class FakeRetroData
         "Say in the brief which baselines must come from CI.", null, Theme, RetroThemeSetBy.Auto, Author, Item, Sprint, false, true, Action, false);
 
     public static RetroCardDto Card() => new(
-        new Guid("00000012-0000-4000-8001-000000000301"), Item, Sprint, Author, false, new DateTimeOffset(2026, 10, 20, 9, 0, 0, TimeSpan.Zero), [], [Point()], FailureLog);
+        new Guid("00000012-0000-4000-8001-000000000301"), Item, Sprint, Author, false, new DateTimeOffset(2026, 10, 20, 9, 0, 0, TimeSpan.Zero), "20 Oct", [], [Point()], FailureLog);
 }

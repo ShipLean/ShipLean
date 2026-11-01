@@ -28,10 +28,10 @@ public sealed class RetroCards(NpgsqlDataSource dataSource, TimeProvider clock) 
         var sources = (await connection.QueryAsync<SourceRow>(new CommandDefinition(SourceSql, new { ids }, cancellationToken: cancellationToken))).ToLookup(row => row.RetroId);
         var failures = (await connection.QueryAsync<FailureRow>(new CommandDefinition(FailureSql, new { ids }, cancellationToken: cancellationToken))).ToLookup(row => row.RetroId);
 
-        return [.. retroIds.Where(retros.ContainsKey).Select(id => ToCard(retros[id], points[id], sources[id], failures[id], today))];
+        return [.. retroIds.Where(retros.ContainsKey).Select(id => ToCard(retros[id], points[id], sources[id], failures[id], today, clock))];
     }
 
-    private static RetroCardDto ToCard(RetroRow retro, IEnumerable<PointRow> points, IEnumerable<SourceRow> sources, IEnumerable<FailureRow> failures, DateOnly today)
+    private static RetroCardDto ToCard(RetroRow retro, IEnumerable<PointRow> points, IEnumerable<SourceRow> sources, IEnumerable<FailureRow> failures, DateOnly today, TimeProvider clock)
     {
         var role = ParseEnum<RetroRole>(retro.Role);
         var workItem = retro.ItemId is { } itemId ? new RetroItemRefDto(itemId, retro.ItemKey!, ToTypeRef(retro.ItemType!), retro.ItemTitle!) : null;
@@ -40,13 +40,15 @@ public sealed class RetroCards(NpgsqlDataSource dataSource, TimeProvider clock) 
         var isFeature = retro.ItemType == "feature";
         var dtos = points.Select(point => ToPoint(point, role, workItem, sprint, isFeature, today)).ToList();
         var log = failures.ToList();
+        var createdAt = new DateTimeOffset(DateTime.SpecifyKind(retro.CreatedAt, DateTimeKind.Utc));
         return new RetroCardDto(
             retro.Id,
             workItem,
             sprint,
             author,
             retro.Partial,
-            new DateTimeOffset(DateTime.SpecifyKind(retro.CreatedAt, DateTimeKind.Utc)),
+            createdAt,
+            DisplayDate.Relative(createdAt, clock),
             [.. sources.Select(source => new RetroItemRefDto(source.ItemId, source.ItemKey, ToTypeRef(source.ItemType), source.ItemTitle))],
             dtos,
             new RetroFailureLogDto(

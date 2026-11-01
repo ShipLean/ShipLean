@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Retros;
+using ShipLean.Core;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Retros;
@@ -26,6 +27,18 @@ public sealed class RetroCardsTests : ApiFixture
         var cards = await Cards.LoadAsync([third, first, second], CancellationToken.None);
 
         cards.Select(card => card.Id).ShouldBe([third, first, second]);
+    }
+
+    [Test]
+    public async Task Load_ShouldBuildTheCreatedAtLabelOnTheServer()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var seed = new RetroSeed(connection, Project);
+        var retro = await AgentRetroAsync(seed, SeedIds.WorkItems.Ship90);
+
+        var card = (await Cards.LoadAsync([retro], CancellationToken.None)).Single();
+
+        card.CreatedAtLabel.ShouldBe(DisplayDate.Relative(card.CreatedAt, Host.Services.GetRequiredService<TimeProvider>()));
     }
 
     [Test]
