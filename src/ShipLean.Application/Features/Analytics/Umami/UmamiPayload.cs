@@ -29,7 +29,7 @@ public static class UmamiPayload
         AnalyticsProps.InstanceHost,
     };
 
-    public static Dictionary<string, object?> EventItem(AnalyticsEvent analyticsEvent, AnalyticsTarget target)
+    public static IReadOnlyDictionary<string, object?> EventItem(AnalyticsEvent analyticsEvent, AnalyticsTarget target)
     {
         var surface = analyticsEvent.Properties.TryGetValue(AnalyticsProps.Surface, out var value) ? value?.ToString() : null;
         var url = $"/p/{(string.IsNullOrEmpty(analyticsEvent.ProjectKey) ? "_" : analyticsEvent.ProjectKey)}/{(string.IsNullOrEmpty(surface) ? "_" : surface)}/{analyticsEvent.Name.Replace('.', '/')}";
@@ -53,7 +53,7 @@ public static class UmamiPayload
         };
     }
 
-    public static Dictionary<string, object?> IdentifyItem(AnalyticsPerson person, AnalyticsTarget target)
+    public static IReadOnlyDictionary<string, object?> IdentifyItem(AnalyticsPerson person, AnalyticsTarget target)
     {
         return new Dictionary<string, object?>
         {
@@ -69,7 +69,7 @@ public static class UmamiPayload
     }
 
     // At most MaxProperties entries, standard keys first; strings cut to MaxStringLength.
-    public static Dictionary<string, object?> Data(IReadOnlyDictionary<string, object> properties)
+    public static IReadOnlyDictionary<string, object?> Data(IReadOnlyDictionary<string, object> properties)
     {
         var data = new Dictionary<string, object?>();
         foreach (var pair in properties.Where(p => StandardKeys.Contains(p.Key)).Concat(properties.Where(p => !StandardKeys.Contains(p.Key))).Take(MaxProperties))

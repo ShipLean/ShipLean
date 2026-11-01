@@ -19,9 +19,23 @@ public class UmamiSinkTests
         }
     }
 
+    private sealed class FailingHandler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            throw new HttpRequestException("connection refused");
+        }
+    }
+
     private AnalyticsSinkStubHandler _handler = null!;
     private UmamiSink _sink = null!;
     private AnalyticsTarget _target = null!;
+
+    [TearDown]
+    public void DisposeHandler()
+    {
+        _handler.Dispose();
+    }
 
     [SetUp]
     public void CreateSink()
@@ -42,7 +56,7 @@ public class UmamiSinkTests
             ["ratio"] = 0.5,
         };
         var person = new AnalyticsPerson(distinctId, new Dictionary<string, object> { [AnalyticsProps.PersonKind] = "user", [AnalyticsProps.PersonUserId] = distinctId });
-        return new AnalyticsEvent(name, distinctId, "user", projectKey, DateTimeOffset.Parse("2026-11-02T01:02:03Z"), props, person);
+        return new AnalyticsEvent(name, distinctId, "user", projectKey, DateTimeOffset.Parse("2026-11-02T01:02:03Z", System.Globalization.CultureInfo.InvariantCulture), props, person);
     }
 
     private JsonArray LastBody()
@@ -144,6 +158,8 @@ public class UmamiSinkTests
         var exception = await Should.ThrowAsync<AnalyticsSendException>(() => _sink.SendAsync([Event()], _target, CancellationToken.None));
 
         exception.Message.ShouldContain("500");
+        exception.Message.ShouldNotContain(SiteKey);
+        exception.Message.ShouldNotContain("boom");
     }
 
     [Test]
@@ -154,6 +170,20 @@ public class UmamiSinkTests
         var exception = await Should.ThrowAsync<AnalyticsSendException>(() => _sink.SendAsync([Event()], _target, CancellationToken.None));
 
         exception.Message.ShouldContain("1");
+        exception.Message.ShouldNotContain(SiteKey);
+        exception.Message.ShouldNotContain("Website not found");
+    }
+
+    [Test]
+    public async Task Send_WhenHostUnreachable_ShouldThrowWithoutSiteKeyInMessage()
+    {
+        using var failing = new FailingHandler();
+        var sink = new UmamiSink(new StubFactory(failing));
+
+        var exception = await Should.ThrowAsync<AnalyticsSendException>(() => sink.SendAsync([Event()], _target, CancellationToken.None));
+
+        exception.Message.ShouldContain("umami.example.com");
+        exception.Message.ShouldNotContain(SiteKey);
     }
 
     [Test]

@@ -19,8 +19,8 @@ public sealed class UmamiSink(IHttpClientFactory httpClientFactory) : IAnalytics
     public async Task SendAsync(IReadOnlyList<AnalyticsEvent> batch, AnalyticsTarget target, CancellationToken cancellationToken)
     {
         // Identify keys are only remembered once their request succeeded, so a failed send is identified again on retry.
-        var chunks = new List<(List<Dictionary<string, object?>> Items, List<string> NewKeys)>();
-        var items = new List<Dictionary<string, object?>>();
+        var chunks = new List<(List<IReadOnlyDictionary<string, object?>> Items, List<string> NewKeys)>();
+        var items = new List<IReadOnlyDictionary<string, object?>>();
         var keys = new List<string>();
         var planned = new HashSet<string>(StringComparer.Ordinal);
         foreach (var analyticsEvent in batch)
@@ -52,7 +52,7 @@ public sealed class UmamiSink(IHttpClientFactory httpClientFactory) : IAnalytics
         }
     }
 
-    private async Task PostAsync(List<Dictionary<string, object?>> items, AnalyticsTarget target, CancellationToken cancellationToken)
+    private async Task PostAsync(List<IReadOnlyDictionary<string, object?>> items, AnalyticsTarget target, CancellationToken cancellationToken)
     {
         try
         {
@@ -63,17 +63,17 @@ public sealed class UmamiSink(IHttpClientFactory httpClientFactory) : IAnalytics
             var body = await response.Content.ReadAsStringAsync(cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
-                throw new AnalyticsSendException($"Umami answered {(int)response.StatusCode}.");
+                throw new AnalyticsSendException($"Umami at {target.Host.Host} answered {(int)response.StatusCode}.");
             }
             var errors = ErrorCount(body);
             if (errors > 0)
             {
-                throw new AnalyticsSendException($"Umami reported {errors} errors in the batch.");
+                throw new AnalyticsSendException($"Umami at {target.Host.Host} reported {errors} errors in the batch.");
             }
         }
         catch (Exception e) when (e is HttpRequestException or TaskCanceledException && !cancellationToken.IsCancellationRequested)
         {
-            throw new AnalyticsSendException($"Umami could not be reached: {e.Message}", e);
+            throw new AnalyticsSendException($"Umami at {target.Host.Host} could not be reached ({e.GetType().Name}).", e);
         }
     }
 
