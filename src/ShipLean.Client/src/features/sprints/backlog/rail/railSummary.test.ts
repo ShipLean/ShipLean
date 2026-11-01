@@ -7,7 +7,7 @@ const priya = { id: 'u1', name: 'Priya' } as UserRef;
 
 const item = (
   key: string,
-  type: 'story' | 'task' | 'bug',
+  type: 'story' | 'task' | 'bug' | 'action',
   category: StateCategory,
   options: { assignee?: UserRef; points?: number } = {},
 ) =>
@@ -55,6 +55,18 @@ test('railSummary counts what each person has in progress and ignores other cate
   );
   expect(summary.activeByUser.get('u1')).toEqual(['Title S1', 'Title T1']);
   expect(summary.activeByUser.size).toBe(1);
+});
+
+test('railSummary sums action item points with story and bug points', () => {
+  const summary = railSummary(
+    [
+      { story: item('S1', 'story', 'inProgress', { points: 5 }), tasks: [] },
+      { story: item('A1', 'action', 'inProgress', { points: 2 }), tasks: [] },
+      { story: item('A2', 'action', 'completed', { points: 1 }), tasks: [] },
+    ],
+    [],
+  );
+  expect(summary.points).toEqual({ proposed: 0, inProgress: 7, resolved: 0, completed: 1 });
 });
 
 test('railSummary sums story and bug points by category and leaves task points out', () => {

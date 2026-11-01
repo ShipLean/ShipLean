@@ -1,11 +1,12 @@
 import type { ChildSummaryDto } from '../../../api/workItems';
+import { isStoryLevel } from '../../../api/workItemTypes';
 
 const isClosed = (child: ChildSummaryDto) =>
   child.state.category === 'completed' || child.state.category === 'removed';
 
 /** A Feature's children that are stories or bugs, open ones first (the server's order within each group). */
 export function storiesAndBugsOf(children: readonly ChildSummaryDto[]): ChildSummaryDto[] {
-  const own = children.filter((child) => child.type.id === 'story' || child.type.id === 'bug');
+  const own = children.filter((child) => isStoryLevel(child.type.id));
   return [...own.filter((child) => !isClosed(child)), ...own.filter(isClosed)];
 }
 

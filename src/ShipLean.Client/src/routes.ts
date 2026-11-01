@@ -26,7 +26,7 @@
 //     /p/:key/retros/insights     Retrospective insights  ?view=themes|actions|impact&range=6|3|all
 //     /p/:key/import              Jira import
 //     /p/:key/settings/:tab       tab: general | states | members | sprints | integrations
-//   The three backlogs also take ?new=epic|feature|story|bug: the new-item row (or dialog) open with that type, see newItemPath.
+//   The three backlogs also take ?new=epic|feature|story|bug|action: the new-item row (or dialog) open with that type, see newItemPath.
 //   Every project-level route also takes ?item=<itemKey>: that work item open in a modal over the screen.
 //
 // A route id is also the screen id presence is reported by. Ids and paths are stable: later work mounts pages on
@@ -39,7 +39,7 @@ export type BacklogMode = (typeof backlogModes)[number];
 export type Level = 'stories' | 'features' | 'epics';
 
 // The types a Create action can start; tasks are made under a parent, so they have no link.
-export const NEW_ITEM_KINDS = ['epic', 'feature', 'story', 'bug'] as const;
+export const NEW_ITEM_KINDS = ['epic', 'feature', 'story', 'bug', 'action'] as const;
 export type NewItemKind = (typeof NEW_ITEM_KINDS)[number];
 
 export const projectSettingsTabs = [
@@ -386,6 +386,7 @@ const NEW_ITEM_BACKLOG = {
   feature: 'featuresBacklog',
   story: 'storiesBacklog',
   bug: 'storiesBacklog',
+  action: 'storiesBacklog',
 } as const satisfies Record<NewItemKind, RouteId>;
 
 // The backlog that creates an item of this kind: the Create actions in quick search link here.
