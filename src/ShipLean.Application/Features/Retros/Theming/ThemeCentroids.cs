@@ -11,8 +11,12 @@ namespace ShipLean.Application.Features.Retros.Theming;
 // The themer runs on its own connection while the writer's transaction may already hold a lock on the same theme row (the
 // writer updates point_count on every insert, a person's write locks the theme). Every write here therefore takes the row with
 // FOR NO KEY UPDATE SKIP LOCKED in a short transaction of its own and skips a locked theme instead of waiting on it, so the
-// themer can never wait on the transaction that called it. A skipped update is not lost for good: the weights come from the
-// stored centroid, and a later point or a reseed brings it back in line.
+// themer can never wait on the transaction that called it. A skipped update is lost: the centroid is weighted by point_count,
+// which the writer has already raised, and a reseed only runs for themes whose centroid is not comparable, so a skipped
+// embedding is never folded in later. Within one log_retrospective every point after the first on the same theme is skipped
+// this way. The trade-off is a centroid that drifts from the true mean by the skipped points (bounded, since it keeps the
+// first point and later folds); auto themes are off by default for that and for clustering quality. Folding the embedding in
+// the writer's own UPDATE would remove the drift.
 internal static class ThemeCentroids
 {
     private const int ReseedThemesPerCall = 5;

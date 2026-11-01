@@ -9,7 +9,8 @@ public static partial class ThemeNamer
     public const int MaxWords = 6;
     public const int MaxLength = 48;
     private const string Fallback = "Untitled theme";
-    private const string TrailingPunctuation = ".,;:!?-–—…\"')]} ";
+    private const string TrailingPunctuation = ".,;:!?-–—… ";
+    private const string Closers = "\"')]}";
 
     public static string Name(string text, IReadOnlyCollection<string> existingNames)
     {
@@ -44,8 +45,34 @@ public static partial class ThemeNamer
             name = cut > 0 ? name[..cut] : name[..maxLength];
         }
 
-        name = name.TrimEnd(TrailingPunctuation.ToCharArray());
+        name = TrimEnd(name);
         return name.Length == 0 ? Fallback : name;
+    }
+
+    // Drops trailing punctuation. A closing bracket or quote goes only when nothing in the name opened it, so "Tests flaky (again)" keeps its bracket.
+    private static string TrimEnd(string name)
+    {
+        while (name.Length > 0)
+        {
+            var last = name[^1];
+            if (TrailingPunctuation.Contains(last) || (Closers.Contains(last) && IsUnmatched(name, last)))
+            {
+                name = name[..^1];
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        return name;
+    }
+
+    private static bool IsUnmatched(string name, char closer)
+    {
+        var opener = closer switch { ')' => '(', ']' => '[', '}' => '{', _ => closer };
+        var closers = name.Count(c => c == closer);
+        return opener == closer ? closers % 2 == 1 : closers > name.Count(c => c == opener);
     }
 
     private static string FirstSentence(string text)

@@ -14,9 +14,10 @@ namespace ShipLean.Application.Features.Retros.Theming;
 public sealed class RetroThemer(NpgsqlDataSource dataSource, IEmbedder embedder, PickRetroThemer pick, bool autoEnabled) : IRetroThemer
 {
     // multilingual-e5-small cosines for retro text sit between 0.80 and 0.91, so only the narrow band 0.86-0.89 separates anything.
-    // Measured on retro-theme-fixture.json (33 points, 7 themes, pairwise): at 0.88, precision 45.5%, recall 24.2%, F1 about 32%;
-    // no threshold reaches 80% on both. 0.88 is the best F1 found, so it is the value used when auto themes are switched on.
-    // Auto clustering is off by default (SHIPLEAN_RETRO_AUTO_THEMES) because this quality is below the bar.
+    // Measured on retro-theme-fixture.json (33 points, 7 themes, pairwise). Through this themer at 0.88 (stored centroids, as
+    // in production): 15 themes, precision 34.1%, recall 22.6%, F1 about 27%. A simulated sweep over the same vectors with
+    // exact running means reaches precision 45.5%, recall 24.2%, F1 about 32% at 0.88, the best of any threshold; none reaches
+    // 80% on both. Auto clustering is therefore off by default (SHIPLEAN_RETRO_AUTO_THEMES).
     public const float JoinThreshold = 0.88f;
 
     private const int NameAttempts = 5;

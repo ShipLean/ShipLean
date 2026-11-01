@@ -18,6 +18,18 @@ public class ThemeNamerTests
     }
 
     [Test]
+    public void Name_WhenClosingBracketIsMatched_ShouldKeepIt()
+    {
+        ThemeNamer.Name("Tests flaky (again).", []).ShouldBe("Tests flaky (again)");
+    }
+
+    [Test]
+    public void Name_WhenClosingBracketOrQuoteIsUnmatched_ShouldDropIt()
+    {
+        ThemeNamer.Name("Deploys slow) today\"", []).ShouldBe("Deploys slow) today");
+    }
+
+    [Test]
     public void Name_WhenMoreThanSixWords_ShouldKeepSix()
     {
         ThemeNamer.Name("one two three four five six seven eight", []).ShouldBe("one two three four five six");
