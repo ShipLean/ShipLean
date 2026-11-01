@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
 using ShipLean.Contracts.Errors;
@@ -73,7 +74,7 @@ public sealed class UsageActionFilter(IUsageEvents events, IUsageScope scope, Ti
 
         var status = executed.Result switch
         {
-            IStatusCodeActionResult { StatusCode: { } code } => code,
+            IStatusCodeActionResult { StatusCode: { } statusCode } => statusCode,
             _ => 0,
         };
         if (status < ErrorStatus)
@@ -81,12 +82,12 @@ public sealed class UsageActionFilter(IUsageEvents events, IUsageScope scope, Ti
             return (UsageOutcome.Ok, null);
         }
         var body = (executed.Result as ObjectResult)?.Value;
-        var code = body switch
+        var errorCode = body switch
         {
             ApiError error => error.Code,
             ConflictDto conflict => conflict.Code,
             _ => $"http_{status}",
         };
-        return (UsageOutcome.Error, code);
+        return (UsageOutcome.Error, errorCode);
     }
 }

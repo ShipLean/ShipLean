@@ -43,7 +43,7 @@ public class ActionUsageMapTests
     }
 
     [Test]
-    public void NoStaleKeys()
+    public void NoStaleKeys_ShouldHold()
     {
         var actions = Actions().ToHashSet(StringComparer.Ordinal);
 
