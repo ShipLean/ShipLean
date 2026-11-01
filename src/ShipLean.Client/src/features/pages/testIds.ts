@@ -29,6 +29,7 @@ export const pagesTestIds = {
   slotImportStepper: 'slot-importStepper',
   slotInstanceGeneral: 'slot-instanceGeneral',
   slotInstanceIntegrations: 'slot-instanceIntegrations',
+  slotInstanceAnalytics: 'slot-instanceAnalytics',
   slotInstanceAgents: 'slot-instanceAgents',
   slotInstanceProjects: 'slot-instanceProjects',
   slotInstanceUsers: 'slot-instanceUsers',

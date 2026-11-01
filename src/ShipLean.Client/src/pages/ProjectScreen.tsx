@@ -5,6 +5,7 @@ import type { ProjectDto } from '../api/projects';
 import { ItemPeekHost } from '../features/itemPeek/ItemPeekHost';
 import { UnsavedGuardHost } from '../features/workItem/form/UnsavedGuardHost';
 import { useScreenPresence } from '../realtime';
+import { ScreenViewReporter } from '../realtime/ScreenViewReporter';
 import type { RouteId } from '../routes';
 import { projectByKeyQuery } from './projectQueries';
 import { QueryFailure } from './QueryFailure';
@@ -28,6 +29,7 @@ export function ProjectScreen({ routeId, testId, children }: ProjectScreenProps)
   }
   return (
     <div data-testid={testId} className="p-4">
+      <ScreenViewReporter routeId={routeId} projectId={project.data.id} />
       {children(project.data)}
       <UnsavedGuardHost />
       <ItemPeekHost project={project.data} />

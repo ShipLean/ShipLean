@@ -56,6 +56,7 @@ export const instanceSettingsTabs = [
   'users',
   'projects',
   'integrations',
+  'analytics',
   'agents',
 ] as const;
 export type InstanceSettingsTab = (typeof instanceSettingsTabs)[number];
