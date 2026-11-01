@@ -20,9 +20,9 @@ export function ThemeGroup({
       data-testid={ids.retroThemeGroup}
       data-theme={group.theme?.id ?? 'unthemed'}
       data-recurring={group.recurring ? 'true' : 'false'}
-      className="grid gap-1.5"
+      className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1.5"
     >
-      <header className="flex items-center gap-2 px-0.5">
+      <header className="flex items-center gap-2 px-0.5 [&>span]:w-full [&>span]:justify-between [&>span]:gap-2 [&>span]:whitespace-normal">
         <ThemeChip theme={group.theme} recurring={group.recurring} />
       </header>
       {group.points.map((point) => (
