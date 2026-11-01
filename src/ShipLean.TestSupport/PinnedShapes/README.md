@@ -30,12 +30,12 @@ Format `KKKKKKKK-0000-4000-80PP-NNNNNNNNNNNN` (valid v4 layout). `KKKKKKKK` = ki
 |---|---|---|---|
 | User | `00000001` | `PP` = `00`; Joel 1, Priya 2, Tom 3, Mei 4, Sam 5, Ana 6 | Joel is the exception: `0199f000-0000-7000-8000-000000000001` (`SeedIds.Users.Joel`); Priya `00000001-0000-4000-8000-000000000002` |
 | Project | `00000002` | `PP` = `00`; SHIP 1, PAY 2, MOB 3, DATA 4, OPS 5, PART 6 | SHIP `00000002-0000-4000-8000-000000000001` |
-| State | `00000003` | `PP` = project; `N` = type digit (epic 1, feature 2, story 3, bug 4, task 5) then two-digit order | SHIP Bug Triaged `00000003-0000-4000-8001-000000000402` |
+| State | `00000003` | `PP` = project; `N` = type digit (epic 1, feature 2, story 3, bug 4, task 5, action 6) then two-digit order | SHIP Bug Triaged `00000003-0000-4000-8001-000000000402` |
 | Sprint | `00000004` | `PP` = project; `N` = sprint number | SHIP Sprint 24 `00000004-0000-4000-8001-000000000024` |
 | Work item | `00000005` | `PP` = project; `N` = key number | SHIP-141 `00000005-0000-4000-8001-000000000141` |
 | Import job | `00000006` | `PP` = `00`; `N` = job number | MOBILE → MOB `00000006-0000-4000-8000-000000000001` |
 
-`refs.json` lists every SHIP state (per type, in state order), every SHIP sprint (19–26), all six users and the five types. Other projects follow the same scheme. Their states and boards aren't pinned here: the seed writes documents in the same shape with their own state ids.
+`refs.json` lists every SHIP state (per type, in state order), every SHIP sprint (19–26), all six users and the six types. Other projects follow the same scheme. Their states and boards aren't pinned here: the seed writes documents in the same shape with their own state ids.
 
 ---
 
