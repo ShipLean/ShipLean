@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Retrospectives search (SHIP-82 mockup)</title>
+<!--
+  SHIP-82 mockup: Retrospectives › Search. Every point from every retro in the project, one row per point,
+  filtered by text, sprint, category, theme, level and who wrote it. Selecting a row shows its whole retro on the right.
+  ?q=<text> prefills the search. Uses ../tokens.css, shiplean.css, shared.js and retro-data.js.
+-->
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="shiplean.css">
+<link rel="stylesheet" href="retro.css">
+<script src="shared.js"></script>
+<script src="retro-data.js"></script>
+</head>
+<body>
+<div id="appbar"></div>
+<div class="toolbar">
+  <div class="filters">
+    <input class="field search-box" type="search" id="q" placeholder="Search points, root causes and raw logs" aria-label="Search retrospectives">
+    <select class="field" id="fSprint" aria-label="Sprint"><option value="">Any sprint</option></select>
+    <select class="field" id="fCat" aria-label="Category"><option value="">Any category</option></select>
+    <select class="field" id="fTheme" aria-label="Theme"><option value="">Any theme</option></select>
+    <select class="field" id="fLevel" aria-label="Level"><option value="">Stories, bugs and features</option><option value="story">Stories and bugs</option><option value="feature">Features</option></select>
+    <select class="field" id="fBy" aria-label="Written by"><option value="">Anyone</option><option value="conductor">Conductors</option><option value="sub-agent">Sub-agents</option><option value="person">People</option></select>
+    <label class="check"><input type="checkbox" id="fRecur"> Recurring themes only</label>
+  </div>
+  <span class="spacer"></span>
+  <span class="muted sm" id="count"></span>
+</div>
+<div class="split wide">
+  <div class="scroll">
+    <table class="list fixed">
+      <thead><tr><th style="width:118px">Category</th><th>Point</th><th style="width:170px">Theme</th><th style="width:170px">Work item</th><th style="width:48px">Sprint</th><th style="width:40px">By</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+  <aside class="detail" id="detail" aria-label="Retrospective"></aside>
+</div>
+
+<script>
+(() => {
+  const { av, tIcon, esc, people } = SL;
+  const { themes, retros, catLabel, roleLabel, recurring, sprintNames, actions } = RETRO;
+  document.getElementById('appbar').outerHTML = SL.appBar('retros');
+
+  const $ = id => document.getElementById(id);
+  [...sprintNames].reverse().forEach(s => $('fSprint').insertAdjacentHTML('beforeend', `<option>${s}</option>`));
+  Object.entries(catLabel).forEach(([k, l]) => $('fCat').insertAdjacentHTML('beforeend', `<option value="${k}">${l}</option>`));
+  Object.entries(themes).forEach(([k, t]) => $('fTheme').insertAdjacentHTML('beforeend', `<option value="${k}">${esc(t.name)}</option>`));
+  $('q').value = new URLSearchParams(location.search).get('q') ?? '';
+
+  const rows = retros.flatMap(r => r.points.map((p, i) => ({ r, p, id: r.id + '.' + i })));
+  let selected = null;
+
+  const hi = (text, q) => {
+    if (!q) return esc(text);
+    const i = text.toLowerCase().indexOf(q.toLowerCase());
+    return i < 0 ? esc(text) : esc(text.slice(0, i)) + '<mark>' + esc(text.slice(i, i + q.length)) + '</mark>' + esc(text.slice(i + q.length));
+  };
+  const logText = r => r.log ? Object.values(r.log).flat().join(' ') : '';
+
+  function filtered() {
+    const q = $('q').value.trim().toLowerCase();
+    // A point matches on its own text; a retro whose only match is its raw failure log shows once, on its first point.
+    const own = ({ r, p }) => (p.text + ' ' + (p.cause || '') + ' ' + themes[p.theme].name + ' ' + r.subject + ' ' + r.title).toLowerCase().includes(q);
+    const logOnly = new Set(retros.filter(r => logText(r).toLowerCase().includes(q) && !rows.some(x => x.r === r && own(x))).map(r => r.id + '.0'));
+    return rows.filter(({ r, p, id }) =>
+      (!q || own({ r, p }) || logOnly.has(id)) &&
+      (!$('fSprint').value || r.sprint === $('fSprint').value) &&
+      (!$('fCat').value || p.cat === $('fCat').value) &&
+      (!$('fTheme').value || p.theme === $('fTheme').value) &&
+      (!$('fLevel').value || ($('fLevel').value === 'feature' ? r.type === 'feature' : r.type !== 'feature')) &&
+      (!$('fBy').value || r.role === $('fBy').value) &&
+      (!$('fRecur').checked || recurring(p.theme)));
+  }
+
+  function render() {
+    const q = $('q').value.trim(), list = filtered();
+    if (!selected || !list.some(x => x.id === selected)) selected = list[0]?.id ?? null;
+    $('count').textContent = `${list.length} point${list.length === 1 ? '' : 's'} in ${new Set(list.map(x => x.r.id)).size} retros`;
+    $('rows').innerHTML = list.length ? list.map(({ r, p, id }) => `<tr class="item" data-id="${id}" aria-selected="${id === selected}">
+      <td><span class="catdot ${p.cat}">${catLabel[p.cat]}</span></td>
+      <td class="wrap">${hi(p.text, q)}${p.cause ? `<div class="xs muted">Root cause: ${hi(p.cause, q)}</div>` : ''}${!(p.text + (p.cause || '')).toLowerCase().includes(q.toLowerCase()) && q && logText(r).toLowerCase().includes(q.toLowerCase()) ? '<div class="xs muted">Match in the raw failure log</div>' : ''}</td>
+      <td class="wrap"><span class="sm">${esc(themes[p.theme].name)}</span>${recurring(p.theme) ? ' <span class="chip warn" style="height:16px" title="Recurring">↻</span>' : ''}</td>
+      <td><div class="title-cell">${tIcon(r.type)}<span class="key">${r.subject}</span><span class="t sm">${esc(r.title)}</span></div></td>
+      <td class="sm">${r.sprint}</td>
+      <td title="${people[r.by].name}${r.agent ? ' · ' + esc(r.agent) : ''}">${av(r.by)}</td>
+    </tr>`).join('') : `<tr><td colspan="6" class="muted" style="text-align:center;height:80px">No point matches. Try fewer filters.</td></tr>`;
+    detail();
+  }
+
+  function detail() {
+    const row = rows.find(x => x.id === selected);
+    if (!row) { $('detail').innerHTML = '<p class="muted sm">Select a point to see its whole retro.</p>'; return; }
+    const r = row.r;
+    $('detail').innerHTML = `<div class="row"><span class="overline">Retrospective ${r.id}</span><span class="spacer"></span><span class="muted xs">${r.at}</span></div>
+      <div class="title-cell" style="font-size:var(--text-md)">${tIcon(r.type)}<span class="key">${r.subject}</span><b class="t">${esc(r.title)}</b></div>
+      <div class="row sm">${av(r.by)}<span>${people[r.by].name}</span>${r.agent ? `<span class="agent">${esc(r.agent)}</span>` : ''}<span class="chip">${roleLabel[r.role]}</span><span class="chip">Sprint ${r.sprint.slice(1)}</span></div>
+      <div class="row"><a class="btn" href="#">Open ${r.subject}</a><a class="btn ghost" href="sprint-retro.html">Sprint retro</a></div>
+      <div class="cats">${['well', 'bad', 'improve', 'unplanned'].map(cat => {
+        const ps = r.points.filter(p => p.cat === cat);
+        if (!ps.length) return '';
+        return `<div class="cat ${cat}"><div class="overline">${catLabel[cat]}</div><ul>${ps.map(p => {
+          const a = p.action && actions.find(x => x.key === p.action);
+          return `<li${p === row.p ? ' style="background:var(--color-accent-soft);border-radius:4px;padding:2px 4px;margin-left:-4px"' : ''}>${esc(p.text)}${p.cause ? `<span class="cause-i">Root cause: ${esc(p.cause)}</span>` : ''}<span class="theme-i">${esc(themes[p.theme].name)}</span>${a ? `<span class="xs">${tIcon(a.type)} <span class="key">${a.key}</span> ${esc(a.title)} · ${SL.st(a.state)}</span>` : ''}</li>`;
+        }).join('')}</ul></div>`;
+      }).join('')}</div>
+      ${r.compiledFrom ? `<p class="xs muted" style="margin:0">Compiled from ${r.compiledFrom.map(id => { const s = retros.find(x => x.id === id); return `${tIcon(s.type)} ${s.subject}`; }).join(', ')}.</p>` : ''}
+      ${r.log ? `<details class="rawlog" open><summary>Raw failure log <span class="muted">· verbatim from the agent</span></summary>
+        <dl style="grid-template-columns:120px minmax(0,1fr)">${[['blockers', 'Blockers'], ['disproved', 'Assumptions disproved'], ['friction', 'Friction']].map(([k, l]) => `<dt>${l}</dt><dd>${r.log[k].length ? r.log[k].map(esc).join('<br>') : '<span class="muted">None reported.</span>'}</dd>`).join('')}</dl></details>` : ''}`;
+  }
+
+  document.querySelector('.filters').addEventListener('input', render);
+  $('rows').addEventListener('click', e => { const tr = e.target.closest('tr[data-id]'); if (!tr) return; selected = tr.dataset.id; render(); });
+  render();
+  SL.preview([{ label: 'Clear search', run: () => { $('q').value = ''; render(); } }, { label: 'Recurring only', run: () => { $('fRecur').checked = !$('fRecur').checked; render(); } }]);
+})();
+</script>
+</body>
+</html>

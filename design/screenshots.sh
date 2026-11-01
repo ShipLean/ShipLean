@@ -47,6 +47,10 @@ declare -A variants=(
   [features-new]="features.html?dialog=new"
   [feature-board-parent]="feature-board.html?key=SHIP-103"
   [feature-board-people]="feature-board.html?key=SHIP-103&view=people"
+  [sprint-retro-items]="sprint-retro.html?view=items"
+  [retros-search]="retros.html?q=screenshot"
+  [retro-insights-actions]="retro-insights.html?view=actions"
+  [retro-insights-impact]="retro-insights.html?view=impact"
 )
 
 names=("$@")
