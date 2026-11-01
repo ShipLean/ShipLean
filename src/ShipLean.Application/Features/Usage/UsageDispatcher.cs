@@ -133,11 +133,26 @@ public sealed class UsageDispatcher : BackgroundService
         var grace = Task.Delay(StopCap, _time, giveUp.Token);
         if (await Task.WhenAny(delivery, grace) != delivery)
         {
+            // Abandoned: if the sink faults later, observe it so it never surfaces as an unobserved task exception.
+            _ = ObserveAbandonedAsync(delivery);
             return false;
         }
         await giveUp.CancelAsync();
         await delivery;
         return true;
+    }
+
+    // Awaits a send nobody waits for any more, so that a later fault is observed. Only the exception type is logged.
+    private async Task ObserveAbandonedAsync(Task abandoned)
+    {
+        try
+        {
+            await abandoned;
+        }
+        catch (Exception problem)
+        {
+            Warn("stop", $"An abandoned usage send failed: {problem.GetType().Name}");
+        }
     }
 
     private async Task FlushOnStopAsync(List<UsageEvent> unsent)

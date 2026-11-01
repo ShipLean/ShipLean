@@ -245,20 +245,28 @@ public class UsageDispatcherTests : ApiFixture
     [TestCase(false)]
     public async Task Dispatcher_WhenSinkNeverReturnsAndIgnoresToken_ShouldStopAtStopCap(bool sinkAlreadyInside)
     {
-        ProbeSink stuck = new(AnalyticsProvider.Umami) { Gate = new TaskCompletionSource() };
+        TaskCompletionSource gate = new();
+        ProbeSink stuck = new(AnalyticsProvider.Umami) { Gate = gate };
         UsageQueue queue = new(Host.Services.GetRequiredService<IMeterFactory>());
         var dispatcher = OwnDispatcher(queue, stuck, new CaptureLogger());
-        await dispatcher.StartAsync(CancellationToken.None);
-        TrackOn(queue, 3);
-        if (sinkAlreadyInside)
+        try
         {
-            await AdvanceUntilAsync(stuck.Started.WaitAsync(Limit));
+            await dispatcher.StartAsync(CancellationToken.None);
+            TrackOn(queue, 3);
+            if (sinkAlreadyInside)
+            {
+                await AdvanceUntilAsync(stuck.Started.WaitAsync(Limit));
+            }
+
+            var started = _clock.GetUtcNow();
+            await AdvanceUntilAsync(dispatcher.StopAsync(CancellationToken.None));
+
+            (_clock.GetUtcNow() - started).ShouldBeLessThan(UsageDispatcher.StopCap + TimeSpan.FromSeconds(3));
         }
-
-        var started = _clock.GetUtcNow();
-        await AdvanceUntilAsync(dispatcher.StopAsync(CancellationToken.None));
-
-        (_clock.GetUtcNow() - started).ShouldBeLessThan(UsageDispatcher.StopCap + TimeSpan.FromSeconds(3));
+        finally
+        {
+            gate.TrySetResult();
+        }
         dispatcher.Dispose();
     }
 
