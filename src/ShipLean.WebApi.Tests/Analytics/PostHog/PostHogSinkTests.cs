@@ -149,7 +149,7 @@ public sealed class PostHogSinkTests
     }
 
     [Test]
-    public async Task Send_WhenNeverProcessPersonFalse_ShouldNotSendProcessPersonProfile()
+    public async Task Send_WhenAnyEvent_ShouldNotSendProcessPersonProfile()
     {
         await _sink.SendAsync([UserEvent()], Target, CancellationToken.None);
 
