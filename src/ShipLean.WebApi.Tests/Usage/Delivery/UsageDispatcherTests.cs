@@ -261,7 +261,13 @@ public class UsageDispatcherTests : ApiFixture
             var started = _clock.GetUtcNow();
             await AdvanceUntilAsync(dispatcher.StopAsync(CancellationToken.None));
 
-            (_clock.GetUtcNow() - started).ShouldBeLessThan(UsageDispatcher.StopCap + TimeSpan.FromSeconds(3));
+            // StopAsync completing at all proves the dispatcher gave up on the stuck sink (AdvanceUntilAsync fails the test at its real-time
+            // limit otherwise). It must not give up early. The upper bound is only a loose sanity check: AdvanceUntilAsync moves the fake
+            // clock a second per yield whether or not the dispatcher is waiting yet, so under load the elapsed fake time says how fast the
+            // host schedules, not how the dispatcher behaves.
+            var elapsed = _clock.GetUtcNow() - started;
+            elapsed.ShouldBeGreaterThanOrEqualTo(UsageDispatcher.StopCap);
+            elapsed.ShouldBeLessThan(UsageDispatcher.StopCap * 10);
         }
         finally
         {
