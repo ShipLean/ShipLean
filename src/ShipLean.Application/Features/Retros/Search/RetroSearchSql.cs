@@ -2,8 +2,6 @@ namespace ShipLean.Application.Features.Retros.Search;
 
 internal static class RetroSearchSql
 {
-    public const int RowCap = 200;
-
     public const string Sprints = """
         SELECT id, name AS sprintName, to_char(start_date, 'YYYY-MM-DD') AS startDate, to_char(end_date, 'YYYY-MM-DD') AS endDate
         FROM sprint
