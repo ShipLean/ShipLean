@@ -45,7 +45,11 @@ public static class RetroRules
         }
 
         var after = since.Average();
-        var changePct = before == 0 ? (double?)null : (after - before) / before;
+        if (before == 0)
+        {
+            return new RetroVerdictResult(RetroVerdict.NoEffect, before, after, null);
+        }
+        var changePct = (after - before) / before;
         if (after <= before / 2)
         {
             return new RetroVerdictResult(RetroVerdict.Helped, before, after, changePct);

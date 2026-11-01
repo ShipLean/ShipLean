@@ -1,6 +1,8 @@
 namespace ShipLean.Contracts.Retros;
 
-// What people do to retros in the UI. Callers have already checked access and the body (RetroChecks).
+// What people do to retros in the UI. Callers have checked the shape of the body (RetroChecks) and the access to the route's project, point or theme only.
+// The ids inside a body (RetroPointCreate.RetroId/WorkItemId/SprintId, RetroThemeMerge.SourceIds/TargetId) are not checked by callers:
+// the implementation must answer not_found for any of them outside projectId.
 public interface IRetroPeopleWrites
 {
     Task<RetroPointDto> AddPointAsync(Guid projectId, RetroPointCreate request, CancellationToken cancellationToken = default);

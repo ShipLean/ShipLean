@@ -116,6 +116,8 @@ public class RetroEndpointShapeTests : ApiFixture
         yield return Case("POST", points, $$"""{"workItemId":"{{item}}","sprintId":"{{sprint}}","category":"improve","text":"x"}""", "AddPoint_WhenItemAndSprintBothNamed");
         yield return Case("POST", points, """{"category":"improve","text":"x"}""", "AddPoint_WhenNoTargetNamed");
         yield return Case("POST", points, $$"""{"workItemId":"{{item}}","category":"improve","text":"  "}""", "AddPoint_WhenTextEmpty");
+        yield return Case("POST", points, $$"""{"workItemId":"{{item}}","category":"improve","text":"x","rootCause":"y"}""", "AddPoint_WhenRootCauseOnImprove");
+        yield return Case("PUT", $"/api/retros/points/{RetroSweepData.Point}/theme", """{"themeName":"  "}""", "MoveTheme_WhenThemeNameBlank");
         yield return Case("PUT", $"/api/retros/points/{RetroSweepData.Point}/theme", $$"""{"themeId":"{{RetroSweepData.Theme}}","themeName":"Both"}""", "MoveTheme_WhenIdAndNameBothGiven");
         yield return Case("POST", $"/api/retros/points/{RetroSweepData.Point}/action", """{"title":"  ","points":null}""", "CreateAction_WhenTitleBlank");
         yield return Case("PUT", $"/api/retros/themes/{RetroSweepData.Theme}", """{"name":""}""", "Rename_WhenNameEmpty");

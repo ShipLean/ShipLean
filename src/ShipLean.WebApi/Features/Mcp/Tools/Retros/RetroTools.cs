@@ -22,7 +22,7 @@ internal sealed class RetroTools(ItemResolver items, ProjectResolver projects, S
     public async Task<CallToolResult> LogRetrospective(
         [Description("The key of the work item this retrospective is about, such as SHIP-12.")] string item,
         [Description("What went well.")] IReadOnlyList<RetroPointInput>? went_well = null,
-        [Description("What went badly. Give each point a root_cause.")] IReadOnlyList<RetroPointInput>? went_badly = null,
+        [Description("What went badly. Give each point a root_cause.")] IReadOnlyList<RetroBadPointInput>? went_badly = null,
         [Description("What can be improved.")] IReadOnlyList<RetroPointInput>? improve = null,
         [Description("What came up that the plan did not foresee.")] IReadOnlyList<RetroPointInput>? not_in_plan = null,
         [Description("Your raw failure log.")] RetroFailureLogInput? failure_log = null,
@@ -41,7 +41,7 @@ internal sealed class RetroTools(ItemResolver items, ProjectResolver projects, S
         }
 
         var request = new RetroLogRequest(
-            resolved.ProjectId, resolved.Id, Points(went_well), Points(went_badly), Points(improve), Points(not_in_plan),
+            resolved.ProjectId, resolved.Id, Points(went_well), BadPoints(went_badly), Points(improve), Points(not_in_plan),
             new RetroFailureLogDto(failure_log?.Blockers ?? [], failure_log?.AssumptionsDisproved ?? [], failure_log?.Friction ?? []),
             compiled, partial ?? false);
         var logged = await log.LogAsync(request, cancellationToken);
@@ -79,6 +79,9 @@ internal sealed class RetroTools(ItemResolver items, ProjectResolver projects, S
     }
 
     private static IReadOnlyList<RetroLogPoint> Points(IReadOnlyList<RetroPointInput>? points)
+        => [.. (points ?? []).Select(p => new RetroLogPoint(p.Text ?? string.Empty, p.Theme, null))];
+
+    private static IReadOnlyList<RetroLogPoint> BadPoints(IReadOnlyList<RetroBadPointInput>? points)
         => [.. (points ?? []).Select(p => new RetroLogPoint(p.Text ?? string.Empty, p.Theme, p.RootCause))];
 
     private static RetroThemeLine Theme(RetroThemeRefDto theme) => new(theme.Id, theme.Name, Name(theme.Tone));

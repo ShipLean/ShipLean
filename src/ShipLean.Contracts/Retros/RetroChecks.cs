@@ -3,6 +3,8 @@ using ShipLean.Contracts.Errors;
 namespace ShipLean.Contracts.Retros;
 
 // The shape checks of the retro routes, run after the access check and before the seam. Each throws ApiException.Validation.
+// The controllers only check the route's project, point and theme. The ids in a body (RetroId, WorkItemId, SprintId, SourceIds, TargetId)
+// are not access-checked here: the seam must answer not_found for any of them outside the route's projectId.
 public static class RetroChecks
 {
     public static RetroRange Range(string? range) => range switch
@@ -27,6 +29,10 @@ public static class RetroChecks
         if (string.IsNullOrWhiteSpace(request.Text))
         {
             throw ApiException.Validation("The point needs text.", "text");
+        }
+        if (request.RootCause is not null && request.Category != RetroCategory.WentBadly)
+        {
+            throw ApiException.Validation("rootCause is only for wentBadly points.", "rootCause");
         }
         ThemeChoice(request.ThemeId, request.ThemeName);
     }
@@ -66,6 +72,10 @@ public static class RetroChecks
         if (themeId is not null && themeName is not null)
         {
             throw ApiException.Validation("Name a theme by id or by name, not both.", "themeId");
+        }
+        if (themeName is not null && string.IsNullOrWhiteSpace(themeName))
+        {
+            throw ApiException.Validation("The theme name cannot be blank.", "themeName");
         }
     }
 }

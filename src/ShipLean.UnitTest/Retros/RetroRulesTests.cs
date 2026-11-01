@@ -42,6 +42,8 @@ public class RetroRulesTests
     [TestCase(new[] { 4, 2, 0 }, 1, 1, RetroVerdict.TooEarly, TestName = "Verdict_WhenNoSprintEndedSince_ShouldBeTooEarly")]
     [TestCase(new[] { 4, 2, 0 }, 0, 1, RetroVerdict.Helped, TestName = "Verdict_WhenTheCurrentSprintIsPastTheLastEnded_ShouldNotCountIt")]
     [TestCase(new[] { 0, 1 }, 0, 1, RetroVerdict.NoEffect, TestName = "Verdict_WhenBeforeIsZero_ShouldBeNoEffect")]
+    [TestCase(new[] { 0, 0 }, 0, 1, RetroVerdict.NoEffect, TestName = "Verdict_WhenBeforeAndAfterAreZero_ShouldBeNoEffectNotHelped")]
+    [TestCase(new[] { 4, 2, 3 }, 0, 2, RetroVerdict.SomeEffect, TestName = "Verdict_WhenAfterIs2Point5OfBefore4_ShouldBeSomeEffect")]
     public void Verdict_WhenCounts_ShouldMatch(int[] counts, int closedAt, int lastEnded, RetroVerdict verdict)
     {
         var result = RetroRules.Verdict(counts, closedAt, lastEnded);
@@ -63,6 +65,7 @@ public class RetroRulesTests
     [TestCase(new[] { 4, 2 }, 0, 1, -0.5)]
     [TestCase(new[] { 4, 6 }, 0, 1, 0.5)]
     [TestCase(new[] { 0, 1 }, 0, 1, null)]
+    [TestCase(new[] { 0, 0 }, 0, 1, null)]
     [TestCase(new[] { 4, 2, 0 }, 1, 1, null)]
     public void Verdict_WhenCounts_ShouldGiveChangePctAsAFraction(int[] counts, int closedAt, int lastEnded, double? change)
     {
