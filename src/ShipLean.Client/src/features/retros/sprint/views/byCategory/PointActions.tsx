@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { RetroPointDto, RetroThemeListDto } from '../../../../../api/retros';
 import { ThemePicker } from '../../../../retroShared/ThemePicker';
 import { retrosTestIds as ids } from '../../../testIds';
 import type { useRetroPointWrites } from './useRetroPointWrites';
 
 const buttonClass =
-  'cursor-pointer rounded-sm border border-edge bg-panel px-1.5 py-0.5 text-[length:var(--text-xs)] text-ink hover:bg-canvas disabled:cursor-default disabled:opacity-60';
+  'h-5 cursor-pointer rounded-[var(--radius-xs)] border border-dashed border-edge bg-transparent px-1.5 text-[length:var(--text-2xs)] whitespace-nowrap text-ink-muted hover:border-solid hover:text-ink disabled:cursor-default disabled:opacity-60';
 
 /**
  * The buttons on a point. The theme can always move; + Action item shows on a Can be improved point with no action
@@ -22,6 +22,22 @@ export function PointActions({
 }) {
   const [picking, setPicking] = useState(false);
   const { moveTheme, addAction, archive } = writes;
+  const anchor = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (!picking) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setPicking(false);
+    };
+    const onDown = (event: MouseEvent) => {
+      if (!anchor.current?.contains(event.target as Node)) setPicking(false);
+    };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('mousedown', onDown);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('mousedown', onDown);
+    };
+  }, [picking]);
   return (
     <>
       {point.category === 'improve' && point.action === null ? (
@@ -35,7 +51,7 @@ export function PointActions({
           + Action item
         </button>
       ) : null}
-      <span className="relative inline-block">
+      <span ref={anchor} className="relative inline-block">
         <button
           type="button"
           data-testid={ids.retroPointMoveTheme}

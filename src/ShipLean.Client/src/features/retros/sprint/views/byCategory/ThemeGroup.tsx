@@ -22,9 +22,8 @@ export function ThemeGroup({
       data-recurring={group.recurring ? 'true' : 'false'}
       className="grid gap-1.5"
     >
-      <header className="flex items-center gap-2">
+      <header className="flex items-center gap-2 px-0.5">
         <ThemeChip theme={group.theme} recurring={group.recurring} />
-        <span className="text-[length:var(--text-xs)] text-ink-muted">{group.points.length}</span>
       </header>
       {group.points.map((point) => (
         <div key={point.id} data-testid={ids.retroPoint} data-point-id={point.id}>
