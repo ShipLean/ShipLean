@@ -1,16 +1,18 @@
 import type { BoardLevel, BoardTypeStatesDto } from '../../../../api/boards';
 import type { StateRefJson, TransitionJson } from '../../../../api/persisted';
-import type { StateRef, WorkItemTypeId } from '../../../../api/refs';
+import { WORK_ITEM_TYPE_IDS, type StateRef, type WorkItemTypeId } from '../../../../api/refs';
+import { isStoryLevel, typeName } from '../../../../api/workItemTypes';
 
+/** Transition types are labelled by their display name, except a story, which reads "Story" in a transition. */
 export const TRANSITION_TYPE_LABELS: Partial<Record<WorkItemTypeId, string>> = {
+  ...Object.fromEntries(WORK_ITEM_TYPE_IDS.filter(isStoryLevel).map((t) => [t, typeName(t)])),
   story: 'Story',
-  bug: 'Bug',
   feature: 'Feature',
 };
 
 /** The types a board of this level may define transitions for: the server refuses any other. */
 export function transitionTypesFor(level: BoardLevel): WorkItemTypeId[] {
-  if (level === 'stories') return ['story', 'bug'];
+  if (level === 'stories') return WORK_ITEM_TYPE_IDS.filter(isStoryLevel);
   if (level === 'features') return ['feature'];
   return [];
 }

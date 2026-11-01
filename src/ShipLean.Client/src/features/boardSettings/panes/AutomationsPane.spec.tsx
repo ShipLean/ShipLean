@@ -18,6 +18,11 @@ const bug = {
   active: { id: 'b-active', name: 'Active', category: 'inProgress' },
 } as const;
 
+const action = {
+  new: { id: 'a-new', name: 'New', category: 'proposed' },
+  active: { id: 'a-active', name: 'Active', category: 'inProgress' },
+} as const;
+
 const toRef = (s: { id: string; name: string }) => ({ stateId: s.id, name: s.name });
 const transition = (
   id: string,
@@ -38,6 +43,7 @@ function board(level: BoardLevel, transitions: TransitionJson[] = []): BoardSett
     states: [
       { type: 'story', states: Object.values(story) },
       { type: 'bug', states: Object.values(bug) },
+      { type: 'action', states: Object.values(action) },
       { type: 'feature', states: [story.new, story.idea, story.active] },
     ],
     settings: { ...emptySettings(), transitions },
@@ -403,4 +409,21 @@ test('AutomationsPane_WhenPromptOver20000Characters_ShouldShowTheLimitMessage', 
     'A prompt is at most 20,000 characters. This one is 20,001.',
   );
   await expect(page.getByTestId(ids.actionPrompt)).toHaveAttribute('aria-invalid', 'true');
+});
+
+test('AutomationsPane_WhenActionItemChosen_ShouldAddATransitionForIt', async ({ mount, page }) => {
+  await stubBoard(page, board('stories'));
+  await mountDialog(mount, 'stories');
+
+  await expect(page.getByTestId(ids.transitionAddType).locator('option')).toHaveText([
+    'Story',
+    'Bug',
+    'Action item',
+  ]);
+  await page.getByTestId(ids.transitionAddType).selectOption({ label: 'Action item' });
+  await page.getByTestId(ids.transitionAddTo).selectOption({ label: 'Active' });
+  await page.getByTestId(ids.transitionAdd).click();
+  await expect(page.getByTestId(ids.transitionLabel)).toHaveText(
+    'Action item · Any state → Active',
+  );
 });

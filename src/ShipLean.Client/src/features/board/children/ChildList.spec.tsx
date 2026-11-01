@@ -93,9 +93,9 @@ test('Board_WhenUserStoryAddedFromTheList_ShouldCreateItUnderTheCardAndRefetch',
   });
   await mount(<BoardHarness level="features" />, features);
   await rollup(page, 'story').click();
-  await expect(page.getByTestId(ids.childAdd)).toHaveCount(2);
+  await expect(page.getByTestId(ids.childAdd)).toHaveCount(3);
 
-  await page.getByTestId(ids.childAdd).filter({ hasText: 'User story' }).click();
+  await page.getByTestId(ids.childAdd).filter({ hasText: 'User Story' }).click();
   await page.getByTestId(ids.childAddTitle).fill('  Export as CSV  ');
   const reads = server.reads.length;
   const childReads = server.childReads.length;
@@ -238,7 +238,7 @@ test('Board_WhenAFeatureHasNoChildren_ShouldOfferNoStoriesYetToAddTheFirst', asy
   await rollup(page, 'story').click();
 
   await expect(page.getByTestId(ids.childEmpty)).toBeVisible();
-  await expect(page.getByTestId(ids.childAdd)).toHaveCount(2);
+  await expect(page.getByTestId(ids.childAdd)).toHaveCount(3);
 });
 
 test('Board_WhenAnEpicHasNoFeatures_ShouldOfferNoFeaturesYet', async ({ mount, page }) => {
@@ -268,5 +268,18 @@ test('Board_WhenChildClicked_ShouldOpenChildInModal', async ({ mount, page }) =>
 
   await expect(page.getByTestId(ids.locationProbe)).toHaveText(
     '/p/SHIP/boards/features?item=SHIP-141',
+  );
+});
+
+test('Board_WhenAFeatureHasNoChildren_ShouldOfferAnActionItemAmongTheTypes', async ({
+  mount,
+  page,
+}) => {
+  await stubBoard(page, rollupBoard(), { level: 'features', children: () => [] });
+  await mount(<BoardHarness level="features" />, features);
+  await page.getByTestId(ids.cardRollup).first().click();
+
+  await expect(page.getByTestId(ids.childAdd).and(page.locator('[data-type="action"]'))).toHaveText(
+    /Action item/,
   );
 });

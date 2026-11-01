@@ -18,14 +18,14 @@ const rows: AnnotationRow[] = [
     type: 'task',
     label: 'Tasks',
     testId: ids.annotationTasks,
-    hint: 'done tasks out of all tasks under a user story or bug',
+    hint: 'done tasks out of all tasks under a user story, bug or action item',
   },
   {
     key: 'stories',
     type: 'story',
     label: 'User stories',
     testId: ids.annotationStories,
-    hint: 'done user stories out of all stories under a feature',
+    hint: 'done stories out of all stories and action items under a feature',
   },
   {
     key: 'bugs',
