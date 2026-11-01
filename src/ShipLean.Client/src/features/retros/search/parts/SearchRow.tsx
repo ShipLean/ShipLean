@@ -80,7 +80,9 @@ export function SearchRow({
         {workItem ? (
           <span className="flex min-w-0 items-center gap-1.5">
             <TypeIcon type={workItem.type.id} />
-            <span className="font-mono text-[length:var(--text-xs)]">{workItem.key}</span>
+            <span className="font-mono whitespace-nowrap text-[length:var(--text-xs)]">
+              {workItem.key}
+            </span>
             <span className="truncate text-[length:var(--text-sm)]">{workItem.title}</span>
           </span>
         ) : (

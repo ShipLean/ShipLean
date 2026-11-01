@@ -20,7 +20,9 @@ test('SearchFilters_WhenEachControlChanges_ShouldWriteItsQueryParameter', async 
   await page.getByTestId(ids.retrosFilterCategory).selectOption('improve');
   await page.getByTestId(ids.retrosFilterLevel).selectOption('features');
   await page.getByTestId(ids.retrosFilterRole).selectOption('conductor');
-  await page.getByTestId(ids.retrosFilterRecurring).check();
+  // click, not check(): the checkbox is controlled by the address, which updates in a router transition after the click.
+  await page.getByTestId(ids.retrosFilterRecurring).click();
+  await expect(page.getByTestId(ids.retrosFilterRecurring)).toBeChecked();
   await page.getByTestId(ids.retrosFilterTheme).selectOption({ index: 1 });
   await page.getByTestId(ids.retrosFilterSprint).selectOption({ index: 1 });
   await expect.poll(asked).toMatchObject({
