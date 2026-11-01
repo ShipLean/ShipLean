@@ -7,6 +7,7 @@ import { DiscussionSlot } from '../slots/DiscussionSlot';
 import { LinksSlot } from '../slots/LinksSlot';
 import { SideSlot } from '../slots/SideSlot';
 import { TasksSlot } from '../slots/TasksSlot';
+import { WorkItemRetroSlot, type WorkItemRetroSlotProps } from '../slots/WorkItemRetroSlot';
 import { backlogSlots } from './backlogSlots';
 import { boardSlots } from './boardSlots';
 import { capacitySlots } from './capacitySlots';
@@ -221,8 +222,11 @@ test('workItemSlots_ShouldHandTheFormTheFourOtherSlots', () => {
   }
 });
 
-test('workItemSlots_ShouldLeaveTheRetroNodeEmptyUntilItIsFilled', () => {
-  expect(workItemSlots(project, 'SHIP-141').form.retro).toBeUndefined();
+test('workItemSlots_ShouldFillTheRetroNodeWithTheRetroSlot', () => {
+  const retro = workItemSlots(project, 'SHIP-141').form
+    .retro as ReactElement<WorkItemRetroSlotProps>;
+  expect(retro.type).toBe(WorkItemRetroSlot);
+  expect(retro.props).toEqual({ project, itemKey: 'SHIP-141' });
 });
 
 test('attachmentSlots_ShouldPassTheProjectItemAndAttachment', () => {
