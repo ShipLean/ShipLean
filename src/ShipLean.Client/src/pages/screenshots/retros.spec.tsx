@@ -12,7 +12,8 @@ async function arrange(page: Page) {
 }
 
 const insightsView = (view: string, ready: string) => ({
-  name: `retro-insights-${view}`,
+  // The mockups: retro-insights (themes), retro-insights-actions and retro-insights-impact.
+  name: view === 'themes' ? 'retro-insights' : `retro-insights-${view}`,
   route: `/p/SHIP/retros/insights?view=${view}`,
   shell: true,
   arrange,
@@ -24,7 +25,7 @@ const insightsView = (view: string, ready: string) => ({
 
 pageShots([
   {
-    name: 'sprint-retro-by-category',
+    name: 'sprint-retro',
     route: '/p/SHIP/sprints/sprint-24/retro',
     shell: true,
     arrange,
@@ -35,7 +36,7 @@ pageShots([
     },
   },
   {
-    name: 'sprint-retro-by-work-item',
+    name: 'sprint-retro-items',
     route: '/p/SHIP/sprints/sprint-24/retro',
     shell: true,
     arrange,
@@ -50,7 +51,7 @@ pageShots([
   },
   {
     name: 'retros-search',
-    route: `/p/SHIP/retros?selected=${retroSearch.rows[0].retroId}`,
+    route: `/p/SHIP/retros?q=screenshot&selected=${retroSearch.rows[0].retroId}`,
     shell: true,
     arrange,
     ready: async (page) => {
