@@ -17,5 +17,5 @@ public sealed class AnalyticsSettings
         return Task.FromResult(_current);
     }
 
-    public Task<AnalyticsTestResultDto> TestAsync(CancellationToken cancellationToken) => Task.FromResult(new AnalyticsTestResultDto(false, "Not built yet."));
+    public static Task<AnalyticsTestResultDto> TestAsync(CancellationToken cancellationToken) => Task.FromResult(new AnalyticsTestResultDto(false, "Not built yet."));
 }
