@@ -127,7 +127,7 @@ public static class BacklogTree
     // The points of the stories and bugs under the group, open and closed, as on the boards and the Features backlog (tasks and
     // Features add no points to the sum).
     private static decimal? ChildPoints(IEnumerable<WorkTreeRollupDto> entries) =>
-        SumOrNull(entries.Where(e => e.Type is WorkItemTypeId.Story or WorkItemTypeId.Bug).Select(e => e.TotalPoints));
+        SumOrNull(entries.Where(e => WorkItemTypeRules.IsStoryLevel(e.Type)).Select(e => e.TotalPoints));
 
     private static List<RollupCountDto> OrphanRollups(IEnumerable<StackRowDto> orphans) =>
         [.. orphans.GroupBy(s => s.Type.Id).OrderBy(g => g.Key)

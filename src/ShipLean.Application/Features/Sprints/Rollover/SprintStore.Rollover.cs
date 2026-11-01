@@ -23,7 +23,7 @@ public sealed partial class SprintStore
                (SELECT count(*) FROM work_item t JOIN state ts ON ts.id = t.state_id
                 WHERE t.parent_id = w.id AND t.sprint_id = w.sprint_id AND t.type = 'task' AND ts.category <> 'removed')::int AS totalTasks
         FROM work_item w JOIN state s ON s.id = w.state_id LEFT JOIN app_user u ON u.id = w.assigned_to
-        WHERE w.sprint_id = @sprintId AND w.type IN ('story', 'bug') AND s.category NOT IN ('completed', 'removed')
+        WHERE w.sprint_id = @sprintId AND w.type = ANY(@storyLevel) AND s.category NOT IN ('completed', 'removed')
         ORDER BY w.backlog_order, w.number
         """;
 
@@ -34,19 +34,19 @@ public sealed partial class SprintStore
         var next = await connection.QueryFirstOrDefaultAsync<SprintRow>(new CommandDefinition(
             $"SELECT {SprintRow.Columns} FROM sprint WHERE project_id = @projectId AND archived_at IS NULL AND start_date > @end ORDER BY start_date LIMIT 1",
             new { projectId = sprint.ProjectId, end = sprint.End }, cancellationToken: cancellationToken));
-        var items = (await connection.QueryAsync<RolloverItemRow>(new CommandDefinition(UnfinishedItems, new { sprintId }, cancellationToken: cancellationToken))).ToList();
+        var items = (await connection.QueryAsync<RolloverItemRow>(new CommandDefinition(UnfinishedItems, new { sprintId, storyLevel = WorkItemTypeRules.StoryLevelDb }, cancellationToken: cancellationToken))).ToList();
         decimal? nextCapacity = null;
         var nextPoints = 0m;
         if (next is not null)
         {
             nextCapacity = await connection.ExecuteScalarAsync<decimal?>(new CommandDefinition(
-                "SELECT sum(capacity_points) FROM sprint_capacity WHERE sprint_id = @id AND archived_at IS NULL", new { next.Id }, cancellationToken: cancellationToken));
+                "SELECT sum(capacity_points) FROM sprint_capacity WHERE sprint_id = @id AND archived_at IS NULL", new { next.Id, storyLevel = WorkItemTypeRules.StoryLevelDb }, cancellationToken: cancellationToken));
             nextPoints = await connection.ExecuteScalarAsync<decimal>(new CommandDefinition(
                 """
                 SELECT coalesce(sum(w.story_points), 0) FROM work_item w JOIN state s ON s.id = w.state_id
-                WHERE w.sprint_id = @id AND w.type IN ('story', 'bug') AND s.category <> 'removed'
+                WHERE w.sprint_id = @id AND w.type = ANY(@storyLevel) AND s.category <> 'removed'
                 """,
-                new { next.Id }, cancellationToken: cancellationToken));
+                new { next.Id, storyLevel = WorkItemTypeRules.StoryLevelDb }, cancellationToken: cancellationToken));
         }
 
         var today = SprintLabels.Today(clock);

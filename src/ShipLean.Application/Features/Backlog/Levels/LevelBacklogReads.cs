@@ -45,7 +45,7 @@ public sealed class LevelBacklogReads(IWorkTreeReads reads, IBoardSettingsStore 
     // Everything estimated under the item: stories and bugs, open and closed, nested Features' included. Null when none is.
     private static decimal? ChildPoints(IEnumerable<WorkTreeRollupDto> own)
     {
-        var estimated = own.Where(r => r.Type is WorkItemTypeId.Story or WorkItemTypeId.Bug && r.TotalPoints is not null).ToList();
+        var estimated = own.Where(r => WorkItemTypeRules.IsStoryLevel(r.Type) && r.TotalPoints is not null).ToList();
         return estimated.Count == 0 ? null : estimated.Sum(r => r.TotalPoints);
     }
 

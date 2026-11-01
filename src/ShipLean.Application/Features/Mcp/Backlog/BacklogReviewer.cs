@@ -21,7 +21,7 @@ public static class BacklogReviewer
     private static BacklogFinding Finding(StackRowDto row, List<(StackRowDto Row, int Own)> compared, DateTimeOffset now, int staleDays)
     {
         var flags = new List<string>();
-        var points = row.Type.Id is WorkItemTypeId.Story or WorkItemTypeId.Bug;
+        var points = WorkItemTypeRules.IsStoryLevel(row.Type.Id);
         if (points && row.Points is null)
         {
             flags.Add("unestimated");

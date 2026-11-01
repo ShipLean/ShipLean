@@ -1,3 +1,4 @@
+using ShipLean.Contracts.Refs;
 using Agoda.IoC.Core;
 using Dapper;
 using Npgsql;
@@ -35,10 +36,10 @@ public sealed class BacklogReads(NpgsqlDataSource dataSource)
             FROM work_item w
             JOIN state s ON s.id = w.state_id AND s.category <> 'removed'
             JOIN work_item p ON p.id = w.parent_id AND p.type = 'feature'
-            WHERE w.sprint_id = @sprintId AND w.type IN ('story', 'bug')
+            WHERE w.sprint_id = @sprintId AND w.type = ANY(@storyLevel)
             ORDER BY p.number
             """,
-            new { sprintId }, cancellationToken: cancellationToken));
+            new { sprintId, storyLevel = WorkItemTypeRules.StoryLevelDb }, cancellationToken: cancellationToken));
         return [.. rows];
     }
 }

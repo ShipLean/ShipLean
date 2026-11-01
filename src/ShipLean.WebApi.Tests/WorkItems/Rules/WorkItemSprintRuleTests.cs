@@ -9,7 +9,7 @@ using static ShipLean.TestSupport.Contracts.WorkItems.WorkItemContractSupport;
 
 namespace ShipLean.WebApi.Tests.WorkItems.Rules;
 
-// A story or bug with no sprint that a person starts goes into the sprint running today (UTC).
+// A story, bug or action item with no sprint that a person starts goes into the sprint running today (UTC).
 [TestFixture]
 public class WorkItemSprintRuleTests : PostgresWorkItemStoreTestBase
 {
@@ -31,6 +31,7 @@ public class WorkItemSprintRuleTests : PostgresWorkItemStoreTestBase
 
     [TestCase(WorkItemTypeId.Story)]
     [TestCase(WorkItemTypeId.Bug)]
+    [TestCase(WorkItemTypeId.Action)]
     public async Task Patch_WhenSprintlessItemStarted_ShouldPutItInTheCurrentSprint(WorkItemTypeId type)
     {
         var store = RealStore();
