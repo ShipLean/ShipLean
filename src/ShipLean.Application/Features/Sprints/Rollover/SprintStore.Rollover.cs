@@ -40,7 +40,7 @@ public sealed partial class SprintStore
         if (next is not null)
         {
             nextCapacity = await connection.ExecuteScalarAsync<decimal?>(new CommandDefinition(
-                "SELECT sum(capacity_points) FROM sprint_capacity WHERE sprint_id = @id AND archived_at IS NULL", new { next.Id, storyLevel = WorkItemTypeRules.StoryLevelDb }, cancellationToken: cancellationToken));
+                "SELECT sum(capacity_points) FROM sprint_capacity WHERE sprint_id = @id AND archived_at IS NULL", new { next.Id }, cancellationToken: cancellationToken));
             nextPoints = await connection.ExecuteScalarAsync<decimal>(new CommandDefinition(
                 """
                 SELECT coalesce(sum(w.story_points), 0) FROM work_item w JOIN state s ON s.id = w.state_id

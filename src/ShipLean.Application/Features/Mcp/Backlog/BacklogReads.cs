@@ -26,7 +26,7 @@ public sealed class BacklogReads(NpgsqlDataSource dataSource)
             new { projectId, itemId, movingId }, cancellationToken: cancellationToken));
     }
 
-    // The features that hold the sprint's stories and bugs (their direct parents), by key.
+    // The features that hold the sprint's story-level items (their direct parents), by key.
     public async Task<IReadOnlyList<SprintFeature>> FeaturesAsync(Guid sprintId, CancellationToken cancellationToken = default)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);

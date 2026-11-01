@@ -1,6 +1,6 @@
 namespace ShipLean.Application.Features.Sprints.Metrics;
 
-// The sprint and state history of a project's stories and bugs, unpacked from revision.changes. A sprint or state change
+// The sprint and state history of a project's story-level items (stories, bugs and action items), unpacked from revision.changes. A sprint or state change
 // records the new value in "to"; an item created in a sprint has its sprint change in revision 1, one created outside any
 // sprint has none. Day boundaries are 00:00 UTC.
 internal static class MetricsSql
@@ -62,7 +62,7 @@ internal static class MetricsSql
         WHERE sp.id = @sprintId
         """;
 
-    // Every story and bug that was committed, added, completed or carried over in one sprint (@sprintId, @projectId). at_start,
+    // Every story-level item that was committed, added, completed or carried over in one sprint (@sprintId, @projectId). at_start,
     // at_last and at_end are the sprint the item sat in at 00:00 on the first day, at 00:00 on the last working day on or
     // before the end, and at the end of the last calendar day. A two-week sprint that starts on Monday ends on Sunday, and
     // the rollover happens on the Friday, so "carried" has to see that Friday. end_state is the category at the end of the
@@ -143,7 +143,7 @@ internal static class MetricsSql
         """;
 
     // The project's sprints in date order with the team's entered capacity (null when nobody entered any) and the points
-    // of the stories and bugs sitting in each now.
+    // of the story-level items sitting in each now.
     public const string ForecastSprints =
         """
         SELECT sp.id, sp.name, to_char(sp.start_date, 'YYYY-MM-DD') AS startDate, to_char(sp.end_date, 'YYYY-MM-DD') AS endDate,

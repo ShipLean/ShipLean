@@ -103,4 +103,17 @@ public class ActionItemMetricsTests
         velocity.Sprints.Select(s => (s.SprintId, s.Committed, s.Completed)).ShouldBe([(sprint, 5m, 5m)]);
         velocity.Average.ShouldBe(5m);
     }
+
+    [Test]
+    public async Task Forecast_WhenActionItemInBacklog_ShouldTakeItsPoints()
+    {
+        var project = (await _arrangement.ArrangeProjectAsync()).ProjectId;
+        await using var connection = await _arrangement.Database.OpenAsync();
+        var item = await new WorkItemBuilder(project).WithType("action").WithPoints(5).InsertAsync(connection);
+
+        var forecast = await Metrics().GetForecastAsync(project);
+
+        var taken = forecast.Sprints.Single(sprint => sprint.ItemCount > 0);
+        (taken.LastItemId, taken.ItemCount, taken.Points).ShouldBe((item, 1, 5m));
+    }
 }

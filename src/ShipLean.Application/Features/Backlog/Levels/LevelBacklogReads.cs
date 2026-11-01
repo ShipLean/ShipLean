@@ -10,7 +10,7 @@ using ShipLean.Contracts.WorkItems.Reads.Tree;
 namespace ShipLean.Application.Features.Backlog.Levels;
 
 // The Features or Epics backlog over the tree reads: one stack read of the level carries the filter and includeCompleted, and one
-// roll-up read gives every row's counts (stories, bugs and nested Features at any depth, closed ones included). Tag colours are
+// roll-up read gives every row's counts (story-level items and nested Features at any depth, closed ones included). Tag colours are
 // the level's own board's.
 public sealed class LevelBacklogReads(IWorkTreeReads reads, IBoardSettingsStore boards) : ILevelBacklogReads
 {
@@ -39,10 +39,10 @@ public sealed class LevelBacklogReads(IWorkTreeReads reads, IBoardSettingsStore 
         return new BacklogViewDto(projectId, level, BacklogMode.List, rows.Count, rows, [], factory.TagColours, null, null);
     }
 
-    // Tasks are not drawn here; the progress counts stories and bugs, and Epics count Features.
+    // Tasks are not drawn here; the progress counts story-level items, and Epics count Features.
     private static bool IsShown(WorkTreeRollupDto rollup) => rollup.Type != WorkItemTypeId.Task;
 
-    // Everything estimated under the item: stories and bugs, open and closed, nested Features' included. Null when none is.
+    // Everything estimated under the item: story-level items, open and closed, nested Features' included. Null when none is.
     private static decimal? ChildPoints(IEnumerable<WorkTreeRollupDto> own)
     {
         var estimated = own.Where(r => WorkItemTypeRules.IsStoryLevel(r.Type) && r.TotalPoints is not null).ToList();
