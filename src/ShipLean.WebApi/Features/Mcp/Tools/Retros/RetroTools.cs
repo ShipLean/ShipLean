@@ -80,7 +80,7 @@ internal sealed class RetroTools(ItemResolver items, ProjectResolver projects, S
         var truncated = listed.Truncated;
         var points = listed.Points;
         var result = new ListRetrospectivesResult(
-            resolvedProject.Key, RetrosUrl(await support.BaseUrlAsync(cancellationToken), resolvedProject.Key),
+            resolvedProject.Key, McpOpenUrls.Retros(await support.BaseUrlAsync(cancellationToken), resolvedProject.Key),
             [.. points.Select(Line)], Name(listed.ThemeMode), [.. listed.Themes.Select(Theme)], truncated);
         return PlanningReply.Of(result, $"{points.Count} retrospective points in {resolvedProject.Key}{(truncated ? " (the newest 200 of more)" : string.Empty)}.");
     }
@@ -97,10 +97,6 @@ internal sealed class RetroTools(ItemResolver items, ProjectResolver projects, S
             throw ApiException.Validation($"{key} is not an item in this project.", "compiled_from");
         }
     }
-
-    // TODO: McpOpenUrls (Contracts, not owned by this task) gets a Retros builder, and this goes.
-    private static string RetrosUrl(string baseUrl, string projectKey)
-        => $"{baseUrl.TrimEnd('/')}/p/{Uri.EscapeDataString(projectKey)}/retros";
 
     private static IReadOnlyList<RetroLogPoint> Points(IReadOnlyList<RetroPointInput>? points)
         => [.. (points ?? []).Select(p => new RetroLogPoint(p.Text ?? string.Empty, p.Theme, StrayRootCause(p)))];
