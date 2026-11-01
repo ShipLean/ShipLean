@@ -9,6 +9,14 @@ namespace ShipLean.TestSupport.Retros;
 // ("completed at T", "moved to sprint S at T"), keeping work_item in step. The item exists already (WorkItemBuilder).
 public static class RetroHistory
 {
+    // Inserts the item and dates its creation revision long ago, as the store's history is read: a later change always sorts after it.
+    public static async Task<Guid> CreateAsync(NpgsqlConnection connection, WorkItemBuilder builder)
+    {
+        var id = await builder.InsertAsync(connection);
+        await connection.ExecuteAsync("UPDATE revision SET changed_at = @created WHERE work_item_id = @id AND rev = 1", new { id, created = new DateTimeOffset(2020, 1, 1, 0, 0, 0, TimeSpan.Zero) });
+        return id;
+    }
+
     public static async Task MoveToSprintAsync(NpgsqlConnection connection, Guid itemId, Guid? sprintId, DateTimeOffset at)
     {
         var from = await connection.ExecuteScalarAsync<Guid?>("SELECT sprint_id FROM work_item WHERE id = @itemId", new { itemId });
