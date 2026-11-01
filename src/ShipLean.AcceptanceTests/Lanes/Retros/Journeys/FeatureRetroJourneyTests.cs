@@ -61,6 +61,9 @@ public class FeatureRetroJourneyTests : SeededAcceptanceTest
         await Page.GotoAsync(Links.WorkItem("SHIP", arranged.FeatureKey));
         var section = new WorkItemRetroSection(Page);
         await Expect(section.Cards).ToHaveCountAsync(1);
+        await Expect(section.Cards).ToHaveAttributeAsync("data-feature", "true");
+        await Expect(section.AuthorChips.First).ToContainTextAsync("Conductor");
+        await Expect(section.AuthorChips.First).ToHaveAttributeAsync("data-role", "conductor");
         await Expect(section.Section).ToContainTextAsync(CompiledPoint);
         await Expect(section.Section).ToContainTextAsync("Compiled from");
         await Expect(section.Section).ToContainTextAsync(arranged.KeyA);
