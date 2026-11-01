@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace ShipLean.WebApi.Features.Mcp.Tools.Retros;
@@ -10,4 +11,8 @@ public sealed record RetroPointInput
 
     [JsonPropertyName("theme"), Description("The theme this point belongs under. Reuse a theme name from the project's list when one fits; a new name creates a theme. Leave out to let ShipLean choose, or to leave it unthemed.")]
     public string? Theme { get; init; }
+
+    // Not advertised: only here so a stray root_cause can be refused rather than silently dropped.
+    [JsonExtensionData, JsonPropertyName("stray")]
+    public IDictionary<string, JsonElement>? Stray { get; init; }
 }

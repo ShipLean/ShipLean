@@ -8,4 +8,5 @@ internal sealed record ListRetrospectivesResult(
     string OpenUrl,
     [property: JsonPropertyName("points")] IReadOnlyList<RetroPointLine> Points,
     [property: JsonPropertyName("theme_mode")] string ThemeMode,
-    [property: JsonPropertyName("themes")] IReadOnlyList<RetroThemeLine> Themes) : McpResult(Project, OpenUrl);
+    [property: JsonPropertyName("themes")] IReadOnlyList<RetroThemeLine> Themes,
+    [property: JsonPropertyName("truncated")] bool Truncated) : McpResult(Project, OpenUrl);

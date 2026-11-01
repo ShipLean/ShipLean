@@ -48,6 +48,8 @@ bld/
 [Ll]ogs/
 # Client feature folders named log/ (e.g. features/feature/log/) are source, not build logs.
 !src/ShipLean.Client/src/**/[Ll]og/
+# The Retros feature has a Log/ folder of C# source.
+!src/ShipLean.Application/Features/Retros/Log/
 
 # Build results on 'Bin' directories
 **/[Bb]in/*
