@@ -15,7 +15,7 @@ internal static class FeatureBoardTree
         var known = features.Select(f => f.Id).Append(root.Id).ToHashSet();
         Guid SectionOf(Guid? parentId) => parentId is { } id && known.Contains(id) ? id : root.Id;
         var children = features.ToLookup(f => SectionOf(f.ParentId));
-        var stories = descendants.Where(d => d.Type.Id is WorkItemTypeId.Story or WorkItemTypeId.Bug).ToLookup(s => SectionOf(s.ParentId), s => s.Id);
+        var stories = descendants.Where(d => WorkItemTypeRules.IsStoryLevel(d.Type.Id)).ToLookup(s => SectionOf(s.ParentId), s => s.Id);
 
         var sections = new List<FeatureBoardSection>
         {

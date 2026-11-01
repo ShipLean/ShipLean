@@ -180,4 +180,14 @@ public sealed class ImportMappingsTests
 
         thrown.Code.ShouldBe(ApiErrorCodes.NotFound);
     }
+
+    [Test]
+    public async Task Mapping_WhenAnyJiraType_ShouldNeverBecomeAnAction()
+    {
+        var mapping = await Mappings(JiraWorld.Data([JiraWorld.Issue("PLAT-1", "Epic"), JiraWorld.Issue("PLAT-2"), JiraWorld.Issue("PLAT-3", "Bug"), JiraWorld.Issue("PLAT-4", "Sub-task")]))
+            .SuggestAsync(Connection, JiraWorld.ProjectKey, null);
+
+        mapping.IssueTypes.Select(t => TargetTypes.WorkItemType(t.Target)).ShouldNotContain(WorkItemTypeId.Action);
+        Enum.GetValues<ImportTypeTarget>().Select(TargetTypes.WorkItemType).ShouldNotContain(WorkItemTypeId.Action);
+    }
 }

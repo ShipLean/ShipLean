@@ -38,7 +38,7 @@ public class TaskboardReadApiTests : ApiFixture
 
         view.Columns.Select(c => c.State.Id).ShouldBe([SeedIds.States.Ship.TaskNew, SeedIds.States.Ship.TaskActive, SeedIds.States.Ship.TaskInReview, SeedIds.States.Ship.TaskClosed]);
         view.Columns[0].Count.ShouldBe(4);
-        view.ParentStates.Select(p => p.Type).ShouldBe([WorkItemTypeId.Story, WorkItemTypeId.Bug]);
+        view.ParentStates.Select(p => p.Type).ShouldBe([WorkItemTypeId.Story, WorkItemTypeId.Bug, WorkItemTypeId.Action]);
         view.ParentStates.SelectMany(p => p.States).ShouldAllBe(s => s.Category != StateCategory.Removed);
         view.BoardId.ShouldBe(SeedIds.Boards.ShipTaskboard);
     }

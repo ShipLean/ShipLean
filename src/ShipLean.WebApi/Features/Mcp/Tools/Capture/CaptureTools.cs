@@ -69,7 +69,7 @@ internal sealed class CaptureTools(
     }
 
     [McpServerTool(Name = "break_down"), McpScope(McpScopes.Write)]
-    [Description("Split a story or bug into child tasks, or a feature into stories (or an epic into features), from a list of titles with optional points, description (Markdown) and tags. Up to 25 children, created together. They take the parent's sprint; the parent's state is left alone.")]
+    [Description("Split a story, bug or action item into child tasks, or a feature into stories (or an epic into features), from a list of titles with optional points, description (Markdown) and tags. Up to 25 children, created together. They take the parent's sprint; the parent's state is left alone.")]
     public async Task<CallToolResult> BreakDown(
         [Description("The parent's key, such as SHIP-12.")] string parent,
         [Description("The children, 1 to 25.")] IReadOnlyList<BreakDownChild> children,
@@ -99,8 +99,8 @@ internal sealed class CaptureTools(
         {
             WorkItemTypeId.Epic => WorkItemTypeId.Feature,
             WorkItemTypeId.Feature => WorkItemTypeId.Story,
-            WorkItemTypeId.Story or WorkItemTypeId.Bug => WorkItemTypeId.Task,
-            _ => throw ApiException.Validation($"{resolved.Key} is a {CaptureSupport.TypeName(snapshot.Type)}; only an epic, feature, story or bug can be broken down.", "parent"),
+            WorkItemTypeId.Story or WorkItemTypeId.Bug or WorkItemTypeId.Action => WorkItemTypeId.Task,
+            _ => throw ApiException.Validation($"{resolved.Key} is a {CaptureSupport.TypeName(snapshot.Type)}; only an epic, feature, story, bug or action item can be broken down.", "parent"),
         };
 
         var planned = children

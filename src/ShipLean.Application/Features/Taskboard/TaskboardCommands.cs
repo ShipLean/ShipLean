@@ -3,6 +3,7 @@ using Dapper;
 using Npgsql;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
+using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Taskboard;
 using ShipLean.Contracts.WorkItems;
 using ShipLean.Contracts.WorkItems.Reads.Tree;
@@ -27,10 +28,10 @@ public sealed class TaskboardCommands(IProjectAccess access, IWorkItemStore stor
             FROM work_item w JOIN state s ON s.id = w.state_id LEFT JOIN work_item p ON p.id = w.parent_id
             WHERE w.id = @id AND s.category <> 'removed'
               AND (w.parent_id IS NULL AND w.sprint_id = @sprintId
-                   OR p.type IN ('story', 'bug') AND p.sprint_id = @sprintId AND p.project_id = w.project_id
+                   OR p.type = ANY(@storyLevel) AND p.sprint_id = @sprintId AND p.project_id = w.project_id
                       AND p.state_id IN (SELECT id FROM state WHERE category <> 'removed'))
             """,
-            new { id = request.TaskId, sprintId }, cancellationToken: cancellationToken));
+            new { id = request.TaskId, sprintId, storyLevel = WorkItemTypeRules.StoryLevelDb }, cancellationToken: cancellationToken));
         if (task is null || task.ProjectId != projectId || task.Type != "task")
         {
             throw ApiException.NotFound("Task not found.");
@@ -58,10 +59,10 @@ public sealed class TaskboardCommands(IProjectAccess access, IWorkItemStore stor
             SELECT w.project_id AS projectId, w.type, w.parent_id AS parentId, s.category AS stateCategory
             FROM work_item w JOIN state s ON s.id = w.state_id JOIN work_item p ON p.id = w.parent_id
             WHERE w.id = @id AND w.type = 'task' AND s.category <> 'removed'
-              AND p.type IN ('story', 'bug') AND p.id = ANY(@tree) AND p.project_id = w.project_id
+              AND p.type = ANY(@storyLevel) AND p.id = ANY(@tree) AND p.project_id = w.project_id
               AND p.state_id IN (SELECT id FROM state WHERE category <> 'removed')
             """,
-            new { id = request.TaskId, tree = inTree }, cancellationToken: cancellationToken));
+            new { id = request.TaskId, tree = inTree, storyLevel = WorkItemTypeRules.StoryLevelDb }, cancellationToken: cancellationToken));
         if (task is null || task.ProjectId != projectId)
         {
             throw ApiException.NotFound("Task not found.");
@@ -69,7 +70,7 @@ public sealed class TaskboardCommands(IProjectAccess access, IWorkItemStore stor
 
         if (request.Row is { Grouping: TaskboardGrouping.Stories, Target: null })
         {
-            throw ApiException.Validation("A task on the Feature board belongs to a story or bug.");
+            throw ApiException.Validation("A task on the Feature board belongs to a story-level item (a story, bug or action item).");
         }
 
         return await WriteAsync(connection, projectId, task, request, null, (grouping, target) => CheckFeatureRowAsync(connection, grouping, target, projectId, inTree, cancellationToken), cancellationToken);
@@ -111,27 +112,27 @@ public sealed class TaskboardCommands(IProjectAccess access, IWorkItemStore stor
         var sql = grouping == TaskboardGrouping.Stories
             ? """
               SELECT EXISTS (SELECT 1 FROM work_item w JOIN state s ON s.id = w.state_id
-                             WHERE w.id = @target AND w.project_id = @projectId AND w.id = ANY(@tree) AND w.type IN ('story', 'bug') AND s.category <> 'removed')
+                             WHERE w.id = @target AND w.project_id = @projectId AND w.id = ANY(@tree) AND w.type = ANY(@storyLevel) AND s.category <> 'removed')
               """
             : "SELECT EXISTS (SELECT 1 FROM project_member WHERE project_id = @projectId AND user_id = @target AND archived_at IS NULL)";
-        if (!await connection.QuerySingleAsync<bool>(new CommandDefinition(sql, new { target, projectId, tree }, cancellationToken: cancellationToken)))
+        if (!await connection.QuerySingleAsync<bool>(new CommandDefinition(sql, new { target, projectId, tree, storyLevel = WorkItemTypeRules.StoryLevelDb }, cancellationToken: cancellationToken)))
         {
-            throw ApiException.NotFound(grouping == TaskboardGrouping.Stories ? "Story or bug not found." : "Member not found.");
+            throw ApiException.NotFound(grouping == TaskboardGrouping.Stories ? "Story, bug or action item not found." : "Member not found.");
         }
     }
 
-    // A row target is a story or bug of this sprint, or a member of the project.
+    // A row target is a story, bug or action item of this sprint, or a member of the project.
     private static async Task CheckRowAsync(NpgsqlConnection connection, TaskboardGrouping grouping, Guid target, Guid projectId, Guid sprintId, CancellationToken cancellationToken)
     {
         var sql = grouping == TaskboardGrouping.Stories
             ? """
               SELECT EXISTS (SELECT 1 FROM work_item w JOIN state s ON s.id = w.state_id
-                             WHERE w.id = @target AND w.project_id = @projectId AND w.sprint_id = @sprintId AND w.type IN ('story', 'bug') AND s.category <> 'removed')
+                             WHERE w.id = @target AND w.project_id = @projectId AND w.sprint_id = @sprintId AND w.type = ANY(@storyLevel) AND s.category <> 'removed')
               """
             : "SELECT EXISTS (SELECT 1 FROM project_member WHERE project_id = @projectId AND user_id = @target AND archived_at IS NULL)";
-        if (!await connection.QuerySingleAsync<bool>(new CommandDefinition(sql, new { target, projectId, sprintId }, cancellationToken: cancellationToken)))
+        if (!await connection.QuerySingleAsync<bool>(new CommandDefinition(sql, new { target, projectId, sprintId, storyLevel = WorkItemTypeRules.StoryLevelDb }, cancellationToken: cancellationToken)))
         {
-            throw ApiException.NotFound(grouping == TaskboardGrouping.Stories ? "Story or bug not found." : "Member not found.");
+            throw ApiException.NotFound(grouping == TaskboardGrouping.Stories ? "Story, bug or action item not found." : "Member not found.");
         }
     }
 

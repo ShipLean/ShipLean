@@ -43,7 +43,7 @@ public class BoardViewStoriesApiTests : ApiFixture
         (ready.DoingCount + ready.DoneCount).ShouldBe(ready.Count);
         ready.DoneCount.ShouldBe(board.Lanes.Sum(l => l.Cell("col-ready", doneHalf: true).Cards.Count));
         board.Lane("lane-default").Cells.Count(c => c.ColumnId == "col-ready").ShouldBe(2);
-        board.Columns.Single(c => c.Id == "col-new").States.Select(s => s.Type).ShouldBe([WorkItemTypeId.Story, WorkItemTypeId.Bug], ignoreOrder: true);
+        board.Columns.Single(c => c.Id == "col-new").States.Select(s => s.Type).ShouldBe([WorkItemTypeId.Story, WorkItemTypeId.Bug, WorkItemTypeId.Action], ignoreOrder: true);
         ready.DefinitionOfDoneHtml.ShouldContain("<li>");
     }
 

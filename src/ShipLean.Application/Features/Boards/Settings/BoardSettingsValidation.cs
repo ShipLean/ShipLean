@@ -87,7 +87,7 @@ internal static class BoardSettingsValidation
     {
         var allowed = level switch
         {
-            BoardLevel.Stories => new[] { WorkItemTypeId.Story, WorkItemTypeId.Bug },
+            BoardLevel.Stories => new[] { WorkItemTypeId.Story, WorkItemTypeId.Bug, WorkItemTypeId.Action },
             BoardLevel.Features => [WorkItemTypeId.Feature],
             _ => Array.Empty<WorkItemTypeId>(),
         };

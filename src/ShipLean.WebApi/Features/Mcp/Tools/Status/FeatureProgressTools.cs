@@ -37,7 +37,7 @@ internal sealed class FeatureProgressTools(
         var byType = rollups
             .Select(r => new FeatureProgressResult.TypeProgress(Word(r.Type), r.Open, r.Closed, Done(r), r.TotalPoints, r.Unestimated))
             .ToList();
-        var pointed = rollups.Where(r => r.Type is WorkItemTypeId.Story or WorkItemTypeId.Bug && r.TotalPoints is not null).ToList();
+        var pointed = rollups.Where(r => WorkItemTypeRules.IsStoryLevel(r.Type) && r.TotalPoints is not null).ToList();
         var open = descendants.Where(d => d.State.Category != StateCategory.Completed).ToList();
         var keys = descendants.ToDictionary(d => d.Id, d => d.Key);
         keys[resolved.Id] = resolved.Key;
