@@ -6,8 +6,6 @@ using ShipLean.WebApi.Infrastructure;
 
 namespace ShipLean.WebApi.Tests.Usage;
 
-public sealed record UsageProbeResult(Guid? ProjectId, int ProjectCount);
-
 // A route that exists only in the usage tests' host (added as an application part): it passes the access check for each project
 // named, swallows a refusal, and says what the request's usage scope holds afterwards. Production has no such endpoint.
 [Route("api/test-usage")]
