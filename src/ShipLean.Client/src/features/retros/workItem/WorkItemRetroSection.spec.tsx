@@ -13,12 +13,21 @@ import { WorkItemRetroSection } from './WorkItemRetroSection';
 const route = { hooksConfig: { route: '/p/SHIP/items/SHIP-141' } };
 
 test('WorkItemRetroSection_WhenItemHasNoRetros_ShouldBeHidden', async ({ mount, page }) => {
+  // Loading and empty both render nothing, so an empty item is mounted beside one with retros: once that one shows its
+  // cards, both answers are in, and the empty item must still have no section.
   await stubRetros(page);
-  await page.route('**/api/work-items/*/retros', (r) =>
+  await page.route('**/api/work-items/w-empty/retros', (r) =>
     r.fulfill({ status: 200, contentType: 'application/json', body: '{"cards":[]}' }),
   );
-  await mount(<WorkItemRetroSection projectId="p1" workItemId="w1" />, route);
-  await expect(page.getByTestId(ids.workItemRetroSection)).toHaveCount(0);
+  await mount(
+    <div>
+      <WorkItemRetroSection projectId="p1" workItemId="w-empty" />
+      <WorkItemRetroSection projectId="p1" workItemId="w1" />
+    </div>,
+    route,
+  );
+  await expect(page.getByTestId(shared.retroCard).first()).toBeVisible();
+  await expect(page.getByTestId(ids.workItemRetroSection)).toHaveCount(1);
 });
 
 test('WorkItemRetroSection_WhenItemHasRetros_ShouldShowCardsWithTheFailureLogCollapsed', async ({

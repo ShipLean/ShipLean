@@ -22,7 +22,9 @@ export function WorkItemRetroSection({
             aria-label="Retrospective"
             className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2"
           >
-            <h2 className="text-[length:var(--text-md)] font-semibold">Retrospective</h2>
+            <header className="flex items-center gap-2">
+              <h2 className="text-[length:var(--text-md)] font-semibold">Retrospective</h2>
+            </header>
             {cards.map((card) => (
               <RetroCard key={card.id} card={card} showActions={false} />
             ))}
