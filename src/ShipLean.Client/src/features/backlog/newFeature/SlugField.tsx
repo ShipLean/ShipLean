@@ -43,7 +43,12 @@ export function SlugField({
         >
           ✓ Free. Agents and imports find this Feature by it.
         </p>
-      ) : null}
+      ) : (
+        // Holds the note's line while the check is out, so the form doesn't jump on every keystroke.
+        <p aria-hidden="true" className="m-0 text-[length:var(--text-sm)]">
+          &nbsp;
+        </p>
+      )}
     </>
   );
 }
