@@ -1,5 +1,5 @@
--- SHIP's work items as drawn in design/screens/shared.js (stories, bugs, features, epics, tasks), with parents, assignees,
--- points, tags, backlog order and board position (board.html's layout where shared.js has none). SHIP-90..SHIP-183.
+-- SHIP's work items as drawn in design/screens/shared.js (stories, bugs, features, epics, tasks) and one Action item, with parents, assignees,
+-- points, tags, backlog order and board position (board.html's layout where shared.js has none). SHIP-90..SHIP-183, plus the Action item SHIP-89 (a free number below the epics; next_item_number stays 184).
 -- Not seeded: board.html's page-local extras (SHIP-146, 148, 149, 152, 157).
 -- Bugs SHIP-153 and SHIP-160 sit in the Ready column, which maps Bug to Triaged, so they are Triaged.
 -- Ids: 00000005-0000-4000-8001-<number>. Every item gets exactly one revision (rev 1, "created"), written from the rows.
@@ -77,7 +77,8 @@ FROM (VALUES
   (180, 'task', 'Feature flag', 129, 'Closed', 1, 24, 'ana', 3, '{}'::text[], NULL, false, 10000, NULL),
   (181, 'task', 'Email template', 150, 'Closed', 1, 24, 'ana', 2, '{}'::text[], NULL, false, 11000, NULL),
   (182, 'task', 'Rotate staging TLS certificates', NULL, 'New', NULL, 24, NULL, 2, ARRAY['Tech debt']::text[], NULL, false, 12000, NULL),
-  (183, 'task', 'Update the on-call runbook', NULL, 'Active', NULL, 24, 'tom', 3, '{}'::text[], NULL, false, 13000, NULL)
+  (183, 'task', 'Update the on-call runbook', NULL, 'Active', NULL, 24, 'tom', 3, '{}'::text[], NULL, false, 13000, NULL),
+  (89, 'action', 'Common brief: screenshot baselines come from the CI report', 101, 'New', NULL, NULL, NULL, 2, '{}'::text[], NULL, false, 11000, NULL)
 ) AS i (number, type, title, parent_number, state_name, points, sprint_number, assignee, priority, tags, board_column_id,
         board_column_done, backlog_rank, column_rank)
 JOIN project ON project.key = 'SHIP'

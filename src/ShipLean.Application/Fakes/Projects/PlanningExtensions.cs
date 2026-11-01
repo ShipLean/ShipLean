@@ -17,7 +17,7 @@ internal static class PlanningExtensions
             SprintLabels.Dates(sprint.Start, sprint.End, world.Today), SprintLabels.Time(sprint.Start, sprint.End, world.Today));
 
     // Only stories and bugs count toward points; task points never do.
-    public static bool Counts(this InMemoryPlanning.ItemRow item) => item.Type is WorkItemTypeId.Story or WorkItemTypeId.Bug;
+    public static bool Counts(this InMemoryPlanning.ItemRow item) => WorkItemTypeRules.IsStoryLevel(item.Type);
 
     // Counted items sitting in the sprint now.
     public static IEnumerable<InMemoryPlanning.ItemRow> CountedItems(this InMemoryPlanning world, Guid sprintId)
@@ -73,12 +73,15 @@ internal static class PlanningExtensions
 
     public static void AddDefaultStates(this InMemoryPlanning world, Guid projectId)
     {
-        var all = new[] { WorkItemTypeId.Epic, WorkItemTypeId.Feature, WorkItemTypeId.Story, WorkItemTypeId.Bug, WorkItemTypeId.Task };
+        var all = new[] { WorkItemTypeId.Epic, WorkItemTypeId.Feature, WorkItemTypeId.Story, WorkItemTypeId.Bug, WorkItemTypeId.Task, WorkItemTypeId.Action };
         foreach (var type in all)
         {
-            var names = type == WorkItemTypeId.Task
-                ? new (string, StateCategory)[] { ("To Do", StateCategory.Proposed), ("In Progress", StateCategory.InProgress), ("In review", StateCategory.Resolved), ("Done", StateCategory.Completed), ("Removed", StateCategory.Removed) }
-                : [("New", StateCategory.Proposed), ("Active", StateCategory.InProgress), ("Resolved", StateCategory.Resolved), ("Closed", StateCategory.Completed), ("Removed", StateCategory.Removed)];
+            var names = type switch
+            {
+                WorkItemTypeId.Task => new (string, StateCategory)[] { ("To Do", StateCategory.Proposed), ("In Progress", StateCategory.InProgress), ("In review", StateCategory.Resolved), ("Done", StateCategory.Completed), ("Removed", StateCategory.Removed) },
+                WorkItemTypeId.Action => [("New", StateCategory.Proposed), ("Active", StateCategory.InProgress), ("Closed", StateCategory.Completed), ("Removed", StateCategory.Removed)],
+                _ => [("New", StateCategory.Proposed), ("Active", StateCategory.InProgress), ("Resolved", StateCategory.Resolved), ("Closed", StateCategory.Completed), ("Removed", StateCategory.Removed)],
+            };
             for (var order = 0; order < names.Length; order++)
             {
                 world.States.Add(new InMemoryPlanning.StateRow { Id = Guid.NewGuid(), ProjectId = projectId, Type = type, Name = names[order].Item1, Category = names[order].Item2, Order = order + 1 });
