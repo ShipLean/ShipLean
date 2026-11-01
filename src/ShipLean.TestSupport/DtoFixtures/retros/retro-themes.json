@@ -1,0 +1,9 @@
+{
+  "mode": "pick",
+  "themes": [
+    {"theme": {"id": "00000010-0000-4000-8001-000000000002", "name": "Screenshot baselines need CI", "tone": "bad"}, "pointCount": 5},
+    {"theme": {"id": "00000010-0000-4000-8001-000000000003", "name": "Shared-branch merge conflicts", "tone": "bad"}, "pointCount": 4},
+    {"theme": {"id": "00000010-0000-4000-8001-000000000004", "name": "Brief too vague", "tone": "bad"}, "pointCount": 3},
+    {"theme": {"id": "00000010-0000-4000-8001-000000000006", "name": "Contracts first worked", "tone": "good"}, "pointCount": 2}
+  ]
+}

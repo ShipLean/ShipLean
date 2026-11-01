@@ -20,6 +20,7 @@ export const PROJECT_EVENT_TYPES = [
   'attachmentsChanged',
   'linksChanged',
   'agentSessionChanged',
+  'retroChanged',
 ] as const;
 export type ProjectEventType = (typeof PROJECT_EVENT_TYPES)[number];
 
@@ -98,6 +99,12 @@ export interface ImportProgress extends ProjectEventBase<'importProgress'> {
   message: string;
 }
 
+export interface RetroChanged extends ProjectEventBase<'retroChanged'> {
+  /** Empty lists (theme rename or merge) mean refetch every retro view. */
+  sprintIds: string[];
+  workItemIds: string[];
+}
+
 export interface CommentsChanged extends ProjectEventBase<'commentsChanged'> {
   workItemId: string;
 }
@@ -130,4 +137,5 @@ export type ProjectEvent =
   | CommentsChanged
   | AttachmentsChanged
   | LinksChanged
-  | AgentSessionChanged;
+  | AgentSessionChanged
+  | RetroChanged;
