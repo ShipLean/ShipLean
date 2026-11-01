@@ -69,7 +69,7 @@ internal static class RetroSearchSql
                    OR (@level = 'features' AND w.type = 'feature'))
               AND (@onlyThemes::uuid[] IS NULL OR p.theme_id = ANY(@onlyThemes))
         )
-        SELECT id, retroId, themeId, count(*) OVER ()::int AS total
+        SELECT id, retroId, themeId, @hasQuery AND rank < 1 AS logOnly, count(*) OVER ()::int AS total
         FROM candidate
         WHERE NOT @hasQuery OR rank > 0
         ORDER BY rank DESC, createdAt DESC, position, id

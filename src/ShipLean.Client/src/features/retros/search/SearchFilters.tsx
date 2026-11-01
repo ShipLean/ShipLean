@@ -105,7 +105,7 @@ export function SearchFilters({ query, search, change }: RetrosSearchSlotProps) 
       <button
         type="button"
         data-testid={ids.retrosFilterClear}
-        className="btn ghost"
+        className="btn-ghost"
         onClick={() =>
           change({
             q: undefined,

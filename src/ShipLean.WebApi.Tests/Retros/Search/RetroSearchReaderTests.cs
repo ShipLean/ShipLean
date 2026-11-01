@@ -55,6 +55,25 @@ public sealed class RetroSearchReaderTests : ApiFixture
     }
 
     [Test]
+    public async Task Search_WhenMatchIsOnlyInFailureLog_ShouldListItInLogMatchPointIds()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var world = await WorldAsync(connection);
+        var logRetro = await world.Seed.RetroAsync(new RetroSeedRetro(Joel, RetroRole.SubAgent, AgentName: "lane A", SprintId: world.Sprints[0]));
+        var logPoint = await world.Seed.PointAsync(logRetro, new RetroSeedPoint(RetroCategory.WentWell, "Tests were green."));
+        await world.Seed.FailureAsync(logRetro, RetroFailureKind.Blocker, "Kafka proxy timed out twice.");
+        var textRetro = await world.Seed.RetroAsync(new RetroSeedRetro(Joel, RetroRole.SubAgent, AgentName: "lane B", SprintId: world.Sprints[0]));
+        var textPoint = await world.Seed.PointAsync(textRetro, new RetroSeedPoint(RetroCategory.WentBadly, "Kafka consumer lagged."));
+
+        var result = await Reader.SearchAsync(world.Project.Id, Query("kafka"), CancellationToken.None);
+        var noQuery = await Reader.SearchAsync(world.Project.Id, Query(null), CancellationToken.None);
+
+        result.Rows.Select(row => row.Id).ShouldBe([textPoint, logPoint], ignoreOrder: true);
+        result.LogMatchPointIds.ShouldBe([logPoint]);
+        noQuery.LogMatchPointIds.ShouldBeEmpty();
+    }
+
+    [Test]
     public async Task Search_WhenThemeName_ShouldFindItsPoints()
     {
         await using var connection = await OpenDatabaseAsync();

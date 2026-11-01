@@ -56,7 +56,8 @@ public sealed class RetroSearchReader(NpgsqlDataSource dataSource, TimeProvider 
         var card = selectedId is { } cardId && loaded.FirstOrDefault(c => c.Id == cardId) is { } loadedCard
             ? loadedCard with { Points = [.. loadedCard.Points.Select(point => Shape(point, recurring))] }
             : null;
-        return new RetroSearchDto(rows, found.Count > 0 ? found[0].Total : 0, [.. sprints.Select(sprint => sprint.ToRef())], [.. themes.Select(theme => theme.ToRef())], card);
+        var logOnly = found.Where(row => row.LogOnly && points.ContainsKey(row.Id)).Select(row => row.Id).ToList();
+        return new RetroSearchDto(rows, logOnly, found.Count > 0 ? found[0].Total : 0, [.. sprints.Select(sprint => sprint.ToRef())], [.. themes.Select(theme => theme.ToRef())], card);
     }
 
     private static RetroPointDto Shape(RetroPointDto point, IReadOnlySet<Guid> recurring)
@@ -99,5 +100,5 @@ public sealed class RetroSearchReader(NpgsqlDataSource dataSource, TimeProvider 
 
     private sealed record ThemeRow(Guid Id, string ThemeName, string Tone);
 
-    private sealed record FoundRow(Guid Id, Guid RetroId, Guid? ThemeId, int Total);
+    private sealed record FoundRow(Guid Id, Guid RetroId, Guid? ThemeId, bool LogOnly, int Total);
 }

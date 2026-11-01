@@ -5,17 +5,19 @@ import type { RetroPointDto } from '../../../../api/retros';
 import { retroCategoryColours, retroCategoryLabels } from '../../../retroShared/retroCategories';
 import { retrosTestIds as ids } from '../../testIds';
 import { Highlight } from './Highlight';
-import { matchedOnlyInLog } from './matches';
 
 /** One point of the result: category, text with root cause, theme, work item, sprint and author. Clicking it opens its retro. */
 export function SearchRow({
   point,
   q,
+  logOnly,
   selected,
   onSelect,
 }: {
   point: RetroPointDto;
   q: string | undefined;
+  /** The row matched only through its retro's raw failure log. */
+  logOnly: boolean;
   selected: boolean;
   onSelect: () => void;
 }) {
@@ -51,7 +53,7 @@ export function SearchRow({
             Root cause: <Highlight text={point.rootCause} q={q} />
           </div>
         ) : null}
-        {matchedOnlyInLog(point, q) ? (
+        {logOnly ? (
           <div className="text-[length:var(--text-xs)] text-ink-muted">
             Match in the raw failure log
           </div>
@@ -68,7 +70,9 @@ export function SearchRow({
         {point.recurring ? (
           <>
             {' '}
-            <Chip tone="warn">Recurring</Chip>
+            <span title="Recurring">
+              <Chip tone="warn">↻</Chip>
+            </span>
           </>
         ) : null}
       </td>

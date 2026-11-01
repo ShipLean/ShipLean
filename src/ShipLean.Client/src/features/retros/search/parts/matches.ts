@@ -1,27 +1,12 @@
-import type { RetroCardDto, RetroPointDto } from '../../../../api/retros';
+import type { RetroPointDto, RetroSearchDto } from '../../../../api/retros';
 
-const holds = (text: string | null | undefined, q: string) =>
-  text != null && text.toLowerCase().includes(q.toLowerCase());
-
-/** Whether the point's own text or root cause holds the search text. */
-export function pointMatches(point: RetroPointDto, q: string | undefined): boolean {
-  return !q || holds(point.text, q) || holds(point.rootCause, q);
-}
-
-/** Whether the retro's raw failure log holds the search text. */
-export function logMatches(card: RetroCardDto, q: string | undefined): boolean {
-  if (!q) return false;
-  const { blockers, assumptionsDisproved, friction } = card.failureLog;
-  return [...blockers, ...assumptionsDisproved, ...friction].some((line) => holds(line, q));
-}
-
-/** A row that matched only through its retro's log (its text, theme and item don't hold the search text). */
-export function matchedOnlyInLog(point: RetroPointDto, q: string | undefined): boolean {
-  if (!q) return false;
-  return (
-    !pointMatches(point, q) &&
-    !holds(point.theme?.name, q) &&
-    !holds(point.workItem?.key, q) &&
-    !holds(point.workItem?.title, q)
-  );
+/** The row highlighted in the open retro: the clicked point when it is a result of that retro, else the retro's first row. */
+export function highlightedRow(
+  search: RetroSearchDto,
+  pointId: string | undefined,
+): RetroPointDto | undefined {
+  const retroId = search.selected?.id;
+  if (!retroId) return undefined;
+  const inRetro = search.rows.filter((row) => row.retroId === retroId);
+  return inRetro.find((row) => row.id === pointId) ?? inRetro[0];
 }

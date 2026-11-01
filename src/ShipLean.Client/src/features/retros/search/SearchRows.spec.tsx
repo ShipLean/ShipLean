@@ -18,7 +18,7 @@ test('SearchRows_WhenResultHasPoints_ShouldShowOneRowEachWithItsParts', async ({
   await expect(first).toContainText(point.text);
   await expect(first).toContainText(`Root cause: ${point.rootCause}`);
   await expect(first).toContainText(point.theme!.name);
-  await expect(first).toContainText('Recurring');
+  await expect(first.locator('[title="Recurring"]')).toHaveText('↻');
   await expect(first).toContainText(point.workItem!.key);
   await expect(first).toContainText(point.sprint!.name);
   await expect(first.locator('[title="Priya Shah · Claude Code · lane A"]')).toBeVisible();
@@ -41,11 +41,13 @@ test('SearchRows_WhenRowClicked_ShouldSetSelected', async ({ mount, page }) => {
     .toBe(retroSearch.rows[1].retroId);
 });
 
-test('SearchRows_WhenQueryMatchesOnlyTheLog_ShouldSayWhere', async ({ mount, page }) => {
+test('SearchRows_WhenARowIsInLogMatchPointIds_ShouldSayWhere', async ({ mount, page }) => {
   await stubShell(page);
   await stubRetros(page);
   await mount(<AppRoutes />, open('/p/SHIP/retros?q=masked%20PAN'));
-  await expect(page.getByTestId(ids.retrosRows)).toContainText('Match in the raw failure log');
+  const rows = page.getByTestId(ids.retrosRow);
+  await expect(rows.nth(1)).toContainText('Match in the raw failure log');
+  await expect(rows.first()).not.toContainText('Match in the raw failure log');
 });
 
 test('SearchRows_WhenResultIsEmpty_ShouldShowTheEmptyState', async ({ mount, page }) => {
