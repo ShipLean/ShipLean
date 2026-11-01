@@ -2,6 +2,10 @@ using System.Net;
 using System.Text.Json.Nodes;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Time.Testing;
+using Npgsql;
+using ShipLean.Application.Features.Analytics;
+using ShipLean.Contracts;
 using ShipLean.Contracts.Analytics;
 using ShipLean.TestSupport.Hosting;
 using ShipLean.TestSupport.Analytics;
@@ -83,6 +87,14 @@ public class AnalyticsTestSendTests : ApiFixture
         sent.Properties[AnalyticsProps.InstanceHost].ShouldBe(call.Target.InstanceHost);
         sent.Properties.ContainsKey(AnalyticsProps.ProjectId).ShouldBeFalse();
         sent.Person.DistinctId.ShouldBe(sent.DistinctId);
+        sent.Properties.Keys.ShouldBe(
+            [
+                AnalyticsProps.Surface, AnalyticsProps.ActorKind, AnalyticsProps.UserId, AnalyticsProps.Outcome,
+                AnalyticsProps.ShipLeanVersion, AnalyticsProps.InstanceHost, AnalyticsProps.ProjectCount, AnalyticsProps.Source,
+            ],
+            ignoreOrder: true);
+        sent.Properties[AnalyticsProps.ProjectCount].ShouldBe(0L);
+        sent.Properties[AnalyticsProps.Source].ShouldBe("api:Analytics.Test");
         _postHog.Calls.ShouldBeEmpty();
     }
 
@@ -96,5 +108,46 @@ public class AnalyticsTestSendTests : ApiFixture
 
         result["ok"]!.GetValue<bool>().ShouldBeFalse();
         result["message"]!.GetValue<string>().ShouldBe("Umami answered 401.");
+    }
+
+    [Test]
+    public async Task TestAsync_WhenSinkOutlastsTimeout_ShouldBeNotOkWithReason()
+    {
+        var clock = new FakeTimeProvider(new DateTimeOffset(2026, 11, 2, 9, 0, 0, TimeSpan.Zero));
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var sink = new WaitingSink(entered);
+        var target = new AnalyticsTarget(AnalyticsProvider.Umami, new Uri("https://umami.example.com"), UmamiKey, "shiplean.example.com", false, "1.0.0");
+        var settings = new AnalyticsSettings(
+            Host.Services.GetRequiredService<NpgsqlDataSource>(), new FixedReader(target), [sink], new FixedUser(TestUser.Joel.Id), clock);
+
+        var pending = settings.TestAsync(CancellationToken.None);
+        await entered.Task;
+        clock.Advance(TimeSpan.FromSeconds(10));
+        var result = await pending;
+
+        result.Ok.ShouldBeFalse();
+        result.Message.ShouldStartWith("Umami didn't answer within 10 seconds: ");
+        result.Message.Length.ShouldBeGreaterThan("Umami didn't answer within 10 seconds: ".Length);
+    }
+
+    private sealed class WaitingSink(TaskCompletionSource entered) : IAnalyticsSink
+    {
+        public AnalyticsProvider Provider => AnalyticsProvider.Umami;
+
+        public async Task SendAsync(IReadOnlyList<AnalyticsEvent> batch, AnalyticsTarget target, CancellationToken cancellationToken)
+        {
+            entered.SetResult();
+            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+        }
+    }
+
+    private sealed class FixedReader(AnalyticsTarget target) : IAnalyticsSettingsReader
+    {
+        public Task<AnalyticsTarget?> GetTargetAsync(CancellationToken cancellationToken) => Task.FromResult<AnalyticsTarget?>(target);
+    }
+
+    private sealed class FixedUser(Guid id) : ICurrentUser
+    {
+        public Guid Id => id;
     }
 }

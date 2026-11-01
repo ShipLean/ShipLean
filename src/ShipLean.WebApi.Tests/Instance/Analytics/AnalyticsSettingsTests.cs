@@ -93,7 +93,8 @@ public class AnalyticsSettingsTests : ApiFixture
     [TestCase("posthog", "https://eu.i.posthog.com", "abc_123", "siteKey")]
     public async Task Put_WhenInvalid_ShouldBeValidationError(string provider, string? host, string siteKey, string field)
     {
-        (await PutAsync("umami", "https://kept.example.com", UmamiKey, false)).EnsureSuccessStatusCode();
+        (await PutAsync("posthog", "https://kept.example.com", PostHogKey, true)).EnsureSuccessStatusCode();
+        var before = await GetStoredAsync();
 
         using var response = await PutAsync(provider, host, siteKey, false);
 
@@ -101,8 +102,12 @@ public class AnalyticsSettingsTests : ApiFixture
         error.Code.ShouldBe(ApiErrorCodes.Validation);
         error.Field.ShouldBe(field);
         var stored = await GetStoredAsync();
-        stored["host"]!.GetValue<string>().ShouldBe("https://kept.example.com");
-        stored["siteKey"]!.GetValue<string>().ShouldBe(UmamiKey);
+        stored["provider"]!.GetValue<string>().ShouldBe(before["provider"]!.GetValue<string>());
+        stored["host"]!.GetValue<string>().ShouldBe(before["host"]!.GetValue<string>());
+        stored["siteKey"]!.GetValue<string>().ShouldBe(before["siteKey"]!.GetValue<string>());
+        stored["sendNames"]!.GetValue<bool>().ShouldBe(before["sendNames"]!.GetValue<bool>());
+        before["provider"]!.GetValue<string>().ShouldBe("posthog");
+        before["sendNames"]!.GetValue<bool>().ShouldBeTrue();
     }
 
     [Test]

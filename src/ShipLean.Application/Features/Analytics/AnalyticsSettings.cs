@@ -63,8 +63,8 @@ public sealed class AnalyticsSettings(
             return new AnalyticsTestResultDto(false, $"No {name} sender is available.");
         }
 
-        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeout.CancelAfter(TestTimeout);
+        using var deadline = new CancellationTokenSource(TestTimeout, clock);
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, deadline.Token);
         try
         {
             await sink.SendAsync([BuildTestEvent(target)], target, timeout.Token);
@@ -73,9 +73,9 @@ public sealed class AnalyticsSettings(
         {
             return new AnalyticsTestResultDto(false, ex.Message);
         }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
         {
-            return new AnalyticsTestResultDto(false, $"{name} didn't answer within {(int)TestTimeout.TotalSeconds} seconds.");
+            return new AnalyticsTestResultDto(false, $"{name} didn't answer within {(int)TestTimeout.TotalSeconds} seconds: {ex.Message}");
         }
         return new AnalyticsTestResultDto(true, $"Sent a test event to {name}.");
     }
@@ -99,6 +99,8 @@ public sealed class AnalyticsSettings(
             [AnalyticsProps.Outcome] = "ok",
             [AnalyticsProps.ShipLeanVersion] = target.ShipLeanVersion,
             [AnalyticsProps.InstanceHost] = target.InstanceHost,
+            [AnalyticsProps.ProjectCount] = 0L,
+            [AnalyticsProps.Source] = "api:Analytics.Test",
         };
         var person = new AnalyticsPerson(actor.DistinctId, new Dictionary<string, object>
         {
