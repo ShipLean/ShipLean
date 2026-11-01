@@ -206,7 +206,7 @@ public class UsageDispatcherTests : ApiFixture
         try
         {
             TrackMany(UsageDispatcher.MaxBatchSize, "test:stuck");
-            await WaitAsync(_postHog.Attempts);
+            await WaitAsync(_postHog.Started);
 
             // The sink is now stuck inside SendAsync.
             Should.CompleteIn(() => TrackMany(50, "test:behind"), TimeSpan.FromSeconds(5));
@@ -215,6 +215,7 @@ public class UsageDispatcherTests : ApiFixture
         {
             gate.SetResult();
         }
+        await AdvanceUntilAsync(_postHog.Attempts.WaitAsync(Limit));
         await AdvanceUntilAsync(_postHog.Attempts.WaitAsync(Limit));
 
         _postHog.Inner.Calls[0].Batch.Count.ShouldBe(UsageDispatcher.MaxBatchSize);

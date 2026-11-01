@@ -3,13 +3,15 @@ using ShipLean.TestSupport.Analytics;
 
 namespace ShipLean.WebApi.Tests.Usage.Delivery;
 
-// A RecordingAnalyticsSink that also says when an attempt starts (Attempts, one release per attempt, failing or not) and can hold
+// A RecordingAnalyticsSink that says when an attempt starts (Started) and when it has ended, failing or not (Attempts), and can hold
 // every attempt on Gate until a test opens it.
 internal sealed class ProbeSink(AnalyticsProvider provider) : IAnalyticsSink
 {
     private int _attemptCount;
 
     public RecordingAnalyticsSink Inner { get; } = new(provider);
+
+    public SemaphoreSlim Started { get; } = new(0);
 
     public SemaphoreSlim Attempts { get; } = new(0);
 
@@ -22,11 +24,18 @@ internal sealed class ProbeSink(AnalyticsProvider provider) : IAnalyticsSink
     public async Task SendAsync(IReadOnlyList<AnalyticsEvent> batch, AnalyticsTarget target, CancellationToken cancellationToken)
     {
         Interlocked.Increment(ref _attemptCount);
-        Attempts.Release();
-        if (Gate is { } gate)
+        Started.Release();
+        try
         {
-            await gate.Task;
+            if (Gate is { } gate)
+            {
+                await gate.Task;
+            }
+            await Inner.SendAsync(batch, target, cancellationToken);
         }
-        await Inner.SendAsync(batch, target, cancellationToken);
+        finally
+        {
+            Attempts.Release();
+        }
     }
 }

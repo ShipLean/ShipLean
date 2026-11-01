@@ -59,8 +59,11 @@ public sealed class UsageEventMapper(ProjectKeyLookup projects, PersonLookup peo
         Add(properties, AnalyticsProps.PersonAgentName, actor.AgentName);
         Add(properties, AnalyticsProps.PersonAgentHost, actor.AgentHost);
         Add(properties, AnalyticsProps.PersonAgentVerified, actor.Kind == UsageActorKind.Agent ? actor.AgentVerified : null);
-        Add(properties, AnalyticsProps.PersonName, person?.Name);
-        Add(properties, AnalyticsProps.PersonEmail, person?.Email);
+        if (actor.Kind == UsageActorKind.User)
+        {
+            Add(properties, AnalyticsProps.PersonName, person?.Name);
+            Add(properties, AnalyticsProps.PersonEmail, person?.Email);
+        }
         return new AnalyticsPerson(actor.DistinctId, properties);
     }
 
