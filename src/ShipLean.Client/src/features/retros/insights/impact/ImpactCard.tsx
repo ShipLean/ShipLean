@@ -11,9 +11,11 @@ import { LatestMentionCallout } from './LatestMentionCallout';
 export function ImpactCard({
   impact,
   sprints,
+  raisedIn,
 }: {
   impact: RetroImpactDto;
   sprints: readonly SprintRef[];
+  raisedIn: string | undefined;
 }) {
   const { action, theme, verdict } = impact;
   const closedIn = impact.closedAt >= 0 ? sprints[impact.closedAt]?.name : undefined;
@@ -28,6 +30,7 @@ export function ImpactCard({
         <VerdictChip verdict={verdict} />
         <span className="flex-1" />
         <span className="text-[length:var(--text-xs)] text-ink-muted">
+          {raisedIn ? `raised ${raisedIn} · ` : ''}
           {closedIn ? `done ${closedIn}` : `done before ${sprints[0]?.name ?? 'this range'}`}
         </span>
       </div>

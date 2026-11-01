@@ -117,13 +117,27 @@ test('ChangesImpact_WhenClosedBeforeTheRange_ShouldPutTheMarkerAtTheLeftEdge', a
   await expect(view.locator('[data-marker]')).toHaveCount(1);
 });
 
+test('ChangesImpact_WhenActionHasARaisedSprint_ShouldShowRaisedAndDoneInTheHeader', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  await mount(<ChangesImpact project={insightsProject} insights={retroInsights} />, open);
+  const row = retroInsights.actionItems.find(
+    (r) =>
+      r.raisedIn && retroInsights.impact.some((i) => i.action.workItemId === r.action.workItemId),
+  )!;
+  const impact = retroInsights.impact.find((i) => i.action.workItemId === row.action.workItemId)!;
+  await expect(card(page, impact.action.key)).toContainText(`raised ${row.raisedIn!.name} · done`);
+});
+
 test('ChangesImpact_WhenNoActionClosed_ShouldSayNothingHere', async ({ mount, page }) => {
   await stubRetros(page);
-  await mount(
+  const view = await mount(
     <ChangesImpact project={insightsProject} insights={{ ...retroInsights, impact: [] }} />,
     open,
   );
-  await expect(page.getByText('Nothing here.')).toBeVisible();
+  await expect(view).toContainText('Nothing here.');
 });
 
 for (const theme of ['light', 'dark'] as const) {

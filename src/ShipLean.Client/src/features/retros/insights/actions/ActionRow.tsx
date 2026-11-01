@@ -3,6 +3,7 @@ import { StateDot } from '../../../../components/StateDot';
 import { TypeIcon } from '../../../../components/TypeIcon';
 import type { RetroActionRowDto } from '../../../../api/retros';
 import type { SprintDto } from '../../../../api/sprints';
+import { Chip } from '../../../../components/Chip';
 import { ItemLink } from '../../../itemPeek/ItemLink';
 import { retrosTestIds as ids } from '../../testIds';
 import { VerdictChip } from '../recurring/VerdictChip';
@@ -15,10 +16,12 @@ export function ActionRow({
   projectId,
   row,
   next,
+  recurring,
 }: {
   projectId: string;
   row: RetroActionRowDto;
   next: SprintDto | undefined;
+  recurring: boolean;
 }) {
   const { action, owner } = row;
   const open = action.state.category !== 'completed' && action.state.category !== 'removed';
@@ -34,12 +37,25 @@ export function ActionRow({
           className="inline-flex items-center gap-1.5 text-ink no-underline"
         >
           <TypeIcon type="action" />
-          <span className="font-mono">{action.key}</span>
+          <span className="font-mono text-[length:var(--text-xs)] whitespace-nowrap text-ink-muted">
+            {action.key}
+          </span>
           <span>{action.title}</span>
         </ItemLink>
       </td>
       <td data-cell="theme" className="px-3 py-2">
-        {row.theme?.name ?? NONE}
+        {row.theme ? (
+          <span className="inline-flex items-center gap-1.5">
+            {row.theme.name}
+            {recurring ? (
+              <span data-recurring="">
+                <Chip tone="warn">↻</Chip>
+              </span>
+            ) : null}
+          </span>
+        ) : (
+          NONE
+        )}
       </td>
       <td data-cell="raised" className="px-3 py-2">
         {row.raisedIn?.name ?? NONE}

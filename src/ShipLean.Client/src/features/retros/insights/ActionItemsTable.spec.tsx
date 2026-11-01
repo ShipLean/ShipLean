@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
+import { componentTestIds } from '../../../components/testIds';
 import { ToastHost } from '../../../components/ToastHost';
 import { retroInsights, stubRetros } from '../ct/retroFixtures';
 import { retrosTestIds as ids } from '../testIds';
@@ -79,7 +80,7 @@ test('ActionItemsTable_WhenMounted_ShouldListRowsInFixtureOrder', async ({ mount
   expect(keys).toEqual(retroInsights.actionItems.map((r) => r.action.key));
   const first = retroInsights.actionItems[0];
   const row = rows.first();
-  await expect(row.locator('[data-cell="theme"]')).toHaveText(first.theme!.name);
+  await expect(row.locator('[data-cell="theme"]')).toContainText(first.theme!.name);
   await expect(row.locator('[data-cell="raised"]')).toHaveText(first.raisedIn!.name);
   await expect(row.locator('[data-cell="state"]')).toHaveText(first.action.state.name);
   await expect(row.locator('[data-cell="points"]')).toHaveText(String(first.action.points));
@@ -149,7 +150,27 @@ test('ActionItemsTable_WhenPullFails_ShouldToastTheError', async ({ mount, page 
     open,
   );
   await page.getByTestId(ids.retroActionPull).first().click();
-  await expect(page.getByText('Could not move it')).toBeVisible();
+  await expect(page.getByTestId(componentTestIds.toast)).toContainText('Could not move it');
+});
+
+test('ActionItemsTable_WhenThemeIsRecurring_ShouldMarkItsRowsAndExplainActionItems', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  await stubWorkItems(page);
+  const view = await mount(
+    <ActionItemsTable project={insightsProject} insights={retroInsights} />,
+    open,
+  );
+  await expect(view).toContainText('is a work item type');
+  const recurringIds = retroInsights.themes
+    .filter((t) => t.status === 'recurring')
+    .map((t) => t.theme.id);
+  const expected = retroInsights.actionItems.filter(
+    (r) => r.theme && recurringIds.includes(r.theme.id),
+  ).length;
+  await expect(view.locator('[data-recurring]')).toHaveCount(expected);
 });
 
 for (const theme of ['light', 'dark'] as const) {

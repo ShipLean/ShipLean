@@ -18,7 +18,15 @@ export function ChangesImpact({ insights }: RetroInsightsSlotProps) {
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(340px,1fr))] gap-3">
           {impact.map((card) => (
-            <ImpactCard key={card.action.workItemId} impact={card} sprints={sprints} />
+            <ImpactCard
+              key={card.action.workItemId}
+              impact={card}
+              sprints={sprints}
+              raisedIn={
+                insights.actionItems.find((r) => r.action.workItemId === card.action.workItemId)
+                  ?.raisedIn?.name
+              }
+            />
           ))}
         </div>
       )}

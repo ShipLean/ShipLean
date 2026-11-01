@@ -6,7 +6,7 @@ export function LatestMentionCallout({ mention }: { mention: RetroPointDto }) {
   return (
     <div
       data-callout="latest"
-      className="rounded-panel border border-edge border-l-[3px] border-l-caution bg-sunken px-3 py-2 text-[length:var(--text-sm)]"
+      className="rounded-control border border-edge border-l-[3px] border-l-caution bg-panel px-3 py-2 text-[length:var(--text-sm)]"
     >
       <b className="block">Didn&apos;t help</b>
       Agents still hit it: &ldquo;{mention.text}&rdquo;.
