@@ -13,6 +13,6 @@ public sealed record RetroPointInput
     public string? Theme { get; init; }
 
     // Not advertised: only here so a stray root_cause can be refused rather than silently dropped.
-    [JsonExtensionData]
+    [JsonExtensionData, JsonPropertyName("stray")]
     public IDictionary<string, JsonElement>? Stray { get; init; }
 }
