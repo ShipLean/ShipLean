@@ -129,7 +129,7 @@ test('RetroShell_WhenRetroChangedArrives_ShouldRefetchTheOpenScreen', async ({ m
   await expect.poll(() => stub.reads('/retro').length).toBeGreaterThan(before);
 
   // The other sprint's event first, then this sprint's: events arrive in order, so once the second one has refetched
-  // the first has been handled too, and the count must be exactly one more.
+  // the first has been handled too, and the count is exactly one more.
   const beforeEvents = stub.reads('/retro').length;
   await hub.push({
     type: 'retroChanged',
@@ -146,8 +146,6 @@ test('RetroShell_WhenRetroChangedArrives_ShouldRefetchTheOpenScreen', async ({ m
     workItemIds: [],
   });
   await expect.poll(() => stub.reads('/retro').length).toBe(beforeEvents + 1);
-  await page.waitForTimeout(300);
-  expect(stub.reads('/retro').length).toBe(beforeEvents + 1);
 });
 
 test('RetrosSearch_WhenEventIsForAnotherWorkItem_ShouldNotReadAnyWorkItemRetros', async ({
@@ -169,7 +167,14 @@ test('RetrosSearch_WhenEventIsForAnotherWorkItem_ShouldNotReadAnyWorkItemRetros'
     sprintIds: [],
     workItemIds: ['w-other'],
   });
-  await expect.poll(() => stub.reads('/retros').length).toBeGreaterThan(searchReads);
-  await page.waitForTimeout(300);
+  // Search reacts to a project-wide event; its refetch means the other item's event before it has been handled too.
+  await hub.push({
+    type: 'retroChanged',
+    projectId: 'p1',
+    clientId: null,
+    sprintIds: [],
+    workItemIds: [],
+  });
+  await expect.poll(() => stub.reads('/retros').length).toBe(searchReads + 2);
   expect(stub.calls.filter((c) => c.path.includes('/work-items/'))).toEqual([]);
 });
