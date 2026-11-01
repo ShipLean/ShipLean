@@ -118,7 +118,7 @@ textarea.field { height: auto; padding: 6px 8px; resize: vertical; }
 
 /* Work item bits */
 .ti { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: var(--radius-xs); color: #fff; font: 700 9px/1 var(--font-sans); flex: none; }
-.ti.epic { background: var(--type-epic); } .ti.feature { background: var(--type-feature); } .ti.story { background: var(--type-story); } .ti.bug { background: var(--type-bug); } .ti.task { background: var(--type-task); }
+.ti.epic { background: var(--type-epic); } .ti.feature { background: var(--type-feature); } .ti.story { background: var(--type-story); } .ti.bug { background: var(--type-bug); } .ti.task { background: var(--type-task); } .ti.action { background: var(--type-action); }
 .st { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-sm); white-space: nowrap; }
 .st::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--state-proposed); flex: none; }
 .st.in-progress::before { background: var(--state-in-progress); } .st.resolved::before { background: var(--state-resolved); } .st.completed::before { background: var(--state-completed); } .st.removed::before { background: var(--state-removed); }
@@ -234,6 +234,7 @@ svg text { fill: var(--color-muted); font: 10px var(--font-sans); }
   --type-story: #2f7fd8;
   --type-bug: #cc3d3d;
   --type-task: #b07f0e;
+  --type-action: #1f8f6a;
   --rule-blocked: var(--color-danger);
   --rule-spike: color-mix(in oklch, var(--color-danger) 40%, var(--color-accent));
   color: var(--color-text);
