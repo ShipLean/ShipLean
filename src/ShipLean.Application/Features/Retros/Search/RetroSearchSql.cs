@@ -12,8 +12,8 @@ internal static class RetroSearchSql
     public const string Themes = """
         SELECT id, name AS themeName, tone
         FROM retro_theme
-        WHERE project_id = @projectId AND archived_at IS NULL AND merged_into_id IS NULL
-        ORDER BY name, id
+        WHERE project_id = @projectId AND archived_at IS NULL AND merged_into_id IS NULL AND point_count > 0
+        ORDER BY lower(name), id
         """;
 
     // Live points of live retros that sit in a sprint and a theme: retrospective.sprint_id is the only sprint attribution.
@@ -38,17 +38,20 @@ internal static class RetroSearchSql
 
     // Needs @projectId, @storyLevel, @hasQuery, @query, @pattern, @sprint, @category, @theme, @level, @role, @onlyThemes (null for no filter).
     // Rank tiers: a point's own text or root cause (2 plus ts_rank), then theme name, key or title (1), then the retro's failure log
-    // (below 1), which counts for the retro's first live point only. Without a query the newest retro comes first.
+    // (below 1), which counts for the retro's first live point only and only when no live point of that retro matches on text or theme. Without a query the newest point comes first.
     public const string Rows = """
         WITH q AS (
             SELECT CASE WHEN @hasQuery THEN websearch_to_tsquery('english', @query) || websearch_to_tsquery('simple', @query) END AS tsq
         ),
         candidate AS (
-            SELECT p.id, p.retrospective_id AS retroId, p.theme_id AS themeId, r.created_at AS createdAt, p.position,
+            SELECT p.id, p.retrospective_id AS retroId, p.theme_id AS themeId, p.created_at AS createdAt, p.position,
                    CASE WHEN @hasQuery THEN greatest(
                        CASE WHEN p.tsv @@ q.tsq THEN 2 + ts_rank(p.tsv, q.tsq) ELSE 0 END,
-                       CASE WHEN th.name ILIKE @pattern OR w.key ILIKE @pattern OR w.title ILIKE @pattern THEN 1 ELSE 0 END,
+                       CASE WHEN (th.archived_at IS NULL AND th.name ILIKE @pattern) OR w.key ILIKE @pattern OR w.title ILIKE @pattern THEN 1 ELSE 0 END,
                        CASE WHEN p.id = (SELECT f.id FROM retro_point f WHERE f.retrospective_id = r.id AND f.archived_at IS NULL ORDER BY f.position, f.created_at, f.id LIMIT 1)
+                             AND NOT EXISTS (SELECT 1 FROM retro_point m LEFT JOIN retro_theme mt ON mt.id = m.theme_id
+                                             WHERE m.retrospective_id = r.id AND m.archived_at IS NULL
+                                               AND (m.tsv @@ q.tsq OR (mt.archived_at IS NULL AND mt.name ILIKE @pattern)))
                             THEN coalesce((SELECT 0.1 + 0.5 * max(ts_rank(l.tsv, q.tsq)) FROM retro_failure_log l WHERE l.retrospective_id = r.id AND l.tsv @@ q.tsq), 0)
                             ELSE 0 END)
                    ELSE 0 END AS rank

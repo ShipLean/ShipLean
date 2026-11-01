@@ -250,6 +250,74 @@ public sealed class RetroSearchReaderTests : ApiFixture
         (await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.BadRequest)).Code.ShouldBe(ApiErrorCodes.Validation);
     }
 
+    [Test]
+    public async Task Search_WhenPointAndFailureLogBothMatch_ShouldReturnOnlyTheMatchingPoint()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var world = await WorldAsync(connection);
+        var retro = await world.Seed.RetroAsync(new RetroSeedRetro(Joel, RetroRole.SubAgent, AgentName: "lane A", SprintId: world.Sprints[0]));
+        await world.Seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.WentWell, "Tests were green.", Position: 0));
+        var hit = await world.Seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.WentBadly, "Kafka proxy was down.", Position: 1));
+        await world.Seed.FailureAsync(retro, RetroFailureKind.Blocker, "Kafka proxy timed out twice.");
+
+        var result = await Reader.SearchAsync(world.Project.Id, Query("kafka"), CancellationToken.None);
+
+        result.Rows.Select(row => row.Id).ShouldBe([hit]);
+        result.Total.ShouldBe(1);
+    }
+
+    [Test]
+    public async Task Search_WhenQueryHasPercentAndUnderscore_ShouldMatchThemLiterally()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var world = await WorldAsync(connection);
+        var literal = await world.Seed.ThemeAsync("Flaky 100%_ci runs");
+        var other = await world.Seed.ThemeAsync("Flaky 100 ci runs");
+        var retro = await world.Seed.RetroAsync(new RetroSeedRetro(Joel, RetroRole.Person, SprintId: world.Sprints[0]));
+        var hit = await world.Seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.WentBadly, "Reran twice.", ThemeId: literal));
+        await world.Seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.WentBadly, "Reran thrice.", ThemeId: other));
+
+        var percent = await Reader.SearchAsync(world.Project.Id, Query("100%_ci"), CancellationToken.None);
+        var wildcard = await Reader.SearchAsync(world.Project.Id, Query("%"), CancellationToken.None);
+
+        percent.Rows.Select(row => row.Id).ShouldBe([hit]);
+        wildcard.Rows.Select(row => row.Id).ShouldBe([hit]);
+    }
+
+    [Test]
+    public async Task Filter_WhenTheme_ShouldOnlyReturnItsPoints()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var world = await WorldAsync(connection);
+        var theme = await world.Seed.ThemeAsync("Slow CI");
+        var otherTheme = await world.Seed.ThemeAsync("Late reviews");
+        var retro = await world.Seed.RetroAsync(new RetroSeedRetro(Joel, RetroRole.Person, SprintId: world.Sprints[0]));
+        var hit = await world.Seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.WentBadly, "Pipeline crawled.", ThemeId: theme));
+        await world.Seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.WentBadly, "Review waited.", ThemeId: otherTheme));
+        await world.Seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.WentBadly, "No theme."));
+
+        var result = await Reader.SearchAsync(world.Project.Id, Query(null) with { Theme = theme }, CancellationToken.None);
+
+        result.Rows.Select(row => row.Id).ShouldBe([hit]);
+    }
+
+    [Test]
+    public async Task Search_WhenNoQuery_ShouldListNewestPointFirstAndOnlyNonEmptyThemes()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var world = await WorldAsync(connection);
+        var used = await world.Seed.ThemeAsync("Used theme");
+        await world.Seed.ThemeAsync("Empty theme");
+        var retro = await world.Seed.RetroAsync(new RetroSeedRetro(Joel, RetroRole.Person, SprintId: world.Sprints[0]));
+        var older = await world.Seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.WentBadly, "Older.", ThemeId: used, CreatedAt: World.NoonIn(0)));
+        var newer = await world.Seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.WentBadly, "Newer.", Position: 1, CreatedAt: World.NoonIn(1)));
+
+        var result = await Reader.SearchAsync(world.Project.Id, Query(null), CancellationToken.None);
+
+        result.Rows.Select(row => row.Id).ShouldBe([newer, older]);
+        result.Themes.Select(theme => theme.Name).ShouldBe(["Used theme"]);
+    }
+
     private static RetroSearchQuery Query(string? q) => new(q, null, null, null, null, null, null, null);
 
     private static async Task<World> WorldAsync(NpgsqlConnection connection)
