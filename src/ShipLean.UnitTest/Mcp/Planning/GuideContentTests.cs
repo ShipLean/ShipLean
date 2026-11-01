@@ -90,4 +90,31 @@ public class GuideContentTests
         fix.ShouldContain("`get_work_item`");
         fix.ShouldNotContain("`get_brief`");
     }
+
+    [Test]
+    public void GuideContent_ShouldOpenWithTheLearningFromFailurePreamble()
+    {
+        const string first = "Your primary goal is absolute truth over artificial success.";
+
+        Guide.ShouldContain(first);
+        Work.ShouldContain(first);
+    }
+
+    [Test]
+    public void GuideContent_ShouldTellAgentsToLogRetrospectives()
+    {
+        Guide.ShouldContain("`log_retrospective`");
+        Work.ShouldContain("`log_retrospective`");
+        PlanGuide.Read(PlanGuidePart.Report).ShouldContain("`log_retrospective`");
+        PlanGuide.Read(PlanGuidePart.Lead).ShouldContain("`log_retrospective`");
+    }
+
+    [Test]
+    public void GuideContent_StepNine_ShouldCompileTheFeatureRetroWithCompiledFrom()
+    {
+        var stepNine = Guide[Guide.IndexOf("## Step 9", StringComparison.Ordinal)..];
+
+        stepNine.ShouldContain("`compiled_from`");
+        stepNine.ShouldContain("blameless site reliability engineer");
+    }
 }

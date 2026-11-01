@@ -8,15 +8,21 @@ import { filterColumns, type WrittenBy } from './byCategory/writtenBy';
 import { WrittenByFilter } from './byCategory/WrittenByFilter';
 
 /** The By category view: the Written by filter over four columns (Went badly, Can be improved, Not in the plan, Went well), each grouped by theme. */
-export function ByCategory({ project, retro }: SprintRetroSlotProps) {
-  const [writtenBy, setWrittenBy] = useState<WrittenBy>('all');
+export function ByCategory({
+  project,
+  retro,
+  writtenBy: controlled,
+}: SprintRetroSlotProps & { writtenBy?: WrittenBy }) {
+  // The panel's toolbar owns the filter; on its own the view shows the filter itself.
+  const [own, setOwn] = useState<WrittenBy>('all');
+  const writtenBy = controlled ?? own;
   const themes = useRetroThemes(project.id);
   const writes = useRetroPointWrites(project.id);
   const featureCard = retro.cards.find((card) => card.workItem?.type.id === 'feature');
   const columns = filterColumns(retro.categories, writtenBy);
   return (
     <div className="grid gap-3">
-      <WrittenByFilter value={writtenBy} onChange={setWrittenBy} />
+      {controlled === undefined ? <WrittenByFilter value={writtenBy} onChange={setOwn} /> : null}
       {featureCard ? <FeatureRetroCallout card={featureCard} /> : null}
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
         {columns.map((column) => (

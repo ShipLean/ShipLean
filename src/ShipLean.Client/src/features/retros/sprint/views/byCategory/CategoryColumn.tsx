@@ -21,7 +21,7 @@ export function CategoryColumn({
       data-testid={ids.retroColumn}
       data-category={column.category}
       aria-label={retroCategoryLabels[column.category]}
-      className="grid min-w-0 content-start gap-2 rounded-md border border-edge border-t-[3px] p-2"
+      className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-2 rounded-md border border-edge border-t-[3px] p-2"
       style={{
         borderTopColor: colour,
         background: `color-mix(in srgb, ${colour} 4%, var(--color-canvas))`,
