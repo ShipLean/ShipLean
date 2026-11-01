@@ -3,8 +3,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Npgsql;
 using ShipLean.Application.Http;
+using ShipLean.Application.Features.Retros.Theming;
 using ShipLean.Application.Identity;
 using ShipLean.Contracts.Agents;
+using ShipLean.Contracts.Retros;
 using ShipLean.Contracts.Search;
 using ShipLean.LocalEnvironment;
 using ShipLean.LocalEnvironment.Hosting;
@@ -72,6 +74,8 @@ public sealed class ShipLeanHost : IAsyncDisposable
                 services.Replace(ServiceDescriptor.Singleton<IHostResolver>(new NoNetworkHostResolver()));
                 // Likewise the embedder: the fake is deterministic and needs no model. A fixture opts back into the real factory with EmbedderServices.Register.
                 services.Replace(ServiceDescriptor.Singleton<IEmbedder>(new FakeEmbedder()));
+                // Likewise the retro themer: pick mode, so no test depends on auto clustering. A fixture opts into auto mode with RetroThemerServices.Register.
+                services.Replace(ServiceDescriptor.Singleton<IRetroThemer>(sp => sp.GetRequiredService<PickRetroThemer>()));
                 if (user != null)
                 {
                     TestAuthentication.Add(services, user);
