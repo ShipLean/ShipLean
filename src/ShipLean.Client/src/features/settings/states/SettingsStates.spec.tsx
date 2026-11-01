@@ -170,7 +170,7 @@ test('States_WhenStateAdded_ShouldAppearAndStageAnAdd', async ({ mount, page }) 
   expect(puts[0]?.states.add[0]?.id).toMatch(/^[0-9a-f-]{36}$/);
 });
 
-test('States_WhenActionItemPicked_ShouldListItsFourStates', async ({ mount, page }) => {
+test('States_WhenActionPicked_ShouldListItsFourStates', async ({ mount, page }) => {
   await stub(page);
   const view = await mountAdmin(mount);
 

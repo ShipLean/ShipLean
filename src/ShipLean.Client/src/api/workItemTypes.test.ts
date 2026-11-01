@@ -13,7 +13,7 @@ test.each<[WorkItemTypeId, boolean]>([
   expect(isStoryLevel(type)).toBe(expected);
 });
 
-test('typeName_WhenAction_ShouldBeActionItem', () => {
+test('typeName_WhenAction_ShouldBeTheActionDisplayName', () => {
   expect(typeName('action')).toBe('Action item');
 });
 
