@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "LocalHost": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "TZ": "UTC",
+        "PGTZ": "UTC"
+      }
+    }
+  }
+}
