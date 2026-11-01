@@ -54,7 +54,8 @@ all (`^shiplean_[a-z0-9_]{1,40}$`). Names that look like the test clean-up's own
 name needs its hyphens turned into underscores before it becomes a database name.
 
 Except with `--data empty`, the host puts the seed's attachment files into the app's blob store after it starts, so seeded
-attachments have their files.
+attachments have their files. The store is the folder `src/ShipLean.WebApi/data/blobs` (gitignored), shared by every local
+run from that checkout.
 
 ## What differs from production
 
@@ -64,8 +65,8 @@ The host uses the `Local` profile of `AppHost`. Nothing leaves the machine:
   environment variables cannot reach a local instance.
 - `HolidayRefreshService` (it calls the internet), `AgentDeliveryService` and `AgentStaleService` are removed. Webhook
   deliveries stay queued in the outbox and nothing is sent.
-- The search indexer runs. It uses the real embedding model when `SHIPLEAN_EMBEDDINGS_MODEL_PATH` is set (see the
-  README), otherwise the app's own lexical fallback. The tests use the `Test` profile, which also removes the indexer.
+- The search indexer runs. It uses the real embedding model when `SHIPLEAN_EMBEDDINGS_MODEL_PATH` is set
+  (`scripts/fetch-embedding-model.sh <dir>` downloads it), otherwise the app's own lexical fallback. The tests use the `Test` profile, which also removes the indexer.
 
 ## F5
 
@@ -115,3 +116,12 @@ LocalHost reads the same two variables as the tests (`docs/testing.md`):
 Unset, each starts a container (`postgres:18`, `redis:7.4`) that is kept running between runs, so `--data keep` still finds
 its database the next time. Several named databases can live on the one server side by side; the server is shared with the
 tests, whose own databases are named differently.
+
+## Troubleshooting
+
+- **The port is in use.** Startup fails with exit code 1 and the reason on stderr. Stop the other instance, or pass
+  `--port <n>` (or `--port 0`). Keep 5113 if you use `pnpm run dev`.
+- **Docker isn't running.** Startup fails with exit code 1 when no `SHIPLEAN_TEST_DB` is set and the Postgres container
+  can't start. Start Docker, or point `SHIPLEAN_TEST_DB` at a Postgres you already have.
+- **The seed's dates look old.** Seed dates are relative to when the database was made. A `--data keep` database ages day
+  by day; run with `--data fresh` (the default) to get today's seed.
