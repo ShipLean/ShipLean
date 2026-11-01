@@ -9,23 +9,23 @@ internal static class WorkItemTypes
 
     public static WorkItemTypeId Parse(string db) => Enum.Parse<WorkItemTypeId>(db, ignoreCase: true);
 
-    public static TypeRef Ref(WorkItemTypeId type) => new(type, type == WorkItemTypeId.Story ? "User Story" : type.ToString());
+    public static TypeRef Ref(WorkItemTypeId type) => new(type, WorkItemTypeRules.Name(type));
 
     // The board level that shows the type; tasks live on the sprint taskboard, whose columns are states, not board columns.
     public static string? BoardLevel(WorkItemTypeId type) => type switch
     {
         WorkItemTypeId.Epic => "epics",
         WorkItemTypeId.Feature => "features",
-        WorkItemTypeId.Story or WorkItemTypeId.Bug => "stories",
+        WorkItemTypeId.Story or WorkItemTypeId.Bug or WorkItemTypeId.Action => "stories",
         _ => null,
     };
 
-    // Epic <- Feature <- Feature | Story | Bug, and Story | Bug <- Task (the schema's ck_work_item_parent_type_allowed).
+    // Epic <- Feature <- Feature | Story | Bug | Action, and Story | Bug | Action <- Task (the schema's ck_work_item_parent_type_allowed).
     public static bool IsAllowedParent(WorkItemTypeId type, WorkItemTypeId parent) => type switch
     {
         WorkItemTypeId.Feature => parent is WorkItemTypeId.Epic or WorkItemTypeId.Feature,
-        WorkItemTypeId.Story or WorkItemTypeId.Bug => parent == WorkItemTypeId.Feature,
-        WorkItemTypeId.Task => parent is WorkItemTypeId.Story or WorkItemTypeId.Bug,
+        WorkItemTypeId.Story or WorkItemTypeId.Bug or WorkItemTypeId.Action => parent == WorkItemTypeId.Feature,
+        WorkItemTypeId.Task => parent is WorkItemTypeId.Story or WorkItemTypeId.Bug or WorkItemTypeId.Action,
         _ => false,
     };
 }

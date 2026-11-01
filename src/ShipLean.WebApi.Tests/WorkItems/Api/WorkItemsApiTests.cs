@@ -5,6 +5,7 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Projects;
+using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.WorkItems;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
@@ -69,6 +70,22 @@ public class WorkItemsApiTests : ApiFixture
         (await ReadAsync<WorkItemDto>(byKey)).Id.ShouldBe(first.Id);
         using var byId = await Api.GetAsync($"api/work-items/{second.Id}");
         (await ReadAsync<WorkItemDto>(byId)).Title.ShouldBe("Second of two");
+    }
+
+    [Test]
+    public async Task Create_WhenAction_ShouldStoreAndShowActionItemName()
+    {
+        var feature = await CreateItemAsync("feature", "Parent of an action item");
+
+        using var response = await Api.PostJsonAsync("api/work-items", Create(SeedIds.Projects.Ship, "action", "Agree the retro cadence", feature.Id));
+        var created = await ReadAsync<WriteResult>(response);
+
+        using var read = await Api.GetAsync($"api/work-items/{created.Id}");
+        var item = await ReadAsync<WorkItemDto>(read);
+        item.Type.Id.ShouldBe(WorkItemTypeId.Action);
+        item.Type.Name.ShouldBe("Action item");
+        item.State.Name.ShouldBe("New");
+        item.Parent!.Id.ShouldBe(feature.Id);
     }
 
     [Test]

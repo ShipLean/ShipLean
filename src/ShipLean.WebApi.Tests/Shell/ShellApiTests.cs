@@ -107,7 +107,8 @@ public class ShellApiTests : ApiFixture
         states.ShouldContain(s => s.Type == WorkItemTypeId.Bug && s.Name == "Triaged");
         states.ShouldContain(s => s.Type == WorkItemTypeId.Task && s.Name == "In review");
         states.ShouldContain(s => s.Category == StateCategory.Removed);
-        states.Select(s => s.Type).Distinct().ShouldBe([WorkItemTypeId.Epic, WorkItemTypeId.Feature, WorkItemTypeId.Story, WorkItemTypeId.Bug, WorkItemTypeId.Task]);
+        states.Select(s => s.Type).Distinct().ShouldBe([WorkItemTypeId.Epic, WorkItemTypeId.Feature, WorkItemTypeId.Story, WorkItemTypeId.Bug, WorkItemTypeId.Task, WorkItemTypeId.Action]);
+        states.Where(s => s.Type == WorkItemTypeId.Action).Select(s => s.Name).ShouldBe(["New", "Active", "Closed", "Removed"]);
         foreach (var group in states.GroupBy(s => s.Type))
         {
             group.Select(s => s.Order).ShouldBe(group.Select(s => s.Order).Order().ToList());

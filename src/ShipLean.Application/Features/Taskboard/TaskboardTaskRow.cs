@@ -48,7 +48,7 @@ internal sealed record TaskboardTaskRow(
         }
 
         var type = Enum.Parse<WorkItemTypeId>(ParentType!, ignoreCase: true);
-        return new ParentRefDto(id, ParentKey!, new TypeRef(type, type == WorkItemTypeId.Story ? "User Story" : type.ToString()), ParentTitle!);
+        return new ParentRefDto(id, ParentKey!, new TypeRef(type, WorkItemTypeRules.Name(type)), ParentTitle!);
     }
 
     private static DateOnly Day(string text) => DateOnly.ParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture);

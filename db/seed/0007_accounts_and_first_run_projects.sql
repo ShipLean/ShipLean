@@ -44,6 +44,14 @@ JOIN project ON project.key = p.key
 CROSS JOIN (VALUES ('epic', 1), ('feature', 2), ('story', 3), ('bug', 4), ('task', 5)) AS t (type, digit)
 CROSS JOIN (VALUES ('New', 'proposed', 1), ('Active', 'inProgress', 2), ('Resolved', 'resolved', 3), ('Closed', 'completed', 4), ('Removed', 'removed', 5)) AS s (name, category, sort_order);
 
+-- The four Action item states (no Resolved), in the same id scheme.
+INSERT INTO state (id, project_id, type, name, category, sort_order)
+SELECT format('00000003-0000-4000-80%s-%s', lpad(p.number::text, 2, '0'), lpad((600 + s.sort_order)::text, 12, '0'))::uuid,
+       project.id, 'action', s.name, s.category, s.sort_order
+FROM (VALUES ('ARCH', 7), ('EMPT', 8)) AS p (key, number)
+JOIN project ON project.key = p.key
+CROSS JOIN (VALUES ('New', 'proposed', 1), ('Active', 'inProgress', 2), ('Closed', 'completed', 3), ('Removed', 'removed', 4)) AS s (name, category, sort_order);
+
 -- Default boards for both projects, generated from their states exactly as 0004 does for the other projects.
 INSERT INTO board (id, project_id, level, settings)
 SELECT format('00000007-0000-4000-80%s-%s', lpad(p.number::text, 2, '0'), lpad(l.digit::text, 12, '0'))::uuid,

@@ -144,7 +144,7 @@ public sealed class BoardViewBuilder(
         return totals.Count == 0 ? null : totals.Sum();
     }
 
-    private static TypeRef TypeRef(WorkItemTypeId type) => new(type, type == WorkItemTypeId.Story ? "User Story" : type.ToString());
+    private static TypeRef TypeRef(WorkItemTypeId type) => new(type, WorkItemTypeRules.Name(type));
 
     private static StateRef State(BoardStateRow state) => new(state.Id, state.Name, Enum.Parse<StateCategory>(state.Category, ignoreCase: true));
 
