@@ -209,7 +209,7 @@ public class UsageDispatcherTests : ApiFixture
             await WaitAsync(_postHog.Attempts);
 
             // The sink is now stuck inside SendAsync.
-            await Task.Run(() => TrackMany(50, "test:behind")).ShouldCompleteInAsync(TimeSpan.FromSeconds(5));
+            Should.CompleteIn(() => TrackMany(50, "test:behind"), TimeSpan.FromSeconds(5));
         }
         finally
         {

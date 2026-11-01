@@ -17,10 +17,10 @@ public sealed class UsageEventMapper(ProjectKeyLookup projects, PersonLookup peo
         {
             person = await people.FindAsync(userId, cancellationToken);
         }
-        return Map(usageEvent, target, projectKey, person);
+        return Build(usageEvent, target, projectKey, person);
     }
 
-    public static AnalyticsEvent Map(UsageEvent usageEvent, AnalyticsTarget target, string? projectKey, PersonLookup.Person? person)
+    public static AnalyticsEvent Build(UsageEvent usageEvent, AnalyticsTarget target, string? projectKey, PersonLookup.Person? person)
     {
         var actor = usageEvent.Actor;
         var isAgent = actor.Kind == UsageActorKind.Agent;

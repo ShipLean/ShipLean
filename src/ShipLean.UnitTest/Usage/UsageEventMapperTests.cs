@@ -26,7 +26,7 @@ public class UsageEventMapperTests
     {
         var actor = UsageActor.ForAgent(UserId, "auth-1", "Claude Code", "claude.ai", true);
 
-        var mapped = UsageEventMapper.Map(Event(actor), Target(sendNames: true), null, Joel);
+        var mapped = UsageEventMapper.Build(Event(actor), Target(sendNames: true), null, Joel);
 
         mapped.ActorKind.ShouldBe("agent");
         mapped.DistinctId.ShouldBe("agent:auth-1");
@@ -48,7 +48,7 @@ public class UsageEventMapperTests
     public void Mapper_WhenSendNamesOff_ShouldOmitNameAndEmail()
     {
         // The lookup is never consulted when SendNames is off, so the dispatcher passes none; the mapper must not invent one.
-        var mapped = UsageEventMapper.Map(Event(UsageActor.ForUser(UserId)), Target(sendNames: false), null, null);
+        var mapped = UsageEventMapper.Build(Event(UsageActor.ForUser(UserId)), Target(sendNames: false), null, null);
 
         mapped.Person.Properties.ShouldNotContainKey(AnalyticsProps.PersonName);
         mapped.Person.Properties.ShouldNotContainKey(AnalyticsProps.PersonEmail);
@@ -59,7 +59,7 @@ public class UsageEventMapperTests
     [Test]
     public void Mapper_WhenSendNamesOn_ShouldAddNameAndEmail()
     {
-        var mapped = UsageEventMapper.Map(Event(UsageActor.ForUser(UserId)), Target(sendNames: true), null, Joel);
+        var mapped = UsageEventMapper.Build(Event(UsageActor.ForUser(UserId)), Target(sendNames: true), null, Joel);
 
         mapped.Person.Properties[AnalyticsProps.PersonName].ShouldBe("Joel");
         mapped.Person.Properties[AnalyticsProps.PersonEmail].ShouldBe("joel@example.com");
@@ -70,7 +70,7 @@ public class UsageEventMapperTests
     [Test]
     public void Mapper_WhenProjectKnown_ShouldAddProjectKey()
     {
-        var mapped = UsageEventMapper.Map(Event(UsageActor.ForUser(UserId), projectId: ProjectId), Target(sendNames: false), "SHIP", null);
+        var mapped = UsageEventMapper.Build(Event(UsageActor.ForUser(UserId), projectId: ProjectId), Target(sendNames: false), "SHIP", null);
 
         mapped.ProjectKey.ShouldBe("SHIP");
         mapped.Properties[AnalyticsProps.ProjectKey].ShouldBe("SHIP");
@@ -88,7 +88,7 @@ public class UsageEventMapperTests
     [Test]
     public void Mapper_WhenProjectUnknown_ShouldLeaveTheKeyOut()
     {
-        var mapped = UsageEventMapper.Map(Event(UsageActor.ForUser(UserId), projectId: ProjectId), Target(sendNames: false), null, null);
+        var mapped = UsageEventMapper.Build(Event(UsageActor.ForUser(UserId), projectId: ProjectId), Target(sendNames: false), null, null);
 
         mapped.ProjectKey.ShouldBeNull();
         mapped.Properties.ShouldNotContainKey(AnalyticsProps.ProjectKey);
@@ -98,7 +98,7 @@ public class UsageEventMapperTests
     [Test]
     public void Mapper_WhenNullValues_ShouldOmitKeys()
     {
-        var mapped = UsageEventMapper.Map(Event(UsageActor.System, durationMs: null), Target(sendNames: true), null, null);
+        var mapped = UsageEventMapper.Build(Event(UsageActor.System, durationMs: null), Target(sendNames: true), null, null);
 
         string[] omitted =
         [
@@ -119,10 +119,10 @@ public class UsageEventMapperTests
     {
         IReadOnlyDictionary<string, object> extras = new Dictionary<string, object> { [UsageProps.AgentName] = "Extra Client" };
 
-        var withStandard = UsageEventMapper.Map(
+        var withStandard = UsageEventMapper.Build(
             Event(UsageActor.ForAgent(UserId, "auth-1", "Claude Code", null, false), UsageEventNames.AgentConnected, properties: extras),
             Target(sendNames: false), null, null);
-        var withoutStandard = UsageEventMapper.Map(
+        var withoutStandard = UsageEventMapper.Build(
             Event(UsageActor.ForUser(UserId), UsageEventNames.AgentConnected, properties: extras), Target(sendNames: false), null, null);
 
         withStandard.Properties[AnalyticsProps.AgentName].ShouldBe("Claude Code");
@@ -140,7 +140,7 @@ public class UsageEventMapperTests
             [UsageProps.Provider] = true,
         };
 
-        var mapped = UsageEventMapper.Map(Event(UsageActor.ForUser(UserId), properties: extras), Target(sendNames: false), null, null);
+        var mapped = UsageEventMapper.Build(Event(UsageActor.ForUser(UserId), properties: extras), Target(sendNames: false), null, null);
 
         mapped.Properties[UsageProps.Screen].ShouldBe("board");
         mapped.Properties[UsageProps.Count].ShouldBe(3L);
