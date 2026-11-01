@@ -206,3 +206,12 @@ test('InstanceSettings_WhenOpened_ShouldLinkEveryTabAndMarkTheCurrentOne', async
   await expect(tabs.nth(5)).toHaveAttribute('href', '/instance/agents');
   await expect(tabs.nth(1)).toHaveAttribute('aria-current', 'page');
 });
+
+test('InstanceSettings_WhenAnalyticsTabOpened_ShouldRenderTheAnalyticsSlot', async ({
+  mount,
+  page,
+}) => {
+  await stubProjectApi(page);
+  await mount(<AppRoutes />, { hooksConfig: { route: '/instance/analytics' } });
+  await expect(page.getByTestId(pagesTestIds.slotInstanceAnalytics)).toBeVisible();
+});
