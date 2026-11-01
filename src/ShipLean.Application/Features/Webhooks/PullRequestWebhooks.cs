@@ -3,6 +3,7 @@ using Agoda.IoC.Core;
 using Dapper;
 using Npgsql;
 using ShipLean.Contracts.Errors;
+using ShipLean.Contracts.Usage;
 using ShipLean.Contracts.Webhooks;
 using ShipLean.Contracts.WorkItems;
 
@@ -12,7 +13,7 @@ namespace ShipLean.Application.Features.Webhooks;
 // reads the payload, PullRequestSync applies a pull or merge request event, and the delivery is recorded (after the work,
 // so a delivery that failed half way is done again when the provider retries it; every step is safe to repeat).
 [RegisterPerRequest]
-public sealed class PullRequestWebhooks(NpgsqlDataSource dataSource, PullRequestSync sync)
+public sealed class PullRequestWebhooks(NpgsqlDataSource dataSource, PullRequestSync sync, IUsageEvents usage, TimeProvider time)
 {
     public async Task<WebhookResultDto> ReceiveAsync(WebhookProvider provider, string? deliveryId, string? eventName, ReadOnlyMemory<byte> body, CancellationToken cancellationToken)
     {
@@ -27,7 +28,36 @@ public sealed class PullRequestWebhooks(NpgsqlDataSource dataSource, PullRequest
         {
             await RecordAsync(provider, deliveryId, eventName ?? string.Empty, parsed, cancellationToken);
         }
+        if (parsed.Event is { } processed)
+        {
+            await TrackReceivedAsync(provider, processed.Url, cancellationToken);
+        }
         return result;
+    }
+
+    // After the work and the record: the projects of the items that now link the pull or merge request (none when no item matched).
+    // The event is analytics, so a failure to look the projects up is never the delivery's failure.
+    private async Task TrackReceivedAsync(WebhookProvider provider, string url, CancellationToken cancellationToken)
+    {
+        Guid[] projects = [];
+        try
+        {
+            await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+            projects = [.. await connection.QueryAsync<Guid>(new CommandDefinition(
+                """
+                SELECT DISTINCT w.project_id FROM work_item_link l JOIN work_item w ON w.id = l.source_id
+                WHERE l.link_type = 'url' AND l.archived_at IS NULL AND link_url_key(l.url) = link_url_key(@url)
+                """,
+                new { url }, cancellationToken: cancellationToken))];
+        }
+        catch (Exception failed) when (failed is not OperationCanceledException)
+        {
+            projects = [];
+        }
+
+        usage.Track(new UsageEvent(
+            UsageEventNames.WebhookReceived, UsageSurface.System, UsageActor.System, projects.Length == 1 ? projects[0] : null, projects.Length, UsageOutcome.Ok,
+            null, null, $"system:{nameof(PullRequestWebhooks)}", time.GetUtcNow(), new Dictionary<string, object> { [UsageProps.Provider] = ProviderDb(provider) }));
     }
 
     private static ParsedDelivery Parse(WebhookProvider provider, string? eventName, ReadOnlyMemory<byte> body)
