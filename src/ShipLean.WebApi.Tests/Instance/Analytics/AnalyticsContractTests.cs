@@ -32,11 +32,19 @@ public class AnalyticsContractTests : ApiFixture
     [Test]
     public async Task Put_WhenAdmin_ShouldAnswerThePinnedShape()
     {
-        using var response = await Api.PutJsonAsync("api/instance/analytics", new { provider = "umami", host = "https://umami.example.com", siteKey = "7f3c1a52-9d4e-4b8a-a1c6-2e5f0b9d3c71", sendNames = false });
+        try
+        {
+            using var response = await Api.PutJsonAsync("api/instance/analytics", new { provider = "umami", host = "https://umami.example.com", siteKey = "7f3c1a52-9d4e-4b8a-a1c6-2e5f0b9d3c71", sendNames = false });
 
-        var text = await response.Content.ReadAsStringAsync();
-        response.StatusCode.ShouldBe(HttpStatusCode.OK, text);
-        ShouldHaveShapeOf(JsonNode.Parse(text)!, Pinned("analytics-settings.json"));
+            var text = await response.Content.ReadAsStringAsync();
+            response.StatusCode.ShouldBe(HttpStatusCode.OK, text);
+            ShouldHaveShapeOf(JsonNode.Parse(text)!, Pinned("analytics-settings.json"));
+        }
+        finally
+        {
+            using var restore = await Api.PutJsonAsync("api/instance/analytics", new { provider = "none", host = (string?)null, siteKey = (string?)null, sendNames = false });
+            restore.StatusCode.ShouldBe(HttpStatusCode.OK, await restore.Content.ReadAsStringAsync());
+        }
     }
 
     [Test]
