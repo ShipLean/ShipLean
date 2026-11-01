@@ -25,7 +25,7 @@ States are named by category (Proposed, In Progress, Completed, Removed), so thi
 
 ## Retrospectives
 
-When you stop work on an item (done or not), call `log_retrospective` on it with what went well, what went badly (each with a `root_cause`), what can be improved, what the plan did not foresee, and your raw `failure_log`. Read `list_retrospectives` first and reuse a theme that fits. When a Feature's last story closes, the conductor compiles the Feature's retrospective with `compiled_from`, as a blameless site reliability engineer.
+When you stop work on an item (done or not), call `log_retrospective` on it (on its story, bug, action item or Feature, not a task) with what went well, what went badly (each with a `root_cause`), what can be improved, what the plan did not foresee, and your raw `failure_log`. Read `list_retrospectives` first, and set `theme` on each point: pick a name from the list, or give a new one. When a Feature's last story closes, the conductor compiles the Feature's retrospective with `compiled_from`, as a blameless site reliability engineer.
 
 ## The Feature body
 

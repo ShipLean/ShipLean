@@ -84,9 +84,16 @@ public class PlanningGuideLessonsTests : McpFixture
         var keys = await PlanTreeSeed.SeedAsync(Host.Services, SeedIds.Projects.Ship, PlanFixture.FeatureEditor);
         var retro = await SeedRetroAsync(keys.Ids[keys.Feature], RetroRole.Conductor, ("Give every agent search access.", false), ("Ship the schema first.", false));
 
-        var lessons = await LessonsAsync();
+        List<(string Feature, string Retro, string Text)> lessons;
+        try
+        {
+            lessons = await LessonsAsync();
+        }
+        finally
+        {
+            await ArchiveRetroAsync(retro);
+        }
 
-        await ArchiveRetroAsync(retro);
         var improve = lessons.Where(l => l.Retro.StartsWith("retrospective ", StringComparison.Ordinal)).ToList();
         improve.Select(l => l.Feature).ShouldBe([keys.Feature]);
         improve[0].Text.ShouldBe("- Give every agent search access.\n- Ship the schema first.");
@@ -100,9 +107,16 @@ public class PlanningGuideLessonsTests : McpFixture
         var keys = await PlanTreeSeed.SeedAsync(Host.Services, SeedIds.Projects.Ship, PlanFixture.FeatureEditor);
         var retro = await SeedRetroAsync(keys.Ids[keys.Feature], RetroRole.SubAgent, ("A sub-agent improve point.", false));
 
-        var lessons = await LessonsAsync();
+        List<(string Feature, string Retro, string Text)> lessons;
+        try
+        {
+            lessons = await LessonsAsync();
+        }
+        finally
+        {
+            await ArchiveRetroAsync(retro);
+        }
 
-        await ArchiveRetroAsync(retro);
         lessons.ShouldNotContain(l => l.Text.Contains("A sub-agent improve point.", StringComparison.Ordinal));
     }
 
@@ -113,9 +127,16 @@ public class PlanningGuideLessonsTests : McpFixture
         var keys = await PlanTreeSeed.SeedAsync(Host.Services, SeedIds.Projects.Ship, PlanFixture.FeatureEditor);
         var retro = await SeedRetroAsync(keys.Ids[keys.Feature], RetroRole.Conductor, ("A kept point.", false), ("An archived point.", true));
 
-        var lessons = await LessonsAsync();
+        List<(string Feature, string Retro, string Text)> lessons;
+        try
+        {
+            lessons = await LessonsAsync();
+        }
+        finally
+        {
+            await ArchiveRetroAsync(retro);
+        }
 
-        await ArchiveRetroAsync(retro);
         var text = string.Join("\n", lessons.Select(l => l.Text));
         text.ShouldContain("A kept point.");
         text.ShouldNotContain("An archived point.");
