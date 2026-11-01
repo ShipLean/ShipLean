@@ -35,7 +35,7 @@ export function RetrosSubmenu({
         Insights
         {recurring ? (
           <span className="ml-auto" data-testid={ids.navRetrosInsightsCount}>
-            <Chip tone="accent">{recurring}</Chip>
+            <Chip tone="warn">{recurring} recurring</Chip>
           </span>
         ) : null}
       </NavItem>

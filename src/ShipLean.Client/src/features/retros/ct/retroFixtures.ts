@@ -137,6 +137,7 @@ const RS = '\u001e';
 /**
  * Stands in for the project hub (docs/events.md): answers the negotiate, the handshake and every hub call, and lets the
  * test push a project event to the page. Needed to see a screen react to a `retroChanged` another tab caused.
+ * It reloads the page (socket routing reaches only documents loaded after it), so call it before `mount`.
  */
 export async function stubHub(page: Page): Promise<{ push: (event: object) => Promise<void> }> {
   let open: () => void = () => undefined;

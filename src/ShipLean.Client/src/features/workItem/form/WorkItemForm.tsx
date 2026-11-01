@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { ProjectDto } from '../../../api/projects';
 import { ApiRequestError } from '../../../api/client';
 import { isApiError } from '../../../api/client';
+import { isStoryLevel } from '../../../api/workItemTypes';
 import { conflictOf, type ConflictDto, type WorkItemDto } from '../../../api/workItems';
 import { showToast } from '../../../components/toastStore';
 import { useRememberItem } from '../../quickSearch/start/recent/useRememberItem';
@@ -293,7 +294,7 @@ export function WorkItemForm({
                       onSeverityChange={(severity) => edit({ severity })}
                     />
                   ) : null}
-                  {retro}
+                  {isStoryLevel(type) ? retro : null}
                   {tasks}
                   {discussion}
                 </div>

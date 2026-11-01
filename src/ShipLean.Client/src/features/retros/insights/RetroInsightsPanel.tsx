@@ -1,6 +1,7 @@
 import { useSearchParams } from 'react-router-dom';
 import type { ProjectDto } from '../../../api/projects';
 import type { RetroRange } from '../../../api/retrosApi';
+import { pagesTestIds } from '../../pages/testIds';
 import { RetroQueryState } from '../RetroQueryState';
 import { retrosTestIds as ids } from '../testIds';
 import { useRetroInsights } from '../useRetroQueries';
@@ -31,7 +32,13 @@ const rangeOf = (params: URLSearchParams): RetroRange =>
 
 function InsightBody({ view, ...props }: RetroInsightsSlotProps & { view: InsightView }) {
   if (view === 'actions') return <ActionItemsTable {...props} />;
-  if (view === 'impact') return <ChangesImpact {...props} />;
+  if (view === 'impact') {
+    return (
+      <div data-testid={pagesTestIds.slotRetroChangesImpact}>
+        <ChangesImpact {...props} />
+      </div>
+    );
+  }
   return (
     <>
       <RecurringThemes {...props} />

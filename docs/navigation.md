@@ -99,7 +99,7 @@ The five work item slots read the item through the query key `['projects', proje
 
 ## The project picker
 
-The picker opens only from the project button in the side menu (tooltip "Switch project"). Ctrl/⌘+P opens quick search, not the picker, and opening quick search closes the picker. Picking a project in the top bar goes to the same screen in that project (`features/shell/sameScreenIn.ts`): the route id, its params and its query are kept, with the new key. Four screens belong to one project's sprint or item, so they fall back: the Sprint taskboard, the Sprint backlog, Capacity and Retro go to All sprints (`sprints`), and a work item goes to the Stories backlog. An install-level page (profile, instance settings, new project, import start, authorize) or an unknown address also goes to the Stories backlog.
+The picker opens only from the project button in the side menu (tooltip "Switch project"). Ctrl/⌘+P opens quick search, not the picker, and opening quick search closes the picker. Picking a project in the top bar goes to the same screen in that project (`features/shell/sameScreenIn.ts`): the route id, its params and its query are kept, with the new key. Five screens belong to one project's sprint or item, so they fall back: the Sprint taskboard, the Sprint backlog, Capacity and Retro go to All sprints (`sprints`), and a work item goes to the Stories backlog. Retrospectives Search keeps its filters in the query, but switching project drops them (a theme or sprint of one project means nothing in another). An install-level page (profile, instance settings, new project, import start, authorize) or an unknown address also goes to the Stories backlog.
 
 ## Testing
 

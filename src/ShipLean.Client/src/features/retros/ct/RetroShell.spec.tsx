@@ -29,7 +29,7 @@ test('RetrosMenu_WhenOpened_ShouldSitBelowSprintsWithSearchAndInsightsCount', as
 
   await expect(menu.getByTestId(shell.navRetrosSearch)).toHaveAttribute('aria-current', 'page');
   await expect(menu.getByTestId(shell.navRetrosInsights)).toContainText('Insights');
-  await expect(menu.getByTestId(shell.navRetrosInsightsCount)).toHaveText('4');
+  await expect(menu.getByTestId(shell.navRetrosInsightsCount)).toHaveText('4 recurring');
 });
 
 test('RetrosMenu_WhenInsightsClicked_ShouldOpenTheInsightsScreen', async ({ mount, page }) => {
@@ -128,7 +128,9 @@ test('RetroShell_WhenRetroChangedArrives_ShouldRefetchTheOpenScreen', async ({ m
   });
   await expect.poll(() => stub.reads('/retro').length).toBeGreaterThan(before);
 
-  const afterOwn = stub.reads('/retro').length;
+  // The other sprint's event first, then this sprint's: events arrive in order, so once the second one has refetched
+  // the first has been handled too, and the count must be exactly one more.
+  const beforeEvents = stub.reads('/retro').length;
   await hub.push({
     type: 'retroChanged',
     projectId: 'p1',
@@ -136,7 +138,38 @@ test('RetroShell_WhenRetroChangedArrives_ShouldRefetchTheOpenScreen', async ({ m
     sprintIds: ['sprint-23'],
     workItemIds: [],
   });
-  await page.getByTestId(ids.retroViewByItem).click();
-  await expect(page.getByTestId(ids.retroCardList)).toBeAttached();
-  expect(stub.reads('/retro').length).toBe(afterOwn);
+  await hub.push({
+    type: 'retroChanged',
+    projectId: 'p1',
+    clientId: null,
+    sprintIds: ['sprint-24'],
+    workItemIds: [],
+  });
+  await expect.poll(() => stub.reads('/retro').length).toBe(beforeEvents + 1);
+  await page.waitForTimeout(300);
+  expect(stub.reads('/retro').length).toBe(beforeEvents + 1);
+});
+
+test('RetrosSearch_WhenEventIsForAnotherWorkItem_ShouldNotReadAnyWorkItemRetros', async ({
+  mount,
+  page,
+}) => {
+  await stubShell(page);
+  const stub = await stubRetros(page);
+  const hub = await stubHub(page);
+  await mount(<AppRoutes />, open('/p/SHIP/retros'));
+  await expect(page.getByTestId(ids.retrosSearchPanel)).toBeAttached();
+  await expect(page.getByTestId(realtimeTestIds.liveDot)).toBeVisible();
+  const searchReads = stub.reads('/retros').length;
+
+  await hub.push({
+    type: 'retroChanged',
+    projectId: 'p1',
+    clientId: null,
+    sprintIds: [],
+    workItemIds: ['w-other'],
+  });
+  await expect.poll(() => stub.reads('/retros').length).toBeGreaterThan(searchReads);
+  await page.waitForTimeout(300);
+  expect(stub.calls.filter((c) => c.path.includes('/work-items/'))).toEqual([]);
 });

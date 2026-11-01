@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { ProjectDto } from '../../../api/projects';
 import type { SprintDto } from '../../../api/sprints';
+import { pagesTestIds } from '../../pages/testIds';
 import { RetroQueryState } from '../RetroQueryState';
 import { retrosTestIds as ids } from '../testIds';
 import { useSprintRetro } from '../useRetroQueries';
@@ -55,7 +56,13 @@ export function SprintRetroPanel({ project, sprint }: { project: ProjectDto; spr
             </div>
             <div className="grid grid-cols-[minmax(0,1fr)_20rem] gap-4">
               <div>
-                {view === 'category' ? <ByCategory {...props} /> : <ByWorkItem {...props} />}
+                {view === 'category' ? (
+                  <div data-testid={pagesTestIds.slotRetroByCategory}>
+                    <ByCategory {...props} />
+                  </div>
+                ) : (
+                  <ByWorkItem {...props} />
+                )}
               </div>
               <RetroRail {...props} />
             </div>

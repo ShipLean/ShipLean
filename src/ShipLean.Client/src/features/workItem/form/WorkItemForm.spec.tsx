@@ -40,6 +40,14 @@ test('WorkItemForm_WhenGivenARetroSlot_ShouldRenderItBeforeTasks', async ({ moun
   expect(order).toEqual([harness.retro, harness.tasks]);
 });
 
+test('WorkItemForm_WhenTask_ShouldRenderNoRetroSlot', async ({ mount, page }) => {
+  await stubApi(page, { ...story, type: { id: 'task', name: 'Task' } });
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-141" />, route('SHIP-141'));
+
+  await expect(screen.getByTestId(harness.tasks)).toBeAttached();
+  await expect(screen.getByTestId(harness.retro)).toHaveCount(0);
+});
+
 test('WorkItemForm_WhenFieldEdited_ShouldTrackDirtyAndDiscardRestores', async ({ mount, page }) => {
   await stubApi(page, story);
   const screen = await mount(<WorkItemFormHarness itemKey="SHIP-141" />, route('SHIP-141'));

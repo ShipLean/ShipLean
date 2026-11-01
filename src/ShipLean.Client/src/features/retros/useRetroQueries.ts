@@ -25,37 +25,37 @@ export const workItemRetrosKey = (projectId: string, workItemId: string) =>
   [...retrosRootKey(projectId), 'work-item', workItemId] as const;
 
 // A retroChanged event names the sprints and work items it touched; empty lists (a theme rename or merge) mean every
-// retro view. Own writes invalidate directly (a tab ignores its own events).
-function useRetroChanged(
-  projectId: string,
-  kind: 'project' | 'themes' | 'sprint' | 'item',
-  id = '',
-) {
+// retro view. A hook gives the key of its own query and what concerns it ('any' for a project-wide read), so an event
+// refetches only the queries it touches and never the ones that merely share the retro prefix. Own writes invalidate
+// directly (a tab ignores its own events).
+type Concern = 'any' | { sprintId: string } | { workItemId: string };
+
+function useRetroChanged(queryKey: readonly unknown[], concern: Concern) {
   const queryClient = useQueryClient();
+  const sprintId = typeof concern === 'object' && 'sprintId' in concern ? concern.sprintId : null;
+  const workItemId =
+    typeof concern === 'object' && 'workItemId' in concern ? concern.workItemId : null;
+  const keyText = JSON.stringify(queryKey);
   useEffect(
     () =>
       registerInvalidation('retroChanged', (event) => {
         const wide = event.sprintIds.length === 0 && event.workItemIds.length === 0;
         const touched =
           wide ||
-          kind === 'project' ||
-          kind === 'themes' ||
-          (kind === 'sprint' && event.sprintIds.includes(id)) ||
-          (kind === 'item' && event.workItemIds.includes(id));
-        if (!touched) return;
-        let queryKey: readonly unknown[] = retrosRootKey(projectId);
-        if (kind === 'themes') queryKey = retroThemesKey(projectId);
-        else if (kind === 'sprint') queryKey = sprintRetroKey(projectId, id);
-        else if (kind === 'item') queryKey = workItemRetrosKey(projectId, id);
-        void queryClient.invalidateQueries({ queryKey });
+          concern === 'any' ||
+          (sprintId !== null && event.sprintIds.includes(sprintId)) ||
+          (workItemId !== null && event.workItemIds.includes(workItemId));
+        if (touched) void queryClient.invalidateQueries({ queryKey: JSON.parse(keyText) });
       }),
-    [projectId, queryClient, kind, id],
+    // `concern` is rebuilt every render; sprintId, workItemId and the key text are what it is made of.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [queryClient, keyText, sprintId, workItemId, concern === 'any'],
   );
 }
 
 /** GET api/sprints/{id}/retro, refetched when a retro of that sprint changes. */
 export function useSprintRetro(projectId: string, sprintId: string) {
-  useRetroChanged(projectId, 'sprint', sprintId);
+  useRetroChanged(sprintRetroKey(projectId, sprintId), { sprintId });
   return useQuery({
     queryKey: sprintRetroKey(projectId, sprintId),
     queryFn: () => fetchSprintRetro(sprintId),
@@ -64,7 +64,7 @@ export function useSprintRetro(projectId: string, sprintId: string) {
 
 /** GET api/projects/{id}/retros: the previous result stays on screen while a new filter loads. */
 export function useRetroSearch(projectId: string, query: RetroSearchQuery) {
-  useRetroChanged(projectId, 'project');
+  useRetroChanged([...retrosRootKey(projectId), 'search'], 'any');
   return useQuery({
     queryKey: retroSearchKey(projectId, query),
     queryFn: () => fetchRetroSearch(projectId, query),
@@ -73,18 +73,17 @@ export function useRetroSearch(projectId: string, query: RetroSearchQuery) {
 }
 
 /** GET api/projects/{id}/retros/insights. */
-export function useRetroInsights(projectId: string, range: RetroRange, enabled = true) {
-  useRetroChanged(projectId, 'project');
+export function useRetroInsights(projectId: string, range: RetroRange) {
+  useRetroChanged([...retrosRootKey(projectId), 'insights'], 'any');
   return useQuery({
     queryKey: retroInsightsKey(projectId, range),
     queryFn: () => fetchRetroInsights(projectId, range),
-    enabled,
   });
 }
 
 /** GET api/projects/{id}/retros/themes: the theme picker's list. */
 export function useRetroThemes(projectId: string) {
-  useRetroChanged(projectId, 'themes');
+  useRetroChanged(retroThemesKey(projectId), 'any');
   return useQuery({
     queryKey: retroThemesKey(projectId),
     queryFn: () => fetchRetroThemes(projectId),
@@ -93,7 +92,7 @@ export function useRetroThemes(projectId: string) {
 
 /** GET api/work-items/{id}/retros, refetched when a retro of that item changes. */
 export function useWorkItemRetros(projectId: string, workItemId: string) {
-  useRetroChanged(projectId, 'item', workItemId);
+  useRetroChanged(workItemRetrosKey(projectId, workItemId), { workItemId });
   return useQuery({
     queryKey: workItemRetrosKey(projectId, workItemId),
     queryFn: () => fetchWorkItemRetros(workItemId),

@@ -1,6 +1,7 @@
 import { useSearchParams } from 'react-router-dom';
 import type { ProjectDto } from '../../../api/projects';
 import type { RetroSearchQuery } from '../../../api/retrosApi';
+import { pagesTestIds } from '../../pages/testIds';
 import { RetroQueryState } from '../RetroQueryState';
 import { retrosTestIds as ids } from '../testIds';
 import { useRetroSearch } from '../useRetroQueries';
@@ -61,7 +62,9 @@ export function RetrosSearchPanel({ project }: { project: ProjectDto }) {
         };
         return (
           <div data-testid={ids.retrosSearchPanel} className="grid gap-4">
-            <SearchFilters {...props} />
+            <div data-testid={pagesTestIds.slotRetroSearchFilters}>
+              <SearchFilters {...props} />
+            </div>
             <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,28rem)] gap-4">
               <SearchRows {...props} />
               <SelectedRetro {...props} />
