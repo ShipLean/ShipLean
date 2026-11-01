@@ -169,14 +169,16 @@ export interface RetroImpactDto {
   counts: number[];
   closedAt: number;
   beforeAvg: number;
-  afterAvg: number;
+  /** Null when the verdict is tooEarly (no sprint has ended since the action closed). */
+  afterAvg: number | null;
+  /** A fraction, (after - before) / before, e.g. -0.5 for half as many mentions; not a percentage. */
   changePct: number | null;
   latestMention: RetroPointDto | null;
 }
 
 export interface RetroInsightsDto {
   /** The requested range: '6', '3' or 'all'. */
-  range: string;
+  range: '6' | '3' | 'all';
   sprints: SprintRef[];
   themes: RetroThemeInsightDto[];
   keepsWorking: RetroThemeInsightDto[];
