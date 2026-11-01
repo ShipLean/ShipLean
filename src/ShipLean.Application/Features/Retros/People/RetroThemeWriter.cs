@@ -75,7 +75,7 @@ internal sealed class RetroThemeWriter(NpgsqlDataSource dataSource, IProjectEven
         await connection.ExecuteAsync(new CommandDefinition("UPDATE retro_action SET theme_id = @target WHERE theme_id = ANY(@sources)", new { target, sources }, transaction, cancellationToken: cancellationToken));
         await connection.ExecuteAsync(
             new CommandDefinition("UPDATE retro_theme SET merged_into_id = @target, point_count = 0 WHERE id = ANY(@sources)", new { target, sources }, transaction, cancellationToken: cancellationToken));
-        await RetroThemeRows.AdjustAsync(connection, transaction, target, moved, cancellationToken);
+        await RetroThemeRows.AdjustAllAsync(connection, transaction, [(target, moved, true)], cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         await events.PublishAsync(new RetroChanged(projectId, [], []));
     }

@@ -11,18 +11,18 @@ internal sealed record RetroPointInfo(Guid Id, Guid RetroId, Guid ProjectId, str
 {
     public RetroChanged Changed => new(ProjectId, SprintId is { } sprint ? [sprint] : [], WorkItemId is { } item ? [item] : []);
 
-    public static async Task<RetroPointInfo> LoadAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, Guid pointId, CancellationToken cancellationToken)
+    private const string Select =
+        """
+        SELECT p.id, p.retrospective_id AS retroId, r.project_id AS projectId, p.category, p.text, p.theme_id AS themeId,
+               r.role, r.sprint_id AS sprintId, r.work_item_id AS workItemId
+        FROM retro_point p JOIN retrospective r ON r.id = p.retrospective_id
+        WHERE p.id = @pointId AND p.archived_at IS NULL
+        """;
+
+    private const string SelectLocked = Select + "\nFOR UPDATE OF p";
+
+    public static async Task<RetroPointInfo> LoadAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, Guid pointId, CancellationToken cancellationToken, bool lockPoint = true)
         => await connection.QuerySingleOrDefaultAsync<RetroPointInfo>(
-            new CommandDefinition(
-                """
-                SELECT p.id, p.retrospective_id AS retroId, r.project_id AS projectId, p.category, p.text, p.theme_id AS themeId,
-                       r.role, r.sprint_id AS sprintId, r.work_item_id AS workItemId
-                FROM retro_point p JOIN retrospective r ON r.id = p.retrospective_id
-                WHERE p.id = @pointId AND p.archived_at IS NULL
-                FOR UPDATE OF p
-                """,
-                new { pointId },
-                transaction,
-                cancellationToken: cancellationToken))
+            new CommandDefinition(lockPoint ? SelectLocked : Select, new { pointId }, transaction, cancellationToken: cancellationToken))
             ?? throw ApiException.NotFound("No retro point with that id was found.");
 }

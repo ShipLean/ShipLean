@@ -21,6 +21,8 @@ internal sealed class RetroActionWriter(NpgsqlDataSource dataSource, IWorkItemSt
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         RetroPointInfo point;
         Guid? previous;
+        // This transaction only reads, to fail early with a clear 409. It is not the guard: two requests can both pass it, and
+        // what stops the second is the ux_retro_action_point index (insert) or the affected-row count of the repoint (Removed).
         await using (var check = await connection.BeginTransactionAsync(cancellationToken))
         {
             point = await RetroPointInfo.LoadAsync(connection, check, pointId, cancellationToken);
@@ -37,11 +39,17 @@ internal sealed class RetroActionWriter(NpgsqlDataSource dataSource, IWorkItemSt
         var outcome = await store.CreateAsync(new WorkItemCreate(point.ProjectId, WorkItemTypeId.Action, title, null, null, changes), WriteOptions.User, cancellationToken);
         var created = outcome.Written ?? throw ApiException.Internal();
 
+        bool linked;
         try
         {
-            await LinkAsync(connection, point, previous, created.Id, cancellationToken);
+            linked = await LinkAsync(connection, point, previous, created.Id, cancellationToken);
         }
         catch (PostgresException exception) when (exception.SqlState == UniqueViolation)
+        {
+            linked = false;
+        }
+
+        if (!linked)
         {
             // Another request linked the point first; the item made here has no link, so it is removed rather than left loose.
             await store.RemoveAsync(created.Id, created.Revision, cancellationToken);
@@ -80,12 +88,12 @@ internal sealed class RetroActionWriter(NpgsqlDataSource dataSource, IWorkItemSt
         return existing.Value.Category == "removed" ? existing.Value.WorkItemId : throw ApiException.Conflict("This point already has an action item.");
     }
 
-    private async Task LinkAsync(NpgsqlConnection connection, RetroPointInfo point, Guid? previous, Guid workItemId, CancellationToken cancellationToken)
+    private async Task<bool> LinkAsync(NpgsqlConnection connection, RetroPointInfo point, Guid? previous, Guid workItemId, CancellationToken cancellationToken)
     {
         var parameters = new { workItemId, previous, projectId = point.ProjectId, themeId = point.ThemeId, pointId = point.Id, sprintId = point.SprintId };
         var sql = previous is null
             ? "INSERT INTO retro_action (work_item_id, project_id, theme_id, point_id, raised_sprint_id) VALUES (@workItemId, @projectId, @themeId, @pointId, @sprintId)"
             : "UPDATE retro_action SET work_item_id = @workItemId, theme_id = @themeId, raised_sprint_id = @sprintId WHERE work_item_id = @previous AND point_id = @pointId";
-        await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
+        return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken)) == 1;
     }
 }

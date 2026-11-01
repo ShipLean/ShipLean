@@ -34,7 +34,15 @@ internal sealed class RetroPointWriter(NpgsqlDataSource dataSource, PickRetroThe
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        // The themes are locked before the point row (a Merge takes them in that order), then the point is read again under its lock.
+        var unlocked = await RetroPointInfo.LoadAsync(connection, transaction, pointId, cancellationToken, lockPoint: false);
+        await RetroThemeRows.LockAsync(connection, transaction, new[] { unlocked.ThemeId, request.ThemeId }.OfType<Guid>().ToArray(), cancellationToken);
         var point = await RetroPointInfo.LoadAsync(connection, transaction, pointId, cancellationToken);
+        if (point.ThemeId != unlocked.ThemeId)
+        {
+            throw ApiException.Conflict("The point's theme changed. Try again.");
+        }
+
         var theme = await ChooseNamedThemeAsync(connection, transaction, point.ProjectId, request.ThemeId, request.ThemeName, point.Text, cancellationToken);
         await connection.ExecuteAsync(
             new CommandDefinition(
@@ -44,14 +52,17 @@ internal sealed class RetroPointWriter(NpgsqlDataSource dataSource, PickRetroThe
                 cancellationToken: cancellationToken));
         if (point.ThemeId != theme.ThemeId)
         {
+            var changes = new List<(Guid ThemeId, int Delta, bool Required)>();
             if (point.ThemeId is { } old)
             {
-                await RetroThemeRows.AdjustAsync(connection, transaction, old, -1, cancellationToken);
+                changes.Add((old, -1, false));
             }
             if (theme.ThemeId is { } added)
             {
-                await RetroThemeRows.AdjustAsync(connection, transaction, added, 1, cancellationToken);
+                changes.Add((added, 1, true));
             }
+
+            await RetroThemeRows.AdjustAllAsync(connection, transaction, changes, cancellationToken);
         }
 
         await transaction.CommitAsync(cancellationToken);
@@ -63,7 +74,14 @@ internal sealed class RetroPointWriter(NpgsqlDataSource dataSource, PickRetroThe
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        var unlocked = await RetroPointInfo.LoadAsync(connection, transaction, pointId, cancellationToken, lockPoint: false);
+        await RetroThemeRows.LockAsync(connection, transaction, new[] { unlocked.ThemeId }.OfType<Guid>().ToArray(), cancellationToken);
         var point = await RetroPointInfo.LoadAsync(connection, transaction, pointId, cancellationToken);
+        if (point.ThemeId != unlocked.ThemeId)
+        {
+            throw ApiException.Conflict("The point's theme changed. Try again.");
+        }
+
         if (point.Role != "person")
         {
             throw ApiException.Validation("Only a point a person wrote can be archived.", "point");
@@ -72,7 +90,7 @@ internal sealed class RetroPointWriter(NpgsqlDataSource dataSource, PickRetroThe
         await connection.ExecuteAsync(new CommandDefinition("UPDATE retro_point SET archived_at = now() WHERE id = @pointId", new { pointId }, transaction, cancellationToken: cancellationToken));
         if (point.ThemeId is { } themeId)
         {
-            await RetroThemeRows.AdjustAsync(connection, transaction, themeId, -1, cancellationToken);
+            await RetroThemeRows.AdjustAllAsync(connection, transaction, [(themeId, -1, false)], cancellationToken);
         }
 
         await transaction.CommitAsync(cancellationToken);
