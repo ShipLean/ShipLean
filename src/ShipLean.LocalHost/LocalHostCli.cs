@@ -18,6 +18,18 @@ public static class LocalHostCli
             return 2;
         }
 
+        LocalHostInstance host;
+        try
+        {
+            host = await LocalHostRunner.StartAsync(parsed.Options, Path.Combine(RepoLayout.WebApiProject, "wwwroot", "index.html"), output);
+        }
+        catch (Exception exception)
+        {
+            await error.WriteLineAsync(exception.Message);
+            return 1;
+        }
+
+        // Attached only now: during startup (image pull, template build, advisory lock) Ctrl+C keeps its default and ends the process.
         var interrupted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         void OnCancelKeyPress(object? sender, ConsoleCancelEventArgs e)
         {
@@ -28,17 +40,6 @@ public static class LocalHostCli
         Console.CancelKeyPress += OnCancelKeyPress;
         try
         {
-            LocalHostInstance host;
-            try
-            {
-                host = await LocalHostRunner.StartAsync(parsed.Options, Path.Combine(RepoLayout.WebApiProject, "wwwroot", "index.html"), output);
-            }
-            catch (Exception exception)
-            {
-                await error.WriteLineAsync(exception.Message);
-                return 1;
-            }
-
             await using (host)
             {
                 var appStopped = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
