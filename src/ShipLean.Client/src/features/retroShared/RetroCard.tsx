@@ -60,6 +60,9 @@ export function RetroCard({
         <span className="flex-1" />
         <AuthorChip author={card.author} />
         <Chip>{roleLabels[card.author.role]}</Chip>
+        <span data-created-at="" className="text-[length:var(--text-xs)] text-ink-muted">
+          {card.createdAtLabel}
+        </span>
       </header>
       <div className="grid grid-cols-1 gap-3 @min-[480px]:grid-cols-2 @min-[760px]:grid-cols-4">
         {RETRO_CATEGORIES.map((category) => {

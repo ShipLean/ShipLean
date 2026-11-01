@@ -129,8 +129,16 @@ test('RetroCard_WhenCompiledFrom_ShouldSeparateKeysWithCommasAndEndWithAPeriod',
   page,
 }) => {
   await mount(<RetroCard card={featureCard} />);
-  const keys = featureCard.compiledFrom.map((i) => i.key).join(', ');
-  await expect(page.getByTestId(ids.retroCard)).toContainText(`Compiled from ${keys}.`);
+  // The type icons render a letter between the separators, so allow one.
+  const pattern = featureCard.compiledFrom.map((i) => i.key).join(',\\s*[A-Z]?');
+  await expect(page.getByTestId(ids.retroCard)).toContainText(
+    new RegExp(`Compiled from\\s*[A-Z]?${pattern}\\.`),
+  );
+});
+
+test('RetroCard_WhenRendered_ShouldShowTheServerDateLabel', async ({ mount, page }) => {
+  await mount(<RetroCard card={{ ...subAgentCard, createdAtLabel: '28 Oct' }} />);
+  await expect(page.getByTestId(ids.retroCard).locator('[data-created-at]')).toHaveText('28 Oct');
 });
 
 for (const theme of ['light', 'dark'] as const) {
