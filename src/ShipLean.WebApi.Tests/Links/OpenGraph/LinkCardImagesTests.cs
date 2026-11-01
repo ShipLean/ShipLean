@@ -6,7 +6,7 @@ using ShipLean.Contracts.Links;
 using ShipLean.Contracts.Blobs;
 using ShipLean.Contracts.Errors;
 using ShipLean.TestSupport;
-using ShipLean.TestSupport.Blobs;
+using ShipLean.LocalEnvironment.Blobs;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
 using Shouldly;

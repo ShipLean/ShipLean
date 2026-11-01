@@ -1,7 +1,7 @@
 using System.Text;
 using ShipLean.Contracts.Blobs;
 
-namespace ShipLean.TestSupport.Blobs;
+namespace ShipLean.LocalEnvironment.Blobs;
 
 // The bytes behind db/seed/0010_attachments.sql and db/seed/0011_feature_editor_links.sql (the seed writes rows only). A test
 // that downloads a seeded attachment, or reads a seeded link's preview image, pins a blob store and puts these into it; the

@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Application.Fakes.Blobs;
 using ShipLean.Contracts.Blobs;
 using ShipLean.TestSupport.AccessSweep;
-using ShipLean.TestSupport.Blobs;
+using ShipLean.LocalEnvironment.Blobs;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
 using ShipLean.WebApi.Tests.Instance.AgentConnections;
