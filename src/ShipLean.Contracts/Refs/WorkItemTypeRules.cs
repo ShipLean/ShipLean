@@ -4,7 +4,7 @@ namespace ShipLean.Contracts.Refs;
 // instead of naming the types itself.
 public static class WorkItemTypeRules
 {
-    // The story-level type ids as the database stores them, for `= ANY(@storyLevel)` (a string[] at run time; AG0018 bans the array type here).
+    // The story-level type ids as the database stores them, for `= ANY(@storyLevel)` (Dapper/Npgsql bind it as text[]; it is not a string[] instance, because AG0018 bans the public array type).
     public static IReadOnlyList<string> StoryLevelDb { get; } = ["story", "bug", "action"];
 
     public static string Name(WorkItemTypeId type) => type switch

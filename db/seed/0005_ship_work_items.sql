@@ -78,7 +78,7 @@ FROM (VALUES
   (181, 'task', 'Email template', 150, 'Closed', 1, 24, 'ana', 2, '{}'::text[], NULL, false, 11000, NULL),
   (182, 'task', 'Rotate staging TLS certificates', NULL, 'New', NULL, 24, NULL, 2, ARRAY['Tech debt']::text[], NULL, false, 12000, NULL),
   (183, 'task', 'Update the on-call runbook', NULL, 'Active', NULL, 24, 'tom', 3, '{}'::text[], NULL, false, 13000, NULL),
-  (89, 'action', 'Common brief: screenshot baselines come from the CI report', 104, 'New', NULL, NULL, NULL, 2, '{}'::text[], NULL, false, 11000, NULL)
+  (89, 'action', 'Common brief: screenshot baselines come from the CI report', 104, 'New', NULL, NULL, NULL, 2, '{}'::text[], NULL, false, 22000, NULL)
 ) AS i (number, type, title, parent_number, state_name, points, sprint_number, assignee, priority, tags, board_column_id,
         board_column_done, backlog_rank, column_rank)
 JOIN project ON project.key = 'SHIP'

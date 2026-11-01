@@ -1,6 +1,7 @@
 using Dapper;
 using Npgsql;
 using ShipLean.Application.Database;
+using ShipLean.Contracts.Refs;
 using ShipLean.LocalEnvironment.Database;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
@@ -51,6 +52,35 @@ public class SchemaActionTypeTests
         var id = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("action").InsertAsync(connection);
 
         (await connection.ExecuteScalarAsync<int>("SELECT count(*)::int FROM work_item WHERE id = @id AND type = 'action' AND parent_id IS NULL", new { id })).ShouldBe(1);
+    }
+
+    [Test]
+    public async Task StoryLevelDb_WhenBoundToAny_ShouldMatchStoryBugAndAction()
+    {
+        await using var connection = await _database.OpenAsync();
+
+        var types = (await connection.QueryAsync<string>(
+            "SELECT t FROM unnest(ARRAY['epic','feature','story','bug','task','action']) AS t WHERE t = ANY(@storyLevel) ORDER BY t",
+            new { storyLevel = WorkItemTypeRules.StoryLevelDb })).ToList();
+
+        types.ShouldBe(["action", "bug", "story"]);
+    }
+
+    [Test]
+    public async Task Seed_WhenLoaded_ShouldHaveTheShipActionItemUnderAFeature()
+    {
+        await using var connection = await _database.OpenAsync();
+
+        var row = await connection.QuerySingleAsync<(string Type, string ParentType, string State, bool HasSprint, bool HasPoints)>(
+            """
+            SELECT w.type, p.type, s.name, w.sprint_id IS NOT NULL, w.story_points IS NOT NULL
+            FROM work_item w
+            JOIN work_item p ON p.id = w.parent_id
+            JOIN state s ON s.id = w.state_id
+            WHERE w.id = @id
+            """, new { id = SeedIds.WorkItems.Ship89 });
+
+        row.ShouldBe(("action", "feature", "New", false, false));
     }
 
     [Test]
