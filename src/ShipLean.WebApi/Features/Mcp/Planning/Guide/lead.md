@@ -29,6 +29,7 @@ Your lane needs nothing from any other lane. Work on the shared branch {{shared_
 3. Check small fix diffs only through the reviewer's comment. Keep your own context under about 100k tokens.
 4. If the conductor caps how many sub-agents run at once, launch the rest as earlier ones finish. Start a fresh agent for any partial task's remainder, alongside reviews whose fixes would be additive.
 5. When every task has passed review, close your story with `update_progress`: set `state` to the story's Completed state, by name (such as Closed), and add a `note` naming the commits. Before closing, give each orphan task an owner in a later wave, or leave it open and unowned and say so in the note. That is what lets the next wave start.
-6. Tell the conductor when a task is done (with its commits and review rounds), when a task is blocked on a person or a contract change, and when your lane is finished.
+6. Make sure every sub-agent has called `log_retrospective` on its story before you close it, and pass each raw failure log on to the conductor without summarizing away the rough edges. Do not soften a failure a sub-agent reported.
+7. Tell the conductor when a task is done (with its commits and review rounds), when a task is blocked on a person or a contract change, and when your lane is finished.
 
 If you cannot launch sub-agents here, stop and return the briefs so the conductor can hand them to the user.

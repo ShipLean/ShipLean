@@ -3,9 +3,11 @@ using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Contracts.Attachments;
 using ShipLean.Contracts.Comments;
+using ShipLean.Contracts.Retros;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Hosting;
 using ShipLean.TestSupport.Plans;
+using ShipLean.TestSupport.Retros;
 using ShipLean.WebApi.Tests.Mcp.Transport;
 
 namespace ShipLean.WebApi.Tests.Mcp.Planning.Guide;
@@ -73,6 +75,100 @@ public class PlanningGuideLessonsTests : McpFixture
         var lessons = reply.Structured().GetProperty("lessons").EnumerateArray().ToList();
         lessons.Select(l => l.GetProperty("feature").GetString()).ShouldBe([_feature, _feature, _feature]);
         lessons.Select(l => l.GetProperty("text").GetString()).ShouldBe(["Newest lesson.", "Second draft lesson.", "Comment lesson."]);
+    }
+
+    [Test]
+    public async Task Lessons_WhenConductorRetroHasImprovePoints_ShouldIncludeThem()
+    {
+        Host.ActAs(SeedIds.Users.Joel);
+        var keys = await PlanTreeSeed.SeedAsync(Host.Services, SeedIds.Projects.Ship, PlanFixture.FeatureEditor);
+        var retro = await SeedRetroAsync(keys.Ids[keys.Feature], RetroRole.Conductor, ("Give every agent search access.", false), ("Ship the schema first.", false));
+
+        List<(string Feature, string Retro, string Text)> lessons;
+        try
+        {
+            lessons = await LessonsAsync();
+        }
+        finally
+        {
+            await ArchiveRetroAsync(retro);
+        }
+
+        var improve = lessons.Where(l => l.Retro.StartsWith("retrospective ", StringComparison.Ordinal)).ToList();
+        improve.Select(l => l.Feature).ShouldBe([keys.Feature]);
+        improve[0].Text.ShouldBe("- Give every agent search access.\n- Ship the schema first.");
+        lessons.Take(3).Select(l => l.Text).ShouldBe(["Newest lesson.", "Second draft lesson.", "Comment lesson."]);
+    }
+
+    [Test]
+    public async Task Lessons_WhenOnlySubAgentRetros_ShouldNotInclude()
+    {
+        Host.ActAs(SeedIds.Users.Joel);
+        var keys = await PlanTreeSeed.SeedAsync(Host.Services, SeedIds.Projects.Ship, PlanFixture.FeatureEditor);
+        var retro = await SeedRetroAsync(keys.Ids[keys.Feature], RetroRole.SubAgent, ("A sub-agent improve point.", false));
+
+        List<(string Feature, string Retro, string Text)> lessons;
+        try
+        {
+            lessons = await LessonsAsync();
+        }
+        finally
+        {
+            await ArchiveRetroAsync(retro);
+        }
+
+        lessons.ShouldNotContain(l => l.Text.Contains("A sub-agent improve point.", StringComparison.Ordinal));
+    }
+
+    [Test]
+    public async Task Lessons_WhenArchivedPoint_ShouldNotInclude()
+    {
+        Host.ActAs(SeedIds.Users.Joel);
+        var keys = await PlanTreeSeed.SeedAsync(Host.Services, SeedIds.Projects.Ship, PlanFixture.FeatureEditor);
+        var retro = await SeedRetroAsync(keys.Ids[keys.Feature], RetroRole.Conductor, ("A kept point.", false), ("An archived point.", true));
+
+        List<(string Feature, string Retro, string Text)> lessons;
+        try
+        {
+            lessons = await LessonsAsync();
+        }
+        finally
+        {
+            await ArchiveRetroAsync(retro);
+        }
+
+        var text = string.Join("\n", lessons.Select(l => l.Text));
+        text.ShouldContain("A kept point.");
+        text.ShouldNotContain("An archived point.");
+    }
+
+    private async Task<List<(string Feature, string Retro, string Text)>> LessonsAsync()
+    {
+        var token = await TokenAsync(TestUser.Joel, ReadOnly);
+        var reply = await CallToolAsync(token, "planning_guide", """{"project":"SHIP"}""");
+        reply.IsToolError().ShouldBeFalse();
+        return [.. reply.Structured().GetProperty("lessons").EnumerateArray()
+            .Select(l => (l.GetProperty("feature").GetString()!, l.GetProperty("retro").GetString()!, l.GetProperty("text").GetString()!))];
+    }
+
+    // The retro is archived again by the test, so the shared project's lessons are what the other cases expect.
+    private async Task<Guid> SeedRetroAsync(Guid featureId, RetroRole role, params (string Text, bool Archived)[] improve)
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var seed = new RetroSeed(connection, SeedIds.Projects.Ship);
+        var retro = await seed.RetroAsync(new RetroSeedRetro(SeedIds.Users.Joel, role, WorkItemId: featureId, AgentName: "lessons-test", CreatedAt: new DateTimeOffset(2099, 1, 1, 0, 0, 0, TimeSpan.Zero)));
+        foreach (var (text, archived) in improve)
+        {
+            await seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.Improve, text, Archived: archived));
+        }
+
+        return retro;
+    }
+
+    private async Task ArchiveRetroAsync(Guid retroId)
+    {
+        await using var connection = await OpenDatabaseAsync();
+        await connection.ExecuteAsync("UPDATE retrospective SET archived_at = now() WHERE id = @retroId", new { retroId });
     }
 
     // Joel is not in PART, so he joins for the seed and the membership is archived again, which leaves a PART Feature with a retro.
