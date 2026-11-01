@@ -88,10 +88,10 @@ public sealed class WorkTreeReads(NpgsqlDataSource dataSource, ICriteriaEvaluato
         return await ItemsAsync(sql, parameters, row => row.ToItem(SprintLabels.Today(time)), cancellationToken);
     }
 
-    // The levels' types: Requirement is Stories and Bugs.
+    // The levels' types: Requirement is the story-level types.
     private static string[] Types(StackLevel level) => level switch
     {
-        StackLevel.Requirement => [WorkItemTypes.Db(WorkItemTypeId.Story), WorkItemTypes.Db(WorkItemTypeId.Bug)],
+        StackLevel.Requirement => [.. WorkItemTypeRules.StoryLevelDb],
         StackLevel.Feature => [WorkItemTypes.Db(WorkItemTypeId.Feature)],
         _ => [WorkItemTypes.Db(WorkItemTypeId.Epic)],
     };

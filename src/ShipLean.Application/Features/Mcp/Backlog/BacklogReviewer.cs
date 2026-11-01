@@ -4,7 +4,7 @@ using ShipLean.Core;
 
 namespace ShipLean.Application.Features.Mcp.Backlog;
 
-// What review_backlog says about the top of a level's stack. Estimates are asked of stories and bugs, acceptance criteria
+// What review_backlog says about the top of a level's stack. Estimates are asked of story-level items, acceptance criteria
 // of stories, a parent of everything below an epic. Likely duplicates compare a row's title with every row of the level
 // (WordOverlap): they share at least two words and three quarters of the shorter title's words.
 public static class BacklogReviewer
@@ -21,7 +21,7 @@ public static class BacklogReviewer
     private static BacklogFinding Finding(StackRowDto row, List<(StackRowDto Row, int Own)> compared, DateTimeOffset now, int staleDays)
     {
         var flags = new List<string>();
-        var points = row.Type.Id is WorkItemTypeId.Story or WorkItemTypeId.Bug;
+        var points = WorkItemTypeRules.IsStoryLevel(row.Type.Id);
         if (points && row.Points is null)
         {
             flags.Add("unestimated");
