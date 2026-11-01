@@ -1,0 +1,181 @@
+[
+  {
+    "theme": "Sign-in and proxy",
+    "category": "wentBadly",
+    "text": "The proxy sign-in redirected to the wrong host after the callback, so every login loop ended on a 404.",
+    "rootCause": "The callback URL was built from the internal host header instead of the public one."
+  },
+  {
+    "theme": "Flaky and slow tests",
+    "category": "wentBadly",
+    "text": "The acceptance test for the board failed one run in five because it clicked before the card had rendered.",
+    "rootCause": "It waited a fixed time instead of waiting for the locator."
+  },
+  {
+    "theme": "Search and embeddings",
+    "category": "wentBadly",
+    "text": "The semantic search ranked unrelated items first because the query used the passage prefix.",
+    "rootCause": "The embedding model needs different prefixes for queries and passages."
+  },
+  {
+    "theme": "Database migrations",
+    "category": "wentBadly",
+    "text": "The migration added a NOT NULL column without a default and failed on the staging copy of the data.",
+    "rootCause": "The migration was only run on the empty test database."
+  },
+  {
+    "theme": "Unclear briefs",
+    "category": "wentBadly",
+    "text": "The brief did not say which tests define done, so the agent stopped at green unit tests and skipped the acceptance run.",
+    "rootCause": "Acceptance criteria were written as prose, not as test names."
+  },
+  {
+    "theme": "Host contention",
+    "category": "wentBadly",
+    "text": "Builds waited on the shared host lock for twenty minutes while three agents queued behind a full test run.",
+    "rootCause": "One agent ran the whole suite instead of its own filter."
+  },
+  {
+    "theme": "Small reviewed pull requests",
+    "category": "wentWell",
+    "text": "Keeping each pull request to one slice made the review quick and the rollbacks trivial."
+  },
+  {
+    "theme": "Sign-in and proxy",
+    "category": "wentBadly",
+    "text": "Sessions expired after a few minutes behind the proxy and users were signed out mid-edit.",
+    "rootCause": "The cookie was set for the internal domain, so the browser dropped it."
+  },
+  {
+    "theme": "Flaky and slow tests",
+    "category": "wentBadly",
+    "text": "The CI run took 40 minutes because the screenshot tests re-ran from scratch on every retry."
+  },
+  {
+    "theme": "Search and embeddings",
+    "category": "wentWell",
+    "text": "Falling back to lexical search when the model is missing meant the feature still worked on the small host."
+  },
+  {
+    "theme": "Database migrations",
+    "category": "improve",
+    "text": "Run every migration against a copy of production-sized data before the merge."
+  },
+  {
+    "theme": "Unclear briefs",
+    "category": "wentBadly",
+    "text": "Two tasks owned the same file because the plan never listed who edits the shared fixture.",
+    "rootCause": "File ownership was implied, not written down."
+  },
+  {
+    "theme": "Host contention",
+    "category": "wentBadly",
+    "text": "The laptop ran out of memory when two real-model tests loaded the embedding model at once."
+  },
+  {
+    "theme": "Small reviewed pull requests",
+    "category": "wentWell",
+    "text": "Reviewers caught the access check gap because the diff was small enough to read in full."
+  },
+  {
+    "theme": "Sign-in and proxy",
+    "category": "improve",
+    "text": "Test the sign-in flow through the real proxy before merging any auth change."
+  },
+  {
+    "theme": "Flaky and slow tests",
+    "category": "improve",
+    "text": "Quarantine a flaky test the first time it fails and open an issue instead of re-running the pipeline."
+  },
+  {
+    "theme": "Search and embeddings",
+    "category": "wentBadly",
+    "text": "Reindexing the whole corpus after the model changed took an hour and blocked the host.",
+    "rootCause": "Vectors from the old model were still stored with no record of which model made them."
+  },
+  {
+    "theme": "Database migrations",
+    "category": "wentBadly",
+    "text": "Two branches both added migration 0910 and the second one failed to apply after the merge.",
+    "rootCause": "Migration numbers are picked by hand with no check for duplicates."
+  },
+  {
+    "theme": "Unclear briefs",
+    "category": "improve",
+    "text": "Every brief should name the files it owns and the tests that define done."
+  },
+  {
+    "theme": "Host contention",
+    "category": "improve",
+    "text": "Cap the number of agents running builds at three and run heavy model tests alone."
+  },
+  {
+    "theme": "Small reviewed pull requests",
+    "category": "wentWell",
+    "text": "Splitting the work by lane let three agents merge without a single conflict."
+  },
+  {
+    "theme": "Sign-in and proxy",
+    "category": "wentBadly",
+    "text": "The forwarded-proto header was missing, so the OAuth redirect used http and the identity provider rejected it.",
+    "rootCause": "The proxy did not forward the scheme."
+  },
+  {
+    "theme": "Flaky and slow tests",
+    "category": "wentBadly",
+    "text": "A test passed locally but failed in CI since the timezone differed between the two machines.",
+    "rootCause": "The test used the local clock rather than a fixed time provider."
+  },
+  {
+    "theme": "Search and embeddings",
+    "category": "improve",
+    "text": "Store the model name next to every embedding so a model swap is detected, not guessed."
+  },
+  {
+    "theme": "Database migrations",
+    "category": "wentBadly",
+    "text": "A schema change dropped an index that a report query depended on, and the report timed out."
+  },
+  {
+    "theme": "Unclear briefs",
+    "category": "notInPlan",
+    "text": "We had to add a contract field mid-wave because the design showed data the contract did not carry."
+  },
+  {
+    "theme": "Host contention",
+    "category": "wentBadly",
+    "text": "A build timed out at the 300 second cap because another process held the lock."
+  },
+  {
+    "theme": "Small reviewed pull requests",
+    "category": "wentWell",
+    "text": "Writing the contract first meant the client and server met in the middle without rework."
+  },
+  {
+    "theme": "Sign-in and proxy",
+    "category": "wentWell",
+    "text": "Once we logged the callback request, finding the bad sign-in redirect took ten minutes."
+  },
+  {
+    "theme": "Flaky and slow tests",
+    "category": "notInPlan",
+    "text": "We spent half a day chasing a flaky end-to-end test that turned out to share a database with another test."
+  },
+  {
+    "theme": "Search and embeddings",
+    "category": "wentBadly",
+    "text": "Search results for short queries were noisy; a two-word query matched almost everything above the cut-off.",
+    "rootCause": "The similarity cut-off was tuned on long sentences."
+  },
+  {
+    "theme": "Database migrations",
+    "category": "wentWell",
+    "text": "The schema tests caught the missing foreign key before review."
+  },
+  {
+    "theme": "Unclear briefs",
+    "category": "wentBadly",
+    "text": "The agent guessed the meaning of the empty state because the brief only linked a screen.",
+    "rootCause": "The screen had no copy for the empty case."
+  }
+]
