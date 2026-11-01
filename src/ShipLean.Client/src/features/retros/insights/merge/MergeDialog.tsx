@@ -112,7 +112,7 @@ export function MergeDialog({
           : 'Pick the themes to merge and the theme to keep.'}
       </p>
       {error ? (
-        <p role="alert" data-error="" className="m-0 text-[length:var(--text-sm)] text-danger">
+        <p role="alert" data-error="" className="m-0 text-[length:var(--text-sm)] text-alert">
           {error}
         </p>
       ) : null}
