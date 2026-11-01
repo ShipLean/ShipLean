@@ -10,7 +10,7 @@ public class NamedDatabaseTests
     private string _name = null!;
 
     [SetUp]
-    public void ChooseName() => _name = $"shiplean_nt_{Guid.NewGuid():N}"[..21];
+    public void ChooseName() => _name = $"shiplean_nt_{Guid.NewGuid():N}"[..20];
 
     [TearDown]
     public async Task DropDatabase() => await ShipLeanDatabase.DropNamedAsync(_name);
