@@ -11,6 +11,8 @@ These files are the contract between the database seed (`db/seed`, `SeedIds`) an
 | `import-job-state.json` | `ImportJobState`, `ImportStep`, `ImportJobProgressJson` examples | `import_job.status` (enum) + `import_job.progress` |
 | `refs.json` | `UserRef`, `StateRef`, `SprintRef`, `TypeRef` examples, **and the pinned seed ids** | Not stored: DTO pieces |
 | `me.json` | `MeDto` (Joel, as `GET /api/me` returns him), `UserDto` in every `UserStatus`, and the `user_preference` values `MeDto` reads | `app_user` + `user_preference` (read model, not stored as one document) |
+| `analytics-settings.json` | `AnalyticsSettingsDto` (`GET`/`PUT /api/instance/analytics`); provider wire values `none`, `umami`, `posthog` | `instance_settings.analytics_*` columns |
+| `analytics-test-result.json` | `AnalyticsTestResultDto` (`POST /api/instance/analytics/test`) | Not stored |
 
 ## Conventions (every file)
 
