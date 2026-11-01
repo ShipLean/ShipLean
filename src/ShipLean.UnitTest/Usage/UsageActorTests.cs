@@ -37,21 +37,31 @@ public class UsageActorTests
 
     [Test]
     public void UsageEvent_WhenValid_ShouldBuild()
-        => Event(UsageEventNames.ScreenViewed, new() { [UsageProps.Screen] = "login", [UsageProps.Count] = 3L, [UsageProps.Board] = true }).Name.ShouldBe("screen.viewed");
+    {
+        Event(UsageEventNames.ScreenViewed, new() { [UsageProps.Screen] = "login", [UsageProps.Count] = 3L, [UsageProps.Board] = true }).Name.ShouldBe("screen.viewed");
+    }
 
     [Test]
     public void UsageEvent_WhenUnknownName_ShouldThrow()
-        => Should.Throw<ArgumentException>(() => Event("nope.nothing", []));
+    {
+        Should.Throw<ArgumentException>(() => Event("nope.nothing", []));
+    }
 
     [Test]
     public void UsageEvent_WhenUnknownPropertyKey_ShouldThrow()
-        => Should.Throw<ArgumentException>(() => Event(UsageEventNames.ScreenViewed, new() { ["title"] = "x" }));
+    {
+        Should.Throw<ArgumentException>(() => Event(UsageEventNames.ScreenViewed, new() { ["title"] = "x" }));
+    }
 
     [Test]
     public void UsageEvent_WhenStringOver200_ShouldThrow()
-        => Should.Throw<ArgumentException>(() => Event(UsageEventNames.ScreenViewed, new() { [UsageProps.Screen] = new string('x', 201) }));
+    {
+        Should.Throw<ArgumentException>(() => Event(UsageEventNames.ScreenViewed, new() { [UsageProps.Screen] = new string('x', 201) }));
+    }
 
     [Test]
     public void UsageEvent_WhenValueIsAnObject_ShouldThrow()
-        => Should.Throw<ArgumentException>(() => Event(UsageEventNames.ScreenViewed, new() { [UsageProps.Screen] = new object() }));
+    {
+        Should.Throw<ArgumentException>(() => Event(UsageEventNames.ScreenViewed, new() { [UsageProps.Screen] = new object() }));
+    }
 }
