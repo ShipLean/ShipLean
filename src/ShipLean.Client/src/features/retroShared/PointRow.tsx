@@ -24,7 +24,7 @@ export function PointRow({
       data-testid={ids.retroPointRow}
       data-category={point.category}
       data-feature={point.isFeature ? 'true' : 'false'}
-      className={`grid gap-1.5 rounded-sm border border-edge bg-panel px-2.5 py-2 ${point.isFeature ? 'border-l-[3px] border-l-signal' : ''}`}
+      className={`grid grid-cols-[minmax(0,1fr)] gap-1.5 rounded-sm border border-edge bg-panel px-2.5 py-2 ${point.isFeature ? 'border-l-[3px] border-l-signal' : ''}`}
     >
       <p className="m-0">{point.text}</p>
       {point.category === 'wentBadly' && point.rootCause ? (
