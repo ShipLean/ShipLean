@@ -8,6 +8,7 @@ import { PriorityField } from './PriorityField';
 import { SprintField } from './SprintField';
 import { StateField } from './StateField';
 import { TagsField } from './TagsField';
+import { isStoryLevel } from '../../../api/workItemTypes';
 
 // State, Assignee, Sprint, Story points, Priority, Parent and Tags across the full width.
 export function FieldsStrip({
@@ -41,7 +42,7 @@ export function FieldsStrip({
         changed={isChanged('assignee')}
         onChange={(assignee) => onChange({ assignee })}
       />
-      {item.type.id === 'story' || item.type.id === 'bug' || item.type.id === 'task' ? (
+      {isStoryLevel(item.type.id) || item.type.id === 'task' ? (
         <SprintField
           projectId={item.projectId}
           value={draft.sprint}

@@ -55,7 +55,7 @@ public abstract class BoardSettingsStoreContract
         board.Level.ShouldBe(BoardLevel.Stories);
         board.Settings.Columns.Count.ShouldBeGreaterThan(0);
         board.Warnings.ShouldBeEmpty();
-        board.States.Select(s => s.Type).ShouldBe([WorkItemTypeId.Story, WorkItemTypeId.Bug]);
+        board.States.Select(s => s.Type).ShouldBe([WorkItemTypeId.Story, WorkItemTypeId.Bug, WorkItemTypeId.Action]);
         (await Store.ListAsync(projectId)).ShouldContain(b => b.Id == board.Id && b.Level == BoardLevel.Stories);
     }
 
@@ -196,7 +196,7 @@ public abstract class BoardSettingsStoreContract
 
         var defaults = Store.BuildDefaults(level, states);
 
-        var shown = level == BoardLevel.Stories ? new[] { WorkItemTypeId.Story, WorkItemTypeId.Bug } : [PrimaryType(level)];
+        var shown = level == BoardLevel.Stories ? new[] { WorkItemTypeId.Story, WorkItemTypeId.Bug, WorkItemTypeId.Action } : [PrimaryType(level)];
         foreach (var type in shown)
         {
             var live = states[type].Where(s => s.Category != StateCategory.Removed).Select(s => s.Id);
@@ -219,13 +219,15 @@ public abstract class BoardSettingsStoreContract
         {
             column.StateMappings.Single(m => m.Type == WorkItemTypeId.Story).StateId.ShouldBe(states[WorkItemTypeId.Story][index].Id);
             column.StateMappings.Single(m => m.Type == WorkItemTypeId.Bug).StateId.ShouldBe(states[WorkItemTypeId.Bug][index].Id);
+            // Action has New, Active and Closed: Resolved repeats the nearest earlier column's state.
+            column.StateMappings.Single(m => m.Type == WorkItemTypeId.Action).StateId.ShouldBe(states[WorkItemTypeId.Action][new[] { 0, 1, 1, 2 }[index]].Id);
         }
         defaults.Columns.ShouldAllBe(c => c.WipLimit == null && !c.Split && c.DefinitionOfDone == string.Empty);
         defaults.Swimlanes.ShouldHaveSingleItem().Kind.ShouldBe(SwimlaneKind.Default);
         defaults.StyleRules.ShouldBeEmpty();
         defaults.TagColours.ShouldBeEmpty();
         defaults.CardReordering.ShouldBe(CardReordering.ChangesBacklogOrder);
-        defaults.CardFields.Select(f => f.Type).ShouldBe([WorkItemTypeId.Story, WorkItemTypeId.Bug]);
+        defaults.CardFields.Select(f => f.Type).ShouldBe([WorkItemTypeId.Story, WorkItemTypeId.Bug, WorkItemTypeId.Action]);
         defaults.Annotations.Tasks.ShouldBeTrue();
     }
 
@@ -237,7 +239,7 @@ public abstract class BoardSettingsStoreContract
         defaults.Columns.ShouldBeEmpty();
         defaults.Swimlanes.ShouldBeEmpty();
         defaults.CardReordering.ShouldBeNull();
-        defaults.CardFields.Select(f => f.Type).ShouldBe([WorkItemTypeId.Task, WorkItemTypeId.Story, WorkItemTypeId.Bug]);
+        defaults.CardFields.Select(f => f.Type).ShouldBe([WorkItemTypeId.Task, WorkItemTypeId.Story, WorkItemTypeId.Bug, WorkItemTypeId.Action]);
     }
 
     [Test]

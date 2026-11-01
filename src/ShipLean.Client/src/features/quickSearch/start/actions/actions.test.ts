@@ -11,7 +11,7 @@ const context = (over: Partial<ActionContext> = {}): ActionContext => ({
 });
 
 describe('buildActions', () => {
-  it('buildActions_WhenProjectOpen_ShouldListAllEightInOrder', () => {
+  it('buildActions_WhenProjectOpen_ShouldListAllNineInOrder', () => {
     const navigate = vi.fn();
     const rows = buildActions(context({ navigate }));
     expect(rows.map((r) => r.id)).toEqual([
@@ -19,16 +19,20 @@ describe('buildActions', () => {
       'create-feature',
       'create-story',
       'create-bug',
+      'create-action',
       'go-backlogs',
       'go-boards',
       'go-sprints',
       'toggle-theme',
     ]);
     expect(rows[0].detail).toBe('in SHIP');
-    expect(rows[4].detail).toBe('SHIP');
+    expect(rows[5].detail).toBe('SHIP');
     rows[3].run();
     expect(navigate).toHaveBeenCalledWith('/p/SHIP/backlogs/stories?new=bug');
+    rows[4].run();
+    expect(navigate).toHaveBeenCalledWith('/p/SHIP/backlogs/stories?new=action');
     const labels = rows.map((r) => r.label);
+    expect(labels).toContain('Create action item');
     expect(labels).not.toContain('Create task');
     expect(labels).not.toContain('Create work item');
   });

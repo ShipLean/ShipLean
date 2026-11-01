@@ -181,7 +181,7 @@ public sealed class LinkCardRows(NpgsqlDataSource dataSource)
         var type = Enum.Parse<WorkItemTypeId>(row.ItemType, ignoreCase: true);
         return new WorkItemLinkRowDto(
             row.Id, Enum.Parse<LinkType>(row.TypeText, ignoreCase: true), row.WorkItemId, row.Key, row.Title,
-            new TypeRef(type, type == WorkItemTypeId.Story ? "User Story" : type.ToString()),
+            new TypeRef(type, WorkItemTypeRules.Name(type)),
             new StateRef(row.StateId, row.StateName, Enum.Parse<StateCategory>(row.StateCategory, ignoreCase: true)));
     }
 

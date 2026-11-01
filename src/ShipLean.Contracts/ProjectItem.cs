@@ -11,4 +11,6 @@ public enum ProjectItem
     ImportJob,
     JiraConnection,
     Link,
+    RetroPoint,
+    RetroTheme,
 }

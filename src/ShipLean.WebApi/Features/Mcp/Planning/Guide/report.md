@@ -18,6 +18,8 @@ Hand in the report with `report_task` on your task, once per stop, whether you f
 - `temporary_behaviour`: each file, what its TODO stands in for, and who replaces it.
 - `constraint_not_met`: a constraint of the brief you could not meet, and why.
 
+Before you hand in the report, call `log_retrospective` on your task's story with your went_well, went_badly (each with a `root_cause`), improve and not_in_plan points and your raw `failure_log`, and set `partial` when you stop before the work is done. State failures exactly as they occurred; do not soften them. Put the same raw failure log in the report's `gotchas`; the two must say the same thing.
+
 Rules:
 
 - Status done means every acceptance test in your definition of done passes. A task whose own definition of done appears in its left-undone list is not done.

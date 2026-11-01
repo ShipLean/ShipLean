@@ -1,6 +1,6 @@
 namespace ShipLean.Application.Features.Sprints.Metrics;
 
-// The sprint and state history of a project's stories and bugs, unpacked from revision.changes. A sprint or state change
+// The sprint and state history of a project's story-level items (stories, bugs and action items), unpacked from revision.changes. A sprint or state change
 // records the new value in "to"; an item created in a sprint has its sprint change in revision 1, one created outside any
 // sprint has none. Day boundaries are 00:00 UTC.
 internal static class MetricsSql
@@ -10,7 +10,7 @@ internal static class MetricsSql
         ev AS (
             SELECT r.work_item_id AS item_id, r.rev, r.changed_at, c.value ->> 'field' AS field, (c.value -> 'to') #>> '{}' AS val
             FROM revision r
-            JOIN work_item w ON w.id = r.work_item_id AND w.type IN ('story', 'bug') AND w.project_id = @projectId
+            JOIN work_item w ON w.id = r.work_item_id AND w.type = ANY(@storyLevel) AND w.project_id = @projectId
             CROSS JOIN LATERAL jsonb_array_elements(r.changes) AS c(value)
             WHERE c.value ->> 'field' IN (@sprintField, @stateField)
         ),
@@ -51,18 +51,18 @@ internal static class MetricsSql
         WITH {{History}}
         SELECT
             (SELECT coalesce(sum(w.story_points), 0) FROM work_item w
-              WHERE w.project_id = sp.project_id AND w.type IN ('story', 'bug')
+              WHERE w.project_id = sp.project_id AND w.type = ANY(@storyLevel)
                 AND (SELECT m.sprint_id FROM mv m
                       WHERE m.item_id = w.id AND m.changed_at <= (sp.start_date::timestamp AT TIME ZONE 'UTC')
                       ORDER BY m.changed_at DESC, m.rev DESC LIMIT 1) = sp.id)::numeric AS committed,
             (SELECT coalesce(sum(w.story_points), 0) FROM work_item w
-              WHERE w.project_id = sp.project_id AND w.type IN ('story', 'bug')
+              WHERE w.project_id = sp.project_id AND w.type = ANY(@storyLevel)
                 AND {{CompletedFor}})::numeric AS completed
         FROM sprint sp
         WHERE sp.id = @sprintId
         """;
 
-    // Every story and bug that was committed, added, completed or carried over in one sprint (@sprintId, @projectId). at_start,
+    // Every story-level item that was committed, added, completed or carried over in one sprint (@sprintId, @projectId). at_start,
     // at_last and at_end are the sprint the item sat in at 00:00 on the first day, at 00:00 on the last working day on or
     // before the end, and at the end of the last calendar day. A two-week sprint that starts on Monday ends on Sunday, and
     // the rollover happens on the Friday, so "carried" has to see that Friday. end_state is the category at the end of the
@@ -84,7 +84,7 @@ internal static class MetricsSql
                     AND NOT {{CompletedFor}}) AS carried
             FROM sprint sp
             JOIN project proj ON proj.id = sp.project_id
-            JOIN work_item w ON w.project_id = sp.project_id AND w.type IN ('story', 'bug')
+            JOIN work_item w ON w.project_id = sp.project_id AND w.type = ANY(@storyLevel)
             LEFT JOIN LATERAL (
                 SELECT coalesce(max(g.day::date), sp.end_date) AS day
                 FROM generate_series((sp.end_date - 6)::timestamp, sp.end_date::timestamp, interval '1 day') AS g(day)
@@ -108,7 +108,7 @@ internal static class MetricsSql
         WITH {{History}}
         SELECT to_char(d.day, 'YYYY-MM-DD') AS day,
                (SELECT coalesce(sum(w.story_points), 0) FROM work_item w
-                 WHERE w.project_id = sp.project_id AND w.type IN ('story', 'bug')
+                 WHERE w.project_id = sp.project_id AND w.type = ANY(@storyLevel)
                    AND (SELECT m.sprint_id FROM mv m
                          WHERE m.item_id = w.id AND m.changed_at < ((d.day + 1)::timestamp AT TIME ZONE 'UTC')
                          ORDER BY m.changed_at DESC, m.rev DESC LIMIT 1) = sp.id
@@ -143,13 +143,13 @@ internal static class MetricsSql
         """;
 
     // The project's sprints in date order with the team's entered capacity (null when nobody entered any) and the points
-    // of the stories and bugs sitting in each now.
+    // of the story-level items sitting in each now.
     public const string ForecastSprints =
         """
         SELECT sp.id, sp.name, to_char(sp.start_date, 'YYYY-MM-DD') AS startDate, to_char(sp.end_date, 'YYYY-MM-DD') AS endDate,
                (SELECT sum(c.capacity_points) FROM sprint_capacity c WHERE c.sprint_id = sp.id AND c.archived_at IS NULL)::numeric AS capacity,
                (SELECT coalesce(sum(w.story_points), 0) FROM work_item w
-                 WHERE w.sprint_id = sp.id AND w.type IN ('story', 'bug'))::numeric AS planned
+                 WHERE w.sprint_id = sp.id AND w.type = ANY(@storyLevel))::numeric AS planned
         FROM sprint sp
         WHERE sp.project_id = @projectId AND sp.archived_at IS NULL
         ORDER BY sp.start_date, sp.name
@@ -161,7 +161,7 @@ internal static class MetricsSql
         SELECT w.id, w.story_points::numeric AS points
         FROM work_item w
         JOIN state s ON s.id = w.state_id
-        WHERE w.project_id = @projectId AND w.sprint_id IS NULL AND w.type IN ('story', 'bug')
+        WHERE w.project_id = @projectId AND w.sprint_id IS NULL AND w.type = ANY(@storyLevel)
           AND s.category NOT IN ('completed', 'removed')
         ORDER BY w.backlog_order COLLATE "C", w.number
         """;

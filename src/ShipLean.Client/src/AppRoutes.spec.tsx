@@ -68,6 +68,9 @@ const scaffolds: Record<RouteId, { path: string; testId: string }> = {
   },
   taskboard: { path: '/p/SHIP/sprints/sprint-24/taskboard', testId: pagesTestIds.taskboardPage },
   capacity: { path: '/p/SHIP/sprints/sprint-24/capacity', testId: pagesTestIds.capacityPage },
+  sprintRetro: { path: '/p/SHIP/sprints/sprint-24/retro', testId: pagesTestIds.sprintRetroPage },
+  retros: { path: '/p/SHIP/retros', testId: pagesTestIds.retrosPage },
+  retroInsights: { path: '/p/SHIP/retros/insights', testId: pagesTestIds.retroInsightsPage },
   jiraImport: { path: '/p/SHIP/import', testId: pagesTestIds.importPage },
   projectSettings: {
     path: '/p/SHIP/settings/states',

@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { ApiRequestError } from '../../../api/client';
-import type { WorkItemTypeId } from '../../../api/refs';
+import { WORK_ITEM_TYPE_IDS, type WorkItemTypeId } from '../../../api/refs';
+import { isStoryLevel, typeName } from '../../../api/workItemTypes';
 import { useCreateWorkItem } from '../backlogApi';
 import { backlogTestIds as ids } from '../testIds';
 
-const types: { id: WorkItemTypeId; label: string }[] = [
-  { id: 'story', label: 'User Story' },
-  { id: 'bug', label: 'Bug' },
-];
+const types: { id: WorkItemTypeId; label: string }[] = WORK_ITEM_TYPE_IDS.filter(isStoryLevel).map(
+  (id) => ({ id, label: typeName(id) }),
+);
 
 // The inline "+ New work item" row: a type and a title. Enter adds the item (the store puts it first, with the next key)
 // and keeps the row open; Esc closes it.

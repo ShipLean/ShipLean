@@ -45,6 +45,7 @@ export function WorkItemFormHarness({
             <div data-testid={harness.links} />
           )
         }
+        retro={<div data-testid={harness.retro} />}
         tasks={<div data-testid={harness.tasks} />}
         discussion={<div data-testid={harness.discussion} />}
         side={<div data-testid={harness.side} />}

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import { ToastHost } from '../../../components/ToastHost';
 import { componentTestIds } from '../../../components/testIds';
-import { PROJECT, treeRows, treeView } from '../ct/fixtures';
+import { PROJECT, itemRow, treeRows, treeView } from '../ct/fixtures';
 import { stubBacklog } from '../ct/stubApi';
 import { backlogTestIds as ids } from '../testIds';
 import { TreeMode } from './TreeMode';
@@ -94,6 +94,39 @@ test('Tree_WhenLoaded_ShouldShowGroupsStoriesAndNoParentLast', async ({ mount, p
   await expect(groups.nth(3).getByTestId(ids.treeRollup)).toHaveText('1 item');
   await expect(groups.nth(3).getByTestId(ids.treeRollup)).toHaveAttribute('data-warn', 'true');
   await expect(groups.last().getByTestId(ids.treeRollup)).toHaveText('1 item · Σ 3 pts');
+});
+
+test('Tree_WhenActionItemUnderFeature_ShouldShowItAsStoryWithAIcon', async ({ mount, page }) => {
+  const { rows: base, checkout } = treeRows();
+  const action = itemRow({
+    key: 'SHIP-180',
+    rank: 9,
+    depth: 2,
+    type: { id: 'action', name: 'Action item' },
+    parent: {
+      id: checkout.id,
+      key: checkout.key,
+      type: { id: 'feature', name: 'Feature' },
+      title: checkout.title,
+    },
+    revision: 2,
+  });
+  const at = base.findIndex((r) => r.key === 'SHIP-144') + 1;
+  const withAction = [...base.slice(0, at), action, ...base.slice(at)];
+  await stubBacklog(page, treeView(withAction));
+  await mount(<TreeMode project={PROJECT} />, route);
+
+  await expect(page.getByTestId(ids.row)).toHaveCount(7);
+  const row = page.getByTestId(ids.row).filter({ hasText: 'SHIP-180' });
+  await expect(row).toHaveCount(1);
+  await expect(row.getByTestId(componentTestIds.typeIcon)).toHaveText('A');
+  await expect(row.getByTestId(componentTestIds.typeIcon)).toHaveAttribute('data-type', 'action');
+  expect((await sequence(page)).slice(2, 6)).toEqual([
+    'SHIP-101',
+    'SHIP-141',
+    'SHIP-144',
+    'SHIP-180',
+  ]);
 });
 
 test('Tree_WhenShown_ShouldHideRankAndParentColumns', async ({ mount, page }) => {

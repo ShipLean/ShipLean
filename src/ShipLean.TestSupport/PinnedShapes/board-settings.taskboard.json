@@ -4,7 +4,8 @@
   "cardFields": [
     { "type": "task", "showKey": true, "showAssignee": true, "showTags": true, "showPoints": false, "showEmptyFields": false, "extraFields": ["parent"] },
     { "type": "story", "showKey": true, "showAssignee": true, "showTags": false, "showPoints": true, "showEmptyFields": false, "extraFields": ["state"] },
-    { "type": "bug", "showKey": true, "showAssignee": true, "showTags": false, "showPoints": true, "showEmptyFields": false, "extraFields": ["state"] }
+    { "type": "bug", "showKey": true, "showAssignee": true, "showTags": false, "showPoints": true, "showEmptyFields": false, "extraFields": ["state"] },
+    { "type": "action", "showKey": true, "showAssignee": true, "showTags": false, "showPoints": true, "showEmptyFields": false, "extraFields": ["state"] }
   ],
   "styleRules": [
     {

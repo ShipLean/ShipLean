@@ -74,9 +74,9 @@ const SAMPLES: Sample[] = [
   },
 ];
 
-/** The type of each sample card on a board of this level: a Stories board also has bugs. */
+/** The type of each sample card on a board of this level: a Stories board also has bugs and action items. */
 const TYPES_OF_LEVEL: Record<BoardLevel, WorkItemTypeId[]> = {
-  stories: ['story', 'story', 'bug', 'story'],
+  stories: ['story', 'action', 'bug', 'story'],
   features: ['feature', 'feature', 'feature', 'feature'],
   epics: ['epic', 'epic', 'epic', 'epic'],
   taskboard: ['task', 'task', 'task', 'task'],

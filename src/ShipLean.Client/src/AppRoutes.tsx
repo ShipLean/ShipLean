@@ -13,7 +13,10 @@ import { NewProjectPage } from './pages/NewProjectPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { ProjectSettingsPage } from './pages/ProjectSettingsPage';
+import { RetroInsightsPage } from './pages/RetroInsightsPage';
+import { RetrosPage } from './pages/RetrosPage';
 import { SprintBacklogPage } from './pages/SprintBacklogPage';
+import { SprintRetroPage } from './pages/SprintRetroPage';
 import { SprintsPage } from './pages/SprintsPage';
 import { TaskboardPage } from './pages/TaskboardPage';
 import { WorkItemPage } from './pages/WorkItemPage';
@@ -45,6 +48,9 @@ export function AppRoutes() {
         <Route path={routePattern('sprintBacklog')} element={<SprintBacklogPage />} />
         <Route path={routePattern('taskboard')} element={<TaskboardPage />} />
         <Route path={routePattern('capacity')} element={<CapacityPage />} />
+        <Route path={routePattern('sprintRetro')} element={<SprintRetroPage />} />
+        <Route path={routePattern('retros')} element={<RetrosPage />} />
+        <Route path={routePattern('retroInsights')} element={<RetroInsightsPage />} />
         <Route path={routePattern('jiraImport')} element={<ImportPage />} />
         <Route path={routePattern('projectSettings')} element={<ProjectSettingsPage />} />
         <Route path="/p/:key/*" element={<NotFoundPage />} />

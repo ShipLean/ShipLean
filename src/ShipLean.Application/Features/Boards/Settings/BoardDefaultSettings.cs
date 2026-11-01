@@ -15,10 +15,10 @@ internal static class BoardDefaultSettings
 
     public static IReadOnlyList<WorkItemTypeId> TypesShown(BoardLevel level) => level switch
     {
-        BoardLevel.Stories => [WorkItemTypeId.Story, WorkItemTypeId.Bug],
+        BoardLevel.Stories => [WorkItemTypeId.Story, WorkItemTypeId.Bug, WorkItemTypeId.Action],
         BoardLevel.Features => [WorkItemTypeId.Feature],
         BoardLevel.Epics => [WorkItemTypeId.Epic],
-        _ => [WorkItemTypeId.Task, WorkItemTypeId.Story, WorkItemTypeId.Bug],
+        _ => [WorkItemTypeId.Task, WorkItemTypeId.Story, WorkItemTypeId.Bug, WorkItemTypeId.Action],
     };
 
     private static BoardSettingsJson Level(BoardLevel level, IReadOnlyDictionary<WorkItemTypeId, IReadOnlyList<StateRef>> statesByType)
@@ -100,12 +100,13 @@ internal static class BoardDefaultSettings
             new CardFieldSettingJson(WorkItemTypeId.Task, true, true, true, false, false, [FieldIds.Parent]),
             new CardFieldSettingJson(WorkItemTypeId.Story, true, true, false, true, false, [FieldIds.State]),
             new CardFieldSettingJson(WorkItemTypeId.Bug, true, true, false, true, false, [FieldIds.State]),
+            new CardFieldSettingJson(WorkItemTypeId.Action, true, true, false, true, false, [FieldIds.State]),
         ],
         [], [], new CardAnnotationsJson(Tasks: true, Stories: false, Bugs: false, Features: false), null, []);
 
     private static CardFieldSettingJson CardFields(WorkItemTypeId type) => type switch
     {
-        WorkItemTypeId.Story => new CardFieldSettingJson(type, true, true, true, true, false, [FieldIds.Parent, FieldIds.Priority, FieldIds.Sprint]),
+        WorkItemTypeId.Story or WorkItemTypeId.Action => new CardFieldSettingJson(type, true, true, true, true, false, [FieldIds.Parent, FieldIds.Priority, FieldIds.Sprint]),
         WorkItemTypeId.Bug => new CardFieldSettingJson(type, true, true, true, true, false, [FieldIds.Parent, FieldIds.Severity, FieldIds.Priority]),
         WorkItemTypeId.Feature => new CardFieldSettingJson(type, true, true, true, true, false, [FieldIds.Parent]),
         _ => new CardFieldSettingJson(type, true, true, true, true, false, []),

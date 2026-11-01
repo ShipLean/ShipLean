@@ -19,7 +19,9 @@ The address of every screen is in `src/ShipLean.Client/src/routes.ts` (ids, path
 | Project | `featureBoard` | `/p/:key/items/:itemKey/board` | `?settings=` |
 | Project | `storiesBoard`, `featuresBoard`, `epicsBoard` | `/p/:key/boards/{stories,features,epics}` | `settings` |
 | Project | `sprints` | `/p/:key/sprints` | |
-| Project | `sprintBacklog`, `capacity` | `/p/:key/sprints/:sprintId/{backlog,capacity}` | |
+| Project | `sprintBacklog`, `capacity`, `sprintRetro` | `/p/:key/sprints/:sprintId/{backlog,capacity,retro}` | |
+| Project | `retros` | `/p/:key/retros` | `q`, `sprint`, `category`, `theme`, `level`, `role`, `recurring`, `selected` (the search filters and the open retro) |
+| Project | `retroInsights` | `/p/:key/retros/insights` | `view` (themes, actions, impact), `range` (6, 3, all) |
 | Project | `taskboard` | `/p/:key/sprints/:sprintId/taskboard` | `settings` |
 | Project | `jiraImport` | `/p/:key/import` | |
 | Project | `projectSettings` | `/p/:key/settings/:tab` (general, states, members, sprints, integrations) | |
@@ -30,12 +32,12 @@ An unknown address (under `/p/:key` or anywhere else, such as `/nowhere`), an un
 
 `src/pages/<Screen>Page.tsx`. A page resolves what the URL names, reports presence (`useScreenPresence(routeId)`) and lays out slots. It fetches only the project (`['projects', 'by-key', key]`) and, where a slot needs them, the sprints (`['projects', projectId, 'sprints']`); every other read belongs to a slot. A page holds no screen content.
 
-- A page's slot wiring is a pure function beside it (`backlogSlots`, `boardSlots`, `workItemSlots`, `sprintsSlots`, `sprintBacklogSlots`, `taskboardSlots`, `capacitySlots`, `importSlots`, `projectSettingsSlots`, `instanceSettingsSlots`; `pageRouteIds` has the presence ids). They return each slot's props (or `undefined` for a slot not mounted), and `pages/pageWiring.test.tsx` pins them. Filling a slot never means editing them.
+- A page's slot wiring is a pure function beside it (`backlogSlots`, `boardSlots`, `workItemSlots`, `sprintsSlots`, `sprintBacklogSlots`, `taskboardSlots`, `capacitySlots`, `sprintRetroSlots`, `retrosSlots`, `retroInsightsSlots`, `importSlots`, `projectSettingsSlots`, `instanceSettingsSlots`; `pageRouteIds` has the presence ids). They return each slot's props (or `undefined` for a slot not mounted), and `pages/pageWiring.test.tsx` pins them. Filling a slot never means editing them.
 - Data: the page renders its slots whenever it holds data. The not-found and load-failed states appear only while there is none, so a failed refetch never unmounts a slot. If the sprints cannot be read, a backlog page still renders and its sprint end prompt gets `sprints: []`.
 - Retries: one policy for every query, the `QueryClient` default in `main.tsx` (`queries/retry.ts`): a 4xx answer is final, a network error or 5xx is retried up to three times. Do not set `retry` on a query.
 - Router: `main.tsx` uses a data router (`createBrowserRouter([{ path: '*', element: <AppRoutes /> }])`) and the component test harness the same shape with `createMemoryRouter`, so a screen can use `useBlocker`.
 - `ProjectScreen` (project page root: presence, project, not found), `SprintScreen` (also the sprint), `InstallScreen` (install-level root), `WithSprints` (reads the sprints for the part of a page that needs them).
-- Sprint pages render `SprintHeader` above their slots: `full` on the Sprint backlog and Capacity, `slim` on the Taskboard. `SprintHeader` renders `sprintGoalEdit`; the page does not.
+- Sprint pages render `SprintHeader` above their slots: `full` on the Sprint backlog, Capacity and Retro, `slim` on the Taskboard. `SprintHeader` renders `sprintGoalEdit`; the page does not.
 - `?settings=` on the boards and the Taskboard: the page reads it as `section`; `onSectionChange(section)` sets it (replacing the history entry), `onClose()` removes it. The slot renders its dialog only while `section` is set. To open a dialog from elsewhere, link to `?settings=<section>` (for example `columns` or `fields`).
 - `sprintGoalEdit`: the slot calls `onDone()` after the goal PATCH succeeds, having invalidated `['projects', projectId, 'sprints']`, and on Cancel or Escape. The header closes the editor and returns focus to its Edit button; the slot moves focus into its input when it mounts.
 - Backlogs: Stories show `listMode`, `planningMode` or `treeMode` by `?mode=` (list when absent or invalid); Features and Epics show `levelBacklog`. `sprintEndPrompt` is mounted on every backlog page and on the Sprints page.
@@ -56,7 +58,7 @@ The five work item slots read the item through the query key `['projects', proje
 | `treeMode` | Backlogs (stories, tree) | `{ project, level, mode }` |
 | `levelBacklog` | Backlogs (features, epics) | `{ project, level, mode }` |
 | `sprintEndPrompt` | Backlogs, Sprints | `{ project, sprints }` |
-| `form` | Work item | `{ project, itemKey, links, tasks, discussion, side: ReactNode }` (the frame) |
+| `form` | Work item | `{ project, itemKey, links, retro?, tasks, discussion, side: ReactNode }` (the frame; `retro` is the item's read-only Retrospective section, after the Repro steps and before `tasks`, and after Stories and bugs on a Feature; null shows none) |
 | `links`, `tasks`, `discussion`, `side` | Work item, inside `form` | `{ project, itemKey }` |
 | `attachment` | Attachment | `{ project, itemKey, attachmentId }` |
 | `board` | Boards | `{ project, level }` |
@@ -67,6 +69,9 @@ The five work item slots read the item through the query key `['projects', proje
 | `featureBoardSettings` | Feature board | `{ project, itemKey, section, onSectionChange, onClose }` (the Taskboard's dialog) |
 | `sprintsList`, `newSprintRail` | Sprints | `{ project, sprints }` |
 | `capacity` | Capacity | `{ project, sprint, sprints }` |
+| `sprintRetro` | Sprint Retro | `{ project, sprint, sprints }`; the slot mounts `SprintRetroPanel`, which reads the sprint's `SprintRetroDto` and gives each of its parts (`SprintRetroHeader`, `AddPoint`, `views/ByCategory`, `views/ByWorkItem`, `rail/RetroRail`) `{ project, sprint, retro }` |
+| `retrosSearch` | Retrospectives › Search | `{ project }`; `RetrosSearchPanel` owns the filters in the address and gives `SearchFilters`, `SearchRows` and `SelectedRetro` `{ project, query, search, change(patch), select(retroId \| null) }` |
+| `retroInsights` | Retrospectives › Insights | `{ project }`; `RetroInsightsPanel` owns the view tabs and the range and gives `MergeThemes`, `RecurringThemes`, `KeepsWorking`, `ActionItemsTable` and `ChangesImpact` `{ project, insights }` |
 | `sprintBacklog` | Sprint backlog | `{ project, sprint, sprints }` |
 | `sprintGoalEdit` | rendered by `SprintHeader` | `{ project, sprint, sprints, onDone() }` |
 | `settingsDraft` | Project settings (every tab; the frame) | `{ project, tab, states, integrations: ReactNode }` |
@@ -90,11 +95,11 @@ The five work item slots read the item through the query key `['projects', proje
   - An item opens in the item modal (`?item=KEY`) over the screen you are on. It opens its full item page instead on a Backlogs page, for an item of another project, and on an install-level page (profile, instance settings, new project, import start, authorize). The rule is `features/itemPeek/opensInModal.ts`, shared with `ItemLink`.
   - A sprint opens its taskboard.
   - A project opens its backlog.
-- **The actions.** Create epic, Create feature, Create story and Create bug open the matching backlog with the new item row (for a feature, the New feature dialog) open and the type picked, through `?new=` (`newItemPath` in `routes.ts`). The stories backlog opens in list mode. Go to Backlogs, Go to Boards and Go to Sprints open that page of the open project. Toggle theme switches between light and dark and saves the choice to your profile; it is hidden until your account (`/api/me`) has loaded, because the saved theme is not known before then. The project actions are left out when no project is open. There is no Create task, nor a generic Create work item: a task is always created under a parent, so create it from its parent's item page.
+- **The actions.** Create epic, Create feature, Create story, Create bug and Create action item open the matching backlog with the new item row (for a feature, the New feature dialog) open and the type picked, through `?new=` (`newItemPath` in `routes.ts`). The stories backlog opens in list mode. Go to Backlogs, Go to Boards and Go to Sprints open that page of the open project. Toggle theme switches between light and dark and saves the choice to your profile; it is hidden until your account (`/api/me`) has loaded, because the saved theme is not known before then. The project actions are left out when no project is open. There is no Create task, nor a generic Create work item: a task is always created under a parent, so create it from its parent's item page.
 
 ## The project picker
 
-The picker opens only from the project button in the side menu (tooltip "Switch project"). Ctrl/⌘+P opens quick search, not the picker, and opening quick search closes the picker. Picking a project in the top bar goes to the same screen in that project (`features/shell/sameScreenIn.ts`): the route id, its params and its query are kept, with the new key. Four screens belong to one project's sprint or item, so they fall back: the Sprint taskboard, the Sprint backlog and Capacity go to All sprints (`sprints`), and a work item goes to the Stories backlog. An install-level page (profile, instance settings, new project, import start, authorize) or an unknown address also goes to the Stories backlog.
+The picker opens only from the project button in the side menu (tooltip "Switch project"). Ctrl/⌘+P opens quick search, not the picker, and opening quick search closes the picker. Picking a project in the top bar goes to the same screen in that project (`features/shell/sameScreenIn.ts`): the route id, its params and its query are kept, with the new key. Five screens belong to one project's sprint or item, so they fall back: the Sprint taskboard, the Sprint backlog, Capacity and Retro go to All sprints (`sprints`), and a work item goes to the Stories backlog. Retrospectives Search keeps its filters in the query, but switching project drops them (a theme or sprint of one project means nothing in another). An install-level page (profile, instance settings, new project, import start, authorize) or an unknown address also goes to the Stories backlog.
 
 ## Testing
 

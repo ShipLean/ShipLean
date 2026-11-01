@@ -36,6 +36,18 @@ test('ParentField_WhenFeatureIsUnderAnEpic_ShouldShowEpicThenFeature', async ({ 
   await expect(options).toHaveCount(2);
 });
 
+test('ParentField_WhenActionItem_ShouldOfferFeatures', async ({ mount, page }) => {
+  await stubApi(page, { ...story, type: { id: 'action', name: 'Action item' } }, undefined, {
+    byType: { feature: [feature, loose] },
+  });
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-141" />, route);
+
+  await screen.getByTestId(ids.parentButton).click();
+
+  await expect(screen.getByTestId(ids.parentOption)).toHaveCount(3);
+  await expect(screen.getByTestId(ids.parentOption).nth(2)).toContainText('Receipts');
+});
+
 test('ParentField_WhenOpenClicked_ShouldOpenParentModal', async ({ mount, page }) => {
   await stubApi(page, { ...story, parent: epic });
   const screen = await mount(<WorkItemFormHarness itemKey="SHIP-141" />, route);

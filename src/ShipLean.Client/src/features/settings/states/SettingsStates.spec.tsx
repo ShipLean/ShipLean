@@ -41,6 +41,34 @@ const otherTypes = (): StateDto[] =>
     },
   ]);
 
+const actionStates = (): StateDto[] => [
+  { id: 'action-new', type: 'action', name: 'New', category: 'proposed', order: 1, itemCount: 0 },
+  {
+    id: 'action-active',
+    type: 'action',
+    name: 'Active',
+    category: 'inProgress',
+    order: 2,
+    itemCount: 0,
+  },
+  {
+    id: 'action-closed',
+    type: 'action',
+    name: 'Closed',
+    category: 'completed',
+    order: 3,
+    itemCount: 0,
+  },
+  {
+    id: 'action-removed',
+    type: 'action',
+    name: 'Removed',
+    category: 'removed',
+    order: 4,
+    itemCount: 0,
+  },
+];
+
 const saved = (): ProjectSettingsDto => ({
   general: {
     key: 'SHIP',
@@ -60,6 +88,7 @@ const saved = (): ProjectSettingsDto => ({
     st('s-active', 'Active', 'inProgress', 2, 3),
     st('s-closed', 'Closed', 'completed', 3, 4),
     ...otherTypes(),
+    ...actionStates(),
   ],
 });
 
@@ -141,6 +170,19 @@ test('States_WhenStateAdded_ShouldAppearAndStageAnAdd', async ({ mount, page }) 
   expect(puts[0]?.states.add[0]?.id).toMatch(/^[0-9a-f-]{36}$/);
 });
 
+test('States_WhenActionPicked_ShouldListItsFourStates', async ({ mount, page }) => {
+  await stub(page);
+  const view = await mountAdmin(mount);
+
+  await view.getByTestId(ids.stateTypeAction).click();
+
+  const rows = view.getByTestId(ids.stateRow);
+  await expect(rows).toHaveCount(4);
+  for (const [index, name] of ['New', 'Active', 'Closed', 'Removed'].entries()) {
+    await expect(rows.nth(index).getByTestId(ids.stateName)).toHaveValue(name);
+  }
+});
+
 test('States_WhenStateRenamed_ShouldKeepCategoryColour', async ({ mount, page }) => {
   const puts = await stub(page);
   const view = await mountAdmin(mount);
@@ -155,6 +197,20 @@ test('States_WhenStateRenamed_ShouldKeepCategoryColour', async ({ mount, page })
   await expect.poll(() => puts.length).toBe(1);
   expect(puts[0]?.states.update).toEqual([
     { stateId: 's-active', name: 'Doing', category: 'inProgress' },
+  ]);
+});
+
+test('States_WhenActionStateRenamed_ShouldSendOnlyThatUpdate', async ({ mount, page }) => {
+  const puts = await stub(page);
+  const view = await mountAdmin(mount);
+  await view.getByTestId(ids.stateTypeAction).click();
+
+  await view.getByTestId(ids.stateRow).nth(1).getByTestId(ids.stateName).fill('Doing');
+  await view.getByTestId(ids.save).click();
+
+  await expect.poll(() => puts.length).toBe(1);
+  expect(puts[0]?.states.update).toEqual([
+    { stateId: 'action-active', name: 'Doing', category: 'inProgress' },
   ]);
 });
 

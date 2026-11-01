@@ -106,7 +106,7 @@ public class SeedAccountsTests
         (await connection.ExecuteScalarAsync<int>("SELECT count(*)::int FROM work_item WHERE project_id = @id", new { id })).ShouldBe(0);
         (await connection.ExecuteScalarAsync<int>("SELECT count(*)::int FROM sprint WHERE project_id = @id", new { id })).ShouldBe(0);
         (await connection.ExecuteScalarAsync<int>("SELECT count(*)::int FROM board WHERE project_id = @id", new { id })).ShouldBe(4);
-        (await connection.ExecuteScalarAsync<int>("SELECT count(*)::int FROM state WHERE project_id = @id", new { id })).ShouldBe(25);
+        (await connection.ExecuteScalarAsync<int>("SELECT count(*)::int FROM state WHERE project_id = @id", new { id })).ShouldBe(29);
     }
 
     [Test]

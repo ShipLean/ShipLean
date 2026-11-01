@@ -98,8 +98,8 @@ internal static class InMemoryChanges
     public static bool IsAllowedParent(WorkItemTypeId type, WorkItemTypeId parent) => type switch
     {
         WorkItemTypeId.Feature => parent is WorkItemTypeId.Epic or WorkItemTypeId.Feature,
-        WorkItemTypeId.Story or WorkItemTypeId.Bug => parent == WorkItemTypeId.Feature,
-        WorkItemTypeId.Task => parent is WorkItemTypeId.Story or WorkItemTypeId.Bug,
+        WorkItemTypeId.Story or WorkItemTypeId.Bug or WorkItemTypeId.Action => parent == WorkItemTypeId.Feature,
+        WorkItemTypeId.Task => parent is WorkItemTypeId.Story or WorkItemTypeId.Bug or WorkItemTypeId.Action,
         _ => false,
     };
 }

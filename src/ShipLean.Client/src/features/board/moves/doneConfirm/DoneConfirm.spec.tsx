@@ -242,3 +242,25 @@ test('Card_WhenEveryChildIsClosed_ShouldOfferMoveToDoneAsOneMove', async ({ moun
   await expect(doneCell(page).getByTestId(ids.cardKey)).toContainText(['SHIP-104']);
   await expect(cardKeyed(page, 'SHIP-104').getByTestId(ids.cardOffer)).toHaveCount(0);
 });
+
+test('DoneConfirm_WhenFeatureHasOpenActionItems_ShouldCountThemWithTheStories', async ({
+  mount,
+  page,
+}) => {
+  const board = featuresBoard();
+  const open = board.lanes[0].cells.flatMap((c) => c.cards).find((c) => c.key === 'SHIP-102')!;
+  open.rollups = [
+    { type: 'story', open: 1, closed: 1 },
+    { type: 'action', open: 1, closed: 0 },
+  ];
+  const server = await stubBoard(page, board, { level: 'features' });
+  await stubChildren(page);
+  await mount(<BoardHarness level="features" />, route);
+
+  await drag(page, cardKeyed(page, 'SHIP-102'), doneCell(page));
+
+  await expect(page.getByTestId(ids.doneConfirm)).toContainText(
+    'still has 1 story and 1 action item open',
+  );
+  expect(server.moves).toHaveLength(0);
+});

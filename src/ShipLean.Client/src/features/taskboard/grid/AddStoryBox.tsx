@@ -1,14 +1,12 @@
 import { useRef, useState, type KeyboardEvent } from 'react';
 import { ApiRequestError } from '../../../api/client';
-import type { WorkItemTypeId } from '../../../api/refs';
+import { WORK_ITEM_TYPE_IDS, type WorkItemTypeId } from '../../../api/refs';
+import { isStoryLevel, typeName } from '../../../api/workItemTypes';
 import { useCreateOnTaskboard } from '../taskboardApi';
 import type { TaskboardScope } from '../taskboardScope';
 import { taskboardTestIds as ids } from '../testIds';
 
-const types: { id: WorkItemTypeId; label: string }[] = [
-  { id: 'story', label: 'User Story' },
-  { id: 'bug', label: 'Bug' },
-];
+const types = WORK_ITEM_TYPE_IDS.filter(isStoryLevel).map((id) => ({ id, label: typeName(id) }));
 
 /** "+ Add story or bug": creates the item into this sprint and stays open for the next one. Esc closes it. */
 export function AddStoryBox({

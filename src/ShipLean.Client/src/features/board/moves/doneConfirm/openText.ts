@@ -9,12 +9,14 @@ const NOUNS: Record<Level, Partial<Record<RollupCountDto['type'], Noun>>> = {
   features: {
     story: ['story', 'stories'],
     bug: ['bug', 'bugs'],
+    action: ['action item', 'action items'],
     feature: ['nested Feature', 'nested Features'],
   },
   epics: {
     feature: ['Feature', 'Features'],
     story: ['story', 'stories'],
     bug: ['bug', 'bugs'],
+    action: ['action item', 'action items'],
   },
 };
 

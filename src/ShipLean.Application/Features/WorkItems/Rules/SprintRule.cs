@@ -13,7 +13,7 @@ internal static class SprintRule
     public static async Task<ProposedChange> ApplyAsync(
         WorkItemSnapshot before, ProposedChange change, Guid? actorId, DateOnly today, DbTransaction transaction, IReadOnlyDictionary<Guid, RuleState> states, List<string> notices, CancellationToken cancellationToken)
     {
-        if (actorId is null || change.Bulk || change.Type is not (WorkItemTypeId.Story or WorkItemTypeId.Bug) || before.SprintId is not null || change.SprintId is not null || before.StateId == change.StateId)
+        if (actorId is null || change.Bulk || !WorkItemTypeRules.IsStoryLevel(change.Type) || before.SprintId is not null || change.SprintId is not null || before.StateId == change.StateId)
         {
             return change;
         }

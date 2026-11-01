@@ -52,6 +52,7 @@ const ANNOTATION_OF: Record<WorkItemTypeId, keyof CardAnnotationsJson | null> = 
   bug: 'bugs',
   feature: 'features',
   epic: null,
+  action: 'stories',
 };
 
 /** The roll-ups the board's annotations turn on: one entry per child type, only the types switched on. */

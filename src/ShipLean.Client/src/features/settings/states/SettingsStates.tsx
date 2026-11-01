@@ -31,6 +31,7 @@ const BOARD_OF: Record<Exclude<WorkItemTypeId, 'task'>, string> = {
   feature: 'Features board',
   story: 'Stories board',
   bug: 'Stories board',
+  action: 'Stories board',
 };
 
 const EVENTS = [

@@ -10,6 +10,11 @@
     <ProjectReference Include="..\ShipLean.Core\ShipLean.Core.csproj" />
   </ItemGroup>
 
+  <!-- WorkItemTypesTests (UnitTest) checks the internal WorkItemTypes rules directly. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="ShipLean.UnitTest" />
+  </ItemGroup>
+
   <!-- db/** ships inside the assembly, so the app and the test fixtures find the schema from any working directory. -->
   <ItemGroup>
     <EmbeddedResource Include="..\..\db\schema\*.sql" LogicalName="db/schema/%(Filename)%(Extension)" />

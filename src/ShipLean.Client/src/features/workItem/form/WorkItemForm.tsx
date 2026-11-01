@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { ProjectDto } from '../../../api/projects';
 import { ApiRequestError } from '../../../api/client';
 import { isApiError } from '../../../api/client';
+import { isStoryLevel } from '../../../api/workItemTypes';
 import { conflictOf, type ConflictDto, type WorkItemDto } from '../../../api/workItems';
 import { showToast } from '../../../components/toastStore';
 import { useRememberItem } from '../../quickSearch/start/recent/useRememberItem';
@@ -38,6 +39,7 @@ export function WorkItemForm({
   item,
   project,
   links,
+  retro = null,
   tasks,
   discussion,
   side,
@@ -45,6 +47,7 @@ export function WorkItemForm({
   item: WorkItemDto;
   project: ProjectDto;
   links: ReactNode;
+  retro?: ReactNode;
   tasks: ReactNode;
   discussion: ReactNode;
   side: ReactNode;
@@ -263,6 +266,7 @@ export function WorkItemForm({
               banners={banners}
               description={description}
               agent={<AgentPanel project={project} itemKey={item.key} />}
+              retro={retro}
             />
           ) : (
             <>
@@ -290,6 +294,7 @@ export function WorkItemForm({
                       onSeverityChange={(severity) => edit({ severity })}
                     />
                   ) : null}
+                  {isStoryLevel(type) ? retro : null}
                   {tasks}
                   {discussion}
                 </div>

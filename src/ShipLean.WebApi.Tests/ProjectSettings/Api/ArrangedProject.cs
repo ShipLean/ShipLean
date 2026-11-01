@@ -8,7 +8,7 @@ using ShipLean.Contracts.Refs;
 namespace ShipLean.WebApi.Tests.ProjectSettings.Api;
 
 // A project of its own for one test: five states per type (New, Active, Resolved, Closed, Removed), a Stories board whose
-// "Doing" column maps the Story and Bug Active states, and the given members.
+// "Doing" column maps the Story, Bug and Action Active states, and the given members.
 internal sealed class ArrangedProject
 {
     private readonly Dictionary<(WorkItemTypeId Type, string Name), Guid> _states = [];
@@ -53,8 +53,8 @@ internal sealed class ArrangedProject
 
         BoardColumnJson[] columns =
         [
-            new("col-todo", "To do", null, false, "", [new(WorkItemTypeId.Story, project.State(WorkItemTypeId.Story, "New")), new(WorkItemTypeId.Bug, project.State(WorkItemTypeId.Bug, "New"))]),
-            new("col-doing", "Doing", null, false, "", [new(WorkItemTypeId.Story, project.State(WorkItemTypeId.Story, "Active")), new(WorkItemTypeId.Bug, project.State(WorkItemTypeId.Bug, "Active"))]),
+            new("col-todo", "To do", null, false, "", [new(WorkItemTypeId.Story, project.State(WorkItemTypeId.Story, "New")), new(WorkItemTypeId.Bug, project.State(WorkItemTypeId.Bug, "New")), new(WorkItemTypeId.Action, project.State(WorkItemTypeId.Action, "New"))]),
+            new("col-doing", "Doing", null, false, "", [new(WorkItemTypeId.Story, project.State(WorkItemTypeId.Story, "Active")), new(WorkItemTypeId.Bug, project.State(WorkItemTypeId.Bug, "Active")), new(WorkItemTypeId.Action, project.State(WorkItemTypeId.Action, "Active"))]),
         ];
         var settings = new BoardSettingsJson(
             columns, [new SwimlaneJson("lane-default", "Everything else", null, SwimlaneKind.Default, null)], [], [], [], new CardAnnotationsJson(false, false, false, false), null, []);

@@ -8,6 +8,7 @@ const testIdOf: Record<WorkItemTypeId, string | undefined> = {
   story: ids.columnStateStory,
   bug: ids.columnStateBug,
   task: undefined,
+  action: undefined,
 };
 
 /** The state one column means for one work item type. */

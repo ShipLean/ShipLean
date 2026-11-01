@@ -43,6 +43,27 @@ test('StoriesAndBugs_ShouldListOpenFirst', async ({ mount, page }) => {
   await expect(screen.getByTestId(ids.childrenCount)).toContainText('1/');
 });
 
+test('StoriesAndBugs_WhenActionItemChild_ShouldListItWithTheStories', async ({ mount, page }) => {
+  const [first, ...rest] = feature.children;
+  const item = {
+    ...feature,
+    children: [
+      {
+        ...first!,
+        key: 'SHIP-903',
+        id: 'c903',
+        type: { id: 'action' as const, name: 'Action item' },
+      },
+      ...rest,
+    ],
+  };
+  await stubAll(page, item);
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-100" />, route);
+
+  await expect(screen.getByTestId(ids.childRow)).toHaveCount(item.children.length);
+  await expect(screen.getByTestId(ids.childKey).filter({ hasText: 'SHIP-903' })).toBeVisible();
+});
+
 test('StoriesAndBugs_WhenNone_ShouldShowEmptyState', async ({ mount, page }) => {
   await stubAll(page, { ...feature, children: [] });
   const screen = await mount(<WorkItemFormHarness itemKey="SHIP-100" />, route);
