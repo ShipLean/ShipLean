@@ -22,7 +22,7 @@ public class UsageScopeTests : ApiFixture
     }
 
     private Task<UsageProbeResult> ProbeAsync(params ArrangedProject[] projects)
-        => Api.GetAsync<UsageProbeResult>("api/test-usage/touch?" + string.Join('&', projects.Select(p => $"project={p.Id}")));
+        => Api.GetJsonAsync<UsageProbeResult>("api/test-usage/touch?" + string.Join('&', projects.Select(p => $"project={p.Id}")));
 
     [Test]
     public async Task ProjectScopedRequest_WhenAccessChecked_ShouldStampOneProject()
