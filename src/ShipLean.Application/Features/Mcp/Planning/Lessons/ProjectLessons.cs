@@ -37,7 +37,38 @@ public sealed class ProjectLessons(NpgsqlDataSource dataSource, IAttachmentStore
                 break;
             }
         }
+        lessons.AddRange(await ImprovePointsAsync(projectId, cancellationToken));
         return lessons;
+    }
+
+    // The "improve" points of the newest conductor retrospectives logged on the project's live Features (log_retrospective), one lesson
+    // each, after the Markdown ones. Archived points do not count, and neither does a retro left with none; sub-agent retros are not lessons.
+    private async Task<List<RetroLesson>> ImprovePointsAsync(Guid projectId, CancellationToken cancellationToken)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        var rows = (await connection.QueryAsync<ImproveRow>(new CommandDefinition(
+            $"""
+            SELECT w.key AS feature, r.id AS retroId, r.created_at AS createdAt, p.text, p.position
+            FROM (
+                SELECT r.id, r.work_item_id, r.created_at
+                FROM retrospective r JOIN work_item w ON w.id = r.work_item_id JOIN state s ON s.id = w.state_id
+                WHERE r.project_id = @projectId AND r.role = 'conductor' AND r.archived_at IS NULL AND w.type = 'feature' AND {TreeSql.Live}
+                  AND EXISTS (SELECT 1 FROM retro_point p WHERE p.retrospective_id = r.id AND p.category = 'improve' AND p.archived_at IS NULL)
+                ORDER BY r.created_at DESC, r.id
+                LIMIT @newest
+            ) r
+            JOIN work_item w ON w.id = r.work_item_id
+            JOIN retro_point p ON p.retrospective_id = r.id AND p.category = 'improve' AND p.archived_at IS NULL
+            ORDER BY r.created_at DESC, r.id, p.position, p.created_at
+            """,
+            new { projectId, newest = Newest }, cancellationToken: cancellationToken))).ToList();
+
+        return [.. rows.GroupBy(row => row.RetroId).Select(group =>
+        {
+            var first = group.First();
+            var date = first.CreatedAt.ToUniversalTime().ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            return new RetroLesson(first.Feature, "retrospective " + date, string.Join("\n", group.Select(row => "- " + row.Text)));
+        })];
     }
 
     // Both queries run on one connection that is closed before any attachment is opened. Features that are Removed do not count: a
@@ -81,6 +112,8 @@ public sealed class ProjectLessons(NpgsqlDataSource dataSource, IAttachmentStore
             return null;
         }
     }
+
+    private sealed record ImproveRow(string Feature, Guid RetroId, DateTime CreatedAt, string Text, int Position);
 
     private sealed record Candidate(Guid Id, string Feature, string? Source, string? Body, DateTime CreatedAt);
 }

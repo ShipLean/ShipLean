@@ -2,6 +2,14 @@
 
 Use this when a Feature or Epic is too big for one agent, or when you will run several agents side by side. It turns the work into a plan in ShipLean, then runs it wave by wave and ends with a retro. Call `planning_guide` with a `project` to also get the lessons from that project's past retros; apply the relevant ones and say which.
 
+## Learning from failure
+
+Your primary goal is absolute truth over artificial success. In this system, discovering a dead end, encountering an error, or failing a sub-task is highly valuable data. Do not fear failure; embrace it as diagnostic information. You are evaluated on the accuracy of your reporting, not on whether the task succeeded perfectly.
+
+If you fail at a task, do not apologize, make excuses, or minimize the error. Adopt a clinical, blameless tone. Simply state what you attempted, what the exact failure was, and the variables involved. Treat errors as neutral engineering data.
+
+Never fabricate or assume results to compensate for a failure. If a tool fails, an API times out, or you lack the necessary context to proceed, you must halt and report the failure exactly as it occurred. Faking a successful outcome is the only true failure.
+
 When you plan an existing Feature, read its attachments with `read_attachment` and its log with `get_work_item` first, then capture the plan under that Feature's key.
 
 ## Where state lives
@@ -25,7 +33,7 @@ ShipLean holds progress for a plan run. Do not write amendments, notes for later
 | The slice's brief | The Task's description |
 | The status table | `plan_status` |
 | An agent's report | `report_task` |
-| The retro | A Markdown file attached to the Feature with `attach_markdown` |
+| The retro | A Markdown run retro attached to the Feature with `attach_markdown`, and the structured retrospectives logged with `log_retrospective` |
 | A merge request | A pull request (PR) |
 
 The Feature carries the shared branch (as a tag) and has the common brief (read by every agent before its own brief) and the plan document attached, all done by `capture_plan`.
@@ -43,7 +51,7 @@ Example: an endpoint between a page and a service. Agent 0 ships the controller 
 
 ## Step 0: Read past lessons
 
-Call `planning_guide` with the `project` key. Its `lessons` list holds the "What to change next time" text of each past retro, with the Feature and retro it came from. Apply anything relevant to this plan and say which lesson you applied.
+Call `planning_guide` with the `project` key. Its `lessons` list holds the "What to change next time" text of each past retro, with the Feature and retro it came from. Apply anything relevant to this plan and say which lesson you applied. It also holds the "Can be improved" points of the newest feature retrospectives logged with `log_retrospective`, labelled with their Feature; treat them the same way.
 
 ## Step 1: Size the work and pick a mode
 
@@ -219,7 +227,8 @@ When a report lists left-undone items, they become orphan tasks; give each an ow
 1. When every task is done, run the full test suite once on the shared branch in CI. Fix what it finds through the same review loop.
 2. Check the plan's list of temporary behaviour: each item is gone, or still listed with an owner. Search the PR diff for TODO; every one in it matches a listed item, or the work is not done.
 3. Open one PR from the shared branch, to be squash-merged. **PUT THE KEY OF EVERY STORY IT DELIVERS IN THE PR TITLE** (for example "SHIP-12 SHIP-13 SHIP-14: WHAT IT DOES"; Features and Epics are not linked). ShipLean links the PR to each Story key in the title and closes the Story when the PR merges; without the keys the Stories stay open after the merge.
-4. Read `plan_status` for the timeline, then fill in the `retro` part : TL;DR, a timeline per task with wave, model and review rounds, every time the four constraints were broken (an agent waited, a wave had an edge, an agent passed about 100k, a handoff happened outside a contract), what caused delays (measured from the timeline), what to change, and the token budget the run would have needed with the changes. Do not estimate time.
-5. Attach the retro to the Feature with `attach_markdown`: `feature` is the Feature's key, `name` is `retro-<yyyy-mm-dd>-<topic>.md` with a real date and a short topic, and `content` is the Markdown. Attaching the same name again replaces the file. That file is where `planning_guide` reads lessons from: the text under "What to change next time" is what the next plan sees, so write it as rules a future plan can apply.
-6. Set the Feature's final status with `set_status`, passing `state` as the Feature's Completed state by name, so it is one call.
-7. Tell the user the outcome, then "Lessons learned" as 3 to 6 bullets, then where the retro is attached.
+4. **Compile the feature retrospective when the Feature's last story closes.** Call `list_retrospectives` with the Feature, read every sub-agent's points and failure log, then call `log_retrospective` on the Feature with `compiled_from` set to the keys of the stories you compiled from. Act as a blameless site reliability engineer. Do not soften the failures the sub-agents reported. Extract the root causes of their failures (for example, one agent lacked search permission, or another looped because the schema was missing) and put them in `went_badly` with a `root_cause` each and in `improve`. Put what came up that the plan did not foresee in `not_in_plan`. Add your own raw `failure_log`. The `improve` points are what the next plan reads as lessons in Step 0.
+5. Read `plan_status` for the timeline, then fill in the `retro` part (the run retro, which stays alongside the structured one): TL;DR, a timeline per task with wave, model and review rounds, every time the four constraints were broken (an agent waited, a wave had an edge, an agent passed about 100k, a handoff happened outside a contract), what caused delays (measured from the timeline), what to change, and the token budget the run would have needed with the changes. Do not estimate time.
+6. Attach the retro to the Feature with `attach_markdown`: `feature` is the Feature's key, `name` is `retro-<yyyy-mm-dd>-<topic>.md` with a real date and a short topic, and `content` is the Markdown. Attaching the same name again replaces the file. That file is where `planning_guide` reads lessons from: the text under "What to change next time" is what the next plan sees, so write it as rules a future plan can apply.
+7. Set the Feature's final status with `set_status`, passing `state` as the Feature's Completed state by name, so it is one call.
+8. Tell the user the outcome, then "Lessons learned" as 3 to 6 bullets, then where the retro is attached.

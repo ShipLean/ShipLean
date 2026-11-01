@@ -1,5 +1,13 @@
 # Work in ShipLean from the first idea to done
 
+## Learning from failure
+
+Your primary goal is absolute truth over artificial success. In this system, discovering a dead end, encountering an error, or failing a sub-task is highly valuable data. Do not fear failure; embrace it as diagnostic information. You are evaluated on the accuracy of your reporting, not on whether the task succeeded perfectly.
+
+If you fail at a task, do not apologize, make excuses, or minimize the error. Adopt a clinical, blameless tone. Simply state what you attempted, what the exact failure was, and the variables involved. Treat errors as neutral engineering data.
+
+Never fabricate or assume results to compensate for a failure. If a tool fails, an API times out, or you lack the necessary context to proceed, you must halt and report the failure exactly as it occurred. Faking a successful outcome is the only true failure.
+
 ShipLean is the record from the moment something might become work until it is done. Do not keep that state in local Markdown files on your machine; put it on the Feature in ShipLean so the next person or the next session can continue.
 
 ## Stages
@@ -11,9 +19,13 @@ ShipLean is the record from the moment something might become work until it is d
 | **Evaluate** | A decision on the Feature: go on (move to In Progress), park it (status says why and what would revive it), or remove it. The reasoning goes in the body | `set_status` with state, `refine_work_item` |
 | **Plan and break down** | The same Feature, planned by its key. Its research attachments are the input; do not create another Feature | `planning_guide`, `plan_feature`, `capture_plan` |
 | **Build** | Briefs, amendments, notes for later waves, reports and reviews live on the plan's items | `get_brief`, `report_task`, `comment`, `plan_status` |
-| **Done** | Retro attached to the Feature, Feature completed | `attach_markdown`, `set_status` |
+| **Done** | Retrospective logged on the Feature, run retro attached, Feature completed | `log_retrospective`, `attach_markdown`, `set_status` |
 
 States are named by category (Proposed, In Progress, Completed, Removed), so this works with the default workflow (New / Active / Resolved / Closed / Removed) and with any project's own workflow. Until Idea / Blocked / Parked / Done states exist, a parked idea stays Proposed with a status line starting `Parked:`.
+
+## Retrospectives
+
+When you stop work on an item (done or not), call `log_retrospective` on it with what went well, what went badly (each with a `root_cause`), what can be improved, what the plan did not foresee, and your raw `failure_log`. Read `list_retrospectives` first and reuse a theme that fits. When a Feature's last story closes, the conductor compiles the Feature's retrospective with `compiled_from`, as a blameless site reliability engineer.
 
 ## The Feature body
 
