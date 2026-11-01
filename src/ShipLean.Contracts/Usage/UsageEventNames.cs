@@ -95,7 +95,7 @@ public static class UsageEventNames
     public const string InstanceSearchReindexed = "instance.search_reindexed";
     public const string ScreenViewed = "screen.viewed";
 
-    public static IReadOnlySet<string> All { get; } = typeof(UsageEventNames)
+    public static readonly IReadOnlySet<string> All = typeof(UsageEventNames)
         .GetFields(BindingFlags.Public | BindingFlags.Static)
         .Where(f => f.IsLiteral)
         .Select(f => (string)f.GetRawConstantValue()!)
