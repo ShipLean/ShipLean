@@ -70,7 +70,7 @@ public class RetroSchemaTests
         await using var connection = await _database.OpenAsync();
         var retro = await InsertRetroAsync(connection, SeedIds.WorkItems.Ship90, null, "category-agent");
 
-        var error = await Should.ThrowAsync<PostgresException>(() => InsertPointAsync(connection, retro, "actionItem", "Nope.", null));
+        var error = await Should.ThrowAsync<PostgresException>(() => InsertPointAsync(connection, retro, "wentSideways", "Nope.", null));
 
         error.SqlState.ShouldBe(PostgresErrorCodes.CheckViolation);
     }
@@ -94,6 +94,25 @@ public class RetroSchemaTests
         byRootCause.ShouldBe(point);
         byLog.ShouldBe(log);
     }
+
+    [Test]
+    public async Task RetroAction_WhenSecondActionForSamePoint_ShouldBeRejected()
+    {
+        await using var connection = await _database.OpenAsync();
+        var retro = await InsertRetroAsync(connection, SeedIds.WorkItems.Ship90, null, "action-agent");
+        var point = await InsertPointAsync(connection, retro, "improve", "Add a retry.", null);
+        await InsertActionAsync(connection, SeedIds.WorkItems.Ship91, point);
+
+        var error = await Should.ThrowAsync<PostgresException>(() => InsertActionAsync(connection, SeedIds.WorkItems.Ship92, point));
+
+        error.SqlState.ShouldBe(PostgresErrorCodes.UniqueViolation);
+        error.ConstraintName.ShouldBe("ux_retro_action_point");
+    }
+
+    private static Task InsertActionAsync(NpgsqlConnection connection, Guid workItem, Guid point)
+        => connection.ExecuteAsync(
+            "INSERT INTO retro_action (work_item_id, project_id, point_id) VALUES (@workItem, @project, @point)",
+            new { workItem, project = SeedIds.Projects.Ship, point });
 
     private static async Task<Guid> InsertRetroAsync(NpgsqlConnection connection, Guid? workItem, Guid? sprint, string agent)
     {

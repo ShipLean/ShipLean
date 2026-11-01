@@ -91,3 +91,4 @@ CREATE TABLE retro_action (
 );
 CREATE INDEX ix_retro_action_theme ON retro_action (theme_id);
 CREATE INDEX ix_retro_action_project ON retro_action (project_id);
+CREATE UNIQUE INDEX ux_retro_action_point ON retro_action (point_id) WHERE point_id IS NOT NULL;
