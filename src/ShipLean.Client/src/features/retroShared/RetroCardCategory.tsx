@@ -1,6 +1,7 @@
 import type { RetroCategory, RetroPointDto } from '../../api/retros';
 import { ActionChip } from './ActionChip';
 import { retroCategoryColours, retroCategoryLabels } from './retroCategories';
+import { retroSharedTestIds as ids } from './testIds';
 import { ThemeChip } from './ThemeChip';
 
 /** One category column of a retro card: its label and its points, each with root cause, `# theme` line and action item. */
@@ -32,6 +33,7 @@ export function RetroCardCategory({
             return (
               <li
                 key={p.id}
+                data-testid={ids.retroPointRow}
                 data-point-id={p.id}
                 data-highlighted={highlighted ? 'true' : 'false'}
                 className={highlighted ? '-ml-1 rounded-sm bg-signal-soft px-1 py-0.5' : undefined}
