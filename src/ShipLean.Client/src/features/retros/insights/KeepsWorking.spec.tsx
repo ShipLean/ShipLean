@@ -20,3 +20,11 @@ test('KeepsWorking_WhenMounted_ShouldListTheGoodThemesOnly', async ({ mount, pag
     await expect(section).not.toContainText(bad.theme.name);
   }
 });
+
+for (const theme of ['light', 'dark'] as const) {
+  test(`KeepsWorking_WhenRendered_ShouldMatchItsScreenshot_${theme}`, async ({ mount, page }) => {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    const view = await mount(<KeepsWorking project={insightsProject} insights={retroInsights} />);
+    await expect(view).toHaveScreenshot(`keeps-working.${theme}.png`, { animations: 'disabled' });
+  });
+}

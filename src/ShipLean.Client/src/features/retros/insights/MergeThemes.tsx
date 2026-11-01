@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { ProjectDto } from '../../../api/projects';
+import { RetroQueryState } from '../RetroQueryState';
 import { retrosTestIds as ids } from '../testIds';
 import { useRetroThemes } from '../useRetroQueries';
 import type { RetroInsightsSlotProps } from './InsightsSlotProps';
@@ -8,8 +9,11 @@ import { MergeDialog } from './merge/MergeDialog';
 // Loads the project's themes only once the dialog is open.
 function MergeDialogLoader({ project, onClose }: { project: ProjectDto; onClose: () => void }) {
   const themes = useRetroThemes(project.id);
-  if (!themes.data) return null;
-  return <MergeDialog project={project} options={themes.data.themes} onClose={onClose} />;
+  return (
+    <RetroQueryState query={themes}>
+      {(data) => <MergeDialog project={project} options={data.themes} onClose={onClose} />}
+    </RetroQueryState>
+  );
 }
 
 /** The Merge themes… button and its dialog. */

@@ -92,3 +92,52 @@ test('RecurringThemes_WhenRenameConflicts_ShouldSayTheNameIsTaken', async ({ mou
   await cell.locator('[data-action="save"]').click();
   await expect(cell.locator('[data-error]')).toHaveText('That name is taken');
 });
+
+test('RecurringThemes_WhenThemesRecur_ShouldWarnWithTheCount', async ({ mount, page }) => {
+  await stubRetros(page);
+  await mount(<RecurringThemes project={insightsProject} insights={retroInsights} />, open);
+  const count = retroInsights.themes.filter((t) => t.status === 'recurring').length;
+  expect(count).toBeGreaterThan(0);
+  await expect(page.locator('[data-callout="recurring"]')).toContainText(`${count} `);
+});
+
+test('RecurringThemes_WhenNoThemeRecurs_ShouldHideTheCallout', async ({ mount, page }) => {
+  await stubRetros(page);
+  const calm = {
+    ...retroInsights,
+    themes: retroInsights.themes.map((t) => ({ ...t, status: 'quiet' as const })),
+  };
+  await mount(<RecurringThemes project={insightsProject} insights={calm} />, open);
+  await expect(page.locator('[data-callout="recurring"]')).toHaveCount(0);
+});
+
+test('RecurringThemes_WhenMounted_ShouldShowTheSprintRangeInTheSubtitle', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  await mount(<RecurringThemes project={insightsProject} insights={retroInsights} />, open);
+  const first = retroInsights.sprints[0].name;
+  const last = retroInsights.sprints[retroInsights.sprints.length - 1].name.replace(
+    /^Sprint\s+/,
+    '',
+  );
+  await expect(page.getByText(`${first} – ${last}`)).toBeVisible();
+});
+
+for (const theme of ['light', 'dark'] as const) {
+  test(`RecurringThemes_WhenRendered_ShouldMatchItsScreenshot_${theme}`, async ({
+    mount,
+    page,
+  }) => {
+    await stubRetros(page);
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    const view = await mount(
+      <RecurringThemes project={insightsProject} insights={retroInsights} />,
+      open,
+    );
+    await expect(view).toHaveScreenshot(`recurring-themes.${theme}.png`, {
+      animations: 'disabled',
+    });
+  });
+}

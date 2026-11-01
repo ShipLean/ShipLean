@@ -3,7 +3,7 @@ import type { RetroVerdict } from '../../../../api/retros';
 
 const VERDICT: Record<RetroVerdict, { label: string; tone: ChipTone }> = {
   helped: { label: 'Helped', tone: 'ok' },
-  someEffect: { label: 'Some effect', tone: 'info' },
+  someEffect: { label: 'Some effect', tone: 'warn' },
   noEffect: { label: 'No effect', tone: 'danger' },
   tooEarly: { label: 'Too early', tone: 'muted' },
 };
