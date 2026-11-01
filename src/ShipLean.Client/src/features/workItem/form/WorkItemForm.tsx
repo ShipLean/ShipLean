@@ -38,6 +38,7 @@ export function WorkItemForm({
   item,
   project,
   links,
+  retro = null,
   tasks,
   discussion,
   side,
@@ -45,6 +46,7 @@ export function WorkItemForm({
   item: WorkItemDto;
   project: ProjectDto;
   links: ReactNode;
+  retro?: ReactNode;
   tasks: ReactNode;
   discussion: ReactNode;
   side: ReactNode;
@@ -263,6 +265,7 @@ export function WorkItemForm({
               banners={banners}
               description={description}
               agent={<AgentPanel project={project} itemKey={item.key} />}
+              retro={retro}
             />
           ) : (
             <>
@@ -290,6 +293,7 @@ export function WorkItemForm({
                       onSeverityChange={(severity) => edit({ severity })}
                     />
                   ) : null}
+                  {retro}
                   {tasks}
                   {discussion}
                 </div>

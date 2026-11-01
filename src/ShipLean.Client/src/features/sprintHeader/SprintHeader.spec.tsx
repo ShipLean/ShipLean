@@ -126,6 +126,32 @@ test('SprintHeader_WhenCapacityTab_ShouldMarkOnlyCapacityCurrent', async ({ moun
   await expect(page.getByTestId(ids.tabTaskboard)).not.toHaveAttribute('aria-current', 'page');
 });
 
+test('SprintHeader_WhenTabsShown_ShouldPutRetroFourthAfterCapacity', async ({ mount, page }) => {
+  await mount(<SprintHeaderHarness {...props()} />);
+  const tabs = page.getByTestId(ids.tabs).getByRole('link');
+  await expect(tabs).toHaveText(['Backlog', 'Taskboard', 'Capacity', 'Retro']);
+  await expect(tabs.nth(3)).toHaveAttribute('data-testid', ids.tabRetro);
+});
+
+test('SprintHeader_WhenRetroTab_ShouldMarkOnlyRetroCurrent', async ({ mount, page }) => {
+  await mount(<SprintHeaderHarness {...props({ tab: 'retro' })} />);
+  await expect(page.getByTestId(ids.tabRetro)).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByTestId(ids.tabCapacity)).not.toHaveAttribute('aria-current', 'page');
+  await expect(page.getByTestId(ids.tabBacklog)).not.toHaveAttribute('aria-current', 'page');
+});
+
+test('SprintHeader_WhenSprintPickedOnRetroTab_ShouldOpenRetroOfThatSprint', async ({
+  mount,
+  page,
+}) => {
+  await mount(<SprintHeaderHarness {...props({ tab: 'retro' })} />, {
+    hooksConfig: { route: '/p/SHIP/sprints/s24/retro' },
+  });
+  await page.getByTestId(ids.picker).click();
+  await page.getByTestId(ids.pickerOption).filter({ hasText: 'Sprint 23' }).click();
+  await expect(page.getByTestId(harness.location)).toHaveText('/p/SHIP/sprints/s23/retro');
+});
+
 test('SprintHeader_WhenSprintChanges_ShouldLeaveGoalEditing', async ({ mount, page }) => {
   const component = await mount(<SprintHeaderHarness {...props()} />);
   await page.getByTestId(ids.goalEdit).click();

@@ -34,6 +34,12 @@ export function SprintTabs({
       testId: ids.tabCapacity,
       to: routePath('capacity', params),
     },
+    {
+      id: 'retro',
+      label: 'Retro',
+      testId: ids.tabRetro,
+      to: routePath('sprintRetro', params),
+    },
   ] as const;
   return (
     <nav

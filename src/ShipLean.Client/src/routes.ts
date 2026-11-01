@@ -20,8 +20,10 @@
 //     /p/:key/boards/features     ?settings=
 //     /p/:key/boards/epics        ?settings=
 //     /p/:key/sprints             all sprints
-//     /p/:key/sprints/:sprintId/backlog | capacity
+//     /p/:key/sprints/:sprintId/backlog | capacity | retro
 //     /p/:key/sprints/:sprintId/taskboard   ?settings=   (the Taskboard settings dialog's section)
+//     /p/:key/retros              Retrospectives search   ?q=&sprint=&category=&theme=&level=&role=&recurring=&selected=
+//     /p/:key/retros/insights     Retrospective insights  ?view=themes|actions|impact&range=6|3|all
 //     /p/:key/import              Jira import
 //     /p/:key/settings/:tab       tab: general | states | members | sprints | integrations
 //   The three backlogs also take ?new=epic|feature|story|bug: the new-item row (or dialog) open with that type, see newItemPath.
@@ -84,6 +86,9 @@ export interface RouteParams {
   sprintBacklog: SprintParams;
   taskboard: SprintParams;
   capacity: SprintParams;
+  sprintRetro: SprintParams;
+  retros: ProjectParams;
+  retroInsights: ProjectParams;
   jiraImport: ProjectParams;
   projectSettings: ProjectParams & { tab: ProjectSettingsTab };
   authorize: Record<string, never>;
@@ -101,6 +106,17 @@ export interface RouteQuery {
   item?: string;
   // The backlogs open their new-item row (or dialog) with this type, then drop it from the address.
   new?: NewItemKind;
+  // Retrospective search filters (all text; the panel validates them), the open retro, and the insights view and range.
+  q?: string;
+  sprint?: string;
+  category?: string;
+  theme?: string;
+  level?: string;
+  role?: string;
+  recurring?: string;
+  selected?: string;
+  view?: string;
+  range?: string;
 }
 
 interface RouteDef<I extends RouteId> {
@@ -219,6 +235,24 @@ const routeDefs: { [I in RouteId]: RouteDef<I> } = {
     query: ['item'],
     installLevel: false,
     crumbs: () => ['Sprints', 'Sprint', 'Capacity'],
+  },
+  sprintRetro: {
+    pattern: '/p/:key/sprints/:sprintId/retro',
+    query: ['item'],
+    installLevel: false,
+    crumbs: () => ['Sprints', 'Sprint', 'Retro'],
+  },
+  retros: {
+    pattern: '/p/:key/retros',
+    query: ['q', 'sprint', 'category', 'theme', 'level', 'role', 'recurring', 'selected', 'item'],
+    installLevel: false,
+    crumbs: () => ['Retrospectives', 'Search'],
+  },
+  retroInsights: {
+    pattern: '/p/:key/retros/insights',
+    query: ['view', 'range', 'item'],
+    installLevel: false,
+    crumbs: () => ['Retrospectives', 'Insights'],
   },
   jiraImport: {
     pattern: '/p/:key/import',
