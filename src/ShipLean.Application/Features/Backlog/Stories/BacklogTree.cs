@@ -10,7 +10,7 @@ namespace ShipLean.Application.Features.Backlog.Stories;
 // read unfiltered and with completed items (a hidden Feature can still hold open stories); only the stories carry the view's
 // filter. A group with no story under it, at any depth, is left out. Each group lists its own stories, then its nested Features.
 // A story whose Feature is Removed sits under its nearest live ancestor (its Epic, say), though its Parent stays the Removed Feature.
-// Every group row, No parent included, counts the filtered stories, bugs and nested Features beneath it, closed ones whatever
+// Every group row, No parent included, counts the filtered story-level items and nested Features beneath it, closed ones whatever
 // includeCompleted says, and has no Task entries. Rank is the whole backlog's (see TreeStories).
 public static class BacklogTree
 {
@@ -124,10 +124,10 @@ public static class BacklogTree
         return byGroup;
     }
 
-    // The points of the stories and bugs under the group, open and closed, as on the boards and the Features backlog (tasks and
+    // The points of the story-level items under the group, open and closed, as on the boards and the Features backlog (tasks and
     // Features add no points to the sum).
     private static decimal? ChildPoints(IEnumerable<WorkTreeRollupDto> entries) =>
-        SumOrNull(entries.Where(e => e.Type is WorkItemTypeId.Story or WorkItemTypeId.Bug).Select(e => e.TotalPoints));
+        SumOrNull(entries.Where(e => WorkItemTypeRules.IsStoryLevel(e.Type)).Select(e => e.TotalPoints));
 
     private static List<RollupCountDto> OrphanRollups(IEnumerable<StackRowDto> orphans) =>
         [.. orphans.GroupBy(s => s.Type.Id).OrderBy(g => g.Key)

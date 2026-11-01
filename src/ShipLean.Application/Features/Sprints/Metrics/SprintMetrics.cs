@@ -1,3 +1,4 @@
+using ShipLean.Contracts.Refs;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using Dapper;
@@ -32,7 +33,7 @@ public sealed partial class SprintMetrics(NpgsqlDataSource dataSource, TimeProvi
         }
 
         var remaining = (await connection.QueryAsync<RemainingRow>(new CommandDefinition(
-            MetricsSql.Remaining, new { sprintId, sprint.ProjectId, last = latest, sprintField = FieldIds.Sprint, stateField = FieldIds.State }, cancellationToken: cancellationToken)))
+            MetricsSql.Remaining, new { sprintId, sprint.ProjectId, last = latest, sprintField = FieldIds.Sprint, stateField = FieldIds.State, storyLevel = WorkItemTypeRules.StoryLevelDb }, cancellationToken: cancellationToken)))
             .ToDictionary(r => r.Date, r => r.Remaining);
         var burndown = working.Where(d => d <= today).Select(d => new BurndownPoint(
             d, remaining[d], working.Count <= 1 ? 0 : Math.Round(figures.Committed * (working.Count - 1 - working.IndexOf(d)) / (working.Count - 1), 2))).ToList();
@@ -51,8 +52,8 @@ public sealed partial class SprintMetrics(NpgsqlDataSource dataSource, TimeProvi
         var velocity = await VelocityAsync(connection, projectId, cancellationToken);
         var used = velocity.Override ?? velocity.Average;
         var today = SprintLabels.Today(clock);
-        var sprints = (await connection.QueryAsync<ForecastSprintRow>(new CommandDefinition(MetricsSql.ForecastSprints, new { projectId }, cancellationToken: cancellationToken))).ToList();
-        var backlog = await connection.QueryAsync<BacklogRow>(new CommandDefinition(MetricsSql.Backlog, new { projectId }, cancellationToken: cancellationToken));
+        var sprints = (await connection.QueryAsync<ForecastSprintRow>(new CommandDefinition(MetricsSql.ForecastSprints, new { projectId, storyLevel = WorkItemTypeRules.StoryLevelDb }, cancellationToken: cancellationToken))).ToList();
+        var backlog = await connection.QueryAsync<BacklogRow>(new CommandDefinition(MetricsSql.Backlog, new { projectId, storyLevel = WorkItemTypeRules.StoryLevelDb }, cancellationToken: cancellationToken));
 
         var buckets = sprints.Where(s => s.Start > today).Select(s =>
         {
@@ -110,7 +111,7 @@ public sealed partial class SprintMetrics(NpgsqlDataSource dataSource, TimeProvi
     }
 
     private static Task<Figures> FiguresAsync(NpgsqlConnection connection, SprintInfo sprint, CancellationToken cancellationToken)
-        => connection.QuerySingleAsync<Figures>(new CommandDefinition(MetricsSql.Figures, new { sprintId = sprint.Id, sprint.ProjectId, sprintField = FieldIds.Sprint, stateField = FieldIds.State }, cancellationToken: cancellationToken));
+        => connection.QuerySingleAsync<Figures>(new CommandDefinition(MetricsSql.Figures, new { sprintId = sprint.Id, sprint.ProjectId, sprintField = FieldIds.Sprint, stateField = FieldIds.State, storyLevel = WorkItemTypeRules.StoryLevelDb }, cancellationToken: cancellationToken));
 
     private static async Task<ProjectInfo> LoadProjectAsync(NpgsqlConnection connection, Guid projectId, CancellationToken cancellationToken)
         => await connection.QuerySingleOrDefaultAsync<ProjectInfo>(new CommandDefinition(MetricsSql.SelectProject, new { projectId }, cancellationToken: cancellationToken))

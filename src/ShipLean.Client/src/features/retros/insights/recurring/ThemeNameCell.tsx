@@ -98,7 +98,7 @@ export function ThemeNameCell({
         </button>
       </div>
       {error ? (
-        <span data-error="" role="alert" className="text-[length:var(--text-xs)] text-danger">
+        <span data-error="" role="alert" className="text-[length:var(--text-xs)] text-alert">
           {error}
         </span>
       ) : null}
