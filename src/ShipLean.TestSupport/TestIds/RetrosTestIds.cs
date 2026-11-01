@@ -28,6 +28,7 @@ public static class RetrosTestIds
     public const string RetroAddPointItem = "retro-add-point-item";
     public const string RetroAddPointSave = "retro-add-point-save";
     // Sprint tab: By work item and rail
+    public const string RetroFeatureCallout = "retro-feature-callout";
     public const string RetroCardList = "retro-card-list";
     public const string RetroRail = "retro-rail";
     public const string RetroCoverage = "retro-coverage";

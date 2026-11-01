@@ -25,6 +25,7 @@ export const retrosTestIds = {
   retroAddPointItem: 'retro-add-point-item',
   retroAddPointSave: 'retro-add-point-save',
   // Sprint tab: By work item and rail
+  retroFeatureCallout: 'retro-feature-callout',
   retroCardList: 'retro-card-list',
   retroRail: 'retro-rail',
   retroCoverage: 'retro-coverage',
