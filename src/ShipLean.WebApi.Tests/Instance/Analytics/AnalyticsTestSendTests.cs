@@ -118,7 +118,7 @@ public class AnalyticsTestSendTests : ApiFixture
         var sink = new WaitingSink(entered);
         var target = new AnalyticsTarget(AnalyticsProvider.Umami, new Uri("https://umami.example.com"), UmamiKey, "shiplean.example.com", false, "1.0.0");
         var settings = new AnalyticsSettings(
-            Host.Services.GetRequiredService<NpgsqlDataSource>(), new FixedReader(target), [sink], new FixedUser(TestUser.Joel.Id), clock);
+            Host.Services.GetRequiredService<NpgsqlDataSource>(), new FixedReader(target), [sink], new FixedUser(TestUser.Joel.Id!.Value), clock);
 
         var pending = settings.TestAsync(CancellationToken.None);
         await entered.Task;
