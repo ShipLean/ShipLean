@@ -76,7 +76,11 @@ public sealed class UsageDispatcher : BackgroundService
                     unsent = batch;
                     break;
                 }
-                await DeliverAsync(batch, retry: true, stoppingToken);
+                if (!await DeliverUnlessStuckAsync(batch, stoppingToken))
+                {
+                    // The sink did not return within the stop cap of the host stopping: leave it, and send nothing more.
+                    return;
+                }
             }
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -113,9 +117,48 @@ public sealed class UsageDispatcher : BackgroundService
         return batch;
     }
 
+    // Delivers the batch. When the host stops while the sink is still inside SendAsync, waits at most StopCap more for it, whether or
+    // not the sink honours the token. False when it was left behind.
+    private async Task<bool> DeliverUnlessStuckAsync(List<UsageEvent> batch, CancellationToken stoppingToken)
+    {
+        var delivery = DeliverAsync(batch, retry: true, stoppingToken);
+        TaskCompletionSource stopped = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        await using var registration = stoppingToken.Register(() => stopped.TrySetResult());
+        if (await Task.WhenAny(delivery, stopped.Task) == delivery)
+        {
+            await delivery;
+            return true;
+        }
+        using var giveUp = new CancellationTokenSource();
+        var grace = Task.Delay(StopCap, _time, giveUp.Token);
+        if (await Task.WhenAny(delivery, grace) != delivery)
+        {
+            return false;
+        }
+        await giveUp.CancelAsync();
+        await delivery;
+        return true;
+    }
+
     private async Task FlushOnStopAsync(List<UsageEvent> unsent)
     {
         using var cap = new CancellationTokenSource(StopCap, _time);
+        using var giveUp = new CancellationTokenSource();
+        var work = DeliverUnsentAsync(unsent, cap.Token);
+        // A sink that ignores its token must not hold the stop: stop waiting at the cap whatever the sink does.
+        var timeout = Task.Delay(StopCap, _time, giveUp.Token);
+        if (await Task.WhenAny(work, timeout) == work)
+        {
+            await giveUp.CancelAsync();
+        }
+        else
+        {
+            await cap.CancelAsync();
+        }
+    }
+
+    private async Task DeliverUnsentAsync(List<UsageEvent> unsent, CancellationToken cancellationToken)
+    {
         try
         {
             while (_queue.Reader.TryRead(out var next))
@@ -124,12 +167,16 @@ public sealed class UsageDispatcher : BackgroundService
             }
             foreach (var batch in unsent.Chunk(MaxBatchSize))
             {
-                await DeliverAsync([.. batch], retry: false, cap.Token);
+                await DeliverAsync([.. batch], retry: false, cancellationToken);
             }
         }
         catch (OperationCanceledException)
         {
             // Out of time: the rest is dropped.
+        }
+        catch (Exception problem)
+        {
+            Warn("stop", $"Sending the last usage events failed: {problem.GetType().Name}");
         }
     }
 
@@ -191,7 +238,7 @@ public sealed class UsageDispatcher : BackgroundService
             }
             catch (Exception problem) when (!cancellationToken.IsCancellationRequested)
             {
-                failure = problem.Message;
+                failure = Describe(problem);
             }
             if (attempt < attempts)
             {
@@ -200,6 +247,11 @@ public sealed class UsageDispatcher : BackgroundService
         }
         return failure;
     }
+
+    // Only the type name, and for the sinks' own AnalyticsSendException its message (they build it without the site key). Never the
+    // exception object, its text or its inner exceptions: an HttpRequestException can carry the request URL.
+    private static string Describe(Exception problem)
+        => problem is AnalyticsSendException ? $"{nameof(AnalyticsSendException)}: {problem.Message}" : problem.GetType().Name;
 
     // The target is read when events arrive, and again once it is 30 seconds old. A read that fails keeps the last target.
     private async Task<AnalyticsTarget?> GetTargetAsync(CancellationToken cancellationToken)

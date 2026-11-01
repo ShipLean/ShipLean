@@ -57,6 +57,15 @@ public class UsageEventMapperTests
     }
 
     [Test]
+    public void Mapper_WhenSendNamesOffAndPersonSupplied_ShouldOmitNameAndEmail()
+    {
+        var mapped = UsageEventMapper.Build(Event(UsageActor.ForUser(UserId)), Target(sendNames: false), null, Joel);
+
+        mapped.Person.Properties.ShouldNotContainKey(AnalyticsProps.PersonName);
+        mapped.Person.Properties.ShouldNotContainKey(AnalyticsProps.PersonEmail);
+    }
+
+    [Test]
     public void Mapper_WhenSendNamesOn_ShouldAddNameAndEmail()
     {
         var mapped = UsageEventMapper.Build(Event(UsageActor.ForUser(UserId)), Target(sendNames: true), null, Joel);

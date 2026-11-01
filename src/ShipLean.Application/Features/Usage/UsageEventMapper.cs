@@ -48,7 +48,7 @@ public sealed class UsageEventMapper(ProjectKeyLookup projects, PersonLookup peo
         }
 
         return new AnalyticsEvent(
-            usageEvent.Name, actor.DistinctId, KindWire(actor.Kind), projectKey, usageEvent.OccurredAt, properties, MapPerson(actor, person));
+            usageEvent.Name, actor.DistinctId, KindWire(actor.Kind), projectKey, usageEvent.OccurredAt, properties, MapPerson(actor, target.SendNames ? person : null));
     }
 
     private static AnalyticsPerson MapPerson(UsageActor actor, PersonLookup.Person? person)

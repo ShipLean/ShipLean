@@ -1,5 +1,6 @@
 using System.Diagnostics.Metrics;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;
 using ShipLean.Application.Features.Usage;
 using ShipLean.Contracts.Analytics;
@@ -219,5 +220,107 @@ public class UsageDispatcherTests : ApiFixture
         await AdvanceUntilAsync(_postHog.Attempts.WaitAsync(Limit));
 
         _postHog.Inner.Calls[0].Batch.Count.ShouldBe(UsageDispatcher.MaxBatchSize);
+    }
+
+    // A dispatcher of its own (own queue and settings), on the shared fake clock, so stopping it leaves the host's one alone.
+    private UsageDispatcher OwnDispatcher(UsageQueue queue, IAnalyticsSink sink, ILogger<UsageDispatcher> logger)
+    {
+        FixedAnalyticsSettingsReader reader = new() { Target = Target(sink.Provider) };
+        return new UsageDispatcher(
+            queue, Host.Services.GetRequiredService<UsageEventMapper>(), reader, [sink], _clock,
+            Host.Services.GetRequiredService<IMeterFactory>(), logger);
+    }
+
+    private void TrackOn(UsageQueue queue, int count)
+    {
+        for (var i = 0; i < count; i++)
+        {
+            queue.Track(new UsageEvent(
+                UsageEventNames.ProjectSettingsChanged, UsageSurface.Web, UsageActor.ForUser(SeedIds.Users.Joel), null, 0,
+                UsageOutcome.Ok, null, 5, "test:own", _clock.GetUtcNow(), new Dictionary<string, object>()));
+        }
+    }
+
+    [TestCase(true)]
+    [TestCase(false)]
+    public async Task Dispatcher_WhenSinkNeverReturnsAndIgnoresToken_ShouldStopAtStopCap(bool sinkAlreadyInside)
+    {
+        ProbeSink stuck = new(AnalyticsProvider.Umami) { Gate = new TaskCompletionSource() };
+        UsageQueue queue = new(Host.Services.GetRequiredService<IMeterFactory>());
+        var dispatcher = OwnDispatcher(queue, stuck, new CaptureLogger());
+        await dispatcher.StartAsync(CancellationToken.None);
+        TrackOn(queue, 3);
+        if (sinkAlreadyInside)
+        {
+            await AdvanceUntilAsync(stuck.Started.WaitAsync(Limit));
+        }
+
+        var started = _clock.GetUtcNow();
+        await AdvanceUntilAsync(dispatcher.StopAsync(CancellationToken.None));
+
+        (_clock.GetUtcNow() - started).ShouldBeLessThan(UsageDispatcher.StopCap + TimeSpan.FromSeconds(3));
+        dispatcher.Dispose();
+    }
+
+    [Test]
+    public async Task Dispatcher_WhenSinkThrowsWithSiteKeyInMessage_ShouldNotLogTheKey()
+    {
+        const string key = "SECRET-SITE-KEY-9f3a";
+        CaptureLogger logger = new();
+        ThrowingSink sink = new(AnalyticsProvider.Umami, new HttpRequestException($"POST https://analytics.example.com/?key={key} failed"));
+        UsageQueue queue = new(Host.Services.GetRequiredService<IMeterFactory>());
+        var dispatcher = OwnDispatcher(queue, sink, logger);
+        await dispatcher.StartAsync(CancellationToken.None);
+
+        TrackOn(queue, 3);
+        await AdvanceUntilAsync(logger.Warned.Task);
+        await AdvanceUntilAsync(dispatcher.StopAsync(CancellationToken.None));
+        dispatcher.Dispose();
+
+        logger.Lines.ShouldNotBeEmpty();
+        logger.Lines.ShouldAllBe(line => !line.Contains(key));
+        logger.Lines.ShouldContain(line => line.Contains(nameof(HttpRequestException)));
+    }
+
+    private sealed class ThrowingSink(AnalyticsProvider provider, Exception failure) : IAnalyticsSink
+    {
+        public AnalyticsProvider Provider => provider;
+
+        public Task SendAsync(IReadOnlyList<AnalyticsEvent> batch, AnalyticsTarget target, CancellationToken cancellationToken)
+            => throw failure;
+    }
+
+    // Keeps every line as a real provider would write it, exception text included.
+    private sealed class CaptureLogger : ILogger<UsageDispatcher>
+    {
+        private readonly object _gate = new();
+        private readonly List<string> _lines = [];
+
+        public TaskCompletionSource Warned { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public IReadOnlyList<string> Lines
+        {
+            get
+            {
+                lock (_gate)
+                {
+                    return [.. _lines];
+                }
+            }
+        }
+
+        public IDisposable? BeginScope<TState>(TState state)
+            where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+        {
+            lock (_gate)
+            {
+                _lines.Add($"{formatter(state, exception)} {exception}");
+            }
+            Warned.TrySetResult();
+        }
     }
 }
