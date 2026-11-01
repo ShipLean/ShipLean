@@ -108,6 +108,18 @@ public class ListRetrospectivesTests : McpFixture
     }
 
     [Test]
+    public async Task List_WhenFeatureKeyIsAStory_ShouldBeValidationError()
+    {
+        var story = await ArrangeItemAsync(b => b.WithType("story"));
+
+        var reply = await CallToolAsync(_bearer, "list_retrospectives", $$"""{"project":"SHIP","feature":"{{await KeyOfAsync(story)}}"}""");
+
+        reply.IsToolError().ShouldBeTrue(reply.Body);
+        reply.Structured().GetProperty("error").GetProperty("code").GetString().ShouldBe("validation");
+        reply.Structured().GetProperty("error").GetProperty("field").GetString().ShouldBe("feature");
+    }
+
+    [Test]
     public async Task List_WhenListed_ShouldReturnThemeListAndModeAndRetrosUrl()
     {
         var themeName = $"Listed theme {Guid.NewGuid():N}";

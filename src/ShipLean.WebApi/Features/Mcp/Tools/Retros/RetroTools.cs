@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Text.Json;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
-using ShipLean.Application.Features.Retros.Log;
+using ShipLean.Application.Features.Mcp.Planning.Lessons;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Mcp;
@@ -16,7 +16,7 @@ using ShipLean.WebApi.Features.Mcp.Tools.Planning;
 namespace ShipLean.WebApi.Features.Mcp.Tools.Retros;
 
 [McpServerToolType]
-internal sealed class RetroTools(ItemResolver items, ProjectResolver projects, SprintResolver sprints, IProjectAccess access, CaptureSupport support, IRetroLog log)
+internal sealed class RetroTools(ItemResolver items, ProjectResolver projects, SprintResolver sprints, IProjectAccess access, CaptureSupport support, IRetroLog log, FeatureKind features)
 {
     [McpServerTool(Name = "log_retrospective"), McpScope(McpScopes.Write)]
     [Description(RetroDescriptions.LogRetrospective)]
@@ -68,13 +68,17 @@ internal sealed class RetroTools(ItemResolver items, ProjectResolver projects, S
         await access.RequireAsync(resolvedProject.Id, ProjectRole.Member, cancellationToken);
         var resolvedSprint = string.IsNullOrWhiteSpace(sprint) ? null : await sprints.ResolveAsync(resolvedProject.Id, sprint, cancellationToken: cancellationToken);
         var resolvedFeature = string.IsNullOrWhiteSpace(feature) ? null : await items.ResolveAsync(feature, ProjectRole.Member, resolvedProject.Id, "feature", cancellationToken);
+        if (resolvedFeature is not null && !await features.IsFeatureAsync(resolvedFeature.Id, cancellationToken))
+        {
+            throw ApiException.Validation($"{resolvedFeature.Key} is not a Feature. Give the key of a Feature.", "feature");
+        }
 
         var listed = await log.ListAsync(
             new RetroListRequest(resolvedProject.Id, resolvedSprint?.Id, resolvedFeature?.Id, ParseCategory(category), string.IsNullOrWhiteSpace(theme) ? null : theme, ParseSince(since)),
             cancellationToken);
 
-        var truncated = listed.Points.Count > RetroLog.MaxListed;
-        var points = listed.Points.Take(RetroLog.MaxListed).ToList();
+        var truncated = listed.Truncated;
+        var points = listed.Points;
         var result = new ListRetrospectivesResult(
             resolvedProject.Key, RetrosUrl(await support.BaseUrlAsync(cancellationToken), resolvedProject.Key),
             [.. points.Select(Line)], Name(listed.ThemeMode), [.. listed.Themes.Select(Theme)], truncated);
@@ -99,7 +103,13 @@ internal sealed class RetroTools(ItemResolver items, ProjectResolver projects, S
         => $"{baseUrl.TrimEnd('/')}/p/{Uri.EscapeDataString(projectKey)}/retros";
 
     private static IReadOnlyList<RetroLogPoint> Points(IReadOnlyList<RetroPointInput>? points)
-        => [.. (points ?? []).Select(p => new RetroLogPoint(p.Text ?? string.Empty, p.Theme, p.RootCause))];
+        => [.. (points ?? []).Select(p => new RetroLogPoint(p.Text ?? string.Empty, p.Theme, StrayRootCause(p)))];
+
+    // root_cause is advertised on went_badly points only. A stray one on another category is caught here and refused.
+    private static string? StrayRootCause(RetroPointInput point)
+        => point.Stray is { } stray && stray.ContainsKey("root_cause")
+            ? throw ApiException.Validation("root_cause is only for went_badly points.", "root_cause")
+            : null;
 
     private static IReadOnlyList<RetroLogPoint> BadPoints(IReadOnlyList<RetroBadPointInput>? points)
         => [.. (points ?? []).Select(p => new RetroLogPoint(p.Text ?? string.Empty, p.Theme, p.RootCause))];

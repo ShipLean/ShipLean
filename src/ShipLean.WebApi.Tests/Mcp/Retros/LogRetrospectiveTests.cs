@@ -1,12 +1,12 @@
 using System.Text.Json;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using ShipLean.Contracts.Events;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Hosting;
 using ShipLean.WebApi.Tests.Mcp.Transport;
+using ShipLean.WebApi.Tests.Sprints.Api;
 
 namespace ShipLean.WebApi.Tests.Mcp.Retros;
 
@@ -19,14 +19,6 @@ public class LogRetrospectiveTests : McpFixture
     private string _bearer = string.Empty;
 
     protected override bool WithProbeTools => false;
-
-    protected override Action<IServiceCollection>? ConfigureTestServices => services =>
-    {
-        base.ConfigureTestServices!(services);
-        services.RemoveAll<IProjectEvents>();
-        services.AddSingleton<RecordedEvents>();
-        services.AddSingleton<IProjectEvents>(sp => sp.GetRequiredService<RecordedEvents>());
-    };
 
     [OneTimeSetUp]
     public async Task IssueAToken() => _bearer = await TokenAsync(TestUser.Joel, ReadWrite);
@@ -153,6 +145,17 @@ public class LogRetrospectiveTests : McpFixture
     }
 
     [Test]
+    public async Task Log_WhenStrayRootCauseOnWentWell_ShouldBeValidationError()
+    {
+        var story = await ArrangeAsync(b => b.WithType("story"));
+
+        var reply = await CallToolAsync(_bearer, "log_retrospective", Json(new { item = await KeyOfAsync(story), went_well = new[] { new { text = "Nope", root_cause = "Not allowed here" } } }));
+
+        ErrorCode(reply).ShouldBe("validation");
+        await AssertNoRetroAsync(story);
+    }
+
+    [Test]
     public async Task Log_WhenUnknownItem_ShouldBeNotFound()
     {
         var reply = await CallToolAsync(_bearer, "log_retrospective", Json(new { item = "SHIP-999999", went_well = new[] { new { text = "x" } } }));
@@ -253,13 +256,104 @@ public class LogRetrospectiveTests : McpFixture
         }
 
         var story = await ArrangeAsync(b => b.WithType("story").WithSprint(sprint));
+        using var watch = new ProjectEventWatch(Host.Services.GetRequiredService<IProjectEvents>(), SeedIds.Projects.Ship);
 
         await CallAsync("log_retrospective", Json(new { item = await KeyOfAsync(story), went_well = new[] { new { text = "Event" } } }));
 
-        var published = Host.Services.GetRequiredService<RecordedEvents>().Published.OfType<RetroChanged>().Where(e => e.WorkItemIds.Contains(story)).ToList();
-        published.Count.ShouldBe(1);
-        published[0].ProjectId.ShouldBe(SeedIds.Projects.Ship);
-        published[0].SprintIds.ShouldBe([sprint]);
+        var published = await watch.NextAsync<RetroChanged>(e => e.WorkItemIds.Contains(story));
+        published.ProjectId.ShouldBe(SeedIds.Projects.Ship);
+        published.SprintIds.ShouldBe([sprint]);
+    }
+
+    [Test]
+    public async Task Log_WhenStoryMovedSprintBetweenLogs_ShouldKeepOriginalSprintInEventAndRow()
+    {
+        var first = await ArrangeSprintAsync("2003-01-01");
+        var second = await ArrangeSprintAsync("2004-01-01");
+        var story = await ArrangeAsync(b => b.WithType("story").WithSprint(first));
+        var key = await KeyOfAsync(story);
+        await CallAsync("log_retrospective", Json(new { item = key, went_well = new[] { new { text = "Before the move" } } }));
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            await connection.ExecuteAsync("UPDATE work_item SET sprint_id = @second WHERE id = @story", new { second, story });
+        }
+
+        using var watch = new ProjectEventWatch(Host.Services.GetRequiredService<IProjectEvents>(), SeedIds.Projects.Ship);
+        await CallAsync("log_retrospective", Json(new { item = key, improve = new[] { new { text = "After the move" } } }));
+
+        var published = await watch.NextAsync<RetroChanged>(e => e.WorkItemIds.Contains(story));
+        published.SprintIds.ShouldBe([first]);
+        await using var check = await OpenDatabaseAsync();
+        (await check.QuerySingleAsync<Guid?>("SELECT sprint_id FROM retrospective WHERE work_item_id = @story", new { story })).ShouldBe(first);
+    }
+
+    [Test]
+    public async Task Log_WhenSubAgentRetroAppendedWithCompiledFrom_ShouldBecomeConductor()
+    {
+        var feature = await ArrangeAsync(b => b.WithType("feature"));
+        var source = await ArrangeAsync(b => b.WithType("story").WithParent(feature));
+        var story = await ArrangeAsync(b => b.WithType("story").WithParent(feature));
+        var sub = await TokenAsync(TestUser.Joel, ReadWrite, "Lane B");
+        (await CallToolAsync(sub, "log_retrospective", Json(new { item = await KeyOfAsync(source), went_well = new[] { new { text = "Source" } } }))).IsToolError().ShouldBeFalse();
+        var key = await KeyOfAsync(story);
+        var first = await CallAsync("log_retrospective", Json(new { item = key, went_well = new[] { new { text = "Alone" } } }));
+        first.GetProperty("role").GetString().ShouldBe("subAgent");
+
+        var second = await CallAsync("log_retrospective", Json(new { item = key, improve = new[] { new { text = "Compiled" } }, compiled_from = new[] { await KeyOfAsync(source) } }));
+
+        second.GetProperty("role").GetString().ShouldBe("conductor");
+        second.GetProperty("retro_id").GetGuid().ShouldBe(first.GetProperty("retro_id").GetGuid());
+        await using var connection = await OpenDatabaseAsync();
+        (await connection.QuerySingleAsync<string>("SELECT role FROM retrospective WHERE work_item_id = @story", new { story })).ShouldBe("conductor");
+    }
+
+    [Test]
+    public async Task Log_WhenAppendedWithoutCompiledFrom_ShouldKeepConductorRole()
+    {
+        var feature = await ArrangeAsync(b => b.WithType("feature"));
+        var key = await KeyOfAsync(feature);
+        await CallAsync("log_retrospective", Json(new { item = key, went_well = new[] { new { text = "One" } } }));
+
+        var again = await CallAsync("log_retrospective", Json(new { item = key, went_well = new[] { new { text = "Two" } } }));
+
+        again.GetProperty("role").GetString().ShouldBe("conductor");
+    }
+
+    [Test]
+    public async Task Log_WhenOneValidAndOneOverlongPoint_ShouldWriteNothing()
+    {
+        var story = await ArrangeAsync(b => b.WithType("story"));
+
+        var reply = await CallToolAsync(_bearer, "log_retrospective", Json(new
+        {
+            item = await KeyOfAsync(story),
+            went_well = new[] { new { text = "Fine" } },
+            improve = new[] { new { text = new string('x', 2001) } },
+        }));
+
+        ErrorCode(reply).ShouldBe("validation");
+        await AssertNoRetroAsync(story);
+    }
+
+    [Test]
+    public async Task Log_WhenValidPointAndBlankFailureEntry_ShouldWriteNothing()
+    {
+        var story = await ArrangeAsync(b => b.WithType("story"));
+
+        var reply = await CallToolAsync(_bearer, "log_retrospective", Json(new { item = await KeyOfAsync(story), went_well = new[] { new { text = "Fine" } }, failure_log = new { friction = new[] { " " } } }));
+
+        ErrorCode(reply).ShouldBe("validation");
+        await AssertNoRetroAsync(story);
+    }
+
+    private async Task<Guid> ArrangeSprintAsync(string start)
+    {
+        var sprint = Guid.NewGuid();
+        await using var connection = await OpenDatabaseAsync();
+        await connection.ExecuteAsync(
+            "INSERT INTO sprint (id, project_id, name, start_date, end_date) VALUES (@sprint, @project, @name, @start::date, @start::date + 13)",
+            new { sprint, project = SeedIds.Projects.Ship, name = $"Retro Move {sprint:N}", start });
+        return sprint;
     }
 
     private async Task AssertNoRetroAsync(Guid item)
@@ -293,41 +387,5 @@ public class LogRetrospectiveTests : McpFixture
     {
         await using var connection = await OpenDatabaseAsync();
         return await connection.QuerySingleAsync<string>("SELECT key FROM work_item WHERE id = @id", new { id });
-    }
-
-    // The bus the host runs on in this class: it keeps what was published and lets subscribers subscribe to nothing.
-    private sealed class RecordedEvents : IProjectEvents
-    {
-        private readonly List<ProjectEvent> _published = [];
-
-        public IReadOnlyList<ProjectEvent> Published
-        {
-            get
-            {
-                lock (_published)
-                {
-                    return [.. _published];
-                }
-            }
-        }
-
-        public Task PublishAsync(ProjectEvent projectEvent)
-        {
-            lock (_published)
-            {
-                _published.Add(projectEvent);
-            }
-
-            return Task.CompletedTask;
-        }
-
-        public IDisposable Subscribe(Guid? projectId, Func<ProjectEvent, Task> handler) => new Subscription();
-
-        private sealed class Subscription : IDisposable
-        {
-            public void Dispose()
-            {
-            }
-        }
     }
 }
