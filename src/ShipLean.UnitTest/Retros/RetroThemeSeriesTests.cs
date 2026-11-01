@@ -38,7 +38,7 @@ public class RetroThemeSeriesTests
         var theme = Guid.NewGuid();
         var points = series.Select(sprint => (theme, sprint.Id, RetroCategory.WentWell));
 
-        var entry = RetroThemeSeries.Build(series, points, new Dictionary<Guid, RetroTone> { [theme] = RetroTone.Good }, []).Single().Value;
+        var entry = RetroThemeSeries.Build(series, points, new Dictionary<Guid, RetroTone> { [theme] = RetroTone.Good }, [], new HashSet<Guid>()).Single().Value;
 
         entry.Counts.ShouldBe([1, 1, 1, 1]);
         entry.IsRecurring.ShouldBeFalse();
@@ -52,7 +52,7 @@ public class RetroThemeSeriesTests
         var points = series.Select(sprint => (theme, sprint.Id, RetroCategory.WentBadly));
         var closed = new[] { new RetroSeriesClosed(Guid.NewGuid(), theme, new DateTimeOffset(2020, 1, 1, 0, 0, 0, TimeSpan.Zero)) };
 
-        var entry = RetroThemeSeries.Build(series, points, new Dictionary<Guid, RetroTone> { [theme] = RetroTone.Bad }, closed).Single().Value;
+        var entry = RetroThemeSeries.Build(series, points, new Dictionary<Guid, RetroTone> { [theme] = RetroTone.Bad }, closed, new HashSet<Guid>()).Single().Value;
 
         entry.Closed.ShouldBeEmpty();
         entry.IsRecurring.ShouldBeTrue();

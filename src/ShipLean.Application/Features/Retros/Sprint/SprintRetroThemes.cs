@@ -17,7 +17,8 @@ internal sealed class SprintRetroThemes
             series,
             mentions.Select(m => (m.ThemeId, m.SprintId, Enum.Parse<RetroCategory>(m.Category, ignoreCase: true))),
             themes.ToDictionary(theme => theme.Key, theme => theme.Value.Tone),
-            closed);
+            closed,
+            new HashSet<Guid>());
     }
 
     // The mentions of the last window of the series, oldest first.

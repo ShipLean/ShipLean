@@ -33,7 +33,7 @@ internal static class RetroRecurringThemes
         var completions = (await RetroSprintFacts.CompletionsAsync(connection, [.. closed.Select(row => row.ItemId)], cancellationToken)).ToDictionary(completion => completion.ItemId);
         var closedActions = closed.Where(row => completions.ContainsKey(row.ItemId)).Select(row => new RetroSeriesClosed(row.ItemId, row.ThemeId, completions[row.ItemId].CompletedAt));
 
-        return RetroThemeSeries.Build(series, mentions, bad, closedActions).Where(entry => entry.Value.IsRecurring).Select(entry => entry.Key).ToHashSet();
+        return RetroThemeSeries.Build(series, mentions, bad, closedActions, new HashSet<Guid>()).Where(entry => entry.Value.IsRecurring).Select(entry => entry.Key).ToHashSet();
     }
 
     private sealed record MentionRow(Guid ThemeId, Guid SprintId, string Category);

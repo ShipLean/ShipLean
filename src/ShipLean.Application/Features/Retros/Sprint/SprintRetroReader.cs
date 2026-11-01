@@ -45,11 +45,12 @@ public sealed class SprintRetroReader(NpgsqlDataSource dataSource, IRetroCards r
         }
         var closed = await SprintRetroStore.ClosedActionsAsync(connection, sprintRow.ProjectId, [.. refs.Keys], cancellationToken);
         var completions = await RetroSprintFacts.CompletionsAsync(connection, [.. closed.Select(c => c.ItemId).Distinct()], cancellationToken);
-        // The series ends with the viewed sprint, so a completion after its end belongs to a later sprint and is left out.
+        // The series ends with the viewed sprint, so a completion on or after the next live sprint's start belongs to a later sprint.
+        // A completion in the gap after this sprint's end still belongs to it.
         var seriesDated = series.Select(row => new RetroSeriesSprint(row.Id, Day(row.Start), Day(row.End), Day(row.End) < today)).ToList();
-        var viewedEnd = seriesDated[^1].End;
+        var nextStart = await SprintRetroStore.NextStartAsync(connection, sprintRow, cancellationToken) is { } next ? Day(next) : (DateOnly?)null;
         var closedActions = completions
-            .Where(c => DateOnly.FromDateTime(c.CompletedAt.UtcDateTime) <= viewedEnd)
+            .Where(c => nextStart is not { } cutoff || DateOnly.FromDateTime(c.CompletedAt.UtcDateTime) < cutoff)
             .Join(closed, c => c.ItemId, row => row.ItemId, (c, row) => new RetroSeriesClosed(c.ItemId, row.ThemeId, c.CompletedAt));
         var themes = new SprintRetroThemes(seriesDated, SprintRetroStore.WindowSize, mentions, closedActions, refs);
 
