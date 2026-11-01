@@ -9,8 +9,10 @@ using ShipLean.LocalHost;
 
 namespace ShipLean.WebApi.Tests.LocalHost;
 
-// The real host on a free port against its own database, with the bundle path pointed at a folder the test controls.
+// The real host on a free port against its own database, with the bundle path pointed at a folder the test controls. Not parallel:
+// the Local blob store is the WebApi project's shared data/blobs folder, which the API fixtures fill too.
 [TestFixture]
+[NonParallelizable]
 public class LocalHostRunTests
 {
     // Seeded by db/seed/0010_attachments.sql.
@@ -84,6 +86,12 @@ public class LocalHostRunTests
     [Test]
     public async Task Start_WhenReady_ShouldServeASeededAttachment()
     {
+        // Earlier runs and the API fixtures leave the seed blobs in the shared folder; only the host's own put may supply them.
+        var seedFolder = Path.Combine(RepoLayout.WebApiProject, "data", "blobs", "seed");
+        if (Directory.Exists(seedFolder))
+        {
+            Directory.Delete(seedFolder, recursive: true);
+        }
         await using var host = await StartAsync(new StringWriter(), withBundle: true);
         using var client = await SignedInAsync(host);
 
