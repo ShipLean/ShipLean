@@ -1,8 +1,10 @@
+using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Retros;
 using ShipLean.Core;
 using ShipLean.TestSupport;
+using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Retros;
 
@@ -141,6 +143,26 @@ public sealed class RetroCardsTests : ApiFixture
         var action = (await Cards.LoadAsync([retro], CancellationToken.None)).Single().Points.Single().Action;
 
         action.ShouldNotBeNull().Key.ShouldBe("SHIP-89");
+    }
+
+    [Test]
+    public async Task Load_WhenActionItemIsRemoved_ShouldLeaveTheActionNull()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var seed = new RetroSeed(connection, Project);
+        var retro = await AgentRetroAsync(seed, SeedIds.WorkItems.Ship92);
+        var point = await seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.Improve, "Do the thing."));
+        var item = await new WorkItemBuilder(Project).WithType("action").WithTitle($"Fix {Guid.NewGuid():N}").InsertAsync(connection);
+        await seed.ActionAsync(new RetroSeedAction(item, PointId: point));
+        var before = (await Cards.LoadAsync([retro], CancellationToken.None)).Single().Points.Single().Action;
+        await connection.ExecuteAsync(
+            "UPDATE work_item SET state_id = (SELECT id FROM state WHERE project_id = @project AND type = 'action' AND category = 'removed' LIMIT 1) WHERE id = @action",
+            new { project = Project, action = item });
+
+        var after = (await Cards.LoadAsync([retro], CancellationToken.None)).Single().Points.Single().Action;
+
+        before.ShouldNotBeNull();
+        after.ShouldBeNull();
     }
 
     private static Task<Guid> AgentRetroAsync(RetroSeed seed, Guid workItemId)

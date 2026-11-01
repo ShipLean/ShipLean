@@ -12,7 +12,7 @@ namespace ShipLean.Application.Features.Retros.Search;
 
 // Retrospectives > Search: one row per live point of a live retro, best match first (newest first without a query). The query
 // matches a point's text and root cause, its theme's name, its retro's work item key and title, and the retro's raw failure log.
-// Recurring is the project-wide rule of the sprint view and Insights (RetroRecurringThemes). A removed action item drops out of a point.
+// Recurring is the project-wide rule of the sprint view and Insights (RetroRecurringThemes). A removed action item is already left off the point by RetroCards.
 public sealed class RetroSearchReader(NpgsqlDataSource dataSource, TimeProvider clock, IRetroCards cards) : IRetroSearchReader
 {
     public async Task<RetroSearchDto> SearchAsync(Guid projectId, RetroSearchQuery query, CancellationToken cancellationToken = default)
@@ -61,11 +61,7 @@ public sealed class RetroSearchReader(NpgsqlDataSource dataSource, TimeProvider 
     }
 
     private static RetroPointDto Shape(RetroPointDto point, IReadOnlySet<Guid> recurring)
-        => point with
-        {
-            Recurring = point.Theme is { } theme && recurring.Contains(theme.Id),
-            Action = point.Action is { State.Category: StateCategory.Removed } ? null : point.Action,
-        };
+        => point with { Recurring = point.Theme is { } theme && recurring.Contains(theme.Id) };
 
     private static void Check(RetroSearchQuery query)
     {
