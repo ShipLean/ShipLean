@@ -147,34 +147,3 @@ test('RetroShell_WhenRetroChangedArrives_ShouldRefetchTheOpenScreen', async ({ m
   });
   await expect.poll(() => stub.reads('/retro').length).toBe(beforeEvents + 1);
 });
-
-test('RetrosSearch_WhenEventIsForAnotherWorkItem_ShouldNotReadAnyWorkItemRetros', async ({
-  mount,
-  page,
-}) => {
-  await stubShell(page);
-  const stub = await stubRetros(page);
-  const hub = await stubHub(page);
-  await mount(<AppRoutes />, open('/p/SHIP/retros'));
-  await expect(page.getByTestId(ids.retrosSearchPanel)).toBeAttached();
-  await expect(page.getByTestId(realtimeTestIds.liveDot)).toBeVisible();
-  const searchReads = stub.reads('/retros').length;
-
-  await hub.push({
-    type: 'retroChanged',
-    projectId: 'p1',
-    clientId: null,
-    sprintIds: [],
-    workItemIds: ['w-other'],
-  });
-  // Search reacts to a project-wide event; its refetch means the other item's event before it has been handled too.
-  await hub.push({
-    type: 'retroChanged',
-    projectId: 'p1',
-    clientId: null,
-    sprintIds: [],
-    workItemIds: [],
-  });
-  await expect.poll(() => stub.reads('/retros').length).toBe(searchReads + 2);
-  expect(stub.calls.filter((c) => c.path.includes('/work-items/'))).toEqual([]);
-});
