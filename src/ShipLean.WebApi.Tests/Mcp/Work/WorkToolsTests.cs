@@ -75,7 +75,7 @@ public class WorkToolsTests : McpFixture
     }
 
     [Test]
-    public async Task FindWork_WhenTypeIsSpelledActionItem_ShouldListOnlyActions()
+    public async Task FindWork_WhenTypeIsSpelledWithASpace_ShouldListOnlyActions()
     {
         var action = await ArrangeAsync(b => b.WithType("action").WithTitle("Find action").WithSprint(_sprintId));
         await ArrangeAsync(b => b.WithType("story").WithTitle("Find story beside the action").WithSprint(_sprintId));
