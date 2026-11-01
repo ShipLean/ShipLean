@@ -9,6 +9,10 @@ import { sprintHeaderHarnessIds as harness } from './ct/harnessIds';
 import type { SprintHeaderProps } from './SprintHeader';
 import { sprintHeaderTestIds as ids } from './testIds';
 
+// The test ids in document order, among the ones given.
+const inDocumentOrder = (testIds: string[]) =>
+  testIds.map((testId) => `[data-testid="${testId}"]`).join(', ');
+
 const project: ProjectDto = {
   id: 'p1',
   key: 'SHIP',
@@ -124,6 +128,35 @@ test('SprintHeader_WhenCapacityTab_ShouldMarkOnlyCapacityCurrent', async ({ moun
   await expect(page.getByTestId(ids.tabCapacity)).toHaveAttribute('aria-current', 'page');
   await expect(page.getByTestId(ids.tabBacklog)).not.toHaveAttribute('aria-current', 'page');
   await expect(page.getByTestId(ids.tabTaskboard)).not.toHaveAttribute('aria-current', 'page');
+});
+
+test('SprintHeader_WhenTabsShown_ShouldPutRetroFourthAfterCapacity', async ({ mount, page }) => {
+  await mount(<SprintHeaderHarness {...props()} />);
+  const tabs = page.locator(
+    inDocumentOrder([ids.tabBacklog, ids.tabTaskboard, ids.tabCapacity, ids.tabRetro]),
+  );
+  await expect(tabs).toHaveText(['Backlog', 'Taskboard', 'Capacity', 'Retro']);
+  const order = await tabs.evaluateAll((nodes) => nodes.map((n) => n.getAttribute('data-testid')));
+  expect(order).toEqual([ids.tabBacklog, ids.tabTaskboard, ids.tabCapacity, ids.tabRetro]);
+});
+
+test('SprintHeader_WhenRetroTab_ShouldMarkOnlyRetroCurrent', async ({ mount, page }) => {
+  await mount(<SprintHeaderHarness {...props({ tab: 'retro' })} />);
+  await expect(page.getByTestId(ids.tabRetro)).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByTestId(ids.tabCapacity)).not.toHaveAttribute('aria-current', 'page');
+  await expect(page.getByTestId(ids.tabBacklog)).not.toHaveAttribute('aria-current', 'page');
+});
+
+test('SprintHeader_WhenSprintPickedOnRetroTab_ShouldOpenRetroOfThatSprint', async ({
+  mount,
+  page,
+}) => {
+  await mount(<SprintHeaderHarness {...props({ tab: 'retro' })} />, {
+    hooksConfig: { route: '/p/SHIP/sprints/s24/retro' },
+  });
+  await page.getByTestId(ids.picker).click();
+  await page.getByTestId(ids.pickerOption).filter({ hasText: 'Sprint 23' }).click();
+  await expect(page.getByTestId(harness.location)).toHaveText('/p/SHIP/sprints/s23/retro');
 });
 
 test('SprintHeader_WhenSprintChanges_ShouldLeaveGoalEditing', async ({ mount, page }) => {

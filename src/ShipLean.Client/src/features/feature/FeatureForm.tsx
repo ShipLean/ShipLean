@@ -20,12 +20,15 @@ export function FeatureForm({
   banners,
   description,
   agent,
+  retro = null,
 }: {
   region: FeatureRegionProps;
   header: ReactNode;
   banners: ReactNode;
   description: ReactNode;
   agent: ReactNode;
+  // The Feature's retrospective section (the conductor's retros), after Stories and bugs.
+  retro?: ReactNode;
 }) {
   return (
     <FeatureDropZone {...region}>
@@ -43,6 +46,7 @@ export function FeatureForm({
             {description}
             <FeatureLinksSection {...region} />
             <StoriesAndBugs {...region} />
+            {retro}
             {agent}
             <FeatureLog {...region} />
           </div>
