@@ -8,11 +8,13 @@ namespace ShipLean.Application.Features.Retros.People;
 // after a point comes, goes or moves. Tone follows RetroPointRows: good when more than half the live points went well.
 internal static class RetroThemeRows
 {
+    // FOR NO KEY UPDATE, not FOR SHARE: the caller goes on to UPDATE this row (count and tone), and two writers that each held
+    // a share lock would deadlock on that upgrade. This way concurrent adds to one theme queue, and a Merge's FOR UPDATE still waits.
     public static async Task RequireLiveAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, Guid projectId, Guid themeId, CancellationToken cancellationToken)
     {
         var found = await connection.ExecuteScalarAsync<bool>(
             new CommandDefinition(
-                "SELECT EXISTS (SELECT 1 FROM (SELECT id FROM retro_theme WHERE id = @themeId AND project_id = @projectId AND archived_at IS NULL AND merged_into_id IS NULL FOR SHARE) live)",
+                "SELECT EXISTS (SELECT 1 FROM (SELECT id FROM retro_theme WHERE id = @themeId AND project_id = @projectId AND archived_at IS NULL AND merged_into_id IS NULL FOR NO KEY UPDATE) live)",
                 new { themeId, projectId },
                 transaction,
                 cancellationToken: cancellationToken));

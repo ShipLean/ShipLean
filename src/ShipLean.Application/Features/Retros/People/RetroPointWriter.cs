@@ -119,7 +119,13 @@ internal sealed class RetroPointWriter(NpgsqlDataSource dataSource, PickRetroThe
             return new RetroThemeResult(id, RetroThemeSetBy.Person, null, null);
         }
 
-        return await pick.AssignAsync(new RetroThemeRequest(projectId, text, null, themeName, true), cancellationToken);
+        // The pick runs on its own connection, so a merge could retire the theme before this transaction inserts the point.
+        var picked = await pick.AssignAsync(new RetroThemeRequest(projectId, text, null, themeName, true), cancellationToken);
+        if (picked.ThemeId is { } pickedId)
+        {
+            await RetroThemeRows.RequireLiveAsync(connection, transaction, projectId, pickedId, cancellationToken);
+        }
+        return picked;
     }
 
     private async Task<RetroRow> ResolveRetroAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, Guid projectId, RetroPointCreate request, CancellationToken cancellationToken)
