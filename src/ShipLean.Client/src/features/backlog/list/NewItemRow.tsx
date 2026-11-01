@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { ApiRequestError } from '../../../api/client';
-import type { WorkItemTypeId } from '../../../api/refs';
-import { typeName } from '../../../api/workItemTypes';
+import { WORK_ITEM_TYPE_IDS, type WorkItemTypeId } from '../../../api/refs';
+import { isStoryLevel, typeName } from '../../../api/workItemTypes';
 import { useCreateWorkItem } from '../backlogApi';
 import { backlogTestIds as ids } from '../testIds';
 
-const types: { id: WorkItemTypeId; label: string }[] = (['story', 'bug', 'action'] as const).map(
+const types: { id: WorkItemTypeId; label: string }[] = WORK_ITEM_TYPE_IDS.filter(isStoryLevel).map(
   (id) => ({ id, label: typeName(id) }),
 );
 

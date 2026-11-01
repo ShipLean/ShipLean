@@ -32,7 +32,7 @@ describe('buildActions', () => {
     rows[4].run();
     expect(navigate).toHaveBeenCalledWith('/p/SHIP/backlogs/stories?new=action');
     const labels = rows.map((r) => r.label);
-    expect(labels).toContain('Create Action item');
+    expect(labels).toContain('Create action item');
     expect(labels).not.toContain('Create task');
     expect(labels).not.toContain('Create work item');
   });

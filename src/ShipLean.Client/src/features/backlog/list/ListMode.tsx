@@ -1,5 +1,6 @@
 import type { ProjectDto } from '../../../api/projects';
-import type { NewItemKind } from '../../../routes';
+import { isStoryLevel } from '../../../api/workItemTypes';
+import { NEW_ITEM_KINDS, type NewItemKind } from '../../../routes';
 import { useReorder } from '../drag/useReorder';
 import { BacklogFrame } from '../filter/BacklogFrame';
 import { useBacklogFilter } from '../filter/useBacklogFilter';
@@ -8,7 +9,7 @@ import { useTeammateChanges } from '../realtime/useTeammateChanges';
 import { useNewItemFromLink } from '../useNewItemFromLink';
 import { ListTable } from './ListTable';
 
-const STORY_KINDS: readonly NewItemKind[] = ['story', 'bug', 'action'];
+const STORY_KINDS: readonly NewItemKind[] = NEW_ITEM_KINDS.filter(isStoryLevel);
 
 // The Stories backlog in list mode: the shared frame (toolbar, filter, first-run state) around the ranked rows (drag to
 // reorder) and the inline new-item row.

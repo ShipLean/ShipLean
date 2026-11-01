@@ -1,4 +1,5 @@
-import type { WorkItemTypeId } from '../../../api/refs';
+import { WORK_ITEM_TYPE_IDS, type WorkItemTypeId } from '../../../api/refs';
+import { isStoryLevel } from '../../../api/workItemTypes';
 import type { ParentRefDto } from '../../../api/workItems';
 import { TypeIcon } from '../../../components/TypeIcon';
 import { workItemTestIds as ids } from '../testIds';
@@ -7,7 +8,7 @@ import { FieldCell } from './FieldCell';
 import { FieldMenu } from './FieldMenu';
 import { ParentCandidates } from './ParentCandidates';
 
-// Epic <- Feature <- Feature | Story | Bug | Action item, and Story | Bug <- Task.
+// Epic <- Feature <- Feature | Story | Bug | Action item, and Story | Bug | Action item <- Task.
 export const parentTypesOf = (type: WorkItemTypeId): WorkItemTypeId[] => {
   switch (type) {
     case 'feature':
@@ -17,7 +18,7 @@ export const parentTypesOf = (type: WorkItemTypeId): WorkItemTypeId[] => {
     case 'action':
       return ['feature'];
     case 'task':
-      return ['story', 'bug'];
+      return WORK_ITEM_TYPE_IDS.filter(isStoryLevel);
     default:
       return [];
   }

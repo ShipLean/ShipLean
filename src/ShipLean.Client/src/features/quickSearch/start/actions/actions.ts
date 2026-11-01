@@ -1,5 +1,4 @@
 import { newItemPath, routePath, type NewItemKind } from '../../../../routes';
-import { typeName } from '../../../../api/workItemTypes';
 import type { Theme } from '../../../../api/me';
 import type { QuickSearchRow } from '../../types';
 
@@ -27,7 +26,7 @@ export function buildActions(context: ActionContext, query = ''): ActionRow[] {
       kind: 'action',
       id: `create-${kind}`,
       glyph: '+',
-      label: `Create ${typeName(kind)}`,
+      label: kind === 'action' ? 'Create action item' : `Create ${kind}`,
       detail: `in ${key}`,
       run: () => navigate(newItemPath(key, kind)),
     });
