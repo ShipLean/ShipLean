@@ -200,6 +200,20 @@ test('States_WhenStateRenamed_ShouldKeepCategoryColour', async ({ mount, page })
   ]);
 });
 
+test('States_WhenActionStateRenamed_ShouldSendOnlyThatUpdate', async ({ mount, page }) => {
+  const puts = await stub(page);
+  const view = await mountAdmin(mount);
+  await view.getByTestId(ids.stateTypeAction).click();
+
+  await view.getByTestId(ids.stateRow).nth(1).getByTestId(ids.stateName).fill('Doing');
+  await view.getByTestId(ids.save).click();
+
+  await expect.poll(() => puts.length).toBe(1);
+  expect(puts[0]?.states.update).toEqual([
+    { stateId: 'action-active', name: 'Doing', category: 'inProgress' },
+  ]);
+});
+
 test('States_WhenReordered_ShouldSendTheFullOrder', async ({ mount, page }) => {
   const puts = await stub(page);
   const view = await mountAdmin(mount);

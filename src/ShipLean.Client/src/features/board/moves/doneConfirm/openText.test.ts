@@ -27,3 +27,11 @@ test('boardOfChildren_WhenEpics_ShouldBeTheFeaturesBoard', () => {
   expect(boardOfChildren('epics')).toBe('Features');
   expect(boardOfChildren('features')).toBe('Stories');
 });
+
+test('openText_WhenActionItemsAreOpen_ShouldCountThemAfterBugs', () => {
+  const withAction = [...rollups, { type: 'action' as const, open: 2, closed: 0 }];
+  expect(openText(withAction, 'features')).toBe(
+    '2 stories, 1 bug, 2 action items and 1 nested Feature',
+  );
+  expect(openText(withAction, 'epics')).toBe('1 Feature, 2 stories, 1 bug and 2 action items');
+});

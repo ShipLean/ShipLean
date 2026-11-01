@@ -482,3 +482,42 @@ for (const theme of ['light', 'dark'] as const) {
     await expect(element).toHaveCSS('background-color', background);
   });
 }
+
+test('Card_WhenActionItem_ShouldShowItsIconOnIndexPaper', async ({ mount, page }) => {
+  await mount(
+    <Card
+      card={card({ key: 'SHIP-89', type: { id: 'action', name: 'Action item' } })}
+      projectKey="SHIP"
+      level="stories"
+      compact={false}
+      settings={SETTINGS}
+      inDone={false}
+    />,
+    route,
+  );
+
+  await expect(page.getByTestId(componentTestIds.typeIcon)).toHaveAttribute('data-type', 'action');
+  await expect(page.getByTestId(componentTestIds.typeIcon)).toHaveText('A');
+  await expect(page.getByTestId(ids.card)).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+});
+
+test('Card_WhenFeatureHasActionItems_ShouldCountThemInTheRollups', async ({ mount, page }) => {
+  await mount(
+    <Card
+      card={card({
+        ...feature,
+        rollups: [
+          { type: 'story', open: 1, closed: 1 },
+          { type: 'action', open: 1, closed: 2 },
+        ],
+      })}
+      projectKey="SHIP"
+      level="features"
+      compact={false}
+      settings={withBugs}
+      inDone={false}
+    />,
+    route,
+  );
+  await expect(page.getByTestId(ids.cardRollup)).toHaveText(['S1/2', 'A2/3']);
+});
