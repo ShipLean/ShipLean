@@ -1,4 +1,6 @@
+import { useQuery } from '@tanstack/react-query';
 import { useLocation, useParams } from 'react-router-dom';
+import { projectByKeyQuery, sprintsQuery } from '../../../pages/projectQueries';
 import { crumbTrail, matchRoute } from '../../../routes';
 import { shellTestIds as ids } from '../testIds';
 
@@ -8,9 +10,19 @@ export function Crumbs() {
   const { pathname, search } = useLocation();
   const key = useParams().key;
   const route = matchRoute(pathname, search);
-  const trail = route
-    ? crumbTrail(route.id, route.params as never, route.query)
-    : [key ?? 'ShipLean'];
+  // The sprint Retro screen names its sprint ("Sprint 24"), as the design does; the other sprint tabs still say
+  // "Sprint". The project and its sprints are the queries the page itself makes, so this reads the cache.
+  const sprintId =
+    route?.id === 'sprintRetro' ? (route.params as { sprintId: string }).sprintId : undefined;
+  const project = useQuery({ ...projectByKeyQuery(key ?? ''), enabled: sprintId !== undefined });
+  const sprints = useQuery({
+    ...sprintsQuery(project.data?.id ?? ''),
+    enabled: sprintId !== undefined && project.data !== undefined,
+  });
+  const sprintName = sprints.data?.find((s) => s.id === sprintId)?.name;
+  const trail = (
+    route ? crumbTrail(route.id, route.params as never, route.query) : [key ?? 'ShipLean']
+  ).map((crumb, index) => (index === 2 && sprintName !== undefined ? sprintName : crumb));
   return (
     <nav
       data-testid={ids.crumbs}

@@ -10,6 +10,8 @@ import { RetroRail } from './rail/RetroRail';
 import { SprintRetroHeader } from './SprintRetroHeader';
 import { ByCategory } from './views/ByCategory';
 import { ByWorkItem } from './views/ByWorkItem';
+import type { WrittenBy } from './views/byCategory/writtenBy';
+import { WrittenByFilter } from './views/byCategory/WrittenByFilter';
 
 type RetroView = 'category' | 'item';
 
@@ -24,15 +26,19 @@ const VIEWS = [
  */
 export function SprintRetroPanel({ project, sprint }: { project: ProjectDto; sprint: SprintDto }) {
   const [view, setView] = useState<RetroView>('category');
+  const [writtenBy, setWrittenBy] = useState<WrittenBy>('all');
   const query = useSprintRetro(project.id, sprint.id);
   return (
     <RetroQueryState query={query}>
       {(retro) => {
         const props = { project, sprint, retro };
         return (
-          <div data-testid={ids.sprintRetroPanel} className="grid gap-4">
+          <div
+            data-testid={ids.sprintRetroPanel}
+            className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4"
+          >
             <SprintRetroHeader {...props} />
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div
                 role="group"
                 aria-label="Retro view"
@@ -52,16 +58,17 @@ export function SprintRetroPanel({ project, sprint }: { project: ProjectDto; spr
                 ))}
               </div>
               <span className="flex-1" />
+              <WrittenByFilter value={writtenBy} onChange={setWrittenBy} />
               <AddPoint {...props} />
             </div>
-            <div className="grid grid-cols-[minmax(0,1fr)_20rem] gap-4">
-              <div>
+            <div className="grid grid-cols-[minmax(0,1fr)_18rem] gap-4">
+              <div className="min-w-0">
                 {view === 'category' ? (
                   <div data-testid={pagesTestIds.slotRetroByCategory}>
-                    <ByCategory {...props} />
+                    <ByCategory {...props} writtenBy={writtenBy} />
                   </div>
                 ) : (
-                  <ByWorkItem {...props} />
+                  <ByWorkItem {...props} writtenBy={writtenBy} />
                 )}
               </div>
               <RetroRail {...props} />

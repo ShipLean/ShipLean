@@ -18,11 +18,11 @@ export function ActionItemsSection({ rows }: { rows: RetroActionRowDto[] }) {
         <div
           key={action.workItemId}
           data-item-key={action.key}
-          className="grid gap-0.5 border-b border-edge/60 pb-1.5"
+          className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-0.5 border-b border-edge/60 pb-1.5"
         >
           <div className="flex items-center gap-1.5">
             <TypeIcon type="action" />
-            <span className="truncate" title={action.title}>
+            <span className="min-w-0 truncate" title={action.title}>
               {action.title}
             </span>
           </div>
