@@ -80,7 +80,7 @@ public sealed class AnalyticsSettings(
         return new AnalyticsTestResultDto(true, $"Sent a test event to {name}.");
     }
 
-    internal static AnalyticsProvider ParseProvider(string wire) => wire switch
+    public static AnalyticsProvider ParseProvider(string wire) => wire switch
     {
         "umami" => AnalyticsProvider.Umami,
         "posthog" => AnalyticsProvider.PostHog,

@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using ShipLean.Contracts.Analytics;
-using ShipLean.TestSupport;
+using ShipLean.TestSupport.Hosting;
 using ShipLean.TestSupport.Analytics;
 using ShipLean.TestSupport.Fixtures;
 
