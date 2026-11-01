@@ -2,7 +2,7 @@ using Dapper;
 using ShipLean.Contracts.Search;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
-using ShipLean.TestSupport.Database;
+using ShipLean.LocalEnvironment.Database;
 
 namespace ShipLean.WebApi.Tests.Search.Shape;
 

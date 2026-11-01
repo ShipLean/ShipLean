@@ -2,7 +2,7 @@ using System.Reflection;
 using Dapper;
 using Microsoft.AspNetCore.Identity;
 using ShipLean.TestSupport;
-using ShipLean.TestSupport.Database;
+using ShipLean.LocalEnvironment.Database;
 
 namespace ShipLean.WebApi.Tests.Schema;
 

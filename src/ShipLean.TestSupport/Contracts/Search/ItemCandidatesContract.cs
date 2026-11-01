@@ -4,7 +4,7 @@ using Npgsql;
 using ShipLean.Application.Features.Search.Ranking;
 using ShipLean.Contracts.Search;
 using ShipLean.TestSupport.Builders;
-using ShipLean.TestSupport.Database;
+using ShipLean.LocalEnvironment.Database;
 using ShipLean.TestSupport.Hosting;
 using Shouldly;
 

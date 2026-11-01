@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Playwright;
 using NUnit.Framework.Interfaces;
 using ShipLean.Contracts;
-using ShipLean.TestSupport.Database;
+using ShipLean.LocalEnvironment.Database;
 using ShipLean.TestSupport.Hosting;
 
 namespace ShipLean.TestSupport.Fixtures;

@@ -7,7 +7,7 @@ using ShipLean.Contracts.Criteria;
 using ShipLean.Contracts.Persisted;
 using ShipLean.TestSupport.Contracts.Criteria;
 using ShipLean.TestSupport.Contracts.Users;
-using ShipLean.TestSupport.Database;
+using ShipLean.LocalEnvironment.Database;
 using Shouldly;
 
 namespace ShipLean.WebApi.Tests.Criteria;

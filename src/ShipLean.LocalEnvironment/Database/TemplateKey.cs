@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace ShipLean.TestSupport.Database;
+namespace ShipLean.LocalEnvironment.Database;
 
 // What a template database is named after: the hash of the db/ scripts and the UTC run date. A changed script or a new
 // day means a new template, built once; templates dated before today are dropped.

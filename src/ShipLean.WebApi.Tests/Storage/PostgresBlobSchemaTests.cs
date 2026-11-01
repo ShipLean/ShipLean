@@ -3,7 +3,7 @@ using Dapper;
 using Npgsql;
 using ShipLean.Application.Database;
 using ShipLean.Application.Storage;
-using ShipLean.TestSupport.Database;
+using ShipLean.LocalEnvironment.Database;
 
 namespace ShipLean.WebApi.Tests.Storage;
 

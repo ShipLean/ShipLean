@@ -5,7 +5,7 @@ using ShipLean.Application.Database;
 using ShipLean.Application.Features.States;
 using ShipLean.Contracts.Projects;
 using ShipLean.TestSupport.Contracts.States;
-using ShipLean.TestSupport.Database;
+using ShipLean.LocalEnvironment.Database;
 
 namespace ShipLean.WebApi.Tests.States.Store;
 

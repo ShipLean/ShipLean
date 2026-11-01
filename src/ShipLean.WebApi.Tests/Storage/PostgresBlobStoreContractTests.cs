@@ -2,7 +2,7 @@ using ShipLean.Application.Database;
 using ShipLean.Application.Storage;
 using ShipLean.Contracts.Blobs;
 using ShipLean.TestSupport.Contracts.Blobs;
-using ShipLean.TestSupport.Database;
+using ShipLean.LocalEnvironment.Database;
 
 namespace ShipLean.WebApi.Tests.Storage;
 

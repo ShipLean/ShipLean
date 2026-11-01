@@ -10,7 +10,7 @@ using ShipLean.Contracts.Import.Jira;
 using ShipLean.Contracts.Refs;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Contracts.Users;
-using ShipLean.TestSupport.Database;
+using ShipLean.LocalEnvironment.Database;
 
 namespace ShipLean.WebApi.Tests.Import.Mapping;
 

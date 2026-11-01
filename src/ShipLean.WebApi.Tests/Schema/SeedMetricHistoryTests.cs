@@ -1,7 +1,7 @@
 using System.Globalization;
 using Dapper;
 using ShipLean.TestSupport;
-using ShipLean.TestSupport.Database;
+using ShipLean.LocalEnvironment.Database;
 
 namespace ShipLean.WebApi.Tests.Schema;
 

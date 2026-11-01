@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Application.Http;
 using ShipLean.Contracts.Links;
 using ShipLean.TestSupport;
-using ShipLean.TestSupport.Database;
+using ShipLean.LocalEnvironment.Database;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Http;
 using Shouldly;

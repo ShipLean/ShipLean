@@ -4,7 +4,7 @@ using ShipLean.Application.Fakes.Blobs;
 using ShipLean.Contracts.Blobs;
 using ShipLean.Contracts.Errors;
 using ShipLean.TestSupport.AccessSweep;
-using ShipLean.TestSupport.Blobs;
+using ShipLean.LocalEnvironment.Blobs;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
 

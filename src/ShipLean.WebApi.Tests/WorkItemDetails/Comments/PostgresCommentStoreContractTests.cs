@@ -8,7 +8,7 @@ using ShipLean.Contracts.Comments;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Contracts.Comments;
-using ShipLean.TestSupport.Database;
+using ShipLean.LocalEnvironment.Database;
 using ShipLean.WebApi.Tests.WorkItems.Store;
 
 namespace ShipLean.WebApi.Tests.WorkItemDetails.Comments;

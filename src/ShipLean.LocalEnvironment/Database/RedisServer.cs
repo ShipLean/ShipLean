@@ -1,6 +1,6 @@
 using Testcontainers.Redis;
 
-namespace ShipLean.TestSupport.Database;
+namespace ShipLean.LocalEnvironment.Database;
 
 // The Redis server the multi-instance realtime tests share. SHIPLEAN_TEST_REDIS (host:port of a long-lived server) wins;
 // otherwise one redis:7.4 container is started and reused across runs. Tests keep apart by channel prefix

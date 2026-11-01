@@ -16,7 +16,7 @@ using ShipLean.Contracts.Refs;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Contracts.Projects;
 using ShipLean.TestSupport.Contracts.Users;
-using ShipLean.TestSupport.Database;
+using ShipLean.LocalEnvironment.Database;
 using ShipLean.WebApi.Tests.Boards.Settings;
 using ShipLean.WebApi.Tests.Sprints.Api;
 
