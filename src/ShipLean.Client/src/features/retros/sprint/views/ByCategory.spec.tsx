@@ -275,7 +275,7 @@ test('ByCategory_WhenSprintHasAFeatureRetro_ShouldShowTheCalloutAboveTheColumns'
   const card = sprintRetro.cards.find((c) => c.workItem?.type.id === 'feature');
   if (!card?.workItem) throw new Error('fixture has no feature retro');
   await mount(<ByCategory project={project} sprint={sprint} retro={sprintRetro} />);
-  const callout = page.getByRole('note', { name: 'Feature retro' });
+  const callout = page.getByTestId(ids.retroFeatureCallout);
   await expect(callout).toContainText(`Feature retro:`);
   await expect(callout).toContainText(`${card.workItem.key} ${card.workItem.title}`);
   await expect(callout).toContainText(`Compiled by ${card.author.user.name}`);
@@ -313,5 +313,5 @@ test('ByCategory_WhenSprintHasNoFeatureRetro_ShouldShowNoCallout', async ({ moun
   };
   await mount(<ByCategory project={project} sprint={sprint} retro={without} />);
   await expect(page.getByTestId(ids.retroColumn)).toHaveCount(4);
-  await expect(page.getByRole('note', { name: 'Feature retro' })).toHaveCount(0);
+  await expect(page.getByTestId(ids.retroFeatureCallout)).toHaveCount(0);
 });
