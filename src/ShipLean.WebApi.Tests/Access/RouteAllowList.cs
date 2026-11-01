@@ -45,6 +45,7 @@ public static class RouteAllowList
         new("DELETE", "api/me/agents/{id:guid}", "Revokes one of the caller's own connected agents; another user's id is not_found."),
         new("GET", "api/agents/consent/{id:guid}", "A pending authorize request is the caller's own; another user's is not_found."),
         new("POST", "api/agents/consent/{id:guid}", "Decides the caller's own pending authorize request; another user's is not_found."),
+        new("POST", "api/usage/screen", "Reports a screen view for the caller's own usage; a project id goes through the member check before anything is recorded.", Body: """{"screen":"profile","projectId":null}"""),
         new("GET", "api/agents/mcp-url", "The server's own /mcp address; names nothing about a project."),
     ];
 

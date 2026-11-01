@@ -8,10 +8,12 @@ using ShipLean.Application.Identity;
 using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Retros;
 using ShipLean.Contracts.Search;
+using ShipLean.Contracts.Usage;
 using ShipLean.LocalEnvironment;
 using ShipLean.LocalEnvironment.Hosting;
 using ShipLean.TestSupport.Http;
 using ShipLean.TestSupport.Search;
+using ShipLean.TestSupport.Usage;
 
 namespace ShipLean.TestSupport.Hosting;
 
@@ -74,6 +76,8 @@ public sealed class ShipLeanHost : IAsyncDisposable
                 services.Replace(ServiceDescriptor.Singleton<IHostResolver>(new NoNetworkHostResolver()));
                 // Likewise the embedder: the fake is deterministic and needs no model. A fixture opts back into the real factory with EmbedderServices.Register.
                 services.Replace(ServiceDescriptor.Singleton<IEmbedder>(new FakeEmbedder()));
+                // Likewise usage events: the recorder keeps them for assertions and sends nothing. The dispatcher still starts and idles. A fixture opts into the real queue with UsageServices.Register.
+                services.Replace(ServiceDescriptor.Singleton<IUsageEvents>(new RecordingUsageEvents()));
                 // Likewise the retro themer: pick mode, so no test depends on auto clustering. A fixture opts into auto mode with RetroThemerServices.Register.
                 services.Replace(ServiceDescriptor.Singleton<IRetroThemer>(sp => sp.GetRequiredService<PickRetroThemer>()));
                 if (user != null)

@@ -7,5 +7,9 @@ namespace ShipLean.Application.Identity;
 public sealed class ProjectAccessServices : IServiceModule
 {
     public void AddServices(IServiceCollection services, IConfiguration configuration)
-        => services.AddSingleton<IProjectAccess, ProjectAccess>();
+    {
+        // The concrete ProjectAccess stays behind the decorator, so IProjectAccess has one registration.
+        services.AddSingleton<ProjectAccess>();
+        services.AddSingleton<IProjectAccess, UsageStampingProjectAccess>();
+    }
 }

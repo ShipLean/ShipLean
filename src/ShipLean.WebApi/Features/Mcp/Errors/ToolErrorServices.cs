@@ -1,5 +1,6 @@
 using ShipLean.Contracts;
 using ShipLean.WebApi.Features.Mcp.Scopes;
+using ShipLean.WebApi.Features.Mcp.Usage;
 
 namespace ShipLean.WebApi.Features.Mcp.Errors;
 
@@ -7,5 +8,5 @@ namespace ShipLean.WebApi.Features.Mcp.Errors;
 public sealed class ToolErrorServices : IServiceModule
 {
     public void AddServices(IServiceCollection services, IConfiguration configuration)
-        => services.AddMcpServer().WithRequestFilters(filters => filters.AddCallToolFilter(next => ToolMetricsFilter.Apply(ToolTraceFilter.Apply(ToolErrorFilter.Apply(ToolScopeFilter.Apply(next))))));
+        => services.AddMcpServer().WithRequestFilters(filters => filters.AddCallToolFilter(next => ToolMetricsFilter.Apply(ToolUsageFilter.Apply(ToolTraceFilter.Apply(ToolErrorFilter.Apply(ToolScopeFilter.Apply(next)))))));
 }
