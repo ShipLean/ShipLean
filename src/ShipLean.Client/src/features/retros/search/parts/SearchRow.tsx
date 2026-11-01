@@ -28,7 +28,7 @@ export function SearchRow({
       data-retro-id={point.retroId}
       aria-selected={selected}
       tabIndex={0}
-      className={`cursor-pointer ${selected ? 'bg-signal-soft' : 'hover:bg-surface-2'}`}
+      className={`cursor-pointer ${selected ? 'bg-signal-soft' : 'hover:bg-sunken'}`}
       onClick={onSelect}
       onKeyDown={(event) => {
         if (event.key === 'Enter') onSelect();
