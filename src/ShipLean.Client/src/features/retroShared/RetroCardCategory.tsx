@@ -8,10 +8,12 @@ export function RetroCardCategory({
   category,
   points,
   highlightPointId,
+  showActions = true,
 }: {
   category: RetroCategory;
   points: RetroPointDto[];
   highlightPointId?: string;
+  showActions?: boolean;
 }) {
   return (
     <section
@@ -41,7 +43,7 @@ export function RetroCardCategory({
                   </span>
                 ) : null}
                 <ThemeChip theme={p.theme} variant="line" />
-                {p.action ? (
+                {showActions && p.action ? (
                   <span className="mt-0.5 flex flex-wrap items-center gap-1 text-[length:var(--text-xs)]">
                     <ActionChip action={p.action} />
                   </span>

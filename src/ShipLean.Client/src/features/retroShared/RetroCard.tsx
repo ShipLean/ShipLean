@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Chip } from '../../components/Chip';
+import { ItemLink } from '../itemPeek/ItemLink';
 import { TypeIcon } from '../../components/TypeIcon';
 import { RETRO_CATEGORIES } from '../../api/retros';
 import type { RetroCardDto, RetroFailureLogDto } from '../../api/retros';
@@ -23,6 +24,7 @@ export function RetroCard({
   highlightPointId,
   logDefaultOpen = false,
   hideEmptyCategories = false,
+  showActions = true,
 }: {
   card: RetroCardDto;
   /** Search's selected retro: this point is highlighted in its category. */
@@ -31,6 +33,8 @@ export function RetroCard({
   logDefaultOpen?: boolean;
   /** Leave out categories with no points instead of showing them with "—". */
   hideEmptyCategories?: boolean;
+  /** Show each point's action item chip. The By work item view leaves them out. */
+  showActions?: boolean;
 }) {
   const [logOpen, setLogOpen] = useState(logDefaultOpen);
   const { workItem, sprint, failureLog } = card;
@@ -74,6 +78,7 @@ export function RetroCard({
               category={category}
               points={points}
               highlightPointId={highlightPointId}
+              showActions={showActions}
             />
           );
         })}
@@ -85,7 +90,9 @@ export function RetroCard({
             <span key={item.id}>
               <span className="inline-flex items-center gap-1">
                 <TypeIcon type={item.type.id} />
-                <span className="font-mono">{item.key}</span>
+                <ItemLink itemKey={item.key} title={item.title} className="font-mono">
+                  {item.key}
+                </ItemLink>
               </span>
               {i < card.compiledFrom.length - 1 ? ',' : '.'}
             </span>

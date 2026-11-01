@@ -1,9 +1,11 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import { componentTestIds } from '../../components/testIds';
 import { CardWidthHarness } from './ct/CardWidthHarness';
-import { featureCard, sprintCard, subAgentCard } from './ct/fixtures';
+import { actionPoint, featureCard, sprintCard, subAgentCard } from './ct/fixtures';
 import { RetroCard } from './RetroCard';
 import { retroSharedTestIds as ids } from './testIds';
+
+const routeOptions = { hooksConfig: { route: '/p/SHIP/boards/stories' } };
 
 test('RetroCard_WhenFailureLogPresent_ShouldStartCollapsedAndExpandInOrder', async ({
   mount,
@@ -24,12 +26,31 @@ test('RetroCard_WhenFeatureRetro_ShouldShowFeatureMarkerAndCompiledFromKeys', as
   mount,
   page,
 }) => {
-  await mount(<RetroCard card={featureCard} />);
+  await mount(<RetroCard card={featureCard} />, routeOptions);
   const card = page.getByTestId(ids.retroCard);
   await expect(card).toHaveAttribute('data-feature', 'true');
   await expect(card.getByText('Feature', { exact: true })).toBeVisible();
-  for (const item of featureCard.compiledFrom) await expect(card).toContainText(item.key);
+  for (const item of featureCard.compiledFrom)
+    await expect(card.locator(`a[data-item-key="${item.key}"]`)).toHaveAttribute(
+      'href',
+      new RegExp(`/items/${item.key}$`),
+    );
   await expect(page.getByTestId(ids.retroCardLogToggle)).toHaveCount(0);
+});
+
+test('RetroCard_WhenShowActionsIsFalse_ShouldLeaveOutActionChips', async ({ mount, page }) => {
+  const card = { ...featureCard, compiledFrom: [], points: [actionPoint] };
+  await mount(<RetroCard card={card} showActions={false} />, routeOptions);
+  await expect(page.locator('li[data-point-id]')).toHaveCount(1);
+  await expect(page.locator('li[data-point-id] a[data-item-key]')).toHaveCount(0);
+});
+
+test('RetroCard_WhenShowActionsIsDefault_ShouldShowTheActionChip', async ({ mount, page }) => {
+  const card = { ...featureCard, compiledFrom: [], points: [actionPoint] };
+  await mount(<RetroCard card={card} />, routeOptions);
+  await expect(
+    page.locator(`li[data-point-id] a[data-item-key="${actionPoint.action!.key}"]`),
+  ).toBeVisible();
 });
 
 test('RetroCard_WhenSprintLevelPersonRetro_ShouldShowSprintAndNoItem', async ({ mount, page }) => {
@@ -94,7 +115,7 @@ test('RetroCard_WhenHideEmptyCategories_ShouldLeaveOutCategoriesWithNoPoints', a
 });
 
 test('RetroCard_WhenCategoryEmpty_ShouldShowAnEmDash', async ({ mount, page }) => {
-  await mount(<RetroCard card={featureCard} />);
+  await mount(<RetroCard card={featureCard} />, routeOptions);
   await expect(
     page.getByTestId(ids.retroCard).locator('section[data-category="notInPlan"]'),
   ).toContainText('—');
@@ -128,7 +149,7 @@ test('RetroCard_WhenCompiledFrom_ShouldSeparateKeysWithCommasAndEndWithAPeriod',
   mount,
   page,
 }) => {
-  await mount(<RetroCard card={featureCard} />);
+  await mount(<RetroCard card={featureCard} />, routeOptions);
   // The type icons render a letter between the separators, so allow one.
   const pattern = featureCard.compiledFrom.map((i) => i.key).join(',\\s*[A-Z]?');
   await expect(page.getByTestId(ids.retroCard)).toContainText(

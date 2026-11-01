@@ -7,7 +7,7 @@ import { RailSection } from './RailSection';
 function CoverageMark({ status }: { status: RetroCoverageRowDto['status'] }) {
   if (status === 'done')
     return (
-      <span className="font-bold text-ok" title="Retro logged">
+      <span className="font-bold text-good" title="Retro logged">
         ✓
       </span>
     );
@@ -21,7 +21,7 @@ function CoverageMark({ status }: { status: RetroCoverageRowDto['status'] }) {
       </span>
     );
   return (
-    <span className="text-[length:var(--text-xs)] font-semibold text-danger" title="No retro">
+    <span className="text-[length:var(--text-xs)] font-semibold text-alert" title="No retro">
       missing
     </span>
   );

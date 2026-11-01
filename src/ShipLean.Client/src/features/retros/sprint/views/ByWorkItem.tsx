@@ -18,7 +18,7 @@ export function ByWorkItem({ retro }: SprintRetroSlotProps) {
       <WrittenByFilter value={writtenBy} onChange={setWrittenBy} />
       <div data-testid={ids.retroCardList} className="grid gap-3">
         {cards.length > 0 ? (
-          cards.map((card) => <RetroCard key={card.id} card={card} />)
+          cards.map((card) => <RetroCard key={card.id} card={card} showActions={false} />)
         ) : (
           <span className="text-[length:var(--text-sm)] text-ink-muted">Nothing here.</span>
         )}

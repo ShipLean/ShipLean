@@ -35,7 +35,9 @@ test('RetroRail_WhenOpened_ShouldShowActionItemsWithKeyStateAndPlannedSprint', a
   for (const row of sprintRetro.actionItems) {
     const item = actions.locator(`[data-item-key="${row.action.key}"]`).first();
     await expect(item).toContainText(row.action.state.name);
-    await expect(item).toContainText(row.action.sprint?.name ?? 'Not planned');
+    await expect(item.locator('[data-planned]')).toContainText(
+      row.action.sprint?.name ?? 'Not planned',
+    );
   }
 });
 

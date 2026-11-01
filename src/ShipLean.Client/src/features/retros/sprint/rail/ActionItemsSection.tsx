@@ -2,11 +2,10 @@ import { StateDot } from '../../../../components/StateDot';
 import { TypeIcon } from '../../../../components/TypeIcon';
 import type { RetroActionRowDto } from '../../../../api/retros';
 import { ItemLink } from '../../../itemPeek/ItemLink';
-import { VerdictChip } from '../../insights/recurring/VerdictChip';
 import { retrosTestIds as ids } from '../../testIds';
 import { RailSection } from './RailSection';
 
-/** Action items: each with its key (opens the item), state, the sprint it is planned in or "Not planned", where it was raised, and its impact once there is one. */
+/** Action items: each with its key (opens the item), state, the sprint it is planned in or "Not planned", where it was raised. */
 export function ActionItemsSection({ rows }: { rows: RetroActionRowDto[] }) {
   return (
     <RailSection
@@ -15,7 +14,7 @@ export function ActionItemsSection({ rows }: { rows: RetroActionRowDto[] }) {
       hint="Action items raised from this sprint's points, plus earlier ones still open, and where they are planned."
       empty={rows.length === 0}
     >
-      {rows.map(({ action, raisedIn, impact }) => (
+      {rows.map(({ action, raisedIn }) => (
         <div
           key={action.workItemId}
           data-item-key={action.key}
@@ -38,7 +37,6 @@ export function ActionItemsSection({ rows }: { rows: RetroActionRowDto[] }) {
             <StateDot category={action.state.category} name={action.state.name} />
             <span data-planned="">· {action.sprint?.name ?? 'Not planned'}</span>
             {raisedIn ? <span>· from {raisedIn.name}</span> : null}
-            {impact ? <VerdictChip verdict={impact} /> : null}
           </div>
         </div>
       ))}
