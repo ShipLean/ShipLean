@@ -4,7 +4,7 @@ import type { Level } from '../../../routes';
 
 const storyLevel = WORK_ITEM_TYPE_IDS.filter(isStoryLevel).map((type) => ({
   type,
-  label: typeName(type),
+  label: type === 'story' ? 'User story' : typeName(type),
 }));
 
 /** What a card on each board can be given as a child from its list: Features take story-level items (stories, bugs, action items), Epics take Features. */

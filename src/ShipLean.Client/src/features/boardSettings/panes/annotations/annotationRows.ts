@@ -25,7 +25,7 @@ const rows: AnnotationRow[] = [
     type: 'story',
     label: 'User stories',
     testId: ids.annotationStories,
-    hint: 'done stories out of all stories and action items under a feature',
+    hint: 'done user stories out of all user stories and action items under a feature',
   },
   {
     key: 'bugs',

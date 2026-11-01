@@ -95,7 +95,7 @@ test('Board_WhenUserStoryAddedFromTheList_ShouldCreateItUnderTheCardAndRefetch',
   await rollup(page, 'story').click();
   await expect(page.getByTestId(ids.childAdd)).toHaveCount(3);
 
-  await page.getByTestId(ids.childAdd).filter({ hasText: 'User Story' }).click();
+  await page.getByTestId(ids.childAdd).filter({ hasText: 'User story' }).click();
   await page.getByTestId(ids.childAddTitle).fill('  Export as CSV  ');
   const reads = server.reads.length;
   const childReads = server.childReads.length;

@@ -8,7 +8,7 @@ import { taskboardTestIds as ids } from '../testIds';
 
 const types = WORK_ITEM_TYPE_IDS.filter(isStoryLevel).map((id) => ({ id, label: typeName(id) }));
 
-/** "+ Add story, bug or action item": creates the item into this sprint and stays open for the next one. Esc closes it. */
+/** "+ Add story or bug": creates the item into this sprint and stays open for the next one. Esc closes it. */
 export function AddStoryBox({
   projectId,
   scope,
