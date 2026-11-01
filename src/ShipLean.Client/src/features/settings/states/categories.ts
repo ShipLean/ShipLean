@@ -19,4 +19,5 @@ export const TYPE_LABELS: Record<WorkItemTypeId, string> = {
   story: 'User Story',
   bug: 'Bug',
   task: 'Task',
+  action: 'Action item',
 };

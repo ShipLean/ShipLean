@@ -9,6 +9,7 @@ const LEVEL_OF: Record<Exclude<WorkItemTypeId, 'task'>, BoardLevel> = {
   feature: 'features',
   story: 'stories',
   bug: 'stories',
+  action: 'stories',
 };
 
 /**
