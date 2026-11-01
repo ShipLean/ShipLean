@@ -103,7 +103,7 @@ public static partial class ShipLeanDatabase
         await ExecuteAsync(connection, $"DROP DATABASE IF EXISTS \"{name}\" WITH (FORCE)");
     }
 
-    [GeneratedRegex("^shiplean_[a-z0-9_]{1,40}$")]
+    [GeneratedRegex(@"\Ashiplean_[a-z0-9_]{1,40}\z")]
     private static partial Regex NamePattern();
 
     [GeneratedRegex(CleanUpRegex)]

@@ -60,6 +60,7 @@ public class NamedDatabaseTests
     }
 
     [TestCase("shiplean_local", true)]
+    [TestCase("shiplean_local\n", false)]
     [TestCase("shiplean_nt_ab12cd34", true)]
     [TestCase("Bad-Name", false)]
     [TestCase("postgres", false)]
