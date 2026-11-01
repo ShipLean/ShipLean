@@ -13,6 +13,10 @@ shiplean-test src/ShipLean.WebApi.Tests --filter "FullyQualifiedName~ShipLean.We
 shiplean-test src/ShipLean.AcceptanceTests --filter "FullyQualifiedName~ShipLean.AcceptanceTests.Harness."
 ```
 
+The test database and host code is the `ShipLean.LocalEnvironment` project (namespaces `ShipLean.LocalEnvironment.Database` and
+`.Hosting`), which `ShipLean.LocalHost` also uses to run a seeded app for people and agents: see
+[`local-environment.md`](local-environment.md). `SHIPLEAN_TEST_DB` and `SHIPLEAN_TEST_REDIS` mean the same there.
+
 ## One database and one host per class
 
 A test class is one scenario. `ApiFixture` (API tests) and `SeededAcceptanceTest` / `EmptyAcceptanceTest` (browser

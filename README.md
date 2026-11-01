@@ -123,13 +123,20 @@ Sign-in is a cookie (`shiplean.auth`, 14-day sliding, `Secure` over https), so p
 
 ## Develop
 
-You need the .NET 10 SDK, Node 24 with pnpm (via corepack), and either Docker or a local Postgres 18.
+You need the .NET 10 SDK, Node 24 with pnpm (via corepack), and Docker.
 
 ```bash
-scripts/db-reset.sh                                   # dev database from db/ (PGHOST/PGPORT/PGUSER/PGPASSWORD)
-dotnet run --project src/ShipLean.WebApi              # API on :5113, connection from appsettings.Development.json
+dotnet run --project src/ShipLean.LocalHost            # seeded ShipLean on :5113; Postgres in a container, nothing else to install
 cd src/ShipLean.Client && pnpm install && pnpm run dev # SPA on :3000, proxies /api to :5113
 ```
+
+Sign in as `joel@shiplean.local` / `joel-dev-password`. In an IDE, start the `LocalHost` launch profile (F5) to debug. The
+options (`--data keep` to keep your changes, `--database`, `--port 0`, `--redis`), how coding agents run their own instance, and
+using a Postgres you already have are in [`docs/local-environment.md`](docs/local-environment.md).
+
+To run the WebApi on its own instead, with your own Postgres 18, use `scripts/db-reset.sh` (it reads `PGHOST`, `PGPORT`,
+`PGUSER` and `PGPASSWORD`) and `dotnet run --project src/ShipLean.WebApi`, which takes its connection from
+`appsettings.Development.json`.
 
 Checks, from the repository root:
 

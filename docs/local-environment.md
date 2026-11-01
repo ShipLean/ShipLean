@@ -1,0 +1,117 @@
+# Local environment
+
+`ShipLean.LocalHost` runs the real ShipLean, seeded, on your machine with one command and no setup beyond Docker. It
+starts a Postgres container (and Redis if you ask), builds the database from `db/`, and serves the app on a fixed port. It
+is for people who want to click around or debug, for coding agents that need to check their work in a running app, and for
+the demo recordings. There are no shell scripts: everything runs in the one process.
+
+The code lives in `src/ShipLean.LocalEnvironment` (a class library) and `src/ShipLean.LocalHost` (the console exe). The
+tests use the same library, so a local instance and a test host start the app the same way.
+
+## Start
+
+You need the .NET 10 SDK and Docker. From the repository root:
+
+```bash
+dotnet run --project src/ShipLean.LocalHost
+```
+
+When the app is ready it prints exactly these four lines, in this order:
+
+```
+ShipLean is running at http://127.0.0.1:5113
+Sign in as joel@shiplean.local / joel-dev-password
+SHIPLEAN_LOCAL_URL=http://127.0.0.1:5113
+Press Ctrl+C to stop.
+```
+
+The email and password are the seeded instance admin (`LocalSignIn.Email` and `LocalSignIn.Password`). The first run pulls
+`postgres:18`, which takes a while; later runs reuse the container.
+
+If there is no client bundle in `src/ShipLean.WebApi/wwwroot`, one warning line starting `No client bundle in
+src/ShipLean.WebApi/wwwroot:` comes first. It tells you to run `pnpm run build`, or `pnpm run dev` on :3000 (see
+[The client](#the-client)). The API works without a bundle.
+
+The host stops on Ctrl+C or SIGTERM, and also when the app itself stops. Exit codes: 0 after a clean stop, 2 for bad
+arguments (the usage goes to stderr), 1 when startup fails (Docker not running, say).
+
+## Options
+
+```bash
+dotnet run --project src/ShipLean.LocalHost -- [--port <n>] [--data fresh|keep|empty] [--database <name>] [--redis]
+```
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--port <n>` | `5113` | The port to serve on. `0` picks a free port; read it from the ready lines. A port above 0 binds `http://localhost:<port>`, so IPv4 and IPv6 loopback both answer. |
+| `--data fresh\|keep\|empty` | `fresh` | `fresh` drops the database and recreates it from today's seed template. `keep` opens the database if it exists and applies pending migrations (no seed), so your changes survive restarts; if it does not exist it behaves like `fresh`. `empty` drops it and recreates it from the schema template: the tables and no rows. |
+| `--database <name>` | `shiplean_local` | The database name on the Postgres server. See the rules below. |
+| `--redis` | off | Start (or reuse) a Redis container and point the app at it, so realtime events go through Redis instead of in-process. Without it the app uses its in-process realtime. |
+
+A database name must be lowercase letters, digits and `_` only, start with `shiplean_`, and be at most 49 characters in
+all (`^shiplean_[a-z0-9_]{1,40}$`). Names that look like the test clean-up's own databases (`shiplean_f_<digits>_`,
+`shiplean_b_`, `shiplean_schema_` and `shiplean_seed_` followed by `_`) are refused. Hyphens are not allowed, so a worktree
+name needs its hyphens turned into underscores before it becomes a database name.
+
+Except with `--data empty`, the host puts the seed's attachment files into the app's blob store after it starts, so seeded
+attachments have their files.
+
+## What differs from production
+
+The host uses the `Local` profile of `AppHost`. Nothing leaves the machine:
+
+- The first-admin, blob-store and webhook-secret settings from your own configuration are blanked, so a developer's
+  environment variables cannot reach a local instance.
+- `HolidayRefreshService` (it calls the internet), `AgentDeliveryService` and `AgentStaleService` are removed. Webhook
+  deliveries stay queued in the outbox and nothing is sent.
+- The search indexer runs. It uses the real embedding model when `SHIPLEAN_EMBEDDINGS_MODEL_PATH` is set (see the
+  README), otherwise the app's own lexical fallback. The tests use the `Test` profile, which also removes the indexer.
+
+## F5
+
+Open `src/ShipLean.slnx` in your IDE and start the `LocalHost` launch profile (`Properties/launchSettings.json`). It sets
+`TZ` and `PGTZ` to `UTC`, which the app and the database expect. The app runs inside the debugged process, so breakpoints in the API and the
+application layer hit. The default options apply: port 5113, `fresh`, database
+`shiplean_local`. Put different options in the profile's `commandLineArgs`, for example `--data keep`.
+
+## The client
+
+The host serves whatever is in `src/ShipLean.WebApi/wwwroot`. Two ways to get a client:
+
+```bash
+cd src/ShipLean.Client && pnpm install && pnpm run build   # once; writes the bundle into the WebApi's wwwroot
+cd src/ShipLean.Client && pnpm run dev                     # or: Vite on :3000 with hot reload
+```
+
+`pnpm run dev` proxies `/api` to `localhost:5113`, so use it with the default port (and keep `--port 5113`). Open
+`http://localhost:3000` and sign in with the seeded account.
+
+## How agents use it
+
+An agent checking its own work starts its own instance and never shares one:
+
+```bash
+dotnet run --project src/ShipLean.LocalHost -- --database shiplean_<name> --port 0
+```
+
+- Choose `<name>` yourself, lowercase letters, digits and `_` only (for example `shiplean_ship319`), so two worktrees
+  on one host never open the same database.
+- `--port 0` takes a free port, so two instances never collide on 5113.
+- Wait for the line starting `SHIPLEAN_LOCAL_URL=`; the rest of the line is the base URL. That line is the one meant for
+  scripts; the others are for people.
+- Run it in the background and stop it with SIGTERM (or Ctrl+C) when you are done, so the app shuts down cleanly. The
+  database stays on the server afterwards; run with `--data fresh` again (the default) to start from the seed, or leave it.
+- Sign in as `joel@shiplean.local` with the password on the second line.
+- If the client bundle is missing, the API still answers; build the bundle first if you need the pages.
+
+## Reusing an existing Postgres or Redis
+
+LocalHost reads the same two variables as the tests (`docs/testing.md`):
+
+- `SHIPLEAN_TEST_DB`: a connection string to a long-lived Postgres. Set, LocalHost creates its database on that server
+  and starts no container. On the shared agent host `source ~/.local/shiplean-env.sh` sets it.
+- `SHIPLEAN_TEST_REDIS`: `host:port` of a long-lived Redis, used by `--redis`.
+
+Unset, each starts a container (`postgres:18`, `redis:7.4`) that is kept running between runs, so `--data keep` still finds
+its database the next time. Several named databases can live on the one server side by side; the server is shared with the
+tests, whose own databases are named differently.
