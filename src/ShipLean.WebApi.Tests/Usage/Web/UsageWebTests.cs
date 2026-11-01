@@ -21,7 +21,10 @@ public class UsageWebTests : ApiFixture
 {
     private RecordingUsageEvents Recorder => (RecordingUsageEvents)Host.Services.GetRequiredService<IUsageEvents>();
 
-    private UsageEvent Only(string source) => Recorder.Events.Where(e => e.Source == source).ToList().ShouldHaveSingleItem();
+    [SetUp]
+    public void ClearRecordedEvents() => Recorder.Clear();
+
+    private UsageEvent Only(string source) => Recorder.Events.Where(e => e.Source == source).ShouldHaveSingleItem();
 
     private async Task<WriteResult> CreateStoryAsync(string title)
     {
