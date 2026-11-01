@@ -88,6 +88,8 @@ export interface RetroCardDto {
   partial: boolean;
   /** ISO 8601 with offset, as the API writes it (+00:00). */
   createdAt: string;
+  /** Built on the server with DisplayDate ("2h ago", "Yesterday", "28 Oct"). */
+  createdAtLabel: string;
   compiledFrom: RetroItemRefDto[];
   points: RetroPointDto[];
   failureLog: RetroFailureLogDto;

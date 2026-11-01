@@ -27,6 +27,7 @@
     "author": {"user": {"id": "00000001-0000-4000-8000-000000000002", "name": "Priya Shah", "initials": "PS", "avatarColour": "#2f7fd8", "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"}, "agentName": "Claude Code · lane A", "role": "subAgent"},
     "partial": false,
     "createdAt": "2026-10-28T11:12:00+00:00",
+    "createdAtLabel": "28 Oct",
     "compiledFrom": [],
     "points": [
       {"id": "00000011-0000-4000-8001-000000000002", "retroId": "00000012-0000-4000-8001-000000000301", "category": "wentWell", "text": "The card token contract was on the branch before I started.", "rootCause": null, "theme": {"id": "00000010-0000-4000-8001-000000000006", "name": "Contracts first worked", "tone": "good"}, "themeSetBy": "auto", "author": {"user": {"id": "00000001-0000-4000-8000-000000000002", "name": "Priya Shah", "initials": "PS", "avatarColour": "#2f7fd8", "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"}, "agentName": "Claude Code · lane A", "role": "subAgent"}, "workItem": {"id": "00000005-0000-4000-8001-000000000141", "key": "SHIP-141", "type": {"id": "story", "name": "User Story"}, "title": "Pay with saved card"}, "sprint": {"id": "00000004-0000-4000-8001-000000000024", "name": "Sprint 24", "status": "current"}, "isFeature": false, "recurring": false, "action": null, "canArchive": false},
