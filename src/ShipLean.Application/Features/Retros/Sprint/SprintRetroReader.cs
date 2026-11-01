@@ -18,24 +18,38 @@ public sealed class SprintRetroReader(NpgsqlDataSource dataSource, IRetroCards r
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var today = SprintLabels.Today(clock);
         var sprintRow = await SprintRetroStore.SprintAsync(connection, sprintId, cancellationToken);
-        var windowRows = await SprintRetroStore.WindowAsync(connection, sprintRow, cancellationToken);
-        var window = windowRows.Select(row => row.Id).ToList();
-        var lastEnded = windowRows.ToList().FindLastIndex(row => Day(row.End) < today);
+        var series = await SprintRetroStore.SeriesAsync(connection, sprintRow, cancellationToken);
+        var seriesIds = series.Select(row => row.Id).ToList();
+        var windowRows = series.Skip(Math.Max(0, series.Count - SprintRetroStore.WindowSize)).ToList();
+        var windowIds = windowRows.Select(row => row.Id).ToHashSet();
+        var lastEnded = series.ToList().FindLastIndex(row => Day(row.End) < today);
 
         var retroIds = await SprintRetroStore.RetroIdsAsync(connection, sprintId, cancellationToken);
         var loaded = await retroCards.LoadAsync(retroIds, cancellationToken);
         var pointDates = await SprintRetroStore.PointDatesAsync(connection, retroIds, cancellationToken);
 
         var sprintThemes = loaded.SelectMany(card => card.Points).Where(point => point.Theme is not null).Select(point => point.Theme!.Id).Distinct().ToList();
-        var mentions = await SprintRetroStore.MentionsAsync(connection, window, cancellationToken);
+        var mentions = await SprintRetroStore.MentionsAsync(connection, seriesIds, cancellationToken);
         var actions = await SprintRetroStore.ActionsAsync(connection, sprintRow, sprintThemes, cancellationToken);
-        var themeIds = sprintThemes.Concat(actions.Where(a => a.ThemeId is not null).Select(a => a.ThemeId!.Value)).Distinct().ToList();
-        var closed = await SprintRetroStore.ClosedActionsAsync(connection, sprintRow.ProjectId, themeIds, cancellationToken);
+        var refs = new Dictionary<Guid, RetroThemeRefDto>();
+        foreach (var mention in mentions.Where(m => windowIds.Contains(m.SprintId)))
+        {
+            refs.TryAdd(mention.ThemeId, new RetroThemeRefDto(mention.ThemeId, mention.ThemeName, Enum.Parse<RetroTone>(mention.ThemeTone, ignoreCase: true)));
+        }
+        foreach (var theme in loaded.SelectMany(card => card.Points).Select(point => point.Theme).OfType<RetroThemeRefDto>())
+        {
+            refs.TryAdd(theme.Id, theme);
+        }
+        foreach (var action in actions.Where(a => a.ThemeId is not null))
+        {
+            refs.TryAdd(action.ThemeId!.Value, new RetroThemeRefDto(action.ThemeId.Value, action.ThemeName!, Enum.Parse<RetroTone>(action.ThemeTone!, ignoreCase: true)));
+        }
+        var closed = await SprintRetroStore.ClosedActionsAsync(connection, sprintRow.ProjectId, [.. refs.Keys], cancellationToken);
         var completions = await RetroSprintFacts.CompletionsAsync(connection, [.. closed.Select(c => c.ItemId).Distinct()], cancellationToken);
         var closedIndex = completions
-            .Where(c => c.SprintId is { } id && window.Contains(id))
-            .ToDictionary(c => c.ItemId, c => window.IndexOf(c.SprintId!.Value));
-        var themes = new SprintRetroThemes(window, lastEnded, mentions, closed, closedIndex, themeIds);
+            .Where(c => c.SprintId is { } id && seriesIds.Contains(id))
+            .ToDictionary(c => c.ItemId, c => seriesIds.IndexOf(c.SprintId!.Value));
+        var themes = new SprintRetroThemes(seriesIds, SprintRetroStore.WindowSize, lastEnded, mentions, closed, closedIndex, refs);
 
         var cards = loaded.Select(card => card with { Points = [.. card.Points.Select(point => point with { Recurring = point.Theme is { } t && themes.IsRecurring(t.Id) })] }).ToList();
         var coverageRows = await SprintRetroStore.CoverageAsync(connection, sprintId, cancellationToken);
@@ -44,7 +58,7 @@ public sealed class SprintRetroReader(NpgsqlDataSource dataSource, IRetroCards r
                 new RetroItemRefDto(row.Id, row.Key, ToTypeRef(row.Type), row.Title),
                 RetroRules.Coverage(row.IsFeature, row.LastChildCompleted, row.HasRetro)))
             .ToList();
-        var recurring = RecurringStrips(cards, themes);
+        var recurring = RecurringStrips(refs, themes);
         var actionRows = actions.Select(action => ToActionRow(action, today, themes, closedIndex)).ToList();
 
         return new SprintRetroDto(
@@ -62,12 +76,8 @@ public sealed class SprintRetroReader(NpgsqlDataSource dataSource, IRetroCards r
             recurring);
     }
 
-    private static List<RetroMentionStripDto> RecurringStrips(IReadOnlyList<RetroCardDto> cards, SprintRetroThemes themes)
-        => cards
-            .SelectMany(card => card.Points)
-            .Where(point => point.Theme is not null)
-            .Select(point => point.Theme!)
-            .DistinctBy(theme => theme.Id)
+    private static List<RetroMentionStripDto> RecurringStrips(IReadOnlyDictionary<Guid, RetroThemeRefDto> refs, SprintRetroThemes themes)
+        => refs.Values
             .Where(theme => themes.IsRecurring(theme.Id))
             .Select(theme => new RetroMentionStripDto(theme, themes.Counts(theme.Id), themes.FixAt(theme.Id)))
             .OrderByDescending(strip => strip.Counts.Sum())

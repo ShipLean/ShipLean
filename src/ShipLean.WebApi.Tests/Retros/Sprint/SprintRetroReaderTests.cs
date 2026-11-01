@@ -115,6 +115,14 @@ public sealed class SprintRetroReaderTests : ApiFixture
         retro.Coverage.Single(row => row.Item.Id == feature).Status.ShouldBe(RetroCoverage.Waiting);
         retro.Coverage.Single(row => row.Item.Id == doneChild).Status.ShouldBe(RetroCoverage.Missing);
         retro.Kpis.Finished.ShouldBe(1);
+
+        await RetroHistory.MoveToSprintAsync(world.Connection, openChild, world.S5, RetroArrangement.Noon(2026, 3, 2));
+
+        var later = await GetAsync(world.S4);
+
+        later.Coverage.Single(row => row.Item.Id == feature).Status.ShouldBe(RetroCoverage.Waiting);
+        later.Coverage.Single(row => row.Item.Id == doneChild).Status.ShouldBe(RetroCoverage.Missing);
+        later.Kpis.Finished.ShouldBe(1);
     }
 
     [Test]
@@ -143,6 +151,71 @@ public sealed class SprintRetroReaderTests : ApiFixture
         strip.Counts.ShouldBe([0, 1, 1, 1]);
         strip.FixAt.ShouldBeNull();
         retro.Kpis.RecurringThemes.ShouldBe(1);
+    }
+
+    [Test]
+    public async Task Get_WhenThemeMentionedInS1ToS3Only_ShouldStillBeRecurringInS4()
+    {
+        await using var world = await WorldAsync();
+        var fading = await world.Seed.ThemeAsync("Fading");
+        foreach (var sprint in new[] { world.S1, world.S2, world.S3 })
+        {
+            await world.MentionAsync(sprint, fading);
+        }
+        await world.Seed.RetroAsync(new RetroSeedRetro(Joel, RetroRole.Person, SprintId: world.S4));
+
+        var retro = await GetAsync(world.S4);
+
+        var strip = retro.Recurring.Single();
+        strip.Theme.Name.ShouldBe("Fading");
+        strip.Counts.ShouldBe([1, 1, 1, 0]);
+        retro.Kpis.RecurringThemes.ShouldBe(1);
+        retro.Categories.ShouldAllBe(column => column.Groups.Count == 0);
+    }
+
+    [Test]
+    public async Task Get_WhenGoodToneThemeIn3Of4Sprints_ShouldNotBeRecurring()
+    {
+        await using var world = await WorldAsync();
+        var good = await world.Seed.ThemeAsync("Pairing", RetroTone.Good);
+        foreach (var sprint in new[] { world.S2, world.S3, world.S4 })
+        {
+            await world.MentionAsync(sprint, good);
+        }
+
+        var retro = await GetAsync(world.S4);
+
+        retro.Recurring.ShouldBeEmpty();
+        retro.Kpis.RecurringThemes.ShouldBe(0);
+        retro.Categories[0].Groups.Single().Recurring.ShouldBeFalse();
+    }
+
+    [Test]
+    public async Task Get_WhenFixHelpedBeforeTheWindow_ShouldNotBeRecurring()
+    {
+        await using var world = await WorldAsync();
+        var a0 = await RetroArrangement.SprintAsync(world.Connection, world.Project.Id, "A0", new DateOnly(2025, 11, 10), new DateOnly(2025, 11, 23));
+        await RetroArrangement.SprintAsync(world.Connection, world.Project.Id, "A1", new DateOnly(2025, 11, 24), new DateOnly(2025, 12, 7));
+        await RetroArrangement.SprintAsync(world.Connection, world.Project.Id, "A2", new DateOnly(2025, 12, 8), new DateOnly(2025, 12, 21));
+        await RetroArrangement.SprintAsync(world.Connection, world.Project.Id, "A3", new DateOnly(2025, 12, 22), new DateOnly(2026, 1, 4));
+        var theme = await world.Seed.ThemeAsync("Review waits");
+        await world.MentionAsync(a0, theme);
+        await world.MentionAsync(a0, theme);
+        foreach (var sprint in new[] { world.S2, world.S3, world.S4 })
+        {
+            await world.MentionAsync(sprint, theme);
+        }
+        var fix = await world.ItemAsync("action");
+        await RetroHistory.MoveToSprintAsync(world.Connection, fix, a0, RetroArrangement.Noon(2025, 11, 11));
+        await RetroHistory.CompleteAsync(world.Connection, fix, RetroArrangement.Noon(2025, 11, 20));
+        await world.Seed.ActionAsync(new RetroSeedAction(fix, theme));
+
+        var retro = await GetAsync(world.S4);
+
+        retro.Recurring.ShouldBeEmpty();
+        retro.Kpis.RecurringThemes.ShouldBe(0);
+        retro.Sprints.Count.ShouldBe(6);
+        retro.Categories[0].Groups.Single().Recurring.ShouldBeFalse();
     }
 
     [Test]
@@ -258,6 +331,13 @@ public sealed class SprintRetroReaderTests : ApiFixture
             await RetroHistory.MoveToSprintAsync(Connection, id, sprintId, RetroArrangement.Noon(2026, 2, 17));
             await RetroHistory.CompleteAsync(Connection, id, RetroArrangement.Noon(2026, 2, 20));
             return id;
+        }
+
+        // A went-badly point on the theme in a person retro of the sprint.
+        public async Task MentionAsync(Guid sprintId, Guid themeId)
+        {
+            var retroId = await Seed.RetroAsync(new RetroSeedRetro(Joel, RetroRole.Person, SprintId: sprintId));
+            await Seed.PointAsync(retroId, new RetroSeedPoint(RetroCategory.WentBadly, "Mention.", ThemeId: themeId));
         }
 
         public Task<Guid> RetroAsync(Guid itemId, Guid sprintId)

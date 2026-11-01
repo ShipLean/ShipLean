@@ -22,20 +22,17 @@ internal static class SprintRetroStore
                 new { sprintId },
                 cancellationToken: cancellationToken));
 
-    // The last sprints of the project that start no later than this one, oldest first, ending with this sprint.
-    public static async Task<IReadOnlyList<SprintRow>> WindowAsync(NpgsqlConnection connection, SprintRow sprint, CancellationToken cancellationToken)
+    // Every sprint of the project that starts no later than this one, oldest first, ending with this sprint.
+    public static async Task<IReadOnlyList<SprintRow>> SeriesAsync(NpgsqlConnection connection, SprintRow sprint, CancellationToken cancellationToken)
         => [.. await connection.QueryAsync<SprintRow>(
             new CommandDefinition(
                 """
-                SELECT * FROM (
-                    SELECT id, project_id AS projectId, name, to_char(start_date, 'YYYY-MM-DD') AS start, to_char(end_date, 'YYYY-MM-DD') AS "end"
-                    FROM sprint
-                    WHERE project_id = @projectId AND archived_at IS NULL AND (start_date, end_date, id) <= (@start::date, @end::date, @id)
-                    ORDER BY start_date DESC, end_date DESC, id DESC
-                    LIMIT @size) w
-                ORDER BY start, "end", id
+                SELECT id, project_id AS projectId, name, to_char(start_date, 'YYYY-MM-DD') AS start, to_char(end_date, 'YYYY-MM-DD') AS "end"
+                FROM sprint
+                WHERE project_id = @projectId AND archived_at IS NULL AND (start_date, end_date, id) <= (@start::date, @end::date, @id)
+                ORDER BY start_date, end_date, id
                 """,
-                new { projectId = sprint.ProjectId, start = sprint.Start, end = sprint.End, id = sprint.Id, size = WindowSize },
+                new { projectId = sprint.ProjectId, start = sprint.Start, end = sprint.End, id = sprint.Id },
                 cancellationToken: cancellationToken))];
 
     public static async Task<IReadOnlyList<Guid>> RetroIdsAsync(NpgsqlConnection connection, Guid sprintId, CancellationToken cancellationToken)
@@ -59,9 +56,10 @@ internal static class SprintRetroStore
         => [.. await connection.QueryAsync<SprintMentionRow>(
             new CommandDefinition(
                 """
-                SELECT p.theme_id AS themeId, r.sprint_id AS sprintId, p.category
+                SELECT p.theme_id AS themeId, r.sprint_id AS sprintId, p.category, th.name AS themeName, th.tone AS themeTone
                 FROM retro_point p
                 JOIN retrospective r ON r.id = p.retrospective_id
+                JOIN retro_theme th ON th.id = p.theme_id
                 WHERE r.sprint_id = ANY(@sprintIds) AND r.archived_at IS NULL AND p.archived_at IS NULL AND p.theme_id IS NOT NULL
                 """,
                 new { sprintIds = sprintIds.ToArray() },
@@ -104,10 +102,13 @@ internal static class SprintRetroStore
                 new { projectId, themeIds = themeIds.ToArray() },
                 cancellationToken: cancellationToken))];
 
-    // The story-level items finished in the sprint, and the features with a story-level child in it, each with whether it has a live retro.
+    // The story-level items finished in the sprint, and the features with a story-level child that finished or rolled over from it
+    // (taken from the sprint's own outcome, so a child that has since moved to a later sprint still counts), each with whether it has a live retro.
     public static async Task<IReadOnlyList<SprintCoverageRow>> CoverageAsync(NpgsqlConnection connection, Guid sprintId, CancellationToken cancellationToken)
     {
-        var finished = (await RetroSprintFacts.SprintItemsAsync(connection, sprintId, cancellationToken)).Where(item => item.Finished).Select(item => item.ItemId).ToArray();
+        var items = await RetroSprintFacts.SprintItemsAsync(connection, sprintId, cancellationToken);
+        var finished = items.Where(item => item.Finished).Select(item => item.ItemId).ToArray();
+        var children = items.Where(item => item.Finished || item.RolledOver).Select(item => item.ItemId).ToArray();
         return [.. await connection.QueryAsync<SprintCoverageRow>(
             new CommandDefinition(
                 """
@@ -123,12 +124,11 @@ internal static class SprintRetroStore
                        EXISTS (SELECT 1 FROM retrospective r WHERE r.work_item_id = f.id AND r.archived_at IS NULL)
                 FROM work_item f
                 WHERE f.type = 'feature' AND EXISTS (
-                    SELECT 1 FROM work_item c JOIN state cs ON cs.id = c.state_id
-                    WHERE c.parent_id = f.id AND c.type = ANY(@storyLevel)
-                      AND (c.id = ANY(@finished) OR (c.sprint_id = @sprintId AND cs.category <> 'removed')))
+                    SELECT 1 FROM work_item c
+                    WHERE c.parent_id = f.id AND c.id = ANY(@children))
                 ORDER BY number
                 """,
-                new { sprintId, finished, storyLevel = WorkItemTypeRules.StoryLevelDb },
+                new { finished, children, storyLevel = WorkItemTypeRules.StoryLevelDb },
                 cancellationToken: cancellationToken))];
     }
 }
