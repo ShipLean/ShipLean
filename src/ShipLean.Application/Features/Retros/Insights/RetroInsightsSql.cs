@@ -19,7 +19,7 @@ internal static class RetroInsightsSql
 
     // Live points of live retros that sit in a sprint and a theme: retrospective.sprint_id is the only sprint attribution.
     public const string Points = """
-        SELECT p.id, p.retrospective_id AS retroId, p.theme_id AS themeId, r.sprint_id AS sprintId, p.category, p.created_at AS createdAt
+        SELECT p.id, p.retrospective_id AS retroId, p.theme_id AS themeId, r.sprint_id AS sprintId, p.category, p.text, p.created_at AS createdAt
         FROM retro_point p
         JOIN retrospective r ON r.id = p.retrospective_id
         WHERE r.project_id = @projectId AND r.archived_at IS NULL AND p.archived_at IS NULL
@@ -35,6 +35,6 @@ internal static class RetroInsightsSql
         JOIN work_item w ON w.id = ra.work_item_id
         JOIN state st ON st.id = w.state_id
         LEFT JOIN app_user u ON u.id = w.assigned_to
-        WHERE ra.project_id = @projectId
+        WHERE ra.project_id = @projectId AND st.category <> 'removed'
         """;
 }

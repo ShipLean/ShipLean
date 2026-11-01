@@ -12,8 +12,9 @@ namespace ShipLean.Application.Features.Retros.Insights;
 
 // Retrospectives > Insights. The series is every ended sprint plus the current one, oldest first. Counts, statuses and verdicts
 // are all worked out over that whole series, so the range only changes which trailing sprints are shown. "After" counts only
-// sprints that have ended (RetroRules.Verdict), so the current sprint's column is shown but never judged. ClosedAt is -1 when
-// the action closed before the first shown sprint.
+// sprints that have ended (RetroRules.Verdict), so the current sprint's column is shown but never judged. A range of N shows N
+// columns including the current sprint. ClosedAt is -1 when the action closed before the first shown sprint. An action closed
+// before every live sprint of the project has no sprint to be placed in, so it gets no impact row (and no verdict).
 public sealed class RetroInsightsReader(NpgsqlDataSource dataSource, TimeProvider clock, IRetroCards cards) : IRetroInsightsReader
 {
     private const int ShortRange = 3;
@@ -35,6 +36,7 @@ public sealed class RetroInsightsReader(NpgsqlDataSource dataSource, TimeProvide
         var shown = Shown(ended, series, range);
         var offset = series.Count - shown.Count;
         var seriesIds = series.Select(sprint => sprint.Id).ToList();
+        var seriesStart = series.ToDictionary(sprint => sprint.Id, sprint => sprint.Start);
         var lastEndedIndex = ended.Count - 1;
 
         var refs = sprints.ToDictionary(sprint => sprint.Id, sprint => sprint.ToRef());
@@ -51,6 +53,7 @@ public sealed class RetroInsightsReader(NpgsqlDataSource dataSource, TimeProvide
             var closedAt = ClosingIndex(series, DateOnly.FromDateTime(completedAt.UtcDateTime));
             if (closedAt < 0)
             {
+                // Closed before every live sprint: nothing to compare against, so no impact row.
                 continue;
             }
 
@@ -59,13 +62,13 @@ public sealed class RetroInsightsReader(NpgsqlDataSource dataSource, TimeProvide
         }
 
         var actionRefs = actions.ToDictionary(action => action.WorkItemId, action => ToActionRef(action, refs));
-        var themeRows = themes.Select(theme => BuildThemeRow(theme, themeRefs[theme.Id], pointsByTheme[theme.Id], actions, actionRefs, outcomes, seriesIds, offset)).ToList();
+        var themeRows = themes.Select(theme => BuildThemeRow(theme, themeRefs[theme.Id], pointsByTheme[theme.Id], actions, actionRefs, outcomes, seriesIds, seriesStart, offset)).ToList();
         var visible = themeRows.Where(row => row.Total > 0 || row.HasActions).ToList();
         var bad = visible.Where(row => row.Theme.Tone == RetroTone.Bad).OrderBy(row => StatusOrder(row.Status)).ThenByDescending(row => row.Total).ThenBy(row => row.Theme.Name, StringComparer.Ordinal).ToList();
         var good = visible.Where(row => row.Theme.Tone == RetroTone.Good).OrderByDescending(row => row.Total).ThenBy(row => row.Theme.Name, StringComparer.Ordinal).ToList();
 
         var actionRows = actions
-            .OrderBy(action => action.StateCategory is "completed" or "removed")
+            .OrderBy(action => action.StateCategory == "completed")
             .ThenByDescending(action => action.CreatedAt)
             .Select(action => new RetroActionRowDto(
                 actionRefs[action.WorkItemId],
@@ -75,7 +78,7 @@ public sealed class RetroInsightsReader(NpgsqlDataSource dataSource, TimeProvide
                 outcomes.TryGetValue(action.WorkItemId, out var outcome) ? outcome.Result.Verdict : null))
             .ToList();
 
-        var impact = await ImpactAsync(actions, actionRefs, themeRefs, pointsByTheme, outcomes, series, seriesIds, offset, bad, cancellationToken);
+        var impact = await ImpactAsync(actions, actionRefs, themeRefs, pointsByTheme, outcomes, seriesStart, seriesIds, offset, bad, cancellationToken);
         return new RetroInsightsDto(RangeName(range), [.. shown.Select(sprint => sprint.ToRef())], [.. bad.Select(row => row.Dto)], [.. good.Select(row => row.Dto)], actionRows, impact);
     }
 
@@ -85,7 +88,7 @@ public sealed class RetroInsightsReader(NpgsqlDataSource dataSource, TimeProvide
         Dictionary<Guid, RetroThemeRefDto> themeRefs,
         ILookup<Guid, InsightPointRow> pointsByTheme,
         Dictionary<Guid, ClosedOutcome> outcomes,
-        List<InsightSprint> series,
+        Dictionary<Guid, DateOnly> seriesStart,
         List<Guid> seriesIds,
         int offset,
         List<ThemeRow> bad,
@@ -96,7 +99,7 @@ public sealed class RetroInsightsReader(NpgsqlDataSource dataSource, TimeProvide
         foreach (var action in closedActions.Where(action => outcomes[action.WorkItemId].Result.Verdict == RetroVerdict.NoEffect))
         {
             var themeId = action.ThemeId!.Value;
-            if (!latest.ContainsKey(themeId) && LatestMention(pointsByTheme[themeId], series) is { } mention)
+            if (!latest.ContainsKey(themeId) && Newest(RetroTone.Bad, pointsByTheme[themeId], seriesStart) is { } mention)
             {
                 latest[themeId] = mention;
             }
@@ -131,18 +134,19 @@ public sealed class RetroInsightsReader(NpgsqlDataSource dataSource, TimeProvide
         Dictionary<Guid, RetroActionRefDto> actionRefs,
         Dictionary<Guid, ClosedOutcome> outcomes,
         List<Guid> seriesIds,
+        Dictionary<Guid, DateOnly> seriesStart,
         int offset)
     {
         var counts = CountsOf(themeRef, points, seriesIds);
         var own = actions.Where(action => action.ThemeId == theme.Id).ToList();
         var verdicts = own.Where(action => outcomes.ContainsKey(action.WorkItemId)).Select(action => outcomes[action.WorkItemId]).ToList();
         var hasHelped = verdicts.Any(outcome => outcome.Result.Verdict == RetroVerdict.Helped);
-        var hasOpen = own.Any(action => action.StateCategory is not ("completed" or "removed"));
+        var hasOpen = own.Any(action => action.StateCategory != "completed");
         var recurring = themeRef.Tone == RetroTone.Bad && RetroRules.IsRecurring(counts, hasHelped);
         var status = RetroRules.Status(recurring, hasOpen, hasHelped);
         RetroVerdict? last = verdicts.OrderByDescending(outcome => outcome.CompletedAt).FirstOrDefault()?.Result.Verdict;
         var shown = counts.Skip(offset).ToList();
-        var dto = new RetroThemeInsightDto(themeRef, shown, shown.Sum(), status, [.. own.OrderByDescending(action => action.CreatedAt).Select(action => actionRefs[action.WorkItemId])], last);
+        var dto = new RetroThemeInsightDto(themeRef, shown, shown.Sum(), LatestText(themeRef, points, seriesStart), status, [.. own.OrderByDescending(action => action.CreatedAt).Select(action => actionRefs[action.WorkItemId])], last);
         return new ThemeRow(themeRef, dto.Status, dto.Total, own.Count > 0, dto);
     }
 
@@ -158,15 +162,21 @@ public sealed class RetroInsightsReader(NpgsqlDataSource dataSource, TimeProvide
         return [.. seriesIds.Select(id => typed.Count(point => point.SprintId == id && point.Category == RetroCategory.WentWell))];
     }
 
-    private static InsightPointRow? LatestMention(IEnumerable<InsightPointRow> points, List<InsightSprint> series)
+    private static bool IsCounted(RetroTone tone, InsightPointRow point)
     {
-        var start = series.ToDictionary(sprint => sprint.Id, sprint => sprint.Start);
-        return points
-            .Where(point => start.ContainsKey(point.SprintId) && Enum.Parse<RetroCategory>(point.Category, ignoreCase: true) is RetroCategory.WentBadly or RetroCategory.NotInPlan)
-            .OrderByDescending(point => start[point.SprintId])
+        var category = Enum.Parse<RetroCategory>(point.Category, ignoreCase: true);
+        return tone == RetroTone.Bad ? category is RetroCategory.WentBadly or RetroCategory.NotInPlan : category == RetroCategory.WentWell;
+    }
+
+    private static InsightPointRow? Newest(RetroTone tone, IEnumerable<InsightPointRow> points, Dictionary<Guid, DateOnly> seriesStart)
+        => points
+            .Where(point => seriesStart.ContainsKey(point.SprintId) && IsCounted(tone, point))
+            .OrderByDescending(point => seriesStart[point.SprintId])
             .ThenByDescending(point => point.CreatedAt)
             .FirstOrDefault();
-    }
+
+    private static string? LatestText(RetroThemeRefDto theme, IEnumerable<InsightPointRow> points, Dictionary<Guid, DateOnly> seriesStart)
+        => Newest(theme.Tone, points, seriesStart)?.Text;
 
     // The sprint whose dates contain the day; a day between sprints belongs to the latest sprint that started before it. -1: no sprint yet.
     private static int ClosingIndex(List<InsightSprint> series, DateOnly day)
@@ -183,7 +193,9 @@ public sealed class RetroInsightsReader(NpgsqlDataSource dataSource, TimeProvide
         }
 
         var window = range == RetroRange.Last3 ? ShortRange : LongRange;
-        return [.. ended.TakeLast(window), .. series.Skip(ended.Count)];
+        // N columns including the current sprint, so the current one takes a slot from the ended sprints.
+        var current = series.Count - ended.Count;
+        return [.. ended.TakeLast(Math.Max(0, window - current)), .. series.Skip(ended.Count)];
     }
 
     private static RetroActionRefDto ToActionRef(InsightActionRow action, Dictionary<Guid, SprintRef> refs)
@@ -209,6 +221,20 @@ public sealed class RetroInsightsReader(NpgsqlDataSource dataSource, TimeProvide
         RetroRange.All => "all",
         _ => "6",
     };
+
+    private sealed record InsightSprintRow(Guid Id, string Name, string StartDate, string EndDate);
+
+
+    private sealed record InsightPointRow(Guid Id, Guid RetroId, Guid ThemeId, Guid SprintId, string Category, string Text, DateTime CreatedAt);
+
+
+    private sealed record InsightThemeRow(Guid Id, string Name, string Tone);
+
+
+    private sealed record InsightActionRow(
+        Guid WorkItemId, Guid? ThemeId, Guid? RaisedSprintId, string Key, string Title, decimal? Points, DateTime CreatedAt,
+        Guid StateId, string StateName, string StateCategory, Guid? SprintId,
+        Guid? OwnerId, string? OwnerName, string? OwnerInitials, string? OwnerColour, string? OwnerPhotoUrl);
 
     private sealed record ClosedOutcome(int ClosedAt, DateTimeOffset CompletedAt, RetroVerdictResult Result);
 

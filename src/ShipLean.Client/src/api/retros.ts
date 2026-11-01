@@ -159,6 +159,7 @@ export interface RetroThemeInsightDto {
   theme: RetroThemeRefDto;
   counts: number[];
   total: number;
+  latest: string | null;
   status: RetroThemeStatus;
   actionItems: RetroActionRefDto[];
   lastVerdict: RetroVerdict | null;

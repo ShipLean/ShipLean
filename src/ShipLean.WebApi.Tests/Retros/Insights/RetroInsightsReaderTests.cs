@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
+using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Retros;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
@@ -175,6 +176,76 @@ public sealed class RetroInsightsReaderTests : ApiFixture
     }
 
     [Test]
+    public async Task Get_WhenCurrentSprintExists_ShouldShowItButNotJudgeIt()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var today = DateOnly.FromDateTime(Host.Services.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime);
+        var currentStart = today.AddDays(-2);
+        var starts = new[] { currentStart.AddDays(-21), currentStart.AddDays(-14), currentStart.AddDays(-7), currentStart };
+        var world = await WorldAsync(connection, starts);
+        var theme = await world.Seed.ThemeAsync("Slow reviews");
+        await world.MentionAsync(0, theme, 3);
+        await world.MentionAsync(1, theme, 3);
+        await world.MentionAsync(2, theme, 3);
+        await world.MentionAsync(3, theme, 1, text: "Mentioned in the current sprint.");
+        var action = await world.ActionAsync(theme, raisedIn: 1);
+        var closedOn = starts[2].AddDays(1);
+        await RetroHistory.CompleteAsync(connection, action, RetroArrangement.Noon(closedOn.Year, closedOn.Month, closedOn.Day));
+
+        var wide = await Reader.GetAsync(world.Project.Id, RetroRange.Last6, CancellationToken.None);
+        var narrow = await Reader.GetAsync(world.Project.Id, RetroRange.Last3, CancellationToken.None);
+
+        wide.Sprints.Count.ShouldBe(4);
+        wide.Sprints[^1].Status.ShouldBe(SprintStatus.Current);
+        wide.Impact.Single().Verdict.ShouldBe(RetroVerdict.TooEarly);
+        wide.Impact.Single().AfterAvg.ShouldBeNull();
+        narrow.Sprints.Select(sprint => sprint.Id).ShouldBe(world.Sprints.Skip(1));
+        narrow.Themes.Single().Counts.ShouldBe([3, 3, 1]);
+        narrow.Themes.Single().Latest.ShouldBe("Mentioned in the current sprint.");
+        narrow.Impact.Single().Verdict.ShouldBe(RetroVerdict.TooEarly);
+        narrow.Impact.Single().ClosedAt.ShouldBe(1);
+    }
+
+    [Test]
+    public async Task Get_WhenPointsOrRetroAreArchived_ShouldNotCountThem()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var world = await WorldAsync(connection, 3);
+        var theme = await world.Seed.ThemeAsync("Slow reviews");
+        var live = await world.Seed.RetroAsync(new RetroSeedRetro(SeedIds.Users.Joel, RetroRole.Person, SprintId: world.Sprints[0]));
+        await world.Seed.PointAsync(live, new RetroSeedPoint(RetroCategory.WentBadly, "Live point.", ThemeId: theme, CreatedAt: World.NoonIn(0)));
+        await world.Seed.PointAsync(live, new RetroSeedPoint(RetroCategory.WentBadly, "Archived point.", ThemeId: theme, CreatedAt: World.NoonIn(0).AddHours(1), Archived: true));
+        var archivedRetro = await world.Seed.RetroAsync(new RetroSeedRetro(SeedIds.Users.Joel, RetroRole.Person, SprintId: world.Sprints[1]));
+        await world.Seed.PointAsync(archivedRetro, new RetroSeedPoint(RetroCategory.WentBadly, "In an archived retro.", ThemeId: theme, CreatedAt: World.NoonIn(1)));
+        await connection.ExecuteAsync("UPDATE retrospective SET archived_at = now() WHERE id = @archivedRetro", new { archivedRetro });
+
+        var row = (await Reader.GetAsync(world.Project.Id, RetroRange.Last6, CancellationToken.None)).Themes.Single();
+
+        row.Counts.ShouldBe([1, 0, 0]);
+        row.Total.ShouldBe(1);
+        row.Latest.ShouldBe("Live point.");
+    }
+
+    [Test]
+    public async Task Get_WhenActionItemRemoved_ShouldDropOutOfEveryView()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var world = await WorldAsync(connection, 3);
+        var theme = await world.Seed.ThemeAsync("Slow reviews");
+        await world.MentionAsync(0, theme, 1);
+        var action = await world.ActionAsync(theme, raisedIn: 0);
+        await connection.ExecuteAsync(
+            "UPDATE work_item w SET state_id = (SELECT s.id FROM state s WHERE s.project_id = w.project_id AND s.type = w.type AND s.category = 'removed') WHERE w.id = @action",
+            new { action });
+
+        var result = await Reader.GetAsync(world.Project.Id, RetroRange.Last6, CancellationToken.None);
+
+        result.ActionItems.ShouldBeEmpty();
+        result.Themes.Single().ActionItems.ShouldBeEmpty();
+        result.Themes.Single().Status.ShouldBe(RetroThemeStatus.Quiet);
+    }
+
+    [Test]
     public async Task Get_WhenGoodTone_ShouldBeInKeepsWorking()
     {
         await using var connection = await OpenDatabaseAsync();
@@ -190,6 +261,7 @@ public sealed class RetroInsightsReaderTests : ApiFixture
         row.Counts.ShouldBe([2, 0, 1]);
         row.Total.ShouldBe(3);
         row.Status.ShouldBe(RetroThemeStatus.Quiet);
+        row.Latest.ShouldBe("Point 2-0");
     }
 
     [Test]
@@ -253,14 +325,16 @@ public sealed class RetroInsightsReaderTests : ApiFixture
         (await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.BadRequest)).Code.ShouldBe(ApiErrorCodes.Validation);
     }
 
-    private static async Task<World> WorldAsync(NpgsqlConnection connection, int sprintCount)
+    private static Task<World> WorldAsync(NpgsqlConnection connection, int sprintCount)
+        => WorldAsync(connection, [.. Enumerable.Range(0, sprintCount).Select(i => FirstMonday.AddDays(7 * i))]);
+
+    private static async Task<World> WorldAsync(NpgsqlConnection connection, IReadOnlyList<DateOnly> starts)
     {
         var project = await ArrangedProject.CreateAsync(connection);
         var sprints = new List<Guid>();
-        for (var i = 0; i < sprintCount; i++)
+        for (var i = 0; i < starts.Count; i++)
         {
-            var start = FirstMonday.AddDays(7 * i);
-            sprints.Add(await RetroArrangement.SprintAsync(connection, project.Id, $"S{i + 1}", start, start.AddDays(6)));
+            sprints.Add(await RetroArrangement.SprintAsync(connection, project.Id, $"S{i + 1}", starts[i], starts[i].AddDays(6)));
         }
 
         return new World(connection, project, sprints, new RetroSeed(connection, project.Id));
