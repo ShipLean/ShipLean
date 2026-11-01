@@ -7,8 +7,13 @@ public sealed class UsageDispatcher(UsageQueue queue) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await foreach (var _ in queue.Reader.ReadAllAsync(stoppingToken))
+        // Read and drop: the discarded event is the stub's whole behaviour.
+        while (await queue.Reader.WaitToReadAsync(stoppingToken))
         {
+            while (queue.Reader.TryRead(out _))
+            {
+                // dropped
+            }
         }
     }
 }

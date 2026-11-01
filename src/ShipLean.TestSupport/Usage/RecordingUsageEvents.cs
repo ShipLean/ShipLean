@@ -62,9 +62,11 @@ public sealed class RecordingUsageEvents : IUsageEvents
             }
             _waiters.Add((match, source));
         }
+        using var timer = new CancellationTokenSource(timeout);
+        await using var registration = timer.Token.Register(() => source.TrySetException(new TimeoutException($"No matching usage event within {timeout}.")));
         try
         {
-            return await source.Task.WaitAsync(timeout);
+            return await source.Task;
         }
         catch (TimeoutException)
         {
