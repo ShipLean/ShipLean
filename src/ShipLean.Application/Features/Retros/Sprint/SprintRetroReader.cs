@@ -22,7 +22,6 @@ public sealed class SprintRetroReader(NpgsqlDataSource dataSource, IRetroCards r
         var seriesIds = series.Select(row => row.Id).ToList();
         var windowRows = series.Skip(Math.Max(0, series.Count - SprintRetroStore.WindowSize)).ToList();
         var windowIds = windowRows.Select(row => row.Id).ToHashSet();
-        var lastEnded = series.ToList().FindLastIndex(row => Day(row.End) < today);
 
         var retroIds = await SprintRetroStore.RetroIdsAsync(connection, sprintId, cancellationToken);
         var loaded = await retroCards.LoadAsync(retroIds, cancellationToken);
@@ -46,10 +45,13 @@ public sealed class SprintRetroReader(NpgsqlDataSource dataSource, IRetroCards r
         }
         var closed = await SprintRetroStore.ClosedActionsAsync(connection, sprintRow.ProjectId, [.. refs.Keys], cancellationToken);
         var completions = await RetroSprintFacts.CompletionsAsync(connection, [.. closed.Select(c => c.ItemId).Distinct()], cancellationToken);
-        var closedIndex = completions
-            .Where(c => c.SprintId is { } id && seriesIds.Contains(id))
-            .ToDictionary(c => c.ItemId, c => seriesIds.IndexOf(c.SprintId!.Value));
-        var themes = new SprintRetroThemes(seriesIds, SprintRetroStore.WindowSize, lastEnded, mentions, closed, closedIndex, refs);
+        // The series ends with the viewed sprint, so a completion after its end belongs to a later sprint and is left out.
+        var seriesDated = series.Select(row => new RetroSeriesSprint(row.Id, Day(row.Start), Day(row.End), Day(row.End) < today)).ToList();
+        var viewedEnd = seriesDated[^1].End;
+        var closedActions = completions
+            .Where(c => DateOnly.FromDateTime(c.CompletedAt.UtcDateTime) <= viewedEnd)
+            .Join(closed, c => c.ItemId, row => row.ItemId, (c, row) => new RetroSeriesClosed(c.ItemId, row.ThemeId, c.CompletedAt));
+        var themes = new SprintRetroThemes(seriesDated, SprintRetroStore.WindowSize, mentions, closedActions, refs);
 
         var cards = loaded.Select(card => card with { Points = [.. card.Points.Select(point => point with { Recurring = point.Theme is { } t && themes.IsRecurring(t.Id) })] }).ToList();
         var coverageRows = await SprintRetroStore.CoverageAsync(connection, sprintId, cancellationToken);
@@ -59,7 +61,7 @@ public sealed class SprintRetroReader(NpgsqlDataSource dataSource, IRetroCards r
                 RetroRules.Coverage(row.IsFeature, row.LastChildCompleted, row.HasRetro)))
             .ToList();
         var recurring = RecurringStrips(refs, themes);
-        var actionRows = actions.Select(action => ToActionRow(action, today, themes, closedIndex)).ToList();
+        var actionRows = actions.Select(action => ToActionRow(action, today, themes)).ToList();
 
         return new SprintRetroDto(
             ToSprint(sprintRow, today),
@@ -84,16 +86,14 @@ public sealed class SprintRetroReader(NpgsqlDataSource dataSource, IRetroCards r
             .ThenBy(strip => strip.Theme.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-    private static RetroActionRowDto ToActionRow(SprintActionRow action, DateOnly today, SprintRetroThemes themes, IReadOnlyDictionary<Guid, int> closedIndex)
+    private static RetroActionRowDto ToActionRow(SprintActionRow action, DateOnly today, SprintRetroThemes themes)
     {
         var category = Enum.Parse<StateCategory>(action.StateCategory, ignoreCase: true);
         var planned = action.PlannedId is { } plannedId ? ToSprint(new SprintRow(plannedId, Guid.Empty, action.PlannedName!, action.PlannedStart!, action.PlannedEnd!), today) : null;
         var raised = action.RaisedId is { } raisedId ? ToSprint(new SprintRow(raisedId, Guid.Empty, action.RaisedName!, action.RaisedStart!, action.RaisedEnd!), today) : null;
         var owner = action.OwnerId is { } ownerId ? new UserRef(ownerId, action.OwnerName!, action.OwnerInitials!, action.OwnerColour!, action.OwnerPhotoUrl) : null;
         var theme = action.ThemeId is { } themeId ? new RetroThemeRefDto(themeId, action.ThemeName!, Enum.Parse<RetroTone>(action.ThemeTone!, ignoreCase: true)) : null;
-        RetroVerdict? impact = category == StateCategory.Completed && action.ThemeId is { } id && closedIndex.TryGetValue(action.ItemId, out var closedAt)
-            ? themes.Verdict(id, closedAt)
-            : null;
+        RetroVerdict? impact = category == StateCategory.Completed && action.ThemeId is { } id ? themes.Verdict(id, action.ItemId) : null;
         return new RetroActionRowDto(
             new RetroActionRefDto(action.ItemId, action.Key, action.Title, new StateRef(action.StateId, action.StateName, category), planned, action.Points),
             theme,
