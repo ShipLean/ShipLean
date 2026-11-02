@@ -22,6 +22,7 @@ export function ChangesImpact({ insights }: RetroInsightsSlotProps) {
               key={card.action.workItemId}
               impact={card}
               sprints={sprints}
+              mode={insights.mode}
               raisedIn={
                 insights.actionItems.find((r) => r.action.workItemId === card.action.workItemId)
                   ?.raisedIn?.name

@@ -1,7 +1,7 @@
 import { Avatar } from '../../../../components/Avatar';
 import { StateDot } from '../../../../components/StateDot';
 import { TypeIcon } from '../../../../components/TypeIcon';
-import type { RetroActionRowDto } from '../../../../api/retros';
+import type { RetroActionRowDto, RetroInsightsMode } from '../../../../api/retros';
 import type { SprintDto } from '../../../../api/sprints';
 import { Chip } from '../../../../components/Chip';
 import { ItemLink } from '../../../itemPeek/ItemLink';
@@ -17,11 +17,13 @@ export function ActionRow({
   row,
   next,
   recurring,
+  mode,
 }: {
   projectId: string;
   row: RetroActionRowDto;
   next: SprintDto | undefined;
   recurring: boolean;
+  mode: RetroInsightsMode;
 }) {
   const { action, owner } = row;
   const open = action.state.category !== 'completed' && action.state.category !== 'removed';
@@ -86,7 +88,7 @@ export function ActionRow({
         )}
       </td>
       <td data-cell="impact" className="px-3 py-2">
-        {row.impact ? <VerdictChip verdict={row.impact} /> : NONE}
+        {row.impact ? <VerdictChip verdict={row.impact} mode={mode} /> : NONE}
       </td>
     </tr>
   );

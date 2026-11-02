@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import { itemPeekTestIds } from '../../itemPeek/testIds';
-import { retroInsights, stubRetros } from '../ct/retroFixtures';
+import { insightsWeeks, retroInsights, stubRetros } from '../ct/retroFixtures';
 import { retrosTestIds as ids } from '../testIds';
 import { insightsProject } from './ct/insightsProject';
 import { RecurringThemes } from './RecurringThemes';
@@ -141,3 +141,17 @@ for (const theme of ['light', 'dark'] as const) {
     });
   });
 }
+
+test('RecurringThemes_WhenModeIsWeek_ShouldCarryItToTheStatusAndVerdictChips', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  await mount(<RecurringThemes project={insightsProject} insights={insightsWeeks} />, open);
+  const rows = page.getByTestId(ids.retroRecurringRow);
+  await expect(rows.first().locator('span[data-status][data-mode="week"]')).toHaveCount(1);
+  await expect(rows.first().locator('span[data-verdict][data-mode="week"]')).toHaveCount(1);
+  await expect(page.locator('[data-mode="sprint"]')).toHaveCount(0);
+  await expect(page.getByTestId(ids.retroTipStatusHead)).toHaveAttribute('data-mode', 'week');
+  await expect(page.getByTestId(ids.retroTipVerdictHead)).toHaveAttribute('data-mode', 'week');
+});

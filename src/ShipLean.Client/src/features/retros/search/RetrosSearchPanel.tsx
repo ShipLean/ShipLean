@@ -1,6 +1,7 @@
 import { useSearchParams } from 'react-router-dom';
 import type { ProjectDto } from '../../../api/projects';
 import type { RetroSearchQuery } from '../../../api/retrosApi';
+import { RetroActionDialogProvider } from '../../retroShared/actionDialog/RetroActionDialogProvider';
 import { pagesTestIds } from '../../pages/testIds';
 import { RetroQueryState } from '../RetroQueryState';
 import { retrosTestIds as ids } from '../testIds';
@@ -57,31 +58,33 @@ export function RetrosSearchPanel({ project }: { project: ProjectDto }) {
       { replace },
     );
   return (
-    <RetroQueryState query={result}>
-      {(search) => {
-        const props = {
-          project,
-          query,
-          search,
-          pointId: params.get('point') ?? undefined,
-          // Changing a filter closes the open retro, which the new result may not hold; typing replaces the entry.
-          change: (patch: Partial<RetroSearchQuery>) =>
-            write({ ...query, selected: undefined, ...patch }, 'q' in patch),
-          select: (retroId: string | null, pointId?: string) =>
-            write({ ...query, selected: retroId ?? undefined }, false, pointId),
-        };
-        return (
-          <div data-testid={ids.retrosSearchPanel} className="grid gap-4">
-            <div data-testid={pagesTestIds.slotRetroSearchFilters}>
-              <SearchFilters {...props} />
+    <RetroActionDialogProvider projectId={project.id}>
+      <RetroQueryState query={result}>
+        {(search) => {
+          const props = {
+            project,
+            query,
+            search,
+            pointId: params.get('point') ?? undefined,
+            // Changing a filter closes the open retro, which the new result may not hold; typing replaces the entry.
+            change: (patch: Partial<RetroSearchQuery>) =>
+              write({ ...query, selected: undefined, ...patch }, 'q' in patch),
+            select: (retroId: string | null, pointId?: string) =>
+              write({ ...query, selected: retroId ?? undefined }, false, pointId),
+          };
+          return (
+            <div data-testid={ids.retrosSearchPanel} className="grid gap-4">
+              <div data-testid={pagesTestIds.slotRetroSearchFilters}>
+                <SearchFilters {...props} />
+              </div>
+              <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,380px)] gap-4">
+                <SearchRows {...props} />
+                <SelectedRetro {...props} />
+              </div>
             </div>
-            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,380px)] gap-4">
-              <SearchRows {...props} />
-              <SelectedRetro {...props} />
-            </div>
-          </div>
-        );
-      }}
-    </RetroQueryState>
+          );
+        }}
+      </RetroQueryState>
+    </RetroActionDialogProvider>
   );
 }

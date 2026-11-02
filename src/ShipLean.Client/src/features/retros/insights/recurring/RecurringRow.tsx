@@ -1,5 +1,5 @@
 import type { SprintRef } from '../../../../api/refs';
-import type { RetroThemeInsightDto } from '../../../../api/retros';
+import type { RetroInsightsMode, RetroThemeInsightDto } from '../../../../api/retros';
 import { ActionChip } from '../../../retroShared/ActionChip';
 import { retrosTestIds as ids } from '../../testIds';
 import { MentionCell } from './MentionCell';
@@ -13,11 +13,13 @@ export function RecurringRow({
   row,
   sprints,
   max,
+  mode,
 }: {
   projectId: string;
   row: RetroThemeInsightDto;
   sprints: readonly SprintRef[];
   max: number;
+  mode: RetroInsightsMode;
 }) {
   return (
     <tr
@@ -42,7 +44,7 @@ export function RecurringRow({
         {row.total}
       </td>
       <td className="px-3 py-2">
-        <StatusChip status={row.status} />
+        <StatusChip status={row.status} mode={mode} />
       </td>
       <td className="px-3 py-2">
         <div className="flex flex-wrap gap-1.5">
@@ -52,7 +54,7 @@ export function RecurringRow({
         </div>
       </td>
       <td className="px-3 py-2">
-        <VerdictChip verdict={row.lastVerdict} />
+        <VerdictChip verdict={row.lastVerdict} mode={mode} />
       </td>
     </tr>
   );

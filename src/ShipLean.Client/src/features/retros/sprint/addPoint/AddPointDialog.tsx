@@ -7,7 +7,7 @@ import { useRetroThemes } from '../../useRetroQueries';
 import { retrosTestIds as ids } from '../../testIds';
 import type { SprintRetroSlotProps } from '../SprintRetroSlotProps';
 import { subjectItems } from './subjects';
-import { useCreatePoint } from './useCreatePoint';
+import { useCreatePoint } from '../../../retroShared/board/useCreatePoint';
 
 type ThemeChoice = { id: string; name: string } | { id: null; name: string } | null;
 

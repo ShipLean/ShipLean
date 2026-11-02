@@ -1,5 +1,7 @@
 import { RecurringCallout } from './recurring/RecurringCallout';
 import { RecurringRow } from './recurring/RecurringRow';
+import { LastChangeHeading } from './tips/LastChangeHeading';
+import { StatusHeading } from './tips/StatusHeading';
 import type { RetroInsightsSlotProps } from './InsightsSlotProps';
 import { retrosTestIds as ids } from '../testIds';
 
@@ -35,9 +37,9 @@ export function RecurringThemes({ project, insights }: RetroInsightsSlotProps) {
                   </th>
                 ))}
                 <th className={`${HEAD} text-right`}>Total</th>
-                <th className={HEAD}>Status</th>
+                <StatusHeading className={HEAD} mode={insights.mode} />
                 <th className={HEAD}>Action items</th>
-                <th className={HEAD}>Last change</th>
+                <LastChangeHeading className={HEAD} mode={insights.mode} />
               </tr>
             </thead>
             <tbody>
@@ -48,6 +50,7 @@ export function RecurringThemes({ project, insights }: RetroInsightsSlotProps) {
                   row={row}
                   sprints={sprints}
                   max={max}
+                  mode={insights.mode}
                 />
               ))}
             </tbody>

@@ -54,6 +54,7 @@ export function ActionItemsTable({ project, insights }: RetroInsightsSlotProps) 
                     projectId={project.id}
                     row={row}
                     next={next}
+                    mode={insights.mode}
                     recurring={row.theme ? recurring.has(row.theme.id) : false}
                   />
                 ))}

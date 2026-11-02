@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import type { RetroImpactDto, RetroInsightsDto } from '../../../api/retros';
-import { retroInsights, stubRetros } from '../ct/retroFixtures';
+import { insightsWeeks, retroInsights, stubRetros } from '../ct/retroFixtures';
 import { retrosTestIds as ids } from '../testIds';
 import { insightsProject } from './ct/insightsProject';
 import { ChangesImpact } from './ChangesImpact';
@@ -151,3 +151,12 @@ for (const theme of ['light', 'dark'] as const) {
     await expect(view).toHaveScreenshot(`changes-impact.${theme}.png`, { animations: 'disabled' });
   });
 }
+
+test('ChangesImpact_WhenModeIsWeek_ShouldCarryItToTheVerdictChip', async ({ mount, page }) => {
+  await stubRetros(page);
+  await mount(<ChangesImpact project={insightsProject} insights={insightsWeeks} />, open);
+  const cards = page.getByTestId(ids.retroImpactCard);
+  const count = await cards.count();
+  expect(count).toBeGreaterThan(0);
+  await expect(cards.locator('span[data-verdict][data-mode="week"]')).toHaveCount(count);
+});

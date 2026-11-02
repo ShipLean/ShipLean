@@ -1,4 +1,4 @@
-import type { RetroImpactDto } from '../../../../api/retros';
+import type { RetroImpactDto, RetroInsightsMode } from '../../../../api/retros';
 import type { SprintRef } from '../../../../api/refs';
 import { ActionChip } from '../../../retroShared/ActionChip';
 import { retrosTestIds as ids } from '../../testIds';
@@ -12,10 +12,12 @@ export function ImpactCard({
   impact,
   sprints,
   raisedIn,
+  mode,
 }: {
   impact: RetroImpactDto;
   sprints: readonly SprintRef[];
   raisedIn: string | undefined;
+  mode: RetroInsightsMode;
 }) {
   const { action, theme, verdict } = impact;
   const closedIn = impact.closedAt >= 0 ? sprints[impact.closedAt]?.name : undefined;
@@ -27,7 +29,7 @@ export function ImpactCard({
       className="grid gap-2 rounded-panel border border-edge bg-panel p-3"
     >
       <div className="flex items-center gap-2">
-        <VerdictChip verdict={verdict} />
+        <VerdictChip verdict={verdict} mode={mode} />
         <span className="flex-1" />
         <span className="text-[length:var(--text-xs)] text-ink-muted">
           {raisedIn ? `raised ${raisedIn} · ` : ''}

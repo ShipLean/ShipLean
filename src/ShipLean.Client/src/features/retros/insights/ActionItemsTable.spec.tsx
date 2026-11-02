@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import { componentTestIds } from '../../../components/testIds';
 import { ToastHost } from '../../../components/ToastHost';
-import { retroInsights, stubRetros } from '../ct/retroFixtures';
+import { insightsWeeks, retroInsights, stubRetros } from '../ct/retroFixtures';
 import { retrosTestIds as ids } from '../testIds';
 import { insightsProject } from './ct/insightsProject';
 import { ActionItemsTable } from './ActionItemsTable';
@@ -189,3 +189,13 @@ for (const theme of ['light', 'dark'] as const) {
     await expect(view).toHaveScreenshot(`action-items.${theme}.png`, { animations: 'disabled' });
   });
 }
+
+test('ActionItemsTable_WhenModeIsWeek_ShouldCarryItToTheVerdictChip', async ({ mount, page }) => {
+  await stubRetros(page);
+  await mount(<ActionItemsTable project={insightsProject} insights={insightsWeeks} />, open);
+  const withImpact = insightsWeeks.actionItems.filter((row) => row.impact !== null).length;
+  expect(withImpact).toBeGreaterThan(0);
+  await expect(
+    page.getByTestId(ids.retroActionRow).locator('span[data-verdict][data-mode="week"]'),
+  ).toHaveCount(withImpact);
+});
