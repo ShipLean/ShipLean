@@ -10,6 +10,7 @@ namespace ShipLean.Application.Features.Retros.Store;
 //    that started before it; a date before every sprint has no sprint, so the action gets no verdict.
 //  - "Helped" is checked over every closed action on the theme, project-wide. Only tone-bad themes can recur.
 //  - Status needs openThemes (themes with an open action item); callers that only want recurrence pass an empty set.
+//  - recurrence is 3 of the last 4 sprints by default; a series of weeks passes RetroRecurrence.Weeks (3 of the last 6). A week is a RetroSeriesSprint.
 //  - Verdict maths is RetroRules (after = ended sprints only; before 0 is noEffect).
 public static class RetroThemeSeries
 {
@@ -18,8 +19,10 @@ public static class RetroThemeSeries
         IEnumerable<(Guid ThemeId, Guid SprintId, RetroCategory Category)> points,
         IReadOnlyDictionary<Guid, RetroTone> tones,
         IEnumerable<RetroSeriesClosed> closed,
-        IReadOnlySet<Guid> openThemes)
+        IReadOnlySet<Guid> openThemes,
+        RetroRecurrence? recurrence = null)
     {
+        recurrence ??= RetroRecurrence.Sprints;
         var seriesIds = series.Select(sprint => sprint.Id).ToList();
         var lastEndedIndex = series.ToList().FindLastIndex(sprint => sprint.Ended);
         var pointsByTheme = points.ToLookup(point => point.ThemeId, point => (point.SprintId, point.Category));
@@ -42,7 +45,7 @@ public static class RetroThemeSeries
             }
 
             var helped = verdicts.Any(verdict => verdict.Result.Verdict == RetroVerdict.Helped);
-            var recurring = tone == RetroTone.Bad && RetroRules.IsRecurring(counts, helped);
+            var recurring = tone == RetroTone.Bad && RetroRules.IsRecurring(counts, helped, recurrence);
             var status = RetroRules.Status(recurring, openThemes.Contains(themeId), helped);
             result[themeId] = new RetroThemeSeriesEntry(counts, verdicts, recurring, status);
         }

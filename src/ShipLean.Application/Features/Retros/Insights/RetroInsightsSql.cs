@@ -18,13 +18,12 @@ internal static class RetroInsightsSql
         WHERE t.project_id = @projectId AND t.archived_at IS NULL AND t.merged_into_id IS NULL
         """;
 
-    // Live points of live retros that sit in a sprint and a theme: retrospective.sprint_id is the only sprint attribution.
+    // Live points of live retros, with or without a theme or a sprint: retrospective.sprint_id is the only sprint attribution. The reader places them.
     public const string Points = """
         SELECT p.id, p.retrospective_id AS retroId, p.theme_id AS themeId, r.sprint_id AS sprintId, p.category, p.text, p.created_at AS createdAt
         FROM retro_point p
         JOIN retrospective r ON r.id = p.retrospective_id
         WHERE r.project_id = @projectId AND r.archived_at IS NULL AND p.archived_at IS NULL
-          AND p.theme_id IS NOT NULL AND r.sprint_id IS NOT NULL
         """;
 
     public static readonly string Actions = $"""

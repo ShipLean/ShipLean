@@ -26,6 +26,19 @@ public class RetroRulesTests
         RetroRules.IsRecurring(counts, helped).ShouldBe(expected);
     }
 
+    [Test]
+    public void IsRecurring_WhenThreeOfLastSixWeeks_ShouldBeTrue()
+    {
+        RetroRules.IsRecurring([0, 1, 0, 1, 0, 1], false, RetroRecurrence.Weeks).ShouldBeTrue();
+        RetroRules.IsRecurring([0, 1, 0, 1, 0, 1], false).ShouldBeFalse();
+    }
+
+    [Test]
+    public void IsRecurring_WhenThreeOfLastSevenButTwoInSix_ShouldBeFalse()
+    {
+        RetroRules.IsRecurring([1, 1, 0, 0, 0, 0, 1], false, RetroRecurrence.Weeks).ShouldBeFalse();
+    }
+
     [TestCase(true, true, true, RetroThemeStatus.Recurring)]
     [TestCase(false, true, true, RetroThemeStatus.BeingAddressed)]
     [TestCase(false, false, true, RetroThemeStatus.Resolved)]

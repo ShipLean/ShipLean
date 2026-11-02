@@ -5,9 +5,6 @@ namespace ShipLean.Application.Features.Retros.Rules;
 // The rules of the Insights views, pure so one set of tests pins them. Counts run oldest sprint first.
 public static class RetroRules
 {
-    private const int RecurringWindow = 4;
-    private const int RecurringMentions = 3;
-
     // wentBadly plus notInPlan points per sprint, one entry per sprint in the order given.
     public static IReadOnlyList<int> Mentions(IReadOnlyList<Guid> sprintIds, IEnumerable<(Guid SprintId, RetroCategory Category)> points)
     {
@@ -17,7 +14,11 @@ public static class RetroRules
 
     // Mentioned in at least 3 of the last 4 sprints, and no closed action item on the theme has the verdict helped.
     public static bool IsRecurring(IReadOnlyList<int> counts, bool hasHelpedFix)
-        => !hasHelpedFix && counts.TakeLast(RecurringWindow).Count(count => count > 0) >= RecurringMentions;
+        => IsRecurring(counts, hasHelpedFix, RetroRecurrence.Sprints);
+
+    // The same rule over another window: 3 of the last 6 weeks in week mode.
+    public static bool IsRecurring(IReadOnlyList<int> counts, bool hasHelpedFix, RetroRecurrence recurrence)
+        => !hasHelpedFix && counts.TakeLast(recurrence.Window).Count(count => count > 0) >= recurrence.Mentions;
 
     // Recurring first, then an open action item, then a helped fix, otherwise quiet.
     public static RetroThemeStatus Status(bool recurring, bool hasOpenAction, bool hasHelpedFix)

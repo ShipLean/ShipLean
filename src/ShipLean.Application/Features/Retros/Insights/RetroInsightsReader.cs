@@ -19,6 +19,8 @@ public sealed class RetroInsightsReader(NpgsqlDataSource dataSource, TimeProvide
 {
     private const int ShortRange = 3;
     private const int LongRange = 6;
+    private const int WeeksShort = 6;
+    private const int WeeksLong = 12;
 
     public async Task<RetroInsightsDto> GetAsync(Guid projectId, RetroRange range, CancellationToken cancellationToken = default)
     {
@@ -31,34 +33,40 @@ public sealed class RetroInsightsReader(NpgsqlDataSource dataSource, TimeProvide
         var points = (await connection.QueryAsync<InsightPointRow>(new CommandDefinition(RetroInsightsSql.Points, new { projectId }, cancellationToken: cancellationToken))).ToList();
         var actions = (await connection.QueryAsync<InsightActionRow>(new CommandDefinition(RetroInsightsSql.Actions, new { projectId }, cancellationToken: cancellationToken))).ToList();
 
-        var ended = sprints.Where(sprint => sprint.Phase == SprintPhase.Past).ToList();
-        var series = ended.Concat(sprints.Where(sprint => sprint.Phase == SprintPhase.Current)).ToList();
-        var shown = Shown(ended, series, range);
-        var offset = series.Count - shown.Count;
-        var seriesStart = series.ToDictionary(sprint => sprint.Id, sprint => sprint.Start);
+        var weekMode = range is RetroRange.Weeks6 or RetroRange.Weeks12;
+        var recurrence = weekMode ? RetroRecurrence.Weeks : RetroRecurrence.Sprints;
+        Guid? Slot(InsightPointRow point) => weekMode ? RetroWeeks.IdOf(RetroWeeks.MondayOf(DateOnly.FromDateTime(point.CreatedAt.ToUniversalTime()))) : point.SprintId;
 
-        var refs = sprints.ToDictionary(sprint => sprint.Id, sprint => sprint.ToRef());
         var themeRefs = themes.ToDictionary(theme => theme.Id, theme => new RetroThemeRefDto(theme.Id, theme.Name, Enum.Parse<RetroTone>(theme.Tone, ignoreCase: true)));
-        var pointsByTheme = points.ToLookup(point => point.ThemeId);
-
         var closed = actions.Where(action => action.StateCategory == "completed").Select(action => action.WorkItemId).ToList();
         var completions = (await RetroSprintFacts.CompletionsAsync(connection, closed, cancellationToken)).ToDictionary(completion => completion.ItemId);
         var closedActions = actions
             .Where(action => action.ThemeId is { } themeId && themeRefs.ContainsKey(themeId) && completions.ContainsKey(action.WorkItemId))
-            .Select(action => new RetroSeriesClosed(action.WorkItemId, action.ThemeId!.Value, completions[action.WorkItemId].CompletedAt));
+            .Select(action => new RetroSeriesClosed(action.WorkItemId, action.ThemeId!.Value, completions[action.WorkItemId].CompletedAt))
+            .ToList();
+
+        var series = weekMode ? WeekSeries(points, closedActions, range, today, clock) : SprintSeries(sprints);
+        var shown = weekMode ? [.. series.TakeLast(WeekCount(range))] : SprintShown(series, range);
+        var offset = series.Count - shown.Count;
+        var seriesStart = series.ToDictionary(column => column.Id, column => column.Start);
+
+        var refs = sprints.ToDictionary(sprint => sprint.Id, sprint => sprint.ToRef());
+        var pointsByTheme = points.Where(point => point.ThemeId is not null).ToLookup(point => point.ThemeId!.Value);
+
         var openThemes = actions.Where(action => action.ThemeId is not null && action.StateCategory != "completed").Select(action => action.ThemeId!.Value).ToHashSet();
         var seriesEntries = RetroThemeSeries.Build(
-            [.. series.Select(sprint => new RetroSeriesSprint(sprint.Id, sprint.Start, sprint.End, sprint.Phase == SprintPhase.Past))],
-            points.Select(point => (point.ThemeId, point.SprintId, Enum.Parse<RetroCategory>(point.Category, ignoreCase: true))),
+            [.. series.Select(column => column.Series)],
+            points.Where(point => point.ThemeId is not null && Slot(point) is not null).Select(point => (point.ThemeId!.Value, Slot(point)!.Value, Enum.Parse<RetroCategory>(point.Category, ignoreCase: true))),
             themeRefs.ToDictionary(theme => theme.Key, theme => theme.Value.Tone),
             closedActions,
-            openThemes);
+            openThemes,
+            recurrence);
 
         // Closed before every live sprint: nothing to compare against, so no impact row (and no verdict).
         var outcomes = seriesEntries.Values.SelectMany(entry => entry.Closed).ToDictionary(verdict => verdict.ItemId);
 
         var actionRefs = actions.ToDictionary(action => action.WorkItemId, action => ToActionRef(action, refs));
-        var themeRows = themes.Select(theme => BuildThemeRow(theme, themeRefs[theme.Id], pointsByTheme[theme.Id], actions, actionRefs, seriesEntries[theme.Id], seriesStart, offset)).ToList();
+        var themeRows = themes.Select(theme => BuildThemeRow(theme, themeRefs[theme.Id], pointsByTheme[theme.Id], actions, actionRefs, seriesEntries[theme.Id], Slot, seriesStart, offset, weekMode)).ToList();
         var visible = themeRows.Where(row => row.Total > 0 || row.HasActions).ToList();
         var bad = visible.Where(row => row.Theme.Tone == RetroTone.Bad).OrderBy(row => StatusOrder(row.Status)).ThenByDescending(row => row.Total).ThenBy(row => row.Theme.Name, StringComparer.Ordinal).ToList();
         var good = visible.Where(row => row.Theme.Tone == RetroTone.Good).OrderByDescending(row => row.Total).ThenBy(row => row.Theme.Name, StringComparer.Ordinal).ToList();
@@ -74,12 +82,16 @@ public sealed class RetroInsightsReader(NpgsqlDataSource dataSource, TimeProvide
                 outcomes.TryGetValue(action.WorkItemId, out var outcome) ? outcome.Result.Verdict : null))
             .ToList();
 
-        var impact = await ImpactAsync(actions, actionRefs, themeRefs, pointsByTheme, outcomes, seriesEntries, seriesStart, offset, bad, cancellationToken);
-        return new RetroInsightsDto(RangeName(range), [.. shown.Select(sprint => sprint.ToRef())], [.. bad.Select(row => row.Dto)], [.. good.Select(row => row.Dto)], actionRows, impact,
-            // TODO(T1): week mode, No sprint and Unthemed replace this: Mode is Sprint, NoSprint is 0, Unthemed is zeros and there are no merge proposals.
-            RetroInsightsMode.Sprint,
-            [.. shown.Select(sprint => new RetroInsightColumnDto(sprint.Id.ToString(), sprint.Name, RetroInsightColumnKind.Sprint, sprint.Phase == SprintPhase.Current))],
-            new RetroUnthemedDto([.. shown.Select(_ => 0)], 0, 0),
+        var impact = await ImpactAsync(actions, actionRefs, themeRefs, pointsByTheme, outcomes, seriesEntries, Slot, seriesStart, offset, bad, cancellationToken);
+        var unthemed = points.Where(point => point.ThemeId is null && Enum.Parse<RetroCategory>(point.Category, ignoreCase: true) != RetroCategory.WentWell).ToList();
+        var unthemedCounts = shown.Select(column => unthemed.Count(point => Slot(point) == column.Id)).ToList();
+        var unthemedNoSprint = weekMode ? 0 : unthemed.Count(point => point.SprintId is null);
+
+        return new RetroInsightsDto(RangeName(range), weekMode ? [] : [.. shown.Select(column => column.Ref!)], [.. bad.Select(row => row.Dto)], [.. good.Select(row => row.Dto)], actionRows, impact,
+            weekMode ? RetroInsightsMode.Week : RetroInsightsMode.Sprint,
+            [.. shown.Select(column => column.Dto)],
+            new RetroUnthemedDto(unthemedCounts, unthemedNoSprint, unthemedCounts.Sum() + unthemedNoSprint),
+            // IRetroMergeProposals has no read yet (T4 owns it): proposals are not listed until it has.
             []);
     }
 
@@ -90,6 +102,7 @@ public sealed class RetroInsightsReader(NpgsqlDataSource dataSource, TimeProvide
         ILookup<Guid, InsightPointRow> pointsByTheme,
         Dictionary<Guid, RetroClosedVerdict> outcomes,
         IReadOnlyDictionary<Guid, RetroThemeSeriesEntry> seriesEntries,
+        Func<InsightPointRow, Guid?> slot,
         Dictionary<Guid, DateOnly> seriesStart,
         int offset,
         List<ThemeRow> bad,
@@ -100,7 +113,7 @@ public sealed class RetroInsightsReader(NpgsqlDataSource dataSource, TimeProvide
         foreach (var action in closedActions.Where(action => outcomes[action.WorkItemId].Result.Verdict == RetroVerdict.NoEffect))
         {
             var themeId = action.ThemeId!.Value;
-            if (!latest.ContainsKey(themeId) && Newest(RetroTone.Bad, pointsByTheme[themeId], seriesStart) is { } mention)
+            if (!latest.ContainsKey(themeId) && Newest(RetroTone.Bad, pointsByTheme[themeId], slot, seriesStart) is { } mention)
             {
                 latest[themeId] = mention;
             }
@@ -134,13 +147,17 @@ public sealed class RetroInsightsReader(NpgsqlDataSource dataSource, TimeProvide
         List<InsightActionRow> actions,
         Dictionary<Guid, RetroActionRefDto> actionRefs,
         RetroThemeSeriesEntry entry,
+        Func<InsightPointRow, Guid?> slot,
         Dictionary<Guid, DateOnly> seriesStart,
-        int offset)
+        int offset,
+        bool weekMode)
     {
+        var all = points.ToList();
+        var noSprint = weekMode ? 0 : all.Count(point => point.SprintId is null && IsCounted(themeRef.Tone, point));
         var own = actions.Where(action => action.ThemeId == theme.Id).ToList();
         RetroVerdict? last = entry.Closed.OrderByDescending(outcome => outcome.CompletedAt).FirstOrDefault()?.Result.Verdict;
         var shown = entry.Counts.Skip(offset).ToList();
-        var dto = new RetroThemeInsightDto(themeRef, shown, shown.Sum(), LatestText(themeRef, points, seriesStart), entry.Status, [.. own.OrderByDescending(action => action.CreatedAt).Select(action => actionRefs[action.WorkItemId])], last, 0);
+        var dto = new RetroThemeInsightDto(themeRef, shown, shown.Sum() + noSprint, LatestText(themeRef, all, slot, seriesStart), entry.Status, [.. own.OrderByDescending(action => action.CreatedAt).Select(action => actionRefs[action.WorkItemId])], last, noSprint);
         return new ThemeRow(themeRef, dto.Status, dto.Total, own.Count > 0, dto);
     }
 
@@ -150,29 +167,57 @@ public sealed class RetroInsightsReader(NpgsqlDataSource dataSource, TimeProvide
         return tone == RetroTone.Bad ? category is RetroCategory.WentBadly or RetroCategory.NotInPlan : category == RetroCategory.WentWell;
     }
 
-    private static InsightPointRow? Newest(RetroTone tone, IEnumerable<InsightPointRow> points, Dictionary<Guid, DateOnly> seriesStart)
+    private static InsightPointRow? Newest(RetroTone tone, IEnumerable<InsightPointRow> points, Func<InsightPointRow, Guid?> slot, Dictionary<Guid, DateOnly> seriesStart)
         => points
-            .Where(point => seriesStart.ContainsKey(point.SprintId) && IsCounted(tone, point))
-            .OrderByDescending(point => seriesStart[point.SprintId])
+            .Where(point => slot(point) is { } id && seriesStart.ContainsKey(id) && IsCounted(tone, point))
+            .OrderByDescending(point => seriesStart[slot(point)!.Value])
             .ThenByDescending(point => point.CreatedAt)
             .FirstOrDefault();
 
-    private static string? LatestText(RetroThemeRefDto theme, IEnumerable<InsightPointRow> points, Dictionary<Guid, DateOnly> seriesStart)
-        => Newest(theme.Tone, points, seriesStart)?.Text;
+    // A theme with no sprint points shows its newest no-sprint point instead.
+    private static string? LatestText(RetroThemeRefDto theme, List<InsightPointRow> points, Func<InsightPointRow, Guid?> slot, Dictionary<Guid, DateOnly> seriesStart)
+        => (Newest(theme.Tone, points, slot, seriesStart)
+            ?? points.Where(point => slot(point) is null && IsCounted(theme.Tone, point)).OrderByDescending(point => point.CreatedAt).FirstOrDefault())?.Text;
 
-    private static List<InsightSprint> Shown(List<InsightSprint> ended, List<InsightSprint> series, RetroRange range)
+    private static List<InsightColumn> SprintSeries(List<InsightSprint> sprints)
+        => [.. sprints.Where(sprint => sprint.Phase == SprintPhase.Past).Concat(sprints.Where(sprint => sprint.Phase == SprintPhase.Current))
+            .Select(sprint => new InsightColumn(
+                new RetroSeriesSprint(sprint.Id, sprint.Start, sprint.End, sprint.Phase == SprintPhase.Past),
+                new RetroInsightColumnDto(sprint.Id.ToString(), sprint.Name, RetroInsightColumnKind.Sprint, sprint.Phase == SprintPhase.Current),
+                sprint.ToRef()))];
+
+    private static int WeekCount(RetroRange range) => range == RetroRange.Weeks6 ? WeeksShort : WeeksLong;
+
+    // From the week of the earliest point or closed action to this week, and at least as long as the range.
+    private static List<InsightColumn> WeekSeries(List<InsightPointRow> points, List<RetroSeriesClosed> closed, RetroRange range, DateOnly today, TimeProvider clock)
+    {
+        var thisMonday = RetroWeeks.MondayOf(today);
+        var days = points.Select(point => DateOnly.FromDateTime(point.CreatedAt.ToUniversalTime())).Concat(closed.Select(action => DateOnly.FromDateTime(action.CompletedAt.UtcDateTime))).ToList();
+        var floor = thisMonday.AddDays(-7 * (WeekCount(range) - 1));
+        var first = days.Count == 0 ? floor : new[] { RetroWeeks.MondayOf(days.Min()), floor }.Min();
+        var result = new List<InsightColumn>();
+        for (var monday = first; monday <= thisMonday; monday = monday.AddDays(7))
+        {
+            var sunday = monday.AddDays(6);
+            var label = DisplayDate.ShortDay(new DateTimeOffset(monday.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero), clock.GetUtcNow(), TimeZoneInfo.Utc);
+            result.Add(new InsightColumn(new RetroSeriesSprint(RetroWeeks.IdOf(monday), monday, sunday, sunday < today), new RetroInsightColumnDto(monday.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), label, RetroInsightColumnKind.Week, monday == thisMonday), null));
+        }
+
+        return result;
+    }
+
+    // N columns including the current sprint, so the current one takes a slot from the ended sprints.
+    private static List<InsightColumn> SprintShown(List<InsightColumn> series, RetroRange range)
     {
         if (range == RetroRange.All)
         {
             return series;
         }
 
-        // TODO(T1): week mode replaces this: w6 and w12 get week columns, a No sprint count and an Unthemed row. Until then they read as Last6.
-
         var window = range == RetroRange.Last3 ? ShortRange : LongRange;
-        // N columns including the current sprint, so the current one takes a slot from the ended sprints.
-        var current = series.Count - ended.Count;
-        return [.. ended.TakeLast(Math.Max(0, window - current)), .. series.Skip(ended.Count)];
+        var ended = series.Count(column => column.Series.Ended);
+        var current = series.Count - ended;
+        return [.. series.Skip(Math.Max(0, ended - Math.Max(0, window - current)))];
     }
 
     private static RetroActionRefDto ToActionRef(InsightActionRow action, Dictionary<Guid, SprintRef> refs)
@@ -206,7 +251,7 @@ public sealed class RetroInsightsReader(NpgsqlDataSource dataSource, TimeProvide
     private sealed record InsightSprintRow(Guid Id, string Name, string StartDate, string EndDate);
 
 
-    private sealed record InsightPointRow(Guid Id, Guid RetroId, Guid ThemeId, Guid SprintId, string Category, string Text, DateTime CreatedAt);
+    private sealed record InsightPointRow(Guid Id, Guid RetroId, Guid? ThemeId, Guid? SprintId, string Category, string Text, DateTime CreatedAt);
 
 
     private sealed record InsightThemeRow(Guid Id, string Name, string Tone);
@@ -217,6 +262,13 @@ public sealed class RetroInsightsReader(NpgsqlDataSource dataSource, TimeProvide
         Guid StateId, string StateName, string StateCategory, Guid? SprintId,
         Guid? OwnerId, string? OwnerName, string? OwnerInitials, string? OwnerColour, string? OwnerPhotoUrl,
         string? FixType, int PointCount);
+
+    private sealed record InsightColumn(RetroSeriesSprint Series, RetroInsightColumnDto Dto, SprintRef? Ref)
+    {
+        public Guid Id => Series.Id;
+
+        public DateOnly Start => Series.Start;
+    }
 
     private sealed record ThemeRow(RetroThemeRefDto Theme, RetroThemeStatus Status, int Total, bool HasActions, RetroThemeInsightDto Dto);
 
