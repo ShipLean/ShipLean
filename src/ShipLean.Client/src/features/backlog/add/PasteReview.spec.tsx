@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import type { Page } from 'playwright';
-import { backlogView, PROJECT, ROWS } from '../ct/fixtures';
+import { ToastHost } from '../../../components/ToastHost';
+import { componentTestIds } from '../../../components/testIds';
+import { backlogView, itemRow, PROJECT, ROWS } from '../ct/fixtures';
 import { stubBacklog } from '../ct/stubApi';
 import { ListMode } from '../list/ListMode';
 import { backlogTestIds as ids } from '../testIds';
@@ -44,25 +46,18 @@ test('Two_lines_open_the_review', async ({ mount, page }) => {
   await expect(page.getByTestId(ids.pasteCreate)).toHaveText('Add 2 items and 1 task');
 });
 
-test('One_line_stays_in_the_field', async ({ mount, page }) => {
+test('One_line_stays_in_the_field', async ({ mount, page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await stubBacklog(page, backlogView(ROWS));
   await mount(<ListMode project={PROJECT} />, route);
   await openAddRow(page);
+  await page.evaluate(() => navigator.clipboard.writeText('Just one line\n'));
 
-  await page.getByTestId(ids.addTitle).evaluate((input) => {
-    const data = new DataTransfer();
-    data.setData('text', 'Just one line\n');
-    const event = new ClipboardEvent('paste', {
-      clipboardData: data,
-      bubbles: true,
-      cancelable: true,
-    });
-    input.dispatchEvent(event);
-    input.setAttribute('data-prevented', String(event.defaultPrevented));
-  });
+  // A real paste: the browser inserts the text only if the intake leaves a one-line paste alone.
+  await page.keyboard.press('ControlOrMeta+V');
 
+  await expect(page.getByTestId(ids.addTitle)).toHaveValue('Just one line');
   await expect(page.getByTestId(ids.pasteDialog)).toHaveCount(0);
-  await expect(page.getByTestId(ids.addTitle)).toHaveAttribute('data-prevented', 'false');
 });
 
 test('Edit_a_row_before_creating', async ({ mount, page }) => {
@@ -87,7 +82,8 @@ test('Edit_a_row_before_creating', async ({ mount, page }) => {
     ['bug', 'One', null],
     ['story', 'Second', 5],
   ]);
-  expect(server.adds[0].placement).toBeNull();
+  expect(server.adds[0].sprintId).toBeNull();
+  expect(server.adds[0].placement).toEqual({ slot: 'first', beforeItemId: null });
   await expect(page.getByTestId(ids.pasteDialog)).toHaveCount(0);
 });
 
@@ -193,7 +189,13 @@ test('A_failed_create_keeps_the_grid', async ({ mount, page }) => {
       body: JSON.stringify({ error: 'Title is too long.', code: 'validation' }),
     }),
   );
-  await mount(<ListMode project={PROJECT} />, route);
+  await mount(
+    <>
+      <ListMode project={PROJECT} />
+      <ToastHost />
+    </>,
+    route,
+  );
   await openAddRow(page);
   await paste(page, 'One\nTwo');
   await titles(page).nth(0).fill('One edited');
@@ -201,8 +203,134 @@ test('A_failed_create_keeps_the_grid', async ({ mount, page }) => {
   await page.getByTestId(ids.pasteCreate).click();
 
   await expect(page.getByTestId(ids.addError)).toHaveText('Title is too long.');
+  await expect(page.getByTestId(componentTestIds.toast)).toHaveAttribute('data-tone', 'danger');
+  await expect(page.getByTestId(componentTestIds.toast)).toContainText('Title is too long.');
   await expect(page.getByTestId(ids.pasteDialog)).toBeVisible();
   await expect(page.getByTestId(ids.pasteRow)).toHaveCount(2);
   await expect(titles(page).nth(0)).toHaveValue('One edited');
   await expect(page.getByTestId(ids.pasteCreate)).toBeEnabled();
+});
+
+// "Put them": the request each choice sends (K2). Rows a, b, c share the Backlog; d and e are in Sprint 25.
+const PLACE_ROWS = [
+  itemRow({ key: 'SHIP-1', rank: 1 }),
+  itemRow({ key: 'SHIP-2', rank: 2 }),
+  itemRow({ key: 'SHIP-3', rank: 3 }),
+  itemRow({ key: 'SHIP-4', rank: 4, sprint: { id: 'sp25', name: 'Sprint 25', status: 'future' } }),
+  itemRow({ key: 'SHIP-5', rank: 5, sprint: { id: 'sp25', name: 'Sprint 25', status: 'future' } }),
+  itemRow({ key: 'SHIP-6', rank: 6, sprint: { id: 'sp24', name: 'Sprint 24', status: 'current' } }),
+];
+
+async function openPaste(page: Page, focusKey: string | null) {
+  await expect(page.getByTestId(ids.row)).toHaveCount(PLACE_ROWS.length);
+  if (focusKey !== null)
+    await page
+      .getByTestId(ids.row)
+      .filter({ hasText: focusKey })
+      .getByTestId(ids.rowSelect)
+      .click();
+  await page.getByTestId(ids.newItem).click();
+  await paste(page, 'One\nTwo');
+}
+
+async function createWith(page: Page, choice: string | null) {
+  if (choice !== null) await page.getByTestId(ids.pastePlace).selectOption({ label: choice });
+  const created = page.waitForResponse((r) => r.url().endsWith('/backlog/items'));
+  await page.getByTestId(ids.pasteCreate).click();
+  await created;
+}
+
+const optionLabels = (page: Page) => page.getByTestId(ids.pastePlace).locator('option');
+
+test('Put_them_offers_top_bottom_and_future_sprints_without_a_focused_row', async ({
+  mount,
+  page,
+}) => {
+  await stubBacklog(page, backlogView(PLACE_ROWS));
+  await mount(<ListMode project={PROJECT} />, route);
+  await openPaste(page, null);
+
+  await expect(optionLabels(page)).toHaveText([
+    'Top of the backlog',
+    'Bottom of the backlog',
+    'Sprint 25',
+  ]);
+  await expect(page.getByTestId(ids.pastePlace)).toHaveValue('top');
+});
+
+test('Put_them_top_sends_first', async ({ mount, page }) => {
+  const server = await stubBacklog(page, backlogView(PLACE_ROWS));
+  await mount(<ListMode project={PROJECT} />, route);
+  await openPaste(page, null);
+  await createWith(page, 'Top of the backlog');
+  expect(server.adds[0].sprintId).toBeNull();
+  expect(server.adds[0].placement).toEqual({ slot: 'first', beforeItemId: null });
+});
+
+test('Put_them_bottom_sends_last', async ({ mount, page }) => {
+  const server = await stubBacklog(page, backlogView(PLACE_ROWS));
+  await mount(<ListMode project={PROJECT} />, route);
+  await openPaste(page, null);
+  await createWith(page, 'Bottom of the backlog');
+  expect(server.adds[0].sprintId).toBeNull();
+  expect(server.adds[0].placement).toEqual({ slot: 'last', beforeItemId: null });
+});
+
+test('Put_them_in_a_sprint_sends_its_id', async ({ mount, page }) => {
+  const server = await stubBacklog(page, backlogView(PLACE_ROWS));
+  await mount(<ListMode project={PROJECT} />, route);
+  await openPaste(page, null);
+  await createWith(page, 'Sprint 25');
+  expect(server.adds[0].sprintId).toBe('sp25');
+  expect(server.adds[0].placement).toEqual({ slot: 'first', beforeItemId: null });
+});
+
+test('Put_them_below_the_focused_row_is_the_default_and_goes_before_the_next_row', async ({
+  mount,
+  page,
+}) => {
+  const server = await stubBacklog(page, backlogView(PLACE_ROWS));
+  await mount(<ListMode project={PROJECT} />, route);
+  await openPaste(page, 'SHIP-1');
+
+  await expect(optionLabels(page)).toContainText(['Below SHIP-1']);
+  await expect(page.getByTestId(ids.pastePlace)).toHaveValue('below');
+  await createWith(page, null);
+
+  expect(server.adds[0].sprintId).toBeNull();
+  expect(server.adds[0].placement).toEqual({ slot: 'before', beforeItemId: 'id-SHIP-2' });
+});
+
+test('Put_them_below_the_last_row_of_a_sprint_lands_last_in_that_sprint', async ({
+  mount,
+  page,
+}) => {
+  const server = await stubBacklog(page, backlogView(PLACE_ROWS));
+  await mount(<ListMode project={PROJECT} />, route);
+  await openPaste(page, 'SHIP-5');
+  await createWith(page, null);
+  expect(server.adds[0].sprintId).toBe('sp25');
+  expect(server.adds[0].placement).toEqual({ slot: 'last', beforeItemId: null });
+});
+
+test('Put_them_below_a_row_inside_a_sprint_lands_in_that_sprint', async ({ mount, page }) => {
+  const server = await stubBacklog(page, backlogView(PLACE_ROWS));
+  await mount(<ListMode project={PROJECT} />, route);
+  await openPaste(page, 'SHIP-4');
+  await createWith(page, null);
+  expect(server.adds[0].sprintId).toBe('sp25');
+  expect(server.adds[0].placement).toEqual({ slot: 'before', beforeItemId: 'id-SHIP-5' });
+});
+
+test('Put_them_makes_no_extra_request', async ({ mount, page }) => {
+  const server = await stubBacklog(page, backlogView(PLACE_ROWS));
+  const requests: string[] = [];
+  page.on('request', (r) => requests.push(new URL(r.url()).pathname));
+  await mount(<ListMode project={PROJECT} />, route);
+  await expect(page.getByTestId(ids.row)).toHaveCount(PLACE_ROWS.length);
+  const before = requests.filter((p) => p.endsWith('/backlog')).length;
+  await openPaste(page, null);
+  await expect(page.getByTestId(ids.pastePlace)).toBeVisible();
+  expect(requests.filter((p) => p.endsWith('/backlog')).length).toBe(before);
+  expect(server.adds).toHaveLength(0);
 });

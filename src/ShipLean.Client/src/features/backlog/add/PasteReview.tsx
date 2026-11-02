@@ -1,31 +1,25 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiRequestError } from '../../../api/client';
 import {
   BULK_MAX_ROWS,
   type BacklogAddItem,
   type BacklogAddRequest,
-  type BulkPlacement,
   type DuplicateItem,
 } from '../../../api/backlogWrites';
 import type { WorkItemTypeId } from '../../../api/refs';
 import { Dialog } from '../../../components/Dialog';
+import type { BacklogViewDto } from '../../../api/views';
 import { showToast } from '../../../components/toastStore';
+import { backlogRootKey } from '../../../queries/backlogKeys';
 import { useBacklogAdd, useDuplicateCheck } from '../bulk/useBacklogAdd';
 import { useSelection } from '../selection/useSelection';
 import { backlogTestIds as ids } from '../testIds';
 import { parsePaste, pointsError, pointsValue, type PasteRow as Row } from './pasteParse';
+import { defaultPlace, placeContext, placeOptions, placeRequest } from './pastePlace';
 import { PasteRow } from './PasteRow';
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
-
-// Where the new items land: just below the focused row, else the top.
-function placementBelow(focusedId: string | null, order: readonly string[]): BulkPlacement | null {
-  if (focusedId === null) return null;
-  const next = order[order.indexOf(focusedId) + 1];
-  return next === undefined
-    ? { slot: 'last', beforeItemId: null }
-    : { slot: 'before', beforeItemId: next };
-}
 
 function itemsOf(rows: readonly Row[]): BacklogAddItem[] {
   const items: BacklogAddItem[] = [];
@@ -67,6 +61,21 @@ export function PasteReview({
   const add = useBacklogAdd(projectId, projectKey);
   const check = useDuplicateCheck(projectId);
   const selection = useSelection();
+  const queryClient = useQueryClient();
+  // The rows and sprints come from the backlog already read; opening the review asks for nothing.
+  const [where] = useState(() => {
+    const newest = queryClient
+      .getQueryCache()
+      .findAll({ queryKey: backlogRootKey(projectId) })
+      .filter((query) => query.state.data !== undefined)
+      .sort((a, b) => b.state.dataUpdatedAt - a.state.dataUpdatedAt)[0];
+    return placeContext(
+      newest?.state.data as BacklogViewDto | undefined,
+      selection.focusedId,
+      selection.orderedIds,
+    );
+  });
+  const [place, setPlace] = useState(() => defaultPlace(where));
 
   // Asks about the titles not asked yet. A failed check only means no flags; it never blocks creating.
   const { mutate: askDuplicates } = check;
@@ -105,11 +114,10 @@ export function PasteReview({
   const over = rows.length > BULK_MAX_ROWS;
   const flagged = rows.some((row) => pointsError(row.points) !== null || row.title.trim() === '');
   const canCreate = rows.length > 0 && !over && !flagged && !add.isPending;
-  const placement = placementBelow(selection.focusedId, selection.orderedIds);
 
   function send(request: Omit<BacklogAddRequest, 'sprintId' | 'placement'>) {
     add.mutate(
-      { ...request, sprintId: null, placement },
+      { ...request, ...placeRequest(place, where) },
       {
         onSuccess: ({ created }) => {
           showToast(`${plural(created.length, 'item')} added, from ${created[0]?.key ?? ''}`, {
@@ -117,6 +125,13 @@ export function PasteReview({
           });
           onClose();
         },
+        onError: (error) =>
+          showToast(
+            error instanceof ApiRequestError
+              ? error.message
+              : 'Could not add the items. Nothing was created.',
+            { tone: 'danger' },
+          ),
       },
     );
   }
@@ -236,6 +251,24 @@ export function PasteReview({
           ))}
         </tbody>
       </table>
+      <label className="flex items-center gap-2 text-[length:var(--text-sm)]">
+        Put them
+        <select
+          data-testid={ids.pastePlace}
+          className="field"
+          value={place}
+          onChange={(event) => setPlace(event.target.value)}
+        >
+          {placeOptions(where).map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <span className="text-[length:var(--text-xs)] text-ink-muted">
+          They keep the order you pasted, whichever place you pick.
+        </span>
+      </label>
       {add.error ? (
         <p
           data-testid={ids.addError}

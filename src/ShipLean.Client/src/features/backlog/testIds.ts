@@ -122,6 +122,7 @@ export const backlogTestIds = {
   pasteRowDuplicate: 'backlog-paste-row-duplicate',
   pasteKeepOne: 'backlog-paste-keep-one',
   pasteCreate: 'backlog-paste-create',
+  pastePlace: 'backlog-paste-place',
   addHere: 'backlog-add-here',
   addParent: 'backlog-add-parent',
   addPoints: 'backlog-add-points',
