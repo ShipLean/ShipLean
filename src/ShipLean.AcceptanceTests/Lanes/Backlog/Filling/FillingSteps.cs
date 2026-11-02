@@ -32,9 +32,6 @@ internal static class FillingSteps
         return body.RootElement.GetProperty("created").EnumerateArray().Select(c => c.GetProperty("key").GetString()!).ToList();
     }
 
-    // The titles of the rows, in order.
-    public static List<string> Titles(IEnumerable<BacklogEntry> entries) => entries.Select(e => e.Title).ToList();
-
     // Whether the dialog or the page scrolls sideways at this width.
     public static async Task<bool> OverflowsAtAsync(IPage page, StoriesBacklog backlog, ILocator element, int width)
     {

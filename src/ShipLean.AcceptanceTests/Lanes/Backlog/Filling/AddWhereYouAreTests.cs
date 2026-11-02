@@ -1,6 +1,7 @@
 using ShipLean.AcceptanceTests.Harness;
 using ShipLean.AcceptanceTests.Pages.Backlog;
 using ShipLean.TestSupport;
+using ShipLean.TestSupport.TestIds;
 
 namespace ShipLean.AcceptanceTests.Lanes.Backlog.Filling;
 
@@ -22,9 +23,15 @@ public class AddWhereYouAreTests : SeededAcceptanceTest
         await Page.Keyboard.PressAsync("n");
         await Expect(backlog.AddRow).ToBeVisibleAsync();
 
+        foreach (var width in new[] { 1280, 1440 })
+        {
+            (await FillingSteps.OverflowsAtAsync(Page, backlog, backlog.AddRow, width)).ShouldBeFalse($"overflow at {width}");
+        }
+
         await backlog.AddParent.ClickAsync();
-        await Page.GetByText("SHIP-103", new() { Exact = false }).First.ClickAsync();
-        await Expect(backlog.AddParent).ToContainTextAsync("Weekly");
+        await Page.GetByTestId(WorkItemTestIds.ParentSearch).FillAsync("SHIP-103");
+        await Page.GetByTestId(WorkItemTestIds.ParentOption).Filter(new() { HasText = "SHIP-103" }).ClickAsync();
+        await Expect(backlog.AddParent).Not.ToContainTextAsync("No parent");
 
         var created = new List<string>();
         foreach (var title in new[] { "Below one", "Below two", "Below three" })
@@ -37,14 +44,14 @@ public class AddWhereYouAreTests : SeededAcceptanceTest
         var stack = await backlog.StackAsync();
         var at = stack.FindIndex(e => e.Key == "SHIP-129");
         stack.Skip(at + 1).Take(3).Select(e => e.Key).ShouldBe(created);
-        FillingSteps.Titles(stack.Skip(at + 1).Take(3)).ShouldBe(["Below one", "Below two", "Below three"]);
+        (stack.Skip(at + 1).Take(3)).Select(e => e.Title).ShouldBe(["Below one", "Below two", "Below three"]);
         stack.Skip(at + 1).Take(3).ShouldAllBe(e => e.ParentKey == "SHIP-103" && e.Sprint == "Sprint 24");
         stack[at + 4].Key.ShouldBe("SHIP-151");
     }
 
     [Test]
     [Order(2)]
-    public async Task Add_WhenBelowTheLastRowOfASprint_ShouldLandBelowItInPlanningAndList()
+    public async Task Add_WhenBelowTheLastRowOfASprintInPlanning_ShouldLandBelowItInTheSection()
     {
         var backlog = new StoriesBacklog(Page);
         await Page.GotoAsync(Links.Backlog("SHIP", mode: "planning"));
@@ -64,18 +71,29 @@ public class AddWhereYouAreTests : SeededAcceptanceTest
         });
         await second;
         await Expect(backlog.Row("SHIP-147")).ToBeVisibleAsync();
-        await Expect(Page.GetByText("Last of sprint two").First).ToBeVisibleAsync();
+        await Expect(backlog.Rows.Filter(new() { HasText = "Last of sprint two" })).ToBeVisibleAsync();
 
-        var section = FillingSteps.Titles(await backlog.SectionAsync("Sprint 25"));
+        var section = (await backlog.SectionAsync("Sprint 25")).Select(e => e.Title).ToList();
         section.TakeLast(2).ShouldBe(["Last of sprint one", "Last of sprint two"]);
+    }
+
+    // Planning numbers rank inside each section, so the screen has no row after the section's last to place before and
+    // sends `last` (the bottom of the whole backlog). The Sprint 25 section reads right; the list, which is the whole
+    // stack, shows the new rows at its bottom, not under SHIP-147. A contract question, not fixed here.
+    [Test]
+    [Order(3)]
+    public async Task Add_WhenBelowTheLastRowOfASprintInPlanning_ShouldSitBelowItInTheListToo()
+    {
+        var backlog = new StoriesBacklog(Page);
         var stack = await backlog.StackAsync();
         var at = stack.FindIndex(e => e.Key == "SHIP-147");
-        FillingSteps.Titles(stack.Skip(at + 1).Take(2)).ShouldBe(["Last of sprint one", "Last of sprint two"]);
+
+        stack.Skip(at + 1).Take(2).Select(e => e.Title).ShouldBe(["Last of sprint one", "Last of sprint two"]);
         stack[at + 3].Key.ShouldBe("SHIP-156");
     }
 
     [Test]
-    [Order(3)]
+    [Order(4)]
     public async Task Add_WhenBelowAMiddleRowInPlanning_ShouldLandDirectlyBelowIt()
     {
         var backlog = new StoriesBacklog(Page);
@@ -95,7 +113,7 @@ public class AddWhereYouAreTests : SeededAcceptanceTest
     }
 
     [Test]
-    [Order(4)]
+    [Order(5)]
     public async Task Add_WhenInSprint_ShouldLandInThatSprint()
     {
         var backlog = new StoriesBacklog(Page);
@@ -115,7 +133,7 @@ public class AddWhereYouAreTests : SeededAcceptanceTest
         }
 
         var section = await backlog.SectionAsync("Sprint 24");
-        FillingSteps.Titles(section.Take(3)).ShouldBe(["Sprint first", "Sprint second", "Sprint third"]);
+        (section.Take(3)).Select(e => e.Title).ShouldBe(["Sprint first", "Sprint second", "Sprint third"]);
         section.Skip(3).First().Key.ShouldBe("SHIP-141");
         section.ShouldAllBe(e => e.Sprint == "Sprint 24");
     }

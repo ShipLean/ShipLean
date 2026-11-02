@@ -32,6 +32,8 @@ public sealed class StoriesBacklog(IPage page)
 
     public ILocator AddTitle => page.GetByTestId(BacklogTestIds.AddTitle);
 
+    public ILocator AddParent => page.GetByTestId(BacklogTestIds.AddParent);
+
     public ILocator ColumnsButton => page.GetByTestId(BacklogTestIds.ColumnsButton);
 
     // The Columns menu's checkbox for a column, by its label; the menu lists them in the list's column order.
