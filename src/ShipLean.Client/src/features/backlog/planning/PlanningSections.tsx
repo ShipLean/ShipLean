@@ -124,7 +124,7 @@ export function PlanningSections({
                 datesLabel={dates.get(section.id)}
                 columnCount={columnCount}
                 collapse={collapse}
-                action={<AddInButton section={section} filtering={addingOff} />}
+                action={<AddInButton section={section} filtering={addingOff} collapse={collapse} />}
               />
               {sprintBody(section)}
             </Fragment>

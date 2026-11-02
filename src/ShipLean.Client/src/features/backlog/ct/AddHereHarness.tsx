@@ -4,6 +4,7 @@ import type { BacklogRowDto, BacklogSectionDto } from '../../../api/views';
 import { AddBelowProvider } from '../add/AddBelowProvider';
 import { AddBelowRow } from '../add/AddBelowRow';
 import { AddInButton, AddInSection } from '../add/AddInSection';
+import type { SectionCollapse } from '../planning/useSectionCollapse';
 import { useBacklog } from '../backlogApi';
 import { SelectionProvider } from '../selection/SelectionProvider';
 import { useRowGestures } from '../selection/useRowGestures';
@@ -12,6 +13,14 @@ import { backlogTestIds as ids } from '../testIds';
 import { CommandHarness } from './CommandHarness';
 
 const COLUMNS = 3;
+// Every section open, as the add row needs; the collapse itself is Sections.spec's.
+const OPEN: SectionCollapse = {
+  isOpen: () => true,
+  toggle: () => undefined,
+  open: () => undefined,
+  searching: false,
+  withSearch: () => OPEN,
+};
 
 function Row({
   row,
@@ -74,7 +83,7 @@ function Screen({
               <>
                 <tr>
                   <td colSpan={COLUMNS}>
-                    <AddInButton section={section} filtering={filtering} />
+                    <AddInButton section={section} filtering={filtering} collapse={OPEN} />
                   </td>
                 </tr>
                 <AddInSection section={section} columnCount={COLUMNS} projectId={project.id} />

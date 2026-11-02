@@ -13,6 +13,8 @@ import {
 export interface SectionCollapse {
   isOpen: (sectionId: string) => boolean;
   toggle: (sectionId: string) => void;
+  /** Opens a closed section (saved like a toggle); an open one stays as it is. */
+  open: (sectionId: string) => void;
   /** A search is on, so the sections follow its hits and cannot be toggled. */
   searching: boolean;
   /** The collapse while a search is on: sections with hits open, without saving that. Same collapse when off. */
@@ -56,12 +58,16 @@ export function useSectionCollapse(
           showToast(`Could not save which sections are open: ${error.message}`, { tone: 'danger' }),
         );
       },
+      open: (id) => {
+        if (closed(id)) base.toggle(id);
+      },
       searching: false,
       withSearch: (searchActive, filtered) =>
         searchActive
           ? {
               isOpen: (id) => filtered.some((s) => s.id === id && s.rows.length > 0),
               toggle: () => undefined,
+              open: () => undefined,
               searching: true,
               withSearch: base.withSearch,
             }

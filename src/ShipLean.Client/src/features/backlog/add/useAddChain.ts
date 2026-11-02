@@ -1,4 +1,4 @@
-import { createContext, useContext, useRef, useSyncExternalStore } from 'react';
+import { createContext, useContext, useSyncExternalStore } from 'react';
 import { ApiRequestError } from '../../../api/client';
 import type {
   BacklogAddRequest,
@@ -43,6 +43,15 @@ interface Snapshot {
 
 type Where = Pick<BacklogAddRequest, 'sprintId' | 'placement'>;
 
+/**
+ * One opening of an add row, until it closes. The writes it submitted carry it, so a completion that arrives after
+ * the row closed or reopened updates only its own `tail` (the row its next queued write goes under) and never the
+ * newer session's.
+ */
+interface Session {
+  tail: string | null;
+}
+
 /** What the provider hands the store on every render: the write, the newest backlog read and focus. */
 export interface AddStoreInputs {
   add: (request: BacklogAddRequest) => Promise<BacklogAddResult>;
@@ -57,7 +66,8 @@ export interface AddStoreInputs {
  */
 export function createAddStore() {
   let snapshot: Snapshot = { below: null, section: null, error: null };
-  let tail: string | null = null;
+  let below: Session | null = null;
+  let sprint: Session | null = null;
   let queue: Promise<unknown> = Promise.resolve();
   let inputs: AddStoreInputs | null = null;
   const listeners = new Set<() => void>();
@@ -80,13 +90,15 @@ export function createAddStore() {
   // Resolves true when the row was made. Never rejects: a failure shows the error and a toast and resolves false.
   function submit(
     fields: AddFields,
+    session: Session,
+    isOpen: () => boolean,
     where: () => Where,
     created: (id: string) => void,
   ): Promise<boolean> {
     const run = queue.then(async () => {
       const current = inputs;
       if (current === null) throw new Error('The add store has no inputs bound.');
-      set({ ...snapshot, error: null });
+      if (isOpen()) set({ ...snapshot, error: null });
       try {
         const result = await current.add({
           items: [
@@ -101,12 +113,14 @@ export function createAddStore() {
           ],
           ...where(),
         });
-        created(result.created[0].id);
+        session.tail = result.created[0].id;
+        // A row that closed meanwhile has nothing to move; the refetch shows what it made.
+        if (isOpen()) created(result.created[0].id);
         return true;
       } catch (failure) {
         const message =
           failure instanceof ApiRequestError ? failure.message : 'Could not add the item.';
-        set({ ...snapshot, error: message });
+        if (isOpen()) set({ ...snapshot, error: message });
         showToast(`Could not add "${fields.title}": ${message}`, { tone: 'danger' });
         return false;
       }
@@ -126,16 +140,26 @@ export function createAddStore() {
     },
     /** Opens the row under `anchorId` with a story type, no parent and nothing typed. */
     open: (anchorId: string) => {
-      tail = anchorId;
+      below = { tail: anchorId };
       set({
         ...snapshot,
         below: { anchorId, type: 'story', parent: null, draft: EMPTY_DRAFT },
         error: null,
       });
     },
-    close: () => set({ ...snapshot, below: null, error: null }),
-    openSection: (sectionId: string) => set({ ...snapshot, section: sectionId, error: null }),
-    closeSection: () => set({ ...snapshot, section: null, error: null }),
+    close: () => {
+      below = null;
+      set({ ...snapshot, below: null, error: null });
+    },
+    openSection: (sectionId: string) => {
+      // Opening the section that is already open keeps its chain.
+      if (snapshot.section !== sectionId || sprint === null) sprint = { tail: null };
+      set({ ...snapshot, section: sectionId, error: null });
+    },
+    closeSection: () => {
+      sprint = null;
+      set({ ...snapshot, section: null, error: null });
+    },
     stick: (change: Partial<Pick<BelowState, 'type' | 'parent'>>) => {
       if (snapshot.below !== null) set({ ...snapshot, below: { ...snapshot.below, ...change } });
     },
@@ -145,34 +169,39 @@ export function createAddStore() {
     },
     clearError: () => set({ ...snapshot, error: null }),
     /** Creates a row just below the last one made, or below the anchor for the first. */
-    addBelow: (fields: AddFields) =>
-      submit(
+    addBelow: (fields: AddFields) => {
+      const session = below;
+      if (session === null) throw new Error('No add-below row is open.');
+      return submit(
         fields,
-        () => belowRequest(tail ?? ''),
+        session,
+        () => below === session,
+        () => belowRequest(session.tail ?? ''),
         (id) => {
-          tail = id;
           const open = snapshot.below;
           if (open === null) return;
           // The open row moves under the row just made; the text typed meanwhile moves with it.
           set({ ...snapshot, below: { ...open, anchorId: id } });
           inputs?.focus(id);
         },
-      ),
+      );
+    },
     /** Creates a row at the top of a sprint for the first, then each one below the row just made. */
-    addInSprint: (
-      sprintId: string | null,
-      after: string | null,
-      fields: AddFields,
-      done: (id: string) => void,
-    ) =>
-      submit(
+    addInSprint: (sprintId: string | null, fields: AddFields) => {
+      const session = sprint;
+      if (session === null) throw new Error('No sprint add row is open.');
+      return submit(
         fields,
+        session,
+        () => sprint === session,
+        // The anchor is read when the write starts, so a row typed while an earlier one is in flight goes under it.
         () =>
-          after === null
+          session.tail === null
             ? { sprintId, placement: { slot: 'first', beforeItemId: null } satisfies BulkPlacement }
-            : belowRequest(after),
-        done,
-      ),
+            : belowRequest(session.tail),
+        () => undefined,
+      );
+    },
   };
 }
 
@@ -218,17 +247,11 @@ export function useBelowControls() {
 export function useAddChain() {
   const store = useStore();
   const error = useSyncExternalStore(store.subscribe, () => store.snapshot().error);
-  // The last row an "+ Add" row made, so the next goes under it. Reset when the row closes.
-  const made = useRef<string | null>(null);
   return {
     error,
     clearError: store.clearError,
     below: store.addBelow,
-    inSprint: (sprintId: string | null, fields: AddFields) =>
-      store.addInSprint(sprintId, made.current, fields, (id) => (made.current = id)),
-    reset: () => {
-      made.current = null;
-      store.clearError();
-    },
+    inSprint: store.addInSprint,
+    reset: store.clearError,
   };
 }

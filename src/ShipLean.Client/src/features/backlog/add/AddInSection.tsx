@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { WorkItemTypeId } from '../../../api/refs';
 import type { BacklogSectionDto } from '../../../api/views';
 import type { ParentRefDto } from '../../../api/workItems';
+import type { SectionCollapse } from '../planning/useSectionCollapse';
 import { backlogTestIds as ids } from '../testIds';
 import { AddRowFields } from './AddRowFields';
 import { EMPTY_DRAFT, useAddChain, useOpenSection, type Draft } from './useAddChain';
@@ -54,9 +55,11 @@ export function AddInSection({ section, columnCount, projectId }: AddInSectionPr
 export function AddInButton({
   section,
   filtering,
+  collapse,
 }: {
   section: BacklogSectionDto;
   filtering: boolean;
+  collapse: SectionCollapse;
 }) {
   const { openSection } = useOpenSection();
   return (
@@ -68,7 +71,11 @@ export function AddInButton({
       title={
         filtering ? "Off while a filter is on: rank is relative to rows you can't see" : undefined
       }
-      onClick={() => openSection(section.id)}
+      onClick={() => {
+        // The add row shows only in an open section.
+        collapse.open(section.id);
+        openSection(section.id);
+      }}
     >
       + Add
     </button>

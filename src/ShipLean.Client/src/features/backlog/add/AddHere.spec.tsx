@@ -346,6 +346,112 @@ test('Rapid_Enter_while_a_write_is_in_flight_keeps_the_typed_order', async ({ mo
   );
 });
 
+test('Rapid_Enter_in_a_sprint_while_a_write_is_in_flight_keeps_the_typed_order', async ({
+  mount,
+  page,
+}) => {
+  const view = planningView();
+  const server = await stubBacklog(page, view);
+  let release!: () => void;
+  const hold = new Promise<void>((resolve) => (release = resolve));
+  await stubCreates(page, server, view, hold);
+  await mount(<AddHereHarness project={PROJECT} mode="planning" />, {
+    hooksConfig: { route: '/p/SHIP/backlogs/stories?mode=planning' },
+  });
+  await expect(page.getByTestId(ids.row)).toHaveCount(5);
+
+  await page.getByTestId(ids.addHere).nth(1).click();
+  const title = page.getByTestId(ids.addTitle);
+  await title.fill('One');
+  await title.press('Enter');
+  await expect.poll(() => server.adds.length).toBe(1);
+  await expect(title).toHaveValue('');
+  await title.fill('Two');
+  await title.press('Enter');
+  await expect(title).toHaveValue('');
+  await title.fill('Three');
+  await title.press('Enter');
+  await expect(title).toHaveValue('');
+  expect(server.adds).toHaveLength(1);
+
+  release();
+  await expect.poll(() => server.adds.length).toBe(3);
+  await expect(page.getByTestId(ids.row)).toHaveText([
+    'Title of SHIP-160',
+    'One',
+    'Two',
+    'Three',
+    'Title of SHIP-158',
+    'Title of SHIP-170',
+    'Title of SHIP-171',
+    'Title of SHIP-172',
+  ]);
+  // Only the first goes first in the sprint; the others go before the row that followed it.
+  expect(server.adds.map((add) => add.placement?.slot)).toEqual(['first', 'before', 'before']);
+});
+
+test('A_completion_after_the_row_reopens_does_not_move_the_new_row', async ({ mount, page }) => {
+  const view = backlogView(ROWS);
+  const server = await stubBacklog(page, view);
+  let release!: () => void;
+  const hold = new Promise<void>((resolve) => (release = resolve));
+  await stubCreates(page, server, view, hold);
+  await mount(<AddHereHarness project={PROJECT} />, route);
+  await expect(page.getByTestId(ids.row)).toHaveCount(3);
+  await focusRow(page, 0);
+  await page.getByTestId('run-command-addBelow').click();
+  const title = page.getByTestId(ids.addTitle);
+  await title.fill('Old session');
+  await title.press('Enter');
+  await expect.poll(() => server.adds.length).toBe(1);
+
+  // The row closes and opens again under SHIP-2 while the first write is still open.
+  await title.press('Escape');
+  await expect(page.getByTestId(ids.addRow)).toHaveCount(0);
+  await focusRow(page, 1);
+  await page.getByTestId('run-command-addBelow').click();
+  await expect(page.getByTestId(ids.addRow)).toHaveAttribute('data-anchor', 'SHIP-2');
+
+  release();
+  // The row it made still appears, from the refetch, and the new row stays under SHIP-2.
+  await expect(page.getByTestId(ids.row)).toHaveCount(4);
+  await expect(page.getByTestId(ids.addRow)).toHaveAttribute('data-anchor', 'SHIP-2');
+  await page.getByTestId(ids.addTitle).fill('New session');
+  await page.getByTestId(ids.addTitle).press('Enter');
+  await expect.poll(() => server.adds.length).toBe(2);
+  expect(server.adds[1].placement).toEqual({ slot: 'before', beforeItemId: ROWS[2].id });
+});
+
+test('A_sprint_completion_after_the_row_closes_does_not_seed_the_next_one', async ({
+  mount,
+  page,
+}) => {
+  const view = planningView();
+  const server = await stubBacklog(page, view);
+  let release!: () => void;
+  const hold = new Promise<void>((resolve) => (release = resolve));
+  await stubCreates(page, server, view, hold);
+  await mount(<AddHereHarness project={PROJECT} mode="planning" />, {
+    hooksConfig: { route: '/p/SHIP/backlogs/stories?mode=planning' },
+  });
+  await expect(page.getByTestId(ids.row)).toHaveCount(5);
+
+  await page.getByTestId(ids.addHere).nth(1).click();
+  await page.getByTestId(ids.addTitle).fill('Old session');
+  await page.getByTestId(ids.addTitle).press('Enter');
+  await expect.poll(() => server.adds.length).toBe(1);
+  await page.getByTestId(ids.addTitle).press('Escape');
+  await expect(page.getByTestId(ids.addRow)).toHaveCount(0);
+
+  release();
+  await expect(page.getByTestId(ids.row)).toHaveCount(6);
+  await page.getByTestId(ids.addHere).nth(1).click();
+  await page.getByTestId(ids.addTitle).fill('New session');
+  await page.getByTestId(ids.addTitle).press('Enter');
+  await expect.poll(() => server.adds.length).toBe(2);
+  expect(server.adds[1].placement).toEqual({ slot: 'first', beforeItemId: null });
+});
+
 test('A_failed_create_in_a_queue_gives_the_text_back', async ({ mount, page }) => {
   const server = await stubBacklog(page, backlogView(ROWS));
   await page.route('**/api/projects/p1/backlog/items', (route) => {

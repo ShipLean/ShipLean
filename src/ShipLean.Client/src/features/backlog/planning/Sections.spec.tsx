@@ -37,6 +37,23 @@ test('Opening_it_is_remembered', async ({ mount, page }) => {
   await expect.poll(() => server.puts).toEqual([{ collapsedSections: [] }]);
 });
 
+test('Add_on_a_closed_section_opens_it_and_shows_the_add_row', async ({ mount, page }) => {
+  const server = await stubBacklog(page, planningView(), { saved: {} });
+  await mount(<PlanningMode project={PROJECT} />, route);
+  await expect(toggleOf(page, 'Sprint 24')).toHaveAttribute('aria-expanded', 'false');
+
+  await page
+    .getByTestId(ids.planningSection)
+    .filter({ hasText: 'Sprint 24' })
+    .getByTestId(ids.addHere)
+    .click();
+
+  await expect(toggleOf(page, 'Sprint 24')).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.getByTestId(ids.addRow)).toBeVisible();
+  await expect(rowOf(page, 'SHIP-160')).toBeVisible();
+  await expect.poll(() => server.puts).toEqual([{ collapsedSections: [] }]);
+});
+
 test('Opening_it_is_remembered_on_the_next_visit', async ({ mount, page }) => {
   await stubBacklog(page, planningView(), { saved: { collapsedSections: [] } });
   await mount(<PlanningMode project={PROJECT} />, route);
