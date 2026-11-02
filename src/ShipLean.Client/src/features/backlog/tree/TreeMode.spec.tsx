@@ -305,3 +305,12 @@ test('Tree_WhenCompletedTicked_ShouldAskForCompletedAndCountThemInGroups', async
     '4 items · Σ 11 pts',
   );
 });
+
+test('TreeMode_HasNoSelectColumn', async ({ mount, page }) => {
+  await stubBacklog(page, view);
+  await mount(<TreeMode project={PROJECT} />, route);
+
+  await expect(page.getByTestId(ids.row).first()).toBeVisible();
+  await expect(page.getByTestId(ids.selectAll)).toHaveCount(0);
+  await expect(page.getByTestId(ids.rowSelect)).toHaveCount(0);
+});

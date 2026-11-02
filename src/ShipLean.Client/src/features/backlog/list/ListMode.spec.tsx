@@ -243,3 +243,14 @@ test('List_WhenBacklogReadFails_ShouldShowLoadFailed', async ({ mount, page }) =
   await mount(<ListMode project={PROJECT} />, route);
   await expect(page.getByTestId(ids.loadFailed)).toBeVisible();
 });
+
+test('ListMode_ShowsAnEmptySelectColumn', async ({ mount, page }) => {
+  await stubBacklog(page, backlogView(ROWS));
+  await mount(<ListMode project={PROJECT} />, route);
+
+  await expect(page.getByTestId(ids.row)).toHaveCount(2);
+  await expect(page.getByTestId(ids.selectAll)).toHaveCount(1);
+  await expect(page.getByTestId(ids.rowSelect)).toHaveCount(2);
+  await expect(page.getByTestId(ids.rowSelect).first()).toBeEmpty();
+  await expect(page.getByTestId(ids.selectAll)).toBeEmpty();
+});

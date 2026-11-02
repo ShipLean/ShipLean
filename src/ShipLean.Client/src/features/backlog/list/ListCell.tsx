@@ -1,8 +1,8 @@
 import { Avatar } from '../../../components/Avatar';
 import { StateDot } from '../../../components/StateDot';
-import { TypeIcon } from '../../../components/TypeIcon';
 import type { BacklogRowDto } from '../../../api/views';
-import { ItemLink } from '../../itemPeek/ItemLink';
+import { PointsCell } from '../estimate/PointsCell';
+import { TitleCell } from '../selection/TitleCell';
 import type { BacklogColumnId } from '../backlogApi';
 import { backlogTestIds as ids } from '../testIds';
 import { ParentCell } from './ParentCell';
@@ -25,14 +25,7 @@ export function ListCell({
     case 'key':
       return <span data-testid={ids.key}>{row.key}</span>;
     case 'title':
-      return (
-        <span className="inline-flex items-center gap-1.5">
-          {row.type ? <TypeIcon type={row.type.id} /> : null}
-          <ItemLink testId={ids.title} projectKey={projectKey} itemKey={row.key}>
-            {row.title}
-          </ItemLink>
-        </span>
-      );
+      return <TitleCell row={row} projectKey={projectKey} />;
     case 'parent':
       return <ParentCell parent={row.parent} />;
     case 'state':
@@ -42,13 +35,7 @@ export function ListCell({
         </span>
       ) : null;
     case 'points':
-      return row.points === null ? (
-        <span data-testid={ids.points} title="Not estimated" className="font-semibold text-caution">
-          ?
-        </span>
-      ) : (
-        <span data-testid={ids.points}>{row.points}</span>
-      );
+      return <PointsCell row={row} />;
     case 'sprint':
       return <SprintCell sprint={row.sprint} />;
     case 'assignee':

@@ -2,6 +2,8 @@ import type { KeyboardEvent } from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import type { BacklogRowDto } from '../../../api/views';
 import type { BacklogColumnId } from '../backlogApi';
+import { RowSelectCell } from '../selection/RowSelectCell';
+import { useRowGestures } from '../selection/useRowGestures';
 import { Grip } from '../drag/Grip';
 import { ListCell } from '../list/ListCell';
 import { backlogTestIds as ids } from '../testIds';
@@ -19,6 +21,7 @@ export function PlanningRow({
   forecast,
   flash,
   dropEdge,
+  dragDisabled,
   onKeyMove,
 }: {
   row: BacklogRowDto;
@@ -31,6 +34,8 @@ export function PlanningRow({
   flash: boolean;
   // The row a dragged one is about to land above ('top') or below ('bottom'): the accent line is drawn on that edge.
   dropEdge: 'top' | 'bottom' | null;
+  // Moving is off (a filter, search or check queue is on).
+  dragDisabled: boolean;
   onKeyMove: (row: BacklogRowDto, direction: 'up' | 'down') => void;
 }) {
   const closed = row.state?.category === 'completed';
@@ -40,9 +45,10 @@ export function PlanningRow({
     setNodeRef: dragRef,
     setActivatorNodeRef,
     isDragging,
-  } = useDraggable({ id: row.id });
+  } = useDraggable({ id: row.id, disabled: dragDisabled });
   const { setNodeRef: dropRef } = useDroppable({ id: row.id });
-  function onKeyDown(event: KeyboardEvent<HTMLTableRowElement>) {
+  const { onKeyDown: gestureKeyDown, ...gestures } = useRowGestures(row);
+  function moveOnAlt(event: KeyboardEvent<HTMLTableRowElement>) {
     if (!event.altKey) return;
     if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
     event.preventDefault();
@@ -55,7 +61,11 @@ export function PlanningRow({
         dropRef(node);
       }}
       tabIndex={0}
-      onKeyDown={onKeyDown}
+      {...gestures}
+      onKeyDown={(event) => {
+        gestureKeyDown?.(event);
+        moveOnAlt(event);
+      }}
       data-testid={ids.row}
       data-key={row.key}
       data-row-id={row.id}
@@ -64,8 +74,9 @@ export function PlanningRow({
       data-over={dropEdge !== null}
       data-edge={dropEdge ?? undefined}
       style={{ opacity: isDragging ? 0.4 : 1 }}
-      className={`h-9 data-[edge=bottom]:[&>td]:shadow-[inset_0_-2px_0_var(--color-accent)] data-[edge=top]:[&>td]:shadow-[inset_0_2px_0_var(--color-accent)] text-[length:var(--text-sm)] transition-colors duration-700 ${flash ? 'bg-signal-soft' : ''} ${mark ? 'border-b-2 border-signal' : 'border-b border-edge'} ${closed ? 'text-ink-muted' : 'text-ink'}`}
+      className={`h-9 data-[edge=bottom]:[&>td]:shadow-[inset_0_-2px_0_var(--color-accent)] data-[edge=top]:[&>td]:shadow-[inset_0_2px_0_var(--color-accent)] text-[length:var(--text-sm)] transition-colors duration-700 data-[selected=true]:bg-accent-soft ${flash ? 'bg-signal-soft' : ''} ${mark ? 'border-b-2 border-signal' : 'border-b border-edge'} ${closed ? 'text-ink-muted' : 'text-ink'}`}
     >
+      <RowSelectCell row={row} />
       {forecast ? (
         <td className="w-[92px] px-2 text-[length:var(--text-xs)] font-semibold whitespace-nowrap text-signal">
           {mark ? <span data-testid={ids.planningForecastLine}>→ {mark}</span> : null}
@@ -74,7 +85,7 @@ export function PlanningRow({
       <td className="w-6 px-1 text-center">
         <Grip
           itemKey={row.key}
-          disabled={false}
+          disabled={dragDisabled}
           buttonRef={setActivatorNodeRef}
           {...attributes}
           {...listeners}

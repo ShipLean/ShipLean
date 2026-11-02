@@ -25,6 +25,10 @@ export interface BacklogToolbarProps {
   options?: () => ReactNode;
   // Renders the filter (the criteria builder and its chips) beside the buttons. Absent, nothing shows.
   filter?: () => ReactNode;
+  // Renders the search field beside the filter. Absent, nothing shows.
+  search?: () => ReactNode;
+  // Renders the keyboard shortcuts button at the right end. Absent, nothing shows.
+  keys?: () => ReactNode;
 }
 
 export function BacklogToolbar({
@@ -39,6 +43,8 @@ export function BacklogToolbar({
   columns,
   options,
   filter,
+  search,
+  keys,
 }: BacklogToolbarProps) {
   return (
     <div
@@ -54,6 +60,7 @@ export function BacklogToolbar({
       <div data-testid={ids.filterSlot} className="flex items-center gap-[var(--space-2)]">
         {filter?.()}
       </div>
+      {search?.()}
       <span className="flex-1" />
       {options?.()}
       {includeCompleted !== undefined && onIncludeCompletedChange ? (
@@ -68,6 +75,7 @@ export function BacklogToolbar({
         </label>
       ) : null}
       {columns ? <ColumnsMenu {...columns} /> : null}
+      {keys?.()}
     </div>
   );
 }

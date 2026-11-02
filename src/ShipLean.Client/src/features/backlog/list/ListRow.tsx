@@ -3,6 +3,8 @@ import { CSS } from '@dnd-kit/utilities';
 import type { BacklogRowDto } from '../../../api/views';
 import type { BacklogColumnId } from '../backlogApi';
 import { Grip } from '../drag/Grip';
+import { RowSelectCell } from '../selection/RowSelectCell';
+import { useRowGestures } from '../selection/useRowGestures';
 import { backlogTestIds as ids } from '../testIds';
 import { ListCell } from './ListCell';
 
@@ -32,8 +34,10 @@ export function ListRow({
     transition,
     isDragging,
   } = useSortable({ id: row.id, disabled: dragDisabled });
+  const gestures = useRowGestures(row);
   return (
     <tr
+      {...gestures}
       ref={setNodeRef}
       data-testid={ids.row}
       data-key={row.key}
@@ -43,8 +47,9 @@ export function ListRow({
         transition,
         opacity: isDragging ? 0.4 : 1,
       }}
-      className={`h-9 border-b border-edge text-[length:var(--text-sm)] transition-colors duration-700 ${flash ? 'bg-signal-soft' : ''} ${closed ? 'text-ink-muted' : 'text-ink'}`}
+      className={`h-9 border-b border-edge text-[length:var(--text-sm)] transition-colors duration-700 data-[selected=true]:bg-accent-soft ${flash ? 'bg-signal-soft' : ''} ${closed ? 'text-ink-muted' : 'text-ink'}`}
     >
+      <RowSelectCell row={row} />
       <td className="w-6 px-1 text-center">
         <Grip
           itemKey={row.key}
