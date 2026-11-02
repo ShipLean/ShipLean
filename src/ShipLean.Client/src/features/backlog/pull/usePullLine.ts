@@ -92,11 +92,13 @@ export function usePullLine({
   const auto = target === null ? null : fits(target);
 
   const on = forecast && !filtering && target !== null && auto !== null && rows.length > 0;
-  const n = !on ? 0 : Math.min(cut ?? auto.selected, rows.length);
-  const taken: BacklogRowDto[] = rows.slice(0, Math.min(n, BULK_MAX_ROWS));
-  const capped = on && (n > BULK_MAX_ROWS || (cut === null && auto.capped));
+  const furthest = Math.min(rows.length, BULK_MAX_ROWS);
+  const n = !on ? 0 : Math.min(cut ?? auto.selected, furthest);
+  const taken: BacklogRowDto[] = rows.slice(0, n);
+  const capped =
+    on && ((n === BULK_MAX_ROWS && rows.length > BULK_MAX_ROWS) || (cut === null && auto.capped));
   const pulledIds = useMemo(
-    () => (on ? new Set(rows.slice(0, Math.min(n, BULK_MAX_ROWS)).map((r) => r.id)) : NOTHING),
+    () => (on ? new Set(rows.slice(0, n).map((r) => r.id)) : NOTHING),
     [on, rows, n],
   );
   const sum = on ? sprintSum(target, taken, velocity) : null;
@@ -111,7 +113,11 @@ export function usePullLine({
           .filter((part) => part !== null)
           .join(' · ');
 
-  const move = (next: number) => setCut(Math.max(0, Math.min(rows.length, next)));
+  // The line only counts as moved when it lands somewhere else than where it is shown.
+  const move = (next: number) => {
+    const to = Math.max(0, Math.min(furthest, next));
+    setCut((current) => (to === Math.min(current ?? auto?.selected ?? 0, furthest) ? current : to));
+  };
   const reset = () => setCut(null);
 
   function onPointerDown(event: PointerEvent<HTMLElement>) {
