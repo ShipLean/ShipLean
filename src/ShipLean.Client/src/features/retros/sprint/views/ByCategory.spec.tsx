@@ -26,15 +26,15 @@ test('ByCategory_WhenOpened_ShouldRunColumnsInOrderWithGroupsLargestFirstAndUnth
 
   const columns = page.getByTestId(ids.retroColumn);
   await expect(columns).toHaveCount(4);
-  await expect(columns.nth(0)).toHaveAttribute('data-category', 'wentBadly');
-  await expect(columns.nth(1)).toHaveAttribute('data-category', 'improve');
-  await expect(columns.nth(2)).toHaveAttribute('data-category', 'notInPlan');
-  await expect(columns.nth(3)).toHaveAttribute('data-category', 'wentWell');
+  await expect(columns.nth(0)).toHaveAttribute('data-category', 'wentWell');
+  await expect(columns.nth(1)).toHaveAttribute('data-category', 'notInPlan');
+  await expect(columns.nth(2)).toHaveAttribute('data-category', 'wentBadly');
+  await expect(columns.nth(3)).toHaveAttribute('data-category', 'improve');
 
-  const improve = columns.nth(1).getByTestId(ids.retroThemeGroup);
+  const improve = columns.nth(3).getByTestId(ids.retroThemeGroup);
   await expect(improve).toHaveCount(3);
   await expect(improve.last()).toHaveAttribute('data-theme', 'unthemed');
-  const badly = columns.nth(0).getByTestId(ids.retroThemeGroup);
+  const badly = columns.nth(2).getByTestId(ids.retroThemeGroup);
   await expect(badly.first().getByTestId(ids.retroPoint)).toHaveCount(2);
 
   await expect(badly.first()).toHaveAttribute('data-recurring', 'true');

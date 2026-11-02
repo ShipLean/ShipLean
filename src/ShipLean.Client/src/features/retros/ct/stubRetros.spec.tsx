@@ -50,6 +50,10 @@ test('stubRetros_WhenTheNewRoutesAreAsked_ShouldAnswerEachWithItsPinnedShape', a
     status: 200,
     json: actionDialog,
   });
+  // K4: Offered runs improve, wentBadly, notInPlan; the pinned fixture has no improve point, so the two it holds.
+  const dialog = await ask(page, 'GET', '/api/projects/p1/retros/action-dialog?point=a');
+  const offered = (dialog.json as { offered: { category: string }[] }).offered;
+  expect(offered.map((point) => point.category)).toEqual(['wentBadly', 'notInPlan']);
   expect(await ask(page, 'GET', `/api/retros/actions/${id}`)).toEqual({
     status: 200,
     json: retroActionDetail,
