@@ -6,17 +6,11 @@ import type { BacklogViewDto } from '../../api/views';
 import { registerInvalidation } from '../../realtime';
 import { fetchPreference, preferenceKey } from '../../queries/shared';
 import type { BacklogMode, Level } from '../../routes';
+import { backlogKey, backlogRootKey } from '../../queries/backlogKeys';
 
 // The backlog's react-query keys and reads, shared by every backlog mode and level. Everything is keyed under
 // ['projects', projectId, 'backlog', …] so one invalidation reaches every mode.
-export const backlogRootKey = (projectId: string) => ['projects', projectId, 'backlog'] as const;
-export const backlogKey = (
-  projectId: string,
-  level: Level,
-  mode: BacklogMode,
-  filter: string,
-  includeCompleted: boolean,
-) => [...backlogRootKey(projectId), level, mode, filter, includeCompleted] as const;
+export { backlogKey, backlogRootKey };
 
 export interface BacklogQuery {
   projectId: string;
@@ -118,6 +112,8 @@ export interface BacklogViewPreference {
   hiddenColumns?: Partial<Record<Level, string[]>>;
   // Planning mode's Forecast toggle; absent = on.
   forecast?: boolean;
+  // Planning mode's collapsed sections, by section id; absent = the running sprint starts closed.
+  collapsedSections?: string[];
 }
 
 const VIEW_KEY = 'view:backlog';
