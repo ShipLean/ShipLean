@@ -112,6 +112,7 @@ export function PlanningScreen({
                 />
               ) : null}
               <BeforeYouPlan review={view.review} queue={queue} />
+              <BulkOutcomeHost projectId={project.id} />
               <PlanningDnd
                 sections={sections}
                 filtering={filtering}
@@ -149,7 +150,6 @@ export function PlanningScreen({
                 projectKey={project.key}
                 view={view}
               />
-              <BulkOutcomeHost projectId={project.id} />
               <KeysDialog />
             </div>
           </PasteHost>

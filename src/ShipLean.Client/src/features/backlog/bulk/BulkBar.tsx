@@ -142,7 +142,7 @@ export function BulkBar({ mode, projectId, view }: BulkBarProps) {
           data-testid={ids.bulkBar}
           role="toolbar"
           aria-label="Actions for the selected rows"
-          className="relative z-[5] flex flex-none flex-wrap items-center gap-2 border-t-2 border-signal bg-panel px-4 py-2 shadow-[0_-6px_18px_rgb(0_0_0/0.08)]"
+          className="sticky bottom-0 z-[5] flex flex-none flex-wrap items-center gap-2 border-t-2 border-signal bg-panel px-4 py-2 shadow-[0_-6px_18px_rgb(0_0_0/0.08)]"
         >
           <div className="grid leading-tight whitespace-nowrap">
             <b data-testid={ids.bulkCount} className="text-[length:var(--text-md)]">

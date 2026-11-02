@@ -22,7 +22,7 @@ export function ChangedRows({
     <div
       data-testid={ids.bulkChanged}
       role="alert"
-      className="flex flex-none flex-wrap items-center gap-2 border-b border-edge border-l-[3px] px-[var(--space-4)] py-1.5 text-[length:var(--text-sm)] text-ink"
+      className="sticky top-0 z-[5] flex flex-none flex-wrap items-center gap-2 border-b border-edge border-l-[3px] px-[var(--space-4)] py-1.5 text-[length:var(--text-sm)] text-ink"
       style={{
         borderLeftColor: 'var(--color-warn)',
         background: 'color-mix(in srgb, var(--color-warn) 12%, var(--color-panel))',

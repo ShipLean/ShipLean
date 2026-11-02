@@ -67,6 +67,7 @@ export function ListScreen({ project, state }: { project: ProjectDto; state: Bac
               {(columns) => (
                 <>
                   <BeforeYouPlan review={state.backlog.data?.review ?? null} queue={queue} />
+                  <BulkOutcomeHost projectId={project.id} />
                   <ListDnd
                     rows={rows}
                     filtering={filtering}
@@ -93,7 +94,6 @@ export function ListScreen({ project, state }: { project: ProjectDto; state: Bac
                     projectKey={project.key}
                     view={state.backlog.data}
                   />
-                  <BulkOutcomeHost projectId={project.id} />
                   <KeysDialog />
                 </>
               )}
