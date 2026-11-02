@@ -39,4 +39,13 @@
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-5crp-9r3c-p9vr" />
   </ItemGroup>
 
+  <!-- Dev feedback: every project build posts its timings to BUILD_METRICS_ES_ENDPOINT (docs: devex-telemetry).
+       Build-time only, so nothing ships. Agoda.Builds.Metrics needs Newtonsoft.Json 13.x (13.0.3 fixes NU1603). -->
+  <ItemGroup>
+    <PackageReference Include="Agoda.Builds.Metrics" Version="1.0.131">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
 </Project>

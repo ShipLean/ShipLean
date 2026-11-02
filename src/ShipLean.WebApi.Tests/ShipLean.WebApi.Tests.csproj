@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <PackageReference Include="Agoda.Tests.Metrics.NUnit" Version="1.0.131" />
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
     <PackageReference Include="CsCheck" Version="4.9.1" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.13" />
