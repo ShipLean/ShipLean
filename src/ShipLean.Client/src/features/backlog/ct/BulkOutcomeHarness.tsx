@@ -21,9 +21,13 @@ function Panel() {
   const runner = useBulkRunner();
   const rows = backlog.data?.rows ?? [];
   const selection = useSelection(rows.map((row) => row.id));
+  // Like the bar: clear before the send, and bring the rows back when nothing was written.
   const run = (plan: BulkPlan) => {
+    const ids = [...selection.ids];
     selection.clear();
-    void runner.run(plan);
+    void runner.run(plan).then((outcome) => {
+      if (outcome.failed) selection.addMany(ids);
+    });
   };
   return (
     <div>
@@ -33,6 +37,9 @@ function Panel() {
           .map((row) => row.key)
           .join(',')}
       </span>
+      <button type="button" data-testid="clear-selection" onClick={() => selection.clear()}>
+        clear
+      </button>
       <button type="button" data-testid="select-all" onClick={() => selection.selectAll()}>
         all
       </button>

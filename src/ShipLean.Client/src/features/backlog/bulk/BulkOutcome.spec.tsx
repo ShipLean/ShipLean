@@ -123,6 +123,68 @@ test('An_error_answer_changes_nothing', async ({ mount, page }) => {
   await expect(page.getByTestId(ids.bulkChanged)).toHaveCount(0);
   await expect(page.getByTestId(ids.undo)).toHaveCount(0);
   expect(server.bulks).toHaveLength(0);
+  await expect(page.getByTestId('selected-keys')).toHaveText('SHIP-1,SHIP-2,SHIP-3');
+});
+
+test('A_changed_row_selection_settles_and_can_be_cleared', async ({ mount, page }) => {
+  const server = await start(page);
+  await mount(<BulkOutcomeHarness />, route);
+  await ready(page, server);
+  server.staleOnBulk(['id-SHIP-2']);
+  await page.getByTestId('select-all').click();
+  await page.getByTestId('run-sprint').click();
+  await expect(page.getByTestId('selected-keys')).toHaveText('SHIP-2');
+
+  await page.getByTestId('clear-selection').click();
+
+  await expect(page.getByTestId('selected-keys')).toHaveText('');
+  await expect(page.getByTestId(ids.bulkChanged)).toBeVisible();
+  expect(server.bulks).toHaveLength(1);
+});
+
+test('Undo_after_Include_it_anyway_puts_back_every_row', async ({ mount, page }) => {
+  const server = await start(page);
+  await mount(<BulkOutcomeHarness />, route);
+  await ready(page, server);
+  server.staleOnBulk(['id-SHIP-2']);
+  await page.getByTestId('select-all').click();
+  await page.getByTestId('run-sprint').click();
+  await expect(page.getByTestId(ids.bulkChanged)).toBeVisible();
+  server.staleOnBulk([]);
+  await page.getByTestId(ids.bulkIncludeAnyway).click();
+  await expect.poll(() => server.bulks.length).toBe(2);
+  await expect(page.getByTestId(ids.bulkChanged)).toHaveCount(0);
+
+  await page.getByTestId(ids.undo).click();
+
+  await expect.poll(() => server.bulks.length).toBe(3);
+  expect(server.bulks[2].items.map((i) => i.id).sort()).toEqual([
+    'id-SHIP-1',
+    'id-SHIP-2',
+    'id-SHIP-3',
+  ]);
+  expect(server.bulks[2].items.every((i) => i.changes?.sprint?.value === null)).toBe(true);
+});
+
+test('A_failed_Undo_is_offered_again', async ({ mount, page }) => {
+  const server = await start(page);
+  await mount(<BulkOutcomeHarness />, route);
+  await ready(page, server);
+  await page.getByTestId('select-all').click();
+  await page.getByTestId('run-sprint').click();
+  await expect(page.getByTestId(ids.undo)).toBeVisible();
+  await page.route('**/api/projects/p1/backlog/bulk', (r) =>
+    r.fulfill({
+      status: 404,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'Gone', code: 'not_found' }),
+    }),
+  );
+
+  await page.getByTestId(ids.undo).click();
+
+  await expect(page.getByTestId(componentTestIds.toast)).toBeVisible();
+  await expect(page.getByTestId(ids.undo)).toBeVisible();
 });
 
 test('Undo_is_offered_once', async ({ mount, page }) => {

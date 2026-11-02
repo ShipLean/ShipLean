@@ -27,6 +27,18 @@ export function isUndoPlan(plan: BulkPlan): boolean {
   return undoPlans.has(plan);
 }
 
+/** One Undo for several runs' undo plans (the run, then Include it anyway's rows), sent as a single request. */
+export function mergeUndo(plans: BulkPlan[]): BulkPlan {
+  const merged: BulkPlan = {
+    items: plans.flatMap((plan) => plan.items),
+    label: plans[0]?.label ?? ((count) => `${count} restored`),
+    undoable: false,
+    pinRevisions: true,
+  };
+  undoPlans.add(merged);
+  return merged;
+}
+
 /**
  * The plan that puts a run back, built from the rows as they were (`outcome.viewBefore`). Only rows in `written` go
  * back, each with its own old values and the revision the run wrote, so a row a teammate changed since comes back

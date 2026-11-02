@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSelection } from '../selection/useSelection';
 import { ChangedRows } from './ChangedRows';
 import { UndoToast } from './UndoToast';
-import { isUndoPlan, undoOf } from './undoOf';
+import { isUndoPlan, mergeUndo, undoOf } from './undoOf';
 import { useBulkRunner, type BulkOutcome, type BulkPlan } from './useBulkRun';
 
 /** The run's rows a teammate changed, sent again against the revision they have now. */
@@ -23,32 +23,48 @@ function includePlan(outcome: BulkOutcome): BulkPlan {
   };
 }
 
+/** The run Undo puts back: the first run, then the rows Include it anyway wrote after it. */
+interface PendingUndo {
+  runs: BulkOutcome[];
+}
+
+const writtenIn = (runs: BulkOutcome[]) => runs.reduce((sum, run) => sum + run.written.length, 0);
+
 /**
  * What the last bulk run left to decide: the rows a teammate changed, with Include it anyway and Leave it, and Undo.
- * Undo is offered for the latest undoable run only, once, and is itself reported when a row changed since.
+ * Undo is offered for the latest undoable run only, once, and is itself reported when a row changed since. Rows
+ * written by Include it anyway join the pending Undo. An Undo whose request failed is offered again.
  */
 export function BulkOutcomeHost({ projectId }: { projectId: string }) {
   void projectId;
   const runner = useBulkRunner();
   const selection = useSelection();
   const { outcome } = runner;
-  const [undo, setUndo] = useState<{ outcome: BulkOutcome; message: string } | null>(null);
-  const { addMany } = selection;
+  const [undo, setUndo] = useState<PendingUndo | null>(null);
 
   // A new outcome offers its Undo; set during render, as React asks, from the last outcome seen.
   const [seen, setSeen] = useState<BulkOutcome | null>(null);
   if (outcome !== seen) {
     setSeen(outcome);
     if (outcome !== null && outcome.plan.undoable && outcome.written.length > 0) {
-      setUndo({ outcome, message: outcome.plan.label(outcome.written.length) });
+      setUndo({ runs: [outcome] });
     }
   }
 
+  // The selection changes identity on every update, so the effect reads it through a ref and runs once per outcome.
+  const latest = useRef(selection);
+  const reselected = useRef<BulkOutcome | null>(null);
   useEffect(() => {
-    if (outcome !== null && outcome.stale.length > 0) {
-      addMany(outcome.stale.map((conflict) => conflict.current.id));
-    }
-  }, [outcome, addMany]);
+    latest.current = selection;
+  });
+  useEffect(() => {
+    if (outcome === null || reselected.current === outcome) return;
+    reselected.current = outcome;
+    const missing = outcome.stale
+      .map((conflict) => conflict.current.id)
+      .filter((id) => !latest.current.has(id));
+    if (missing.length > 0) latest.current.addMany(missing);
+  }, [outcome]);
 
   const expire = useCallback(() => setUndo(null), []);
 
@@ -56,11 +72,19 @@ export function BulkOutcomeHost({ projectId }: { projectId: string }) {
   const changed = outcome !== null && outcome.stale.length > 0 ? outcome : null;
   const undoing = changed !== null && isUndoPlan(changed.plan);
 
-  const doUndo = () => {
+  const doUndo = async () => {
     if (undo === null) return;
-    const source = undo.outcome;
+    const source = undo;
     setUndo(null);
-    void runner.run(undoOf(source.viewBefore, source));
+    const plans = source.runs.map((run) => undoOf(run.viewBefore, run));
+    const result = await runner.run(mergeUndo(plans));
+    if (result.failed) setUndo((current) => current ?? source);
+  };
+
+  const include = async (stale: BulkOutcome) => {
+    const result = await runner.run(includePlan(stale));
+    if (result.failed || result.written.length === 0) return;
+    setUndo((current) => (current === null ? null : { runs: [...current.runs, result] }));
   };
 
   return (
@@ -70,15 +94,15 @@ export function BulkOutcomeHost({ projectId }: { projectId: string }) {
           summary={changed.plan.label(changed.written.length)}
           conflicts={changed.stale}
           canInclude={!undoing}
-          onInclude={() => void runner.run(includePlan(changed))}
+          onInclude={() => void include(changed)}
           onLeave={runner.dismiss}
         />
       ) : null}
       {undo ? (
         <UndoToast
-          message={undo.message}
+          message={undo.runs[0].plan.label(writtenIn(undo.runs))}
           aboveBar={selection.count > 0}
-          onUndo={doUndo}
+          onUndo={() => void doUndo()}
           onExpire={expire}
         />
       ) : null}
