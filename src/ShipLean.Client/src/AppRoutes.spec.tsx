@@ -4,6 +4,8 @@ import { stubFeatureBoard } from './features/featureBoard/ct/stubFeatureBoard';
 import { AppRoutes } from './AppRoutes';
 import { meDto, stubInstance, stubJson } from './features/auth/authFixtures';
 import { agentsTestIds } from './features/agents/testIds';
+import { stubAnalyticsApi } from './features/settings/instance/analytics/ct/analyticsStub';
+import { analyticsTestIds } from './features/settings/instance/analytics/testIds';
 import { pagesTestIds } from './features/pages/testIds';
 import { stubProjectApi } from './pages/pagesFixtures';
 import type { RouteId } from './routes';
@@ -212,6 +214,8 @@ test('InstanceSettings_WhenAnalyticsTabOpened_ShouldRenderTheAnalyticsSlot', asy
   page,
 }) => {
   await stubProjectApi(page);
+  await stubAnalyticsApi(page);
   await mount(<AppRoutes />, { hooksConfig: { route: '/instance/analytics' } });
   await expect(page.getByTestId(pagesTestIds.slotInstanceAnalytics)).toBeVisible();
+  await expect(page.getByTestId(analyticsTestIds.container)).toBeVisible();
 });
