@@ -35,8 +35,9 @@ public class RowModalTests : SeededAcceptanceTest
 
         await editing.ToggleSelectAsync(key);
         await Expect(editing.Row(key)).ToHaveAttributeAsync("data-selected", "true");
+        var sprint = await editing.Row(key).GetByTestId(BacklogTestIds.SprintChip).TextContentAsync();
         var bulk = await Page.RunAndWaitForResponseAsync(
-            () => editing.BulkMoveTop.ClickAsync(),
+            () => editing.BulkMoveSprint.Filter(new() { HasNotTextString = sprint }).First.ClickAsync(),
             r => r.Request.Method == "POST" && r.Url.EndsWith("/backlog/bulk", StringComparison.Ordinal));
 
         bulk.Ok.ShouldBeTrue(await bulk.TextAsync());
@@ -44,7 +45,7 @@ public class RowModalTests : SeededAcceptanceTest
         body.GetProperty("stale").GetArrayLength().ShouldBe(0);
         body.GetProperty("written").GetArrayLength().ShouldBe(1);
         await Expect(editing.BulkChanged).ToHaveCountAsync(0);
-        await Expect(editing.Rows.First.GetByTestId(BacklogTestIds.Key)).ToHaveTextAsync(key);
+        body.GetProperty("written")[0].GetProperty("id").GetGuid().ShouldBe(await IdOfAsync(editing, key));
     }
 
     [Test]

@@ -13,6 +13,9 @@ public sealed class BacklogRowEditing(IPage page)
 
     public ILocator BulkBar => page.GetByTestId(BacklogTestIds.BulkBar);
 
+    // A move to a sprint carries the row's revision (K1), unlike Top and Bottom, which are position only.
+    public ILocator BulkMoveSprint => page.GetByTestId(BacklogTestIds.BulkMoveSprint);
+
     public ILocator BulkMoveTop => page.GetByTestId(BacklogTestIds.BulkMoveTop);
 
     public ILocator BulkChanged => page.GetByTestId(BacklogTestIds.BulkChanged);
