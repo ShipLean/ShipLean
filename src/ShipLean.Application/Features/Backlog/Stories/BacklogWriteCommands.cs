@@ -25,14 +25,9 @@ public sealed partial class BacklogWriteCommands(IProjectAccess access, IWorkIte
             CheckItem(item);
         }
 
-        var ids = items.Select(i => i.Id).ToHashSet();
+        RequireNoBeforeWithinBlock(items);
         foreach (var item in items)
         {
-            if (item.Placement is { Slot: BatchSlot.Before, BeforeItemId: { } before } && ids.Contains(before))
-            {
-                throw ApiException.Validation("A row can't be placed before a row of the same write.");
-            }
-
             var row = await store.GetAsync(item.Id, cancellationToken);
             if (row.ProjectId != projectId)
             {
@@ -44,6 +39,26 @@ public sealed partial class BacklogWriteCommands(IProjectAccess access, IWorkIte
         var writes = items.Select(i => new BatchWrite(i.Id, i.ExpectedRevision, i.Changes, i.Placement is { } p ? new BatchPlacement(p.Slot, p.BeforeItemId) : null)).ToList();
         var outcome = await batch.WriteBatchAsync(writes, options, cancellationToken);
         return new BulkWriteResult(outcome.Written, outcome.Stale);
+    }
+
+    // Consecutive items with an equal placement form a block. A "before" that names a row of its own block can't land.
+    private static void RequireNoBeforeWithinBlock(IReadOnlyList<BulkWriteItem> items)
+    {
+        for (var start = 0; start < items.Count;)
+        {
+            var end = start + 1;
+            while (end < items.Count && Equals(items[end].Placement, items[start].Placement))
+            {
+                end++;
+            }
+
+            if (items[start].Placement is { Slot: BatchSlot.Before, BeforeItemId: { } before } && items.Skip(start).Take(end - start).Any(i => i.Id == before))
+            {
+                throw ApiException.Validation("A row can't be placed before a row of the same block.");
+            }
+
+            start = end;
+        }
     }
 
     private static void CheckItem(BulkWriteItem item)

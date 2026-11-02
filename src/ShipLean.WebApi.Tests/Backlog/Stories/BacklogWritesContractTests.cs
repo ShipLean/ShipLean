@@ -47,6 +47,29 @@ public class BacklogWritesContractTests : ApiFixture
     }
 
     [Test]
+    public async Task Bulk_WhenBeforeTargetIsInAnotherBlock_ShouldAccept()
+    {
+        var first = new { slot = "first", beforeItemId = (Guid?)null };
+        var before = new { slot = "before", beforeItemId = (Guid?)SeedIds.WorkItems.Ship141 };
+        var items = new[] { Placed(SeedIds.WorkItems.Ship141, first), Placed(SeedIds.WorkItems.Ship144, before) };
+
+        using var response = await Api.PostJsonAsync($"{Url}/bulk", new { items });
+
+        (await ReadAsync(response)).GetProperty("written").GetArrayLength().ShouldBe(2);
+    }
+
+    [Test]
+    public async Task Bulk_WhenBeforeTargetIsInSameBlock_ShouldAnswerValidation()
+    {
+        var before = new { slot = "before", beforeItemId = (Guid?)SeedIds.WorkItems.Ship141 };
+        var items = new[] { Placed(SeedIds.WorkItems.Ship141, before), Placed(SeedIds.WorkItems.Ship144, before) };
+
+        using var response = await Api.PostJsonAsync($"{Url}/bulk", new { items });
+
+        (await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.BadRequest)).Code.ShouldBe(ApiErrorCodes.Validation);
+    }
+
+    [Test]
     public async Task Bulk_WhenNotMember_ShouldAnswerNotFound()
     {
         using var response = await Api.ActingAs(TestUser.Kai).PostJsonAsync($"{Url}/bulk", new { items = new[] { Row(SeedIds.WorkItems.Ship141) } });
@@ -97,6 +120,8 @@ public class BacklogWritesContractTests : ApiFixture
     }
 
     private static object Row(Guid id) => new { id, expectedRevision = 1, changes = Points, placement = (object?)null };
+
+    private static object Placed(Guid id, object placement) => new { id, expectedRevision = 1, changes = (object?)null, placement };
 
     private static async Task<JsonElement> ReadAsync(HttpResponseMessage response)
     {

@@ -15,7 +15,7 @@ namespace ShipLean.Application.Fakes.WorkItems;
 // The work item store in memory: thread-safe, no I/O, publishes no events. Every write runs on a copy of the data that
 // replaces the real data only when the whole write (rules, the InTransaction hook) succeeded, which is its transaction.
 // Arrange it with AddProject, AddUser and AddSprint before use. Board and backlog order are sortable strings computed before the rules run; the rules may amend them.
-public sealed partial class InMemoryWorkItemStore(IWorkItemRules rules, ICurrentUser currentUser, MarkdownRenderer renderer, TimeProvider time, ICurrentAgent currentAgent) : IWorkItemStore, IWorkItemTreeWriter, IWorkItemBatchWriter
+public sealed partial class InMemoryWorkItemStore(IWorkItemRules rules, ICurrentUser currentUser, MarkdownRenderer renderer, TimeProvider time, ICurrentAgent currentAgent) : IWorkItemStore, IWorkItemTreeWriter
 {
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly ConcurrentDictionary<Guid, UserRef> _users = new();
