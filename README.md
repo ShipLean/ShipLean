@@ -194,3 +194,4 @@ The mark is a boat: three backlog rows stacked as a sail, widening down to the h
     <img alt="ShipLean mark" src="design/logo/shiplean-mark-light.svg" width="48">
   </picture>
 </p>
+
