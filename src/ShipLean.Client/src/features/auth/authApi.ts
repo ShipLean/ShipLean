@@ -8,6 +8,8 @@ export interface InstanceDto {
   signIn: 'password' | 'proxy';
   /** Where "Sign out" goes in proxy mode; null hides it (and always null in password mode). */
   signOutUrl: string | null;
+  /** Whether the sign-in page shows the "Sign in with Google" button. */
+  googleSignIn: boolean;
 }
 
 export const instanceKey = ['auth', 'instance'] as const;

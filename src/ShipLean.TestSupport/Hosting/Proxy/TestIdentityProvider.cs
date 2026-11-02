@@ -48,6 +48,12 @@ public sealed class TestIdentityProvider : IAsyncDisposable
     // When set, the discovery document's jwks_uri is this instead of JwksUrl. Set it before the host fetches the document.
     public string? DiscoveryJwksUriOverride { get; set; }
 
+    // What /token answers with, for a sign-in that goes through the code flow.
+    public string? NextIdToken { get; set; }
+
+    // The form of the last POST to /token.
+    public IReadOnlyDictionary<string, string>? LastTokenRequest { get; private set; }
+
     public static async Task<TestIdentityProvider> StartAsync()
     {
         var key = RSA.Create(2048);
@@ -64,10 +70,23 @@ public sealed class TestIdentityProvider : IAsyncDisposable
         {
             ["issuer"] = self?.DiscoveryIssuerOverride ?? baseUrl!,
             ["jwks_uri"] = self?.DiscoveryJwksUriOverride ?? $"{baseUrl}/jwks",
+            ["authorization_endpoint"] = $"{baseUrl}/authorize",
+            ["token_endpoint"] = $"{baseUrl}/token",
             ["id_token_signing_alg_values_supported"] = new[] { SecurityAlgorithms.RsaSha256 },
             ["subject_types_supported"] = new[] { "public" },
             ["response_types_supported"] = new[] { "code" },
         }));
+        app.MapPost("/token", async (HttpRequest request) =>
+        {
+            self!.LastTokenRequest = (await request.ReadFormAsync()).ToDictionary(field => field.Key, field => field.Value.ToString());
+            return Results.Json(new Dictionary<string, object>
+            {
+                ["id_token"] = self.NextIdToken ?? string.Empty,
+                ["access_token"] = "unused",
+                ["token_type"] = "Bearer",
+                ["expires_in"] = 3600,
+            });
+        });
         app.MapGet("/signed-out", () => Results.Content(
             "<!doctype html><html><head><title>Signed out</title></head><body><p data-testid=\"idp-signed-out\">You are signed out.</p></body></html>",
             "text/html"));

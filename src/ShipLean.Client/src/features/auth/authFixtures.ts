@@ -55,6 +55,10 @@ export async function stubInstance(page: StubbablePage) {
   await stubJson(page, '/api/auth/instance', { name: 'Larkspur' });
 }
 
+export async function stubGoogleInstance(page: StubbablePage) {
+  await stubJson(page, '/api/auth/instance', { name: 'Larkspur', googleSignIn: true });
+}
+
 export async function stubProxyInstance(page: StubbablePage, signOutUrl: string | null = null) {
   await stubJson(page, '/api/auth/instance', { name: 'Larkspur', signIn: 'proxy', signOutUrl });
 }

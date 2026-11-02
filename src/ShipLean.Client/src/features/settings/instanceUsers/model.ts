@@ -7,6 +7,7 @@ export const statusLabels: Record<UserStatus, string> = {
   locked: 'Locked',
   noPassword: 'No password yet',
   disabled: 'Disabled',
+  googleOnly: 'Signs in with Google',
 };
 
 export type UsersFilter = 'all' | 'active' | 'attention' | 'disabled';

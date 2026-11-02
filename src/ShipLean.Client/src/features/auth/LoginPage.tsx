@@ -23,6 +23,11 @@ const notes: Record<string, { tone: 'ok' | 'info'; text: string }> = {
     tone: 'info',
     text: 'You were signed out because your password was changed or reset. Sign in again to carry on.',
   },
+  'google-failed': { tone: 'info', text: "Couldn't finish signing in with Google. Try again." },
+  'google-refused': {
+    tone: 'info',
+    text: "This Google account can't sign in here. Ask your ShipLean admin.",
+  },
 };
 
 const changeNote =
@@ -123,7 +128,18 @@ export function LoginPage() {
         />
       );
     }
-    return <SignInForm instanceName={instance.data?.name} note={note} onSignedIn={onSignedIn} />;
+    return (
+      <SignInForm
+        instanceName={instance.data?.name}
+        note={note}
+        onSignedIn={onSignedIn}
+        googleHref={
+          instance.data?.googleSignIn
+            ? `/api/auth/google/start?returnUrl=${encodeURIComponent(returnUrl)}`
+            : null
+        }
+      />
+    );
   }
 
   return (

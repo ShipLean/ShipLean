@@ -9,7 +9,7 @@ import { useUsersAdminMutations, type AdminUserDto } from './usersAdminApi';
 export function PasswordDialog({ user, onClose }: { user: AdminUserDto; onClose(): void }) {
   const { issuePassword } = useUsersAdminMutations();
   const [password, setPassword] = useState<string | null>(null);
-  const setup = user.status === 'noPassword';
+  const setup = user.status === 'noPassword' || user.status === 'googleOnly';
 
   const confirm = () =>
     issuePassword.mutate(user.id, { onSuccess: (issued) => setPassword(issued.password) });

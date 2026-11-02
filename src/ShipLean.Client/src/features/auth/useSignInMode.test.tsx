@@ -44,7 +44,12 @@ async function settle(client: QueryClient) {
 
 test('useSignInMode_WhenInstanceIsProxy_ShouldReportProxyAndSignOutUrl', async () => {
   const { seen } = await readMode(
-    Promise.resolve({ name: 'Larkspur', signIn: 'proxy', signOutUrl: '/oauth2/sign_out' }),
+    Promise.resolve({
+      name: 'Larkspur',
+      signIn: 'proxy',
+      signOutUrl: '/oauth2/sign_out',
+      googleSignIn: false,
+    }),
   );
 
   expect(seen[0]).toEqual({ proxy: false, signOutUrl: null });
@@ -53,7 +58,12 @@ test('useSignInMode_WhenInstanceIsProxy_ShouldReportProxyAndSignOutUrl', async (
 
 test('useSignInMode_WhenInstanceIsPassword_ShouldReportPassword', async () => {
   const { seen } = await readMode(
-    Promise.resolve({ name: 'Larkspur', signIn: 'password', signOutUrl: null }),
+    Promise.resolve({
+      name: 'Larkspur',
+      signIn: 'password',
+      signOutUrl: null,
+      googleSignIn: false,
+    }),
   );
 
   expect(seen.at(-1)).toEqual({ proxy: false, signOutUrl: null });
@@ -67,7 +77,12 @@ test('useSignInMode_WhenInstanceFails_ShouldReportPassword', async () => {
 
 test('useSignInMode_WhenRefetchFailsAfterProxy_ShouldReportPassword', async () => {
   const { seen, client } = await readMode(
-    Promise.resolve({ name: 'Larkspur', signIn: 'proxy', signOutUrl: '/oauth2/sign_out' }),
+    Promise.resolve({
+      name: 'Larkspur',
+      signIn: 'proxy',
+      signOutUrl: '/oauth2/sign_out',
+      googleSignIn: false,
+    }),
   );
   expect(seen.at(-1)).toEqual({ proxy: true, signOutUrl: '/oauth2/sign_out' });
   fetchInstance.mockReturnValueOnce(Promise.reject(new Error('offline')));

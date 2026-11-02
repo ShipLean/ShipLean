@@ -6,6 +6,7 @@ import {
   meDto,
   projectSummary,
   signInWithPassword,
+  stubGoogleInstance,
   stubInstance,
   stubJson,
   stubProxyInstance,
@@ -376,4 +377,27 @@ test('LoginPage_WhenInstanceReadFails_ShouldShowThePasswordForm', async ({ mount
   await stubJson(page, '/api/auth/instance', { error: 'Nope.', code: 'internal' }, 500);
   await mount(<AppRoutes />, { hooksConfig: { route: '/login' } });
   await expect(page.getByTestId(ids.signInForm)).toBeVisible();
+});
+
+test('LoginPage_WhenGoogleIsOff_ShouldNotShowTheButton', async ({ mount, page }) => {
+  await stubInstance(page);
+  await mount(<AppRoutes />, { hooksConfig: { route: '/login' } });
+  await expect(page.getByTestId(ids.signInForm)).toBeVisible();
+  await expect(page.getByTestId(ids.googleSignIn)).toHaveCount(0);
+});
+
+test('LoginPage_WhenGoogleIsOn_ShouldLinkToGoogleWithTheReturnUrl', async ({ mount, page }) => {
+  await stubGoogleInstance(page);
+  await mount(<AppRoutes />, { hooksConfig: { route: '/login?returnUrl=%2Fp%2FPAY' } });
+  await expect(page.getByTestId(ids.googleSignIn)).toHaveText('Sign in with Google');
+  await expect(page.getByTestId(ids.googleSignIn)).toHaveAttribute(
+    'href',
+    '/api/auth/google/start?returnUrl=%2Fp%2FPAY',
+  );
+});
+
+test('LoginPage_WhenGoogleRefused_ShouldSayWhoToAsk', async ({ mount, page }) => {
+  await stubGoogleInstance(page);
+  await mount(<AppRoutes />, { hooksConfig: { route: '/login?state=google-refused' } });
+  await expect(page.getByTestId(ids.note)).toContainText('Ask your ShipLean admin');
 });
