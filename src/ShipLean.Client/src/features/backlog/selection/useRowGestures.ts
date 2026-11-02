@@ -17,6 +17,11 @@ const inside = 'a, button, input, select, textarea, label';
 export function useRowGestures(row: BacklogRowDto): RowGestureProps {
   const selection = useSelection();
   const selected = selection.has(row.id);
+  // Roving tab stop: the focused row is the one row in the tab order, or the first when none is focused (or the focused
+  // one is no longer shown). Without a shown order every row stays a tab stop.
+  const { focusedId, orderedIds } = selection;
+  const stop =
+    focusedId !== null && orderedIds.includes(focusedId) ? focusedId : (orderedIds[0] ?? row.id);
   const click = (event: MouseEvent<HTMLTableRowElement>) => {
     selection.setFocused(row.id);
     if (event.target instanceof Element && event.target.closest(inside) !== null) return;
@@ -24,7 +29,9 @@ export function useRowGestures(row: BacklogRowDto): RowGestureProps {
     else if (event.ctrlKey || event.metaKey) selection.toggle(row.id);
   };
   return {
-    tabIndex: 0,
+    tabIndex: stop === row.id ? 0 : -1,
+    'aria-keyshortcuts': 'J K X',
+    'data-row-id': row.id,
     onClick: click,
     // Shift-click would otherwise select the text between the rows.
     onMouseDown: (event) => {
