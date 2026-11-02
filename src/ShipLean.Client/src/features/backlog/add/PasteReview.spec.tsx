@@ -108,6 +108,40 @@ test('Likely_duplicate_is_flagged', async ({ mount, page }) => {
   expect(server.duplicateChecks[1]).toEqual({ titles: ['One edited'] });
 });
 
+// Pasting into the dialog's own box checks the new titles at once; typing there still waits for the box to lose focus.
+test('Pasting_into_the_review_box_flags_a_duplicate_before_the_box_loses_focus', async ({
+  mount,
+  page,
+}) => {
+  const server = await stubBacklog(page, backlogView(ROWS));
+  await mount(<ListMode project={PROJECT} />, route);
+  await openAddRow(page);
+  await paste(page, 'One\nTwo');
+  await expect(page.getByTestId(ids.pasteRow)).toHaveCount(2);
+  await expect.poll(() => server.duplicateChecks.length).toBe(1);
+  server.duplicatesFor([{ index: 0, items: [{ key: 'SHIP-12', title: 'Three, already' }] }]);
+
+  const box = page.getByTestId(ids.pasteSource);
+  await box.click();
+  await box.press('Control+End');
+  await box.dispatchEvent('paste');
+  await page.keyboard.insertText('\nThree');
+
+  await expect(box).toBeFocused();
+  await expect(page.getByTestId(ids.pasteRowDuplicate)).toHaveText(
+    'Looks like SHIP-12: Three, already',
+  );
+  expect(server.duplicateChecks).toEqual([{ titles: ['One', 'Two'] }, { titles: ['Three'] }]);
+
+  // Typing is not a paste: no check until the box loses focus.
+  await page.keyboard.insertText(' more');
+  await expect(titles(page).nth(2)).toHaveValue('Three more');
+  expect(server.duplicateChecks).toHaveLength(2);
+  await box.blur();
+  await expect.poll(() => server.duplicateChecks.length).toBe(3);
+  expect(server.duplicateChecks[2]).toEqual({ titles: ['Three more'] });
+});
+
 test('Keep_as_one_item_sends_one_item_with_the_paste_as_its_description', async ({
   mount,
   page,

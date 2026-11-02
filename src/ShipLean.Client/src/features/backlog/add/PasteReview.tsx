@@ -58,6 +58,8 @@ export function PasteReview({
   const [rows, setRows] = useState(() => parsePaste(initialText, defaultType));
   const [duplicates, setDuplicates] = useState<Record<string, DuplicateItem>>({});
   const checked = useRef(new Set<string>());
+  // A paste into the box is checked when its text lands, not when the box loses focus; typing waits for the blur.
+  const pasting = useRef(false);
   const add = useBacklogAdd(projectId, projectKey);
   const check = useDuplicateCheck(projectId);
   const selection = useSelection();
@@ -215,7 +217,13 @@ export function PasteReview({
         value={text}
         onChange={(event) => {
           setText(event.target.value);
-          setRows(parsePaste(event.target.value, defaultType));
+          const parsed = parsePaste(event.target.value, defaultType);
+          setRows(parsed);
+          if (pasting.current) checkTitles(parsed);
+          pasting.current = false;
+        }}
+        onPaste={() => {
+          pasting.current = true;
         }}
         onBlur={() => checkTitles(rows)}
       />

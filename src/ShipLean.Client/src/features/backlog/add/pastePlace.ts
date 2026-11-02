@@ -73,8 +73,8 @@ export function placeRequest(value: string, context: PlaceContext): Where {
   if (value === BELOW && focused) {
     const sprintId = focused.sprint?.id ?? null;
     // List: the next row in the shown list, whatever its sprint. Planning: the next row of the focused row's
-    // section. Every section is the one backlog stack filtered by sprint, so last in the stack is also last in the
-    // section, and the new rows land directly below the focused row when it is the section's last.
+    // section. When the focused row is the last one shown, `last` with its sprint means directly below that sprint's
+    // last row in the server's order (K2), so the new rows land under the focused row, not at the bottom of the backlog.
     const rows =
       context.sectionRows ?? context.order.map((id) => context.rows.find((r) => r.id === id));
     const next = rows[rows.findIndex((row) => row?.id === focused.id) + 1];
