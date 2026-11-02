@@ -106,8 +106,8 @@ public class SelfEmittedWebUsageTests : ApiFixture
         Recorder.Events.ShouldBeEmpty();
     }
 
-    private static System.Text.Json.JsonSerializerOptions ApiJson { get; } = new(System.Text.Json.JsonSerializerDefaults.Web)
+    private static global::System.Text.Json.JsonSerializerOptions ApiJson { get; } = new(global::System.Text.Json.JsonSerializerDefaults.Web)
     {
-        Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter(System.Text.Json.JsonNamingPolicy.CamelCase) },
+        Converters = { new global::System.Text.Json.Serialization.JsonStringEnumConverter(global::System.Text.Json.JsonNamingPolicy.CamelCase) },
     };
 }

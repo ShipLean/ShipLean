@@ -5,7 +5,6 @@ using ShipLean.Contracts.Instance;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Usage;
 using ShipLean.WebApi.Features.Auth;
-using ShipLean.WebApi.Features.Usage;
 using ShipLean.WebApi.Infrastructure;
 
 namespace ShipLean.WebApi.Features.Instance;

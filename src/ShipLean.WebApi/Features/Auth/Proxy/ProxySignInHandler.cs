@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 using ShipLean.Application.Identity;
 using ShipLean.Contracts.Usage;
 using ShipLean.Contracts.Users;
-using ShipLean.WebApi.Features.Usage;
+using ShipLean.WebApi.Infrastructure;
 
 namespace ShipLean.WebApi.Features.Auth.Proxy;
 

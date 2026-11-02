@@ -8,7 +8,6 @@ using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Users;
 using ShipLean.Contracts.Usage;
 using ShipLean.WebApi.Features.Auth.Proxy;
-using ShipLean.WebApi.Features.Usage;
 using ShipLean.WebApi.Infrastructure;
 
 namespace ShipLean.WebApi.Features.Auth;

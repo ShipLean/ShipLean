@@ -3,7 +3,6 @@ using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Usage;
-using ShipLean.WebApi.Features.Usage;
 using ShipLean.WebApi.Infrastructure;
 
 namespace ShipLean.WebApi.Features.Agents.Consent;

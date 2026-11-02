@@ -5,7 +5,6 @@ using ShipLean.Contracts.Projects;
 using ShipLean.Contracts.Sprints;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Usage;
-using ShipLean.WebApi.Features.Usage;
 using ShipLean.WebApi.Infrastructure;
 
 namespace ShipLean.WebApi.Features.Projects;
