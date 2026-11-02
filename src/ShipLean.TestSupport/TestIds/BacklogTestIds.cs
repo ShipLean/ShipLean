@@ -125,6 +125,7 @@ public static class BacklogTestIds
     public const string PasteRowDuplicate = "backlog-paste-row-duplicate";
     public const string PasteKeepOne = "backlog-paste-keep-one";
     public const string PasteCreate = "backlog-paste-create";
+    public const string PastePlace = "backlog-paste-place";
     public const string AddHere = "backlog-add-here";
     public const string AddParent = "backlog-add-parent";
     public const string AddPoints = "backlog-add-points";

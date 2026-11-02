@@ -15,6 +15,8 @@ export interface PlaceContext {
   focused: BacklogRowDto | null;
   /** The shown order of row ids, to find the row after the focused one. */
   order: readonly string[];
+  /** Planning: the focused row's own section, since each section is the one stack filtered by sprint. */
+  sectionRows: readonly BacklogRowDto[] | null;
 }
 
 const TOP = 'top';
@@ -38,6 +40,10 @@ export function placeContext(
     sprints: [...seen.values()],
     focused: rows.find((row) => row.id === focusedId) ?? null,
     order,
+    sectionRows:
+      view?.mode === 'planning'
+        ? (view.sections.find((s) => s.rows.some((row) => row.id === focusedId))?.rows ?? null)
+        : null,
   };
 }
 
@@ -66,10 +72,13 @@ export function placeRequest(value: string, context: PlaceContext): Where {
   const { focused } = context;
   if (value === BELOW && focused) {
     const sprintId = focused.sprint?.id ?? null;
-    const nextId = context.order[context.order.indexOf(focused.id) + 1];
-    const next = context.rows.find((row) => row.id === nextId);
-    // A next row in another sprint (or none) is outside the focused row's scope: land last in that scope.
-    return next !== undefined && (next.sprint?.id ?? null) === sprintId
+    // List: the next row in the shown list, whatever its sprint. Planning: the next row of the focused row's
+    // section. Every section is the one backlog stack filtered by sprint, so last in the stack is also last in the
+    // section, and the new rows land directly below the focused row when it is the section's last.
+    const rows =
+      context.sectionRows ?? context.order.map((id) => context.rows.find((r) => r.id === id));
+    const next = rows[rows.findIndex((row) => row?.id === focused.id) + 1];
+    return next
       ? { sprintId, placement: { slot: 'before', beforeItemId: next.id } }
       : { sprintId, placement: { slot: 'last', beforeItemId: null } };
   }

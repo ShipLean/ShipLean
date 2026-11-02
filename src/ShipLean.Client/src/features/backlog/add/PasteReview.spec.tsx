@@ -2,9 +2,10 @@ import { expect, test } from '@playwright/experimental-ct-react';
 import type { Page } from 'playwright';
 import { ToastHost } from '../../../components/ToastHost';
 import { componentTestIds } from '../../../components/testIds';
-import { backlogView, itemRow, PROJECT, ROWS } from '../ct/fixtures';
+import { backlogView, itemRow, planningView, PROJECT, ROWS } from '../ct/fixtures';
 import { stubBacklog } from '../ct/stubApi';
 import { ListMode } from '../list/ListMode';
+import { PlanningMode } from '../planning/PlanningMode';
 import { backlogTestIds as ids } from '../testIds';
 
 const route = { hooksConfig: { route: '/p/SHIP/backlogs/stories' } };
@@ -301,7 +302,7 @@ test('Put_them_below_the_focused_row_is_the_default_and_goes_before_the_next_row
   expect(server.adds[0].placement).toEqual({ slot: 'before', beforeItemId: 'id-SHIP-2' });
 });
 
-test('Put_them_below_the_last_row_of_a_sprint_lands_last_in_that_sprint', async ({
+test('Put_them_below_the_last_row_of_a_sprint_goes_before_the_next_listed_row_in_its_sprint', async ({
   mount,
   page,
 }) => {
@@ -310,6 +311,15 @@ test('Put_them_below_the_last_row_of_a_sprint_lands_last_in_that_sprint', async 
   await openPaste(page, 'SHIP-5');
   await createWith(page, null);
   expect(server.adds[0].sprintId).toBe('sp25');
+  expect(server.adds[0].placement).toEqual({ slot: 'before', beforeItemId: 'id-SHIP-6' });
+});
+
+test('Put_them_below_the_last_listed_row_lands_last', async ({ mount, page }) => {
+  const server = await stubBacklog(page, backlogView(PLACE_ROWS));
+  await mount(<ListMode project={PROJECT} />, route);
+  await openPaste(page, 'SHIP-6');
+  await createWith(page, null);
+  expect(server.adds[0].sprintId).toBe('sp24');
   expect(server.adds[0].placement).toEqual({ slot: 'last', beforeItemId: null });
 });
 
@@ -333,4 +343,40 @@ test('Put_them_makes_no_extra_request', async ({ mount, page }) => {
   await expect(page.getByTestId(ids.pastePlace)).toBeVisible();
   expect(requests.filter((p) => p.endsWith('/backlog')).length).toBe(before);
   expect(server.adds).toHaveLength(0);
+});
+
+// Planning: each section is the one backlog stack filtered by sprint, so the next row is the next row of the section.
+const PLANNING_ROWS = 5;
+const planningRoute = { hooksConfig: { route: '/p/SHIP/backlogs/stories?mode=planning' } };
+
+async function openPlanningPaste(page: Page, focusKey: string) {
+  await expect(page.getByTestId(ids.row)).toHaveCount(PLANNING_ROWS);
+  await page.getByTestId(ids.row).filter({ hasText: focusKey }).getByTestId(ids.rowSelect).click();
+  await page.getByTestId(ids.newItem).click();
+  await paste(page, 'One\nTwo');
+}
+
+test('Planning_PutThemBelowARowInASection_GoesBeforeTheNextRowOfThatSection', async ({
+  mount,
+  page,
+}) => {
+  const server = await stubBacklog(page, planningView());
+  await mount(<PlanningMode project={PROJECT} />, planningRoute);
+  await openPlanningPaste(page, 'SHIP-170');
+  await createWith(page, null);
+  expect(server.adds[0].sprintId).toBeNull();
+  expect(server.adds[0].placement).toEqual({ slot: 'before', beforeItemId: 'id-SHIP-171' });
+});
+
+test('Planning_PutThemBelowTheLastRowOfASection_LandsLastInThatSection', async ({
+  mount,
+  page,
+}) => {
+  const view = planningView();
+  const server = await stubBacklog(page, view);
+  await mount(<PlanningMode project={PROJECT} />, planningRoute);
+  await openPlanningPaste(page, 'SHIP-158');
+  await createWith(page, null);
+  expect(server.adds[0].sprintId).toBe(view.sections[1].sprint?.id);
+  expect(server.adds[0].placement).toEqual({ slot: 'last', beforeItemId: null });
 });
