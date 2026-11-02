@@ -278,4 +278,17 @@ export const settingsTestIds = {
   profileEmailSource: 'settings-profile-email-source',
   // Users admin, proxy mode
   usersAddProxyNote: 'settings-users-add-proxy-note',
+  // Instance analytics
+  analyticsContainer: 'instance-analytics',
+  analyticsProviderSelect: 'instance-analytics-provider',
+  analyticsHostInput: 'instance-analytics-host',
+  analyticsSiteKeyInput: 'instance-analytics-site-key',
+  analyticsSendNamesToggle: 'instance-analytics-send-names',
+  analyticsSaveButton: 'instance-analytics-save',
+  analyticsTestButton: 'instance-analytics-test',
+  analyticsTestResult: 'instance-analytics-test-result',
+  analyticsFieldError: 'instance-analytics-field-error',
+  analyticsHostError: 'instance-analytics-host-error',
+  analyticsSiteKeyError: 'instance-analytics-site-key-error',
+  analyticsProviderError: 'instance-analytics-provider-error',
 } as const;

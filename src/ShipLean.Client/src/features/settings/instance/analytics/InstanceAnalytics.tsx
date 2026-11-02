@@ -13,7 +13,7 @@ import {
   type AnalyticsProvider,
   type AnalyticsSettings,
 } from './analyticsApi';
-import { analyticsTestIds } from './testIds';
+import { settingsTestIds } from '../../testIds';
 
 const input =
   'h-7 w-full max-w-md rounded-control border border-edge bg-panel px-2 text-[length:var(--text-sm)] text-ink disabled:opacity-60';
@@ -108,12 +108,12 @@ function AnalyticsForm({ saved }: { saved: AnalyticsSettings }) {
   const on = draft.provider === 'none' ? undefined : copy[draft.provider];
 
   return (
-    <div data-testid={analyticsTestIds.container} className="p-4">
+    <div data-testid={settingsTestIds.analyticsContainer} className="p-4">
       <Panel title="Analytics">
         <label className="grid gap-1 text-[length:var(--text-sm)] font-medium text-ink">
           Provider
           <select
-            data-testid={analyticsTestIds.providerSelect}
+            data-testid={settingsTestIds.analyticsProviderSelect}
             className={input}
             value={draft.provider}
             disabled={locked}
@@ -129,14 +129,17 @@ function AnalyticsForm({ saved }: { saved: AnalyticsSettings }) {
             Usage events from people and agents are sent from this server. Nothing is loaded in
             browsers.
           </span>
-          <FieldError message={fieldMessage('provider')} testId={analyticsTestIds.providerError} />
+          <FieldError
+            message={fieldMessage('provider')}
+            testId={settingsTestIds.analyticsProviderError}
+          />
         </label>
         {on ? (
           <>
             <label className="grid gap-1 text-[length:var(--text-sm)] font-medium text-ink">
               Host
               <input
-                data-testid={analyticsTestIds.hostInput}
+                data-testid={settingsTestIds.analyticsHostInput}
                 className={`${input} font-mono`}
                 value={draft.host}
                 spellCheck={false}
@@ -145,12 +148,15 @@ function AnalyticsForm({ saved }: { saved: AnalyticsSettings }) {
                 onChange={(e) => change({ host: e.target.value })}
               />
               <span className="font-normal text-ink-muted">{on.hostHint}</span>
-              <FieldError message={fieldMessage('host')} testId={analyticsTestIds.hostError} />
+              <FieldError
+                message={fieldMessage('host')}
+                testId={settingsTestIds.analyticsHostError}
+              />
             </label>
             <label className="grid gap-1 text-[length:var(--text-sm)] font-medium text-ink">
               {on.keyLabel}
               <input
-                data-testid={analyticsTestIds.siteKeyInput}
+                data-testid={settingsTestIds.analyticsSiteKeyInput}
                 className={`${input} font-mono`}
                 value={draft.siteKey}
                 spellCheck={false}
@@ -160,7 +166,7 @@ function AnalyticsForm({ saved }: { saved: AnalyticsSettings }) {
               />
               <FieldError
                 message={fieldMessage('siteKey')}
-                testId={analyticsTestIds.siteKeyError}
+                testId={settingsTestIds.analyticsSiteKeyError}
               />
             </label>
           </>
@@ -169,7 +175,7 @@ function AnalyticsForm({ saved }: { saved: AnalyticsSettings }) {
           <span className="flex items-center gap-2">
             <input
               type="checkbox"
-              data-testid={analyticsTestIds.sendNamesToggle}
+              data-testid={settingsTestIds.analyticsSendNamesToggle}
               checked={draft.sendNames}
               disabled={locked}
               onChange={(e) => change({ sendNames: e.target.checked })}
@@ -184,7 +190,7 @@ function AnalyticsForm({ saved }: { saved: AnalyticsSettings }) {
       {message !== undefined && !named ? (
         <p
           role="alert"
-          data-testid={analyticsTestIds.fieldError}
+          data-testid={settingsTestIds.analyticsFieldError}
           className="m-0 mb-3 text-[length:var(--text-sm)] text-alert"
         >
           {message}
@@ -193,7 +199,7 @@ function AnalyticsForm({ saved }: { saved: AnalyticsSettings }) {
       <div className="flex items-center gap-2 text-[length:var(--text-sm)]">
         <button
           type="button"
-          data-testid={analyticsTestIds.testButton}
+          data-testid={settingsTestIds.analyticsTestButton}
           className="btn-ghost"
           disabled={dirty || locked || test.isPending}
           onClick={() => test.mutate()}
@@ -204,21 +210,25 @@ function AnalyticsForm({ saved }: { saved: AnalyticsSettings }) {
         {test.data ? (
           <span
             role={test.data.ok ? 'status' : 'alert'}
-            data-testid={analyticsTestIds.testResult}
+            data-testid={settingsTestIds.analyticsTestResult}
             className={test.data.ok ? 'text-ok' : 'text-alert'}
           >
             {test.data.message}
           </span>
         ) : null}
         {test.isError ? (
-          <span role="alert" data-testid={analyticsTestIds.testResult} className="text-alert">
+          <span
+            role="alert"
+            data-testid={settingsTestIds.analyticsTestResult}
+            className="text-alert"
+          >
             {errorText(test.error)}
           </span>
         ) : null}
         <span className="flex-1" />
         <button
           type="button"
-          data-testid={analyticsTestIds.saveButton}
+          data-testid={settingsTestIds.analyticsSaveButton}
           className="btn-signal"
           disabled={!dirty || locked}
           onClick={() => save.mutate(bodyOf(draft))}
