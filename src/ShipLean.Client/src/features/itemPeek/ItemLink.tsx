@@ -23,8 +23,8 @@ const isPlainLeftClick = (event: MouseEvent) =>
   event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
 
 // A link to a work item. Its `href` is always the full item page (so Ctrl/Cmd/Shift/middle-click open it in a new tab);
-// a plain left click opens the item in the modal over the current screen, except on a Backlogs page or for an item of
-// another project than the open one, where it navigates to the full page.
+// a plain left click opens the item in the modal over the current screen, except for an item of another project than
+// the open one, where it navigates to the full page.
 export function ItemLink({
   projectKey,
   itemKey,
