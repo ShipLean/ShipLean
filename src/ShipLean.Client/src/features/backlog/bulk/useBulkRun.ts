@@ -17,6 +17,8 @@ export interface BulkPlan {
   items: { row: BacklogRowDto; changes: WorkItemChanges | null; placement: BulkPlacement | null }[];
   label: (count: number) => string;
   undoable: boolean;
+  /** Send each row's own revision instead of the one the backlog holds now: Undo must not overwrite a later change. */
+  pinRevisions?: boolean;
 }
 
 /** viewBefore is the backlog as it was just before the send, for Undo. */
@@ -69,7 +71,7 @@ export function useBulkRun(projectId: string, queryKey: QueryKey): BulkRunner {
     const body: BulkWriteRequest = {
       items: plan.items.map(({ row, changes, placement }) => ({
         id: row.id,
-        expectedRevision: current.get(row.id) ?? row.revision,
+        expectedRevision: plan.pinRevisions ? row.revision : (current.get(row.id) ?? row.revision),
         changes,
         placement,
       })),
@@ -89,7 +91,8 @@ export function useBulkRun(projectId: string, queryKey: QueryKey): BulkRunner {
     }
     const done: BulkOutcome = { plan, written: result.written, stale: result.stale, viewBefore };
     setOutcome(done);
-    if (done.written.length > 0) showToast(plan.label(done.written.length));
+    // An undoable run is announced by the Undo toast, which carries the label.
+    if (done.written.length > 0 && !plan.undoable) showToast(plan.label(done.written.length));
     await queryClient.invalidateQueries({ queryKey: backlogRootKey(projectId) });
     return done;
   }
