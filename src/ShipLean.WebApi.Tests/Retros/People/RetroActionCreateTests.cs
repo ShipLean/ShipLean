@@ -81,10 +81,10 @@ public sealed class RetroActionCreateTests : RetroPeopleFixture
         await using var world = await World.CreateAsync(await OpenDatabaseAsync());
         var pointId = await world.Seed.PointAsync(await world.AgentRetroAsync(), new RetroSeedPoint(RetroCategory.Improve, "Racing."));
         var removed = await new ShipLean.TestSupport.Builders.WorkItemBuilder(world.Project.Id).WithType("action").WithStateNamed("Removed").InsertAsync(world.Connection);
-        var other = await new ShipLean.TestSupport.Builders.WorkItemBuilder(world.Project.Id).WithType("action").WithStateNamed("Removed").InsertAsync(world.Connection);
+        var other = await new ShipLean.TestSupport.Builders.WorkItemBuilder(world.Project.Id).WithType("action").InsertAsync(world.Connection);
         await world.Seed.ActionAsync(new RetroSeedAction(removed, PointId: pointId));
         await world.Seed.ActionAsync(new RetroSeedAction(other));
-        // Stands in for the other request: when this request's action item is inserted, the link moves to a different Removed item.
+        // Stands in for the other request: when this request's action item is inserted, the link moves to a different, live item.
         var name = $"race_{Guid.NewGuid():N}";
         await world.Connection.ExecuteAsync(
             $"""
@@ -112,10 +112,22 @@ public sealed class RetroActionCreateTests : RetroPeopleFixture
     }
 
     [Test]
-    public async Task Create_WhenWentBadly_ShouldBeValidation()
+    public async Task Create_WhenWentBadly_ShouldCreate()
     {
         await using var world = await World.CreateAsync(await OpenDatabaseAsync());
         var pointId = await world.Seed.PointAsync(await world.AgentRetroAsync(), new RetroSeedPoint(RetroCategory.WentBadly, "Broke."));
+
+        using var response = await Api.PostJsonAsync($"/api/retros/points/{pointId}/action", new { });
+
+        var itemId = (await ReadAsync(response, HttpStatusCode.Created)).GetProperty("workItemId").GetGuid();
+        (await world.Connection.QuerySingleAsync<Guid>("SELECT work_item_id FROM retro_action_point WHERE point_id = @pointId AND archived_at IS NULL", new { pointId })).ShouldBe(itemId);
+    }
+
+    [Test]
+    public async Task Create_WhenWentWell_ShouldBeValidation()
+    {
+        await using var world = await World.CreateAsync(await OpenDatabaseAsync());
+        var pointId = await world.Seed.PointAsync(await world.AgentRetroAsync(), new RetroSeedPoint(RetroCategory.WentWell, "Smooth."));
 
         using var response = await Api.PostJsonAsync($"/api/retros/points/{pointId}/action", new { });
 

@@ -207,7 +207,9 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `retro.searched` |  | `RetroSearch.Search` |
 | `retro.point_archived` |  | `RetroPoints.Archive` |
 | `retro.point_moved` |  | `RetroPoints.MoveTheme` |
-| `retro.action_created` |  | `RetroPoints.CreateAction` |
+| `retro.action_created` |  | `RetroPoints.CreateAction`, `RetroActions.Create` |
+| `retro.action_points_added` |  | `RetroActions.AddPoints` |
+| `retro.action_updated` |  | `RetroActions.Update` |
 | `retro.themes_merged` |  | `RetroThemeWrites.Merge` |
 | `retro.theme_renamed` |  | `RetroThemeWrites.Rename` |
 | `retro.point_not_needed` |  | `RetroDecisions.NotNeeded` |

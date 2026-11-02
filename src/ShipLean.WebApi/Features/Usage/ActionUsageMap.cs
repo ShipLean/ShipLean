@@ -64,7 +64,9 @@ public static class ActionUsageMap
         Add(ActionUsage.Track(UsageEventNames.RetroSearched), "RetroSearch.Search");
         Add(ActionUsage.Track(UsageEventNames.RetroPointArchived), "RetroPoints.Archive");
         Add(ActionUsage.Track(UsageEventNames.RetroPointMoved), "RetroPoints.MoveTheme");
-        Add(ActionUsage.Track(UsageEventNames.RetroActionCreated), "RetroPoints.CreateAction");
+        Add(ActionUsage.Track(UsageEventNames.RetroActionCreated), "RetroPoints.CreateAction", "RetroActions.Create");
+        Add(ActionUsage.Track(UsageEventNames.RetroActionPointsAdded), "RetroActions.AddPoints");
+        Add(ActionUsage.Track(UsageEventNames.RetroActionUpdated), "RetroActions.Update");
         Add(ActionUsage.Track(UsageEventNames.RetroThemesMerged), "RetroThemeWrites.Merge");
         Add(ActionUsage.Track(UsageEventNames.RetroThemeRenamed), "RetroThemeWrites.Rename");
         Add(ActionUsage.Track(UsageEventNames.RetroPointNotNeeded), "RetroDecisions.NotNeeded");
