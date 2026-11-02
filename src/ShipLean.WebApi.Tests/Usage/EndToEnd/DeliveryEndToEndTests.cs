@@ -141,10 +141,15 @@ public static class DeliveryEndToEndTests
             properties["surface"]!.GetValue<string>().ShouldBe("web");
             properties["actor_kind"]!.GetValue<string>().ShouldBe("user");
             properties["user_id"]!.GetValue<string>().ShouldBe(SeedIds.Users.Joel.ToString());
-            properties["$set"]!["kind"]!.GetValue<string>().ShouldBe("user");
-            properties["$set"]!["user_id"]!.GetValue<string>().ShouldBe(SeedIds.Users.Joel.ToString());
-            properties["$set"]!["name"].ShouldBeNull();
-            properties["$set"]!["email"].ShouldBeNull();
+
+            // $set rides on the actor's first event in the process (the settings save may be that one, in this same batch), and only there.
+            var actorEvents = body["batch"]!.AsArray().Where(i => i!["distinct_id"]!.GetValue<string>() == $"user:{SeedIds.Users.Joel}").ToList();
+            var person = actorEvents[0]!["properties"]!["$set"]!;
+            actorEvents.Count(i => i!["properties"]!["$set"] is not null).ShouldBe(1);
+            person["kind"]!.GetValue<string>().ShouldBe("user");
+            person["user_id"]!.GetValue<string>().ShouldBe(SeedIds.Users.Joel.ToString());
+            person["name"].ShouldBeNull();
+            person["email"].ShouldBeNull();
         }
     }
 
