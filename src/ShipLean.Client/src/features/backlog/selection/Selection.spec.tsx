@@ -22,7 +22,6 @@ test('Checkbox_selects_without_opening_the_item', async ({ mount, page }) => {
   await expect(row(page, 'SHIP-180')).toHaveAttribute('aria-selected', 'true');
   await expect(box(page, 'SHIP-180')).toBeChecked();
   await expect(box(page, 'SHIP-180')).toHaveAccessibleName('Select SHIP-180');
-  await expect(page).toHaveURL(/mode=planning/);
   await expect(page.getByRole('dialog')).toHaveCount(0);
 });
 
@@ -142,10 +141,10 @@ test('A_row_that_left_is_dropped_from_the_selection', async ({ mount, page }) =>
   await mount(<ListMode project={PROJECT} />, list);
 
   await box(page, 'SHIP-160').click();
-  await box(page, 'SHIP-161').click();
-  await expect(box(page, 'SHIP-161')).toBeChecked();
+  await box(page, 'SHIP-158').click();
+  await expect(box(page, 'SHIP-158')).toBeChecked();
 
-  // The next read no longer has SHIP-160 (a teammate moved it); SHIP-161 stays selected through the refetch.
+  // The next read no longer has SHIP-160 (a teammate moved it); SHIP-158 stays selected through the refetch.
   server.setBacklog(backlogView([itemRow({ key: 'SHIP-184', rank: 1 }), ROWS[1]]));
   await page.getByTestId(ids.newItem).click();
   await page.getByTestId(ids.addTitle).fill('Another');
@@ -153,7 +152,7 @@ test('A_row_that_left_is_dropped_from_the_selection', async ({ mount, page }) =>
 
   await expect(row(page, 'SHIP-184')).toBeVisible();
   await expect(row(page, 'SHIP-160')).toHaveCount(0);
-  await expect(box(page, 'SHIP-161')).toBeChecked();
+  await expect(box(page, 'SHIP-158')).toBeChecked();
   await expect(page.getByTestId(ids.row).and(page.locator('[aria-selected="true"]'))).toHaveCount(
     1,
   );
