@@ -55,6 +55,7 @@ To check your work in a running app: `dotnet run --project src/ShipLean.LocalHos
 - [`docs/testing.md`](docs/testing.md): fixtures, one database and host per test class, doubles, registries, test ids, traces.
 - [`docs/auth.md`](docs/auth.md): sign-in, sessions, the project access rule, how tests sign in, the access sweep.
 - [`docs/events.md`](docs/events.md): project events and the `X-ShipLean-Client` header.
+- [`docs/analytics.md`](docs/analytics.md): usage analytics: how events are captured, how to track a new action, the property rules, and running against a local Umami.
 - [`db/README.md`](db/README.md): schema rules. [`design/README.md`](design/README.md): tokens and reference screens.
 - [README configuration](README.md#configuration): every `SHIPLEAN_*` variable.
 
