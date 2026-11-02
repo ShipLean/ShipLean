@@ -52,7 +52,7 @@ public class BulkWriteAgentSessionTests : ApiFixture
         await AgentDispatchArrange.AddTransitionAsync(database, arranged.Project.Id, WorkItemTypeId.Story, arranged.Project.State(WorkItemTypeId.Story, "New"), arranged.Active);
         var item = await arranged.CreateItemAsync(Api);
 
-        await BulkAsync(Api, arranged.Project.Id, [Item(item.Id, item.Revision, State(arranged.Active), null)]);
+        (await BulkAsync(Api, arranged.Project.Id, [Item(item.Id, item.Revision, State(arranged.Active), null)])).ShouldReport([item.Id], []);
         await HandledAsync(item.Id);
 
         (await AgentDispatchArrange.SessionsAsync(database, item.Id)).ShouldHaveSingleItem().State.ShouldBe("submitted");
@@ -67,7 +67,7 @@ public class BulkWriteAgentSessionTests : ApiFixture
         var first = await arranged.CreateItemAsync(Api);
         var second = await arranged.CreateItemAsync(Api);
 
-        await BulkAsync(Api, arranged.Project.Id, [Item(first.Id, first.Revision, State(arranged.Active), null), Item(second.Id, second.Revision, State(arranged.Active), null)]);
+        (await BulkAsync(Api, arranged.Project.Id, [Item(first.Id, first.Revision, State(arranged.Active), null), Item(second.Id, second.Revision, State(arranged.Active), null)])).ShouldReport([first.Id, second.Id], []);
         await HandledAsync(second.Id);
 
         (await AgentDispatchArrange.SessionsAsync(database, first.Id)).ShouldBeEmpty();
