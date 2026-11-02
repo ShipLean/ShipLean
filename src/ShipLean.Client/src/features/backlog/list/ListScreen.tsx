@@ -9,6 +9,7 @@ import { BulkOutcomeHost } from '../bulk/BulkOutcomeHost';
 import { KeysButton } from '../commands/KeysButton';
 import { KeysDialog } from '../commands/KeysDialog';
 import { ListKeysHost } from '../commands/ListKeysHost';
+import { OpenCommandHost } from '../commands/OpenCommandHost';
 import { useReorder } from '../drag/useReorder';
 import { BacklogFrame } from '../filter/BacklogFrame';
 import type { BacklogFilterState } from '../filter/useBacklogFilter';
@@ -42,6 +43,7 @@ export function ListScreen({ project, state }: { project: ProjectDto; state: Bac
   return (
     <SelectionProvider>
       <ListKeysHost />
+      <OpenCommandHost rows={rows} projectKey={project.key} />
       <PasteHost projectId={project.id} projectKey={project.key}>
         <BacklogFrame
           project={project}

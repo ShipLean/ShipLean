@@ -77,19 +77,21 @@ public class QuickSearchJourneyTests : SeededAcceptanceTest
     }
 
     [Test]
-    public async Task QuickSearch_WhenPickedOnABacklog_ShouldOpenTheFullItemPage()
+    public async Task QuickSearch_WhenPickedOnABacklog_ShouldOpenTheItemInTheModal()
     {
         var search = new QuickSearchDialog(Page);
-        await new ShellFrame(Page).OpenAsync(Links.Backlog("SHIP"));
+        var peek = new ItemPeekDialog(Page);
+        var backlog = Links.Backlog("SHIP");
+        await new ShellFrame(Page).OpenAsync(backlog);
         await search.OpenWithShortcutAsync();
 
         await search.TypeAsync(SeedWord);
         await search.Item(PasskeyItem).ClickAsync();
 
-        await Expect(Page).ToHaveURLAsync(new Regex($"{Regex.Escape(Links.WorkItem("SHIP", PasskeyItem))}$"));
-        await Expect(Page.GetByTestId(WorkItemTestIds.Key)).ToHaveTextAsync(PasskeyItem);
-        // A Backlogs page never shows the modal. Catches an item that opens in the modal over the backlog.
-        await Expect(new ItemPeekDialog(Page).Dialog).ToHaveCountAsync(0);
+        await Expect(Page).ToHaveURLAsync(new Regex($"{Regex.Escape(backlog)}\\?item={PasskeyItem}$"));
+        await peek.WaitOpenAsync(PasskeyItem);
+        // Catches a pick that leaves the backlog for the full item page.
+        await Expect(Page.GetByTestId(PagesTestIds.BacklogPage)).ToBeAttachedAsync();
     }
 
     [Test]

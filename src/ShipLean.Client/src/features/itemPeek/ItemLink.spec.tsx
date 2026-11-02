@@ -55,17 +55,6 @@ test('ItemLink_WhenOnBoard_ShouldOpenModalAndKeepPage', async ({ mount, page }) 
   await expect(page.getByTestId(ids.address)).toHaveText('/p/SHIP/boards/stories?item=SHIP-141');
 });
 
-test('ItemLink_WhenOnBacklog_ShouldNavigateToFullPage', async ({ mount, page }) => {
-  await stub(page);
-  await mount(<ItemPeekHarness itemKey="SHIP-141" />, at('/p/SHIP/backlogs/stories'));
-
-  await page.getByTestId(ids.link).click();
-
-  await expect(page.getByTestId(pagesTestIds.workItemPage)).toBeVisible();
-  await expect(page.getByTestId(ids.dialog)).toHaveCount(0);
-  await expect(page.getByTestId(ids.address)).toHaveText('/p/SHIP/items/SHIP-141');
-});
-
 test('ItemLink_WhenModifierClick_ShouldNotOpenModal', async ({ mount, page }) => {
   await stub(page);
   await mount(<ItemPeekHarness itemKey="SHIP-141" />, at('/p/SHIP/sprints'));

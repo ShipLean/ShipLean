@@ -151,10 +151,12 @@ test('OpenItem_WhenOnABoardOfTheSameProject_ShouldOpenTheModal', async ({ mount,
   await expect(page.getByTestId(openItem.location)).toHaveText(`${board}?item=SHIP-9`);
 });
 
-test('OpenItem_WhenOnABacklog_ShouldOpenTheFullPage', async ({ mount, page }) => {
+test('Quick_search_on_a_backlog_opens_the_modal', async ({ mount, page }) => {
   await mount(<OpenItemHarness />, at('/p/SHIP/backlogs/stories'));
   await page.getByTestId(openItem.open).click();
-  await expect(page.getByTestId(openItem.location)).toHaveText('/p/SHIP/items/SHIP-9');
+  await expect(page.getByTestId(openItem.location)).toHaveText(
+    '/p/SHIP/backlogs/stories?item=SHIP-9',
+  );
 });
 
 test('QuickSearch_WhenOpenedFromThePicker_ShouldRefocusTheProjectButtonOnEscape', async ({

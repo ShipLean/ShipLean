@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { ChildSummaryDto, WorkItemChanges } from '../../../api/workItems';
+import { useInvalidateBacklog } from '../useInvalidateBacklog';
 import { fetchWorkItem, patchWorkItem, workItemKey } from '../workItemApi';
 
 const NO_CHANGES: WorkItemChanges = {
@@ -24,6 +25,7 @@ const NO_CHANGES: WorkItemChanges = {
 // revision does not move when a child's state does.
 export function useTaskState(projectId: string, itemKey: string) {
   const queryClient = useQueryClient();
+  const invalidateBacklog = useInvalidateBacklog();
   return useMutation({
     mutationFn: async (change: { task: ChildSummaryDto; stateId: string }) => {
       const current = await fetchWorkItem(projectId, change.task.key);
@@ -32,6 +34,10 @@ export function useTaskState(projectId: string, itemKey: string) {
         changes: { ...NO_CHANGES, state: { value: change.stateId } },
       });
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: workItemKey(projectId, itemKey) }),
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: workItemKey(projectId, itemKey) }),
+        invalidateBacklog(projectId),
+      ]),
   });
 }

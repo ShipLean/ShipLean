@@ -8,6 +8,7 @@ import { BulkOutcomeHost } from '../bulk/BulkOutcomeHost';
 import { KeysButton } from '../commands/KeysButton';
 import { KeysDialog } from '../commands/KeysDialog';
 import { ListKeysHost } from '../commands/ListKeysHost';
+import { OpenCommandHost } from '../commands/OpenCommandHost';
 import { ReorderConflict } from '../drag/ReorderConflict';
 import type { useReorder } from '../drag/useReorder';
 import { BacklogSearchBox } from '../search/BacklogSearchBox';
@@ -76,6 +77,10 @@ export function PlanningScreen({
   return (
     <SelectionProvider walkOrder={walkOrder}>
       <ListKeysHost />
+      <OpenCommandHost
+        rows={sections.flatMap((section) => section.rows)}
+        projectKey={project.key}
+      />
       <PasteHost projectId={project.id} projectKey={project.key}>
         <div className="flex min-h-0 flex-1 flex-col">
           <BacklogToolbar
