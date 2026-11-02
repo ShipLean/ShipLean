@@ -2,6 +2,7 @@ using System.Text.Json;
 using Agoda.IoC.Core;
 using ModelContextProtocol.Protocol;
 using ShipLean.Contracts;
+using ShipLean.Contracts.Backlog;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Mcp;
 using ShipLean.Contracts.Persisted;
@@ -17,7 +18,7 @@ namespace ShipLean.WebApi.Features.Mcp.Tools.Capture;
 [RegisterPerRequest]
 public sealed class CaptureSupport(IServiceProvider services, AgentBaseUrl baseUrl, ItemResolver items, SprintResolver sprints, ProjectResolver projects)
 {
-    public const int MaxItems = 25;
+    public const int MaxItems = BulkLimits.MaxRows;
 
     private HttpContext Http => services.GetRequiredService<IHttpContextAccessor>().HttpContext!;
 

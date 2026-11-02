@@ -53,6 +53,23 @@ public abstract class SprintFixture : McpFixture
         return await (sprint is { } id ? builder.WithSprint(id) : builder).InsertAsync(connection);
     }
 
+    protected async Task<List<Guid>> AddStoriesAsync(string prefix, int count, decimal points)
+    {
+        var ids = new List<Guid>();
+        await using var connection = await OpenDatabaseAsync();
+        for (var i = 1; i <= count; i++)
+        {
+            ids.Add(await new WorkItemBuilder(SeedIds.Projects.Empt).WithType("story").WithTitle($"{prefix} {i}").WithPoints(points).InsertAsync(connection));
+        }
+        return ids;
+    }
+
+    protected async Task<int> InSprintAsync(Guid sprint)
+    {
+        await using var connection = await OpenDatabaseAsync();
+        return await connection.QuerySingleAsync<int>("SELECT count(*)::int FROM work_item WHERE sprint_id = @sprint", new { sprint });
+    }
+
     protected async Task<string> KeyOfAsync(Guid item)
     {
         await using var connection = await OpenDatabaseAsync();
