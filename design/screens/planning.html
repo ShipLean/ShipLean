@@ -6,19 +6,23 @@
 <title>ShipLean · Planning (reference)</title>
 <!--
   Reference Planning screen: the Stories backlog in Planning mode.
-  Open directly in a browser. Uses ../tokens.css, shiplean.css and shared.js only; no build step.
+  Open directly in a browser. Uses ../tokens.css, shiplean.css, bulk.css, shared.js and bulk.js only; no build step.
   The current and future sprints are stacked above the Backlog. Every section is the same backlog_order,
-  filtered by sprint_id, so rank is the same everywhere.
-  Working: drag a row into another section (writes sprint_id), drop on a row to put it just above
-  (also writes backlog_order), drop on a section header to change only the sprint; Alt+↑/↓ on a focused
-  grip does the same from the keyboard; ▼ collapses a section; Forecast toggle; List/Planning switch.
-  The forecast walks the Backlog in order into each future sprint's remaining room (team capacity −
-  committed), then into later sprints at velocity.
+  filtered by sprint_id, so rank is the same everywhere. Capacity warns and never blocks.
+  Working (SHIP-255): select many rows and act on them from the action bar; drag a whole selection, with the sum
+  previewed on the sprint header; the pull line, which sits where the next sprint fills up and can be dragged;
+  estimates in the row; the item modal; + Add inside a sprint; search; the Before you plan strip; the keyboard (press ?).
+  Also working: drop on a row to put it just above, drop on a section header to change only the sprint; ▼ collapses a
+  section, and the running sprint starts closed; Forecast toggle; List/Planning switch.
+  ?state=selected|conflict|queue|modal|add|paste|keys opens a state, ?state=drag shows a selection being dragged, and
+  ?pull=N puts the pull line below row N of the Backlog.
   The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot).
 -->
 <link rel="stylesheet" href="../tokens.css">
 <link rel="stylesheet" href="shiplean.css">
+<link rel="stylesheet" href="bulk.css">
 <script src="shared.js"></script>
+<script src="bulk.js"></script>
 <style>
 table.list td.fc { width: 92px; font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--color-accent); white-space: nowrap; }
 table.list tr.fc-line td { border-bottom: 2px solid var(--color-accent); }
@@ -26,7 +30,8 @@ table.list td.grip { width: 22px; padding: 0; }
 .grip-btn { width: 22px; height: 22px; border: 0; background: none; color: var(--color-muted); cursor: grab; opacity: 0; border-radius: var(--radius-xs); }
 tr.item:hover .grip-btn, .grip-btn:focus-visible { opacity: 1; }
 .grip-btn:focus-visible { outline: 2px solid var(--color-accent); }
-tr.item[draggable] { cursor: grab; }
+.filtered .grip-btn { visibility: hidden; }
+tr.item[draggable] { cursor: default; }
 tr.item.dragging { opacity: .4; }
 tr.item.drop-before td { box-shadow: inset 0 2px 0 var(--color-accent); }
 tr.item.flash td { animation: flash 1.8s ease-out; }
@@ -42,6 +47,7 @@ tr.sec.over-drop td { box-shadow: inset 0 0 0 2px var(--color-accent); }
 tr.empty td { height: 52px; text-align: center; color: var(--color-muted); font-size: var(--text-sm); border: 1px dashed var(--color-border); }
 tr.empty.over-drop td { background: var(--color-accent-soft); color: var(--color-text); }
 tr.newsprint td { height: 40px; }
+.banner.info { display: flex; gap: var(--space-2); align-items: center; padding: 6px var(--space-4); font-size: var(--text-sm); border-bottom: 1px solid var(--color-border); border-left: 3px solid var(--color-info); background: var(--color-surface); flex: none; }
 </style>
 </head>
 <body>
@@ -49,38 +55,67 @@ tr.newsprint td { height: 40px; }
 <div class="toolbar">
   <div class="seg" role="group" aria-label="Backlog level"><button type="button" aria-pressed="false" onclick="location.href='features.html?level=epics'">Epics</button><button type="button" aria-pressed="false" onclick="location.href='features.html'">Features</button><button type="button" aria-pressed="true">Stories</button></div>
   <div class="seg" role="group" aria-label="Mode"><button type="button" aria-pressed="false" title="The plain ranked backlog" onclick="location.href='backlog.html'">List</button><button type="button" aria-pressed="true">Planning</button></div>
-  <button class="btn primary" type="button">+ New work item</button>
+  <button class="btn primary" type="button" id="btnAdd">+ New work item</button>
+  <input class="field find" id="find" type="search" placeholder="Search this list  ( / )" aria-label="Search this list">
   <span class="spacer"></span>
+  <button class="btn ghost" type="button" id="btnKeys" title="Keyboard shortcuts">Keys <kbd>?</kbd></button>
   <label class="check"><input type="checkbox" id="optForecast" checked> Forecast</label>
-  <button class="btn" type="button">Filter</button>
 </div>
-<div class="scroll">
-  <table class="list">
-    <thead><tr><th>Forecast</th><th></th><th class="num" style="width:32px">#</th><th style="width:90px">Key</th><th>Title</th><th style="width:170px">Parent</th><th style="width:110px">State</th><th class="num" style="width:56px">Pts</th></tr></thead>
-    <tbody id="rows"></tbody>
-  </table>
+<div id="strip" class="strip"></div>
+<div id="bulkConflict" class="bulk-conflict" role="alert" hidden></div>
+<div id="fbanner" class="banner info" hidden>Dragging and the pull line are off while a search or check is on, because rank is relative to rows you can't see. Moving to a sprint, the top or the bottom still works.</div>
+<div class="with-panel">
+  <div class="scroll">
+    <table class="list">
+      <thead><tr>
+        <th class="chk"><input type="checkbox" id="allChk" aria-label="Select all shown rows"></th>
+        <th>Forecast</th><th></th><th class="num" style="width:32px">#</th><th style="width:90px">Key</th><th>Title</th><th style="width:170px">Parent</th><th style="width:110px">State</th><th class="num" style="width:56px">Pts</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
 </div>
+<div id="bulkbar" class="bulkbar" role="region" aria-label="Actions for the selected rows" hidden></div>
 
 <script>
 (() => {
-  const { VELOCITY, sprints, items, committed, teamCapacity, tIcon, st, av, esc, toast } = SL;
+  const { VELOCITY, sprints, items, teamCapacity, tIcon, st, av, esc, toast, kit } = SL;
   document.getElementById('appbar').outerHTML = SL.appBar('backlogs');
   const body = document.getElementById('rows');
   const optForecast = document.getElementById('optForecast');
   const planning = sprints.filter(s => s.status !== 'past');
-  const collapsed = new Set();
+  const collapsed = new Set(sprints.filter(s => s.status === 'current').map(s => s.id)); // the running sprint starts closed: you plan what's next
   const nameOf = id => sprints.find(s => s.id === id)?.name ?? 'Backlog';
+  const COLS = 9;
+  const committed = kit.committedIn;
+
+  // The pull line: which future sprint it fills, and how far down the Backlog it sits. null = where it fits.
+  const pull = { target: null, cut: null };
+  const unplanned = () => items.filter(i => !i.sprint);
+
+  // Same rule as SprintFill.Cut: take rows from the top while they fit, stop at the first that doesn't, never skip.
+  // Unestimated rows count zero.
+  function fitCount(s) {
+    const already = committed(s.id), cap = kit.capOf(s);
+    let used = already, n = 0;
+    for (const it of unplanned()) {
+      const p = it.points || 0;
+      if (used + p <= cap || (n === 0 && already === 0)) { used += p; n++; } else break;
+    }
+    return n;
+  }
+  const futureSprints = () => planning.filter(s => s.status === 'future');
+  const targetSprint = () => pull.target ? sprints.find(s => s.id === pull.target) : (futureSprints().find(s => fitCount(s) > 0) ?? futureSprints()[0]);
+  const cutCount = () => pull.cut ?? fitCount(targetSprint());
 
   function forecast() {
-    // Walk unplanned items in order into each future sprint's remaining room, then later sprints at velocity.
     const marks = new Map();
-    const buckets = planning.filter(s => s.status === 'future').map(s => { const full = teamCapacity(s) ?? VELOCITY; return { name: s.name, full, room: full - committed(s.id) }; });
+    const buckets = futureSprints().map(s => { const full = kit.capOf(s); return { name: s.name, full, room: full - committed(s.id) }; });
     let next = 27, b = 0, last = null;
-    for (const it of items.filter(i => !i.sprint)) {
+    for (const it of unplanned()) {
+      const p = it.points || 0;
       while (true) {
         if (!buckets[b]) buckets[b] = { name: 'Sprint ' + next++, full: VELOCITY, room: VELOCITY };
-        // An item bigger than a whole sprint still lands in an empty one.
-        if (it.points <= buckets[b].room || buckets[b].room === buckets[b].full) { buckets[b].room -= it.points; break; }
+        if (p <= buckets[b].room || buckets[b].room === buckets[b].full) { buckets[b].room -= p; break; }
         if (last) marks.set(last, buckets[b].name);
         last = null; b++;
       }
@@ -90,105 +125,178 @@ tr.newsprint td { height: 40px; }
     return marks;
   }
 
-  const row = (it, i, mark) => `<tr class="item${mark ? ' fc-line' : ''}" draggable="true" data-key="${it.key}" data-sec="${it.sprint ?? ''}">
+  const row = (it, i, mark, inPull) => `<tr class="item${mark ? ' fc-line' : ''}${inPull ? ' pull-in' : ''}${kit.rowClass(it.key)}"${kit.filtering() ? '' : ' draggable="true"'} data-key="${it.key}" data-sec="${it.sprint ?? ''}">
+    ${kit.checkCell(it.key)}
     <td class="fc">${mark ? '→ ' + mark : ''}</td>
-    <td class="grip"><button class="grip-btn" type="button" aria-label="Move ${it.key} (Alt+↑/↓)">⠿</button></td>
+    <td class="grip"><button class="grip-btn" type="button" tabindex="-1" aria-label="Move ${it.key}">⠿</button></td>
     <td class="num muted sm">${i + 1}</td><td class="key">${it.key}</td>
-    <td><div class="title-cell">${tIcon(it.type)}<span class="t">${esc(it.title)}</span></div></td>
-    <td><span class="parent">${tIcon('feature')}${esc(it.parent)}</span></td>
-    <td>${st(it.state)}</td><td class="pts">${it.points}</td></tr>`;
+    <td><div class="title-cell">${tIcon(it.type)}${kit.titleLink(it)}</div></td>
+    <td>${it.parent ? `<span class="parent">${tIcon('feature')}${esc(it.parent)}</span>` : '<span class="muted">–</span>'}</td>
+    <td>${st(it.state)}</td>${kit.ptsCell(it)}</tr>`;
 
   const toggle = (id, label) => `<button class="ib" type="button" data-toggle="${id}" aria-expanded="${!collapsed.has(id)}" aria-label="Collapse ${label}">${collapsed.has(id) ? '▶' : '▼'}</button>`;
 
+  function pullRow() {
+    const list = unplanned(), n = cutCount(), s = targetSprint(), taken = list.slice(0, n);
+    const adding = taken.reduce((a, i) => a + (i.points || 0), 0), un = taken.filter(i => i.points == null).length;
+    const now = committed(s.id), cap = kit.capOf(s), after = now + adding, over = after > cap;
+    const opts = futureSprints().map(x => `<option value="${x.id}"${x.id === s.id ? ' selected' : ''}>${x.name}</option>`).join('');
+    return `<tr class="pull" data-pull><td colspan="${COLS}"><div class="pull-h">
+      <button class="pull-grip" type="button" id="pullGrip" aria-label="Move the pull line. Drag, or Alt with the up and down arrows">⠿</button>
+      <span>Everything above this line, <b>${n} item${n === 1 ? '' : 's'} · ${adding} pts</b>, into</span>
+      <select class="field" id="pullTo" aria-label="Sprint to pull into">${opts}</select>
+      <span class="cap${over ? ' over' : ''}${teamCapacity(s) == null ? ' velocity' : ''}"><i style="width:${Math.min(100, after / cap * 100)}%"></i></span>
+      <span><b>${after}</b> / ${cap} pts</span>${over ? `<span class="over">+${after - cap} over</span>` : `<span class="muted">${cap - after} free</span>`}
+      ${un ? `<span class="chip warn">${un} not estimated, counted as 0</span>` : ''}
+      ${pull.cut != null ? '<button class="btn ghost" type="button" id="pullReset">Back to what fits</button>' : ''}
+      <span class="spacer"></span>
+      <button class="btn primary" type="button" id="pullGo"${n ? '' : ' disabled'}>Pull into ${s.name}</button></div></td></tr>`;
+  }
+
   function render(focusKey) {
+    const filtering = kit.filtering();
+    const passes = kit.passes;
     const marks = optForecast.checked ? forecast() : new Map();
+    const pullOn = optForecast.checked && !filtering;
     let html = '';
     for (const s of planning) {
-      const rows = items.filter(i => i.sprint === s.id), c = committed(s.id), tc = teamCapacity(s), cap = tc ?? VELOCITY, over = c > cap;
-      html += `<tr class="sec" data-sec="${s.id}"><td colspan="8"><div class="sec-h">
+      const rows = items.filter(i => i.sprint === s.id), shown = rows.filter(passes), c = committed(s.id), tc = teamCapacity(s), cap = tc ?? VELOCITY, over = c > cap;
+      html += `<tr class="sec" data-sec="${s.id}"><td colspan="${COLS}"><div class="sec-h">
         ${toggle(s.id, s.name)}<b>${s.name}</b>${s.status === 'current' ? '<span class="chip accent">Current</span>' : ''}
-        <span class="sm muted">${s.start} – ${s.end} · ${rows.length} items</span><span class="spacer"></span>
+        <span class="sm muted">${s.start} – ${s.end} · ${rows.length} items</span>
+        <button class="btn ghost" type="button" data-addin="${s.id}" title="Add a work item to ${s.name}">+ Add</button>
+        <span class="drop-preview" data-preview></span><span class="spacer"></span>
         <span class="sec-cap"><span class="cap ${over ? 'over' : tc == null ? 'velocity' : ''}"><i style="width:${Math.min(100, c / cap * 100)}%"></i></span>
           <span><b>${c}</b> / ${cap} pts</span>${tc == null ? '<span class="chip warn" title="Nobody has entered capacity for this sprint yet">velocity</span>' : ''}
           ${over ? `<span class="over">+${c - cap} over</span>` : `<span class="muted">${cap - c} free</span>`}</span>
         <a class="btn ghost" href="${s.status === 'current' ? 'sprint-backlog.html' : 'capacity.html'}">${s.status === 'current' ? 'Open sprint' : 'Capacity'}</a></div></td></tr>`;
       if (collapsed.has(s.id)) continue;
-      if (!rows.length) html += `<tr class="empty" data-sec="${s.id}"><td colspan="8">Drag stories or bugs here to plan ${s.name}</td></tr>`;
-      rows.forEach((it, i) => { html += row(it, i, null); });
+      if (!shown.length && !filtering) html += `<tr class="empty" data-sec="${s.id}"><td colspan="${COLS}">Drag stories or bugs here to plan ${s.name}</td></tr>`;
+      shown.forEach(it => { html += row(it, rows.indexOf(it), null); });
     }
-    html += `<tr class="newsprint"><td colspan="8"><a class="btn ghost" href="sprints.html">+ Create sprint</a></td></tr>`;
-    const bl = items.filter(i => !i.sprint), blPts = bl.reduce((a, i) => a + i.points, 0);
-    html += `<tr class="sec backlog" data-sec=""><td colspan="8"><div class="sec-h">
+    html += `<tr class="newsprint"><td colspan="${COLS}"><a class="btn ghost" href="sprints.html">+ Create sprint</a></td></tr>`;
+    const bl = unplanned(), blPts = bl.reduce((a, i) => a + (i.points || 0), 0), shownBl = bl.filter(passes);
+    html += `<tr class="sec backlog" data-sec=""><td colspan="${COLS}"><div class="sec-h">
       ${toggle('', 'Backlog')}<b>Backlog</b><span class="sm muted">${bl.length} items · ${blPts} pts</span><span class="spacer"></span>
       ${optForecast.checked ? `<span class="sm">Forecast at velocity <b>${VELOCITY}</b> <span class="muted">(average of last 3 sprints: 20 · 22 · 21)</span></span><button class="btn" type="button">Override</button>` : ''}
     </div></td></tr>`;
-    if (!collapsed.has('')) bl.forEach((it, i) => { html += row(it, i, marks.get(it.key)); });
+    if (!collapsed.has('')) {
+      const n = pullOn ? cutCount() : -1, s = pullOn ? targetSprint() : null;
+      if (n === 0) html += pullRow();
+      shownBl.forEach(it => {
+        const i = bl.indexOf(it);
+        const m = marks.get(it.key);
+        html += row(it, i, i === n - 1 && pullOn ? null : (m === s?.name ? null : m), i < n);
+        if (i === n - 1) html += pullRow();
+      });
+    }
     body.innerHTML = html;
-    if (focusKey) body.querySelector(`[data-key="${focusKey}"] .grip-btn`)?.focus();
+    document.getElementById('fbanner').hidden = !filtering;
+    body.closest('.scroll').classList.toggle('filtered', filtering);
+    kit.afterRender();
+    if (focusKey) body.querySelector(`[data-key="${focusKey}"]`)?.classList.add('flash');
   }
 
-  function move(it, toSprint, beforeKey, afterKey) {
-    const from = it.sprint;
-    it.sprint = toSprint;
-    if (beforeKey || afterKey) {
-      items.splice(items.indexOf(it), 1);
-      const at = items.findIndex(i => i.key === (beforeKey || afterKey));
-      items.splice(beforeKey ? at : at + 1, 0, it);
-    }
-    return from;
-  }
-  const announce = (it, from) => toast(it.sprint === from ? `${it.key} reordered` : `${it.key} → ${nameOf(it.sprint)}`);
+  const host = { body, mode: 'planning', render };
+  kit.init(host);
 
   body.addEventListener('click', e => {
-    const t = e.target.closest('[data-toggle]'); if (!t) return;
-    const id = t.dataset.toggle; collapsed.has(id) ? collapsed.delete(id) : collapsed.add(id); render();
+    const t = e.target.closest('[data-toggle]');
+    if (t) { const id = t.dataset.toggle; collapsed.has(id) ? collapsed.delete(id) : collapsed.add(id); render(); return; }
+    const addin = e.target.closest('[data-addin]');
+    if (addin) { kit.openAdd({ sprint: addin.dataset.addin }); return; }
+    if (e.target.id === 'pullGo') {
+      const s = targetSprint(), taken = unplanned().slice(0, cutCount());
+      const going = () => taken.filter(i => i.key !== kit.staleKey);
+      kit.act(() => `${going().length} item${going().length === 1 ? '' : 's'} pulled into ${s.name}`, () => {
+        going().forEach(i => { i.sprint = s.id; });
+        pull.cut = null; pull.target = null;
+      }, { keep: true, rows: taken.map(i => i.key) });
+      return;
+    }
+    if (e.target.id === 'pullReset') { pull.cut = null; render(); return; }
+  });
+  body.addEventListener('change', e => { if (e.target.id === 'pullTo') { pull.target = e.target.value; pull.cut = null; render(); } });
+
+  // Drag the pull line: it snaps below the row the pointer is on.
+  function pullAt(y) {
+    const rows = [...body.querySelectorAll('tr.item[data-sec=""]')];
+    let n = 0;
+    for (const r of rows) { const b = r.getBoundingClientRect(); if (y > b.top + b.height / 2) n++; else break; }
+    return n;
+  }
+  body.addEventListener('pointerdown', e => {
+    if (e.target.id !== 'pullGrip') return;
+    e.preventDefault(); document.body.classList.add('pulling');
+    const move = ev => { const n = pullAt(ev.clientY); if (n !== cutCount()) { pull.cut = n; if (!pull.target) pull.target = targetSprint().id; render(); } };
+    const up = () => { document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); document.body.classList.remove('pulling'); };
+    document.addEventListener('pointermove', move); document.addEventListener('pointerup', up);
+  });
+  body.addEventListener('keydown', e => {
+    if (e.target.id !== 'pullGrip' || !e.altKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+    e.preventDefault(); e.stopPropagation();
+    if (!pull.target) pull.target = targetSprint().id;
+    const n = Math.max(0, Math.min(unplanned().length, cutCount() + (e.key === 'ArrowDown' ? 1 : -1)));
+    pull.cut = n; render(); document.getElementById('pullGrip')?.focus();
   });
 
-  // Drag and drop
-  let dragKey = null;
-  const clearDrop = () => body.querySelectorAll('.drop-before, .over-drop').forEach(el => el.classList.remove('drop-before', 'over-drop'));
-  body.addEventListener('dragstart', e => { const tr = e.target.closest('tr.item'); if (!tr) return; dragKey = tr.dataset.key; tr.classList.add('dragging'); e.dataTransfer.setData('text/plain', dragKey); e.dataTransfer.effectAllowed = 'move'; });
-  body.addEventListener('dragend', () => { dragKey = null; body.querySelectorAll('.dragging').forEach(el => el.classList.remove('dragging')); clearDrop(); });
+  // Drag rows: a selected row brings the whole selection, in rank order.
+  let dragKeys = null;
+  const clearDrop = () => { body.querySelectorAll('.drop-before, .over-drop').forEach(el => el.classList.remove('drop-before', 'over-drop')); body.querySelectorAll('[data-preview]').forEach(el => { el.textContent = ''; }); };
+  body.addEventListener('dragstart', e => {
+    const tr = e.target.closest('tr.item'); if (!tr || kit.filtering()) return;
+    dragKeys = kit.dragKeys(tr.dataset.key);
+    dragKeys.forEach(k => body.querySelector(`tr.item[data-key="${k}"]`)?.classList.add('dragging'));
+    e.dataTransfer.setData('text/plain', dragKeys.join(' ')); e.dataTransfer.effectAllowed = 'move';
+    kit.dragBadge(e, dragKeys);
+  });
+  body.addEventListener('dragend', () => { dragKeys = null; body.querySelectorAll('.dragging').forEach(el => el.classList.remove('dragging')); clearDrop(); });
   body.addEventListener('dragover', e => {
-    const tr = e.target.closest('tr.item, tr.sec, tr.empty'); if (!tr || !dragKey) return;
+    const tr = e.target.closest('tr.item, tr.sec, tr.empty'); if (!tr || !dragKeys) return;
     e.preventDefault(); clearDrop(); tr.classList.add(tr.classList.contains('item') ? 'drop-before' : 'over-drop');
+    const secId = tr.dataset.sec;
+    if (tr.classList.contains('sec') && secId) {
+      const p = kit.previewFor(dragKeys, secId), el = tr.querySelector('[data-preview]');
+      if (p && el) { el.textContent = p.text; el.classList.toggle('over', p.over); }
+    }
   });
   body.addEventListener('drop', e => {
-    const tr = e.target.closest('tr.item, tr.sec, tr.empty'); if (!tr || !dragKey) return; e.preventDefault();
-    const it = items.find(i => i.key === dragKey);
-    const onRow = tr.classList.contains('item') && tr.dataset.key !== it.key;
-    const from = move(it, tr.dataset.sec || null, onRow ? tr.dataset.key : null, null);
-    render(); announce(it, from);
+    const tr = e.target.closest('tr.item, tr.sec, tr.empty'); if (!tr || !dragKeys) return; e.preventDefault();
+    const keys = dragKeys, to = tr.dataset.sec || null;
+    const onRow = tr.classList.contains('item') && !keys.includes(tr.dataset.key) ? tr.dataset.key : null;
+    const moved = items.filter(i => keys.includes(i.key)), crossing = moved.some(i => i.sprint !== to);
+    if (!crossing && !onRow) return;
+    kit.act(keys.length > 1 ? `${keys.length} items ${crossing ? `moved to ${nameOf(to)}` : 'reordered'}` : `${keys[0]} ${crossing ? `→ ${nameOf(to)}` : 'reordered'}`, () => {
+      moved.forEach(i => { i.sprint = to; });
+      if (onRow) kit.moveBlock(keys, onRow);
+    });
   });
 
-  // Keyboard: Alt+↑/↓ on a grip moves past the neighbouring row, crossing into the next section at the ends.
-  body.addEventListener('keydown', e => {
-    if (!e.altKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') || !e.target.closest('.grip-btn')) return;
-    e.preventDefault();
-    const tr = e.target.closest('tr.item'), it = items.find(i => i.key === tr.dataset.key);
-    const rows = [...body.querySelectorAll('tr.item, tr.sec, tr.empty')];
-    const idx = rows.indexOf(tr), up = e.key === 'ArrowUp';
-    const n = rows[idx + (up ? -1 : 1)]; if (!n) return;
-    let from;
-    if (n.classList.contains('item')) from = move(it, n.dataset.sec || null, up ? n.dataset.key : null, up ? null : n.dataset.key);
-    else if (up) { // above a section header: join the end of the previous section
-      const prev = rows.slice(0, rows.indexOf(n)).reverse().find(r => r.classList.contains('item') || r.classList.contains('sec') || r.classList.contains('empty'));
-      if (!prev) return;
-      from = prev.classList.contains('item') ? move(it, prev.dataset.sec || null, null, prev.dataset.key) : move(it, prev.dataset.sec || null);
-    } else { // below a section header: join the top of the next section
-      const nx = rows[rows.indexOf(n) + 1];
-      from = nx?.classList.contains('item') ? move(it, nx.dataset.sec || null, nx.dataset.key, null) : move(it, n.dataset.sec || null);
-    }
-    render(it.key); announce(it, from);
-  });
-
+  document.getElementById('btnAdd').onclick = () => kit.openAdd({});
+  document.getElementById('btnKeys').onclick = () => kit.keySheet();
   optForecast.onchange = () => render();
-  render();
+  const opening = new URLSearchParams(location.search);
+  if (opening.has('pull')) { pull.cut = Number(opening.get('pull')); pull.target = 's25'; }
+  kit.boot();
+  if (opening.get('state') === 'drag') { // a selection on its way to Sprint 26, for the reference screenshot
+    const keys = ['SHIP-160', 'SHIP-158', 'SHIP-184', 'SHIP-163'];
+    keys.forEach(k => kit.selected.add(k)); render();
+    keys.forEach(k => body.querySelector(`tr.item[data-key="${k}"]`).classList.add('dragging'));
+    const head = body.querySelector('tr.sec[data-sec="s26"]'), p = kit.previewFor(keys, 's26'), el = head.querySelector('[data-preview]');
+    head.classList.add('over-drop'); el.textContent = p.text; el.classList.toggle('over', p.over);
+    setTimeout(() => { // once the shell has laid the page out
+      const box = head.getBoundingClientRect(), badge = document.createElement('div');
+      badge.className = 'dragbadge'; badge.textContent = '4 items · 8 pts';
+      badge.style.cssText = `top:${box.top + 8}px;left:${box.left + 640}px;z-index:30`;
+      document.body.append(badge);
+    }, 0);
+  }
 
   SL.preview([
+    { label: 'Add many', run: () => kit.openPaste() },
+    { label: 'Teammate changes a row', run: () => kit.arm() },
     { label: 'Simulate teammate move', run: () => {
-      const it = items.find(i => i.key === 'SHIP-158'); it.sprint = 's25'; render();
-      body.querySelector('[data-key="SHIP-158"]')?.classList.add('flash');
+      const it = items.find(i => i.key === 'SHIP-158'); it.sprint = 's25'; render('SHIP-158');
       toast(`${av('mei')} Mei Lin moved SHIP-158 to Sprint 25`);
     } },
   ]);

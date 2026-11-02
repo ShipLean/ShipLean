@@ -10,7 +10,7 @@ The screens here are reference designs for every page of the v1 domain model: **
 | `tokens.json` | The same values in machine-readable form. |
 | `screens/shiplean.css` | Shared chrome and controls (side menu, project picker, top bar with presence, toolbar, buttons, list table, rail, dialog, chips, capacity bar). Tokens only. |
 | `screens/shared.js` | Shared sample data (project `SHIP`, five people, Sprints 21–26, Epics, Features and the Stories backlog, Sprint 24's tasks, each type's states, the projects list, who's viewing each screen) and helpers. Builds the side menu and top bar. Handles `?theme=` and `?shot`. |
-| `screens/backlog.html` | **Stories backlog, List mode**: the ranked backlog with add-at-top, tree mode (show parents), the filter builder and column options. Its Preview panel simulates the real-time states. |
+| `screens/backlog.html` | **Stories backlog, List mode**: the ranked backlog with add-at-top, tree mode (show parents), the filter builder and column options, plus [selecting and adding many rows](#planning-many-rows-ship-255) (SHIP-255). `?state=selected\|paste\|modal\|add\|queue\|keys` opens those states. Its Preview panel simulates the real-time states. |
 | `screens/features.html` | **Features and Epics backlogs** (`?level=epics`): the same list one and two levels up, with points and progress rolled up from the stories and bugs below. At the Features level, **+ New work item** opens the New Feature dialog (`?dialog=new`). |
 | `screens/board.html` | **Stories board**: Kanban columns mapped to states per type, WIP limits, a split Ready column, definition of done, Expedite and Default swimlanes, card style rules and tag colours, and the pull rule on drag. |
 | `screens/board-settings.html` | **Board settings** (Stories board): the settings dialog over the board, in the same shell as the Taskboard settings, with Columns (state mapping, WIP, split, definition of done), Swimlanes, Fields, Styles, Tag colours, Annotations and Card reordering. `?pane=` opens a section. |
@@ -20,7 +20,8 @@ The screens here are reference designs for every page of the v1 domain model: **
 | `screens/attachment.html` | **Markdown attachment**: an attached `.md` rendered on its own page under the work item, with its outline, which images resolved and the replace rule. `?view=source` shows the source. |
 | `screens/settings.html` | **Project settings**: General (locked project key, working days), States per type with categories, Members, Sprints & forecast (velocity window and override) and Integrations, with one Save for the whole page. |
 | `screens/import.html` | **Jira import**: one Jira project into one ShipLean project in five steps (Connection, Jira project, Project key, Mapping, Run), with progress, an error log and re-runs. `?step=1..5` and `?run=done\|errors` open those states. |
-| `screens/planning.html` | **Planning**: the Stories backlog in Planning mode, with sprint sections stacked above the Backlog. |
+| `screens/planning.html` | **Planning**: the Stories backlog in Planning mode, with sprint sections stacked above the Backlog, plus [the pull line and selecting many rows](#planning-many-rows-ship-255) (SHIP-255). `?state=selected\|drag\|conflict\|queue` and `?pull=N` open those states. |
+| `screens/bulk.js`, `screens/bulk.css` | What the Stories backlog and Planning share for SHIP-255: selection, the action bar, Undo, estimates in the row, the item modal stand-in, add here, the paste review, the Before you plan strip and the keyboard. Their sample rows too, so these two screens have more backlog than `shared.js`. |
 | `screens/sprint-backlog.html` | **Sprint backlog**: inside one sprint, with tasks, burndown, Ready to pick up and In progress now. |
 | `screens/capacity.html` | **Capacity**: the team types a velocity for the sprint and each member's days available; capacity is velocity / people × days / working days, with public holidays lowering the default days. Only the team total is compared with the sprint. |
 | `screens/sprints.html` | **All sprints**: the flat sprint list, the velocity chart and the New sprint form. |
@@ -43,6 +44,12 @@ Open any screen and use the **Preview** panel (bottom left) to switch the theme.
 |---|---|---|
 | Stories backlog (List) | ![Stories backlog, light](screens/backlog.light.png) | ![Stories backlog, dark](screens/backlog.dark.png) |
 | Stories backlog · tree | ![Stories backlog with parents, light](screens/backlog-tree.light.png) | ![Stories backlog with parents, dark](screens/backlog-tree.dark.png) |
+| Stories backlog · selected | ![Rows selected with the action bar, light](screens/backlog-selected.light.png) | ![Rows selected with the action bar, dark](screens/backlog-selected.dark.png) |
+| Stories backlog · Add many | ![Paste review, light](screens/backlog-paste.light.png) | ![Paste review, dark](screens/backlog-paste.dark.png) |
+| Stories backlog · add below a row | ![Add row below a focused row, light](screens/backlog-add.light.png) | ![Add row below a focused row, dark](screens/backlog-add.dark.png) |
+| Stories backlog · item modal | ![Item modal over the backlog, light](screens/backlog-modal.light.png) | ![Item modal over the backlog, dark](screens/backlog-modal.dark.png) |
+| Stories backlog · not estimated | ![Working through the rows with no estimate, light](screens/backlog-queue.light.png) | ![Working through the rows with no estimate, dark](screens/backlog-queue.dark.png) |
+| Stories backlog · keys | ![Keyboard shortcuts, light](screens/backlog-keys.light.png) | ![Keyboard shortcuts, dark](screens/backlog-keys.dark.png) |
 | Features backlog | ![Features backlog, light](screens/features.light.png) | ![Features backlog, dark](screens/features.dark.png) |
 | Epics backlog | ![Epics backlog, light](screens/features-epics.light.png) | ![Epics backlog, dark](screens/features-epics.dark.png) |
 | Stories board | ![Stories board, light](screens/board.light.png) | ![Stories board, dark](screens/board.dark.png) |
@@ -71,7 +78,11 @@ Open any screen and use the **Preview** panel (bottom left) to switch the theme.
 | Jira import · Mapping | ![Jira import, Mapping, light](screens/import.light.png) | ![Jira import, Mapping, dark](screens/import.dark.png) |
 | Jira import · Project key | ![Jira import, Project key, light](screens/import-key.light.png) | ![Jira import, Project key, dark](screens/import-key.dark.png) |
 | Jira import · Run | ![Jira import, Run with errors, light](screens/import-run.light.png) | ![Jira import, Run with errors, dark](screens/import-run.dark.png) |
-| Planning | ![Planning, light](screens/planning.light.png) | ![Planning, dark](screens/planning.dark.png) |
+| Planning | ![Planning with the pull line, light](screens/planning.light.png) | ![Planning with the pull line, dark](screens/planning.dark.png) |
+| Planning · selected | ![Rows selected with sums on the sprint buttons, light](screens/planning-selected.light.png) | ![Rows selected with sums on the sprint buttons, dark](screens/planning-selected.dark.png) |
+| Planning · drag a selection | ![A selection dragged to a sprint header, light](screens/planning-drag.light.png) | ![A selection dragged to a sprint header, dark](screens/planning-drag.dark.png) |
+| Planning · pull line over capacity | ![The pull line dragged past capacity, light](screens/planning-over.light.png) | ![The pull line dragged past capacity, dark](screens/planning-over.dark.png) |
+| Planning · one row changed | ![A row left out of a bulk move and reported, light](screens/planning-row-changed.light.png) | ![A row left out of a bulk move and reported, dark](screens/planning-row-changed.dark.png) |
 | Sprint backlog | ![Sprint backlog, light](screens/sprint-backlog.light.png) | ![Sprint backlog, dark](screens/sprint-backlog.dark.png) |
 | Capacity | ![Capacity, light](screens/capacity.light.png) | ![Capacity, dark](screens/capacity.dark.png) |
 | All sprints | ![All sprints, light](screens/sprints.light.png) | ![All sprints, dark](screens/sprints.dark.png) |
@@ -100,6 +111,25 @@ Open any screen and use the **Preview** panel (bottom left) to switch the theme.
 | Your profile | ![Your profile, light](screens/profile.light.png) | ![Your profile, dark](screens/profile.dark.png) |
 | Your profile · photo | ![Your profile with a photo, light](screens/profile-photo.light.png) | ![Your profile with a photo, dark](screens/profile-photo.dark.png) |
 | Taskboard settings · Styles | ![Taskboard settings, Styles, light](screens/taskboard-styles.light.png) | ![Taskboard settings, Styles, dark](screens/taskboard-styles.dark.png) |
+
+## Planning many rows (SHIP-255)
+
+**Designed, not built yet.** The Stories backlog and Planning screens now show how filling a backlog and planning a sprint should work, benchmarked on Jira and Azure DevOps. The research and every decision are on SHIP-255. Where this differs from the patterns further down, such as adding at #1 only, this section is the design to build. Decided by Joel on 2 Nov 2026:
+
+- **Select many rows:** hover checkbox, Ctrl/Cmd-click, Shift for a range, select all, across sprint sections. A plain click only moves focus, so a stray click can't lose a selection.
+- **One action bar, one limit:** move to a sprint, the top or the bottom; set points, state, parent or tag; remove. 100 rows per action, measured before release. Everything has Undo. Each sprint button shows the sum first (`13 + 8 = 21 / 22`). It warns and never blocks, like capacity. **No Assign**, because work is pulled.
+- **Drag a selection:** a selected row brings the others, in rank order, under a count badge. The sprint header previews the sum.
+- **A row a teammate changed** is left out and reported, with **Include it anyway** and **Leave it**. The others still move. This applies to the pull line and Undo too. Agents' `plan_sprint` stays all or nothing.
+- **Estimate in the row:** click the number or type it, and Enter walks to the next row.
+- **Rows open in the item modal** on Backlogs, from a title click or Enter, as on every other screen. Ctrl/Cmd-click and middle-click still open a new tab. The modal in these screens is a stand-in for the real one.
+- **Add many:** paste into the add row and review a grid before anything is created. An indented line becomes a task, `bug:` makes a bug, a number column or `(3 pts)` sets points, and likely duplicates are flagged. **Keep as one item** is there for when you meant one.
+- **Add where you are:** `N` adds below the focused row, **+ Add** adds inside a sprint, the row takes a parent and points, and a typed list keeps its order.
+- **Pull line:** the forecast's cut becomes a line in the Backlog, where the next sprint fills up. Press Pull, or drag it first and watch the sum, including going over. It uses the same rule as `plan_sprint`: top down, stop at the first row that doesn't fit, unestimated rows count zero.
+- **Room to plan:** search on List and Planning, collapsible sections, and the running sprint starts closed. While a search or filter is on, dragging and the pull line stop, because rank is relative to rows you can't see. Moving to a sprint, the top or the bottom still works.
+- **Before you plan:** the same five checks as `review_backlog`. Click a count to work through those rows; they stay put as you fix them. It never blocks.
+- **Keyboard:** only while the list has focus, never while typing in a field. Press `?` for the list.
+
+Left out on purpose: per-person load (the team is the unit), AI inside the app (agents use MCP), a bulk wizard (Undo is lighter) and a dashboard screen (the strip covers planning).
 
 ## Logo
 
