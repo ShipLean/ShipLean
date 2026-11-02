@@ -1,19 +1,44 @@
 import type { ProjectDto } from '../../../api/projects';
 import { RetroActionDialogProvider } from '../../retroShared/actionDialog/RetroActionDialogProvider';
+import { RetroQueryState } from '../RetroQueryState';
 import { retrosTestIds as ids } from '../testIds';
+import { useRetroItem } from '../useRetroQueries';
+import { ItemBoard } from './ItemBoard';
 import { ItemChildRows } from './ItemChildRows';
 import { ItemFailureLogs } from './ItemFailureLogs';
+import { ItemHeader } from './ItemHeader';
 import { ItemRail } from './ItemRail';
+import { ItemToolbar } from './ItemToolbar';
+import { useRetroItemAddress } from './useRetroItemAddress';
 
-// TODO: the item's board and filters replace this empty panel; the three parts below are already mounted.
+/**
+ * One item's retros: the header, the filters and one board over the item's retros, then the story rows, failure logs
+ * and rail (I2's parts). The retro filter, decide and point live in the address (retroItemAddress.ts).
+ */
 export function RetroItemPanel({ project, itemKey }: { project: ProjectDto; itemKey: string }) {
+  const { address, setRetro, setDecide, onAdded } = useRetroItemAddress();
+  const query = useRetroItem(project.id, itemKey);
   return (
     <RetroActionDialogProvider projectId={project.id}>
-      <div data-testid={ids.retroItemPanel} data-project={project.key} data-item={itemKey}>
-        <ItemChildRows />
-        <ItemFailureLogs />
-        <ItemRail />
-      </div>
+      <RetroQueryState query={query}>
+        {(item) => (
+          <div
+            data-testid={ids.retroItemPanel}
+            data-project={project.key}
+            data-item={itemKey}
+            className="grid min-w-0 grid-cols-[minmax(0,1fr)_18rem] gap-4"
+          >
+            <div className="grid min-w-0 content-start gap-4">
+              <ItemHeader projectKey={project.key} item={item} />
+              <ItemToolbar item={item} address={address} onRetro={setRetro} onDecide={setDecide} />
+              <ItemBoard item={item} address={address} onAdded={onAdded} />
+              <ItemChildRows />
+              <ItemFailureLogs />
+            </div>
+            <ItemRail />
+          </div>
+        )}
+      </RetroQueryState>
     </RetroActionDialogProvider>
   );
 }
