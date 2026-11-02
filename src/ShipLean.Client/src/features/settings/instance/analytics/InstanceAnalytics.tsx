@@ -12,7 +12,6 @@ import {
   testAnalytics,
   type AnalyticsProvider,
   type AnalyticsSettings,
-  type AnalyticsTestResult,
 } from './analyticsApi';
 import { analyticsTestIds } from './testIds';
 
@@ -87,7 +86,6 @@ export function InstanceAnalytics() {
 function AnalyticsForm({ saved }: { saved: AnalyticsSettings }) {
   const client = useQueryClient();
   const [draft, setDraft] = useState<Draft>(() => draftOf(saved));
-  const [result, setResult] = useState<AnalyticsTestResult | undefined>();
   const save = useMutation({
     mutationFn: putAnalytics,
     onSuccess: (stored) => {
@@ -95,7 +93,7 @@ function AnalyticsForm({ saved }: { saved: AnalyticsSettings }) {
       setDraft(draftOf(stored));
     },
   });
-  const test = useMutation({ mutationFn: testAnalytics, onSuccess: setResult });
+  const test = useMutation({ mutationFn: testAnalytics });
 
   const dirty = isDirty(saved, draft);
   const locked = save.isPending;
@@ -104,7 +102,7 @@ function AnalyticsForm({ saved }: { saved: AnalyticsSettings }) {
   const fieldMessage = (field: string) => (blamed === field ? message : undefined);
   const named = ['provider', 'host', 'siteKey'].includes(blamed ?? '');
   const change = (patch: Partial<Draft>) => {
-    setResult(undefined);
+    test.reset();
     setDraft((d) => ({ ...d, ...patch }));
   };
   const on = draft.provider === 'none' ? undefined : copy[draft.provider];
@@ -203,13 +201,13 @@ function AnalyticsForm({ saved }: { saved: AnalyticsSettings }) {
           Send test event
         </button>
         {dirty ? <span className="text-ink-muted">Save first</span> : null}
-        {result ? (
+        {test.data ? (
           <span
-            role="status"
+            role={test.data.ok ? 'status' : 'alert'}
             data-testid={analyticsTestIds.testResult}
-            className={result.ok ? 'text-ink' : 'text-alert'}
+            className={test.data.ok ? 'text-ok' : 'text-alert'}
           >
-            {result.message}
+            {test.data.message}
           </span>
         ) : null}
         {test.isError ? (
