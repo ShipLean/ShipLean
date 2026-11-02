@@ -30,8 +30,19 @@ public sealed class EndToEndAnalytics : IDisposable
         services.AddSingleton<IAnalyticsSettingsReader>(sp => new CountingReader(ActivatorUtilities.CreateInstance<AnalyticsSettingsReader>(sp), _reads));
     }
 
-    // Waits for the dispatcher to read the saved settings once more than it had.
-    public Task ReadSettingsAsync() => AdvanceUntilAsync(_reads.WaitAsync(Limit));
+    // Waits for the settings reader to be called once more than it had (the dispatcher, or the settings page).
+    public Task ReadSettingsAsync() => AdvanceUntilSignalAsync(_reads, "the settings reader to be called");
+
+    // Advances the clock until the semaphore is released; SemaphoreSlim.WaitAsync(timeout) returns false instead of throwing, so check it.
+    public async Task AdvanceUntilSignalAsync(SemaphoreSlim signal, string what)
+    {
+        var wait = signal.WaitAsync(Limit);
+        await AdvanceUntilAsync(wait);
+        if (!await wait)
+        {
+            throw new TimeoutException($"Timed out after {Limit.TotalSeconds:0} s waiting for {what}.");
+        }
+    }
 
     // The dispatcher caches the target for SettingsLifetime: a test that changes the settings moves the clock past that first.
     public void ExpireSettingsCache() => Clock.Advance(UsageDispatcher.SettingsLifetime + TimeSpan.FromSeconds(1));

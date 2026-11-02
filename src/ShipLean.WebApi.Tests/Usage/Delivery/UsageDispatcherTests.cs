@@ -71,6 +71,17 @@ public class UsageDispatcherTests : ApiFixture
         await done;
     }
 
+    // SemaphoreSlim.WaitAsync(timeout) returns false on timeout instead of throwing: turn that into a failure.
+    private async Task AdvanceUntilSignalAsync(SemaphoreSlim signal, string what)
+    {
+        var wait = signal.WaitAsync(Limit);
+        await AdvanceUntilAsync(wait);
+        if (!await wait)
+        {
+            throw new TimeoutException($"Timed out after {Limit.TotalSeconds:0} s waiting for {what}.");
+        }
+    }
+
     private static async Task WaitAsync(SemaphoreSlim signal)
     {
         using var limit = new CancellationTokenSource(Limit);
@@ -145,7 +156,7 @@ public class UsageDispatcherTests : ApiFixture
         var before = _umami.Inner.Calls.Count;
 
         TrackMany(3, "test:partial");
-        await AdvanceUntilAsync(_umami.Attempts.WaitAsync(Limit));
+        await AdvanceUntilSignalAsync(_umami.Attempts, "_umami attempts");
 
         var batch = _umami.Inner.Calls[before].Batch;
         batch.Count.ShouldBe(3);
@@ -219,8 +230,8 @@ public class UsageDispatcherTests : ApiFixture
         {
             gate.SetResult();
         }
-        await AdvanceUntilAsync(_postHog.Attempts.WaitAsync(Limit));
-        await AdvanceUntilAsync(_postHog.Attempts.WaitAsync(Limit));
+        await AdvanceUntilSignalAsync(_postHog.Attempts, "_postHog attempts");
+        await AdvanceUntilSignalAsync(_postHog.Attempts, "_postHog attempts");
 
         _postHog.Inner.Calls[0].Batch.Count.ShouldBe(UsageDispatcher.MaxBatchSize);
     }
@@ -258,7 +269,7 @@ public class UsageDispatcherTests : ApiFixture
             TrackOn(queue, 3);
             if (sinkAlreadyInside)
             {
-                await AdvanceUntilAsync(stuck.Started.WaitAsync(Limit));
+                await AdvanceUntilSignalAsync(stuck.Started, "stuck started");
             }
 
             var started = _clock.GetUtcNow();
