@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import type { Locator, Page } from 'playwright';
 import { PullLineHarness } from '../ct/PullLineHarness';
-import { PROJECT, itemRow, planningView } from '../ct/fixtures';
+import { PROJECT, itemRow, planningView, review } from '../ct/fixtures';
+import { PlanningMode } from '../planning/PlanningMode';
 import { stubBacklog } from '../ct/stubApi';
 import { backlogTestIds as ids } from '../testIds';
 
@@ -226,4 +227,20 @@ test('A_stale_row_lands_in_the_runner_outcome', async ({ mount, page }) => {
   expect(server.bulks[0].items.map((i) => i.id)).toEqual(['id-SHIP-170', 'id-SHIP-171']);
   await expect(page.getByTestId(ids.bulkChanged)).toBeVisible();
   await expect(page.getByTestId(ids.bulkChangedRow)).toHaveCount(1);
+});
+
+test('Hidden_while_a_check_queue_is_open', async ({ mount, page }) => {
+  await stubBacklog(page, {
+    ...planningView(),
+    review: review({ unestimated: ['id-SHIP-170', 'id-SHIP-171'] }),
+  });
+  await mount(<PlanningMode project={PROJECT} />, route);
+  await expect(page.getByTestId(ids.pullLine)).toHaveCount(1);
+
+  await page.getByTestId(ids.planCheck).and(page.locator('[data-check="unestimated"]')).click();
+  await expect(page.getByTestId(ids.row)).toHaveCount(2);
+  await expect(page.getByTestId(ids.pullLine)).toHaveCount(0);
+
+  await page.getByTestId(ids.planQueueExit).click();
+  await expect(page.getByTestId(ids.pullLine)).toHaveCount(1);
 });

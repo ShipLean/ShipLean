@@ -16,6 +16,7 @@ import { BacklogSearchBox } from '../search/BacklogSearchBox';
 import { MovingOffBanner } from '../search/MovingOffBanner';
 import { useBacklogSearch } from '../search/useBacklogSearch';
 import { SelectionProvider } from '../selection/SelectionProvider';
+import { QueueFixedProvider } from '../strip/QueueFixedProvider';
 import { BeforeYouPlan } from '../strip/BeforeYouPlan';
 import { useCheckQueue } from '../strip/useCheckQueue';
 import { BacklogToolbar } from '../toolbar/BacklogToolbar';
@@ -55,13 +56,14 @@ export function PlanningScreen({
   const [adding, setAdding] = useState(false);
   const queue = useCheckQueue();
   const search = useBacklogSearch();
+  const queuedSections = useMemo(
+    () => view.sections.map((section) => ({ ...section, rows: queue.apply(section.rows) })),
+    [view.sections, queue],
+  );
+  const queued = useMemo(() => queuedSections.flatMap((section) => section.rows), [queuedSections]);
   const sections = useMemo(
-    () =>
-      view.sections.map((section) => ({
-        ...section,
-        rows: search.apply(queue.apply(section.rows)),
-      })),
-    [view.sections, search, queue],
+    () => queuedSections.map((section) => ({ ...section, rows: search.apply(section.rows) })),
+    [queuedSections, search],
   );
   const searchCollapse = useMemo(
     () => collapse.withSearch(search.active, sections),
@@ -74,76 +76,85 @@ export function PlanningScreen({
         .flatMap((section) => section.rows.map((row) => row.id)),
     [sections, searchCollapse],
   );
+  // Drag and the pull line stop for a search or a check queue; adding stops for a search only.
   const filtering = search.active || queue.active;
   return (
-    <SelectionProvider walkOrder={walkOrder}>
-      <ListKeysHost />
-      <OpenCommandHost
-        rows={sections.flatMap((section) => section.rows)}
-        projectKey={project.key}
-      />
-      <AddBelowProvider projectId={project.id} projectKey={project.key}>
-        <PasteHost projectId={project.id} projectKey={project.key}>
-          <div className="flex min-h-0 flex-1 flex-col">
-            <BacklogToolbar
-              projectKey={project.key}
-              level="stories"
-              mode="planning"
-              onNewItem={() => setAdding(true)}
-              options={() => (
-                <>
-                  <AddManyButton />
-                  <ForecastToggle checked={forecast} onChange={onForecastChange} />
-                </>
-              )}
-              search={() => <BacklogSearchBox search={search} />}
-              keys={() => <KeysButton />}
-            />
-            <MovingOffBanner search={search} queue={queue} />
-            {reorder.conflict ? (
-              <ReorderConflict
-                conflict={reorder.conflict}
-                onUseMine={() => void reorder.useMine()}
-                onKeepTheirs={() => void reorder.keepTheirs()}
+    <QueueFixedProvider review={view.review} queue={queue} queued={queued}>
+      <SelectionProvider walkOrder={walkOrder}>
+        <ListKeysHost />
+        <OpenCommandHost
+          rows={sections.flatMap((section) => section.rows)}
+          projectKey={project.key}
+        />
+        <AddBelowProvider projectId={project.id} projectKey={project.key}>
+          <PasteHost projectId={project.id} projectKey={project.key}>
+            <div className="flex min-h-0 flex-1 flex-col">
+              <BacklogToolbar
+                projectKey={project.key}
+                level="stories"
+                mode="planning"
+                onNewItem={() => setAdding(true)}
+                options={() => (
+                  <>
+                    <AddManyButton />
+                    <ForecastToggle checked={forecast} onChange={onForecastChange} />
+                  </>
+                )}
+                search={() => <BacklogSearchBox search={search} />}
+                keys={() => <KeysButton />}
               />
-            ) : null}
-            <BeforeYouPlan review={view.review} queue={queue} />
-            <PlanningDnd
-              sections={sections}
-              filtering={filtering}
-              velocity={view.velocity}
-              onMove={onMove}
-            >
-              {({ tableRef, dropLine, onKeyMove }) => (
-                <PlanningSections
-                  sections={sections}
-                  velocity={view.velocity}
-                  forecast={forecast}
-                  marks={forecast ? forecastMarks(view.forecast) : NO_MARKS}
-                  projectId={project.id}
-                  projectKey={project.key}
-                  adding={adding}
-                  onCloseAdd={() => setAdding(false)}
-                  flashing={flashing}
-                  collapse={searchCollapse}
-                  noMatch={
-                    search.active && !sections.some((s) => s.rows.length > 0)
-                      ? search.query.trim()
-                      : null
-                  }
-                  filtering={filtering}
-                  tableRef={tableRef}
-                  dropLine={dropLine}
-                  onKeyMove={onKeyMove}
+              <MovingOffBanner search={search} queue={queue} />
+              {reorder.conflict ? (
+                <ReorderConflict
+                  conflict={reorder.conflict}
+                  onUseMine={() => void reorder.useMine()}
+                  onKeepTheirs={() => void reorder.keepTheirs()}
                 />
-              )}
-            </PlanningDnd>
-            <BulkBar mode="planning" projectId={project.id} projectKey={project.key} view={view} />
-            <BulkOutcomeHost projectId={project.id} />
-            <KeysDialog />
-          </div>
-        </PasteHost>
-      </AddBelowProvider>
-    </SelectionProvider>
+              ) : null}
+              <BeforeYouPlan review={view.review} queue={queue} />
+              <PlanningDnd
+                sections={sections}
+                filtering={filtering}
+                velocity={view.velocity}
+                onMove={onMove}
+              >
+                {({ tableRef, dropLine, onKeyMove }) => (
+                  <PlanningSections
+                    sections={sections}
+                    velocity={view.velocity}
+                    forecast={forecast}
+                    marks={forecast ? forecastMarks(view.forecast) : NO_MARKS}
+                    projectId={project.id}
+                    projectKey={project.key}
+                    adding={adding}
+                    onCloseAdd={() => setAdding(false)}
+                    flashing={flashing}
+                    collapse={searchCollapse}
+                    noMatch={
+                      search.active && !sections.some((s) => s.rows.length > 0)
+                        ? search.query.trim()
+                        : null
+                    }
+                    filtering={filtering}
+                    addingOff={search.active}
+                    tableRef={tableRef}
+                    dropLine={dropLine}
+                    onKeyMove={onKeyMove}
+                  />
+                )}
+              </PlanningDnd>
+              <BulkBar
+                mode="planning"
+                projectId={project.id}
+                projectKey={project.key}
+                view={view}
+              />
+              <BulkOutcomeHost projectId={project.id} />
+              <KeysDialog />
+            </div>
+          </PasteHost>
+        </AddBelowProvider>
+      </SelectionProvider>
+    </QueueFixedProvider>
   );
 }

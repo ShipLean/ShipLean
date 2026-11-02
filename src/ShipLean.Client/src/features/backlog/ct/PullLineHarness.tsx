@@ -65,6 +65,7 @@ export function PullLineHarness({
                   flashing={NONE}
                   collapse={collapse}
                   filtering={filtering}
+                  addingOff={filtering}
                   tableRef={tableRef}
                   dropLine={dropLine}
                   onKeyMove={onKeyMove}

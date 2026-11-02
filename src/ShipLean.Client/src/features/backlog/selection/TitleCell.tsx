@@ -2,6 +2,7 @@ import type { MouseEvent } from 'react';
 import type { BacklogRowDto } from '../../../api/views';
 import { TypeIcon } from '../../../components/TypeIcon';
 import { ItemLink } from '../../itemPeek/ItemLink';
+import { QueueDoneMark } from '../strip/QueueDoneMark';
 import { backlogTestIds as ids } from '../testIds';
 import { useSelection } from './useSelection';
 
@@ -22,6 +23,7 @@ export function TitleCell({ row, projectKey }: { row: BacklogRowDto; projectKey:
       <ItemLink testId={ids.title} projectKey={projectKey} itemKey={row.key} onClick={click}>
         {row.title}
       </ItemLink>
+      <QueueDoneMark rowId={row.id} />
     </span>
   );
 }

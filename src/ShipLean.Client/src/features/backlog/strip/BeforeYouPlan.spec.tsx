@@ -54,6 +54,10 @@ test('A_fixed_row_stays_in_the_queue_marked_done', async ({ mount, page }) => {
 
   await expect(page.getByTestId(ids.planQueueBar)).toHaveText('1 of 2 fixed');
   await expect(page.getByTestId(ids.row)).toHaveCount(2);
+  const fixed = page.getByTestId(ids.row).nth(0);
+  await expect(fixed.getByTestId(ids.queueDone)).toBeVisible();
+  await expect(fixed.getByRole('img', { name: 'Fixed' })).toBeVisible();
+  await expect(page.getByTestId(ids.row).nth(1).getByTestId(ids.queueDone)).toHaveCount(0);
   await expect(check(page, 'unestimated')).toHaveText('1 not estimated');
 });
 
@@ -85,11 +89,17 @@ test('The_queue_makes_the_mode_report_filtering', async ({ mount, page }) => {
 });
 
 test('No_strip_when_review_is_null', async ({ mount, page }) => {
-  await stubBacklog(page, backlogView(ROWS));
+  const server = await stubBacklog(page, view(IDS));
   await mount(<ListMode project={PROJECT} />, route);
-  await expect(page.getByTestId(ids.row)).toHaveCount(4);
+  await expect(page.getByTestId(ids.planStrip)).toBeVisible();
+
+  server.setBacklog(backlogView(ROWS));
+  await page.getByTestId(ids.row).nth(0).getByTestId(ids.points).click();
+  await page.getByTestId(ids.pointsInput).fill('5');
+  await page.getByTestId(ids.pointsInput).press('Enter');
 
   await expect(page.getByTestId(ids.planStrip)).toHaveCount(0);
+  await expect(page.getByTestId(ids.row)).toHaveCount(4);
 });
 
 test('A_row_gone_from_the_list_is_dropped', async ({ mount, page }) => {
@@ -105,4 +115,5 @@ test('A_row_gone_from_the_list_is_dropped', async ({ mount, page }) => {
 
   await expect(page.getByTestId(ids.row)).toHaveCount(1);
   await expect(page.getByTestId(ids.row).nth(0)).toHaveAttribute('data-key', 'SHIP-2');
+  await expect(page.getByTestId(ids.planQueueBar)).toHaveText('0 of 1 fixed');
 });

@@ -6,6 +6,7 @@ import {
   itemRow,
   planningSprints,
   PROJECT,
+  review,
   ROWS,
 } from '../ct/fixtures';
 import { stubBacklog } from '../ct/stubApi';
@@ -253,4 +254,16 @@ test('ListMode_ShowsACheckboxPerRowAndOneToSelectAll', async ({ mount, page }) =
   await expect(page.getByTestId(ids.rowSelect)).toHaveCount(2);
   await expect(page.getByTestId(ids.rowSelect).first().getByRole('checkbox')).not.toBeChecked();
   await expect(page.getByTestId(ids.selectAll).getByRole('checkbox')).not.toBeChecked();
+});
+
+test('List_WhenACheckQueueIsOpen_ShouldStillAddBelowARow', async ({ mount, page }) => {
+  await stubBacklog(page, { ...backlogView(ROWS), review: review({ unestimated: [ROWS[0].id] }) });
+  await mount(<ListMode project={PROJECT} />, route);
+  await page.getByTestId(ids.planCheck).and(page.locator('[data-check="unestimated"]')).click();
+  await expect(page.getByTestId(ids.row)).toHaveCount(1);
+
+  await page.getByTestId(ids.row).focus();
+  await page.keyboard.press('n');
+
+  await expect(page.getByTestId(ids.addRow)).toBeVisible();
 });

@@ -19,6 +19,7 @@ export function PlanningSectionRows({
   flashing,
   dropLine,
   filtering,
+  addingOff,
   onKeyMove,
   isPulled,
   after,
@@ -34,6 +35,8 @@ export function PlanningSectionRows({
   dropLine: DropLine | null;
   // A filter, search or check queue is on: moving is off, and rank is relative to rows you can't see.
   filtering: boolean;
+  // A filter or search is on: Add below is off. A check queue leaves it on.
+  addingOff: boolean;
   onKeyMove: (row: BacklogRowDto, direction: 'up' | 'down') => void;
   // The row sits above the pull line: its numbers take the pull-in tint. Nothing is pulled when absent.
   isPulled?: (rowId: string) => boolean;
@@ -65,7 +68,7 @@ export function PlanningSectionRows({
             columnCount={columnCount}
             projectId={projectId}
             projectKey={projectKey}
-            filtering={filtering}
+            filtering={addingOff}
           />
           {after?.(row)}
         </Fragment>

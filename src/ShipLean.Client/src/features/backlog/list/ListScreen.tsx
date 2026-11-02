@@ -19,6 +19,7 @@ import { useTeammateChanges } from '../realtime/useTeammateChanges';
 import { BacklogSearchBox } from '../search/BacklogSearchBox';
 import { useBacklogSearch } from '../search/useBacklogSearch';
 import { SelectionProvider } from '../selection/SelectionProvider';
+import { QueueFixedProvider } from '../strip/QueueFixedProvider';
 import { BeforeYouPlan } from '../strip/BeforeYouPlan';
 import { useCheckQueue } from '../strip/useCheckQueue';
 import { useNewItemFromLink } from '../useNewItemFromLink';
@@ -35,66 +36,71 @@ export function ListScreen({ project, state }: { project: ProjectDto; state: Bac
   const queue = useCheckQueue();
   const search = useBacklogSearch();
   const items = useMemo(() => state.rows.filter((row) => row.kind === 'item'), [state.rows]);
-  const rows = useMemo(() => search.apply(queue.apply(items)), [search, queue, items]);
+  const queued = useMemo(() => queue.apply(items), [queue, items]);
+  const rows = useMemo(() => search.apply(queued), [search, queued]);
   const flashing = useTeammateChanges(project.id, items);
-  const filtering = state.filtering || search.active || queue.active;
+  // Drag stops for a filter, a search or a check queue; adding stops for a filter or a search only.
+  const addingOff = state.filtering || search.active;
+  const filtering = addingOff || queue.active;
   useReconnectSummary(state.queryKey);
   useNewItemFromLink(STORY_KINDS, (kind) => state.openAdd(kind));
 
   return (
-    <SelectionProvider>
-      <ListKeysHost />
-      <OpenCommandHost rows={rows} projectKey={project.key} />
-      <AddBelowProvider projectId={project.id} projectKey={project.key}>
-        <PasteHost projectId={project.id} projectKey={project.key}>
-          <BacklogFrame
-            project={project}
-            mode="list"
-            state={state}
-            reorder={reorder}
-            rowCount={rows.length}
-            filtering={filtering}
-            options={() => <AddManyButton />}
-            search={() => <BacklogSearchBox search={search} />}
-            keys={() => <KeysButton />}
-            movingOffText="Reordering is off while a filter is on, because rank is relative to items you can't see. # shows each item's place in the full backlog."
-          >
-            {(columns) => (
-              <>
-                <BeforeYouPlan review={state.backlog.data?.review ?? null} queue={queue} />
-                <ListDnd
-                  rows={rows}
-                  filtering={filtering}
-                  onReorder={(row, move) => void reorder.drop(row, move.beforeItemId)}
-                >
-                  <ListTable
+    <QueueFixedProvider review={state.backlog.data?.review ?? null} queue={queue} queued={queued}>
+      <SelectionProvider>
+        <ListKeysHost />
+        <OpenCommandHost rows={rows} projectKey={project.key} />
+        <AddBelowProvider projectId={project.id} projectKey={project.key}>
+          <PasteHost projectId={project.id} projectKey={project.key}>
+            <BacklogFrame
+              project={project}
+              mode="list"
+              state={state}
+              reorder={reorder}
+              rowCount={rows.length}
+              filtering={filtering}
+              options={() => <AddManyButton />}
+              search={() => <BacklogSearchBox search={search} />}
+              keys={() => <KeysButton />}
+              movingOffText="Reordering is off while a filter is on, because rank is relative to items you can't see. # shows each item's place in the full backlog."
+            >
+              {(columns) => (
+                <>
+                  <BeforeYouPlan review={state.backlog.data?.review ?? null} queue={queue} />
+                  <ListDnd
                     rows={rows}
-                    columns={columns}
+                    filtering={filtering}
+                    onReorder={(row, move) => void reorder.drop(row, move.beforeItemId)}
+                  >
+                    <ListTable
+                      rows={rows}
+                      columns={columns}
+                      projectId={project.id}
+                      projectKey={project.key}
+                      adding={state.adding}
+                      addType={state.addType}
+                      addRequest={state.addRequest}
+                      onCloseAdd={() => state.setAdding(false)}
+                      dragDisabled={filtering}
+                      flashing={flashing}
+                      filtered={addingOff}
+                      searched={search.active ? search.query.trim() : ''}
+                    />
+                  </ListDnd>
+                  <BulkBar
+                    mode="list"
                     projectId={project.id}
                     projectKey={project.key}
-                    adding={state.adding}
-                    addType={state.addType}
-                    addRequest={state.addRequest}
-                    onCloseAdd={() => state.setAdding(false)}
-                    dragDisabled={filtering}
-                    flashing={flashing}
-                    filtered={filtering}
-                    searched={search.active ? search.query.trim() : ''}
+                    view={state.backlog.data}
                   />
-                </ListDnd>
-                <BulkBar
-                  mode="list"
-                  projectId={project.id}
-                  projectKey={project.key}
-                  view={state.backlog.data}
-                />
-                <BulkOutcomeHost projectId={project.id} />
-                <KeysDialog />
-              </>
-            )}
-          </BacklogFrame>
-        </PasteHost>
-      </AddBelowProvider>
-    </SelectionProvider>
+                  <BulkOutcomeHost projectId={project.id} />
+                  <KeysDialog />
+                </>
+              )}
+            </BacklogFrame>
+          </PasteHost>
+        </AddBelowProvider>
+      </SelectionProvider>
+    </QueueFixedProvider>
   );
 }

@@ -35,6 +35,7 @@ export function PlanningSections({
   collapse,
   noMatch = null,
   filtering,
+  addingOff,
   tableRef,
   dropLine,
   onKeyMove,
@@ -54,6 +55,8 @@ export function PlanningSections({
   noMatch?: string | null;
   // A filter, search or check queue is on: moving is off, and rank is relative to rows you can't see.
   filtering: boolean;
+  // A filter or search is on: adding is off, because rank is relative to rows you can't see. A check queue leaves it on.
+  addingOff: boolean;
   tableRef: RefObject<HTMLTableElement | null>;
   dropLine: DropLine | null;
   onKeyMove: (row: BacklogRowDto, direction: 'up' | 'down') => void;
@@ -83,6 +86,7 @@ export function PlanningSections({
           flashing={flashing}
           dropLine={dropLine}
           filtering={filtering}
+          addingOff={addingOff}
           onKeyMove={onKeyMove}
         />
         <AddInSection section={section} columnCount={columnCount} projectId={projectId} />
@@ -120,7 +124,7 @@ export function PlanningSections({
                 datesLabel={dates.get(section.id)}
                 columnCount={columnCount}
                 collapse={collapse}
-                action={<AddInButton section={section} filtering={filtering} />}
+                action={<AddInButton section={section} filtering={addingOff} />}
               />
               {sprintBody(section)}
             </Fragment>
@@ -163,6 +167,7 @@ export function PlanningSections({
                   flashing={flashing}
                   dropLine={dropLine}
                   filtering={filtering}
+                  addingOff={addingOff}
                   onKeyMove={onKeyMove}
                 />
               ) : null}

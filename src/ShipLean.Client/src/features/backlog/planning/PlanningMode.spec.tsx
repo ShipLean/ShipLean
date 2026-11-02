@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import { componentTestIds } from '../../../components/testIds';
-import { PROJECT, planningView } from '../ct/fixtures';
+import { PROJECT, planningView, review } from '../ct/fixtures';
 import { stubBacklog } from '../ct/stubApi';
 import { backlogTestIds as ids } from '../testIds';
 import { PlanningMode } from './PlanningMode';
@@ -270,4 +270,22 @@ test('PlanningMode_ShowsACheckboxPerRowAndOneToSelectAll', async ({ mount, page 
   await expect(page.getByTestId(ids.rowSelect)).toHaveCount(5);
   await expect(page.getByTestId(ids.rowSelect).first().getByRole('checkbox')).not.toBeChecked();
   await expect(page.getByTestId(ids.selectAll).getByRole('checkbox')).not.toBeChecked();
+});
+
+test('Planning_WhenACheckQueueIsOpen_ShouldStillAllowAdding', async ({ mount, page }) => {
+  const server = await stubBacklog(page, {
+    ...planningView(),
+    review: review({ unestimated: ['id-SHIP-170', 'id-SHIP-171'] }),
+  });
+  await mount(<PlanningMode project={PROJECT} />, route);
+  await page.getByTestId(ids.planCheck).and(page.locator('[data-check="unestimated"]')).click();
+  await expect(page.getByTestId(ids.row)).toHaveCount(2);
+
+  const here = page.getByTestId(ids.addHere).last();
+  await expect(here).toBeEnabled();
+  await here.click();
+  await page.getByTestId(ids.addTitle).fill('Fixing as I go');
+  await page.getByTestId(ids.addTitle).press('Enter');
+  await expect.poll(() => server.adds.length).toBe(1);
+  expect(server.adds[0].items[0]).toMatchObject({ title: 'Fixing as I go' });
 });

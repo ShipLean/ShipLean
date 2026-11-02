@@ -137,6 +137,7 @@ export const backlogTestIds = {
   planStrip: 'backlog-plan-strip',
   planCheck: 'backlog-plan-check',
   planQueueBar: 'backlog-plan-queue-bar',
+  queueDone: 'backlog-queue-done',
   planQueueExit: 'backlog-plan-queue-exit',
   keysButton: 'backlog-keys-button',
   keysDialog: 'backlog-keys-dialog',

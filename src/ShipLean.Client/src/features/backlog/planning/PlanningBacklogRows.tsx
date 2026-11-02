@@ -21,6 +21,7 @@ export function PlanningBacklogRows({
   flashing,
   dropLine,
   filtering,
+  addingOff,
   onKeyMove,
 }: {
   section: BacklogSectionDto;
@@ -36,6 +37,7 @@ export function PlanningBacklogRows({
   flashing: ReadonlySet<string>;
   dropLine: DropLine | null;
   filtering: boolean;
+  addingOff: boolean;
   onKeyMove: (row: BacklogRowDto, direction: 'up' | 'down') => void;
 }) {
   const pull = usePullLine({ section, sprints, velocity, forecast, projectId, filtering });
@@ -62,6 +64,7 @@ export function PlanningBacklogRows({
         flashing={flashing}
         dropLine={dropLine}
         filtering={filtering}
+        addingOff={addingOff}
         onKeyMove={onKeyMove}
         isPulled={pull.isPulled}
         after={(row) =>

@@ -1,6 +1,7 @@
 import type { BacklogCheckId, BacklogReviewDto } from '../../../api/backlogWrites';
 import { useListCommand } from '../commands/listCommands';
 import { backlogTestIds as ids } from '../testIds';
+import { useQueueFixed } from './queueFixed';
 import type { CheckQueue } from './useCheckQueue';
 
 const LABELS: Record<BacklogCheckId, string> = {
@@ -25,10 +26,9 @@ export function BeforeYouPlan({
   review: BacklogReviewDto | null;
   queue: CheckQueue;
 }) {
+  const tally = useQueueFixed();
   if (!review) return null;
-  const open = review.checks.find((check) => check.id === queue.checkId);
-  const flagged = new Set(open?.itemIds ?? []);
-  const fixed = queue.frozenIds.filter((id) => !flagged.has(id)).length;
+  const fixed = tally.fixed.size;
   return (
     <div
       data-testid={ids.planStrip}
@@ -61,7 +61,7 @@ export function BeforeYouPlan({
           <QueueEscape exit={queue.exit} />
           <span className="flex-1" />
           <span data-testid={ids.planQueueBar} data-fixed={fixed}>
-            {fixed} of {queue.frozenIds.length} fixed
+            {fixed} of {tally.total} fixed
           </span>
           <button
             type="button"
