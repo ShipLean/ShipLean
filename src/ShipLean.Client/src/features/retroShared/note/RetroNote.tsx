@@ -13,7 +13,6 @@ import { useRetroNoteWrites } from './useRetroNoteWrites';
  * A point as a post-it. It reads the themes and does its own writes, taking the project from the action dialog's
  * provider, so a screen passes only the point and where it sits. A highlighted note scrolls itself into view once.
  */
-// TODO: the finished post-it styling replaces this plain note.
 export function RetroNote({
   point,
   showItem = false,
@@ -46,10 +45,10 @@ export function RetroNote({
       data-category={point.category}
       data-decision={point.decision ?? 'none'}
       data-highlighted={highlighted ? 'true' : undefined}
-      className="relative grid min-w-0 gap-1.5 rounded-sm border border-edge bg-panel p-2 text-[length:var(--text-sm)] data-[highlighted=true]:outline-2 data-[highlighted=true]:outline-accent"
+      className="paper paper-postit paper-sheet relative grid min-w-0 gap-1.5 rounded-[2px] border px-2.5 py-2 text-[length:var(--text-sm)] [overflow-wrap:anywhere] [&[data-decision=notNeeded]>:not([data-testid=retro-note-none])]:opacity-[0.62] data-[highlighted=true]:outline-2 data-[highlighted=true]:outline-offset-1 data-[highlighted=true]:outline-[var(--theme-accent)]"
     >
       {point.canArchive ? <NoteMore pointId={point.id} writes={writes} /> : null}
-      <p className="m-0">{point.text}</p>
+      <p className={`m-0 ${point.canArchive ? 'pr-4' : ''}`}>{point.text}</p>
       {point.rootCause ? (
         <p className="m-0 text-[length:var(--text-xs)] text-ink-muted">
           <b>Root cause:</b> {point.rootCause}

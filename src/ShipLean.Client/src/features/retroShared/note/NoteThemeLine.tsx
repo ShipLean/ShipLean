@@ -6,7 +6,6 @@ import { ThemePicker } from '../ThemePicker';
 import { retroSharedTestIds as ids } from '../testIds';
 import type { RetroNoteWrites } from './useRetroNoteWrites';
 
-// TODO: the finished theme line styling replaces this plain button.
 export function NoteThemeLine({
   point,
   writes,
@@ -34,16 +33,16 @@ export function NoteThemeLine({
     };
   }, [picking]);
   return (
-    <span ref={anchor} className="relative inline-block">
+    <span ref={anchor} className="relative max-w-full justify-self-start">
       <button
         type="button"
         data-testid={ids.retroNoteTheme}
         aria-expanded={picking}
         disabled={themes === undefined}
-        className="cursor-pointer border-0 bg-transparent p-0 text-[length:var(--text-xs)] text-ink-muted hover:text-ink disabled:cursor-default"
+        className={`cursor-pointer border-0 bg-transparent p-0 text-left text-[length:var(--text-xs)] text-ink-muted hover:text-ink hover:underline disabled:cursor-default ${point.theme ? '' : 'italic'}`}
         onClick={() => setPicking(!picking)}
       >
-        # {point.theme?.name ?? 'Unthemed'} ▾
+        # {point.theme?.name ?? 'Unthemed'} <span className="text-[9px] opacity-70">▾</span>
       </button>
       {picking && themes ? (
         <span className="absolute left-0 z-10 mt-1 block">

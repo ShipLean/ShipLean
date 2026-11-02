@@ -37,18 +37,17 @@ export function NoteDecision({
       />
     );
   }
-  // TODO: the finished button and link styling replaces these plain controls.
   const emphasised = point.category === 'improve';
   return (
-    <div className="flex items-center gap-2 text-[length:var(--text-xs)]">
+    <div className="flex min-w-0 flex-wrap items-center gap-1.5 pt-0.5 text-[length:var(--text-xs)]">
       <button
         type="button"
         data-testid={ids.retroNoteAddAction}
         data-variant={emphasised ? 'button' : 'link'}
         className={
           emphasised
-            ? 'cursor-pointer rounded-control bg-accent px-2 py-0.5 text-signal-ink'
-            : 'cursor-pointer border-0 bg-transparent p-0 text-accent underline'
+            ? 'inline-flex h-6 cursor-pointer items-center gap-1 rounded-control border border-signal bg-signal px-2 font-semibold whitespace-nowrap text-signal-ink hover:brightness-[1.08]'
+            : 'cursor-pointer border-0 bg-transparent p-0 font-medium whitespace-nowrap text-signal hover:underline'
         }
         onClick={() => dialog.open({ pointIds: [point.id], scope })}
       >
@@ -57,7 +56,7 @@ export function NoteDecision({
       <button
         type="button"
         data-testid={ids.retroNoteNotNeeded}
-        className="cursor-pointer border-0 bg-transparent p-0 text-ink-muted underline"
+        className="cursor-pointer border-0 bg-transparent p-0 whitespace-nowrap text-ink-muted hover:underline"
         onClick={() => setAsking(true)}
       >
         Not needed

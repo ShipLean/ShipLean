@@ -1,8 +1,8 @@
 import type { RetroPointDto } from '../../../api/retros';
+import { TypeIcon } from '../../../components/TypeIcon';
 import { AuthorChip } from '../AuthorChip';
 import { ItemLink } from '../../itemPeek/ItemLink';
 
-// TODO: the finished meta line styling replaces this plain row.
 export function NoteMeta({
   point,
   showItem,
@@ -13,11 +13,18 @@ export function NoteMeta({
   showAuthor: boolean;
 }) {
   return (
-    <div className="flex min-w-0 items-center gap-1.5 text-[length:var(--text-xs)] text-ink-muted">
+    <div className="flex min-w-0 flex-wrap items-center gap-[5px] text-[length:var(--text-xs)] text-ink-muted">
       {showItem && point.workItem ? (
-        <ItemLink itemKey={point.workItem.key} title={point.workItem.title} className="font-mono">
-          {point.workItem.key}
-        </ItemLink>
+        <>
+          <TypeIcon type={point.workItem.type.id} />
+          <ItemLink
+            itemKey={point.workItem.key}
+            title={point.workItem.title}
+            className="font-mono whitespace-nowrap text-inherit no-underline hover:underline"
+          >
+            {point.workItem.key}
+          </ItemLink>
+        </>
       ) : null}
       {showAuthor ? <AuthorChip author={point.author} /> : null}
     </div>

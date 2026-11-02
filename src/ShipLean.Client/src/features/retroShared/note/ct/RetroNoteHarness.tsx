@@ -1,4 +1,5 @@
 import type { RetroPointDto } from '../../../../api/retros';
+import { ToastHost } from '../../../../components/ToastHost';
 import { RetroActionDialogProvider } from '../../actionDialog/RetroActionDialogProvider';
 import { RetroNote } from '../RetroNote';
 
@@ -17,6 +18,7 @@ export function RetroNoteHarness({
       {tall ? <div style={{ height: 3000 }} /> : null}
       <RetroNote point={point} highlighted={highlighted} scope={{ kind: 'project' }} />
       {tall ? <div style={{ height: 3000 }} /> : null}
+      <ToastHost />
     </RetroActionDialogProvider>
   );
 }

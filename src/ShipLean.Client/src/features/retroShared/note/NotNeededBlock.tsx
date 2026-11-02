@@ -2,7 +2,6 @@ import type { RetroNotNeededDto } from '../../../api/retros';
 import { retroSharedTestIds as ids } from '../testIds';
 import type { RetroNoteWrites } from './useRetroNoteWrites';
 
-// TODO: the finished Not needed block styling replaces this plain block.
 export function NotNeededBlock({
   pointId,
   notNeeded,
@@ -15,7 +14,7 @@ export function NotNeededBlock({
   return (
     <div
       data-testid={ids.retroNoteNone}
-      className="grid gap-0.5 border-l-2 border-edge pl-1.5 text-[length:var(--text-xs)] text-ink-muted"
+      className="grid gap-0.5 border-l-2 border-ink-muted px-1.5 py-1 text-[length:var(--text-xs)] text-ink-muted"
     >
       <b className="font-semibold text-ink">Not needed</b>
       <span>{notNeeded.reason}</span>
@@ -27,7 +26,7 @@ export function NotNeededBlock({
           type="button"
           data-testid={ids.retroNoteUndo}
           disabled={writes.undoNotNeeded.isPending}
-          className="cursor-pointer border-0 bg-transparent p-0 text-ink-muted underline"
+          className="cursor-pointer border-0 bg-transparent p-0 text-ink-muted hover:underline"
           onClick={() => writes.undoNotNeeded.mutate(pointId)}
         >
           Undo
