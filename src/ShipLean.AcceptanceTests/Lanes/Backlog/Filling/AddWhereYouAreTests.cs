@@ -78,8 +78,8 @@ public class AddWhereYouAreTests : SeededAcceptanceTest
     }
 
     // Planning numbers rank inside each section, so the screen has no row after the section's last to place before and
-    // sends `last` (the bottom of the whole backlog). The Sprint 25 section reads right; the list, which is the whole
-    // stack, shows the new rows at its bottom, not under SHIP-147. A contract question, not fixed here.
+    // sends `last` with that section's `sprintId` (K2): the new rows land directly below the sprint's last row, in the
+    // Sprint 25 section and in the list, which is the whole stack.
     [Test]
     [Order(3)]
     public async Task Add_WhenBelowTheLastRowOfASprintInPlanning_ShouldSitBelowItInTheListToo()

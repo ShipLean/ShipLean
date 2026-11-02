@@ -140,7 +140,7 @@ public class PasteManyTests : SeededAcceptanceTest
         (await backlog.SectionAsync("Sprint 25")).TakeLast(2).Select(e => e.Title).ShouldBe(["Below paste one", "Below paste two"]);
     }
 
-    // Same contract question as AddWhereYouAreTests: Planning sends `last`, which is the bottom of the whole backlog.
+    // Same as AddWhereYouAreTests: Planning sends `last` with the sprint's `sprintId` (K2), so the rows land directly below that sprint's last row.
     [Test]
     [Order(6)]
     public async Task Paste_WhenBelowTheLastRowOfASprintInPlanning_ShouldSitBelowItInTheListToo()
