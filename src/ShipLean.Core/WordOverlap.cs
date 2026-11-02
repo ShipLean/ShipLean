@@ -20,27 +20,11 @@ public static class WordOverlap
             wanted.UnionWith(Split(word));
         }
 
-        return Shared(Words(title), wanted);
+        return Words(title).Shared(new WordSet(wanted));
     }
 
-    // The distinct words of a title, prepared once for Shared.
-    public static HashSet<string> Words(string title) => new(Split(title), StringComparer.Ordinal);
-
-    // How many words two prepared titles share; Score(a, [b]) is Shared(Words(a), Words(b)).
-    public static int Shared(HashSet<string> first, HashSet<string> second)
-    {
-        var (small, large) = first.Count <= second.Count ? (first, second) : (second, first);
-        var shared = 0;
-        foreach (var word in small)
-        {
-            if (large.Contains(word))
-            {
-                shared++;
-            }
-        }
-
-        return shared;
-    }
+    // The words of a title, prepared once; a.Shared(b) equals Score(a's title, [b's title]).
+    public static WordSet Words(string title) => new(Split(title));
 
     // NFC-normalised, lower-cased words of the text; stop words and single letters (not digits) dropped.
     private static IEnumerable<string> Split(string raw)

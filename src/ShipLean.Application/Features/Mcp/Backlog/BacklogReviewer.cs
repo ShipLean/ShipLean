@@ -18,7 +18,7 @@ public static class BacklogReviewer
         return [.. stack.Take(top).Select(row => Finding(row, compared, now, staleDays))];
     }
 
-    private static BacklogFinding Finding(StackRowDto row, List<(StackRowDto Row, HashSet<string> Words)> compared, DateTimeOffset now, int staleDays)
+    private static BacklogFinding Finding(StackRowDto row, List<(StackRowDto Row, WordSet Words)> compared, DateTimeOffset now, int staleDays)
     {
         var flags = new List<string>();
         var points = WorkItemTypeRules.IsStoryLevel(row.Type.Id);
@@ -54,9 +54,9 @@ public static class BacklogReviewer
     // The likeness test review_backlog and the duplicate check share.
     public static bool LooksAlike(string title, string otherTitle) => LooksAlike(WordOverlap.Words(title), WordOverlap.Words(otherTitle));
 
-    private static bool LooksAlike(HashSet<string> words, HashSet<string> otherWords)
+    private static bool LooksAlike(WordSet words, WordSet otherWords)
     {
-        var shared = WordOverlap.Shared(words, otherWords);
+        var shared = words.Shared(otherWords);
         return shared >= 2 && shared * 4 >= Math.Min(words.Count, otherWords.Count) * 3;
     }
 }

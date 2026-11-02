@@ -46,10 +46,10 @@ public class WordOverlapTests
     [TestCase("", "pay")]
     public void WordOverlap_WhenPrepared_ShouldAgreeWithScore(string title, string other)
     {
-        var shared = WordOverlap.Shared(WordOverlap.Words(title), WordOverlap.Words(other));
+        var shared = WordOverlap.Words(title).Shared(WordOverlap.Words(other));
 
         shared.ShouldBe(WordOverlap.Score(title, [other]));
-        shared.ShouldBe(WordOverlap.Shared(WordOverlap.Words(other), WordOverlap.Words(title)));
+        shared.ShouldBe(WordOverlap.Words(other).Shared(WordOverlap.Words(title)));
         WordOverlap.Words(title).Count.ShouldBe(WordOverlap.Score(title, [title]));
     }
 }
