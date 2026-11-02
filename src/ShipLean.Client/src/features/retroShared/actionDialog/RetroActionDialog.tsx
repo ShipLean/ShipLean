@@ -4,6 +4,7 @@ import { RetroQueryState } from '../../retros/RetroQueryState';
 import { useRetroActionDialogData } from '../../retros/useRetroQueries';
 import { retroSharedTestIds as ids } from '../testIds';
 import type { OpenRetroActionDialog } from './RetroActionDialogContext';
+import { RetroActionForm } from './RetroActionForm';
 import { useRetroActionDialog } from './useRetroActionDialog';
 
 function queryOf(request: OpenRetroActionDialog): RetroActionDialogQuery {
@@ -16,7 +17,7 @@ function queryOf(request: OpenRetroActionDialog): RetroActionDialogQuery {
   };
 }
 
-// TODO: the New / Existing action item form, the points to cover and the real Save replace the title and Save below.
+/** Loads what the dialog offers, then shows the form; until then, and if the load fails, an empty frame to close. */
 export function RetroActionDialog({
   request,
   onClose,
@@ -26,35 +27,12 @@ export function RetroActionDialog({
 }) {
   const { projectId } = useRetroActionDialog();
   const query = useRetroActionDialogData(projectId, queryOf(request));
-  return (
-    <Dialog
-      title="New action item"
-      onClose={onClose}
-      testId={ids.retroActionDialog}
-      footer={
-        <>
-          <span className="flex-1" />
-          <button type="button" className="cursor-pointer px-3 py-1 text-ink" onClick={onClose}>
-            Cancel
-          </button>
-          <button
-            type="button"
-            data-testid={ids.retroActionSave}
-            disabled
-            className="rounded-control bg-accent px-3 py-1 text-signal-ink disabled:opacity-60"
-          >
-            Save
-          </button>
-        </>
-      }
-    >
-      <RetroQueryState query={query}>
-        {(dialog) => (
-          <p className="m-0 text-[length:var(--text-sm)] text-ink-muted">
-            {dialog.selected.length} selected
-          </p>
-        )}
-      </RetroQueryState>
-    </Dialog>
-  );
+  if (query.data === undefined) {
+    return (
+      <Dialog title="Action item" width="620px" onClose={onClose} testId={ids.retroActionDialog}>
+        <RetroQueryState query={query}>{() => null}</RetroQueryState>
+      </Dialog>
+    );
+  }
+  return <RetroActionForm request={request} dialog={query.data} onClose={onClose} />;
 }

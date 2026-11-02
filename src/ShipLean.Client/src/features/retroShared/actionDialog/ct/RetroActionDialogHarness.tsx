@@ -1,13 +1,19 @@
+import { ToastHost } from '../../../../components/ToastHost';
 import { RetroActionDialogProvider } from '../RetroActionDialogProvider';
 import { useRetroActionDialog } from '../useRetroActionDialog';
 
-function Opener() {
+interface Opening {
+  pointIds?: string[];
+  existingWorkItemId?: string;
+}
+
+function Opener({ pointIds, existingWorkItemId }: Opening) {
   const dialog = useRetroActionDialog();
   return (
     <button
       type="button"
       onClick={() =>
-        dialog.open({ pointIds: ['pt-1', 'pt-2'], scope: { kind: 'item', itemId: 'item-1' } })
+        dialog.open({ pointIds, existingWorkItemId, scope: { kind: 'item', itemId: 'item-1' } })
       }
     >
       open
@@ -15,11 +21,15 @@ function Opener() {
   );
 }
 
-/** A provider with a button that opens the dialog on two points in an item's scope. */
-export function RetroActionDialogHarness() {
+/** A provider with a button that opens the dialog in an item's scope; the points and the item to add to are props. */
+export function RetroActionDialogHarness({
+  pointIds = ['pt-1', 'pt-2'],
+  existingWorkItemId,
+}: Opening) {
   return (
     <RetroActionDialogProvider projectId="p1">
-      <Opener />
+      <Opener pointIds={pointIds} existingWorkItemId={existingWorkItemId} />
+      <ToastHost />
     </RetroActionDialogProvider>
   );
 }
