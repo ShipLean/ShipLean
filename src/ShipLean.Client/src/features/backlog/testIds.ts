@@ -106,6 +106,8 @@ export const backlogTestIds = {
   bulkChangedRow: 'backlog-bulk-changed-row',
   bulkIncludeAnyway: 'backlog-bulk-include-anyway',
   bulkLeave: 'backlog-bulk-leave',
+  bulkPointsInput: 'backlog-bulk-points-input',
+  bulkTagInput: 'backlog-bulk-tag-input',
   undo: 'backlog-undo',
   dragBadge: 'backlog-drag-badge',
   sectionPreview: 'backlog-section-preview',

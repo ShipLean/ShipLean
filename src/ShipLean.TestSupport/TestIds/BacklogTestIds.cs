@@ -109,6 +109,8 @@ public static class BacklogTestIds
     public const string BulkChangedRow = "backlog-bulk-changed-row";
     public const string BulkIncludeAnyway = "backlog-bulk-include-anyway";
     public const string BulkLeave = "backlog-bulk-leave";
+    public const string BulkPointsInput = "backlog-bulk-points-input";
+    public const string BulkTagInput = "backlog-bulk-tag-input";
     public const string Undo = "backlog-undo";
     public const string DragBadge = "backlog-drag-badge";
     public const string SectionPreview = "backlog-section-preview";
