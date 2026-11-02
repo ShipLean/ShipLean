@@ -146,6 +146,55 @@ test('Stale_answer_keeps_the_value_and_offers_use_mine', async ({ mount, page })
   await expect(page.getByTestId(componentTestIds.conflictBanner)).toHaveCount(0);
 });
 
+test('Edit_made_while_a_save_is_pending_goes_out_after_it_at_the_new_revision', async ({
+  mount,
+  page,
+}) => {
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const server = await stubBacklog(page, backlogView(ESTIMATE_ROWS), {
+    holdFirstPatch: held,
+    patchAnswers: [
+      {
+        status: 200,
+        body: { id: 'id-SHIP-1', key: 'SHIP-1', revision: 5, changes: [], notices: [] },
+      },
+      {
+        status: 200,
+        body: { id: 'id-SHIP-1', key: 'SHIP-1', revision: 6, changes: [], notices: [] },
+      },
+    ],
+  });
+  await mount(<ListMode project={PROJECT} />, route);
+  const first = page.getByTestId(ids.row).nth(0);
+  await expect(first.getByTestId(ids.points)).toHaveText('3');
+
+  await first.getByTestId(ids.points).click();
+  await page.getByTestId(ids.pointsInput).fill('5');
+  await page.getByTestId(ids.pointsInput).press('Enter');
+  await expect.poll(() => server.patches.length).toBe(1);
+
+  // The first save is still pending and the list still shows 3. Typing 3 again is a real change from the 5 being saved.
+  await first.getByTestId(ids.points).click();
+  await page.getByTestId(ids.pointsInput).fill('3');
+  await page.getByTestId(ids.pointsInput).press('Enter');
+  expect(server.patches).toHaveLength(1);
+  await expect(first.getByTestId(ids.points)).toHaveText('3');
+
+  server.setBacklog(
+    backlogView([{ ...ESTIMATE_ROWS[0], points: 5, revision: 5 }, ...ESTIMATE_ROWS.slice(1)]),
+  );
+  release();
+
+  await expect.poll(() => server.patches.length).toBe(2);
+  expect(server.patches[1].body).toMatchObject({
+    expectedRevision: 5,
+    changes: { points: { value: 3 } },
+  });
+});
+
 test('Tree_mode_points_are_read_only', async ({ mount, page }) => {
   await stubBacklog(page, backlogView(ESTIMATE_ROWS));
   await mount(<EstimateHarness tree />, route);
