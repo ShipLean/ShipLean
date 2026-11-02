@@ -11,6 +11,16 @@ public sealed class BacklogKeys(IPage page)
 
     public ILocator Dialog => page.GetByTestId(BacklogTestIds.KeysDialog);
 
+    // The row of an item, by its key.
+    public ILocator Row(string itemKey) =>
+        page.GetByTestId(BacklogTestIds.Row).Filter(new() { Has = page.GetByTestId(BacklogTestIds.Key).Filter(new() { HasTextRegex = new System.Text.RegularExpressions.Regex($"^{itemKey}$") }) });
+
+    // The keys of the rows on the page, top to bottom.
+    public async Task<IReadOnlyList<string>> RowKeysAsync() =>
+        await page.GetByTestId(BacklogTestIds.Row).EvaluateAllAsync<string[]>("rows => rows.map(r => r.getAttribute('data-key'))");
+
+    public Task TypeAsync(string text) => page.Keyboard.TypeAsync(text);
+
     public Task PressAsync(string key) => page.Keyboard.PressAsync(key);
 
     // The key of the row that has focus, or null when focus is not on a row.
@@ -39,9 +49,9 @@ public sealed class BacklogKeys(IPage page)
     // Walks to a row with J or K from the row that has focus.
     public async Task WalkToAsync(string itemKey)
     {
-        var rows = await page.GetByTestId(BacklogTestIds.Row).EvaluateAllAsync<string[]>("rows => rows.map(r => r.getAttribute('data-key'))");
-        var from = Array.IndexOf(rows, await FocusedRowKeyAsync());
-        var to = Array.IndexOf(rows, itemKey);
+        var rows = (await RowKeysAsync()).ToList();
+        var from = rows.IndexOf(await FocusedRowKeyAsync() ?? string.Empty);
+        var to = rows.IndexOf(itemKey);
         from.ShouldBeGreaterThanOrEqualTo(0);
         to.ShouldBeGreaterThanOrEqualTo(0);
         for (var step = 0; step < Math.Abs(to - from); step++)
@@ -49,6 +59,6 @@ public sealed class BacklogKeys(IPage page)
             await page.Keyboard.PressAsync(to > from ? "j" : "k");
         }
 
-        await Assertions.Expect(page.GetByTestId(BacklogTestIds.Row).Filter(new() { Has = page.GetByTestId(BacklogTestIds.Key).Filter(new() { HasTextString = itemKey }) })).ToBeFocusedAsync();
+        await Assertions.Expect(Row(itemKey)).ToBeFocusedAsync();
     }
 }
