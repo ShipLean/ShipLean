@@ -13,6 +13,7 @@ const TYPE_NAMES: Record<WorkItemTypeId, string> = {
   story: 'User Story',
   bug: 'Bug',
   task: 'Task',
+  action: 'Action item',
 };
 
 // What a column means: the state each type takes there, the WIP rule, and its Definition of done as the server

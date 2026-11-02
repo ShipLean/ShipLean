@@ -10,6 +10,7 @@ export const sprintHeaderTestIds = {
   tabBacklog: 'sprint-header-tab-backlog',
   tabTaskboard: 'sprint-header-tab-taskboard',
   tabCapacity: 'sprint-header-tab-capacity',
+  tabRetro: 'sprint-header-tab-retro',
   pickerList: 'sprint-header-picker-list',
   pickerOption: 'sprint-header-picker-option',
 } as const;

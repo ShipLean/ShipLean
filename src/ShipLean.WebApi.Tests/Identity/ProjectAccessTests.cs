@@ -14,6 +14,9 @@ public class ProjectAccessTests : ApiFixture
 {
     private static readonly Guid Comment = new("0000000b-0000-4000-8001-000000000001");
     private static readonly Guid Attachment = new("0000000c-0000-4000-8001-000000000001");
+    private static readonly Guid RetroTheme = new("0000000d-0000-4000-8001-000000000001");
+    private static readonly Guid Retrospective = new("0000000d-0000-4000-8001-000000000002");
+    private static readonly Guid RetroPoint = new("0000000d-0000-4000-8001-000000000003");
 
     private IProjectAccess Access => Host.Services.GetRequiredService<IProjectAccess>();
 
@@ -27,6 +30,15 @@ public class ProjectAccessTests : ApiFixture
         await connection.ExecuteAsync(
             "INSERT INTO attachment (id, work_item_id, name, content_type, size_bytes, storage_ref) VALUES (@Attachment, @item, 'a.png', 'image/png', 3, 'blob/a')",
             new { Attachment, item = SeedIds.WorkItems.Ship90 });
+        await connection.ExecuteAsync(
+            "INSERT INTO retro_theme (id, project_id, name, name_set_by, tone) VALUES (@RetroTheme, @project, 'Flaky waits', 'person', 'bad')",
+            new { RetroTheme, project = SeedIds.Projects.Ship });
+        await connection.ExecuteAsync(
+            "INSERT INTO retrospective (id, project_id, work_item_id, author_user_id, role) VALUES (@Retrospective, @project, @item, @joel, 'person')",
+            new { Retrospective, project = SeedIds.Projects.Ship, item = SeedIds.WorkItems.Ship90, joel = SeedIds.Users.Joel });
+        await connection.ExecuteAsync(
+            "INSERT INTO retro_point (id, retrospective_id, category, text, created_by_user_id) VALUES (@RetroPoint, @Retrospective, 'improve', 'Wait on a locator.', @joel)",
+            new { RetroPoint, Retrospective, joel = SeedIds.Users.Joel });
     }
 
     [Test]
@@ -118,6 +130,8 @@ public class ProjectAccessTests : ApiFixture
     [TestCase(ProjectItem.ImportJob)]
     [TestCase(ProjectItem.JiraConnection)]
     [TestCase(ProjectItem.Link)]
+    [TestCase(ProjectItem.RetroPoint)]
+    [TestCase(ProjectItem.RetroTheme)]
     public async Task ProjectAccess_WhenItemIdUnknown_ShouldThrowNotFound(ProjectItem item)
     {
         Host.ActAs(SeedIds.Users.Joel);
@@ -166,6 +180,8 @@ public class ProjectAccessTests : ApiFixture
         yield return Case(ProjectItem.ImportJob, SeedIds.ImportJobs.MobImport, SeedIds.Projects.Mob);
         yield return Case(ProjectItem.JiraConnection, SeedIds.JiraConnections.Mob, SeedIds.Projects.Mob);
         yield return Case(ProjectItem.Link, SeedIds.Links.Ship101Pull, SeedIds.Projects.Ship);
+        yield return Case(ProjectItem.RetroPoint, RetroPoint, SeedIds.Projects.Ship);
+        yield return Case(ProjectItem.RetroTheme, RetroTheme, SeedIds.Projects.Ship);
     }
 
     private static TestCaseData Case(ProjectItem item, Guid id, Guid project) => new TestCaseData(item, id, project).SetArgDisplayNames(item.ToString());

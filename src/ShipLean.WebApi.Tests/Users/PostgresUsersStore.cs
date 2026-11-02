@@ -3,7 +3,7 @@ using Npgsql;
 using ShipLean.Application.Database;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Contracts.Users;
-using ShipLean.TestSupport.Database;
+using ShipLean.LocalEnvironment.Database;
 using ShipLean.Contracts.Users;
 
 namespace ShipLean.WebApi.Tests.Users;

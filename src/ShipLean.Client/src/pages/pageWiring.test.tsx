@@ -7,6 +7,7 @@ import { DiscussionSlot } from '../slots/DiscussionSlot';
 import { LinksSlot } from '../slots/LinksSlot';
 import { SideSlot } from '../slots/SideSlot';
 import { TasksSlot } from '../slots/TasksSlot';
+import { WorkItemRetroSlot, type WorkItemRetroSlotProps } from '../slots/WorkItemRetroSlot';
 import { backlogSlots } from './backlogSlots';
 import { boardSlots } from './boardSlots';
 import { capacitySlots } from './capacitySlots';
@@ -14,6 +15,9 @@ import { importSlots } from './importSlots';
 import { instanceSettingsSlots } from './instanceSettingsSlots';
 import { backlogRouteIds, boardRouteIds, pageRouteIds } from './pageRouteIds';
 import { projectSettingsSlots } from './projectSettingsSlots';
+import { retroInsightsSlots } from './retroInsightsSlots';
+import { retrosSlots } from './retrosSlots';
+import { sprintRetroSlots } from './sprintRetroSlots';
 import { sprintBacklogSlots } from './sprintBacklogSlots';
 import { sprintsSlots } from './sprintsSlots';
 import { taskboardSlots } from './taskboardSlots';
@@ -97,11 +101,20 @@ test('sprintPages_ShouldPassTheSprintAndTheRightHeader', () => {
     header: { variant: 'full', project, sprint, sprints, tab: 'capacity' },
     capacity: { project, sprint, sprints },
   });
+  expect(sprintRetroSlots(project, sprint, sprints)).toEqual({
+    header: { variant: 'full', project, sprint, sprints, tab: 'retro' },
+    sprintRetro: { project, sprint, sprints },
+  });
   expect(sprintsSlots(project, sprints)).toEqual({
     sprintEndPrompt: { project, sprints },
     sprintsList: { project, sprints },
     newSprintRail: { project, sprints },
   });
+});
+
+test('retroPages_ShouldPassTheProjectToTheirOneSlot', () => {
+  expect(retrosSlots(project)).toEqual({ retrosSearch: { project } });
+  expect(retroInsightsSlots(project)).toEqual({ retroInsights: { project } });
 });
 
 test('backlogSlots_WhenStoriesInEachMode_ShouldMountOnlyThatModesSlot', () => {
@@ -165,6 +178,7 @@ test('instanceSettingsSlots_ShouldMountTheSlotOfTheTabOnly', () => {
     instanceUsers: undefined,
     instanceProjects: undefined,
     instanceIntegrations: undefined,
+    instanceAnalytics: undefined,
     instanceAgents: undefined,
   });
   expect(instanceSettingsSlots('users')).toEqual({
@@ -172,6 +186,7 @@ test('instanceSettingsSlots_ShouldMountTheSlotOfTheTabOnly', () => {
     instanceUsers: { tab: 'users' },
     instanceProjects: undefined,
     instanceIntegrations: undefined,
+    instanceAnalytics: undefined,
     instanceAgents: undefined,
   });
   expect(instanceSettingsSlots('projects')).toEqual({
@@ -179,6 +194,7 @@ test('instanceSettingsSlots_ShouldMountTheSlotOfTheTabOnly', () => {
     instanceUsers: undefined,
     instanceProjects: { tab: 'projects' },
     instanceIntegrations: undefined,
+    instanceAnalytics: undefined,
     instanceAgents: undefined,
   });
   expect(instanceSettingsSlots('integrations')).toEqual({
@@ -186,6 +202,15 @@ test('instanceSettingsSlots_ShouldMountTheSlotOfTheTabOnly', () => {
     instanceUsers: undefined,
     instanceProjects: undefined,
     instanceIntegrations: { tab: 'integrations' },
+    instanceAnalytics: undefined,
+    instanceAgents: undefined,
+  });
+  expect(instanceSettingsSlots('analytics')).toEqual({
+    instanceGeneral: undefined,
+    instanceUsers: undefined,
+    instanceProjects: undefined,
+    instanceIntegrations: undefined,
+    instanceAnalytics: { tab: 'analytics' },
     instanceAgents: undefined,
   });
   expect(instanceSettingsSlots('agents')).toEqual({
@@ -193,6 +218,7 @@ test('instanceSettingsSlots_ShouldMountTheSlotOfTheTabOnly', () => {
     instanceUsers: undefined,
     instanceProjects: undefined,
     instanceIntegrations: undefined,
+    instanceAnalytics: undefined,
     instanceAgents: { tab: 'agents' },
   });
   expect(InstanceGeneralSlot).toBeDefined();
@@ -207,6 +233,13 @@ test('workItemSlots_ShouldHandTheFormTheFourOtherSlots', () => {
     expect(node.type).toBe(slot);
     expect(node.props).toEqual({ project, itemKey: 'SHIP-141' });
   }
+});
+
+test('workItemSlots_ShouldFillTheRetroNodeWithTheRetroSlot', () => {
+  const retro = workItemSlots(project, 'SHIP-141').form
+    .retro as ReactElement<WorkItemRetroSlotProps>;
+  expect(retro.type).toBe(WorkItemRetroSlot);
+  expect(retro.props).toEqual({ project, itemKey: 'SHIP-141' });
 });
 
 test('attachmentSlots_ShouldPassTheProjectItemAndAttachment', () => {
@@ -242,6 +275,9 @@ test('pageRouteIds_ShouldNameTheScreenEachPageReports', () => {
     sprintBacklog: 'sprintBacklog',
     taskboard: 'taskboard',
     capacity: 'capacity',
+    sprintRetro: 'sprintRetro',
+    retros: 'retros',
+    retroInsights: 'retroInsights',
     importIntoProject: 'jiraImport',
     importWithoutProject: 'importStart',
     projectSettings: 'projectSettings',

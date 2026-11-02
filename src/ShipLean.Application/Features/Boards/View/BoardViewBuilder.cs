@@ -137,14 +137,14 @@ public sealed class BoardViewBuilder(
             row.Revision);
     }
 
-    // The points of every Story and Bug below the card, nested Features included; null when none of them has points.
+    // The points of every story-level item below the card, nested Features included; null when none of them has points.
     private static decimal? ChildPoints(List<WorkTreeRollupDto> below)
     {
-        var totals = below.Where(r => r.Type is WorkItemTypeId.Story or WorkItemTypeId.Bug && r.TotalPoints is not null).Select(r => r.TotalPoints!.Value).ToList();
+        var totals = below.Where(r => WorkItemTypeRules.IsStoryLevel(r.Type) && r.TotalPoints is not null).Select(r => r.TotalPoints!.Value).ToList();
         return totals.Count == 0 ? null : totals.Sum();
     }
 
-    private static TypeRef TypeRef(WorkItemTypeId type) => new(type, type == WorkItemTypeId.Story ? "User Story" : type.ToString());
+    private static TypeRef TypeRef(WorkItemTypeId type) => new(type, WorkItemTypeRules.Name(type));
 
     private static StateRef State(BoardStateRow state) => new(state.Id, state.Name, Enum.Parse<StateCategory>(state.Category, ignoreCase: true));
 

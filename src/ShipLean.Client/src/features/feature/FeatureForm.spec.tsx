@@ -74,6 +74,20 @@ test('FeatureForm_ShouldRenderRegionsInOrder', async ({ mount, page }) => {
   }
 });
 
+test('FeatureForm_WhenGivenARetroSlot_ShouldRenderItAfterStoriesAndBugsInTheMainColumn', async ({
+  mount,
+  page,
+}) => {
+  await stubAll(page);
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-100" />, route('SHIP-100'));
+
+  await expect(screen.getByTestId(ids.main).getByTestId(harness.retro)).toBeAttached();
+  const order = await page
+    .locator(inDocumentOrder([ids.storiesAndBugs, harness.retro, ids.log]))
+    .evaluateAll((nodes) => nodes.map((node) => node.getAttribute('data-testid')));
+  expect(order).toEqual([ids.storiesAndBugs, harness.retro, ids.log]);
+});
+
 test('FeatureForm_WhenDescriptionHasAWideTable_ShouldKeepItBesideTheRail', async ({
   mount,
   page,

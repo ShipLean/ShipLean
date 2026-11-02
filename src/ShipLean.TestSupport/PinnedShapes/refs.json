@@ -43,6 +43,12 @@
       { "id": "00000003-0000-4000-8001-000000000503", "name": "In review", "category": "resolved" },
       { "id": "00000003-0000-4000-8001-000000000504", "name": "Closed", "category": "completed" },
       { "id": "00000003-0000-4000-8001-000000000505", "name": "Removed", "category": "removed" }
+    ],
+    "action": [
+      { "id": "00000003-0000-4000-8001-000000000601", "name": "New", "category": "proposed" },
+      { "id": "00000003-0000-4000-8001-000000000602", "name": "Active", "category": "inProgress" },
+      { "id": "00000003-0000-4000-8001-000000000603", "name": "Closed", "category": "completed" },
+      { "id": "00000003-0000-4000-8001-000000000604", "name": "Removed", "category": "removed" }
     ]
   },
   "sprintRefs": [
@@ -60,6 +66,7 @@
     { "id": "feature", "name": "Feature" },
     { "id": "story", "name": "User Story" },
     { "id": "bug", "name": "Bug" },
-    { "id": "task", "name": "Task" }
+    { "id": "task", "name": "Task" },
+    { "id": "action", "name": "Action item" }
   ]
 }

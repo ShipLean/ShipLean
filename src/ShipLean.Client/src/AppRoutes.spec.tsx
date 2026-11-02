@@ -4,6 +4,8 @@ import { stubFeatureBoard } from './features/featureBoard/ct/stubFeatureBoard';
 import { AppRoutes } from './AppRoutes';
 import { meDto, stubInstance, stubJson } from './features/auth/authFixtures';
 import { agentsTestIds } from './features/agents/testIds';
+import { stubAnalyticsApi } from './features/settings/instance/analytics/ct/analyticsStub';
+import { settingsTestIds } from './features/settings/testIds';
 import { pagesTestIds } from './features/pages/testIds';
 import { stubProjectApi } from './pages/pagesFixtures';
 import type { RouteId } from './routes';
@@ -68,6 +70,9 @@ const scaffolds: Record<RouteId, { path: string; testId: string }> = {
   },
   taskboard: { path: '/p/SHIP/sprints/sprint-24/taskboard', testId: pagesTestIds.taskboardPage },
   capacity: { path: '/p/SHIP/sprints/sprint-24/capacity', testId: pagesTestIds.capacityPage },
+  sprintRetro: { path: '/p/SHIP/sprints/sprint-24/retro', testId: pagesTestIds.sprintRetroPage },
+  retros: { path: '/p/SHIP/retros', testId: pagesTestIds.retrosPage },
+  retroInsights: { path: '/p/SHIP/retros/insights', testId: pagesTestIds.retroInsightsPage },
   jiraImport: { path: '/p/SHIP/import', testId: pagesTestIds.importPage },
   projectSettings: {
     path: '/p/SHIP/settings/states',
@@ -191,7 +196,26 @@ test('InstanceSettings_WhenOpened_ShouldLinkEveryTabAndMarkTheCurrentOne', async
   await stubProjectApi(page);
   await mount(<AppRoutes />, { hooksConfig: { route: '/instance/users' } });
   const tabs = page.getByTestId(pagesTestIds.instanceSettingsTab);
-  await expect(tabs).toHaveText(['General', 'Users', 'Projects', 'Integrations', 'Agents']);
-  await expect(tabs.nth(4)).toHaveAttribute('href', '/instance/agents');
+  await expect(tabs).toHaveText([
+    'General',
+    'Users',
+    'Projects',
+    'Integrations',
+    'Analytics',
+    'Agents',
+  ]);
+  await expect(tabs.nth(4)).toHaveAttribute('href', '/instance/analytics');
+  await expect(tabs.nth(5)).toHaveAttribute('href', '/instance/agents');
   await expect(tabs.nth(1)).toHaveAttribute('aria-current', 'page');
+});
+
+test('InstanceSettings_WhenAnalyticsTabOpened_ShouldRenderTheAnalyticsSlot', async ({
+  mount,
+  page,
+}) => {
+  await stubProjectApi(page);
+  await stubAnalyticsApi(page);
+  await mount(<AppRoutes />, { hooksConfig: { route: '/instance/analytics' } });
+  await expect(page.getByTestId(pagesTestIds.slotInstanceAnalytics)).toBeVisible();
+  await expect(page.getByTestId(settingsTestIds.analyticsContainer)).toBeVisible();
 });

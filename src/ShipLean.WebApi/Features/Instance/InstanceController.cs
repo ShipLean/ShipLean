@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using ShipLean.Application.Features.Instance;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Instance;
+using ShipLean.Contracts;
+using ShipLean.Contracts.Usage;
 using ShipLean.WebApi.Features.Auth;
 using ShipLean.WebApi.Infrastructure;
 
@@ -14,7 +16,8 @@ namespace ShipLean.WebApi.Features.Instance;
 // POST /api/instance/projects/{id}/join    -> 204; the caller becomes the project's Admin
 [InstanceAdmin]
 [Route("api/instance")]
-public sealed class InstanceController(InstanceSettings settings, InstanceProjects projects, PublicOrigin origins) : ApiControllerBase
+public sealed class InstanceController(InstanceSettings settings, InstanceProjects projects, PublicOrigin origins,
+    ICurrentUser currentUser, IUsageEvents events, TimeProvider time) : ApiControllerBase
 {
     [HttpGet("settings")]
     [ProducesResponseType<InstanceSettingsDto>(StatusCodes.Status200OK)]
@@ -45,5 +48,11 @@ public sealed class InstanceController(InstanceSettings settings, InstanceProjec
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ApiError>(StatusCodes.Status403Forbidden)]
     [ProducesResponseType<ApiError>(StatusCodes.Status404NotFound)]
-    public Task<NoContentResult> Join(Guid id, CancellationToken cancellationToken) => NoContentAfter(projects.JoinAsync(id, cancellationToken));
+    public async Task<NoContentResult> Join(Guid id, CancellationToken cancellationToken)
+    {
+        var started = time.GetTimestamp();
+        await projects.JoinAsync(id, cancellationToken);
+        SelfEmittedUsage.TrackOk(events, time, started, UsageEventNames.ProjectJoined, currentUser.Id, "api:Instance.Join", id);
+        return NoContent();
+    }
 }

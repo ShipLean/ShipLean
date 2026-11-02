@@ -8,6 +8,7 @@ export const typeNames: Record<WorkItemTypeId, string> = {
   story: 'Story',
   bug: 'Bug',
   task: 'Task',
+  action: 'Action item',
 };
 
 export interface UnmappedState {

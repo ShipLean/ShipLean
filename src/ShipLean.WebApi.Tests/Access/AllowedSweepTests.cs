@@ -3,10 +3,11 @@ using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Application.Fakes.Blobs;
 using ShipLean.Contracts.Blobs;
 using ShipLean.TestSupport.AccessSweep;
-using ShipLean.TestSupport.Blobs;
+using ShipLean.LocalEnvironment.Blobs;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
 using ShipLean.WebApi.Tests.Instance.AgentConnections;
+using ShipLean.WebApi.Tests.Retros.Api;
 
 namespace ShipLean.WebApi.Tests.Access;
 
@@ -36,6 +37,14 @@ public class AllowedSweepTests : ApiFixture
                 """,
                 new { id, name = $"Sweep {id}", hash = id.ToByteArray() });
         }
+    }
+
+    // The point- and theme-keyed retro routes need real rows: a made-up id is a 404 whether or not access is checked.
+    [OneTimeSetUp]
+    public async Task InsertRetroSweepRows()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        await RetroSweepData.InsertAsync(connection);
     }
 
     [TestCaseSource(typeof(SweepCalls), nameof(SweepCalls.AllRows))]

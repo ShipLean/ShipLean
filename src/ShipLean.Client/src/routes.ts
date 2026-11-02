@@ -5,7 +5,7 @@
 //   Install level (no project; the crumbs start at "ShipLean"):
 //     /login                      sign in            ?returnUrl=<path> is where to go afterwards
 //     /projects/new               new project
-//     /instance/:tab              instance settings  tab: general | users | projects | integrations | agents
+//     /instance/:tab              instance settings  tab: general | users | projects | integrations | analytics | agents
 //     /profile                    your profile
 //     /import                     Jira import with no project yet (the stepper creates or picks one)
 //     /authorize                  connect an agent  ?request=<id> is the pending authorize request
@@ -20,11 +20,13 @@
 //     /p/:key/boards/features     ?settings=
 //     /p/:key/boards/epics        ?settings=
 //     /p/:key/sprints             all sprints
-//     /p/:key/sprints/:sprintId/backlog | capacity
+//     /p/:key/sprints/:sprintId/backlog | capacity | retro
 //     /p/:key/sprints/:sprintId/taskboard   ?settings=   (the Taskboard settings dialog's section)
+//     /p/:key/retros              Retrospectives search   ?q=&sprint=&category=&theme=&level=&role=&recurring=&selected=
+//     /p/:key/retros/insights     Retrospective insights  ?view=themes|actions|impact&range=6|3|all
 //     /p/:key/import              Jira import
 //     /p/:key/settings/:tab       tab: general | states | members | sprints | integrations
-//   The three backlogs also take ?new=epic|feature|story|bug: the new-item row (or dialog) open with that type, see newItemPath.
+//   The three backlogs also take ?new=epic|feature|story|bug|action: the new-item row (or dialog) open with that type, see newItemPath.
 //   Every project-level route also takes ?item=<itemKey>: that work item open in a modal over the screen.
 //
 // A route id is also the screen id presence is reported by. Ids and paths are stable: later work mounts pages on
@@ -37,7 +39,7 @@ export type BacklogMode = (typeof backlogModes)[number];
 export type Level = 'stories' | 'features' | 'epics';
 
 // The types a Create action can start; tasks are made under a parent, so they have no link.
-export const NEW_ITEM_KINDS = ['epic', 'feature', 'story', 'bug'] as const;
+export const NEW_ITEM_KINDS = ['epic', 'feature', 'story', 'bug', 'action'] as const;
 export type NewItemKind = (typeof NEW_ITEM_KINDS)[number];
 
 export const projectSettingsTabs = [
@@ -54,6 +56,7 @@ export const instanceSettingsTabs = [
   'users',
   'projects',
   'integrations',
+  'analytics',
   'agents',
 ] as const;
 export type InstanceSettingsTab = (typeof instanceSettingsTabs)[number];
@@ -84,6 +87,9 @@ export interface RouteParams {
   sprintBacklog: SprintParams;
   taskboard: SprintParams;
   capacity: SprintParams;
+  sprintRetro: SprintParams;
+  retros: ProjectParams;
+  retroInsights: ProjectParams;
   jiraImport: ProjectParams;
   projectSettings: ProjectParams & { tab: ProjectSettingsTab };
   authorize: Record<string, never>;
@@ -101,6 +107,17 @@ export interface RouteQuery {
   item?: string;
   // The backlogs open their new-item row (or dialog) with this type, then drop it from the address.
   new?: NewItemKind;
+  // Retrospective search filters (all text; the panel validates them), the open retro, and the insights view and range.
+  q?: string;
+  sprint?: string;
+  category?: string;
+  theme?: string;
+  level?: string;
+  role?: string;
+  recurring?: string;
+  selected?: string;
+  view?: string;
+  range?: string;
 }
 
 interface RouteDef<I extends RouteId> {
@@ -219,6 +236,24 @@ const routeDefs: { [I in RouteId]: RouteDef<I> } = {
     query: ['item'],
     installLevel: false,
     crumbs: () => ['Sprints', 'Sprint', 'Capacity'],
+  },
+  sprintRetro: {
+    pattern: '/p/:key/sprints/:sprintId/retro',
+    query: ['item'],
+    installLevel: false,
+    crumbs: () => ['Sprints', 'Sprint', 'Retro'],
+  },
+  retros: {
+    pattern: '/p/:key/retros',
+    query: ['q', 'sprint', 'category', 'theme', 'level', 'role', 'recurring', 'selected', 'item'],
+    installLevel: false,
+    crumbs: () => ['Retrospectives', 'Search'],
+  },
+  retroInsights: {
+    pattern: '/p/:key/retros/insights',
+    query: ['view', 'range', 'item'],
+    installLevel: false,
+    crumbs: () => ['Retrospectives', 'Insights'],
   },
   jiraImport: {
     pattern: '/p/:key/import',
@@ -352,6 +387,7 @@ const NEW_ITEM_BACKLOG = {
   feature: 'featuresBacklog',
   story: 'storiesBacklog',
   bug: 'storiesBacklog',
+  action: 'storiesBacklog',
 } as const satisfies Record<NewItemKind, RouteId>;
 
 // The backlog that creates an item of this kind: the Create actions in quick search link here.

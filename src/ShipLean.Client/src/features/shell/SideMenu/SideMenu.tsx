@@ -10,7 +10,8 @@ import { useShellProject } from '../useShellProject';
 import { LevelsSubmenu } from './LevelsSubmenu';
 import { NavItem } from './NavItem';
 import { ProjectButton } from './ProjectButton';
-import { backlogsRoutes, boardsRoutes, sprintsRoutes } from './sections';
+import { backlogsRoutes, boardsRoutes, retrosRoutes, sprintsRoutes } from './sections';
+import { RetrosSubmenu } from './RetrosSubmenu';
 import { SprintsSubmenu } from './SprintsSubmenu';
 
 // The frame's left side: the ShipLean mark, the project button and its picker, the sections of the project and the
@@ -136,6 +137,17 @@ export function SideMenu() {
           </NavItem>
           {project && is(sprintsRoutes) ? (
             <SprintsSubmenu projectId={project.id} projectKey={key} route={route} />
+          ) : null}
+          <NavItem
+            icon="↺"
+            testId={ids.navRetrospectives}
+            to={routePath('retros', { key })}
+            active={is(retrosRoutes)}
+          >
+            Retrospectives
+          </NavItem>
+          {project && is(retrosRoutes) ? (
+            <RetrosSubmenu projectId={project.id} projectKey={key} route={route} />
           ) : null}
           <NavItem
             icon="⇪"

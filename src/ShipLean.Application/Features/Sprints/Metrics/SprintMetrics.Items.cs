@@ -14,7 +14,7 @@ public sealed partial class SprintMetrics
         var sprint = await connection.QuerySingleOrDefaultAsync<SprintInfo>(new CommandDefinition(MetricsSql.SelectSprint, new { sprintId }, cancellationToken: cancellationToken))
             ?? throw ApiException.NotFound("There is no such sprint.");
         var rows = await connection.QueryAsync<OutcomeRow>(new CommandDefinition(
-            MetricsSql.Items, new { sprintId, sprint.ProjectId, sprintField = FieldIds.Sprint, stateField = FieldIds.State }, cancellationToken: cancellationToken));
+            MetricsSql.Items, new { sprintId, sprint.ProjectId, sprintField = FieldIds.Sprint, stateField = FieldIds.State, storyLevel = WorkItemTypeRules.StoryLevelDb }, cancellationToken: cancellationToken));
         return [.. rows.Select(row => new SprintItemOutcomeDto(
             row.Id, row.Key, row.Title, Enum.Parse<WorkItemTypeId>(row.Type, ignoreCase: true), row.Points, row.Committed, row.Added, row.Completed, row.Carried))];
     }

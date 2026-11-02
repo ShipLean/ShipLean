@@ -15,6 +15,7 @@ public static class BoardContractSupport
         [WorkItemTypeId.Story] = Workflow("New", "Active", "Resolved", "Closed"),
         [WorkItemTypeId.Bug] = Workflow("New", "Active", "Resolved", "Closed"),
         [WorkItemTypeId.Task] = Workflow("New", "Active", "In review", "Closed"),
+        [WorkItemTypeId.Action] = [new(Guid.NewGuid(), "New", StateCategory.Proposed), new(Guid.NewGuid(), "Active", StateCategory.InProgress), new(Guid.NewGuid(), "Closed", StateCategory.Completed), new(Guid.NewGuid(), "Removed", StateCategory.Removed)],
     };
 
     // The states of the seeded SHIP project, from the pinned refs.json: Bug has New / Triaged / Active / Resolved / Closed.

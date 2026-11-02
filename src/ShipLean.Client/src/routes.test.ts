@@ -103,6 +103,23 @@ const samples: {
     path: '/p/SHIP/sprints/s%2024/capacity',
     crumbs: ['SHIP', 'Sprints', 'Sprint', 'Capacity'],
   },
+  sprintRetro: {
+    params: sprint,
+    path: '/p/SHIP/sprints/s%2024/retro',
+    crumbs: ['SHIP', 'Sprints', 'Sprint', 'Retro'],
+  },
+  retros: {
+    params: project,
+    query: { q: 'flaky', sprint: 's24', category: 'improve', recurring: 'true', selected: 'r1' },
+    path: '/p/SHIP/retros?q=flaky&sprint=s24&category=improve&recurring=true&selected=r1',
+    crumbs: ['SHIP', 'Retrospectives', 'Search'],
+  },
+  retroInsights: {
+    params: project,
+    query: { view: 'impact', range: '3' },
+    path: '/p/SHIP/retros/insights?view=impact&range=3',
+    crumbs: ['SHIP', 'Retrospectives', 'Insights'],
+  },
   jiraImport: { params: project, path: '/p/SHIP/import', crumbs: ['SHIP', 'Jira import'] },
   projectSettings: {
     params: { ...project, tab: 'states' },

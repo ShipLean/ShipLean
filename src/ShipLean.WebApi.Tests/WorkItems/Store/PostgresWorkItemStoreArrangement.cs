@@ -9,7 +9,7 @@ using ShipLean.Contracts.Persisted;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.WorkItems;
 using ShipLean.TestSupport.Contracts.WorkItems;
-using ShipLean.TestSupport.Database;
+using ShipLean.LocalEnvironment.Database;
 
 namespace ShipLean.WebApi.Tests.WorkItems.Store;
 

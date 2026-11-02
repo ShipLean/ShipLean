@@ -1,6 +1,8 @@
 import { componentTestIds } from './testIds';
 
-export type WorkItemType = 'epic' | 'feature' | 'story' | 'bug' | 'task';
+import type { WorkItemTypeId } from '../api/refs';
+
+export type WorkItemType = WorkItemTypeId;
 
 const letters: Record<WorkItemType, string> = {
   epic: 'E',
@@ -8,6 +10,7 @@ const letters: Record<WorkItemType, string> = {
   story: 'S',
   bug: 'B',
   task: 'T',
+  action: 'A',
 };
 
 /** The 16px coloured square with a letter that marks a work item's type. */

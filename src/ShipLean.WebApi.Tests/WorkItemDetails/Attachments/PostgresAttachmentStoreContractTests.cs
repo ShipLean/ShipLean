@@ -6,7 +6,7 @@ using ShipLean.Contracts.Attachments;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Contracts.Attachments;
-using ShipLean.TestSupport.Database;
+using ShipLean.LocalEnvironment.Database;
 using ShipLean.WebApi.Tests.Boards.Settings;
 using ShipLean.WebApi.Tests.WorkItems.Store;
 

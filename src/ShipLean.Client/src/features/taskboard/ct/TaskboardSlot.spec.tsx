@@ -431,3 +431,49 @@ test('Taskboard_WhenRowIsTallerThanItsHeader_ShouldKeepTheIndexCardToItsContent'
   expect(headerBox.height).toBeLessThan(rowBox.height / 2);
   expect(headerBox.y + headerBox.height - (stateBox.y + stateBox.height)).toBeLessThan(24);
 });
+
+test('Taskboard_WhenRowIsAnActionItem_ShouldDrawItAndAddATaskUnderIt', async ({ mount, page }) => {
+  const first = VIEW.rows[0]!;
+  const actionView: TaskboardViewDto = {
+    ...VIEW,
+    rows: [
+      {
+        ...first,
+        parent: first.parent && { ...first.parent, type: { id: 'action', name: 'Action item' } },
+      },
+      ...VIEW.rows.slice(1),
+    ],
+  };
+  const server = await stubTaskboard(page, actionView);
+  await mount(slot, route);
+
+  const row = page.getByTestId(ids.row).nth(0);
+  await expect(row.getByTestId(componentTestIds.typeIcon).first()).toHaveAttribute(
+    'data-type',
+    'action',
+  );
+  await row.getByTestId(ids.addTask).click();
+  await page.getByTestId(ids.taskTitle).fill('Write the rule');
+  await page.getByTestId(ids.taskTitle).press('Enter');
+  await expect(page.getByTestId(ids.taskTitle)).toHaveValue('');
+  expect(server.creates.map((c) => [c.type, c.parentId])).toEqual([['task', 'id-SHIP-141']]);
+});
+
+test('Taskboard_WhenActionItemAdded_ShouldCreateItIntoTheSprint', async ({ mount, page }) => {
+  const server = await stubTaskboard(page, VIEW);
+  await mount(slot, route);
+
+  await page.getByTestId(ids.addStory).click();
+  await expect(page.getByTestId(ids.addStoryType).locator('option')).toHaveText([
+    'User Story',
+    'Bug',
+    'Action item',
+  ]);
+  await page.getByTestId(ids.addStoryType).selectOption('action');
+  await page.getByTestId(ids.addStoryTitle).fill('Agree a rule');
+  await page.getByTestId(ids.addStoryTitle).press('Enter');
+
+  await expect(page.getByTestId(ids.addStoryTitle)).toHaveValue('');
+  expect(server.creates).toHaveLength(1);
+  expect(server.creates[0]).toMatchObject({ type: 'action', parentId: null, sprintId: 's24' });
+});

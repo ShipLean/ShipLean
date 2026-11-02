@@ -20,6 +20,8 @@ Self-hosted lean planning tool (backlogs, boards, sprints, a sprint taskboard) b
 | `src/ShipLean.Application/` | Commands and queries per `Features/<Feature>/`, `Database/`, `Identity/`. Embeds `db/**` |
 | `src/ShipLean.Contracts/` | Interfaces, DTOs, events. `Features/<A>` reaches `Features/<B>` only through here |
 | `src/ShipLean.Core/` | Dependency-free helpers (`DisplayDate`) |
+| `src/ShipLean.LocalEnvironment/` | Testcontainers, database templates and named databases, AppHost (the real app on Kestrel, test or local profile). No test frameworks |
+| `src/ShipLean.LocalHost/` | Console host: a seeded ShipLean on a fixed port for F5, people and agents (docs/local-environment.md) |
 | `src/ShipLean.TestSupport/` | Fixtures, `SeedIds`, builders, test ids, pinned JSON shapes. Production never references it |
 | `src/ShipLean.WebApi.Tests/` | API tests: real app on Kestrel over a cloned Postgres database |
 | `src/ShipLean.AcceptanceTests/` | Playwright (.NET) against the built SPA. CI shards on namespaces `Harness`, `Journeys`, `Lanes.<Area>` |
@@ -46,11 +48,14 @@ shiplean-test src/ShipLean.AcceptanceTests --filter "FullyQualifiedName~ShipLean
 cd src/ShipLean.Client && pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm test && pnpm run test-ct
 ```
 
+To check your work in a running app: `dotnet run --project src/ShipLean.LocalHost -- --database shiplean_<name> --port 0` (a name of your own, lowercase letters, digits and `_` only) and wait for `SHIPLEAN_LOCAL_URL=`.
+
 ## Links
 
 - [`docs/testing.md`](docs/testing.md): fixtures, one database and host per test class, doubles, registries, test ids, traces.
 - [`docs/auth.md`](docs/auth.md): sign-in, sessions, the project access rule, how tests sign in, the access sweep.
 - [`docs/events.md`](docs/events.md): project events and the `X-ShipLean-Client` header.
+- [`docs/analytics.md`](docs/analytics.md): usage analytics: how events are captured, how to track a new action, the property rules, and running against a local Umami.
 - Debugging production: query Seq, VictoriaMetrics and Grafana from the arr host; recipes in home-setup `docs/sg-observability.md` (the OpenTelemetry settings are in [`docs/observability.md`](docs/observability.md)).
 - [`db/README.md`](db/README.md): schema rules. [`design/README.md`](design/README.md): tokens and reference screens.
 - [README configuration](README.md#configuration): every `SHIPLEAN_*` variable.

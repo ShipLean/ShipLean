@@ -2,7 +2,7 @@ using Dapper;
 using Npgsql;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
-using ShipLean.TestSupport.Database;
+using ShipLean.LocalEnvironment.Database;
 
 namespace ShipLean.WebApi.Tests.Schema;
 
@@ -24,7 +24,7 @@ public class SchemaTests
         [
             "agent_activity", "agent_connection", "agent_delivery", "agent_session", "app_user", "attachment", "board", "comment", "data_protection_key", "holiday_country", "import_error", "import_job", "import_log",
             "import_mapping", "instance_settings", "jira_connection", "link_state", "mcp_capture_plan_apply", "oauth_authorization", "oauth_client", "oauth_code",
-            "oauth_request", "oauth_token", "project", "project_member", "public_holiday", "revision", "search_doc", "sprint",
+            "oauth_request", "oauth_token", "project", "project_member", "public_holiday", "retro_action", "retro_failure_log", "retro_point", "retro_theme", "retrospective", "retrospective_source", "revision", "search_doc", "sprint",
             "sprint_capacity", "state", "transfer_token", "user_preference", "webhook_delivery", "work_item", "work_item_link",
         ];
         await using var connection = await _database.OpenAsync();

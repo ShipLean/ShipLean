@@ -107,6 +107,7 @@ Everything is an environment variable prefixed `SHIPLEAN_`.
 | `SHIPLEAN_JIRA_ALLOW_LOCAL_ENDPOINTS` | `true` lets a Jira import address be a local one, and also lets it use plain `http` (to any host, so the token travels unencrypted). Leave it off unless Jira is on your own network. |
 | `SHIPLEAN_EMBEDDINGS` | `on` (default) or `off`. Search ranks by meaning as well as by words when a model is loaded; `off` keeps search lexical (words only). |
 | `SHIPLEAN_EMBEDDINGS_MODEL_PATH` | Folder holding the embedding model (`model.onnx`, `sentencepiece.bpe.model`, `shiplean-model.json`). The image sets `/app/models/multilingual-e5-small`. Unset (a source build), or unreadable, search stays lexical and `/health` says why. `scripts/fetch-embedding-model.sh <dir>` downloads the pinned model into a folder. |
+| `SHIPLEAN_RETRO_AUTO_THEMES` | `on` or `off` (default). Experimental. `on` makes retrospective points join themes by meaning when a model is loaded (see `SHIPLEAN_EMBEDDINGS`); `off` leaves themes to the person or agent that supplies them. Off by default because clustering quality on the bundled model is below the bar (on the 33-point test set at the chosen threshold: 15 themes against 7 expected, precision 34%, recall 23%, F1 about 27%). |
 | `SHIPLEAN_SEARCH_CHUNK_CHARS`, `SHIPLEAN_SEARCH_CHUNK_OVERLAP` | How long a text is split into pieces for indexing, and how much neighbouring pieces overlap, in characters. Default `1200` and `150`. |
 | `SHIPLEAN_SEARCH_CUTOFF` | The lowest similarity (0 to 1) for a meaning match to count. Default `0.55`. |
 | `SHIPLEAN_SEARCH_TOP_PER_LIST`, `SHIPLEAN_SEARCH_RRF_K` | Hits kept from each ranked list before they are merged (default `100`), and the reciprocal-rank-fusion constant used to merge them (default `60`). |
@@ -123,13 +124,20 @@ Sign-in is a cookie (`shiplean.auth`, 14-day sliding, `Secure` over https), so p
 
 ## Develop
 
-You need the .NET 10 SDK, Node 24 with pnpm (via corepack), and either Docker or a local Postgres 18.
+You need the .NET 10 SDK, Node 24 with pnpm (via corepack), and Docker.
 
 ```bash
-scripts/db-reset.sh                                   # dev database from db/ (PGHOST/PGPORT/PGUSER/PGPASSWORD)
-dotnet run --project src/ShipLean.WebApi              # API on :5113, connection from appsettings.Development.json
+dotnet run --project src/ShipLean.LocalHost            # seeded ShipLean on :5113; Postgres in a container, nothing else to install
 cd src/ShipLean.Client && pnpm install && pnpm run dev # SPA on :3000, proxies /api to :5113
 ```
+
+Sign in as `joel@shiplean.local` / `joel-dev-password`. In an IDE, start the `LocalHost` launch profile (F5) to debug. The
+options (`--data keep` to keep your changes, `--database`, `--port 0`, `--redis`), how coding agents run their own instance, and
+using a Postgres you already have are in [`docs/local-environment.md`](docs/local-environment.md).
+
+To run the WebApi on its own instead, with your own Postgres 18, use `scripts/db-reset.sh` (it reads `PGHOST`, `PGPORT`,
+`PGUSER` and `PGPASSWORD`) and `dotnet run --project src/ShipLean.WebApi`, which takes its connection from
+`appsettings.Development.json`.
 
 Checks, from the repository root:
 

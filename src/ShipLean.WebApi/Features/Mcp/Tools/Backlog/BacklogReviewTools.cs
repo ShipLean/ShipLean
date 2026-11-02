@@ -116,7 +116,7 @@ internal sealed class BacklogReviewTools(
         var rollups = await tree.RollupsAsync(projectId, [.. features.Select(f => f.Id)], null, cancellationToken);
         return [.. features.Select(feature =>
         {
-            var own = rollups.Where(r => r.ParentId == feature.Id && r.Type is WorkItemTypeId.Story or WorkItemTypeId.Bug).ToList();
+            var own = rollups.Where(r => r.ParentId == feature.Id && WorkItemTypeRules.IsStoryLevel(r.Type)).ToList();
             var total = own.Any(r => r.TotalPoints is not null) ? own.Sum(r => r.TotalPoints ?? 0) : (decimal?)null;
             var done = total is null ? null : total - own.Sum(r => r.OpenPoints ?? 0);
             return new FeatureLine(feature.Key, feature.Title, own.Sum(r => r.Open), own.Sum(r => r.Closed), done, total);

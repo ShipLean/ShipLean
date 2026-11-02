@@ -1,3 +1,4 @@
+using ShipLean.Contracts.Refs;
 using System.Data.Common;
 using Agoda.IoC.Core;
 using Dapper;
@@ -42,12 +43,12 @@ public sealed class PullRequestSync(NpgsqlDataSource dataSource, IWorkItemStore 
         var tickets = await connection.QueryAsync<TicketRow>(new CommandDefinition(
             """
             SELECT w.id, w.key, w.revision FROM work_item w
-            WHERE w.key = ANY(@keys) AND w.type IN ('story', 'task', 'bug')
+            WHERE w.key = ANY(@keys) AND (w.type = ANY(@storyLevel) OR w.type = 'task')
               AND NOT EXISTS (SELECT 1 FROM work_item_link l
                               WHERE l.source_id = w.id AND l.link_type = 'url' AND link_url_key(l.url) = link_url_key(@url))
             ORDER BY w.key
             """,
-            new { keys = keys.Select(k => k.Key).ToArray(), url = pullRequest.Url }, cancellationToken: cancellationToken));
+            new { keys = keys.Select(k => k.Key).ToArray(), url = pullRequest.Url, storyLevel = WorkItemTypeRules.StoryLevelDb }, cancellationToken: cancellationToken));
 
         var linked = new List<string>();
         foreach (var ticket in tickets)

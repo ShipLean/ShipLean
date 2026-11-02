@@ -38,7 +38,7 @@ public sealed class MarkdownView(IProjectAccess access, IAttachmentStore attachm
             // The 256 KB byte check above is this file's only limit; the 100,000-character cap is for typed Markdown.
             var rendered = renderer.RenderFile(markdown, new MarkdownImageContext(live));
             return new AttachmentMarkdownDto(
-                attachment, new MarkdownWorkItemDto(item.Id, item.Key, item.Title, new TypeRef(item.Type, item.Type == WorkItemTypeId.Story ? "User Story" : item.Type.ToString())),
+                attachment, new MarkdownWorkItemDto(item.Id, item.Key, item.Title, new TypeRef(item.Type, WorkItemTypeRules.Name(item.Type))),
                 rendered.Markdown, rendered.Html, MarkdownHeadings.Outline(markdown), rendered.Images,
                 [.. live.Where(a => a.Kind == AttachmentKind.Markdown && a.Id != attachment.Id)]);
         }

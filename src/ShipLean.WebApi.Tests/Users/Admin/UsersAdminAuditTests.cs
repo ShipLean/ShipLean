@@ -5,7 +5,7 @@ using ShipLean.Contracts.Users;
 using ShipLean.Contracts.Users.Admin;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
-using ShipLean.TestSupport.Database;
+using ShipLean.LocalEnvironment.Database;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.WebApi.Tests.Auth;
 using ShipLean.WebApi.Tests.Import.Jira;

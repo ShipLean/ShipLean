@@ -140,7 +140,7 @@ test('sampleOutcomes_WhenRuleReadsSeverity_ShouldMatchTheBug', () => {
 });
 
 test.each([
-  ['stories', ['story', 'story', 'bug', 'story']],
+  ['stories', ['story', 'action', 'bug', 'story']],
   ['features', ['feature', 'feature', 'feature', 'feature']],
   ['epics', ['epic', 'epic', 'epic', 'epic']],
 ] as const)('sampleOutcomes_WhenBoardIs_%s_ShouldSampleItsTypes', (level, types) => {

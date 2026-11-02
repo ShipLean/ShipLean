@@ -13,6 +13,7 @@ using ShipLean.Contracts.Search;
 using ShipLean.Contracts.Refs;
 using ShipLean.WebApi.Features.Mcp.Contracts;
 using ShipLean.WebApi.Features.Mcp.Resolve;
+using ShipLean.WebApi.Features.Mcp.Tools.Capture;
 
 namespace ShipLean.WebApi.Features.Mcp.Tools.Orient;
 
@@ -37,7 +38,7 @@ internal sealed class SearchTool(
     public async Task<CallToolResult> SearchAsync(
         [Description("Words to look for, like \"checkout timeout\" (optional when you filter).")] string? words = null,
         [Description("Project key (optional: with words, every project you are in).")] string? project = null,
-        [Description("Work item type: epic, feature, story, bug or task.")] string? type = null,
+        [Description("Work item type: epic, feature, story, bug, action or task.")] string? type = null,
         [Description("A state name, like \"In progress\" (with words, needs project or parent).")] string? state = null,
         [Description("A person: me, a name or an email (with words, needs project or parent).")] string? assignee = null,
         [Description("A sprint: current, next or its name (with words, needs project or parent).")] string? sprint = null,
@@ -49,7 +50,7 @@ internal sealed class SearchTool(
     {
         var text = string.Join(' ', (words ?? string.Empty).Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
         var take = Math.Clamp(limit ?? (text.Length == 0 ? OrientReads.SearchCap : DefaultWordsLimit), 1, OrientReads.SearchCap);
-        var wantedType = string.IsNullOrWhiteSpace(type) ? (WorkItemTypeId?)null : ParseType(type);
+        var wantedType = string.IsNullOrWhiteSpace(type) ? (WorkItemTypeId?)null : CaptureSupport.ParseType(type, "type");
         var hasState = !string.IsNullOrWhiteSpace(state);
         var hasAssignee = !string.IsNullOrWhiteSpace(assignee);
         var hasSprint = !string.IsNullOrWhiteSpace(sprint);
@@ -176,16 +177,4 @@ internal sealed class SearchTool(
         => type is { } t
             ? [(await states.ResolveAsync(projectId, t, state, cancellationToken: cancellationToken)).Id.ToString()]
             : await reads.StateIdsByNameAsync(projectId, state, cancellationToken);
-
-    private static WorkItemTypeId ParseType(string type)
-    {
-        var wanted = type.Trim().Replace(" ", string.Empty, StringComparison.Ordinal);
-        if (wanted.Equals("userstory", StringComparison.OrdinalIgnoreCase))
-        {
-            return WorkItemTypeId.Story;
-        }
-        return Enum.TryParse<WorkItemTypeId>(wanted, true, out var parsed) && Enum.IsDefined(parsed)
-            ? parsed
-            : throw ApiException.Validation($"\"{type}\" is not a work item type: use epic, feature, story, bug or task.", "type");
-    }
 }

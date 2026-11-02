@@ -61,10 +61,15 @@ VALUES
   ('00000003-0000-4000-8001-000000000502', '00000002-0000-4000-8000-000000000001', 'task', 'Active', 'inProgress', 2),
   ('00000003-0000-4000-8001-000000000503', '00000002-0000-4000-8000-000000000001', 'task', 'In review', 'resolved', 3),
   ('00000003-0000-4000-8001-000000000504', '00000002-0000-4000-8000-000000000001', 'task', 'Closed', 'completed', 4),
-  ('00000003-0000-4000-8001-000000000505', '00000002-0000-4000-8000-000000000001', 'task', 'Removed', 'removed', 5);
+  ('00000003-0000-4000-8001-000000000505', '00000002-0000-4000-8000-000000000001', 'task', 'Removed', 'removed', 5),
+  ('00000003-0000-4000-8001-000000000601', '00000002-0000-4000-8000-000000000001', 'action', 'New', 'proposed', 1),
+  ('00000003-0000-4000-8001-000000000602', '00000002-0000-4000-8000-000000000001', 'action', 'Active', 'inProgress', 2),
+  ('00000003-0000-4000-8001-000000000603', '00000002-0000-4000-8000-000000000001', 'action', 'Closed', 'completed', 3),
+  ('00000003-0000-4000-8001-000000000604', '00000002-0000-4000-8000-000000000001', 'action', 'Removed', 'removed', 4);
 
 -- The other projects get the default states for every type, in the same id scheme:
--- 00000003-0000-4000-80PP-NNNNNNNNNNNN where N = type digit (epic 1 .. task 5) then the two-digit order.
+-- 00000003-0000-4000-80PP-NNNNNNNNNNNN where N = type digit (epic 1 .. action 6) then the two-digit order.
+-- An Action item has four states (New, Active, Closed, Removed), so no Resolved; they follow the other types.
 INSERT INTO state (id, project_id, type, name, category, sort_order)
 SELECT format('00000003-0000-4000-80%s-%s', lpad(p.number::text, 2, '0'), lpad((t.digit * 100 + s.sort_order)::text, 12, '0'))::uuid,
        project.id, t.type, s.name, s.category, s.sort_order
@@ -72,3 +77,10 @@ FROM (VALUES ('PAY', 2), ('MOB', 3), ('DATA', 4), ('OPS', 5), ('PART', 6)) AS p 
 JOIN project ON project.key = p.key
 CROSS JOIN (VALUES ('epic', 1), ('feature', 2), ('story', 3), ('bug', 4), ('task', 5)) AS t (type, digit)
 CROSS JOIN (VALUES ('New', 'proposed', 1), ('Active', 'inProgress', 2), ('Resolved', 'resolved', 3), ('Closed', 'completed', 4), ('Removed', 'removed', 5)) AS s (name, category, sort_order);
+
+INSERT INTO state (id, project_id, type, name, category, sort_order)
+SELECT format('00000003-0000-4000-80%s-%s', lpad(p.number::text, 2, '0'), lpad((600 + s.sort_order)::text, 12, '0'))::uuid,
+       project.id, 'action', s.name, s.category, s.sort_order
+FROM (VALUES ('PAY', 2), ('MOB', 3), ('DATA', 4), ('OPS', 5), ('PART', 6)) AS p (key, number)
+JOIN project ON project.key = p.key
+CROSS JOIN (VALUES ('New', 'proposed', 1), ('Active', 'inProgress', 2), ('Closed', 'completed', 3), ('Removed', 'removed', 4)) AS s (name, category, sort_order);

@@ -1,5 +1,6 @@
 using System.Reflection;
 using ShipLean.Contracts;
+using ShipLean.WebApi.Features.Usage;
 using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
@@ -30,6 +31,7 @@ public sealed class MvcServices : IServiceModule
             options.OutputFormatters.Insert(0, new NullAsEmptyBodyFormatter());
             options.Conventions.Add(new JsonBodyConsumesConvention());
             options.ModelMetadataDetailsProviders.Add(new KeepBlankStringsProvider());
+            options.Filters.Add<UsageActionFilter>();
         });
         services.PostConfigure<ApiBehaviorOptions>(options => options.SuppressMapClientErrors = true);
     }

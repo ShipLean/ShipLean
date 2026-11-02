@@ -7,7 +7,7 @@ using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Import;
 using ShipLean.TestSupport;
-using ShipLean.TestSupport.Database;
+using ShipLean.LocalEnvironment.Database;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
 using ShipLean.TestSupport.Jira;

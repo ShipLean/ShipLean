@@ -34,3 +34,4 @@ export type { ConnectionState } from './connectionState';
 export const registerInvalidation = realtime.registerInvalidation;
 export const onRemote = realtime.onRemote;
 export const onReconnected = realtime.onReconnected;
+export { useScreenView } from './useScreenView';

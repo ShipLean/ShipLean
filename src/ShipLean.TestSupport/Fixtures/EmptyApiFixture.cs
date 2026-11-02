@@ -1,4 +1,4 @@
-using ShipLean.TestSupport.Database;
+using ShipLean.LocalEnvironment.Database;
 
 namespace ShipLean.TestSupport.Fixtures;
 

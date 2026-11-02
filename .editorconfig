@@ -72,6 +72,6 @@ dotnet_diagnostic.AG0012.severity = none
 # inherits, so one set of tests pins every implementation of the interface.
 dotnet_diagnostic.AG0010.severity = none
 
-[src/ShipLean.TestSupport/**.cs]
+[src/ShipLean.{TestSupport,LocalEnvironment}/**.cs]
 # AG0047: the rule enforces Agoda's internal Docker Hub mirror prefix; this repo pulls postgres:18 from Docker Hub directly.
 dotnet_diagnostic.AG0047.severity = none

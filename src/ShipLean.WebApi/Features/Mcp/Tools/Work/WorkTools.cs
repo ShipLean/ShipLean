@@ -12,6 +12,7 @@ using ShipLean.Contracts.WorkItems.Reads.Tree;
 using ShipLean.WebApi.Features.Mcp.Contracts;
 using ShipLean.WebApi.Features.Mcp.Notes;
 using ShipLean.WebApi.Features.Mcp.Resolve;
+using ShipLean.WebApi.Features.Mcp.Tools.Capture;
 using ShipLean.WebApi.Features.Mcp.Transport;
 using ShipLean.WebApi.Features.Mcp.Writes;
 
@@ -38,13 +39,13 @@ internal sealed class WorkTools(
     public async Task<CallToolResult> FindWorkToPickUp(
         [Description("Project key such as SHIP. Leave out for the person's most recent project.")] string? project = null,
         [Description("current, next or a sprint name. Defaults to current.")] string? sprint = null,
-        [Description("Only this type: epic, feature, story, bug or task.")] string? type = null,
+        [Description("Only this type: epic, feature, story, bug, action or task.")] string? type = null,
         [Description("Only items under this parent, by key such as SHIP-12.")] string? parent = null,
         CancellationToken cancellationToken = default)
     {
         var resolvedProject = await projects.ResolveAsync(project, forWrite: false, cancellationToken);
         var resolvedSprint = await sprints.ResolveAsync(resolvedProject.Id, sprint ?? "current", cancellationToken: cancellationToken);
-        var wantedType = ParseType(type);
+        var wantedType = string.IsNullOrWhiteSpace(type) ? (WorkItemTypeId?)null : CaptureSupport.ParseType(type, "type");
         Guid? parentId = null;
         if (parent is not null)
         {
@@ -210,7 +211,7 @@ internal sealed class WorkTools(
     // After closing a task: when it was the last open task of its story or bug, name the parent and the state to offer.
     private async Task<(bool Last, string? ParentKey, string? MoveParentTo)> ClosedLastTaskAsync(WorkItemSnapshot task, IReadOnlyList<StateDto> allStates, CancellationToken cancellationToken)
     {
-        if (task.Type != WorkItemTypeId.Task || task.ParentId is not { } parentId || task.ParentType is not (WorkItemTypeId.Story or WorkItemTypeId.Bug))
+        if (task.Type != WorkItemTypeId.Task || task.ParentId is not { } parentId || task.ParentType is not { } parentType || !WorkItemTypeRules.IsStoryLevel(parentType))
         {
             return (false, null, null);
         }
@@ -226,24 +227,6 @@ internal sealed class WorkTools(
             ? WorkStates.FirstOrDefault(allStates, parent.Type, StateCategory.Resolved)
             : null;
         return (true, parent.Key, offer?.Name);
-    }
-
-    private static WorkItemTypeId? ParseType(string? type)
-    {
-        if (string.IsNullOrWhiteSpace(type))
-        {
-            return null;
-        }
-
-        return type.Trim().ToLowerInvariant() switch
-        {
-            "epic" => WorkItemTypeId.Epic,
-            "feature" => WorkItemTypeId.Feature,
-            "story" => WorkItemTypeId.Story,
-            "bug" => WorkItemTypeId.Bug,
-            "task" => WorkItemTypeId.Task,
-            _ => throw ApiException.Validation($"\"{type}\" is not a work item type. Use epic, feature, story, bug or task.", "type"),
-        };
     }
 
     private static string ProjectKey(string itemKey) => itemKey[..itemKey.LastIndexOf('-')];

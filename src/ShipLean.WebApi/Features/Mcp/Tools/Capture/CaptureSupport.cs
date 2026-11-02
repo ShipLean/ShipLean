@@ -35,16 +35,23 @@ public sealed class CaptureSupport(IServiceProvider services, AgentBaseUrl baseU
     public static CallToolResult Reply(McpResult result, string summary)
         => McpToolResult.Of(JsonSerializer.SerializeToElement(result, result.GetType()), summary);
 
+    // Matches the letters of the text, lower-cased, against each type's enum name or display name ("User Story", "Action item").
     public static WorkItemTypeId ParseType(string? text, string field)
-        => new string((text ?? string.Empty).Where(char.IsLetter).ToArray()).ToLowerInvariant() switch
+    {
+        var wanted = LettersOnly(text);
+        foreach (var type in Enum.GetValues<WorkItemTypeId>())
         {
-            "epic" => WorkItemTypeId.Epic,
-            "feature" => WorkItemTypeId.Feature,
-            "story" or "userstory" => WorkItemTypeId.Story,
-            "bug" => WorkItemTypeId.Bug,
-            "task" => WorkItemTypeId.Task,
-            _ => throw ApiException.Validation($"\"{text}\" is not a work item type: use epic, feature, story, bug or task.", field),
-        };
+            if (wanted.Length > 0 && (wanted == LettersOnly(type.ToString()) || wanted == LettersOnly(WorkItemTypeRules.Name(type))))
+            {
+                return type;
+            }
+        }
+
+        throw ApiException.Validation($"\"{text}\" is not a work item type: use epic, feature, story, bug, action or task.", field);
+    }
+
+    private static string LettersOnly(string? text)
+        => new string((text ?? string.Empty).Where(char.IsLetter).ToArray()).ToLowerInvariant();
 
     public static string TypeName(WorkItemTypeId type) => type.ToString().ToLowerInvariant();
 

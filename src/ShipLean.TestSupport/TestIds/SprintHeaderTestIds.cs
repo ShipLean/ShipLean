@@ -13,6 +13,7 @@ public static class SprintHeaderTestIds
     public const string TabBacklog = "sprint-header-tab-backlog";
     public const string TabTaskboard = "sprint-header-tab-taskboard";
     public const string TabCapacity = "sprint-header-tab-capacity";
+    public const string TabRetro = "sprint-header-tab-retro";
     public const string PickerList = "sprint-header-picker-list";
     public const string PickerOption = "sprint-header-picker-option";
 }

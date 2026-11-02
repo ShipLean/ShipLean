@@ -10,8 +10,10 @@ Working documentation for ShipLean that is too long for `AGENTS.md`. One file pe
 | `agents.md` | Connecting an agent: the browser sign-in and consent, scopes, tokens, revoking, and what the person sees. |
 | `mcp.md` | The `/mcp` endpoint agents use: how it authenticates, the 401 and 403 answers, the limits, the Origin rule, how to connect, and how a tool is added. |
 | `webhooks.md` | GitHub and GitLab pull request webhooks: turning them on, which events to tick, auto-linking by key, link card state and the close rule. |
+| `retrospectives.md` | Retrospectives: what agents log and when, themes, action items, and how verdicts are computed. |
 | `search.md` | Advanced search: the `search_doc` row contract (fields, weights, chunking, staleness, what is never indexed) and the embedder, index and ranker pieces. |
 | `navigation.md` | Routes, the shell, pages and their slots, and how screens link to each other. |
+| `analytics.md` | Usage analytics: the three capture seams, the event catalogue, the property rules, delivery to Umami or PostHog, and how a tracked action is added. |
 | `observability.md` | OpenTelemetry: turning it on, the spans, metrics and log fields emitted, what is deliberately left out, and the local Aspire dashboard profile. |
 
 Elsewhere:

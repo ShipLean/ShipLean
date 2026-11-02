@@ -161,6 +161,22 @@ test('List_WhenNewItemAdded_ShouldPostTypeAndTitleAndKeepRowOpen', async ({ moun
   await expect(page.getByTestId(ids.addRow)).toHaveCount(0);
 });
 
+test('List_WhenActionItemPicked_ShouldOfferItAndPostTypeAction', async ({ mount, page }) => {
+  const server = await stubBacklog(page, backlogView(ROWS));
+  await mount(<ListMode project={PROJECT} />, route);
+  await page.getByTestId(ids.newItem).click();
+  await expect(page.getByTestId(ids.addType).locator('option')).toHaveText([
+    'User Story',
+    'Bug',
+    'Action item',
+  ]);
+  await page.getByTestId(ids.addType).selectOption('action');
+  await page.getByTestId(ids.addTitle).fill('Agree on a rota');
+  await page.getByTestId(ids.addTitle).press('Enter');
+  await expect.poll(() => server.creates.length).toBe(1);
+  expect(server.creates[0]).toMatchObject({ type: 'action', title: 'Agree on a rota' });
+});
+
 test('List_WhenTitleBlank_ShouldNotCreate', async ({ mount, page }) => {
   const server = await stubBacklog(page, backlogView(ROWS));
   await mount(<ListMode project={PROJECT} />, route);

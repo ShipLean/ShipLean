@@ -9,6 +9,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ShipLean.LocalEnvironment\ShipLean.LocalEnvironment.csproj" />
     <ProjectReference Include="..\ShipLean.WebApi\ShipLean.WebApi.csproj" />
     <ProjectReference Include="..\ShipLean.Application\ShipLean.Application.csproj" />
     <ProjectReference Include="..\ShipLean.Contracts\ShipLean.Contracts.csproj" />
@@ -22,8 +23,6 @@
     <PackageReference Include="ModelContextProtocol" Version="2.3.0" />
     <PackageReference Include="NUnit" Version="4.3.2" />
     <PackageReference Include="Shouldly" Version="4.3.0" />
-    <PackageReference Include="Testcontainers.PostgreSql" Version="4.16.0" />
-    <PackageReference Include="Testcontainers.Redis" Version="4.16.0" />
   </ItemGroup>
 
 </Project>

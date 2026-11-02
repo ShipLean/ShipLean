@@ -10,7 +10,7 @@ using ShipLean.Contracts.Import.Jira;
 using ShipLean.Contracts.Refs;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Contracts.Users;
-using ShipLean.TestSupport.Database;
+using ShipLean.LocalEnvironment.Database;
 
 namespace ShipLean.WebApi.Tests.Import.Mapping;
 
@@ -179,5 +179,15 @@ public sealed class ImportMappingsTests
         var thrown = await Should.ThrowAsync<ApiException>(() => Mappings(JiraWorld.Data([])).SuggestAsync(Guid.NewGuid(), JiraWorld.ProjectKey, null));
 
         thrown.Code.ShouldBe(ApiErrorCodes.NotFound);
+    }
+
+    [Test]
+    public async Task Mapping_WhenAnyJiraType_ShouldNeverBecomeAnAction()
+    {
+        var mapping = await Mappings(JiraWorld.Data([JiraWorld.Issue("PLAT-1", "Epic"), JiraWorld.Issue("PLAT-2"), JiraWorld.Issue("PLAT-3", "Bug"), JiraWorld.Issue("PLAT-4", "Sub-task")]))
+            .SuggestAsync(Connection, JiraWorld.ProjectKey, null);
+
+        mapping.IssueTypes.Select(t => TargetTypes.WorkItemType(t.Target)).ShouldNotContain(WorkItemTypeId.Action);
+        Enum.GetValues<ImportTypeTarget>().Select(TargetTypes.WorkItemType).ShouldNotContain(WorkItemTypeId.Action);
     }
 }

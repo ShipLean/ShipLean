@@ -13,6 +13,11 @@ shiplean-test src/ShipLean.WebApi.Tests --filter "FullyQualifiedName~ShipLean.We
 shiplean-test src/ShipLean.AcceptanceTests --filter "FullyQualifiedName~ShipLean.AcceptanceTests.Harness."
 ```
 
+The test database and host code is the `ShipLean.LocalEnvironment` project (namespaces `ShipLean.LocalEnvironment.Database` and
+`.Hosting`), which `ShipLean.LocalHost` also uses to run a seeded app for people and agents: see
+[`local-environment.md`](local-environment.md). TestSupport's `ShipLeanHost` wraps its `AppHost` with the `Test` profile and
+adds the test fakes. `SHIPLEAN_TEST_DB` and `SHIPLEAN_TEST_REDIS` mean the same there.
+
 ## One database and one host per class
 
 A test class is one scenario. `ApiFixture` (API tests) and `SeededAcceptanceTest` / `EmptyAcceptanceTest` (browser
@@ -33,6 +38,7 @@ it, and drop the clone at the end. Classes run in parallel; tests inside a class
   to control the build itself.
 - **Doubles** go through `ConfigureTestServices` (override it on the fixture). Production code has no test switches.
   Time is never frozen: the app uses `TimeProvider.System`, and a test compares times against the real clock (see `ExpectedLabels`).
+  The host replaces `IUsageEvents` with `RecordingUsageEvents` for every fixture: assert tracked usage events through it, and `Clear()` it in a `[SetUp]` (see [`analytics.md`](analytics.md)).
 - **A stopped host is never collected.** ASP.NET's rate limiting middleware starts a timer for its endpoint limiter and
   never disposes it. The timer is rooted for the life of the process, and through the limiter and the startup context it
   keeps the whole app (DI container, routing, MVC caches) alive after the host is disposed: about 3.5 MB per test class,

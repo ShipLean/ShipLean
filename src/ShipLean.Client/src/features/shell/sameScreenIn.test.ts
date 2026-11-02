@@ -7,6 +7,7 @@ test('sameScreenIn_WhenSprintRoute_ShouldFallBackToAllSprints', () => {
     '/p/SHIP/sprints/abc/backlog',
     '/p/SHIP/sprints/abc/taskboard',
     '/p/SHIP/sprints/abc/capacity',
+    '/p/SHIP/sprints/abc/retro',
   ]) {
     expect(sameScreenIn(matchRoute(path), 'PAY')).toBe('/p/PAY/sprints');
   }
@@ -42,5 +43,14 @@ test('sameScreenIn_WhenInstallLevelOrUnknown_ShouldOpenTheStoriesBacklog', () =>
 test('sameScreenIn_WhenAnItemIsOpenInAModal_ShouldDropTheItem', () => {
   expect(sameScreenIn(matchRoute('/p/SHIP/boards/stories', '?item=SHIP-12'), 'PAY')).toBe(
     '/p/PAY/boards/stories',
+  );
+});
+
+test('sameScreenIn_WhenRetrosSearchHasFilters_ShouldOpenItUnfiltered', () => {
+  expect(sameScreenIn(matchRoute('/p/SHIP/retros', '?q=flaky&sprint=s1&selected=r1'), 'PAY')).toBe(
+    '/p/PAY/retros',
+  );
+  expect(sameScreenIn(matchRoute('/p/SHIP/retros/insights', '?view=impact&range=3'), 'PAY')).toBe(
+    '/p/PAY/retros/insights?view=impact&range=3',
   );
 });

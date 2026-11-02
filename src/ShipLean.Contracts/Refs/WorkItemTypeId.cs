@@ -7,4 +7,5 @@ public enum WorkItemTypeId
     Story,
     Bug,
     Task,
+    Action,
 }

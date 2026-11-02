@@ -76,9 +76,9 @@ public sealed class AgentReports(
             """,
             new { id, sessionId = create.SessionId, type = create.Type, body = create.Body, action = create.Action, parameter = create.Parameter, result = create.Result, ephemeral = create.Ephemeral, signal = create.Signal, now },
             transaction, cancellationToken: cancellationToken));
-        await MoveStateAsync(connection, transaction, session, create, now, cancellationToken);
+        var ended = await MoveStateAsync(connection, transaction, session, create, now, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-        await notifier.ChangedAsync(create.SessionId);
+        await notifier.ChangedAsync(create.SessionId, ended);
 
         if (create.Type is Response or Error)
         {
@@ -164,12 +164,12 @@ public sealed class AgentReports(
             new { sessionId, connectionId = reporter.ConnectionId }, transaction, cancellationToken: cancellationToken))
             ?? throw ApiException.NotFound("Agent session not found.");
 
-    private static async Task MoveStateAsync(
+    private static async Task<string?> MoveStateAsync(
         NpgsqlConnection connection, NpgsqlTransaction transaction, LockedSession session, AgentActivityCreate create, DateTimeOffset now, CancellationToken cancellationToken)
     {
         if (AgentSessionStates.IsTerminal(session.State))
         {
-            return;
+            return null;
         }
 
         var next = create.Type switch
@@ -206,6 +206,8 @@ public sealed class AgentReports(
             await connection.ExecuteAsync(new CommandDefinition(
                 "UPDATE agent_session SET last_activity_at = @now WHERE id = @id", new { id = create.SessionId, now }, transaction, cancellationToken: cancellationToken));
         }
+
+        return moved > 0 && ended is not null ? next : null;
     }
 
     // An ended session takes no more activities or updates; the relay posts its final response while the session is still live.

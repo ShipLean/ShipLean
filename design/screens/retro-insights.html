@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Retrospective insights (SHIP-82 mockup)</title>
+<!--
+  SHIP-82 mockup: Retrospectives › Insights. Three views over every retro in the project:
+  Recurring themes (mentions per sprint), Action items (the Action item work item type) and
+  Changes & impact (mentions of a theme before and after its action item closed).
+  ?view=themes|actions|impact picks the view. Uses ../tokens.css, shiplean.css, shared.js and retro-data.js.
+-->
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="shiplean.css">
+<link rel="stylesheet" href="retro.css">
+<script src="shared.js"></script>
+<script src="retro-data.js"></script>
+</head>
+<body>
+<div id="appbar"></div>
+<div class="toolbar">
+  <div class="seg" role="group" aria-label="Insight">
+    <button type="button" data-v="themes">Recurring themes</button>
+    <button type="button" data-v="actions">Action items</button>
+    <button type="button" data-v="impact">Changes &amp; impact</button>
+  </div>
+  <select class="field" aria-label="Range"><option>Last 6 sprints</option><option>Last 3 sprints</option><option>All sprints</option></select>
+  <span class="spacer"></span>
+  <button class="btn" type="button" id="merge">Merge themes…</button>
+</div>
+<div class="scroll"><div class="ins" id="ins"></div></div>
+
+<script>
+(() => {
+  const { av, tIcon, esc, toast, people } = SL;
+  const { themes, trend, sprintNames, actions, retros, verdict, recurring, strip } = RETRO;
+  document.getElementById('appbar').outerHTML = SL.appBar('retros');
+  let view = new URLSearchParams(location.search).get('view') || 'themes';
+
+  const mentions = k => retros.flatMap(r => r.points.filter(p => p.theme === k));
+  function status(k) {
+    const v = verdict(k), open = actions.some(a => a.theme === k && a.state !== 'Closed');
+    if (recurring(k)) return '<span class="chip warn">Recurring</span>';
+    if (v && v.tone === 'ok') return '<span class="chip ok">Resolved</span>';
+    if (open) return '<span class="chip accent">Being addressed</span>';
+    return '<span class="chip">Quiet</span>';
+  }
+  const verdictChip = k => { const v = verdict(k); return v ? `<span class="chip ${v.tone}">${v.label}</span>` : '<span class="muted xs">no change shipped</span>'; };
+
+  function themesView() {
+    const bad = Object.keys(themes).filter(k => themes[k].tone === 'bad').sort((a, b) => recurring(b) - recurring(a) || trend[b].slice(-3).reduce((x, y) => x + y) - trend[a].slice(-3).reduce((x, y) => x + y));
+    const good = Object.keys(themes).filter(k => themes[k].tone === 'good');
+    return `<div class="callout warn"><b>3 themes keep coming back</b>Screenshot baselines and vague briefs came up in every one of the last 4 sprints, merge conflicts in each of the last 3. The screenshot fix (SHIP-133) shipped in Sprint 23 and mentions did not drop.</div>
+    <section class="panel"><header><h2>Went badly and not in the plan</h2><span class="muted sm">by theme, Sprint 19 – 24 · themes are clustered by ShipLean from the point text</span></header>
+      <table class="list"><thead><tr><th>Theme</th><th style="width:130px">Mentions per sprint</th><th class="num" style="width:60px">Total</th><th style="width:130px">Status</th><th>Action items</th><th style="width:130px">Last change</th></tr></thead>
+      <tbody>${bad.map(k => `<tr class="item"><td><b class="sm">${esc(themes[k].name)}</b></td><td>${strip(k, { w: 112, h: 22 })}</td>
+        <td class="pts">${trend[k].reduce((a, v) => a + v, 0)}</td><td>${status(k)}</td>
+        <td><div class="row" style="gap:6px">${actions.filter(a => a.theme === k).map(a => `<span class="act-chip" title="${esc(a.title)}">${tIcon(a.type)}<span class="key">${a.key}</span>${SL.st(a.state)}</span>`).join('') || '<button class="mini" type="button" data-make="' + esc(themes[k].name) + '">+ Action item</button>'}</div></td>
+        <td>${verdictChip(k)}</td></tr>`).join('')}</tbody></table>
+    </section>
+    <section class="panel"><header><h2>What keeps working</h2><span class="muted sm">Went well, to keep in the planning guide</span></header>
+      <table class="list"><thead><tr><th>Theme</th><th class="num" style="width:80px">Mentions</th><th>Latest</th></tr></thead>
+      <tbody>${good.map(k => { const m = mentions(k); return `<tr class="item"><td><b class="sm">${esc(themes[k].name)}</b></td><td class="pts">${m.length}</td><td class="sm muted">${esc(m[0]?.text || '')}</td></tr>`; }).join('')}</tbody></table>
+    </section>`;
+  }
+
+  function actionsView() {
+    return `<p class="sm muted" style="margin:0">${tIcon('action')} <b>Action item</b> is a work item type at the same level as stories and bugs. It sits in the Stories backlog, carries points and is pulled into a sprint like any story; it also links to the theme it addresses.</p>
+    <section class="panel"><header><h2>Action items</h2><span class="muted sm">${actions.filter(a => a.state !== 'Closed').length} open · ${actions.filter(a => a.state === 'Closed').length} done</span><span class="spacer"></span><button class="btn" type="button">+ Action item</button></header>
+      <table class="list"><thead><tr><th>Action</th><th style="width:210px">Theme</th><th style="width:70px">Raised</th><th style="width:110px">State</th><th style="width:150px">Sprint</th><th class="num" style="width:44px">Pts</th><th style="width:110px">Owner</th><th style="width:140px">Impact</th></tr></thead>
+      <tbody>${[...actions].sort((a, b) => (a.state === 'Closed') - (b.state === 'Closed')).map(a => {
+        const v = a.state === 'Closed' ? verdict(a.theme) : null;
+        return `<tr class="item"><td><div class="title-cell">${tIcon(a.type)}<span class="key">${a.key}</span><span class="t">${esc(a.title)}</span></div></td>
+          <td class="sm">${esc(themes[a.theme].name)} ${recurring(a.theme) ? '<span class="chip warn" style="height:16px">↻</span>' : ''}</td><td class="sm">${a.raised}</td><td>${SL.st(a.state)}</td>
+          <td>${a.sprint ? `<span class="sm">${a.sprint}</span>` : '<button class="mini" type="button" data-pull="' + a.key + '">Pull into Sprint 25</button>'}</td><td class="pts">${a.points}</td>
+          <td><div class="title-cell">${av(a.owner)}<span class="t sm">${a.owner ? people[a.owner].name.split(' ')[0] : '<span class="muted">Unassigned</span>'}</span></div></td>
+          <td>${v ? `<span class="chip ${v.tone}">${v.label}</span>` : '<span class="muted xs">when done</span>'}</td></tr>`;
+      }).join('')}</tbody></table>
+    </section>`;
+  }
+
+  function chart(k, a) {
+    const t = trend[k], w = 320, h = 108, pad = 18, bw = (w - pad) / t.length, max = 4, y = n => h - 18 - (n / max) * (h - 30);
+    const v = verdict(k);
+    const bars = t.map((n, i) => `<rect x="${pad + i * bw + 5}" y="${y(n)}" width="${bw - 10}" height="${Math.max(h - 18 - y(n), 1)}" rx="2" fill="${v && i > v.at ? 'var(--color-ok)' : 'var(--color-warn)'}" opacity="${n ? 1 : .35}"><title>${sprintNames[i]}: ${n}</title></rect><text x="${pad + i * bw + bw / 2}" y="${h - 4}" text-anchor="middle">${sprintNames[i]}</text>`).join('');
+    const xAt = (v.at + 1) * bw + pad;
+    const avgLine = (x1, x2, val, col) => `<line x1="${x1}" x2="${x2}" y1="${y(val)}" y2="${y(val)}" stroke="${col}" stroke-width="1.5"/>`;
+    return `<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="${esc(themes[k].name)} mentions per sprint, ${a.key} shipped after ${sprintNames[v.at]}">
+      ${[0, 2, 4].map(n => `<line x1="${pad}" x2="${w}" y1="${y(n)}" y2="${y(n)}" stroke="var(--color-border)" stroke-width="1"/><text x="2" y="${y(n) + 3}">${n}</text>`).join('')}
+      ${bars}
+      ${avgLine(pad, xAt, v.before, 'var(--color-text)')}${v.after !== null ? avgLine(xAt, w, v.after, 'var(--color-text)') : ''}
+      <line x1="${xAt}" x2="${xAt}" y1="4" y2="${h - 16}" stroke="var(--color-accent)" stroke-width="1.5" stroke-dasharray="3 3"/>
+      <text x="${xAt > w - 90 ? xAt - 4 : xAt + 4}" y="12" text-anchor="${xAt > w - 90 ? 'end' : 'start'}" style="fill:var(--color-accent);font-weight:600">${a.key} done</text></svg>`;
+  }
+
+  function impactView() {
+    const done = actions.filter(a => a.state === 'Closed');
+    return `<p class="sm muted" style="margin:0">For each closed action item: how often its theme came up before and after it shipped. Bars are mentions per sprint; the lines are the averages before and after. The verdict is worked out automatically: after at most half of before is <i>Helped</i>, lower is <i>Some effect</i>, the same or higher is <i>No effect</i>, and no full sprint since is <i>Too early</i>.</p>
+    <div class="impact-grid">${done.map(a => {
+      const v = verdict(a.theme);
+      return `<article class="impact"><div class="row"><span class="chip ${v.tone}">${v.label}</span><span class="spacer"></span><span class="muted xs">raised ${a.raised} · done ${sprintNames[a.closedIn]}</span></div>
+        <h3>${esc(a.title)}</h3>
+        <div class="title-cell sm">${tIcon(a.type)}<span class="key">${a.key}</span><span class="muted">for</span><b class="t">${esc(themes[a.theme].name)}</b></div>
+        ${chart(a.theme, a)}
+        <div class="nums"><div><b>${v.before.toFixed(1)}</b><span>per sprint before</span></div><div><b>${v.after === null ? '–' : v.after.toFixed(1)}</b><span>per sprint after</span></div><div><b>${v.after === null ? '–' : (v.after - v.before > 0 ? '+' : '') + Math.round((v.after - v.before) / v.before * 100) + '%'}</b><span>change</span></div></div>
+        ${v.tone === 'danger' ? `<div class="callout warn"><b>Didn't help</b>Agents still hit it: “${esc(retros.filter(r => r.sprint === 'S24').flatMap(r => r.points).find(p => p.theme === a.theme && p.cat === 'bad')?.text || '')}”. Follow-up ${tIcon('action')} SHIP-188 raised in Sprint 24.</div>` : ''}
+        
+      </article>`;
+    }).join('')}</div>`;
+  }
+
+  function render() {
+    document.querySelectorAll('[data-v]').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === view));
+    document.getElementById('ins').innerHTML = view === 'actions' ? actionsView() : view === 'impact' ? impactView() : themesView();
+  }
+  document.querySelector('[aria-label="Insight"]').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (!b) return; view = b.dataset.v; render(); });
+  document.getElementById('ins').addEventListener('click', e => { const pl = e.target.closest('[data-pull]'); if (pl) { toast(`${tIcon('action')} ${pl.dataset.pull} pulled into Sprint 25`); return; } const m = e.target.closest('[data-make]'); if (m) toast(`${tIcon('action')} New Action item for “${esc(m.dataset.make)}”`); });
+  document.getElementById('merge').addEventListener('click', () => toast('ShipLean clusters points into themes. Merge two clusters, rename one, or move a point to another theme.'));
+  render();
+  SL.preview([{ label: 'Themes', run: () => { view = 'themes'; render(); } }, { label: 'Actions', run: () => { view = 'actions'; render(); } }, { label: 'Impact', run: () => { view = 'impact'; render(); } }]);
+})();
+</script>
+</body>
+</html>

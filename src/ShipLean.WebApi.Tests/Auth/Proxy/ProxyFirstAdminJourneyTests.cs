@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
 using ShipLean.Application.Identity;
-using ShipLean.TestSupport.Database;
+using ShipLean.LocalEnvironment.Database;
 using ShipLean.TestSupport.Fixtures;
 
 namespace ShipLean.WebApi.Tests.Auth.Proxy;

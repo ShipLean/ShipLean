@@ -7,6 +7,7 @@ const LABELS: Record<InstanceSettingsTab, string> = {
   users: 'Users',
   projects: 'Projects',
   integrations: 'Integrations',
+  analytics: 'Analytics',
   agents: 'Agents',
 };
 

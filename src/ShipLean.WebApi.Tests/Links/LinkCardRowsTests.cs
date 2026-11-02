@@ -5,7 +5,7 @@ using ShipLean.Contracts.Links;
 using ShipLean.Contracts.Persisted;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
-using ShipLean.TestSupport.Database;
+using ShipLean.LocalEnvironment.Database;
 
 namespace ShipLean.WebApi.Tests.Links;
 

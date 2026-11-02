@@ -44,6 +44,14 @@ JOIN project ON project.key = p.key
 CROSS JOIN (VALUES ('epic', 1), ('feature', 2), ('story', 3), ('bug', 4), ('task', 5)) AS t (type, digit)
 CROSS JOIN (VALUES ('New', 'proposed', 1), ('Active', 'inProgress', 2), ('Resolved', 'resolved', 3), ('Closed', 'completed', 4), ('Removed', 'removed', 5)) AS s (name, category, sort_order);
 
+-- The four Action item states (no Resolved), in the same id scheme.
+INSERT INTO state (id, project_id, type, name, category, sort_order)
+SELECT format('00000003-0000-4000-80%s-%s', lpad(p.number::text, 2, '0'), lpad((600 + s.sort_order)::text, 12, '0'))::uuid,
+       project.id, 'action', s.name, s.category, s.sort_order
+FROM (VALUES ('ARCH', 7), ('EMPT', 8)) AS p (key, number)
+JOIN project ON project.key = p.key
+CROSS JOIN (VALUES ('New', 'proposed', 1), ('Active', 'inProgress', 2), ('Closed', 'completed', 3), ('Removed', 'removed', 4)) AS s (name, category, sort_order);
+
 -- Default boards for both projects, generated from their states exactly as 0004 does for the other projects.
 INSERT INTO board (id, project_id, level, settings)
 SELECT format('00000007-0000-4000-80%s-%s', lpad(p.number::text, 2, '0'), lpad(l.digit::text, 12, '0'))::uuid,
@@ -60,11 +68,18 @@ SELECT format('00000007-0000-4000-80%s-%s', lpad(p.number::text, 2, '0'), lpad(l
                           'stateMappings', CASE WHEN l.level = 'stories'
                               THEN jsonb_build_array(
                                        jsonb_build_object('type', 'story', 'stateId', main.id),
-                                       jsonb_build_object('type', 'bug', 'stateId', bug.id))
+                                       jsonb_build_object('type', 'bug', 'stateId', bug.id),
+                                       jsonb_build_object('type', 'action', 'stateId', act.id))
                               ELSE jsonb_build_array(jsonb_build_object('type', l.main_type, 'stateId', main.id)) END)
                       ORDER BY main.sort_order)
                FROM state main
                LEFT JOIN state bug ON bug.project_id = main.project_id AND bug.type = 'bug' AND bug.name = main.name
+               LEFT JOIN LATERAL (SELECT a.id FROM state a
+                                  WHERE a.project_id = main.project_id AND a.type = 'action' AND a.category <> 'removed'
+                                    AND (CASE a.category WHEN 'proposed' THEN 0 WHEN 'inProgress' THEN 1 WHEN 'resolved' THEN 2 ELSE 3 END)
+                                        <= (CASE main.category WHEN 'proposed' THEN 0 WHEN 'inProgress' THEN 1 WHEN 'resolved' THEN 2 ELSE 3 END)
+                                  ORDER BY (CASE a.category WHEN 'proposed' THEN 0 WHEN 'inProgress' THEN 1 WHEN 'resolved' THEN 2 ELSE 3 END) DESC, a.sort_order DESC
+                                  LIMIT 1) act ON true
                WHERE main.project_id = project.id AND main.type = l.main_type AND main.category <> 'removed') END,
            'swimlanes', CASE WHEN l.level = 'taskboard' THEN '[]'::jsonb ELSE
                jsonb_build_array(jsonb_build_object('id', 'lane-default', 'name', 'Default lane', 'colour', NULL::text, 'kind', 'default', 'criteria', NULL::jsonb)) END,

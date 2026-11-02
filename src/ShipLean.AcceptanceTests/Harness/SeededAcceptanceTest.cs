@@ -1,4 +1,4 @@
-using ShipLean.TestSupport.Database;
+using ShipLean.LocalEnvironment.Database;
 using ShipLean.TestSupport.Fixtures;
 
 namespace ShipLean.AcceptanceTests.Harness;

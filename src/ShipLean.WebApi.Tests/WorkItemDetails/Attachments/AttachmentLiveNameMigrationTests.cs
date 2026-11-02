@@ -3,7 +3,7 @@ using Dapper;
 using Npgsql;
 using ShipLean.Application.Database;
 using ShipLean.TestSupport;
-using ShipLean.TestSupport.Database;
+using ShipLean.LocalEnvironment.Database;
 
 namespace ShipLean.WebApi.Tests.WorkItemDetails.Attachments;
 

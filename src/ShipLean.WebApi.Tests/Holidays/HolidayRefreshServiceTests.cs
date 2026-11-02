@@ -2,7 +2,7 @@ using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Application.Features.Holidays;
 using ShipLean.Contracts.Holidays;
-using ShipLean.TestSupport.Database;
+using ShipLean.LocalEnvironment.Database;
 using Shouldly;
 
 namespace ShipLean.WebApi.Tests.Holidays;

@@ -34,7 +34,7 @@ public static class TransitionStates
     // The board level whose settings hold a type's transitions; null for types that have no Automations (Epic, Task).
     public static string? BoardLevel(WorkItemTypeId type) => type switch
     {
-        WorkItemTypeId.Story or WorkItemTypeId.Bug => "stories",
+        WorkItemTypeId.Story or WorkItemTypeId.Bug or WorkItemTypeId.Action => "stories",
         WorkItemTypeId.Feature => "features",
         _ => null,
     };

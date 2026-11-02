@@ -15,7 +15,11 @@ export function sameScreenIn(route: MatchedRoute | undefined, key: string): stri
     case 'sprintBacklog':
     case 'taskboard':
     case 'capacity':
+    case 'sprintRetro':
       return routePath('sprints', { key });
+    case 'retros':
+      // Its filters and the open retro name the old project's sprints, themes and retros.
+      return routePath('retros', { key });
     case 'workItem':
     case 'workItemAttachment':
     case 'featureBoard':

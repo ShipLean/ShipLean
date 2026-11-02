@@ -9,7 +9,7 @@ using ShipLean.Contracts.Refs;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Contracts.Boards;
 using ShipLean.TestSupport.Contracts.Users;
-using ShipLean.TestSupport.Database;
+using ShipLean.LocalEnvironment.Database;
 
 namespace ShipLean.WebApi.Tests.Boards.Settings;
 

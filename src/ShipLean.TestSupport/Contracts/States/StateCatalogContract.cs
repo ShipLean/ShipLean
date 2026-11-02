@@ -10,7 +10,7 @@ namespace ShipLean.TestSupport.Contracts.States;
 [TestFixture]
 public abstract class StateCatalogContract
 {
-    private static readonly WorkItemTypeId[] Types = [WorkItemTypeId.Epic, WorkItemTypeId.Feature, WorkItemTypeId.Story, WorkItemTypeId.Bug, WorkItemTypeId.Task];
+    private static readonly WorkItemTypeId[] Types = [WorkItemTypeId.Epic, WorkItemTypeId.Feature, WorkItemTypeId.Story, WorkItemTypeId.Bug, WorkItemTypeId.Task, WorkItemTypeId.Action];
 
     protected abstract IStateCatalog CreateCatalog();
 
@@ -24,7 +24,7 @@ public abstract class StateCatalogContract
     protected abstract Task<Guid> ReadItemStateAsync(Guid itemId);
 
     [Test]
-    public async Task CreateDefaults_ShouldGiveEveryTypeAStatePerCategory()
+    public async Task CreateDefaults_ShouldGiveEveryTypeAStatePerCategoryExceptActionItemsResolved()
     {
         var catalog = CreateCatalog();
         var project = await ArrangeProjectAsync(withDefaultStates: false);
@@ -34,7 +34,15 @@ public abstract class StateCatalogContract
         var states = await catalog.ListAsync(project);
         foreach (var type in Types)
         {
-            states.Where(s => s.Type == type).Select(s => s.Category).Distinct().Order().ShouldBe(Enum.GetValues<StateCategory>().Order());
+            var expected = type == WorkItemTypeId.Action
+                ? Enum.GetValues<StateCategory>().Where(c => c != StateCategory.Resolved)
+                : Enum.GetValues<StateCategory>();
+            states.Where(s => s.Type == type).Select(s => s.Category).Distinct().Order().ShouldBe(expected.Order());
+        }
+        states.Count(s => s.Type == WorkItemTypeId.Action).ShouldBe(4);
+        foreach (var type in Types.Where(t => t != WorkItemTypeId.Action))
+        {
+            states.Count(s => s.Type == type).ShouldBe(5);
         }
         states.Select(s => s.Type).Distinct().ShouldBe(Types);
     }

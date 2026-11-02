@@ -8,6 +8,7 @@ const names: Record<WorkItemTypeId, string> = {
   story: 'User Story',
   bug: 'Bug',
   task: 'Task',
+  action: 'Action item',
 };
 
 /** Which work item type's card the pane edits. Task cards are the Taskboard's cards; story and bug settings are the row headers'. */

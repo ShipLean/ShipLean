@@ -88,6 +88,7 @@
   --type-story: #2f7fd8;
   --type-bug: #cc3d3d;
   --type-task: #c9951a;
+  --type-action: #1f8f6a;   /* Action item (retro action, SHIP-82) */
 
   /* Charts (validated for CVD separation against --color-surface) */
   --chart-committed: #16a089;
@@ -137,6 +138,7 @@
     --type-story: #5aa5f5;
     --type-bug: #f07070;
     --type-task: #e6b84a;
+    --type-action: #4cc79a;
     --chart-committed: #1fa88c;
     --chart-completed: #3b82e0;
   }
@@ -171,6 +173,7 @@
   --type-story: #5aa5f5;
   --type-bug: #f07070;
   --type-task: #e6b84a;
+  --type-action: #4cc79a;
   --chart-committed: #1fa88c;
   --chart-completed: #3b82e0;
 }

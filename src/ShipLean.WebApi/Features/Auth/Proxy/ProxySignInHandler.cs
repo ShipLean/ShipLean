@@ -4,7 +4,9 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.Options;
 using ShipLean.Application.Identity;
+using ShipLean.Contracts.Usage;
 using ShipLean.Contracts.Users;
+using ShipLean.WebApi.Infrastructure;
 
 namespace ShipLean.WebApi.Features.Auth.Proxy;
 
@@ -30,7 +32,9 @@ public sealed class ProxySignInHandler(
     IProxyFirstAdmin firstAdmin,
     CookieSession cookieSession,
     ProxySignInSettings settings,
-    IOptionsMonitor<CookieAuthenticationOptions> cookieOptions)
+    IOptionsMonitor<CookieAuthenticationOptions> cookieOptions,
+    IUsageEvents events,
+    TimeProvider time)
     : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder), IAuthenticationRequestHandler
 {
     // Hides the base Scheme property (the AuthenticationScheme instance); this is the name AuthServices registers it under.
@@ -38,6 +42,7 @@ public sealed class ProxySignInHandler(
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
+        var started = time.GetTimestamp();
         var cancellationToken = Context.RequestAborted;
         var identity = await reader.ReadAsync(Request, cancellationToken);
         // Runs CookieSessionEvents.ValidatePrincipal, which signs out a stale or disabled user's cookie.
@@ -72,6 +77,7 @@ public sealed class ProxySignInHandler(
         // The cookie handler keeps the result it authenticated above for the rest of the request, so this request acts
         // as the principal just issued rather than re-reading it.
         var principal = await cookieSession.SignInAsync(user.Id, snapshot.SecurityStamp, identity);
+        SelfEmittedUsage.TrackOk(events, time, started, UsageEventNames.AuthSignedIn, user.Id, "system:ProxySignInHandler");
         return AuthenticateResult.Success(new AuthenticationTicket(principal, base.Scheme.Name));
     }
 
