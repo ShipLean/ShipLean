@@ -57,8 +57,21 @@ export function useBacklog(query: BacklogQuery) {
   const queryClient = useQueryClient();
   const { projectId } = query;
   useEffect(() => {
+    // At most one refetch in flight and one queued: a bulk move by a teammate is many events, and they cost two reads.
+    let inFlight = false;
+    let queued = false;
     const refetch = () => {
-      void queryClient.invalidateQueries({ queryKey: backlogRootKey(projectId) });
+      if (inFlight) {
+        queued = true;
+        return;
+      }
+      inFlight = true;
+      void queryClient.invalidateQueries({ queryKey: backlogRootKey(projectId) }).finally(() => {
+        inFlight = false;
+        if (!queued) return;
+        queued = false;
+        refetch();
+      });
     };
     const unregister = BACKLOG_EVENTS.map((type) => registerInvalidation(type, refetch));
     return () => unregister.forEach((off) => off());
