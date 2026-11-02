@@ -11,7 +11,12 @@ const rowOf = (page: Page, key: string) =>
   page.getByTestId(ids.row).and(page.locator(`[data-key="${key}"]`));
 // Picks `row` up by its grip and puts it down on `target`. The button is released once the sortable list has made
 // room at the target (it slid), which is how dnd-kit shows it knows the drop.
-async function dragRow(page: Page, row: Locator, target: Locator) {
+async function dragRow(
+  page: Page,
+  row: Locator,
+  target: Locator,
+  beforeDrop: () => Promise<void> = async () => undefined,
+) {
   const grip = (await row.getByTestId(ids.grip).boundingBox())!;
   const box = (await target.boundingBox())!;
   await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2);
@@ -19,6 +24,7 @@ async function dragRow(page: Page, row: Locator, target: Locator) {
   await page.mouse.move(grip.x + 5, grip.y + 20, { steps: 4 });
   await page.mouse.move(grip.x + 5, box.y + box.height / 2, { steps: 10 });
   await expect(target).toHaveAttribute('style', /translate3d\(0px, -?[1-9]/);
+  await beforeDrop();
   await page.mouse.up();
 }
 const select = async (page: Page, ...keys: string[]) => {
@@ -76,6 +82,25 @@ test('List_WhenDroppedOnASelectedRow_ShouldSendNothing', async ({ mount, page })
   expect(server.bulks).toHaveLength(0);
   expect(server.reorders).toHaveLength(0);
   await expect(page.getByTestId('toast')).toHaveCount(0);
+});
+
+test('List_WhenTheSelectionChangesMidDragAndTheDropIsOnADraggedRow_ShouldSendNothing', async ({
+  mount,
+  page,
+}) => {
+  const server = await stubBacklog(page, backlogView(ROWS));
+  await mount(<ListGroupHarness project={PROJECT} />, route);
+  await expect(page.getByTestId(ids.row)).toHaveCount(5);
+  await select(page, 'SHIP-1', 'SHIP-2');
+
+  // SHIP-2 leaves the live selection while the block of SHIP-1 and SHIP-2 is still in the air.
+  await dragRow(page, rowOf(page, 'SHIP-1'), rowOf(page, 'SHIP-2'), () =>
+    page.getByTestId('harness-select-SHIP-2').dispatchEvent('pointerdown'),
+  );
+
+  await expect(page.getByTestId(ids.dragBadge)).toHaveCount(0);
+  expect(server.bulks).toHaveLength(0);
+  expect(server.reorders).toHaveLength(0);
 });
 
 test('List_WhenAnUnselectedRowIsDragged_ShouldReorderOnlyIt', async ({ mount, page }) => {

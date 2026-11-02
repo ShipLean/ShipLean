@@ -64,7 +64,7 @@ export function ListDnd({
     if (filtering || over === null) return;
     if (dragged !== null) {
       // The block lands above the row it is dropped on; a row of the block is no target.
-      if (!landsOnSelection(selection.ids, String(over.id)))
+      if (!landsOnSelection(dragged.ids, String(over.id)))
         void bulk.run(moveBeforePlan(dragged.rows, String(over.id), undefined));
       return;
     }

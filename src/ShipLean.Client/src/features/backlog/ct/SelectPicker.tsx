@@ -1,7 +1,7 @@
 import type { BacklogRowDto } from '../../../api/views';
 import { useSelection } from '../selection/useSelection';
 
-// CT-only: one button per row that toggles it in the selection, so a test picks rows in any order.
+// CT-only: one button per row that toggles it in the selection on pointer down (dnd-kit swallows clicks while a row is held), so a test picks rows in any order.
 export function SelectPicker({ rows }: { rows: readonly BacklogRowDto[] }) {
   const selection = useSelection();
   return (
@@ -11,7 +11,7 @@ export function SelectPicker({ rows }: { rows: readonly BacklogRowDto[] }) {
           key={row.id}
           type="button"
           data-testid={`harness-select-${row.key}`}
-          onClick={() => selection.toggle(row.id)}
+          onPointerDown={() => selection.toggle(row.id)}
         >
           {row.key}
         </button>
