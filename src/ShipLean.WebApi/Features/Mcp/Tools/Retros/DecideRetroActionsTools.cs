@@ -6,6 +6,7 @@ using ShipLean.Application.Features.Mcp.Planning.Lessons;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Mcp;
+using ShipLean.Contracts.Retros;
 using ShipLean.WebApi.Features.Mcp.Contracts;
 using ShipLean.WebApi.Features.Mcp.Plan;
 using ShipLean.WebApi.Features.Mcp.Resolve;
@@ -50,6 +51,7 @@ internal sealed class DecideRetroActionsTools(ItemResolver items, ProjectResolve
         }
 
         await RequireOneScopeAsync(resolved.Id, feature, sprint, from, to, cancellationToken);
+        RequireFields(actions, not_needed, themes, merges);
         if (actions?.Count(action => string.IsNullOrWhiteSpace(action.Existing)) > MaxNewActions)
         {
             throw ApiException.Validation($"At most {MaxNewActions} new action items per call. Fold the points into fewer actions, or add them to an open action with `existing`.", "actions");
@@ -60,6 +62,52 @@ internal sealed class DecideRetroActionsTools(ItemResolver items, ProjectResolve
             resolved.Key, openUrl, false, [], [], [], 0, 0, [], 0, [],
             envelope.Seal(PlanKind, resolved.Id, new DecidePlan([], [], [], [])), (int)PlanEnvelope.Lifetime.TotalMinutes);
         return PlanningReply.Of(preview, "Preview: nothing would change yet. Nothing was written.");
+    }
+
+    // The schema marks these fields required, but the generator lists every string as nullable, so a null or blank one gets here.
+    private static void RequireFields(
+        IReadOnlyList<DecideActionInput>? actions, IReadOnlyList<DecideNotNeededInput>? notNeeded, IReadOnlyList<DecideThemeInput>? themes, IReadOnlyList<DecideMergeInput>? merges)
+    {
+        for (var i = 0; i < (actions?.Count ?? 0); i++)
+        {
+            var action = actions![i];
+            RequireText(action?.Title, $"actions[{i}].title");
+            RequireText(action!.FixType, $"actions[{i}].fix_type");
+            if (!Enum.TryParse<RetroFixType>(action.FixType, ignoreCase: true, out _))
+            {
+                throw ApiException.Validation("fix_type is skill, guide, test, analyzer, product or other.", $"actions[{i}].fix_type");
+            }
+
+            if (action.Points is not { Count: > 0 })
+            {
+                throw ApiException.Validation("Name at least one point.", $"actions[{i}].points");
+            }
+        }
+
+        for (var i = 0; i < (notNeeded?.Count ?? 0); i++)
+        {
+            RequireText(notNeeded![i]?.Reason, $"not_needed[{i}].reason");
+        }
+
+        for (var i = 0; i < (themes?.Count ?? 0); i++)
+        {
+            RequireText(themes![i]?.Theme, $"themes[{i}].theme");
+        }
+
+        for (var i = 0; i < (merges?.Count ?? 0); i++)
+        {
+            RequireText(merges![i]?.From, $"merges[{i}].from");
+            RequireText(merges[i].Into, $"merges[{i}].into");
+            RequireText(merges[i].Reason, $"merges[{i}].reason");
+        }
+    }
+
+    private static void RequireText(string? value, string field)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw ApiException.Validation($"{field} is required.", field);
+        }
     }
 
     private async Task RequireOneScopeAsync(Guid projectId, string? feature, string? sprint, string? from, string? to, CancellationToken cancellationToken)

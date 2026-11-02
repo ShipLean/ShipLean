@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.Json;
 using ModelContextProtocol.Server;
 using ShipLean.TestSupport.Hosting;
 using ShipLean.WebApi.Features.Mcp.Contracts;
@@ -108,6 +109,69 @@ public class DecideRetroActionsTests : McpFixture
 
         reply.IsToolError().ShouldBeFalse(reply.Body);
         reply.Structured().GetProperty("applied").GetBoolean().ShouldBeTrue();
+    }
+
+    [TestCase("actions", "title", "fix_type", "points")]
+    [TestCase("not_needed", "point", "reason")]
+    [TestCase("themes", "point", "theme")]
+    [TestCase("merges", "from", "into", "reason")]
+    public async Task ToolsList_ShouldRequireEveryNestedField(string argument, params string[] fields)
+    {
+        var token = await TokenAsync(TestUser.Joel, ReadOnly);
+        var reply = await PostAsync(token, """{"jsonrpc":"2.0","id":1,"method":"tools/list"}""");
+        var tool = reply.Json().GetProperty("result").GetProperty("tools").EnumerateArray().Single(t => t.GetProperty("name").GetString() == "decide_retro_actions");
+        var schema = tool.GetProperty("inputSchema");
+
+        var item = Resolve(schema.GetProperty("properties").GetProperty(argument).GetProperty("items"), schema);
+
+        item.GetProperty("required").EnumerateArray().Select(name => name.GetString()).ShouldBe(fields, ignoreOrder: true);
+        foreach (var field in fields)
+        {
+            var type = item.GetProperty("properties").GetProperty(field).GetProperty("type");
+            // The generator lists every string as ["string","null"] (as for capture_plan's tasks), so only a Guid can be pinned non-null; the strings are checked at runtime below.
+            if (field == "point")
+            {
+                type.ValueKind.ShouldBe(JsonValueKind.String, field);
+            }
+        }
+    }
+
+    [TestCase("""{"actions":[{"title":null,"fix_type":"skill","points":["PID"]}]}""", "actions[0].title")]
+    [TestCase("""{"actions":[{"title":" ","fix_type":"skill","points":["PID"]}]}""", "actions[0].title")]
+    [TestCase("""{"actions":[{"title":"t","fix_type":null,"points":["PID"]}]}""", "actions[0].fix_type")]
+    [TestCase("""{"actions":[{"title":"t","fix_type":"nope","points":["PID"]}]}""", "actions[0].fix_type")]
+    [TestCase("""{"actions":[{"title":"t","fix_type":"skill","points":null}]}""", "actions[0].points")]
+    [TestCase("""{"actions":[{"title":"t","fix_type":"skill","points":[]}]}""", "actions[0].points")]
+    [TestCase("""{"not_needed":[{"point":"PID","reason":null}]}""", "not_needed[0].reason")]
+    [TestCase("""{"not_needed":[{"point":"PID","reason":" "}]}""", "not_needed[0].reason")]
+    [TestCase("""{"themes":[{"point":"PID","theme":null}]}""", "themes[0].theme")]
+    [TestCase("""{"merges":[{"from":null,"into":"b","reason":"r"}]}""", "merges[0].from")]
+    [TestCase("""{"merges":[{"from":"a","into":null,"reason":"r"}]}""", "merges[0].into")]
+    [TestCase("""{"merges":[{"from":"a","into":"b","reason":null}]}""", "merges[0].reason")]
+    public async Task Decide_WhenANestedFieldIsMissing_ShouldBeValidationNamingIt(string nested, string field)
+    {
+        var token = await TokenAsync(TestUser.Joel, ReadOnly);
+        var arguments = nested.Replace("PID", Guid.NewGuid().ToString()).Insert(1, "\"project\":\"SHIP\",\"sprint\":\"current\",");
+
+        var reply = await CallToolAsync(token, "decide_retro_actions", arguments);
+
+        ErrorField(reply).ShouldBe(("validation", field));
+    }
+
+    private static JsonElement Resolve(JsonElement node, JsonElement root)
+    {
+        if (!node.TryGetProperty("$ref", out var reference))
+        {
+            return node;
+        }
+
+        var current = root;
+        foreach (var part in reference.GetString()!.TrimStart('#', '/').Split('/'))
+        {
+            current = current.GetProperty(part);
+        }
+
+        return current;
     }
 
     private static string Arguments(string actions) => $$"""{"project":"SHIP","sprint":"current","actions":{{actions}}}""";
