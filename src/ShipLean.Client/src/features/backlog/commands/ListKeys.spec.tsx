@@ -3,7 +3,7 @@ import type { Page } from 'playwright';
 import { stubShell } from '../../shell/shellFixtures';
 import { quickSearchTestIds } from '../../quickSearch/testIds';
 import { ListKeysHarness } from '../ct/ListKeysHarness';
-import { PROJECT, planningView } from '../ct/fixtures';
+import { PROJECT, planningManyView, planningView } from '../ct/fixtures';
 import { stubBacklog } from '../ct/stubApi';
 import { PlanningMode } from '../planning/PlanningMode';
 import { backlogTestIds as ids } from '../testIds';
@@ -160,17 +160,19 @@ test('M_then_2_runs_moveMenu_with_2', async ({ mount, page }) => {
   await row(page, 'SHIP-1').focus();
 
   await page.keyboard.press('m');
-  await expect(log(page)).toHaveText('');
+  await expect(log(page)).toHaveText('moveMenu:undefined');
   await page.keyboard.press('2');
   await page.keyboard.press('m');
   await page.keyboard.press('t');
   await page.keyboard.press('m');
   await page.keyboard.press('b');
 
-  await expect(log(page)).toHaveText('moveMenu:2,moveMenu:t,moveMenu:b');
+  await expect(log(page)).toHaveText(
+    'moveMenu:undefined,moveMenu:2,moveMenu:undefined,moveMenu:t,moveMenu:undefined,moveMenu:b',
+  );
 });
 
-test('M_then_0_runs_nothing', async ({ mount, page }) => {
+test('M_then_0_cancels_the_hints', async ({ mount, page }) => {
   await mountList(mount, page);
   await row(page, 'SHIP-1').focus();
 
@@ -179,10 +181,10 @@ test('M_then_0_runs_nothing', async ({ mount, page }) => {
   // The chord is over: a digit now starts an estimate.
   await page.keyboard.press('3');
 
-  await expect(log(page)).toHaveText('estimate:3');
+  await expect(log(page)).toHaveText('moveMenu:undefined,moveMenu:cancel,estimate:3');
 });
 
-test('M_then_Esc_runs_nothing', async ({ mount, page }) => {
+test('M_then_Esc_cancels_the_hints', async ({ mount, page }) => {
   await mountList(mount, page);
   await row(page, 'SHIP-1').focus();
   await page.keyboard.press('x');
@@ -192,9 +194,49 @@ test('M_then_Esc_runs_nothing', async ({ mount, page }) => {
   // The chord is over: a digit now starts an estimate, not a move.
   await page.keyboard.press('2');
 
-  await expect(log(page)).toHaveText('estimate:2');
+  await expect(log(page)).toHaveText('moveMenu:undefined,moveMenu:cancel,estimate:2');
   // Esc only cancelled the chord; it did not clear the selection.
   await expect(page.getByTestId('selected-count')).toHaveText('1');
+});
+
+test('M_shows_the_sprint_hints_on_the_bar_and_Esc_clears_them', async ({ mount, page }) => {
+  // The real planning screen: the bar's own moveMenu, not the harness fake.
+  await stubBacklog(page, planningManyView());
+  await mount(<PlanningMode project={PROJECT} />, {
+    hooksConfig: { route: '/p/SHIP/backlogs/stories?mode=planning' },
+  });
+  const hints = page.getByTestId(ids.bulkMoveSprint).locator('kbd');
+  await row(page, 'SHIP-180').focus();
+  await page.keyboard.press('x');
+  await expect(page.getByTestId(ids.bulkBar)).toBeVisible();
+  await expect(hints).toHaveCount(0);
+
+  await page.keyboard.press('m');
+  await expect(hints.first()).toHaveText('1');
+  await expect(page.getByTestId(ids.bulkMoveTop).locator('kbd')).toHaveText('T');
+
+  await page.keyboard.press('Escape');
+  await expect(hints).toHaveCount(0);
+  // Any other key ends the chord too.
+  await page.keyboard.press('m');
+  await expect(hints.first()).toBeVisible();
+  await page.keyboard.press('z');
+  await expect(hints).toHaveCount(0);
+});
+
+test('M_with_nothing_selected_shows_no_hints_and_does_not_error', async ({ mount, page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await stubBacklog(page, planningManyView());
+  await mount(<PlanningMode project={PROJECT} />, {
+    hooksConfig: { route: '/p/SHIP/backlogs/stories?mode=planning' },
+  });
+  await row(page, 'SHIP-180').focus();
+  await page.keyboard.press('m');
+  await page.keyboard.press('Escape');
+
+  await expect(page.getByTestId(ids.bulkBar)).toHaveCount(0);
+  expect(errors).toEqual([]);
 });
 
 test('Question_mark_opens_the_list_and_Esc_closes_it', async ({ mount, page }) => {

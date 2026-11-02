@@ -17,14 +17,17 @@ function belongsToList(event: KeyboardEvent): boolean {
   return target.closest(rowSelector) !== null;
 }
 
+/** What `moveMenu` gets when the chord ends without a pick (Esc or any other key): the sprint hints go away. */
+export const CANCEL = 'cancel';
+
 function focusRow(id: string) {
   document.querySelector<HTMLElement>(`${rowSelector}[data-row-id="${CSS.escape(id)}"]`)?.focus();
 }
 
 /**
  * The list's keys, live only while a row has focus: J and K move it (the commands `focusNext` and `focusPrev`, which
- * this registers), the rest run the commands other features register, by name. `M` waits for one more key (a sprint
- * number, T or B) and Esc cancels it. Mount it once per screen, inside the selection provider.
+ * this registers), the rest run the commands other features register, by name. `M` runs `moveMenu` with no argument (show the hints), then waits for one more key (a sprint
+ * number, T or B), which runs it with that key; Esc or any other key runs it with `cancel`. Mount it once per screen, inside the selection provider.
  */
 export function useListKeys(): void {
   const selection = useSelection();
@@ -69,6 +72,7 @@ export function useListKeys(): void {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (!belongsToList(event)) {
+        if (chord.current) run('moveMenu', CANCEL);
         chord.current = false;
         return;
       }
@@ -79,7 +83,7 @@ export function useListKeys(): void {
       if (chord.current) {
         chord.current = false;
         handled();
-        if (/^[1-9tb]$/.test(key) && !event.shiftKey) run('moveMenu', key);
+        run('moveMenu', /^[1-9tb]$/.test(key) && !event.shiftKey ? key : CANCEL);
         return;
       }
       if (key === 'Escape') {
@@ -100,8 +104,10 @@ export function useListKeys(): void {
         else if (key === 'x') run('toggleSelect');
         else if (key === 'n') run('addBelow');
         else if (key === '/') run('search');
-        else if (key === 'm') chord.current = true;
-        else if (/^[0-9]$/.test(key)) run('estimate', key);
+        else if (key === 'm') {
+          chord.current = true;
+          run('moveMenu');
+        } else if (/^[0-9]$/.test(key)) run('estimate', key);
         else return;
         handled();
       }

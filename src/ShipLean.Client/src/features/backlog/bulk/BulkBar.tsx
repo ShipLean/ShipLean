@@ -6,6 +6,7 @@ import type { BacklogRowDto, BacklogSectionDto, BacklogViewDto } from '../../../
 import { useProjectSprints, useProjectStates } from '../../workItem/workItemApi';
 import { parentTypesOf } from '../../workItem/form/ParentField';
 import { useListCommand } from '../commands/listCommands';
+import { CANCEL } from '../commands/useListKeys';
 import { useSelection } from '../selection/useSelection';
 import { backlogTestIds as ids } from '../testIds';
 import { BulkMenu } from './BulkMenus';
@@ -113,6 +114,11 @@ export function BulkBar({ mode, projectId, view }: BulkBarProps) {
     });
 
   useListCommand('moveMenu', (arg) => {
+    // The chord ended without a pick (Esc, or a key that is no move): the hints go, selection or not.
+    if (arg === CANCEL) {
+      setMoving(false);
+      return;
+    }
     if (count === 0 || tooMany) return;
     if (arg === undefined) {
       setMoving(true);

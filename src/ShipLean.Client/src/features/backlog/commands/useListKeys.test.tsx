@@ -102,12 +102,21 @@ test('Key_WhenOutsideTheList_ShouldDoNothing', () => {
 
 test('M_WhenFollowedByASprintNumberTOrB_ShouldRunMoveMenuWithIt', () => {
   for (const key of ['m', '1', 'm', '9', 'm', 't', 'm', 'b']) press(at('tr'), { key });
-  expect(calls).toEqual(['moveMenu:1', 'moveMenu:9', 'moveMenu:t', 'moveMenu:b']);
+  expect(calls).toEqual([
+    'moveMenu:undefined',
+    'moveMenu:1',
+    'moveMenu:undefined',
+    'moveMenu:9',
+    'moveMenu:undefined',
+    'moveMenu:t',
+    'moveMenu:undefined',
+    'moveMenu:b',
+  ]);
 });
 
-test('M_WhenFollowedByZero_ShouldRunNothingAndEndTheChord', () => {
+test('M_WhenFollowedByZero_ShouldCancelTheHintsAndEndTheChord', () => {
   press(at('tr'), { key: 'm' });
   press(at('tr'), { key: '0' });
   press(at('tr'), { key: '4' });
-  expect(calls).toEqual(['estimate:4']);
+  expect(calls).toEqual(['moveMenu:undefined', 'moveMenu:cancel', 'estimate:4']);
 });
