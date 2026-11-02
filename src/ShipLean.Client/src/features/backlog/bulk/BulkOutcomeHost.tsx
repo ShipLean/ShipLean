@@ -2,15 +2,19 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSelection } from '../selection/useSelection';
 import { ChangedRows } from './ChangedRows';
 import { UndoToast } from './UndoToast';
-import { isUndoPlan, mergeUndo, undoOf } from './undoOf';
+import type { WorkItemDto, WriteResult } from '../../../api/workItems';
+import { isUndoPlan, undoOf } from './undoOf';
 import { useBulkRunner, type BulkOutcome, type BulkPlan } from './useBulkRun';
+
+/** For a plan Include it anyway made, the plan of the run it came from. */
+const includedFrom = new WeakMap<BulkPlan, BulkPlan>();
 
 /** The run's rows a teammate changed, sent again against the revision they have now. */
 function includePlan(outcome: BulkOutcome): BulkPlan {
   const revisions = new Map(
     outcome.stale.map((conflict) => [conflict.current.id, conflict.current.revision]),
   );
-  return {
+  const plan: BulkPlan = {
     items: outcome.plan.items
       .filter(({ row }) => revisions.has(row.id))
       .map((item) => ({
@@ -21,19 +25,26 @@ function includePlan(outcome: BulkOutcome): BulkPlan {
     undoable: false,
     pinRevisions: true,
   };
+  includedFrom.set(plan, includedFrom.get(outcome.plan) ?? outcome.plan);
+  return plan;
 }
 
-/** The run Undo puts back: the first run, then the rows Include it anyway wrote after it. */
+/**
+ * The run Undo puts back: the original run, every row written for it (the run, then Include it anyway), and those
+ * rows as a teammate held them when Include it anyway sent them. `stamp` changes with each success so the toast's
+ * nine seconds start again.
+ */
 interface PendingUndo {
-  runs: BulkOutcome[];
+  source: BulkOutcome;
+  written: WriteResult[];
+  held: ReadonlyMap<string, WorkItemDto>;
+  stamp: number;
 }
-
-const writtenIn = (runs: BulkOutcome[]) => runs.reduce((sum, run) => sum + run.written.length, 0);
 
 /**
  * What the last bulk run left to decide: the rows a teammate changed, with Include it anyway and Leave it, and Undo.
  * Undo is offered for the latest undoable run only, once, and is itself reported when a row changed since. Rows
- * written by Include it anyway join the pending Undo. An Undo whose request failed is offered again.
+ * written by Include it anyway join the pending Undo and start its nine seconds again. An Undo whose request failed is offered again.
  */
 export function BulkOutcomeHost({ projectId }: { projectId: string }) {
   void projectId;
@@ -47,7 +58,7 @@ export function BulkOutcomeHost({ projectId }: { projectId: string }) {
   if (outcome !== seen) {
     setSeen(outcome);
     if (outcome !== null && outcome.plan.undoable && outcome.written.length > 0) {
-      setUndo({ runs: [outcome] });
+      setUndo({ source: outcome, written: outcome.written, held: new Map(), stamp: 0 });
     }
   }
 
@@ -76,15 +87,30 @@ export function BulkOutcomeHost({ projectId }: { projectId: string }) {
     if (undo === null) return;
     const source = undo;
     setUndo(null);
-    const plans = source.runs.map((run) => undoOf(run.viewBefore, run));
-    const result = await runner.run(mergeUndo(plans));
+    const plan = undoOf(
+      source.source.viewBefore,
+      { ...source.source, written: source.written },
+      source.held,
+    );
+    const result = await runner.run(plan);
     if (result.failed) setUndo((current) => current ?? source);
   };
 
   const include = async (stale: BulkOutcome) => {
     const result = await runner.run(includePlan(stale));
     if (result.failed || result.written.length === 0) return;
-    setUndo((current) => (current === null ? null : { runs: [...current.runs, result] }));
+    const original = includedFrom.get(stale.plan) ?? stale.plan;
+    const heldNow = new Map(stale.stale.map((conflict) => [conflict.current.id, conflict.current]));
+    setUndo((current) => {
+      const joins = current !== null && current.source.plan === original;
+      if (!joins && !(original === stale.plan && original.undoable)) return current;
+      return {
+        source: joins ? current.source : stale,
+        written: [...(joins ? current.written : []), ...result.written],
+        held: new Map([...(joins ? current.held : []), ...heldNow]),
+        stamp: (current?.stamp ?? 0) + 1,
+      };
+    });
   };
 
   return (
@@ -100,7 +126,8 @@ export function BulkOutcomeHost({ projectId }: { projectId: string }) {
       ) : null}
       {undo ? (
         <UndoToast
-          message={undo.runs[0].plan.label(writtenIn(undo.runs))}
+          key={undo.stamp}
+          message={undo.source.plan.label(undo.written.length)}
           aboveBar={selection.count > 0}
           onUndo={() => void doUndo()}
           onExpire={expire}

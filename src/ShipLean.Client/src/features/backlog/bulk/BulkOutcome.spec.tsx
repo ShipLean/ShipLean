@@ -163,7 +163,8 @@ test('Undo_after_Include_it_anyway_puts_back_every_row', async ({ mount, page })
     'id-SHIP-2',
     'id-SHIP-3',
   ]);
-  expect(server.bulks[2].items.every((i) => i.changes?.sprint?.value === null)).toBe(true);
+  // SHIP-2 goes back to what the teammate left (Sprint 24 in the stub), the others to no sprint.
+  expect(server.bulks[2].items.map((i) => i.changes?.sprint?.value)).toEqual([null, 'sp24', null]);
 });
 
 test('A_failed_Undo_is_offered_again', async ({ mount, page }) => {
@@ -200,5 +201,79 @@ test('Undo_is_offered_once', async ({ mount, page }) => {
   await page.getByTestId('select-all').click();
   await page.getByTestId('run-points').click();
   await expect.poll(() => server.bulks.length).toBe(3);
+  await expect(page.getByTestId(ids.undo)).toHaveCount(0);
+});
+
+test('Undo_after_Include_it_anyway_restores_the_value_the_teammate_left', async ({
+  mount,
+  page,
+}) => {
+  const server = await start(page);
+  await mount(<BulkOutcomeHarness />, route);
+  await ready(page, server);
+  // The stub's conflict says the teammate had put SHIP-2 in Sprint 24; the rows here are in no sprint.
+  server.staleOnBulk(['id-SHIP-2']);
+  await page.getByTestId('select-all').click();
+  await page.getByTestId('run-sprint').click();
+  await expect(page.getByTestId(ids.bulkChanged)).toBeVisible();
+  server.staleOnBulk([]);
+  await page.getByTestId(ids.bulkIncludeAnyway).click();
+  await expect.poll(() => server.bulks.length).toBe(2);
+
+  await page.getByTestId(ids.undo).click();
+
+  await expect.poll(() => server.bulks.length).toBe(3);
+  expect(server.bulks[2].items.map((i) => [i.id, i.changes?.sprint])).toEqual([
+    ['id-SHIP-1', { value: null }],
+    ['id-SHIP-2', { value: 'sp24' }],
+    ['id-SHIP-3', { value: null }],
+  ]);
+});
+
+test('Undo_after_Include_it_anyway_puts_the_rows_back_in_their_old_order', async ({
+  mount,
+  page,
+}) => {
+  const server = await start(page);
+  await mount(<BulkOutcomeHarness />, route);
+  await ready(page, server);
+  server.staleOnBulk(['id-SHIP-2']);
+  await page.getByTestId('select-all').click();
+  await page.getByTestId('run-top').click();
+  await expect(page.getByTestId(ids.bulkChanged)).toBeVisible();
+  server.staleOnBulk([]);
+  await page.getByTestId(ids.bulkIncludeAnyway).click();
+  await expect.poll(() => server.bulks.length).toBe(2);
+
+  await page.getByTestId(ids.undo).click();
+
+  await expect.poll(() => server.bulks.length).toBe(3);
+  expect(server.bulks[2].items.map((i) => [i.id, i.placement])).toEqual([
+    ['id-SHIP-1', { slot: 'last', beforeItemId: null }],
+    ['id-SHIP-2', { slot: 'last', beforeItemId: null }],
+    ['id-SHIP-3', { slot: 'last', beforeItemId: null }],
+  ]);
+});
+
+test('Include_it_anyway_gives_Undo_nine_seconds_again', async ({ mount, page }) => {
+  await page.clock.install();
+  const server = await start(page);
+  await mount(<BulkOutcomeHarness />, route);
+  await ready(page, server);
+  server.staleOnBulk(['id-SHIP-2']);
+  await page.getByTestId('select-all').click();
+  await page.getByTestId('run-sprint').click();
+  await expect(page.getByTestId(ids.bulkChanged)).toBeVisible();
+  server.staleOnBulk([]);
+  await page.clock.fastForward(8000);
+  await expect(page.getByTestId(ids.undo)).toBeVisible();
+
+  await page.getByTestId(ids.bulkIncludeAnyway).click();
+  await expect.poll(() => server.bulks.length).toBe(2);
+  await expect.poll(() => server.reads.length).toBeGreaterThan(2);
+  await page.clock.fastForward(5000);
+  await expect(page.getByTestId(ids.undo)).toBeVisible();
+
+  await page.clock.fastForward(5000);
   await expect(page.getByTestId(ids.undo)).toHaveCount(0);
 });

@@ -1,6 +1,8 @@
 import { expect, test } from 'vitest';
 import type { WriteResult } from '../../../api/workItems';
-import { backlogView, itemRow } from '../ct/fixtures';
+import type { BacklogRowDto } from '../../../api/views';
+import { backlogView, itemRow, planningView } from '../ct/fixtures';
+import { story } from '../../workItem/ct/fixtures';
 import { changesOf } from './changesOf';
 import { moveToBacklogEdgePlan, moveToEdgePlan, moveToSprintPlan } from './movePlan';
 import { undoOf } from './undoOf';
@@ -95,4 +97,66 @@ test('restores_the_sprint_and_rank_of_a_row_moved_to_the_top_of_the_backlog', ()
   expect(undo.items[0].changes?.sprint).toEqual({ value: 'sp25' });
   expect(undo.items[0].placement).toEqual({ slot: 'before', beforeItemId: 'id-D' });
   expect(undo.items[0].row.revision).toBe(9);
+});
+
+test('restores_rows_moved_from_a_sprint_to_the_top_of_the_backlog_in_each_sprint', () => {
+  const sp24 = [1, 2, 3].map((n) => itemRow({ key: `P${n}`, rank: n, sprint: OTHER }));
+  const sp25 = [1, 2].map((n) => itemRow({ key: `Q${n}`, rank: n, sprint: SPRINT }));
+  const backlog = [1, 2].map((n) => itemRow({ key: `B${n}`, rank: n }));
+  const base = planningView();
+  const [first, second, , last] = base.sections;
+  const planning = {
+    ...base,
+    sections: [
+      { ...first, rows: sp24 },
+      { ...second, rows: sp25 },
+      { ...base.sections[2], rows: [] },
+      { ...last, rows: backlog },
+    ],
+  };
+  const moving = [sp24[0], sp24[2], sp25[1]];
+
+  const undo = undoOf(planning, {
+    ...outcome(moveToBacklogEdgePlan(moving, 'first'), 'P1', 'P3', 'Q2'),
+    viewBefore: planning,
+  });
+
+  expect(undo.items.map((i) => [i.row.key, i.changes?.sprint, i.placement])).toEqual([
+    ['P1', { value: 'sp24' }, { slot: 'before', beforeItemId: 'id-P2' }],
+    ['P3', { value: 'sp24' }, { slot: 'last', beforeItemId: null }],
+    ['Q2', { value: 'sp25' }, { slot: 'last', beforeItemId: null }],
+  ]);
+});
+
+/** Applies Undo's items one after another to the order after the move, as the server does. */
+function applied(order: string[], items: ReturnType<typeof undoOf>['items']): string[] {
+  return items.reduce((current, { row, placement }) => {
+    const rest = current.filter((id) => id !== row.id);
+    if (placement === null) return current;
+    if (placement.slot === 'last') return [...rest, row.id];
+    const at = rest.indexOf(placement.beforeItemId ?? '');
+    return [...rest.slice(0, at), row.id, ...rest.slice(at)];
+  }, order);
+}
+
+test('puts_the_original_order_back_when_a_stale_row_was_included_later', () => {
+  // A and B go to the bottom; B was stale and Include it anyway wrote it afterwards, so Undo has both.
+  const plan = moveToEdgePlan(pick('A', 'B'), 'last');
+  const undo = undoOf(view, outcome(plan, 'A', 'B'));
+
+  expect(undo.items.map((i) => [i.row.key, i.placement?.beforeItemId])).toEqual([
+    ['A', 'id-C'],
+    ['B', 'id-C'],
+  ]);
+  const afterMove = ['id-C', 'id-D', 'id-E', 'id-A', 'id-B'];
+  expect(applied(afterMove, undo.items)).toEqual(rows.map((row: BacklogRowDto) => row.id));
+});
+
+test('restores_an_included_rows_value_from_what_the_teammate_left', () => {
+  const plan = moveToSprintPlan(pick('B'), SPRINT);
+  const teammate = { ...story, id: 'id-B', sprint: OTHER, points: 8, revision: 3 };
+
+  const undo = undoOf(view, outcome(plan, 'B'), new Map([['id-B', teammate]]));
+
+  expect(undo.items[0].changes?.sprint).toEqual({ value: 'sp24' });
 });
