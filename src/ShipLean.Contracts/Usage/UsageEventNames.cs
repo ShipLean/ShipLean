@@ -77,6 +77,8 @@ public static class UsageEventNames
     public const string RetroActionCreated = "retro.action_created";
     public const string RetroThemesMerged = "retro.themes_merged";
     public const string RetroThemeRenamed = "retro.theme_renamed";
+    public const string RetroPointNotNeeded = "retro.point_not_needed";
+    public const string RetroNotNeededUndone = "retro.not_needed_undone";
     public const string ImportStarted = "import.started";
     public const string ImportJobChanged = "import.job_changed";
     public const string ImportJiraConnected = "import.jira_connected";

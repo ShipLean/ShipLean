@@ -210,6 +210,8 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `retro.action_created` |  | `RetroPoints.CreateAction` |
 | `retro.themes_merged` |  | `RetroThemeWrites.Merge` |
 | `retro.theme_renamed` |  | `RetroThemeWrites.Rename` |
+| `retro.point_not_needed` |  | `RetroDecisions.NotNeeded` |
+| `retro.not_needed_undone` |  | `RetroDecisions.UndoNotNeeded` |
 | `import.started` |  | `ImportJobs.Start` |
 | `import.job_changed` |  | `ImportJobs.Rerun`, `ImportJobs.Retry`, `ImportJobs.Skip`, `ImportJobs.Stop` |
 | `import.jira_connected` |  | `Jira.Put` |

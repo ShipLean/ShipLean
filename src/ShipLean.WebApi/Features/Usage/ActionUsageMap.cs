@@ -67,6 +67,8 @@ public static class ActionUsageMap
         Add(ActionUsage.Track(UsageEventNames.RetroActionCreated), "RetroPoints.CreateAction");
         Add(ActionUsage.Track(UsageEventNames.RetroThemesMerged), "RetroThemeWrites.Merge");
         Add(ActionUsage.Track(UsageEventNames.RetroThemeRenamed), "RetroThemeWrites.Rename");
+        Add(ActionUsage.Track(UsageEventNames.RetroPointNotNeeded), "RetroDecisions.NotNeeded");
+        Add(ActionUsage.Track(UsageEventNames.RetroNotNeededUndone), "RetroDecisions.UndoNotNeeded");
         Add(ActionUsage.Track(UsageEventNames.ImportStarted), "ImportJobs.Start");
         Add(ActionUsage.Track(UsageEventNames.ImportJobChanged), "ImportJobs.Rerun", "ImportJobs.Retry", "ImportJobs.Skip", "ImportJobs.Stop");
         Add(ActionUsage.Track(UsageEventNames.ImportJiraConnected), "Jira.Put");
