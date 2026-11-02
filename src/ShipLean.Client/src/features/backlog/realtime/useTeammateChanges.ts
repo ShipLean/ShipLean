@@ -4,7 +4,7 @@ import type { WorkItemDto } from '../../../api/workItems';
 import type { BacklogRowDto } from '../../../api/views';
 import { showToast } from '../../../components/toastStore';
 import { registerInvalidation } from '../../../realtime';
-import { BURST_WINDOW_MS, burstText, isBurst, withinWindow } from './teammateBurst';
+import { BURST_WINDOW_MS, burstText, isBurst } from './teammateBurst';
 import { fetchWorkItem, workItemKey } from '../../workItem/workItemApi';
 
 const FLASH_MS = 2500;
@@ -37,8 +37,7 @@ export function useTeammateChanges(
     type Pending = () => void;
     let pending: Pending[] = [];
     let pendingIds = new Set<string>();
-    let times: number[] = [];
-    let flushTimer: ReturnType<typeof setTimeout> | undefined;
+    let windowTimer: ReturnType<typeof setTimeout> | undefined;
     let quietTimer: ReturnType<typeof setTimeout> | undefined;
     let burstIds: Set<string> | undefined;
     function flash(id: string) {
@@ -78,26 +77,26 @@ export function useTeammateChanges(
         if (ids !== undefined) showToast(burstText(ids.size));
       }, BURST_WINDOW_MS);
     }
-    function flush() {
-      flushTimer = undefined;
+    // The window has closed: more than three rows changed in it is a burst (one toast once it goes quiet, no item
+    // reads); otherwise each change is announced, in the order it arrived.
+    function classify() {
+      windowTimer = undefined;
       const batch = pending;
       const ids = pendingIds;
       pending = [];
       pendingIds = new Set();
-      if (burstIds === undefined && !isBurst(times, Date.now())) {
+      if (!isBurst(ids.size)) {
         batch.forEach((run) => run());
         return;
       }
-      burstIds ??= new Set();
-      ids.forEach((id) => burstIds?.add(id));
+      burstIds = new Set(ids);
       endBurstWhenQuiet();
     }
-    // Every row event flashes its row now; what the toast says waits for the end of this tick, to see if it is a burst.
+    // Every row event flashes its row now; what the toast says waits until the window closes, to see if it is a burst.
     function onRow(id: string, announceIt: (row: BacklogRowDto) => void) {
       const row = rowOf(id);
       if (row === undefined) return;
       flash(row.id);
-      times = withinWindow([...times, Date.now()], Date.now());
       if (burstIds !== undefined) {
         burstIds.add(row.id);
         endBurstWhenQuiet();
@@ -105,7 +104,7 @@ export function useTeammateChanges(
       }
       pending.push(() => announceIt(row));
       pendingIds.add(row.id);
-      flushTimer ??= setTimeout(flush, 0);
+      windowTimer ??= setTimeout(classify, BURST_WINDOW_MS);
     }
     const rowOf = (id: string) => rowsRef.current.find((r) => r.id === id);
     const unregister = [
@@ -137,7 +136,7 @@ export function useTeammateChanges(
       live.forEach(clearTimeout);
       live.clear();
       sprintMoves.clear();
-      clearTimeout(flushTimer);
+      clearTimeout(windowTimer);
       clearTimeout(quietTimer);
     };
   }, [projectId, queryClient]);

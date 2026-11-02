@@ -152,3 +152,45 @@ test('A_burst_still_flashes_every_row', async () => {
   expect(flashed.size).toBe(100);
   act(() => root.unmount());
 });
+
+test('Four_changes_100ms_apart_shows_one_toast_and_reads_no_item', async () => {
+  const root = await mountScreen();
+  const before = toasts().length;
+  for (const key of KEYS.slice(0, 4)) {
+    act(() => hub.deliver(remote('workItemUpdated', { id: `id-${key}`, fields: ['storyPoints'] })));
+    await act(() => vi.advanceTimersByTimeAsync(100));
+  }
+  await act(() => vi.advanceTimersByTimeAsync(2000));
+
+  expect(toasts().slice(before)).toEqual(['4 items changed by a teammate']);
+  expect(fetchWorkItem).not.toHaveBeenCalled();
+  act(() => root.unmount());
+});
+
+test('Three_changes_100ms_apart_toast_one_by_one', async () => {
+  const root = await mountScreen();
+  const before = toasts().length;
+  for (const key of KEYS.slice(0, 3)) {
+    act(() => hub.deliver(remote('workItemUpdated', { id: `id-${key}`, fields: ['storyPoints'] })));
+    await act(() => vi.advanceTimersByTimeAsync(100));
+  }
+  await act(() => vi.advanceTimersByTimeAsync(2000));
+
+  expect(toasts().slice(before)).toEqual([
+    'Priya Shah changed story points on SHIP-1',
+    'Priya Shah changed story points on SHIP-2',
+    'Priya Shah changed story points on SHIP-3',
+  ]);
+  act(() => root.unmount());
+});
+
+test('Unmount_before_the_window_closes_shows_nothing', async () => {
+  const root = await mountScreen();
+  const before = toasts().length;
+  act(() => hub.deliver(remote('workItemUpdated', { id: 'id-SHIP-1', fields: ['storyPoints'] })));
+  act(() => root.unmount());
+  await act(() => vi.advanceTimersByTimeAsync(2000));
+
+  expect(toasts().slice(before)).toEqual([]);
+  expect(fetchWorkItem).not.toHaveBeenCalled();
+});

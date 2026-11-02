@@ -1,16 +1,12 @@
 import { expect, test } from 'vitest';
 import { burstText, isBurst } from './teammateBurst';
 
-test('isBurst_WhenThreeEventsInTheWindow_ShouldBeFalse', () => {
-  expect(isBurst([0, 100, 200], 200)).toBe(false);
+test('isBurst_WhenThreeRows_ShouldBeFalse', () => {
+  expect(isBurst(3)).toBe(false);
 });
 
-test('isBurst_WhenFourEventsInTheWindow_ShouldBeTrue', () => {
-  expect(isBurst([0, 100, 200, 300], 300)).toBe(true);
-});
-
-test('isBurst_WhenFourEventsButSomeOutsideTheWindow_ShouldBeFalse', () => {
-  expect(isBurst([0, 100, 700, 800], 800)).toBe(false);
+test('isBurst_WhenFourRows_ShouldBeTrue', () => {
+  expect(isBurst(4)).toBe(true);
 });
 
 test('burstText_WhenManyOrOne_ShouldCountItems', () => {
