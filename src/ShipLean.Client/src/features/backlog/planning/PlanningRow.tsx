@@ -20,6 +20,7 @@ export function PlanningRow({
   mark,
   forecast,
   flash,
+  pulled,
   dropEdge,
   dragDisabled,
   onKeyMove,
@@ -32,6 +33,8 @@ export function PlanningRow({
   forecast: boolean;
   // A teammate just changed this row.
   flash: boolean;
+  // The row is above the pull line: its number cells take the accent colour.
+  pulled: boolean;
   // The row a dragged one is about to land above ('top') or below ('bottom'): the accent line is drawn on that edge.
   dropEdge: 'top' | 'bottom' | null;
   // Moving is off (a filter, search or check queue is on).
@@ -92,7 +95,10 @@ export function PlanningRow({
         />
       </td>
       {columns.map((column) => (
-        <td key={column} className={`px-2 ${numeric.includes(column) ? 'text-right' : ''}`}>
+        <td
+          key={column}
+          className={`px-2 ${numeric.includes(column) ? 'text-right' : ''} ${pulled && numeric.includes(column) ? 'font-semibold text-accent' : ''}`}
+        >
           <ListCell row={row} column={column} projectKey={projectKey} />
         </td>
       ))}

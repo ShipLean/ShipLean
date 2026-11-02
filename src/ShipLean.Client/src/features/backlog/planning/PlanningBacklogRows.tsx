@@ -49,8 +49,17 @@ export function PlanningBacklogRows({
       dropLine={dropLine}
       filtering={filtering}
       onKeyMove={onKeyMove}
+      isPulled={pull.isPulled}
       after={(row) =>
-        pull.afterRowId === row.id ? <PullLineRow row={row} columnCount={columnCount} /> : null
+        pull.afterRowId === row.id ? (
+          <PullLineRow
+            line={pull}
+            row={row}
+            section={section}
+            projectId={projectId}
+            columnCount={columnCount}
+          />
+        ) : null
       }
     />
   );

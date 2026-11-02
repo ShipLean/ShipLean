@@ -5,6 +5,8 @@ import type { BacklogSectionDto } from '../../../api/views';
 export interface PullLine {
   /** The row the line is drawn under; null for no line. */
   afterRowId: string | null;
+  /** The row falls above the line, so the Pull action would bring it into the sprint. */
+  isPulled: (rowId: string) => boolean;
 }
 
 export interface PullLineInput {
@@ -16,7 +18,7 @@ export interface PullLineInput {
   filtering: boolean;
 }
 
-const none: PullLine = { afterRowId: null };
+const none: PullLine = { afterRowId: null, isPulled: () => false };
 
 /** The forecast's cut as a line in the Backlog. */
 // TODO: the cut rule, the Pull action and dragging the line replace this absent line.

@@ -8,7 +8,7 @@ import { BulkBar } from '../bulk/BulkBar';
 import { BulkOutcomeHost } from '../bulk/BulkOutcomeHost';
 import { KeysButton } from '../commands/KeysButton';
 import { KeysDialog } from '../commands/KeysDialog';
-import { useListKeys } from '../commands/useListKeys';
+import { ListKeysHost } from '../commands/ListKeysHost';
 import { useReorder } from '../drag/useReorder';
 import { BacklogFrame } from '../filter/BacklogFrame';
 import type { BacklogFilterState } from '../filter/useBacklogFilter';
@@ -36,12 +36,12 @@ export function ListScreen({ project, state }: { project: ProjectDto; state: Bac
   const rows = useMemo(() => search.apply(queue.apply(items)), [search, queue, items]);
   const flashing = useTeammateChanges(project.id, items);
   const filtering = state.filtering || search.active || queue.active;
-  useListKeys();
   useReconnectSummary(state.queryKey);
   useNewItemFromLink(STORY_KINDS, (kind) => state.openAdd(kind));
 
   return (
     <SelectionProvider>
+      <ListKeysHost />
       <PasteHost projectId={project.id} projectKey={project.key}>
         <BacklogFrame
           project={project}

@@ -20,6 +20,7 @@ export function PlanningSectionRows({
   dropLine,
   filtering,
   onKeyMove,
+  isPulled,
   after,
 }: {
   section: BacklogSectionDto;
@@ -34,6 +35,8 @@ export function PlanningSectionRows({
   // A filter, search or check queue is on: moving is off, and rank is relative to rows you can't see.
   filtering: boolean;
   onKeyMove: (row: BacklogRowDto, direction: 'up' | 'down') => void;
+  // The row sits above the pull line: its numbers take the pull-in tint. Nothing is pulled when absent.
+  isPulled?: (rowId: string) => boolean;
   // What goes under a row, after its add-below row (the pull line).
   after?: (row: BacklogRowDto) => ReactNode;
 }) {
@@ -52,6 +55,7 @@ export function PlanningSectionRows({
             mark={marks.get(row.id)}
             forecast={forecast}
             flash={flashing.has(row.id)}
+            pulled={isPulled?.(row.id) ?? false}
             dropEdge={dropLine?.id === row.id ? (dropLine.below ? 'bottom' : 'top') : null}
             dragDisabled={filtering}
             onKeyMove={onKeyMove}

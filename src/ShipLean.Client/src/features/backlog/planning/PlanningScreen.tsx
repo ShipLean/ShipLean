@@ -7,7 +7,7 @@ import { BulkBar } from '../bulk/BulkBar';
 import { BulkOutcomeHost } from '../bulk/BulkOutcomeHost';
 import { KeysButton } from '../commands/KeysButton';
 import { KeysDialog } from '../commands/KeysDialog';
-import { useListKeys } from '../commands/useListKeys';
+import { ListKeysHost } from '../commands/ListKeysHost';
 import { ReorderConflict } from '../drag/ReorderConflict';
 import type { useReorder } from '../drag/useReorder';
 import { BacklogSearchBox } from '../search/BacklogSearchBox';
@@ -61,17 +61,21 @@ export function PlanningScreen({
       })),
     [view.sections, search, queue],
   );
+  const searchCollapse = useMemo(
+    () => collapse.withSearch(search.active, sections),
+    [collapse, search.active, sections],
+  );
   const walkOrder = useMemo(
     () =>
       sections
-        .filter((section) => collapse.isOpen(section.id))
+        .filter((section) => searchCollapse.isOpen(section.id))
         .flatMap((section) => section.rows.map((row) => row.id)),
-    [sections, collapse],
+    [sections, searchCollapse],
   );
   const filtering = search.active || queue.active;
-  useListKeys();
   return (
     <SelectionProvider walkOrder={walkOrder}>
+      <ListKeysHost />
       <PasteHost projectId={project.id} projectKey={project.key}>
         <div className="flex min-h-0 flex-1 flex-col">
           <BacklogToolbar
@@ -109,7 +113,7 @@ export function PlanningScreen({
                 adding={adding}
                 onCloseAdd={() => setAdding(false)}
                 flashing={flashing}
-                collapse={collapse}
+                collapse={searchCollapse}
                 filtering={filtering}
                 tableRef={tableRef}
                 dropLine={dropLine}
