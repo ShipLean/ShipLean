@@ -41,14 +41,21 @@ async function stubFeatures(page: Page) {
   );
 }
 
-// A create that really adds the row, where the request says: before the named row, else last in its sprint.
-async function stubCreates(page: Page, server: BacklogServer, view: BacklogViewDto) {
+// A create that really adds the row, where the request says: first in its sprint, before the named row, else last.
+// `hold` keeps the first answer back until the test lets it go.
+async function stubCreates(
+  page: Page,
+  server: BacklogServer,
+  view: BacklogViewDto,
+  hold?: Promise<void>,
+) {
   let current = view;
   let made = 0;
-  await page.route('**/api/projects/p1/backlog/items', (route) => {
+  await page.route('**/api/projects/p1/backlog/items', async (route) => {
     const body = route.request().postDataJSON() as BacklogAddRequest;
     server.adds.push(body);
     made += 1;
+    if (made === 1) await hold;
     const sprint =
       current.sections.find((s) => s.sprint?.id === body.sprintId)?.sprint ??
       current.rows.find((r) => r.sprint?.id === body.sprintId)?.sprint ??
@@ -61,7 +68,10 @@ async function stubCreates(page: Page, server: BacklogServer, view: BacklogViewD
       parent: null,
     });
     const put = (rows: BacklogRowDto[]) => {
-      const at = rows.findIndex((r) => r.id === body.placement?.beforeItemId);
+      const at =
+        body.placement?.slot === 'first'
+          ? 0
+          : rows.findIndex((r) => r.id === body.placement?.beforeItemId);
       return at < 0 ? [...rows, row] : [...rows.slice(0, at), row, ...rows.slice(at)];
     };
     current =
@@ -183,6 +193,8 @@ test('Points_clear_after_each_add', async ({ mount, page }) => {
   expect(server.adds.map((add) => add.items[0].points)).toEqual([5, null]);
 });
 
+// Changed rule (brief: "the first item goes at the top of the sprint, each next one under the row just made"): the
+// first row sends `first` with the sprint, not `last`; the second goes before the row that followed the first.
 test('Add_in_a_sprint_sends_its_sprint', async ({ mount, page }) => {
   const view = planningView();
   const server = await stubBacklog(page, view);
@@ -195,18 +207,25 @@ test('Add_in_a_sprint_sends_its_sprint', async ({ mount, page }) => {
   await page.getByTestId(ids.addHere).nth(1).click();
   await page.getByTestId(ids.addTitle).fill('Into sprint 25');
   await page.getByTestId(ids.addTitle).press('Enter');
-
-  await expect.poll(() => server.adds.length).toBe(1);
-  expect(server.adds[0].sprintId).toBe('sp25');
-  expect(server.adds[0].placement).toEqual({ slot: 'last', beforeItemId: null });
   await expect(page.getByTestId(ids.row)).toHaveCount(6);
-  await expect(page.getByTestId(ids.row).filter({ hasText: 'Into sprint 25' })).toHaveCount(1);
-  // It sits in Sprint 25's rows, right after SHIP-158.
-  const before = await page
-    .getByTestId(ids.row)
-    .filter({ hasText: 'Into sprint 25' })
-    .evaluate((el) => el.previousElementSibling?.getAttribute('data-key'));
-  expect(before).toBe('SHIP-158');
+  await page.getByTestId(ids.addTitle).fill('Also sprint 25');
+  await page.getByTestId(ids.addTitle).press('Enter');
+  await expect(page.getByTestId(ids.row)).toHaveCount(7);
+
+  expect(server.adds.map((add) => [add.sprintId, add.placement])).toEqual([
+    ['sp25', { slot: 'first', beforeItemId: null }],
+    ['sp25', { slot: 'before', beforeItemId: expect.any(String) }],
+  ]);
+  // They sit at the top of Sprint 25's rows, in the order typed, above SHIP-158.
+  await expect(page.getByTestId(ids.row)).toHaveText([
+    'Title of SHIP-160',
+    'Into sprint 25',
+    'Also sprint 25',
+    'Title of SHIP-158',
+    'Title of SHIP-170',
+    'Title of SHIP-171',
+    'Title of SHIP-172',
+  ]);
 });
 
 test('Esc_closes_and_returns_focus_to_the_row', async ({ mount, page }) => {
@@ -227,7 +246,13 @@ test('A_failed_create_keeps_the_text', async ({ mount, page }) => {
     server.adds.push(route.request().postDataJSON() as BacklogAddRequest);
     return route.fulfill(json({ code: 'validation', error: 'Title is too long.' }, 400));
   });
-  await mount(<AddHereHarness project={PROJECT} />, route);
+  await mount(
+    <>
+      <AddHereHarness project={PROJECT} />
+      <ToastHost />
+    </>,
+    route,
+  );
   await expect(page.getByTestId(ids.row)).toHaveCount(3);
   await focusRow(page, 0);
   await page.getByTestId('run-command-addBelow').click();
@@ -239,6 +264,9 @@ test('A_failed_create_keeps_the_text', async ({ mount, page }) => {
   await expect(page.getByTestId(ids.addTitle)).toHaveValue('Keep me');
   await expect(page.getByTestId(ids.addPoints)).toHaveValue('3');
   await expect(page.getByTestId(ids.row)).toHaveCount(3);
+  await expect(
+    page.getByRole('alert').filter({ hasText: 'Could not add "Keep me"' }),
+  ).toContainText('Title is too long.');
 });
 
 test('AddBelow_is_off_when_filtering', async ({ mount, page }) => {
@@ -274,4 +302,81 @@ test('New_work_item_still_adds_at_the_top', async ({ mount, page }) => {
   await expect.poll(() => server.creates.length).toBe(1);
   expect(server.creates[0]).toMatchObject({ type: 'story', title: 'At the top' });
   expect(server.adds).toHaveLength(0);
+});
+
+test('Rapid_Enter_while_a_write_is_in_flight_keeps_the_typed_order', async ({ mount, page }) => {
+  const view = backlogView(ROWS);
+  const server = await stubBacklog(page, view);
+  let release!: () => void;
+  const hold = new Promise<void>((resolve) => (release = resolve));
+  await stubCreates(page, server, view, hold);
+  await mount(<AddHereHarness project={PROJECT} />, route);
+  await expect(page.getByTestId(ids.row)).toHaveCount(3);
+  await focusRow(page, 0);
+  await page.getByTestId('run-command-addBelow').click();
+
+  // The first write is held open. The next two are typed and sent with Enter while it is.
+  const title = page.getByTestId(ids.addTitle);
+  await title.fill('One');
+  await title.press('Enter');
+  await expect.poll(() => server.adds.length).toBe(1);
+  await expect(title).toHaveValue('');
+  await title.fill('Two');
+  await title.press('Enter');
+  await expect(title).toHaveValue('');
+  await title.fill('Three');
+  await title.press('Enter');
+  await expect(title).toHaveValue('');
+  expect(server.adds).toHaveLength(1);
+
+  release();
+  await expect.poll(() => server.adds.length).toBe(3);
+  await expect(page.getByTestId(ids.row)).toHaveText([
+    'Title of SHIP-1',
+    'One',
+    'Two',
+    'Three',
+    'Title of SHIP-2',
+    'Title of SHIP-3',
+  ]);
+  expect(server.adds.map((add) => add.items[0].title)).toEqual(['One', 'Two', 'Three']);
+  // None of them went in as a second row under SHIP-1, ahead of the one before.
+  expect(server.adds.map((add) => add.placement)).toEqual(
+    Array(3).fill({ slot: 'before', beforeItemId: ROWS[1].id }),
+  );
+});
+
+test('A_failed_create_in_a_queue_gives_the_text_back', async ({ mount, page }) => {
+  const server = await stubBacklog(page, backlogView(ROWS));
+  await page.route('**/api/projects/p1/backlog/items', (route) => {
+    server.adds.push(route.request().postDataJSON() as BacklogAddRequest);
+    return route.fulfill(json({ code: 'validation', error: 'Title is too long.' }, 400));
+  });
+  await mount(<AddHereHarness project={PROJECT} />, route);
+  await expect(page.getByTestId(ids.row)).toHaveCount(3);
+  await focusRow(page, 0);
+  await page.getByTestId('run-command-addBelow').click();
+  await page.getByTestId(ids.addTitle).fill('Back again');
+  await page.getByTestId(ids.addTitle).press('Enter');
+  await expect(page.getByTestId(ids.addError)).toBeVisible();
+  await expect(page.getByTestId(ids.addTitle)).toHaveValue('Back again');
+});
+
+test('A_closed_screen_does_not_leave_its_add_row_state_behind', async ({ mount, page }) => {
+  await stubBacklog(page, backlogView(ROWS));
+  const screen = await mount(<AddHereHarness project={PROJECT} />, route);
+  await expect(page.getByTestId(ids.row)).toHaveCount(3);
+  await focusRow(page, 0);
+  await page.getByTestId('run-command-addBelow').click();
+  await page.getByTestId(ids.addType).selectOption('bug');
+  await page.getByTestId(ids.addTitle).fill('Left behind');
+  await screen.unmount();
+
+  await mount(<AddHereHarness project={PROJECT} />, route);
+  await expect(page.getByTestId(ids.row)).toHaveCount(3);
+  await expect(page.getByTestId(ids.addRow)).toHaveCount(0);
+  await focusRow(page, 1);
+  await page.getByTestId('run-command-addBelow').click();
+  await expect(page.getByTestId(ids.addType)).toHaveValue('story');
+  await expect(page.getByTestId(ids.addTitle)).toHaveValue('');
 });

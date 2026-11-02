@@ -1,9 +1,10 @@
 import { showToast } from '../../../components/toastStore';
 import { useListCommand } from '../commands/listCommands';
-import { openBelow } from './useAddChain';
+import { useBelowControls } from './useAddChain';
 
 // Registers `addBelow` for one row. Only the focused row mounts it, so the name belongs to that row.
 export function AddBelowCommand({ rowId, filtering }: { rowId: string; filtering: boolean }) {
+  const below = useBelowControls();
   useListCommand('addBelow', () => {
     if (filtering) {
       showToast(
@@ -12,7 +13,7 @@ export function AddBelowCommand({ rowId, filtering }: { rowId: string; filtering
       );
       return;
     }
-    openBelow(rowId);
+    below.open(rowId);
   });
   return null;
 }

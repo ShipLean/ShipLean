@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import type { BacklogSectionDto } from '../../../api/views';
 import { Chip } from '../../../components/Chip';
@@ -17,6 +18,7 @@ export function SectionHeader({
   velocity,
   datesLabel,
   columnCount,
+  action,
   collapse,
 }: {
   section: BacklogSectionDto;
@@ -26,6 +28,8 @@ export function SectionHeader({
   // "20 Oct – 2 Nov", from the shared sprints; undefined until they are read.
   datesLabel: string | undefined;
   columnCount: number;
+  // A button beside the title, such as "+ Add".
+  action?: ReactNode;
   collapse: SectionCollapse;
 }) {
   const { attach, over } = useSectionDrop(section.id);
@@ -67,6 +71,7 @@ export function SectionHeader({
           >
             {section.rows.length} items
           </span>
+          {action}
           <span className="flex-1" />
           <SectionCapacity
             committed={section.points}

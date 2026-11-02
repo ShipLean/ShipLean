@@ -8,16 +8,19 @@ import { ParentCandidates } from '../../workItem/form/ParentCandidates';
 import { parentTypesOf } from '../../workItem/form/ParentField';
 import { backlogTestIds as ids } from '../testIds';
 import { usePasteIntake } from './usePasteIntake';
-import type { AddFields } from './useAddChain';
+import { EMPTY_DRAFT, type AddFields, type Draft } from './useAddChain';
 
 const types = WORK_ITEM_TYPE_IDS.filter(isStoryLevel);
 
 // The type, title, parent and points of an add row, with Add and Esc. The caller owns the type and parent (they stick
-// between rows) and gets the fields on Enter. Title and points are kept here and clear after a row is made.
+// between rows) and the typed text, and gets the fields on Enter. The text clears at once, so the next row can be
+// typed while the write is in flight; a failed create puts it back unless something new has been typed.
 export function AddRowFields({
   projectId,
   type,
   parent,
+  draft,
+  onDraft,
   onType,
   onParent,
   hint,
@@ -28,16 +31,17 @@ export function AddRowFields({
   projectId: string;
   type: WorkItemTypeId;
   parent: ParentRefDto | null;
+  draft: Draft;
+  onDraft: (update: (draft: Draft) => Draft) => void;
   onType: (type: WorkItemTypeId) => void;
   onParent: (parent: ParentRefDto | null) => void;
   hint: string;
   error: string | null;
-  // Resolves true when the row was made: the title and points clear. A failed create resolves false and keeps them.
+  // Resolves true when the row was made. A failed create resolves false and the text comes back.
   onAdd: (fields: AddFields) => Promise<boolean>;
   onClose: () => void;
 }) {
-  const [title, setTitle] = useState('');
-  const [points, setPoints] = useState('');
+  const { title, points } = draft;
   const [pointsError, setPointsError] = useState(false);
   const paste = usePasteIntake(type);
 
@@ -51,10 +55,10 @@ export function AddRowFields({
       return;
     }
     setPointsError(false);
-    if (await onAdd({ type, title: text, points: value, parent })) {
-      setTitle('');
-      setPoints('');
-    }
+    const typed = { title, points };
+    onDraft(() => EMPTY_DRAFT);
+    if (!(await onAdd({ type, title: text, points: value, parent })))
+      onDraft((now) => (now.title === '' && now.points === '' ? typed : now));
   }
 
   function onKeyDown(event: KeyboardEvent) {
@@ -88,7 +92,7 @@ export function AddRowFields({
         className="field flex-1"
         placeholder="Title, then Enter. Or paste many lines"
         value={title}
-        onChange={(event) => setTitle(event.target.value)}
+        onChange={(event) => onDraft((now) => ({ ...now, title: event.target.value }))}
         onKeyDown={onKeyDown}
         {...paste}
       />
@@ -127,7 +131,7 @@ export function AddRowFields({
         placeholder="Pts"
         className="field w-16 text-right"
         value={points}
-        onChange={(event) => setPoints(event.target.value)}
+        onChange={(event) => onDraft((now) => ({ ...now, points: event.target.value }))}
         onKeyDown={onKeyDown}
       />
       <button

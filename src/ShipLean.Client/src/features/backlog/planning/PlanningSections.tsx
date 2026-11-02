@@ -1,7 +1,7 @@
 import { Fragment, useMemo, type RefObject } from 'react';
 import type { VelocityDto } from '../../../api/sprints';
 import type { BacklogRowDto, BacklogSectionDto } from '../../../api/views';
-import { AddInSection } from '../add/AddInSection';
+import { AddInButton, AddInSection } from '../add/AddInSection';
 import { BACKLOG_COLUMNS, type BacklogColumnId } from '../backlogApi';
 import { NewItemRow } from '../list/NewItemRow';
 import { SelectAllCell } from '../selection/SelectAllCell';
@@ -85,13 +85,7 @@ export function PlanningSections({
           filtering={filtering}
           onKeyMove={onKeyMove}
         />
-        <AddInSection
-          section={section}
-          columnCount={columnCount}
-          projectId={projectId}
-          projectKey={projectKey}
-          filtering={filtering}
-        />
+        <AddInSection section={section} columnCount={columnCount} projectId={projectId} />
       </>
     ) : null;
   return (
@@ -126,6 +120,7 @@ export function PlanningSections({
                 datesLabel={dates.get(section.id)}
                 columnCount={columnCount}
                 collapse={collapse}
+                action={<AddInButton section={section} filtering={filtering} />}
               />
               {sprintBody(section)}
             </Fragment>

@@ -9,6 +9,7 @@ import { PlanningDnd } from '../planning/PlanningDnd';
 import { PlanningSections } from '../planning/PlanningSections';
 import { useSectionCollapse } from '../planning/useSectionCollapse';
 import { SelectionProvider } from '../selection/SelectionProvider';
+import { AddBelowProvider } from '../add/AddBelowProvider';
 import { SelectPicker } from './SelectPicker';
 
 const NO_MARKS: ReturnType<typeof forecastMarks> = new Map();
@@ -43,34 +44,36 @@ export function PlanningGroupHarness({
         queryKey={backlogKey(project.id, 'stories', 'planning', '', false)}
       >
         <SelectionProvider>
-          <ToastHost />
-          <SelectPicker rows={rows} />
-          <span data-testid="harness-moves">{moves.join(',')}</span>
-          <PlanningDnd
-            sections={view.sections}
-            filtering={filtering}
-            velocity={view.velocity}
-            onMove={(row) => setMoves((current) => [...current, row.key])}
-          >
-            {({ tableRef, dropLine, onKeyMove }) => (
-              <PlanningSections
-                sections={view.sections}
-                velocity={view.velocity}
-                forecast={false}
-                marks={NO_MARKS}
-                projectId={project.id}
-                projectKey={project.key}
-                adding={false}
-                onCloseAdd={() => undefined}
-                flashing={NONE}
-                collapse={collapse}
-                filtering={filtering}
-                tableRef={tableRef}
-                dropLine={dropLine}
-                onKeyMove={onKeyMove}
-              />
-            )}
-          </PlanningDnd>
+          <AddBelowProvider projectId={project.id} projectKey={project.key}>
+            <ToastHost />
+            <SelectPicker rows={rows} />
+            <span data-testid="harness-moves">{moves.join(',')}</span>
+            <PlanningDnd
+              sections={view.sections}
+              filtering={filtering}
+              velocity={view.velocity}
+              onMove={(row) => setMoves((current) => [...current, row.key])}
+            >
+              {({ tableRef, dropLine, onKeyMove }) => (
+                <PlanningSections
+                  sections={view.sections}
+                  velocity={view.velocity}
+                  forecast={false}
+                  marks={NO_MARKS}
+                  projectId={project.id}
+                  projectKey={project.key}
+                  adding={false}
+                  onCloseAdd={() => undefined}
+                  flashing={NONE}
+                  collapse={collapse}
+                  filtering={filtering}
+                  tableRef={tableRef}
+                  dropLine={dropLine}
+                  onKeyMove={onKeyMove}
+                />
+              )}
+            </PlanningDnd>
+          </AddBelowProvider>
         </SelectionProvider>
       </BulkRunProvider>
     </ListCommandsProvider>

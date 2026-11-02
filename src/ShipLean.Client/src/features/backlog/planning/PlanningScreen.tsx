@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { ProjectDto } from '../../../api/projects';
 import type { BacklogViewDto } from '../../../api/views';
+import { AddBelowProvider } from '../add/AddBelowProvider';
 import { AddManyButton } from '../add/AddManyButton';
 import { PasteHost } from '../add/PasteHost';
 import { BulkBar } from '../bulk/BulkBar';
@@ -81,66 +82,68 @@ export function PlanningScreen({
         rows={sections.flatMap((section) => section.rows)}
         projectKey={project.key}
       />
-      <PasteHost projectId={project.id} projectKey={project.key}>
-        <div className="flex min-h-0 flex-1 flex-col">
-          <BacklogToolbar
-            projectKey={project.key}
-            level="stories"
-            mode="planning"
-            onNewItem={() => setAdding(true)}
-            options={() => (
-              <>
-                <AddManyButton />
-                <ForecastToggle checked={forecast} onChange={onForecastChange} />
-              </>
-            )}
-            search={() => <BacklogSearchBox search={search} />}
-            keys={() => <KeysButton />}
-          />
-          <MovingOffBanner search={search} queue={queue} />
-          {reorder.conflict ? (
-            <ReorderConflict
-              conflict={reorder.conflict}
-              onUseMine={() => void reorder.useMine()}
-              onKeepTheirs={() => void reorder.keepTheirs()}
+      <AddBelowProvider projectId={project.id} projectKey={project.key}>
+        <PasteHost projectId={project.id} projectKey={project.key}>
+          <div className="flex min-h-0 flex-1 flex-col">
+            <BacklogToolbar
+              projectKey={project.key}
+              level="stories"
+              mode="planning"
+              onNewItem={() => setAdding(true)}
+              options={() => (
+                <>
+                  <AddManyButton />
+                  <ForecastToggle checked={forecast} onChange={onForecastChange} />
+                </>
+              )}
+              search={() => <BacklogSearchBox search={search} />}
+              keys={() => <KeysButton />}
             />
-          ) : null}
-          <BeforeYouPlan review={view.review} queue={queue} />
-          <PlanningDnd
-            sections={sections}
-            filtering={filtering}
-            velocity={view.velocity}
-            onMove={onMove}
-          >
-            {({ tableRef, dropLine, onKeyMove }) => (
-              <PlanningSections
-                sections={sections}
-                velocity={view.velocity}
-                forecast={forecast}
-                marks={forecast ? forecastMarks(view.forecast) : NO_MARKS}
-                projectId={project.id}
-                projectKey={project.key}
-                adding={adding}
-                onCloseAdd={() => setAdding(false)}
-                flashing={flashing}
-                collapse={searchCollapse}
-                noMatch={
-                  search.active && !sections.some((s) => s.rows.length > 0)
-                    ? search.query.trim()
-                    : null
-                }
-                filtering={filtering}
-                tableRef={tableRef}
-                dropLine={dropLine}
-                onKeyMove={onKeyMove}
+            <MovingOffBanner search={search} queue={queue} />
+            {reorder.conflict ? (
+              <ReorderConflict
+                conflict={reorder.conflict}
+                onUseMine={() => void reorder.useMine()}
+                onKeepTheirs={() => void reorder.keepTheirs()}
               />
-            )}
-          </PlanningDnd>
-          <BulkBar mode="planning" projectId={project.id} projectKey={project.key} view={view} />
-          <BulkOutcomeHost projectId={project.id} />
-          <KeysDialog />
-        </div>
-      </PasteHost>
+            ) : null}
+            <BeforeYouPlan review={view.review} queue={queue} />
+            <PlanningDnd
+              sections={sections}
+              filtering={filtering}
+              velocity={view.velocity}
+              onMove={onMove}
+            >
+              {({ tableRef, dropLine, onKeyMove }) => (
+                <PlanningSections
+                  sections={sections}
+                  velocity={view.velocity}
+                  forecast={forecast}
+                  marks={forecast ? forecastMarks(view.forecast) : NO_MARKS}
+                  projectId={project.id}
+                  projectKey={project.key}
+                  adding={adding}
+                  onCloseAdd={() => setAdding(false)}
+                  flashing={flashing}
+                  collapse={searchCollapse}
+                  noMatch={
+                    search.active && !sections.some((s) => s.rows.length > 0)
+                      ? search.query.trim()
+                      : null
+                  }
+                  filtering={filtering}
+                  tableRef={tableRef}
+                  dropLine={dropLine}
+                  onKeyMove={onKeyMove}
+                />
+              )}
+            </PlanningDnd>
+            <BulkBar mode="planning" projectId={project.id} projectKey={project.key} view={view} />
+            <BulkOutcomeHost projectId={project.id} />
+            <KeysDialog />
+          </div>
+        </PasteHost>
+      </AddBelowProvider>
     </SelectionProvider>
   );
 }

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import type { ProjectDto } from '../../../api/projects';
 import { isStoryLevel } from '../../../api/workItemTypes';
 import { NEW_ITEM_KINDS, type NewItemKind } from '../../../routes';
+import { AddBelowProvider } from '../add/AddBelowProvider';
 import { AddManyButton } from '../add/AddManyButton';
 import { PasteHost } from '../add/PasteHost';
 import { BulkBar } from '../bulk/BulkBar';
@@ -44,54 +45,56 @@ export function ListScreen({ project, state }: { project: ProjectDto; state: Bac
     <SelectionProvider>
       <ListKeysHost />
       <OpenCommandHost rows={rows} projectKey={project.key} />
-      <PasteHost projectId={project.id} projectKey={project.key}>
-        <BacklogFrame
-          project={project}
-          mode="list"
-          state={state}
-          reorder={reorder}
-          rowCount={rows.length}
-          filtering={filtering}
-          options={() => <AddManyButton />}
-          search={() => <BacklogSearchBox search={search} />}
-          keys={() => <KeysButton />}
-          movingOffText="Reordering is off while a filter is on, because rank is relative to items you can't see. # shows each item's place in the full backlog."
-        >
-          {(columns) => (
-            <>
-              <BeforeYouPlan review={state.backlog.data?.review ?? null} queue={queue} />
-              <ListDnd
-                rows={rows}
-                filtering={filtering}
-                onReorder={(row, move) => void reorder.drop(row, move.beforeItemId)}
-              >
-                <ListTable
+      <AddBelowProvider projectId={project.id} projectKey={project.key}>
+        <PasteHost projectId={project.id} projectKey={project.key}>
+          <BacklogFrame
+            project={project}
+            mode="list"
+            state={state}
+            reorder={reorder}
+            rowCount={rows.length}
+            filtering={filtering}
+            options={() => <AddManyButton />}
+            search={() => <BacklogSearchBox search={search} />}
+            keys={() => <KeysButton />}
+            movingOffText="Reordering is off while a filter is on, because rank is relative to items you can't see. # shows each item's place in the full backlog."
+          >
+            {(columns) => (
+              <>
+                <BeforeYouPlan review={state.backlog.data?.review ?? null} queue={queue} />
+                <ListDnd
                   rows={rows}
-                  columns={columns}
+                  filtering={filtering}
+                  onReorder={(row, move) => void reorder.drop(row, move.beforeItemId)}
+                >
+                  <ListTable
+                    rows={rows}
+                    columns={columns}
+                    projectId={project.id}
+                    projectKey={project.key}
+                    adding={state.adding}
+                    addType={state.addType}
+                    addRequest={state.addRequest}
+                    onCloseAdd={() => state.setAdding(false)}
+                    dragDisabled={filtering}
+                    flashing={flashing}
+                    filtered={filtering}
+                    searched={search.active ? search.query.trim() : ''}
+                  />
+                </ListDnd>
+                <BulkBar
+                  mode="list"
                   projectId={project.id}
                   projectKey={project.key}
-                  adding={state.adding}
-                  addType={state.addType}
-                  addRequest={state.addRequest}
-                  onCloseAdd={() => state.setAdding(false)}
-                  dragDisabled={filtering}
-                  flashing={flashing}
-                  filtered={filtering}
-                  searched={search.active ? search.query.trim() : ''}
+                  view={state.backlog.data}
                 />
-              </ListDnd>
-              <BulkBar
-                mode="list"
-                projectId={project.id}
-                projectKey={project.key}
-                view={state.backlog.data}
-              />
-              <BulkOutcomeHost projectId={project.id} />
-              <KeysDialog />
-            </>
-          )}
-        </BacklogFrame>
-      </PasteHost>
+                <BulkOutcomeHost projectId={project.id} />
+                <KeysDialog />
+              </>
+            )}
+          </BacklogFrame>
+        </PasteHost>
+      </AddBelowProvider>
     </SelectionProvider>
   );
 }

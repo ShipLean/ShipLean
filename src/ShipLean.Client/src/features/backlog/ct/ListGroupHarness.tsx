@@ -5,6 +5,7 @@ import { BulkRunProvider } from '../bulk/BulkRunProvider';
 import { ListCommandsProvider } from '../commands/listCommands';
 import { ListDnd } from '../list/ListDnd';
 import { ListTable } from '../list/ListTable';
+import { AddBelowProvider } from '../add/AddBelowProvider';
 import { SelectionProvider } from '../selection/SelectionProvider';
 import { SelectPicker } from './SelectPicker';
 
@@ -29,21 +30,23 @@ export function ListGroupHarness({ project }: { project: ProjectDto }) {
         queryKey={backlogKey(project.id, 'stories', 'list', '', false)}
       >
         <SelectionProvider>
-          <ToastHost />
-          <SelectPicker rows={rows} />
-          <ListDnd rows={rows} filtering={false} onReorder={() => undefined}>
-            <ListTable
-              rows={rows}
-              columns={['rank', 'key', 'title', 'points']}
-              projectId={project.id}
-              projectKey={project.key}
-              adding={false}
-              onCloseAdd={() => undefined}
-              dragDisabled={false}
-              flashing={NONE}
-              filtered={false}
-            />
-          </ListDnd>
+          <AddBelowProvider projectId={project.id} projectKey={project.key}>
+            <ToastHost />
+            <SelectPicker rows={rows} />
+            <ListDnd rows={rows} filtering={false} onReorder={() => undefined}>
+              <ListTable
+                rows={rows}
+                columns={['rank', 'key', 'title', 'points']}
+                projectId={project.id}
+                projectKey={project.key}
+                adding={false}
+                onCloseAdd={() => undefined}
+                dragDisabled={false}
+                flashing={NONE}
+                filtered={false}
+              />
+            </ListDnd>
+          </AddBelowProvider>
         </SelectionProvider>
       </BulkRunProvider>
     </ListCommandsProvider>

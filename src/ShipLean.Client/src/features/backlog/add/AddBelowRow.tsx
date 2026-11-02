@@ -3,7 +3,7 @@ import type { BacklogRowDto } from '../../../api/views';
 import { useSelection } from '../selection/useSelection';
 import { AddBelowCommand } from './AddBelowCommand';
 import { AddRowFields } from './AddRowFields';
-import { closeBelow, openBelow, stickBelow, useAddChain, useBelowState } from './useAddChain';
+import { useAddChain, useBelowControls, useBelowState } from './useAddChain';
 import { backlogTestIds as ids } from '../testIds';
 
 export interface AddBelowRowProps {
@@ -19,16 +19,11 @@ export interface AddBelowRowProps {
 // The inline add row under a row. One is mounted under every row; the `addBelow` command opens the one under the
 // focused row. Each Enter makes a row just below the one before, so the typed list keeps its order: the open row
 // then moves under the row it made.
-export function AddBelowRow({
-  row,
-  columnCount,
-  projectId,
-  projectKey,
-  filtering,
-}: AddBelowRowProps) {
+export function AddBelowRow({ row, columnCount, projectId, filtering }: AddBelowRowProps) {
   const selection = useSelection();
   const state = useBelowState();
-  const chain = useAddChain(projectId, projectKey);
+  const chain = useAddChain();
+  const controls = useBelowControls();
   const cell = useRef<HTMLTableCellElement>(null);
 
   const command =
@@ -40,7 +35,7 @@ export function AddBelowRow({
   function close() {
     // Focus goes back to the row above before this row leaves.
     (cell.current?.parentElement?.previousElementSibling as HTMLElement | null)?.focus();
-    closeBelow();
+    controls.close();
   }
 
   return (
@@ -52,18 +47,14 @@ export function AddBelowRow({
             projectId={projectId}
             type={state.type}
             parent={state.parent}
-            onType={(type) => stickBelow({ type })}
-            onParent={(parent) => stickBelow({ parent })}
+            draft={state.draft}
+            onDraft={controls.draft}
+            onType={(type) => controls.stick({ type })}
+            onParent={(parent) => controls.stick({ parent })}
             hint={`Goes below ${row.key}`}
             error={chain.error}
             onClose={close}
-            onAdd={async (fields) => {
-              const id = await chain.below(row.id, fields);
-              if (id === null) return false;
-              selection.setFocused(id);
-              openBelow(id);
-              return true;
-            }}
+            onAdd={chain.below}
           />
         </td>
       </tr>

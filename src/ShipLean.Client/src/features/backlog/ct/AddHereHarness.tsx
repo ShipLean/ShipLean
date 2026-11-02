@@ -1,8 +1,9 @@
 import { Fragment } from 'react';
 import type { ProjectDto } from '../../../api/projects';
 import type { BacklogRowDto, BacklogSectionDto } from '../../../api/views';
+import { AddBelowProvider } from '../add/AddBelowProvider';
 import { AddBelowRow } from '../add/AddBelowRow';
-import { AddInSection } from '../add/AddInSection';
+import { AddInButton, AddInSection } from '../add/AddInSection';
 import { useBacklog } from '../backlogApi';
 import { SelectionProvider } from '../selection/SelectionProvider';
 import { useRowGestures } from '../selection/useRowGestures';
@@ -70,13 +71,14 @@ function Screen({
               <Row key={row.id} row={row} filtering={filtering} project={project} />
             ))}
             {section.sprint !== null ? (
-              <AddInSection
-                section={section}
-                columnCount={COLUMNS}
-                projectId={project.id}
-                projectKey={project.key}
-                filtering={filtering}
-              />
+              <>
+                <tr>
+                  <td colSpan={COLUMNS}>
+                    <AddInButton section={section} filtering={filtering} />
+                  </td>
+                </tr>
+                <AddInSection section={section} columnCount={COLUMNS} projectId={project.id} />
+              </>
             ) : null}
           </Fragment>
         ))}
@@ -99,7 +101,9 @@ export function AddHereHarness({
   return (
     <CommandHarness>
       <SelectionProvider>
-        <Screen project={project} mode={mode} filtering={filtering} />
+        <AddBelowProvider projectId={project.id} projectKey={project.key}>
+          <Screen project={project} mode={mode} filtering={filtering} />
+        </AddBelowProvider>
       </SelectionProvider>
     </CommandHarness>
   );
