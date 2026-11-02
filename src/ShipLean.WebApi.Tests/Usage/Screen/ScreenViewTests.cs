@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Contracts.Usage;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
+using ShipLean.TestSupport.Hosting;
 using ShipLean.TestSupport.Usage;
 
 namespace ShipLean.WebApi.Tests.Usage.Screen;

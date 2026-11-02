@@ -3,7 +3,8 @@ import { createRoot } from 'react-dom/client';
 import { beforeEach, expect, test, vi } from 'vitest';
 import type { RouteId } from '../routes';
 
-const postScreenView = vi.fn<(body: { screen: string; projectId: string | null }) => Promise<void>>();
+const postScreenView =
+  vi.fn<(body: { screen: string; projectId: string | null }) => Promise<void>>();
 vi.mock('../api/usageApi', () => ({ postScreenView }));
 
 const { useScreenView } = await import('./useScreenView');

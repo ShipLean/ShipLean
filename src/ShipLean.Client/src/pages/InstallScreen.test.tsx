@@ -17,7 +17,13 @@ beforeEach(() => {
 
 test('installScreen_WhenRendered_ShouldReportTheScreenViewWithNoProject', () => {
   const root = createRoot(document.createElement('div'));
-  act(() => root.render(<InstallScreen routeId="profile" testId="x">{null}</InstallScreen>));
+  act(() =>
+    root.render(
+      <InstallScreen routeId="profile" testId="x">
+        {null}
+      </InstallScreen>,
+    ),
+  );
   expect(useScreenView).toHaveBeenCalledTimes(1);
   expect(useScreenView).toHaveBeenCalledWith('profile', null);
   act(() => root.unmount());

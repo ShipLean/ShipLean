@@ -53,7 +53,9 @@ test('projectScreen_WhenProjectResolved_ShouldReportTheScreenViewWithItsProjectI
 
 test('projectScreen_WhenProjectNotResolved_ShouldNotReportAScreenView', () => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  queryClient.setQueryDefaults(['projects', 'by-key', ''], { queryFn: () => new Promise(() => undefined) });
+  queryClient.setQueryDefaults(['projects', 'by-key', ''], {
+    queryFn: () => new Promise(() => undefined),
+  });
   const root = renderScreen(queryClient);
   expect(useScreenView).not.toHaveBeenCalled();
   act(() => root.unmount());
