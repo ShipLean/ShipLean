@@ -167,6 +167,54 @@ public class BacklogAddApiTests : ApiFixture
         (await CountAsync()).ShouldBe(before);
     }
 
+    [Test]
+    public async Task Add_WhenLastWithSprint_ShouldLandBelowTheSprintsLastRow()
+    {
+        var order = await OrderedKeysAsync();
+        var sprintRows = await SprintKeysAsync(SeedIds.Sprints.Sprint24);
+        var lastOfSprint = order.Select((key, index) => (key, index)).Last(r => sprintRows.Contains(r.key));
+        lastOfSprint.index.ShouldBeLessThan(order.Count - 1, "the seed must leave an unrelated row below the sprint's last row");
+        var next = order[lastOfSprint.index + 1];
+        var items = new[] { Story("Below one", tasks: [new { title = "Below task", points = (int?)null }]), Story("Below two") };
+
+        var created = await AddAsync(new { items, sprintId = (Guid?)SeedIds.Sprints.Sprint24, placement = new { slot = "last", beforeItemId = (Guid?)null } });
+
+        var after = await OrderedKeysAsync();
+        after.Skip(lastOfSprint.index).Take(5).ShouldBe([lastOfSprint.key, created[0].Key, created[1].Key, created[2].Key, next]);
+    }
+
+    [Test]
+    public async Task Add_WhenLastWithEmptySprint_ShouldLandAtTheBottom()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var empty = await connection.QueryFirstAsync<Guid>(
+            "SELECT id FROM sprint s WHERE project_id = @project AND NOT EXISTS (SELECT 1 FROM work_item w WHERE w.sprint_id = s.id) LIMIT 1", new { project = SeedIds.Projects.Ship });
+
+        var created = await AddAsync(new { items = new[] { Story("Empty one"), Story("Empty two") }, sprintId = (Guid?)empty, placement = new { slot = "last", beforeItemId = (Guid?)null } });
+
+        (await OrderedKeysAsync()).TakeLast(2).ShouldBe([created[0].Key, created[1].Key]);
+    }
+
+    [Test]
+    public async Task Add_WhenLastWithoutSprint_ShouldLandAtTheBottom()
+    {
+        var created = await AddAsync(new { items = new[] { Story("Plain one"), Story("Plain two") }, sprintId = (Guid?)null, placement = new { slot = "last", beforeItemId = (Guid?)null } });
+
+        (await OrderedKeysAsync()).TakeLast(2).ShouldBe([created[0].Key, created[1].Key]);
+    }
+
+    [Test]
+    public async Task Add_WhenLastWithSprintWhoseLastRowIsTheBottom_ShouldLandAtTheBottom()
+    {
+        var bottom = (await OrderedKeysAsync())[^1];
+        await using var connection = await OpenDatabaseAsync();
+        await connection.ExecuteAsync("UPDATE work_item SET sprint_id = @sprint WHERE key = @bottom AND project_id = @project", new { sprint = SeedIds.Sprints.Sprint24, bottom, project = SeedIds.Projects.Ship });
+
+        var created = await AddAsync(new { items = new[] { Story("Bottom one") }, sprintId = (Guid?)SeedIds.Sprints.Sprint24, placement = new { slot = "last", beforeItemId = (Guid?)null } });
+
+        (await OrderedKeysAsync()).TakeLast(2).ShouldBe([bottom, created[0].Key]);
+    }
+
     private static object Story(string title, int? points = null, Guid? parentId = null, IReadOnlyList<object>? tasks = null)
         => new { type = "story", title, description = (string?)null, points, parentId, tasks = tasks ?? [] };
 
@@ -182,6 +230,19 @@ public class BacklogAddApiTests : ApiFixture
     {
         var view = await Api.GetBacklogAsync($"{Url}?mode=list");
         return [.. view.Rows.Select(row => row.Key)];
+    }
+
+    // Every row of the project, tasks too, in the order the stack keeps.
+    private async Task<List<string>> OrderedKeysAsync()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        return [.. await connection.QueryAsync<string>("SELECT key FROM work_item WHERE project_id = @project ORDER BY backlog_order, id", new { project = SeedIds.Projects.Ship })];
+    }
+
+    private async Task<HashSet<string>> SprintKeysAsync(Guid sprint)
+    {
+        await using var connection = await OpenDatabaseAsync();
+        return [.. await connection.QueryAsync<string>("SELECT key FROM work_item WHERE sprint_id = @sprint", new { sprint })];
     }
 
     private async Task<int> CountAsync()
