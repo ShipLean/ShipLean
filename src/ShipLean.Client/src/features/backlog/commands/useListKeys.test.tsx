@@ -14,6 +14,7 @@ function Keys() {
   useListCommand('open', () => void calls.push('open'));
   useListCommand('toggleSelect', () => void calls.push('toggleSelect'));
   useListCommand('estimate', (arg) => void calls.push(`estimate:${String(arg)}`));
+  useListCommand('moveMenu', (arg) => void calls.push(`moveMenu:${String(arg)}`));
   useListCommand('clear', () => void calls.push('clear'));
   return (
     <table>
@@ -97,4 +98,16 @@ test('Key_WhenModifiedOrShifted_ShouldDoNothing', () => {
 test('Key_WhenOutsideTheList_ShouldDoNothing', () => {
   press(document.body, { key: 'x' });
   expect(calls).toEqual([]);
+});
+
+test('M_WhenFollowedByASprintNumberTOrB_ShouldRunMoveMenuWithIt', () => {
+  for (const key of ['m', '1', 'm', '9', 'm', 't', 'm', 'b']) press(at('tr'), { key });
+  expect(calls).toEqual(['moveMenu:1', 'moveMenu:9', 'moveMenu:t', 'moveMenu:b']);
+});
+
+test('M_WhenFollowedByZero_ShouldRunNothingAndEndTheChord', () => {
+  press(at('tr'), { key: 'm' });
+  press(at('tr'), { key: '0' });
+  press(at('tr'), { key: '4' });
+  expect(calls).toEqual(['estimate:4']);
 });

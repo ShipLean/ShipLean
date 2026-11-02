@@ -8,12 +8,15 @@ export function KeysButton() {
     <button
       type="button"
       data-testid={ids.keysButton}
-      className="btn-ghost"
-      aria-label="Keyboard shortcuts"
+      className="btn-ghost gap-1.5 border-transparent bg-transparent"
+      title="Keyboard shortcuts"
       aria-keyshortcuts="?"
       onClick={() => run('help')}
     >
-      ?
+      Keys
+      <kbd className="inline-grid h-[18px] min-w-[18px] place-items-center rounded-xs border border-b-2 border-edge bg-panel px-1 font-mono text-[length:var(--text-2xs)] font-semibold text-ink">
+        ?
+      </kbd>
     </button>
   );
 }

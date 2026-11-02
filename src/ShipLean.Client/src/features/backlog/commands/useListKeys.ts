@@ -79,7 +79,7 @@ export function useListKeys(): void {
       if (chord.current) {
         chord.current = false;
         handled();
-        if (/^[0-9tb]$/.test(key) && !event.shiftKey) run('moveMenu', key);
+        if (/^[1-9tb]$/.test(key) && !event.shiftKey) run('moveMenu', key);
         return;
       }
       if (key === 'Escape') {

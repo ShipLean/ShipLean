@@ -3,6 +3,9 @@ import type { Page } from 'playwright';
 import { stubShell } from '../../shell/shellFixtures';
 import { quickSearchTestIds } from '../../quickSearch/testIds';
 import { ListKeysHarness } from '../ct/ListKeysHarness';
+import { PROJECT, planningView } from '../ct/fixtures';
+import { stubBacklog } from '../ct/stubApi';
+import { PlanningMode } from '../planning/PlanningMode';
 import { backlogTestIds as ids } from '../testIds';
 
 const row = (page: Page, key: string) =>
@@ -15,6 +18,15 @@ async function mountList(mount: (node: React.JSX.Element) => Promise<unknown>, p
     route.fulfill({ status: 200, contentType: 'application/json', body: '{"results":[]}' }),
   );
   await mount(<ListKeysHarness />);
+}
+
+// Proves the keys are live: J on the first row moves focus to the second. A test that then shows a key doing nothing
+// somewhere else means something only because this holds.
+async function proveKeysAreLive(page: Page) {
+  await row(page, 'SHIP-1').focus();
+  await page.keyboard.press('j');
+  await expect(row(page, 'SHIP-2')).toBeFocused();
+  await expect(page.getByTestId('focused-id')).toHaveText('id-SHIP-2');
 }
 
 test('J_and_K_move_focus', async ({ mount, page }) => {
@@ -67,12 +79,14 @@ test('Keys_run_the_registered_commands', async ({ mount, page }) => {
 
 test('Keys_do_nothing_in_a_field', async ({ mount, page }) => {
   await mountList(mount, page);
+  await proveKeysAreLive(page);
   await page.getByTestId('field').focus();
 
   await page.keyboard.type('jkx5n/?m2');
   await page.keyboard.press('Escape');
 
   await expect(page.getByTestId('field')).toHaveValue('jkx5n/?m2');
+  await expect(page.getByTestId('focused-id')).toHaveText('id-SHIP-2');
   await expect(log(page)).toHaveText('');
   await expect(page.getByTestId('selected-count')).toHaveText('0');
   await expect(page.getByTestId(ids.keysDialog)).toHaveCount(0);
@@ -80,7 +94,7 @@ test('Keys_do_nothing_in_a_field', async ({ mount, page }) => {
 
 test('Keys_do_nothing_in_a_dialog', async ({ mount, page }) => {
   await mountList(mount, page);
-  await row(page, 'SHIP-1').focus();
+  await proveKeysAreLive(page);
   await page.getByTestId('open-modal').click();
   await expect(page.getByRole('dialog')).toBeVisible();
 
@@ -89,12 +103,13 @@ test('Keys_do_nothing_in_a_dialog', async ({ mount, page }) => {
   await page.keyboard.press('5');
 
   await expect(log(page)).toHaveText('');
-  await expect(page.getByTestId('focused-id')).toHaveText('id-SHIP-1');
+  await expect(page.getByTestId('focused-id')).toHaveText('id-SHIP-2');
   await expect(page.getByTestId('selected-count')).toHaveText('0');
 });
 
 test('Keys_do_nothing_outside_the_list', async ({ mount, page }) => {
   await mountList(mount, page);
+  await proveKeysAreLive(page);
   await page.getByTestId('outside').focus();
 
   await page.keyboard.press('j');
@@ -104,13 +119,14 @@ test('Keys_do_nothing_outside_the_list', async ({ mount, page }) => {
   await page.keyboard.press('Escape');
 
   await expect(log(page)).toHaveText('');
-  await expect(page.getByTestId('focused-id')).toHaveText('none');
+  await expect(page.getByTestId('focused-id')).toHaveText('id-SHIP-2');
+  await expect(page.getByTestId('selected-count')).toHaveText('0');
   await expect(page.getByTestId(ids.keysDialog)).toHaveCount(0);
 });
 
 test('Ctrl_P_still_opens_quick_search', async ({ mount, page }) => {
   await mountList(mount, page);
-  await row(page, 'SHIP-1').focus();
+  await proveKeysAreLive(page);
 
   await page.keyboard.press('Control+p');
 
@@ -119,30 +135,24 @@ test('Ctrl_P_still_opens_quick_search', async ({ mount, page }) => {
 });
 
 test('Alt_arrow_still_moves_the_row', async ({ mount, page }) => {
-  await mountList(mount, page);
-  await row(page, 'SHIP-2').focus();
-  // The row's own handler (PlanningRow) takes Alt+Arrow; the list keys must neither run a command nor claim the event.
-  const claimed = await row(page, 'SHIP-2').evaluate((el) => {
-    const event = new KeyboardEvent('keydown', {
-      key: 'ArrowUp',
-      altKey: true,
-      bubbles: true,
-      cancelable: true,
-    });
-    el.dispatchEvent(event);
-    const altJ = new KeyboardEvent('keydown', {
-      key: 'j',
-      altKey: true,
-      bubbles: true,
-      cancelable: true,
-    });
-    el.dispatchEvent(altJ);
-    return [event.defaultPrevented, altJ.defaultPrevented];
+  // The real planning screen: PlanningRow takes Alt+Arrow and writes the move, with the list keys mounted beside it.
+  const server = await stubBacklog(page, planningView());
+  await mount(<PlanningMode project={PROJECT} />, {
+    hooksConfig: { route: '/p/SHIP/backlogs/stories?mode=planning' },
   });
+  await expect(page.getByTestId(ids.row)).toHaveCount(5);
+  // The keys are live on this screen: K goes from SHIP-172 to SHIP-171.
+  await row(page, 'SHIP-172').focus();
+  await page.keyboard.press('k');
+  await expect(row(page, 'SHIP-171')).toBeFocused();
+  expect(server.reorders).toHaveLength(0);
 
-  expect(claimed).toEqual([false, false]);
-  await expect(row(page, 'SHIP-2')).toBeFocused();
-  await expect(log(page)).toHaveText('');
+  await page.keyboard.press('Alt+ArrowUp');
+
+  await expect.poll(() => server.reorders.length).toBe(1);
+  expect(server.reorders[0].url).toContain('/api/work-items/id-SHIP-171/reorder');
+  expect(server.reorders[0].body).toEqual({ expectedRevision: 1, beforeItemId: 'id-SHIP-170' });
+  expect(server.patches).toHaveLength(0);
 });
 
 test('M_then_2_runs_moveMenu_with_2', async ({ mount, page }) => {
@@ -158,6 +168,18 @@ test('M_then_2_runs_moveMenu_with_2', async ({ mount, page }) => {
   await page.keyboard.press('b');
 
   await expect(log(page)).toHaveText('moveMenu:2,moveMenu:t,moveMenu:b');
+});
+
+test('M_then_0_runs_nothing', async ({ mount, page }) => {
+  await mountList(mount, page);
+  await row(page, 'SHIP-1').focus();
+
+  await page.keyboard.press('m');
+  await page.keyboard.press('0');
+  // The chord is over: a digit now starts an estimate.
+  await page.keyboard.press('3');
+
+  await expect(log(page)).toHaveText('estimate:3');
 });
 
 test('M_then_Esc_runs_nothing', async ({ mount, page }) => {
