@@ -6,7 +6,8 @@
 <title>ShipLean · Feature form (reference)</title>
 <!--
   Reference Feature form (#2): Backlogs › Features › SHIP-101, the work item form for a Feature, made richer.
-  Open directly in a browser. Uses ../tokens.css, shiplean.css and shared.js only; no build step.
+  Open directly in a browser. Uses ../tokens.css, shiplean.css and shared.js, plus retro-data.js and retro-cards.js for
+  the Retrospectives rows (SHIP-497); no build step.
   The field strip swaps Sprint, Points and Priority for Epic, Slug and Started. A status band under the strip holds
   the state, one honest Status line and Verified at; Blocked needs Blocked by, Parked needs a reason and what would
   revive it. Goal sits above the Description (markdown, with revision history). Images in the description resolve
@@ -23,7 +24,11 @@
 -->
 <link rel="stylesheet" href="../tokens.css">
 <link rel="stylesheet" href="shiplean.css">
+<link rel="stylesheet" href="retro-cards.css">
+<style>:root { --cat-well: var(--color-ok); --cat-bad: var(--color-danger); --cat-improve: var(--color-accent); --cat-unplanned: var(--color-purple); }</style>
 <script src="shared.js"></script>
+<script src="retro-data.js"></script>
+<script src="retro-cards.js"></script>
 <style>
 [hidden] { display: none !important; }
 /* Header and field strip: as on the story form */
@@ -539,6 +544,10 @@ svg text { fill: currentColor; }
           ${children.map(c => `<tr class="item"><td><div class="title-cell">${tIcon(c.type)}<a class="t" href="${c.key === 'SHIP-141' ? 'work-item.html' : '#'}" style="color:inherit;text-decoration:none">${esc(c.title)}</a></div></td><td class="key">${c.key}</td><td class="sm muted">${c.sprint ? SL.sprints.find(s => s.id === c.sprint).name : 'Backlog'}</td><td>${SL.st(c.state)}</td><td>${av(c.assignee)}</td></tr>`).join('')}
         </tbody></table></div>
       </section>
+      <section class="sec" data-testid="retro-section">
+        <div class="sec-h"><h2>Retrospectives</h2><span class="cnt">${RC.retrosOf('SHIP-101').length}</span><span class="xs muted">One row per retro. Open one to read it and decide its points.</span><span class="spacer"></span><a class="btn tiny" href="retro-item.html?key=SHIP-101">All retros for this Feature</a></div>
+        ${RC.workItemRows('SHIP-101')}
+      </section>
       <section class="sec">
         <div class="sec-h"><h2>Log</h2><span class="cnt">${log.length}</span><span class="xs muted">Dated entries, newest first. Agents add one after every session.</span></div>
         <ul class="comments">${log.map((c, i) => `<li class="cm${c.superseded ? ' superseded' : ''}${c.fresh ? ' fresh' : ''}">${avH(c.by)}<div>
@@ -698,6 +707,7 @@ svg text { fill: currentColor; }
     { label: 'Drop files', run: () => dropCard(['design-v0.2.md', 'brief-gift-cards.md', 'picker-on-ios.png', 'funnel-nov.csv']) },
   ]);
 })();
+  if (new URLSearchParams(location.search).has('retros')) requestAnimationFrame(() => { const sec = document.querySelector('[data-testid="retro-section"]'); if (sec) sec.closest('.scroll').scrollTop = sec.offsetTop - sec.closest('.scroll').offsetTop; });
 </script>
 </body>
 </html>
