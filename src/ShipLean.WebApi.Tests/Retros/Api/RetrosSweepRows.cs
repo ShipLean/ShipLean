@@ -25,6 +25,12 @@ public sealed class RetrosSweepRows : IAccessSweepRows
         new("POST", "api/retros/points/{id:guid}/not-needed", ProjectRole.Member, Body: """{"reason":""}""", Url: $"api/retros/points/{RetroSweepData.Point}/not-needed"),
         new("POST", "api/retros/points/{id:guid}/undo-not-needed", ProjectRole.Member, Url: $"api/retros/points/{RetroSweepData.Point}/undo-not-needed"),
         new("PUT", "api/retros/themes/{id:guid}", ProjectRole.Member, Body: """{"name":"Sweep"}""", Url: $"api/retros/themes/{RetroSweepData.Theme}"),
+        new("GET", "api/projects/{id:guid}/retros/features", ProjectRole.Member),
+        new("GET", "api/projects/{id:guid}/retros/items/{key}", ProjectRole.Member, Url: $"api/projects/{SeedIds.Projects.Ship}/retros/items/SHIP-90"),
+        new("GET", "api/projects/{id:guid}/retros/action-dialog", ProjectRole.Member),
+        new("GET", "api/retros/actions/{workItemId:guid}", ProjectRole.Member, Url: $"api/retros/actions/{RetroSweepData.Action}"),
+        new("POST", "api/retros/theme-merge-proposals/{id:guid}/merge", ProjectRole.Member, Url: $"api/retros/theme-merge-proposals/{RetroSweepData.Proposal}/merge"),
+        new("POST", "api/retros/theme-merge-proposals/{id:guid}/keep-apart", ProjectRole.Member, Url: $"api/retros/theme-merge-proposals/{RetroSweepData.Proposal}/keep-apart"),
         new("POST", "api/projects/{id:guid}/retros/themes/merge", ProjectRole.Member, Body: """{"sourceIds":[],"targetId":"0a2e0000-0000-7000-8000-000000000001"}"""),
     ];
 }

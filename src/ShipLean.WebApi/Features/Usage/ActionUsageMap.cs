@@ -67,7 +67,8 @@ public static class ActionUsageMap
         Add(ActionUsage.Track(UsageEventNames.RetroActionCreated), "RetroPoints.CreateAction", "RetroActions.Create");
         Add(ActionUsage.Track(UsageEventNames.RetroActionPointsAdded), "RetroActions.AddPoints");
         Add(ActionUsage.Track(UsageEventNames.RetroActionUpdated), "RetroActions.Update");
-        Add(ActionUsage.Track(UsageEventNames.RetroThemesMerged), "RetroThemeWrites.Merge");
+        Add(ActionUsage.Track(UsageEventNames.RetroThemesMerged), "RetroThemeWrites.Merge", "RetroMergeProposals.Merge");
+        Add(ActionUsage.Track(UsageEventNames.RetroMergeKeptApart), "RetroMergeProposals.KeepApart");
         Add(ActionUsage.Track(UsageEventNames.RetroThemeRenamed), "RetroThemeWrites.Rename");
         Add(ActionUsage.Track(UsageEventNames.RetroPointNotNeeded), "RetroDecisions.NotNeeded");
         Add(ActionUsage.Track(UsageEventNames.RetroNotNeededUndone), "RetroDecisions.UndoNotNeeded");
@@ -167,7 +168,11 @@ public static class ActionUsageMap
             "ProjectVelocity.Get",
             "ProjectWorkItems.List",
             "ProjectWorkItems.Tags",
+            "RetroActionDialog.Get",
+            "RetroActions.Get",
+            "RetroFeatures.List",
             "RetroInsights.Get",
+            "RetroItems.Get",
             "RetroThemes.List",
             "SprintCapacity.Get",
             "SprintMetrics.Get",

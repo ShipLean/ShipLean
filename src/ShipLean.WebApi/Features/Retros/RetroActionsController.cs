@@ -8,8 +8,17 @@ namespace ShipLean.WebApi.Features.Retros;
 
 // Action items over retro points: one item can cover many points.
 [Route("api")]
-public sealed class RetroActionsController(IRetroDecisionWrites writes, IProjectAccess access, ICurrentUser user) : ApiControllerBase
+public sealed class RetroActionsController(IRetroDecisionWrites writes, IRetroActionDetailReader details, IProjectAccess access, ICurrentUser user) : ApiControllerBase
 {
+    [HttpGet("retros/actions/{workItemId:guid}")]
+    [ProducesResponseType<RetroActionDetailDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ApiError>(StatusCodes.Status404NotFound)]
+    public async Task<RetroActionDetailDto> Get(Guid workItemId, CancellationToken cancellationToken)
+    {
+        await access.RequireAsync(ProjectItem.WorkItem, workItemId, ProjectRole.Member, cancellationToken);
+        return await details.GetAsync(workItemId, cancellationToken);
+    }
+
     [HttpPost("projects/{id:guid}/retros/actions")]
     [ProducesResponseType<RetroActionDetailDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<ApiError>(StatusCodes.Status400BadRequest)]

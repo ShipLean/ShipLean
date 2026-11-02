@@ -132,6 +132,7 @@ public class ProjectAccessTests : ApiFixture
     [TestCase(ProjectItem.Link)]
     [TestCase(ProjectItem.RetroPoint)]
     [TestCase(ProjectItem.RetroTheme)]
+    [TestCase(ProjectItem.RetroMergeProposal)]
     public async Task ProjectAccess_WhenItemIdUnknown_ShouldThrowNotFound(ProjectItem item)
     {
         Host.ActAs(SeedIds.Users.Joel);

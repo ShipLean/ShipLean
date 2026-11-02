@@ -13,4 +13,5 @@ public enum ProjectItem
     Link,
     RetroPoint,
     RetroTheme,
+    RetroMergeProposal,
 }

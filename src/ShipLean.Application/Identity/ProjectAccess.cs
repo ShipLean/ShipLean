@@ -93,6 +93,13 @@ public sealed class ProjectAccess(NpgsqlDataSource dataSource, ICurrentUser curr
         WHERE x.id = @id
         """;
 
+    private const string RetroMergeProposalSql =
+        """
+        SELECT x.project_id AS ProjectId, m.role AS Role FROM retro_theme_merge_proposal x
+        LEFT JOIN project_member m ON m.project_id = x.project_id AND m.user_id = @user AND m.archived_at IS NULL
+        WHERE x.id = @id
+        """;
+
     private static string SqlFor(ProjectItem item) => item switch
     {
         ProjectItem.WorkItem => WorkItemSql,
@@ -105,6 +112,7 @@ public sealed class ProjectAccess(NpgsqlDataSource dataSource, ICurrentUser curr
         ProjectItem.Link => LinkSql,
         ProjectItem.RetroPoint => RetroPointSql,
         ProjectItem.RetroTheme => RetroThemeSql,
+        ProjectItem.RetroMergeProposal => RetroMergeProposalSql,
         _ => throw new ArgumentOutOfRangeException(nameof(item), item, "Unknown project item kind."),
     };
 
