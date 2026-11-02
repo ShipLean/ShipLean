@@ -150,7 +150,7 @@ public class UsageWebTests : ApiFixture
     [Test]
     public async Task SelfEmittedAction_ShouldNotBeTrackedByTheFilter()
     {
-        using var screen = await Api.PostJsonAsync("api/usage/screen", new ScreenViewDto("board", null));
+        using var screen = await Api.PostJsonAsync("api/usage/screen", new ScreenViewDto("profile", null));
         using var logout = await Api.PostJsonAsync("api/auth/logout", new { });
 
         screen.StatusCode.ShouldBe(HttpStatusCode.NoContent);
