@@ -35,27 +35,25 @@ internal sealed class RetroActionWriter(NpgsqlDataSource dataSource, IWorkItemSt
     }
 
     public Task<RetroActionDetailDto> CreateActionAsync(Guid projectId, RetroActionNew request, RetroActor actor, CancellationToken cancellationToken)
-        => CreateCoreAsync(projectId, request.Title.Trim(), null, request.FixType, request.PointIds, request.ThemeId, request.ThemeName, cancellationToken);
+    {
+        RetroChecks.ActionNew(request);
+        return CreateCoreAsync(projectId, request.Title.Trim(), null, request.FixType, request.PointIds, request.ThemeId, request.ThemeName, cancellationToken);
+    }
 
+    // One transaction: the action item and the points are locked and read inside it, so what is decided is what is written.
     public async Task<RetroActionDetailDto> AddPointsAsync(Guid workItemId, RetroActionAddPoints request, RetroActor actor, CancellationToken cancellationToken)
     {
+        RetroChecks.ActionAddPoints(request);
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-        IReadOnlyDictionary<Guid, Guid> previous;
-        ActionRow action;
-        await using (var check = await connection.BeginTransactionAsync(cancellationToken))
-        {
-            action = await LiveActionAsync(connection, check, workItemId, cancellationToken);
-            var points = await RetroActionPoint.LoadAsync(connection, check, action.ProjectId, request.PointIds, false, cancellationToken);
-            previous = RetroActionPoint.RequireOpen(points);
-        }
-
+        Guid projectId;
         await using (var transaction = await connection.BeginTransactionAsync(cancellationToken))
         {
             try
             {
-                // Under the points' locks, a Not needed or another link made since the check above is seen here.
-                action = await LiveActionAsync(connection, transaction, workItemId, cancellationToken);
-                RetroActionPoint.RequireOpen(await RetroActionPoint.LoadAsync(connection, transaction, action.ProjectId, request.PointIds, true, cancellationToken));
+                var action = await LiveActionAsync(connection, transaction, workItemId, cancellationToken);
+                projectId = action.ProjectId;
+                var points = await RetroActionPoint.LoadAsync(connection, transaction, projectId, request.PointIds, true, cancellationToken);
+                var previous = RetroActionPoint.RequireOpen(points);
                 var position = await connection.QuerySingleAsync<int>(
                     new CommandDefinition("SELECT COALESCE(max(position) + 1, 0) FROM retro_action_point WHERE work_item_id = @workItemId", new { workItemId }, transaction, cancellationToken: cancellationToken));
                 await LinkPointsAsync(connection, transaction, workItemId, request.PointIds, previous, position, cancellationToken);
@@ -67,24 +65,17 @@ internal sealed class RetroActionWriter(NpgsqlDataSource dataSource, IWorkItemSt
             }
         }
 
-        return await PublishedAsync(action.ProjectId, workItemId, cancellationToken);
+        return await PublishedAsync(projectId, workItemId, cancellationToken);
     }
 
+    // One transaction too. The theme name is resolved first, on the pick themer's own connection, as MoveThemeAsync does;
+    // the theme is then required live inside the transaction.
     public async Task<RetroActionDetailDto> UpdateActionAsync(Guid workItemId, RetroActionPut request, RetroActor actor, CancellationToken cancellationToken)
     {
+        RetroChecks.ActionPut(request);
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-        Guid projectId;
-        await using (var check = await connection.BeginTransactionAsync(cancellationToken))
-        {
-            var current = await LiveActionAsync(connection, check, workItemId, cancellationToken);
-            projectId = current.ProjectId;
-            RequireFixType(request, current);
-            if (request.ThemeId is { } id)
-            {
-                await RetroThemeRows.RequireLiveAsync(connection, check, current.ProjectId, id, cancellationToken);
-            }
-        }
-
+        var projectId = await connection.QuerySingleOrDefaultAsync<Guid?>(new CommandDefinition("SELECT project_id FROM work_item WHERE id = @workItemId", new { workItemId }, cancellationToken: cancellationToken))
+            ?? throw ApiException.NotFound("No action item with that id was found.");
         var themeId = await ResolveThemeAsync(projectId, request.ThemeId, request.ThemeName, cancellationToken);
         await using (var transaction = await connection.BeginTransactionAsync(cancellationToken))
         {
@@ -251,10 +242,22 @@ internal sealed class RetroActionWriter(NpgsqlDataSource dataSource, IWorkItemSt
             SELECT w.project_id AS projectId, ra.fix_type AS fixType, st.category AS stateCategory, (ra.work_item_id IS NOT NULL) AS isAction
             FROM work_item w JOIN state st ON st.id = w.state_id LEFT JOIN retro_action ra ON ra.work_item_id = w.id
             WHERE w.id = @workItemId
+            FOR SHARE OF w
             """;
         var row = await connection.QuerySingleOrDefaultAsync<ActionRow>(new CommandDefinition(sql, new { workItemId }, transaction, cancellationToken: cancellationToken))
             ?? throw ApiException.NotFound("No action item with that id was found.");
-        return row.IsAction && row.StateCategory != "removed" ? row : throw ApiException.Validation("That is not an action item raised from a retro.", "workItemId");
+        if (!row.IsAction || row.StateCategory == "removed")
+        {
+            throw ApiException.Validation("That is not an action item raised from a retro.", "workItemId");
+        }
+
+        // The retro_action row is locked too, so two updates of one item queue and the second reads what the first wrote.
+        return await connection.QuerySingleAsync<ActionRow>(
+            new CommandDefinition(
+                "SELECT @projectId AS projectId, fix_type AS fixType, @stateCategory AS stateCategory, true AS isAction FROM retro_action WHERE work_item_id = @workItemId FOR UPDATE",
+                new { workItemId, projectId = row.ProjectId, stateCategory = row.StateCategory },
+                transaction,
+                cancellationToken: cancellationToken));
     }
 
     private sealed record ActionRow(Guid ProjectId, string? FixType, string StateCategory, bool IsAction);

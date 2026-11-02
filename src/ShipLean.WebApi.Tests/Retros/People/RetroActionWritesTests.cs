@@ -115,9 +115,9 @@ public sealed class RetroActionWritesTests : RetroPeopleFixture
     {
         await using var world = await World.CreateAsync(await OpenDatabaseAsync());
 
-        using var response = await CreateAsync(world, []);
+        var error = await Should.ThrowAsync<ApiException>(() => Writes.CreateActionAsync(world.Project.Id, new RetroActionNew("Fix", RetroFixType.Skill, [], null, null), Actor));
 
-        (await ErrorAsync(response, HttpStatusCode.BadRequest)).ShouldBe((ApiErrorCodes.Validation, "pointIds"));
+        (error.Code, error.Field).ShouldBe((ApiErrorCodes.Validation, "pointIds"));
     }
 
     [Test]
@@ -126,9 +126,10 @@ public sealed class RetroActionWritesTests : RetroPeopleFixture
         await using var world = await World.CreateAsync(await OpenDatabaseAsync());
         var pointId = await PointAsync(world);
 
-        using var response = await CreateAsync(world, [pointId, pointId]);
+        var error = await Should.ThrowAsync<ApiException>(() => Writes.CreateActionAsync(world.Project.Id, new RetroActionNew("Fix", RetroFixType.Skill, [pointId, pointId], null, null), Actor));
 
-        (await ErrorAsync(response, HttpStatusCode.BadRequest)).ShouldBe((ApiErrorCodes.Validation, "pointIds"));
+        (error.Code, error.Field).ShouldBe((ApiErrorCodes.Validation, "pointIds"));
+        (await ActionCountAsync(world)).ShouldBe(0);
     }
 
     [Test]
@@ -272,9 +273,9 @@ public sealed class RetroActionWritesTests : RetroPeopleFixture
         await using var world = await World.CreateAsync(await OpenDatabaseAsync());
         var itemId = await CreatedItemAsync(world, [await PointAsync(world)]);
 
-        using var response = await AddPointsAsync(itemId, []);
+        var error = await Should.ThrowAsync<ApiException>(() => Writes.AddPointsAsync(itemId, new RetroActionAddPoints([]), Actor));
 
-        (await ErrorAsync(response, HttpStatusCode.BadRequest)).ShouldBe((ApiErrorCodes.Validation, "pointIds"));
+        (error.Code, error.Field).ShouldBe((ApiErrorCodes.Validation, "pointIds"));
     }
 
     [Test]
@@ -284,9 +285,9 @@ public sealed class RetroActionWritesTests : RetroPeopleFixture
         var itemId = await CreatedItemAsync(world, [await PointAsync(world)]);
         var pointId = await PointAsync(world);
 
-        using var response = await AddPointsAsync(itemId, [pointId, pointId]);
+        var error = await Should.ThrowAsync<ApiException>(() => Writes.AddPointsAsync(itemId, new RetroActionAddPoints([pointId, pointId]), Actor));
 
-        (await ErrorAsync(response, HttpStatusCode.BadRequest)).ShouldBe((ApiErrorCodes.Validation, "pointIds"));
+        (error.Code, error.Field).ShouldBe((ApiErrorCodes.Validation, "pointIds"));
     }
 
     [Test]
@@ -439,10 +440,11 @@ public sealed class RetroActionWritesTests : RetroPeopleFixture
     {
         await using var world = await World.CreateAsync(await OpenDatabaseAsync());
         var itemId = await CreatedItemAsync(world, [await PointAsync(world)], fixType: "skill");
+        var themeId = await world.Seed.ThemeAsync("T");
 
-        using var response = await UpdateAsync(itemId, new { fixType = "skill", themeId = await world.Seed.ThemeAsync("T"), themeName = "T" });
+        var error = await Should.ThrowAsync<ApiException>(() => Writes.UpdateActionAsync(itemId, new RetroActionPut(RetroFixType.Skill, themeId, "T"), Actor));
 
-        (await ErrorAsync(response, HttpStatusCode.BadRequest)).ShouldBe((ApiErrorCodes.Validation, "themeId"));
+        (error.Code, error.Field).ShouldBe((ApiErrorCodes.Validation, "themeId"));
     }
 
     [Test]
@@ -457,6 +459,34 @@ public sealed class RetroActionWritesTests : RetroPeopleFixture
     }
 
     [Test]
+    public async Task UpdateAction_WhenItemRemovedWhileTheThemeIsPicked_ShouldBeValidationAndChangeNothing()
+    {
+        await using var world = await World.CreateAsync(await OpenDatabaseAsync());
+        var itemId = await CreatedItemAsync(world, [await PointAsync(world)], fixType: "skill");
+        // Stands in for a Remove that lands after the request began: creating the named theme moves the item to Removed.
+        var name = $"removing_{Guid.NewGuid():N}";
+        await world.Connection.ExecuteAsync(
+            $"""
+            CREATE FUNCTION {name}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
+              UPDATE work_item SET state_id = (SELECT id FROM state WHERE project_id = '{world.Project.Id}' AND type = 'action' AND category = 'removed' LIMIT 1) WHERE id = '{itemId}';
+              RETURN NEW; END $$;
+            CREATE TRIGGER {name} AFTER INSERT ON retro_theme FOR EACH ROW WHEN (NEW.project_id = '{world.Project.Id}') EXECUTE FUNCTION {name}();
+            """);
+        try
+        {
+            using var response = await UpdateAsync(itemId, new { fixType = "guide", themeName = "Late theme" });
+
+            (await ErrorAsync(response, HttpStatusCode.BadRequest)).ShouldBe((ApiErrorCodes.Validation, "workItemId"));
+        }
+        finally
+        {
+            await world.Connection.ExecuteAsync($"DROP TRIGGER {name} ON retro_theme; DROP FUNCTION {name}();");
+        }
+
+        (await world.Connection.QuerySingleAsync<string>("SELECT fix_type FROM retro_action WHERE work_item_id = @itemId", new { itemId })).ShouldBe("skill");
+    }
+
+    [Test]
     public async Task UpdateAction_WhenItemIsNotAction_ShouldBeValidation()
     {
         await using var world = await World.CreateAsync(await OpenDatabaseAsync());
@@ -466,6 +496,20 @@ public sealed class RetroActionWritesTests : RetroPeopleFixture
 
         (await ErrorAsync(response, HttpStatusCode.BadRequest)).ShouldBe((ApiErrorCodes.Validation, "workItemId"));
     }
+
+    // The seam M2 calls with no controller in front: the writers run the RetroChecks themselves.
+    private IServiceScope? _scope;
+
+    private IRetroDecisionWrites Writes => (_scope ??= Host.Services.CreateScope()).ServiceProvider.GetRequiredService<IRetroDecisionWrites>();
+
+    [TearDown]
+    public void DisposeScope()
+    {
+        _scope?.Dispose();
+        _scope = null;
+    }
+
+    private static RetroActor Actor => new(ShipLean.TestSupport.SeedIds.Users.Joel, null);
 
     private static Task<Guid> PointAsync(World world, RetroCategory category = RetroCategory.Improve, Guid? theme = null)
         => PointInRetroAsync(world, world.AgentRetroAsync(), category, theme);
