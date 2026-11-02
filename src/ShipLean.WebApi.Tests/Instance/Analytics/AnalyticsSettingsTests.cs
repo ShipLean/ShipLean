@@ -146,6 +146,27 @@ public class AnalyticsSettingsTests : ApiFixture
         target.ShipLeanVersion.ShouldNotContain("+");
     }
 
+    [Test]
+    public async Task Reader_WhenBaseUrlIsEmpty_ShouldReturnTargetWithEmptyInstanceHost()
+    {
+        (await PutAsync("umami", "https://umami.example.com", UmamiKey, false)).EnsureSuccessStatusCode();
+        await using var connection = await OpenDatabaseAsync();
+        var baseUrl = await Dapper.SqlMapper.QuerySingleAsync<string>(connection, "SELECT base_url FROM instance_settings");
+        await Dapper.SqlMapper.ExecuteAsync(connection, "UPDATE instance_settings SET base_url = ''");
+        try
+        {
+            var target = await ReadTargetAsync();
+
+            target.ShouldNotBeNull();
+            target.Provider.ShouldBe(AnalyticsProvider.Umami);
+            target.InstanceHost.ShouldBe(string.Empty);
+        }
+        finally
+        {
+            await Dapper.SqlMapper.ExecuteAsync(connection, "UPDATE instance_settings SET base_url = @baseUrl", new { baseUrl });
+        }
+    }
+
     private async Task<AnalyticsTarget?> ReadTargetAsync()
     {
         var reader = Host.Services.GetRequiredService<IAnalyticsSettingsReader>();

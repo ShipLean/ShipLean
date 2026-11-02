@@ -20,6 +20,10 @@ public sealed class AnalyticsSettingsReader(NpgsqlDataSource dataSource) : IAnal
         {
             return null;
         }
-        return new AnalyticsTarget(provider, new Uri(row.Host), row.SiteKey, new Uri(row.BaseUrl).Host, row.SendNames, ShipLeanVersion.Current);
+        return new AnalyticsTarget(provider, new Uri(row.Host), row.SiteKey, InstanceHost(row.BaseUrl), row.SendNames, ShipLeanVersion.Current);
     }
+
+    // An instance that has not set its base URL stores an empty string; its events then carry no instance host.
+    private static string InstanceHost(string baseUrl)
+        => Uri.TryCreate(baseUrl, UriKind.Absolute, out var uri) ? uri.Host : string.Empty;
 }
