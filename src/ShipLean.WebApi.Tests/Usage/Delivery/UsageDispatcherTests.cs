@@ -1,5 +1,6 @@
 using System.Diagnostics.Metrics;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;
 using ShipLean.Application.Features.Usage;
@@ -28,6 +29,8 @@ public class UsageDispatcherTests : ApiFixture
         UsageServices.Register(services);
         services.AddSingleton<TimeProvider>(_clock);
         services.AddSingleton<IAnalyticsSettingsReader>(_reader);
+        // The dispatcher uses the first sink of a provider, so the real Umami and PostHog sinks must go or they shadow the probes.
+        services.RemoveAll<IAnalyticsSink>();
         services.AddSingleton<IAnalyticsSink>(_umami);
         services.AddSingleton<IAnalyticsSink>(_postHog);
     };
