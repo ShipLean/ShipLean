@@ -1,5 +1,6 @@
 using System.Net;
 using Microsoft.Extensions.DependencyInjection;
+using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Usage;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
@@ -55,6 +56,16 @@ public class ScreenViewTests : ApiFixture
         Recorder.Events.ShouldBeEmpty();
     }
 
+    [Test]
+    public async Task ScreenView_WhenNotMemberAndScreenInvalid_ShouldBeNotFoundAndTrackNothing()
+    {
+        using var response = await Api.PostJsonAsync("api/usage/screen", new ScreenViewDto("notARoute", SeedIds.Projects.Part));
+
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        (await response.ReadApiErrorAsync()).Code.ShouldBe(ApiErrorCodes.NotFound);
+        Recorder.Events.ShouldBeEmpty();
+    }
+
     [TestCase("")]
     [TestCase("a-b")]
     [TestCase("<script>")]
@@ -64,6 +75,9 @@ public class ScreenViewTests : ApiFixture
         using var response = await Api.PostJsonAsync("api/usage/screen", new ScreenViewDto(screen, null));
 
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        var error = await response.ReadApiErrorAsync();
+        error.Code.ShouldBe(ApiErrorCodes.Validation);
+        error.Field.ShouldBe("screen");
         Recorder.Events.ShouldBeEmpty();
     }
 

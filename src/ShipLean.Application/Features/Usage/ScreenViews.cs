@@ -5,21 +5,21 @@ using ShipLean.Contracts.Usage;
 
 namespace ShipLean.Application.Features.Usage;
 
-// The SPA's report that a screen was opened: the screen must be a known route id, a project must be one the caller is a member of
-// (which also stamps the usage scope), and then screen.viewed is tracked. Nothing here waits on delivery.
+// The SPA's report that a screen was opened: a project must be one the caller is a member of (which also stamps the usage scope),
+// then the screen must be a known route id, and then screen.viewed is tracked. Nothing here waits on delivery.
 [RegisterPerRequest]
 public sealed class ScreenViews(IProjectAccess access, ICurrentUser currentUser, IUsageEvents events, TimeProvider time)
 {
     public async Task ReportAsync(ScreenViewDto view, CancellationToken cancellationToken)
     {
         var started = time.GetTimestamp();
-        if (!ScreenIds.All.Contains(view.Screen))
-        {
-            throw ApiException.Validation("That is not a known screen.", "screen");
-        }
         if (view.ProjectId is { } projectId)
         {
             await access.RequireAsync(projectId, ProjectRole.Member, cancellationToken);
+        }
+        if (!ScreenIds.All.Contains(view.Screen))
+        {
+            throw ApiException.Validation("That is not a known screen.", "screen");
         }
         events.Track(new UsageEvent(
             UsageEventNames.ScreenViewed,
