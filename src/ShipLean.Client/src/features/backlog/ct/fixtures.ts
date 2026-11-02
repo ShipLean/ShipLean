@@ -87,6 +87,7 @@ export function backlogView(rows: BacklogRowDto[]): BacklogViewDto {
     tagColours: [],
     forecast: null,
     velocity: null,
+    review: null,
   };
 }
 

@@ -87,5 +87,6 @@ export function levelView(level: 'features' | 'epics', rows: BacklogRowDto[]): B
     tagColours: [],
     forecast: null,
     velocity: null,
+    review: null,
   };
 }

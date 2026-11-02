@@ -45,6 +45,8 @@ public static class UsageEventNames
     public const string PlanningGuideViewed = "planning_guide.viewed";
     public const string FeatureProgressViewed = "feature.progress_viewed";
     public const string BacklogReviewed = "backlog.reviewed";
+    public const string BacklogBulkWritten = "backlog.bulk_written";
+    public const string BacklogItemsAdded = "backlog.items_added";
     public const string ChangesViewed = "changes.viewed";
     public const string SearchPerformed = "search.performed";
     public const string CommentAdded = "comment.added";
