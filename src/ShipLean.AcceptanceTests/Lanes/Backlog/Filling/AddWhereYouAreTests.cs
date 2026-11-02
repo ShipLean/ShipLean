@@ -39,6 +39,9 @@ public class AddWhereYouAreTests : SeededAcceptanceTest
             var response = await FillingSteps.TypeAsync(Page, backlog, title);
             response.Ok.ShouldBeTrue(await response.TextAsync());
             created.AddRange(await FillingSteps.CreatedKeysAsync(response));
+            // The open row moves under the row just made once the answer is handled, and the title box is a new element
+            // there: typing before that lands in the old one as it goes.
+            await Expect(backlog.AddRow).ToHaveAttributeAsync("data-anchor", created[^1]);
         }
 
         var stack = await backlog.StackAsync();
