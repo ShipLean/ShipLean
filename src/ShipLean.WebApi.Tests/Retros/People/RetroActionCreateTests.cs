@@ -85,23 +85,27 @@ public sealed class RetroActionCreateTests : RetroPeopleFixture
         await world.Seed.ActionAsync(new RetroSeedAction(removed, PointId: pointId));
         await world.Seed.ActionAsync(new RetroSeedAction(other));
         // Stands in for the other request: when this request's action item is inserted, the link moves to a different, live item.
-        var name = $"race_{Guid.NewGuid():N}";
         await world.Connection.ExecuteAsync(
-            $"""
-            CREATE FUNCTION {name}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
-              UPDATE retro_action_point SET work_item_id = '{other}' WHERE point_id = '{pointId}';
+            """
+            CREATE FUNCTION retro_link_race() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
+              UPDATE retro_action_point SET work_item_id = (
+                  SELECT ra.work_item_id FROM retro_action ra JOIN work_item w ON w.id = ra.work_item_id JOIN state st ON st.id = w.state_id
+                  WHERE ra.project_id = NEW.project_id AND st.category <> 'removed' AND ra.work_item_id <> NEW.id LIMIT 1)
+              WHERE archived_at IS NULL AND work_item_id IN (
+                  SELECT ra.work_item_id FROM retro_action ra JOIN work_item w ON w.id = ra.work_item_id JOIN state st ON st.id = w.state_id
+                  WHERE ra.project_id = NEW.project_id AND st.category = 'removed');
               RETURN NEW; END $$;
-            CREATE TRIGGER {name} AFTER INSERT ON work_item FOR EACH ROW WHEN (NEW.project_id = '{world.Project.Id}') EXECUTE FUNCTION {name}();
+            CREATE TRIGGER retro_link_race AFTER INSERT ON work_item FOR EACH ROW WHEN (NEW.title = 'Link race') EXECUTE FUNCTION retro_link_race();
             """);
         try
         {
-            using var response = await Api.PostJsonAsync($"/api/retros/points/{pointId}/action", new { });
+            using var response = await Api.PostJsonAsync($"/api/retros/points/{pointId}/action", new { title = "Link race" });
 
             (await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.Conflict)).Code.ShouldBe(ApiErrorCodes.Conflict);
         }
         finally
         {
-            await world.Connection.ExecuteAsync($"DROP TRIGGER {name} ON work_item; DROP FUNCTION {name}();");
+            await world.Connection.ExecuteAsync("DROP TRIGGER IF EXISTS retro_link_race ON work_item; DROP FUNCTION IF EXISTS retro_link_race();");
         }
 
         var states = await world.Connection.QueryAsync<string>(

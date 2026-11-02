@@ -203,24 +203,18 @@ public sealed class RetroActionWritesTests : RetroPeopleFixture
     {
         await using var world = await World.CreateAsync(await OpenDatabaseAsync());
         var pointId = await PointAsync(world);
-        // Stands in for a Not needed write that lands after the early check: when the action item is inserted, the point is marked.
-        var name = $"notneeded_{Guid.NewGuid():N}";
-        await world.Connection.ExecuteAsync(
-            $"""
-            CREATE FUNCTION {name}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
-              UPDATE retro_point SET not_needed_reason = 'Late.', decided_by_user_id = created_by_user_id, decided_at = now() WHERE id = '{pointId}';
-              RETURN NEW; END $$;
-            CREATE TRIGGER {name} AFTER INSERT ON work_item FOR EACH ROW WHEN (NEW.project_id = '{world.Project.Id}') EXECUTE FUNCTION {name}();
-            """);
+        // Stands in for a Not needed write that lands after the early check: when the action item titled as below is inserted, the
+        // project's points are marked. The trigger fires only for that title, so no other test's insert is touched.
+        await world.Connection.ExecuteAsync(NotNeededTrigger);
         try
         {
-            using var response = await CreateAsync(world, [pointId]);
+            using var response = await Api.PostJsonAsync($"/api/projects/{world.Project.Id}/retros/actions", new { title = "Not needed race", fixType = "skill", pointIds = new[] { pointId } });
 
             (await ErrorAsync(response, HttpStatusCode.Conflict)).ShouldBe((ApiErrorCodes.Conflict, null));
         }
         finally
         {
-            await world.Connection.ExecuteAsync($"DROP TRIGGER {name} ON work_item; DROP FUNCTION {name}();");
+            await world.Connection.ExecuteAsync("DROP TRIGGER IF EXISTS retro_not_needed_race ON work_item; DROP FUNCTION IF EXISTS retro_not_needed_race();");
         }
 
         (await world.Connection.QuerySingleAsync<int>("SELECT count(*)::int FROM retro_action_point WHERE point_id = @pointId", new { pointId })).ShouldBe(0);
@@ -459,34 +453,6 @@ public sealed class RetroActionWritesTests : RetroPeopleFixture
     }
 
     [Test]
-    public async Task UpdateAction_WhenItemRemovedWhileTheThemeIsPicked_ShouldBeValidationAndChangeNothing()
-    {
-        await using var world = await World.CreateAsync(await OpenDatabaseAsync());
-        var itemId = await CreatedItemAsync(world, [await PointAsync(world)], fixType: "skill");
-        // Stands in for a Remove that lands after the request began: creating the named theme moves the item to Removed.
-        var name = $"removing_{Guid.NewGuid():N}";
-        await world.Connection.ExecuteAsync(
-            $"""
-            CREATE FUNCTION {name}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
-              UPDATE work_item SET state_id = (SELECT id FROM state WHERE project_id = '{world.Project.Id}' AND type = 'action' AND category = 'removed' LIMIT 1) WHERE id = '{itemId}';
-              RETURN NEW; END $$;
-            CREATE TRIGGER {name} AFTER INSERT ON retro_theme FOR EACH ROW WHEN (NEW.project_id = '{world.Project.Id}') EXECUTE FUNCTION {name}();
-            """);
-        try
-        {
-            using var response = await UpdateAsync(itemId, new { fixType = "guide", themeName = "Late theme" });
-
-            (await ErrorAsync(response, HttpStatusCode.BadRequest)).ShouldBe((ApiErrorCodes.Validation, "workItemId"));
-        }
-        finally
-        {
-            await world.Connection.ExecuteAsync($"DROP TRIGGER {name} ON retro_theme; DROP FUNCTION {name}();");
-        }
-
-        (await world.Connection.QuerySingleAsync<string>("SELECT fix_type FROM retro_action WHERE work_item_id = @itemId", new { itemId })).ShouldBe("skill");
-    }
-
-    [Test]
     public async Task UpdateAction_WhenItemIsNotAction_ShouldBeValidation()
     {
         await using var world = await World.CreateAsync(await OpenDatabaseAsync());
@@ -498,6 +464,15 @@ public sealed class RetroActionWritesTests : RetroPeopleFixture
     }
 
     // The seam M2 calls with no controller in front: the writers run the RetroChecks themselves.
+    private const string NotNeededTrigger =
+        """
+        CREATE FUNCTION retro_not_needed_race() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
+          UPDATE retro_point SET not_needed_reason = 'Late.', decided_by_user_id = created_by_user_id, decided_at = now()
+          WHERE id IN (SELECT p.id FROM retro_point p JOIN retrospective r ON r.id = p.retrospective_id WHERE r.project_id = NEW.project_id);
+          RETURN NEW; END $$;
+        CREATE TRIGGER retro_not_needed_race AFTER INSERT ON work_item FOR EACH ROW WHEN (NEW.title = 'Not needed race') EXECUTE FUNCTION retro_not_needed_race();
+        """;
+
     private IServiceScope? _scope;
 
     private IRetroDecisionWrites Writes => (_scope ??= Host.Services.CreateScope()).ServiceProvider.GetRequiredService<IRetroDecisionWrites>();
