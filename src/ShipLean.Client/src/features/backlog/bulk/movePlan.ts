@@ -36,6 +36,25 @@ export function moveToEdgePlan(rows: readonly BacklogRowDto[], slot: 'first' | '
 }
 
 /**
+ * Planning's Top and Bottom: the block goes to the top or bottom of the backlog, so a row in a sprint also leaves its
+ * sprint and a row already in the Backlog changes position only.
+ */
+export function moveToBacklogEdgePlan(
+  rows: readonly BacklogRowDto[],
+  slot: 'first' | 'last',
+): BulkPlan {
+  return {
+    items: rows.map((row) => ({
+      row,
+      changes: row.sprint === null ? null : changesOf({ sprint: { value: null } }),
+      placement: { slot, beforeItemId: null },
+    })),
+    label: (count) => `${count} moved to the ${slot === 'first' ? 'top' : 'bottom'} of the backlog`,
+    undoable: true,
+  };
+}
+
+/**
  * Drops rows as one block just above `beforeItemId`, in rank order, with one placement for all of them. `sprint`
  * is the section they land in: undefined leaves each row's sprint alone, null is the Backlog. The target row is
  * never part of its own block.

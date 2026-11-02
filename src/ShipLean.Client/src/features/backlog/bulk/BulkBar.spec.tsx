@@ -128,6 +128,42 @@ test('Move_to_top_keeps_rank_order', async ({ mount, page }) => {
   expect(server.bulks[0].items.every((i) => i.changes === null)).toBe(true);
 });
 
+test('Top_in_Planning_clears_the_sprint_of_a_row_in_one', async ({ mount, page }) => {
+  const server = await open(mount, page);
+  await select(page, 'SHIP-160', 'SHIP-181');
+
+  await page.getByTestId(ids.bulkMoveTop).click();
+
+  await expect.poll(() => server.bulks.length).toBe(1);
+  expect(server.bulks[0].items.map((i) => [i.id, i.changes?.sprint ?? null, i.placement])).toEqual([
+    ['id-SHIP-160', { value: null }, { slot: 'first', beforeItemId: null }],
+    ['id-SHIP-181', null, { slot: 'first', beforeItemId: null }],
+  ]);
+  await expect(page.getByText('2 moved to the top of the backlog')).toBeVisible();
+});
+
+test('Top_in_List_keeps_the_sprint', async ({ mount, page }) => {
+  const server = await stubBacklog(
+    page,
+    backlogView([
+      itemRow({
+        key: 'SHIP-160',
+        rank: 1,
+        sprint: { id: 'sp24', name: 'Sprint 24', status: 'current' },
+      }),
+    ]),
+  );
+  await page.route('**/api/projects/p1/states', (route) => route.fulfill({ body: '[]' }));
+  await mount(<ListMode project={PROJECT} />, list);
+  await select(page, 'SHIP-160');
+
+  await page.getByTestId(ids.bulkMoveTop).click();
+
+  await expect.poll(() => server.bulks.length).toBe(1);
+  expect(server.bulks[0].items[0].changes).toBeNull();
+  expect(server.bulks[0].items[0].placement).toEqual({ slot: 'first', beforeItemId: null });
+});
+
 test('Set_points_on_all_selected', async ({ mount, page }) => {
   const server = await open(mount, page);
   await select(page, 'SHIP-180', 'SHIP-181');
@@ -228,15 +264,21 @@ test('Remove_clears_the_selection', async ({ mount, page }) => {
 });
 
 test('Over_100_turns_actions_off', async ({ mount, page }) => {
-  const rows = Array.from({ length: 101 }, (_, i) =>
-    itemRow({ key: `SHIP-${300 + i}`, rank: i + 1 }),
+  const base = planningManyView();
+  const extra = Array.from({ length: 101 }, (_, i) =>
+    itemRow({ key: `SHIP-${300 + i}`, rank: 20 + i }),
   );
-  await stubBacklog(page, backlogView(rows));
-  await page.route('**/api/projects/p1/states', (route) => route.fulfill({ body: '[]' }));
-  await mount(<ListMode project={PROJECT} />, list);
+  const view = {
+    ...base,
+    sections: base.sections.map((section) =>
+      section.id === 'backlog' ? { ...section, rows: [...section.rows, ...extra] } : section,
+    ),
+  };
+  await open(mount, page, view);
 
   await page.getByTestId(ids.selectAll).getByRole('checkbox').click();
 
+  await expect(page.getByTestId(ids.bulkBar)).toBeVisible();
   await expect(page.getByTestId(ids.bulkLimit)).toContainText('100');
   for (const id of [
     ids.bulkMoveTop,
@@ -248,6 +290,9 @@ test('Over_100_turns_actions_off', async ({ mount, page }) => {
     ids.bulkRemove,
   ])
     await expect(page.getByTestId(id)).toBeDisabled();
+  const sprintButtons = page.getByTestId(ids.bulkMoveSprint);
+  expect(await sprintButtons.count()).toBeGreaterThan(0);
+  for (const button of await sprintButtons.all()) await expect(button).toBeDisabled();
   await expect(page.getByTestId(ids.bulkClear)).toBeEnabled();
 });
 
@@ -255,6 +300,7 @@ test('There_is_no_assign_action', async ({ mount, page }) => {
   await open(mount, page);
   await select(page, 'SHIP-180');
 
+  await expect(page.getByTestId(ids.bulkBar)).toBeVisible();
   await expect(page.getByTestId(ids.bulkBar).getByText(/assign/i)).toHaveCount(0);
   await expect(page.getByTestId(ids.bulkBar).getByRole('button', { name: /assign/i })).toHaveCount(
     0,
@@ -282,4 +328,45 @@ test('MoveMenu_command_moves_by_sprint_number_top_and_bottom', async ({ mount, p
   await run('t');
   await expect.poll(() => server.bulks.length).toBe(3);
   expect(server.bulks[2].items[0].placement).toEqual({ slot: 'first', beforeItemId: null });
+});
+
+test('Remove_with_a_stale_row_leaves_that_row_selected', async ({ mount, page }) => {
+  const server = await open(mount, page);
+  await select(page, 'SHIP-180', 'SHIP-182');
+  server.staleOnBulk(['id-SHIP-182']);
+
+  await page.getByTestId(ids.bulkRemove).click();
+
+  await expect(page.getByTestId(ids.bulkChanged)).toBeVisible();
+  await expect(page.getByTestId(ids.bulkCount)).toHaveText('1 selected');
+  await expect(box(page, 'SHIP-182')).toBeChecked();
+  await expect(box(page, 'SHIP-180')).not.toBeChecked();
+});
+
+test('A_failed_Remove_keeps_the_selection', async ({ mount, page }) => {
+  const server = await open(mount, page);
+  await select(page, 'SHIP-180', 'SHIP-182');
+  await page.route('**/api/projects/p1/backlog/bulk', (route) =>
+    route.fulfill({ status: 500, body: '{}' }),
+  );
+
+  await page.getByTestId(ids.bulkRemove).click();
+
+  await expect(page.getByTestId(ids.bulkCount)).toHaveText('2 selected');
+  expect(server.bulks).toHaveLength(0);
+});
+
+test('Focus_returns_to_the_button_after_an_outside_click_closes_a_menu', async ({
+  mount,
+  page,
+}) => {
+  await open(mount, page);
+  await select(page, 'SHIP-180');
+  await page.getByTestId(ids.bulkSetPoints).click();
+  await expect(page.getByTestId(ids.bulkMenu)).toBeVisible();
+
+  await page.getByTestId(ids.bulkCount).click();
+
+  await expect(page.getByTestId(ids.bulkMenu)).toHaveCount(0);
+  await expect(page.getByTestId(ids.bulkSetPoints)).toBeFocused();
 });

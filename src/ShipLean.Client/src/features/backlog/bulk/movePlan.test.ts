@@ -1,6 +1,11 @@
 import { expect, test } from 'vitest';
 import { itemRow } from '../ct/fixtures';
-import { moveBeforePlan, moveToEdgePlan, moveToSprintPlan } from './movePlan';
+import {
+  moveBeforePlan,
+  moveToBacklogEdgePlan,
+  moveToEdgePlan,
+  moveToSprintPlan,
+} from './movePlan';
 
 const rows = ['SHIP-1', 'SHIP-2', 'SHIP-3'].map((key, i) => itemRow({ key, rank: i + 1 }));
 const sprint = { id: 'sp25', name: 'Sprint 25', status: 'future' } as const;
@@ -48,4 +53,23 @@ test('sprint_move_has_no_placement', () => {
   expect(
     moveToSprintPlan([itemRow({ key: 'SHIP-4', sprint })], null).items[0].changes?.sprint,
   ).toEqual({ value: null });
+});
+
+test('planning_edge_clears_the_sprint_of_rows_in_one_and_leaves_backlog_rows_alone', () => {
+  const inSprint = itemRow({ key: 'SHIP-4', rank: 4, sprint });
+
+  const plan = moveToBacklogEdgePlan([inSprint, ...rows], 'first');
+
+  expect(plan.items.map((i) => i.row.key)).toEqual(['SHIP-4', 'SHIP-1', 'SHIP-2', 'SHIP-3']);
+  expect(plan.items[0].changes?.sprint).toEqual({ value: null });
+  expect(plan.items.slice(1).every((i) => i.changes === null)).toBe(true);
+  expect(plan.items.every((i) => i.placement?.slot === 'first')).toBe(true);
+  expect(plan.label(2)).toBe('2 moved to the top of the backlog');
+  expect(moveToBacklogEdgePlan(rows, 'last').label(1)).toBe('1 moved to the bottom of the backlog');
+});
+
+test('list_edge_keeps_the_sprint', () => {
+  const plan = moveToEdgePlan([itemRow({ key: 'SHIP-4', rank: 4, sprint })], 'first');
+
+  expect(plan.items[0].changes).toBeNull();
 });

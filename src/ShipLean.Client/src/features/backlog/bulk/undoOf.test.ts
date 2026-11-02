@@ -2,7 +2,7 @@ import { expect, test } from 'vitest';
 import type { WriteResult } from '../../../api/workItems';
 import { backlogView, itemRow } from '../ct/fixtures';
 import { changesOf } from './changesOf';
-import { moveToEdgePlan, moveToSprintPlan } from './movePlan';
+import { moveToBacklogEdgePlan, moveToEdgePlan, moveToSprintPlan } from './movePlan';
 import { undoOf } from './undoOf';
 import type { BulkOutcome } from './useBulkRun';
 
@@ -80,4 +80,19 @@ test('last_when_the_run_was_at_the_bottom', () => {
     { slot: 'last', beforeItemId: null },
     { slot: 'last', beforeItemId: null },
   ]);
+});
+
+test('restores_the_sprint_and_rank_of_a_row_moved_to_the_top_of_the_backlog', () => {
+  const inSprint = [{ ...rows[2], sprint: SPRINT }];
+  const before = backlogView([rows[0], rows[1], ...inSprint, rows[3], rows[4]]);
+
+  const undo = undoOf(before, {
+    ...outcome(moveToBacklogEdgePlan(inSprint, 'first'), 'C'),
+    viewBefore: before,
+  });
+
+  expect(undo.items).toHaveLength(1);
+  expect(undo.items[0].changes?.sprint).toEqual({ value: 'sp25' });
+  expect(undo.items[0].placement).toEqual({ slot: 'before', beforeItemId: 'id-D' });
+  expect(undo.items[0].row.revision).toBe(9);
 });

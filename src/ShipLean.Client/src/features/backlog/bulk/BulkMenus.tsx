@@ -24,16 +24,24 @@ export function BulkMenu({
     if (!open) return undefined;
     const onPointer = (event: PointerEvent) => {
       if (root.current?.contains(event.target as Node)) return;
-      wasOpen.current = false;
       setOpen(false);
     };
     document.addEventListener('pointerdown', onPointer);
     return () => document.removeEventListener('pointerdown', onPointer);
   }, [open]);
   // Focus goes back to the button when the menu closes, however it closed.
+  // After a click outside, the browser moves focus once the click settles, so wait for that and only take focus back
+  // when it ended up nowhere (a click on text), never from a control the user clicked.
   useEffect(() => {
-    if (!open && wasOpen.current) button.current?.focus();
+    const returning = !open && wasOpen.current;
     wasOpen.current = open;
+    if (!returning) return undefined;
+    const timer = window.setTimeout(() => {
+      const active = document.activeElement;
+      if (active === null || active === document.body || root.current?.contains(active))
+        button.current?.focus();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [open]);
   const close = () => setOpen(false);
   return (

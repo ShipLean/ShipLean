@@ -14,7 +14,7 @@ import { PointsMenuBody } from './PointsMenuBody';
 import { SprintMoveButton } from './SprintMoveButton';
 import { StateMenuBody } from './StateMenuBody';
 import { TagMenuBody } from './TagMenuBody';
-import { moveToEdgePlan, moveToSprintPlan } from './movePlan';
+import { moveToBacklogEdgePlan, moveToEdgePlan, moveToSprintPlan } from './movePlan';
 import {
   removePlan,
   setParentPlan,
@@ -87,20 +87,30 @@ export function BulkBar({ mode, projectId, view }: BulkBarProps) {
             },
           }));
 
-  async function apply(set: SetPlan | { plan: BulkPlan; skipped: null }, clearAfter = false) {
+  async function apply(set: SetPlan | { plan: BulkPlan; skipped: null }, clearFirst = false) {
     setMoving(false);
     if (set.plan.items.length === 0) {
       showToast(set.skipped ?? 'Nothing to change', { tone: 'warn' });
       return;
     }
+    // Clear before the run: the outcome host re-selects the rows a teammate changed once it resolves. A failed run
+    // wrote nothing, so the user gets their selection back.
+    const before = clearFirst ? [...selection.ids] : [];
+    if (clearFirst) selection.clear();
     const outcome = await runner.run(set.plan);
-    if (clearAfter && outcome.failed !== true && outcome.written.length > 0) selection.clear();
+    if (clearFirst && outcome.failed === true) selection.addMany(before);
   }
 
   const moveTo = (target: MoveTarget) =>
     apply({ plan: moveToSprintPlan(selected, target.sprint), skipped: null });
   const moveToEdge = (slot: 'first' | 'last') =>
-    apply({ plan: moveToEdgePlan(selected, slot), skipped: null });
+    apply({
+      plan:
+        mode === 'planning'
+          ? moveToBacklogEdgePlan(selected, slot)
+          : moveToEdgePlan(selected, slot),
+      skipped: null,
+    });
 
   useListCommand('moveMenu', (arg) => {
     if (count === 0 || tooMany) return;
