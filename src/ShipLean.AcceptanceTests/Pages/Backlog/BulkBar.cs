@@ -72,4 +72,18 @@ public sealed class BulkBar(IPage page)
         page.WaitForFunctionAsync(
             "([testId, section, keys]) => { const shown = [...document.querySelectorAll(`[data-testid=\"${testId}\"]`)].filter(r => r.getAttribute('data-section') === section).map(r => r.getAttribute('data-key')); return shown.length === keys.length && shown.every((k, i) => k === keys[i]); }",
             new object[] { BacklogTestIds.Row, sectionId, itemKeys.ToArray() });
+
+    // Ticks the first row, then Shift-clicks the last: the whole range between them is selected.
+    public async Task SelectRangeAsync(string firstKey, string lastKey, int count)
+    {
+        await Row(firstKey).GetByTestId(BacklogTestIds.RowSelect).ClickAsync();
+        await Row(lastKey).GetByTestId(BacklogTestIds.RowSelect).ClickAsync(new() { Modifiers = [KeyboardModifier.Shift] });
+        await Assertions.Expect(Count).ToHaveTextAsync($"{count} selected");
+    }
+
+    // Waits until a section holds this many rows.
+    public Task WaitForSectionCountAsync(string sectionId, int count) =>
+        page.WaitForFunctionAsync(
+            "([testId, section, n]) => [...document.querySelectorAll(`[data-testid=\"${testId}\"]`)].filter(r => r.getAttribute('data-section') === section).length === n",
+            new object[] { BacklogTestIds.Row, sectionId, count });
 }

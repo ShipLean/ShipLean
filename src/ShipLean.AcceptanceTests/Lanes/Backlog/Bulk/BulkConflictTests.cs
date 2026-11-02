@@ -19,8 +19,8 @@ public class BulkConflictTests : SeededAcceptanceTest
         var (bar, frozen, tom) = await OpenAsync();
         var api = Page.Context.APIRequest;
         await bar.SelectAsync("SHIP-156", "SHIP-158", "SHIP-160");
-        await BacklogWrites.SetPointsAsync(tom, "SHIP-158", 13);
         frozen.Freeze();
+        await BacklogWrites.SetPointsAsync(tom, "SHIP-158", 13);
 
         var response = await bar.MoveToSprintAsync("Sprint 26");
 
@@ -49,8 +49,8 @@ public class BulkConflictTests : SeededAcceptanceTest
         var (bar, frozen, tom) = await OpenAsync();
         var api = Page.Context.APIRequest;
         await bar.SelectAsync("SHIP-162", "SHIP-163", "SHIP-165");
-        await BacklogWrites.SetPointsAsync(tom, "SHIP-163", 8);
         frozen.Freeze();
+        await BacklogWrites.SetPointsAsync(tom, "SHIP-163", 8);
         (await bar.MoveToSprintAsync("Sprint 26")).Status.ShouldBe(200);
         await Expect(bar.ChangedRows).ToHaveCountAsync(1);
         await frozen.ThawAsync(Page);
