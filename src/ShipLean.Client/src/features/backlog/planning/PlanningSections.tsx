@@ -152,6 +152,7 @@ export function PlanningSections({
               {collapse.isOpen(backlog.id) ? (
                 <PlanningBacklogRows
                   section={backlog}
+                  sprints={sprints}
                   columns={COLUMNS}
                   columnCount={columnCount}
                   projectId={projectId}

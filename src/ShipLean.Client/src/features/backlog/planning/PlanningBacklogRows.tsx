@@ -10,6 +10,7 @@ import { PlanningSectionRows } from './PlanningSectionRows';
 // falls.
 export function PlanningBacklogRows({
   section,
+  sprints,
   columns,
   columnCount,
   projectId,
@@ -23,6 +24,8 @@ export function PlanningBacklogRows({
   onKeyMove,
 }: {
   section: BacklogSectionDto;
+  // The sprint sections, one of which the pull line fills.
+  sprints: readonly BacklogSectionDto[];
   columns: readonly BacklogColumnId[];
   columnCount: number;
   projectId: string;
@@ -35,32 +38,44 @@ export function PlanningBacklogRows({
   filtering: boolean;
   onKeyMove: (row: BacklogRowDto, direction: 'up' | 'down') => void;
 }) {
-  const pull = usePullLine({ section, velocity, forecast, projectId, filtering });
+  const pull = usePullLine({ section, sprints, velocity, forecast, projectId, filtering });
+  const first = section.rows[0];
   return (
-    <PlanningSectionRows
-      section={section}
-      columns={columns}
-      columnCount={columnCount}
-      projectId={projectId}
-      projectKey={projectKey}
-      marks={marks}
-      forecast={forecast}
-      flashing={flashing}
-      dropLine={dropLine}
-      filtering={filtering}
-      onKeyMove={onKeyMove}
-      isPulled={pull.isPulled}
-      after={(row) =>
-        pull.afterRowId === row.id ? (
-          <PullLineRow
-            line={pull}
-            row={row}
-            section={section}
-            projectId={projectId}
-            columnCount={columnCount}
-          />
-        ) : null
-      }
-    />
+    <>
+      {pull.atTop && first ? (
+        <PullLineRow
+          line={pull}
+          row={first}
+          section={section}
+          projectId={projectId}
+          columnCount={columnCount}
+        />
+      ) : null}
+      <PlanningSectionRows
+        section={section}
+        columns={columns}
+        columnCount={columnCount}
+        projectId={projectId}
+        projectKey={projectKey}
+        marks={marks}
+        forecast={forecast}
+        flashing={flashing}
+        dropLine={dropLine}
+        filtering={filtering}
+        onKeyMove={onKeyMove}
+        isPulled={pull.isPulled}
+        after={(row) =>
+          pull.afterRowId === row.id ? (
+            <PullLineRow
+              line={pull}
+              row={row}
+              section={section}
+              projectId={projectId}
+              columnCount={columnCount}
+            />
+          ) : null
+        }
+      />
+    </>
   );
 }
