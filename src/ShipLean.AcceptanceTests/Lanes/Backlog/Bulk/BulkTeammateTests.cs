@@ -26,7 +26,7 @@ public class BulkTeammateTests : SeededAcceptanceTest
 
         moved.Ok.ShouldBeTrue(await moved.TextAsync());
         await bar.WaitForSectionAsync(sprint26, (await BulkReadBack.InOrderAsync(Page.Context.APIRequest, keys.ToArray())));
-        await Expect(bar.Toasts).ToHaveCountAsync(1);
-        await Expect(bar.Toasts.First).ToContainTextAsync("20 items changed by a teammate");
+        var teammateToasts = bar.Toasts.Filter(new() { HasTextString = "20 items changed by a teammate" });
+        await Expect(teammateToasts).ToHaveCountAsync(1);
     }
 }

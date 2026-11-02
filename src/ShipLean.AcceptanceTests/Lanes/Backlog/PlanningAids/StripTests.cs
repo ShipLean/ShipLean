@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using ModelContextProtocol.Client;
 using ShipLean.AcceptanceTests.Harness;
+using ShipLean.AcceptanceTests.Lanes.Backlog.Bulk;
 using ShipLean.AcceptanceTests.Pages.Backlog;
 using ShipLean.AcceptanceTests.Pages.Realtime;
 using ShipLean.TestSupport;
@@ -140,6 +141,13 @@ public class StripTests : SeededAcceptanceTest
         var result = (await response.JsonAsync()).GetValueOrDefault();
         result.GetProperty("written").GetArrayLength().ShouldBeGreaterThan(0);
         result.GetProperty("stale").GetArrayLength().ShouldBe(0);
+
+        // The server holds what the response says: every written row is now in Sprint 25, the sprint the pull line fills.
+        var written = result.GetProperty("written").EnumerateArray().Select(w => w.GetProperty("key").GetString()!).ToList();
+        foreach (var key in written)
+        {
+            (await BulkReadBack.ReadAsync(Page.Context.APIRequest, key)).Sprint.ShouldBe("Sprint 25", $"{key} after Pull");
+        }
     }
 
     [Test]
