@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Contracts.Usage;
-using ShipLean.Contracts.WorkItems;
+using ShipLean.Contracts.Refs;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Usage;
 using ShipLean.WebApi.Tests.AgentDispatch;

@@ -52,7 +52,7 @@ public class ImportRunnerUsageTests : ImportJobsFixture
         tracked.Source.ShouldBe("system:ImportRunner");
         tracked.ProjectId.ShouldBeNull();
         tracked.ProjectCount.ShouldBe(0);
-        tracked.Properties.Values.ShouldAllBe(v => v is not string text || text == "jira");
+        tracked.Properties.Keys.ShouldBe([UsageProps.Provider]);
         Recorder.Events.ShouldNotContain(e => e.Name == UsageEventNames.ImportCompleted);
     }
 }
