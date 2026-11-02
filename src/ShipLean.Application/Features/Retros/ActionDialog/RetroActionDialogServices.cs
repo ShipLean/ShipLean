@@ -8,5 +8,5 @@ namespace ShipLean.Application.Features.Retros.ActionDialog;
 public sealed class RetroActionDialogServices : IServiceModule
 {
     public void AddServices(IServiceCollection services, IConfiguration configuration)
-        => services.AddScoped<IRetroActionDialogReader, RetroActionDialogReader>();
+        => services.AddSingleton<IRetroActionDialogReader, RetroActionDialogReader>();
 }
