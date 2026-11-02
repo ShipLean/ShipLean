@@ -73,8 +73,8 @@ export function useEstimate(row: BacklogRowDto): Estimate {
   const current = useSyncExternalStore(subscribe, () => editing);
   const [pending, setPending] = useState<{ value: number | null } | null>(null);
   const [conflict, setConflict] = useState<EstimateConflict | null>(null);
-  // The revision our own last save made, until the backlog is read again with it.
-  const savedRevision = useRef(0);
+  // What our own last save wrote and the revision it made.
+  const written = useRef<{ value: number | null; revision: number } | null>(null);
   const inFlight = useRef(false);
   const queued = useRef<{ value: number | null } | null>(null);
 
@@ -101,13 +101,20 @@ export function useEstimate(row: BacklogRowDto): Estimate {
       ? Promise.resolve()
       : queryClient.invalidateQueries({ queryKey: backlogRootKey(projectId) });
 
-  // One save at a time per row: an edit made while one is pending waits in `queued` and goes out when the backlog
-  // has been read again, from that row's points and revision. `explicitRevision` is the conflict's, for Use mine.
+  // One save at a time per row: an edit made while one is pending waits in `queued` and goes out the moment that save
+  // is answered, from the answer's value and revision, so it never depends on the backlog being read again.
+  // `explicitRevision` is the conflict's, for Use mine.
   async function send(value: number | null, explicitRevision?: number) {
     const cached = latest();
     const base = cached?.row ?? row;
-    if (explicitRevision === undefined && value === base.points) return;
-    const revision = explicitRevision ?? Math.max(base.revision, savedRevision.current);
+    // What the row holds now: our own last write, until a backlog read at or after its revision shows it.
+    const own = written.current;
+    const stored = own !== null && own.revision > base.revision ? own.value : base.points;
+    if (explicitRevision === undefined && value === stored) {
+      if (!inFlight.current) setPending(null);
+      return;
+    }
+    const revision = explicitRevision ?? Math.max(base.revision, own?.revision ?? 0);
     inFlight.current = true;
     setPending({ value });
     let stale: EstimateConflict | null = null;
@@ -116,7 +123,7 @@ export function useEstimate(row: BacklogRowDto): Estimate {
         expectedRevision: revision,
         changes: changesOf({ points: { value } }),
       });
-      savedRevision.current = result.revision;
+      written.current = { value, revision: result.revision };
       setConflict(null);
     } catch (error) {
       const conflicted = conflictOf(error);
@@ -135,19 +142,24 @@ export function useEstimate(row: BacklogRowDto): Estimate {
         });
       }
     }
-    await refetch(latest()?.projectId ?? cached?.projectId);
-    inFlight.current = false;
     const next = queued.current;
     queued.current = null;
     if (next !== null && stale !== null) {
       // The typed value replaces the conflicting one; Use mine sends it at the revision the conflict named.
-      setConflict({ ...stale, value: next.value });
-      setPending(null);
-    } else {
-      if (stale !== null) setConflict(stale);
-      setPending(null);
-      if (next !== null) await send(next.value);
+      stale = { ...stale, value: next.value };
     }
+    if (stale !== null) setConflict(stale);
+    const projectId = latest()?.projectId ?? cached?.projectId;
+    if (next !== null && stale === null) {
+      // Straight away, whether or not the backlog read below works, or this cell is still on screen.
+      inFlight.current = false;
+      void refetch(projectId);
+      await send(next.value);
+      return;
+    }
+    inFlight.current = false;
+    await refetch(projectId);
+    if (!inFlight.current) setPending(null);
   }
 
   function commit(value: number | null, walk: boolean) {

@@ -195,6 +195,50 @@ test('Edit_made_while_a_save_is_pending_goes_out_after_it_at_the_new_revision', 
   });
 });
 
+for (const ending of ['the_backlog_read_fails', 'the_row_leaves_the_screen'] as const) {
+  test(`Queued_edit_is_sent_when_${ending}`, async ({ mount, page }) => {
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let reads = 'ok';
+    const server = await stubBacklog(page, backlogView(ESTIMATE_ROWS), {
+      holdFirstPatch: held,
+      answer: () => (reads === 'fail' ? { status: 500, body: { error: 'down' } } : undefined),
+      patchAnswers: [
+        {
+          status: 200,
+          body: { id: 'id-SHIP-1', key: 'SHIP-1', revision: 5, changes: [], notices: [] },
+        },
+        {
+          status: 200,
+          body: { id: 'id-SHIP-1', key: 'SHIP-1', revision: 6, changes: [], notices: [] },
+        },
+      ],
+    });
+    const component = await mount(<ListMode project={PROJECT} />, route);
+    const first = page.getByTestId(ids.row).nth(0);
+    await first.getByTestId(ids.points).click();
+    await page.getByTestId(ids.pointsInput).fill('5');
+    await page.getByTestId(ids.pointsInput).press('Enter');
+    await expect.poll(() => server.patches.length).toBe(1);
+    await first.getByTestId(ids.points).click();
+    await page.getByTestId(ids.pointsInput).fill('3');
+    await page.getByTestId(ids.pointsInput).press('Enter');
+
+    // The list still holds 3 at revision 4 and never reads the 5 back; the revert to 3 must still go out.
+    reads = 'fail';
+    if (ending === 'the_row_leaves_the_screen') await component.unmount();
+    release();
+
+    await expect.poll(() => server.patches.length).toBe(2);
+    expect(server.patches[1].body).toMatchObject({
+      expectedRevision: 5,
+      changes: { points: { value: 3 } },
+    });
+  });
+}
+
 test('Tree_mode_points_are_read_only', async ({ mount, page }) => {
   await stubBacklog(page, backlogView(ESTIMATE_ROWS));
   await mount(<EstimateHarness tree />, route);
