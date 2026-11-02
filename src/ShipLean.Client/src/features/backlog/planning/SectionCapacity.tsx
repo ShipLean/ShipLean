@@ -1,12 +1,11 @@
 import { CapacityBar } from '../../../components/CapacityBar';
 import { Chip } from '../../../components/Chip';
-import type { SprintSum } from '../bulk/sprintSum';
 import { backlogTestIds as ids } from '../testIds';
 
 // A sprint section's load: committed against the team's capacity, with the points free or over (a warning, never a
 // block). With no capacity entered the muted bar is drawn against the velocity the forecast plans at, beside a
 // velocity chip. Without a velocity either there is only the committed points and the chip.
-function Capacity({
+export function SectionCapacity({
   committed,
   capacity,
   velocity,
@@ -56,32 +55,6 @@ function Capacity({
           {limit - committed} free
         </span>
       )}
-    </span>
-  );
-}
-
-// A section's load, led by what it would hold while a dragged selection is over it.
-export function SectionCapacity({
-  preview = null,
-  ...load
-}: {
-  committed: number;
-  capacity: number | null;
-  velocity: number | null;
-  preview?: SprintSum | null;
-}) {
-  return (
-    <span className="inline-flex items-center gap-3">
-      {preview === null ? null : (
-        <span
-          data-testid={ids.sectionPreview}
-          data-over={preview.over}
-          className={`text-[length:var(--text-xs)] font-semibold whitespace-nowrap ${preview.over ? 'text-alert' : 'text-accent'}`}
-        >
-          {preview.text}
-        </span>
-      )}
-      <Capacity {...load} />
     </span>
   );
 }

@@ -109,6 +109,53 @@ public class BacklogAddApiTests : ApiFixture
     }
 
     [Test]
+    public async Task Add_WhenExactlyLimitCountingTasks_ShouldCreateAll()
+    {
+        var before = await CountAsync();
+        var tasks = Enumerable.Range(0, 99).Select(n => new { title = $"Task {n}", points = (int?)null }).ToList();
+
+        var created = await AddAsync(new { items = new[] { Story("Full", tasks: tasks) }, sprintId = (Guid?)null, placement = (object?)null });
+
+        created.Count.ShouldBe(100);
+        (await CountAsync()).ShouldBe(before + 100);
+    }
+
+    [TestCase("before", false)]
+    [TestCase("first", true)]
+    [TestCase("last", true)]
+    public async Task Add_WhenPlacementDisagreesWithItsTarget_ShouldAnswerValidation(string slot, bool withTarget)
+    {
+        var before = await CountAsync();
+        var placement = new { slot, beforeItemId = withTarget ? (Guid?)SeedIds.WorkItems.Ship153 : null };
+
+        using var response = await Api.PostJsonAsync($"{Url}/items", new { items = new[] { Story("Misplaced") }, sprintId = (Guid?)null, placement });
+
+        (await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.BadRequest)).Code.ShouldBe(ApiErrorCodes.Validation);
+        (await CountAsync()).ShouldBe(before);
+    }
+
+    [Test]
+    public async Task Add_WhenBeforeTargetIsInAnotherProject_ShouldLandLast()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var elsewhere = await connection.QueryFirstAsync<Guid>("SELECT id FROM work_item WHERE project_id <> @project AND type = 'story' LIMIT 1", new { project = SeedIds.Projects.Ship });
+        var placement = new { slot = "before", beforeItemId = (Guid?)elsewhere };
+
+        var created = await AddAsync(new { items = new[] { Story("Stray one"), Story("Stray two") }, sprintId = (Guid?)null, placement });
+
+        (await StoryKeysAsync()).TakeLast(2).ShouldBe([created[0].Key, created[1].Key]);
+    }
+
+    [Test]
+    public async Task Add_WhenBeforeTargetIsGone_ShouldLandLast()
+    {
+        var placement = new { slot = "before", beforeItemId = (Guid?)Guid.NewGuid() };
+        var created = await AddAsync(new { items = new[] { Story("Gone one"), Story("Gone two") }, sprintId = (Guid?)null, placement });
+
+        (await StoryKeysAsync()).TakeLast(2).ShouldBe([created[0].Key, created[1].Key]);
+    }
+
+    [Test]
     public async Task Add_WhenTaskAtTopLevel_ShouldAnswerValidation()
     {
         var before = await CountAsync();

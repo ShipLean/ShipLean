@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'rea
 import {
   closestCenter,
   DndContext,
-  DragOverlay,
   KeyboardSensor,
   pointerWithin,
   PointerSensor,
@@ -12,16 +11,10 @@ import {
   type DragEndEvent,
   type DragMoveEvent,
   type DragOverEvent,
-  type DragStartEvent,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
-import type { VelocityDto } from '../../../api/sprints';
 import type { BacklogRowDto, BacklogSectionDto } from '../../../api/views';
-import { useBulkRunner } from '../bulk/useBulkRun';
 import { DragBadge } from '../drag/DragBadge';
-import { GroupDragContext, type GroupDrag } from '../drag/GroupDragContext';
-import { useSelection } from '../selection/useSelection';
-import { inRankOrder, groupDropOnRow, groupDropOnSection, groupPlan } from './groupDrop';
 import {
   dropByKey,
   dropOnRow,
@@ -69,13 +62,10 @@ function droppedBelow(
 export function PlanningDnd({
   sections,
   filtering,
-  velocity,
   onMove,
   children,
 }: {
   sections: BacklogSectionDto[];
-  // What the sprint headers preview a dragged selection against.
-  velocity: VelocityDto | null;
   // A filter, search or check queue is on: moving is off.
   filtering: boolean;
   onMove: (row: BacklogRowDto, drop: PlanningDrop) => void;
@@ -107,33 +97,6 @@ export function PlanningDnd({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
   const rows = sections.flatMap((section) => section.rows);
-  const selection = useSelection();
-  const bulk = useBulkRunner();
-  // The selection being dragged (a selected row picked up with others), else null: the row moves alone.
-  const [group, setGroup] = useState<{
-    rows: readonly BacklogRowDto[];
-    ids: ReadonlySet<string>;
-  } | null>(null);
-  const [overSectionId, setOverSectionId] = useState<string | null>(null);
-  function onDragStart({ active, activatorEvent }: DragStartEvent) {
-    // Keyboard drag stays single-row.
-    if (activatorEvent instanceof KeyboardEvent) return;
-    if (filtering || !selection.has(String(active.id)) || selection.count < 2) return;
-    // Rank order, whatever order the rows were selected in.
-    const picked = inRankOrder(selection.selectedRows(rows));
-    setGroup({ rows: picked, ids: new Set(picked.map((row) => row.id)) });
-  }
-  function sectionOver(over: DragOverEvent['over']): string | null {
-    if (over === null) return null;
-    const id = String(over.id);
-    return (
-      sectionOfDropId(id) ?? sections.find((s) => s.rows.some((row) => row.id === id))?.id ?? null
-    );
-  }
-  function endGroup() {
-    setGroup(null);
-    setOverSectionId(null);
-  }
   // The row the dragged one would land beside, and on which edge: the line the design draws where the row will land.
   const [line, setLine] = useState<DropLine | null>(null);
   // dnd-kit reports a new `over` through onDragOver; onDragMove's own `over` can be one render behind the pointer. So
@@ -142,10 +105,7 @@ export function PlanningDnd({
   function drawLine({ active, activatorEvent }: Pick<DragMoveEvent, 'active' | 'activatorEvent'>) {
     const over = overNow.current;
     const next =
-      over === null ||
-      active.id === over.id ||
-      group?.ids.has(String(over.id)) === true ||
-      sectionOfDropId(String(over.id)) !== undefined
+      over === null || active.id === over.id || sectionOfDropId(String(over.id)) !== undefined
         ? null
         : {
             id: String(over.id),
@@ -162,32 +122,14 @@ export function PlanningDnd({
   }
   function onDragOver(event: DragOverEvent) {
     overNow.current = event.over;
-    setOverSectionId(sectionOver(event.over));
     drawLine(event);
   }
   function onDragEnd({ active, over, activatorEvent }: DragEndEvent) {
     setLine(null);
     overNow.current = null;
-    const dragged = group;
-    endGroup();
     const row = rows.find((r) => r.id === active.id);
     if (filtering || over === null || row === undefined) return;
     const overId = String(over.id);
-    if (dragged !== null) {
-      const overSection = sectionOfDropId(overId);
-      const below = droppedBelow(
-        tableRef.current,
-        active,
-        over,
-        activatorEvent instanceof MouseEvent ? pointerY.current : null,
-      );
-      const target =
-        overSection === undefined
-          ? groupDropOnRow(sections, dragged.ids, overId, below)
-          : groupDropOnSection(sections, overSection);
-      if (target !== null) void bulk.run(groupPlan(target, dragged.rows));
-      return;
-    }
     let drop: PlanningDrop | null;
     const overSection = sectionOfDropId(overId);
     if (overSection !== undefined) {
@@ -214,30 +156,20 @@ export function PlanningDnd({
     refocus.current = row.id;
     onMove(row, drop);
   }
-  const groupDrag: GroupDrag | null = group === null ? null : { ...group, overSectionId, velocity };
   return (
     <DndContext
       sensors={sensors}
       collisionDetection={collisions}
-      onDragStart={onDragStart}
       onDragOver={onDragOver}
       onDragMove={drawLine}
       onDragEnd={onDragEnd}
       onDragCancel={() => {
         setLine(null);
         overNow.current = null;
-        endGroup();
       }}
     >
-      <GroupDragContext.Provider value={groupDrag}>
-        {children({ tableRef, dropLine: line, onKeyMove })}
-      </GroupDragContext.Provider>
-      {/* Only mounted for a dragged selection: an overlay always mounted breaks the keyboard drag back. */}
-      {group === null ? null : (
-        <DragOverlay dropAnimation={null} style={{ width: 'auto', height: 'auto' }}>
-          <DragBadge count={group.rows.length} />
-        </DragOverlay>
-      )}
+      {children({ tableRef, dropLine: line, onKeyMove })}
+      <DragBadge />
     </DndContext>
   );
 }

@@ -18,7 +18,7 @@ public sealed partial class WorkItemStore : IWorkItemBlockWriter
             await WorkItemProjectLock.TakeAsync(scope, [block.ProjectId], cancellationToken);
             var placement = block.Placement ?? new BatchPlacement(BatchSlot.First, null);
             // At the top the block's first row goes first and the rest in front of what was on top before; at the end every row goes last;
-            // before a row every row goes just in front of it, so they keep input order.
+            // before a row every row goes just in front of it, so they keep input order; a target that's gone or in another project means last.
             var top = placement.Slot == BatchSlot.First
                 ? await scope.Connection.QuerySingleOrDefaultAsync<Guid?>(new CommandDefinition(
                     "SELECT id FROM work_item WHERE project_id = @projectId ORDER BY backlog_order, id LIMIT 1",
@@ -32,7 +32,7 @@ public sealed partial class WorkItemStore : IWorkItemBlockWriter
                 {
                     BatchSlot.First => (written.Count == 0 ? Slot.First : Slot.BeforeOrLast, top),
                     BatchSlot.Last => (Slot.Last, (Guid?)null),
-                    _ => (Slot.Before, placement.BeforeItemId),
+                    _ => (Slot.BeforeOrLast, placement.BeforeItemId),
                 };
                 written.Add((await CreateInAsync(scope, create, cancellationToken, slot, before)).Written!);
             }

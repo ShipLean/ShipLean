@@ -1,4 +1,5 @@
 using ShipLean.Contracts.Backlog;
+using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.WorkItems.Reads.Tree;
 
 namespace ShipLean.Application.Features.Mcp.Backlog;
@@ -22,7 +23,8 @@ public sealed class BacklogChecks(IWorkTreeReads reads, TimeProvider time) : IBa
     // Each title against the project's live stories and bugs, up to BacklogReviewer.CompareCap rows.
     public async Task<IReadOnlyList<DuplicateMatch>> DuplicatesAsync(Guid projectId, IReadOnlyList<string> titles, CancellationToken cancellationToken = default)
     {
-        var stack = (await reads.StackAsync(projectId, StackLevel.Requirement, null, false, cancellationToken)).Take(BacklogReviewer.CompareCap).ToList();
+        var stack = (await reads.StackAsync(projectId, StackLevel.Requirement, null, false, cancellationToken))
+            .Where(row => WorkItemTypeRules.IsStoryOrBug(row.Type.Id)).Take(BacklogReviewer.CompareCap).ToList();
         return [.. titles
             .Select((title, index) => new DuplicateMatch(index, [.. stack.Where(row => BacklogReviewer.LooksAlike(title, row.Title)).Select(row => new DuplicateItem(row.Key, row.Title))]))
             .Where(match => match.Items.Count > 0)];

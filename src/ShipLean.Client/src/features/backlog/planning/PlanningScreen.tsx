@@ -101,12 +101,7 @@ export function PlanningScreen({
             />
           ) : null}
           <BeforeYouPlan review={view.review} queue={queue} />
-          <PlanningDnd
-            sections={sections}
-            filtering={filtering}
-            velocity={view.velocity}
-            onMove={onMove}
-          >
+          <PlanningDnd sections={sections} filtering={filtering} onMove={onMove}>
             {({ tableRef, dropLine, onKeyMove }) => (
               <PlanningSections
                 sections={sections}

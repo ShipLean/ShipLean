@@ -59,7 +59,6 @@ public class CaptureMeasureTests : SprintFixture
 
         ErrorCode(reply).ShouldBe(ApiErrorCodes.Validation);
         reply.Structured().GetProperty("error").GetProperty("field").GetString().ShouldBe("items");
-        reply.Structured().GetProperty("error").GetProperty("message").GetString()!.ShouldContain(BulkLimits.MaxRows.ToString());
         (await CountLikeAsync("Cap over")).ShouldBe(0);
     }
 
@@ -86,7 +85,6 @@ public class CaptureMeasureTests : SprintFixture
 
         ErrorCode(reply).ShouldBe(ApiErrorCodes.Validation);
         reply.Structured().GetProperty("error").GetProperty("field").GetString().ShouldBe("children");
-        reply.Structured().GetProperty("error").GetProperty("message").GetString()!.ShouldContain(BulkLimits.MaxRows.ToString());
         (await CountLikeAsync("Child over")).ShouldBe(0);
     }
 

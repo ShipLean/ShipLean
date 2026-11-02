@@ -12,6 +12,7 @@ public sealed partial class BacklogWriteCommands
     {
         await access.RequireAsync(projectId, ProjectRole.Member, cancellationToken);
         RequireWithinLimit(request.Items.Sum(i => 1 + i.Tasks.Count), "rows, counting tasks,");
+        CheckPlacement(request.Placement);
         foreach (var item in request.Items)
         {
             CheckAddItem(item);

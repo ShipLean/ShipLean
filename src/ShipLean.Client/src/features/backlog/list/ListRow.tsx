@@ -2,7 +2,6 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { BacklogRowDto } from '../../../api/views';
 import type { BacklogColumnId } from '../backlogApi';
-import { useGroupDragged } from '../drag/GroupDragContext';
 import { Grip } from '../drag/Grip';
 import { RowSelectCell } from '../selection/RowSelectCell';
 import { useRowGestures } from '../selection/useRowGestures';
@@ -36,8 +35,6 @@ export function ListRow({
     isDragging,
   } = useSortable({ id: row.id, disabled: dragDisabled });
   const gestures = useRowGestures(row);
-  // Part of a dragged selection: dims in place.
-  const withGroup = useGroupDragged(row.id);
   return (
     <tr
       {...gestures}
@@ -48,7 +45,7 @@ export function ListRow({
       style={{
         transform: CSS.Transform.toString(transform),
         transition,
-        opacity: isDragging || withGroup ? 0.4 : 1,
+        opacity: isDragging ? 0.4 : 1,
       }}
       className={`h-9 border-b border-edge text-[length:var(--text-sm)] transition-colors duration-700 data-[selected=true]:bg-accent-soft ${flash ? 'bg-signal-soft' : ''} ${closed ? 'text-ink-muted' : 'text-ink'}`}
     >

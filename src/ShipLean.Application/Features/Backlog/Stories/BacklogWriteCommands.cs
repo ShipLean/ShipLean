@@ -68,9 +68,15 @@ public sealed partial class BacklogWriteCommands(IProjectAccess access, IWorkIte
             throw ApiException.Validation("A row needs changes, a placement or both.");
         }
 
-        if (item.Placement is { } placement && (placement.Slot == BatchSlot.Before) != (placement.BeforeItemId is not null))
+        CheckPlacement(item.Placement);
+    }
+
+    // K1's rule for a placement, shared by bulk and add: it names the row to go before if and only if its slot is before.
+    private static void CheckPlacement(BulkPlacement? placement)
+    {
+        if (placement is not null && (placement.Slot == BatchSlot.Before) != (placement.BeforeItemId is not null))
         {
-            throw ApiException.Validation("A placement names the row to go before if and only if its slot is before.");
+            throw ApiException.Validation("A placement names the row to go before if and only if its slot is before.", "placement");
         }
     }
 
