@@ -42,7 +42,7 @@ public class BulkWriteApiTests : ApiFixture
 
         var body = await BulkAsync(Api, Project, [Item(c, 1, null, Slot("first")), Item(a, 1, null, Slot("first"))]);
 
-        Ids(body.GetProperty("written")).ShouldBe([c, a]);
+        body.ShouldReport([c, a], []);
         await using var database = await OpenDatabaseAsync();
         (await BacklogOrderAsync(database, Project)).Take(2).ShouldBe([c, a]);
         (await BacklogOrderAsync(database, Project)).ShouldContain(b);
@@ -54,7 +54,9 @@ public class BulkWriteApiTests : ApiFixture
         var rows = await CreateManyAsync(Api, Project, 4, "Before");
         var (a, b, c, d) = (rows[0].Id, rows[1].Id, rows[2].Id, rows[3].Id);
 
-        await BulkAsync(Api, Project, [Item(d, 1, null, Slot("before", a)), Item(c, 1, null, Slot("before", a))]);
+        var body = await BulkAsync(Api, Project, [Item(d, 1, null, Slot("before", a)), Item(c, 1, null, Slot("before", a))]);
+
+        body.ShouldReport([d, c], []);
 
         await using var database = await OpenDatabaseAsync();
         var order = await BacklogOrderAsync(database, Project);
@@ -68,7 +70,9 @@ public class BulkWriteApiTests : ApiFixture
     {
         var rows = await CreateManyAsync(Api, Project, 3, "Bottom");
 
-        await BulkAsync(Api, Project, [Item(rows[0].Id, 1, null, Slot("last")), Item(rows[1].Id, 1, null, Slot("last"))]);
+        var body = await BulkAsync(Api, Project, [Item(rows[0].Id, 1, null, Slot("last")), Item(rows[1].Id, 1, null, Slot("last"))]);
+
+        body.ShouldReport([rows[0].Id, rows[1].Id], []);
 
         await using var database = await OpenDatabaseAsync();
         (await BacklogOrderAsync(database, Project)).TakeLast(2).ShouldBe([rows[0].Id, rows[1].Id]);
@@ -79,9 +83,14 @@ public class BulkWriteApiTests : ApiFixture
     {
         var rows = await CreateManyAsync(Api, Project, 2, "Gone");
 
-        await BulkAsync(Api, Project, [Item(rows[0].Id, 1, null, Slot("before", Guid.NewGuid()))]);
-
+        // New rows land on top, so rows[1] sits above rows[0]; move rows[0] to the top first so it is not already last.
+        await BulkAsync(Api, Project, [Item(rows[0].Id, 1, null, Slot("first"))]);
         await using var database = await OpenDatabaseAsync();
+        (await BacklogOrderAsync(database, Project))[0].ShouldBe(rows[0].Id);
+
+        var body = await BulkAsync(Api, Project, [Item(rows[0].Id, 1, null, Slot("before", Guid.NewGuid()))]);
+
+        body.ShouldReport([rows[0].Id], []);
         (await BacklogOrderAsync(database, Project))[^1].ShouldBe(rows[0].Id);
     }
 
@@ -109,7 +118,9 @@ public class BulkWriteApiTests : ApiFixture
         using var patch = await Api.PatchJsonAsync($"api/work-items/{single.Id}", new JsonObject { ["expectedRevision"] = single.Revision, ["changes"] = Sprint(SeedIds.Sprints.Sprint26) });
         patch.StatusCode.ShouldBe(HttpStatusCode.OK);
 
-        await BulkAsync(Api, Project, [Item(viaBulk.Id, viaBulk.Revision, Sprint(SeedIds.Sprints.Sprint26), null), Item(other.Id, other.Revision, Sprint(SeedIds.Sprints.Sprint26), null)]);
+        var body = await BulkAsync(Api, Project, [Item(viaBulk.Id, viaBulk.Revision, Sprint(SeedIds.Sprints.Sprint26), null), Item(other.Id, other.Revision, Sprint(SeedIds.Sprints.Sprint26), null)]);
+
+        body.ShouldReport([viaBulk.Id, other.Id], []);
 
         await using var database = await OpenDatabaseAsync();
         (await RowAsync(database, viaBulk.Id)).Sprint.ShouldBe(SeedIds.Sprints.Sprint26);
@@ -124,14 +135,21 @@ public class BulkWriteApiTests : ApiFixture
     {
         var rows = await CreateManyAsync(Api, Project, 3, "Position");
 
-        var body = await BulkAsync(Api, Project, [Item(rows[2].Id, 1, null, Slot("first")), Item(rows[1].Id, 1, null, Slot("first"))]);
+        // New rows land on top, so the order starts as rows[2], rows[1], rows[0]; asking for rows[0], rows[1] on top reverses it.
+        await using var database = await OpenDatabaseAsync();
+        (await BacklogOrderAsync(database, Project)).Take(3).ShouldBe([rows[2].Id, rows[1].Id, rows[0].Id]);
 
+        var body = await BulkAsync(Api, Project, [Item(rows[0].Id, 1, null, Slot("first")), Item(rows[1].Id, 1, null, Slot("first"))]);
+
+        body.ShouldReport([rows[0].Id, rows[1].Id], []);
         body.GetProperty("written")[0].GetProperty("revision").GetInt32().ShouldBe(1);
         body.GetProperty("written")[0].GetProperty("changes").GetArrayLength().ShouldBe(0);
-        await using var database = await OpenDatabaseAsync();
-        (await RowAsync(database, rows[2].Id)).Revision.ShouldBe(1);
-        (await RevisionsAsync(database, rows[2].Id)).Select(r => r.Rev).ShouldBe([1]);
-        (await BacklogOrderAsync(database, Project)).Take(2).ShouldBe([rows[2].Id, rows[1].Id]);
+        (await BacklogOrderAsync(database, Project)).Take(3).ShouldBe([rows[0].Id, rows[1].Id, rows[2].Id]);
+        foreach (var row in rows)
+        {
+            (await RowAsync(database, row.Id)).Revision.ShouldBe(1);
+            (await RevisionsAsync(database, row.Id)).Select(r => r.Rev).ShouldBe([1]);
+        }
     }
 
     [Test]
@@ -155,7 +173,9 @@ public class BulkWriteApiTests : ApiFixture
     {
         var one = await CreateAsync(Api, Project, "Alone");
 
-        await BulkAsync(Api, Project, [Item(one.Id, one.Revision, Points(3), null)]);
+        var body = await BulkAsync(Api, Project, [Item(one.Id, one.Revision, Points(3), null)]);
+
+        body.ShouldReport([one.Id], []);
 
         await using var database = await OpenDatabaseAsync();
         (await RevisionsAsync(database, one.Id)).ShouldBe([(1, false), (2, false)]);
@@ -166,7 +186,9 @@ public class BulkWriteApiTests : ApiFixture
     {
         var rows = await CreateManyAsync(Api, Project, 2, "Many");
 
-        await BulkAsync(Api, Project, [.. rows.Select(r => Item(r.Id, r.Revision, Points(2), null))]);
+        var body = await BulkAsync(Api, Project, [.. rows.Select(r => Item(r.Id, r.Revision, Points(2), null))]);
+
+        body.ShouldReport([rows[0].Id, rows[1].Id], []);
 
         await using var database = await OpenDatabaseAsync();
         (await RevisionsAsync(database, rows[0].Id))[^1].ShouldBe((2, true));
@@ -179,7 +201,9 @@ public class BulkWriteApiTests : ApiFixture
         var rows = await CreateManyAsync(Api, Project, 4, "Events");
         var updates = new List<(Guid Id, int EventRevision, int StoredRevision)>();
         var reorders = new List<Guid>();
-        using var watch = new ProjectEventWatch(Host.Services.GetRequiredService<IProjectEvents>(), Project);
+        var marker = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        await using var expire = timeout.Token.Register(() => marker.TrySetCanceled());
         using var subscription = Host.Services.GetRequiredService<IProjectEvents>().Subscribe(Project, async projectEvent =>
         {
             if (projectEvent is WorkItemUpdated updated)
@@ -191,6 +215,11 @@ public class BulkWriteApiTests : ApiFixture
                 {
                     updates.Add((updated.Id, updated.Revision, stored));
                 }
+
+                if (updated.Id == rows[3].Id)
+                {
+                    marker.TrySetResult();
+                }
             }
             else if (projectEvent is WorkItemReordered reordered)
             {
@@ -201,10 +230,12 @@ public class BulkWriteApiTests : ApiFixture
             }
         });
 
-        await BulkAsync(Api, Project, [Item(rows[0].Id, 1, Points(1), null), Item(rows[1].Id, 1, Points(1), null), Item(rows[2].Id, 1, null, Slot("first"))]);
-        // The bus delivers in publish order: once this later write's event is in, everything the bulk write published is.
-        await BulkAsync(Api, Project, [Item(rows[3].Id, 1, Points(1), null)]);
-        await watch.NextAsync<WorkItemUpdated>(e => e.Id == rows[3].Id);
+        var body = await BulkAsync(Api, Project, [Item(rows[0].Id, 1, Points(1), null), Item(rows[1].Id, 1, Points(1), null), Item(rows[2].Id, 1, null, Slot("first"))]);
+        body.ShouldReport([rows[0].Id, rows[1].Id, rows[2].Id], []);
+        // The bus delivers to one subscriber in publish order. This subscription handles the later write's event after everything the
+        // bulk write published, so waiting on its own marker (not on another subscriber) means its lists are complete.
+        (await BulkAsync(Api, Project, [Item(rows[3].Id, 1, Points(1), null)])).ShouldReport([rows[3].Id], []);
+        await marker.Task;
 
         lock (updates)
         {

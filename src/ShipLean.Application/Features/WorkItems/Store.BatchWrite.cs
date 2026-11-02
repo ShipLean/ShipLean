@@ -48,23 +48,30 @@ public sealed partial class WorkItemStore : IWorkItemBatchWriter
                     : await PatchOneAsync(scope, rows[item.Id], item.Changes, cancellationToken));
             }
 
-            await PlaceBlocksAsync(scope, live.Where(i => i.Placement is not null).ToList(), rows, cancellationToken);
+            await PlaceBlocksAsync(scope, live, rows, cancellationToken);
             return (new BatchWriteOutcome(written, stale), true);
         }, cancellationToken);
 
     // Consecutive rows with an equal placement form a block, which lands in request order whichever slot it is for.
-    private static async Task PlaceBlocksAsync(WriteScope scope, IReadOnlyList<BatchWrite> placed, IReadOnlyDictionary<Guid, WorkItemRow> rows, CancellationToken cancellationToken)
+    private static async Task PlaceBlocksAsync(WriteScope scope, IReadOnlyList<BatchWrite> live, IReadOnlyDictionary<Guid, WorkItemRow> rows, CancellationToken cancellationToken)
     {
-        for (var start = 0; start < placed.Count;)
+        // Runs over the live sequence: a row with no placement ends a block, a stale row (already left out) does not.
+        for (var start = 0; start < live.Count;)
         {
+            if (live[start].Placement is null)
+            {
+                start++;
+                continue;
+            }
+
             var end = start + 1;
-            while (end < placed.Count && placed[end].Placement == placed[start].Placement)
+            while (end < live.Count && live[end].Placement == live[start].Placement)
             {
                 end++;
             }
 
-            var block = placed.Skip(start).Take(end - start).Select(i => i.Id).ToList();
-            var placement = placed[start].Placement!;
+            var block = live.Skip(start).Take(end - start).Select(i => i.Id).ToList();
+            var placement = live[start].Placement!;
             if (placement.Slot == BatchSlot.Before && placement.BeforeItemId is { } target && block.Contains(target))
             {
                 throw ApiException.Validation("A row can't be placed before a row of the same write.");

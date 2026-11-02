@@ -14,7 +14,7 @@ public sealed partial class InMemoryWorkItemStore : IWorkItemBatchWriter
             var stamp = Stamp(options);
             var written = new List<WriteResult>();
             var stale = new List<ConflictDto>();
-            var placed = new List<(Guid Id, BatchPlacement Placement)>();
+            var live = new List<BatchWrite>();
             foreach (var item in items)
             {
                 var before = Load(world, item.Id);
@@ -27,13 +27,10 @@ public sealed partial class InMemoryWorkItemStore : IWorkItemBatchWriter
                 written.Add(item.Changes is null
                     ? new WriteResult(before.Id, before.Key, before.Revision, [], [])
                     : await PatchOneAsync(world, before, item.Changes, null, stamp, cancellationToken));
-                if (item.Placement is { } placement)
-                {
-                    placed.Add((item.Id, placement));
-                }
+                live.Add(item);
             }
 
-            PlaceBlocks(world, placed);
+            PlaceBlocks(world, live);
             await RunHookAsync(options, cancellationToken);
             _world = world;
             return new BatchWriteOutcome(written, stale);
@@ -45,18 +42,25 @@ public sealed partial class InMemoryWorkItemStore : IWorkItemBatchWriter
     }
 
     // Consecutive rows with an equal placement form a block that lands in request order.
-    private static void PlaceBlocks(InMemoryWorld world, List<(Guid Id, BatchPlacement Placement)> placed)
+    private static void PlaceBlocks(InMemoryWorld world, List<BatchWrite> live)
     {
-        for (var start = 0; start < placed.Count;)
+        // Runs over the live sequence: a row with no placement ends a block, a stale row (already left out) does not.
+        for (var start = 0; start < live.Count;)
         {
-            var end = start;
-            while (end < placed.Count && placed[end].Placement == placed[start].Placement)
+            if (live[start].Placement is null)
+            {
+                start++;
+                continue;
+            }
+
+            var end = start + 1;
+            while (end < live.Count && live[end].Placement == live[start].Placement)
             {
                 end++;
             }
 
-            var block = placed.Skip(start).Take(end - start).Select(p => p.Id).ToList();
-            var placement = placed[start].Placement;
+            var block = live.Skip(start).Take(end - start).Select(p => p.Id).ToList();
+            var placement = live[start].Placement!;
             foreach (var id in block)
             {
                 var item = world.Items[id];

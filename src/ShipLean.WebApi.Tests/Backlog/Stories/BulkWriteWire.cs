@@ -61,6 +61,13 @@ internal static class BulkWriteWire
     public static IReadOnlyList<Guid> Ids(JsonElement array, Func<JsonElement, JsonElement>? pick = null)
         => [.. array.EnumerateArray().Select(e => (pick?.Invoke(e) ?? e).GetProperty("id").GetGuid())];
 
+    // The response's written and stale ids, both in request order.
+    public static void ShouldReport(this JsonElement body, IReadOnlyList<Guid> written, IReadOnlyList<Guid> stale)
+    {
+        Ids(body.GetProperty("written")).ShouldBe(written);
+        Ids(body.GetProperty("stale"), c => c.GetProperty("current")).ShouldBe(stale);
+    }
+
     // The project's rows in the backlog's own order, as the database sorts them (the order the reads use).
     public static async Task<List<Guid>> BacklogOrderAsync(NpgsqlConnection database, Guid projectId)
         => [.. await database.QueryAsync<Guid>("SELECT id FROM work_item WHERE project_id = @projectId ORDER BY backlog_order, id", new { projectId })];
