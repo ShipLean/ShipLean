@@ -51,6 +51,9 @@ public static class BacklogReviewer
         return new BacklogFinding(row.Key, row.Title, row.Type.Name, row.State.Name, row.Points, days, flags, duplicates);
     }
 
+    // The likeness test review_backlog and the duplicate check share.
+    public static bool LooksAlike(string title, string otherTitle) => LooksAlike(title, Own(title), otherTitle, Own(otherTitle));
+
     private static bool LooksAlike(string title, int own, string otherTitle, int otherOwn)
     {
         var shared = WordOverlap.Score(title, [otherTitle]);

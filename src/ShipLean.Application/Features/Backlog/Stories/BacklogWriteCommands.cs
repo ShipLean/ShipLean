@@ -8,7 +8,7 @@ namespace ShipLean.Application.Features.Backlog.Stories;
 
 // What the backlog write endpoints do: the access check first, then the checks every action shares, then the write.
 [RegisterPerRequest]
-public sealed partial class BacklogWriteCommands(IProjectAccess access, IWorkItemStore store, IWorkItemBatchWriter batch, IBacklogChecks checks)
+public sealed partial class BacklogWriteCommands(IProjectAccess access, IWorkItemStore store, IWorkItemBatchWriter batch, IWorkItemBlockWriter blocks, IBacklogChecks checks)
 {
     public async Task<BulkWriteResult> BulkAsync(Guid projectId, BulkWriteRequest request, CancellationToken cancellationToken)
     {

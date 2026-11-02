@@ -19,7 +19,12 @@ public sealed class BacklogChecks(IWorkTreeReads reads, TimeProvider time) : IBa
         return new BacklogReviewDto(BulkLimits.MaxRows, StaleDays, checks);
     }
 
-    // TODO: compare each title with the project's live stories and bugs by BacklogReviewer's likeness test; until then no title matches.
-    public Task<IReadOnlyList<DuplicateMatch>> DuplicatesAsync(Guid projectId, IReadOnlyList<string> titles, CancellationToken cancellationToken = default)
-        => Task.FromResult<IReadOnlyList<DuplicateMatch>>([]);
+    // Each title against the project's live stories and bugs, up to BacklogReviewer.CompareCap rows.
+    public async Task<IReadOnlyList<DuplicateMatch>> DuplicatesAsync(Guid projectId, IReadOnlyList<string> titles, CancellationToken cancellationToken = default)
+    {
+        var stack = (await reads.StackAsync(projectId, StackLevel.Requirement, null, false, cancellationToken)).Take(BacklogReviewer.CompareCap).ToList();
+        return [.. titles
+            .Select((title, index) => new DuplicateMatch(index, [.. stack.Where(row => BacklogReviewer.LooksAlike(title, row.Title)).Select(row => new DuplicateItem(row.Key, row.Title))]))
+            .Where(match => match.Items.Count > 0)];
+    }
 }
