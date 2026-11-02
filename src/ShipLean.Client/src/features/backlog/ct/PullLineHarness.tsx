@@ -2,6 +2,7 @@ import { ToastHost } from '../../../components/ToastHost';
 import type { ProjectDto } from '../../../api/projects';
 import { backlogKey, useBacklog } from '../backlogApi';
 import { BulkOutcomeHost } from '../bulk/BulkOutcomeHost';
+import { AddBelowProvider } from '../add/AddBelowProvider';
 import { BulkRunProvider } from '../bulk/BulkRunProvider';
 import { ListCommandsProvider } from '../commands/listCommands';
 import { forecastMarks } from '../planning/forecastMarks';
@@ -42,33 +43,35 @@ export function PullLineHarness({
         queryKey={backlogKey(project.id, 'stories', 'planning', '', false)}
       >
         <SelectionProvider>
-          <ToastHost />
-          <BulkOutcomeHost projectId={project.id} />
-          <PlanningDnd
-            sections={view.sections}
-            filtering={filtering}
-            velocity={view.velocity}
-            onMove={() => undefined}
-          >
-            {({ tableRef, dropLine, onKeyMove }) => (
-              <PlanningSections
-                sections={view.sections}
-                velocity={view.velocity}
-                forecast={forecast}
-                marks={NO_MARKS}
-                projectId={project.id}
-                projectKey={project.key}
-                adding={false}
-                onCloseAdd={() => undefined}
-                flashing={NONE}
-                collapse={collapse}
-                filtering={filtering}
-                tableRef={tableRef}
-                dropLine={dropLine}
-                onKeyMove={onKeyMove}
-              />
-            )}
-          </PlanningDnd>
+          <AddBelowProvider projectId={project.id} projectKey={project.key}>
+            <ToastHost />
+            <BulkOutcomeHost projectId={project.id} />
+            <PlanningDnd
+              sections={view.sections}
+              filtering={filtering}
+              velocity={view.velocity}
+              onMove={() => undefined}
+            >
+              {({ tableRef, dropLine, onKeyMove }) => (
+                <PlanningSections
+                  sections={view.sections}
+                  velocity={view.velocity}
+                  forecast={forecast}
+                  marks={NO_MARKS}
+                  projectId={project.id}
+                  projectKey={project.key}
+                  adding={false}
+                  onCloseAdd={() => undefined}
+                  flashing={NONE}
+                  collapse={collapse}
+                  filtering={filtering}
+                  tableRef={tableRef}
+                  dropLine={dropLine}
+                  onKeyMove={onKeyMove}
+                />
+              )}
+            </PlanningDnd>
+          </AddBelowProvider>
         </SelectionProvider>
       </BulkRunProvider>
     </ListCommandsProvider>
