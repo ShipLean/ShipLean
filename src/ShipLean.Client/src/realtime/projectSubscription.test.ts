@@ -254,3 +254,134 @@ test('subscription_WhenJoinScreenIsRefused_ShouldStillReportLive', async () => {
   await vi.advanceTimersByTimeAsync(0);
   expect(states.at(-1)).toBe('live');
 });
+
+// Hub calls that wait until the test answers them, in the order they were made.
+function deferredHub() {
+  const hub = fakeConnection();
+  const pending: { method: string; args: unknown[]; ok: () => void; fail: (e: Error) => void }[] =
+    [];
+  hub.spies.invoke.mockImplementation(
+    (method: string, ...args: unknown[]) =>
+      new Promise<void>((resolve, reject) => {
+        hub.calls.push([method, ...args].join(' '));
+        pending.push({ method, args, ok: resolve, fail: reject });
+      }),
+  );
+  const take = (call: string) => {
+    const index = pending.findIndex((p) => [p.method, ...p.args].join(' ') === call);
+    expect(index, `${call} is pending`).toBeGreaterThanOrEqual(0);
+    return pending.splice(index, 1)[0]!;
+  };
+  return { hub, take, pending };
+}
+
+const projectB = '0199a000-0000-7000-8000-000000000013';
+
+test('subscription_WhenProjectChanges_ShouldLeaveLiveUntilTheNewProjectIsJoined', async () => {
+  const { hub, take } = deferredHub();
+  const { subscription, states } = subscribe(hub);
+  subscription.setProject(project);
+  await vi.advanceTimersByTimeAsync(0);
+  take(`JoinProject ${project}`).ok();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(states.at(-1)).toBe('live');
+
+  subscription.setProject(projectB);
+  expect(states.at(-1)).not.toBe('live');
+  take(`LeaveProject ${project}`).ok();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(states.at(-1)).not.toBe('live');
+  take(`JoinProject ${projectB}`).ok();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(states.at(-1)).toBe('live');
+});
+
+test('subscription_WhenSwitchedAToBToAWhileJoinsPending_ShouldBeLiveOnlyOnceAIsJoined', async () => {
+  const { hub, take, pending } = deferredHub();
+  const { subscription, states } = subscribe(hub);
+  subscription.setProject(project);
+  await vi.advanceTimersByTimeAsync(0);
+  take(`JoinProject ${project}`).ok();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(states.at(-1)).toBe('live');
+
+  subscription.setProject(projectB);
+  subscription.setProject(project);
+  const marker = states.length;
+  take(`LeaveProject ${project}`).ok();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(states.slice(marker)).not.toContain('live');
+  expect(states.at(-1)).not.toBe('live');
+  take(`JoinProject ${project}`).ok();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(states.at(-1)).toBe('live');
+  expect(pending).toEqual([]);
+});
+
+test('subscription_WhenOldJoinAnswersLate_ShouldNotSetLiveOrMarkTheWrongProjectJoined', async () => {
+  const { hub, take, pending } = deferredHub();
+  const { subscription, states } = subscribe(hub);
+  subscription.setProject(project);
+  await vi.advanceTimersByTimeAsync(0);
+  // The join of A is still on its way when B is wanted.
+  subscription.setProject(projectB);
+  take(`JoinProject ${project}`).ok();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(states).not.toContain('live');
+  // A is left (it was joined), and only then is B joined.
+  expect(hub.calls.slice(1)).toEqual([`LeaveProject ${project}`]);
+  take(`LeaveProject ${project}`).ok();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(states).not.toContain('live');
+  take(`JoinProject ${projectB}`).ok();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(states.at(-1)).toBe('live');
+  expect(pending).toEqual([]);
+});
+
+test('subscription_WhenOldJoinIsRefusedLate_ShouldNotTakeLiveOrOfflineFromTheNewProject', async () => {
+  const { hub, take } = deferredHub();
+  const { subscription, states } = subscribe(hub);
+  subscription.setProject(project);
+  await vi.advanceTimersByTimeAsync(0);
+  subscription.setProject(projectB);
+  take(`JoinProject ${project}`).fail(hubError('JoinProject', 'not_found'));
+  await vi.advanceTimersByTimeAsync(0);
+  expect(states).not.toContain('offline');
+  take(`JoinProject ${projectB}`).ok();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(states.at(-1)).toBe('live');
+});
+
+test('subscription_WhenProjectIsDroppedAndAnotherWanted_ShouldNotBeLiveBeforeTheJoin', async () => {
+  const { hub, take } = deferredHub();
+  const { subscription, states } = subscribe(hub);
+  subscription.setProject(project);
+  await vi.advanceTimersByTimeAsync(0);
+  take(`JoinProject ${project}`).ok();
+  await vi.advanceTimersByTimeAsync(0);
+  // A page's effect cleanup asks for no project, then the next one.
+  subscription.setProject(undefined);
+  subscription.setProject(projectB);
+  const marker = states.length;
+  take(`LeaveProject ${project}`).ok();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(states.slice(marker)).not.toContain('live');
+  take(`JoinProject ${projectB}`).ok();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(states.at(-1)).toBe('live');
+});
+
+test('subscription_WhenScreenJoinIsPendingAfterProjectChange_ShouldHoldLive', async () => {
+  const { hub, take } = deferredHub();
+  const { subscription, states } = subscribe(hub);
+  subscription.setScreen('sprints');
+  subscription.setProject(project);
+  await vi.advanceTimersByTimeAsync(0);
+  take(`JoinProject ${project}`).ok();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(states).not.toContain('live');
+  take(`JoinScreen ${project} sprints`).ok();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(states.at(-1)).toBe('live');
+});
