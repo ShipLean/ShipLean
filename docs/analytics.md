@@ -23,8 +23,7 @@ Three seams, so a feature never has to remember to track itself:
 
 **Events that carry no project:**
 
-- `search.performed`, `projects.listed`, `auth.*`, `instance.*` and `profile.*` touch no single project.
-- `project.created` and `project.joined` run no access check, so they are self-emitted with the project's id.
+- `search.performed`, `projects.listed`, `auth.*`, `instance.*`, `profile.*`, `agent.connected`, `agent.consent_denied` and `agent.revoked` touch no single project. (`project.created` and `project.joined` run no access check, so they are self-emitted with the project's id and do carry it.)
 - Any event whose request touched several projects (the id is left out, `project_count` is above 1) or none.
 
 ## Delivery
@@ -35,7 +34,7 @@ Three seams, so a feature never has to remember to track itself:
 - A batch opens when an event arrives and is flushed after 2 s, or at 100 events. The dispatcher does not run a timer while the queue is empty.
 - Settings are read when events arrive and cached for 30 s, so a change in the Analytics tab applies within about 30 s.
 - A failed send is retried once after 5 s, then the batch is dropped. `shiplean.analytics.sent` and `shiplean.analytics.failed` count events, tagged by `provider`. A warning is logged at most once a minute per provider; it never contains the site key.
-- On shutdown the dispatcher sends what is queued, capped at 5 s, so at most the batch in hand is lost.
+- On shutdown the dispatcher tries to send what is queued for at most 5 seconds; anything not sent by then is lost.
 - Nothing is persisted. A restart loses the queue.
 
 The dispatcher maps each `UsageEvent` to an `AnalyticsEvent` (`UsageEventMapper`) and hands the batch to the sink of the configured provider (`IAnalyticsSink`: `UmamiSink`, `PostHogSink`). A sink throws `AnalyticsSendException` on any failure.
@@ -77,7 +76,7 @@ The distinct id of an actor is `user:<guid>`, `agent:<authorizationId>` (`agent:
 
 Umami only filters on event properties on its Events page, which is why the project goes into the URL path and the actor kind into `tag`: both can be filtered in every Umami report. PostHog group analytics is a paid add-on, so the project also goes as a plain property.
 
-**Umami must run with `DISABLE_BOT_CHECK=1`.** Every request comes from a server, and by default Umami excludes what it takes for bots. Umami also requires a `User-Agent` header on `/api/batch`; ShipLean sends `ShipLean/{version}`. Umami stamps an event when it receives it, so a delayed or retried batch is dated at arrival.
+**Umami must run with `DISABLE_BOT_CHECK=1`.** Every request comes from a server, and by default Umami excludes what it takes for bots. Umami also requires a `User-Agent` header on `/api/batch`; ShipLean sends `ShipLean/{version}`. Umami accepts a `payload.timestamp`, but ShipLean does not send one, so events are dated on arrival and a delayed or retried batch is dated when it lands.
 
 Sources: [Umami: sending stats](https://docs.umami.is/docs/api/sending-stats) (`/api/batch` takes a JSON array, requires a `User-Agent`), [Umami environment variables](https://docs.umami.is/docs/environment-variables) (`DISABLE_BOT_CHECK`), [PostHog capture API](https://posthog.com/docs/api/capture) (`/batch/`, `api_key`, `batch`, `historical_migration`).
 
@@ -85,7 +84,7 @@ Sources: [Umami: sending stats](https://docs.umami.is/docs/api/sending-stats) (`
 
 Stored on `instance_settings` (`analytics_provider`, `analytics_host`, `analytics_site_key`, `analytics_send_names`), edited in Instance settings → Analytics by an instance admin through `GET` and `PUT api/instance/analytics`. The host must be an absolute `http` or `https` address with no query, fragment or credentials. An Umami site key is a GUID; a PostHog key starts with `phc_`. Provider `none` clears host and key.
 
-**Send a test event** calls `POST api/instance/analytics/test`. It sends one `analytics.test` event straight to the sink, with a 10 s timeout, and reports `ok` and a message. It does not go through the queue, and `analytics.test` is not in `UsageEventNames`.
+**Send test event** calls `POST api/instance/analytics/test`. It sends one `analytics.test` event straight to the sink, with a 10 s timeout, and reports `ok` and a message. It does not go through the queue, and `analytics.test` is not in `UsageEventNames`.
 
 ## Add a tracked action
 
@@ -93,10 +92,11 @@ Stored on `instance_settings` (`analytics_provider`, `analytics_host`, `analytic
 2. **Map it.**
    - A new MCP tool: add `["tool_name"] = UsageEventNames.X` to `ToolUsageMap` (`src/ShipLean.WebApi/Features/Mcp/Usage/ToolUsageMap.cs`).
    - A new controller action: add it to `ActionUsageMap` (`src/ShipLean.WebApi/Features/Usage/ActionUsageMap.cs`), keyed `Controller.Action` without the `Controller` suffix. Use `ActionUsage.Track(name)` (add `board:` only for `work_item.moved`), `ActionUsage.SelfEmitted` if the action tracks itself, or `ActionUsage.Untracked("reason")`.
-   - A system event: call `IUsageEvents.Track` where the thing happens, with `UsageSurface.System` and `UsageActor.System`.
+   - A self-emitted action: mark it `ActionUsage.SelfEmitted` and call `SelfEmittedUsage.TrackOk` (`src/ShipLean.WebApi/Infrastructure/SelfEmittedUsage.cs`) from the action.
+   - A system event: call `IUsageEvents.Track` where the thing happens, with `UsageSurface.System` and `UsageActor.System`. `AgentTrigger` (`src/ShipLean.Application/Features/AgentDispatch/AgentTrigger.cs`) is the example.
 3. **Keep the project stamp working.** A project-scoped command must call `IProjectAccess.RequireAsync` (it does already, by the access rule in `docs/auth.md`). Nothing else is needed for the project to appear.
-4. **Add extra properties only from `UsageProps`.** A new key is a contract change: add the constant, and see the rules above.
-5. **Test it** (below), and update the table here if you want it current.
+4. **Add extra properties only from `UsageProps`.** A new key is a contract change: add the constant, and see the rules above. The `UsageEvent` constructor throws `ArgumentException` in the caller for an unknown event name, an extra key that is not in `UsageProps`, or a value of the wrong type (a string of at most 200 characters, `long`, `int`, `double` or `bool`; `int` is accepted).
+5. **Test it** (below), and update the event catalogue table in this file in the same change.
 
 **What the coverage tests enforce** (`src/ShipLean.UnitTest/Usage/`):
 
@@ -105,17 +105,17 @@ Stored on `instance_settings` (`analytics_provider`, `analytics_host`, `analytic
 - `UsageEventNamesTests`: names match the pattern, fit 50 characters and are unique.
 - `ScreenIdsTests`: `ScreenIds.All` matches the route ids in `src/ShipLean.Client/src/routes.ts`. A new client route needs a new entry in `ScreenIds` (`src/ShipLean.Contracts/Usage/ScreenIds.cs`).
 
-A new tool or action with no mapping fails the build. A catalogue name that nothing emits does not: check it yourself.
+A new tool or action with no mapping fails a unit test, not the build. A catalogue name that nothing emits does not: check it yourself.
 
 ## Test it
 
-The test host replaces `IUsageEvents` with `RecordingUsageEvents` (`src/ShipLean.TestSupport/Usage/RecordingUsageEvents.cs`) for every fixture, so tests read what was tracked and never touch the queue or a provider.
+The test host replaces `IUsageEvents` with `RecordingUsageEvents` (`src/ShipLean.TestSupport/Usage/RecordingUsageEvents.cs`) for every fixture. Get it with `(RecordingUsageEvents)Host.Services.GetRequiredService<IUsageEvents>()`, so tests read what was tracked and never touch the queue or a provider.
 
 - `Events` is a snapshot, `Clear()` empties it, and `WaitForAsync(predicate, timeout)` completes on a signal when a matching event arrives (or already has). `ApiFixture` shares one host across a fixture's tests, so call `Clear()` in a `[SetUp]`.
 - Assert the fields that matter: `Name`, `Surface`, `Actor`, `ProjectId`, `ProjectCount`, `Outcome`, `ErrorCode`, `Source`, `Properties`. Make a negative test (an untracked action emits nothing) fail against the obvious wrong implementation.
 - Examples: `src/ShipLean.WebApi.Tests/Usage/Web/UsageWebTests.cs` (web actions) and `src/ShipLean.WebApi.Tests/Usage/Mcp/ToolUsageTests.cs` (tools).
 
-To test delivery, opt into the real pipeline: in `ConfigureTestServices` call `UsageServices.Register(services)`, register a `TimeProvider` and an `IAnalyticsSettingsReader`, and replace the sinks with `RecordingAnalyticsSink` (`FailWith`, `Calls`, `Events`). Sink tests use `AnalyticsSinkStubHandler` (`Respond`, `Requests`) as the `HttpMessageHandler`. See `src/ShipLean.WebApi.Tests/Usage/Delivery/UsageDispatcherTests.cs` and the sink tests under `src/ShipLean.WebApi.Tests/Analytics/`.
+To test delivery, opt into the real pipeline: in `ConfigureTestServices` call `UsageServices.Register(services)`, register a `TimeProvider` and an `IAnalyticsSettingsReader` (use `FixedAnalyticsSettingsReader`, `src/ShipLean.TestSupport/Usage/FixedAnalyticsSettingsReader.cs`, and set its `Target`), and replace the sinks with `RecordingAnalyticsSink` (`FailWith`, `Calls`, `Events`). Sink tests use `AnalyticsSinkStubHandler` (`Respond`, `Requests`) as the `HttpMessageHandler`. See `src/ShipLean.WebApi.Tests/Usage/Delivery/UsageDispatcherTests.cs` and the sink tests under `src/ShipLean.WebApi.Tests/Analytics/`.
 
 ## Run against a local Umami
 
@@ -128,7 +128,7 @@ docker compose up -d
 1. Open <http://localhost:3000> and sign in (`admin` / `umami` on a fresh install; change it).
 2. Settings → Websites → add a website, and copy its Website ID.
 3. Start ShipLean (`dotnet run --project src/ShipLean.LocalHost -- --database shiplean_analytics --port 0`, then wait for `SHIPLEAN_LOCAL_URL=`), sign in as an instance admin, and open Instance settings → Analytics.
-4. Pick Umami, host `http://localhost:3000`, site key the Website ID. Save, then **Send a test event**. It should appear on the website's Events page within seconds.
+4. Pick Umami, host `http://localhost:3000`, site key the Website ID. Save, then **Send test event**. It should appear on the website's Events page within seconds.
 5. Do something in the app. Events arrive about 2 s after a batch opens. Use the Events page, and filter by the URL path or by tag to see one project or one kind of actor.
 
 If the ShipLean process runs in a container, `localhost` is the container: use the Umami container's name or `host.docker.internal`.
