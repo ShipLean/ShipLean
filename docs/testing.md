@@ -38,6 +38,7 @@ it, and drop the clone at the end. Classes run in parallel; tests inside a class
   to control the build itself.
 - **Doubles** go through `ConfigureTestServices` (override it on the fixture). Production code has no test switches.
   Time is never frozen: the app uses `TimeProvider.System`, and a test compares times against the real clock (see `ExpectedLabels`).
+  The host replaces `IUsageEvents` with `RecordingUsageEvents` for every fixture: assert tracked usage events through it, and `Clear()` it in a `[SetUp]` (see [`analytics.md`](analytics.md)).
 - **A stopped host is never collected.** ASP.NET's rate limiting middleware starts a timer for its endpoint limiter and
   never disposes it. The timer is rooted for the life of the process, and through the limiter and the startup context it
   keeps the whole app (DI container, routing, MVC caches) alive after the host is disposed: about 3.5 MB per test class,
