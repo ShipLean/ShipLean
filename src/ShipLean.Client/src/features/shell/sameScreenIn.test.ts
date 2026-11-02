@@ -54,3 +54,10 @@ test('sameScreenIn_WhenRetrosSearchHasFilters_ShouldOpenItUnfiltered', () => {
     '/p/PAY/retros/insights?view=impact&range=3',
   );
 });
+
+test('sameScreenIn_WhenRetroItemRoute_ShouldFallBackToTheRetroFeatures', () => {
+  expect(sameScreenIn(matchRoute('/p/SHIP/retros/items/SHIP-141', '?retro=r1'), 'PAY')).toBe(
+    '/p/PAY/retros/features',
+  );
+  expect(sameScreenIn(matchRoute('/p/SHIP/retros/features'), 'PAY')).toBe('/p/PAY/retros/features');
+});

@@ -15,7 +15,9 @@ import { importSlots } from './importSlots';
 import { instanceSettingsSlots } from './instanceSettingsSlots';
 import { backlogRouteIds, boardRouteIds, pageRouteIds } from './pageRouteIds';
 import { projectSettingsSlots } from './projectSettingsSlots';
+import { retroFeaturesSlots } from './retroFeaturesSlots';
 import { retroInsightsSlots } from './retroInsightsSlots';
+import { retroItemSlots } from './retroItemSlots';
 import { retrosSlots } from './retrosSlots';
 import { sprintRetroSlots } from './sprintRetroSlots';
 import { sprintBacklogSlots } from './sprintBacklogSlots';
@@ -115,6 +117,10 @@ test('sprintPages_ShouldPassTheSprintAndTheRightHeader', () => {
 test('retroPages_ShouldPassTheProjectToTheirOneSlot', () => {
   expect(retrosSlots(project)).toEqual({ retrosSearch: { project } });
   expect(retroInsightsSlots(project)).toEqual({ retroInsights: { project } });
+  expect(retroFeaturesSlots(project)).toEqual({ retroFeatures: { project } });
+  expect(retroItemSlots(project, 'SHIP-141')).toEqual({
+    retroItem: { project, itemKey: 'SHIP-141' },
+  });
 });
 
 test('backlogSlots_WhenStoriesInEachMode_ShouldMountOnlyThatModesSlot', () => {
@@ -277,6 +283,8 @@ test('pageRouteIds_ShouldNameTheScreenEachPageReports', () => {
     capacity: 'capacity',
     sprintRetro: 'sprintRetro',
     retros: 'retros',
+    retroFeatures: 'retroFeatures',
+    retroItem: 'retroItem',
     retroInsights: 'retroInsights',
     importIntoProject: 'jiraImport',
     importWithoutProject: 'importStart',

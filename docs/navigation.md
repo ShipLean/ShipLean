@@ -19,9 +19,11 @@ The address of every screen is in `src/ShipLean.Client/src/routes.ts` (ids, path
 | Project | `featureBoard` | `/p/:key/items/:itemKey/board` | `?settings=` |
 | Project | `storiesBoard`, `featuresBoard`, `epicsBoard` | `/p/:key/boards/{stories,features,epics}` | `settings` |
 | Project | `sprints` | `/p/:key/sprints` | |
-| Project | `sprintBacklog`, `capacity`, `sprintRetro` | `/p/:key/sprints/:sprintId/{backlog,capacity,retro}` | |
-| Project | `retros` | `/p/:key/retros` | `q`, `sprint`, `category`, `theme`, `level`, `role`, `recurring`, `selected` (the search filters and the open retro) |
-| Project | `retroInsights` | `/p/:key/retros/insights` | `view` (themes, actions, impact), `range` (6, 3, all) |
+| Project | `sprintBacklog`, `capacity`, `sprintRetro` | `/p/:key/sprints/:sprintId/{backlog,capacity,retro}` | `sprintRetro` takes `decide` (open), `point`, `view` (category, item) and `writtenBy` (all, agents, people) |
+| Project | `retros` | `/p/:key/retros` | `q`, `sprint`, `category`, `theme`, `level`, `role`, `recurring`, `selected`, `noSprint`, `decision`, `unthemed` (the search filters and the open retro) |
+| Project | `retroFeatures` | `/p/:key/retros/features` | |
+| Project | `retroItem` | `/p/:key/retros/items/:itemKey` | `retro` (the open retro), `decide` (open), `point` (the point to highlight) |
+| Project | `retroInsights` | `/p/:key/retros/insights` | `view` (themes, actions, impact), `range` (6, 3, all, w6, w12) |
 | Project | `taskboard` | `/p/:key/sprints/:sprintId/taskboard` | `settings` |
 | Project | `jiraImport` | `/p/:key/import` | |
 | Project | `projectSettings` | `/p/:key/settings/:tab` (general, states, members, sprints, integrations) | |

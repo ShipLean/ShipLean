@@ -74,4 +74,32 @@ public static class RetrosTestIds
     public const string RetroImpactCard = "retro-impact-card";
     // Work item section
     public const string WorkItemRetroSection = "work-item-retro-section";
+
+    // Decide, Features, item screen, insights and search additions (SHIP-497)
+    public const string RetroToDecideFilter = "retro-to-decide-filter";
+    public const string RetroKpiToDecide = "retro-kpi-to-decide";
+    public const string RetroFeaturesPanel = "retro-features-panel";
+    public const string RetroFeaturesRow = "retro-features-row";
+    public const string RetroFeaturesFilter = "retro-features-filter";
+    public const string RetroFeaturesSearch = "retro-features-search";
+    public const string RetroItemPanel = "retro-item-panel";
+    public const string RetroItemFilter = "retro-item-filter";
+    public const string RetroItemAddAction = "retro-item-add-action";
+    public const string RetroItemRail = "retro-item-rail";
+    public const string RetroItemChildRow = "retro-item-child-row";
+    public const string WorkItemRetroRow = "work-item-retro-row";
+    public const string RetroActionWhy = "retro-action-why";
+    public const string RetroActionWhyAdd = "retro-action-why-add";
+    public const string RetroInsightsNosprint = "retro-insights-nosprint";
+    public const string RetroInsightsUnthemed = "retro-insights-unthemed";
+    public const string RetroInsightsThemeAction = "retro-insights-theme-action";
+    public const string RetroMergeProposal = "retro-merge-proposal";
+    public const string RetroMergeProposalMerge = "retro-merge-proposal-merge";
+    public const string RetroMergeProposalKeep = "retro-merge-proposal-keep";
+    public const string RetroTipStatusHead = "retro-tip-status-head";
+    public const string RetroTipVerdictHead = "retro-tip-verdict-head";
+    public const string RetroTipNosprint = "retro-tip-nosprint";
+    public const string RetroTipUnthemed = "retro-tip-unthemed";
+    public const string RetrosFilterNosprint = "retros-filter-nosprint";
+    public const string RetrosFilterDecision = "retros-filter-decision";
 }

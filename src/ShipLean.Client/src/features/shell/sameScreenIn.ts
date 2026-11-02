@@ -20,6 +20,9 @@ export function sameScreenIn(route: MatchedRoute | undefined, key: string): stri
     case 'retros':
       // Its filters and the open retro name the old project's sprints, themes and retros.
       return routePath('retros', { key });
+    case 'retroItem':
+      // The item belongs to the old project; its Features list is the nearest screen.
+      return routePath('retroFeatures', { key });
     case 'workItem':
     case 'workItemAttachment':
     case 'featureBoard':

@@ -17,4 +17,9 @@ export const sprintsRoutes: readonly RouteId[] = [
   'capacity',
   'sprintRetro',
 ];
-export const retrosRoutes: readonly RouteId[] = ['retros', 'retroInsights'];
+export const retrosRoutes: readonly RouteId[] = [
+  'retros',
+  'retroFeatures',
+  'retroItem',
+  'retroInsights',
+];

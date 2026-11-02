@@ -11,6 +11,7 @@ export const shellTestIds = {
   navAllSprints: 'shell-nav-all-sprints',
   navRetrospectives: 'shell-nav-retrospectives',
   navRetrosSearch: 'shell-nav-retros-search',
+  navRetrosFeatures: 'shell-nav-retros-features',
   navRetrosInsights: 'shell-nav-retros-insights',
   navRetrosInsightsCount: 'shell-nav-retros-insights-count',
   navJiraImport: 'shell-nav-jira-import',

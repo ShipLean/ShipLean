@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import type { ProjectDto } from '../../../api/projects';
 import type { SprintDto } from '../../../api/sprints';
 import { pagesTestIds } from '../../pages/testIds';
@@ -8,12 +8,10 @@ import { useSprintRetro } from '../useRetroQueries';
 import { AddPoint } from './AddPoint';
 import { RetroRail } from './rail/RetroRail';
 import { SprintRetroHeader } from './SprintRetroHeader';
+import { parseSprintRetroAddress, withSprintRetroValue } from './sprintRetroAddress';
 import { ByCategory } from './views/ByCategory';
 import { ByWorkItem } from './views/ByWorkItem';
-import type { WrittenBy } from './views/byCategory/writtenBy';
 import { WrittenByFilter } from './views/byCategory/WrittenByFilter';
-
-type RetroView = 'category' | 'item';
 
 const VIEWS = [
   { id: 'category', label: 'By category', testId: ids.retroViewByCategory },
@@ -22,16 +20,16 @@ const VIEWS = [
 
 /**
  * The sprint Retro tab: the header, the By category / By work item toggle (opens on By category), the chosen view and
- * the rail. The data is the sprint's SprintRetroDto; each part is its own component and takes it whole.
+ * the rail. The view, Written by, decide and point live in the address (sprintRetroAddress.ts), not in state. The data is the sprint's SprintRetroDto; each part is its own component and takes it whole.
  */
 export function SprintRetroPanel({ project, sprint }: { project: ProjectDto; sprint: SprintDto }) {
-  const [view, setView] = useState<RetroView>('category');
-  const [writtenBy, setWrittenBy] = useState<WrittenBy>('all');
+  const [params, setParams] = useSearchParams();
+  const { view, writtenBy, decide, point } = parseSprintRetroAddress(params);
   const query = useSprintRetro(project.id, sprint.id);
   return (
     <RetroQueryState query={query}>
       {(retro) => {
-        const props = { project, sprint, retro };
+        const props = { project, sprint, retro, decide, point };
         return (
           <div
             data-testid={ids.sprintRetroPanel}
@@ -51,14 +49,17 @@ export function SprintRetroPanel({ project, sprint }: { project: ProjectDto; spr
                     data-testid={v.testId}
                     aria-pressed={view === v.id}
                     className="cursor-pointer border-r border-edge bg-panel px-3 py-1 text-[length:var(--text-sm)] text-ink last:border-r-0 aria-pressed:bg-canvas aria-pressed:font-semibold"
-                    onClick={() => setView(v.id)}
+                    onClick={() => setParams(withSprintRetroValue(params, 'view', v.id))}
                   >
                     {v.label}
                   </button>
                 ))}
               </div>
               <span className="flex-1" />
-              <WrittenByFilter value={writtenBy} onChange={setWrittenBy} />
+              <WrittenByFilter
+                value={writtenBy}
+                onChange={(value) => setParams(withSprintRetroValue(params, 'writtenBy', value))}
+              />
               <AddPoint {...props} />
             </div>
             <div className="grid grid-cols-[minmax(0,1fr)_18rem] gap-4">

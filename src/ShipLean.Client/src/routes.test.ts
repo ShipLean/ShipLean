@@ -108,16 +108,36 @@ const samples: {
     path: '/p/SHIP/sprints/s%2024/retro',
     crumbs: ['SHIP', 'Sprints', 'Sprint', 'Retro'],
   },
+  retroFeatures: {
+    params: project,
+    path: '/p/SHIP/retros/features',
+    crumbs: ['SHIP', 'Retrospectives', 'Features'],
+  },
+  retroItem: {
+    params: { ...project, itemKey: 'SHIP-141' },
+    query: { retro: 'r1', decide: 'open', point: 'p1' },
+    path: '/p/SHIP/retros/items/SHIP-141?retro=r1&decide=open&point=p1',
+    crumbs: ['SHIP', 'Retrospectives', 'Features', 'SHIP-141'],
+  },
   retros: {
     params: project,
-    query: { q: 'flaky', sprint: 's24', category: 'improve', recurring: 'true', selected: 'r1' },
-    path: '/p/SHIP/retros?q=flaky&sprint=s24&category=improve&recurring=true&selected=r1',
+    query: {
+      q: 'flaky',
+      sprint: 's24',
+      category: 'improve',
+      recurring: 'true',
+      selected: 'r1',
+      noSprint: 'true',
+      decision: 'undecided',
+      unthemed: 'true',
+    },
+    path: '/p/SHIP/retros?q=flaky&sprint=s24&category=improve&recurring=true&selected=r1&noSprint=true&decision=undecided&unthemed=true',
     crumbs: ['SHIP', 'Retrospectives', 'Search'],
   },
   retroInsights: {
     params: project,
-    query: { view: 'impact', range: '3' },
-    path: '/p/SHIP/retros/insights?view=impact&range=3',
+    query: { view: 'impact', range: 'w6' },
+    path: '/p/SHIP/retros/insights?view=impact&range=w6',
     crumbs: ['SHIP', 'Retrospectives', 'Insights'],
   },
   jiraImport: { params: project, path: '/p/SHIP/import', crumbs: ['SHIP', 'Jira import'] },
@@ -230,4 +250,12 @@ test('routes_WhenBacklogHasNew_ShouldStillMatchAndKeepIt', () => {
 test('routes_WhenNewIsNotAKind_ShouldDropIt', () => {
   expect(matchRoute('/p/SHIP/backlogs/stories', '?new=task')?.query).toEqual({});
   expect(matchRoute('/p/SHIP/boards/stories', '?new=story')?.query).toEqual({});
+});
+
+test('routes_SprintRetro_ShouldKeepDecidePointViewAndWrittenBy', () => {
+  const query = { decide: 'open', point: 'p1', view: 'item', writtenBy: 'agents' };
+  const path = routePath('sprintRetro', sprint, query);
+  expect(path).toBe('/p/SHIP/sprints/s%2024/retro?decide=open&point=p1&view=item&writtenBy=agents');
+  const [pathname, search] = path.split('?');
+  expect(matchRoute(pathname, `?${search}`)?.query).toEqual(query);
 });

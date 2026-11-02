@@ -13,7 +13,9 @@ import { NewProjectPage } from './pages/NewProjectPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { ProjectSettingsPage } from './pages/ProjectSettingsPage';
+import { RetroFeaturesPage } from './pages/RetroFeaturesPage';
 import { RetroInsightsPage } from './pages/RetroInsightsPage';
+import { RetroItemPage } from './pages/RetroItemPage';
 import { RetrosPage } from './pages/RetrosPage';
 import { SprintBacklogPage } from './pages/SprintBacklogPage';
 import { SprintRetroPage } from './pages/SprintRetroPage';
@@ -50,6 +52,8 @@ export function AppRoutes() {
         <Route path={routePattern('capacity')} element={<CapacityPage />} />
         <Route path={routePattern('sprintRetro')} element={<SprintRetroPage />} />
         <Route path={routePattern('retros')} element={<RetrosPage />} />
+        <Route path={routePattern('retroFeatures')} element={<RetroFeaturesPage />} />
+        <Route path={routePattern('retroItem')} element={<RetroItemPage />} />
         <Route path={routePattern('retroInsights')} element={<RetroInsightsPage />} />
         <Route path={routePattern('jiraImport')} element={<ImportPage />} />
         <Route path={routePattern('projectSettings')} element={<ProjectSettingsPage />} />

@@ -24,6 +24,8 @@ export const pageRouteIds = {
   capacity: 'capacity',
   sprintRetro: 'sprintRetro',
   retros: 'retros',
+  retroFeatures: 'retroFeatures',
+  retroItem: 'retroItem',
   retroInsights: 'retroInsights',
   importIntoProject: 'jiraImport',
   importWithoutProject: 'importStart',
