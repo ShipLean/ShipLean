@@ -88,7 +88,7 @@ test('Move_to_sprint_sends_one_bulk_with_the_new_sprint', async ({ mount, page }
     { value: 'sp25' },
     { value: 'sp25' },
   ]);
-  await expect(page.getByTestId(ids.bulkBar)).toBeVisible();
+  await expect(page.getByTestId(ids.bulkBar)).toHaveCount(0);
 });
 
 test('Sprint_button_shows_13_plus_8', async ({ mount, page }) => {
@@ -317,14 +317,19 @@ test('MoveMenu_command_moves_by_sprint_number_top_and_bottom', async ({ mount, p
     await page.getByTestId('run-command-moveMenu').click();
   };
 
+  // A move clears the selection, so each one selects again first.
+  const reselect = () => page.getByTestId('harness-reselect').click();
+
   await run('2');
   await expect.poll(() => server.bulks.length).toBe(1);
   expect(server.bulks[0].items[0].changes?.sprint).toEqual({ value: 'sp25' });
 
+  await reselect();
   await run('b');
   await expect.poll(() => server.bulks.length).toBe(2);
   expect(server.bulks[1].items[0].placement).toEqual({ slot: 'last', beforeItemId: null });
 
+  await reselect();
   await run('t');
   await expect.poll(() => server.bulks.length).toBe(3);
   expect(server.bulks[2].items[0].placement).toEqual({ slot: 'first', beforeItemId: null });
@@ -369,4 +374,62 @@ test('Focus_returns_to_the_button_after_an_outside_click_closes_a_menu', async (
 
   await expect(page.getByTestId(ids.bulkMenu)).toHaveCount(0);
   await expect(page.getByTestId(ids.bulkSetPoints)).toBeFocused();
+});
+
+test('Move_to_a_sprint_clears_the_selection', async ({ mount, page }) => {
+  const server = await open(mount, page);
+  await select(page, 'SHIP-180', 'SHIP-181');
+
+  await sprintButton(page, 'Sprint 25').click();
+
+  await expect.poll(() => server.bulks.length).toBe(1);
+  await expect(page.getByTestId(ids.bulkBar)).toHaveCount(0);
+  await expect(box(page, 'SHIP-180')).not.toBeChecked();
+  await expect(box(page, 'SHIP-181')).not.toBeChecked();
+});
+
+test('Move_to_top_clears_the_selection', async ({ mount, page }) => {
+  const server = await open(mount, page);
+  await select(page, 'SHIP-181', 'SHIP-183');
+
+  await page.getByTestId(ids.bulkMoveTop).click();
+
+  await expect.poll(() => server.bulks.length).toBe(1);
+  await expect(page.getByTestId(ids.bulkBar)).toHaveCount(0);
+});
+
+test('Move_to_bottom_clears_the_selection', async ({ mount, page }) => {
+  const server = await open(mount, page);
+  await select(page, 'SHIP-181', 'SHIP-183');
+
+  await page.getByTestId(ids.bulkMoveBottom).click();
+
+  await expect.poll(() => server.bulks.length).toBe(1);
+  await expect(page.getByTestId(ids.bulkBar)).toHaveCount(0);
+});
+
+test('A_failed_move_keeps_the_selection', async ({ mount, page }) => {
+  const server = await open(mount, page);
+  await select(page, 'SHIP-180', 'SHIP-181');
+  await page.route('**/api/projects/p1/backlog/bulk', (route) =>
+    route.fulfill({ status: 500, body: '{}' }),
+  );
+
+  await sprintButton(page, 'Sprint 25').click();
+
+  await expect(page.getByTestId(ids.bulkCount)).toHaveText('2 selected');
+  expect(server.bulks).toHaveLength(0);
+});
+
+test('Move_with_a_stale_row_leaves_only_that_row_selected', async ({ mount, page }) => {
+  const server = await open(mount, page);
+  await select(page, 'SHIP-180', 'SHIP-181', 'SHIP-182');
+  server.staleOnBulk(['id-SHIP-182']);
+
+  await sprintButton(page, 'Sprint 25').click();
+
+  await expect(page.getByTestId(ids.bulkChanged)).toBeVisible();
+  await expect(page.getByTestId(ids.bulkCount)).toHaveText('1 selected');
+  await expect(box(page, 'SHIP-182')).toBeChecked();
+  await expect(box(page, 'SHIP-180')).not.toBeChecked();
 });

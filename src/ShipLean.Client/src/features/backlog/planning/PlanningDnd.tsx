@@ -17,6 +17,7 @@ import {
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import type { VelocityDto } from '../../../api/sprints';
 import type { BacklogRowDto, BacklogSectionDto } from '../../../api/views';
+import { runClearingSelection } from '../bulk/runClearingSelection';
 import { useBulkRunner } from '../bulk/useBulkRun';
 import { DragBadge } from '../drag/DragBadge';
 import { GroupDragContext, type GroupDrag } from '../drag/GroupDragContext';
@@ -185,7 +186,8 @@ export function PlanningDnd({
         overSection === undefined
           ? groupDropOnRow(sections, dragged.ids, overId, below)
           : groupDropOnSection(sections, overSection);
-      if (target !== null) void bulk.run(groupPlan(target, dragged.rows));
+      if (target !== null)
+        void runClearingSelection(selection, bulk, groupPlan(target, dragged.rows));
       return;
     }
     let drop: PlanningDrop | null;

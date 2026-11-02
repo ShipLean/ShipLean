@@ -157,3 +157,51 @@ test('Dragging_is_off_when_filtering', async ({ mount, page }) => {
   expect(server.bulks).toHaveLength(0);
   await expect(page.getByTestId('harness-moves')).toHaveText('');
 });
+
+const picked = (page: Page) => page.locator(`[data-testid="${ids.row}"][data-selected="true"]`);
+
+test('Dropping_a_block_on_a_row_clears_the_selection', async ({ mount, page }) => {
+  const server = await mountPlanning(mount, page);
+  await select(page, 'SHIP-181', 'SHIP-183');
+  await expect(picked(page)).toHaveCount(2);
+
+  await dragRow(page, rowOf(page, 'SHIP-181'), rowOf(page, 'SHIP-188'), 'above');
+
+  await expect.poll(() => server.bulks.length).toBe(1);
+  await expect(picked(page)).toHaveCount(0);
+});
+
+test('Dropping_a_block_on_a_header_clears_the_selection', async ({ mount, page }) => {
+  const server = await mountPlanning(mount, page);
+  await select(page, 'SHIP-181', 'SHIP-183');
+
+  await dragRow(page, rowOf(page, 'SHIP-181'), headerOf(page, 'Sprint 24'));
+
+  await expect.poll(() => server.bulks.length).toBe(1);
+  await expect(picked(page)).toHaveCount(0);
+});
+
+test('A_failed_block_drop_keeps_the_selection', async ({ mount, page }) => {
+  const server = await mountPlanning(mount, page);
+  await select(page, 'SHIP-181', 'SHIP-183');
+  await page.route('**/api/projects/p1/backlog/bulk', (route) =>
+    route.fulfill({ status: 500, body: '{}' }),
+  );
+
+  await dragRow(page, rowOf(page, 'SHIP-181'), rowOf(page, 'SHIP-188'), 'above');
+
+  await expect(page.getByTestId('toast')).toBeVisible();
+  await expect(picked(page)).toHaveCount(2);
+  expect(server.bulks).toHaveLength(0);
+});
+
+test('A_block_dropped_on_one_of_its_rows_keeps_the_selection', async ({ mount, page }) => {
+  await mountPlanning(mount, page);
+  await select(page, 'SHIP-181', 'SHIP-183');
+
+  await holdOver(page, rowOf(page, 'SHIP-181'), rowOf(page, 'SHIP-183'));
+  await page.mouse.up();
+
+  await expect(page.getByTestId(ids.dragBadge)).toHaveCount(0);
+  await expect(picked(page)).toHaveCount(2);
+});

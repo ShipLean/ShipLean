@@ -25,6 +25,7 @@ import {
   stateNamesFor,
   type SetPlan,
 } from './setPlans';
+import { runClearingSelection } from './runClearingSelection';
 import { sprintSum } from './sprintSum';
 import { useBulkRunner, type BulkPlan } from './useBulkRun';
 
@@ -94,24 +95,23 @@ export function BulkBar({ mode, projectId, view }: BulkBarProps) {
       showToast(set.skipped ?? 'Nothing to change', { tone: 'warn' });
       return;
     }
-    // Clear before the run: the outcome host re-selects the rows a teammate changed once it resolves. A failed run
-    // wrote nothing, so the user gets their selection back.
-    const before = clearFirst ? [...selection.ids] : [];
-    if (clearFirst) selection.clear();
-    const outcome = await runner.run(set.plan);
-    if (clearFirst && outcome.failed === true) selection.addMany(before);
+    if (clearFirst) await runClearingSelection(selection, runner, set.plan);
+    else await runner.run(set.plan);
   }
 
   const moveTo = (target: MoveTarget) =>
-    apply({ plan: moveToSprintPlan(selected, target.sprint), skipped: null });
+    apply({ plan: moveToSprintPlan(selected, target.sprint), skipped: null }, true);
   const moveToEdge = (slot: 'first' | 'last') =>
-    apply({
-      plan:
-        mode === 'planning'
-          ? moveToBacklogEdgePlan(selected, slot)
-          : moveToEdgePlan(selected, slot),
-      skipped: null,
-    });
+    apply(
+      {
+        plan:
+          mode === 'planning'
+            ? moveToBacklogEdgePlan(selected, slot)
+            : moveToEdgePlan(selected, slot),
+        skipped: null,
+      },
+      true,
+    );
 
   useListCommand('moveMenu', (arg) => {
     // The chord ended without a pick (Esc, or a key that is no move): the hints go, selection or not.

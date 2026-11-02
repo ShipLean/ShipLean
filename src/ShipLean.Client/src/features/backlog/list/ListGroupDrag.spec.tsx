@@ -113,3 +113,45 @@ test('List_WhenAnUnselectedRowIsDragged_ShouldReorderOnlyIt', async ({ mount, pa
 
   expect(server.bulks).toHaveLength(0);
 });
+
+const picked = (page: Page) => page.locator(`[data-testid="${ids.row}"][data-selected="true"]`);
+
+test('List_WhenABlockIsDropped_ShouldClearTheSelection', async ({ mount, page }) => {
+  const server = await stubBacklog(page, backlogView(ROWS));
+  await mount(<ListGroupHarness project={PROJECT} />, route);
+  await expect(page.getByTestId(ids.row)).toHaveCount(5);
+  await select(page, 'SHIP-3', 'SHIP-1');
+  await expect(picked(page)).toHaveCount(2);
+
+  await dragRow(page, rowOf(page, 'SHIP-3'), rowOf(page, 'SHIP-5'));
+
+  await expect.poll(() => server.bulks.length).toBe(1);
+  await expect(picked(page)).toHaveCount(0);
+});
+
+test('List_WhenTheBlockDropFails_ShouldKeepTheSelection', async ({ mount, page }) => {
+  const server = await stubBacklog(page, backlogView(ROWS));
+  await mount(<ListGroupHarness project={PROJECT} />, route);
+  await expect(page.getByTestId(ids.row)).toHaveCount(5);
+  await select(page, 'SHIP-3', 'SHIP-1');
+  await page.route('**/api/projects/p1/backlog/bulk', (route) =>
+    route.fulfill({ status: 500, body: '{}' }),
+  );
+
+  await dragRow(page, rowOf(page, 'SHIP-3'), rowOf(page, 'SHIP-5'));
+
+  await expect(page.getByTestId('toast')).toBeVisible();
+  await expect(picked(page)).toHaveCount(2);
+  expect(server.bulks).toHaveLength(0);
+});
+
+test('List_WhenDroppedOnASelectedRow_ShouldKeepTheSelection', async ({ mount, page }) => {
+  await stubBacklog(page, backlogView(ROWS));
+  await mount(<ListGroupHarness project={PROJECT} />, route);
+  await expect(page.getByTestId(ids.row)).toHaveCount(5);
+  await select(page, 'SHIP-1', 'SHIP-2');
+
+  await dragRow(page, rowOf(page, 'SHIP-1'), rowOf(page, 'SHIP-2'));
+
+  await expect(picked(page)).toHaveCount(2);
+});

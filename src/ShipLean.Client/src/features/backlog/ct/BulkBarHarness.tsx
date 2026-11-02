@@ -18,6 +18,15 @@ function Select({ view, ids }: { view: BacklogViewDto; ids: string[] }) {
   return null;
 }
 
+function Reselect({ ids }: { ids: string[] }) {
+  const selection = useSelection();
+  return (
+    <button type="button" data-testid="harness-reselect" onClick={() => selection.addMany(ids)}>
+      Select again
+    </button>
+  );
+}
+
 // CT-only: the bar over a selection made on mount, with CommandHarness's buttons to run `moveMenu` by name.
 export function BulkBarHarness({ view, selected }: { view: BacklogViewDto; selected: string[] }) {
   return (
@@ -28,6 +37,7 @@ export function BulkBarHarness({ view, selected }: { view: BacklogViewDto; selec
           queryKey={backlogKey('p1', 'stories', 'planning', '', false)}
         >
           <Select view={view} ids={selected} />
+          <Reselect ids={selected} />
           <BulkBar mode="planning" projectId="p1" projectKey="SHIP" view={view} />
         </BulkRunProvider>
       </SelectionProvider>

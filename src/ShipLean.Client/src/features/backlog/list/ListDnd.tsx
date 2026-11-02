@@ -17,6 +17,7 @@ import {
 } from '@dnd-kit/sortable';
 import type { BacklogRowDto } from '../../../api/views';
 import { moveBeforePlan } from '../bulk/movePlan';
+import { runClearingSelection } from '../bulk/runClearingSelection';
 import { useBulkRunner } from '../bulk/useBulkRun';
 import { inRankOrder, landsOnSelection } from '../planning/groupDrop';
 import { useSelection } from '../selection/useSelection';
@@ -65,7 +66,11 @@ export function ListDnd({
     if (dragged !== null) {
       // The block lands above the row it is dropped on; a row of the block is no target.
       if (!landsOnSelection(dragged.ids, String(over.id)))
-        void bulk.run(moveBeforePlan(dragged.rows, String(over.id), undefined));
+        void runClearingSelection(
+          selection,
+          bulk,
+          moveBeforePlan(dragged.rows, String(over.id), undefined),
+        );
       return;
     }
     const move = reorderTarget(rowIds, String(active.id), String(over.id));
