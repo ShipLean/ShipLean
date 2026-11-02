@@ -1,10 +1,12 @@
 /// <reference types="vitest/config" />
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
+import { viteBuildStatsPlugin } from 'agoda-devfeedback-vite2';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  // viteBuildStatsPlugin posts build and dev-server timings to VITE_ENDPOINT (devex-telemetry).
+  plugins: [react(), tailwindcss(), viteBuildStatsPlugin()],
   server: {
     port: 3000,
     // The proxy target below must never silently shift ports.
