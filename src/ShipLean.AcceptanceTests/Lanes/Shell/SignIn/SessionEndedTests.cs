@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using Microsoft.Playwright;
 using ShipLean.AcceptanceTests.Harness;
 using ShipLean.AcceptanceTests.Pages.Auth;
+using ShipLean.AcceptanceTests.Pages.Realtime;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.TestIds;
 
@@ -16,6 +17,12 @@ public class SessionEndedTests : SeededAcceptanceTest
     {
         await Page.GotoAsync("/p/PAY/sprints?x=1");
         await Expect(Page.GetByTestId(AppTestIds.ShellTopBar)).ToBeVisibleAsync();
+
+        // The page's hub calls (join project, join screen) are still on their way when the top bar shows. One that reaches
+        // the server after the sessions end is refused, and the page then runs its own sign-out (its API check deletes the
+        // cookie) while this test reloads, so the reload carries no cookie and gets the plain sign-in page. Live is the
+        // dot that says the joins are done.
+        await new LiveStatus(Page).WaitUntilLiveAsync();
 
         var browser = Page.Context.Browser!;
         var other = await browser.NewContextAsync(new BrowserNewContextOptions { BaseURL = BaseUrl });

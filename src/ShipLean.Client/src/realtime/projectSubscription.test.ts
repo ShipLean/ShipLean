@@ -211,3 +211,46 @@ test('subscription_WhenJoinProjectNotFound_ShouldBeOfflineUntilProjectChanges', 
   await vi.advanceTimersByTimeAsync(0);
   expect(states.at(-1)).toBe('live');
 });
+
+test.each(['JoinProject', 'JoinScreen'])(
+  'subscription_When%sIsPending_ShouldNotReportLiveUntilItIsDone',
+  async (pending) => {
+    const hub = fakeConnection();
+    let done: () => void = () => undefined;
+    hub.spies.invoke.mockImplementation(async (method: string) => {
+      if (method === pending) await new Promise<void>((resolve) => (done = resolve));
+    });
+    const { subscription, states } = subscribe(hub);
+    subscription.setScreen('sprints');
+    subscription.setProject(project);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(hub.spies.start).toHaveBeenCalledTimes(1);
+    expect(states).not.toContain('live');
+
+    done();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(states.at(-1)).toBe('live');
+  },
+);
+
+test('subscription_WhenJoinProjectFailsOtherwise_ShouldReportOfflineNotLive', async () => {
+  const hub = fakeConnection();
+  hub.spies.invoke.mockRejectedValueOnce(hubError('JoinProject', 'internal_error'));
+  const { subscription, states } = subscribe(hub);
+  subscription.setProject(project);
+  await vi.advanceTimersByTimeAsync(0);
+  expect(states).not.toContain('live');
+  expect(states.at(-1)).toBe('offline');
+});
+
+test('subscription_WhenJoinScreenIsRefused_ShouldStillReportLive', async () => {
+  const hub = fakeConnection();
+  hub.spies.invoke.mockImplementation(async (method: string) => {
+    if (method === 'JoinScreen') throw hubError('JoinScreen', 'validation');
+  });
+  const { subscription, states } = subscribe(hub);
+  subscription.setScreen('sprints');
+  subscription.setProject(project);
+  await vi.advanceTimersByTimeAsync(0);
+  expect(states.at(-1)).toBe('live');
+});
