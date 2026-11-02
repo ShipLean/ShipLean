@@ -1,6 +1,15 @@
 import { expect, test } from 'vitest';
 import { itemRow } from '../ct/fixtures';
-import { emptySelection, prune, range, selectAll, selectedRows, toggle } from './selectionModel';
+import {
+  addMany,
+  emptySelection,
+  prune,
+  range,
+  removeMany,
+  selectAll,
+  selectedRows,
+  toggle,
+} from './selectionModel';
 
 // Two sections in screen order: a, b | c, d, e
 const order = ['a', 'b', 'c', 'd', 'e'];
@@ -42,4 +51,11 @@ test('selectedRows_is_in_rank_order_not_click_order', () => {
 test('toggle_twice_clears_the_row_and_selectAll_takes_every_shown_row', () => {
   expect(toggle(toggle(emptySelection, 'a'), 'a').ids.size).toBe(0);
   expect(selectAll(order).ids.size).toBe(5);
+});
+
+test('addMany_keeps_the_rest_and_removeMany_drops_only_those_rows', () => {
+  const start = toggle(emptySelection, 'z');
+  const added = addMany(start, ['a', 'b']);
+  expect([...added.ids].sort()).toEqual(['a', 'b', 'z']);
+  expect([...removeMany(added, ['a', 'b']).ids]).toEqual(['z']);
 });

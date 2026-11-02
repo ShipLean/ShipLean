@@ -14,6 +14,8 @@ export type SelectionAction =
   | { type: 'toggle'; id: string }
   | { type: 'range'; id: string; order: readonly string[] }
   | { type: 'selectAll'; order: readonly string[] }
+  | { type: 'addMany'; ids: readonly string[] }
+  | { type: 'removeMany'; ids: readonly string[] }
   | { type: 'clear' }
   | { type: 'prune'; order: readonly string[] };
 
@@ -43,6 +45,19 @@ export function selectAll(order: readonly string[]): SelectionState {
   return { ids: new Set(order), anchor: order[0] ?? null };
 }
 
+/** Adds rows to the selection, keeping the rest (a collapsed section's rows stay selected). */
+export function addMany(state: SelectionState, ids: readonly string[]): SelectionState {
+  if (ids.length === 0) return state;
+  return { ids: new Set([...state.ids, ...ids]), anchor: state.anchor ?? ids[0] };
+}
+
+export function removeMany(state: SelectionState, ids: readonly string[]): SelectionState {
+  const drop = new Set(ids);
+  const kept = [...state.ids].filter((id) => !drop.has(id));
+  const anchor = state.anchor !== null && drop.has(state.anchor) ? null : state.anchor;
+  return { ids: new Set(kept), anchor };
+}
+
 export const clear = (): SelectionState => emptySelection;
 
 /** Drops the rows that left the screen (moved off by a filter, removed, or changed by a teammate). Same state when none left. */
@@ -62,6 +77,10 @@ export function selectionReducer(state: SelectionState, action: SelectionAction)
       return range(state, action.order, action.id);
     case 'selectAll':
       return selectAll(action.order);
+    case 'addMany':
+      return addMany(state, action.ids);
+    case 'removeMany':
+      return removeMany(state, action.ids);
     case 'clear':
       return state.ids.size === 0 ? state : clear();
     case 'prune':

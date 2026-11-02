@@ -31,6 +31,9 @@ export interface Selection {
   toggle: (id: string) => void;
   rangeTo: (id: string) => void;
   selectAll: () => void;
+  /** Adds the rows to the selection, keeping the rest. */
+  addMany: (ids: readonly string[]) => void;
+  removeMany: (ids: readonly string[]) => void;
   clear: () => void;
   focusedId: string | null;
   setFocused: (id: string | null) => void;
@@ -48,6 +51,8 @@ const inert: Selection = {
   toggle: noop,
   rangeTo: noop,
   selectAll: noop,
+  addMany: noop,
+  removeMany: noop,
   clear: noop,
   focusedId: null,
   setFocused: noop,
@@ -76,7 +81,10 @@ export function useSelection(shownIds?: readonly string[]): Selection {
       count: state.ids.size,
       orderedIds: walkOrder ?? owned,
       toggle: (id) => context.dispatch({ type: 'toggle', id }),
-      rangeTo: (id) => context.dispatch({ type: 'range', id, order: owned }),
+      // A range walks the order the rows are shown in, so a collapsed section's rows are skipped.
+      rangeTo: (id) => context.dispatch({ type: 'range', id, order: walkOrder ?? owned }),
+      addMany: (ids) => context.dispatch({ type: 'addMany', ids }),
+      removeMany: (ids) => context.dispatch({ type: 'removeMany', ids }),
       selectAll: () => context.dispatch({ type: 'selectAll', order: owned }),
       clear: () => context.dispatch({ type: 'clear' }),
       focusedId,

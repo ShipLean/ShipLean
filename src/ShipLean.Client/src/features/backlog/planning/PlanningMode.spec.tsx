@@ -259,13 +259,13 @@ test('Planning_WhenReadFails_ShouldSayItCouldNotLoad', async ({ mount, page }) =
   await expect(page.getByTestId(ids.loadFailed)).toBeVisible();
 });
 
-test('PlanningMode_ShowsAnEmptySelectColumn', async ({ mount, page }) => {
+test('PlanningMode_ShowsACheckboxPerRowAndOneToSelectAll', async ({ mount, page }) => {
   await stubBacklog(page, planningView());
   await mount(<PlanningMode project={PROJECT} />, route);
 
   await expect(page.getByTestId(ids.row)).toHaveCount(5);
   await expect(page.getByTestId(ids.selectAll)).toHaveCount(1);
   await expect(page.getByTestId(ids.rowSelect)).toHaveCount(5);
-  await expect(page.getByTestId(ids.rowSelect).first()).toBeEmpty();
-  await expect(page.getByTestId(ids.selectAll)).toBeEmpty();
+  await expect(page.getByTestId(ids.rowSelect).first().getByRole('checkbox')).not.toBeChecked();
+  await expect(page.getByTestId(ids.selectAll).getByRole('checkbox')).not.toBeChecked();
 });
