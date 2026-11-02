@@ -137,7 +137,7 @@ Run these checks and fix what they find:
 3. **Placeholders and known gaps.** Look through upstream handoffs' "left undone" items and known gaps, TODOs and stubs this plan consumes, and every placeholder Agent 0 itself introduces. Each one gets an owning task, or the plan says it stays fake.
 4. **File ownership.** No two concurrent tasks own the same file. List owned files per task, including test infrastructure: page objects, test helpers, fixtures and route tables.
 5. **Context budget.** Every task, and every orchestrator, conductor and lead, has an estimate under about 100k (Step 2).
-6. **Definition of ready.** The plan is not handed over until the briefs and the common brief exist and have passed the plan review (any edit after the review is re-reviewed), and every command in every brief's test block has been run in a throwaway worktree on this host, twice from clean, and timed. Only commands that worked go into the briefs. If an inner-loop run is over about a minute, fix the fixture setup or the filter first.
+6. **Definition of ready.** The plan is not handed over until the briefs and the common brief exist and have passed the plan review (any edit after the review is re-reviewed).
 7. **Open questions.** Anything whose answer changes the work (where data comes from, which environment, who approves) goes to the user now, batched in one set of questions. Do not build something you might throw away to find out.
 8. **Concurrency.** Size each wave's parallel sub-agents to the machine's test load (containers, browsers, cores), not a fixed agent count.
 

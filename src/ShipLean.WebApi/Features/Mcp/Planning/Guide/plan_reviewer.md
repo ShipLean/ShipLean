@@ -18,7 +18,7 @@ Check each item and report blocking findings first, then non-blocking:
 5. Constraint 1: each task's context estimate (`context_k`), and the conductor's and leads'. Anything likely over about 100k, or over about 1,500 lines, 3 UI surfaces or 2 journeys, should split. Critical-path tasks budgeted over about 60k should split. Any size given in time instead of tokens is a finding.
 6. Shared shapes written by one task and read by another without an owner or a round-trip test.
 7. Two concurrent tasks owning the same file, including page objects, test helpers and fixtures.
-8. Briefs missing the filtered inner-loop command with a timeout, the per-test acceptance filter, measured test times, banned patterns, the contract rule, or how to reuse shared expensive fixtures instead of starting new ones per run.
+8. Briefs missing the filtered inner-loop command with a timeout, the per-test acceptance filter, banned patterns, the contract rule, or how to reuse shared expensive fixtures instead of starting new ones per run.
 9. Placeholders, stubs or known gaps from earlier work or from Agent 0 that this plan consumes without an owner.
 10. Questions whose answer would change the work that nobody has asked the user.
 11. Model assignment: grunt work not on a fast cheap model; a reviewer from the same model family as the author.
