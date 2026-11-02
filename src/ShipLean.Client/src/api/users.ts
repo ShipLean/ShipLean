@@ -6,8 +6,9 @@ export const USER_STATUSES = [
   'locked',
   'noPassword',
   'disabled',
+  'googleOnly',
 ] as const;
-/** Derived by the server, first match wins: disabled, noPassword, locked, oneTimePassword, active. */
+/** Derived by the server, first match wins: disabled, googleOnly, noPassword, locked, oneTimePassword, active. */
 export type UserStatus = (typeof USER_STATUSES)[number];
 
 export interface UserDto {

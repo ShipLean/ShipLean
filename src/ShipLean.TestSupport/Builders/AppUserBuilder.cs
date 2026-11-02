@@ -24,6 +24,7 @@ public sealed class AppUserBuilder
     private DateTimeOffset? _disabledAt;
     private bool _isAdmin;
     private bool _hasPhoto;
+    private string? _googleSubject;
 
     public AppUserBuilder WithId(Guid id)
     {
@@ -68,6 +69,12 @@ public sealed class AppUserBuilder
         return this;
     }
 
+    public AppUserBuilder WithGoogleSubject(string subject)
+    {
+        _googleSubject = subject;
+        return this;
+    }
+
     public AppUserBuilder Admin()
     {
         _isAdmin = true;
@@ -90,8 +97,8 @@ public sealed class AppUserBuilder
         await connection.ExecuteAsync(
             """
             INSERT INTO app_user (id, email, name, initials, avatar_colour, avatar_photo_blob, photo_version, password_hash, must_change_password,
-                                  security_stamp, locked_until, is_admin, disabled_at)
-            VALUES (@id, @email, @name, @initials, '#2f7fd8', @photo, @photoVersion, @hash, @mustChange, @stamp, @lockedUntil, @isAdmin, @disabledAt)
+                                  security_stamp, locked_until, is_admin, disabled_at, google_subject)
+            VALUES (@id, @email, @name, @initials, '#2f7fd8', @photo, @photoVersion, @hash, @mustChange, @stamp, @lockedUntil, @isAdmin, @disabledAt, @googleSubject)
             """,
             new
             {
@@ -107,6 +114,7 @@ public sealed class AppUserBuilder
                 lockedUntil = _lockedUntil,
                 isAdmin = _isAdmin,
                 disabledAt = _disabledAt,
+                googleSubject = _googleSubject,
             });
         return _id;
     }

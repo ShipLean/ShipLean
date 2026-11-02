@@ -128,6 +128,7 @@ public static class ActionUsageMap
             "AgentSession.Sessions",
             "Analytics.Get",
             "Auth.Instance",
+            "GoogleSignIn.Start",
             "BoardSettings.Get",
             "BoardView.Get",
             "ConnectedAgents.List",

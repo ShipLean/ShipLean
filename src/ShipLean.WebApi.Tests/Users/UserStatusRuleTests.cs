@@ -30,6 +30,9 @@ public class UserStatusRuleTests
             ("lockedAndOneTimePassword", new AppUserBuilder().LockedUntil(now.AddHours(1)).MustChangePassword(), UserStatus.Locked),
             ("noPassword", new AppUserBuilder().WithPassword(null), UserStatus.NoPassword),
             ("noPasswordAndLocked", new AppUserBuilder().WithPassword(null).LockedUntil(now.AddHours(1)), UserStatus.NoPassword),
+            ("googleOnly", new AppUserBuilder().WithPassword(null).WithGoogleSubject("status-1"), UserStatus.GoogleOnly),
+            ("googleAndPassword", new AppUserBuilder().WithGoogleSubject("status-2"), UserStatus.Active),
+            ("googleDisabled", new AppUserBuilder().WithPassword(null).WithGoogleSubject("status-3").DisabledAt(now.AddDays(-1)), UserStatus.Disabled),
             ("disabled", new AppUserBuilder().DisabledAt(now.AddDays(-1)), UserStatus.Disabled),
             ("disabledAndLocked", new AppUserBuilder().DisabledAt(now.AddDays(-1)).LockedUntil(now.AddHours(1)), UserStatus.Disabled),
             ("disabledAndNoPassword", new AppUserBuilder().DisabledAt(now.AddDays(-1)).WithPassword(null), UserStatus.Disabled),
@@ -43,7 +46,7 @@ public class UserStatusRuleTests
 
         var rows = (await connection.QueryAsync<Row>(
             $"""
-            SELECT id, disabled_at AS disabledAt, password_hash IS NOT NULL AS hasPassword, locked_until AS lockedUntil,
+            SELECT id, disabled_at AS disabledAt, password_hash IS NOT NULL AS hasPassword, google_subject IS NOT NULL AS hasGoogle, locked_until AS lockedUntil,
                    must_change_password AS mustChangePassword, {UserStatusRule.Sql} AS sqlStatus
             FROM app_user
             """, new { now })).ToList();
@@ -53,9 +56,9 @@ public class UserStatusRuleTests
         {
             var (name, expected) = ids[row.Id];
             UserStatusRule.Parse(row.SqlStatus).ShouldBe(expected, $"SQL for {name}");
-            UserStatusRule.Derive(row.DisabledAt, row.HasPassword, row.LockedUntil, row.MustChangePassword, now).ShouldBe(expected, $"C# for {name}");
+            UserStatusRule.Derive(row.DisabledAt, row.HasPassword, row.HasGoogle, row.LockedUntil, row.MustChangePassword, now).ShouldBe(expected, $"C# for {name}");
         }
     }
 
-    private sealed record Row(Guid Id, DateTimeOffset? DisabledAt, bool HasPassword, DateTimeOffset? LockedUntil, bool MustChangePassword, string SqlStatus);
+    private sealed record Row(Guid Id, DateTimeOffset? DisabledAt, bool HasPassword, bool HasGoogle, DateTimeOffset? LockedUntil, bool MustChangePassword, string SqlStatus);
 }

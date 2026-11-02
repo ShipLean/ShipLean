@@ -28,7 +28,10 @@ function itemsFor(user: AdminUserDto, isMe: boolean, proxy: boolean): Item[] {
     : [
         {
           action: 'password',
-          label: user.status === 'noPassword' ? 'Set up sign-in…' : 'Reset password…',
+          label:
+            user.status === 'noPassword' || user.status === 'googleOnly'
+              ? 'Set up sign-in…'
+              : 'Reset password…',
           testId: settingsTestIds.usersMenuPassword,
           reason: isMe ? 'Change your own on Your profile' : undefined,
         },

@@ -7,6 +7,7 @@ export const authTestIds = {
   password: 'auth-password',
   revealPassword: 'auth-reveal-password',
   signInSubmit: 'auth-sign-in-submit',
+  googleSignIn: 'auth-google-sign-in',
   changeForm: 'auth-change-form',
   newPassword: 'auth-new-password',
   confirmPassword: 'auth-confirm-password',

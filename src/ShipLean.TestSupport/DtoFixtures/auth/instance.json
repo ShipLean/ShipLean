@@ -1,4 +1,4 @@
 {
-  "password": { "name": "Larkspur Engineering", "signIn": "password", "signOutUrl": null },
-  "proxy": { "name": "Larkspur Engineering", "signIn": "proxy", "signOutUrl": "/oauth2/sign_out" }
+  "password": { "name": "Larkspur Engineering", "signIn": "password", "signOutUrl": null, "googleSignIn": false },
+  "proxy": { "name": "Larkspur Engineering", "signIn": "proxy", "signOutUrl": "/oauth2/sign_out", "googleSignIn": false }
 }

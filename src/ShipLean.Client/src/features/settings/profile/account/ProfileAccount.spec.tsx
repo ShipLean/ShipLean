@@ -44,11 +44,15 @@ interface Routable {
 
 const stub = async (
   page: Routable,
-  options: { refuse?: { path: string; message: string }; projects?: ProjectSummaryDto[] } = {},
+  options: {
+    refuse?: { path: string; message: string };
+    projects?: ProjectSummaryDto[];
+    status?: MeDto['status'];
+  } = {},
 ): Promise<Calls> => {
   const calls: Calls = { list: [], bodies: [] };
   let projects = options.projects ?? [projectOf('SHIP', 'admin'), projectOf('PAY', 'member')];
-  let current = me;
+  let current = options.status ? { ...me, status: options.status } : me;
   await page.route('**/api/**', async (route) => {
     const request = route.request();
     const method = request.method();
@@ -351,6 +355,14 @@ test('Account_WhenProxyMode_ShouldHideThePasswordPanelAndKeepSignOutOthers', asy
 }) => {
   await stub(page);
   await proxyInstance(page, '/oauth2/sign_out');
+  const view = await mount(<ProfileAccount />);
+
+  await expect(view.getByTestId(ids.signOutOthers)).toBeVisible();
+  await expect(view.getByTestId(ids.passwordPanel)).toHaveCount(0);
+});
+
+test('Account_WhenUserOnlyHasGoogle_ShouldHideThePasswordPanel', async ({ mount, page }) => {
+  await stub(page, { status: 'googleOnly' });
   const view = await mount(<ProfileAccount />);
 
   await expect(view.getByTestId(ids.signOutOthers)).toBeVisible();

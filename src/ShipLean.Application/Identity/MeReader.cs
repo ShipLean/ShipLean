@@ -9,7 +9,7 @@ namespace ShipLean.Application.Identity;
 
 // GET /api/me: the signed-in user as the shell draws itself, read by SQL in one statement.
 [RegisterSingleton]
-public sealed class MeReader(NpgsqlDataSource dataSource, TimeProvider clock, ProxySignInSettings proxy)
+public sealed class MeReader(NpgsqlDataSource dataSource, TimeProvider clock, ProxySignInSettings proxy, GoogleSignInSettings google)
 {
     private sealed record Row(
         Guid Id, string Name, string Email, string Initials, string AvatarColour, string? PhotoUrl, bool IsInstanceAdmin,
@@ -47,6 +47,6 @@ public sealed class MeReader(NpgsqlDataSource dataSource, TimeProvider clock, Pr
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var name = await connection.ExecuteScalarAsync<string>(new CommandDefinition(
             "SELECT name FROM instance_settings", cancellationToken: cancellationToken)) ?? "ShipLean";
-        return new InstanceDto(name, proxy.IsProxy ? SignInMode.Proxy : SignInMode.Password, proxy.SignOutUrl);
+        return new InstanceDto(name, proxy.IsProxy ? SignInMode.Proxy : SignInMode.Password, proxy.SignOutUrl, google.IsEnabled);
     }
 }

@@ -14,6 +14,7 @@ public static class RouteAllowList
         new("POST", "api/auth/login", "Signs a user in.", Body: LoginBody),
         new("POST", "api/auth/logout", "Ends the cookie session, valid or not."),
         new("GET", "api/auth/instance", "The sign-in page's instance name."),
+        new("GET", "api/auth/google/start", "Sends someone with no session to Google; 404 while Google sign-in is off."),
         new("GET", "api/health", "Liveness probe."),
         new("GET", "api/downloads/{token}", "An agent's curl has no session; the short-lived URL token is the proof, and every token that is not live is 404."),
         new("PUT", "api/uploads/{token}", "An agent's curl has no session; the one-time URL token is the proof, and every token that is not live is 404."),

@@ -5,6 +5,7 @@ import type { MeDto } from '../../api/me';
 import { login } from './authApi';
 import { Banner } from './Banner';
 import { FormField } from './FormField';
+import { GoogleSignInLink } from './GoogleSignInLink';
 import { authTestIds } from './testIds';
 
 // The failure sentence is the server's, the same one whatever the reason, so the page never says which emails exist.
@@ -14,10 +15,13 @@ export function SignInForm({
   instanceName,
   note,
   onSignedIn,
+  googleHref,
 }: {
   instanceName: string | undefined;
   note: ReactNode;
   onSignedIn: (me: MeDto, password: string) => void;
+  /** Where the Google button goes; null hides it. */
+  googleHref: string | null;
 }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -94,6 +98,7 @@ export function SignInForm({
             revealTestId={authTestIds.revealPassword}
           />
         </div>
+        {googleHref ? <GoogleSignInLink href={googleHref} /> : null}
       </div>
       <footer className="flex items-center gap-2 rounded-b-frame border-t border-edge bg-canvas px-4 py-3">
         <span className="flex-1 text-[length:var(--text-xs)] text-ink-muted">

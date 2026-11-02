@@ -39,5 +39,9 @@ test('users_ShouldTypeTheFixture', () => {
     'noPassword',
     'disabled',
   ]);
-  expect(new Set(users.map((user) => user.status))).toEqual(new Set(USER_STATUSES));
+  // Not a seeded user, so it isn't in the list above.
+  const googleOnly = typed<UserDto>()(me.googleOnlyUser);
+  expect(new Set([...users, googleOnly].map((user) => user.status))).toEqual(
+    new Set(USER_STATUSES),
+  );
 });

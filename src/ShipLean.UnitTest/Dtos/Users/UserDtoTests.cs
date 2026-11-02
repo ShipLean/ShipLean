@@ -27,6 +27,17 @@ public class UserDtoTests
     }
 
     [Test]
+    public void UserDto_WhenGoogleOnly_ShouldRoundTrip()
+    {
+        var node = PinnedFixture.Read("me.json")["googleOnlyUser"]!;
+
+        var user = node.Deserialize<UserDto>(ApiJson.CreateOptions())!;
+
+        user.Status.ShouldBe(UserStatus.GoogleOnly);
+        JsonNode.DeepEquals(node, JsonSerializer.SerializeToNode(user, ApiJson.CreateOptions())).ShouldBeTrue();
+    }
+
+    [Test]
     public void UserDto_WhenFixtureRead_ShouldCoverEveryStatus()
     {
         var statuses = UserEntries().Select(c => ((JsonNode)c.Arguments[0]!)["status"]!.GetValue<string>()).ToList();
