@@ -4,6 +4,7 @@ import type { BacklogRowDto } from '../../../api/views';
 import type { BacklogColumnId } from '../backlogApi';
 import { RowSelectCell } from '../selection/RowSelectCell';
 import { useRowGestures } from '../selection/useRowGestures';
+import { useGroupDragged } from '../drag/GroupDragContext';
 import { Grip } from '../drag/Grip';
 import { ListCell } from '../list/ListCell';
 import { backlogTestIds as ids } from '../testIds';
@@ -50,6 +51,8 @@ export function PlanningRow({
     isDragging,
   } = useDraggable({ id: row.id, disabled: dragDisabled });
   const { setNodeRef: dropRef } = useDroppable({ id: row.id });
+  // Part of a dragged selection: dims in place.
+  const withGroup = useGroupDragged(row.id);
   const { onKeyDown: gestureKeyDown, ...gestures } = useRowGestures(row);
   function moveOnAlt(event: KeyboardEvent<HTMLTableRowElement>) {
     if (!event.altKey) return;
@@ -76,7 +79,7 @@ export function PlanningRow({
       data-flash={flash}
       data-over={dropEdge !== null}
       data-edge={dropEdge ?? undefined}
-      style={{ opacity: isDragging ? 0.4 : 1 }}
+      style={{ opacity: isDragging || withGroup ? 0.4 : 1 }}
       className={`h-9 data-[edge=bottom]:[&>td]:shadow-[inset_0_-2px_0_var(--color-accent)] data-[edge=top]:[&>td]:shadow-[inset_0_2px_0_var(--color-accent)] text-[length:var(--text-sm)] transition-colors duration-700 data-[selected=true]:bg-accent-soft ${flash ? 'bg-signal-soft' : ''} ${mark ? 'border-b-2 border-signal' : 'border-b border-edge'} ${closed ? 'text-ink-muted' : 'text-ink'}`}
     >
       <RowSelectCell row={row} />
