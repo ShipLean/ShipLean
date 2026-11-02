@@ -136,6 +136,8 @@ public static class BacklogTestIds
     public const string PullSum = "backlog-pull-sum";
     public const string PullReset = "backlog-pull-reset";
     public const string PullGo = "backlog-pull-go";
+    public const string PullCell = "backlog-pull-cell";
+    public const string PullContent = "backlog-pull-content";
     public const string SearchBox = "backlog-search-box";
     public const string SectionToggle = "backlog-section-toggle";
     public const string PlanStrip = "backlog-plan-strip";

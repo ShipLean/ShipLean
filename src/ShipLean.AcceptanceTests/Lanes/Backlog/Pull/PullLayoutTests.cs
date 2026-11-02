@@ -26,10 +26,55 @@ public class PullLayoutTests : SeededAcceptanceTest
         await Expect(moves.DragBadge).ToBeVisibleAsync();
 
         // Nothing sticks out of the window, the list or the pull line's own cell, with the badge up and the line showing.
-        var overflow = await Page.EvaluateAsync<string[]>(
-            "([lineId, badgeId]) => { const out = []; const root = document.documentElement; if (root.scrollWidth > root.clientWidth) out.push(`page ${root.scrollWidth} > ${root.clientWidth}`); const cell = document.querySelector(`[data-testid=\"${lineId}\"] td`); const cb = cell.getBoundingClientRect(); for (const el of cell.querySelectorAll('*')) { const b = el.getBoundingClientRect(); if (b.width > 0 && (b.right > cb.right + 0.5 || b.left < cb.left - 0.5)) out.push(`line child ${el.tagName} ${Math.round(b.right)} > ${Math.round(cb.right)}`); } if (cell.scrollWidth > cell.clientWidth) out.push(`line cell ${cell.scrollWidth} > ${cell.clientWidth}`); for (let n = cell.parentElement; n; n = n.parentElement) { if (n.scrollWidth > n.clientWidth + 1 && /(auto|scroll)/.test(getComputedStyle(n).overflowX)) out.push(`scrolls sideways: ${n.tagName}`); } const badge = document.querySelector(`[data-testid=\"${badgeId}\"]`).getBoundingClientRect(); if (badge.right > innerWidth || badge.left < 0) out.push('badge outside the window'); return out; }",
-            new object[] { BacklogTestIds.PullLine, BacklogTestIds.DragBadge });
+        var overflow = new List<string>();
+        var page = await Page.EvaluateAsync<int[]>("() => [document.documentElement.scrollWidth, document.documentElement.clientWidth]");
+        if (page[0] > page[1])
+        {
+            overflow.Add($"page {page[0]} > {page[1]}");
+        }
+
+        var cell = (await pull.Cell.BoundingBoxAsync())!;
+        foreach (var (name, part) in new[] { ("content", pull.Content), ("grip", pull.Grip), ("target", pull.Target), ("sum", pull.Sum), ("go", pull.Go) })
+        {
+            var b = (await part.BoundingBoxAsync())!;
+            if (b.X + b.Width > cell.X + cell.Width + 0.5 || b.X < cell.X - 0.5)
+            {
+                overflow.Add($"line {name} {Math.Round(b.X + b.Width)} > {Math.Round(cell.X + cell.Width)}");
+            }
+        }
+
+        var cellScroll = await pull.Cell.EvaluateAsync<int[]>("el => [el.scrollWidth, el.clientWidth]");
+        if (cellScroll[0] > cellScroll[1])
+        {
+            overflow.Add($"line cell {cellScroll[0]} > {cellScroll[1]}");
+        }
+
+        var scrolling = await pull.Cell.EvaluateAsync<string[]>(
+            "el => { const out = []; for (let n = el.parentElement; n; n = n.parentElement) { if (n.scrollWidth > n.clientWidth + 1 && /(auto|scroll)/.test(getComputedStyle(n).overflowX)) out.push(`scrolls sideways: ${n.tagName}`); } return out; }");
+        overflow.AddRange(scrolling);
+
+        var badge = (await moves.DragBadge.BoundingBoxAsync())!;
+        if (badge.X + badge.Width > width || badge.X < 0)
+        {
+            overflow.Add("badge outside the window");
+        }
+
         overflow.ShouldBeEmpty();
+
+        // Nothing is dropped: Escape cancels the drag, and no bulk write was sent.
+        var bulk = new List<string>();
+        Page.Request += (_, request) =>
+        {
+            if (request.Method == "POST" && request.Url.EndsWith("/backlog/bulk", StringComparison.Ordinal))
+            {
+                bulk.Add(request.Url);
+            }
+        };
+        await Page.Keyboard.PressAsync("Escape");
+        await Expect(moves.DragBadge).ToBeHiddenAsync();
+        await Expect(moves.Row("SHIP-153")).Not.ToHaveAttributeAsync("data-over", "true");
         await Page.Mouse.UpAsync();
+        await Expect(moves.DragBadge).ToBeHiddenAsync();
+        bulk.ShouldBeEmpty();
     }
 }

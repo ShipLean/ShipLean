@@ -17,12 +17,17 @@ public sealed class PullLine(IPage page)
 
     public ILocator Go => page.GetByTestId(BacklogTestIds.PullGo);
 
+    public ILocator Cell => page.GetByTestId(BacklogTestIds.PullCell);
+
+    public ILocator Content => page.GetByTestId(BacklogTestIds.PullContent);
+
     // The keys of the Backlog's rows above the line, top to bottom: the rows Pull would take.
     public async Task<List<string>> KeysAboveAsync()
     {
-        var keys = await page.EvaluateAsync<string[]>(
-            "([lineId, rowId]) => { const keys = []; for (const tr of document.querySelectorAll('tr')) { const id = tr.getAttribute('data-testid'); if (id === lineId) break; if (id === rowId && tr.getAttribute('data-section') === 'backlog') keys.push(tr.getAttribute('data-key') ?? ''); } return keys; }",
-            new object[] { BacklogTestIds.PullLine, BacklogTestIds.Row });
+        var line = (await Line.ElementHandleAsync());
+        var keys = await page.GetByTestId(BacklogTestIds.Row).EvaluateAllAsync<string[]>(
+            "(rows, line) => rows.filter(r => r.getAttribute('data-section') === 'backlog' && (line.compareDocumentPosition(r) & Node.DOCUMENT_POSITION_PRECEDING) !== 0).map(r => r.getAttribute('data-key') ?? '')",
+            line);
         return [.. keys];
     }
 

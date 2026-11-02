@@ -132,6 +132,8 @@ export const backlogTestIds = {
   pullSum: 'backlog-pull-sum',
   pullReset: 'backlog-pull-reset',
   pullGo: 'backlog-pull-go',
+  pullCell: 'backlog-pull-cell',
+  pullContent: 'backlog-pull-content',
   searchBox: 'backlog-search-box',
   sectionToggle: 'backlog-section-toggle',
   planStrip: 'backlog-plan-strip',

@@ -28,10 +28,11 @@ export function PullLineRow({
   return (
     <tr data-testid={ids.pullLine} data-over={sum.over}>
       <td
+        data-testid={ids.pullCell}
         colSpan={columnCount}
         className="h-[42px] border-y-2 border-accent bg-accent-soft px-2 text-[length:var(--text-sm)]"
       >
-        <div className="flex flex-wrap items-center gap-2">
+        <div data-testid={ids.pullContent} className="flex flex-wrap items-center gap-2">
           <button
             ref={grip}
             type="button"
