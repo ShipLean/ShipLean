@@ -1,0 +1,26 @@
+{
+  "matches": [
+    {
+      "index": 0,
+      "items": [
+        {
+          "key": "SHIP-141",
+          "title": "Pay with saved card"
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "items": [
+        {
+          "key": "SHIP-150",
+          "title": "Expired cards can be picked"
+        },
+        {
+          "key": "SHIP-151",
+          "title": "Expired card shown as valid"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "items": [
+    {
+      "type": "story",
+      "title": "Pay with a saved card",
+      "description": null,
+      "points": 5,
+      "parentId": null,
+      "tasks": [
+        {
+          "title": "Show saved cards",
+          "points": 2
+        },
+        {
+          "title": "Pick the card used last",
+          "points": null
+        }
+      ]
+    },
+    {
+      "type": "bug",
+      "title": "Expired card can be picked",
+      "description": "Greyed out but still clickable.",
+      "points": null,
+      "parentId": "00000005-0000-4000-8001-000000000100",
+      "tasks": []
+    }
+  ],
+  "sprintId": "00000006-0000-4000-8000-000000000024",
+  "placement": {
+    "slot": "last",
+    "beforeItemId": null
+  }
+}

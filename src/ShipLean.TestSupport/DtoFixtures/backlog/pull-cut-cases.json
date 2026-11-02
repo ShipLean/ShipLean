@@ -1,0 +1,110 @@
+{
+  "about": "The pull line's cut rule for C# (SprintFill.Cut) and TypeScript (pull/pullCut.ts). stack is each row's points (null = unestimated); rows+pointsEach is a stack of that many equal rows. selected 'cap' is the row cap: SprintFill.MaxItems in C#, BULK_MAX_ROWS in TypeScript.",
+  "cases": [
+    {
+      "name": "all_fit",
+      "stack": [
+        3,
+        5,
+        2
+      ],
+      "room": 20,
+      "alreadyIn": 0,
+      "expect": {
+        "selected": 3,
+        "sprintPoints": 10,
+        "overBy": null,
+        "capped": false
+      }
+    },
+    {
+      "name": "stops_at_first_that_does_not_fit_and_never_skips",
+      "stack": [
+        5,
+        8,
+        1
+      ],
+      "room": 10,
+      "alreadyIn": 0,
+      "expect": {
+        "selected": 1,
+        "sprintPoints": 5,
+        "overBy": null,
+        "capped": false
+      }
+    },
+    {
+      "name": "oversize_row_lands_in_an_empty_sprint",
+      "stack": [
+        13,
+        2
+      ],
+      "room": 8,
+      "alreadyIn": 0,
+      "expect": {
+        "selected": 1,
+        "sprintPoints": 13,
+        "overBy": 5,
+        "capped": false
+      }
+    },
+    {
+      "name": "oversize_row_waits_when_the_sprint_already_has_work",
+      "stack": [
+        13,
+        2
+      ],
+      "room": 8,
+      "alreadyIn": 3,
+      "expect": {
+        "selected": 0,
+        "sprintPoints": 3,
+        "overBy": null,
+        "capped": false
+      }
+    },
+    {
+      "name": "unestimated_rows_count_zero",
+      "stack": [
+        null,
+        3,
+        null
+      ],
+      "room": 3,
+      "alreadyIn": 0,
+      "expect": {
+        "selected": 3,
+        "sprintPoints": 3,
+        "overBy": null,
+        "capped": false
+      }
+    },
+    {
+      "name": "already_over_takes_nothing",
+      "stack": [
+        1
+      ],
+      "room": 8,
+      "alreadyIn": 10,
+      "expect": {
+        "selected": 0,
+        "sprintPoints": 10,
+        "overBy": 2,
+        "capped": false
+      }
+    },
+    {
+      "name": "stops_at_the_row_cap",
+      "rows": 120,
+      "pointsEach": 0,
+      "room": 10,
+      "alreadyIn": 0,
+      "expect": {
+        "selected": "cap",
+        "sprintPoints": 0,
+        "overBy": null,
+        "capped": true
+      }
+    }
+  ]
+}
