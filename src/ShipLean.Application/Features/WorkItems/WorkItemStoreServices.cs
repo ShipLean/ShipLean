@@ -11,5 +11,6 @@ public sealed class WorkItemStoreServices : IServiceModule
     {
         services.AddScoped<IWorkItemStore, WorkItemStore>();
         services.AddScoped<IWorkItemTreeWriter, WorkItemStore>();
+        services.AddScoped<IWorkItemBatchWriter, WorkItemStore>();
     }
 }

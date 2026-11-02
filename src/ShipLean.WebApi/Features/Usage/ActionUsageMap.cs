@@ -42,6 +42,8 @@ public static class ActionUsageMap
         Add(ActionUsage.Track(UsageEventNames.WorkItemMoved, board: "taskboard"), "Taskboard.Move");
         Add(ActionUsage.Track(UsageEventNames.WorkItemReordered), "WorkItems.Reorder");
         Add(ActionUsage.Track(UsageEventNames.WorkItemRemoved), "WorkItems.Remove");
+        Add(ActionUsage.Track(UsageEventNames.BacklogBulkWritten), "BacklogWrites.Bulk");
+        Add(ActionUsage.Track(UsageEventNames.BacklogItemsAdded), "BacklogWrites.Add");
         Add(ActionUsage.Track(UsageEventNames.SearchPerformed), "Search.Get");
         Add(ActionUsage.Track(UsageEventNames.CommentAdded), "WorkItemComments.Add");
         Add(ActionUsage.Track(UsageEventNames.CommentEdited), "Comments.Edit");
@@ -104,6 +106,7 @@ public static class ActionUsageMap
             "Jira.Test",
             "ProjectCreation.KeyCheck",
             "FeatureSlug.Check",
+            "BacklogWrites.Duplicates",
             "Analytics.Test");
         Add(
             ActionUsage.Untracked(Noise),

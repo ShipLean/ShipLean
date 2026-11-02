@@ -178,6 +178,8 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `planning_guide.viewed` | `planning_guide` |  |
 | `feature.progress_viewed` | `feature_progress` |  |
 | `backlog.reviewed` | `review_backlog` |  |
+| `backlog.bulk_written` |  | `BacklogWrites.Bulk` |
+| `backlog.items_added` |  | `BacklogWrites.Add` |
 | `changes.viewed` | `whats_changed_since` |  |
 | `search.performed` | `search` | `Search.Get` |
 | `comment.added` | `comment` | `WorkItemComments.Add` |

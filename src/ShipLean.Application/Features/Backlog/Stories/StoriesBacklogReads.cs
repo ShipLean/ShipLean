@@ -29,15 +29,15 @@ public sealed class StoriesBacklogReads(
                     ? stories
                     : await reads.StackAsync(projectId, StackLevel.Requirement, criteria, true, cancellationToken);
                 var tree = await BacklogTree.BuildAsync(reads, projectId, new TreeStories(stories, withClosed, rank), criteria, factory, cancellationToken);
-                return View(projectId, mode, stories.Count, tree, [], factory, null, null);
+                return View(projectId, mode, stories.Count, tree, [], factory, null, null, null);
             case BacklogMode.Planning:
                 var committed = await reads.StackAsync(projectId, StackLevel.Requirement, null, true, cancellationToken);
                 var sections = await planning.BuildAsync(projectId, stories, committed, factory, cancellationToken);
                 var forecast = await metrics.GetForecastAsync(projectId, cancellationToken);
                 var velocity = await metrics.GetVelocityAsync(projectId, cancellationToken);
-                return View(projectId, mode, sections.Sum(s => s.Rows.Count), [], sections, factory, forecast, velocity);
+                return View(projectId, mode, sections.Sum(s => s.Rows.Count), [], sections, factory, forecast, velocity, EmptyReview());
             default:
-                return View(projectId, mode, stories.Count, [.. stories.Select(s => factory.Item(s, 0, rank[s.Id]))], [], factory, null, null);
+                return View(projectId, mode, stories.Count, [.. stories.Select(s => factory.Item(s, 0, rank[s.Id]))], [], factory, null, null, EmptyReview());
         }
     }
 
@@ -51,8 +51,12 @@ public sealed class StoriesBacklogReads(
 
     private static BacklogViewDto View(
         Guid projectId, BacklogMode mode, int total, IReadOnlyList<BacklogRowDto> rows, IReadOnlyList<BacklogSectionDto> sections,
-        BacklogRows factory, ForecastDto? forecast, VelocityDto? velocity)
-        => new(projectId, BoardLevel.Stories, mode, total, rows, sections, factory.TagColours, forecast, velocity);
+        BacklogRows factory, ForecastDto? forecast, VelocityDto? velocity, BacklogReviewDto? review)
+        => new(projectId, BoardLevel.Stories, mode, total, rows, sections, factory.TagColours, forecast, velocity, review);
+
+    // TODO: fill the checks from IBacklogChecks.ReviewAsync; until then the five checks are there and empty.
+    private static BacklogReviewDto EmptyReview()
+        => new(BulkLimits.MaxRows, 30, [.. BacklogCheckIds.All.Select(id => new BacklogReviewCheckDto(id, []))]);
 
     private async Task<IReadOnlyList<TagColourJson>> TagColoursAsync(Guid projectId, CancellationToken cancellationToken)
     {

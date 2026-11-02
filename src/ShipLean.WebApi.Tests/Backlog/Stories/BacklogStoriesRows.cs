@@ -9,5 +9,8 @@ public sealed class BacklogStoriesRows : IAccessSweepRows
     public IEnumerable<AccessSweepRow> Rows =>
     [
         new("GET", "api/projects/{id:guid}/backlog", ProjectRole.Member),
+        new("POST", "api/projects/{id:guid}/backlog/bulk", ProjectRole.Member, Body: """{"items":[]}"""),
+        new("POST", "api/projects/{id:guid}/backlog/items", ProjectRole.Member, Body: """{"items":[]}"""),
+        new("POST", "api/projects/{id:guid}/backlog/duplicates", ProjectRole.Member, Body: """{"titles":[]}"""),
     ];
 }
