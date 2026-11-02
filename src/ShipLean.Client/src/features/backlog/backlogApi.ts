@@ -125,7 +125,7 @@ export interface BacklogViewPreference {
   hiddenColumns?: Partial<Record<Level, string[]>>;
   // Planning mode's Forecast toggle; absent = on.
   forecast?: boolean;
-  // Planning mode's collapsed sections, by section id; absent = the running sprint starts closed.
+  // Planning mode's collapsed sections as `<projectId>:<sectionId>`, every project's in the one list; absent = the running sprint starts closed.
   collapsedSections?: string[];
 }
 
@@ -164,11 +164,11 @@ export function useBacklogView(level: Level, columns: readonly ColumnSpec[]) {
     onError: () => queryClient.invalidateQueries({ queryKey: backlogViewKey }),
   });
   // The change shows at once; a failed save puts the saved value back.
-  function update(patch: Partial<BacklogViewPreference>) {
+  function update(patch: Partial<BacklogViewPreference>, onFailed?: (error: Error) => void) {
     const current = (queryClient.getQueryData(backlogViewKey) ?? {}) as BacklogViewPreference;
     const next: BacklogViewPreference = { ...current, ...patch };
     queryClient.setQueryData(backlogViewKey, next);
-    save.mutate(next);
+    save.mutate(next, { onError: onFailed });
   }
   function setHidden(hidden: string[]) {
     const current = (queryClient.getQueryData(backlogViewKey) ?? {}) as BacklogViewPreference;

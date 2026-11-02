@@ -29,7 +29,7 @@ export function PlanningMode({ project }: { project: ProjectDto }) {
     includeCompleted: false,
   });
   const queryKey = backlogKey(project.id, 'stories', 'planning', '', false);
-  const collapse = useSectionCollapse(backlog.data?.sections ?? []);
+  const collapse = useSectionCollapse(project.id, backlog.data?.sections ?? []);
   const reorder = useReorder(project.id, queryKey);
   const flashing = useTeammateChanges(
     project.id,

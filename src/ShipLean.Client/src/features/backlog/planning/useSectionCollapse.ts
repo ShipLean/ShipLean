@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef } from 'react';
 import type { BacklogSectionDto } from '../../../api/views';
+import { showToast } from '../../../components/toastStore';
 import {
   BACKLOG_COLUMNS,
   backlogViewKey,
@@ -24,9 +25,13 @@ export interface SectionCollapse {
 /**
  * Collapsible sections, kept in the saved `view:backlog` preference as `collapsedSections`. With nothing saved the
  * running sprint is closed: you plan what is next. The first toggle saves every section's state, so the running sprint
- * stays closed unless it was opened.
+ * stays closed unless it was opened. The preference is the signed-in user's across projects, so each entry is
+ * `<projectId>:<sectionId>`; a save keeps the other projects' entries.
  */
-export function useSectionCollapse(sections: readonly BacklogSectionDto[]): SectionCollapse {
+export function useSectionCollapse(
+  projectId: string,
+  sections: readonly BacklogSectionDto[],
+): SectionCollapse {
   const { update } = useBacklogView('stories', BACKLOG_COLUMNS);
   // Reads the preference useBacklogView fetched; only the cache is watched here.
   const preference = useQuery({ queryKey: backlogViewKey, enabled: false });
@@ -39,14 +44,17 @@ export function useSectionCollapse(sections: readonly BacklogSectionDto[]): Sect
     const closed = (id: string) =>
       saved === undefined
         ? sections.some((s) => s.id === id && s.sprint?.status === 'current')
-        : saved.includes(id);
+        : saved.includes(`${projectId}:${id}`);
     const base: SectionCollapse = {
       isOpen: (id) => !closed(id),
       toggle: (id) => {
-        const next = sections
+        const mine = sections
           .filter((s) => (s.id === id ? !closed(id) : closed(s.id)))
-          .map((s) => s.id);
-        save.current({ collapsedSections: next });
+          .map((s) => `${projectId}:${s.id}`);
+        const others = (saved ?? []).filter((entry) => !entry.startsWith(`${projectId}:`));
+        save.current({ collapsedSections: [...others, ...mine] }, (error) =>
+          showToast(`Could not save which sections are open: ${error.message}`, { tone: 'danger' }),
+        );
       },
       searching: false,
       withSearch: (searchActive, filtered) =>
@@ -60,5 +68,5 @@ export function useSectionCollapse(sections: readonly BacklogSectionDto[]): Sect
           : base,
     };
     return base;
-  }, [saved, sections]);
+  }, [saved, sections, projectId]);
 }

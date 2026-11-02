@@ -33,7 +33,7 @@ export function PlanningGroupHarness({
     includeCompleted: false,
   } as const;
   const backlog = useBacklog(query);
-  const collapse = useSectionCollapse(backlog.data?.sections ?? []);
+  const collapse = useSectionCollapse(project.id, backlog.data?.sections ?? []);
   if (!backlog.isSuccess) return null;
   const view = backlog.data;
   const rows = view.sections.flatMap((section) => section.rows);

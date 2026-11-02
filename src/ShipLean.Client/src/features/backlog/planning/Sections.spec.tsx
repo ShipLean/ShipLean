@@ -2,6 +2,8 @@ import { expect, test } from '@playwright/experimental-ct-react';
 import { PROJECT, planningView } from '../ct/fixtures';
 import { stubBacklog } from '../ct/stubApi';
 import { backlogTestIds as ids } from '../testIds';
+import { ToastHost } from '../../../components/ToastHost';
+import { componentTestIds } from '../../../components/testIds';
 import { PlanningMode } from './PlanningMode';
 
 const route = { hooksConfig: { route: '/p/SHIP/backlogs/stories?mode=planning' } };
@@ -52,7 +54,7 @@ test('Collapse_is_saved_in_the_preference', async ({ mount, page }) => {
   await expect(rowOf(page, 'SHIP-158')).toHaveCount(0);
   await expect
     .poll(() => server.puts)
-    .toEqual([{ forecast: true, collapsedSections: ['sp24', 'sp25'] }]);
+    .toEqual([{ forecast: true, collapsedSections: ['p1:sp24', 'p1:sp25'] }]);
 
   await toggleOf(page, 'Backlog').click();
   await expect(rowOf(page, 'SHIP-170')).toHaveCount(0);
@@ -60,7 +62,7 @@ test('Collapse_is_saved_in_the_preference', async ({ mount, page }) => {
     .poll(() => server.puts.at(-1))
     .toEqual({
       forecast: true,
-      collapsedSections: ['sp24', 'sp25', 'backlog'],
+      collapsedSections: ['p1:sp24', 'p1:sp25', 'p1:backlog'],
     });
 });
 
@@ -93,4 +95,43 @@ test('Search_opens_sections_with_hits_without_saving', async ({ mount, page }) =
   await page.getByTestId(ids.searchBox).fill('');
   await expect(rowOf(page, 'SHIP-160')).toHaveCount(0);
   expect(server.puts).toHaveLength(0);
+});
+
+test('Collapse_is_per_project_and_keeps_other_projects_entries', async ({ mount, page }) => {
+  // Another project closed its Backlog and Sprint 24; this project has not collapsed anything.
+  const server = await stubBacklog(page, planningView(), {
+    saved: { collapsedSections: ['p2:backlog', 'p2:sp24'] },
+  });
+  await mount(<PlanningMode project={PROJECT} />, route);
+
+  await expect(toggleOf(page, 'Backlog')).toHaveAttribute('aria-expanded', 'true');
+  await expect(rowOf(page, 'SHIP-170')).toBeVisible();
+
+  await toggleOf(page, 'Sprint 25').click();
+  await expect
+    .poll(() => server.puts)
+    .toEqual([{ collapsedSections: ['p2:backlog', 'p2:sp24', 'p1:sp25'] }]);
+});
+
+test('A_failed_save_shows_the_reason_in_a_toast', async ({ mount, page }) => {
+  await stubBacklog(page, planningView(), { saved: {} });
+  await page.route('**/api/me/preferences/**', (r) =>
+    r.request().method() === 'PUT'
+      ? r.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Preferences are down', code: 'validation' }),
+        })
+      : r.fallback(),
+  );
+  await mount(
+    <>
+      <ToastHost />
+      <PlanningMode project={PROJECT} />
+    </>,
+    route,
+  );
+
+  await toggleOf(page, 'Sprint 24').click();
+  await expect(page.getByTestId(componentTestIds.toast)).toContainText('Preferences are down');
 });
