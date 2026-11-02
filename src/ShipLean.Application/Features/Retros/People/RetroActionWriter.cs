@@ -22,7 +22,7 @@ internal sealed class RetroActionWriter(NpgsqlDataSource dataSource, IWorkItemSt
         RetroPointInfo point;
         Guid? previous;
         // This transaction only reads, to fail early with a clear 409. It is not the guard: two requests can both pass it, and
-        // what stops the second is the ux_retro_action_point index (insert) or the affected-row count of the repoint (Removed).
+        // what stops the second is the ux_retro_action_point_live index (insert) or the affected-row count of archiving the Removed link.
         await using (var check = await connection.BeginTransactionAsync(cancellationToken))
         {
             point = await RetroPointInfo.LoadAsync(connection, check, pointId, cancellationToken);
@@ -73,9 +73,9 @@ internal sealed class RetroActionWriter(NpgsqlDataSource dataSource, IWorkItemSt
         var existing = await connection.QuerySingleOrDefaultAsync<(Guid WorkItemId, string Category)?>(
             new CommandDefinition(
                 """
-                SELECT ra.work_item_id AS workItemId, st.category
-                FROM retro_action ra JOIN work_item w ON w.id = ra.work_item_id JOIN state st ON st.id = w.state_id
-                WHERE ra.point_id = @pointId
+                SELECT rap.work_item_id AS workItemId, st.category
+                FROM retro_action_point rap JOIN work_item w ON w.id = rap.work_item_id JOIN state st ON st.id = w.state_id
+                WHERE rap.point_id = @pointId AND rap.archived_at IS NULL
                 """,
                 new { pointId },
                 transaction,
@@ -88,12 +88,55 @@ internal sealed class RetroActionWriter(NpgsqlDataSource dataSource, IWorkItemSt
         return existing.Value.Category == "removed" ? existing.Value.WorkItemId : throw ApiException.Conflict("This point already has an action item.");
     }
 
+    // One transaction: the action row (point_id stays null, K1), the archive of the Removed item's link when there is one, and the new link.
     private async Task<bool> LinkAsync(NpgsqlConnection connection, RetroPointInfo point, Guid? previous, Guid workItemId, CancellationToken cancellationToken)
     {
-        var parameters = new { workItemId, previous, projectId = point.ProjectId, themeId = point.ThemeId, pointId = point.Id, sprintId = point.SprintId };
-        var sql = previous is null
-            ? "INSERT INTO retro_action (work_item_id, project_id, theme_id, point_id, raised_sprint_id) VALUES (@workItemId, @projectId, @themeId, @pointId, @sprintId)"
-            : "UPDATE retro_action SET work_item_id = @workItemId, theme_id = @themeId, raised_sprint_id = @sprintId WHERE work_item_id = @previous AND point_id = @pointId";
-        return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken)) == 1;
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        await connection.ExecuteAsync(new CommandDefinition(
+            "INSERT INTO retro_action (work_item_id, project_id, theme_id, raised_sprint_id) VALUES (@workItemId, @projectId, @themeId, @sprintId)",
+            new { workItemId, projectId = point.ProjectId, themeId = point.ThemeId, sprintId = point.SprintId },
+            transaction,
+            cancellationToken: cancellationToken));
+        if (previous is not null)
+        {
+            var archived = await connection.ExecuteAsync(new CommandDefinition(
+                "UPDATE retro_action_point SET archived_at = now() WHERE work_item_id = @previous AND point_id = @pointId AND archived_at IS NULL",
+                new { previous, pointId = point.Id },
+                transaction,
+                cancellationToken: cancellationToken));
+            if (archived != 1)
+            {
+                return false;
+            }
+        }
+
+        await connection.ExecuteAsync(new CommandDefinition(
+            "INSERT INTO retro_action_point (work_item_id, point_id) VALUES (@workItemId, @pointId)",
+            new { workItemId, pointId = point.Id },
+            transaction,
+            cancellationToken: cancellationToken));
+        await transaction.CommitAsync(cancellationToken);
+        return true;
+    }
+
+    // TODO(A0W): fill in per K5. The projectId, the actor and the transaction rules are in contracts.md.
+    public async Task<RetroActionDetailDto> CreateActionAsync(Guid projectId, RetroActionNew request, RetroActor actor, CancellationToken cancellationToken)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        throw ApiException.Internal();
+    }
+
+    // TODO(A0W): fill in per K5.
+    public async Task<RetroActionDetailDto> AddPointsAsync(Guid workItemId, RetroActionAddPoints request, RetroActor actor, CancellationToken cancellationToken)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        throw ApiException.Internal();
+    }
+
+    // TODO(A0W): fill in per K5.
+    public async Task<RetroActionDetailDto> UpdateActionAsync(Guid workItemId, RetroActionPut request, RetroActor actor, CancellationToken cancellationToken)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        throw ApiException.Internal();
     }
 }

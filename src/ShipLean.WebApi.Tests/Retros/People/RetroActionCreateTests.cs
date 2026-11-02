@@ -29,7 +29,7 @@ public sealed class RetroActionCreateTests : RetroPeopleFixture
         var dto = await ReadAsync(item, HttpStatusCode.OK);
         dto.GetProperty("type").GetProperty("id").GetString().ShouldBe("action");
         dto.GetProperty("state").GetProperty("name").GetString().ShouldBe("New");
-        var link = await world.Connection.QuerySingleAsync<(Guid Theme, Guid Point, Guid Sprint)>("SELECT theme_id AS Theme, point_id AS Point, raised_sprint_id AS Sprint FROM retro_action WHERE work_item_id = @itemId", new { itemId });
+        var link = await world.Connection.QuerySingleAsync<(Guid Theme, Guid Point, Guid Sprint)>("SELECT ra.theme_id AS Theme, rap.point_id AS Point, ra.raised_sprint_id AS Sprint FROM retro_action ra JOIN retro_action_point rap ON rap.work_item_id = ra.work_item_id WHERE ra.work_item_id = @itemId AND rap.archived_at IS NULL", new { itemId });
         link.ShouldBe((theme, pointId, world.Sprint));
         var placement = await world.Connection.QuerySingleAsync<(Guid? Sprint, Guid? Parent)>("SELECT sprint_id AS Sprint, parent_id AS Parent FROM work_item WHERE id = @itemId", new { itemId });
         placement.ShouldBe((null, null));
@@ -62,7 +62,7 @@ public sealed class RetroActionCreateTests : RetroPeopleFixture
     }
 
     [Test]
-    public async Task Create_WhenEarlierActionWasRemoved_ShouldRepointTheLink()
+    public async Task Create_WhenEarlierActionWasRemoved_ShouldTakeTheLinkOver()
     {
         await using var world = await World.CreateAsync(await OpenDatabaseAsync());
         var pointId = await world.Seed.PointAsync(await world.AgentRetroAsync(), new RetroSeedPoint(RetroCategory.Improve, "Again."));
@@ -72,7 +72,7 @@ public sealed class RetroActionCreateTests : RetroPeopleFixture
         using var response = await Api.PostJsonAsync($"/api/retros/points/{pointId}/action", new { });
 
         var created = (await ReadAsync(response, HttpStatusCode.Created)).GetProperty("workItemId").GetGuid();
-        (await world.Connection.QueryAsync<Guid>("SELECT work_item_id FROM retro_action WHERE point_id = @pointId", new { pointId })).ShouldBe([created]);
+        (await world.Connection.QueryAsync<Guid>("SELECT work_item_id FROM retro_action_point WHERE point_id = @pointId AND archived_at IS NULL", new { pointId })).ShouldBe([created]);
     }
 
     [Test]
@@ -83,12 +83,13 @@ public sealed class RetroActionCreateTests : RetroPeopleFixture
         var removed = await new ShipLean.TestSupport.Builders.WorkItemBuilder(world.Project.Id).WithType("action").WithStateNamed("Removed").InsertAsync(world.Connection);
         var other = await new ShipLean.TestSupport.Builders.WorkItemBuilder(world.Project.Id).WithType("action").WithStateNamed("Removed").InsertAsync(world.Connection);
         await world.Seed.ActionAsync(new RetroSeedAction(removed, PointId: pointId));
+        await world.Seed.ActionAsync(new RetroSeedAction(other));
         // Stands in for the other request: when this request's action item is inserted, the link moves to a different Removed item.
         var name = $"race_{Guid.NewGuid():N}";
         await world.Connection.ExecuteAsync(
             $"""
             CREATE FUNCTION {name}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
-              UPDATE retro_action SET work_item_id = '{other}' WHERE point_id = '{pointId}';
+              UPDATE retro_action_point SET work_item_id = '{other}' WHERE point_id = '{pointId}';
               RETURN NEW; END $$;
             CREATE TRIGGER {name} AFTER INSERT ON work_item FOR EACH ROW WHEN (NEW.project_id = '{world.Project.Id}') EXECUTE FUNCTION {name}();
             """);
@@ -107,7 +108,7 @@ public sealed class RetroActionCreateTests : RetroPeopleFixture
             "SELECT st.category FROM work_item w JOIN state st ON st.id = w.state_id WHERE w.project_id = @project AND w.type = 'action' AND w.id NOT IN (@removed, @other)",
             new { project = world.Project.Id, removed, other });
         states.ShouldBe(["removed"]);
-        (await world.Connection.QuerySingleAsync<Guid>("SELECT work_item_id FROM retro_action WHERE point_id = @pointId", new { pointId })).ShouldBe(other);
+        (await world.Connection.QuerySingleAsync<Guid>("SELECT work_item_id FROM retro_action_point WHERE point_id = @pointId AND archived_at IS NULL", new { pointId })).ShouldBe(other);
     }
 
     [Test]

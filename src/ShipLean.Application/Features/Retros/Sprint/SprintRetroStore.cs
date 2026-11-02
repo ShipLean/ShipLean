@@ -1,5 +1,6 @@
 using Dapper;
 using Npgsql;
+using ShipLean.Application.Features.Retros.Reads;
 using ShipLean.Application.Features.Retros.Store;
 using ShipLean.Application.Identity;
 using ShipLean.Contracts.Persisted;
@@ -83,25 +84,28 @@ internal static class SprintRetroStore
     public static async Task<IReadOnlyList<SprintActionRow>> ActionsAsync(NpgsqlConnection connection, SprintRow sprint, IReadOnlyList<Guid> themeIds, CancellationToken cancellationToken)
         => [.. await connection.QueryAsync<SprintActionRow>(
             new CommandDefinition(
-                $"""
-                SELECT w.id AS itemId, w.key, w.title, w.story_points::numeric AS points, ra.theme_id AS themeId, th.name AS themeName, th.tone AS themeTone,
-                       st.id AS stateId, st.name AS stateName, st.category AS stateCategory,
-                       psp.id AS plannedId, psp.name AS plannedName, to_char(psp.start_date, 'YYYY-MM-DD') AS plannedStart, to_char(psp.end_date, 'YYYY-MM-DD') AS plannedEnd,
-                       rsp.id AS raisedId, rsp.name AS raisedName, to_char(rsp.start_date, 'YYYY-MM-DD') AS raisedStart, to_char(rsp.end_date, 'YYYY-MM-DD') AS raisedEnd,
-                       u.id AS ownerId, u.name AS ownerName, u.initials AS ownerInitials, u.avatar_colour AS ownerColour, {UserRefs.PhotoUrlSql} AS ownerPhotoUrl
-                FROM retro_action ra
-                JOIN work_item w ON w.id = ra.work_item_id
-                JOIN state st ON st.id = w.state_id
-                LEFT JOIN retro_theme th ON th.id = ra.theme_id
-                LEFT JOIN sprint psp ON psp.id = w.sprint_id
-                LEFT JOIN sprint rsp ON rsp.id = ra.raised_sprint_id
-                LEFT JOIN app_user u ON u.id = w.assigned_to
-                WHERE ra.project_id = @projectId AND st.category <> 'removed'
-                  AND (ra.raised_sprint_id = @sprintId OR (ra.theme_id = ANY(@themeIds) AND st.category <> 'completed'))
-                ORDER BY w.number
-                """,
+                ActionsSql,
                 new { projectId = sprint.ProjectId, sprintId = sprint.Id, themeIds = themeIds.ToArray() },
                 cancellationToken: cancellationToken))];
+
+    private static readonly string ActionsSql = $"""
+        SELECT w.id AS itemId, w.key, w.title, w.story_points::numeric AS points, ra.theme_id AS themeId, th.name AS themeName, th.tone AS themeTone,
+               st.id AS stateId, st.name AS stateName, st.category AS stateCategory,
+               psp.id AS plannedId, psp.name AS plannedName, to_char(psp.start_date, 'YYYY-MM-DD') AS plannedStart, to_char(psp.end_date, 'YYYY-MM-DD') AS plannedEnd,
+               rsp.id AS raisedId, rsp.name AS raisedName, to_char(rsp.start_date, 'YYYY-MM-DD') AS raisedStart, to_char(rsp.end_date, 'YYYY-MM-DD') AS raisedEnd,
+               u.id AS ownerId, u.name AS ownerName, u.initials AS ownerInitials, u.avatar_colour AS ownerColour, {UserRefs.PhotoUrlSql} AS ownerPhotoUrl,
+               ra.fix_type AS fixType, {RetroActionSql.PointCount("ra")} AS pointCount
+        FROM retro_action ra
+        JOIN work_item w ON w.id = ra.work_item_id
+        JOIN state st ON st.id = w.state_id
+        LEFT JOIN retro_theme th ON th.id = ra.theme_id
+        LEFT JOIN sprint psp ON psp.id = w.sprint_id
+        LEFT JOIN sprint rsp ON rsp.id = ra.raised_sprint_id
+        LEFT JOIN app_user u ON u.id = w.assigned_to
+        WHERE ra.project_id = @projectId AND st.category <> 'removed'
+          AND (ra.raised_sprint_id = @sprintId OR (ra.theme_id = ANY(@themeIds) AND st.category <> 'completed'))
+        ORDER BY w.number
+        """;
 
     public static async Task<IReadOnlyList<SprintClosedActionRow>> ClosedActionsAsync(NpgsqlConnection connection, Guid projectId, IReadOnlyList<Guid> themeIds, CancellationToken cancellationToken)
         => [.. await connection.QueryAsync<SprintClosedActionRow>(

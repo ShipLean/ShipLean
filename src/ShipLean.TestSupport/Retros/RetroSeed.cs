@@ -47,8 +47,11 @@ public sealed class RetroSeed(NpgsqlConnection connection, Guid projectId)
         var position = point.Position ?? await connection.ExecuteScalarAsync<int>("SELECT count(*)::int FROM retro_point WHERE retrospective_id = @retroId", new { retroId });
         await connection.ExecuteAsync(
             """
-            INSERT INTO retro_point (id, retrospective_id, category, text, root_cause, theme_id, theme_set_by, created_by_user_id, agent_name, position, created_at, archived_at)
-            VALUES (@id, @retroId, @category, @text, @rootCause, @themeId, @setBy, @authorId, @agentName, @position, coalesce(@createdAt, now()), CASE WHEN @archived THEN now() END)
+            INSERT INTO retro_point (id, retrospective_id, category, text, root_cause, theme_id, theme_set_by, created_by_user_id, agent_name, position, created_at, archived_at,
+                                     not_needed_reason, decided_by_user_id, decided_agent_name, decided_at)
+            VALUES (@id, @retroId, @category, @text, @rootCause, @themeId, @setBy, @authorId, @agentName, @position, coalesce(@createdAt, now()), CASE WHEN @archived THEN now() END,
+                    @notNeededReason, CASE WHEN @notNeededReason::text IS NULL THEN NULL ELSE coalesce(@decidedById::uuid, @authorId) END,
+                    @decidedAgentName, CASE WHEN @notNeededReason::text IS NULL THEN NULL ELSE coalesce(@decidedAt::timestamptz, now()) END)
             """,
             new
             {
@@ -64,6 +67,10 @@ public sealed class RetroSeed(NpgsqlConnection connection, Guid projectId)
                 position,
                 createdAt = point.CreatedAt,
                 archived = point.Archived,
+                notNeededReason = point.NotNeededReason,
+                decidedById = point.DecidedById,
+                decidedAgentName = point.DecidedAgentName,
+                decidedAt = point.DecidedAt,
             });
         if (point.ThemeId is { } themeId && !point.Archived)
         {
@@ -84,10 +91,20 @@ public sealed class RetroSeed(NpgsqlConnection connection, Guid projectId)
             "INSERT INTO retrospective_source (retrospective_id, source_retrospective_id) VALUES (@retroId, @sourceRetroId)",
             new { retroId, sourceRetroId });
 
+    // The action row has point_id null; its points are join rows (K1).
     public async Task ActionAsync(RetroSeedAction action)
-        => await connection.ExecuteAsync(
-            "INSERT INTO retro_action (work_item_id, project_id, theme_id, point_id, raised_sprint_id) VALUES (@workItemId, @projectId, @themeId, @pointId, @raisedSprintId)",
-            new { workItemId = action.WorkItemId, projectId, themeId = action.ThemeId, pointId = action.PointId, raisedSprintId = action.RaisedSprintId });
+    {
+        await connection.ExecuteAsync(
+            "INSERT INTO retro_action (work_item_id, project_id, theme_id, raised_sprint_id, fix_type) VALUES (@workItemId, @projectId, @themeId, @raisedSprintId, @fixType)",
+            new { workItemId = action.WorkItemId, projectId, themeId = action.ThemeId, raisedSprintId = action.RaisedSprintId, fixType = action.FixType is { } fixType ? Text(fixType) : null });
+        var pointIds = (action.PointId is { } single ? new[] { single } : []).Concat(action.PointIds ?? []).ToList();
+        for (var position = 0; position < pointIds.Count; position++)
+        {
+            await connection.ExecuteAsync(
+                "INSERT INTO retro_action_point (work_item_id, point_id, position) VALUES (@workItemId, @pointId, @position)",
+                new { workItemId = action.WorkItemId, pointId = pointIds[position], position });
+        }
+    }
 
     private static string Text<T>(T value)
         where T : struct, Enum

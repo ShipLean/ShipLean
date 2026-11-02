@@ -51,7 +51,7 @@ public sealed class RetroThemeSeriesAgreementTests : ApiFixture
         using var scope = Host.Services.CreateScope();
         var sprintView = await scope.ServiceProvider.GetRequiredService<ISprintRetroReader>().GetAsync(sprints[3], CancellationToken.None);
         var insights = await scope.ServiceProvider.GetRequiredService<IRetroInsightsReader>().GetAsync(project.Id, RetroRange.All, CancellationToken.None);
-        var search = await scope.ServiceProvider.GetRequiredService<IRetroSearchReader>().SearchAsync(project.Id, new RetroSearchQuery(null, null, null, null, null, null, null, null), CancellationToken.None);
+        var search = await scope.ServiceProvider.GetRequiredService<IRetroSearchReader>().SearchAsync(project.Id, new RetroSearchQuery(null, null, null, null, null, null, null, null, null, null, null), CancellationToken.None);
 
         sprintView.Recurring.Select(strip => strip.Theme.Id).ShouldBe([stuck]);
         insights.Themes.Where(row => row.Status == RetroThemeStatus.Recurring).Select(row => row.Theme.Id).ShouldBe([stuck]);

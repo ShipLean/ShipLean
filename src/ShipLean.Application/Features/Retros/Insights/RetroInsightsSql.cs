@@ -1,3 +1,4 @@
+using ShipLean.Application.Features.Retros.Reads;
 using ShipLean.Application.Identity;
 
 namespace ShipLean.Application.Features.Retros.Insights;
@@ -30,7 +31,8 @@ internal static class RetroInsightsSql
         SELECT ra.work_item_id AS workItemId, ra.theme_id AS themeId, ra.raised_sprint_id AS raisedSprintId,
                w.key, w.title, w.story_points::numeric AS points, w.created_at AS createdAt,
                st.id AS stateId, st.name AS stateName, st.category AS stateCategory, w.sprint_id AS sprintId,
-               u.id AS ownerId, u.name AS ownerName, u.initials AS ownerInitials, u.avatar_colour AS ownerColour, {UserRefs.PhotoUrlSql} AS ownerPhotoUrl
+               u.id AS ownerId, u.name AS ownerName, u.initials AS ownerInitials, u.avatar_colour AS ownerColour, {UserRefs.PhotoUrlSql} AS ownerPhotoUrl,
+               ra.fix_type AS fixType, {RetroActionSql.PointCount("ra")} AS pointCount
         FROM retro_action ra
         JOIN work_item w ON w.id = ra.work_item_id
         JOIN state st ON st.id = w.state_id

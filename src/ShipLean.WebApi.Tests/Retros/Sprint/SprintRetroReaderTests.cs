@@ -40,8 +40,8 @@ public sealed class SprintRetroReaderTests : ApiFixture
 
         var retro = await GetAsync(world.S4);
 
-        retro.Categories.Select(column => column.Category).ShouldBe([RetroCategory.WentBadly, RetroCategory.Improve, RetroCategory.NotInPlan, RetroCategory.WentWell]);
-        var badly = retro.Categories[0].Groups;
+        retro.Categories.Select(column => column.Category).ShouldBe([RetroCategory.WentWell, RetroCategory.NotInPlan, RetroCategory.WentBadly, RetroCategory.Improve]);
+        var badly = retro.Categories[2].Groups;
         badly.Select(group => group.Theme!.Name).ShouldBe(["Slow CI", "Flaky tests"]);
         badly[0].Points.Select(point => point.Text).ShouldBe(["Slow feature point.", "Slow story point."]);
         badly[0].Points[0].IsFeature.ShouldBeTrue();
@@ -98,7 +98,7 @@ public sealed class SprintRetroReaderTests : ApiFixture
         retro.Coverage.Count.ShouldBe(2);
         retro.Coverage.Single(row => row.Item.Id == withRetro).Status.ShouldBe(RetroCoverage.Done);
         retro.Coverage.Single(row => row.Item.Id == without).Status.ShouldBe(RetroCoverage.Missing);
-        retro.Kpis.ShouldBe(new RetroKpisDto(1, 2, 0, 0));
+        retro.Kpis.ShouldBe(new RetroKpisDto(1, 2, 0, 0, 0));
     }
 
     [Test]
@@ -144,7 +144,7 @@ public sealed class SprintRetroReaderTests : ApiFixture
 
         var retro = await GetAsync(world.S4);
 
-        var groups = retro.Categories[0].Groups;
+        var groups = retro.Categories[2].Groups;
         groups.Single(group => group.Theme!.Name == "Review waits").Recurring.ShouldBeTrue();
         groups.Single(group => group.Theme!.Name == "One-off").Recurring.ShouldBeFalse();
         groups.Single(group => group.Theme!.Name == "Review waits").Points.ShouldAllBe(point => point.Recurring);
@@ -189,7 +189,7 @@ public sealed class SprintRetroReaderTests : ApiFixture
 
         retro.Recurring.ShouldBeEmpty();
         retro.Kpis.RecurringThemes.ShouldBe(0);
-        retro.Categories[0].Groups.Single().Recurring.ShouldBeFalse();
+        retro.Categories[2].Groups.Single().Recurring.ShouldBeFalse();
     }
 
     [Test]
@@ -217,7 +217,7 @@ public sealed class SprintRetroReaderTests : ApiFixture
         retro.Recurring.ShouldBeEmpty();
         retro.Kpis.RecurringThemes.ShouldBe(0);
         retro.Sprints.Count.ShouldBe(6);
-        retro.Categories[0].Groups.Single().Recurring.ShouldBeFalse();
+        retro.Categories[2].Groups.Single().Recurring.ShouldBeFalse();
     }
 
     [Test]
@@ -265,7 +265,7 @@ public sealed class SprintRetroReaderTests : ApiFixture
 
         var retro = await GetAsync(world.S4);
 
-        retro.Categories[0].Groups.SelectMany(group => group.Points).Select(point => point.Text).ShouldBe(["Kept."]);
+        retro.Categories[2].Groups.SelectMany(group => group.Points).Select(point => point.Text).ShouldBe(["Kept."]);
         retro.Cards.Single().Points.Select(point => point.Text).ShouldBe(["Kept."]);
     }
 
@@ -310,7 +310,7 @@ public sealed class SprintRetroReaderTests : ApiFixture
         retro.Recurring.ShouldBeEmpty();
         retro.Categories.Count.ShouldBe(4);
         retro.Categories.ShouldAllBe(column => column.Groups.Count == 0);
-        retro.Kpis.ShouldBe(new RetroKpisDto(0, 0, 0, 0));
+        retro.Kpis.ShouldBe(new RetroKpisDto(0, 0, 0, 0, 0));
         retro.Sprints.Count.ShouldBe(4);
         retro.Sprint.Status.ShouldBe(SprintStatus.Past);
     }

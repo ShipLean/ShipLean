@@ -12,7 +12,10 @@ public static class RetroChecks
         null or "6" => RetroRange.Last6,
         "3" => RetroRange.Last3,
         "all" => RetroRange.All,
-        _ => throw ApiException.Validation("range is 6, 3 or all.", "range"),
+        // TODO(T1): the reader treats w6 and w12 as Last6 until week mode replaces it.
+        "w6" => RetroRange.Weeks6,
+        "w12" => RetroRange.Weeks12,
+        _ => throw ApiException.Validation("range is 6, 3, all, w6 or w12.", "range"),
     };
 
     public static void PointCreate(RetroPointCreate request)
@@ -64,6 +67,56 @@ public static class RetroChecks
         if (request.Points is < 0)
         {
             throw ApiException.Validation("points cannot be negative.", "points");
+        }
+    }
+
+    public static void ActionNew(RetroActionNew request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Title))
+        {
+            throw ApiException.Validation("The title cannot be blank.", "title");
+        }
+        FixTypeChoice(request.FixType);
+        PointIds(request.PointIds);
+        ThemeChoice(request.ThemeId, request.ThemeName);
+    }
+
+    public static void ActionAddPoints(RetroActionAddPoints request) => PointIds(request.PointIds);
+
+    public static void ActionPut(RetroActionPut request)
+    {
+        if (request.FixType is { } fixType)
+        {
+            FixTypeChoice(fixType);
+        }
+        ThemeChoice(request.ThemeId, request.ThemeName);
+    }
+
+    public static void NotNeededPut(RetroNotNeededPut request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Reason))
+        {
+            throw ApiException.Validation("Say why the point needs no action.", "reason");
+        }
+    }
+
+    private static void PointIds(IReadOnlyList<Guid>? pointIds)
+    {
+        if (pointIds is not { Count: > 0 })
+        {
+            throw ApiException.Validation("Name at least one point.", "pointIds");
+        }
+        if (pointIds.Distinct().Count() != pointIds.Count)
+        {
+            throw ApiException.Validation("A point can be named once.", "pointIds");
+        }
+    }
+
+    private static void FixTypeChoice(RetroFixType fixType)
+    {
+        if (!Enum.IsDefined(fixType))
+        {
+            throw ApiException.Validation("fixType is not a type of fix.", "fixType");
         }
     }
 

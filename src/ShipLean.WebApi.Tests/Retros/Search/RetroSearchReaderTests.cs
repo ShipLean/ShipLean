@@ -337,7 +337,7 @@ public sealed class RetroSearchReaderTests : ApiFixture
         result.Themes.Select(theme => theme.Name).ShouldBe(["Used theme"]);
     }
 
-    private static RetroSearchQuery Query(string? q) => new(q, null, null, null, null, null, null, null);
+    private static RetroSearchQuery Query(string? q) => new(q, null, null, null, null, null, null, null, null, null, null);
 
     private static async Task<World> WorldAsync(NpgsqlConnection connection)
     {

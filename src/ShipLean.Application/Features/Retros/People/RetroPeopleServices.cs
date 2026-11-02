@@ -12,6 +12,9 @@ public sealed class RetroPeopleServices : IServiceModule
         services.AddScoped<RetroPointWriter>();
         services.AddScoped<RetroActionWriter>();
         services.AddScoped<RetroThemeWriter>();
+        services.AddScoped<RetroDecisionWriter>();
+        services.AddScoped<RetroMergeProposalWriter>();
         services.AddScoped<IRetroPeopleWrites, RetroPeopleWrites>();
+        services.AddScoped<IRetroDecisionWrites, RetroDecisionWrites>();
     }
 }

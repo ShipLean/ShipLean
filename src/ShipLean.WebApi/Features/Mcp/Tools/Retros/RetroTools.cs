@@ -74,7 +74,7 @@ internal sealed class RetroTools(ItemResolver items, ProjectResolver projects, S
         }
 
         var listed = await log.ListAsync(
-            new RetroListRequest(resolvedProject.Id, resolvedSprint?.Id, resolvedFeature?.Id, ParseCategory(category), string.IsNullOrWhiteSpace(theme) ? null : theme, ParseSince(since)),
+            new RetroListRequest(resolvedProject.Id, resolvedSprint?.Id, resolvedFeature?.Id, ParseCategory(category), string.IsNullOrWhiteSpace(theme) ? null : theme, ParseSince(since), false, false),
             cancellationToken);
 
         var truncated = listed.Truncated;

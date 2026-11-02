@@ -5,4 +5,5 @@ internal sealed record SprintActionRow(
     Guid StateId, string StateName, string StateCategory,
     Guid? PlannedId, string? PlannedName, string? PlannedStart, string? PlannedEnd,
     Guid? RaisedId, string? RaisedName, string? RaisedStart, string? RaisedEnd,
-    Guid? OwnerId, string? OwnerName, string? OwnerInitials, string? OwnerColour, string? OwnerPhotoUrl);
+    Guid? OwnerId, string? OwnerName, string? OwnerInitials, string? OwnerColour, string? OwnerPhotoUrl,
+    string? FixType, int PointCount);

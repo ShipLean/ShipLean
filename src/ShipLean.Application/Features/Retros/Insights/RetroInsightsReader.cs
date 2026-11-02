@@ -75,7 +75,12 @@ public sealed class RetroInsightsReader(NpgsqlDataSource dataSource, TimeProvide
             .ToList();
 
         var impact = await ImpactAsync(actions, actionRefs, themeRefs, pointsByTheme, outcomes, seriesEntries, seriesStart, offset, bad, cancellationToken);
-        return new RetroInsightsDto(RangeName(range), [.. shown.Select(sprint => sprint.ToRef())], [.. bad.Select(row => row.Dto)], [.. good.Select(row => row.Dto)], actionRows, impact);
+        return new RetroInsightsDto(RangeName(range), [.. shown.Select(sprint => sprint.ToRef())], [.. bad.Select(row => row.Dto)], [.. good.Select(row => row.Dto)], actionRows, impact,
+            // TODO(T1): week mode, No sprint and Unthemed replace this: Mode is Sprint, NoSprint is 0, Unthemed is zeros and there are no merge proposals.
+            RetroInsightsMode.Sprint,
+            [.. shown.Select(sprint => new RetroInsightColumnDto(sprint.Id.ToString(), sprint.Name, RetroInsightColumnKind.Sprint, sprint.Phase == SprintPhase.Current))],
+            new RetroUnthemedDto([.. shown.Select(_ => 0)], 0, 0),
+            []);
     }
 
     private async Task<IReadOnlyList<RetroImpactDto>> ImpactAsync(
@@ -135,7 +140,7 @@ public sealed class RetroInsightsReader(NpgsqlDataSource dataSource, TimeProvide
         var own = actions.Where(action => action.ThemeId == theme.Id).ToList();
         RetroVerdict? last = entry.Closed.OrderByDescending(outcome => outcome.CompletedAt).FirstOrDefault()?.Result.Verdict;
         var shown = entry.Counts.Skip(offset).ToList();
-        var dto = new RetroThemeInsightDto(themeRef, shown, shown.Sum(), LatestText(themeRef, points, seriesStart), entry.Status, [.. own.OrderByDescending(action => action.CreatedAt).Select(action => actionRefs[action.WorkItemId])], last);
+        var dto = new RetroThemeInsightDto(themeRef, shown, shown.Sum(), LatestText(themeRef, points, seriesStart), entry.Status, [.. own.OrderByDescending(action => action.CreatedAt).Select(action => actionRefs[action.WorkItemId])], last, 0);
         return new ThemeRow(themeRef, dto.Status, dto.Total, own.Count > 0, dto);
     }
 
@@ -162,6 +167,8 @@ public sealed class RetroInsightsReader(NpgsqlDataSource dataSource, TimeProvide
             return series;
         }
 
+        // TODO(T1): week mode replaces this: w6 and w12 get week columns, a No sprint count and an Unthemed row. Until then they read as Last6.
+
         var window = range == RetroRange.Last3 ? ShortRange : LongRange;
         // N columns including the current sprint, so the current one takes a slot from the ended sprints.
         var current = series.Count - ended.Count;
@@ -175,7 +182,9 @@ public sealed class RetroInsightsReader(NpgsqlDataSource dataSource, TimeProvide
             action.Title,
             new StateRef(action.StateId, action.StateName, Enum.Parse<StateCategory>(action.StateCategory, ignoreCase: true)),
             action.SprintId is { } sprintId && refs.TryGetValue(sprintId, out var sprint) ? sprint : null,
-            action.Points);
+            action.Points,
+            action.FixType is { } fixType ? Enum.Parse<RetroFixType>(fixType, ignoreCase: true) : null,
+            action.PointCount);
 
     private static int StatusOrder(RetroThemeStatus status) => status switch
     {
@@ -189,6 +198,8 @@ public sealed class RetroInsightsReader(NpgsqlDataSource dataSource, TimeProvide
     {
         RetroRange.Last3 => "3",
         RetroRange.All => "all",
+        RetroRange.Weeks6 => "w6",
+        RetroRange.Weeks12 => "w12",
         _ => "6",
     };
 
@@ -204,7 +215,8 @@ public sealed class RetroInsightsReader(NpgsqlDataSource dataSource, TimeProvide
     private sealed record InsightActionRow(
         Guid WorkItemId, Guid? ThemeId, Guid? RaisedSprintId, string Key, string Title, decimal? Points, DateTime CreatedAt,
         Guid StateId, string StateName, string StateCategory, Guid? SprintId,
-        Guid? OwnerId, string? OwnerName, string? OwnerInitials, string? OwnerColour, string? OwnerPhotoUrl);
+        Guid? OwnerId, string? OwnerName, string? OwnerInitials, string? OwnerColour, string? OwnerPhotoUrl,
+        string? FixType, int PointCount);
 
     private sealed record ThemeRow(RetroThemeRefDto Theme, RetroThemeStatus Status, int Total, bool HasActions, RetroThemeInsightDto Dto);
 
@@ -222,6 +234,8 @@ public sealed class RetroInsightsReader(NpgsqlDataSource dataSource, TimeProvide
         }
 
         public Guid Id { get; }
+
+        public string Name => _name;
 
         public DateOnly Start { get; }
 

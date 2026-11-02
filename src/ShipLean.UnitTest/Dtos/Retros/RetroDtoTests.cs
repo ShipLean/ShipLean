@@ -14,6 +14,14 @@ public class RetroDtoTests
     [TestCase("retro-themes.json", typeof(RetroThemeListDto))]
     [TestCase("work-item-retros.json", typeof(WorkItemRetrosDto))]
     [TestCase("retro-point.json", typeof(RetroPointDto))]
+    [TestCase("retro-features.json", typeof(RetroFeaturesDto))]
+    [TestCase("retro-item.json", typeof(RetroItemDto))]
+    [TestCase("retro-action-dialog.json", typeof(RetroActionDialogDto))]
+    [TestCase("retro-action-detail.json", typeof(RetroActionDetailDto))]
+    [TestCase("retro-action-new.json", typeof(RetroActionNew))]
+    [TestCase("retro-action-add-points.json", typeof(RetroActionAddPoints))]
+    [TestCase("retro-action-put.json", typeof(RetroActionPut))]
+    [TestCase("retro-not-needed-put.json", typeof(RetroNotNeededPut))]
     public void RoundTrip_WhenEachFixture_ShouldMatch(string file, Type type)
     {
         var document = BoardDtoFixture.Read("retros", file);
@@ -37,6 +45,10 @@ public class RetroDtoTests
         Name(RetroCoverage.Waiting).ShouldBe("waiting");
         Name(RetroTone.Good).ShouldBe("good");
         Name(RetroThemeSetBy.Person).ShouldBe("person");
+        Name(RetroDecision.NotNeeded).ShouldBe("notNeeded");
+        Name(RetroFixType.Analyzer).ShouldBe("analyzer");
+        Name(RetroInsightsMode.Week).ShouldBe("week");
+        Name(RetroInsightColumnKind.Sprint).ShouldBe("sprint");
     }
 
     private static string Name<T>(T value) where T : struct, Enum

@@ -4,11 +4,7 @@
   "category": "improve",
   "text": "Say in the brief which baselines must come from CI.",
   "rootCause": null,
-  "theme": {
-    "id": "00000010-0000-4000-8001-000000000002",
-    "name": "Screenshot baselines need CI",
-    "tone": "bad"
-  },
+  "theme": {"id": "00000010-0000-4000-8001-000000000002", "name": "Screenshot baselines need CI", "tone": "bad"},
   "themeSetBy": "auto",
   "author": {
     "user": {"id": "00000001-0000-4000-8000-000000000002", "name": "Priya Shah", "initials": "PS", "avatarColour": "#2f7fd8", "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"},
@@ -21,11 +17,7 @@
     "type": {"id": "story", "name": "User Story"},
     "title": "Pay with saved card"
   },
-  "sprint": {
-    "id": "00000004-0000-4000-8001-000000000024",
-    "name": "Sprint 24",
-    "status": "current"
-  },
+  "sprint": {"id": "00000004-0000-4000-8001-000000000024", "name": "Sprint 24", "status": "current"},
   "isFeature": false,
   "recurring": true,
   "action": {
@@ -34,7 +26,11 @@
     "title": "Common brief: screenshot baselines come from the CI report",
     "state": {"id": "00000003-0000-4000-8001-000000000601", "name": "New", "category": "proposed"},
     "sprint": null,
-    "points": 1
+    "points": 1,
+    "fixType": "skill",
+    "pointCount": 2
   },
-  "canArchive": false
+  "canArchive": false,
+  "decision": "actioned",
+  "notNeeded": null
 }
