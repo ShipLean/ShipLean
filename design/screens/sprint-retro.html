@@ -7,23 +7,29 @@
 <!--
   SHIP-82 mockup: Sprints › Sprint 24 › Retro.
   Every retrospective whose work item finished (or rolled over) in the sprint, by category and grouped by theme.
-  By work item shows each retro on its own, with the sub-agent's raw failure log underneath.
-  ?view=items opens By work item. Uses ../tokens.css, shiplean.css, shared.js and retro-data.js; no build step.
+  By work item shows each item's retros on one board, with the sub-agent's raw failure log underneath.
+  SHIP-497: points are post-its in the fixed order Went well, Not in the plan, Went badly, Can be improved.
+  ?view=items opens By work item, ?decide=open shows only points to decide. Uses ../tokens.css, shiplean.css, shared.js,
+  retro-data.js and retro-cards.js; no build step.
 -->
 <link rel="stylesheet" href="../tokens.css">
 <link rel="stylesheet" href="shiplean.css">
 <link rel="stylesheet" href="retro.css">
+<link rel="stylesheet" href="retro-cards.css">
 <script src="shared.js"></script>
 <script src="retro-data.js"></script>
+<script src="retro-cards.js"></script>
 <style>
 .sprint-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-4); padding: var(--space-3) var(--space-4); background: var(--color-surface); border-bottom: 1px solid var(--color-border); flex: none; }
 .picker { display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0; background: none; font-size: var(--text-lg); font-weight: var(--weight-semibold); cursor: pointer; }
 .picker span { font-size: var(--text-xs); color: var(--color-muted); }
 .goal { display: flex; gap: var(--space-2); align-items: baseline; margin-top: var(--space-2); max-width: 760px; }
 .page { padding: var(--space-3) var(--space-4) var(--space-5); display: grid; gap: var(--space-3); align-content: start; }
-.cols { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); align-items: start; }
-@media (max-width: 1250px) { .cols { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 900px) { .sprint-head { grid-template-columns: minmax(0, 1fr); } .cols { grid-template-columns: minmax(0, 1fr); } }
+.item-block { display: grid; gap: var(--space-2); padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+.item-block.compiled { border-left: 3px solid var(--color-accent); }
+.item-block > header { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: var(--text-sm); }
+.item-block > header b { font-size: var(--text-md); }
+@media (max-width: 900px) { .sprint-head { grid-template-columns: minmax(0, 1fr); } }
 </style>
 </head>
 <body>
@@ -41,6 +47,7 @@
   <div class="kpis">
     <div class="kpi"><div class="v" id="kRetros"></div><div class="l">Finished items with a retro</div></div>
     <div class="kpi"><div class="v" id="kRecurring"></div><div class="l">Recurring themes · <a href="retro-insights.html">insights</a></div></div>
+    <div class="kpi"><div class="v" id="kOpen"></div><div class="l">Points to decide</div></div>
     <div class="kpi"><div class="v" id="kActions"></div><div class="l">Action items raised</div></div>
   </div>
 </section>
@@ -56,7 +63,10 @@
     <button type="button" data-src="agent" aria-pressed="false">Agents</button>
     <button type="button" data-src="person" aria-pressed="false">People</button>
   </div>
-  <button class="btn" type="button" id="addPoint">+ Add a point</button>
+  <div class="seg" role="group" aria-label="Decision">
+    <button type="button" data-decide="all" aria-pressed="true">All points</button>
+    <button type="button" data-decide="open" aria-pressed="false">To decide</button>
+  </div>
 </div>
 <div class="split">
   <div class="scroll">
@@ -83,61 +93,39 @@
 
 <script>
 (() => {
-  const { av, tIcon, esc, toast, people } = SL;
-  const { themes, retros, actions, catLabel, recurring, strip } = RETRO;
+  const { av, tIcon, esc, people } = SL;
+  const { themes, retros, actions, recurring, strip } = RETRO;
   document.getElementById('appbar').outerHTML = SL.appBar('sprints');
   document.getElementById('tabs').outerHTML = SL.sprintTabs('retro');
 
   const params = new URLSearchParams(location.search);
-  let view = params.get('view') === 'items' ? 'items' : 'cat', src = 'all';
+  let view = params.get('view') === 'items' ? 'items' : 'cat', src = 'all', decide = params.get('decide') === 'open' ? 'open' : 'all';
   const sprintRetros = () => retros.filter(r => r.sprint === 'S24' && (src === 'all' || (src === 'person' ? r.role === 'person' : r.role !== 'person')));
-  const actionByKey = k => actions.find(a => a.key === k);
+  const shown = p => decide === 'all' || RC.isOpen(p);
 
-  const who = r => `${av(r.by)}<span>${people[r.by].name.split(' ')[0]}</span>${r.agent ? `<span class="agent">${esc(r.agent)}</span>` : ''}`;
-  const actionChip = p => {
-    if (!p.action) return p.cat === 'improve' ? `<button class="mini" type="button" data-make="${esc(p.text)}">+ Action item</button>` : '';
-    const a = actionByKey(p.action);
-    return `<a class="act-chip" href="#" title="${esc(a.title)}">${tIcon(a.type)}<span class="key">${a.key}</span>${SL.st(a.state)}</a>`;
-  };
+  // Add in this view writes to the person's sprint-level retro unless they pick one of the sprint's items.
+  const aboutOptions = () => [['', 'The sprint'], ...[...new Set(retros.filter(r => r.sprint === 'S24').map(r => r.subject))].map(k => [k, `${k} ${retros.find(r => r.subject === k).title}`])];
 
   function byCategory() {
     const rs = sprintRetros();
     const feature = rs.find(r => r.role === 'conductor');
-    const head = feature ? `<div class="callout"><b>Feature retro: ${tIcon('feature')} ${feature.subject} ${esc(feature.title)}</b>
-      Compiled by ${people[feature.by].name} · ${esc(feature.agent)} from ${feature.compiledFrom.length} story retros when the last story closed. Its points are marked <span class="chip accent" style="height:16px">Feature</span>.
+    const head = feature ? `<div class="callout"><b>Feature retro: ${tIcon('feature')} <a href="retro-item.html?key=${feature.subject}">${feature.subject} ${esc(feature.title)}</a></b>
+      Compiled by ${people[feature.by].name} · ${esc(feature.agent)} from ${feature.compiledFrom.length} story retros when the last story closed.
       Mobile sign-in has no feature retro yet: ${tIcon('story')} SHIP-129 rolled over to Sprint 25.</div>` : '';
-    const cols = ['bad', 'improve', 'unplanned', 'well'].map(cat => {
-      const groups = {};
-      rs.forEach(r => r.points.filter(p => p.cat === cat).forEach(p => (groups[p.theme] ??= []).push({ p, r })));
-      const order = Object.keys(groups).sort((a, b) => groups[b].length - groups[a].length);
-      const n = order.reduce((a, k) => a + groups[k].length, 0);
-      return `<section class="col ${cat}" aria-label="${catLabel[cat]}">
-        <header><span>${catLabel[cat]}</span><span class="muted">${n}</span></header>
-        ${order.map(k => `<div class="grp">
-          <div class="grp-h"><span class="theme">${esc(themes[k].name)}</span>${recurring(k) ? '<span class="chip warn" title="Mentioned in 3 of the last 4 sprints">Recurring</span>' : ''}</div>
-          ${groups[k].sort((a, b) => (b.r.role === 'conductor') - (a.r.role === 'conductor')).map(({ p, r }) => `<article class="pt${r.role === 'conductor' ? ' compiled' : ''}">
-            <p>${esc(p.text)}</p>
-            ${p.cause ? `<p class="cause"><span class="overline">Root cause</span> ${esc(p.cause)}</p>` : ''}
-            <footer>${r.role === 'conductor' ? '<span class="chip accent" style="height:16px">Feature</span>' : ''}${tIcon(r.type)}<span class="key">${r.subject}</span>${who(r)}<span class="spacer"></span>${actionChip(p)}</footer>
-          </article>`).join('')}
-        </div>`).join('') || '<p class="muted sm" style="margin:8px">Nothing here.</p>'}
-      </section>`;
-    }).join('');
-    return head + `<div class="cols">${cols}</div>`;
+    return head + RC.board(rs, { id: 'sprint', about: aboutOptions() }, { groupByTheme: true, filter: shown, note: { showItem: true } });
   }
 
   function byItem() {
-    return sprintRetros().map(r => `<article class="retro-card${r.role === 'conductor' ? ' compiled' : ''}">
-      <header>${tIcon(r.type)}<span class="key">${r.subject}</span><b>${esc(r.title)}</b>${r.partial ? '<span class="chip warn">Rolled over</span>' : ''}
-        <span class="spacer"></span>${who(r)}<span class="chip">${RETRO.roleLabel[r.role]}</span><span class="muted xs">${r.at}</span></header>
-      <div class="cats">${['well', 'bad', 'improve', 'unplanned'].map(cat => {
-        const ps = r.points.filter(p => p.cat === cat);
-        return `<div class="cat ${cat}"><div class="overline">${catLabel[cat]}</div>${ps.length ? `<ul>${ps.map(p => `<li>${esc(p.text)}${p.cause ? `<span class="cause-i">Root cause: ${esc(p.cause)}</span>` : ''}<span class="theme-i">${esc(themes[p.theme].name)}</span></li>`).join('')}</ul>` : '<span class="muted xs">—</span>'}</div>`;
-      }).join('')}</div>
-      ${r.compiledFrom ? `<p class="xs muted" style="margin:0">Compiled from ${r.compiledFrom.map(id => { const s = retros.find(x => x.id === id); return `${tIcon(s.type)} ${s.subject}`; }).join(', ')}.</p>` : ''}
-      ${r.log ? `<details class="rawlog"><summary>Raw failure log <span class="muted">· verbatim from the agent</span></summary>
-        <dl>${[['blockers', 'Blockers'], ['disproved', 'Assumptions disproved'], ['friction', 'Friction']].map(([k, l]) => `<dt>${l}</dt><dd>${r.log[k].length ? r.log[k].map(esc).join('<br>') : '<span class="muted">None reported.</span>'}</dd>`).join('')}</dl></details>` : ''}
-    </article>`).join('');
+    const keys = [...new Set(sprintRetros().map(r => r.subject))].sort((a, b) => (retros.find(r => r.subject === b).type === 'feature') - (retros.find(r => r.subject === a).type === 'feature'));
+    return keys.map(k => {
+      const rs = sprintRetros().filter(r => r.subject === k), first = rs[0], c = RC.counts(rs);
+      return `<article class="item-block${first.type === 'feature' ? ' compiled' : ''}">
+        <header>${tIcon(first.type)}<a class="key" href="retro-item.html?key=${k}">${k}</a><b>${esc(first.title)}</b>${first.partial ? '<span class="chip warn">Rolled over</span>' : ''}
+          <span class="spacer"></span>${RC.progress(c)}<a class="btn tiny" href="retro-item.html?key=${k}">Open</a></header>
+        ${RC.board(rs, { id: k }, { filter: shown, note: { showItem: false } })}
+        ${rs.map(RC.rawLog).join('')}
+      </article>`;
+    }).join('') || '<p class="muted sm">Nothing here.</p>';
   }
 
   function rail() {
@@ -157,8 +145,18 @@
     document.getElementById('page').innerHTML = view === 'cat' ? byCategory() : byItem();
     document.getElementById('kRetros').innerHTML = `5 <small>/ 5</small>`;
     document.getElementById('kRecurring').innerHTML = `${Object.keys(themes).filter(recurring).length}`;
+    document.getElementById('kOpen').innerHTML = `${RC.counts(retros.filter(r => r.sprint === 'S24')).open}`;
     document.getElementById('kActions').innerHTML = `${actions.filter(a => a.raised === 'S24').length} <small>new</small>`;
+    rail();
   }
+  RC.render = render;
+  RC.addPoint = (cat, text, cause, about) => {
+    if (about) { RC.addPointToItem(about, cat, text, cause); return; }
+    let r = retros.find(x => !x.subject && x.role === 'person' && x.by === SL.ME);
+    if (!r) { r = { id: 'R-990', subject: '', type: 'story', title: 'Sprint 24', sprint: 'S24', at: 'Just now', by: SL.ME, agent: null, role: 'person', points: [] }; retros.push(r); }
+    r.points.push({ cat, text, theme: 'none', cause });
+  };
+  RC.wire(document.getElementById('page'), () => retros.filter(r => r.sprint === 'S24'));
 
   document.querySelector('[aria-label="View"]').addEventListener('click', e => {
     const b = e.target.closest('[data-view]'); if (!b) return; view = b.dataset.view;
@@ -168,13 +166,13 @@
     const b = e.target.closest('[data-src]'); if (!b) return; src = b.dataset.src;
     b.parentElement.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); render();
   });
-  document.getElementById('page').addEventListener('click', e => {
-    const m = e.target.closest('[data-make]'); if (!m) return;
-    toast(`${tIcon('action')} New Action item in the Backlog from “${esc(m.dataset.make.slice(0, 48))}…”`);
+  document.querySelector('[aria-label="Decision"]').addEventListener('click', e => {
+    const b = e.target.closest('[data-decide]'); if (!b) return; decide = b.dataset.decide;
+    b.parentElement.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); render();
   });
-  document.getElementById('addPoint').addEventListener('click', () => toast('Opens: category, text, theme, work item. Saved as your point on the sprint.'));
+  document.querySelectorAll('[data-decide]').forEach(b => b.setAttribute('aria-pressed', b.dataset.decide === decide));
   document.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed', b.dataset.view === view));
-  render(); rail();
+  render();
   SL.preview([{ label: 'By work item', run: () => document.querySelector('[data-view=items]').click() }]);
 })();
 </script>

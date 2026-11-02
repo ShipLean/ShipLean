@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Retro note states (SHIP-497 mockup)</title>
+<!--
+  SHIP-497 reference: every state of a retro point's post-it, side by side. Not a page in the app.
+  Uses ../tokens.css, shiplean.css, shared.js, retro-data.js and retro-cards.js.
+-->
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="shiplean.css">
+<link rel="stylesheet" href="retro.css">
+<link rel="stylesheet" href="retro-cards.css">
+<script src="shared.js"></script>
+<script src="retro-data.js"></script>
+<script src="retro-cards.js"></script>
+<style>
+html, body { height: auto; overflow: auto; display: block; }
+.states { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: var(--space-4) var(--space-3); padding: var(--space-3); align-items: start; }
+.state { display: grid; gap: 6px; min-width: 0; }
+.state > b { font-size: var(--text-xs); color: var(--color-muted); }
+</style>
+</head>
+<body>
+<div class="states" id="states"></div>
+<script>
+(() => {
+  const { retros } = RETRO;
+  const r = id => retros.find(x => x.id === id);
+  const find = (id, text) => { const x = r(id); return { r: x, p: x.points.find(p => p.text.startsWith(text)) }; };
+  const pick = [
+    ['Can be improved, to decide', find('R-312', 'State in the brief whether retention')],
+    ['Went badly or Not in the plan, to decide', find('R-302', 'Provider sandbox')],
+    ['Being marked not needed', find('R-312', 'State in the brief which default'), 'why'],
+    ['Actioned: pinned to its action item', find('R-305', 'Common brief')],
+    ['Not needed, with the reason', find('R-305', 'The address provider')],
+    ['Went well: nothing to decide', find('R-302', 'The provider spike')],
+    ['A person\'s own point: can be archived', find('R-307', 'Show the review')],
+  ];
+  const html = () => pick.map(([label, { r: x, p }, mode]) => {
+    RC.ui.why = mode === 'why' ? RC.idOf(x, p) : null;
+    return `<div class="state"><b>${label}</b>${RC.note(p, x, { showItem: true })}</div>`;
+  }).join('');
+  document.getElementById('states').innerHTML = html();
+})();
+</script>
+</body>
+</html>

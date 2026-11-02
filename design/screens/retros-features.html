@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Retrospectives, Features (SHIP-497 mockup)</title>
+<!--
+  SHIP-497 mockup: Retrospectives › Features (retros/features). One row per Feature, counting the Feature's own retro and
+  its stories' and bugs' retros, in the fixed category order. A row opens retros/items/<key>. Stories and bugs with no
+  Feature sit in their own group, so they still have a way in. ?show=open|waiting filters.
+  Uses ../tokens.css, shiplean.css, shared.js, retro-data.js and retro-cards.js.
+-->
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="shiplean.css">
+<link rel="stylesheet" href="retro.css">
+<link rel="stylesheet" href="retro-cards.css">
+<script src="shared.js"></script>
+<script src="retro-data.js"></script>
+<script src="retro-cards.js"></script>
+</head>
+<body>
+<div id="appbar"></div>
+<div class="toolbar">
+  <div class="seg" role="group" aria-label="Show">
+    <button type="button" data-show="all">All</button>
+    <button type="button" data-show="open">To decide</button>
+    <button type="button" data-show="waiting">No Feature retro yet</button>
+  </div>
+  <input class="field" type="search" id="q" placeholder="Search Features" aria-label="Search Features" style="width:240px">
+  <span class="spacer"></span>
+  <span class="muted sm" id="count"></span>
+</div>
+<div class="scroll"><div class="rc-page">
+  <div class="rc-box"><table class="rc-rows">
+    <thead id="head"></thead>
+    <tbody id="rows"></tbody>
+  </table></div>
+  <p class="xs muted" style="margin:0">Counts cover the Feature's own retro and its stories' and bugs' retros. Went well needs no decision.</p>
+</div></div>
+
+<script>
+(() => {
+  const { tIcon, esc, features } = SL;
+  const { retros, catOrder, featureOf } = RETRO;
+  document.getElementById('appbar').outerHTML = SL.appBar('retros');
+  const $ = id => document.getElementById(id);
+  let show = new URLSearchParams(location.search).get('show') || 'all';
+
+  $('head').innerHTML = `<tr><th>Feature</th><th>State</th><th class="n">Retros</th>${catOrder.map(c => `<th class="n">${RC.catHead(c)}</th>`).join('')}<th class="n">To decide</th><th>Decided</th><th class="n">Actions</th><th>Last retro</th></tr>`;
+
+  const row = (key, type, title, state, rs, waiting) => {
+    const c = RC.counts(rs);
+    const own = rs.filter(r => r.subject === key).length;
+    const href = `retro-item.html?key=${key}`;
+    return `<tr data-href="${href}">
+      <td><div class="title-cell">${tIcon(type)}<span class="key">${key}</span><a class="rowlink t" href="${href}">${esc(title)}</a>${waiting ? '<span class="chip" style="height:16px" title="Only its stories and bugs have retros so far. The conductor logs the Feature\'s retro when its last story closes.">No Feature retro yet</span>' : ''}</div></td>
+      <td>${state ? SL.st(state) : ''}</td>
+      <td class="n" title="${own} on the ${type === 'feature' ? 'Feature' : 'item'}, ${rs.length - own} on its stories and bugs">${rs.length}</td>
+      ${catOrder.map(cat => `<td class="n">${RC.countCell(cat, c[cat])}</td>`).join('')}
+      <td class="n">${c.open ? `<span class="rc-todo">${c.open}</span>` : '<span class="muted">0</span>'}</td>
+      <td>${RC.progress(c)}</td>
+      <td class="n">${c.actions.size || '<span class="muted">0</span>'}</td>
+      <td class="xs muted" style="white-space:nowrap">${(rs[0]?.at ?? '').replace(/ \d\d:\d\d$/, '')}</td></tr>`;
+  };
+
+  function render() {
+    document.querySelectorAll('[data-show]').forEach(b => b.setAttribute('aria-pressed', b.dataset.show === show));
+    const q = $('q').value.trim().toLowerCase();
+    const rows = features
+      .map(f => ({ f, rs: RC.scopeOfFeature(f.key) }))
+      .filter(({ rs }) => rs.length)
+      .map(x => ({ ...x, waiting: !x.rs.some(r => r.subject === x.f.key && r.role === 'conductor'), open: RC.counts(x.rs).open }))
+      .filter(x => !q || x.f.title.toLowerCase().includes(q) || x.f.key.toLowerCase().includes(q))
+      .filter(x => show === 'all' || (show === 'open' ? x.open > 0 : x.waiting));
+    const loose = retros.filter(r => featureOf[r.subject] === null && r.type !== 'feature').filter(r => show === 'all' || (show === 'open' && RC.counts([r]).open > 0));
+    $('rows').innerHTML = rows.map(({ f, rs, waiting }) => row(f.key, 'feature', f.title, f.state, rs, waiting)).join('')
+      + (loose.length ? `<tr class="group"><td colspan="${catOrder.length + 7}">Stories and bugs with no Feature</td></tr>` + [...new Set(loose.map(r => r.subject))].map(k => { const rs = loose.filter(r => r.subject === k); return row(k, rs[0].type, rs[0].title, 'Closed', rs, false); }).join('') : '')
+      || `<tr><td colspan="${catOrder.length + 7}" class="muted" style="text-align:center;height:80px">Nothing here.</td></tr>`;
+    $('count').textContent = `${rows.length} Feature${rows.length === 1 ? '' : 's'} with retros`;
+  }
+
+  document.querySelector('[aria-label="Show"]').addEventListener('click', e => { const b = e.target.closest('[data-show]'); if (b) { show = b.dataset.show; render(); } });
+  $('q').addEventListener('input', render);
+  RC.wire(document.querySelector('.rc-page'), () => []);
+  render();
+  SL.preview([{ label: 'To decide', run: () => { show = 'open'; render(); } }]);
+})();
+</script>
+</body>
+</html>

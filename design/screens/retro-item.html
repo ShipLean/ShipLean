@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Retrospectives, one item (SHIP-497 mockup)</title>
+<!--
+  SHIP-497 mockup: retros/items/SHIP-101. Everything logged about one work item (a Feature, or a story or bug, with or
+  without a Feature): the retros on one board of post-its, the raw failure logs, and for a Feature a row per story and bug.
+  An agent's text stays read-only: Add appends a point to the signed-in person's own retro on this item, shown on the same board.
+  ?key=<item> picks the item, ?retro=<id> narrows to one retro (a work item page's row links here),
+  ?decide=open shows only points to decide, ?dialog=action opens New action item, ?why=<point> opens Not needed,
+  ?adding=<item>:<category> opens Add. Uses ../tokens.css, shiplean.css, shared.js, retro-data.js and retro-cards.js.
+-->
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="shiplean.css">
+<link rel="stylesheet" href="retro.css">
+<link rel="stylesheet" href="retro-cards.css">
+<script src="shared.js"></script>
+<script src="retro-data.js"></script>
+<script src="retro-cards.js"></script>
+</head>
+<body>
+<div id="appbar"></div>
+<section class="rc-head" id="head" aria-label="Work item"></section>
+<div class="toolbar">
+  <div class="seg" role="group" aria-label="Retro" id="retroSeg"></div>
+  <div class="seg" role="group" aria-label="Decision">
+    <button type="button" data-decide="all">All points</button>
+    <button type="button" data-decide="open">To decide</button>
+  </div>
+  <span class="spacer"></span>
+  <button class="btn primary" type="button" id="newAction">+ Action item</button>
+</div>
+<div class="split">
+  <div class="scroll"><div class="rc-page" id="page"></div></div>
+  <aside class="rail" id="rail" aria-label="About this item"></aside>
+</div>
+
+<script>
+(() => {
+  const { tIcon, esc, av, people, features } = SL;
+  const { retros, actions, catOrder, roleLabel, featureOf } = RETRO;
+  const params = new URLSearchParams(location.search);
+  const KEY = params.get('key') || 'SHIP-101';
+  document.getElementById('appbar').outerHTML = SL.appBar('retros');
+  const $ = id => document.getElementById(id);
+
+  const own = RC.retrosOf(KEY);
+  const isFeature = own[0]?.type === 'feature' || features.some(f => f.key === KEY);
+  const title = own[0]?.title ?? features.find(f => f.key === KEY)?.title ?? KEY;
+  const type = isFeature ? 'feature' : own[0]?.type ?? 'story';
+  const children = retros.filter(r => featureOf[r.subject] === KEY);
+  const scope = () => (isFeature ? [...RC.retrosOf(KEY), ...retros.filter(r => featureOf[r.subject] === KEY)] : RC.retrosOf(KEY));
+  let selected = params.get('retro') || 'all';
+  let decide = params.get('decide') === 'open' ? 'open' : 'all';
+
+  const shown = () => RC.retrosOf(KEY).filter(r => selected === 'all' || r.id === selected);
+
+  function head() {
+    const c = RC.counts(RC.retrosOf(KEY));
+    const parent = featureOf[KEY];
+    $('head').innerHTML = `<div>
+        <div class="row">${tIcon(type)}<span class="key">${KEY}</span><h1>${esc(title)}</h1><a class="btn tiny" href="${isFeature ? 'feature.html' : 'work-item.html?key=' + KEY}">Open work item</a></div>
+        <div class="row sm muted" style="margin-top:4px">${parent ? `Part of ${tIcon('feature')} <a href="retro-item.html?key=${parent}">${parent} ${esc(features.find(f => f.key === parent)?.title ?? '')}</a>` : isFeature ? `${RC.retrosOf(KEY).length} retro${RC.retrosOf(KEY).length === 1 ? '' : 's'} on the Feature, ${children.length} on its stories and bugs` : 'No Feature'}</div>
+      </div>
+      <div class="kpis">
+        <div class="kpi"><div class="v">${c.open}</div><div class="l">To decide</div></div>
+        <div class="kpi"><div class="v">${c.actions.size}</div><div class="l">Action items</div></div>
+        <div class="kpi"><div class="v">${c.decided}<small> / ${c.decidable}</small></div><div class="l">Decided</div></div>
+      </div>`;
+  }
+
+  function seg() {
+    const rs = RC.retrosOf(KEY);
+    $('retroSeg').innerHTML = (rs.length > 1 ? `<button type="button" data-retro="all" aria-pressed="${selected === 'all'}">All retros</button>` : '')
+      + rs.map(r => `<button type="button" data-retro="${r.id}" aria-pressed="${selected === r.id || rs.length === 1}" title="${r.at}">${esc(r.agent || people[r.by].name)}</button>`).join('');
+    document.querySelectorAll('[data-decide]').forEach(b => b.setAttribute('aria-pressed', b.dataset.decide === decide));
+  }
+
+  function page() {
+    const rs = shown();
+    const filter = p => decide === 'all' || RC.isOpen(p);
+    const childKeys = [...new Set(children.map(r => r.subject))];
+    $('page').innerHTML = (rs.length ? RC.board(rs, { id: KEY }, { filter, note: { showAuthor: RC.retrosOf(KEY).length > 1 } }) : RC.board([], { id: KEY }))
+      + rs.map(RC.rawLog).join('')
+      + (isFeature && childKeys.length ? `<div class="rc-sec-h"><h2>Stories and bugs</h2><span class="xs muted">Their own retros. The Feature's retro above was compiled from them.</span></div>
+        <div class="rc-box"><table class="rc-rows"><thead><tr><th>Item</th>${catOrder.map(c => `<th class="n">${RC.catHead(c)}</th>`).join('')}<th>Decided</th></tr></thead><tbody>
+        ${childKeys.map(k => { const list = RC.retrosOf(k), c = RC.counts(list), href = `retro-item.html?key=${k}`; return `<tr data-href="${href}"><td><div class="title-cell">${tIcon(list[0].type)}<span class="key">${k}</span><a class="rowlink t" href="${href}">${esc(list[0].title)}</a>${RC.todo(c.open)}</div></td>${catOrder.map(cat => `<td class="n">${RC.countCell(cat, c[cat])}</td>`).join('')}<td>${RC.progress(c)}</td></tr>`; }).join('')}
+        </tbody></table></div>` : '');
+  }
+
+  function rail() {
+    const list = actions.filter(a => scope().some(r => r.points.some(p => p.action === a.key)));
+    const compiled = RC.retrosOf(KEY).flatMap(r => r.compiledFrom ?? []);
+    $('rail').innerHTML = `<section><div class="overline">Action items</div><p class="hint">Raised from these points. Each starts in New with no sprint; pulling it into a sprint is the approval.</p>
+        <div class="acts">${list.map(a => `<div class="act-row"><div class="title-cell">${tIcon('action')}<a class="t" href="work-item.html?key=${a.key}" style="color:inherit;text-decoration:none" title="${esc(a.title)}">${esc(a.title)}</a></div>
+          <div class="row xs muted"><span class="key">${a.key}</span>${SL.st(a.state)}<span>· ${a.sprint || 'No sprint'}</span>${a.fix ? `<span>· ${RC.fixLabel(a.fix)}</span>` : ''}</div></div>`).join('') || '<span class="xs muted">None yet.</span>'}</div></section>
+      ${compiled.length ? `<section><div class="overline">Compiled from</div><div class="acts">${compiled.map(id => { const s = retros.find(x => x.id === id); return s ? `<div class="title-cell">${tIcon(s.type)}<a class="t" href="retro-item.html?key=${s.subject}" style="color:inherit;text-decoration:none">${s.subject} ${esc(s.title)}</a></div>` : ''; }).join('')}</div></section>` : ''}
+      <section><div class="overline">Who wrote this</div><div class="acts">${RC.retrosOf(KEY).map(r => `<div class="row" style="gap:6px">${av(r.by)}<span class="sm">${esc(r.agent || people[r.by].name)}</span><span class="chip">${roleLabel[r.role]}</span></div><div class="xs muted">${r.at} · ${r.sprint ? 'Sprint ' + r.sprint.slice(1) : 'No sprint'}</div>`).join('')}</div></section>`;
+  }
+
+  function render() { head(); seg(); page(); rail(); }
+  RC.render = render;
+  RC.addPoint = (cat, text, cause) => RC.addPointToItem(KEY, cat, text, cause);
+  RC.wire($('page'), scope);
+  $('retroSeg').addEventListener('click', e => { const b = e.target.closest('[data-retro]'); if (b) { selected = b.dataset.retro; render(); } });
+  document.querySelector('[aria-label="Decision"]').addEventListener('click', e => { const b = e.target.closest('[data-decide]'); if (b) { decide = b.dataset.decide; render(); } });
+  $('newAction').addEventListener('click', () => RC.openActionDialog([], scope()));
+  render();
+  if (params.get('dialog') === 'action') {
+    const open = RC.retrosOf(KEY).flatMap(r => r.points.filter(RC.isOpen).map(p => RC.idOf(r, p)));
+    RC.openActionDialog(open.slice(0, 2), scope());
+  }
+  SL.preview([{ label: 'New action item', run: () => $('newAction').click() }, { label: 'Story (SHIP-141)', run: () => { location.search = '?key=SHIP-141'; } }]);
+})();
+</script>
+</body>
+</html>
