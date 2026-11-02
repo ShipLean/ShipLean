@@ -66,7 +66,9 @@ export function ListScreen({ project, state }: { project: ProjectDto; state: Bac
             >
               {(columns) => (
                 <>
-                  <BeforeYouPlan review={state.backlog.data?.review ?? null} queue={queue} />
+                  <div className="sticky top-0 z-[5] flex-none">
+                    <BeforeYouPlan review={state.backlog.data?.review ?? null} queue={queue} />
+                  </div>
                   <BulkOutcomeHost projectId={project.id} />
                   <ListDnd
                     rows={rows}

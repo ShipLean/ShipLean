@@ -111,7 +111,9 @@ export function PlanningScreen({
                   onKeepTheirs={() => void reorder.keepTheirs()}
                 />
               ) : null}
-              <BeforeYouPlan review={view.review} queue={queue} />
+              <div className="sticky top-0 z-[5] flex-none">
+                <BeforeYouPlan review={view.review} queue={queue} />
+              </div>
               <BulkOutcomeHost projectId={project.id} />
               <PlanningDnd
                 sections={sections}
