@@ -38,7 +38,7 @@ export function NewItemRow({
   const [title, setTitle] = useState('');
   const input = useRef<HTMLInputElement>(null);
   const create = useCreateWorkItem(projectId, projectKey);
-  const paste = usePasteIntake();
+  const paste = usePasteIntake(type);
   useEffect(() => input.current?.focus(), [request]);
 
   function add() {
