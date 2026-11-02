@@ -23,7 +23,8 @@ public class GroupDragScrolledTests : SeededAcceptanceTest
         var top = (await moves.Row("SHIP-153").BoundingBoxAsync())!.Y;
         top.ShouldBeInRange(100, 144);
 
-        await moves.PickUpAndHoverAsync("SHIP-158", moves.Row("SHIP-153"));
+        // Held in the zone, the list autoscrolls up and the target slides down; the drop is on the target once it is under the pointer.
+        await moves.PickUpAutoscrollAndHoverAsync("SHIP-158", moves.Row("SHIP-153"));
         var response = await moves.DropAsync();
 
         response.Ok.ShouldBeTrue(await response.TextAsync());

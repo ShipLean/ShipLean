@@ -95,9 +95,37 @@ public sealed class PlanningDragging(IPage page)
             () => page.Mouse.UpAsync(),
             r => r.Request.Method == "POST" && r.Url.EndsWith("/backlog/bulk", StringComparison.Ordinal));
 
+    // Picks the row up by its grip and moves to where `target` is, which the test has put inside the autoscroll zone at the
+    // top of the viewport. dnd-kit scrolls the list for as long as the pointer is held there, so the rows slide under the
+    // pointer for a few hundred milliseconds (longer on a busy machine) and nothing is "over" for good yet. Waits until the
+    // list has scrolled as far as it goes, then moves the pointer onto the target where it now is, outside the zone, and
+    // holds there until the page says it is the one under the pointer. Returns with the button still down, like PickUpAndHoverAsync.
+    public async Task PickUpAutoscrollAndHoverAsync(string itemKey, ILocator target)
+    {
+        var grip = (await Row(itemKey).GetByTestId(BacklogTestIds.Grip).BoundingBoxAsync())!;
+        var box = (await target.BoundingBoxAsync())!;
+        var startX = grip.X + (grip.Width / 2);
+        var startY = grip.Y + (grip.Height / 2);
+        await page.Mouse.MoveAsync(startX, startY);
+        await page.Mouse.DownAsync();
+        await page.Mouse.MoveAsync(startX + 5, startY + 10, new() { Steps = 4 });
+        await page.Mouse.MoveAsync(box.X + (box.Width / 2), box.Y + (box.Height / 2) - 8, new() { Steps = 12 });
+        await page.WaitForFunctionAsync(
+            "([testId, key]) => { const el = document.querySelector(`[data-testid=\"${testId}\"][data-key=\"${key}\"]`); " + ScrollerOf + " return scroller.scrollTop <= 0; }",
+            new object[] { BacklogTestIds.Row, itemKey });
+        var moved = (await target.BoundingBoxAsync())!;
+        moved.Y.ShouldBeGreaterThan(box.Y + 40, "autoscroll should have carried the target down from the edge");
+        await page.Mouse.MoveAsync(moved.X + (moved.Width / 2), moved.Y + (moved.Height / 2) - 8, new() { Steps = 4 });
+        await Assertions.Expect(target).ToHaveAttributeAsync("data-over", "true");
+    }
+
+    // JavaScript that sets `scroller` to whatever scrolls the list around `el`: the nearest scrolling ancestor, else the page.
+    private const string ScrollerOf =
+        "let scroller = el.parentElement; while (scroller && !(scroller.scrollHeight > scroller.clientHeight && /(auto|scroll)/.test(getComputedStyle(scroller).overflowY))) { scroller = scroller.parentElement; } if (!scroller || scroller === document.body || scroller === document.documentElement) { scroller = { get scrollTop() { return window.scrollY; }, scrollBy: (x, y) => window.scrollBy(x, y) }; }";
+
     // Scrolls whatever scrolls the list so `row` sits `fromTop` pixels below the top of the viewport.
     public static Task ScrollRowToAsync(ILocator row, int fromTop) =>
         row.EvaluateAsync(
-            "(el, fromTop) => { const want = el.getBoundingClientRect().top - fromTop; let n = el.parentElement; while (n && !(n.scrollHeight > n.clientHeight && /(auto|scroll)/.test(getComputedStyle(n).overflowY))) { n = n.parentElement; } if (n && n !== document.body && n !== document.documentElement) { n.scrollTop += want; } else { window.scrollBy(0, want); } }",
+            "(el, fromTop) => { const want = el.getBoundingClientRect().top - fromTop; " + ScrollerOf + " scroller.scrollBy(0, want); }",
             fromTop);
 }
