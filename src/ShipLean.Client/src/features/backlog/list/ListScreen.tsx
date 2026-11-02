@@ -77,6 +77,7 @@ export function ListScreen({ project, state }: { project: ProjectDto; state: Bac
                   dragDisabled={filtering}
                   flashing={flashing}
                   filtered={filtering}
+                  searched={search.active ? search.query.trim() : ''}
                 />
               </ListDnd>
               <BulkBar

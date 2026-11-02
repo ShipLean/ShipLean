@@ -124,6 +124,11 @@ export function PlanningScreen({
                 onCloseAdd={() => setAdding(false)}
                 flashing={flashing}
                 collapse={searchCollapse}
+                noMatch={
+                  search.active && !sections.some((s) => s.rows.length > 0)
+                    ? search.query.trim()
+                    : null
+                }
                 filtering={filtering}
                 tableRef={tableRef}
                 dropLine={dropLine}

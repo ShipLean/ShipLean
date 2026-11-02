@@ -5,6 +5,8 @@ import { routePath } from '../../../routes';
 import { useSectionPreview } from '../drag/GroupDragContext';
 import { backlogTestIds as ids } from '../testIds';
 import { SectionCapacity } from './SectionCapacity';
+import { SectionToggle } from './SectionToggle';
+import type { SectionCollapse } from './useSectionCollapse';
 import { useSectionDrop } from './useSectionDrop';
 
 // A sprint section's header: name, Current chip, item count, its load and a link to the sprint (its backlog when
@@ -15,6 +17,7 @@ export function SectionHeader({
   velocity,
   datesLabel,
   columnCount,
+  collapse,
 }: {
   section: BacklogSectionDto;
   projectKey: string;
@@ -23,6 +26,7 @@ export function SectionHeader({
   // "20 Oct – 2 Nov", from the shared sprints; undefined until they are read.
   datesLabel: string | undefined;
   columnCount: number;
+  collapse: SectionCollapse;
 }) {
   const { attach, over } = useSectionDrop(section.id);
   const preview = useSectionPreview(section);
@@ -39,6 +43,12 @@ export function SectionHeader({
     >
       <td colSpan={columnCount} className="px-2">
         <div className="flex items-center gap-2">
+          <SectionToggle
+            title={section.title}
+            open={collapse.isOpen(section.id)}
+            disabled={collapse.searching}
+            onToggle={() => collapse.toggle(section.id)}
+          />
           <b data-testid={ids.planningSectionTitle} className="text-[length:var(--text-md)]">
             {section.title}
           </b>

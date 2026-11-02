@@ -33,6 +33,7 @@ export function PlanningSections({
   onCloseAdd,
   flashing,
   collapse,
+  noMatch = null,
   filtering,
   tableRef,
   dropLine,
@@ -49,6 +50,8 @@ export function PlanningSections({
   // Ids of the rows a teammate just changed.
   flashing: ReadonlySet<string>;
   collapse: SectionCollapse;
+  // What the search typed, when it left no row in any section; null otherwise.
+  noMatch?: string | null;
   // A filter, search or check queue is on: moving is off, and rank is relative to rows you can't see.
   filtering: boolean;
   tableRef: RefObject<HTMLTableElement | null>;
@@ -122,6 +125,7 @@ export function PlanningSections({
                 velocity={planned}
                 datesLabel={dates.get(section.id)}
                 columnCount={columnCount}
+                collapse={collapse}
               />
               {sprintBody(section)}
             </Fragment>
@@ -140,6 +144,7 @@ export function PlanningSections({
                 projectId={projectId}
                 projectKey={projectKey}
                 columnCount={columnCount}
+                collapse={collapse}
               />
               {adding ? (
                 <NewItemRow
@@ -168,6 +173,17 @@ export function PlanningSections({
               ) : null}
             </>
           ) : null}
+          {noMatch === null ? null : (
+            <tr>
+              <td
+                colSpan={columnCount}
+                data-testid={ids.noRows}
+                className="h-16 text-center text-[length:var(--text-sm)] text-ink-muted"
+              >
+                Nothing matches &quot;{noMatch}&quot;
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
     </div>

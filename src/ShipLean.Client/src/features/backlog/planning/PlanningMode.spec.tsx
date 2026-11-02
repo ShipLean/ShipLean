@@ -130,7 +130,7 @@ test('Planning_WhenForecastOn_ShouldDrawCutLinesUnderTheLastItemOfEachSprint', a
 });
 
 test('Planning_WhenForecastToggledOff_ShouldHideLinesAndSaveTheChoice', async ({ mount, page }) => {
-  const server = await stubBacklog(page, planningView());
+  const server = await stubBacklog(page, planningView(), { saved: {} });
   await mount(<PlanningMode project={PROJECT} />, route);
   await expect(page.getByTestId(ids.planningForecastLine)).toHaveCount(2);
 
@@ -145,7 +145,9 @@ test('Planning_WhenForecastToggledOff_ShouldHideLinesAndSaveTheChoice', async ({
 });
 
 test('Planning_WhenForecastSavedOff_ShouldOpenWithoutLines', async ({ mount, page }) => {
-  await stubBacklog(page, planningView(), { saved: { forecast: false } });
+  await stubBacklog(page, planningView(), {
+    saved: { forecast: false, collapsedSections: [] },
+  });
   await mount(<PlanningMode project={PROJECT} />, route);
 
   await expect(page.getByTestId(ids.row)).toHaveCount(5);

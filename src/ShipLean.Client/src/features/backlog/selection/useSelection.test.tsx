@@ -70,3 +70,18 @@ test('useSelection outside a provider is inert', () => {
   expect(selection?.focusedId).toBeNull();
   expect(seen.cell).toBe(selection);
 });
+
+test('a range across a collapsed section skips its rows', () => {
+  // b and c sit in a collapsed section: shown ids still hold them, the walk order does not.
+  mount(
+    <SelectionProvider walkOrder={['a', 'd']}>
+      <Owner />
+      <Cell />
+    </SelectionProvider>,
+  );
+
+  act(() => seen.cell?.toggle('a'));
+  act(() => seen.cell?.rangeTo('d'));
+
+  expect([...(seen.cell?.ids ?? [])].sort()).toEqual(['a', 'd']);
+});

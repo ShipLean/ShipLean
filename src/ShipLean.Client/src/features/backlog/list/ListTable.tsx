@@ -32,6 +32,7 @@ export function ListTable({
   onCloseAdd,
   dragDisabled,
   filtered,
+  searched = '',
   flashing,
 }: {
   rows: BacklogRowDto[];
@@ -47,11 +48,19 @@ export function ListTable({
   dragDisabled: boolean;
   // A filter, search or check queue is on: an empty list means nothing matches it.
   filtered: boolean;
+  // What the search typed, when one is on: an empty list names it.
+  searched?: string;
   // Ids of the rows a teammate just changed.
   flashing: ReadonlySet<string>;
 }) {
   // The select column and the grip column come before the data columns.
   const columnCount = columns.length + 2;
+  const emptyText =
+    searched === ''
+      ? filtered
+        ? 'Nothing matches this filter'
+        : 'Nothing to show'
+      : `Nothing matches "${searched}"`;
   const rowIds = useMemo(() => rows.map((row) => row.id), [rows]);
   useSelection(rowIds);
   return (
@@ -110,7 +119,7 @@ export function ListTable({
                 data-testid={ids.noRows}
                 className="h-16 text-center text-[length:var(--text-sm)] text-ink-muted"
               >
-                {filtered ? 'Nothing matches this filter' : 'Nothing to show'}
+                {emptyText}
               </td>
             </tr>
           ) : null}

@@ -105,7 +105,10 @@ export async function stubBacklog(
     },
   };
   let current = view;
-  let saved = options.saved;
+  // Planning specs that are not about collapsing see every section open; pass `saved: {}` for the app's default
+  // (the running sprint closed).
+  let saved: unknown =
+    options.saved ?? (view.mode === 'planning' ? { collapsedSections: [] } : undefined);
   let staleIds: string[] = [];
   let duplicateMatches: DuplicateMatch[] = [];
   await page.route('**/api/projects/p1/backlog/bulk', (route) => {
