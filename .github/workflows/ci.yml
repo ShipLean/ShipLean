@@ -3,13 +3,9 @@ name: CI
 on:
   # Pull requests only: a merge to main is the code its pull request already tested.
   # main's image is built by docker-publish. Run it by hand on any branch with workflow_dispatch.
+  # Every pull request runs, because the ruleset requires these checks. A pull request that only
+  # changes what CI cannot see skips the work instead (the changes job below).
   pull_request:
-    # Changes CI cannot see. Only top-level *.md: Markdown under src/ and db/ is test or app input.
-    # ci.yml itself is not listed, so a change to it still runs everything.
-    paths-ignore:
-      - '*.md'
-      - 'docs/**'
-      - '.github/workflows/docker-publish.yml'
   workflow_dispatch:
 
 concurrency:
@@ -23,9 +19,44 @@ permissions:
   actions: write
 
 jobs:
+  # Changes CI cannot see: top-level *.md (Markdown under src/ and db/ is test or app input), docs/
+  # and docker-publish.yml. A pull request with only those sets code=false, and the jobs below skip,
+  # which the ruleset counts as passing (acceptance skips its steps instead: a skipped matrix job
+  # reports an unexpanded name). A hand run has no base and always runs. If this job fails, code is
+  # empty and everything runs.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.diff.outputs.code }}
+    steps:
+      - uses: actions/checkout@v4
+        if: github.event_name == 'pull_request'
+      - id: diff
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" != "pull_request" ]; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git fetch --depth=1 origin "$BASE_SHA"
+          changed=$(git diff --name-only "$BASE_SHA" HEAD)
+          printf '%s\n' "$changed"
+          code_files=$(printf '%s\n' "$changed" | grep -Ev '^([^/]+\.md|docs/.*|\.github/workflows/docker-publish\.yml)?$' || true)
+          if [ -n "$code_files" ]; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Only docs changed; the jobs skip"
+            echo "code=false" >> "$GITHUB_OUTPUT"
+          fi
+
   # GitHub-hosted runners. The repo is public, so these minutes are free.
   build:
     name: build, lint, typecheck
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -76,6 +107,8 @@ jobs:
 
   unit:
     name: unit tests
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -86,6 +119,8 @@ jobs:
 
   api:
     name: API tests
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-latest
     # SHIPLEAN_TEST_DB is unset, so the tests start a postgres:18 Testcontainers container.
     # ubuntu-latest provides Docker, which Testcontainers uses.
@@ -114,6 +149,8 @@ jobs:
 
   component:
     name: component tests
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-latest
     # Same image used to generate the committed screenshot snapshots. The
     # GitHub-hosted runner image and this container ship different font
@@ -177,6 +214,8 @@ jobs:
 
   acceptance:
     name: acceptance (${{ matrix.group }})
+    needs: changes
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -194,25 +233,33 @@ jobs:
             shards: Lanes.Board Lanes.BoardSettings Lanes.Taskboard Lanes.Settings Lanes.Import Other
     steps:
       - uses: actions/checkout@v4
+        if: needs.changes.outputs.code != 'false'
       - uses: actions/setup-dotnet@v4
+        if: needs.changes.outputs.code != 'false'
         with:
           dotnet-version: 10.0.x
       - uses: pnpm/action-setup@v4
+        if: needs.changes.outputs.code != 'false'
         with:
           package_json_file: src/ShipLean.Client/package.json
       - uses: actions/setup-node@v4
+        if: needs.changes.outputs.code != 'false'
         with:
           node-version: 24
           cache: pnpm
           cache-dependency-path: src/ShipLean.Client/pnpm-lock.yaml
       # The tests serve the real bundle, so it is built first (into ShipLean.WebApi/wwwroot).
       - run: pnpm install --frozen-lockfile && pnpm run build
+        if: needs.changes.outputs.code != 'false'
         working-directory: src/ShipLean.Client
       - run: dotnet build src/ShipLean.AcceptanceTests --configuration Release
+        if: needs.changes.outputs.code != 'false'
       # No --with-deps: the runner image already has Chromium's libraries, and the extra apt packages (fonts, xvfb)
       # sometimes took over 10 minutes from a slow Ubuntu mirror. These tests are headless and take no screenshots.
       - run: pwsh src/ShipLean.AcceptanceTests/bin/Release/net10.0/playwright.ps1 install chromium
+        if: needs.changes.outputs.code != 'false'
       - name: dotnet test (${{ matrix.shards }})
+        if: needs.changes.outputs.code != 'false'
         env:
           SHARDS: ${{ matrix.shards }}
         # Every shard runs even after one fails; the step fails at the end, naming the failed shards.
@@ -246,6 +293,8 @@ jobs:
 
   image:
     name: docker image build
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
