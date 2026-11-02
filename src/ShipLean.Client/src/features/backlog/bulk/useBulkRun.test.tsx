@@ -85,10 +85,29 @@ test('invalidates_the_backlog_after_a_partial_answer', async () => {
   queryClient.setQueryData(key, backlogView(rows));
   const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
   const stale = { error: 'conflict', code: 'conflict' as const, current: {}, theirChanges: [] };
-  post.mockResolvedValue({ written: [], stale: [stale, stale] });
+  post.mockResolvedValue({ written: [written(rows[0].id)], stale: [stale] });
 
   await act(() => runner.run(moveToEdgePlan(rows, 'first')));
 
+  expect(invalidate).toHaveBeenCalledWith({ queryKey: backlogRootKey('p1') });
+});
+
+test('an_empty_plan_sends_no_request_and_resolves_empty', async () => {
+  const outcome = await act(() => runner.run(moveToEdgePlan([], 'first')));
+
+  expect(post).not.toHaveBeenCalled();
+  expect([outcome.written, outcome.stale]).toEqual([[], []]);
+  expect(outcome.failed).toBeUndefined();
+});
+
+test('a_failed_request_resolves_failed_and_still_invalidates', async () => {
+  queryClient.setQueryData(key, backlogView(rows));
+  const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
+  post.mockRejectedValue(new Error('boom'));
+
+  const outcome = await act(() => runner.run(moveToEdgePlan(rows, 'first')));
+
+  expect(outcome).toMatchObject({ written: [], stale: [], failed: true });
   expect(invalidate).toHaveBeenCalledWith({ queryKey: backlogRootKey('p1') });
 });
 
@@ -98,5 +117,5 @@ test('refuses_over_100_without_a_request', async () => {
   const outcome = await act(() => runner.run(moveToEdgePlan(many, 'first')));
 
   expect(post).not.toHaveBeenCalled();
-  expect(outcome.written).toEqual([]);
+  expect(outcome).toMatchObject({ written: [], failed: true });
 });

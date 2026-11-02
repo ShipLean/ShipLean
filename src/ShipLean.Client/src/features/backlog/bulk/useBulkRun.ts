@@ -25,6 +25,8 @@ export interface BulkOutcome {
   written: WriteResult[];
   stale: ConflictDto[];
   viewBefore: BacklogViewDto | undefined;
+  /** True on a refused or failed run, absent on a normal one: nothing was written, keep the selection. */
+  failed?: true;
 }
 
 export interface BulkRunner {
@@ -58,9 +60,10 @@ export function useBulkRun(projectId: string, queryKey: QueryKey): BulkRunner {
 
   async function run(plan: BulkPlan): Promise<BulkOutcome> {
     const viewBefore = queryClient.getQueryData<BacklogViewDto>(queryKey);
+    if (plan.items.length === 0) return { plan, written: [], stale: [], viewBefore };
     if (plan.items.length > BULK_MAX_ROWS) {
       showToast(`Select ${BULK_MAX_ROWS} rows or fewer`, { tone: 'danger' });
-      return { plan, written: [], stale: [], viewBefore };
+      return { plan, written: [], stale: [], viewBefore, failed: true };
     }
     const current = new Map(rowsOf(viewBefore).map((row) => [row.id, row.revision]));
     const body: BulkWriteRequest = {
@@ -81,7 +84,8 @@ export function useBulkRun(projectId: string, queryKey: QueryKey): BulkRunner {
       showToast(error instanceof Error ? error.message : 'Could not apply the change', {
         tone: 'danger',
       });
-      return { plan, written: [], stale: [], viewBefore };
+      await queryClient.invalidateQueries({ queryKey: backlogRootKey(projectId) });
+      return { plan, written: [], stale: [], viewBefore, failed: true };
     }
     const done: BulkOutcome = { plan, written: result.written, stale: result.stale, viewBefore };
     setOutcome(done);

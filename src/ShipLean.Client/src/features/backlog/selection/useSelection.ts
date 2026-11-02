@@ -15,6 +15,9 @@ export interface SelectionContextValue {
   setFocused: (id: string | null) => void;
   /** The ids a walk (J/K, Enter) visits, collapsed sections left out; absent = every shown row. */
   walkOrder: readonly string[] | undefined;
+  /** Every shown row's id in screen order, as the screen's owner last gave it; what range and select-all run over. */
+  shownIds: readonly string[];
+  setShownIds: (ids: readonly string[]) => void;
 }
 
 export const SelectionContext = createContext<SelectionContextValue | null>(null);
@@ -58,24 +61,27 @@ const inert: Selection = {
 export function useSelection(shownIds?: readonly string[]): Selection {
   const context = useContext(SelectionContext);
   const dispatch = context?.dispatch;
+  const setShownIds = context?.setShownIds;
   useEffect(() => {
-    if (shownIds !== undefined) dispatch?.({ type: 'prune', order: shownIds ?? emptyIds });
-  }, [dispatch, shownIds]);
+    if (shownIds === undefined) return;
+    setShownIds?.(shownIds);
+    dispatch?.({ type: 'prune', order: shownIds });
+  }, [dispatch, setShownIds, shownIds]);
   return useMemo(() => {
     if (context === null) return inert;
-    const { state, focusedId, setFocused, walkOrder } = context;
+    const { state, focusedId, setFocused, walkOrder, shownIds: owned } = context;
     return {
       ids: state.ids,
       has: (id) => state.ids.has(id),
       count: state.ids.size,
-      orderedIds: walkOrder ?? shownIds ?? emptyIds,
+      orderedIds: walkOrder ?? owned,
       toggle: (id) => context.dispatch({ type: 'toggle', id }),
-      rangeTo: (id) => context.dispatch({ type: 'range', id, order: shownIds ?? emptyIds }),
-      selectAll: () => context.dispatch({ type: 'selectAll', order: shownIds ?? emptyIds }),
+      rangeTo: (id) => context.dispatch({ type: 'range', id, order: owned }),
+      selectAll: () => context.dispatch({ type: 'selectAll', order: owned }),
       clear: () => context.dispatch({ type: 'clear' }),
       focusedId,
       setFocused,
       selectedRows: (rows) => pickRows(state, rows),
     };
-  }, [context, shownIds]);
+  }, [context]);
 }

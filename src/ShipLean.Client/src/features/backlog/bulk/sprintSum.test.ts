@@ -40,18 +40,18 @@ test('rows already in the sprint add nothing', () => {
   expect(sum.adding).toBe(8);
 });
 
-test('unestimated rows add zero', () => {
+test('unestimated count zero', () => {
   const sum = sprintSum(section(), [itemRow({ key: 'SHIP-5', points: null })], null);
 
   expect(sum.text).toBe('13 + 0 = 13 / 22');
 });
 
-test('over is true past the limit and not at it', () => {
+test('over is true past the limit', () => {
   expect(sprintSum(section({ capacity: 20 }), rows, null).over).toBe(true);
   expect(sprintSum(section({ capacity: 21 }), rows, null).over).toBe(false);
 });
 
-test('no sprint limit at all omits the slash', () => {
+test('no sprint limit at all omits / n', () => {
   const sum = sprintSum(section({ capacity: null }), rows, null);
 
   expect(sum.text).toBe('13 + 8 = 21');

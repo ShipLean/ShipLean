@@ -7,6 +7,7 @@ import type {
   DuplicateMatch,
 } from '../../../api/backlogWrites';
 import type { ConflictDto, WorkItemCreate, WriteResult } from '../../../api/workItems';
+import { story } from '../../workItem/ct/fixtures';
 
 // The part of Playwright's Page and Route these stubs use (the CT package does not re-export the types).
 interface StubRoute {
@@ -117,9 +118,14 @@ export async function stubBacklog(
           ({
             error: 'conflict',
             code: 'conflict',
-            current: { id: item.id, key: item.id, revision: item.expectedRevision + 1 },
+            current: {
+              ...story,
+              id: item.id,
+              key: item.id,
+              revision: item.expectedRevision + 1,
+            },
             theirChanges: [],
-          }) as unknown as ConflictDto,
+          }) satisfies ConflictDto,
       );
     const done = body.items
       .filter((item) => !staleIds.includes(item.id))
