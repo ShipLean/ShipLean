@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import type { BacklogSectionDto } from '../../../api/views';
 import { Chip } from '../../../components/Chip';
 import { routePath } from '../../../routes';
+import { useSectionPreview } from '../drag/GroupDragContext';
 import { backlogTestIds as ids } from '../testIds';
 import { SectionCapacity } from './SectionCapacity';
 import { useSectionDrop } from './useSectionDrop';
@@ -24,6 +25,7 @@ export function SectionHeader({
   columnCount: number;
 }) {
   const { attach, over } = useSectionDrop(section.id);
+  const preview = useSectionPreview(section);
   const sprint = section.sprint;
   if (sprint === null) return null;
   const current = sprint.status === 'current';
@@ -60,6 +62,7 @@ export function SectionHeader({
             committed={section.points}
             capacity={section.capacity}
             velocity={velocity}
+            preview={preview}
           />
           <Link
             data-testid={ids.planningSectionLink}
