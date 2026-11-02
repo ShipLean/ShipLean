@@ -37,4 +37,19 @@ public class WordOverlapTests
         WordOverlap.Score("Plan 9", ["9"]).ShouldBe(1);
         WordOverlap.Score("Caf\u00e9 menu", ["cafe\u0301"]).ShouldBe(1);
     }
+
+    [TestCase("Card, CARD; card-vault v2!", "Card vault v2 card")]
+    [TestCase("Sign-up page, sign UP again", "SIGN up")]
+    [TestCase("User's card", "don't x")]
+    [TestCase("Caf\u00e9 menu menu", "cafe\u0301 MENU!")]
+    [TestCase("The end of the road", "the of a")]
+    [TestCase("", "pay")]
+    public void WordOverlap_WhenPrepared_ShouldAgreeWithScore(string title, string other)
+    {
+        var shared = WordOverlap.Shared(WordOverlap.Words(title), WordOverlap.Words(other));
+
+        shared.ShouldBe(WordOverlap.Score(title, [other]));
+        shared.ShouldBe(WordOverlap.Shared(WordOverlap.Words(other), WordOverlap.Words(title)));
+        WordOverlap.Words(title).Count.ShouldBe(WordOverlap.Score(title, [title]));
+    }
 }

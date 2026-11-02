@@ -106,9 +106,11 @@ public class BacklogReviewApiTests : McpFixture
     public async Task Get_WhenClosedRow_ShouldNotBeChecked()
     {
         var closed = await InsertAsync(b => b.WithTitle("Closed gecko prism").WithStateNamed("Closed"));
+        var open = await InsertAsync(b => b.WithTitle("Open gecko prism rudder"));
 
         var review = await ReviewAsync("list");
 
+        Ids(review, "unestimated").ShouldContain(open);
         review.Checks.SelectMany(c => c.ItemIds).ShouldNotContain(closed);
     }
 
