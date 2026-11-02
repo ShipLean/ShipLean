@@ -6,6 +6,7 @@ using ShipLean.Contracts;
 using ShipLean.Contracts.Auth;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Users;
+using ShipLean.Contracts.Usage;
 using ShipLean.WebApi.Features.Auth.Proxy;
 using ShipLean.WebApi.Infrastructure;
 
@@ -19,7 +20,8 @@ namespace ShipLean.WebApi.Features.Auth;
 // GET  /api/auth/instance        -> InstanceDto (anonymous)
 [Route("api/auth")]
 public sealed class AuthController(
-    SignInService signIn, CookieSession cookie, MeReader me, IUserAccounts accounts, ICurrentUser currentUser) : ApiControllerBase
+    SignInService signIn, CookieSession cookie, MeReader me, IUserAccounts accounts, ICurrentUser currentUser,
+    IUsageEvents events, TimeProvider time) : ApiControllerBase
 {
     [AllowAnonymous]
     [PasswordSignInOnly]
@@ -31,8 +33,10 @@ public sealed class AuthController(
     [ProducesResponseType<ApiError>(StatusCodes.Status429TooManyRequests)]
     public async Task<MeDto> Login(LoginRequest request, CancellationToken ct)
     {
+        var started = time.GetTimestamp();
         var userId = await signIn.SignInAsync(request, ct);
         await cookie.SignInAsync(userId, ct);
+        SelfEmittedUsage.TrackOk(events, time, started, UsageEventNames.AuthSignedIn, userId, "api:Auth.Login");
         return await me.GetAsync(userId, ct);
     }
 

@@ -7,6 +7,7 @@ using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Events;
 using ShipLean.Contracts.Persisted;
 using ShipLean.Contracts.Refs;
+using ShipLean.Contracts.Usage;
 
 namespace ShipLean.Application.Features.AgentDispatch;
 
@@ -19,7 +20,7 @@ namespace ShipLean.Application.Features.AgentDispatch;
 // exact from match beats Any, so one move starts at most one session, with the first Send to agent action of that transition.
 // Gates: the revision is by a person (no import, webhook, named MCP agent or bulk write), it is recent (a revision from long ago is not
 // "entering" the state now). The person is the session's creator. No live session, connection and repository are checked by the starter.
-public sealed class AgentTrigger(NpgsqlDataSource dataSource, AgentSessionStarter starter, TimeProvider time, ILogger<AgentTrigger> logger)
+public sealed class AgentTrigger(NpgsqlDataSource dataSource, AgentSessionStarter starter, IUsageEvents usage, TimeProvider time, ILogger<AgentTrigger> logger)
 {
     private const string AgentKind = "agent";
     private static readonly TimeSpan Recent = TimeSpan.FromMinutes(5);
@@ -41,6 +42,13 @@ public sealed class AgentTrigger(NpgsqlDataSource dataSource, AgentSessionStarte
         var outcome = await starter.StartAsync(
             updated.Id, creator, null, action.ConnectionId, action.Prompt,
             new AgentTransitionInput(transition.From?.Name ?? "Any", transition.To.Name), cancellationToken);
+        if (outcome.SessionId is not null)
+        {
+            usage.Track(new UsageEvent(
+                UsageEventNames.AgentSessionOpened, UsageSurface.System, UsageActor.System, updated.ProjectId, 1, UsageOutcome.Ok, null, null,
+                $"system:{nameof(AgentTrigger)}", time.GetUtcNow(), new Dictionary<string, object>()));
+        }
+
         if (outcome.Block is { } block)
         {
             if (block == AgentStartBlock.LiveSession)

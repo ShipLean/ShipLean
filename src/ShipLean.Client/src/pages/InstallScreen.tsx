@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useScreenPresence } from '../realtime';
+import { useScreenPresence, useScreenView } from '../realtime';
 import type { RouteId } from '../routes';
 
 interface InstallScreenProps {
@@ -12,6 +12,7 @@ interface InstallScreenProps {
 // its slots.
 export function InstallScreen({ routeId, testId, children }: InstallScreenProps) {
   useScreenPresence(routeId);
+  useScreenView(routeId, null);
   return (
     <div data-testid={testId} className="p-4">
       {children}

@@ -283,4 +283,18 @@ public static class SettingsTestIds
 
     // Users admin, proxy mode
     public const string UsersAddProxyNote = "settings-users-add-proxy-note";
+
+    // Instance analytics
+    public const string AnalyticsContainer = "instance-analytics";
+    public const string AnalyticsProviderSelect = "instance-analytics-provider";
+    public const string AnalyticsHostInput = "instance-analytics-host";
+    public const string AnalyticsSiteKeyInput = "instance-analytics-site-key";
+    public const string AnalyticsSendNamesToggle = "instance-analytics-send-names";
+    public const string AnalyticsSaveButton = "instance-analytics-save";
+    public const string AnalyticsTestButton = "instance-analytics-test";
+    public const string AnalyticsTestResult = "instance-analytics-test-result";
+    public const string AnalyticsFieldError = "instance-analytics-field-error";
+    public const string AnalyticsHostError = "instance-analytics-host-error";
+    public const string AnalyticsSiteKeyError = "instance-analytics-site-key-error";
+    public const string AnalyticsProviderError = "instance-analytics-provider-error";
 }

@@ -2,6 +2,7 @@ import { useParams } from 'react-router-dom';
 import { pagesTestIds } from '../features/pages/testIds';
 import { instanceSettingsTabs, type InstanceSettingsTab } from '../routes';
 import { InstanceAgentsSlot } from '../slots/InstanceAgentsSlot';
+import { InstanceAnalyticsSlot } from '../slots/InstanceAnalyticsSlot';
 import { InstanceGeneralSlot } from '../slots/InstanceGeneralSlot';
 import { InstanceIntegrationsSlot } from '../slots/InstanceIntegrationsSlot';
 import { InstanceProjectsSlot } from '../slots/InstanceProjectsSlot';
@@ -28,6 +29,7 @@ export function InstanceSettingsPage() {
       {slots.instanceUsers && <InstanceUsersSlot {...slots.instanceUsers} />}
       {slots.instanceProjects && <InstanceProjectsSlot {...slots.instanceProjects} />}
       {slots.instanceIntegrations && <InstanceIntegrationsSlot {...slots.instanceIntegrations} />}
+      {slots.instanceAnalytics && <InstanceAnalyticsSlot {...slots.instanceAnalytics} />}
       {slots.instanceAgents && <InstanceAgentsSlot {...slots.instanceAgents} />}
     </InstallScreen>
   );

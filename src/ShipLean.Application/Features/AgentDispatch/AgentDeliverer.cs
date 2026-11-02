@@ -67,7 +67,7 @@ public sealed class AgentDeliverer(
         foreach (var id in canceled)
         {
             logger.LogInformation("Agent session {SessionId} was canceled: the agent did not answer Stop in time", id);
-            await notifier.ChangedAsync(id);
+            await notifier.ChangedAsync(id, AgentSessionStates.Canceled);
         }
 
         return canceled.Count;
@@ -224,7 +224,7 @@ public sealed class AgentDeliverer(
         await connection.ExecuteAsync(new CommandDefinition(
             "UPDATE agent_delivery SET status = 'failed', attempts = @attempts, claimed_until = NULL, last_error = @error WHERE id = @id AND status = 'pending'",
             new { id = row.Id, attempts, error }, transaction, cancellationToken: cancellationToken));
-        await connection.ExecuteAsync(new CommandDefinition(
+        var failedSessions = await connection.ExecuteAsync(new CommandDefinition(
             $"UPDATE agent_session SET state = 'failed', ended_at = @now WHERE id = @sessionId AND state IN {AgentSessionStates.LiveSql}",
             new { sessionId = row.SessionId, now }, transaction, cancellationToken: cancellationToken));
         await connection.ExecuteAsync(new CommandDefinition(
@@ -234,6 +234,6 @@ public sealed class AgentDeliverer(
         logger.LogWarning(
             "Agent delivery {DeliveryId} ({Action}, try {Attempt}) to connection {Connection} ({ConnectionId}) failed for good: {Error} Session {SessionId} failed.",
             row.Id, row.Action, attempts, connectionName, row.ConnectionId, error, row.SessionId);
-        await notifier.ChangedAsync(row.SessionId);
+        await notifier.ChangedAsync(row.SessionId, failedSessions > 0 ? AgentSessionStates.Failed : null);
     }
 }
