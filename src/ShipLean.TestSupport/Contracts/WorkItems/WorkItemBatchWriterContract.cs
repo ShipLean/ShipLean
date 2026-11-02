@@ -15,7 +15,6 @@ public abstract class WorkItemBatchWriterContract
 
     protected abstract Task<ArrangedProject> ArrangeProjectAsync();
 
-    // Red against the real store until the batch writer is real.
     [Test]
     public async Task WriteBatch_WhenOneRowStale_ShouldWriteTheOthers()
     {
@@ -41,7 +40,6 @@ public abstract class WorkItemBatchWriterContract
         (await store.GetAsync(second.Id)).Points.ShouldBeNull();
     }
 
-    // Red against the real store until the batch writer is real.
     [Test]
     public async Task WriteBatch_WhenBlockPlaced_ShouldKeepRequestOrder()
     {
