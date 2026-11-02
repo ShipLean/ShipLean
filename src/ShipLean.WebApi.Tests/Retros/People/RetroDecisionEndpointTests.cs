@@ -1,10 +1,10 @@
 using System.Net;
-using Microsoft.Extensions.DependencyInjection;
-using ShipLean.Contracts;
+using Dapper;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Retros;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
+using ShipLean.TestSupport.Hosting;
 using ShipLean.TestSupport.Retros;
 
 namespace ShipLean.WebApi.Tests.Retros.People;
@@ -52,17 +52,17 @@ public sealed class RetroDecisionEndpointTests : RetroPeopleFixture
         (body.TryGetProperty("notNeeded", out var notNeeded) ? notNeeded.ValueKind : System.Text.Json.JsonValueKind.Null).ShouldBe(System.Text.Json.JsonValueKind.Null);
     }
 
-    [Test]
-    public async Task Routes_WhenCallerNotMember_ShouldBeNotFound()
+    [TestCase("not-needed")]
+    [TestCase("undo-not-needed")]
+    public async Task Routes_WhenCallerNotMember_ShouldBeNotFoundAndChangeNothing(string route)
     {
         await using var world = await World.CreateAsync(await OpenDatabaseAsync());
         var pointId = await world.Seed.PointAsync(await world.AgentRetroAsync(), new RetroSeedPoint(RetroCategory.Improve, "X.", NotNeededReason: "R."));
-        Host.ActAs(SeedIds.Users.Kai);
-        var access = Host.Services.GetRequiredService<IProjectAccess>();
 
-        var error = await Should.ThrowAsync<ApiException>(() => access.RequireAsync(ProjectItem.RetroPoint, pointId, ProjectRole.Member));
+        using var response = await Api.ActingAs(TestUser.Kai).PostJsonAsync($"/api/retros/points/{pointId}/{route}", new { reason = "Other." });
 
-        error.Code.ShouldBe(ApiErrorCodes.NotFound);
+        (await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.NotFound)).Code.ShouldBe(ApiErrorCodes.NotFound);
+        (await world.Connection.QuerySingleAsync<string?>("SELECT not_needed_reason FROM retro_point WHERE id = @pointId", new { pointId })).ShouldBe("R.");
     }
 
     [TestCase("not-needed")]

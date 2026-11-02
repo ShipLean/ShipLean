@@ -22,6 +22,8 @@ public sealed class RetrosSweepRows : IAccessSweepRows
         new("POST", "api/projects/{id:guid}/retros/actions", ProjectRole.Member, Body: """{"title":"","fixType":"skill","pointIds":[]}"""),
         new("POST", "api/retros/actions/{workItemId:guid}/points", ProjectRole.Member, Body: """{"pointIds":[]}""", Url: $"api/retros/actions/{SeedIds.WorkItems.Ship90}/points"),
         new("PUT", "api/retros/actions/{workItemId:guid}", ProjectRole.Member, Body: """{"fixType":"skill","themeId":"0a2e0000-0000-7000-8000-000000000001","themeName":"x"}""", Url: $"api/retros/actions/{SeedIds.WorkItems.Ship90}"),
+        new("POST", "api/retros/points/{id:guid}/not-needed", ProjectRole.Member, Body: """{"reason":""}""", Url: $"api/retros/points/{RetroSweepData.Point}/not-needed"),
+        new("POST", "api/retros/points/{id:guid}/undo-not-needed", ProjectRole.Member, Url: $"api/retros/points/{RetroSweepData.Point}/undo-not-needed"),
         new("PUT", "api/retros/themes/{id:guid}", ProjectRole.Member, Body: """{"name":"Sweep"}""", Url: $"api/retros/themes/{RetroSweepData.Theme}"),
         new("POST", "api/projects/{id:guid}/retros/themes/merge", ProjectRole.Member, Body: """{"sourceIds":[],"targetId":"0a2e0000-0000-7000-8000-000000000001"}"""),
     ];

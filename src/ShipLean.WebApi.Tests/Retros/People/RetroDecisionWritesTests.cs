@@ -5,7 +5,9 @@ using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Retros;
 using ShipLean.TestSupport;
+using ShipLean.Contracts.Events;
 using ShipLean.TestSupport.Fixtures;
+using ShipLean.TestSupport.Hosting;
 using ShipLean.TestSupport.Retros;
 
 namespace ShipLean.WebApi.Tests.Retros.People;
@@ -231,14 +233,62 @@ public sealed class RetroDecisionWritesTests : RetroPeopleFixture
     public async Task Writes_WhenPointInOtherProject_ShouldBeNotFound()
     {
         await using var world = await World.CreateAsync(await OpenDatabaseAsync());
+        await using var other = await World.CreateAsync(await OpenDatabaseAsync());
         var pointId = await PointAsync(world);
-        Host.ActAs(SeedIds.Users.Kai);
-        var access = Host.Services.GetRequiredService<IProjectAccess>();
+        var otherPoint = await PointAsync(other);
 
-        var refused = await Should.ThrowAsync<ApiException>(() => access.RequireAsync(ProjectItem.RetroPoint, pointId, ProjectRole.Member));
-        refused.Code.ShouldBe(ApiErrorCodes.NotFound);
-        var missing = await Should.ThrowAsync<ApiException>(() => InScopeAsync(writes => writes.AssignThemeAsync(Guid.NewGuid(), "Any", Person)));
-        missing.Code.ShouldBe(ApiErrorCodes.NotFound);
+        // The real writers, given a point that is not in the caller's project, find no live point to write.
+        using var mark = await Api.ActingAs(TestUser.Kai).PostJsonAsync($"/api/retros/points/{pointId}/not-needed", new { reason = "No." });
+        using var undo = await Api.ActingAs(TestUser.Kai).PostJsonAsync($"/api/retros/points/{otherPoint}/undo-not-needed");
+        var unknown = await Should.ThrowAsync<ApiException>(() => InScopeAsync(writes => writes.AssignThemeAsync(Guid.NewGuid(), "Any", Person)));
+
+        (await ApiClient.ReadApiErrorAsync(mark, HttpStatusCode.NotFound)).Code.ShouldBe(ApiErrorCodes.NotFound);
+        (await ApiClient.ReadApiErrorAsync(undo, HttpStatusCode.NotFound)).Code.ShouldBe(ApiErrorCodes.NotFound);
+        unknown.Code.ShouldBe(ApiErrorCodes.NotFound);
         (await world.Connection.QuerySingleAsync<string?>("SELECT not_needed_reason FROM retro_point WHERE id = @pointId", new { pointId })).ShouldBeNull();
+    }
+
+    [Test]
+    public async Task ProposeMerge_ShouldPublishRetroChangedForTheProject()
+    {
+        await using var world = await World.CreateAsync(await OpenDatabaseAsync());
+        await world.Seed.ThemeAsync("Alpha");
+        await world.Seed.ThemeAsync("Beta");
+        using var watch = Watch(world.Project.Id);
+
+        await InScopeAsync(writes => writes.ProposeMergeAsync(world.Project.Id, "Alpha", "Beta", "Same.", Person));
+
+        var published = await watch.NextAsync<RetroChanged>(_ => true);
+        (published.SprintIds, published.WorkItemIds).ShouldBe(([], []));
+    }
+
+    [Test]
+    public async Task ProposeMerge_WhenThemeRetired_ShouldBeValidation()
+    {
+        await using var world = await World.CreateAsync(await OpenDatabaseAsync());
+        await world.Seed.ThemeAsync("Alpha");
+        var beta = await world.Seed.ThemeAsync("Beta");
+        await world.Connection.ExecuteAsync("UPDATE retro_theme SET archived_at = now() WHERE id = @beta", new { beta });
+
+        (await FieldOfValidationAsync(writes => writes.ProposeMergeAsync(world.Project.Id, "Alpha", "Beta", "Why.", Person))).ShouldBe("intoTheme");
+    }
+
+    // Deterministic atomicity check: a trigger fails the point's UPDATE after the theme was created in the same call. One transaction
+    // rolls the new theme back; a version that created the theme on its own connection would leave it behind.
+    [Test]
+    public async Task AssignTheme_WhenTheUpdateFails_ShouldLeaveNoNewTheme()
+    {
+        await using var world = await World.CreateAsync(await OpenDatabaseAsync());
+        var pointId = await PointAsync(world);
+        await world.Connection.ExecuteAsync(
+            $"""
+            CREATE FUNCTION fail_point_{pointId:N}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'blocked'; END $$;
+            CREATE TRIGGER fail_point BEFORE UPDATE ON retro_point FOR EACH ROW WHEN (OLD.id = '{pointId}') EXECUTE FUNCTION fail_point_{pointId:N}();
+            """);
+
+        await Should.ThrowAsync<Exception>(() => InScopeAsync(writes => writes.AssignThemeAsync(pointId, "Brand new", new RetroActor(SeedIds.Users.Joel, "claude-x"))));
+
+        (await world.Connection.ExecuteScalarAsync<int>("SELECT count(*)::int FROM retro_theme WHERE project_id = @project", new { project = world.Project.Id })).ShouldBe(0);
+        await world.Connection.ExecuteAsync($"DROP TRIGGER fail_point ON retro_point; DROP FUNCTION fail_point_{pointId:N}();");
     }
 }
