@@ -114,7 +114,7 @@ Open any screen and use the **Preview** panel (bottom left) to switch the theme.
 
 ## Planning many rows (SHIP-255)
 
-**Designed, not built yet.** The Stories backlog and Planning screens now show how filling a backlog and planning a sprint should work, benchmarked on Jira and Azure DevOps. The research and every decision are on SHIP-255. Where this differs from the patterns further down, such as adding at #1 only, this section is the design to build. Decided by Joel on 2 Nov 2026:
+**Built** (SHIP-255). The Stories backlog and Planning screens show how filling a backlog and planning a sprint work, benchmarked on Jira and Azure DevOps. The research and every decision are on SHIP-255. Where this differs from the patterns further down, this section wins. Decided by Joel on 2 Nov 2026:
 
 - **Select many rows:** hover checkbox, Ctrl/Cmd-click, Shift for a range, select all, across sprint sections. A plain click only moves focus, so a stray click can't lose a selection.
 - **One action bar, one limit:** move to a sprint, the top or the bottom; set points, state, parent or tag; remove. 100 rows per action, measured before release. Everything has Undo. Each sprint button shows the sum first (`13 + 8 = 21 / 22`). It warns and never blocks, like capacity. **No Assign**, because work is pulled.
@@ -130,6 +130,25 @@ Open any screen and use the **Preview** panel (bottom left) to switch the theme.
 - **Keyboard:** only while the list has focus, never while typing in a field. Press `?` for the list.
 
 Left out on purpose: per-person load (the team is the unit), AI inside the app (agents use MCP), a bulk wizard (Undo is lighter) and a dashboard screen (the strip covers planning).
+
+### Where the build differs from the screens
+
+- **+ Add** lives in the sprint section's header.
+- The action bar is sticky at the bottom of the list. The changed-row report and the Before you plan strip are sticky at the top.
+- Undo offers only **Leave it** for a row someone changed since. Position-only writes carry no revision, so a position-only Undo cannot be checked, and it moves the row back even if a teammate has reordered it since.
+- The selection stays after a move, so the next action can use it.
+- On List, **Put them** offers only sprints that have visible rows.
+- The Fixed tick on a queue row is not in the screens.
+
+### What was measured and what wasn't
+
+All numbers are from one laptop (16 cores, 39 GB), not the 7 GB host the plan was timed on, with 100 rows.
+
+- **Bulk write through the API (B1), three runs each:** move to a sprint 777, 747, 785 ms; block to top 297, 267, 286 ms; set points 837, 711, 674 ms. No test forces overlap, so the evidence that a bulk write doesn't delay other writers is weak; a single PATCH took 9 to 54 ms during one run.
+- **One MCP apply of 100 items (M1), three runs:** `capture_work` 514, 507, 504 ms (preview 93.5 KB, answer 35.2 KB); `break_down` 566, 543, 596 ms (answer 34.8 KB); `plan_sprint` 672, 569, 506 ms (preview about 43 KB, answer about 25.6 KB). Sizes are raw bodies, which carry the JSON twice. Whether the limit stays at 100 is not decided.
+- **A 100-row move through the UI (J1), click to rows showing:** 1056, 954, 1141, 1025, 1065 ms, with the server taking about 0.85 s of that.
+- **The backlog read (B3)** adds about 20 ms (36 with, 16 without) on the seeded project plus 500 rows.
+- **Not tried:** no screen reader, no real user.
 
 ## Logo
 
@@ -222,7 +241,7 @@ These were decided while reviewing the screens on 2026-10-24.
 ## Backlog patterns (`screens/backlog.html`, `screens/features.html`)
 
 - **List and Planning are two modes of the Stories backlog.** List is the plain ranked backlog with Sprint and Assignee columns. Scheduled items stay in the list with a sprint chip, and the current sprint's chip is accent. Completed items are hidden unless **Completed** is ticked.
-- **+ New work item** opens an inline row at the top with a type menu (only types at this level: User Story or Bug) and a title field. Enter adds it at #1 with the next key and keeps the row open, and Esc closes it. A new item has no estimate, shown as a warn `?`.
+- **+ New work item** opens an inline row at the top with a type menu (only types at this level: User Story or Bug) and a title field. Enter adds it with the next key and keeps the row open (`N` and **+ Add** add where you are, see Planning many rows), and Esc closes it. A new item has no estimate, shown as a warn `?`.
 - **Show parents** groups rows under Epic › Feature (› nested Feature) header rows. Header rows show their state and the open points under them, collapse with ▼, and aren't ranked here. Stories with no Feature collect under **No parent**. Dropping a row on a Feature header reparents it, and dropping it on a row in another Feature puts it just above that row and takes that row's parent. A toast confirms each move.
 - **Filter** opens the Criteria builder: one group of `field · operator · value` clauses joined by **All** or **Any**, with fields from the fixed field list. Active clauses show as chips in the toolbar. While a filter is on, dragging is off (a banner says why) and `#` keeps showing each item's place in the full backlog.
 - **Columns** is a per-user, per-level checklist. Key and Title can't be hidden.
