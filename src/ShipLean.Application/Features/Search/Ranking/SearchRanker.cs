@@ -13,7 +13,8 @@ namespace ShipLean.Application.Features.Search.Ranking;
 // Exact key first, then RRF over the legs' lists, then the boosts (Fusion/SearchBoosts). Semantic is true only when the
 // embedder is semantic, every semantic leg is available and none of them has rows still waiting for an embedding.
 // The exact key ignores IncludeClosed (a quick menu typed "SHIP-12" finds a done item), but when Types, Tags or Criteria
-// are set it only promotes an item a leg already listed, so the filters still hold.
+// are set it only promotes an item a leg already listed, so the filters still hold. While the caller is typing (Prefix) a bare
+// number is exact too: "435" names item 435 of each project.
 public sealed partial class SearchRanker(
     IEnumerable<IItemCandidates> legs,
     ISearchGroups groups,
@@ -68,8 +69,9 @@ public sealed partial class SearchRanker(
 
         var semantic = IsSemantic(embedderSemantic, semanticLegs);
         var fused = ReciprocalRankFusion.Fuse(lists, options.RrfK).ToDictionary(f => f.Key, f => f.Value);
-        var exactId = ExactKey.TryParse(query.Text, out var key) ? await ExactItemAsync(connection, key, projectIds, cancellationToken) : null;
-        var facts = fused.Count == 0 ? new Dictionary<Guid, ItemFacts>() : await FactsAsync(connection, [.. fused.Keys], projectIds, cancellationToken);
+        var exactIds = await ExactItemsAsync(connection, query, projectIds, cancellationToken);
+        Guid[] factIds = [.. fused.Keys.Union(exactIds)];
+        var facts = factIds.Length == 0 ? new Dictionary<Guid, ItemFacts>() : await FactsAsync(connection, factIds, projectIds, cancellationToken);
 
         var now = clock.GetUtcNow();
         var recentProject = RecentProject(memberships);
@@ -91,12 +93,12 @@ public sealed partial class SearchRanker(
         // Types, tags and criteria describe items, so projects and sprints are not looked up for them.
         var itemOnly = query.Types is { Count: > 0 } || query.Tags is { Count: > 0 } || query.Criteria is not null;
         // With item filters the legs applied them, so only an item they listed (and that survived above) may be promoted.
-        if (exactId is { } exact && (!itemOnly || ranked.Exists(r => r.Id == exact)))
+        foreach (var exact in exactIds.Where(id => !itemOnly || ranked.Exists(r => r.Id == id)))
         {
             // A leg's own hit keeps its field and snippet. Otherwise it is a title hit with no snippet, which ToItem shows as the title.
             var best = fused.TryGetValue(exact, out var listed) ? listed.Best : new CandidateHit(exact, SearchField.Title, 1, "");
             ranked.RemoveAll(r => r.Id == exact);
-            ranked.Add((new FusedItem(best, 0) { Score = SearchBoosts.ExactKeyScore }, exact));
+            ranked.Add((new FusedItem(best, 0) { Score = SearchBoosts.ExactKeyScore * SearchBoosts.Factor(facts[exact], currentUser.Id, recentProject, now) }, exact));
         }
 
         var ordered = ranked.OrderByDescending(r => r.Item.Score).Select(r => r.Id).ToList();
@@ -150,16 +152,26 @@ public sealed partial class SearchRanker(
     [LoggerMessage(Level = LogLevel.Debug, Message = "Search is lexical only: {PendingRows} matching rows are not embedded yet")]
     private partial void LogRowsPending(int pendingRows);
 
-    // The item the key names, if it is in an allowed project the caller is in and not removed.
-    private async Task<Guid?> ExactItemAsync(NpgsqlConnection connection, string key, IReadOnlyList<Guid> projectIds, CancellationToken cancellationToken)
-        => await connection.QuerySingleOrDefaultAsync<Guid?>(new CommandDefinition(
+    // The items the query names (the key's item, or a bare number's item in each project), if they are in an allowed project the caller is in and not removed.
+    private async Task<IReadOnlyList<Guid>> ExactItemsAsync(NpgsqlConnection connection, SearchQuery query, IReadOnlyList<Guid> projectIds, CancellationToken cancellationToken)
+    {
+        string? key = ExactKey.TryParse(query.Text, out var parsedKey) ? parsedKey : null;
+        int? number = query.Prefix && KeyPart.TryParse(query.Text, out var part) && int.TryParse(part, out var parsedNumber) ? parsedNumber : null;
+        if (key is null && number is null)
+        {
+            return [];
+        }
+
+        var rows = await connection.QueryAsync<Guid>(new CommandDefinition(
             """
             SELECT w.id FROM work_item w
             JOIN state s ON s.id = w.state_id
             JOIN project_member m ON m.project_id = w.project_id AND m.user_id = @me AND m.archived_at IS NULL
-            WHERE w.key = @key AND w.project_id = ANY(@projectIds) AND s.category <> 'removed'
+            WHERE (w.key = @key OR w.number = @number) AND w.project_id = ANY(@projectIds) AND s.category <> 'removed'
             """,
-            new { key, projectIds = projectIds.ToArray(), me = currentUser.Id }, cancellationToken: cancellationToken));
+            new { key, number, projectIds = projectIds.ToArray(), me = currentUser.Id }, cancellationToken: cancellationToken));
+        return [.. rows];
+    }
 
     private static async Task<Dictionary<Guid, ItemFacts>> FactsAsync(NpgsqlConnection connection, Guid[] ids, IReadOnlyList<Guid> projectIds, CancellationToken cancellationToken)
     {

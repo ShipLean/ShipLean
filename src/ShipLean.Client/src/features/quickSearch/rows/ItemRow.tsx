@@ -10,6 +10,9 @@ export function parentPathLabel(path: readonly string[]): string {
   return path.length > 2 ? `… › ${path.slice(-2).join(' › ')}` : path.join(' › ');
 }
 
+// A query matches keys only when it has a digit (the server's KeyPart), so a word such as "ship" leaves the key unmarked.
+const hasDigit = (query: string): boolean => /\d/.test(query);
+
 export function ItemRow({
   item,
   match,
@@ -29,7 +32,7 @@ export function ItemRow({
         {item.parentPath.length > 0 ? <span>{parentPathLabel(item.parentPath)}</span> : null}
         <StateDot category={item.stateCategory} name={item.state} />
         <span data-testid={ids.optionKey} className="min-w-[62px] text-right font-mono text-ink">
-          {item.key}
+          {hasDigit(query) ? <Match text={item.key} query={query} /> : item.key}
         </span>
       </span>
       {match ? <WhereLine match={match} query={query} /> : null}
