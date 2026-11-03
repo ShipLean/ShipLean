@@ -145,7 +145,7 @@ public sealed class RetroMergeProposalsTests : ApiFixture
             (await scope.ServiceProvider.GetRequiredService<IRetroDecisionWrites>().ProposeMergeAsync(project.Id, "Alpha", "Beta", "Same.", Agent)).ShouldBeTrue();
         }
 
-        var id = (await PendingAsync(project.Id)).Single().Id;
+        var id = await connection.QuerySingleAsync<Guid>("SELECT id FROM retro_theme_merge_proposal WHERE project_id = @project", new { project = project.Id });
         foreach (var route in new[] { "merge", "keep-apart" })
         {
             using var response = await Api.PostJsonAsync($"/api/retros/theme-merge-proposals/{id}/{route}");

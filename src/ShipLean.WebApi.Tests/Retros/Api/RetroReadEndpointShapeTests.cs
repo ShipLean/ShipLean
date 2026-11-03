@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using Dapper;
 using ShipLean.Contracts.Errors;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
@@ -99,7 +100,17 @@ public class RetroReadEndpointShapeTests : ApiFixture
     [TestCase("keep-apart")]
     public async Task MergeProposal_WhenKnown_ShouldBeNoContent(string answer)
     {
-        using var response = await Api.PostJsonAsync($"/api/retros/theme-merge-proposals/{RetroSweepData.Proposal}/{answer}");
+        // An answered proposal is a conflict, so each case answers a pending one of its own.
+        var proposal = Guid.NewGuid();
+        await using var connection = await OpenDatabaseAsync();
+        await connection.ExecuteAsync(
+            """
+            INSERT INTO retro_theme (id, project_id, name, name_set_by, tone) VALUES (@from, @project, @fromName, 'agent', 'bad'), (@into, @project, @intoName, 'agent', 'bad');
+            INSERT INTO retro_theme_merge_proposal (id, project_id, from_theme_id, into_theme_id, reason, proposed_by_user_id) VALUES (@proposal, @project, @from, @into, 'Shape', @user);
+            """,
+            new { proposal, from = Guid.NewGuid(), into = Guid.NewGuid(), fromName = $"From {proposal}", intoName = $"Into {proposal}", project = SeedIds.Projects.Ship, user = SeedIds.Users.Joel });
+
+        using var response = await Api.PostJsonAsync($"/api/retros/theme-merge-proposals/{proposal}/{answer}");
 
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
     }
