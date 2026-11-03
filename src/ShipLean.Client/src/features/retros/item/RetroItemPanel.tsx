@@ -32,10 +32,10 @@ export function RetroItemPanel({ project, itemKey }: { project: ProjectDto; item
               <ItemHeader projectKey={project.key} item={item} />
               <ItemToolbar item={item} address={address} onRetro={setRetro} onDecide={setDecide} />
               <ItemBoard item={item} address={address} onAdded={onAdded} />
-              <ItemChildRows />
-              <ItemFailureLogs />
+              <ItemChildRows projectKey={project.key} item={item} />
+              <ItemFailureLogs item={item} address={address} />
             </div>
-            <ItemRail />
+            <ItemRail projectKey={project.key} item={item} />
           </div>
         )}
       </RetroQueryState>
