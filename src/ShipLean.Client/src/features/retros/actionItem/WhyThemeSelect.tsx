@@ -6,10 +6,12 @@ import { retrosTestIds as ids } from '../testIds';
 export function WhyThemeSelect({
   projectId,
   theme,
+  disabled,
   onChange,
 }: {
   projectId: string;
   theme: RetroThemeRefDto | null;
+  disabled: boolean;
   onChange: (themeId: string | null) => void;
 }) {
   const listed = useRetroThemes(projectId).data?.themes.map((option) => option.theme) ?? [];
@@ -22,6 +24,7 @@ export function WhyThemeSelect({
       <span className="text-ink-muted">Theme</span>
       <select
         data-testid={ids.retroActionWhyTheme}
+        disabled={disabled}
         value={theme?.id ?? ''}
         className="field w-56"
         onChange={(e) => onChange(e.target.value === '' ? null : e.target.value)}

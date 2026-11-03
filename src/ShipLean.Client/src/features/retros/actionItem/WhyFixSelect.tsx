@@ -5,9 +5,11 @@ import { retrosTestIds as ids } from '../testIds';
 /** The action item's type of fix. The empty option is there only while the stored fix is null (a back-copied legacy action). */
 export function WhyFixSelect({
   fixType,
+  disabled,
   onChange,
 }: {
   fixType: RetroFixType | null;
+  disabled: boolean;
   onChange: (fixType: RetroFixType) => void;
 }) {
   return (
@@ -15,6 +17,7 @@ export function WhyFixSelect({
       <span className="text-ink-muted">Type of fix</span>
       <select
         data-testid={ids.retroActionWhyFix}
+        disabled={disabled}
         value={fixType ?? ''}
         className="field"
         onChange={(e) => onChange(e.target.value as RetroFixType)}

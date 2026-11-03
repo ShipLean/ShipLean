@@ -1,3 +1,4 @@
+import { ApiRequestError } from '../../../api/client';
 import type { WorkItemTypeId } from '../../../api/refs';
 import { useRetroActionDialog } from '../../retroShared/actionDialog/useRetroActionDialog';
 import { RetroQueryState } from '../RetroQueryState';
@@ -10,7 +11,7 @@ import { WhyThemeSelect } from './WhyThemeSelect';
 
 /**
  * "Why this exists" on an action item's page: the points it covers, quoted with links back, its theme and type of fix, and
- * + Add points. Only an action shows it. Each select PUTs both current values with the one that changed (K5).
+ * + Add points. Only an action shows it. Each select PUTs both current values with the one that changed (K5), so both stay disabled until a write and the re-read after it have finished: a second change would otherwise send the first one's old value.
  */
 export function ActionWhy({
   projectId,
@@ -28,6 +29,8 @@ export function ActionWhy({
   const update = useUpdateRetroAction(projectId, workItemId);
   const dialog = useRetroActionDialog();
   if (!isAction) return null;
+  // An action item made without Why this exists has no retro_action row: the 404 is "nothing to show", not a failure.
+  if (query.error instanceof ApiRequestError && query.error.status === 404) return null;
   return (
     <RetroQueryState query={query}>
       {({ action, theme, points }) => (
@@ -45,12 +48,14 @@ export function ActionWhy({
             <WhyThemeSelect
               projectId={projectId}
               theme={theme}
+              disabled={update.isPending}
               onChange={(themeId) =>
                 update.mutate({ fixType: action.fixType, themeId, themeName: null })
               }
             />
             <WhyFixSelect
               fixType={action.fixType}
+              disabled={update.isPending}
               onChange={(fixType) =>
                 update.mutate({ fixType, themeId: theme?.id ?? null, themeName: null })
               }

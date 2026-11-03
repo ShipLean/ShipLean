@@ -14,12 +14,33 @@ const themeOf = retroActionDetail.points[1].theme!;
 
 type Page = Parameters<Parameters<typeof test>[2]>[0]['page'];
 
+/** Answers every action GET with `detail`; returns the paths it was asked for. */
 async function answerWith(page: Page, detail: RetroActionDetailDto) {
-  await page.route(/\/api\/retros\/actions\/[^/]+$/, (r) =>
-    r.request().method() === 'GET'
-      ? r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(detail) })
-      : r.fallback(),
-  );
+  const asked: string[] = [];
+  await page.route(/\/api\/retros\/actions\/[^/]+$/, (r) => {
+    if (r.request().method() !== 'GET') return r.fallback();
+    asked.push(new URL(r.request().url()).pathname);
+    return r.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(detail),
+    });
+  });
+  return asked;
+}
+
+/** Answers every action GET with a failure; returns the paths it was asked for. */
+async function failWith(page: Page, status: number, error: string, code: string) {
+  const asked: string[] = [];
+  await page.route(/\/api\/retros\/actions\/[^/]+$/, (r) => {
+    asked.push(new URL(r.request().url()).pathname);
+    return r.fulfill({
+      status,
+      contentType: 'application/json',
+      body: JSON.stringify({ error, code }),
+    });
+  });
+  return asked;
 }
 
 const withFix = (fixType: RetroFixType | null, theme = themeOf): RetroActionDetailDto => ({
@@ -141,19 +162,65 @@ test('failed PUT shows a toast', async ({ mount, page }) => {
   await expect(page.getByTestId(componentTestIds.toast)).toContainText('Fix type is required.');
 });
 
-test('not shown on a story', async ({ mount, page }) => {
-  const stub = await stubRetros(page);
-  await answerWith(page, withFix('guide'));
+test('not shown on a story (and shown on an action item)', async ({ mount, page }) => {
+  await stubRetros(page);
+  const asked = await answerWith(page, withFix('guide'));
   await mount(
-    <div>
-      <RetroActionDialogProvider projectId="p1">
-        <ActionWhy projectId="p1" projectKey="SHIP" workItemId="w189" itemType="story" />
-      </RetroActionDialogProvider>
-      <p>marker</p>
-    </div>,
+    <RetroActionDialogProvider projectId="p1">
+      <ActionWhy projectId="p1" projectKey="SHIP" workItemId="w189" itemType="action" />
+      <ActionWhy projectId="p1" projectKey="SHIP" workItemId="w190" itemType="story" />
+    </RetroActionDialogProvider>,
     route,
   );
-  await expect(page.getByText('marker')).toBeVisible();
+  await expect(page.getByTestId(ids.retroActionWhy)).toHaveCount(1);
+  await expect(page.getByTestId(ids.retroActionWhy)).toContainText('Why this exists');
+  expect(asked).toEqual(['/api/retros/actions/w189']);
+});
+
+test('an action item with no retro_action row shows nothing, not an alert', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  const asked = await failWith(page, 404, 'No action item with that id was found.', 'not_found');
+  await mountWhy(mount);
+  await expect.poll(() => asked.length).toBe(1);
   await expect(page.getByTestId(ids.retroActionWhy)).toHaveCount(0);
-  expect(stub.reads('/retros/actions/w189')).toHaveLength(0);
+  await expect(page.getByRole('alert')).toHaveCount(0);
+});
+
+test('another failed read still shows as an alert', async ({ mount, page }) => {
+  await stubRetros(page);
+  await failWith(page, 500, 'The server failed.', 'internal_error');
+  await mountWhy(mount);
+  await expect(page.getByRole('alert')).toContainText('The server failed.');
+});
+
+test('two quick changes: the second PUT carries the first change', async ({ mount, page }) => {
+  const stub = await stubRetros(page);
+  const other = first.theme!;
+  // The server keeps what was last PUT, as the real one does.
+  await page.route(/\/api\/retros\/actions\/[^/]+$/, (r) => {
+    if (r.request().method() !== 'GET') return r.fallback();
+    const put = stub.writes().at(-1)?.body as
+      { fixType: RetroFixType | null; themeId: string | null } | undefined;
+    const themes = [themeOf, other];
+    const detail = put
+      ? {
+          ...withFix(put.fixType),
+          theme: themes.find((t) => t.id === put.themeId) ?? null,
+        }
+      : withFix('guide');
+    return r.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(detail),
+    });
+  });
+  await mountWhy(mount);
+  await expect(page.getByTestId(ids.retroActionWhyFix)).toHaveValue('guide');
+  await page.getByTestId(ids.retroActionWhyTheme).selectOption(other.id);
+  await page.getByTestId(ids.retroActionWhyFix).selectOption('test');
+  await expect.poll(() => stub.writes().length).toBe(2);
+  expect(stub.writes()[1].body).toEqual({ fixType: 'test', themeId: other.id, themeName: null });
 });
