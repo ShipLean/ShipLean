@@ -48,7 +48,7 @@ export function SprintRetroPanel({ project, sprint }: { project: ProjectDto; spr
               className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4"
             >
               <SprintRetroHeader {...props} />
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="sticky top-0 z-10 flex flex-wrap items-center gap-3 bg-canvas py-1">
                 <div
                   role="group"
                   aria-label="Retro view"
