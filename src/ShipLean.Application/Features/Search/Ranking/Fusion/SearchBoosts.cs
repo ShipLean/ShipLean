@@ -19,7 +19,8 @@ public static class SearchBoosts
 
     public static readonly TimeSpan RecentWindow = TimeSpan.FromDays(7);
 
-    // The score an exact key match gets: above any fused and boosted score.
+    // The score an exact key match gets before its boosts: above any fused and boosted score. The boosts order several exact
+    // matches, when a bare number names an item in more than one project.
     public const double ExactKeyScore = 1.0;
 
     public static double Factor(ItemFacts facts, Guid me, Guid? recentProject, DateTimeOffset now)
