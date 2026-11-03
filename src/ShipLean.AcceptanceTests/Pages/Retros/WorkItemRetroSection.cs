@@ -9,8 +9,6 @@ public sealed class WorkItemRetroSection(IPage page)
 
     public ILocator Rows => Section.GetByTestId(RetrosTestIds.WorkItemRetroRow);
 
-    public ILocator RowLink(int index) => Rows.Nth(index).GetByRole(AriaRole.Link);
-
     // TODO: J2 moves FeatureRetroJourneyTests and AgentRetroJourneyTests to the item page and deletes these card members, which the section no longer renders.
     public ILocator Cards => Section.GetByTestId(RetroSharedTestIds.RetroCard);
 
