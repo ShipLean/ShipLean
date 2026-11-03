@@ -9,6 +9,8 @@ import { WorkItemRetroRow } from './WorkItemRetroRow';
 
 const head =
   'bg-sunken px-2 py-1.5 text-left text-[length:var(--text-xs)] font-semibold whitespace-nowrap text-ink-muted';
+// A heading may take two lines, so the four category columns stay narrow.
+const wrapHead = '[&>span]:items-start [&>span]:text-left [&>span]:whitespace-normal';
 const headNum = `${head} text-right`;
 
 // One row per retro of the item, newest first, with its counts. A row opens the item's page in Retrospectives filtered to
@@ -52,9 +54,9 @@ export function WorkItemRetroSection({
                 <thead>
                   <tr>
                     <th className={head}>Retro</th>
-                    <th className={head}>Logged</th>
+                    <th className={`${head}`}>Logged</th>
                     {RETRO_CATEGORIES.map((category) => (
-                      <th key={category} className={headNum}>
+                      <th key={category} className={`${headNum} ${wrapHead}`}>
                         <CategoryHead category={category} />
                       </th>
                     ))}

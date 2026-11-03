@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom';
+import type { MouseEvent } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import type { WorkItemRetroRowDto } from '../../../api/retros';
 import { RETRO_CATEGORIES } from '../../../api/retros';
 import { routePath } from '../../../routes';
@@ -21,12 +22,26 @@ export function WorkItemRetroRow({
   row: WorkItemRetroRowDto;
 }) {
   const { totals } = row;
+  const navigate = useNavigate();
+  const to = routePath('retroItem', { key: projectKey, itemKey }, { retro: row.retroId });
+  // The whole row opens the retro. The author link stays the keyboard and middle-click way in, so a click that lands on
+  // a link (it handles itself) or ends a text selection is left alone.
+  const open = (event: MouseEvent<HTMLTableRowElement>) => {
+    if ((event.target as HTMLElement).closest('a, button')) return;
+    if (window.getSelection()?.toString()) return;
+    void navigate(to);
+  };
   return (
-    <tr data-testid={ids.workItemRetroRow} data-retro-id={row.retroId} className="hover:bg-sunken">
-      <td className={cell}>
+    <tr
+      data-testid={ids.workItemRetroRow}
+      data-retro-id={row.retroId}
+      onClick={open}
+      className="cursor-pointer hover:bg-sunken"
+    >
+      <td className={`${cell} max-w-40`}>
         <Link
-          to={routePath('retroItem', { key: projectKey, itemKey }, { retro: row.retroId })}
-          className="font-medium text-ink hover:underline"
+          to={to}
+          className="block min-w-0 font-medium text-ink hover:underline [&>span]:max-w-full [&_[data-agent]]:min-w-0 [&_[data-agent]]:truncate"
         >
           <AuthorChip author={row.author} />
         </Link>

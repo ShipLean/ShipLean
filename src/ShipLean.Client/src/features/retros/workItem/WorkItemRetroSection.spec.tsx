@@ -8,6 +8,7 @@ import { stubSide } from '../../workItem/ct/stubSide';
 import { stubRetros, workItemRetros } from '../ct/retroFixtures';
 import { retrosTestIds as ids } from '../testIds';
 import { WorkItemRetroHarness } from './ct/WorkItemRetroHarness';
+import { WorkItemRetroLocationHarness } from './ct/WorkItemRetroLocationHarness';
 import { WorkItemRetroSection } from './WorkItemRetroSection';
 
 const props = { projectId: 'p1', projectKey: 'SHIP', itemKey: 'SHIP-141', workItemId: 'w1' };
@@ -76,6 +77,69 @@ test('WorkItemRetroSection_WhenARowIsOpened_ShouldLinkWithRetro', async ({ mount
       'href',
       `/p/SHIP/retros/items/SHIP-141?retro=${row.retroId}`,
     );
+  }
+});
+
+test('WorkItemRetroSection_WhenARowIsClickedOutsideItsLink_ShouldOpenTheSameFilteredRetro', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  await mount(<WorkItemRetroLocationHarness {...props} />, route);
+  const rows = page.getByTestId(ids.workItemRetroRow);
+  await expect(rows.first()).toBeVisible();
+  const second = workItemRetros.rows[1];
+  await rows.nth(1).getByRole('cell').nth(1).click();
+  await expect(page.getByTestId('location-probe')).toHaveText(
+    `/p/SHIP/retros/items/SHIP-141?retro=${second.retroId}`,
+  );
+});
+
+test('WorkItemRetroSection_WhenARowHasFocus_ShouldOpenOnlyThroughItsLink', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  await mount(<WorkItemRetroLocationHarness {...props} />, route);
+  const first = page.getByTestId(ids.workItemRetroRow).first();
+  await first.getByRole('link').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByTestId('location-probe')).toHaveText(
+    `/p/SHIP/retros/items/SHIP-141?retro=${workItemRetros.rows[0].retroId}`,
+  );
+  await expect(first.getByRole('link')).toHaveCount(1);
+});
+
+test('WorkItemRetroSection_WhenTheColumnIs664Wide_ShouldShowEveryCountAndDecidedWithoutScrolling', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  const long = structuredClone(workItemRetros);
+  long.rows[0].author.agentName = 'Claude Code with a very long agent name indeed';
+  long.rows[0].author.user.name = 'Bartholomew Longname-Fitzgerald';
+  await page.route('**/api/work-items/w1/retros', (r) =>
+    r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(long) }),
+  );
+  await mount(
+    <div style={{ width: 664 }}>
+      <WorkItemRetroSection {...props} />
+    </div>,
+    route,
+  );
+  const section = page.getByTestId(ids.workItemRetroSection);
+  await expect(section.getByTestId(ids.workItemRetroRow).first()).toBeVisible();
+  const box = await section.locator('table').evaluate((table) => {
+    const holder = table.parentElement as HTMLElement;
+    const right = holder.getBoundingClientRect().right;
+    const cells = [...table.querySelectorAll('tbody tr:first-child td')];
+    const last = cells[cells.length - 1].getBoundingClientRect().right;
+    return { scroll: holder.scrollWidth, client: holder.clientWidth, right, last };
+  });
+  expect(box.scroll).toBeLessThanOrEqual(box.client);
+  expect(box.last).toBeLessThanOrEqual(box.right);
+  for (const name of ['Went well', 'Not in the plan', 'Went badly', 'Can be improved', 'Decided']) {
+    await expect(section.getByRole('columnheader', { name })).toBeVisible();
   }
 });
 
