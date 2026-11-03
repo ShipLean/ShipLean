@@ -11,11 +11,11 @@
       "retros": 4,
       "ownRetros": 1,
       "totals": {
-        "counts": {"wentWell": 3, "notInPlan": 1, "wentBadly": 4, "improve": 3},
-        "toDecide": 5,
-        "decided": 3,
-        "decidable": 8,
-        "actions": 2
+        "counts": {"wentWell": 4, "notInPlan": 2, "wentBadly": 5, "improve": 4},
+        "toDecide": 6,
+        "decided": 5,
+        "decidable": 11,
+        "actions": 3
       },
       "lastRetroLabel": "2 days ago",
       "noFeatureRetro": false

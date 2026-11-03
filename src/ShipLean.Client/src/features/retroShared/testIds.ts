@@ -3,7 +3,6 @@ export const retroSharedTestIds = {
   retroCard: 'retro-card',
   retroCardLog: 'retro-card-log',
   retroCardLogToggle: 'retro-card-log-toggle',
-  retroPointRow: 'retro-point-row',
   retroThemeChip: 'retro-theme-chip',
   retroAuthorChip: 'retro-author-chip',
   retroThemePicker: 'retro-theme-picker',

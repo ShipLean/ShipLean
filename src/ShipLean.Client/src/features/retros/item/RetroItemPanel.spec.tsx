@@ -72,7 +72,7 @@ test('RetroItemPanel_WhenToDecideChosen_ShouldShowOnlyUndecidedPoints', async ({
 
 test('RetroItemPanel_WhenOpenedWithPoint_ShouldHighlightTheNote', async ({ mount, page }) => {
   await serve(page, twoRetros);
-  const id = allPoints[4].id;
+  const id = allPoints[allPoints.length - 1].id;
   await mount(<RetroItemPanel project={project} itemKey="SHIP-101" />, route(`?point=${id}`));
   const marked = page.locator(`[data-testid="${shared.retroNote}"][data-highlighted="true"]`);
   await expect(marked).toHaveCount(1);
