@@ -5,7 +5,8 @@ export default defineConfig({
   testDir: './src',
   testMatch: '**/*.spec.tsx',
   timeout: 30_000,
-  reporter: [['list'], ['html', { open: 'never' }]],
+  // agoda-test-metrics/playwright posts each run to PLAYWRIGHT_METRICS_ENDPOINT (devex-telemetry); unset, the post fails silently.
+  reporter: [['list'], ['html', { open: 'never' }], ['agoda-test-metrics/playwright']],
   expect: {
     // Baselines are generated inside the same Docker image CI runs in, so
     // renders are near-deterministic and the budget can be a small absolute
