@@ -192,6 +192,14 @@ test('RetroNote_WhenThemeLineUsed_ShouldPickAThemeAndCloseOnEscape', async ({ mo
   await page.getByRole('option').first().click();
   await expect(page.getByTestId(ids.retroThemePicker)).toHaveCount(0);
   await expect.poll(() => stub.writes().map((w) => w.path.split('/').pop())).toContain('theme');
+
+  await line.click();
+  await page.getByTestId(ids.retroThemePicker).getByRole('combobox').fill('Brand new theme');
+  await page.getByTestId(ids.retroThemePickerAdd).click();
+  await expect.poll(() => stub.writes().length).toBe(2);
+  expect(stub.writes()[1].method).toBe('PUT');
+  expect(stub.writes()[1].path).toBe(`/api/retros/points/${improve.id}/theme`);
+  expect(stub.writes()[1].body).toEqual({ themeId: null, themeName: 'Brand new theme' });
 });
 
 test('RetroNote_WhenClickedOutsideThePicker_ShouldCloseIt', async ({ mount, page }) => {

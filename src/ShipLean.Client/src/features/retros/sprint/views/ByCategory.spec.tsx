@@ -31,6 +31,49 @@ test('ByCategory_WhenOpened_ShouldRunColumnsWentWellToCanBeImproved', async ({ m
   await expect(page.getByTestId(shared.retroBoard)).toBeVisible();
 });
 
+test('ByCategory_WhenOpened_ShouldGroupEachColumnByThemeLargestFirstWithUnthemedLastAndRecurringMarked', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  await mount(<ByCategoryHarness project={project} sprint={sprint} retro={sprintRetro} />);
+  for (const column of sprintRetro.categories) {
+    const actual = await page
+      .locator(`[data-testid="${shared.retroBoardColumn}"][data-category="${column.category}"]`)
+      .evaluate(
+        (el, [chip, noteId]) => {
+          const groups: { heading: string; ids: string[] }[] = [];
+          for (const node of el.querySelectorAll(
+            `[data-testid="${chip}"], [data-testid="${noteId}"]`,
+          )) {
+            if (node.getAttribute('data-testid') === chip) {
+              groups.push({ heading: node.textContent?.trim() ?? '', ids: [] });
+            } else {
+              groups[groups.length - 1].ids.push(node.getAttribute('data-point-id') ?? '');
+            }
+          }
+          return groups;
+        },
+        [shared.retroThemeChip, shared.retroNote],
+      );
+    expect(actual.map((g) => g.ids)).toEqual(column.groups.map((g) => g.points.map((p) => p.id)));
+    for (const [i, group] of column.groups.entries()) {
+      expect(actual[i].heading).toContain(group.theme?.name ?? 'Unthemed');
+      expect(actual[i].heading.includes('Recurring')).toBe(group.recurring);
+    }
+  }
+  const improve = sprintRetro.categories.find((c) => c.category === 'improve');
+  expect(improve?.groups.at(-1)?.theme).toBe(null);
+  expect(improve?.groups.length).toBeGreaterThan(1);
+});
+
+test('ByCategory_WhenNotesAreGrouped_ShouldShowNoThemeLineOnThem', async ({ mount, page }) => {
+  await stubRetros(page);
+  await mount(<ByCategoryHarness project={project} sprint={sprint} retro={sprintRetro} />);
+  await expect(page.getByTestId(shared.retroNote)).toHaveCount(allPoints.length);
+  await expect(page.getByTestId(shared.retroNoteTheme)).toHaveCount(0);
+});
+
 test('ByCategory_WhenOpened_ShouldShowNoToolbarAddAPoint', async ({ mount, page }) => {
   await stubRetros(page);
   await mount(<SprintRetroPanel project={project} sprint={sprint} />, retroRoute);
@@ -87,9 +130,9 @@ test('ByCategory_WhenToDecideInTheAddress_ShouldOpenFiltered', async ({ mount, p
 test('ByCategory_WhenPointInTheAddress_ShouldHighlightThatNote', async ({ mount, page }) => {
   await stubRetros(page);
   const target = allPoints[0];
-  await mount(
-    <ByCategoryHarness project={project} sprint={sprint} retro={sprintRetro} point={target.id} />,
-  );
+  await mount(<SprintRetroAddressHarness project={project} sprint={sprint} />, {
+    hooksConfig: { route: `/p/SHIP/sprints/sprint-24/retro?point=${target.id}` },
+  });
   const highlighted = page.locator('[data-highlighted="true"]');
   await expect(highlighted).toHaveCount(1);
   await expect(highlighted).toHaveAttribute('data-point-id', target.id);
