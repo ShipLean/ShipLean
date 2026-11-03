@@ -11,12 +11,11 @@ export function highlightedRow(
   return inRetro.find((row) => row.id === pointId) ?? inRetro[0];
 }
 
-/** Whether a search for `q` matched the root cause: any word of it appears there, in any case. */
+const normalize = (text: string) => text.trim().replace(/\s+/g, ' ').toLowerCase();
+
+/** Whether a search for `q` matched the root cause itself: the whole query, trimmed and in any case, appears in it (as Highlight marks it). A word that only some other field holds does not count. */
 export function matchesRootCause(rootCause: string | null, q: string | undefined): boolean {
   if (!rootCause || !q) return false;
-  const text = rootCause.toLowerCase();
-  return q
-    .toLowerCase()
-    .split(/\s+/)
-    .some((word) => word !== '' && text.includes(word));
+  const needle = normalize(q);
+  return needle !== '' && normalize(rootCause).includes(needle);
 }

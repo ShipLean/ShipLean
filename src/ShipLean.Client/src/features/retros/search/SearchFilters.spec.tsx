@@ -126,6 +126,7 @@ test('SearchFilters_WhenClearClicked_ShouldResetEveryFilter', async ({ mount, pa
   await expect.poll(() => stub.reads('/retros').at(-1)?.query).toBe('');
 });
 
+// Owner P1: the screenshot baselines below are stale (decision, No sprint and Unthemed filters were added in Q1); regenerate them in the CI Docker image.
 for (const theme of ['light', 'dark'] as const) {
   test(`SearchFilters_WhenRendered_ShouldMatchItsScreenshot_${theme}`, async ({ mount, page }) => {
     await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });

@@ -39,6 +39,23 @@ test('SearchRows_WhenTheSearchMatchedTheRootCause_ShouldShowItOnlyThen', async (
   await expect(rows.nth(1)).not.toContainText('Root cause');
 });
 
+test('SearchRows_WhenAnotherFieldMatchedAndOnlyOneWordIsInTheRootCause_ShouldKeepTheRootCauseOut', async ({
+  mount,
+  page,
+}) => {
+  await stubShell(page);
+  await stubRetros(page);
+  const point = retroSearch.rows[0];
+  // "brief" is in the root cause, "Pay" only in the item title: the search matched the title.
+  const q = encodeURIComponent(
+    `${point.rootCause!.split(' ')[1]} ${point.workItem!.title.split(' ')[0]}`,
+  );
+  await mount(<AppRoutes />, open(`/p/SHIP/retros?q=${q}`));
+  const rows = page.getByTestId(ids.retrosRow);
+  await expect(rows).toHaveCount(retroSearch.rows.length);
+  await expect(rows.first()).not.toContainText('Root cause');
+});
+
 test('SearchRows_WhenTextIsLong_ShouldStayOneLineAt1280', async ({ mount, page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await stubShell(page);

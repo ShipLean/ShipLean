@@ -1,20 +1,26 @@
 import { Link } from 'react-router-dom';
 import { routePath } from '../../../routes';
 import { ItemLink } from '../../itemPeek/ItemLink';
-import { Chip } from '../../../components/Chip';
-import { TypeIcon } from '../../../components/TypeIcon';
 import { retroSharedTestIds as shared } from '../../retroShared/testIds';
-import { AuthorChip } from '../../retroShared/AuthorChip';
 import { RetroBoard } from '../../retroShared/board/RetroBoard';
+import { CompiledFrom } from './parts/CompiledFrom';
+import { SelectedHeader } from './parts/SelectedHeader';
 import { SelectedLog } from './parts/SelectedLog';
 import { cardAddTarget, cardColumns } from '../sprint/views/byWorkItem/cardColumns';
 import { retrosTestIds as ids } from '../testIds';
 import { highlightedRow } from './parts/matches';
+import type { RetroActionScope } from '../../retroShared/actionDialog/RetroActionScope';
+import type { AddTarget } from '../../retroShared/board/AddTarget';
+import type { RetroCardDto } from '../../../api/retros';
 import type { RetrosSearchSlotProps } from './SearchSlotProps';
 
 /** The whole retro of the selected point as a board of the same notes and buttons as everywhere else, the clicked point highlighted, and the raw log open when that point matched only there. */
 export function SelectedRetro({ project, search, pointId }: RetrosSearchSlotProps) {
-  const card = search.selected;
+  const selected = search.selected;
+  // A retro is of an item or of a sprint (K4); a card with neither cannot exist, so it gets no board.
+  const target = selected ? boardTarget(selected) : undefined;
+  const card = target ? selected : null;
+  const isFeature = card?.workItem?.type.id === 'feature';
   const highlighted = highlightedRow(search, pointId);
   const inLog = highlighted !== undefined && search.logMatchPointIds.includes(highlighted.id);
   return (
@@ -23,7 +29,7 @@ export function SelectedRetro({ project, search, pointId }: RetrosSearchSlotProp
       aria-label="Retrospective"
       className="sticky top-[8.5rem] max-h-[calc(100vh-12rem)] min-w-0 self-start overflow-y-auto"
     >
-      {card ? (
+      {card && target ? (
         <div className="grid gap-2">
           {card.workItem || card.sprint ? (
             <div className="flex flex-wrap gap-2">
@@ -48,42 +54,21 @@ export function SelectedRetro({ project, search, pointId }: RetrosSearchSlotProp
           ) : null}
           <article
             data-testid={shared.retroCard}
-            className="grid min-w-0 gap-2 rounded-md border border-edge bg-panel p-3"
+            data-feature={isFeature ? 'true' : 'false'}
+            className={`grid min-w-0 gap-2 rounded-md border border-edge bg-panel p-3 ${isFeature ? 'border-l-[3px] border-l-signal' : ''}`}
           >
-            <header className="flex flex-wrap items-center gap-1.5 text-[length:var(--text-sm)]">
-              {card.workItem ? (
-                <>
-                  <TypeIcon type={card.workItem.type.id} />
-                  <span className="font-mono">{card.workItem.key}</span>
-                  <b className="text-[length:var(--text-md)]">{card.workItem.title}</b>
-                </>
-              ) : (
-                <>
-                  <Chip>Sprint</Chip>
-                  <b className="text-[length:var(--text-md)]">{card.sprint?.name}</b>
-                </>
-              )}
-            </header>
-            <div className="flex flex-wrap items-center gap-2 text-[length:var(--text-sm)]">
-              <AuthorChip author={card.author} />
-              <span className="text-[length:var(--text-xs)] text-ink-muted">
-                {card.createdAtLabel}
-              </span>
-            </div>
+            <SelectedHeader card={card} />
             <div className="[&>div]:grid-cols-1!">
               <RetroBoard
                 columns={cardColumns(card.points)}
                 groupByTheme={false}
                 filter={() => true}
                 note={{ showItem: false, highlightedPointId: highlighted?.id }}
-                add={cardAddTarget(card, card.sprint?.id ?? '')}
-                scope={
-                  card.workItem
-                    ? { kind: 'item', itemId: card.workItem.id }
-                    : { kind: 'sprint', sprintId: card.sprint?.id ?? '' }
-                }
+                add={target.add}
+                scope={target.scope}
               />
             </div>
+            <CompiledFrom items={card.compiledFrom} />
             <SelectedLog key={`${card.id}:${inLog}`} log={card.failureLog} defaultOpen={inLog} />
           </article>
         </div>
@@ -94,4 +79,21 @@ export function SelectedRetro({ project, search, pointId }: RetrosSearchSlotProp
       )}
     </aside>
   );
+}
+
+/** Where a card's board writes: its item, else its sprint, else nowhere. */
+function boardTarget(card: RetroCardDto): { add: AddTarget; scope: RetroActionScope } | undefined {
+  if (card.workItem) {
+    return {
+      add: { kind: 'item', workItemId: card.workItem.id },
+      scope: { kind: 'item', itemId: card.workItem.id },
+    };
+  }
+  if (card.sprint) {
+    return {
+      add: cardAddTarget(card, card.sprint.id),
+      scope: { kind: 'sprint', sprintId: card.sprint.id },
+    };
+  }
+  return undefined;
 }
