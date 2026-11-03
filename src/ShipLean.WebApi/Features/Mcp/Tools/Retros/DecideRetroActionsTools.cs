@@ -3,6 +3,7 @@ using System.Globalization;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using ShipLean.Application.Features.Mcp.Planning.Lessons;
+using ShipLean.Application.Features.Retros.Decide;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Mcp;
@@ -18,7 +19,7 @@ namespace ShipLean.WebApi.Features.Mcp.Tools.Retros;
 // Decides a scope's undecided retro points in one go: action items, Not needed, themes, merge proposals. Without `plan` it only previews and
 // returns a plan; with the plan it applies exactly what the plan holds. Applying needs shiplean:plan; a preview needs only shiplean:read.
 [McpServerToolType]
-internal sealed class DecideRetroActionsTools(ItemResolver items, ProjectResolver projects, SprintResolver sprints, IProjectAccess access, CaptureSupport support, FeatureKind features, PlanEnvelope envelope)
+internal sealed class DecideRetroActionsTools(ItemResolver items, ProjectResolver projects, SprintResolver sprints, IProjectAccess access, CaptureSupport support, FeatureKind features, PlanEnvelope envelope, IRetroDecidePlanner planner, ICurrentUser user, ICurrentAgent agent)
 {
     private const string PlanKind = "decide_retro_actions";
     private const int MaxNewActions = 3;
@@ -42,26 +43,60 @@ internal sealed class DecideRetroActionsTools(ItemResolver items, ProjectResolve
         await access.RequireAsync(resolved.Id, ProjectRole.Member, cancellationToken);
         var openUrl = McpOpenUrls.Retros(await support.BaseUrlAsync(cancellationToken), resolved.Key);
 
+        var actor = new RetroActor(user.Id, AgentStamp.Of(agent));
         if (plan is not null)
         {
-            // TODO: the real apply replaces this: it writes what the plan holds and lists the keys it created.
-            _ = envelope.Open<DecidePlan>(PlanKind, plan, resolved.Id);
-            var applied = new DecideRetroActionsResult(resolved.Key, openUrl, true, [], [], [], 0, 0, [], 0, [], null, null);
-            return PlanningReply.Of(applied, "Applied the plan.");
+            var applied = await planner.ApplyAsync(resolved.Id, envelope.Open<DecidePlan>(PlanKind, plan, resolved.Id), actor, cancellationToken);
+            var done = Result(resolved.Key, openUrl, true, applied, null, null);
+            return PlanningReply.Of(done, $"Applied: {applied.Created.Count} action items created, {applied.WouldAdd.Count} added to, {applied.WouldMarkNotNeeded.Count} marked Not needed, {applied.Skipped.Count} skipped, {applied.LeftUndecided} points still undecided.");
         }
 
-        await RequireOneScopeAsync(resolved.Id, feature, sprint, from, to, cancellationToken);
+        var scope = await RequireOneScopeAsync(resolved.Id, feature, sprint, from, to, cancellationToken);
         RequireFields(actions, not_needed, themes, merges);
         if (actions?.Count(action => string.IsNullOrWhiteSpace(action.Existing)) > MaxNewActions)
         {
             throw ApiException.Validation($"At most {MaxNewActions} new action items per call. Fold the points into fewer actions, or add them to an open action with `existing`.", "actions");
         }
 
-        // TODO: the real preview replaces this: it resolves the arguments, skips decided points and lists what would be written.
-        var preview = new DecideRetroActionsResult(
-            resolved.Key, openUrl, false, [], [], [], 0, 0, [], 0, [],
-            envelope.Seal(PlanKind, resolved.Id, new DecidePlan([], [], [], [])), (int)PlanEnvelope.Lifetime.TotalMinutes);
-        return PlanningReply.Of(preview, "Preview: nothing would change yet. Nothing was written.");
+        var request = new DecidePlan(
+            scope,
+            await PlanActionsAsync(resolved.Id, actions, cancellationToken),
+            [.. (not_needed ?? []).Select(entry => new DecidePlanNotNeeded(entry.Point, entry.Reason))],
+            [.. (themes ?? []).Select(entry => new DecidePlanTheme(entry.Point, entry.Theme))],
+            [.. (merges ?? []).Select(entry => new DecidePlanMerge(entry.From, entry.Into, entry.Reason))]);
+        var outcome = await planner.PreviewAsync(resolved.Id, request, cancellationToken);
+        var preview = Result(resolved.Key, openUrl, false, outcome, envelope.Seal(PlanKind, resolved.Id, outcome.Plan), (int)PlanEnvelope.Lifetime.TotalMinutes);
+        return PlanningReply.Of(preview, $"Preview: {outcome.WouldCreate.Count} action items would be created, {outcome.WouldAdd.Count} added to, {outcome.WouldMarkNotNeeded.Count} marked Not needed, {outcome.Skipped.Count} skipped, {outcome.LeftUndecided} points left undecided. Nothing was written; call decide_retro_actions again with the `plan` value from the JSON below to apply it.");
+    }
+
+    private static DecideRetroActionsResult Result(string project, string openUrl, bool applied, DecideOutcome outcome, string? plan, int? expiresInMinutes)
+        => new(
+            project, openUrl, applied,
+            [.. outcome.WouldCreate.Select(line => new DecideWouldCreateLine(line.Title, line.FixType.ToString().ToLowerInvariant(), line.Theme, line.Covers, [.. line.PossibleDuplicates.Select(open => new DecideDuplicateLine(open.Key, open.Title, open.State))]))],
+            [.. outcome.WouldAdd.Select(line => new DecideWouldAddLine(line.Existing, line.Covers))],
+            [.. outcome.WouldMarkNotNeeded.Select(line => new DecideWouldNotNeededLine(line.Point, line.Text, line.Reason))],
+            outcome.WouldTheme, outcome.WouldProposeMerges,
+            [.. outcome.Skipped.Select(skip => new DecideSkippedLine(skip.Point, skip.Reason))],
+            outcome.LeftUndecided, outcome.Created, plan, expiresInMinutes);
+
+    private async Task<IReadOnlyList<DecidePlanAction>> PlanActionsAsync(Guid projectId, IReadOnlyList<DecideActionInput>? actions, CancellationToken cancellationToken)
+    {
+        var planned = new List<DecidePlanAction>();
+        for (var index = 0; index < (actions?.Count ?? 0); index++)
+        {
+            var action = actions![index];
+            Guid? existing = string.IsNullOrWhiteSpace(action.Existing)
+                ? null
+                : (await items.ResolveAsync(action.Existing, ProjectRole.Member, projectId, $"actions[{index}].existing", cancellationToken)).Id;
+            planned.Add(new DecidePlanAction(
+                action.Title,
+                Enum.Parse<RetroFixType>(action.FixType, ignoreCase: true),
+                action.Points,
+                string.IsNullOrWhiteSpace(action.Theme) ? null : action.Theme.Trim(),
+                existing));
+        }
+
+        return planned;
     }
 
     // The schema marks these fields required, but the generator lists every string as nullable, so a null or blank one gets here.
@@ -110,7 +145,7 @@ internal sealed class DecideRetroActionsTools(ItemResolver items, ProjectResolve
         }
     }
 
-    private async Task RequireOneScopeAsync(Guid projectId, string? feature, string? sprint, string? from, string? to, CancellationToken cancellationToken)
+    private async Task<DecideScope> RequireOneScopeAsync(Guid projectId, string? feature, string? sprint, string? from, string? to, CancellationToken cancellationToken)
     {
         var hasFeature = !string.IsNullOrWhiteSpace(feature);
         var hasSprint = !string.IsNullOrWhiteSpace(sprint);
@@ -118,7 +153,7 @@ internal sealed class DecideRetroActionsTools(ItemResolver items, ProjectResolve
         var hasTo = !string.IsNullOrWhiteSpace(to);
         if (hasFrom != hasTo)
         {
-            throw ApiException.Validation("Give `from` and `to` together, or neither.", hasFrom ? "to" : "from");
+            throw ApiException.Validation("Give `from` and `to` together, or neither.", "scope");
         }
 
         if (new[] { hasFeature, hasSprint, hasFrom }.Count(given => given) != 1)
@@ -133,19 +168,18 @@ internal sealed class DecideRetroActionsTools(ItemResolver items, ProjectResolve
             {
                 throw ApiException.Validation($"{resolvedFeature.Key} is not a Feature. Give the key of a Feature.", "feature");
             }
+
+            return new DecideScope(resolvedFeature.Id, null, null, null);
         }
-        else if (hasSprint)
+
+        if (hasSprint)
         {
-            await sprints.ResolveAsync(projectId, sprint!, cancellationToken: cancellationToken);
+            return new DecideScope(null, (await sprints.ResolveAsync(projectId, sprint!, cancellationToken: cancellationToken)).Id, null, null);
         }
-        else
-        {
-            var start = Day(from!, "from");
-            if (start > Day(to!, "to"))
-            {
-                throw ApiException.Validation("`from` is after `to`.", "from");
-            }
-        }
+
+        var start = Day(from!, "from");
+        var end = Day(to!, "to");
+        return start > end ? throw ApiException.Validation("`from` is after `to`.", "from") : new DecideScope(null, null, start, end);
     }
 
     private static DateOnly Day(string text, string field)

@@ -1,9 +1,8 @@
-using ShipLean.Contracts.Retros;
+namespace ShipLean.Application.Features.Retros.Decide;
 
-namespace ShipLean.WebApi.Features.Mcp.Tools.Retros;
-
-// What decide_retro_actions seals: the resolved writes. Applying does exactly this and ignores the other arguments.
+// The writes of one run: what a preview resolves and seals, and what an apply does, exactly. Merges are only ever proposed.
 public sealed record DecidePlan(
+    DecideScope Scope,
     IReadOnlyList<DecidePlanAction> Actions,
     IReadOnlyList<DecidePlanNotNeeded> NotNeeded,
     IReadOnlyList<DecidePlanTheme> Themes,
