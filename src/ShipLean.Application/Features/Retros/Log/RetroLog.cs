@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Dapper;
 using Npgsql;
+using ShipLean.Application.Features.Retros.Reads;
 using ShipLean.Application.Features.Retros.Store;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
@@ -16,6 +17,24 @@ public sealed class RetroLog(NpgsqlDataSource dataSource, IRetroThemer themer, I
 {
     public const int MaxTextLength = 2000;
     public const int MaxListed = 200;
+
+    private static readonly string ListSql = $"""
+        SELECT p.id, p.retrospective_id AS retroId
+        FROM retro_point p
+        JOIN retrospective r ON r.id = p.retrospective_id
+        LEFT JOIN work_item w ON w.id = r.work_item_id
+        LEFT JOIN retro_theme t ON t.id = p.theme_id
+        WHERE r.project_id = @projectId AND r.archived_at IS NULL AND p.archived_at IS NULL
+          AND (@sprintId::uuid IS NULL OR r.sprint_id = @sprintId)
+          AND (@featureId::uuid IS NULL OR r.work_item_id = @featureId OR (w.parent_id = @featureId AND w.type IN ('story', 'bug')))
+          AND (NOT @noSprint OR r.sprint_id IS NULL)
+          AND (NOT @undecided OR {RetroDecisionSql.Undecided("p")})
+          AND (@category::text IS NULL OR p.category = @category)
+          AND (@theme::text IS NULL OR lower(t.name) = lower(@theme))
+          AND (@since::timestamptz IS NULL OR p.created_at >= @since)
+        ORDER BY p.created_at DESC, p.position DESC, p.id
+        LIMIT @limit
+        """;
 
     private const string AutoThemeWarning = "Themes are assigned by ShipLean; theme ignored";
 
@@ -80,25 +99,16 @@ public sealed class RetroLog(NpgsqlDataSource dataSource, IRetroThemer themer, I
 
     public async Task<RetroListResult> ListAsync(RetroListRequest request, CancellationToken cancellationToken = default)
     {
+        if (request.NoSprint && request.SprintId is not null)
+        {
+            throw ApiException.Validation("no_sprint and sprint cannot be combined: a point with no sprint has no sprint to name.", "no_sprint");
+        }
+
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-        // One more than the cap, so the caller can tell the list was cut.
+        // One more than the cap, so the caller can tell the list was cut. The filters run in SQL, before the cap.
         var rows = (await connection.QueryAsync<ListedPoint>(
             new CommandDefinition(
-                """
-                SELECT p.id, p.retrospective_id AS retroId
-                FROM retro_point p
-                JOIN retrospective r ON r.id = p.retrospective_id
-                LEFT JOIN work_item w ON w.id = r.work_item_id
-                LEFT JOIN retro_theme t ON t.id = p.theme_id
-                WHERE r.project_id = @projectId AND r.archived_at IS NULL AND p.archived_at IS NULL
-                  AND (@sprintId::uuid IS NULL OR r.sprint_id = @sprintId)
-                  AND (@featureId::uuid IS NULL OR r.work_item_id = @featureId OR w.parent_id = @featureId)
-                  AND (@category::text IS NULL OR p.category = @category)
-                  AND (@theme::text IS NULL OR lower(t.name) = lower(@theme))
-                  AND (@since::timestamptz IS NULL OR p.created_at >= @since)
-                ORDER BY p.created_at DESC, p.position DESC, p.id
-                LIMIT @limit
-                """,
+                ListSql,
                 new
                 {
                     projectId = request.ProjectId,
@@ -107,6 +117,8 @@ public sealed class RetroLog(NpgsqlDataSource dataSource, IRetroThemer themer, I
                     category = request.Category is { } category ? JsonNamingPolicy.CamelCase.ConvertName(category.ToString()) : null,
                     theme = request.Theme,
                     since = request.Since is { } since ? new DateTime(since.Year, since.Month, since.Day, 0, 0, 0, DateTimeKind.Utc) : (DateTime?)null,
+                    noSprint = request.NoSprint,
+                    undecided = request.Undecided,
                     limit = MaxListed + 1,
                 },
                 cancellationToken: cancellationToken))).ToList();

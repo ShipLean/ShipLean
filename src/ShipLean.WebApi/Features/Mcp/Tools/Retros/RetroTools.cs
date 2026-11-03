@@ -62,8 +62,15 @@ internal sealed class RetroTools(ItemResolver items, ProjectResolver projects, S
         [Description("went_well, went_badly, improve or not_in_plan.")] string? category = null,
         [Description("A theme name.")] string? theme = null,
         [Description("Only points logged on or after this date (yyyy-MM-dd).")] string? since = null,
+        [Description("true: only points that still need a decision. Went well points are left out.")] bool? undecided = null,
+        [Description("true: only points whose retro has no sprint. Not with sprint.")] bool? no_sprint = null,
         CancellationToken cancellationToken = default)
     {
+        if (no_sprint == true && !string.IsNullOrWhiteSpace(sprint))
+        {
+            throw ApiException.Validation("no_sprint and sprint cannot be combined.", "no_sprint");
+        }
+
         var resolvedProject = await projects.ResolveAsync(project, forWrite: false, cancellationToken);
         await access.RequireAsync(resolvedProject.Id, ProjectRole.Member, cancellationToken);
         var resolvedSprint = string.IsNullOrWhiteSpace(sprint) ? null : await sprints.ResolveAsync(resolvedProject.Id, sprint, cancellationToken: cancellationToken);
@@ -74,7 +81,7 @@ internal sealed class RetroTools(ItemResolver items, ProjectResolver projects, S
         }
 
         var listed = await log.ListAsync(
-            new RetroListRequest(resolvedProject.Id, resolvedSprint?.Id, resolvedFeature?.Id, ParseCategory(category), string.IsNullOrWhiteSpace(theme) ? null : theme, ParseSince(since), false, false),
+            new RetroListRequest(resolvedProject.Id, resolvedSprint?.Id, resolvedFeature?.Id, ParseCategory(category), string.IsNullOrWhiteSpace(theme) ? null : theme, ParseSince(since), undecided == true, no_sprint == true),
             cancellationToken);
 
         var truncated = listed.Truncated;
@@ -113,7 +120,8 @@ internal sealed class RetroTools(ItemResolver items, ProjectResolver projects, S
     private static RetroThemeLine Theme(RetroThemeRefDto theme) => new(theme.Id, theme.Name, Name(theme.Tone));
 
     private static RetroPointLine Line(RetroPointDto point)
-        => new(point.Id, point.RetroId, Name(point.Category), point.Text, point.RootCause, point.Theme?.Name, point.WorkItem?.Key, point.Sprint?.Name, Name(point.Author.Role), point.Author.AgentName);
+        => new(point.Id, point.RetroId, Name(point.Category), point.Text, point.RootCause, point.Theme?.Name, point.WorkItem?.Key, point.Sprint?.Name, Name(point.Author.Role), point.Author.AgentName,
+            point.Decision is { } decision ? Name(decision) : null, point.Action is { } action ? new RetroActionLine(action.Key, action.State.Name) : null, point.NotNeeded?.Reason);
 
     private static string Name<T>(T value) where T : struct, Enum => JsonNamingPolicy.CamelCase.ConvertName(value.ToString());
 
