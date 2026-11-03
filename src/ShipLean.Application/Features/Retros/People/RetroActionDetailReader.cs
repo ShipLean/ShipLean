@@ -21,7 +21,8 @@ internal sealed class RetroActionDetailReader(NpgsqlDataSource dataSource, IRetr
         var pointRows = (await connection.QueryAsync<(Guid RetroId, Guid PointId)>(new CommandDefinition(PointSql, new { workItemId }, cancellationToken: cancellationToken))).ToList();
         var loaded = await cards.LoadAsync([.. pointRows.Select(point => point.RetroId).Distinct()], cancellationToken);
         var byId = loaded.SelectMany(card => card.Points).ToDictionary(point => point.Id);
-        var points = pointRows.Where(point => byId.ContainsKey(point.PointId)).Select(point => byId[point.PointId]).ToList();
+        // The cards are read on another connection, after the link rows: keep a point only while the cards still say this action is its live one (K1).
+        var points = pointRows.Select(point => byId.GetValueOrDefault(point.PointId)).OfType<RetroPointDto>().Where(point => point.Action?.WorkItemId == workItemId).ToList();
 
         var today = SprintLabels.Today(clock);
         var state = new StateRef(row.StateId, row.StateName, Enum.Parse<StateCategory>(row.StateCategory, ignoreCase: true));

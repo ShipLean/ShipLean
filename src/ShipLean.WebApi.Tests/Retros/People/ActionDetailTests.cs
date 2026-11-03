@@ -71,6 +71,20 @@ public sealed class ActionDetailTests : RetroPeopleFixture
         point.GetProperty("sprint").GetProperty("id").GetGuid().ShouldBe(world.Sprint);
     }
 
+    [Test]
+    public async Task ActionDetail_WhenTheActionWasRemoved_ShouldCarryNoPoints()
+    {
+        await using var world = await World.CreateAsync(await OpenDatabaseAsync());
+        var pointId = await world.Seed.PointAsync(await world.AgentRetroAsync(), new RetroSeedPoint(RetroCategory.Improve, "Left behind."));
+        var removed = await new ShipLean.TestSupport.Builders.WorkItemBuilder(world.Project.Id).WithType("action").WithStateNamed("Removed").InsertAsync(world.Connection);
+        await world.Seed.ActionAsync(new RetroSeedAction(removed, PointId: pointId));
+
+        var detail = await GetAsync(removed);
+
+        detail.GetProperty("points").GetArrayLength().ShouldBe(0);
+        detail.GetProperty("action").GetProperty("pointCount").GetInt32().ShouldBe(0);
+    }
+
     private async Task<System.Text.Json.JsonElement> GetAsync(Guid itemId)
     {
         using var response = await Api.GetAsync($"/api/retros/actions/{itemId}");
