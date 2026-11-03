@@ -185,7 +185,7 @@ Left out on purpose: per-person load (the team is the unit), AI inside the app (
 20. It creates at most 3 new action items per run, a hard limit. Adding to an existing one and marking Not needed stay unlimited, and the rest stay undecided for the next run.
 21. It runs as a `planning_guide` step after the conductor compiles a Feature's retro. It isn't automatic. `list_retrospectives` returns each point's decision and gains undecided and no-sprint filters.
 
-**As built** (differences from the screens, and decisions Joel has not yet confirmed)
+**As built** (differences from the screens)
 
 - `POST retros/points/{id}/action` is gone. A new action item comes from `POST api/projects/{id}/retros/actions`, which requires a title and has no story-points field (it names the retro points it covers in `PointIds`).
 - By work item shows one board per item, with its key as a link, the decided progress and an Open link; the sprint's own board has progress only.
@@ -193,7 +193,9 @@ Left out on purpose: per-person load (the team is the unit), AI inside the app (
 - By category has no theme line under a theme group, as drawn. By work item and the item page keep it.
 - Feature scope (in `list_retrospectives`, `decide_retro_actions` and the action dialog) is the Feature plus its stories and bugs only.
 - Recurrence in week mode is fixed at the last 6 weeks whatever range is shown.
-- Not confirmed yet: a Feature's rail lists its children's action items; removing an action item moves it to Removed and returns all its points to undecided; the Unthemed row counts every unthemed point except Went well.
+- A Feature's rail lists its children's action items.
+- Removing an action item moves it to Removed and returns all its points to undecided.
+- The Unthemed row counts every unthemed point except Went well.
 
 ## Logo
 

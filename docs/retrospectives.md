@@ -36,8 +36,8 @@ An action item is a work item of type `action` ("Action item"), at the same leve
 - It has a title, which a new one requires, a **type of fix** (skill, guide, test, analyzer, product or other) and one **theme**: the one given, otherwise the commonest among its points, and editable afterwards. Verdicts judge that theme. An action item raised before decisions existed has no type of fix and keeps it empty until someone sets one.
 - It quotes its points and links back to them. A person creates one from `POST api/projects/{id}/retros/actions`; the old route that made one from a single point is gone.
 - An action item with no tasks shows no Tasks section on its page; one with tasks lists them, with no way to add more from that page. The Taskboard can still add a task under an action item.
-- Removing an action item moves it to Removed and returns all its points to undecided (open decision: Joel has not confirmed this). Removed action items drop out of every retro view and count.
-- A Feature's rail lists its children's action items (open decision: not confirmed).
+- Removing an action item moves it to Removed and returns all its points to undecided. Removed action items drop out of every retro view and count.
+- A Feature's rail lists its children's action items.
 
 ## Proposals
 
@@ -53,14 +53,14 @@ The range picks sprints (`6`, `3`, `all`) or weeks (`w6`, `w12`), which drives R
 
 - **Sprint mode** has a **No sprint** column. It counts in Total and never in Recurring or a verdict, because it has no time order.
 - **Week mode** places each point in the week it was logged (Monday to Sunday, UTC) and has no No sprint column. A week counts as ended once its Sunday has passed.
-- **Unthemed** comes last, marked "not judged": it has no status and no verdict. It counts every unthemed point except Went well (open decision: Joel has not confirmed this).
+- **Unthemed** comes last, marked "not judged": it has no status and no verdict. It counts every unthemed point except Went well.
 - The Status and Last change headings have tooltips, and each status chip explains itself.
 
 ## Verdicts
 
-- **Mentions:** went-badly plus not-in-plan points per sprint per theme.
+- **Mentions:** went-badly plus not-in-plan points per theme, per sprint in sprint mode or per week in week mode (a point's week is the one it was logged in).
 - **Recurring:** a tone-bad theme mentioned in at least 3 of the last 4 sprints with no closed action item on it (any sprint, project-wide) that helped. In week mode it is 3 of the last 6 weeks, fixed at 6 whatever range is shown.
-- **Verdict**, for a closed action item only: `before` is the average mentions per sprint up to and including the sprint it closed in, `after` the average over sprints that have ended since. `helped` when after is at most half of before, `someEffect` when it is lower, otherwise `noEffect`. `tooEarly` when no sprint has ended since. A before of 0 counts as `noEffect`.
+- **Verdict**, for a closed action item only: `before` is the average mentions per column up to and including the closing column, `after` the average over the later columns that have ended. A column is a sprint in sprint mode and a week in week mode; the closing column is the sprint the action item closed in, or the week it closed in. `helped` when after is at most half of before, `someEffect` when it is lower, otherwise `noEffect`. `tooEarly` when no sprint has ended since. A before of 0 counts as `noEffect`.
 - **Status** of a theme: `recurring`, else `beingAddressed` (an open action item), else `resolved` (a helped verdict), else `quiet`.
 
 Events: `retroChanged` ([events.md](events.md)). Tools: [mcp.md](mcp.md).
