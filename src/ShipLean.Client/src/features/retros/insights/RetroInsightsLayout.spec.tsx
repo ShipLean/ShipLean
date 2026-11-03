@@ -7,22 +7,74 @@ import { retrosTestIds as ids } from '../testIds';
 
 type Page = Parameters<Parameters<typeof test>[2]>[0]['page'];
 
-const many = (base: RetroInsightsDto, columns: number): RetroInsightsDto => ({
-  ...base,
-  columns: Array.from({ length: columns }, (_, i) => ({
-    ...base.columns[i % base.columns.length],
-    key: `k${i}`,
-    label: base.mode === 'week' ? `${i + 1} Oct` : `Sprint ${i + 1}`,
-  })),
-  themes: Array.from({ length: 30 }, (_, i) => {
-    const source = base.themes[i % base.themes.length];
+const MONDAY = Date.UTC(2026, 9, 26);
+const WEEK_MS = 7 * 24 * 3600 * 1000;
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** A valid K4 answer with `size` columns: keys are sprint ids or Mondays, one current column, every count parallel. */
+const column = (mode: RetroInsightsDto['mode'], index: number, size: number) => {
+  const current = index === size - 1;
+  if (mode === 'sprint') {
     return {
-      ...source,
-      theme: { ...source.theme, id: `theme-${i}`, name: `${source.theme.name} ${i + 1}` },
-      counts: Array.from({ length: columns }, (_, c) => (i + c) % 4),
+      key: `00000004-0000-4000-8001-${String(index + 1).padStart(12, '0')}`,
+      label: `Sprint ${index + 1}`,
+      kind: 'sprint' as const,
+      isCurrent: current,
     };
-  }),
-});
+  }
+  const monday = new Date(MONDAY - (size - 1 - index) * WEEK_MS);
+  return {
+    key: monday.toISOString().slice(0, 10),
+    label: `${monday.getUTCDate()} ${MONTHS[monday.getUTCMonth()]}`,
+    kind: 'week' as const,
+    isCurrent: current,
+  };
+};
+
+const many = (base: RetroInsightsDto, size: number): RetroInsightsDto => {
+  const columns = Array.from({ length: size }, (_, i) => column(base.mode, i, size));
+  const series = (seed: number) => Array.from({ length: size }, (_, c) => (seed + c) % 4);
+  const sum = (counts: number[]) => counts.reduce((a, b) => a + b, 0);
+  const noSprint = base.mode === 'sprint' ? 2 : 0;
+  const unthemedCounts = series(1);
+  return {
+    ...base,
+    columns,
+    sprints:
+      base.mode === 'sprint'
+        ? columns.map((c, i) => ({
+            ...base.sprints[i % base.sprints.length],
+            id: c.key,
+            name: c.label,
+          }))
+        : [],
+    unthemed: {
+      counts: unthemedCounts,
+      noSprint,
+      total: sum(unthemedCounts) + noSprint,
+    },
+    themes: Array.from({ length: 30 }, (_, i) => {
+      const source = base.themes[i % base.themes.length];
+      const counts = series(i);
+      return {
+        ...source,
+        theme: { ...source.theme, id: `theme-${i}`, name: `${source.theme.name} ${i + 1}` },
+        counts,
+        noSprint,
+        total: sum(counts) + noSprint,
+      };
+    }),
+    keepsWorking: base.keepsWorking.map((source, i) => {
+      const counts = series(i + 2);
+      return { ...source, counts, noSprint, total: sum(counts) + noSprint };
+    }),
+    impact: base.impact.map((card, i) => ({
+      ...card,
+      counts: series(i),
+      closedAt: card.closedAt < 0 ? -1 : Math.min(card.closedAt, size - 1),
+    })),
+  };
+};
 
 async function overflow(page: Page) {
   return page.evaluate(() => {

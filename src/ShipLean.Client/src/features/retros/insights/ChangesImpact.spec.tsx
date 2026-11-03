@@ -172,3 +172,21 @@ test('ChangesImpact_WhenModeIsWeek_ShouldDrawABarPerWeekColumnAndSayPerWeek', as
   await expect(view.locator('[data-figure="before"]')).toContainText('per week before');
   await expect(view.locator('svg title').first()).toContainText(insightsWeeks.columns[0].label);
 });
+
+for (const [name, insights, unit] of [
+  ['Week', insightsWeeks, 'week'],
+  ['Sprint', retroInsights, 'sprint'],
+] as const) {
+  test(`ChangesImpact_When${name}Mode_ShouldExplainBarsAndTooEarlyInThatUnit`, async ({
+    mount,
+    page,
+  }) => {
+    await stubRetros(page);
+    await mount(<ChangesImpact project={insightsProject} insights={insights} />, open);
+    const other = unit === 'week' ? 'sprint' : 'week';
+    const text = page.getByText('For each closed action item');
+    await expect(text).toContainText(`mentions per ${unit};`);
+    await expect(text).toContainText(`no full ${unit} since is Too early`);
+    await expect(text).not.toContainText(other);
+  });
+}
