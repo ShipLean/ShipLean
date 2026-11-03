@@ -20,7 +20,7 @@ public sealed class RetroActionCreateTests : RetroPeopleFixture
 
         using var response = await Api.PostJsonAsync($"/api/projects/{world.Project.Id}/retros/actions", new { title = "Cache the build", fixType = "skill", pointIds = new[] { pointId } });
 
-        var action = await ReadAsync(response, HttpStatusCode.Created);
+        var action = (await ReadAsync(response, HttpStatusCode.Created)).GetProperty("action");
         action.GetProperty("title").GetString().ShouldBe("Cache the build");
         action.GetProperty("state").GetProperty("name").GetString().ShouldBe("New");
         var itemId = action.GetProperty("workItemId").GetGuid();
@@ -70,7 +70,7 @@ public sealed class RetroActionCreateTests : RetroPeopleFixture
 
         using var response = await Api.PostJsonAsync($"/api/projects/{world.Project.Id}/retros/actions", new { title = "Fix it", fixType = "skill", pointIds = new[] { pointId } });
 
-        var created = (await ReadAsync(response, HttpStatusCode.Created)).GetProperty("workItemId").GetGuid();
+        var created = (await ReadAsync(response, HttpStatusCode.Created)).GetProperty("action").GetProperty("workItemId").GetGuid();
         (await world.Connection.QueryAsync<Guid>("SELECT work_item_id FROM retro_action_point WHERE point_id = @pointId AND archived_at IS NULL", new { pointId })).ShouldBe([created]);
     }
 
@@ -122,7 +122,7 @@ public sealed class RetroActionCreateTests : RetroPeopleFixture
 
         using var response = await Api.PostJsonAsync($"/api/projects/{world.Project.Id}/retros/actions", new { title = "Fix it", fixType = "skill", pointIds = new[] { pointId } });
 
-        var itemId = (await ReadAsync(response, HttpStatusCode.Created)).GetProperty("workItemId").GetGuid();
+        var itemId = (await ReadAsync(response, HttpStatusCode.Created)).GetProperty("action").GetProperty("workItemId").GetGuid();
         (await world.Connection.QuerySingleAsync<Guid>("SELECT work_item_id FROM retro_action_point WHERE point_id = @pointId AND archived_at IS NULL", new { pointId })).ShouldBe(itemId);
     }
 
