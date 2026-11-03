@@ -7,13 +7,16 @@ import { AddTaskForm } from './AddTaskForm';
 import { TaskRow } from './TaskRow';
 import { useChildEvents } from './useChildEvents';
 
-// The item's child tasks. Each is its own work item and saves straight away, so nothing here touches the form's draft.
+// The item's child tasks. An action item doesn't take tasks (design/screens/work-item.html), so one with none shows no
+// section; one that already has some still lists them, with no way to add more. Each is its own work item and saves straight away, so nothing here touches the form's draft.
 export function TasksSection({ project, itemKey }: { project: ProjectDto; itemKey: string }) {
   const item = useWorkItem(project.id, itemKey).data;
   useChildEvents(project.id, itemKey, item);
   const [adding, setAdding] = useState(false);
   if (!item) return null;
   const tasks = item.children.filter((child) => child.type.id === 'task');
+  const isAction = item.type.id === 'action';
+  if (isAction && tasks.length === 0) return null;
   const done = tasks.filter((task) => task.state.category === 'completed').length;
   return (
     <section
@@ -31,14 +34,16 @@ export function TasksSection({ project, itemKey }: { project: ProjectDto; itemKe
         <span className="text-[length:var(--text-xs)] text-ink-muted">
           Each task is its own work item and saves straight away
         </span>
-        <button
-          type="button"
-          data-testid={ids.taskAdd}
-          className="ml-auto h-6 rounded-control px-2 text-[length:var(--text-xs)] text-signal hover:bg-signal-soft"
-          onClick={() => setAdding(!adding)}
-        >
-          + Task
-        </button>
+        {isAction ? null : (
+          <button
+            type="button"
+            data-testid={ids.taskAdd}
+            className="ml-auto h-6 rounded-control px-2 text-[length:var(--text-xs)] text-signal hover:bg-signal-soft"
+            onClick={() => setAdding(!adding)}
+          >
+            + Task
+          </button>
+        )}
       </header>
       <div className="rounded-control border border-edge bg-panel">
         {tasks.length === 0 && !adding ? (

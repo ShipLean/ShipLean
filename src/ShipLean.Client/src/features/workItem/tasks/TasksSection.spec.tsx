@@ -159,3 +159,37 @@ test('TasksSection_WhenTaskStateChangeFails_ShouldShowTheError', async ({ mount,
 
   await expect(screen.getByTestId(ids.taskStateError)).toHaveText('That state is not allowed.');
 });
+
+const actionItem = { ...story, type: { id: 'action' as const, name: 'Action item' } };
+
+test('TasksSection_WhenActionItemHasNoTasks_ShouldShowNoSectionAndNoAdd', async ({
+  mount,
+  page,
+}) => {
+  await stubApi(page, actionItem);
+  const screen = await mount(<WorkItemDetailsHarness itemKey="SHIP-141" />, route);
+
+  await expect(screen.getByTestId(ids.title)).toHaveValue('Pay with saved card');
+  await expect(screen.getByTestId(ids.tasks)).toHaveCount(0);
+  await expect(screen.getByTestId(ids.taskAdd)).toHaveCount(0);
+});
+
+test('TasksSection_WhenActionItemAlreadyHasTasks_ShouldListThemWithNoAdd', async ({
+  mount,
+  page,
+}) => {
+  await stubApi(page, { ...actionItem, children: withTasks.children });
+  const screen = await mount(<WorkItemDetailsHarness itemKey="SHIP-141" />, route);
+
+  await expect(screen.getByTestId(ids.taskRow)).toHaveCount(2);
+  await expect(screen.getByTestId(ids.tasksCount)).toHaveText('1/2');
+  await expect(screen.getByTestId(ids.taskAdd)).toHaveCount(0);
+});
+
+test('TasksSection_WhenItemIsAStory_ShouldKeepItsSectionAndAdd', async ({ mount, page }) => {
+  await stubApi(page, story);
+  const screen = await mount(<WorkItemDetailsHarness itemKey="SHIP-141" />, route);
+
+  await expect(screen.getByTestId(ids.tasks)).toBeVisible();
+  await expect(screen.getByTestId(ids.taskAdd)).toBeVisible();
+});
