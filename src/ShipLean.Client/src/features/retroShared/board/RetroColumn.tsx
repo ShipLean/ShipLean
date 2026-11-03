@@ -16,6 +16,9 @@ export function RetroColumn({
   note,
   add,
   scope,
+  adding,
+  onOpenAdd,
+  onCloseAdd,
   onAdded,
 }: {
   column: RetroCategoryColumnDto;
@@ -24,6 +27,9 @@ export function RetroColumn({
   note: NoteOptions;
   add: AddTarget;
   scope: RetroActionScope;
+  adding: boolean;
+  onOpenAdd: () => void;
+  onCloseAdd: () => void;
   onAdded?: (point: RetroPointDto) => void;
 }) {
   const groups = column.groups
@@ -49,6 +55,7 @@ export function RetroColumn({
       aria-label={retroCategoryLabels[column.category]}
       className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-2 rounded-md border border-edge border-t-[3px] p-2"
       style={{
+        ['--cat' as string]: colour,
         borderTopColor: colour,
         background: `color-mix(in srgb, ${colour} 4%, var(--color-canvas))`,
       }}
@@ -76,7 +83,14 @@ export function RetroColumn({
             </div>
           ))
         : groups.flatMap((group) => group.points).map((point) => renderNote(point, true))}
-      <AddNote category={column.category} add={add} onAdded={onAdded} />
+      <AddNote
+        category={column.category}
+        add={add}
+        open={adding}
+        onOpen={onOpenAdd}
+        onClose={onCloseAdd}
+        onAdded={onAdded}
+      />
     </section>
   );
 }

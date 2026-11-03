@@ -1,7 +1,7 @@
 import type { RetroThemeRefDto } from '../../../api/retros';
 import { ThemeChip } from '../ThemeChip';
 
-// TODO: the finished theme heading styling replaces this plain heading.
+/** A theme's heading over its notes in a column: the name (Unthemed last, as the server sends it) and a Recurring chip. */
 export function ThemeGroupHeading({
   theme,
   recurring,
