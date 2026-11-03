@@ -1,5 +1,6 @@
 import type { ProjectDto } from '../api/projects';
 import { RetroActionDialogProvider } from '../features/retroShared/actionDialog/RetroActionDialogProvider';
+import { ActionWhy } from '../features/retros/actionItem/ActionWhy';
 import { WorkItemRetroSection } from '../features/retros/workItem/WorkItemRetroSection';
 import { useWorkItem } from '../features/workItem/workItemApi';
 
@@ -14,6 +15,12 @@ export function WorkItemRetroSlot({ project, itemKey }: WorkItemRetroSlotProps) 
   if (!item) return null;
   return (
     <RetroActionDialogProvider projectId={project.id}>
+      <ActionWhy
+        projectId={project.id}
+        projectKey={project.key}
+        workItemId={item.id}
+        itemType={item.type.id}
+      />
       <WorkItemRetroSection projectId={project.id} workItemId={item.id} />
     </RetroActionDialogProvider>
   );

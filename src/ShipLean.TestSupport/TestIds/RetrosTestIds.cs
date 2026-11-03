@@ -90,6 +90,10 @@ public static class RetrosTestIds
     public const string WorkItemRetroRow = "work-item-retro-row";
     public const string RetroActionWhy = "retro-action-why";
     public const string RetroActionWhyAdd = "retro-action-why-add";
+    public const string RetroActionWhyPoint = "retro-action-why-point";
+    public const string RetroActionWhyLink = "retro-action-why-link";
+    public const string RetroActionWhyTheme = "retro-action-why-theme";
+    public const string RetroActionWhyFix = "retro-action-why-fix";
     public const string RetroInsightsNosprint = "retro-insights-nosprint";
     public const string RetroInsightsUnthemed = "retro-insights-unthemed";
     public const string RetroInsightsThemeAction = "retro-insights-theme-action";
