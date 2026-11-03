@@ -18,7 +18,7 @@ internal sealed class DecideScopeReader(NpgsqlDataSource dataSource)
         LEFT JOIN retro_theme t ON t.id = p.theme_id
         WHERE r.project_id = @projectId AND r.archived_at IS NULL AND p.archived_at IS NULL
           AND (@sprintId::uuid IS NULL OR r.sprint_id = @sprintId)
-          AND (@featureId::uuid IS NULL OR r.work_item_id = @featureId OR w.parent_id = @featureId)
+          AND (@featureId::uuid IS NULL OR r.work_item_id = @featureId OR (w.parent_id = @featureId AND w.type IN ('story', 'bug')))
           AND (@since::timestamptz IS NULL OR p.created_at >= @since)
           AND (@until::timestamptz IS NULL OR p.created_at < @until)
         ORDER BY p.created_at, p.position, p.id

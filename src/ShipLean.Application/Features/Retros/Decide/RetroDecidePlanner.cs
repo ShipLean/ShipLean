@@ -136,8 +136,9 @@ internal sealed class RetroDecidePlanner(DecideScopeReader reader, IRetroDecisio
         foreach (var action in plan.Actions)
         {
             var kept = Undecided(action.PointIds, points, skipped);
-            // A point decided between the read and the write makes the writer conflict. Read again and try once more with the points still undecided.
-            for (var attempt = 0; attempt < 2 && kept.Count > 0; attempt++)
+            // A point decided between the read and the write makes the writer conflict. Read again and retry with the points still undecided.
+            // Each retry follows a smaller set, so the loop ends; a conflict that drops no point is a real one and propagates.
+            while (kept.Count > 0)
             {
                 try
                 {
@@ -146,14 +147,14 @@ internal sealed class RetroDecidePlanner(DecideScopeReader reader, IRetroDecisio
                 }
                 catch (ApiException exception) when (exception.Code == ApiErrorCodes.Conflict)
                 {
-                    if (attempt == 1)
+                    points = await reader.PointsAsync(projectId, plan.Scope, cancellationToken);
+                    var remaining = Undecided(kept, points, skipped);
+                    if (remaining.Count == kept.Count)
                     {
-                        kept.ForEach(id => skipped.Add(id, AlreadyDecided));
-                        break;
+                        throw;
                     }
 
-                    points = await reader.PointsAsync(projectId, plan.Scope, cancellationToken);
-                    kept = Undecided(kept, points, skipped);
+                    kept = remaining;
                 }
             }
         }

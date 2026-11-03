@@ -120,8 +120,10 @@ public class DecideRetroActionsTests : McpFixture
         var story = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("story").WithParent(feature).InsertAsync(connection);
         var bug = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("bug").WithParent(feature).InsertAsync(connection);
         var stranger = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("story").InsertAsync(connection);
+        var actionChild = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("action").WithParent(feature).InsertAsync(connection);
         var seed = new RetroSeed(connection, SeedIds.Projects.Ship);
         await seed.PointAsync(await seed.RetroAsync(new RetroSeedRetro(SeedIds.Users.Joel, WorkItemId: feature, AgentName: Agent())), new RetroSeedPoint(RetroCategory.WentBadly, "Own"));
+        var inActionChild = await seed.PointAsync(await seed.RetroAsync(new RetroSeedRetro(SeedIds.Users.Joel, WorkItemId: actionChild, AgentName: Agent())), new RetroSeedPoint(RetroCategory.WentBadly, "In action child"));
         var inStory = await seed.PointAsync(await seed.RetroAsync(new RetroSeedRetro(SeedIds.Users.Joel, WorkItemId: story, AgentName: Agent())), new RetroSeedPoint(RetroCategory.WentBadly, "In story"));
         var inBug = await seed.PointAsync(await seed.RetroAsync(new RetroSeedRetro(SeedIds.Users.Joel, WorkItemId: bug, AgentName: Agent())), new RetroSeedPoint(RetroCategory.Improve, "In bug"));
         var outside = await seed.PointAsync(await seed.RetroAsync(new RetroSeedRetro(SeedIds.Users.Joel, WorkItemId: stranger, AgentName: Agent())), new RetroSeedPoint(RetroCategory.WentBadly, "Outside"));
@@ -135,6 +137,8 @@ public class DecideRetroActionsTests : McpFixture
         inside.Structured().GetProperty("would_mark_not_needed").GetArrayLength().ShouldBe(2);
         inside.Structured().GetProperty("left_undecided").GetInt32().ShouldBe(1);
         ErrorField(refused).Code.ShouldBe("validation");
+        var actionRefused = await CallToolAsync(token, "decide_retro_actions", $$"""{"project":"SHIP","feature":"{{key}}","not_needed":[{"point":"{{inActionChild}}","reason":"r"}]}""");
+        ErrorField(actionRefused).Code.ShouldBe("validation");
     }
 
     [Test]
@@ -338,37 +342,69 @@ public class DecideRetroActionsTests : McpFixture
         ErrorField(reply).ShouldBe(("validation", "actions[0].fix_type"));
     }
 
-    // Stands in for another request: when this apply inserts the action's work item, one of its points gets decided.
+    private const string RaceTriggerSql =
+        """
+        CREATE OR REPLACE FUNCTION decide_race() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
+          UPDATE retro_point SET not_needed_reason = 'Late.', decided_by_user_id = created_by_user_id, decided_at = now()
+          WHERE not_needed_reason IS NULL
+            AND text LIKE 'late' || (SELECT count(*) FROM work_item WHERE title = NEW.title AND project_id = NEW.project_id)::text || ':' || NEW.title || ' %';
+          RETURN NEW; END $$;
+        DROP TRIGGER IF EXISTS decide_race ON work_item;
+        CREATE TRIGGER decide_race AFTER INSERT ON work_item FOR EACH ROW WHEN (NEW.title LIKE 'Race %') EXECUTE FUNCTION decide_race();
+        """;
+
+    private const string RaceTriggerDropSql = "DROP TRIGGER IF EXISTS decide_race ON work_item; DROP FUNCTION IF EXISTS decide_race();";
+
+    // Stands in for another request: the Nth time an action titled "Race ..." is inserted, the point whose text is "lateN:<title> <tag>" gets decided.
+    private async Task WithRaceAsync(Func<Task> act)
+    {
+        await using var connection = await OpenDatabaseAsync();
+        await connection.ExecuteAsync(RaceTriggerSql);
+        try
+        {
+            await act();
+        }
+        finally
+        {
+            await connection.ExecuteAsync(RaceTriggerDropSql);
+        }
+    }
+
     [Test]
     public async Task Apply_WhenOnePointIsDecidedBetweenReadAndWrite_ShouldRetryWithTheRest()
     {
         var world = await WorldAsync();
-        var kept = await world.PointAsync(RetroCategory.WentBadly, "Kept");
-        var late = await world.PointAsync(RetroCategory.WentBadly, "Decided during apply");
         var title = "Race " + world.Tag;
+        var kept = await world.PointAsync(RetroCategory.WentBadly, "Kept");
+        var late = await world.PointAsync(RetroCategory.WentBadly, "late1:" + title);
         var plan = await world.PlanAsync($$""", "actions":[{{New(title, kept, late)}}]""");
-        await using var connection = await OpenDatabaseAsync();
-        var function = $"decide_race_{late:N}";
-        await connection.ExecuteAsync(
-            $"""
-            CREATE FUNCTION {function}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
-              UPDATE retro_point SET not_needed_reason = 'Late.', decided_by_user_id = created_by_user_id, decided_at = now()
-              WHERE id = '{late}' AND not_needed_reason IS NULL;
-              RETURN NEW; END $$;
-            CREATE TRIGGER {function} AFTER INSERT ON work_item FOR EACH ROW WHEN (NEW.title = '{title}') EXECUTE FUNCTION {function}();
-            """);
-        JsonElement applied;
-        try
-        {
-            applied = await world.ApplyAsync(plan);
-        }
-        finally
-        {
-            await connection.ExecuteAsync($"DROP TRIGGER IF EXISTS {function} ON work_item; DROP FUNCTION IF EXISTS {function}();");
-        }
+        JsonElement applied = default;
+
+        await WithRaceAsync(async () => applied = await world.ApplyAsync(plan));
 
         applied.GetProperty("created").GetArrayLength().ShouldBe(1);
         Skipped(applied).ShouldBe([late]);
+        await using var connection = await OpenDatabaseAsync();
+        var key = applied.GetProperty("created")[0].GetString();
+        (await connection.QueryAsync<Guid>("SELECT point_id FROM retro_action_point rap JOIN work_item w ON w.id = rap.work_item_id WHERE w.key = @key AND rap.archived_at IS NULL", new { key })).ShouldBe([kept]);
+    }
+
+    [Test]
+    public async Task Apply_WhenPointsAreDecidedInSuccessivePasses_ShouldKeepRetryingWithTheRest()
+    {
+        var world = await WorldAsync();
+        var title = "Race " + world.Tag;
+        var kept = await world.PointAsync(RetroCategory.WentBadly, "Kept");
+        var first = await world.PointAsync(RetroCategory.WentBadly, "late1:" + title);
+        var second = await world.PointAsync(RetroCategory.WentBadly, "late2:" + title);
+        var plan = await world.PlanAsync($$""", "actions":[{{New(title, kept, first, second)}}]""");
+        JsonElement applied = default;
+
+        await WithRaceAsync(async () => applied = await world.ApplyAsync(plan));
+
+        applied.GetProperty("created").GetArrayLength().ShouldBe(1);
+        Skipped(applied).ShouldBe([first, second], ignoreOrder: true);
+        await using var connection = await OpenDatabaseAsync();
         var key = applied.GetProperty("created")[0].GetString();
         (await connection.QueryAsync<Guid>("SELECT point_id FROM retro_action_point rap JOIN work_item w ON w.id = rap.work_item_id WHERE w.key = @key AND rap.archived_at IS NULL", new { key })).ShouldBe([kept]);
     }
@@ -378,31 +414,16 @@ public class DecideRetroActionsTests : McpFixture
     public async Task Apply_WhenTheOnlyPointIsDecidedBetweenReadAndWrite_ShouldCreateNothing()
     {
         var world = await WorldAsync();
-        var late = await world.PointAsync(RetroCategory.WentBadly, "Decided during apply");
-        var title = "Lone race " + world.Tag;
+        var title = "Race " + world.Tag;
+        var late = await world.PointAsync(RetroCategory.WentBadly, "late1:" + title);
         var plan = await world.PlanAsync($$""", "actions":[{{New(title, late)}}]""");
-        await using var connection = await OpenDatabaseAsync();
-        var function = $"decide_lone_{late:N}";
-        await connection.ExecuteAsync(
-            $"""
-            CREATE FUNCTION {function}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
-              UPDATE retro_point SET not_needed_reason = 'Late.', decided_by_user_id = created_by_user_id, decided_at = now()
-              WHERE id = '{late}' AND not_needed_reason IS NULL;
-              RETURN NEW; END $$;
-            CREATE TRIGGER {function} AFTER INSERT ON work_item FOR EACH ROW WHEN (NEW.title = '{title}') EXECUTE FUNCTION {function}();
-            """);
-        JsonElement applied;
-        try
-        {
-            applied = await world.ApplyAsync(plan);
-        }
-        finally
-        {
-            await connection.ExecuteAsync($"DROP TRIGGER IF EXISTS {function} ON work_item; DROP FUNCTION IF EXISTS {function}();");
-        }
+        JsonElement applied = default;
+
+        await WithRaceAsync(async () => applied = await world.ApplyAsync(plan));
 
         applied.GetProperty("created").GetArrayLength().ShouldBe(0);
         Skipped(applied).ShouldBe([late]);
+        await using var connection = await OpenDatabaseAsync();
         (await connection.ExecuteScalarAsync<int>(
             "SELECT count(*)::int FROM work_item w JOIN state st ON st.id = w.state_id WHERE w.title = @title AND st.category <> 'removed'", new { title })).ShouldBe(0);
     }
