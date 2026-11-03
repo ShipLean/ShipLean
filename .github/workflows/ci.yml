@@ -86,6 +86,10 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          # Test metrics (devex-telemetry). The token lets test reports past the IP lock; build and
+          # bundle metrics are not sent from hosted runners, so VITE_ENDPOINT stays unset.
+          VITEST_METRICS_ENDPOINT: https://devmetrics.dicko.dev:18888/vitest
+          DEVFEEDBACK_TEST_TOKEN: ${{ secrets.DEVFEEDBACK_TEST_TOKEN }}
         run: |
           set -euo pipefail
           pnpm run format:check && pnpm run lint && pnpm run typecheck
@@ -116,6 +120,9 @@ jobs:
         with:
           dotnet-version: 10.0.x
       - run: dotnet test src/ShipLean.UnitTest --configuration Release
+        env:
+          NUNIT_METRICS_ES_ENDPOINT: https://devmetrics.dicko.dev:18888/dotnet/nunit
+          DEVFEEDBACK_TEST_TOKEN: ${{ secrets.DEVFEEDBACK_TEST_TOKEN }}
 
   api:
     name: API tests
@@ -144,8 +151,14 @@ jobs:
       # GitHub-hosted runners have 16 GB, so the 1 GiB heap cap the home runners needed is not set.
       - run: dotnet build src/ShipLean.WebApi.Tests --configuration Release && dotnet build-server shutdown
       - run: dotnet test src/ShipLean.WebApi.Tests --configuration Release --no-build --filter "FullyQualifiedName!~ShipLean.WebApi.Tests.Search." -- NUnit.NumberOfTestWorkers=4
+        env:
+          NUNIT_METRICS_ES_ENDPOINT: https://devmetrics.dicko.dev:18888/dotnet/nunit
+          DEVFEEDBACK_TEST_TOKEN: ${{ secrets.DEVFEEDBACK_TEST_TOKEN }}
       - if: success() || failure()
         run: dotnet test src/ShipLean.WebApi.Tests --configuration Release --no-build --filter "FullyQualifiedName~ShipLean.WebApi.Tests.Search." -- NUnit.NumberOfTestWorkers=4
+        env:
+          NUNIT_METRICS_ES_ENDPOINT: https://devmetrics.dicko.dev:18888/dotnet/nunit
+          DEVFEEDBACK_TEST_TOKEN: ${{ secrets.DEVFEEDBACK_TEST_TOKEN }}
 
   component:
     name: component tests
@@ -189,6 +202,8 @@ jobs:
           GIT_CONFIG_COUNT: "1"
           GIT_CONFIG_KEY_0: safe.directory
           GIT_CONFIG_VALUE_0: ${{ github.workspace }}
+          PLAYWRIGHT_METRICS_ENDPOINT: https://devmetrics.dicko.dev:18888/playwright
+          DEVFEEDBACK_TEST_TOKEN: ${{ secrets.DEVFEEDBACK_TEST_TOKEN }}
         run: |
           set -euo pipefail
           if [ "$EVENT_NAME" != "pull_request" ]; then
@@ -262,6 +277,8 @@ jobs:
         if: needs.changes.outputs.code != 'false'
         env:
           SHARDS: ${{ matrix.shards }}
+          NUNIT_METRICS_ES_ENDPOINT: https://devmetrics.dicko.dev:18888/dotnet/nunit
+          DEVFEEDBACK_TEST_TOKEN: ${{ secrets.DEVFEEDBACK_TEST_TOKEN }}
         # Every shard runs even after one fails; the step fails at the end, naming the failed shards.
         # The trailing dot keeps Lanes.Board from also matching Lanes.BoardSettings.
         run: |

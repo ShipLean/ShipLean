@@ -466,3 +466,6 @@ src/ShipLean.WebApi/data/
 scripts/search-eval/results/
 scripts/search-eval/.cache/
 .pytest_cache/
+
+# devfeedback-js (agoda-devfeedback-vite2) logs its telemetry send failures here
+devfeedback.log
