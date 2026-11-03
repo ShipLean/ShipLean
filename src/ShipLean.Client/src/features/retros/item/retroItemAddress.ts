@@ -16,7 +16,7 @@ export function parseRetroItemAddress(params: URLSearchParams): RetroItemAddress
   };
 }
 
-/** The address with filters changed; an unset filter drops its parameter, and a changed filter drops `point`. */
+/** The address with filters changed; an unset filter drops its parameter; `point` is kept. */
 export function withRetroItemFilters(
   params: URLSearchParams,
   change: { retro?: string | undefined; decide?: boolean },

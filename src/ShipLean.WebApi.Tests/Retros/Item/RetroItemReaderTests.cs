@@ -48,11 +48,14 @@ public sealed class RetroItemReaderTests : ApiFixture
     {
         await using var world = await WorldAsync();
         var story = await world.ItemAsync("story");
+        await world.PointAsync(story, RetroCategory.Improve, "Story point.");
 
         var item = await world.GetAsync(story);
 
         item.Parent.ShouldBeNull();
         item.Children.ShouldBeEmpty();
+        item.Cards.Count.ShouldBe(1);
+        item.Totals.ToDecide.ShouldBe(1);
     }
 
     [Test]
@@ -60,8 +63,12 @@ public sealed class RetroItemReaderTests : ApiFixture
     {
         await using var world = await WorldAsync();
         var bug = await world.ItemAsync("bug");
+        await world.PointAsync(bug, RetroCategory.WentBadly, "Bug point.");
 
-        (await world.GetAsync(bug)).Parent.ShouldBeNull();
+        var item = await world.GetAsync(bug);
+
+        item.Parent.ShouldBeNull();
+        item.Categories.SelectMany(column => column.Groups).SelectMany(group => group.Points).Select(point => point.Text).ShouldBe(["Bug point."]);
     }
 
     [Test]
@@ -112,10 +119,12 @@ public sealed class RetroItemReaderTests : ApiFixture
     public async Task Get_WhenNoRetros_ShouldReturnEmptyBoard()
     {
         await using var world = await WorldAsync();
-        var story = await world.ItemAsync("story");
+        var feature = await world.ItemAsync("feature");
+        var story = await world.ItemAsync("story", feature);
 
-        var item = await world.GetAsync(story);
+        var item = await world.GetAsync(feature);
 
+        item.Children.Select(child => child.Item.Id).ShouldBe([story]);
         item.Cards.ShouldBeEmpty();
         item.Actions.ShouldBeEmpty();
         item.Categories.Count.ShouldBe(4);

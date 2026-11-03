@@ -96,6 +96,8 @@ test('RetroItemPanel_WhenBugHasNoFeature_ShouldShowNoPartOfLine', async ({ mount
   });
   await mount(<RetroItemPanel project={project} itemKey="SHIP-180" />, route());
   await expect(page.getByTestId(ids.retroItemPanel)).toBeVisible();
+  await expect(page.getByRole('heading', { name: twoRetros.item.title })).toBeVisible();
+  await expect(page.getByTestId(shared.retroNote)).toHaveCount(allPoints.length);
   await expect(page.getByText('Part of')).toHaveCount(0);
 });
 
