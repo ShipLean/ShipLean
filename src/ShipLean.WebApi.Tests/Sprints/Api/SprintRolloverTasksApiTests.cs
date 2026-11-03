@@ -142,17 +142,27 @@ public class SprintRolloverTasksApiTests : ApiFixture
     }
 
     [Test]
-    public async Task Rollover_WhenReadForAnEndedSprintWithNothingUnfinished_ShouldMarkItDecidedAndLeaveAnOlderDeferredOne()
+    public async Task Rollover_WhenReadForAnEndedSprintWithNothingUnfinished_ShouldLeaveItOpen()
     {
         await using var connection = await OpenDatabaseAsync();
-        var (deferred, _, _) = await SprintRolloverSupport.ArrangeEndedSprintAsync(connection, "Deferred sprint");
         var empty = await SprintRolloverSupport.ArrangeEmptyEndedSprintAsync(connection, "Empty sprint");
 
         var read = await Api.GetAsync<RolloverDto>($"api/sprints/{empty}/rollover");
 
-        read.Status.ShouldBe(RolloverStatus.Decided);
+        read.Status.ShouldBe(RolloverStatus.Pending);
+        (await connection.ExecuteScalarAsync<string>("SELECT rollover_status FROM sprint WHERE id = @empty", new { empty })).ShouldNotBe("decided");
+    }
+
+    [Test]
+    public async Task Rollover_WhenClosedWithNothingUnfinished_ShouldMarkItDecided()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var empty = await SprintRolloverSupport.ArrangeEmptyEndedSprintAsync(connection, "Empty sprint to close");
+
+        using var response = await Api.PostJsonAsync($"api/sprints/{empty}/rollover", new RolloverRequest([]));
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
         (await connection.ExecuteScalarAsync<string>("SELECT rollover_status FROM sprint WHERE id = @empty", new { empty })).ShouldBe("decided");
-        (await connection.ExecuteScalarAsync<string>("SELECT rollover_status FROM sprint WHERE id = @deferred", new { deferred })).ShouldBe("pending");
     }
 
     [Test]

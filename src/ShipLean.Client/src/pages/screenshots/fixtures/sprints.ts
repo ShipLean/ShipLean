@@ -342,10 +342,11 @@ const rollover: RolloverDto = {
   nextSprint: { id: 'sprint-25', name: 'Sprint 25', status: 'current' },
   nextSprintCapacity: 22,
   nextSprintPoints: 13,
+  endsEarly: false,
 };
 
 export async function stubSprintEnd(page: Page) {
-  await stubSprintFigures(page);
+  await stubSprintBacklog(page);
   await page.route('**/api/sprints/sprint-24/metrics', (route) =>
     route.fulfill({
       json: {

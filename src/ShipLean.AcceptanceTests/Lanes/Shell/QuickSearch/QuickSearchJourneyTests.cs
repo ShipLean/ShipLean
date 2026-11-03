@@ -76,6 +76,20 @@ public class QuickSearchJourneyTests : SeededAcceptanceTest
         await Expect(search.SearchButton).ToBeFocusedAsync();
     }
 
+    [TestCase("129")]
+    [TestCase("ship-129")]
+    public async Task QuickSearch_WhenKeyOrItsNumberTyped_ShouldListThatItemFirst(string query)
+    {
+        var search = new QuickSearchDialog(Page);
+        await new ShellFrame(Page).OpenAsync(Links.Backlog("SHIP"));
+        await search.OpenWithShortcutAsync();
+
+        await search.TypeAsync(query);
+
+        await Expect(search.Options.First.GetByTestId(QuickSearchTestIds.OptionKey)).ToHaveTextAsync(PasskeyItem);
+        await Expect(search.Options.First.GetByTestId(QuickSearchTestIds.OptionKey).GetByTestId(QuickSearchTestIds.Match)).ToHaveCountAsync(1);
+    }
+
     [Test]
     public async Task QuickSearch_WhenPickedOnABacklog_ShouldOpenTheItemInTheModal()
     {

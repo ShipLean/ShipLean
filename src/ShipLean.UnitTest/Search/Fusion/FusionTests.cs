@@ -82,6 +82,33 @@ public sealed class FusionTests
         ExactKey.TryParse(text, out _).ShouldBeFalse();
     }
 
+    [TestCase("435", "435")]
+    [TestCase(" 435 ", "435")]
+    [TestCase("0435", "435")]
+    [TestCase("SHIP-435", "SHIP-435")]
+    [TestCase("ship435", "SHIP-435")]
+    [TestCase("ip-43", "IP-43")]
+    [TestCase("P4", "P-4")]
+    public void KeyPart_WhenPartOfAKey_ShouldNormalise(string text, string expected)
+    {
+        KeyPart.TryParse(text, out var part).ShouldBeTrue();
+        part.ShouldBe(expected);
+    }
+
+    [TestCase("login")]
+    [TestCase("SHIP")]
+    [TestCase("SHIP-")]
+    [TestCase("-435")]
+    [TestCase("SHIPS-12")]
+    [TestCase("SHIP-12 login")]
+    [TestCase("435 errors")]
+    [TestCase("1234567890")]
+    [TestCase("")]
+    public void KeyPart_WhenNotPartOfAKey_ShouldNotParse(string text)
+    {
+        KeyPart.TryParse(text, out _).ShouldBeFalse();
+    }
+
     [Test]
     public void Boosts_WhenEverythingBoosts_ShouldStillLoseToAStrongTextMatch()
     {

@@ -135,9 +135,10 @@ public class NewProjectSprintJourneyTests : SeededAcceptanceTest
         // 6. Arrangement: Sprint 1 ran over the last fortnight, the sprint moves came before it and the state changes inside it.
         await ArrangeEndedSprintAsync(sprint1, stories.Select(s => s.Id).ToArray());
 
-        // 7. The sprint-end prompt: the two unfinished stories roll into Sprint 2.
+        // 7. Close sprint: the two unfinished stories roll into Sprint 2.
         var prompt = new SprintEndPrompt(Page);
-        await prompt.OpenAsync(ProjectKey);
+        await prompt.OpenAsync(ProjectKey, sprint1);
+        await prompt.PressCloseAsync();
         await Expect(prompt.Rows).ToHaveCountAsync(2);
         foreach (var story in stories.Take(2))
         {

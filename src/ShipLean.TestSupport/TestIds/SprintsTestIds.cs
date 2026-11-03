@@ -99,16 +99,17 @@ public static class SprintsTestIds
     public const string CapacityKpiVelocity = "sprints-capacity-kpi-velocity";
     public const string CapacityRoom = "sprints-capacity-room";
     public const string CapacityCallout = "sprints-capacity-callout";
+    public const string CloseSprint = "sprints-close-sprint";
     public const string EndRow = "sprints-end-row";
     public const string EndDestination = "sprints-end-destination";
     public const string EndSetAll = "sprints-end-set-all";
     public const string EndAfter = "sprints-end-after";
     public const string EndHistory = "sprints-end-history";
     public const string EndApply = "sprints-end-apply";
-    public const string EndLater = "sprints-end-later";
+    public const string EndCancel = "sprints-end-cancel";
+    public const string EndConfirm = "sprints-end-confirm";
+    public const string EndEarly = "sprints-end-early";
     public const string EndError = "sprints-end-error";
-    public const string EndBanner = "sprints-end-banner";
-    public const string EndReview = "sprints-end-review";
     public const string EndDone = "sprints-end-done";
     public const string EndDoneClose = "sprints-end-done-close";
 }

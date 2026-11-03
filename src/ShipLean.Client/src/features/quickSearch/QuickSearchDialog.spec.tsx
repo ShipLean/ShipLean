@@ -235,6 +235,20 @@ test('Dialog_WhenMatchedInAComment_ShouldShowWhereItMatched', async ({ mount, pa
   await expect(page.getByTestId(ids.option).nth(1)).toContainText('… › SHIP-2 › SHIP-30');
 });
 
+test('Dialog_WhenPartOfAKeyTyped_ShouldMarkItInTheKey', async ({ mount, page }) => {
+  await mount(<QuickSearchDialogHarness results={results()} initialQuery="41" />);
+  const key = page.getByTestId(ids.option).first().getByTestId(ids.optionKey);
+  await expect(key).toHaveText('SHIP-41');
+  await expect(key.getByTestId(ids.match)).toHaveText('41');
+});
+
+test('Dialog_WhenWordWithNoDigitTyped_ShouldLeaveTheKeyUnmarked', async ({ mount, page }) => {
+  await mount(<QuickSearchDialogHarness results={results()} initialQuery="ship" />);
+  const key = page.getByTestId(ids.option).first().getByTestId(ids.optionKey);
+  await expect(key).toHaveText('SHIP-41');
+  await expect(key.getByTestId(ids.match)).toHaveCount(0);
+});
+
 test('Dialog_WhenMatchedInAnAttachment_ShouldNameTheAttachment', async ({ mount, page }) => {
   await mount(<QuickSearchDialogHarness results={results()} initialQuery="sign" />);
   const where = page.getByTestId(ids.where).nth(1);

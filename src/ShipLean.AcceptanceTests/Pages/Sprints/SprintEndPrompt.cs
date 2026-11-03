@@ -3,7 +3,7 @@ using ShipLean.TestSupport.TestIds;
 
 namespace ShipLean.AcceptanceTests.Pages.Sprints;
 
-// The Sprint end prompt over All sprints (and the Backlog): the dialog, its rows, the banner Decide later leaves.
+// The Close sprint button in the sprint header, and the dialog it opens.
 public sealed class SprintEndPrompt(IPage page)
 {
     public ILocator Dialog => page.GetByTestId(ComponentTestIds.Dialog);
@@ -16,9 +16,11 @@ public sealed class SprintEndPrompt(IPage page)
 
     public ILocator After => page.GetByTestId(SprintsTestIds.EndAfter);
 
-    public ILocator Banner => page.GetByTestId(SprintsTestIds.EndBanner);
+    public ILocator CloseButton => page.GetByTestId(SprintsTestIds.CloseSprint);
 
-    public ILocator Review => page.GetByTestId(SprintsTestIds.EndReview);
+    public ILocator Confirm => page.GetByTestId(SprintsTestIds.EndConfirm);
+
+    public ILocator EndsEarly => page.GetByTestId(SprintsTestIds.EndEarly);
 
     public ILocator Done => page.GetByTestId(SprintsTestIds.EndDone);
 
@@ -26,12 +28,19 @@ public sealed class SprintEndPrompt(IPage page)
 
     public ILocator Apply => page.GetByTestId(SprintsTestIds.EndApply);
 
-    public ILocator Later => page.GetByTestId(SprintsTestIds.EndLater);
+    public ILocator Cancel => page.GetByTestId(SprintsTestIds.EndCancel);
 
-    public async Task OpenAsync(string projectKey)
+    // The sprint's page, where the button is. The dialog stays closed until PressCloseAsync.
+    public async Task OpenAsync(string projectKey, Guid sprintId)
     {
-        await page.GotoAsync(Links.Sprints(projectKey));
-        await page.GetByTestId(SprintsTestIds.List).WaitForAsync();
+        await page.GotoAsync(Links.SprintBacklog(projectKey, sprintId));
+        await CloseButton.WaitForAsync();
+    }
+
+    public async Task PressCloseAsync()
+    {
+        await CloseButton.ClickAsync();
+        await Dialog.WaitForAsync();
     }
 
     // Presses Apply and returns the rollover POST response.

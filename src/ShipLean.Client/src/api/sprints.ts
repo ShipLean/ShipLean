@@ -158,6 +158,8 @@ export interface RolloverDto {
   nextSprintCapacity: number | null;
   /** Points already planned into the next sprint. */
   nextSprintPoints: number;
+  /** The sprint is still running, so closing it moves its end date to today. */
+  endsEarly: boolean;
 }
 
 export interface RolloverMove {
@@ -168,4 +170,6 @@ export interface RolloverMove {
 
 export interface RolloverRequest {
   moves: RolloverMove[];
+  /** Close a sprint that is still running: its end date moves to today with the moves. */
+  endToday?: boolean;
 }

@@ -35,4 +35,20 @@ public class SprintRolloverStaleApiTests : ApiFixture
         (await connection.ExecuteScalarAsync<string>("SELECT rollover_status FROM sprint WHERE id = @sprintId", new { sprintId })).ShouldBe("pending");
         (await connection.ExecuteScalarAsync<int>("SELECT count(*)::int FROM work_item WHERE sprint_id = @sprintId", new { sprintId })).ShouldBe(2);
     }
+
+    [Test]
+    public async Task Rollover_WhenClosingEarlyAndItemStale_ShouldKeepTheEndDate()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var (sprintId, first, second) = await SprintRolloverSupport.ArrangeEndedSprintAsync(connection, "Stale early close");
+        var today = DateOnly.FromDateTime(TimeProvider.System.GetUtcNow().UtcDateTime);
+        var end = today.AddDays(5);
+        await connection.ExecuteAsync("UPDATE sprint SET end_date = @end WHERE id = @sprintId", new { end, sprintId });
+
+        using var response = await Api.PostJsonAsync($"api/sprints/{sprintId}/rollover", new RolloverRequest([new RolloverMove(first, null), new RolloverMove(second, null)], EndToday: true));
+
+        await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.Conflict);
+        (await connection.ExecuteScalarAsync<DateOnly>("SELECT end_date FROM sprint WHERE id = @sprintId", new { sprintId })).ShouldBe(end);
+        (await connection.ExecuteScalarAsync<string>("SELECT rollover_status FROM sprint WHERE id = @sprintId", new { sprintId })).ShouldBe("pending");
+    }
 }

@@ -47,15 +47,19 @@ public class ImportThenPlanJourneyTests : SeededAcceptanceTest
         await dragging.ShowWholePageAsync();
         await planning.OpenAsync(ProjectKey);
         // Platform Sprint 12 ended on 26 Oct 2026. PLAT-412 is still in it, and planning only lists the backlog
-        // and sprints that have not ended, so the wrap-up has to put PLAT-412 on the backlog before it can be planned.
+        // and sprints that have not ended, so closing the sprint has to put PLAT-412 on the backlog before it can be planned.
+        await Page.GotoAsync(Links.Sprints(ProjectKey));
+        var allSprints = new AllSprints(Page);
+        await allSprints.RowOf("Platform Sprint 12").GetByTestId(SprintsTestIds.RowLink).ClickAsync();
         var wrapUp = new SprintEndPrompt(Page);
-        await Expect(wrapUp.Dialog).ToBeVisibleAsync();
+        await wrapUp.PressCloseAsync();
         await wrapUp.DestinationOf("PLAT-412").SelectOptionAsync("backlog");
         var applied = await Page.RunAndWaitForResponseAsync(
             () => wrapUp.Apply.ClickAsync(),
             r => r.Request.Method == "POST" && r.Url.Contains("/rollover", StringComparison.Ordinal));
         applied.Ok.ShouldBeTrue(await applied.TextAsync());
         await Expect(wrapUp.Dialog).ToBeHiddenAsync();
+        await planning.OpenAsync(ProjectKey);
         var created = await Page.RunAndWaitForResponseAsync(
             () => Page.GetByTestId(BacklogTestIds.PlanningCreateSprint).ClickAsync(),
             r => r.Request.Method == "POST" && new Uri(r.Url).AbsolutePath.EndsWith("/sprints", StringComparison.Ordinal));

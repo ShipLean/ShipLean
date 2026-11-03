@@ -5,16 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ShipLean · Sprint end (reference)</title>
 <!--
-  Reference Sprint end dialog, as seen on Mon 2 Nov after Sprint 24 ended.
+  Reference Close sprint dialog, as seen on Mon 2 Nov after Sprint 24 ended, opened from the button in the sprint header.
   Open directly in a browser. Uses ../tokens.css, shiplean.css and shared.js only; no build step.
-  There is no "close sprint" action: status comes from the dates. The dialog opens the first time a member
-  opens a Sprints or Backlog screen after a sprint's end date while the sprint still holds stories or bugs
-  whose state category isn't Completed. Anyone on the team can apply it; once applied it is gone for everyone
-  (real-time). "Decide later" leaves a banner on the sprint until someone does.
+  Closing a sprint is something a person chooses to do (SHIP-549): nothing opens by itself. The button shows on a
+  running or ended sprint nobody has closed. Anyone on the team can press it; once closed it is done for everyone
+  (real-time). Closing a running sprint moves its end date to today. With nothing unfinished it's a short confirmation.
   Each unfinished item defaults to the next sprint. Moving writes an ordinary sprint_id change; open tasks
   move with their story and closed tasks stay, so the ended sprint's committed / completed history is intact.
-  Working: per-item destination, Set all, live total for the next sprint against its team capacity, Apply,
-  Decide later (shows the banner), Esc closes.
+  Working: Close sprint, per-item destination, Set all, live total for the next sprint against its team capacity,
+  Cancel, Esc cancels.
   The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot).
 -->
 <link rel="stylesheet" href="../tokens.css">
@@ -23,8 +22,6 @@
 <style>
 .head { padding: var(--space-3) var(--space-4); background: var(--color-surface); border-bottom: 1px solid var(--color-border); flex: none; }
 .head h1 { margin: 0; font-size: var(--text-lg); font-weight: var(--weight-semibold); display: flex; gap: var(--space-2); align-items: center; }
-.banner { display: none; gap: var(--space-2); align-items: center; padding: var(--space-2) var(--space-4); background: color-mix(in srgb, var(--color-warn) 16%, var(--color-surface)); border-bottom: 1px solid var(--color-border); font-size: var(--text-sm); flex: none; }
-.banner.show { display: flex; }
 .ro { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-3); align-items: center; padding: var(--space-2) 0; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
 .ro .meta { display: flex; gap: var(--space-2); align-items: center; margin-top: 2px; }
 .ro select { width: 220px; }
@@ -33,10 +30,9 @@
 <body>
 <div id="appbar"></div>
 <section class="head">
-  <h1>Sprint 24 <span class="chip">Ended</span></h1>
+  <h1>Sprint 24 <span class="chip">Ended</span><span class="spacer"></span><button class="btn" type="button" id="closeSprint">Close sprint</button></h1>
   <div class="sm muted">Mon 19 Oct – Fri 30 Oct · Goal: Customers can check out with a saved card; passkey sign-in behind a flag.</div>
 </section>
-<div class="banner" id="banner"><span><b>Sprint 24 has 2 unfinished items.</b> Decide where they go.</span><button class="btn" type="button" id="reopen">Review</button></div>
 <div class="toolbar"><div id="tabs"></div></div>
 <div class="scroll">
   <table class="list">
@@ -48,7 +44,7 @@
 <div class="backdrop" id="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgTitle">
   <div class="dialog">
     <header>
-      <div><h2 id="dlgTitle">Sprint 24 ended on Fri 30 Oct</h2><div class="sm muted" id="dlgSub"></div></div>
+      <div><h2 id="dlgTitle">Close Sprint 24</h2><div class="sm muted" id="dlgSub"></div></div>
       <span class="spacer"></span><button class="ib" type="button" data-close aria-label="Close">✕</button>
     </header>
     <div class="body">
@@ -57,7 +53,7 @@
       <div class="callout" id="after"></div>
       <div class="callout"><b>History stays as it was</b>Sprint 24 keeps 21 committed / 10 completed for velocity, because both come from revisions at its end date. Open tasks move with their story; closed tasks stay in Sprint 24.</div>
     </div>
-    <footer><span class="xs muted">Anyone on the team can do this. Once applied, it's done for everyone.</span><span class="spacer"></span><button class="btn" type="button" data-later>Decide later</button><button class="btn primary" type="button" id="apply">Apply</button></footer>
+    <footer><span class="xs muted">Anyone on the team can do this. Once closed, it's done for everyone.</span><span class="spacer"></span><button class="btn" type="button" data-cancel>Cancel</button><button class="btn primary" type="button" id="apply">Close sprint</button></footer>
   </div>
 </div>
 
@@ -100,21 +96,22 @@
   box.addEventListener('change', e => { const s = e.target.closest('select'); if (s) { choice[s.dataset.key] = s.value; update(); } });
   document.querySelectorAll('[data-all]').forEach(b => b.onclick = () => { unfinished.forEach(i => { choice[i.key] = b.dataset.all; }); update(); });
 
-  const dlg = document.getElementById('dlg'), banner = document.getElementById('banner');
-  const show = () => { dlg.style.display = ''; banner.classList.remove('show'); box.querySelector('select')?.focus(); };
-  const later = () => { dlg.style.display = 'none'; banner.classList.add('show'); };
-  dlg.querySelector('[data-close]').onclick = later;
-  dlg.querySelector('[data-later]').onclick = later;
-  dlg.addEventListener('click', e => { if (e.target === dlg) later(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && dlg.style.display !== 'none') later(); });
-  document.getElementById('reopen').onclick = show;
+  const dlg = document.getElementById('dlg'), closeSprint = document.getElementById('closeSprint');
+  const show = () => { dlg.style.display = ''; box.querySelector('select')?.focus(); };
+  const cancel = () => { dlg.style.display = 'none'; closeSprint.focus(); };
+  dlg.querySelector('[data-close]').onclick = cancel;
+  dlg.querySelector('[data-cancel]').onclick = cancel;
+  dlg.addEventListener('click', e => { if (e.target === dlg) cancel(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && dlg.style.display !== 'none') cancel(); });
+  closeSprint.onclick = show;
   document.getElementById('apply').onclick = () => {
     dlg.style.display = 'none';
+    closeSprint.remove();
     const n = unfinished.filter(i => choice[i.key] !== 'stay').length;
-    toast(`Moved ${n} item${n === 1 ? '' : 's'} out of Sprint 24`);
+    toast(n === 0 ? 'Closed Sprint 24' : `Closed Sprint 24 and moved ${n} item${n === 1 ? '' : 's'} out`);
   };
   update();
-  SL.preview([{ label: 'Reopen dialog', run: show }]);
+  SL.preview([{ label: 'Close the dialog', run: cancel }]);
 })();
 </script>
 </body>
