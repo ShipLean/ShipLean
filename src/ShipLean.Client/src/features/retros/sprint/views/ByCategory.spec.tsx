@@ -91,27 +91,31 @@ test('ByCategory_WhenToDecideChosen_ShouldWriteTheAddressAndHideDecidedNotesKeep
   const notes = page.getByTestId(shared.retroNote);
   await expect(notes).toHaveCount(allPoints.length);
   const filter = page.getByTestId(ids.retroToDecideFilter);
+  const expectToDecideBadges = async () => {
+    for (const column of sprintRetro.categories) {
+      const header = page
+        .getByTestId(shared.retroBoardColumn)
+        .and(page.locator(`[data-category="${column.category}"]`));
+      if (column.toDecide > 0) {
+        await expect(header.locator('[data-to-decide]')).toHaveAttribute(
+          'data-to-decide',
+          String(column.toDecide),
+        );
+      }
+    }
+  };
 
   await filter.locator('[data-value="open"]').click();
   await expect(page.getByTestId('test-address')).toHaveText('?decide=open');
   const undecided = allPoints.filter((p) => p.decision === 'undecided');
   await expect(notes).toHaveCount(undecided.length);
   expect(undecided.length).toBeLessThan(allPoints.length);
-  for (const column of sprintRetro.categories) {
-    const header = page
-      .getByTestId(shared.retroBoardColumn)
-      .and(page.locator(`[data-category="${column.category}"]`));
-    if (column.toDecide > 0) {
-      await expect(header.locator('[data-to-decide]')).toHaveAttribute(
-        'data-to-decide',
-        String(column.toDecide),
-      );
-    }
-  }
+  await expectToDecideBadges();
 
   await filter.locator('[data-value="all"]').click();
   await expect(page.getByTestId('test-address')).toHaveText('');
   await expect(notes).toHaveCount(allPoints.length);
+  await expectToDecideBadges();
 });
 
 test('ByCategory_WhenToDecideInTheAddress_ShouldOpenFiltered', async ({ mount, page }) => {
