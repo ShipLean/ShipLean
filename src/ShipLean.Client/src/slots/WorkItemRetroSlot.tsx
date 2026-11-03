@@ -21,7 +21,12 @@ export function WorkItemRetroSlot({ project, itemKey }: WorkItemRetroSlotProps) 
         workItemId={item.id}
         itemType={item.type.id}
       />
-      <WorkItemRetroSection projectId={project.id} workItemId={item.id} />
+      <WorkItemRetroSection
+        projectId={project.id}
+        projectKey={project.key}
+        itemKey={itemKey}
+        workItemId={item.id}
+      />
     </RetroActionDialogProvider>
   );
 }
