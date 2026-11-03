@@ -30,6 +30,10 @@ public static class RetrosTestIds
     // Sprint tab: By work item and rail
     public const string RetroFeatureCallout = "retro-feature-callout";
     public const string RetroCardList = "retro-card-list";
+    public const string RetroCardHeader = "retro-card-header";
+    public const string RetroCardKeyLink = "retro-card-key-link";
+    public const string RetroCardProgress = "retro-card-progress";
+    public const string RetroCardOpen = "retro-card-open";
     public const string RetroRail = "retro-rail";
     public const string RetroCoverage = "retro-coverage";
     public const string RetroCoverageRow = "retro-coverage-row";

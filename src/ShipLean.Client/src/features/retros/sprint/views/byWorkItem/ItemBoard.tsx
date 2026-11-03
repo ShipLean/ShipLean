@@ -50,7 +50,10 @@ export function ItemBoard({
       data-item-key={workItem?.key ?? 'sprint'}
       className={`grid min-w-0 gap-2 rounded-md border border-edge bg-panel p-3 ${isFeature ? 'border-l-[3px] border-l-signal' : ''}`}
     >
-      <header className="flex flex-wrap items-center gap-1.5 text-[length:var(--text-sm)]">
+      <header
+        data-testid={retrosTestIds.retroCardHeader}
+        className="flex flex-wrap items-center gap-1.5 text-[length:var(--text-sm)]"
+      >
         {isFeature ? <FeatureChip /> : null}
         {workItem ? (
           <>

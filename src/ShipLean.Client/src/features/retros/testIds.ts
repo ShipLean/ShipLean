@@ -27,6 +27,7 @@ export const retrosTestIds = {
   // Sprint tab: By work item and rail
   retroFeatureCallout: 'retro-feature-callout',
   retroCardList: 'retro-card-list',
+  retroCardHeader: 'retro-card-header',
   retroCardKeyLink: 'retro-card-key-link',
   retroCardProgress: 'retro-card-progress',
   retroCardOpen: 'retro-card-open',

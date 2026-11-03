@@ -7,6 +7,8 @@ import { componentTestIds } from '../../../../components/testIds';
 import { retroSharedTestIds as shared } from '../../../retroShared/testIds';
 import { retrosTestIds as ids } from '../../testIds';
 
+type Page = Parameters<Parameters<typeof test>[2]>[0]['page'];
+
 const project = { id: 'p1', key: 'SHIP' } as ProjectDto;
 const sprint = { id: 'sprint-24', name: 'Sprint 24' } as SprintDto;
 const mountOptions = { hooksConfig: { route: '/p/SHIP/boards/stories' } };
@@ -209,6 +211,12 @@ const decided = (points: { decision: string | null }[]) => {
   return `${decidable.filter((p) => p.decision !== 'undecided').length}/${decidable.length}`;
 };
 
+/** The board of one item, found by the key link in its header. */
+const boardOf = (page: Page, key: string) =>
+  page
+    .getByTestId(shared.retroCard)
+    .filter({ has: page.getByTestId(ids.retroCardKeyLink).filter({ hasText: key }) });
+
 test('ByWorkItem_WhenTwoRetrosShareAnItem_ShouldCountBothInTheHeaderProgress', async ({
   mount,
   page,
@@ -216,14 +224,13 @@ test('ByWorkItem_WhenTwoRetrosShareAnItem_ShouldCountBothInTheHeaderProgress', a
   await stubRetros(page);
   const { base, second, retro } = twoRetrosOnOneItem;
   await mount(<ByWorkItemHarness project={project} sprint={sprint} retro={retro} />, mountOptions);
-  const progress = page
-    .locator('article[data-item-key="SHIP-141"]')
-    .getByTestId(ids.retroCardProgress);
   const expected = decided([...base.points, ...second.points]);
   expect(Number(expected.split('/')[1])).toBeGreaterThan(
     Number(decided(base.points).split('/')[1]),
   );
-  await expect(progress).toContainText(expected);
+  await expect(boardOf(page, 'SHIP-141').getByTestId(ids.retroCardProgress)).toContainText(
+    expected,
+  );
 });
 
 test('ByWorkItem_WhenToDecideChosen_ShouldNotChangeTheHeaderProgress', async ({ mount, page }) => {
@@ -233,9 +240,7 @@ test('ByWorkItem_WhenToDecideChosen_ShouldNotChangeTheHeaderProgress', async ({ 
     mountOptions,
   );
   for (const card of sprintRetro.cards.filter((c) => c.workItem)) {
-    const progress = page
-      .locator(`article[data-item-key="${card.workItem!.key}"]`)
-      .getByTestId(ids.retroCardProgress);
+    const progress = boardOf(page, card.workItem!.key).getByTestId(ids.retroCardProgress);
     const expected = decided(card.points);
     if (expected.endsWith('/0')) await expect(progress).toContainText('nothing to decide');
     else await expect(progress).toContainText(expected);
@@ -248,7 +253,7 @@ test('ByWorkItem_WhenAnItemHasABoard_ShouldLinkItsKeyAndOpenToItsRetroPage', asy
 }) => {
   await stubRetros(page);
   await mount(element, mountOptions);
-  const card = page.locator('article[data-item-key="SHIP-141"]');
+  const card = boardOf(page, 'SHIP-141');
   await expect(card.getByTestId(ids.retroCardKeyLink)).toHaveAttribute(
     'href',
     '/p/SHIP/retros/items/SHIP-141',
@@ -265,7 +270,8 @@ test('ByWorkItem_WhenTheBoardIsTheSprints_ShouldShowProgressButNoOpenOrKeyLink',
 }) => {
   await stubRetros(page);
   await mount(element, mountOptions);
-  const board = page.locator('[data-item-key="sprint"]');
+  const board = page.getByTestId(shared.retroCard).last();
+  await expect(board.getByText('Sprint 24')).toBeVisible();
   await expect(board.getByTestId(ids.retroCardProgress)).toBeVisible();
   await expect(board.getByTestId(ids.retroCardOpen)).toHaveCount(0);
   await expect(board.getByTestId(ids.retroCardKeyLink)).toHaveCount(0);
@@ -275,13 +281,17 @@ test('ByWorkItem_WhenNarrow_ShouldKeepTheHeaderInsideTheBoard', async ({ mount, 
   await stubRetros(page);
   await page.setViewportSize({ width: 360, height: 800 });
   await mount(element, mountOptions);
-  for (const header of await page.locator('article[data-item-key] > header').all()) {
-    const box = (await header.boundingBox())!;
-    const parent = (await header.locator('xpath=..').boundingBox())!;
-    expect(box.x + box.width).toBeLessThanOrEqual(parent.x + parent.width + 1);
-    for (const child of await header.locator('> *').all()) {
-      const c = (await child.boundingBox())!;
-      expect(c.x + c.width).toBeLessThanOrEqual(box.x + box.width + 1);
+  const cards = await page.getByTestId(shared.retroCard).all();
+  expect(cards.length).toBeGreaterThan(0);
+  for (const card of cards) {
+    const outer = (await card.boundingBox())!;
+    const header = (await card.getByTestId(ids.retroCardHeader).boundingBox())!;
+    const parts = [ids.retroCardProgress, ids.retroCardOpen].map((id) => card.getByTestId(id));
+    expect(header.x + header.width).toBeLessThanOrEqual(outer.x + outer.width + 1);
+    for (const part of parts) {
+      if ((await part.count()) === 0) continue;
+      const box = (await part.boundingBox())!;
+      expect(box.x + box.width).toBeLessThanOrEqual(outer.x + outer.width + 1);
     }
   }
 });
