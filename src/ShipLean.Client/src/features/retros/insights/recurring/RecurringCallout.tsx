@@ -1,5 +1,15 @@
+import type { RetroInsightsMode } from '../../../../api/retros';
+
 /** The warn callout above the recurring table; hidden when no theme is recurring. */
-export function RecurringCallout({ count }: { count: number }) {
+export function RecurringCallout({
+  count,
+  mode,
+  weeks,
+}: {
+  count: number;
+  mode: RetroInsightsMode;
+  weeks: number;
+}) {
   if (count === 0) return null;
   const noun = count === 1 ? 'theme keeps' : 'themes keep';
   return (
@@ -11,7 +21,9 @@ export function RecurringCallout({ count }: { count: number }) {
       <b className="block">
         {count} {noun} coming back
       </b>
-      They were mentioned in several recent sprints without a change that helped.
+      {mode === 'week'
+        ? `Counted over the last ${weeks} weeks, by the day each point was logged.`
+        : 'They were mentioned in several recent sprints without a change that helped.'}
     </div>
   );
 }

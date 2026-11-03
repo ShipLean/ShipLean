@@ -272,3 +272,19 @@ test('RecurringThemes_WhenNoSprintAndUnthemedShow_ShouldMountTheirTipsWithEachLa
   await expect(row.getByTestId(ids.retroTipUnthemed)).toHaveCount(1);
   await expect(row.getByText('Unthemed')).toHaveCount(1);
 });
+
+for (const [name, insights, expected, absent] of [
+  ['Week', insightsWeeks, `Counted over the last ${insightsWeeks.columns.length} weeks`, 'sprints'],
+  ['Sprint', retroInsights, 'in several recent sprints', 'Counted over'],
+] as const) {
+  test(`RecurringThemes_When${name}Mode_ShouldWordTheCalloutInThatUnit`, async ({
+    mount,
+    page,
+  }) => {
+    await stubRetros(page);
+    await mount(table(insights), open);
+    const callout = page.locator('[data-callout="recurring"]');
+    await expect(callout).toContainText(expected);
+    await expect(callout).not.toContainText(absent);
+  });
+}
