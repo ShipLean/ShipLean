@@ -1,3 +1,4 @@
+using ShipLean.Application.Features.Retros.Rules;
 using ShipLean.Application.Features.Retros.Store;
 using ShipLean.Contracts.Retros;
 
@@ -57,6 +58,34 @@ public class RetroThemeSeriesTests
         entry.Closed.ShouldBeEmpty();
         entry.IsRecurring.ShouldBeTrue();
         entry.Status.ShouldBe(RetroThemeStatus.Recurring);
+    }
+
+    [Test]
+    public void Build_WhenWeeksRecurrence_ShouldUseThreeOfSix()
+    {
+        var weeks = Series(6);
+        var theme = Guid.NewGuid();
+        var tones = new Dictionary<Guid, RetroTone> { [theme] = RetroTone.Bad };
+        var spread = new[] { 0, 2, 4 }.Select(i => (theme, weeks[i].Id, RetroCategory.WentBadly)).ToList();
+
+        var asWeeks = RetroThemeSeries.Build(weeks, spread, tones, [], new HashSet<Guid>(), RetroRecurrence.Weeks).Single().Value;
+        var asSprints = RetroThemeSeries.Build(weeks, spread, tones, [], new HashSet<Guid>()).Single().Value;
+
+        asWeeks.Counts.ShouldBe([1, 0, 1, 0, 1, 0]);
+        asWeeks.IsRecurring.ShouldBeTrue();
+        asSprints.IsRecurring.ShouldBeFalse();
+    }
+
+    [Test]
+    public void Build_WhenWeekClosedBeforeTheFirstWeek_ShouldGiveItNoVerdict()
+    {
+        var weeks = Series(6);
+        var theme = Guid.NewGuid();
+        var closed = new[] { new RetroSeriesClosed(Guid.NewGuid(), theme, new DateTimeOffset(2026, 3, 1, 23, 59, 0, TimeSpan.Zero)) };
+
+        var entry = RetroThemeSeries.Build(weeks, [], new Dictionary<Guid, RetroTone> { [theme] = RetroTone.Bad }, closed, new HashSet<Guid>(), RetroRecurrence.Weeks).Single().Value;
+
+        entry.Closed.ShouldBeEmpty();
     }
 
     private static List<RetroSeriesSprint> Series(int count)

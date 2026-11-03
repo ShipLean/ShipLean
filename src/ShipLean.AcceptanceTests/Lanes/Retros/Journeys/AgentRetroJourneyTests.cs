@@ -68,20 +68,22 @@ public class AgentRetroJourneyTests : SeededAcceptanceTest
         await card.GetByTestId(RetroSharedTestIds.RetroCardLogToggle).ClickAsync();
         await Expect(card.GetByTestId(RetroSharedTestIds.RetroCardLog)).ToContainTextAsync(Friction);
 
-        // The work item page shows the same retro.
+        // The work item page lists the retro; its row opens the item page, which shows the same points and the log.
         await Page.GotoAsync(Links.WorkItem("SHIP", key));
         var section = new WorkItemRetroSection(Page);
-        await Expect(section.Cards).ToHaveCountAsync(1);
-        await Expect(section.Section).ToContainTextAsync(WentWell);
-        await Expect(section.Section).ToContainTextAsync(WentBadly);
-        await Expect(section.Section).ToContainTextAsync(Improve);
-        await Expect(section.Section).ToContainTextAsync(NotInPlan);
-        await Expect(section.AuthorChips.First).ToContainTextAsync("Lane Agent");
-        await Expect(section.AuthorChips.First).ToHaveAttributeAsync("data-role", "subAgent");
-        await Expect(section.Log).ToHaveCountAsync(0);
-        await Expect(section.Section).ToContainTextAsync(RootCause);
-        await section.LogToggle.ClickAsync();
-        await Expect(section.Log).ToContainTextAsync(Friction);
+        await Expect(section.Rows).ToHaveCountAsync(1);
+        await section.Rows.First.ClickAsync();
+        var item = new RetroItemPage(Page);
+        await item.Panel.WaitForAsync();
+        await Expect(item.Board.NoteOf(WentWell).Root).ToHaveCountAsync(1);
+        await Expect(item.Board.NoteOf(WentBadly).Root).ToContainTextAsync(RootCause);
+        await Expect(item.Board.NoteOf(Improve).Root).ToHaveCountAsync(1);
+        await Expect(item.Board.NoteOf(NotInPlan).Root).ToHaveCountAsync(1);
+        await Expect(item.WriterChips.First).ToContainTextAsync("Lane Agent");
+        await Expect(item.WriterChips.First).ToHaveAttributeAsync("data-role", "subAgent");
+        await Expect(item.Log).ToHaveCountAsync(0);
+        await item.LogToggle.ClickAsync();
+        await Expect(item.Log).ToContainTextAsync(Friction);
     }
 
     // The point sits in exactly one column, the one of its category.

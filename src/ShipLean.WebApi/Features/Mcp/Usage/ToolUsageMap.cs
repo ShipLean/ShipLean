@@ -43,5 +43,6 @@ public static class ToolUsageMap
         ["sprint_review"] = UsageEventNames.SprintReviewed,
         ["log_retrospective"] = UsageEventNames.RetroPointAdded,
         ["list_retrospectives"] = UsageEventNames.RetroListed,
+        ["decide_retro_actions"] = UsageEventNames.RetroActionsDecided,
     };
 }

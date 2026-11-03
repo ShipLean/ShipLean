@@ -170,6 +170,170 @@ public class ListRetrospectivesTests : McpFixture
         Texts(result)[0].ShouldBe("Point 200");
     }
 
+    [Test]
+    public async Task List_WhenActioned_ShouldReturnActionKeyAndState()
+    {
+        var story = await ArrangeItemAsync(b => b.WithType("story"));
+        var action = await ArrangeItemAsync(b => b.WithType("action"));
+        var (pointId, theme) = (Guid.Empty, $"Actioned {Guid.NewGuid():N}");
+        var themeId = await ArrangeThemeAsync(theme);
+        pointId = (await SeedPointsAsync(story, null, new RetroSeedPoint(RetroCategory.Improve, "Fix it", ThemeId: themeId)))[0];
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            await new RetroSeed(connection, SeedIds.Projects.Ship).ActionAsync(new RetroSeedAction(action, PointId: pointId));
+        }
+
+        var result = await ListAsync($$"""{"project":"SHIP","theme":"{{theme}}"}""");
+
+        var line = result.GetProperty("points")[0];
+        line.GetProperty("decision").GetString().ShouldBe("actioned");
+        line.GetProperty("action").GetProperty("key").GetString().ShouldBe(await KeyOfAsync(action));
+        line.GetProperty("action").GetProperty("state").GetString().ShouldBe(await StateNameOfAsync(action));
+        line.GetProperty("not_needed_reason").ValueKind.ShouldBe(JsonValueKind.Null);
+    }
+
+    [Test]
+    public async Task List_WhenNotNeeded_ShouldReturnTheReason()
+    {
+        var (sprint, name) = await ArrangeSprintAsync();
+        var story = await ArrangeStoryAsync(sprint);
+        await SeedAsync(story, sprint, new RetroSeedPoint(RetroCategory.Improve, "Skip it", NotNeededReason: "Fixed upstream"));
+
+        var line = (await ListAsync($$"""{"project":"SHIP","sprint":"{{name}}"}""")).GetProperty("points")[0];
+
+        line.GetProperty("decision").GetString().ShouldBe("notNeeded");
+        line.GetProperty("not_needed_reason").GetString().ShouldBe("Fixed upstream");
+        line.GetProperty("action").ValueKind.ShouldBe(JsonValueKind.Null);
+    }
+
+    [Test]
+    public async Task List_WhenWentWell_ShouldHaveNullDecision()
+    {
+        var (sprint, name) = await ArrangeSprintAsync();
+        var story = await ArrangeStoryAsync(sprint);
+        await SeedAsync(story, sprint, new RetroSeedPoint(RetroCategory.WentWell, "Nice"));
+
+        var line = (await ListAsync($$"""{"project":"SHIP","sprint":"{{name}}"}""")).GetProperty("points")[0];
+
+        line.GetProperty("decision").ValueKind.ShouldBe(JsonValueKind.Null);
+        line.GetProperty("action").ValueKind.ShouldBe(JsonValueKind.Null);
+        line.GetProperty("not_needed_reason").ValueKind.ShouldBe(JsonValueKind.Null);
+    }
+
+    [Test]
+    public async Task List_WhenUndecided_ShouldLeaveOutDecidedAndWentWell()
+    {
+        var (sprint, name) = await ArrangeSprintAsync();
+        var story = await ArrangeStoryAsync(sprint);
+        var action = await ArrangeItemAsync(b => b.WithType("action"));
+        var ids = await SeedPointsAsync(
+            story,
+            sprint,
+            new RetroSeedPoint(RetroCategory.Improve, "Open"),
+            new RetroSeedPoint(RetroCategory.WentWell, "Nice"),
+            new RetroSeedPoint(RetroCategory.WentBadly, "Skipped", NotNeededReason: "No"),
+            new RetroSeedPoint(RetroCategory.NotInPlan, "Done"));
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            await new RetroSeed(connection, SeedIds.Projects.Ship).ActionAsync(new RetroSeedAction(action, PointId: ids[3]));
+        }
+
+        var result = await ListAsync($$"""{"project":"SHIP","sprint":"{{name}}","undecided":true}""");
+
+        Texts(result).ShouldBe(["Open"]);
+    }
+
+    [Test]
+    public async Task List_WhenManyDecided_ShouldStillReachUndecided()
+    {
+        var (sprint, name) = await ArrangeSprintAsync();
+        var story = await ArrangeStoryAsync(sprint);
+        var decided = Enumerable.Range(0, 205).Select(i => new RetroSeedPoint(RetroCategory.Improve, $"Decided {i}", NotNeededReason: "No", CreatedAt: DateTimeOffset.Parse("2026-05-01T00:00:00Z", System.Globalization.CultureInfo.InvariantCulture).AddMinutes(i)));
+        await SeedAsync(story, sprint, [.. decided, new RetroSeedPoint(RetroCategory.Improve, "Oldest open", CreatedAt: DateTimeOffset.Parse("2026-04-01T00:00:00Z", System.Globalization.CultureInfo.InvariantCulture))]);
+
+        var result = await ListAsync($$"""{"project":"SHIP","sprint":"{{name}}","undecided":true}""");
+
+        Texts(result).ShouldBe(["Oldest open"]);
+        result.GetProperty("truncated").GetBoolean().ShouldBeFalse();
+    }
+
+    [Test]
+    public async Task List_WhenNoSprint_ShouldOnlyReturnNoSprintPoints()
+    {
+        var (sprint, _) = await ArrangeSprintAsync();
+        var theme = $"No sprint {Guid.NewGuid():N}";
+        var themeId = await ArrangeThemeAsync(theme);
+        var inSprint = await ArrangeStoryAsync(sprint);
+        var without = await ArrangeStoryAsync(null);
+        await SeedAsync(inSprint, sprint, new RetroSeedPoint(RetroCategory.Improve, "With sprint", ThemeId: themeId));
+        await SeedAsync(without, null, new RetroSeedPoint(RetroCategory.Improve, "Without sprint", ThemeId: themeId));
+
+        var result = await ListAsync($$"""{"project":"SHIP","theme":"{{theme}}","no_sprint":true}""");
+
+        Texts(result).ShouldBe(["Without sprint"]);
+    }
+
+    [Test]
+    public async Task List_WhenNoSprintAndSprint_ShouldBeValidation()
+    {
+        var (_, name) = await ArrangeSprintAsync();
+
+        var reply = await CallToolAsync(_bearer, "list_retrospectives", $$"""{"project":"SHIP","sprint":"{{name}}","no_sprint":true}""");
+
+        reply.IsToolError().ShouldBeTrue(reply.Body);
+        reply.Structured().GetProperty("error").GetProperty("code").GetString().ShouldBe("validation");
+        reply.Structured().GetProperty("error").GetProperty("field").GetString().ShouldBe("no_sprint");
+    }
+
+    [Test]
+    public async Task List_WhenNonMemberGivesNoSprintAndSprint_ShouldBeNotFoundNotValidation()
+    {
+        var reply = await CallToolAsync(_bearer, "list_retrospectives", """{"project":"PART","sprint":"current","no_sprint":true}""");
+
+        reply.IsToolError().ShouldBeTrue(reply.Body);
+        reply.Structured().GetProperty("error").GetProperty("code").GetString().ShouldBe("not_found");
+    }
+
+    [Test]
+    public async Task List_WhenFilteredByFeature_ShouldLeaveOutItsActionItemsRetros()
+    {
+        var feature = await ArrangeItemAsync(b => b.WithType("feature"));
+        var story = await ArrangeItemAsync(b => b.WithType("story").WithParent(feature));
+        var actionChild = await ArrangeItemAsync(b => b.WithType("action").WithParent(feature));
+        await SeedAsync(story, null, new RetroSeedPoint(RetroCategory.Improve, "Story point"));
+        await SeedAsync(actionChild, null, new RetroSeedPoint(RetroCategory.Improve, "Action point"));
+
+        var result = await ListAsync($$"""{"project":"SHIP","feature":"{{await KeyOfAsync(feature)}}"}""");
+
+        Texts(result).ShouldBe(["Story point"]);
+    }
+
+    private async Task<Guid> ArrangeThemeAsync(string name)
+    {
+        await using var connection = await OpenDatabaseAsync();
+        return await new RetroSeed(connection, SeedIds.Projects.Ship).ThemeAsync(name);
+    }
+
+    private async Task<string> StateNameOfAsync(Guid id)
+    {
+        await using var connection = await OpenDatabaseAsync();
+        return await connection.QuerySingleAsync<string>("SELECT s.name FROM work_item w JOIN state s ON s.id = w.state_id WHERE w.id = @id", new { id });
+    }
+
+    private async Task<List<Guid>> SeedPointsAsync(Guid story, Guid? sprint, params RetroSeedPoint[] points)
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var seed = new RetroSeed(connection, SeedIds.Projects.Ship);
+        var retro = await seed.RetroAsync(new RetroSeedRetro(Joel, WorkItemId: story, SprintId: sprint, AgentName: $"Seed {Guid.NewGuid():N}"));
+        var ids = new List<Guid>();
+        foreach (var point in points)
+        {
+            ids.Add(await seed.PointAsync(retro, point));
+        }
+
+        return ids;
+    }
+
     private async Task<JsonElement> ListAsync(string arguments)
     {
         var reply = await CallToolAsync(_bearer, "list_retrospectives", arguments);

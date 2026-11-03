@@ -24,6 +24,39 @@ public sealed class RetroInsightsPage(IPage page)
 
     public ILocator Rename(string theme) => RecurringRowOf(theme).GetByTestId(RetrosTestIds.RetroThemeRename);
 
+    public ILocator NoSprintHead => page.GetByTestId(RetrosTestIds.RetroInsightsNosprint);
+
+    // One cell per column (a sprint or a week) in a theme's row.
+    public ILocator MentionCellsOf(string theme) => RecurringRowOf(theme).GetByTestId(RetrosTestIds.RetroMentionCell);
+
+    public ILocator TotalOf(string theme) => RecurringRowOf(theme).GetByTestId(RetrosTestIds.RetroTotalCell);
+
+    public ILocator NoSprintOf(string theme) => RecurringRowOf(theme).GetByTestId(RetrosTestIds.RetroNosprintCell);
+
+    public ILocator StatusOf(string theme) => RecurringRowOf(theme).GetByTestId(RetrosTestIds.RetroStatusChip);
+
+    public ILocator Tooltip => page.GetByTestId(RetrosTestIds.RetroTipBubble);
+
+    public ILocator Callout => page.GetByTestId(RetrosTestIds.RetroRecurringCallout);
+
+    public ILocator UnthemedRow => page.GetByTestId(RetrosTestIds.RetroInsightsUnthemed);
+
+    public ILocator GiveThemes => page.GetByTestId(RetrosTestIds.RetroUnthemedLink);
+
+    public ILocator ThemeAction(string theme) => RecurringRowOf(theme).GetByTestId(RetrosTestIds.RetroInsightsThemeAction);
+
+    public ILocator Proposals => page.GetByTestId(RetrosTestIds.RetroMergeProposal);
+
+    public ILocator ProposalOf(string theme) => Proposals.Filter(new() { HasText = theme });
+
+    public ILocator ProposalMerge(string theme) => ProposalOf(theme).GetByTestId(RetrosTestIds.RetroMergeProposalMerge);
+
+    public ILocator ProposalKeep(string theme) => ProposalOf(theme).GetByTestId(RetrosTestIds.RetroMergeProposalKeep);
+
+    public ILocator FixOf(string action) => ActionRowOf(action).GetByTestId(RetrosTestIds.RetroActionFixCell);
+
+    public ILocator CoversOf(string action) => ActionRowOf(action).GetByTestId(RetrosTestIds.RetroActionCoversCell);
+
     public ILocator KeepsWorking => page.GetByTestId(RetrosTestIds.RetroKeepsWorking);
 
     public ILocator MergeThemes => page.GetByTestId(RetrosTestIds.RetroMergeThemes);
@@ -39,6 +72,8 @@ public sealed class RetroInsightsPage(IPage page)
     public ILocator MergeSave => page.GetByTestId(RetrosTestIds.RetroMergeSave);
 
     public ILocator ActionsTable => page.GetByTestId(RetrosTestIds.RetroActionsTable);
+
+    public ILocator ActionsAdd => page.GetByTestId(RetrosTestIds.RetroActionsAdd);
 
     public ILocator ActionRows => page.GetByTestId(RetrosTestIds.RetroActionRow);
 

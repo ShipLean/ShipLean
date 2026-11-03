@@ -70,7 +70,8 @@ public sealed class SprintRetroReader(NpgsqlDataSource dataSource, IRetroCards r
                 coverage.Count(row => row.Status == RetroCoverage.Done),
                 coverage.Count(row => row.Status != RetroCoverage.Waiting),
                 recurring.Count,
-                actions.Count(action => action.RaisedId == sprintId)),
+                actions.Count(action => action.RaisedId == sprintId),
+                cards.SelectMany(card => card.Points).Count(point => point.Decision == RetroDecision.Undecided)),
             [.. windowRows.Select(row => ToSprint(row, today))],
             SprintRetroColumns.Build(cards, pointDates),
             cards,
@@ -96,7 +97,7 @@ public sealed class SprintRetroReader(NpgsqlDataSource dataSource, IRetroCards r
         var theme = action.ThemeId is { } themeId ? new RetroThemeRefDto(themeId, action.ThemeName!, Enum.Parse<RetroTone>(action.ThemeTone!, ignoreCase: true)) : null;
         RetroVerdict? impact = category == StateCategory.Completed && action.ThemeId is { } id ? themes.Verdict(id, action.ItemId) : null;
         return new RetroActionRowDto(
-            new RetroActionRefDto(action.ItemId, action.Key, action.Title, new StateRef(action.StateId, action.StateName, category), planned, action.Points),
+            new RetroActionRefDto(action.ItemId, action.Key, action.Title, new StateRef(action.StateId, action.StateName, category), planned, action.Points, action.FixType is { } fixType ? Enum.Parse<RetroFixType>(fixType, ignoreCase: true) : null, action.PointCount),
             theme,
             raised,
             owner,

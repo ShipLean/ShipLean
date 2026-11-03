@@ -58,16 +58,20 @@ public class FeatureRetroJourneyTests : SeededAcceptanceTest
         await Expect(retro.CoverageRows.Filter(new() { HasText = FeatureTitle })).ToHaveAttributeAsync("data-status", "done");
         await Expect(retro.PointOf(CompiledPoint)).ToHaveCountAsync(1);
 
+        // The Feature's own page lists the retro; its row opens the item page, filtered to that retro.
         await Page.GotoAsync(Links.WorkItem("SHIP", arranged.FeatureKey));
         var section = new WorkItemRetroSection(Page);
-        await Expect(section.Cards).ToHaveCountAsync(1);
-        await Expect(section.Cards).ToHaveAttributeAsync("data-feature", "true");
-        await Expect(section.AuthorChips.First).ToContainTextAsync("Conductor");
-        await Expect(section.AuthorChips.First).ToHaveAttributeAsync("data-role", "conductor");
-        await Expect(section.Section).ToContainTextAsync(CompiledPoint);
-        await Expect(section.Section).ToContainTextAsync("Compiled from");
-        await Expect(section.Section).ToContainTextAsync(arranged.KeyA);
-        await Expect(section.Section).ToContainTextAsync(arranged.KeyB);
+        await Expect(section.Rows).ToHaveCountAsync(1);
+        await section.Rows.First.ClickAsync();
+        var item = new RetroItemPage(Page);
+        await item.Panel.WaitForAsync();
+        await Expect(item.Board.NoteOf(CompiledPoint).Root).ToHaveCountAsync(1);
+        await Expect(item.WriterChips).ToHaveCountAsync(1);
+        await Expect(item.WriterChips.First).ToContainTextAsync("Conductor");
+        await Expect(item.WriterChips.First).ToHaveAttributeAsync("data-role", "conductor");
+        await Expect(item.Compiled).ToContainTextAsync("Compiled from");
+        await Expect(item.Compiled).ToContainTextAsync(arranged.KeyA);
+        await Expect(item.Compiled).ToContainTextAsync(arranged.KeyB);
     }
 
     private sealed record Arranged(string FeatureKey, string KeyA, string KeyB, Guid StoryB);

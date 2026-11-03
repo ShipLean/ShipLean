@@ -1,12 +1,13 @@
 import { Avatar } from '../../../../components/Avatar';
 import { StateDot } from '../../../../components/StateDot';
 import { TypeIcon } from '../../../../components/TypeIcon';
-import type { RetroActionRowDto } from '../../../../api/retros';
+import type { RetroActionRowDto, RetroInsightsMode } from '../../../../api/retros';
 import type { SprintDto } from '../../../../api/sprints';
 import { Chip } from '../../../../components/Chip';
 import { ItemLink } from '../../../itemPeek/ItemLink';
 import { retrosTestIds as ids } from '../../testIds';
 import { VerdictChip } from '../recurring/VerdictChip';
+import { retroFixOptions } from '../../../retroShared/actionDialog/retroFixTypes';
 import { PullButton } from './PullButton';
 
 const NONE = <span className="text-ink-muted">—</span>;
@@ -17,11 +18,13 @@ export function ActionRow({
   row,
   next,
   recurring,
+  mode,
 }: {
   projectId: string;
   row: RetroActionRowDto;
   next: SprintDto | undefined;
   recurring: boolean;
+  mode: RetroInsightsMode;
 }) {
   const { action, owner } = row;
   const open = action.state.category !== 'completed' && action.state.category !== 'removed';
@@ -42,6 +45,18 @@ export function ActionRow({
           </span>
           <span>{action.title}</span>
         </ItemLink>
+      </td>
+      <td data-testid={ids.retroActionFixCell} data-cell="fix" className="px-3 py-2">
+        {row.action.fixType
+          ? (retroFixOptions.find((o) => o.id === row.action.fixType)?.label ?? NONE)
+          : NONE}
+      </td>
+      <td
+        data-testid={ids.retroActionCoversCell}
+        data-cell="covers"
+        className="px-3 py-2 text-right tabular-nums"
+      >
+        {row.action.pointCount}
       </td>
       <td data-cell="theme" className="px-3 py-2">
         {row.theme ? (
@@ -86,7 +101,7 @@ export function ActionRow({
         )}
       </td>
       <td data-cell="impact" className="px-3 py-2">
-        {row.impact ? <VerdictChip verdict={row.impact} /> : NONE}
+        {row.impact ? <VerdictChip verdict={row.impact} mode={mode} /> : NONE}
       </td>
     </tr>
   );

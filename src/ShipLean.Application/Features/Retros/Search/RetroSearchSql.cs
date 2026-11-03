@@ -1,3 +1,5 @@
+using ShipLean.Application.Features.Retros.Reads;
+
 namespace ShipLean.Application.Features.Retros.Search;
 
 internal static class RetroSearchSql
@@ -36,10 +38,10 @@ internal static class RetroSearchSql
 
     public const string LiveRetro = "SELECT id FROM retrospective WHERE id = @selected AND project_id = @projectId AND archived_at IS NULL";
 
-    // Needs @projectId, @storyLevel, @hasQuery, @query, @pattern, @sprint, @category, @theme, @level, @role, @onlyThemes (null for no filter).
+    // Needs @projectId, @storyLevel, @hasQuery, @query, @pattern, @sprint, @category, @theme, @level, @role, @onlyThemes (null for no filter), @noSprint, @decision (undecided, actioned, notNeeded or null), @unthemed.
     // Rank tiers: a point's own text or root cause (2 plus ts_rank), then theme name, key or title (1), then the retro's failure log
     // (below 1), which counts for the retro's first live point only and only when no live point of that retro matches on text or theme. Without a query the newest point comes first.
-    public const string Rows = """
+    public static readonly string Rows = $$"""
         WITH q AS (
             SELECT CASE WHEN @hasQuery THEN websearch_to_tsquery('english', @query) || websearch_to_tsquery('simple', @query) END AS tsq
         ),
@@ -68,6 +70,9 @@ internal static class RetroSearchSql
                    OR (@level = 'stories' AND w.type = ANY(@storyLevel))
                    OR (@level = 'features' AND w.type = 'feature'))
               AND (@onlyThemes::uuid[] IS NULL OR p.theme_id = ANY(@onlyThemes))
+              AND (NOT @noSprint OR r.sprint_id IS NULL)
+              AND (NOT @unthemed OR p.theme_id IS NULL)
+              AND (@decision::text IS NULL OR {{RetroDecisionSql.Decision("p")}} = @decision)
         )
         SELECT id, retroId, themeId, @hasQuery AND rank < 1 AS logOnly, count(*) OVER ()::int AS total
         FROM candidate

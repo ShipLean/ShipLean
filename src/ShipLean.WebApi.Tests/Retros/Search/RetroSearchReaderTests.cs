@@ -129,6 +129,75 @@ public sealed class RetroSearchReaderTests : ApiFixture
     }
 
     [Test]
+    public async Task Search_WhenNoSprint_ShouldOnlyReturnPointsWithNoSprint()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var world = await WorldAsync(connection);
+        var story = await world.ItemAsync("story", "Loose story");
+        var loose = await world.Seed.RetroAsync(new RetroSeedRetro(Joel, RetroRole.SubAgent, WorkItemId: story, AgentName: "lane A"));
+        var inSprint = await world.Seed.RetroAsync(new RetroSeedRetro(Joel, RetroRole.Person, SprintId: world.Sprints[0]));
+        var hit = await world.Seed.PointAsync(loose, new RetroSeedPoint(RetroCategory.WentBadly, "No sprint point."));
+        await world.Seed.PointAsync(inSprint, new RetroSeedPoint(RetroCategory.WentBadly, "Sprint point."));
+
+        var result = await Reader.SearchAsync(world.Project.Id, Query(null) with { NoSprint = true }, CancellationToken.None);
+        var all = await Reader.SearchAsync(world.Project.Id, Query(null), CancellationToken.None);
+
+        result.Rows.Select(row => row.Id).ShouldBe([hit]);
+        all.Rows.Count.ShouldBe(2);
+    }
+
+    [Test]
+    public async Task Search_WhenDecisionUndecided_ShouldLeaveOutWentWellAndDecided()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var world = await WorldAsync(connection);
+        var theme = await world.Seed.ThemeAsync("Slow reviews");
+        var retro = await world.Seed.RetroAsync(new RetroSeedRetro(Joel, RetroRole.Person, SprintId: world.Sprints[0]));
+        await world.Seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.WentWell, "Good."));
+        var undecided = await world.Seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.WentBadly, "Undecided."));
+        await world.Seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.WentBadly, "Not needed.", NotNeededReason: "One-off."));
+        var actioned = await world.Seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.Improve, "Actioned.", ThemeId: theme));
+        await world.ActionAsync(theme, raisedIn: 0, pointId: actioned);
+
+        var result = await Reader.SearchAsync(world.Project.Id, Query(null) with { Decision = RetroDecision.Undecided }, CancellationToken.None);
+        var notNeeded = await Reader.SearchAsync(world.Project.Id, Query(null) with { Decision = RetroDecision.NotNeeded }, CancellationToken.None);
+
+        result.Rows.Select(row => row.Id).ShouldBe([undecided]);
+        notNeeded.Rows.Single().Text.ShouldBe("Not needed.");
+    }
+
+    [Test]
+    public async Task Search_WhenDecisionActioned_ShouldFindActionFromTheJoin()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var world = await WorldAsync(connection);
+        var theme = await world.Seed.ThemeAsync("Slow reviews");
+        var retro = await world.Seed.RetroAsync(new RetroSeedRetro(Joel, RetroRole.Person, SprintId: world.Sprints[0]));
+        await world.Seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.WentBadly, "Undecided."));
+        var linked = await world.Seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.WentBadly, "Linked.", ThemeId: theme));
+        await world.ActionAsync(theme, raisedIn: 0, pointId: linked);
+
+        var result = await Reader.SearchAsync(world.Project.Id, Query(null) with { Decision = RetroDecision.Actioned }, CancellationToken.None);
+
+        result.Rows.Select(row => row.Id).ShouldBe([linked]);
+    }
+
+    [Test]
+    public async Task Search_WhenUnthemed_ShouldOnlyReturnPointsWithNoTheme()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var world = await WorldAsync(connection);
+        var theme = await world.Seed.ThemeAsync("Slow reviews");
+        var retro = await world.Seed.RetroAsync(new RetroSeedRetro(Joel, RetroRole.Person, SprintId: world.Sprints[0]));
+        await world.Seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.WentBadly, "Themed.", ThemeId: theme));
+        var bare = await world.Seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.WentBadly, "Bare."));
+
+        var result = await Reader.SearchAsync(world.Project.Id, Query(null) with { Unthemed = true }, CancellationToken.None);
+
+        result.Rows.Select(row => row.Id).ShouldBe([bare]);
+    }
+
+    [Test]
     public async Task Filter_WhenLevelFeatures_ShouldOnlyReturnFeatureRetros()
     {
         await using var connection = await OpenDatabaseAsync();
@@ -337,7 +406,7 @@ public sealed class RetroSearchReaderTests : ApiFixture
         result.Themes.Select(theme => theme.Name).ShouldBe(["Used theme"]);
     }
 
-    private static RetroSearchQuery Query(string? q) => new(q, null, null, null, null, null, null, null);
+    private static RetroSearchQuery Query(string? q) => new(q, null, null, null, null, null, null, null, null, null, null);
 
     private static async Task<World> WorldAsync(NpgsqlConnection connection)
     {

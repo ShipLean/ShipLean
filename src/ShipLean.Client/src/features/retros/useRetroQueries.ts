@@ -1,11 +1,16 @@
 import { useEffect } from 'react';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  fetchRetroAction,
+  fetchRetroActionDialog,
+  fetchRetroFeatures,
   fetchRetroInsights,
+  fetchRetroItem,
   fetchRetroSearch,
   fetchRetroThemes,
   fetchSprintRetro,
   fetchWorkItemRetros,
+  type RetroActionDialogQuery,
   type RetroRange,
   type RetroSearchQuery,
 } from '../../api/retrosApi';
@@ -21,6 +26,14 @@ export const retroInsightsKey = (projectId: string, range: RetroRange) =>
   [...retrosRootKey(projectId), 'insights', range] as const;
 export const retroThemesKey = (projectId: string) =>
   [...retrosRootKey(projectId), 'themes'] as const;
+export const retroFeaturesKey = (projectId: string) =>
+  [...retrosRootKey(projectId), 'features'] as const;
+export const retroItemKey = (projectId: string, itemKey: string) =>
+  [...retrosRootKey(projectId), 'item', itemKey] as const;
+export const retroActionDialogKey = (projectId: string, query: RetroActionDialogQuery) =>
+  [...retrosRootKey(projectId), 'action-dialog', query] as const;
+export const retroActionKey = (projectId: string, workItemId: string) =>
+  [...retrosRootKey(projectId), 'action', workItemId] as const;
 export const workItemRetrosKey = (projectId: string, workItemId: string) =>
   [...retrosRootKey(projectId), 'work-item', workItemId] as const;
 
@@ -96,5 +109,47 @@ export function useWorkItemRetros(projectId: string, workItemId: string) {
   return useQuery({
     queryKey: workItemRetrosKey(projectId, workItemId),
     queryFn: () => fetchWorkItemRetros(workItemId),
+  });
+}
+
+/** GET api/projects/{id}/retros/features. Any retro change can move a count, so every event refetches it. */
+export function useRetroFeatures(projectId: string) {
+  useRetroChanged(retroFeaturesKey(projectId));
+  return useQuery({
+    queryKey: retroFeaturesKey(projectId),
+    queryFn: () => fetchRetroFeatures(projectId),
+  });
+}
+
+/** GET api/projects/{id}/retros/items/{key}: one item's retro screen. */
+export function useRetroItem(projectId: string, itemKey: string) {
+  useRetroChanged(retroItemKey(projectId, itemKey));
+  return useQuery({
+    queryKey: retroItemKey(projectId, itemKey),
+    queryFn: () => fetchRetroItem(projectId, itemKey),
+  });
+}
+
+/** GET api/projects/{id}/retros/action-dialog: what the action dialog offers for the selection it opened on. */
+export function useRetroActionDialogData(
+  projectId: string,
+  query: RetroActionDialogQuery,
+  enabled = true,
+) {
+  useRetroChanged([...retrosRootKey(projectId), 'action-dialog']);
+  return useQuery({
+    queryKey: retroActionDialogKey(projectId, query),
+    queryFn: () => fetchRetroActionDialog(projectId, query),
+    enabled,
+  });
+}
+
+/** GET api/retros/actions/{workItemId}: an action item with the points it covers. */
+export function useRetroAction(projectId: string, workItemId: string, enabled = true) {
+  useRetroChanged(retroActionKey(projectId, workItemId));
+  return useQuery({
+    queryKey: retroActionKey(projectId, workItemId),
+    queryFn: () => fetchRetroAction(workItemId),
+    enabled,
   });
 }

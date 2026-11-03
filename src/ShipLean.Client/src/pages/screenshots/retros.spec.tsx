@@ -14,7 +14,8 @@ async function arrange(page: Page) {
 const insightsView = (view: string, ready: string) => ({
   // The mockups: retro-insights (themes), retro-insights-actions and retro-insights-impact.
   name: view === 'themes' ? 'retro-insights' : `retro-insights-${view}`,
-  route: `/p/SHIP/retros/insights?view=${view}`,
+  route:
+    view === 'weeks' ? '/p/SHIP/retros/insights?range=w6' : `/p/SHIP/retros/insights?view=${view}`,
   shell: true,
   arrange,
   ready: async (page: Page) => {
@@ -22,6 +23,12 @@ const insightsView = (view: string, ready: string) => ({
     await expect(page.getByTestId(ready).first()).toBeVisible();
   },
 });
+
+const itemReady = async (page: Page) => {
+  await expect(page.getByTestId(ids.retroItemPanel)).toBeVisible();
+  await expect(page.getByTestId(retroSharedTestIds.retroNote).first()).toBeVisible();
+  await expect(page.getByTestId(ids.retroItemChildRow).first()).toBeVisible();
+};
 
 pageShots([
   {
@@ -31,7 +38,7 @@ pageShots([
     arrange,
     ready: async (page) => {
       await expect(page.getByTestId(ids.sprintRetroPanel)).toBeVisible();
-      await expect(page.getByTestId(ids.retroPoint).first()).toBeVisible();
+      await expect(page.getByTestId(retroSharedTestIds.retroNote).first()).toBeVisible();
       await expect(page.getByTestId(ids.retroRail)).toBeVisible();
     },
   },
@@ -47,6 +54,81 @@ pageShots([
       await page.getByTestId(ids.retroViewByItem).click();
       await expect(page.getByTestId(ids.retroCardList)).toBeVisible();
       await expect(page.getByTestId(retroSharedTestIds.retroCard).first()).toBeVisible();
+    },
+  },
+  {
+    name: 'sprint-retro-decide',
+    route: '/p/SHIP/sprints/sprint-24/retro?decide=open',
+    shell: true,
+    arrange,
+    ready: async (page) => {
+      await expect(page.getByTestId(ids.sprintRetroPanel)).toBeVisible();
+      await expect(page.getByTestId(ids.retroToDecideFilter)).toBeVisible();
+      await expect(page.getByTestId(retroSharedTestIds.retroNote).first()).toBeVisible();
+    },
+  },
+  {
+    name: 'retros-features',
+    route: '/p/SHIP/retros/features',
+    shell: true,
+    arrange,
+    ready: async (page) => {
+      await expect(page.getByTestId(ids.retroFeaturesPanel)).toBeVisible();
+      await expect(page.getByTestId(ids.retroFeaturesRow).first()).toBeVisible();
+    },
+  },
+  {
+    name: 'retro-item',
+    route: '/p/SHIP/retros/items/SHIP-101',
+    shell: true,
+    arrange,
+    ready: async (page) => {
+      await expect(page.getByTestId(ids.retroItemPanel)).toBeVisible();
+      await expect(page.getByTestId(retroSharedTestIds.retroNote).first()).toBeVisible();
+    },
+  },
+  {
+    name: 'retro-item-editing',
+    route: '/p/SHIP/retros/items/SHIP-101',
+    shell: true,
+    arrange,
+    ready: itemReady,
+    act: async (page) => {
+      await page
+        .locator(
+          `[data-testid="${retroSharedTestIds.retroBoardColumn}"][data-category="wentBadly"]`,
+        )
+        .getByTestId(retroSharedTestIds.retroBoardAdd)
+        .click();
+      await expect(page.getByTestId(retroSharedTestIds.retroBoardAddText)).toBeVisible();
+      await expect(page.getByTestId(retroSharedTestIds.retroBoardAddCause)).toBeVisible();
+    },
+  },
+  {
+    name: 'retro-item-new-action',
+    route: '/p/SHIP/retros/items/SHIP-101',
+    shell: true,
+    arrange,
+    ready: itemReady,
+    act: async (page) => {
+      await page.getByTestId(ids.retroItemAddAction).click();
+      await expect(page.getByTestId(retroSharedTestIds.retroActionDialog)).toBeVisible();
+      await expect(page.getByTestId(retroSharedTestIds.retroActionTitle)).toBeVisible();
+    },
+  },
+  insightsView('weeks', ids.retroRecurringRow),
+  {
+    name: 'retro-insights-status-tip',
+    route: '/p/SHIP/retros/insights',
+    shell: true,
+    arrange,
+    ready: async (page) => {
+      await expect(page.getByTestId(ids.retroInsightsPanel)).toBeVisible();
+      await expect(page.getByTestId(ids.retroRecurringRow).first()).toBeVisible();
+    },
+    act: async (page) => {
+      await page.getByTestId(ids.retroTipStatusHead).getByText('Status').focus();
+      await expect(page.getByRole('tooltip')).toBeVisible();
     },
   },
   {

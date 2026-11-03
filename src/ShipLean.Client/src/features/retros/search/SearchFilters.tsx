@@ -1,4 +1,5 @@
 import { RETRO_CATEGORIES } from '../../../api/retros';
+import type { RetroDecision } from '../../../api/retros';
 import { retroCategoryLabels } from '../../retroShared/retroCategories';
 import { retrosTestIds as ids } from '../testIds';
 import { SearchBox } from './parts/SearchBox';
@@ -15,7 +16,13 @@ const levels = [
   { value: 'features', label: 'Features' },
 ] as const;
 
-/** The search box, the sprint, category, theme, level and author filters, Recurring only, and Clear. Each writes its query parameter. */
+const decisions: { value: RetroDecision; label: string }[] = [
+  { value: 'undecided', label: 'Undecided' },
+  { value: 'actioned', label: 'Actioned' },
+  { value: 'notNeeded', label: 'Not needed' },
+];
+
+/** The search box, the sprint, category, theme, level, author and decision filters, No sprint, Unthemed, Recurring only, and Clear. Each writes its query parameter. */
 export function SearchFilters({ query, search, change }: RetrosSearchSlotProps) {
   const distinctRetros = new Set(search.rows.map((row) => row.retroId)).size;
   return (
@@ -93,6 +100,40 @@ export function SearchFilters({ query, search, change }: RetrosSearchSlotProps) 
           </option>
         ))}
       </select>
+      <select
+        data-testid={ids.retrosFilterDecision}
+        className="field"
+        aria-label="Decision"
+        value={query.decision ?? ''}
+        onChange={(event) =>
+          change({ decision: decisions.find((d) => d.value === event.target.value)?.value })
+        }
+      >
+        <option value="">Any decision</option>
+        {decisions.map((decision) => (
+          <option key={decision.value} value={decision.value}>
+            {decision.label}
+          </option>
+        ))}
+      </select>
+      <label className="inline-flex items-center gap-1.5 text-[length:var(--text-sm)]">
+        <input
+          data-testid={ids.retrosFilterNosprint}
+          type="checkbox"
+          checked={query.noSprint === true}
+          onChange={(event) => change({ noSprint: event.target.checked || undefined })}
+        />
+        No sprint
+      </label>
+      <label className="inline-flex items-center gap-1.5 text-[length:var(--text-sm)]">
+        <input
+          data-testid={ids.retrosFilterUnthemed}
+          type="checkbox"
+          checked={query.unthemed === true}
+          onChange={(event) => change({ unthemed: event.target.checked || undefined })}
+        />
+        Unthemed
+      </label>
       <label className="inline-flex items-center gap-1.5 text-[length:var(--text-sm)]">
         <input
           data-testid={ids.retrosFilterRecurring}
@@ -115,6 +156,9 @@ export function SearchFilters({ query, search, change }: RetrosSearchSlotProps) 
             level: undefined,
             role: undefined,
             recurring: undefined,
+            noSprint: undefined,
+            decision: undefined,
+            unthemed: undefined,
           })
         }
       >

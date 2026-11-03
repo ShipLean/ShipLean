@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import type { RetroImpactDto, RetroInsightsDto } from '../../../api/retros';
-import { retroInsights, stubRetros } from '../ct/retroFixtures';
+import { insightsWeeks, retroInsights, stubRetros } from '../ct/retroFixtures';
 import { retrosTestIds as ids } from '../testIds';
 import { insightsProject } from './ct/insightsProject';
 import { ChangesImpact } from './ChangesImpact';
@@ -149,5 +149,44 @@ for (const theme of ['light', 'dark'] as const) {
       open,
     );
     await expect(view).toHaveScreenshot(`changes-impact.${theme}.png`, { animations: 'disabled' });
+  });
+}
+
+test('ChangesImpact_WhenModeIsWeek_ShouldCarryItToTheVerdictChip', async ({ mount, page }) => {
+  await stubRetros(page);
+  await mount(<ChangesImpact project={insightsProject} insights={insightsWeeks} />, open);
+  const cards = page.getByTestId(ids.retroImpactCard);
+  const count = await cards.count();
+  expect(count).toBeGreaterThan(0);
+  await expect(cards.locator('span[data-verdict][data-mode="week"]')).toHaveCount(count);
+});
+
+test('ChangesImpact_WhenModeIsWeek_ShouldDrawABarPerWeekColumnAndSayPerWeek', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  await mount(<ChangesImpact project={insightsProject} insights={insightsWeeks} />, open);
+  const view = card(page, insightsWeeks.impact[0].action.key);
+  await expect(view.locator('[data-bar]')).toHaveCount(insightsWeeks.columns.length);
+  await expect(view.locator('[data-figure="before"]')).toContainText('per week before');
+  await expect(view.locator('svg title').first()).toContainText(insightsWeeks.columns[0].label);
+});
+
+for (const [name, insights, unit] of [
+  ['Week', insightsWeeks, 'week'],
+  ['Sprint', retroInsights, 'sprint'],
+] as const) {
+  test(`ChangesImpact_When${name}Mode_ShouldExplainBarsAndTooEarlyInThatUnit`, async ({
+    mount,
+    page,
+  }) => {
+    await stubRetros(page);
+    await mount(<ChangesImpact project={insightsProject} insights={insights} />, open);
+    const other = unit === 'week' ? 'sprint' : 'week';
+    const text = page.getByText('For each closed action item');
+    await expect(text).toContainText(`mentions per ${unit};`);
+    await expect(text).toContainText(`no full ${unit} since is Too early`);
+    await expect(text).not.toContainText(other);
   });
 }

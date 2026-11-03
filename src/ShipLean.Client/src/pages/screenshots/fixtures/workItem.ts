@@ -77,6 +77,35 @@ export const savedCardStory: WorkItemDto = {
   changedAtLabel: 'Mon 19 Oct, 09:12',
 };
 
+// SHIP-188 as design/screens/work-item-action.html draws it: an action item in New, in the backlog, with no parent or tasks.
+export const actionItem: WorkItemDto = {
+  ...story,
+  id: 'w188',
+  key: 'SHIP-188',
+  number: 188,
+  type: { id: 'action', name: 'Action item' },
+  title: 'Common brief: screenshot baselines come from the CI report',
+  description:
+    'Add one line to the common brief: screenshot baselines come from the CI report, and agents do not retry them locally.',
+  descriptionHtml:
+    '<p>Add one line to the common brief: screenshot baselines come from the CI report, and agents do not retry them locally.</p>',
+  acceptanceCriteria: [],
+  state: { id: 's-new', name: 'New', category: 'proposed' },
+  assignee: null,
+  createdBy: PEOPLE.priya,
+  changedBy: PEOPLE.priya,
+  sprint: null,
+  priority: 2,
+  points: 1,
+  parent: null,
+  tags: [],
+  links: [],
+  children: [],
+  revision: 2,
+  createdAtLabel: 'Fri 30 Oct',
+  changedAtLabel: 'Fri 30 Oct, 16:02',
+};
+
 export const crashBug: WorkItemDto = {
   ...savedCardStory,
   id: 'w153',

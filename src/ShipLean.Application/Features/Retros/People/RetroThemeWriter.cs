@@ -53,10 +53,18 @@ internal sealed class RetroThemeWriter(NpgsqlDataSource dataSource, IProjectEven
     // through merged_into_id so a pick by a source's name still lands there.
     public async Task MergeAsync(Guid projectId, RetroThemeMerge request, CancellationToken cancellationToken)
     {
-        var sources = request.SourceIds.Distinct().ToArray();
-        var all = sources.Append(request.TargetId).ToArray();
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        await MergeInAsync(connection, transaction, projectId, request, cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        await events.PublishAsync(new RetroChanged(projectId, [], []));
+    }
+
+    // The same merge inside a transaction the caller owns, so a caller can decide something in the same commit. It neither commits nor publishes.
+    public static async Task MergeInAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, Guid projectId, RetroThemeMerge request, CancellationToken cancellationToken)
+    {
+        var sources = request.SourceIds.Distinct().ToArray();
+        var all = sources.Append(request.TargetId).ToArray();
         var live = (await connection.QueryAsync<Guid>(
             new CommandDefinition(
                 "SELECT id FROM retro_theme WHERE id = ANY(@all) AND project_id = @projectId AND archived_at IS NULL AND merged_into_id IS NULL ORDER BY id FOR UPDATE",
@@ -76,8 +84,6 @@ internal sealed class RetroThemeWriter(NpgsqlDataSource dataSource, IProjectEven
         await connection.ExecuteAsync(
             new CommandDefinition("UPDATE retro_theme SET merged_into_id = @target, point_count = 0 WHERE id = ANY(@sources)", new { target, sources }, transaction, cancellationToken: cancellationToken));
         await RetroThemeRows.AdjustAllAsync(connection, transaction, [(target, moved, true)], cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
-        await events.PublishAsync(new RetroChanged(projectId, [], []));
     }
 
     private sealed record ThemeRow(Guid Id, Guid ProjectId, string Name, string Tone);

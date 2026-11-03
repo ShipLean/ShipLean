@@ -41,6 +41,9 @@ public sealed class RetroSearchReader(NpgsqlDataSource dataSource, TimeProvider 
             theme = query.Theme,
             level = query.Level is { } level ? Name(level) : null,
             role = query.Role is { } role ? Name(role) : null,
+            noSprint = query.NoSprint == true,
+            unthemed = query.Unthemed == true,
+            decision = query.Decision is { } decision ? Name(decision) : null,
             onlyThemes = query.Recurring == true ? recurring.ToArray() : null,
         };
         var found = (await connection.QueryAsync<FoundRow>(new CommandDefinition(RetroSearchSql.Rows, parameters, cancellationToken: cancellationToken))).ToList();
@@ -72,6 +75,10 @@ public sealed class RetroSearchReader(NpgsqlDataSource dataSource, TimeProvider 
         if (query.Level is { } level && !Enum.IsDefined(level))
         {
             throw ApiException.Validation("level is stories or features.", "level");
+        }
+        if (query.Decision is { } decision && !Enum.IsDefined(decision))
+        {
+            throw ApiException.Validation("decision is undecided, actioned or notNeeded.", "decision");
         }
         if (query.Role is { } role && !Enum.IsDefined(role))
         {

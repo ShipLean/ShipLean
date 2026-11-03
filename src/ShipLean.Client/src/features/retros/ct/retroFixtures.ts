@@ -1,7 +1,11 @@
 import type { test } from '@playwright/experimental-ct-react';
 import type {
+  RetroActionDetailDto,
+  RetroActionDialogDto,
   RetroActionRefDto,
+  RetroFeaturesDto,
   RetroInsightsDto,
+  RetroItemDto,
   RetroPointDto,
   RetroSearchDto,
   RetroThemeListDto,
@@ -9,6 +13,10 @@ import type {
   SprintRetroDto,
   WorkItemRetrosDto,
 } from '../../../api/retros';
+import actionDetailFixture from '../../../../../ShipLean.TestSupport/DtoFixtures/retros/retro-action-detail.json' with { type: 'json' };
+import actionDialogFixture from '../../../../../ShipLean.TestSupport/DtoFixtures/retros/retro-action-dialog.json' with { type: 'json' };
+import featuresFixture from '../../../../../ShipLean.TestSupport/DtoFixtures/retros/retro-features.json' with { type: 'json' };
+import itemFixture from '../../../../../ShipLean.TestSupport/DtoFixtures/retros/retro-item.json' with { type: 'json' };
 import insightsFixture from '../../../../../ShipLean.TestSupport/DtoFixtures/retros/retro-insights.json' with { type: 'json' };
 import pointFixture from '../../../../../ShipLean.TestSupport/DtoFixtures/retros/retro-point.json' with { type: 'json' };
 import searchFixture from '../../../../../ShipLean.TestSupport/DtoFixtures/retros/retro-search.json' with { type: 'json' };
@@ -25,6 +33,42 @@ export const retroInsights = insightsFixture as unknown as RetroInsightsDto;
 export const retroThemes = themesFixture as unknown as RetroThemeListDto;
 export const workItemRetros = workItemFixture as unknown as WorkItemRetrosDto;
 export const retroPoint = pointFixture as unknown as RetroPointDto;
+
+export const retroFeatures = featuresFixture as unknown as RetroFeaturesDto;
+export const retroItem = itemFixture as unknown as RetroItemDto;
+export const actionDialog = actionDialogFixture as unknown as RetroActionDialogDto;
+export const retroActionDetail = actionDetailFixture as unknown as RetroActionDetailDto;
+
+const itemPoints = retroItem.categories.flatMap((column) => column.groups.flatMap((g) => g.points));
+const pointWhere = (test: (point: RetroPointDto) => boolean, what: string) => {
+  const found = itemPoints.find(test);
+  if (found === undefined) throw new Error(`The retro-item fixture has no ${what} point.`);
+  return found;
+};
+
+/** One point per state a note can be in, from the pinned retro-item fixture (a Went well point has no decision). */
+export const noteStates = {
+  wentWell: pointWhere((p) => p.category === 'wentWell', 'Went well'),
+  undecided: pointWhere((p) => p.decision === 'undecided', 'undecided'),
+  notNeeded: pointWhere((p) => p.decision === 'notNeeded', 'not needed'),
+  actioned: retroPoint,
+} satisfies Record<string, RetroPointDto>;
+
+/** The Insights answer in week mode: six weeks as columns, no sprints, every count parallel to the columns. */
+export const insightsWeeks: RetroInsightsDto = {
+  ...retroInsights,
+  range: 'w6',
+  mode: 'week',
+  sprints: [],
+  columns: ['2026-09-21', '2026-09-28', '2026-10-05', '2026-10-12', '2026-10-19', '2026-10-26'].map(
+    (key, index, all) => ({
+      key,
+      label: ['21 Sep', '28 Sep', '5 Oct', '12 Oct', '19 Oct', '26 Oct'][index],
+      kind: 'week' as const,
+      isCurrent: index === all.length - 1,
+    }),
+  ),
+};
 
 /** The action item the first Can be improved point already has, used as the answer to creating one. */
 export const retroActionRef: RetroActionRefDto = sprintRetro.actionItems[0].action;
@@ -85,6 +129,7 @@ export async function stubRetros(page: Page): Promise<RetroStub> {
     at(/^\/api\/projects\/[^/]+\/retros\/insights$/),
     handle((call) => {
       const range = new URLSearchParams(call.query).get('range') ?? '6';
+      if (range === 'w6' || range === 'w12') return json({ ...insightsWeeks, range });
       return json({ ...retroInsights, range });
     }),
   );
@@ -122,6 +167,42 @@ export async function stubRetros(page: Page): Promise<RetroStub> {
   );
   await page.route(
     at(/^\/api\/projects\/[^/]+\/retros\/themes\/merge$/),
+    handle(() => ({ status: 204 })),
+  );
+  await page.route(
+    at(/^\/api\/projects\/[^/]+\/retros\/features$/),
+    handle(() => json(retroFeatures)),
+  );
+  await page.route(
+    at(/^\/api\/projects\/[^/]+\/retros\/items\/[^/]+$/),
+    handle(() => json(retroItem)),
+  );
+  await page.route(
+    at(/^\/api\/projects\/[^/]+\/retros\/action-dialog$/),
+    handle(() => json(actionDialog)),
+  );
+  await page.route(
+    at(/^\/api\/projects\/[^/]+\/retros\/actions$/),
+    handle(() => json(retroActionDetail, 201)),
+  );
+  await page.route(
+    at(/^\/api\/retros\/actions\/[^/]+$/),
+    handle(() => json(retroActionDetail)),
+  );
+  await page.route(
+    at(/^\/api\/retros\/actions\/[^/]+\/points$/),
+    handle(() => json(retroActionDetail)),
+  );
+  await page.route(
+    at(/^\/api\/retros\/points\/[^/]+\/not-needed$/),
+    handle(() => json(noteStates.notNeeded)),
+  );
+  await page.route(
+    at(/^\/api\/retros\/points\/[^/]+\/undo-not-needed$/),
+    handle(() => json(noteStates.undecided)),
+  );
+  await page.route(
+    at(/^\/api\/retros\/theme-merge-proposals\/[^/]+\/(merge|keep-apart)$/),
     handle(() => ({ status: 204 })),
   );
   return {

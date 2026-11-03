@@ -23,6 +23,15 @@ public sealed class ShellFrame(IPage page)
 
     public ILocator SignOut => page.GetByTestId(ShellTestIds.UserMenuSignOut);
 
+    public ILocator NavRetrospectives => page.GetByTestId(ShellTestIds.NavRetrospectives);
+
+    // The Retrospectives sub-items, in the order the menu lists them.
+    public ILocator NavRetrosSearch => page.GetByTestId(ShellTestIds.NavRetrosSearch);
+
+    public ILocator NavRetrosFeatures => page.GetByTestId(ShellTestIds.NavRetrosFeatures);
+
+    public ILocator NavRetrosInsights => page.GetByTestId(ShellTestIds.NavRetrosInsights);
+
     public ILocator Crumbs => page.GetByTestId(ShellTestIds.Crumb);
 
     public static string BacklogPath(string key) => $"/p/{Uri.EscapeDataString(key)}/backlogs/stories";

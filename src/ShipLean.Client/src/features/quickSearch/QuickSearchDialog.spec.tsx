@@ -176,6 +176,7 @@ test('Dialog_WhenArrowKeysPressed_ShouldMoveAndWrapOverRowsSkippingHeaders', asy
 
 test('Dialog_WhenEnterOnAnItem_ShouldOpenItAndFinish', async ({ mount, page }) => {
   await mount(<QuickSearchDialogHarness results={results()} />);
+  await expect(page.getByTestId(ids.input)).toBeFocused();
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter');
   await expect(page.getByTestId(harness.opened)).toHaveText('SHIP-97');
@@ -216,6 +217,7 @@ test('Dialog_WhenScrimClicked_ShouldClose', async ({ mount, page }) => {
 
 test('Dialog_WhenQueryChanges_ShouldHighlightTheFirstRow', async ({ mount, page }) => {
   await mount(<QuickSearchDialogHarness results={results()} initialQuery="a" />);
+  await expect(page.getByTestId(ids.input)).toBeFocused();
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('ArrowDown');
   await expect(page.locator(highlightedRow)).toHaveAttribute('data-key', 'SHIP-130');
@@ -300,6 +302,7 @@ test('Dialog_WhenRowListChanges_ShouldHighlightTheFirstRow', async ({ mount, pag
   const component = await mount(
     <QuickSearchDialogHarness results={results()} initialQuery="sign" />,
   );
+  await expect(page.getByTestId(ids.input)).toBeFocused();
   await page.keyboard.press('ArrowDown');
   await expect(page.locator(highlightedRow)).toHaveAttribute('data-key', 'SHIP-97');
   await component.update(

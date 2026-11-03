@@ -9,14 +9,15 @@ export function AuthorChip({ author }: { author: RetroAuthorDto }) {
     <span
       data-testid={ids.retroAuthorChip}
       data-role={role}
-      className="inline-flex items-center gap-1.5 text-[length:var(--text-xs)] whitespace-nowrap text-ink"
+      className="inline-flex max-w-full min-w-0 items-center gap-1.5 text-[length:var(--text-xs)] whitespace-nowrap text-ink"
     >
       <Avatar {...user} />
       <span>{user.name.split(' ')[0]}</span>
       {agentName ? (
         <span
           data-agent=""
-          className="inline-flex h-[18px] items-center rounded-[var(--radius-xs)] px-1.5 text-[length:var(--text-2xs)] font-medium whitespace-nowrap text-ink"
+          title={agentName}
+          className="block h-[18px] min-w-0 truncate rounded-[var(--radius-xs)] px-1.5 text-[length:var(--text-2xs)] leading-[18px] font-medium text-ink"
           style={{ background: 'color-mix(in srgb, var(--color-purple) 14%, transparent)' }}
         >
           {agentName}

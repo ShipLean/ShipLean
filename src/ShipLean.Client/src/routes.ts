@@ -22,8 +22,10 @@
 //     /p/:key/sprints             all sprints
 //     /p/:key/sprints/:sprintId/backlog | capacity | retro
 //     /p/:key/sprints/:sprintId/taskboard   ?settings=   (the Taskboard settings dialog's section)
-//     /p/:key/retros              Retrospectives search   ?q=&sprint=&category=&theme=&level=&role=&recurring=&selected=
-//     /p/:key/retros/insights     Retrospective insights  ?view=themes|actions|impact&range=6|3|all
+//     /p/:key/retros              Retrospectives search   ?q=&sprint=&category=&theme=&level=&role=&recurring=&selected=&noSprint=&decision=&unthemed=
+//     /p/:key/retros/features     Retrospectives by Feature
+//     /p/:key/retros/items/:itemKey   one item's retros   ?retro=&decide=open&point=
+//     /p/:key/retros/insights     Retrospective insights  ?view=themes|actions|impact&range=6|3|all|w6|w12
 //     /p/:key/import              Jira import
 //     /p/:key/settings/:tab       tab: general | states | members | sprints | integrations
 //   The three backlogs also take ?new=epic|feature|story|bug|action: the new-item row (or dialog) open with that type, see newItemPath.
@@ -89,6 +91,8 @@ export interface RouteParams {
   capacity: SprintParams;
   sprintRetro: SprintParams;
   retros: ProjectParams;
+  retroFeatures: ProjectParams;
+  retroItem: ProjectParams & { itemKey: string };
   retroInsights: ProjectParams;
   jiraImport: ProjectParams;
   projectSettings: ProjectParams & { tab: ProjectSettingsTab };
@@ -118,6 +122,17 @@ export interface RouteQuery {
   selected?: string;
   view?: string;
   range?: string;
+  // Retro search: only points with no sprint, a decision, only unthemed points.
+  noSprint?: string;
+  decision?: string;
+  unthemed?: string;
+  // The retro open on an item's retro screen.
+  retro?: string;
+  // 'open' puts the screen in decide mode; `point` is the point to highlight. The sprint Retro tab and the item screen both take them.
+  decide?: string;
+  point?: string;
+  // The sprint Retro tab's Written by filter (all | agents | people).
+  writtenBy?: string;
 }
 
 interface RouteDef<I extends RouteId> {
@@ -239,15 +254,40 @@ const routeDefs: { [I in RouteId]: RouteDef<I> } = {
   },
   sprintRetro: {
     pattern: '/p/:key/sprints/:sprintId/retro',
-    query: ['item'],
+    query: ['decide', 'point', 'view', 'writtenBy', 'item'],
     installLevel: false,
     crumbs: () => ['Sprints', 'Sprint', 'Retro'],
   },
   retros: {
     pattern: '/p/:key/retros',
-    query: ['q', 'sprint', 'category', 'theme', 'level', 'role', 'recurring', 'selected', 'item'],
+    query: [
+      'q',
+      'sprint',
+      'category',
+      'theme',
+      'level',
+      'role',
+      'recurring',
+      'selected',
+      'noSprint',
+      'decision',
+      'unthemed',
+      'item',
+    ],
     installLevel: false,
     crumbs: () => ['Retrospectives', 'Search'],
+  },
+  retroFeatures: {
+    pattern: '/p/:key/retros/features',
+    query: ['item'],
+    installLevel: false,
+    crumbs: () => ['Retrospectives', 'Features'],
+  },
+  retroItem: {
+    pattern: '/p/:key/retros/items/:itemKey',
+    query: ['retro', 'decide', 'point', 'item'],
+    installLevel: false,
+    crumbs: (p) => ['Retrospectives', 'Features', p.itemKey],
   },
   retroInsights: {
     pattern: '/p/:key/retros/insights',

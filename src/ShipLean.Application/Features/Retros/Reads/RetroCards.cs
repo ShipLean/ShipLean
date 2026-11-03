@@ -38,7 +38,7 @@ public sealed class RetroCards(NpgsqlDataSource dataSource, TimeProvider clock) 
         var sprint = ToSprint(retro.SprintId, retro.SprintName, retro.SprintStart, retro.SprintEnd, today);
         var author = new RetroAuthorDto(new UserRef(retro.UserId, retro.UserName, retro.UserInitials, retro.UserColour, retro.UserPhotoUrl), retro.AgentName, role);
         var isFeature = retro.ItemType == "feature";
-        var dtos = points.Select(point => ToPoint(point, role, workItem, sprint, isFeature, today)).ToList();
+        var dtos = points.Select(point => ToPoint(point, role, workItem, sprint, isFeature, today, clock)).ToList();
         var log = failures.ToList();
         var createdAt = new DateTimeOffset(DateTime.SpecifyKind(retro.CreatedAt, DateTimeKind.Utc));
         return new RetroCardDto(
@@ -57,7 +57,7 @@ public sealed class RetroCards(NpgsqlDataSource dataSource, TimeProvider clock) 
                 [.. log.Where(row => row.Kind == "friction").Select(row => row.Text)]));
     }
 
-    private static RetroPointDto ToPoint(PointRow point, RetroRole role, RetroItemRefDto? workItem, SprintRef? sprint, bool isFeature, DateOnly today)
+    private static RetroPointDto ToPoint(PointRow point, RetroRole role, RetroItemRefDto? workItem, SprintRef? sprint, bool isFeature, DateOnly today, TimeProvider clock)
     {
         var theme = point.ThemeId is { } themeId ? new RetroThemeRefDto(themeId, point.ThemeName!, ParseEnum<RetroTone>(point.ThemeTone!)) : null;
         RetroActionRefDto? action = null;
@@ -65,7 +65,17 @@ public sealed class RetroCards(NpgsqlDataSource dataSource, TimeProvider clock) 
         {
             var state = new StateRef(point.ActionStateId!.Value, point.ActionStateName!, ParseEnum<StateCategory>(point.ActionStateCategory!));
             var actionSprint = ToSprint(point.ActionSprintId, point.ActionSprintName, point.ActionSprintStart, point.ActionSprintEnd, today);
-            action = new RetroActionRefDto(actionId, point.ActionKey!, point.ActionTitle!, state, actionSprint, point.ActionPoints);
+            action = new RetroActionRefDto(actionId, point.ActionKey!, point.ActionTitle!, state, actionSprint, point.ActionPoints, point.ActionFixType is { } fixType ? ParseEnum<RetroFixType>(fixType) : null, point.ActionPointCount ?? 0);
+        }
+
+        // The decision rule of contract K2; RetroDecisionSql is the same rule for readers that filter in the database.
+        var decision = Decide(point.Category, action, point.NotNeededReason);
+        RetroNotNeededDto? notNeeded = null;
+        if (decision == RetroDecision.NotNeeded)
+        {
+            var decider = new UserRef(point.DeciderId!.Value, point.DeciderName!, point.DeciderInitials!, point.DeciderColour!, point.DeciderPhotoUrl);
+            var decidedAt = new DateTimeOffset(DateTime.SpecifyKind(point.DecidedAt!.Value, DateTimeKind.Utc));
+            notNeeded = new RetroNotNeededDto(point.NotNeededReason!, new RetroAuthorDto(decider, point.DecidedAgentName, point.DecidedAgentName is null ? RetroRole.Person : RetroRole.Conductor), DisplayDate.Relative(decidedAt, clock));
         }
 
         var author = new RetroAuthorDto(new UserRef(point.UserId, point.UserName, point.UserInitials, point.UserColour, point.UserPhotoUrl), point.AgentName, role);
@@ -83,7 +93,23 @@ public sealed class RetroCards(NpgsqlDataSource dataSource, TimeProvider clock) 
             isFeature,
             false,
             action,
-            role == RetroRole.Person);
+            role == RetroRole.Person,
+            decision,
+            notNeeded);
+    }
+
+    private static RetroDecision? Decide(string category, RetroActionRefDto? action, string? notNeededReason)
+    {
+        if (category == "wentWell")
+        {
+            return null;
+        }
+        if (action is not null)
+        {
+            return RetroDecision.Actioned;
+        }
+
+        return notNeededReason is not null ? RetroDecision.NotNeeded : RetroDecision.Undecided;
     }
 
     private static SprintRef? ToSprint(Guid? id, string? name, string? start, string? end, DateOnly today)
@@ -109,6 +135,8 @@ public sealed class RetroCards(NpgsqlDataSource dataSource, TimeProvider clock) 
 
     private static readonly string UserColumns = $"u.id AS userId, u.name AS userName, u.initials AS userInitials, u.avatar_colour AS userColour, {UserRefs.PhotoUrlSql} AS userPhotoUrl";
 
+    private static readonly string DeciderPhoto = UserRefs.PhotoUrlSql.Replace("u.", "du.", StringComparison.Ordinal);
+
     private static readonly string RetroSql = $"""
         SELECT r.id, r.role, r.agent_name AS agentName, r.partial, r.created_at AS createdAt,
                {UserColumns},
@@ -127,11 +155,16 @@ public sealed class RetroCards(NpgsqlDataSource dataSource, TimeProvider clock) 
                t.id AS themeId, t.name AS themeName, t.tone AS themeTone,
                aw.id AS actionId, aw.key AS actionKey, aw.title AS actionTitle, st.id AS actionStateId, st.name AS actionStateName, st.category AS actionStateCategory,
                asp.id AS actionSprintId, asp.name AS actionSprintName, to_char(asp.start_date, 'YYYY-MM-DD') AS actionSprintStart, to_char(asp.end_date, 'YYYY-MM-DD') AS actionSprintEnd,
-               aw.story_points::numeric AS actionPoints
+               aw.story_points::numeric AS actionPoints, ra.fix_type AS actionFixType,
+               {RetroActionSql.PointCount("ra")} AS actionPointCount,
+               p.not_needed_reason AS notNeededReason, p.decided_agent_name AS decidedAgentName, p.decided_at AS decidedAt,
+               du.id AS deciderId, du.name AS deciderName, du.initials AS deciderInitials, du.avatar_colour AS deciderColour, {DeciderPhoto} AS deciderPhotoUrl
         FROM retro_point p
         JOIN app_user u ON u.id = p.created_by_user_id
+        LEFT JOIN app_user du ON du.id = p.decided_by_user_id
         LEFT JOIN retro_theme t ON t.id = p.theme_id
-        LEFT JOIN retro_action ra ON ra.point_id = p.id
+        LEFT JOIN retro_action_point rap ON rap.point_id = p.id AND rap.archived_at IS NULL
+        LEFT JOIN retro_action ra ON ra.work_item_id = rap.work_item_id
         LEFT JOIN work_item aw ON aw.id = ra.work_item_id
         LEFT JOIN state st ON st.id = aw.state_id
         LEFT JOIN sprint asp ON asp.id = aw.sprint_id
@@ -161,7 +194,10 @@ public sealed class RetroCards(NpgsqlDataSource dataSource, TimeProvider clock) 
         Guid UserId, string UserName, string UserInitials, string UserColour, string? UserPhotoUrl,
         Guid? ThemeId, string? ThemeName, string? ThemeTone,
         Guid? ActionId, string? ActionKey, string? ActionTitle, Guid? ActionStateId, string? ActionStateName, string? ActionStateCategory,
-        Guid? ActionSprintId, string? ActionSprintName, string? ActionSprintStart, string? ActionSprintEnd, decimal? ActionPoints);
+        Guid? ActionSprintId, string? ActionSprintName, string? ActionSprintStart, string? ActionSprintEnd, decimal? ActionPoints,
+        string? ActionFixType, int? ActionPointCount,
+        string? NotNeededReason, string? DecidedAgentName, DateTime? DecidedAt,
+        Guid? DeciderId, string? DeciderName, string? DeciderInitials, string? DeciderColour, string? DeciderPhotoUrl);
 
     private sealed record SourceRow(Guid RetroId, Guid ItemId, string ItemKey, string ItemType, string ItemTitle);
 

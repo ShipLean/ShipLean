@@ -61,7 +61,7 @@ export function MergeDialog({
             type="button"
             data-testid={ids.retroMergeSave}
             disabled={!ready || merge.isPending}
-            className="cursor-pointer rounded-control border border-edge bg-accent px-3 py-1 text-white disabled:opacity-50"
+            className="cursor-pointer rounded-control border border-edge bg-signal px-3 py-1 text-signal-ink disabled:opacity-50"
             onClick={() => merge.mutate()}
           >
             Merge

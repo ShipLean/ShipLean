@@ -1,0 +1,100 @@
+{
+  "selected": [
+    {
+      "id": "00000011-0000-4000-8001-000000000001",
+      "retroId": "00000012-0000-4000-8001-000000000301",
+      "category": "wentBadly",
+      "text": "Could not take the saved-card picker screenshot locally; left the baseline for CI.",
+      "rootCause": "The brief did not say that baselines come from the CI report.",
+      "theme": {"id": "00000010-0000-4000-8001-000000000002", "name": "Screenshot baselines need CI", "tone": "bad"},
+      "themeSetBy": "auto",
+      "author": {
+        "user": {"id": "00000001-0000-4000-8000-000000000002", "name": "Priya Shah", "initials": "PS", "avatarColour": "#2f7fd8", "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"},
+        "agentName": "Claude Code · lane A",
+        "role": "subAgent"
+      },
+      "workItem": {
+        "id": "00000005-0000-4000-8001-000000000141",
+        "key": "SHIP-141",
+        "type": {"id": "story", "name": "User Story"},
+        "title": "Pay with saved card"
+      },
+      "sprint": {"id": "00000004-0000-4000-8001-000000000024", "name": "Sprint 24", "status": "current"},
+      "isFeature": false,
+      "recurring": true,
+      "action": null,
+      "canArchive": false,
+      "decision": "undecided",
+      "notNeeded": null
+    }
+  ],
+  "offered": [
+    {
+      "id": "00000011-0000-4000-8001-000000000012",
+      "retroId": "00000012-0000-4000-8001-000000000303",
+      "category": "wentBadly",
+      "text": "The coupon-removed screenshot baseline also had to wait for the CI report.",
+      "rootCause": null,
+      "theme": {"id": "00000010-0000-4000-8001-000000000002", "name": "Screenshot baselines need CI", "tone": "bad"},
+      "themeSetBy": "person",
+      "author": {
+        "user": {"id": "00000001-0000-4000-8000-000000000003", "name": "Tom Okafor", "initials": "TO", "avatarColour": "#16a089", "photoUrl": null},
+        "agentName": null,
+        "role": "person"
+      },
+      "workItem": {
+        "id": "00000005-0000-4000-8001-000000000138",
+        "key": "SHIP-138",
+        "type": {"id": "bug", "name": "Bug"},
+        "title": "Totals wrong when coupon removed"
+      },
+      "sprint": {"id": "00000004-0000-4000-8001-000000000024", "name": "Sprint 24", "status": "current"},
+      "isFeature": false,
+      "recurring": true,
+      "action": null,
+      "canArchive": true,
+      "decision": "undecided",
+      "notNeeded": null
+    },
+    {
+      "id": "00000011-0000-4000-8001-000000000004",
+      "retroId": "00000012-0000-4000-8001-000000000301",
+      "category": "notInPlan",
+      "text": "Tokens expire mid-checkout; no story covers re-auth.",
+      "rootCause": null,
+      "theme": {"id": "00000010-0000-4000-8001-000000000005", "name": "Plan missed a dependency", "tone": "bad"},
+      "themeSetBy": "auto",
+      "author": {
+        "user": {"id": "00000001-0000-4000-8000-000000000002", "name": "Priya Shah", "initials": "PS", "avatarColour": "#2f7fd8", "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"},
+        "agentName": "Claude Code · lane A",
+        "role": "subAgent"
+      },
+      "workItem": {
+        "id": "00000005-0000-4000-8001-000000000141",
+        "key": "SHIP-141",
+        "type": {"id": "story", "name": "User Story"},
+        "title": "Pay with saved card"
+      },
+      "sprint": {"id": "00000004-0000-4000-8001-000000000024", "name": "Sprint 24", "status": "current"},
+      "isFeature": false,
+      "recurring": false,
+      "action": null,
+      "canArchive": false,
+      "decision": "undecided",
+      "notNeeded": null
+    }
+  ],
+  "openActions": [
+    {
+      "workItemId": "00000005-0000-4000-8001-000000000189",
+      "key": "SHIP-189",
+      "title": "Plan gives each lane its own migration range",
+      "state": {"id": "00000003-0000-4000-8001-000000000601", "name": "New", "category": "proposed"},
+      "sprint": {"id": "00000004-0000-4000-8001-000000000025", "name": "Sprint 25", "status": "future"},
+      "points": 2,
+      "fixType": null,
+      "pointCount": 1
+    }
+  ],
+  "suggestedTheme": {"id": "00000010-0000-4000-8001-000000000007", "name": "Slices sized well", "tone": "good"}
+}

@@ -5,6 +5,7 @@ import { workItemTestIds } from '../../features/workItem/testIds';
 import { projectSettings, storiesBoardSettings } from './fixtures/workItemSettings';
 import { stubShell, PEOPLE, SHELL_MEMBERS, SHELL_SPRINTS } from './shellStub';
 import {
+  actionItem,
   attachments,
   comments,
   crashBug,
@@ -23,10 +24,12 @@ import {
   stubJob,
   stubMapping,
 } from '../../features/import/ct/fixtures';
+import { retroActionDetail, stubRetros } from '../../features/retros/ct/retroFixtures';
+import { retrosTestIds } from '../../features/retros/testIds';
 import { pageShots, type Page } from './shoot';
 import type { WorkItemDto } from '../../api/workItems';
 
-async function stubItem(page: Page, item: WorkItemDto) {
+async function stubItem(page: Page, item: WorkItemDto, itemAttachments = attachments) {
   await stubShell(page);
   await stubApi(page, item);
   // The form fixture's states, members and sprints are registered last and win; put the shell's back.
@@ -34,7 +37,7 @@ async function stubItem(page: Page, item: WorkItemDto) {
   await page.route('**/api/projects/p1/members', (route) => route.fulfill({ json: SHELL_MEMBERS }));
   await page.route('**/api/projects/p1/sprints', (route) => route.fulfill({ json: SHELL_SPRINTS }));
   await page.route('**/api/work-items/*/comments', (route) => route.fulfill({ json: comments }));
-  await stubSide(page, PEOPLE.priya, attachments, revisions);
+  await stubSide(page, PEOPLE.priya, itemAttachments, revisions);
 }
 
 const itemReady = async (page: Page) => {
@@ -53,6 +56,22 @@ pageShots([
     shell: true,
     arrange: (page) => stubItem(page, savedCardStory),
     ready: itemReady,
+  },
+  {
+    name: 'work-item-action',
+    route: '/p/SHIP/items/SHIP-188',
+    shell: true,
+    arrange: async (page) => {
+      await stubItem(page, actionItem, []);
+      await stubRetros(page);
+    },
+    ready: async (page) => {
+      await expect(page.getByTestId(workItemTestIds.title)).toBeVisible();
+      await expect(page.getByTestId(retrosTestIds.retroActionWhy)).toBeVisible();
+      await expect(page.getByTestId(retrosTestIds.retroActionWhyPoint)).toHaveCount(
+        retroActionDetail.points.length,
+      );
+    },
   },
   {
     name: 'work-item-bug',

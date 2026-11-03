@@ -19,14 +19,14 @@ export function SearchRows({ query, search, pointId, select }: RetrosSearchSlotP
           No point matches. Try fewer filters.
         </p>
       ) : (
-        <table className="w-full min-w-[46rem] table-fixed border-collapse text-[length:var(--text-sm)]">
+        <table className="w-full min-w-[36rem] table-fixed border-collapse text-[length:var(--text-sm)]">
           <thead>
             <tr>
-              <th className={`${head} w-[118px]`}>Category</th>
+              <th className={`${head} w-[108px]`}>Category</th>
               <th className={head}>Point</th>
-              <th className={`${head} w-[170px]`}>Theme</th>
-              <th className={`${head} w-[170px]`}>Work item</th>
-              <th className={`${head} w-[48px]`}>Sprint</th>
+              <th className={`${head} w-[130px]`}>Theme</th>
+              <th className={`${head} w-[100px]`}>Work item</th>
+              <th className={`${head} w-[68px]`}>Sprint</th>
               <th className={`${head} w-[40px]`}>By</th>
             </tr>
           </thead>

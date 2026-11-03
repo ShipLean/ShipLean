@@ -1,5 +1,6 @@
 using Dapper;
 using Npgsql;
+using ShipLean.Application.Features.Retros.Reads;
 using ShipLean.Contracts.Retros;
 
 namespace ShipLean.Application.Features.Retros.WorkItem;
@@ -17,6 +18,8 @@ public sealed class WorkItemRetroReader(NpgsqlDataSource dataSource, IRetroCards
                 new { workItemId },
                 cancellationToken: cancellationToken))).ToList();
         var cards = await retroCards.LoadAsync(retroIds, cancellationToken);
-        return new WorkItemRetrosDto([.. cards]);
+        return new WorkItemRetrosDto(
+            [.. cards],
+            [.. cards.Select(card => new WorkItemRetroRowDto(card.Id, card.Author, card.Partial, card.CreatedAtLabel, RetroAggregates.Of(card.Points)))]);
     }
 }

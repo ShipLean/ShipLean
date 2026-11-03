@@ -5,52 +5,152 @@ import { priya } from '../../workItem/ct/fixtures';
 import { stubApi } from '../../workItem/ct/stubApi';
 import { stubComments } from '../../workItem/ct/stubDetails';
 import { stubSide } from '../../workItem/ct/stubSide';
-import { stubRetros, workItemRetros } from '../ct/retroFixtures';
+import { sprintRetro, stubRetros, workItemRetros } from '../ct/retroFixtures';
 import { retrosTestIds as ids } from '../testIds';
 import { WorkItemRetroHarness } from './ct/WorkItemRetroHarness';
+import { WorkItemRetroLocationHarness } from './ct/WorkItemRetroLocationHarness';
 import { WorkItemRetroSection } from './WorkItemRetroSection';
+
+const props = { projectId: 'p1', projectKey: 'SHIP', itemKey: 'SHIP-141', workItemId: 'w1' };
 
 const route = { hooksConfig: { route: '/p/SHIP/items/SHIP-141' } };
 
 test('WorkItemRetroSection_WhenItemHasNoRetros_ShouldBeHidden', async ({ mount, page }) => {
   // Loading and empty both render nothing, so an empty item is mounted beside one with retros: once that one shows its
-  // cards, both answers are in, and the empty item must still have no section.
+  // rows, both answers are in, and the empty item must still have no section. The empty item still carries legacy
+  // cards, which the UI must ignore: only its empty rows decide.
+  const legacy = { cards: sprintRetro.cards.slice(0, 1), rows: [] };
+  expect(legacy.cards).toHaveLength(1);
   await stubRetros(page);
   await page.route('**/api/work-items/w-empty/retros', (r) =>
-    r.fulfill({ status: 200, contentType: 'application/json', body: '{"cards":[]}' }),
+    r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(legacy) }),
   );
   await mount(
     <div>
-      <WorkItemRetroSection projectId="p1" workItemId="w-empty" />
-      <WorkItemRetroSection projectId="p1" workItemId="w1" />
+      <WorkItemRetroSection {...props} workItemId="w-empty" />
+      <WorkItemRetroSection {...props} />
     </div>,
     route,
   );
-  await expect(page.getByTestId(shared.retroCard).first()).toBeVisible();
+  await expect(page.getByTestId(ids.workItemRetroRow).first()).toBeVisible();
   await expect(page.getByTestId(ids.workItemRetroSection)).toHaveCount(1);
 });
 
-test('WorkItemRetroSection_WhenItemHasRetros_ShouldShowCardsWithTheFailureLogCollapsed', async ({
+test('WorkItemRetroSection_WhenItemHasRetros_ShouldShowOneRowPerRetroWithCountsInOrder', async ({
   mount,
   page,
 }) => {
   await stubRetros(page);
-  await mount(<WorkItemRetroSection projectId="p1" workItemId="w1" />, route);
+  await mount(<WorkItemRetroSection {...props} />, route);
   const section = page.getByTestId(ids.workItemRetroSection);
-  await expect(section.getByRole('heading', { name: 'Retrospective' })).toBeVisible();
-  await expect(section.getByTestId(shared.retroCard)).toHaveCount(workItemRetros.cards.length);
-  await expect(section.getByTestId(shared.retroCardLog)).toHaveCount(0);
-  await expect(section.getByTestId(shared.retroCardLogToggle).first()).toHaveAttribute(
-    'aria-expanded',
-    'false',
+  await expect(section.getByRole('heading', { name: 'Retrospectives' })).toBeVisible();
+  const rows = section.getByTestId(ids.workItemRetroRow);
+  await expect(rows).toHaveCount(workItemRetros.rows.length);
+  await expect(section.getByTestId(shared.retroCard)).toHaveCount(0);
+  const titles = section.getByRole('columnheader');
+  await expect(titles).toHaveText([
+    'Retro',
+    'Logged',
+    'Went well',
+    'Not in the plan',
+    'Went badly',
+    'Can be improved',
+    'To decide',
+    'Decided',
+  ]);
+  // The first fixture row: one of each, 2 to decide, 1 of 3 decided.
+  await expect(rows.first().getByRole('cell')).toHaveText([
+    /Priya.*Claude Code/,
+    '28 Oct',
+    '1',
+    '1',
+    '1',
+    '1',
+    '2',
+    '1/3',
+  ]);
+});
+
+test('WorkItemRetroSection_WhenARowIsOpened_ShouldLinkWithRetro', async ({ mount, page }) => {
+  await stubRetros(page);
+  await mount(<WorkItemRetroSection {...props} />, route);
+  const rows = page.getByTestId(ids.workItemRetroRow);
+  for (const [index, row] of workItemRetros.rows.entries()) {
+    await expect(rows.nth(index).getByRole('link')).toHaveAttribute(
+      'href',
+      `/p/SHIP/retros/items/SHIP-141?retro=${row.retroId}`,
+    );
+  }
+});
+
+test('WorkItemRetroSection_WhenARowIsClickedOutsideItsLink_ShouldOpenTheSameFilteredRetro', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  await mount(<WorkItemRetroLocationHarness {...props} />, route);
+  const rows = page.getByTestId(ids.workItemRetroRow);
+  await expect(rows.first()).toBeVisible();
+  const second = workItemRetros.rows[1];
+  await rows.nth(1).getByRole('cell').nth(1).click();
+  await expect(page.getByTestId('location-probe')).toHaveText(
+    `/p/SHIP/retros/items/SHIP-141?retro=${second.retroId}`,
   );
+});
+
+test('WorkItemRetroSection_WhenARowHasFocus_ShouldOpenOnlyThroughItsLink', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  await mount(<WorkItemRetroLocationHarness {...props} />, route);
+  const first = page.getByTestId(ids.workItemRetroRow).first();
+  await first.getByRole('link').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByTestId('location-probe')).toHaveText(
+    `/p/SHIP/retros/items/SHIP-141?retro=${workItemRetros.rows[0].retroId}`,
+  );
+  await expect(first.getByRole('link')).toHaveCount(1);
+});
+
+test('WorkItemRetroSection_WhenTheColumnIs664Wide_ShouldShowEveryCountAndDecidedWithoutScrolling', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  const long = structuredClone(workItemRetros);
+  long.rows[0].author.agentName = 'Claude Code with a very long agent name indeed';
+  long.rows[0].author.user.name = 'Bartholomew Longname-Fitzgerald';
+  await page.route('**/api/work-items/w1/retros', (r) =>
+    r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(long) }),
+  );
+  await mount(
+    <div style={{ width: 664 }}>
+      <WorkItemRetroSection {...props} />
+    </div>,
+    route,
+  );
+  const section = page.getByTestId(ids.workItemRetroSection);
+  await expect(section.getByTestId(ids.workItemRetroRow).first()).toBeVisible();
+  const box = await section.locator('table').evaluate((table) => {
+    const holder = table.parentElement as HTMLElement;
+    const right = holder.getBoundingClientRect().right;
+    const cells = [...table.querySelectorAll('tbody tr:first-child td')];
+    const last = cells[cells.length - 1].getBoundingClientRect().right;
+    return { scroll: holder.scrollWidth, client: holder.clientWidth, right, last };
+  });
+  expect(box.scroll).toBeLessThanOrEqual(box.client);
+  expect(box.last).toBeLessThanOrEqual(box.right);
+  for (const name of ['Went well', 'Not in the plan', 'Went badly', 'Can be improved', 'Decided']) {
+    await expect(section.getByRole('columnheader', { name })).toBeVisible();
+  }
 });
 
 test('WorkItemRetroSection_WhenShown_ShouldBeReadOnly', async ({ mount, page }) => {
   await stubRetros(page);
-  await mount(<WorkItemRetroSection projectId="p1" workItemId="w1" />, route);
+  await mount(<WorkItemRetroSection {...props} />, route);
   const section = page.getByTestId(ids.workItemRetroSection);
-  await expect(section.getByTestId(shared.retroCard).first()).toBeVisible();
+  await expect(section.getByTestId(ids.workItemRetroRow).first()).toBeVisible();
   for (const id of [
     ids.retroAddPoint,
     ids.retroPointMoveTheme,
@@ -59,9 +159,7 @@ test('WorkItemRetroSection_WhenShown_ShouldBeReadOnly', async ({ mount, page }) 
   ]) {
     await expect(section.getByTestId(id)).toHaveCount(0);
   }
-  await expect(section.getByRole('button').filter({ hasNotText: 'Raw failure log' })).toHaveCount(
-    0,
-  );
+  await expect(section.getByRole('button')).toHaveCount(0);
 });
 
 test('WorkItemRetroSection_WhenOnAFeatureForm_ShouldShowTheConductorRetro', async ({
@@ -78,7 +176,7 @@ test('WorkItemRetroSection_WhenOnAFeatureForm_ShouldShowTheConductorRetro', asyn
   });
   const section = page.getByTestId(ids.workItemRetroSection);
   await expect(section).toBeVisible();
-  await expect(section.getByTestId(shared.retroCard)).toHaveCount(workItemRetros.cards.length);
+  await expect(section.getByTestId(ids.workItemRetroRow)).toHaveCount(workItemRetros.rows.length);
 });
 
 for (const theme of ['light', 'dark'] as const) {
@@ -88,8 +186,8 @@ for (const theme of ['light', 'dark'] as const) {
   }) => {
     await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
     await stubRetros(page);
-    await mount(<WorkItemRetroSection projectId="p1" workItemId="w1" />, route);
-    await expect(page.getByTestId(shared.retroCard).first()).toBeVisible();
+    await mount(<WorkItemRetroSection {...props} />, route);
+    await expect(page.getByTestId(ids.workItemRetroRow).first()).toBeVisible();
     await expect(page.getByTestId(ids.workItemRetroSection)).toHaveScreenshot(
       `work-item-retro-section.${theme}.png`,
       { animations: 'disabled' },

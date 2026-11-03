@@ -21,15 +21,13 @@ public static class RetrosTestIds
     public const string RetroPointArchive = "retro-point-archive";
     // Sprint tab: Add point
     public const string RetroAddPoint = "retro-add-point";
-    public const string RetroAddPointDialog = "retro-add-point-dialog";
-    public const string RetroAddPointCategory = "retro-add-point-category";
-    public const string RetroAddPointText = "retro-add-point-text";
-    public const string RetroAddPointRootCause = "retro-add-point-root-cause";
-    public const string RetroAddPointItem = "retro-add-point-item";
-    public const string RetroAddPointSave = "retro-add-point-save";
     // Sprint tab: By work item and rail
     public const string RetroFeatureCallout = "retro-feature-callout";
     public const string RetroCardList = "retro-card-list";
+    public const string RetroCardHeader = "retro-card-header";
+    public const string RetroCardKeyLink = "retro-card-key-link";
+    public const string RetroCardProgress = "retro-card-progress";
+    public const string RetroCardOpen = "retro-card-open";
     public const string RetroRail = "retro-rail";
     public const string RetroCoverage = "retro-coverage";
     public const string RetroCoverageRow = "retro-coverage-row";
@@ -71,7 +69,59 @@ public static class RetrosTestIds
     public const string RetroActionsTable = "retro-actions-table";
     public const string RetroActionRow = "retro-action-row";
     public const string RetroActionPull = "retro-action-pull";
+    public const string RetroActionsAdd = "retro-actions-add";
     public const string RetroImpactCard = "retro-impact-card";
     // Work item section
     public const string WorkItemRetroSection = "work-item-retro-section";
+
+    // Decide, Features, item screen, insights and search additions (SHIP-497)
+    public const string RetroToDecideFilter = "retro-to-decide-filter";
+    public const string RetroKpiToDecide = "retro-kpi-to-decide";
+    public const string RetroFeaturesPanel = "retro-features-panel";
+    public const string RetroFeaturesRow = "retro-features-row";
+    public const string RetroFeaturesFilter = "retro-features-filter";
+    public const string RetroFeaturesSearch = "retro-features-search";
+    public const string RetroFeaturesFilterOption = "retro-features-filter-option";
+    public const string RetroFeaturesLink = "retro-features-link";
+    public const string RetroFeaturesLoose = "retro-features-loose";
+    public const string RetroCategoryCount = "retro-category-count";
+    public const string RetroItemPanel = "retro-item-panel";
+    public const string RetroItemFilter = "retro-item-filter";
+    public const string RetroItemAddAction = "retro-item-add-action";
+    public const string RetroItemRail = "retro-item-rail";
+    public const string RetroItemChildRow = "retro-item-child-row";
+    public const string RetroItemChildRows = "retro-item-child-rows";
+    public const string RetroItemLogs = "retro-item-logs";
+    public const string RetroItemRailActions = "retro-item-rail-actions";
+    public const string RetroItemRailCompiled = "retro-item-rail-compiled";
+    public const string RetroItemRailWriters = "retro-item-rail-writers";
+    public const string WorkItemRetroRow = "work-item-retro-row";
+    public const string RetroActionWhy = "retro-action-why";
+    public const string RetroActionWhyAdd = "retro-action-why-add";
+    public const string RetroActionWhyPoint = "retro-action-why-point";
+    public const string RetroActionWhyLink = "retro-action-why-link";
+    public const string RetroActionWhyTheme = "retro-action-why-theme";
+    public const string RetroActionWhyFix = "retro-action-why-fix";
+    public const string RetroInsightsNosprint = "retro-insights-nosprint";
+    public const string RetroInsightsUnthemed = "retro-insights-unthemed";
+    public const string RetroInsightsThemeAction = "retro-insights-theme-action";
+    public const string RetroMergeProposal = "retro-merge-proposal";
+    public const string RetroMergeProposalMerge = "retro-merge-proposal-merge";
+    public const string RetroMergeProposalKeep = "retro-merge-proposal-keep";
+    public const string RetroTipStatusHead = "retro-tip-status-head";
+    public const string RetroTipVerdictHead = "retro-tip-verdict-head";
+    public const string RetroTipNosprint = "retro-tip-nosprint";
+    public const string RetroTipBubble = "retro-tip-bubble";
+    public const string RetroMentionCell = "retro-mention-cell";
+    public const string RetroTotalCell = "retro-total-cell";
+    public const string RetroNosprintCell = "retro-nosprint-cell";
+    public const string RetroStatusChip = "retro-status-chip";
+    public const string RetroRecurringCallout = "retro-recurring-callout";
+    public const string RetroUnthemedLink = "retro-unthemed-link";
+    public const string RetroActionFixCell = "retro-action-fix-cell";
+    public const string RetroActionCoversCell = "retro-action-covers-cell";
+    public const string RetroTipUnthemed = "retro-tip-unthemed";
+    public const string RetrosFilterNosprint = "retros-filter-nosprint";
+    public const string RetrosFilterDecision = "retros-filter-decision";
+    public const string RetrosFilterUnthemed = "retros-filter-unthemed";
 }

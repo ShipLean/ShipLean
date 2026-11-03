@@ -302,6 +302,81 @@ public sealed class RetroInsightsReaderTests : ApiFixture
     }
 
     [Test]
+    public async Task Get_WhenNoSprintPoints_ShouldCountInTotalNotRecurring()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var world = await WorldAsync(connection, 4);
+        var theme = await world.Seed.ThemeAsync("Slow reviews");
+        await world.MentionAsync(1, theme, 1);
+        await world.MentionAsync(2, theme, 1);
+        await world.NoSprintAsync(theme, 3);
+        var alone = await world.Seed.ThemeAsync("Only without a sprint");
+        await world.NoSprintAsync(alone, 3);
+        var quiet = await world.Seed.ThemeAsync("Verdict untouched");
+        await world.NoSprintAsync(quiet, 5);
+        var action = await world.ActionAsync(quiet, raisedIn: 0);
+        await RetroHistory.CompleteAsync(connection, action, World.NoonIn(1));
+
+        var result = await Reader.GetAsync(world.Project.Id, RetroRange.Last6, CancellationToken.None);
+
+        var row = result.Themes.Single(row => row.Theme.Id == theme);
+        row.Counts.ShouldBe([0, 1, 1, 0]);
+        row.NoSprint.ShouldBe(3);
+        row.Total.ShouldBe(5);
+        row.Status.ShouldBe(RetroThemeStatus.Quiet);
+        var onlyNoSprint = result.Themes.Single(row => row.Theme.Id == alone);
+        onlyNoSprint.Counts.ShouldBe([0, 0, 0, 0]);
+        onlyNoSprint.Total.ShouldBe(3);
+        onlyNoSprint.Status.ShouldBe(RetroThemeStatus.Quiet);
+        var impact = result.Impact.Single();
+        impact.BeforeAvg.ShouldBe(0d);
+        impact.AfterAvg.ShouldBe(0d);
+        impact.Counts.ShouldBe([0, 0, 0, 0]);
+    }
+
+    [Test]
+    public async Task Get_WhenNoSprintOnly_ShouldShowLatestText()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var world = await WorldAsync(connection, 2);
+        var theme = await world.Seed.ThemeAsync("Slow reviews");
+        var retro = await world.NoSprintRetroAsync();
+        await world.Seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.WentBadly, "Older.", ThemeId: theme, CreatedAt: World.NoonIn(0)));
+        await world.Seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.NotInPlan, "Newest.", ThemeId: theme, CreatedAt: World.NoonIn(1)));
+        await world.Seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.Improve, "Not a mention.", ThemeId: theme, CreatedAt: World.NoonIn(1).AddDays(1)));
+
+        var row = (await Reader.GetAsync(world.Project.Id, RetroRange.Last6, CancellationToken.None)).Themes.Single();
+
+        row.Latest.ShouldBe("Newest.");
+        row.NoSprint.ShouldBe(2);
+        row.Total.ShouldBe(2);
+    }
+
+    [Test]
+    public async Task Get_WhenUnthemed_ShouldCountThemLastAndLeaveOutWentWell()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var world = await WorldAsync(connection, 3);
+        var sprint1 = await world.Seed.RetroAsync(new RetroSeedRetro(SeedIds.Users.Joel, RetroRole.Person, SprintId: world.Sprints[0]));
+        var sprint2 = await world.Seed.RetroAsync(new RetroSeedRetro(SeedIds.Users.Joel, RetroRole.Person, SprintId: world.Sprints[1]));
+        var none = await world.NoSprintRetroAsync();
+        await world.Seed.PointAsync(sprint1, new RetroSeedPoint(RetroCategory.WentBadly, "A.", CreatedAt: World.NoonIn(0)));
+        await world.Seed.PointAsync(sprint1, new RetroSeedPoint(RetroCategory.NotInPlan, "B.", CreatedAt: World.NoonIn(0)));
+        await world.Seed.PointAsync(sprint1, new RetroSeedPoint(RetroCategory.WentWell, "Not counted.", CreatedAt: World.NoonIn(0)));
+        await world.Seed.PointAsync(sprint2, new RetroSeedPoint(RetroCategory.Improve, "C.", CreatedAt: World.NoonIn(1)));
+        await world.Seed.PointAsync(none, new RetroSeedPoint(RetroCategory.WentBadly, "D.", CreatedAt: World.NoonIn(1)));
+        await world.Seed.PointAsync(none, new RetroSeedPoint(RetroCategory.WentWell, "Not counted either.", CreatedAt: World.NoonIn(1)));
+
+        var result = await Reader.GetAsync(world.Project.Id, RetroRange.Last6, CancellationToken.None);
+
+        result.Unthemed.Counts.ShouldBe([2, 1, 0]);
+        result.Unthemed.NoSprint.ShouldBe(1);
+        result.Unthemed.Total.ShouldBe(4);
+        result.Themes.ShouldBeEmpty();
+        result.KeepsWorking.ShouldBeEmpty();
+    }
+
+    [Test]
     public async Task Get_WhenNoRetros_ShouldReturnEmptyListsNotNull()
     {
         await using var connection = await OpenDatabaseAsync();
@@ -355,6 +430,22 @@ public sealed class RetroInsightsReaderTests : ApiFixture
             for (var i = 0; i < count; i++)
             {
                 await Seed.PointAsync(retro, new RetroSeedPoint(category, text ?? $"Point {sprint}-{i}", ThemeId: theme, CreatedAt: World.NoonIn(sprint).AddMinutes(i)));
+            }
+        }
+
+        // A retro on a story, with no sprint: a retro needs one or the other.
+        public async Task<Guid> NoSprintRetroAsync()
+        {
+            var story = await RetroHistory.CreateAsync(Connection, new WorkItemBuilder(Project.Id).WithType("story").WithTitle($"Story {Guid.NewGuid():N}"));
+            return await Seed.RetroAsync(new RetroSeedRetro(SeedIds.Users.Joel, RetroRole.Person, WorkItemId: story));
+        }
+
+        public async Task NoSprintAsync(Guid theme, int count)
+        {
+            var retro = await NoSprintRetroAsync();
+            for (var i = 0; i < count; i++)
+            {
+                await Seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.WentBadly, $"No sprint {i}", ThemeId: theme, CreatedAt: World.NoonIn(0).AddMinutes(i)));
             }
         }
 

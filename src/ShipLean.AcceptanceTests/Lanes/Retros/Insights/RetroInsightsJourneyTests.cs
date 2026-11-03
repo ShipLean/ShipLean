@@ -6,6 +6,7 @@ using ShipLean.Contracts.Retros;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Retros;
+using ShipLean.TestSupport.TestIds;
 
 namespace ShipLean.AcceptanceTests.Lanes.Retros.Insights;
 
@@ -46,10 +47,37 @@ public class RetroInsightsJourneyTests : SeededAcceptanceTest
         await Expect(insights.ImpactCardOf(ThemeName)).ToBeVisibleAsync();
     }
 
-    private static async Task<Guid> ArrangeAsync(NpgsqlConnection connection)
+    [Test]
+    public async Task Insights_WhenActionItemAddedFromTheHeader_ShouldListTheNewRowWithoutReloading()
+    {
+        const string title = "Stop the flaky stage from flaking";
+        await using var connection = new NpgsqlConnection(ConnectionString);
+        await connection.OpenAsync();
+        await ArrangeAsync(connection, "Header action theme", "Header action seed");
+        var insights = new RetroInsightsPage(Page);
+        var dialog = new RetroActionDialogPart(Page);
+
+        await insights.OpenAsync(Project, view: "actions");
+        await Expect(insights.ActionRowOf(title)).ToHaveCountAsync(0);
+        await insights.ActionsAdd.ClickAsync();
+
+        await Expect(dialog.Dialog).ToBeVisibleAsync();
+        await Expect(dialog.Save).ToBeDisabledAsync();
+        await dialog.Title.FillAsync(title);
+        await Expect(dialog.Save).ToBeDisabledAsync();
+        await dialog.Pick.First.GetByTestId(RetroSharedTestIds.RetroActionPickCheck).CheckAsync();
+        await Expect(dialog.Save).ToBeEnabledAsync();
+        await dialog.Save.ClickAsync();
+
+        await Expect(dialog.Dialog).ToHaveCountAsync(0);
+        await Expect(insights.ActionRowOf(title)).ToBeVisibleAsync();
+        await Expect(insights.CoversOf(title)).ToHaveTextAsync("1");
+    }
+
+    private static async Task<Guid> ArrangeAsync(NpgsqlConnection connection, string themeName = ThemeName, string actionTitle = ActionTitle)
     {
         var seed = new RetroSeed(connection, SeedIds.Projects.Ship);
-        var theme = await seed.ThemeAsync(ThemeName);
+        var theme = await seed.ThemeAsync(themeName);
         foreach (var sprint in Mentioned)
         {
             var retro = await seed.RetroAsync(new RetroSeedRetro(SeedIds.Users.Joel, RetroRole.Person, SprintId: sprint));
@@ -59,7 +87,7 @@ public class RetroInsightsJourneyTests : SeededAcceptanceTest
             }
         }
 
-        var action = await RetroHistory.CreateAsync(connection, new WorkItemBuilder(SeedIds.Projects.Ship).WithType("action").WithTitle(ActionTitle));
+        var action = await RetroHistory.CreateAsync(connection, new WorkItemBuilder(SeedIds.Projects.Ship).WithType("action").WithTitle(actionTitle));
         await seed.ActionAsync(new RetroSeedAction(action, theme, RaisedSprintId: SeedIds.Sprints.Sprint21));
         return action;
     }

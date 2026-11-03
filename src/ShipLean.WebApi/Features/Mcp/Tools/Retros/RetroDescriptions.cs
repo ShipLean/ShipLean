@@ -25,5 +25,5 @@ internal static class RetroDescriptions
         + " Each point is text plus an optional theme; went_badly points also take root_cause. Set partial when you are logging before the work is done. Pass compiled_from (item keys) when you compile the retrospective of other items. Logging an item again adds more points.";
 
     public const string ListRetrospectives =
-        Preamble + " List the retrospective points logged in a project, newest first, with each point's theme, item, role and agent name, plus the theme mode and the project's theme list. Filter by sprint, feature, category, theme or date. Read the earlier points before you log yours, so you reuse a theme instead of inventing a new one.";
+        Preamble + " List the retrospective points logged in a project, newest first, with each point's theme, item, role and agent name, plus the theme mode and the project's theme list. Each point carries its decision (undecided, actioned or notNeeded; null on went well), the action item it became (key and state) and the reason it was not needed. Filter by sprint, feature, category, theme or date, by undecided (points still to decide), or by no_sprint (points with no sprint). Read the earlier points before you log yours, so you reuse a theme instead of inventing a new one.";
 }

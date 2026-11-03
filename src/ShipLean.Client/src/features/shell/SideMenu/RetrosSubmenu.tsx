@@ -4,7 +4,7 @@ import { useRetroInsights } from '../../retros/useRetroQueries';
 import { shellTestIds as ids } from '../testIds';
 import { NavItem } from './NavItem';
 
-// Under Retrospectives while you are in it: Search, and Insights with how many themes are recurring.
+// Under Retrospectives while you are in it: Search, Features, and Insights with how many themes are recurring.
 export function RetrosSubmenu({
   projectId,
   projectKey,
@@ -25,6 +25,14 @@ export function RetrosSubmenu({
         active={route?.id === 'retros'}
       >
         Search
+      </NavItem>
+      <NavItem
+        sub
+        testId={ids.navRetrosFeatures}
+        to={routePath('retroFeatures', { key: projectKey })}
+        active={route?.id === 'retroFeatures' || route?.id === 'retroItem'}
+      >
+        Features
       </NavItem>
       <NavItem
         sub

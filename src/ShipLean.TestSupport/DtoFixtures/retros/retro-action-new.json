@@ -1,0 +1,7 @@
+{
+  "title": "Say which baselines come from CI",
+  "fixType": "guide",
+  "pointIds": ["00000011-0000-4000-8001-000000000001", "00000011-0000-4000-8001-000000000004"],
+  "themeId": "00000010-0000-4000-8001-000000000007",
+  "themeName": null
+}

@@ -1,24 +1,26 @@
 import { IMPACT_HEIGHT, IMPACT_WIDTH, impactShape } from './impactGeometry';
 
-const shortName = (name: string) => name.replace(/^Sprint\s+/, 'S');
+const shortName = (label: string) => label.replace(/^Sprint\s+/, 'S');
 
-/** Mentions per sprint as bars, the before and after averages as lines and a dashed marker where the action closed. Inline SVG. */
+/** Mentions per column (sprint or week) as bars, the before and after averages as lines and a dashed marker where the action closed. Inline SVG. */
 export function ImpactChart({
   label,
   actionKey,
-  sprintNames,
+  columnLabels,
   counts,
   closedAt,
   beforeAvg,
   afterAvg,
+  unit,
 }: {
   label: string;
   actionKey: string;
-  sprintNames: readonly string[];
+  columnLabels: readonly string[];
   counts: readonly number[];
   closedAt: number;
   beforeAvg: number;
   afterAvg: number | null;
+  unit: 'sprint' | 'week';
 }) {
   const shape = impactShape(counts, closedAt, beforeAvg, afterAvg);
   const markerOnRight = shape.markerX > IMPACT_WIDTH - 90;
@@ -28,7 +30,7 @@ export function ImpactChart({
       viewBox={`0 0 ${IMPACT_WIDTH} ${IMPACT_HEIGHT}`}
       width="100%"
       role="img"
-      aria-label={`${label} mentions per sprint, ${markerText}`}
+      aria-label={`${label} mentions per ${unit}, ${markerText}`}
       className="block text-[length:var(--text-2xs)]"
       data-chart=""
     >
@@ -61,10 +63,10 @@ export function ImpactChart({
             fill={bar.after ? 'var(--color-ok)' : 'var(--color-warn)'}
             opacity={bar.count > 0 ? 1 : 0.35}
           >
-            <title>{`${sprintNames[bar.index] ?? ''}: ${bar.count}`}</title>
+            <title>{`${columnLabels[bar.index] ?? ''}: ${bar.count}`}</title>
           </rect>
           <text x={bar.labelX} y={IMPACT_HEIGHT - 4} textAnchor="middle" fill="var(--color-muted)">
-            {shortName(sprintNames[bar.index] ?? '')}
+            {shortName(columnLabels[bar.index] ?? '')}
           </text>
         </g>
       ))}

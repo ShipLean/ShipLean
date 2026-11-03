@@ -55,7 +55,7 @@ test('SprintRetro_WhenOpened_ShouldShowByCategoryThenToggleToByWorkItem', async 
   await expect(page.getByTestId(ids.retroViewByItem)).toHaveAttribute('aria-pressed', 'false');
   await expect(page.getByTestId(pagesTestIds.slotRetroByCategory)).toBeAttached();
   await expect(page.getByTestId(ids.retroCardList)).toHaveCount(0);
-  for (const id of [ids.retroHeader, ids.retroAddPoint, ids.retroRail]) {
+  for (const id of [ids.retroHeader, ids.retroToDecideFilter, ids.retroRail]) {
     await expect(page.getByTestId(id)).toBeAttached();
   }
 

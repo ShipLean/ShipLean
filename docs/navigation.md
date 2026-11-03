@@ -19,9 +19,11 @@ The address of every screen is in `src/ShipLean.Client/src/routes.ts` (ids, path
 | Project | `featureBoard` | `/p/:key/items/:itemKey/board` | `?settings=` |
 | Project | `storiesBoard`, `featuresBoard`, `epicsBoard` | `/p/:key/boards/{stories,features,epics}` | `settings` |
 | Project | `sprints` | `/p/:key/sprints` | |
-| Project | `sprintBacklog`, `capacity`, `sprintRetro` | `/p/:key/sprints/:sprintId/{backlog,capacity,retro}` | |
-| Project | `retros` | `/p/:key/retros` | `q`, `sprint`, `category`, `theme`, `level`, `role`, `recurring`, `selected` (the search filters and the open retro) |
-| Project | `retroInsights` | `/p/:key/retros/insights` | `view` (themes, actions, impact), `range` (6, 3, all) |
+| Project | `sprintBacklog`, `capacity`, `sprintRetro` | `/p/:key/sprints/:sprintId/{backlog,capacity,retro}` | `sprintRetro` takes `decide` (open), `point`, `view` (category, item) and `writtenBy` (all, agents, people) |
+| Project | `retros` | `/p/:key/retros` | `q`, `sprint`, `category`, `theme`, `level`, `role`, `recurring`, `selected`, `noSprint`, `decision`, `unthemed` (the search filters and the open retro) |
+| Project | `retroFeatures` | `/p/:key/retros/features` | `show` (open, waiting), `q` |
+| Project | `retroItem` | `/p/:key/retros/items/:itemKey` | `retro` (the open retro), `decide` (open), `point` (the point to highlight) |
+| Project | `retroInsights` | `/p/:key/retros/insights` | `view` (themes, actions, impact), `range` (6, 3, all, w6, w12) |
 | Project | `taskboard` | `/p/:key/sprints/:sprintId/taskboard` | `settings` |
 | Project | `jiraImport` | `/p/:key/import` | |
 | Project | `projectSettings` | `/p/:key/settings/:tab` (general, states, members, sprints, integrations) | |
@@ -70,6 +72,8 @@ The five work item slots read the item through the query key `['projects', proje
 | `capacity` | Capacity | `{ project, sprint, sprints }` |
 | `sprintRetro` | Sprint Retro | `{ project, sprint, sprints }`; the slot mounts `SprintRetroPanel`, which reads the sprint's `SprintRetroDto` and gives each of its parts (`SprintRetroHeader`, `AddPoint`, `views/ByCategory`, `views/ByWorkItem`, `rail/RetroRail`) `{ project, sprint, retro }` |
 | `retrosSearch` | Retrospectives › Search | `{ project }`; `RetrosSearchPanel` owns the filters in the address and gives `SearchFilters`, `SearchRows` and `SelectedRetro` `{ project, query, search, change(patch), select(retroId \| null) }` |
+| `retroFeatures` | Retrospectives › Features | `{ project }`; `RetroFeaturesPanel` owns its address (`show`, `q`) and reads the Features list |
+| `retroItem` | Retrospectives › one item | `{ project, itemKey }`; `RetroItemPanel` owns `retro`, `decide` and `point` in the address and gives the header, toolbar, board, rail and failure logs their parts |
 | `retroInsights` | Retrospectives › Insights | `{ project }`; `RetroInsightsPanel` owns the view tabs and the range and gives `MergeThemes`, `RecurringThemes`, `KeepsWorking`, `ActionItemsTable` and `ChangesImpact` `{ project, insights }` |
 | `sprintBacklog` | Sprint backlog | `{ project, sprint, sprints }` |
 | `closeSprint` | Sprint header, every sprint tab | `{ project, sprint }`; shows the Close sprint button on a sprint that isn't closed and isn't in the future, and opens its dialog when pressed. Nothing opens by itself |

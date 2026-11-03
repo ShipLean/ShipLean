@@ -6,11 +6,10 @@ namespace ShipLean.Application.Features.Retros.People;
 internal sealed class RetroPeopleWrites : IRetroPeopleWrites
 {
     private readonly RetroPointWriter _points;
-    private readonly RetroActionWriter _actions;
     private readonly RetroThemeWriter _themes;
 
-    public RetroPeopleWrites(RetroPointWriter points, RetroActionWriter actions, RetroThemeWriter themes)
-        => (_points, _actions, _themes) = (points, actions, themes);
+    public RetroPeopleWrites(RetroPointWriter points, RetroThemeWriter themes)
+        => (_points, _themes) = (points, themes);
 
     public Task<RetroPointDto> AddPointAsync(Guid projectId, RetroPointCreate request, CancellationToken cancellationToken = default)
         => _points.AddAsync(projectId, request, cancellationToken);
@@ -19,9 +18,6 @@ internal sealed class RetroPeopleWrites : IRetroPeopleWrites
         => _points.MoveThemeAsync(pointId, request, cancellationToken);
 
     public Task ArchiveAsync(Guid pointId, CancellationToken cancellationToken = default) => _points.ArchiveAsync(pointId, cancellationToken);
-
-    public Task<RetroActionRefDto> CreateActionAsync(Guid pointId, RetroActionCreate request, CancellationToken cancellationToken = default)
-        => _actions.CreateAsync(pointId, request, cancellationToken);
 
     public Task<RetroThemeRefDto> RenameThemeAsync(Guid themeId, RetroThemeRename request, CancellationToken cancellationToken = default)
         => _themes.RenameAsync(themeId, request, cancellationToken);

@@ -2,16 +2,15 @@ using ShipLean.Contracts.Retros;
 
 namespace ShipLean.Application.Features.Retros.Sprint;
 
+// Groups the sprint's points into the category columns, in the display order (RetroCategories.Display). ToDecide counts the column's undecided points.
 // Groups the sprint's points into the category columns. A column's groups run largest first, then by theme name, with Unthemed last.
 // Inside a group the feature points come first, then the oldest.
 internal static class SprintRetroColumns
 {
-    private static readonly RetroCategory[] Order = [RetroCategory.WentBadly, RetroCategory.Improve, RetroCategory.NotInPlan, RetroCategory.WentWell];
-
     public static IReadOnlyList<RetroCategoryColumnDto> Build(IReadOnlyList<RetroCardDto> cards, IReadOnlyDictionary<Guid, DateTimeOffset> pointDates)
     {
         var points = cards.SelectMany((card, cardIndex) => card.Points.Select((point, index) => (Point: point, CardIndex: cardIndex, Index: index))).ToList();
-        return [.. Order.Select(category => Column(category, points.Where(p => p.Point.Category == category).ToList(), pointDates))];
+        return [.. RetroCategories.Display.Select(category => Column(category, points.Where(p => p.Point.Category == category).ToList(), pointDates))];
     }
 
     private static RetroCategoryColumnDto Column(RetroCategory category, List<(RetroPointDto Point, int CardIndex, int Index)> points, IReadOnlyDictionary<Guid, DateTimeOffset> pointDates)
@@ -30,6 +29,6 @@ internal static class SprintRetroColumns
                     .ThenBy(p => p.CardIndex)
                     .ThenBy(p => p.Index)
                     .Select(p => p.Point)]));
-        return new RetroCategoryColumnDto(category, [.. groups]);
+        return new RetroCategoryColumnDto(category, [.. groups], points.Count(p => p.Point.Decision == RetroDecision.Undecided));
     }
 }

@@ -1,7 +1,7 @@
 // Retrospective shapes (SHIP-82 contract C3). C# twin: ShipLean.Contracts.Retros. Fetchers live in retrosApi.ts.
 import type { SprintRef, StateRef, TypeRef, UserRef } from './refs';
 
-export const RETRO_CATEGORIES = ['wentWell', 'wentBadly', 'improve', 'notInPlan'] as const;
+export const RETRO_CATEGORIES = ['wentWell', 'notInPlan', 'wentBadly', 'improve'] as const;
 export type RetroCategory = (typeof RETRO_CATEGORIES)[number];
 
 export const RETRO_ROLES = ['conductor', 'subAgent', 'person'] as const;
@@ -27,6 +27,18 @@ export type RetroCoverage = (typeof RETRO_COVERAGES)[number];
 
 export const RETRO_FAILURE_KINDS = ['blocker', 'assumptionDisproved', 'friction'] as const;
 export type RetroFailureKind = (typeof RETRO_FAILURE_KINDS)[number];
+
+export const RETRO_DECISIONS = ['undecided', 'actioned', 'notNeeded'] as const;
+export type RetroDecision = (typeof RETRO_DECISIONS)[number];
+
+export const RETRO_FIX_TYPES = ['skill', 'guide', 'test', 'analyzer', 'product', 'other'] as const;
+export type RetroFixType = (typeof RETRO_FIX_TYPES)[number];
+
+export const RETRO_INSIGHTS_MODES = ['sprint', 'week'] as const;
+export type RetroInsightsMode = (typeof RETRO_INSIGHTS_MODES)[number];
+
+export const RETRO_INSIGHT_COLUMN_KINDS = ['sprint', 'week'] as const;
+export type RetroInsightColumnKind = (typeof RETRO_INSIGHT_COLUMN_KINDS)[number];
 
 export interface RetroThemeRefDto {
   id: string;
@@ -54,6 +66,16 @@ export interface RetroActionRefDto {
   state: StateRef;
   sprint: SprintRef | null;
   points: number | null;
+  /** Null for a legacy action item that was back-copied without one. */
+  fixType: RetroFixType | null;
+  /** Live linked points. */
+  pointCount: number;
+}
+
+export interface RetroNotNeededDto {
+  reason: string;
+  by: RetroAuthorDto;
+  decidedAtLabel: string;
 }
 
 export interface RetroPointDto {
@@ -69,8 +91,12 @@ export interface RetroPointDto {
   sprint: SprintRef | null;
   isFeature: boolean;
   recurring: boolean;
+  /** The live link only. */
   action: RetroActionRefDto | null;
   canArchive: boolean;
+  /** Null for a Went well point. */
+  decision: RetroDecision | null;
+  notNeeded: RetroNotNeededDto | null;
 }
 
 /** Position order within each list. */
@@ -116,6 +142,7 @@ export interface RetroKpisDto {
   finished: number;
   recurringThemes: number;
   actionItemsRaised: number;
+  pointsToDecide: number;
 }
 
 export interface RetroThemeGroupDto {
@@ -128,6 +155,8 @@ export interface RetroThemeGroupDto {
 export interface RetroCategoryColumnDto {
   category: RetroCategory;
   groups: RetroThemeGroupDto[];
+  /** Undecided points in the column, regardless of any filter. */
+  toDecide: number;
 }
 
 export interface RetroCoverageRowDto {
@@ -139,7 +168,7 @@ export interface SprintRetroDto {
   sprint: SprintRef;
   kpis: RetroKpisDto;
   sprints: SprintRef[];
-  /** Columns run wentBadly, improve, notInPlan, wentWell. */
+  /** Columns run in RETRO_CATEGORIES order. */
   categories: RetroCategoryColumnDto[];
   cards: RetroCardDto[];
   coverage: RetroCoverageRowDto[];
@@ -165,6 +194,8 @@ export interface RetroThemeInsightDto {
   status: RetroThemeStatus;
   actionItems: RetroActionRefDto[];
   lastVerdict: RetroVerdict | null;
+  /** Mentions with no sprint; 0 in week mode. */
+  noSprint: number;
 }
 
 export interface RetroImpactDto {
@@ -181,9 +212,38 @@ export interface RetroImpactDto {
   latestMention: RetroPointDto | null;
 }
 
+export interface RetroInsightColumnDto {
+  /** The sprint id, or the week's Monday as yyyy-MM-dd. */
+  key: string;
+  label: string;
+  kind: RetroInsightColumnKind;
+  isCurrent: boolean;
+}
+
+export interface RetroUnthemedDto {
+  counts: number[];
+  noSprint: number;
+  total: number;
+}
+
+export interface RetroMergeProposalDto {
+  id: string;
+  from: RetroThemeRefDto;
+  into: RetroThemeRefDto;
+  reason: string;
+  pointCount: number;
+  proposedBy: RetroAuthorDto;
+}
+
 export interface RetroInsightsDto {
-  /** The requested range: '6', '3' or 'all'. */
-  range: '6' | '3' | 'all';
+  /** The requested range: '6', '3', 'all', 'w6' or 'w12'. */
+  range: '6' | '3' | 'all' | 'w6' | 'w12';
+  mode: RetroInsightsMode;
+  /** The columns every `counts` and `closedAt` index into. */
+  columns: RetroInsightColumnDto[];
+  unthemed: RetroUnthemedDto;
+  mergeProposals: RetroMergeProposalDto[];
+  /** Filled in sprint mode, empty in week mode. */
   sprints: SprintRef[];
   themes: RetroThemeInsightDto[];
   keepsWorking: RetroThemeInsightDto[];
@@ -201,8 +261,76 @@ export interface RetroThemeListDto {
   themes: RetroThemeOptionDto[];
 }
 
+export interface RetroCategoryCountsDto {
+  wentWell: number;
+  notInPlan: number;
+  wentBadly: number;
+  improve: number;
+}
+
+export interface RetroAggregateDto {
+  counts: RetroCategoryCountsDto;
+  toDecide: number;
+  decided: number;
+  decidable: number;
+  actions: number;
+}
+
+export interface WorkItemRetroRowDto {
+  retroId: string;
+  author: RetroAuthorDto;
+  partial: boolean;
+  createdAtLabel: string;
+  totals: RetroAggregateDto;
+}
+
 export interface WorkItemRetrosDto {
+  /** The UI no longer reads this; it reads `rows`. */
   cards: RetroCardDto[];
+  rows: WorkItemRetroRowDto[];
+}
+
+export interface RetroFeatureRowDto {
+  item: RetroItemRefDto;
+  state: StateRef;
+  retros: number;
+  ownRetros: number;
+  totals: RetroAggregateDto;
+  lastRetroLabel: string | null;
+  noFeatureRetro: boolean;
+}
+
+export interface RetroFeaturesDto {
+  features: RetroFeatureRowDto[];
+  /** Stories and bugs with no Feature that have a retro. */
+  loose: RetroFeatureRowDto[];
+}
+
+export interface RetroItemDto {
+  item: RetroItemRefDto;
+  state: StateRef;
+  parent: RetroItemRefDto | null;
+  totals: RetroAggregateDto;
+  categories: RetroCategoryColumnDto[];
+  cards: RetroCardDto[];
+  actions: RetroActionRefDto[];
+  /** Empty unless the item is a Feature. */
+  children: RetroFeatureRowDto[];
+}
+
+export interface RetroActionDialogDto {
+  selected: RetroPointDto[];
+  /** Improve, wentBadly, notInPlan order; undecided only; excludes `selected`. */
+  offered: RetroPointDto[];
+  openActions: RetroActionRefDto[];
+  suggestedTheme: RetroThemeRefDto | null;
+}
+
+export interface RetroActionDetailDto {
+  action: RetroActionRefDto;
+  theme: RetroThemeRefDto | null;
+  points: RetroPointDto[];
+  raisedIn: SprintRef | null;
 }
 
 /** Exactly one of retroId, workItemId and sprintId. */
@@ -231,8 +359,25 @@ export interface RetroThemeMerge {
   targetId: string;
 }
 
-/** The title defaults to the point text. */
-export interface RetroActionCreate {
-  title: string | null;
-  points: number | null;
+export interface RetroActionNew {
+  title: string;
+  fixType: RetroFixType;
+  pointIds: string[];
+  themeId: string | null;
+  themeName: string | null;
+}
+
+export interface RetroActionAddPoints {
+  pointIds: string[];
+}
+
+/** A full replacement: send the current value of the field you are not changing. */
+export interface RetroActionPut {
+  fixType: RetroFixType | null;
+  themeId: string | null;
+  themeName: string | null;
+}
+
+export interface RetroNotNeededPut {
+  reason: string;
 }

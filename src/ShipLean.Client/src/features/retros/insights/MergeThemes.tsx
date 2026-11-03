@@ -17,7 +17,7 @@ function MergeDialogLoader({ project, onClose }: { project: ProjectDto; onClose:
 }
 
 /** The Merge themes… button and its dialog. */
-export function MergeThemes({ project }: RetroInsightsSlotProps) {
+export function MergeThemes({ project }: Pick<RetroInsightsSlotProps, 'project'>) {
   const [open, setOpen] = useState(false);
   return (
     <>

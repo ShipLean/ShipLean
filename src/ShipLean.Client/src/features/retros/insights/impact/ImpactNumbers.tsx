@@ -15,23 +15,25 @@ function Figure({ name, value, caption }: { name: string; value: string; caption
   );
 }
 
-/** Per sprint before and after the action closed, and the change; the change is left out when it has no base. */
+/** Per sprint or week before and after the action closed, and the change; the change is left out when it has no base. */
 export function ImpactNumbers({
   beforeAvg,
   afterAvg,
   changePct,
+  unit,
 }: {
   beforeAvg: number;
   afterAvg: number | null;
   changePct: number | null;
+  unit: 'sprint' | 'week';
 }) {
   return (
     <div className="flex gap-4">
-      <Figure name="before" value={oneDecimal(beforeAvg)} caption="per sprint before" />
+      <Figure name="before" value={oneDecimal(beforeAvg)} caption={`per ${unit} before`} />
       <Figure
         name="after"
         value={afterAvg === null ? '–' : oneDecimal(afterAvg)}
-        caption="per sprint after"
+        caption={`per ${unit} after`}
       />
       {changePct === null ? null : (
         <Figure name="change" value={signedPercent(changePct)} caption="change" />

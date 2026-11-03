@@ -1,4 +1,6 @@
+import type { Page } from 'playwright';
 import { expect, test } from '@playwright/experimental-ct-react';
+import type { RetroCardDto } from '../../../api/retros';
 import { AppRoutes } from '../../../AppRoutes';
 import { stubShell } from '../../../pages/screenshots/shellStub';
 import { retroSharedTestIds as shared } from '../../retroShared/testIds';
@@ -20,6 +22,22 @@ test('SelectedRetro_WhenARetroIsSelected_ShouldShowItsCardWithTheOpenedPointHigh
   );
   await expect(selected.locator('[data-highlighted="true"]')).toHaveCount(1);
   await expect(selected.getByTestId(shared.retroCardLog)).toHaveCount(0);
+});
+
+test('SelectedRetro_WhenARetroIsSelected_ShouldGiveItsNotesTheirButtonsAndAnAddButton', async ({
+  mount,
+  page,
+}) => {
+  await stubShell(page);
+  await stubRetros(page);
+  await mount(<AppRoutes />, open('/p/SHIP/retros'));
+  const selected = page.getByTestId(ids.retrosSelected);
+  await expect(selected.getByTestId(shared.retroBoard)).toBeVisible();
+  await expect(selected.getByTestId(shared.retroNote).first()).toBeVisible();
+  await expect(selected.getByTestId(shared.retroBoardAdd).first()).toBeVisible();
+  // A went-badly or improve note that nobody has decided on offers both decisions.
+  await expect(selected.getByTestId(shared.retroNoteAddAction).first()).toBeVisible();
+  await expect(selected.getByTestId(shared.retroNoteNotNeeded).first()).toBeVisible();
 });
 
 const searchRoute = (url: URL) => /^\/api\/projects\/[^/]+\/retros$/.test(url.pathname);
@@ -85,24 +103,91 @@ test('SelectedRetro_WhenTheCardHasAnItemAndASprint_ShouldLinkToThem', async ({ m
   );
 });
 
-test('SelectedRetro_WhenTheCardHasNoItemOrSprint_ShouldHideTheButtons', async ({ mount, page }) => {
-  await stubShell(page);
-  await stubRetros(page);
-  await page.route(searchRoute, (route) =>
+const withSelected = async (page: Page, change: Partial<RetroCardDto>) =>
+  page.route(searchRoute, (route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({
-        ...retroSearch,
-        selected: { ...retroSearch.selected, workItem: null, sprint: null },
-      }),
+      body: JSON.stringify({ ...retroSearch, selected: { ...retroSearch.selected, ...change } }),
     }),
   );
+
+test('SelectedRetro_WhenTheCardIsASprintsOwn_ShouldHideTheItemButtonAndAddToTheSprint', async ({
+  mount,
+  page,
+}) => {
+  await stubShell(page);
+  const stub = await stubRetros(page);
+  await withSelected(page, { workItem: null });
   await mount(<AppRoutes />, open('/p/SHIP/retros'));
   const selected = page.getByTestId(ids.retrosSelected);
-  await expect(selected.getByTestId(shared.retroCard)).toBeVisible();
-  await expect(selected.getByRole('link', { name: 'Sprint retro' })).toHaveCount(0);
+  const sprint = retroSearch.selected!.sprint!;
+  await expect(selected.getByTestId(shared.retroCard)).toContainText(sprint.name);
+  await expect(selected.getByRole('link', { name: 'Sprint retro' })).toBeVisible();
   await expect(selected.getByRole('link', { name: /^Open / })).toHaveCount(0);
+  await selected.getByTestId(shared.retroBoardAdd).first().click();
+  await page.getByTestId(shared.retroBoardAddText).fill('A sprint-wide note');
+  await page.getByTestId(shared.retroBoardAddSave).click();
+  await expect
+    .poll(() => stub.writes().find((w) => w.path.endsWith('/retros/points'))?.body)
+    .toMatchObject({ sprintId: sprint.id });
+});
+
+test('SelectedRetro_WhenTheCardHasNeitherItemNorSprint_ShouldDrawNoBoard', async ({
+  mount,
+  page,
+}) => {
+  await stubShell(page);
+  await stubRetros(page);
+  await withSelected(page, { workItem: null, sprint: null });
+  await mount(<AppRoutes />, open('/p/SHIP/retros'));
+  const selected = page.getByTestId(ids.retrosSelected);
+  await expect(selected).toContainText('Select a point');
+  await expect(selected.getByTestId(shared.retroBoard)).toHaveCount(0);
+});
+
+test('SelectedRetro_WhenTheRetroIsPartial_ShouldSayRolledOver', async ({ mount, page }) => {
+  await stubShell(page);
+  await stubRetros(page);
+  await withSelected(page, { partial: true });
+  await mount(<AppRoutes />, open('/p/SHIP/retros'));
+  await expect(page.getByTestId(ids.retrosSelected)).toContainText('Rolled over');
+});
+
+test('SelectedRetro_WhenTheAuthorIsASubAgent_ShouldShowTheirRole', async ({ mount, page }) => {
+  await stubShell(page);
+  await stubRetros(page);
+  await mount(<AppRoutes />, open('/p/SHIP/retros'));
+  expect(retroSearch.selected!.author.role).toBe('subAgent');
+  await expect(page.getByTestId(ids.retrosSelected)).toContainText('Sub-agent');
+});
+
+test('SelectedRetro_WhenTheItemIsAFeature_ShouldShowTheFeatureMarker', async ({ mount, page }) => {
+  await stubShell(page);
+  await stubRetros(page);
+  const item = retroSearch.selected!.workItem!;
+  await withSelected(page, { workItem: { ...item, type: { id: 'feature', name: 'Feature' } } });
+  await mount(<AppRoutes />, open('/p/SHIP/retros'));
+  const card = page.getByTestId(ids.retrosSelected).getByTestId(shared.retroCard);
+  await expect(card).toHaveAttribute('data-feature', 'true');
+  await expect(card.getByText('Feature', { exact: true })).toBeVisible();
+});
+
+test('SelectedRetro_WhenTheRetroWasCompiledFromItems_ShouldListThem', async ({ mount, page }) => {
+  await stubShell(page);
+  await stubRetros(page);
+  const item = retroSearch.selected!.workItem!;
+  await withSelected(page, {
+    compiledFrom: [
+      { ...item, id: 'c1', key: 'SHIP-901' },
+      { ...item, id: 'c2', key: 'SHIP-902' },
+    ],
+  });
+  await mount(<AppRoutes />, open('/p/SHIP/retros'));
+  const selected = page.getByTestId(ids.retrosSelected);
+  await expect(selected).toContainText('Compiled from');
+  await expect(selected.getByText('SHIP-901')).toBeVisible();
+  await expect(selected.getByText('SHIP-902')).toBeVisible();
 });
 
 test('SelectedRetro_WhenTheMatchIsInAPoint_ShouldLeaveTheLogCollapsed', async ({ mount, page }) => {

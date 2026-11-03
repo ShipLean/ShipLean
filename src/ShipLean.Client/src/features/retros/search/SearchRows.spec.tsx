@@ -16,12 +16,71 @@ test('SearchRows_WhenResultHasPoints_ShouldShowOneRowEachWithItsParts', async ({
   const point = retroSearch.rows[0];
   await expect(first).toContainText('Went badly');
   await expect(first).toContainText(point.text);
-  await expect(first).toContainText(`Root cause: ${point.rootCause}`);
+  await expect(first).not.toContainText('Root cause');
   await expect(first).toContainText(point.theme!.name);
   await expect(first.locator('[title="Recurring"]')).toHaveText('↻');
   await expect(first).toContainText(point.workItem!.key);
   await expect(first).toContainText(point.sprint!.name);
   await expect(first.locator('[title="Priya Shah · Claude Code · lane A"]')).toBeVisible();
+});
+
+test('SearchRows_WhenTheSearchMatchedTheRootCause_ShouldShowItOnlyThen', async ({
+  mount,
+  page,
+}) => {
+  await stubShell(page);
+  await stubRetros(page);
+  const point = retroSearch.rows[0];
+  const word = point.rootCause!.split(' ')[3];
+  await mount(<AppRoutes />, open(`/p/SHIP/retros?q=${word}`));
+  const rows = page.getByTestId(ids.retrosRow);
+  await expect(rows.first()).toContainText(`Root cause: ${point.rootCause}`);
+  // Another row's root cause does not share the word, so it stays out.
+  await expect(rows.nth(1)).not.toContainText('Root cause');
+});
+
+test('SearchRows_WhenAnotherFieldMatchedAndOnlyOneWordIsInTheRootCause_ShouldKeepTheRootCauseOut', async ({
+  mount,
+  page,
+}) => {
+  await stubShell(page);
+  await stubRetros(page);
+  const point = retroSearch.rows[0];
+  // "brief" is in the root cause, "Pay" only in the item title: the search matched the title.
+  const q = encodeURIComponent(
+    `${point.rootCause!.split(' ')[1]} ${point.workItem!.title.split(' ')[0]}`,
+  );
+  await mount(<AppRoutes />, open(`/p/SHIP/retros?q=${q}`));
+  const rows = page.getByTestId(ids.retrosRow);
+  await expect(rows).toHaveCount(retroSearch.rows.length);
+  await expect(rows.first()).not.toContainText('Root cause');
+  // The hover title leaves it out as well.
+  await expect(rows.first().locator('td').nth(1)).not.toHaveAttribute('title', /Root cause/);
+});
+
+test('SearchRows_WhenTextIsLong_ShouldStayOneLineAt1280', async ({ mount, page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await stubShell(page);
+  await stubRetros(page);
+  await mount(<AppRoutes />, open('/p/SHIP/retros'));
+  const rows = page.getByTestId(ids.retrosRow);
+  await expect(rows).toHaveCount(retroSearch.rows.length);
+  // One line is the height of the avatar and padding; two lines of text would add a line more to some rows.
+  const heights = await Promise.all(
+    (await rows.all()).map(async (row) => (await row.boundingBox())!.height),
+  );
+  expect(Math.max(...heights)).toBeLessThan(40);
+  expect(Math.max(...heights) - Math.min(...heights)).toBeLessThan(1);
+  // The theme name is cut with an ellipsis too, so it is on hover.
+  const themed = retroSearch.rows[0].theme!;
+  await expect(rows.first().locator('td').nth(2)).toHaveAttribute('title', themed.name);
+  // The text is cut with an ellipsis, so the point's whole text is on hover.
+  const cell = rows.first().locator('td').nth(1);
+  await expect(cell).toHaveAttribute('title', new RegExp(retroSearch.rows[0].text.slice(0, 20)));
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(0);
 });
 
 test('SearchRows_WhenTextMatches_ShouldHighlightIt', async ({ mount, page }) => {

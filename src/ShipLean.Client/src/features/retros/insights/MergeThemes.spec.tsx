@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import { retroInsights, retroThemes, stubRetros } from '../ct/retroFixtures';
+import { retroThemes, stubRetros } from '../ct/retroFixtures';
 import { retrosTestIds as ids } from '../testIds';
 import { insightsProject } from './ct/insightsProject';
 import { MergeThemes } from './MergeThemes';
@@ -8,7 +8,7 @@ const [a, b, c] = retroThemes.themes;
 
 test('MergeThemes_WhenTwoSourcesAndATargetChosen_ShouldPostTheMerge', async ({ mount, page }) => {
   const stub = await stubRetros(page);
-  await mount(<MergeThemes project={insightsProject} insights={retroInsights} />);
+  await mount(<MergeThemes project={insightsProject} />);
   await page.getByTestId(ids.retroMergeThemes).click();
   await expect(page.getByTestId(ids.retroMergeDialog)).toBeVisible();
   const sources = page.getByTestId(ids.retroMergeSource);
@@ -30,7 +30,7 @@ test('MergeThemes_WhenTwoSourcesAndATargetChosen_ShouldPostTheMerge', async ({ m
 
 test('MergeThemes_WhenTargetPicked_ShouldNotAlsoBeASource', async ({ mount, page }) => {
   await stubRetros(page);
-  await mount(<MergeThemes project={insightsProject} insights={retroInsights} />);
+  await mount(<MergeThemes project={insightsProject} />);
   await page.getByTestId(ids.retroMergeThemes).click();
   const source = page
     .getByTestId(ids.retroMergeSource)

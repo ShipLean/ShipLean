@@ -4,6 +4,10 @@ import retroSearch from '../../../ShipLean.TestSupport/DtoFixtures/retros/retro-
 import retroInsights from '../../../ShipLean.TestSupport/DtoFixtures/retros/retro-insights.json';
 import retroThemes from '../../../ShipLean.TestSupport/DtoFixtures/retros/retro-themes.json';
 import workItemRetros from '../../../ShipLean.TestSupport/DtoFixtures/retros/work-item-retros.json';
+import retroFeatures from '../../../ShipLean.TestSupport/DtoFixtures/retros/retro-features.json';
+import retroItem from '../../../ShipLean.TestSupport/DtoFixtures/retros/retro-item.json';
+import actionDialog from '../../../ShipLean.TestSupport/DtoFixtures/retros/retro-action-dialog.json';
+import actionDetail from '../../../ShipLean.TestSupport/DtoFixtures/retros/retro-action-detail.json';
 import retroPoint from '../../../ShipLean.TestSupport/DtoFixtures/retros/retro-point.json';
 import {
   RETRO_CATEGORIES,
@@ -14,7 +18,13 @@ import {
   RETRO_THEME_STATUSES,
   RETRO_TONES,
   RETRO_VERDICTS,
+  RETRO_DECISIONS,
+  RETRO_FIX_TYPES,
+  type RetroActionDetailDto,
+  type RetroActionDialogDto,
   type RetroCardDto,
+  type RetroFeaturesDto,
+  type RetroItemDto,
   type RetroInsightsDto,
   type RetroPointDto,
   type RetroSearchDto,
@@ -59,11 +69,15 @@ test('retroFixtures_ShouldTypeEveryFixture', () => {
   typed<RetroThemeListDto>()(retroThemes);
   typed<WorkItemRetrosDto>()(workItemRetros);
   typed<RetroPointDto>()(retroPoint);
+  typed<RetroFeaturesDto>()(retroFeatures);
+  typed<RetroItemDto>()(retroItem);
+  typed<RetroActionDialogDto>()(actionDialog);
+  typed<RetroActionDetailDto>()(actionDetail);
   expect(view.categories.map((column) => column.category)).toEqual([
+    'wentWell',
+    'notInPlan',
     'wentBadly',
     'improve',
-    'notInPlan',
-    'wentWell',
   ]);
 });
 
@@ -74,6 +88,10 @@ test('retroFixtures_ShouldUseEveryEnumValue', () => {
     retroInsights,
     retroPoint,
     workItemRetros,
+    retroFeatures,
+    retroItem,
+    actionDialog,
+    actionDetail,
   ]);
   const used = (key: string, values: readonly string[]) =>
     values.filter((value) => text.includes(`"${key}":"${value}"`));
@@ -84,6 +102,8 @@ test('retroFixtures_ShouldUseEveryEnumValue', () => {
   expect(used('status', RETRO_THEME_STATUSES)).toEqual([...RETRO_THEME_STATUSES]);
   expect(used('status', RETRO_COVERAGES)).toEqual(expect.arrayContaining([...RETRO_COVERAGES]));
   expect(used('verdict', RETRO_VERDICTS)).toEqual([...RETRO_VERDICTS]);
+  expect(used('decision', RETRO_DECISIONS)).toEqual([...RETRO_DECISIONS]);
+  expect(used('fixType', RETRO_FIX_TYPES)).toEqual(expect.arrayContaining(['skill']));
   expect(RETRO_THEME_MODES).toContain(retroThemes.mode);
 });
 
@@ -99,4 +119,8 @@ test('sprintRetro_ShouldPinTheSpecialCases', () => {
   expect(cards.some((card) => card.workItem === null && card.author.role === 'person')).toBe(true);
   expect(cards.some((card) => card.points.some((point) => point.action !== null))).toBe(true);
   expect(cards.some((card) => card.partial)).toBe(true);
+});
+
+test('retroCategories_ShouldRunInDisplayOrder', () => {
+  expect([...RETRO_CATEGORIES]).toEqual(['wentWell', 'notInPlan', 'wentBadly', 'improve']);
 });

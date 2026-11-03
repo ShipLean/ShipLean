@@ -20,6 +20,10 @@ vi.mock('../../api/retrosApi', () => {
     fetchRetroInsights: pending,
     fetchRetroThemes: pending,
     fetchWorkItemRetros: pending,
+    fetchRetroFeatures: pending,
+    fetchRetroItem: pending,
+    fetchRetroActionDialog: pending,
+    fetchRetroAction: pending,
   };
 });
 
@@ -32,6 +36,10 @@ const keys = {
   search: queries.retroSearchKey('p1', {}),
   insights: queries.retroInsightsKey('p1', '6'),
   themes: queries.retroThemesKey('p1'),
+  features: queries.retroFeaturesKey('p1'),
+  retroItem: queries.retroItemKey('p1', 'SHIP-1'),
+  dialog: queries.retroActionDialogKey('p1', { pointIds: ['a'] }),
+  action: queries.retroActionKey('p1', 'w2'),
 };
 
 function Hooks() {
@@ -40,6 +48,10 @@ function Hooks() {
   queries.useRetroSearch('p1', {});
   queries.useRetroInsights('p1', '6');
   queries.useRetroThemes('p1');
+  queries.useRetroFeatures('p1');
+  queries.useRetroItem('p1', 'SHIP-1');
+  queries.useRetroActionDialogData('p1', { pointIds: ['a'] });
+  queries.useRetroAction('p1', 'w2');
   return null;
 }
 
@@ -68,16 +80,51 @@ const deliver = (sprintIds: string[], workItemIds: string[]) =>
 
 test('RetroChanged_WhenEventIsForAnotherSprintAndItem_ShouldMarkOnlyTheProjectWideReads', () => {
   deliver(['s23'], ['w-other']);
-  expect(marked()).toEqual(['search', 'insights', 'themes']);
+  expect(marked()).toEqual([
+    'search',
+    'insights',
+    'themes',
+    'features',
+    'retroItem',
+    'dialog',
+    'action',
+  ]);
 });
 
 test('RetroChanged_WhenEventIsForThisSprintAndItem_ShouldMarkThemAndTheProjectReads', () => {
   deliver(['s24'], ['w1']);
-  expect(marked()).toEqual(['sprint', 'item', 'search', 'insights', 'themes']);
+  expect(marked()).toEqual([
+    'sprint',
+    'item',
+    'search',
+    'insights',
+    'themes',
+    'features',
+    'retroItem',
+    'dialog',
+    'action',
+  ]);
 });
 
 test('RetroChanged_WhenListsAreEmpty_ShouldMarkEveryOpenRetroRead', () => {
   deliver([], []);
   // The other sprint's query has no screen open, so nothing refetches it; the event must not reach it through a prefix.
-  expect(marked()).toEqual(['sprint', 'item', 'search', 'insights', 'themes']);
+  expect(marked()).toEqual([
+    'sprint',
+    'item',
+    'search',
+    'insights',
+    'themes',
+    'features',
+    'retroItem',
+    'dialog',
+    'action',
+  ]);
+});
+
+test('NewHooks_ShouldKeepEveryKeyUnderTheRetrosRootKey', () => {
+  const root = queries.retrosRootKey('p1');
+  for (const key of Object.values(keys)) expect(key.slice(0, root.length)).toEqual([...root]);
+  expect(queries.retroFeaturesKey('p1')).toEqual([...root, 'features']);
+  expect(queries.retroItemKey('p1', 'SHIP-1')).toEqual([...root, 'item', 'SHIP-1']);
 });

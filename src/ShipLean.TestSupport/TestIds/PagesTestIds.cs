@@ -15,6 +15,8 @@ public static class PagesTestIds
     public const string CapacityPage = "page-capacity";
     public const string SprintRetroPage = "page-sprint-retro";
     public const string RetrosPage = "page-retros";
+    public const string RetroFeaturesPage = "page-retro-features";
+    public const string RetroItemPage = "page-retro-item";
     public const string RetroInsightsPage = "page-retro-insights";
     public const string ImportPage = "page-import";
     public const string ProjectSettingsPage = "page-project-settings";
@@ -54,6 +56,8 @@ public static class PagesTestIds
     public const string SlotSprintsList = "slot-sprintsList";
     public const string SlotSprintRetro = "slot-sprintRetro";
     public const string SlotRetrosSearch = "slot-retrosSearch";
+    public const string SlotRetroFeatures = "slot-retroFeatures";
+    public const string SlotRetroItem = "slot-retroItem";
     public const string SlotRetroInsights = "slot-retroInsights";
     public const string SlotRetroByCategory = "slot-retroByCategory";
     public const string SlotRetroSearchFilters = "slot-retroSearchFilters";

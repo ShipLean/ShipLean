@@ -66,9 +66,14 @@ public static class ActionUsageMap
         Add(ActionUsage.Track(UsageEventNames.RetroSearched), "RetroSearch.Search");
         Add(ActionUsage.Track(UsageEventNames.RetroPointArchived), "RetroPoints.Archive");
         Add(ActionUsage.Track(UsageEventNames.RetroPointMoved), "RetroPoints.MoveTheme");
-        Add(ActionUsage.Track(UsageEventNames.RetroActionCreated), "RetroPoints.CreateAction");
-        Add(ActionUsage.Track(UsageEventNames.RetroThemesMerged), "RetroThemeWrites.Merge");
+        Add(ActionUsage.Track(UsageEventNames.RetroActionCreated), "RetroActions.Create");
+        Add(ActionUsage.Track(UsageEventNames.RetroActionPointsAdded), "RetroActions.AddPoints");
+        Add(ActionUsage.Track(UsageEventNames.RetroActionUpdated), "RetroActions.Update");
+        Add(ActionUsage.Track(UsageEventNames.RetroThemesMerged), "RetroThemeWrites.Merge", "RetroMergeProposals.Merge");
+        Add(ActionUsage.Track(UsageEventNames.RetroMergeKeptApart), "RetroMergeProposals.KeepApart");
         Add(ActionUsage.Track(UsageEventNames.RetroThemeRenamed), "RetroThemeWrites.Rename");
+        Add(ActionUsage.Track(UsageEventNames.RetroPointNotNeeded), "RetroDecisions.NotNeeded");
+        Add(ActionUsage.Track(UsageEventNames.RetroNotNeededUndone), "RetroDecisions.UndoNotNeeded");
         Add(ActionUsage.Track(UsageEventNames.ImportStarted), "ImportJobs.Start");
         Add(ActionUsage.Track(UsageEventNames.ImportJobChanged), "ImportJobs.Rerun", "ImportJobs.Retry", "ImportJobs.Skip", "ImportJobs.Stop");
         Add(ActionUsage.Track(UsageEventNames.ImportJiraConnected), "Jira.Put");
@@ -166,7 +171,11 @@ public static class ActionUsageMap
             "ProjectVelocity.Get",
             "ProjectWorkItems.List",
             "ProjectWorkItems.Tags",
+            "RetroActionDialog.Get",
+            "RetroActions.Get",
+            "RetroFeatures.List",
             "RetroInsights.Get",
+            "RetroItems.Get",
             "RetroThemes.List",
             "SprintCapacity.Get",
             "SprintMetrics.Get",
