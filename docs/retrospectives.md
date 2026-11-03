@@ -38,6 +38,7 @@ An action item is a work item of type `action` ("Action item"), at the same leve
 - An action item with no tasks shows no Tasks section on its page; one with tasks lists them, with no way to add more from that page. The Taskboard can still add a task under an action item.
 - Removing an action item moves it to Removed and returns all its points to undecided. Removed action items drop out of every retro view and count.
 - A Feature's rail lists its children's action items.
+- On Insights, **+ Action item** in the Action items header opens the dialog with no points ticked, offering the project's undecided ones; Create stays off until a title and a point are set.
 
 ## Proposals
 

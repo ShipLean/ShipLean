@@ -1,6 +1,7 @@
 import { TypeIcon } from '../../../components/TypeIcon';
 import { useProjectSprints } from '../../workItem/workItemApi';
 import { retrosTestIds as ids } from '../testIds';
+import { AddActionItemButton } from './actions/AddActionItemButton';
 import { ActionRow } from './actions/ActionRow';
 import { nextSprintOf } from './actions/nextSprint';
 import type { RetroInsightsSlotProps } from './InsightsSlotProps';
@@ -29,6 +30,8 @@ export function ActionItemsTable({ project, insights }: RetroInsightsSlotProps) 
           <span className="text-[length:var(--text-sm)] text-ink-muted">
             {actionItems.length - done} open · {done} done
           </span>
+          <span className="flex-1" />
+          <AddActionItemButton />
         </header>
         {actionItems.length === 0 ? (
           <p className="m-0 px-4 pb-4 text-[length:var(--text-sm)] text-ink-muted">Nothing here.</p>

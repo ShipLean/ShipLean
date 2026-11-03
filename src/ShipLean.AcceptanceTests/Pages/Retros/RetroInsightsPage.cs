@@ -73,6 +73,8 @@ public sealed class RetroInsightsPage(IPage page)
 
     public ILocator ActionsTable => page.GetByTestId(RetrosTestIds.RetroActionsTable);
 
+    public ILocator ActionsAdd => page.GetByTestId(RetrosTestIds.RetroActionsAdd);
+
     public ILocator ActionRows => page.GetByTestId(RetrosTestIds.RetroActionRow);
 
     public ILocator ActionRowOf(string text) => ActionRows.Filter(new() { HasText = text });

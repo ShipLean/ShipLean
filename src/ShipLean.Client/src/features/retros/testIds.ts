@@ -66,6 +66,7 @@ export const retrosTestIds = {
   retroActionsTable: 'retro-actions-table',
   retroActionRow: 'retro-action-row',
   retroActionPull: 'retro-action-pull',
+  retroActionsAdd: 'retro-actions-add',
   retroImpactCard: 'retro-impact-card',
   // Work item section
   workItemRetroSection: 'work-item-retro-section',

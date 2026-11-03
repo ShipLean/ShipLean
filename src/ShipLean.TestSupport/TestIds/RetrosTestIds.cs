@@ -69,6 +69,7 @@ public static class RetrosTestIds
     public const string RetroActionsTable = "retro-actions-table";
     public const string RetroActionRow = "retro-action-row";
     public const string RetroActionPull = "retro-action-pull";
+    public const string RetroActionsAdd = "retro-actions-add";
     public const string RetroImpactCard = "retro-impact-card";
     // Work item section
     public const string WorkItemRetroSection = "work-item-retro-section";
