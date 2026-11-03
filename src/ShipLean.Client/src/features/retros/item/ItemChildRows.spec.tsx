@@ -52,11 +52,11 @@ test('ItemChildRows_WhenAFeature_ShouldListItsStoriesAndBugsWithCountsInOrder', 
   await expect(rows.nth(1)).not.toContainText('to decide');
 });
 
-test('ItemChildRows_WhenAStory_ShouldShowNoRows', async ({ mount, page }) => {
-  await mount(
-    <ItemChildRows projectKey="SHIP" item={{ ...retroItem, children: [] }} />,
-    mountOptions,
-  );
+test('ItemChildRows_WhenAFeatureThenAStory_ShouldShowRowsThenNone', async ({ mount, page }) => {
+  const component = await mount(<ItemChildRows projectKey="SHIP" item={feature} />, mountOptions);
+  await expect(page.getByTestId(ids.retroItemChildRows)).toHaveCount(1);
+  await expect(page.getByTestId(ids.retroItemChildRow)).toHaveCount(2);
+  await component.update(<ItemChildRows projectKey="SHIP" item={{ ...retroItem, children: [] }} />);
   await expect(page.getByTestId(ids.retroItemChildRows)).toHaveCount(0);
   await expect(page.getByTestId(ids.retroItemChildRow)).toHaveCount(0);
 });

@@ -131,6 +131,31 @@ test('RetroItemPanel_WhenItemHasNoRetros_ShouldStillRenderTheBoardToAdd', async 
   await expect(page.getByTestId(shared.retroBoardAdd)).toHaveCount(4);
 });
 
+test('RetroItemPanel_WhenItemHasLogsAndStories_ShouldShowLogsBelowTheBoardBeforeTheStoryRows', async ({
+  mount,
+  page,
+}) => {
+  const [child] = retroItem.children;
+  await serve(page, {
+    ...twoRetros,
+    cards: [
+      {
+        ...firstCard,
+        failureLog: { blockers: ['Port 5432 was taken'], assumptionsDisproved: [], friction: [] },
+      },
+      twoRetros.cards[1],
+    ],
+    children: [child],
+  });
+  await mount(<RetroItemPanel project={project} itemKey="SHIP-180" />, route());
+  await expect(page.getByTestId(ids.retroItemChildRows)).toBeVisible();
+  const board = await page.getByTestId(shared.retroBoard).boundingBox();
+  const logs = await page.getByTestId(ids.retroItemLogs).boundingBox();
+  const rows = await page.getByTestId(ids.retroItemChildRows).boundingBox();
+  expect(board!.y + board!.height).toBeLessThanOrEqual(logs!.y);
+  expect(logs!.y + logs!.height).toBeLessThanOrEqual(rows!.y);
+});
+
 test('ItemAddedHarness_WhenAddedPointWouldBeHidden_ShouldClearTheFilter', async ({
   mount,
   page,

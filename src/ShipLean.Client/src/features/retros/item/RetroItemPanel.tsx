@@ -12,7 +12,7 @@ import { ItemToolbar } from './ItemToolbar';
 import { useRetroItemAddress } from './useRetroItemAddress';
 
 /**
- * One item's retros: the header, the filters and one board over the item's retros, then the story rows, failure logs
+ * One item's retros: the header, the filters and one board over the item's retros, then the failure logs, the story rows
  * and rail (I2's parts). The retro filter, decide and point live in the address (retroItemAddress.ts).
  */
 export function RetroItemPanel({ project, itemKey }: { project: ProjectDto; itemKey: string }) {
@@ -32,8 +32,8 @@ export function RetroItemPanel({ project, itemKey }: { project: ProjectDto; item
               <ItemHeader projectKey={project.key} item={item} />
               <ItemToolbar item={item} address={address} onRetro={setRetro} onDecide={setDecide} />
               <ItemBoard item={item} address={address} onAdded={onAdded} />
-              <ItemChildRows projectKey={project.key} item={item} />
               <ItemFailureLogs item={item} address={address} />
+              <ItemChildRows projectKey={project.key} item={item} />
             </div>
             <ItemRail projectKey={project.key} item={item} />
           </div>
