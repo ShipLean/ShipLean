@@ -112,7 +112,7 @@ internal sealed class SprintTools(
     }
 
     [McpServerTool(Name = "end_sprint"), McpScope(McpScopes.Plan, PreviewScope = McpScopes.Read)]
-    [Description("Close a sprint: the roll-over prompt as a tool. Without `plan` it previews which unfinished stories and bugs move to the next sprint (or the backlog) and returns a plan; call again with that plan to move them. The roll-over then shows as decided for everyone. A sprint can be closed from its end day on; while it is still running (its end date is after today) pass end_today: true, which moves its end date to today first. An earlier sprint that has already ended is named by `sprint`.")]
+    [Description("Close a sprint: the Close sprint button as a tool. Without `plan` it previews which unfinished stories and bugs move to the next sprint (or the backlog) and returns a plan; call again with that plan to move them. The roll-over then shows as decided for everyone. A sprint can be closed from its end day on; while it is still running (its end date is after today) pass end_today: true, which moves its end date to today first. An earlier sprint that has already ended is named by `sprint`.")]
     public async Task<CallToolResult> EndSprint(
         [Description("The project key, such as SHIP. Needed when the user is in more than one project.")] string? project = null,
         [Description("current (the sprint running today) or a sprint name. Defaults to current.")] string? sprint = null,
@@ -168,11 +168,7 @@ internal sealed class SprintTools(
         if (sealedPlan is not null)
         {
             await CheckUnchangedAsync(sealedPlan.Moves, [.. current.Select(m => (m.Item.WorkItemId, m.Target))], cancellationToken);
-            if (movesEndDate)
-            {
-                await sprintStore.UpdateAsync(sprintId, new SprintUpdate(null, null, today, null), cancellationToken);
-            }
-            await sprintStore.RolloverAsync(sprintId, new RolloverRequest([.. current.Select(m => new RolloverMove(m.Item.WorkItemId, m.Target))]), cancellationToken);
+            await sprintStore.RolloverAsync(sprintId, new RolloverRequest([.. current.Select(m => new RolloverMove(m.Item.WorkItemId, m.Target))], movesEndDate), cancellationToken);
             var done = new EndSprintResult(resolved.Key, url, head.Name, true, lines, movedPoints, [], null, null);
             return SprintReply.Of(done, $"{head.Name} is closed: {lines.Count} items ({movedPoints} points) moved to {targetName}.");
         }

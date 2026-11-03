@@ -20,6 +20,23 @@ public class EndSprintTests : SprintFixture
     }
 
     [Test]
+    public async Task EndSprint_WhenEndedWithNothingUnfinished_ShouldCloseIt()
+    {
+        await ParkBacklogAsync();
+        var ended = await AddSprintAsync("Ended clean", -20, -6);
+        var token = await TokenAsync(TestUser.Joel, ReadWritePlan);
+
+        var preview = await CallToolAsync(token, "end_sprint", """{"project":"EMPT","sprint":"Ended clean"}""");
+
+        preview.IsToolError().ShouldBeFalse(preview.Body);
+        var applied = await CallToolAsync(token, "end_sprint", $$"""{"project":"EMPT","plan":"{{preview.Structured().GetProperty("plan").GetString()}}"}""");
+
+        applied.IsToolError().ShouldBeFalse(applied.Body);
+        await using var connection = await OpenDatabaseAsync();
+        (await connection.QuerySingleAsync<string>("SELECT rollover_status FROM sprint WHERE id = @ended", new { ended })).ShouldBe("decided");
+    }
+
+    [Test]
     public async Task EndSprint_ShouldStampRolledItemsWithAgentName()
     {
         await ParkBacklogAsync();

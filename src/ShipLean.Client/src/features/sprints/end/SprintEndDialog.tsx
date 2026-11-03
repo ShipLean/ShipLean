@@ -1,6 +1,7 @@
 import type { RolloverDto, SprintMetricsDto } from '../../../api/sprints';
 import { Dialog } from '../../../components/Dialog';
 import { sprintsTestIds as ids } from '../testIds';
+import { EndsEarlyNote } from './EndsEarlyNote';
 import { NextSprintCallout } from './NextSprintCallout';
 import {
   destinationOf,
@@ -19,19 +20,19 @@ interface SprintEndDialogProps {
   choices: Choices;
   onChoices: (choices: Choices) => void;
   onApply: () => void;
-  onLater: () => void;
+  onCancel: () => void;
   applying: boolean;
   error: string | null;
 }
 
-/** The Sprint end dialog: each unfinished item with where it goes, the next sprint's total, Apply and Decide later. */
+/** The Close sprint dialog: each unfinished item with where it goes, the next sprint's total, Close sprint and Cancel. */
 export function SprintEndDialog({
   rollover,
   metrics,
   choices,
   onChoices,
   onApply,
-  onLater,
+  onCancel,
   applying,
   error,
 }: SprintEndDialogProps) {
@@ -42,17 +43,22 @@ export function SprintEndDialog({
   const everyChoice = (destination: Destination) => onChoices(setAll(items, destination));
   return (
     <Dialog
-      title={`${sprint.name} has ended`}
-      onClose={onLater}
+      title={`Close ${sprint.name}`}
+      onClose={onCancel}
       width="720px"
       footer={
         <>
           <span className="text-[length:var(--text-xs)] text-ink-muted">
-            Anyone on the team can do this. Once applied, it&apos;s done for everyone.
+            Anyone on the team can do this. Once closed, it&apos;s done for everyone.
           </span>
           <span className="flex-1" />
-          <button type="button" data-testid={ids.endLater} className="btn-ghost" onClick={onLater}>
-            Decide later
+          <button
+            type="button"
+            data-testid={ids.endCancel}
+            className="btn-ghost"
+            onClick={onCancel}
+          >
+            Cancel
           </button>
           <button
             type="button"
@@ -61,7 +67,7 @@ export function SprintEndDialog({
             disabled={applying}
             onClick={onApply}
           >
-            Apply
+            Close sprint
           </button>
         </>
       }
@@ -69,6 +75,7 @@ export function SprintEndDialog({
       <p className="m-0 text-[length:var(--text-sm)] text-ink-muted">
         {`${metrics ? `${metrics.completed} of ${metrics.committed} committed points completed · ` : ''}${items.length} ${items.length === 1 ? 'item' : 'items'} unfinished (${points} pts)`}
       </p>
+      {rollover.endsEarly ? <EndsEarlyNote sprintName={sprint.name} /> : null}
       <div>
         {items.map((item) => (
           <UnfinishedRow

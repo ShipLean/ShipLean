@@ -29,7 +29,6 @@ import { projectDto, sprintDto } from './pagesFixtures';
 const project = projectDto('SHIP');
 const sprint = sprintDto('sprint-24');
 const sprints = [sprint];
-const loaded = { data: sprints, isError: false };
 
 function element(node: unknown): ReactElement<Record<string, unknown>> {
   if (!isValidElement<Record<string, unknown>>(node)) throw new Error('expected an element');
@@ -108,7 +107,6 @@ test('sprintPages_ShouldPassTheSprintAndTheRightHeader', () => {
     sprintRetro: { project, sprint, sprints },
   });
   expect(sprintsSlots(project, sprints)).toEqual({
-    sprintEndPrompt: { project, sprints },
     sprintsList: { project, sprints },
     newSprintRail: { project, sprints },
   });
@@ -125,24 +123,24 @@ test('retroPages_ShouldPassTheProjectToTheirOneSlot', () => {
 
 test('backlogSlots_WhenStoriesInEachMode_ShouldMountOnlyThatModesSlot', () => {
   const props = (mode: 'list' | 'planning' | 'tree') => ({ project, level: 'stories', mode });
-  const list = backlogSlots(project, 'stories', 'list', loaded);
+  const list = backlogSlots(project, 'stories', 'list');
   expect(list.listMode).toEqual(props('list'));
   expect([list.planningMode, list.treeMode, list.levelBacklog]).toEqual([
     undefined,
     undefined,
     undefined,
   ]);
-  const planning = backlogSlots(project, 'stories', 'planning', loaded);
+  const planning = backlogSlots(project, 'stories', 'planning');
   expect(planning.planningMode).toEqual(props('planning'));
   expect([planning.listMode, planning.treeMode]).toEqual([undefined, undefined]);
-  const tree = backlogSlots(project, 'stories', 'tree', loaded);
+  const tree = backlogSlots(project, 'stories', 'tree');
   expect(tree.treeMode).toEqual(props('tree'));
   expect([tree.listMode, tree.planningMode]).toEqual([undefined, undefined]);
 });
 
 test('backlogSlots_WhenFeaturesOrEpics_ShouldMountTheLevelBacklogOnly', () => {
   for (const level of ['features', 'epics'] as const) {
-    const slots = backlogSlots(project, level, 'list', loaded);
+    const slots = backlogSlots(project, level, 'list');
     expect(slots.levelBacklog).toEqual({ project, level, mode: 'list' });
     expect([slots.listMode, slots.planningMode, slots.treeMode]).toEqual([
       undefined,
@@ -150,19 +148,6 @@ test('backlogSlots_WhenFeaturesOrEpics_ShouldMountTheLevelBacklogOnly', () => {
       undefined,
     ]);
   }
-});
-
-test('backlogSlots_WhenSprintsPendingOrFailed_ShouldWaitOrGiveNone', () => {
-  expect(
-    backlogSlots(project, 'stories', 'list', { data: undefined, isError: false }).sprintEndPrompt,
-  ).toBeUndefined();
-  const failed = backlogSlots(project, 'stories', 'list', { data: undefined, isError: true });
-  expect(failed.sprintEndPrompt).toEqual({ project, sprints: [] });
-  expect(failed.listMode).toBeDefined();
-  expect(backlogSlots(project, 'stories', 'list', loaded).sprintEndPrompt).toEqual({
-    project,
-    sprints,
-  });
 });
 
 test('projectSettingsSlots_ShouldFrameEveryTabAndHandOverTheTwoContents', () => {

@@ -8,7 +8,7 @@ using static ShipLean.AcceptanceTests.Lanes.Sprints.End.EndedSprint;
 
 namespace ShipLean.AcceptanceTests.Lanes.Sprints.End;
 
-// Sprint 24 ended, with Joel and Tom both on All sprints when Joel applies. Its own class: Apply moves the items.
+// Sprint 24 ended, with Joel and Tom both on its page with the dialog open when Joel closes it. Its own class: closing moves the items.
 [TestFixture]
 public class SprintEndAppliedTests : SeededAcceptanceTest
 {
@@ -22,7 +22,7 @@ public class SprintEndAppliedTests : SeededAcceptanceTest
     }
 
     [Test]
-    public async Task SprintEnd_WhenApplied_ShouldMoveItemsAndShowOnceForEveryone()
+    public async Task CloseSprint_WhenClosed_ShouldMoveItemsAndBeDoneForEveryone()
     {
         await EndSprint24Async(ConnectionString);
         var keys = Keys(await ReadRolloverAsync(Page, SeedIds.Sprints.Sprint24));
@@ -31,8 +31,9 @@ public class SprintEndAppliedTests : SeededAcceptanceTest
         var projectItems = $"/api/projects/{SeedIds.Projects.Ship}/work-items";
 
         var joel = new SprintEndPrompt(Page);
-        await joel.OpenAsync("SHIP");
+        await joel.OpenAsync("SHIP", SeedIds.Sprints.Sprint24);
         await new LiveStatus(Page).WaitUntilLiveAsync();
+        await joel.PressCloseAsync();
         await Expect(joel.Rows).ToHaveCountAsync(keys.Count);
 
         await using var context = await Page.Context.Browser!.NewContextAsync(new BrowserNewContextOptions { BaseURL = BaseUrl });
@@ -44,8 +45,9 @@ public class SprintEndAppliedTests : SeededAcceptanceTest
         login.Ok.ShouldBeTrue();
         var tomPage = await context.NewPageAsync();
         var tom = new SprintEndPrompt(tomPage);
-        await tom.OpenAsync("SHIP");
+        await tom.OpenAsync("SHIP", SeedIds.Sprints.Sprint24);
         await new LiveStatus(tomPage).WaitUntilLiveAsync();
+        await tom.PressCloseAsync();
         await Expect(tom.Rows).ToHaveCountAsync(keys.Count);
 
         await joel.DestinationOf(toBacklog).SelectOptionAsync("backlog");
@@ -57,11 +59,8 @@ public class SprintEndAppliedTests : SeededAcceptanceTest
         await Expect(tom.Apply).ToHaveCountAsync(0);
         await tom.DoneClose.ClickAsync();
         await Expect(tom.Dialog).ToHaveCountAsync(0);
-        await tom.OpenAsync("SHIP");
-        await Expect(tom.Dialog).ToHaveCountAsync(0);
-        await Expect(tom.Banner).ToHaveCountAsync(0);
-        await joel.OpenAsync("SHIP");
-        await Expect(joel.Dialog).ToHaveCountAsync(0);
+        await Expect(tom.CloseButton).ToHaveCountAsync(0);
+        await Expect(joel.CloseButton).ToHaveCountAsync(0);
 
         var moved = new Dictionary<string, string?>();
         foreach (var key in keys)

@@ -35,14 +35,14 @@ An unknown address (under `/p/:key` or anywhere else, such as `/nowhere`), an un
 `src/pages/<Screen>Page.tsx`. A page resolves what the URL names, reports presence (`useScreenPresence(routeId)`) and lays out slots. It fetches only the project (`['projects', 'by-key', key]`) and, where a slot needs them, the sprints (`['projects', projectId, 'sprints']`); every other read belongs to a slot. A page holds no screen content.
 
 - A page's slot wiring is a pure function beside it (`backlogSlots`, `boardSlots`, `workItemSlots`, `sprintsSlots`, `sprintBacklogSlots`, `taskboardSlots`, `capacitySlots`, `sprintRetroSlots`, `retrosSlots`, `retroInsightsSlots`, `importSlots`, `projectSettingsSlots`, `instanceSettingsSlots`; `pageRouteIds` has the presence ids). They return each slot's props (or `undefined` for a slot not mounted), and `pages/pageWiring.test.tsx` pins them. Filling a slot never means editing them.
-- Data: the page renders its slots whenever it holds data. The not-found and load-failed states appear only while there is none, so a failed refetch never unmounts a slot. If the sprints cannot be read, a backlog page still renders and its sprint end prompt gets `sprints: []`.
+- Data: the page renders its slots whenever it holds data. The not-found and load-failed states appear only while there is none, so a failed refetch never unmounts a slot.
 - Retries: one policy for every query, the `QueryClient` default in `main.tsx` (`queries/retry.ts`): a 4xx answer is final, a network error or 5xx is retried up to three times. Do not set `retry` on a query.
 - Router: `main.tsx` uses a data router (`createBrowserRouter([{ path: '*', element: <AppRoutes /> }])`) and the component test harness the same shape with `createMemoryRouter`, so a screen can use `useBlocker`.
 - `ProjectScreen` (project page root: presence, project, not found), `SprintScreen` (also the sprint), `InstallScreen` (install-level root), `WithSprints` (reads the sprints for the part of a page that needs them).
-- Sprint pages render `SprintHeader` above their slots: `full` on the Sprint backlog, Capacity and Retro, `slim` on the Taskboard. `SprintHeader` renders `sprintGoalEdit`; the page does not.
+- Sprint pages render `SprintHeader` above their slots: `full` on the Sprint backlog, Capacity and Retro, `slim` on the Taskboard. `SprintHeader` renders `sprintGoalEdit` and `closeSprint`; the page does not.
 - `?settings=` on the boards and the Taskboard: the page reads it as `section`; `onSectionChange(section)` sets it (replacing the history entry), `onClose()` removes it. The slot renders its dialog only while `section` is set. To open a dialog from elsewhere, link to `?settings=<section>` (for example `columns` or `fields`).
 - `sprintGoalEdit`: the slot calls `onDone()` after the goal PATCH succeeds, having invalidated `['projects', projectId, 'sprints']`, and on Cancel or Escape. The header closes the editor and returns focus to its Edit button; the slot moves focus into its input when it mounts.
-- Backlogs: Stories show `listMode`, `planningMode` or `treeMode` by `?mode=` (list when absent or invalid); Features and Epics show `levelBacklog`. `sprintEndPrompt` is mounted on every backlog page and on the Sprints page.
+- Backlogs: Stories show `listMode`, `planningMode` or `treeMode` by `?mode=` (list when absent or invalid); Features and Epics show `levelBacklog`.
 - Project settings: `settingsDraft` is the frame of **every** tab (tab list with dirty dots, the one Save and Discard header, Save jumping to the first error). The page passes it the content of the States and Integrations tabs as `states` and `integrations` (elements of `settingsStates` and `settingsIntegrations`), and the frame renders them on those tabs. The frame shares the draft with `settingsStates` through its own context.
 - Work item: `form` is the page frame (header and fields strip across the full width, then the main column beside the rail, as `work-item.html` draws it). The page passes it `links`, `tasks`, `discussion` and `side` as elements; the frame puts Links at the top of the rail, then Side, and Tasks and Discussion in the main column.
 - Instance settings: each tab mounts its own slot, with the `tab`.
@@ -59,7 +59,6 @@ The five work item slots read the item through the query key `['projects', proje
 | `planningMode` | Backlogs (stories, planning) | `{ project, level, mode }` |
 | `treeMode` | Backlogs (stories, tree) | `{ project, level, mode }` |
 | `levelBacklog` | Backlogs (features, epics) | `{ project, level, mode }` |
-| `sprintEndPrompt` | Backlogs, Sprints | `{ project, sprints }` |
 | `form` | Work item | `{ project, itemKey, links, retro?, tasks, discussion, side: ReactNode }` (the frame; `retro` is the item's read-only Retrospective section, after the Repro steps and before `tasks`, and after Stories and bugs on a Feature; null shows none) |
 | `links`, `tasks`, `discussion`, `side` | Work item, inside `form` | `{ project, itemKey }` |
 | `attachment` | Attachment | `{ project, itemKey, attachmentId }` |
@@ -77,6 +76,7 @@ The five work item slots read the item through the query key `['projects', proje
 | `retroItem` | Retrospectives › one item | `{ project, itemKey }`; `RetroItemPanel` owns `retro`, `decide` and `point` in the address and gives the header, toolbar, board, rail and failure logs their parts |
 | `retroInsights` | Retrospectives › Insights | `{ project }`; `RetroInsightsPanel` owns the view tabs and the range and gives `MergeThemes`, `RecurringThemes`, `KeepsWorking`, `ActionItemsTable` and `ChangesImpact` `{ project, insights }` |
 | `sprintBacklog` | Sprint backlog | `{ project, sprint, sprints }` |
+| `closeSprint` | Sprint header, every sprint tab | `{ project, sprint }`; shows the Close sprint button on a sprint that isn't closed and isn't in the future, and opens its dialog when pressed. Nothing opens by itself |
 | `sprintGoalEdit` | rendered by `SprintHeader` | `{ project, sprint, sprints, onDone() }` |
 | `settingsDraft` | Project settings (every tab; the frame) | `{ project, tab, states, integrations: ReactNode }` |
 | `settingsStates` | Project settings, inside `settingsDraft` | `{ project, tab }` |

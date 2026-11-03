@@ -1,7 +1,7 @@
 import { Dialog } from '../../../components/Dialog';
 import { sprintsTestIds as ids } from '../testIds';
 
-/** What a teammate sees when the rollover was applied while their dialog was open: it is done, nothing more to do. */
+/** What a person sees when a teammate closed the sprint while their dialog was open: it is done, nothing more to do. */
 export function SprintEndDone({
   sprintName,
   onClose,
@@ -11,7 +11,7 @@ export function SprintEndDone({
 }) {
   return (
     <Dialog
-      title={`${sprintName} has ended`}
+      title={`${sprintName} is closed`}
       onClose={onClose}
       footer={
         <>
@@ -28,7 +28,7 @@ export function SprintEndDone({
       }
     >
       <p data-testid={ids.endDone} role="status" className="m-0">
-        {`The unfinished items in ${sprintName} were just moved by someone on the team. There is nothing left to decide.`}
+        {`Someone on the team just closed ${sprintName}. There is nothing left to decide.`}
       </p>
     </Dialog>
   );

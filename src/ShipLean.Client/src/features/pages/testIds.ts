@@ -49,7 +49,7 @@ export const pagesTestIds = {
   slotSettingsStates: 'slot-settingsStates',
   slotSide: 'slot-side',
   slotSprintBacklog: 'slot-sprintBacklog',
-  slotSprintEndPrompt: 'slot-sprintEndPrompt',
+  slotCloseSprint: 'slot-closeSprint',
   slotSprintsList: 'slot-sprintsList',
   slotSprintRetro: 'slot-sprintRetro',
   slotRetrosSearch: 'slot-retrosSearch',
