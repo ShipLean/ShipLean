@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Contracts;
+using ShipLean.Contracts.Retros.Decide;
 
 namespace ShipLean.Application.Features.Retros.Decide;
 

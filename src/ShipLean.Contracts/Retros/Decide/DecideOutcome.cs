@@ -1,4 +1,4 @@
-namespace ShipLean.Application.Features.Retros.Decide;
+namespace ShipLean.Contracts.Retros.Decide;
 
 // A preview (nothing written) or an apply. WouldTheme and WouldMerges are what was themed and proposed once applied. Created lists the keys an apply made.
 public sealed record DecideOutcome(

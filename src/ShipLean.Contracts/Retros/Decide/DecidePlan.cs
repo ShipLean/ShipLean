@@ -1,4 +1,4 @@
-namespace ShipLean.Application.Features.Retros.Decide;
+namespace ShipLean.Contracts.Retros.Decide;
 
 // The writes of one run: what a preview resolves and seals, and what an apply does, exactly. Merges are only ever proposed.
 public sealed record DecidePlan(
