@@ -1,0 +1,29 @@
+import { RETRO_CATEGORIES } from '../../../../../api/retros';
+import type { AddTarget } from '../../../../retroShared/board/AddTarget';
+import type {
+  RetroCardDto,
+  RetroCategoryColumnDto,
+  RetroPointDto,
+} from '../../../../../api/retros';
+
+/** One retro's points as board columns in K3's order: one unthemed group per column, `toDecide` counted from the points. */
+export function cardColumns(points: RetroPointDto[]): RetroCategoryColumnDto[] {
+  return RETRO_CATEGORIES.map((category) => {
+    const inColumn = points.filter((point: RetroPointDto) => point.category === category);
+    return {
+      category,
+      groups: [{ theme: null, recurring: false, points: inColumn }],
+      toDecide: inColumn.filter((point) => point.decision === 'undecided').length,
+    };
+  });
+}
+
+/** Where Add on this retro's board writes: its work item, or the sprint when the retro is the sprint's own. */
+export function cardAddTarget(card: RetroCardDto): AddTarget {
+  if (card.workItem) return { kind: 'item', workItemId: card.workItem.id };
+  return {
+    kind: 'sprint',
+    sprintId: card.sprint?.id ?? '',
+    about: [{ value: '', label: 'The sprint' }],
+  };
+}

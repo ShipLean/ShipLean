@@ -84,7 +84,7 @@ export function SprintRetroPanel({ project, sprint }: { project: ProjectDto; spr
                       <ByCategory {...props} writtenBy={writtenBy} onAdded={clearHidingFilters} />
                     </div>
                   ) : (
-                    <ByWorkItem {...props} writtenBy={writtenBy} />
+                    <ByWorkItem {...props} writtenBy={writtenBy} onAdded={clearHidingFilters} />
                   )}
                 </div>
                 <RetroRail {...props} />
