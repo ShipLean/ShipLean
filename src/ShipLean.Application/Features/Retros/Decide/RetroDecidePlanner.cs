@@ -136,34 +136,25 @@ internal sealed class RetroDecidePlanner(DecideScopeReader reader, IRetroDecisio
         foreach (var action in plan.Actions)
         {
             var kept = Undecided(action.PointIds, points, skipped);
-            if (kept.Count == 0)
+            // A point decided between the read and the write makes the writer conflict. Read again and try once more with the points still undecided.
+            for (var attempt = 0; attempt < 2 && kept.Count > 0; attempt++)
             {
-                continue;
-            }
-
-            try
-            {
-                if (action.Existing is { } existingId)
+                try
                 {
-                    var existing = await reader.LiveActionAsync(projectId, existingId, cancellationToken);
-                    if (existing is null)
+                    await ApplyActionAsync(projectId, action, kept, actor, skipped, create, add, created, cancellationToken);
+                    break;
+                }
+                catch (ApiException exception) when (exception.Code == ApiErrorCodes.Conflict)
+                {
+                    if (attempt == 1)
                     {
-                        kept.ForEach(id => skipped.Add(id, ActionNotLive));
-                        continue;
+                        kept.ForEach(id => skipped.Add(id, AlreadyDecided));
+                        break;
                     }
 
-                    await writes.AddPointsAsync(existingId, new RetroActionAddPoints(kept), actor, cancellationToken);
-                    add.Add(new DecideAddLine(existing.Key, kept.Count));
-                    continue;
+                    points = await reader.PointsAsync(projectId, plan.Scope, cancellationToken);
+                    kept = Undecided(kept, points, skipped);
                 }
-
-                var detail = await writes.CreateActionAsync(projectId, new RetroActionNew(action.Title, action.FixType, kept, null, action.Theme), actor, cancellationToken);
-                created.Add(detail.Action.Key);
-                create.Add(new DecideCreateLine(detail.Action.Title, action.FixType, detail.Theme?.Name, kept.Count, []));
-            }
-            catch (ApiException exception) when (exception.Code == ApiErrorCodes.Conflict)
-            {
-                kept.ForEach(id => skipped.Add(id, AlreadyDecided));
             }
         }
 
@@ -231,6 +222,29 @@ internal sealed class RetroDecidePlanner(DecideScopeReader reader, IRetroDecisio
     }
 
     // The points still undecided, in the order given; the others go to skipped.
+    private async Task ApplyActionAsync(
+        Guid projectId, DecidePlanAction action, List<Guid> kept, RetroActor actor, Skips skipped,
+        List<DecideCreateLine> create, List<DecideAddLine> add, List<string> created, CancellationToken cancellationToken)
+    {
+        if (action.Existing is { } existingId)
+        {
+            var existing = await reader.LiveActionAsync(projectId, existingId, cancellationToken);
+            if (existing is null)
+            {
+                kept.ForEach(id => skipped.Add(id, ActionNotLive));
+                return;
+            }
+
+            await writes.AddPointsAsync(existingId, new RetroActionAddPoints(kept), actor, cancellationToken);
+            add.Add(new DecideAddLine(existing.Key, kept.Count));
+            return;
+        }
+
+        var detail = await writes.CreateActionAsync(projectId, new RetroActionNew(action.Title, action.FixType, kept, null, action.Theme), actor, cancellationToken);
+        created.Add(detail.Action.Key);
+        create.Add(new DecideCreateLine(detail.Action.Title, action.FixType, detail.Theme?.Name, kept.Count, []));
+    }
+
     private static List<Guid> Undecided(IReadOnlyList<Guid> ids, IReadOnlyDictionary<Guid, DecideScopePoint> points, Skips skipped)
     {
         var kept = new List<Guid>();

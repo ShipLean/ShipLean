@@ -328,6 +328,86 @@ public class DecideRetroActionsTests : McpFixture
     }
 
     [Test]
+    public async Task Preview_WhenFixTypeIsANumber_ShouldBeValidationNamingTheField()
+    {
+        var world = await WorldAsync();
+        var point = await world.PointAsync(RetroCategory.WentBadly, "Point");
+
+        var reply = await world.PreviewRawAsync($$""", "actions":[{"title":"Numeric {{world.Tag}}","fix_type":"999","points":["{{point}}"]}]""");
+
+        ErrorField(reply).ShouldBe(("validation", "actions[0].fix_type"));
+    }
+
+    // Stands in for another request: when this apply inserts the action's work item, one of its points gets decided.
+    [Test]
+    public async Task Apply_WhenOnePointIsDecidedBetweenReadAndWrite_ShouldRetryWithTheRest()
+    {
+        var world = await WorldAsync();
+        var kept = await world.PointAsync(RetroCategory.WentBadly, "Kept");
+        var late = await world.PointAsync(RetroCategory.WentBadly, "Decided during apply");
+        var title = "Race " + world.Tag;
+        var plan = await world.PlanAsync($$""", "actions":[{{New(title, kept, late)}}]""");
+        await using var connection = await OpenDatabaseAsync();
+        var function = $"decide_race_{late:N}";
+        await connection.ExecuteAsync(
+            $"""
+            CREATE FUNCTION {function}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
+              UPDATE retro_point SET not_needed_reason = 'Late.', decided_by_user_id = created_by_user_id, decided_at = now()
+              WHERE id = '{late}' AND not_needed_reason IS NULL;
+              RETURN NEW; END $$;
+            CREATE TRIGGER {function} AFTER INSERT ON work_item FOR EACH ROW WHEN (NEW.title = '{title}') EXECUTE FUNCTION {function}();
+            """);
+        JsonElement applied;
+        try
+        {
+            applied = await world.ApplyAsync(plan);
+        }
+        finally
+        {
+            await connection.ExecuteAsync($"DROP TRIGGER IF EXISTS {function} ON work_item; DROP FUNCTION IF EXISTS {function}();");
+        }
+
+        applied.GetProperty("created").GetArrayLength().ShouldBe(1);
+        Skipped(applied).ShouldBe([late]);
+        var key = applied.GetProperty("created")[0].GetString();
+        (await connection.QueryAsync<Guid>("SELECT point_id FROM retro_action_point rap JOIN work_item w ON w.id = rap.work_item_id WHERE w.key = @key AND rap.archived_at IS NULL", new { key })).ShouldBe([kept]);
+    }
+
+    // The same race when the decided point is the action's only one: nothing is created.
+    [Test]
+    public async Task Apply_WhenTheOnlyPointIsDecidedBetweenReadAndWrite_ShouldCreateNothing()
+    {
+        var world = await WorldAsync();
+        var late = await world.PointAsync(RetroCategory.WentBadly, "Decided during apply");
+        var title = "Lone race " + world.Tag;
+        var plan = await world.PlanAsync($$""", "actions":[{{New(title, late)}}]""");
+        await using var connection = await OpenDatabaseAsync();
+        var function = $"decide_lone_{late:N}";
+        await connection.ExecuteAsync(
+            $"""
+            CREATE FUNCTION {function}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
+              UPDATE retro_point SET not_needed_reason = 'Late.', decided_by_user_id = created_by_user_id, decided_at = now()
+              WHERE id = '{late}' AND not_needed_reason IS NULL;
+              RETURN NEW; END $$;
+            CREATE TRIGGER {function} AFTER INSERT ON work_item FOR EACH ROW WHEN (NEW.title = '{title}') EXECUTE FUNCTION {function}();
+            """);
+        JsonElement applied;
+        try
+        {
+            applied = await world.ApplyAsync(plan);
+        }
+        finally
+        {
+            await connection.ExecuteAsync($"DROP TRIGGER IF EXISTS {function} ON work_item; DROP FUNCTION IF EXISTS {function}();");
+        }
+
+        applied.GetProperty("created").GetArrayLength().ShouldBe(0);
+        Skipped(applied).ShouldBe([late]);
+        (await connection.ExecuteScalarAsync<int>(
+            "SELECT count(*)::int FROM work_item w JOIN state st ON st.id = w.state_id WHERE w.title = @title AND st.category <> 'removed'", new { title })).ShouldBe(0);
+    }
+
+    [Test]
     public async Task Apply_ShouldApplyThePlanNotTheArguments()
     {
         var world = await WorldAsync();

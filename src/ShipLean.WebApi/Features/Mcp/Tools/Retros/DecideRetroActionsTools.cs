@@ -108,7 +108,7 @@ internal sealed class DecideRetroActionsTools(ItemResolver items, ProjectResolve
             var action = actions![i];
             RequireText(action?.Title, $"actions[{i}].title");
             RequireText(action!.FixType, $"actions[{i}].fix_type");
-            if (!Enum.TryParse<RetroFixType>(action.FixType, ignoreCase: true, out _))
+            if (!Enum.TryParse<RetroFixType>(action.FixType, ignoreCase: true, out var fixType) || !Enum.IsDefined(fixType))
             {
                 throw ApiException.Validation("fix_type is skill, guide, test, analyzer, product or other.", $"actions[{i}].fix_type");
             }
