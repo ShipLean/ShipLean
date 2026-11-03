@@ -223,6 +223,30 @@ public class RetroWeeksJourneyTests : SeededAcceptanceTest
         await Expect(insights.CoversOf(title)).ToHaveTextAsync("3");
     }
 
+    [TestCase(1280)]
+    [TestCase(1440)]
+    public async Task Insights_WhenTallerThanTheWindow_ShouldKeepItsBarInViewWithoutSidewaysScroll(int width)
+    {
+        await using var connection = await OpenAsync();
+        var seed = new RetroSeed(connection, SeedIds.Projects.Ship);
+        var retro = await NoSprintRetroAsync(connection, seed, $"Layout story {width}");
+        for (var i = 0; i < 30; i++)
+        {
+            await WentBadlyAsync(seed, retro, await seed.ThemeAsync($"Layout theme {width} {i}"), $"Layout point {width} {i}", DaysAgo(i + 1));
+        }
+
+        await Page.SetViewportSizeAsync(width, 720);
+        var insights = new RetroInsightsPage(Page);
+
+        await insights.OpenAsync(Project, range: "w12");
+        await Page.EvaluateAsync("window.scrollTo(0, document.body.scrollHeight)");
+
+        (await Page.EvaluateAsync<bool>("document.documentElement.scrollWidth <= window.innerWidth")).ShouldBeTrue();
+        var bar = await insights.Range.BoundingBoxAsync();
+        bar.ShouldNotBeNull();
+        (bar.Y >= 0 && bar.Y + bar.Height <= 720).ShouldBeTrue($"the range select sits at y={bar.Y}");
+    }
+
     private async Task<NpgsqlConnection> OpenAsync()
     {
         var connection = new NpgsqlConnection(ConnectionString);
