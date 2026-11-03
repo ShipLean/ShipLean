@@ -88,10 +88,31 @@ public sealed class RetroActionDialogReaderTests : ApiFixture
         await seed.PointAsync(await AgentRetroAsync(seed, story), new RetroSeedPoint(RetroCategory.Improve, "Story.", CreatedAt: Day.AddHours(1)));
         await seed.PointAsync(await AgentRetroAsync(seed, bug), new RetroSeedPoint(RetroCategory.WentBadly, "Bug.", CreatedAt: Day));
         await seed.PointAsync(await AgentRetroAsync(seed, await ItemAsync(connection, "story")), new RetroSeedPoint(RetroCategory.Improve, "Unrelated."));
+        var childAction = await new WorkItemBuilder(Project).WithType("action").WithTitle("Child action").WithParent(feature).InsertAsync(connection);
+        await seed.PointAsync(await AgentRetroAsync(seed, childAction), new RetroSeedPoint(RetroCategory.Improve, "Action child."));
 
         var dialog = await Reader.GetAsync(Project, [], null, feature, null);
 
         dialog.Offered.Select(point => point.Text).ShouldBe(["Story.", "Feature.", "Bug."]);
+    }
+
+    [Test]
+    public async Task ActionDialog_ShouldLeaveOutArchivedRetrospectives()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var seed = new RetroSeed(connection, Project);
+        var theme = await seed.ThemeAsync($"Theme {Guid.NewGuid():N}");
+        var item = await ItemAsync(connection, "story");
+        var live = await AgentRetroAsync(seed, item);
+        var archived = await AgentRetroAsync(seed, item);
+        var kept = await seed.PointAsync(live, new RetroSeedPoint(RetroCategory.Improve, "Live.", ThemeId: theme));
+        var gone = await seed.PointAsync(archived, new RetroSeedPoint(RetroCategory.Improve, "Archived retro.", ThemeId: theme));
+        await connection.ExecuteAsync("UPDATE retrospective SET archived_at = now() WHERE id = @archived", new { archived });
+
+        var dialog = await Reader.GetAsync(Project, [gone], theme, item, null);
+
+        dialog.Selected.Select(point => point.Id).ShouldBe([kept]);
+        dialog.Offered.ShouldBeEmpty();
     }
 
     [Test]

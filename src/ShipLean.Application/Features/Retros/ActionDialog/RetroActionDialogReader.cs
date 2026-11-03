@@ -10,7 +10,7 @@ using ShipLean.Core;
 namespace ShipLean.Application.Features.Retros.ActionDialog;
 
 // What the action dialog offers (contract K6): the selected points, the project's undecided points to add (Can be improved, then Went badly, then
-// Not in the plan; scoped by item, a Feature's item including its stories' and bugs', and by sprint; at most 100, newest first), the open action
+// Not in the plan; scoped by item, a Feature's item including its stories' and bugs' (not its action items), and by sprint; at most 100, newest first), the open action
 // items, and the theme that most of the selected points share. Went well points and decided points are never offered or selected.
 public sealed class RetroActionDialogReader(NpgsqlDataSource dataSource, IRetroCards cards, TimeProvider clock) : IRetroActionDialogReader
 {
@@ -75,7 +75,7 @@ public sealed class RetroActionDialogReader(NpgsqlDataSource dataSource, IRetroC
         SELECT p.id, p.retrospective_id AS retroId
         FROM retro_point p
         JOIN retrospective r ON r.id = p.retrospective_id
-        WHERE r.project_id = @projectId AND p.archived_at IS NULL AND p.category <> 'wentWell'
+        WHERE r.project_id = @projectId AND r.archived_at IS NULL AND p.archived_at IS NULL AND p.category <> 'wentWell'
           AND {RetroDecisionSql.Undecided("p")}
           AND (p.id = ANY(@given) OR (@themeId::uuid IS NOT NULL AND p.theme_id = @themeId))
         ORDER BY p.created_at, p.id
@@ -86,10 +86,10 @@ public sealed class RetroActionDialogReader(NpgsqlDataSource dataSource, IRetroC
         FROM retro_point p
         JOIN retrospective r ON r.id = p.retrospective_id
         LEFT JOIN work_item w ON w.id = r.work_item_id
-        WHERE r.project_id = @projectId AND p.archived_at IS NULL AND p.category <> 'wentWell'
+        WHERE r.project_id = @projectId AND r.archived_at IS NULL AND p.archived_at IS NULL AND p.category <> 'wentWell'
           AND {RetroDecisionSql.Undecided("p")}
           AND NOT (p.id = ANY(@selected))
-          AND (@itemId::uuid IS NULL OR r.work_item_id = @itemId OR w.parent_id = @itemId)
+          AND (@itemId::uuid IS NULL OR r.work_item_id = @itemId OR (w.parent_id = @itemId AND w.type IN ('story', 'bug')))
           AND (@sprintId::uuid IS NULL OR r.sprint_id = @sprintId)
         ORDER BY p.created_at DESC, p.id
         LIMIT @limit
