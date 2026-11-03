@@ -215,6 +215,19 @@ test('Over_100_turns_create_off', async ({ mount, page }) => {
   await expect(page.getByTestId(ids.pasteCreate)).toBeEnabled();
 });
 
+test('The_text_box_stays_tall_for_a_big_paste_on_a_short_screen', async ({ mount, page }) => {
+  await page.setViewportSize({ width: 1280, height: 500 });
+  await stubBacklog(page, backlogView(ROWS));
+  await mount(<ListMode project={PROJECT} />, route);
+  await openAddRow(page);
+
+  await paste(page, Array.from({ length: 60 }, (_, i) => `Line ${i}`).join('\n'));
+
+  await expect(page.getByTestId(ids.pasteRow)).toHaveCount(60);
+  const box = await page.getByTestId(ids.pasteSource).boundingBox();
+  expect(box?.height).toBeGreaterThanOrEqual(300);
+});
+
 test('A_failed_create_keeps_the_grid', async ({ mount, page }) => {
   await stubBacklog(page, backlogView(ROWS));
   await page.route('**/api/projects/p1/backlog/items', (route) =>

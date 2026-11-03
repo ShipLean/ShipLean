@@ -212,8 +212,7 @@ export function PasteReview({
         data-testid={ids.pasteSource}
         aria-label="Pasted text"
         spellCheck={false}
-        rows={4}
-        className="field"
+        className="field h-80 py-1.5"
         value={text}
         onChange={(event) => {
           setText(event.target.value);
