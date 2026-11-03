@@ -51,19 +51,10 @@ public sealed partial class SprintStore
 
         var today = SprintLabels.Today(clock);
         var status = sprint.RolloverStatus is null ? RolloverStatus.Pending : Enum.Parse<RolloverStatus>(sprint.RolloverStatus, true);
-        if (status == RolloverStatus.Pending && sprint.End < today && items.Count == 0)
-        {
-            // An ended sprint with nothing unfinished has nothing to decide: the first read marks it decided, so no prompt is ever asked for it.
-            await connection.ExecuteAsync(new CommandDefinition(
-                "UPDATE sprint SET rollover_status = 'decided', updated_at = @now WHERE id = @sprintId AND rollover_status IS DISTINCT FROM 'decided'",
-                new { sprintId, now = clock.GetUtcNow() }, cancellationToken: cancellationToken));
-            await events.PublishAsync(new SprintChanged(sprint.ProjectId, sprintId));
-            status = RolloverStatus.Decided;
-        }
 
         return new RolloverDto(
             Ref(sprint, today), status,
-            [.. items.Select(i => i.ToDto(next?.Id))], next is null ? null : Ref(next, today), nextCapacity, nextPoints);
+            [.. items.Select(i => i.ToDto(next?.Id))], next is null ? null : Ref(next, today), nextCapacity, nextPoints, sprint.End > today);
     }
 
     private const int MAX_ATTEMPTS = 3;
@@ -88,6 +79,8 @@ public sealed partial class SprintStore
         }
 
         SprintRow sprint;
+        IReadOnlyList<Guid> recomputed = [];
+        var today = SprintLabels.Today(clock);
         var attempt = 0;
         while (true)
         {
@@ -99,10 +92,7 @@ public sealed partial class SprintStore
             await using (var connection = await dataSource.OpenConnectionAsync(cancellationToken))
             {
                 sprint = await LoadAsync(connection, null, sprintId, forUpdate: false, cancellationToken);
-                if (sprint.End > SprintLabels.Today(clock))
-                {
-                    throw ApiException.Validation("The sprint has not ended.");
-                }
+                CheckCanClose(sprint, request.EndToday, today);
 
                 if (string.Equals(sprint.RolloverStatus, "decided", StringComparison.OrdinalIgnoreCase))
                 {
@@ -123,6 +113,11 @@ public sealed partial class SprintStore
             var options = new WriteOptions(
                 async (transaction, token) =>
                 {
+                    if (sprint.End > today)
+                    {
+                        recomputed = await EndTodayAsync(transaction, sprint, today, token);
+                    }
+
                     await transaction.Connection!.ExecuteAsync(new CommandDefinition(
                         "UPDATE sprint SET rollover_status = 'decided', updated_at = @now WHERE id = @sprintId",
                         new { sprintId, now = clock.GetUtcNow() }, transaction, cancellationToken: token));
@@ -167,8 +162,41 @@ public sealed partial class SprintStore
         }
 
         await events.PublishAsync(new SprintChanged(sprint.ProjectId, sprintId));
+        foreach (var other in recomputed.Where(r => r != sprintId))
+        {
+            await events.PublishAsync(new SprintChanged(sprint.ProjectId, other));
+        }
+
         await using var reload = await dataSource.OpenConnectionAsync(cancellationToken);
         return (await LoadAsync(reload, null, sprintId, forUpdate: false, cancellationToken)).ToDto(SprintLabels.Today(clock));
+    }
+
+    private static void CheckCanClose(SprintRow sprint, bool endToday, DateOnly today)
+    {
+        if (sprint.End <= today)
+        {
+            return;
+        }
+
+        if (!endToday)
+        {
+            throw ApiException.Validation("The sprint has not ended.");
+        }
+
+        if (sprint.Start > today)
+        {
+            throw ApiException.Validation("The sprint has not started, so there is nothing to close.");
+        }
+    }
+
+    // Shortening a sprint can't make it overlap another. New dates change the default days, so the stored capacity follows, as in UpdateAsync.
+    private async Task<IReadOnlyList<Guid>> EndTodayAsync(System.Data.Common.DbTransaction transaction, SprintRow sprint, DateOnly today, CancellationToken cancellationToken)
+    {
+        await LockProjectAsync(transaction.Connection!, transaction, sprint.ProjectId, cancellationToken);
+        await transaction.Connection!.ExecuteAsync(new CommandDefinition(
+            "UPDATE sprint SET end_date = @today WHERE id = @id AND end_date > @today",
+            new { id = sprint.Id, today }, transaction, cancellationToken: cancellationToken));
+        return await recompute.RecomputeAsync(sprint.ProjectId, transaction, cancellationToken);
     }
 
     private static WorkItemPatch MoveTo(int revision, Guid? target) => new(revision, new WorkItemChanges { Sprint = new FieldSet<Guid?>(target) });

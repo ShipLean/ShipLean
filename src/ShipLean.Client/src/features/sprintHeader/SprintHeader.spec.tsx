@@ -58,6 +58,25 @@ test('SprintHeader_WhenEnded_ShouldShowEndedChip', async ({ mount, page }) => {
   await expect(page.getByTestId(ids.dates)).toHaveText('19 Oct – 30 Oct');
 });
 
+test('SprintHeader_WhenNotClosed_ShouldOfferCloseSprintOnBothVariants', async ({ mount, page }) => {
+  const full = await mount(<SprintHeaderHarness {...props()} />);
+  await expect(page.getByTestId(sprintsTestIds.closeSprint)).toBeVisible();
+  await full.unmount();
+
+  await mount(
+    <SprintHeaderHarness {...props({ variant: 'slim', sprint: past, tab: 'taskboard' })} />,
+  );
+  await expect(page.getByTestId(sprintsTestIds.closeSprint)).toBeVisible();
+});
+
+test('SprintHeader_WhenClosed_ShouldNotOfferCloseSprint', async ({ mount, page }) => {
+  await mount(
+    <SprintHeaderHarness {...props({ sprint: { ...past, rolloverStatus: 'decided' } })} />,
+  );
+  await expect(page.getByTestId(ids.header)).toBeVisible();
+  await expect(page.getByTestId(sprintsTestIds.closeSprint)).toHaveCount(0);
+});
+
 test('SprintHeader_WhenCurrent_ShouldShowCurrentChip', async ({ mount, page }) => {
   await mount(<SprintHeaderHarness {...props()} />);
   await expect(page.getByTestId(componentTestIds.chip)).toHaveText('Current');
