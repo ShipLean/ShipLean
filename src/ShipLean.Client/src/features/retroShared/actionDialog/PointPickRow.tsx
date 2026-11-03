@@ -19,6 +19,7 @@ export function PointPickRow({
     >
       <input
         type="checkbox"
+        data-testid={ids.retroActionPickCheck}
         checked={checked}
         className="mt-0.5 accent-[var(--color-accent)]"
         onChange={onToggle}

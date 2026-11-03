@@ -42,5 +42,7 @@ public static class RetroSharedTestIds
     public const string RetroActionTheme = "retro-action-theme";
     public const string RetroActionExisting = "retro-action-existing";
     public const string RetroActionPick = "retro-action-pick";
+    public const string RetroActionFixOption = "retro-action-fix-option";
+    public const string RetroActionPickCheck = "retro-action-pick-check";
     public const string RetroActionSave = "retro-action-save";
 }

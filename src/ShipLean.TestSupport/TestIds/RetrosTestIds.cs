@@ -108,6 +108,15 @@ public static class RetrosTestIds
     public const string RetroTipStatusHead = "retro-tip-status-head";
     public const string RetroTipVerdictHead = "retro-tip-verdict-head";
     public const string RetroTipNosprint = "retro-tip-nosprint";
+    public const string RetroTipBubble = "retro-tip-bubble";
+    public const string RetroMentionCell = "retro-mention-cell";
+    public const string RetroTotalCell = "retro-total-cell";
+    public const string RetroNosprintCell = "retro-nosprint-cell";
+    public const string RetroStatusChip = "retro-status-chip";
+    public const string RetroRecurringCallout = "retro-recurring-callout";
+    public const string RetroUnthemedLink = "retro-unthemed-link";
+    public const string RetroActionFixCell = "retro-action-fix-cell";
+    public const string RetroActionCoversCell = "retro-action-covers-cell";
     public const string RetroTipUnthemed = "retro-tip-unthemed";
     public const string RetrosFilterNosprint = "retros-filter-nosprint";
     public const string RetrosFilterDecision = "retros-filter-decision";

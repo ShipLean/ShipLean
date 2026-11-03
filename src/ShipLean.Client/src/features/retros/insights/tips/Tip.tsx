@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
+import { retrosTestIds } from '../../testIds';
 
 const GAP = 6;
 const EDGE = 8;
@@ -60,6 +61,7 @@ export function Tip({
               ref={bubble}
               id={id}
               role="tooltip"
+              data-testid={retrosTestIds.retroTipBubble}
               style={{ visibility: 'hidden' }}
               className="pointer-events-none fixed top-0 left-0 z-60 max-w-[340px] rounded-control bg-ink px-2.5 py-2 text-left text-[length:var(--text-xs)] leading-[1.45] font-normal whitespace-normal text-canvas no-underline shadow-lg"
             >

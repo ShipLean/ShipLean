@@ -1,7 +1,10 @@
+import { retrosTestIds as ids } from '../../testIds';
+
 /** One theme's mentions that belong to no sprint: hatched and set apart, since they are in Total but not in any column's trend. */
 export function NoSprintCell({ count }: { count: number }) {
   return (
     <td
+      data-testid={ids.retroNosprintCell}
       data-cell="no-sprint"
       data-count={count}
       title={`No sprint: ${count} mention${count === 1 ? '' : 's'}`}

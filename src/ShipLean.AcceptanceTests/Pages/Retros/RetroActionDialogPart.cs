@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using ShipLean.TestSupport.TestIds;
 
 namespace ShipLean.AcceptanceTests.Pages.Retros;
@@ -21,6 +22,10 @@ public sealed class RetroActionDialogPart(IPage page)
 
     // The picker of points to cover (selected ones are checked).
     public ILocator Pick => page.GetByTestId(RetroSharedTestIds.RetroActionPick);
+
+    public ILocator FixOption(string label) => page.GetByTestId(RetroSharedTestIds.RetroActionFixOption).Filter(new() { HasTextRegex = new Regex($"^{Regex.Escape(label)}") });
+
+    public ILocator PickCheck => page.GetByTestId(RetroSharedTestIds.RetroActionPickCheck);
 
     public ILocator Save => page.GetByTestId(RetroSharedTestIds.RetroActionSave);
 }

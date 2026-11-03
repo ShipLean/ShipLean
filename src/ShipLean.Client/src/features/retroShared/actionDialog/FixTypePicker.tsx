@@ -22,6 +22,7 @@ export function FixTypePicker({
         {retroFixOptions.map((fix) => (
           <label
             key={fix.id}
+            data-testid={ids.retroActionFixOption}
             className={`grid cursor-pointer gap-0.5 rounded-control border px-2 py-1.5 text-[length:var(--text-sm)] font-medium text-ink ${value === fix.id ? 'border-signal bg-signal-soft' : 'border-edge'}`}
           >
             <input

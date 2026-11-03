@@ -1,5 +1,7 @@
 import type { RetroInsightsMode } from '../../../../api/retros';
 
+import { retrosTestIds as ids } from '../../testIds';
+
 /** The week-mode recurrence window, whatever range is shown: `RetroRecurrence.Weeks.Window` (K11). */
 const RECURRENCE_WEEKS = 6;
 
@@ -10,6 +12,7 @@ export function RecurringCallout({ count, mode }: { count: number; mode: RetroIn
   return (
     <div
       role="alert"
+      data-testid={ids.retroRecurringCallout}
       data-callout="recurring"
       className="rounded-panel border border-edge border-l-[3px] border-l-caution bg-sunken px-3 py-2 text-[length:var(--text-sm)]"
     >

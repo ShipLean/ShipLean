@@ -46,7 +46,11 @@ export function RecurringRow({
         />
       ))}
       {mode === 'sprint' ? <NoSprintCell count={row.noSprint} /> : null}
-      <td data-cell="total" className="px-3 py-2 text-right tabular-nums">
+      <td
+        data-testid={ids.retroTotalCell}
+        data-cell="total"
+        className="px-3 py-2 text-right tabular-nums"
+      >
         {row.total}
       </td>
       <td className="px-3 py-2">

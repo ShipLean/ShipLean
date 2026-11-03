@@ -46,12 +46,16 @@ export function ActionRow({
           <span>{action.title}</span>
         </ItemLink>
       </td>
-      <td data-cell="fix" className="px-3 py-2">
+      <td data-testid={ids.retroActionFixCell} data-cell="fix" className="px-3 py-2">
         {row.action.fixType
           ? (retroFixOptions.find((o) => o.id === row.action.fixType)?.label ?? NONE)
           : NONE}
       </td>
-      <td data-cell="covers" className="px-3 py-2 text-right tabular-nums">
+      <td
+        data-testid={ids.retroActionCoversCell}
+        data-cell="covers"
+        className="px-3 py-2 text-right tabular-nums"
+      >
         {row.action.pointCount}
       </td>
       <td data-cell="theme" className="px-3 py-2">

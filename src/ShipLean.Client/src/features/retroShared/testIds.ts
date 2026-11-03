@@ -38,5 +38,7 @@ export const retroSharedTestIds = {
   retroActionTheme: 'retro-action-theme',
   retroActionExisting: 'retro-action-existing',
   retroActionPick: 'retro-action-pick',
+  retroActionFixOption: 'retro-action-fix-option',
+  retroActionPickCheck: 'retro-action-pick-check',
   retroActionSave: 'retro-action-save',
 } as const;

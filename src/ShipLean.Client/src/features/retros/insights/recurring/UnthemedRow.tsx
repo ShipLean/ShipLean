@@ -45,12 +45,17 @@ export function UnthemedRow({
         />
       ))}
       {mode === 'sprint' ? <NoSprintCell count={unthemed.noSprint} /> : null}
-      <td data-cell="total" className="px-3 py-2 text-right font-semibold tabular-nums">
+      <td
+        data-testid={ids.retroTotalCell}
+        data-cell="total"
+        className="px-3 py-2 text-right font-semibold tabular-nums"
+      >
         {unthemed.total}
       </td>
       <td className="px-3 py-2 text-[length:var(--text-xs)] text-ink-muted">not judged</td>
       <td colSpan={2} className="px-3 py-2">
         <Link
+          data-testid={ids.retroUnthemedLink}
           to={routePath('retros', { key: projectKey }, { unthemed: 'true' })}
           className="inline-block rounded-control border border-edge bg-panel px-2 py-0.5 text-[length:var(--text-xs)] text-ink no-underline"
         >

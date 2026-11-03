@@ -1,5 +1,6 @@
 import { Chip, type ChipTone } from '../../../../components/Chip';
 import type { RetroInsightsMode, RetroThemeStatus } from '../../../../api/retros';
+import { retrosTestIds as ids } from '../../testIds';
 import { Tip } from '../tips/Tip';
 import { statusWording } from '../tips/tipWording';
 
@@ -21,6 +22,7 @@ export function StatusChip({
   const { label, tone } = STATUS[status];
   return (
     <Tip
+      data-testid={ids.retroStatusChip}
       data-status={status}
       data-mode={mode}
       tip={statusWording(status, mode)}

@@ -1,3 +1,5 @@
+import { retrosTestIds as ids } from '../../testIds';
+
 /** One column's (sprint or week) mention count, shaded by how many there are against the busiest cell in the table. */
 export function MentionCell({
   count,
@@ -13,6 +15,7 @@ export function MentionCell({
   const strength = max > 0 ? Math.round((count / max) * 70) : 0;
   return (
     <td
+      data-testid={ids.retroMentionCell}
       data-cell="mentions"
       data-sprint-id={columnKey}
       data-count={count}
