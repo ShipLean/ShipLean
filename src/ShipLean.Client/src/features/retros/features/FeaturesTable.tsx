@@ -4,7 +4,7 @@ import { CategoryHead } from './CategoryHead';
 import { FeatureRow } from './FeatureRow';
 
 const head =
-  'sticky top-0 bg-sunken px-2.5 py-1.5 text-left text-[length:var(--text-xs)] font-semibold whitespace-nowrap text-ink-muted';
+  'bg-sunken px-2.5 py-1.5 text-left text-[length:var(--text-xs)] font-semibold whitespace-nowrap text-ink-muted';
 const headNum = `${head} text-right`;
 const COLUMNS = RETRO_CATEGORIES.length + 7;
 

@@ -16,10 +16,12 @@ export function FeatureRow({ projectKey, row }: { projectKey: string; row: Retro
   const { item, totals } = row;
   return (
     <tr data-testid={ids.retroFeaturesRow} data-key={item.key} className="hover:bg-sunken">
-      <td className={cell}>
+      <td className={`${cell} w-full min-w-48`}>
         <div className="flex items-center gap-2">
           <TypeIcon type={item.type.id} />
-          <span className="font-mono text-[length:var(--text-xs)] text-ink-muted">{item.key}</span>
+          <span className="font-mono text-[length:var(--text-xs)] whitespace-nowrap text-ink-muted">
+            {item.key}
+          </span>
           <Link
             to={routePath('retroItem', { key: projectKey, itemKey: item.key })}
             className="font-medium text-ink hover:underline"

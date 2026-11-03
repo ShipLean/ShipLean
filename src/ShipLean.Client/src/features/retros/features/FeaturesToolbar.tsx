@@ -20,7 +20,7 @@ export function FeaturesToolbar({
   onSearch: (q: string) => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="sticky top-0 z-10 flex flex-wrap items-center gap-3 bg-canvas py-1">
       <div
         role="group"
         aria-label="Show"
