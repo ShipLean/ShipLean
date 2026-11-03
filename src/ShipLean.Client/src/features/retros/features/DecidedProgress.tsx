@@ -1,7 +1,11 @@
 import type { RetroAggregateDto } from '../../../api/retros';
 
 /** How many decidable points are decided, as a bar and "decided/decidable"; "nothing to decide" when there are none. */
-export function DecidedProgress({ totals }: { totals: RetroAggregateDto }) {
+export function DecidedProgress({
+  totals,
+}: {
+  totals: Pick<RetroAggregateDto, 'decided' | 'decidable'>;
+}) {
   if (totals.decidable === 0) {
     return <span className="text-[length:var(--text-xs)] text-ink-muted">nothing to decide</span>;
   }

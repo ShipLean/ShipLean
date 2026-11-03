@@ -1,4 +1,6 @@
+import { Link } from 'react-router-dom';
 import type { RetroCardDto, RetroPointDto } from '../../../../../api/retros';
+import { routePath } from '../../../../../routes';
 import { Chip } from '../../../../../components/Chip';
 import { TypeIcon } from '../../../../../components/TypeIcon';
 import { ItemLink } from '../../../../itemPeek/ItemLink';
@@ -6,17 +8,21 @@ import { AuthorChip } from '../../../../retroShared/AuthorChip';
 import { RetroBoard } from '../../../../retroShared/board/RetroBoard';
 import { FeatureChip } from '../../../../retroShared/FeatureChip';
 import { retroSharedTestIds as ids } from '../../../../retroShared/testIds';
+import { DecidedProgress } from '../../../features/DecidedProgress';
+import { retrosTestIds } from '../../../testIds';
 import { cardAddTarget, cardColumns } from './cardColumns';
 import { FailureLog } from './FailureLog';
 
 /** One item's board: the four columns with the notes of all its retros, Add, each retro's Compiled from line, and each raw failure log below. */
 export function ItemBoard({
+  projectKey,
   cards,
   sprintId,
   filter,
   highlightedPointId,
   onAdded,
 }: {
+  projectKey: string;
   /** Every retro of this item (or of the sprint itself), at least one. */
   cards: RetroCardDto[];
   sprintId: string;
@@ -26,6 +32,16 @@ export function ItemBoard({
 }) {
   const [card] = cards;
   const { workItem, sprint } = card;
+  const itemPage = workItem
+    ? routePath('retroItem', { key: projectKey, itemKey: workItem.key })
+    : null;
+  // Progress counts every point of the item's retros, not the ones the filter shows, so To decide leaves it alone.
+  const points = cards.flatMap((each) => each.points);
+  const decidable = points.filter((p) => p.decision !== null);
+  const progress = {
+    decidable: decidable.length,
+    decided: decidable.filter((p) => p.decision !== 'undecided').length,
+  };
   const isFeature = workItem?.type.id === 'feature';
   return (
     <article
@@ -39,7 +55,13 @@ export function ItemBoard({
         {workItem ? (
           <>
             <TypeIcon type={workItem.type.id} />
-            <span className="font-mono">{workItem.key}</span>
+            <Link
+              to={itemPage!}
+              data-testid={retrosTestIds.retroCardKeyLink}
+              className="font-mono text-ink hover:underline"
+            >
+              {workItem.key}
+            </Link>
             <b className="text-[length:var(--text-md)]">{workItem.title}</b>
           </>
         ) : (
@@ -58,6 +80,18 @@ export function ItemBoard({
             </span>
           </span>
         ))}
+        <span data-testid={retrosTestIds.retroCardProgress}>
+          <DecidedProgress totals={progress} />
+        </span>
+        {itemPage ? (
+          <Link
+            to={itemPage}
+            data-testid={retrosTestIds.retroCardOpen}
+            className="rounded-control border border-edge px-2 py-0.5 text-[length:var(--text-xs)] font-medium whitespace-nowrap hover:bg-sunken"
+          >
+            Open
+          </Link>
+        ) : null}
       </header>
       <RetroBoard
         columns={cardColumns(cards.flatMap((each) => each.points))}

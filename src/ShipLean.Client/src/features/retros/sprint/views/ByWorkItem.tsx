@@ -8,6 +8,7 @@ import { retrosTestIds as ids } from '../../testIds';
 
 /** The By work item view: one board per item, a Feature's first, each with its raw failure log below. */
 export function ByWorkItem({
+  project,
   sprint,
   retro,
   decide = false,
@@ -41,6 +42,7 @@ export function ByWorkItem({
           [...boards].map(([key, cards]) => (
             <ItemBoard
               key={key}
+              projectKey={project.key}
               cards={cards}
               sprintId={sprint.id}
               filter={filter}

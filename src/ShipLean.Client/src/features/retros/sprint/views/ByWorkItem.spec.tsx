@@ -204,6 +204,88 @@ test('ByWorkItem_WhenWrittenByIsPeople_ShouldKeepOnlyPersonRetros', async ({ mou
   await expect(page.getByTestId(shared.retroCard)).toHaveCount(people.length);
 });
 
+const decided = (points: { decision: string | null }[]) => {
+  const decidable = points.filter((p) => p.decision !== null);
+  return `${decidable.filter((p) => p.decision !== 'undecided').length}/${decidable.length}`;
+};
+
+test('ByWorkItem_WhenTwoRetrosShareAnItem_ShouldCountBothInTheHeaderProgress', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  const { base, second, retro } = twoRetrosOnOneItem;
+  await mount(<ByWorkItemHarness project={project} sprint={sprint} retro={retro} />, mountOptions);
+  const progress = page
+    .locator('article[data-item-key="SHIP-141"]')
+    .getByTestId(ids.retroCardProgress);
+  const expected = decided([...base.points, ...second.points]);
+  expect(Number(expected.split('/')[1])).toBeGreaterThan(
+    Number(decided(base.points).split('/')[1]),
+  );
+  await expect(progress).toContainText(expected);
+});
+
+test('ByWorkItem_WhenToDecideChosen_ShouldNotChangeTheHeaderProgress', async ({ mount, page }) => {
+  await stubRetros(page);
+  await mount(
+    <ByWorkItemHarness project={project} sprint={sprint} retro={sprintRetro} decide />,
+    mountOptions,
+  );
+  for (const card of sprintRetro.cards.filter((c) => c.workItem)) {
+    const progress = page
+      .locator(`article[data-item-key="${card.workItem!.key}"]`)
+      .getByTestId(ids.retroCardProgress);
+    const expected = decided(card.points);
+    if (expected.endsWith('/0')) await expect(progress).toContainText('nothing to decide');
+    else await expect(progress).toContainText(expected);
+  }
+});
+
+test('ByWorkItem_WhenAnItemHasABoard_ShouldLinkItsKeyAndOpenToItsRetroPage', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  await mount(element, mountOptions);
+  const card = page.locator('article[data-item-key="SHIP-141"]');
+  await expect(card.getByTestId(ids.retroCardKeyLink)).toHaveAttribute(
+    'href',
+    '/p/SHIP/retros/items/SHIP-141',
+  );
+  await expect(card.getByTestId(ids.retroCardOpen)).toHaveAttribute(
+    'href',
+    '/p/SHIP/retros/items/SHIP-141',
+  );
+});
+
+test('ByWorkItem_WhenTheBoardIsTheSprints_ShouldShowProgressButNoOpenOrKeyLink', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  await mount(element, mountOptions);
+  const board = page.locator('[data-item-key="sprint"]');
+  await expect(board.getByTestId(ids.retroCardProgress)).toBeVisible();
+  await expect(board.getByTestId(ids.retroCardOpen)).toHaveCount(0);
+  await expect(board.getByTestId(ids.retroCardKeyLink)).toHaveCount(0);
+});
+
+test('ByWorkItem_WhenNarrow_ShouldKeepTheHeaderInsideTheBoard', async ({ mount, page }) => {
+  await stubRetros(page);
+  await page.setViewportSize({ width: 360, height: 800 });
+  await mount(element, mountOptions);
+  for (const header of await page.locator('article[data-item-key] > header').all()) {
+    const box = (await header.boundingBox())!;
+    const parent = (await header.locator('xpath=..').boundingBox())!;
+    expect(box.x + box.width).toBeLessThanOrEqual(parent.x + parent.width + 1);
+    for (const child of await header.locator('> *').all()) {
+      const c = (await child.boundingBox())!;
+      expect(c.x + c.width).toBeLessThanOrEqual(box.x + box.width + 1);
+    }
+  }
+});
+
 for (const theme of ['light', 'dark'] as const) {
   test(`ByWorkItem_WhenRendered_ShouldMatchItsScreenshot_${theme}`, async ({ mount, page }) => {
     await stubRetros(page);
