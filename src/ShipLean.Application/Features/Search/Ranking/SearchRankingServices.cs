@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Application.Features.Search.Ranking.Groups;
+using ShipLean.Application.Features.Search.Ranking.Keys;
 using ShipLean.Application.Features.Search.Ranking.Lexical;
 using ShipLean.Application.Features.Search.Ranking.Semantic;
 using ShipLean.Contracts;
@@ -15,5 +16,6 @@ public sealed class SearchRankingServices : IServiceModule
         services.AddScoped<ISearchGroups, SearchGroups>();
         services.AddScoped<IItemCandidates, LexicalItemCandidates>();
         services.AddScoped<IItemCandidates, SemanticItemCandidates>();
+        services.AddScoped<IItemCandidates, KeyItemCandidates>();
     }
 }
