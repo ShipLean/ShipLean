@@ -45,6 +45,30 @@ public sealed class WorkItemRetrosReaderTests : ApiFixture
     }
 
     [Test]
+    public async Task Rows_WhenTwoRetros_ShouldCountEach()
+    {
+        await using var world = await WorldAsync();
+        var story = await world.ItemAsync("story");
+        var older = await world.Seed.RetroAsync(new RetroSeedRetro(Joel, WorkItemId: story, AgentName: "agent-a", CreatedAt: RetroArrangement.Noon(2026, 2, 10)));
+        var newer = await world.Seed.RetroAsync(new RetroSeedRetro(Joel, WorkItemId: story, AgentName: "agent-b", CreatedAt: RetroArrangement.Noon(2026, 2, 12)));
+        await world.Seed.PointAsync(older, new RetroSeedPoint(RetroCategory.WentBadly, "Slow."));
+        await world.Seed.PointAsync(newer, new RetroSeedPoint(RetroCategory.WentWell, "Fast."));
+        await world.Seed.PointAsync(newer, new RetroSeedPoint(RetroCategory.WentWell, "Clear."));
+        await world.Seed.PointAsync(newer, new RetroSeedPoint(RetroCategory.Improve, "Plan.", NotNeededReason: "Fixed already.", DecidedById: Joel, DecidedAt: RetroArrangement.Noon(2026, 2, 13)));
+        await world.Seed.PointAsync(newer, new RetroSeedPoint(RetroCategory.NotInPlan, "Surprise."));
+
+        var retros = await GetAsync(story);
+
+        retros.Rows.Select(row => row.RetroId).ShouldBe([newer, older]);
+        var first = retros.Rows[0].Totals;
+        first.Counts.ShouldBe(new RetroCategoryCountsDto(2, 1, 0, 1));
+        (first.ToDecide, first.Decided, first.Decidable).ShouldBe((1, 1, 2));
+        var second = retros.Rows[1].Totals;
+        second.Counts.ShouldBe(new RetroCategoryCountsDto(0, 0, 1, 0));
+        (second.ToDecide, second.Decided, second.Decidable).ShouldBe((1, 0, 1));
+    }
+
+    [Test]
     public async Task Get_WhenFeature_ShouldReturnConductorRetro()
     {
         await using var world = await WorldAsync();
