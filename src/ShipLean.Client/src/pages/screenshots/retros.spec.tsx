@@ -32,7 +32,7 @@ pageShots([
     arrange,
     ready: async (page) => {
       await expect(page.getByTestId(ids.sprintRetroPanel)).toBeVisible();
-      await expect(page.getByTestId(ids.retroPoint).first()).toBeVisible();
+      await expect(page.getByTestId(retroSharedTestIds.retroNote).first()).toBeVisible();
       await expect(page.getByTestId(ids.retroRail)).toBeVisible();
     },
   },
