@@ -286,6 +286,15 @@ public class ListRetrospectivesTests : McpFixture
     }
 
     [Test]
+    public async Task List_WhenNonMemberGivesNoSprintAndSprint_ShouldBeNotFoundNotValidation()
+    {
+        var reply = await CallToolAsync(_bearer, "list_retrospectives", """{"project":"PART","sprint":"current","no_sprint":true}""");
+
+        reply.IsToolError().ShouldBeTrue(reply.Body);
+        reply.Structured().GetProperty("error").GetProperty("code").GetString().ShouldBe("not_found");
+    }
+
+    [Test]
     public async Task List_WhenFilteredByFeature_ShouldLeaveOutItsActionItemsRetros()
     {
         var feature = await ArrangeItemAsync(b => b.WithType("feature"));

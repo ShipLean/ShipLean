@@ -66,13 +66,13 @@ internal sealed class RetroTools(ItemResolver items, ProjectResolver projects, S
         [Description("true: only points whose retro has no sprint. Not with sprint.")] bool? no_sprint = null,
         CancellationToken cancellationToken = default)
     {
+        var resolvedProject = await projects.ResolveAsync(project, forWrite: false, cancellationToken);
+        await access.RequireAsync(resolvedProject.Id, ProjectRole.Member, cancellationToken);
         if (no_sprint == true && !string.IsNullOrWhiteSpace(sprint))
         {
             throw ApiException.Validation("no_sprint and sprint cannot be combined.", "no_sprint");
         }
 
-        var resolvedProject = await projects.ResolveAsync(project, forWrite: false, cancellationToken);
-        await access.RequireAsync(resolvedProject.Id, ProjectRole.Member, cancellationToken);
         var resolvedSprint = string.IsNullOrWhiteSpace(sprint) ? null : await sprints.ResolveAsync(resolvedProject.Id, sprint, cancellationToken: cancellationToken);
         var resolvedFeature = string.IsNullOrWhiteSpace(feature) ? null : await items.ResolveAsync(feature, ProjectRole.Member, resolvedProject.Id, "feature", cancellationToken);
         if (resolvedFeature is not null && !await features.IsFeatureAsync(resolvedFeature.Id, cancellationToken))
