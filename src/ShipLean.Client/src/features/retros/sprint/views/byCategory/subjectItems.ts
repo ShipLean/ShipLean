@@ -1,4 +1,4 @@
-import type { RetroItemRefDto, SprintRetroDto } from '../../../../api/retros';
+import type { RetroItemRefDto, SprintRetroDto } from '../../../../../api/retros';
 
 /** The work items a point can be about: the coverage rows plus the items on the cards, each once, in that order. */
 export function subjectItems(retro: SprintRetroDto): RetroItemRefDto[] {

@@ -1,4 +1,5 @@
 import { useSearchParams } from 'react-router-dom';
+import type { RetroPointDto } from '../../../api/retros';
 import type { ProjectDto } from '../../../api/projects';
 import type { SprintDto } from '../../../api/sprints';
 import { RetroActionDialogProvider } from '../../retroShared/actionDialog/RetroActionDialogProvider';
@@ -6,12 +7,13 @@ import { pagesTestIds } from '../../pages/testIds';
 import { RetroQueryState } from '../RetroQueryState';
 import { retrosTestIds as ids } from '../testIds';
 import { useSprintRetro } from '../useRetroQueries';
-import { AddPoint } from './AddPoint';
+import { DecideFilter } from './DecideFilter';
 import { RetroRail } from './rail/RetroRail';
 import { SprintRetroHeader } from './SprintRetroHeader';
 import { parseSprintRetroAddress, withSprintRetroValue } from './sprintRetroAddress';
 import { ByCategory } from './views/ByCategory';
 import { ByWorkItem } from './views/ByWorkItem';
+import { matchesWrittenBy } from './views/byCategory/writtenBy';
 import { WrittenByFilter } from './views/byCategory/WrittenByFilter';
 
 const VIEWS = [
@@ -27,6 +29,13 @@ export function SprintRetroPanel({ project, sprint }: { project: ProjectDto; spr
   const [params, setParams] = useSearchParams();
   const { view, writtenBy, decide, point } = parseSprintRetroAddress(params);
   const query = useSprintRetro(project.id, sprint.id);
+  // A point just added must stay visible: To decide hides Went well, Written by hides the other authors.
+  const clearHidingFilters = (added: RetroPointDto) => {
+    let next = params;
+    if (decide && added.decision !== 'undecided') next = withSprintRetroValue(next, 'decide', 'all');
+    if (!matchesWrittenBy(added, writtenBy)) next = withSprintRetroValue(next, 'writtenBy', 'all');
+    if (next !== params) setParams(next);
+  };
   return (
     <RetroActionDialogProvider projectId={project.id}>
       <RetroQueryState query={query}>
@@ -62,13 +71,16 @@ export function SprintRetroPanel({ project, sprint }: { project: ProjectDto; spr
                   value={writtenBy}
                   onChange={(value) => setParams(withSprintRetroValue(params, 'writtenBy', value))}
                 />
-                <AddPoint {...props} />
+                <DecideFilter
+                  decide={decide}
+                  onChange={(value) => setParams(withSprintRetroValue(params, 'decide', value))}
+                />
               </div>
               <div className="grid grid-cols-[minmax(0,1fr)_18rem] gap-4">
                 <div className="min-w-0">
                   {view === 'category' ? (
                     <div data-testid={pagesTestIds.slotRetroByCategory}>
-                      <ByCategory {...props} writtenBy={writtenBy} />
+                      <ByCategory {...props} writtenBy={writtenBy} onAdded={clearHidingFilters} />
                     </div>
                   ) : (
                     <ByWorkItem {...props} writtenBy={writtenBy} />

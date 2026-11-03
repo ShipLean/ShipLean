@@ -29,11 +29,11 @@ export function parseSprintRetroAddress(params: URLSearchParams): SprintRetroAdd
 /** The address with one value changed; a default value drops its parameter so the tab opens at a clean address. */
 export function withSprintRetroValue(
   params: URLSearchParams,
-  name: 'view' | 'writtenBy',
-  value: RetroView | WrittenBy,
+  name: 'view' | 'writtenBy' | 'decide',
+  value: RetroView | WrittenBy | 'open' | 'all',
 ): URLSearchParams {
   const next = new URLSearchParams(params);
-  const isDefault = name === 'view' ? value === 'category' : value === 'all';
+  const isDefault = value === 'all' || (name === 'view' && value === 'category');
   if (isDefault) next.delete(name);
   else next.set(name, value);
   return next;

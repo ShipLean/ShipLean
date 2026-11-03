@@ -9,7 +9,7 @@ const project = { id: 'p1', key: 'SHIP' } as ProjectDto;
 const sprint = { id: 'sprint-24', name: 'Sprint 24' } as SprintDto;
 const props = { project, sprint, retro: sprintRetro };
 
-test('SprintRetroHeader_WhenRendered_ShouldShowTheThreeKpisFromTheFixture', async ({
+test('SprintRetroHeader_WhenRendered_ShouldShowTheKpisFromTheFixture', async ({
   mount,
   page,
 }) => {
@@ -25,6 +25,14 @@ test('SprintRetroHeader_WhenRendered_ShouldShowTheThreeKpisFromTheFixture', asyn
   await expect(
     page.getByTestId(ids.retroHeader).getByRole('link', { name: 'insights' }),
   ).toHaveAttribute('href', '/p/SHIP/retros/insights');
+});
+
+test('SprintRetroHeader_WhenRendered_ShouldShowPointsToDecide', async ({ mount, page }) => {
+  await mount(<SprintRetroHeader {...props} retro={{ ...sprintRetro, kpis: { ...sprintRetro.kpis, pointsToDecide: 9 } }} />, {
+    hooksConfig: { route: '/p/SHIP/boards/stories' },
+  });
+  await expect(page.getByTestId(ids.retroKpiToDecide)).toHaveText('9');
+  await expect(page.getByTestId(ids.retroHeader)).toContainText('Points to decide');
 });
 
 for (const theme of ['light', 'dark'] as const) {

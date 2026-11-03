@@ -3,7 +3,7 @@ import { routePath } from '../../../routes';
 import { retrosTestIds as ids } from '../testIds';
 import type { SprintRetroSlotProps } from './SprintRetroSlotProps';
 
-/** The retro header's three KPIs: finished items with a retro, recurring themes (linked to Insights) and action items raised. */
+/** The retro header's four KPIs: finished items with a retro, recurring themes (linked to Insights), points to decide and action items raised. */
 export function SprintRetroHeader({ project, retro }: SprintRetroSlotProps) {
   const { kpis } = retro;
   return (
@@ -42,6 +42,15 @@ export function SprintRetroHeader({ project, retro }: SprintRetroSlotProps) {
             insights
           </Link>
         </div>
+      </div>
+      <div>
+        <div
+          data-testid={ids.retroKpiToDecide}
+          className="text-[20px] leading-tight font-bold tabular-nums"
+        >
+          {kpis.pointsToDecide}
+        </div>
+        <div className="text-[length:var(--text-xs)] text-ink-muted">Points to decide</div>
       </div>
       <div>
         <div

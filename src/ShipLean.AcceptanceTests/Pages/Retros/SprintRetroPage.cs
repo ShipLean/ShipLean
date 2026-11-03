@@ -3,7 +3,7 @@ using ShipLean.TestSupport.TestIds;
 
 namespace ShipLean.AcceptanceTests.Pages.Retros;
 
-// A sprint's Retro tab: the header and KPIs, the By category / By work item toggle, Add a point, the two views and the rail.
+// A sprint's Retro tab: the header and KPIs, the By category / By work item toggle, the To decide filter, the two views and the rail.
 public sealed class SprintRetroPage(IPage page)
 {
     public ILocator Panel => page.GetByTestId(RetrosTestIds.SprintRetroPanel);
@@ -14,6 +14,10 @@ public sealed class SprintRetroPage(IPage page)
 
     public ILocator KpiRecurring => page.GetByTestId(RetrosTestIds.RetroKpiRecurring);
 
+    public ILocator KpiToDecide => page.GetByTestId(RetrosTestIds.RetroKpiToDecide);
+
+    public ILocator ToDecideFilter => page.GetByTestId(RetrosTestIds.RetroToDecideFilter);
+
     public ILocator KpiActions => page.GetByTestId(RetrosTestIds.RetroKpiActions);
 
     public ILocator ViewByCategory => page.GetByTestId(RetrosTestIds.RetroViewByCategory);
@@ -22,20 +26,21 @@ public sealed class SprintRetroPage(IPage page)
 
     public ILocator WrittenByFilter => page.GetByTestId(RetrosTestIds.RetroWrittenByFilter);
 
-    public ILocator Columns => page.GetByTestId(RetrosTestIds.RetroColumn);
+    public ILocator Columns => page.GetByTestId(RetroSharedTestIds.RetroBoardColumn);
 
     public ILocator ThemeGroups => page.GetByTestId(RetrosTestIds.RetroThemeGroup);
 
-    public ILocator Points => page.GetByTestId(RetrosTestIds.RetroPoint);
+    public ILocator Points => page.GetByTestId(RetroSharedTestIds.RetroNote);
 
     public ILocator PointOf(string text) => Points.Filter(new() { HasText = text });
 
-    public ILocator MoveTheme(string pointText) => PointOf(pointText).GetByTestId(RetrosTestIds.RetroPointMoveTheme);
+    public ILocator MoveTheme(string pointText) => PointOf(pointText).GetByTestId(RetroSharedTestIds.RetroNoteTheme);
 
-    public ILocator AddAction(string pointText) => PointOf(pointText).GetByTestId(RetrosTestIds.RetroPointAddAction);
+    public ILocator AddAction(string pointText) => PointOf(pointText).GetByTestId(RetroSharedTestIds.RetroNoteAddAction);
 
-    public ILocator Archive(string pointText) => PointOf(pointText).GetByTestId(RetrosTestIds.RetroPointArchive);
+    public ILocator Archive(string pointText) => PointOf(pointText).GetByTestId(RetroSharedTestIds.RetroNoteArchive);
 
+    // TODO: J1 deletes the AddPoint members below with the journeys that use them (the toolbar Add is gone; the board's Add replaces it).
     public ILocator AddPoint => page.GetByTestId(RetrosTestIds.RetroAddPoint);
 
     public ILocator AddPointDialog => page.GetByTestId(RetrosTestIds.RetroAddPointDialog);

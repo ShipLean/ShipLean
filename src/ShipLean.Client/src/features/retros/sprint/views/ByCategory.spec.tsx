@@ -1,10 +1,9 @@
 import { expect, test } from '@playwright/experimental-ct-react';
+import { useLocation } from 'react-router-dom';
 import type { ProjectDto } from '../../../../api/projects';
 import type { RetroPointDto, SprintRetroDto } from '../../../../api/retros';
 import type { SprintDto } from '../../../../api/sprints';
-import { retroActionRef, sprintRetro, stubRetros } from '../../ct/retroFixtures';
-import { ToastHost } from '../../../../components/ToastHost';
-import { componentTestIds } from '../../../../components/testIds';
+import { sprintRetro, stubRetros } from '../../ct/retroFixtures';
 import { retroSharedTestIds as shared } from '../../../retroShared/testIds';
 import { retrosTestIds as ids } from '../../testIds';
 import { SprintRetroPanel } from '../SprintRetroPanel';
@@ -13,34 +12,97 @@ import { ByCategory } from './ByCategory';
 const project = { id: 'p1', key: 'SHIP' } as ProjectDto;
 const sprint = { id: 'sprint-24', name: 'Sprint 24' } as SprintDto;
 
+const retroRoute = { hooksConfig: { route: '/p/SHIP/sprints/sprint-24/retro' } };
+
+// Shows the address the panel writes, since a component test has no browser bar to read.
+function WithAddress() {
+  const { search } = useLocation();
+  return (
+    <>
+      <span data-testid="test-address">{search}</span>
+      <SprintRetroPanel project={project} sprint={sprint} />
+    </>
+  );
+}
+
 const allPoints = sprintRetro.categories.flatMap((c) => c.groups.flatMap((g) => g.points));
 const byRole = (agent: boolean) =>
   allPoints.filter((p: RetroPointDto) => (p.author.role !== 'person') === agent);
 
-test('ByCategory_WhenOpened_ShouldRunColumnsInOrderWithGroupsLargestFirstAndUnthemedLast', async ({
-  mount,
-  page,
-}) => {
+test('ByCategory_WhenOpened_ShouldRunColumnsWentWellToCanBeImproved', async ({ mount, page }) => {
   await stubRetros(page);
   await mount(<ByCategory project={project} sprint={sprint} retro={sprintRetro} />);
 
-  const columns = page.getByTestId(ids.retroColumn);
+  const columns = page.getByTestId(shared.retroBoardColumn);
   await expect(columns).toHaveCount(4);
   await expect(columns.nth(0)).toHaveAttribute('data-category', 'wentWell');
   await expect(columns.nth(1)).toHaveAttribute('data-category', 'notInPlan');
   await expect(columns.nth(2)).toHaveAttribute('data-category', 'wentBadly');
   await expect(columns.nth(3)).toHaveAttribute('data-category', 'improve');
+  await expect(page.getByTestId(shared.retroBoardColumn)).toHaveCount(0);
+  await expect(page.getByTestId(shared.retroBoard)).toBeVisible();
+});
 
-  const improve = columns.nth(3).getByTestId(ids.retroThemeGroup);
-  await expect(improve).toHaveCount(3);
-  await expect(improve.last()).toHaveAttribute('data-theme', 'unthemed');
-  const badly = columns.nth(2).getByTestId(ids.retroThemeGroup);
-  await expect(badly.first().getByTestId(ids.retroPoint)).toHaveCount(2);
+test('ByCategory_WhenOpened_ShouldShowNoToolbarAddAPoint', async ({ mount, page }) => {
+  await stubRetros(page);
+  await mount(<SprintRetroPanel project={project} sprint={sprint} />, retroRoute);
+  await expect(page.getByTestId(shared.retroBoard)).toBeVisible();
+  await expect(page.getByTestId(ids.retroAddPoint)).toHaveCount(0);
+  await expect(page.getByTestId(shared.retroBoardAdd)).toHaveCount(4);
+});
 
-  await expect(badly.first()).toHaveAttribute('data-recurring', 'true');
-  await expect(badly.first().getByTestId(shared.retroThemeChip)).toContainText('Recurring');
-  await expect(badly.last()).toHaveAttribute('data-recurring', 'false');
-  await expect(badly.last().getByTestId(shared.retroThemeChip)).not.toContainText('Recurring');
+test('ByCategory_WhenToDecideChosen_ShouldWriteTheAddressAndHideDecidedNotesKeepingCounts', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  await mount(<WithAddress />, retroRoute);
+  const notes = page.getByTestId(shared.retroNote);
+  await expect(notes).toHaveCount(allPoints.length);
+  const filter = page.getByTestId(ids.retroToDecideFilter);
+
+  await filter.locator('[data-value="open"]').click();
+  await expect(page.getByTestId('test-address')).toHaveText('?decide=open');
+  const undecided = allPoints.filter((p) => p.decision === 'undecided');
+  await expect(notes).toHaveCount(undecided.length);
+  expect(undecided.length).toBeLessThan(allPoints.length);
+  for (const column of sprintRetro.categories) {
+    const header = page
+      .getByTestId(shared.retroBoardColumn)
+      .and(page.locator(`[data-category="${column.category}"]`));
+    if (column.toDecide > 0) {
+      await expect(header.locator('[data-to-decide]')).toHaveAttribute(
+        'data-to-decide',
+        String(column.toDecide),
+      );
+    }
+  }
+
+  await filter.locator('[data-value="all"]').click();
+  await expect(page.getByTestId('test-address')).toHaveText('');
+  await expect(notes).toHaveCount(allPoints.length);
+});
+
+test('ByCategory_WhenToDecideInTheAddress_ShouldOpenFiltered', async ({ mount, page }) => {
+  await stubRetros(page);
+  await mount(<WithAddress />, {
+    hooksConfig: { route: '/p/SHIP/sprints/sprint-24/retro?decide=open' },
+  });
+  await expect(page.getByTestId(shared.retroNote)).toHaveCount(
+    allPoints.filter((p) => p.decision === 'undecided').length,
+  );
+  await expect(
+    page.getByTestId(ids.retroToDecideFilter).locator('[data-value="open"]'),
+  ).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('ByCategory_WhenPointInTheAddress_ShouldHighlightThatNote', async ({ mount, page }) => {
+  await stubRetros(page);
+  const target = allPoints[0];
+  await mount(<ByCategory project={project} sprint={sprint} retro={sprintRetro} point={target.id} />);
+  const highlighted = page.locator('[data-highlighted="true"]');
+  await expect(highlighted).toHaveCount(1);
+  await expect(highlighted).toHaveAttribute('data-point-id', target.id);
 });
 
 test('ByCategory_WhenFeaturePointShown_ShouldShowFeatureMarkerAndRootCause', async ({
@@ -60,7 +122,7 @@ test('ByCategory_WhenWrittenByChanged_ShouldHideTheOtherAuthorsPoints', async ({
   await stubRetros(page);
   await mount(<ByCategory project={project} sprint={sprint} retro={sprintRetro} />);
   const filter = page.getByTestId(ids.retroWrittenByFilter);
-  const rows = page.getByTestId(ids.retroPoint);
+  const rows = page.getByTestId(shared.retroNote);
   await expect(rows).toHaveCount(allPoints.length);
 
   await filter.locator('[data-value="agents"]').click();
@@ -87,7 +149,7 @@ test('ByCategory_WhenThemeMoved_ShouldPutTheThemeIdOrTheNewName', async ({ mount
   await mount(<ByCategory project={project} sprint={sprint} retro={sprintRetro} />);
   const point = page.locator(`[data-point-id="${allPoints[0].id}"]`);
 
-  await point.getByTestId(ids.retroPointMoveTheme).click();
+  await point.getByTestId(shared.retroNoteTheme).click();
   const picker = page.getByTestId(shared.retroThemePicker);
   await picker.getByRole('combobox').fill('Merge');
   await picker.getByRole('option').first().click();
@@ -98,96 +160,62 @@ test('ByCategory_WhenThemeMoved_ShouldPutTheThemeIdOrTheNewName', async ({ mount
   expect(first.body).toMatchObject({ themeName: null });
   expect((first.body as { themeId: string }).themeId).toMatch(/\S/);
 
-  await point.getByTestId(ids.retroPointMoveTheme).click();
+  await point.getByTestId(shared.retroNoteTheme).click();
   await picker.getByRole('combobox').fill('Brand new theme');
   await page.getByTestId(shared.retroThemePickerAdd).click();
   await expect.poll(() => stub.writes().length).toBe(2);
   expect(stub.writes()[1].body).toEqual({ themeId: null, themeName: 'Brand new theme' });
 });
 
-test('ByCategory_WhenPointsListed_ShouldOfferActionItemOnImprovePointsWithoutOneOnly', async ({
+test('ByCategory_WhenPointsListed_ShouldShowActionItemAsSolidOnImproveAndLinkElsewhere', async ({
   mount,
   page,
 }) => {
   await stubRetros(page);
   await mount(<ByCategory project={project} sprint={sprint} retro={sprintRetro} />);
-  const expected = allPoints.filter((p) => p.category === 'improve' && p.action === null);
-  await expect(page.getByTestId(ids.retroPointAddAction)).toHaveCount(expected.length);
-  for (const p of allPoints.filter((x) => x.category !== 'improve')) {
+  const undecided = allPoints.filter((p) => p.decision === 'undecided');
+  await expect(page.getByTestId(shared.retroNoteAddAction)).toHaveCount(undecided.length);
+  for (const p of undecided) {
     await expect(
-      page.locator(`[data-point-id="${p.id}"]`).getByTestId(ids.retroPointAddAction),
+      page.locator(`[data-point-id="${p.id}"]`).getByTestId(shared.retroNoteAddAction),
+    ).toHaveAttribute('data-variant', p.category === 'improve' ? 'button' : 'link');
+  }
+  for (const p of allPoints.filter((x) => x.decision !== 'undecided')) {
+    await expect(
+      page.locator(`[data-point-id="${p.id}"]`).getByTestId(shared.retroNoteAddAction),
     ).toHaveCount(0);
   }
 });
 
-test('ByCategory_WhenActionItemAdded_ShouldPostAndShowTheReturnedKeyAfterRefetch', async ({
+test('ByCategory_WhenActionItemPressed_ShouldOpenTheActionDialogForThatPoint', async ({
   mount,
   page,
 }) => {
   await stubRetros(page);
-  const target = allPoints.find((p) => p.category === 'improve' && p.action === null);
-  if (!target) throw new Error('fixture has no improve point without an action item');
-  let created = false;
-  const withAction: SprintRetroDto = {
-    ...sprintRetro,
-    categories: sprintRetro.categories.map((c) => ({
-      ...c,
-      groups: c.groups.map((g) => ({
-        ...g,
-        points: g.points.map((p) => (p.id === target.id ? { ...p, action: retroActionRef } : p)),
-      })),
-    })),
-  };
-  // Registered after the stub, so it answers first: the retro read changes once the action exists.
-  await page.route(
-    (url) => /^\/api\/sprints\/[^/]+\/retro$/.test(url.pathname),
-    (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(created ? withAction : sprintRetro),
-      }),
-  );
-  await page.route(
-    (url) => url.pathname === `/api/retros/points/${target.id}/action`,
-    (route) => {
-      created = true;
-      return route.fulfill({
-        status: 201,
-        contentType: 'application/json',
-        body: JSON.stringify(retroActionRef),
-      });
-    },
-  );
-  // The panel owns the retro query, so the refetch after the write reaches the view.
-  await mount(<SprintRetroPanel project={project} sprint={sprint} />);
-  const point = page.locator(`[data-point-id="${target.id}"]`);
-  await point.getByTestId(ids.retroPointAddAction).click();
-
-  await expect(point).toContainText(retroActionRef.key);
-  await expect(point.getByTestId(componentTestIds.stateDot)).toContainText(
-    retroActionRef.state.name,
-  );
-  await expect(point.getByTestId(ids.retroPointAddAction)).toHaveCount(0);
+  const target = allPoints.find((p) => p.decision === 'undecided');
+  if (!target) throw new Error('fixture has no undecided point');
+  await mount(<SprintRetroPanel project={project} sprint={sprint} />, retroRoute);
+  await page
+    .locator(`[data-point-id="${target.id}"]`)
+    .getByTestId(shared.retroNoteAddAction)
+    .click();
+  await expect(page.getByTestId(shared.retroActionDialog)).toBeVisible();
 });
 
-test('ByCategory_WhenPointsListed_ShouldOfferArchiveOnlyWhereCanArchive', async ({
+test('ByCategory_WhenPointsListed_ShouldOfferMoreOnlyWhereCanArchiveAndArchiveFromIt', async ({
   mount,
   page,
 }) => {
   const stub = await stubRetros(page);
   await mount(<ByCategory project={project} sprint={sprint} retro={sprintRetro} />);
-  await expect(page.getByTestId(ids.retroPointArchive)).toHaveCount(
+  await expect(page.getByTestId(shared.retroNoteMore)).toHaveCount(
     allPoints.filter((p) => p.canArchive).length,
   );
-  for (const p of allPoints.filter((x) => !x.canArchive)) {
-    await expect(
-      page.locator(`[data-point-id="${p.id}"]`).getByTestId(ids.retroPointArchive),
-    ).toHaveCount(0);
-  }
   const mine = allPoints.find((p) => p.canArchive);
   if (!mine) throw new Error('fixture has no archivable point');
-  await page.locator(`[data-point-id="${mine.id}"]`).getByTestId(ids.retroPointArchive).click();
+  const note = page.locator(`[data-point-id="${mine.id}"]`);
+  await note.getByTestId(shared.retroNoteMore).click();
+  await note.getByTestId(shared.retroNoteArchive).click();
   await expect.poll(() => stub.writes().length).toBe(1);
   expect(stub.writes()[0].path).toBe(`/api/retros/points/${mine.id}/archive`);
 });
@@ -196,55 +224,10 @@ test('ByCategory_WhenAgentPointShown_ShouldOfferNoTextEditing', async ({ mount, 
   await stubRetros(page);
   await mount(<ByCategory project={project} sprint={sprint} retro={sprintRetro} />);
   const agent = page.locator(`[data-point-id="${byRole(true)[0].id}"]`);
-  await expect(agent.getByTestId(ids.retroPointMoveTheme)).toHaveCount(1);
+  await expect(agent.getByTestId(shared.retroNoteTheme)).toHaveCount(1);
   await expect(agent.getByRole('textbox')).toHaveCount(0);
-  await expect(page.getByTestId(ids.retroColumn).getByRole('textbox')).toHaveCount(0);
+  await expect(page.getByTestId(shared.retroBoardColumn).getByRole('textbox')).toHaveCount(0);
   await expect(agent.locator('[contenteditable]')).toHaveCount(0);
-});
-
-test('ByCategory_WhenActionItemRefused_ShouldShowTheErrorAsAToastAndRefetch', async ({
-  mount,
-  page,
-}) => {
-  await stubRetros(page);
-  const target = allPoints.find((p) => p.category === 'improve' && p.action === null);
-  if (!target) throw new Error('fixture has no improve point without an action item');
-  let retroReads = 0;
-  await page.route(
-    (url) => /^\/api\/sprints\/[^/]+\/retro$/.test(url.pathname),
-    (route) => {
-      retroReads += 1;
-      return route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(sprintRetro),
-      });
-    },
-  );
-  await page.route(
-    (url) => url.pathname === `/api/retros/points/${target.id}/action`,
-    (route) =>
-      route.fulfill({
-        status: 409,
-        contentType: 'application/json',
-        body: JSON.stringify({ error: 'This point already has an action item.', code: 'conflict' }),
-      }),
-  );
-  await mount(
-    <>
-      <ToastHost />
-      <SprintRetroPanel project={project} sprint={sprint} />
-    </>,
-  );
-  const point = page.locator(`[data-point-id="${target.id}"]`);
-  await expect(point).toBeVisible();
-  const readsBefore = retroReads;
-  await point.getByTestId(ids.retroPointAddAction).click();
-
-  await expect(page.getByTestId(componentTestIds.toast)).toContainText(
-    'This point already has an action item.',
-  );
-  await expect.poll(() => retroReads).toBeGreaterThan(readsBefore);
 });
 
 test('ByCategory_WhenMoveThemeOpen_ShouldCloseOnEscapeAndOnClickOutside', async ({
@@ -256,12 +239,12 @@ test('ByCategory_WhenMoveThemeOpen_ShouldCloseOnEscapeAndOnClickOutside', async 
   const point = page.locator(`[data-point-id="${allPoints[0].id}"]`);
   const picker = page.getByTestId(shared.retroThemePicker);
 
-  await point.getByTestId(ids.retroPointMoveTheme).click();
+  await point.getByTestId(shared.retroNoteTheme).click();
   await expect(picker).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(picker).toHaveCount(0);
 
-  await point.getByTestId(ids.retroPointMoveTheme).click();
+  await point.getByTestId(shared.retroNoteTheme).click();
   await expect(picker).toBeVisible();
   await page.getByTestId(ids.retroWrittenByFilter).click();
   await expect(picker).toHaveCount(0);
@@ -291,7 +274,7 @@ test('ByCategory_WhenACategoryHasNoPoints_ShouldSayNothingHere', async ({ mount,
     ),
   };
   await mount(<ByCategory project={project} sprint={sprint} retro={empty} />);
-  const column = page.getByTestId(ids.retroColumn).and(page.locator('[data-category="wentWell"]'));
+  const column = page.getByTestId(shared.retroBoardColumn).and(page.locator('[data-category="wentWell"]'));
   await expect(column).toContainText('Nothing here.');
 });
 
@@ -300,7 +283,7 @@ for (const theme of ['light', 'dark'] as const) {
     await stubRetros(page);
     await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
     const view = await mount(<ByCategory project={project} sprint={sprint} retro={sprintRetro} />);
-    await expect(page.getByTestId(ids.retroColumn)).toHaveCount(4);
+    await expect(page.getByTestId(shared.retroBoardColumn)).toHaveCount(4);
     await expect(view).toHaveScreenshot(`by-category.${theme}.png`, { animations: 'disabled' });
   });
 }
@@ -312,6 +295,6 @@ test('ByCategory_WhenSprintHasNoFeatureRetro_ShouldShowNoCallout', async ({ moun
     cards: sprintRetro.cards.filter((c) => c.workItem?.type.id !== 'feature'),
   };
   await mount(<ByCategory project={project} sprint={sprint} retro={without} />);
-  await expect(page.getByTestId(ids.retroColumn)).toHaveCount(4);
+  await expect(page.getByTestId(shared.retroBoardColumn)).toHaveCount(4);
   await expect(page.getByTestId(ids.retroFeatureCallout)).toHaveCount(0);
 });
