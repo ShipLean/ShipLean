@@ -521,6 +521,26 @@ public class DecideRetroActionsTests : McpFixture
     }
 
     [Test]
+    public async Task Apply_WhenAPointsThemeChangedSincePreview_ShouldCreateTheActionWithThePreviewedTheme()
+    {
+        var world = await WorldAsync();
+        var previewed = await world.Seed.ThemeAsync($"Previewed {world.Tag}");
+        var changed = await world.Seed.ThemeAsync($"Changed {world.Tag}");
+        var point = await world.PointAsync(RetroCategory.WentBadly, "Themed", themeId: previewed);
+        var preview = await world.PreviewAsync($$""", "actions":[{{New("Themed " + world.Tag, point)}}]""");
+        await using var connection = await OpenDatabaseAsync();
+        await connection.ExecuteAsync("UPDATE retro_point SET theme_id = @changed WHERE id = @point", new { changed, point });
+
+        var applied = await world.ApplyAsync(Plan(preview));
+
+        var shown = preview.GetProperty("would_create")[0].GetProperty("theme").GetString();
+        shown.ShouldBe($"Previewed {world.Tag}");
+        var key = applied.GetProperty("created")[0].GetString();
+        (await connection.QuerySingleAsync<string?>(
+            "SELECT t.name FROM work_item w JOIN retro_action ra ON ra.work_item_id = w.id JOIN retro_theme t ON t.id = ra.theme_id WHERE w.key = @key", new { key })).ShouldBe(shown);
+    }
+
+    [Test]
     public async Task LeftUndecided_ShouldCountTheScopesUndecidedMinusThoseHandled()
     {
         var world = await WorldAsync();

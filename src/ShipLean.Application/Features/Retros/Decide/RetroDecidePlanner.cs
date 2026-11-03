@@ -35,16 +35,18 @@ internal sealed class RetroDecidePlanner(DecideScopeReader reader, IRetroDecisio
             }
 
             kept.ForEach(id => handled.Add(id));
-            planActions.Add(action with { PointIds = kept });
             if (action.Existing is { } existingId)
             {
                 var existing = await reader.LiveActionAsync(projectId, existingId, cancellationToken)
                     ?? throw ApiException.Validation("That is not a live action item raised from a retro.", $"actions[{index}].existing");
+                planActions.Add(action with { PointIds = kept });
                 add.Add(new DecideAddLine(existing.Key, kept.Count));
                 continue;
             }
 
+            // The plan seals the theme the preview shows, so apply does not work it out again from points that may have changed.
             var theme = action.Theme ?? Commonest(kept.Select(id => themeOf.TryGetValue(id, out var given) && !points[id].ThemeByPerson ? given : points[id].ThemeName));
+            planActions.Add(action with { PointIds = kept, Theme = theme });
             create.Add(new DecideCreateLine(action.Title.Trim(), action.FixType, theme, kept.Count, RetroDuplicates.Find(action.Title, open)));
         }
 
