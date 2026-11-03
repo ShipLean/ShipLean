@@ -10,12 +10,14 @@ using ShipLean.Core;
 
 namespace ShipLean.Application.Features.Retros.Insights;
 
-// Retrospectives > Insights. The series is every ended sprint plus the current one, oldest first. Counts, statuses and verdicts
-// are all worked out over that whole series, so the range only changes which trailing sprints are shown. "After" counts only
+// Retrospectives > Insights, in sprint mode (ranges 3, 6, all: one column per sprint) or week mode (ranges w6, w12: one column per week,
+// by the day each point was logged). Merge proposals waiting for an answer are the same in both. The series is every ended sprint (or, in
+// week mode, every week) plus the current one, oldest first. Counts, statuses and verdicts are all worked out over that whole series, so
+// the range only changes which trailing columns are shown. "After" counts only
 // sprints that have ended (RetroRules.Verdict), so the current sprint's column is shown but never judged. A range of N shows N
 // columns including the current sprint. ClosedAt is -1 when the action closed before the first shown sprint. An action closed
 // before every live sprint of the project has no sprint to be placed in, so it gets no impact row (and no verdict).
-public sealed class RetroInsightsReader(NpgsqlDataSource dataSource, TimeProvider clock, IRetroCards cards) : IRetroInsightsReader
+public sealed class RetroInsightsReader(NpgsqlDataSource dataSource, TimeProvider clock, IRetroCards cards, IRetroMergeProposals mergeProposals) : IRetroInsightsReader
 {
     private const int ShortRange = 3;
     private const int LongRange = 6;
@@ -91,8 +93,7 @@ public sealed class RetroInsightsReader(NpgsqlDataSource dataSource, TimeProvide
             weekMode ? RetroInsightsMode.Week : RetroInsightsMode.Sprint,
             [.. shown.Select(column => column.Dto)],
             new RetroUnthemedDto(unthemedCounts, unthemedNoSprint, unthemedCounts.Sum() + unthemedNoSprint),
-            // IRetroMergeProposals has no read yet (T4 owns it): proposals are not listed until it has.
-            []);
+            await mergeProposals.PendingAsync(projectId, cancellationToken));
     }
 
     private async Task<IReadOnlyList<RetroImpactDto>> ImpactAsync(

@@ -8,5 +8,5 @@ namespace ShipLean.Application.Features.Retros.Merge;
 public sealed class RetroMergeProposalServices : IServiceModule
 {
     public void AddServices(IServiceCollection services, IConfiguration configuration)
-        => services.AddScoped<IRetroMergeProposals, RetroMergeProposals>();
+        => services.AddSingleton<IRetroMergeProposals, RetroMergeProposals>();
 }
