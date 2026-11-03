@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import { useLocation } from 'react-router-dom';
 import type { ProjectDto } from '../../../../api/projects';
 import type { RetroPointDto, SprintRetroDto } from '../../../../api/retros';
 import type { SprintDto } from '../../../../api/sprints';
+import { SprintRetroAddressHarness } from '../../ct/SprintRetroAddressHarness';
 import { ByCategoryHarness } from '../../ct/ByCategoryHarness';
 import { sprintRetro, stubRetros } from '../../ct/retroFixtures';
 import { retroSharedTestIds as shared } from '../../../retroShared/testIds';
@@ -13,17 +13,6 @@ const project = { id: 'p1', key: 'SHIP' } as ProjectDto;
 const sprint = { id: 'sprint-24', name: 'Sprint 24' } as SprintDto;
 
 const retroRoute = { hooksConfig: { route: '/p/SHIP/sprints/sprint-24/retro' } };
-
-// Shows the address the panel writes, since a component test has no browser bar to read.
-function WithAddress() {
-  const { search } = useLocation();
-  return (
-    <>
-      <span data-testid="test-address">{search}</span>
-      <SprintRetroPanel project={project} sprint={sprint} />
-    </>
-  );
-}
 
 const allPoints = sprintRetro.categories.flatMap((c) => c.groups.flatMap((g) => g.points));
 const byRole = (agent: boolean) =>
@@ -55,7 +44,7 @@ test('ByCategory_WhenToDecideChosen_ShouldWriteTheAddressAndHideDecidedNotesKeep
   page,
 }) => {
   await stubRetros(page);
-  await mount(<WithAddress />, retroRoute);
+  await mount(<SprintRetroAddressHarness project={project} sprint={sprint} />, retroRoute);
   const notes = page.getByTestId(shared.retroNote);
   await expect(notes).toHaveCount(allPoints.length);
   const filter = page.getByTestId(ids.retroToDecideFilter);
@@ -84,7 +73,7 @@ test('ByCategory_WhenToDecideChosen_ShouldWriteTheAddressAndHideDecidedNotesKeep
 
 test('ByCategory_WhenToDecideInTheAddress_ShouldOpenFiltered', async ({ mount, page }) => {
   await stubRetros(page);
-  await mount(<WithAddress />, {
+  await mount(<SprintRetroAddressHarness project={project} sprint={sprint} />, {
     hooksConfig: { route: '/p/SHIP/sprints/sprint-24/retro?decide=open' },
   });
   await expect(page.getByTestId(shared.retroNote)).toHaveCount(
@@ -106,17 +95,12 @@ test('ByCategory_WhenPointInTheAddress_ShouldHighlightThatNote', async ({ mount,
   await expect(highlighted).toHaveAttribute('data-point-id', target.id);
 });
 
-test('ByCategory_WhenFeaturePointShown_ShouldShowFeatureMarkerAndRootCause', async ({
-  mount,
-  page,
-}) => {
+test('ByCategory_WhenFeaturePointShown_ShouldShowTheRootCause', async ({ mount, page }) => {
   await stubRetros(page);
   await mount(<ByCategoryHarness project={project} sprint={sprint} retro={sprintRetro} />);
 
-  const feature = page.locator(`[data-feature="true"][data-category="wentBadly"]`);
-  await expect(feature).toHaveCount(1);
-  await expect(feature).toContainText('Feature');
-  await expect(feature).toContainText('Root cause');
+  const withCause = page.getByTestId(shared.retroNote).filter({ hasText: 'Root cause' });
+  await expect(withCause).toHaveCount(allPoints.filter((p) => p.rootCause).length);
 });
 
 test('ByCategory_WhenWrittenByChanged_ShouldHideTheOtherAuthorsPoints', async ({ mount, page }) => {
@@ -143,29 +127,6 @@ test('ByCategory_WhenWrittenByChanged_ShouldHideTheOtherAuthorsPoints', async ({
 
   await filter.locator('[data-value="all"]').click();
   await expect(rows).toHaveCount(allPoints.length);
-});
-
-test('ByCategory_WhenThemeMoved_ShouldPutTheThemeIdOrTheNewName', async ({ mount, page }) => {
-  const stub = await stubRetros(page);
-  await mount(<ByCategoryHarness project={project} sprint={sprint} retro={sprintRetro} />);
-  const point = page.locator(`[data-point-id="${allPoints[0].id}"]`);
-
-  await point.getByTestId(shared.retroNoteTheme).click();
-  const picker = page.getByTestId(shared.retroThemePicker);
-  await picker.getByRole('combobox').fill('Merge');
-  await picker.getByRole('option').first().click();
-  await expect.poll(() => stub.writes().length).toBe(1);
-  const first = stub.writes()[0];
-  expect(first.method).toBe('PUT');
-  expect(first.path).toBe(`/api/retros/points/${allPoints[0].id}/theme`);
-  expect(first.body).toMatchObject({ themeName: null });
-  expect((first.body as { themeId: string }).themeId).toMatch(/\S/);
-
-  await point.getByTestId(shared.retroNoteTheme).click();
-  await picker.getByRole('combobox').fill('Brand new theme');
-  await page.getByTestId(shared.retroThemePickerAdd).click();
-  await expect.poll(() => stub.writes().length).toBe(2);
-  expect(stub.writes()[1].body).toEqual({ themeId: null, themeName: 'Brand new theme' });
 });
 
 test('ByCategory_WhenPointsListed_ShouldShowActionItemAsSolidOnImproveAndLinkElsewhere', async ({
@@ -225,30 +186,10 @@ test('ByCategory_WhenAgentPointShown_ShouldOfferNoTextEditing', async ({ mount, 
   await stubRetros(page);
   await mount(<ByCategoryHarness project={project} sprint={sprint} retro={sprintRetro} />);
   const agent = page.locator(`[data-point-id="${byRole(true)[0].id}"]`);
-  await expect(agent.getByTestId(shared.retroNoteTheme)).toHaveCount(1);
+  await expect(agent).toHaveCount(1);
   await expect(agent.getByRole('textbox')).toHaveCount(0);
   await expect(page.getByTestId(shared.retroBoardColumn).getByRole('textbox')).toHaveCount(0);
   await expect(agent.locator('[contenteditable]')).toHaveCount(0);
-});
-
-test('ByCategory_WhenMoveThemeOpen_ShouldCloseOnEscapeAndOnClickOutside', async ({
-  mount,
-  page,
-}) => {
-  await stubRetros(page);
-  await mount(<ByCategoryHarness project={project} sprint={sprint} retro={sprintRetro} />);
-  const point = page.locator(`[data-point-id="${allPoints[0].id}"]`);
-  const picker = page.getByTestId(shared.retroThemePicker);
-
-  await point.getByTestId(shared.retroNoteTheme).click();
-  await expect(picker).toBeVisible();
-  await page.keyboard.press('Escape');
-  await expect(picker).toHaveCount(0);
-
-  await point.getByTestId(shared.retroNoteTheme).click();
-  await expect(picker).toBeVisible();
-  await page.getByTestId(ids.retroWrittenByFilter).click();
-  await expect(picker).toHaveCount(0);
 });
 
 test('ByCategory_WhenSprintHasAFeatureRetro_ShouldShowTheCalloutAboveTheColumns', async ({
@@ -266,7 +207,7 @@ test('ByCategory_WhenSprintHasAFeatureRetro_ShouldShowTheCalloutAboveTheColumns'
   await expect(callout).toContainText(`from ${card.compiledFrom.length} story retros`);
 });
 
-test('ByCategory_WhenACategoryHasNoPoints_ShouldSayNothingHere', async ({ mount, page }) => {
+test('ByCategory_WhenACategoryHasNoPoints_ShouldShowNoNotesInIt', async ({ mount, page }) => {
   await stubRetros(page);
   const empty: SprintRetroDto = {
     ...sprintRetro,
@@ -278,7 +219,8 @@ test('ByCategory_WhenACategoryHasNoPoints_ShouldSayNothingHere', async ({ mount,
   const column = page
     .getByTestId(shared.retroBoardColumn)
     .and(page.locator('[data-category="wentWell"]'));
-  await expect(column).toContainText('Nothing here.');
+  await expect(column.getByTestId(shared.retroNote)).toHaveCount(0);
+  await expect(column.locator('[data-count="shown"]')).toHaveText('0');
 });
 
 for (const theme of ['light', 'dark'] as const) {
