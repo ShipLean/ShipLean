@@ -147,7 +147,7 @@ public sealed class InMemorySprintStore(InMemoryPlanning world, IPublicHolidays?
                 .Select(i => ToRolloverItem(i, next?.Id)).ToList();
             var status = sprint.Rollover ?? Contracts.Sprints.RolloverStatus.Pending;
             return Task.FromResult(new RolloverDto(
-                Ref(sprint), status, items, next is null ? null : Ref(next), world.TeamCapacity(next), next is null ? 0 : world.CountedItems(next.Id).Sum(i => i.Points ?? 0)));
+                Ref(sprint), status, items, next is null ? null : Ref(next), world.TeamCapacity(next), next is null ? 0 : world.CountedItems(next.Id).Sum(i => i.Points ?? 0), sprint.End > world.Today));
         }
     }
 
@@ -156,9 +156,13 @@ public sealed class InMemorySprintStore(InMemoryPlanning world, IPublicHolidays?
         lock (world.Gate)
         {
             var sprint = world.Sprint(sprintId);
-            if (sprint.End > world.Today)
+            if (sprint.End > world.Today && !request.EndToday)
             {
                 throw ApiException.Validation("The sprint has not ended.");
+            }
+            if (sprint.End > world.Today && sprint.Start > world.Today)
+            {
+                throw ApiException.Validation("The sprint has not started, so there is nothing to close.");
             }
             foreach (var move in request.Moves)
             {
@@ -175,6 +179,10 @@ public sealed class InMemorySprintStore(InMemoryPlanning world, IPublicHolidays?
             foreach (var move in request.Moves)
             {
                 world.MoveItem(move.WorkItemId, move.TargetSprintId, world.Today);
+            }
+            if (sprint.End > world.Today)
+            {
+                sprint.End = world.Today;
             }
             sprint.Rollover = Contracts.Sprints.RolloverStatus.Decided;
             return Task.FromResult(world.ToDto(sprint));

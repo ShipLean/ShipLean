@@ -57,13 +57,17 @@ pageShots([
   },
   {
     name: 'sprint-end',
-    route: '/p/SHIP/sprints',
+    route: '/p/SHIP/sprints/sprint-24/backlog',
     shell: true,
     arrange: async (page) => {
       await stubShell(page, { sprints: sprintsAtEnd });
       await stubSprintEnd(page);
     },
     ready: async (page) => {
+      await expect(page.getByTestId(ids.closeSprint)).toBeVisible();
+    },
+    act: async (page) => {
+      await page.getByTestId(ids.closeSprint).click();
       await expect(page.getByTestId(componentTestIds.dialog)).toBeVisible();
       await expect(page.getByTestId(ids.endRow)).toHaveCount(2);
     },

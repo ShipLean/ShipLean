@@ -50,7 +50,7 @@ public static class PagesTestIds
     public const string SlotSettingsStates = "slot-settingsStates";
     public const string SlotSide = "slot-side";
     public const string SlotSprintBacklog = "slot-sprintBacklog";
-    public const string SlotSprintEndPrompt = "slot-sprintEndPrompt";
+    public const string SlotCloseSprint = "slot-closeSprint";
     public const string SlotSprintsList = "slot-sprintsList";
     public const string SlotSprintRetro = "slot-sprintRetro";
     public const string SlotRetrosSearch = "slot-retrosSearch";

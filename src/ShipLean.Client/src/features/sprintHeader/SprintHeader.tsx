@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import type { ProjectDto } from '../../api/projects';
 import type { SprintDto } from '../../api/sprints';
 import { routePath } from '../../routes';
+import { CloseSprintSlot } from '../../slots/CloseSprintSlot';
 import { EditSprintRailSlot } from '../../slots/EditSprintRailSlot';
 import { SprintGoalEditSlot } from '../../slots/SprintGoalEditSlot';
 import { SprintGoal } from './SprintGoal';
@@ -30,6 +31,7 @@ export function SprintHeader({ variant, project, sprint, sprints, tab }: SprintH
   const editSprintRef = useRef<HTMLButtonElement>(null);
   const picker = <SprintPicker project={project} sprint={sprint} sprints={sprints} tab={tab} />;
   const chip = <SprintStatusChip status={sprint.status} />;
+  const closeSprint = <CloseSprintSlot project={project} sprint={sprint} />;
   const allSprints = (
     <Link
       data-testid={ids.allSprints}
@@ -60,6 +62,7 @@ export function SprintHeader({ variant, project, sprint, sprints, tab }: SprintH
           {chip}
           {when}
           <span className="ml-auto">{allSprints}</span>
+          {closeSprint}
         </div>
       ) : (
         <>
@@ -67,6 +70,7 @@ export function SprintHeader({ variant, project, sprint, sprints, tab }: SprintH
             {picker}
             {chip}
             {allSprints}
+            <span className="ml-auto">{closeSprint}</span>
           </div>
           {when}
           <SprintGoal

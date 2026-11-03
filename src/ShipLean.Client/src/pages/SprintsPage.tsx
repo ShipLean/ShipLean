@@ -1,6 +1,5 @@
 import { pagesTestIds } from '../features/pages/testIds';
 import { NewSprintRailSlot } from '../slots/NewSprintRailSlot';
-import { SprintEndPromptSlot } from '../slots/SprintEndPromptSlot';
 import { SprintsListSlot } from '../slots/SprintsListSlot';
 import { pageRouteIds } from './pageRouteIds';
 import { ProjectScreen } from './ProjectScreen';
@@ -16,7 +15,6 @@ export function SprintsPage() {
             const slots = sprintsSlots(project, sprints);
             return (
               <>
-                <SprintEndPromptSlot {...slots.sprintEndPrompt} />
                 <SprintsListSlot {...slots.sprintsList} />
                 <NewSprintRailSlot {...slots.newSprintRail} />
               </>

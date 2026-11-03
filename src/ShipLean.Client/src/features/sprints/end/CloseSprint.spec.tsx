@@ -5,7 +5,7 @@ import type { RolloverDto, RolloverItemDto, SprintDto } from '../../../api/sprin
 import { componentTestIds } from '../../../components/testIds';
 import { ToastHost } from '../../../components/ToastHost';
 import { sprintsTestIds as ids } from '../testIds';
-import { SprintEnd } from './SprintEnd';
+import { CloseSprint } from './CloseSprint';
 
 const project: ProjectDto = {
   id: 'p1',
@@ -54,11 +54,13 @@ const rollover = (overrides: Partial<RolloverDto> = {}): RolloverDto => ({
   nextSprint: sprintRef('s25', 'Sprint 25', 'current'),
   nextSprintCapacity: 12,
   nextSprintPoints: 6,
+  endsEarly: false,
   ...overrides,
 });
 
 interface Posted {
   moves: { workItemId: string; targetSprintId: string | null }[];
+  endToday?: boolean;
 }
 
 async function stub(page: Page, current: () => RolloverDto, posts: Posted[] = []) {
@@ -76,20 +78,26 @@ async function stub(page: Page, current: () => RolloverDto, posts: Posted[] = []
   });
 }
 
-const mountPrompt = (mount: (c: React.JSX.Element) => Promise<unknown>) =>
+const mountButton = (mount: (c: React.JSX.Element) => Promise<unknown>, sprint = ended) =>
   mount(
     <>
-      <SprintEnd project={project} sprints={[ended]} />
+      <CloseSprint project={project} sprint={sprint} />
       <ToastHost />
     </>,
   );
 
-test('SprintEnd_WhenSprintEndedWithUnfinishedItems_ShouldListThemDefaultingToTheNextSprint', async ({
+// Mounts the button and presses it.
+const openDialog = async (mount: (c: React.JSX.Element) => Promise<unknown>, page: Page) => {
+  await mountButton(mount);
+  await page.getByTestId(ids.closeSprint).click();
+};
+
+test('CloseSprint_WhenSprintEndedWithUnfinishedItems_ShouldListThemDefaultingToTheNextSprint', async ({
   mount,
   page,
 }) => {
   await stub(page, () => rollover());
-  await mountPrompt(mount);
+  await openDialog(mount, page);
 
   const rows = page.getByTestId(ids.endRow);
   await expect(rows).toHaveCount(2);
@@ -104,27 +112,102 @@ test('SprintEnd_WhenSprintEndedWithUnfinishedItems_ShouldListThemDefaultingToThe
   await expect(rows.first()).toContainText('2 of 3 tasks open');
   await expect(rows.first().getByTestId(ids.endDestination)).toHaveValue('next');
   await expect(rows.first().getByTestId(ids.endDestination)).toContainText('Move to Sprint 25');
+  await expect(page.getByTestId(ids.endEarly)).toHaveCount(0);
 });
 
-test('SprintEnd_WhenNothingIsUnfinished_ShouldShowNothing', async ({ mount, page }) => {
-  await stub(page, () => rollover({ items: [] }));
-  await mountPrompt(mount);
+test('CloseSprint_WhenMounted_ShouldOpenNothingAndReadNothing', async ({ mount, page }) => {
+  const reads: string[] = [];
+  await stub(page, () => {
+    reads.push('rollover');
+    return rollover();
+  });
+  await mountButton(mount);
 
+  await expect(page.getByTestId(ids.closeSprint)).toHaveText('Close sprint');
   await expect(page.getByTestId(componentTestIds.dialog)).toHaveCount(0);
-  await expect(page.getByTestId(ids.endBanner)).toHaveCount(0);
+  expect(reads).toEqual([]);
 });
 
-test('SprintEnd_WhenAlreadyDecided_ShouldShowNothing', async ({ mount, page }) => {
+test('CloseSprint_WhenAlreadyClosed_ShouldShowNoButton', async ({ mount, page }) => {
   await stub(page, () => rollover({ status: 'decided' }));
-  await mount(<SprintEnd project={project} sprints={[{ ...ended, rolloverStatus: 'decided' }]} />);
+  await mountButton(mount, { ...ended, rolloverStatus: 'decided' });
 
-  await expect(page.getByTestId(componentTestIds.dialog)).toHaveCount(0);
-  await expect(page.getByTestId(ids.endBanner)).toHaveCount(0);
+  await expect(page.getByTestId(ids.closeSprint)).toHaveCount(0);
 });
 
-test('SprintEnd_WhenMovedPastNextSprintCapacity_ShouldWarnButNotBlock', async ({ mount, page }) => {
+test('CloseSprint_WhenFuture_ShouldShowNoButton', async ({ mount, page }) => {
   await stub(page, () => rollover());
-  await mountPrompt(mount);
+  await mountButton(mount, { ...ended, status: 'future' });
+
+  await expect(page.getByTestId(ids.closeSprint)).toHaveCount(0);
+});
+
+test('CloseSprint_WhenNothingIsUnfinished_ShouldConfirmThenCloseWithNoMoves', async ({
+  mount,
+  page,
+}) => {
+  const posts: Posted[] = [];
+  await stub(page, () => rollover({ items: [] }), posts);
+  await openDialog(mount, page);
+
+  await expect(page.getByTestId(ids.endConfirm)).toContainText(
+    'Nothing is unfinished in Sprint 24',
+  );
+  await expect(page.getByTestId(ids.endRow)).toHaveCount(0);
+  await expect(page.getByTestId(ids.endEarly)).toHaveCount(0);
+  await page.getByTestId(ids.endApply).click();
+
+  await expect(page.getByTestId(componentTestIds.dialog)).toHaveCount(0);
+  await expect(page.getByTestId(componentTestIds.toast)).toContainText('Closed Sprint 24');
+  expect(posts).toEqual([{ moves: [], endToday: false }]);
+});
+
+test('CloseSprint_WhenStillRunning_ShouldSayTheEndDateMovesAndAskForIt', async ({
+  mount,
+  page,
+}) => {
+  const posts: Posted[] = [];
+  await stub(page, () => rollover({ endsEarly: true }), posts);
+  await openDialog(mount, page);
+
+  await expect(page.getByTestId(ids.endEarly)).toContainText('moves its end date to today');
+  await page.getByTestId(ids.endApply).click();
+
+  await expect(page.getByTestId(componentTestIds.dialog)).toHaveCount(0);
+  expect(posts[0]!.endToday).toBe(true);
+});
+
+test('CloseSprint_WhenStillRunningWithNothingUnfinished_ShouldSayTheEndDateMoves', async ({
+  mount,
+  page,
+}) => {
+  await stub(page, () => rollover({ items: [], endsEarly: true }));
+  await openDialog(mount, page);
+
+  await expect(page.getByTestId(ids.endConfirm)).toBeVisible();
+  await expect(page.getByTestId(ids.endEarly)).toContainText('moves its end date to today');
+});
+
+test('CloseSprint_WhenTheRolloverCannotBeRead_ShouldSaySoAndCancelBack', async ({
+  mount,
+  page,
+}) => {
+  await page.route('**/api/sprints/s24/rollover', (route) =>
+    route.fulfill({ status: 404, json: { error: 'There is no such sprint.', code: 'not_found' } }),
+  );
+  await openDialog(mount, page);
+
+  await expect(page.getByTestId(ids.endError)).toContainText('could not be loaded');
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId(componentTestIds.dialog)).toHaveCount(0);
+});
+
+test('CloseSprint_WhenMovedPastNextSprintCapacity_ShouldWarnButNotBlock', async ({
+  mount,
+  page,
+}) => {
+  await stub(page, () => rollover());
+  await openDialog(mount, page);
 
   // 6 planned + 8 moving = 14 against 12.
   const after = page.getByTestId(ids.endAfter);
@@ -139,9 +222,9 @@ test('SprintEnd_WhenMovedPastNextSprintCapacity_ShouldWarnButNotBlock', async ({
   await expect(after).toHaveAttribute('data-over', 'false');
 });
 
-test('SprintEnd_WhenSetAllIsPressed_ShouldChangeEveryRowAndTheTotal', async ({ mount, page }) => {
+test('CloseSprint_WhenSetAllIsPressed_ShouldChangeEveryRowAndTheTotal', async ({ mount, page }) => {
   await stub(page, () => rollover());
-  await mountPrompt(mount);
+  await openDialog(mount, page);
 
   await page.getByTestId(ids.endSetAll).filter({ hasText: 'Top of backlog' }).click();
   for (const select of await page.getByTestId(ids.endDestination).all()) {
@@ -154,15 +237,15 @@ test('SprintEnd_WhenSetAllIsPressed_ShouldChangeEveryRowAndTheTotal', async ({ m
   await expect(page.getByTestId(ids.endAfter)).toContainText('14 / 12 pts');
 });
 
-test('SprintEnd_WhenNoCapacityIsEntered_ShouldNotWarn', async ({ mount, page }) => {
+test('CloseSprint_WhenNoCapacityIsEntered_ShouldNotWarn', async ({ mount, page }) => {
   await stub(page, () => rollover({ nextSprintCapacity: null }));
-  await mountPrompt(mount);
+  await openDialog(mount, page);
 
   await expect(page.getByTestId(ids.endAfter)).toContainText('No capacity is entered');
   await expect(page.getByTestId(ids.endAfter)).toHaveAttribute('data-over', 'false');
 });
 
-test('SprintEnd_WhenThereIsNoNextSprint_ShouldOfferTheBacklogAndStayOnly', async ({
+test('CloseSprint_WhenThereIsNoNextSprint_ShouldOfferTheBacklogAndStayOnly', async ({
   mount,
   page,
 }) => {
@@ -173,7 +256,7 @@ test('SprintEnd_WhenThereIsNoNextSprint_ShouldOfferTheBacklogAndStayOnly', async
     items: [{ ...unfinished('SHIP-129', 5, 0, 0), defaultTargetSprintId: null }],
   });
   await stub(page, () => noNext);
-  await mountPrompt(mount);
+  await openDialog(mount, page);
 
   const select = page.getByTestId(ids.endDestination);
   await expect(select).toHaveValue('backlog');
@@ -184,17 +267,17 @@ test('SprintEnd_WhenThereIsNoNextSprint_ShouldOfferTheBacklogAndStayOnly', async
   await expect(page.getByTestId(ids.endAfter)).toHaveCount(0);
 });
 
-test('SprintEnd_WhenApplied_ShouldPostTheStoryMovesAndClose', async ({ mount, page }) => {
+test('CloseSprint_WhenApplied_ShouldPostTheStoryMovesAndClose', async ({ mount, page }) => {
   const posts: Posted[] = [];
   await stub(page, () => rollover(), posts);
-  await mountPrompt(mount);
+  await openDialog(mount, page);
   await page.getByTestId(ids.endDestination).last().selectOption('backlog');
 
   await page.getByTestId(ids.endApply).click();
 
   await expect(page.getByTestId(componentTestIds.dialog)).toHaveCount(0);
   await expect(page.getByTestId(componentTestIds.toast)).toContainText(
-    'Moved 2 items out of Sprint 24',
+    'Closed Sprint 24 and moved 2 items out',
   );
   expect(posts).toHaveLength(1);
   expect(posts[0]!.moves).toEqual([
@@ -203,19 +286,22 @@ test('SprintEnd_WhenApplied_ShouldPostTheStoryMovesAndClose', async ({ mount, pa
   ]);
 });
 
-test('SprintEnd_WhenAnItemIsLeftInTheSprint_ShouldNotMoveItOrItsTasks', async ({ mount, page }) => {
+test('CloseSprint_WhenAnItemIsLeftInTheSprint_ShouldNotMoveItOrItsTasks', async ({
+  mount,
+  page,
+}) => {
   const posts: Posted[] = [];
   await stub(page, () => rollover(), posts);
-  await mountPrompt(mount);
+  await openDialog(mount, page);
   await page.getByTestId(ids.endDestination).first().selectOption('stay');
 
   await page.getByTestId(ids.endApply).click();
 
-  await expect(page.getByTestId(componentTestIds.toast)).toContainText('Moved 1 item out of');
+  await expect(page.getByTestId(componentTestIds.toast)).toContainText('moved 1 item out');
   expect(posts[0]!.moves).toEqual([{ workItemId: 'SHIP-144', targetSprintId: 's25' }]);
 });
 
-test('SprintEnd_WhenTheApplyIsRefused_ShouldSayWhyAndKeepTheDialog', async ({ mount, page }) => {
+test('CloseSprint_WhenTheApplyIsRefused_ShouldSayWhyAndKeepTheDialog', async ({ mount, page }) => {
   await stub(page, () => rollover());
   await page.route('**/api/sprints/s24/rollover', (route) =>
     route.request().method() === 'POST'
@@ -228,7 +314,7 @@ test('SprintEnd_WhenTheApplyIsRefused_ShouldSayWhyAndKeepTheDialog', async ({ mo
         })
       : route.fulfill({ json: rollover() }),
   );
-  await mountPrompt(mount);
+  await openDialog(mount, page);
 
   await page.getByTestId(ids.endApply).click();
 
@@ -236,46 +322,40 @@ test('SprintEnd_WhenTheApplyIsRefused_ShouldSayWhyAndKeepTheDialog', async ({ mo
   await expect(page.getByTestId(componentTestIds.dialog)).toBeVisible();
 });
 
-test('SprintEnd_WhenDecideLater_ShouldRememberItInTheBrowserNotTheTab', async ({ mount, page }) => {
-  await stub(page, () => rollover());
-  await mountPrompt(mount);
-  await page.getByTestId(ids.endLater).click();
-  await expect(page.getByTestId(ids.endBanner)).toBeVisible();
+test('CloseSprint_WhenCancelled_ShouldCloseTheDialogMoveNothingAndKeepTheButton', async ({
+  mount,
+  page,
+}) => {
+  const posts: Posted[] = [];
+  await stub(page, () => rollover(), posts);
+  await openDialog(mount, page);
 
-  expect(await page.evaluate(() => window.localStorage.length)).toBeGreaterThan(0);
-  expect(await page.evaluate(() => window.sessionStorage.length)).toBe(0);
-});
+  await page.getByTestId(ids.endCancel).click();
 
-test('SprintEnd_WhenDecideLater_ShouldLeaveABannerThatReviewReopens', async ({ mount, page }) => {
-  await stub(page, () => rollover());
-  await mountPrompt(mount);
-
-  await page.getByTestId(ids.endLater).click();
   await expect(page.getByTestId(componentTestIds.dialog)).toHaveCount(0);
-  await expect(page.getByTestId(ids.endBanner)).toContainText('Sprint 24 has 2 unfinished items.');
-
-  await page.getByTestId(ids.endReview).click();
-  await expect(page.getByTestId(componentTestIds.dialog)).toBeVisible();
-  await expect(page.getByTestId(ids.endBanner)).toHaveCount(0);
+  await expect(page.getByTestId(ids.closeSprint)).toBeFocused();
+  expect(posts).toEqual([]);
+  expect(await page.evaluate(() => window.localStorage.length)).toBe(0);
 });
 
-test('SprintEnd_WhenEscIsPressed_ShouldDecideLater', async ({ mount, page }) => {
+test('CloseSprint_WhenEscIsPressed_ShouldCancel', async ({ mount, page }) => {
   await stub(page, () => rollover());
-  await mountPrompt(mount);
+  await openDialog(mount, page);
   await expect(page.getByTestId(componentTestIds.dialog)).toBeVisible();
 
   await page.keyboard.press('Escape');
 
-  await expect(page.getByTestId(ids.endBanner)).toBeVisible();
+  await expect(page.getByTestId(componentTestIds.dialog)).toHaveCount(0);
+  await expect(page.getByTestId(ids.closeSprint)).toBeVisible();
 });
 
-test('SprintEnd_WhenAnotherMemberAppliesWhileOpen_ShouldShowTheDoneStateNotThePrompt', async ({
+test('CloseSprint_WhenAnotherMemberClosesItWhileOpen_ShouldShowTheDoneState', async ({
   mount,
   page,
 }) => {
   let decided = false;
   await stub(page, () => (decided ? rollover({ status: 'decided', items: [] }) : rollover()));
-  await mountPrompt(mount);
+  await openDialog(mount, page);
   await expect(page.getByTestId(ids.endApply)).toBeVisible();
 
   decided = true;

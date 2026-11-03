@@ -425,6 +425,76 @@ public abstract class SprintStoreContract
     }
 
     [Test]
+    public async Task GetRollover_WhenEndedWithNothingUnfinished_ShouldStayPending()
+    {
+        var store = CreateStore();
+        var project = await ArrangeProjectAsync();
+        var ended = await store.CreateAsync(project, Sprint("Old", -40), null);
+
+        (await store.GetRolloverAsync(ended.Id)).Status.ShouldBe(RolloverStatus.Pending);
+        (await store.UpdateAsync(ended.Id, new SprintUpdate(null, null, null, null))).RolloverStatus.ShouldBeNull();
+    }
+
+    [Test]
+    public async Task GetRollover_WhenStillRunning_ShouldSayItEndsEarly()
+    {
+        var store = CreateStore();
+        var project = await ArrangeProjectAsync();
+        var running = await store.CreateAsync(project, Sprint("Running", -2), null);
+
+        (await store.GetRolloverAsync(running.Id)).EndsEarly.ShouldBeTrue();
+    }
+
+    [Test]
+    public async Task GetRollover_WhenItEndsToday_ShouldNotSayItEndsEarly()
+    {
+        var store = CreateStore();
+        var project = await ArrangeProjectAsync();
+        var endsToday = await store.CreateAsync(project, Sprint("Ends today", -13), null);
+
+        (await store.GetRolloverAsync(endsToday.Id)).EndsEarly.ShouldBeFalse();
+    }
+
+    [Test]
+    public async Task Rollover_WhenStillRunningAndEndToday_ShouldMoveTheEndDateAndMarkItDecided()
+    {
+        var store = CreateStore();
+        var project = await ArrangeProjectAsync();
+        var running = await store.CreateAsync(project, Sprint("Running", -2), null);
+
+        var closed = await store.RolloverAsync(running.Id, new RolloverRequest([], EndToday: true));
+
+        closed.RolloverStatus.ShouldBe(RolloverStatus.Decided);
+        closed.EndDate.ShouldBe(Today);
+    }
+
+    [Test]
+    public async Task Rollover_WhenEndedAndEndToday_ShouldKeepTheEndDate()
+    {
+        var store = CreateStore();
+        var project = await ArrangeProjectAsync();
+        var ended = await store.CreateAsync(project, Sprint("Old", -40), null);
+
+        var closed = await store.RolloverAsync(ended.Id, new RolloverRequest([], EndToday: true));
+
+        closed.RolloverStatus.ShouldBe(RolloverStatus.Decided);
+        closed.EndDate.ShouldBe(ended.EndDate);
+    }
+
+    [Test]
+    public async Task Rollover_WhenNotStartedAndEndToday_ShouldBeValidation()
+    {
+        var store = CreateStore();
+        var project = await ArrangeProjectAsync();
+        var future = await store.CreateAsync(project, Sprint("Future", 5), null);
+
+        var error = await Should.ThrowAsync<ApiException>(() => store.RolloverAsync(future.Id, new RolloverRequest([], EndToday: true)));
+
+        error.Code.ShouldBe(ApiErrorCodes.Validation);
+        (await store.UpdateAsync(future.Id, new SprintUpdate(null, null, null, null))).EndDate.ShouldBe(future.EndDate);
+    }
+
+    [Test]
     public async Task Update_WhenUnknownSprint_ShouldBeNotFound()
     {
         var error = await Should.ThrowAsync<ApiException>(() => CreateStore().UpdateAsync(Guid.NewGuid(), new SprintUpdate("x", null, null, null)));

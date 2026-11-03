@@ -13,7 +13,7 @@ public class SprintEndCapacityTests : SeededAcceptanceTest
     private static string Pts(decimal points) => points.ToString("0.##", CultureInfo.InvariantCulture);
 
     [Test]
-    public async Task SprintEnd_WhenNextSprintOverCapacity_ShouldWarn()
+    public async Task CloseSprint_WhenNextSprintOverCapacity_ShouldWarn()
     {
         await EndSprint24Async(ConnectionString);
         var rollover = await ReadRolloverAsync(Page, SeedIds.Sprints.Sprint24);
@@ -26,7 +26,8 @@ public class SprintEndCapacityTests : SeededAcceptanceTest
         firstPoints.ShouldBeGreaterThan(0);
 
         var prompt = new SprintEndPrompt(Page);
-        await prompt.OpenAsync("SHIP");
+        await prompt.OpenAsync("SHIP", SeedIds.Sprints.Sprint24);
+        await prompt.PressCloseAsync();
 
         await Expect(prompt.After).ToContainTextAsync($"Sprint 25 after this: {Pts(planned + moving)} / {Pts(capacity)} pts");
         await Expect(prompt.After).ToContainTextAsync("1 over team capacity");
