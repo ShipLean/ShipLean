@@ -147,7 +147,7 @@ Left out on purpose: per-person load (the team is the unit), AI inside the app (
 
 ## Retro improvements (SHIP-497)
 
-**Designed, not built yet.** The retro screens now show how points get read and decided, so the reference screens are ahead of the app. On 2026-11-03, 45 of SHIP's 53 Can be improved points had no sprint, so they appeared on no sprint's Retro tab, and SHIP had no action items.
+**Built** (the reference screens are the design; where the app differs it is listed under "As built" below). On 2026-11-03, 45 of SHIP's 53 Can be improved points had no sprint, so they appeared on no sprint's Retro tab, and SHIP had no action items.
 
 **Decide on every point**
 
@@ -184,6 +184,16 @@ Left out on purpose: per-person load (the team is the unit), AI inside the app (
 19. It takes a Feature, a sprint or a date range, and uses the usual preview-then-apply flow. It creates items in New with no sprint, so pulling one into a sprint is the human approval.
 20. It creates at most 3 new action items per run, a hard limit. Adding to an existing one and marking Not needed stay unlimited, and the rest stay undecided for the next run.
 21. It runs as a `planning_guide` step after the conductor compiles a Feature's retro. It isn't automatic. `list_retrospectives` returns each point's decision and gains undecided and no-sprint filters.
+
+**As built** (differences from the screens, and decisions Joel has not yet confirmed)
+
+- `POST retros/points/{id}/action` is gone. A new action item comes from `POST api/projects/{id}/retros/actions`, which requires a title and has no story-points field (it names the retro points it covers in `PointIds`).
+- By work item shows one board per item, with its key as a link, the decided progress and an Open link; the sprint's own board has progress only.
+- An action item with no tasks shows no Tasks section; one with tasks lists them, with no way to add more from that page. The Taskboard can still add a task under an action item.
+- By category has no theme line under a theme group, as drawn. By work item and the item page keep it.
+- Feature scope (in `list_retrospectives`, `decide_retro_actions` and the action dialog) is the Feature plus its stories and bugs only.
+- Recurrence in week mode is fixed at the last 6 weeks whatever range is shown.
+- Not confirmed yet: a Feature's rail lists its children's action items; removing an action item moves it to Removed and returns all its points to undecided; the Unthemed row counts every unthemed point except Went well.
 
 ## Logo
 
