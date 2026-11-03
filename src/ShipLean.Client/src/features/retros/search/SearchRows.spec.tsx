@@ -50,7 +50,7 @@ test('SearchRows_WhenTextIsLong_ShouldStayOneLineAt1280', async ({ mount, page }
   const heights = await Promise.all(
     (await rows.all()).map(async (row) => (await row.boundingBox())!.height),
   );
-  expect(Math.max(...heights)).toBeLessThan(48);
+  expect(Math.max(...heights)).toBeLessThan(40);
   expect(Math.max(...heights) - Math.min(...heights)).toBeLessThan(1);
   // The text is cut with an ellipsis, so the point's whole text is on hover.
   const cell = rows.first().locator('td').nth(1);

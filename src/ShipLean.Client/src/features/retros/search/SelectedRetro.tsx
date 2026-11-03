@@ -18,7 +18,11 @@ export function SelectedRetro({ project, search, pointId }: RetrosSearchSlotProp
   const highlighted = highlightedRow(search, pointId);
   const inLog = highlighted !== undefined && search.logMatchPointIds.includes(highlighted.id);
   return (
-    <aside data-testid={ids.retrosSelected} aria-label="Retrospective" className="min-w-0">
+    <aside
+      data-testid={ids.retrosSelected}
+      aria-label="Retrospective"
+      className="sticky top-[8.5rem] max-h-[calc(100vh-12rem)] min-w-0 self-start overflow-y-auto"
+    >
       {card ? (
         <div className="grid gap-2">
           {card.workItem || card.sprint ? (

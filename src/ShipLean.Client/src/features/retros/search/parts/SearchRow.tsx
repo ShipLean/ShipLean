@@ -89,7 +89,7 @@ export function SearchRow({
           <span className="text-[length:var(--text-sm)] text-ink-muted">Sprint</span>
         )}
       </td>
-      <td className={`${cell} text-[length:var(--text-sm)]`}>{sprint?.name}</td>
+      <td className={`${cell} ${oneLine} text-[length:var(--text-sm)]`}>{sprint?.name}</td>
       <td
         className={cell}
         title={author.agentName ? `${author.user.name} · ${author.agentName}` : author.user.name}

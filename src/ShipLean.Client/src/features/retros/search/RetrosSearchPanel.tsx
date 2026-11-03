@@ -91,7 +91,10 @@ export function RetrosSearchPanel({ project }: { project: ProjectDto }) {
           };
           return (
             <div data-testid={ids.retrosSearchPanel} className="grid gap-4">
-              <div data-testid={pagesTestIds.slotRetroSearchFilters}>
+              <div
+                data-testid={pagesTestIds.slotRetroSearchFilters}
+                className="sticky top-0 z-10 bg-canvas pb-2"
+              >
                 <SearchFilters {...props} />
               </div>
               <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,380px)] gap-4">
