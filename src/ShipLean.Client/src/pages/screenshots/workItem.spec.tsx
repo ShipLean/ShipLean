@@ -23,6 +23,8 @@ import {
   stubJob,
   stubMapping,
 } from '../../features/import/ct/fixtures';
+import { retroActionDetail, stubRetros } from '../../features/retros/ct/retroFixtures';
+import { retrosTestIds } from '../../features/retros/testIds';
 import { pageShots, type Page } from './shoot';
 import type { WorkItemDto } from '../../api/workItems';
 
@@ -53,6 +55,27 @@ pageShots([
     shell: true,
     arrange: (page) => stubItem(page, savedCardStory),
     ready: itemReady,
+  },
+  {
+    name: 'work-item-action',
+    route: '/p/SHIP/items/SHIP-188',
+    shell: true,
+    arrange: async (page) => {
+      await stubItem(page, {
+        ...savedCardStory,
+        key: 'SHIP-188',
+        type: { id: 'action', name: 'Action item' },
+        title: 'Common brief: screenshot baselines come from the CI report',
+      });
+      await stubRetros(page);
+    },
+    ready: async (page) => {
+      await expect(page.getByTestId(workItemTestIds.title)).toBeVisible();
+      await expect(page.getByTestId(retrosTestIds.retroActionWhy)).toBeVisible();
+      await expect(page.getByTestId(retrosTestIds.retroActionWhyPoint)).toHaveCount(
+        retroActionDetail.points.length,
+      );
+    },
   },
   {
     name: 'work-item-bug',

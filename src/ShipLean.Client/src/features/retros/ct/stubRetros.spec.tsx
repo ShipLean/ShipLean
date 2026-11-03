@@ -42,7 +42,7 @@ test('stubRetros_WhenTheNewRoutesAreAsked_ShouldAnswerEachWithItsPinnedShape', a
     status: 200,
     json: retroFeatures,
   });
-  expect(await ask(page, 'GET', '/api/projects/p1/retros/items/SHIP-180')).toEqual({
+  expect(await ask(page, 'GET', '/api/projects/p1/retros/items/SHIP-101')).toEqual({
     status: 200,
     json: retroItem,
   });

@@ -7,7 +7,7 @@ import { retrosTestIds as ids } from '../testIds';
 import { RetroItemPanel } from './RetroItemPanel';
 
 const project = { id: 'p1', key: 'SHIP' } as ProjectDto;
-const route = (query = '') => ({ hooksConfig: { route: `/p/SHIP/retros/items/SHIP-180${query}` } });
+const route = (query = '') => ({ hooksConfig: { route: `/p/SHIP/retros/items/SHIP-101${query}` } });
 
 const OTHER = 'second-retro';
 const [firstCard] = retroItem.cards;
@@ -45,7 +45,7 @@ async function serve(page: Parameters<typeof stubRetros>[0], item: RetroItemDto)
 
 test('RetroItemPanel_WhenRetroFilterClicked_ShouldNarrowTheBoard', async ({ mount, page }) => {
   await serve(page, twoRetros);
-  await mount(<RetroItemPanel project={project} itemKey="SHIP-180" />, route());
+  await mount(<RetroItemPanel project={project} itemKey="SHIP-101" />, route());
   await expect(page.getByTestId(shared.retroNote)).toHaveCount(allPoints.length);
   await page
     .getByTestId(ids.retroItemFilter)
@@ -56,7 +56,7 @@ test('RetroItemPanel_WhenRetroFilterClicked_ShouldNarrowTheBoard', async ({ moun
 
 test('RetroItemPanel_WhenOpenedWithRetro_ShouldShowThatRetro', async ({ mount, page }) => {
   await serve(page, twoRetros);
-  await mount(<RetroItemPanel project={project} itemKey="SHIP-180" />, route(`?retro=${OTHER}`));
+  await mount(<RetroItemPanel project={project} itemKey="SHIP-101" />, route(`?retro=${OTHER}`));
   await expect(page.getByTestId(shared.retroNote)).toHaveCount(inOther.length);
   await expect(
     page.getByTestId(ids.retroItemFilter).getByRole('button', { name: /Second agent/ }),
@@ -65,7 +65,7 @@ test('RetroItemPanel_WhenOpenedWithRetro_ShouldShowThatRetro', async ({ mount, p
 
 test('RetroItemPanel_WhenToDecideChosen_ShouldShowOnlyUndecidedPoints', async ({ mount, page }) => {
   await serve(page, twoRetros);
-  await mount(<RetroItemPanel project={project} itemKey="SHIP-180" />, route('?decide=open'));
+  await mount(<RetroItemPanel project={project} itemKey="SHIP-101" />, route('?decide=open'));
   const undecided = allPoints.filter((p) => p.decision === 'undecided').length;
   await expect(page.getByTestId(shared.retroNote)).toHaveCount(undecided);
 });
@@ -73,7 +73,7 @@ test('RetroItemPanel_WhenToDecideChosen_ShouldShowOnlyUndecidedPoints', async ({
 test('RetroItemPanel_WhenOpenedWithPoint_ShouldHighlightTheNote', async ({ mount, page }) => {
   await serve(page, twoRetros);
   const id = allPoints[4].id;
-  await mount(<RetroItemPanel project={project} itemKey="SHIP-180" />, route(`?point=${id}`));
+  await mount(<RetroItemPanel project={project} itemKey="SHIP-101" />, route(`?point=${id}`));
   const marked = page.locator(`[data-testid="${shared.retroNote}"][data-highlighted="true"]`);
   await expect(marked).toHaveCount(1);
   await expect(marked).toHaveAttribute('data-point-id', id);
@@ -81,7 +81,7 @@ test('RetroItemPanel_WhenOpenedWithPoint_ShouldHighlightTheNote', async ({ mount
 
 test('RetroItemPanel_WhenActionItemClicked_ShouldOpenTheDialog', async ({ mount, page }) => {
   await serve(page, twoRetros);
-  await mount(<RetroItemPanel project={project} itemKey="SHIP-180" />, route());
+  await mount(<RetroItemPanel project={project} itemKey="SHIP-101" />, route());
   await page.getByTestId(ids.retroItemAddAction).click();
   await expect(page.getByTestId(shared.retroActionDialog)).toBeVisible();
 });
@@ -93,7 +93,7 @@ test('RetroItemPanel_WhenBugHasNoFeature_ShouldShowNoPartOfLine', async ({ mount
     parent: null,
     children: [],
   });
-  await mount(<RetroItemPanel project={project} itemKey="SHIP-180" />, route());
+  await mount(<RetroItemPanel project={project} itemKey="SHIP-101" />, route());
   await expect(page.getByTestId(ids.retroItemPanel)).toBeVisible();
   await expect(page.getByRole('heading', { name: twoRetros.item.title })).toBeVisible();
   await expect(page.getByTestId(shared.retroNote)).toHaveCount(allPoints.length);
@@ -104,13 +104,13 @@ test('RetroItemPanel_WhenBugIsInAFeature_ShouldLinkTheFeature', async ({ mount, 
   await serve(page, {
     ...twoRetros,
     item: { ...twoRetros.item, type: { id: 'bug', name: 'Bug' } },
-    parent: { ...twoRetros.item, key: 'SHIP-101', title: 'Checkout v2' },
+    parent: { ...twoRetros.item, key: 'SHIP-180', title: 'Saved cards' },
     children: [],
   });
-  await mount(<RetroItemPanel project={project} itemKey="SHIP-180" />, route());
-  await expect(page.getByRole('link', { name: 'SHIP-101 Checkout v2' })).toHaveAttribute(
+  await mount(<RetroItemPanel project={project} itemKey="SHIP-101" />, route());
+  await expect(page.getByRole('link', { name: 'SHIP-180 Saved cards' })).toHaveAttribute(
     'href',
-    '/p/SHIP/retros/items/SHIP-101',
+    '/p/SHIP/retros/items/SHIP-180',
   );
 });
 
@@ -125,7 +125,7 @@ test('RetroItemPanel_WhenItemHasNoRetros_ShouldStillRenderTheBoardToAdd', async 
     children: [],
     parent: null,
   });
-  await mount(<RetroItemPanel project={project} itemKey="SHIP-180" />, route());
+  await mount(<RetroItemPanel project={project} itemKey="SHIP-101" />, route());
   await expect(page.getByTestId(shared.retroBoardColumn)).toHaveCount(4);
   await expect(page.getByTestId(shared.retroBoardAdd)).toHaveCount(4);
 });
@@ -146,7 +146,7 @@ test('RetroItemPanel_WhenItemHasLogsAndStories_ShouldShowLogsBelowTheBoardBefore
     ],
     children: [child],
   });
-  await mount(<RetroItemPanel project={project} itemKey="SHIP-180" />, route());
+  await mount(<RetroItemPanel project={project} itemKey="SHIP-101" />, route());
   await expect(page.getByTestId(ids.retroItemChildRows)).toBeVisible();
   const board = await page.getByTestId(shared.retroBoard).boundingBox();
   const logs = await page.getByTestId(ids.retroItemLogs).boundingBox();
@@ -182,7 +182,7 @@ test('RetroItemPanel_WhenAddedUnderAColumnToAnotherRetro_ShouldClearTheRetroFilt
     ...allPoints.find((p) => p.category === 'improve')!,
     retroId: firstCard.id,
   });
-  await mount(<RetroItemPanel project={project} itemKey="SHIP-180" />, route(`?retro=${OTHER}`));
+  await mount(<RetroItemPanel project={project} itemKey="SHIP-101" />, route(`?retro=${OTHER}`));
   const retroFilter = page.getByTestId(ids.retroItemFilter);
   await expect(retroFilter.getByRole('button', { name: /Second agent/ })).toHaveAttribute(
     'aria-pressed',
@@ -206,7 +206,7 @@ test('RetroItemPanel_WhenWentWellAddedUnderToDecide_ShouldClearToDecide', async 
     ...allPoints.find((p) => p.category === 'wentWell')!,
     retroId: firstCard.id,
   });
-  await mount(<RetroItemPanel project={project} itemKey="SHIP-180" />, route('?decide=open'));
+  await mount(<RetroItemPanel project={project} itemKey="SHIP-101" />, route('?decide=open'));
   const pointsFilter = page.getByTestId(ids.retroToDecideFilter);
   await expect(pointsFilter.getByRole('button', { name: 'To decide' })).toHaveAttribute(
     'aria-pressed',
@@ -240,7 +240,7 @@ for (const width of [1280, 1440]) {
       })),
     };
     await serve(page, tall);
-    await mount(<RetroItemPanel project={project} itemKey="SHIP-180" />, route());
+    await mount(<RetroItemPanel project={project} itemKey="SHIP-101" />, route());
     await expect(page.getByTestId(shared.retroBoard)).toBeVisible();
     const box = await page.getByTestId(ids.retroItemAddAction).boundingBox();
     expect(box).not.toBeNull();
@@ -259,7 +259,7 @@ test('RetroItemPanel_WhenRendered_ShouldDrawActionItemAsAFilledPrimaryButton', a
   page,
 }) => {
   await serve(page, twoRetros);
-  await mount(<RetroItemPanel project={project} itemKey="SHIP-180" />, route());
+  await mount(<RetroItemPanel project={project} itemKey="SHIP-101" />, route());
   await expect(page.getByTestId(ids.retroItemAddAction)).not.toHaveCSS(
     'background-color',
     'rgba(0, 0, 0, 0)',

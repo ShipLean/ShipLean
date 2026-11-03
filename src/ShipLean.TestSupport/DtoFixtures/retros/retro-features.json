@@ -2,6 +2,26 @@
   "features": [
     {
       "item": {
+        "id": "00000005-0000-4000-8001-000000000101",
+        "key": "SHIP-101",
+        "type": {"id": "feature", "name": "Feature"},
+        "title": "Checkout v2"
+      },
+      "state": {"id": "00000003-0000-4000-8001-000000000602", "name": "In Progress", "category": "inProgress"},
+      "retros": 4,
+      "ownRetros": 1,
+      "totals": {
+        "counts": {"wentWell": 3, "notInPlan": 1, "wentBadly": 4, "improve": 3},
+        "toDecide": 5,
+        "decided": 3,
+        "decidable": 8,
+        "actions": 2
+      },
+      "lastRetroLabel": "2 days ago",
+      "noFeatureRetro": false
+    },
+    {
+      "item": {
         "id": "00000005-0000-4000-8001-000000000180",
         "key": "SHIP-180",
         "type": {"id": "feature", "name": "Feature"},
@@ -44,20 +64,20 @@
   "loose": [
     {
       "item": {
-        "id": "00000005-0000-4000-8001-000000000101",
-        "key": "SHIP-101",
-        "type": {"id": "feature", "name": "Feature"},
-        "title": "Checkout v2"
+        "id": "00000005-0000-4000-8001-000000000199",
+        "key": "SHIP-199",
+        "type": {"id": "bug", "name": "Bug"},
+        "title": "Favicon 404"
       },
       "state": {"id": "00000003-0000-4000-8001-000000000602", "name": "In Progress", "category": "inProgress"},
       "retros": 1,
       "ownRetros": 1,
       "totals": {
-        "counts": {"wentWell": 3, "notInPlan": 1, "wentBadly": 4, "improve": 3},
-        "toDecide": 5,
-        "decided": 3,
-        "decidable": 8,
-        "actions": 2
+        "counts": {"wentWell": 0, "notInPlan": 0, "wentBadly": 1, "improve": 1},
+        "toDecide": 2,
+        "decided": 0,
+        "decidable": 2,
+        "actions": 0
       },
       "lastRetroLabel": "2 days ago",
       "noFeatureRetro": false

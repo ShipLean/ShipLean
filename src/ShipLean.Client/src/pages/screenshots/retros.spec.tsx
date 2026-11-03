@@ -24,6 +24,12 @@ const insightsView = (view: string, ready: string) => ({
   },
 });
 
+const itemReady = async (page: Page) => {
+  await expect(page.getByTestId(ids.retroItemPanel)).toBeVisible();
+  await expect(page.getByTestId(retroSharedTestIds.retroNote).first()).toBeVisible();
+  await expect(page.getByTestId(ids.retroItemChildRow).first()).toBeVisible();
+};
+
 pageShots([
   {
     name: 'sprint-retro',
@@ -81,7 +87,50 @@ pageShots([
       await expect(page.getByTestId(retroSharedTestIds.retroNote).first()).toBeVisible();
     },
   },
+  {
+    name: 'retro-item-editing',
+    route: '/p/SHIP/retros/items/SHIP-101',
+    shell: true,
+    arrange,
+    ready: itemReady,
+    act: async (page) => {
+      await page
+        .locator(
+          `[data-testid="${retroSharedTestIds.retroBoardColumn}"][data-category="wentBadly"]`,
+        )
+        .getByTestId(retroSharedTestIds.retroBoardAdd)
+        .click();
+      await expect(page.getByTestId(retroSharedTestIds.retroBoardAddText)).toBeVisible();
+      await expect(page.getByTestId(retroSharedTestIds.retroBoardAddCause)).toBeVisible();
+    },
+  },
+  {
+    name: 'retro-item-new-action',
+    route: '/p/SHIP/retros/items/SHIP-101',
+    shell: true,
+    arrange,
+    ready: itemReady,
+    act: async (page) => {
+      await page.getByTestId(ids.retroItemAddAction).click();
+      await expect(page.getByTestId(retroSharedTestIds.retroActionDialog)).toBeVisible();
+      await expect(page.getByTestId(retroSharedTestIds.retroActionTitle)).toBeVisible();
+    },
+  },
   insightsView('weeks', ids.retroRecurringRow),
+  {
+    name: 'retro-insights-status-tip',
+    route: '/p/SHIP/retros/insights',
+    shell: true,
+    arrange,
+    ready: async (page) => {
+      await expect(page.getByTestId(ids.retroInsightsPanel)).toBeVisible();
+      await expect(page.getByTestId(ids.retroRecurringRow).first()).toBeVisible();
+    },
+    act: async (page) => {
+      await page.getByTestId(ids.retroTipStatusHead).getByText('Status').focus();
+      await expect(page.getByRole('tooltip')).toBeVisible();
+    },
+  },
   {
     name: 'retros-search',
     route: `/p/SHIP/retros?q=screenshot&selected=${retroSearch.rows[0].retroId}`,

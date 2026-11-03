@@ -3,6 +3,8 @@ import { attachmentTestIds } from '../../features/attachment/testIds';
 import { featureTestIds } from '../../features/feature/testIds';
 import { workItemTestIds } from '../../features/workItem/testIds';
 import { checkoutV2, designView, staleCheckoutV2, stubFeaturePage } from './fixtures/feature';
+import { stubRetros } from '../../features/retros/ct/retroFixtures';
+import { retrosTestIds } from '../../features/retros/testIds';
 import { pageShots, type Page } from './shoot';
 import type { WorkItemDto } from '../../api/workItems';
 
@@ -28,6 +30,20 @@ pageShots([
     shell: true,
     arrange: arrange(checkoutV2),
     ready: featureReady,
+  },
+  {
+    name: 'feature-retros',
+    route: '/p/SHIP/items/SHIP-100',
+    shell: true,
+    arrange: async (page) => {
+      await stubFeaturePage(page, checkoutV2);
+      await stubRetros(page);
+    },
+    ready: async (page) => {
+      await featureReady(page);
+      await expect(page.getByTestId(retrosTestIds.workItemRetroRow).first()).toBeVisible();
+      await page.getByTestId(retrosTestIds.workItemRetroSection).scrollIntoViewIfNeeded();
+    },
   },
   {
     name: 'feature-stale',

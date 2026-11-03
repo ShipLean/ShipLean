@@ -5,7 +5,7 @@ import { retroItem } from '../ct/retroFixtures';
 import { retrosTestIds as ids } from '../testIds';
 import { ItemChildRows } from './ItemChildRows';
 
-const mountOptions = { hooksConfig: { route: '/p/SHIP/retros/items/SHIP-180' } };
+const mountOptions = { hooksConfig: { route: '/p/SHIP/retros/items/SHIP-101' } };
 const [first] = retroItem.children;
 const feature: RetroItemDto = {
   ...retroItem,

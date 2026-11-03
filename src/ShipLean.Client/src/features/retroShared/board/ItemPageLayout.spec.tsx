@@ -6,7 +6,7 @@ import { RetroItemPanel } from '../../retros/item/RetroItemPanel';
 import { retroSharedTestIds as ids } from '../testIds';
 
 const project = { id: 'p1', key: 'SHIP' } as ProjectDto;
-const route = { hooksConfig: { route: '/p/SHIP/retros/items/SHIP-180' } };
+const route = { hooksConfig: { route: '/p/SHIP/retros/items/SHIP-101' } };
 
 /** The fixture item with every column grown well past the window. */
 const tall: RetroItemDto = {
@@ -35,7 +35,7 @@ for (const [width, height] of [
     await page.route(/\/api\/projects\/[^/]+\/retros\/items\/[^/]+$/, (r) =>
       r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(tall) }),
     );
-    await mount(<RetroItemPanel project={project} itemKey="SHIP-180" />, route);
+    await mount(<RetroItemPanel project={project} itemKey="SHIP-101" />, route);
     const board = page.getByTestId(ids.retroBoard);
     await expect(board).toBeVisible();
     const boardHeight = (await board.boundingBox())!.height;

@@ -1,9 +1,9 @@
 {
   "item": {
-    "id": "00000005-0000-4000-8001-000000000180",
-    "key": "SHIP-180",
+    "id": "00000005-0000-4000-8001-000000000101",
+    "key": "SHIP-101",
     "type": {"id": "feature", "name": "Feature"},
-    "title": "Saved cards"
+    "title": "Checkout v2"
   },
   "state": {"id": "00000003-0000-4000-8001-000000000602", "name": "In Progress", "category": "inProgress"},
   "parent": null,
@@ -578,22 +578,62 @@
   "children": [
     {
       "item": {
-        "id": "00000005-0000-4000-8001-000000000101",
-        "key": "SHIP-101",
-        "type": {"id": "feature", "name": "Feature"},
-        "title": "Checkout v2"
+        "id": "00000005-0000-4000-8001-000000000141",
+        "key": "SHIP-141",
+        "type": {"id": "story", "name": "User Story"},
+        "title": "Pay with saved card"
       },
       "state": {"id": "00000003-0000-4000-8001-000000000602", "name": "In Progress", "category": "inProgress"},
       "retros": 1,
       "ownRetros": 1,
       "totals": {
-        "counts": {"wentWell": 3, "notInPlan": 1, "wentBadly": 4, "improve": 3},
-        "toDecide": 5,
-        "decided": 3,
-        "decidable": 8,
-        "actions": 2
+        "counts": {"wentWell": 1, "notInPlan": 1, "wentBadly": 2, "improve": 1},
+        "toDecide": 2,
+        "decided": 1,
+        "decidable": 3,
+        "actions": 1
+      },
+      "lastRetroLabel": "3 days ago",
+      "noFeatureRetro": false
+    },
+    {
+      "item": {
+        "id": "00000005-0000-4000-8001-000000000144",
+        "key": "SHIP-144",
+        "type": {"id": "story", "name": "User Story"},
+        "title": "Address autocomplete"
+      },
+      "state": {"id": "00000003-0000-4000-8001-000000000602", "name": "In Progress", "category": "inProgress"},
+      "retros": 1,
+      "ownRetros": 1,
+      "totals": {
+        "counts": {"wentWell": 1, "notInPlan": 0, "wentBadly": 1, "improve": 1},
+        "toDecide": 1,
+        "decided": 1,
+        "decidable": 2,
+        "actions": 1
       },
       "lastRetroLabel": "2 days ago",
+      "noFeatureRetro": false
+    },
+    {
+      "item": {
+        "id": "00000005-0000-4000-8001-000000000150",
+        "key": "SHIP-150",
+        "type": {"id": "story", "name": "User Story"},
+        "title": "Order confirmation email"
+      },
+      "state": {"id": "00000003-0000-4000-8001-000000000602", "name": "In Progress", "category": "inProgress"},
+      "retros": 1,
+      "ownRetros": 1,
+      "totals": {
+        "counts": {"wentWell": 1, "notInPlan": 0, "wentBadly": 1, "improve": 1},
+        "toDecide": 2,
+        "decided": 1,
+        "decidable": 3,
+        "actions": 0
+      },
+      "lastRetroLabel": "yesterday",
       "noFeatureRetro": false
     }
   ]
