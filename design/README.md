@@ -28,9 +28,13 @@ The screens here are reference designs for every page of the v1 domain model: **
 | `screens/sprint-end.html` | **Close sprint**: the dialog the Close sprint button opens, for a sprint's unfinished work. |
 | `screens/taskboard.html` | **Sprint Taskboard**: the sprint's stories and bugs × Task states, Group by Stories / People, and the Taskboard settings dialog. `?view=people` and `?dialog=settings[&pane=styles\|tags]` open those states. |
 | `screens/feature-board.html` | **Feature board**: the Taskboard grid for one Feature's stories and bugs in any sprint, opened from **Task board** on the Feature form. A parent Feature gets one board section per Feature in its tree. `?key=SHIP-103` opens a parent Feature, `?view=people` groups by People. |
-| `screens/sprint-retro.html` | **Sprint Retro tab** (SHIP-82): every retrospective on items that finished or rolled over in the sprint. By category (Went badly, Can be improved, Not in the plan, Went well), grouped by theme, or By work item (`?view=items`) with each sub-agent's raw failure log. Rail: coverage, action items, recurring themes. |
+| `screens/sprint-retro.html` | **Sprint Retro tab** (SHIP-82): every retrospective on items that finished or rolled over in the sprint. By category (Went well, Not in the plan, Went badly, Can be improved), grouped by theme, or By work item (`?view=items`) with each sub-agent's raw failure log. Points are post-its (SHIP-497). `?decide=open` shows only points to decide. Rail: coverage, action items, recurring themes. |
 | `screens/retros.html` | **Retrospectives › Search** (SHIP-82): one row per point from every retro in the project, filtered by text, sprint, category, theme, level and author; the selected point's whole retro on the right. `?q=` prefills the search. |
-| `screens/retro-insights.html` | **Retrospectives › Insights** (SHIP-82): Recurring themes, Action items (`?view=actions`) and Changes & impact (`?view=impact`). |
+| `screens/retros-features.html` | **Retrospectives › Features** (SHIP-497): one row per Feature with counts per category and how many points are decided, plus stories and bugs with no Feature. `?show=open\|waiting` filters. |
+| `screens/retro-item.html` | **Retrospectives › one item** (SHIP-497): all of a work item's retros on one board, with a retro filter, raw failure logs and, for a Feature, a row per story and bug. `?key=`, `?retro=`, `?decide=open`, `?dialog=action`, `?why=<point>` and `?adding=<item>:<category>` open those states. |
+| `screens/retro-notes.html` | **Retro note states** (SHIP-497): every state of a point's post-it, side by side. A reference, not a page in the app. |
+| `screens/retro-insights.html` | **Retrospectives › Insights** (SHIP-82, SHIP-497): Recurring themes, Action items (`?view=actions`) and Changes & impact (`?view=impact`). `?range=6\|3\|all\|w6\|w12` picks sprints or weeks, and `?tip=status\|verdict` opens a tooltip. |
+| `screens/retro-cards.js`, `screens/retro-cards.css` | What every retro screen shares for SHIP-497: the post-it and its actions, the column with + Add, the aggregate rows, the action item dialog and the tooltips. |
 | `screens/retro-data.js`, `screens/retro.css` | Sample retrospectives, themes, mentions per sprint and action items for the three retro screens, and their styles. || `screens/signin.html` | **Sign in**: cookie sign-in with no side menu, plus the states after it. `?state=error\|change\|signed-out\|ended\|no-projects`. |
 | `screens/new-project.html` | **New project**: name, the permanent key (suggested, checked live, with free alternatives), start from defaults or another project's settings, members, working days and Sprint 1. |
 | `screens/instance.html` | **Instance settings** (instance admins only): General (name, base URL, who can create projects), Users (add, reset password, unlock, admin, disable) and Projects (every project, Join as admin). `?tab=general\|users\|projects`. |
@@ -94,6 +98,16 @@ Open any screen and use the **Preview** panel (bottom left) to switch the theme.
 | Feature board · parent Feature | ![Feature board for a parent Feature, light](screens/feature-board-parent.light.png) | ![Feature board for a parent Feature, dark](screens/feature-board-parent.dark.png) |
 | Feature board · People | ![Feature board grouped by People, light](screens/feature-board-people.light.png) | ![Feature board grouped by People, dark](screens/feature-board-people.dark.png) |
 | Sprint Retro | ![Sprint Retro tab by category, light](screens/sprint-retro.light.png) | ![Sprint Retro tab by category, dark](screens/sprint-retro.dark.png) |
+| Sprint Retro · to decide | ![Sprint Retro tab showing only points to decide, light](screens/sprint-retro-decide.light.png) | ![Sprint Retro tab showing only points to decide, dark](screens/sprint-retro-decide.dark.png) |
+| Retro note states | ![Every state of a retro point's post-it, light](screens/retro-notes.light.png) | ![Every state of a retro point's post-it, dark](screens/retro-notes.dark.png) |
+| Retrospectives · Features | ![Retrospectives Features list, light](screens/retros-features.light.png) | ![Retrospectives Features list, dark](screens/retros-features.dark.png) |
+| Retrospectives · one Feature | ![One Feature's retros on a board, light](screens/retro-item.light.png) | ![One Feature's retros on a board, dark](screens/retro-item.dark.png) |
+| Retrospectives · no sprint, Add and Not needed open | ![A Feature's retro with no sprint, with Add and Not needed open, light](screens/retro-item-editing.light.png) | ![A Feature's retro with no sprint, with Add and Not needed open, dark](screens/retro-item-editing.dark.png) |
+| Retrospectives · New action item | ![New action item dialog, light](screens/retro-item-new-action.light.png) | ![New action item dialog, dark](screens/retro-item-new-action.dark.png) |
+| Work item · retro rows | ![Feature form with one row per retro, light](screens/feature-retros.light.png) | ![Feature form with one row per retro, dark](screens/feature-retros.dark.png) |
+| Work item · action item | ![Action item with its quoted points and type of fix, light](screens/work-item-action.light.png) | ![Action item with its quoted points and type of fix, dark](screens/work-item-action.dark.png) |
+| Retrospectives · Recurring themes by week | ![Insights by week, light](screens/retro-insights-weeks.light.png) | ![Insights by week, dark](screens/retro-insights-weeks.dark.png) |
+| Retrospectives · Status tooltip | ![Insights with the Status tooltip open, light](screens/retro-insights-status-tip.light.png) | ![Insights with the Status tooltip open, dark](screens/retro-insights-status-tip.dark.png) |
 | Sprint Retro · by work item | ![Sprint Retro tab by work item with a raw failure log, light](screens/sprint-retro-items.light.png) | ![Sprint Retro tab by work item with a raw failure log, dark](screens/sprint-retro-items.dark.png) |
 | Retrospectives · Search | ![Retrospectives search, light](screens/retros.light.png) | ![Retrospectives search, dark](screens/retros.dark.png) |
 | Retrospectives · Search “screenshot” | ![Retrospectives search with a query, light](screens/retros-search.light.png) | ![Retrospectives search with a query, dark](screens/retros-search.dark.png) |
@@ -130,6 +144,46 @@ Open any screen and use the **Preview** panel (bottom left) to switch the theme.
 - **Keyboard:** only while the list has focus, never while typing in a field. Press `?` for the list.
 
 Left out on purpose: per-person load (the team is the unit), AI inside the app (agents use MCP), a bulk wizard (Undo is lighter) and a dashboard screen (the strip covers planning).
+
+## Retro improvements (SHIP-497)
+
+**Designed, not built yet.** The retro screens now show how points get read and decided, so the reference screens are ahead of the app. On 2026-11-03, 45 of SHIP's 53 Can be improved points had no sprint, so they appeared on no sprint's Retro tab, and SHIP had no action items.
+
+**Decide on every point**
+
+1. Every point except Went well gets a decision: **actioned**, or **Not needed** with a reason. Later runs skip points already decided. People get the same choice in the UI.
+2. One action item can cover many points. **Add to existing** adds points to an open one.
+3. Went badly and Not in the plan points can become action items too: a link on the note, and listed in the dialog.
+4. An action item has one theme: the commonest among its points, and editable. Verdicts judge that theme.
+5. An action item quotes its points, links back to them, and has a type of fix: skill, guide, test, analyzer, product or other.
+
+**Cards**
+
+6. Points are post-its like Taskboard tasks, but they can't be moved. The order is the same everywhere: Went well, Not in the plan, Went badly, Can be improved.
+7. + Action item is solid on an undecided Can be improved note, and a link on Went badly and Not in the plan. Move theme becomes the `# theme ▾` line.
+8. **+ Add** sits under each column's last card and replaces the toolbar's + Add a point. It adds the person's point to their own retro, typed straight on a blank note. In By category, an About picker defaults to the sprint.
+9. An item with several retros has one board with a retro filter. Points can't be added to an agent's retro, so one board means a new point appears where you clicked.
+
+**Screens**
+
+10. **Retrospectives › Features** (`retros/features`) lists Features with counts, covering the Feature's retro plus its stories and bugs. **`retros/items/SHIP-123`** is the detail, so a story or bug with no Feature still has a page.
+11. A work item page shows one row per retro with counts, not the retro itself. A row opens the detail, filtered to that retro.
+12. The buttons on a note are the same on every retro screen.
+13. Search rows are one line. The rest is on hover and in the selected retro on the right.
+
+**Insights**
+
+14. The range picks sprints or weeks, and that drives Recurring and the verdicts as well as the columns. Recurring in week mode is 3 of the last 6 weeks. Weeks place each point by the day it was logged.
+15. Sprint mode has a **No sprint** column. It counts in Total, never in Recurring or a verdict, because it has no time order.
+16. An **Unthemed** row comes last, marked "not judged".
+17. The Status and Last change headings have tooltips explaining every value, and each chip explains itself. Recurring's wording follows the mode.
+18. Theme merges an agent proposes wait for a person: Merge or Keep apart.
+
+**Agents: Decide what to do** (`decide_retro_actions`)
+
+19. It takes a Feature, a sprint or a date range, and uses the usual preview-then-apply flow. It creates items in New with no sprint, so pulling one into a sprint is the human approval.
+20. It creates at most 3 new action items per run, a hard limit. Adding to an existing one and marking Not needed stay unlimited, and the rest stay undecided for the next run.
+21. It runs as a `planning_guide` step after the conductor compiles a Feature's retro. It isn't automatic. `list_retrospectives` returns each point's decision and gains undecided and no-sprint filters.
 
 ## Logo
 
@@ -473,10 +527,10 @@ These were decided while reviewing the retrospective screens on 2026-11-01 (SHIP
 ## Retrospective patterns (`screens/sprint-retro.html`, `screens/retros.html`, `screens/retro-insights.html`)
 
 - **Who wrote it:** every point shows the work item it belongs to (type icon and key), the person's avatar and, for an agent, its `agent_name` in a purple chip (`Claude Code · lane A`). A conductor's feature retro is marked **Feature** and has a blue left edge; Went badly points carry **Root cause**.
-- **Sprint Retro tab:** the header KPIs are finished items with a retro, recurring themes and action items raised. Columns run Went badly, Can be improved, Not in the plan, Went well; inside a column one group per theme, largest first, with a **Recurring** chip. **+ Action item** on a Can be improved point creates an Action item in the Stories backlog and links it; the point then shows its key and state. **Written by** filters All / Agents / People. **+ Add a point** adds a person's point. The rail lists **Coverage** (finished stories, bugs and features, ✓ or *missing*; a feature is *waiting* until its last story closes), **Action items** (where each is planned) and **Recurring** themes with a mentions strip, a dashed line where a fix shipped.
+- **Sprint Retro tab:** the header KPIs are finished items with a retro, recurring themes, points to decide and action items raised. Columns run Went well, Not in the plan, Went badly, Can be improved; inside a column one group per theme, largest first, with a **Recurring** chip. **+ Action item** on a point opens the [action item dialog](#retro-improvements-ship-497); the point then shows the item's key and state. **Written by** filters All / Agents / People, and **To decide** shows only undecided points. **+ Add** under a column adds a person's point. The rail lists **Coverage** (finished stories, bugs and features, ✓ or *missing*; a feature is *waiting* until its last story closes), **Action items** (where each is planned) and **Recurring** themes with a mentions strip, a dashed line where a fix shipped.
 - **Recurring:** a theme mentioned (in Went badly or Not in the plan) in 3 of the last 4 sprints, with no closed action item that Helped. Status per theme: Recurring, Being addressed (an open action item), Resolved (a fix Helped), Quiet.
-- **Search:** one row per point. The search covers point text, root causes, theme names, the work item and the raw failure log; a retro that matches only in its log shows once. Filters: sprint, category, theme, level (stories and bugs, or features), author (conductor, sub-agent, person) and Recurring themes only.
-- **Insights:** a range select (last 6 or 3 sprints, all) and **Merge themes…**. Recurring themes is a table per theme with mentions per sprint, total, status, its action items and the last change's verdict, plus **What keeps working** (Went well themes). Action items lists key, theme, sprint raised, state, sprint planned (or **Pull into Sprint N**), points, owner and impact. Changes & impact has a card per closed action item: verdict, a bar chart of mentions per sprint with the before and after averages and a line where it closed, and the % change; a fix with No effect names the latest mention and its follow-up.
+- **Search:** one row per point. The search covers point text, root causes, theme names, the work item and the raw failure log; a retro that matches only in its log shows once. Filters: sprint or no sprint, category, theme, level (stories and bugs, or features), author (conductor, sub-agent, person), decision and Recurring themes only.
+- **Insights:** a range select (last 6 or 3 sprints, all, last 6 or 12 weeks) and **Merge themes…**. Recurring themes is a table per theme with mentions per sprint, total, status, its action items and the last change's verdict, plus **What keeps working** (Went well themes). Action items lists key, theme, sprint raised, state, sprint planned (or **Pull into Sprint N**), points, owner and impact. Changes & impact has a card per closed action item: verdict, a bar chart of mentions per sprint with the before and after averages and a line where it closed, and the % change; a fix with No effect names the latest mention and its follow-up.
 
 ## Screenshots
 

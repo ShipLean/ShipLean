@@ -155,7 +155,7 @@
     'sprint-backlog': ['Sprints', 'Sprint 24', 'Backlog'], capacity: ['Sprints', 'Sprint 24', 'Capacity'], sprints: ['Sprints', 'All sprints'], 'sprint-end': ['Sprints', 'Sprint 24'],
     taskboard: ['Sprints', 'Sprint 24', 'Taskboard'], board: ['Boards', 'Stories'], 'features-board': ['Boards', new URLSearchParams(location.search).get('level') === 'epics' ? 'Epics' : 'Features'], 'board-settings': ['Boards', 'Stories', 'Settings'],
     'work-item': ['Backlogs', 'SHIP-141'], feature: ['Backlogs', 'Features', 'SHIP-101'], 'feature-board': ['Backlogs', new URLSearchParams(location.search).get('key') || 'SHIP-101', 'Feature board'], attachment: ['Backlogs', 'SHIP-101', 'design-v0.2.md'], settings: ['Settings'], import: ['Jira import'],
-    'sprint-retro': ['Sprints', 'Sprint 24', 'Retro'], retros: ['Retrospectives', 'Search'], 'retro-insights': ['Retrospectives', 'Insights'],
+    'sprint-retro': ['Sprints', 'Sprint 24', 'Retro'], retros: ['Retrospectives', 'Search'], 'retros-features': ['Retrospectives', 'Features'], 'retro-item': ['Retrospectives', 'Features', new URLSearchParams(location.search).get('key') || 'SHIP-101'], 'retro-insights': ['Retrospectives', 'Insights'],
     'new-project': ['New project'], instance: ['Instance settings'], profile: ['Your profile'],
   };
   // Pages that belong to the install or to you, not to a project: the breadcrumb starts at ShipLean and there's no Live dot.
@@ -182,7 +182,7 @@
       ${link('sprints', '◷', 'Sprints', 'sprint-backlog.html')}
       ${active === 'sprints' ? link('sprint-backlog', '', 'Sprint 24 <span class="chip accent" style="height:16px;margin-left:auto">Current</span>', 'sprint-backlog.html', true) + link('sprints-all', '', 'All sprints', 'sprints.html', true) : ''}
       ${link('retros', '↺', 'Retrospectives', 'retros.html')}
-      ${active === 'retros' ? link(page === 'retros' ? 'retros' : 'retros-search', '', 'Search', 'retros.html', true) + link('retro-insights', '', 'Insights <span class="chip warn" style="height:16px;margin-left:auto">3 recurring</span>', 'retro-insights.html', true) : ''}
+      ${active === 'retros' ? link(page === 'retros' ? 'retros' : 'retros-search', '', 'Search', 'retros.html', true) + link(page === 'retro-item' ? 'retro-item' : 'retros-features', '', 'Features', 'retros-features.html', true) + link('retro-insights', '', 'Insights <span class="chip warn" style="height:16px;margin-left:auto">3 recurring</span>', 'retro-insights.html', true) : ''}
       ${link('import', '⇪', 'Jira import', 'import.html')}
       ${link('settings', '⚙', 'Settings', 'settings.html')}
       <button class="me" type="button" aria-haspopup="menu" aria-expanded="false">${av(ME)}<span>${people[ME].name}</span><span class="muted">▴</span></button>

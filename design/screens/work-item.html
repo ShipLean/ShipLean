@@ -25,7 +25,14 @@
 -->
 <link rel="stylesheet" href="../tokens.css">
 <link rel="stylesheet" href="shiplean.css">
+<link rel="stylesheet" href="retro-cards.css">
+<style>:root { --cat-well: var(--color-ok); --cat-bad: var(--color-danger); --cat-improve: var(--color-accent); --cat-unplanned: var(--color-purple); }
+.why-points { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--space-2); }
+.why-points .from { font-size: var(--text-xs); color: var(--color-muted); }
+.fix-line { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); }</style>
 <script src="shared.js"></script>
+<script src="retro-data.js"></script>
+<script src="retro-cards.js"></script>
 <style>
 [hidden] { display: none !important; }
 /* Header: stays put while the body scrolls */
@@ -225,7 +232,7 @@ li:hover > .rm, li:focus-within > .rm, tr:hover .rm { opacity: 1; }
 (() => {
   const { ME, people, sprints, items, doneItems, features, epics, esc, tIcon, av, toast } = SL;
   const $ = id => document.getElementById(id);
-  const KEY = new URLSearchParams(location.search).get('key') === 'SHIP-153' ? 'SHIP-153' : 'SHIP-141';
+  const KEY = ['SHIP-153', 'SHIP-188'].includes(new URLSearchParams(location.search).get('key')) ? new URLSearchParams(location.search).get('key') : 'SHIP-141';
   document.getElementById('appbar').outerHTML = SL.appBar('backlogs').replace('<b>SHIP-141</b>', `<b>${KEY}</b>`);
   const clone = o => JSON.parse(JSON.stringify(o));
   const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -236,10 +243,11 @@ li:hover > .rm, li:focus-within > .rm, tr:hover .rm { opacity: 1; }
     story: [['proposed', ['New']], ['in-progress', ['Active']], ['resolved', ['Resolved']], ['completed', ['Closed']], ['removed', ['Removed']]],
     bug: [['proposed', ['New', 'Triaged']], ['in-progress', ['Active']], ['resolved', ['Resolved']], ['completed', ['Closed']]],
     task: [['proposed', ['New']], ['in-progress', ['Active']], ['resolved', ['In review']], ['completed', ['Closed']], ['removed', ['Removed']]],
+    action: [['proposed', ['New']], ['in-progress', ['Active']], ['resolved', ['Resolved']], ['completed', ['Closed']], ['removed', ['Removed']]],
   };
   const catOf = (type, s) => (STATES[type] ? STATES[type].find(([, n]) => n.includes(s))?.[0] : SL.stateCategory[s]) || 'proposed';
   const stH = (type, s) => `<span class="st ${catOf(type, s)}">${esc(s)}</span>`;
-  const typeName = { story: 'User Story', bug: 'Bug', task: 'Task', feature: 'Feature', epic: 'Epic' };
+  const typeName = { story: 'User Story', bug: 'Bug', task: 'Task', feature: 'Feature', epic: 'Epic', action: 'Action item' };
   const SEVERITIES = ['1 - Critical', '2 - High', '3 - Medium', '4 - Low'];
   const LINK_TYPES = [['predecessor', 'Predecessor'], ['successor', 'Successor'], ['blocked-by', 'Blocked by'], ['related', 'Related'], ['duplicate', 'Duplicate'], ['url', 'External URL']];
   const linkLabel = t => LINK_TYPES.find(x => x[0] === t)[1];
@@ -296,7 +304,16 @@ li:hover > .rm, li:focus-within > .rm, tr:hover .rm { opacity: 1; }
       theirs: { by: 'mei', changes: f => ({ severity: '1 - Critical', points: (f.points ?? 0) + 2 }) },
     },
   };
-  const v = V[KEY], base = items.find(i => i.key === KEY), type = base.type;
+  // SHIP-497: an action item quotes the points it covers and says what kind of fix it is.
+  V['SHIP-188'] = {
+    rev: 2, priority: 2, parent: null, tags: [], severity: '3 - Medium', repro: '',
+    description: 'Add one line to the common brief: screenshot baselines come from the CI report, and agents do not retry them locally.',
+    taskKeys: [], links: [], attachments: [],
+    comments: [['priya', 'Fri 30 Oct, 16:02', 'Raised by Decide what to do on SHIP-101, from 3 points.']],
+    history: [{ rev: 1, by: 'priya', when: 'Fri 30 Oct, 16:02', changes: [], note: 'Created in New with no sprint by Claude Code · conductor, from 3 retro points' }],
+  };
+  const actionBase = { key: 'SHIP-188', type: 'action', title: 'Common brief: screenshot baselines come from the CI report', state: 'New', points: 1, sprint: null, assignee: null };
+  const v = V[KEY], base = KEY === 'SHIP-188' ? actionBase : items.find(i => i.key === KEY), type = base.type;
 
   const initial = { title: base.title, state: base.state, assignee: base.assignee, sprint: base.sprint, points: base.points, priority: v.priority, parent: v.parent, tags: v.tags, description: v.description,
     ...(type === 'story' ? { criteria: v.criteria.map(([done, text]) => ({ done, text })) } : { repro: v.repro, severity: v.severity }), links: v.links };
@@ -459,13 +476,21 @@ li:hover > .rm, li:focus-within > .rm, tr:hover .rm { opacity: 1; }
       <div class="cm-new">${av(ME)}<div style="display:grid;gap:6px"><span class="pop-wrap"><textarea class="field" id="cmText" placeholder="Add a comment. Type @ to mention someone" aria-label="New comment"></textarea></span>
         <div class="row"><span class="xs muted">Markdown and @mentions · Ctrl+Enter posts · comments post straight away, not with Save</span><span class="spacer"></span><button class="btn primary" type="button" id="cmPost" disabled>Comment</button></div></div></div>`;
   }
+  function renderWhy() {
+    const quoted = RETRO.retros.flatMap(r => r.points.filter(p => p.action === KEY).map(p => ({ p, r })));
+    const fix = RETRO.actions.find(a => a.key === KEY)?.fix;
+    return `<section class="sec" data-f="why"><header class="sec-h"><h2>Why this exists</h2><span class="chip">${quoted.length} points</span><span class="spacer"></span><span class="fix-line"><span class="muted">Theme</span><select class="field" aria-label="Theme">${Object.entries(RETRO.themes).filter(([, t]) => t.tone !== 'good').map(([k, t]) => `<option${k === RETRO.actions.find(a => a.key === KEY)?.theme ? ' selected' : ''}>${esc(t.name)}</option>`).join('')}</select></span><span class="fix-line"><span class="muted">Type of fix</span><select class="field" aria-label="Type of fix">${RC.FIXES.map(([id, label]) => `<option${id === fix ? ' selected' : ''}>${label}</option>`).join('')}</select></span><button class="btn tiny" type="button" data-add-points>+ Add points</button></header>
+      <div class="why-points">${quoted.map(({ p, r }) => `<article class="rc-note"><p>${esc(p.text)}</p><div class="meta"><span class="catdot-mini">${RETRO.catLabel[p.cat]}</span> · ${tIcon(r.type)}<a class="key" href="retro-item.html?key=${r.subject}&point=${RC.idOf(r, p)}">${r.subject}</a></div></article>`).join('')}</div></section>`;
+  }
+
   function renderMain() {
     const keep = $('main').scrollTop;
     $('main').innerHTML = `<section class="sec" data-f="description">${mdSection('description', 'Description', 'No description yet. Edit to add one.')}</section>
-      ${type === 'story' ? `<section class="sec" data-f="criteria">${renderCriteria()}</section>`
+      ${type === 'action' ? renderWhy() : type === 'story' ? `<section class="sec" data-f="criteria">${renderCriteria()}</section>`
         : `<section class="sec" data-f="repro">${mdSection('repro', 'Repro steps', 'No repro steps yet.')}
           <div class="sev-row" data-f="severity"><label for="fSev">Severity</label><select class="field" id="fSev">${SEVERITIES.map(s => `<option${s === draft.severity ? ' selected' : ''}>${s}</option>`).join('')}</select><span class="xs muted">How bad it is for the people it hits. Priority is when we fix it.</span></div></section>`}
-      <section class="sec" id="tasksSec">${renderTasks()}</section>
+      ${type === 'action' ? '' : `<section class="sec" id="tasksSec">${renderTasks()}</section>`}
+      ${RC.retrosOf(KEY).length ? `<section class="sec" data-testid="retro-section"><header class="sec-h"><h2>Retrospectives</h2><span class="cnt">${RC.retrosOf(KEY).length}</span><span class="xs muted">One row per retro. Open one to read it and decide its points.</span></header>${RC.workItemRows(KEY)}</section>` : ''}
       <section class="sec" id="discSec">${renderDiscussion()}</section>`;
     $('main').scrollTop = keep;
     comments.forEach(c => { c.fresh = false; });
@@ -697,6 +722,7 @@ li:hover > .rm, li:focus-within > .rm, tr:hover .rm { opacity: 1; }
     { label: KEY === 'SHIP-141' ? 'Bug variant (SHIP-153)' : 'Story variant (SHIP-141)', run: () => { const p = new URLSearchParams(location.search); if (KEY === 'SHIP-141') p.set('key', 'SHIP-153'); else p.delete('key'); location.search = p.toString(); } },
   ]);
 })();
+  if (new URLSearchParams(location.search).has('retros')) requestAnimationFrame(() => { const sec = document.querySelector('[data-testid="retro-section"]'); if (sec) sec.closest('.scroll').scrollTop = sec.offsetTop - sec.closest('.scroll').offsetTop; });
 </script>
 </body>
 </html>

@@ -6,15 +6,20 @@
 <title>ShipLean · Retrospective insights (SHIP-82 mockup)</title>
 <!--
   SHIP-82 mockup: Retrospectives › Insights. Three views over every retro in the project:
-  Recurring themes (mentions per sprint), Action items (the Action item work item type) and
+  Recurring themes (mentions per sprint or week), Action items (the Action item work item type) and
   Changes & impact (mentions of a theme before and after its action item closed).
-  ?view=themes|actions|impact picks the view. Uses ../tokens.css, shiplean.css, shared.js and retro-data.js.
+  SHIP-497: the range also picks sprints or weeks, which drives Recurring and the verdicts as well as the columns. Sprint mode
+  has a No sprint column; week mode doesn't need one. An Unthemed row sits last. Status and verdict chips have tooltips.
+  ?view=themes|actions|impact picks the view, ?range=6|3|all|w6|w12 the range, ?tip=status|verdict opens a tooltip.
+  Uses ../tokens.css, shiplean.css, shared.js, retro-data.js and retro-cards.js.
 -->
 <link rel="stylesheet" href="../tokens.css">
 <link rel="stylesheet" href="shiplean.css">
 <link rel="stylesheet" href="retro.css">
+<link rel="stylesheet" href="retro-cards.css">
 <script src="shared.js"></script>
 <script src="retro-data.js"></script>
+<script src="retro-cards.js"></script>
 </head>
 <body>
 <div id="appbar"></div>
@@ -24,7 +29,7 @@
     <button type="button" data-v="actions">Action items</button>
     <button type="button" data-v="impact">Changes &amp; impact</button>
   </div>
-  <select class="field" aria-label="Range"><option>Last 6 sprints</option><option>Last 3 sprints</option><option>All sprints</option></select>
+  <select class="field" id="range" aria-label="Range"><optgroup label="By sprint"><option value="6">Last 6 sprints</option><option value="3">Last 3 sprints</option><option value="all">All sprints</option></optgroup><optgroup label="By week"><option value="w6">Last 6 weeks</option><option value="w12">Last 12 weeks</option></optgroup></select>
   <span class="spacer"></span>
   <button class="btn" type="button" id="merge">Merge themes…</button>
 </div>
@@ -33,30 +38,73 @@
 <script>
 (() => {
   const { av, tIcon, esc, toast, people } = SL;
-  const { themes, trend, sprintNames, actions, retros, verdict, recurring, strip } = RETRO;
+  const { themes, sprintNames, weekNames, noSprint, unthemed, actions, retros, verdict, recurring, getSeries, setSeries } = RETRO;
   document.getElementById('appbar').outerHTML = SL.appBar('retros');
-  let view = new URLSearchParams(location.search).get('view') || 'themes';
+  const params = new URLSearchParams(location.search);
+  let view = params.get('view') || 'themes', range = params.get('range') || '6';
+  const weekMode = () => range.startsWith('w');
+  const shownCount = () => ({ 6: 6, 3: 3, all: 6, w6: 6, w12: 12 }[range]);
+  const unit = () => (weekMode() ? 'week' : 'sprint');
+  const trend = new Proxy({}, { get: (_, k) => getSeries().counts[k] });
+
+  // What each status and verdict means. Recurring's wording follows the mode.
+  const recurringRule = () => (weekMode()
+    ? 'Mentioned in 3 of the last 6 weeks, and no closed action item on the theme has helped.'
+    : 'Mentioned in 3 of the last 4 sprints, and no closed action item on the theme has helped.');
+  const STATUS_TEXT = {
+    recurring: recurringRule,
+    addressed: () => 'Not recurring, and an action item on this theme is still open.',
+    resolved: () => 'Not recurring, and a closed action item on this theme has the verdict Helped.',
+    quiet: () => 'Not recurring, with no open action item and no fix that helped.',
+  };
+  const VERDICT_TEXT = {
+    Helped: () => `Mentions per ${unit()} after the fix are at most half of what they were before.`,
+    'Some effect': () => `Mentions per ${unit()} after the fix are lower than before, but more than half.`,
+    'No effect': () => `Mentions per ${unit()} after the fix are the same or higher than before.`,
+    'Too early': () => `No full ${unit()} has ended since the fix closed.`,
+  };
+  const dl = rows => `<dl>${rows.map(([k, v]) => `<dt><b>${k}</b></dt><dd>${v}</dd>`).join('')}</dl>`;
+  Object.assign(RC.tips, {
+    statusHead: () => `<p>Worked out from every ${unit()}, not only the ones shown. No sprint points never count.</p>` + dl([['Recurring', recurringRule()], ['Being addressed', STATUS_TEXT.addressed()], ['Resolved', STATUS_TEXT.resolved()], ['Quiet', STATUS_TEXT.quiet()]]),
+    verdictHead: () => `<p>What happened to a theme after its last action item closed.</p>` + dl(Object.entries(VERDICT_TEXT).map(([k, f]) => [k, f()])),
+    recurring: recurringRule, addressed: STATUS_TEXT.addressed, resolved: STATUS_TEXT.resolved, quiet: STATUS_TEXT.quiet,
+    Helped: VERDICT_TEXT.Helped, 'Some effect': VERDICT_TEXT['Some effect'], 'No effect': VERDICT_TEXT['No effect'], 'Too early': VERDICT_TEXT['Too early'],
+    noSprint: 'Points on retros with no sprint. They count in Total, but not towards Recurring or a verdict, because they have no time order. Week mode places them by the day they were logged.',
+    unthemed: 'Went badly and Not in the plan points with no theme. Give them one in Search, or run Decide what to do, which assigns themes as it goes.',
+  });
 
   const mentions = k => retros.flatMap(r => r.points.filter(p => p.theme === k));
   function status(k) {
     const v = verdict(k), open = actions.some(a => a.theme === k && a.state !== 'Closed');
-    if (recurring(k)) return '<span class="chip warn">Recurring</span>';
-    if (v && v.tone === 'ok') return '<span class="chip ok">Resolved</span>';
-    if (open) return '<span class="chip accent">Being addressed</span>';
-    return '<span class="chip">Quiet</span>';
+    if (recurring(k)) return '<span class="chip warn" data-rc-tip="recurring" tabindex="0">Recurring</span>';
+    if (v && v.tone === 'ok') return '<span class="chip ok" data-rc-tip="resolved" tabindex="0">Resolved</span>';
+    if (open) return '<span class="chip accent" data-rc-tip="addressed" tabindex="0">Being addressed</span>';
+    return '<span class="chip" data-rc-tip="quiet" tabindex="0">Quiet</span>';
   }
-  const verdictChip = k => { const v = verdict(k); return v ? `<span class="chip ${v.tone}">${v.label}</span>` : '<span class="muted xs">no change shipped</span>'; };
+  const verdictChip = k => { const v = verdict(k); return v ? `<span class="chip ${v.tone}" data-rc-tip="${v.label}" tabindex="0">${v.label}</span>` : '<span class="muted xs">no change shipped</span>'; };
+
+  const heat = (n, max) => `<td class="rc-heat${n ? '' : ' zero'}"${n ? ` style="background:color-mix(in srgb, var(--color-warn) ${Math.round(10 + (n / max) * 45)}%, transparent)"` : ''}>${n}</td>`;
 
   function themesView() {
-    const bad = Object.keys(themes).filter(k => themes[k].tone === 'bad').sort((a, b) => recurring(b) - recurring(a) || trend[b].slice(-3).reduce((x, y) => x + y) - trend[a].slice(-3).reduce((x, y) => x + y));
+    const series = getSeries(), n = shownCount(), names = series.names.slice(-n), week = weekMode();
+    const bad = Object.keys(themes).filter(k => themes[k].tone === 'bad' && trend[k]).sort((a, b) => recurring(b) - recurring(a) || trend[b].slice(-3).reduce((x, y) => x + y) - trend[a].slice(-3).reduce((x, y) => x + y));
     const good = Object.keys(themes).filter(k => themes[k].tone === 'good');
-    return `<div class="callout warn"><b>3 themes keep coming back</b>Screenshot baselines and vague briefs came up in every one of the last 4 sprints, merge conflicts in each of the last 3. The screenshot fix (SHIP-133) shipped in Sprint 23 and mentions did not drop.</div>
-    <section class="panel"><header><h2>Went badly and not in the plan</h2><span class="muted sm">by theme, Sprint 19 – 24 · themes are clustered by ShipLean from the point text</span></header>
-      <table class="list"><thead><tr><th>Theme</th><th style="width:130px">Mentions per sprint</th><th class="num" style="width:60px">Total</th><th style="width:130px">Status</th><th>Action items</th><th style="width:130px">Last change</th></tr></thead>
-      <tbody>${bad.map(k => `<tr class="item"><td><b class="sm">${esc(themes[k].name)}</b></td><td>${strip(k, { w: 112, h: 22 })}</td>
-        <td class="pts">${trend[k].reduce((a, v) => a + v, 0)}</td><td>${status(k)}</td>
-        <td><div class="row" style="gap:6px">${actions.filter(a => a.theme === k).map(a => `<span class="act-chip" title="${esc(a.title)}">${tIcon(a.type)}<span class="key">${a.key}</span>${SL.st(a.state)}</span>`).join('') || '<button class="mini" type="button" data-make="' + esc(themes[k].name) + '">+ Action item</button>'}</div></td>
-        <td>${verdictChip(k)}</td></tr>`).join('')}</tbody></table>
+    const max = Math.max(...bad.flatMap(k => trend[k].slice(-n)), 1);
+    const total = k => trend[k].slice(-n).reduce((a, v) => a + v, 0) + (week ? 0 : noSprint[k] ?? 0);
+    const un = week ? unthemed.weeks.slice(-n) : unthemed.trend.slice(-n);
+    const unTotal = un.reduce((a, v) => a + v, 0) + (week ? 0 : unthemed.noSprint);
+    const count = bad.filter(recurring).length;
+    return `<div class="callout warn"><b>${count} theme${count === 1 ? '' : 's'} keep${count === 1 ? 's' : ''} coming back</b>${week ? 'Counted over the last 6 weeks, by the day each point was logged.' : 'Screenshot baselines and vague briefs came up in every one of the last 4 sprints. The screenshot fix (SHIP-133) shipped in Sprint 23 and mentions did not drop.'}</div>
+    <div class="callout"><b>1 merge proposed by Decide what to do</b>
+      <div class="rc-merge"><span class="chip">CI screenshots</span><span class="to">into</span><span class="chip">Screenshot baselines need CI</span><span class="muted xs">2 points, the same fix · Claude Code · conductor</span><span class="spacer"></span><button class="btn tiny" type="button" data-merge="keep">Keep apart</button><button class="btn tiny primary" type="button" data-merge="yes">Merge</button></div></div>
+    <section class="panel"><header><h2>Went badly and not in the plan</h2><span class="muted sm">by theme, ${names[0]} – ${names[names.length - 1]}</span></header>
+      <div style="overflow-x:auto"><table class="rc-rows"><thead><tr><th>Theme</th>${names.map(x => `<th style="text-align:center">${esc(x)}</th>`).join('')}${week ? '' : '<th style="text-align:center" class="rc-nosprint"><span data-rc-tip="noSprint" tabindex="0">No sprint</span></th>'}<th class="n">Total</th><th><span data-rc-tip="statusHead" tabindex="0" id="tipStatus">Status</span></th><th>Action items</th><th><span data-rc-tip="verdictHead" tabindex="0" id="tipVerdict">Last change</span></th></tr></thead>
+      <tbody>${bad.map(k => `<tr><td><b class="sm">${esc(themes[k].name)}</b></td>${trend[k].slice(-n).map(v => heat(v, max)).join('')}${week ? '' : `<td class="rc-heat rc-nosprint${noSprint[k] ? '' : ' zero'}">${noSprint[k] ?? 0}</td>`}
+        <td class="n"><b>${total(k)}</b></td><td>${status(k)}</td>
+        <td><div class="row" style="gap:6px">${actions.filter(a => a.theme === k).map(a => `<span class="act-chip" title="${esc(a.title)}">${tIcon(a.type)}<span class="key">${a.key}</span>${SL.st(a.state)}</span>`).join('') || `<button class="mini" type="button" data-make="${esc(themes[k].name)}">+ Action item</button>`}</div></td>
+        <td>${verdictChip(k)}</td></tr>`).join('')}
+        <tr class="rc-unthemed"><td><span class="sm" style="font-style:italic" data-rc-tip="unthemed" tabindex="0">Unthemed</span></td>${un.map(v => heat(v, max)).join('')}${week ? '' : `<td class="rc-heat rc-nosprint">${unthemed.noSprint}</td>`}<td class="n"><b>${unTotal}</b></td><td><span class="muted xs">not judged</span></td><td colspan="2"><a class="btn tiny" href="retros.html?theme=none">Give them themes</a></td></tr>
+      </tbody></table></div>
     </section>
     <section class="panel"><header><h2>What keeps working</h2><span class="muted sm">Went well, to keep in the planning guide</span></header>
       <table class="list"><thead><tr><th>Theme</th><th class="num" style="width:80px">Mentions</th><th>Latest</th></tr></thead>
@@ -67,10 +115,11 @@
   function actionsView() {
     return `<p class="sm muted" style="margin:0">${tIcon('action')} <b>Action item</b> is a work item type at the same level as stories and bugs. It sits in the Stories backlog, carries points and is pulled into a sprint like any story; it also links to the theme it addresses.</p>
     <section class="panel"><header><h2>Action items</h2><span class="muted sm">${actions.filter(a => a.state !== 'Closed').length} open · ${actions.filter(a => a.state === 'Closed').length} done</span><span class="spacer"></span><button class="btn" type="button">+ Action item</button></header>
-      <table class="list"><thead><tr><th>Action</th><th style="width:210px">Theme</th><th style="width:70px">Raised</th><th style="width:110px">State</th><th style="width:150px">Sprint</th><th class="num" style="width:44px">Pts</th><th style="width:110px">Owner</th><th style="width:140px">Impact</th></tr></thead>
+      <table class="list"><thead><tr><th>Action</th><th style="width:80px">Fix</th><th class="num" style="width:60px">Covers</th><th style="width:200px">Theme</th><th style="width:70px">Raised</th><th style="width:110px">State</th><th style="width:150px">Sprint</th><th class="num" style="width:44px">Pts</th><th style="width:110px">Owner</th><th style="width:140px">Impact</th></tr></thead>
       <tbody>${[...actions].sort((a, b) => (a.state === 'Closed') - (b.state === 'Closed')).map(a => {
         const v = a.state === 'Closed' ? verdict(a.theme) : null;
         return `<tr class="item"><td><div class="title-cell">${tIcon(a.type)}<span class="key">${a.key}</span><span class="t">${esc(a.title)}</span></div></td>
+          <td class="sm">${a.fix ? RC.fixLabel(a.fix) : ''}</td><td class="pts">${retros.flatMap(r => r.points).filter(p => p.action === a.key).length}</td>
           <td class="sm">${esc(themes[a.theme].name)} ${recurring(a.theme) ? '<span class="chip warn" style="height:16px">↻</span>' : ''}</td><td class="sm">${a.raised}</td><td>${SL.st(a.state)}</td>
           <td>${a.sprint ? `<span class="sm">${a.sprint}</span>` : '<button class="mini" type="button" data-pull="' + a.key + '">Pull into Sprint 25</button>'}</td><td class="pts">${a.points}</td>
           <td><div class="title-cell">${av(a.owner)}<span class="t sm">${a.owner ? people[a.owner].name.split(' ')[0] : '<span class="muted">Unassigned</span>'}</span></div></td>
@@ -80,12 +129,12 @@
   }
 
   function chart(k, a) {
-    const t = trend[k], w = 320, h = 108, pad = 18, bw = (w - pad) / t.length, max = 4, y = n => h - 18 - (n / max) * (h - 30);
-    const v = verdict(k);
-    const bars = t.map((n, i) => `<rect x="${pad + i * bw + 5}" y="${y(n)}" width="${bw - 10}" height="${Math.max(h - 18 - y(n), 1)}" rx="2" fill="${v && i > v.at ? 'var(--color-ok)' : 'var(--color-warn)'}" opacity="${n ? 1 : .35}"><title>${sprintNames[i]}: ${n}</title></rect><text x="${pad + i * bw + bw / 2}" y="${h - 4}" text-anchor="middle">${sprintNames[i]}</text>`).join('');
+    const sprintNames = getSeries().names, t = trend[k].slice(-6), shift = trend[k].length - t.length, w = 320, h = 108, pad = 18, bw = (w - pad) / t.length, max = 4, y = n => h - 18 - (n / max) * (h - 30);
+    const raw = verdict(k), v = { ...raw, at: raw.at - shift };
+    const bars = t.map((n, i) => `<rect x="${pad + i * bw + 5}" y="${y(n)}" width="${bw - 10}" height="${Math.max(h - 18 - y(n), 1)}" rx="2" fill="${v && i > v.at ? 'var(--color-ok)' : 'var(--color-warn)'}" opacity="${n ? 1 : .35}"><title>${sprintNames[i + shift]}: ${n}</title></rect><text x="${pad + i * bw + bw / 2}" y="${h - 4}" text-anchor="middle">${sprintNames[i + shift]}</text>`).join('');
     const xAt = (v.at + 1) * bw + pad;
     const avgLine = (x1, x2, val, col) => `<line x1="${x1}" x2="${x2}" y1="${y(val)}" y2="${y(val)}" stroke="${col}" stroke-width="1.5"/>`;
-    return `<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="${esc(themes[k].name)} mentions per sprint, ${a.key} shipped after ${sprintNames[v.at]}">
+    return `<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="${esc(themes[k].name)} mentions per ${unit()}, ${a.key} shipped after ${sprintNames[raw.at]}">
       ${[0, 2, 4].map(n => `<line x1="${pad}" x2="${w}" y1="${y(n)}" y2="${y(n)}" stroke="var(--color-border)" stroke-width="1"/><text x="2" y="${y(n) + 3}">${n}</text>`).join('')}
       ${bars}
       ${avgLine(pad, xAt, v.before, 'var(--color-text)')}${v.after !== null ? avgLine(xAt, w, v.after, 'var(--color-text)') : ''}
@@ -94,15 +143,15 @@
   }
 
   function impactView() {
-    const done = actions.filter(a => a.state === 'Closed');
-    return `<p class="sm muted" style="margin:0">For each closed action item: how often its theme came up before and after it shipped. Bars are mentions per sprint; the lines are the averages before and after. The verdict is worked out automatically: after at most half of before is <i>Helped</i>, lower is <i>Some effect</i>, the same or higher is <i>No effect</i>, and no full sprint since is <i>Too early</i>.</p>
+    const done = actions.filter(a => a.state === 'Closed' && a[getSeries().close] !== undefined);
+    return `<p class="sm muted" style="margin:0">For each closed action item: how often its theme came up before and after it shipped. Bars are mentions per ${unit()}; the lines are the averages before and after. The verdict is worked out automatically: after at most half of before is <i>Helped</i>, lower is <i>Some effect</i>, the same or higher is <i>No effect</i>, and no full ${unit()} since is <i>Too early</i>.</p>
     <div class="impact-grid">${done.map(a => {
       const v = verdict(a.theme);
-      return `<article class="impact"><div class="row"><span class="chip ${v.tone}">${v.label}</span><span class="spacer"></span><span class="muted xs">raised ${a.raised} · done ${sprintNames[a.closedIn]}</span></div>
+      return `<article class="impact"><div class="row"><span class="chip ${v.tone}" data-rc-tip="${v.label}" tabindex="0">${v.label}</span><span class="spacer"></span><span class="muted xs">raised ${a.raised} · done ${getSeries().names[a[getSeries().close]]}</span></div>
         <h3>${esc(a.title)}</h3>
         <div class="title-cell sm">${tIcon(a.type)}<span class="key">${a.key}</span><span class="muted">for</span><b class="t">${esc(themes[a.theme].name)}</b></div>
         ${chart(a.theme, a)}
-        <div class="nums"><div><b>${v.before.toFixed(1)}</b><span>per sprint before</span></div><div><b>${v.after === null ? '–' : v.after.toFixed(1)}</b><span>per sprint after</span></div><div><b>${v.after === null ? '–' : (v.after - v.before > 0 ? '+' : '') + Math.round((v.after - v.before) / v.before * 100) + '%'}</b><span>change</span></div></div>
+        <div class="nums"><div><b>${v.before.toFixed(1)}</b><span>per ${unit()} before</span></div><div><b>${v.after === null ? '–' : v.after.toFixed(1)}</b><span>per ${unit()} after</span></div><div><b>${v.after === null ? '–' : (v.after - v.before > 0 ? '+' : '') + Math.round((v.after - v.before) / v.before * 100) + '%'}</b><span>change</span></div></div>
         ${v.tone === 'danger' ? `<div class="callout warn"><b>Didn't help</b>Agents still hit it: “${esc(retros.filter(r => r.sprint === 'S24').flatMap(r => r.points).find(p => p.theme === a.theme && p.cat === 'bad')?.text || '')}”. Follow-up ${tIcon('action')} SHIP-188 raised in Sprint 24.</div>` : ''}
         
       </article>`;
@@ -111,12 +160,17 @@
 
   function render() {
     document.querySelectorAll('[data-v]').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === view));
+    setSeries(weekMode() ? 'weeks' : 'sprints');
+    document.getElementById('range').value = range;
     document.getElementById('ins').innerHTML = view === 'actions' ? actionsView() : view === 'impact' ? impactView() : themesView();
   }
   document.querySelector('[aria-label="Insight"]').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (!b) return; view = b.dataset.v; render(); });
-  document.getElementById('ins').addEventListener('click', e => { const pl = e.target.closest('[data-pull]'); if (pl) { toast(`${tIcon('action')} ${pl.dataset.pull} pulled into Sprint 25`); return; } const m = e.target.closest('[data-make]'); if (m) toast(`${tIcon('action')} New Action item for “${esc(m.dataset.make)}”`); });
+  document.getElementById('ins').addEventListener('click', e => { const pl = e.target.closest('[data-pull]'); if (pl) { toast(`${tIcon('action')} ${pl.dataset.pull} pulled into Sprint 25`); return; } const m = e.target.closest('[data-make]'); if (m) { const key = Object.keys(themes).find(k => themes[k].name === m.dataset.make); RC.openActionDialog(retros.flatMap(r => r.points.filter(p => p.theme === key && RC.isOpen(p)).map(p => RC.idOf(r, p))), retros); return; } const mg = e.target.closest('[data-merge]'); if (mg) toast(mg.dataset.merge === 'yes' ? 'Merged: its points and action items moved to Screenshot baselines need CI.' : 'Kept apart. This pair is not proposed again.'); });
+  document.getElementById('range').addEventListener('change', e => { range = e.target.value; render(); });
+  RC.render = render;
   document.getElementById('merge').addEventListener('click', () => toast('ShipLean clusters points into themes. Merge two clusters, rename one, or move a point to another theme.'));
   render();
+  if (params.get('tip')) { const t = document.getElementById(params.get('tip') === 'verdict' ? 'tipVerdict' : 'tipStatus'); t?.dispatchEvent(new MouseEvent('mouseover', { bubbles: true })); }
   SL.preview([{ label: 'Themes', run: () => { view = 'themes'; render(); } }, { label: 'Actions', run: () => { view = 'actions'; render(); } }, { label: 'Impact', run: () => { view = 'impact'; render(); } }]);
 })();
 </script>
