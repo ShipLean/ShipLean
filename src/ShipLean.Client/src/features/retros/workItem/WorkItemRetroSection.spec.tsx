@@ -5,7 +5,7 @@ import { priya } from '../../workItem/ct/fixtures';
 import { stubApi } from '../../workItem/ct/stubApi';
 import { stubComments } from '../../workItem/ct/stubDetails';
 import { stubSide } from '../../workItem/ct/stubSide';
-import { stubRetros, workItemRetros } from '../ct/retroFixtures';
+import { sprintRetro, stubRetros, workItemRetros } from '../ct/retroFixtures';
 import { retrosTestIds as ids } from '../testIds';
 import { WorkItemRetroHarness } from './ct/WorkItemRetroHarness';
 import { WorkItemRetroLocationHarness } from './ct/WorkItemRetroLocationHarness';
@@ -17,10 +17,13 @@ const route = { hooksConfig: { route: '/p/SHIP/items/SHIP-141' } };
 
 test('WorkItemRetroSection_WhenItemHasNoRetros_ShouldBeHidden', async ({ mount, page }) => {
   // Loading and empty both render nothing, so an empty item is mounted beside one with retros: once that one shows its
-  // cards, both answers are in, and the empty item must still have no section.
+  // rows, both answers are in, and the empty item must still have no section. The empty item still carries legacy
+  // cards, which the UI must ignore: only its empty rows decide.
+  const legacy = { cards: sprintRetro.cards.slice(0, 1), rows: [] };
+  expect(legacy.cards).toHaveLength(1);
   await stubRetros(page);
   await page.route('**/api/work-items/w-empty/retros', (r) =>
-    r.fulfill({ status: 200, contentType: 'application/json', body: '{"cards":[],"rows":[]}' }),
+    r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(legacy) }),
   );
   await mount(
     <div>
