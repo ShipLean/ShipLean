@@ -1,11 +1,29 @@
-import type { RetroInsightsMode } from '../../../../api/retros';
+import type { RetroInsightsMode, RetroThemeStatus } from '../../../../api/retros';
 import { retrosTestIds as ids } from '../../testIds';
+import { DefinitionTip } from './DefinitionTip';
+import { Tip } from './Tip';
+import { statusHeadIntro, statusWording } from './tipWording';
 
-// TODO: the Status tooltip, worded for the mode, replaces this plain heading.
+const ROWS: { status: RetroThemeStatus; term: string }[] = [
+  { status: 'recurring', term: 'Recurring' },
+  { status: 'beingAddressed', term: 'Being addressed' },
+  { status: 'resolved', term: 'Resolved' },
+  { status: 'quiet', term: 'Quiet' },
+];
+
 export function StatusHeading({ className, mode }: { className: string; mode: RetroInsightsMode }) {
   return (
     <th data-testid={ids.retroTipStatusHead} data-mode={mode} className={className}>
-      Status
+      <Tip
+        tip={
+          <DefinitionTip
+            intro={statusHeadIntro(mode)}
+            rows={ROWS.map((r) => ({ term: r.term, meaning: statusWording(r.status, mode) }))}
+          />
+        }
+      >
+        Status
+      </Tip>
     </th>
   );
 }

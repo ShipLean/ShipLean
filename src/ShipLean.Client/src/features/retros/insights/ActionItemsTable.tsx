@@ -38,6 +38,8 @@ export function ActionItemsTable({ project, insights }: RetroInsightsSlotProps) 
               <thead>
                 <tr>
                   <th className={HEAD}>Action</th>
+                  <th className={HEAD}>Fix</th>
+                  <th className={`${HEAD} text-right`}>Covers</th>
                   <th className={HEAD}>Theme</th>
                   <th className={HEAD}>Raised</th>
                   <th className={HEAD}>State</th>

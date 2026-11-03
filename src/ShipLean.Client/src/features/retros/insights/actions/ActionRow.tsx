@@ -7,6 +7,7 @@ import { Chip } from '../../../../components/Chip';
 import { ItemLink } from '../../../itemPeek/ItemLink';
 import { retrosTestIds as ids } from '../../testIds';
 import { VerdictChip } from '../recurring/VerdictChip';
+import { retroFixOptions } from '../../../retroShared/actionDialog/retroFixTypes';
 import { PullButton } from './PullButton';
 
 const NONE = <span className="text-ink-muted">—</span>;
@@ -44,6 +45,14 @@ export function ActionRow({
           </span>
           <span>{action.title}</span>
         </ItemLink>
+      </td>
+      <td data-cell="fix" className="px-3 py-2">
+        {row.action.fixType
+          ? (retroFixOptions.find((o) => o.id === row.action.fixType)?.label ?? NONE)
+          : NONE}
+      </td>
+      <td data-cell="covers" className="px-3 py-2 text-right tabular-nums">
+        {row.action.pointCount}
       </td>
       <td data-cell="theme" className="px-3 py-2">
         {row.theme ? (

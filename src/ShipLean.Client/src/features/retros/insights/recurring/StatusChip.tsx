@@ -1,5 +1,7 @@
 import { Chip, type ChipTone } from '../../../../components/Chip';
 import type { RetroInsightsMode, RetroThemeStatus } from '../../../../api/retros';
+import { Tip } from '../tips/Tip';
+import { statusWording } from '../tips/tipWording';
 
 const STATUS: Record<RetroThemeStatus, { label: string; tone: ChipTone }> = {
   recurring: { label: 'Recurring', tone: 'warn' },
@@ -9,7 +11,6 @@ const STATUS: Record<RetroThemeStatus, { label: string; tone: ChipTone }> = {
 };
 
 /** A theme's status as a chip (the design's `status()`); the wrapper carries `data-status` and `data-mode`. */
-// TODO: the status tooltip, worded for the mode, replaces this plain `data-mode`.
 export function StatusChip({
   status,
   mode,
@@ -19,8 +20,13 @@ export function StatusChip({
 }) {
   const { label, tone } = STATUS[status];
   return (
-    <span data-status={status} data-mode={mode}>
+    <Tip
+      data-status={status}
+      data-mode={mode}
+      tip={statusWording(status, mode)}
+      className="no-underline"
+    >
       <Chip tone={tone}>{label}</Chip>
-    </span>
+    </Tip>
   );
 }

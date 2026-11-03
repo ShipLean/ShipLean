@@ -1,5 +1,7 @@
 import { Chip, type ChipTone } from '../../../../components/Chip';
 import type { RetroInsightsMode, RetroVerdict } from '../../../../api/retros';
+import { Tip } from '../tips/Tip';
+import { verdictWording } from '../tips/tipWording';
 
 const VERDICT: Record<RetroVerdict, { label: string; tone: ChipTone }> = {
   helped: { label: 'Helped', tone: 'ok' },
@@ -9,7 +11,6 @@ const VERDICT: Record<RetroVerdict, { label: string; tone: ChipTone }> = {
 };
 
 /** The verdict of a theme's last shipped change, or a muted note when none shipped. */
-// TODO: the verdict tooltip, worded for the mode, replaces this plain `data-mode`.
 export function VerdictChip({
   verdict,
   mode,
@@ -30,8 +31,13 @@ export function VerdictChip({
   }
   const { label, tone } = VERDICT[verdict];
   return (
-    <span data-verdict={verdict} data-mode={mode}>
+    <Tip
+      data-verdict={verdict}
+      data-mode={mode}
+      tip={verdictWording(verdict, mode)}
+      className="no-underline"
+    >
       <Chip tone={tone}>{label}</Chip>
-    </span>
+    </Tip>
   );
 }

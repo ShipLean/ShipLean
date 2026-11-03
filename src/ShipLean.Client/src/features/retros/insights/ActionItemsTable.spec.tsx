@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/experimental-ct-react';
 import { componentTestIds } from '../../../components/testIds';
 import { ToastHost } from '../../../components/ToastHost';
 import { insightsWeeks, retroInsights, stubRetros } from '../ct/retroFixtures';
+import { retroFixOptions } from '../../retroShared/actionDialog/retroFixTypes';
 import { retrosTestIds as ids } from '../testIds';
 import { insightsProject } from './ct/insightsProject';
 import { ActionItemsTable } from './ActionItemsTable';
@@ -199,3 +200,60 @@ test('ActionItemsTable_WhenModeIsWeek_ShouldCarryItToTheVerdictChip', async ({ m
     page.getByTestId(ids.retroActionRow).locator('span[data-verdict][data-mode="week"]'),
   ).toHaveCount(withImpact);
 });
+
+test('ActionItemsTable_WhenRendered_ShouldShowFixAndCovers', async ({ mount, page }) => {
+  await stubRetros(page);
+  await stubWorkItems(page);
+  // The pinned fixture has no fix types (legacy rows), so give each row one here.
+  const items = retroInsights.actionItems.map((r, i) => ({
+    ...r,
+    action: {
+      ...r.action,
+      fixType: retroFixOptions[i % retroFixOptions.length].id,
+      pointCount: i,
+    },
+  }));
+  await mount(
+    <ActionItemsTable
+      project={insightsProject}
+      insights={{ ...retroInsights, actionItems: items }}
+    />,
+    open,
+  );
+  const rows = page.getByTestId(ids.retroActionRow);
+  for (const [index] of items.entries()) {
+    await expect(rows.nth(index).locator('[data-cell="fix"]')).toHaveText(
+      retroFixOptions[index % retroFixOptions.length].label,
+    );
+    await expect(rows.nth(index).locator('[data-cell="covers"]')).toHaveText(String(index));
+  }
+});
+
+test('ActionItemsTable_WhenFixTypeIsNull_ShouldShowADash', async ({ mount, page }) => {
+  await stubRetros(page);
+  await stubWorkItems(page);
+  const legacy = {
+    ...retroInsights,
+    actionItems: retroInsights.actionItems.map((r) => ({
+      ...r,
+      action: { ...r.action, fixType: null },
+    })),
+  };
+  await mount(<ActionItemsTable project={insightsProject} insights={legacy} />, open);
+  await expect(
+    page.getByTestId(ids.retroActionRow).first().locator('[data-cell="fix"]'),
+  ).toHaveText('—');
+});
+
+for (const width of [1280, 1440]) {
+  test(`ActionItemsTable_At${width}_ShouldNotScrollInsideItsColumn`, async ({ mount, page }) => {
+    await stubRetros(page);
+    await stubWorkItems(page);
+    await page.setViewportSize({ width: width - 240, height: 800 });
+    await mount(<ActionItemsTable project={insightsProject} insights={retroInsights} />, open);
+    const wrap = page.getByTestId(ids.retroActionsTable).locator('..');
+    await expect(page.getByTestId(ids.retroActionRow).first()).toBeVisible();
+    const [scroll, client] = await wrap.evaluate((el) => [el.scrollWidth, el.clientWidth]);
+    expect(scroll).toBeLessThanOrEqual(client);
+  });
+}
