@@ -1,26 +1,25 @@
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ProjectDto } from '../../../api/projects';
 import type { BacklogRowDto, BacklogViewDto } from '../../../api/views';
 import { BACKLOG_COLUMNS, backlogKey, useBacklog, useBacklogView } from '../backlogApi';
 import { moveRowToSection, useReorder } from '../drag/useReorder';
-import { ReorderConflict } from '../drag/ReorderConflict';
 import { useTeammateChanges } from '../realtime/useTeammateChanges';
-import { BacklogToolbar } from '../toolbar/BacklogToolbar';
+import { BulkRunProvider } from '../bulk/BulkRunProvider';
+import { ListCommandsProvider } from '../commands/listCommands';
 import { backlogTestIds as ids } from '../testIds';
-import { ForecastToggle } from './ForecastToggle';
-import { forecastMarks } from './forecastMarks';
+import { useSectionCollapse } from './useSectionCollapse';
 import type { PlanningDrop } from './planningTarget';
-import { PlanningTable } from './PlanningTable';
+import { PlanningScreen } from './PlanningScreen';
 import { sprintMoveWrite } from './sprintMoveWrite';
 import { withWritten } from './withWritten';
 
-// The Stories backlog in planning mode: the sprint sections above the Backlog, capacity bars, forecast lines and the
-// velocity override. Planning has no Completed toggle and no Columns menu. A dragged row sets its sprint and its place
-// in one action; a stale write offers Use mine / Keep theirs.
+// The Stories backlog in planning mode: loads the backlog, writes the moves, and mounts the providers PlanningScreen
+// shares. The screen shows the sprint sections above the Backlog, capacity bars, forecast lines and the velocity
+// override. Planning has no Completed toggle and no Columns menu. A dragged row sets its sprint and its place in one
+// action; a stale write offers Use mine / Keep theirs.
 export function PlanningMode({ project }: { project: ProjectDto }) {
   const queryClient = useQueryClient();
-  const [adding, setAdding] = useState(false);
   const view = useBacklogView('stories', BACKLOG_COLUMNS);
   const backlog = useBacklog({
     projectId: project.id,
@@ -30,6 +29,7 @@ export function PlanningMode({ project }: { project: ProjectDto }) {
     includeCompleted: false,
   });
   const queryKey = backlogKey(project.id, 'stories', 'planning', '', false);
+  const collapse = useSectionCollapse(project.id, backlog.data?.sections ?? []);
   const reorder = useReorder(project.id, queryKey);
   const flashing = useTeammateChanges(
     project.id,
@@ -88,37 +88,20 @@ export function PlanningMode({ project }: { project: ProjectDto }) {
       </div>
     );
   }
-  const forecast = view.forecast;
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <BacklogToolbar
-        projectKey={project.key}
-        level="stories"
-        mode="planning"
-        onNewItem={() => setAdding(true)}
-        options={() => (
-          <ForecastToggle checked={forecast} onChange={(on) => view.update({ forecast: on })} />
-        )}
-      />
-      {reorder.conflict ? (
-        <ReorderConflict
-          conflict={reorder.conflict}
-          onUseMine={() => void reorder.useMine()}
-          onKeepTheirs={() => void reorder.keepTheirs()}
+    <ListCommandsProvider>
+      <BulkRunProvider projectId={project.id} queryKey={queryKey}>
+        <PlanningScreen
+          project={project}
+          view={backlog.data}
+          forecast={view.forecast}
+          onForecastChange={(on) => view.update({ forecast: on })}
+          reorder={reorder}
+          flashing={flashing}
+          collapse={collapse}
+          onMove={move}
         />
-      ) : null}
-      <PlanningTable
-        sections={backlog.data.sections}
-        velocity={backlog.data.velocity}
-        forecast={forecast}
-        marks={forecast ? forecastMarks(backlog.data.forecast) : new Map()}
-        projectId={project.id}
-        projectKey={project.key}
-        adding={adding}
-        onCloseAdd={() => setAdding(false)}
-        flashing={flashing}
-        onMove={move}
-      />
-    </div>
+      </BulkRunProvider>
+    </ListCommandsProvider>
   );
 }

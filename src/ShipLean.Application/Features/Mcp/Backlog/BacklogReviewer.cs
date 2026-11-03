@@ -14,11 +14,11 @@ public static class BacklogReviewer
 
     public static IReadOnlyList<BacklogFinding> Review(IReadOnlyList<StackRowDto> stack, DateTimeOffset now, int staleDays, int top)
     {
-        var compared = stack.Take(CompareCap).Select(row => (Row: row, Own: Own(row.Title))).ToList();
+        var compared = stack.Take(CompareCap).Select(row => (Row: row, Words: WordOverlap.Words(row.Title))).ToList();
         return [.. stack.Take(top).Select(row => Finding(row, compared, now, staleDays))];
     }
 
-    private static BacklogFinding Finding(StackRowDto row, List<(StackRowDto Row, int Own)> compared, DateTimeOffset now, int staleDays)
+    private static BacklogFinding Finding(StackRowDto row, List<(StackRowDto Row, WordSet Words)> compared, DateTimeOffset now, int staleDays)
     {
         var flags = new List<string>();
         var points = WorkItemTypeRules.IsStoryLevel(row.Type.Id);
@@ -41,8 +41,8 @@ public static class BacklogReviewer
             flags.Add("stale");
         }
 
-        var mine = Own(row.Title);
-        var duplicates = compared.Where(other => other.Row.Id != row.Id && LooksAlike(row.Title, mine, other.Row.Title, other.Own)).Select(other => other.Row.Key).ToList();
+        var mine = WordOverlap.Words(row.Title);
+        var duplicates = compared.Where(other => other.Row.Id != row.Id && LooksAlike(mine, other.Words)).Select(other => other.Row.Key).ToList();
         if (duplicates.Count > 0)
         {
             flags.Add("likely_duplicate");
@@ -51,12 +51,12 @@ public static class BacklogReviewer
         return new BacklogFinding(row.Key, row.Title, row.Type.Name, row.State.Name, row.Points, days, flags, duplicates);
     }
 
-    private static bool LooksAlike(string title, int own, string otherTitle, int otherOwn)
-    {
-        var shared = WordOverlap.Score(title, [otherTitle]);
-        return shared >= 2 && shared * 4 >= Math.Min(own, otherOwn) * 3;
-    }
+    // The likeness test review_backlog and the duplicate check share.
+    public static bool LooksAlike(string title, string otherTitle) => LooksAlike(WordOverlap.Words(title), WordOverlap.Words(otherTitle));
 
-    // How many distinct words a title has, as WordOverlap counts them.
-    private static int Own(string title) => WordOverlap.Score(title, [title]);
+    private static bool LooksAlike(WordSet words, WordSet otherWords)
+    {
+        var shared = words.Shared(otherWords);
+        return shared >= 2 && shared * 4 >= Math.Min(words.Count, otherWords.Count) * 3;
+    }
 }

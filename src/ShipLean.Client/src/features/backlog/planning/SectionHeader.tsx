@@ -1,9 +1,13 @@
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import type { BacklogSectionDto } from '../../../api/views';
 import { Chip } from '../../../components/Chip';
 import { routePath } from '../../../routes';
+import { useSectionPreview } from '../drag/GroupDragContext';
 import { backlogTestIds as ids } from '../testIds';
 import { SectionCapacity } from './SectionCapacity';
+import { SectionToggle } from './SectionToggle';
+import type { SectionCollapse } from './useSectionCollapse';
 import { useSectionDrop } from './useSectionDrop';
 
 // A sprint section's header: name, Current chip, item count, its load and a link to the sprint (its backlog when
@@ -14,6 +18,8 @@ export function SectionHeader({
   velocity,
   datesLabel,
   columnCount,
+  action,
+  collapse,
 }: {
   section: BacklogSectionDto;
   projectKey: string;
@@ -22,8 +28,12 @@ export function SectionHeader({
   // "20 Oct – 2 Nov", from the shared sprints; undefined until they are read.
   datesLabel: string | undefined;
   columnCount: number;
+  // A button beside the title, such as "+ Add".
+  action?: ReactNode;
+  collapse: SectionCollapse;
 }) {
   const { attach, over } = useSectionDrop(section.id);
+  const preview = useSectionPreview(section);
   const sprint = section.sprint;
   if (sprint === null) return null;
   const current = sprint.status === 'current';
@@ -37,6 +47,12 @@ export function SectionHeader({
     >
       <td colSpan={columnCount} className="px-2">
         <div className="flex items-center gap-2">
+          <SectionToggle
+            title={section.title}
+            open={collapse.isOpen(section.id)}
+            disabled={collapse.searching}
+            onToggle={() => collapse.toggle(section.id)}
+          />
           <b data-testid={ids.planningSectionTitle} className="text-[length:var(--text-md)]">
             {section.title}
           </b>
@@ -55,11 +71,13 @@ export function SectionHeader({
           >
             {section.rows.length} items
           </span>
+          {action}
           <span className="flex-1" />
           <SectionCapacity
             committed={section.points}
             capacity={section.capacity}
             velocity={velocity}
+            preview={preview}
           />
           <Link
             data-testid={ids.planningSectionLink}

@@ -6,17 +6,11 @@ import type { BacklogViewDto } from '../../api/views';
 import { registerInvalidation } from '../../realtime';
 import { fetchPreference, preferenceKey } from '../../queries/shared';
 import type { BacklogMode, Level } from '../../routes';
+import { backlogKey, backlogRootKey } from '../../queries/backlogKeys';
 
 // The backlog's react-query keys and reads, shared by every backlog mode and level. Everything is keyed under
 // ['projects', projectId, 'backlog', …] so one invalidation reaches every mode.
-export const backlogRootKey = (projectId: string) => ['projects', projectId, 'backlog'] as const;
-export const backlogKey = (
-  projectId: string,
-  level: Level,
-  mode: BacklogMode,
-  filter: string,
-  includeCompleted: boolean,
-) => [...backlogRootKey(projectId), level, mode, filter, includeCompleted] as const;
+export { backlogKey, backlogRootKey };
 
 export interface BacklogQuery {
   projectId: string;
@@ -63,8 +57,21 @@ export function useBacklog(query: BacklogQuery) {
   const queryClient = useQueryClient();
   const { projectId } = query;
   useEffect(() => {
+    // At most one refetch in flight and one queued: a bulk move by a teammate is many events, and they cost two reads.
+    let inFlight = false;
+    let queued = false;
     const refetch = () => {
-      void queryClient.invalidateQueries({ queryKey: backlogRootKey(projectId) });
+      if (inFlight) {
+        queued = true;
+        return;
+      }
+      inFlight = true;
+      void queryClient.invalidateQueries({ queryKey: backlogRootKey(projectId) }).finally(() => {
+        inFlight = false;
+        if (!queued) return;
+        queued = false;
+        refetch();
+      });
     };
     const unregister = BACKLOG_EVENTS.map((type) => registerInvalidation(type, refetch));
     return () => unregister.forEach((off) => off());
@@ -118,6 +125,8 @@ export interface BacklogViewPreference {
   hiddenColumns?: Partial<Record<Level, string[]>>;
   // Planning mode's Forecast toggle; absent = on.
   forecast?: boolean;
+  // Planning mode's collapsed sections as `<projectId>:<sectionId>`, every project's in the one list; absent = the running sprint starts closed.
+  collapsedSections?: string[];
 }
 
 const VIEW_KEY = 'view:backlog';
@@ -155,11 +164,11 @@ export function useBacklogView(level: Level, columns: readonly ColumnSpec[]) {
     onError: () => queryClient.invalidateQueries({ queryKey: backlogViewKey }),
   });
   // The change shows at once; a failed save puts the saved value back.
-  function update(patch: Partial<BacklogViewPreference>) {
+  function update(patch: Partial<BacklogViewPreference>, onFailed?: (error: Error) => void) {
     const current = (queryClient.getQueryData(backlogViewKey) ?? {}) as BacklogViewPreference;
     const next: BacklogViewPreference = { ...current, ...patch };
     queryClient.setQueryData(backlogViewKey, next);
-    save.mutate(next);
+    save.mutate(next, { onError: onFailed });
   }
   function setHidden(hidden: string[]) {
     const current = (queryClient.getQueryData(backlogViewKey) ?? {}) as BacklogViewPreference;

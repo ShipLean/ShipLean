@@ -106,8 +106,9 @@ export function createProjectSubscription(deps: SubscriptionDeps): ProjectSubscr
       const code = hubErrorCode(error);
       if (code === 'session_ended' || code === 'password_change_required') {
         await endIfSessionOver();
-      } else if (code === 'not_found' && method === 'JoinProject') {
-        // Not joined, so the dot must not claim Live for it.
+      } else if (code === 'not_found' && method === 'JoinProject' && args[0] === wantedProject) {
+        // Not joined, so the dot must not claim Live for it. (An answer for a project no longer wanted says nothing
+        // about the one that is.)
         setState('offline');
       }
       return false;
@@ -138,7 +139,10 @@ export function createProjectSubscription(deps: SubscriptionDeps): ProjectSubscr
       const project = wantedProject;
       const epochBefore = epoch;
       if (await call('JoinProject', project)) joinedProject = project;
-      else if (epoch === epochBefore) refused.add(`p:${project}`);
+      else if (epoch === epochBefore) {
+        refused.add(`p:${project}`);
+        if (project === wantedProject) setState('offline');
+      }
       return true;
     }
     if (
@@ -154,6 +158,11 @@ export function createProjectSubscription(deps: SubscriptionDeps): ProjectSubscr
       else if (epoch === epochBefore) refused.add(`s:${project}:${screen}`);
       return true;
     }
+    // Nothing left to join. Live means the wanted project is joined and no join is still on its way: an event published
+    // before the join is never delivered to this connection, and a hub call still on its way can meet a session that has
+    // since ended. A refused screen join does not take Live away: project events flow without it (the screen is only for
+    // presence).
+    if (wantedProject === undefined || joinedProject === wantedProject) setState('live');
     return false;
   }
 
@@ -225,7 +234,6 @@ export function createProjectSubscription(deps: SubscriptionDeps): ProjectSubscr
     const reconnect = everConnected || attemptFailed;
     everConnected = true;
     attemptFailed = false;
-    setState('live');
     await sync();
     if (reconnect && connected) deps.onReconnected(joinedProject);
   }
@@ -254,7 +262,8 @@ export function createProjectSubscription(deps: SubscriptionDeps): ProjectSubscr
       wantedProject = projectId;
       refused = new Set();
       deps.onReset();
-      if (connected) setState('live');
+      // Not Live until the new project is joined (sync sets it): an event published before that join is never delivered.
+      if (connected && projectId !== undefined) setState('connecting');
       if (projectId !== undefined) ensureConnection();
       void sync();
     },

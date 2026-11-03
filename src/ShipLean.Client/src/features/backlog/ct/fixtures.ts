@@ -1,5 +1,6 @@
 import type { ProjectDto } from '../../../api/projects';
 import type { SprintDto } from '../../../api/sprints';
+import type { BacklogReviewDto } from '../../../api/backlogWrites';
 import type { BacklogRowDto, BacklogViewDto } from '../../../api/views';
 
 export const PROJECT: ProjectDto = {
@@ -87,6 +88,7 @@ export function backlogView(rows: BacklogRowDto[]): BacklogViewDto {
     tagColours: [],
     forecast: null,
     velocity: null,
+    review: null,
   };
 }
 
@@ -280,4 +282,74 @@ export function planningSprints(): SprintDto[] {
     sprint(FUTURE, '3 Nov – 16 Nov'),
     sprint(LATER, '17 Nov – 30 Nov'),
   ];
+}
+
+/** The five review checks over the top of the stack: the ids each check flags, none by default. */
+export function review(
+  flagged: Partial<Record<BacklogReviewDto['checks'][number]['id'], string[]>> = {},
+): BacklogReviewDto {
+  const ids = [
+    'unestimated',
+    'no_acceptance_criteria',
+    'no_parent',
+    'stale',
+    'likely_duplicate',
+  ] as const;
+  return {
+    top: 100,
+    staleDays: 30,
+    checks: ids.map((id) => ({ id, itemIds: flagged[id] ?? [] })),
+  };
+}
+
+const SPRINT_FULL = { id: 'sp24', name: 'Sprint 24', status: 'current' } as const;
+const SPRINT_OPEN = { id: 'sp25', name: 'Sprint 25', status: 'future' } as const;
+
+/**
+ * Twelve rows to plan with: Sprint 24 (capacity 23, 13 points), Sprint 25 (no capacity, empty) and a Backlog of eleven
+ * rows, SHIP-182 a bug, SHIP-185 unestimated. Ranks run down the screen. The review flags the unestimated row.
+ */
+export function planningManyView(): BacklogViewDto {
+  const committed = itemRow({ key: 'SHIP-160', rank: 1, sprint: SPRINT_FULL, points: 13 });
+  const backlog = [3, 5, 8, 2, 1, 5, 3, 13, 2, 5, 8].map((points, i) =>
+    itemRow({
+      key: `SHIP-${180 + i}`,
+      rank: i + 2,
+      points: i === 5 ? null : points,
+      type: i === 2 ? { id: 'bug', name: 'Bug' } : { id: 'story', name: 'User Story' },
+    }),
+  );
+  const base = planningView();
+  return {
+    ...base,
+    totalCount: 12,
+    sections: [
+      {
+        id: SPRINT_FULL.id,
+        title: SPRINT_FULL.name,
+        sprint: SPRINT_FULL,
+        points: 13,
+        capacity: 23,
+        rows: [committed],
+      },
+      {
+        id: SPRINT_OPEN.id,
+        title: SPRINT_OPEN.name,
+        sprint: SPRINT_OPEN,
+        points: 0,
+        capacity: null,
+        rows: [],
+      },
+      {
+        id: 'backlog',
+        title: 'Backlog',
+        sprint: null,
+        points: backlog.reduce((sum, row) => sum + (row.points ?? 0), 0),
+        capacity: null,
+        rows: backlog,
+      },
+    ],
+    forecast: null,
+    review: review({ unestimated: [backlog[5].id] }),
+  };
 }

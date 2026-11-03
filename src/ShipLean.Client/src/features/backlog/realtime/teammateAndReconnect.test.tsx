@@ -6,6 +6,7 @@ import type { ProjectDto } from '../../../api/projects';
 import type { BacklogRowDto, BacklogViewDto } from '../../../api/views';
 import { getToasts } from '../../../components/toastStore';
 import { fakeConnection } from '../../../realtime/testing/fakeConnection';
+import { BURST_WINDOW_MS } from './teammateBurst';
 import { backlogKey } from '../backlogApi';
 import { backlogView, itemRow } from '../ct/fixtures';
 
@@ -98,7 +99,7 @@ test('teammateChanges_WhenReordered_ShouldFlashAndNameNobody', async () => {
   const root = await mountScreen();
   const before = toasts().length;
   act(() => hub.deliver(remote('workItemReordered', { id: 'id-SHIP-2', backlogOrder: 'a' })));
-  await act(() => vi.advanceTimersByTimeAsync(0));
+  await act(() => vi.advanceTimersByTimeAsync(BURST_WINDOW_MS));
 
   expect(toasts().slice(before)).toEqual(['SHIP-2 moved in the backlog']);
   expect(fetchWorkItem).not.toHaveBeenCalled();
@@ -110,7 +111,7 @@ test('teammateChanges_WhenUpdated_ShouldNameTheLastEditor', async () => {
   const root = await mountScreen();
   const before = toasts().length;
   act(() => hub.deliver(remote('workItemUpdated', { id: 'id-SHIP-1', fields: ['storyPoints'] })));
-  await act(() => vi.advanceTimersByTimeAsync(0));
+  await act(() => vi.advanceTimersByTimeAsync(BURST_WINDOW_MS));
 
   expect(toasts().slice(before)).toEqual(['Priya Shah changed story points on SHIP-1']);
   expect(flashes.at(-1)?.has('id-SHIP-1')).toBe(true);
@@ -126,7 +127,7 @@ test('teammateChanges_WhenSprintChangedThenReordered_ShouldToastTheMoveOnce', as
   const before = toasts().length;
   act(() => hub.deliver(remote('workItemUpdated', { id: 'id-SHIP-1', fields: ['sprint'] })));
   act(() => hub.deliver(remote('workItemReordered', { id: 'id-SHIP-1', backlogOrder: 'a' })));
-  await act(() => vi.advanceTimersByTimeAsync(0));
+  await act(() => vi.advanceTimersByTimeAsync(BURST_WINDOW_MS));
 
   expect(toasts().slice(before)).toEqual(['Tom Okafor moved SHIP-1 to Sprint 25']);
   expect(flashes.at(-1)?.has('id-SHIP-1')).toBe(true);
@@ -140,7 +141,7 @@ test('teammateChanges_WhenReorderedLongAfterASprintMove_ShouldToastTheReorder', 
   await act(() => vi.advanceTimersByTimeAsync(10_000));
   const before = toasts().length;
   act(() => hub.deliver(remote('workItemReordered', { id: 'id-SHIP-1', backlogOrder: 'b' })));
-  await act(() => vi.advanceTimersByTimeAsync(0));
+  await act(() => vi.advanceTimersByTimeAsync(BURST_WINDOW_MS));
 
   expect(toasts().slice(before)).toEqual(['SHIP-1 moved in the backlog']);
   act(() => root.unmount());

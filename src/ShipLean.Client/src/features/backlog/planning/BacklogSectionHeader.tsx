@@ -1,6 +1,8 @@
 import type { BacklogSectionDto } from '../../../api/views';
 import type { VelocityDto } from '../../../api/sprints';
 import { backlogTestIds as ids } from '../testIds';
+import { SectionToggle } from './SectionToggle';
+import type { SectionCollapse } from './useSectionCollapse';
 import { useSectionDrop } from './useSectionDrop';
 import { VelocityOverride } from './VelocityOverride';
 
@@ -12,6 +14,7 @@ export function BacklogSectionHeader({
   projectId,
   projectKey,
   columnCount,
+  collapse,
 }: {
   section: BacklogSectionDto;
   velocity: VelocityDto | null;
@@ -19,6 +22,7 @@ export function BacklogSectionHeader({
   projectId: string;
   projectKey: string;
   columnCount: number;
+  collapse: SectionCollapse;
 }) {
   const { attach, over } = useSectionDrop(section.id);
   return (
@@ -31,6 +35,12 @@ export function BacklogSectionHeader({
     >
       <td colSpan={columnCount} className="px-2">
         <div className="flex items-center gap-2">
+          <SectionToggle
+            title={section.title}
+            open={collapse.isOpen(section.id)}
+            disabled={collapse.searching}
+            onToggle={() => collapse.toggle(section.id)}
+          />
           <b data-testid={ids.planningSectionTitle} className="text-[length:var(--text-md)]">
             {section.title}
           </b>

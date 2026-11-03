@@ -1,3 +1,4 @@
+using ShipLean.Contracts.Backlog;
 using ShipLean.Contracts.WorkItems.Reads.Tree;
 
 namespace ShipLean.Application.Features.Mcp.Sprint;
@@ -11,8 +12,8 @@ namespace ShipLean.Application.Features.Mcp.Sprint;
 // so a sprint holding Removed items has more room here. The forecast also fills only sprints that start after today.
 public static class SprintFill
 {
-    // One apply moves all or nothing in one transaction, so a plan stays small (the same cap as capture_work).
-    public const int MaxItems = 25;
+    // One apply moves all or nothing in one transaction, so a plan stays bounded (the same cap as capture_work and the bulk endpoint).
+    public const int MaxItems = BulkLimits.MaxRows;
 
     public static FillResult Cut(IReadOnlyList<StackRowDto> stack, decimal room, decimal alreadyIn)
     {

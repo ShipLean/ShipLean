@@ -22,6 +22,10 @@ export function BacklogFrame({
   reorder,
   movingOffText,
   rowCount,
+  filtering: narrowed,
+  options,
+  search,
+  keys,
   children,
 }: {
   project: ProjectDto;
@@ -30,14 +34,24 @@ export function BacklogFrame({
   reorder: ReturnType<typeof useReorder>;
   movingOffText: string;
   rowCount: number;
+  // Whether the rows are narrowed by anything (a filter, a search, a check queue); the filter alone when left out.
+  filtering?: boolean;
+  // Extra toolbar controls, the toolbar's own slots. Tree mode gives none.
+  options?: () => ReactNode;
+  search?: () => ReactNode;
+  keys?: () => ReactNode;
   children: (columns: BacklogColumnId[]) => ReactNode;
 }) {
-  const { backlog, view, refused, criteria, filtering, lists } = state;
+  const { backlog, view, refused, criteria, lists } = state;
+  const filtering = narrowed ?? state.filtering;
   const toolbar = (
     <BacklogToolbar
       projectKey={project.key}
       level="stories"
       mode={mode}
+      options={options}
+      search={search}
+      keys={keys}
       onNewItem={() => state.setAdding(true)}
       includeCompleted={state.includeCompleted}
       onIncludeCompletedChange={state.setIncludeCompleted}

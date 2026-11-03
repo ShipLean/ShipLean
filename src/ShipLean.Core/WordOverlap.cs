@@ -17,25 +17,14 @@ public static class WordOverlap
         var wanted = new HashSet<string>(StringComparer.Ordinal);
         foreach (var word in words)
         {
-            foreach (var part in Split(word))
-            {
-                wanted.Add(part);
-            }
+            wanted.UnionWith(Split(word));
         }
 
-        if (wanted.Count == 0)
-        {
-            return 0;
-        }
-
-        var shared = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var part in Split(title).Where(wanted.Contains))
-        {
-            shared.Add(part);
-        }
-
-        return shared.Count;
+        return Words(title).Shared(new WordSet(wanted));
     }
+
+    // The words of a title, prepared once; a.Shared(b) equals Score(a's title, [b's title]).
+    public static WordSet Words(string title) => new(Split(title));
 
     // NFC-normalised, lower-cased words of the text; stop words and single letters (not digits) dropped.
     private static IEnumerable<string> Split(string raw)

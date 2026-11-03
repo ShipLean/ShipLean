@@ -1,6 +1,13 @@
 import type { BacklogViewDto } from '../../../api/views';
 import type { SprintCreate, SprintDto } from '../../../api/sprints';
-import type { WorkItemCreate } from '../../../api/workItems';
+import type {
+  BacklogAddRequest,
+  BulkWriteRequest,
+  DuplicateCheckRequest,
+  DuplicateMatch,
+} from '../../../api/backlogWrites';
+import type { ConflictDto, WorkItemCreate, WriteResult } from '../../../api/workItems';
+import { story } from '../../workItem/ct/fixtures';
 
 // The part of Playwright's Page and Route these stubs use (the CT package does not re-export the types).
 interface StubRoute {
@@ -34,7 +41,23 @@ export interface BacklogServer {
   overrides: unknown[];
   // The bodies of the sprints created.
   sprintCreates: SprintCreate[];
+  // The bodies of the bulk writes (K1), the adds (K2) and the duplicate checks (K3) sent.
+  bulks: BulkWriteRequest[];
+  adds: BacklogAddRequest[];
+  duplicateChecks: DuplicateCheckRequest[];
+  // From now on a bulk write answers these ids as stale (a teammate changed them) and writes the rest.
+  staleOnBulk: (ids: string[]) => void;
+  // From now on a duplicate check answers these matches.
+  duplicatesFor: (matches: DuplicateMatch[]) => void;
 }
+
+const written = (id: string, key: string, revision: number): WriteResult => ({
+  id,
+  key,
+  revision,
+  changes: [],
+  notices: [],
+});
 
 // Stubs everything the list makes: the backlog read, the `view:backlog` preference and the work item create.
 export async function stubBacklog(
@@ -67,13 +90,64 @@ export async function stubBacklog(
     patches: [],
     overrides: [],
     sprintCreates: [],
+    bulks: [],
+    adds: [],
+    duplicateChecks: [],
+    staleOnBulk: (ids) => {
+      staleIds = ids;
+    },
+    duplicatesFor: (matches) => {
+      duplicateMatches = matches;
+    },
     saved: () => saved,
     setBacklog: (next) => {
       current = next;
     },
   };
   let current = view;
-  let saved = options.saved;
+  // Planning specs that are not about collapsing see every section open; pass `saved: {}` for the app's default
+  // (the running sprint closed).
+  let saved: unknown =
+    options.saved ?? (view.mode === 'planning' ? { collapsedSections: [] } : undefined);
+  let staleIds: string[] = [];
+  let duplicateMatches: DuplicateMatch[] = [];
+  await page.route('**/api/projects/p1/backlog/bulk', (route) => {
+    const body = route.request().postDataJSON() as BulkWriteRequest;
+    server.bulks.push(body);
+    const stale = body.items
+      .filter((item) => staleIds.includes(item.id))
+      .map(
+        (item) =>
+          ({
+            error: 'conflict',
+            code: 'conflict',
+            current: {
+              ...story,
+              id: item.id,
+              key: item.id,
+              revision: item.expectedRevision + 1,
+            },
+            theirChanges: [],
+          }) satisfies ConflictDto,
+      );
+    const done = body.items
+      .filter((item) => !staleIds.includes(item.id))
+      .map((item) => written(item.id, item.id, item.expectedRevision + 1));
+    return route.fulfill(json({ written: done, stale }));
+  });
+  await page.route('**/api/projects/p1/backlog/items', (route) => {
+    const body = route.request().postDataJSON() as BacklogAddRequest;
+    server.adds.push(body);
+    const created = body.items.flatMap((item, i) => [
+      written(`new-${i}`, `SHIP-${200 + i}`, 1),
+      ...item.tasks.map((_, t) => written(`new-${i}-${t}`, `SHIP-${300 + i * 10 + t}`, 1)),
+    ]);
+    return route.fulfill(json({ created }));
+  });
+  await page.route('**/api/projects/p1/backlog/duplicates', (route) => {
+    server.duplicateChecks.push(route.request().postDataJSON() as DuplicateCheckRequest);
+    return route.fulfill(json({ matches: duplicateMatches }));
+  });
   await page.route('**/api/projects/p1/backlog?*', (route) => {
     const url = new URL(route.request().url());
     server.reads.push(url.search);

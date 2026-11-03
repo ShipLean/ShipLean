@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { ApiRequestError } from '../../../api/client';
 import { WORK_ITEM_TYPE_IDS, type WorkItemTypeId } from '../../../api/refs';
 import { isStoryLevel, typeName } from '../../../api/workItemTypes';
+import { usePasteIntake } from '../add/usePasteIntake';
 import { useCreateWorkItem } from '../backlogApi';
 import { backlogTestIds as ids } from '../testIds';
 
@@ -37,6 +38,7 @@ export function NewItemRow({
   const [title, setTitle] = useState('');
   const input = useRef<HTMLInputElement>(null);
   const create = useCreateWorkItem(projectId, projectKey);
+  const paste = usePasteIntake(type);
   useEffect(() => input.current?.focus(), [request]);
 
   function add() {
@@ -85,6 +87,7 @@ export function NewItemRow({
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             onKeyDown={onKeyDown}
+            {...paste}
           />
           <button type="button" data-testid={ids.addSubmit} className="btn-signal" onClick={add}>
             Add

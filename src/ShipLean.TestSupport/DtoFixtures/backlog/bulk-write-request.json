@@ -1,0 +1,72 @@
+{
+  "items": [
+    {
+      "id": "00000005-0000-4000-8001-000000000141",
+      "expectedRevision": 7,
+      "changes": {
+        "title": null,
+        "description": null,
+        "acceptanceCriteria": null,
+        "reproSteps": null,
+        "severity": null,
+        "state": null,
+        "assignee": null,
+        "sprint": {
+          "value": "00000006-0000-4000-8000-000000000024"
+        },
+        "priority": null,
+        "points": {
+          "value": 8
+        },
+        "parent": null,
+        "tags": null,
+        "goal": null,
+        "statusLine": null,
+        "confirmStatus": false,
+        "addLinks": [],
+        "removeLinkIds": []
+      },
+      "placement": {
+        "slot": "first",
+        "beforeItemId": null
+      }
+    },
+    {
+      "id": "00000005-0000-4000-8001-000000000144",
+      "expectedRevision": 3,
+      "changes": null,
+      "placement": {
+        "slot": "before",
+        "beforeItemId": "00000005-0000-4000-8001-000000000129"
+      }
+    },
+    {
+      "id": "00000005-0000-4000-8001-000000000129",
+      "expectedRevision": 2,
+      "changes": {
+        "title": null,
+        "description": null,
+        "acceptanceCriteria": null,
+        "reproSteps": null,
+        "severity": null,
+        "state": null,
+        "assignee": null,
+        "sprint": null,
+        "priority": null,
+        "points": null,
+        "parent": null,
+        "tags": {
+          "value": [
+            "Payments"
+          ]
+        },
+        "goal": null,
+        "statusLine": null,
+        "confirmStatus": false,
+        "addLinks": [],
+        "removeLinkIds": []
+      },
+      "placement": null
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 using System.Net;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
+using ShipLean.Contracts.Backlog;
 using ShipLean.Contracts.Errors;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
@@ -109,10 +110,10 @@ public class CaptureToolsTests : McpFixture
     }
 
     [Test]
-    public async Task Capture_WhenTwentySix_ShouldBeValidation()
+    public async Task Capture_WhenOverTheCap_ShouldBeValidation()
     {
         var token = await TokenAsync(TestUser.Joel, ReadWrite);
-        var items = string.Join(",", Enumerable.Range(1, 26).Select(i => $$"""{"type":"task","title":"Too many {{i}}"}"""));
+        var items = string.Join(",", Enumerable.Range(1, BulkLimits.MaxRows + 1).Select(i => $$"""{"type":"task","title":"Too many {{i}}"}"""));
 
         var reply = await CallToolAsync(token, "capture_work", $$"""{"project":"SHIP","items":[{{items}}]}""");
 

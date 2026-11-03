@@ -1,5 +1,7 @@
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using ShipLean.AcceptanceTests.Harness;
+using ShipLean.TestSupport;
 using ShipLean.TestSupport.TestIds;
 
 namespace ShipLean.AcceptanceTests.Pages.Backlog;
@@ -30,6 +32,8 @@ public sealed class StoriesBacklog(IPage page)
 
     public ILocator AddTitle => page.GetByTestId(BacklogTestIds.AddTitle);
 
+    public ILocator AddParent => page.GetByTestId(BacklogTestIds.AddParent);
+
     public ILocator ColumnsButton => page.GetByTestId(BacklogTestIds.ColumnsButton);
 
     // The Columns menu's checkbox for a column, by its label; the menu lists them in the list's column order.
@@ -41,6 +45,17 @@ public sealed class StoriesBacklog(IPage page)
     public ILocator EmptyCreate => page.GetByTestId(BacklogTestIds.EmptyCreate);
 
     public ILocator EmptyImport => page.GetByTestId(BacklogTestIds.EmptyImport);
+
+    public ILocator AddMany => page.GetByTestId(BacklogTestIds.AddMany);
+
+    public ILocator AddHere(string sectionTitle) =>
+        page.GetByTestId(BacklogTestIds.PlanningSection)
+            .Filter(new() { Has = page.GetByTestId(BacklogTestIds.PlanningSectionTitle).Filter(new() { HasTextRegex = new Regex($"^{sectionTitle}$") }) })
+            .GetByTestId(BacklogTestIds.AddHere);
+
+    // A row by its key.
+    public ILocator Row(string itemKey) =>
+        Rows.Filter(new() { Has = RowKeys.Filter(new() { HasTextRegex = new Regex($"^{itemKey}$") }) });
 
     public async Task OpenAsync(string projectKey)
     {
@@ -68,4 +83,29 @@ public sealed class StoriesBacklog(IPage page)
             "PUT",
             () => ColumnOption(label).ClickAsync());
     }
+
+    // The backlog read model as the server answers it now, in a mode ("list" or "planning").
+    public async Task<JsonElement> ViewAsync(string mode)
+    {
+        var response = await page.Context.APIRequest.GetAsync(
+            $"/api/projects/{SeedIds.Projects.Ship}/backlog?mode={mode}&filter=&includeCompleted=false");
+        response.Ok.ShouldBeTrue(await response.TextAsync());
+        return JsonDocument.Parse(await response.TextAsync()).RootElement.Clone();
+    }
+
+    // The whole stack top to bottom as the server holds it (list mode).
+    public async Task<List<BacklogEntry>> StackAsync() =>
+        (await ViewAsync("list")).GetProperty("rows").EnumerateArray().Select(BacklogEntry.From).ToList();
+
+    // One planning section's rows top to bottom, by section title ("Sprint 25", "Backlog").
+    public async Task<List<BacklogEntry>> SectionAsync(string title) =>
+        (await ViewAsync("planning")).GetProperty("sections").EnumerateArray()
+            .Single(section => section.GetProperty("title").GetString() == title)
+            .GetProperty("rows").EnumerateArray().Select(BacklogEntry.From).ToList();
+
+    // Scrolls sideways or not: true when the page or the element is wider than what shows.
+    public Task<bool> OverflowsAsync(ILocator? within = null) =>
+        within is null
+            ? page.EvaluateAsync<bool>("() => document.documentElement.scrollWidth > document.documentElement.clientWidth")
+            : within.EvaluateAsync<bool>("el => el.scrollWidth > el.clientWidth");
 }

@@ -1,4 +1,5 @@
 // Read-model shapes of the backlog, board and Taskboard screens. C#: ShipLean.Contracts.Views.
+import type { BacklogReviewDto } from './backlogWrites';
 import type { BoardLevel, BoardTypeStatesDto } from './boards';
 import type {
   CardAnnotationsJson,
@@ -251,4 +252,6 @@ export interface BacklogViewDto {
   tagColours: TagColourJson[];
   forecast: ForecastDto | null;
   velocity: VelocityDto | null;
+  /** Filled for the Stories level in list and planning mode, null for tree and the other levels. */
+  review: BacklogReviewDto | null;
 }

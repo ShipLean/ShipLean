@@ -1,6 +1,5 @@
 using ShipLean.Application.Features.Mcp.Planning.Markers;
 using ShipLean.Contracts.Errors;
-using ShipLean.WebApi.Features.Mcp.Tools.Capture;
 using ShipLean.WebApi.Features.Mcp.Tools.Planning;
 
 namespace ShipLean.WebApi.Features.Mcp.Planning.Reports;
@@ -95,11 +94,14 @@ internal static class ReportChecks
             : leftUndone.FirstOrDefault(i => !string.IsNullOrWhiteSpace(i))?.Trim()
               ?? throw ApiException.Validation("A blocked report needs its reason: constraint_not_met, or something in left_undone.", "constraint_not_met");
 
+    // report_task's own limit on commits and left-undone items; unrelated to the 100-row cap of the planning tools.
+    private const int MaxLines = 25;
+
     private static void CheckCount(int count, string field)
     {
-        if (count > CaptureSupport.MaxItems)
+        if (count > MaxLines)
         {
-            throw ApiException.Validation($"Send at most {CaptureSupport.MaxItems} {field} at a time; you passed {count}.", field);
+            throw ApiException.Validation($"Send at most {MaxLines} {field} at a time; you passed {count}.", field);
         }
     }
 

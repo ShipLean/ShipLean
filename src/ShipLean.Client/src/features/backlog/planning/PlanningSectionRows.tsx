@@ -1,5 +1,7 @@
+import { Fragment, type ReactNode } from 'react';
 import type { BacklogRowDto, BacklogSectionDto } from '../../../api/views';
 import type { BacklogColumnId } from '../backlogApi';
+import { AddBelowRow } from '../add/AddBelowRow';
 import { PlanningRow } from './PlanningRow';
 import { EmptySection } from './EmptySection';
 import type { DropLine } from './planningTarget';
@@ -10,22 +12,36 @@ export function PlanningSectionRows({
   section,
   columns,
   columnCount,
+  projectId,
   projectKey,
   marks,
   forecast,
   flashing,
   dropLine,
+  filtering,
+  addingOff,
   onKeyMove,
+  isPulled,
+  after,
 }: {
   section: BacklogSectionDto;
   columns: readonly BacklogColumnId[];
   columnCount: number;
+  projectId: string;
   projectKey: string;
   marks: ReadonlyMap<string, string>;
   forecast: boolean;
   flashing: ReadonlySet<string>;
   dropLine: DropLine | null;
+  // A filter, search or check queue is on: moving is off, and rank is relative to rows you can't see.
+  filtering: boolean;
+  // A filter or search is on: Add below is off. A check queue leaves it on.
+  addingOff: boolean;
   onKeyMove: (row: BacklogRowDto, direction: 'up' | 'down') => void;
+  // The row sits above the pull line: its numbers take the pull-in tint. Nothing is pulled when absent.
+  isPulled?: (rowId: string) => boolean;
+  // What goes under a row, after its add-below row (the pull line).
+  after?: (row: BacklogRowDto) => ReactNode;
 }) {
   if (section.rows.length === 0 && section.sprint !== null) {
     return <EmptySection section={section} columnCount={columnCount} />;
@@ -33,18 +49,29 @@ export function PlanningSectionRows({
   return (
     <>
       {section.rows.map((row) => (
-        <PlanningRow
-          key={row.id}
-          row={row}
-          sectionId={section.id}
-          columns={columns}
-          projectKey={projectKey}
-          mark={marks.get(row.id)}
-          forecast={forecast}
-          flash={flashing.has(row.id)}
-          dropEdge={dropLine?.id === row.id ? (dropLine.below ? 'bottom' : 'top') : null}
-          onKeyMove={onKeyMove}
-        />
+        <Fragment key={row.id}>
+          <PlanningRow
+            row={row}
+            sectionId={section.id}
+            columns={columns}
+            projectKey={projectKey}
+            mark={marks.get(row.id)}
+            forecast={forecast}
+            flash={flashing.has(row.id)}
+            pulled={isPulled?.(row.id) ?? false}
+            dropEdge={dropLine?.id === row.id ? (dropLine.below ? 'bottom' : 'top') : null}
+            dragDisabled={filtering}
+            onKeyMove={onKeyMove}
+          />
+          <AddBelowRow
+            row={row}
+            columnCount={columnCount}
+            projectId={projectId}
+            projectKey={projectKey}
+            filtering={addingOff}
+          />
+          {after?.(row)}
+        </Fragment>
       ))}
     </>
   );

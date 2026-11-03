@@ -1,7 +1,8 @@
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import {
   closestCenter,
   DndContext,
+  DragOverlay,
   KeyboardSensor,
   pointerWithin,
   PointerSensor,
@@ -11,16 +12,17 @@ import {
   type DragEndEvent,
   type DragMoveEvent,
   type DragOverEvent,
+  type DragStartEvent,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import type { VelocityDto } from '../../../api/sprints';
 import type { BacklogRowDto, BacklogSectionDto } from '../../../api/views';
-import { BACKLOG_COLUMNS, type BacklogColumnId } from '../backlogApi';
-import { NewItemRow } from '../list/NewItemRow';
-import { backlogTestIds as ids } from '../testIds';
-import { BacklogSectionHeader } from './BacklogSectionHeader';
-import { CreateSprint } from './CreateSprint';
-import { forecastMarks } from './forecastMarks';
+import { runClearingSelection } from '../bulk/runClearingSelection';
+import { useBulkRunner } from '../bulk/useBulkRun';
+import { DragBadge } from '../drag/DragBadge';
+import { GroupDragContext, type GroupDrag } from '../drag/GroupDragContext';
+import { useSelection } from '../selection/useSelection';
+import { inRankOrder, groupDropOnRow, groupDropOnSection, groupPlan } from './groupDrop';
 import {
   dropByKey,
   dropOnRow,
@@ -29,13 +31,14 @@ import {
   sectionOfDropId,
   type PlanningDrop,
 } from './planningTarget';
-import { PlanningSectionRows } from './PlanningSectionRows';
-import { SectionHeader } from './SectionHeader';
 import { useRowFlip } from './useRowFlip';
-import { useSprintDates } from './useSprintDates';
 
-const COLUMNS: readonly BacklogColumnId[] = ['rank', 'key', 'title', 'parent', 'state', 'points'];
-const numeric: readonly BacklogColumnId[] = ['rank', 'points'];
+/** What the sections need from the drag: the table to attach, the line to draw and the keyboard move. */
+export interface PlanningDndState {
+  tableRef: RefObject<HTMLTableElement | null>;
+  dropLine: DropLine | null;
+  onKeyMove: (row: BacklogRowDto, direction: 'up' | 'down') => void;
+}
 
 // A pointer over a row or header drops there; with the keyboard (no pointer) the nearest one does.
 const collisions: CollisionDetection = (args) => {
@@ -61,38 +64,24 @@ function droppedBelow(
   return from !== null && from.top < over.rect.top;
 }
 
-// The sprint sections (all expanded) stacked above the Backlog, with "+ Create sprint" between them. The rows keep
-// the list's cells; a forecast cut line is drawn under the last item that fits each forecast sprint. A row is dragged
-// by its grip onto another row (just above it, or just below when dropped on its lower half) or onto a section header.
-export function PlanningTable({
+// Planning's drag and drop: sensors, collisions, the drop line and what a drop does. A row is dragged by its grip onto
+// another row (just above it, or just below when dropped on its lower half) or onto a section header. The sections
+// are `children`, given the table ref, the line and the keyboard move.
+export function PlanningDnd({
   sections,
+  filtering,
   velocity,
-  forecast,
-  marks,
-  projectId,
-  projectKey,
-  adding,
-  onCloseAdd,
-  flashing,
   onMove,
+  children,
 }: {
   sections: BacklogSectionDto[];
+  // What the sprint headers preview a dragged selection against.
   velocity: VelocityDto | null;
-  forecast: boolean;
-  marks: ReturnType<typeof forecastMarks>;
-  projectId: string;
-  projectKey: string;
-  adding: boolean;
-  onCloseAdd: () => void;
-  // Ids of the rows a teammate just changed.
-  flashing: ReadonlySet<string>;
+  // A filter, search or check queue is on: moving is off.
+  filtering: boolean;
   onMove: (row: BacklogRowDto, drop: PlanningDrop) => void;
+  children: (dnd: PlanningDndState) => ReactNode;
 }) {
-  const columnCount = COLUMNS.length + 1 + (forecast ? 1 : 0);
-  const sprints = sections.filter((s) => s.sprint !== null);
-  const backlog = sections.find((s) => s.sprint === null);
-  const planned = velocity === null ? null : (velocity.override ?? velocity.average);
-  const dates = useSprintDates(projectId);
   const tableRef = useRef<HTMLTableElement>(null);
   const refocus = useRef<string | null>(null);
   // Where the pointer is now, in the page.
@@ -119,6 +108,33 @@ export function PlanningTable({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
   const rows = sections.flatMap((section) => section.rows);
+  const selection = useSelection();
+  const bulk = useBulkRunner();
+  // The selection being dragged (a selected row picked up with others), else null: the row moves alone.
+  const [group, setGroup] = useState<{
+    rows: readonly BacklogRowDto[];
+    ids: ReadonlySet<string>;
+  } | null>(null);
+  const [overSectionId, setOverSectionId] = useState<string | null>(null);
+  function onDragStart({ active, activatorEvent }: DragStartEvent) {
+    // Keyboard drag stays single-row.
+    if (activatorEvent instanceof KeyboardEvent) return;
+    if (filtering || !selection.has(String(active.id)) || selection.count < 2) return;
+    // Rank order, whatever order the rows were selected in.
+    const picked = inRankOrder(selection.selectedRows(rows));
+    setGroup({ rows: picked, ids: new Set(picked.map((row) => row.id)) });
+  }
+  function sectionOver(over: DragOverEvent['over']): string | null {
+    if (over === null) return null;
+    const id = String(over.id);
+    return (
+      sectionOfDropId(id) ?? sections.find((s) => s.rows.some((row) => row.id === id))?.id ?? null
+    );
+  }
+  function endGroup() {
+    setGroup(null);
+    setOverSectionId(null);
+  }
   // The row the dragged one would land beside, and on which edge: the line the design draws where the row will land.
   const [line, setLine] = useState<DropLine | null>(null);
   // dnd-kit reports a new `over` through onDragOver; onDragMove's own `over` can be one render behind the pointer. So
@@ -127,7 +143,10 @@ export function PlanningTable({
   function drawLine({ active, activatorEvent }: Pick<DragMoveEvent, 'active' | 'activatorEvent'>) {
     const over = overNow.current;
     const next =
-      over === null || active.id === over.id || sectionOfDropId(String(over.id)) !== undefined
+      over === null ||
+      active.id === over.id ||
+      group?.ids.has(String(over.id)) === true ||
+      sectionOfDropId(String(over.id)) !== undefined
         ? null
         : {
             id: String(over.id),
@@ -144,14 +163,33 @@ export function PlanningTable({
   }
   function onDragOver(event: DragOverEvent) {
     overNow.current = event.over;
+    setOverSectionId(sectionOver(event.over));
     drawLine(event);
   }
   function onDragEnd({ active, over, activatorEvent }: DragEndEvent) {
     setLine(null);
     overNow.current = null;
+    const dragged = group;
+    endGroup();
     const row = rows.find((r) => r.id === active.id);
-    if (over === null || row === undefined) return;
+    if (filtering || over === null || row === undefined) return;
     const overId = String(over.id);
+    if (dragged !== null) {
+      const overSection = sectionOfDropId(overId);
+      const below = droppedBelow(
+        tableRef.current,
+        active,
+        over,
+        activatorEvent instanceof MouseEvent ? pointerY.current : null,
+      );
+      const target =
+        overSection === undefined
+          ? groupDropOnRow(sections, dragged.ids, overId, below)
+          : groupDropOnSection(sections, overSection);
+      if (target !== null)
+        void runClearingSelection(selection, bulk, groupPlan(target, dragged.rows));
+      return;
+    }
     let drop: PlanningDrop | null;
     const overSection = sectionOfDropId(overId);
     if (overSection !== undefined) {
@@ -172,98 +210,36 @@ export function PlanningTable({
     if (drop) onMove(row, drop);
   }
   function onKeyMove(row: BacklogRowDto, direction: 'up' | 'down') {
+    if (filtering) return;
     const drop = dropByKey(sections, row.id, direction);
     if (drop === null) return;
     refocus.current = row.id;
     onMove(row, drop);
   }
-  const body = (section: BacklogSectionDto) => (
-    <PlanningSectionRows
-      section={section}
-      columns={COLUMNS}
-      columnCount={columnCount}
-      projectKey={projectKey}
-      marks={marks}
-      forecast={forecast}
-      flashing={flashing}
-      dropLine={line}
-      onKeyMove={onKeyMove}
-    />
-  );
+  const groupDrag: GroupDrag | null = group === null ? null : { ...group, overSectionId, velocity };
   return (
-    <div data-testid={ids.planning} className="flex-1 overflow-auto">
-      <DndContext
-        sensors={sensors}
-        collisionDetection={collisions}
-        onDragOver={onDragOver}
-        onDragMove={drawLine}
-        onDragEnd={onDragEnd}
-        onDragCancel={() => {
-          setLine(null);
-          overNow.current = null;
-        }}
-      >
-        <table ref={tableRef} className="w-full border-collapse">
-          <thead>
-            <tr className="h-8 border-b border-edge text-left text-[length:var(--text-xs)] text-ink-muted">
-              {forecast ? (
-                <th data-testid={ids.planningForecastLabel} className="w-[92px] px-2 font-semibold">
-                  Forecast
-                </th>
-              ) : null}
-              <th className="w-6" />
-              {COLUMNS.map((column) => (
-                <th
-                  key={column}
-                  className={`px-2 font-semibold ${numeric.includes(column) ? 'text-right' : ''}`}
-                >
-                  {BACKLOG_COLUMNS.find((c) => c.id === column)?.label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {sprints.map((section) => (
-              <Fragment key={section.id}>
-                <SectionHeader
-                  section={section}
-                  projectKey={projectKey}
-                  velocity={planned}
-                  datesLabel={dates.get(section.id)}
-                  columnCount={columnCount}
-                />
-                {body(section)}
-              </Fragment>
-            ))}
-            <tr className="h-10">
-              <td colSpan={columnCount} className="px-2">
-                <CreateSprint projectId={projectId} />
-              </td>
-            </tr>
-            {backlog ? (
-              <>
-                <BacklogSectionHeader
-                  section={backlog}
-                  velocity={velocity}
-                  forecast={forecast}
-                  projectId={projectId}
-                  projectKey={projectKey}
-                  columnCount={columnCount}
-                />
-                {adding ? (
-                  <NewItemRow
-                    projectId={projectId}
-                    projectKey={projectKey}
-                    columnCount={columnCount}
-                    onClose={onCloseAdd}
-                  />
-                ) : null}
-                {body(backlog)}
-              </>
-            ) : null}
-          </tbody>
-        </table>
-      </DndContext>
-    </div>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={collisions}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDragMove={drawLine}
+      onDragEnd={onDragEnd}
+      onDragCancel={() => {
+        setLine(null);
+        overNow.current = null;
+        endGroup();
+      }}
+    >
+      <GroupDragContext.Provider value={groupDrag}>
+        {children({ tableRef, dropLine: line, onKeyMove })}
+      </GroupDragContext.Provider>
+      {/* Only mounted for a dragged selection: an overlay always mounted breaks the keyboard drag back. */}
+      {group === null ? null : (
+        <DragOverlay dropAnimation={null} style={{ width: 'auto', height: 'auto' }}>
+          <DragBadge count={group.rows.length} />
+        </DragOverlay>
+      )}
+    </DndContext>
   );
 }

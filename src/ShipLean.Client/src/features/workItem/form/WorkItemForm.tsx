@@ -15,6 +15,7 @@ import type { FeatureRegionProps } from '../../feature/FeatureRegionProps';
 import { WorkItemConflictBanner } from '../conflict/WorkItemConflictBanner';
 import { workItemTestIds as ids } from '../testIds';
 import { fetchWorkItem, patchWorkItem, workItemHistoryKey, workItemKey } from '../workItemApi';
+import { useInvalidateBacklog } from '../useInvalidateBacklog';
 import { BeforeSaveContext } from './beforeSave';
 import { useBeforeSaveGate } from './beforeSave';
 import { CriteriaSection } from './CriteriaSection';
@@ -55,6 +56,7 @@ export function WorkItemForm({
   const projectKey = project.key;
   useRememberItem(projectKey, item);
   const queryClient = useQueryClient();
+  const invalidateBacklog = useInvalidateBacklog();
   // The revision the draft is based on. A newer one arriving (another tab saved) replaces it only while the form is clean.
   const [base, setBase] = useState(item);
   const [draft, setDraft] = useState<Draft>(() => draftOf(item));
@@ -84,6 +86,7 @@ export function WorkItemForm({
       if (result.notices.includes('pulled')) showToast(PICKED_UP_MESSAGE, { tone: 'ok' });
       const itemKey = sent.base.key;
       const projectId = sent.base.projectId;
+      void invalidateBacklog(projectId);
       let fresh: WorkItemDto;
       try {
         fresh = await queryClient.fetchQuery({
