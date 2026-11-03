@@ -5,6 +5,7 @@ import { retrosTestIds as ids } from '../testIds';
 import { useRetroThemes } from '../useRetroQueries';
 import type { RetroInsightsSlotProps } from './InsightsSlotProps';
 import { MergeDialog } from './merge/MergeDialog';
+import { MergeProposals } from './merge/MergeProposals';
 
 // Loads the project's themes only once the dialog is open.
 function MergeDialogLoader({ project, onClose }: { project: ProjectDto; onClose: () => void }) {
@@ -16,8 +17,8 @@ function MergeDialogLoader({ project, onClose }: { project: ProjectDto; onClose:
   );
 }
 
-/** The Merge themes… button and its dialog. */
-export function MergeThemes({ project }: RetroInsightsSlotProps) {
+/** The Merge themes… button and its dialog, and under the toolbar the merges agents proposed. */
+export function MergeThemes({ project, insights }: RetroInsightsSlotProps) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -29,6 +30,9 @@ export function MergeThemes({ project }: RetroInsightsSlotProps) {
       >
         Merge themes…
       </button>
+      <div className="absolute inset-x-0 top-full z-10">
+        <MergeProposals project={project} proposals={insights.mergeProposals} />
+      </div>
       {open ? <MergeDialogLoader project={project} onClose={() => setOpen(false)} /> : null}
     </>
   );
