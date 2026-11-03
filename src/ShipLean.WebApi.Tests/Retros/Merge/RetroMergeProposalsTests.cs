@@ -133,7 +133,7 @@ public sealed class RetroMergeProposalsTests : ApiFixture
     }
 
     [Test]
-    public async Task Merge_WhenOtherProject_ShouldBeNotFound()
+    public async Task Merge_WhenNotAMember_ShouldBeNotFound()
     {
         await using var connection = await OpenDatabaseAsync();
         var project = await ArrangedProject.CreateAsync(connection);
@@ -157,7 +157,7 @@ public sealed class RetroMergeProposalsTests : ApiFixture
 
     // The proposal is the caller's own project's, so the controller's access check passes; its two themes belong to another project, so only the merge itself can refuse.
     [Test]
-    public async Task Merge_WhenTheThemesBelongToAnotherProject_ShouldBeNotFoundAndLeaveItPending()
+    public async Task Merge_WhenOtherProject_ShouldBeNotFound()
     {
         await using var world = await World.CreateAsync(await OpenDatabaseAsync());
         await using var other = await World.CreateAsync(await OpenDatabaseAsync());

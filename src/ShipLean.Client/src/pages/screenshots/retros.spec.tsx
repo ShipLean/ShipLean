@@ -11,6 +11,7 @@ async function arrange(page: Page) {
   await stubRetros(page);
 }
 
+// Owner P1: the six retro-insights baselines (themes, actions, impact; light and dark) are stale: stubRetros serves a pending merge proposal, which the themes view now shows in flow; regenerate them in the CI Docker image.
 const insightsView = (view: string, ready: string) => ({
   // The mockups: retro-insights (themes), retro-insights-actions and retro-insights-impact.
   name: view === 'themes' ? 'retro-insights' : `retro-insights-${view}`,
