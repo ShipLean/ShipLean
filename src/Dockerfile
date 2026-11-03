@@ -8,7 +8,8 @@ RUN corepack enable
 # The client may import design/tokens.css.
 COPY design/ /source/design/
 WORKDIR /source/src/ShipLean.Client
-COPY src/ShipLean.Client/package.json src/ShipLean.Client/pnpm-lock.yaml ./
+# pnpm-workspace.yaml holds allowBuilds; without it pnpm fails on the dependency build scripts it hasn't been told about.
+COPY src/ShipLean.Client/package.json src/ShipLean.Client/pnpm-lock.yaml src/ShipLean.Client/pnpm-workspace.yaml ./
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store pnpm install --frozen-lockfile
 COPY src/ShipLean.Client/ ./
 # Bundle only: CI's build job typechecks (tsc also covers tests).
