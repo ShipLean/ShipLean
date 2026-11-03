@@ -87,6 +87,11 @@ public static class RetrosTestIds
     public const string RetroItemAddAction = "retro-item-add-action";
     public const string RetroItemRail = "retro-item-rail";
     public const string RetroItemChildRow = "retro-item-child-row";
+    public const string RetroItemChildRows = "retro-item-child-rows";
+    public const string RetroItemLogs = "retro-item-logs";
+    public const string RetroItemRailActions = "retro-item-rail-actions";
+    public const string RetroItemRailCompiled = "retro-item-rail-compiled";
+    public const string RetroItemRailWriters = "retro-item-rail-writers";
     public const string WorkItemRetroRow = "work-item-retro-row";
     public const string RetroActionWhy = "retro-action-why";
     public const string RetroActionWhyAdd = "retro-action-why-add";
