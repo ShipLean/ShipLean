@@ -253,3 +253,15 @@ for (const width of [1280, 1440]) {
     ).toBe(true);
   });
 }
+
+test('RetroItemPanel_WhenRendered_ShouldDrawActionItemAsAFilledPrimaryButton', async ({
+  mount,
+  page,
+}) => {
+  await serve(page, twoRetros);
+  await mount(<RetroItemPanel project={project} itemKey="SHIP-180" />, route());
+  await expect(page.getByTestId(ids.retroItemAddAction)).not.toHaveCSS(
+    'background-color',
+    'rgba(0, 0, 0, 0)',
+  );
+});

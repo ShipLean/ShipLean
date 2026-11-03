@@ -52,7 +52,7 @@ export function ItemToolbar({
       <button
         type="button"
         data-testid={ids.retroItemAddAction}
-        className="cursor-pointer rounded-control bg-accent px-3 py-1 text-[length:var(--text-sm)] font-medium text-white"
+        className="cursor-pointer rounded-control bg-signal px-3 py-1 text-[length:var(--text-sm)] font-medium text-signal-ink"
         onClick={() => dialog.open({ scope: { kind: 'item', itemId: item.item.id } })}
       >
         + Action item

@@ -36,7 +36,7 @@ export function SprintRetroHeader({ project, retro }: SprintRetroSlotProps) {
         <div className="text-[length:var(--text-xs)] text-ink-muted">
           Recurring themes ·{' '}
           <Link
-            className="text-accent underline"
+            className="text-signal underline"
             to={routePath('retroInsights', { key: project.key })}
           >
             insights

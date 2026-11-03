@@ -46,7 +46,7 @@ export function ItemHeader({ projectKey, item }: { projectKey: string; item: Ret
           <p className="mt-1 text-[length:var(--text-sm)] text-ink-muted">
             Part of{' '}
             <Link
-              className="text-accent underline"
+              className="text-signal underline"
               to={routePath('retroItem', { key: projectKey, itemKey: item.parent.key })}
             >
               {item.parent.key} {item.parent.title}
