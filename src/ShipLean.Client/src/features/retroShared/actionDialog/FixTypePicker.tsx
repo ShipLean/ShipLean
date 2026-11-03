@@ -17,7 +17,7 @@ export function FixTypePicker({
         role="radiogroup"
         aria-label="Type of fix"
         data-testid={ids.retroActionFix}
-        className="grid grid-cols-3 gap-1.5"
+        className="grid grid-cols-3 gap-1.5 max-[620px]:grid-cols-2"
       >
         {retroFixOptions.map((fix) => (
           <label

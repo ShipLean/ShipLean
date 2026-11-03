@@ -14,6 +14,7 @@ import { useRetroActionDialog } from './useRetroActionDialog';
 import { useSaveRetroAction } from './useSaveRetroAction';
 
 const TITLE_SEED_LENGTH = 80;
+const DEFAULT_FIX: RetroFixType = 'guide';
 
 /** The dialog itself, mounted once the offer has loaded. Its state starts from what was selected; a refetch only changes what is listed. */
 export function RetroActionForm({
@@ -31,7 +32,7 @@ export function RetroActionForm({
   const [title, setTitle] = useState(() =>
     (dialog.selected[0]?.text ?? '').slice(0, TITLE_SEED_LENGTH),
   );
-  const [fix, setFix] = useState<RetroFixType | null>(null);
+  const [fix, setFix] = useState<RetroFixType | null>(DEFAULT_FIX);
   const [chosenTheme, setChosenTheme] = useState<string | undefined>(undefined);
   const [checked, setChecked] = useState(() => new Set(dialog.selected.map((point) => point.id)));
   const [existingId, setExistingId] = useState(

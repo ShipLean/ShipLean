@@ -151,8 +151,6 @@ test('RetroActionDialog_Save waits for a title, a fix and a point', async ({ mou
   await mount(<RetroActionDialogHarness />);
   await open(page);
   const save = page.getByTestId(ids.retroActionSave);
-  await expect(save).toBeDisabled();
-  await page.getByRole('radio', { name: /^Guide/ }).check({ force: true });
   await expect(save).toBeEnabled();
   await page.getByTestId(ids.retroActionTitle).fill('  ');
   await expect(save).toBeDisabled();
@@ -169,6 +167,31 @@ test('RetroActionDialog_Save waits for a title, a fix and a point', async ({ mou
     themeId: (selectedPoint.theme as NonNullable<RetroPointDto['theme']>).id,
     themeName: null,
   });
+});
+
+test('RetroActionDialog_New starts with Guide as the type of fix', async ({ mount, page }) => {
+  await stubRetros(page);
+  await mount(<RetroActionDialogHarness />);
+  await open(page);
+  await expect(page.getByRole('radio', { name: /^Guide/ })).toBeChecked();
+  await expect(page.getByRole('radio', { name: /^Test/ })).not.toBeChecked();
+});
+
+test('RetroActionDialog_type of fix is two columns on a narrow screen and three on a wide one', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  await mount(<RetroActionDialogHarness />);
+  await open(page);
+  const columns = () =>
+    page
+      .getByTestId(ids.retroActionFix)
+      .evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(' ').length);
+  await page.setViewportSize({ width: 800, height: 700 });
+  expect(await columns()).toBe(3);
+  await page.setViewportSize({ width: 600, height: 700 });
+  expect(await columns()).toBe(2);
 });
 
 test('RetroActionDialog_with nothing to offer shows an empty state and a disabled Save', async ({
