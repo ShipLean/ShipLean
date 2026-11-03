@@ -83,6 +83,62 @@ test('ByWorkItem_WhenAddedUnderAnItemsColumn_ShouldTargetThatItem', async ({ mou
     .toMatchObject({ workItemId: card.workItem!.id });
 });
 
+const twoRetrosOnOneItem = (() => {
+  const base = sprintRetro.cards.find((c) => c.workItem?.key === 'SHIP-141')!;
+  const second = {
+    ...base,
+    id: `${base.id}-second`,
+    points: base.points.map((p) => ({ ...p, id: `${p.id}-second` })),
+    failureLog: { blockers: ['Second retro blocker'], assumptionsDisproved: [], friction: [] },
+  };
+  const first = {
+    ...base,
+    failureLog: { blockers: ['First retro blocker'], assumptionsDisproved: [], friction: [] },
+  };
+  return {
+    base,
+    second,
+    retro: {
+      ...sprintRetro,
+      cards: sprintRetro.cards.map((c) => (c === base ? first : c)).concat(second),
+    },
+  };
+})();
+
+test('ByWorkItem_WhenTwoRetrosShareAnItem_ShouldShowOneBoardWithBothSetsOfNotesAndLogs', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  const { base, retro } = twoRetrosOnOneItem;
+  await mount(<ByWorkItemHarness project={project} sprint={sprint} retro={retro} />, mountOptions);
+  const board = page.locator('article[data-item-key="SHIP-141"]');
+  await expect(board).toHaveCount(1);
+  await expect(page.getByTestId(shared.retroCard)).toHaveCount(sprintRetro.cards.length);
+  await expect(board.getByTestId(shared.retroBoard)).toHaveCount(1);
+  await expect(board.getByTestId(shared.retroNote)).toHaveCount(base.points.length * 2);
+  await expect(board.getByTestId(shared.retroCardLogToggle)).toHaveCount(2);
+  for (const toggle of await board.getByTestId(shared.retroCardLogToggle).all())
+    await toggle.click();
+  await expect(board).toContainText('First retro blocker');
+  await expect(board).toContainText('Second retro blocker');
+});
+
+test('ByWorkItem_WhenAddedUnderTheSprintBoard_ShouldSendThePagesSprintId', async ({
+  mount,
+  page,
+}) => {
+  const stub = await stubRetros(page);
+  await mount(element, mountOptions);
+  const board = page.locator('[data-item-key="sprint"]');
+  await board.getByTestId(shared.retroBoardAdd).first().click();
+  await page.getByTestId(shared.retroBoardAddText).fill('A sprint point');
+  await page.getByTestId(shared.retroBoardAddSave).click();
+  await expect
+    .poll(() => stub.writes().find((w) => w.path.endsWith('/retros/points'))?.body)
+    .toMatchObject({ sprintId: sprint.id });
+});
+
 test('ByWorkItem_WhenALogIsReported_ShouldKeepItCollapsedBelowItsBoard', async ({
   mount,
   page,

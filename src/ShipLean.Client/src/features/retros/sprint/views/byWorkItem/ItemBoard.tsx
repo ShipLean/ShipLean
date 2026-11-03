@@ -9,18 +9,22 @@ import { retroSharedTestIds as ids } from '../../../../retroShared/testIds';
 import { cardAddTarget, cardColumns } from './cardColumns';
 import { FailureLog } from './FailureLog';
 
-/** One retro's item as a board: who wrote it, the four columns of its notes with Add, the Compiled from line, and its raw failure log below. */
+/** One item's board: the four columns with the notes of all its retros, Add, each retro's Compiled from line, and each raw failure log below. */
 export function ItemBoard({
-  card,
+  cards,
+  sprintId,
   filter,
   highlightedPointId,
   onAdded,
 }: {
-  card: RetroCardDto;
+  /** Every retro of this item (or of the sprint itself), at least one. */
+  cards: RetroCardDto[];
+  sprintId: string;
   filter: (point: RetroPointDto) => boolean;
   highlightedPointId?: string;
   onAdded?: (point: RetroPointDto) => void;
 }) {
+  const [card] = cards;
   const { workItem, sprint } = card;
   const isFeature = workItem?.type.id === 'feature';
   return (
@@ -44,43 +48,47 @@ export function ItemBoard({
             <b className="text-[length:var(--text-md)]">{sprint?.name}</b>
           </>
         )}
-        {card.partial ? <Chip tone="warn">Rolled over</Chip> : null}
+        {cards.some((each) => each.partial) ? <Chip tone="warn">Rolled over</Chip> : null}
         <span className="flex-1" />
-        <AuthorChip author={card.author} />
-        <span data-created-at="" className="text-[length:var(--text-xs)] text-ink-muted">
-          {card.createdAtLabel}
-        </span>
+        {cards.map((each) => (
+          <span key={each.id} className="inline-flex items-center gap-1.5">
+            <AuthorChip author={each.author} />
+            <span data-created-at="" className="text-[length:var(--text-xs)] text-ink-muted">
+              {each.createdAtLabel}
+            </span>
+          </span>
+        ))}
       </header>
       <RetroBoard
-        columns={cardColumns(card.points)}
+        columns={cardColumns(cards.flatMap((each) => each.points))}
         groupByTheme={false}
         filter={filter}
         note={{ showItem: false, highlightedPointId }}
-        add={cardAddTarget(card)}
-        scope={
-          workItem
-            ? { kind: 'item', itemId: workItem.id }
-            : { kind: 'sprint', sprintId: sprint?.id ?? '' }
-        }
+        add={cardAddTarget(card, sprintId)}
+        scope={workItem ? { kind: 'item', itemId: workItem.id } : { kind: 'sprint', sprintId }}
         onAdded={onAdded}
       />
-      {card.compiledFrom.length > 0 ? (
-        <p className="m-0 flex flex-wrap items-center gap-1.5 text-[length:var(--text-xs)] text-ink-muted">
-          Compiled from
-          {card.compiledFrom.map((item, i) => (
-            <span key={item.id}>
-              <span className="inline-flex items-center gap-1">
-                <TypeIcon type={item.type.id} />
-                <ItemLink itemKey={item.key} title={item.title} className="font-mono">
-                  {item.key}
-                </ItemLink>
-              </span>
-              {i < card.compiledFrom.length - 1 ? ',' : '.'}
-            </span>
-          ))}
-        </p>
-      ) : null}
-      <FailureLog log={card.failureLog} />
+      {cards.map((each) => (
+        <div key={each.id} className="grid gap-2">
+          {each.compiledFrom.length > 0 ? (
+            <p className="m-0 flex flex-wrap items-center gap-1.5 text-[length:var(--text-xs)] text-ink-muted">
+              Compiled from
+              {each.compiledFrom.map((item, i) => (
+                <span key={item.id}>
+                  <span className="inline-flex items-center gap-1">
+                    <TypeIcon type={item.type.id} />
+                    <ItemLink itemKey={item.key} title={item.title} className="font-mono">
+                      {item.key}
+                    </ItemLink>
+                  </span>
+                  {i < each.compiledFrom.length - 1 ? ',' : '.'}
+                </span>
+              ))}
+            </p>
+          ) : null}
+          <FailureLog log={each.failureLog} />
+        </div>
+      ))}
     </article>
   );
 }

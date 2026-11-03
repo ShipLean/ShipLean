@@ -18,12 +18,12 @@ export function cardColumns(points: RetroPointDto[]): RetroCategoryColumnDto[] {
   });
 }
 
-/** Where Add on this retro's board writes: its work item, or the sprint when the retro is the sprint's own. */
-export function cardAddTarget(card: RetroCardDto): AddTarget {
+/** Where Add on a board writes: its work item, or the page's sprint when the retros are the sprint's own. */
+export function cardAddTarget(card: RetroCardDto, sprintId: string): AddTarget {
   if (card.workItem) return { kind: 'item', workItemId: card.workItem.id };
   return {
     kind: 'sprint',
-    sprintId: card.sprint?.id ?? '',
+    sprintId,
     about: [{ value: '', label: 'The sprint' }],
   };
 }
