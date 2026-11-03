@@ -19,7 +19,7 @@ ShipLean is the record from the moment something might become work until it is d
 | **Evaluate** | A decision on the Feature: go on (move to In Progress), park it (status says why and what would revive it), or remove it. The reasoning goes in the body | `set_status` with state, `refine_work_item` |
 | **Plan and break down** | The same Feature, planned by its key. Its research attachments are the input; do not create another Feature | `planning_guide`, `plan_feature`, `capture_plan` |
 | **Build** | Briefs, amendments, notes for later waves, reports and reviews live on the plan's items | `get_brief`, `report_task`, `comment`, `plan_status` |
-| **Done** | Retrospective logged on the Feature, run retro attached, Feature completed | `log_retrospective`, `attach_markdown`, `set_status` |
+| **Done** | Retrospective logged on the Feature, run retro attached, Feature completed | `log_retrospective`, `list_retrospectives`, `decide_retro_actions`, `attach_markdown`, `set_status` |
 
 States are named by category (Proposed, In Progress, Completed, Removed), so this works with the default workflow (New / Active / Resolved / Closed / Removed) and with any project's own workflow. Until Idea / Blocked / Parked / Done states exist, a parked idea stays Proposed with a status line starting `Parked:`.
 

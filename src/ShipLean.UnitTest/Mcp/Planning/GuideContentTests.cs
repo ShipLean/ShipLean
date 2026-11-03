@@ -117,4 +117,35 @@ public class GuideContentTests
         stepNine.ShouldContain("`compiled_from`");
         stepNine.ShouldContain("blameless site reliability engineer");
     }
+
+    [Test]
+    public void GuideContent_StepNine_ShouldDecideWhatToDoAfterCompiling()
+    {
+        var stepNine = Guide[Guide.IndexOf("## Step 9", StringComparison.Ordinal)..];
+
+        var decide = stepNine.IndexOf("**Decide what to do.**", StringComparison.Ordinal);
+        decide.ShouldBeGreaterThan(stepNine.IndexOf("`compiled_from`", StringComparison.Ordinal));
+        stepNine[decide..].ShouldContain("`list_retrospectives`");
+        stepNine[decide..].ShouldContain("`undecided`");
+        stepNine[decide..].ShouldContain("`decide_retro_actions`");
+        stepNine[decide..].ShouldContain("`not_needed`");
+    }
+
+    [Test]
+    public void GuideContent_ShouldSayDecideIsNotAutomatic()
+    {
+        var stepNine = Guide[Guide.IndexOf("## Step 9", StringComparison.Ordinal)..];
+        var decide = stepNine[stepNine.IndexOf("**Decide what to do.**", StringComparison.Ordinal)..];
+
+        decide.ShouldContain("at most 3 new");
+        decide.ShouldContain("no sprint");
+        decide.ShouldContain("human approval");
+        decide.ShouldContain("not automatic");
+    }
+
+    [Test]
+    public void WorkContent_ShouldNameDecideRetroActions()
+    {
+        Work.ShouldContain("`decide_retro_actions`");
+    }
 }
