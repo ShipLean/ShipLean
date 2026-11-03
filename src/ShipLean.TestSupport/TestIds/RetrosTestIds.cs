@@ -21,12 +21,6 @@ public static class RetrosTestIds
     public const string RetroPointArchive = "retro-point-archive";
     // Sprint tab: Add point
     public const string RetroAddPoint = "retro-add-point";
-    public const string RetroAddPointDialog = "retro-add-point-dialog";
-    public const string RetroAddPointCategory = "retro-add-point-category";
-    public const string RetroAddPointText = "retro-add-point-text";
-    public const string RetroAddPointRootCause = "retro-add-point-root-cause";
-    public const string RetroAddPointItem = "retro-add-point-item";
-    public const string RetroAddPointSave = "retro-add-point-save";
     // Sprint tab: By work item and rail
     public const string RetroFeatureCallout = "retro-feature-callout";
     public const string RetroCardList = "retro-card-list";

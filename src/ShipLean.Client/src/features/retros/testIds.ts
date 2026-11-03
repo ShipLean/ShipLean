@@ -18,12 +18,6 @@ export const retrosTestIds = {
   retroPointArchive: 'retro-point-archive',
   // Sprint tab: Add point
   retroAddPoint: 'retro-add-point',
-  retroAddPointDialog: 'retro-add-point-dialog',
-  retroAddPointCategory: 'retro-add-point-category',
-  retroAddPointText: 'retro-add-point-text',
-  retroAddPointRootCause: 'retro-add-point-root-cause',
-  retroAddPointItem: 'retro-add-point-item',
-  retroAddPointSave: 'retro-add-point-save',
   // Sprint tab: By work item and rail
   retroFeatureCallout: 'retro-feature-callout',
   retroCardList: 'retro-card-list',

@@ -12,7 +12,6 @@ public static class RetroChecks
         null or "6" => RetroRange.Last6,
         "3" => RetroRange.Last3,
         "all" => RetroRange.All,
-        // TODO(T1): the reader treats w6 and w12 as Last6 until week mode replaces it.
         "w6" => RetroRange.Weeks6,
         "w12" => RetroRange.Weeks12,
         _ => throw ApiException.Validation("range is 6, 3, all, w6 or w12.", "range"),
