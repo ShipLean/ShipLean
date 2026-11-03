@@ -77,7 +77,10 @@ export function RetroColumn({
       </header>
       {groupByTheme
         ? groups.map((group) => (
-            <div key={group.theme?.id ?? 'unthemed'} className="grid gap-2">
+            <div
+              key={group.theme?.id ?? 'unthemed'}
+              className="grid grid-cols-[minmax(0,1fr)] gap-2"
+            >
               <ThemeGroupHeading theme={group.theme} recurring={group.recurring} />
               {group.points.map((point) => renderNote(point, false))}
             </div>

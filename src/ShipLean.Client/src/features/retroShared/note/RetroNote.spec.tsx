@@ -312,7 +312,7 @@ for (const theme of ['light', 'dark'] as const) {
     const action = noteStates.actioned.action!;
     const own = { ...improve, id: 'own', canArchive: true, theme: null };
     const asking = { ...improve, id: 'asking', theme: null };
-    const component = await mount(
+    await mount(
       <RetroNoteStatesHarness
         points={[
           improve,
@@ -331,7 +331,7 @@ for (const theme of ['light', 'dark'] as const) {
       />,
     );
     await page.locator('[data-point-id="asking"]').getByTestId(ids.retroNoteNotNeeded).click();
-    await expect(component.getByTestId('note-states')).toHaveScreenshot(
+    await expect(page.getByTestId('note-states')).toHaveScreenshot(
       `retro-note-states.${theme}.png`,
       {
         animations: 'disabled',

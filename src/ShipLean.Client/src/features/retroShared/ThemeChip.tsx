@@ -32,10 +32,16 @@ export function ThemeChip({
       data-testid={ids.retroThemeChip}
       data-themed={theme ? 'true' : 'false'}
       data-variant="chip"
-      className="inline-flex items-center gap-1.5 text-[length:var(--text-xs)] font-semibold whitespace-nowrap text-ink-muted"
+      className="flex items-center justify-between gap-1.5 text-[length:var(--text-xs)] font-semibold text-ink-muted"
     >
-      {theme ? theme.name : <span className="font-normal italic">Unthemed</span>}
-      {recurring ? <Chip tone="warn">Recurring</Chip> : null}
+      <span className="min-w-0">
+        {theme ? theme.name : <span className="font-normal italic">Unthemed</span>}
+      </span>
+      {recurring ? (
+        <span className="shrink-0">
+          <Chip tone="warn">Recurring</Chip>
+        </span>
+      ) : null}
     </span>
   );
 }

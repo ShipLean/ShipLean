@@ -99,3 +99,24 @@ test('RetroBoard_WhenGroupedByTheme_ShouldPutEachNoteUnderItsOwnThemeWithUntheme
     null,
   );
 });
+
+test('RetroBoard_WhenFourColumnsAreNarrow_ShouldKeepEveryThemeHeadingAndNoteInsideItsColumn', async ({
+  mount,
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await stubRetros(page);
+  await page.addStyleTag({ content: '#root { width: 860px; }' });
+  await mount(<RetroBoardHarness />);
+  const columns = page.getByTestId(ids.retroBoardColumn);
+  await expect(columns).toHaveCount(4);
+  const escaped = await columns.evaluateAll((els) =>
+    els.flatMap((column) => {
+      const edge = column.getBoundingClientRect().right;
+      return [...column.querySelectorAll('*')]
+        .filter((el) => el.getBoundingClientRect().right > edge + 0.5)
+        .map((el) => el.getAttribute('data-testid') ?? el.tagName);
+    }),
+  );
+  expect(escaped).toEqual([]);
+});
