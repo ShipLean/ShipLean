@@ -22,6 +22,22 @@ test('SelectedRetro_WhenARetroIsSelected_ShouldShowItsCardWithTheOpenedPointHigh
   await expect(selected.getByTestId(shared.retroCardLog)).toHaveCount(0);
 });
 
+test('SelectedRetro_WhenARetroIsSelected_ShouldGiveItsNotesTheirButtonsAndAnAddButton', async ({
+  mount,
+  page,
+}) => {
+  await stubShell(page);
+  await stubRetros(page);
+  await mount(<AppRoutes />, open('/p/SHIP/retros'));
+  const selected = page.getByTestId(ids.retrosSelected);
+  await expect(selected.getByTestId(shared.retroBoard)).toBeVisible();
+  await expect(selected.getByTestId(shared.retroNote).first()).toBeVisible();
+  await expect(selected.getByTestId(shared.retroBoardAdd).first()).toBeVisible();
+  // A went-badly or improve note that nobody has decided on offers both decisions.
+  await expect(selected.getByTestId(shared.retroNoteAddAction).first()).toBeVisible();
+  await expect(selected.getByTestId(shared.retroNoteNotNeeded).first()).toBeVisible();
+});
+
 const searchRoute = (url: URL) => /^\/api\/projects\/[^/]+\/retros$/.test(url.pathname);
 
 test('SelectedRetro_WhenTheHighlightedPointMatchedOnlyInTheLog_ShouldOpenTheFailureLog', async ({

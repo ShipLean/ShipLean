@@ -1,12 +1,18 @@
 import { Link } from 'react-router-dom';
 import { routePath } from '../../../routes';
 import { ItemLink } from '../../itemPeek/ItemLink';
-import { RetroCard } from '../../retroShared/RetroCard';
+import { Chip } from '../../../components/Chip';
+import { TypeIcon } from '../../../components/TypeIcon';
+import { retroSharedTestIds as shared } from '../../retroShared/testIds';
+import { AuthorChip } from '../../retroShared/AuthorChip';
+import { RetroBoard } from '../../retroShared/board/RetroBoard';
+import { SelectedLog } from './parts/SelectedLog';
+import { cardAddTarget, cardColumns } from '../sprint/views/byWorkItem/cardColumns';
 import { retrosTestIds as ids } from '../testIds';
 import { highlightedRow } from './parts/matches';
 import type { RetrosSearchSlotProps } from './SearchSlotProps';
 
-/** The whole retro of the selected point: its card with the clicked point highlighted, and the raw log open when that point matched only there. */
+/** The whole retro of the selected point as a board of the same notes and buttons as everywhere else, the clicked point highlighted, and the raw log open when that point matched only there. */
 export function SelectedRetro({ project, search, pointId }: RetrosSearchSlotProps) {
   const card = search.selected;
   const highlighted = highlightedRow(search, pointId);
@@ -36,13 +42,46 @@ export function SelectedRetro({ project, search, pointId }: RetrosSearchSlotProp
               ) : null}
             </div>
           ) : null}
-          <RetroCard
-            key={`${card.id}:${inLog}`}
-            card={card}
-            highlightPointId={highlighted?.id}
-            logDefaultOpen={inLog}
-            hideEmptyCategories
-          />
+          <article
+            data-testid={shared.retroCard}
+            className="grid min-w-0 gap-2 rounded-md border border-edge bg-panel p-3"
+          >
+            <header className="flex flex-wrap items-center gap-1.5 text-[length:var(--text-sm)]">
+              {card.workItem ? (
+                <>
+                  <TypeIcon type={card.workItem.type.id} />
+                  <span className="font-mono">{card.workItem.key}</span>
+                  <b className="text-[length:var(--text-md)]">{card.workItem.title}</b>
+                </>
+              ) : (
+                <>
+                  <Chip>Sprint</Chip>
+                  <b className="text-[length:var(--text-md)]">{card.sprint?.name}</b>
+                </>
+              )}
+            </header>
+            <div className="flex flex-wrap items-center gap-2 text-[length:var(--text-sm)]">
+              <AuthorChip author={card.author} />
+              <span className="text-[length:var(--text-xs)] text-ink-muted">
+                {card.createdAtLabel}
+              </span>
+            </div>
+            <div className="[&>div]:grid-cols-1!">
+              <RetroBoard
+                columns={cardColumns(card.points)}
+                groupByTheme={false}
+                filter={() => true}
+                note={{ showItem: false, highlightedPointId: highlighted?.id }}
+                add={cardAddTarget(card, card.sprint?.id ?? '')}
+                scope={
+                  card.workItem
+                    ? { kind: 'item', itemId: card.workItem.id }
+                    : { kind: 'sprint', sprintId: card.sprint?.id ?? '' }
+                }
+              />
+            </div>
+            <SelectedLog key={`${card.id}:${inLog}`} log={card.failureLog} defaultOpen={inLog} />
+          </article>
         </div>
       ) : (
         <p className="m-0 text-[length:var(--text-sm)] text-ink-muted">

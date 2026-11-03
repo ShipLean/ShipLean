@@ -107,4 +107,5 @@ export const retrosTestIds = {
   retroTipUnthemed: 'retro-tip-unthemed',
   retrosFilterNosprint: 'retros-filter-nosprint',
   retrosFilterDecision: 'retros-filter-decision',
+  retrosFilterUnthemed: 'retros-filter-unthemed',
 } as const;

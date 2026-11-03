@@ -106,4 +106,5 @@ public static class RetrosTestIds
     public const string RetroTipUnthemed = "retro-tip-unthemed";
     public const string RetrosFilterNosprint = "retros-filter-nosprint";
     public const string RetrosFilterDecision = "retros-filter-decision";
+    public const string RetrosFilterUnthemed = "retros-filter-unthemed";
 }

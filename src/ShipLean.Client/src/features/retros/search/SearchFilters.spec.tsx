@@ -35,6 +35,69 @@ test('SearchFilters_WhenEachControlChanges_ShouldWriteItsQueryParameter', async 
   await expect.poll(() => asked().sprint).toBeTruthy();
 });
 
+test('SearchFilters_WhenDecisionNoSprintAndUnthemedChange_ShouldWriteTheAddress', async ({
+  mount,
+  page,
+}) => {
+  await stubShell(page);
+  const stub = await stubRetros(page);
+  await mount(<AppRoutes />, open('/p/SHIP/retros'));
+  await expect(page.getByTestId(ids.retrosFilterDecision)).toBeVisible();
+  const asked = () => Object.fromEntries(new URLSearchParams(stub.reads('/retros').at(-1)?.query));
+
+  await page.getByTestId(ids.retrosFilterDecision).selectOption('notNeeded');
+  await expect.poll(asked).toMatchObject({ decision: 'notNeeded' });
+  await page.getByTestId(ids.retrosFilterNosprint).click();
+  await page.getByTestId(ids.retrosFilterUnthemed).click();
+  await expect.poll(asked).toMatchObject({
+    decision: 'notNeeded',
+    noSprint: 'true',
+    unthemed: 'true',
+  });
+  await page.getByTestId(ids.retrosFilterClear).click();
+  await expect.poll(() => stub.reads('/retros').at(-1)?.query).toBe('');
+});
+
+test('SearchFilters_WhenTheAddressOpensWithUnthemed_ShouldShowAndAskForIt', async ({
+  mount,
+  page,
+}) => {
+  await stubShell(page);
+  const stub = await stubRetros(page);
+  await mount(<AppRoutes />, open('/p/SHIP/retros?unthemed=true&decision=bogus'));
+  await expect(page.getByTestId(ids.retrosFilterUnthemed)).toBeChecked();
+  await expect(page.getByTestId(ids.retrosFilterDecision)).toHaveValue('');
+  await expect.poll(() => stub.reads('/retros').at(-1)?.query).toBe('unthemed=true');
+});
+
+test('SearchFilters_WhenTwoControlsChangeBeforeTheScreenRenders_ShouldKeepBoth', async ({
+  mount,
+  page,
+}) => {
+  await stubShell(page);
+  const stub = await stubRetros(page);
+  await mount(<AppRoutes />, open('/p/SHIP/retros'));
+  await expect(page.getByTestId(ids.retrosFilterCategory)).toBeVisible();
+  // Both changes land in one task, so the second runs before React has rendered the first.
+  await page.evaluate(
+    ([category, role]) => {
+      for (const [id, value] of [
+        [category, 'improve'],
+        [role, 'conductor'],
+      ]) {
+        const select = document.querySelector<HTMLSelectElement>(`[data-testid="${id}"]`)!;
+        const set = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')!.set!;
+        set.call(select, value);
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    },
+    [ids.retrosFilterCategory, ids.retrosFilterRole],
+  );
+  await expect
+    .poll(() => Object.fromEntries(new URLSearchParams(stub.reads('/retros').at(-1)?.query)))
+    .toMatchObject({ category: 'improve', role: 'conductor' });
+});
+
 test('SearchFilters_WhenTyping_ShouldWriteQOnceTypingSettles', async ({ mount, page }) => {
   await stubShell(page);
   const stub = await stubRetros(page);
