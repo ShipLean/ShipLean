@@ -23,7 +23,7 @@ export function WhyThemeSelect({
       <select
         data-testid={ids.retroActionWhyTheme}
         value={theme?.id ?? ''}
-        className="field max-w-64"
+        className="field w-56"
         onChange={(e) => onChange(e.target.value === '' ? null : e.target.value)}
       >
         <option value="">No theme</option>
