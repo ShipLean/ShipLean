@@ -1,8 +1,9 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import type { RetroPointDto } from '../../../api/retros';
-import { noteStates, stubRetros } from '../../retros/ct/retroFixtures';
+import { noteStates, retroItem, stubRetros } from '../../retros/ct/retroFixtures';
 import { retroSharedTestIds as ids } from '../testIds';
 import { componentTestIds } from '../../../components/testIds';
+import { RetroNoteLiveHarness } from './ct/RetroNoteLiveHarness';
 import { RetroNoteHarness } from './ct/RetroNoteHarness';
 import { RetroNoteStatesHarness } from './ct/RetroNoteStatesHarness';
 
@@ -70,6 +71,54 @@ test('RetroNote_WhenHighlighted_ShouldMarkAndScrollToIt', async ({ mount, page }
 
 const improve: RetroPointDto = { ...noteStates.undecided, category: 'improve' };
 
+type Page = Parameters<Parameters<typeof test>[2]>[0]['page'];
+
+/** Serves the retro item with one point in the state the "server" holds: a not-needed write moves it, an undo moves it back. */
+async function serveDecidable(page: Page, undecided: RetroPointDto) {
+  const reasons: string[] = [];
+  let decided = false;
+  const withPoint = (point: RetroPointDto) => ({
+    ...retroItem,
+    categories: retroItem.categories.map((column) => ({
+      ...column,
+      groups: column.groups.map((group) => ({
+        ...group,
+        points: group.points.map((p) => (p.id === point.id ? point : p)),
+      })),
+    })),
+  });
+  const json = (body: unknown) => ({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify(body),
+  });
+  await page.route(/\/api\/projects\/[^/]+\/retros\/items\/[^/]+$/, (route) =>
+    route.fulfill(
+      json(
+        withPoint(
+          decided
+            ? {
+                ...undecided,
+                decision: 'notNeeded',
+                notNeeded: { ...noteStates.notNeeded.notNeeded!, reason: reasons.at(-1) ?? '' },
+              }
+            : undecided,
+        ),
+      ),
+    ),
+  );
+  await page.route(/\/api\/retros\/points\/[^/]+\/not-needed$/, (route) => {
+    reasons.push((route.request().postDataJSON() as { reason: string }).reason);
+    decided = true;
+    return route.fulfill(json(noteStates.notNeeded));
+  });
+  await page.route(/\/api\/retros\/points\/[^/]+\/undo-not-needed$/, (route) => {
+    decided = false;
+    return route.fulfill(json(undecided));
+  });
+  return { reasons };
+}
+
 test('RetroNote_WhenReasonBlank_ShouldNotLetNotNeededBeSaved', async ({ mount, page }) => {
   const stub = await stubRetros(page);
   await mount(<RetroNoteHarness point={improve} />);
@@ -83,39 +132,33 @@ test('RetroNote_WhenReasonBlank_ShouldNotLetNotNeededBeSaved', async ({ mount, p
   expect(stub.writes()).toHaveLength(0);
 });
 
-test('RetroNote_WhenNotNeededSaved_ShouldCallTheServerAndShowTheBlock', async ({ mount, page }) => {
-  const stub = await stubRetros(page);
-  let answered = false;
-  await page.route(/\/api\/retros\/points\/[^/]+\/not-needed$/, (route) => {
-    answered = true;
-    return route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(noteStates.notNeeded),
-    });
-  });
-  const component = await mount(<RetroNoteHarness point={improve} />);
+test('RetroNote_WhenNotNeededSaved_ShouldSendTheReasonAndShowTheBlockFromTheRefetch', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  const server = await serveDecidable(page, improve);
+  await mount(<RetroNoteLiveHarness itemKey={retroItem.item.key} pointId={improve.id} />);
+  await page.getByTestId(ids.retroNoteNotNeeded).click();
+  await page.getByTestId(ids.retroNoteWhyText).fill('  Covered elsewhere  ');
+  await page.getByTestId(ids.retroNoteWhySave).click();
+  await expect(page.getByTestId(ids.retroNoteNone)).toContainText('Covered elsewhere');
+  expect(server.reasons).toEqual(['Covered elsewhere']);
+  await expect(page.getByTestId(ids.retroNoteAddAction)).toHaveCount(0);
+});
+
+test('RetroNote_WhenUndoClicked_ShouldOfferTheButtonsAgainFromTheRefetch', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  await serveDecidable(page, improve);
+  await mount(<RetroNoteLiveHarness itemKey={retroItem.item.key} pointId={improve.id} />);
   await page.getByTestId(ids.retroNoteNotNeeded).click();
   await page.getByTestId(ids.retroNoteWhyText).fill('Covered elsewhere');
   await page.getByTestId(ids.retroNoteWhySave).click();
-  await expect.poll(() => answered).toBe(true);
-  expect(stub.calls).toBeDefined();
-  await component.update(<RetroNoteHarness point={noteStates.notNeeded} />);
-  await expect(page.getByTestId(ids.retroNoteNone)).toContainText(
-    noteStates.notNeeded.notNeeded!.reason,
-  );
-});
-
-test('RetroNote_WhenUndoClicked_ShouldCallUndoAndOfferTheButtonsAgain', async ({ mount, page }) => {
-  const stub = await stubRetros(page);
-  const component = await mount(<RetroNoteHarness point={noteStates.notNeeded} />);
+  await expect(page.getByTestId(ids.retroNoteNone)).toBeVisible();
   await page.getByTestId(ids.retroNoteUndo).click();
-  await expect
-    .poll(() => stub.writes().map((w) => w.path.split('/').pop()))
-    .toContain('undo-not-needed');
-  await component.update(
-    <RetroNoteHarness point={{ ...noteStates.undecided, category: 'improve' }} />,
-  );
   await expect(page.getByTestId(ids.retroNoteAddAction)).toBeVisible();
   await expect(page.getByTestId(ids.retroNoteNone)).toHaveCount(0);
 });
@@ -237,6 +280,20 @@ test('RetroNote_WhenPaper_ShouldBePostitInBothThemes', async ({ mount, page }) =
   }
 });
 
+for (const theme of ['light', 'dark'] as const) {
+  test(`RetroNote_WhenActioned_ShouldDrawTheActionIconInItsLightColour_${theme}`, async ({
+    mount,
+    page,
+  }) => {
+    await stubRetros(page);
+    await mount(<RetroNoteHarness point={noteStates.actioned} />);
+    await page.evaluate((v) => document.documentElement.setAttribute('data-theme', v), theme);
+    const icon = page.getByTestId(ids.retroNotePin).getByTestId(componentTestIds.typeIcon);
+    await expect(icon).toHaveCSS('background-color', 'rgb(31, 143, 106)');
+  });
+}
+
+// Owner P1: these baselines are new and red in CI until P1 generates them in the CI Docker image.
 for (const theme of ['light', 'dark'] as const) {
   test(`RetroNote_WhenEveryStateShown_ShouldMatchItsScreenshot_${theme}`, async ({
     mount,

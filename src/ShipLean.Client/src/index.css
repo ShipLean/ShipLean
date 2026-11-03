@@ -127,6 +127,7 @@
   --type-story: #2f7fd8;
   --type-bug: #cc3d3d;
   --type-task: #c9951a;
+  --type-action: #1f8f6a;
   color: var(--color-text);
 }
 
