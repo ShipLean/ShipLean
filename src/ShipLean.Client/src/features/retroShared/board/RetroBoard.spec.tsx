@@ -61,22 +61,41 @@ test('RetroBoard_WhenRendered_ShouldPutAddAfterTheLastCardOfEveryColumn', async 
   }
 });
 
-test('RetroBoard_WhenGroupedByTheme_ShouldListThemesInServerOrderWithUnthemedLast', async ({
+test('RetroBoard_WhenGroupedByTheme_ShouldPutEachNoteUnderItsOwnThemeWithUnthemedLast', async ({
   mount,
   page,
 }) => {
   await stubRetros(page);
   await mount(<RetroBoardHarness />);
   for (const column of sprintRetro.categories) {
-    const headings = page
+    const expected = column.groups.map((g) => ({
+      heading: g.theme?.name ?? 'Unthemed',
+      ids: g.points.map((p) => p.id),
+    }));
+    const actual = await page
       .locator(`[data-testid="${ids.retroBoardColumn}"][data-category="${column.category}"]`)
-      .getByTestId(ids.retroThemeChip);
-    const expected = column.groups.map((g) => g.theme?.name ?? 'Unthemed');
-    await expect(headings).toHaveCount(expected.length);
-    for (const [i, name] of expected.entries()) {
-      await expect(headings.nth(i)).toContainText(name);
+      .evaluate(
+        (el, [chip, noteId]) => {
+          const groups: { heading: string; ids: string[] }[] = [];
+          for (const node of el.querySelectorAll(
+            `[data-testid="${chip}"], [data-testid="${noteId}"]`,
+          )) {
+            if (node.getAttribute('data-testid') === chip) {
+              groups.push({ heading: node.textContent?.trim() ?? '', ids: [] });
+            } else {
+              groups[groups.length - 1].ids.push(node.getAttribute('data-point-id') ?? '');
+            }
+          }
+          return groups;
+        },
+        [ids.retroThemeChip, ids.retroNote],
+      );
+    expect(actual.map((g) => g.ids)).toEqual(expected.map((g) => g.ids));
+    for (const [i, group] of expected.entries()) {
+      expect(actual[i].heading).toContain(group.heading);
     }
   }
-  const improve = page.locator(`[data-testid="${ids.retroBoardColumn}"][data-category="improve"]`);
-  await expect(improve.getByTestId(ids.retroThemeChip).last()).toHaveText('Unthemed');
+  expect(sprintRetro.categories.find((c) => c.category === 'improve')!.groups.at(-1)!.theme).toBe(
+    null,
+  );
 });
