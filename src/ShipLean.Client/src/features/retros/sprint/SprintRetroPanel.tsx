@@ -32,7 +32,8 @@ export function SprintRetroPanel({ project, sprint }: { project: ProjectDto; spr
   // A point just added must stay visible: To decide hides Went well, Written by hides the other authors.
   const clearHidingFilters = (added: RetroPointDto) => {
     let next = params;
-    if (decide && added.decision !== 'undecided') next = withSprintRetroValue(next, 'decide', 'all');
+    if (decide && added.decision !== 'undecided')
+      next = withSprintRetroValue(next, 'decide', 'all');
     if (!matchesWrittenBy(added, writtenBy)) next = withSprintRetroValue(next, 'writtenBy', 'all');
     if (next !== params) setParams(next);
   };

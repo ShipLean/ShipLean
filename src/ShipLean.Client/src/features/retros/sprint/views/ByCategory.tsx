@@ -35,9 +35,7 @@ export function ByCategory({
       <RetroBoard
         columns={retro.categories}
         groupByTheme
-        filter={(p) =>
-          matchesWrittenBy(p, writtenBy) && (!decide || p.decision === 'undecided')
-        }
+        filter={(p) => matchesWrittenBy(p, writtenBy) && (!decide || p.decision === 'undecided')}
         note={{ showItem: true, highlightedPointId: point }}
         add={{ kind: 'sprint', sprintId: sprint.id, about }}
         scope={{ kind: 'sprint', sprintId: sprint.id }}

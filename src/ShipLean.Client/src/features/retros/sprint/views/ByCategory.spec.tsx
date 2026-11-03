@@ -3,11 +3,11 @@ import { useLocation } from 'react-router-dom';
 import type { ProjectDto } from '../../../../api/projects';
 import type { RetroPointDto, SprintRetroDto } from '../../../../api/retros';
 import type { SprintDto } from '../../../../api/sprints';
+import { ByCategoryHarness } from '../../ct/ByCategoryHarness';
 import { sprintRetro, stubRetros } from '../../ct/retroFixtures';
 import { retroSharedTestIds as shared } from '../../../retroShared/testIds';
 import { retrosTestIds as ids } from '../../testIds';
 import { SprintRetroPanel } from '../SprintRetroPanel';
-import { ByCategory } from './ByCategory';
 
 const project = { id: 'p1', key: 'SHIP' } as ProjectDto;
 const sprint = { id: 'sprint-24', name: 'Sprint 24' } as SprintDto;
@@ -31,7 +31,7 @@ const byRole = (agent: boolean) =>
 
 test('ByCategory_WhenOpened_ShouldRunColumnsWentWellToCanBeImproved', async ({ mount, page }) => {
   await stubRetros(page);
-  await mount(<ByCategory project={project} sprint={sprint} retro={sprintRetro} />);
+  await mount(<ByCategoryHarness project={project} sprint={sprint} retro={sprintRetro} />);
 
   const columns = page.getByTestId(shared.retroBoardColumn);
   await expect(columns).toHaveCount(4);
@@ -39,7 +39,6 @@ test('ByCategory_WhenOpened_ShouldRunColumnsWentWellToCanBeImproved', async ({ m
   await expect(columns.nth(1)).toHaveAttribute('data-category', 'notInPlan');
   await expect(columns.nth(2)).toHaveAttribute('data-category', 'wentBadly');
   await expect(columns.nth(3)).toHaveAttribute('data-category', 'improve');
-  await expect(page.getByTestId(shared.retroBoardColumn)).toHaveCount(0);
   await expect(page.getByTestId(shared.retroBoard)).toBeVisible();
 });
 
@@ -99,7 +98,9 @@ test('ByCategory_WhenToDecideInTheAddress_ShouldOpenFiltered', async ({ mount, p
 test('ByCategory_WhenPointInTheAddress_ShouldHighlightThatNote', async ({ mount, page }) => {
   await stubRetros(page);
   const target = allPoints[0];
-  await mount(<ByCategory project={project} sprint={sprint} retro={sprintRetro} point={target.id} />);
+  await mount(
+    <ByCategoryHarness project={project} sprint={sprint} retro={sprintRetro} point={target.id} />,
+  );
   const highlighted = page.locator('[data-highlighted="true"]');
   await expect(highlighted).toHaveCount(1);
   await expect(highlighted).toHaveAttribute('data-point-id', target.id);
@@ -110,7 +111,7 @@ test('ByCategory_WhenFeaturePointShown_ShouldShowFeatureMarkerAndRootCause', asy
   page,
 }) => {
   await stubRetros(page);
-  await mount(<ByCategory project={project} sprint={sprint} retro={sprintRetro} />);
+  await mount(<ByCategoryHarness project={project} sprint={sprint} retro={sprintRetro} />);
 
   const feature = page.locator(`[data-feature="true"][data-category="wentBadly"]`);
   await expect(feature).toHaveCount(1);
@@ -120,7 +121,7 @@ test('ByCategory_WhenFeaturePointShown_ShouldShowFeatureMarkerAndRootCause', asy
 
 test('ByCategory_WhenWrittenByChanged_ShouldHideTheOtherAuthorsPoints', async ({ mount, page }) => {
   await stubRetros(page);
-  await mount(<ByCategory project={project} sprint={sprint} retro={sprintRetro} />);
+  await mount(<ByCategoryHarness project={project} sprint={sprint} retro={sprintRetro} />);
   const filter = page.getByTestId(ids.retroWrittenByFilter);
   const rows = page.getByTestId(shared.retroNote);
   await expect(rows).toHaveCount(allPoints.length);
@@ -146,7 +147,7 @@ test('ByCategory_WhenWrittenByChanged_ShouldHideTheOtherAuthorsPoints', async ({
 
 test('ByCategory_WhenThemeMoved_ShouldPutTheThemeIdOrTheNewName', async ({ mount, page }) => {
   const stub = await stubRetros(page);
-  await mount(<ByCategory project={project} sprint={sprint} retro={sprintRetro} />);
+  await mount(<ByCategoryHarness project={project} sprint={sprint} retro={sprintRetro} />);
   const point = page.locator(`[data-point-id="${allPoints[0].id}"]`);
 
   await point.getByTestId(shared.retroNoteTheme).click();
@@ -172,7 +173,7 @@ test('ByCategory_WhenPointsListed_ShouldShowActionItemAsSolidOnImproveAndLinkEls
   page,
 }) => {
   await stubRetros(page);
-  await mount(<ByCategory project={project} sprint={sprint} retro={sprintRetro} />);
+  await mount(<ByCategoryHarness project={project} sprint={sprint} retro={sprintRetro} />);
   const undecided = allPoints.filter((p) => p.decision === 'undecided');
   await expect(page.getByTestId(shared.retroNoteAddAction)).toHaveCount(undecided.length);
   for (const p of undecided) {
@@ -207,7 +208,7 @@ test('ByCategory_WhenPointsListed_ShouldOfferMoreOnlyWhereCanArchiveAndArchiveFr
   page,
 }) => {
   const stub = await stubRetros(page);
-  await mount(<ByCategory project={project} sprint={sprint} retro={sprintRetro} />);
+  await mount(<ByCategoryHarness project={project} sprint={sprint} retro={sprintRetro} />);
   await expect(page.getByTestId(shared.retroNoteMore)).toHaveCount(
     allPoints.filter((p) => p.canArchive).length,
   );
@@ -222,7 +223,7 @@ test('ByCategory_WhenPointsListed_ShouldOfferMoreOnlyWhereCanArchiveAndArchiveFr
 
 test('ByCategory_WhenAgentPointShown_ShouldOfferNoTextEditing', async ({ mount, page }) => {
   await stubRetros(page);
-  await mount(<ByCategory project={project} sprint={sprint} retro={sprintRetro} />);
+  await mount(<ByCategoryHarness project={project} sprint={sprint} retro={sprintRetro} />);
   const agent = page.locator(`[data-point-id="${byRole(true)[0].id}"]`);
   await expect(agent.getByTestId(shared.retroNoteTheme)).toHaveCount(1);
   await expect(agent.getByRole('textbox')).toHaveCount(0);
@@ -235,7 +236,7 @@ test('ByCategory_WhenMoveThemeOpen_ShouldCloseOnEscapeAndOnClickOutside', async 
   page,
 }) => {
   await stubRetros(page);
-  await mount(<ByCategory project={project} sprint={sprint} retro={sprintRetro} />);
+  await mount(<ByCategoryHarness project={project} sprint={sprint} retro={sprintRetro} />);
   const point = page.locator(`[data-point-id="${allPoints[0].id}"]`);
   const picker = page.getByTestId(shared.retroThemePicker);
 
@@ -257,7 +258,7 @@ test('ByCategory_WhenSprintHasAFeatureRetro_ShouldShowTheCalloutAboveTheColumns'
   await stubRetros(page);
   const card = sprintRetro.cards.find((c) => c.workItem?.type.id === 'feature');
   if (!card?.workItem) throw new Error('fixture has no feature retro');
-  await mount(<ByCategory project={project} sprint={sprint} retro={sprintRetro} />);
+  await mount(<ByCategoryHarness project={project} sprint={sprint} retro={sprintRetro} />);
   const callout = page.getByTestId(ids.retroFeatureCallout);
   await expect(callout).toContainText(`Feature retro:`);
   await expect(callout).toContainText(`${card.workItem.key} ${card.workItem.title}`);
@@ -273,8 +274,10 @@ test('ByCategory_WhenACategoryHasNoPoints_ShouldSayNothingHere', async ({ mount,
       c.category === 'wentWell' ? { ...c, groups: [] } : c,
     ),
   };
-  await mount(<ByCategory project={project} sprint={sprint} retro={empty} />);
-  const column = page.getByTestId(shared.retroBoardColumn).and(page.locator('[data-category="wentWell"]'));
+  await mount(<ByCategoryHarness project={project} sprint={sprint} retro={empty} />);
+  const column = page
+    .getByTestId(shared.retroBoardColumn)
+    .and(page.locator('[data-category="wentWell"]'));
   await expect(column).toContainText('Nothing here.');
 });
 
@@ -282,7 +285,9 @@ for (const theme of ['light', 'dark'] as const) {
   test(`ByCategory_WhenRendered_ShouldMatchItsScreenshot_${theme}`, async ({ mount, page }) => {
     await stubRetros(page);
     await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
-    const view = await mount(<ByCategory project={project} sprint={sprint} retro={sprintRetro} />);
+    const view = await mount(
+      <ByCategoryHarness project={project} sprint={sprint} retro={sprintRetro} />,
+    );
     await expect(page.getByTestId(shared.retroBoardColumn)).toHaveCount(4);
     await expect(view).toHaveScreenshot(`by-category.${theme}.png`, { animations: 'disabled' });
   });
@@ -294,7 +299,7 @@ test('ByCategory_WhenSprintHasNoFeatureRetro_ShouldShowNoCallout', async ({ moun
     ...sprintRetro,
     cards: sprintRetro.cards.filter((c) => c.workItem?.type.id !== 'feature'),
   };
-  await mount(<ByCategory project={project} sprint={sprint} retro={without} />);
+  await mount(<ByCategoryHarness project={project} sprint={sprint} retro={without} />);
   await expect(page.getByTestId(shared.retroBoardColumn)).toHaveCount(4);
   await expect(page.getByTestId(ids.retroFeatureCallout)).toHaveCount(0);
 });
