@@ -4,7 +4,6 @@ import { ToastHost } from '../../../../components/ToastHost';
 import { retroInsights, stubRetros } from '../../ct/retroFixtures';
 import { retrosTestIds as ids } from '../../testIds';
 import { insightsProject } from '../ct/insightsProject';
-import { MergeThemes } from '../MergeThemes';
 import { RetroInsightsPanel } from '../RetroInsightsPanel';
 import { MergeProposals } from './MergeProposals';
 
@@ -43,7 +42,9 @@ test('MergeProposals_WhenMergeClicked_ShouldCallTheRouteAndRefetch', async ({ mo
 
 test('MergeProposals_WhenKeepApartClicked_ShouldCallTheRoute', async ({ mount, page }) => {
   const stub = await stubRetros(page);
-  await mount(<MergeThemes project={insightsProject} insights={retroInsights} />);
+  await mount(
+    <MergeProposals project={insightsProject} proposals={retroInsights.mergeProposals} />,
+  );
   await page.getByTestId(ids.retroMergeProposalKeep).click();
   await expect.poll(() => stub.writes().length).toBe(1);
   expect(stub.writes()[0].method).toBe('POST');
@@ -64,7 +65,7 @@ test('MergeProposals_WhenTheRouteFails_ShouldToastTheError', async ({ mount, pag
   );
   await mount(
     <>
-      <MergeThemes project={insightsProject} insights={retroInsights} />
+      <MergeProposals project={insightsProject} proposals={retroInsights.mergeProposals} />
       <ToastHost />
     </>,
   );

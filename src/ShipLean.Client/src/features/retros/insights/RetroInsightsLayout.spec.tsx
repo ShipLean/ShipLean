@@ -129,3 +129,55 @@ for (const width of [1280, 1440]) {
     }
   }
 }
+
+async function arrangeProposal(page: Page, width: number) {
+  await page.setViewportSize({ width, height: 800 });
+  await stubShell(page);
+  await stubRetros(page);
+}
+
+for (const width of [1280, 1440]) {
+  test(`RetroInsights_WhenAMergeIsProposedAt${width}_ShouldPutTheCardBetweenTheCalloutAndTheTable`, async ({
+    mount,
+    page,
+  }) => {
+    await arrangeProposal(page, width);
+    await mount(<AppRoutes />, { hooksConfig: { route: '/p/SHIP/retros/insights?view=themes' } });
+    const card = page.getByTestId(ids.retroMergeProposal).first();
+    await expect(card).toBeVisible();
+    const found = await page.evaluate(() => {
+      const box = (selector: string) => document.querySelector(selector)!.getBoundingClientRect();
+      const region = box('[role="region"][aria-label="Proposed merges"]');
+      const callout = box('[data-callout="recurring"]');
+      const table = box('[data-testid="retro-recurring-table"]');
+      const bar = box('[data-testid="retro-merge-themes"]');
+      return {
+        calloutBottom: callout.bottom,
+        regionTop: region.top,
+        regionBottom: region.bottom,
+        regionHeight: region.height,
+        regionRight: region.right,
+        tableTop: table.top,
+        barBottom: bar.bottom,
+        width: window.innerWidth,
+        horizontal: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      };
+    });
+    expect(found.regionHeight).toBeGreaterThan(0);
+    expect(found.regionTop).toBeGreaterThanOrEqual(found.calloutBottom);
+    expect(found.regionBottom).toBeLessThanOrEqual(found.tableTop);
+    expect(found.regionTop).toBeGreaterThanOrEqual(found.barBottom);
+    expect(found.regionRight).toBeLessThanOrEqual(found.width);
+    expect(found.horizontal).toBeLessThanOrEqual(0);
+  });
+}
+
+for (const view of ['actions', 'impact']) {
+  test(`RetroInsights_WhenAMergeIsProposedOn${view}_ShouldShowNoCard`, async ({ mount, page }) => {
+    await arrangeProposal(page, 1280);
+    await mount(<AppRoutes />, { hooksConfig: { route: `/p/SHIP/retros/insights?view=${view}` } });
+    await expect(page.getByTestId(ids.retroInsightsPanel)).toBeVisible();
+    await expect(page.getByTestId(ids.retroMergeThemes)).toBeVisible();
+    await expect(page.getByTestId(ids.retroMergeProposal)).toHaveCount(0);
+  });
+}

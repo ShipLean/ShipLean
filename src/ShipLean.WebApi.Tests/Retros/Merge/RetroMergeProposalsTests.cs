@@ -155,6 +155,63 @@ public sealed class RetroMergeProposalsTests : ApiFixture
         (await connection.QuerySingleAsync<string>("SELECT status FROM retro_theme_merge_proposal WHERE id = @id", new { id })).ShouldBe("pending");
     }
 
+    // The proposal is the caller's own project's, so the controller's access check passes; its two themes belong to another project, so only the merge itself can refuse.
+    [Test]
+    public async Task Merge_WhenTheThemesBelongToAnotherProject_ShouldBeNotFoundAndLeaveItPending()
+    {
+        await using var world = await World.CreateAsync(await OpenDatabaseAsync());
+        await using var other = await World.CreateAsync(await OpenDatabaseAsync());
+        var (from, into) = (await other.Seed.ThemeAsync("Alpha"), await other.Seed.ThemeAsync("Beta"));
+        var id = Guid.NewGuid();
+        await world.Connection.ExecuteAsync(
+            "INSERT INTO retro_theme_merge_proposal (id, project_id, from_theme_id, into_theme_id, reason, proposed_by_user_id) VALUES (@id, @project, @from, @into, 'Same.', @user)",
+            new { id, project = world.Project.Id, from, into, user = SeedIds.Users.Joel });
+
+        using var response = await Api.PostJsonAsync($"/api/retros/theme-merge-proposals/{id}/merge");
+
+        (await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.NotFound)).Code.ShouldBe(ApiErrorCodes.NotFound);
+        (await world.Connection.QuerySingleAsync<string>("SELECT status FROM retro_theme_merge_proposal WHERE id = @id", new { id })).ShouldBe("pending");
+        (await world.Connection.QuerySingleAsync<Guid?>("SELECT merged_into_id FROM retro_theme WHERE id = @from", new { from })).ShouldBeNull();
+    }
+
+    // Stands in for a keep-apart that lands while the merge is moving the themes: when the source theme is marked merged, the proposal is marked kept apart.
+    // The merge holds the proposal row until it commits, so it must notice and roll back, never leave merged themes under a kept-apart proposal.
+    [Test]
+    public async Task Merge_WhenKeptApartWhileMerging_ShouldConflictAndMergeNothing()
+    {
+        await using var world = await World.CreateAsync(await OpenDatabaseAsync());
+        var alpha = await world.Seed.ThemeAsync("Alpha");
+        await world.Seed.ThemeAsync("Beta");
+        var retro = await world.AgentRetroAsync();
+        var point = await world.Seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.WentBadly, "One.", ThemeId: alpha));
+        await ProposeAsync(world, "Alpha", "Beta");
+        var id = (await PendingAsync(world.Project.Id)).Single().Id;
+        await world.Connection.ExecuteAsync(KeepApartDuringMergeTrigger);
+        try
+        {
+            using var response = await Api.PostJsonAsync($"/api/retros/theme-merge-proposals/{id}/merge");
+
+            (await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.Conflict)).Code.ShouldBe(ApiErrorCodes.Conflict);
+        }
+        finally
+        {
+            await world.Connection.ExecuteAsync("DROP TRIGGER IF EXISTS keep_apart_during_merge ON retro_theme; DROP FUNCTION IF EXISTS keep_apart_during_merge();");
+        }
+
+        (await world.Connection.QuerySingleAsync<Guid?>("SELECT merged_into_id FROM retro_theme WHERE id = @alpha", new { alpha })).ShouldBeNull();
+        (await world.Connection.QuerySingleAsync<Guid?>("SELECT theme_id FROM retro_point WHERE id = @point", new { point })).ShouldBe(alpha);
+        (await world.Connection.QuerySingleAsync<string>("SELECT status FROM retro_theme_merge_proposal WHERE id = @id", new { id })).ShouldBe("pending");
+    }
+
+    private const string KeepApartDuringMergeTrigger =
+        """
+        CREATE FUNCTION keep_apart_during_merge() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
+          UPDATE retro_theme_merge_proposal SET status = 'keptApart', decided_by_user_id = proposed_by_user_id, decided_at = now()
+          WHERE from_theme_id = NEW.id AND status = 'pending';
+          RETURN NEW; END $$;
+        CREATE TRIGGER keep_apart_during_merge AFTER UPDATE OF merged_into_id ON retro_theme FOR EACH ROW WHEN (NEW.merged_into_id IS NOT NULL) EXECUTE FUNCTION keep_apart_during_merge();
+        """;
+
     [Test]
     public async Task Insights_WhenProposalPending_ShouldListItInBothModes()
     {

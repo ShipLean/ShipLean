@@ -9,14 +9,12 @@ using ShipLean.Contracts.Retros;
 
 namespace ShipLean.Application.Features.Retros.Merge;
 
-// Agents propose merging one theme into another; a person answers. Merge moves the points through RetroThemeWriter.MergeAsync and only then
-// marks the proposal merged, so a failed merge leaves it pending. Keep apart marks it keptApart. The row is never deleted, so the pair
+// Agents propose merging one theme into another; a person answers. Merge moves the points through RetroThemeWriter.MergeInAsync and marks the
+// proposal merged in the same transaction, so a failed merge leaves it pending. Keep apart marks it keptApart. The row is never deleted, so the pair
 // stays in the unique pair index and cannot be proposed again. Only a pending proposal can be answered; any other is a conflict.
-// A singleton, because the insights reader (a singleton) lists the pending ones; so it makes its own RetroThemeWriter, which is only scoped by habit.
+// A singleton, because the insights reader (a singleton) lists the pending ones.
 internal sealed class RetroMergeProposals(NpgsqlDataSource dataSource, IProjectEvents events) : IRetroMergeProposals
 {
-    private readonly RetroThemeWriter _themes = new(dataSource, events);
-
     private const string PendingSql =
         $"""
         SELECT p.id, p.reason, p.proposed_agent_name AS agentName,
@@ -49,41 +47,52 @@ internal sealed class RetroMergeProposals(NpgsqlDataSource dataSource, IProjectE
 
     public async Task MergeAsync(Guid proposalId, RetroActor actor, CancellationToken cancellationToken = default)
     {
-        var proposal = await RequirePendingAsync(proposalId, cancellationToken);
-        await _themes.MergeAsync(proposal.ProjectId, new RetroThemeMerge([proposal.FromThemeId], proposal.IntoThemeId), cancellationToken);
-        await DecideAsync(proposal, "merged", actor, cancellationToken);
+        var projectId = await DecideAsync(proposalId, "merged", actor, async (connection, transaction, proposal) =>
+            await RetroThemeWriter.MergeInAsync(connection, transaction, proposal.ProjectId, new RetroThemeMerge([proposal.FromThemeId], proposal.IntoThemeId), cancellationToken), cancellationToken);
+        await events.PublishAsync(new RetroChanged(projectId, [], []));
     }
 
     public async Task KeepApartAsync(Guid proposalId, RetroActor actor, CancellationToken cancellationToken = default)
     {
-        var proposal = await RequirePendingAsync(proposalId, cancellationToken);
-        await DecideAsync(proposal, "keptApart", actor, cancellationToken);
-        await events.PublishAsync(new RetroChanged(proposal.ProjectId, [], []));
+        var projectId = await DecideAsync(proposalId, "keptApart", actor, null, cancellationToken);
+        await events.PublishAsync(new RetroChanged(projectId, [], []));
     }
 
-    private async Task<ProposalRow> RequirePendingAsync(Guid proposalId, CancellationToken cancellationToken)
+    // One transaction holds the proposal row locked from the status check to the commit, and the theme merge runs inside it. So two answers
+    // to one proposal queue behind each other and the second sees the first's status, and a merge never commits under a proposal that was kept apart.
+    private async Task<Guid> DecideAsync(
+        Guid proposalId, string status, RetroActor actor, Func<NpgsqlConnection, NpgsqlTransaction, ProposalRow, Task>? beforeDeciding, CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-        var row = await connection.QuerySingleOrDefaultAsync<ProposalRow>(new CommandDefinition(
-            "SELECT id, project_id AS projectId, from_theme_id AS fromThemeId, into_theme_id AS intoThemeId, status FROM retro_theme_merge_proposal WHERE id = @proposalId AND archived_at IS NULL",
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        var proposal = await connection.QuerySingleOrDefaultAsync<ProposalRow>(new CommandDefinition(
+            "SELECT id, project_id AS projectId, from_theme_id AS fromThemeId, into_theme_id AS intoThemeId, status FROM retro_theme_merge_proposal WHERE id = @proposalId AND archived_at IS NULL FOR UPDATE",
             new { proposalId },
+            transaction,
             cancellationToken: cancellationToken))
             ?? throw ApiException.NotFound("No merge proposal with that id was found.");
-        return row.Status == "pending" ? row : throw ApiException.Conflict("That merge proposal was already answered.");
-    }
+        if (proposal.Status != "pending")
+        {
+            throw ApiException.Conflict("That merge proposal was already answered.");
+        }
 
-    // The status test is in the UPDATE, so of two answers racing for one proposal only one lands.
-    private async Task DecideAsync(ProposalRow proposal, string status, RetroActor actor, CancellationToken cancellationToken)
-    {
-        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        if (beforeDeciding is not null)
+        {
+            await beforeDeciding(connection, transaction, proposal);
+        }
+
         var updated = await connection.ExecuteAsync(new CommandDefinition(
             "UPDATE retro_theme_merge_proposal SET status = @status, decided_by_user_id = @userId, decided_at = now() WHERE id = @id AND status = 'pending'",
             new { status, userId = actor.UserId, id = proposal.Id },
+            transaction,
             cancellationToken: cancellationToken));
         if (updated == 0)
         {
             throw ApiException.Conflict("That merge proposal was already answered.");
         }
+
+        await transaction.CommitAsync(cancellationToken);
+        return proposal.ProjectId;
     }
 
     private sealed record ProposalRow(Guid Id, Guid ProjectId, Guid FromThemeId, Guid IntoThemeId, string Status);

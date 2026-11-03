@@ -78,7 +78,7 @@ export function RetroInsightsPanel({ project }: { project: ProjectDto }) {
           </div>
           <RangeSelect range={range} onChange={(next) => set('range', next)} />
           <span className="flex-1" />
-          {query.data ? <MergeThemes project={project} insights={query.data} /> : null}
+          {query.data ? <MergeThemes project={project} /> : null}
         </div>
         <RetroQueryState query={query}>
           {(insights) => {

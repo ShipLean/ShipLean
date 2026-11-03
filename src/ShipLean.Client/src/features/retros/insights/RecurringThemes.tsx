@@ -1,3 +1,4 @@
+import { MergeProposals } from './merge/MergeProposals';
 import { RecurringCallout } from './recurring/RecurringCallout';
 import { RecurringRow } from './recurring/RecurringRow';
 import { UnthemedRow } from './recurring/UnthemedRow';
@@ -19,6 +20,7 @@ export function RecurringThemes({ project, insights }: RetroInsightsSlotProps) {
   return (
     <div className="flex flex-col gap-3">
       <RecurringCallout count={recurring} mode={mode} />
+      <MergeProposals project={project} proposals={insights.mergeProposals} />
       <section className="rounded-frame border border-edge bg-panel">
         <header className="flex items-baseline gap-3 px-4 py-3">
           <h2 className="m-0 text-[length:var(--text-md)] font-semibold">
