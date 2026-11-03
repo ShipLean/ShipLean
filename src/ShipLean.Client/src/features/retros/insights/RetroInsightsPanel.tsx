@@ -55,8 +55,8 @@ export function RetroInsightsPanel({ project }: { project: ProjectDto }) {
   };
   return (
     <RetroActionDialogProvider projectId={project.id}>
-      <div data-testid={ids.retroInsightsPanel} className="grid gap-4">
-        <div className="flex items-center gap-3">
+      <div data-testid={ids.retroInsightsPanel} className="grid grid-cols-[minmax(0,1fr)] gap-4">
+        <div className="sticky top-0 z-10 flex items-center gap-3 bg-canvas py-1">
           <div
             role="group"
             aria-label="Insight"
