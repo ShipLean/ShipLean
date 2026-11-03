@@ -30,6 +30,8 @@ public sealed class RetroFeaturesReaderTests : ApiFixture
         await world.PointAsync(story, RetroCategory.Improve, "Story point.");
         await world.PointAsync(story, RetroCategory.NotInPlan, "Surprise.");
         await world.PointAsync(story, RetroCategory.WentWell, "Pairing.");
+        var actionChild = await world.ItemAsync("action", feature);
+        await world.PointAsync(actionChild, RetroCategory.WentBadly, "Not a story or bug.");
 
         var features = await world.ListAsync();
 
