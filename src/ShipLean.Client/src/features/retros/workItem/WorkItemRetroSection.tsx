@@ -8,7 +8,7 @@ import { useWorkItemRetros } from '../useRetroQueries';
 import { WorkItemRetroRow } from './WorkItemRetroRow';
 
 const head =
-  'bg-sunken px-2.5 py-1.5 text-left text-[length:var(--text-xs)] font-semibold whitespace-nowrap text-ink-muted';
+  'bg-sunken px-2 py-1.5 text-left text-[length:var(--text-xs)] font-semibold whitespace-nowrap text-ink-muted';
 const headNum = `${head} text-right`;
 
 // One row per retro of the item, newest first, with its counts. A row opens the item's page in Retrospectives filtered to
@@ -42,7 +42,7 @@ export function WorkItemRetroSection({
               </span>
               <Link
                 to={routePath('retroItem', { key: projectKey, itemKey })}
-                className="ml-auto rounded-control border border-edge px-2.5 py-1 text-[length:var(--text-sm)] font-medium whitespace-nowrap hover:bg-sunken"
+                className="ml-auto rounded-control border border-edge px-2 py-1 text-[length:var(--text-sm)] font-medium whitespace-nowrap hover:bg-sunken"
               >
                 All retros for this item
               </Link>

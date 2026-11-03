@@ -7,7 +7,7 @@ import { CategoryCount } from '../features/CategoryCount';
 import { DecidedProgress } from '../features/DecidedProgress';
 import { retrosTestIds as ids } from '../testIds';
 
-const cell = 'border-t border-edge px-2.5 py-[7px] align-middle text-[length:var(--text-sm)]';
+const cell = 'border-t border-edge px-2 py-[7px] align-middle text-[length:var(--text-sm)]';
 const num = `${cell} text-right tabular-nums`;
 
 /** One retro of the item: who wrote it, when, its counts per category and how much is decided; the author opens the item's page filtered to this retro. */
