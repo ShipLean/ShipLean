@@ -1,15 +1,10 @@
 import type { RetroInsightsMode } from '../../../../api/retros';
 
+/** The week-mode recurrence window, whatever range is shown: `RetroRecurrence.Weeks.Window` (K11). */
+const RECURRENCE_WEEKS = 6;
+
 /** The warn callout above the recurring table; hidden when no theme is recurring. */
-export function RecurringCallout({
-  count,
-  mode,
-  weeks,
-}: {
-  count: number;
-  mode: RetroInsightsMode;
-  weeks: number;
-}) {
+export function RecurringCallout({ count, mode }: { count: number; mode: RetroInsightsMode }) {
   if (count === 0) return null;
   const noun = count === 1 ? 'theme keeps' : 'themes keep';
   return (
@@ -22,7 +17,7 @@ export function RecurringCallout({
         {count} {noun} coming back
       </b>
       {mode === 'week'
-        ? `Counted over the last ${weeks} weeks, by the day each point was logged.`
+        ? `Counted over the last ${RECURRENCE_WEEKS} weeks, by the day each point was logged.`
         : 'They were mentioned in several recent sprints without a change that helped.'}
     </div>
   );

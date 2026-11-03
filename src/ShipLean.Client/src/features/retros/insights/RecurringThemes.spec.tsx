@@ -288,3 +288,25 @@ for (const [name, insights, expected, absent] of [
     await expect(callout).not.toContainText(absent);
   });
 }
+
+test('RecurringThemes_WhenWeek12ColumnsShown_ShouldStillSayLast6Weeks', async ({ mount, page }) => {
+  await stubRetros(page);
+  const base = insightsWeeks;
+  const columns = Array.from({ length: 12 }, (_, i) => ({
+    ...base.columns[i % base.columns.length],
+    key: `2026-08-${String(10 + i).padStart(2, '0')}`,
+    isCurrent: i === 11,
+  }));
+  const pad = (counts: number[]) => Array.from({ length: 12 }, (_, i) => counts[i % counts.length]);
+  const wide = {
+    ...base,
+    range: 'w12' as const,
+    columns,
+    themes: base.themes.map((t) => ({ ...t, counts: pad(t.counts) })),
+    unthemed: { ...base.unthemed, counts: pad(base.unthemed.counts) },
+  };
+  await mount(table(wide), open);
+  const callout = page.locator('[data-callout="recurring"]');
+  await expect(callout).toContainText('the last 6 weeks');
+  await expect(callout).not.toContainText('12 weeks');
+});
