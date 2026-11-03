@@ -15,29 +15,13 @@ namespace ShipLean.Application.Features.Retros.People;
 // The unique index on live join rows is the guard against two writes racing for one point.
 internal sealed class RetroActionWriter(NpgsqlDataSource dataSource, IWorkItemStore store, PickRetroThemer pick, RetroActionDetailReader details, IProjectEvents events)
 {
-    private const int MaxDerivedTitle = 200;
     private const string UniqueViolation = "23505";
     private const string AlreadyDecided = "This point is already decided.";
-
-    // The old one-point route: the point's own theme, no fix type, the title from the point's text when none is given.
-    public async Task<RetroActionRefDto> CreateAsync(Guid pointId, RetroActionCreate request, CancellationToken cancellationToken)
-    {
-        RetroPointInfo point;
-        await using (var connection = await dataSource.OpenConnectionAsync(cancellationToken))
-        await using (var transaction = await connection.BeginTransactionAsync(cancellationToken))
-        {
-            point = await RetroPointInfo.LoadAsync(connection, transaction, pointId, cancellationToken, lockPoint: false);
-        }
-
-        var title = string.IsNullOrWhiteSpace(request.Title) ? DerivedTitle(point.Text) : request.Title.Trim();
-        var detail = await CreateCoreAsync(point.ProjectId, title, request.Points, null, [pointId], null, null, cancellationToken);
-        return detail.Action;
-    }
 
     public Task<RetroActionDetailDto> CreateActionAsync(Guid projectId, RetroActionNew request, RetroActor actor, CancellationToken cancellationToken)
     {
         RetroChecks.ActionNew(request);
-        return CreateCoreAsync(projectId, request.Title.Trim(), null, request.FixType, request.PointIds, request.ThemeId, request.ThemeName, cancellationToken);
+        return CreateCoreAsync(projectId, request.Title.Trim(), request.FixType, request.PointIds, request.ThemeId, request.ThemeName, cancellationToken);
     }
 
     // One transaction: the action item and the points are locked and read inside it, so what is decided is what is written.
@@ -98,7 +82,7 @@ internal sealed class RetroActionWriter(NpgsqlDataSource dataSource, IWorkItemSt
     }
 
     private async Task<RetroActionDetailDto> CreateCoreAsync(
-        Guid projectId, string title, decimal? storyPoints, RetroFixType? fixType, IReadOnlyList<Guid> pointIds, Guid? themeId, string? themeName, CancellationToken cancellationToken)
+        Guid projectId, string title, RetroFixType? fixType, IReadOnlyList<Guid> pointIds, Guid? themeId, string? themeName, CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         IReadOnlyList<RetroActionPoint> points;
@@ -117,8 +101,7 @@ internal sealed class RetroActionWriter(NpgsqlDataSource dataSource, IWorkItemSt
 
         var chosen = await ResolveThemeAsync(projectId, themeId, themeName, cancellationToken);
         var theme = chosen ?? Commonest(points);
-        var changes = storyPoints is { } storyPoint ? new WorkItemChanges { Points = new FieldSet<decimal?>(storyPoint) } : null;
-        var outcome = await store.CreateAsync(new WorkItemCreate(projectId, WorkItemTypeId.Action, title, null, null, changes), WriteOptions.User, cancellationToken);
+        var outcome = await store.CreateAsync(new WorkItemCreate(projectId, WorkItemTypeId.Action, title, null, null, null), WriteOptions.User, cancellationToken);
         var created = outcome.Written ?? throw ApiException.Internal();
 
         try
@@ -228,12 +211,6 @@ internal sealed class RetroActionWriter(NpgsqlDataSource dataSource, IWorkItemSt
     }
 
     private static string? FixTypeText(RetroFixType? fixType) => fixType?.ToString().ToLowerInvariant();
-
-    private static string DerivedTitle(string text)
-    {
-        var line = text.Trim().Split('\n')[0].Trim();
-        return line.Length <= MaxDerivedTitle ? line : line[..MaxDerivedTitle].TrimEnd();
-    }
 
     // The action item must exist (not_found) and be a retro action that is not Removed (validation, field workItemId).
     private static async Task<ActionRow> LiveActionAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, Guid workItemId, CancellationToken cancellationToken)

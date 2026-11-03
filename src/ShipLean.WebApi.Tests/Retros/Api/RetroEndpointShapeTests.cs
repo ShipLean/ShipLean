@@ -119,7 +119,6 @@ public class RetroEndpointShapeTests : ApiFixture
         yield return Case("POST", points, $$"""{"workItemId":"{{item}}","category":"improve","text":"x","rootCause":"y"}""", "AddPoint_WhenRootCauseOnImprove");
         yield return Case("PUT", $"/api/retros/points/{RetroSweepData.Point}/theme", """{"themeName":"  "}""", "MoveTheme_WhenThemeNameBlank");
         yield return Case("PUT", $"/api/retros/points/{RetroSweepData.Point}/theme", $$"""{"themeId":"{{RetroSweepData.Theme}}","themeName":"Both"}""", "MoveTheme_WhenIdAndNameBothGiven");
-        yield return Case("POST", $"/api/retros/points/{RetroSweepData.Point}/action", """{"title":"  ","points":null}""", "CreateAction_WhenTitleBlank");
         yield return Case("PUT", $"/api/retros/themes/{RetroSweepData.Theme}", """{"name":""}""", "Rename_WhenNameEmpty");
         yield return Case("POST", $"/api/projects/{Ship}/retros/themes/merge", $$"""{"sourceIds":["{{RetroSweepData.Theme}}"],"targetId":"{{RetroSweepData.Theme}}"}""", "Merge_WhenSourceIsTarget");
         yield return Case("POST", $"/api/projects/{Ship}/retros/themes/merge", $$"""{"sourceIds":[],"targetId":"{{RetroSweepData.Theme}}"}""", "Merge_WhenNoSources");

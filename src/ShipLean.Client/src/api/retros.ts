@@ -359,12 +359,6 @@ export interface RetroThemeMerge {
   targetId: string;
 }
 
-/** The old per-point route's body; removed with the route. */
-export interface RetroActionCreate {
-  title: string | null;
-  points: number | null;
-}
-
 export interface RetroActionNew {
   title: string;
   fixType: RetroFixType;

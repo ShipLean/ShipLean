@@ -40,20 +40,9 @@ public sealed class SprintRetroPage(IPage page)
 
     public ILocator Archive(string pointText) => PointOf(pointText).GetByTestId(RetroSharedTestIds.RetroNoteArchive);
 
-    // TODO: J1 deletes the AddPoint members below with the journeys that use them (the toolbar Add is gone; the board's Add replaces it).
-    public ILocator AddPoint => page.GetByTestId(RetrosTestIds.RetroAddPoint);
+    public RetroBoardPart Board => new(Panel);
 
-    public ILocator AddPointDialog => page.GetByTestId(RetrosTestIds.RetroAddPointDialog);
-
-    public ILocator AddPointCategory => page.GetByTestId(RetrosTestIds.RetroAddPointCategory);
-
-    public ILocator AddPointText => page.GetByTestId(RetrosTestIds.RetroAddPointText);
-
-    public ILocator AddPointRootCause => page.GetByTestId(RetrosTestIds.RetroAddPointRootCause);
-
-    public ILocator AddPointItem => page.GetByTestId(RetrosTestIds.RetroAddPointItem);
-
-    public ILocator AddPointSave => page.GetByTestId(RetrosTestIds.RetroAddPointSave);
+    public RetroActionDialogPart Dialog => new(page);
 
     public ILocator CardList => page.GetByTestId(RetrosTestIds.RetroCardList);
 

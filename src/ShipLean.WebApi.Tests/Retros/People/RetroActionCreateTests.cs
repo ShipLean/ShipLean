@@ -18,12 +18,11 @@ public sealed class RetroActionCreateTests : RetroPeopleFixture
         var pointId = await world.Seed.PointAsync(await world.AgentRetroAsync(), new RetroSeedPoint(RetroCategory.Improve, "Cache the build.", ThemeId: theme));
         using var watch = Watch(world.Project.Id);
 
-        using var response = await Api.PostJsonAsync($"/api/retros/points/{pointId}/action", new { title = "Cache the build", points = 3 });
+        using var response = await Api.PostJsonAsync($"/api/projects/{world.Project.Id}/retros/actions", new { title = "Cache the build", fixType = "skill", pointIds = new[] { pointId } });
 
         var action = await ReadAsync(response, HttpStatusCode.Created);
         action.GetProperty("title").GetString().ShouldBe("Cache the build");
         action.GetProperty("state").GetProperty("name").GetString().ShouldBe("New");
-        action.GetProperty("points").GetDecimal().ShouldBe(3m);
         var itemId = action.GetProperty("workItemId").GetGuid();
         using var item = await Api.GetAsync($"/api/work-items/{itemId}");
         var dto = await ReadAsync(item, HttpStatusCode.OK);
@@ -37,14 +36,14 @@ public sealed class RetroActionCreateTests : RetroPeopleFixture
     }
 
     [Test]
-    public async Task Create_WhenNoTitle_ShouldUseThePointText()
+    public async Task Create_WhenTitleBlank_ShouldBeValidation()
     {
         await using var world = await World.CreateAsync(await OpenDatabaseAsync());
         var pointId = await world.Seed.PointAsync(await world.AgentRetroAsync(), new RetroSeedPoint(RetroCategory.Improve, "Pair on the hard ones."));
 
-        using var response = await Api.PostJsonAsync($"/api/retros/points/{pointId}/action", new { });
+        using var response = await Api.PostJsonAsync($"/api/projects/{world.Project.Id}/retros/actions", new { title = "  ", fixType = "skill", pointIds = new[] { pointId } });
 
-        (await ReadAsync(response, HttpStatusCode.Created)).GetProperty("title").GetString().ShouldBe("Pair on the hard ones.");
+        (await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.BadRequest)).Code.ShouldBe(ApiErrorCodes.Validation);
     }
 
     [Test]
@@ -55,7 +54,7 @@ public sealed class RetroActionCreateTests : RetroPeopleFixture
         var existing = await world.ItemAsync("action", inSprint: false);
         await world.Seed.ActionAsync(new RetroSeedAction(existing, PointId: pointId));
 
-        using var response = await Api.PostJsonAsync($"/api/retros/points/{pointId}/action", new { });
+        using var response = await Api.PostJsonAsync($"/api/projects/{world.Project.Id}/retros/actions", new { title = "Fix it", fixType = "skill", pointIds = new[] { pointId } });
 
         (await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.Conflict)).Code.ShouldBe(ApiErrorCodes.Conflict);
         (await world.Connection.QuerySingleAsync<int>("SELECT count(*)::int FROM work_item WHERE project_id = @project AND type = 'action'", new { project = world.Project.Id })).ShouldBe(1);
@@ -69,7 +68,7 @@ public sealed class RetroActionCreateTests : RetroPeopleFixture
         var removed = await new ShipLean.TestSupport.Builders.WorkItemBuilder(world.Project.Id).WithType("action").WithStateNamed("Removed").InsertAsync(world.Connection);
         await world.Seed.ActionAsync(new RetroSeedAction(removed, PointId: pointId));
 
-        using var response = await Api.PostJsonAsync($"/api/retros/points/{pointId}/action", new { });
+        using var response = await Api.PostJsonAsync($"/api/projects/{world.Project.Id}/retros/actions", new { title = "Fix it", fixType = "skill", pointIds = new[] { pointId } });
 
         var created = (await ReadAsync(response, HttpStatusCode.Created)).GetProperty("workItemId").GetGuid();
         (await world.Connection.QueryAsync<Guid>("SELECT work_item_id FROM retro_action_point WHERE point_id = @pointId AND archived_at IS NULL", new { pointId })).ShouldBe([created]);
@@ -99,7 +98,7 @@ public sealed class RetroActionCreateTests : RetroPeopleFixture
             """);
         try
         {
-            using var response = await Api.PostJsonAsync($"/api/retros/points/{pointId}/action", new { title = "Link race" });
+            using var response = await Api.PostJsonAsync($"/api/projects/{world.Project.Id}/retros/actions", new { title = "Link race", fixType = "skill", pointIds = new[] { pointId } });
 
             (await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.Conflict)).Code.ShouldBe(ApiErrorCodes.Conflict);
         }
@@ -121,7 +120,7 @@ public sealed class RetroActionCreateTests : RetroPeopleFixture
         await using var world = await World.CreateAsync(await OpenDatabaseAsync());
         var pointId = await world.Seed.PointAsync(await world.AgentRetroAsync(), new RetroSeedPoint(RetroCategory.WentBadly, "Broke."));
 
-        using var response = await Api.PostJsonAsync($"/api/retros/points/{pointId}/action", new { });
+        using var response = await Api.PostJsonAsync($"/api/projects/{world.Project.Id}/retros/actions", new { title = "Fix it", fixType = "skill", pointIds = new[] { pointId } });
 
         var itemId = (await ReadAsync(response, HttpStatusCode.Created)).GetProperty("workItemId").GetGuid();
         (await world.Connection.QuerySingleAsync<Guid>("SELECT work_item_id FROM retro_action_point WHERE point_id = @pointId AND archived_at IS NULL", new { pointId })).ShouldBe(itemId);
@@ -133,7 +132,7 @@ public sealed class RetroActionCreateTests : RetroPeopleFixture
         await using var world = await World.CreateAsync(await OpenDatabaseAsync());
         var pointId = await world.Seed.PointAsync(await world.AgentRetroAsync(), new RetroSeedPoint(RetroCategory.WentWell, "Smooth."));
 
-        using var response = await Api.PostJsonAsync($"/api/retros/points/{pointId}/action", new { });
+        using var response = await Api.PostJsonAsync($"/api/projects/{world.Project.Id}/retros/actions", new { title = "Fix it", fixType = "skill", pointIds = new[] { pointId } });
 
         (await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.BadRequest)).Code.ShouldBe(ApiErrorCodes.Validation);
     }

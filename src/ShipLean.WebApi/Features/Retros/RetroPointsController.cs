@@ -40,16 +40,4 @@ public sealed class RetroPointsController(IRetroPeopleWrites writes, IProjectAcc
         await access.RequireAsync(ProjectItem.RetroPoint, id, ProjectRole.Member, cancellationToken);
         return await NoContentAfter(writes.ArchiveAsync(id, cancellationToken));
     }
-
-    [HttpPost("retros/points/{id:guid}/action")]
-    [ProducesResponseType<RetroActionRefDto>(StatusCodes.Status201Created)]
-    [ProducesResponseType<ApiError>(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType<ApiError>(StatusCodes.Status404NotFound)]
-    [ProducesResponseType<ApiError>(StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> CreateAction(Guid id, RetroActionCreate request, CancellationToken cancellationToken)
-    {
-        await access.RequireAsync(ProjectItem.RetroPoint, id, ProjectRole.Member, cancellationToken);
-        RetroChecks.ActionCreate(request);
-        return StatusCode(StatusCodes.Status201Created, await writes.CreateActionAsync(id, request, cancellationToken));
-    }
 }

@@ -30,13 +30,19 @@ public class PeoplePointsJourneyTests : SeededAcceptanceTest
         var retro = new SprintRetroPage(Page);
         await retro.OpenAsync(Project, MoveSprintId);
 
-        await retro.AddPoint.ClickAsync();
-        await retro.AddPointText.FillAsync(ownText);
-        await PickThemeAsync("Release pipeline", expectAdd: true);
-        var created = await Page.RunAndWaitForApiAsync($"/api/projects/{ProjectId}/retros/points", "POST", () => retro.AddPointSave.ClickAsync());
+        // The column's own Add (the toolbar one is gone): Went badly, about the sprint.
+        await retro.Board.AddIn("Went badly").ClickAsync();
+        await retro.Board.AddText.FillAsync(ownText);
+        var created = await Page.RunAndWaitForApiAsync($"/api/projects/{ProjectId}/retros/points", "POST", () => retro.Board.AddSave.ClickAsync());
         created.Ok.ShouldBeTrue(await created.TextAsync());
-        await Expect(retro.AddPointDialog).ToBeHiddenAsync();
+        await Expect(retro.Board.AddText).ToBeHiddenAsync();
         await Expect(retro.PointOf(ownText)).ToBeVisibleAsync();
+
+        // By category groups notes under their theme and shows no theme line; By work item shows the line, so the themes are set there.
+        await retro.ViewByItem.ClickAsync();
+        await retro.MoveTheme(ownText).ClickAsync();
+        var set = await Page.RunAndWaitForApiAsync($"/api/retros/points/{await retro.PointOf(ownText).GetAttributeAsync("data-point-id")}/theme", "PUT", () => PickNewThemeAsync("Release pipeline"));
+        set.Ok.ShouldBeTrue(await set.TextAsync());
 
         // The agent's point moves to the person's new theme.
         await retro.MoveTheme(agentText).ClickAsync();
@@ -45,12 +51,13 @@ public class PeoplePointsJourneyTests : SeededAcceptanceTest
 
         await Page.ReloadAsync();
         await retro.Panel.WaitForAsync();
-        var ownGroup = GroupOf(retro, ownText);
-        await Expect(ownGroup).ToBeVisibleAsync();
-        await Expect(ownGroup.GetByTestId(RetrosTestIds.RetroPoint).Filter(new() { HasText = agentText })).ToHaveCountAsync(1);
-        var theme = await ownGroup.GetAttributeAsync("data-theme");
-        theme.ShouldNotBe("unthemed");
-        await Expect(GroupOf(retro, agentText)).ToHaveAttributeAsync("data-theme", theme!);
+        await retro.ViewByCategory.ClickAsync();
+        // Both notes sit under one theme heading in their column: one chip, themed, named for the person's theme.
+        var column = retro.Board.ColumnOf("Went badly");
+        await Expect(column.GetByTestId(RetroSharedTestIds.RetroNote)).ToHaveCountAsync(2);
+        await Expect(column.GetByTestId(RetroSharedTestIds.RetroThemeChip)).ToHaveCountAsync(1);
+        await Expect(column.GetByTestId(RetroSharedTestIds.RetroThemeChip)).ToHaveAttributeAsync("data-themed", "true");
+        await Expect(column.GetByTestId(RetroSharedTestIds.RetroThemeChip)).ToContainTextAsync("Release pipeline");
 
         await using var connection = await OpenAsync();
         (await connection.QuerySingleAsync<string>("SELECT text FROM retro_point WHERE id = @agentPointId", new { agentPointId })).ShouldBe(agentText);
@@ -76,17 +83,17 @@ public class PeoplePointsJourneyTests : SeededAcceptanceTest
         var retro = new SprintRetroPage(Page);
         await retro.OpenAsync(Project, ArchiveSprintId);
 
-        await retro.AddPoint.ClickAsync();
-        await retro.AddPointCategory.SelectOptionAsync("wentWell");
-        await retro.AddPointItem.SelectOptionAsync(storyId.ToString());
-        await retro.AddPointText.FillAsync(itemText);
-        var created = await Page.RunAndWaitForApiAsync($"/api/projects/{ProjectId}/retros/points", "POST", () => retro.AddPointSave.ClickAsync());
+        await retro.Board.AddIn("Went well").ClickAsync();
+        await retro.Board.AddAbout.SelectOptionAsync(storyId.ToString());
+        await retro.Board.AddText.FillAsync(itemText);
+        var created = await Page.RunAndWaitForApiAsync($"/api/projects/{ProjectId}/retros/points", "POST", () => retro.Board.AddSave.ClickAsync());
         created.Ok.ShouldBeTrue(await created.TextAsync());
         await Expect(retro.PointOf(itemText)).ToBeVisibleAsync();
 
         // Only the person's own point can be archived; the agent's has no Archive button.
         await Expect(retro.Archive(agentText)).ToHaveCountAsync(0);
         var ownPointId = await retro.PointOf(itemText).GetAttributeAsync("data-point-id");
+        await retro.PointOf(itemText).GetByTestId(RetroSharedTestIds.RetroNoteMore).ClickAsync();
         var archived = await Page.RunAndWaitForApiAsync($"/api/retros/points/{ownPointId}/archive", "POST", () => retro.Archive(itemText).ClickAsync());
         archived.Ok.ShouldBeTrue($"Archive answered {archived.Status}");
         await Expect(retro.PointOf(itemText)).ToHaveCountAsync(0);
@@ -101,20 +108,13 @@ public class PeoplePointsJourneyTests : SeededAcceptanceTest
         (await check.ExecuteScalarAsync<bool>("SELECT archived_at IS NULL FROM retro_point WHERE id = @agentPointId", new { agentPointId })).ShouldBeTrue();
     }
 
-    private static ILocator GroupOf(SprintRetroPage retro, string pointText) =>
-        retro.ThemeGroups.Filter(new() { Has = retro.PointOf(pointText) });
-
-    // Types the name in the open theme picker; a new name is picked through its "Add" option.
-    private async Task PickThemeAsync(string name, bool expectAdd)
+    // Types a new name in the open theme picker and picks it through its "Add" option.
+    private async Task PickNewThemeAsync(string name)
     {
         var picker = Page.GetByTestId(RetroSharedTestIds.RetroThemePicker);
         await FocusPickerInputAsync(picker);
         await Page.Keyboard.TypeAsync(name);
-        if (expectAdd)
-        {
-            await Expect(Page.GetByTestId(RetroSharedTestIds.RetroThemePickerAdd)).ToBeVisibleAsync();
-        }
-
+        await Expect(Page.GetByTestId(RetroSharedTestIds.RetroThemePickerAdd)).ToBeVisibleAsync();
         await Page.Keyboard.PressAsync("Enter");
     }
 

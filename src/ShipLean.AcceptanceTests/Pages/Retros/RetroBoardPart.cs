@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using ShipLean.TestSupport.TestIds;
 
 namespace ShipLean.AcceptanceTests.Pages.Retros;
@@ -14,6 +15,12 @@ public sealed class RetroBoardPart(ILocator scope)
     public RetroNotePart NoteOf(string text) => new(Notes.Filter(new() { HasText = text }));
 
     public ILocator Add => scope.GetByTestId(RetroSharedTestIds.RetroBoardAdd);
+
+    // The column with this heading ("Can be improved", "Went badly", "Went well", "Not in the plan"): its text starts with it.
+    public ILocator ColumnOf(string heading) => Columns.Filter(new() { HasTextRegex = new Regex($"^{Regex.Escape(heading)}") });
+
+    // The "+ Add" button under that column.
+    public ILocator AddIn(string heading) => ColumnOf(heading).GetByTestId(RetroSharedTestIds.RetroBoardAdd);
 
     public ILocator AddText => scope.GetByTestId(RetroSharedTestIds.RetroBoardAddText);
 

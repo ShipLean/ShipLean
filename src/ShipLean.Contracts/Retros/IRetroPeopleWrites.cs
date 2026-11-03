@@ -12,10 +12,6 @@ public interface IRetroPeopleWrites
     // 400 validation for an agent-written point.
     Task ArchiveAsync(Guid pointId, CancellationToken cancellationToken = default);
 
-    // The old one-point route: no fix type, the point's own theme. 400 validation for a Went well point; 409 if the point is already decided
-    // (a live action item or Not needed). Any other category is allowed.
-    Task<RetroActionRefDto> CreateActionAsync(Guid pointId, RetroActionCreate request, CancellationToken cancellationToken = default);
-
     Task<RetroThemeRefDto> RenameThemeAsync(Guid themeId, RetroThemeRename request, CancellationToken cancellationToken = default);
 
     Task MergeThemesAsync(Guid projectId, RetroThemeMerge request, CancellationToken cancellationToken = default);

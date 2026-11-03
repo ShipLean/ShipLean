@@ -20,9 +20,6 @@ internal sealed class RetroPeopleWrites : IRetroPeopleWrites
 
     public Task ArchiveAsync(Guid pointId, CancellationToken cancellationToken = default) => _points.ArchiveAsync(pointId, cancellationToken);
 
-    public Task<RetroActionRefDto> CreateActionAsync(Guid pointId, RetroActionCreate request, CancellationToken cancellationToken = default)
-        => _actions.CreateAsync(pointId, request, cancellationToken);
-
     public Task<RetroThemeRefDto> RenameThemeAsync(Guid themeId, RetroThemeRename request, CancellationToken cancellationToken = default)
         => _themes.RenameAsync(themeId, request, cancellationToken);
 

@@ -2,12 +2,10 @@
 import { api } from './client';
 import type {
   RetroActionAddPoints,
-  RetroActionCreate,
   RetroActionDetailDto,
   RetroActionDialogDto,
   RetroActionNew,
   RetroActionPut,
-  RetroActionRefDto,
   RetroDecision,
   RetroFeaturesDto,
   RetroItemDto,
@@ -123,9 +121,6 @@ export const putRetroPointTheme = (pointId: string, put: RetroPointThemePut) =>
 
 export const archiveRetroPoint = (pointId: string) =>
   api.post<void>(`${pointPath(pointId)}/archive`);
-
-export const createRetroAction = (pointId: string, create: RetroActionCreate) =>
-  api.post<RetroActionRefDto>(`${pointPath(pointId)}/action`, create);
 
 export const markPointNotNeeded = (pointId: string, put: RetroNotNeededPut) =>
   api.post<RetroPointDto>(`${pointPath(pointId)}/not-needed`, put);

@@ -58,18 +58,6 @@ public static class RetroChecks
         }
     }
 
-    public static void ActionCreate(RetroActionCreate request)
-    {
-        if (request.Title is not null && string.IsNullOrWhiteSpace(request.Title))
-        {
-            throw ApiException.Validation("The title cannot be blank.", "title");
-        }
-        if (request.Points is < 0)
-        {
-            throw ApiException.Validation("points cannot be negative.", "points");
-        }
-    }
-
     public static void ActionNew(RetroActionNew request)
     {
         if (string.IsNullOrWhiteSpace(request.Title))

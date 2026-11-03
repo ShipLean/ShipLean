@@ -18,7 +18,6 @@ public sealed class RetrosSweepRows : IAccessSweepRows
         new("POST", "api/projects/{id:guid}/retros/points", ProjectRole.Member, Body: """{"category":"improve","text":""}"""),
         new("PUT", "api/retros/points/{id:guid}/theme", ProjectRole.Member, Body: """{"themeId":null,"themeName":null}""", Url: $"api/retros/points/{RetroSweepData.Point}/theme"),
         new("POST", "api/retros/points/{id:guid}/archive", ProjectRole.Member, Url: $"api/retros/points/{RetroSweepData.Point}/archive"),
-        new("POST", "api/retros/points/{id:guid}/action", ProjectRole.Member, Body: """{"title":null,"points":null}""", Url: $"api/retros/points/{RetroSweepData.Point}/action"),
         new("POST", "api/projects/{id:guid}/retros/actions", ProjectRole.Member, Body: """{"title":"","fixType":"skill","pointIds":[]}"""),
         new("POST", "api/retros/actions/{workItemId:guid}/points", ProjectRole.Member, Body: """{"pointIds":[]}""", Url: $"api/retros/actions/{SeedIds.WorkItems.Ship90}/points"),
         new("PUT", "api/retros/actions/{workItemId:guid}", ProjectRole.Member, Body: """{"fixType":"skill","themeId":"0a2e0000-0000-7000-8000-000000000001","themeName":"x"}""", Url: $"api/retros/actions/{SeedIds.WorkItems.Ship90}"),

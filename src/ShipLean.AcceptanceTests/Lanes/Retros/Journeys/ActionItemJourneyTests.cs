@@ -28,14 +28,18 @@ public class ActionItemJourneyTests : SeededAcceptanceTest
     public async Task CreateActionItem_WhenFromImprovePoint_ShouldBePullableIntoSprint()
     {
         var pointText = "Estimates ignore review latency";
-        var pointId = await ArrangeImprovePointAsync(pointText);
+        await ArrangeImprovePointAsync(pointText);
         var retro = new SprintRetroPage(Page);
         await retro.OpenAsync(Project, RetroSprintId);
 
-        var created = await Page.RunAndWaitForApiAsync($"/api/retros/points/{pointId}/action", "POST", () => retro.AddAction(pointText).ClickAsync());
+        // The note's "+ Action item" opens the dialog, which starts New with the point selected and its text as the title.
+        await retro.AddAction(pointText).ClickAsync();
+        await Expect(retro.Dialog.Dialog).ToBeVisibleAsync();
+        await Expect(retro.Dialog.Title).ToHaveValueAsync(pointText);
+        var created = await Page.RunAndWaitForApiAsync($"/api/projects/{ProjectId}/retros/actions", "POST", () => retro.Dialog.Save.ClickAsync());
         created.Ok.ShouldBeTrue(await created.TextAsync());
         using var reply = JsonDocument.Parse(await created.TextAsync());
-        var key = reply.RootElement.GetProperty("key").GetString()!;
+        var key = reply.RootElement.GetProperty("action").GetProperty("key").GetString()!;
         key.ShouldNotBeNullOrEmpty();
         await Expect(retro.AddAction(pointText)).ToHaveCountAsync(0);
         await Expect(retro.RailActions).ToContainTextAsync(key);
