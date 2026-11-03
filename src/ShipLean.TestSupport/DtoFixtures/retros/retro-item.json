@@ -117,7 +117,7 @@
                 "name": "Sprint 24",
                 "status": "current"
               },
-              "isFeature": false,
+              "isFeature": true,
               "recurring": false,
               "action": null,
               "canArchive": false,
@@ -423,7 +423,7 @@
             "name": "Sprint 24",
             "status": "current"
           },
-          "isFeature": false,
+          "isFeature": true,
           "recurring": false,
           "action": null,
           "canArchive": false,
@@ -567,7 +567,9 @@
       "points": 2,
       "fixType": null,
       "pointCount": 1
-    }
+    },
+    {"workItemId": "00000005-0000-4000-8001-000000000188", "key": "SHIP-188", "title": "Common brief: screenshot baselines come from the CI report", "state": {"id": "00000003-0000-4000-8001-000000000601", "name": "New", "category": "proposed"}, "sprint": null, "points": 1, "fixType": null, "pointCount": 1},
+    {"workItemId": "00000005-0000-4000-8001-000000000146", "key": "SHIP-146", "title": "Brief template: name the test double for each external service", "state": {"id": "00000003-0000-4000-8001-000000000602", "name": "Active", "category": "inProgress"}, "sprint": {"id": "00000004-0000-4000-8001-000000000024", "name": "Sprint 24", "status": "current"}, "points": 2, "fixType": null, "pointCount": 1}
   ],
   "children": [
     {
