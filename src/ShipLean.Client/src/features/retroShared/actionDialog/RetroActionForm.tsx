@@ -81,6 +81,7 @@ export function RetroActionForm({
       width="620px"
       onClose={onClose}
       testId={ids.retroActionDialog}
+      titleIcon={<TypeIcon type="action" />}
       headerExtra={<ModeToggle mode={mode} onChange={setMode} />}
       footer={
         <>
@@ -89,14 +90,18 @@ export function RetroActionForm({
               ? 'Starts in New with no sprint. Pulling it into a sprint is the approval.'
               : ''}
           </span>
-          <button type="button" className="cursor-pointer px-3 py-1 text-ink" onClick={onClose}>
+          <button
+            type="button"
+            className="btn-ghost cursor-pointer border-transparent text-ink"
+            onClick={onClose}
+          >
             Cancel
           </button>
           <button
             type="button"
             data-testid={ids.retroActionSave}
             disabled={!ready}
-            className="cursor-pointer rounded-control bg-accent px-3 py-1 text-signal-ink disabled:cursor-default disabled:opacity-60"
+            className="btn-signal cursor-pointer disabled:cursor-default disabled:opacity-60"
             onClick={submit}
           >
             {mode === 'new' ? 'Create action item' : 'Add points'}
@@ -108,13 +113,13 @@ export function RetroActionForm({
         <>
           <label className="grid gap-1">
             <span className="flex items-center gap-1.5 text-[length:var(--text-xs)] font-semibold text-ink-muted">
-              <TypeIcon type="action" /> Title
+              Title
             </span>
             <input
               data-testid={ids.retroActionTitle}
               value={title}
               placeholder="What will change"
-              className="w-full rounded-control border border-edge bg-canvas px-2 py-1 text-[length:var(--text-sm)] text-ink"
+              className="field w-full"
               onChange={(e) => setTitle(e.target.value)}
             />
           </label>

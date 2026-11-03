@@ -17,7 +17,7 @@ export function ExistingActionField({
       <select
         data-testid={ids.retroActionExisting}
         value={value}
-        className="w-full rounded-control border border-edge bg-canvas px-2 py-1 text-[length:var(--text-sm)] text-ink"
+        className="field w-full"
         onChange={(e) => onChange(e.target.value)}
       >
         {actions.length === 0 ? <option value="">No open action items</option> : null}

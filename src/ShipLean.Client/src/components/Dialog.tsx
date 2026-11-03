@@ -14,6 +14,7 @@ export function Dialog({
   testId,
   closeTestId,
   headerExtra,
+  titleIcon,
   onBackdropClick,
 }: {
   title: string;
@@ -29,6 +30,8 @@ export function Dialog({
   closeTestId?: string;
   /** Shown in the header, before the close button. */
   headerExtra?: ReactNode;
+  /** Shown in the header before the title. */
+  titleIcon?: ReactNode;
   /** A click on the backdrop (outside the panel). Without it the backdrop does nothing. */
   onBackdropClick?: () => void;
 }) {
@@ -73,6 +76,7 @@ export function Dialog({
         className={`flex max-h-[calc(100dvh-32px)] flex-col ${tall ? 'h-[calc(100dvh-32px)]' : ''}  overflow-hidden rounded-frame border border-edge bg-panel shadow-panel`}
       >
         <header className="flex items-start gap-2 border-b border-edge px-4 py-3">
+          {titleIcon}
           <h2
             id={titleId}
             className="m-0 flex-1 text-[length:var(--text-md)] font-semibold text-ink"

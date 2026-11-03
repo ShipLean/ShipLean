@@ -29,7 +29,7 @@ export function ThemeField({
       <select
         data-testid={ids.retroActionTheme}
         value={value}
-        className="w-full rounded-control border border-edge bg-canvas px-2 py-1 text-[length:var(--text-sm)] text-ink"
+        className="field w-full"
         onChange={(e) => onChoose(e.target.value)}
       >
         <option value="">No theme</option>
