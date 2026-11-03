@@ -7,7 +7,7 @@ import { retrosTestIds as ids } from '../../testIds';
 import { Highlight } from './Highlight';
 import { matchesRootCause } from './matches';
 
-/** One point of the result on one line: category, text (the root cause too when the search matched it), theme, work item key, sprint and author. The rest is on hover and in the selected retro. Clicking it opens its retro. */
+/** One point of the result on one line (the hover title carries the root cause only when the search matched it): category, text (the root cause too when the search matched it), theme, work item key, sprint and author. The rest is on hover and in the selected retro. Clicking it opens its retro. */
 export function SearchRow({
   point,
   q,
@@ -26,7 +26,8 @@ export function SearchRow({
   const cell = 'border-b border-edge px-2.5 py-1.5 align-middle';
   const oneLine = 'overflow-hidden text-ellipsis whitespace-nowrap';
   const showRootCause = matchesRootCause(point.rootCause, q);
-  const fullText = point.rootCause ? `${point.text}\nRoot cause: ${point.rootCause}` : point.text;
+  const fullText =
+    showRootCause && point.rootCause ? `${point.text}\nRoot cause: ${point.rootCause}` : point.text;
   return (
     <tr
       data-testid={ids.retrosRow}
@@ -60,7 +61,7 @@ export function SearchRow({
         ) : null}
         {logOnly ? <span className="text-ink-muted"> · Match in the raw failure log</span> : null}
       </td>
-      <td className={`${cell} ${oneLine}`}>
+      <td className={`${cell} ${oneLine}`} title={theme?.name}>
         {theme ? (
           <span className="text-[length:var(--text-sm)]">
             <Highlight text={theme.name} q={q} />

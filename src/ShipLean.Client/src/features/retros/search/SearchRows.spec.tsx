@@ -54,6 +54,8 @@ test('SearchRows_WhenAnotherFieldMatchedAndOnlyOneWordIsInTheRootCause_ShouldKee
   const rows = page.getByTestId(ids.retrosRow);
   await expect(rows).toHaveCount(retroSearch.rows.length);
   await expect(rows.first()).not.toContainText('Root cause');
+  // The hover title leaves it out as well.
+  await expect(rows.first().locator('td').nth(1)).not.toHaveAttribute('title', /Root cause/);
 });
 
 test('SearchRows_WhenTextIsLong_ShouldStayOneLineAt1280', async ({ mount, page }) => {
@@ -69,6 +71,9 @@ test('SearchRows_WhenTextIsLong_ShouldStayOneLineAt1280', async ({ mount, page }
   );
   expect(Math.max(...heights)).toBeLessThan(40);
   expect(Math.max(...heights) - Math.min(...heights)).toBeLessThan(1);
+  // The theme name is cut with an ellipsis too, so it is on hover.
+  const themed = retroSearch.rows[0].theme!;
+  await expect(rows.first().locator('td').nth(2)).toHaveAttribute('title', themed.name);
   // The text is cut with an ellipsis, so the point's whole text is on hover.
   const cell = rows.first().locator('td').nth(1);
   await expect(cell).toHaveAttribute('title', new RegExp(retroSearch.rows[0].text.slice(0, 20)));
@@ -121,6 +126,7 @@ test('SearchRows_WhenResultIsEmpty_ShouldShowTheEmptyState', async ({ mount, pag
   await expect(page.getByTestId(ids.retrosRow)).toHaveCount(0);
 });
 
+// Owner P1: these screenshot baselines are stale (rows, filters and the selected retro changed in Q1); regenerate them in the CI Docker image.
 for (const theme of ['light', 'dark'] as const) {
   test(`SearchRows_WhenRendered_ShouldMatchItsScreenshot_${theme}`, async ({ mount, page }) => {
     await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
