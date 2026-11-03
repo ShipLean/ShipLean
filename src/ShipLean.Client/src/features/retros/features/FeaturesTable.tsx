@@ -1,5 +1,6 @@
 import type { RetroFeatureRowDto } from '../../../api/retros';
 import { RETRO_CATEGORIES } from '../../../api/retros';
+import { retrosTestIds as ids } from '../testIds';
 import { CategoryHead } from './CategoryHead';
 import { FeatureRow } from './FeatureRow';
 
@@ -44,6 +45,7 @@ export function FeaturesTable({
           {loose.length ? (
             <tr>
               <td
+                data-testid={ids.retroFeaturesLoose}
                 colSpan={COLUMNS}
                 className="border-t border-edge bg-canvas px-2.5 py-1.5 text-[length:var(--text-xs)] font-semibold text-ink-muted"
               >

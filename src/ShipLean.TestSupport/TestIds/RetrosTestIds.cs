@@ -86,6 +86,10 @@ public static class RetrosTestIds
     public const string RetroFeaturesRow = "retro-features-row";
     public const string RetroFeaturesFilter = "retro-features-filter";
     public const string RetroFeaturesSearch = "retro-features-search";
+    public const string RetroFeaturesFilterOption = "retro-features-filter-option";
+    public const string RetroFeaturesLink = "retro-features-link";
+    public const string RetroFeaturesLoose = "retro-features-loose";
+    public const string RetroCategoryCount = "retro-category-count";
     public const string RetroItemPanel = "retro-item-panel";
     public const string RetroItemFilter = "retro-item-filter";
     public const string RetroItemAddAction = "retro-item-add-action";

@@ -22,6 +22,10 @@ public sealed class RetrosSearchPage(IPage page)
 
     public ILocator FilterRecurring => page.GetByTestId(RetrosTestIds.RetrosFilterRecurring);
 
+    public ILocator FilterDecision => page.GetByTestId(RetrosTestIds.RetrosFilterDecision);
+
+    public ILocator FilterNoSprint => page.GetByTestId(RetrosTestIds.RetrosFilterNosprint);
+
     public ILocator FilterUnthemed => page.GetByTestId(RetrosTestIds.RetrosFilterUnthemed);
 
     public ILocator FilterClear => page.GetByTestId(RetrosTestIds.RetrosFilterClear);

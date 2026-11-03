@@ -23,6 +23,7 @@ export function FeatureRow({ projectKey, row }: { projectKey: string; row: Retro
             {item.key}
           </span>
           <Link
+            data-testid={ids.retroFeaturesLink}
             to={routePath('retroItem', { key: projectKey, itemKey: item.key })}
             className="font-medium text-ink hover:underline"
           >

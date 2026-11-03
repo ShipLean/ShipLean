@@ -1,10 +1,9 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import type { ProjectDto } from '../../../api/projects';
-import type { RetroItemDto } from '../../../api/retros';
+import type { RetroItemDto, RetroPointDto } from '../../../api/retros';
 import { retroSharedTestIds as shared } from '../../retroShared/testIds';
 import { retroItem, stubRetros } from '../ct/retroFixtures';
 import { retrosTestIds as ids } from '../testIds';
-import { ItemAddedHarness } from './ct/ItemAddedHarness';
 import { RetroItemPanel } from './RetroItemPanel';
 
 const project = { id: 'p1', key: 'SHIP' } as ProjectDto;
@@ -156,25 +155,70 @@ test('RetroItemPanel_WhenItemHasLogsAndStories_ShouldShowLogsBelowTheBoardBefore
   expect(logs!.y + logs!.height).toBeLessThanOrEqual(rows!.y);
 });
 
-test('ItemAddedHarness_WhenAddedPointWouldBeHidden_ShouldClearTheFilter', async ({
+/** Answers the board's POST of a new point with `point`, over the stub's own answer. */
+async function answerAddWith(page: Parameters<typeof stubRetros>[0], point: RetroPointDto) {
+  await page.route(/\/api\/projects\/[^/]+\/retros\/points$/, (r) =>
+    r.request().method() === 'POST'
+      ? r.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify(point) })
+      : r.fallback(),
+  );
+}
+
+async function addUnder(page: Parameters<typeof stubRetros>[0], category: string, text: string) {
+  const column = page.locator(
+    `[data-testid="${shared.retroBoardColumn}"][data-category="${category}"]`,
+  );
+  await column.getByTestId(shared.retroBoardAdd).click();
+  await page.getByTestId(shared.retroBoardAddText).fill(text);
+  await page.getByTestId(shared.retroBoardAddSave).click();
+}
+
+test('RetroItemPanel_WhenAddedUnderAColumnToAnotherRetro_ShouldClearTheRetroFilter', async ({
   mount,
   page,
 }) => {
-  await mount(<ItemAddedHarness />, { hooksConfig: { route: '/p/SHIP/retros/items/X?retro=r1' } });
-  await expect(page.getByTestId('address')).toHaveText('retro=r1 decide=false');
-  await page.getByRole('button', { name: 'added to another retro' }).click();
-  await expect(page.getByTestId('address')).toHaveText('retro= decide=false');
+  await serve(page, twoRetros);
+  await answerAddWith(page, {
+    ...allPoints.find((p) => p.category === 'improve')!,
+    retroId: firstCard.id,
+  });
+  await mount(<RetroItemPanel project={project} itemKey="SHIP-180" />, route(`?retro=${OTHER}`));
+  const retroFilter = page.getByTestId(ids.retroItemFilter);
+  await expect(retroFilter.getByRole('button', { name: /Second agent/ })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+
+  await addUnder(page, 'improve', 'A point written under the filter');
+
+  await expect(retroFilter.getByRole('button', { name: 'All retros' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
 });
 
-test('ItemAddedHarness_WhenWentWellAddedUnderToDecide_ShouldClearDecide', async ({
+test('RetroItemPanel_WhenWentWellAddedUnderToDecide_ShouldClearToDecide', async ({
   mount,
   page,
 }) => {
-  await mount(<ItemAddedHarness />, {
-    hooksConfig: { route: '/p/SHIP/retros/items/X?retro=r1&decide=open' },
+  await serve(page, twoRetros);
+  await answerAddWith(page, {
+    ...allPoints.find((p) => p.category === 'wentWell')!,
+    retroId: firstCard.id,
   });
-  await page.getByRole('button', { name: 'added a went well' }).click();
-  await expect(page.getByTestId('address')).toHaveText('retro=r1 decide=false');
+  await mount(<RetroItemPanel project={project} itemKey="SHIP-180" />, route('?decide=open'));
+  const pointsFilter = page.getByTestId(ids.retroToDecideFilter);
+  await expect(pointsFilter.getByRole('button', { name: 'To decide' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+
+  await addUnder(page, 'wentWell', 'Something went well');
+
+  await expect(pointsFilter.getByRole('button', { name: 'All points' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
 });
 
 for (const width of [1280, 1440]) {

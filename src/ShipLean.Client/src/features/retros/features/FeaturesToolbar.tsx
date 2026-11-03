@@ -31,6 +31,7 @@ export function FeaturesToolbar({
           <button
             key={option.id}
             type="button"
+            data-testid={ids.retroFeaturesFilterOption}
             data-value={option.id}
             aria-pressed={address.show === option.id}
             className="cursor-pointer border-r border-edge bg-panel px-3 py-1 text-[length:var(--text-sm)] whitespace-nowrap text-ink-muted last:border-r-0 aria-pressed:bg-signal-soft aria-pressed:font-semibold aria-pressed:text-ink"
