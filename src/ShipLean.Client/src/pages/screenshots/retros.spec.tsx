@@ -11,11 +11,11 @@ async function arrange(page: Page) {
   await stubRetros(page);
 }
 
-// Owner P1: the six retro-insights baselines (themes, actions, impact; light and dark) are stale: stubRetros serves a pending merge proposal, which the themes view now shows in flow; regenerate them in the CI Docker image.
 const insightsView = (view: string, ready: string) => ({
   // The mockups: retro-insights (themes), retro-insights-actions and retro-insights-impact.
   name: view === 'themes' ? 'retro-insights' : `retro-insights-${view}`,
-  route: `/p/SHIP/retros/insights?view=${view}`,
+  route:
+    view === 'weeks' ? '/p/SHIP/retros/insights?range=w6' : `/p/SHIP/retros/insights?view=${view}`,
   shell: true,
   arrange,
   ready: async (page: Page) => {
@@ -50,6 +50,38 @@ pageShots([
       await expect(page.getByTestId(retroSharedTestIds.retroCard).first()).toBeVisible();
     },
   },
+  {
+    name: 'sprint-retro-decide',
+    route: '/p/SHIP/sprints/sprint-24/retro?decide=open',
+    shell: true,
+    arrange,
+    ready: async (page) => {
+      await expect(page.getByTestId(ids.sprintRetroPanel)).toBeVisible();
+      await expect(page.getByTestId(ids.retroToDecideFilter)).toBeVisible();
+      await expect(page.getByTestId(retroSharedTestIds.retroNote).first()).toBeVisible();
+    },
+  },
+  {
+    name: 'retros-features',
+    route: '/p/SHIP/retros/features',
+    shell: true,
+    arrange,
+    ready: async (page) => {
+      await expect(page.getByTestId(ids.retroFeaturesPanel)).toBeVisible();
+      await expect(page.getByTestId(ids.retroFeaturesRow).first()).toBeVisible();
+    },
+  },
+  {
+    name: 'retro-item',
+    route: '/p/SHIP/retros/items/SHIP-101',
+    shell: true,
+    arrange,
+    ready: async (page) => {
+      await expect(page.getByTestId(ids.retroItemPanel)).toBeVisible();
+      await expect(page.getByTestId(retroSharedTestIds.retroNote).first()).toBeVisible();
+    },
+  },
+  insightsView('weeks', ids.retroRecurringRow),
   {
     name: 'retros-search',
     route: `/p/SHIP/retros?q=screenshot&selected=${retroSearch.rows[0].retroId}`,

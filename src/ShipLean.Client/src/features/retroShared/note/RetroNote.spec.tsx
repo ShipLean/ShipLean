@@ -301,7 +301,6 @@ for (const theme of ['light', 'dark'] as const) {
   });
 }
 
-// Owner P1: these baselines are new and red in CI until P1 generates them in the CI Docker image.
 for (const theme of ['light', 'dark'] as const) {
   test(`RetroNote_WhenEveryStateShown_ShouldMatchItsScreenshot_${theme}`, async ({
     mount,

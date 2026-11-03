@@ -214,7 +214,6 @@ test('SelectedRetro_WhenNothingIsSelected_ShouldInviteASelection', async ({ moun
   await expect(page.getByTestId(ids.retrosSelected)).toContainText('Select a point');
 });
 
-// Owner P1: these screenshot baselines are stale (rows, filters and the selected retro changed in Q1); regenerate them in the CI Docker image.
 for (const theme of ['light', 'dark'] as const) {
   test(`SelectedRetro_WhenRendered_ShouldMatchItsScreenshot_${theme}`, async ({ mount, page }) => {
     await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });

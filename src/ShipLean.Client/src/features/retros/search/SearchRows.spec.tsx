@@ -126,7 +126,6 @@ test('SearchRows_WhenResultIsEmpty_ShouldShowTheEmptyState', async ({ mount, pag
   await expect(page.getByTestId(ids.retrosRow)).toHaveCount(0);
 });
 
-// Owner P1: these screenshot baselines are stale (rows, filters and the selected retro changed in Q1); regenerate them in the CI Docker image.
 for (const theme of ['light', 'dark'] as const) {
   test(`SearchRows_WhenRendered_ShouldMatchItsScreenshot_${theme}`, async ({ mount, page }) => {
     await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
