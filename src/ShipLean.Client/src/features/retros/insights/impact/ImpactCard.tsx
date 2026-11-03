@@ -1,5 +1,8 @@
-import type { RetroImpactDto, RetroInsightsMode } from '../../../../api/retros';
-import type { SprintRef } from '../../../../api/refs';
+import type {
+  RetroImpactDto,
+  RetroInsightColumnDto,
+  RetroInsightsMode,
+} from '../../../../api/retros';
 import { ActionChip } from '../../../retroShared/ActionChip';
 import { retrosTestIds as ids } from '../../testIds';
 import { VerdictChip } from '../recurring/VerdictChip';
@@ -10,17 +13,18 @@ import { LatestMentionCallout } from './LatestMentionCallout';
 /** One closed action item: verdict, when it closed, the chart, the numbers and, for No effect, the latest mention. */
 export function ImpactCard({
   impact,
-  sprints,
+  columns,
   raisedIn,
   mode,
 }: {
   impact: RetroImpactDto;
-  sprints: readonly SprintRef[];
+  columns: readonly RetroInsightColumnDto[];
   raisedIn: string | undefined;
   mode: RetroInsightsMode;
 }) {
   const { action, theme, verdict } = impact;
-  const closedIn = impact.closedAt >= 0 ? sprints[impact.closedAt]?.name : undefined;
+  const unit = mode === 'week' ? 'week' : 'sprint';
+  const closedIn = impact.closedAt >= 0 ? columns[impact.closedAt]?.label : undefined;
   return (
     <article
       data-testid={ids.retroImpactCard}
@@ -33,7 +37,7 @@ export function ImpactCard({
         <span className="flex-1" />
         <span className="text-[length:var(--text-xs)] text-ink-muted">
           {raisedIn ? `raised ${raisedIn} · ` : ''}
-          {closedIn ? `done ${closedIn}` : `done before ${sprints[0]?.name ?? 'this range'}`}
+          {closedIn ? `done ${closedIn}` : `done before ${columns[0]?.label ?? 'this range'}`}
         </span>
       </div>
       <h3 className="m-0 text-[length:var(--text-md)] font-semibold">{action.title}</h3>
@@ -45,16 +49,18 @@ export function ImpactCard({
       <ImpactChart
         label={theme.name}
         actionKey={action.key}
-        sprintNames={sprints.map((s) => s.name)}
+        columnLabels={columns.map((c) => c.label)}
         counts={impact.counts}
         closedAt={impact.closedAt}
         beforeAvg={impact.beforeAvg}
         afterAvg={impact.afterAvg}
+        unit={unit}
       />
       <ImpactNumbers
         beforeAvg={impact.beforeAvg}
         afterAvg={impact.afterAvg}
         changePct={impact.changePct}
+        unit={unit}
       />
       {verdict === 'noEffect' && impact.latestMention ? (
         <LatestMentionCallout mention={impact.latestMention} />

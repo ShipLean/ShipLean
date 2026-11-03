@@ -1,22 +1,22 @@
-/** One sprint's mention count, shaded by how many there are against the busiest cell in the table. */
+/** One column's (sprint or week) mention count, shaded by how many there are against the busiest cell in the table. */
 export function MentionCell({
   count,
   max,
-  sprintId,
-  sprintName,
+  columnKey,
+  columnLabel,
 }: {
   count: number;
   max: number;
-  sprintId: string;
-  sprintName: string;
+  columnKey: string;
+  columnLabel: string;
 }) {
   const strength = max > 0 ? Math.round((count / max) * 70) : 0;
   return (
     <td
       data-cell="mentions"
-      data-sprint-id={sprintId}
+      data-sprint-id={columnKey}
       data-count={count}
-      title={`${sprintName}: ${count} mention${count === 1 ? '' : 's'}`}
+      title={`${columnLabel}: ${count} mention${count === 1 ? '' : 's'}`}
       className="px-1 py-1 text-center text-[length:var(--text-sm)] tabular-nums"
     >
       <span

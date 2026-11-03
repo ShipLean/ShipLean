@@ -160,3 +160,15 @@ test('ChangesImpact_WhenModeIsWeek_ShouldCarryItToTheVerdictChip', async ({ moun
   expect(count).toBeGreaterThan(0);
   await expect(cards.locator('span[data-verdict][data-mode="week"]')).toHaveCount(count);
 });
+
+test('ChangesImpact_WhenModeIsWeek_ShouldDrawABarPerWeekColumnAndSayPerWeek', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  await mount(<ChangesImpact project={insightsProject} insights={insightsWeeks} />, open);
+  const view = card(page, insightsWeeks.impact[0].action.key);
+  await expect(view.locator('[data-bar]')).toHaveCount(insightsWeeks.columns.length);
+  await expect(view.locator('[data-figure="before"]')).toContainText('per week before');
+  await expect(view.locator('svg title').first()).toContainText(insightsWeeks.columns[0].label);
+});

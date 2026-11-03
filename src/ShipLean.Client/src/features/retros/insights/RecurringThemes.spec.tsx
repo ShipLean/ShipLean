@@ -1,9 +1,18 @@
 import { expect, test } from '@playwright/experimental-ct-react';
+import type { RetroInsightsDto } from '../../../api/retros';
 import { itemPeekTestIds } from '../../itemPeek/testIds';
 import { insightsWeeks, retroInsights, stubRetros } from '../ct/retroFixtures';
 import { retrosTestIds as ids } from '../testIds';
 import { insightsProject } from './ct/insightsProject';
+import { RetroActionDialogProvider } from '../../retroShared/actionDialog/RetroActionDialogProvider';
+import { retroSharedTestIds } from '../../retroShared/testIds';
 import { RecurringThemes } from './RecurringThemes';
+
+const table = (insights: RetroInsightsDto) => (
+  <RetroActionDialogProvider projectId={insightsProject.id}>
+    <RecurringThemes project={insightsProject} insights={insights} />
+  </RetroActionDialogProvider>
+);
 
 const open = { hooksConfig: { route: '/p/SHIP/retros/insights' } };
 
@@ -12,7 +21,7 @@ test('RecurringThemes_WhenMounted_ShouldListRowsInFixtureOrderWithACellPerSprint
   page,
 }) => {
   await stubRetros(page);
-  await mount(<RecurringThemes project={insightsProject} insights={retroInsights} />, open);
+  await mount(table(retroInsights), open);
   const rows = page.getByTestId(ids.retroRecurringRow);
   await expect(rows).toHaveCount(retroInsights.themes.length);
   const ids_ = await rows.evaluateAll((els) => els.map((e) => e.getAttribute('data-theme-id')));
@@ -32,7 +41,7 @@ test('RecurringThemes_WhenMounted_ShouldListRowsInFixtureOrderWithACellPerSprint
 
 test('RecurringThemes_WhenStatusesDiffer_ShouldLabelEachOfTheFour', async ({ mount, page }) => {
   await stubRetros(page);
-  await mount(<RecurringThemes project={insightsProject} insights={retroInsights} />, open);
+  await mount(table(retroInsights), open);
   const labels = {
     recurring: 'Recurring',
     beingAddressed: 'Being addressed',
@@ -50,7 +59,7 @@ test('RecurringThemes_WhenStatusesDiffer_ShouldLabelEachOfTheFour', async ({ mou
 
 test('RecurringThemes_WhenRowHasActions_ShouldLinkEachKeyToTheItem', async ({ mount, page }) => {
   await stubRetros(page);
-  await mount(<RecurringThemes project={insightsProject} insights={retroInsights} />, open);
+  await mount(table(retroInsights), open);
   const first = page.getByTestId(ids.retroRecurringRow).first();
   const links = first.getByTestId(itemPeekTestIds.link);
   await expect(links).toHaveCount(retroInsights.themes[0].actionItems.length);
@@ -62,7 +71,7 @@ test('RecurringThemes_WhenRowHasActions_ShouldLinkEachKeyToTheItem', async ({ mo
 
 test('RecurringThemes_WhenRenamed_ShouldPutTheNewName', async ({ mount, page }) => {
   const stub = await stubRetros(page);
-  await mount(<RecurringThemes project={insightsProject} insights={retroInsights} />, open);
+  await mount(table(retroInsights), open);
   const cell = page.getByTestId(ids.retroThemeRename).first();
   await cell.locator('[data-action="edit"]').click();
   await cell.locator('[data-field="name"]').fill('Baselines come from CI');
@@ -85,7 +94,7 @@ test('RecurringThemes_WhenRenameConflicts_ShouldSayTheNameIsTaken', async ({ mou
         body: JSON.stringify({ error: 'name taken', code: 'conflict', field: 'name' }),
       }),
   );
-  await mount(<RecurringThemes project={insightsProject} insights={retroInsights} />, open);
+  await mount(table(retroInsights), open);
   const cell = page.getByTestId(ids.retroThemeRename).first();
   await cell.locator('[data-action="edit"]').click();
   await cell.locator('[data-field="name"]').fill('Brief too vague');
@@ -95,7 +104,7 @@ test('RecurringThemes_WhenRenameConflicts_ShouldSayTheNameIsTaken', async ({ mou
 
 test('RecurringThemes_WhenThemesRecur_ShouldWarnWithTheCount', async ({ mount, page }) => {
   await stubRetros(page);
-  await mount(<RecurringThemes project={insightsProject} insights={retroInsights} />, open);
+  await mount(table(retroInsights), open);
   const count = retroInsights.themes.filter((t) => t.status === 'recurring').length;
   expect(count).toBeGreaterThan(0);
   await expect(page.locator('[data-callout="recurring"]')).toContainText(`${count} `);
@@ -107,7 +116,7 @@ test('RecurringThemes_WhenNoThemeRecurs_ShouldHideTheCallout', async ({ mount, p
     ...retroInsights,
     themes: retroInsights.themes.map((t) => ({ ...t, status: 'quiet' as const })),
   };
-  await mount(<RecurringThemes project={insightsProject} insights={calm} />, open);
+  await mount(table(calm), open);
   await expect(page.locator('[data-callout="recurring"]')).toHaveCount(0);
 });
 
@@ -116,7 +125,7 @@ test('RecurringThemes_WhenMounted_ShouldShowTheSprintRangeInTheSubtitle', async 
   page,
 }) => {
   await stubRetros(page);
-  await mount(<RecurringThemes project={insightsProject} insights={retroInsights} />, open);
+  await mount(table(retroInsights), open);
   const first = retroInsights.sprints[0].name;
   const last = retroInsights.sprints[retroInsights.sprints.length - 1].name.replace(
     /^Sprint\s+/,
@@ -132,10 +141,7 @@ for (const theme of ['light', 'dark'] as const) {
   }) => {
     await stubRetros(page);
     await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
-    const view = await mount(
-      <RecurringThemes project={insightsProject} insights={retroInsights} />,
-      open,
-    );
+    const view = await mount(table(retroInsights), open);
     await expect(view).toHaveScreenshot(`recurring-themes.${theme}.png`, {
       animations: 'disabled',
     });
@@ -147,11 +153,122 @@ test('RecurringThemes_WhenModeIsWeek_ShouldCarryItToTheStatusAndVerdictChips', a
   page,
 }) => {
   await stubRetros(page);
-  await mount(<RecurringThemes project={insightsProject} insights={insightsWeeks} />, open);
+  await mount(table(insightsWeeks), open);
   const rows = page.getByTestId(ids.retroRecurringRow);
   await expect(rows.first().locator('span[data-status][data-mode="week"]')).toHaveCount(1);
   await expect(rows.first().locator('span[data-verdict][data-mode="week"]')).toHaveCount(1);
   await expect(page.locator('[data-mode="sprint"]')).toHaveCount(0);
   await expect(page.getByTestId(ids.retroTipStatusHead)).toHaveAttribute('data-mode', 'week');
   await expect(page.getByTestId(ids.retroTipVerdictHead)).toHaveAttribute('data-mode', 'week');
+});
+
+const header = (page: Page) => page.locator('thead th');
+type Page = Parameters<Parameters<typeof test>[2]>[0]['page'];
+const headLabels = (page: Page) => header(page).allTextContents();
+const withNoSprint = (counts: number[]): RetroInsightsDto => ({
+  ...retroInsights,
+  themes: retroInsights.themes.map((t, i) => ({
+    ...t,
+    counts,
+    noSprint: i === 0 ? 2 : 0,
+    total: counts.reduce((a, b) => a + b, 0) + (i === 0 ? 2 : 0),
+  })),
+  unthemed: { counts: [1, 0, 0, 0, 0, 2], noSprint: 3, total: 6 },
+});
+
+test('RecurringThemes_WhenModeIsWeek_ShouldShowWeekColumnsAndNoNoSprintColumn', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  await mount(table(insightsWeeks), open);
+  const labels = await headLabels(page);
+  expect(labels.slice(1, 7)).toEqual(insightsWeeks.columns.map((c) => c.label));
+  await expect(page.getByTestId(ids.retroInsightsNosprint)).toHaveCount(0);
+  await expect(
+    page.getByTestId(ids.retroRecurringRow).first().locator('[data-cell="no-sprint"]'),
+  ).toHaveCount(0);
+  await expect(
+    page.getByTestId(ids.retroInsightsUnthemed).locator('[data-cell="no-sprint"]'),
+  ).toHaveCount(0);
+  await expect(page.getByRole('columnheader', { name: '26 Oct' })).toBeVisible();
+});
+
+test('RecurringThemes_WhenModeIsSprint_ShouldShowNoSprintBeforeTotal', async ({ mount, page }) => {
+  await stubRetros(page);
+  await mount(table(withNoSprint([1, 0, 0, 0, 0, 1])), open);
+  const labels = (await headLabels(page)).map((l) => l.trim());
+  const at = labels.findIndex((l) => l.startsWith('No sprint'));
+  expect(at).toBe(retroInsights.columns.length + 1);
+  expect(labels[at + 1]).toBe('Total');
+  const row = page.getByTestId(ids.retroRecurringRow).first();
+  const cells = await row
+    .locator('td')
+    .evaluateAll((els) => els.map((e) => e.getAttribute('data-cell')));
+  expect(cells.indexOf('no-sprint')).toBe(retroInsights.columns.length + 1);
+  expect(cells.indexOf('total')).toBe(retroInsights.columns.length + 2);
+});
+
+test('RecurringThemes_WhenThemeHasNoSprintMentions_ShouldCountThemInTotal', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  const insights = withNoSprint([1, 0, 0, 0, 0, 1]);
+  await mount(table(insights), open);
+  const row = page.getByTestId(ids.retroRecurringRow).first();
+  await expect(row.locator('[data-cell="no-sprint"]')).toHaveText('2');
+  await expect(row.locator('[data-cell="total"]')).toHaveText(String(insights.themes[0].total));
+  expect(insights.themes[0].total).toBe(4);
+});
+
+test('RecurringThemes_WhenUnthemedHasPoints_ShouldBeLastAndLinkToSearch', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  await mount(table(withNoSprint([1, 0, 0, 0, 0, 1])), open);
+  const last = page.locator('tbody tr').last();
+  await expect(last).toHaveAttribute('data-testid', ids.retroInsightsUnthemed);
+  await expect(last).toContainText('not judged');
+  await expect(last.locator('[data-cell="total"]')).toHaveText('6');
+  await expect(last.getByRole('link')).toHaveAttribute('href', '/p/SHIP/retros?unthemed=true');
+});
+
+test('RecurringThemes_WhenUnthemedIsEmpty_ShouldHideTheRow', async ({ mount, page }) => {
+  await stubRetros(page);
+  await mount(
+    table({ ...retroInsights, unthemed: { counts: [0, 0, 0, 0, 0, 0], noSprint: 0, total: 0 } }),
+    open,
+  );
+  await expect(page.getByTestId(ids.retroInsightsUnthemed)).toHaveCount(0);
+});
+
+test('RecurringThemes_WhenThemeRowActionClicked_ShouldOpenTheDialogWithTheTheme', async ({
+  mount,
+  page,
+}) => {
+  const stub = await stubRetros(page);
+  await mount(table(retroInsights), open);
+  const buttons = page.getByTestId(ids.retroInsightsThemeAction);
+  await expect(buttons).toHaveCount(retroInsights.themes.length);
+  await buttons.nth(1).click();
+  await expect(page.getByTestId(retroSharedTestIds.retroActionDialog)).toBeVisible();
+  await expect
+    .poll(() => stub.reads('/retros/action-dialog').map((c) => c.query))
+    .toContainEqual(expect.stringContaining(`theme=${retroInsights.themes[1].theme.id}`));
+});
+
+test('RecurringThemes_WhenNoSprintAndUnthemedShow_ShouldMountTheirTips', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  await mount(table(withNoSprint([1, 0, 0, 0, 0, 1])), open);
+  await expect(
+    page.getByTestId(ids.retroInsightsNosprint).getByTestId(ids.retroTipNosprint),
+  ).toHaveCount(1);
+  await expect(
+    page.getByTestId(ids.retroInsightsUnthemed).getByTestId(ids.retroTipUnthemed),
+  ).toHaveCount(1);
 });

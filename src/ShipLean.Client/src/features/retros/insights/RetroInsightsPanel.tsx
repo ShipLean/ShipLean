@@ -1,6 +1,5 @@
 import { useSearchParams } from 'react-router-dom';
 import type { ProjectDto } from '../../../api/projects';
-import type { RetroRange } from '../../../api/retrosApi';
 import { RetroActionDialogProvider } from '../../retroShared/actionDialog/RetroActionDialogProvider';
 import { pagesTestIds } from '../../pages/testIds';
 import { RetroQueryState } from '../RetroQueryState';
@@ -11,6 +10,7 @@ import { ChangesImpact } from './ChangesImpact';
 import type { RetroInsightsSlotProps } from './InsightsSlotProps';
 import { KeepsWorking } from './KeepsWorking';
 import { MergeThemes } from './MergeThemes';
+import { RangeSelect, rangeOf } from './RangeSelect';
 import { RecurringThemes } from './RecurringThemes';
 
 const VIEWS = [
@@ -20,17 +20,8 @@ const VIEWS = [
 ] as const;
 type InsightView = (typeof VIEWS)[number]['id'];
 
-const RANGES = [
-  { id: '6', label: 'Last 6 sprints' },
-  { id: '3', label: 'Last 3 sprints' },
-  { id: 'all', label: 'All sprints' },
-] as const satisfies readonly { id: RetroRange; label: string }[];
-
 const viewOf = (params: URLSearchParams): InsightView =>
   VIEWS.find((v) => v.id === params.get('view'))?.id ?? 'themes';
-const rangeOf = (params: URLSearchParams): RetroRange =>
-  RANGES.find((r) => r.id === params.get('range'))?.id ?? '6';
-
 function InsightBody({ view, ...props }: RetroInsightsSlotProps & { view: InsightView }) {
   if (view === 'actions') return <ActionItemsTable {...props} />;
   if (view === 'impact') {
@@ -55,7 +46,7 @@ function InsightBody({ view, ...props }: RetroInsightsSlotProps & { view: Insigh
 export function RetroInsightsPanel({ project }: { project: ProjectDto }) {
   const [params, setParams] = useSearchParams();
   const view = viewOf(params);
-  const range = rangeOf(params);
+  const range = rangeOf(params.get('range'));
   const query = useRetroInsights(project.id, range);
   const set = (name: 'view' | 'range', value: string) => {
     const next = new URLSearchParams(params);
@@ -85,19 +76,7 @@ export function RetroInsightsPanel({ project }: { project: ProjectDto }) {
               </button>
             ))}
           </div>
-          <select
-            data-testid={ids.retroInsightsRange}
-            aria-label="Range"
-            value={range}
-            className="rounded-control border border-edge bg-panel px-2 py-1 text-[length:var(--text-sm)]"
-            onChange={(event) => set('range', event.target.value)}
-          >
-            {RANGES.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.label}
-              </option>
-            ))}
-          </select>
+          <RangeSelect range={range} onChange={(next) => set('range', next)} />
           <span className="flex-1" />
           {query.data ? <MergeThemes project={project} insights={query.data} /> : null}
         </div>
