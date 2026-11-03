@@ -43,7 +43,6 @@ export function RecurringThemes({ project, insights }: RetroInsightsSlotProps) {
                     data-testid={ids.retroInsightsNosprint}
                     className={`${HEAD} border-l-2 border-edge text-center`}
                   >
-                    No sprint
                     <NoSprintTip />
                   </th>
                 ) : null}

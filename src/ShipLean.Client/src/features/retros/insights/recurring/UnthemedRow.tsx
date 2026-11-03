@@ -31,8 +31,9 @@ export function UnthemedRow({
       className="border-t-2 border-dashed border-edge bg-canvas"
     >
       <td className="px-3 py-2">
-        <span className="text-[length:var(--text-sm)] italic">Unthemed</span>
-        <UnthemedTip />
+        <span className="text-[length:var(--text-sm)] italic">
+          <UnthemedTip />
+        </span>
       </td>
       {columns.map((column, i) => (
         <MentionCell

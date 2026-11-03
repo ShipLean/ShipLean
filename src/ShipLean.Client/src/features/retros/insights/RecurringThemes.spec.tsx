@@ -259,16 +259,16 @@ test('RecurringThemes_WhenThemeRowActionClicked_ShouldOpenTheDialogWithTheTheme'
     .toContainEqual(expect.stringContaining(`theme=${retroInsights.themes[1].theme.id}`));
 });
 
-test('RecurringThemes_WhenNoSprintAndUnthemedShow_ShouldMountTheirTips', async ({
+test('RecurringThemes_WhenNoSprintAndUnthemedShow_ShouldMountTheirTipsWithEachLabelOnce', async ({
   mount,
   page,
 }) => {
   await stubRetros(page);
   await mount(table(withNoSprint([1, 0, 0, 0, 0, 1])), open);
-  await expect(
-    page.getByTestId(ids.retroInsightsNosprint).getByTestId(ids.retroTipNosprint),
-  ).toHaveCount(1);
-  await expect(
-    page.getByTestId(ids.retroInsightsUnthemed).getByTestId(ids.retroTipUnthemed),
-  ).toHaveCount(1);
+  const head = page.getByTestId(ids.retroInsightsNosprint);
+  await expect(head.getByTestId(ids.retroTipNosprint)).toHaveCount(1);
+  await expect(head.getByText('No sprint')).toHaveCount(1);
+  const row = page.getByTestId(ids.retroInsightsUnthemed);
+  await expect(row.getByTestId(ids.retroTipUnthemed)).toHaveCount(1);
+  await expect(row.getByText('Unthemed')).toHaveCount(1);
 });
