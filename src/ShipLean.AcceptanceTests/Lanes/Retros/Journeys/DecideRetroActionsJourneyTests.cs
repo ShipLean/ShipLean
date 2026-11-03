@@ -16,7 +16,7 @@ using ShipLean.TestSupport.TestIds;
 namespace ShipLean.AcceptanceTests.Lanes.Retros.Journeys;
 
 // An agent logs the retro of a story under a Feature, lists what is undecided, previews its decisions and applies them. A person
-// who has the Feature's retro open sees the pinned action and the Not needed reason with the agent's name, without a reload.
+// who has the story's retro item page open sees the pinned action and the Not needed reason with the agent's name, without a reload.
 [TestFixture]
 public class DecideRetroActionsJourneyTests : SeededAcceptanceTest
 {

@@ -9,9 +9,15 @@ const sections: { key: keyof RetroFailureLogDto; label: string }[] = [
   { key: 'friction', label: 'Friction' },
 ];
 
-/** The raw failure log below a retro's board, collapsed until opened. Nothing is drawn when the log is empty. */
-export function FailureLog({ log }: { log: RetroFailureLogDto }) {
-  const [open, setOpen] = useState(false);
+/** The raw failure log below a retro's board, collapsed until opened unless `defaultOpen`. Nothing is drawn when the log is empty. */
+export function FailureLog({
+  log,
+  defaultOpen = false,
+}: {
+  log: RetroFailureLogDto;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
   if (!sections.some((section) => log[section.key].length > 0)) return null;
   return (
     <div className="rounded-sm border border-edge bg-canvas">

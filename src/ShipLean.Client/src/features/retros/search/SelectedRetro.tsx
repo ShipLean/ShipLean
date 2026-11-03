@@ -5,7 +5,7 @@ import { retroSharedTestIds as shared } from '../../retroShared/testIds';
 import { RetroBoard } from '../../retroShared/board/RetroBoard';
 import { CompiledFrom } from './parts/CompiledFrom';
 import { SelectedHeader } from './parts/SelectedHeader';
-import { SelectedLog } from './parts/SelectedLog';
+import { FailureLog } from '../sprint/views/byWorkItem/FailureLog';
 import { cardAddTarget, cardColumns } from '../sprint/views/byWorkItem/cardColumns';
 import { retrosTestIds as ids } from '../testIds';
 import { highlightedRow } from './parts/matches';
@@ -69,7 +69,7 @@ export function SelectedRetro({ project, search, pointId }: RetrosSearchSlotProp
               />
             </div>
             <CompiledFrom items={card.compiledFrom} />
-            <SelectedLog key={`${card.id}:${inLog}`} log={card.failureLog} defaultOpen={inLog} />
+            <FailureLog key={`${card.id}:${inLog}`} log={card.failureLog} defaultOpen={inLog} />
           </article>
         </div>
       ) : (
