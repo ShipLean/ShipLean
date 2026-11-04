@@ -27,13 +27,13 @@ function CoverageMark({ status }: { status: RetroCoverageRowDto['status'] }) {
   );
 }
 
-/** Coverage: the finished stories, bugs and features, each with a ✓, "missing" or "waiting". */
+/** Coverage: the finished stories, bugs and Action items and the Features with a child that finished or rolled over, each with a ✓, "missing" or "waiting". */
 export function CoverageSection({ rows }: { rows: RetroCoverageRowDto[] }) {
   return (
     <RailSection
       testId={ids.retroCoverage}
       title="Coverage"
-      hint="Stories, bugs and features finished in the sprint, and whether a retro was logged."
+      hint="Stories, bugs and Action items finished in the sprint, and Features with a child that finished or rolled over, and whether a retro was logged."
       empty={rows.length === 0}
     >
       {rows.map((row) => (

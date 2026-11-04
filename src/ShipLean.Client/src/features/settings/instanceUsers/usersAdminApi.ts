@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../../api/client';
 import type { ProjectRole } from '../../../api/projects';
 import type { OneTimePasswordDto, UserStatus } from '../../../api/users';
+import { meKey } from '../../../queries/shared';
 import { registerInvalidation } from '../../../realtime';
 
 // TS twins of ShipLean.Contracts.Users.Admin.
@@ -102,10 +103,14 @@ export function useUsersAdminMutations() {
         api.put<void>(userUrl(v.id, 'instance-admin'), { isInstanceAdmin: v.isInstanceAdmin }),
       ),
     ),
-    changeEmail: useMutation(
-      run((v: { id: string; email: string }) =>
+    // The shell shows the signed-in user's email, so it reads it again: the admin may have changed their own.
+    changeEmail: useMutation({
+      mutationFn: (v: { id: string; email: string }) =>
         api.put<void>(userUrl(v.id, 'email'), { email: v.email }),
-      ),
-    ),
+      onSuccess: async () => {
+        await refresh();
+        await queryClient.invalidateQueries({ queryKey: meKey });
+      },
+    }),
   };
 }

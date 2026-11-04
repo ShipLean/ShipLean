@@ -37,7 +37,7 @@ export function LinkCard({
     <li
       data-testid={ids.linkCard}
       data-kind={card.kind}
-      className="grid gap-1 rounded-control border border-edge bg-panel p-2.5 text-[length:var(--text-sm)]"
+      className="grid grid-cols-[minmax(0,1fr)] gap-1 rounded-control border border-edge bg-panel p-2.5 text-[length:var(--text-sm)]"
     >
       <div className="flex items-start gap-2">
         {card.faviconUrl && card.group === 'page' ? (
@@ -47,7 +47,7 @@ export function LinkCard({
             {kindBadge(card.kind)}
           </span>
         )}
-        <div className="grid min-w-0 flex-1 gap-0.5">
+        <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)] gap-0.5">
           {editing ? (
             <LinkCardEditor
               card={card}

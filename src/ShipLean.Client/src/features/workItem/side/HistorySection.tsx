@@ -15,7 +15,11 @@ export function HistorySection({ project, itemKey }: { project: ProjectDto; item
   if (!item) return null;
   const revisions = history.data?.revisions ?? [];
   return (
-    <section data-testid={ids.history} aria-label="History" className="grid content-start gap-2">
+    <section
+      data-testid={ids.history}
+      aria-label="History"
+      className="grid grid-cols-[minmax(0,1fr)] content-start gap-2"
+    >
       <div className="flex items-center gap-2">
         <span className="text-[length:var(--text-xs)] font-semibold tracking-wide text-ink-muted uppercase">
           History
@@ -40,7 +44,7 @@ export function HistorySection({ project, itemKey }: { project: ProjectDto; item
           The history could not be loaded.
         </p>
       ) : (
-        <ol className="m-0 grid list-none p-0">
+        <ol className="m-0 grid grid-cols-[minmax(0,1fr)] list-none p-0">
           {revisions.map((revision) => (
             <RevisionItem key={revision.rev} revision={revision} />
           ))}

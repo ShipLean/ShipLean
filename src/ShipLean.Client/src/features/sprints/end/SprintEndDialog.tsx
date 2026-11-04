@@ -132,7 +132,7 @@ export function SprintEndDialog({
         className="rounded-panel border border-edge border-l-[3px] border-l-edge bg-sunken px-3 py-2 text-[length:var(--text-sm)]"
       >
         <b className="block">History stays as it was</b>
-        {`${sprint.name} keeps ${metrics ? `${metrics.committed} committed / ${metrics.completed} completed` : 'its committed and completed points'} for velocity, because both come from revisions at its end date. Open tasks move with their story; closed tasks stay in ${sprint.name}.`}
+        {`${sprint.name} keeps ${metrics ? `${metrics.committed} committed / ${metrics.completed} completed` : 'its committed and completed points'} for velocity. Committed is what was in it at 00:00 UTC on its start date; completed is what finished in it and was still finished when it ended. Open tasks move with their story; closed tasks stay in ${sprint.name}.`}
       </div>
       <p
         data-testid={ids.endError}

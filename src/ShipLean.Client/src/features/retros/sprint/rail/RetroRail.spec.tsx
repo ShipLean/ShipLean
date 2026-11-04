@@ -11,6 +11,19 @@ const sprint = { id: 'sprint-24', name: 'Sprint 24' } as SprintDto;
 const mountOptions = { hooksConfig: { route: '/p/SHIP/boards/stories' } };
 const element = <RetroRail project={project} sprint={sprint} retro={sprintRetro} />;
 
+test('RetroRail_WhenOpened_ShouldDescribeCoverageAndActionItemsAsTheCodeListsThem', async ({
+  mount,
+  page,
+}) => {
+  await mount(element, mountOptions);
+  await expect(page.getByTestId(ids.retroCoverage)).toContainText(
+    'Stories, bugs and Action items finished in the sprint, and Features with a child that finished or rolled over',
+  );
+  await expect(page.getByTestId(ids.retroRailActions)).toContainText(
+    'plus other open ones on the same themes',
+  );
+});
+
 test('RetroRail_WhenOpened_ShouldListCoverageWithDoneMissingAndWaiting', async ({
   mount,
   page,

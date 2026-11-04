@@ -20,11 +20,11 @@ public sealed class BacklogChecks(IWorkTreeReads reads, TimeProvider time) : IBa
         return new BacklogReviewDto(BulkLimits.MaxRows, StaleDays, checks);
     }
 
-    // Each title against the project's live stories and bugs, up to BacklogReviewer.CompareCap rows.
+    // Each title against the project's live stories, bugs and Action items, up to BacklogReviewer.CompareCap rows.
     public async Task<IReadOnlyList<DuplicateMatch>> DuplicatesAsync(Guid projectId, IReadOnlyList<string> titles, CancellationToken cancellationToken = default)
     {
         var stack = (await reads.StackAsync(projectId, StackLevel.Requirement, null, false, cancellationToken))
-            .Where(row => WorkItemTypeRules.IsStoryOrBug(row.Type.Id)).Take(BacklogReviewer.CompareCap).ToList();
+            .Where(row => WorkItemTypeRules.IsStoryLevel(row.Type.Id)).Take(BacklogReviewer.CompareCap).ToList();
         return [.. titles
             .Select((title, index) => new DuplicateMatch(index, [.. stack.Where(row => BacklogReviewer.LooksAlike(title, row.Title)).Select(row => new DuplicateItem(row.Key, row.Title))]))
             .Where(match => match.Items.Count > 0)];

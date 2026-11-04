@@ -2,11 +2,12 @@ using System.Net;
 using System.Text.Json;
 using Dapper;
 using ShipLean.TestSupport;
+using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Fixtures;
 
 namespace ShipLean.WebApi.Tests.Backlog.Stories;
 
-// POST backlog/duplicates uses review_backlog's likeness test against the project's live stories and bugs.
+// POST backlog/duplicates uses review_backlog's likeness test against the project's live stories, bugs and Action items.
 [TestFixture]
 public class BacklogDuplicatesApiTests : ApiFixture
 {
@@ -44,15 +45,36 @@ public class BacklogDuplicatesApiTests : ApiFixture
     }
 
     [Test]
-    public async Task Duplicates_WhenActionItemMatches_ShouldNotReturnIt()
+    public async Task Duplicates_WhenOpenActionItemMatches_ShouldReturnIt()
     {
         const string title = "Axolotl ledger harmonizer pancake";
-        await AddAsync(title, "action");
+        await using var connection = await OpenDatabaseAsync();
+        var action = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("action").WithTitle(title).InsertAsync(connection);
+
+        var match = (await CheckAsync(title)).Single();
+
+        match.GetProperty("items").EnumerateArray().Select(i => i.GetProperty("key").GetString()).ShouldBe([await KeyOfAsync(action)]);
+    }
+
+    [Test]
+    public async Task Duplicates_WhenClosedActionItemMatches_ShouldNotReturnIt()
+    {
+        const string title = "Wombat sprocket calibrator waffle";
+        await using var connection = await OpenDatabaseAsync();
+        await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("action").WithTitle(title).WithStateNamed("Closed").InsertAsync(connection);
 
         (await CheckAsync(title)).ShouldBeEmpty();
+    }
 
-        await AddAsync(title);
-        (await CheckAsync(title)).Single().GetProperty("items").GetArrayLength().ShouldBe(1);
+    [Test]
+    public async Task Duplicates_WhenTaskUnderActionItemMatches_ShouldNotReturnIt()
+    {
+        const string title = "Ocelot gantry recalibrator muffin";
+        await using var connection = await OpenDatabaseAsync();
+        var action = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("action").WithTitle("Unrelated narwhal parent").InsertAsync(connection);
+        await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("task").WithTitle(title).WithParent(action).InsertAsync(connection);
+
+        (await CheckAsync(title)).ShouldBeEmpty();
     }
 
     [Test]
@@ -79,6 +101,12 @@ public class BacklogDuplicatesApiTests : ApiFixture
         var text = await response.Content.ReadAsStringAsync();
         response.StatusCode.ShouldBe(HttpStatusCode.OK, text);
         return JsonDocument.Parse(text).RootElement.GetProperty("created")[0].GetProperty("id").GetGuid();
+    }
+
+    private async Task<string> KeyOfAsync(Guid id)
+    {
+        await using var connection = await OpenDatabaseAsync();
+        return await connection.QuerySingleAsync<string>("SELECT key FROM work_item WHERE id = @id", new { id });
     }
 
     private async Task<string> TitleOfAsync(string key)

@@ -15,13 +15,13 @@ export function LinksList({
   itemKey: string;
 }) {
   return (
-    <div className="grid gap-3">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-3">
       {cards.workItems.length > 0 ? (
-        <div className="grid gap-1">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-1">
           <h3 className="m-0 text-[length:var(--text-xs)] font-semibold tracking-wide text-ink-muted uppercase">
             Work items
           </h3>
-          <ul className="m-0 grid list-none rounded-control border border-edge bg-panel p-0">
+          <ul className="m-0 grid list-none grid-cols-[minmax(0,1fr)] rounded-control border border-edge bg-panel p-0">
             {cards.workItems.map((row) => (
               <WorkItemLinkRow key={row.id} row={row} projectKey={projectKey} />
             ))}

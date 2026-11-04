@@ -252,6 +252,7 @@ test('ByCategory_WhenSprintHasAFeatureRetro_ShouldShowTheCalloutAboveTheColumns'
   await expect(callout).toContainText(`${card.workItem.key} ${card.workItem.title}`);
   await expect(callout).toContainText(`Compiled by ${card.author.user.name}`);
   await expect(callout).toContainText(`from ${card.compiledFrom.length} story retros`);
+  await expect(callout).toContainText('Its points come first in each theme group.');
 });
 
 test('ByCategory_WhenACategoryHasNoPoints_ShouldShowNoNotesInIt', async ({ mount, page }) => {

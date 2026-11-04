@@ -33,7 +33,11 @@ function itemsFor(user: AdminUserDto, isMe: boolean, proxy: boolean): Item[] {
               ? 'Set up sign-in…'
               : 'Reset password…',
           testId: settingsTestIds.usersMenuPassword,
-          reason: isMe ? 'Change your own on Your profile' : undefined,
+          // Your profile asks for the current password; this item would skip that. A user with no password has none to ask for.
+          reason:
+            isMe && user.status !== 'noPassword' && user.status !== 'googleOnly'
+              ? 'Change your own on Your profile'
+              : undefined,
         },
       ];
   if (user.status === 'locked') {
@@ -53,7 +57,6 @@ function itemsFor(user: AdminUserDto, isMe: boolean, proxy: boolean): Item[] {
             action: 'email',
             label: 'Change email…',
             testId: settingsTestIds.usersMenuEmail,
-            reason: isMe ? 'Change your own on Your profile' : undefined,
           } as Item,
         ]),
     {

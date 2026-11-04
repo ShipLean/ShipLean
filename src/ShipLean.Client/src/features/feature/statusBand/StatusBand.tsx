@@ -71,8 +71,11 @@ export function StatusBand({ item, draft, dirty, setField, saveError }: FeatureR
             >
               <StateDot category={draft.state.category} name={draft.state.name} />
             </span>
-            <div className="grid min-w-0 gap-1">
-              <p data-testid={ids.statusLine} className="text-[length:var(--text-lg)] text-ink">
+            <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1">
+              <p
+                data-testid={ids.statusLine}
+                className="text-[length:var(--text-lg)] break-words text-ink"
+              >
                 {draft.statusLine === '' ? 'No status yet.' : draft.statusLine}
               </p>
               <div className="flex flex-wrap items-center gap-2">

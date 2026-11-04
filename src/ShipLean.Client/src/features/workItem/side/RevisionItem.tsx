@@ -20,10 +20,10 @@ export function RevisionItem({ revision }: { revision: RevisionDto }) {
       >
         {revision.rev}
       </span>
-      <div className="grid gap-1">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-1">
         <div className="flex flex-wrap items-center gap-1.5 text-[length:var(--text-sm)]">
           <Avatar {...(revision.changedBy ?? {})} />
-          <b data-testid={ids.revisionWho} className="font-medium">
+          <b data-testid={ids.revisionWho} className="font-medium [overflow-wrap:anywhere]">
             {revision.agentName ? `${who} via ${revision.agentName}` : who}
           </b>
           <span
@@ -49,7 +49,7 @@ export function RevisionItem({ revision }: { revision: RevisionDto }) {
             </span>
           ) : null}
         </div>
-        <ul className="m-0 grid list-none gap-0.5 p-0">
+        <ul className="m-0 grid grid-cols-[minmax(0,1fr)] list-none gap-0.5 p-0">
           {revision.changes.map((change) => (
             <RevisionChange key={change.field} change={change} />
           ))}

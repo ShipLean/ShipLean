@@ -11,7 +11,7 @@ export function ActionItemsSection({ rows }: { rows: RetroActionRowDto[] }) {
     <RailSection
       testId={ids.retroRailActions}
       title="Action items"
-      hint="Action items raised from this sprint's points, plus earlier ones still open, and where they are planned."
+      hint="Action items raised from this sprint's points, plus other open ones on the same themes, and where they are planned."
       empty={rows.length === 0}
     >
       {rows.map(({ action, raisedIn }) => (

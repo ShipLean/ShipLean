@@ -18,7 +18,11 @@ export function LinkGroup({
 }) {
   if (cards.length === 0) return null;
   return (
-    <div data-testid={ids.linkGroup} data-group={group} className="grid gap-1">
+    <div
+      data-testid={ids.linkGroup}
+      data-group={group}
+      className="grid grid-cols-[minmax(0,1fr)] gap-1"
+    >
       <h3 className="m-0 text-[length:var(--text-xs)] font-semibold tracking-wide text-ink-muted uppercase">
         {title}
       </h3>
