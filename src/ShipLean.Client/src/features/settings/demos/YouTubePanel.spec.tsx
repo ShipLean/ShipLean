@@ -103,7 +103,7 @@ for (const [kind, text] of [
   ['error', 'could not connect that channel and saved nothing'],
   ['pending', 'Signed in to Google'],
 ] as const) {
-  test(`Return_When${kind[0].toUpperCase()}${kind.slice(1)}_ShouldSayAndClearTheQuery`, async ({
+  test(`Return_When${kind[0].toUpperCase()}${kind.slice(1)}_ShouldSaySoAndClearTheQuery`, async ({
     mount,
     page,
   }) => {
@@ -111,7 +111,10 @@ for (const [kind, text] of [
     await mount(<YouTubePanelHarness project={admin} />, hooks(`?youtube=${kind}`));
 
     await expect(page.getByTestId(ids.youtubePanel)).toContainText(text);
-    await expect(page.getByTestId(harnessLocationTestId)).toHaveText('/p/SHIP/settings/demos');
+    const location = page.getByTestId(harnessLocationTestId);
+    await expect(location).toHaveText('/p/SHIP/settings/demos');
+    // Replaced, not pushed: a pushed entry would keep the query in history and trap Back.
+    await expect(location).toHaveAttribute('data-navigation', 'REPLACE');
   });
 }
 
@@ -120,7 +123,9 @@ test('Return_WhenDenied_ShouldKeepOtherQueryValues', async ({ mount, page }) => 
   await mount(<YouTubePanelHarness project={admin} />, hooks('?youtube=denied&x=1'));
 
   await expect(page.getByTestId(ids.youtubePanel)).toContainText('You did not allow ShipLean');
-  await expect(page.getByTestId(harnessLocationTestId)).toHaveText('/p/SHIP/settings/demos?x=1');
+  const location = page.getByTestId(harnessLocationTestId);
+  await expect(location).toHaveText('/p/SHIP/settings/demos?x=1');
+  await expect(location).toHaveAttribute('data-navigation', 'REPLACE');
 });
 
 test('Pending_ShouldRequireAChoiceBeforeCheck', async ({ mount, page }) => {
@@ -280,6 +285,11 @@ test('Disconnect_WhenConfirmed_ShouldCall', async ({ mount, page }) => {
   await expect(page.getByTestId(ids.youtubeConnect)).toBeVisible();
   expect(server.disconnects).toBe(1);
   await expect(page.getByTestId(ids.youtubeConnected)).toHaveCount(0);
+  // Google revoked it, so the panel says so and does not send the person to remove access by hand.
+  await expect(page.getByTestId(ids.youtubePanel)).toContainText(
+    'Google confirmed that ShipLean no longer has access',
+  );
+  await expect(page.getByTestId(ids.youtubePanel)).not.toContainText('Remove ShipLean');
 });
 
 test('Disconnect_WhenNotRevoked_ShouldSayToRemoveAccessInGoogle', async ({ mount, page }) => {
