@@ -12,15 +12,17 @@ export function signInSummary(instance: Pick<InstanceDto, 'signIn' | 'googleSign
   return 'Email and password. No sign-up: an admin adds each person on Users.';
 }
 
-const facts: [string, string][] = [
+const sessions: [string, string] = [
+  'Sessions',
+  'Stay signed in for 14 days after you last used ShipLean. Changing or resetting a password signs out every other session.',
+];
+
+const passwordFacts: [string, string][] = [
   [
     'Forgotten passwords',
     'ShipLean sends no email. An admin resets the password and hands over the one-time password.',
   ],
-  [
-    'Sessions',
-    'Stay signed in for 14 days after you last used ShipLean. Changing or resetting a password signs out every other session.',
-  ],
+  sessions,
   [
     'Lockout',
     '10 wrong passwords in a row lock the account for 15 minutes. Admins can unlock sooner on Users.',
@@ -31,6 +33,15 @@ const facts: [string, string][] = [
   ],
 ];
 
+// Behind an identity proxy there are no passwords, so the password rows are left out.
+const proxyFacts: [string, string][] = [
+  sessions,
+  [
+    'First admin',
+    'SHIPLEAN_ADMIN_EMAIL on first boot: the person with that email becomes an admin when they first sign in through the proxy. No password is needed. Later admins are made on Users.',
+  ],
+];
+
 /** The sign-in rules that aren't settings in v1, shown so admins can answer questions. */
 export function SignInRules() {
   const instance = useQuery({ queryKey: instanceKey, queryFn: fetchInstance, retry: false });
@@ -38,6 +49,12 @@ export function SignInRules() {
   const summary = instance.isPending
     ? ''
     : signInSummary(instance.isError ? undefined : instance.data);
+  // Until the answer arrives only the rows true in every mode show, so none flashes and vanishes.
+  const facts = instance.isPending
+    ? [sessions]
+    : !instance.isError && instance.data?.signIn === 'proxy'
+      ? proxyFacts
+      : passwordFacts;
   const rows: [string, string][] = [['How people sign in', summary], ...facts];
   return (
     <Panel title="Sign-in" testId={settingsTestIds.instanceSignInFacts}>

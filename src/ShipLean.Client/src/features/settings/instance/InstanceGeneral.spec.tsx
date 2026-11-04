@@ -184,6 +184,8 @@ test('General_WhenGoogleSignInIsOn_ShouldSayGoogleAdmitsAddAUser', async ({ moun
   const facts = view.getByTestId(ids.instanceSignInFacts);
   await expect(facts).toContainText('anyone Google admits gets a user on first sign-in');
   await expect(facts).not.toContainText('No sign-up');
+  await expect(facts).toContainText('Forgotten passwords');
+  await expect(facts).toContainText('Lockout');
 });
 
 test('General_WhenSignInIsThroughAProxy_ShouldSayTheProxyCreatesUsers', async ({ mount, page }) => {
@@ -199,6 +201,11 @@ test('General_WhenSignInIsThroughAProxy_ShouldSayTheProxyCreatesUsers', async ({
   const facts = view.getByTestId(ids.instanceSignInFacts);
   await expect(facts).toContainText('created the first time the proxy sees their email');
   await expect(facts).not.toContainText('No sign-up');
+  await expect(facts).toContainText('First admin');
+  await expect(facts).toContainText('No password is needed');
+  await expect(facts).not.toContainText('SHIPLEAN_ADMIN_PASSWORD');
+  await expect(facts).not.toContainText('Forgotten passwords');
+  await expect(facts).not.toContainText('Lockout');
 });
 
 // The server's document changes under the admin: the second and later reads return `later`.
