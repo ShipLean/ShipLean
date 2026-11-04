@@ -91,16 +91,18 @@ for f in s*.wav; do $FF -hide_banner -v error -y -i "$f" -af loudnorm=I=-16:TP=-
 
 ## 8. The clip
 
-For each Feature with a journey, record a walkthrough with Playwright (`recordVideo`, 1280x720) against the local instance, in demo mode, scripted from the Feature's stories and criteria:
+For each Feature, record one walkthrough with Playwright (`recordVideo`, 1280x720) against the local instance from step 5, scripted from the Feature's page and its stories (and their criteria, where the data has them). Sign in before you start recording, so the clip never shows the sign-in:
 
 - An init script draws a visible cursor. Slow every action down. Zoom only at key moments.
-- Each segment acts, then waits out its narration (from `durations.json`), and writes its start time to `marks.json`.
+- Each segment acts, then waits out its narration (from `durations.json`), and writes its start time to `marks.json`, in seconds since the recording page was created. That number is the `-ss` of its clip segment in step 11.
 - **Wait until the app answers before you act** (a known search returns results). Never act on a blank page.
+- **The clip shows the local copy, not the data above.** The copy holds the standard seed, so a clip can lack what the data lists (a `why`, tasks) or hold more (other stories). Narrate only what the clip shows, and say in the intro that the clips come from a separate seeded copy. Names of people shown in the app are made-up seed data: never read them out.
+- Use `data-testid` locators. Opening an item can lay its page over the one underneath, so scope each locator to the part you mean.
 - Before and after: if "before" can't be shown, say so in the narration and skip it.
 
 ```js
-// Pass to context.addInitScript before any page loads.
-() => {
+// Pass this string to context.addInitScript (any language) before any page loads. It runs itself: a bare function would only be defined.
+(() => {
   const dot = document.createElement('div');
   dot.style.cssText = 'position:fixed;z-index:2147483647;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:#e8451e;border:2px solid #fff;pointer-events:none;transition:transform .1s';
   const attach = () => document.documentElement.appendChild(dot);
@@ -108,7 +110,7 @@ For each Feature with a journey, record a walkthrough with Playwright (`recordVi
   addEventListener('mousemove', e => { dot.style.left = e.clientX + 'px'; dot.style.top = e.clientY + 'px'; }, true);
   addEventListener('mousedown', () => { dot.style.transform = 'scale(.6)'; }, true);
   addEventListener('mouseup', () => { dot.style.transform = ''; }, true);
-}
+})();
 ```
 
 Move the mouse in steps (`page.mouse.move(x, y, { steps: 20 })`) so the cursor is seen to travel.

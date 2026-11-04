@@ -673,6 +673,33 @@ public class SprintDemoPromptTests
         Template.ShouldContain("venv/bin/playwright install chromium");
     }
 
+    [Test]
+    public void Prompt_ShouldMakeTheCursorScriptRunItself()
+    {
+        Template.ShouldContain("It runs itself: a bare function would only be defined.");
+        Template.ShouldContain("\n})();\n```");
+    }
+
+    [Test]
+    public void Prompt_ShouldSayWhatTheMarksAreMeasuredFrom()
+    {
+        Template.ShouldContain("in seconds since the recording page was created. That number is the `-ss` of its clip segment in step 11.");
+    }
+
+    [Test]
+    public void Prompt_ShouldSayTheClipShowsTheLocalCopyNotTheData()
+    {
+        Template.ShouldContain("**The clip shows the local copy, not the data above.**");
+        Template.ShouldContain("say in the intro that the clips come from a separate seeded copy");
+        Template.ShouldContain("never read them out");
+    }
+
+    [Test]
+    public void Prompt_ShouldNotAskForADemoModeNoOneDefined()
+    {
+        Template.ShouldNotContain("demo mode");
+    }
+
     private static int CountOf(string text, string needle)
     {
         var count = 0;
