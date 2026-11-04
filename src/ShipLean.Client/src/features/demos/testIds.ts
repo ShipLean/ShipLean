@@ -18,6 +18,7 @@ export const demosTestIds = {
   demoScript: 'demo-script',
   demoYoutubeNotice: 'demo-youtube-notice',
   demoYoutubeRetry: 'demo-youtube-retry',
+  demoLoadRetry: 'demo-load-retry',
   // Settings
   settingsTabDemos: 'settings-tab-demos',
   demoSettingsPanel: 'demo-settings-panel',

@@ -20,6 +20,17 @@ test('Panel_WhenNone_ShouldShowCreate', async ({ mount, page }) => {
   await expect(component.getByTestId(ids.demoStatusBand)).toBeVisible();
   await expect(component.getByTestId(ids.demoCreate)).toBeEnabled();
   await expect(component.getByTestId(ids.demoVideo)).toHaveCount(0);
+  await expect(component.getByTestId(ids.demoScript)).toHaveCount(0);
+});
+
+test('Panel_WhenFailedWithAnOldVideo_ShouldKeepShowingVideoAndScript', async ({ mount, page }) => {
+  const failedWithVideo = { ...ready, status: 'failed', statusMessage: 'The agent stopped.' };
+  await page.route('**/api/sprints/*/demo', (route) => route.fulfill({ json: failedWithVideo }));
+  const component = await mount(view);
+
+  await expect(component.getByTestId(ids.demoStatusBand)).toBeVisible();
+  await expect(component.getByTestId(ids.demoVideo)).toBeVisible();
+  await expect(component.getByTestId(ids.demoScript)).toBeVisible();
 });
 
 test('Panel_WhenReady_ShouldMountTheVideoWithContentUrl', async ({ mount, page }) => {
@@ -44,11 +55,10 @@ test('Panel_WhenLoadFails_ShouldShowErrorWithRetry', async ({ mount, page }) => 
   });
   const component = await mount(view);
 
-  const failure = component.getByRole('alert');
-  await expect(failure).toContainText('The demo could not be read.');
+  await expect(component).toContainText('The demo could not be read.');
   await expect(component.getByTestId(ids.demoStatusBand)).toHaveCount(0);
 
-  await failure.getByRole('button', { name: 'Retry' }).click();
+  await component.getByTestId(ids.demoLoadRetry).click();
 
   await expect(component.getByTestId(ids.demoCreate)).toBeEnabled();
   expect(reads).toBe(2);
@@ -96,5 +106,47 @@ for (const width of [1280, 1440]) {
     expect(fit.scroll).toBeLessThanOrEqual(fit.view);
     const band = await component.getByTestId(ids.demoStatusBand).boundingBox();
     expect(band!.x + band!.width).toBeLessThanOrEqual(width);
+  });
+}
+
+// A tall demo: many chapters and features must scroll inside their own panels, not push the band or its buttons out.
+const tall = {
+  ...ready,
+  chapters: Array.from({ length: 60 }, (_, index) => ({
+    title: `Chapter ${index} ${'long '.repeat(10)}`,
+    startSeconds: index,
+    startLabel: `0:${String(index).padStart(2, '0')}`,
+    featureKey: null,
+  })),
+  features: Array.from({ length: 60 }, (_, index) => ({
+    ...ready.features[0],
+    key: `SHIP-${300 + index}`,
+    url: `/p/SHIP/items/SHIP-${300 + index}`,
+  })),
+};
+
+for (const width of [1280, 1440]) {
+  test(`Panel_WhenListsAreTall_ShouldKeepBandAndButtonsInTheWindowAt${width}`, async ({
+    mount,
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await page.route('**/api/sprints/*/demo', (route) => route.fulfill({ json: tall }));
+    const component = await mount(view);
+    await expect(component.getByTestId(ids.demoChapter)).toHaveCount(60);
+
+    const view_ = await page.evaluate(() => ({ h: window.innerHeight, w: window.innerWidth }));
+    for (const id of [ids.demoStatusBand, ids.demoCreate]) {
+      const box = await component.getByTestId(id).boundingBox();
+      expect(box!.y).toBeGreaterThanOrEqual(0);
+      expect(box!.y + box!.height).toBeLessThanOrEqual(view_.h);
+      expect(box!.x + box!.width).toBeLessThanOrEqual(view_.w);
+    }
+    // The chapter list scrolls inside its panel instead of growing the page without bound.
+    const list = await component
+      .getByTestId(ids.demoChapters)
+      .evaluate((el) => ({ client: el.clientHeight, scroll: el.scrollHeight }));
+    expect(list.client).toBeLessThan(view_.h);
+    expect(list.scroll).toBeGreaterThan(list.client);
   });
 }

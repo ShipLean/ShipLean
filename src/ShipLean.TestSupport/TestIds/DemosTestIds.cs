@@ -21,6 +21,7 @@ public static class DemosTestIds
     public const string DemoScript = "demo-script";
     public const string DemoYoutubeNotice = "demo-youtube-notice";
     public const string DemoYoutubeRetry = "demo-youtube-retry";
+    public const string DemoLoadRetry = "demo-load-retry";
 
     // Settings
     public const string SettingsTabDemos = "settings-tab-demos";
