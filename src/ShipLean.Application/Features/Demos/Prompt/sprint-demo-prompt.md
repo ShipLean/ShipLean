@@ -23,15 +23,17 @@ Three named presenters, all synthetic voices.
 
 | Presenter | Voice | lang | Sections |
 |---|---|---|---|
-| Ann | `af_heart` | `en-us` | the intro, each Feature's why, the closing measure |
+| Ann | `af_heart` | `en-us` | the intro, each Feature's why and its measure, the closing measure |
 | Keith | `bm_george` | `en-gb` | before and after, the clip, the implementation |
 | Becky | `bf_emma` | `en-gb` | how the agents built it, the retro items, Also this sprint |
 
-Each presenter introduces themselves once, the first time they speak ("I'm Keith"). Each section ends with a spoken handover to the next presenter, for example "I'll pass over to Keith for the implementation". **A handover is its own narration segment**, so the screen doesn't move while it is said. Keep one slide up for it.
+Each presenter introduces themselves once, the first time they speak ("I'm Keith"). Each section ends with a spoken handover to the next presenter, for example "I'll pass over to Keith for the implementation". **A handover is its own narration segment**, so the screen doesn't move while it is said. Keep one slide up for it. When the next section is the same presenter's, there is no handover.
 
 ## 3. Be honest
 
-Narrate the why and the stated measure, **never results**: nothing has been measured yet. A Feature with no `why` gets the sentence "This feature has no recorded why" and nothing invented. A measure marked `(to confirm)` is said to be to confirm. Don't claim anything the data doesn't say.
+Narrate the why and the stated measure, **never results**: nothing has been measured yet. A Feature with no `why` gets the sentence "This feature has no recorded why" and nothing invented. A measure marked `(to confirm)` is said to be to confirm. A Feature whose `measure` is null gets "No measure is recorded", in its own section and again in the closing. Don't claim anything the data doesn't say.
+
+Where the data holds nothing for a section (no `summary` or `criteria` for before and after or the implementation, no `plan` numbers), say so in one sentence and describe what the data does hold, such as the stories, their points and states, and their tasks. Quote the `plan` numbers as what the plan recorded, and don't try to reconcile them with the stories listed.
 
 ## 4. Retro items
 
@@ -49,14 +51,19 @@ Check `ffmpeg`, Playwright and Python 3.10 or later. Install what is missing und
 
 ```bash
 mkdir -p ~/.local/demo-tools && cd ~/.local/demo-tools
-uv venv venv || python3 -m venv venv
-(uv pip install --python venv/bin/python kokoro-onnx soundfile imageio-ffmpeg) || venv/bin/pip install kokoro-onnx soundfile imageio-ffmpeg
+command -v uv >/dev/null || export PATH="$HOME/.local/bin:$PATH"
+if command -v uv >/dev/null; then
+  uv venv venv && uv pip install --python venv/bin/python kokoro-onnx soundfile imageio-ffmpeg playwright
+else
+  rm -rf venv && python3 -m venv venv && venv/bin/pip install kokoro-onnx soundfile imageio-ffmpeg playwright
+fi
+venv/bin/playwright install chromium
 B=https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0
 curl -sLO $B/kokoro-v1.0.int8.onnx && curl -sLO $B/voices-v1.0.bin
 FF=$(venv/bin/python -c 'import imageio_ffmpeg;print(imageio_ffmpeg.get_ffmpeg_exe())')
 ```
 
-`$FF` has libx264, aac, loudnorm and overlay, and **no ffprobe**. Read an audio duration with `soundfile` (`soundfile.info(path).duration`) and a video duration by parsing the `Duration:` line of `$FF -hide_banner -i file.mp4 2>&1` (the command exits non-zero without an output; that is fine). Install Playwright and Chromium for your project's language as usual.
+`$FF` has libx264, aac, loudnorm and overlay, and **no ffprobe**. Read an audio duration with `soundfile` (`soundfile.info(path).duration`) and a video duration by parsing the `Duration:` line of `$FF -hide_banner -i file.mp4 2>&1` (the command exits non-zero without an output; that is fine). The commands above install Playwright for Python and its Chromium; another Playwright you already have works as well. `$FF` is a shell variable: set it again in every new shell. If neither `uv` nor `python3 -m venv` works, that is a tool you can't have: comment and stop.
 
 If a tool can't be had, `comment` on `{{demo_item}}` with the exact failure and stop.
 
@@ -65,9 +72,10 @@ If a tool can't be had, `comment` on `{{demo_item}}` with the exact failure and 
 Write the narration before anything else: one text per segment, a WAV per segment, and `durations.json` (segment id to seconds), so timing follows speech. Then level every WAV to the same loudness, because the voices differ.
 
 ```python
-import json, soundfile as sf
+import json, os, soundfile as sf
 from kokoro_onnx import Kokoro
-k = Kokoro("kokoro-v1.0.int8.onnx", "voices-v1.0.bin")
+D = os.path.expanduser("~/.local/demo-tools")
+k = Kokoro(D + "/kokoro-v1.0.int8.onnx", D + "/voices-v1.0.bin")  # the model files are in demo-tools, not in your working folder
 segments = [{"id": "s01", "voice": "af_heart", "lang": "en-us", "text": "Hello, I'm Ann."}]  # all of them
 durations = {}
 for s in segments:
@@ -186,6 +194,8 @@ Upload once, with this command (the order of the parts matters):
 The link is valid until {{upload_expires}} and works once. On a 400 answer, fix the part it names and retry the same link. **Never write the upload link, or the logo link, in a comment, an activity, a slide or the script.**
 
 Then `comment` on `{{demo_item}}` with the duration, the size, anything you left out, and any logo fallback reason from step 10. If you had no way to start a local instance, say so there as well. Don't call `log_retrospective` on this item: it is refused.
+
+**Then end your run.** The Demo tab shows the demo as Ready only once your session has ended; while it is open the tab reads Working. Do nothing after the comment: no second upload, no other work, no waiting for an answer.
 
 ## Data
 

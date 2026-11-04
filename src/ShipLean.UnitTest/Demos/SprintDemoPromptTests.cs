@@ -634,6 +634,45 @@ public class SprintDemoPromptTests
         text.ShouldNotContain("{{");
     }
 
+    [Test]
+    public void Prompt_ShouldTellTheAgentToEndItsRunAfterTheUpload()
+    {
+        Template.ShouldContain("**Then end your run.** The Demo tab shows the demo as Ready only once your session has ended");
+        Template.IndexOf("**Then end your run.**", StringComparison.Ordinal).ShouldBeGreaterThan(Template.IndexOf("## 13. Return", StringComparison.Ordinal));
+    }
+
+    [Test]
+    public void Prompt_ShouldSayWhatToSayWhenAMeasureIsNull()
+    {
+        Template.ShouldContain("A Feature whose `measure` is null gets \"No measure is recorded\"");
+    }
+
+    [Test]
+    public void Prompt_ShouldSayWhatToDoWhenTheDataHoldsNothingForASection()
+    {
+        Template.ShouldContain("Where the data holds nothing for a section");
+        Template.ShouldContain("Quote the `plan` numbers as what the plan recorded");
+    }
+
+    [Test]
+    public void Prompt_ShouldGiveNoHandoverBetweenTwoSectionsOfOnePresenter()
+    {
+        Template.ShouldContain("When the next section is the same presenter's, there is no handover.");
+    }
+
+    [Test]
+    public void Prompt_ShouldLoadTheKokoroModelFromDemoTools()
+    {
+        Template.ShouldContain("Kokoro(D + \"/kokoro-v1.0.int8.onnx\", D + \"/voices-v1.0.bin\")");
+    }
+
+    [Test]
+    public void Prompt_ShouldInstallPlaywrightAndChromiumWithTheTools()
+    {
+        Template.ShouldContain("kokoro-onnx soundfile imageio-ffmpeg playwright");
+        Template.ShouldContain("venv/bin/playwright install chromium");
+    }
+
     private static int CountOf(string text, string needle)
     {
         var count = 0;
