@@ -1,3 +1,4 @@
+using System.Data.Common;
 using Dapper;
 using Npgsql;
 using ShipLean.Contracts.Agents;
@@ -13,9 +14,34 @@ public sealed class TransferTokens(NpgsqlDataSource dataSource, TimeProvider clo
 
     public async Task<IssuedTransfer> IssueAsync(NewTransfer transfer, CancellationToken cancellationToken = default)
     {
-        var token = StoreSecrets.New();
-        var expiresAt = clock.GetUtcNow().Add(ITransferTokens.Lifetime);
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        return await InsertAsync(connection, null, transfer, cancellationToken);
+    }
+
+    public Task<IssuedTransfer> IssueAsync(NewTransfer transfer, DbTransaction transaction, CancellationToken cancellationToken = default)
+        => InsertAsync(transaction.Connection!, transaction, transfer, cancellationToken);
+
+    public async Task RevokeAsync(TransferKind kind, Guid workItemId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await SetRevokedAsync(connection, null, kind, workItemId, cancellationToken);
+    }
+
+    public Task RevokeAsync(TransferKind kind, Guid workItemId, DbTransaction transaction, CancellationToken cancellationToken = default)
+        => SetRevokedAsync(transaction.Connection!, transaction, kind, workItemId, cancellationToken);
+
+    public async Task<bool> IsRevokedAsync(string token, DbTransaction transaction, CancellationToken cancellationToken = default)
+    {
+        var rows = (await transaction.Connection!.QueryAsync<DateTimeOffset?>(new CommandDefinition(
+            "SELECT revoked_at FROM transfer_token WHERE token_hash = @hash FOR SHARE",
+            new { hash = StoreSecrets.Hash(token) }, transaction, cancellationToken: cancellationToken))).ToList();
+        return rows.Count == 0 || rows[0] is not null;
+    }
+
+    private async Task<IssuedTransfer> InsertAsync(DbConnection connection, DbTransaction? transaction, NewTransfer transfer, CancellationToken cancellationToken)
+    {
+        var token = StoreSecrets.New();
+        var expiresAt = clock.GetUtcNow().Add(transfer.Lifetime ?? ITransferTokens.Lifetime);
         await connection.ExecuteAsync(new CommandDefinition(
             """
             INSERT INTO transfer_token (token_hash, kind, work_item_id, attachment_id, name, content_type, user_id, authorization_id, agent_stamp, expires_at)
@@ -26,9 +52,15 @@ public sealed class TransferTokens(NpgsqlDataSource dataSource, TimeProvider clo
                 hash = StoreSecrets.Hash(token), kind = Wire(transfer.Kind), transfer.WorkItemId, transfer.AttachmentId, transfer.Name, transfer.ContentType,
                 transfer.UserId, transfer.AuthorizationId, transfer.AgentStamp, expiresAt,
             },
+            transaction,
             cancellationToken: cancellationToken));
         return new IssuedTransfer(token, expiresAt);
     }
+
+    private async Task SetRevokedAsync(DbConnection connection, DbTransaction? transaction, TransferKind kind, Guid workItemId, CancellationToken cancellationToken)
+        => await connection.ExecuteAsync(new CommandDefinition(
+            "UPDATE transfer_token SET revoked_at = @now WHERE kind = @kind AND work_item_id = @workItemId AND revoked_at IS NULL",
+            new { kind = Wire(kind), workItemId, now = clock.GetUtcNow() }, transaction, cancellationToken: cancellationToken));
 
     public async Task<TransferGrant?> FindAsync(TransferKind kind, string token, CancellationToken cancellationToken = default)
     {
@@ -45,7 +77,7 @@ public sealed class TransferTokens(NpgsqlDataSource dataSource, TimeProvider clo
             FROM transfer_token t
             JOIN app_user u ON u.id = t.user_id AND u.disabled_at IS NULL
             LEFT JOIN oauth_authorization a ON a.id = t.authorization_id
-            WHERE t.token_hash = @hash AND t.kind = @kind AND t.used_at IS NULL AND t.expires_at > @now
+            WHERE t.token_hash = @hash AND t.kind = @kind AND t.used_at IS NULL AND t.revoked_at IS NULL AND t.expires_at > @now
               AND (t.authorization_id IS NULL OR (a.revoked_at IS NULL AND a.security_stamp = u.security_stamp))
             """,
             new { hash = StoreSecrets.Hash(token), kind = Wire(kind), now = clock.GetUtcNow() }, cancellationToken: cancellationToken));
@@ -56,7 +88,7 @@ public sealed class TransferTokens(NpgsqlDataSource dataSource, TimeProvider clo
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var claimed = await connection.ExecuteAsync(new CommandDefinition(
-            "UPDATE transfer_token SET used_at = @now WHERE token_hash = @hash AND kind = 'upload' AND used_at IS NULL AND expires_at > @now",
+            "UPDATE transfer_token SET used_at = @now WHERE token_hash = @hash AND kind IN ('upload', 'demo') AND used_at IS NULL AND revoked_at IS NULL AND expires_at > @now",
             new { hash = StoreSecrets.Hash(token), now = clock.GetUtcNow() }, cancellationToken: cancellationToken));
         return claimed == 1;
     }
@@ -65,9 +97,16 @@ public sealed class TransferTokens(NpgsqlDataSource dataSource, TimeProvider clo
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await connection.ExecuteAsync(new CommandDefinition(
-            "UPDATE transfer_token SET used_at = NULL WHERE token_hash = @hash AND kind = 'upload'",
+            "UPDATE transfer_token SET used_at = NULL WHERE token_hash = @hash AND kind IN ('upload', 'demo')",
             new { hash = StoreSecrets.Hash(token) }, cancellationToken: cancellationToken));
     }
 
-    private static string Wire(TransferKind kind) => kind == TransferKind.Upload ? "upload" : "download";
+    private static string Wire(TransferKind kind) => kind switch
+    {
+        TransferKind.Upload => "upload",
+        TransferKind.Download => "download",
+        TransferKind.Demo => "demo",
+        TransferKind.DemoLogo => "demoLogo",
+        _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
+    };
 }
