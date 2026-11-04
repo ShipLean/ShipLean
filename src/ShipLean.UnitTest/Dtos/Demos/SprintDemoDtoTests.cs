@@ -85,4 +85,10 @@ public class SprintDemoDtoTests
     {
         Check<YouTubeDisconnectDto>("youtube-disconnect.json").ShouldBeTrue();
     }
+
+    [Test]
+    public void SprintDemoData_WhenSprintDemoDataFixtureRoundTripped_ShouldMatchTheFixture()
+    {
+        Check<SprintDemoData>("sprint-demo-data.json").ShouldBeTrue();
+    }
 }
