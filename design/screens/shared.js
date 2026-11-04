@@ -273,7 +273,7 @@
   // Sprint header tabs, shared by the sprint pages.
   function sprintTabs(active) {
     const t = (id, label, href) => `<a class="tab" href="${href}"${id === active ? ' aria-current="page"' : ''}>${label}</a>`;
-    return `<nav class="tabs" aria-label="Sprint">${t('backlog', 'Backlog', 'sprint-backlog.html')}${t('taskboard', 'Taskboard', 'taskboard.html')}${t('capacity', 'Capacity', 'capacity.html')}${t('retro', 'Retro', 'sprint-retro.html')}</nav>`;
+    return `<nav class="tabs" aria-label="Sprint">${t('backlog', 'Backlog', 'sprint-backlog.html')}${t('taskboard', 'Taskboard', 'taskboard.html')}${t('capacity', 'Capacity', 'capacity.html')}${t('retro', 'Retro', 'sprint-retro.html')}${t('demo', 'Demo', 'sprint-demo.html')}</nav>`;
   }
 
   let toastEl, toastTimer;

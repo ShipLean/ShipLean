@@ -18,7 +18,7 @@ The screens here are reference designs for every page of the v1 domain model: **
 | `screens/work-item.html` | **Work item form**: one story (or a bug with `?key=SHIP-153`) with its fields, tasks, discussion, links, attachments and revision history, saved with Save. Its Preview panel simulates a 409 when a teammate saves first. |
 | `screens/feature.html` | **Feature form** ([#2](https://github.com/joeldickson/ShipLean/issues/2)): Checkout v2 with Goal, the status band (State, Status, Verified at, Blocked by, Parked reason), the description with inline images, Links as cards with live state, grouped attachments, the Log and History. `?band=blocked\|parked\|edit`, `?menu=state`, `?edit`, `?drop` and `?addlink=og\|github\|private` open those states. |
 | `screens/attachment.html` | **Markdown attachment**: an attached `.md` rendered on its own page under the work item, with its outline, which images resolved and the replace rule. `?view=source` shows the source. |
-| `screens/settings.html` | **Project settings**: General (locked project key, working days), States per type with categories, Members, Sprints & forecast (velocity window and override) and Integrations, with one Save for the whole page. |
+| `screens/settings.html` | **Project settings**: General (locked project key, working days), States per type with categories, Members, Sprints & forecast (velocity window and override) Integrations and Demos (SHIP-303, designed, not built yet: Automatic demos, Demo brand, YouTube; its own Save, `?tab=demos&brand=default\|logo\|refused\|tokens-refused&yt=off\|connect\|pending\|refused\|connected`), with one Save for the whole page. |
 | `screens/import.html` | **Jira import**: one Jira project into one ShipLean project in five steps (Connection, Jira project, Project key, Mapping, Run), with progress, an error log and re-runs. `?step=1..5` and `?run=done\|errors` open those states. |
 | `screens/planning.html` | **Planning**: the Stories backlog in Planning mode, with sprint sections stacked above the Backlog, plus [the pull line and selecting many rows](#planning-many-rows-ship-255) (SHIP-255). `?state=selected\|drag\|conflict\|queue` and `?pull=N` open those states. |
 | `screens/bulk.js`, `screens/bulk.css` | What the Stories backlog and Planning share for SHIP-255: selection, the action bar, Undo, estimates in the row, the item modal stand-in, add here, the paste review, the Before you plan strip and the keyboard. Their sample rows too, so these two screens have more backlog than `shared.js`. |
@@ -29,6 +29,7 @@ The screens here are reference designs for every page of the v1 domain model: **
 | `screens/taskboard.html` | **Sprint Taskboard**: the sprint's stories and bugs × Task states, Group by Stories / People, and the Taskboard settings dialog. `?view=people` and `?dialog=settings[&pane=styles\|tags]` open those states. |
 | `screens/feature-board.html` | **Feature board**: the Taskboard grid for one Feature's stories and bugs in any sprint, opened from **Task board** on the Feature form. A parent Feature gets one board section per Feature in its tree. `?key=SHIP-103` opens a parent Feature, `?view=people` groups by People. |
 | `screens/sprint-retro.html` | **Sprint Retro tab** (SHIP-82): every retrospective on items that finished or rolled over in the sprint. By category (Went well, Not in the plan, Went badly, Can be improved), grouped by theme, or By work item (`?view=items`) with each sub-agent's raw failure log. Points are post-its (SHIP-497). `?decide=open` shows only points to decide. Rail: coverage, action items, recurring themes. |
+| `screens/sprint-demo.html` | **Sprint Demo tab** (SHIP-303, designed, not built yet): Sprint 23's demo video, after Retro. `?state=closable\|none\|blocked\|working\|failed\|ready\|youtube-unlisted\|youtube-private\|youtube-failed` (default ready). |
 | `screens/retros.html` | **Retrospectives › Search** (SHIP-82): one row per point from every retro in the project, filtered by text, sprint, category, theme, level and author; the selected point's whole retro on the right. `?q=` prefills the search. |
 | `screens/retros-features.html` | **Retrospectives › Features** (SHIP-497): one row per Feature with counts per category and how many points are decided, plus stories and bugs with no Feature. `?show=open\|waiting` filters. |
 | `screens/retro-item.html` | **Retrospectives › one item** (SHIP-497): all of a work item's retros on one board, with a retro filter, raw failure logs and, for a Feature, a row per story and bug. `?key=`, `?retro=`, `?decide=open`, `?dialog=action`, `?why=<point>` and `?adding=<item>:<category>` open those states. |
@@ -37,7 +38,7 @@ The screens here are reference designs for every page of the v1 domain model: **
 | `screens/retro-cards.js`, `screens/retro-cards.css` | What every retro screen shares for SHIP-497: the post-it and its actions, the column with + Add, the aggregate rows, the action item dialog and the tooltips. |
 | `screens/retro-data.js`, `screens/retro.css` | Sample retrospectives, themes, mentions per sprint and action items for the three retro screens, and their styles. || `screens/signin.html` | **Sign in**: cookie sign-in with no side menu, plus the states after it. `?state=error\|change\|signed-out\|ended\|no-projects`. |
 | `screens/new-project.html` | **New project**: name, the permanent key (suggested, checked live, with free alternatives), start from defaults or another project's settings, members, working days and Sprint 1. |
-| `screens/instance.html` | **Instance settings** (instance admins only): General (name, base URL, who can create projects), Users (add, reset password, unlock, admin, disable) and Projects (every project, Join as admin). `?tab=general\|users\|projects`. |
+| `screens/instance.html` | **Instance settings** (instance admins only): General (name, base URL, who can create projects), Users (add, reset password, unlock, admin, disable) and Projects (every project, Join as admin). `?tab=general\|users\|projects\|integrations` (Integrations: the YouTube OAuth client, SHIP-303, designed, not built yet). |
 | `screens/profile.html` | **Your profile**: display name, optional photo and avatar colour (`?photo` opens with a photo), theme and density, password, your projects (Leave), sessions and saved views. |
 | `screenshots.sh` | Regenerates `screens/<name>.<theme>.png` (1440×900, 2× scale) with headless Chrome. Variants (such as `taskboard-people`, `backlog-tree`, `work-item-bug`, `import-run`) shoot one screen in another state. |
 | `logo/` | The logo: the mark, the light and dark lockups, and PNG exports. See [Logo](#logo). |
@@ -122,6 +123,25 @@ Open any screen and use the **Preview** panel (bottom left) to switch the theme.
 | Instance settings · Users | ![Instance settings, Users, light](screens/instance.light.png) | ![Instance settings, Users, dark](screens/instance.dark.png) |
 | Instance settings · General | ![Instance settings, General, light](screens/instance-general.light.png) | ![Instance settings, General, dark](screens/instance-general.dark.png) |
 | Instance settings · Projects | ![Instance settings, Projects, light](screens/instance-projects.light.png) | ![Instance settings, Projects, dark](screens/instance-projects.dark.png) |
+| Sprint Demo · ready | ![Sprint Demo tab, ready, light](screens/sprint-demo.light.png) | ![Sprint Demo tab, ready, dark](screens/sprint-demo.dark.png) |
+| Sprint Demo · closable | ![Sprint Demo tab, sprint not closed, light](screens/sprint-demo-closable.light.png) | ![Sprint Demo tab, sprint not closed, dark](screens/sprint-demo-closable.dark.png) |
+| Sprint Demo · none | ![Sprint Demo tab, no demo yet, light](screens/sprint-demo-none.light.png) | ![Sprint Demo tab, no demo yet, dark](screens/sprint-demo-none.dark.png) |
+| Sprint Demo · blocked | ![Sprint Demo tab, blocked, light](screens/sprint-demo-blocked.light.png) | ![Sprint Demo tab, blocked, dark](screens/sprint-demo-blocked.dark.png) |
+| Sprint Demo · working | ![Sprint Demo tab, agent working, light](screens/sprint-demo-working.light.png) | ![Sprint Demo tab, agent working, dark](screens/sprint-demo-working.dark.png) |
+| Sprint Demo · failed | ![Sprint Demo tab, failed, light](screens/sprint-demo-failed.light.png) | ![Sprint Demo tab, failed, dark](screens/sprint-demo-failed.dark.png) |
+| Sprint Demo · YouTube unlisted | ![Sprint Demo tab, YouTube embed, light](screens/sprint-demo-youtube-unlisted.light.png) | ![Sprint Demo tab, YouTube embed, dark](screens/sprint-demo-youtube-unlisted.dark.png) |
+| Sprint Demo · YouTube private | ![Sprint Demo tab, private on YouTube, light](screens/sprint-demo-youtube-private.light.png) | ![Sprint Demo tab, private on YouTube, dark](screens/sprint-demo-youtube-private.dark.png) |
+| Sprint Demo · YouTube failed | ![Sprint Demo tab, YouTube upload failed, light](screens/sprint-demo-youtube-failed.light.png) | ![Sprint Demo tab, YouTube upload failed, dark](screens/sprint-demo-youtube-failed.dark.png) |
+| Project settings · Demos | ![Demos settings, light](screens/settings-demos.light.png) | ![Demos settings, dark](screens/settings-demos.dark.png) |
+| Project settings · Demos, project logo | ![Demos settings with a project logo, light](screens/settings-demos-logo.light.png) | ![Demos settings with a project logo, dark](screens/settings-demos-logo.dark.png) |
+| Project settings · Demos, logo refused | ![Demos settings, logo refused, light](screens/settings-demos-logo-refused.light.png) | ![Demos settings, logo refused, dark](screens/settings-demos-logo-refused.dark.png) |
+| Project settings · Demos, tokens refused | ![Demos settings, tokens refused, light](screens/settings-demos-tokens-refused.light.png) | ![Demos settings, tokens refused, dark](screens/settings-demos-tokens-refused.dark.png) |
+| Project settings · YouTube off | ![YouTube panel, off, light](screens/settings-demos-yt-off.light.png) | ![YouTube panel, off, dark](screens/settings-demos-yt-off.dark.png) |
+| Project settings · YouTube not connected | ![YouTube panel, not connected, light](screens/settings-demos-yt-connect.light.png) | ![YouTube panel, not connected, dark](screens/settings-demos-yt-connect.dark.png) |
+| Project settings · YouTube pending check | ![YouTube panel, pending, light](screens/settings-demos-yt-pending.light.png) | ![YouTube panel, pending, dark](screens/settings-demos-yt-pending.dark.png) |
+| Project settings · YouTube check refused | ![YouTube panel, check refused, light](screens/settings-demos-yt-refused.light.png) | ![YouTube panel, check refused, dark](screens/settings-demos-yt-refused.dark.png) |
+| Project settings · YouTube connected | ![YouTube panel, connected, light](screens/settings-demos-yt-connected.light.png) | ![YouTube panel, connected, dark](screens/settings-demos-yt-connected.dark.png) |
+| Instance settings · Integrations | ![Instance settings, Integrations, light](screens/instance-integrations.light.png) | ![Instance settings, Integrations, dark](screens/instance-integrations.dark.png) |
 | Your profile | ![Your profile, light](screens/profile.light.png) | ![Your profile, dark](screens/profile.dark.png) |
 | Your profile · photo | ![Your profile with a photo, light](screens/profile-photo.light.png) | ![Your profile with a photo, dark](screens/profile-photo.dark.png) |
 | Taskboard settings · Styles | ![Taskboard settings, Styles, light](screens/taskboard-styles.light.png) | ![Taskboard settings, Styles, dark](screens/taskboard-styles.dark.png) |
@@ -215,6 +235,18 @@ All numbers are from one laptop (16 cores, 39 GB), not the 7 GB host the plan wa
 - A Feature's rail lists its children's action items.
 - Removing an action item moves it to Removed and returns all its points to undecided.
 - The Unthemed row counts every unthemed point except Went well.
+
+## Sprint demos (SHIP-303)
+
+**Designed, not built yet.** Reference screens only: `screens/sprint-demo.html` (the Sprint Demo tab, after Retro), the Demos tab of `screens/settings.html` and the Integrations tab of `screens/instance.html`. UI tasks port from them; where the app differs it will be listed here under "As built".
+
+A demo is a short video of what a sprint finished, made by an agent working a BAU item (Business As Usual: background work that is never on a sprint) in a seeded copy of the project.
+
+- **Demo tab states** (`?state=`): `closable` (sprint still open, Create demo disabled with why), `none`, `blocked` (disabled, says why), `working` (link to the BAU item), `failed`, `ready` (16:9 player, chapters beside it, features covered, script), and three YouTube cases on a ready demo: `youtube-unlisted` (embed plus a link), `youtube-private` (the file plays here, Watch on YouTube, a note that only the channel owner can watch it there) and `youtube-failed` (the file plays, a notice with the reason, Retry upload). The player is a placeholder here; the real one plays the file or the embed.
+- **Settings › Demos:** Automatic demos (disabled with the reason when the project has no agent connection or repository), how an agent starts the environment, the **Demo brand** panel (ShipLean's logo marked as the default; a project's logo with Replace and Remove; a refused upload says why; the tokens field lists the seven names slides use with ShipLean's values, and a refused save names the line) and the **YouTube** panel (off, not connected, pending check, check refused with K12's text, connected with Disconnect). Brand and YouTube have their own Save and checks, not the page's draft.
+- **Instance settings › Integrations:** the YouTube OAuth client (client id, secret, "set by environment"), separate from Sign in with Google.
+- The sprint tab bar in `shared.js` gains Demo after Retro, so every sprint screen shows it; their PNGs are not regenerated here.
+- The check is never shown as proven against Google: that live spike is left undone (K12).
 
 ## Logo
 

@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Sprint demo (SHIP-303 reference)</title>
+<!--
+  SHIP-303 reference: Sprints › Sprint 23 › Demo. Designed, not built yet.
+  A short video of what the sprint finished, made by an agent working a BAU item (Business As Usual: background
+  work that is never on a sprint) and delivered back to ShipLean. Uses ../tokens.css, shiplean.css and shared.js.
+  ?state= picks what the tab shows (default ready):
+    closable          sprint still open: Create demo is disabled and says why
+    none              closed, no demo yet: Create demo
+    blocked           Create demo disabled, says why (no agent connection or repository)
+    working           an agent is running; link to the BAU item
+    failed            the upload link expired or the session ended without a video
+    ready             player 16:9, chapters beside it, features covered, script
+    youtube-unlisted  ready, and the YouTube embed plays (link to YouTube)
+    youtube-private   ready, the file plays here, Watch on YouTube and a note that only the channel owner can
+    youtube-failed    ready, the file plays here, a notice with the reason and Retry upload
+-->
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="shiplean.css">
+<script src="shared.js"></script>
+<style>
+[hidden] { display: none !important; }
+.sprint-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-4); padding: var(--space-3) var(--space-4); background: var(--color-surface); border-bottom: 1px solid var(--color-border); flex: none; }
+.picker { display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0; background: none; font-size: var(--text-lg); font-weight: var(--weight-semibold); cursor: pointer; }
+.picker span { font-size: var(--text-xs); color: var(--color-muted); }
+.goal { display: flex; gap: var(--space-2); align-items: baseline; margin-top: var(--space-2); max-width: 760px; }
+.page { padding: var(--space-3) var(--space-4) var(--space-5); display: grid; gap: var(--space-3); align-content: start; max-width: 1280px; }
+.band { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; padding: var(--space-2) var(--space-3); background: var(--color-surface); border: 1px solid var(--color-border); border-left: 3px solid var(--color-info); border-radius: var(--radius-md); }
+.band.ok { border-left-color: var(--color-ok); }
+.band.warn { border-left-color: var(--color-warn); }
+.band.danger { border-left-color: var(--color-danger); }
+.band .msg { flex: 1; min-width: 260px; display: grid; gap: 2px; font-size: var(--text-sm); }
+.band .msg b { font-size: var(--text-base); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn.primary:disabled:hover { filter: none; }
+.pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--color-info); animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .25; } }
+@media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
+.stage { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: var(--space-4); align-items: start; }
+.player { position: relative; aspect-ratio: 16 / 9; width: 100%; background: var(--color-surface-2); color: var(--color-text); border-radius: var(--radius-md); overflow: hidden; display: grid; place-items: center; border: 1px solid var(--color-border); }
+.player .poster { text-align: center; display: grid; gap: var(--space-2); justify-items: center; }
+.player .poster b { font-size: var(--text-lg); }
+.player .poster span { font-size: var(--text-sm); color: var(--color-muted); }
+.player .play { width: 56px; height: 56px; border-radius: 50%; background: var(--color-accent); color: var(--color-accent-fg); display: grid; place-items: center; font-size: 22px; }
+.player .bar { position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; gap: var(--space-2); padding: 0 var(--space-3); height: 34px; background: color-mix(in srgb, var(--color-surface) 85%, transparent); border-top: 1px solid var(--color-border); font-size: var(--text-xs); font-variant-numeric: tabular-nums; }
+.player .track { flex: 1; height: 4px; border-radius: 2px; background: color-mix(in srgb, var(--color-text) 20%, transparent); position: relative; }
+.player .track i { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; border-radius: 2px; background: var(--color-accent); }
+.player .src { position: absolute; top: var(--space-2); left: var(--space-2); }
+.player .src .chip { background: var(--color-surface); }
+.under { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; margin-top: var(--space-2); font-size: var(--text-sm); }
+.note { padding: var(--space-2) var(--space-3); border: 1px dashed var(--color-border); border-radius: var(--radius-sm); font-size: var(--text-sm); color: var(--color-muted); margin-top: var(--space-2); }
+.notice { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; padding: var(--space-2) var(--space-3); margin-top: var(--space-2); border: 1px solid var(--color-border); border-left: 3px solid var(--color-danger); border-radius: var(--radius-sm); background: var(--color-surface); font-size: var(--text-sm); }
+.notice .t { flex: 1; min-width: 240px; }
+.box { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.box > header { display: flex; align-items: center; gap: var(--space-2); min-height: 36px; padding: 0 var(--space-3); border-bottom: 1px solid var(--color-border); }
+.box > header h2 { margin: 0; font-size: var(--text-base); font-weight: var(--weight-semibold); }
+.chapters, .feats { list-style: none; margin: 0; padding: var(--space-1); display: grid; gap: 1px; }
+.chapters li { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; gap: var(--space-2); align-items: center; min-height: 30px; padding: 0 var(--space-2); border-radius: var(--radius-sm); font-size: var(--text-sm); cursor: pointer; }
+.chapters li:hover { background: var(--color-surface-2); }
+.chapters li[aria-current="true"] { background: var(--color-accent-soft); font-weight: var(--weight-semibold); }
+.chapters .at { font-variant-numeric: tabular-nums; color: var(--color-muted); font-size: var(--text-xs); }
+.chapters .ttl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.feats li { display: flex; align-items: center; gap: var(--space-2); min-height: 30px; padding: 0 var(--space-2); font-size: var(--text-sm); }
+.feats .ttl { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.script { padding: var(--space-3) var(--space-4); display: grid; gap: var(--space-2); max-width: 820px; font-size: var(--text-base); }
+.script h3 { margin: var(--space-2) 0 0; font-size: var(--text-base); font-weight: var(--weight-semibold); }
+.script p { margin: 0; color: var(--color-text); }
+.script .at { font-variant-numeric: tabular-nums; color: var(--color-muted); font-size: var(--text-xs); margin-right: 6px; }
+.facts { display: flex; gap: var(--space-4); flex-wrap: wrap; font-size: var(--text-sm); color: var(--color-muted); }
+.facts b { color: var(--color-text); font-weight: var(--weight-medium); }
+@media (max-width: 1100px) { .stage { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 900px) { .sprint-head { grid-template-columns: minmax(0, 1fr); } }
+</style>
+</head>
+<body>
+<div id="appbar"></div>
+<section class="sprint-head" aria-label="Sprint 23">
+  <div>
+    <div class="row">
+      <button class="picker" type="button" aria-haspopup="listbox" title="Switch sprint">Sprint 23 <span>▾</span></button>
+      <span class="chip" id="sprintChip">Ended</span>
+      <a class="sm" href="sprints.html">All sprints</a>
+    </div>
+    <div class="sm muted" id="sprintDates">Mon 5 Oct – Fri 16 Oct · ended 2 weeks ago</div>
+    <div class="goal"><span class="overline">Goal</span><span>Coupons v2.</span></div>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><div class="v">23</div><div class="l">Points committed</div></div>
+    <div class="kpi"><div class="v">21</div><div class="l">Points completed</div></div>
+    <div class="kpi"><div class="v">3</div><div class="l">Features moved</div></div>
+  </div>
+</section>
+<div class="toolbar">
+  <div id="tabs"></div>
+</div>
+<div class="scroll"><div class="page" id="page" data-testid="demo-panel"></div></div>
+
+<script>
+(() => {
+  const { esc, tIcon, st } = SL;
+  document.getElementById('appbar').outerHTML = SL.appBar('sprints');
+  document.getElementById('tabs').outerHTML = SL.sprintTabs('demo');
+  const $ = id => document.getElementById(id);
+
+  const STATES = ['closable', 'none', 'blocked', 'working', 'failed', 'ready', 'youtube-unlisted', 'youtube-private', 'youtube-failed'];
+  const q = new URLSearchParams(location.search).get('state');
+  let state = STATES.includes(q) ? q : 'ready';
+
+  const FEATURES = [['SHIP-101', 'Checkout v2', 'Active'], ['SHIP-102', 'Mobile sign-in', 'Active'], ['SHIP-103', 'Reporting', 'Active']];
+  const CHAPTERS = [
+    ['0:00', 'Sprint 23 at a glance', null],
+    ['0:28', 'Coupon field on checkout', 'SHIP-101'],
+    ['1:15', 'Coupon stacking rules', 'SHIP-101'],
+    ['1:58', 'Sign in with a passkey', 'SHIP-102'],
+    ['2:44', 'Coupon redemptions report', 'SHIP-103'],
+    ['3:21', 'What rolled over to Sprint 24', null],
+  ];
+  const SCRIPT = [
+    ['0:00', 'Sprint 23 at a glance', 'Sprint 23 committed 23 points and finished 21. The goal was Coupons v2: a shopper can apply a coupon at checkout and see the total change straight away.'],
+    ['0:28', 'Coupon field on checkout', 'On the checkout page the new coupon field sits under the order summary. Enter SPRING10 and the total drops by ten percent; remove it and the total goes back.'],
+    ['1:15', 'Coupon stacking rules', 'A second coupon is refused with a message that says which coupon is already applied. Free-shipping coupons stack with a percentage coupon.'],
+    ['1:58', 'Sign in with a passkey', 'Mobile sign-in offers a passkey after the first password sign-in. It stays behind a flag, so only the flagged account sees it today.'],
+    ['2:44', 'Coupon redemptions report', 'Reporting has a new tile that counts redemptions per coupon for the last 30 days.'],
+    ['3:21', 'What rolled over to Sprint 24', 'Two stories rolled over: the saved-card form and the passkey recovery flow. Both are in Sprint 24.'],
+  ];
+  const ITEM = ['SHIP-190', 'Sprint 23 demo'];
+  const itemLink = `<a class="key" href="work-item.html?key=${ITEM[0]}" data-testid="demo-item-link">${tIcon('task')} ${ITEM[0]} ${ITEM[1]}</a>`;
+
+  const bandHtml = {
+    closable: () => band('', 'Not closed', 'Close the sprint to make its demo.', `<button class="btn primary" type="button" disabled data-testid="demo-create">Create demo</button>`,
+      `A demo is a short video of what the sprint finished. It's made by an agent working a BAU item (Business As Usual: background work that is never on a sprint).`),
+    none: () => band('', 'No demo yet', 'Make a demo of Sprint 23.', `<button class="btn primary" type="button" data-testid="demo-create">Create demo</button>`,
+      `An agent starts a seeded copy of Storefront, records a walk-through of the 3 features this sprint moved, and uploads the video here. It runs as a BAU item (Business As Usual: background work that is never on a sprint), so it never counts in your velocity.`),
+    blocked: () => band('warn', 'Blocked', `The automatic demo didn't start: Storefront has no agent connection.`, `<button class="btn primary" type="button" disabled data-testid="demo-create-blocked">Create demo</button>`,
+      `Connect an agent to this project in <a href="settings.html#demos">Settings</a>, then create the demo here.`),
+    working: () => band('', 'Working', 'An agent is making the demo.', `<span class="pulse" aria-hidden="true"></span>`,
+      `Requested 4 minutes ago by Priya Shah. The upload link works until 15:42. This tab updates when the video arrives. ${itemLink}`),
+    failed: () => band('danger', 'Failed', 'The upload link expired before a video came back.', `<button class="btn primary" type="button" data-testid="demo-create">Create demo again</button>`,
+      `Requested 1 day ago by Priya Shah. A new request replaces the old link. ${itemLink}`),
+    ready: () => band('ok', 'Ready', 'The demo for Sprint 23 is ready.', '',
+      `Delivered 17 Oct, 09:12 · ${itemLink}`),
+  };
+  function band(tone, chip, msg, action, sub) {
+    const c = tone === 'ok' ? 'ok' : tone === 'warn' ? 'warn' : tone === 'danger' ? 'danger' : 'accent';
+    return `<div class="band ${tone}" data-testid="demo-status-band"><span class="chip ${c}">${chip}</span>
+      <div class="msg"><b data-testid="demo-status-message">${msg}</b><span class="muted">${sub}</span></div>${action}</div>`;
+  }
+
+  function player(kind) {
+    const label = kind === 'embed' ? 'YouTube' : 'Video file';
+    const tid = kind === 'embed' ? 'demo-embed' : 'demo-video';
+    return `<div class="player" data-testid="demo-player"><div class="src"><span class="chip">${label}</span></div>
+      <div data-testid="${tid}" class="poster"><div class="play" aria-hidden="true">▶</div><b>Sprint 23 demo</b><span>Storefront · 3:42</span></div>
+      <div class="bar"><span>0:00</span><div class="track"><i></i></div><span>3:42</span></div></div>`;
+  }
+
+  function under(s) {
+    if (s === 'youtube-unlisted') return `<div class="under"><a class="btn" href="#" data-testid="demo-watch-on-youtube">Watch on YouTube ↗</a><span class="muted">Unlisted: anyone with the link can watch.</span></div>`;
+    if (s === 'youtube-private') return `<div class="under"><a class="btn" href="#" data-testid="demo-watch-on-youtube">Watch on YouTube ↗</a></div>
+      <div class="note" data-testid="demo-private-note">This video is private on YouTube, so only the channel owner can watch it there. Everyone here watches the file ShipLean kept.</div>`;
+    if (s === 'youtube-failed') return `<div class="notice" data-testid="demo-youtube-notice"><span class="chip danger">YouTube upload failed</span>
+      <span class="t">YouTube refused the upload: the channel's daily upload quota is used up. Your file is safe here and plays above. Try again tomorrow, or after the quota resets.</span>
+      <button class="btn" type="button" data-testid="demo-youtube-retry">Retry upload</button></div>`;
+    return '';
+  }
+
+  function readyBody(s) {
+    const embed = s === 'youtube-unlisted';
+    return `<div class="stage">
+      <div>${player(embed ? 'embed' : 'video')}${under(s)}
+        <div class="facts" style="margin-top:var(--space-2)"><span>Length <b>3:42</b></span><span>Size <b>18.4 MB</b></span><span>File <b>sprint-23-demo.mp4</b></span><span>Delivered <b>17 Oct, 09:12</b></span></div></div>
+      <div style="display:grid;gap:var(--space-3)">
+        <section class="box" aria-label="Chapters"><header><h2>Chapters</h2><span class="xs muted">${CHAPTERS.length}</span></header>
+          <ol class="chapters" data-testid="demo-chapters" style="list-style:none">${CHAPTERS.map((c, i) => `<li data-testid="demo-chapter" aria-current="${i === 0}"><span class="at">${c[0]}</span><span class="ttl">${esc(c[1])}</span>${c[2] ? `<span class="key">${c[2]}</span>` : ''}</li>`).join('')}</ol></section>
+        <section class="box" aria-label="Features covered"><header><h2>Features covered</h2><span class="xs muted">${FEATURES.length}</span></header>
+          <ul class="feats" data-testid="demo-features">${FEATURES.map(f => `<li data-testid="demo-feature">${tIcon('feature')}<a class="key" href="feature.html?key=${f[0]}">${f[0]}</a><span class="ttl">${esc(f[1])}</span>${st(f[2])}</li>`).join('')}</ul></section>
+      </div></div>
+      <section class="box" aria-label="Script"><header><h2>Script</h2><span class="xs muted">What the agent said, by chapter</span></header>
+        <div class="script" data-testid="demo-script">${SCRIPT.map(c => `<h3><span class="at">${c[0]}</span>${esc(c[1])}</h3><p>${esc(c[2])}</p>`).join('')}</div></section>`;
+  }
+
+  function render() {
+    const closed = state !== 'closable';
+    $('sprintChip').textContent = closed ? 'Ended' : 'Active';
+    $('sprintDates').textContent = closed ? 'Mon 5 Oct – Fri 16 Oct · ended 2 weeks ago' : 'Mon 5 Oct – Fri 16 Oct · 1 day left';
+    const ready = state === 'ready' || state.startsWith('youtube-');
+    const b = bandHtml[ready ? 'ready' : state]();
+    $('page').innerHTML = b + (ready ? readyBody(state) : '');
+  }
+  render();
+  SL.preview(STATES.map(s => ({ label: s, run: () => { state = s; render(); } })));
+})();
+</script>
+</body>
+</html>

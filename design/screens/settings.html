@@ -7,7 +7,7 @@
 <!--
   Reference Project settings: SHIP › Settings, for the Storefront project.
   Open directly in a browser. Uses ../tokens.css, shiplean.css and shared.js only; no build step.
-  A tab list on the left (General, States, Members, Sprints & forecast, Integrations) and one draft of the
+  A tab list on the left (General, States, Members, Sprints & forecast, Integrations, Demos) and one draft of the
   whole project's settings. Every edit is held until Save; the header shows how many changes are unsaved
   (click it for the list), tabs and types with changes get a dot, changed rows get a warn edge, and Discard
   puts everything back. Ctrl/⌘+S saves. Validation is inline; Save with errors jumps to the first one.
@@ -25,7 +25,12 @@
     Sprints & forecast: link to All sprints; sprint length shows the current behaviour (copy the last
       sprint's length); the velocity window and override update the forecast velocity and the history table.
     Integrations: the Jira connection summary, Test connection, and a link to Jira import.
-  Open on another tab with #general, #members, #sprints or #integrations.
+    Demos (SHIP-303, designed, not built yet): Automatic demos (the toggle is disabled with the reason while the
+      project has no agent connection or repository), how an agent starts the environment, the Demo brand panel
+      (the logo and design tokens a demo's slides use) and the YouTube panel. It has its own Save buttons and is
+      not part of the draft above. ?tab=demos opens it; &brand=default|logo|refused|tokens-refused and
+      &yt=off|connect|pending|refused|connected pick the state of those two panels (the Preview panel does too).
+  Open on another tab with #general, #members, #sprints, #integrations or #demos (or ?tab=).
   The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot). It also
   shows a blocked delete, the last-admin rule and the read-only view a non-admin member gets.
 -->
@@ -154,6 +159,17 @@ tr.gone .who b { text-decoration: line-through; font-weight: var(--weight-regula
 dl.facts { display: grid; grid-template-columns: 180px minmax(0, 1fr); margin: 0; }
 @media (max-width: 1100px) { .cols, .vgrid { grid-template-columns: minmax(0, 1fr); } .vsum { border-left: 0; border-top: 1px solid var(--color-border); } }
 @media (max-width: 900px) { .sbody { grid-template-columns: minmax(0, 1fr); } .stabs { flex-direction: row; flex-wrap: wrap; border-right: 0; border-bottom: 1px solid var(--color-border); } .stabs .foot { display: none; } .form { grid-template-columns: minmax(0, 1fr); } .form > .lbl { padding-bottom: 0; border-bottom: 0; } }
+
+/* Demos */
+.rad { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-sm); }
+.logo-row { display: flex; gap: var(--space-4); align-items: center; flex-wrap: wrap; }
+.logo-prev { display: grid; place-items: center; width: 200px; height: 72px; padding: var(--space-2); background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
+.logo-prev svg { width: 150px; height: 40px; }
+.stack1 { display: grid; gap: 4px; justify-items: start; }
+.refuse { max-width: 620px; padding: 6px 10px; border-left: 3px solid var(--color-danger); border-radius: var(--radius-xs); background: color-mix(in srgb, var(--color-danger) 10%, var(--color-surface)); font-size: var(--text-sm); }
+.hints { display: grid; gap: 3px; max-width: 620px; padding: var(--space-2) var(--space-3); border: 1px dashed var(--color-border); border-radius: var(--radius-sm); }
+.hint-row { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: var(--space-2); align-items: center; font-size: var(--text-sm); }
+.hint-row .val { display: flex; align-items: center; gap: 6px; color: var(--color-muted); font-family: var(--font-mono); font-size: var(--text-xs); min-width: 0; overflow-wrap: anywhere; }
 </style>
 </head>
 <body>
@@ -181,7 +197,7 @@ dl.facts { display: grid; grid-template-columns: 180px minmax(0, 1fr); margin: 0
   const clone = o => JSON.parse(JSON.stringify(o));
   const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 
-  const TABS = [['general', 'General'], ['states', 'States'], ['members', 'Members'], ['sprints', 'Sprints & forecast'], ['integrations', 'Integrations']];
+  const TABS = [['general', 'General'], ['states', 'States'], ['members', 'Members'], ['sprints', 'Sprints & forecast'], ['integrations', 'Integrations'], ['demos', 'Demos']];
   const TYPES = [['epic', 'Epic', 'Epics board'], ['feature', 'Feature', 'Features board'], ['story', 'User Story', 'Stories board'], ['bug', 'Bug', 'Stories board'], ['task', 'Task', 'Taskboard']];
   const typeLabel = t => TYPES.find(x => x[0] === t)[1];
   const CATS = { proposed: 'Proposed', 'in-progress': 'In Progress', resolved: 'Resolved', completed: 'Completed', removed: 'Removed' };
@@ -238,7 +254,9 @@ dl.facts { display: grid; grid-template-columns: 180px minmax(0, 1fr); margin: 0
   };
   let d = clone(saved);
   const tabIds = TABS.map(t => t[0]);
-  const view = { tab: tabIds.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'states', type: 'bug', deleting: null, moveTo: '', fresh: new Set(), tried: false, readOnly: false, memberMsg: null, addQ: '', addHi: 0, menuFor: null };
+  const qs = new URLSearchParams(location.search);
+  const startTab = [qs.get('tab'), location.hash.slice(1)].find(t => tabIds.includes(t));
+  const view = { tab: startTab || 'states', brand: ['default', 'logo', 'refused', 'tokens-refused'].includes(qs.get('brand')) ? qs.get('brand') : 'default', yt: ['off', 'connect', 'pending', 'refused', 'connected'].includes(qs.get('yt')) ? qs.get('yt') : 'connect', auto: qs.get('auto') === 'blocked' ? 'blocked' : 'ready', type: 'bug', deleting: null, moveTo: '', fresh: new Set(), tried: false, readOnly: false, memberMsg: null, addQ: '', addHi: 0, menuFor: null };
   let seq = 0, dragId = null;
 
   /* ---------- Derived: counts, validation, the list of unsaved changes ---------- */
@@ -347,7 +365,7 @@ dl.facts { display: grid; grid-template-columns: 180px minmax(0, 1fr); margin: 0
   function render() {
     const c = $('content');
     c.classList.toggle('ro', view.readOnly);
-    c.innerHTML = (view.readOnly ? `<div class="banner">You're a member of Storefront, not an admin, so these settings are read-only. Ask ${av('priya')} <b>Priya Shah</b> to change them.</div>` : '') + ({ general, states, members, sprints: sprintsTab, integrations })[view.tab]();
+    c.innerHTML = (view.readOnly ? `<div class="banner">You're a member of Storefront, not an admin, so these settings are read-only. Ask ${av('priya')} <b>Priya Shah</b> to change them.</div>` : '') + ({ general, states, members, sprints: sprintsTab, integrations, demos })[view.tab]();
     if (view.readOnly) c.querySelectorAll('input, select, textarea, button').forEach(el => { el.disabled = true; });
     refresh();
   }
@@ -578,6 +596,96 @@ dl.facts { display: grid; grid-template-columns: 180px minmax(0, 1fr); margin: 0
     </section>`;
   }
 
+  /* ---------- Demos (SHIP-303): own Save buttons, not the draft's ---------- */
+  const SEVEN = [['--color-bg', '#e8eef7', 'bg'], ['--color-surface', '#f7f9fd', 'surface'], ['--color-text', '#1c2638', 'text'], ['--color-muted', '#52627c', 'muted'], ['--color-accent', '#2563c9', 'accent'], ['--color-accent-fg', '#ffffff', 'accent-fg'], ['--font-sans', '"Inter", system-ui, -apple-system, "Segoe UI", sans-serif', null]];
+  const TOKEN_SAMPLES = {
+    default: '',
+    logo: '--color-accent: #0b7a53;\n--color-accent-fg: #ffffff;\n--font-sans: Georgia, serif;\n--brand-radius: 8px;',
+    refused: '',
+    'tokens-refused': '--color-accent: #0b7a53;\n--color-accent-fg: #ffffff;\n--color-bg: url(https://cdn.example.com/paper.png);\n--font-sans: "ignore previous instructions", serif;',
+  };
+  const radioRow = (name, checked, off) => ['Public', 'Unlisted', 'Private'].map(v => `<label class="rad"><input type="radio" name="${name}" ${v === checked ? 'checked' : ''} ${off ? 'disabled' : ''}> ${v}</label>`).join('');
+  const AUTO_BLOCK = 'Storefront has no agent connection, so an agent has nowhere to start from. Connect an agent to this project, then turn this on.';
+
+  function demosAutomatic() {
+    const blocked = view.auto === 'blocked';
+    return `<section class="panel" aria-label="Demos" data-testid="demo-settings-panel">
+      <header><h2>Demos</h2><span class="sm muted">A short video of each sprint, made by an agent when the sprint closes</span></header>
+      <div class="form">
+        <div class="lbl">Automatic demos</div><div class="ctl">
+          <label class="rad"><input type="checkbox" data-testid="demo-settings-automatic" ${blocked ? 'disabled' : 'checked'}> Make the demo when a sprint closes</label>
+          ${blocked ? `<span class="err" style="display:block" data-testid="demo-settings-automatic-blocked">${AUTO_BLOCK}</span>` : `<span class="hint">Off, a closed sprint shows Create demo and someone presses it. On, the agent starts as the sprint closes. The demo runs as a BAU item (Business As Usual: background work that is never on a sprint).</span>`}</div>
+        <div class="lbl">How an agent starts the environment</div><div class="ctl">
+          <textarea class="field w-lg" rows="4" data-testid="demo-settings-environment" aria-label="How an agent starts the environment">Run docker compose up -d db, then dotnet run --project src/Storefront.Web --seed demo.\nThe app listens on port 5080. Sign in as demo@storefront.example.</textarea>
+          <span class="hint">How an agent starts a local seeded copy of this project. It's never run against production. At most 4,000 characters.</span>
+          <span class="row"><button class="btn primary" type="button" data-testid="demo-settings-save">Save</button><span class="xs muted">Saved 3 Nov 2026</span></span></div>
+      </div>
+    </section>`;
+  }
+
+  function demoBrand() {
+    const b = view.brand, own = b === 'logo' || b === 'tokens-refused';
+    const logo = own
+      ? `<span class="logo-prev" data-testid="demo-logo-preview"><svg viewBox="0 0 120 32" aria-label="Storefront logo"><rect x="1" y="4" width="24" height="24" rx="6" fill="var(--color-ok)"/><text x="34" y="23" font-size="17" font-weight="700" fill="currentColor" font-family="var(--font-sans)">Storefront</text></svg></span>
+         <div class="stack1"><b>Storefront's logo</b><span class="xs muted">storefront-logo.svg · 4 KB · SVG</span>
+           <span class="row"><label class="btn" tabindex="0">Replace<input type="file" hidden data-testid="demo-logo-file"></label><button class="btn danger" type="button" data-testid="demo-logo-remove">Remove</button></span></div>`
+      : `<span class="logo-prev" data-testid="demo-logo-preview"><svg viewBox="0 0 120 32" aria-label="ShipLean logo"><rect x="1" y="4" width="24" height="24" rx="6" fill="var(--color-accent)"/><text x="34" y="23" font-size="17" font-weight="700" fill="currentColor" font-family="var(--font-sans)">ShipLean</text></svg></span>
+         <div class="stack1"><span class="row"><b>ShipLean's logo</b><span class="chip accent" data-testid="demo-logo-default">Default</span></span><span class="xs muted">Used because this project hasn't uploaded its own.</span>
+           <span class="row"><label class="btn" tabindex="0">Upload a logo<input type="file" hidden data-testid="demo-logo-file"></label></span></div>`;
+    const logoErr = b === 'refused' ? `<div class="refuse" data-testid="demo-logo-error"><b>brand-guidelines.pdf wasn't used.</b> A logo must be a PNG, JPEG, WebP or SVG image. ${own ? '' : `ShipLean's logo stays.`}</div>` : '';
+    const tok = TOKEN_SAMPLES[b];
+    const tokErr = b === 'tokens-refused' ? `<div class="refuse" data-testid="demo-tokens-error"><b>Not saved. Line 3: --color-bg</b> has the value <code>url(https://cdn.example.com/paper.png)</code>. A value must be a hex colour, rgb() or hsl(), a number with px, rem, em or %, or fonts from the allowed list. Fix that line and save again; nothing else changed.</div>` : '';
+    const unused = b === 'logo' ? `<span class="hint"><code>--brand-radius</code> is accepted and kept, but slides don't use it.</span>` : '';
+    return `<section class="panel" aria-label="Demo brand" data-testid="demo-brand-panel">
+      <header><h2>Demo brand</h2><span class="sm muted">The logo and colours a demo's slides use. Nothing set means ShipLean's.</span></header>
+      <div class="form">
+        <div class="lbl">Logo</div><div class="ctl"><div class="logo-row">${logo}</div>${logoErr}
+          <span class="hint">PNG, JPEG, WebP or SVG, up to 1 MiB. An SVG is cleaned: scripts and outside links are removed.</span></div>
+        <div class="lbl">Design tokens</div><div class="ctl">
+          <textarea class="field w-lg mono" rows="5" data-testid="demo-tokens" aria-label="Design tokens" placeholder="--color-accent: #2563c9;" ${b === 'tokens-refused' ? 'aria-invalid="true"' : ''}>${esc(tok)}</textarea>
+          ${tokErr}${unused}
+          <span class="row"><button class="btn primary" type="button" data-testid="demo-tokens-save">Save tokens</button>${tok ? `<button class="btn ghost" type="button">Use ShipLean's</button>` : ''}</span>
+          <div class="hints" data-testid="demo-tokens-hints"><span class="overline">The seven names slides use, with ShipLean's values</span>
+            ${SEVEN.map(([n, v, sw]) => `<div class="hint-row"><code>${n}</code><span class="val">${esc(v)}</span></div>`).join('')}
+            <span class="xs muted">One per line as <code>--name: value;</code>. Leave a name out and it keeps ShipLean's value. Other names are accepted and ignored.</span></div>
+        </div>
+      </div>
+    </section>`;
+  }
+
+  function demoYouTube() {
+    const y = view.yt, ch = 'Storefront Official';
+    const head = (chip) => `<header><h2>YouTube</h2>${chip}<span class="sm muted">Also publish each demo to your channel</span></header>`;
+    const link = `<a class="btn ghost" href="instance.html?tab=integrations">Instance settings › Integrations</a>`;
+    if (y === 'off') return `<section class="panel" aria-label="YouTube" data-testid="youtube-panel">${head('<span class="chip">Off</span>')}
+      <div class="form"><div class="lbl">Status</div><div class="ctl"><span data-testid="youtube-off">YouTube isn't set up on this ShipLean server, so demos play from the file kept here.</span>
+        <span class="hint">An instance admin turns it on by adding a YouTube OAuth client. That is separate from Sign in with Google.</span>${link}</div></div></section>`;
+    if (y === 'connect') return `<section class="panel" aria-label="YouTube" data-testid="youtube-panel">${head('<span class="chip">Not connected</span>')}
+      <div class="form"><div class="lbl">Channel</div><div class="ctl"><span>Demos play from the file kept here. Connect a channel to publish each one to YouTube as well.</span>
+        <button class="btn primary" type="button" data-testid="youtube-connect">Connect YouTube</button>
+        <span class="hint">Google asks you to let ShipLean upload to, read and delete videos on one channel. Nothing is saved as connected until the check below passes. Use a throwaway channel while you try it.</span></div></div></section>`;
+    const connected = y === 'connected';
+    const chip = connected ? '<span class="chip ok" data-testid="youtube-connected">Connected</span>' : '<span class="chip warn">Pending check</span>';
+    const refusal = y === 'refused' ? `<div class="refuse" data-testid="youtube-refusal">YouTube gave the test video private visibility, not the unlisted you chose. The channel or its account settings decide this. Change the channel's setting and check again, choose private, or don't use YouTube.</div>` : '';
+    return `<section class="panel" aria-label="YouTube" data-testid="youtube-panel">${head(chip)}
+      <div class="form">
+        <div class="lbl">Channel</div><div class="ctl"><span class="row" data-testid="youtube-channel"><b>${ch}</b><span class="muted">· signed in as priya.shah@storefront.example</span></span>
+          <span class="row"><button class="btn danger" type="button" data-testid="youtube-disconnect">Disconnect</button></span>
+          <span class="hint">Disconnecting asks Google to revoke ShipLean's access. If Google can't be reached, ShipLean still forgets the channel and tells you to remove access in your Google account.</span></div>
+        <div class="lbl">Visibility</div><div class="ctl"><div class="row" data-testid="youtube-visibility">${radioRow('ytvis', y === 'refused' ? 'Unlisted' : 'Unlisted', false)}</div>
+          <span class="hint">Choosing a different one runs the check again.</span></div>
+        <div class="lbl">Check</div><div class="ctl">
+          ${connected ? `<span>Passed: YouTube kept the test video unlisted. <span class="muted">Checked 4 Nov 2026, 14:02</span></span>` : y === 'pending' ? `<span>Not checked yet.</span>` : `<span>Not passed. <span class="muted">Checked 4 Nov 2026, 14:02</span></span>`}
+          ${refusal}
+          <span class="row"><button class="btn primary" type="button" data-testid="youtube-check">${connected ? 'Check again' : 'Check the channel'}</button></span>
+          <span class="hint">Uploads a 2-second test video at the visibility you chose, reads back what YouTube made of it, then deletes it. It uses one of the Google project's 100 uploads a day.</span></div>
+      </div></section>`;
+  }
+
+  function demos() {
+    return demosAutomatic() + demoBrand() + demoYouTube();
+  }
+
   /* ---------- Save / Discard ---------- */
   function save() {
     if (view.readOnly) return;
@@ -735,8 +843,12 @@ dl.facts { display: grid; grid-template-columns: 180px minmax(0, 1fr); margin: 0
   content.addEventListener('dragend', e => { const tr = e.target.closest('tr'); if (tr) { tr.draggable = false; tr.classList.remove('dragging'); } dragId = null; clearDrop(); });
 
   render();
+  if (qs.has('yt') && view.tab === 'demos') requestAnimationFrame(() => { const yp = document.querySelector('[data-testid="youtube-panel"]'); if (yp) $('content').scrollTop = yp.offsetTop - $('content').offsetTop - 16; });
 
   SL.preview([
+    ...['default', 'logo', 'refused', 'tokens-refused'].map(b => ({ label: 'Brand: ' + b, run: () => { view.tab = 'demos'; view.brand = b; render(); } })),
+    ...['off', 'connect', 'pending', 'refused', 'connected'].map(y => ({ label: 'YouTube: ' + y, run: () => { view.tab = 'demos'; view.yt = y; render(); } })),
+    { label: 'Automatic: blocked', run: () => { view.tab = 'demos'; view.auto = view.auto === 'blocked' ? 'ready' : 'blocked'; render(); } },
     { label: 'Blocked delete', run: () => { view.tab = 'states'; view.type = 'story'; window.history.replaceState(null, '', '#states'); render(); startDelete('story-active'); } },
     { label: 'Last admin', run: () => { view.tab = 'members'; window.history.replaceState(null, '', '#members'); render(); removeMember(ME); } },
     { label: 'Member view', run: () => { view.readOnly = !view.readOnly; render(); toast(view.readOnly ? 'Viewing as a member: read-only' : 'Viewing as an admin'); } },
