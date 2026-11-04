@@ -1,0 +1,15 @@
+{
+  "durationSeconds": 8,
+  "chapters": [
+    {
+      "title": "Introduction",
+      "startSeconds": 0,
+      "featureKey": null
+    },
+    {
+      "title": "Checkout v2",
+      "startSeconds": 4,
+      "featureKey": "SHIP-101"
+    }
+  ]
+}

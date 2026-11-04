@@ -1,0 +1,10 @@
+{
+  "logoIsDefault": false,
+  "logoSvg": null,
+  "logoUrl": "https://shiplean.example.com/api/downloads/demo-logo?token=EXAMPLE",
+  "logoContentType": "image/svg+xml",
+  "logoUrlExpiresAt": "2026-11-06T10:15:00+00:00",
+  "tokensAreDefault": false,
+  "tokensCss": ":root{--color-bg:#e8eef7}\n:root { --color-accent: #c2410c; }",
+  "logoFallbackReason": null
+}

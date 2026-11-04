@@ -22,6 +22,13 @@
     <EmbeddedResource Include="..\..\db\seed\*.sql" LogicalName="db/seed/%(Filename)%(Extension)" />
     <EmbeddedResource Include="..\..\db\blobs\*.sql" LogicalName="db/blobs/%(Filename)%(Extension)" />
   </ItemGroup>
+  <!-- Sprint demos: the prompt, ShipLean's default brand and the YouTube check clip ship inside the assembly (K11, K12). -->
+  <ItemGroup>
+    <EmbeddedResource Include="Features\Demos\Prompt\*.md" LogicalName="sprint-demo/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="Features\Demos\Prompt\*.svg" LogicalName="sprint-demo/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="Features\Demos\Prompt\*.css" LogicalName="sprint-demo/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="Features\Demos\YouTube\*.mp4" LogicalName="sprint-demo/%(Filename)%(Extension)" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Agoda.IoC.NetCore" Version="1.1.144" />
     <PackageReference Include="AWSSDK.S3" Version="4.0.104.6" />

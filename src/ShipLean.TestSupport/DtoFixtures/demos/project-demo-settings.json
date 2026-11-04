@@ -1,0 +1,51 @@
+{
+  "automatic": false,
+  "environment": "",
+  "agentCheck": {
+    "ready": true,
+    "block": null,
+    "message": "Ready to make demos."
+  },
+  "brand": {
+    "logoUrl": null,
+    "logoContentType": null,
+    "tokens": "",
+    "defaultTokens": [
+      {
+        "name": "--color-bg",
+        "value": "#e8eef7"
+      },
+      {
+        "name": "--color-surface",
+        "value": "#f7f9fd"
+      },
+      {
+        "name": "--color-text",
+        "value": "#1c2638"
+      },
+      {
+        "name": "--color-muted",
+        "value": "#52627c"
+      },
+      {
+        "name": "--color-accent",
+        "value": "#2563c9"
+      },
+      {
+        "name": "--color-accent-fg",
+        "value": "#ffffff"
+      },
+      {
+        "name": "--font-sans",
+        "value": "\"Inter\", system-ui, -apple-system, \"Segoe UI\", sans-serif"
+      }
+    ]
+  },
+  "youTube": {
+    "status": "off",
+    "channelTitle": null,
+    "visibility": null,
+    "checkedLabel": null,
+    "refusal": null
+  }
+}

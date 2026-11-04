@@ -1,0 +1,29 @@
+{
+  "sprintId": "00000004-0000-4000-8001-000000000024",
+  "sprintName": "Sprint 24",
+  "status": "working",
+  "statusMessage": null,
+  "run": {
+    "itemKey": "SHIP-200",
+    "itemUrl": "/p/SHIP/items/SHIP-200",
+    "sessionState": "working",
+    "requestedLabel": "Requested today at 10:15",
+    "uploadExpiresLabel": "Link valid until tomorrow at 10:15"
+  },
+  "video": null,
+  "chapters": [],
+  "features": [],
+  "scriptHtml": null,
+  "youTube": {
+    "state": "none",
+    "watchUrl": null,
+    "embedUrl": null,
+    "privacy": null,
+    "failureMessage": null
+  },
+  "actions": {
+    "canCreate": false,
+    "createBlockedMessage": "An agent session is already making this demo.",
+    "canRetryYouTube": false
+  }
+}

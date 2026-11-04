@@ -102,6 +102,11 @@ public static class UsageEventNames
     public const string InstanceUserChanged = "instance.user_changed";
     public const string InstanceSearchReindexed = "instance.search_reindexed";
     public const string ScreenViewed = "screen.viewed";
+    public const string SprintDemoCreated = "sprint_demo.created";
+    public const string SprintDemoYouTubeRetried = "sprint_demo.youtube_retried";
+    public const string ProjectDemoSettingsChanged = "project_demo.settings_changed";
+    public const string ProjectDemoBrandChanged = "project_demo.brand_changed";
+    public const string ProjectYouTubeChanged = "project_youtube.changed";
 
     public static readonly IReadOnlySet<string> All = typeof(UsageEventNames)
         .GetFields(BindingFlags.Public | BindingFlags.Static)

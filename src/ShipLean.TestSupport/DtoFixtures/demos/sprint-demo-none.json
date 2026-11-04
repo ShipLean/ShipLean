@@ -1,0 +1,23 @@
+{
+  "sprintId": "00000004-0000-4000-8001-000000000024",
+  "sprintName": "Sprint 24",
+  "status": "none",
+  "statusMessage": null,
+  "run": null,
+  "video": null,
+  "chapters": [],
+  "features": [],
+  "scriptHtml": null,
+  "youTube": {
+    "state": "none",
+    "watchUrl": null,
+    "embedUrl": null,
+    "privacy": null,
+    "failureMessage": null
+  },
+  "actions": {
+    "canCreate": true,
+    "createBlockedMessage": null,
+    "canRetryYouTube": false
+  }
+}
