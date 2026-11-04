@@ -149,6 +149,15 @@ export interface YouTubeDisconnectDto {
   message: string | null;
 }
 
+/** The answer to the agent's upload (`POST /api/uploads/demo`). */
+export interface DemoUploadedDto {
+  sprintName: string;
+  videoAttachmentId: string;
+  videoBytes: number;
+  chapters: number;
+  openUrl: string;
+}
+
 export interface DemoChapterJson {
   title: string;
   startSeconds: number;

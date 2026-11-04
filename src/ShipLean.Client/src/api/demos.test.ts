@@ -19,6 +19,7 @@ import {
   YOU_TUBE_CONNECTION_STATUSES,
   type DemoBrand,
   type DemoChaptersJson,
+  type DemoUploadedDto,
   type ProjectDemoSettingsDto,
   type SprintDemoDto,
   type YouTubeDisconnectDto,
@@ -82,4 +83,16 @@ test('demoFixtures_ShouldTypeSettingsBrandAndTheRest', () => {
   expect(brandFallback.logoFallbackReason).not.toBeNull();
   typed<DemoChaptersJson>()(chapters);
   typed<YouTubeDisconnectDto>()(disconnect);
+});
+
+// No pinned file for the upload answer: the literal is the K4 record's fields, typed the same way.
+test('demoUploaded_ShouldTypeTheUploadAnswer', () => {
+  const uploaded = typed<DemoUploadedDto>()({
+    sprintName: 'Sprint 24',
+    videoAttachmentId: ready.video.attachmentId,
+    videoBytes: ready.video.sizeBytes,
+    chapters: ready.chapters.length,
+    openUrl: '/p/SHIP/items/SHIP-200',
+  });
+  expect(uploaded.chapters).toBe(2);
 });
