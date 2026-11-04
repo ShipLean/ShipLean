@@ -202,7 +202,13 @@ test('General_WhenSignInIsThroughAProxy_ShouldSayTheProxyCreatesUsers', async ({
   await expect(facts).toContainText('created the first time the proxy sees their email');
   await expect(facts).not.toContainText('No sign-up');
   await expect(facts).toContainText('First admin');
+  await expect(facts).toContainText(
+    'at startup if they already have a user, otherwise when they next sign in',
+  );
   await expect(facts).toContainText('No password is needed');
+  await expect(facts).not.toContainText('on first boot');
+  await expect(facts).toContainText('Stay signed in for 14 days');
+  await expect(facts).not.toContainText('Changing or resetting a password');
   await expect(facts).not.toContainText('SHIPLEAN_ADMIN_PASSWORD');
   await expect(facts).not.toContainText('Forgotten passwords');
   await expect(facts).not.toContainText('Lockout');

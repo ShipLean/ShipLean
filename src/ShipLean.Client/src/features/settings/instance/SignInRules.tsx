@@ -12,10 +12,12 @@ export function signInSummary(instance: Pick<InstanceDto, 'signIn' | 'googleSign
   return 'Email and password. No sign-up: an admin adds each person on Users.';
 }
 
-const sessions: [string, string] = [
-  'Sessions',
-  'Stay signed in for 14 days after you last used ShipLean. Changing or resetting a password signs out every other session.',
-];
+const sessionsFor = (detail: string): [string, string] => ['Sessions', detail];
+const sessionDays = 'Stay signed in for 14 days after you last used ShipLean.';
+const sessions = sessionsFor(
+  `${sessionDays} Changing or resetting a password signs out every other session.`,
+);
+const proxySessions = sessionsFor(sessionDays);
 
 const passwordFacts: [string, string][] = [
   [
@@ -35,10 +37,10 @@ const passwordFacts: [string, string][] = [
 
 // Behind an identity proxy there are no passwords, so the password rows are left out.
 const proxyFacts: [string, string][] = [
-  sessions,
+  proxySessions,
   [
     'First admin',
-    'SHIPLEAN_ADMIN_EMAIL on first boot: the person with that email becomes an admin when they first sign in through the proxy. No password is needed. Later admins are made on Users.',
+    'While no admin exists, the person whose email is SHIPLEAN_ADMIN_EMAIL becomes an admin: at startup if they already have a user, otherwise when they next sign in through the proxy. No password is needed. Later admins are made on Users.',
   ],
 ];
 
