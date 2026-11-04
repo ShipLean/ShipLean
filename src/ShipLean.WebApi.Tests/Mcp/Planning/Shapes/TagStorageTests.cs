@@ -1,6 +1,5 @@
 using Dapper;
-using ShipLean.Application.Features.Mcp.Planning.Tags;
-using ShipLean.Application.Features.Mcp.Planning.Waves;
+using ShipLean.Application.Plans;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Hosting;

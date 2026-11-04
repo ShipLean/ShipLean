@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
-using ShipLean.Application.Features.Mcp.Planning.Waves;
 using ShipLean.Application.Markdown;
+using ShipLean.Application.Plans;
 using ShipLean.Application.WorkItems;
 using ShipLean.WebApi.Features.Mcp.Tools.Planning;
 

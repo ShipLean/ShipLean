@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
-namespace ShipLean.Application.Features.Mcp.Planning.Waves;
+namespace ShipLean.Application.Plans;
 
 // A wave's label, such as "0.1", "1" or "2": dotted whole numbers, compared part by part as numbers, so 0.2 < 1 < 1.1 < 2
 // and 1.10 > 1.9. A label is a prefix of its sub-waves and sorts before them (1 < 1.0 < 1.1). Text is the canonical form,

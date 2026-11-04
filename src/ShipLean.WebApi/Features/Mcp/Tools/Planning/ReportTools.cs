@@ -1,11 +1,10 @@
 using System.ComponentModel;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
-using ShipLean.Application.Features.Mcp.Planning.Markers;
 using ShipLean.Application.Features.Mcp.Planning.Reads;
-using ShipLean.Application.Features.Mcp.Planning.Tags;
 using ShipLean.Application.Features.Mcp.Planning.Tree;
 using ShipLean.Application.Markdown;
+using ShipLean.Application.Plans;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Comments;

@@ -1,6 +1,6 @@
 using System.Data.Common;
 using Dapper;
-using ShipLean.Application.Features.Mcp.Planning.Tags;
+using ShipLean.Application.Plans;
 
 namespace ShipLean.WebApi.Features.Mcp.Planning.Capture;
 

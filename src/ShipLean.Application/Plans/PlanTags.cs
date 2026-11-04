@@ -1,8 +1,7 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
-using ShipLean.Application.Features.Mcp.Planning.Waves;
 
-namespace ShipLean.Application.Features.Mcp.Planning.Tags;
+namespace ShipLean.Application.Plans;
 
 // The plan's tags on work items: wave:<w>, lane:<l>, model:<m>, ctx:<n>k, branch:<name> and orphan. The only place that
 // writes or reads them; every other tag on the item is the person's and is left alone.

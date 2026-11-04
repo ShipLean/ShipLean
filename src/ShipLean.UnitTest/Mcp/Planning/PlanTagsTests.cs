@@ -1,6 +1,5 @@
 using CsCheck;
-using ShipLean.Application.Features.Mcp.Planning.Tags;
-using ShipLean.Application.Features.Mcp.Planning.Waves;
+using ShipLean.Application.Plans;
 
 namespace ShipLean.UnitTest.Mcp.Planning;
 

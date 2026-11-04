@@ -3,9 +3,7 @@ using System.Text.Json;
 using Dapper;
 using Npgsql;
 using ShipLean.Application.Features.Mcp.Backlog;
-using ShipLean.Application.Features.Mcp.Planning.Markers;
-using ShipLean.Application.Features.Mcp.Planning.Tags;
-using ShipLean.Application.Features.Mcp.Planning.Waves;
+using ShipLean.Application.Plans;
 using ShipLean.Contracts.Demos;
 using ShipLean.Contracts.Persisted;
 

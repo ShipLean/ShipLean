@@ -1,7 +1,7 @@
 using Agoda.IoC.Core;
 using ShipLean.Application.Features.Mcp.Planning.Reads;
 using ShipLean.Application.Features.Mcp.Planning.Tree;
-using ShipLean.Application.Features.Mcp.Planning.Tags;
+using ShipLean.Application.Plans;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.WorkItems;
 using ShipLean.WebApi.Features.Mcp.Tools.Planning;

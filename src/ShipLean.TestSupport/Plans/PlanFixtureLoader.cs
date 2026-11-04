@@ -1,5 +1,5 @@
 using System.Text.Json.Nodes;
-using ShipLean.Application.Features.Mcp.Planning.Waves;
+using ShipLean.Application.Plans;
 
 namespace ShipLean.TestSupport.Plans;
 

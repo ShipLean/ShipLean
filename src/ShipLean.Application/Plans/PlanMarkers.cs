@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace ShipLean.Application.Features.Mcp.Planning.Markers;
+namespace ShipLean.Application.Plans;
 
 // How a plan marks its comments and links so they can be found again. Comments start with a prefix ("Report · done ...");
 // a commit link is titled "commit <sha7> <subject>", a pull request link "PR <title or url>".

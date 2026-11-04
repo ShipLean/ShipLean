@@ -1,6 +1,5 @@
-using ShipLean.Application.Features.Mcp.Planning.Tags;
 using ShipLean.Application.Features.Mcp.Planning.Tree;
-using ShipLean.Application.Features.Mcp.Planning.Waves;
+using ShipLean.Application.Plans;
 using ShipLean.Contracts.Refs;
 using ShipLean.WebApi.Features.Mcp.Planning;
 using ShipLean.WebApi.Features.Mcp.Planning.Briefs;
