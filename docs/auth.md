@@ -23,15 +23,19 @@ How a request becomes a user, how a user gets into a project, and how the tests 
 
 A "Sign in with Google" button on the normal sign-in page, next to email and password. ShipLean talks to Google itself, so no proxy is involved. Set `SHIPLEAN_GOOGLE_CLIENT_ID` and `SHIPLEAN_GOOGLE_CLIENT_SECRET` to turn it on. Without them nothing changes. Setting only one, or setting them alongside a `SHIPLEAN_AUTH_PROXY_*` identity setting, stops startup naming the setting.
 
-**Turning it on opens signup.** Anyone with a Google account who can reach ShipLean gets a user on their first sign-in. They see no projects until someone adds them, but the default `project_creation` of `everyone` lets them create their own, and `GET /api/users/by-email` lets them look up other users. Set **Who can create projects** to admins in the instance settings unless you want that.
+**Turning it on opens signup.** Anyone with a Google account who can reach ShipLean gets a user on their first sign-in. They see no projects until someone adds them, but the default `project_creation` of `everyone` lets them create their own. Set **Who can create projects** to admins in the instance settings unless you want that. It limits only project creating. `GET /api/users/by-email` answers any signed-in user, and no setting limits it, so a new Google user can look up other users by email.
 
 To get the client values, create an OAuth client of type *Web application* in the [Google Cloud console](https://console.cloud.google.com/auth/clients). Its authorized redirect URI is `<your address>/api/auth/google/callback`, where the address is `base_url`, or the address people reach ShipLean on when `base_url` is blank. It must match exactly, so set `base_url` when ShipLean is behind a gateway.
 
 - **Who a person is.** ShipLean keeps the ID token's `sub` in `app_user.google_subject`. Once linked, that decides, so changing an address at Google changes nothing here. ShipLean doesn't follow the new email.
-- **First sign-in.** Google must say the email is verified. An existing user with that email is linked, keeping their password and name. Otherwise a user is created with Google's name.
+- **Verified email.** Google must say the email is verified on every sign-in, so a user who is already linked is refused too when it doesn't.
+- **First sign-in.** An existing user with that email is linked, keeping their password and name. Otherwise a user is created with Google's name.
 - **Refused.** A disabled user, an unverified email, or an email already linked to a different Google account (an address that changed hands). The last one needs an admin to change the existing user's email.
-- **Passwords.** A linked user's password still works. A password lockout doesn't stop Google sign-in, and Google sign-in doesn't clear it. An unused one-time password ends at the first Google sign-in, along with any session it opened, because the person no longer needs it and someone else knows it.
+- **Passwords.** A linked user's password still works. A password lockout doesn't stop Google sign-in, and Google sign-in doesn't clear it. A one-time password ends at any Google sign-in while the user still has to change it, not only the first. The password is removed and any session it opened ends, because the person no longer needs it and someone else knows it.
 - **Status.** A user with Google and no password has the status `googleOnly`, and their profile has no password form. An admin's one-time password gives them a password too.
+- **Admins on their own row.** An instance admin changes their own email with Change email on their own row on Users. An admin with no password uses Set up sign-in on their own row, so a Google-only admin can get one. An admin who has a password still changes it on Your profile.
+
+If ShipLean cannot fetch Google's configuration when sign-in starts, the person returns to the sign-in page with the failed message, "Couldn't finish signing in with Google. Try again." A cancelled consent screen and a stale state end the same way.
 
 Sign-in checks (state, nonce, PKCE, signature, issuer, audience, expiry) are ASP.NET Core's OpenID Connect handler, in `Features/Auth/Google`. The session after that is the ordinary cookie, so session end and agent consent work as with a password.
 
