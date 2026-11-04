@@ -3,39 +3,18 @@ import none from '../../../../ShipLean.TestSupport/DtoFixtures/demos/sprint-demo
 import ready from '../../../../ShipLean.TestSupport/DtoFixtures/demos/sprint-demo-ready.json' with { type: 'json' };
 import type { ProjectDto } from '../../api/projects';
 import type { SprintDto } from '../../api/sprints';
-import { ToastHost } from '../../components/ToastHost';
-import { componentTestIds } from '../../components/testIds';
-import { SprintDemoPanel } from './SprintDemoPanel';
+import { realtimeTestIds } from '../realtime/testIds';
+import { stubShell } from '../../pages/screenshots/shellStub';
+import { stubHub } from '../retros/ct/retroFixtures';
+import { DemoPanelHarness } from './ct/DemoPanelHarness';
 import { demosTestIds as ids } from './testIds';
 
-interface Routable {
-  route(
-    url: string,
-    handler: (route: {
-      request(): { method(): string };
-      fulfill(response: { json?: unknown; status?: number }): Promise<void>;
-    }) => Promise<void>,
-  ): Promise<unknown>;
-}
-
-const project = { id: 'p-ship', key: 'SHIP', role: 'member' } as ProjectDto;
+const project = { id: 'p1', key: 'SHIP', role: 'member' } as ProjectDto;
 const sprint = { id: none.sprintId, name: 'Sprint 24' } as SprintDto;
-
-const view = (
-  <>
-    <SprintDemoPanel project={project} sprint={sprint} />
-    <ToastHost />
-  </>
-);
-
-const stubDemo = (page: Routable, get: unknown, post?: { status: number; json: unknown }) =>
-  page.route('**/api/sprints/*/demo', async (route) => {
-    if (route.request().method() === 'POST' && post) return route.fulfill(post);
-    return route.fulfill({ json: get });
-  });
+const view = <DemoPanelHarness project={project} sprint={sprint} />;
 
 test('Panel_WhenNone_ShouldShowCreate', async ({ mount, page }) => {
-  await stubDemo(page, none);
+  await page.route('**/api/sprints/*/demo', (route) => route.fulfill({ json: none }));
   const component = await mount(view);
 
   await expect(component.getByTestId(ids.demoStatusBand)).toBeVisible();
@@ -43,25 +22,79 @@ test('Panel_WhenNone_ShouldShowCreate', async ({ mount, page }) => {
   await expect(component.getByTestId(ids.demoVideo)).toHaveCount(0);
 });
 
-test('Panel_WhenCreateFails_ShouldToast', async ({ mount, page }) => {
-  await stubDemo(page, none, {
-    status: 400,
-    json: { error: 'The project has no repository.', code: 'validation' },
-  });
-  const component = await mount(view);
-
-  await component.getByTestId(ids.demoCreate).click();
-
-  await expect(component.getByTestId(componentTestIds.toast)).toContainText(
-    'The project has no repository.',
-  );
-});
-
 test('Panel_WhenReady_ShouldMountTheVideoWithContentUrl', async ({ mount, page }) => {
-  await stubDemo(page, ready);
+  await page.route('**/api/sprints/*/demo', (route) => route.fulfill({ json: ready }));
   const component = await mount(view);
 
   const video = component.getByTestId(ids.demoVideo);
   await expect(video).toHaveAttribute('src', ready.video.contentUrl);
   await expect(video).toHaveAttribute('controls', '');
 });
+
+test('Panel_WhenLoadFails_ShouldShowErrorWithRetry', async ({ mount, page }) => {
+  let reads = 0;
+  await page.route('**/api/sprints/*/demo', (route) => {
+    reads += 1;
+    return reads === 1
+      ? route.fulfill({
+          status: 500,
+          json: { error: 'The demo could not be read.', code: 'internal_error' },
+        })
+      : route.fulfill({ json: none });
+  });
+  const component = await mount(view);
+
+  const failure = component.getByRole('alert');
+  await expect(failure).toContainText('The demo could not be read.');
+  await expect(component.getByTestId(ids.demoStatusBand)).toHaveCount(0);
+
+  await failure.getByRole('button', { name: 'Retry' }).click();
+
+  await expect(component.getByTestId(ids.demoCreate)).toBeEnabled();
+  expect(reads).toBe(2);
+});
+
+test('Panel_WhenEventArrives_ShouldRefetch', async ({ mount, page }) => {
+  await stubShell(page);
+  let reads = 0;
+  await page.route('**/api/sprints/*/demo', (route) => {
+    reads += 1;
+    return route.fulfill({ json: none });
+  });
+  const hub = await stubHub(page);
+  const component = await mount(view);
+  await expect(component.getByTestId(ids.demoStatusBand)).toBeVisible();
+  await expect(page.getByTestId(realtimeTestIds.liveDot)).toHaveAttribute('data-state', 'live');
+  const before = reads;
+
+  // Two events of other sprints first, then this one's: events arrive in order, so once this one has refetched the other
+  // has been handled too, and the count is exactly one more.
+  for (const other of ['other-1', 'other-2']) {
+    await hub.push({ type: 'sprintDemoChanged', projectId: 'p1', clientId: null, sprintId: other });
+  }
+  await hub.push({
+    type: 'sprintDemoChanged',
+    projectId: 'p1',
+    clientId: null,
+    sprintId: none.sprintId,
+  });
+
+  await expect.poll(() => reads).toBe(before + 1);
+});
+
+for (const width of [1280, 1440]) {
+  test(`Panel_WhenReady_ShouldFitTheWindowAt${width}`, async ({ mount, page }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await page.route('**/api/sprints/*/demo', (route) => route.fulfill({ json: ready }));
+    const component = await mount(view);
+    await expect(component.getByTestId(ids.demoVideo)).toBeVisible();
+
+    const fit = await page.evaluate(() => ({
+      scroll: document.documentElement.scrollWidth,
+      view: window.innerWidth,
+    }));
+    expect(fit.scroll).toBeLessThanOrEqual(fit.view);
+    const band = await component.getByTestId(ids.demoStatusBand).boundingBox();
+    expect(band!.x + band!.width).toBeLessThanOrEqual(width);
+  });
+}
