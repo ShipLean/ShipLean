@@ -3,9 +3,10 @@ import { priya } from '../../../workItem/ct/fixtures';
 import { workItemHarnessIds as harness } from '../../../workItem/ct/harnessIds';
 import { stubApi } from '../../../workItem/ct/stubApi';
 import { stubComments } from '../../../workItem/ct/stubDetails';
-import { stubSide } from '../../../workItem/ct/stubSide';
+import { change, revision, stubSide } from '../../../workItem/ct/stubSide';
 import { WorkItemFormHarness } from '../../../workItem/ct/WorkItemFormHarness';
 import { feature, linkCards, stubFeature } from '../../ct/stubFeature';
+import { workItemTestIds } from '../../../workItem/testIds';
 import { featureTestIds as ids } from '../../testIds';
 
 const route = { hooksConfig: { route: '/p/SHIP/items/SHIP-100' } };
@@ -220,6 +221,39 @@ for (const width of [1024, 1440]) {
     await stubFeature(page);
     const screen = await mount(<WorkItemFormHarness itemKey="SHIP-100" />, route);
     await expect(screen.getByTestId(ids.childRow).first()).toBeVisible();
+
+    const { scrollWidth, clientWidth } = await page.evaluate(() => ({
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+    }));
+    expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+  });
+}
+
+// The rail's History with an agent name and a webhook that have no break in them.
+for (const width of [1024, 1440]) {
+  test(`FeatureForm_WhenHistoryIsLong_ShouldNotWidenThePage_${width}px`, async ({
+    mount,
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await stubApi(page, feature);
+    await stubSide(
+      page,
+      priya,
+      [],
+      [
+        revision(2, priya, [change('points', 3, 5)], { agentName: long('a') }),
+        revision(1, null, [change('title', 'Old', 'New')], {
+          origin: 'webhook',
+          webhook: `GitHub ${long('w')}`,
+        }),
+      ],
+    );
+    await stubComments(page, priya, []);
+    await stubFeature(page);
+    const screen = await mount(<WorkItemFormHarness itemKey="SHIP-100" />, route);
+    await expect(screen.getByTestId(workItemTestIds.revision)).toHaveCount(2);
 
     const { scrollWidth, clientWidth } = await page.evaluate(() => ({
       scrollWidth: document.documentElement.scrollWidth,
