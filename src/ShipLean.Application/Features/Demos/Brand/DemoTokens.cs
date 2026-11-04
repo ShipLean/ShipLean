@@ -113,7 +113,7 @@ public static partial class DemoTokens
         if (!ValidName().IsMatch(name))
         {
             refusal = name.Any(char.IsUpper)
-                ? $"{name} is not a valid name: use lower-case letters, digits and hyphens."
+                ? $"{name} is not a valid name: a name can't have upper-case letters."
                 : $"{name} is not a valid name: it starts with -- and a letter, then lower-case letters, digits and hyphens, at most 64 characters in all.";
             return null;
         }

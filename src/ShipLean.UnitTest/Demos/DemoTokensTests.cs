@@ -93,7 +93,7 @@ public class DemoTokensTests
         var result = DemoTokens.Parse($"{Good}\n{line}");
 
         result.Line.ShouldBe(2);
-        result.Refusal!.ShouldContain("lower-case");
+        result.Refusal!.ShouldContain("upper-case");
     }
 
     [TestCase("--1abc: 1;")]
@@ -154,7 +154,7 @@ public class DemoTokensTests
     [Test]
     public void Parse_WhenOver8KiB_ShouldRefuseTheWholeText()
     {
-        var padding = new string(' ', DemoTokens.MaxBytes + 1);
+        var padding = new string(' ', (8 * 1024) + 1);
 
         var result = DemoTokens.Parse($"{Good}\n{padding}");
 
@@ -166,7 +166,7 @@ public class DemoTokensTests
     [Test]
     public void Parse_WhenExactly8KiB_ShouldAcceptIt()
     {
-        var text = Good + new string(' ', DemoTokens.MaxBytes - Good.Length);
+        var text = Good + new string(' ', (8 * 1024) - Good.Length);
 
         DemoTokens.Parse(text).Lines.ShouldBe(Good);
     }
