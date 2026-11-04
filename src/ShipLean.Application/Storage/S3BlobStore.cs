@@ -55,6 +55,9 @@ public sealed class S3BlobStore : IBlobStore, IDisposable
         }
     }
 
+    // TODO: real ranged read replaces this
+    public Task<Stream?> OpenAtAsync(string key, long offset, CancellationToken cancellationToken) => throw new NotSupportedException();
+
     public async Task<bool> ExistsAsync(string key, CancellationToken cancellationToken)
     {
         var objectKey = ObjectKey(key);

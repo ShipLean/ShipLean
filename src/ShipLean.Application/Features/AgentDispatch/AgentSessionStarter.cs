@@ -22,32 +22,48 @@ public sealed class AgentSessionStarter(
 
     private readonly AgentContextLoader _loader = new(dataSource, blobs, logger);
 
+    // The agent check at project level: null when an agent can start for the project, else why not. connectionId, when given,
+    // wins over the project's connection, so an override works on a project with none.
+    public async Task<AgentStartBlock?> PlanProjectAsync(Guid projectId, Guid? connectionId, CancellationToken cancellationToken)
+    {
+        var settings = await projectSettings.GetAsync(projectId, cancellationToken);
+        var agent = (connectionId ?? settings.ConnectionId) is { } id ? await connections.GetAsync(id, cancellationToken) : null;
+        if (agent is null || agent.ArchivedAt is not null)
+        {
+            return AgentStartBlock.NoConnection;
+        }
+
+        return string.IsNullOrWhiteSpace(settings.RepoUrl) ? AgentStartBlock.NoRepository : null;
+    }
+
     public async Task<AgentStartPlan> PlanAsync(Guid workItemId, Guid? connectionId, string? prompt, CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var projectId = await connection.QuerySingleOrDefaultAsync<Guid?>(new CommandDefinition(
             "SELECT project_id FROM work_item WHERE id = @workItemId", new { workItemId }, cancellationToken: cancellationToken))
             ?? throw ApiException.NotFound("That work item was not found.");
-        var settings = await projectSettings.GetAsync(projectId, cancellationToken);
         // connectionId overrides the project's connection for every check below; a blank prompt is no prompt.
         prompt = string.IsNullOrWhiteSpace(prompt) ? null : prompt;
-        var agent = (connectionId ?? settings.ConnectionId) is { } id ? await connections.GetAsync(id, cancellationToken) : null;
-        if (agent is null || agent.ArchivedAt is not null)
+        var block = await PlanProjectAsync(projectId, connectionId, cancellationToken);
+        var settings = await projectSettings.GetAsync(projectId, cancellationToken);
+        if (block is AgentStartBlock.NoConnection)
         {
             return new AgentStartPlan(AgentStartBlock.NoConnection, Guid.Empty, string.Empty, string.Empty);
         }
 
-        if (string.IsNullOrWhiteSpace(settings.RepoUrl))
+        var agentId = (connectionId ?? settings.ConnectionId)!.Value;
+        if (block is AgentStartBlock.NoRepository)
         {
-            return new AgentStartPlan(AgentStartBlock.NoRepository, agent.Id, string.Empty, string.Empty);
+            return new AgentStartPlan(AgentStartBlock.NoRepository, agentId, string.Empty, string.Empty);
         }
 
+        var repoUrl = settings.RepoUrl!; // PlanProjectAsync found no block, so the repository is set
         var live = await connection.ExecuteScalarAsync<bool>(new CommandDefinition(
             $"SELECT EXISTS (SELECT 1 FROM agent_session WHERE work_item_id = @workItemId AND state IN {AgentSessionStates.LiveSql})",
             new { workItemId }, cancellationToken: cancellationToken));
         return live
-            ? new AgentStartPlan(AgentStartBlock.LiveSession, agent.Id, settings.RepoUrl, settings.BaseBranch, prompt)
-            : new AgentStartPlan(null, agent.Id, settings.RepoUrl, settings.BaseBranch, prompt);
+            ? new AgentStartPlan(AgentStartBlock.LiveSession, agentId, repoUrl, settings.BaseBranch, prompt)
+            : new AgentStartPlan(null, agentId, repoUrl, settings.BaseBranch, prompt);
     }
 
     // fallbackBaseUrl is the origin of the request, for an instance that has not set its base URL. connectionId and prompt: see PlanAsync;

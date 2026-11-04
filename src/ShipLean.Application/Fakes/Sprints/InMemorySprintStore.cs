@@ -1,6 +1,8 @@
 using System.Data.Common;
 using ShipLean.Application.Fakes.Projects;
+using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
+using ShipLean.Contracts.Events;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Sprints;
 using ShipLean.Application.Sprints;
@@ -11,7 +13,7 @@ using ShipLean.Core.Sprints;
 
 namespace ShipLean.Application.Fakes.Sprints;
 
-public sealed class InMemorySprintStore(InMemoryPlanning world, IPublicHolidays? holidays = null) : ISprintStore
+public sealed class InMemorySprintStore(InMemoryPlanning world, IPublicHolidays? holidays = null, IProjectEvents? events = null, ICurrentUser? currentUser = null) : ISprintStore
 {
     private readonly IPublicHolidays holidays = holidays ?? new InMemoryPublicHolidays();
 
@@ -151,8 +153,10 @@ public sealed class InMemorySprintStore(InMemoryPlanning world, IPublicHolidays?
         }
     }
 
-    public Task<SprintDto> RolloverAsync(Guid sprintId, RolloverRequest request, CancellationToken cancellationToken = default)
+    public async Task<SprintDto> RolloverAsync(Guid sprintId, RolloverRequest request, CancellationToken cancellationToken = default)
     {
+        SprintDto dto;
+        Guid projectId;
         lock (world.Gate)
         {
             var sprint = world.Sprint(sprintId);
@@ -185,8 +189,16 @@ public sealed class InMemorySprintStore(InMemoryPlanning world, IPublicHolidays?
                 sprint.End = world.Today;
             }
             sprint.Rollover = Contracts.Sprints.RolloverStatus.Decided;
-            return Task.FromResult(world.ToDto(sprint));
+            dto = world.ToDto(sprint);
+            projectId = sprint.ProjectId;
         }
+
+        if (events is not null)
+        {
+            await events.PublishAsync(new SprintClosed(projectId, sprintId, currentUser?.Id ?? Guid.Empty));
+        }
+
+        return dto;
     }
 
     private static void Check(InMemoryPlanning world, Guid projectId, Guid? self, string name, DateOnly start, DateOnly end)

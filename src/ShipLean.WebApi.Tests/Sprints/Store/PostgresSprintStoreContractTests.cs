@@ -52,8 +52,8 @@ public sealed class PostgresSprintStoreContractTests : SprintStoreContract
 
     protected override ISprintStore CreateStore()
         => new SprintStore(
-            _dataSource, TimeProvider.System, new DiscardingProjectEvents(), _arrangement.CreateStore(new PassThroughWorkItemRules(), ShipLean.TestSupport.SeedIds.Users.Joel),
-            _holidays, new SprintMetrics(_dataSource, TimeProvider.System), CreateRecompute());
+            _dataSource, TimeProvider.System, Events, _arrangement.CreateStore(new PassThroughWorkItemRules(), ShipLean.TestSupport.SeedIds.Users.Joel),
+            _holidays, new SprintMetrics(_dataSource, TimeProvider.System), CreateRecompute(), Closer);
 
     protected override ISprintCapacityRecompute CreateRecompute() => new SprintCapacityRecompute(_dataSource, TimeProvider.System, _holidays);
 

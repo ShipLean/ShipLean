@@ -1,9 +1,11 @@
 using System.Data.Common;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
+using ShipLean.Contracts.Events;
 using ShipLean.Contracts.Holidays;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Sprints;
+using ShipLean.TestSupport.Contracts.Users;
 using Shouldly;
 
 namespace ShipLean.TestSupport.Contracts.Sprints;
@@ -12,6 +14,18 @@ namespace ShipLean.TestSupport.Contracts.Sprints;
 [TestFixture]
 public abstract class SprintStoreContract
 {
+    // What the store under test publishes and who it acts as: CreateStore must build the store over both.
+    protected RecordedProjectEvents Events { get; private set; } = new();
+
+    protected SettableCurrentUser Closer { get; private set; } = new();
+
+    [SetUp]
+    public void ResetEventsAndCloser()
+    {
+        Events = new RecordedProjectEvents();
+        Closer = new SettableCurrentUser { Id = Guid.CreateVersion7() };
+    }
+
     protected abstract ISprintStore CreateStore();
 
     protected abstract Task<Guid> ArrangeProjectAsync();
@@ -410,6 +424,22 @@ public abstract class SprintStoreContract
 
         decided.RolloverStatus.ShouldBe(RolloverStatus.Decided);
         (await store.GetRolloverAsync(ended.Id)).Status.ShouldBe(RolloverStatus.Decided);
+    }
+
+    [Test]
+    public async Task Rollover_ShouldPublishSprintClosedWithTheCloser()
+    {
+        var store = CreateStore();
+        var project = await ArrangeProjectAsync();
+        var ended = await store.CreateAsync(project, Sprint("Old", -40), null);
+
+        await store.RolloverAsync(ended.Id, new RolloverRequest([]));
+
+        var published = Events.Published;
+        var closed = published.OfType<SprintClosed>().ShouldHaveSingleItem();
+        closed.ShouldBe(new SprintClosed(project, ended.Id, Closer.Id) { ClientId = closed.ClientId });
+        var closedAt = published.ToList().IndexOf(closed);
+        published.Take(closedAt).Count(e => e is SprintChanged).ShouldBe(published.Count(e => e is SprintChanged));
     }
 
     [Test]

@@ -97,6 +97,9 @@ public sealed class LocalDiskBlobStore : IBlobStore
         }
     }
 
+    // TODO: real ranged read replaces this
+    public Task<Stream?> OpenAtAsync(string key, long offset, CancellationToken cancellationToken) => throw new NotSupportedException();
+
     public Task<bool> ExistsAsync(string key, CancellationToken cancellationToken)
         => Task.FromResult(File.Exists(PathFor(key)));
 

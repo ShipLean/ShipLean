@@ -167,6 +167,9 @@ public sealed partial class SprintStore
             await events.PublishAsync(new SprintChanged(sprint.ProjectId, other));
         }
 
+        // Read here and nowhere else: CurrentUser.Id throws off a request, and this store also runs off one (capacity recomputes).
+        await events.PublishAsync(new SprintClosed(sprint.ProjectId, sprintId, currentUser.Id));
+
         await using var reload = await dataSource.OpenConnectionAsync(cancellationToken);
         return (await LoadAsync(reload, null, sprintId, forUpdate: false, cancellationToken)).ToDto(SprintLabels.Today(clock));
     }

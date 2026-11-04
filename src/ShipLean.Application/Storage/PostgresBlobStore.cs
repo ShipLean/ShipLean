@@ -78,6 +78,9 @@ public sealed class PostgresBlobStore : IBlobStore, IAsyncDisposable, IDisposabl
         return new BlobContent(new MemoryStream(reader.GetFieldValue<byte[]>(1), writable: false), reader.GetString(0));
     }
 
+    // TODO: real ranged read replaces this
+    public Task<Stream?> OpenAtAsync(string key, long offset, CancellationToken cancellationToken) => throw new NotSupportedException();
+
     public async Task<bool> ExistsAsync(string key, CancellationToken cancellationToken)
     {
         BlobKey.Check(key);
