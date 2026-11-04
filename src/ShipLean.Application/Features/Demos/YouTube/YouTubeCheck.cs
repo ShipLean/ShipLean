@@ -1,9 +1,9 @@
 using Dapper;
 using Npgsql;
+using ShipLean.Application.Features.Demos.Reads;
 using ShipLean.Application.Features.Instance.Integrations;
 using ShipLean.Contracts.Demos;
 using ShipLean.Contracts.Errors;
-using ShipLean.Core;
 
 namespace ShipLean.Application.Features.Demos.YouTube;
 
@@ -36,7 +36,7 @@ public sealed class YouTubeCheck(
             outcome.Passed ? YouTubeConnectionStatus.Connected : YouTubeConnectionStatus.Pending,
             channel.Title,
             outcome.Passed ? visibility : null,
-            $"Checked {DisplayDate.Relative(checkedAt, clock)}",
+            outcome.Passed ? $"Checked {SprintDemoLabels.When(checkedAt, clock)}" : null,
             outcome.Refusal);
     }
 

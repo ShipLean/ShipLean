@@ -8,6 +8,7 @@ using ShipLean.Application.Features.Instance.Integrations;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Demos;
 using ShipLean.Contracts.Errors;
+using ShipLean.Core;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
@@ -103,8 +104,7 @@ public class YouTubeCheckTests : ApiFixture
             () => result.Status.ShouldBe(YouTubeConnectionStatus.Connected),
             () => result.Visibility.ShouldBe(YouTubeVisibility.Unlisted),
             () => result.ChannelTitle.ShouldBe("Fake channel"),
-            () => result.Refusal.ShouldBeNull(),
-            () => result.CheckedLabel.ShouldBe("Checked just now"));
+            () => result.Refusal.ShouldBeNull());
         var upload = _client.Inner.Uploads.ShouldHaveSingleItem();
         upload.Upload.Visibility.ShouldBe(YouTubeVisibility.Unlisted);
         upload.Upload.ContentType.ShouldBe("video/mp4");
@@ -115,6 +115,7 @@ public class YouTubeCheckTests : ApiFixture
         stored.Visibility.ShouldBe("unlisted");
         stored.Refusal.ShouldBeNull();
         stored.CheckedAt.ShouldNotBeNull();
+        result.CheckedLabel.ShouldBe($"Checked today at {DisplayDate.Clock(stored.CheckedAt.Value, TimeProvider.System)}");
     }
 
     [Test]
@@ -127,6 +128,7 @@ public class YouTubeCheckTests : ApiFixture
 
         result.Status.ShouldBe(YouTubeConnectionStatus.Pending);
         result.Visibility.ShouldBeNull();
+        result.CheckedLabel.ShouldBeNull();
         result.Refusal.ShouldNotBeNull().ShouldContain("YouTube gave the test video private visibility, not the unlisted you chose.");
         var stored = await StoredAsync(project);
         stored.Status.ShouldBe("pending");
