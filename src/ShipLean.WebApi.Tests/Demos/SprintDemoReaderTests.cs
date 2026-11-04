@@ -84,7 +84,20 @@ public class SprintDemoReaderTests : ApiFixture
             """,
             new { id = Guid.CreateVersion7(), itemId = demo.ItemId, connectionId = demo.Project.ConnectionId, state, at = at ?? TimeProvider.System.GetUtcNow(), by = SeedIds.Users.Joel });
 
-    private static string ClockOf(DateTimeOffset at) => DisplayDate.Clock(at, TimeProvider.System);
+    // The label the reader should make for a moment, built from DisplayDate's own day maths so it holds across local midnight.
+    private static string WhenOf(DateTimeOffset at)
+    {
+        var now = TimeProvider.System.GetUtcNow();
+        var zone = TimeProvider.System.LocalTimeZone;
+        var day = DisplayDate.DaysUntil(at, now, zone) switch
+        {
+            0 => "today",
+            -1 => "yesterday",
+            1 => "tomorrow",
+            _ => DisplayDate.ShortDay(at, now, zone),
+        };
+        return $"{day} at {DisplayDate.Clock(at, TimeProvider.System)}";
+    }
 
     private async Task<Delivered> DeliverAsync(NpgsqlConnection database, Arranged demo, string chaptersJson, string script, DateTimeOffset delivered, int videoBytes = 4321)
     {
@@ -143,7 +156,7 @@ public class SprintDemoReaderTests : ApiFixture
         dto.Run.ItemKey.ShouldBe(demo.ItemKey);
         dto.Run.ItemUrl.ShouldBe($"/p/{demo.Project.Project.Key}/items/{demo.ItemKey}");
         dto.Run.SessionState.ShouldBe("inputRequired");
-        dto.Run.RequestedLabel.ShouldBe($"Requested today at {ClockOf(requested)}");
+        dto.Run.RequestedLabel.ShouldBe($"Requested {WhenOf(requested)}");
         dto.Run.UploadExpiresLabel.ShouldNotBeNull().ShouldStartWith("Link valid until ");
         dto.Actions.CanCreate.ShouldBeFalse();
         dto.Actions.CreateBlockedMessage.ShouldBe("An agent session is already making this demo.");
@@ -177,7 +190,7 @@ public class SprintDemoReaderTests : ApiFixture
         video.SizeBytes.ShouldBe(4321);
         video.DurationSeconds.ShouldBe(3723.4m);
         video.DurationLabel.ShouldBe("1:02:03");
-        video.DeliveredLabel.ShouldBe($"Delivered today at {ClockOf(delivered)}");
+        video.DeliveredLabel.ShouldBe($"Delivered {WhenOf(delivered)}");
         dto.Chapters.Select(c => (c.Title, c.StartLabel, c.FeatureKey)).ToList().ShouldBe(
             [("Intro", "0:00", null), ("Checkout", "1:05", checkout.Key), ("Coupons", "1:02:03", coupons.Key), ("Checkout again", "1:03:20", checkout.Key)]);
         dto.Chapters[1].StartSeconds.ShouldBe(65m);
@@ -319,6 +332,14 @@ public class SprintDemoReaderTests : ApiFixture
     {
         await using var database = await OpenDatabaseAsync();
         var demo = await ArrangeAsync(database);
+        await RequestAsync(database, demo.SprintId, TimeProvider.System.GetUtcNow().AddHours(-2));
+        var (videoId, _, _) = await DeliverAsync(database, demo, ChaptersJson(("Intro", 0, null)), "Hello", TimeProvider.System.GetUtcNow().AddHours(-1));
+
+        // Control: a member gets the real reader's output, not the None shape.
+        var member = await GetAsync(demo.SprintId);
+        member.Status.ShouldBe(SprintDemoStatus.Ready);
+        member.Video.ShouldNotBeNull().AttachmentId.ShouldBe(videoId);
+        member.ScriptHtml.ShouldNotBeNull().ShouldContain("Hello");
 
         using var response = await Api.ActingAs(TestUser.Mei).GetAsync($"api/sprints/{demo.SprintId}/demo");
 
