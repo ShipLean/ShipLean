@@ -179,19 +179,30 @@ public class AttachmentCommitTests
     [Test]
     public async Task Commit_WhenConcurrentWithAddOfTheSameName_ShouldLeaveOneLiveRow()
     {
-        for (var round = 0; round < 10; round++)
+        await _store.AddAsync(_workItem, "race.bin", "application/octet-stream", Zeros(10));
+        var staged = await StageAsync("race.bin", 10);
+        var inHook = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        var commit = _store.CommitStagedAsync(_workItem, [staged], async (_, _) =>
         {
-            var name = $"race{round}.bin";
-            var staged = await StageAsync(name, 10);
-
-            await Task.WhenAll(
-                _store.CommitStagedAsync(_workItem, [staged]),
-                _store.AddAsync(_workItem, name, "application/octet-stream", Zeros(10)));
-
-            await using var connection = await _database.OpenAsync();
-            (await connection.ExecuteScalarAsync<int>(
-                "SELECT count(*)::int FROM attachment WHERE work_item_id = @id AND name = @name AND archived_at IS NULL", new { id = _workItem, name })).ShouldBe(1);
+            inHook.SetResult();
+            await release.Task;
+        });
+        if (await Task.WhenAny(inHook.Task, commit) == commit)
+        {
+            await commit;
         }
+
+        var add = _store.AddAsync(_workItem, "race.bin", "application/octet-stream", Zeros(10));
+        release.SetResult();
+        await Task.WhenAll(commit, add);
+
+        await using var connection = await _database.OpenAsync();
+        (await connection.ExecuteScalarAsync<int>(
+            "SELECT count(*)::int FROM attachment WHERE work_item_id = @id AND name = 'race.bin' AND archived_at IS NULL", new { id = _workItem })).ShouldBe(1);
+        (await connection.ExecuteScalarAsync<int>(
+            "SELECT count(*)::int FROM attachment WHERE work_item_id = @id AND name = 'race.bin'", new { id = _workItem })).ShouldBe(3);
     }
 
     private Task<StagedAttachment> StageAsync(string name, int size)
