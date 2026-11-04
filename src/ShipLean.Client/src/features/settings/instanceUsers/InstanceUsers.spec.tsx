@@ -53,6 +53,8 @@ interface StubOptions {
   proxy?: boolean;
   /** Add user answers 409 with this message instead of adding. */
   addConflict?: boolean;
+  /** The signed-in admin's own row has this status instead of active. */
+  meStatus?: AdminUserDto['status'];
   /** Add user answers a null one-time password (proxy mode). */
   noPassword?: boolean;
 }
@@ -60,6 +62,7 @@ interface StubOptions {
 const stub = async (page: Routable, options: StubOptions = {}) => {
   const calls: string[] = [];
   const state = initial();
+  if (options.meStatus) state.users[0].status = options.meStatus;
   await page.route('**/api/auth/instance', (route) =>
     route.fulfill({
       json: options.proxy
@@ -143,16 +146,59 @@ test('Users_WhenOwnRow_ShouldRefuseDisableAndDemote', async ({ mount, page }) =>
   await expect(view.getByTestId(ids.usersMenuAdmin)).toBeDisabled();
 });
 
-test('Users_WhenOwnRow_ShouldRefuseResetAndEmailChange', async ({ mount, page }) => {
+test('Users_WhenOwnRowHasAPassword_ShouldRefuseResetButOfferEmailChange', async ({
+  mount,
+  page,
+}) => {
   const calls = await stub(page);
   const view = await mount(<InstanceUsers />);
 
   await view.getByTestId(ids.usersRow).first().getByTestId(ids.usersActions).click();
 
   await expect(view.getByTestId(ids.usersMenuPassword)).toBeDisabled();
-  await expect(view.getByTestId(ids.usersMenuEmail)).toBeDisabled();
   await expect(view.getByTestId(ids.usersMenuPassword)).toContainText('Your profile');
+  await expect(view.getByTestId(ids.usersMenuEmail)).toBeEnabled();
+  await expect(view.getByTestId(ids.usersMenuEmail)).not.toContainText('Your profile');
   expect(calls).toEqual([]);
+});
+
+test('Users_WhenOwnRowHasNoPassword_ShouldOfferSetUpSignIn', async ({ mount, page }) => {
+  const calls = await stub(page, { meStatus: 'googleOnly' });
+  const view = await mount(<InstanceUsers />);
+
+  await view.getByTestId(ids.usersRow).first().getByTestId(ids.usersActions).click();
+  await expect(view.getByTestId(ids.usersMenuPassword)).toBeEnabled();
+  await expect(view.getByTestId(ids.usersMenuPassword)).toContainText('Set up sign-in');
+  await expect(view.getByTestId(ids.usersMenuPassword)).not.toContainText('Your profile');
+  await view.getByTestId(ids.usersMenuPassword).click();
+  await expect(page.getByRole('dialog')).toContainText('You have no password yet');
+  await page.getByTestId(ids.usersDialogConfirm).click();
+
+  await expect(page.getByTestId(componentTestIds.otpPassword)).toHaveText('ABCD-EFGH-JKLM');
+  expect(calls).toEqual(['POST /api/admin/users/me/one-time-password']);
+});
+
+test('Users_WhenOwnEmailChanged_ShouldSendItAndReadTheShellUserAgain', async ({ mount, page }) => {
+  const calls = await stub(page);
+  let meReads = 0;
+  await page.route('**/api/me', (route) => {
+    meReads += 1;
+    return route.fulfill({ json: { id: 'me' } });
+  });
+  const view = await mount(<InstanceUsers />);
+  await expect(view.getByTestId(ids.usersRow).first()).toBeVisible();
+  const before = meReads;
+
+  await view.getByTestId(ids.usersRow).first().getByTestId(ids.usersActions).click();
+  await view.getByTestId(ids.usersMenuEmail).click();
+  await page.getByTestId(ids.usersEmailInput).fill('joel.new@example.test');
+  await page.getByTestId(ids.usersDialogConfirm).click();
+
+  await expect(view.getByTestId(ids.usersRow).first().getByTestId(ids.usersEmail)).toHaveText(
+    'joel.new@example.test',
+  );
+  expect(calls).toEqual(['PUT /api/admin/users/me/email']);
+  await expect.poll(() => meReads).toBeGreaterThan(before);
 });
 
 test('Users_WhenResettingAnActiveUser_ShouldConfirmThenShowThePasswordOnce', async ({

@@ -1,8 +1,10 @@
 using System.Net;
+using System.Net.Http.Json;
 using System.Text.Json;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Contracts;
+using ShipLean.Contracts.Auth;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Events;
 using ShipLean.Contracts.Users;
@@ -340,12 +342,58 @@ public class UsersAdminApiTests : ApiFixture
     }
 
     [Test]
-    public async Task Email_WhenSelf_ShouldBeValidationAndChangeNothing()
+    public async Task Email_WhenAdminChangesOwn_ShouldStaySignedInUnderTheNewEmailAndEndOtherSessions()
     {
-        using var response = await Api.PutJsonAsync($"api/admin/users/{SeedIds.Users.Joel}/email", new { email = "joel.moved@example.test" });
+        var admin = await ArrangeAsync(b => b.Admin());
+        const string changed = "own.email.moved@example.test";
+        using var here = await AuthClient.SignedInAsync(Host, admin.Email, AppUserBuilder.ArrangedPassword);
+        using var elsewhere = await AuthClient.SignedInAsync(Host, admin.Email, AppUserBuilder.ArrangedPassword);
 
-        (await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.BadRequest)).Code.ShouldBe(ApiErrorCodes.Validation);
-        (await RowAsync(SeedIds.Users.Joel)).Email.ShouldBe(TestUser.Joel.Email);
+        using var response = await here.PutAsJsonAsync($"/api/admin/users/{admin.Id}/email", new { email = changed });
+
+        response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        var me = await ReadAsync<MeDto>(await here.GetAsync("/api/me"));
+        me.Email.ShouldBe(changed);
+        using var other = await elsewhere.GetAsync("/api/me");
+        other.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+        using var fresh = AuthClient.Create(Host);
+        (await fresh.LoginAsync(changed, AppUserBuilder.ArrangedPassword)).StatusCode.ShouldBe(HttpStatusCode.OK);
+    }
+
+    [Test]
+    public async Task Email_WhenNonAdminChangesOwn_ShouldBeForbiddenAndChangeNothing()
+    {
+        var member = await ArrangeAsync(b => b);
+        using var client = await AuthClient.SignedInAsync(Host, member.Email, AppUserBuilder.ArrangedPassword);
+
+        using var email = await client.PutAsJsonAsync($"/api/admin/users/{member.Id}/email", new { email = "member.moved@example.test" });
+        using var password = await client.PostAsync($"/api/admin/users/{member.Id}/one-time-password", null);
+
+        (await ApiClient.ReadApiErrorAsync(email, HttpStatusCode.Forbidden)).Code.ShouldBe(ApiErrorCodes.Forbidden);
+        (await ApiClient.ReadApiErrorAsync(password, HttpStatusCode.Forbidden)).Code.ShouldBe(ApiErrorCodes.Forbidden);
+        (await RowAsync(member.Id)).Email.ShouldBe(member.Email);
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task OneTimePassword_WhenAdminWithNoPasswordSetsUpOwnSignIn_ShouldKeepTheSessionAndForceAChange(bool googleOnly)
+    {
+        // The admin signed in with a password, which is then removed (or never mattered: Google signed them in), so the session is live and the row has no password.
+        var admin = await ArrangeAsync(b => b.Admin());
+        using var client = await AuthClient.SignedInAsync(Host, admin.Email, AppUserBuilder.ArrangedPassword);
+        await ScalarAsync<int>("UPDATE app_user SET password_hash = NULL, google_subject = @subject WHERE id = @id RETURNING 1", new { id = admin.Id, subject = googleOnly ? "google-" + admin.Id : null });
+        (await RowAsync(admin.Id)).Status.ShouldBe(googleOnly ? UserStatus.GoogleOnly : UserStatus.NoPassword);
+
+        var issued = await ReadAsync<OneTimePasswordDto>(await client.PostAsync($"/api/admin/users/{admin.Id}/one-time-password", null));
+
+        issued.UserId.ShouldBe(admin.Id);
+        (await ScalarAsync<bool>("SELECT must_change_password FROM app_user WHERE id = @id", new { id = admin.Id })).ShouldBeTrue();
+        using var still = await client.GetAsync("/api/me");
+        still.StatusCode.ShouldNotBe(HttpStatusCode.Unauthorized);
+        using var change = await client.PostAsJsonAsync("/api/auth/password", new ChangePasswordRequest(issued.Password, "a-new-password-for-me-1"));
+        change.StatusCode.ShouldBe(HttpStatusCode.OK);
+        using var fresh = AuthClient.Create(Host);
+        (await fresh.LoginAsync(admin.Email, "a-new-password-for-me-1")).StatusCode.ShouldBe(HttpStatusCode.OK);
     }
 
     [Test]

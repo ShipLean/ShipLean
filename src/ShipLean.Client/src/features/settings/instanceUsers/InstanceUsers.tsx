@@ -151,6 +151,7 @@ export function InstanceUsers() {
       <UsersDialogs
         dialog={dialog}
         projects={administeredProjects}
+        meId={me.data?.id}
         onClose={() => setDialog(null)}
       />
     </section>
