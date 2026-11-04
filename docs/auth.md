@@ -48,7 +48,7 @@ To leave `base_url` blank, do both of these:
 1. Add the gateway's address to `SHIPLEAN_TRUSTED_PROXIES`. In a cluster the gateway is another pod, not loopback, so the default ignores what it sends.
 2. Have the gateway send `X-Forwarded-Host` (the public host) and `X-Forwarded-Proto` (`https`). The forwarded host must not itself be a `*.svc` name.
 
-If the dialed host is still `*.svc`, ShipLean logs one warning per process. The warning names the cause: no `X-Forwarded-Host`, the peer is not in `SHIPLEAN_TRUSTED_PROXIES`, or the forwarded host is `*.svc`. `/health` reports `publicOrigin` as `unknown: set base_url`, and the instance settings General tab says the same. `attach_file` without `base64` and a `read_attachment` download URL fail instead of returning that host. `open_url` still uses it until `base_url` is set. The same checklist is in [`mcp.md`](mcp.md#behind-a-gateway).
+If `base_url` is blank and an agent request that reads the agent address falls back to a `*.svc` host, ShipLean logs one warning per process. The warning names the cause: no `X-Forwarded-Host`, the peer is not in `SHIPLEAN_TRUSTED_PROXIES`, or the forwarded host is `*.svc`. From then on, until a request arrives with `base_url` set, `/health` reports `publicOrigin` as `unknown: set base_url`, and the instance settings General tab shows a warning in words. `attach_file` without `base64` and a `read_attachment` download URL fail instead of returning that host. `open_url` still uses it until `base_url` is set. The same checklist is in [`mcp.md`](mcp.md#behind-a-gateway).
 
 ## Behind an identity proxy
 
