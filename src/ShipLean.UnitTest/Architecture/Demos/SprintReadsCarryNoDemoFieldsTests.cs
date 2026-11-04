@@ -3,7 +3,7 @@ using ShipLean.TestSupport;
 
 namespace ShipLean.UnitTest.Architecture.Demos;
 
-// K3: the sprint's demo_ columns are read by exactly one thing, the demo reader under Features/Demos. A common sprint read that
+// K3 (lowercase demo_ only: the SHIPLEAN_DEMO_MAX_BYTES config key is upper case and allowed): the sprint's demo_ columns are read by exactly one thing, the demo reader under Features/Demos. A common sprint read that
 // widens to the whole row (a column list that names demo_, SELECT * FROM sprint, to_jsonb of a sprint) would carry them everywhere.
 [TestFixture]
 public class SprintReadsCarryNoDemoFieldsTests
@@ -17,7 +17,7 @@ public class SprintReadsCarryNoDemoFieldsTests
         "ShipLean.Application/Features/Retros/Sprint/SprintRetroStore.cs",
     ];
 
-    private static readonly Regex DemoField = new("demo_", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex DemoField = new("demo_", RegexOptions.Compiled);
     private static readonly Regex SelectStar = new(@"SELECT\s+(?:DISTINCT\s+)?(?:\w+\.)?\*\s+FROM\s+sprint\b", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly Regex ToJsonb = new(@"to_jsonb\(\s*(?:sprint|s)\s*\)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
@@ -50,6 +50,13 @@ public class SprintReadsCarryNoDemoFieldsTests
         Violations([("ShipLean.Application/Features/Sprints/SprintReads.cs", "\"SELECT demo_duration_seconds FROM sprint\"")]).ShouldNotBeEmpty();
         Violations([("ShipLean.Application/Features/Demos/App/Reads/SprintDemoRow.cs", "\"SELECT demo_duration_seconds FROM sprint\"")]).ShouldBeEmpty();
         Violations([("ShipLean.WebApi/Features/Demos/Web/Thing.cs", "demo_delivered_at")]).ShouldBeEmpty();
+    }
+
+    [Test]
+    public void Violations_WhenAnUpperCaseConfigKeyHasDemo_ShouldBeEmptyButALowerCaseColumnShouldReport()
+    {
+        Violations([("ShipLean.Application/Storage/AttachmentLimits.cs", "\"SHIPLEAN_DEMO_MAX_BYTES\"")]).ShouldBeEmpty();
+        Violations([("ShipLean.Application/Features/Sprints/SprintReads.cs", "\"SELECT demo_video_attachment_id FROM sprint\"")]).ShouldNotBeEmpty();
     }
 
     [TestCase("\"SELECT * FROM sprint WHERE id = @id\"")]
