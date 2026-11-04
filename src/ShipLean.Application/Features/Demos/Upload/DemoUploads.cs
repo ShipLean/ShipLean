@@ -154,7 +154,7 @@ public sealed class DemoUploads(ITransferTokens tokens, IProjectAccess access, I
 
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var live = (await connection.QueryAsync<string>(new CommandDefinition(
-            "SELECT w.key FROM work_item w JOIN work_item demo ON demo.project_id = w.project_id WHERE demo.id = @workItemId AND w.key = ANY(@keys)",
+            "SELECT w.key FROM work_item w JOIN state s ON s.id = w.state_id JOIN work_item demo ON demo.project_id = w.project_id WHERE demo.id = @workItemId AND w.key = ANY(@keys) AND s.category <> 'removed'",
             new { workItemId, keys }, cancellationToken: cancellationToken))).ToHashSet();
         if (keys.FirstOrDefault(key => !live.Contains(key)) is { } missing)
         {

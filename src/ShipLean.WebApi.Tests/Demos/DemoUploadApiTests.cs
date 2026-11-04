@@ -148,24 +148,49 @@ public class DemoUploadApiTests : ApiFixture
     public async Task Upload_WhenConcurrent_ShouldDeliverOnce()
     {
         var upload = await NewAsync();
-        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        _delivery.Before = async _ =>
-        {
-            entered.TrySetResult();
-            await release.Task;
-        };
+        await using var holder = await OpenDatabaseAsync();
+        await using var lockTransaction = await holder.BeginTransactionAsync();
+        await holder.ExecuteAsync("SELECT 1 FROM transfer_token WHERE work_item_id = @itemId FOR UPDATE", new { itemId = upload.ItemId }, lockTransaction);
+
+        // Both requests find the live token (a plain read, which the row lock does not block), then wait in ClaimAsync's UPDATE behind the held lock.
         var first = PostValidAsync(upload);
-        await entered.Task;
-
-        using var second = await PostValidAsync(upload);
-        release.SetResult();
+        var second = PostValidAsync(upload);
+        await WaitForClaimsBlockedAsync(2);
+        await lockTransaction.RollbackAsync();
         using var firstResponse = await first;
+        using var secondResponse = await second;
 
-        await ExpectNotValidAsync(second);
-        firstResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var responses = new[] { firstResponse, secondResponse };
+        responses.Count(r => r.StatusCode == HttpStatusCode.OK).ShouldBe(1);
+        await ExpectNotValidAsync(responses.Single(r => r.StatusCode != HttpStatusCode.OK));
         _delivery.Entered.ShouldBe(1);
         _delivery.Calls.Count.ShouldBe(1);
+    }
+
+    private async Task WaitForClaimsBlockedAsync(int expected)
+    {
+        await using var watcher = await OpenDatabaseAsync();
+        using var tick = new PeriodicTimer(TimeSpan.FromMilliseconds(50));
+        var blocked = 0;
+        for (var attempt = 0; attempt < 600 && blocked < expected; attempt++)
+        {
+            blocked = await watcher.ExecuteScalarAsync<int>(
+                "SELECT count(*)::int FROM pg_stat_activity WHERE datname = current_database() AND wait_event_type = 'Lock' AND query LIKE 'UPDATE transfer_token SET used_at%'");
+            if (blocked < expected)
+            {
+                await tick.WaitForNextTickAsync();
+            }
+        }
+
+        blocked.ShouldBe(expected);
+    }
+
+    // A separate, valid token that the same POST accepts: a refusal test shows its own check did the refusing, not a route that answers 404 to anything.
+    private async Task ExpectControlAcceptedAsync()
+    {
+        var control = await NewAsync();
+        using var response = await PostValidAsync(control);
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
     }
 
     [Test]
@@ -176,8 +201,9 @@ public class DemoUploadApiTests : ApiFixture
 
         using var response = await PostValidAsync(upload);
 
+        await ExpectControlAcceptedAsync();
         await ExpectNotValidAsync(response);
-        _delivery.Entered.ShouldBe(0);
+        _delivery.Entered.ShouldBe(1);
     }
 
     [Test]
@@ -192,8 +218,9 @@ public class DemoUploadApiTests : ApiFixture
 
         using var response = await PostValidAsync(upload);
 
+        await ExpectControlAcceptedAsync();
         await ExpectNotValidAsync(response);
-        _delivery.Entered.ShouldBe(0);
+        _delivery.Entered.ShouldBe(1);
     }
 
     [Test]
@@ -205,8 +232,9 @@ public class DemoUploadApiTests : ApiFixture
 
         using var response = await Client.PostAsync($"api/uploads/demo?token={Uri.EscapeDataString(issued.Token)}", DemoUploadArrange.Form(Chapters(), "# The demo", DemoUploadArrange.Mp4()));
 
+        await ExpectControlAcceptedAsync();
         await ExpectNotValidAsync(response);
-        _delivery.Entered.ShouldBe(0);
+        _delivery.Entered.ShouldBe(1);
     }
 
     [Test]
@@ -275,6 +303,24 @@ public class DemoUploadApiTests : ApiFixture
 
         (await ExpectValidationAsync(response)).Error.ShouldContain(foreign!);
         _delivery.Entered.ShouldBe(0);
+    }
+
+    [Test]
+    public async Task Upload_WhenAChapterNamesARemovedItem_ShouldBeValidationAndNeverReachDelivery()
+    {
+        var upload = await NewAsync();
+        string removedKey;
+        await using (var database = await OpenDatabaseAsync())
+        {
+            var removed = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("feature").WithTitle("Dropped idea").WithStateNamed("Removed").InsertAsync(database);
+            removedKey = await database.QuerySingleAsync<string>("SELECT key FROM work_item WHERE id = @removed", new { removed });
+        }
+
+        using var response = await Client.PostAsync(upload.Path, DemoUploadArrange.Form(Chapters(removedKey), "# The demo", DemoUploadArrange.Mp4()));
+
+        (await ExpectValidationAsync(response)).Error.ShouldContain(removedKey);
+        _delivery.Entered.ShouldBe(0);
+        (await PostValidAsync(upload)).StatusCode.ShouldBe(HttpStatusCode.OK);
     }
 
     [Test]
@@ -427,8 +473,9 @@ public class DemoUploadApiTests : ApiFixture
         {
             using var response = await PostValidAsync(upload);
 
+            await ExpectControlAcceptedAsync();
             await ExpectNotValidAsync(response);
-            _delivery.Entered.ShouldBe(0);
+            _delivery.Entered.ShouldBe(1);
         }
         finally
         {
@@ -445,8 +492,9 @@ public class DemoUploadApiTests : ApiFixture
         {
             using var response = await PostValidAsync(upload);
 
+            await ExpectControlAcceptedAsync();
             await ExpectNotValidAsync(response);
-            _delivery.Entered.ShouldBe(0);
+            _delivery.Entered.ShouldBe(1);
             (await RunQueryAsync<bool>("SELECT used_at IS NULL FROM transfer_token WHERE work_item_id = @itemId", new { itemId = upload.ItemId })).ShouldBeTrue();
         }
         finally
