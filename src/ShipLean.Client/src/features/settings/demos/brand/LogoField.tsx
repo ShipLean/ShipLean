@@ -3,6 +3,7 @@ import type { ProjectDemoBrandDto } from '../../../../api/demos';
 import { showToast } from '../../../../components/toastStore';
 import { useRemoveDemoLogo, useUploadDemoLogo } from '../../../demos/demosApi';
 import { demosTestIds as ids } from '../../../demos/testIds';
+import shipleanLogo from './shiplean-logo.svg';
 
 const previewBox =
   'grid h-[72px] w-[200px] place-items-center overflow-hidden rounded-control border border-edge bg-sunken p-2';
@@ -32,37 +33,14 @@ export function LogoField({
     <div className="grid gap-2 text-[length:var(--text-sm)]">
       <span className="font-medium text-ink">Logo</span>
       <div className="flex flex-wrap items-center gap-4">
-        {brand.logoUrl === null ? (
-          <span data-testid={ids.demoLogoPreview} className={previewBox}>
-            <svg
-              viewBox="0 0 120 32"
-              role="img"
-              aria-label="ShipLean logo"
-              className="h-10 w-[150px]"
-            >
-              <rect x="1" y="4" width="24" height="24" rx="6" fill="var(--color-accent)" />
-              <text
-                x="34"
-                y="23"
-                fontSize="17"
-                fontWeight="700"
-                fill="currentColor"
-                fontFamily="var(--font-sans)"
-              >
-                ShipLean
-              </text>
-            </svg>
-          </span>
-        ) : (
-          <span className={previewBox}>
-            <img
-              data-testid={ids.demoLogoPreview}
-              src={brand.logoUrl}
-              alt="This project's logo"
-              className="max-h-14 max-w-44 object-contain"
-            />
-          </span>
-        )}
+        <span className={previewBox}>
+          <img
+            data-testid={ids.demoLogoPreview}
+            src={brand.logoUrl ?? shipleanLogo}
+            alt={brand.logoUrl === null ? "ShipLean's logo" : "This project's logo"}
+            className="max-h-14 max-w-44 object-contain"
+          />
+        </span>
         <div className="grid justify-items-start gap-1">
           {brand.logoUrl === null ? (
             <span className="flex items-center gap-2">
@@ -84,11 +62,11 @@ export function LogoField({
           ) : null}
           {readOnly ? null : (
             <span className="flex items-center gap-2">
-              <label className="btn-ghost cursor-pointer">
+              <label className="btn-ghost relative cursor-pointer has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-signal">
                 {brand.logoUrl === null ? 'Upload a logo' : 'Replace'}
                 <input
                   type="file"
-                  hidden
+                  className="sr-only"
                   data-testid={ids.demoLogoFile}
                   accept="image/png,image/jpeg,image/webp,image/svg+xml"
                   disabled={busy}

@@ -20,7 +20,12 @@ test('Logo_WhenNone_ShouldShowShipLeansAsTheDefault', async ({ mount, page }) =>
   await mount(<SettingsDemosHarness project={admin} />, hooks);
 
   await expect(page.getByTestId(ids.demoLogoDefault)).toHaveText('Default');
-  await expect(page.getByTestId(ids.demoLogoPreview).getByLabel('ShipLean logo')).toBeVisible();
+  const preview = page.getByTestId(ids.demoLogoPreview);
+  await expect(preview).toHaveJSProperty('tagName', 'IMG');
+  // A static client asset, not the project's logo route; it loads, and has the 640 x 128 size of ShipLean's own logo art.
+  await expect(preview).not.toHaveAttribute('src', /demo-brand/);
+  await expect(preview).toHaveJSProperty('naturalWidth', 640);
+  await expect(preview).toHaveJSProperty('naturalHeight', 128);
   await expect(page.getByTestId(ids.demoLogoRemove)).toHaveCount(0);
 });
 
@@ -35,23 +40,66 @@ test('Logo_WhenSet_ShouldPreviewItThroughAnImg', async ({ mount, page }) => {
   await expect(page.getByTestId(ids.demoLogoRemove)).toBeVisible();
 });
 
-for (const [name, width, height] of [
-  ['VeryWide', 4000, 40],
-  ['VeryTall', 40, 4000],
-] as const) {
-  test(`Logo_When${name}_ShouldStayInsideItsBox`, async ({ mount, page }) => {
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="${width}" height="${height}" fill="#c2410c"/></svg>`;
-    await page.route('**/demo-brand/logo*', (route) =>
-      route.fulfill({ contentType: 'image/svg+xml', body: svg }),
-    );
-    await serve(page, branded);
-    await mount(<SettingsDemosHarness project={admin} />, hooks);
+// Layout: each logo shape at both desktop widths. The tab is taller than the window, so the buttons are scrolled into view
+// first and must then sit inside innerHeight; the page itself must not scroll sideways.
+for (const viewportWidth of [1280, 1440]) {
+  for (const [name, width, height] of [
+    ['VeryWide', 4000, 40],
+    ['VeryTall', 40, 4000],
+  ] as const) {
+    test(`Logo_When${name}At${viewportWidth}_ShouldStayInsideItsBox`, async ({ mount, page }) => {
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="${width}" height="${height}" fill="#c2410c"/></svg>`;
+      await page.setViewportSize({ width: viewportWidth, height: 720 });
+      await page.route('**/demo-brand/logo*', (route) =>
+        route.fulfill({ contentType: 'image/svg+xml', body: svg }),
+      );
+      await serve(page, branded);
+      await mount(<SettingsDemosHarness project={admin} />, hooks);
 
-    const box = await page.getByTestId(ids.demoLogoPreview).boundingBox();
-    expect(box!.width).toBeLessThanOrEqual(200);
-    expect(box!.height).toBeLessThanOrEqual(72);
-  });
+      const preview = page.getByTestId(ids.demoLogoPreview);
+      await expect(preview).toHaveJSProperty('naturalWidth', width);
+      const box = (await preview.boundingBox())!;
+      expect(box.width).toBeLessThanOrEqual(176);
+      expect(box.height).toBeLessThanOrEqual(56);
+      expect(box.width).toBeGreaterThan(0);
+
+      for (const id of [ids.demoLogoRemove, ids.demoTokensSave]) {
+        const button = page.getByTestId(id);
+        await button.scrollIntoViewIfNeeded();
+        const at = (await button.boundingBox())!;
+        const inner = await page.evaluate(() => window.innerHeight);
+        expect(at.y).toBeGreaterThanOrEqual(0);
+        expect(at.y + at.height).toBeLessThanOrEqual(inner);
+      }
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - window.innerWidth,
+      );
+      expect(overflow).toBeLessThanOrEqual(0);
+    });
+  }
 }
+
+test('Logo_WhenUploadChosenByKeyboard_ShouldPost', async ({ mount, page }) => {
+  let puts = 0;
+  await serve(page, settings);
+  await page.route('**/api/projects/*/demo-brand/logo', (route) => {
+    puts++;
+    return route.fulfill({ json: branded.brand });
+  });
+  await mount(<SettingsDemosHarness project={admin} />, hooks);
+
+  const input = page.getByTestId(ids.demoLogoFile);
+  await input.focus();
+  await expect(input).toBeFocused();
+  const chooser = page.waitForEvent('filechooser');
+  await page.keyboard.press('Space');
+  await (
+    await chooser
+  ).setFiles({ name: 'logo.png', mimeType: 'image/png', buffer: Buffer.from('png') });
+
+  await expect(page.getByTestId(ids.demoLogoRemove)).toBeVisible();
+  expect(puts).toBe(1);
+});
 
 test('Logo_WhenUploadRefused_ShouldShowWhy', async ({ mount, page }) => {
   const message = 'A logo must be a PNG, JPEG, WebP or SVG image.';
@@ -96,15 +144,20 @@ test('Logo_WhenRemoved_ShouldCallAndShowTheDefault', async ({ mount, page }) => 
 });
 
 test('Tokens_ShouldListTheDefaultNames', async ({ mount, page }) => {
-  await serve(page, settings);
+  // Served names and values that differ from the contract's, so a hardcoded list cannot pass.
+  const defaultTokens = [
+    ...settings.brand.defaultTokens.map((token) =>
+      token.name === '--color-accent' ? { ...token, value: '#123456' } : token,
+    ),
+    { name: '--color-extra', value: '9px' },
+  ];
+  await serve(page, { ...settings, brand: { ...settings.brand, defaultTokens } });
   await mount(<SettingsDemosHarness project={admin} />, hooks);
 
-  const hints = page.getByTestId(ids.demoTokensHints);
-  for (const token of settings.brand.defaultTokens) {
-    await expect(hints).toContainText(token.name);
-    await expect(hints).toContainText(token.value);
-  }
-  await expect(hints.locator('code')).toHaveCount(settings.brand.defaultTokens.length + 1);
+  const rows = defaultTokens.map((token) => `${token.name}${token.value}`).join('');
+  await expect(page.getByTestId(ids.demoTokensHints)).toHaveText(
+    new RegExp(`^The seven names slides use, with ShipLean's values${rows}One per line`),
+  );
 });
 
 test('Tokens_ShouldSayOtherNamesAreSavedAndNotUsed', async ({ mount, page }) => {
