@@ -133,8 +133,7 @@ public class GoogleYouTubeClientContractTests : YouTubeClientContract
         put.Headers["Content-Type"].ShouldBe("video/mp4");
         put.Headers["Content-Length"].ShouldBe(length.ToString());
         put.BodyBytes.ShouldBe(length);
-        put.BodyReads.ShouldBeGreaterThan(1);
-        put.LargestRead.ShouldBeLessThan(length);
+        // ReceivedAtEnd is the assert that guards streaming: the stub's own read counts hold for a buffering client too.
         source.ReceivedAtEnd.ShouldBeGreaterThan(0, "the stub received nothing before the client had read the whole source: the body was buffered");
     }
 
@@ -154,8 +153,23 @@ public class GoogleYouTubeClientContractTests : YouTubeClientContract
         failure.ToString().ShouldNotContain(tokens.RefreshToken);
     }
 
+    [TestCase("localhost")]
+    [TestCase("127.0.0.2")]
+    public async Task Upload_WhenResumeUrlIsAnotherHostOnTheSamePort_ShouldRefuse(string host)
+    {
+        var port = new Uri(_server.BaseUrl).Port;
+        _server.SessionLocationOverride = $"http://{host}:{port}/upload/youtube/v3/videos?uploadType=resumable&upload_id=s99";
+
+        var failure = await Should.ThrowAsync<YouTubeFailureException>(() => Create().UploadAsync(
+            "the-access-token", new YouTubeUpload("T", "D", YouTubeVisibility.Unlisted, "video/mp4"), new MemoryStream([1, 2, 3]), 3, CancellationToken.None));
+
+        failure.Kind.ShouldBe(YouTubeFailureKind.Rejected);
+        failure.Message.ShouldContain("address ShipLean won't send the video to");
+        _server.Calls.ShouldNotContain(c => c.Method == "PUT");
+    }
+
     [Test]
-    public async Task Upload_WhenResumeUrlIsAnotherHost_ShouldRefuse()
+    public async Task Upload_WhenResumeUrlIsAnotherPort_ShouldRefuse()
     {
         await using var elsewhere = await TestYouTubeServer.StartAsync();
         _server.SessionLocationOverride = $"{elsewhere.Upload}/videos?uploadType=resumable&upload_id=s99";
@@ -164,8 +178,79 @@ public class GoogleYouTubeClientContractTests : YouTubeClientContract
             "the-access-token", new YouTubeUpload("T", "D", YouTubeVisibility.Unlisted, "video/mp4"), new MemoryStream([1, 2, 3]), 3, CancellationToken.None));
 
         failure.Kind.ShouldBe(YouTubeFailureKind.Rejected);
+        failure.Message.ShouldContain("address ShipLean won't send the video to");
         elsewhere.Calls.ShouldBeEmpty();
         _server.Calls.ShouldNotContain(c => c.Method == "PUT");
+    }
+
+    [Test]
+    public async Task Channel_WhenGoogleGivesNoTitle_ShouldFailInsteadOfShowingTheId()
+    {
+        _server.OmitChannelTitle = true;
+
+        var failure = await Should.ThrowAsync<YouTubeFailureException>(() => Create().ChannelAsync("the-access-token", CancellationToken.None));
+
+        failure.Kind.ShouldBe(YouTubeFailureKind.Rejected);
+        failure.Message.ShouldContain("no title");
+    }
+
+    [Test]
+    public async Task Channel_WhenTheAnswerDropsMidBody_ShouldFailAsNetwork()
+    {
+        _server.DropChannelBody = true;
+
+        var failure = await Should.ThrowAsync<YouTubeFailureException>(() => Create().ChannelAsync("the-access-token", CancellationToken.None));
+
+        failure.Kind.ShouldBe(YouTubeFailureKind.Network);
+    }
+
+    // The stub answers as Google does to a request that is not what the docs describe; the client tests above fail on it because
+    // the client then gets the refusal. These pin the stub itself, so that a wrong request cannot slip through it.
+    [TestCase("GET", "/youtube/v3/channels?part=snippet", true, 400)]
+    [TestCase("GET", "/youtube/v3/channels?mine=true", true, 400)]
+    [TestCase("GET", "/youtube/v3/channels?part=snippet&mine=true", false, 401)]
+    [TestCase("GET", "/youtube/v3/videos?id=v1", true, 400)]
+    [TestCase("GET", "/youtube/v3/videos?part=status", true, 400)]
+    [TestCase("GET", "/youtube/v3/videos?part=status&id=v1", false, 401)]
+    [TestCase("DELETE", "/youtube/v3/videos", true, 400)]
+    [TestCase("DELETE", "/youtube/v3/videos?id=v1", false, 401)]
+    [TestCase("POST", "/upload/youtube/v3/videos?part=snippet,status", true, 400)]
+    [TestCase("POST", "/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status", false, 401)]
+    [TestCase("PUT", "/upload/youtube/v3/videos?uploadType=resumable&upload_id=s1", false, 401)]
+    public async Task Stub_ShouldRefuseWhatGoogleRefuses(string method, string path, bool withBearer, int expected)
+    {
+        using var http = new HttpClient();
+        using var request = new HttpRequestMessage(new HttpMethod(method), _server.BaseUrl + path);
+        if (withBearer)
+        {
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "t");
+        }
+
+        if (method is "POST" or "PUT")
+        {
+            request.Content = new StringContent("{}", System.Text.Encoding.UTF8, "application/json");
+        }
+
+        using var reply = await http.SendAsync(request);
+
+        ((int)reply.StatusCode).ShouldBe(expected);
+    }
+
+    [TestCase("/token", "grant_type=password&client_id=a&client_secret=b", "unsupported_grant_type")]
+    [TestCase("/token", "grant_type=authorization_code&client_id=a&client_secret=b&code=c", "invalid_request")]
+    [TestCase("/token", "grant_type=authorization_code&client_id=a&code=c&redirect_uri=r", "invalid_request")]
+    [TestCase("/token", "grant_type=refresh_token&client_secret=b&refresh_token=r", "invalid_request")]
+    [TestCase("/token", "grant_type=refresh_token&client_id=a&client_secret=b", "invalid_request")]
+    [TestCase("/revoke", "tok=1", "invalid_request")]
+    public async Task Stub_ShouldRefuseAFormGoogleRefuses(string path, string form, string error)
+    {
+        using var http = new HttpClient();
+        using var content = new StringContent(form, System.Text.Encoding.UTF8, "application/x-www-form-urlencoded");
+
+        using var reply = await http.PostAsync(_server.BaseUrl + path, content);
+
+        ((int)reply.StatusCode).ShouldBe(400);
+        JsonDocument.Parse(await reply.Content.ReadAsStringAsync()).RootElement.GetProperty("error").GetString().ShouldBe(error);
     }
 
     private static IHost Host(TestYouTubeServer server)

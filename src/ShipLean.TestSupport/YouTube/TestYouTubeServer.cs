@@ -72,6 +72,12 @@ public sealed class TestYouTubeServer : IAsyncDisposable
     // The code exchange gives no refresh token (a second consent without prompt=consent does that).
     public bool OmitRefreshToken { get; set; }
 
+    // The channels answer carries no snippet title (the channel id alone).
+    public bool OmitChannelTitle { get; set; }
+
+    // The channels answer promises more bytes than it sends, then drops the connection.
+    public bool DropChannelBody { get; set; }
+
     // The upload start answers a Location at this address instead of its own session address.
     public string? SessionLocationOverride { get; set; }
 
@@ -122,10 +128,36 @@ public sealed class TestYouTubeServer : IAsyncDisposable
 
     private async Task<(string?, long, int, long)> TokenAsync(HttpRequest request, HttpResponse response, CancellationToken ct)
     {
+        // Google's token endpoint takes a form body: grant_type, client_id and client_secret always; code and redirect_uri for the
+        // code grant; refresh_token for the refresh grant.
+        if (!request.HasFormContentType)
+        {
+            await OAuthError(response, ct, 400, "invalid_request", "Content-Type must be application/x-www-form-urlencoded.");
+            return (null, 0, 0, 0);
+        }
+
         var form = await request.ReadFormAsync(ct);
         var raw = string.Join('&', form.Select(pair => $"{pair.Key}={pair.Value}"));
         var grant = form["grant_type"].ToString();
         var refresh = form["refresh_token"].ToString();
+        var required = grant switch
+        {
+            "authorization_code" => new[] { "client_id", "client_secret", "code", "redirect_uri" },
+            "refresh_token" => ["client_id", "client_secret", "refresh_token"],
+            _ => null,
+        };
+        if (required is null)
+        {
+            await OAuthError(response, ct, 400, "unsupported_grant_type", "Only authorization_code and refresh_token are supported.");
+            return (raw, 0, 0, 0);
+        }
+
+        if (required.FirstOrDefault(name => string.IsNullOrEmpty(form[name])) is { } missing)
+        {
+            await OAuthError(response, ct, 400, "invalid_request", $"Missing required parameter: {missing}");
+            return (raw, 0, 0, 0);
+        }
+
         if (Revoked || (grant == "refresh_token" && !_refreshTokens.ContainsKey(refresh)))
         {
             await Json(response, ct, 400, new { error = "invalid_grant", error_description = $"Token {refresh} has been expired or revoked." });
@@ -153,8 +185,15 @@ public sealed class TestYouTubeServer : IAsyncDisposable
 
     private async Task<(string?, long, int, long)> RevokeAsync(HttpRequest request, HttpResponse response, CancellationToken ct)
     {
-        var form = await request.ReadFormAsync(ct);
-        var token = form["token"].ToString();
+        // Google's revoke endpoint takes the token as a form field.
+        var form = request.HasFormContentType ? await request.ReadFormAsync(ct) : null;
+        var token = form?["token"].ToString() ?? string.Empty;
+        if (token.Length == 0)
+        {
+            await OAuthError(response, ct, 400, "invalid_request", "Missing required parameter: token");
+            return (null, 0, 0, 0);
+        }
+
         if (RevokeFails)
         {
             await Json(response, ct, 400, new { error = "invalid_token", error_description = $"Token {token} could not be revoked." });
@@ -168,7 +207,36 @@ public sealed class TestYouTubeServer : IAsyncDisposable
 
     private async Task<(string?, long, int, long)> ChannelsAsync(HttpRequest request, HttpResponse response, CancellationToken ct)
     {
-        await Json(response, ct, 200, new { items = new[] { new { id = ChannelId, snippet = new { title = ChannelTitle } } } });
+        // channels.list needs the bearer token, part, and exactly one filter; this stub only knows mine=true.
+        if (await RefusedAsync(request, response, ct, "part", "mine"))
+        {
+            return (null, 0, 0, 0);
+        }
+
+        if (request.Query["mine"] != "true")
+        {
+            await ApiError(response, ct, 400, "invalidFilter", "channels.list in this stub filters only by mine=true.");
+            return (null, 0, 0, 0);
+        }
+
+        if (DropChannelBody)
+        {
+            response.StatusCode = 200;
+            response.ContentType = "application/json";
+            response.ContentLength = 4096;
+            await response.WriteAsync("{\"items\":[", ct);
+            await response.Body.FlushAsync(ct);
+            request.HttpContext.Abort();
+            return (null, 0, 0, 0);
+        }
+
+        var item = new Dictionary<string, object> { ["id"] = ChannelId };
+        if (Parts(request).Contains("snippet"))
+        {
+            item["snippet"] = OmitChannelTitle ? new Dictionary<string, object>() : new Dictionary<string, object> { ["title"] = ChannelTitle };
+        }
+
+        await Json(response, ct, 200, new { items = new[] { item } });
         return (null, 0, 0, 0);
     }
 
@@ -176,6 +244,17 @@ public sealed class TestYouTubeServer : IAsyncDisposable
     {
         using var reader = new StreamReader(request.Body);
         var body = await reader.ReadToEndAsync(ct);
+        if (await RefusedAsync(request, response, ct, "uploadType", "part"))
+        {
+            return (body, 0, 0, 0);
+        }
+
+        if (request.Query["uploadType"] != "resumable")
+        {
+            await ApiError(response, ct, 400, "invalidUploadType", "This stub takes only uploadType=resumable.");
+            return (body, 0, 0, 0);
+        }
+
         if (QuotaExceeded)
         {
             await Json(response, ct, 403, new { error = new { code = 403, message = "The request cannot be completed because you have exceeded your quota.", errors = new[] { new { reason = "quotaExceeded", domain = "youtube.quota" } } } });
@@ -192,6 +271,11 @@ public sealed class TestYouTubeServer : IAsyncDisposable
 
     private async Task<(string?, long, int, long)> PutUploadAsync(HttpRequest request, HttpResponse response, CancellationToken ct)
     {
+        if (await RefusedAsync(request, response, ct, "upload_id"))
+        {
+            return (null, 0, 0, 0);
+        }
+
         var session = request.Query["upload_id"].ToString();
         if (!_sessions.TryRemove(session, out var requested))
         {
@@ -221,26 +305,74 @@ public sealed class TestYouTubeServer : IAsyncDisposable
 
     private async Task<(string?, long, int, long)> ListVideoAsync(HttpRequest request, HttpResponse response, CancellationToken ct)
     {
-        var items = _videos.TryGetValue(request.Query["id"].ToString(), out var privacy)
-            ? new[] { new { id = request.Query["id"].ToString(), status = new { privacyStatus = privacy } } }
-            : [];
+        // videos.list answers only the parts it was asked for.
+        if (await RefusedAsync(request, response, ct, "part", "id"))
+        {
+            return (null, 0, 0, 0);
+        }
+
+        var id = request.Query["id"].ToString();
+        var items = new List<Dictionary<string, object>>();
+        if (_videos.TryGetValue(id, out var privacy))
+        {
+            var item = new Dictionary<string, object> { ["id"] = id };
+            if (Parts(request).Contains("status"))
+            {
+                item["status"] = new { privacyStatus = privacy };
+            }
+
+            items.Add(item);
+        }
+
         await Json(response, ct, 200, new { items });
         return (null, 0, 0, 0);
     }
 
     private async Task<(string?, long, int, long)> DeleteVideoAsync(HttpRequest request, HttpResponse response, CancellationToken ct)
     {
+        if (await RefusedAsync(request, response, ct, "id"))
+        {
+            return (null, 0, 0, 0);
+        }
+
         if (_videos.TryRemove(request.Query["id"].ToString(), out _))
         {
             response.StatusCode = 204;
         }
         else
         {
-            await Json(response, ct, 404, new { error = new { code = 404, errors = new[] { new { reason = "videoNotFound" } } } });
+            await ApiError(response, ct, 404, "videoNotFound", "The video could not be found.");
         }
 
         return (null, 0, 0, 0);
     }
+
+    private static string[] Parts(HttpRequest request) => request.Query["part"].ToString().Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    // Google answers 401 when the bearer token is missing and 400 when a required parameter is. True when it has refused.
+    private static async Task<bool> RefusedAsync(HttpRequest request, HttpResponse response, CancellationToken ct, params string[] required)
+    {
+        var authorization = request.Headers.Authorization.ToString();
+        if (!authorization.StartsWith("Bearer ", StringComparison.Ordinal) || authorization.Length <= "Bearer ".Length)
+        {
+            await ApiError(response, ct, 401, "authError", "Login Required.");
+            return true;
+        }
+
+        if (required.FirstOrDefault(name => string.IsNullOrEmpty(request.Query[name])) is { } missing)
+        {
+            await ApiError(response, ct, 400, "required", $"Required parameter: {missing}");
+            return true;
+        }
+
+        return false;
+    }
+
+    private static Task ApiError(HttpResponse response, CancellationToken ct, int status, string reason, string message) =>
+        Json(response, ct, status, new { error = new { code = status, message, errors = new[] { new { reason, message } } } });
+
+    private static Task OAuthError(HttpResponse response, CancellationToken ct, int status, string error, string description) =>
+        Json(response, ct, status, new { error, error_description = description });
 
     private static async Task Json(HttpResponse response, CancellationToken ct, int status, object body)
     {
