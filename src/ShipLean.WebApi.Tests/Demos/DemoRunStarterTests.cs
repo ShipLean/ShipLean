@@ -60,7 +60,7 @@ public class DemoRunStarterTests : ApiFixture
         => DemoRunArrange.TokenIn((await AgentDispatchArrange.DeliveriesAsync(database, itemId)).Single().Body);
 
     [Test]
-    public async Task Item_ShouldBeBauWithNoSprintOrParentAndTitledForTheSprint()
+    public async Task Item_ShouldBeBauWithNoSprintOrParent()
     {
         await using var database = await OpenDatabaseAsync();
         var (_, sprintId, itemId) = await NewDemoAsync(database);
@@ -247,45 +247,29 @@ public class DemoRunStarterTests : ApiFixture
     }
 
     [Test]
-    public async Task HandOver_WhenConcurrentWithSession_ShouldLeaveOneLiveTokenMatchingTheSession()
+    public async Task HandOver_WhenTheItemIsLockedBySomeoneElse_ShouldWaitForTheItemLock()
     {
         await using var database = await OpenDatabaseAsync();
-        for (var round = 0; round < 4; round++)
-        {
-            var (projectId, sprintId, itemId) = await NewDemoAsync(database);
-            var barrier = new TaskCompletionSource();
-            var session = Task.Run(async () =>
-            {
-                await barrier.Task;
-                using var scope = NewScope();
-                return await StarterOf(scope).StartSessionAsync(DemoRunArrange.Request(projectId, sprintId, itemId), CancellationToken.None);
-            });
-            var handover = Task.Run(async () =>
-            {
-                await barrier.Task;
-                using var scope = NewScope();
-                try
-                {
-                    return await StarterOf(scope).HandOverAsync(DemoRunArrange.Request(projectId, sprintId, itemId, "mcp"), CancellationToken.None);
-                }
-                catch (ApiException conflict) when (conflict.Code == ApiErrorCodes.Conflict)
-                {
-                    return null;
-                }
-            });
-            barrier.SetResult();
-            (await session).SessionId.ShouldNotBeNull();
-            var handed = await handover;
+        var (projectId, sprintId, itemId) = await NewDemoAsync(database);
+        var settings = new NpgsqlConnectionStringBuilder(ConnectionString) { Options = "-c lock_timeout=500ms" };
+        await using var shortTimeout = NpgsqlDataSource.Create(settings);
+        using var scope = NewScope();
+        var services = scope.ServiceProvider;
+        var starter = new DemoRunStarter(
+            shortTimeout, services.GetRequiredService<IWorkItemStore>(), services.GetRequiredService<AgentSessionStarter>(),
+            services.GetRequiredService<ISprintDemoData>(), services.GetRequiredService<ISprintDemoPrompt>(), services.GetRequiredService<IDemoBrandSource>(),
+            services.GetRequiredService<ITransferTokens>(), services.GetRequiredService<IProjectEvents>(), services.GetRequiredService<AttachmentLimits>(), TimeProvider.System);
+        await using var holder = await OpenDatabaseAsync();
+        await using var holding = await holder.BeginTransactionAsync();
+        await holder.ExecuteAsync("SELECT id FROM work_item WHERE id = @itemId FOR NO KEY UPDATE", new { itemId }, holding);
 
-            (await AgentDispatchArrange.SessionsAsync(database, itemId)).ShouldHaveSingleItem();
-            (await TokensAsync(database, itemId, "AND revoked_at IS NULL")).ShouldBe(1);
-            var sessionToken = await DeliveredTokenAsync(database, itemId);
-            (await UsableAsync(sessionToken)).ShouldBeTrue();
-            if (handed is not null)
-            {
-                (await UsableAsync(DemoRunArrange.TokenIn(handed.UploadUrl))).ShouldBeFalse();
-            }
-        }
+        var blocked = await Should.ThrowAsync<PostgresException>(() => starter.HandOverAsync(DemoRunArrange.Request(projectId, sprintId, itemId, "mcp"), CancellationToken.None));
+        await holding.RollbackAsync();
+        var handover = await starter.HandOverAsync(DemoRunArrange.Request(projectId, sprintId, itemId, "mcp"), CancellationToken.None);
+
+        blocked.SqlState.ShouldBe(PostgresErrorCodes.LockNotAvailable);
+        (await TokensAsync(database, itemId, "AND revoked_at IS NULL")).ShouldBe(1);
+        (await UsableAsync(DemoRunArrange.TokenIn(handover.UploadUrl))).ShouldBeTrue();
     }
 
     [Test]
