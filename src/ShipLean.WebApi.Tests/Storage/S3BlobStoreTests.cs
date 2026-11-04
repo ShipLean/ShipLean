@@ -1,5 +1,6 @@
 using System.Text;
 using Amazon.S3;
+using Amazon.S3.Model;
 using ShipLean.Application.Storage;
 using ShipLean.TestSupport.Storage;
 
@@ -22,6 +23,18 @@ public class S3BlobStoreTests
         (await raw.ListObjectsV2Async(new() { BucketName = connection.Bucket })).S3Objects.Select(o => o.Key).ShouldBe(["prod/covers/a.txt"]);
         using var response = await raw.GetObjectAsync(connection.Bucket, "prod/covers/a.txt");
         (await new StreamReader(response.ResponseStream).ReadToEndAsync()).ShouldBe("hello");
+    }
+
+    [Test]
+    public async Task Dispose_ShouldDisposeTheUnderlyingResponseStream()
+    {
+        var spy = new DisposalSpyStream([1, 2, 3]);
+        var body = new S3ObjectBody(new GetObjectResponse { ResponseStream = spy });
+        spy.WasDisposed.ShouldBeFalse();
+
+        await body.DisposeAsync();
+
+        spy.WasDisposed.ShouldBeTrue();
     }
 
     [Test]

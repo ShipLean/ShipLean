@@ -126,7 +126,9 @@ public sealed class LocalDiskBlobStore : IBlobStore
                 throw new InvalidDataException($"Blob '{key}' has no valid header.");
             }
 
-            file.Seek(length + offset, SeekOrigin.Current);
+            // An offset past the body is the empty rest: clamp to the end so a huge offset can't overflow the seek.
+            var bodyStart = file.Position + length;
+            file.Seek(Math.Min(offset, Math.Max(0, file.Length - bodyStart)) + length, SeekOrigin.Current);
             return file;
         }
         catch

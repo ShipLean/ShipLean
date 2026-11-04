@@ -21,20 +21,20 @@ public class AttachmentRangeApiTests(BlobStoreKind kind) : ApiFixture
 {
     private static readonly string ItemUrl = $"api/work-items/{SeedIds.WorkItems.Ship90}/attachments";
 
-    private static readonly string BlobRoot = Path.Combine(Path.GetTempPath(), $"shiplean-range-blobs-{Guid.NewGuid():N}");
+    private readonly string _blobRoot = Path.Combine(Path.GetTempPath(), $"shiplean-range-blobs-{Guid.NewGuid():N}");
 
     private static readonly byte[] Video = File.ReadAllBytes(Path.Combine(RepoPaths.Root, "src", "ShipLean.TestSupport", "DemoFixtures", "demo-fixture.mp4"));
 
     protected override IReadOnlyDictionary<string, string?> HostSettings => kind == BlobStoreKind.Postgres
         ? new Dictionary<string, string?> { [BlobStoreServices.DbConnectionKey] = ConnectionString }
-        : new Dictionary<string, string?> { [BlobStoreServices.RootKey] = BlobRoot };
+        : new Dictionary<string, string?> { [BlobStoreServices.RootKey] = _blobRoot };
 
     [OneTimeTearDown]
     public void DeleteBlobs()
     {
-        if (Directory.Exists(BlobRoot))
+        if (Directory.Exists(_blobRoot))
         {
-            Directory.Delete(BlobRoot, recursive: true);
+            Directory.Delete(_blobRoot, recursive: true);
         }
     }
 
@@ -164,7 +164,7 @@ public class AttachmentRangeApiTests(BlobStoreKind kind) : ApiFixture
         }
         else
         {
-            File.Move(Path.Combine(BlobRoot, storageRef!), Path.Combine(BlobRoot, storageRef + ".moved"));
+            File.Move(Path.Combine(_blobRoot, storageRef!), Path.Combine(_blobRoot, storageRef + ".moved"));
         }
     }
 

@@ -91,9 +91,11 @@ public sealed class PostgresBlobStore : IBlobStore, IAsyncDisposable, IDisposabl
         NpgsqlDataReader? reader = null;
         try
         {
-            command = new NpgsqlCommand("SELECT substring(bytes from (@offset + 1)::int) FROM blob WHERE key = @key", connection);
+            // substring takes an int position. A bytea is at most 1 GB, so any offset from int.MaxValue - 1 up is past its end and
+            // clamps to a position that is also past it: the empty remainder the long contract asks for, never an overflow.
+            command = new NpgsqlCommand("SELECT substring(bytes from @position) FROM blob WHERE key = @key", connection);
             command.Parameters.AddWithValue("key", key);
-            command.Parameters.Add(new NpgsqlParameter("offset", NpgsqlDbType.Bigint) { Value = offset });
+            command.Parameters.Add(new NpgsqlParameter("position", NpgsqlDbType.Integer) { Value = (int)(Math.Min(offset, int.MaxValue - 2L) + 1) });
             reader = await command.ExecuteReaderAsync(System.Data.CommandBehavior.SequentialAccess, cancellationToken);
             if (!await reader.ReadAsync(cancellationToken))
             {

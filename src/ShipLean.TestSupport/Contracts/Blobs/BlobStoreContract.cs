@@ -175,6 +175,20 @@ public abstract class BlobStoreContract
         (await new StreamReader(rest).ReadToEndAsync()).ShouldBeEmpty();
     }
 
+    [TestCase(int.MaxValue - 1L)]
+    [TestCase(int.MaxValue)]
+    [TestCase(int.MaxValue + 1L)]
+    [TestCase(long.MaxValue - 1)]
+    public async Task OpenAt_WhenOffsetIsFarPastTheEnd_ShouldReturnAnEmptyStreamNotNull(long offset)
+    {
+        var store = Create();
+        await store.PutAsync("video/a.bin", Bytes("0123456789"), "video/mp4", CancellationToken.None);
+
+        await using var rest = (await store.OpenAtAsync("video/a.bin", offset, CancellationToken.None)).ShouldNotBeNull();
+
+        (await new StreamReader(rest).ReadToEndAsync()).ShouldBeEmpty();
+    }
+
     [Test]
     public async Task OpenAt_WhenMissing_ShouldBeNull()
     {
