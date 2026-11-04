@@ -66,6 +66,44 @@ public class CreateSprintDemoShapeTests : McpFixture
     }
 
     [Test]
+    public async Task Tool_WhenSprintOmitted_ShouldUseTheMostRecentlyClosedSprint()
+    {
+        var token = await TokenAsync(TestUser.Joel, ReadWrite);
+        await using var connection = await OpenDatabaseAsync();
+        var expected = await connection.QuerySingleAsync<Guid>(
+            "SELECT id FROM sprint WHERE project_id = @project AND archived_at IS NULL AND rollover_status = 'decided' ORDER BY end_date DESC LIMIT 1", new { project = SeedIds.Projects.Ship });
+
+        var reply = await CallToolAsync(token, Tool, """{"project":"SHIP"}""");
+
+        reply.IsToolError().ShouldBeFalse(reply.Body);
+        _demos.Calls.Select(c => c.SprintId).ShouldBe([expected]);
+    }
+
+    [Test]
+    public async Task Tool_WhenSprintOmittedAndNoneClosed_ShouldUseTheCurrentSprint()
+    {
+        var token = await TokenAsync(TestUser.Joel, ReadWrite);
+        await using var connection = await OpenDatabaseAsync();
+        var today = DateOnly.FromDateTime(TimeProvider.System.GetUtcNow().UtcDateTime);
+        var current = await connection.QuerySingleAsync<Guid>(
+            "SELECT id FROM sprint s WHERE s.project_id = @project AND s.archived_at IS NULL AND s.start_date <= @today AND s.end_date >= @today ORDER BY s.start_date LIMIT 1",
+            new { project = SeedIds.Projects.Ship, today });
+        var closed = (await connection.QueryAsync<Guid>("SELECT id FROM sprint WHERE project_id = @project AND rollover_status = 'decided'", new { project = SeedIds.Projects.Ship })).ToArray();
+        await connection.ExecuteAsync("UPDATE sprint SET rollover_status = NULL WHERE id = ANY(@closed)", new { closed });
+        try
+        {
+            var reply = await CallToolAsync(token, Tool, """{"project":"SHIP"}""");
+
+            reply.IsToolError().ShouldBeFalse(reply.Body);
+            _demos.Calls.Select(c => c.SprintId).ShouldBe([current]);
+        }
+        finally
+        {
+            await connection.ExecuteAsync("UPDATE sprint SET rollover_status = 'decided' WHERE id = ANY(@closed)", new { closed });
+        }
+    }
+
+    [Test]
     public async Task Tool_WhenConflict_ShouldReturnTheErrorShape()
     {
         _demos.Failure = ApiException.Conflict("A demo is already being made for this sprint.");

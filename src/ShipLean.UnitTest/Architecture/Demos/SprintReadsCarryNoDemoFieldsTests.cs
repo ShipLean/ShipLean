@@ -18,6 +18,8 @@ public class SprintReadsCarryNoDemoFieldsTests
     ];
 
     private static readonly Regex DemoField = new("demo_", RegexOptions.Compiled);
+    // A wire name such as [JsonPropertyName("demo_item")] on an MCP result names a JSON property, not a sprint column.
+    private static readonly Regex WireName = new(@"JsonPropertyName\(""demo_\w+""\)", RegexOptions.Compiled);
     private static readonly Regex SelectStar = new(@"SELECT\s+(?:DISTINCT\s+)?(?:\w+\.)?\*\s+FROM\s+sprint\b", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly Regex ToJsonb = new(@"to_jsonb\(\s*(?:sprint|s)\s*\)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
@@ -59,6 +61,14 @@ public class SprintReadsCarryNoDemoFieldsTests
         Violations([("ShipLean.Application/Features/Sprints/SprintReads.cs", "\"SELECT demo_video_attachment_id FROM sprint\"")]).ShouldNotBeEmpty();
     }
 
+    [Test]
+    public void Violations_WhenAJsonWireNameStartsWithDemo_ShouldBeEmptyButAColumnBesideItShouldReport()
+    {
+        const string wire = "[property: JsonPropertyName(\"demo_item\")] string DemoItem";
+        Violations([("ShipLean.WebApi/Features/Mcp/Tools/Sprint/CreateSprintDemoResult.cs", wire)]).ShouldBeEmpty();
+        Violations([("ShipLean.WebApi/Features/Mcp/Tools/Sprint/CreateSprintDemoResult.cs", wire + "\n\"SELECT demo_video_attachment_id FROM sprint\"")]).ShouldNotBeEmpty();
+    }
+
     [TestCase("\"SELECT * FROM sprint WHERE id = @id\"")]
     [TestCase("\"SELECT s.* FROM sprint s\"")]
     [TestCase("\"select  DISTINCT\n *   from sprint\"")]
@@ -82,7 +92,7 @@ public class SprintReadsCarryNoDemoFieldsTests
         foreach (var (path, text) in files)
         {
             var inDemoFeature = path.Contains("/Features/Demos/", StringComparison.Ordinal);
-            if (!inDemoFeature && DemoField.IsMatch(text))
+            if (!inDemoFeature && DemoField.IsMatch(WireName.Replace(text, string.Empty)))
             {
                 found.Add($"{path}: names a demo_ field");
             }
