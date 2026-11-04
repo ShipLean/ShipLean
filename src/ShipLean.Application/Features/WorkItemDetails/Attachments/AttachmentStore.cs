@@ -1,4 +1,5 @@
 using ShipLean.Application.Storage;
+using System.Data.Common;
 using Dapper;
 using Microsoft.Net.Http.Headers;
 using Npgsql;
@@ -47,11 +48,9 @@ public sealed class AttachmentStore(
         await RequireWorkItemAsync(connection, workItemId, cancellationToken);
         var id = Guid.NewGuid();
         var storageRef = NewRef();
-        var (size, storedType, sanitized) = await PutAsync(storageRef, content, cleanName, type, cancellationToken);
+        var (size, storedType, sanitized) = await PutAsync(storageRef, content, cleanName, type, limits.MaxBytes, cancellationToken);
         type = storedType;
-        var searchText = AttachmentKinds.Of(cleanName, type) == AttachmentKind.Markdown && size <= MaxSearchTextBytes
-            ? await ReadTextAsync(storageRef, cancellationToken)
-            : null;
+        var searchText = await SearchTextAsync(storageRef, cleanName, type, size, cancellationToken);
         var row = new NewAttachment(id, workItemId, cleanName, type, size, storageRef, sanitized, searchText, source);
         AttachmentRow added;
         try
@@ -111,7 +110,7 @@ public sealed class AttachmentStore(
         }
 
         var storageRef = NewRef();
-        var (size, storedType, sanitized) = await PutAsync(storageRef, content, cleanName, type, cancellationToken);
+        var (size, storedType, sanitized) = await PutAsync(storageRef, content, cleanName, type, limits.MaxBytes, cancellationToken);
         type = storedType;
         // Under the item lock, like an upload: another live file of the same name is archived (as a replace would), so the live-name index holds.
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
@@ -143,6 +142,114 @@ public sealed class AttachmentStore(
         return id;
     }
 
+    public async Task<StagedAttachment> StageAsync(Guid workItemId, string name, string contentType, Stream content, AttachmentSource? source = null, long? maxBytes = null, CancellationToken cancellationToken = default)
+    {
+        var cleanName = RequireName(name);
+        var type = CleanContentType(contentType);
+        // A short connection for the existence check, disposed before the first byte is written: a slow upload must not pin a pooled connection.
+        await using (var connection = await dataSource.OpenConnectionAsync(cancellationToken))
+        {
+            await RequireWorkItemAsync(connection, workItemId, cancellationToken);
+        }
+
+        var storageRef = NewRef();
+        var (size, storedType, sanitized) = await PutAsync(storageRef, content, cleanName, type, maxBytes ?? limits.MaxBytes, cancellationToken);
+        var searchText = await SearchTextAsync(storageRef, cleanName, storedType, size, cancellationToken);
+        return new StagedAttachment(Guid.NewGuid(), workItemId, cleanName, storedType, size, storageRef, sanitized, searchText, source);
+    }
+
+    public async Task<IReadOnlyList<AttachmentDto>> CommitStagedAsync(Guid workItemId, IReadOnlyList<StagedAttachment> staged, Func<DbTransaction, CancellationToken, Task>? inTransaction = null, CancellationToken cancellationToken = default)
+    {
+        if (staged.Count == 0)
+        {
+            throw ApiException.Validation("There are no attachments to commit.");
+        }
+
+        if (staged.Any(s => s.WorkItemId != workItemId))
+        {
+            throw ApiException.Validation("Every attachment in a batch must belong to the same work item.");
+        }
+
+        if (staged.Select(s => s.Name).Distinct(StringComparer.Ordinal).Count() != staged.Count)
+        {
+            throw ApiException.Validation("A batch cannot hold two attachments with the same name.");
+        }
+
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        IReadOnlyList<AttachmentRow> stored;
+        try
+        {
+            stored = await CommitAsync(connection, workItemId, staged, inTransaction, cancellationToken);
+        }
+        catch (PostgresException ex) when (ex.SqlState == PostgresErrorCodes.UniqueViolation)
+        {
+            // The item lock should leave no second live row to collide with; if one slipped through, it is replaced like any other.
+            stored = await CommitAsync(connection, workItemId, staged, inTransaction, cancellationToken);
+        }
+
+        await PublishChangedAsync(connection, workItemId, cancellationToken);
+        return [.. stored.Select(r => r.ToDto(clock))];
+    }
+
+    private async Task<IReadOnlyList<AttachmentRow>> CommitAsync(NpgsqlConnection connection, Guid workItemId, IReadOnlyList<StagedAttachment> staged, Func<DbTransaction, CancellationToken, Task>? inTransaction, CancellationToken cancellationToken)
+    {
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        var locked = await connection.ExecuteScalarAsync<Guid?>(new CommandDefinition(
+            "SELECT id FROM work_item WHERE id = @workItemId FOR NO KEY UPDATE", new { workItemId }, transaction, cancellationToken: cancellationToken));
+        if (locked is null)
+        {
+            throw ApiException.NotFound("That work item does not exist.");
+        }
+
+        var names = staged.Select(s => s.Name).ToArray();
+        var liveElsewhere = await connection.ExecuteScalarAsync<long>(new CommandDefinition(
+            "SELECT coalesce(sum(size_bytes), 0)::bigint FROM attachment WHERE work_item_id = @workItemId AND archived_at IS NULL AND NOT (name = ANY(@names))",
+            new { workItemId, names }, transaction, cancellationToken: cancellationToken));
+        if (liveElsewhere + staged.Sum(s => s.SizeBytes) > limits.MaxItemBytes)
+        {
+            throw ApiException.Validation(limits.ItemFullMessage);
+        }
+
+        var now = clock.GetUtcNow();
+        await connection.ExecuteAsync(new CommandDefinition(
+            "UPDATE attachment SET archived_at = @now WHERE work_item_id = @workItemId AND name = ANY(@names) AND archived_at IS NULL",
+            new { workItemId, names, now }, transaction, cancellationToken: cancellationToken));
+        foreach (var row in staged)
+        {
+            await InsertAsync(connection, transaction, new NewAttachment(row.Id, row.WorkItemId, row.Name, row.ContentType, row.SizeBytes, row.StorageRef, row.Sanitized, row.SearchText, row.Source), now, cancellationToken);
+        }
+
+        if (inTransaction is not null)
+        {
+            await inTransaction(transaction, cancellationToken);
+        }
+
+        var ids = staged.Select(s => s.Id).ToArray();
+        var rows = (await connection.QueryAsync<AttachmentRow>(new CommandDefinition(
+            $"SELECT {AttachmentRow.Columns} {AttachmentRow.From} WHERE a.id = ANY(@ids) AND a.archived_at IS NULL",
+            new { ids }, transaction, cancellationToken: cancellationToken))).ToDictionary(r => r.Id);
+        await transaction.CommitAsync(cancellationToken);
+        return [.. staged.Select(s => rows[s.Id])];
+    }
+
+    private async Task InsertAsync(NpgsqlConnection connection, DbTransaction transaction, NewAttachment row, DateTimeOffset now, CancellationToken cancellationToken)
+        => await connection.ExecuteAsync(new CommandDefinition(
+            """
+            INSERT INTO attachment (id, work_item_id, name, content_type, size_bytes, storage_ref, uploaded_by, created_at, search_text, agent_name, uploaded_via, sanitized)
+            VALUES (@id, @workItemId, @name, @type, @size, @storageRef, @uploader, @now, @searchText, @agentName, @via, @sanitized)
+            """,
+            new
+            {
+                row.Id, row.WorkItemId, row.Name, type = row.ContentType, size = row.Size, row.StorageRef, uploader = currentUser.Id, now,
+                row.SearchText, agentName = row.Source?.AgentName, via = row.Source?.Via, row.Sanitized,
+            },
+            transaction, cancellationToken: cancellationToken));
+
+    private async Task<string?> SearchTextAsync(string storageRef, string name, string contentType, long size, CancellationToken cancellationToken)
+        => AttachmentKinds.Of(name, contentType) == AttachmentKind.Markdown && size <= MaxSearchTextBytes
+            ? await ReadTextAsync(storageRef, cancellationToken)
+            : null;
+
     // One transaction per item at a time: the item row is locked, so the cap check and the archive-then-insert see each other's commits.
     private async Task<AttachmentRow> StoreAsync(NpgsqlConnection connection, NewAttachment row, CancellationToken cancellationToken)
     {
@@ -160,17 +267,7 @@ public sealed class AttachmentStore(
         await connection.ExecuteAsync(new CommandDefinition(
             "UPDATE attachment SET archived_at = @now WHERE work_item_id = @workItemId AND name = @name AND archived_at IS NULL",
             new { row.WorkItemId, row.Name, now = clock.GetUtcNow() }, transaction, cancellationToken: cancellationToken));
-        await connection.ExecuteAsync(new CommandDefinition(
-            """
-            INSERT INTO attachment (id, work_item_id, name, content_type, size_bytes, storage_ref, uploaded_by, created_at, search_text, agent_name, uploaded_via, sanitized)
-            VALUES (@id, @workItemId, @name, @type, @size, @storageRef, @uploader, @now, @searchText, @agentName, @via, @sanitized)
-            """,
-            new
-            {
-                row.Id, row.WorkItemId, row.Name, type = row.ContentType, size = row.Size, row.StorageRef, uploader = currentUser.Id, now = clock.GetUtcNow(),
-                row.SearchText, agentName = row.Source?.AgentName, via = row.Source?.Via, row.Sanitized,
-            },
-            transaction, cancellationToken: cancellationToken));
+        await InsertAsync(connection, transaction, row, clock.GetUtcNow(), cancellationToken);
         // Read before the commit releases the lock: afterwards a racing upload of the same name could already have replaced this row.
         var stored = await connection.QuerySingleAsync<AttachmentRow>(new CommandDefinition(SelectLive, new { row.Id }, transaction, cancellationToken: cancellationToken));
         await transaction.CommitAsync(cancellationToken);
@@ -253,9 +350,9 @@ public sealed class AttachmentStore(
 
     // An SVG is read whole (it is within the file limit), cleaned, and the cleaned bytes are stored as image/svg+xml whatever
     // type was declared. Bytes that are not an SVG document are kept as they came but as an opaque download type, never an image.
-    private async Task<(long Size, string ContentType, bool Sanitized)> PutAsync(string storageRef, Stream content, string name, string contentType, CancellationToken cancellationToken)
+    private async Task<(long Size, string ContentType, bool Sanitized)> PutAsync(string storageRef, Stream content, string name, string contentType, long maxBytes, CancellationToken cancellationToken)
     {
-        await using var limited = new CountingLimitStream(content, limits.MaxBytes);
+        await using var limited = new CountingLimitStream(content, maxBytes);
         if (!IsSvg(name, contentType))
         {
             return (await blobs.PutAsync(storageRef, limited, contentType, cancellationToken), contentType, false);

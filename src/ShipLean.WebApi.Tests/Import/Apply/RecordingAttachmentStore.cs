@@ -1,3 +1,4 @@
+using System.Data.Common;
 using ShipLean.Contracts.Attachments;
 using ShipLean.Contracts.Blobs;
 
@@ -38,4 +39,8 @@ internal sealed class RecordingAttachmentStore : IAttachmentStore
     public Task<(AttachmentDto Attachment, BlobContent Content)> OpenAsync(Guid id, CancellationToken cancellationToken = default) => throw new NotSupportedException();
 
     public Task ArchiveAsync(Guid id, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+
+    public Task<StagedAttachment> StageAsync(Guid workItemId, string name, string contentType, Stream content, AttachmentSource? source = null, long? maxBytes = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+
+    public Task<IReadOnlyList<AttachmentDto>> CommitStagedAsync(Guid workItemId, IReadOnlyList<StagedAttachment> staged, Func<DbTransaction, CancellationToken, Task>? inTransaction = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
 }
