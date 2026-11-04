@@ -61,6 +61,30 @@ public class SvgSanitizerVectorsTests
     [TestCase("<rect style=\"fill:&#117;rl(https://evil.example/x)\"/>")]
     [TestCase("<rect style=\"fill:\\75rl(https://evil.example/x)\"/>")]
     [TestCase("<rect fill=\"url(https://evil.example/x)\"/>")]
+    [TestCase("<style>rect { background: image(\"https://evil.example/x\") }</style>")]
+    [TestCase("<rect style=\"background: image(&quot;https://evil.example/x&quot;)\"/>")]
+    [TestCase("<style>rect { background: image('https://evil.example/x') }</style>")]
+    [TestCase("<rect style=\"background: image('https://evil.example/x')\"/>")]
+    [TestCase("<style>rect { background: -webkit-image-set(\"https://evil.example/x\" 1x) }</style>")]
+    [TestCase("<rect style=\"background: -webkit-image-set(&quot;https://evil.example/x&quot; 1x)\"/>")]
+    [TestCase("<style>rect { background: -moz-image-set(\"https://evil.example/x\" 1x) }</style>")]
+    [TestCase("<rect style=\"background: -moz-image-set(&quot;https://evil.example/x&quot; 1x)\"/>")]
+    [TestCase("<style>rect { background: -webkit-image(\"https://evil.example/x\") }</style>")]
+    [TestCase("<rect style=\"background: -webkit-image(&quot;https://evil.example/x&quot;)\"/>")]
+    [TestCase("<style>rect { background: cross-fade(\"https://evil.example/x\", 50%) }</style>")]
+    [TestCase("<rect style=\"background: cross-fade(&quot;https://evil.example/x&quot;, 50%)\"/>")]
+    [TestCase("<style>rect { background: -webkit-cross-fade(\"https://evil.example/x\", 50%) }</style>")]
+    [TestCase("<rect style=\"background: -webkit-cross-fade(&quot;https://evil.example/x&quot;, 50%)\"/>")]
+    [TestCase("<style>rect { background: element(#a) }</style>")]
+    [TestCase("<rect style=\"background: element(#a)\"/>")]
+    [TestCase("<style>rect { background: paint(\"https://evil.example/x\") }</style>")]
+    [TestCase("<rect style=\"background: paint(&quot;https://evil.example/x&quot;)\"/>")]
+    [TestCase("<style>rect { background: -x-src(\"https://evil.example/x\") }</style>")]
+    [TestCase("<rect style=\"background: -x-src(&quot;https://evil.example/x&quot;)\"/>")]
+    [TestCase("<style>rect { content: \"https://evil.example/x\" }</style>")]
+    [TestCase("<rect style=\"cursor: https://evil.example/x\"/>")]
+    [TestCase("<rect style=\"background: IMAGE(&quot;https://evil.example/x&quot;)\"/>")]
+    [TestCase("<style>rect { background: -WebKit-Image-Set(&quot;https://evil.example/x&quot; 1x) }</style>")]
     [TestCase("<foreignObject><div xmlns=\"http://www.w3.org/1999/xhtml\">evil.example</div></foreignObject>")]
     [TestCase("<script>evil.example</script>")]
     [TestCase("<rect onclick=\"evil.example\"/>")]
@@ -71,6 +95,12 @@ public class SvgSanitizerVectorsTests
         clean.ShouldNotContain("evil.example");
         clean.ShouldNotContain("javascript", Case.Insensitive);
         clean.ShouldNotContain("foreignObject");
+        clean.ShouldNotContain("image(", Case.Insensitive);
+        clean.ShouldNotContain("image-set(", Case.Insensitive);
+        clean.ShouldNotContain("cross-fade(", Case.Insensitive);
+        clean.ShouldNotContain("element(", Case.Insensitive);
+        clean.ShouldNotContain("paint(", Case.Insensitive);
+        clean.ShouldNotContain("src(", Case.Insensitive);
     }
 
     [Test]
@@ -80,5 +110,34 @@ public class SvgSanitizerVectorsTests
 
         clean.ShouldContain("fill=\"url(#g)\"");
         clean.ShouldContain("stroke:url(#g)");
+    }
+
+    [Test]
+    public void TrySanitize_WhenPlainQuotedFont_ShouldKeepIt()
+    {
+        var clean = Clean("<style>text { font-family: \"Inter\", sans-serif }</style><text style=\"font-family:&quot;Inter&quot;\">a</text><text font-family=\"Inter\">b</text>");
+
+        clean.ShouldContain("<style>");
+        clean.ShouldContain("font-family: \"Inter\", sans-serif");
+        clean.ShouldContain("font-family:&quot;Inter&quot;");
+        clean.ShouldContain("font-family=\"Inter\"");
+    }
+
+    [Test]
+    public void TrySanitize_WhenFragmentUrlInStyleElement_ShouldKeepIt()
+    {
+        var clean = Clean("<defs><linearGradient id=\"g\"/></defs><style>rect { fill: url(#g) }</style><rect style=\"fill:url('#g')\"/>");
+
+        clean.ShouldContain("<style>rect { fill: url(#g) }</style>");
+        clean.ShouldContain("fill:url('#g')");
+    }
+
+    [Test]
+    public void TrySanitize_ShouldKeepNamespaceDeclarations()
+    {
+        var clean = Clean("<rect/>");
+
+        clean.ShouldContain(SvgNs);
+        clean.ShouldContain("<rect");
     }
 }

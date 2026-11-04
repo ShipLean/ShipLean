@@ -107,10 +107,18 @@ internal static partial class SvgSanitizer
             return !attribute.Value.TrimStart().StartsWith('#');
         }
 
+        // A namespace declaration is a URI by design; it is not a CSS value.
+        if (attribute.IsNamespaceDeclaration)
+        {
+            return false;
+        }
+
         return ExternalCss().IsMatch(attribute.Value) || attribute.Value.Contains("javascript:", StringComparison.OrdinalIgnoreCase);
     }
 
-    // A backslash is a CSS escape (\75 rl(...) is url(...)), which no filter on the text can follow, so any value with one is dropped; so are image-set() and src(), which take a URL as a string.
-    [GeneratedRegex(@"@import|\\|image-set\(|(?<![a-z-])src\(|url\((?>\s*['""]?\s*)(?!#)", RegexOptions.IgnoreCase)]
+    // A backslash is a CSS escape (\75 rl(...) is url(...)), which no filter on the text can follow, so any value with one is dropped.
+    // So is any function that takes a URL, bare or as a string (image-set(), image(), cross-fade(), element(), paint(), src()) and any "://", whatever the property.
+    // The function names are matched anywhere, not after a lookbehind, so a vendor prefix (-webkit-image-set()) cannot hide one.
+    [GeneratedRegex(@"@import|\\|://|image-set\(|image\(|cross-fade\(|element\(|paint\(|src\(|url\((?>\s*['""]?\s*)(?!#)", RegexOptions.IgnoreCase)]
     private static partial Regex ExternalCss();
 }

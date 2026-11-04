@@ -126,6 +126,35 @@ public class DemoLogoApiTests : ApiFixture
         stored.ShouldContain("#c00");
     }
 
+    [TestCase("<rect width=\"4\" height=\"4\" style=\"background:image(&quot;https://evil.example/x&quot;)\"/>")]
+    [TestCase("<rect width=\"4\" height=\"4\" style=\"background:-webkit-image-set(&quot;https://evil.example/x&quot; 1x)\"/>")]
+    [TestCase("<rect width=\"4\" height=\"4\" style=\"background:cross-fade(&quot;https://evil.example/x&quot;,50%)\"/>")]
+    [TestCase("<rect width=\"4\" height=\"4\" style=\"background:element(#a)\"/>")]
+    [TestCase("<rect width=\"4\" height=\"4\" style=\"background:paint(&quot;https://evil.example/x&quot;)\"/>")]
+    [TestCase("<rect width=\"4\" height=\"4\" style=\"cursor:https://evil.example/x\"/>")]
+    [TestCase("<style>rect { background: image(\"https://evil.example/x\") }</style><rect width=\"4\" height=\"4\"/>")]
+    [TestCase("<style>rect { background: -webkit-image-set(\"https://evil.example/x\" 1x) }</style><rect width=\"4\" height=\"4\"/>")]
+    [TestCase("<style>rect { background: cross-fade(\"https://evil.example/x\",50%) }</style><rect width=\"4\" height=\"4\"/>")]
+    [TestCase("<style>rect { background: element(#a) }</style><rect width=\"4\" height=\"4\"/>")]
+    [TestCase("<style>rect { background: paint(\"https://evil.example/x\") }</style><rect width=\"4\" height=\"4\"/>")]
+    [TestCase("<style>rect { content: \"https://evil.example/x\" }</style><rect width=\"4\" height=\"4\"/>")]
+    public async Task PutLogo_WhenSvgWithCssResourceFunction_ShouldStoreWithoutIt(string inner)
+    {
+        using var put = await PutAsync(Svg(inner + "<text style=\"font-family:&quot;Inter&quot;\">a</text><rect fill=\"url(#g)\" width=\"1\" height=\"1\"/>"), "logo.svg");
+
+        put.StatusCode.ShouldBe(HttpStatusCode.OK);
+        using var served = await Api.GetAsync(LogoPath);
+        var stored = await served.Content.ReadAsStringAsync();
+        stored.ShouldNotContain("evil.example");
+        stored.ShouldNotContain("image(");
+        stored.ShouldNotContain("image-set(");
+        stored.ShouldNotContain("cross-fade(");
+        stored.ShouldNotContain("element(");
+        stored.ShouldNotContain("paint(");
+        stored.ShouldContain("font-family:&quot;Inter&quot;");
+        stored.ShouldContain("url(#g)");
+    }
+
     [Test]
     public async Task PutLogo_WhenHtmlNamedPng_ShouldBeValidation()
     {
