@@ -92,6 +92,8 @@ function typeOf(event: ProjectEvent): string {
     case 'linksChanged':
     case 'agentSessionChanged':
     case 'retroChanged':
+    case 'sprintClosed':
+    case 'sprintDemoChanged':
       return event.type;
   }
 }
