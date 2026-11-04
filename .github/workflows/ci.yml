@@ -67,6 +67,12 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
+      # One cache per job: each restores different projects, so a shared key would keep whichever job finished first.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ github.job }}-${{ hashFiles('src/**/*.csproj', 'src/Directory.Build.props') }}
+          restore-keys: nuget-${{ github.job }}-
       - uses: pnpm/action-setup@v4
         with:
           package_json_file: src/ShipLean.Client/package.json
@@ -119,6 +125,12 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
+      # One cache per job: each restores different projects, so a shared key would keep whichever job finished first.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ github.job }}-${{ hashFiles('src/**/*.csproj', 'src/Directory.Build.props') }}
+          restore-keys: nuget-${{ github.job }}-
       - run: dotnet test src/ShipLean.UnitTest --configuration Release
         env:
           NUNIT_METRICS_ES_ENDPOINT: https://devmetrics.dicko.dev:18888/dotnet/nunit
@@ -136,6 +148,12 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
+      # One cache per job: each restores different projects, so a shared key would keep whichever job finished first.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ github.job }}-${{ hashFiles('src/**/*.csproj', 'src/Directory.Build.props') }}
+          restore-keys: nuget-${{ github.job }}-
       # The search embedding model: cached on the fetch script, its manifest and the model's metadata (the script
       # checks every SHA-256 either way), then handed to the tests through the same variable the image sets.
       # The files are public on Hugging Face; no token.
@@ -253,6 +271,13 @@ jobs:
         if: needs.changes.outputs.code != 'false'
         with:
           dotnet-version: 10.0.x
+      # One cache per job: each restores different projects, so a shared key would keep whichever job finished first.
+      - uses: actions/cache@v4
+        if: needs.changes.outputs.code != 'false'
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ github.job }}-${{ hashFiles('src/**/*.csproj', 'src/Directory.Build.props') }}
+          restore-keys: nuget-${{ github.job }}-
       - uses: pnpm/action-setup@v4
         if: needs.changes.outputs.code != 'false'
         with:
