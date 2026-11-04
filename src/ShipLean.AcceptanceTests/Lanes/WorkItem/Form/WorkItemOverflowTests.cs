@@ -13,9 +13,10 @@ namespace ShipLean.AcceptanceTests.Lanes.WorkItem.Form;
 [TestFixture]
 public class WorkItemOverflowTests : SeededAcceptanceTest
 {
-    private static readonly string LongTitle = "A very long link title that has no good place to break " + new string('t', 200);
+    // One class shares one database, so each width gets an address of its own.
+    private static string LongTitle(int width) => $"A very long link title that has no good place to break {width} " + new string('t', 200);
 
-    private static readonly string LongUrl = "https://example.com/" + new string('u', 300);
+    private static string LongUrl(int width) => $"https://example.com/{width}/" + new string('u', 300);
 
     [TestCase(1024)]
     [TestCase(1440)]
@@ -24,10 +25,10 @@ public class WorkItemOverflowTests : SeededAcceptanceTest
         await Page.SetViewportSizeAsync(width, 900);
         var links = new LinksPanel(Page);
         var screen = new WorkItemScreen(Page);
-        await AddLongLinkToStoryAsync();
+        await AddLongLinkToStoryAsync(width);
 
         await screen.OpenAsync("SHIP", "SHIP-147");
-        await Expect(links.Rows.Filter(new() { HasText = LongTitle })).ToHaveCountAsync(1);
+        await Expect(links.Rows.Filter(new() { HasText = LongTitle(width) })).ToHaveCountAsync(1);
         await Page.GetByTestId(WorkItemTestIds.LinkAdd).ClickAsync();
         await Expect(Page.GetByTestId(WorkItemTestIds.LinkForm)).ToBeVisibleAsync();
 
@@ -46,10 +47,10 @@ public class WorkItemOverflowTests : SeededAcceptanceTest
         await Expect(section.Section).ToBeVisibleAsync();
         var created = await Page.Context.APIRequest.PostAsync($"/api/work-items/{SeedIds.WorkItems.Ship101}/link-cards", new APIRequestContextOptions
         {
-            DataObject = new { url = LongUrl, title = LongTitle },
+            DataObject = new { url = LongUrl(width), title = LongTitle(width) },
         });
         created.Ok.ShouldBeTrue(await created.TextAsync());
-        await Expect(section.CardTitled(LongTitle)).ToHaveCountAsync(1);
+        await Expect(section.CardTitled(LongTitle(width))).ToHaveCountAsync(1);
 
         await add.Open.ClickAsync();
         await Expect(add.Form).ToBeVisibleAsync();
@@ -68,7 +69,7 @@ public class WorkItemOverflowTests : SeededAcceptanceTest
         measured.GetProperty("scrollLeft").GetInt32().ShouldBe(0);
     }
 
-    private async Task AddLongLinkToStoryAsync()
+    private async Task AddLongLinkToStoryAsync(int width)
     {
         var response = await Page.Context.APIRequest.GetAsync($"/api/work-items/{SeedIds.WorkItems.Ship147}");
         response.Ok.ShouldBeTrue(await response.TextAsync());
@@ -92,7 +93,7 @@ public class WorkItemOverflowTests : SeededAcceptanceTest
                     points = (object?)null,
                     parent = (object?)null,
                     tags = (object?)null,
-                    addLinks = new[] { new { type = "url", workItemId = (Guid?)null, key = (string?)null, url = LongUrl, title = LongTitle } },
+                    addLinks = new[] { new { type = "url", workItemId = (Guid?)null, key = (string?)null, url = LongUrl(width), title = LongTitle(width) } },
                     removeLinkIds = Array.Empty<string>(),
                 },
             },
