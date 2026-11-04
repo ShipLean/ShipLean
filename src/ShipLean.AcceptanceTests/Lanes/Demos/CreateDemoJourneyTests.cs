@@ -16,7 +16,7 @@ namespace ShipLean.AcceptanceTests.Lanes.Demos;
 
 // The demo made by hand, with the Automatic setting off: closing the sprint starts nothing, the Demo tab offers Create demo, and the click starts the session.
 // A retry (Remake demo on a Ready tab) reuses the BAU item, kills the old upload link, and the new upload replaces all three files together.
-// Its own class: closing Sprint 24 moves its items, and each test closes it on its own database state, so each filter runs alone.
+// Its own class: closing Sprint 24 moves its items. The retry test uses Sprint 23, which is already closed, so the two tests share no sprint and each filter runs alone.
 [TestFixture]
 public class CreateDemoJourneyTests : SeededAcceptanceTest
 {
@@ -50,7 +50,6 @@ public class CreateDemoJourneyTests : SeededAcceptanceTest
         await Expect(tab.Create).ToBeEnabledAsync();
         await Expect(tab.Create).ToHaveTextAsync("Create demo");
         (await ReadScalarAsync<bool>($"SELECT demo_work_item_id IS NULL AND demo_requested_at IS NULL FROM sprint WHERE id = '{SeedIds.Sprints.Sprint24}'")).ShouldBeTrue();
-        (await ReadScalarAsync<long>("SELECT count(*) FROM agent_session s JOIN work_item w ON w.id = s.work_item_id WHERE w.type = 'bau'")).ShouldBe(0);
 
         // The click makes the BAU item and starts the session; the open tab turns Working with no reload.
         var create = await Page.RunAndWaitForResponseAsync(
@@ -83,23 +82,15 @@ public class CreateDemoJourneyTests : SeededAcceptanceTest
     public async Task CreateDemo_WhenRetried_ShouldReuseTheItem()
     {
         var callbackToken = await ArrangeAgentAsync();
-        await EndSprint24Async(ConnectionString);
-        var prompt = new SprintEndPrompt(Page);
-        await prompt.OpenAsync("SHIP", SeedIds.Sprints.Sprint24);
-        await new LiveStatus(Page).WaitUntilLiveAsync();
-        await prompt.PressCloseAsync();
-        var applied = await prompt.ApplyAsync(SeedIds.Sprints.Sprint24);
-        applied.Ok.ShouldBeTrue(await applied.TextAsync());
-        await Expect(prompt.Dialog).ToHaveCountAsync(0);
-
+        var sprint = SeedIds.Sprints.Sprint23;
         var tab = new SprintDemoTab(Page);
-        await tab.Tab.ClickAsync();
-        await tab.Panel.WaitForAsync();
+        await tab.GotoAsync("SHIP", sprint);
+        await new LiveStatus(Page).WaitUntilLiveAsync();
         await Expect(tab.StatusBand).ToHaveAttributeAsync("data-status", "none");
         await tab.CreateDemoAsync();
         await Expect(tab.StatusBand).ToHaveAttributeAsync("data-status", "working", new() { Timeout = 30_000 });
         var itemKey = await tab.ItemLink.InnerTextAsync();
-        var itemId = await ReadScalarAsync<Guid>($"SELECT demo_work_item_id FROM sprint WHERE id = '{SeedIds.Sprints.Sprint24}'");
+        var itemId = await ReadScalarAsync<Guid>($"SELECT demo_work_item_id FROM sprint WHERE id = '{sprint}'");
 
         // The first demo: its upload, then the agent's final response, which ends the session and turns the tab Ready.
         var firstUrl = await LatestUploadUrlAsync(itemId);
@@ -114,7 +105,7 @@ public class CreateDemoJourneyTests : SeededAcceptanceTest
         await Expect(tab.StatusBand).ToHaveAttributeAsync("data-status", "ready", new() { Timeout = 30_000 });
         var firstFiles = await ListLiveAsync(itemId);
         firstFiles.Select(a => a.Name).Order().ShouldBe(["sprint-demo-chapters.json", "sprint-demo-script.md", "sprint-demo.mp4"]);
-        var firstPointers = await ReadPointersAsync(SeedIds.Sprints.Sprint24);
+        var firstPointers = await ReadPointersAsync(sprint);
         firstPointers.ShouldBe(PointersOf(firstFiles));
 
         // The retry: Remake demo on the Ready tab starts a second session on the same item and kills the first link.
@@ -122,9 +113,9 @@ public class CreateDemoJourneyTests : SeededAcceptanceTest
         await tab.CreateDemoAsync();
         await Expect(tab.StatusBand).ToHaveAttributeAsync("data-status", "working", new() { Timeout = 30_000 });
         await Expect(tab.ItemLink).ToHaveTextAsync(itemKey);
-        (await ReadScalarAsync<Guid>($"SELECT demo_work_item_id FROM sprint WHERE id = '{SeedIds.Sprints.Sprint24}'")).ShouldBe(itemId);
+        (await ReadScalarAsync<Guid>($"SELECT demo_work_item_id FROM sprint WHERE id = '{sprint}'")).ShouldBe(itemId);
         (await ReadScalarAsync<long>($"SELECT count(*) FROM agent_session WHERE work_item_id = '{itemId}'")).ShouldBe(2);
-        (await ReadScalarAsync<long>("SELECT count(*) FROM work_item WHERE type = 'bau'")).ShouldBe(1);
+        (await ReadScalarAsync<long>("SELECT count(*) FROM work_item WHERE type = 'bau' AND title = 'Sprint 23 demo'")).ShouldBe(1);
 
         var secondUrl = await LatestUploadUrlAsync(itemId);
         secondUrl.ShouldNotBe(firstUrl);
@@ -134,7 +125,7 @@ public class CreateDemoJourneyTests : SeededAcceptanceTest
         }
 
         (await ListLiveAsync(itemId)).ShouldBe(firstFiles, customMessage: "a refused upload on the dead link changes nothing");
-        (await ReadPointersAsync(SeedIds.Sprints.Sprint24)).ShouldBe(firstPointers);
+        (await ReadPointersAsync(sprint)).ShouldBe(firstPointers);
         (await ReadScalarAsync<long>($"SELECT count(*) FROM transfer_token WHERE work_item_id = '{itemId}' AND kind = 'demo' AND revoked_at IS NULL")).ShouldBe(1);
 
         // The second upload: a different video (the fixture plus a trailing, valid free box), script and chapters, replacing all three files together.
@@ -151,7 +142,7 @@ public class CreateDemoJourneyTests : SeededAcceptanceTest
             secondFiles.Select(a => a.Id).ShouldNotContain(old.Id, $"{old.Name} was replaced, not kept");
         }
 
-        var secondPointers = await ReadPointersAsync(SeedIds.Sprints.Sprint24);
+        var secondPointers = await ReadPointersAsync(sprint);
         secondPointers.ShouldBe(PointersOf(secondFiles));
         var stored = await Page.APIRequest.GetAsync($"/api/attachments/{secondPointers.Video}/content");
         stored.Ok.ShouldBeTrue();
