@@ -10,7 +10,7 @@ namespace ShipLean.WebApi.Features.Demos;
 [Route("api/projects/{id:guid}/demo-brand")]
 public sealed class DemoBrandController(IDemoBrand brand, IDemoLogoUpload upload, IProjectAccess access) : ApiControllerBase
 {
-    // The settings preview's <img>; ?v= is the logo's version and only keys the browser's cache.
+    // The settings preview's <img>. ?v= is the logo_version the brand's LogoUrl carries: the current one is cached for a year, anything else revalidates.
     [HttpGet("logo")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType<ApiError>(StatusCodes.Status404NotFound)]
@@ -18,7 +18,8 @@ public sealed class DemoBrandController(IDemoBrand brand, IDemoLogoUpload upload
     {
         await access.RequireAsync(id, ProjectRole.Member, cancellationToken);
         var logo = await brand.OpenLogoAsync(id, cancellationToken);
-        return new DemoLogoFileResult(logo.Content, logo.ContentType, true);
+        var current = await brand.ReadAsync(id, cancellationToken);
+        return new DemoLogoFileResult(logo.Content, logo.ContentType, true, v is not null && current.LogoUrl is { } url && url.EndsWith($"?v={v}", StringComparison.Ordinal));
     }
 
     // The file arrives as multipart form data. The action binds no form.
