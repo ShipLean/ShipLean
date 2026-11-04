@@ -30,6 +30,7 @@ const failed: SprintDemoDto = {
   ...(working as unknown as SprintDemoDto),
   status: 'failed',
   statusMessage: 'The upload link expired before a video came back.',
+  run: { ...(working as unknown as SprintDemoDto).run!, sessionState: 'ended' },
   actions: { canCreate: true, createBlockedMessage: null, canRetryYouTube: false },
 };
 const noAgent: SprintDemoDto = withActions(base, {
