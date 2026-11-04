@@ -301,7 +301,7 @@ export function WorkItemForm({
                   {tasks}
                   {discussion}
                 </div>
-                <aside className="grid content-start gap-4">
+                <aside className="grid grid-cols-[minmax(0,1fr)] content-start gap-4">
                   {links}
                   {side}
                 </aside>

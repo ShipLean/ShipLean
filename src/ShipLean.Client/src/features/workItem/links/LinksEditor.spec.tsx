@@ -300,3 +300,40 @@ test('LinksEditor_WhenWorkItemLinkClicked_ShouldOpenItInModal', async ({ mount, 
   await expect(screen.getByTestId(harness.location)).toHaveText('/p/SHIP/items/SHIP-141');
   await expect(screen.getByTestId(harness.search)).toHaveText(`?item=${related.key}`);
 });
+
+// Links whose titles and addresses are longer than the 20rem rail.
+const longLinks: LinkDto[] = [
+  {
+    ...related,
+    title: 'A very long linked work item title that goes on past any width the rail could give it',
+  },
+  {
+    ...web,
+    title: null,
+    url: 'https://github.com/ShipLean/ShipLean/pull/56/files?diff=split&w=1&query=a-very-long-address',
+  },
+];
+
+for (const width of [1024, 1440]) {
+  for (const open of [false, true]) {
+    test(`LinksEditor_WhenLinksAreLong_ShouldNotWidenThePage_${width}px_${open ? 'FormOpen' : 'FormClosed'}`, async ({
+      mount,
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await stubApi(page, { ...story, links: longLinks });
+      const screen = await mount(<WorkItemFormHarness itemKey="SHIP-141" realLinks />, route);
+      await expect(screen.getByTestId(ids.linkRow)).toHaveCount(2);
+      if (open) {
+        await screen.getByTestId(ids.linkAdd).click();
+        await expect(screen.getByTestId(ids.linkForm)).toBeVisible();
+      }
+
+      const { scrollWidth, clientWidth } = await page.evaluate(() => ({
+        scrollWidth: document.documentElement.scrollWidth,
+        clientWidth: document.documentElement.clientWidth,
+      }));
+      expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+    });
+  }
+}
