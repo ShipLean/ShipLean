@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import type { ProjectSettingsDto, ProjectSettingsPut } from '../../../api/projects';
 import { WORK_ITEM_TYPE_IDS } from '../../../api/refs';
+import demoSettings from '../../../../../ShipLean.TestSupport/DtoFixtures/demos/project-demo-settings.json' with { type: 'json' };
+import { demosTestIds as demosIds } from '../../demos/testIds';
 import { settingsTestIds as ids } from '../testIds';
 import { SettingsDraftHarness } from './ct/SettingsDraftHarness';
 import { PROJECT_ID } from './ct/projectDto';
@@ -374,23 +376,19 @@ test('Tabs_ShouldListDemosLast', async ({ mount, page }) => {
 
 test('DemosTab_ShouldNotJoinTheDraftsSave', async ({ mount, page }) => {
   const puts = await stub(page);
-  const view = await mount(<SettingsDraftHarness role="admin" />, {
-    hooksConfig: { route: '/p/SHIP/settings/general' },
-  });
-  await view.getByTestId(ids.generalName).fill('Shop');
-  await view.getByTestId(ids.tabDemos).click();
-
-  await expect(view.getByTestId('harness-demos')).toBeVisible();
-  await expect(view.getByTestId(ids.tabDirty)).toHaveCount(1);
-  await expect(view.getByTestId(ids.unsaved)).toContainText('1 unsaved change');
-  await view.getByTestId(ids.save).click();
-  await expect(view.getByTestId(ids.unsaved)).toHaveCount(0);
-  expect(puts).toHaveLength(1);
-  expect(Object.keys(puts[0]).sort()).toEqual(
-    Object.keys(puts[0])
-      .filter((k) => k !== 'demos')
-      .sort(),
+  await page.route(`**/api/projects/${PROJECT_ID}/demo-settings`, (route) =>
+    route.fulfill({ json: demoSettings }),
   );
+  const view = await mount(<SettingsDraftHarness role="admin" />, {
+    hooksConfig: { route: '/p/SHIP/settings/demos' },
+  });
+
+  await expect(view.getByTestId(demosIds.demoSettingsPanel)).toBeVisible();
+  await expect(view.getByTestId(demosIds.demoBrandPanel)).toBeVisible();
+  await expect(view.getByTestId(ids.tabDirty)).toHaveCount(0);
+  await expect(view.getByTestId(ids.unsaved)).toHaveCount(0);
+  await expect(view.getByTestId(ids.save)).toBeDisabled();
+  expect(puts).toHaveLength(0);
 });
 
 test('Draft_WhenStateStagedThroughContext_ShouldSurviveTabSwitchAndGoInTheOnePut', async ({
