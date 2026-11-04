@@ -89,7 +89,8 @@ public sealed class DemoBrandSource(NpgsqlDataSource dataSource, IBlobStore blob
             logger.LogWarning("Project {ProjectId}'s demo logo blob {Blob} has a type a logo can't have; ShipLean's logo is used.", projectId, blob);
             return null;
         }
-        catch (Exception failure) when (failure is not OperationCanceledException)
+        // A timeout inside the store (an HttpClient timeout is a TaskCanceledException) falls back like any other failure; only our own cancellation ends the start.
+        catch (Exception failure) when (failure is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
         {
             logger.LogWarning(failure, "Project {ProjectId}'s demo logo blob {Blob} couldn't be read; ShipLean's logo is used.", projectId, blob);
             return null;

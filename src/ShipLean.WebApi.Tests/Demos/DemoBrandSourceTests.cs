@@ -258,6 +258,20 @@ public class DemoBrandSourceTests : ApiFixture
     }
 
     [Test]
+    public async Task Source_WhenBlobStoreTimesOut_ShouldFallBackWithTheReason()
+    {
+        var item = await NewItemAsync();
+        await PutLogoAsync();
+        await SetRowAsync(LogoKey, "--color-accent: #c2410c;");
+        _blobs.TimeOutOnExists = true;
+
+        var brand = await RunAsync(item);
+
+        AssertFellBack(brand);
+        (await TransfersAsync(item)).ShouldBe(0);
+    }
+
+    [Test]
     public async Task Source_WhenBlobGone_ShouldFallBackWithTheReason()
     {
         var item = await NewItemAsync();
@@ -362,9 +376,11 @@ public class DemoBrandSourceTests : ApiFixture
 
         public bool ThrowOnExists { get; set; }
 
+        public bool TimeOutOnExists { get; set; }
+
         public int Calls => Volatile.Read(ref _calls);
 
-        public void Reset() => ThrowOnExists = false;
+        public void Reset() => (ThrowOnExists, TimeOutOnExists) = (false, false);
 
         public Task<long> PutAsync(string key, Stream content, string contentType, CancellationToken cancellationToken)
         {
@@ -387,6 +403,10 @@ public class DemoBrandSourceTests : ApiFixture
         public Task<bool> ExistsAsync(string key, CancellationToken cancellationToken)
         {
             Interlocked.Increment(ref _calls);
+            if (TimeOutOnExists)
+            {
+                throw new TaskCanceledException($"The request to {SecretText} was canceled due to the configured HttpClient.Timeout of 100 seconds elapsing.");
+            }
             return ThrowOnExists ? throw new IOException($"Connection refused to {SecretText}") : inner.ExistsAsync(key, cancellationToken);
         }
     }
