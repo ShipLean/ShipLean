@@ -6,7 +6,7 @@ import { demosTestIds as ids } from '../../../demos/testIds';
 import shipleanLogo from './shiplean-logo.svg';
 
 const previewBox =
-  'grid h-[72px] w-[200px] place-items-center overflow-hidden rounded-control border border-edge bg-sunken p-2';
+  'grid h-[72px] w-[200px] place-items-center overflow-hidden rounded-control border border-edge bg-white p-2';
 
 /** The logo: previewed through an img, uploaded and removed with the server's message shown beside it. */
 export function LogoField({

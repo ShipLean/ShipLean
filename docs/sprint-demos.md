@@ -23,7 +23,7 @@ Create demo is off, with the reason shown, when the sprint isn't closed, when an
 | `none` | No demo yet | Closed, and nobody has asked for a demo. |
 | `requested` | Requested | A demo was asked for and no agent session is live yet. |
 | `working` | Working | An agent session is live on the demo's BAU item. The band links to the item. |
-| `ready` | Ready | A video arrived after the last request. |
+| `ready` | Ready | A video arrived after the last request and the agent's session has ended. The tab stays Working while the session is live, so the agent must finish its run once the upload succeeds; the tab turns Ready when it does. |
 | `failed` | Failed | The upload link expired before a video came back, or the agent session ended as failed, canceled or stale without one. The message says which. |
 | `blocked` | Blocked | The demo could not start. The message says why: no agent connection, no repository, no base URL on the instance, or "The demo could not be started. Start it again from the sprint's demo panel." |
 

@@ -5,10 +5,19 @@ import { workItemTestIds } from '../../features/workItem/testIds';
 import { stubApi } from '../../features/workItem/ct/stubApi';
 import { stubSide } from '../../features/workItem/ct/stubSide';
 import type { SprintDemoDto } from '../../api/demos';
-import { bauItem, demoStates, settingsStates, stubDemo, stubDemoSettings } from './fixtures/demos';
+import {
+  bauAttachments,
+  bauItem,
+  bauRevisions,
+  demoSprints,
+  demoStates,
+  settingsStates,
+  stubDemo,
+  stubDemoSettings,
+} from './fixtures/demos';
 import { stubSprintFigures } from './fixtures/sprints';
 import { projectSettings } from './fixtures/workItemSettings';
-import { attachments, comments, revisions, workItemStates } from './fixtures/workItem';
+import { workItemStates } from './fixtures/workItem';
 import { PEOPLE, SHELL_MEMBERS, SHELL_SPRINTS, stubShell } from './shellStub';
 import { pageShots, type Page } from './shoot';
 
@@ -24,7 +33,7 @@ const demoShot = (
   route: `/p/SHIP/sprints/${demo.sprintId}/demo`,
   shell: true,
   arrange: async (page: Page) => {
-    await stubShell(page);
+    await stubShell(page, { sprints: demoSprints });
     await stubSprintFigures(page);
     await stubDemo(page, demo);
   },
@@ -98,6 +107,9 @@ const refuseThenDismiss = async (page: Page, shown: string, message: string) => 
   await expect(page.getByTestId(componentTestIds.toast)).toHaveCount(0);
 };
 
+// The YouTube panel sits below the window's first screen: bring it into view so the shot shows its state.
+const showYouTube = (page: Page) => page.getByTestId(ids.youtubePanel).scrollIntoViewIfNeeded();
+
 const LOGO_REFUSAL = 'A logo must be a PNG, JPEG, WebP or SVG image.';
 const TOKENS_REFUSAL = 'Not saved. Line 1: --color-bg has a value that is not allowed.';
 
@@ -139,27 +151,52 @@ pageShots([
     await page.getByTestId(ids.demoTokensSave).click();
     await refuseThenDismiss(page, ids.demoTokensError, TOKENS_REFUSAL);
   }),
-  settingsShot('settings-demos-yt-off', settingsStates.off, async (page) => {
-    await panelsReady(page);
-    await expect(page.getByTestId(ids.youtubeOff)).toBeVisible();
-  }),
-  settingsShot('settings-demos-yt-connect', settingsStates.notConnected, async (page) => {
-    await panelsReady(page);
-    await expect(page.getByTestId(ids.youtubeConnect)).toBeVisible();
-  }),
-  settingsShot('settings-demos-yt-pending', settingsStates.pending, async (page) => {
-    await panelsReady(page);
-    await expect(page.getByTestId(ids.youtubeChannel)).toBeVisible();
-    await expect(page.getByTestId(ids.youtubeCheck)).toBeVisible();
-  }),
-  settingsShot('settings-demos-yt-refused', settingsStates.refused, async (page) => {
-    await panelsReady(page);
-    await expect(page.getByTestId(ids.youtubeRefusal)).toBeVisible();
-  }),
-  settingsShot('settings-demos-yt-connected', settingsStates.branded, async (page) => {
-    await panelsReady(page);
-    await expect(page.getByTestId(ids.youtubeConnected)).toBeVisible();
-  }),
+  settingsShot(
+    'settings-demos-yt-off',
+    settingsStates.off,
+    async (page) => {
+      await panelsReady(page);
+      await expect(page.getByTestId(ids.youtubeOff)).toBeVisible();
+    },
+    showYouTube,
+  ),
+  settingsShot(
+    'settings-demos-yt-connect',
+    settingsStates.notConnected,
+    async (page) => {
+      await panelsReady(page);
+      await expect(page.getByTestId(ids.youtubeConnect)).toBeVisible();
+    },
+    showYouTube,
+  ),
+  settingsShot(
+    'settings-demos-yt-pending',
+    settingsStates.pending,
+    async (page) => {
+      await panelsReady(page);
+      await expect(page.getByTestId(ids.youtubeChannel)).toBeVisible();
+      await expect(page.getByTestId(ids.youtubeCheck)).toBeVisible();
+    },
+    showYouTube,
+  ),
+  settingsShot(
+    'settings-demos-yt-refused',
+    settingsStates.refused,
+    async (page) => {
+      await panelsReady(page);
+      await expect(page.getByTestId(ids.youtubeRefusal)).toBeVisible();
+    },
+    showYouTube,
+  ),
+  settingsShot(
+    'settings-demos-yt-connected',
+    settingsStates.branded,
+    async (page) => {
+      await panelsReady(page);
+      await expect(page.getByTestId(ids.youtubeConnected)).toBeVisible();
+    },
+    showYouTube,
+  ),
 ]);
 
 // ---- The BAU item a demo runs as: a work item on no sprint, board or parent ----
@@ -182,14 +219,12 @@ pageShots([
       await page.route('**/api/projects/p1/sprints', (route) =>
         route.fulfill({ json: SHELL_SPRINTS }),
       );
-      await page.route('**/api/work-items/*/comments', (route) =>
-        route.fulfill({ json: comments }),
-      );
-      await stubSide(page, PEOPLE.priya, attachments, revisions);
+      await page.route('**/api/work-items/*/comments', (route) => route.fulfill({ json: [] }));
+      await stubSide(page, PEOPLE.priya, bauAttachments, bauRevisions);
     },
     ready: async (page) => {
       await expect(page.getByTestId(workItemTestIds.title)).toHaveValue(bauItem.title);
-      await expect(page.getByTestId(workItemTestIds.attachment)).toHaveCount(attachments.length);
+      await expect(page.getByTestId(workItemTestIds.attachment)).toHaveCount(bauAttachments.length);
     },
   },
 ]);

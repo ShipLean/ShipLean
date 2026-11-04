@@ -7,8 +7,11 @@ import working from '../../../../../ShipLean.TestSupport/DtoFixtures/demos/sprin
 import settingsDefault from '../../../../../ShipLean.TestSupport/DtoFixtures/demos/project-demo-settings.json' with { type: 'json' };
 import settingsBranded from '../../../../../ShipLean.TestSupport/DtoFixtures/demos/project-demo-settings-branded.json' with { type: 'json' };
 import type { ProjectDemoSettingsDto, SprintDemoDto, YouTubeProjectDto } from '../../../api/demos';
+import type { SprintDto } from '../../../api/sprints';
 import type { WorkItemDto } from '../../../api/workItems';
+import { attachment, change, revision } from '../../../features/workItem/ct/stubSide';
 import { PEOPLE } from '../shellStub';
+import { sprintsWithGoals } from './sprints';
 import type { Page } from '../shoot';
 import { actionItem } from './workItem';
 
@@ -29,12 +32,21 @@ const forSprint = (demo: SprintDemoDto, id: string, name: string): SprintDemoDto
   sprintName: name,
 });
 
-const ended = (demo: SprintDemoDto) => forSprint(demo, ENDED_SPRINT, 'Sprint 23');
+// The pins are written for Sprint 24; the script names its sprint, so it moves with it.
+const ended = (demo: SprintDemoDto): SprintDemoDto => ({
+  ...forSprint(demo, ENDED_SPRINT, 'Sprint 23'),
+  scriptHtml: demo.scriptHtml?.replaceAll('Sprint 24', 'Sprint 23') ?? null,
+});
 
 const noneDemo = ended(asDemo(none));
 const readyDemo = ended(asDemo(ready));
 const workingDemo = ended(asDemo(working));
 const workingRun = workingDemo.run!;
+
+/** Sprints 21 to 23 closed and decided, Sprint 24 running: the shell the Demo tab is shot in. */
+export const demoSprints: SprintDto[] = sprintsWithGoals.map((sprint) =>
+  sprint.status === 'past' ? { ...sprint, rolloverStatus: 'decided' } : sprint,
+);
 
 export const demoStates = {
   /** Sprint 24 is still open and has no demo: nothing to create yet. */
@@ -80,10 +92,9 @@ export const demoStates = {
 
 export async function stubDemo(page: Page, demo: SprintDemoDto) {
   await page.route('**/api/sprints/*/demo', (route) => route.fulfill({ json: demo }));
-  // The CI browser has no H.264 decoder: the video element shows its controls on an empty file, the same in every run.
-  await page.route('**/api/attachments/*/content', (route) =>
-    route.fulfill({ status: 200, contentType: 'video/mp4', body: '' }),
-  );
+  // No video file is served: the element settles on its error state with its controls, the same in every run (an empty
+  // 200 leaves the browser's loading spinner turning, which differs frame to frame).
+  await page.route('**/api/attachments/*/content', (route) => route.fulfill({ status: 404 }));
   // The nocookie embed is a third-party page: a plain dark frame stands in for it.
   await page.route('https://www.youtube-nocookie.com/**', (route) =>
     route.fulfill({
@@ -157,3 +168,28 @@ export const bauItem: WorkItemDto = {
   createdAtLabel: 'Mon 2 Nov',
   changedAtLabel: 'Mon 2 Nov, 10:15',
 };
+
+/** What the agent uploaded to SHIP-200: the video, its chapters and its script. */
+export const bauAttachments = [
+  {
+    ...attachment('a1', 'sprint-demo.mp4', PEOPLE.priya, 50841),
+    workItemId: 'w200',
+    createdLabel: 'Mon 2 Nov',
+  },
+  {
+    ...attachment('a2', 'sprint-demo-chapters.json', PEOPLE.priya, 412),
+    workItemId: 'w200',
+    createdLabel: 'Mon 2 Nov',
+  },
+  {
+    ...attachment('a3', 'sprint-demo-script.md', PEOPLE.priya, 1820),
+    workItemId: 'w200',
+    createdLabel: 'Mon 2 Nov',
+  },
+];
+
+export const bauRevisions = [
+  revision(2, PEOPLE.priya, [change('state', 's-bau-new', 's-bau-active', ['New', 'Active'])], {
+    changedAtLabel: 'Mon 2 Nov, 10:15',
+  }),
+];
