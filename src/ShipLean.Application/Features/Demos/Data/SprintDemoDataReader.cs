@@ -2,8 +2,8 @@ using System.Globalization;
 using System.Text.Json;
 using Dapper;
 using Npgsql;
-using ShipLean.Application.Features.Mcp.Backlog;
 using ShipLean.Application.Plans;
+using ShipLean.Contracts.Backlog;
 using ShipLean.Contracts.Demos;
 using ShipLean.Contracts.Persisted;
 
@@ -11,7 +11,7 @@ namespace ShipLean.Application.Features.Demos.Data;
 
 // K7: what a sprint demo needs to know, per Feature, so the agent needn't call get_work_item. The SQL is SprintDemoDataSql's and reads no
 // failure log, root cause, comment body or author. Anything cut to a limit sets Truncated.
-public sealed class SprintDemoDataReader(NpgsqlDataSource dataSource, BacklogReads backlog) : ISprintDemoData
+public sealed class SprintDemoDataReader(NpgsqlDataSource dataSource, ISprintFeatureReads backlog) : ISprintDemoData
 {
     internal const int MaxWhyLength = 4096;
     internal const int MaxStoriesPerFeature = 50;

@@ -1,5 +1,5 @@
+using ShipLean.Contracts.Backlog;
 using ShipLean.Contracts.Refs;
-using Agoda.IoC.Core;
 using Dapper;
 using Npgsql;
 
@@ -7,8 +7,7 @@ namespace ShipLean.Application.Features.Mcp.Backlog;
 
 // The SQL behind the Backlog tools that no shared read answers (sprint outcomes are ISprintMetrics.GetSprintItemsAsync). Callers resolve and check access first. Points, burndown
 // and velocity come from ISprintMetrics, the stack and roll-ups from IWorkTreeReads, never from here.
-[RegisterSingleton]
-public sealed class BacklogReads(NpgsqlDataSource dataSource)
+public sealed class BacklogReads(NpgsqlDataSource dataSource) : ISprintFeatureReads
 {
     // The item right after the given one in the project's backlog order, leaving out the item being moved; null when the
     // given item is last. Removed items still hold a place in the order, so they count.
