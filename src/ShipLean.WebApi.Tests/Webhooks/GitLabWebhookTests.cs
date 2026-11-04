@@ -74,4 +74,19 @@ public class GitLabWebhookTests : WebhookApiTest
         merged.Closed.ShouldBe([task.Key]);
         UrlLink(await GetAsync(task.Id)).AutoLinked.ShouldBe(new AutoLinkDto(WebhookProvider.Gitlab, AutoLinkMatch.Branch));
     }
+
+    [Test]
+    public async Task Open_WhenTheDescriptionLineNamesAFeature_ShouldLinkItsStoryThenCloseItOnMerge()
+    {
+        var feature = await CreateAsync("feature", "Named in a GitLab description");
+        var story = await CreateAsync("story", "Under the Feature", feature.Id);
+        var description = $"ShipLean IDs: {feature.Key}\n\nWhat it does.";
+
+        var opened = await DeliverAsync(WebhookDelivery.Gitlab(GitlabSecret, "open", 10, "Rate grid", Next(), description: description));
+        var merged = await DeliverAsync(WebhookDelivery.Gitlab(GitlabSecret, "merge", 10, "Rate grid", Next(), state: "merged", description: description));
+
+        opened.Linked.ShouldBe([story.Key]);
+        merged.Closed.ShouldBe([story.Key]);
+        UrlLink(await GetAsync(story.Id)).AutoLinked.ShouldBe(new AutoLinkDto(WebhookProvider.Gitlab, AutoLinkMatch.Body));
+    }
 }

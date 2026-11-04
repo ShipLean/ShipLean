@@ -15,8 +15,14 @@ const stateTints: Record<LinkCardDto['state'], string> = {
 
 const providers: Record<LinkCardDto['source'], string> = { github: 'GitHub', gitlab: 'GitLab' };
 
+const matchReasons: Record<AutoLinkDto['matchedOn'], string> = {
+  title: 'the key is in the title',
+  branch: 'the key is in the branch name',
+  body: 'the description names it or its Feature',
+};
+
 // The pull or merge request's state as its webhook last reported it, with the source and when in the tooltip, and
-// "auto" when the webhook added the link because the item's key was in the title or branch.
+// "auto" when the webhook added the link because the title, branch or description named the item.
 export function LinkCardBadge({
   card,
   autoLinked,
@@ -37,7 +43,7 @@ export function LinkCardBadge({
       {autoLinked ? (
         <span
           data-testid={ids.linkAutoLinked}
-          title={`Linked by the ${providers[autoLinked.via]} webhook: the key is in the ${autoLinked.matchedOn === 'title' ? 'title' : 'branch name'}`}
+          title={`Linked by the ${providers[autoLinked.via]} webhook: ${matchReasons[autoLinked.matchedOn]}`}
           className="shrink-0 text-[length:var(--text-2xs)] text-ink-muted"
         >
           auto

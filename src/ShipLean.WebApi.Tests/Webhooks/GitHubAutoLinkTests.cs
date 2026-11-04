@@ -7,8 +7,9 @@ using ShipLean.TestSupport.Webhooks;
 
 namespace ShipLean.WebApi.Tests.Webhooks;
 
-// Only the GitHub secret is set. Pull requests name items by key in the title or the source branch; the webhook links
-// them to the Story, Task or Bug with that key, and the close rule then applies as to a hand-made link.
+// Only the GitHub secret is set. Pull requests name items by key in the title, the source branch or a "ShipLean IDs:" line
+// that opens the body; the webhook links them to the Story, Task or Bug with that key, or to the Stories and Bugs of a
+// Feature the body line names, and the close rule then applies as to a hand-made link.
 [TestFixture]
 public class GitHubAutoLinkTests : WebhookApiTest
 {
@@ -66,6 +67,95 @@ public class GitHubAutoLinkTests : WebhookApiTest
 
         result.Linked.ShouldBeEmpty();
         (await GetAsync(feature.Id)).Links.ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task Opened_WhenTheBodyLineListsKeys_ShouldLinkThemAsMatchedOnTheBody()
+    {
+        var story = await CreateAsync("story", "Listed first");
+        var bug = await CreateAsync("bug", "Listed second");
+
+        var result = await DeliverAsync(WebhookDelivery.Github(GithubSecret, "opened", 60, "A clean title", Next(), body: $"\r\n\r\nShipLean IDs: {story.Key}, {bug.Key}\r\n\r\nWhat it does."));
+
+        result.Linked.ShouldBe(new[] { story.Key, bug.Key }, ignoreOrder: true);
+        UrlLink(await GetAsync(story.Id)).AutoLinked.ShouldBe(new AutoLinkDto(WebhookProvider.Github, AutoLinkMatch.Body));
+    }
+
+    [Test]
+    public async Task Merged_WhenTheBodyLineNamesAFeature_ShouldLinkAndCloseItsStoriesAndBugsButNotTheFeatureOrItsTasks()
+    {
+        var feature = await CreateAsync("feature", "Named in the title and the body");
+        var story = await CreateAsync("story", "Under the Feature", feature.Id);
+        var bug = await CreateAsync("bug", "Also under the Feature", feature.Id);
+        var task = await CreateAsync("task", "Still open under the story", story.Id);
+        var other = await CreateAsync("story", "Under nothing");
+        var title = $"{feature.Key}: a clean title";
+        var body = $"ShipLean IDs: {feature.Key}\n\nWhat it does.";
+
+        var opened = await DeliverAsync(WebhookDelivery.Github(GithubSecret, "opened", 61, title, Next(), body: body));
+        var merged = await DeliverAsync(WebhookDelivery.Github(GithubSecret, "closed", 61, title, Next(), state: "closed", merged: true, body: body));
+
+        opened.Linked.ShouldBe(new[] { story.Key, bug.Key }, ignoreOrder: true);
+        merged.Closed.ShouldBe(new[] { story.Key, bug.Key }, ignoreOrder: true);
+        UrlLink(await GetAsync(bug.Id)).AutoLinked.ShouldBe(new AutoLinkDto(WebhookProvider.Github, AutoLinkMatch.Body));
+        CategoryOf(await GetAsync(story.Id)).ShouldBe(StateCategory.Completed);
+        var featureAfter = await GetAsync(feature.Id);
+        featureAfter.Links.ShouldBeEmpty();
+        CategoryOf(featureAfter).ShouldBe(StateCategory.Proposed);
+        (await GetAsync(task.Id)).Links.ShouldBeEmpty();
+        (await GetAsync(other.Id)).Links.ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task Opened_WhenOnlyTheTitleNamesAFeature_ShouldNotLinkItsStories()
+    {
+        var feature = await CreateAsync("feature", "Named in the title for people to read");
+        var story = await CreateAsync("story", "Not part of this pull request", feature.Id);
+
+        var result = await DeliverAsync(WebhookDelivery.Github(GithubSecret, "opened", 62, $"{feature.Key} Reference screens", Next()));
+
+        result.Linked.ShouldBeEmpty();
+        (await GetAsync(story.Id)).Links.ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task Opened_WhenTheBodyLineIsNotFirstOrHasNoLabel_ShouldNotLink()
+    {
+        var story = await CreateAsync("story", "Only quoted in the body");
+
+        var later = await DeliverAsync(WebhookDelivery.Github(GithubSecret, "opened", 63, "Quotes the convention", Next(), body: $"For example:\nShipLean IDs: {story.Key}"));
+        var unlabelled = await DeliverAsync(WebhookDelivery.Github(GithubSecret, "opened", 64, "Mentions a key", Next(), body: $"Follows on from {story.Key}."));
+
+        later.Linked.ShouldBeEmpty();
+        unlabelled.Linked.ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task Edited_WhenTheBodyGainsTheLine_ShouldLinkThen()
+    {
+        var story = await CreateAsync("story", "Named in the body later");
+        await DeliverAsync(WebhookDelivery.Github(GithubSecret, "opened", 65, "No key yet", Next(), body: "What it does."));
+
+        var edited = await DeliverAsync(WebhookDelivery.Github(GithubSecret, "edited", 65, "No key yet", Next(), body: $"ShipLean IDs: {story.Key}\n\nWhat it does."));
+
+        edited.Linked.ShouldBe([story.Key]);
+    }
+
+    [Test]
+    public async Task Opened_WhenAFeatureHasMoreThanTheLimit_ShouldLinkTheRestOnTheNextEvent()
+    {
+        var feature = await CreateAsync("feature", "More stories than one event links");
+        for (var i = 0; i < 101; i++)
+        {
+            await CreateAsync("story", $"Story {i}", feature.Id);
+        }
+        var body = $"ShipLean IDs: {feature.Key}";
+
+        var opened = await DeliverAsync(WebhookDelivery.Github(GithubSecret, "opened", 66, "A big Feature", Next(), body: body));
+        var edited = await DeliverAsync(WebhookDelivery.Github(GithubSecret, "edited", 66, "A big Feature", Next(), body: body));
+
+        opened.Linked.Count.ShouldBe(100);
+        edited.Linked.Count.ShouldBe(1);
     }
 
     [Test]

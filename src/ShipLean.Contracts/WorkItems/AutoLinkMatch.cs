@@ -4,4 +4,5 @@ public enum AutoLinkMatch
 {
     Title,
     Branch,
+    Body,
 }

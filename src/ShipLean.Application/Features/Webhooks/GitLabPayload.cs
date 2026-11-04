@@ -33,6 +33,7 @@ internal static class GitLabPayload
             StateOf(PayloadJson.OptionalText(request, "state"), action),
             PayloadJson.Text(request, "title"),
             PayloadJson.OptionalText(request, "source_branch") ?? string.Empty,
+            PayloadJson.OptionalText(request, "description") ?? string.Empty,
             PayloadJson.Timestamp(request, "updated_at"),
             name,
             $"GitLab {name}!{iid}"));

@@ -44,10 +44,10 @@ export interface LinkCardDto {
   source: WebhookProvider;
 }
 
-/** Why a webhook added a link: the item's key was in the title or the source branch. */
+/** Why a webhook added a link: the item's key was in the title or the source branch, or the body's IDs line named it or its Feature. */
 export interface AutoLinkDto {
   via: WebhookProvider;
-  matchedOn: 'title' | 'branch';
+  matchedOn: 'title' | 'branch' | 'body';
 }
 
 export interface LinkDto {

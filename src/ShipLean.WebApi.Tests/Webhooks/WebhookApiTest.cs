@@ -30,14 +30,14 @@ public abstract class WebhookApiTest : ApiFixture
 
     protected DateTimeOffset Next() => Start.AddMinutes(++_deliveries);
 
-    protected async Task<WriteResult> CreateAsync(string type, string title)
+    protected async Task<WriteResult> CreateAsync(string type, string title, Guid? parentId = null)
     {
         using var response = await Api.PostJsonAsync("api/work-items", new JsonObject
         {
             ["projectId"] = SeedIds.Projects.Ship,
             ["type"] = type,
             ["title"] = title,
-            ["parentId"] = null,
+            ["parentId"] = parentId,
             ["sprintId"] = null,
         });
         return await ReadAsync<WriteResult>(response);

@@ -11,8 +11,9 @@ using ShipLean.Contracts.WorkItems;
 namespace ShipLean.Application.Features.Webhooks;
 
 // What a pull or merge request event does, the same for every provider:
-//   1. links it to each Story, Task or Bug whose key its title or source branch names, unless that item has (or had,
-//      before someone archived it) a link to it;
+//   1. links it to each Story, Task or Bug whose key its title, source branch or "ShipLean IDs:" body line names, and to
+//      the Stories and Bugs of a Feature that body line names, unless that item has (or had, before someone archived it)
+//      a link to it;
 //   2. records its state for the link cards, when any item links to it;
 //   3. on a merge or a close, moves each linked item that isn't Completed or Removed to its type's first Completed state,
 //      once every pull or merge request the item links to is merged or closed and at least one of them merged.
@@ -33,7 +34,8 @@ public sealed class PullRequestSync(NpgsqlDataSource dataSource, IWorkItemStore 
 
     private async Task<IReadOnlyList<string>> AutoLinkAsync(PullRequestEvent pullRequest, CancellationToken cancellationToken)
     {
-        var keys = TicketKeys.In(pullRequest.Title, pullRequest.SourceBranch);
+        var bodyKeys = TicketKeys.InBody(pullRequest.Body);
+        var keys = TicketKeys.In(pullRequest.Title, pullRequest.SourceBranch, bodyKeys);
         if (keys.Count == 0)
         {
             return [];
@@ -43,17 +45,29 @@ public sealed class PullRequestSync(NpgsqlDataSource dataSource, IWorkItemStore 
         var tickets = await connection.QueryAsync<TicketRow>(new CommandDefinition(
             """
             SELECT w.id, w.key, w.revision FROM work_item w
-            WHERE w.key = ANY(@keys) AND (w.type = ANY(@storyLevel) OR w.type = 'task')
+            LEFT JOIN work_item feature ON feature.id = w.parent_id AND feature.type = 'feature'
+            WHERE ((w.key = ANY(@keys) AND (w.type = ANY(@storyLevel) OR w.type = 'task'))
+                   OR (feature.key = ANY(@bodyKeys) AND w.type = ANY(@storyLevel)))
               AND NOT EXISTS (SELECT 1 FROM work_item_link l
                               WHERE l.source_id = w.id AND l.link_type = 'url' AND link_url_key(l.url) = link_url_key(@url))
             ORDER BY w.key
+            LIMIT @limit
             """,
-            new { keys = keys.Select(k => k.Key).ToArray(), url = pullRequest.Url, storyLevel = WorkItemTypeRules.StoryLevelDb }, cancellationToken: cancellationToken));
+            new
+            {
+                keys = keys.Select(k => k.Key).ToArray(),
+                bodyKeys = bodyKeys.ToArray(),
+                url = pullRequest.Url,
+                storyLevel = WorkItemTypeRules.StoryLevelDb,
+                limit = TicketKeys.MaxItems,
+            },
+            cancellationToken: cancellationToken));
 
         var linked = new List<string>();
         foreach (var ticket in tickets)
         {
-            var matchedOn = keys.First(k => k.Key == ticket.Key).MatchedOn;
+            // An item not named itself came from its Feature's key in the body line.
+            var matchedOn = keys.Where(k => k.Key == ticket.Key).Select(k => k.MatchedOn).DefaultIfEmpty(AutoLinkMatch.Body).First();
             var changes = new WorkItemChanges { AddLinks = [new LinkValue(LinkType.Url, null, null, pullRequest.Url, pullRequest.Title)] };
             var options = WriteOptions.FromWebhook(pullRequest.Reference, (transaction, ct) => MarkAutoLinkAsync(transaction, ticket.Id, pullRequest, matchedOn, ct));
             if (await PatchAsync(ticket.Id, ticket.Revision, changes, options, cancellationToken))
