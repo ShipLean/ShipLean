@@ -4,17 +4,22 @@ using ShipLean.AcceptanceTests.Pages.Feature;
 using ShipLean.AcceptanceTests.Pages.Shell;
 using ShipLean.AcceptanceTests.Pages.WorkItem;
 using ShipLean.TestSupport;
+using ShipLean.TestSupport.Hosting;
+using ShipLean.TestSupport.Mcp;
 using ShipLean.TestSupport.TestIds;
 
 namespace ShipLean.AcceptanceTests.Lanes.WorkItem.Form;
 
 // The routed work item page in the real shell: long link titles and addresses, with the Add link form open, must not
-// make the pane wider than itself or pan it sideways.
+// make the pane wider than itself or pan it sideways. The same goes for a long unbroken agent name in the History rail.
 [TestFixture]
 public class WorkItemOverflowTests : SeededAcceptanceTest
 {
     // One class shares one database, so each width gets an address of its own.
     private static string LongTitle(int width) => $"A very long link title that has no good place to break {width} " + new string('t', 200);
+
+    // The longest name an agent can register under (200 characters), with no place to break.
+    private static readonly string LongAgentName = new('W', 200);
 
     private static string LongUrl(int width) => $"https://example.com/{width}/" + new string('u', 300);
 
@@ -43,17 +48,37 @@ public class WorkItemOverflowTests : SeededAcceptanceTest
         var section = new LinksSectionPanel(Page);
         var add = new AddLinkForm(Page);
         var screen = new WorkItemScreen(Page);
-        await screen.OpenAsync("SHIP", "SHIP-101");
-        await Expect(section.Section).ToBeVisibleAsync();
         var created = await Page.Context.APIRequest.PostAsync($"/api/work-items/{SeedIds.WorkItems.Ship101}/link-cards", new APIRequestContextOptions
         {
             DataObject = new { url = LongUrl(width), title = LongTitle(width) },
         });
         created.Ok.ShouldBeTrue(await created.TextAsync());
-        await Expect(section.CardTitled(LongTitle(width))).ToHaveCountAsync(1);
 
+        await screen.OpenAsync("SHIP", "SHIP-101");
+        await Expect(section.Section).ToBeVisibleAsync();
+        await Expect(section.CardTitled(LongTitle(width))).ToHaveCountAsync(1);
         await add.Open.ClickAsync();
         await Expect(add.Form).ToBeVisibleAsync();
+
+        await AssertMainDoesNotOverflowAsync();
+    }
+
+    [TestCase("SHIP-147", 1024)]
+    [TestCase("SHIP-147", 1440)]
+    [TestCase("SHIP-101", 1024)]
+    [TestCase("SHIP-101", 1440)]
+    public async Task WorkItemPage_WhenHistoryAgentNameIsLongAndUnbroken_ShouldNotOverflowShellMain(string key, int width)
+    {
+        await Page.SetViewportSizeAsync(width, 900);
+        var side = new SideRailPanel(Page);
+        var screen = new WorkItemScreen(Page);
+        var token = await Host.IssueAgentToken(TestUser.Joel, new HashSet<string> { "shiplean:read", "shiplean:write" }, LongAgentName);
+        await using var mcp = await McpTestClient.ConnectAsync(new Uri($"{BaseUrl}/mcp"), token);
+        var refined = await mcp.CallToolAsync("refine_work_item", new Dictionary<string, object?> { ["item"] = key, ["title"] = $"History overflow check {key} {width}" });
+        refined.IsError.ShouldNotBe(true, refined.StructuredContent?.ToString());
+
+        await screen.OpenAsync("SHIP", key);
+        await Expect(side.Revisions.First.GetByTestId(WorkItemTestIds.RevisionWho)).ToContainTextAsync(LongAgentName);
 
         await AssertMainDoesNotOverflowAsync();
     }
