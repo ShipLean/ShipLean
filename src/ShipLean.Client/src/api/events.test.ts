@@ -11,6 +11,8 @@ import {
   type AgentSessionChanged,
   type PresenceChanged,
   type RetroChanged,
+  type SprintClosed,
+  type SprintDemoChanged,
   type ProjectChanged,
   type ProjectEvent,
   type SprintChanged,
@@ -71,6 +73,8 @@ const examples = {
   linksChanged: typed<LinksChanged>()(events.linksChanged),
   agentSessionChanged: typed<AgentSessionChanged>()(events.agentSessionChanged),
   retroChanged: typed<RetroChanged>()(events.retroChanged),
+  sprintClosed: typed<SprintClosed>()(events.sprintClosed),
+  sprintDemoChanged: typed<SprintDemoChanged>()(events.sprintDemoChanged),
 };
 
 // Compile-time: every union member is covered by a case, so a new event type fails the typecheck until it is handled.
