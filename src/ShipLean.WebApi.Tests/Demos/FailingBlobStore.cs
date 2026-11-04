@@ -2,26 +2,20 @@ using ShipLean.Contracts.Blobs;
 
 namespace ShipLean.WebApi.Tests.Demos;
 
-// The real blob store, throwing on the Nth PutAsync counted from FailOnPut (0 = never). The failed put writes nothing, as an IBlobStore failure is all or nothing.
+// The real blob store, throwing on the put whose content type was named in FailOnContentType (null = never). The failed put writes nothing, as an IBlobStore failure is all or nothing.
 internal sealed class FailingBlobStore(IBlobStore inner) : IBlobStore
 {
-    private int _puts;
-    private int _failOn;
+    private string? _failOn;
 
-    public void FailOnPut(int nth)
-    {
-        Volatile.Write(ref _puts, 0);
-        Volatile.Write(ref _failOn, nth);
-    }
+    public void FailOnContentType(string contentType) => Volatile.Write(ref _failOn, contentType);
 
-    public void Heal() => Volatile.Write(ref _failOn, 0);
+    public void Heal() => Volatile.Write(ref _failOn, null);
 
     public async Task<long> PutAsync(string key, Stream content, string contentType, CancellationToken cancellationToken)
     {
-        var put = Interlocked.Increment(ref _puts);
-        if (put == Volatile.Read(ref _failOn))
+        if (contentType == Volatile.Read(ref _failOn))
         {
-            throw new IOException($"The blob store failed on put {put}.");
+            throw new IOException($"The blob store failed on {contentType}.");
         }
 
         return await inner.PutAsync(key, content, contentType, cancellationToken);

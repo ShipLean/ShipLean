@@ -146,34 +146,33 @@ public class DemoDeliveryTests : ApiFixture
     [Test]
     public async Task Deliver_WhenChaptersPartFails_ShouldLeaveOldFilesAndPointersLive()
     {
-        (await FailPartAsync(1)).ShouldBe(1);
+        (await FailPartAsync("application/json")).ShouldBe("The blob store failed on application/json.");
     }
 
     [Test]
     public async Task Deliver_WhenScriptPartFails_ShouldLeaveOldFilesAndPointersLive()
     {
-        (await FailPartAsync(2)).ShouldBe(2);
+        (await FailPartAsync("text/markdown")).ShouldBe("The blob store failed on text/markdown.");
     }
 
     [Test]
     public async Task Deliver_WhenVideoPartFails_ShouldLeaveOldFilesAndPointersLive()
     {
-        (await FailPartAsync(3)).ShouldBe(3);
+        (await FailPartAsync("video/mp4")).ShouldBe("The blob store failed on video/mp4.");
     }
 
-    // The Nth put of a delivery is the chapters, the script, then the video.
-    // Returns the put that failed, read from the exception, so a test also proves which part it broke.
-    private async Task<int> FailPartAsync(int nth)
+    // The part is named by its content type (chapters application/json, script text/markdown, video video/mp4), so the order of the puts doesn't matter.
+    private async Task<string> FailPartAsync(string contentType)
     {
         var demo = await ArrangeAsync();
         var old = await DeliverAsync(demo);
         var oldPointers = await PointersAsync(demo.SprintId);
-        _blobs.FailOnPut(nth);
+        _blobs.FailOnContentType(contentType);
 
         var failure = await Should.ThrowAsync<IOException>(async () => await DeliverAsync(demo, "# Newer", videoBytes: 500, fill: 9));
 
         await AssertOldSetLiveAsync(demo, old, oldPointers);
-        return int.Parse(failure.Message.Split(' ')[^1].TrimEnd('.'));
+        return failure.Message;
     }
 
     [Test]
@@ -206,6 +205,7 @@ public class DemoDeliveryTests : ApiFixture
 
         var refused = await Should.ThrowAsync<ApiException>(async () => await DeliverAsync(demo, "# Stale", videoBytes: 500, fill: 9, token: stale));
 
+        refused.Code.ShouldBe(ApiErrorCodes.NotFound);
         refused.Message.ShouldBe("That upload link is not valid.");
         await AssertOldSetLiveAsync(demo, old, oldPointers);
     }
@@ -217,7 +217,9 @@ public class DemoDeliveryTests : ApiFixture
         var old = await DeliverAsync(demo);
         var oldPointers = await PointersAsync(demo.SprintId);
 
-        await Should.ThrowAsync<ApiException>(async () => await DeliverAsync(demo, videoBytes: 2000, limits: new AttachmentLimits(10_000, 100_000, 1000)));
+        var refused = await Should.ThrowAsync<ApiException>(async () => await DeliverAsync(demo, videoBytes: 2000, limits: new AttachmentLimits(10_000, 100_000, 1000)));
+
+        refused.Code.ShouldBe(ApiErrorCodes.Validation);
 
         await AssertOldSetLiveAsync(demo, old, oldPointers);
     }
@@ -254,15 +256,17 @@ public class DemoDeliveryTests : ApiFixture
     public async Task Deliver_WhenOverTheItemTotal_ShouldBeValidationAndChangeNothing()
     {
         var demo = await ArrangeAsync();
+        var old = await DeliverAsync(demo);
+        var oldPointers = await PointersAsync(demo.SprintId);
         using (var scope = Host.Services.CreateScope())
         {
             await scope.ServiceProvider.GetRequiredService<IAttachmentStore>().AddAsync(demo.ItemId, "other.bin", "application/octet-stream", new MemoryStream(new byte[5000]));
         }
 
-        await Should.ThrowAsync<ApiException>(async () => await DeliverAsync(demo, videoBytes: 3500, limits: new AttachmentLimits(10_000, 7000, 5000)));
+        var refused = await Should.ThrowAsync<ApiException>(async () => await DeliverAsync(demo, videoBytes: 3500, fill: 9, limits: new AttachmentLimits(10_000, 7000, 5000)));
 
-        (await LiveAsync(demo.ItemId)).Select(a => a.Name).ShouldBe(["other.bin"]);
-        (await PointersAsync(demo.SprintId)).VideoId.ShouldBeNull();
+        refused.Code.ShouldBe(ApiErrorCodes.Validation);
+        await AssertOldSetLiveAsync(demo, old, oldPointers, expectedLive: 4);
     }
 
     [Test]
