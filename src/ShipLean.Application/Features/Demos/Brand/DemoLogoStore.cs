@@ -8,15 +8,11 @@ namespace ShipLean.Application.Features.Demos.Brand;
 // A project's logo row (project_demo_settings.logo_blob and logo_version) and its blob. Reads are always fresh, so a removed logo stops being served at once.
 public sealed class DemoLogoStore(NpgsqlDataSource dataSource, IBlobStore blobs, TimeProvider clock) : IDemoLogoStore
 {
+    // One row snapshot decides everything: the version in the URL, the blob opened and the type reported all come from it, so a replacement racing this read can't pair an old version with a new blob.
     public async Task<DemoLogoRef?> ReadAsync(Guid projectId, CancellationToken cancellationToken = default)
     {
         var row = await ReadRowAsync(projectId, cancellationToken);
-        if (row.Blob is null)
-        {
-            return null;
-        }
-
-        var content = await TryOpenAsync(projectId, cancellationToken);
+        var content = await OpenBlobAsync(row.Blob, cancellationToken);
         if (content is null)
         {
             return null;
@@ -34,7 +30,13 @@ public sealed class DemoLogoStore(NpgsqlDataSource dataSource, IBlobStore blobs,
     public async Task<BlobContent?> TryOpenAsync(Guid projectId, CancellationToken cancellationToken = default)
     {
         var row = await ReadRowAsync(projectId, cancellationToken);
-        var content = row.Blob is null ? null : await blobs.GetAsync(row.Blob, cancellationToken);
+        return await OpenBlobAsync(row.Blob, cancellationToken);
+    }
+
+    // The blob a row snapshot names, or null when none is set, it is gone, or its stored type is not one a logo can have.
+    private async Task<BlobContent?> OpenBlobAsync(string? blob, CancellationToken cancellationToken)
+    {
+        var content = blob is null ? null : await blobs.GetAsync(blob, cancellationToken);
         if (content is not null && !DemoLogoFile.ServableTypes.Contains(content.ContentType))
         {
             await content.Content.DisposeAsync();

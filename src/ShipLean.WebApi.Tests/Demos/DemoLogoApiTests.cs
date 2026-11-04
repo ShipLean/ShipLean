@@ -108,8 +108,8 @@ public class DemoLogoApiTests : ApiFixture
     public async Task PutLogo_WhenSvgWithScript_ShouldStoreTheCleanedBytes()
     {
         var dirty = Svg(
-            "<script>alert(1)</script><image href=\"http://evil.example/x.png\"/><rect width=\"4\" height=\"4\" fill=\"#c00\" onclick=\"steal()\"/>",
-            "onload=\"alert(2)\"");
+            "<script>alert(1)</script><image href=\"http://evil.example/x.png\"/><rect width=\"4\" height=\"4\" fill=\"#c00\" onclick=\"steal()\"/><use href=\"#x\" xml:base=\"https://evil.example/x.svg\"/><g xml:BASE=\"https://evil.example/y.svg\"/>",
+            "onload=\"alert(2)\" xml:base=\"https://evil.example/root.svg\"");
 
         using var put = await PutAsync(dirty, "logo.svg");
 
@@ -121,6 +121,7 @@ public class DemoLogoApiTests : ApiFixture
         stored.ShouldNotContain("onload");
         stored.ShouldNotContain("onclick");
         stored.ShouldNotContain("evil.example");
+        stored.ShouldNotContain("base", Case.Insensitive);
         stored.ShouldContain("<rect");
         stored.ShouldContain("#c00");
     }

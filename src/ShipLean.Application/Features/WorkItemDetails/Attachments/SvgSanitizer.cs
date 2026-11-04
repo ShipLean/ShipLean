@@ -9,7 +9,7 @@ namespace ShipLean.Application.Features.WorkItemDetails.Attachments;
 // leaves the document (anything but a "#fragment" link, and any CSS url()/@import to elsewhere) are removed.
 internal static partial class SvgSanitizer
 {
-    private static readonly HashSet<string> BlockedElements = ["script", "foreignObject", "iframe", "object", "embed", "set", "animate", "animateMotion", "animateTransform", "handler", "listener"];
+    private static readonly HashSet<string> BlockedElements = new(["script", "foreignObject", "iframe", "object", "embed", "set", "animate", "animateMotion", "animateTransform", "handler", "listener"], StringComparer.OrdinalIgnoreCase);
 
     private const string SvgNamespace = "http://www.w3.org/2000/svg";
 
@@ -96,7 +96,13 @@ internal static partial class SvgSanitizer
             return true;
         }
 
-        if (name == "href" || name == "src")
+        // xml:base re-roots every relative reference, so even a "#fragment" href would then resolve to another document.
+        if (name.Equals("base", StringComparison.OrdinalIgnoreCase) && (attribute.Name.Namespace == XNamespace.Xml || attribute.Name.Namespace == XNamespace.None))
+        {
+            return true;
+        }
+
+        if (name.Equals("href", StringComparison.OrdinalIgnoreCase) || name.Equals("src", StringComparison.OrdinalIgnoreCase))
         {
             return !attribute.Value.TrimStart().StartsWith('#');
         }
@@ -104,6 +110,7 @@ internal static partial class SvgSanitizer
         return ExternalCss().IsMatch(attribute.Value) || attribute.Value.Contains("javascript:", StringComparison.OrdinalIgnoreCase);
     }
 
-    [GeneratedRegex(@"@import|url\((?>\s*['""]?\s*)(?!#)", RegexOptions.IgnoreCase)]
+    // A backslash is a CSS escape (\75 rl(...) is url(...)), which no filter on the text can follow, so any value with one is dropped; so are image-set() and src(), which take a URL as a string.
+    [GeneratedRegex(@"@import|\\|image-set\(|(?<![a-z-])src\(|url\((?>\s*['""]?\s*)(?!#)", RegexOptions.IgnoreCase)]
     private static partial Regex ExternalCss();
 }
