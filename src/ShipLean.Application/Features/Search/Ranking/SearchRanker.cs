@@ -69,6 +69,12 @@ public sealed partial class SearchRanker(
 
         var semantic = IsSemantic(embedderSemantic, semanticLegs);
         var fused = ReciprocalRankFusion.Fuse(lists, options.RrfK).ToDictionary(f => f.Key, f => f.Value);
+        // K2: the index holds a hidden (bau) item, and every leg may return it; it leaves here, before the facts are read.
+        foreach (var hidden in await HiddenAsync(connection, [.. fused.Keys], cancellationToken))
+        {
+            fused.Remove(hidden);
+        }
+
         var exactIds = await ExactItemsAsync(connection, query, projectIds, cancellationToken);
         Guid[] factIds = [.. fused.Keys.Union(exactIds)];
         var facts = factIds.Length == 0 ? new Dictionary<Guid, ItemFacts>() : await FactsAsync(connection, factIds, projectIds, cancellationToken);
@@ -163,15 +169,21 @@ public sealed partial class SearchRanker(
         }
 
         var rows = await connection.QueryAsync<Guid>(new CommandDefinition(
-            """
+            $"""
             SELECT w.id FROM work_item w
             JOIN state s ON s.id = w.state_id
             JOIN project_member m ON m.project_id = w.project_id AND m.user_id = @me AND m.archived_at IS NULL
-            WHERE (w.key = @key OR w.number = @number) AND w.project_id = ANY(@projectIds) AND s.category <> 'removed'
+            WHERE (w.key = @key OR w.number = @number) AND w.project_id = ANY(@projectIds) AND s.category <> 'removed' AND {WorkItemTypeRules.NotHiddenSql}
             """,
             new { key, number, projectIds = projectIds.ToArray(), me = currentUser.Id }, cancellationToken: cancellationToken));
         return [.. rows];
     }
+
+    private static async Task<IReadOnlyList<Guid>> HiddenAsync(NpgsqlConnection connection, Guid[] ids, CancellationToken cancellationToken)
+        => ids.Length == 0
+            ? []
+            : [.. await connection.QueryAsync<Guid>(new CommandDefinition(
+                $"SELECT w.id FROM work_item w WHERE w.id = ANY(@ids) AND NOT ({WorkItemTypeRules.NotHiddenSql})", new { ids }, cancellationToken: cancellationToken))];
 
     private static async Task<Dictionary<Guid, ItemFacts>> FactsAsync(NpgsqlConnection connection, Guid[] ids, IReadOnlyList<Guid> projectIds, CancellationToken cancellationToken)
     {

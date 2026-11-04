@@ -45,7 +45,7 @@ public sealed class WorkItemReads(NpgsqlDataSource dataSource, MarkdownRenderer 
             $"""
             {WorkItemRow.Select}
             JOIN state s ON s.id = w.state_id
-            WHERE w.project_id = @projectId AND s.category <> 'removed' AND (@type::text IS NULL OR w.type = @type)
+            WHERE w.project_id = @projectId AND s.category <> 'removed' AND {WorkItemTypeRules.NotHiddenSql} AND (@type::text IS NULL OR w.type = @type)
             ORDER BY w.backlog_order, w.number
             """,
             new { projectId, type = type is { } t ? WorkItemTypes.Db(t) : null },
