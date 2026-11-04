@@ -1,6 +1,4 @@
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using ShipLean.Application.Features.WorkItemDetails.Attachments;
 using ShipLean.Application.Storage;
 
 namespace ShipLean.UnitTest.Storage;
@@ -33,14 +31,6 @@ public class AttachmentLimitsTests
         var error = Should.Throw<InvalidOperationException>(() => AttachmentLimits.FromConfiguration(config));
 
         error.Message.ShouldContain("SHIPLEAN_DEMO_MAX_BYTES");
-    }
-
-    [Test]
-    public void AddServices_WhenDemoLimitIsAboveTheItemLimit_ShouldFailAtStartup()
-    {
-        var config = Config(new() { [AttachmentLimits.DemoConfigKey] = "2000", [AttachmentLimits.ItemConfigKey] = "1000" });
-
-        Should.Throw<InvalidOperationException>(() => new AttachmentStoreServices().AddServices(new ServiceCollection(), config));
     }
 
     private static IConfiguration Config(Dictionary<string, string?> values) => new ConfigurationBuilder().AddInMemoryCollection(values).Build();

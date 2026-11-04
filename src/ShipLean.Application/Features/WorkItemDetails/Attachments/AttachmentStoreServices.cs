@@ -10,8 +10,9 @@ public sealed class AttachmentStoreServices : IServiceModule
 {
     public void AddServices(IServiceCollection services, IConfiguration configuration)
     {
-        // Resolved now so a bad setting stops startup; the instance is the one everything shares.
-        services.AddSingleton(AttachmentLimits.FromConfiguration(configuration));
+        // Read from DI's configuration when first resolved, after the host applied its overrides; AttachmentLimitsStartup resolves it at start so a bad setting stops startup.
+        services.AddSingleton(sp => AttachmentLimits.FromConfiguration(sp.GetRequiredService<IConfiguration>()));
+        services.AddHostedService<AttachmentLimitsStartup>();
         services.AddScoped<AttachmentStore>();
         services.AddScoped<IAttachmentStore>(sp => sp.GetRequiredService<AttachmentStore>());
     }

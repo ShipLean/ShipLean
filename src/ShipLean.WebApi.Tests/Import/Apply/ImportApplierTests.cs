@@ -1,3 +1,6 @@
+using ShipLean.Application.Fakes.Attachments;
+using ShipLean.Application.Fakes.Blobs;
+using ShipLean.TestSupport.Contracts.Users;
 using System.Text;
 using System.Text.Json;
 using Dapper;
@@ -32,7 +35,7 @@ public sealed class ImportApplierTests : ApiFixture
     private static readonly JiraSprint Sprint2 = new(102, "Sprint 2", "future", null, null, null);
     private static readonly JiraAttachment Spec = new("att-1", "spec.txt", "text/plain", 5, "https://acme.example.test/secure/attachment/att-1/spec.txt");
     private static readonly RecordingCommentStore CommentStore = new();
-    private static readonly RecordingAttachmentStore AttachmentStore = new();
+    private static readonly RecordingAttachmentStore AttachmentStore = new(new InMemoryAttachmentStore(new SettableCurrentUser(), new InMemoryBlobStore(), TimeProvider.System));
 
     private static readonly JiraIssue Epic = JiraWorld.Issue("PLAT-10", "Epic", reporter: Joel);
     private static readonly JiraIssue Story = JiraWorld.Issue(
