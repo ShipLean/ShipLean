@@ -14,6 +14,8 @@ public sealed class SprintDemoTab(IPage page)
 
     public ILocator StatusMessage => page.GetByTestId(DemosTestIds.DemoStatusMessage);
 
+    public ILocator LoadRetry => page.GetByTestId(DemosTestIds.DemoLoadRetry);
+
     public ILocator Create => page.GetByTestId(DemosTestIds.DemoCreate);
 
     public ILocator CreateBlocked => page.GetByTestId(DemosTestIds.DemoCreateBlocked);
