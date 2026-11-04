@@ -173,5 +173,3 @@ public sealed class FakeYouTubeClient : IYouTubeClient
     private static YouTubeFailureException NoVideo() =>
         new(YouTubeFailureKind.Rejected, "YouTube has no such video.");
 }
-
-public sealed record FakeYouTubeUpload(string VideoId, YouTubeUpload Upload, byte[] Content);
