@@ -19,6 +19,8 @@ import {
   type ProjectDemoSettingsPut,
   type SprintDemoDto,
   type YouTubeCheckRequest,
+  type YouTubeDisconnectDto,
+  type YouTubeProjectDto,
 } from '../../api/demos';
 import { registerInvalidation } from '../../realtime';
 
@@ -131,6 +133,6 @@ function useYouTubeWrite<V, R>(
 export const useStartYouTube = (projectId: string) =>
   useYouTubeWrite<void, { url: string }>(projectId, (id) => startYouTube(id));
 export const useCheckYouTube = (projectId: string) =>
-  useYouTubeWrite<YouTubeCheckRequest, unknown>(projectId, checkYouTube);
+  useYouTubeWrite<YouTubeCheckRequest, YouTubeProjectDto>(projectId, checkYouTube);
 export const useDisconnectYouTube = (projectId: string) =>
-  useYouTubeWrite<void, unknown>(projectId, (id) => disconnectYouTube(id));
+  useYouTubeWrite<void, YouTubeDisconnectDto>(projectId, (id) => disconnectYouTube(id));
