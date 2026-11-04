@@ -37,6 +37,8 @@ JSON objects, camelCase, enums as camelCase strings, nothing omitted. Every even
 | `linksChanged` | `workItemId` | a link on the work item is added, edited or archived, or a link card's state or preview is refreshed |
 | `retroChanged` | `sprintIds`, `workItemIds` | a retrospective point is logged, archived, moved to another theme, marked Not needed or un-marked (undo), added to an action item as one of its points, turned into an action item, or a theme is renamed or merged (empty lists, for a rename or merge, mean refetch every retro view) |
 | `agentSessionChanged` | `workItemId`, `sessionId` | an agent session on the work item opens, changes state or gets an activity, a link or a plan, or a prompt (a comment, Stop) is queued for it (`AgentSessionNotifier`; background writers publish with `clientId: null`) |
+| `sprintClosed` | `sprintId`, `closedBy` | a sprint's rollover is decided (Close sprint or the MCP `end_sprint`), after its `sprintChanged`. Starts the project's automatic demo when that setting is on |
+| `sprintDemoChanged` | `sprintId` | every write to a sprint's demo: a run starts or is handed over, a blocked message is stored or cleared, a video is delivered, the YouTube state moves or is retried. Open Demo tabs refetch |
 
 Pinned by `src/ShipLean.TestSupport/DtoFixtures/events/events.json` (one example per type), C# types in `src/ShipLean.Contracts/Events/`, TypeScript twin in `src/ShipLean.Client/src/api/events.ts`.
 

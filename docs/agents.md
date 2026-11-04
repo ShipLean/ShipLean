@@ -92,3 +92,13 @@ Rules and gates:
 - The person who moved the item is the session's creator.
 
 **Sprint rule (related, not an agent feature).** A story or bug with no sprint that a person moves from a Proposed state to an In progress state goes into the sprint running today (UTC) and the write carries the notice `sprinted`. It runs in the same write as the move, so a transition into an In progress state fires on an item that already has its sprint.
+
+## A sprint's demo
+
+A closed sprint's demo video is made by an agent, started the same way as Start agent and board Automations ([sprint-demos.md](sprint-demos.md)).
+
+- **The work item is a BAU item** ("Sprint 24 demo"), one per sprint, made by ShipLean and hidden from lists. An agent session needs a work item, and this is the one that carries it. The session, its activities and its comments show on that item's page, which the Demo tab links to. The one-live-session rule stops two runs at once.
+- **Who starts it.** Create demo on the Demo tab, or Automatic demos when the sprint is closed (by Close sprint or `end_sprint`). Both use the same gate as any agent start: the project needs a connection and a repository, and a live session blocks a second. The person who pressed the button, or who closed the sprint, is the session's creator. `create_sprint_demo` over MCP is the way for an agent you already have: it skips the agent check and the closed-sprint check and returns the prompt to the caller instead of starting a session.
+- **What is sent.** The demo prompt goes in as the session's `<guidance>`, beside the item and the repository, so agent-relay changes nothing. The prompt holds the sprint's data and the one-time upload link. The link is issued and the body written only for the starter that wins the race for the item, so a losing click never issues one and never revokes the winner's.
+- **What comes back.** The agent uploads the video, chapters and script to the link, then comments on the BAU item with what it left out. The sprint's Demo tab refetches on `sprintDemoChanged`.
+- The prompt is stored in plain text in the delivery, like every prompt. The agent panel doesn't show it, and the agent is told never to write the link in a comment or an activity.
