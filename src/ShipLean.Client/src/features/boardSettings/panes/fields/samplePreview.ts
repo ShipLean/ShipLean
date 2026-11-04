@@ -14,6 +14,7 @@ const typeNames: Record<WorkItemTypeId, string> = {
   bug: 'Bug',
   task: 'Task',
   action: 'Action item',
+  bau: 'BAU',
 };
 
 const typeRef = (id: WorkItemTypeId): TypeRef => ({ id, name: typeNames[id] });
@@ -119,6 +120,15 @@ const samples: Record<WorkItemTypeId, PreviewSample> = {
     childPoints: null,
     tags: ['Retro'],
     parent: parentOf('feature', 'KEY-12', 'Saved payment methods'),
+    fields: common,
+  },
+  bau: {
+    key: 'KEY-63',
+    title: 'Rotate the on-call rota',
+    points: null,
+    childPoints: null,
+    tags: [],
+    parent: null,
     fields: common,
   },
 };

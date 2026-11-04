@@ -8,7 +8,7 @@ namespace ShipLean.Application.Fakes.States;
 
 public sealed class InMemoryStateCatalog(InMemoryPlanning world) : IStateCatalog
 {
-    private static readonly WorkItemTypeId[] TypeOrder = [WorkItemTypeId.Epic, WorkItemTypeId.Feature, WorkItemTypeId.Story, WorkItemTypeId.Bug, WorkItemTypeId.Task, WorkItemTypeId.Action];
+    private static readonly WorkItemTypeId[] TypeOrder = [WorkItemTypeId.Epic, WorkItemTypeId.Feature, WorkItemTypeId.Story, WorkItemTypeId.Bug, WorkItemTypeId.Task, WorkItemTypeId.Action, WorkItemTypeId.Bau];
 
     public Task<IReadOnlyList<StateDto>> ListAsync(Guid projectId, CancellationToken cancellationToken = default)
     {

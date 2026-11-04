@@ -1,6 +1,14 @@
 // Read-side pieces every DTO carries. C#: ShipLean.Contracts.Refs. Ids are lowercase UUID strings except type ids.
 
-export const WORK_ITEM_TYPE_IDS = ['epic', 'feature', 'story', 'bug', 'task', 'action'] as const;
+export const WORK_ITEM_TYPE_IDS = [
+  'epic',
+  'feature',
+  'story',
+  'bug',
+  'task',
+  'action',
+  'bau',
+] as const;
 export type WorkItemTypeId = (typeof WORK_ITEM_TYPE_IDS)[number];
 
 export const STATE_CATEGORIES = [

@@ -44,11 +44,20 @@ public sealed class CaptureSupport(IServiceProvider services, AgentBaseUrl baseU
         {
             if (wanted.Length > 0 && (wanted == LettersOnly(type.ToString()) || wanted == LettersOnly(WorkItemTypeRules.Name(type))))
             {
+                RequireNotHidden(type, field);
                 return type;
             }
         }
 
         throw ApiException.Validation($"\"{text}\" is not a work item type: use epic, feature, story, bug, action or task.", field);
+    }
+
+    private static void RequireNotHidden(WorkItemTypeId type, string field)
+    {
+        if (WorkItemTypeRules.IsHidden(type))
+        {
+            throw ApiException.Validation("A BAU item is made by ShipLean, not by hand.", field);
+        }
     }
 
     private static string LettersOnly(string? text)

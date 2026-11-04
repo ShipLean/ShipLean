@@ -92,6 +92,7 @@
   --type-bug: #cc3d3d;
   --type-task: #c9951a;
   --type-action: #1f8f6a;
+  --type-bau: #5f6f82; /* BAU (made by ShipLean, SHIP-303) */
 
   /* Charts (validated for CVD separation against --color-surface) */
   --chart-committed: #16a089;
@@ -142,6 +143,7 @@
     --type-bug: #f07070;
     --type-task: #e6b84a;
     --type-action: #4cc79a;
+    --type-bau: #a3b1c2;
     --chart-committed: #1fa88c;
     --chart-completed: #3b82e0;
   }
@@ -177,6 +179,7 @@
   --type-bug: #f07070;
   --type-task: #e6b84a;
   --type-action: #4cc79a;
+  --type-bau: #a3b1c2;
   --chart-committed: #1fa88c;
   --chart-completed: #3b82e0;
 }

@@ -26,12 +26,18 @@ import {
 import { TypeSegment, typeLabel } from './TypeSegment';
 import { useStateColumns } from './useStateColumns';
 
-const BOARD_OF: Record<Exclude<WorkItemTypeId, 'task'>, string> = {
+const BOARD_OF: Record<Exclude<WorkItemTypeId, 'task' | 'bau'>, string> = {
   epic: 'Epics board',
   feature: 'Features board',
   story: 'Stories board',
   bug: 'Stories board',
   action: 'Stories board',
+};
+
+const columnHeading = (type: WorkItemTypeId) => {
+  if (type === 'task') return 'Taskboard column';
+  if (type === 'bau') return 'Board';
+  return `Column on the ${BOARD_OF[type]}`;
 };
 
 const EVENTS = [
@@ -88,6 +94,7 @@ export function SettingsStates({ projectId }: { projectId: string }) {
   const columnOf = (row: StateRowModel) => {
     if (row.category === 'removed') return 'Hidden (Removed)';
     if (type === 'task') return row.name.trim() || 'New column';
+    if (type === 'bau') return 'Not on a board';
     return columns === undefined ? '' : (columns.get(row.id) ?? undefined);
   };
   const stage = (next: (c: typeof changes) => typeof changes) =>
@@ -145,9 +152,7 @@ export function SettingsStates({ projectId }: { projectId: string }) {
             <th className="px-3 py-1 font-normal">State</th>
             <th className="px-3 py-1 font-normal">Category</th>
             <th className="px-3 py-1 text-right font-normal">Items</th>
-            <th className="px-3 py-1 font-normal">
-              {type === 'task' ? 'Taskboard column' : `Column on the ${BOARD_OF[type]}`}
-            </th>
+            <th className="px-3 py-1 font-normal">{columnHeading(type)}</th>
             <th />
           </tr>
         </thead>

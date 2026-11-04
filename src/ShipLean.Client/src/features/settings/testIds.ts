@@ -58,6 +58,7 @@ export const settingsTestIds = {
   stateTypeBug: 'settings-state-type-bug',
   stateTypeTask: 'settings-state-type-task',
   stateTypeAction: 'settings-state-type-action',
+  stateTypeBau: 'settings-state-type-bau',
   stateRow: 'settings-state-row',
   stateName: 'settings-state-name',
   stateCategory: 'settings-state-category',

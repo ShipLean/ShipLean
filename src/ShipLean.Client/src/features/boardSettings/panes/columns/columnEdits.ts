@@ -9,6 +9,7 @@ export const typeNames: Record<WorkItemTypeId, string> = {
   bug: 'Bug',
   task: 'Task',
   action: 'Action item',
+  bau: 'BAU',
 };
 
 export interface UnmappedState {

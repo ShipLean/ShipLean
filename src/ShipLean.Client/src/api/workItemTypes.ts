@@ -13,6 +13,7 @@ const NAMES: Record<WorkItemTypeId, string> = {
   bug: 'Bug',
   task: 'Task',
   action: 'Action item',
+  bau: 'BAU',
 };
 
 /** The display name of a type. */

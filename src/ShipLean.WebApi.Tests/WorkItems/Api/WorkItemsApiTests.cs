@@ -89,6 +89,17 @@ public class WorkItemsApiTests : ApiFixture
     }
 
     [Test]
+    public async Task Create_WhenBau_ShouldBeValidation()
+    {
+        using var response = await Api.PostJsonAsync("api/work-items", Create(SeedIds.Projects.Ship, "bau", "Hand-made BAU"));
+
+        var error = await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.BadRequest);
+        error.Code.ShouldBe(ApiErrorCodes.Validation);
+        error.Field.ShouldBe("type");
+        error.Error.ShouldBe("A BAU item is made by ShipLean, not by hand.");
+    }
+
+    [Test]
     public async Task Create_WhenStoryParentIsEpic_ShouldBeValidation()
     {
         var epic = await CreateItemAsync("epic", "An epic");

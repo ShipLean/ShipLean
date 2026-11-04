@@ -73,13 +73,13 @@ internal static class PlanningExtensions
 
     public static void AddDefaultStates(this InMemoryPlanning world, Guid projectId)
     {
-        var all = new[] { WorkItemTypeId.Epic, WorkItemTypeId.Feature, WorkItemTypeId.Story, WorkItemTypeId.Bug, WorkItemTypeId.Task, WorkItemTypeId.Action };
+        var all = new[] { WorkItemTypeId.Epic, WorkItemTypeId.Feature, WorkItemTypeId.Story, WorkItemTypeId.Bug, WorkItemTypeId.Task, WorkItemTypeId.Action, WorkItemTypeId.Bau };
         foreach (var type in all)
         {
             var names = type switch
             {
                 WorkItemTypeId.Task => new (string, StateCategory)[] { ("To Do", StateCategory.Proposed), ("In Progress", StateCategory.InProgress), ("In review", StateCategory.Resolved), ("Done", StateCategory.Completed), ("Removed", StateCategory.Removed) },
-                WorkItemTypeId.Action => [("New", StateCategory.Proposed), ("Active", StateCategory.InProgress), ("Closed", StateCategory.Completed), ("Removed", StateCategory.Removed)],
+                WorkItemTypeId.Action or WorkItemTypeId.Bau => [("New", StateCategory.Proposed), ("Active", StateCategory.InProgress), ("Closed", StateCategory.Completed), ("Removed", StateCategory.Removed)],
                 _ => [("New", StateCategory.Proposed), ("Active", StateCategory.InProgress), ("Resolved", StateCategory.Resolved), ("Closed", StateCategory.Completed), ("Removed", StateCategory.Removed)],
             };
             for (var order = 0; order < names.Length; order++)

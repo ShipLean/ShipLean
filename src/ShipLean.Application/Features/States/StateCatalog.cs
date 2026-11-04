@@ -17,7 +17,7 @@ public sealed partial class StateCatalog(NpgsqlDataSource dataSource) : IStateCa
         ("Closed", StateCategory.Completed), ("Removed", StateCategory.Removed),
     ];
 
-    // An Action item has no Resolved state: it is New, Active, Closed or Removed.
+    // An Action item and a BAU item have no Resolved state: it is New, Active, Closed or Removed.
     private static readonly (string Name, StateCategory Category)[] ActionDefaults =
     [
         ("New", StateCategory.Proposed), ("Active", StateCategory.InProgress), ("Closed", StateCategory.Completed), ("Removed", StateCategory.Removed),
@@ -32,7 +32,7 @@ public sealed partial class StateCatalog(NpgsqlDataSource dataSource) : IStateCa
             SELECT s.id, s.type, s.name, s.category, s.sort_order AS sortOrder, (SELECT count(*) FROM work_item w WHERE w.state_id = s.id)::int AS itemCount
             FROM state s
             WHERE s.project_id = @projectId AND s.archived_at IS NULL
-            ORDER BY CASE s.type WHEN 'epic' THEN 1 WHEN 'feature' THEN 2 WHEN 'story' THEN 3 WHEN 'bug' THEN 4 WHEN 'task' THEN 5 ELSE 6 END, s.sort_order, s.name
+            ORDER BY CASE s.type WHEN 'epic' THEN 1 WHEN 'feature' THEN 2 WHEN 'story' THEN 3 WHEN 'bug' THEN 4 WHEN 'task' THEN 5 WHEN 'action' THEN 6 ELSE 7 END, s.sort_order, s.name
             """,
             new { projectId }, cancellationToken: cancellationToken));
         return [.. rows.Select(r => r.ToDto())];
@@ -51,7 +51,7 @@ public sealed partial class StateCatalog(NpgsqlDataSource dataSource) : IStateCa
 
         foreach (var type in Enum.GetValues<WorkItemTypeId>())
         {
-            var defaults = type == WorkItemTypeId.Action ? ActionDefaults : Defaults;
+            var defaults = type is WorkItemTypeId.Action or WorkItemTypeId.Bau ? ActionDefaults : Defaults;
             for (var i = 0; i < defaults.Length; i++)
             {
                 await InsertAsync(connection, transaction, Guid.CreateVersion7(), projectId, type, defaults[i].Name, defaults[i].Category, i + 1, cancellationToken);

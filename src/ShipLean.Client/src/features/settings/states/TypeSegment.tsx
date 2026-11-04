@@ -10,6 +10,7 @@ const testIds: Record<WorkItemTypeId, string> = {
   bug: settingsTestIds.stateTypeBug,
   task: settingsTestIds.stateTypeTask,
   action: settingsTestIds.stateTypeAction,
+  bau: settingsTestIds.stateTypeBau,
 };
 
 export const typeLabel = (type: WorkItemTypeId) => TYPE_LABELS[type];

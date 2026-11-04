@@ -61,6 +61,7 @@ public static class SettingsTestIds
     public const string StateTypeBug = "settings-state-type-bug";
     public const string StateTypeTask = "settings-state-type-task";
     public const string StateTypeAction = "settings-state-type-action";
+    public const string StateTypeBau = "settings-state-type-bau";
     public const string StateRow = "settings-state-row";
     public const string StateName = "settings-state-name";
     public const string StateCategory = "settings-state-category";

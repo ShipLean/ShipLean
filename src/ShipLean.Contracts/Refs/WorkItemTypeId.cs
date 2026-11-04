@@ -8,4 +8,5 @@ public enum WorkItemTypeId
     Bug,
     Task,
     Action,
+    Bau,
 }

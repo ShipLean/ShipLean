@@ -10,7 +10,7 @@ namespace ShipLean.TestSupport.Contracts.States;
 [TestFixture]
 public abstract class StateCatalogContract
 {
-    private static readonly WorkItemTypeId[] Types = [WorkItemTypeId.Epic, WorkItemTypeId.Feature, WorkItemTypeId.Story, WorkItemTypeId.Bug, WorkItemTypeId.Task, WorkItemTypeId.Action];
+    private static readonly WorkItemTypeId[] Types = [WorkItemTypeId.Epic, WorkItemTypeId.Feature, WorkItemTypeId.Story, WorkItemTypeId.Bug, WorkItemTypeId.Task, WorkItemTypeId.Action, WorkItemTypeId.Bau];
 
     protected abstract IStateCatalog CreateCatalog();
 
@@ -24,7 +24,7 @@ public abstract class StateCatalogContract
     protected abstract Task<Guid> ReadItemStateAsync(Guid itemId);
 
     [Test]
-    public async Task CreateDefaults_ShouldGiveEveryTypeAStatePerCategoryExceptActionItemsResolved()
+    public async Task CreateDefaults_ShouldGiveEveryTypeAStatePerCategoryExceptActionAndBauResolved()
     {
         var catalog = CreateCatalog();
         var project = await ArrangeProjectAsync(withDefaultStates: false);
@@ -34,13 +34,14 @@ public abstract class StateCatalogContract
         var states = await catalog.ListAsync(project);
         foreach (var type in Types)
         {
-            var expected = type == WorkItemTypeId.Action
+            var expected = type is WorkItemTypeId.Action or WorkItemTypeId.Bau
                 ? Enum.GetValues<StateCategory>().Where(c => c != StateCategory.Resolved)
                 : Enum.GetValues<StateCategory>();
             states.Where(s => s.Type == type).Select(s => s.Category).Distinct().Order().ShouldBe(expected.Order());
         }
         states.Count(s => s.Type == WorkItemTypeId.Action).ShouldBe(4);
-        foreach (var type in Types.Where(t => t != WorkItemTypeId.Action))
+        states.Where(s => s.Type == WorkItemTypeId.Bau).Select(s => s.Name).ShouldBe(["New", "Active", "Closed", "Removed"]);
+        foreach (var type in Types.Where(t => t is not (WorkItemTypeId.Action or WorkItemTypeId.Bau)))
         {
             states.Count(s => s.Type == type).ShouldBe(5);
         }

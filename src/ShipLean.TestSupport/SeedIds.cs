@@ -83,6 +83,10 @@ public static class SeedIds
             public static readonly Guid ActionActive = new("00000003-0000-4000-8001-000000000602");
             public static readonly Guid ActionClosed = new("00000003-0000-4000-8001-000000000603");
             public static readonly Guid ActionRemoved = new("00000003-0000-4000-8001-000000000604");
+            public static readonly Guid BauNew = new("00000003-0000-4000-8001-000000000701");
+            public static readonly Guid BauActive = new("00000003-0000-4000-8001-000000000702");
+            public static readonly Guid BauClosed = new("00000003-0000-4000-8001-000000000703");
+            public static readonly Guid BauRemoved = new("00000003-0000-4000-8001-000000000704");
         }
 
         public static class Pay
@@ -116,6 +120,10 @@ public static class SeedIds
             public static readonly Guid ActionActive = new("00000003-0000-4000-8002-000000000602");
             public static readonly Guid ActionClosed = new("00000003-0000-4000-8002-000000000603");
             public static readonly Guid ActionRemoved = new("00000003-0000-4000-8002-000000000604");
+            public static readonly Guid BauNew = new("00000003-0000-4000-8002-000000000701");
+            public static readonly Guid BauActive = new("00000003-0000-4000-8002-000000000702");
+            public static readonly Guid BauClosed = new("00000003-0000-4000-8002-000000000703");
+            public static readonly Guid BauRemoved = new("00000003-0000-4000-8002-000000000704");
         }
 
         public static class Mob
@@ -149,6 +157,10 @@ public static class SeedIds
             public static readonly Guid ActionActive = new("00000003-0000-4000-8003-000000000602");
             public static readonly Guid ActionClosed = new("00000003-0000-4000-8003-000000000603");
             public static readonly Guid ActionRemoved = new("00000003-0000-4000-8003-000000000604");
+            public static readonly Guid BauNew = new("00000003-0000-4000-8003-000000000701");
+            public static readonly Guid BauActive = new("00000003-0000-4000-8003-000000000702");
+            public static readonly Guid BauClosed = new("00000003-0000-4000-8003-000000000703");
+            public static readonly Guid BauRemoved = new("00000003-0000-4000-8003-000000000704");
         }
 
         public static class Data
@@ -182,6 +194,10 @@ public static class SeedIds
             public static readonly Guid ActionActive = new("00000003-0000-4000-8004-000000000602");
             public static readonly Guid ActionClosed = new("00000003-0000-4000-8004-000000000603");
             public static readonly Guid ActionRemoved = new("00000003-0000-4000-8004-000000000604");
+            public static readonly Guid BauNew = new("00000003-0000-4000-8004-000000000701");
+            public static readonly Guid BauActive = new("00000003-0000-4000-8004-000000000702");
+            public static readonly Guid BauClosed = new("00000003-0000-4000-8004-000000000703");
+            public static readonly Guid BauRemoved = new("00000003-0000-4000-8004-000000000704");
         }
 
         public static class Ops
@@ -215,6 +231,10 @@ public static class SeedIds
             public static readonly Guid ActionActive = new("00000003-0000-4000-8005-000000000602");
             public static readonly Guid ActionClosed = new("00000003-0000-4000-8005-000000000603");
             public static readonly Guid ActionRemoved = new("00000003-0000-4000-8005-000000000604");
+            public static readonly Guid BauNew = new("00000003-0000-4000-8005-000000000701");
+            public static readonly Guid BauActive = new("00000003-0000-4000-8005-000000000702");
+            public static readonly Guid BauClosed = new("00000003-0000-4000-8005-000000000703");
+            public static readonly Guid BauRemoved = new("00000003-0000-4000-8005-000000000704");
         }
 
         public static class Part
@@ -248,6 +268,10 @@ public static class SeedIds
             public static readonly Guid ActionActive = new("00000003-0000-4000-8006-000000000602");
             public static readonly Guid ActionClosed = new("00000003-0000-4000-8006-000000000603");
             public static readonly Guid ActionRemoved = new("00000003-0000-4000-8006-000000000604");
+            public static readonly Guid BauNew = new("00000003-0000-4000-8006-000000000701");
+            public static readonly Guid BauActive = new("00000003-0000-4000-8006-000000000702");
+            public static readonly Guid BauClosed = new("00000003-0000-4000-8006-000000000703");
+            public static readonly Guid BauRemoved = new("00000003-0000-4000-8006-000000000704");
         }
 
         public static class Arch
@@ -281,6 +305,10 @@ public static class SeedIds
             public static readonly Guid ActionActive = new("00000003-0000-4000-8007-000000000602");
             public static readonly Guid ActionClosed = new("00000003-0000-4000-8007-000000000603");
             public static readonly Guid ActionRemoved = new("00000003-0000-4000-8007-000000000604");
+            public static readonly Guid BauNew = new("00000003-0000-4000-8007-000000000701");
+            public static readonly Guid BauActive = new("00000003-0000-4000-8007-000000000702");
+            public static readonly Guid BauClosed = new("00000003-0000-4000-8007-000000000703");
+            public static readonly Guid BauRemoved = new("00000003-0000-4000-8007-000000000704");
         }
 
         public static class Empt
@@ -314,6 +342,10 @@ public static class SeedIds
             public static readonly Guid ActionActive = new("00000003-0000-4000-8008-000000000602");
             public static readonly Guid ActionClosed = new("00000003-0000-4000-8008-000000000603");
             public static readonly Guid ActionRemoved = new("00000003-0000-4000-8008-000000000604");
+            public static readonly Guid BauNew = new("00000003-0000-4000-8008-000000000701");
+            public static readonly Guid BauActive = new("00000003-0000-4000-8008-000000000702");
+            public static readonly Guid BauClosed = new("00000003-0000-4000-8008-000000000703");
+            public static readonly Guid BauRemoved = new("00000003-0000-4000-8008-000000000704");
         }
     }
 

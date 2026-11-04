@@ -9,12 +9,17 @@ test.each<[WorkItemTypeId, boolean]>([
   ['epic', false],
   ['feature', false],
   ['task', false],
+  ['bau', false],
 ])('isStoryLevel_When%s_ShouldBe%s', (type, expected) => {
   expect(isStoryLevel(type)).toBe(expected);
 });
 
 test('typeName_WhenAction_ShouldBeTheActionDisplayName', () => {
   expect(typeName('action')).toBe('Action item');
+});
+
+test('typeName_WhenBau_ShouldBeBauInCapitals', () => {
+  expect(typeName('bau')).toBe('BAU');
 });
 
 test('typeName_WhenAnyType_ShouldBeNonEmpty', () => {
