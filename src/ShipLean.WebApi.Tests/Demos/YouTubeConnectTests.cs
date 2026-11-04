@@ -402,10 +402,12 @@ public class YouTubeConnectTests : ApiFixture
     {
         var first = await ConnectAsync();
         await DisconnectAsync();
+        (await ReadAsync()).Status.ShouldBe(YouTubeConnectionStatus.NotConnected);
 
         var second = await ConnectAsync();
 
         second.ShouldNotBe(first);
+        _fake.Revocations.Count(token => token == first).ShouldBe(1);
         var rows = await RowsAsync();
         rows.Count.ShouldBe(2);
         rows.Count(r => r.ArchivedAt is null).ShouldBe(1);
