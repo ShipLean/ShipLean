@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Application.Storage;
 using ShipLean.TestSupport;
 using ShipLean.Contracts.Agents;
+using ShipLean.Contracts.Demos;
 using ShipLean.Contracts.Errors;
 using ShipLean.TestSupport.Hosting;
 using ShipLean.WebApi.Tests.AgentDispatch;
@@ -26,7 +27,13 @@ public class CreateSprintDemoToolTests : McpFixture
     {
         base.ConfigureTestServices!(services);
         DemoRunCalls.UseNamedDataAndUrlPrompt(services, _prompt);
+        DemoRunCalls.UseBrand(services, ProjectBrand);
     };
+
+    // Nothing here is a default, so a hand-over that dropped the brand's source for ShipLean's own would show.
+    private static readonly DemoBrand ProjectBrand = new(
+        false, "<svg id=\"c1-logo\"/>", "https://logos.example/c1-project-logo.svg", "image/svg+xml", new DateTimeOffset(2031, 5, 17, 9, 30, 0, TimeSpan.Zero),
+        false, ":root { --c1-brand: #123456; }", "c1 logo fallback");
 
     private async Task<bool> UsableAsync(string url)
     {
@@ -171,9 +178,45 @@ public class CreateSprintDemoToolTests : McpFixture
 
         reply.IsToolError().ShouldBeFalse(reply.Body);
         var brand = reply.Structured().GetProperty("brand");
-        brand.GetProperty("logo_is_default").GetBoolean().ShouldBeTrue();
-        brand.GetProperty("tokens_are_default").GetBoolean().ShouldBeTrue();
-        brand.GetProperty("logo_url").ValueKind.ShouldBe(JsonValueKind.Null);
-        brand.GetProperty("logo_fallback_reason").ValueKind.ShouldBe(JsonValueKind.Null);
+        brand.GetProperty("logo_is_default").GetBoolean().ShouldBeFalse();
+        brand.GetProperty("logo_url").GetString().ShouldBe(ProjectBrand.LogoUrl);
+        brand.GetProperty("logo_content_type").GetString().ShouldBe(ProjectBrand.LogoContentType);
+        brand.GetProperty("logo_url_expires_at").GetDateTimeOffset().ShouldBe(ProjectBrand.LogoUrlExpiresAt!.Value);
+        brand.GetProperty("tokens_are_default").GetBoolean().ShouldBeFalse();
+        brand.GetProperty("logo_fallback_reason").GetString().ShouldBe(ProjectBrand.LogoFallbackReason);
+        _prompt.LastBrand.ShouldBe(ProjectBrand);
+    }
+
+    [Test]
+    public async Task CreateSprintDemo_WhenSprintArchived_ShouldBeNotFoundAndChangeNothing()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var (project, sprintId, name) = await DemoRunCalls.ArrangeAsync(database, Api);
+        await database.ExecuteAsync("UPDATE sprint SET archived_at = now() WHERE id = @sprintId", new { sprintId });
+        var token = await TokenAsync(TestUser.Joel, ReadWrite);
+
+        var reply = await CallToolAsync(token, Tool, DemoRunCalls.ToolArguments(project.Key, name));
+
+        reply.IsToolError().ShouldBeTrue(reply.Body);
+        reply.Structured().GetProperty("error").GetProperty("code").GetString().ShouldBe(ApiErrorCodes.NotFound);
+        (await DemoRunCalls.ItemOfAsync(database, sprintId)).ShouldBeNull();
+        (await database.ExecuteScalarAsync<int>("SELECT count(*) FROM work_item WHERE project_id = @projectId AND type = 'bau'", new { projectId = project.Id })).ShouldBe(0);
+    }
+
+    // The tool's name lookup already refuses an archived sprint, so this reaches the hand-over by id, the way a caller holding a stale id would.
+    [Test]
+    public async Task CreateForAgent_WhenSprintArchivedAfterItWasResolved_ShouldBeNotFoundAndChangeNothing()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var (project, sprintId, _) = await DemoRunCalls.ArrangeAsync(database, Api);
+        await database.ExecuteAsync("UPDATE sprint SET archived_at = now() WHERE id = @sprintId", new { sprintId });
+        using var scope = Host.Services.CreateScope();
+
+        var thrown = await Should.ThrowAsync<ApiException>(
+            () => scope.ServiceProvider.GetRequiredService<ISprintDemos>().CreateForAgentAsync(sprintId, "https://example.test", "c1", null));
+
+        thrown.Code.ShouldBe(ApiErrorCodes.NotFound);
+        (await DemoRunCalls.ItemOfAsync(database, sprintId)).ShouldBeNull();
+        (await database.ExecuteScalarAsync<int>("SELECT count(*) FROM work_item WHERE project_id = @projectId AND type = 'bau'", new { projectId = project.Id })).ShouldBe(0);
     }
 }

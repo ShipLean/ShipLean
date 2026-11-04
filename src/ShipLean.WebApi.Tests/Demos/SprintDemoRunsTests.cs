@@ -19,6 +19,7 @@ namespace ShipLean.WebApi.Tests.Demos;
 public class SprintDemoRunsTests : McpFixture
 {
     private readonly UploadUrlPrompt _prompt = new();
+    private TeeProjectEvents? _events;
 
     protected override bool WithProbeTools => false;
 
@@ -26,6 +27,7 @@ public class SprintDemoRunsTests : McpFixture
     {
         base.ConfigureTestServices!(services);
         DemoRunCalls.UseNamedDataAndUrlPrompt(services, _prompt);
+        DemoRunCalls.UseRecordedEvents(services, tee => _events = tee);
     };
 
     private async Task<bool> UsableAsync(string token)
@@ -169,6 +171,12 @@ public class SprintDemoRunsTests : McpFixture
         var (_, sprintId, _) = await DemoRunCalls.ArrangeAsync(database, Api);
         using var made = await DemoRunCalls.ButtonAsync(Api, sprintId);
         made.StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await DemoRunCalls.ItemOfAsync(database, sprintId)).ShouldNotBeNull();
+        var request = await database.QuerySingleAsync<(string? Via, Guid? By, DateTimeOffset? At, DateTimeOffset? Expires)>(
+            "SELECT demo_requested_via AS via, demo_requested_by AS by, demo_requested_at AS at, demo_upload_expires_at AS expires FROM sprint WHERE id = @sprintId", new { sprintId });
+        (request.Via, request.By).ShouldBe(("button", SeedIds.Users.Joel));
+        request.At.ShouldNotBeNull();
+        request.Expires.ShouldNotBeNull();
         var joel = Api.ActingAs(TestUser.Joel);
 
         foreach (var path in new[] { $"api/sprints/{sprintId}/rollover", $"api/sprints/{sprintId}/metrics", $"api/sprints/{sprintId}/capacity" })
@@ -185,25 +193,28 @@ public class SprintDemoRunsTests : McpFixture
     {
         await using var database = await OpenDatabaseAsync();
         var (project, sprintId, _) = await DemoRunCalls.ArrangeAsync(database, Api);
-        var seen = new List<ProjectEvent>();
-        using var subscription = Host.Services.GetRequiredService<IProjectEvents>().Subscribe(project.Id, change =>
-        {
-            lock (seen)
-            {
-                seen.Add(change);
-            }
-
-            return Task.CompletedTask;
-        });
 
         using var made = await DemoRunCalls.ButtonAsync(Api, sprintId);
         made.StatusCode.ShouldBe(HttpStatusCode.OK);
 
-        lock (seen)
-        {
-            seen.OfType<SprintDemoChanged>().ShouldHaveSingleItem().SprintId.ShouldBe(sprintId);
-            seen.OfType<SprintChanged>().ShouldBeEmpty();
-        }
+        var published = _events.ShouldNotBeNull().Published.Where(e => e.ProjectId == project.Id).ToList();
+        published.OfType<SprintDemoChanged>().ShouldHaveSingleItem().SprintId.ShouldBe(sprintId);
+        published.OfType<SprintChanged>().ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task Button_WhenSprintArchived_ShouldBeNotFoundAndChangeNothing()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var (project, sprintId, _) = await DemoRunCalls.ArrangeAsync(database, Api);
+        await database.ExecuteAsync("UPDATE sprint SET archived_at = now() WHERE id = @sprintId", new { sprintId });
+
+        var error = await ErrorOfAsync(await DemoRunCalls.ButtonAsync(Api, sprintId), HttpStatusCode.NotFound);
+
+        error.Code.ShouldBe(ApiErrorCodes.NotFound);
+        (await DemoRunCalls.ItemOfAsync(database, sprintId)).ShouldBeNull();
+        (await database.ExecuteScalarAsync<int>("SELECT count(*) FROM work_item WHERE project_id = @projectId AND type = 'bau'", new { projectId = project.Id })).ShouldBe(0);
+        (await database.ExecuteScalarAsync<int>("SELECT count(*) FROM agent_session s JOIN work_item w ON w.id = s.work_item_id WHERE w.project_id = @projectId", new { projectId = project.Id })).ShouldBe(0);
     }
 
     [Test]

@@ -73,7 +73,7 @@ public sealed class SprintDemoRuns(
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         return await connection.QuerySingleOrDefaultAsync<SprintFacts>(new CommandDefinition(
-            "SELECT project_id AS projectId, name, rollover_status AS rolloverStatus, demo_work_item_id AS demoWorkItemId FROM sprint WHERE id = @sprintId",
+            "SELECT project_id AS projectId, name, rollover_status AS rolloverStatus, demo_work_item_id AS demoWorkItemId FROM sprint WHERE id = @sprintId AND archived_at IS NULL",
             new { sprintId }, cancellationToken: cancellationToken)) ?? throw ApiException.NotFound("That sprint was not found.");
     }
 

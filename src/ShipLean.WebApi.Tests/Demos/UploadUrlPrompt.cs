@@ -7,6 +7,12 @@ internal sealed class UploadUrlPrompt : ISprintDemoPrompt
 {
     public volatile bool Fail;
 
+    // The brand the last render was given.
+    public volatile DemoBrand? LastBrand;
+
     public string Render(SprintDemoData data, DemoUploadTarget upload, DemoBrand brand)
-        => Fail ? throw new InvalidOperationException("The prompt failed.") : $"Upload to {upload.Url}";
+    {
+        LastBrand = brand;
+        return Fail ? throw new InvalidOperationException("The prompt failed.") : $"Upload to {upload.Url}";
+    }
 }

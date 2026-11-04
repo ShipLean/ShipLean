@@ -3,7 +3,9 @@ using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Npgsql;
+using ShipLean.Application.Events;
 using ShipLean.Contracts.Demos;
+using ShipLean.Contracts.Events;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
 using ShipLean.WebApi.Tests.AgentDispatch;
@@ -21,6 +23,25 @@ internal static class DemoRunCalls
         services.AddScoped<ISprintDemoData, SprintNamedDemoData>();
         services.RemoveAll<ISprintDemoPrompt>();
         services.AddSingleton<ISprintDemoPrompt>(prompt);
+    }
+
+    // Replaces the brand source with one that returns the given brand.
+    public static void UseBrand(IServiceCollection services, DemoBrand brand)
+    {
+        services.RemoveAll<IDemoBrandSource>();
+        services.AddSingleton<IDemoBrandSource>(new FixedBrandSource(brand));
+    }
+
+    // Wraps the host's bus so published events can be read at once, without waiting for delivery.
+    public static void UseRecordedEvents(IServiceCollection services, Action<TeeProjectEvents> capture)
+    {
+        services.RemoveAll<IProjectEvents>();
+        services.AddSingleton<IProjectEvents>(provider =>
+        {
+            var tee = new TeeProjectEvents(ActivatorUtilities.CreateInstance<InMemoryProjectEvents>(provider));
+            capture(tee);
+            return tee;
+        });
     }
 
     // Joel is admin. An agent connection and a repository are set unless left out. The sprint is closed (rollover decided) unless left open.
