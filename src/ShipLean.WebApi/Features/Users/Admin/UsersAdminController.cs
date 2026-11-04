@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ShipLean.Application.Features.Users.Admin;
 using ShipLean.Contracts;
+using ShipLean.Contracts.Auth;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Users;
 using ShipLean.Contracts.Users.Admin;
@@ -14,7 +15,7 @@ namespace ShipLean.WebApi.Features.Users.Admin;
 [InstanceAdmin]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 [Route("api/admin/users")]
-public sealed class UsersAdminController(UserAdmin admin, ICurrentUser currentUser, CookieSession cookie) : ApiControllerBase
+public sealed class UsersAdminController(UserAdmin admin, ICurrentUser currentUser, ISessionKeeper session) : ApiControllerBase
 {
     [HttpGet]
     [ProducesResponseType<AdminUsersDto>(StatusCodes.Status200OK)]
@@ -80,5 +81,5 @@ public sealed class UsersAdminController(UserAdmin admin, ICurrentUser currentUs
     // Both rotate the user's security stamp, which ends every session. When the admin did it to themselves, this
     // session gets a cookie under the new stamp, so only their other sessions end.
     private Task KeepThisSessionAsync(Guid id, CancellationToken cancellationToken)
-        => id == currentUser.Id ? cookie.SignInAsync(id, cancellationToken) : Task.CompletedTask;
+        => id == currentUser.Id ? session.KeepAsync(id, cancellationToken) : Task.CompletedTask;
 }
