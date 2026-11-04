@@ -1,6 +1,9 @@
 import type { ProjectDemoBrandDto } from '../../../api/demos';
 import type { ProjectDto } from '../../../api/projects';
 import { demosTestIds as ids } from '../../demos/testIds';
+import { Panel } from '../draft/Panel';
+import { LogoField } from './brand/LogoField';
+import { TokensField } from './brand/TokensField';
 
 export interface BrandPanelProps {
   project: ProjectDto;
@@ -8,11 +11,15 @@ export interface BrandPanelProps {
   readOnly: boolean;
 }
 
-// TODO: the logo upload and preview, and the design tokens editor with its hints.
-export function BrandPanel({ brand }: BrandPanelProps) {
+/** The logo and design tokens a demo's slides use. Each part saves at once with its own button, never the draft. */
+export function BrandPanel({ project, brand, readOnly }: BrandPanelProps) {
   return (
-    <section data-testid={ids.demoBrandPanel}>
-      Logo: {brand.logoUrl === null ? 'ShipLean default' : 'custom'}
-    </section>
+    <Panel title="Demo brand" testId={ids.demoBrandPanel}>
+      <p className="text-[length:var(--text-sm)] text-ink-muted">
+        The logo and colours a demo&apos;s slides use. Nothing set means ShipLean&apos;s.
+      </p>
+      <LogoField projectId={project.id} brand={brand} readOnly={readOnly} />
+      <TokensField key={brand.tokens} projectId={project.id} brand={brand} readOnly={readOnly} />
+    </Panel>
   );
 }
