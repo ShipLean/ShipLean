@@ -1,6 +1,5 @@
 using Dapper;
 using Npgsql;
-using ShipLean.Application.Features.AgentDispatch;
 using ShipLean.Application.Features.Demos.Reads;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Agents;
@@ -13,7 +12,7 @@ namespace ShipLean.Application.Features.Demos.Runs;
 public sealed class SprintDemoRuns(
     NpgsqlDataSource dataSource,
     IDemoRunStarter starter,
-    AgentSessionStarter sessions,
+    IAgentSessionStarter sessions,
     ISprintDemoReader reader,
     ICurrentUser currentUser) : ISprintDemoRuns
 {

@@ -1,8 +1,7 @@
-using ShipLean.Contracts.Agents;
+namespace ShipLean.Contracts.Agents;
 
-namespace ShipLean.Application.Features.AgentDispatch;
-
-internal static class AgentStartMessages
+// What a person is told when an agent cannot start, for each AgentStartBlock.
+public static class AgentStartMessages
 {
     public static string For(AgentStartBlock block) => block switch
     {

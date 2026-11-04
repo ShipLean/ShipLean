@@ -2,8 +2,8 @@ using System.Text;
 using System.Text.Json;
 using Dapper;
 using Npgsql;
-using ShipLean.Application.Features.AgentDispatch;
 using ShipLean.Application.Markdown;
+using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Attachments;
 using ShipLean.Contracts.Demos;
 using ShipLean.Contracts.Errors;
@@ -16,7 +16,7 @@ public sealed class SprintDemoReader(
     NpgsqlDataSource dataSource,
     IAttachmentStore attachments,
     MarkdownRenderer renderer,
-    AgentSessionStarter sessions,
+    IAgentSessionStarter sessions,
     TimeProvider time) : ISprintDemoReader
 {
     private const string LiveSessionMessage = "An agent session is already making this demo.";
@@ -61,9 +61,9 @@ public sealed class SprintDemoReader(
     private static async Task<SessionRow?> LatestSessionAsync(NpgsqlConnection connection, Guid itemId, CancellationToken cancellationToken)
         => await connection.QuerySingleOrDefaultAsync<SessionRow>(new CommandDefinition(
             $"""
-            SELECT state, state IN {AgentSessionStates.LiveSql} AS live, coalesce(ended_at, last_activity_at) AS endedAt
+            SELECT state, state IN {AgentSessionLiveStates.Sql} AS live, coalesce(ended_at, last_activity_at) AS endedAt
             FROM agent_session WHERE work_item_id = @itemId
-            ORDER BY (state IN {AgentSessionStates.LiveSql}) DESC, created_at DESC LIMIT 1
+            ORDER BY (state IN {AgentSessionLiveStates.Sql}) DESC, created_at DESC LIMIT 1
             """,
             new { itemId }, cancellationToken: cancellationToken));
 

@@ -1,6 +1,6 @@
 using Dapper;
 using Npgsql;
-using ShipLean.Application.Features.AgentDispatch;
+using ShipLean.Contracts.Agents;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Demos;
 using ShipLean.Contracts.Errors;
@@ -10,7 +10,7 @@ namespace ShipLean.Application.Features.Demos.Settings;
 // A project's demo settings (K16): the stored automatic flag and environment, the live agent check, and the brand and YouTube parts from their own services.
 // Automatic can't be turned on while the agent check fails; when the check fails later with automatic already on, the flag stays and the automatic run says why.
 public sealed class DemoSettings(
-    NpgsqlDataSource dataSource, AgentSessionStarter sessions, IDemoBrand brand, IYouTubeConnections youTube, ICurrentUser currentUser) : IDemoSettings
+    NpgsqlDataSource dataSource, IAgentSessionStarter sessions, IDemoBrand brand, IYouTubeConnections youTube, ICurrentUser currentUser) : IDemoSettings
 {
     public const int MaxEnvironmentLength = 4000;
     private const string ReadyMessage = "Ready to make demos.";

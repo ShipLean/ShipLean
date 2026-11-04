@@ -1,7 +1,6 @@
 using System.Data.Common;
 using Dapper;
 using Npgsql;
-using ShipLean.Application.Features.AgentDispatch;
 using ShipLean.Application.Storage;
 using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Demos;
@@ -19,7 +18,7 @@ namespace ShipLean.Application.Features.Demos.Runs;
 public sealed class DemoRunStarter(
     NpgsqlDataSource dataSource,
     IWorkItemStore workItems,
-    AgentSessionStarter sessions,
+    IAgentSessionStarter sessions,
     ISprintDemoData sprintData,
     ISprintDemoPrompt prompt,
     IDemoBrandSource brandSource,
@@ -85,7 +84,7 @@ public sealed class DemoRunStarter(
         await connection.ExecuteAsync(new CommandDefinition(
             "SELECT id FROM work_item WHERE id = @itemId FOR NO KEY UPDATE", new { itemId = request.ItemId }, transaction, cancellationToken: cancellationToken));
         var live = await connection.ExecuteScalarAsync<bool>(new CommandDefinition(
-            $"SELECT EXISTS (SELECT 1 FROM agent_session WHERE work_item_id = @itemId AND state IN {AgentSessionStates.LiveSql})",
+            $"SELECT EXISTS (SELECT 1 FROM agent_session WHERE work_item_id = @itemId AND state IN {AgentSessionLiveStates.Sql})",
             new { itemId = request.ItemId }, transaction, cancellationToken: cancellationToken));
         if (live)
         {

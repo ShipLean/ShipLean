@@ -16,7 +16,7 @@ namespace ShipLean.Application.Features.AgentDispatch;
 // The blob store is lazy: this starter is built at startup (AgentDispatchSubscriber), and making a folder store then
 // would stop the host when its folder is not writable, before any attachment is read.
 public sealed class AgentSessionStarter(
-    NpgsqlDataSource dataSource, IProjectAgentSettings projectSettings, IAgentConnections connections, AgentSessionNotifier notifier, TimeProvider time, Lazy<IBlobStore> blobs, ILogger<AgentSessionStarter> logger)
+    NpgsqlDataSource dataSource, IProjectAgentSettings projectSettings, IAgentConnections connections, AgentSessionNotifier notifier, TimeProvider time, Lazy<IBlobStore> blobs, ILogger<AgentSessionStarter> logger) : IAgentSessionStarter
 {
     // agent-relay refuses a body over 1 MiB (413, then retries until the session fails), so the body is kept under this.
     private const int MaxBodyBytes = 900_000;

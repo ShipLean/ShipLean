@@ -1,7 +1,6 @@
 using Dapper;
 using Microsoft.Extensions.Logging;
 using Npgsql;
-using ShipLean.Application.Features.AgentDispatch;
 using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Events;
 
@@ -12,7 +11,7 @@ namespace ShipLean.Application.Features.Demos.Runs;
 public sealed class SprintDemoAutomaticRun(
     NpgsqlDataSource dataSource,
     IDemoRunStarter starter,
-    AgentSessionStarter sessions,
+    IAgentSessionStarter sessions,
     TimeProvider time,
     IProjectEvents events,
     ILogger<SprintDemoAutomaticRun> logger) : ISprintDemoAutomaticRun

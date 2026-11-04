@@ -12,6 +12,7 @@ public sealed class AgentDispatchServices : IServiceModule
     {
         services.AddSingleton(sp => new Lazy<IBlobStore>(sp.GetRequiredService<IBlobStore>));
         services.AddSingleton<AgentSessionStarter>();
+        services.AddSingleton<IAgentSessionStarter>(sp => sp.GetRequiredService<AgentSessionStarter>());
         services.AddSingleton<AgentTrigger>();
         services.AddSingleton<AgentPanelReader>();
         services.AddSingleton<AgentSessionEndpoints>();

@@ -1,4 +1,4 @@
-using ShipLean.Application.Features.AgentDispatch;
+using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Demos;
 
 namespace ShipLean.Application.Features.Demos.Runs;
