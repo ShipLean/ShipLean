@@ -8,8 +8,8 @@ using ShipLean.Contracts.Errors;
 namespace ShipLean.Application.Features.Demos.YouTube;
 
 // The check before a channel connects (K12). It uploads the embedded test video at the chosen visibility, reads back what YouTube made of it, and
-// deletes it whatever happened. Only a read-back that equals the choice, and a delete that worked, saves the channel as connected; every other
-// outcome leaves it pending with the reason. The channel row is the only thing written, and only after the video is gone or the delete is known to have failed.
+// deletes it whatever happened. Only a read-back that equals the choice saves the channel as connected; every other outcome leaves it pending
+// with the reason. A delete that failed is named in the result either way, and is never stored as a refusal on a connected channel. The channel row is the only thing written, and only after the video is gone or the delete is known to have failed.
 // This has been exercised against the fake and the stub, not against Google.
 public sealed class YouTubeCheck(
     NpgsqlDataSource dataSource, IYouTubeClient client, IYouTubeSettings settings, IntegrationTokens tokens, TimeProvider clock) : IYouTubeCheck
@@ -65,11 +65,12 @@ public sealed class YouTubeCheck(
             }
         }
 
-        if (leftBehind is not null)
+        // A failed delete doesn't decide the check: the read-back does. The result still names the video so the person can remove it.
+        if (leftBehind is null)
         {
-            refusal = refusal is null ? leftBehind : $"{refusal} {leftBehind}";
+            return new Outcome(refusal is null, refusal);
         }
-        return new Outcome(refusal is null, refusal);
+        return new Outcome(refusal is null, refusal is null ? leftBehind : $"{refusal} {leftBehind}");
     }
 
     private async Task<string> UploadAsync(string accessToken, YouTubeVisibility chosen, CancellationToken cancellationToken)
@@ -124,7 +125,7 @@ public sealed class YouTubeCheck(
                 channelId,
                 status = outcome.Passed ? "connected" : "pending",
                 visibility = outcome.Passed ? Word(chosen) : null,
-                refusal = outcome.Refusal,
+                refusal = outcome.Passed ? null : outcome.Refusal,
                 checkedAt,
             },
             cancellationToken: cancellationToken));

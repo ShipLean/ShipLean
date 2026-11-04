@@ -231,12 +231,12 @@ public class YouTubeCheckTests : ApiFixture
         var result = await CheckAsync(project, "unlisted");
 
         var left = _client.Inner.Uploads.ShouldHaveSingleItem().VideoId;
-        result.Status.ShouldBe(YouTubeConnectionStatus.Pending);
+        result.Status.ShouldBe(YouTubeConnectionStatus.Connected);
         result.Refusal.ShouldNotBeNull().ShouldContain($"The test video {left} could not be deleted");
         result.Refusal.ShouldContain("YouTube Studio");
         var stored = await StoredAsync(project);
-        stored.Status.ShouldBe("pending");
-        stored.Refusal.ShouldBe(result.Refusal);
+        stored.Status.ShouldBe("connected");
+        stored.Refusal.ShouldBeNull();
     }
 
     [Test]
