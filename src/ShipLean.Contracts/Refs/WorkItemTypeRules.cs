@@ -14,8 +14,5 @@ public static class WorkItemTypeRules
         _ => type.ToString(),
     };
 
-    // Stories and Bugs: the types a duplicate check compares against (Action items are story-level but not compared).
-    public static bool IsStoryOrBug(WorkItemTypeId type) => type is WorkItemTypeId.Story or WorkItemTypeId.Bug;
-
     public static bool IsStoryLevel(WorkItemTypeId type) => type is WorkItemTypeId.Story or WorkItemTypeId.Bug or WorkItemTypeId.Action;
 }
