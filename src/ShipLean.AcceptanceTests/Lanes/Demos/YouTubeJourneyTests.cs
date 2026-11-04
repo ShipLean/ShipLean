@@ -48,11 +48,21 @@ public class YouTubeJourneyTests : SeededAcceptanceTest
         services.AddSingleton<IYouTubeSettings>(new OurOAuthClient());
     };
 
+    // The fake lives as long as the class, so what the other test did to it is behind these marks and not counted.
+    private int _uploadsBefore;
+    private int _deletesBefore;
+
+    private IReadOnlyList<FakeYouTubeUpload> Uploads => [.. _fake.Uploads.Skip(_uploadsBefore)];
+
+    private IReadOnlyList<string> Deletes => [.. _fake.Deletes.Skip(_deletesBefore)];
+
     [SetUp]
     public void ResetTheFake()
     {
         _fake.ForcedVisibility = null;
         _fake.FailWith(null);
+        _uploadsBefore = _fake.Uploads.Count;
+        _deletesBefore = _fake.Deletes.Count;
     }
 
     [Test]
@@ -60,6 +70,7 @@ public class YouTubeJourneyTests : SeededAcceptanceTest
     public async Task Connect_WhenChannelForcesPrivate_ShouldRefuseThenPrivateConnects()
     {
         _fake.ForcedVisibility = YouTubeVisibility.Private;
+        await DisconnectLiveChannelAsync();
         var tab = new DemoSettingsTab(Page);
         await tab.GotoAsync("SHIP");
         await Expect(tab.YouTubeConnect).ToBeVisibleAsync();
@@ -93,8 +104,8 @@ public class YouTubeJourneyTests : SeededAcceptanceTest
         (await ReadChannelAsync()).ShouldBe(("pending", null));
 
         // The test video is always taken down, and no video was left on the channel.
-        _fake.Uploads.ShouldHaveSingleItem().Upload.Visibility.ShouldBe(YouTubeVisibility.Unlisted);
-        _fake.Deletes.ShouldBe([_fake.Uploads[0].VideoId]);
+        Uploads.ShouldHaveSingleItem().Upload.Visibility.ShouldBe(YouTubeVisibility.Unlisted);
+        Deletes.ShouldBe([Uploads[0].VideoId]);
 
         // Choosing what came back checks again and connects. The refusal goes.
         await ChooseAsync(tab, "Private");
@@ -105,9 +116,9 @@ public class YouTubeJourneyTests : SeededAcceptanceTest
         await Expect(tab.YouTubeConnected).ToBeVisibleAsync();
         await Expect(tab.YouTubeRefusal).ToHaveCountAsync(0);
         (await ReadChannelAsync()).ShouldBe(("connected", "private"));
-        _fake.Uploads.Count.ShouldBe(2);
-        _fake.Uploads[1].Upload.Visibility.ShouldBe(YouTubeVisibility.Private);
-        _fake.Deletes.ShouldBe([.. _fake.Uploads.Select(u => u.VideoId)]);
+        Uploads.Count.ShouldBe(2);
+        Uploads[1].Upload.Visibility.ShouldBe(YouTubeVisibility.Private);
+        Deletes.ShouldBe([.. Uploads.Select(u => u.VideoId)]);
 
         // It is what the server keeps, not only what this page remembers.
         await tab.GotoAsync("SHIP");
@@ -172,7 +183,7 @@ public class YouTubeJourneyTests : SeededAcceptanceTest
         var failed = await ReadYouTubeAsync();
         failed.State.ShouldBe("failed");
         failed.Failure.ShouldNotBeNull().ShouldContain("daily upload quota");
-        _fake.Uploads.Count.ShouldBe(1, "Only the connect step's test video was uploaded.");
+        Uploads.Count.ShouldBe(1, "Only the connect step's test video was uploaded.");
         await Expect(tab.YouTubeNotice).ToContainTextAsync("YouTube upload failed");
         await Expect(tab.YouTubeNotice).ToContainTextAsync("daily upload quota");
         await Expect(tab.YouTubeRetry).ToBeVisibleAsync();
@@ -195,8 +206,8 @@ public class YouTubeJourneyTests : SeededAcceptanceTest
         published.Privacy.ShouldBe("unlisted");
         published.VideoId.ShouldNotBeNull();
         // The connect step's own test video was the first upload and was deleted; the demo is the second.
-        _fake.Uploads.Count.ShouldBe(2);
-        var sent = _fake.Uploads[1];
+        Uploads.Count.ShouldBe(2);
+        var sent = Uploads[1];
         sent.VideoId.ShouldBe(published.VideoId);
         sent.Upload.Visibility.ShouldBe(YouTubeVisibility.Unlisted);
         sent.Upload.Title.ShouldEndWith(": Sprint 24 demo");
@@ -269,6 +280,16 @@ public class YouTubeJourneyTests : SeededAcceptanceTest
 
     // The publisher's own pass, called as the 30-second loop would (the loop is not hosted here), so the test decides when the forward runs.
     private Task<int> PublishDueAsync() => ActivatorUtilities.CreateInstance<DemoYouTubePublisher>(Host.Services).PublishDueAsync();
+
+    // The other test leaves a connected channel on the project; this one starts from none.
+    private async Task DisconnectLiveChannelAsync()
+    {
+        var live = await ReadScalarAsync<long>($"SELECT count(*) FROM project_youtube_channel WHERE project_id = '{SeedIds.Projects.Ship}' AND archived_at IS NULL");
+        if (live > 0)
+        {
+            await SendAsync("POST", $"/api/projects/{SeedIds.Projects.Ship}/youtube/disconnect");
+        }
+    }
 
     // The channel is connected through the routes the page uses: start, the callback the consent would send the browser to, and the check at unlisted.
     private async Task ConnectUnlistedChannelAsync()
