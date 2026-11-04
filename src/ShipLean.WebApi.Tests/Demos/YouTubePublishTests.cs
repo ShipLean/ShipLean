@@ -351,8 +351,6 @@ public class YouTubePublishTests : ApiFixture
     [Test]
     public async Task Publish_ShouldPublishSprintDemoChanged()
     {
-        var published = await ArrangeAsync();
-        var failed = await ArrangeAsync(channelVisibility: "unlisted");
         var seen = new List<Guid>();
         using var subscription = Host.Services.GetRequiredService<IProjectEvents>().Subscribe(null, e =>
         {
@@ -364,12 +362,26 @@ public class YouTubePublishTests : ApiFixture
             return Task.CompletedTask;
         });
 
+        // One pass per outcome, so each event is the one its own outcome sent.
+        var published = await ArrangeAsync();
         await Publisher().PublishDueAsync();
+        (await StoredAsync(published.SprintId)).State.ShouldBe("published");
+
+        var failed = await ArrangeAsync();
+        Fake.FailWith(YouTubeFailureKind.Quota);
+        await Publisher().PublishDueAsync();
+        Fake.FailWith(null);
+        (await StoredAsync(failed.SprintId)).State.ShouldBe("failed");
+
+        var none = await ArrangeAsync(channelVisibility: null);
+        await Publisher().PublishDueAsync();
+        (await StoredAsync(none.SprintId)).State.ShouldBe("none");
 
         lock (seen)
         {
             seen.ShouldContain(published.SprintId);
             seen.ShouldContain(failed.SprintId);
+            seen.ShouldContain(none.SprintId);
         }
     }
 

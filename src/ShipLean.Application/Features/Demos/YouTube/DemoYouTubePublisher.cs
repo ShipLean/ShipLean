@@ -61,7 +61,7 @@ public sealed class DemoYouTubePublisher(
                     published++;
                 }
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
                 await ReleaseAsync(claimed);
                 throw;
