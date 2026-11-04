@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { showToast } from '../../../../components/toastStore';
 import { api } from '../../../../api/client';
+import { errorText } from '../model';
 import type { IntegrationsSaveDto, IntegrationsSettingsDto } from './model';
 
 export const integrationsKey = ['instance', 'integrations'] as const;
@@ -21,5 +23,6 @@ export function useSaveIntegrations() {
     onSuccess: (saved) => {
       queryClient.setQueryData(integrationsKey, saved);
     },
+    onError: (failure) => showToast(errorText(failure), { tone: 'danger' }),
   });
 }

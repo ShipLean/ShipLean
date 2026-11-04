@@ -19,6 +19,7 @@ public sealed class YouTubeServices : IServiceModule
         services.AddScoped<IYouTubeCheck, YouTubeCheck>();
         services.AddScoped<IYouTubeConnections, YouTubeConnections>();
         services.AddScoped<IDemoYouTubeRetry, DemoYouTubeRetry>();
+        services.AddHostedService<YouTubeClientEnvStartup>();
         services.AddHostedService<DemoYouTubePublisher>();
     }
 }

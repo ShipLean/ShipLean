@@ -6,7 +6,8 @@ public sealed class IntegrationRow
 {
     public const string Select =
         "SELECT github_token AS GitHubToken, github_token_last4 AS GitHubTokenLast4, gitlab_url AS GitLabUrl, gitlab_token AS GitLabToken, "
-        + "gitlab_token_last4 AS GitLabTokenLast4, array_to_string(preview_allow_hosts, ',') AS PreviewAllowHostsCsv FROM instance_settings";
+        + "gitlab_token_last4 AS GitLabTokenLast4, array_to_string(preview_allow_hosts, ',') AS PreviewAllowHostsCsv, "
+        + "youtube_client_id AS YouTubeClientId, youtube_client_secret AS YouTubeClientSecret, youtube_client_secret_last4 AS YouTubeClientSecretLast4 FROM instance_settings";
 
     public string? GitHubToken { get; set; }
 
@@ -17,6 +18,13 @@ public sealed class IntegrationRow
     public string? GitLabToken { get; set; }
 
     public string? GitLabTokenLast4 { get; set; }
+
+    public string? YouTubeClientId { get; set; }
+
+    // Protected by IntegrationTokens; only DbYouTubeSettings opens it.
+    public string? YouTubeClientSecret { get; set; }
+
+    public string? YouTubeClientSecretLast4 { get; set; }
 
     public string PreviewAllowHostsCsv { get; set; } = string.Empty;
 

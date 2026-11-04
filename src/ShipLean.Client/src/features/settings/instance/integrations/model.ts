@@ -8,6 +8,10 @@ export interface IntegrationsSettingsDto {
   gitLabTokenLastFour: string | null;
   gitLabFromEnv: boolean;
   previewAllowHosts: string[];
+  /** The YouTube OAuth client: its own, never sign-in's. The id is shown; the secret only as its last four. */
+  youTubeClientId: string | null;
+  youTubeClientSecretLastFour: string | null;
+  youTubeFromEnv: boolean;
 }
 
 /** The PUT body (C#: IntegrationsSaveDto). An absent token or URL leaves the saved one alone. */
@@ -18,6 +22,9 @@ export interface IntegrationsSaveDto {
   gitLabToken?: string;
   clearGitLabToken: boolean;
   previewAllowHosts: string[];
+  /** "" clears the saved client. A new id needs its secret; an absent secret keeps the saved one. */
+  youTubeClientId?: string;
+  youTubeClientSecret?: string;
 }
 
 /** What the admin did to one token: typed a new one (`replacing`), or marked the saved one for removal (`clear`). */
@@ -34,10 +41,18 @@ export interface IntegrationsEdit {
   gitLabUrl?: string;
   /** The allow-list as typed, one host a line. */
   allowText?: string;
+  /** Set once the admin touches the field; absent means the client id in force. */
+  youTubeClientId?: string;
+  /** The secret as typed; write-only. */
+  youTubeSecret: string;
 }
 
 export const noTokenEdit: TokenEdit = { replacing: false, clear: false, value: '' };
-export const noEdit: IntegrationsEdit = { gitHub: noTokenEdit, gitLab: noTokenEdit };
+export const noEdit: IntegrationsEdit = {
+  gitHub: noTokenEdit,
+  gitLab: noTokenEdit,
+  youTubeSecret: '',
+};
 
 /** One host a line; blank lines are dropped. The server validates the names. */
 export const parseHosts = (text: string) =>
@@ -57,6 +72,13 @@ export const gitLabUrlChanged = (saved: IntegrationsSettingsDto, edit: Integrati
 export const allowTextOf = (saved: IntegrationsSettingsDto, edit: IntegrationsEdit) =>
   edit.allowText ?? saved.previewAllowHosts.join('\n');
 
+export const youTubeIdOf = (saved: IntegrationsSettingsDto, edit: IntegrationsEdit) =>
+  edit.youTubeClientId ?? saved.youTubeClientId ?? '';
+
+const youTubeIdChanged = (saved: IntegrationsSettingsDto, edit: IntegrationsEdit) =>
+  edit.youTubeClientId !== undefined &&
+  edit.youTubeClientId.trim() !== (saved.youTubeClientId ?? '');
+
 const tokenDirty = (edit: TokenEdit) => edit.replacing || edit.clear || edit.value.length > 0;
 
 export function isDirty(saved: IntegrationsSettingsDto, edit: IntegrationsEdit): boolean {
@@ -65,6 +87,8 @@ export function isDirty(saved: IntegrationsSettingsDto, edit: IntegrationsEdit):
     tokenDirty(edit.gitHub) ||
     tokenDirty(edit.gitLab) ||
     gitLabUrlChanged(saved, edit) ||
+    youTubeIdChanged(saved, edit) ||
+    edit.youTubeSecret.length > 0 ||
     hosts.join('\n') !== saved.previewAllowHosts.join('\n')
   );
 }
@@ -84,6 +108,12 @@ export function toSaveDto(
     gitLabToken: edit.gitLab.value.length > 0 ? edit.gitLab.value : undefined,
     clearGitLabToken: edit.gitLab.clear,
     previewAllowHosts: parseHosts(allowTextOf(saved, edit)),
+    // A secret typed for the id from the environment is saved with that id.
+    youTubeClientId:
+      youTubeIdChanged(saved, edit) || edit.youTubeSecret.length > 0
+        ? youTubeIdOf(saved, edit).trim()
+        : undefined,
+    youTubeClientSecret: edit.youTubeSecret.length > 0 ? edit.youTubeSecret : undefined,
   };
 }
 
