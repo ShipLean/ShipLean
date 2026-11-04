@@ -10,6 +10,7 @@ public sealed record PullRequestEvent(
     LinkCardState State,
     string Title,
     string SourceBranch,
+    string Body,
     DateTimeOffset AsOf,
     string Repository,
     string Reference);

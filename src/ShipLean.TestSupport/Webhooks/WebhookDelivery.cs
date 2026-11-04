@@ -21,9 +21,9 @@ public sealed record WebhookDelivery(string Path, string Body, IReadOnlyDictiona
 
     public static string GitlabUrl(int iid) => $"https://gitlab.example.com/{GitlabRepository}/-/merge_requests/{iid}";
 
-    // action: opened, edited, reopened, closed. state "open" or "closed"; merged only with closed.
+    // action: opened, edited, reopened, closed. state "open" or "closed"; merged only with closed. body null keeps the recorded one.
     public static WebhookDelivery Github(
-        string secret, string action, int number, string title, DateTimeOffset updatedAt, string branch = "fix/rate-grid", string state = "open", bool merged = false)
+        string secret, string action, int number, string title, DateTimeOffset updatedAt, string branch = "fix/rate-grid", string state = "open", bool merged = false, string? body = null)
     {
         var payload = Load("github-pull-request.json");
         payload["action"] = action;
@@ -36,15 +36,19 @@ public sealed record WebhookDelivery(string Path, string Body, IReadOnlyDictiona
         pull["merged"] = merged;
         pull["updated_at"] = updatedAt.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
         pull["head"]!["ref"] = branch;
+        if (body is not null)
+        {
+            pull["body"] = body;
+        }
         return Signed(secret, payload.ToJsonString(), "pull_request");
     }
 
     // GitHub's ping when a webhook is added.
     public static WebhookDelivery GithubPing(string secret) => Signed(secret, """{"zen":"Keep it logically awesome.","hook_id":1}""", "ping");
 
-    // action: open, update, reopen, merge, close. state: opened, closed, merged.
+    // action: open, update, reopen, merge, close. state: opened, closed, merged. description null keeps the recorded one.
     public static WebhookDelivery Gitlab(
-        string token, string action, int iid, string title, DateTimeOffset updatedAt, string branch = "fix/rate-grid", string state = "opened")
+        string token, string action, int iid, string title, DateTimeOffset updatedAt, string branch = "fix/rate-grid", string state = "opened", string? description = null)
     {
         var payload = Load("gitlab-merge-request.json");
         var request = payload["object_attributes"]!;
@@ -54,6 +58,10 @@ public sealed record WebhookDelivery(string Path, string Body, IReadOnlyDictiona
         request["title"] = title;
         request["state"] = state;
         request["source_branch"] = branch;
+        if (description is not null)
+        {
+            request["description"] = description;
+        }
         request["updated_at"] = updatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss 'UTC'", CultureInfo.InvariantCulture);
         return new WebhookDelivery(GitlabPath, payload.ToJsonString(), new Dictionary<string, string>
         {

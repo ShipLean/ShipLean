@@ -31,6 +31,7 @@ internal static class GitHubPayload
             StateOf(pull),
             PayloadJson.Text(pull, "title"),
             PayloadJson.OptionalText(PayloadJson.Object(pull, "head"), "ref") ?? string.Empty,
+            PayloadJson.OptionalText(pull, "body") ?? string.Empty,
             PayloadJson.Timestamp(pull, "updated_at"),
             name,
             $"GitHub {name}#{number}"));

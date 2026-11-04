@@ -2,7 +2,7 @@
 
 GitHub and GitLab can tell ShipLean when a pull or merge request opens, changes, merges or closes ([#39](https://github.com/joeldickson/ShipLean/issues/39)). ShipLean then:
 
-- **links** the pull or merge request to each Story, Task or Bug whose key is in its title or source branch,
+- **links** the pull or merge request to each Story, Task or Bug whose key is in its title or source branch, or that a `ShipLean IDs:` line at the start of its body names,
 - **shows its state** (Open, Merged, Closed) on every link to it, and
 - **closes** each linked item once its pull or merge requests have merged.
 
@@ -42,7 +42,9 @@ On a project (or a group, for all its projects): **Settings → Webhooks → Add
 
 The GitHub endpoint acts on `pull_request` actions `opened`, `edited`, `reopened` and `closed`; the GitLab one on `Merge Request Hook` actions `open`, `update`, `reopen`, `merge` and `close`. Other events and actions are answered `{"outcome":"ignored"}`. Each parser turns its payload into one event (URL, state, title, source branch, time), and the rest is shared:
 
-1. **Auto-link.** Keys matching `\b[A-Z]{2,4}-\d+\b` are taken from the **title** (upper case only, so `abc-123` in a sentence is not a key) and the **source branch** (any case, upper-cased: `feature/ABC-123-rate-grid`, `abc-123-fix`). Each key that is an existing **Story, Task or Bug** gets a URL link to the pull or merge request, titled with its title and marked "auto" with whether the key was in the title or branch. Features, Epics and keys that match nothing (`UTF-8`, `SHA-256`) are skipped. An item that already has a link to it, or had one that someone removed, gets no new one. Taking the key out of the title later leaves the link.
+1. **Auto-link.** Keys matching `\b[A-Z]{2,4}-\d+\b` are taken from the **title** (upper case only, so `abc-123` in a sentence is not a key) and the **source branch** (any case, upper-cased: `feature/ABC-123-rate-grid`, `abc-123-fix`). Each key that is an existing **Story, Task or Bug** gets a URL link to the pull or merge request, titled with its title and marked "auto" with whether the title, branch or body named it. Features, Epics and keys that match nothing (`UTF-8`, `SHA-256`) are skipped. An item that already has a link to it, or had one that someone removed, gets no new one. Taking the key out of the title later leaves the link.
+
+   **Many items in one pull request.** Keys are also taken from the first non-blank line of the **body** when it starts with `ShipLean IDs:` (upper case keys, any separator: `ShipLean IDs: SHIP-12, SHIP-13`). A key further down the body counts for nothing, so a body can quote this convention safely. A **Feature's** key in that line means all the Stories and Bugs directly under it, as they are at that event: they are linked, and the close rule below closes them on merge, including any with open Tasks. The Feature itself and those Tasks aren't linked. This is the only place a Feature's key does anything, so a title such as `SHIP-12: what it does` is for people to read. At most 100 items are linked per event, and the next event links the rest.
 2. **Card state.** When any item links to the pull or merge request, its state, title and time are stored once for its URL, and every link to it shows the badge, with the provider and how long ago in the tooltip. An event older than the stored one changes nothing, so a late delivery can't turn a merged card back to open.
 3. **Close rule**, on a merge or a close. An item that isn't in a Completed or Removed state moves to its type's first Completed state when every pull or merge request it links to is merged or closed, and at least one of them merged:
    - a merge closes it;
