@@ -21,6 +21,9 @@ public class WorkItemOverflowTests : SeededAcceptanceTest
     // The longest name an agent can register under (200 characters), with no place to break.
     private static readonly string LongAgentName = new('W', 200);
 
+    // The longest display name a person can have (100 characters), with no place to break.
+    private static readonly string LongDisplayName = new('W', 100);
+
     private static string LongUrl(int width) => $"https://example.com/{width}/" + new string('u', 300);
 
     [TestCase(1024)]
@@ -81,6 +84,54 @@ public class WorkItemOverflowTests : SeededAcceptanceTest
         await Expect(side.Revisions.First.GetByTestId(WorkItemTestIds.RevisionWho)).ToContainTextAsync(LongAgentName);
 
         await AssertMainDoesNotOverflowAsync();
+    }
+
+    [TestCase("SHIP-147", 1024)]
+    [TestCase("SHIP-147", 1440)]
+    [TestCase("SHIP-101", 1024)]
+    [TestCase("SHIP-101", 1440)]
+    public async Task WorkItemPage_WhenDisplayNameIsLongAndUnbroken_ShouldNotOverflowShellMain(string key, int width)
+    {
+        await Page.SetViewportSizeAsync(width, 900);
+        var screen = new WorkItemScreen(Page);
+        var me = await Page.Context.APIRequest.GetAsync("/api/me");
+        me.Ok.ShouldBeTrue(await me.TextAsync());
+        using var current = JsonDocument.Parse(await me.TextAsync());
+        var originalName = current.RootElement.GetProperty("name").GetString()!;
+        // The seeded items were created and last changed by Priya; Joel's save makes him the one who changed it.
+        var itemId = key == "SHIP-147" ? SeedIds.WorkItems.Ship147 : SeedIds.WorkItems.Ship101;
+        var itemResponse = await Page.Context.APIRequest.GetAsync($"/api/work-items/{itemId}");
+        itemResponse.Ok.ShouldBeTrue(await itemResponse.TextAsync());
+        using var item = JsonDocument.Parse(await itemResponse.TextAsync());
+        var saved = await Page.Context.APIRequest.PatchAsync($"/api/work-items/{itemId}", new APIRequestContextOptions
+        {
+            DataObject = new
+            {
+                expectedRevision = item.RootElement.GetProperty("revision").GetInt32(),
+                changes = new { title = new { value = $"Display name overflow check {key} {width}" }, addLinks = Array.Empty<object>(), removeLinkIds = Array.Empty<string>() },
+            },
+        });
+        saved.Ok.ShouldBeTrue(await saved.TextAsync());
+        try
+        {
+            await RenameMeAsync(LongDisplayName);
+            await screen.OpenAsync("SHIP", key);
+            await Expect(Page.GetByTestId(WorkItemTestIds.Meta)).ToContainTextAsync(LongDisplayName);
+
+            await AssertMainDoesNotOverflowAsync();
+        }
+        finally
+        {
+            // One class shares one database: put Joel's name back for the other cases. The seeded colour is not one the
+            // profile accepts, so the name goes back with a colour from the list.
+            await RenameMeAsync(originalName);
+        }
+    }
+
+    private async Task RenameMeAsync(string name)
+    {
+        var response = await Page.Context.APIRequest.PutAsync("/api/me/profile", new APIRequestContextOptions { DataObject = new { name, avatarColour = "#7b4fc9" } });
+        response.Ok.ShouldBeTrue(await response.TextAsync());
     }
 
     private async Task AssertMainDoesNotOverflowAsync()
