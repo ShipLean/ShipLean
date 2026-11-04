@@ -3,7 +3,10 @@ using Dapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Npgsql;
+using ShipLean.Application.Events;
 using ShipLean.Application.Features.Demos.Runs;
 using ShipLean.Application.Storage;
 using ShipLean.Contracts;
@@ -26,6 +29,8 @@ public class SprintDemoAutomaticTests : McpFixture
     private static int _next;
     private readonly UploadUrlPrompt _prompt = new();
     private readonly RecordedAutomaticRuns _runs = new();
+    private readonly RecordedLogs _logs = new();
+    private RecordedDemoWrites? _writes;
 
     protected override bool WithProbeTools => false;
 
@@ -34,6 +39,13 @@ public class SprintDemoAutomaticTests : McpFixture
         base.ConfigureTestServices!(services);
         DemoRunCalls.UseNamedDataAndUrlPrompt(services, _prompt);
         services.AddSingleton(_runs);
+        services.RemoveAll<IProjectEvents>();
+        services.AddSingleton<IProjectEvents>(provider =>
+        {
+            var writes = new RecordedDemoWrites(ActivatorUtilities.CreateInstance<InMemoryProjectEvents>(provider), provider.GetRequiredService<NpgsqlDataSource>());
+            _writes = writes;
+            return writes;
+        });
         services.RemoveAll<ISprintDemos>();
         services.AddScoped<ISprintDemos>(provider => new RecordingSprintDemos(
             ActivatorUtilities.CreateInstance<ShipLean.Application.Features.Demos.SprintDemos>(provider), _runs));
@@ -74,6 +86,8 @@ public class SprintDemoAutomaticTests : McpFixture
         await PublishClosedAsync(projectId, sprintId, closedBy);
         await _runs.WaitAsync(sprintId, runs);
     }
+
+    private IReadOnlyList<(bool Requested, string? Message)> WritesOf(Guid sprintId) => _writes.ShouldNotBeNull().Of(sprintId);
 
     private async Task<bool> UsableAsync(string token)
     {
@@ -166,6 +180,8 @@ public class SprintDemoAutomaticTests : McpFixture
         var request = await RequestOfAsync(database, sprintId);
         request.Message.ShouldNotBeNull().ShouldContain("agent connection");
         (request.By, request.Via).ShouldBe((SeedIds.Users.Kai, "close"));
+        // K14: one publish after the claim (no message yet), one after the blocked message is stored.
+        WritesOf(sprintId).ShouldBe([(true, null), (true, request.Message)]);
     }
 
     [Test]
@@ -201,7 +217,9 @@ public class SprintDemoAutomaticTests : McpFixture
             await database.ExecuteAsync("UPDATE instance_settings SET base_url = @stored", new { stored });
         }
 
-        (await RequestOfAsync(database, sprintId)).Message.ShouldNotBeNull().ShouldContain("base URL");
+        var blank = await RequestOfAsync(database, sprintId);
+        blank.Message.ShouldNotBeNull().ShouldContain("base URL");
+        WritesOf(sprintId).ShouldBe([(true, null), (true, blank.Message)]);
         (await DemoRunCalls.ItemOfAsync(database, sprintId)).ShouldBeNull();
         (await BauItemsAsync(database, projectId)).ShouldBe(0);
         (await SessionsInProjectAsync(database, projectId)).ShouldBe(0);
@@ -214,10 +232,15 @@ public class SprintDemoAutomaticTests : McpFixture
         await using var database = await OpenDatabaseAsync();
         var (projectId, sprintId, _, _) = await ArrangeAsync(database, automatic: true);
 
-        await PublishClosedAsync(projectId, sprintId, SeedIds.Users.Kai);
-        await PublishClosedAsync(projectId, sprintId, SeedIds.Users.Kai);
-        await _runs.WaitAsync(sprintId, 2);
+        await CloseByEventAsync(projectId, sprintId, SeedIds.Users.Kai);
+        var first = await RequestOfAsync(database, sprintId);
+        first.At.ShouldNotBeNull();
 
+        // The second delivery names another closer. A claim that works leaves the first request exactly as it was (the starter's session
+        // uniqueness would hide a claim that won twice, so the claim itself is what this asserts).
+        await CloseByEventAsync(projectId, sprintId, SeedIds.Users.Priya, runs: 2);
+
+        (await RequestOfAsync(database, sprintId)).ShouldBe(first);
         var itemId = (await DemoRunCalls.ItemOfAsync(database, sprintId)).ShouldNotBeNull();
         (await AgentDispatchArrange.SessionsAsync(database, itemId)).ShouldHaveSingleItem();
         (await DemoRunCalls.TokensAsync(database, itemId)).ShouldBe(1);
@@ -252,6 +275,7 @@ public class SprintDemoAutomaticTests : McpFixture
         await CloseByEventAsync(projectId, sprintId, SeedIds.Users.Kai);
 
         (await RequestOfAsync(database, sprintId)).Message.ShouldBe(SprintDemoAutomaticRun.FailedMessage);
+        WritesOf(sprintId).ShouldContain((true, SprintDemoAutomaticRun.FailedMessage));
         var itemId = (await DemoRunCalls.ItemOfAsync(database, sprintId)).ShouldNotBeNull();
         (await AgentDispatchArrange.SessionsAsync(database, itemId)).ShouldBeEmpty();
         (await DemoRunCalls.TokensAsync(database, itemId)).ShouldBe(0);
@@ -345,6 +369,24 @@ public class SprintDemoAutomaticTests : McpFixture
         closed.StatusCode.ShouldBe(HttpStatusCode.OK, await closed.Content.ReadAsStringAsync());
         (await database.ExecuteScalarAsync<string>("SELECT rollover_status FROM sprint WHERE id = @sprintId", new { sprintId })).ShouldBe("decided");
         (await DemoRunCalls.ItemOfAsync(database, sprintId)).ShouldBeNull();
+    }
+
+    [Test]
+    [CancelAfter(120_000)]
+    public async Task Subscriber_WhenTheRunThrows_ShouldLogAndSwallowItself()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var (projectId, sprintId, _, _) = await ArrangeAsync(database, automatic: true);
+        _runs.Fail = true;
+        var captured = new CapturedSubscription();
+        var subscriber = new ShipLean.Application.Features.Demos.SprintDemoAutomaticSubscriber(
+            captured, Host.Services.GetRequiredService<IServiceScopeFactory>(), _logs.CreateLogger<ShipLean.Application.Features.Demos.SprintDemoAutomaticSubscriber>());
+        await ((IHostedService)subscriber).StartAsync(CancellationToken.None);
+
+        // Called directly, so the bus's own catch is not in the way: the handler must complete by itself.
+        await Should.NotThrowAsync(() => captured.Handler.ShouldNotBeNull()(new SprintClosed(projectId, sprintId, SeedIds.Users.Kai)));
+
+        _logs.Events.ShouldContain(e => e.StartsWith("Error ", StringComparison.Ordinal) && e.Contains("Could not start the automatic demo") && e.Contains(sprintId.ToString()));
     }
 
     [Test]

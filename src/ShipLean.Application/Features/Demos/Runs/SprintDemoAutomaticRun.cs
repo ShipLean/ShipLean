@@ -14,6 +14,7 @@ public sealed class SprintDemoAutomaticRun(
     IDemoRunStarter starter,
     AgentSessionStarter sessions,
     TimeProvider time,
+    IProjectEvents events,
     ILogger<SprintDemoAutomaticRun> logger) : ISprintDemoAutomaticRun
 {
     private const string BaseUrlMessage = "The instance has no base URL, so the demo's upload link cannot be made. Set it in the instance settings.";
@@ -28,7 +29,7 @@ public sealed class SprintDemoAutomaticRun(
         catch (Exception failed)
         {
             logger.LogError(failed, "The automatic demo of sprint {SprintId} failed", sprintId);
-            await StoreMessageAsync(sprintId, FailedMessage, CancellationToken.None);
+            await StoreMessageAsync(projectId, sprintId, FailedMessage, CancellationToken.None);
         }
     }
 
@@ -45,16 +46,18 @@ public sealed class SprintDemoAutomaticRun(
             return;
         }
 
+        await events.PublishAsync(new SprintDemoChanged(projectId, sprintId));
+
         if (await sessions.PlanProjectAsync(projectId, null, cancellationToken) is { } block)
         {
-            await StoreMessageAsync(sprintId, AgentStartMessages.For(block), cancellationToken);
+            await StoreMessageAsync(projectId, sprintId, AgentStartMessages.For(block), cancellationToken);
             return;
         }
 
         var baseUrl = await BaseUrlAsync(cancellationToken);
         if (string.IsNullOrWhiteSpace(baseUrl))
         {
-            await StoreMessageAsync(sprintId, BaseUrlMessage, cancellationToken);
+            await StoreMessageAsync(projectId, sprintId, BaseUrlMessage, cancellationToken);
             return;
         }
 
@@ -63,7 +66,7 @@ public sealed class SprintDemoAutomaticRun(
         var outcome = await starter.StartSessionAsync(request, cancellationToken);
         if (outcome.Block is { } refused and not AgentStartBlock.LiveSession)
         {
-            await StoreMessageAsync(sprintId, AgentStartMessages.For(refused), cancellationToken);
+            await StoreMessageAsync(projectId, sprintId, AgentStartMessages.For(refused), cancellationToken);
         }
     }
 
@@ -93,10 +96,11 @@ public sealed class SprintDemoAutomaticRun(
         return await connection.ExecuteScalarAsync<string?>(new CommandDefinition("SELECT base_url FROM instance_settings", cancellationToken: cancellationToken));
     }
 
-    private async Task StoreMessageAsync(Guid sprintId, string message, CancellationToken cancellationToken)
+    private async Task StoreMessageAsync(Guid projectId, Guid sprintId, string message, CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await connection.ExecuteAsync(new CommandDefinition(
             "UPDATE sprint SET demo_blocked_message = @message WHERE id = @sprintId", new { message, sprintId }, cancellationToken: cancellationToken));
+        await events.PublishAsync(new SprintDemoChanged(projectId, sprintId));
     }
 }
