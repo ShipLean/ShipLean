@@ -173,7 +173,7 @@ The first chapter starts at 0, starts ascend strictly, each is below `durationSe
 - Extract a frame per chapter and look at it: `$FF -hide_banner -v error -y -ss SECONDS -i demo.mp4 -frames:v 1 frame-N.png`. The logo is on each, bottom right.
 - No segment overran: no narration is cut, and no screen moves during a handover.
 - No leftover placeholder (a pair of opening curly braces) appears in the script, the slides or the chapters.
-- No raw failure log, stack trace or name of a person or agent appears anywhere.
+- No raw failure log or stack trace appears anywhere, and no person or agent named in the sprint and retro data appears by name. Only the presenters (Ann, Keith and Becky) are named.
 
 ## 13. Return
 

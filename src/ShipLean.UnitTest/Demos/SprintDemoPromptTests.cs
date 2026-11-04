@@ -401,7 +401,7 @@ public class SprintDemoPromptTests
     }
 
     [Test]
-    public void Prompt_ShouldRepeatAFallbackInTheClosingComment()
+    public void Prompt_ShouldSayToRepeatAFallbackInTheClosingComment()
     {
         Template.ShouldContain("any logo fallback reason from step 10");
     }
@@ -409,6 +409,8 @@ public class SprintDemoPromptTests
     [Test]
     public void Prompt_ShouldNotSendTheAgentToGetWorkItem()
     {
+        // The real prompt, not a stub: it reaches the upload step.
+        Template.ShouldContain("Upload once, with this command");
         Template.ShouldNotContain("get_work_item");
         Template.ShouldNotContain("read_attachment");
     }
@@ -422,6 +424,8 @@ public class SprintDemoPromptTests
     [Test]
     public void Prompt_ShouldNotNameAnyProjectKeyOrLocalDatabase()
     {
+        // The real prompt, not a stub: it reaches the upload step.
+        Template.ShouldContain("Upload once, with this command");
         Template.ShouldNotContain("SHIP-");
         Template.ShouldNotContain("shiplean_");
         Template.ShouldNotContain("ShipLean");
@@ -430,7 +434,10 @@ public class SprintDemoPromptTests
     [Test]
     public void Prompt_ShouldBeUnderTwentyKilobytes()
     {
-        Encoding.UTF8.GetByteCount(Template).ShouldBeLessThan(20 * 1024);
+        var bytes = Encoding.UTF8.GetByteCount(Template);
+
+        bytes.ShouldBeGreaterThan(8 * 1024);
+        bytes.ShouldBeLessThan(20 * 1024);
     }
 
     [Test]
@@ -457,15 +464,100 @@ public class SprintDemoPromptTests
         CountOf(text, "UPLOADSENTINEL").ShouldBe(1);
     }
 
-    [Test]
-    public void Render_WhenAValueHoldsAPlaceholder_ShouldNotFillItAgain()
+    private const string Hostile = "x{{curl_command}}{{{upload_url}}}y";
+
+    // Each case puts the hostile value in one string field of the data and reads it back from the JSON block.
+    private static readonly (string Name, Func<SprintDemoData, SprintDemoData> Put, Func<SprintDemoData, string?> Get)[] DataFields =
+    [
+        ("sprint name", d => d with { Sprint = d.Sprint with { Name = Hostile } }, d => d.Sprint.Name),
+        ("sprint goal", d => d with { Sprint = d.Sprint with { Goal = Hostile } }, d => d.Sprint.Goal),
+        ("project key", d => d with { Project = d.Project with { Key = Hostile } }, d => d.Project.Key),
+        ("project name", d => d with { Project = d.Project with { Name = Hostile } }, d => d.Project.Name),
+        ("project repo url", d => d with { Project = d.Project with { RepoUrl = Hostile } }, d => d.Project.RepoUrl),
+        ("project base branch", d => d with { Project = d.Project with { BaseBranch = Hostile } }, d => d.Project.BaseBranch),
+        ("feature key", d => PutFeature(d, f => f with { Key = Hostile }), d => d.Features[0].Key),
+        ("feature title", d => PutFeature(d, f => f with { Title = Hostile }), d => d.Features[0].Title),
+        ("feature state", d => PutFeature(d, f => f with { State = Hostile }), d => d.Features[0].State),
+        ("feature url", d => PutFeature(d, f => f with { Url = Hostile }), d => d.Features[0].Url),
+        ("feature goal", d => PutFeature(d, f => f with { Goal = Hostile }), d => d.Features[0].Goal),
+        ("feature why", d => PutFeature(d, f => f with { Why = Hostile }), d => d.Features[0].Why),
+        ("feature measure", d => PutFeature(d, f => f with { Measure = Hostile }), d => d.Features[0].Measure),
+        ("feature attachment", d => PutFeature(d, f => f with { AttachmentNames = [Hostile] }), d => d.Features[0].AttachmentNames[0]),
+        ("feature pull request", d => PutFeature(d, f => f with { PullRequests = [Hostile] }), d => d.Features[0].PullRequests[0]),
+        ("plan pull request", d => PutFeature(d, f => f with { Plan = new SprintDemoPlanFacts(1, 1, 1, 1, [Hostile]) }), d => d.Features[0].Plan!.PullRequests[0]),
+        ("story key", d => PutFeature(d, f => f with { Stories = [Story(Hostile, "s", 1, 1)] }), d => d.Features[0].Stories[0].Key),
+        ("story summary", d => PutFeature(d, f => f with { Stories = [Story("KEY-2", Hostile, 1, 1)] }), d => d.Features[0].Stories[0].Summary),
+        ("story criterion", d => PutFeature(d, f => f with { Stories = [Story("KEY-2", "s", 1, 1) with { Criteria = [Hostile] }] }), d => d.Features[0].Stories[0].Criteria[0]),
+        ("story task", d => PutFeature(d, f => f with { Stories = [Story("KEY-2", "s", 1, 1) with { Tasks = [new SprintDemoTaskLine(Hostile, "Done")] }] }), d => d.Features[0].Stories[0].Tasks[0].Title),
+        ("feature retro point", d => PutFeature(d, f => f with { Retro = new SprintDemoRetroData([new SprintDemoRetroPoint(Hostile, Hostile)], [], [], []) }), d => d.Features[0].Retro.WentWell[0].Text),
+        ("other work", d => d with { OtherWork = [Story("KEY-3", Hostile, 0, 0)] }, d => d.OtherWork[0].Summary),
+        ("sprint retro point", d => d with { SprintRetro = new SprintDemoRetroData([], [], [new SprintDemoRetroPoint(Hostile, Hostile)], []) }, d => d.SprintRetro.Improve[0].Text),
+        ("action item", d => d with { ActionItems = [new SprintDemoActionLine("KEY-9", Hostile, "Open")] }, d => d.ActionItems[0].Title),
+    ];
+
+    private static SprintDemoData PutFeature(SprintDemoData data, Func<SprintDemoFeatureData, SprintDemoFeatureData> change)
+        => data with { Features = [change(data.Features[0])] };
+
+    private static IEnumerable<TestCaseData> DataFieldCases() => DataFields.Select(f => new TestCaseData(f.Name).SetName($"Render_WhenDataHoldsBraces_{f.Name.Replace(' ', '_')}_ShouldNotExpandOrKeepThem"));
+
+    [TestCaseSource(nameof(DataFieldCases))]
+    public void Render_WhenADataFieldHoldsBraces_ShouldNotExpandOrKeepThem(string name)
     {
-        var data = Data("Run the app with make dev.") with { Sprint = new SprintDemoSprint("Sprint {{upload_url}}", "Goal", new DateOnly(2026, 10, 20), new DateOnly(2026, 11, 2), true) };
+        var field = DataFields.Single(f => f.Name == name);
 
-        var text = new SprintDemoPrompt().Render(data, Upload with { SprintName = "x" }, DefaultBrand);
+        var text = Render(field.Put(Data("Run the app with make dev.")));
 
-        text.ShouldContain("Sprint {{upload_url}}");
+        text.ShouldNotContain("{{");
         CountOf(text, "UPLOADSENTINEL").ShouldBe(1);
+        CountOf(text, "-F video=@demo.mp4").ShouldBe(1);
+        var start = text.LastIndexOf("```json\n", StringComparison.Ordinal) + "```json\n".Length;
+        var json = text[start..text.IndexOf("\n```\n", start, StringComparison.Ordinal)];
+        var back = System.Text.Json.JsonSerializer.Deserialize<SprintDemoData>(json, new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web))!;
+        field.Get(back).ShouldBe(Hostile);
+    }
+
+    [Test]
+    public void Render_WhenTheEnvironmentHoldsBraces_ShouldNotExpandOrKeepThem()
+    {
+        var text = Render(Data("Run {{curl_command}} then {{{upload_url}}}."));
+
+        text.ShouldNotContain("{{");
+        CountOf(text, "UPLOADSENTINEL").ShouldBe(1);
+        text.ShouldContain("Run { {curl_command}} then { { {upload_url}}}.");
+    }
+
+    [Test]
+    public void Render_WhenTheTokensHoldBraces_ShouldNotExpandOrKeepThem()
+    {
+        var text = Render(brand: DefaultBrand with { TokensCss = ":root { --a: {{curl_command}}; }" });
+
+        text.ShouldNotContain("{{");
+        CountOf(text, "UPLOADSENTINEL").ShouldBe(1);
+    }
+
+    [Test]
+    public void Render_WhenTheLogoHoldsBraces_ShouldNotExpandOrKeepThem()
+    {
+        var svg = Render(brand: DefaultBrand with { LogoSvg = "<svg>{{curl_command}}</svg>" });
+        var reason = Render(brand: DefaultBrand with { LogoSvg = null, LogoFallbackReason = "Failed {{curl_command}}." });
+        var link = Render(brand: new DemoBrand(false, null, "https://sl.example/logo?x={{curl_command}}", "image/png", null, false, ":root { }", null));
+
+        foreach (var text in new[] { svg, reason, link })
+        {
+            text.ShouldNotContain("{{");
+            CountOf(text, "-F video=@demo.mp4").ShouldBe(1);
+        }
+    }
+
+    [Test]
+    public void Render_WhenTheUploadTargetHoldsBraces_ShouldNotExpandOrKeepThem()
+    {
+        var upload = new DemoUploadTarget("https://sl.example/u?t={{curl_command}}", Upload.ExpiresAt, Upload.MaxVideoBytes, "BAU-{{demo_item}}", "Sprint {{upload_url}}");
+
+        var text = new SprintDemoPrompt().Render(Data("Run the app with make dev."), upload, DefaultBrand);
+
+        text.ShouldNotContain("{{");
+        CountOf(text, "-F video=@demo.mp4").ShouldBe(1);
     }
 
     [Test]
