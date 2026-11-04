@@ -1,5 +1,5 @@
 using System.Text;
-using ShipLean.Application.Features.WorkItemDetails.Attachments;
+using ShipLean.Application.Images;
 
 namespace ShipLean.UnitTest.Demos;
 

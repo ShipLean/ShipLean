@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Net.Http.Headers;
 using Npgsql;
 using ShipLean.Application.Identity;
+using ShipLean.Application.Images;
 using ShipLean.Application.Uploads;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Blobs;

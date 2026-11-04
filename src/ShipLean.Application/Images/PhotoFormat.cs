@@ -1,6 +1,6 @@
 using System.Buffers.Binary;
 
-namespace ShipLean.Application.Features.Profile;
+namespace ShipLean.Application.Images;
 
 // What a photo is, decided by its bytes and never by the declared type or the file name: the first bytes name the format and
 // the header the format puts first gives the size the image claims, so a file that is truncated, or that would decode to a

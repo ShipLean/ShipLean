@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
 
-namespace ShipLean.Application.Features.WorkItemDetails.Attachments;
+namespace ShipLean.Application.Images;
 
 // Makes an uploaded SVG safe to show: scripts and other active elements, event attributes, and every reference that
 // leaves the document (anything but a "#fragment" link, and any CSS url()/@import to elsewhere) are removed.

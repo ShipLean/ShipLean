@@ -1,3 +1,4 @@
+using ShipLean.Application.Images;
 using ShipLean.Application.Storage;
 using System.Data.Common;
 using Dapper;

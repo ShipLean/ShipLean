@@ -1,5 +1,4 @@
-using ShipLean.Application.Features.Profile;
-using ShipLean.Application.Features.WorkItemDetails.Attachments;
+using ShipLean.Application.Images;
 
 namespace ShipLean.Application.Features.Demos.Brand;
 
