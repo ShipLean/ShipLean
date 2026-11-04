@@ -13,10 +13,23 @@ public sealed class FakeSprintDemos : ISprintDemos
 
     public Exception? Failure { get; set; }
 
+    // A project's own logo and tokens: a link, no inline SVG, no fallback reason (K18).
+    public static DemoBrand ProjectBrand { get; } = new(
+        LogoIsDefault: false, LogoSvg: null, LogoUrl: "https://demo.example/api/downloads/demo-logo?token=abc", LogoContentType: "image/png",
+        LogoUrlExpiresAt: Expires, TokensAreDefault: false, TokensCss: ":root { --brand: #123456; }", LogoFallbackReason: null);
+
+    // ShipLean's logo standing in because the project's could not be prepared: inline SVG, no link, and the reason.
+    public static DemoBrand FallbackBrand { get; } = new(
+        LogoIsDefault: true, LogoSvg: "<svg/>", LogoUrl: null, LogoContentType: null,
+        LogoUrlExpiresAt: null, TokensAreDefault: true, TokensCss: ":root { --brand: #654321; }", LogoFallbackReason: "The logo is a fallback.");
+
+    public DemoBrand Brand { get; set; } = ProjectBrand;
+
     public void Reset()
     {
         _calls.Clear();
         Failure = null;
+        Brand = ProjectBrand;
     }
 
     public Task<SprintDemoHandover> CreateForAgentAsync(Guid sprintId, string baseUrl, string agentStamp, Guid? authorizationId, CancellationToken cancellationToken = default)
@@ -27,12 +40,9 @@ public sealed class FakeSprintDemos : ISprintDemos
             throw Failure;
         }
 
-        var brand = new DemoBrand(
-            LogoIsDefault: false, LogoSvg: null, LogoUrl: "https://demo.example/api/downloads/demo-logo?token=abc", LogoContentType: "image/png",
-            LogoUrlExpiresAt: Expires, TokensAreDefault: false, TokensCss: ":root { --brand: #123456; }", LogoFallbackReason: "The logo is a fallback.");
         return Task.FromResult(new SprintDemoHandover(
             sprintId, "SHIP-9001", "https://demo.example/p/SHIP/items/SHIP-9001", "https://demo.example/p/SHIP/sprints/x/demo",
-            "https://demo.example/api/uploads/demo?token=up123", Expires, 157286400, brand, "# Make the demo\n\nStep 1."));
+            "https://demo.example/api/uploads/demo?token=up123", Expires, 157286400, Brand, "# Make the demo\n\nStep 1."));
     }
 
     public Task<SprintDemoDto> GetAsync(Guid sprintId, CancellationToken cancellationToken = default) => throw new NotSupportedException();

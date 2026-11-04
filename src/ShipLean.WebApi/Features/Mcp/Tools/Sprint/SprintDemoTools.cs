@@ -36,8 +36,7 @@ internal sealed class SprintDemoTools(ProjectResolver projects, SprintResolver s
         if (RequestOrigin.HostIsClusterService(baseUrl))
         {
             throw ApiException.Validation(
-                "There is no upload URL: the only host available is a cluster service name, which a laptop cannot open. Ask an admin to set base_url to the public origin.",
-                "sprint");
+                "There is no upload URL: the only host available is a cluster service name, which a laptop cannot open. Ask an admin to set base_url to the public origin.");
         }
 
         var handover = await demos.CreateForAgentAsync(target.Id, baseUrl, AgentStamp.Of(agent) ?? "Agent", support.AgentAuthorizationId(), cancellationToken);

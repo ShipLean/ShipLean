@@ -1,5 +1,6 @@
 using System.Net;
 using System.Reflection;
+using System.Text.Json;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using ModelContextProtocol.Server;
@@ -60,7 +61,7 @@ public class CreateSprintDemoShapeTests : McpFixture
         brand.GetProperty("logo_content_type").GetString().ShouldBe("image/png");
         brand.GetProperty("logo_url_expires_at").GetDateTimeOffset().ShouldBe(FakeSprintDemos.Expires);
         brand.GetProperty("tokens_are_default").GetBoolean().ShouldBeFalse();
-        brand.GetProperty("logo_fallback_reason").GetString().ShouldBe("The logo is a fallback.");
+        brand.GetProperty("logo_fallback_reason").ValueKind.ShouldBe(JsonValueKind.Null);
         _demos.Calls.Select(c => c.SprintId).ShouldBe([sprint]);
         _demos.Calls[0].AgentStamp.ShouldNotBeNullOrWhiteSpace();
     }
@@ -104,6 +105,23 @@ public class CreateSprintDemoShapeTests : McpFixture
     }
 
     [Test]
+    public async Task Tool_WhenLogoFellBack_ShouldCarryTheReasonAndNoLogoLink()
+    {
+        _demos.Brand = FakeSprintDemos.FallbackBrand;
+        var token = await TokenAsync(TestUser.Joel, ReadWrite);
+
+        var reply = await CallToolAsync(token, Tool, """{"project":"SHIP","sprint":"Sprint 23"}""");
+
+        reply.IsToolError().ShouldBeFalse(reply.Body);
+        var brand = reply.Structured().GetProperty("brand");
+        brand.GetProperty("logo_is_default").GetBoolean().ShouldBeTrue();
+        brand.GetProperty("logo_url").ValueKind.ShouldBe(JsonValueKind.Null);
+        brand.GetProperty("logo_url_expires_at").ValueKind.ShouldBe(JsonValueKind.Null);
+        brand.GetProperty("tokens_are_default").GetBoolean().ShouldBeTrue();
+        brand.GetProperty("logo_fallback_reason").GetString().ShouldBe("The logo is a fallback.");
+    }
+
+    [Test]
     public async Task Tool_WhenConflict_ShouldReturnTheErrorShape()
     {
         _demos.Failure = ApiException.Conflict("A demo is already being made for this sprint.");
@@ -131,7 +149,12 @@ public class CreateSprintDemoShapeTests : McpFixture
             var reply = await CallToolAsync(token, Tool, """{"project":"SHIP","sprint":"Sprint 23"}""", request => request.Headers.Host = "non-prod.shiplean.svc:8080");
 
             reply.IsToolError().ShouldBeTrue(reply.Body);
-            reply.Structured().GetProperty("error").GetProperty("message").GetString()!.ShouldContain("base_url");
+            var error = reply.Structured().GetProperty("error");
+            error.GetProperty("code").GetString().ShouldBe(ApiErrorCodes.Validation);
+            error.TryGetProperty("field", out var field).ShouldBeTrue();
+            field.ValueKind.ShouldBe(JsonValueKind.Null);
+            error.GetProperty("message").GetString().ShouldBe(
+                "There is no upload URL: the only host available is a cluster service name, which a laptop cannot open. Ask an admin to set base_url to the public origin.");
             _demos.Calls.ShouldBeEmpty();
         }
         finally
