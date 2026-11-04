@@ -5,6 +5,7 @@ using ShipLean.Contracts;
 using ShipLean.Contracts.Criteria;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Persisted;
+using ShipLean.Contracts.Refs;
 using ShipLean.Core;
 using ShipLean.Core.Sprints;
 
@@ -85,7 +86,7 @@ public sealed class OrientReads(NpgsqlDataSource dataSource, ICurrentUser curren
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var parameters = new DynamicParameters(new { projectId = filter.ProjectId });
-        var conditions = new List<string> { "w.project_id = @projectId", "s.category <> 'removed'" };
+        var conditions = new List<string> { "w.project_id = @projectId", "s.category <> 'removed'", WorkItemTypeRules.NotHiddenSql };
 
         var clauses = new List<CriteriaClause>();
         if (filter.Type is { } type)

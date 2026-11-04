@@ -1,6 +1,6 @@
 using System.Text;
 using ShipLean.Application.Features.Mcp.Planning.Markers;
-using ShipLean.Application.Features.Mcp.Planning.Tags;
+using ShipLean.Application.Plans;
 using ShipLean.TestSupport.Plans;
 
 namespace ShipLean.UnitTest.Mcp.Planning;

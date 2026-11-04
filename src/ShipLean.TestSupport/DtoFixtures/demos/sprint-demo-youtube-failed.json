@@ -1,0 +1,71 @@
+{
+  "sprintId": "00000004-0000-4000-8001-000000000024",
+  "sprintName": "Sprint 24",
+  "status": "ready",
+  "statusMessage": null,
+  "run": {
+    "itemKey": "SHIP-200",
+    "itemUrl": "/p/SHIP/items/SHIP-200",
+    "sessionState": "ended",
+    "requestedLabel": "Requested today at 10:15",
+    "uploadExpiresLabel": "Link valid until tomorrow at 10:15"
+  },
+  "video": {
+    "attachmentId": "00000005-0000-4000-8000-0000000000a1",
+    "contentUrl": "/api/attachments/00000005-0000-4000-8000-0000000000a1/content",
+    "name": "sprint-demo.mp4",
+    "sizeBytes": 50841,
+    "durationSeconds": 8,
+    "durationLabel": "0:08",
+    "deliveredLabel": "Delivered today at 10:40"
+  },
+  "chapters": [
+    {
+      "title": "Introduction",
+      "startSeconds": 0,
+      "startLabel": "0:00",
+      "featureKey": null
+    },
+    {
+      "title": "Checkout v2",
+      "startSeconds": 4,
+      "startLabel": "0:04",
+      "featureKey": "SHIP-101"
+    }
+  ],
+  "features": [
+    {
+      "key": "SHIP-101",
+      "title": "Checkout v2",
+      "state": {
+        "id": "00000003-0000-4000-8000-000000000002",
+        "name": "Done",
+        "category": "completed"
+      },
+      "url": "/p/SHIP/items/SHIP-101"
+    },
+    {
+      "key": "SHIP-102",
+      "title": "Coupons",
+      "state": {
+        "id": "00000003-0000-4000-8000-000000000001",
+        "name": "Active",
+        "category": "inProgress"
+      },
+      "url": "/p/SHIP/items/SHIP-102"
+    }
+  ],
+  "scriptHtml": "<h2>Introduction</h2><p><strong>Ann:</strong> Welcome to the Sprint 24 demo.</p><h2>Checkout v2</h2><p><strong>Keith:</strong> Checkout now takes one step.</p>",
+  "youTube": {
+    "state": "failed",
+    "watchUrl": null,
+    "embedUrl": null,
+    "privacy": null,
+    "failureMessage": "YouTube refused the upload: the daily quota is used up."
+  },
+  "actions": {
+    "canCreate": true,
+    "createBlockedMessage": null,
+    "canRetryYouTube": true
+  }
+}

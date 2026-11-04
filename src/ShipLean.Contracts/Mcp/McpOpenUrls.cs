@@ -30,6 +30,10 @@ public static class McpOpenUrls
     public static string Taskboard(string baseUrl, string projectKey, Guid sprintId)
         => Join(baseUrl, $"/p/{Segment(projectKey)}/sprints/{sprintId}/taskboard");
 
+    // The sprint's demo screen.
+    public static string SprintDemo(string baseUrl, string projectKey, Guid sprintId)
+        => Join(baseUrl, $"/p/{Segment(projectKey)}/sprints/{sprintId}/demo");
+
     // The Feature board: the Taskboard scoped to one Feature.
     public static string FeatureBoard(string baseUrl, string projectKey, string itemKey)
         => Join(baseUrl, $"/p/{Segment(projectKey)}/items/{Segment(itemKey)}/board");

@@ -9,10 +9,19 @@ public static class AttachmentServing
 {
     private const string SvgType = "image/svg+xml";
 
+    private static readonly string[] PlayableTypes = ["video/mp4", "video/webm"];
+
     public static bool IsInline(string contentType, bool sanitized)
     {
         var mediaType = contentType.Split(';')[0].Trim();
         return AttachmentKinds.ImageTypes.Contains(mediaType, StringComparer.OrdinalIgnoreCase)
             && (sanitized || !mediaType.Equals(SvgType, StringComparison.OrdinalIgnoreCase));
+    }
+
+    // A file a browser plays and seeks with ranged requests. Still served as an attachment: <video src> plays it all the same.
+    public static bool IsPlayable(string contentType)
+    {
+        var mediaType = contentType.Split(';')[0].Trim();
+        return PlayableTypes.Contains(mediaType, StringComparer.OrdinalIgnoreCase);
     }
 }

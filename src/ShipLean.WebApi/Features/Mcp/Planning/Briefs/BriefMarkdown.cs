@@ -2,6 +2,7 @@ using System.Text;
 using ShipLean.Application.Features.Mcp.Planning.Markers;
 using ShipLean.Application.Features.Mcp.Planning.Tree;
 using ShipLean.Application.Features.Mcp.Planning.Waves;
+using ShipLean.Application.Plans;
 
 namespace ShipLean.WebApi.Features.Mcp.Planning.Briefs;
 

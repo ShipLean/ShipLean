@@ -1,6 +1,6 @@
 using Dapper;
 using Npgsql;
-using ShipLean.Application.Features.Mcp.Planning.Markers;
+using ShipLean.Application.Plans;
 using ShipLean.Contracts.Persisted;
 
 namespace ShipLean.Application.Features.Mcp.Planning.Status;

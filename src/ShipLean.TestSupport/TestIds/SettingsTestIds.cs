@@ -9,6 +9,7 @@ public static class SettingsTestIds
     public const string TabMembers = "settings-tab-members";
     public const string TabSprints = "settings-tab-sprints";
     public const string TabIntegrations = "settings-tab-integrations";
+    public const string TabDemos = "settings-tab-demos";
     public const string TabDirty = "settings-tab-dirty";
     public const string TabError = "settings-tab-error";
     public const string ChangesList = "settings-changes-list";
@@ -61,6 +62,7 @@ public static class SettingsTestIds
     public const string StateTypeBug = "settings-state-type-bug";
     public const string StateTypeTask = "settings-state-type-task";
     public const string StateTypeAction = "settings-state-type-action";
+    public const string StateTypeBau = "settings-state-type-bau";
     public const string StateRow = "settings-state-row";
     public const string StateName = "settings-state-name";
     public const string StateCategory = "settings-state-category";

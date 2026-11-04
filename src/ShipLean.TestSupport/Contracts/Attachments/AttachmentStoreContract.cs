@@ -1,3 +1,4 @@
+using System.Data.Common;
 using System.Text;
 using ShipLean.Contracts.Attachments;
 using ShipLean.TestSupport.Contracts.Blobs;
@@ -143,6 +144,103 @@ public abstract class AttachmentStoreContract
         listed[0].UploadedBy.ShouldNotBeNull().Id.ShouldBe(Priya);
         listed[0].CreatedAt.ShouldBe(created);
         listed[1].UploadedBy.ShouldBeNull();
+    }
+
+    [Test]
+    public async Task Stage_ShouldChangeNoRow()
+    {
+        var workItem = await ArrangeWorkItemAsync();
+        var store = CreateStore(Joel);
+        var old = await store.AddAsync(workItem, "a.txt", "text/plain", Bytes("old"));
+
+        var staged = await store.StageAsync(workItem, "a.txt", "text/plain", Bytes("new"));
+
+        staged.Name.ShouldBe("a.txt");
+        staged.SizeBytes.ShouldBe(3);
+        staged.WorkItemId.ShouldBe(workItem);
+        (await store.ListAsync(workItem)).Select(a => a.Id).ShouldBe([old.Id]);
+        await using var stream = (await store.OpenAsync(old.Id)).Content.Content;
+        (await new StreamReader(stream).ReadToEndAsync()).ShouldBe("old");
+    }
+
+    [Test]
+    public async Task Commit_ShouldReplaceEverySameNameRowTogether()
+    {
+        var workItem = await ArrangeWorkItemAsync();
+        var store = CreateStore(Joel);
+        var oldA = await store.AddAsync(workItem, "a.txt", "text/plain", Bytes("old a"));
+        var oldB = await store.AddAsync(workItem, "b.txt", "text/plain", Bytes("old b"));
+        var kept = await store.AddAsync(workItem, "keep.txt", "text/plain", Bytes("kept"));
+        var newA = await store.StageAsync(workItem, "a.txt", "text/plain", Bytes("new a"));
+        var newB = await store.StageAsync(workItem, "b.txt", "text/plain", Bytes("new b"));
+        var newC = await store.StageAsync(workItem, "c.txt", "text/plain", Bytes("new c"));
+
+        var committed = await store.CommitStagedAsync(workItem, [newA, newB, newC]);
+
+        committed.Select(a => a.Id).ShouldBe([newA.Id, newB.Id, newC.Id]);
+        (await store.ListAsync(workItem)).Select(a => a.Id).OrderBy(i => i).ShouldBe(new[] { kept.Id, newA.Id, newB.Id, newC.Id }.OrderBy(i => i));
+        foreach (var gone in new[] { oldA.Id, oldB.Id })
+        {
+            (await Should.ThrowAsync<ApiException>(() => store.OpenAsync(gone))).Code.ShouldBe(ApiErrorCodes.NotFound);
+        }
+
+        await using var stream = (await store.OpenAsync(newA.Id)).Content.Content;
+        (await new StreamReader(stream).ReadToEndAsync()).ShouldBe("new a");
+    }
+
+    [Test]
+    public async Task Commit_WhenHookThrows_ShouldLeaveTheOldRowsLiveAndNoNewRow()
+    {
+        var workItem = await ArrangeWorkItemAsync();
+        var store = CreateStore(Joel);
+        var oldA = await store.AddAsync(workItem, "a.txt", "text/plain", Bytes("old a"));
+        var newA = await store.StageAsync(workItem, "a.txt", "text/plain", Bytes("new a"));
+        var newB = await store.StageAsync(workItem, "b.txt", "text/plain", Bytes("new b"));
+
+        await Should.ThrowAsync<InvalidOperationException>(() => store.CommitStagedAsync(workItem, [newA, newB], (_, _) => throw new InvalidOperationException("hook failed")));
+
+        (await store.ListAsync(workItem)).Select(a => a.Id).ShouldBe([oldA.Id]);
+        (await Should.ThrowAsync<ApiException>(() => store.OpenAsync(newA.Id))).Code.ShouldBe(ApiErrorCodes.NotFound);
+    }
+
+    [Test]
+    public async Task Commit_ShouldRunTheHookAfterTheRowsAreWritten()
+    {
+        var workItem = await ArrangeWorkItemAsync();
+        var store = CreateStore(Joel);
+        var staged = await store.StageAsync(workItem, "a.txt", "text/plain", Bytes("a"));
+        var calls = new List<DbTransaction?>();
+
+        await store.CommitStagedAsync(workItem, [staged], (transaction, _) =>
+        {
+            calls.Add(transaction);
+            return Task.CompletedTask;
+        });
+
+        calls.Count.ShouldBe(1);
+        calls[0].ShouldNotBeNull();
+        (await store.ListAsync(workItem)).Select(a => a.Id).ShouldBe([staged.Id]);
+    }
+
+    [Test]
+    public async Task Commit_WhenNameRepeated_ShouldBeValidationAndChangeNothing()
+    {
+        var workItem = await ArrangeWorkItemAsync();
+        var store = CreateStore(Joel);
+        var old = await store.AddAsync(workItem, "a.txt", "text/plain", Bytes("old"));
+        var first = await store.StageAsync(workItem, "a.txt", "text/plain", Bytes("one"));
+        var second = await store.StageAsync(workItem, "a.txt", "text/plain", Bytes("two"));
+        var hookRan = false;
+
+        var error = await Should.ThrowAsync<ApiException>(() => store.CommitStagedAsync(workItem, [first, second], (_, _) =>
+        {
+            hookRan = true;
+            return Task.CompletedTask;
+        }));
+
+        error.Code.ShouldBe(ApiErrorCodes.Validation);
+        hookRan.ShouldBeFalse();
+        (await store.ListAsync(workItem)).Select(a => a.Id).ShouldBe([old.Id]);
     }
 
     private static ImportedAttachment Imported(string id, string name, DateTimeOffset createdAt, Guid? uploader = null)

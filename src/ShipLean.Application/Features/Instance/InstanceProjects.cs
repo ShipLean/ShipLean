@@ -23,10 +23,10 @@ public sealed class InstanceProjects(NpgsqlDataSource dataSource, ICurrentUser c
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var projects = (await connection.QueryAsync<ProjectRow>(new CommandDefinition(
-            """
+            $"""
             SELECT p.id, p.key, p.name,
                    (SELECT count(*) FROM project_member m WHERE m.project_id = p.id AND m.archived_at IS NULL)::int AS memberCount,
-                   (SELECT count(*) FROM work_item w JOIN state s ON s.id = w.state_id WHERE w.project_id = p.id AND s.category <> 'removed')::int AS itemCount,
+                   (SELECT count(*) FROM work_item w JOIN state s ON s.id = w.state_id WHERE w.project_id = p.id AND s.category <> 'removed' AND {WorkItemTypeRules.NotHiddenSql})::int AS itemCount,
                    (SELECT m.role FROM project_member m WHERE m.project_id = p.id AND m.user_id = @caller AND m.archived_at IS NULL) AS yourRole
             FROM project p
             ORDER BY p.key

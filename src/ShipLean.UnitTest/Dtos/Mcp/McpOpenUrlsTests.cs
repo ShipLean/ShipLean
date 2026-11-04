@@ -28,6 +28,7 @@ public class McpOpenUrlsTests
             ["retros"] = McpOpenUrls.Retros(Base, "SHIP"),
             ["sprintBacklog"] = McpOpenUrls.SprintBacklog(Base, "SHIP", Sprint),
             ["taskboard"] = McpOpenUrls.Taskboard(Base, "SHIP", Sprint),
+            ["sprintDemo"] = McpOpenUrls.SprintDemo(Base, "SHIP", Sprint),
             ["featureBoard"] = McpOpenUrls.FeatureBoard(Base, "SHIP", "SHIP-141"),
             ["workItemAttachment"] = McpOpenUrls.WorkItemAttachment(Base, "SHIP", "SHIP-141", Guid.Parse("00000004-0000-4000-8001-000000000020")),
         };

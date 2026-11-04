@@ -69,7 +69,7 @@ const velocity: VelocityDto = {
 
 const sprintIdOf = (url: string, fromEnd: number) => url.split('/').at(-fromEnd)!;
 
-async function stubSprintFigures(page: Page, burndown: SprintMetricsDto['burndown'] = []) {
+export async function stubSprintFigures(page: Page, burndown: SprintMetricsDto['burndown'] = []) {
   await page.route('**/api/projects/p1/velocity', (route) => route.fulfill({ json: velocity }));
   await page.route('**/api/sprints/*/metrics', (route) => {
     const id = sprintIdOf(route.request().url(), 2);

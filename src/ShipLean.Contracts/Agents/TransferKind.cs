@@ -4,4 +4,6 @@ public enum TransferKind
 {
     Upload,
     Download,
+    Demo,
+    DemoLogo,
 }

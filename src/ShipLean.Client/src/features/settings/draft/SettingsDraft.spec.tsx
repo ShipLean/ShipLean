@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import type { ProjectSettingsDto, ProjectSettingsPut } from '../../../api/projects';
 import { WORK_ITEM_TYPE_IDS } from '../../../api/refs';
+import demoSettings from '../../../../../ShipLean.TestSupport/DtoFixtures/demos/project-demo-settings.json' with { type: 'json' };
+import { demosTestIds as demosIds } from '../../demos/testIds';
 import { settingsTestIds as ids } from '../testIds';
 import { SettingsDraftHarness } from './ct/SettingsDraftHarness';
 import { PROJECT_ID } from './ct/projectDto';
@@ -340,6 +342,53 @@ test('Draft_WhenStatesTab_ShouldShowTheStatesNodeUntouched', async ({ mount, pag
     hooksConfig: { route: '/p/SHIP/settings/states' },
   });
   await expect(view.getByTestId('harness-states')).toBeVisible();
+});
+
+test('Tabs_ShouldListDemosLast', async ({ mount, page }) => {
+  await stub(page);
+  const view = await mount(<SettingsDraftHarness role="admin" />, {
+    hooksConfig: { route: '/p/SHIP/settings/general' },
+  });
+  const tabs = view.locator(
+    [
+      ids.tabGeneral,
+      ids.tabStates,
+      ids.tabMembers,
+      ids.tabSprints,
+      ids.tabIntegrations,
+      ids.tabDemos,
+    ]
+      .map((testId) => `[data-testid="${testId}"]`)
+      .join(', '),
+  );
+  await expect(tabs).toHaveText([
+    'General',
+    'States',
+    'Members',
+    'Sprints & forecast',
+    'Integrations',
+    'Demos',
+  ]);
+  await expect(
+    view.getByRole('navigation', { name: 'Settings sections' }).getByRole('link').last(),
+  ).toHaveAttribute('data-testid', ids.tabDemos);
+});
+
+test('DemosTab_ShouldNotJoinTheDraftsSave', async ({ mount, page }) => {
+  const puts = await stub(page);
+  await page.route(`**/api/projects/${PROJECT_ID}/demo-settings`, (route) =>
+    route.fulfill({ json: demoSettings }),
+  );
+  const view = await mount(<SettingsDraftHarness role="admin" />, {
+    hooksConfig: { route: '/p/SHIP/settings/demos' },
+  });
+
+  await expect(view.getByTestId(demosIds.demoSettingsPanel)).toBeVisible();
+  await expect(view.getByTestId(demosIds.demoBrandPanel)).toBeVisible();
+  await expect(view.getByTestId(ids.tabDirty)).toHaveCount(0);
+  await expect(view.getByTestId(ids.unsaved)).toHaveCount(0);
+  await expect(view.getByTestId(ids.save)).toBeDisabled();
+  expect(puts).toHaveLength(0);
 });
 
 test('Draft_WhenStateStagedThroughContext_ShouldSurviveTabSwitchAndGoInTheOnePut', async ({

@@ -5,6 +5,7 @@ import { projectSettingsTabs, type ProjectSettingsTab } from '../../../../routes
 import { projectDto } from './projectDto';
 import { SettingsDraftContext } from '../LoadedSettings';
 import { SettingsDraftSlot } from '../../../../slots/SettingsDraftSlot';
+import { SettingsDemosSlot } from '../../../../slots/SettingsDemosSlot';
 
 // Stands in for the settings page: the tab comes from the address, as the page reads it from the route.
 // A tiny States consumer: stages one state change through the context, as the States tab will.
@@ -46,12 +47,14 @@ export function SettingsDraftHarness({
 }) {
   const last = useLocation().pathname.split('/').pop();
   const tab: ProjectSettingsTab = projectSettingsTabs.find((t) => t === last) ?? 'general';
+  const project = projectDto(role);
   return (
     <SettingsDraftSlot
-      project={projectDto(role)}
+      project={project}
       tab={tab}
       states={fakeStates ? <FakeStates /> : <div data-testid="harness-states">states</div>}
       integrations={<div data-testid="harness-integrations">integrations</div>}
+      demos={<SettingsDemosSlot project={project} tab={tab} />}
     />
   );
 }

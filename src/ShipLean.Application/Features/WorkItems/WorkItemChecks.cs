@@ -30,6 +30,11 @@ internal static class WorkItemChecks
             throw ApiException.NotFound("User not found.");
         }
 
+        if (change.SprintId is not null && WorkItemTypeRules.IsHidden(change.Type))
+        {
+            throw ApiException.Validation("A BAU item can't be in a sprint.", "sprint");
+        }
+
         if (change.SprintId is { } sprint
             && !await ExistsAsync(scope, "SELECT EXISTS (SELECT 1 FROM sprint WHERE id = @id AND project_id = @projectId AND archived_at IS NULL)", sprint, change.ProjectId, cancellationToken))
         {

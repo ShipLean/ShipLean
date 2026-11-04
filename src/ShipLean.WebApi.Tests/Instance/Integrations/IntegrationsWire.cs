@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Application.Features.Instance.Integrations;
+using ShipLean.Contracts.Demos;
 using ShipLean.Contracts.Links;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
@@ -32,5 +33,11 @@ internal static class IntegrationsWire
     {
         await using var scope = host.Services.CreateAsyncScope();
         return await scope.ServiceProvider.GetRequiredService<IIntegrationSettings>().GetAsync();
+    }
+
+    public static async Task<YouTubeClientSettings?> ResolveYouTubeAsync(ShipLeanHost host)
+    {
+        await using var scope = host.Services.CreateAsyncScope();
+        return await scope.ServiceProvider.GetRequiredService<IYouTubeSettings>().GetAsync();
     }
 }

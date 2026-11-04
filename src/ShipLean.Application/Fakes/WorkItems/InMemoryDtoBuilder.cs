@@ -23,6 +23,7 @@ internal sealed class InMemoryDtoBuilder(
         [WorkItemTypeId.Bug] = "Bug",
         [WorkItemTypeId.Task] = "Task",
         [WorkItemTypeId.Action] = "Action item",
+        [WorkItemTypeId.Bau] = "BAU",
     };
 
     public ConflictDto Conflict(WorkItemSnapshot current, int expectedRevision)

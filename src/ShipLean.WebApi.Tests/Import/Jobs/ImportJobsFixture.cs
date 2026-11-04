@@ -1,3 +1,6 @@
+using ShipLean.Application.Fakes.Attachments;
+using ShipLean.Application.Fakes.Blobs;
+using ShipLean.TestSupport.Contracts.Users;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -36,7 +39,7 @@ public abstract class ImportJobsFixture : ApiFixture
 
     protected InMemoryJiraConnections Connections { get; } = new();
 
-    internal RecordingAttachmentStore Attachments { get; } = new();
+    internal RecordingAttachmentStore Attachments { get; } = new(new InMemoryAttachmentStore(new SettableCurrentUser(), new InMemoryBlobStore(), TimeProvider.System));
 
     protected InMemoryJiraClient Jira { get; private set; } = null!;
 

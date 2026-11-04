@@ -1,4 +1,4 @@
-using ShipLean.Application.Features.Mcp.Planning.Waves;
+using ShipLean.Application.Plans;
 using ShipLean.WebApi.Features.Mcp.Tools.Planning;
 
 namespace ShipLean.WebApi.Features.Mcp.Planning.Capture;

@@ -1,4 +1,4 @@
-using ShipLean.Application.Features.Mcp.Planning.Tags;
+using ShipLean.Application.Plans;
 using ShipLean.Contracts.Refs;
 
 namespace ShipLean.Application.Features.Mcp.Planning.Tree;

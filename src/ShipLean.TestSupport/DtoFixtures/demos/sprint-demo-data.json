@@ -1,0 +1,118 @@
+{
+  "sprint": {
+    "name": "Sprint 24",
+    "goal": "Coupons v2",
+    "startDate": "2026-10-20",
+    "endDate": "2026-11-02",
+    "closed": true
+  },
+  "project": {
+    "key": "SHIP",
+    "name": "ShipLean",
+    "repoUrl": "https://github.com/example/shop",
+    "baseBranch": "main",
+    "environment": "Run the app with make dev."
+  },
+  "features": [
+    {
+      "key": "SHIP-101",
+      "title": "Checkout v2",
+      "state": "Done",
+      "url": "/p/SHIP/items/SHIP-101",
+      "goal": "One-step checkout",
+      "why": "Shoppers drop out of a three-step checkout.",
+      "measure": "Checkout completion rate (to confirm)",
+      "stories": [
+        {
+          "key": "SHIP-111",
+          "type": "story",
+          "title": "One-step payment",
+          "state": "Done",
+          "points": 3,
+          "summary": "Checkout takes one step instead of three.",
+          "criteria": [
+            "A shopper can pay without leaving the page"
+          ],
+          "tasks": [
+            {
+              "title": "Build the payment step",
+              "state": "Done"
+            }
+          ]
+        }
+      ],
+      "plan": {
+        "waves": 2,
+        "stories": 3,
+        "tasks": 9,
+        "reviewRounds": 2,
+        "pullRequests": [
+          "https://github.com/example/shop/pull/12"
+        ]
+      },
+      "retro": {
+        "wentWell": [
+          {
+            "theme": "Planning",
+            "text": "Small slices merged quickly."
+          }
+        ],
+        "wentBadly": [
+          {
+            "theme": "Testing",
+            "text": "A flaky screenshot cost a review round."
+          }
+        ],
+        "improve": [
+          {
+            "theme": "Testing",
+            "text": "Pin screenshots to the CI image."
+          }
+        ],
+        "notInPlan": [
+          {
+            "theme": null,
+            "text": "The payment provider changed its sandbox."
+          }
+        ]
+      },
+      "attachmentNames": [
+        "checkout-flow.png"
+      ],
+      "pullRequests": [
+        "https://github.com/example/shop/pull/12"
+      ]
+    }
+  ],
+  "otherWork": [
+    {
+      "key": "SHIP-120",
+      "type": "bug",
+      "title": "Typo in receipt",
+      "state": "Done",
+      "points": 1,
+      "summary": null,
+      "criteria": [],
+      "tasks": []
+    }
+  ],
+  "sprintRetro": {
+    "wentWell": [
+      {
+        "theme": null,
+        "text": "The team kept the sprint goal."
+      }
+    ],
+    "wentBadly": [],
+    "improve": [],
+    "notInPlan": []
+  },
+  "actionItems": [
+    {
+      "key": "SHIP-130",
+      "title": "Pin screenshots to the CI image",
+      "state": "New"
+    }
+  ],
+  "truncated": false
+}

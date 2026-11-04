@@ -1,4 +1,5 @@
 using ShipLean.Application.Features.Mcp.Planning.Tree;
+using ShipLean.Application.Plans;
 using ShipLean.Contracts.Refs;
 
 namespace ShipLean.Application.Features.Mcp.Planning.Waves;

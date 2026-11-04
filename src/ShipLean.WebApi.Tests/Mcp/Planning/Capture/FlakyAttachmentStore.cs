@@ -1,3 +1,4 @@
+using System.Data.Common;
 using ShipLean.Contracts.Attachments;
 
 namespace ShipLean.WebApi.Tests.Mcp.Planning.Capture;
@@ -19,4 +20,10 @@ public sealed class FlakyAttachmentStore(IAttachmentStore inner, AttachFailures 
 
     public Task<Guid> ImportAsync(Guid workItemId, ImportedAttachment attachment, Stream content, CancellationToken cancellationToken = default)
         => inner.ImportAsync(workItemId, attachment, content, cancellationToken);
+
+    public Task<StagedAttachment> StageAsync(Guid workItemId, string name, string contentType, Stream content, AttachmentSource? source = null, long? maxBytes = null, CancellationToken cancellationToken = default)
+        => inner.StageAsync(workItemId, name, contentType, content, source, maxBytes, cancellationToken);
+
+    public Task<IReadOnlyList<AttachmentDto>> CommitStagedAsync(Guid workItemId, IReadOnlyList<StagedAttachment> staged, Func<DbTransaction, CancellationToken, Task>? inTransaction = null, CancellationToken cancellationToken = default)
+        => inner.CommitStagedAsync(workItemId, staged, inTransaction, cancellationToken);
 }

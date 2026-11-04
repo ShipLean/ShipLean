@@ -97,6 +97,47 @@ public sealed class LocalDiskBlobStore : IBlobStore
         }
     }
 
+    // The header is read and skipped, then the file is positioned at the body's offset, so the caller's first read is the byte asked for.
+    public async Task<Stream?> OpenAtAsync(string key, long offset, CancellationToken cancellationToken)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(offset);
+        var path = PathFor(key);
+        FileStream file;
+        try
+        {
+            file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 4096, useAsync: true);
+        }
+        catch (FileNotFoundException)
+        {
+            return null;
+        }
+        catch (DirectoryNotFoundException)
+        {
+            return null;
+        }
+
+        try
+        {
+            var header = new byte[sizeof(int)];
+            await file.ReadExactlyAsync(header, cancellationToken);
+            var length = BinaryPrimitives.ReadInt32LittleEndian(header);
+            if (length is < 0 or > MaxContentTypeBytes)
+            {
+                throw new InvalidDataException($"Blob '{key}' has no valid header.");
+            }
+
+            // An offset past the body is the empty rest: clamp to the end so a huge offset can't overflow the seek.
+            var bodyStart = file.Position + length;
+            file.Seek(Math.Min(offset, Math.Max(0, file.Length - bodyStart)) + length, SeekOrigin.Current);
+            return file;
+        }
+        catch
+        {
+            await file.DisposeAsync();
+            throw;
+        }
+    }
+
     public Task<bool> ExistsAsync(string key, CancellationToken cancellationToken)
         => Task.FromResult(File.Exists(PathFor(key)));
 

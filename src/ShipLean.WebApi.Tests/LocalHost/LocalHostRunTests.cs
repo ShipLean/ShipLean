@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text.Json;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Auth;
 using ShipLean.Contracts.Projects;
@@ -44,6 +45,17 @@ public class LocalHostRunTests
             $"SHIPLEAN_LOCAL_URL={host.BaseUrl}",
             "Press Ctrl+C to stop.",
         ]);
+    }
+
+    [Test]
+    public async Task Start_ShouldPointTheInstanceBaseUrlAtItself()
+    {
+        await using var host = await StartAsync(new StringWriter(), withBundle: true);
+        using var client = await SignedInAsync(host);
+
+        using var settings = JsonDocument.Parse(await client.GetStringAsync("/api/instance/settings"));
+
+        settings.RootElement.GetProperty("baseUrl").GetString().ShouldBe(host.BaseUrl);
     }
 
     [Test]

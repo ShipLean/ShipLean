@@ -1,3 +1,5 @@
+using System.Data.Common;
+using ShipLean.Application.Fakes.WorkItems;
 using ShipLean.Application.Features.WorkItemDetails.Attachments;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Attachments;
@@ -14,6 +16,7 @@ namespace ShipLean.Application.Fakes.Attachments;
 public sealed class InMemoryAttachmentStore(ICurrentUser currentUser, IBlobStore blobs, TimeProvider time) : IAttachmentStore
 {
     private readonly object _gate = new();
+    private readonly SemaphoreSlim _commits = new(1, 1);
     private readonly HashSet<Guid> _workItems = [];
     private readonly Dictionary<Guid, UserRef> _users = [];
     private readonly List<Entry> _entries = [];
@@ -64,6 +67,76 @@ public sealed class InMemoryAttachmentStore(ICurrentUser currentUser, IBlobStore
             var entry = new Entry(id, workItemId, cleanName, contentType, size, storageRef, currentUser.Id, time.GetUtcNow(), _entries.Count) { Source = source };
             _entries.Add(entry);
             return ToDto(entry);
+        }
+    }
+
+    public async Task<StagedAttachment> StageAsync(Guid workItemId, string name, string contentType, Stream content, AttachmentSource? source = null, long? maxBytes = null, CancellationToken cancellationToken = default)
+    {
+        var cleanName = RequireName(name);
+        lock (_gate)
+        {
+            RequireWorkItem(workItemId);
+        }
+
+        var storageRef = NewRef();
+        await using var limited = maxBytes is { } max ? new CountingLimitStream(content, max) : null;
+        var size = await blobs.PutAsync(storageRef, limited ?? content, contentType, cancellationToken);
+        return new StagedAttachment(Guid.NewGuid(), workItemId, cleanName, contentType, size, storageRef, false, null, source);
+    }
+
+    // Commits one at a time. The hook runs first, on a transaction with no connection; the rows are applied under the gate only once it returns, so a throw changes nothing.
+    public async Task<IReadOnlyList<AttachmentDto>> CommitStagedAsync(Guid workItemId, IReadOnlyList<StagedAttachment> staged, Func<DbTransaction, CancellationToken, Task>? inTransaction = null, CancellationToken cancellationToken = default)
+    {
+        if (staged.Count == 0)
+        {
+            throw ApiException.Validation("There are no attachments to commit.");
+        }
+
+        if (staged.Any(s => s.WorkItemId != workItemId))
+        {
+            throw ApiException.Validation("Every attachment in a batch must belong to the same work item.");
+        }
+
+        if (staged.Select(s => s.Name).Distinct(StringComparer.Ordinal).Count() != staged.Count)
+        {
+            throw ApiException.Validation("A batch cannot hold two attachments with the same name.");
+        }
+
+        await _commits.WaitAsync(cancellationToken);
+        try
+        {
+            lock (_gate)
+            {
+                RequireWorkItem(workItemId);
+            }
+
+            if (inTransaction is not null)
+            {
+                await inTransaction(new InMemoryTransaction(), cancellationToken);
+            }
+
+            lock (_gate)
+            {
+                var names = staged.Select(s => s.Name).ToHashSet(StringComparer.Ordinal);
+                foreach (var old in _entries.Where(e => e.WorkItemId == workItemId && !e.Archived && names.Contains(e.Name)))
+                {
+                    old.Archived = true;
+                }
+
+                var added = new List<AttachmentDto>();
+                foreach (var row in staged)
+                {
+                    var entry = new Entry(row.Id, workItemId, row.Name, row.ContentType, row.SizeBytes, row.StorageRef, currentUser.Id, time.GetUtcNow(), _entries.Count) { Source = row.Source };
+                    _entries.Add(entry);
+                    added.Add(ToDto(entry));
+                }
+
+                return added;
+            }
+        }
+        finally
+        {
+            _commits.Release();
         }
     }
 

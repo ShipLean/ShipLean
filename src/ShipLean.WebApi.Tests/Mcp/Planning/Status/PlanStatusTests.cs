@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
-using ShipLean.Application.Features.Mcp.Planning.Markers;
+using ShipLean.Application.Plans;
 using ShipLean.Contracts.Comments;
 using ShipLean.Contracts.Links;
 using ShipLean.Contracts.WorkItems;

@@ -103,6 +103,8 @@ public class SchemaActionTypeTests
         await connection.ExecuteAsync("INSERT INTO project (id, key, name) VALUES (@projectId, 'MIGR', 'Migrated')", new { projectId });
         await connection.ExecuteAsync(
             "INSERT INTO state (id, project_id, type, name, category, sort_order) VALUES (gen_random_uuid(), @projectId, 'story', 'New', 'proposed', 1)", new { projectId });
+        // The BAU migration came after this script and widened the type check this script puts back: park the BAU states under another type so the old check holds.
+        await connection.ExecuteAsync("UPDATE state SET type = 'task', name = 'parked ' || name WHERE type = 'bau'");
         await connection.ExecuteAsync(ReadScript());
 
         var states = (await connection.QueryAsync<ActionState>(

@@ -1,0 +1,51 @@
+{
+  "automatic": true,
+  "environment": "Run the app with `make dev` and sign in as the seeded admin.",
+  "agentCheck": {
+    "ready": true,
+    "block": null,
+    "message": "Ready to make demos."
+  },
+  "brand": {
+    "logoUrl": "/api/projects/00000002-0000-4000-8000-000000000001/demo-brand/logo?v=3",
+    "logoContentType": "image/svg+xml",
+    "tokens": "--color-accent: #c2410c;\n--color-accent-fg: #ffffff;",
+    "defaultTokens": [
+      {
+        "name": "--color-bg",
+        "value": "#e8eef7"
+      },
+      {
+        "name": "--color-surface",
+        "value": "#f7f9fd"
+      },
+      {
+        "name": "--color-text",
+        "value": "#1c2638"
+      },
+      {
+        "name": "--color-muted",
+        "value": "#52627c"
+      },
+      {
+        "name": "--color-accent",
+        "value": "#2563c9"
+      },
+      {
+        "name": "--color-accent-fg",
+        "value": "#ffffff"
+      },
+      {
+        "name": "--font-sans",
+        "value": "\"Inter\", system-ui, -apple-system, \"Segoe UI\", sans-serif"
+      }
+    ]
+  },
+  "youTube": {
+    "status": "connected",
+    "channelTitle": "Acme Product Demos",
+    "visibility": "unlisted",
+    "checkedLabel": "Checked today at 09:30",
+    "refusal": null
+  }
+}

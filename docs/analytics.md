@@ -203,6 +203,11 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `sprint.rolled_over` |  | `SprintRollover.Apply` |
 | `sprint.status_viewed` | `sprint_status` |  |
 | `sprint.reviewed` | `sprint_review` |  |
+| `sprint_demo.created` | `create_sprint_demo` | `SprintDemo.Create` |
+| `sprint_demo.youtube_retried` |  | `SprintDemo.RetryYouTube` |
+| `project_demo.settings_changed` |  | `ProjectDemoSettings.Put` |
+| `project_demo.brand_changed` |  | `DemoBrand.ReplaceLogo`, `DemoBrand.RemoveLogo`, `DemoBrand.PutTokens` |
+| `project_youtube.changed` |  | `YouTube.Check`, `YouTube.Disconnect` |
 | `board.settings_changed` |  | `BoardSettings.Put` |
 | `retro.point_added` | `log_retrospective` | `RetroPoints.Add` |
 | `retro.listed` | `list_retrospectives` |  |
@@ -237,3 +242,5 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `screen.viewed` |  | self-emitted: Usage.Screen |
 
 `analytics.test` is not in the catalogue: the test send goes straight to the sink.
+
+The demo's anonymous and token routes are untracked on purpose, each with its reason in `ActionUsageMap`: `DemoUpload.Upload` and `DemoLogoDownload.Download` (the demo's creation is counted by `sprint_demo.created`), and `YouTube.Start` and `YouTube.Callback` (the connection they lead to is counted when the person's check runs, by `project_youtube.changed`).

@@ -18,6 +18,9 @@ public static class RouteAllowList
         new("GET", "api/health", "Liveness probe."),
         new("GET", "api/downloads/{token}", "An agent's curl has no session; the short-lived URL token is the proof, and every token that is not live is 404."),
         new("PUT", "api/uploads/{token}", "An agent's curl has no session; the one-time URL token is the proof, and every token that is not live is 404."),
+        new("POST", "api/uploads/demo", "An agent's curl has no session; the one-time URL token in the query is the proof, and every token that is not live is 404."),
+        new("GET", "api/downloads/demo-logo", "An agent's curl has no session; the project-logo URL token in the query is the proof, and every token that is not live is 404."),
+        new("GET", "api/youtube/callback", "Google's browser comes back with no session of its own; the service validates the signed state, the signed-in user and their Admin role, and a signed-out caller is redirected with youtube=error and nothing stored."),
         new("POST", "api/webhooks/github", "GitHub delivers pull request events with no session; the shared secret's signature is the proof, and the endpoint is 404 while its secret is unset."),
         new("POST", "api/webhooks/gitlab", "GitLab delivers merge request events with no session; the shared secret token is the proof, and the endpoint is 404 while its secret is unset."),
     ];

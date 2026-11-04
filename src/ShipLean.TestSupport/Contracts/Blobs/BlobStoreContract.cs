@@ -142,5 +142,72 @@ public abstract class BlobStoreContract
         await Should.ThrowAsync<ArgumentException>(async () => await store.ExistsAsync(key, CancellationToken.None));
     }
 
+    [Test]
+    public async Task OpenAt_WhenOffset_ShouldReturnTheRest()
+    {
+        var store = Create();
+        await store.PutAsync("video/a.bin", Bytes("0123456789"), "video/mp4", CancellationToken.None);
+
+        await using var rest = (await store.OpenAtAsync("video/a.bin", 4, CancellationToken.None)).ShouldNotBeNull();
+
+        (await new StreamReader(rest).ReadToEndAsync()).ShouldBe("456789");
+    }
+
+    [Test]
+    public async Task OpenAt_WhenZero_ShouldReturnAll()
+    {
+        var store = Create();
+        await store.PutAsync("video/a.bin", Bytes("0123456789"), "video/mp4", CancellationToken.None);
+
+        await using var all = (await store.OpenAtAsync("video/a.bin", 0, CancellationToken.None)).ShouldNotBeNull();
+
+        (await new StreamReader(all).ReadToEndAsync()).ShouldBe("0123456789");
+    }
+
+    [Test]
+    public async Task OpenAt_WhenOffsetIsTheLength_ShouldReturnAnEmptyStreamNotNull()
+    {
+        var store = Create();
+        await store.PutAsync("video/a.bin", Bytes("0123456789"), "video/mp4", CancellationToken.None);
+
+        await using var rest = (await store.OpenAtAsync("video/a.bin", 10, CancellationToken.None)).ShouldNotBeNull();
+
+        (await new StreamReader(rest).ReadToEndAsync()).ShouldBeEmpty();
+    }
+
+    [TestCase(int.MaxValue - 1L)]
+    [TestCase(int.MaxValue)]
+    [TestCase(int.MaxValue + 1L)]
+    [TestCase(long.MaxValue - 1)]
+    public async Task OpenAt_WhenOffsetIsFarPastTheEnd_ShouldReturnAnEmptyStreamNotNull(long offset)
+    {
+        var store = Create();
+        await store.PutAsync("video/a.bin", Bytes("0123456789"), "video/mp4", CancellationToken.None);
+
+        await using var rest = (await store.OpenAtAsync("video/a.bin", offset, CancellationToken.None)).ShouldNotBeNull();
+
+        (await new StreamReader(rest).ReadToEndAsync()).ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task OpenAt_WhenMissing_ShouldBeNull()
+    {
+        // The null comes from the call itself: nothing is read from a stream afterwards.
+        (await Create().OpenAtAsync("video/none.bin", 3, CancellationToken.None)).ShouldBeNull();
+    }
+
+    [Test]
+    public async Task OpenAt_WhenDisposed_ShouldReleaseItsResources()
+    {
+        var store = Create();
+        await store.PutAsync("video/a.bin", Bytes("0123456789"), "video/mp4", CancellationToken.None);
+        var rest = (await store.OpenAtAsync("video/a.bin", 2, CancellationToken.None)).ShouldNotBeNull();
+        rest.CanRead.ShouldBeTrue();
+
+        await rest.DisposeAsync();
+
+        rest.CanRead.ShouldBeFalse();
+    }
+
     private static MemoryStream Bytes(string text) => new(Encoding.UTF8.GetBytes(text));
 }

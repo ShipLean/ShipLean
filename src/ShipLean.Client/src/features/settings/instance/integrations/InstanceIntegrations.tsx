@@ -17,6 +17,7 @@ import {
   type IntegrationsEdit,
   type IntegrationsSettingsDto,
 } from './model';
+import { YouTubePanel } from './YouTubePanel';
 import { TokenField, type TokenFieldIds } from './TokenField';
 
 const input =
@@ -56,9 +57,14 @@ function IntegrationsForm({ saved }: { saved: IntegrationsSettingsDto }) {
   const blamed = errorField(save.error);
   const message = save.isError ? errorText(save.error) : undefined;
   const fieldMessage = (field: string) => (blamed === field ? message : undefined);
-  const named = ['gitHubToken', 'gitLabUrl', 'gitLabToken', 'previewAllowHosts'].includes(
-    blamed ?? '',
-  );
+  const named = [
+    'gitHubToken',
+    'gitLabUrl',
+    'gitLabToken',
+    'previewAllowHosts',
+    'youTubeClientId',
+    'youTubeClientSecret',
+  ].includes(blamed ?? '');
   // A new address leaves the saved GitLab token behind, so the token field starts empty.
   const urlChanged = gitLabUrlChanged(saved, edit);
 
@@ -115,6 +121,14 @@ function IntegrationsForm({ saved }: { saved: IntegrationsSettingsDto }) {
           onChange={(allowText) => setEdit((e) => ({ ...e, allowText }))}
         />
       </Panel>
+      <YouTubePanel
+        saved={saved}
+        edit={edit}
+        disabled={locked}
+        idError={fieldMessage('youTubeClientId')}
+        secretError={fieldMessage('youTubeClientSecret')}
+        onChange={(patch) => setEdit((e) => ({ ...e, ...patch }))}
+      />
       {message !== undefined && !named ? (
         <p
           role="alert"

@@ -9,7 +9,8 @@
   Open directly in a browser. Uses ../tokens.css, shiplean.css and shared.js only; no build step.
   Reached from the user menu (the signed-in user at the bottom of the side menu); only instance admins see it.
   The side menu keeps the project you came from, so you can go straight back.
-  Tabs on the left (#general, #users, #projects, or ?tab= for screenshots). Users opens by default.
+  Tabs on the left (#general, #users, #projects, #integrations, or ?tab= for screenshots). Users opens by default.
+  Integrations (SHIP-303, designed, not built yet): the YouTube OAuth client that project admins connect their channels through.
     General: instance name (shown on the sign-in page), base URL (checked against the address you're using),
       who can create projects (Everyone / Instance admins), and sign-in facts that aren't settings in v1.
       General is one draft with Save, like Project settings.
@@ -168,7 +169,7 @@ tr.flag td:first-child { box-shadow: inset 3px 0 0 var(--color-warn); }
   function tabs() {
     const n = users.filter(attention).length, flagged = allProjects.filter(noActiveAdmin).length;
     const t = (id, label, meta, warn) => `<a class="stab" href="#${id}"${S.tab === id ? ' aria-current="page"' : ''}>${label}${meta != null ? `<span class="meta${warn ? ' warn' : ''}">${meta}</span>` : ''}</a>`;
-    $('tabs').innerHTML = t('general', 'General', JSON.stringify(S.g) !== JSON.stringify(G0) ? '●' : null, true) + t('users', 'Users', n ? `${users.length} · ${n} ⚠` : users.length, !!n) + t('projects', 'Projects', flagged ? `${allProjects.length} · ${flagged} ⚠` : allProjects.length, !!flagged)
+    $('tabs').innerHTML = t('general', 'General', JSON.stringify(S.g) !== JSON.stringify(G0) ? '●' : null, true) + t('users', 'Users', n ? `${users.length} · ${n} ⚠` : users.length, !!n) + t('projects', 'Projects', flagged ? `${allProjects.length} · ${flagged} ⚠` : allProjects.length, !!flagged) + t('integrations', 'Integrations', 'YouTube')
       + `<div class="foot">ShipLean 1.0.0<br>Single install, self-hosted</div>`;
   }
 
@@ -193,6 +194,18 @@ tr.flag td:first-child { box-shadow: inset 3px 0 0 var(--color-warn); }
         <dt>Lockout</dt><dd>10 wrong passwords in a row lock the account for 15 minutes. Admins can unlock sooner on Users.</dd>
         <dt>First admin</dt><dd><code>SHIPLEAN_ADMIN_EMAIL</code> and <code>SHIPLEAN_ADMIN_PASSWORD</code> on first boot. Later admins are made here.</dd>
       </dl></section>`;
+  }
+
+  function viewIntegrations() {
+    return `<section class="panel"><header><h2>YouTube</h2><span class="chip warn">Not set</span><span class="meta">Lets project admins publish sprint demos to their own channel</span></header><div class="form">
+        <label class="lbl" for="ytid">Client id</label><div class="ctl"><input class="field w-md mono" id="ytid" data-testid="instance-youtube-client-id" placeholder="123456789-abc.apps.googleusercontent.com" spellcheck="false" autocomplete="off"></div>
+        <label class="lbl" for="ytsecret">Client secret</label><div class="ctl"><input class="field w-md mono" id="ytsecret" type="password" data-testid="instance-youtube-client-secret" placeholder="Paste the secret" autocomplete="off">
+          <span class="hint">Stored encrypted. Once saved it isn't shown again; leave it blank to keep the saved one.</span></div>
+        <span class="lbl">Set by environment</span><div class="ctl"><span class="muted" data-testid="instance-youtube-from-env">Not set. <code>SHIPLEAN_YOUTUBE_CLIENT_ID</code> and <code>SHIPLEAN_YOUTUBE_CLIENT_SECRET</code> are read when nothing is saved here. If they are set, this page says "set by environment" and shows no secret.</span></div>
+        <span class="lbl">Not Sign in with Google</span><div class="ctl"><span class="sm">This is a separate OAuth client from the one for signing in. It is only used when a project admin connects a channel in a project's Settings › Demos, and with no client here that panel says YouTube is off.</span>
+          <span class="hint">In Google Cloud, enable YouTube Data API v3 and add this redirect: <code>${esc(S.here)}/api/youtube/callback</code></span></div>
+      </div>
+      <div class="pfoot"><span class="spacer"></span><button class="btn primary" type="button">Save</button></div></section>`;
   }
 
   function viewUsers() {
@@ -267,7 +280,7 @@ tr.flag td:first-child { box-shadow: inset 3px 0 0 var(--color-warn); }
   }
 
   function render() {
-    S.tab = ['general', 'users', 'projects'].includes(S.tab) ? S.tab : 'users';
+    S.tab = ['general', 'users', 'projects', 'integrations'].includes(S.tab) ? S.tab : 'users';
     if (S.denied) {
       $('tabs').hidden = true; $('sbody').style.gridTemplateColumns = 'minmax(0, 1fr)';
       $('content').innerHTML = `<div class="denied"><h2>Instance settings are for instance admins</h2><p>You're signed in as Mei Lin, who isn't one. Ask ${instance.admins.map(a => esc(people[a].name)).join(' or ')} if you need something changed. The user menu doesn't show this page to you; this is what the address gives you if you type it.</p><a class="btn" href="backlog.html">Back to SHIP</a></div>`;
@@ -276,7 +289,7 @@ tr.flag td:first-child { box-shadow: inset 3px 0 0 var(--color-warn); }
     $('tabs').hidden = false; $('sbody').style.gridTemplateColumns = '';
     tabs();
     const focus = document.activeElement?.id, caret = document.activeElement?.selectionStart;
-    $('content').innerHTML = (S.tab === 'general' ? viewGeneral() : S.tab === 'users' ? viewUsers() : viewProjects()) + viewDialog();
+    $('content').innerHTML = (S.tab === 'general' ? viewGeneral() : S.tab === 'users' ? viewUsers() : S.tab === 'integrations' ? viewIntegrations() : viewProjects()) + viewDialog();
     if (focus && $(focus)) { $(focus).focus(); try { if (caret != null) $(focus).setSelectionRange(caret, caret); } catch {} }
   }
 

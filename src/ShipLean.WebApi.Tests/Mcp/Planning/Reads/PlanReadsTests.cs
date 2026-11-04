@@ -1,9 +1,8 @@
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Application.Features.Mcp.Planning.Reads;
-using ShipLean.Application.Features.Mcp.Planning.Tags;
 using ShipLean.Application.Features.Mcp.Planning.Tree;
-using ShipLean.Application.Features.Mcp.Planning.Waves;
+using ShipLean.Application.Plans;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Refs;
 using ShipLean.TestSupport;

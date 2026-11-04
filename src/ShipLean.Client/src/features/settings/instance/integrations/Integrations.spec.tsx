@@ -1,6 +1,9 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import { settingsTestIds as ids } from '../../testIds';
 import type { IntegrationsSaveDto, IntegrationsSettingsDto } from './model';
+import { demosTestIds } from '../../../demos/testIds';
+import { ToastHost } from '../../../../components/ToastHost';
+import { componentTestIds } from '../../../../components/testIds';
 import { InstanceIntegrations } from './InstanceIntegrations';
 
 interface Routable {
@@ -20,6 +23,9 @@ const empty: IntegrationsSettingsDto = {
   gitLabTokenLastFour: null,
   gitLabFromEnv: false,
   previewAllowHosts: [],
+  youTubeClientId: null,
+  youTubeClientSecretLastFour: null,
+  youTubeFromEnv: false,
 };
 
 // A server that applies a PUT the way the real one reports it: a typed token comes back as its last four only.
@@ -197,4 +203,92 @@ test('Integrations_WhenReplaceClickedThenDiscarded_ShouldShowTheSavedTokenAgain'
   await view.getByTestId(ids.integrationsDiscard).click();
 
   await expect(view.getByTestId(ids.integrationsGitHubTokenLastFour)).toHaveText('•••• 1234');
+});
+
+test('YouTube_WhenFromEnv_ShouldShowThatAndAllowOverride', async ({ mount, page }) => {
+  const puts = await stub(page, {
+    ...empty,
+    youTubeClientId: 'env-client.apps.example',
+    youTubeClientSecretLastFour: '0001',
+    youTubeFromEnv: true,
+  });
+  const view = await mount(<InstanceIntegrations />);
+
+  await expect(view.getByTestId(demosTestIds.instanceYoutubeFromEnv)).toContainText(
+    'Set by environment',
+  );
+  await expect(view.getByTestId(demosTestIds.instanceYoutubeClientId)).toHaveValue(
+    'env-client.apps.example',
+  );
+  await expect(view.getByTestId(demosTestIds.instanceYoutubeClientSecret)).toHaveAttribute(
+    'placeholder',
+    /From the environment, ending 0001/,
+  );
+  await view.getByTestId(demosTestIds.instanceYoutubeClientId).fill('mine.apps.example');
+  await view.getByTestId(demosTestIds.instanceYoutubeClientSecret).fill('yt-mysecret-4321');
+  await view.getByTestId(ids.integrationsSave).click();
+
+  await expect(view.getByTestId(ids.integrationsDirty)).toHaveText('Saved');
+  expect(puts).toEqual([
+    {
+      clearGitHubToken: false,
+      clearGitLabToken: false,
+      previewAllowHosts: [],
+      youTubeClientId: 'mine.apps.example',
+      youTubeClientSecret: 'yt-mysecret-4321',
+    },
+  ]);
+});
+
+test('YouTube_WhenSaved_ShouldShowLastFour', async ({ mount, page }) => {
+  await stub(page, {
+    ...empty,
+    youTubeClientId: 'saved.apps.example',
+    youTubeClientSecretLastFour: '9876',
+  });
+  const view = await mount(<InstanceIntegrations />);
+
+  const secret = view.getByTestId(demosTestIds.instanceYoutubeClientSecret);
+  await expect(secret).toHaveAttribute('placeholder', /Saved, ending 9876/);
+  await expect(secret).toHaveValue('');
+  await expect(view.getByTestId(demosTestIds.instanceYoutubeFromEnv)).toContainText(
+    'Not set by environment',
+  );
+});
+
+test('YouTube_ShouldSayItIsSeparateFromSignIn', async ({ mount, page }) => {
+  await stub(page);
+  const view = await mount(<InstanceIntegrations />);
+
+  await expect(view.getByText('separate OAuth client from the one for signing in')).toBeVisible();
+  await expect(view.getByText('/api/youtube/callback')).toBeVisible();
+});
+
+test('Save_WhenFails_ShouldToast', async ({ mount, page }) => {
+  await page.route('**/api/instance/integrations', async (route) => {
+    if (route.request().method() === 'GET') return route.fulfill({ json: empty });
+    return route.fulfill({
+      status: 400,
+      json: {
+        error: 'A YouTube client id is saved with its secret: paste the client secret.',
+        code: 'validation',
+        field: 'youTubeClientSecret',
+      },
+    });
+  });
+  await mount(
+    <>
+      <InstanceIntegrations />
+      <ToastHost />
+    </>,
+  );
+
+  await page.getByTestId(demosTestIds.instanceYoutubeClientId).fill('half.apps.example');
+  await page.getByTestId(ids.integrationsSave).click();
+
+  await expect(page.getByTestId(componentTestIds.toast)).toContainText('paste the client secret');
+  await expect(page.getByTestId(ids.integrationsFieldError)).toContainText('client secret');
+  await expect(page.getByTestId(demosTestIds.instanceYoutubeClientId)).toHaveValue(
+    'half.apps.example',
+  );
 });

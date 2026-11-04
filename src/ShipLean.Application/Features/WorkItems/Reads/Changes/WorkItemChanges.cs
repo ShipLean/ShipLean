@@ -3,6 +3,7 @@ using Dapper;
 using Npgsql;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Persisted;
+using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.WorkItems.Reads.Changes;
 
 namespace ShipLean.Application.Features.WorkItems.Reads.Changes;
@@ -14,7 +15,7 @@ public sealed class WorkItemChanges(NpgsqlDataSource dataSource) : IWorkItemChan
     private const int MaxLimit = 500;
 
     private const string Sql =
-        """
+        $"""
         SELECT * FROM (
             SELECT w.id AS workItemId, w.key, w.title, 0 AS kind,
                    w.id::text || ':' || lpad(r.rev::text, 10, '0') AS tie,
@@ -23,7 +24,7 @@ public sealed class WorkItemChanges(NpgsqlDataSource dataSource) : IWorkItemChan
             FROM revision r
             JOIN work_item w ON w.id = r.work_item_id
             LEFT JOIN app_user u ON u.id = r.changed_by
-            WHERE w.project_id = @projectId
+            WHERE w.project_id = @projectId AND {WorkItemTypeRules.NotHiddenSql}
               AND (@mine::uuid IS NULL OR w.assigned_to = @mine::uuid OR w.created_by = @mine::uuid)
             UNION ALL
             SELECT w.id, w.key, w.title, 1, c.id::text,
@@ -31,7 +32,7 @@ public sealed class WorkItemChanges(NpgsqlDataSource dataSource) : IWorkItemChan
             FROM comment c
             JOIN work_item w ON w.id = c.work_item_id
             LEFT JOIN app_user u ON u.id = c.author_id
-            WHERE w.project_id = @projectId AND c.archived_at IS NULL
+            WHERE w.project_id = @projectId AND c.archived_at IS NULL AND {WorkItemTypeRules.NotHiddenSql}
               AND (@mine::uuid IS NULL OR w.assigned_to = @mine::uuid OR w.created_by = @mine::uuid)
         ) AS entry
         WHERE @hasCursor = false OR (entry.at, entry.kind, entry.tie COLLATE "C") > (@cursorAt::timestamptz, @cursorKind, @cursorTie::text COLLATE "C")

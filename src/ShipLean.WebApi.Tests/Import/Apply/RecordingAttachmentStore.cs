@@ -1,10 +1,11 @@
+using System.Data.Common;
 using ShipLean.Contracts.Attachments;
 using ShipLean.Contracts.Blobs;
 
 namespace ShipLean.WebApi.Tests.Import.Apply;
 
-// The attachment store as the importer sees it: records what ImportAsync is given, with the bytes it read. Nothing else is called.
-internal sealed class RecordingAttachmentStore : IAttachmentStore
+// The attachment store as the importer sees it: records what ImportAsync is given, with the bytes it read. Stage and commit go to the inner store; nothing else is called.
+internal sealed class RecordingAttachmentStore(IAttachmentStore inner) : IAttachmentStore
 {
     private readonly List<(Guid WorkItemId, ImportedAttachment Attachment, byte[] Bytes)> _imported = [];
 
@@ -38,4 +39,8 @@ internal sealed class RecordingAttachmentStore : IAttachmentStore
     public Task<(AttachmentDto Attachment, BlobContent Content)> OpenAsync(Guid id, CancellationToken cancellationToken = default) => throw new NotSupportedException();
 
     public Task ArchiveAsync(Guid id, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+
+    public Task<StagedAttachment> StageAsync(Guid workItemId, string name, string contentType, Stream content, AttachmentSource? source = null, long? maxBytes = null, CancellationToken cancellationToken = default) => inner.StageAsync(workItemId, name, contentType, content, source, maxBytes, cancellationToken);
+
+    public Task<IReadOnlyList<AttachmentDto>> CommitStagedAsync(Guid workItemId, IReadOnlyList<StagedAttachment> staged, Func<DbTransaction, CancellationToken, Task>? inTransaction = null, CancellationToken cancellationToken = default) => inner.CommitStagedAsync(workItemId, staged, inTransaction, cancellationToken);
 }

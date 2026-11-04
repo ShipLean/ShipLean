@@ -4,6 +4,7 @@ using Dapper;
 using Npgsql;
 using ShipLean.Application.Features.Mcp.Planning.Markers;
 using ShipLean.Application.Features.WorkItems.Reads.Tree;
+using ShipLean.Application.Plans;
 using ShipLean.Contracts.Attachments;
 using ShipLean.Contracts.Errors;
 

@@ -1,3 +1,4 @@
+using System.Data.Common;
 using Dapper;
 using Microsoft.Extensions.Logging;
 using Npgsql;
@@ -15,12 +16,26 @@ namespace ShipLean.Application.Features.AgentDispatch;
 // The blob store is lazy: this starter is built at startup (AgentDispatchSubscriber), and making a folder store then
 // would stop the host when its folder is not writable, before any attachment is read.
 public sealed class AgentSessionStarter(
-    NpgsqlDataSource dataSource, IProjectAgentSettings projectSettings, IAgentConnections connections, AgentSessionNotifier notifier, TimeProvider time, Lazy<IBlobStore> blobs, ILogger<AgentSessionStarter> logger)
+    NpgsqlDataSource dataSource, IProjectAgentSettings projectSettings, IAgentConnections connections, AgentSessionNotifier notifier, TimeProvider time, Lazy<IBlobStore> blobs, ILogger<AgentSessionStarter> logger) : IAgentSessionStarter
 {
     // agent-relay refuses a body over 1 MiB (413, then retries until the session fails), so the body is kept under this.
     private const int MaxBodyBytes = 900_000;
 
     private readonly AgentContextLoader _loader = new(dataSource, blobs, logger);
+
+    // The agent check at project level: null when an agent can start for the project, else why not. connectionId, when given,
+    // wins over the project's connection, so an override works on a project with none.
+    public async Task<AgentStartBlock?> PlanProjectAsync(Guid projectId, Guid? connectionId, CancellationToken cancellationToken)
+    {
+        var settings = await projectSettings.GetAsync(projectId, cancellationToken);
+        var agent = (connectionId ?? settings.ConnectionId) is { } id ? await connections.GetAsync(id, cancellationToken) : null;
+        if (agent is null || agent.ArchivedAt is not null)
+        {
+            return AgentStartBlock.NoConnection;
+        }
+
+        return string.IsNullOrWhiteSpace(settings.RepoUrl) ? AgentStartBlock.NoRepository : null;
+    }
 
     public async Task<AgentStartPlan> PlanAsync(Guid workItemId, Guid? connectionId, string? prompt, CancellationToken cancellationToken)
     {
@@ -28,26 +43,28 @@ public sealed class AgentSessionStarter(
         var projectId = await connection.QuerySingleOrDefaultAsync<Guid?>(new CommandDefinition(
             "SELECT project_id FROM work_item WHERE id = @workItemId", new { workItemId }, cancellationToken: cancellationToken))
             ?? throw ApiException.NotFound("That work item was not found.");
-        var settings = await projectSettings.GetAsync(projectId, cancellationToken);
         // connectionId overrides the project's connection for every check below; a blank prompt is no prompt.
         prompt = string.IsNullOrWhiteSpace(prompt) ? null : prompt;
-        var agent = (connectionId ?? settings.ConnectionId) is { } id ? await connections.GetAsync(id, cancellationToken) : null;
-        if (agent is null || agent.ArchivedAt is not null)
+        var block = await PlanProjectAsync(projectId, connectionId, cancellationToken);
+        var settings = await projectSettings.GetAsync(projectId, cancellationToken);
+        if (block is AgentStartBlock.NoConnection)
         {
             return new AgentStartPlan(AgentStartBlock.NoConnection, Guid.Empty, string.Empty, string.Empty);
         }
 
-        if (string.IsNullOrWhiteSpace(settings.RepoUrl))
+        var agentId = (connectionId ?? settings.ConnectionId)!.Value;
+        if (block is AgentStartBlock.NoRepository)
         {
-            return new AgentStartPlan(AgentStartBlock.NoRepository, agent.Id, string.Empty, string.Empty);
+            return new AgentStartPlan(AgentStartBlock.NoRepository, agentId, string.Empty, string.Empty);
         }
 
+        var repoUrl = settings.RepoUrl!; // PlanProjectAsync found no block, so the repository is set
         var live = await connection.ExecuteScalarAsync<bool>(new CommandDefinition(
             $"SELECT EXISTS (SELECT 1 FROM agent_session WHERE work_item_id = @workItemId AND state IN {AgentSessionStates.LiveSql})",
             new { workItemId }, cancellationToken: cancellationToken));
         return live
-            ? new AgentStartPlan(AgentStartBlock.LiveSession, agent.Id, settings.RepoUrl, settings.BaseBranch, prompt)
-            : new AgentStartPlan(null, agent.Id, settings.RepoUrl, settings.BaseBranch, prompt);
+            ? new AgentStartPlan(AgentStartBlock.LiveSession, agentId, repoUrl, settings.BaseBranch, prompt)
+            : new AgentStartPlan(null, agentId, repoUrl, settings.BaseBranch, prompt);
     }
 
     // fallbackBaseUrl is the origin of the request, for an instance that has not set its base URL. connectionId and prompt: see PlanAsync;
@@ -70,28 +87,72 @@ public sealed class AgentSessionStarter(
 
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
-        var inserted = await connection.ExecuteAsync(new CommandDefinition(
+        if (!await InsertSessionAsync(connection, transaction, sessionId, workItemId, plan, now, creatorId, cancellationToken))
+        {
+            return new AgentStartOutcome(null, AgentStartBlock.LiveSession);
+        }
+
+        await InsertDeliveryAsync(connection, transaction, sessionId, body, now, cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        await notifier.ChangedAsync(sessionId);
+        return new AgentStartOutcome(sessionId, null);
+    }
+
+    // Like StartAsync, but the caller's prompt is made only by the starter that wins the race, on the winning transaction, so a prompt that
+    // issues a token or revokes one (a sprint demo's upload link) never does it for a loser. Order: plan (a block, a live session included, returns
+    // with nothing done); load the context with no lock; lock the item row; insert the session, and if the live-session index refuses it roll back and
+    // return LiveSession without calling winnerPrompt; call winnerPrompt on the transaction; render the body; insert the delivery; commit.
+    // Anything thrown after the insert rolls back the session, the delivery and whatever winnerPrompt wrote.
+    public async Task<AgentStartOutcome> StartWinnerAsync(
+        Guid workItemId, Guid creatorId, string? fallbackBaseUrl, Guid? connectionId, Func<DbTransaction, CancellationToken, Task<string>> winnerPrompt, CancellationToken cancellationToken)
+    {
+        var plan = await PlanAsync(workItemId, connectionId, null, cancellationToken);
+        if (plan.Block is { } block)
+        {
+            return new AgentStartOutcome(null, block);
+        }
+
+        var sessionId = Guid.CreateVersion7();
+        var now = time.GetUtcNow();
+        var input = await _loader.LoadAsync(
+            workItemId, sessionId, now, plan.ConnectionId, creatorId, new AgentRepositoryInput(plan.RepoUrl, plan.BaseBranch), fallbackBaseUrl, null, cancellationToken);
+
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        await connection.ExecuteAsync(new CommandDefinition(
+            "SELECT id FROM work_item WHERE id = @workItemId FOR NO KEY UPDATE", new { workItemId }, transaction, cancellationToken: cancellationToken));
+        if (!await InsertSessionAsync(connection, transaction, sessionId, workItemId, plan, now, creatorId, cancellationToken))
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return new AgentStartOutcome(null, AgentStartBlock.LiveSession);
+        }
+
+        var prompt = await winnerPrompt(transaction, cancellationToken);
+        var body = RenderBody(input with { Guidance = prompt }, workItemId);
+        await InsertDeliveryAsync(connection, transaction, sessionId, body, now, cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        await notifier.ChangedAsync(sessionId);
+        return new AgentStartOutcome(sessionId, null);
+    }
+
+    // False when the partial unique index ux_agent_session_live finds the item taken.
+    private static async Task<bool> InsertSessionAsync(
+        NpgsqlConnection connection, DbTransaction transaction, Guid sessionId, Guid workItemId, AgentStartPlan plan, DateTimeOffset now, Guid creatorId, CancellationToken cancellationToken)
+        => await connection.ExecuteAsync(new CommandDefinition(
             $"""
             INSERT INTO agent_session (id, work_item_id, connection_id, state, repo_url, base_branch, last_activity_at, created_by, created_at)
             VALUES (@sessionId, @workItemId, @connectionId, 'submitted', @repoUrl, @baseBranch, @now, @creatorId, @now)
             ON CONFLICT (work_item_id) WHERE state IN {AgentSessionStates.LiveSql} DO NOTHING
             """,
-            new { sessionId, workItemId, connectionId = plan.ConnectionId, repoUrl = plan.RepoUrl, baseBranch = plan.BaseBranch, now, creatorId }, transaction, cancellationToken: cancellationToken));
-        if (inserted == 0)
-        {
-            return new AgentStartOutcome(null, AgentStartBlock.LiveSession);
-        }
+            new { sessionId, workItemId, connectionId = plan.ConnectionId, repoUrl = plan.RepoUrl, baseBranch = plan.BaseBranch, now, creatorId }, transaction, cancellationToken: cancellationToken)) > 0;
 
-        await connection.ExecuteAsync(new CommandDefinition(
+    private static Task InsertDeliveryAsync(NpgsqlConnection connection, DbTransaction transaction, Guid sessionId, string body, DateTimeOffset now, CancellationToken cancellationToken)
+        => connection.ExecuteAsync(new CommandDefinition(
             """
             INSERT INTO agent_delivery (id, session_id, seq, action, body, next_attempt_at, status, created_at)
             VALUES (@id, @sessionId, 1, 'created', @body::jsonb, @now, 'pending', @now)
             """,
             new { id = Guid.CreateVersion7(), sessionId, body, now }, transaction, cancellationToken: cancellationToken));
-        await transaction.CommitAsync(cancellationToken);
-        await notifier.ChangedAsync(sessionId);
-        return new AgentStartOutcome(sessionId, null);
-    }
 
     // The `created` body as JSON, kept under MaxBodyBytes: first with every attachment as a link only, then without the oldest comments
     // (as many as it takes; the context says how many were left out).

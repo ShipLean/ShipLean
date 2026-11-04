@@ -2,6 +2,7 @@ using System.Net;
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Application.Fakes.Blobs;
 using ShipLean.Contracts.Blobs;
+using ShipLean.TestSupport;
 using ShipLean.TestSupport.AccessSweep;
 using ShipLean.LocalEnvironment.Blobs;
 using ShipLean.TestSupport.Fixtures;
@@ -20,8 +21,28 @@ public class AllowedSweepTests : ApiFixture
     // Seeded attachments are rows only; their bytes go into an in-memory blob store so a download row can succeed.
     protected override Action<IServiceCollection>? ConfigureTestServices => services => services.AddSingleton<IBlobStore, InMemoryBlobStore>();
 
+    // The YouTube routes answer 404 while no OAuth client is set, and the allowed leg refuses a 404 (Y3): the host has one, from the environment's names.
+    protected override IReadOnlyDictionary<string, string?> HostSettings => new Dictionary<string, string?>
+    {
+        ["SHIPLEAN_YOUTUBE_CLIENT_ID"] = "sweep-client.apps.example",
+        ["SHIPLEAN_YOUTUBE_CLIENT_SECRET"] = "sweep-client-secret",
+    };
+
     [OneTimeSetUp]
     public Task PutSeedAttachmentBlobs() => SeedAttachmentBlobs.PutAllAsync(Host.Services.GetRequiredService<IBlobStore>());
+
+    // The demo logo GET answers 404 for a project with no logo, and the allowed leg refuses a 404: SHIP gets one (B1). The DELETE row comes after the GET row.
+    [OneTimeSetUp]
+    public async Task InsertDemoLogoSweepRow()
+    {
+        var blobs = Host.Services.GetRequiredService<IBlobStore>();
+        const string key = "demo-logos/sweep/logo";
+        await blobs.PutAsync(key, new MemoryStream("<svg xmlns=\"http://www.w3.org/2000/svg\"/>"u8.ToArray()), "image/svg+xml", CancellationToken.None);
+        await using var connection = await OpenDatabaseAsync();
+        await Dapper.SqlMapper.ExecuteAsync(connection,
+            "INSERT INTO project_demo_settings (project_id, logo_blob, logo_version) VALUES (@project, @key, 1) ON CONFLICT (project_id) DO UPDATE SET logo_blob = @key",
+            new { project = SeedIds.Projects.Ship, key });
+    }
 
     // The seed has no agent connection, and the instance rows for them need one to find (the 404 check): see AgentConnectionSweepIds.
     [OneTimeSetUp]

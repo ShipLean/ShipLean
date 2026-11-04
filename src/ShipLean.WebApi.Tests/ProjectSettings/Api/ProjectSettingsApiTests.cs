@@ -109,7 +109,7 @@ public class ProjectSettingsApiTests : ApiFixture
         response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
         Wire(await LoadAsync(project)).ShouldBe(Wire(loaded));
         loaded.Members.Select(m => m.Email).ShouldBe([JoelEmail, PriyaEmail], ignoreOrder: true);
-        loaded.States.Count.ShouldBe(30);
+        loaded.States.Count.ShouldBe(35);
     }
 
     [Test]

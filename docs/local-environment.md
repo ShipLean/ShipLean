@@ -65,6 +65,8 @@ The host uses the `Local` profile of `AppHost`. Nothing leaves the machine:
 
 - The first-admin, blob-store and webhook-secret settings from your own configuration are blanked, so a developer's
   environment variables cannot reach a local instance.
+- The instance's base URL is set to the address the host listens on each time it starts, so every link the app hands out
+  (agent prompts, one-time upload links, `open_url`) points back at this run, not at the seed's `shiplean.larkspur.dev`.
 - `HolidayRefreshService` (it calls the internet), `AgentDeliveryService` and `AgentStaleService` are removed. Webhook
   deliveries stay queued in the outbox and nothing is sent.
 - The search indexer runs. It uses the real embedding model when `SHIPLEAN_EMBEDDINGS_MODEL_PATH` is set
@@ -106,6 +108,28 @@ dotnet run --project src/ShipLean.LocalHost -- --database shiplean_<name> --port
   database stays on the server afterwards; run with `--data fresh` again (the default) to start from the seed, or leave it.
 - Sign in as `joel@shiplean.local` with the password on the second line.
 - If the client bundle is missing, the API still answers; build the bundle first if you need the pages.
+
+## Driving a local instance from a script
+
+A script that has to change data on its instance (seed a Feature's `## Why`, a retro, a project's logo) can skip the browser sign-in and the OAuth consent. Start the instance with the MCP gateway header turned on:
+
+```bash
+SHIPLEAN_MCP_GATEWAY_EMAIL_HEADER=X-Demo-Email dotnet run --project src/ShipLean.LocalHost -- --database shiplean_<name> --port 0
+```
+
+Then send the header to `/mcp` and the call acts as that person, with every scope and no agent, so comments and edits are theirs:
+
+```bash
+curl -s "$SHIPLEAN_LOCAL_URL/mcp" -H 'X-Demo-Email: joel@shiplean.local' \
+  -H 'content-type: application/json' -H 'accept: application/json, text/event-stream' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+```
+
+- LocalHost leaves this variable alone (it blanks only the first-admin, blob-store and webhook-secret settings), so the value you pass reaches the app.
+- Use an email of a seeded user. A new email creates a user, who is on no project until someone adds them.
+- The header is believed from anyone who can reach the port. LocalHost listens on `localhost` only; never set this variable on an instance other people can reach ([mcp.md](mcp.md#who-gets-in)).
+- Only `/mcp` reads the header. For a REST call, sign in as the seeded admin with `POST /api/auth/login` and keep the cookie, and send `X-ShipLean-Client` or a JSON body on writes ([auth.md](auth.md)).
+- The sprint-demo recordings use this to seed their data. A demo is made against a local seeded copy like this one, never against production ([sprint-demos.md](sprint-demos.md)). LocalHost doesn't run the YouTube forwarding loop.
 
 ## Reusing an existing Postgres or Redis
 

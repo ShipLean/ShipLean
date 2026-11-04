@@ -1,6 +1,6 @@
 using Dapper;
 using System.Text.Json;
-using ShipLean.Application.Features.Mcp.Planning.Tags;
+using ShipLean.Application.Plans;
 using ShipLean.Contracts.Errors;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Hosting;

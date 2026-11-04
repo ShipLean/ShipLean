@@ -1,6 +1,7 @@
 import { isValidElement, type ReactElement } from 'react';
 import { expect, test, vi } from 'vitest';
 import { InstanceGeneralSlot } from '../slots/InstanceGeneralSlot';
+import { SettingsDemosSlot } from '../slots/SettingsDemosSlot';
 import { SettingsIntegrationsSlot } from '../slots/SettingsIntegrationsSlot';
 import { SettingsStatesSlot } from '../slots/SettingsStatesSlot';
 import { DiscussionSlot } from '../slots/DiscussionSlot';
@@ -19,6 +20,7 @@ import { retroFeaturesSlots } from './retroFeaturesSlots';
 import { retroInsightsSlots } from './retroInsightsSlots';
 import { retroItemSlots } from './retroItemSlots';
 import { retrosSlots } from './retrosSlots';
+import { sprintDemoSlots } from './sprintDemoSlots';
 import { sprintRetroSlots } from './sprintRetroSlots';
 import { sprintBacklogSlots } from './sprintBacklogSlots';
 import { sprintsSlots } from './sprintsSlots';
@@ -106,6 +108,10 @@ test('sprintPages_ShouldPassTheSprintAndTheRightHeader', () => {
     header: { variant: 'full', project, sprint, sprints, tab: 'retro' },
     sprintRetro: { project, sprint, sprints },
   });
+  expect(sprintDemoSlots(project, sprint, sprints)).toEqual({
+    header: { variant: 'full', project, sprint, sprints, tab: 'demo' },
+    sprintDemo: { project, sprint, sprints },
+  });
   expect(sprintsSlots(project, sprints)).toEqual({
     sprintsList: { project, sprints },
     newSprintRail: { project, sprints },
@@ -150,8 +156,8 @@ test('backlogSlots_WhenFeaturesOrEpics_ShouldMountTheLevelBacklogOnly', () => {
   }
 });
 
-test('projectSettingsSlots_ShouldFrameEveryTabAndHandOverTheTwoContents', () => {
-  for (const tab of ['general', 'states', 'members', 'sprints', 'integrations'] as const) {
+test('projectSettingsSlots_ShouldFrameEveryTabAndHandOverTheThreeContents', () => {
+  for (const tab of ['general', 'states', 'members', 'sprints', 'integrations', 'demos'] as const) {
     const { settingsDraft } = projectSettingsSlots(project, tab);
     expect(settingsDraft).toMatchObject({ project, tab });
     const states = element(settingsDraft.states);
@@ -160,6 +166,9 @@ test('projectSettingsSlots_ShouldFrameEveryTabAndHandOverTheTwoContents', () => 
     const integrations = element(settingsDraft.integrations);
     expect(integrations.type).toBe(SettingsIntegrationsSlot);
     expect(integrations.props).toEqual({ project, tab });
+    const demos = element(settingsDraft.demos);
+    expect(demos.type).toBe(SettingsDemosSlot);
+    expect(demos.props).toEqual({ project, tab });
   }
 });
 
@@ -267,6 +276,7 @@ test('pageRouteIds_ShouldNameTheScreenEachPageReports', () => {
     taskboard: 'taskboard',
     capacity: 'capacity',
     sprintRetro: 'sprintRetro',
+    sprintDemo: 'sprintDemo',
     retros: 'retros',
     retroFeatures: 'retroFeatures',
     retroItem: 'retroItem',

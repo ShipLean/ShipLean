@@ -21,7 +21,7 @@ public sealed class InMemorySprintStoreContractTests : SprintStoreContract
         _holidays = new InMemoryPublicHolidays();
     }
 
-    protected override ISprintStore CreateStore() => new InMemorySprintStore(_world, _holidays);
+    protected override ISprintStore CreateStore() => new InMemorySprintStore(_world, _holidays, Events, Closer);
 
     protected override ISprintCapacityRecompute CreateRecompute() => new InMemorySprintCapacityRecompute(_world, _holidays);
 

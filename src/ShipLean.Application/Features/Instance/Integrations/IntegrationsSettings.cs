@@ -3,6 +3,7 @@ using Agoda.IoC.Core;
 using Dapper;
 using Microsoft.Extensions.Configuration;
 using Npgsql;
+using ShipLean.Application.Integrations;
 using ShipLean.Contracts.Errors;
 
 namespace ShipLean.Application.Features.Instance.Integrations;
@@ -48,14 +49,42 @@ public sealed partial class IntegrationsSettings(NpgsqlDataSource dataSource, In
             throw ApiException.Validation("A GitLab token is only sent to an https address. Use an https GitLab URL.", "gitLabUrl");
         }
 
+        var (youtubeId, youtubeSecret, youtubeLast4) = YouTube(row, body);
+
         await connection.ExecuteAsync(new CommandDefinition(
             """
             UPDATE instance_settings SET github_token = @githubToken, github_token_last4 = @githubLast4, gitlab_url = @url,
-                gitlab_token = @gitlabToken, gitlab_token_last4 = @gitlabLast4, preview_allow_hosts = @hosts, updated_at = @now
+                gitlab_token = @gitlabToken, gitlab_token_last4 = @gitlabLast4, preview_allow_hosts = @hosts,
+                youtube_client_id = @youtubeId, youtube_client_secret = @youtubeSecret, youtube_client_secret_last4 = @youtubeLast4, updated_at = @now
             """,
-            new { githubToken, githubLast4, url, gitlabToken, gitlabLast4, hosts = hosts ?? [.. row.PreviewAllowHosts], now = clock.GetUtcNow() },
+            new { githubToken, githubLast4, url, gitlabToken, gitlabLast4, youtubeId, youtubeSecret, youtubeLast4, hosts = hosts ?? [.. row.PreviewAllowHosts], now = clock.GetUtcNow() },
             cancellationToken: cancellationToken));
         return Present(await ReadAsync(connection, cancellationToken));
+    }
+
+    // The client id is plain text; the secret belongs to the id it was saved with, so a new id needs a new secret.
+    private (string? Id, string? Secret, string? LastFour) YouTube(IntegrationRow row, IntegrationsSaveDto body)
+    {
+        var newSecret = body.YouTubeClientSecret is null ? null : IntegrationTokens.Require(body.YouTubeClientSecret, "youTubeClientSecret");
+        var id = body.YouTubeClientId is null ? row.YouTubeClientId : body.YouTubeClientId.Trim();
+        if (string.IsNullOrEmpty(id))
+        {
+            if (newSecret is not null)
+            {
+                throw ApiException.Validation("Set the YouTube client id with its secret.", "youTubeClientId");
+            }
+            return (null, null, null);
+        }
+        id = IntegrationTokens.Require(id, "youTubeClientId");
+        if (newSecret is not null)
+        {
+            return (id, tokens.Protect(newSecret), IntegrationTokens.LastFour(newSecret));
+        }
+        if (string.Equals(id, row.YouTubeClientId, StringComparison.Ordinal) && row.YouTubeClientSecret is not null)
+        {
+            return (id, row.YouTubeClientSecret, row.YouTubeClientSecretLast4);
+        }
+        throw ApiException.Validation("A YouTube client id is saved with its secret: paste the client secret.", "youTubeClientSecret");
     }
 
     private (string? Protected, string? LastFour) Token(string? saved, string? savedLast4, string? replacement, bool clear)
@@ -96,13 +125,27 @@ public sealed partial class IntegrationsSettings(NpgsqlDataSource dataSource, In
         {
             gitlabLast4 = envGitLabUrl is null ? null : ShownFromEnv(envGitLabToken);
         }
+        var youtubeSaved = row.YouTubeClientId is not null;
+        var envYouTube = youtubeSaved ? null : YouTubeClientEnv.Read(configuration);
+        string? youtubeLast4;
+        if (youtubeSaved)
+        {
+            youtubeLast4 = Shown(row.YouTubeClientSecretLast4);
+        }
+        else
+        {
+            youtubeLast4 = envYouTube is null ? null : Shown(IntegrationTokens.LastFour(envYouTube.ClientSecret));
+        }
         return new IntegrationsSettingsDto(
             githubSaved ? Shown(githubLast4) : githubLast4,
             !githubSaved && envGitHub is not null,
             gitlabSaved ? row.GitLabUrl : envGitLabUrl,
             gitlabLast4,
             !gitlabSaved && envGitLabUrl is not null,
-            row.PreviewAllowHosts);
+            row.PreviewAllowHosts,
+            youtubeSaved ? row.YouTubeClientId : envYouTube?.ClientId,
+            youtubeLast4,
+            envYouTube is not null);
     }
 
     private static string? ShownFromEnv(string? token) => token is null ? null : Shown(IntegrationTokens.LastFour(token));

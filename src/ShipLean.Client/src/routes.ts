@@ -50,6 +50,7 @@ export const projectSettingsTabs = [
   'members',
   'sprints',
   'integrations',
+  'demos',
 ] as const;
 export type ProjectSettingsTab = (typeof projectSettingsTabs)[number];
 
@@ -90,6 +91,7 @@ export interface RouteParams {
   taskboard: SprintParams;
   capacity: SprintParams;
   sprintRetro: SprintParams;
+  sprintDemo: SprintParams;
   retros: ProjectParams;
   retroFeatures: ProjectParams;
   retroItem: ProjectParams & { itemKey: string };
@@ -257,6 +259,12 @@ const routeDefs: { [I in RouteId]: RouteDef<I> } = {
     query: ['decide', 'point', 'view', 'writtenBy', 'item'],
     installLevel: false,
     crumbs: () => ['Sprints', 'Sprint', 'Retro'],
+  },
+  sprintDemo: {
+    pattern: '/p/:key/sprints/:sprintId/demo',
+    query: [],
+    installLevel: false,
+    crumbs: () => ['Sprints', 'Sprint', 'Demo'],
   },
   retros: {
     pattern: '/p/:key/retros',

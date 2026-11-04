@@ -23,6 +23,7 @@ const HEADINGS: Record<WorkItemTypeId, string> = {
   bug: 'Bugs',
   task: 'Tasks',
   action: 'Action items',
+  bau: 'BAU items',
 };
 
 const WIDTH = 320;

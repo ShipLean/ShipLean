@@ -59,7 +59,7 @@ test('projects_ShouldTypeTheFixtures', () => {
   expect(typed<KeyCheckDto>()(keyCheck.taken).reason).toBe('takenByAnotherProject');
   expect(typed<KeyCheckDto>()(keyCheck.free).available).toBe(true);
   expect(typed<MemberDto[]>()(members)).toHaveLength(2);
-  expect(typed<StateDto[]>()(states)).toHaveLength(4);
+  expect(typed<StateDto[]>()(states)).toHaveLength(5);
   expect(typed<StateChanges>()(stateChanges).remove).toHaveLength(1);
   expect(typed<InstanceSettingsDto>()(instance.settings).projectCreation).toBe('admins');
   expect(typed<InstanceProjectDto[]>()(instance.projects)[0].hasActiveAdmin).toBe(false);

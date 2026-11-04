@@ -26,6 +26,15 @@ public sealed class InMemoryBlobStore : IBlobStore
             : null);
     }
 
+    public Task<Stream?> OpenAtAsync(string key, long offset, CancellationToken cancellationToken)
+    {
+        Check(key);
+        ArgumentOutOfRangeException.ThrowIfNegative(offset);
+        return Task.FromResult<Stream?>(_blobs.TryGetValue(key, out var blob)
+            ? new MemoryStream(blob.Bytes, (int)Math.Min(offset, blob.Bytes.Length), blob.Bytes.Length - (int)Math.Min(offset, blob.Bytes.Length), writable: false)
+            : null);
+    }
+
     public Task<bool> ExistsAsync(string key, CancellationToken cancellationToken)
     {
         Check(key);

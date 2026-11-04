@@ -2,7 +2,7 @@ namespace ShipLean.AcceptanceTests.Harness;
 
 public static partial class Links
 {
-    // A project's settings tab ("general", "states", "members", "sprints", "integrations"): /p/:key/settings/:tab.
+    // A project's settings tab ("general", "states", "members", "sprints", "integrations", "demos"): /p/:key/settings/:tab.
     public static string ProjectSettings(string projectKey, string tab) =>
         $"/p/{Segment(projectKey)}/settings/{Segment(tab)}";
 

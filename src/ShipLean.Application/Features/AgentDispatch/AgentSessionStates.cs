@@ -1,4 +1,5 @@
 using ShipLean.Application.Features.AgentDispatch.Rendering;
+using ShipLean.Contracts.Agents;
 
 namespace ShipLean.Application.Features.AgentDispatch;
 
@@ -14,7 +15,7 @@ internal static class AgentSessionStates
     public const string Stale = "stale";
 
     // The SQL list of live states, for queries that must agree with the partial unique index.
-    public const string LiveSql = "('submitted', 'working', 'inputRequired')";
+    public const string LiveSql = AgentSessionLiveStates.Sql;
 
     // The ended ones. A stale session is neither live nor terminal: it can be started again, so its queued prompts are kept.
     public const string TerminalSql = "('completed', 'failed', 'canceled')";

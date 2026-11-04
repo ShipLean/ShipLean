@@ -1,0 +1,10 @@
+{
+  "logoIsDefault": true,
+  "logoSvg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 160 32\"><rect width=\"26\" height=\"26\" rx=\"7\" fill=\"#16a089\"/></svg>",
+  "logoUrl": null,
+  "logoContentType": null,
+  "logoUrlExpiresAt": null,
+  "tokensAreDefault": true,
+  "tokensCss": ":root{--color-bg:#e8eef7}",
+  "logoFallbackReason": null
+}

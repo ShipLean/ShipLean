@@ -8,6 +8,7 @@ const LABELS: Record<ProjectSettingsTab, string> = {
   members: 'Members',
   sprints: 'Sprints & forecast',
   integrations: 'Integrations',
+  demos: 'Demos',
 };
 const TEST_IDS: Record<ProjectSettingsTab, string> = {
   general: settingsTestIds.tabGeneral,
@@ -15,8 +16,16 @@ const TEST_IDS: Record<ProjectSettingsTab, string> = {
   members: settingsTestIds.tabMembers,
   sprints: settingsTestIds.tabSprints,
   integrations: settingsTestIds.tabIntegrations,
+  demos: settingsTestIds.tabDemos,
 };
-const ORDER: ProjectSettingsTab[] = ['general', 'states', 'members', 'sprints', 'integrations'];
+const ORDER: ProjectSettingsTab[] = [
+  'general',
+  'states',
+  'members',
+  'sprints',
+  'integrations',
+  'demos',
+];
 
 export function TabList({
   projectKey,

@@ -41,6 +41,7 @@ public static class ToolUsageMap
         ["end_sprint"] = UsageEventNames.SprintEnded,
         ["sprint_status"] = UsageEventNames.SprintStatusViewed,
         ["sprint_review"] = UsageEventNames.SprintReviewed,
+        ["create_sprint_demo"] = UsageEventNames.SprintDemoCreated,
         ["log_retrospective"] = UsageEventNames.RetroPointAdded,
         ["list_retrospectives"] = UsageEventNames.RetroListed,
         ["decide_retro_actions"] = UsageEventNames.RetroActionsDecided,

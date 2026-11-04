@@ -33,6 +33,11 @@ public sealed partial class BacklogWriteCommands
             throw ApiException.Validation("A task goes under a story, not at the top level.");
         }
 
+        if (WorkItemTypeRules.IsHidden(item.Type))
+        {
+            throw ApiException.Validation("A BAU item is made by ShipLean, not by hand.", "type");
+        }
+
         if (string.IsNullOrWhiteSpace(item.Title) || item.Tasks.Any(t => string.IsNullOrWhiteSpace(t.Title)))
         {
             throw ApiException.Validation("Every row needs a title.", "title");

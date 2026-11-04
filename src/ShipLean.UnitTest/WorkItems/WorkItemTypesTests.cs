@@ -21,6 +21,7 @@ public class WorkItemTypesTests
     [TestCase(WorkItemTypeId.Bug, true)]
     [TestCase(WorkItemTypeId.Task, false)]
     [TestCase(WorkItemTypeId.Action, true)]
+    [TestCase(WorkItemTypeId.Bau, false)]
     public void IsStoryLevel_WhenEachType_ShouldMatchStoryBugAction(WorkItemTypeId type, bool expected)
     {
         WorkItemTypeRules.IsStoryLevel(type).ShouldBe(expected);
@@ -44,5 +45,39 @@ public class WorkItemTypesTests
         WorkItemTypes.IsAllowedParent(WorkItemTypeId.Task, WorkItemTypeId.Action).ShouldBeTrue();
         WorkItemTypes.IsAllowedParent(WorkItemTypeId.Task, WorkItemTypeId.Story).ShouldBeTrue();
         WorkItemTypes.IsAllowedParent(WorkItemTypeId.Task, WorkItemTypeId.Feature).ShouldBeFalse();
+    }
+
+    [Test]
+    public void Name_WhenBau_ShouldBeBauInCapitals()
+    {
+        WorkItemTypeRules.Name(WorkItemTypeId.Bau).ShouldBe("BAU");
+        WorkItemTypes.Ref(WorkItemTypeId.Bau).Name.ShouldBe("BAU");
+        WorkItemTypes.Db(WorkItemTypeId.Bau).ShouldBe("bau");
+    }
+
+    [Test]
+    public void IsHidden_WhenEachType_ShouldBeTrueOnlyForBau()
+    {
+        foreach (var type in Enum.GetValues<WorkItemTypeId>())
+        {
+            WorkItemTypeRules.IsHidden(type).ShouldBe(type == WorkItemTypeId.Bau, type.ToString());
+        }
+
+        WorkItemTypeRules.HiddenDb.ShouldBe("bau");
+        WorkItemTypeRules.NotHiddenSql.ShouldBe("w.type <> 'bau'");
+    }
+
+    [Test]
+    public void Bau_WhenAskedWhereItSits_ShouldHaveNoParentNoBoardAndStayOutOfStoryLevelQueries()
+    {
+        foreach (var parent in Enum.GetValues<WorkItemTypeId>())
+        {
+            WorkItemTypes.IsAllowedParent(WorkItemTypeId.Bau, parent).ShouldBeFalse(parent.ToString());
+            WorkItemTypes.IsAllowedParent(WorkItemTypeId.Task, WorkItemTypeId.Bau).ShouldBeFalse();
+        }
+
+        WorkItemTypes.BoardLevel(WorkItemTypeId.Bau).ShouldBeNull();
+        WorkItemTypeRules.StoryLevelDb.ShouldBe(["story", "bug", "action"]);
+        WorkItemTypeRules.IsStoryLevel(WorkItemTypeId.Bau).ShouldBeFalse();
     }
 }

@@ -57,6 +57,54 @@ public class AgentStartOverrideTests : ApiFixture
     }
 
     [Test]
+    public async Task PlanProject_WhenNoConnection_ShouldSaySo()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var arranged = await AgentDispatchArrange.CreateAsync(database, Api, connection: false);
+
+        var block = await Starter.PlanProjectAsync(arranged.Project.Id, null, CancellationToken.None);
+
+        block.ShouldBe(AgentStartBlock.NoConnection);
+    }
+
+    [Test]
+    public async Task PlanProject_WhenOverrideAndProjectHasNone_ShouldPass()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var arranged = await AgentDispatchArrange.CreateAsync(database, Api, connection: false);
+        var other = await NewConnectionAsync();
+
+        var block = await Starter.PlanProjectAsync(arranged.Project.Id, other, CancellationToken.None);
+
+        block.ShouldBeNull();
+    }
+
+    [Test]
+    public async Task PlanProject_WhenOverrideArchived_ShouldSayNoConnection()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
+        var other = await NewConnectionAsync();
+        await database.ExecuteAsync("UPDATE agent_connection SET archived_at = now() WHERE id = @other", new { other });
+
+        var block = await Starter.PlanProjectAsync(arranged.Project.Id, other, CancellationToken.None);
+
+        block.ShouldBe(AgentStartBlock.NoConnection);
+    }
+
+    [Test]
+    public async Task PlanProject_WhenOverrideAndNoRepository_ShouldSayNoRepository()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var arranged = await AgentDispatchArrange.CreateAsync(database, Api, repository: false);
+        var other = await NewConnectionAsync();
+
+        var block = await Starter.PlanProjectAsync(arranged.Project.Id, other, CancellationToken.None);
+
+        block.ShouldBe(AgentStartBlock.NoRepository);
+    }
+
+    [Test]
     public async Task Start_WhenAnOverrideConnectionAndPromptAreGiven_ShouldStoreTheConnectionAndSendThePromptAsGuidance()
     {
         await using var database = await OpenDatabaseAsync();

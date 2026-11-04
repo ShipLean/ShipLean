@@ -11,6 +11,7 @@ export const sprintHeaderTestIds = {
   tabTaskboard: 'sprint-header-tab-taskboard',
   tabCapacity: 'sprint-header-tab-capacity',
   tabRetro: 'sprint-header-tab-retro',
+  tabDemo: 'sprint-header-tab-demo',
   pickerList: 'sprint-header-picker-list',
   pickerOption: 'sprint-header-picker-option',
 } as const;

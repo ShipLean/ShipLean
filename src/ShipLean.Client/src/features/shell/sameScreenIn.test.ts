@@ -8,6 +8,7 @@ test('sameScreenIn_WhenSprintRoute_ShouldFallBackToAllSprints', () => {
     '/p/SHIP/sprints/abc/taskboard',
     '/p/SHIP/sprints/abc/capacity',
     '/p/SHIP/sprints/abc/retro',
+    '/p/SHIP/sprints/abc/demo',
   ]) {
     expect(sameScreenIn(matchRoute(path), 'PAY')).toBe('/p/PAY/sprints');
   }

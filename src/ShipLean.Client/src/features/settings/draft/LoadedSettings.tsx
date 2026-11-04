@@ -37,12 +37,14 @@ export function LoadedSettings({
   tab,
   states,
   integrations,
+  demos,
 }: {
   project: ProjectDto;
   settings: ProjectSettingsDto;
   tab: ProjectSettingsTab;
   states: ReactNode;
   integrations: ReactNode;
+  demos: ReactNode;
 }) {
   const navigate = useNavigate();
   const readOnly = project.role !== 'admin';
@@ -137,6 +139,7 @@ export function LoadedSettings({
           <SettingsDraftContext.Provider value={{ settings, focus: focusRequest, ...tabProps }}>
             {tab === 'states' && states}
             {tab === 'integrations' && integrations}
+            {tab === 'demos' && demos}
           </SettingsDraftContext.Provider>
         </main>
       </div>

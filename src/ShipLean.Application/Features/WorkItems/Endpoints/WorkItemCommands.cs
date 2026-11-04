@@ -1,5 +1,7 @@
 using Agoda.IoC.Core;
 using ShipLean.Contracts;
+using ShipLean.Contracts.Errors;
+using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.WorkItems;
 
 namespace ShipLean.Application.Features.WorkItems.Endpoints;
@@ -11,6 +13,11 @@ public sealed class WorkItemCommands(IProjectAccess access, IWorkItemStore store
     public async Task<WriteOutcome> CreateAsync(WorkItemCreate create, CancellationToken cancellationToken)
     {
         await access.RequireAsync(create.ProjectId, ProjectRole.Member, cancellationToken);
+        if (WorkItemTypeRules.IsHidden(create.Type))
+        {
+            throw ApiException.Validation("A BAU item is made by ShipLean, not by hand.", "type");
+        }
+
         return await store.CreateAsync(create, WriteOptions.User, cancellationToken);
     }
 

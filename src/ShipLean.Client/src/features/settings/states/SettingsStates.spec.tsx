@@ -69,6 +69,34 @@ const actionStates = (): StateDto[] => [
   },
 ];
 
+const bauStates = (): StateDto[] => [
+  { id: 'bau-new', type: 'bau', name: 'New', category: 'proposed', order: 1, itemCount: 0 },
+  {
+    id: 'bau-active',
+    type: 'bau',
+    name: 'Active',
+    category: 'inProgress',
+    order: 2,
+    itemCount: 0,
+  },
+  {
+    id: 'bau-closed',
+    type: 'bau',
+    name: 'Closed',
+    category: 'completed',
+    order: 3,
+    itemCount: 0,
+  },
+  {
+    id: 'bau-removed',
+    type: 'bau',
+    name: 'Removed',
+    category: 'removed',
+    order: 4,
+    itemCount: 0,
+  },
+];
+
 const saved = (): ProjectSettingsDto => ({
   general: {
     key: 'SHIP',
@@ -89,6 +117,7 @@ const saved = (): ProjectSettingsDto => ({
     st('s-closed', 'Closed', 'completed', 3, 4),
     ...otherTypes(),
     ...actionStates(),
+    ...bauStates(),
   ],
 });
 
@@ -181,6 +210,20 @@ test('States_WhenActionPicked_ShouldListItsFourStates', async ({ mount, page }) 
   for (const [index, name] of ['New', 'Active', 'Closed', 'Removed'].entries()) {
     await expect(rows.nth(index).getByTestId(ids.stateName)).toHaveValue(name);
   }
+});
+
+test('States_WhenBauPicked_ShouldListItsFourStatesAndNoBoard', async ({ mount, page }) => {
+  await stub(page);
+  const view = await mountAdmin(mount);
+
+  await view.getByTestId(ids.stateTypeBau).click();
+
+  const rows = view.getByTestId(ids.stateRow);
+  await expect(rows).toHaveCount(4);
+  for (const [index, name] of ['New', 'Active', 'Closed', 'Removed'].entries()) {
+    await expect(rows.nth(index).getByTestId(ids.stateName)).toHaveValue(name);
+  }
+  await expect(view.getByText('Not on a board').first()).toBeVisible();
 });
 
 test('States_WhenStateRenamed_ShouldKeepCategoryColour', async ({ mount, page }) => {

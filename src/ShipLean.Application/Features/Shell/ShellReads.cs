@@ -94,7 +94,7 @@ public sealed class ShellReads(NpgsqlDataSource dataSource, ICurrentUser current
             SELECT s.id, s.type, s.name, s.category, s.sort_order AS "order",
                    (SELECT count(*) FROM work_item w WHERE w.state_id = s.id)::int AS itemCount
             FROM state s WHERE s.project_id = @projectId AND s.archived_at IS NULL
-            ORDER BY array_position(ARRAY['epic', 'feature', 'story', 'bug', 'task', 'action'], s.type), s.sort_order
+            ORDER BY array_position(ARRAY['epic', 'feature', 'story', 'bug', 'task', 'action', 'bau'], s.type), s.sort_order
             """,
             new { projectId }, cancellationToken: cancellationToken));
         return [.. rows.Select(row => new StateDto(row.Id, Enum.Parse<WorkItemTypeId>(row.Type, true), row.Name, Enum.Parse<StateCategory>(row.Category, true), row.Order, row.ItemCount))];

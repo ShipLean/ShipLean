@@ -12,5 +12,9 @@ public interface IBlobStore
     // Null when the key holds nothing.
     Task<BlobContent?> GetAsync(string key, CancellationToken cancellationToken);
 
+    // The blob's content from offset to its end; null when the key holds nothing, decided before the method returns. The caller
+    // owns and disposes the stream, and disposing it releases everything behind it.
+    Task<Stream?> OpenAtAsync(string key, long offset, CancellationToken cancellationToken);
+
     Task<bool> ExistsAsync(string key, CancellationToken cancellationToken);
 }

@@ -1,7 +1,7 @@
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Application.Features.Mcp.Planning.Markers;
-using ShipLean.Application.Features.Mcp.Planning.Tags;
+using ShipLean.Application.Plans;
 using ShipLean.Contracts.Attachments;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.WorkItems;

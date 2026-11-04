@@ -65,10 +65,14 @@ VALUES
   ('00000003-0000-4000-8001-000000000601', '00000002-0000-4000-8000-000000000001', 'action', 'New', 'proposed', 1),
   ('00000003-0000-4000-8001-000000000602', '00000002-0000-4000-8000-000000000001', 'action', 'Active', 'inProgress', 2),
   ('00000003-0000-4000-8001-000000000603', '00000002-0000-4000-8000-000000000001', 'action', 'Closed', 'completed', 3),
-  ('00000003-0000-4000-8001-000000000604', '00000002-0000-4000-8000-000000000001', 'action', 'Removed', 'removed', 4);
+  ('00000003-0000-4000-8001-000000000604', '00000002-0000-4000-8000-000000000001', 'action', 'Removed', 'removed', 4),
+  ('00000003-0000-4000-8001-000000000701', '00000002-0000-4000-8000-000000000001', 'bau', 'New', 'proposed', 1),
+  ('00000003-0000-4000-8001-000000000702', '00000002-0000-4000-8000-000000000001', 'bau', 'Active', 'inProgress', 2),
+  ('00000003-0000-4000-8001-000000000703', '00000002-0000-4000-8000-000000000001', 'bau', 'Closed', 'completed', 3),
+  ('00000003-0000-4000-8001-000000000704', '00000002-0000-4000-8000-000000000001', 'bau', 'Removed', 'removed', 4);
 
 -- The other projects get the default states for every type, in the same id scheme:
--- 00000003-0000-4000-80PP-NNNNNNNNNNNN where N = type digit (epic 1 .. action 6) then the two-digit order.
+-- 00000003-0000-4000-80PP-NNNNNNNNNNNN where N = type digit (epic 1 .. bau 7) then the two-digit order.
 -- An Action item has four states (New, Active, Closed, Removed), so no Resolved; they follow the other types.
 INSERT INTO state (id, project_id, type, name, category, sort_order)
 SELECT format('00000003-0000-4000-80%s-%s', lpad(p.number::text, 2, '0'), lpad((t.digit * 100 + s.sort_order)::text, 12, '0'))::uuid,
@@ -81,6 +85,14 @@ CROSS JOIN (VALUES ('New', 'proposed', 1), ('Active', 'inProgress', 2), ('Resolv
 INSERT INTO state (id, project_id, type, name, category, sort_order)
 SELECT format('00000003-0000-4000-80%s-%s', lpad(p.number::text, 2, '0'), lpad((600 + s.sort_order)::text, 12, '0'))::uuid,
        project.id, 'action', s.name, s.category, s.sort_order
+FROM (VALUES ('PAY', 2), ('MOB', 3), ('DATA', 4), ('OPS', 5), ('PART', 6)) AS p (key, number)
+JOIN project ON project.key = p.key
+CROSS JOIN (VALUES ('New', 'proposed', 1), ('Active', 'inProgress', 2), ('Closed', 'completed', 3), ('Removed', 'removed', 4)) AS s (name, category, sort_order);
+
+-- A BAU item has the same four states as an Action item, after it.
+INSERT INTO state (id, project_id, type, name, category, sort_order)
+SELECT format('00000003-0000-4000-80%s-%s', lpad(p.number::text, 2, '0'), lpad((700 + s.sort_order)::text, 12, '0'))::uuid,
+       project.id, 'bau', s.name, s.category, s.sort_order
 FROM (VALUES ('PAY', 2), ('MOB', 3), ('DATA', 4), ('OPS', 5), ('PART', 6)) AS p (key, number)
 JOIN project ON project.key = p.key
 CROSS JOIN (VALUES ('New', 'proposed', 1), ('Active', 'inProgress', 2), ('Closed', 'completed', 3), ('Removed', 'removed', 4)) AS s (name, category, sort_order);

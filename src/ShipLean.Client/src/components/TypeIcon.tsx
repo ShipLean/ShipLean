@@ -11,6 +11,7 @@ const letters: Record<WorkItemType, string> = {
   bug: 'B',
   task: 'T',
   action: 'A',
+  bau: 'U',
 };
 
 /** The 16px coloured square with a letter that marks a work item's type. */

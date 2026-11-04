@@ -4,7 +4,7 @@ import type { WorkItemTypeId } from '../../../api/refs';
 import { fetchBoards, projectBoardsKey } from '../../../queries/shared';
 import { boardSettingsKey, fetchBoardSettings } from '../../boardSettings/boardSettingsApi';
 
-const LEVEL_OF: Record<Exclude<WorkItemTypeId, 'task'>, BoardLevel> = {
+const LEVEL_OF: Record<Exclude<WorkItemTypeId, 'task' | 'bau'>, BoardLevel> = {
   epic: 'epics',
   feature: 'features',
   story: 'stories',
@@ -17,7 +17,7 @@ const LEVEL_OF: Record<Exclude<WorkItemTypeId, 'task'>, BoardLevel> = {
  * Tasks sit in a Taskboard column named after the state, so they read nothing.
  */
 export function useStateColumns(projectId: string, type: WorkItemTypeId) {
-  const level = type === 'task' ? undefined : LEVEL_OF[type];
+  const level = type === 'task' || type === 'bau' ? undefined : LEVEL_OF[type];
   const boards = useQuery({
     queryKey: projectBoardsKey(projectId),
     queryFn: () => fetchBoards(projectId),

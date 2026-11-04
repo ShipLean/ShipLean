@@ -200,7 +200,10 @@ test('persisted_ShouldTypeEveryFixture', () => {
     typed<SprintRef[]>()(refs.sprintRefs).map((sprint) => sprint.status),
     SPRINT_STATUSES,
   );
-  expect(typed<TypeRef[]>()(refs.typeRefs).map((type) => type.id)).toEqual([...WORK_ITEM_TYPE_IDS]);
+  // A BAU item is made by ShipLean, so the seeded SHIP project has none and the pinned refs list no BAU type.
+  expect(typed<TypeRef[]>()(refs.typeRefs).map((type) => type.id)).toEqual(
+    WORK_ITEM_TYPE_IDS.filter((id) => id !== 'bau'),
+  );
 });
 
 test('fieldIds_ShouldMatchTheVocabularyFixture', () => {

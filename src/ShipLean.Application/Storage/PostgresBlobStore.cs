@@ -78,6 +78,55 @@ public sealed class PostgresBlobStore : IBlobStore, IAsyncDisposable, IDisposabl
         return new BlobContent(new MemoryStream(reader.GetFieldValue<byte[]>(1), writable: false), reader.GetString(0));
     }
 
+    // The rest of the blob streamed from the database: the server cuts it at the offset (substring), and the reader runs in sequential
+    // mode, so the bytes are never held whole here. The returned stream owns the connection, command and reader; disposing it
+    // gives the connection back to the pool.
+    public async Task<Stream?> OpenAtAsync(string key, long offset, CancellationToken cancellationToken)
+    {
+        BlobKey.Check(key);
+        ArgumentOutOfRangeException.ThrowIfNegative(offset);
+
+        var connection = await _dataSource.OpenConnectionAsync(cancellationToken);
+        NpgsqlCommand? command = null;
+        NpgsqlDataReader? reader = null;
+        try
+        {
+            // substring takes an int position. A bytea is at most 1 GB, so any offset from int.MaxValue - 1 up is past its end and
+            // clamps to a position that is also past it: the empty remainder the long contract asks for, never an overflow.
+            command = new NpgsqlCommand("SELECT substring(bytes from @position) FROM blob WHERE key = @key", connection);
+            command.Parameters.AddWithValue("key", key);
+            command.Parameters.Add(new NpgsqlParameter("position", NpgsqlDbType.Integer) { Value = (int)(Math.Min(offset, int.MaxValue - 2L) + 1) });
+            reader = await command.ExecuteReaderAsync(System.Data.CommandBehavior.SequentialAccess, cancellationToken);
+            if (!await reader.ReadAsync(cancellationToken))
+            {
+                await DisposeAllAsync(reader, command, connection);
+                return null;
+            }
+
+            return new PostgresBlobReadStream(reader.GetStream(0), reader, command, connection);
+        }
+        catch
+        {
+            await DisposeAllAsync(reader, command, connection);
+            throw;
+        }
+    }
+
+    private static async Task DisposeAllAsync(NpgsqlDataReader? reader, NpgsqlCommand? command, NpgsqlConnection connection)
+    {
+        if (reader is not null)
+        {
+            await reader.DisposeAsync();
+        }
+
+        if (command is not null)
+        {
+            await command.DisposeAsync();
+        }
+
+        await connection.DisposeAsync();
+    }
+
     public async Task<bool> ExistsAsync(string key, CancellationToken cancellationToken)
     {
         BlobKey.Check(key);

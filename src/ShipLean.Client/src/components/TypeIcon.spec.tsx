@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/experimental-ct-react';
 import { TypeIcon, type WorkItemType } from './TypeIcon';
 import { componentTestIds as ids } from './testIds';
 
-const types: WorkItemType[] = ['epic', 'feature', 'story', 'bug', 'task', 'action'];
+const types: WorkItemType[] = ['epic', 'feature', 'story', 'bug', 'task', 'action', 'bau'];
 
 test('TypeIcon_ShouldRenderEachType', async ({ mount, page }) => {
   await mount(
@@ -13,12 +13,13 @@ test('TypeIcon_ShouldRenderEachType', async ({ mount, page }) => {
     </div>,
   );
   const icons = page.getByTestId(ids.typeIcon);
-  await expect(icons).toHaveCount(6);
+  await expect(icons).toHaveCount(7);
   for (const [index, type] of types.entries()) {
     await expect(icons.nth(index)).toHaveAttribute('data-type', type);
   }
   await expect(icons.nth(3)).toHaveText('B');
   await expect(icons.nth(5)).toHaveText('A');
+  await expect(icons.nth(6)).toHaveText('U');
 });
 
 test('TypeIcon_WhenAction_ShouldUseTheActionColourInLightAndDark', async ({ mount, page }) => {
@@ -43,4 +44,28 @@ test('TypeIcon_WhenAction_ShouldUseTheActionColourInLightAndDark', async ({ moun
   const dark = await colourOf();
   expect(dark.background).toBe(dark.colour);
   expect(dark.colour).toBe('rgb(76, 199, 154)');
+});
+
+test('TypeIcon_WhenBau_ShouldUseTheBauColourInLightAndDark', async ({ mount, page }) => {
+  await mount(<TypeIcon type="bau" />);
+  const icon = page.getByTestId(ids.typeIcon);
+  const colourOf = () =>
+    icon.evaluate((node) => {
+      const probe = document.createElement('span');
+      probe.style.color = 'var(--type-bau)';
+      document.body.append(probe);
+      const colour = getComputedStyle(probe).color;
+      probe.remove();
+      return { colour, background: getComputedStyle(node).backgroundColor };
+    });
+
+  await page.emulateMedia({ colorScheme: 'light' });
+  const light = await colourOf();
+  expect(light.background).toBe(light.colour);
+  expect(light.colour).toBe('rgb(95, 111, 130)');
+
+  await page.emulateMedia({ colorScheme: 'dark' });
+  const dark = await colourOf();
+  expect(dark.background).toBe(dark.colour);
+  expect(dark.colour).toBe('rgb(163, 177, 194)');
 });

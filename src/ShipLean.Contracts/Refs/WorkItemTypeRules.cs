@@ -11,8 +11,16 @@ public static class WorkItemTypeRules
     {
         WorkItemTypeId.Story => "User Story",
         WorkItemTypeId.Action => "Action item",
+        WorkItemTypeId.Bau => "BAU",
         _ => type.ToString(),
     };
 
     public static bool IsStoryLevel(WorkItemTypeId type) => type is WorkItemTypeId.Story or WorkItemTypeId.Bug or WorkItemTypeId.Action;
+
+    // A BAU item is made by ShipLean and never shows in a list or search result; it is reached by its key, its id or a link.
+    public const string HiddenDb = "bau";
+
+    public const string NotHiddenSql = "w.type <> 'bau'";
+
+    public static bool IsHidden(WorkItemTypeId type) => type is WorkItemTypeId.Bau;
 }

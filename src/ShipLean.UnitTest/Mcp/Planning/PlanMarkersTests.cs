@@ -1,4 +1,5 @@
 using ShipLean.Application.Features.Mcp.Planning.Markers;
+using ShipLean.Application.Plans;
 
 namespace ShipLean.UnitTest.Mcp.Planning;
 
