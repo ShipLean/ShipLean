@@ -474,6 +474,36 @@ public class SprintDemoDataTests : ApiFixture
     }
 
     [Test]
+    public async Task Oversized_WhenStoryHasManyCriteria_ShouldKeepTenAndSetTheFlag()
+    {
+        await using var world = await WorldAsync();
+        var feature = await world.FeatureAsync("F");
+        await world.ItemAsync("story", parent: feature, sprint: world.Sprint, criteria: [.. Enumerable.Range(0, 12).Select(i => $"Criterion {i:00}")]);
+
+        var data = await world.ReadAsync();
+
+        data.Features.Single().Stories.Single().Criteria.Count.ShouldBe(10);
+        data.Truncated.ShouldBeTrue();
+    }
+
+    [Test]
+    public async Task Oversized_WhenStoryHasManyTasks_ShouldKeepThirtyAndSetTheFlag()
+    {
+        await using var world = await WorldAsync();
+        var feature = await world.FeatureAsync("F");
+        var story = await world.ItemAsync("story", parent: feature, sprint: world.Sprint);
+        for (var i = 0; i < 35; i++)
+        {
+            await world.ItemAsync("task", parent: story, title: $"Task {i:00}");
+        }
+
+        var data = await world.ReadAsync();
+
+        data.Features.Single().Stories.Single().Tasks.Count.ShouldBe(30);
+        data.Truncated.ShouldBeTrue();
+    }
+
+    [Test]
     public async Task Oversized_WhenManyFeatures_ShouldKeepEveryFeatureAndShrinkTheLastToItsHeader()
     {
         await using var world = await WorldAsync();
@@ -489,7 +519,9 @@ public class SprintDemoDataTests : ApiFixture
         var data = await world.ReadAsync();
 
         data.Features.Count.ShouldBe(30);
-        SprintDemoDataBudget.Size(data).ShouldBeLessThanOrEqualTo(SprintDemoDataBudget.MaxBytes);
+        SprintDemoDataBudget.MaxBytes.ShouldBe(120 * 1024);
+        SprintDemoDataBudget.Size(data).ShouldBeLessThanOrEqualTo(120 * 1024);
+        System.Text.Encoding.UTF8.GetByteCount(Serialize(data)).ShouldBeLessThanOrEqualTo(120 * 1024);
         data.Truncated.ShouldBeTrue();
         var whole = data.Features.Count(feature => feature.Stories.Count == 12);
         whole.ShouldBeGreaterThan(0);

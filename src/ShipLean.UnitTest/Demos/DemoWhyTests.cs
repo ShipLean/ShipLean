@@ -29,6 +29,7 @@ public class DemoWhyTests
     public void Extract_WhenWhyIsTheLastSection_ShouldRunToTheEnd()
     {
         DemoWhy.Extract("## Plan\n\nBuild it.\n\n## Why\n\nBecause.\r\nAnd more.\n").Why.ShouldBe("Because.\nAnd more.");
+        DemoWhy.Extract("## Why\n\nBecause.\nAnd more.").Why.ShouldBe("Because.\nAnd more.");
     }
 
     [Test]
