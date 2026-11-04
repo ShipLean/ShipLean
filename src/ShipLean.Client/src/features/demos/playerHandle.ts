@@ -7,7 +7,6 @@ const listeners = new WeakMap<DemoPlayerHandle, Set<(seconds: number) => void>>(
 
 /** A handle whose `seekTo` does nothing until a DemoPlayer binds its video or embed to it. */
 export function newPlayerHandle(): DemoPlayerHandle {
-  const heard = new Set<(seconds: number) => void>();
   const handle: DemoPlayerHandle = {
     seekTo(seconds) {
       const video = videos.get(handle);
@@ -19,12 +18,8 @@ export function newPlayerHandle(): DemoPlayerHandle {
       }
       reportTime(handle, seconds);
     },
-    subscribe(listener) {
-      heard.add(listener);
-      return () => void heard.delete(listener);
-    },
   };
-  listeners.set(handle, heard);
+  listeners.set(handle, new Set());
   return handle;
 }
 
@@ -43,4 +38,11 @@ export function bindEmbed(handle: DemoPlayerHandle, seek: ((seconds: number) => 
 /** DemoPlayer's end: tell the chapters where the player is. */
 export function reportTime(handle: DemoPlayerHandle, seconds: number) {
   listeners.get(handle)?.forEach((listener) => listener(seconds));
+}
+
+/** DemoChapters' end: hear where the player is (a seek, or the file playing). Returns the way to stop listening. */
+export function subscribeTime(handle: DemoPlayerHandle, listener: (seconds: number) => void) {
+  const heard = listeners.get(handle);
+  heard?.add(listener);
+  return () => void heard?.delete(listener);
 }

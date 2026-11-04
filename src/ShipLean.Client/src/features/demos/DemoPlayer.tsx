@@ -55,7 +55,7 @@ export function DemoPlayer({ demo, player }: DemoProps) {
             src={video.contentUrl}
             controls
             onTimeUpdate={(event) => reportTime(player, event.currentTarget.currentTime)}
-            className="size-full bg-black"
+            className="size-full bg-sunken"
           />
         )}
         <span className="pointer-events-none absolute top-2 left-2">

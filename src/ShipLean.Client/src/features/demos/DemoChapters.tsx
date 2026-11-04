@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { DemoProps } from './DemoProps';
+import { subscribeTime } from './playerHandle';
 import { demosTestIds as ids } from './testIds';
 
 // The chapter the position is in: the last one that has started.
@@ -12,7 +13,7 @@ function currentIndex(starts: number[], seconds: number): number {
 export function DemoChapters({ demo, player }: DemoProps) {
   const { chapters } = demo;
   const [seconds, setSeconds] = useState(0);
-  useEffect(() => player.subscribe(setSeconds), [player]);
+  useEffect(() => subscribeTime(player, setSeconds), [player]);
   const current = currentIndex(
     chapters.map((chapter) => chapter.startSeconds),
     seconds,
