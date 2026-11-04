@@ -1,4 +1,6 @@
+using Dapper;
 using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
 using ShipLean.Contracts.Blobs;
 using ShipLean.LocalEnvironment;
 using ShipLean.LocalEnvironment.Blobs;
@@ -34,6 +36,7 @@ public static class LocalHostRunner
             {
                 await SeedAttachmentBlobs.PutAllAsync(app.Services.GetRequiredService<IBlobStore>());
             }
+            await UseOwnBaseUrlAsync(app);
         }
         catch
         {
@@ -48,6 +51,14 @@ public static class LocalHostRunner
             + $"SHIPLEAN_LOCAL_URL={app.BaseUrl}{newLine}"
             + $"Press Ctrl+C to stop.{newLine}");
         return new LocalHostInstance(app);
+    }
+
+    // Links the app hands out (agent prompts, upload links, open_url) name the instance's base URL. On LocalHost that must be the
+    // address it listens on, not the seed's production-looking one, or an agent following a link leaves the local run.
+    private static async Task UseOwnBaseUrlAsync(AppHost app)
+    {
+        await using var connection = await app.Services.GetRequiredService<NpgsqlDataSource>().OpenConnectionAsync(app.Stopping);
+        await connection.ExecuteAsync(new CommandDefinition("UPDATE instance_settings SET base_url = @baseUrl", new { baseUrl = app.BaseUrl }, cancellationToken: app.Stopping));
     }
 
     private static NamedDatabaseMode ModeFor(LocalHostData data) => data switch

@@ -65,6 +65,8 @@ The host uses the `Local` profile of `AppHost`. Nothing leaves the machine:
 
 - The first-admin, blob-store and webhook-secret settings from your own configuration are blanked, so a developer's
   environment variables cannot reach a local instance.
+- The instance's base URL is set to the address the host listens on each time it starts, so every link the app hands out
+  (agent prompts, one-time upload links, `open_url`) points back at this run, not at the seed's `shiplean.larkspur.dev`.
 - `HolidayRefreshService` (it calls the internet), `AgentDeliveryService` and `AgentStaleService` are removed. Webhook
   deliveries stay queued in the outbox and nothing is sent.
 - The search indexer runs. It uses the real embedding model when `SHIPLEAN_EMBEDDINGS_MODEL_PATH` is set
