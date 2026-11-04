@@ -78,8 +78,52 @@ public sealed class PostgresBlobStore : IBlobStore, IAsyncDisposable, IDisposabl
         return new BlobContent(new MemoryStream(reader.GetFieldValue<byte[]>(1), writable: false), reader.GetString(0));
     }
 
-    // TODO: real ranged read replaces this
-    public Task<Stream?> OpenAtAsync(string key, long offset, CancellationToken cancellationToken) => throw new NotSupportedException();
+    // The rest of the blob streamed from the database: the server cuts it at the offset (substring), and the reader runs in sequential
+    // mode, so the bytes are never held whole here. The returned stream owns the connection, command and reader; disposing it
+    // gives the connection back to the pool.
+    public async Task<Stream?> OpenAtAsync(string key, long offset, CancellationToken cancellationToken)
+    {
+        BlobKey.Check(key);
+        ArgumentOutOfRangeException.ThrowIfNegative(offset);
+
+        var connection = await _dataSource.OpenConnectionAsync(cancellationToken);
+        NpgsqlCommand? command = null;
+        NpgsqlDataReader? reader = null;
+        try
+        {
+            command = new NpgsqlCommand("SELECT substring(bytes from (@offset + 1)::int) FROM blob WHERE key = @key", connection);
+            command.Parameters.AddWithValue("key", key);
+            command.Parameters.Add(new NpgsqlParameter("offset", NpgsqlDbType.Bigint) { Value = offset });
+            reader = await command.ExecuteReaderAsync(System.Data.CommandBehavior.SequentialAccess, cancellationToken);
+            if (!await reader.ReadAsync(cancellationToken))
+            {
+                await DisposeAllAsync(reader, command, connection);
+                return null;
+            }
+
+            return new PostgresBlobReadStream(reader.GetStream(0), reader, command, connection);
+        }
+        catch
+        {
+            await DisposeAllAsync(reader, command, connection);
+            throw;
+        }
+    }
+
+    private static async Task DisposeAllAsync(NpgsqlDataReader? reader, NpgsqlCommand? command, NpgsqlConnection connection)
+    {
+        if (reader is not null)
+        {
+            await reader.DisposeAsync();
+        }
+
+        if (command is not null)
+        {
+            await command.DisposeAsync();
+        }
+
+        await connection.DisposeAsync();
+    }
 
     public async Task<bool> ExistsAsync(string key, CancellationToken cancellationToken)
     {

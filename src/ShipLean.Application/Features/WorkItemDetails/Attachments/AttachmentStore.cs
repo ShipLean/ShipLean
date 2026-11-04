@@ -79,6 +79,17 @@ public sealed class AttachmentStore(
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var row = await connection.QuerySingleOrDefaultAsync<AttachmentRow>(new CommandDefinition(SelectLive, new { id }, cancellationToken: cancellationToken))
             ?? throw ApiException.NotFound("That attachment does not exist.");
+        if (AttachmentServing.IsPlayable(row.ContentType))
+        {
+            // Decided here, before a header is written: a stream that opens lazily would otherwise fail halfway through the response.
+            if (!await blobs.ExistsAsync(row.StorageRef, cancellationToken))
+            {
+                throw ApiException.NotFound("That attachment does not exist.");
+            }
+
+            return (row.ToDto(clock), new BlobContent(new BlobRangeStream(blobs, row.StorageRef, row.SizeBytes), row.ContentType), false);
+        }
+
         var blob = await blobs.GetAsync(row.StorageRef, cancellationToken) ?? throw ApiException.NotFound("That attachment does not exist.");
         return (row.ToDto(clock), new BlobContent(blob.Content, row.ContentType), AttachmentServing.IsInline(row.ContentType, row.Sanitized));
     }

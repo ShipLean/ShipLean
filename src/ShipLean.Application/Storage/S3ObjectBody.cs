@@ -9,8 +9,9 @@ public sealed class S3ObjectBody(GetObjectResponse response) : Stream
 {
     private readonly Stream _source = response.ResponseStream;
     private long _position;
+    private bool _disposed;
 
-    public override bool CanRead => true;
+    public override bool CanRead => !_disposed;
 
     public override bool CanSeek => true;
 
@@ -78,6 +79,7 @@ public sealed class S3ObjectBody(GetObjectResponse response) : Stream
     {
         if (disposing)
         {
+            _disposed = true;
             response.Dispose();
         }
         base.Dispose(disposing);

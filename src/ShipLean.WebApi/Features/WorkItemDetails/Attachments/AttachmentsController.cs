@@ -15,7 +15,7 @@ public sealed class AttachmentsController(AttachmentEndpoints endpoints) : ApiCo
     public async Task<IActionResult> Download(Guid id, CancellationToken cancellationToken)
     {
         var (attachment, content, inline) = await endpoints.DownloadAsync(id, cancellationToken);
-        return new AttachmentFileResult(content.Content, content.ContentType, attachment.Name, inline);
+        return new AttachmentFileResult(content.Content, content.ContentType, attachment.Name, inline, attachment.Id);
     }
 
     [HttpPost("archive")]

@@ -55,8 +55,31 @@ public sealed class S3BlobStore : IBlobStore, IDisposable
         }
     }
 
-    // TODO: real ranged read replaces this
-    public Task<Stream?> OpenAtAsync(string key, long offset, CancellationToken cancellationToken) => throw new NotSupportedException();
+    // A ranged GET from the offset to the end. The response's stream isn't seekable, so a seek is a new call. An offset at or past the
+    // end is answered 416 by S3: that is an empty rest, not a missing blob.
+    public async Task<Stream?> OpenAtAsync(string key, long offset, CancellationToken cancellationToken)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(offset);
+        var objectKey = ObjectKey(key);
+        var request = new GetObjectRequest { BucketName = _connection.Bucket, Key = objectKey };
+        if (offset > 0)
+        {
+            request.ByteRange = new ByteRange($"bytes={offset}-");
+        }
+
+        try
+        {
+            return new S3ObjectBody(await WithBucketCheck(() => _client.GetObjectAsync(request, cancellationToken)));
+        }
+        catch (AmazonS3Exception e) when (e.ErrorCode == "NoSuchKey")
+        {
+            return null;
+        }
+        catch (AmazonS3Exception e) when (e.StatusCode == HttpStatusCode.RequestedRangeNotSatisfiable)
+        {
+            return await ExistsAsync(key, cancellationToken) ? Stream.Null : null;
+        }
+    }
 
     public async Task<bool> ExistsAsync(string key, CancellationToken cancellationToken)
     {

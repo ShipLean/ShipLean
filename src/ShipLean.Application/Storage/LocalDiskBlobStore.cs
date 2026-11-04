@@ -97,8 +97,44 @@ public sealed class LocalDiskBlobStore : IBlobStore
         }
     }
 
-    // TODO: real ranged read replaces this
-    public Task<Stream?> OpenAtAsync(string key, long offset, CancellationToken cancellationToken) => throw new NotSupportedException();
+    // The header is read and skipped, then the file is positioned at the body's offset, so the caller's first read is the byte asked for.
+    public async Task<Stream?> OpenAtAsync(string key, long offset, CancellationToken cancellationToken)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(offset);
+        var path = PathFor(key);
+        FileStream file;
+        try
+        {
+            file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 4096, useAsync: true);
+        }
+        catch (FileNotFoundException)
+        {
+            return null;
+        }
+        catch (DirectoryNotFoundException)
+        {
+            return null;
+        }
+
+        try
+        {
+            var header = new byte[sizeof(int)];
+            await file.ReadExactlyAsync(header, cancellationToken);
+            var length = BinaryPrimitives.ReadInt32LittleEndian(header);
+            if (length is < 0 or > MaxContentTypeBytes)
+            {
+                throw new InvalidDataException($"Blob '{key}' has no valid header.");
+            }
+
+            file.Seek(length + offset, SeekOrigin.Current);
+            return file;
+        }
+        catch
+        {
+            await file.DisposeAsync();
+            throw;
+        }
+    }
 
     public Task<bool> ExistsAsync(string key, CancellationToken cancellationToken)
         => Task.FromResult(File.Exists(PathFor(key)));

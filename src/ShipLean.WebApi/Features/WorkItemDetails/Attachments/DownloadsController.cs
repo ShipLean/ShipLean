@@ -21,6 +21,6 @@ public sealed class DownloadsController(AttachmentDownloads handler) : ApiContro
     public async Task<IActionResult> Download(string token, CancellationToken cancellationToken)
     {
         var (attachment, content, inline) = await handler.DownloadAsync(token, Request, cancellationToken);
-        return new AttachmentFileResult(content.Content, content.ContentType, attachment.Name, inline);
+        return new AttachmentFileResult(content.Content, content.ContentType, attachment.Name, inline, attachment.Id);
     }
 }
