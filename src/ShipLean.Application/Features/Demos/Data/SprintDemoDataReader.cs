@@ -53,15 +53,14 @@ public sealed class SprintDemoDataReader(NpgsqlDataSource dataSource, BacklogRea
             row, head.ProjectKey, stories.Where(story => story.FeatureId == row.Id).ToList(), tasks, plan.Where(member => member.FeatureId == row.Id).ToList(),
             reviews.GetValueOrDefault(row.Id), [.. pullRequests[row.Id].Distinct()], [.. attachments[row.Id]],
             points.Where(point => point.FeatureId == row.Id).ToList(), truncation)).ToList();
-        var otherWork = stories.Where(story => story.FeatureId is null).Take(MaxStoriesPerFeature).Select(story => Story(story, tasks, truncation)).ToList();
-        truncation.Mark(stories.Count(story => story.FeatureId is null) > MaxStoriesPerFeature);
+        var otherWork = stories.Where(story => story.FeatureId is null).Select(story => Story(story, tasks, truncation)).ToList();
 
         return SprintDemoDataBudget.Apply(new SprintDemoData(
             new SprintDemoSprint(head.SprintName, head.SprintGoal, DateOnly.ParseExact(head.StartDate, "yyyy-MM-dd", CultureInfo.InvariantCulture), DateOnly.ParseExact(head.EndDate, "yyyy-MM-dd", CultureInfo.InvariantCulture), head.Closed),
             new SprintDemoProject(head.ProjectKey, head.ProjectName, head.RepoUrl, head.BaseBranch, head.Environment),
             features,
             otherWork,
-            Retro(points.Where(point => point.FeatureId is null || !shown.Contains(point.FeatureId.Value)).ToList(), truncation),
+            Retro(points.Where(point => point.FeatureId is null || !shown.Contains(point.FeatureId.Value)).ToList(), truncation, int.MaxValue),
             [.. actions.Select(action => new SprintDemoActionLine(action.Key, action.Title, action.State))],
             truncation.Happened));
     }

@@ -60,5 +60,5 @@ public static class SprintDemoDataBudget
     public static int Size<T>(T value) => Encoding.UTF8.GetByteCount(JsonSerializer.Serialize(value));
 
     private static SprintDemoFeatureData Header(SprintDemoFeatureData feature)
-        => feature with { Why = null, Measure = null, Stories = [], Retro = NoRetro, AttachmentNames = [] };
+        => feature with { Why = null, Measure = null, Stories = [], Retro = NoRetro, AttachmentNames = [], PullRequests = [] };
 }

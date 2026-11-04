@@ -532,6 +532,78 @@ public class SprintDemoDataTests : ApiFixture
     }
 
     [Test]
+    public async Task OtherWork_WhenMoreThanFiftyLooseStories_ShouldKeepAllWithinBudget()
+    {
+        await using var world = await WorldAsync();
+        for (var i = 0; i < 55; i++)
+        {
+            await world.ItemAsync("story", sprint: world.Sprint, title: $"Loose {i:00}");
+        }
+
+        var data = await world.ReadAsync();
+
+        data.OtherWork.Count.ShouldBe(55);
+        data.Truncated.ShouldBeFalse();
+    }
+
+    [Test]
+    public async Task SprintRetro_WhenMoreThanFortyLoosePoints_ShouldKeepAllWithinBudget()
+    {
+        await using var world = await WorldAsync();
+        var retro = await world.Seed.RetroAsync(new RetroSeedRetro(Joel, SprintId: world.Sprint));
+        for (var i = 0; i < 45; i++)
+        {
+            await world.Seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.WentWell, $"Sprint point {i:00}"));
+        }
+
+        var data = await world.ReadAsync();
+
+        data.SprintRetro.WentWell.Count.ShouldBe(45);
+        data.Truncated.ShouldBeFalse();
+    }
+
+    [Test]
+    public async Task Oversized_WhenFeatureShrinks_ShouldKeepOnlyTheHeaderFacts()
+    {
+        await using var world = await WorldAsync();
+        for (var f = 0; f < 30; f++)
+        {
+            var feature = await world.FeatureAsync($"Feature {f:00}", goal: $"Goal {f:00}", description: "## Why\n\nBecause.");
+            var story = await world.ItemAsync("story", parent: feature, sprint: world.Sprint, tags: ["wave:1"], description: new string('d', 600));
+            await world.LinkAsync(story, $"https://github.com/example/shop/pull/{f}", $"PR https://github.com/example/shop/pull/{f}");
+            await world.AttachmentAsync(feature, $"shot-{f}.png");
+            var retro = await world.Seed.RetroAsync(new RetroSeedRetro(Joel, WorkItemId: feature, SprintId: world.Sprint));
+            await world.Seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.WentWell, "Went well."));
+            for (var i = 0; i < 11; i++)
+            {
+                await world.ItemAsync("story", parent: feature, sprint: world.Sprint, title: $"Story {f:00}-{i:00}", description: new string('d', 600));
+            }
+        }
+
+        var data = await world.ReadAsync();
+
+        var shrunk = data.Features.Where(feature => feature.Stories.Count == 0).ToList();
+        shrunk.ShouldNotBeEmpty();
+        foreach (var header in shrunk)
+        {
+            var number = header.Title["Feature ".Length..];
+            header.Goal.ShouldBe($"Goal {number}");
+            header.Url.ShouldBe($"/p/{world.Project.Key}/items/{header.Key}");
+            header.Why.ShouldBeNull();
+            header.Measure.ShouldBeNull();
+            header.Retro.WentWell.ShouldBeEmpty();
+            header.Retro.WentBadly.ShouldBeEmpty();
+            header.Retro.Improve.ShouldBeEmpty();
+            header.Retro.NotInPlan.ShouldBeEmpty();
+            header.AttachmentNames.ShouldBeEmpty();
+            header.PullRequests.ShouldBeEmpty();
+            var plan = header.Plan.ShouldNotBeNull();
+            plan.Stories.ShouldBe(12);
+            plan.PullRequests.ShouldBe([$"https://github.com/example/shop/pull/{int.Parse(number)}"]);
+        }
+    }
+
+    [Test]
     public async Task Archived_PointsAndRetros_ShouldBeLeftOut()
     {
         await using var world = await WorldAsync();
