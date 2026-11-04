@@ -12,5 +12,6 @@ public sealed class SprintMcpRows : IMcpSweepRows
         new("plan_sprint", McpScopes.Plan, ProjectRole.Member, """{"project":"PART","sprint":"next"}""", ReadOnly: true),
         new("end_sprint", McpScopes.Plan, ProjectRole.Member, """{"project":"PART","sprint":"current"}""", ReadOnly: true),
         new("create_sprint", McpScopes.Plan, ProjectRole.Member, """{"project":"PART"}"""),
+        new("create_sprint_demo", McpScopes.Write, ProjectRole.Member, """{"project":"PART"}"""),
     ];
 }

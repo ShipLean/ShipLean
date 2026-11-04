@@ -41,6 +41,17 @@ public sealed class SprintResolver(NpgsqlDataSource dataSource, IProjectAccess a
         return match with { Exact = exact };
     }
 
+    // The default of create_sprint_demo: the project's most recently closed sprint (rollover decided), else the running one.
+    public async Task<ResolvedSprint> ResolveDemoDefaultAsync(Guid projectId, CancellationToken cancellationToken = default)
+    {
+        await access.RequireAsync(projectId, ProjectRole.Member, cancellationToken);
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        var closed = await connection.QueryFirstOrDefaultAsync<SprintRow>(new CommandDefinition(
+            "SELECT id, name, true AS active FROM sprint WHERE project_id = @projectId AND archived_at IS NULL AND rollover_status = 'decided' ORDER BY end_date DESC LIMIT 1",
+            new { projectId }, cancellationToken: cancellationToken));
+        return closed?.ToResolved() ?? await ResolveAsync(projectId, "current", cancellationToken: cancellationToken);
+    }
+
     // The sprint by id when it is still a live sprint of the project (not archived, not another project's); null otherwise. For
     // callers that hold an id from earlier and need to know it is still usable; nothing here throws for a sprint that went away.
     public async Task<ResolvedSprint?> FindLiveAsync(Guid projectId, Guid sprintId, CancellationToken cancellationToken = default)
