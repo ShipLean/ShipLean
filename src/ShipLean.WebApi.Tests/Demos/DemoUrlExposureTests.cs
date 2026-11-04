@@ -15,6 +15,7 @@ using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Usage;
+using ShipLean.WebApi.Features.Usage;
 using ShipLean.WebApi.Tests.Instance.AgentConnections;
 using ShipLean.WebApi.Tests.ProjectSettings.Api;
 
@@ -137,7 +138,8 @@ public class DemoUrlExposureTests : ApiFixture
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
         var recorded = ((RecordingUsageEvents)Host.Services.GetRequiredService<IUsageEvents>()).Events;
-        recorded.ShouldNotBeEmpty();
+        ActionUsageMap.All["DemoUpload.Upload"].Kind.ShouldBe(ActionUsageKind.Untracked);
+        recorded.ShouldNotContain(usage => usage.Source.Contains("DemoUpload", StringComparison.Ordinal));
         var text = JsonSerializer.Serialize(recorded);
         foreach (var token in Forms(upload.Token))
         {

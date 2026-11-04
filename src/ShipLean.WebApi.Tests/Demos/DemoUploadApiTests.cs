@@ -331,7 +331,7 @@ public class DemoUploadApiTests : ApiFixture
 
         var error = await ExpectValidationAsync(response);
         error.Field.ShouldBe("chapters");
-        error.Error.ShouldContain("chapters");
+        error.Error.ShouldContain("Expected the chapters part next but found script");
         _delivery.Entered.ShouldBe(0);
     }
 
