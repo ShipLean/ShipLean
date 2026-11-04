@@ -79,6 +79,10 @@ public static class ActionUsageMap
         Add(ActionUsage.Track(UsageEventNames.ImportJiraConnected), "Jira.Put");
         Add(ActionUsage.Track(UsageEventNames.ProfileUpdated), "Profile.Update");
         Add(ActionUsage.Track(UsageEventNames.ProfilePhotoChanged), "Profile.ReplacePhoto", "Profile.RemovePhoto");
+        Add(ActionUsage.Track(UsageEventNames.SprintDemoCreated), "SprintDemo.Create");
+        Add(ActionUsage.Track(UsageEventNames.SprintDemoYouTubeRetried), "SprintDemo.RetryYouTube");
+        Add(ActionUsage.Track(UsageEventNames.ProjectDemoSettingsChanged), "ProjectDemoSettings.Put");
+        Add(ActionUsage.Track(UsageEventNames.ProjectDemoBrandChanged), "DemoBrand.ReplaceLogo", "DemoBrand.RemoveLogo", "DemoBrand.PutTokens");
         Add(ActionUsage.Track(UsageEventNames.InstanceSettingsChanged), "Instance.PutSettings");
         Add(ActionUsage.Track(UsageEventNames.InstanceIntegrationsChanged), "Integrations.Put");
         Add(ActionUsage.Track(UsageEventNames.InstanceAnalyticsChanged), "Analytics.Put");
@@ -127,6 +131,8 @@ public static class ActionUsageMap
             "Downloads.Download",
             "LinkCardImages.Favicon",
             "LinkCardImages.Image");
+        Add(ActionUsage.Untracked("Anonymous, one-time upload token: the delivery that follows publishes SprintDemoChanged, and the demo's creation is counted by SprintDemo.Create."), "DemoUpload.Upload");
+        Add(ActionUsage.Untracked("Anonymous, token-authenticated download of the project's logo for the agent making a demo; the demo's creation is counted by SprintDemo.Create."), "DemoLogoDownload.Download");
         Add(ActionUsage.Untracked("Anonymous, signature-authenticated webhook: counted as a system event where it is handled."), "Webhooks.GitHub", "Webhooks.GitLab");
         Add(ActionUsage.Untracked("The item detail view loads the item by key (ProjectWorkItems.ByKey), which is the one that counts; tracking both would count a view twice."), "WorkItems.Get");
         Add(
@@ -139,6 +145,7 @@ public static class ActionUsageMap
             "GoogleSignIn.Start",
             "BoardSettings.Get",
             "BoardView.Get",
+            "DemoBrand.Logo",
             "ConnectedAgents.List",
             "Consent.Get",
             "FeatureBoardRead.Get",
@@ -160,6 +167,7 @@ public static class ActionUsageMap
             "ProjectBoards.List",
             "ProjectCreation.FirstSprint",
             "ProjectForecast.Get",
+            "ProjectDemoSettings.Get",
             "Projects.ByKey",
             "Projects.Get",
             "Projects.List",
@@ -178,6 +186,7 @@ public static class ActionUsageMap
             "RetroItems.Get",
             "RetroThemes.List",
             "SprintCapacity.Get",
+            "SprintDemo.Get",
             "SprintMetrics.Get",
             "SprintRetro.Get",
             "SprintRollover.Get",
