@@ -162,3 +162,69 @@ test('WorkItemLinkRow_WhenClicked_ShouldOpenItemModal', async ({ mount, page }) 
   await expect(screen.getByTestId(harness.location)).toHaveText('/p/SHIP/items/SHIP-100');
   await expect(screen.getByTestId(harness.search)).toHaveText('?item=SHIP-142');
 });
+
+// Titles and addresses with no break in them, far wider than the rail-less main column.
+const long = (word: string) => word.repeat(200).slice(0, 200);
+const longCards = {
+  workItems: linkCards.workItems.map((row) => ({ ...row, title: long('w') })),
+  code: linkCards.code.map((card) => ({
+    ...card,
+    title: long('c'),
+    url: `https://github.com/${long('u')}`,
+    location: long('l'),
+  })),
+  pages: linkCards.pages.map((card) => ({
+    ...card,
+    title: long('p'),
+    url: `https://example.com/${long('q')}`,
+    refreshDue: false,
+  })),
+};
+
+for (const width of [1024, 1440]) {
+  for (const open of [false, true]) {
+    test(`LinksSection_WhenLinksAreLong_ShouldNotWidenThePage_${width}px_${open ? 'FormOpen' : 'FormClosed'}`, async ({
+      mount,
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await stubAll(page, longCards);
+      const screen = await mount(<WorkItemFormHarness itemKey="SHIP-100" />, route);
+      await expect(screen.getByTestId(ids.linkCard).first()).toBeVisible();
+      if (open) {
+        await screen.getByTestId(ids.addLinkOpen).click();
+        await expect(screen.getByTestId(ids.addLinkForm)).toBeVisible();
+      }
+
+      const { scrollWidth, clientWidth } = await page.evaluate(() => ({
+        scrollWidth: document.documentElement.scrollWidth,
+        clientWidth: document.documentElement.clientWidth,
+      }));
+      expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+    });
+  }
+}
+
+// The Feature's own text with no break in it: status line, goal and the stories and bugs rows.
+for (const width of [1024, 1440]) {
+  test(`FeatureForm_WhenTextIsLong_ShouldNotWidenThePage_${width}px`, async ({ mount, page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await stubApi(page, {
+      ...feature,
+      goal: long('g'),
+      statusLine: long('s'),
+      children: feature.children.map((child) => ({ ...child, title: long('k') })),
+    });
+    await stubSide(page, priya, [], []);
+    await stubComments(page, priya, []);
+    await stubFeature(page);
+    const screen = await mount(<WorkItemFormHarness itemKey="SHIP-100" />, route);
+    await expect(screen.getByTestId(ids.childRow).first()).toBeVisible();
+
+    const { scrollWidth, clientWidth } = await page.evaluate(() => ({
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+    }));
+    expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+  });
+}

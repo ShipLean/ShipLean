@@ -8,7 +8,11 @@ export function GoalSection({ draft, changed, setField, saveError }: FeatureRegi
   const [editing, setEditing] = useState(false);
   const error = saveError?.field === 'goal' ? saveError.message : null;
   return (
-    <section data-testid={ids.goal} aria-label="Goal" className="grid gap-1">
+    <section
+      data-testid={ids.goal}
+      aria-label="Goal"
+      className="grid grid-cols-[minmax(0,1fr)] gap-1"
+    >
       <header className="flex items-center gap-2">
         <h2 className="text-[length:var(--text-xs)] font-semibold tracking-wide text-ink-muted uppercase">
           Goal
@@ -42,7 +46,10 @@ export function GoalSection({ draft, changed, setField, saveError }: FeatureRegi
           onChange={(event) => setField({ goal: event.target.value })}
         />
       ) : (
-        <p data-testid={ids.goalView} className="m-0 text-[length:var(--text-base)] text-ink">
+        <p
+          data-testid={ids.goalView}
+          className="m-0 text-[length:var(--text-base)] break-words text-ink"
+        >
           {draft.goal === '' ? (
             <span className="text-ink-muted">No goal yet. Edit to add one.</span>
           ) : (

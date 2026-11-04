@@ -13,7 +13,11 @@ export function StoriesAndBugs({ item, projectKey }: FeatureRegionProps) {
   const children = storiesAndBugsOf(item.children);
   const { closed, total } = closedCount(item.children);
   return (
-    <section data-testid={ids.storiesAndBugs} aria-label="Stories and bugs" className="grid gap-2">
+    <section
+      data-testid={ids.storiesAndBugs}
+      aria-label="Stories and bugs"
+      className="grid grid-cols-[minmax(0,1fr)] gap-2"
+    >
       <header className="flex items-center gap-2">
         <h2 className="text-[length:var(--text-md)] font-semibold">Stories and bugs</h2>
         <span data-testid={ids.childrenCount}>
@@ -42,7 +46,7 @@ export function StoriesAndBugs({ item, projectKey }: FeatureRegionProps) {
             No stories or bugs yet. Add them from the backlog.
           </p>
         ) : (
-          <ul className="m-0 grid list-none p-0">
+          <ul className="m-0 grid list-none grid-cols-[minmax(0,1fr)] p-0">
             {children.map((child) => (
               <ChildRow key={child.id} child={child} projectKey={projectKey} />
             ))}
