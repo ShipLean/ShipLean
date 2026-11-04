@@ -10,7 +10,7 @@ using Npgsql;
 using ShipLean.Application.Fakes.YouTube;
 using ShipLean.Application.Features.Demos.Runs;
 using ShipLean.Application.Features.Demos.YouTube;
-using ShipLean.Application.Features.Instance.Integrations;
+using ShipLean.Application.Integrations;
 using ShipLean.Contracts.Attachments;
 using ShipLean.Contracts.Demos;
 using ShipLean.Contracts.Events;

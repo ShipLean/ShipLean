@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using ShipLean.Application.Features.Instance.Integrations;
+using ShipLean.Application.Integrations;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Demos;
 using ShipLean.Contracts.Errors;

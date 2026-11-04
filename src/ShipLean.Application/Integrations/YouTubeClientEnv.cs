@@ -1,8 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using ShipLean.Contracts.Demos;
-using ShipLean.Application.Features.Instance.Integrations;
 
-namespace ShipLean.Application.Features.Demos.YouTube;
+namespace ShipLean.Application.Integrations;
 
 // The YouTube OAuth client from SHIPLEAN_YOUTUBE_CLIENT_ID and SHIPLEAN_YOUTUBE_CLIENT_SECRET. It is its own client, never
 // the sign-in one (SHIPLEAN_GOOGLE_*). Both or neither: one without the other throws, naming the one that is missing.

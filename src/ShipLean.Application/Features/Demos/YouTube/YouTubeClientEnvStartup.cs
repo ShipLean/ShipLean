@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using ShipLean.Application.Integrations;
 
 namespace ShipLean.Application.Features.Demos.YouTube;
 

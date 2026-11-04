@@ -1,7 +1,7 @@
 using Dapper;
 using Npgsql;
 using ShipLean.Application.Features.Demos.Reads;
-using ShipLean.Application.Features.Instance.Integrations;
+using ShipLean.Application.Integrations;
 using ShipLean.Contracts.Demos;
 using ShipLean.Contracts.Errors;
 

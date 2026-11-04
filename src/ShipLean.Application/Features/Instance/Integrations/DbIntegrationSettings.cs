@@ -1,6 +1,7 @@
 using Dapper;
 using Microsoft.Extensions.Configuration;
 using Npgsql;
+using ShipLean.Application.Integrations;
 using ShipLean.Contracts.Links;
 
 namespace ShipLean.Application.Features.Instance.Integrations;

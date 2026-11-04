@@ -3,7 +3,7 @@ using Agoda.IoC.Core;
 using Dapper;
 using Microsoft.Extensions.Configuration;
 using Npgsql;
-using ShipLean.Application.Features.Demos.YouTube;
+using ShipLean.Application.Integrations;
 using ShipLean.Contracts.Errors;
 
 namespace ShipLean.Application.Features.Instance.Integrations;

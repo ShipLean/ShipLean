@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Configuration;
 
-namespace ShipLean.Application.Features.Instance.Integrations;
+namespace ShipLean.Application.Integrations;
 
 // The SHIPLEAN_* variables the integrations fall back to. Blank counts as unset.
 public static class IntegrationEnv

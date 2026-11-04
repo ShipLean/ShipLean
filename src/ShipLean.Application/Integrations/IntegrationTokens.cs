@@ -3,7 +3,7 @@ using Agoda.IoC.Core;
 using Microsoft.AspNetCore.DataProtection;
 using ShipLean.Contracts.Errors;
 
-namespace ShipLean.Application.Features.Instance.Integrations;
+namespace ShipLean.Application.Integrations;
 
 // GitHub and GitLab tokens at rest: ASP.NET Data Protection (keys are in Postgres, data_protection_key) under a purpose of
 // their own, so neither the sign-in cookie's protector nor the Jira one can open one. The plaintext exists only in memory.

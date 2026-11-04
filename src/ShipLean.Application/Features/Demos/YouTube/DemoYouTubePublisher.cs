@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Npgsql;
-using ShipLean.Application.Features.Instance.Integrations;
+using ShipLean.Application.Integrations;
 using ShipLean.Contracts.Attachments;
 using ShipLean.Contracts.Demos;
 using ShipLean.Contracts.Errors;

@@ -1,4 +1,4 @@
-namespace ShipLean.Application.Features.Instance.Integrations;
+namespace ShipLean.Application.Integrations;
 
 // The integration columns of the install's one instance_settings row. The allow-list is read joined into one text,
 // because Dapper can't fill a collection property from a text[] column.

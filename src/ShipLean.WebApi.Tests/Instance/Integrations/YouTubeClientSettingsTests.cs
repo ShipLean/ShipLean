@@ -1,7 +1,7 @@
 using System.Net;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
-using ShipLean.Application.Features.Instance.Integrations;
+using ShipLean.Application.Integrations;
 using ShipLean.Contracts.Errors;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Hosting;

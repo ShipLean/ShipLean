@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using ShipLean.Application.Fakes.YouTube;
 using ShipLean.Application.Features.Demos.YouTube;
-using ShipLean.Application.Features.Instance.Integrations;
+using ShipLean.Application.Integrations;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Demos;
 using ShipLean.Contracts.Errors;
