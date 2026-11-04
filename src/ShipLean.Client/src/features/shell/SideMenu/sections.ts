@@ -16,6 +16,7 @@ export const sprintsRoutes: readonly RouteId[] = [
   'taskboard',
   'capacity',
   'sprintRetro',
+  'sprintDemo',
 ];
 export const retrosRoutes: readonly RouteId[] = [
   'retros',

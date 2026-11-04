@@ -9,6 +9,7 @@ public static class SettingsTestIds
     public const string TabMembers = "settings-tab-members";
     public const string TabSprints = "settings-tab-sprints";
     public const string TabIntegrations = "settings-tab-integrations";
+    public const string TabDemos = "settings-tab-demos";
     public const string TabDirty = "settings-tab-dirty";
     public const string TabError = "settings-tab-error";
     public const string ChangesList = "settings-changes-list";

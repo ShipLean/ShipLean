@@ -342,6 +342,57 @@ test('Draft_WhenStatesTab_ShouldShowTheStatesNodeUntouched', async ({ mount, pag
   await expect(view.getByTestId('harness-states')).toBeVisible();
 });
 
+test('Tabs_ShouldListDemosLast', async ({ mount, page }) => {
+  await stub(page);
+  const view = await mount(<SettingsDraftHarness role="admin" />, {
+    hooksConfig: { route: '/p/SHIP/settings/general' },
+  });
+  const tabs = view.locator(
+    [
+      ids.tabGeneral,
+      ids.tabStates,
+      ids.tabMembers,
+      ids.tabSprints,
+      ids.tabIntegrations,
+      ids.tabDemos,
+    ]
+      .map((testId) => `[data-testid="${testId}"]`)
+      .join(', '),
+  );
+  await expect(tabs).toHaveText([
+    'General',
+    'States',
+    'Members',
+    'Sprints & forecast',
+    'Integrations',
+    'Demos',
+  ]);
+  await expect(
+    view.getByRole('navigation', { name: 'Settings sections' }).getByRole('link').last(),
+  ).toHaveAttribute('data-testid', ids.tabDemos);
+});
+
+test('DemosTab_ShouldNotJoinTheDraftsSave', async ({ mount, page }) => {
+  const puts = await stub(page);
+  const view = await mount(<SettingsDraftHarness role="admin" />, {
+    hooksConfig: { route: '/p/SHIP/settings/general' },
+  });
+  await view.getByTestId(ids.generalName).fill('Shop');
+  await view.getByTestId(ids.tabDemos).click();
+
+  await expect(view.getByTestId('harness-demos')).toBeVisible();
+  await expect(view.getByTestId(ids.tabDirty)).toHaveCount(1);
+  await expect(view.getByTestId(ids.unsaved)).toContainText('1 unsaved change');
+  await view.getByTestId(ids.save).click();
+  await expect(view.getByTestId(ids.unsaved)).toHaveCount(0);
+  expect(puts).toHaveLength(1);
+  expect(Object.keys(puts[0]).sort()).toEqual(
+    Object.keys(puts[0])
+      .filter((k) => k !== 'demos')
+      .sort(),
+  );
+});
+
 test('Draft_WhenStateStagedThroughContext_ShouldSurviveTabSwitchAndGoInTheOnePut', async ({
   mount,
   page,

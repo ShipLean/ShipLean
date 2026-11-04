@@ -6,6 +6,10 @@ public static partial class Links
     public static string SprintRetro(string projectKey, Guid sprintId, params (string Key, string? Value)[] parameters) =>
         $"/p/{Segment(projectKey)}/sprints/{Segment(sprintId.ToString())}/retro" + QueryOf(parameters);
 
+    // A sprint's Demo tab: /p/:key/sprints/:sprintId/demo, as routes.ts builds it.
+    public static string SprintDemo(string projectKey, Guid sprintId) =>
+        $"/p/{Segment(projectKey)}/sprints/{Segment(sprintId.ToString())}/demo";
+
     // Retrospectives by Feature: /p/:key/retros/features.
     public static string RetroFeatures(string projectKey) => $"/p/{Segment(projectKey)}/retros/features";
 

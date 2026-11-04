@@ -71,6 +71,7 @@ const scaffolds: Record<RouteId, { path: string; testId: string }> = {
   taskboard: { path: '/p/SHIP/sprints/sprint-24/taskboard', testId: pagesTestIds.taskboardPage },
   capacity: { path: '/p/SHIP/sprints/sprint-24/capacity', testId: pagesTestIds.capacityPage },
   sprintRetro: { path: '/p/SHIP/sprints/sprint-24/retro', testId: pagesTestIds.sprintRetroPage },
+  sprintDemo: { path: '/p/SHIP/sprints/sprint-24/demo', testId: pagesTestIds.sprintDemoPage },
   retros: { path: '/p/SHIP/retros', testId: pagesTestIds.retrosPage },
   retroFeatures: { path: '/p/SHIP/retros/features', testId: pagesTestIds.retroFeaturesPage },
   retroItem: { path: '/p/SHIP/retros/items/SHIP-141', testId: pagesTestIds.retroItemPage },

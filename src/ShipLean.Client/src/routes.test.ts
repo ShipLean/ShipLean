@@ -4,6 +4,7 @@ import {
   isInstanceLevel,
   matchRoute,
   newItemPath,
+  projectSettingsTabs,
   routeIds,
   routePath,
   type RouteId,
@@ -108,6 +109,11 @@ const samples: {
     path: '/p/SHIP/sprints/s%2024/retro',
     crumbs: ['SHIP', 'Sprints', 'Sprint', 'Retro'],
   },
+  sprintDemo: {
+    params: sprint,
+    path: '/p/SHIP/sprints/s%2024/demo',
+    crumbs: ['SHIP', 'Sprints', 'Sprint', 'Demo'],
+  },
   retroFeatures: {
     params: project,
     path: '/p/SHIP/retros/features',
@@ -197,6 +203,12 @@ test('routes_WhenModeAndSettingsAreAbsent_ShouldDropTheExtraCrumb', () => {
     'Stories',
   ]);
   expect(crumbTrail('epicsBoard', project)).toEqual(['SHIP', 'Boards', 'Epics']);
+});
+
+test('routes_WhenSettingsTabIsDemos_ShouldMatchItAfterIntegrations', () => {
+  expect(matchRoute('/p/SHIP/settings/demos')?.id).toBe('projectSettings');
+  expect(projectSettingsTabs.at(-1)).toBe('demos');
+  expect(projectSettingsTabs.at(-2)).toBe('integrations');
 });
 
 test('routes_WhenInstanceTabIsAgents_ShouldMatchIt', () => {

@@ -159,6 +159,41 @@ test('SprintHeader_WhenTabsShown_ShouldPutRetroFourthAfterCapacity', async ({ mo
   expect(order).toEqual([ids.tabBacklog, ids.tabTaskboard, ids.tabCapacity, ids.tabRetro]);
 });
 
+test('SprintHeader_WhenTabsShown_ShouldPutDemoFifthAfterRetro', async ({ mount, page }) => {
+  await mount(<SprintHeaderHarness {...props()} />);
+  const tabs = page.locator(
+    inDocumentOrder([ids.tabBacklog, ids.tabTaskboard, ids.tabCapacity, ids.tabRetro, ids.tabDemo]),
+  );
+  await expect(tabs).toHaveText(['Backlog', 'Taskboard', 'Capacity', 'Retro', 'Demo']);
+  const order = await tabs.evaluateAll((nodes) => nodes.map((n) => n.getAttribute('data-testid')));
+  expect(order).toEqual([
+    ids.tabBacklog,
+    ids.tabTaskboard,
+    ids.tabCapacity,
+    ids.tabRetro,
+    ids.tabDemo,
+  ]);
+});
+
+test('SprintHeader_WhenDemoTab_ShouldMarkOnlyDemoCurrent', async ({ mount, page }) => {
+  await mount(<SprintHeaderHarness {...props({ tab: 'demo' })} />);
+  await expect(page.getByTestId(ids.tabDemo)).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByTestId(ids.tabRetro)).not.toHaveAttribute('aria-current', 'page');
+  await expect(page.getByTestId(ids.tabBacklog)).not.toHaveAttribute('aria-current', 'page');
+});
+
+test('SprintHeader_WhenSprintPickedOnDemoTab_ShouldOpenDemoOfThatSprint', async ({
+  mount,
+  page,
+}) => {
+  await mount(<SprintHeaderHarness {...props({ tab: 'demo' })} />, {
+    hooksConfig: { route: '/p/SHIP/sprints/s24/demo' },
+  });
+  await page.getByTestId(ids.picker).click();
+  await page.getByTestId(ids.pickerOption).filter({ hasText: 'Sprint 23' }).click();
+  await expect(page.getByTestId(harness.location)).toHaveText('/p/SHIP/sprints/s23/demo');
+});
+
 test('SprintHeader_WhenRetroTab_ShouldMarkOnlyRetroCurrent', async ({ mount, page }) => {
   await mount(<SprintHeaderHarness {...props({ tab: 'retro' })} />);
   await expect(page.getByTestId(ids.tabRetro)).toHaveAttribute('aria-current', 'page');

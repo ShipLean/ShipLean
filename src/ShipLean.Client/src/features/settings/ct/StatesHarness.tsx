@@ -19,6 +19,7 @@ export function StatesHarness({ role }: { role: ProjectRole }) {
         tab={tab}
         states={<SettingsStatesSlot project={project} tab={tab} />}
         integrations={<div />}
+        demos={<div />}
       />
       <ToastHost />
     </>

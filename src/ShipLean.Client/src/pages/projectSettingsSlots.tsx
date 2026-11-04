@@ -1,6 +1,7 @@
 import type { ProjectDto } from '../api/projects';
 import type { ProjectSettingsTab } from '../routes';
 import type { SettingsDraftSlotProps } from '../slots/SettingsDraftSlot';
+import { SettingsDemosSlot } from '../slots/SettingsDemosSlot';
 import { SettingsIntegrationsSlot } from '../slots/SettingsIntegrationsSlot';
 import { SettingsStatesSlot } from '../slots/SettingsStatesSlot';
 
@@ -16,6 +17,7 @@ export function projectSettingsSlots(
       tab,
       states: <SettingsStatesSlot project={project} tab={tab} />,
       integrations: <SettingsIntegrationsSlot project={project} tab={tab} />,
+      demos: <SettingsDemosSlot project={project} tab={tab} />,
     },
   };
 }

@@ -52,6 +52,7 @@ export function SettingsDraftHarness({
       tab={tab}
       states={fakeStates ? <FakeStates /> : <div data-testid="harness-states">states</div>}
       integrations={<div data-testid="harness-integrations">integrations</div>}
+      demos={<div data-testid="harness-demos">demos</div>}
     />
   );
 }

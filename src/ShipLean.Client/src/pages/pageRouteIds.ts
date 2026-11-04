@@ -23,6 +23,7 @@ export const pageRouteIds = {
   taskboard: 'taskboard',
   capacity: 'capacity',
   sprintRetro: 'sprintRetro',
+  sprintDemo: 'sprintDemo',
   retros: 'retros',
   retroFeatures: 'retroFeatures',
   retroItem: 'retroItem',

@@ -19,6 +19,7 @@ import { RetroItemPage } from './pages/RetroItemPage';
 import { RetrosPage } from './pages/RetrosPage';
 import { SprintBacklogPage } from './pages/SprintBacklogPage';
 import { SprintRetroPage } from './pages/SprintRetroPage';
+import { SprintDemoPage } from './pages/SprintDemoPage';
 import { SprintsPage } from './pages/SprintsPage';
 import { TaskboardPage } from './pages/TaskboardPage';
 import { WorkItemPage } from './pages/WorkItemPage';
@@ -51,6 +52,7 @@ export function AppRoutes() {
         <Route path={routePattern('taskboard')} element={<TaskboardPage />} />
         <Route path={routePattern('capacity')} element={<CapacityPage />} />
         <Route path={routePattern('sprintRetro')} element={<SprintRetroPage />} />
+        <Route path={routePattern('sprintDemo')} element={<SprintDemoPage />} />
         <Route path={routePattern('retros')} element={<RetrosPage />} />
         <Route path={routePattern('retroFeatures')} element={<RetroFeaturesPage />} />
         <Route path={routePattern('retroItem')} element={<RetroItemPage />} />

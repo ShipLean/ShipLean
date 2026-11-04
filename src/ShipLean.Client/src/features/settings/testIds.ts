@@ -6,6 +6,7 @@ export const settingsTestIds = {
   tabMembers: 'settings-tab-members',
   tabSprints: 'settings-tab-sprints',
   tabIntegrations: 'settings-tab-integrations',
+  tabDemos: 'settings-tab-demos',
   tabDirty: 'settings-tab-dirty',
   tabError: 'settings-tab-error',
   changesList: 'settings-changes-list',

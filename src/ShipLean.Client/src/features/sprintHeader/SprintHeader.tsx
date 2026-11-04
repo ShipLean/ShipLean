@@ -12,7 +12,7 @@ import { SprintStatusChip } from './SprintStatusChip';
 import { SprintTabs } from './SprintTabs';
 import { sprintHeaderTestIds as ids } from './testIds';
 
-export type SprintTab = 'backlog' | 'taskboard' | 'capacity' | 'retro';
+export type SprintTab = 'backlog' | 'taskboard' | 'capacity' | 'retro' | 'demo';
 
 export interface SprintHeaderProps {
   // full: Sprint backlog and Capacity (with the Backlog · Taskboard · Capacity · Retro tabs); slim: the Taskboard.

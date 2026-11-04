@@ -11,7 +11,11 @@ const tabRoute = {
   taskboard: 'taskboard',
   capacity: 'capacity',
   retro: 'sprintRetro',
-} as const satisfies Record<SprintTab, 'sprintBacklog' | 'taskboard' | 'capacity' | 'sprintRetro'>;
+  demo: 'sprintDemo',
+} as const satisfies Record<
+  SprintTab,
+  'sprintBacklog' | 'taskboard' | 'capacity' | 'sprintRetro' | 'sprintDemo'
+>;
 
 // `Sprint 24 ▾` opening a listbox. The arrows only move the highlight; the route changes when a sprint is picked.
 export function SprintPicker({

@@ -27,7 +27,13 @@ test('settingsFrame_WhenProjectChangedByTeammate_ShouldReadSettingsAgain', () =>
   act(() =>
     root.render(
       <QueryClientProvider client={client}>
-        <SettingsDraftFrame project={project} tab="general" states={null} integrations={null} />
+        <SettingsDraftFrame
+          project={project}
+          tab="general"
+          states={null}
+          integrations={null}
+          demos={null}
+        />
       </QueryClientProvider>,
     ),
   );
