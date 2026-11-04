@@ -78,6 +78,6 @@ public class WorkItemTypesTests
 
         WorkItemTypes.BoardLevel(WorkItemTypeId.Bau).ShouldBeNull();
         WorkItemTypeRules.StoryLevelDb.ShouldBe(["story", "bug", "action"]);
-        WorkItemTypeRules.IsStoryOrBug(WorkItemTypeId.Bau).ShouldBeFalse();
+        WorkItemTypeRules.IsStoryLevel(WorkItemTypeId.Bau).ShouldBeFalse();
     }
 }
