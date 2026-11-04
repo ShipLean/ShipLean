@@ -148,4 +148,16 @@ public class GuideContentTests
     {
         Work.ShouldContain("`decide_retro_actions`");
     }
+
+    [Test]
+    public void GuideContent_ShouldAskForAWhySection()
+    {
+        foreach (var text in new[] { Guide, Work })
+        {
+            text.ShouldContain("`## Why` section");
+            text.ShouldContain("Problem, Who, We believe and Measure");
+            text.ShouldContain("to confirm");
+            text.ShouldContain("`create_sprint_demo`");
+        }
+    }
 }

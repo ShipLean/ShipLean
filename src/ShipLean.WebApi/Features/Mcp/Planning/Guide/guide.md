@@ -146,6 +146,7 @@ Run these checks and fix what they find:
 Write the plan, then put it in the backlog with `capture_plan`. The plan review sits between the preview and the apply, because `capture_plan` refuses a Feature that already has plan stories: there is no second capture.
 
 - `feature`: an existing Feature by `key`, or a new one with a `title`. Put what the Feature is for in `goal`, in a sentence or two, at most 1,000 characters. That is the Feature's Goal field; never write a Goal heading in the description. Put the contracts in `description`, in a section headed exactly "## Contracts".
+- The Feature's `description` opens with a `## Why` section of four bullets: Problem, Who, We believe and Measure. A measure not yet agreed says "to confirm". `create_sprint_demo` narrates this section.
 - `shared_branch`: the one branch every agent pushes to.
 - `common_brief`: what every agent reads before its own brief: the repository, environment, test tiers, banned patterns, git rules, the contract rule and the report rule.
 - `plan_markdown`: the whole plan document, attached to the Feature.

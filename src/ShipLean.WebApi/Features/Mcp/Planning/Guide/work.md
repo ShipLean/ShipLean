@@ -36,6 +36,8 @@ Keep four blocks in the description (plain Markdown):
 3. **Next** — the very next step for whoever picks this up.
 4. **Open questions** — what still needs a person or more research.
 
+A new Feature's description opens with a `## Why` section of four bullets: Problem, Who, We believe and Measure (a measure not yet agreed says "to confirm"). `create_sprint_demo` narrates it.
+
 Update the body as you learn; attachments hold the long form.
 
 ## Attachments
