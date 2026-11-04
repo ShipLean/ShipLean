@@ -10,6 +10,7 @@ using ShipLean.AcceptanceTests.Pages.Sprints;
 using ShipLean.Contracts;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
+using ShipLean.TestSupport.TestIds;
 using static ShipLean.AcceptanceTests.Lanes.Sprints.End.EndedSprint;
 
 namespace ShipLean.AcceptanceTests.Lanes.Demos;
@@ -69,6 +70,17 @@ public class CloseSprintDemoJourneyTests : SeededAcceptanceTest
         stored.Ok.ShouldBeTrue();
         (await stored.BodyAsync()).ShouldBe(fixture);
 
+        // Recorded from before the tab can load the video, so the browser's own first request is seen and not one its HTTP cache answers.
+        var mediaPath = $"/api/attachments/{pointers.Video}/content";
+        var media = new List<(int Status, string Range)>();
+        Page.Response += (_, r) =>
+        {
+            if (new Uri(r.Url).AbsolutePath == mediaPath)
+            {
+                media.Add((r.Status, r.Request.Headers.GetValueOrDefault("range") ?? string.Empty));
+            }
+        };
+
         // The upload alone leaves the agent's session live, and a live session reads as Working. The agent's last act is its final response, through the
         // connection's own callback token on the Linear-compatible endpoint: nothing else here plays the agent.
         var sessionId = await ReadScalarAsync<Guid>($"SELECT id FROM agent_session WHERE work_item_id = '{itemId}'");
@@ -83,33 +95,34 @@ public class CloseSprintDemoJourneyTests : SeededAcceptanceTest
         await Expect(tab.Script).ToContainTextAsync("Welcome to the Sprint 24 demo.");
         await Expect(tab.Script).ToContainTextAsync("Checkout now takes one step.");
 
-        var mediaPath = $"/api/attachments/{pointers.Video}/content";
-        var media = new List<(int Status, string Range)>();
-        Page.Response += (_, r) =>
-        {
-            if (new Uri(r.Url).AbsolutePath == mediaPath)
-            {
-                media.Add((r.Status, r.Request.Headers.GetValueOrDefault("range") ?? string.Empty));
-            }
-        };
-        await Page.ReloadAsync();
-        await Expect(tab.Video).ToBeVisibleAsync();
-        await tab.Video.EvaluateAsync("v => { v.muted = true; v.preload = 'auto'; return v.readyState >= 3 ? null : new Promise(r => v.addEventListener('canplay', r, { once: true })); }");
+        await tab.Video.EvaluateAsync("v => { v.muted = true; v.preload = 'auto'; }");
+        await WaitForVideoAsync("v.readyState >= 3");
         (await tab.Video.EvaluateAsync<double>("v => v.seekable.length > 0 ? v.seekable.end(0) : 0")).ShouldBeInRange(7.0, 9.0);
 
+        await tab.Video.EvaluateAsync("v => v.play()");
+        await WaitForVideoAsync("v.currentTime > 0.3");
+        await tab.Video.EvaluateAsync("v => v.pause()");
+
         await tab.Video.EvaluateAsync("v => { v.currentTime = 6; }");
-        await tab.WaitForSeekedAsync(6);
+        await WaitForVideoAsync("!v.seeking && Math.abs(v.currentTime - 6) < 0.5");
         (await tab.CurrentTimeAsync()).ShouldBeInRange(5.5, 6.5);
 
         await tab.SeekAsync(1);
-        await tab.WaitForSeekedAsync(4);
+        await WaitForVideoAsync("!v.seeking && Math.abs(v.currentTime - 4) < 0.5");
         (await tab.CurrentTimeAsync()).ShouldBeInRange(3.5, 4.5);
         await tab.SeekAsync(0);
-        await tab.WaitForSeekedAsync(0);
+        await WaitForVideoAsync("!v.seeking && v.currentTime < 0.5");
 
         media.ShouldNotBeEmpty();
-        media.ShouldContain(m => m.Status == 206 && m.Range.StartsWith("bytes=", StringComparison.Ordinal));
-        media.ShouldNotContain(m => m.Status != 206 && m.Status != 200);
+        media[0].Status.ShouldBe(206, "the browser's first request for the video is a ranged one, answered 206");
+        media[0].Range.ShouldStartWith("bytes=");
+        media.ShouldAllBe(m => m.Status == 206);
+
+        // A fresh request with no browser cache in front of it: bytes 2 to 5 come back as a 206 naming where they sit.
+        var ranged = await Page.APIRequest.GetAsync(mediaPath, new() { Headers = new Dictionary<string, string> { ["Range"] = "bytes=2-5" } });
+        ranged.Status.ShouldBe(206);
+        ranged.Headers["content-range"].ShouldBe($"bytes 2-5/{fixture.Length}");
+        (await ranged.BodyAsync()).ShouldBe(fixture[2..6]);
     }
 
     [Test]
@@ -172,6 +185,10 @@ public class CloseSprintDemoJourneyTests : SeededAcceptanceTest
             await Expect(tab.Create).ToBeInViewportAsync();
         }
     }
+
+    // Waits, bounded, for a media condition on the Demo tab's video (the page object's own seek wait has no bound, so a seek that never happens would hang the run).
+    private Task WaitForVideoAsync(string condition) =>
+        Page.WaitForFunctionAsync($"id => {{ const v = document.querySelector(`[data-testid=\"${{id}}\"]`); return v !== null && ({condition}); }}", DemosTestIds.DemoVideo, new() { Timeout = 15_000 });
 
     // A connection, the project's repository, the instance's address (this host, so the upload link reaches it) and the Demos setting, all by API.
     private async Task<string> ArrangeAgentAsync(bool automatic)
