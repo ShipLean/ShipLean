@@ -83,6 +83,7 @@ public static class ActionUsageMap
         Add(ActionUsage.Track(UsageEventNames.SprintDemoYouTubeRetried), "SprintDemo.RetryYouTube");
         Add(ActionUsage.Track(UsageEventNames.ProjectDemoSettingsChanged), "ProjectDemoSettings.Put");
         Add(ActionUsage.Track(UsageEventNames.ProjectDemoBrandChanged), "DemoBrand.ReplaceLogo", "DemoBrand.RemoveLogo", "DemoBrand.PutTokens");
+        Add(ActionUsage.Track(UsageEventNames.ProjectYouTubeChanged), "YouTube.Check", "YouTube.Disconnect");
         Add(ActionUsage.Track(UsageEventNames.InstanceSettingsChanged), "Instance.PutSettings");
         Add(ActionUsage.Track(UsageEventNames.InstanceIntegrationsChanged), "Integrations.Put");
         Add(ActionUsage.Track(UsageEventNames.InstanceAnalyticsChanged), "Analytics.Put");
@@ -132,6 +133,8 @@ public static class ActionUsageMap
             "LinkCardImages.Favicon",
             "LinkCardImages.Image");
         Add(ActionUsage.Untracked("Anonymous, one-time upload token: the delivery that follows publishes SprintDemoChanged, and the demo's creation is counted by SprintDemo.Create."), "DemoUpload.Upload");
+        Add(ActionUsage.Untracked("Only builds Google's consent address; nothing changes until the callback and the check, and the check is counted by YouTube.Check."), "YouTube.Start");
+        Add(ActionUsage.Untracked("Anonymous browser redirect from Google with no session of its own; the connection it stores is counted by YouTube.Check when the person confirms it."), "YouTube.Callback");
         Add(ActionUsage.Untracked("Anonymous, token-authenticated download of the project's logo for the agent making a demo; the demo's creation is counted by SprintDemo.Create."), "DemoLogoDownload.Download");
         Add(ActionUsage.Untracked("Anonymous, signature-authenticated webhook: counted as a system event where it is handled."), "Webhooks.GitHub", "Webhooks.GitLab");
         Add(ActionUsage.Untracked("The item detail view loads the item by key (ProjectWorkItems.ByKey), which is the one that counts; tracking both would count a view twice."), "WorkItems.Get");
