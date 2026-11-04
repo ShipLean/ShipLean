@@ -26,6 +26,11 @@ public class BauHiddenSweepTests : McpFixture
     private const string CommentWord = "quibblesnort";
     private const string AttachmentWord = "frumpelwick";
 
+    // Seeded Sprint 24 content the sprint-scoped rows must still show: a story in the sprint, and a task that is ready to pick up.
+    private const string SeededSprintStory = "SHIP-141";
+    private const string SeededReadyTask = "SHIP-173";
+    private const string ControlTheme = "Control theme";
+
     private Guid _bauId;
     private string _bauKey = string.Empty;
     private int _bauNumber;
@@ -62,6 +67,9 @@ public class BauHiddenSweepTests : McpFixture
             (await CallToolAsync(_token, "comment", $$"""{"item":"{{key}}","text":"A note about {{CommentWord}} here."}""")).IsToolError().ShouldBeFalse();
             (await CallToolAsync(_token, "attach_markdown", $$"""{"feature":"{{key}}","name":"notes.md","content":"The {{AttachmentWord}} handshake."}""")).IsToolError().ShouldBeFalse();
         }
+
+        // A retro point on the control story, so the Retro views have something to show.
+        (await CallToolAsync(_token, "log_retrospective", $$"""{"item":"{{_controlStoryKey}}","went_well":[{"text":"The {{TitleWord}} retro point.","theme":"{{ControlTheme}}"}]}""")).IsToolError().ShouldBeFalse();
 
         using var reindexed = await Joel.PostJsonAsync("api/admin/search/reindex?full=true");
         reindexed.EnsureSuccessStatusCode();
@@ -109,24 +117,42 @@ public class BauHiddenSweepTests : McpFixture
     [Test]
     public async Task Boards_ShouldNotListBau()
     {
-        foreach (var board in new[] { SeedIds.Boards.ShipStories, SeedIds.Boards.ShipFeatures, SeedIds.Boards.ShipEpics })
+        await using var connection = await OpenDatabaseAsync();
+        var epicKeys = (await connection.QueryAsync<string>(
+            "SELECT p.key || '-' || w.number FROM work_item w JOIN project p ON p.id = w.project_id JOIN state s ON s.id = w.state_id WHERE w.project_id = @id AND w.type = 'epic' AND s.category NOT IN ('removed', 'completed')", new { id = SeedIds.Projects.Ship })).ToList();
+        epicKeys.ShouldNotBeEmpty();
+
+        // Each board must show a known card of its own level, so an empty board cannot pass.
+        var boards = new Dictionary<Guid, string[]>
         {
-            AssertHidden(await GetAsync($"api/boards/{board}"));
+            [SeedIds.Boards.ShipStories] = [_controlStoryKey],
+            [SeedIds.Boards.ShipFeatures] = [_controlFeatureKey],
+            [SeedIds.Boards.ShipEpics] = [.. epicKeys],
+        };
+        foreach (var (board, cards) in boards)
+        {
+            var body = await GetAsync($"api/boards/{board}");
+            AssertHidden(body);
+            cards.ShouldAllBe(key => body.Contains($"\"key\":\"{key}\"", StringComparison.Ordinal), $"board {board}");
         }
-        (await GetAsync($"api/boards/{SeedIds.Boards.ShipStories}")).ShouldContain("\"cards\"", Case.Insensitive);
     }
 
     [Test]
     public async Task SprintViews_ShouldNotListBau()
     {
-        var bodies = new[]
-        {
-            await GetAsync($"api/sprints/{SeedIds.Sprints.Sprint24}/taskboard"),
-            await GetAsync($"api/sprints/{SeedIds.Sprints.Sprint24}/metrics"),
-            await GetAsync($"api/sprints/{SeedIds.Sprints.Sprint24}/capacity"),
-        };
+        var taskboard = await GetAsync($"api/sprints/{SeedIds.Sprints.Sprint24}/taskboard");
+        var metrics = await GetAsync($"api/sprints/{SeedIds.Sprints.Sprint24}/metrics");
+        var capacity = await GetAsync($"api/sprints/{SeedIds.Sprints.Sprint24}/capacity");
 
-        bodies.ShouldAllBe(body => !LeaksBau(body));
+        // Known Sprint 24 content in each response, so an empty view cannot pass.
+        taskboard.ShouldContain($"\"key\":\"{SeededSprintStory}\"");
+        taskboard.ShouldContain($"\"key\":\"{SeededReadyTask}\"");
+        var metricsJson = System.Text.Json.JsonDocument.Parse(metrics).RootElement;
+        metricsJson.GetProperty("committed").GetDecimal().ShouldBeGreaterThan(0);
+        metricsJson.GetProperty("burndown").GetArrayLength().ShouldBeGreaterThan(0);
+        System.Text.Json.JsonDocument.Parse(capacity).RootElement.GetProperty("members").GetArrayLength().ShouldBeGreaterThan(0);
+
+        new[] { taskboard, metrics, capacity }.ShouldAllBe(body => !LeaksBau(body));
     }
 
     [Test]
@@ -154,19 +180,25 @@ public class BauHiddenSweepTests : McpFixture
     [Test]
     public async Task McpBacklogAndSprintTools_ShouldNotListBau()
     {
-        var bodies = new[]
+        // Each tool with a control item it must list: the control story or feature, or seeded Sprint 24 content.
+        var calls = new (string Tool, string Arguments, string Control)[]
         {
-            await McpAsync("review_backlog", """{"project":"SHIP","level":"stories","top":100}"""),
-            await McpAsync("review_backlog", """{"project":"SHIP","level":"features","top":100}"""),
-            await McpAsync("find_work_to_pick_up", """{"project":"SHIP"}"""),
-            await McpAsync("plan_sprint", """{"project":"SHIP","sprint":"next","points_limit":1000}"""),
-            await McpAsync("end_sprint", """{"project":"SHIP","end_today":true}"""),
-            await McpAsync("sprint_status", """{"project":"SHIP"}"""),
-            await McpAsync("sprint_review", """{"project":"SHIP"}"""),
-            await McpAsync("feature_progress", $$"""{"item":"{{_controlFeatureKey}}"}"""),
+            ("review_backlog", """{"project":"SHIP","level":"stories","top":100}""", _controlStoryKey),
+            ("review_backlog", """{"project":"SHIP","level":"features","top":100}""", _controlFeatureKey),
+            ("find_work_to_pick_up", """{"project":"SHIP"}""", SeededReadyTask),
+            ("plan_sprint", """{"project":"SHIP","sprint":"next","points_limit":1000}""", _controlStoryKey),
+            ("end_sprint", """{"project":"SHIP","end_today":true}""", SeededSprintStory),
+            ("sprint_status", """{"project":"SHIP"}""", SeededSprintStory),
+            ("sprint_review", """{"project":"SHIP"}""", SeededSprintStory),
+            ("feature_progress", $$"""{"item":"{{_controlFeatureKey}}"}""", _controlStoryKey),
         };
 
-        bodies.ShouldAllBe(body => !LeaksBau(body));
+        foreach (var (tool, arguments, control) in calls)
+        {
+            var body = await McpAsync(tool, arguments);
+            body.ShouldContain($"\"key\":\"{control}\"", Case.Sensitive, $"{tool} {arguments}");
+            AssertHidden(body);
+        }
     }
 
     [Test]
@@ -179,10 +211,20 @@ public class BauHiddenSweepTests : McpFixture
         AssertHidden(duplicateText);
         duplicateText.ShouldContain(_controlStoryKey);
 
-        AssertHidden(await GetAsync($"api/projects/{project}/retros?q={TitleWord}"));
-        AssertHidden(await GetAsync($"api/projects/{project}/retros/insights"));
-        AssertHidden(await GetAsync($"api/projects/{project}/retros/themes"));
-        AssertHidden(await GetAsync($"api/sprints/{SeedIds.Sprints.Sprint22}/retro"));
+        // The retro point on the control story is in the search rows, the insights and the theme list; Sprint 22's coverage lists its seeded stories.
+        var retros = await GetAsync($"api/projects/{project}/retros?q={TitleWord}");
+        AssertHidden(retros);
+        retros.ShouldContain(_controlStoryKey);
+        var insights = await GetAsync($"api/projects/{project}/retros/insights");
+        AssertHidden(insights);
+        insights.ShouldContain(ControlTheme);
+        var themes = await GetAsync($"api/projects/{project}/retros/themes");
+        AssertHidden(themes);
+        themes.ShouldContain(ControlTheme);
+        var sprintRetro = await GetAsync($"api/sprints/{SeedIds.Sprints.Sprint22}/retro");
+        AssertHidden(sprintRetro);
+        sprintRetro.ShouldContain("\"key\":\"SHIP-46\"");
+        // No action item exists to offer, so this one is a shape check only: a bau item could not be offered but nothing would show it.
         AssertHidden(await GetAsync($"api/projects/{project}/retros/action-dialog"));
     }
 
@@ -194,6 +236,7 @@ public class BauHiddenSweepTests : McpFixture
             "SELECT count(*)::int FROM work_item w JOIN state s ON s.id = w.state_id WHERE w.project_id = @id AND s.category <> 'removed' AND w.type <> 'bau'", new { id = SeedIds.Projects.Ship });
         var bauCount = await connection.QuerySingleAsync<int>("SELECT count(*)::int FROM work_item WHERE project_id = @id AND type = 'bau'", new { id = SeedIds.Projects.Ship });
         bauCount.ShouldBeGreaterThan(0);
+        expected.ShouldBeGreaterThan(0);
 
         var projects = System.Text.Json.JsonDocument.Parse(await GetAsync("api/instance/projects")).RootElement;
         var ship = projects.EnumerateArray().Single(p => p.GetProperty("key").GetString() == "SHIP");
