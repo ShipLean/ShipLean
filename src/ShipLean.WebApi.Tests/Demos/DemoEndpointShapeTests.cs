@@ -325,6 +325,7 @@ public class DemoEndpointShapeTests : ApiFixture
         var error = await ErrorOfAsync(response, HttpStatusCode.BadRequest);
         error.Code.ShouldBe(ApiErrorCodes.Validation);
         error.Error.ShouldContain("video");
+        error.Field.ShouldBeNull();
     }
 
     [Test]
