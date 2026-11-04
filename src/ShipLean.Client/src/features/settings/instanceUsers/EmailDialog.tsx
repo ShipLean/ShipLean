@@ -5,7 +5,15 @@ import { settingsTestIds } from '../testIds';
 import { errorText } from './model';
 import { useUsersAdminMutations, type AdminUserDto } from './usersAdminApi';
 
-export function EmailDialog({ user, onClose }: { user: AdminUserDto; onClose(): void }) {
+export function EmailDialog({
+  user,
+  isMe,
+  onClose,
+}: {
+  user: AdminUserDto;
+  isMe: boolean;
+  onClose(): void;
+}) {
   const { changeEmail } = useUsersAdminMutations();
   const [email, setEmail] = useState(user.email);
 
@@ -14,9 +22,12 @@ export function EmailDialog({ user, onClose }: { user: AdminUserDto; onClose(): 
       { id: user.id, email },
       {
         onSuccess: () => {
-          showToast(`${user.name} now signs in as ${email.trim()} and is signed out everywhere`, {
-            tone: 'ok',
-          });
+          showToast(
+            isMe
+              ? `You now sign in as ${email.trim()}. Your other sessions are signed out.`
+              : `${user.name} now signs in as ${email.trim()} and is signed out everywhere`,
+            { tone: 'ok' },
+          );
           onClose();
         },
       },

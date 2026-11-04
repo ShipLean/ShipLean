@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ShipLean.Application.Features.Users.Admin;
+using ShipLean.Contracts;
+using ShipLean.Contracts.Auth;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Users;
 using ShipLean.Contracts.Users.Admin;
@@ -13,7 +15,7 @@ namespace ShipLean.WebApi.Features.Users.Admin;
 [InstanceAdmin]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 [Route("api/admin/users")]
-public sealed class UsersAdminController(UserAdmin admin) : ApiControllerBase
+public sealed class UsersAdminController(UserAdmin admin, ICurrentUser currentUser, ISessionKeeper session) : ApiControllerBase
 {
     [HttpGet]
     [ProducesResponseType<AdminUsersDto>(StatusCodes.Status200OK)]
@@ -35,7 +37,12 @@ public sealed class UsersAdminController(UserAdmin admin) : ApiControllerBase
     [ProducesResponseType<ApiError>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ApiError>(StatusCodes.Status403Forbidden)]
     [ProducesResponseType<ApiError>(StatusCodes.Status404NotFound)]
-    public Task<OneTimePasswordDto> IssueOneTimePassword(Guid id, CancellationToken cancellationToken) => admin.IssueOneTimePasswordAsync(id, cancellationToken);
+    public async Task<OneTimePasswordDto> IssueOneTimePassword(Guid id, CancellationToken cancellationToken)
+    {
+        var issued = await admin.IssueOneTimePasswordAsync(id, cancellationToken);
+        await KeepThisSessionAsync(id, cancellationToken);
+        return issued;
+    }
 
     [HttpPost("{id:guid}/unlock")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -64,5 +71,15 @@ public sealed class UsersAdminController(UserAdmin admin) : ApiControllerBase
     [ProducesResponseType<ApiError>(StatusCodes.Status403Forbidden)]
     [ProducesResponseType<ApiError>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<ApiError>(StatusCodes.Status409Conflict)]
-    public Task<NoContentResult> ChangeEmail(Guid id, ChangeEmailRequest request, CancellationToken cancellationToken) => NoContentAfter(admin.ChangeEmailAsync(id, request.Email, cancellationToken));
+    public async Task<NoContentResult> ChangeEmail(Guid id, ChangeEmailRequest request, CancellationToken cancellationToken)
+    {
+        await admin.ChangeEmailAsync(id, request.Email, cancellationToken);
+        await KeepThisSessionAsync(id, cancellationToken);
+        return NoContent();
+    }
+
+    // Both rotate the user's security stamp, which ends every session. When the admin did it to themselves, this
+    // session gets a cookie under the new stamp, so only their other sessions end.
+    private Task KeepThisSessionAsync(Guid id, CancellationToken cancellationToken)
+        => id == currentUser.Id ? session.KeepAsync(id, cancellationToken) : Task.CompletedTask;
 }

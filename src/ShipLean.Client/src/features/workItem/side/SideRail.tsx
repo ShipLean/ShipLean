@@ -12,7 +12,7 @@ export function SideRail({ project, itemKey }: { project: ProjectDto; itemKey: s
     <aside
       data-testid={ids.side}
       aria-label="Attachments and history"
-      className="grid content-start gap-4 p-4"
+      className="grid grid-cols-[minmax(0,1fr)] content-start gap-4 p-4"
     >
       <AttachmentsSection project={project} itemKey={itemKey} />
       <HistorySection project={project} itemKey={itemKey} />

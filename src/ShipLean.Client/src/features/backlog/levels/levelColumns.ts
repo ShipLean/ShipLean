@@ -16,7 +16,7 @@ export const FEATURE_COLUMNS: readonly ColumnSpec[] = [
   { id: 'parent', label: 'Parent', required: false },
   { id: 'state', label: 'State', required: false },
   { id: 'points', label: 'Pts', required: false },
-  { id: 'progress', label: 'Progress (stories and bugs)', required: false },
+  { id: 'progress', label: 'Progress (stories, bugs and Action items)', required: false },
 ];
 
 /** The Epics level's columns, in order: a Features count in place of Parent. */
@@ -25,7 +25,7 @@ export const EPIC_COLUMNS: readonly ColumnSpec[] = [
   { id: 'state', label: 'State', required: false },
   { id: 'features', label: 'Features', required: false },
   { id: 'points', label: 'Pts', required: false },
-  { id: 'progress', label: 'Progress (stories and bugs)', required: false },
+  { id: 'progress', label: 'Progress (stories, bugs and Action items)', required: false },
 ];
 
 export type LevelBacklogLevel = Exclude<Level, 'stories'>;

@@ -14,7 +14,11 @@ export function FeatureLinksSection(props: FeatureRegionProps) {
     ? links.data.workItems.length + links.data.code.length + links.data.pages.length
     : null;
   return (
-    <section data-testid={ids.links} aria-label="Links" className="grid gap-2">
+    <section
+      data-testid={ids.links}
+      aria-label="Links"
+      className="grid grid-cols-[minmax(0,1fr)] gap-2"
+    >
       <header className="flex items-center gap-2">
         <h2 className="text-[length:var(--text-md)] font-semibold">Links</h2>
         {count === null ? null : (

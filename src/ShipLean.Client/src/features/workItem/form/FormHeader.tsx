@@ -51,7 +51,7 @@ export function FormHeader({
         )}
         <span
           data-testid={ids.meta}
-          className="ml-auto text-[length:var(--text-xs)] text-ink-muted"
+          className="ml-auto min-w-0 text-right text-[length:var(--text-xs)] text-ink-muted [overflow-wrap:anywhere]"
         >
           Created by {who(item.createdBy?.name)}, {item.createdAtLabel} · Changed by{' '}
           {who(item.changedBy?.name)}, {item.changedAtLabel} · revision {item.revision}

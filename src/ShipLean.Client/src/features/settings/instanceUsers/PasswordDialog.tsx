@@ -6,7 +6,15 @@ import { errorText } from './model';
 import { useUsersAdminMutations, type AdminUserDto } from './usersAdminApi';
 
 /** Reset password, or Set up sign-in for a user with no password: confirm, then show the one-time password once. */
-export function PasswordDialog({ user, onClose }: { user: AdminUserDto; onClose(): void }) {
+export function PasswordDialog({
+  user,
+  isMe,
+  onClose,
+}: {
+  user: AdminUserDto;
+  isMe: boolean;
+  onClose(): void;
+}) {
   const { issuePassword } = useUsersAdminMutations();
   const [password, setPassword] = useState<string | null>(null);
   const setup = user.status === 'noPassword' || user.status === 'googleOnly';
@@ -16,7 +24,13 @@ export function PasswordDialog({ user, onClose }: { user: AdminUserDto; onClose(
 
   return (
     <Dialog
-      title={setup ? `Set up sign-in for ${user.name}` : `Reset ${user.name}’s password?`}
+      title={
+        setup
+          ? isMe
+            ? 'Set up your sign-in'
+            : `Set up sign-in for ${user.name}`
+          : `Reset ${user.name}’s password?`
+      }
       onClose={onClose}
       footer={
         password === null ? (
@@ -46,7 +60,9 @@ export function PasswordDialog({ user, onClose }: { user: AdminUserDto; onClose(
       {password === null ? (
         <p className="m-0 text-[length:var(--text-sm)] text-ink">
           {setup
-            ? 'They have no password yet. This gives you a one-time password to hand over.'
+            ? isMe
+              ? 'You have no password yet. This gives you a one-time password. Sign in with it, then choose your own.'
+              : 'They have no password yet. This gives you a one-time password to hand over.'
             : 'This signs them out everywhere and gives you a one-time password to hand over. Their current password stops working straight away.'}
         </p>
       ) : (

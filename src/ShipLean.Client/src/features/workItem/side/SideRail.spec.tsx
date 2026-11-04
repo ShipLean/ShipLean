@@ -230,3 +230,29 @@ test('SideRail_WhenFeatureFieldsChanged_ShouldShowTheirLabelsAndNoRawTimestamp',
   );
   await expect(changes.nth(2)).not.toContainText(instant);
 });
+
+// A rail narrower than its History text: an agent name and a webhook with no break in them must wrap inside it.
+test('SideRail_WhenHistoryIsLong_ShouldNotWidenThePage', async ({ mount, page }) => {
+  await page.setViewportSize({ width: 360, height: 900 });
+  await stubApi(page, story);
+  await stubSide(
+    page,
+    mei,
+    [],
+    [
+      revision(2, mei, [change('points', 3, 5)], { agentName: 'a'.repeat(200) }),
+      revision(1, null, [change('title', 'Old', 'New')], {
+        origin: 'webhook',
+        webhook: `GitHub ${'w'.repeat(200)}`,
+      }),
+    ],
+  );
+  const screen = await mount(<SideRailHarness itemKey="SHIP-141" />, route);
+  await expect(screen.getByTestId(ids.revision)).toHaveCount(2);
+
+  const { scrollWidth, clientWidth } = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+  }));
+  expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+});

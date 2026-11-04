@@ -15,7 +15,11 @@ export function LinksEditor({ project, itemKey }: { project: ProjectDto; itemKey
   const grouped = LINK_TYPES.flatMap((type) => links.filter((link) => link.type === type));
   const editing = links.find((link) => link.uid === open) ?? null;
   return (
-    <section data-testid={ids.links} aria-label="Links" className="grid content-start gap-2">
+    <section
+      data-testid={ids.links}
+      aria-label="Links"
+      className="grid grid-cols-[minmax(0,1fr)] content-start gap-2"
+    >
       <div className="flex items-center gap-2">
         <span className="flex items-center gap-1 text-[length:var(--text-xs)] font-semibold tracking-wide text-ink-muted uppercase">
           Links
@@ -63,7 +67,7 @@ export function LinksEditor({ project, itemKey }: { project: ProjectDto; itemKey
           No links.
         </span>
       ) : (
-        <ul className="grid gap-1">
+        <ul className="grid grid-cols-[minmax(0,1fr)] gap-1">
           {grouped.map((link) => (
             <LinkRow
               key={link.uid}

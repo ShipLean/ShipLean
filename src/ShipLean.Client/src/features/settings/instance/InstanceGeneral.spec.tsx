@@ -153,6 +153,67 @@ test('General_WhenLoaded_ShouldShowTheFixedSignInRules', async ({ mount, page })
   await expect(view.getByTestId(ids.instanceSignInFacts)).toContainText('10 wrong passwords');
 });
 
+const stubSignIn = (page: Routable, instance: Record<string, unknown>) =>
+  page.route('**/api/auth/instance', (route) => route.fulfill({ json: instance }));
+
+test('General_WhenOnlyPasswordSignIn_ShouldSayAdminsAddEachPerson', async ({ mount, page }) => {
+  await stub(page);
+  await stubSignIn(page, {
+    name: 'Larkspur',
+    signIn: 'password',
+    signOutUrl: null,
+    googleSignIn: false,
+  });
+  const view = await mount(<InstanceGeneral />);
+
+  await expect(view.getByTestId(ids.instanceSignInFacts)).toContainText(
+    'Email and password. No sign-up: an admin adds each person on Users.',
+  );
+});
+
+test('General_WhenGoogleSignInIsOn_ShouldSayGoogleAdmitsAddAUser', async ({ mount, page }) => {
+  await stub(page);
+  await stubSignIn(page, {
+    name: 'Larkspur',
+    signIn: 'password',
+    signOutUrl: null,
+    googleSignIn: true,
+  });
+  const view = await mount(<InstanceGeneral />);
+
+  const facts = view.getByTestId(ids.instanceSignInFacts);
+  await expect(facts).toContainText('anyone Google admits gets a user on first sign-in');
+  await expect(facts).not.toContainText('No sign-up');
+  await expect(facts).toContainText('Forgotten passwords');
+  await expect(facts).toContainText('Lockout');
+});
+
+test('General_WhenSignInIsThroughAProxy_ShouldSayTheProxyCreatesUsers', async ({ mount, page }) => {
+  await stub(page);
+  await stubSignIn(page, {
+    name: 'Larkspur',
+    signIn: 'proxy',
+    signOutUrl: null,
+    googleSignIn: false,
+  });
+  const view = await mount(<InstanceGeneral />);
+
+  const facts = view.getByTestId(ids.instanceSignInFacts);
+  await expect(facts).toContainText('created the first time the proxy sees their email');
+  await expect(facts).not.toContainText('No sign-up');
+  await expect(facts).toContainText('First admin');
+  await expect(facts).toContainText(
+    'at startup if they already have a user, otherwise when they next sign in',
+  );
+  await expect(facts).toContainText('No password is needed');
+  await expect(facts).not.toContainText('on first boot');
+  await expect(facts).toContainText('Stay signed in for 14 days');
+  await expect(facts).not.toContainText('Changing or resetting a password');
+  await expect(facts).not.toContainText('SHIPLEAN_ADMIN_PASSWORD');
+  await expect(facts).not.toContainText('Forgotten passwords');
+  await expect(facts).not.toContainText('Lockout');
+});
+
 // The server's document changes under the admin: the second and later reads return `later`.
 const stubChangingOnRead = async (page: Routable, later: InstanceSettingsDto) => {
   const puts: InstanceSettingsDto[] = [];

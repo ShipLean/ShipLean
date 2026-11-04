@@ -91,7 +91,9 @@ public sealed class UserAdmin(
 
     public async Task<OneTimePasswordDto> IssueOneTimePasswordAsync(Guid userId, CancellationToken cancellationToken)
     {
-        if (userId == currentUser.Id)
+        // Your profile asks for the current password, and this route would skip that check. A user with no password has
+        // nothing to bypass, so only they may issue themselves one.
+        if (userId == currentUser.Id && await HasPasswordAsync(userId, cancellationToken))
         {
             throw ApiException.Validation("Change your own password on Your profile.");
         }
@@ -121,13 +123,16 @@ public sealed class UserAdmin(
 
     public async Task ChangeEmailAsync(Guid userId, string email, CancellationToken cancellationToken)
     {
-        if (userId == currentUser.Id)
-        {
-            throw ApiException.Validation("Change your own email on Your profile.");
-        }
         await accounts.ChangeEmailAsync(userId, email, cancellationToken);
         Audit("change-email", userId);
         await PublishProjectsOfAsync(userId, cancellationToken);
+    }
+
+    private async Task<bool> HasPasswordAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        return await connection.QuerySingleOrDefaultAsync<bool>(new CommandDefinition(
+            "SELECT password_hash IS NOT NULL FROM app_user WHERE id = @userId", new { userId }, cancellationToken: cancellationToken));
     }
 
     private void Audit(string action, Guid targetId)

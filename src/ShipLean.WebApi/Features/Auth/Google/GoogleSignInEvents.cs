@@ -80,6 +80,6 @@ public sealed class GoogleSignInEvents(
         return Task.CompletedTask;
     }
 
-    private static string LoginPath(string state, string returnUrl)
+    public static string LoginPath(string state, string returnUrl)
         => $"/login?state={state}&returnUrl={Uri.EscapeDataString(returnUrl)}";
 }

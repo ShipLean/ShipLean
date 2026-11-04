@@ -53,7 +53,7 @@ export function FeatureForm({
           <aside
             data-testid={ids.rail}
             aria-label="Attachments and history"
-            className="grid content-start gap-4"
+            className="grid grid-cols-[minmax(0,1fr)] content-start gap-4"
           >
             <FeatureAttachmentsRail {...region} />
             <FeatureHistory {...region} />
