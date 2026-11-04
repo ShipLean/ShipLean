@@ -49,6 +49,15 @@ public class YouTubeClientSettingsTests : ApiFixture
 
         (await ApiClient.ReadApiErrorAsync(write, HttpStatusCode.Forbidden)).Code.ShouldBe(ApiErrorCodes.Forbidden);
         (await IntegrationsWire.ReadAsync(control)).Dto.YouTubeClientId.ShouldBe("env-client.apps.example");
+        (await IntegrationsWire.ResolveYouTubeAsync(Host))!.ClientId.ShouldBe("env-client.apps.example");
+
+        // Control: the same PUT body as the instance admin succeeds and persists, so the 403 is the refusal, not a dead PUT.
+        using var admin = await Api.PutJsonAsync("api/instance/integrations", new { youTubeClientId = "mei-client", youTubeClientSecret = "mei-secret-1234" });
+        var (saved, _) = await IntegrationsWire.ReadAsync(admin);
+        saved.YouTubeClientId.ShouldBe("mei-client");
+        saved.YouTubeClientSecretLastFour.ShouldBe("1234");
+        (await IntegrationsWire.ResolveYouTubeAsync(Host))!.ClientId.ShouldBe("mei-client");
+        (await IntegrationsWire.GetAsync(Api)).YouTubeClientId.ShouldBe("mei-client");
     }
 
     [Test]
