@@ -1,6 +1,5 @@
 import type { RetroCardDto } from '../../../../../api/retros';
 import { TypeIcon } from '../../../../../components/TypeIcon';
-import { FeatureChip } from '../../../../retroShared/FeatureChip';
 import { retrosTestIds as ids } from '../../../testIds';
 
 /** The Feature retro callout above the columns: which feature retro the sprint has, who compiled it and from how many story retros. */
@@ -20,7 +19,7 @@ export function FeatureRetroCallout({ card }: { card: RetroCardDto }) {
       <span>
         Compiled by {author.user.name}
         {author.agentName ? ` · ${author.agentName}` : ''} from {compiledFrom.length} story retros
-        when the last story closed. Its points are marked <FeatureChip />.
+        when the last story closed. Its points come first in each theme group.
       </span>
     </aside>
   );

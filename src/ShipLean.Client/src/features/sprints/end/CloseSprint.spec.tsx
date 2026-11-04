@@ -107,6 +107,9 @@ test('CloseSprint_WhenSprintEndedWithUnfinishedItems_ShouldListThemDefaultingToT
   await expect(page.getByTestId(ids.endHistory)).toContainText(
     'Sprint 24 keeps 21 committed / 10 completed for velocity',
   );
+  await expect(page.getByTestId(ids.endHistory)).toContainText(
+    'Committed is what was in it at 00:00 UTC on its start date',
+  );
   await expect(rows.first()).toContainText('SHIP-129');
   await expect(rows.first()).toContainText('5 pts');
   await expect(rows.first()).toContainText('2 of 3 tasks open');

@@ -99,4 +99,5 @@ test('Tips_WhenNoSprintAndUnthemedFocused_ShouldExplainThem', async ({ mount, pa
   await expect(page.getByRole('tooltip')).toContainText('no sprint. They count in Total');
   await page.getByTestId(ids.retroTipUnthemed).focus();
   await expect(page.getByRole('tooltip')).toContainText('Give them one in Search');
+  await expect(page.getByRole('tooltip')).toContainText('every category except Went well');
 });
