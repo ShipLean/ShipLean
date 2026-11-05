@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using ShipLean.Contracts.Analytics;
+using ShipLean.Contracts.Usage;
 
 namespace ShipLean.Application.Features.Analytics.Umami;
 
@@ -27,7 +28,8 @@ public sealed class UmamiSink(IHttpClientFactory httpClientFactory) : IAnalytics
         {
             var key = $"{target.SiteKey}|{analyticsEvent.Person.DistinctId}";
             var needsIdentify = !IsIdentified(key) && planned.Add(key);
-            if (items.Count + (needsIdentify ? 2 : 1) > MaxItemsPerRequest)
+            var isScreenView = analyticsEvent.Name == UsageEventNames.ScreenViewed;
+            if (items.Count + (needsIdentify ? 2 : 1) + (isScreenView ? 1 : 0) > MaxItemsPerRequest)
             {
                 chunks.Add((items, keys));
                 items = [];
@@ -39,6 +41,10 @@ public sealed class UmamiSink(IHttpClientFactory httpClientFactory) : IAnalytics
                 keys.Add(key);
             }
             items.Add(UmamiPayload.EventItem(analyticsEvent, target));
+            if (isScreenView)
+            {
+                items.Add(UmamiPayload.PageViewItem(analyticsEvent, target));
+            }
         }
         if (items.Count > 0)
         {

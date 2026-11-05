@@ -1,4 +1,5 @@
 using ShipLean.Contracts.Analytics;
+using ShipLean.Contracts.Usage;
 
 namespace ShipLean.Application.Features.Analytics.Umami;
 
@@ -51,6 +52,25 @@ public static class UmamiPayload
                 ["data"] = Data(analyticsEvent.Properties),
             },
         };
+    }
+
+    public static IReadOnlyDictionary<string, object?> PageViewItem(AnalyticsEvent analyticsEvent, AnalyticsTarget target)
+    {
+        var project = string.IsNullOrEmpty(analyticsEvent.ProjectKey) ? "_" : analyticsEvent.ProjectKey;
+        var screen = analyticsEvent.Properties.TryGetValue(UsageProps.Screen, out var value) ? value.ToString() : null;
+        var payload = new Dictionary<string, object?>
+        {
+            ["website"] = target.SiteKey,
+            ["hostname"] = target.InstanceHost,
+            ["url"] = $"/p/{project}/{Uri.EscapeDataString(string.IsNullOrEmpty(screen) ? "_" : screen)}",
+            ["title"] = screen,
+            ["id"] = analyticsEvent.DistinctId,
+            ["tag"] = analyticsEvent.ActorKind,
+            ["language"] = string.Empty,
+            ["screen"] = string.Empty,
+            ["referrer"] = string.Empty,
+        };
+        return new Dictionary<string, object?> { ["type"] = "event", ["payload"] = payload };
     }
 
     public static IReadOnlyDictionary<string, object?> IdentifyItem(AnalyticsPerson person, AnalyticsTarget target)

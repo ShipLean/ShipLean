@@ -74,6 +74,8 @@ The distinct id of an actor is `user:<guid>`, `agent:<authorizationId>` (`agent:
 | Project | in the URL path `/p/{project_key or _}/{surface}/{name with . as /}`, and as a property | as a property, and `$groups.project` |
 | Batches | at most 500 items per request; at most 50 properties per item, strings cut to 500 characters | one request per dispatcher batch |
 
+For each `screen.viewed` custom event, Umami also receives a page view at `/p/<project-key>/<screen>` (or `/p/_/<screen>` without a project), so its Pages report shows screen views by project. Page views start from deployment and do not backfill past events.
+
 Umami only filters on event properties on its Events page, which is why the project goes into the URL path and the actor kind into `tag`: both can be filtered in every Umami report. PostHog group analytics is a paid add-on, so the project also goes as a plain property.
 
 **Umami must run with `DISABLE_BOT_CHECK=1`.** Every request comes from a server, and by default Umami excludes what it takes for bots. Umami also requires a `User-Agent` header on `/api/batch`; ShipLean sends `ShipLean/{version}`. Umami accepts a `payload.timestamp`, but ShipLean does not send one, so events are dated on arrival and a delayed or retried batch is dated when it lands.
