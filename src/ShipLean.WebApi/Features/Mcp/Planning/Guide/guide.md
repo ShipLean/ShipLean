@@ -160,6 +160,8 @@ A plan has at most 60 items (stories plus tasks, plus the Feature when it is new
 
 Do not launch anything before the review. After the apply, change a task's wording with `refine_work_item`; a change to the plan's structure needs a new Feature.
 
+After applying the plan, give every Story a rough estimate in story points or tokens, following the team's convention. Use your best guess from the plan and task budgets; do not spend much time investigating or trying to make it precise. For story points, set `points` with `refine_work_item`. For a token estimate, include the estimate and unit in the Story description. These Story estimates are separate from the task context budgets used to size work.
+
 ## Step 5: Launch the right agents
 
 The conductor reads the Feature with `get_brief` (the Feature's key) for its waves and the first startable one, and `plan_status` for the whole picture. A wave can start when every Story of the wave before it is Completed or Removed, so every Story must be closed (Step 7, item 7).
