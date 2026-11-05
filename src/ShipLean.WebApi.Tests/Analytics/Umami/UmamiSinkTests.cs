@@ -82,6 +82,32 @@ public class UmamiSinkTests
     }
 
     [Test]
+    public async Task Send_WhenScreenViewed_ShouldSendCustomEventAndPageView()
+    {
+        var properties = new Dictionary<string, object> { [AnalyticsProps.Surface] = "web", ["screen"] = "board" };
+        await _sink.SendAsync([Event("screen.viewed", properties: properties)], _target, CancellationToken.None);
+
+        var body = LastBody();
+        body.Count.ShouldBe(3);
+        body[1]!["payload"]!["name"]!.GetValue<string>().ShouldBe("screen.viewed");
+        var page = body[2]!["payload"]!;
+        page["url"]!.GetValue<string>().ShouldBe("/p/SHIP/board");
+        page["name"].ShouldBeNull();
+        page["id"]!.GetValue<string>().ShouldBe("u-1");
+        page["tag"]!.GetValue<string>().ShouldBe("user");
+    }
+
+    [Test]
+    public async Task Send_WhenScreenViewsCrossBatchLimit_ShouldKeepRequestsWithinLimit()
+    {
+        var properties = new Dictionary<string, object> { ["screen"] = "board" };
+        var batch = Enumerable.Range(0, 250).Select(_ => Event("screen.viewed", properties: properties)).ToList();
+        await _sink.SendAsync(batch, _target, CancellationToken.None);
+
+        _handler.Requests.Select(r => JsonNode.Parse(r.Body)!.AsArray().Count).ShouldBe([499, 2]);
+    }
+
+    [Test]
     public async Task Send_WhenSameActorTwice_ShouldIdentifyOnce()
     {
         await _sink.SendAsync([Event()], _target, CancellationToken.None);
