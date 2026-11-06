@@ -18,13 +18,18 @@ public sealed class FakeBackupAdmin(
 {
     private static readonly JsonSerializerOptions Options = CreateOptions();
 
-    public ConcurrentQueue<(BackupSaveDto Body, Guid UserId)> Saves { get; } = new();
+    private readonly ConcurrentQueue<(BackupSaveDto Body, Guid UserId)> _saves = new();
+    private readonly ConcurrentQueue<BackupDestinationSaveDto> _tests = new();
+    private readonly ConcurrentQueue<string> _previews = new();
+    private readonly ConcurrentQueue<Guid> _runs = new();
 
-    public ConcurrentQueue<BackupDestinationSaveDto> Tests { get; } = new();
+    public IReadOnlyList<(BackupSaveDto Body, Guid UserId)> Saves => [.. _saves];
 
-    public ConcurrentQueue<string> Previews { get; } = new();
+    public IReadOnlyList<BackupDestinationSaveDto> Tests => [.. _tests];
 
-    public ConcurrentQueue<Guid> Runs { get; } = new();
+    public IReadOnlyList<string> Previews => [.. _previews];
+
+    public IReadOnlyList<Guid> Runs => [.. _runs];
 
     // One example of a pinned backup-*.json file, read with the API's options ("backup-run.json", "running").
     public static T Pinned<T>(string file, string example)
@@ -39,25 +44,25 @@ public sealed class FakeBackupAdmin(
 
     public Task<BackupSettingsDto> SaveAsync(BackupSaveDto body, Guid userId, CancellationToken cancellationToken)
     {
-        Saves.Enqueue((body, userId));
+        _saves.Enqueue((body, userId));
         return Task.FromResult(save(body));
     }
 
     public Task<BackupTestResultDto> TestAsync(BackupDestinationSaveDto destination, CancellationToken cancellationToken)
     {
-        Tests.Enqueue(destination);
+        _tests.Enqueue(destination);
         return Task.FromResult(test(destination));
     }
 
     public Task<CronPreviewDto> PreviewCronAsync(string cron, CancellationToken cancellationToken)
     {
-        Previews.Enqueue(cron);
+        _previews.Enqueue(cron);
         return Task.FromResult(previewCron(cron));
     }
 
     public Task<BackupRunDto> RunNowAsync(Guid userId, CancellationToken cancellationToken)
     {
-        Runs.Enqueue(userId);
+        _runs.Enqueue(userId);
         return Task.FromResult(runNow());
     }
 
