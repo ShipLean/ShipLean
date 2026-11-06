@@ -40,6 +40,7 @@ The screens here are reference designs for every page of the v1 domain model: **
 | `screens/new-project.html` | **New project**: name, the permanent key (suggested, checked live, with free alternatives), start from defaults or another project's settings, members, working days and Sprint 1. |
 | `screens/instance.html` | **Instance settings** (instance admins only): General (name, base URL, who can create projects), Users (add, reset password, unlock, admin, disable) and Projects (every project, Join as admin). `?tab=general\|users\|projects\|integrations` (Integrations: the YouTube OAuth client, SHIP-303). |
 | `screens/profile.html` | **Your profile**: display name, optional photo and avatar colour (`?photo` opens with a photo), theme and density, password, your projects (Leave), sessions and saved views. |
+| `mobile/` | **Touch shell** (SHIP-713): the frame under 900px (drawer, top bar, project picker sheet, full-screen quick search), its review page `mobile/index.html`, phone images in light and dark, and today's phone screenshots. See [Touch shell](#touch-shell-ship-713) and [`mobile/README.md`](mobile/README.md). |
 | `screenshots.sh` | Regenerates `screens/<name>.<theme>.png` (1440×900, 2× scale) with headless Chrome. Variants (such as `taskboard-people`, `backlog-tree`, `work-item-bug`, `import-run`) shoot one screen in another state. |
 | `logo/` | The logo: the mark, the light and dark lockups, and PNG exports. See [Logo](#logo). |
 
@@ -332,9 +333,21 @@ These were decided while reviewing the screens on 2026-10-24.
 
 ## Shell patterns (every screen)
 
-- **Side menu** (`--sidebar-width`): the ShipLean mark, the **project button** (key badge, name, member count, ▾), then the sections. The active section has a raised surface, and the active sub-item (Sprint 24, All sprints) uses the accent-soft background. The signed-in user sits at the bottom. Under 900px the menu becomes a strip across the top.
+- **Side menu** (`--sidebar-width`): the ShipLean mark, the **project button** (key badge, name, member count, ▾), then the sections. The active section has a raised surface, and the active sub-item (Sprint 24, All sprints) uses the accent-soft background. The signed-in user sits at the bottom. Under 900px it becomes a drawer ([Touch shell](#touch-shell-ship-713)).
 - **Project picker:** opens under the project button with the search field focused. With no search it shows **Recent** and then **All your projects** alphabetically. Typing filters by name or key and highlights the match. ↑/↓ and Enter pick, Esc closes. The footer has **+ New project** and **Import from Jira**. Only projects you're a member of are listed, which matches how the hub hides other projects.
 - **Top bar:** a breadcrumb (`SHIP › Backlogs › Stories`) on the left, then on the right the **presence stack** and the **Live** dot. The presence stack leaves out yourself, overlaps the avatars and shows `+n` after three. While the socket is reconnecting, the dot turns warn and says Reconnecting.
+
+## Touch shell (SHIP-713)
+
+At 900px wide and below every screen uses the touch shell; above 900px nothing changes. `shared.js` builds it, so every reference screen shows it in a narrow window. `?nav`, `?picker`, `?search[=query]`, `?usermenu` and `?offline` open its states.
+
+**Decided 2026-11-07:** a drawer from a top-bar Menu button (not bottom tabs); one breakpoint at 900px for phones and tablets; every section's sub-pages always shown in the drawer; the breadcrumb on one line, cut from the left; quick search full screen with Cancel; presence as a count only (`+3`) with Live as a dot; only the top bar is sticky; shell controls 44px while data rows stay compact; one shared toolbar pattern; a `viewport` property (`phone` under 600px, `tablet` to 900px, `desktop`) on `screen.viewed`.
+
+- **Top bar** (`--mobile-bar-height` plus the top safe area), sticky: Menu (`--touch-target`), the breadcrumb on one line (when it doesn't fit, it is cut from the left behind a 20px fade so the screen's name always shows), the presence count, the Live dot (Reconnecting keeps its word), Search.
+- **Drawer** (`--drawer-width`, at most 86vw) over a scrim: the side menu with 44px rows. Backlogs and Boards get an Epics · Features · Stories row, Sprints its current sprint and All sprints, Retrospectives a Search · Features · Insights row, whichever section you're in. The user menu opens upwards from the bottom. Menu, Close, Esc or the scrim; no edge swipe.
+- **Project picker:** a bottom sheet over the drawer with a grab bar, Cancel, 48px rows and the field not focused until tapped (the keyboard would cover the list). Picking closes the sheet and the drawer.
+- **Quick search:** the whole screen, the field at the top with Cancel, 52px rows with the key under the title, no key caps.
+- **Every page:** text inputs use `--text-input-touch` (16px; smaller makes iOS Safari zoom). Toolbars keep one row: the primary action, the most used control, **Filter** with a count and **⋯ More**, a bottom sheet with the rest; keyboard hints are hidden. Sprint tabs scroll sideways. Menus open as bottom sheets, form dialogs full screen. Sheets, toasts and bars pad with `env(safe-area-inset-*)` (the app needs `viewport-fit=cover`). Nothing shows only on hover.
 
 ## Backlog patterns (`screens/backlog.html`, `screens/features.html`)
 

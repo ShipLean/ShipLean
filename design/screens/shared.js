@@ -4,6 +4,9 @@
  *   ?theme=light|dark  forces a theme (default: follow the OS)
  *   ?shot              hides the Preview panel, for screenshots
  *   ?usermenu          opens the user menu (Your profile, Instance settings, Sign out)
+  *   ?nav, ?picker, ?search[=query], ?offline   the touch shell's states (SHIP-713): the drawer open, the project
+ *                      picker, quick search, and the top bar while reconnecting. Under 900px wide only, except ?picker,
+ *                      ?search and ?offline, which work on a desktop too.
  * Sample data is fictional. "Today" is Sat 24 Oct 2026, midway through Sprint 24.
  */
 (() => {
@@ -163,26 +166,37 @@
 
   function presenceStack(ids) {
     if (!ids.length) return '';
-    const shown = ids.slice(0, 3), more = ids.length - shown.length;
     const names = ids.map(p => people[p].name).join(', ');
+    // Up to three avatars then +n. Under 900px a count only, +3 (SHIP-713 D6); tapping still lists everyone.
+    const shown = ids.slice(0, 3), more = ids.length - shown.length;
     return `<span class="presence"><button type="button" aria-haspopup="true" aria-expanded="false" aria-label="Also viewing: ${names}" title="Also viewing: ${names}">
-        <span style="display:inline-flex">${shown.map(av).join('')}${more ? `<span class="av more">+${more}</span>` : ''}</span></button>
+        <span class="d-only" style="display:inline-flex">${shown.map(av).join('')}${more ? `<span class="av more">+${more}</span>` : ''}</span><span class="m-only pcount">+${ids.length}</span></button>
       <div class="presence-list" hidden><span class="overline">Also on this screen</span>${ids.map(p => `<div>${av(p)}${people[p].name}</div>`).join('')}</div></span>`;
   }
 
   function sideMenu(active) {
     const proj = projects.find(p => p.key === PROJECT);
     const link = (id, icon, label, href, sub) => `<a class="nav-i${sub ? ' sub' : ''}" href="${href}"${id === active || id === page ? ' aria-current="page"' : ''}>${sub ? '' : `<span class="ic">${icon}</span>`}${label}</a>`;
-    return `<aside class="side" aria-label="Project navigation">
-      <span class="logo"><i></i>ShipLean</span>
+    // Under 900px the side menu is a drawer (SHIP-713). It shows every section's sub-pages, so any screen is one tap
+    // from the drawer: Backlogs and Boards get an Epics · Features · Stories row, Retrospectives a Search · Features ·
+    // Insights row, and Sprints its two rows. On a desktop only the active section's sub-items show, as before.
+    const level = new URLSearchParams(location.search).get('level') === 'epics' ? 'Epics' : 'Features';
+    const lvls = (label, rows) => `<div class="lvls m-only" role="group" aria-label="${label}">${rows.map(([text, href, on]) => `<a href="${href}"${on ? ' aria-current="page"' : ''}>${text}</a>`).join('')}</div>`;
+    const sprintSubs = link('sprint-backlog', '', 'Sprint 24 <span class="chip accent" style="height:16px;margin-left:auto">Current</span>', 'sprint-backlog.html', true) + link('sprints-all', '', 'All sprints', 'sprints.html', true);
+    return `<aside class="side" id="side" aria-label="Project navigation">
+      <div class="dhead m-only"><span class="logo"><i></i>ShipLean</span><button class="tbtn dclose" type="button" aria-label="Close navigation">${icon.close}</button></div>
+      <span class="logo d-only"><i></i>ShipLean</span>
       <button class="proj-btn" type="button" aria-haspopup="listbox" aria-expanded="false" title="Switch project">
         <span class="pkey">${proj.key}</span><span class="nm"><b>${esc(proj.name)}</b><span>${proj.members} members</span></span><span class="muted">▾</span></button>
       ${link('backlogs', '☰', 'Backlogs', 'backlog.html')}
+      ${lvls('Backlog levels', [['Epics', 'features.html?level=epics', page === 'features' && level === 'Epics'], ['Features', 'features.html', page === 'features' && level === 'Features'], ['Stories', 'backlog.html', page === 'backlog' || page === 'planning']])}
       ${link('boards', '▦', 'Boards', 'board.html')}
+      ${lvls('Board levels', [['Epics', 'features-board.html?level=epics', page === 'features-board' && level === 'Epics'], ['Features', 'features-board.html', page === 'features-board' && level === 'Features'], ['Stories', 'board.html', page === 'board' || page === 'board-settings']])}
       ${link('sprints', '◷', 'Sprints', 'sprint-backlog.html')}
-      ${active === 'sprints' ? link('sprint-backlog', '', 'Sprint 24 <span class="chip accent" style="height:16px;margin-left:auto">Current</span>', 'sprint-backlog.html', true) + link('sprints-all', '', 'All sprints', 'sprints.html', true) : ''}
+      ${active === 'sprints' ? sprintSubs : `<div class="navgrp m-only">${sprintSubs}</div>`}
       ${link('retros', '↺', 'Retrospectives', 'retros.html')}
-      ${active === 'retros' ? link(page === 'retros' ? 'retros' : 'retros-search', '', 'Search', 'retros.html', true) + link(page === 'retro-item' ? 'retro-item' : 'retros-features', '', 'Features', 'retros-features.html', true) + link('retro-insights', '', 'Insights <span class="chip warn" style="height:16px;margin-left:auto">3 recurring</span>', 'retro-insights.html', true) : ''}
+      ${active === 'retros' ? `<div class="navgrp d-only">${link(page === 'retros' ? 'retros' : 'retros-search', '', 'Search', 'retros.html', true) + link(page === 'retro-item' ? 'retro-item' : 'retros-features', '', 'Features', 'retros-features.html', true) + link('retro-insights', '', 'Insights <span class="chip warn" style="height:16px;margin-left:auto">3 recurring</span>', 'retro-insights.html', true)}</div>` : ''}
+      ${lvls('Retrospectives', [['Search', 'retros.html', page === 'retros'], ['Features', 'retros-features.html', page === 'retros-features' || page === 'retro-item'], ['Insights <span class="dot warn" title="3 recurring themes"></span>', 'retro-insights.html', page === 'retro-insights']])}
       ${link('import', '⇪', 'Jira import', 'import.html')}
       ${link('settings', '⚙', 'Settings', 'settings.html')}
       <button class="me" type="button" aria-haspopup="menu" aria-expanded="false">${av(ME)}<span>${people[ME].name}</span><span class="muted">▴</span></button>
@@ -192,16 +206,98 @@
         ${instance.admins.includes(ME) ? `<a role="menuitem" href="instance.html"${page === 'instance' ? ' aria-current="page"' : ''}>Instance settings<span class="chip" style="height:16px;margin-left:auto">Admin</span></a>` : ''}
         <hr><a role="menuitem" href="signin.html?state=signed-out">Sign out</a>
       </div>
-      <div class="proj-picker" role="dialog" aria-label="Switch project" hidden>
-        <div class="search"><input class="field" type="search" placeholder="Search projects by name or key" aria-label="Search projects"></div>
-        <ul role="listbox" aria-label="Projects"></ul>
-        <footer><a class="btn ghost" href="new-project.html">+ New project</a><a class="btn ghost" href="import.html">Import from Jira</a></footer>
-      </div>
     </aside>`;
   }
 
+  // The project picker sits outside the side menu so that under 900px it can be a bottom sheet over everything,
+  // the drawer included. On a desktop it still opens under the project button.
+  const pickerHtml = () => `<div class="proj-picker" role="dialog" aria-label="Switch project" hidden>
+      <header class="sheet-head m-only"><b>Switch project</b><button class="btn ghost sheet-x" type="button">Cancel</button></header>
+      <div class="search"><input class="field" type="search" placeholder="Search projects by name or key" aria-label="Search projects"></div>
+      <ul role="listbox" aria-label="Projects"></ul>
+      <footer><a class="btn ghost" href="new-project.html">+ New project</a><a class="btn ghost" href="import.html">Import from Jira</a></footer>
+    </div>`;
+
+  const icon = {
+    menu: '<svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13"/></svg>',
+    search: '<svg viewBox="0 0 16 16" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3.5 3.5" stroke-linecap="round"/></svg>',
+    close: '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"/></svg>',
+  };
+
+  // Drawer and sheets under 900px: <html data-nav> while the drawer is open, <html data-sheet="picker|search"> while a
+  // sheet is up. One scrim sits under whichever is on top; tapping it closes that one.
+  const isTouchShell = () => matchMedia('(max-width: 900px)').matches;
+  function setNav(open, focus = true) {
+    if (open) root.dataset.nav = ''; else delete root.dataset.nav;
+    document.querySelector('.appbar .mnav')?.setAttribute('aria-expanded', open);
+    if (open && focus) document.querySelector('.side .dclose')?.focus();
+  }
+  function wireDrawer(side) {
+    document.querySelector('.appbar .mnav')?.addEventListener('click', () => setNav(true));
+    side.querySelector('.dclose').addEventListener('click', () => { setNav(false); document.querySelector('.appbar .mnav')?.focus(); });
+    document.querySelector('.scrim').addEventListener('click', () => {
+      if (root.dataset.sheet === 'picker') document.querySelector('.proj-picker .sheet-x').click();
+      else if (root.dataset.sheet === 'search') closeSearch();
+      else setNav(false);
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && 'nav' in root.dataset && !root.dataset.sheet) setNav(false); });
+  }
+
+  // Quick search (the real one is features/quickSearch). Here it's a stand-in for the shell: under 900px it fills the
+  // screen with the field at the top and Cancel; ?search opens it, ?search=pay with a query.
+  function searchHtml() {
+    return `<div class="qs" role="dialog" aria-label="Quick search" hidden>
+      <div class="qs-head">${icon.search}<input type="search" aria-label="Search" placeholder="Search work items, sprints and projects" autocomplete="off"><kbd class="d-only">Esc</kbd><button class="btn ghost qs-x m-only" type="button">Cancel</button></div>
+      <ul class="qs-list" role="listbox" aria-label="Results"></ul>
+      <footer class="qs-foot"><span class="d-only"><kbd>↑</kbd><kbd>↓</kbd> move <kbd>↵</kbd> open <kbd>Esc</kbd> close</span><span class="note"></span></footer>
+    </div>`;
+  }
+  const recentKeys = ['SHIP-141', 'SHIP-129', 'SHIP-101', 'SHIP-153'];
+  const findItem = k => items.find(i => i.key === k) || features.find(f => f.key === k) && { ...features.find(f => f.key === k), type: 'feature' } || epics.find(e => e.key === k) && { ...epics.find(e => e.key === k), type: 'epic' };
+  const qsItemRow = i => `<li role="option" class="qs-row"><span class="ti ${i.type}">${typeLetter[i.type]}</span><span class="qs-t"><span class="t">${esc(i.title)}</span><span class="key">${i.key}</span></span>${st(i.state)}</li>`;
+  function drawSearch() {
+    const qs = document.querySelector('.qs'), q = qs.querySelector('input').value.trim().toLowerCase(), list = qs.querySelector('.qs-list'), note = qs.querySelector('.note');
+    // The real list: Create (each type), Go to (sections), Toggle theme (features/quickSearch/start/actions).
+    const actions = [['+', 'Create epic', `in ${PROJECT}`], ['+', 'Create feature', `in ${PROJECT}`], ['+', 'Create story', `in ${PROJECT}`], ['+', 'Create bug', `in ${PROJECT}`], ['+', 'Create action item', `in ${PROJECT}`], ['☰', 'Go to Backlogs', PROJECT], ['▦', 'Go to Boards', PROJECT], ['◷', 'Go to Sprints', PROJECT], ['◐', 'Toggle theme', 'Light → Dark']].filter(a => a[1].toLowerCase().includes(q));
+    const actionRows = actions.map(([ic, l, meta]) => `<li role="option" class="qs-row"><span class="ic">${ic}</span><span class="qs-t"><span class="t">${l}</span></span><span class="muted xs">${meta}</span></li>`).join('');
+    const grp = (title, rows) => rows ? `<li class="grp overline" role="presentation">${title}</li>${rows}` : '';
+    if (!q) {
+      list.innerHTML = grp('Recent', recentKeys.map(findItem).filter(Boolean).map(qsItemRow).join('')) + grp('Actions', actionRows);
+      note.textContent = 'Recent items are kept in this browser';
+      return;
+    }
+    const all = [...items, ...doneItems, ...features.map(f => ({ ...f, type: 'feature' })), ...epics.map(e => ({ ...e, type: 'epic' }))];
+    const hits = all.filter(i => i.title.toLowerCase().includes(q) || i.key.toLowerCase().includes(q)).slice(0, 8);
+    const sprintHits = sprints.filter(s => s.name.toLowerCase().includes(q) || (s.goal || '').toLowerCase().includes(q));
+    const projHits = projects.filter(p => p.name.toLowerCase().includes(q) || p.key.toLowerCase().includes(q));
+    const html = grp('Work items', hits.map(qsItemRow).join(''))
+      + grp('Sprints', sprintHits.map(s => `<li role="option" class="qs-row"><span class="ic">◷</span><span class="qs-t"><span class="t">${s.name}</span><span class="key">${s.start} – ${s.end}</span></span>${s.status === 'current' ? '<span class="chip accent">Current</span>' : ''}</li>`).join(''))
+      + grp('Projects', projHits.map(p => `<li role="option" class="qs-row"><span class="pkey${p.key === PROJECT ? '' : ' alt'}">${p.key}</span><span class="qs-t"><span class="t">${esc(p.name)}</span></span><span class="muted xs">${p.members} members</span></li>`).join(''))
+      + grp('Actions', actionRows);
+    list.innerHTML = html || `<li class="none">Nothing matches “${esc(q)}”</li>`;
+    note.textContent = hits.length ? `${hits.length} work items` : '';
+  }
+  function openSearch(query = '') {
+    const qs = document.querySelector('.qs'); if (!qs) return;
+    setNav(false);
+    qs.hidden = false; root.dataset.sheet = 'search';
+    const input = qs.querySelector('input'); input.value = query; drawSearch(); input.focus();
+  }
+  function closeSearch() {
+    const qs = document.querySelector('.qs'); qs.hidden = true; delete root.dataset.sheet;
+    document.querySelector('.appbar .msearch')?.focus();
+  }
+  function wireSearch() {
+    const qs = document.querySelector('.qs');
+    qs.querySelector('input').addEventListener('input', drawSearch);
+    qs.querySelector('.qs-x').addEventListener('click', closeSearch);
+    qs.addEventListener('keydown', e => { if (e.key === 'Escape') closeSearch(); });
+    qs.addEventListener('click', e => { if (e.target.closest('.qs-row')) { closeSearch(); toast('Opens it, as the real quick search does'); } });
+    document.querySelector('.appbar .msearch')?.addEventListener('click', () => openSearch());
+  }
+
   function wirePicker(side) {
-    const btn = side.querySelector('.proj-btn'), pk = side.querySelector('.proj-picker'), input = pk.querySelector('input'), list = pk.querySelector('ul');
+    const btn = side.querySelector('.proj-btn'), pk = document.querySelector('.proj-picker'), input = pk.querySelector('input'), list = pk.querySelector('ul');
     let hi = 0, shown = [];
     const mark = (text, q) => { const i = q ? text.toLowerCase().indexOf(q) : -1; return i < 0 ? esc(text) : esc(text.slice(0, i)) + '<mark>' + esc(text.slice(i, i + q.length)) + '</mark>' + esc(text.slice(i + q.length)); };
     const opt = (p, q) => `<li role="option" data-key="${p.key}" aria-selected="${p.key === PROJECT}"><span class="pkey${p.key === PROJECT ? '' : ' alt'}">${mark(p.key, q)}</span><span class="n">${mark(p.name, q)}</span>${p.key === PROJECT ? '<span class="muted sm">current</span>' : `<span class="muted xs">${p.members}</span>`}</li>`;
@@ -217,9 +313,15 @@
       hi = Math.min(hi, Math.max(shown.length - 1, 0));
       list.querySelectorAll('[role=option]').forEach((li, i) => li.classList.toggle('hi', i === hi));
     }
-    const open = v => { pk.hidden = !v; btn.setAttribute('aria-expanded', v); if (v) { input.value = ''; hi = 0; draw(); input.focus(); } };
-    const pick = key => { open(false); btn.focus(); if (key !== PROJECT) toast(`Switching to <b>${key}</b>: the same screen in that project`); };
+    const open = v => {
+      pk.hidden = !v; btn.setAttribute('aria-expanded', v);
+      if (v) root.dataset.sheet = 'picker'; else if (root.dataset.sheet === 'picker') delete root.dataset.sheet;
+      // On a touch screen the keyboard would cover half the list, so the field waits for a tap there.
+      if (v) { input.value = ''; hi = 0; draw(); if (!isTouchShell()) input.focus(); }
+    };
+    const pick = key => { open(false); if (isTouchShell()) setNav(false); else btn.focus(); if (key !== PROJECT) toast(`Switching to <b>${key}</b>: the same screen in that project`); };
     btn.addEventListener('click', () => open(pk.hidden));
+    pk.querySelector('.sheet-x').addEventListener('click', () => { open(false); btn.focus(); });
     input.addEventListener('input', () => { hi = 0; draw(); });
     input.addEventListener('keydown', e => {
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); hi = (hi + (e.key === 'ArrowDown' ? 1 : -1) + shown.length) % Math.max(shown.length, 1); draw(); }
@@ -227,7 +329,8 @@
       else if (e.key === 'Escape') { open(false); btn.focus(); }
     });
     list.addEventListener('click', e => { const li = e.target.closest('[role=option]'); if (li) pick(li.dataset.key); });
-    document.addEventListener('click', e => { if (!pk.hidden && !side.contains(e.target)) open(false); });
+    document.addEventListener('click', e => { if (!pk.hidden && !side.contains(e.target) && !pk.contains(e.target) && !e.target.closest('.scrim')) open(false); });
+    if (params.has('picker')) open(true);
     document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p' && !e.shiftKey) { e.preventDefault(); open(true); } });
   }
 
@@ -258,14 +361,31 @@
       [...document.body.children].forEach(el => { if (el.tagName !== 'SCRIPT' && !el.matches('.toast, .tip, .preview')) main.append(el); });
       document.body.prepend(main);
       main.insertAdjacentHTML('beforebegin', sideMenu(active));
-      wirePicker(document.querySelector('.side'));
-      wireUserMenu(document.querySelector('.side'));
-      if (params.has('usermenu')) document.querySelector('.side .me').click(); // ?usermenu opens the user menu, for screenshots
+      document.body.insertAdjacentHTML('beforeend', `<div class="scrim" aria-hidden="true"></div>${pickerHtml()}${searchHtml()}`);
+      const side = document.querySelector('.side');
+      wirePicker(side);
+      wireUserMenu(side);
+      wireDrawer(side);
+      wireSearch();
+      // Review states: ?nav opens the drawer, ?picker the project picker, ?search[=query] quick search, ?usermenu the
+      // user menu (inside the drawer under 900px), ?offline the Reconnecting state.
+      if (params.has('nav') || (params.has('usermenu') && isTouchShell()) || (params.has('picker') && isTouchShell())) setNav(true, false);
+      if (params.has('usermenu')) side.querySelector('.me').click();
+      if (params.has('search')) openSearch(params.get('search') || '');
+      if (params.has('offline')) setLive(false);
       wirePresence(main.querySelector('.appbar'));
+      // Under 900px the breadcrumb stays on one line and, when it doesn't fit, is cut from the left so the screen's name
+      // always shows (SHIP-713 D4). The app does this with a ResizeObserver; here a resize listener is enough.
+      const crumbsEl = main.querySelector('.appbar .crumbs');
+      const fit = () => { crumbsEl.classList.remove('cut'); crumbsEl.classList.toggle('cut', isTouchShell() && crumbsEl.scrollWidth > crumbsEl.clientWidth + 1); };
+      fit(); addEventListener('resize', fit);
     });
+    const root0 = instanceLevel.has(page) ? 'ShipLean' : PROJECT;
     return `<header class="appbar">
-      <nav class="crumbs" aria-label="You are here"><span>${instanceLevel.has(page) ? 'ShipLean' : PROJECT}</span>${crumbs.map((c, i) => `<span>›</span>${i === crumbs.length - 1 ? `<b>${c}</b>` : `<span>${c}</span>`}`).join('')}</nav>
+      <button class="tbtn mnav m-only" type="button" aria-label="Open navigation" aria-controls="side" aria-expanded="false">${icon.menu}</button>
+      <nav class="crumbs" aria-label="You are here"><span>${root0}</span>${crumbs.map((c, i) => `<span>›</span>${i === crumbs.length - 1 ? `<b>${c}</b>` : `<span>${c}</span>`}`).join('')}</nav>
       <span class="spacer"></span>${presenceStack(presence[page] || [])}${instanceLevel.has(page) ? '' : '<span class="live" title="Real-time updates connected">Live</span>'}
+      <button class="tbtn msearch m-only" type="button" aria-label="Quick search">${icon.search}</button>
     </header>`;
   }
   const setLive = on => { const l = document.querySelector('.appbar .live'); if (!l) return; l.classList.toggle('off', !on); l.textContent = on ? 'Live' : 'Reconnecting'; l.title = on ? 'Real-time updates connected' : 'Live updates paused, retrying'; };
