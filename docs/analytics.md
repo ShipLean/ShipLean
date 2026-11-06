@@ -242,6 +242,10 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `instance.user_changed` |  | `UsersAdmin.ChangeEmail`, `UsersAdmin.IssueOneTimePassword`, `UsersAdmin.SetDisabled`, `UsersAdmin.SetInstanceAdmin`, `UsersAdmin.Unlock` |
 | `instance.search_reindexed` |  | `SearchAdmin.Reindex` |
 | `screen.viewed` |  | self-emitted: Usage.Screen |
+| `backup.settings_saved` |  | `Backups.Put` |
+| `backup.connection_tested` |  | `Backups.Test` |
+| `backup.run_started` |  | `Backups.Run` |
+| `backup.run_finished` |  | system: the backup job |
 
 `analytics.test` is not in the catalogue: the test send goes straight to the sink.
 

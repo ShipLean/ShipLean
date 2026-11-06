@@ -107,6 +107,12 @@ public static class UsageEventNames
     public const string ProjectDemoSettingsChanged = "project_demo.settings_changed";
     public const string ProjectDemoBrandChanged = "project_demo.brand_changed";
     public const string ProjectYouTubeChanged = "project_youtube.changed";
+    public const string BackupSettingsSaved = "backup.settings_saved";
+    public const string BackupConnectionTested = "backup.connection_tested";
+    public const string BackupRunStarted = "backup.run_started";
+
+    // System: the backup job emits it when a run ends, whatever started it.
+    public const string BackupRunFinished = "backup.run_finished";
 
     public static readonly IReadOnlySet<string> All = typeof(UsageEventNames)
         .GetFields(BindingFlags.Public | BindingFlags.Static)
