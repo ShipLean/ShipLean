@@ -50,6 +50,10 @@ cd src/ShipLean.Client && pnpm run format:check && pnpm run lint && pnpm run typ
 
 To check your work in a running app: `dotnet run --project src/ShipLean.LocalHost -- --database shiplean_<name> --port 0` (a name of your own, lowercase letters, digits and `_` only) and wait for `SHIPLEAN_LOCAL_URL=`.
 
+## Experiment and Measure
+
+New feature should have analytic events in them, we should be measuring impact of new features by looking at these analytics. Always have something to compare against, never say "this feature is used X times" that is meaningless on it's own, you need to have something to anchor it against, a B variant is best, number of usage of a feature next to it or the page its on is better. Also we need to look at data over time to measure incrementality, never say "data is X" alone, need to meantion a time component, e.g. X per second vs X per year is very different, never talk about X alone. 
+
 ## Links
 
 - [`docs/testing.md`](docs/testing.md): fixtures, one database and host per test class, doubles, registries, test ids, traces.
