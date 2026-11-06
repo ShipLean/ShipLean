@@ -243,6 +243,7 @@ svg text { fill: currentColor; }
   .box { overflow-x: auto; }
 }
 </style>
+<link rel="stylesheet" href="item-touch.css">
 </head>
 <body>
 <div id="appbar"></div>
@@ -709,5 +710,6 @@ svg text { fill: currentColor; }
 })();
   if (new URLSearchParams(location.search).has('retros')) requestAnimationFrame(() => { const sec = document.querySelector('[data-testid="retro-section"]'); if (sec) sec.closest('.scroll').scrollTop = sec.offsetTop - sec.closest('.scroll').offsetTop; });
 </script>
+<script src="item-touch.js"></script>
 </body>
 </html>
