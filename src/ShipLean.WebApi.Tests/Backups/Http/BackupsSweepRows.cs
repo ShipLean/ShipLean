@@ -4,9 +4,8 @@ using ShipLean.TestSupport.AccessSweep;
 namespace ShipLean.WebApi.Tests.Backups.Http;
 
 // The backup routes: instance admin only.
-// SHIP-782: AccessSweep_WhenAllowed_ShouldPassAccess is red for PUT, test, cron-preview and run while PendingBackupAdmin
-// is registered: C-HTTP has it answer 503 not_configured, and the allowed leg refuses 5xx. Run stays 503 after
-// BackupAdmin lands unless the allowed leg's host has backups configured. Reported to the conductor for a decision.
+// The allowed leg's host answers them through FakeBackupAdmin (AllowedSweepTests), because the real admin answers
+// 503 not_configured until backups are set up.
 public sealed class BackupsSweepRows : IAccessSweepRows
 {
     public IEnumerable<AccessSweepRow> Rows =>
