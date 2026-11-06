@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ShipLean · Markdown attachment on a phone (SHIP-715 reference)</title>
+<!--
+  SHIP-715 reference: the Markdown attachment page and the image viewer on a phone (designed at 390 × 844; it applies at
+  900px and below, inside the SHIP-713 touch shell). Open directly in a browser. Uses ../tokens.css only; no build step.
+  The touch shell's top bar is drawn here as it is in ../screens/shared.js (Menu, breadcrumb cut from the left, Live dot,
+  Search); the drawer and quick search live there, not here.
+  - The page header scrolls away with the page: only the top bar is sticky (SHIP-713 D7), and its breadcrumb ends in the
+    file name, so the name stays in view.
+  - Header: back to the item, the file name (tap: the item's other Markdown files), a one-line facts row (tap: About this
+    file), then one toolbar row: Rendered / Source / Edit and ⋯ (Download, Replace…, Copy link, About this file).
+  - The desktop side panel moves into bottom sheets: On this page (the Contents pill), About this file, Markdown on SHIP-101.
+  - Wide tables and code scroll sideways inside themselves. An attached image opens the viewer.
+  - Edit: the editor fills the screen at 16px, the toolbar is one row that scrolls, Save sits in a bar at the bottom.
+  - Viewer: full screen and dark, pinch and double-tap zoom, swipe between the item's images, ⋯ for Download.
+  ?state=rendered|scrolled|contents|about|files|menu|source|edit|viewer|viewer-zoom|toolarge   ?theme=light|dark
+-->
+<link rel="stylesheet" href="../tokens.css">
+<script>
+  (() => {
+    const p = new URLSearchParams(location.search);
+    if (p.get('theme')) document.documentElement.dataset.theme = p.get('theme');
+  })();
+</script>
+<style>
+/* A reading page: body text 15px on a phone. Controls use the shell's --touch-target (44px); inputs --text-input-touch. */
+:root { --m-body: 15px; --m-small: 13px; --m-pad: 16px; }
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; min-height: 100dvh; background: var(--color-surface); color: var(--color-text); font: var(--m-body)/1.55 var(--font-sans); -webkit-font-smoothing: antialiased; }
+:root[data-sheet] body { overflow: hidden; }
+button { font: inherit; color: inherit; cursor: pointer; }
+svg text { fill: currentColor; }
+.ic { width: 18px; height: 18px; flex: none; }
+
+/* The SHIP-713 top bar, as ../screens/shiplean.css draws it under 900px. */
+.appbar { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: var(--space-1); height: calc(var(--mobile-bar-height) + env(safe-area-inset-top)); padding: env(safe-area-inset-top) var(--space-1) 0; background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.tbtn { display: inline-grid; place-items: center; width: var(--touch-target); height: var(--touch-target); flex: none; padding: 0; border: 0; border-radius: var(--radius-md); background: transparent; color: var(--color-text); }
+.crumbs { flex: 1; min-width: 0; display: flex; justify-content: flex-end; gap: 6px; overflow: hidden; white-space: nowrap; padding-left: var(--space-1); font-size: var(--text-base); color: var(--color-muted); -webkit-mask-image: linear-gradient(to right, transparent, #000 20px); mask-image: linear-gradient(to right, transparent, #000 20px); }
+.crumbs > * { flex: none; }
+.crumbs b { color: var(--color-text); font-size: var(--text-md); font-weight: var(--weight-semibold); }
+.live { display: inline-flex; align-items: center; padding: 0 6px; }
+.live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--color-ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-ok) 22%, transparent); }
+
+/* Page header: in the page, so it scrolls away. */
+.head { display: grid; gap: 4px; padding: var(--space-2) var(--m-pad) var(--space-3); background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.back { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; min-width: 0; color: var(--color-muted); text-decoration: none; font-size: var(--m-small); }
+.back .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ti { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: var(--radius-xs); color: #fff; font: 700 9px/1 var(--font-sans); flex: none; background: var(--type-feature); }
+.name { display: flex; align-items: center; gap: 8px; min-width: 0; min-height: var(--touch-target); padding: 0; border: 0; background: none; text-align: left; width: 100%; }
+.ext { display: inline-grid; place-items: center; width: 26px; height: 20px; font: 700 9px/1 var(--font-mono); border: 1px solid var(--color-border); border-radius: var(--radius-xs); background: var(--color-surface-2); flex: none; }
+.name h1 { margin: 0; min-width: 0; font: var(--weight-semibold) 18px/1.25 var(--font-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.name .chev { flex: none; color: var(--color-muted); font-size: 12px; }
+.facts { display: flex; align-items: center; gap: 6px; min-height: 32px; min-width: 0; padding: 0; border: 0; background: none; color: var(--color-muted); font-size: var(--m-small); text-align: left; }
+.facts .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.circ { flex: none; display: inline-grid; place-items: center; width: 18px; height: 18px; border: 1.5px solid currentColor; border-radius: 50%; font: 700 11px/1 var(--font-sans); }
+.facts .bot { flex: none; padding: 0 5px; border-radius: 999px; background: var(--color-surface-2); font-size: 11px; color: var(--color-text); }
+/* One toolbar row (SHIP-713): the view switch, then ⋯ More. */
+.tools { display: flex; gap: var(--space-2); align-items: center; margin-top: 4px; }
+.seg { flex: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); height: var(--touch-target); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg); padding: 3px; gap: 2px; }
+.seg button { border: 0; border-radius: calc(var(--radius-md) - 2px); background: none; font-size: 15px; color: var(--color-muted); }
+.seg button[aria-pressed="true"] { background: var(--color-surface); color: var(--color-text); font-weight: var(--weight-semibold); box-shadow: var(--shadow-raised); }
+.more { width: var(--touch-target); height: var(--touch-target); flex: none; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); font-size: 20px; line-height: 1; letter-spacing: 1px; }
+
+/* Body. */
+.doc { padding: 16px var(--m-pad) 96px; font-size: var(--m-body); line-height: 1.6; }
+.doc h1 { font-size: 22px; line-height: 1.25; margin: 0 0 6px; letter-spacing: -.01em; }
+.doc h2 { font-size: 17px; margin: 26px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--color-border); scroll-margin-top: calc(var(--mobile-bar-height) + 12px); }
+.doc p { margin: 0 0 12px; }
+.doc .lede { color: var(--color-muted); }
+.doc code { font: 13px var(--font-mono); padding: 1px 4px; border-radius: var(--radius-xs); background: var(--color-surface-2); overflow-wrap: anywhere; }
+.doc ul { margin: 0 0 12px; padding-left: 20px; }
+/* Anything wider than the screen scrolls inside itself, with a fade that says so; the page never scrolls sideways. */
+.wide { position: relative; margin: 4px calc(-1 * var(--m-pad)) 14px; }
+.wide > .in { overflow-x: auto; padding: 0 var(--m-pad); scrollbar-width: none; }
+.wide > .in::-webkit-scrollbar { display: none; }
+.wide::after { content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 28px; background: linear-gradient(to right, transparent, var(--color-surface)); pointer-events: none; }
+.wide .hint { display: block; padding: 4px var(--m-pad) 0; font-size: 12px; color: var(--color-muted); }
+.doc table { border-collapse: collapse; font-size: 14px; white-space: nowrap; }
+.doc th, .doc td { padding: 8px 12px; border: 1px solid var(--color-border); text-align: left; }
+.doc th { background: var(--color-surface-2); font-size: 12px; }
+.doc td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.doc pre { margin: 0; padding: 10px 12px; width: max-content; min-width: 100%; border-radius: var(--radius-md); background: var(--color-bg); border: 1px solid var(--color-border); font: 13px/1.55 var(--font-mono); }
+.doc pre code { padding: 0; background: none; font-size: inherit; overflow-wrap: normal; }
+figure.img { margin: 4px 0 14px; display: grid; gap: 6px; }
+figure.img > button { display: block; width: 100%; padding: 10px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg); position: relative; }
+figure.img > button svg { display: block; width: 100%; height: auto; }
+figure.img .zoom { position: absolute; right: 8px; bottom: 8px; width: 30px; height: 30px; border-radius: 50%; background: var(--color-surface); border: 1px solid var(--color-border); display: grid; place-items: center; box-shadow: var(--shadow-raised); }
+figure.img figcaption { font-size: 12px; color: var(--color-muted); }
+.no-img { display: flex; gap: 8px; align-items: flex-start; margin: 4px 0 14px; padding: 10px 12px; border: 1px dashed var(--color-border); border-radius: var(--radius-md); background: var(--color-bg); font-size: 13px; color: var(--color-muted); }
+.src { margin: 0; padding: 16px var(--m-pad) 96px; font: 13.5px/1.6 var(--font-mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* The Contents pill floats over the page (it is not a bar) and names the heading you are in. */
+.pill { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 20; display: inline-flex; align-items: center; gap: 8px; max-width: calc(100% - 32px); height: var(--touch-target); padding: 0 16px 0 14px; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-surface); box-shadow: var(--shadow-dialog); font-size: 14px; }
+.pill .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pill .lines { color: var(--color-accent); }
+.pill .n { color: var(--color-muted); font-size: 12px; flex: none; }
+
+/* Bottom sheets: the shell's sheet (grab bar, 48px rows, safe area). */
+.scrim { position: fixed; inset: 0; z-index: 65; background: rgb(10 16 28 / .45); }
+.sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 70; max-height: 85dvh; display: flex; flex-direction: column; background: var(--color-surface); border-radius: var(--radius-lg) var(--radius-lg) 0 0; box-shadow: var(--shadow-dialog); padding-bottom: env(safe-area-inset-bottom); }
+.sheet .grab { flex: none; width: 36px; height: 4px; border-radius: 2px; background: var(--color-border); margin: 6px auto 2px; }
+.sheet-head { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 2px var(--space-2) 2px var(--m-pad); }
+.sheet-head b { font-size: var(--text-md); }
+.sheet-head .x { height: var(--touch-target); padding: 0 var(--space-2); border: 0; background: none; color: var(--color-accent); font-size: var(--text-md); }
+.sheet .sb { overflow: auto; padding: var(--space-2) var(--m-pad) var(--space-4); display: grid; gap: 16px; align-content: start; }
+.overline { font-size: 11px; font-weight: var(--weight-semibold); letter-spacing: .06em; text-transform: uppercase; color: var(--color-muted); display: flex; gap: 6px; align-items: baseline; margin-bottom: 6px; }
+.overline .c { letter-spacing: 0; text-transform: none; font-weight: var(--weight-regular); }
+.toc { list-style: none; margin: 0 calc(-1 * var(--m-pad)); padding: 0; }
+.toc a { display: flex; align-items: center; min-height: 48px; padding: 0 var(--m-pad); color: var(--color-text); text-decoration: none; border-left: 3px solid transparent; font-size: 15px; }
+.toc a.l2 { padding-left: calc(var(--m-pad) + 16px); }
+.toc a[aria-current="true"] { border-left-color: var(--color-accent); background: var(--color-accent-soft); font-weight: var(--weight-semibold); }
+.lst { list-style: none; margin: 0; padding: 0; border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+.lst > li { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 12px; border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); font-size: 15px; }
+.lst > li:first-child { border-top: 0; }
+.lst > li[aria-current="page"] { background: var(--color-accent-soft); }
+.lst .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lst .m { flex: none; font-size: 12px; color: var(--color-muted); }
+.lst .ok { color: var(--color-ok); font-weight: 700; width: 16px; text-align: center; }
+.lst .no { color: var(--color-danger); font-weight: 700; width: 16px; text-align: center; }
+.kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 14px; margin: 0; font-size: 14px; }
+.kv dt { color: var(--color-muted); }
+.kv dd { margin: 0; overflow-wrap: anywhere; }
+.callout { padding: 10px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg); font-size: 14px; }
+.callout b { display: block; }
+.hint { margin: 6px 0 0; font-size: 13px; color: var(--color-muted); }
+.acts { list-style: none; margin: 0; padding: 0 0 var(--space-2); }
+.acts button { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 52px; padding: 0 var(--m-pad); border: 0; background: none; text-align: left; font-size: 16px; }
+.acts .g { width: 22px; display: grid; place-items: center; color: var(--color-muted); }
+.acts small { display: block; font-size: 12px; color: var(--color-muted); }
+.acts hr { border: 0; border-top: 1px solid var(--color-border); margin: 4px 0; }
+
+/* Edit. */
+.tb { position: sticky; top: calc(var(--mobile-bar-height) + env(safe-area-inset-top)); z-index: 10; display: flex; gap: 2px; overflow-x: auto; padding: 6px 8px; border-bottom: 1px solid var(--color-border); background: var(--color-surface-2); scrollbar-width: none; }
+.tb::-webkit-scrollbar { display: none; }
+.tb button { flex: none; display: grid; place-items: center; min-width: var(--touch-target); height: 40px; border: 0; background: none; border-radius: var(--radius-sm); font: 600 15px/1 var(--font-sans); }
+.tb .div { flex: none; width: 1px; margin: 8px 4px; background: var(--color-border); }
+.ta { display: block; width: 100%; min-height: calc(100dvh - 300px); margin: 0; padding: 14px var(--m-pad) 110px; border: 0; resize: none; background: var(--color-surface); color: var(--color-text); font: var(--text-input-touch)/1.6 var(--font-mono); outline: none; field-sizing: content; }
+.savebar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: flex; align-items: center; gap: 8px; padding: 10px var(--m-pad) calc(10px + env(safe-area-inset-bottom)); background: var(--color-surface); border-top: 1px solid var(--color-border); box-shadow: 0 -6px 16px -10px rgb(0 0 0 / .25); }
+.savebar .st { flex: 1; min-width: 0; font-size: 13px; color: var(--color-muted); }
+.savebar .st b { color: var(--color-text); font-weight: var(--weight-semibold); }
+.btn { height: var(--touch-target); padding: 0 16px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); font-size: 15px; }
+.btn.pri { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-fg); font-weight: var(--weight-semibold); }
+.btn.block { width: 100%; }
+
+/* The viewer: full screen and always dark, whatever the theme, so photos and screenshots read true. */
+.viewer { position: fixed; inset: 0; z-index: 80; background: #0b0f17; color: #e8eef7; display: flex; flex-direction: column; }
+.viewer .vt { flex: none; display: flex; align-items: center; gap: 4px; padding: calc(4px + env(safe-area-inset-top)) 4px 4px; }
+.viewer .vt button { width: var(--touch-target); height: var(--touch-target); border: 0; background: none; color: inherit; border-radius: 50%; display: grid; place-items: center; font-size: 20px; }
+.viewer .ttl { flex: 1; min-width: 0; text-align: center; }
+.viewer .ttl b { display: block; font: 600 14px/1.3 var(--font-mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.viewer .ttl span { font-size: 12px; color: #9aa7bd; }
+.viewer .stage { flex: 1; min-height: 0; display: grid; place-items: center; overflow: hidden; position: relative; }
+.viewer .art { width: 100%; }
+.viewer .art.zoomed { width: 230%; transform: translateX(-12%); }
+.viewer .art svg { display: block; width: 100%; height: auto; }
+.viewer .art svg text { fill: #1c2638; }
+.viewer .art svg text.m { fill: #5f6d84; }
+.viewer .zchip { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); padding: 3px 10px; border-radius: 999px; background: rgb(255 255 255 / .14); font-size: 12px; white-space: nowrap; }
+.viewer .vb { flex: none; display: grid; gap: 10px; padding: 8px 12px calc(14px + env(safe-area-inset-bottom)); }
+.viewer .thumbs { display: flex; gap: 8px; justify-content: center; }
+.viewer .thumbs button { width: 56px; height: 44px; border-radius: 6px; border: 2px solid transparent; background: #1c2433; padding: 3px; }
+.viewer .thumbs button[aria-current="true"] { border-color: #5cc8f0; }
+.viewer .thumbs i { display: block; width: 100%; height: 100%; border-radius: 3px; }
+.viewer .help { text-align: center; font-size: 12px; color: #9aa7bd; }
+.viewer .menu { position: absolute; right: 8px; top: calc(52px + env(safe-area-inset-top)); z-index: 2; min-width: 220px; background: #1c2433; border: 1px solid #2c3850; border-radius: var(--radius-md); box-shadow: 0 16px 40px rgb(0 0 0 / .5); padding: 4px 0; }
+.viewer .menu button { display: flex; gap: 12px; align-items: center; width: 100%; min-height: 48px; padding: 0 14px; border: 0; background: none; color: inherit; font-size: 15px; text-align: left; }
+
+/* Too large to show. */
+.empty { padding: 32px var(--m-pad); display: grid; gap: 12px; justify-items: start; }
+.empty .ext { width: 48px; height: 36px; font-size: 13px; }
+.empty h2 { margin: 0; font-size: 18px; }
+.empty p { margin: 0; color: var(--color-muted); }
+
+.toast { position: fixed; left: 50%; bottom: calc(76px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 90; max-width: calc(100vw - 32px); padding: 8px 14px; border-radius: var(--radius-md); background: var(--color-text); color: var(--color-surface); font-size: 13px; box-shadow: var(--shadow-dialog); }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-menu" viewBox="0 0 20 20"><path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+  <symbol id="i-search" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="m10.5 10.5 3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-close" viewBox="0 0 16 16"><path d="m4 4 8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+  <symbol id="i-link" viewBox="0 0 16 16"><path d="M6.5 9.5l3-3M7 4.5l1.2-1.2a2.6 2.6 0 013.7 3.7L10.7 8.2M9 11.5l-1.2 1.2a2.6 2.6 0 01-3.7-3.7L5.3 7.8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+  <symbol id="i-down" viewBox="0 0 16 16"><path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M3 13.5h10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-up" viewBox="0 0 16 16"><path d="M8 11V3M4.5 6.5 8 3l3.5 3.5M3 13.5h10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-expand" viewBox="0 0 16 16"><path d="M9.5 2.5h4v4M6.5 13.5h-4v-4M13.5 2.5 9 7M2.5 13.5 7 9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-lines" viewBox="0 0 16 16"><path d="M2.5 4h11M5 8h8.5M5 12h8.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-open" viewBox="0 0 16 16"><path d="M9 2.5h4.5V7M13.5 2.5 7.5 8.5M11.5 9.5v3a1 1 0 01-1 1h-7a1 1 0 01-1-1v-7a1 1 0 011-1h3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<header class="appbar" aria-label="Top bar (SHIP-713 touch shell)">
+  <button class="tbtn" type="button" aria-label="Open navigation"><svg class="ic" width="20" height="20"><use href="#i-menu"/></svg></button>
+  <nav class="crumbs" aria-label="You are here"><span>SHIP</span><span>›</span><span>Backlogs</span><span>›</span><span>SHIP-101</span><span>›</span><b>design-v0.2.md</b></nav>
+  <span class="live" title="Real-time updates connected" aria-label="Live"></span>
+  <button class="tbtn" type="button" aria-label="Quick search"><svg class="ic"><use href="#i-search"/></svg></button>
+</header>
+
+<section class="head" aria-label="Attachment header">
+  <a class="back" href="#" data-toast="Back to SHIP-101"><span aria-hidden="true">←</span><span class="ti" aria-hidden="true">F</span><span class="t">SHIP-101 Checkout v2</span></a>
+  <button class="name" type="button" data-open="files" aria-label="design-v0.2.md. Other Markdown files on SHIP-101">
+    <span class="ext" aria-hidden="true">MD</span><h1>design-v0.2.md</h1><span class="chev" aria-hidden="true">▾</span>
+  </button>
+  <button class="facts" type="button" data-open="about">
+    <span class="t" id="factsText">14 KB · Claude Code <span class="bot">agent</span> · 24 Oct · replaced twice</span><span class="circ" aria-hidden="true">i</span>
+  </button>
+  <div class="tools" id="tools">
+    <div class="seg" role="group" aria-label="View">
+      <button type="button" data-view="rendered" aria-pressed="true">Rendered</button>
+      <button type="button" data-view="source" aria-pressed="false">Source</button>
+      <button type="button" data-view="edit" aria-pressed="false">Edit</button>
+    </div>
+    <button class="more" type="button" data-open="menu" aria-label="More actions for design-v0.2.md">⋯</button>
+  </div>
+</section>
+
+<main>
+  <article class="doc" id="rendered">
+    <h1 id="top">Checkout v2: design v0.2</h1>
+    <p class="lede">Second round. v0.1's questions are answered inline; the big change is keeping card tokens in the vault.</p>
+    <h2 id="approach">1. Approach</h2>
+    <p>Saved cards never touch our database. Checkout asks the vault for the customer's tokens and hands the chosen token to the payment provider, so the storefront stays out of PCI scope.</p>
+    <figure class="img">
+      <button type="button" data-open="viewer" aria-label="Open payment-flow.svg">
+        <svg viewBox="0 0 480 140" role="img" aria-label="Checkout asks the card vault for tokens, then sends the chosen token to the payment provider">
+          <g font-size="13">
+            <rect x="10" y="50" width="110" height="40" rx="6" fill="var(--color-surface)" stroke="var(--color-border)"/>
+            <text x="65" y="75" text-anchor="middle">Checkout</text>
+            <rect x="185" y="50" width="110" height="40" rx="6" fill="var(--color-accent-soft)" stroke="var(--color-accent)"/>
+            <text x="240" y="75" text-anchor="middle" font-weight="600">Card vault</text>
+            <rect x="360" y="50" width="110" height="40" rx="6" fill="var(--color-surface)" stroke="var(--color-border)"/>
+            <text x="415" y="75" text-anchor="middle">Provider</text>
+            <path d="M120 64 H185 M295 64 H360" stroke="var(--color-muted)" stroke-width="1.5" fill="none"/>
+            <path d="M185 78 H120 M360 78 H295" stroke="var(--color-muted)" stroke-width="1.5" fill="none" stroke-dasharray="3 3"/>
+            <text x="152" y="40" text-anchor="middle" font-size="11">GET /cards</text>
+            <text x="152" y="104" text-anchor="middle" font-size="11">tokens</text>
+            <text x="327" y="40" text-anchor="middle" font-size="11">charge(token)</text>
+            <text x="327" y="104" text-anchor="middle" font-size="11">result</text>
+          </g>
+        </svg>
+        <span class="zoom" aria-hidden="true"><svg class="ic" style="width:14px;height:14px"><use href="#i-expand"/></svg></span>
+      </button>
+      <figcaption><code>payment-flow.svg</code> · tap to open</figcaption>
+    </figure>
+    <h2 id="budget">2. Conversion by step</h2>
+    <p>Mobile is where we lose people, so each step has an owner and a target.</p>
+    <div class="wide">
+      <div class="in">
+        <table>
+          <thead><tr><th>Step</th><th>Today (mobile)</th><th>Target</th><th>Owner</th></tr></thead>
+          <tbody>
+            <tr><td>Address</td><td class="num">84%</td><td class="num">88%</td><td>Address autocomplete (SHIP-144)</td></tr>
+            <tr><td>Payment</td><td class="num">71%</td><td class="num">80%</td><td>Saved cards (SHIP-141)</td></tr>
+            <tr><td>Paid</td><td class="num">43%</td><td class="num">50%</td><td>Everything above</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <span class="hint">Swipe the table sideways →</span>
+    </div>
+    <h2 id="picker">3. The saved-card picker</h2>
+    <p>Radio rows rather than cards, so it still works with six or more saved cards. Each row shows what the vault returns and nothing else:</p>
+    <div class="wide">
+      <div class="in"><pre><code>GET /cards
+[{ "token": "tok_8Fq2", "brand": "visa", "last4": "4242", "expiry": "08/27" }]</code></pre></div>
+    </div>
+    <div class="no-img"><span aria-hidden="true">⊘</span><span><b>External image not shown.</b> <code>i.imgur.com/r8Kd2.png</code> must be attached to SHIP-101.</span></div>
+    <h2 id="open">4. Open questions</h2>
+    <ul>
+      <li>Should an expired card be hidden, or shown greyed out with a prompt to update it?</li>
+      <li>Do we let people name a card ("Work Visa")?</li>
+    </ul>
+    <p>Rollout follows the plan in <code>plan-2026-10-11.md</code>; the brief for the picker is <code>brief-saved-cards.md</code>.</p>
+    <p class="lede">Next review: Thu 29 Oct with Priya and Tom.</p>
+  </article>
+  <pre class="src" id="source" hidden></pre>
+  <div id="edit" hidden>
+    <div class="tb" role="toolbar" aria-label="Formatting">
+      <button type="button" aria-label="Bold">B</button><button type="button" aria-label="Italic"><i>I</i></button><button type="button" aria-label="Heading">H</button>
+      <span class="div"></span>
+      <button type="button" aria-label="Link"><svg class="ic"><use href="#i-link"/></svg></button><button type="button" aria-label="Image">▣</button><button type="button" aria-label="Code">&lt;/&gt;</button><button type="button" aria-label="Quote">❝</button>
+      <span class="div"></span>
+      <button type="button" aria-label="Bulleted list">•≡</button><button type="button" aria-label="Numbered list">1≡</button><button type="button" aria-label="Checklist">☑</button><button type="button" aria-label="Table">▦</button>
+    </div>
+    <textarea class="ta" id="ta" aria-label="design-v0.2.md (markdown)" spellcheck="false"></textarea>
+  </div>
+  <div class="empty" id="toolarge" hidden>
+    <span class="ext" aria-hidden="true">MD</span>
+    <h2>Too large to show here</h2>
+    <p>That Markdown file is over 256 KB, so it is not shown here. Download it instead.</p>
+    <button class="btn pri block" type="button" data-toast="Downloading design-v0.2.md">Download (2.4 MB)</button>
+    <a class="back" href="#" data-toast="Back to SHIP-101">← Back to SHIP-101 Checkout v2</a>
+  </div>
+</main>
+
+<button class="pill" id="pill" type="button" data-open="contents" aria-label="On this page">
+  <svg class="ic lines"><use href="#i-lines"/></svg><span class="t" id="pillText">1. Approach</span><span class="n" id="pillN">1 / 4</span>
+</button>
+
+<div class="savebar" id="savebar" hidden>
+  <span class="st"><b>Unsaved changes</b><br>Saving replaces the file</span>
+  <button class="btn" type="button" data-view="rendered">Cancel</button>
+  <button class="btn pri" type="button" data-toast="Saved. design-v0.2.md replaced">Save</button>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+
+<section class="sheet" id="sheet-contents" aria-label="On this page" hidden>
+  <div class="grab"></div>
+  <div class="sheet-head"><b>On this page</b><button class="x" type="button" data-close>Close</button></div>
+  <div class="sb" style="padding-top:0">
+    <ul class="toc">
+      <li><a href="#top">Checkout v2: design v0.2</a></li>
+      <li><a class="l2" href="#approach">1. Approach</a></li>
+      <li><a class="l2" href="#budget">2. Conversion by step</a></li>
+      <li><a class="l2" href="#picker">3. The saved-card picker</a></li>
+      <li><a class="l2" href="#open">4. Open questions</a></li>
+    </ul>
+  </div>
+</section>
+
+<section class="sheet" id="sheet-about" aria-label="About this file" hidden>
+  <div class="grab"></div>
+  <div class="sheet-head"><b>About this file</b><button class="x" type="button" data-close>Close</button></div>
+  <div class="sb">
+    <dl class="kv">
+      <dt>Size</dt><dd>14 KB</dd>
+      <dt>Uploaded by</dt><dd>Claude Code (agent) through <code>attach_markdown</code></dd>
+      <dt>When</dt><dd>Sat 24 Oct, 11:20 · replaced twice</dd>
+      <dt>On</dt><dd>SHIP-101 Checkout v2</dd>
+    </dl>
+    <div>
+      <div class="overline">Images in this file <span class="c">1 of 2 shown</span></div>
+      <ul class="lst">
+        <li><span class="ok">✓</span><span class="t">payment-flow.svg</span><span class="m">attached</span></li>
+        <li><span class="no">⊘</span><span class="t">i.imgur.com/r8Kd2.png</span><span class="m">external</span></li>
+      </ul>
+      <p class="hint">Attach the missing image to SHIP-101 and change the link to its file name. External images never render.</p>
+    </div>
+    <div>
+      <div class="overline">Replacing this file</div>
+      <div class="callout"><b>No version history for attachments</b>Uploading another <code>design-v0.2.md</code> replaces this one, and the old copy is soft-deleted. Only the Feature's description keeps revisions.</div>
+    </div>
+  </div>
+</section>
+
+<section class="sheet" id="sheet-files" aria-label="Markdown on SHIP-101" hidden>
+  <div class="grab"></div>
+  <div class="sheet-head"><b>Markdown on SHIP-101</b><button class="x" type="button" data-close>Close</button></div>
+  <div class="sb">
+    <ul class="lst">
+      <li aria-current="page"><span class="ext">MD</span><span class="t">design-v0.2.md</span><span class="m">14 KB</span></li>
+      <li data-toast="Opens plan-2026-10-11.md"><span class="ext">MD</span><span class="t">plan-2026-10-11.md</span><span class="m">9 KB</span></li>
+      <li data-toast="Opens brief-saved-cards.md"><span class="ext">MD</span><span class="t">brief-saved-cards.md</span><span class="m">4 KB</span></li>
+    </ul>
+    <p class="hint">Images and other files are in SHIP-101's Attachments.</p>
+  </div>
+</section>
+
+<section class="sheet" id="sheet-menu" aria-label="More" hidden>
+  <div class="grab"></div>
+  <ul class="acts">
+    <li><button type="button" data-toast="Downloading design-v0.2.md"><span class="g"><svg class="ic"><use href="#i-down"/></svg></span><span>Download<small>14 KB</small></span></button></li>
+    <li><button type="button" data-toast="Opens the file picker"><span class="g"><svg class="ic"><use href="#i-up"/></svg></span><span>Replace…<small>Pick a file; the old copy is soft-deleted</small></span></button></li>
+    <li><button type="button" data-toast="Link copied"><span class="g"><svg class="ic"><use href="#i-link"/></svg></span><span>Copy link</span></button></li>
+    <li><hr></li>
+    <li><button type="button" data-open="about"><span class="g"><span class="circ">i</span></span><span>About this file</span></button></li>
+    <li><button type="button" data-close><span class="g"><svg class="ic"><use href="#i-close"/></svg></span><span>Cancel</span></button></li>
+  </ul>
+</section>
+
+<section class="viewer" id="viewer" aria-label="Image viewer" hidden>
+  <div class="vt">
+    <button type="button" data-close-viewer aria-label="Close"><svg class="ic" style="width:20px;height:20px"><use href="#i-close"/></svg></button>
+    <div class="ttl"><b>payment-flow.svg</b><span>1 of 3 · SHIP-101</span></div>
+    <button type="button" id="vmore" aria-label="More">⋯</button>
+  </div>
+  <div class="menu" id="vmenu" hidden>
+    <button type="button" data-toast="Downloading payment-flow.svg"><svg class="ic"><use href="#i-down"/></svg>Download</button>
+    <button type="button" data-toast="Link copied"><svg class="ic"><use href="#i-link"/></svg>Copy link</button>
+    <button type="button" data-toast="Opens in a new tab"><svg class="ic"><use href="#i-open"/></svg>Open original</button>
+  </div>
+  <div class="stage">
+    <span class="zchip" id="zchip" hidden>230% · double-tap to fit</span>
+    <div class="art" id="art">
+      <svg viewBox="0 0 480 140" role="img" aria-label="payment-flow.svg">
+        <rect width="480" height="140" fill="#f7f9fd"/>
+        <g font-size="13">
+          <rect x="10" y="50" width="110" height="40" rx="6" fill="#fff" stroke="#c8d3e3"/>
+          <text x="65" y="75" text-anchor="middle">Checkout</text>
+          <rect x="185" y="50" width="110" height="40" rx="6" fill="#dbe7fb" stroke="#2563c9"/>
+          <text x="240" y="75" text-anchor="middle" font-weight="600">Card vault</text>
+          <rect x="360" y="50" width="110" height="40" rx="6" fill="#fff" stroke="#c8d3e3"/>
+          <text x="415" y="75" text-anchor="middle">Provider</text>
+          <path d="M120 64 H185 M295 64 H360" stroke="#5f6d84" stroke-width="1.5" fill="none"/>
+          <path d="M185 78 H120 M360 78 H295" stroke="#5f6d84" stroke-width="1.5" fill="none" stroke-dasharray="3 3"/>
+          <text class="m" x="152" y="40" text-anchor="middle" font-size="11">GET /cards</text>
+          <text class="m" x="152" y="104" text-anchor="middle" font-size="11">tokens</text>
+          <text class="m" x="327" y="40" text-anchor="middle" font-size="11">charge(token)</text>
+          <text class="m" x="327" y="104" text-anchor="middle" font-size="11">result</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+  <div class="vb">
+    <div class="thumbs" role="group" aria-label="Images on SHIP-101">
+      <button type="button" aria-current="true" aria-label="payment-flow.svg"><i style="background:linear-gradient(90deg,#fff 30%,#dbe7fb 30% 63%,#fff 63%)"></i></button>
+      <button type="button" aria-label="checkout-mobile.png"><i style="background:linear-gradient(#2f7fd8 0 18%,#f3f5f9 18%)"></i></button>
+      <button type="button" aria-label="Screenshot 2026-10-22 141207.png"><i style="background:linear-gradient(135deg,#16a089,#7b4fc9)"></i></button>
+    </div>
+    <div class="help">Pinch to zoom · swipe for the next image</div>
+  </div>
+</section>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const root = document.documentElement;
+  const SOURCE = `# Checkout v2: design v0.2
+
+Second round. v0.1's questions are answered inline; the big change is keeping card tokens in the vault.
+
+## 1. Approach
+
+Saved cards never touch our database. Checkout asks the vault for the customer's tokens and hands the chosen token to the payment provider, so the storefront stays out of PCI scope.
+
+![](payment-flow.svg)
+
+## 2. Conversion by step
+
+Mobile is where we lose people, so each step has an owner and a target.
+
+| Step | Today (mobile) | Target | Owner |
+|---|---|---|---|
+| Address | 84% | 88% | Address autocomplete (SHIP-144) |
+| Payment | 71% | 80% | Saved cards (SHIP-141) |
+| Paid | 43% | 50% | Everything above |
+
+## 3. The saved-card picker
+
+Radio rows rather than cards, so it still works with six or more saved cards.
+
+\`\`\`
+GET /cards
+[{ "token": "tok_8Fq2", "brand": "visa", "last4": "4242", "expiry": "08/27" }]
+\`\`\`
+
+![](https://i.imgur.com/r8Kd2.png)
+
+## 4. Open questions
+
+- Should an expired card be hidden, or shown greyed out?
+- Do we let people name a card ("Work Visa")?`;
+  $('source').textContent = SOURCE;
+  $('ta').value = SOURCE.replace('greyed out?', 'greyed out with a prompt to update it?');
+
+  function setView(v) {
+    $('rendered').hidden = v !== 'rendered';
+    $('source').hidden = v !== 'source';
+    $('edit').hidden = v !== 'edit';
+    $('savebar').hidden = v !== 'edit';
+    $('pill').hidden = v !== 'rendered';
+    document.querySelectorAll('.seg [data-view]').forEach(b => b.setAttribute('aria-pressed', b.dataset.view === v));
+    scrollTo(0, 0);
+  }
+  function closeAll() {
+    document.querySelectorAll('.sheet').forEach(s => s.hidden = true);
+    $('scrim').hidden = true;
+    delete root.dataset.sheet;
+  }
+  function open(name) {
+    if (name === 'viewer') { $('viewer').hidden = false; root.dataset.sheet = 'viewer'; return; }
+    closeAll();
+    $('sheet-' + name).hidden = false;
+    $('scrim').hidden = false;
+    root.dataset.sheet = name;
+  }
+  let toastTimer;
+  function toast(text) {
+    document.querySelector('.toast')?.remove();
+    const t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); t.textContent = text; document.body.append(t);
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => t.remove(), 1800);
+  }
+
+  // The pill follows the heading you are in (the app: an IntersectionObserver over the outline anchors).
+  const heads = ['approach', 'budget', 'picker', 'open'].map(id => $(id));
+  function follow() {
+    let i = 0; heads.forEach((h, n) => { if (h.getBoundingClientRect().top < 120) i = n; });
+    $('pillText').textContent = heads[i].textContent;
+    $('pillN').textContent = `${i + 1} / ${heads.length}`;
+    document.querySelectorAll('.toc a').forEach(a => a.setAttribute('aria-current', a.getAttribute('href') === '#' + heads[i].id));
+  }
+  addEventListener('scroll', follow, { passive: true });
+
+  document.addEventListener('click', e => {
+    const v = e.target.closest('[data-view]'); if (v) { setView(v.dataset.view); return; }
+    const o = e.target.closest('[data-open]'); if (o) { e.preventDefault(); open(o.dataset.open); return; }
+    if (e.target.closest('[data-close]') || e.target === $('scrim')) { closeAll(); return; }
+    if (e.target.closest('[data-close-viewer]')) { $('viewer').hidden = true; $('vmenu').hidden = true; delete root.dataset.sheet; return; }
+    if (e.target.closest('#vmore')) { $('vmenu').hidden = !$('vmenu').hidden; return; }
+    const a = e.target.closest('.toc a');
+    if (a) { e.preventDefault(); closeAll(); document.querySelector(a.getAttribute('href')).scrollIntoView(); return; }
+    const th = e.target.closest('.thumbs button');
+    if (th) { document.querySelectorAll('.thumbs button').forEach(b => b.setAttribute('aria-current', b === th)); return; }
+    if (e.target.closest('.art')) { const z = $('art').classList.toggle('zoomed'); $('zchip').hidden = !z; return; }
+    const t = e.target.closest('[data-toast]'); if (t) { e.preventDefault(); closeAll(); toast(t.dataset.toast); }
+  });
+  addEventListener('keydown', e => { if (e.key === 'Escape') { closeAll(); $('viewer').hidden = true; } });
+
+  // Review states.
+  const state = new URLSearchParams(location.search).get('state') || 'rendered';
+  // Under ?shot (screenshots.sh), headless Chrome can't capture a scrolled page, so "scrolled" hides what is above the
+  // heading instead; only the top bar is sticky, so the picture is the same.
+  const shot = new URLSearchParams(location.search).has('shot');
+  const at = id => {
+    if (shot) {
+      document.querySelector('.head').hidden = true;
+      for (let el = $(id).previousElementSibling; el; el = el.previousElementSibling) el.hidden = true;
+      $(id).style.marginTop = '14px';
+      heads.forEach((h, n) => { if (h.id === id) { $('pillText').textContent = h.textContent; $('pillN').textContent = `${n + 1} / ${heads.length}`; document.querySelectorAll('.toc a').forEach(a => a.setAttribute('aria-current', a.getAttribute('href') === '#' + id)); } });
+      return;
+    }
+    $(id).scrollIntoView(); follow();
+  };
+  addEventListener('load', () => {
+    switch (state) {
+      case 'scrolled': at('budget'); break;
+      case 'contents': at('budget'); open('contents'); break;
+      case 'about': open('about'); break;
+      case 'files': open('files'); break;
+      case 'menu': open('menu'); break;
+      case 'source': setView('source'); break;
+      case 'edit': setView('edit'); break;
+      case 'viewer': open('viewer'); break;
+      case 'viewer-zoom': open('viewer'); $('art').classList.add('zoomed'); $('zchip').hidden = false; break;
+      case 'toolarge':
+        $('rendered').hidden = true; $('pill').hidden = true; $('toolarge').hidden = false; $('tools').hidden = true;
+        $('factsText').textContent = '2.4 MB · Claude Code · 24 Oct';
+        break;
+      default: follow();
+    }
+  });
+})();
+</script>
+</body>
+</html>

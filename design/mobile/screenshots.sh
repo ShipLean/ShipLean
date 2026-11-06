@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # Regenerates images/<name>.<theme>.png: the touch shell (SHIP-713) and the work item page (SHIP-714, item-* and
-# feature-*) on the reference screens at 390 × 844, 2× scale.
+# feature-*) on the reference screens at 390 × 844, 2× scale, and the page stories' phone screens kept in this folder
+# (an address starting ./, such as SHIP-715's attachment.html).
 # Usage: ./screenshots.sh [name ...]   (no names = all). CHROME=/path/to/chrome overrides the browser.
 # The today-*.png images are screenshots of the real app (main at 918cf067) and are not made here.
+# (today-attachment-*.png come from the SPA's component harness at 390 × 844 with the page-shot fixtures.)
 # Item shots use ?at=<section>, which with ?shot hides what is above the section: --screenshot ignores scrolling.
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -44,6 +46,18 @@ declare -A shots=(
   [feature-links]="feature.html?at=Links"
   [feature-children]="feature.html?at=Stories%20and%20bugs"
   [feature-log]="feature.html?at=Log"
+  # Markdown attachments and images (SHIP-715)
+  [attachment]="./attachment.html"
+  [attachment-scrolled]="./attachment.html?state=scrolled"
+  [attachment-contents]="./attachment.html?state=contents"
+  [attachment-about]="./attachment.html?state=about"
+  [attachment-files]="./attachment.html?state=files"
+  [attachment-menu]="./attachment.html?state=menu"
+  [attachment-source]="./attachment.html?state=source"
+  [attachment-edit]="./attachment.html?state=edit"
+  [attachment-viewer]="./attachment.html?state=viewer"
+  [attachment-viewer-zoom]="./attachment.html?state=viewer-zoom"
+  [attachment-toolarge]="./attachment.html?state=toolarge"
 )
 
 names=("$@")
@@ -52,11 +66,13 @@ names=("$@")
 mkdir -p images
 for name in "${names[@]}"; do
   url="${shots[$name]}"
+  base="$screens"
+  if [[ "$url" == ./* ]]; then base="$PWD"; url="${url#./}"; fi
   sep='?'; [[ "$url" == *\?* ]] && sep='&'
   for theme in light dark; do
     "$chrome" --headless=new --no-sandbox --hide-scrollbars --force-device-scale-factor=2 \
       --window-size=390,844 --virtual-time-budget=4000 \
-      --screenshot="$PWD/images/$name.$theme.png" "file://$screens/$url${sep}shot&theme=$theme" >/dev/null 2>&1
+      --screenshot="$PWD/images/$name.$theme.png" "file://$base/$url${sep}shot&theme=$theme" >/dev/null 2>&1
     echo "wrote mobile/images/$name.$theme.png"
   done
 done
