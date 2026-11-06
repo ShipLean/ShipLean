@@ -4,11 +4,18 @@ using System.Text.Json.Serialization;
 using Agoda.IoC.NetCore;
 using Serilog;
 using ShipLean.Application;
+using ShipLean.Application.Features.Backups.Cli;
 using ShipLean.Contracts;
 using ShipLean.WebApi;
 using ShipLean.WebApi.Features.Auth;
 using ShipLean.WebApi.Features.Mcp.Transport;
 using ShipLean.WebApi.Infrastructure;
+
+// The backup restore verbs (decrypt-backup, restore-blobs) run instead of the web host: docker run <image> <verb> ...
+if (args is [var verb, ..] && BackupCommands.Handles(verb))
+{
+    return await BackupCommands.RunAsync(args, Console.In, Console.Out, Console.Error);
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -97,5 +104,6 @@ app.MapFallback("/api/{**path}", () => Results.NotFound());
 app.MapFallbackToFile("index.html");
 
 await app.RunAsync();
+return 0;
 
 static JsonStringEnumConverter CamelCaseEnums() => new(JsonNamingPolicy.CamelCase, allowIntegerValues: false);
