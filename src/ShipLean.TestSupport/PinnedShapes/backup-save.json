@@ -1,0 +1,40 @@
+{
+  "first": {
+    "enabled": true,
+    "destination": {
+      "provider": "s3",
+      "s3": {
+        "region": "us-east-1",
+        "endpointUrl": "https://ceph.example.internal:7480",
+        "bucket": "shiplean-backups",
+        "prefix": "shiplean/",
+        "forcePathStyle": true,
+        "accessKeyId": "SHIPLEANEXAMPLEKEY01",
+        "secretKey": "example-secret-not-a-real-key-7Hq2"
+      }
+    },
+    "cron": "0 2 * * *",
+    "keepCount": 14,
+    "includeAttachments": true,
+    "passphrase": "correct horse battery staple"
+  },
+  "keepSecrets": {
+    "enabled": true,
+    "destination": {
+      "provider": "s3",
+      "s3": {
+        "region": "ap-southeast-1",
+        "endpointUrl": null,
+        "bucket": "shiplean-backups",
+        "prefix": "shiplean/",
+        "forcePathStyle": false,
+        "accessKeyId": "SHIPLEANEXAMPLEKEY02",
+        "secretKey": null
+      }
+    },
+    "cron": "0 2 * * *",
+    "keepCount": 14,
+    "includeAttachments": true,
+    "passphrase": null
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "valid": {
+    "valid": true,
+    "error": null,
+    "description": "At 02:00",
+    "nextRuns": [
+      { "at": "2026-10-25T02:00:00Z", "label": "2026-10-25 02:00 UTC" },
+      { "at": "2026-10-26T02:00:00Z", "label": "2026-10-26 02:00 UTC" },
+      { "at": "2026-10-27T02:00:00Z", "label": "2026-10-27 02:00 UTC" },
+      { "at": "2026-10-28T02:00:00Z", "label": "2026-10-28 02:00 UTC" },
+      { "at": "2026-10-29T02:00:00Z", "label": "2026-10-29 02:00 UTC" }
+    ]
+  },
+  "invalid": {
+    "valid": false,
+    "error": "Enter 5 fields: minute, hour, day of month, month and day of week.",
+    "description": null,
+    "nextRuns": []
+  },
+  "tooOften": {
+    "valid": false,
+    "error": "Runs must be at least 1 hour apart.",
+    "description": "Every 30 minutes",
+    "nextRuns": [
+      { "at": "2026-10-24T14:30:00Z", "label": "2026-10-24 14:30 UTC" },
+      { "at": "2026-10-24T15:00:00Z", "label": "2026-10-24 15:00 UTC" },
+      { "at": "2026-10-24T15:30:00Z", "label": "2026-10-24 15:30 UTC" },
+      { "at": "2026-10-24T16:00:00Z", "label": "2026-10-24 16:00 UTC" },
+      { "at": "2026-10-24T16:30:00Z", "label": "2026-10-24 16:30 UTC" }
+    ]
+  }
+}

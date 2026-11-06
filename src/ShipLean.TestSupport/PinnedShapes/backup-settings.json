@@ -1,0 +1,211 @@
+{
+  "configured": {
+    "enabled": true,
+    "destination": {
+      "provider": "s3",
+      "s3": {
+        "region": "ap-southeast-1",
+        "endpointUrl": null,
+        "bucket": "shiplean-backups",
+        "prefix": "shiplean/",
+        "forcePathStyle": false,
+        "accessKeyId": "SHIPLEANEXAMPLEKEY02",
+        "secretKeyLast4": "x9Qm"
+      }
+    },
+    "cron": "0 2 * * *",
+    "schedule": {
+      "valid": true,
+      "error": null,
+      "description": "At 02:00",
+      "nextRuns": [
+        {
+          "at": "2026-10-25T02:00:00Z",
+          "label": "2026-10-25 02:00 UTC"
+        },
+        {
+          "at": "2026-10-26T02:00:00Z",
+          "label": "2026-10-26 02:00 UTC"
+        },
+        {
+          "at": "2026-10-27T02:00:00Z",
+          "label": "2026-10-27 02:00 UTC"
+        },
+        {
+          "at": "2026-10-28T02:00:00Z",
+          "label": "2026-10-28 02:00 UTC"
+        },
+        {
+          "at": "2026-10-29T02:00:00Z",
+          "label": "2026-10-29 02:00 UTC"
+        }
+      ]
+    },
+    "keepCount": 14,
+    "includeAttachments": true,
+    "attachmentStore": {
+      "kind": "localDisk",
+      "inDatabaseBackup": false
+    },
+    "passphraseGeneration": 2,
+    "passphraseSetAt": "2026-10-20T09:15:00Z",
+    "passphraseSetLabel": "20 Oct",
+    "health": "ok",
+    "lastSuccessAt": "2026-10-24T02:00:47Z",
+    "lastSuccessLabel": "11h ago",
+    "runs": [
+      {
+        "id": "a41d0e7c-2b5f-4c3a-8e9d-1f6a7b8c9d02",
+        "trigger": "scheduled",
+        "state": "succeeded",
+        "startedAt": "2026-10-24T02:00:00Z",
+        "startedLabel": "12h ago",
+        "finishedAt": "2026-10-24T02:00:47Z",
+        "durationLabel": "47s",
+        "startedBy": null,
+        "passphraseGeneration": 2,
+        "databaseObjectKey": "shiplean/database/shiplean-20261024T020000Z-a41d0e7c-g2.dump.slbk",
+        "databaseBytes": 48213504,
+        "attachmentsCopied": 12,
+        "attachmentsBytes": 3145728,
+        "error": null,
+        "pruned": false
+      },
+      {
+        "id": "5e2c8b14-7d3a-4f6b-a0c9-2e1d4f5a6b03",
+        "trigger": "scheduled",
+        "state": "failed",
+        "startedAt": "2026-10-23T02:00:00Z",
+        "startedLabel": "Yesterday",
+        "finishedAt": "2026-10-23T02:00:09Z",
+        "durationLabel": "9s",
+        "startedBy": null,
+        "passphraseGeneration": 2,
+        "databaseObjectKey": null,
+        "databaseBytes": null,
+        "attachmentsCopied": null,
+        "attachmentsBytes": null,
+        "error": "The bucket refused the upload: Access Denied (403).",
+        "pruned": false
+      },
+      {
+        "id": "c9077a3b-1e4d-4b8f-9c2a-6d5e8f7a0b04",
+        "trigger": "scheduled",
+        "state": "failed",
+        "startedAt": "2026-10-22T02:00:00Z",
+        "startedLabel": "22 Oct",
+        "finishedAt": "2026-10-23T02:00:00Z",
+        "durationLabel": null,
+        "startedBy": null,
+        "passphraseGeneration": 2,
+        "databaseObjectKey": null,
+        "databaseBytes": null,
+        "attachmentsCopied": null,
+        "attachmentsBytes": null,
+        "error": "Abandoned: the instance running it stopped.",
+        "pruned": false
+      }
+    ],
+    "regions": [
+      {
+        "code": "us-east-1",
+        "name": "US East (N. Virginia)"
+      },
+      {
+        "code": "us-west-2",
+        "name": "US West (Oregon)"
+      },
+      {
+        "code": "eu-west-1",
+        "name": "Europe (Ireland)"
+      },
+      {
+        "code": "eu-central-1",
+        "name": "Europe (Frankfurt)"
+      },
+      {
+        "code": "ap-southeast-1",
+        "name": "Asia Pacific (Singapore)"
+      },
+      {
+        "code": "ap-southeast-2",
+        "name": "Asia Pacific (Sydney)"
+      }
+    ],
+    "updatedAt": "2026-10-20T09:15:00Z",
+    "updatedLabel": "20 Oct"
+  },
+  "notConfigured": {
+    "enabled": false,
+    "destination": null,
+    "cron": "0 2 * * *",
+    "schedule": {
+      "valid": true,
+      "error": null,
+      "description": "At 02:00",
+      "nextRuns": [
+        {
+          "at": "2026-10-25T02:00:00Z",
+          "label": "2026-10-25 02:00 UTC"
+        },
+        {
+          "at": "2026-10-26T02:00:00Z",
+          "label": "2026-10-26 02:00 UTC"
+        },
+        {
+          "at": "2026-10-27T02:00:00Z",
+          "label": "2026-10-27 02:00 UTC"
+        },
+        {
+          "at": "2026-10-28T02:00:00Z",
+          "label": "2026-10-28 02:00 UTC"
+        },
+        {
+          "at": "2026-10-29T02:00:00Z",
+          "label": "2026-10-29 02:00 UTC"
+        }
+      ]
+    },
+    "keepCount": 14,
+    "includeAttachments": false,
+    "attachmentStore": {
+      "kind": "localDisk",
+      "inDatabaseBackup": false
+    },
+    "passphraseGeneration": 0,
+    "passphraseSetAt": null,
+    "passphraseSetLabel": null,
+    "health": "notConfigured",
+    "lastSuccessAt": null,
+    "lastSuccessLabel": null,
+    "runs": [],
+    "regions": [
+      {
+        "code": "us-east-1",
+        "name": "US East (N. Virginia)"
+      },
+      {
+        "code": "us-west-2",
+        "name": "US West (Oregon)"
+      },
+      {
+        "code": "eu-west-1",
+        "name": "Europe (Ireland)"
+      },
+      {
+        "code": "eu-central-1",
+        "name": "Europe (Frankfurt)"
+      },
+      {
+        "code": "ap-southeast-1",
+        "name": "Asia Pacific (Singapore)"
+      },
+      {
+        "code": "ap-southeast-2",
+        "name": "Asia Pacific (Sydney)"
+      }
+    ],
+    "updatedAt": null,
+    "updatedLabel": null
+  }
+}
