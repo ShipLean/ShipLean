@@ -40,3 +40,46 @@ The shell itself is built in `../screens/shared.js` and `../screens/shiplean.css
 | A page with no project | ![Your profile, light](images/profile.light.png) | ![Your profile, dark](images/profile.dark.png) |
 
 The pages inside the frame are still their desktop layouts; their phone versions are the page stories.
+
+## Markdown attachments and images (SHIP-715)
+
+The Markdown attachment page and the image viewer at 900px and below, inside the touch shell. Desktop is unchanged.
+
+| File | What it is |
+|---|---|
+| `attachment.html` | The phone screen, opened directly. `?state=rendered\|scrolled\|contents\|about\|files\|menu\|source\|edit\|viewer\|viewer-zoom\|toolarge` and `?theme=light\|dark`. It draws the touch shell's top bar itself; the drawer and quick search are in `../screens/shared.js`. |
+| `attachment-review.html` | The design review: today on a phone, every state as a live frame, scope, what it takes to build, and the decisions. |
+| `images/attachment*.png` | `attachment.html` at 390 × 844, 2× scale, light and dark (made by `screenshots.sh`). |
+| `images/today-attachment*.png`, `images/today-image-preview.png` | The real attachment page, its Edit view and the Feature's image preview at 390 × 844, before this change (main at 918cf067, the SPA's component harness with the page-shot fixtures). |
+
+### Today
+
+| Rendered | Edit | Image preview |
+|---|---|---|
+| ![Today: the attachment page on a phone](images/today-attachment.png) | ![Today: Edit on a phone](images/today-attachment-edit.png) | ![Today: the image preview dialog on a phone](images/today-image-preview.png) |
+
+1. The header stacks the back link, a two-line facts line and five buttons, so Replace… wraps onto its own row.
+2. The side panel (outline, images, the no-history note, the other Markdown files) falls under the document.
+3. A long file has no way to jump between sections.
+4. Wide tables and code blocks have no scroll container of their own.
+5. Save is off screen below a fixed 560px editor.
+6. An image opens in a ~340px dialog with no zoom and no next or previous.
+7. The text is 12–13px and the buttons are 28px.
+
+### The phone page
+
+| State | Light | Dark |
+|---|---|---|
+| Rendered | ![Rendered, light](images/attachment.light.png) | ![Rendered, dark](images/attachment.dark.png) |
+| Scrolled: only the top bar stays | ![Scrolled, light](images/attachment-scrolled.light.png) | ![Scrolled, dark](images/attachment-scrolled.dark.png) |
+| On this page (Contents pill) | ![Contents sheet, light](images/attachment-contents.light.png) | ![Contents sheet, dark](images/attachment-contents.dark.png) |
+| About this file | ![About this file sheet, light](images/attachment-about.light.png) | ![About this file sheet, dark](images/attachment-about.dark.png) |
+| Markdown on SHIP-101 | ![File switcher sheet, light](images/attachment-files.light.png) | ![File switcher sheet, dark](images/attachment-files.dark.png) |
+| ⋯ More | ![Action sheet, light](images/attachment-menu.light.png) | ![Action sheet, dark](images/attachment-menu.dark.png) |
+| Source | ![Source, light](images/attachment-source.light.png) | ![Source, dark](images/attachment-source.dark.png) |
+| Edit | ![Edit with the Save bar, light](images/attachment-edit.light.png) | ![Edit with the Save bar, dark](images/attachment-edit.dark.png) |
+| Image viewer | ![Image viewer, light](images/attachment-viewer.light.png) | ![Image viewer, dark](images/attachment-viewer.dark.png) |
+| Image viewer, zoomed | ![Image viewer zoomed, light](images/attachment-viewer-zoom.light.png) | ![Image viewer zoomed, dark](images/attachment-viewer-zoom.dark.png) |
+| Too large to show | ![Too large, light](images/attachment-toolarge.light.png) | ![Too large, dark](images/attachment-toolarge.dark.png) |
+
+The viewer is always dark, so both themes look the same there. The decisions are in [design/README.md › Markdown attachments on a phone](../README.md#markdown-attachments-on-a-phone-ship-715).

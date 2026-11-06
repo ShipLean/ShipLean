@@ -349,6 +349,19 @@ At 900px wide and below every screen uses the touch shell; above 900px nothing c
 - **Quick search:** the whole screen, the field at the top with Cancel, 52px rows with the key under the title, no key caps.
 - **Every page:** text inputs use `--text-input-touch` (16px; smaller makes iOS Safari zoom). Toolbars keep one row: the primary action, the most used control, **Filter** with a count and **⋯ More**, a bottom sheet with the rest; keyboard hints are hidden. Sprint tabs scroll sideways. Menus open as bottom sheets, form dialogs full screen. Sheets, toasts and bars pad with `env(safe-area-inset-*)` (the app needs `viewport-fit=cover`). Nothing shows only on hover.
 
+## Markdown attachments on a phone (SHIP-715)
+
+At 900px and below, the Markdown attachment page and the image viewer follow `mobile/attachment.html` (images and review in [mobile/README.md](mobile/README.md#markdown-attachments-and-images-ship-715)). Above 900px, `screens/attachment.html` still applies.
+
+**Decided 2026-11-07:** the side panel moves into bottom sheets (D1); Download, Replace… and Copy link go in a ⋯ sheet (D2); editing works on a phone (D3); a full-screen viewer with zoom that swipes through the item's images (D4), which also opens from images in a Markdown file (D5); **PDFs open in a new tab and other files download** (D6, against the recommendation); the touch shell's 900px breakpoint (D7); the page header scrolls away while the top bar's breadcrumb keeps the file name in view (D8, amended to fit the touch shell's sticky rule); and the viewer is for phones only for now, so the desktop keeps its dialog (D9).
+
+- **Header** (in the page, not sticky): ← back to the item; the file name, which lists the item's other Markdown files when tapped; a one-line facts row that opens About this file; then one toolbar row with Rendered / Source / Edit and ⋯.
+- **Sheets:** On this page, opened by a floating **Contents pill** that names the current heading (hidden when the outline has fewer than 2 entries), About this file (facts, Images in this file, the no-history note) and Markdown on SHIP-n. They use the touch shell's sheet: grab bar, Close, 48px rows.
+- **Body:** 15px text. Tables and code scroll sideways inside a wrapper with a fade, never the page. An attached image fits the width and opens the viewer.
+- **Edit:** the editor at `--text-input-touch` fills the screen; the toolbar is one row that scrolls (no Fullscreen); Save and Cancel sit in a bar at the bottom, padded for the safe area.
+- **Viewer:** full screen and always dark; pinch and double-tap zoom; swipe or thumbnails through the item's images ("1 of 3 · SHIP-101"); ⋯ holds Download, Copy link and Open original.
+- **PDF in a new tab:** today only images are served `inline`, and every attachment gets `Content-Security-Policy: sandbox`. Check that iOS Safari and Android Chrome still show a PDF under that policy before relaxing anything, and fall back to download if they don't.
+
 ## Backlog patterns (`screens/backlog.html`, `screens/features.html`)
 
 - **List and Planning are two modes of the Stories backlog.** List is the plain ranked backlog with Sprint and Assignee columns. Scheduled items stay in the list with a sprint chip, and the current sprint's chip is accent. Completed items are hidden unless **Completed** is ticked.
