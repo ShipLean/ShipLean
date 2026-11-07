@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Regenerates images/<name>.<theme>.png: the touch shell (SHIP-713), the work item page (SHIP-714, item-* and
 # feature-*) and the boards (SHIP-719: board-*, features-board-*, epics-board-*) on the reference screens at 390 × 844,
-# 2× scale, and the page stories' phone screens kept in this folder
+# 2× scale, the Feature board (SHIP-722, fboard-*) and the sprint Taskboard (SHIP-725, tboard-*), and the page stories' phone screens kept in this folder
 # (an address starting ./, such as SHIP-715's attachment.html).
 # Usage: ./screenshots.sh [name ...]   (no names = all). CHROME=/path/to/chrome overrides the browser.
 # The today-*.png images are screenshots of the real app (main at 918cf067) and are not made here.
-# (today-attachment-*.png and today-fboard*.png come from the SPA's component harness at 390 × 844 with the page-shot
+# (today-attachment-*.png, today-fboard*.png and today-tboard*.png come from the SPA's component harness at 390 × 844 with the page-shot
 # fixtures.)
 # Item shots use ?at=<section>, which with ?shot hides what is above the section: --screenshot ignores scrolling.
 set -euo pipefail
@@ -140,12 +140,31 @@ declare -A shots=(
   [fboard-filter]="feature-board.html?filter=mei&sheet=filter"
   [fboard-filtered]="feature-board.html?filter=mei"
   [fboard-end]="feature-board.html?at=SHIP-160"
-  [fboard-closed]="feature-board.html?closed&at=SHIP-160"
   [fboard-more]="feature-board.html?sheet=more"
   [fboard-add]="feature-board.html?add"
   [fboard-parent]="feature-board.html?key=SHIP-103"
   [fboard-parent-section]="feature-board.html?key=SHIP-103&at=SHIP-108"
   [fboard-people]="feature-board.html?key=SHIP-103&view=people"
+  # The sprint Taskboard (SHIP-725)
+  [tboard]="taskboard.html"
+  [tboard-active]="taskboard.html?col=active"
+  [tboard-drag]="taskboard.html?drag=SHIP-176&to=active"
+  [tboard-task]="taskboard.html?sheet=task&task=SHIP-173"
+  [tboard-story]="taskboard.html?sheet=story&task=SHIP-172"
+  [tboard-assign]="taskboard.html?sheet=assign&task=SHIP-176"
+  [tboard-filter]="taskboard.html?filter=mei&sheet=filter"
+  [tboard-filtered]="taskboard.html?filter=mei"
+  [tboard-end]="taskboard.html?at=SHIP-129"
+  [tboard-alldone]="taskboard.html?alldone&col=closed"
+  [tboard-bump]="taskboard.html?bump=active"
+  [tboard-more]="taskboard.html?sheet=more"
+  [tboard-sprint]="taskboard.html?sheet=sprint"
+  [tboard-sprint-more]="taskboard.html?sheet=sprintmore"
+  [tboard-add]="taskboard.html?add"
+  [tboard-people]="taskboard.html?view=people"
+  [tboard-settings]="taskboard.html?dialog=settings&pane=styles"
+  [tboard-settings-fields]="taskboard.html?dialog=settings"
+  [tboard-settings-tags]="taskboard.html?dialog=settings&pane=tags"
 )
 
 names=("$@")

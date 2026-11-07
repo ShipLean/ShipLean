@@ -108,7 +108,7 @@ ol.ac { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 980px
 <header class="top">
   <span class="eyebrow">SHIP-722 · Mobile feature work item board · design, decisions settled 7 Nov</span>
   <h1>The Feature board on a phone</h1>
-  <p class="lead">The Feature board is the sprint Taskboard's grid for one Feature: a row per story or bug, a column per task state, tasks as cards. A phone can't fit that grid. At 900px and below it works like the SHIP-719 boards: <b>one task state a page in a sideways pager, with every story as a lane on every page</b>. Tasks move through a ⋯ action sheet, or a long press and drag (to another story, or to the screen's edge for another state). Closed stories wait behind “Show n closed”. The phones below are the reference screen (<code>../screens/feature-board.html</code>) at 390 × 844, made by <code>screenshots.sh</code>; open it in a window narrower than 900px to try it.</p>
+  <p class="lead">The Feature board is the sprint Taskboard's grid for one Feature: a row per story or bug, a column per task state, tasks as cards. A phone can't fit that grid. At 900px and below it works like the SHIP-719 boards: <b>one task state a page in a sideways pager, with every story as a lane on every page</b>. Tasks move through a ⋯ action sheet, or a long press and drag (to another story, or to the screen's edge for another state). Closed stories are one line each, as on desktop. The phones below are the reference screen (<code>../screens/feature-board.html</code>) at 390 × 844, made by <code>screenshots.sh</code>; open it in a window narrower than 900px to try it.</p>
   <div class="chips">
     <span class="chip accent">Design only · nothing built</span>
     <span class="chip accent">Decisions settled by Joel, 7 Nov 2026 (D1–D12 below)</span>
@@ -236,12 +236,12 @@ ol.ac { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 980px
     <tbody>
       <tr><td>Grid</td><td>Story / bug column, then a column per task state (Removed left out)</td><td>A sideways pager with one page per task state; the next page peeks and pages snap. State chips above it show each state's task count and turn to that page. A tablet shows two and a bit pages.</td></tr>
       <tr><td>Stories</td><td>A row per story or bug, its index card in the first column</td><td>On every page, every open story or bug is a lane (D4): a compact index card (title, points, key, state, assignee, task progress), then its tasks in that state, or “None”. The lanes are in the same order on every page.</td></tr>
-      <tr><td>Closed stories</td><td>Collapsed to one line at the bottom</td><td>Behind “Show n closed” at the end of each Feature's lanes (D8); shown, they are one-line lanes as on desktop. ⋯ More also has Show or hide closed stories.</td></tr>
+      <tr><td>Closed stories</td><td>Collapsed to one line at the bottom</td><td>One-line lanes in backlog order on every page, with done/total tasks and the state; ▶ opens one (D8, changed 7 Nov in the SHIP-725 review).</td></tr>
       <tr><td>Header</td><td>← back link, key, title, state, “Feature board”, roll-up, sprint pills, Jump to</td><td>Key and state, then the title on its own line; the roll-up bar full width with points and tasks under it; sprint pills and Jump to chips wrap (32px). The ← back link and the “Feature board” label go: the top bar's crumbs say both (D10, SHIP-805 C13).</td></tr>
       <tr><td>Toolbar</td><td>Group by, the face filter, Settings, + Add story or bug</td><td>One row (rule 8, D5): Stories | People, Filter (n), ⋯, and + Add on the right. Filter shows the chosen people's faces and a count when on. Settings moves into ⋯.</td></tr>
       <tr><td>Moving a task</td><td>Drag to a column (state) or row (story, or person when grouped by People)</td><td>⋯ on the task opens its action sheet: Move to (every state; tap applies and closes), Move to another story, Assignee, Open. A long press lifts the task: drag it to another lane, or hold it at the left or right edge to turn to another state, and let go; let go without moving and the sheet opens (D2). Same rules as a drop: In progress with no assignee assigns you; a move never changes the sprint. The pager stays on the page you were reading; the toast says where it went.</td></tr>
       <tr><td>Opening a task</td><td>Click opens the peek</td><td>Tap opens the item modal full screen (D3, SHIP-714 D8); ✕ comes back to the same page.</td></tr>
-      <tr><td>Story state</td><td>A borderless select in the row header</td><td>A native select at 16px text in the lane's card (D9, SHIP-805 C5). Closing a story moves it under “Show n closed”.</td></tr>
+      <tr><td>Story state</td><td>A borderless select in the row header</td><td>A native select at 16px text in the lane's card (D9, SHIP-805 C5). Closing a story collapses its lane to one line.</td></tr>
       <tr><td>Face filter</td><td>A row of faces in the toolbar</td><td>A Filter bottom sheet (D6): a checkbox row per person and Unassigned, with their task count. Every story keeps its lane, with “n hidden by Filter” (D7); the chips count only matching tasks.</td></tr>
       <tr><td>Group by People</td><td>A row per person</td><td>The people are the lanes on every page; each card names its Feature and story.</td></tr>
       <tr><td>Parent Feature</td><td>A section per Feature in the tree, indented by depth</td><td>A band per Feature on every page (key, title, ↗ Open), collapsible; “Directly under SHIP-103” first.</td></tr>
@@ -267,7 +267,7 @@ ol.ac { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 980px
       <tr><td>D5</td><td>Toolbar</td><td>Stories | People · Filter (n) · ⋯ · + Add</td><td>As recommended.</td></tr>
       <tr><td>D6</td><td>Face filter</td><td>A Filter sheet: a row per person with their task count</td><td>As recommended.</td></tr>
       <tr><td>D7</td><td>Stories with no tasks for the filter</td><td>Keep their lanes, with “n hidden by Filter”</td><td>As recommended.</td></tr>
-      <tr><td>D8</td><td>Closed stories</td><td>Behind “Show n closed” at the end of each Feature's lanes</td><td>Changed from one line each at the bottom.</td></tr>
+      <tr><td>D8</td><td>Closed stories</td><td>One line each, as on desktop</td><td>As recommended (changed back on 7 Nov in the SHIP-725 review from “Show n closed”).</td></tr>
       <tr><td>D9</td><td>Story state on its card</td><td>A native select with 16px text (SHIP-805 C5)</td><td>As recommended.</td></tr>
       <tr><td>D10</td><td>The header</td><td>Drop the ← back link and the “Feature board” label (SHIP-805 C13); Jump to wraps</td><td>As recommended.</td></tr>
       <tr><td>D11</td><td>SHIP-725, the sprint Taskboard</td><td>Build the phone layout in the shared Taskboard grid so SHIP-725 gets it too</td><td>As recommended. Points may move from SHIP-725 to SHIP-722.</td></tr>
@@ -284,7 +284,7 @@ ol.ac { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 980px
   <div class="card"><ol class="ac">
     <li>At 390 × 844 the Feature board has no page-level sideways scroll, in both themes, for a leaf Feature, a parent Feature and grouped by People. Only the state pager and the state chips scroll sideways, each in its own box. Above 900px nothing changes.</li>
     <li>At 900px and below one task state shows at a time with the next one peeking; swiping snaps to a state; the state chips show each state's task count (matching the filter) and turn to that state when tapped.</li>
-    <li>Every open story or bug (or person, grouped by People) is a lane on every page, in the same order, showing “None” when it has no task in that state. Closed stories are behind “Show n closed” at the end of each Feature's lanes and show as one-line lanes.</li>
+    <li>Every open story or bug (or person, grouped by People) is a lane on every page, in the same order, showing “None” when it has no task in that state. Closed stories show as one-line lanes in backlog order, as on desktop.</li>
     <li>Every task can be moved on a touch screen: ⋯ opens its action sheet (Move to a state, another story, Assignee, Open); a long press lifts it to drag to another lane or, held at the screen's edge, to another state. Both behave as the same drop on desktop (auto-assign on In progress, never changes the sprint), and the pager stays on the page you were reading.</li>
     <li>Tapping a task opens the item modal full screen; closing it returns to the same page.</li>
     <li>The toolbar is one row (Stories | People, Filter (n), ⋯, + Add); Filter, ⋯ More and the task's sheets are built on SHIP-713's <code>Sheet</code>.</li>
@@ -306,7 +306,7 @@ ol.ac { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 980px
     <div class="card"><h3>Where things are</h3><ul>
       <li>On the touch-shell design PR (#69), with SHIP-713, 714, 715, 716 and 719.</li>
       <li><code>design/screens/feature-board-touch.css</code> and <code>feature-board-touch.js</code>; <code>feature-board.html</code> now exposes its state as <code>SL.fb</code> and fires <code>fb:render</code>.</li>
-      <li>Review states: <code>?col=active</code>, <code>?sheet=task|story|assign&amp;task=KEY</code>, <code>?sheet=filter|more</code>, <code>?filter=mei,none</code>, <code>?closed</code>, <code>?drag=KEY&amp;to=active</code>, <code>?add</code>, <code>?addtask=KEY</code>, <code>?at=KEY</code> (with <code>?shot</code>), plus the board's own <code>?key=SHIP-103</code> and <code>?view=people</code>.</li>
+      <li>Review states: <code>?col=active</code>, <code>?sheet=task|story|assign&amp;task=KEY</code>, <code>?sheet=filter|more</code>, <code>?filter=mei,none</code>, <code>?drag=KEY&amp;to=active</code>, <code>?add</code>, <code>?addtask=KEY</code>, <code>?at=KEY</code> (with <code>?shot</code>), plus the board's own <code>?key=SHIP-103</code> and <code>?view=people</code>.</li>
       
       <li>Today's images came from the SPA's component harness at 390 × 844 with the page-shot fixtures.</li>
     </ul></div>
@@ -331,9 +331,8 @@ ol.ac { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 980px
     ['fboard-assign', 'feature-board.html?sheet=assign&task=SHIP-176', 'Assignee', 'Everyone in the project, and Unassigned'],
     ['fboard-filter', 'feature-board.html?filter=mei&sheet=filter', 'Filter', 'People with their task counts'],
     ['fboard-filtered', 'feature-board.html?filter=mei', 'Filtered to Mei Lin', 'Every lane stays; the chips count only Mei\'s tasks'],
-    ['fboard-end', 'feature-board.html?at=SHIP-160', 'End of the page', '“Show 4 closed” after the open stories'],
-    ['fboard-closed', 'feature-board.html?closed&at=SHIP-160', 'Closed shown', 'One line each, as on desktop'],
-    ['fboard-more', 'feature-board.html?sheet=more', '⋯ More', 'Collapse or expand all, closed stories, Card settings'],
+    ['fboard-end', 'feature-board.html?at=SHIP-160', 'End of the page', 'Closed stories one line each, as on desktop (D8)'],
+    ['fboard-more', 'feature-board.html?sheet=more', '⋯ More', 'Collapse or expand all, Card settings'],
     ['fboard-add', 'feature-board.html?add', '+ Add story or bug', 'The desktop inline row, wrapped'],
   ];
   const PARENT = [

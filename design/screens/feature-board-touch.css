@@ -2,8 +2,8 @@
  * The Feature board in the touch shell (SHIP-722). Loaded by feature-board.html after its own styles. Follows SHIP-805
  * (the shared mobile rules) and doesn't restate them; this file only applies them to the Feature board, the same way
  * SHIP-719's board-touch.css does for the other boards. At 900px and below: one task state a page in a sideways pager
- * (the next one peeks), state chips above it, the stories (or people) as lanes on every page, closed stories behind
- * "Show n closed", the toolbar on one row (Group · Filter (n) · ⋯ · + Add), and a ⋯ on every task plus long-press drag
+ * (the next one peeks), state chips above it, the stories (or people) as lanes on every page, closed stories on one line
+ * (D8), the toolbar on one row (Group · Filter (n) · ⋯ · + Add), and a ⋯ on every task plus long-press drag
  * instead of drag and drop. Above 900px nothing changes. feature-board-touch.js builds it.
  */
 .fbt-bar, .fbt-strip, .fbt-pager, .fbt-sheet, .fbt-addstory, .fbt-edge { display: none; }
@@ -107,10 +107,6 @@
   .fbt-ph .av { width: 24px; height: 24px; font-size: 10px; }
   .fbt-ph b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: var(--weight-semibold); }
   .fbt-ph .hint { margin-left: auto; font-size: var(--text-xs); color: var(--color-muted); white-space: nowrap; }
-
-  /* Closed stories wait behind one button at the end of each Feature's lanes (D8). */
-  .fbt-closed { justify-self: start; display: inline-flex; align-items: center; gap: 6px; height: var(--touch-target); padding: 0 12px; border: 1px dashed var(--color-border); border-radius: 999px; background: transparent; color: var(--color-muted); font: inherit; font-size: var(--text-sm); cursor: pointer; }
-  .fbt-closed[aria-expanded="true"] { border-style: solid; }
 
   /* Task card: the Taskboard's post-it with a 32px ⋯ (rule 5). Tapping it opens the task (D3). */
   .fbt-pager .card, .fbt-ghost.card { grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 4px 6px; padding: 8px 4px 8px 10px; cursor: pointer; -webkit-touch-callout: none; user-select: none; }

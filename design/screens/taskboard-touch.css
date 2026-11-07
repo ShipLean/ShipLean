@@ -1,0 +1,213 @@
+/*
+ * The sprint Taskboard in the touch shell (SHIP-725). Loaded by taskboard.html after its own styles. Follows SHIP-805
+ * (the shared mobile rules) and doesn't restate them. The board is SHIP-722's Feature board layout (one task state a
+ * page, stories as lanes on every page, ⋯ and long-press drag; closed stories one line each, D8); this file adds what only the sprint Taskboard has: the
+ * sprint header and picker, the sprint tabs, the Unparented lane, Pick up, the "All tasks done" prompt and the Taskboard
+ * settings dialog full screen. When both are built they are one shared Taskboard grid (SHIP-722 D11); in the mocks
+ * feature-board-touch.* and taskboard-touch.* are separate copies. Above 900px nothing changes.
+ */
+.tbt-bar, .tbt-strip, .tbt-pager, .tbt-sheet, .tbt-addstory, .tbt-edge, .tbt-hmore, .tbt-goal { display: none; }
+
+@media (max-width: 900px) {
+  /* SHIP-805 rules 11 and 13 (48px bar, 32px targets) until the token change lands in tokens.css. */
+  :root { --touch-target: 32px; --mobile-bar-height: 48px; --tbt-col: min(calc(100vw - 48px), 340px); }
+  body { padding-bottom: env(safe-area-inset-bottom); }
+
+  /* Sprint header: SHIP-724's shared phone header (its D5, D6, D10; this story's D10, D11, D17). Row 1 the picker,
+     Current and ⋯; then the dates and time left, the goal (two lines, tap to expand) and the tabs. It scrolls. */
+  .sprint-head { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: 4px 8px; padding: 10px var(--space-3) 0; border-bottom: 0; }
+  .sprint-head .picker { grid-row: 1; grid-column: 1; height: var(--touch-target); margin-left: -6px; padding: 0 6px; border-radius: var(--radius-sm); font-size: 19px; }
+  .sprint-head .picker span { font-size: 11px; }
+  .sprint-head > .chip { grid-row: 1; grid-column: 2; }
+  .sprint-head > .tbt-hmore { grid-row: 1; grid-column: 4; display: inline-grid; place-items: center; width: var(--touch-target); height: var(--touch-target); padding: 0; }
+  .sprint-head > .sm.muted { grid-column: 1 / -1; font-size: 13px; }
+  .sprint-head > .spacer, .sprint-head > a { display: none; }
+  .tbt-goal { grid-column: 1 / -1; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: baseline; margin-top: 4px; padding: 0; border: 0; background: none; color: var(--color-text); font: inherit; font-size: 15px; line-height: 1.4; text-align: left; cursor: pointer; }
+  .tbt-goal .txt { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .tbt-goal[aria-expanded="true"] .txt { display: block; }
+
+  /* Toolbar: the sprint tabs on their own row (rule 7: tabs scroll sideways in their own box), then one row of
+     controls (rule 8, D5). The desktop controls are replaced by .tbt-bar. */
+  .toolbar { flex-wrap: wrap; gap: var(--space-2) 0; padding: 0 var(--space-3) var(--space-2); border-bottom: 0; }
+  .toolbar > :not(.tbt-bar):not(.tabs) { display: none !important; }
+  .toolbar > .tabs { flex: 1 0 100%; gap: 2px; margin: 6px calc(-1 * var(--space-3)) 0; padding: 0 var(--space-3); background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+  .toolbar > .tabs .tab { height: 38px; padding: 0 10px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; margin-bottom: -1px; background: none; color: var(--color-muted); font-size: 14px; font-weight: var(--weight-medium); }
+  .toolbar > .tabs .tab[aria-current="page"] { border-bottom-color: var(--color-accent); background: none; color: var(--color-text); font-weight: var(--weight-semibold); }
+  .tbt-bar { display: flex; align-items: center; gap: var(--space-2); width: 100%; min-width: 0; padding-top: var(--space-1); }
+  .tbt-bar .seg { height: var(--touch-target); flex: none; }
+  .tbt-bar .seg button { padding: 0 10px; font-size: var(--text-sm); }
+  .tbt-bar .btn { height: var(--touch-target); font-size: var(--text-sm); flex: none; }
+  .tbt-bar .tbt-filter[data-n] { border-color: var(--color-accent); background: var(--color-accent-soft); font-weight: var(--weight-semibold); }
+  .tbt-bar .tbt-filter .n { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--color-accent); color: var(--color-accent-fg); font-size: var(--text-2xs); font-variant-numeric: tabular-nums; }
+  .tbt-bar .tbt-more { width: var(--touch-target); padding: 0; justify-content: center; }
+  .tbt-bar .spacer { flex: 1; }
+  .tbt-bar .tbt-face-row { display: inline-flex; align-items: center; }
+  .tbt-bar .tbt-face-row .av { width: 18px; height: 18px; margin-left: -5px; box-shadow: 0 0 0 2px var(--color-accent-soft); font-size: 8px; }
+  .tbt-bar .tbt-face-row .av:first-child { margin-left: 0; }
+
+  /* + Add: the desktop's "Add story or bug", as SHIP-722's inline row; it lands in this sprint. */
+  .tbt-addstory:not([hidden]) { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--space-2); padding: 0 var(--space-3) var(--space-2); }
+  .tbt-addstory .field { height: 40px; }
+  .tbt-addstory .btn { height: 40px; }
+  .tbt-addstory .hint { grid-column: 1 / -1; margin: 0; font-size: var(--text-xs); color: var(--color-muted); }
+
+  /* The grid is replaced by the pager. */
+  .board { display: none; }
+
+  /* State chips: one per task state with its count; the page on screen is highlighted. A teammate's move pulses the
+     chip of the state it landed in. */
+  .tbt-strip { display: flex; gap: 6px; padding: 0 var(--space-3) var(--space-2); overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--color-border); }
+  .tbt-strip::-webkit-scrollbar { display: none; }
+  .tbt-strip button { flex: none; display: inline-flex; align-items: center; gap: 6px; height: var(--touch-target); padding: 0 12px; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-surface); color: var(--color-muted); font: inherit; font-size: var(--text-sm); font-weight: var(--weight-medium); cursor: pointer; }
+  .tbt-strip button .n { font-size: var(--text-xs); font-variant-numeric: tabular-nums; }
+  .tbt-strip button[aria-current="true"] { border-color: var(--color-accent); background: var(--color-accent-soft); color: var(--color-text); font-weight: var(--weight-semibold); }
+  .tbt-strip button.bump { animation: tbt-bump 1.6s ease-out; }
+  @keyframes tbt-bump { 0%, 30% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 55%, transparent); } 100% { box-shadow: none; } }
+
+  /* Pager: each task state is a page, the next one peeks. */
+  .tbt-pager { display: flex; align-items: flex-start; gap: var(--space-2); padding: var(--space-3) var(--space-3) calc(var(--space-6, 32px) + env(safe-area-inset-bottom)); overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scroll-padding: 0 var(--space-3); scrollbar-width: none; }
+  .tbt-pager::-webkit-scrollbar { display: none; }
+  .tbt-page { flex: none; width: var(--tbt-col); display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-2); align-content: start; scroll-snap-align: start; }
+  .tbt-colh { display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 10px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+  .tbt-colh .st { font-size: var(--text-md); font-weight: var(--weight-semibold); }
+  .tbt-colh .n { color: var(--color-muted); font-variant-numeric: tabular-nums; }
+
+  /* Lanes: a story's index card (compact, it repeats on every page), then its tasks in this state, or None. */
+  .tbt-lane { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; }
+  :root .tbt-pager .tbt-lane > .rowh:not(.orphan):not(.person) { position: relative; left: auto; z-index: 1; isolation: isolate; display: grid; gap: 0; padding: 2px 10px 4px 2px; border: 0; background: transparent; }
+  :root .tbt-pager .tbt-lane > .rowh:not(.orphan):not(.person)::before { inset: 0; border-radius: var(--radius-md); }
+  .tbt-lane > .rowh .top { display: flex; align-items: center; gap: 6px; min-height: var(--touch-target); }
+  .tbt-lane > .rowh .ib { width: var(--touch-target); height: var(--touch-target); flex: none; font-size: var(--text-xs); }
+  .tbt-lane > .rowh .t1 { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-base); font-weight: var(--weight-semibold); }
+  .tbt-lane > .rowh .meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding-left: 34px; min-height: var(--touch-target); font-size: var(--text-xs); }
+  .tbt-lane > .rowh .meta .key { font-size: var(--text-2xs); }
+  .tbt-lane > .rowh .top .pts { flex: none; font-size: var(--text-xs); font-weight: var(--weight-semibold); }
+  .tbt-lane > .rowh.collapsed .st { font-size: var(--text-xs); }
+  .tbt-lane .stsel select { height: 28px; padding: 0 4px; border-color: var(--color-border); background: var(--color-surface); font-size: var(--text-input-touch); }
+  .tbt-lane .stsel .st { width: 8px; }
+  :root .tbt-pager .tbt-lane > .rowh.collapsed:not(.orphan):not(.person) { display: flex; align-items: center; gap: 6px; min-height: 40px; padding: 2px 10px 2px 2px; }
+  .tbt-lane > .rowh.collapsed .cnt { font-size: var(--text-xs); color: var(--color-muted); white-space: nowrap; }
+  .tbt-lane > .rowh.collapsed .t1 { font-weight: var(--weight-medium); }
+
+  /* All tasks done (D14): the desktop prompt, inside the lane's card on every page. Never moves the story by itself. */
+  .tbt-lane > .rowh .suggest { display: flex; align-items: center; gap: 6px; margin: 4px 0 2px 34px; padding: 2px 2px 2px 8px; font-size: var(--text-xs); }
+  .tbt-lane > .rowh .suggest .btn { height: 28px; padding: 0 8px; font-size: var(--text-xs); }
+  .tbt-lane > .rowh .suggest .ib { width: 28px; height: 28px; }
+
+  /* Unparented (D12): the last lane on every page, a plain header like a person's, so a task can be dropped there. */
+  .tbt-oh { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 4px 0 2px; border: 1px dashed var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); position: relative; z-index: 1; }
+  .tbt-oh .ib { width: var(--touch-target); height: var(--touch-target); flex: none; font-size: var(--text-xs); }
+  .tbt-oh b { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: var(--weight-semibold); }
+  .tbt-oh .hint { font-size: var(--text-xs); color: var(--color-muted); white-space: nowrap; padding-right: 6px; }
+
+  .tbt-cell { display: grid; gap: 6px; min-height: 40px; margin: -6px 0 0 12px; padding: 12px 8px 8px; border: 1px solid var(--color-border); border-top: 0; border-radius: 0 0 var(--radius-md) var(--radius-md); background: color-mix(in srgb, var(--color-surface-2) 55%, var(--color-bg)); transition: background .12s; }
+  .tbt-none { padding: 0 4px; font-size: var(--text-sm); color: var(--color-muted); }
+  .tbt-hidden { padding: 0 4px; font-size: var(--text-xs); color: var(--color-muted); }
+
+  /* Grouped by People: everyone on the project is a lane (D16), with "None" when they have nothing in this state. */
+  .tbt-ph { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 8px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); position: relative; z-index: 1; }
+  .tbt-ph .av { width: 24px; height: 24px; font-size: 10px; }
+  .tbt-ph b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: var(--weight-semibold); }
+  .tbt-ph .hint { margin-left: auto; font-size: var(--text-xs); color: var(--color-muted); white-space: nowrap; }
+
+
+  /* Task card: the post-it with a 32px ⋯ (rule 5). Tapping it opens the task. */
+  .tbt-pager .card, .tbt-ghost.card { grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 4px 6px; padding: 8px 4px 8px 10px; cursor: pointer; -webkit-touch-callout: none; user-select: none; }
+  .tbt-pager .card.styled, .tbt-ghost.card.styled { padding-left: 8px; }
+  .tbt-pager .card > .par, .tbt-ghost.card > .par { grid-column: 1 / -1; margin-right: 6px; }
+  .tbt-pager .card .ct, .tbt-ghost.card .ct { font-size: var(--text-base); line-height: 1.35; padding-top: 4px; }
+  .tbt-pager .card .ct .ti, .tbt-ghost.card .ct .ti { margin-top: 2px; }
+  .tbt-pager .card .cm, .tbt-ghost.card .cm { grid-column: 1 / -1; min-height: 22px; padding-right: 6px; }
+  .tbt-pager .card .tag, .tbt-ghost.card .tag { height: 20px; font-size: var(--text-xs); }
+  .tbt-cm { display: inline-grid; place-items: center; width: var(--touch-target); height: var(--touch-target); margin: -2px 0 0; padding: 0; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--color-muted); cursor: pointer; }
+  .tbt-cm:active { background: var(--color-surface-2); }
+  .tbt-pager .card.lifted { box-shadow: 0 0 0 2px var(--color-accent); }
+
+  /* Pick up (D13): always shown on an unassigned task in a New-category state, in place of the empty face. */
+  .tbt-pager .card .pick, .tbt-ghost.card .pick { display: inline-flex; height: 28px; padding: 0 10px; font-size: var(--text-xs); }
+
+  .tbt-add { justify-self: start; height: var(--touch-target); padding: 0 6px; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--color-accent); font: inherit; font-size: var(--text-sm); font-weight: var(--weight-medium); cursor: pointer; }
+  .tbt-addtask { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; }
+  .tbt-addtask .field { height: 40px; }
+  .tbt-addtask .btn { height: 40px; }
+
+  /* Touch drag (SHIP-722 D2, as SHIP-719). */
+  :root[data-dragging] { user-select: none; -webkit-user-select: none; }
+  :root[data-dragging] .tbt-pager { scroll-snap-type: none; }
+  .tbt-pager .card.dragging { opacity: .35; }
+  .tbt-cell.over { background: color-mix(in srgb, var(--color-accent-soft) 80%, transparent); box-shadow: inset 0 0 0 2px var(--color-accent); }
+  .tbt-cell .drop-before { box-shadow: 0 -3px 0 var(--color-accent); }
+  .tbt-cell.drop-end::after { content: ""; height: 3px; border-radius: 2px; background: var(--color-accent); }
+  .tbt-ghost.card { position: fixed; left: 0; top: 0; z-index: 80; margin: 0; pointer-events: none; box-shadow: 0 18px 36px rgb(0 0 0 / .3), 0 0 0 2px var(--color-accent); transition: none; }
+  .tbt-edge { position: fixed; top: calc(var(--mobile-bar-height) + env(safe-area-inset-top)); bottom: 0; z-index: 75; width: 28px; place-items: center; font-size: 22px; color: var(--color-accent); pointer-events: none; }
+  .tbt-edge.left { left: 0; background: linear-gradient(to right, color-mix(in srgb, var(--color-accent) 22%, transparent), transparent); }
+  .tbt-edge.right { right: 0; background: linear-gradient(to left, color-mix(in srgb, var(--color-accent) 22%, transparent), transparent); }
+  :root[data-dragging] .tbt-edge { display: grid; opacity: .45; }
+  :root[data-dragging] .tbt-edge.hot { opacity: 1; }
+
+  /* Bottom sheets (SHIP-805 rules 3, 4, 8, 9 and C4's recommended anatomy): grab bar, title, Close. */
+  .tbt-sheet:not([hidden]) { position: fixed; inset: auto 0 0 0; z-index: 70; display: flex; flex-direction: column; max-height: 85dvh; padding-bottom: env(safe-area-inset-bottom); border-radius: var(--radius-lg) var(--radius-lg) 0 0; border-top: 1px solid var(--color-border); background: var(--color-surface); box-shadow: 0 -12px 32px rgb(0 0 0 / .22); }
+  .tbt-sheet::before { content: ""; align-self: center; flex: none; width: 36px; height: 4px; margin-top: 6px; border-radius: 2px; background: var(--color-border); }
+  .tbt-sheet .sheet-head { flex: none; gap: var(--space-2); min-height: 44px; }
+  .tbt-sheet .sheet-head b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tbt-sheet .sheet-head .who { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .tbt-sheet .body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 var(--space-2) var(--space-3); }
+  .tbt-sheet .lbl { padding: 10px var(--space-2) 4px; font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--color-muted); text-transform: uppercase; letter-spacing: .04em; }
+  .tbt-sheet .opt { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 40px; padding: 4px var(--space-2); border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--color-text); font: inherit; font-size: var(--text-base); text-align: left; text-decoration: none; cursor: pointer; }
+  .tbt-sheet .opt:active { background: var(--color-surface-2); }
+  .tbt-sheet .opt[aria-checked="true"] { background: var(--color-accent-soft); font-weight: var(--weight-semibold); }
+  .tbt-sheet .opt.primary { color: var(--color-accent); font-weight: var(--weight-semibold); }
+  .tbt-sheet .opt .tx { flex: 1; min-width: 0; display: grid; gap: 1px; }
+  .tbt-sheet .opt .tx > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tbt-sheet .opt .tx small { font-size: var(--text-xs); font-weight: var(--weight-regular); color: var(--color-muted); }
+  .tbt-sheet .opt .chk { width: 18px; flex: none; color: var(--color-accent); text-align: center; font-weight: var(--weight-bold, 700); }
+  .tbt-sheet .opt .val { flex: none; max-width: 50%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-muted); font-size: var(--text-sm); font-weight: var(--weight-regular); }
+  .tbt-sheet .opt .go { flex: none; color: var(--color-muted); }
+  .tbt-sheet .opt .av { width: 24px; height: 24px; font-size: 10px; }
+  .tbt-sheet .opt input[type="checkbox"] { width: 18px; height: 18px; margin: 0; accent-color: var(--color-accent); flex: none; }
+  .tbt-sheet .opt .st { font-size: var(--text-base); }
+  .tbt-sheet .opt .chip { flex: none; }
+  .tbt-sheet .grp { padding: 10px var(--space-2) 2px; font-size: var(--text-xs); color: var(--color-muted); display: flex; align-items: center; gap: 6px; }
+  .tbt-sheet .msearch { padding: var(--space-1) var(--space-2) var(--space-2); }
+  .tbt-sheet .msearch .field { width: 100%; height: 40px; font-size: var(--text-input-touch); }
+  .tbt-sheet .note.sub { margin: 0 var(--space-4) 6px; }
+  .tbt-sheet .note { margin: 6px var(--space-2) 0; font-size: var(--text-xs); color: var(--color-muted); }
+  .tbt-sheet hr { margin: 6px var(--space-2); border: 0; border-top: 1px solid var(--color-border); }
+  :root[data-sheet="tbt"] .scrim { display: block; position: fixed; inset: 0; z-index: 65; background: rgb(10 16 28 / .45); }
+
+  /* Taskboard settings (D15): a form dialog, so full screen (rule 4). ✕ at the top left (C9), the section list as
+     chips under the title, the Save bar at the bottom (rule 15: Discard, Save). */
+  #settings.backdrop:not([hidden]) { padding: 0; align-items: stretch; z-index: 70; }
+  #settings .dialog.settings { width: 100%; max-width: none; height: 100dvh; max-height: none; border: 0; border-radius: 0; padding: env(safe-area-inset-top) 0 0; }
+  #settings .dialog > header { flex: none; align-items: center; min-height: var(--mobile-bar-height); padding: 0 var(--space-3) 0 var(--space-1); gap: var(--space-2); }
+  #settings .dialog > header [data-close] { order: -1; width: var(--touch-target); height: var(--touch-target); }
+  #settings .dialog > header h2 { font-size: var(--text-md); }
+  #settings .dialog > header .spacer { display: none; }
+  #settings .dialog > header .chip { margin-left: auto; }
+  #settings .settings .cols { grid-template-rows: auto minmax(0, 1fr); }
+  #settings .settings nav { padding: var(--space-2) var(--space-3); gap: 6px; background: var(--color-surface); scrollbar-width: none; }
+  #settings .settings nav .overline { display: none; }
+  #settings .settings nav button { flex: none; height: var(--touch-target); padding: 0 12px; border: 1px solid var(--color-border); border-radius: 999px; white-space: nowrap; }
+  #settings .settings nav button[aria-current="true"] { border-color: var(--color-accent); font-weight: var(--weight-semibold); }
+  #settings .settings nav button:disabled { display: none; }
+  #settings .settings .pane { min-height: 0; padding: var(--space-3); }
+  #settings .fgrid { grid-template-columns: minmax(0, 1fr); }
+  #settings .fgrid .check { min-height: var(--touch-target); }
+  #settings .rule .rh { grid-template-columns: auto minmax(0, 1fr) auto; }
+  #settings .rule .rh > label { grid-row: 2; }
+  #settings .rule .rh > label:last-child { grid-column: 2 / -1; justify-self: end; }
+  /* A clause: And/Where over field and operator, then the value with ✕ beside it. */
+  #settings .crit { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 6px; padding-left: 0; }
+  #settings .crit .andor { grid-column: 1 / -1; text-align: left; }
+  #settings .crit > span:empty { display: none; }
+  #settings .crit > select + select { grid-column: 2 / -1; }
+  #settings .crit > input.field { grid-column: 1 / 3; }
+  #settings .crit > .btn { grid-column: 1 / -1; }
+  #settings .crit .ib, #settings .tc .ib { width: var(--touch-target); height: var(--touch-target); }
+  #settings .tc { grid-template-columns: minmax(0, 1fr) auto auto; }
+  #settings .tc .swatches { grid-column: 1 / -1; grid-row: 2; }
+  #settings .swatches button { width: var(--touch-target); height: var(--touch-target); }
+  #settings .dialog > footer { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: var(--space-2); padding: var(--space-2) var(--space-3) calc(var(--space-2) + env(safe-area-inset-bottom)); box-shadow: 0 -6px 18px rgb(0 0 0 / .08); }
+  #settings .dialog > footer .spacer { display: none; }
+  #settings .dialog > footer .btn { height: 40px; }
+}

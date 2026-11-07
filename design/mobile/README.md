@@ -265,9 +265,9 @@ The decisions are in [design/README.md › Sign in on a phone](../README.md#sign
 
 ## Feature board (SHIP-722)
 
-The board on a Feature's own page (`/p/SHIP/items/KEY/board`, the Taskboard's grid for one Feature) at 900px and below. It works like the SHIP-719 boards: one task state a page in a sideways pager with state chips above it; every open story or bug is a lane on every page (its compact index card, then its tasks in that state, or None); closed stories wait behind “Show n closed”. A ⋯ on every task opens its action sheet (Move to a state, another story, Assignee, Open), and a long press lifts it for touch drag (to another lane, or the screen's edge for another state). The toolbar is one row: Stories | People, Filter (n), ⋯, + Add. Above 900px nothing changes. The review page is [`feature-board.html`](feature-board.html); the decisions (D1–D12, settled by Joel on 7 Nov 2026) and acceptance criteria are on SHIP-722.
+The board on a Feature's own page (`/p/SHIP/items/KEY/board`, the Taskboard's grid for one Feature) at 900px and below. It works like the SHIP-719 boards: one task state a page in a sideways pager with state chips above it; every open story or bug is a lane on every page (its compact index card, then its tasks in that state, or None); closed stories are one line each in backlog order, as on desktop (D8, changed 7 Nov in the SHIP-725 review). A ⋯ on every task opens its action sheet (Move to a state, another story, Assignee, Open), and a long press lifts it for touch drag (to another lane, or the screen's edge for another state). The toolbar is one row: Stories | People, Filter (n), ⋯, + Add. Above 900px nothing changes. The review page is [`feature-board.html`](feature-board.html); the decisions (D1–D12, settled by Joel on 7 Nov 2026) and acceptance criteria are on SHIP-722.
 
-It is built in `../screens/feature-board-touch.css` and `feature-board-touch.js`, which `feature-board.html` loads (it exposes its state as `SL.fb` and fires `fb:render`). These address parameters open its states: `?col=active`, `?sheet=task|story|assign&task=KEY`, `?sheet=filter|more`, `?filter=mei,none`, `?closed`, `?drag=KEY&to=active`, `?add`, `?addtask=KEY`, `?at=KEY` (with `?shot` it hides what is above that lane), plus the board's own `?key=SHIP-103` and `?view=people`.
+It is built in `../screens/feature-board-touch.css` and `feature-board-touch.js`, which `feature-board.html` loads (it exposes its state as `SL.fb` and fires `fb:render`). These address parameters open its states: `?col=active`, `?sheet=task|story|assign&task=KEY`, `?sheet=filter|more`, `?filter=mei,none`, `?drag=KEY&to=active`, `?add`, `?addtask=KEY`, `?at=KEY` (with `?shot` it hides what is above that lane), plus the board's own `?key=SHIP-103` and `?view=people`.
 
 ### Today
 
@@ -287,8 +287,7 @@ It is built in `../screens/feature-board-touch.css` and `feature-board-touch.js`
 | Assignee | ![Assignee sheet, light](images/fboard-assign.light.png) | ![Assignee sheet, dark](images/fboard-assign.dark.png) |
 | Filter | ![Filter sheet, light](images/fboard-filter.light.png) | ![Filter sheet, dark](images/fboard-filter.dark.png) |
 | Filtered | ![Filtered, light](images/fboard-filtered.light.png) | ![Filtered, dark](images/fboard-filtered.dark.png) |
-| Show n closed | ![End of the page, light](images/fboard-end.light.png) | ![End of the page, dark](images/fboard-end.dark.png) |
-| Closed shown | ![Closed stories shown, light](images/fboard-closed.light.png) | ![Closed stories shown, dark](images/fboard-closed.dark.png) |
+| Closed stories, one line each | ![End of the page, light](images/fboard-end.light.png) | ![End of the page, dark](images/fboard-end.dark.png) |
 | ⋯ More | ![More sheet, light](images/fboard-more.light.png) | ![More sheet, dark](images/fboard-more.dark.png) |
 | + Add story or bug | ![Add row, light](images/fboard-add.light.png) | ![Add row, dark](images/fboard-add.dark.png) |
 | Parent Feature | ![Parent Feature, light](images/fboard-parent.light.png) | ![Parent Feature, dark](images/fboard-parent.dark.png) |
@@ -335,3 +334,49 @@ The Sprint backlog (`/p/:key/sprints/:id/backlog`) and the sprint header every s
 | Edit sprint | ![Edit sprint, light](images/sprint-backlog-edit.light.png) | ![Edit sprint, dark](images/sprint-backlog-edit.dark.png) |
 | Close sprint | ![Close sprint, light](images/sprint-backlog-close.light.png) | ![Close sprint, dark](images/sprint-backlog-close.dark.png) |
 | Someone else changed it | ![Conflict toast, light](images/sprint-backlog-conflict.light.png) | ![Conflict toast, dark](images/sprint-backlog-conflict.dark.png) |
+
+## Sprint Taskboard (SHIP-725)
+
+The sprint Taskboard (`/p/:key/sprints/:id/taskboard`) at 900px and below, inside the touch shell. Desktop is unchanged. The board works like the Feature board (SHIP-722): one task state a page in a sideways pager with state chips, every story a lane on every page, closed stories one line each, ⋯ and long-press drag. The header is SHIP-724's shared sprint header. What only the Taskboard has: Unparented as the last lane, Pick up always visible, "All tasks done" in the lane, a teammate's move pulsing its state chip, and Taskboard settings full screen. The decisions (D1–D20, settled by Joel on 7 Nov 2026) are in [design/README.md › Sprint Taskboard on a phone](../README.md#sprint-taskboard-on-a-phone-ship-725) and on SHIP-725.
+
+| File | What it is |
+|---|---|
+| `../screens/taskboard-touch.css`, `taskboard-touch.js` | The touch layer, loaded by `taskboard.html` (which exposes its state as `SL.tb` and fires `tb:render`). `?col=<state>`, `?sheet=task\|story\|assign&task=KEY`, `?sheet=filter\|more\|sprint\|sprintmore`, `?filter=mei`, `?alldone`, `?drag=KEY&to=<state>`, `?bump=<state>`, `?add`, `?addtask=KEY`, `?at=KEY` (with `?shot`), `?view=people`, `?dialog=settings&pane=styles\|tags`. In the mocks it is a copy of `feature-board-touch.*` with the Taskboard's extras. |
+| `taskboard-review.html` | The design review: today on a phone, every state as a live frame, the requirements, the decisions and the acceptance criteria. |
+| `images/tboard*.png` | `taskboard.html` at 390 × 844, 2× scale, light and dark (made by `screenshots.sh`). |
+| `images/today-tboard*.png` | The real Taskboard at 390 × 844 before this change (the SPA's component harness with the page-shot fixtures, 1×). |
+
+### Today
+
+| Stories | People | Taskboard settings |
+|---|---|---|
+| ![Today: the Taskboard at 390px](images/today-tboard-full.png) | ![Today: grouped by People](images/today-tboard-people-full.png) | ![Today: Taskboard settings](images/today-tboard-settings.png) |
+
+1. Only the Story / bug column and part of New fit; Active, In review and Closed are off to the right.
+2. Tasks move only by HTML drag and drop, which touch screens don't fire; Pick up shows only on hover.
+3. The toolbar wraps onto three lines and "+ Add story or bug" is cut off.
+4. Taskboard settings keeps its two-column dialog, so the rules are cut off at the right.
+
+### The phone page
+
+| State | Light | Dark |
+|---|---|---|
+| New: the first page | ![Taskboard, light](images/tboard.light.png) | ![Taskboard, dark](images/tboard.dark.png) |
+| Active | ![Active, light](images/tboard-active.light.png) | ![Active, dark](images/tboard-active.dark.png) |
+| Long press and drag | ![Dragging a task, light](images/tboard-drag.light.png) | ![Dragging a task, dark](images/tboard-drag.dark.png) |
+| Task ⋯ (Pick up first) | ![Task actions, light](images/tboard-task.light.png) | ![Task actions, dark](images/tboard-task.dark.png) |
+| Move to another story | ![Story sheet, light](images/tboard-story.light.png) | ![Story sheet, dark](images/tboard-story.dark.png) |
+| Assignee | ![Assignee sheet, light](images/tboard-assign.light.png) | ![Assignee sheet, dark](images/tboard-assign.dark.png) |
+| Filter | ![Filter sheet, light](images/tboard-filter.light.png) | ![Filter sheet, dark](images/tboard-filter.dark.png) |
+| Filtered | ![Filtered, light](images/tboard-filtered.light.png) | ![Filtered, dark](images/tboard-filtered.dark.png) |
+| End of the page: closed story, Unparented | ![End of the page, light](images/tboard-end.light.png) | ![End of the page, dark](images/tboard-end.dark.png) |
+| All tasks done | ![All tasks done, light](images/tboard-alldone.light.png) | ![All tasks done, dark](images/tboard-alldone.dark.png) |
+| A teammate's move | ![Chip pulse, light](images/tboard-bump.light.png) | ![Chip pulse, dark](images/tboard-bump.dark.png) |
+| Board ⋯ | ![Board actions, light](images/tboard-more.light.png) | ![Board actions, dark](images/tboard-more.dark.png) |
+| Sprint picker | ![Sprints sheet, light](images/tboard-sprint.light.png) | ![Sprints sheet, dark](images/tboard-sprint.dark.png) |
+| Header ⋯ | ![Header actions, light](images/tboard-sprint-more.light.png) | ![Header actions, dark](images/tboard-sprint-more.dark.png) |
+| + Add story or bug | ![Add row, light](images/tboard-add.light.png) | ![Add row, dark](images/tboard-add.dark.png) |
+| Grouped by People | ![People lanes, light](images/tboard-people.light.png) | ![People lanes, dark](images/tboard-people.dark.png) |
+| Settings: Styles | ![Settings styles, light](images/tboard-settings.light.png) | ![Settings styles, dark](images/tboard-settings.dark.png) |
+| Settings: Fields | ![Settings fields, light](images/tboard-settings-fields.light.png) | ![Settings fields, dark](images/tboard-settings-fields.dark.png) |
+| Settings: Tag colours | ![Settings tag colours, light](images/tboard-settings-tags.light.png) | ![Settings tag colours, dark](images/tboard-settings-tags.dark.png) |

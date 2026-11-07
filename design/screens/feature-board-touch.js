@@ -4,7 +4,7 @@
  *   - a pager with one page per task state (the next one peeks) and state chips above it with their counts
  *   - on every page, every story or bug of the Feature as a lane (D4): its compact index card, then its tasks in that
  *     state, or None; on a parent Feature a band per Feature; grouped by People the people are the lanes
- *   - closed stories behind "Show n closed" at the end of each Feature's lanes (D8)
+ *   - closed stories as one-line lanes in backlog order, as on desktop (D8, changed 7 Nov in the SHIP-725 review)
  *   - a ⋯ on every task opening its actions (Move to a state, another story, Assignee, Open); a long press lifts the
  *     task to drag it to another lane, or to the screen's edge to turn the page; let go without moving and the actions
  *     open (D2). Tapping a task opens it (D3). After a move the pager stays on the page you were reading.
@@ -14,7 +14,6 @@
  *   ?sheet=task|story|assign&task=SHIP-172   a task's action sheet, or its Move to story / Assign sheet
  *   ?sheet=filter, ?sheet=more               the Filter sheet and the ⋯ More action sheet
  *   ?filter=mei,none                         starts filtered to those people
- *   ?closed                                  closed stories shown
  *   ?add                                     the "+ Add" row (story or bug) open
  *   ?addtask=SHIP-158                        the "+ Task" field open on that story (on the first page)
  *   ?drag=SHIP-176&to=active                 a task lifted and held over its lane on that page
@@ -58,7 +57,6 @@
   document.body.append(sheet);
 
   let addingTo = q.get('addtask');
-  let showClosed = q.has('closed');
   let current = 0;
   if (q.get('filter')) { q.get('filter').split(',').filter(p => p === 'none' || people[p]).forEach(p => S.filter.add(p)); F.render(); }
 
@@ -100,7 +98,7 @@
     const done = all.filter(t => cat(t.state) === 'completed').length;
     const collapsed = S.collapsed.has(p.key);
     const toggle = `<button class="ib" type="button" data-collapse="${p.key}" aria-expanded="${!collapsed}" aria-label="${collapsed ? 'Expand' : 'Collapse'} ${p.key}">${collapsed ? '▶' : '▼'}</button>`;
-    if (collapsed) return `<div class="fbt-lane" data-at="${p.key}"><div class="rowh collapsed">${toggle}${tIcon(p.type)}<span class="t1">${esc(p.title)}</span><span class="cnt">${shown.length ? `${shown.length} here` : ''}</span><span class="st ${cat(p.state)}">${p.state}</span></div></div>`;
+    if (collapsed) return `<div class="fbt-lane" data-at="${p.key}"><div class="rowh collapsed">${toggle}${tIcon(p.type)}<span class="t1">${esc(p.title)}</span><span class="cnt">${shown.length ? `${shown.length} here · ` : ''}☑ ${done}/${all.length}</span><span class="st ${cat(p.state)}">${p.state}</span></div></div>`;
     const stSel = `<span class="stsel"><span class="st ${cat(p.state)}"></span><select data-pstate="${p.key}" aria-label="State of ${p.key}">${states.story.filter(s => cat(s) !== 'removed').map(n => `<option${n === p.state ? ' selected' : ''}>${n}</option>`).join('')}</select></span>`;
     const prog = all.length ? `<span class="prog">☑ ${done}/${all.length}<span class="bar"><i style="width:${Math.round(done / all.length * 100)}%"></i></span></span>` : '';
     const hidden = here.length - shown.length;
@@ -126,14 +124,13 @@
   function storiesPage(c, ci) {
     return tree.map((f, i) => {
       const parents = S.parents.filter(p => p.feature === f.key);
-      const open = parents.filter(p => cat(p.state) !== 'completed'), closed = parents.filter(p => cat(p.state) === 'completed');
       const multi = tree.length > 1;
       if (i === 0 && multi && !parents.length) return '';
       const head = multi ? sectionHead(f, i === 0) : '';
       if (multi && S.closedSections.has(f.key)) return head;
-      const closedBtn = closed.length ? `<button class="fbt-closed" type="button" data-closed aria-expanded="${showClosed}"><span class="st completed"></span>${showClosed ? 'Hide' : 'Show'} ${closed.length} closed</button>` : '';
-      const lanes = [...open.map(p => storyLane(p, c, ci)), ...(showClosed ? closed.map(p => storyLane(p, c, ci)) : [])].join('');
-      return head + (parents.length ? lanes + closedBtn : '<p class="fbt-empty">No stories or bugs yet.</p>');
+      // Backlog order; Completed stories start collapsed to one line (S.collapsed), as on desktop (D8).
+      const lanes = parents.map(p => storyLane(p, c, ci)).join('');
+      return head + (parents.length ? lanes : '<p class="fbt-empty">No stories or bugs yet.</p>');
     }).join('');
   }
 
@@ -242,12 +239,11 @@
         <p class="note">Every story keeps its lane; tasks that don't match are counted, not shown.</p>
       </div>`;
     } else if (kind === 'more') {
-      const f = tree[0], nClosed = S.parents.filter(p => cat(p.state) === 'completed').length;
+      const f = tree[0];
       sheet.setAttribute('aria-label', 'More');
       sheet.innerHTML = `${head('Feature board')}<div class="body">
         <button class="opt" type="button" data-all="collapse"><span class="tx"><span>Collapse all stories</span></span></button>
         <button class="opt" type="button" data-all="expand"><span class="tx"><span>Expand all stories</span></span></button>
-        ${nClosed ? `<button class="opt" type="button" data-all="closed"><span class="tx"><span>${showClosed ? 'Hide' : 'Show'} closed stories</span></span><span class="val">${nClosed}</span></button>` : ''}
         <hr>
         <a class="opt" href="taskboard.html?dialog=settings"><span class="tx"><span>Card settings</span><small>Shared with the Taskboard</small></span><span class="go">${ICON.go}</span></a>
         <a class="opt" href="${f.key === 'SHIP-101' ? 'feature.html' : '#'}"><span class="tx"><span>Open ${f.key}</span><small>${esc(f.title)}</small></span><span class="go">${ICON.open}</span></a>
@@ -290,7 +286,6 @@
     const all = e.target.closest('[data-all]');
     if (all) {
       closeSheet();
-      if (all.dataset.all === 'closed') { showClosed = !showClosed; draw(); return; }
       S.parents.forEach(p => all.dataset.all === 'collapse' ? S.collapsed.add(p.key) : S.collapsed.delete(p.key));
       F.render();
     }
@@ -322,7 +317,6 @@
     if (suppressClick) { suppressClick = false; e.stopPropagation(); e.preventDefault(); return; }
     const c = e.target.closest('[data-collapse]'); if (c) { const k = c.dataset.collapse; S.collapsed.has(k) ? S.collapsed.delete(k) : S.collapsed.add(k); F.render(); return; }
     const s = e.target.closest('[data-section]'); if (s) { const k = s.dataset.section; S.closedSections.has(k) ? S.closedSections.delete(k) : S.closedSections.add(k); F.render(); return; }
-    if (e.target.closest('[data-closed]')) { showClosed = !showClosed; draw(); return; }
     const m = e.target.closest('[data-task]'); if (m) { openSheet('task', m.dataset.task); return; }
     const a = e.target.closest('[data-addtask]'); if (a) { addingTo = a.dataset.addtask; draw(); pager.querySelector('.fbt-addtask .field').focus(); return; }
     const go = e.target.closest('[data-addtask-go]');
@@ -332,7 +326,8 @@
   pager.addEventListener('change', e => {
     const sel = e.target.closest('[data-pstate]'); if (!sel) return;
     const p = S.parents.find(x => x.key === sel.dataset.pstate); p.state = sel.value;
-    F.render(); toast(`${p.key} → ${esc(p.state)}${cat(p.state) === 'completed' ? ' (now under Show closed)' : ''}`);
+    if (cat(p.state) === 'completed') S.collapsed.add(p.key);
+    F.render(); toast(`${p.key} → ${esc(p.state)}${cat(p.state) === 'completed' ? ' (collapsed to one line)' : ''}`);
   });
 
   /* Long press and touch drag (D2, as SHIP-719). A long press lifts the task: drag it to another lane on this page, or

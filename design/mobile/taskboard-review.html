@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SHIP-725 · Sprint Taskboard on a phone</title>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+html { background: var(--color-bg); color: var(--color-text); }
+body { margin: 0; font: var(--text-base)/1.55 var(--font-sans); -webkit-font-smoothing: antialiased; }
+a { color: var(--color-accent); }
+code { font-family: var(--font-mono); font-size: .9em; padding: 0 4px; border-radius: var(--radius-xs); background: var(--color-surface-2); }
+.wrap { max-width: 1320px; margin: 0 auto; padding: 32px 28px 80px; display: grid; gap: 40px; }
+.wrap > * { min-width: 0; }
+header.top { display: grid; gap: 10px; }
+.eyebrow { font-size: var(--text-xs); font-weight: var(--weight-semibold); letter-spacing: .06em; text-transform: uppercase; color: var(--color-muted); }
+h1 { margin: 0; font-size: 28px; line-height: 1.2; letter-spacing: -.01em; }
+h2 { margin: 0 0 4px; font-size: 20px; }
+h3 { margin: 0; font-size: var(--text-md); }
+p { margin: 0; max-width: 860px; }
+.lead { font-size: var(--text-md); color: var(--color-muted); max-width: 920px; }
+.muted { color: var(--color-muted); }
+.sm { font-size: var(--text-sm); }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { display: inline-flex; align-items: center; gap: 6px; min-height: 24px; padding: 2px 10px; border-radius: 999px; background: var(--color-surface-2); font-size: var(--text-xs); font-weight: var(--weight-medium); }
+.chip.accent { background: var(--color-accent-soft); }
+.chip.warn { background: color-mix(in srgb, var(--color-warn) 20%, transparent); }
+section.block { display: grid; gap: 16px; }
+.sec-head { display: flex; align-items: end; gap: 16px; flex-wrap: wrap; }
+.sec-head > div { flex: 1; min-width: 280px; display: grid; gap: 4px; }
+.card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 16px 18px; }
+
+/* Phones */
+.phones { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 28px 20px; }
+.phone { display: grid; gap: 8px; justify-items: center; align-content: start; margin: 0; }
+.phone .frame { width: 328px; height: 691px; padding: 8px; border-radius: 34px; background: #0f1520; box-shadow: 0 1px 0 rgb(255 255 255 / .06) inset, 0 18px 40px rgb(0 0 0 / .22); }
+.phone .screen { width: 312px; height: 675px; overflow: hidden; border-radius: 26px; background: var(--color-surface); position: relative; }
+.phone iframe { width: 390px; height: 844px; border: 0; transform: scale(.8); transform-origin: 0 0; display: block; }
+.phone img { width: 312px; display: block; }
+.phone .screen.scroll { overflow-y: auto; scrollbar-width: thin; }
+.phone .cap { width: 328px; display: grid; gap: 2px; }
+.phone .cap b { font-size: var(--text-sm); }
+.phone .cap span { font-size: var(--text-xs); color: var(--color-muted); }
+.phone .cap a { font-size: var(--text-xs); }
+.today .frame { background: #3a1f22; }
+.bad { display: block; font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--color-danger) !important; }
+.tablet { grid-column: span 2; }
+.tablet .frame { width: 389px; height: 551px; padding: 10px; border-radius: 22px; }
+.tablet .screen { width: 369px; height: 531px; border-radius: 12px; }
+.tablet iframe { width: 820px; height: 1180px; transform: scale(.45); }
+.tablet .cap { width: 389px; }
+@media (max-width: 760px) { .tablet { grid-column: auto; } }
+.toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.seg { display: inline-flex; border: 1px solid var(--color-border); border-radius: var(--radius-sm); overflow: hidden; background: var(--color-surface); }
+.seg button { height: 30px; padding: 0 12px; border: 0; border-right: 1px solid var(--color-border); background: transparent; color: var(--color-muted); font: inherit; font-size: var(--text-sm); cursor: pointer; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--color-accent-soft); color: var(--color-text); font-weight: var(--weight-semibold); }
+.group-title { display: flex; gap: 10px; align-items: center; margin-top: 4px; }
+ol.issues { margin: 0; padding-left: 22px; display: grid; gap: 4px; font-size: var(--text-sm); max-width: 980px; }
+
+/* Layout options */
+.opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.optc { display: grid; gap: 10px; align-content: start; }
+.optc.rec { border-color: var(--color-accent); box-shadow: 0 0 0 1px var(--color-accent); }
+.optc svg { width: 100%; max-width: 240px; height: auto; justify-self: center; }
+.optc .tag { justify-self: start; font-size: var(--text-2xs); font-weight: var(--weight-semibold); text-transform: uppercase; letter-spacing: .05em; padding: 2px 8px; border-radius: 999px; background: var(--color-surface-2); color: var(--color-muted); }
+.optc.rec .tag { background: var(--color-accent); color: var(--color-accent-fg); }
+.optc ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: var(--text-sm); }
+.optc li.minus::marker { content: "− "; color: var(--color-danger); }
+.optc li.plus::marker { content: "+ "; color: var(--color-ok); }
+
+/* Rules table */
+table.rules { width: 100%; border-collapse: collapse; background: var(--color-surface); font-size: var(--text-sm); }
+table.rules th, table.rules td { padding: 10px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+table.rules th { background: var(--color-surface-2); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .05em; color: var(--color-muted); }
+table.rules td:first-child { font-weight: var(--weight-semibold); white-space: nowrap; }
+table.rules tr:last-child td { border-bottom: 0; }
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
+
+/* Decisions */
+.decisions { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 14px; }
+@media (max-width: 460px) { .decisions { grid-template-columns: minmax(0, 1fr); } }
+fieldset.d { margin: 0; display: grid; gap: 8px; align-content: start; padding: 14px 16px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); min-width: 0; }
+fieldset.d legend { float: left; width: 100%; padding: 0; display: flex; gap: 8px; align-items: baseline; font-weight: var(--weight-semibold); }
+fieldset.d legend .id { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-muted); }
+fieldset.d .why { font-size: var(--text-sm); color: var(--color-muted); }
+fieldset.d label.opt { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; align-items: start; padding: 8px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-md); cursor: pointer; font-size: var(--text-sm); }
+fieldset.d label.opt:has(input:checked) { border-color: var(--color-accent); background: var(--color-accent-soft); }
+fieldset.d label.opt input { margin: 2px 0 0; accent-color: var(--color-accent); }
+fieldset.d label.opt small { display: block; color: var(--color-muted); font-size: var(--text-xs); }
+fieldset.d .rec { font-size: var(--text-2xs); font-weight: var(--weight-semibold); text-transform: uppercase; letter-spacing: .05em; color: var(--color-ok); margin-left: 4px; }
+fieldset.d small.pager { margin-top: 4px; padding: 4px 8px; border-left: 3px solid var(--color-info); background: color-mix(in srgb, var(--color-info) 8%, transparent); color: var(--color-text); }
+fieldset.d .ord { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-muted); }
+fieldset.d .same { font-size: var(--text-2xs); font-weight: var(--weight-semibold); color: var(--color-info); margin-left: 4px; }
+fieldset.d textarea { width: 100%; min-height: 34px; padding: 6px 8px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: inherit; font: inherit; font-size: var(--text-sm); resize: vertical; }
+.submit-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 14px 16px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); position: sticky; bottom: 12px; box-shadow: 0 8px 24px rgb(0 0 0 / .12); margin-top: 14px; }
+.btn { display: inline-flex; align-items: center; height: 34px; padding: 0 14px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); font: inherit; font-size: var(--text-sm); font-weight: var(--weight-medium); cursor: pointer; }
+.btn.primary { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-fg); }
+.status { font-size: var(--text-sm); color: var(--color-muted); }
+ol.ac { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 980px; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; }
+.two .card { display: grid; gap: 8px; align-content: start; }
+.two ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: var(--text-sm); }
+.carried { display: grid; gap: 6px; }
+table.rules td.same { white-space: normal; font-weight: var(--weight-regular); color: var(--color-info); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <span class="eyebrow">SHIP-725 · Mobile sprint taskboard · design for review</span>
+  <h1>The sprint Taskboard on a phone</h1>
+  <p class="lead">The sprint Taskboard is the same grid as the Feature board: a row per story or bug, a column per task state, tasks as cards. So at 900px and below it gets <b>the layout you settled for SHIP-722</b>: one task state a page in a sideways pager, every story a lane on every page, ⋯ and long-press drag to move tasks, closed stories one line each, as on desktop. This page covers what only the Taskboard has: the sprint header and picker, the sprint tabs, the Unparented lane, Pick up, “All tasks done”, Close sprint and the Taskboard settings dialog. The phones below are the reference screen (<code>taskboard.html</code>) running live at 390 × 844 in ShipLean's own design system, so you can tap them.</p>
+  <div class="chips">
+    <span class="chip accent">Design only · nothing built</span>
+    <span class="chip">On PR #69 (<code>design/713-mobile-shell</code>)</span>
+    <span class="chip">New: <code>design/screens/taskboard-touch.css</code>, <code>taskboard-touch.js</code></span>
+    <span class="chip">Follows SHIP-805; C4, C5, C9 and C13 drawn as recommended there</span>
+    <span class="chip accent">All 20 decisions settled 7 Nov: D8 changed to one line each, the rest as shown</span>
+    <span class="chip warn">D10, D11, D17 follow SHIP-724's shared sprint header (settled the same day): Close sprint and All sprints sit in the header's ⋯</span>
+  </div>
+</header>
+
+<section class="block">
+  <div class="sec-head"><div>
+    <h2>Today: the desktop grid in a 390px window</h2>
+    <p class="muted sm">The real SPA at 390 × 844 with the page-shot fixtures, before SHIP-713's shell. Scroll inside each phone to see the whole page.</p>
+  </div></div>
+  <div class="phones today" id="todayPhones"></div>
+  <ol class="issues">
+    <li>Only the Story / bug column and part of New fit (<code>268px + 176px</code> per state). Active, In review and Closed are off to the right.</li>
+    <li>Tasks move only by HTML drag and drop, which touch screens don't fire. Pick up only shows on hover, which a phone doesn't have.</li>
+    <li>The toolbar wraps onto three lines: “Group by” on two lines, faces, Settings, and “+ Add story or bug” cut off at the right.</li>
+    <li>“All sprints” and “Close sprint” take a line of their own under the sprint name.</li>
+    <li>Taskboard settings keeps its two-column dialog: the section list takes half the width and the rules are cut off at the right.</li>
+  </ol>
+</section>
+
+<section class="block">
+  <div class="sec-head">
+    <div>
+      <h2>Proposed: 900px and below</h2>
+      <p class="muted sm">Each phone opens a state through its URL; “Open” shows it full size (narrow the window below 900px). Swipe the pager or tap a state chip. Moves go through the reference board's own move, so the toasts and auto-assign are the real rules. Use the Preview panel's “Teammate's move” (in “Open”) to see the chip pulse.</p>
+    </div>
+    <div class="toolbar" style="flex:none">
+      <span class="sm muted">Theme</span>
+      <div class="seg" role="group" aria-label="Theme of the phones"><button type="button" data-theme="light" aria-pressed="true">Light</button><button type="button" data-theme="dark" aria-pressed="false">Dark</button></div>
+    </div>
+  </div>
+  <div class="group-title"><span class="chip">=</span><h3>The board, as SHIP-722</h3></div>
+  <div class="phones" id="boardPhones"></div>
+  <div class="group-title"><span class="chip accent">New</span><h3>What only the Taskboard has</h3></div>
+  <div class="phones" id="extraPhones"></div>
+</section>
+
+<section class="block">
+  <div class="sec-head"><div>
+    <h2>What changes at 900px and below</h2>
+    <p class="muted sm">Written as requirements for the app. The shared rules are SHIP-805's; the board itself is SHIP-722's (the blue rows). Above 900px nothing changes.</p>
+  </div></div>
+  <div class="tbl-wrap"><table class="rules">
+    <thead><tr><th>Area</th><th>Desktop</th><th>900px and below</th></tr></thead>
+    <tbody>
+      <tr><td>Grid, lanes, moves, Filter, closed stories, + Task, + Add</td><td>As on the Feature board</td><td class="same">As SHIP-722 settled on 7 Nov (D1–D9 below): state pager with chips, every story a lane on every page with None, ⋯ action sheet plus long-press drag, tap opens the item modal, Filter sheet with counts, filtered-out tasks counted, closed stories one line each in backlog order, as desktop (D8, changed for both boards on 7 Nov), native story state select. + Add adds a story or bug to this sprint.</td></tr>
+      <tr><td>Sprint header</td><td>Sprint 24 ▾ picker, Current, dates and days left, All sprints, Close sprint</td><td>SHIP-724's shared phone header (its D5, D6, D10), built once in <code>SprintHeader</code>: the picker, Current and ⋯ on one line; the dates and time left; the goal in two lines (tap to expand). The picker opens a Sprints sheet with dates and Past / Current / Future, All sprints at the foot; picking keeps the Taskboard tab (D10). The header's ⋯ has Edit goal, Edit sprint, All sprints and Close sprint (D17).</td></tr>
+      <tr><td>Sprint tabs</td><td>Backlog · Taskboard · Capacity · Retro · Demo, in the toolbar</td><td>SHIP-724's tabs row at the foot of the header: 38px, underlined, scrolling sideways in their own box with the current tab in view (D11).</td></tr>
+      <tr><td>Toolbar</td><td>Group by, faces, Filter, ⚙ Settings, + Add story or bug</td><td>One row under the tabs: Stories | People · Filter (n) · ⋯ · + Add (as SHIP-722). The board's ⋯ has Collapse all, Expand all and Taskboard settings.</td></tr>
+      <tr><td>Unparented</td><td>The last row, with a hint</td><td>The last lane on every page, with a dashed header (“Unparented · 2 tasks · no points”), so a task can be dropped there or added with + Task (D12). Move to another story offers “No parent”.</td></tr>
+      <tr><td>Pick up</td><td>A button on hover over an unassigned New task</td><td>Always shown on an unassigned task in a New-category state, in place of the empty face; also the first row of the task's ⋯ sheet. Assigns you and moves it to Active (D13).</td></tr>
+      <tr><td>All tasks done</td><td>A prompt in the row header: Move to Resolved, ✕</td><td>The same prompt inside the lane's card, on every page (D14). It never moves the story by itself.</td></tr>
+      <tr><td>Taskboard settings</td><td>A dialog: section list on the left, pane on the right, Cancel and Save</td><td>⋯ → Taskboard settings opens it full screen (rule 4): ✕ top left (C9), Fields · Styles · Tag colours as chips, one column of fields, rule clauses stacked (field and operator, then value and ✕), swatches at 32px, and the footer as the Save bar with Discard and Save (rule 15) (D15).</td></tr>
+      <tr><td>Group by People</td><td>A row per person, everyone on the project</td><td>Everyone on the project is a lane on every page, Unassigned first, with “None” or “No tasks in this sprint” (D16). Each card names its story.</td></tr>
+      <tr><td>A teammate's move</td><td>Card flashes, toast</td><td>Card flashes and toast as desktop; the chip of the state it landed in pulses, and the pager stays where you are (D18).</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section class="block">
+  <div class="sec-head"><div>
+    <h2>Decisions</h2>
+    <p class="muted sm"><b>Settled 7 Nov:</b> you kept everything as shown except D8 (closed stories one line each, for both boards). D1–D9 show SHIP-722's options exactly as you saw them, in the same order and numbered, with your SHIP-722 answer selected. SHIP-722's options were worded for the story list, its first recommendation; a blue “On the pager” line says what each option becomes on the state pager you chose. D4 is the one I'm least sure was read the way you meant. Change any that should differ, for both boards. D10–D20 are new; the first option is my recommendation and is what the phones show.</p>
+  </div></div>
+  <form id="decisions" data-lavish-question="ship-725-decisions">
+    <div class="decisions" id="dlist"></div>
+    <div class="submit-row">
+      <button class="btn primary" type="submit">Queue decisions</button>
+      <span class="status" id="qstatus">Nothing queued yet.</span>
+      <span style="flex:1"></span>
+      <button class="btn" type="button" id="copyAll">Copy all answers</button>
+      <span class="status" data-lavish-copy-all-status role="status" aria-live="polite"></span>
+    </div>
+  </form>
+</section>
+
+<section class="block">
+  <div class="sec-head"><div>
+    <h2>Proposed acceptance criteria for SHIP-725</h2>
+    <p class="muted sm">With the recommended decisions, on top of SHIP-722's. These go on SHIP-725 once you've settled them.</p>
+  </div></div>
+  <div class="card"><ol class="ac">
+    <li>At 390 × 844 the sprint Taskboard has no page-level sideways scroll, in both themes, grouped by Stories and by People. Only the sprint tabs, the state chips and the state pager scroll sideways, each in its own box. Above 900px nothing changes.</li>
+    <li>The board meets SHIP-722's criteria for the pager, lanes, “None”, closed stories on one line, ⋯ and long-press moves, tap to open, Filter and the one-row toolbar, using the same shared Taskboard grid code.</li>
+    <li>Unparented is the last lane on every page; a task can be dragged or moved (“No parent”) into it and added to it with + Task.</li>
+    <li>An unassigned task in a New-category state shows Pick up without hover; Pick up (on the card or in the ⋯ sheet) assigns you and moves it to the first In progress state.</li>
+    <li>When every task of an open story is in a Completed state, its lane offers Move to Resolved and ✕ on every page; nothing moves by itself.</li>
+    <li>The Taskboard uses SHIP-724's shared phone sprint header (picker sheet, Current, ⋯ with Edit goal, Edit sprint, All sprints and Close sprint, the goal, the tabs); the board's ⋯ has Collapse all, Expand all and Taskboard settings.</li>
+    <li>Taskboard settings opens full screen with ✕ at the top left, section chips, every field and swatch at 32px or more, inputs at 16px, and the SHIP-713 Save bar (Discard, Save).</li>
+    <li>A teammate's move flashes the card, shows the toast and pulses the target state's chip without turning the page.</li>
+    <li>Page screenshots at 390 × 844 in both themes next to the desktop ones: taskboard, taskboard-people, taskboard-task-actions, taskboard-settings.</li>
+    <li>Analytics: <code>work_item.moved</code> from <code>Taskboard.Move</code> carries <code>method</code> (drag, touch drag, keyboard, sheet, pick up), shared with SHIP-722, next to <code>viewport</code>. We compare task moves per Taskboard view, week by week, on phones against desktop, before and after this ships.</li>
+  </ol></div>
+</section>
+
+<section class="block">
+  <div class="two">
+    <div class="card"><h3>Owned elsewhere</h3><ul>
+      <li><b>SHIP-722</b>: the Feature board. Its D11 builds the phone layout in the shared Taskboard grid, so this story only adds the extras above (D19).</li>
+      <li><b>SHIP-805</b>: the shared rules. Rule 7 needs to name the Taskboard's state pager as well as SHIP-719's and SHIP-722's.</li>
+      <li><b>SHIP-713</b>: top bar, drawer, <code>Sheet</code>, <code>SaveBar</code>, scrim and <code>viewport</code>.</li>
+      <li><b>SHIP-714</b>: the item modal a task opens.</li>
+      <li><b>SHIP-724</b>: the Sprint backlog and the shared phone sprint header (<code>SprintHeader</code>: picker, ⋯, goal, tabs), which this page uses. SHIP-726 and SHIP-727 get it too.</li>
+      <li><b>sprint-end.html</b>: the Close sprint dialog (SHIP-549), not redesigned here.</li>
+    </ul></div>
+    <div class="card"><h3>Where things are</h3><ul>
+      <li><code>design/screens/taskboard-touch.css</code> and <code>taskboard-touch.js</code>; <code>taskboard.html</code> exposes its state as <code>SL.tb</code> and fires <code>tb:render</code>.</li>
+      <li>In the mocks <code>taskboard-touch.*</code> is a copy of SHIP-722's <code>feature-board-touch.*</code> with the Taskboard's extras; the app builds them once in the shared Taskboard grid.</li>
+      <li>Review states: <code>?col=active</code>, <code>?sheet=task|story|assign&amp;task=KEY</code>, <code>?sheet=filter|more|sprint|sprintmore</code>, <code>?filter=mei</code>, <code>?alldone</code>, <code>?drag=KEY&amp;to=active</code>, <code>?bump=active</code>, <code>?add</code>, <code>?addtask=KEY</code>, <code>?at=KEY</code> (with <code>?shot</code>), <code>?view=people</code>, <code>?dialog=settings&amp;pane=styles|tags</code>.</li>
+      <li>Images: <code>images/tboard*.png</code> (made by <code>screenshots.sh</code>) and <code>images/today-tboard*.png</code> (the real SPA at 390 × 844, page-shot fixtures).</li>
+      <li>Decisions and acceptance criteria are also on SHIP-725 (<code>mobile-taskboard-design.md</code>).</li>
+    </ul></div>
+  </div>
+</section>
+
+</div>
+
+<script>
+(() => {
+  const TODAY = [
+    ['images/today-tboard-full.png', 'Stories', 'Only New is half visible; the toolbar wraps onto three lines'],
+    ['images/today-tboard-people-full.png', 'Grouped by People', 'Person rows and one column of cards'],
+    ['images/today-tboard-settings.png', 'Taskboard settings', 'Two columns in 390px; the rules are cut off'],
+  ];
+  const BOARD = [
+    ['taskboard.html?', 'New: the first page', 'Every story a lane; closed ones on one line (D8); Pick up on unassigned tasks'],
+    ['taskboard.html?col=active', 'Active', 'The same lanes, None where a story has nothing here'],
+    ['taskboard.html?drag=SHIP-176&to=active', 'Long press and drag', 'Held over its lane on Active'],
+    ['taskboard.html?sheet=task&task=SHIP-173', '⋯ on a task', 'Pick up first; Move to applies and closes'],
+    ['taskboard.html?filter=mei', 'Filtered to Mei Lin', 'Every lane stays; hidden tasks are counted'],
+    ['taskboard.html?view=people', 'Grouped by People', 'Everyone is a lane; cards name their story'],
+  ];
+  const EXTRA = [
+    ['taskboard.html?at=SHIP-129', 'End of the page', 'A closed story on one line, then Unparented as the last lane'],
+    ['taskboard.html?sheet=story&task=SHIP-172', 'Move to another story', 'This sprint\'s stories, then No parent'],
+    ['taskboard.html?alldone&col=closed', 'All tasks done', 'Move to Resolved inside the lane, on every page'],
+    ['taskboard.html?sheet=sprint', 'Sprint picker', 'SHIP-724\'s Sprints sheet: dates, Past / Current / Future'],
+    ['taskboard.html?sheet=sprintmore', 'Header ⋯', 'SHIP-724\'s: Edit goal, Edit sprint, All sprints, Close sprint'],
+    ['taskboard.html?sheet=more', 'Board ⋯', 'Collapse all, Expand all, Taskboard settings'],
+    ['taskboard.html?dialog=settings&pane=styles', 'Taskboard settings: Styles', 'Full screen, chips, clauses stacked, Save bar'],
+    ['taskboard.html?dialog=settings', 'Taskboard settings: Fields', 'One column of checkboxes at 32px'],
+    ['taskboard.html?dialog=settings&pane=tags', 'Taskboard settings: Tag colours', '32px swatches under each tag'],
+    ['taskboard.html?bump=active&col=new', 'A teammate\'s move', 'The Active chip pulses; the page doesn\'t turn'],
+  ];
+  let theme = 'light';
+  const url = u => `../screens/${u}${u.endsWith('?') ? '' : '&'}shot&theme=${theme}`;
+  const frame = cls => ([u, title, sub]) => `<figure class="phone${cls}"><div class="frame"><div class="screen"><iframe loading="lazy" src="${url(u)}" title="${title}"></iframe></div></div>
+    <figcaption class="cap"><b>${title}</b><span>${sub}</span><a href="${url(u).replace('&shot', '').replace('?shot&', '?')}" target="_blank" rel="noopener">Open</a></figcaption></figure>`;
+  const shot = ([src, title, sub]) => `<figure class="phone"><div class="frame"><div class="screen scroll"><img src="${src}" alt="${title} today at 390px" loading="lazy" style="width:312px"></div></div>
+    <figcaption class="cap"><b>${title}</b><span class="bad">${sub}</span></figcaption></figure>`;
+  const render = () => {
+    document.getElementById('todayPhones').innerHTML = TODAY.map(shot).join('');
+    document.getElementById('boardPhones').innerHTML = BOARD.map(frame('')).join('') + frame(' tablet')(['taskboard.html?', 'Tablet, 820px', 'Same pager; two and a bit pages show']);
+    document.getElementById('extraPhones').innerHTML = EXTRA.map(frame('')).join('');
+  };
+  render();
+  document.querySelector('[aria-label="Theme of the phones"]').addEventListener('click', e => {
+    const b = e.target.closest('[data-theme]'); if (!b) return;
+    theme = b.dataset.theme;
+    document.querySelectorAll('[data-theme]').forEach(x => x.setAttribute('aria-pressed', x === b));
+    render();
+  });
+
+  // [id, title, why, options [label, detail], carried from SHIP-722?]
+  // D1–D9: SHIP-722's own options, in SHIP-722's order and wording. pick = Joel's SHIP-722 answer (0-based).
+  // Each option's third field says what it means on the state pager, where the SHIP-722 wording assumed the story list.
+  // [id, title, why, options [label, detail, on the pager], carried from SHIP-722?, pick]
+  const D = [
+    ['D1', 'Fitting the grid', 'SHIP-722 D1 had three options. You picked the second.', [
+      ['Story list: each story with its tasks under it, by state', 'The page is about how far each story is; no sideways scroll; a tablet gets a small board per story.', 'Not drawn here; the SHIP-722 page has its sketch.'],
+      ['State pager, as SHIP-719: one state a page, stories as lanes', 'Same pattern as the other boards; a story is split over four pages; needs SHIP-719\'s rule 7 change.', 'What the phones above show.'],
+      ['Today\'s grid in its own sideways box', 'Least to build; one and a half columns visible; breaks rule 7.', '']], true, 1],
+    ['D2', 'Moving a task on touch', 'SHIP-722 D2 had three options. You picked the second.', [
+      ['⋯ on every task and a long press, both open an action sheet', 'Visible (rule 5), precise; State, story and assignee in one place; two taps per move.', 'No dragging: a long press opens the same sheet as ⋯.'],
+      ['Also touch drag after a long press', 'Feels direct; fiddly across stories in a long list, and a lot to build and test.', 'What the phones show: ⋯ opens the sheet; a long press lifts the task to drag to another lane, or to the screen\'s edge for the next state; let go without moving and the sheet opens.'],
+      ['Swipe a task left or right to move it one state', 'Fast for the common step; hidden, and can\'t change the story or assignee.', 'Conflicts with swiping the pager between states.']], true, 1],
+    ['D3', 'Tapping a task', 'SHIP-722 D3. You kept the recommendation.', [
+      ['Opens the item modal full screen (SHIP-714 D8)', 'Same as desktop; ✕ comes back to the same place.', ''],
+      ['Opens the task\'s action sheet', 'Moves are one tap quicker; reading the task takes one more.', '']], true, 0],
+    ['D4', 'Task states with no tasks', 'SHIP-722 D4 had three options, worded for the story list. You picked the second. On the pager a page is one state, so I read “state headings” as story lanes; check that this is what you meant.', [
+      ['Leave them out; show only states that have tasks', 'Shorter; the column order still holds.', 'A page shows only the stories that have a task in that state; a story appears on some pages and not others.'],
+      ['Show every state heading, with “None” under the empty ones', 'Same shape for every story; much longer page.', 'What the phones show: every story is a lane on every page, in the same order, with “None” when it has no task in that state.'],
+      ['No headings: a flat list with a state pill on each card', 'Shortest; the board feel is gone.', 'A page is a flat list of that state\'s tasks with no story lanes; each card names its story.']], true, 1],
+    ['D5', 'Toolbar', 'SHIP-722 D5. You kept the recommendation.', [
+      ['Stories | People · Filter (n) · ⋯ · + Add', 'Group by is one tap; + Add is short because the row is tight at 390px.', ''],
+      ['+ Add story or bug · Filter (n) · ⋯; Group by inside ⋯', 'Full label; switching to People takes two taps.', '']], true, 0],
+    ['D6', 'The face filter', 'SHIP-722 D6. You kept the recommendation.', [
+      ['A Filter sheet: a row per person with their task count', 'Names, not just initials; the count shows on Filter.', ''],
+      ['Keep the faces as a second toolbar row', 'One tap per person; a second row the other pages don\'t have.', '']], true, 0],
+    ['D7', 'Stories with no tasks for the filter', 'SHIP-722 D7. You kept the recommendation.', [
+      ['Keep them, with “n tasks hidden by Filter”', 'As desktop; you still see every story\'s state and progress.', 'Every lane stays on every page, with “n hidden by Filter”.'],
+      ['Hide them while a filter is on', 'Shorter; stories with no tasks at all disappear too.', '']], true, 0],
+    ['D8', 'Closed stories', 'SHIP-722 D8: you picked the second; on 7 Nov you changed it to the first, for both boards.', [
+      ['One line each (40px), with done/total tasks and the state', 'As desktop.', 'What the phones show: a Completed story is a one-line lane in its backlog place on every page; ▶ opens it.'],
+      ['Gather them behind “Show n closed” at the end', 'Shorter on a Feature with many done stories; one more tap to see them.', '']], true, 0],
+    ['D9', 'Story state on its card', 'SHIP-722 D9. You kept the recommendation.', [
+      ['A native select, 32px with 16px text (SHIP-805 C5)', 'A plain list of values; the phone\'s own picker.', ''],
+      ['A bottom sheet, like the task\'s State', 'Matches the task sheet; more to build.', '']], true, 0],
+    ['D10', 'Switching sprint', 'Desktop: “Sprint 24 ▾” opens a list. Drawn as SHIP-724 D6 (shared header): Past / Current / Future with dates, All sprints at the foot.', [
+      ['A Switch sprint sheet: Current, Next, Past, with dates and goal, then All sprints', 'Reads like the Sprints page; reusable on the other sprint tabs.'],
+      ['A native select of sprint names', 'Least to build; no dates or goals, no grouping.']]],
+    ['D11', 'The sprint tabs', 'Backlog, Taskboard, Capacity, Retro and Demo sit in the toolbar on desktop. Drawn as SHIP-724 D10: the tabs row of the shared header.', [
+      ['Their own row under the header, scrolling sideways if they don\'t fit', 'Rule 7 already allows tabs; one tap between sprint pages; the same row on SHIP-724, 726 and 727.'],
+      ['Drop them on phones; use the drawer\'s Sprints entry', 'Saves a row; switching sprint page takes three taps.']]],
+    ['D12', 'Unparented tasks', 'Desktop always shows an Unparented row last, so there\'s somewhere to drop.', [
+      ['The last lane on every page, even when empty', 'A drop target on every page; consistent with D4.'],
+      ['Only on pages where it has tasks', 'Shorter; you can\'t drag a task into it on an empty page (the sheet\'s “No parent” still works).']]],
+    ['D13', 'Pick up', 'Desktop shows Pick up on hover; rule 5: nothing hover-only.', [
+      ['Always on the card of an unassigned New task, and first in its ⋯ sheet', 'The Taskboard\'s main action is one tap; replaces the empty face.'],
+      ['Only in the ⋯ sheet', 'Quieter cards; two taps to pick up.']]],
+    ['D14', '“All tasks done”', 'Desktop prompts in the row header: Move to Resolved, ✕.', [
+      ['Inside the lane\'s card, on every page', 'Seen whichever page you\'re on; one more line per finished story.'],
+      ['Only on the last (Closed) page', 'Quieter; easy to miss.']]],
+    ['D15', 'Taskboard settings', 'A dialog with a section list and a pane; rule 4: form dialogs go full screen.', [
+      ['⋯ → full screen: ✕ top left, section chips, Save bar (Discard, Save)', 'Everything editable on a phone; the board isn\'t visible while editing, so “updates live” only shows after Save.'],
+      ['Desktop only: ⋯ says “Settings need a wider screen”', 'Nothing to build; rules and fields are set rarely and by one person.']]],
+    ['D16', 'People lanes', 'Desktop lists everyone on the project. SHIP-722 shows only people with tasks on the Feature.', [
+      ['Everyone on the project, Unassigned first, as desktop', 'On a sprint board, who has nothing is the point; differs from SHIP-722.'],
+      ['Only people with tasks in this sprint, as SHIP-722', 'Shorter; idle people disappear.']]],
+    ['D17', 'Close sprint and All sprints', 'The real app has them in the header (Close sprint from SHIP-549). SHIP-724 D5 (settled the same day, shared header) puts them in the header\'s ⋯ with Edit goal and Edit sprint, so that is where they are drawn.', [
+      ['Both in a ⋯ (the header\'s, per SHIP-724 D5; All sprints also at the bottom of the sprint sheet)', 'Saves the header line; Close sprint is used once a sprint.'],
+      ['Keep Close sprint as a button in the header', 'Visible near the sprint end; one more line every day.']]],
+    ['D18', 'A teammate\'s move', 'Desktop: the card flashes and a toast names who moved it.', [
+      ['Also pulse the chip of the state it landed in; never turn the page', 'You see it happened even when the card is on another page.'],
+      ['Toast only', 'Nothing new to build.']]],
+    ['D19', 'Build order and estimate', 'SHIP-722 D11: the phone layout is built once in the shared Taskboard grid.', [
+      ['SHIP-722 builds the grid first; SHIP-725 adds its extras; re-estimate 8 → 5', 'The extras are header, tabs, Unparented, Pick up, All done, settings full screen.'],
+      ['SHIP-725 builds the grid (the Taskboard is used more); SHIP-722 follows', 'Moves the bigger share to this story; keep 8, drop SHIP-722 to 3.'],
+      ['Keep both estimates as they are', 'No re-planning.']]],
+    ['D20', 'Measuring it', 'work_item.moved already fires from Taskboard.Move; SHIP-722 D12 adds method.', [
+      ['The same method property, plus “pick up”, from Taskboard.Move', 'With viewport: task moves and pick-ups per Taskboard view per week, phones against desktop, before and after.'],
+      ['Nothing new; viewport alone', 'Shows phone use, not how people move tasks there.']], true],
+  ];
+  const pickOf = d => d[5] ?? 0;
+  document.getElementById('dlist').innerHTML = D.map(d => { const [id, title, why, opts, same] = d, pick = pickOf(d), carried = d[5] != null; return `<fieldset class="d" data-id="${id}">
+    <legend><span class="id">${id}</span>${title}${same ? '<span class="same">Same as SHIP-722</span>' : ''}</legend>
+    <span class="why">${why}</span>
+    ${opts.map(([o, s, pg], i) => `<label class="opt"><input type="radio" name="${id}" value="${o.replace(/"/g, '&quot;')}"${i === pick ? ' checked' : ''}><span>${carried ? `<b class="ord">${i + 1}.</b> ` : ''}${o}${carried ? (i === pick ? `<span class="same">${id === 'D8' ? 'Decided 7 Nov (changed)' : 'Your SHIP-722 answer'}</span>` : '') + (i === 0 ? '<span class="rec">Recommended then</span>' : '') : i ? '' : '<span class="rec">Recommended</span>'}<small>${s}</small>${pg ? `<small class="pager"><b>On the pager:</b> ${pg}</small>` : ''}</span></label>`).join('')}
+    <textarea name="${id}-note" placeholder="Note (optional)" aria-label="${id} note"></textarea>
+  </fieldset>`; }).join('');
+
+  const answers = () => D.map(d => { const [id, title, , opts] = d;
+    const v = document.querySelector(`input[name="${id}"]:checked`)?.value;
+    const note = document.querySelector(`textarea[name="${id}-note"]`).value.trim();
+    return { id, title, choice: v, recommended: v === opts[pickOf(d)][0], note };
+  });
+  document.getElementById('decisions').addEventListener('submit', e => {
+    e.preventDefault();
+    const items = answers();
+    const changed = items.filter(a => !a.recommended || a.note);
+    const text = items.map(a => `${a.id} ${a.title}: ${a.choice}${a.recommended ? (+a.id.slice(1) < 10 ? ' (as SHIP-722)' : ' (as recommended)') : ' (changed)'}${a.note ? ` — note: ${a.note}` : ''}`).join('\n');
+    if (window.lavish?.queuePrompt) {
+      window.lavish.queuePrompt(`SHIP-725 design decisions. Apply each one to the Taskboard phone design (taskboard-touch.*, this page, the acceptance criteria) and give a per-ID receipt for D1–D20:\n${text}`,
+        { tag: 'tracked-batch', text: `SHIP-725 decisions: ${changed.length} changed or noted`, element: e.currentTarget, queueKey: 'ship-725-decisions', data: { items } });
+      document.getElementById('qstatus').textContent = `Queued ${items.length} decisions (${changed.length} changed or noted). Send to agent to deliver.`;
+    } else {
+      document.getElementById('qstatus').textContent = 'Lavish is not running: use Copy all answers and paste them into the chat.';
+    }
+  });
+  document.getElementById('copyAll').addEventListener('click', async () => {
+    const text = answers().map(a => `${a.id} ${a.title}: ${a.choice}${a.note ? ` — note: ${a.note}` : ''}`).join('\n');
+    const st = document.querySelector('[data-lavish-copy-all-status]');
+    try { await navigator.clipboard.writeText(text); st.textContent = 'Answers copied.'; } catch { st.textContent = 'Clipboard unavailable.'; }
+  });
+})();
+</script>
+</body>
+</html>
