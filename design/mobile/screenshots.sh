@@ -58,6 +58,24 @@ declare -A shots=(
   [attachment-viewer]="./attachment.html?state=viewer"
   [attachment-viewer-zoom]="./attachment.html?state=viewer-zoom"
   [attachment-toolarge]="./attachment.html?state=toolarge"
+  # Backlogs: stories, features and epics (SHIP-716)
+  [backlogs]="./backlogs.html"
+  [backlogs-more]="./backlogs.html?state=more"
+  [backlogs-search]="./backlogs.html?state=search"
+  [backlogs-add]="./backlogs.html?state=add"
+  [backlogs-filter]="./backlogs.html?state=filter"
+  [backlogs-row]="./backlogs.html?state=row"
+  [backlogs-drag]="./backlogs.html?state=drag"
+  [backlogs-select]="./backlogs.html?state=select"
+  [backlogs-bulk-sprint]="./backlogs.html?state=bulk-sprint"
+  [backlogs-points]="./backlogs.html?state=points"
+  [backlogs-planning]="./backlogs.html?mode=planning"
+  [backlogs-planning-drag]="./backlogs.html?mode=planning&state=drag"
+  [backlogs-planning-more]="./backlogs.html?mode=planning&state=more"
+  [backlogs-planning-section]="./backlogs.html?mode=planning&state=section"
+  [backlogs-tree]="./backlogs.html?mode=tree"
+  [backlogs-features]="./backlogs.html?level=features"
+  [backlogs-epics]="./backlogs.html?level=epics"
 )
 
 names=("$@")
