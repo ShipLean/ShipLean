@@ -33,6 +33,21 @@ public sealed class InMemorySprintStore(InMemoryPlanning world, IPublicHolidays?
         }
     }
 
+    public Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        lock (world.Gate)
+        {
+            var sprint = world.Sprint(id);
+            if (world.Items.Any(i => i.SprintId == id))
+            {
+                throw ApiException.Conflict($"{sprint.Name} has work items, so it can't be deleted. Move them to another sprint or the backlog first.");
+            }
+
+            world.Sprints.Remove(sprint);
+            return Task.CompletedTask;
+        }
+    }
+
     public Task<SprintDto> UpdateAsync(Guid id, SprintUpdate update, CancellationToken cancellationToken = default)
     {
         lock (world.Gate)

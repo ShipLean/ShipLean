@@ -65,6 +65,7 @@ public static class UsageEventNames
     public const string SprintCreated = "sprint.created";
     public const string SprintPlanned = "sprint.planned";
     public const string SprintUpdated = "sprint.updated";
+    public const string SprintDeleted = "sprint.deleted";
     public const string SprintCapacityChanged = "sprint.capacity_changed";
     public const string SprintEnded = "sprint.ended";
     public const string SprintRolledOver = "sprint.rolled_over";

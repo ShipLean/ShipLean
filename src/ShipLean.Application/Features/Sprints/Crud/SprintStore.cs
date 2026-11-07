@@ -87,6 +87,39 @@ public sealed partial class SprintStore(NpgsqlDataSource dataSource, TimeProvide
         return saved.ToDto(SprintLabels.Today(clock));
     }
 
+    // FOR UPDATE (not NO KEY UPDATE) on the sprint row: a work item write that names the sprint takes FOR KEY SHARE on it
+    // (WorkItemChecks), so the two never interleave. A write that got there first has committed its item before the
+    // count below runs; one that comes after waits for this archive and then finds no sprint.
+    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        var sprint = await LoadAsync(connection, transaction, id, forUpdate: true, cancellationToken);
+        var hasItems = await connection.ExecuteScalarAsync<bool>(new CommandDefinition(
+            "SELECT EXISTS (SELECT 1 FROM work_item WHERE sprint_id = @id)", new { id }, transaction, cancellationToken: cancellationToken));
+        if (hasItems)
+        {
+            throw ApiException.Conflict($"{sprint.Name} has work items, so it can't be deleted. Move them to another sprint or the backlog first.");
+        }
+
+        var hasRetros = await connection.ExecuteScalarAsync<bool>(new CommandDefinition(
+            """
+            SELECT EXISTS (SELECT 1 FROM retrospective WHERE sprint_id = @id AND archived_at IS NULL)
+                OR EXISTS (SELECT 1 FROM retro_action WHERE raised_sprint_id = @id)
+            """,
+            new { id }, transaction, cancellationToken: cancellationToken));
+        if (hasRetros)
+        {
+            throw ApiException.Conflict($"{sprint.Name} has a retrospective, so it can't be deleted.");
+        }
+
+        var now = clock.GetUtcNow();
+        await connection.ExecuteAsync(new CommandDefinition(
+            "UPDATE sprint SET archived_at = @now, updated_at = @now WHERE id = @id", new { id, now }, transaction, cancellationToken: cancellationToken));
+        await transaction.CommitAsync(cancellationToken);
+        await events.PublishAsync(new SprintChanged(sprint.ProjectId, id));
+    }
+
     private async Task<SprintDto> InsertAsync(DbConnection connection, DbTransaction transaction, Guid projectId, SprintCreate create, bool serialise, CancellationToken cancellationToken)
     {
         var exists = await connection.ExecuteScalarAsync<bool>(new CommandDefinition(

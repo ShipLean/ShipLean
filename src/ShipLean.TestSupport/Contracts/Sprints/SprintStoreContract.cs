@@ -99,6 +99,27 @@ public abstract class SprintStoreContract
     }
 
     [Test]
+    public async Task Delete_WhenSprintIsEmpty_ShouldGoAndFreeItsNameAndDates()
+    {
+        var store = CreateStore();
+        var project = await ArrangeProjectAsync();
+        var created = await store.CreateAsync(project, Sprint("Gone", 40), null);
+
+        await store.DeleteAsync(created.Id);
+
+        (await Should.ThrowAsync<ApiException>(() => store.UpdateAsync(created.Id, new SprintUpdate(null, null, null, "x")))).Code.ShouldBe(ApiErrorCodes.NotFound);
+        (await store.CreateAsync(project, Sprint("Gone", 40), null)).Id.ShouldNotBe(created.Id);
+    }
+
+    [Test]
+    public async Task Delete_WhenSprintIsUnknown_ShouldBeNotFound()
+    {
+        var store = CreateStore();
+
+        (await Should.ThrowAsync<ApiException>(() => store.DeleteAsync(Guid.NewGuid()))).Code.ShouldBe(ApiErrorCodes.NotFound);
+    }
+
+    [Test]
     public async Task Update_ShouldChangeOnlyTheGivenFields()
     {
         var store = CreateStore();
