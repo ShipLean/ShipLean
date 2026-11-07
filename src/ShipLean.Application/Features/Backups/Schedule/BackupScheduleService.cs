@@ -92,6 +92,7 @@ public sealed class BackupScheduleService(
             return PollInterval;
         }
         DateTimeOffset? requested = null;
+        DateTimeOffset? skippedLast = null;
         while (true)
         {
             var now = clock.GetUtcNow();
@@ -113,6 +114,12 @@ public sealed class BackupScheduleService(
             if (next is { } following && now >= following)
             {
                 var skipped = LastMissed(config.Cron, due, following, now);
+                if (skipped == skippedLast)
+                {
+                    // Recorded, yet the cursor hasn't moved past it: look again on the next tick rather than spin.
+                    return PollInterval;
+                }
+                skippedLast = skipped;
                 await runLog.RecordSkippedAsync(skipped, stopping);
                 logger.LogWarning("Scheduled backups from {Due:O} to {Skipped:O} were skipped: another backup held the lease, or no instance was running", due, skipped);
                 continue;
