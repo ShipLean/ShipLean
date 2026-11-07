@@ -15,6 +15,7 @@ public interface IUsageScope
     string? Viewport { get; }
 
     // An extra property (a UsageProps key) for the usage event of the current web action; the action filter records it.
+    // Only a Track action records it: a property added in a self-emitted or untracked action is not recorded.
     void AddProperty(string key, object value);
 
     // The extra properties added so far in this request.

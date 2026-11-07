@@ -84,13 +84,33 @@ public class UsageViewportTests : ApiFixture
     }
 
     [Test]
-    public async Task SelfEmitted_WhenViewportHeaderIsDesktop_ShouldStampViewport()
+    public async Task ScreenView_WhenViewportHeaderIsMissing_ShouldLeaveViewportOut()
     {
-        await PostAsync("api/projects", new ProjectCreate("Viewport create", "VPT", null, [], [1, 2, 3, 4, 5], null), UsageViewports.Desktop);
+        await PostAsync("api/usage/screen", new ScreenViewDto("profile", null), null);
+
+        var tracked = Recorder.Events.ShouldHaveSingleItem();
+        tracked.Name.ShouldBe(UsageEventNames.ScreenViewed);
+        tracked.Properties.ShouldNotContainKey(UsageProps.Viewport);
+    }
+
+    [Test]
+    public async Task SelfEmitted_WhenViewportHeaderIsPhone_ShouldStampViewport()
+    {
+        await PostAsync("api/projects", new ProjectCreate("Viewport create phone", "VPP", null, [], [1, 2, 3, 4, 5], null), UsageViewports.Phone);
 
         var tracked = Recorder.Events.ShouldHaveSingleItem();
         tracked.Name.ShouldBe(UsageEventNames.ProjectCreated);
         tracked.Source.ShouldBe("api:ProjectCreation.Create");
-        tracked.Properties[UsageProps.Viewport].ShouldBe(UsageViewports.Desktop);
+        tracked.Properties[UsageProps.Viewport].ShouldBe(UsageViewports.Phone);
+    }
+
+    [Test]
+    public async Task SelfEmitted_WhenViewportHeaderIsMissing_ShouldLeaveViewportOut()
+    {
+        await PostAsync("api/projects", new ProjectCreate("Viewport create none", "VPN", null, [], [1, 2, 3, 4, 5], null), null);
+
+        var tracked = Recorder.Events.ShouldHaveSingleItem();
+        tracked.Name.ShouldBe(UsageEventNames.ProjectCreated);
+        tracked.Properties.ShouldNotContainKey(UsageProps.Viewport);
     }
 }
