@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="en" data-lavish-annotate="on">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SHIP-730 · Retrospectives search on a phone</title>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+html { background: var(--color-bg); color: var(--color-text); }
+body { margin: 0; font: var(--text-base)/1.55 var(--font-sans); -webkit-font-smoothing: antialiased; }
+a { color: var(--color-accent); }
+code { font-family: var(--font-mono); font-size: .9em; padding: 0 4px; border-radius: var(--radius-xs); background: var(--color-surface-2); }
+.wrap { max-width: 1320px; margin: 0 auto; padding: 32px 28px 80px; display: grid; gap: 40px; }
+.wrap > * { min-width: 0; }
+header.top { display: grid; gap: 10px; }
+.eyebrow { font-size: var(--text-xs); font-weight: var(--weight-semibold); letter-spacing: .06em; text-transform: uppercase; color: var(--color-muted); }
+h1 { margin: 0; font-size: 28px; line-height: 1.2; letter-spacing: -.01em; }
+h2 { margin: 0 0 4px; font-size: 20px; }
+h3 { margin: 0; font-size: var(--text-md); }
+p { margin: 0; max-width: 860px; }
+.lead { font-size: var(--text-md); color: var(--color-muted); max-width: 920px; }
+.muted { color: var(--color-muted); }
+.sm { font-size: var(--text-sm); }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { display: inline-flex; align-items: center; gap: 6px; min-height: 24px; padding: 2px 10px; border-radius: 999px; background: var(--color-surface-2); font-size: var(--text-xs); font-weight: var(--weight-medium); }
+.chip.accent { background: var(--color-accent-soft); }
+.chip.warn { background: color-mix(in srgb, var(--color-warn) 20%, transparent); }
+section.block { display: grid; gap: 16px; }
+.sec-head { display: flex; align-items: end; gap: 16px; flex-wrap: wrap; }
+.sec-head > div { flex: 1; min-width: 280px; display: grid; gap: 4px; }
+.card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 16px 18px; }
+
+/* Phones */
+.phones { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 28px 20px; }
+.phone { display: grid; gap: 8px; justify-items: center; align-content: start; margin: 0; }
+.phone .frame { width: 328px; height: 691px; padding: 8px; border-radius: 34px; background: #0f1520; box-shadow: 0 1px 0 rgb(255 255 255 / .06) inset, 0 18px 40px rgb(0 0 0 / .22); }
+.phone .screen { width: 312px; height: 675px; overflow: hidden; border-radius: 26px; background: var(--color-surface); position: relative; }
+.phone iframe { width: 390px; height: 844px; border: 0; transform: scale(.8); transform-origin: 0 0; display: block; }
+.phone img { width: 312px; display: block; }
+.phone .screen.scroll { overflow-y: auto; scrollbar-width: thin; }
+.phone .cap { width: 328px; display: grid; gap: 2px; }
+.phone .cap b { font-size: var(--text-sm); }
+.phone .cap span { font-size: var(--text-xs); color: var(--color-muted); }
+.phone .cap a { font-size: var(--text-xs); }
+.today .frame { background: #3a1f22; }
+.bad { display: block; font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--color-danger) !important; }
+.tablet { grid-column: span 2; }
+.tablet .frame { width: 389px; height: 551px; padding: 10px; border-radius: 22px; }
+.tablet .screen { width: 369px; height: 531px; border-radius: 12px; }
+.tablet iframe { width: 820px; height: 1180px; transform: scale(.45); }
+.tablet .cap { width: 389px; }
+@media (max-width: 760px) { .tablet { grid-column: auto; } }
+.toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.seg { display: inline-flex; border: 1px solid var(--color-border); border-radius: var(--radius-sm); overflow: hidden; background: var(--color-surface); }
+.seg button { height: 30px; padding: 0 12px; border: 0; border-right: 1px solid var(--color-border); background: transparent; color: var(--color-muted); font: inherit; font-size: var(--text-sm); cursor: pointer; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--color-accent-soft); color: var(--color-text); font-weight: var(--weight-semibold); }
+.group-title { display: flex; gap: 10px; align-items: center; margin-top: 4px; }
+ol.issues { margin: 0; padding-left: 22px; display: grid; gap: 4px; font-size: var(--text-sm); max-width: 980px; }
+
+/* Layout options */
+.opts .phone { justify-items: start; }
+.opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.optc { display: grid; gap: 10px; align-content: start; }
+.optc.rec { border-color: var(--color-accent); box-shadow: 0 0 0 1px var(--color-accent); }
+.optc .phone { width: 100%; max-width: 240px; height: auto; justify-self: center; }
+.optc .tag { justify-self: start; font-size: var(--text-2xs); font-weight: var(--weight-semibold); text-transform: uppercase; letter-spacing: .05em; padding: 2px 8px; border-radius: 999px; background: var(--color-surface-2); color: var(--color-muted); }
+.optc.rec .tag { background: var(--color-accent); color: var(--color-accent-fg); }
+.optc ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: var(--text-sm); }
+.optc li.minus::marker { content: "− "; color: var(--color-danger); }
+.optc li.plus::marker { content: "+ "; color: var(--color-ok); }
+
+/* Rules table */
+table.rules { width: 100%; border-collapse: collapse; background: var(--color-surface); font-size: var(--text-sm); }
+table.rules th, table.rules td { padding: 10px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+table.rules th { background: var(--color-surface-2); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .05em; color: var(--color-muted); }
+table.rules td:first-child { font-weight: var(--weight-semibold); white-space: nowrap; }
+table.rules tr:last-child td { border-bottom: 0; }
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
+
+/* Decisions */
+.decisions { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 14px; }
+@media (max-width: 460px) { .decisions { grid-template-columns: minmax(0, 1fr); } }
+fieldset.d { margin: 0; display: grid; gap: 8px; align-content: start; padding: 14px 16px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); min-width: 0; }
+fieldset.d legend { float: left; width: 100%; padding: 0; display: flex; gap: 8px; align-items: baseline; font-weight: var(--weight-semibold); }
+fieldset.d legend .id { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-muted); }
+fieldset.d .why { font-size: var(--text-sm); color: var(--color-muted); }
+fieldset.d label.opt { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; align-items: start; padding: 8px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-md); cursor: pointer; font-size: var(--text-sm); }
+fieldset.d label.opt:has(input:checked) { border-color: var(--color-accent); background: var(--color-accent-soft); }
+fieldset.d label.opt input { margin: 2px 0 0; accent-color: var(--color-accent); }
+fieldset.d label.opt small { display: block; color: var(--color-muted); font-size: var(--text-xs); }
+fieldset.d .rec { font-size: var(--text-2xs); font-weight: var(--weight-semibold); text-transform: uppercase; letter-spacing: .05em; color: var(--color-ok); margin-left: 4px; }
+fieldset.d .same { font-size: var(--text-2xs); font-weight: var(--weight-semibold); color: var(--color-info); margin-left: 4px; }
+fieldset.d textarea { width: 100%; min-height: 34px; padding: 6px 8px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: inherit; font: inherit; font-size: var(--text-sm); resize: vertical; }
+.submit-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 14px 16px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); position: sticky; bottom: 12px; box-shadow: 0 8px 24px rgb(0 0 0 / .12); margin-top: 14px; }
+.btn { display: inline-flex; align-items: center; height: 34px; padding: 0 14px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); font: inherit; font-size: var(--text-sm); font-weight: var(--weight-medium); cursor: pointer; }
+.btn.primary { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-fg); }
+.status { font-size: var(--text-sm); color: var(--color-muted); }
+ol.ac { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 980px; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; }
+.two .card { display: grid; gap: 8px; align-content: start; }
+.two ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: var(--text-sm); }
+</style>
+<style>.opts3 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }</style>
+
+<style>.opts3 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); } .find { display: grid; gap: 4px; padding-left: 22px; }</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <span class="eyebrow">SHIP-730 · Mobile retrospective search · design for review</span>
+  <h1>Retrospectives search on a phone</h1>
+  <p class="lead">Search lists every point from every retro in the project, one row per point, under a search box, six filters, three checkboxes and Clear. Selecting a row shows its whole retro in a 380px panel on the right. At 900px and below this design keeps every filter, match and action. <b>The search field gets its own row, and the filters move into one Filter sheet. Each one you set shows as a chip you can remove. Every point is a three-line row with the match marked. Tapping a row opens its whole retro full screen at that point, and ‹ › step through the results without going back.</b></p>
+  <div class="chips">
+    <span class="chip accent">Design only · nothing built</span>
+    <span class="chip">Branch <code>design/730-mobile-retro-search</code> from PR #69</span>
+    <span class="chip">New: <code>design/screens/search-touch.css</code>, <code>search-touch.js</code>, loaded by <code>retros.html</code></span>
+    <span class="chip">Follows SHIP-805. Drawn as SHIP-805 recommends for its open points: C4 (sheet with Close on the right), C5 (native selects for Sprint and Theme) and C9 (✕ at the top left)</span>
+    <span class="chip">Reuses SHIP-727's sheet, theme picker, note ⋯ and full-screen New action item (its D8)</span>
+  </div>
+</header>
+
+<section class="block">
+  <div class="sec-head"><div>
+    <h2>Today: the desktop page in a 390px window</h2>
+    <p class="muted sm">The real SPA (PR #69 at 3c4b0bc3) at 390 × 844 and 768 × 1024, using the page-shot fixtures and without SHIP-713's shell. Scroll inside each phone to see the whole page.</p>
+  </div></div>
+  <div class="phones today" id="todayPhones"></div>
+  <ol class="issues">
+    <li><b>The results can't be seen.</b> The page is a two-column grid (results | a 380px retro). At 390px the retro takes the whole width and the results column is <b>0px wide</b> (measured), so no row can be read or tapped. All you see is the first result's retro.</li>
+    <li>The filters (search, six selects, three checkboxes, Clear) wrap onto seven rows, about 240px. The whole block is <code>sticky</code>, so it stays on screen over a third of the phone (rule 12).</li>
+    <li>The search box and selects are 13px, so iOS Safari zooms in when you tap one (rule 14). The checkboxes are 13px targets (rule 13).</li>
+    <li>The retro panel is sticky too, with its own scroll box (<code>max-height: calc(100vh - 12rem)</code>): a scroll area inside the page.</li>
+    <li>On a 768px tablet the Point column is about 120px, so each point shows three words (“Could not take th…”). The full text, a root-cause match and the theme name are only in a hover title (rule 5).</li>
+  </ol>
+</section>
+
+<section class="block">
+  <div class="sec-head"><div>
+    <h2>Three ways to show a result (D1)</h2>
+    <p class="muted sm">These are live mocks at 390px, all searching “screenshot”. Scroll and tap inside each one. The other states below use the recommended layout.</p>
+  </div></div>
+  <div class="opts opts3" id="optPhones"></div>
+</section>
+
+<section class="block">
+  <div class="sec-head"><div>
+    <h2>Three places to open the retro (D2)</h2>
+    <p class="muted sm">Each one opened on the same point, “2 of 3 lanes burned retries…”, the third result.</p>
+  </div></div>
+  <div class="opts opts3" id="openPhones"></div>
+</section>
+
+<section class="block">
+  <div class="sec-head"><div>
+    <h2>Proposed: 900px and below</h2>
+    <p class="muted sm">These are live mocks. Type, filter, tap a row, step with ‹ ›, decide a point, but nothing is saved. Open any of them full size in a narrow window to try it.</p>
+  </div>
+    <span class="seg" role="group" aria-label="Theme of the phones"><button type="button" data-theme="light" aria-pressed="true">Light</button><button type="button" data-theme="dark" aria-pressed="false">Dark</button></span>
+  </div>
+  <h3 class="group-title">Results</h3>
+  <div class="phones" id="listPhones"></div>
+  <h3 class="group-title">Filter</h3>
+  <div class="phones" id="filterPhones"></div>
+  <h3 class="group-title">The open retro</h3>
+  <div class="phones" id="retroPhones"></div>
+  <h3 class="group-title">Tablet (D6)</h3>
+  <div class="phones" id="tabletPhones"></div>
+</section>
+
+<section class="block">
+  <div class="sec-head"><div>
+    <h2>What changes at 900px and below</h2>
+    <p class="muted sm">Each part of the page and the SHIP-805 rule behind it. The shared rules aren't restated here.</p>
+  </div></div>
+  <div class="tbl-wrap"><table class="rules">
+    <thead><tr><th>Part</th><th>Desktop</th><th>900px and below</th></tr></thead>
+    <tbody>
+      <tr><td>Search field</td><td>One of eleven controls on a wrapping row</td><td>Alone on the first row, full width, 40px tall, 16px text (rule 14). The placeholder shortens to “Search points, root causes and logs”, and the keyboard's key says Search, which closes the keyboard. Results still follow typing after a 300ms pause, as on desktop.</td></tr>
+      <tr><td>Filters</td><td>Six selects, three checkboxes and Clear</td><td>One <b>Filter</b> button with the number set (rule 8), opening a sheet. Category, Level, Written by and Decision are choice chips, so every value is one tap. Sprint and Theme are native selects (C5: plain lists, and Theme can be long). No sprint, Unthemed and Recurring themes only are switches with a line saying what each does. Changes apply as you pick, as on desktop; the foot has Clear and <b>Show n points</b> with the live count.</td></tr>
+      <tr><td>Active filters</td><td>Visible in the controls</td><td>One chip each under the bar (“Sprint 24 ✕”, “# Screenshot baselines need CI ✕”, “↻ Recurring ✕”), wrapping, 32px. ✕ removes that one; Clear all appears with two or more. A link from Insights (“All n in Search”) lands showing its theme chip.</td></tr>
+      <tr><td>Count</td><td>Right end of the filter row</td><td>On the Filter row: “48 points in 15 retros”.</td></tr>
+      <tr><td>Sticky</td><td>Filters and the retro panel stick</td><td>Nothing sticks (rule 12). The toolbar scrolls away with the list; the retro has no inner scroll box on the page.</td></tr>
+      <tr><td>Results</td><td>A six-column table, one line per point</td><td><b>One row per point, three lines:</b> category and the work item key; the point, two lines, the match marked; the theme with ↻, the sprint and the author's avatar. When the match is in the root cause, a fourth line shows it (“Root cause: …”); when it's only in the raw failure log, that line says so. The whole row is the tap target.</td></tr>
+      <tr><td>The retro</td><td>A 380px panel on the right, the clicked point outlined</td><td><b>Full screen</b> (rule 4): ✕ at the top left (C9). The title slot names the retro (type, key, title) with “Result 3 of 48 · Sprint 24” under it, because the view opens scrolled to the point. <b>‹ ›</b> at the top right step to the previous and next result. It's the same panel: the author, role and date, Open SHIP-101's retros and Sprint retro, the four categories stacked, the point outlined, Compiled from, and the raw log (open when that's where it matched).</td></tr>
+      <tr><td>Address and Back</td><td><code>selected</code> and <code>point</code> in the address</td><td>The same. Opening a retro adds a history entry, so the phone's Back closes it; stepping replaces the entry. Every filter stays in the address, as now.</td></tr>
+      <tr><td>Notes in the retro</td><td>The shared note, hover tips</td><td>SHIP-727's touch notes: 32px + Action item and Not needed, the # theme opens the <b>Move to theme</b> sheet, ⋯ on your own points opens a sheet with Move to theme… and Archive. Not needed's reason field and + Add are 16px.</td></tr>
+      <tr><td>New action item</td><td>620px dialog</td><td>The sprint Retro tab's full-screen dialog (SHIP-727 D5, built once per its D8), seeded with the point.</td></tr>
+      <tr><td>No results</td><td>“No point matches. Try fewer filters.”</td><td>“No point matches “zzz”.” with a <b>Clear search and filters</b> button.</td></tr>
+      <tr><td>Tablet</td><td>The two columns</td><td>The phone layout (rule 1), rows at full width. D6 (b) would keep the list and the retro side by side from 600px.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section class="block">
+  <div class="sec-head"><div>
+    <h2>Decisions</h2>
+    <p class="muted sm">Each starts on the recommendation, which is what the phones above show. Every alternative can be viewed: the links under each decision open it in a new tab. Change any, add a note, then Queue decisions and Send to agent.</p>
+  </div></div>
+  <form id="decisions" data-lavish-question="ship-730-decisions">
+    <div class="decisions" id="dlist"></div>
+    <div class="submit-row">
+      <button class="btn primary" type="submit">Queue decisions</button>
+      <span class="status" id="qstatus">Nothing queued yet.</span>
+      <span style="flex:1"></span>
+      <button class="btn" type="button" id="copyAll">Copy all answers</button>
+      <span class="status" data-lavish-copy-all-status role="status" aria-live="polite"></span>
+    </div>
+  </form>
+</section>
+
+<section class="block">
+  <div class="sec-head"><div>
+    <h2>Proposed acceptance criteria for SHIP-730</h2>
+    <p class="muted sm">Written for the recommendations. They change with the decisions, and go on SHIP-730 once you've settled them.</p>
+  </div></div>
+  <div class="card"><ol class="ac">
+    <li>At 390 × 844, in both themes, Retrospectives › Search has no page-level sideways scroll with any filter, search, open retro, sheet or full-screen view. Above 900px nothing changes.</li>
+    <li>The search field is alone on the first row, full width, with 16px text. Its keyboard key says Search and closes the keyboard; results follow typing as on desktop.</li>
+    <li>Under it, one row: Filter, with the number of filters set, and “n points in m retros”. Nothing on the page sticks.</li>
+    <li>Filter opens a bottom sheet with Category, Level, Written by and Decision as choice chips, Sprint and Theme as native selects, and No sprint, Unthemed and Recurring themes only as switches. Each change applies at once and is written to the address. The foot has Clear and “Show n points” with the live count.</li>
+    <li>Each filter set shows as a chip under the bar; ✕ removes it. With two or more, Clear all is shown. Opening Search from Insights with a theme shows that theme's chip.</li>
+    <li>Each point is one row: category and work item key; the point on up to two lines with the match marked; the root cause when it matched there, or “Match in the raw failure log”; the theme (↻ when recurring), sprint and author. Every row is at least 32px and tapping anywhere on it opens the retro.</li>
+    <li>Tapping a row opens its whole retro full screen, scrolled to the point, which is outlined. The top bar has ✕ at the left, the retro's type, key and title with “Result n of m · sprint”, and ‹ › that step through the results in order (disabled at the ends).</li>
+    <li>Opening a retro adds a history entry (<code>selected</code>, <code>point</code>), so Back closes it; stepping replaces the entry. Reloading with them in the address opens the same retro at the same point.</li>
+    <li>In the open retro, + Action item and Not needed are at least 32px; the # theme opens the Move to theme sheet; ⋯ on a person's own point opens a sheet with Move to theme… and Archive; text fields are 16px.</li>
+    <li>+ Action item opens the shared full-screen New action item dialog from SHIP-727, seeded with the point.</li>
+    <li>No results shows what was searched and a Clear search and filters button when anything is set.</li>
+    <li>On a 768px tablet the layout is the phone's, rows at full width.</li>
+    <li>Page screenshots at 390 × 844 in both themes sit next to the desktop ones: retros-search, retros-search-filter, retros-search-retro and retros-search-empty.</li>
+    <li>Analytics: nothing new. The <code>viewport</code> stamped on <code>retro.searched</code> lets us compare searches per week on phones and on desktop, against the share of Search <code>screen.viewed</code> from phones, for four weeks before and after this ships.</li>
+  </ol></div>
+</section>
+
+<section class="block">
+  <div class="two">
+    <div class="card"><h3>Owned elsewhere</h3><ul>
+      <li><b>SHIP-805</b>: the shared rules. Everything here fits them; D6 (b) would need a rule 1 change.</li>
+      <li><b>SHIP-713</b>: the top bar, drawer (Retrospectives › Search), <code>Sheet</code>, scrim and the <code>viewport</code> property.</li>
+      <li><b>SHIP-727</b>: the sheet, Move to theme, the note's ⋯ and the full-screen New action item dialog, built once in the shared retro components (its D8).</li>
+      <li><b>SHIP-714</b>: the item opened full screen from an action item chip. <b>SHIP-729</b>: Open SHIP-101's retros.</li>
+      <li><b>SHIP-731</b>: Insights' “All n in Search” links land here with <code>?theme=</code>.</li>
+    </ul></div>
+    <div class="card"><h3>Not in this design</h3><ul>
+      <li>Matching and filtering don't change: the rows, counts and raw-log rule are the server's, as now.</li>
+      <li>No sort, saved searches or recent searches: desktop has none either.</li>
+      <li>The mock's desktop filters caught up with the real app (No sprint, Unthemed, Clear, Undecided / Actioned / Not needed, every filter in the address). Its desktop look is otherwise unchanged; its page shots get regenerated with the phone ones.</li>
+    </ul></div>
+  </div>
+</section>
+
+</div>
+
+<script>
+(() => {
+  const TODAY = [
+    ['images/today-search.png', 'Search (scroll)', 'Results 0px wide: only the first retro shows'],
+    ['images/today-search-q.png', 'With a search typed (scroll)', 'Still no results column; the filters take 240px and stick (the fixture returns the same 4 points)'],
+  ];
+  const R3 = 'selected=R-305&point=R-305.2';
+  const OPTS = [
+    ['retros.html?q=screenshot', 'a · Three lines a point', 'Recommended. The point reads in full (two lines) with its category, item, theme, sprint and author; a root-cause or log match gets its own line.', true],
+    ['retros.html?alt=line&q=screenshot', 'b · One line, like desktop', 'More than twice as many on screen, but each point is cut to one line and the theme, sprint and author are gone.'],
+    ['retros.html?alt=grouped&q=screenshot', 'c · Grouped under their retro', 'The item, sprint and author once per retro; fewer repeats. The list order is by retro, not by point, unlike desktop.'],
+  ];
+  const OPEN = [
+    ['retros.html?' + R3, 'a · Full screen, ‹ › to step', 'Recommended. The whole height for the retro; the title says which retro; step through results without going back.', true],
+    ['retros.html?alt=sheet&' + R3, 'b · A tall bottom sheet', 'The list peeks behind it. Less room, and a sheet holding a whole board with its own sheets on top stacks two layers.'],
+    ['retros.html?alt=inline&' + R3, 'c · Expands under its row', 'No new layer. A whole retro is 1,500px or more, so the list below it is far away and the page jumps.'],
+  ];
+  const LIST = [
+    ['retros.html?', 'All points', '48 points in 15 retros'],
+    ['retros.html?q=rediscovered', 'A root-cause match', 'Its own line, the match marked'],
+    ['retros.html?theme=shots&decision=undecided&recurring=true', 'Three filters set', 'One chip each; Clear all'],
+    ['retros.html?q=zzz&category=well', 'No results', 'Clear search and filters'],
+  ];
+  const FILTER = [
+    ['retros.html?sheet=filter', 'Filter', 'Chips, two selects, three switches'],
+    ['retros.html?sheet=filter&category=bad&role=sub-agent&recurring=true', 'Filter, three set', 'Show 10 points updates as you pick'],
+    ['retros.html?alt=selects&sheet=filter', 'D3 (b): the desktop selects', 'Every filter a native select'],
+  ];
+  const RETRO = [
+    ['retros.html?' + R3, 'The open retro', 'Opened on the point, outlined; ‹ › step'],
+    ['retros.html?' + R3 + '&sheet=theme:R-305.2', 'Move to theme', 'From the point\'s # theme'],
+    ['retros.html?selected=R-303&point=R-303.0&sheet=note:R-303.0', 'Your own point\'s ⋯', 'Move to theme…, Archive'],
+    ['retros.html?selected=R-305&point=R-305.7&dialog=R-305.7', 'New action item', 'The shared full-screen dialog (SHIP-727)'],
+  ];
+  let theme = 'light';
+  const url = u => `../screens/${u}${u.endsWith('?') ? '' : '&'}shot&theme=${theme}`;
+  const frame = cls => ([u, title, sub, rec]) => `<figure class="phone${cls}"><div class="frame"><div class="screen"><iframe loading="lazy" src="${url(u)}" title="${title}"></iframe></div></div>
+    <figcaption class="cap"><b>${title}${rec === true ? ' <span class="chip accent">Recommended</span>' : ''}</b><span>${sub}</span><a href="${url(u)}" target="_blank" rel="noopener">Open</a></figcaption></figure>`;
+  const shot = ([src, title, sub]) => `<figure class="phone"><div class="frame"><div class="screen scroll"><img src="${src}" alt="${title} today at 390px" loading="lazy" style="width:312px"></div></div>
+    <figcaption class="cap"><b>${title}</b><span class="bad">${sub}</span></figcaption></figure>`;
+  const tabletShot = `<figure class="phone tablet today"><div class="frame"><div class="screen scroll"><img src="images/today-search-tablet.png" alt="Today at 768px" style="width:369px"></div></div><figcaption class="cap"><b>Tablet, 768px</b><span class="bad">Each point cut to three words; full text on hover only</span></figcaption></figure>`;
+  const render = () => {
+    document.getElementById('todayPhones').innerHTML = TODAY.map(shot).join('') + tabletShot;
+    document.getElementById('optPhones').innerHTML = OPTS.map(frame('')).join('');
+    document.getElementById('openPhones').innerHTML = OPEN.map(frame('')).join('');
+    document.getElementById('listPhones').innerHTML = LIST.map(frame('')).join('');
+    document.getElementById('filterPhones').innerHTML = FILTER.map(frame('')).join('');
+    document.getElementById('retroPhones').innerHTML = RETRO.map(frame('')).join('');
+    document.getElementById('tabletPhones').innerHTML = frame(' tablet')(['retros.html?', 'a · Tablet, 820px: the phone layout', 'Recommended (rule 1)', true]) + frame(' tablet')(['retros.html?alt=split', 'b · List and retro side by side', 'From 600px; needs a rule 1 change']);
+  };
+  render();
+  document.querySelector('[aria-label="Theme of the phones"]').addEventListener('click', e => {
+    const b = e.target.closest('[data-theme]'); if (!b) return;
+    theme = b.dataset.theme;
+    document.querySelectorAll('[data-theme]').forEach(x => x.setAttribute('aria-pressed', x === b));
+    render();
+  });
+
+  // [id, title, why, options [label, detail, alt url]]; the first option is the recommendation.
+  const D = [
+    ['D1', 'A result row', 'Six columns don\'t fit across a phone. The three options are compared above.', [
+      ['Three lines a point: category and key; the point on two lines; theme, sprint and author', 'The point reads in full and the match shows; about 7 points on a 390 × 844 screen.'],
+      ['One line, like desktop: category dot, the point cut short, key', 'About 17 on screen; each point is cut to one line (~45 characters); theme, sprint and author go.', 'retros.html?alt=line&q=screenshot'],
+      ['Grouped under their retro', 'Fewer repeats; ordered by retro, not by point, unlike desktop.', 'retros.html?alt=grouped&q=screenshot']]],
+    ['D2', 'Where the retro opens', 'Today it\'s a 380px panel beside the results; there\'s no room beside them on a phone.', [
+      ['Full screen: ✕ at the top left, the retro named in the title slot, opened at the point', 'The whole height for a long retro; Back closes it.'],
+      ['A tall bottom sheet (88%)', 'The list peeks behind; less room, and its own sheets stack on top of it.', 'retros.html?alt=sheet&selected=R-305&point=R-305.2'],
+      ['Expands in place under its row', 'No new layer; a whole retro pushes the rest of the list 1,500px down.', 'retros.html?alt=inline&selected=R-305&point=R-305.2']]],
+    ['D3', 'The Filter sheet\'s controls', 'Six filters and three flags. C5 recommends native selects for plain lists.', [
+      ['Choice chips for the four short lists, native selects for Sprint and Theme, switches for the three flags', 'One tap per value for the short lists; the long lists use the phone\'s own picker.'],
+      ['Every filter a native select, as on desktop, with checkboxes for the flags', 'Least to build; two taps for every filter, and you can\'t see the choices until you open each one.', 'retros.html?alt=selects&sheet=filter']]],
+    ['D4', 'Showing what\'s filtered', 'The filters are hidden in a sheet, so the page has to say what\'s set.', [
+      ['A chip for each one under the bar, ✕ to remove it, Clear all with two or more', 'You see what\'s on and undo one in a tap; a link from Insights shows its theme.'],
+      ['The number on Filter only', 'A shorter page; to see or undo a filter you open the sheet.', 'retros.html?alt=nochips&theme=shots&decision=undecided&recurring=true']]],
+    ['D5', 'Stepping through results', 'Desktop shows the list and the retro together, so you click down the rows.', [
+      ['‹ › at the top right of the open retro, with “Result 3 of 48”', 'Read the results one after another without going back to the list.'],
+      ['None: close and tap the next row', 'Simpler top bar; going back and finding your place for every result.', 'retros.html?alt=nostep&selected=R-305&point=R-305.2']]],
+    ['D6', 'Tablets (600–900px)', 'Rule 1: phones, tablets and narrow windows share one layout.', [
+      ['The phone layout, rows at full width', 'Fits rule 1; one layout to build and test.'],
+      ['The list and the open retro side by side from 600px', 'Closer to desktop on a tablet; a second layout, and a rule 1 change on SHIP-805.', 'retros.html?alt=split']]],
+    ['D7', 'Measuring it', 'The server already sends retro.searched for every search, with viewport (rule 16).', [
+      ['Nothing new: viewport on retro.searched', 'Searches per week on phones against desktop, alongside the share of Search screen.viewed from phones, four weeks before and after.'],
+      ['Also a client event when a result is opened (its position, and whether ‹ › was used)', 'Shows whether people read results on phones, not only search; one more event to keep.']]],
+  ];
+  const href = u => `../screens/${u}&shot`;
+  document.getElementById('dlist').innerHTML = D.map(([id, title, why, opts]) => `<fieldset class="d" data-id="${id}">
+    <legend><span class="id">${id}</span>${title}</legend>
+    <span class="why">${why}</span>
+    ${opts.map(([o, s, alt], i) => `<label class="opt"><input type="radio" name="${id}" value="${o.replace(/"/g, '&quot;')}"${i === 0 ? ' checked' : ''}><span>${o}${i ? '' : '<span class="rec">Recommended</span>'}<small>${s}${alt ? ` <a href="${href(alt)}" target="_blank" rel="noopener">View</a>` : ''}</small></span></label>`).join('')}
+    <textarea name="${id}-note" placeholder="Note (optional)" aria-label="${id} note"></textarea>
+  </fieldset>`).join('');
+
+  const answers = () => D.map(([id, title, , opts]) => {
+    const v = document.querySelector(`input[name="${id}"]:checked`)?.value;
+    const note = document.querySelector(`textarea[name="${id}-note"]`).value.trim();
+    return { id, title, choice: v, recommended: v === opts[0][0], note };
+  });
+  document.getElementById('decisions').addEventListener('submit', e => {
+    e.preventDefault();
+    const items = answers();
+    const changed = items.filter(a => !a.recommended || a.note);
+    const text = items.map(a => `${a.id} ${a.title}: ${a.choice}${a.recommended ? ' (recommended)' : ' (changed)'}${a.note ? ` (note: ${a.note})` : ''}`).join('\n');
+    if (window.lavish?.queuePrompt) {
+      window.lavish.queuePrompt(`SHIP-730 design decisions. Apply each one to the search phone design (search-touch.*, this page, the acceptance criteria) and give a per-ID receipt for D1–D7:\n${text}`,
+        { tag: 'tracked-batch', text: `SHIP-730 decisions: ${changed.length} changed or noted`, element: e.currentTarget, queueKey: 'ship-730-decisions', data: { items } });
+      document.getElementById('qstatus').textContent = `Queued ${items.length} decisions (${changed.length} changed or noted). Send to agent to deliver.`;
+    } else {
+      document.getElementById('qstatus').textContent = 'Lavish is not running. Use Copy all answers and paste them into the chat.';
+    }
+  });
+  document.getElementById('copyAll').addEventListener('click', async () => {
+    const text = answers().map(a => `${a.id} ${a.title}: ${a.choice}${a.note ? ` (note: ${a.note})` : ''}`).join('\n');
+    const st = document.querySelector('[data-lavish-copy-all-status]');
+    try { await navigator.clipboard.writeText(text); st.textContent = 'Answers copied.'; } catch { st.textContent = 'Clipboard unavailable.'; }
+  });
+})();
+</script>
+</body>
+</html>
