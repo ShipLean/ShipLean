@@ -4,7 +4,8 @@
 # (an address starting ./, such as SHIP-715's attachment.html).
 # Usage: ./screenshots.sh [name ...]   (no names = all). CHROME=/path/to/chrome overrides the browser.
 # The today-*.png images are screenshots of the real app (main at 918cf067) and are not made here.
-# (today-attachment-*.png come from the SPA's component harness at 390 × 844 with the page-shot fixtures.)
+# (today-attachment-*.png and today-fboard*.png come from the SPA's component harness at 390 × 844 with the page-shot
+# fixtures.)
 # Item shots use ?at=<section>, which with ?shot hides what is above the section: --screenshot ignores scrolling.
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -58,6 +59,22 @@ declare -A shots=(
   [attachment-viewer]="./attachment.html?state=viewer"
   [attachment-viewer-zoom]="./attachment.html?state=viewer-zoom"
   [attachment-toolarge]="./attachment.html?state=toolarge"
+  # The Feature board (SHIP-722)
+  [fboard]="feature-board.html"
+  [fboard-active]="feature-board.html?col=active"
+  [fboard-drag]="feature-board.html?drag=SHIP-176&to=active"
+  [fboard-task]="feature-board.html?sheet=task&task=SHIP-172&col=active"
+  [fboard-story]="feature-board.html?sheet=story&task=SHIP-172"
+  [fboard-assign]="feature-board.html?sheet=assign&task=SHIP-176"
+  [fboard-filter]="feature-board.html?filter=mei&sheet=filter"
+  [fboard-filtered]="feature-board.html?filter=mei"
+  [fboard-end]="feature-board.html?at=SHIP-160"
+  [fboard-closed]="feature-board.html?closed&at=SHIP-160"
+  [fboard-more]="feature-board.html?sheet=more"
+  [fboard-add]="feature-board.html?add"
+  [fboard-parent]="feature-board.html?key=SHIP-103"
+  [fboard-parent-section]="feature-board.html?key=SHIP-103&at=SHIP-108"
+  [fboard-people]="feature-board.html?key=SHIP-103&view=people"
 )
 
 names=("$@")

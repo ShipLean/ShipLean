@@ -9,6 +9,7 @@ The frame every screen sits in, at 900px wide and below: one sticky top bar, a n
 | `images/today-*.png` | The real app on a phone before this change (main at 918cf067, seeded local instance). |
 | `screenshots.sh` | Regenerates `images/<state>.<theme>.png` from `../screens/` with headless Chrome. |
 | `work-item.html` | The design review for the **work item page** (SHIP-714): today, every state, the rules, the decisions and the acceptance criteria. Its images are `images/item*.png`, `images/feature*.png` and `images/today-item*.png`, `today-feature.png`. |
+| `feature-board.html` | The design review for the **Feature board** (SHIP-722): today, the three layouts considered, every state, the rules, the decisions and the acceptance criteria. Its images are `images/fboard*.png` and `images/today-fboard*.png`. |
 
 The shell itself is built in `../screens/shared.js` and `../screens/shiplean.css`, so any reference screen shows it in a window narrower than 900px. These address parameters open its states: `?nav` (drawer), `?picker`, `?search` or `?search=pay`, `?usermenu`, `?offline` (Reconnecting).
 
@@ -122,3 +123,35 @@ The Markdown attachment page and the image viewer at 900px and below, inside the
 | Too large to show | ![Too large, light](images/attachment-toolarge.light.png) | ![Too large, dark](images/attachment-toolarge.dark.png) |
 
 The viewer is always dark, so both themes look the same there. The decisions are in [design/README.md › Markdown attachments on a phone](../README.md#markdown-attachments-on-a-phone-ship-715).
+
+## Feature board (SHIP-722)
+
+The board on a Feature's own page (`/p/SHIP/items/KEY/board`, the Taskboard's grid for one Feature) at 900px and below. It works like the SHIP-719 boards: one task state a page in a sideways pager with state chips above it; every open story or bug is a lane on every page (its compact index card, then its tasks in that state, or None); closed stories wait behind “Show n closed”. A ⋯ on every task opens its action sheet (Move to a state, another story, Assignee, Open), and a long press lifts it for touch drag (to another lane, or the screen's edge for another state). The toolbar is one row: Stories | People, Filter (n), ⋯, + Add. Above 900px nothing changes. The review page is [`feature-board.html`](feature-board.html); the decisions (D1–D12, settled by Joel on 7 Nov 2026) and acceptance criteria are on SHIP-722.
+
+It is built in `../screens/feature-board-touch.css` and `feature-board-touch.js`, which `feature-board.html` loads (it exposes its state as `SL.fb` and fires `fb:render`). These address parameters open its states: `?col=active`, `?sheet=task|story|assign&task=KEY`, `?sheet=filter|more`, `?filter=mei,none`, `?closed`, `?drag=KEY&to=active`, `?add`, `?addtask=KEY`, `?at=KEY` (with `?shot` it hides what is above that lane), plus the board's own `?key=SHIP-103` and `?view=people`.
+
+### Today
+
+| Leaf Feature | Parent Feature | Grouped by People |
+|---|---|---|
+| ![Today: the Feature board at 390px, New half visible](images/today-fboard.png) | ![Today: a parent Feature at 390px](images/today-fboard-parent.png) | ![Today: grouped by People at 390px](images/today-fboard-people.png) |
+
+### The phone board
+
+| State | Light | Dark |
+|---|---|---|
+| New, the first page | ![Feature board, light](images/fboard.light.png) | ![Feature board, dark](images/fboard.dark.png) |
+| Active | ![Active page, light](images/fboard-active.light.png) | ![Active page, dark](images/fboard-active.dark.png) |
+| Long press and drag | ![Touch drag, light](images/fboard-drag.light.png) | ![Touch drag, dark](images/fboard-drag.dark.png) |
+| ⋯ on a task | ![Task actions, light](images/fboard-task.light.png) | ![Task actions, dark](images/fboard-task.dark.png) |
+| Move to another story | ![Story sheet, light](images/fboard-story.light.png) | ![Story sheet, dark](images/fboard-story.dark.png) |
+| Assignee | ![Assignee sheet, light](images/fboard-assign.light.png) | ![Assignee sheet, dark](images/fboard-assign.dark.png) |
+| Filter | ![Filter sheet, light](images/fboard-filter.light.png) | ![Filter sheet, dark](images/fboard-filter.dark.png) |
+| Filtered | ![Filtered, light](images/fboard-filtered.light.png) | ![Filtered, dark](images/fboard-filtered.dark.png) |
+| Show n closed | ![End of the page, light](images/fboard-end.light.png) | ![End of the page, dark](images/fboard-end.dark.png) |
+| Closed shown | ![Closed stories shown, light](images/fboard-closed.light.png) | ![Closed stories shown, dark](images/fboard-closed.dark.png) |
+| ⋯ More | ![More sheet, light](images/fboard-more.light.png) | ![More sheet, dark](images/fboard-more.dark.png) |
+| + Add story or bug | ![Add row, light](images/fboard-add.light.png) | ![Add row, dark](images/fboard-add.dark.png) |
+| Parent Feature | ![Parent Feature, light](images/fboard-parent.light.png) | ![Parent Feature, dark](images/fboard-parent.dark.png) |
+| A Feature under it | ![Feature band, light](images/fboard-parent-section.light.png) | ![Feature band, dark](images/fboard-parent-section.dark.png) |
+| Grouped by People | ![People lanes, light](images/fboard-people.light.png) | ![People lanes, dark](images/fboard-people.dark.png) |
