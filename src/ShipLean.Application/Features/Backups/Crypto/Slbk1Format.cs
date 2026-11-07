@@ -66,15 +66,15 @@ internal static class Slbk1Format
             throw new BackupDecryptException($"The backup key derivation {header[KdfOffset]} is not supported.");
         }
 
+        if (header[ReservedOffset] != 0 || header[ReservedOffset + 1] != 0)
+        {
+            throw new BackupDecryptException("The backup header's reserved bytes are not zero.");
+        }
+
         var iterations = Iterations(header);
         if (iterations is < MinIterations or > MaxIterations)
         {
             throw new BackupDecryptException($"The backup's key derivation iterations ({iterations}) are outside {MinIterations} to {MaxIterations}.");
-        }
-
-        if (header[ReservedOffset] != 0 || header[ReservedOffset + 1] != 0)
-        {
-            throw new BackupDecryptException("The backup header's reserved bytes are not zero.");
         }
     }
 

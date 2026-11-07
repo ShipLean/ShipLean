@@ -33,8 +33,17 @@ public sealed class AesGcmBackupCipher : IBackupCipher
 
         Slbk1Format.Check(header);
         var key = Slbk1Format.DeriveKey(passphrase, header);
-        using var aes = new AesGcm(key, Slbk1Format.TagLength);
-        CryptographicOperations.ZeroMemory(key);
+        AesGcm aes;
+        try
+        {
+            aes = new AesGcm(key, Slbk1Format.TagLength);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(key);
+        }
+
+        using var cipher = aes;
 
         var recordHeader = new byte[Slbk1Format.RecordHeaderLength];
         var sealedRecord = new byte[Slbk1Format.MaxRecordLength + Slbk1Format.TagLength];
@@ -79,7 +88,7 @@ public sealed class AesGcmBackupCipher : IBackupCipher
                 Slbk1Format.Aad(header, (uint)index, flags, aad);
                 try
                 {
-                    aes.Decrypt(nonce, sealedRecord.AsSpan(0, size), sealedRecord.AsSpan(size, Slbk1Format.TagLength), plain.AsSpan(0, size), aad);
+                    cipher.Decrypt(nonce, sealedRecord.AsSpan(0, size), sealedRecord.AsSpan(size, Slbk1Format.TagLength), plain.AsSpan(0, size), aad);
                 }
                 catch (AuthenticationTagMismatchException e)
                 {

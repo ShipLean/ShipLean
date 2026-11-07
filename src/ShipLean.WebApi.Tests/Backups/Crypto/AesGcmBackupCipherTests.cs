@@ -166,6 +166,45 @@ public class AesGcmBackupCipherTests
         output.Length.ShouldBe(0);
     }
 
+    // Files sealed correctly under a header SLBK1 doesn't allow: without the explicit check each would decrypt. With
+    // the iterations then set to int.MaxValue, which would take many minutes to derive, the same refusal within the
+    // minute shows it comes before deriving.
+    [TestCase(0, 0x58, "not a ShipLean backup")]
+    [TestCase(4, 0x02, "format version 2")]
+    [TestCase(5, 0x02, "key derivation 2")]
+    [TestCase(Slbk1Spec.ReservedOffset, 0x01, "reserved bytes")]
+    [TestCase(Slbk1Spec.ReservedOffset + 1, 0x01, "reserved bytes")]
+    public async Task Decrypt_WhenHeaderFieldUnsupported_ShouldThrowBeforeDeriving(int offset, int value, string message)
+    {
+        var plain = Plain(100);
+        var file = Slbk1Spec.Build(Passphrase, [plain], editHeader: header => header[offset] = (byte)value);
+
+        (await Should.ThrowAsync<BackupDecryptException>(() => DecryptAsync(file))).Message.ShouldContain(message);
+
+        BinaryPrimitives.WriteUInt32BigEndian(file.AsSpan(Slbk1Spec.IterationsOffset, 4), int.MaxValue);
+        BackupDecryptException? error = null;
+        Should.CompleteIn(
+            () => Task.Run(async () => error = await Should.ThrowAsync<BackupDecryptException>(() => DecryptAsync(file))),
+            TimeSpan.FromSeconds(60));
+        error.ShouldNotBeNull().Message.ShouldContain(message);
+    }
+
+    // A final record sealed with unknown flag bits; without the explicit check 0x03 would decrypt and 0x02 would read
+    // as cut off.
+    [TestCase(0x02)]
+    [TestCase(0x03)]
+    [TestCase(0x81)]
+    public async Task Decrypt_WhenFlagsUnknown_ShouldThrow(int flags)
+    {
+        var file = Slbk1Spec.Build(Passphrase, [Plain(100)], finalFlags: (byte)flags);
+        using var output = new MemoryStream();
+
+        var error = await Should.ThrowAsync<BackupDecryptException>(() => _cipher.DecryptAsync(new MemoryStream(file), output, Passphrase, CancellationToken.None));
+
+        error.Message.ShouldContain("unknown flags");
+        output.Length.ShouldBe(0);
+    }
+
     // The header is bound into every record's AAD as well as into the key and nonce: a file whose records were sealed
     // without it is refused.
     [Test]

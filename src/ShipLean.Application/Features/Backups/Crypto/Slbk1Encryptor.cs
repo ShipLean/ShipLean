@@ -31,7 +31,15 @@ internal sealed class Slbk1Encryptor : Stream
             CryptographicOperations.ZeroMemory(key);
         }
 
-        _output.Write(_header);
+        try
+        {
+            _output.Write(_header);
+        }
+        catch
+        {
+            _aes.Dispose();
+            throw;
+        }
     }
 
     public override bool CanRead => false;

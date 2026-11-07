@@ -20,12 +20,14 @@ All integers are unsigned and big-endian.
 | 26 | 8 | nonce prefix | random per file |
 | 34 | 2 | reserved | `0x00 0x00` |
 
-A reader refuses the file, before deriving any key, when the magic, version or key derivation differ, when the
-iterations are below 600,000 or above 2,000,000, or when either reserved byte is not zero.
+A reader refuses the file, before deriving any key, when the magic, version or key derivation differ, when either
+reserved byte is not zero, or when the iterations are below 600,000 or above 2,000,000 (checked in that order).
 
 ## Key
 
-`key = PBKDF2-HMAC-SHA256(password = UTF-8 bytes of the passphrase, salt, iterations, 32 bytes)`. The cipher is
+`key = PBKDF2-HMAC-SHA256(password = UTF-8 bytes of the passphrase, salt, iterations, 32 bytes)`. The passphrase is
+used exactly as given: no Unicode normalisation and no trimming, so a reader that takes it from a line of input strips
+the line ending and nothing else. The cipher is
 AES-256-GCM with a 12-byte nonce and a 16-byte tag.
 
 ## Records

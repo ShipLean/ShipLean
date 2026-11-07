@@ -17,8 +17,16 @@ public static class Slbk1Spec
     public const int MaxRecordLength = 1_048_576;
 
     // An SLBK1 file with one record per entry of plains; the last one is final. headerInAad false leaves the header
-    // out of each record's AAD, which a correct reader must refuse.
-    public static byte[] Build(string passphrase, IReadOnlyList<byte[]> plains, uint iterations = 600_000, bool headerInAad = true)
+    // out of each record's AAD, which a correct reader must refuse. editHeader changes header bytes and finalFlags the
+    // last record's flags before anything is sealed, so the file is still sealed correctly: only an explicit check
+    // refuses it.
+    public static byte[] Build(
+        string passphrase,
+        IReadOnlyList<byte[]> plains,
+        uint iterations = 600_000,
+        bool headerInAad = true,
+        Action<byte[]>? editHeader = null,
+        byte finalFlags = 0x01)
     {
         var header = new byte[HeaderLength];
         "SLBK"u8.CopyTo(header);
@@ -27,13 +35,14 @@ public static class Slbk1Spec
         BinaryPrimitives.WriteUInt32BigEndian(header.AsSpan(IterationsOffset), iterations);
         RandomNumberGenerator.Fill(header.AsSpan(SaltOffset, 16));
         RandomNumberGenerator.Fill(header.AsSpan(NoncePrefixOffset, 8));
+        editHeader?.Invoke(header);
 
         using var aes = new AesGcm(Key(passphrase, header), TagLength);
         using var file = new MemoryStream();
         file.Write(header);
         for (var index = 0; index < plains.Count; index++)
         {
-            var flags = (byte)(index == plains.Count - 1 ? 0x01 : 0x00);
+            var flags = index == plains.Count - 1 ? finalFlags : (byte)0x00;
             var plain = plains[index];
             var ciphertext = new byte[plain.Length];
             var tag = new byte[TagLength];
