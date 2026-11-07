@@ -31,7 +31,7 @@ header.top .t { flex: 1; min-width: 300px; }
 .seg button[aria-pressed="true"] { background: var(--color-accent-soft); color: var(--color-text); font-weight: 600; }
 section.block { margin-top: 44px; }
 .sub { margin: 0 0 14px; color: var(--color-muted); max-width: 960px; }
-.today { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; align-items: start; }
+.today { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; align-items: start; }
 @media (max-width: 1100px) { .today { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 700px) { .today { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 figure { margin: 0; min-width: 0; }
@@ -85,16 +85,6 @@ table.data tr:last-child td { border-bottom: 0; }
 .today figure.tall img { max-height: 760px; object-fit: cover; object-position: top; }
 </style>
 </head>
-src=open('sign-in-review.html').read()
-head=src[:src.index('<body>')]
-head=head.replace('<title>ShipLean · SHIP-736 Sign in on a phone</title>','<title>ShipLean · SHIP-733 Your profile on a phone</title>')
-head=head.replace('<!-- SHIP-736 design review.','<!-- SHIP-733 design review.')
-head=head.replace('''[{ "id": "r1", "label": "Round 1", "timestamp": "2026-11-07T11:00:00Z", "summary": "Joel kept all eight recommendations (D1–D8); recorded as settled" }]''','''[{ "id": "r1", "label": "Round 1", "timestamp": "2026-11-07T12:00:00Z", "summary": "First draft: today at 390px, the proposed phone page, seven alternatives and D1–D8 for Joel" }]''')
-head=head.replace('.today { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));','.today { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));')
-head=head.replace('@media (max-width: 1100px) { .today { grid-template-columns: repeat(3,','@media (max-width: 1100px) { .today { grid-template-columns: repeat(3,')
-head=head.replace('</style>','''.today figure.tall img { max-height: 760px; object-fit: cover; object-position: top; }
-</style>''')
-open('profile-review.html','w').write(head + open('/dev/stdin').read())
 <body>
 <div class="wrap">
   <header class="top">
@@ -123,8 +113,7 @@ open('profile-review.html','w').write(head + open('/dev/stdin').read())
       <figure class="tall"><img src="images/today-profile-full.png" alt="The whole profile page at 390px"><figcaption>The whole page, 2,395px</figcaption></figure>
       <figure><img src="images/today-profile.png" alt="Profile at 390px"><figcaption>Profile: Save is at the bottom of the panel, a screen down</figcaption></figure>
       <figure><img src="images/today-profile-password.png" alt="Password at 390px"><figcaption>Password: open all the time; Change password wraps to two lines</figcaption></figure>
-      <figure><img src="images/today-profile-projects.png" alt="Your projects at 390px"><figcaption>Your projects</figcaption></figure>
-      <figure><img src="images/today-profile-agents.png" alt="Connected agents at 390px"><figcaption>Connected agents: the Claude Code line is cut off</figcaption></figure>
+      <figure><img src="images/today-profile-agents.png" alt="Connected agents at 390px"><figcaption>The bottom: Your projects, Sessions, Connected agents; the Claude Code line is cut off</figcaption></figure>
     </div>
     <ol class="problems">
       <li><b>12px fields.</b> iOS Safari zooms the page when you tap Display name or any password field, and stays zoomed (rule 14). The fields are a fixed 280px, not the width of the panel.</li>
