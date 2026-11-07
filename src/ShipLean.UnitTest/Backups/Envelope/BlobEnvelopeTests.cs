@@ -57,31 +57,62 @@ public class BlobEnvelopeTests
         await Should.ThrowAsync<InvalidDataException>(async () => await BlobEnvelope.ReadAsync(input));
     }
 
-    [Test]
-    public async Task Envelope_WhenMetadataOverFourKilobytes_ShouldThrow()
-    {
-        using var output = new MemoryStream();
-        await Should.ThrowAsync<ArgumentException>(async () => await BlobEnvelope.WriteAsync(
-            output, "a", new string('t', BlobEnvelope.MaxMetadataBytes), new MemoryStream(), CancellationToken.None));
-        output.Length.ShouldBe(0);
+    // Backups outlive the code, so the bytes are pinned: the magic, camelCase names, no spaces, one LF, then the content.
+    private const string Golden = "SLBLOB1\n{\"key\":\"attachments/ab\",\"contentType\":\"image/png\"}\nBODY";
 
-        var line = $"{{\"key\":\"a\",\"contentType\":\"{new string('t', BlobEnvelope.MaxMetadataBytes)}\"}}";
-        using var oversized = new MemoryStream(Encoding.UTF8.GetBytes($"SLBLOB1\n{line}\nbody"));
-        await Should.ThrowAsync<InvalidDataException>(async () => await BlobEnvelope.ReadAsync(oversized));
+    [Test]
+    public async Task Envelope_WhenWritten_ShouldProduceTheExactBytes()
+    {
+        using var envelope = new MemoryStream();
+
+        await BlobEnvelope.WriteAsync(envelope, "attachments/ab", "image/png", new MemoryStream("BODY"u8.ToArray()), CancellationToken.None);
+
+        Encoding.UTF8.GetString(envelope.ToArray()).ShouldBe(Golden);
     }
+
+    [Test]
+    public async Task Envelope_WhenReadingTheExactBytes_ShouldParseThem()
+    {
+        using var input = new MemoryStream(Encoding.UTF8.GetBytes(Golden));
+
+        var (key, contentType, content) = await BlobEnvelope.ReadAsync(input);
+
+        key.ShouldBe("attachments/ab");
+        contentType.ShouldBe("image/png");
+        (await new StreamReader(content).ReadToEndAsync()).ShouldBe("BODY");
+    }
+
+    // {"key":"a","contentType":""} is 28 bytes; the content type fills the rest of the limit.
+    private static string ContentTypeFor(int metadataBytes) => new('t', metadataBytes - 28);
 
     [Test]
     public async Task Envelope_WhenMetadataExactlyFourKilobytes_ShouldRoundTrip()
     {
-        // {"key":"a","contentType":"..."} is 31 bytes around the content type.
-        var contentType = new string('t', BlobEnvelope.MaxMetadataBytes - 31);
+        var contentType = ContentTypeFor(BlobEnvelope.MaxMetadataBytes);
         using var envelope = new MemoryStream();
-        await BlobEnvelope.WriteAsync(envelope, "a", contentType, new MemoryStream("x"u8.ToArray()), CancellationToken.None);
+        await BlobEnvelope.WriteAsync(envelope, "a", contentType, new MemoryStream(), CancellationToken.None);
+        // 8 bytes of magic and the closing LF around the JSON line; there is no content.
+        (envelope.Length - 9).ShouldBe(4096);
         envelope.Position = 0;
 
         var (_, readType, _) = await BlobEnvelope.ReadAsync(envelope);
 
         readType.ShouldBe(contentType);
+    }
+
+    [Test]
+    public async Task Envelope_WhenMetadataOverFourKilobytes_ShouldThrow()
+    {
+        var contentType = ContentTypeFor(BlobEnvelope.MaxMetadataBytes + 1);
+        using var output = new MemoryStream();
+        await Should.ThrowAsync<ArgumentException>(async () => await BlobEnvelope.WriteAsync(
+            output, "a", contentType, new MemoryStream(), CancellationToken.None));
+        output.Length.ShouldBe(0);
+
+        var line = $"{{\"key\":\"a\",\"contentType\":\"{contentType}\"}}";
+        Encoding.UTF8.GetByteCount(line).ShouldBe(4097);
+        using var oversized = new MemoryStream(Encoding.UTF8.GetBytes($"SLBLOB1\n{line}\nbody"));
+        await Should.ThrowAsync<InvalidDataException>(async () => await BlobEnvelope.ReadAsync(oversized));
     }
 
     [TestCase("../outside")]
