@@ -1,0 +1,41 @@
+// Test ids for the shared touch pieces (K4-K7). A lane that needs a new id adds it to its own feature's testIds.ts.
+export const touchTestIds = {
+  // K4 top bar and drawer
+  topBar: 'touch-top-bar',
+  topBarMenu: 'touch-top-bar-menu',
+  topBarBack: 'touch-top-bar-back',
+  topBarTitle: 'touch-top-bar-title',
+  topBarAction: 'touch-top-bar-action',
+  topBarSearch: 'touch-top-bar-search',
+  topBarPinned: 'touch-top-bar-pinned',
+  drawer: 'touch-drawer',
+  drawerScrim: 'touch-drawer-scrim',
+  drawerClose: 'touch-drawer-close',
+  // K5 overlays
+  sheet: 'touch-sheet',
+  sheetScrim: 'touch-sheet-scrim',
+  sheetGrab: 'touch-sheet-grab',
+  sheetTitle: 'touch-sheet-title',
+  sheetClose: 'touch-sheet-close',
+  sheetBody: 'touch-sheet-body',
+  sheetFooter: 'touch-sheet-footer',
+  actionSheetRow: 'touch-action-sheet-row',
+  moreButton: 'touch-more-button',
+  saveBar: 'touch-save-bar',
+  saveBarMessage: 'touch-save-bar-message',
+  saveBarDiscard: 'touch-save-bar-discard',
+  saveBarSave: 'touch-save-bar-save',
+  dialogClose: 'touch-dialog-close',
+  dialogPrimary: 'touch-dialog-primary',
+  // K6 pager and touch drag
+  pager: 'touch-pager',
+  pagerChips: 'touch-pager-chips',
+  pagerChip: 'touch-pager-chip',
+  pagerPage: 'touch-pager-page',
+  dragGhost: 'touch-drag-ghost',
+  // K7 markdown and image viewer
+  markdownScroll: 'touch-markdown-scroll',
+  imageViewer: 'touch-image-viewer',
+  imageViewerImage: 'touch-image-viewer-image',
+  imageViewerClose: 'touch-image-viewer-close',
+} as const;
