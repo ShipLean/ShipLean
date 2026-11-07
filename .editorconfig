@@ -49,8 +49,6 @@ dotnet_naming_style.upper_case.capitalization = all_upper
 dotnet_naming_style.upper_case.word_separator = _
 
 # Analyzer tuning (SonarAnalyzer.CSharp + Agoda.Analyzers). Keep this list short; justify each line.
-# AG0051: fixed dates on FakeTimeProvider are the required pattern; its advice (DateTime.UtcNow) is banned by RS0030.
-dotnet_diagnostic.AG0051.severity = none
 # S1135: a plain `TODO:` comment is how temporary behaviour is marked (and listed in the slice report); the rule would fail the build on each.
 dotnet_diagnostic.S1135.severity = none
 

@@ -17,7 +17,9 @@ public class SprintDemoPromptTests
 
     private static string Template => File.ReadAllText(TemplatePath);
 
+#pragma warning disable AG0051 // the prompt prints this date as text; no clock reads it.
     private static readonly DemoUploadTarget Upload = new(UploadUrl, new DateTimeOffset(2026, 11, 5, 9, 30, 0, TimeSpan.Zero), 200L * 1024 * 1024, "BAU-7", "Sprint 24");
+#pragma warning restore AG0051
 
     private static readonly DemoBrand DefaultBrand = new(true, "<svg id=\"default-logo\"/>", null, null, null, true, ":root { --color-bg: #e8eef7; }", null);
 
@@ -574,8 +576,10 @@ public class SprintDemoPromptTests
     [Test]
     public void Render_WhenProjectBrand_ShouldCarryTheLogoLinkAndOverlaidTokensAndNoShipLeanSvg()
     {
+#pragma warning disable AG0051 // the prompt prints this date as text; no clock reads it.
         var brand = new DemoBrand(false, null, LogoUrl, "image/png", new DateTimeOffset(2026, 11, 5, 9, 30, 0, TimeSpan.Zero), false,
             ":root { --color-bg: #e8eef7; }\n:root { --color-accent: #c2410c; }", null);
+#pragma warning restore AG0051
 
         var text = Render(brand: brand);
 

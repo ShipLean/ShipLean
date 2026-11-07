@@ -39,7 +39,7 @@ public class SearchDocWriterGuardTests : ApiFixture
         var old = Guid.NewGuid();
         await using (var connection = await OpenDatabaseAsync())
         {
-            await new SearchDocBuilder(Project, SearchSourceKind.Item, late, SearchField.Title, "Written late").WithIndexedAt(new DateTimeOffset(2100, 1, 1, 0, 0, 0, TimeSpan.Zero)).InsertAsync(connection);
+            await new SearchDocBuilder(Project, SearchSourceKind.Item, late, SearchField.Title, "Written late").WithIndexedAt(TestDates.FarFuture).InsertAsync(connection);
             await new SearchDocBuilder(Project, SearchSourceKind.Item, old, SearchField.Title, "Written long ago").WithIndexedAt(new DateTimeOffset(2000, 1, 1, 0, 0, 0, TimeSpan.Zero)).InsertAsync(connection);
         }
 

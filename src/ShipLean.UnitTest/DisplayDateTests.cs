@@ -109,10 +109,12 @@ public class DisplayDateTests
     // midnight, as some real zones' do.
     private static TimeZoneInfo MidnightTransitions()
     {
+#pragma warning disable AG0051 // the bounds of a made-up zone, tested on fixed dates inside them; no clock reads them.
         var rule = TimeZoneInfo.AdjustmentRule.CreateAdjustmentRule(
             new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Unspecified), new DateTime(2030, 12, 31, 0, 0, 0, DateTimeKind.Unspecified), TimeSpan.FromHours(1),
             TimeZoneInfo.TransitionTime.CreateFixedDateRule(new DateTime(1, 1, 1, 0, 0, 0, DateTimeKind.Unspecified), 11, 1),
             TimeZoneInfo.TransitionTime.CreateFixedDateRule(new DateTime(1, 1, 1, 1, 0, 0, DateTimeKind.Unspecified), 2, 21));
+#pragma warning restore AG0051
         return TimeZoneInfo.CreateCustomTimeZone("midnight-dst", TimeSpan.FromHours(-3), "midnight-dst", "standard", "summer", [rule]);
     }
 }
