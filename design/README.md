@@ -374,6 +374,18 @@ At 900px and below, the Stories backlog (List, Planning, Tree) and the Features 
 - **⋯ More:** Search this list (a 16px field under the toolbar), Add many…, Select, Estimate what has no points, Show completed. In Planning: Forecast, Override velocity, Create sprint. Columns and Keys aren't offered.
 - **Planning:** each sprint is a header block (name, dates, count, then a full-width capacity bar with free or over), and its + Add, Capacity and Open sprint move into the section's ⋯.
 
+## Boards on a phone (SHIP-719)
+
+At 900px and below, the Stories, Features and Epics boards follow `screens/board-touch.css` and `board-touch.js`, which `board.html` and `features-board.html` load (images and review in [mobile/README.md](mobile/README.md#boards-stories-features-and-epics-ship-719)). Above 900px the patterns below still apply. The shared mobile rules are on SHIP-805 and aren't repeated here; SHIP-805 rule 7 lets the column pager and column chips scroll sideways.
+
+**Decided 2026-11-07:** one column a page in a sideways pager, the next one peeking, with column chips above (D1); cards move by **touch drag after a long press**, turning the page at the screen's edge, **and** by ⋯ → Move to (D2, against the recommendation of the ⋯ sheet alone); SHIP-805 rule 7 amended for the pager and chips (D3); tapping a card opens the item modal full screen (D4); one toolbar row: level switch, Filter (n), ⋯, with the summary on a meta line under it (D5); Move to puts the card at the bottom of the column, as Alt+→ does, and Done stays newest first (D6); after a move the page stays on the column you were reading (D7); lanes with no cards in a column are left out of it, and collapsed lanes keep their header (D8); a split column is one page, Doing then Done (D9); the Move to Done check is a bottom sheet with Move to Done anyway on top (D10); Full cards stay the default (D11); Board settings on a phone isn't part of this story (D12).
+
+- **Pager:** each page is one column, `min(100vw − 48px, 340px)` wide, and pages snap. The column header (name, WIP, state per type, ⓘ) tops its page and scrolls with it. Inside, each lane has a short header with its count in that column; ▼ collapses the lane in every column. A tablet shows two and a bit columns.
+- **Column chips:** one per column with `count/limit`, danger when over; the one on screen is highlighted and tapping one turns to it. They scroll with the page.
+- **Drag:** hold a card for 450ms to lift it (it follows the finger, the original fades). The drop line shows where it lands. Holding within 32px of the left or right edge for half a second turns the page, and again every 0.8s; near the top or bottom the page scrolls. Letting go drops it exactly as a mouse drop on desktop (state per type, the pull rule, lane criteria, the WIP warning, the Move to Done check). Letting go without moving opens the card's actions. A swipe that starts on a card still scrolls.
+- **Card ⋯:** Open, Assign (Owner on Features and Epics), Show what's under it, Move to (every column and sub-column with its WIP), Lane, Move to top, Move to bottom.
+- **Sheets:** Filter (keyword, people or owner, Sprint or Epic as a native select, Clear, Show cards), ⋯ More (Swimlanes or Lanes, Full or Compact cards, Board settings), ⓘ, Assign/Owner and the Move to Done check.
+
 ## Backlog patterns (`screens/backlog.html`, `screens/features.html`)
 
 - **List and Planning are two modes of the Stories backlog.** List is the plain ranked backlog with Sprint and Assignee columns. Scheduled items stay in the list with a sprint chip, and the current sprint's chip is accent. Completed items are hidden unless **Completed** is ticked.

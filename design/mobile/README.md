@@ -168,3 +168,49 @@ The Stories backlog (List, Planning, Tree) and the Features and Epics backlogs a
 | Epics | ![Epics, light](images/backlogs-epics.light.png) | ![Epics, dark](images/backlogs-epics.dark.png) |
 
 The decisions are in [design/README.md › Backlogs on a phone](../README.md#backlogs-on-a-phone-ship-716).
+
+## Boards: stories, features and epics (SHIP-719)
+
+The Stories, Features and Epics boards at 900px and below, inside the touch shell. Desktop is unchanged.
+
+| File | What it is |
+|---|---|
+| `../screens/board-touch.css`, `board-touch.js` | The touch layer, loaded by `board.html` and `features-board.html`. `?col=<column id>`, `?sheet=filter\|more\|card:KEY\|assign:KEY\|dod:<column id>`, `?drag=KEY&to=<column id>`, `?q=`, `?who=`, `?compact`, `?nolanes`; `?notouch` shows the desktop board at any width. |
+| `boards-review.html` | The design review: today, how the board fits a phone, every state as a live frame, the requirements, the decisions and the acceptance criteria. |
+| `images/board*.png`, `features-board*.png`, `epics-board*.png` | The boards at 390 × 844, 2× scale, light and dark (made by `screenshots.sh`). |
+| `images/*-before.*.png` | The same reference boards with the touch layer off: a 1120px board in a 390px window, as the app does today (`BoardGrid.tsx` sets `min-w-[1120px]`). |
+
+### Before
+
+| Stories | Features | Epics |
+|---|---|---|
+| ![Before: Stories board on a phone](images/board-before.light.png) | ![Before: Features board on a phone](images/features-board-before.light.png) | ![Before: Epics board on a phone](images/epics-board-before.light.png) |
+
+1. The board is 1120px wide, so about one and a half columns show and the rest is a sideways scroll.
+2. The toolbar wraps to three rows.
+3. Cards move only by HTML drag and drop, which touch screens don't fire, or by Alt+arrow keys.
+4. ⓘ and the assignee menu are popovers anchored to small targets.
+
+### The phone boards
+
+| State | Light | Dark |
+|---|---|---|
+| Stories: New | ![Stories board, light](images/board.light.png) | ![Stories board, dark](images/board.dark.png) |
+| Ready: split column, two lanes | ![Ready, light](images/board-ready.light.png) | ![Ready, dark](images/board-ready.dark.png) |
+| Dragging a card | ![Dragging a card, light](images/board-drag.light.png) | ![Dragging a card, dark](images/board-drag.dark.png) |
+| Card ⋯ | ![Card actions, light](images/board-card.light.png) | ![Card actions, dark](images/board-card.dark.png) |
+| Filter | ![Filter, light](images/board-filter.light.png) | ![Filter, dark](images/board-filter.dark.png) |
+| ⋯ More | ![⋯ More, light](images/board-more.light.png) | ![⋯ More, dark](images/board-more.dark.png) |
+| Assign | ![Assign, light](images/board-assign.light.png) | ![Assign, dark](images/board-assign.dark.png) |
+| ⓘ Definition of done | ![Definition of done, light](images/board-dod.light.png) | ![Definition of done, dark](images/board-dod.dark.png) |
+| Compact cards | ![Compact cards, light](images/board-compact.light.png) | ![Compact cards, dark](images/board-compact.dark.png) |
+| Features: In progress | ![Features board, light](images/features-board.light.png) | ![Features board, dark](images/features-board.dark.png) |
+| What's under a Feature | ![Children, light](images/features-board-children.light.png) | ![Children, dark](images/features-board-children.dark.png) |
+| Lanes by Epic | ![Lanes by Epic, light](images/features-board-lanes.light.png) | ![Lanes by Epic, dark](images/features-board-lanes.dark.png) |
+| Dragging a Feature | ![Dragging a Feature, light](images/features-board-drag.light.png) | ![Dragging a Feature, dark](images/features-board-drag.dark.png) |
+| Feature card ⋯ | ![Feature card actions, light](images/features-board-card.light.png) | ![Feature card actions, dark](images/features-board-card.dark.png) |
+| Move to Done with open children | ![Move to Done check, light](images/features-board-done-check.light.png) | ![Move to Done check, dark](images/features-board-done-check.dark.png) |
+| Epics | ![Epics board, light](images/epics-board.light.png) | ![Epics board, dark](images/epics-board.dark.png) |
+| Epic card ⋯ | ![Epic card actions, light](images/epics-board-card.light.png) | ![Epic card actions, dark](images/epics-board-card.dark.png) |
+
+The decisions are in [design/README.md › Boards on a phone](../README.md#boards-on-a-phone-ship-719).

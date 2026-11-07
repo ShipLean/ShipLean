@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="en" data-lavish-annotate="on">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SHIP-719 · Mobile boards</title>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+html { background: var(--color-bg); color: var(--color-text); }
+body { margin: 0; font: var(--text-base)/1.55 var(--font-sans); -webkit-font-smoothing: antialiased; }
+a { color: var(--color-accent); }
+code { font-family: var(--font-mono); font-size: .9em; padding: 0 4px; border-radius: var(--radius-xs); background: var(--color-surface-2); }
+.wrap { max-width: 1320px; margin: 0 auto; padding: 32px 28px 80px; display: grid; gap: 40px; }
+.wrap > * { min-width: 0; }
+header.top { display: grid; gap: 10px; }
+.eyebrow { font-size: var(--text-xs); font-weight: var(--weight-semibold); letter-spacing: .06em; text-transform: uppercase; color: var(--color-muted); }
+h1 { margin: 0; font-size: 28px; line-height: 1.2; letter-spacing: -.01em; }
+h2 { margin: 0 0 4px; font-size: 20px; }
+h3 { margin: 0; font-size: var(--text-md); }
+p { margin: 0; max-width: 860px; }
+.lead { font-size: var(--text-md); color: var(--color-muted); max-width: 920px; }
+.muted { color: var(--color-muted); }
+.sm { font-size: var(--text-sm); }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { display: inline-flex; align-items: center; gap: 6px; min-height: 24px; padding: 2px 10px; border-radius: 999px; background: var(--color-surface-2); font-size: var(--text-xs); font-weight: var(--weight-medium); }
+.chip.accent { background: var(--color-accent-soft); }
+.chip.warn { background: color-mix(in srgb, var(--color-warn) 20%, transparent); }
+section.block { display: grid; gap: 16px; }
+.sec-head { display: flex; align-items: end; gap: 16px; flex-wrap: wrap; }
+.sec-head > div { flex: 1; min-width: 280px; display: grid; gap: 4px; }
+.card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 16px 18px; }
+
+/* Phones */
+.phones { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 28px 20px; }
+.phone { display: grid; gap: 8px; justify-items: center; align-content: start; margin: 0; }
+.phone .frame { width: 328px; height: 691px; padding: 8px; border-radius: 34px; background: #0f1520; box-shadow: 0 1px 0 rgb(255 255 255 / .06) inset, 0 18px 40px rgb(0 0 0 / .22); }
+.phone .screen { width: 312px; height: 675px; overflow: hidden; border-radius: 26px; background: var(--color-surface); position: relative; }
+.phone iframe { width: 390px; height: 844px; border: 0; transform: scale(.8); transform-origin: 0 0; display: block; }
+.phone .cap { width: 328px; display: grid; gap: 2px; }
+.phone .cap b { font-size: var(--text-sm); }
+.phone .cap span { font-size: var(--text-xs); color: var(--color-muted); }
+.phone .cap a { font-size: var(--text-xs); }
+.today .frame { background: #3a1f22; }
+.bad { display: block; font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--color-danger) !important; }
+.tablet .frame { width: 389px; height: 551px; padding: 10px; border-radius: 22px; }
+.tablet .screen { width: 369px; height: 531px; border-radius: 12px; }
+.tablet iframe { width: 820px; height: 1180px; transform: scale(.45); }
+.tablet .cap { width: 389px; }
+.toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.seg { display: inline-flex; border: 1px solid var(--color-border); border-radius: var(--radius-sm); overflow: hidden; background: var(--color-surface); }
+.seg button { height: 30px; padding: 0 12px; border: 0; border-right: 1px solid var(--color-border); background: transparent; color: var(--color-muted); font: inherit; font-size: var(--text-sm); cursor: pointer; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--color-accent-soft); color: var(--color-text); font-weight: var(--weight-semibold); }
+.group-title { display: flex; gap: 10px; align-items: center; margin-top: 4px; }
+
+/* Anatomy diagram */
+.anat { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 28px; align-items: center; }
+.anat svg { width: 100%; height: auto; }
+.anat ol { margin: 0; padding-left: 22px; display: grid; gap: 8px; font-size: var(--text-sm); }
+.anat ol b { font-weight: var(--weight-semibold); }
+@media (max-width: 760px) { .anat { grid-template-columns: minmax(0, 1fr); } }
+
+/* Rules table */
+table.rules { width: 100%; border-collapse: collapse; background: var(--color-surface); font-size: var(--text-sm); }
+table.rules th, table.rules td { padding: 10px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+table.rules th { background: var(--color-surface-2); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .05em; color: var(--color-muted); }
+table.rules td:first-child { font-weight: var(--weight-semibold); white-space: nowrap; }
+table.rules tr:last-child td { border-bottom: 0; }
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
+
+/* Decisions */
+.decisions { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 14px; }
+fieldset.d { margin: 0; display: grid; gap: 8px; align-content: start; padding: 14px 16px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); min-width: 0; }
+fieldset.d legend { float: left; width: 100%; padding: 0; display: flex; gap: 8px; align-items: baseline; font-weight: var(--weight-semibold); }
+fieldset.d legend .id { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-muted); }
+fieldset.d .why { font-size: var(--text-sm); color: var(--color-muted); }
+fieldset.d label.opt { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; align-items: start; padding: 8px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-md); cursor: pointer; font-size: var(--text-sm); }
+fieldset.d label.opt:has(input:checked) { border-color: var(--color-accent); background: var(--color-accent-soft); }
+fieldset.d label.opt input { margin: 2px 0 0; accent-color: var(--color-accent); }
+fieldset.d label.opt small { display: block; color: var(--color-muted); font-size: var(--text-xs); }
+fieldset.d .rec { font-size: var(--text-2xs); font-weight: var(--weight-semibold); text-transform: uppercase; letter-spacing: .05em; color: var(--color-ok); margin-left: 4px; }
+fieldset.d textarea { width: 100%; min-height: 34px; padding: 6px 8px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: inherit; font: inherit; font-size: var(--text-sm); resize: vertical; }
+.submit-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 14px 16px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); position: sticky; bottom: 12px; box-shadow: 0 8px 24px rgb(0 0 0 / .12); margin-top: 14px; }
+.btn { display: inline-flex; align-items: center; height: 34px; padding: 0 14px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); font: inherit; font-size: var(--text-sm); font-weight: var(--weight-medium); cursor: pointer; }
+.btn.primary { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-fg); }
+.status { font-size: var(--text-sm); color: var(--color-muted); }
+ol.ac { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 980px; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; }
+.two .card { display: grid; gap: 8px; align-content: start; }
+.two ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: var(--text-sm); }
+.decided { font-size: var(--text-2xs); font-weight: var(--weight-semibold); text-transform: uppercase; letter-spacing: .05em; color: var(--color-accent); margin-left: 4px; }
+.chip.ok { background: color-mix(in srgb, var(--color-ok) 18%, transparent); }
+</style>
+<script type="application/json" data-lavish-revisions>
+[{ "id": "r1", "label": "Round 1", "timestamp": "2026-11-07T12:00:00Z", "summary": "Decisions settled: D2 adds touch drag after a long press (edge turns the page); the rest as recommended" }]
+</script>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <span class="eyebrow">SHIP-719 · Mobile boards (story, feature and epic) · design for review</span>
+  <h1>The three boards on a phone</h1>
+  <p class="lead">One treatment for the Stories, Features and Epics boards at 900px and below. The board shows one column at a time in a sideways pager, cards move by press-and-hold drag (holding at the screen's edge turns the page) or through a ⋯ action sheet, and every popover becomes a bottom sheet. The phones below are the real reference screens (<code>board.html</code>, <code>features-board.html</code>) running live at 390 × 844 in ShipLean's own design system, so you can tap them: turn columns, press and hold a card and drag it, open ⋯ on a card and move it, filter, assign.</p>
+  <div class="chips">
+    <span class="chip accent">Design only · nothing built</span>
+    <span class="chip">On PR #69 (<code>design/713-mobile-shell</code>)</span>
+    <span class="chip">New: <code>design/screens/board-touch.css</code>, <code>board-touch.js</code></span>
+    <span class="chip">Follows SHIP-805; C4 (sheet anatomy) and C5 (native selects) drawn as recommended there</span>
+    <span class="chip ok" data-lavish-revision="r1">Round 1: D2 changed to add touch drag; D1, D3–D12 as recommended</span>
+    <span class="chip" data-lavish-revision="r1">SHIP-805 rule 7 amended for the pager (D3)</span>
+  </div>
+</header>
+
+<section class="block">
+  <div class="sec-head"><div>
+    <h2>Today: a 1120px board in a 390px window</h2>
+    <p class="muted sm">The reference boards at 390px with the touch layer switched off (<code>?notouch</code>), which is what the app does: <code>BoardGrid.tsx:26</code> gives the grid <code>min-w-[1120px]</code>, so the board scrolls sideways under the touch shell and you see about one and a half columns. The toolbar wraps to three rows, cards move only by HTML drag and drop (which touch screens don't fire) or Alt+arrow keys, and ⓘ and the assignee menu are anchored popovers.</p>
+  </div></div>
+  <div class="phones today" id="todayPhones"></div>
+</section>
+
+<section class="block">
+  <div class="sec-head"><div>
+    <h2>How the board fits a phone</h2>
+    <p class="muted sm">The pieces, top to bottom. Only the top bar is pinned (SHIP-805 rule 12); everything else scrolls with the page.</p>
+  </div></div>
+  <div class="card anat">
+    <svg viewBox="0 0 340 420" role="img" aria-label="Anatomy of the board on a phone: top bar, toolbar, meta line, column chips, and a pager with the current column and the next one peeking">
+      <defs><clipPath id="ph"><rect x="20" y="10" width="240" height="400" rx="22"/></clipPath></defs>
+      <rect x="20" y="10" width="240" height="400" rx="22" fill="var(--color-bg)" stroke="var(--color-border)" stroke-width="2"/>
+      <g clip-path="url(#ph)">
+        <rect x="20" y="10" width="240" height="34" fill="var(--color-surface)"/>
+        <line x1="20" y1="44" x2="260" y2="44" stroke="var(--color-border)"/>
+        <rect x="32" y="22" width="14" height="10" rx="2" fill="var(--color-muted)"/>
+        <rect x="56" y="23" width="90" height="8" rx="4" fill="var(--color-text)" opacity=".7"/>
+        <circle cx="244" cy="27" r="5" fill="none" stroke="var(--color-muted)" stroke-width="2"/>
+        <rect x="32" y="54" width="104" height="20" rx="4" fill="var(--color-surface)" stroke="var(--color-border)"/>
+        <rect x="102" y="54" width="34" height="20" rx="4" fill="var(--color-accent-soft)" stroke="var(--color-border)"/>
+        <rect x="190" y="54" width="38" height="20" rx="4" fill="var(--color-surface)" stroke="var(--color-border)"/>
+        <rect x="232" y="54" width="20" height="20" rx="4" fill="var(--color-surface)" stroke="var(--color-border)"/>
+        <rect x="32" y="80" width="120" height="6" rx="3" fill="var(--color-muted)" opacity=".6"/>
+        <rect x="32" y="94" width="50" height="20" rx="10" fill="var(--color-accent-soft)" stroke="var(--color-accent)"/>
+        <rect x="88" y="94" width="56" height="20" rx="10" fill="var(--color-surface)" stroke="var(--color-border)"/>
+        <rect x="150" y="94" width="66" height="20" rx="10" fill="var(--color-surface)" stroke="var(--color-border)"/>
+        <rect x="222" y="94" width="56" height="20" rx="10" fill="var(--color-surface)" stroke="var(--color-border)"/>
+        <rect x="32" y="124" width="196" height="32" rx="5" fill="var(--color-surface)" stroke="var(--color-border)"/>
+        <rect x="40" y="134" width="60" height="8" rx="4" fill="var(--color-text)" opacity=".7"/>
+        <rect x="236" y="124" width="60" height="300" rx="5" fill="var(--color-surface-2)" opacity=".7"/>
+        <rect x="32" y="164" width="196" height="250" rx="5" fill="var(--color-surface-2)" opacity=".7"/>
+        <g fill="var(--color-surface)" stroke="var(--color-border)">
+          <rect x="40" y="174" width="180" height="60" rx="5"/><rect x="40" y="242" width="180" height="60" rx="5"/><rect x="40" y="310" width="180" height="60" rx="5"/>
+          <rect x="244" y="174" width="60" height="60" rx="5"/><rect x="244" y="242" width="60" height="60" rx="5"/>
+        </g>
+        <g fill="var(--color-muted)"><circle cx="206" cy="184" r="1.6"/><circle cx="211" cy="184" r="1.6"/><circle cx="201" cy="184" r="1.6"/></g>
+        <rect x="48" y="196" width="120" height="7" rx="3.5" fill="var(--color-text)" opacity=".6"/>
+        <rect x="48" y="264" width="100" height="7" rx="3.5" fill="var(--color-text)" opacity=".6"/>
+        <rect x="48" y="332" width="130" height="7" rx="3.5" fill="var(--color-text)" opacity=".6"/>
+      </g>
+      <g font-family="var(--font-sans)" font-size="12" font-weight="600" fill="var(--color-accent)">
+        <circle cx="10" cy="27" r="9"/><text x="10" y="31" text-anchor="middle" fill="var(--color-accent-fg)">1</text>
+        <circle cx="10" cy="64" r="9"/><text x="10" y="68" text-anchor="middle" fill="var(--color-accent-fg)">2</text>
+        <circle cx="10" cy="104" r="9"/><text x="10" y="108" text-anchor="middle" fill="var(--color-accent-fg)">3</text>
+        <circle cx="10" cy="140" r="9"/><text x="10" y="144" text-anchor="middle" fill="var(--color-accent-fg)">4</text>
+        <circle cx="10" cy="204" r="9"/><text x="10" y="208" text-anchor="middle" fill="var(--color-accent-fg)">5</text>
+        <circle cx="322" cy="184" r="9"/><text x="322" y="188" text-anchor="middle" fill="var(--color-accent-fg)">6</text>
+        <circle cx="222" cy="166" r="9" transform="translate(-6 4)"/><text x="216" y="174" text-anchor="middle" fill="var(--color-accent-fg)">7</text>
+      </g>
+    </svg>
+    <ol>
+      <li><b>Top bar</b> from SHIP-713, unchanged: Menu, Boards › Stories, presence, Live, Search. The drawer already has the Epics · Features · Stories switch.</li>
+      <li><b>Toolbar, one row</b> (rule 8): the level switch, <b>Filter (n)</b>, and <b>⋯</b> for Swimlanes or Lanes, Full or Compact cards, and Board settings.</li>
+      <li><b>Meta line</b>: 19 open · 86 pts · Swimlanes, and “Filtered: 1 of 26 cards” while a filter is on, so you can see what you're looking at once the controls have gone into ⋯.</li>
+      <li><b>Column chips</b>: one per column with its count against the WIP limit (red when over). The column on screen is highlighted; tapping one turns to it.</li>
+      <li><b>The column</b>: its header (name, WIP, state per type, ⓘ), then each lane's short header and its cards. A split column shows Doing, then Done. Lanes with no cards in this column are left out.</li>
+      <li><b>The next column peeks</b> 36px in from the right, so it's clear there's more. Swipe to turn; pages snap. On a tablet the same pager shows two and a bit columns.</li>
+      <li data-lavish-revision="r1"><b>⋯ on every card</b> opens its actions: Open, Assign or Owner, what's under it, Move to (each column with its WIP), Lane, and Move to top or bottom. <b>Press and hold</b> lifts the card: drag it to a column or lane and let go; hold it at the left or right edge to turn the page; let go without moving and the actions open.</li>
+    </ol>
+  </div>
+</section>
+
+<section class="block">
+  <div class="sec-head">
+    <div>
+      <h2>Proposed: 900px and below</h2>
+      <p class="muted sm">Each phone opens a state through its URL; “Open” shows it full size (narrow the window below 900px). <span data-lavish-revision="r1">Press and hold a card (mouse or touch) to drag it; hold it at a phone's edge to turn the page.</span> Moves, assigning and the Move to Done check go through the board's own code, so the state mapping, pull rule, WIP and toasts are the real ones.</p>
+    </div>
+    <div class="toolbar" style="flex:none">
+      <span class="sm muted">Theme</span>
+      <div class="seg" role="group" aria-label="Theme of the phones"><button type="button" data-theme="light" aria-pressed="true">Light</button><button type="button" data-theme="dark" aria-pressed="false">Dark</button></div>
+    </div>
+  </div>
+  <div class="group-title"><span class="chip">S</span><h3>Stories board (<code>board.html</code>)</h3></div>
+  <div class="phones" id="storyPhones"></div>
+  <div class="group-title"><span class="chip">F</span><h3>Features board (<code>features-board.html</code>)</h3></div>
+  <div class="phones" id="featurePhones"></div>
+  <div class="group-title"><span class="chip">E</span><h3>Epics board (<code>features-board.html?level=epics</code>)</h3></div>
+  <div class="phones" id="epicPhones"></div>
+</section>
+
+<section class="block">
+  <div class="sec-head"><div>
+    <h2>What changes at 900px and below</h2>
+    <p class="muted sm">Written as requirements for the app. The shared rules (sizes, sheets, scrim, inputs, safe areas) are SHIP-805's and aren't repeated here. Above 900px nothing changes.</p>
+  </div></div>
+  <div class="tbl-wrap"><table class="rules">
+    <thead><tr><th>Area</th><th>Desktop</th><th>900px and below</th></tr></thead>
+    <tbody>
+      <tr><td>Columns</td><td>All columns side by side, 1120px minimum</td><td>One column per page in a sideways pager that snaps; the next column peeks. Column chips above it turn pages and show which one you're on.</td></tr>
+      <tr><td>Column header</td><td>Sticky above the lanes</td><td>At the top of its page, scrolls with it (rule 12). ⓘ opens the definition of done as a bottom sheet.</td></tr>
+      <tr><td>Swimlanes</td><td>A row per lane across every column</td><td>Inside each column, a short header per lane (Expedite, Default lane, or the Epic) with its card count in that column; ▼ still collapses the lane everywhere. Lanes empty in this column are left out.</td></tr>
+      <tr><td>Split columns</td><td>Doing and Done side by side</td><td>Stacked in the same page: Doing, then Done, each with its count.</td></tr>
+      <tr><td>Toolbar</td><td>Level, summary, Swimlanes, Cards, Filter, Board settings</td><td>One row: level switch, Filter (n), ⋯. Swimlanes/Lanes, Cards and Board settings move into the ⋯ sheet; the summary becomes the meta line.</td></tr>
+      <tr><td>Filter</td><td>A bar under the toolbar</td><td>A bottom sheet: keyword (16px, not focused until tapped), people or owner, Sprint or Epic as a native select, Clear and Show cards. The count of matching cards shows in the sheet and on the meta line.</td></tr>
+      <tr data-lavish-revision="r1"><td>Moving a card</td><td>Drag and drop; Alt+arrow keys</td><td><b>Drag:</b> press and hold (450ms) lifts the card, which then follows the finger; the drop line shows where it lands; holding it within 32px of the left or right edge for half a second turns the page (again every 0.8s); near the top or bottom the page scrolls. Let go to drop, exactly as a mouse drop on desktop. Let go without moving and the card's actions open. A quick swipe still turns pages.<br><b>⋯ on the card:</b> Move to a column, a lane, or the top or bottom of its own column, at the bottom of the target column as Alt+→ does (Done stays newest first). The page stays on the column you were reading.</td></tr>
+      <tr><td>Opening a card</td><td>Click opens the item modal</td><td>Tap opens the item modal full screen (SHIP-714 D8).</td></tr>
+      <tr><td>Assign / Owner</td><td>Avatar opens an anchored menu</td><td>Avatar (32px) or the card's Assign row opens a bottom sheet of people. The pull rule is unchanged.</td></tr>
+      <tr><td>Features and Epics</td><td>Roll-up button lists children inline; Move to Done prompt; Done check dialog</td><td>The same inline list with 32px rows and + Story / + Bug / + Feature. Moving into Done with open children asks in a bottom sheet with Move to Done anyway on top, full width.</td></tr>
+      <tr><td>New card</td><td>+ New item at the top of New</td><td>Unchanged, on the New page (the first one).</td></tr>
+      <tr><td>Real time</td><td>Teammates' moves slide and flash</td><td>The card flashes where it lands; the column chips' counts update. A move into another column shows in the toast.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section class="block">
+  <div class="sec-head"><div>
+    <h2>Decisions</h2>
+    <p class="muted sm" data-lavish-revision="r1">Settled in round 1. Your choice is selected and marked; the first option in each was my recommendation. You can still change one and queue again.</p>
+  </div></div>
+  <form id="decisions" data-lavish-question="ship-719-decisions">
+    <div class="decisions" id="dlist"></div>
+    <div class="submit-row">
+      <button class="btn primary" type="submit">Queue decisions</button>
+      <span class="status" id="qstatus">Nothing queued yet.</span>
+      <span style="flex:1"></span>
+      <button class="btn" type="button" id="copyAll">Copy all answers</button>
+      <span class="status" data-lavish-copy-all-status role="status" aria-live="polite"></span>
+    </div>
+  </form>
+</section>
+
+<section class="block">
+  <div class="sec-head"><div>
+    <h2>Proposed acceptance criteria for SHIP-719</h2>
+    <p class="muted sm" data-lavish-revision="r1">With the round 1 decisions. Ready to go on SHIP-719.</p>
+  </div></div>
+  <div class="card"><ol class="ac">
+    <li>At 390 × 844 the Stories, Features and Epics boards have no page-level sideways scroll, in both themes. Only the column pager and the column chips scroll sideways, each inside its own box.</li>
+    <li>At 900px and below one column shows at a time with the next one peeking; swiping snaps to a column; the column chips show each column's count against its WIP limit (danger when over) and turn to that column when tapped. Above 900px nothing changes.</li>
+    <li data-lavish-revision="r1">Every card can be moved on a touch screen two ways, both behaving as the same drop on desktop (state per type, the pull rule, lane criteria, WIP over-limit warning, the Move to Done check): press and hold, then drag to a column or lane, holding at the screen edge to turn the page; or ⋯ → Move to a column, a lane, or the top or bottom of its column. Letting go of a held card without moving opens its actions; a swipe that starts on a card still scrolls.</li>
+    <li>Swimlanes (Expedite, Default) and Lanes by Epic show inside each column with their own header and count; collapsing a lane collapses it in every column.</li>
+    <li>Filter, ⋯ More, ⓘ, Assign/Owner, the card actions and the Move to Done check are bottom sheets built on SHIP-713's <code>Sheet</code>; the toolbar is one row (level, Filter (n), ⋯).</li>
+    <li>Tapping a card opens the item modal full screen; ✕ comes back to the same column of the board.</li>
+    <li>Page screenshots at 390 × 844 in both themes: board, board-ready (split column and lanes), board-card-actions, features-board, features-board-lanes, epics-board, next to the existing desktop ones; the reference screens in <code>design/screens</code> gain the layer shown here.</li>
+    <li>Analytics: <code>board.card_moved</code> carries <code>method</code> (drag, touch_drag, keyboard, sheet) and the shared <code>viewport</code> property, so we can compare moves per board view, week by week, on phones against desktop, and before and after this ships.</li>
+  </ol></div>
+</section>
+
+<section class="block">
+  <div class="two">
+    <div class="card"><h3>Owned elsewhere</h3><ul>
+      <li data-lavish-revision="r1"><b>SHIP-805</b>: the shared rules; rule 7 now lists the board column pager and column chips (D3).</li>
+      <li><b>SHIP-713</b>: top bar, drawer (with the level switch), <code>Sheet</code>, scrim, and the <code>viewport</code> property.</li>
+      <li><b>SHIP-714</b>: the item modal a card opens.</li>
+      <li><b>SHIP-722</b>: the board on a Feature's own page stays its own story.</li>
+      <li><b>Board settings</b> (columns, WIP, styles, tag colours): see D12.</li>
+    </ul></div>
+    <div class="card"><h3>Where things are</h3><ul>
+      <li>PR #69, branch <code>design/713-mobile-shell</code>.</li>
+      <li><code>design/screens/board-touch.css</code> and <code>board-touch.js</code>, linked from <code>board.html</code> and <code>features-board.html</code>.</li>
+      <li>Review states: <code>?drag=KEY&amp;to=&lt;id&gt;</code> (a card held over a column), <code>?col=&lt;id&gt;</code>, <code>?sheet=filter|more|card:KEY|assign:KEY|dod:&lt;id&gt;</code>, <code>?q=</code>, <code>?who=</code>, <code>?compact</code>, <code>?nolanes</code>, <code>?notouch</code>, plus each board's own (<code>?level=epics</code>, <code>?lanes=epic</code>, <code>?open=KEY</code>, <code>?confirm=KEY</code>).</li>
+      <li>The 32px and 48px tokens are set in <code>board-touch.css</code> until SHIP-805's token change lands in <code>tokens.css</code>.</li>
+      <li>This page: <code>design/mobile/boards-review.html</code>; images in <code>design/mobile/images</code> from <code>screenshots.sh</code>.</li>
+    </ul></div>
+  </div>
+</section>
+
+</div>
+
+<script>
+(() => {
+  const TODAY = [
+    ['board.html?notouch', 'Stories board today', '✕ 1½ columns visible; the board scrolls sideways under the shell'],
+    ['features-board.html?notouch&col=prog', 'Features board today', '✕ Toolbar wraps to three rows before any card'],
+    ['features-board.html?level=epics&notouch', 'Epics board today', '✕ No way to move a card: drag and drop needs a mouse'],
+  ];
+  const STORY = [
+    ['board.html?', 'New column', 'Toolbar on one row, meta line, column chips; Ready peeks on the right'],
+    ['board.html?col=ready', 'Ready: split column, two lanes', 'Expedite then Default lane; Doing then Done inside each'],
+    ['board.html?col=ready&drag=SHIP-147&to=prog', 'Dragging a card (round 1)', 'Held over In progress after turning the page at the edge; drop line on top'],
+    ['board.html?col=prog&sheet=card:SHIP-129', 'Card actions (⋯)', 'Move to shows every column with its WIP; In review is over'],
+    ['board.html?sheet=filter&who=ana', 'Filter', 'Keyword, people, sprint; “Filtered: 1 of 26” on the meta line'],
+    ['board.html?sheet=more', '⋯ More', 'Swimlanes, Full or Compact cards, Board settings'],
+    ['board.html?col=new&sheet=assign:SHIP-170', 'Assign', 'The avatar opens people as a sheet; pulling still assigns you'],
+    ['board.html?col=ready&sheet=dod:ready', 'ⓘ Definition of done', 'State per type, WIP and the split, as a sheet'],
+    ['board.html?compact&col=prog', 'Compact cards', 'One-line titles; the avatar moves up beside the key'],
+  ];
+  const FEATURE = [
+    ['features-board.html?col=prog', 'In progress', 'Own points · Σ of the stories below; roll-up button'],
+    ['features-board.html?open=SHIP-101&col=prog', 'What’s under a Feature', 'Children inline with their states; + User story, + Bug'],
+    ['features-board.html?lanes=epic&col=shaping', 'Lanes by Epic', 'One header per Epic inside the column; empty Epics left out'],
+    ['features-board.html?drag=SHIP-108&to=prog', 'Dragging a Feature (round 1)', 'From Shaping to In progress; no pull rule on this level'],
+    ['features-board.html?col=release&sheet=card:SHIP-111', 'Card actions', 'Owner, what’s under it, Move to; no pull rule here'],
+    ['features-board.html?confirm=SHIP-102&col=release', 'Move to Done with open children', 'Asks in a bottom sheet; Move to Done anyway on top'],
+  ];
+  const EPIC = [
+    ['features-board.html?level=epics', 'Epics board', 'Four columns; Features, stories and bugs rolled up'],
+    ['features-board.html?level=epics&col=prog&sheet=card:SHIP-90', 'Epic card actions', 'Same sheet as the other boards'],
+  ];
+  let theme = 'light';
+  const url = u => `../screens/${u}${u.endsWith('?') ? '' : '&'}shot&theme=${theme}`;
+  const frame = (cls, bad) => ([u, title, sub]) => `<figure class="phone${cls}"><div class="frame"><div class="screen"><iframe loading="lazy" src="${url(u)}" title="${title}"></iframe></div></div>
+    <figcaption class="cap"><b>${title}</b><span${bad ? ' class="bad"' : ''}>${sub}</span><a href="${url(u)}" target="_blank" rel="noopener">Open</a></figcaption></figure>`;
+  const render = () => {
+    document.getElementById('todayPhones').innerHTML = TODAY.map(frame('', true)).join('');
+    document.getElementById('storyPhones').innerHTML = STORY.map(frame('')).join('') + frame(' tablet')(['board.html?col=ready', 'Tablet, 820px', 'Same pager; two and a bit columns show']);
+    document.getElementById('featurePhones').innerHTML = FEATURE.map(frame('')).join('');
+    document.getElementById('epicPhones').innerHTML = EPIC.map(frame('')).join('');
+  };
+  render();
+  document.querySelector('[aria-label="Theme of the phones"]').addEventListener('click', e => {
+    const b = e.target.closest('[data-theme]'); if (!b) return;
+    theme = b.dataset.theme;
+    document.querySelectorAll('[data-theme]').forEach(x => x.setAttribute('aria-pressed', x === b));
+    render();
+  });
+
+  const D = [
+    ['D1', 'Fitting the columns', 'Five to six columns, each about 330px wide on a phone.', [
+      ['Pager: one column a page, the next peeks, chips above', 'What the phones show. Swipe or tap a chip; a tablet shows two and a bit.'],
+      ['Tabs: one column at a time, no sideways scroll', 'Chips switch the column; swipe would need gesture code. No peek, so less hint that more columns exist.'],
+      ['Stacked: every column down the page, each folded', 'One long page with no sideways movement; you lose the board feel and the WIP at a glance.']]],
+    ['D2', 'Moving cards on touch', 'HTML drag and drop does not fire on touch screens.', [
+      ['⋯ on every card and a long press, both open an action sheet with Move to', 'Visible (rule 5), precise, works with lanes and split columns; two taps per move.'],
+      ['Also touch drag after a long press, flipping pages at the edge', 'Feels direct, but fiddly on a phone and a lot to build and test. Chosen: both, so ⋯ stays the precise way.'],
+      ['Swipe a card left or right to move it one column', 'Fast for the common step; hidden, and clashes with the pager’s swipe.']]],
+    ['D3', 'SHIP-805 rule 7 (sideways scroll)', 'The pager and the chips scroll sideways in their own boxes; rule 7 lists the only things allowed to.', [
+      ['Add “the board column pager and column chips” to rule 7, with a change-log line', 'Needed for D1’s pager.'],
+      ['Keep rule 7 as it is', 'Then D1 has to be Tabs or Stacked.']]],
+    ['D4', 'Tapping a card', 'On desktop a click opens the item modal.', [
+      ['Opens the item modal full screen (SHIP-714 D8)', 'Same as desktop; ✕ comes back to the same column.'],
+      ['Opens the card’s action sheet', 'Moves are one tap quicker; reading the item takes one more.']]],
+    ['D5', 'Toolbar', 'Rule 8: primary action, main control, Filter (count), ⋯.', [
+      ['Level switch · Filter (n) · ⋯; summary on a meta line under it', 'The level switch is also in the drawer, but here it’s one tap.'],
+      ['+ New · Filter (n) · ⋯; level only in the drawer', '+ New is already at the top of the New column.']]],
+    ['D6', 'Where Move to puts the card', 'Within the target column.', [
+      ['At the bottom, as Alt+→ does (Done stays newest first)', 'Matches the keyboard move; pull order is top to bottom.'],
+      ['At the top', 'Easy to find right after the move.']]],
+    ['D7', 'After a move', 'The card leaves the column you’re reading.', [
+      ['Stay on this column; the toast says where it went', 'Good for triaging a column card by card.'],
+      ['Turn to the card’s new column', 'You see it land; you lose your place.']]],
+    ['D8', 'Lanes with no cards in a column', 'With Lanes by Epic there can be six Epics and only two have cards in Shaping.', [
+      ['Leave them out (collapsed lanes still show their header)', 'Shorter pages.'],
+      ['Show every lane header with “No cards”', 'Same lane order on every page.']]],
+    ['D9', 'Split columns (Ready: Doing and Done)', 'Two sub-columns under one WIP limit.', [
+      ['One page: Doing, then Done, stacked', 'The WIP covers both, so they stay together.'],
+      ['Two pages with their own chips', 'Narrower content; the chip strip gets longer.']]],
+    ['D10', 'The Move to Done check', 'A confirm with a list of what is still open.', [
+      ['Bottom sheet, Move to Done anyway on top, full width', 'It’s a choice, not a form, so not full screen (rule 4).'],
+      ['Full screen like a form dialog', 'More room for the list.']]],
+    ['D11', 'Card size on phones', 'Full or Compact is a per-person toggle.', [
+      ['Keep Full as the default; the toggle is in ⋯', 'Title, parent, tags and assignee all show.'],
+      ['Compact by default at 900px and below', 'About twice as many cards per screen; less on each.']]],
+    ['D12', 'Board settings on a phone', 'Columns, WIP, swimlanes, styles and tag colours; reached from ⋯.', [
+      ['Not in this story; SHIP-732 (project settings) or a new story', 'Keeps this to the boards; the link still works, the page is desktop-shaped until then.'],
+      ['In this story', 'Adds a large screen to 13 points.']]],
+  ];
+  const DECIDED = { D2: 1 };
+  document.getElementById('dlist').innerHTML = D.map(([id, title, why, opts]) => `<fieldset class="d" data-id="${id}"${id === 'D2' ? ' data-lavish-revision="r1"' : ''}>
+    <legend><span class="id">${id}</span>${title}</legend>
+    <span class="why">${why}</span>
+    ${opts.map(([o, s], i) => `<label class="opt"><input type="radio" name="${id}" value="${o.replace(/"/g, '&quot;')}"${i === (DECIDED[id] || 0) ? ' checked' : ''}><span>${o}${i ? '' : '<span class="rec">Recommended</span>'}${i === (DECIDED[id] || 0) ? '<span class="decided">Decided</span>' : ''}<small>${s}</small></span></label>`).join('')}
+    <textarea name="${id}-note" placeholder="Note (optional)" aria-label="${id} note"></textarea>
+  </fieldset>`).join('');
+
+  const answers = () => D.map(([id, title, , opts]) => {
+    const v = document.querySelector(`input[name="${id}"]:checked`)?.value;
+    const note = document.querySelector(`textarea[name="${id}-note"]`).value.trim();
+    return { id, title, choice: v, recommended: v === opts[0][0], note };
+  });
+  document.getElementById('decisions').addEventListener('submit', e => {
+    e.preventDefault();
+    const items = answers();
+    const changed = items.filter(a => !a.recommended || a.note);
+    const text = items.map(a => `${a.id} ${a.title}: ${a.choice}${a.recommended ? ' (recommended)' : ''}${a.note ? ` — note: ${a.note}` : ''}`).join('\n');
+    if (window.lavish?.queuePrompt) {
+      window.lavish.queuePrompt(`SHIP-719 design decisions. Apply each one to the mobile boards design (board-touch.*, this page, the acceptance criteria) and give a per-ID receipt for D1–D12:\n${text}`,
+        { tag: 'tracked-batch', text: `SHIP-719 decisions: ${changed.length} changed or noted, ${items.length - changed.length} as recommended`, element: e.currentTarget, queueKey: 'ship-719-decisions', data: { items } });
+      document.getElementById('qstatus').textContent = `Queued ${items.length} decisions (${changed.length} changed or noted). Send to agent to deliver.`;
+    } else {
+      document.getElementById('qstatus').textContent = 'Lavish is not running: use Copy all answers and paste them into the chat.';
+    }
+  });
+  document.getElementById('copyAll').addEventListener('click', async () => {
+    const text = answers().map(a => `${a.id} ${a.title}: ${a.choice}${a.note ? ` — note: ${a.note}` : ''}`).join('\n');
+    const st = document.querySelector('[data-lavish-copy-all-status]');
+    try { await navigator.clipboard.writeText(text); st.textContent = 'Answers copied.'; } catch { st.textContent = 'Clipboard unavailable.'; }
+  });
+})();
+</script>
+</body>
+</html>
