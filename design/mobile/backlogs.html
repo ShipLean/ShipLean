@@ -17,7 +17,7 @@
 <link rel="stylesheet" href="../tokens.css">
 <script>
   (() => {
-    const p = new URLSearchParams(location.search);
+    const p = new URLSearchParams(window.SL_QUERY ?? location.search); // SL_QUERY: set by a standalone review page (srcdoc)
     if (p.get('theme')) document.documentElement.dataset.theme = p.get('theme');
   })();
 </script>
@@ -284,7 +284,7 @@ button { cursor: pointer; }
 
 <script>
 (() => {
-  const P = new URLSearchParams(location.search);
+  const P = new URLSearchParams(window.SL_QUERY ?? location.search);
   const level = P.get('level') || 'stories';
   const mode = level === 'stories' ? (P.get('mode') || 'list') : 'list';
   const state = P.get('state') || '';
@@ -537,7 +537,12 @@ button { cursor: pointer; }
   layer();
 
   /* Enough wiring to click around: modes, levels, sheets. Each link keeps the theme. */
-  const go = q => { const n = new URLSearchParams(q); if (P.get('theme')) n.set('theme', P.get('theme')); if (P.has('shot')) n.set('shot', ''); location.search = n.toString(); };
+  const go = q => {
+    const n = new URLSearchParams(q); if (P.get('theme')) n.set('theme', P.get('theme')); if (P.has('shot')) n.set('shot', '');
+    // Inside a standalone review page the frame has no address to change, so the page swaps the frame's srcdoc.
+    if (window.SL_QUERY !== undefined && window.frameElement && parent.SL_SRCDOC) { window.frameElement.srcdoc = parent.SL_SRCDOC(n.toString()); return; }
+    location.search = n.toString();
+  };
   document.addEventListener('click', e => {
     const t = e.target.closest('[data-mode],[data-open],[data-row],[data-est],[data-close],[data-add]');
     if (!t) return;

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Regenerates images/<name>.<theme>.png: the touch shell (SHIP-713) and the work item page (SHIP-714, item-* and
-# feature-*) on the reference screens at 390 × 844, 2× scale, and the page stories' phone screens kept in this folder
+# Regenerates images/<name>.<theme>.png: the touch shell (SHIP-713), the work item page (SHIP-714, item-* and
+# feature-*) and the boards (SHIP-719: board-*, features-board-*, epics-board-*) on the reference screens at 390 × 844,
+# 2× scale, and the page stories' phone screens kept in this folder
 # (an address starting ./, such as SHIP-715's attachment.html).
 # Usage: ./screenshots.sh [name ...]   (no names = all). CHROME=/path/to/chrome overrides the browser.
 # The today-*.png images are screenshots of the real app (main at 918cf067) and are not made here.
@@ -76,6 +77,27 @@ declare -A shots=(
   [backlogs-tree]="./backlogs.html?mode=tree"
   [backlogs-features]="./backlogs.html?level=features"
   [backlogs-epics]="./backlogs.html?level=epics"
+  # Boards: stories, features and epics (SHIP-719). *-before is the same screen with the touch layer off (?notouch).
+  [board-before]="board.html?notouch"
+  [board]="board.html"
+  [board-ready]="board.html?col=ready"
+  [board-drag]="board.html?col=ready&drag=SHIP-147&to=prog"
+  [board-card]="board.html?col=prog&sheet=card:SHIP-129"
+  [board-filter]="board.html?sheet=filter&who=ana"
+  [board-more]="board.html?sheet=more"
+  [board-assign]="board.html?col=new&sheet=assign:SHIP-170"
+  [board-dod]="board.html?col=ready&sheet=dod:ready"
+  [board-compact]="board.html?compact&col=prog"
+  [features-board-before]="features-board.html?notouch"
+  [features-board]="features-board.html?col=prog"
+  [features-board-children]="features-board.html?open=SHIP-101&col=prog"
+  [features-board-lanes]="features-board.html?lanes=epic&col=shaping"
+  [features-board-drag]="features-board.html?drag=SHIP-108&to=prog"
+  [features-board-card]="features-board.html?col=release&sheet=card:SHIP-111"
+  [features-board-done-check]="features-board.html?confirm=SHIP-102&col=release"
+  [epics-board-before]="features-board.html?level=epics&notouch"
+  [epics-board]="features-board.html?level=epics"
+  [epics-board-card]="features-board.html?level=epics&col=prog&sheet=card:SHIP-90"
 )
 
 names=("$@")
