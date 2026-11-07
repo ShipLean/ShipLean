@@ -113,7 +113,7 @@ public class AnalyticsTestSendTests : ApiFixture
     [Test]
     public async Task TestAsync_WhenSinkOutlastsTimeout_ShouldBeNotOkWithReason()
     {
-        var clock = new FakeTimeProvider(new DateTimeOffset(2026, 11, 2, 9, 0, 0, TimeSpan.Zero));
+        var clock = new FakeTimeProvider(TimeProvider.System.GetUtcNow());
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var sink = new WaitingSink(entered);
         var target = new AnalyticsTarget(AnalyticsProvider.Umami, new Uri("https://umami.example.com"), UmamiKey, "shiplean.example.com", false, "1.0.0");

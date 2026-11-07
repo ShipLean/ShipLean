@@ -21,7 +21,9 @@ public class SprintDemoLabelsTests
     [Test]
     public void When_ShouldNameTodayYesterdayAndTomorrowInTheClocksZone()
     {
+#pragma warning disable AG0051 // the labels are checked as text against a fake clock; no real clock is involved.
         var clock = new FakeTimeProvider(new DateTimeOffset(2026, 11, 5, 10, 15, 0, TimeSpan.Zero));
+#pragma warning restore AG0051
         clock.SetLocalTimeZone(TimeZoneInfo.Utc);
 
         SprintDemoLabels.When(clock.GetUtcNow(), clock).ShouldBe("today at 10:15");

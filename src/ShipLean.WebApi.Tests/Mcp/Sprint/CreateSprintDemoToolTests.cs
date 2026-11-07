@@ -32,7 +32,7 @@ public class CreateSprintDemoToolTests : McpFixture
 
     // Nothing here is a default, so a hand-over that dropped the brand's source for ShipLean's own would show.
     private static readonly DemoBrand ProjectBrand = new(
-        false, "<svg id=\"c1-logo\"/>", "https://logos.example/c1-project-logo.svg", "image/svg+xml", new DateTimeOffset(2031, 5, 17, 9, 30, 0, TimeSpan.Zero),
+        false, "<svg id=\"c1-logo\"/>", "https://logos.example/c1-project-logo.svg", "image/svg+xml", TestDates.Today.AddYears(5).AddHours(9.5),
         false, ":root { --c1-brand: #123456; }", "c1 logo fallback");
 
     private async Task<bool> UsableAsync(string url)

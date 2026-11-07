@@ -156,7 +156,7 @@ public class PlanningGuideLessonsTests : McpFixture
     {
         await using var connection = await OpenDatabaseAsync();
         var seed = new RetroSeed(connection, SeedIds.Projects.Ship);
-        var retro = await seed.RetroAsync(new RetroSeedRetro(SeedIds.Users.Joel, role, WorkItemId: featureId, AgentName: "lessons-test", CreatedAt: new DateTimeOffset(2099, 1, 1, 0, 0, 0, TimeSpan.Zero)));
+        var retro = await seed.RetroAsync(new RetroSeedRetro(SeedIds.Users.Joel, role, WorkItemId: featureId, AgentName: "lessons-test", CreatedAt: TestDates.FarFuture));
         foreach (var (text, archived) in improve)
         {
             await seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.Improve, text, Archived: archived));
