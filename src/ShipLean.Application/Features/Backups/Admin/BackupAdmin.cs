@@ -189,7 +189,12 @@ public sealed class BackupAdmin(
         {
             return s3.SecretKey.Length == 0 ? null : s3.SecretKey;
         }
-        return KeptSecret(s3, saved) is { } kept ? secrets.Unprotect(kept) : null;
+        if (KeptSecret(s3, saved) is not { } kept)
+        {
+            return null;
+        }
+        return secrets.TryUnprotect(kept)
+               ?? throw ApiException.Validation("The saved secret key can no longer be read. Enter the secret key again.", BackupSaveRules.SecretKeyField);
     }
 
     // The saved secret (still protected) that a null secretKey keeps, or null when there are no keys at all.
@@ -205,8 +210,9 @@ public sealed class BackupAdmin(
         return savedSecret ?? throw ApiException.Validation("Enter the secret key for this access key ID.", BackupSaveRules.SecretKeyField);
     }
 
+    // A saved passphrase the key ring can no longer open counts as different, so typing it again starts a new generation.
     private bool IsSavedPassphrase(BackupSettingsRow? saved, string passphrase)
-        => saved?.Passphrase is { } current && string.Equals(secrets.Unprotect(current), passphrase, StringComparison.Ordinal);
+        => saved?.Passphrase is { } current && string.Equals(secrets.TryUnprotect(current), passphrase, StringComparison.Ordinal);
 
     private static BackupStoredDestination Stored(S3DestinationSaveDto s3)
         => new(s3.Region, s3.EndpointUrl, s3.Bucket, s3.Prefix, s3.ForcePathStyle, s3.AccessKeyId);

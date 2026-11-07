@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json.Nodes;
 using Dapper;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Time.Testing;
@@ -260,6 +261,9 @@ public class BackupAdminTests
         stored.Secret.ShouldNotContain(Secret);
         stored.Passphrase.ShouldNotContain(Passphrase);
         stored.Destination.ShouldNotContain(Secret);
+        var protector = _host.Services.GetRequiredService<IDataProtectionProvider>().CreateProtector("ShipLean.Instance.Backups.Secret.v1");
+        protector.Unprotect(stored.Secret).ShouldBe(Secret);
+        protector.Unprotect(stored.Passphrase).ShouldBe(Passphrase);
     }
 
     [Test]
@@ -324,6 +328,16 @@ public class BackupAdminTests
         _clock.SetUtcNow(new DateTimeOffset(2026, 10, 25, 2, 59, 59, TimeSpan.Zero));
         (await GetAsync())["health"]!.GetValue<string>().ShouldBe("ok");
         _clock.SetUtcNow(new DateTimeOffset(2026, 10, 25, 3, 0, 0, TimeSpan.Zero));
+        (await GetAsync())["health"]!.GetValue<string>().ShouldBe("overdue");
+        // A success clears it until the occurrence after the success (2026-10-26 02:00) is an hour late.
+        using (var run = await _api.PostJsonAsync("api/instance/backups/run"))
+        {
+            run.StatusCode.ShouldBe(HttpStatusCode.Accepted, await run.Content.ReadAsStringAsync());
+        }
+        (await GetAsync())["health"]!.GetValue<string>().ShouldBe("ok");
+        _clock.SetUtcNow(new DateTimeOffset(2026, 10, 26, 2, 59, 59, TimeSpan.Zero));
+        (await GetAsync())["health"]!.GetValue<string>().ShouldBe("ok");
+        _clock.SetUtcNow(new DateTimeOffset(2026, 10, 26, 3, 0, 0, TimeSpan.Zero));
 
         (await GetAsync())["health"]!.GetValue<string>().ShouldBe("overdue");
     }
@@ -409,6 +423,56 @@ public class BackupAdminTests
     }
 
     [Test]
+    public async Task Save_WhenSavedSecretsUnreadable_ShouldAcceptNewOnes()
+    {
+        await SaveAsync(SaveBody());
+        await MakeSavedSecretsUnreadableAsync();
+        _clock.Advance(TimeSpan.FromMinutes(1));
+        var retyped = SaveBody();
+        retyped["destination"]!["s3"]!["secretKey"] = "a-new-secret-key-after-key-loss-9Zx1";
+
+        var settings = await SaveAsync(retyped);
+
+        settings["passphraseGeneration"]!.GetValue<int>().ShouldBe(2);
+        settings["destination"]!["s3"]!["secretKeyLast4"]!.GetValue<string>().ShouldBe("9Zx1");
+        var config = (await ReadConfigAsync())!;
+        config.Passphrase.ShouldBe(Passphrase);
+        config.PassphraseGeneration.ShouldBe(2);
+        config.Destination.S3!.SecretKey.ShouldBe("a-new-secret-key-after-key-loss-9Zx1");
+    }
+
+    [Test]
+    public async Task Test_WhenSavedSecretUnreadable_ShouldFailOnSecretKey()
+    {
+        await SaveAsync(SaveBody());
+        await MakeSavedSecretsUnreadableAsync();
+        var destination = SaveBody()["destination"]!.DeepClone();
+        destination["s3"]!["secretKey"] = null;
+
+        using var response = await _api.PostJsonAsync("api/instance/backups/test", destination);
+
+        var error = await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.BadRequest);
+        error.Code.ShouldBe(ApiErrorCodes.Validation);
+        error.Field.ShouldBe("destination.s3.secretKey");
+        _destinations.Configs.ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task Save_WhenEndpointEndsInSlash_ShouldKeepOneDestinationId()
+    {
+        await SaveAsync(SaveBody());
+        var before = (await ReadConfigAsync())!.DestinationId;
+        _clock.Advance(TimeSpan.FromMinutes(1));
+        var slashed = SaveBody();
+        slashed["destination"]!["s3"]!["endpointUrl"] = "https://ceph.example.internal:7480/";
+
+        var settings = await SaveAsync(slashed);
+
+        settings["destination"]!["s3"]!["endpointUrl"]!.GetValue<string>().ShouldBe("https://ceph.example.internal:7480");
+        (await ReadConfigAsync())!.DestinationId.ShouldBe(before);
+    }
+
+    [Test]
     public async Task Reader_WhenSaved_ShouldReturnDecryptedConfig()
     {
         (await ReadConfigAsync()).ShouldBeNull();
@@ -478,6 +542,13 @@ public class BackupAdminTests
         var text = await response.Content.ReadAsStringAsync();
         response.StatusCode.ShouldBe(HttpStatusCode.OK, text);
         return JsonNode.Parse(text)!;
+    }
+
+    // As if the Data Protection key ring that protected them were lost: ciphertext no key opens.
+    private async Task MakeSavedSecretsUnreadableAsync()
+    {
+        await using var connection = await _database.OpenAsync();
+        await connection.ExecuteAsync("UPDATE backup_settings SET passphrase = 'CfDJ8unreadable', destination_secret = 'CfDJ8unreadable'");
     }
 
     private Task<BackupSettingsRow?> ReadRowAsync() => _host.Services.GetRequiredService<BackupSettingsRows>().ReadAsync();

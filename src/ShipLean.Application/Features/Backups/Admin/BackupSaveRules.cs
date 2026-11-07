@@ -146,7 +146,8 @@ public static partial class BackupSaveRules
         {
             throw ApiException.Validation("The endpoint address can't have a query or fragment.", EndpointField);
         }
-        return text;
+        // "https://ceph:7480/" and "https://ceph:7480" are one destination (and one destination_id).
+        return text.TrimEnd('/');
     }
 
     // Amazon S3 itself takes a region from the AWS list; an S3-compatible endpoint takes a free-text signing region.

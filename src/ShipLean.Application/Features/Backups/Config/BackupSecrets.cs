@@ -21,6 +21,20 @@ public sealed class BackupSecrets(IDataProtectionProvider provider)
 
     public string Protect(string secret) => _protector.Protect(secret);
 
+    // The plaintext, or null when the key ring can no longer open it (keys lost or rotated away). A save that replaces
+    // the secret never needs the old one.
+    public string? TryUnprotect(string protectedSecret)
+    {
+        try
+        {
+            return _protector.Unprotect(protectedSecret);
+        }
+        catch (CryptographicException)
+        {
+            return null;
+        }
+    }
+
     public string Unprotect(string protectedSecret)
     {
         try
