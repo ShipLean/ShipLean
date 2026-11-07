@@ -169,6 +169,6 @@ public sealed class BackupJob(
         usage.Track(new UsageEvent(
             UsageEventNames.BackupRunFinished, UsageSurface.System, UsageActor.System, null, 0, succeeded ? UsageOutcome.Ok : UsageOutcome.Error, null,
             (long)(now - run.StartedAt).TotalMilliseconds, $"system:{nameof(BackupJob)}", now,
-            new Dictionary<string, object> { [UsageProps.Provider] = snapshot.Destination.Provider }));
+            new Dictionary<string, object> { [UsageProps.Provider] = snapshot.Destination.Provider, [UsageProps.Trigger] = BackupRunWire.Trigger(run.Trigger) }));
     }
 }

@@ -331,7 +331,16 @@ public class BackupJobTests
         finished.Outcome.ShouldBe(succeeds ? UsageOutcome.Ok : UsageOutcome.Error);
         finished.DurationMs.ShouldBe(42_000);
         finished.Source.ShouldBe("system:BackupJob");
-        finished.Properties.ShouldBe(new Dictionary<string, object> { [UsageProps.Provider] = "s3" });
+        finished.Properties.ShouldBe(new Dictionary<string, object> { [UsageProps.Provider] = "s3", [UsageProps.Trigger] = "manual" });
+    }
+
+    [TestCase(BackupTriggerKind.Scheduled, "scheduled")]
+    [TestCase(BackupTriggerKind.Manual, "manual")]
+    public async Task Run_WhenFinished_ShouldCarryTrigger(BackupTriggerKind trigger, string expected)
+    {
+        await RunAsync(Config(), trigger);
+
+        _usage.Events.ShouldHaveSingleItem().Properties[UsageProps.Trigger].ShouldBe(expected);
     }
 
     [TestCase(true)]
@@ -386,9 +395,10 @@ public class BackupJobTests
     }
 
     // Starts a manual run as the trigger would, hands it to the job, then releases the lease.
-    private async Task<BackupRunRow> RunAsync(BackupConfig config)
+    private async Task<BackupRunRow> RunAsync(BackupConfig config, BackupTriggerKind trigger = BackupTriggerKind.Manual)
     {
-        var started = await _log.TryStartAsync(new BackupStart(BackupTriggerKind.Manual, null, null, config.PassphraseGeneration, config.DestinationId));
+        DateTimeOffset? occurrence = trigger == BackupTriggerKind.Scheduled ? _clock.GetUtcNow() : null;
+        var started = await _log.TryStartAsync(new BackupStart(trigger, null, occurrence, config.PassphraseGeneration, config.DestinationId));
         var lease = started.Lease.ShouldNotBeNull();
         _leases.Add(lease);
 
