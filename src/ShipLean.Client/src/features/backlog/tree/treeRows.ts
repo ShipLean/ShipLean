@@ -1,7 +1,7 @@
 import type { BacklogRowDto } from '../../../api/views';
 import { isStoryLevel } from '../../../api/workItemTypes';
 
-/** The rows shown: everything under a collapsed group (the rows deeper than it, up to the next row as shallow) is hidden. */
+/** The rows shown: everything under a collapsed row (the rows deeper than it, up to the next row as shallow) is hidden. */
 export function visibleRows(
   rows: readonly BacklogRowDto[],
   collapsed: ReadonlySet<string>,
@@ -14,7 +14,7 @@ export function visibleRows(
       hiddenBelow = null;
     }
     shown.push(row);
-    if (row.kind !== 'item' && collapsed.has(row.id)) hiddenBelow = row.depth;
+    if (collapsed.has(row.id)) hiddenBelow = row.depth;
   }
   return shown;
 }

@@ -33,7 +33,9 @@ async function stub(
 }
 
 test('EditSprintRail_WhenOpened_ShouldPrefillTheSprint', async ({ mount, page }) => {
-  await mount(<EditSprintRail projectId="p1" sprint={future} onDone={() => {}} />);
+  await mount(
+    <EditSprintRail projectId="p1" sprint={future} onDone={() => {}} onDeleted={() => {}} />,
+  );
 
   await expect(page.getByTestId(ids.editSprintName)).toHaveValue('Sprint 26');
   await expect(page.getByTestId(ids.editSprintStart)).toHaveValue('2026-12-14');
@@ -44,7 +46,9 @@ test('EditSprintRail_WhenOpened_ShouldPrefillTheSprint', async ({ mount, page })
 });
 
 test('EditSprintRail_WhenSprintEnded_ShouldDisableTheDatesWithAHint', async ({ mount, page }) => {
-  await mount(<EditSprintRail projectId="p1" sprint={ended} onDone={() => {}} />);
+  await mount(
+    <EditSprintRail projectId="p1" sprint={ended} onDone={() => {}} onDeleted={() => {}} />,
+  );
 
   await expect(page.getByTestId(ids.editSprintStart)).toBeDisabled();
   await expect(page.getByTestId(ids.editSprintEnd)).toBeDisabled();
@@ -58,7 +62,14 @@ test('EditSprintRail_WhenOnlyTheEndChanged_ShouldSendOnlyTheEndAndFinish', async
 }) => {
   const patched = await stub(page, 's26');
   let done = 0;
-  await mount(<EditSprintRail projectId="p1" sprint={future} onDone={() => (done += 1)} />);
+  await mount(
+    <EditSprintRail
+      projectId="p1"
+      sprint={future}
+      onDone={() => (done += 1)}
+      onDeleted={() => {}}
+    />,
+  );
 
   await page.getByTestId(ids.editSprintEnd).fill('2026-12-23');
   await page.getByTestId(ids.editSprintSubmit).click();
@@ -73,7 +84,14 @@ test('EditSprintRail_WhenNameChangedOnAnEndedSprint_ShouldSendOnlyTheName', asyn
 }) => {
   const patched = await stub(page, 's20');
   let done = 0;
-  await mount(<EditSprintRail projectId="p1" sprint={ended} onDone={() => (done += 1)} />);
+  await mount(
+    <EditSprintRail
+      projectId="p1"
+      sprint={ended}
+      onDone={() => (done += 1)}
+      onDeleted={() => {}}
+    />,
+  );
 
   await page.getByTestId(ids.editSprintName).fill('  Sprint 20 (retro)  ');
   await page.getByTestId(ids.editSprintSubmit).click();
@@ -87,7 +105,14 @@ test('EditSprintRail_WhenNameChangedOnAnEndedSprint_ShouldSendOnlyTheName', asyn
 test('EditSprintRail_WhenNothingChanged_ShouldFinishWithoutSaving', async ({ mount, page }) => {
   const patched = await stub(page, 's26');
   let done = 0;
-  await mount(<EditSprintRail projectId="p1" sprint={future} onDone={() => (done += 1)} />);
+  await mount(
+    <EditSprintRail
+      projectId="p1"
+      sprint={future}
+      onDone={() => (done += 1)}
+      onDeleted={() => {}}
+    />,
+  );
 
   await page.getByTestId(ids.editSprintSubmit).click();
 
@@ -97,7 +122,9 @@ test('EditSprintRail_WhenNothingChanged_ShouldFinishWithoutSaving', async ({ mou
 
 test('EditSprintRail_WhenEndIsBeforeStart_ShouldRefuseWithoutSending', async ({ mount, page }) => {
   const patched = await stub(page, 's26');
-  await mount(<EditSprintRail projectId="p1" sprint={future} onDone={() => {}} />);
+  await mount(
+    <EditSprintRail projectId="p1" sprint={future} onDone={() => {}} onDeleted={() => {}} />,
+  );
 
   await page.getByTestId(ids.editSprintEnd).fill('2026-12-01');
   await page.getByTestId(ids.editSprintSubmit).click();
@@ -116,7 +143,14 @@ test('EditSprintRail_WhenServerRefuses_ShouldShowItBesideSaveAndStayOpen', async
 }) => {
   await stub(page, 's26', { status: 400, error: 'Sprints cannot overlap.', code: 'validation' });
   let done = 0;
-  await mount(<EditSprintRail projectId="p1" sprint={future} onDone={() => (done += 1)} />);
+  await mount(
+    <EditSprintRail
+      projectId="p1"
+      sprint={future}
+      onDone={() => (done += 1)}
+      onDeleted={() => {}}
+    />,
+  );
 
   await page.getByTestId(ids.editSprintStart).fill('2026-12-10');
   await page.getByTestId(ids.editSprintSubmit).click();
@@ -129,7 +163,14 @@ test('EditSprintRail_WhenServerRefuses_ShouldShowItBesideSaveAndStayOpen', async
 test('EditSprintRail_WhenCancelled_ShouldFinishWithoutSaving', async ({ mount, page }) => {
   const patched = await stub(page, 's26');
   let done = 0;
-  await mount(<EditSprintRail projectId="p1" sprint={future} onDone={() => (done += 1)} />);
+  await mount(
+    <EditSprintRail
+      projectId="p1"
+      sprint={future}
+      onDone={() => (done += 1)}
+      onDeleted={() => {}}
+    />,
+  );
 
   await page.getByTestId(ids.editSprintName).fill('Other');
   await page.getByTestId(ids.editSprintCancel).click();
@@ -139,7 +180,9 @@ test('EditSprintRail_WhenCancelled_ShouldFinishWithoutSaving', async ({ mount, p
 });
 
 test('EditSprintRail_WhenOpened_ShouldFocusTheName', async ({ mount, page }) => {
-  await mount(<EditSprintRail projectId="p1" sprint={future} onDone={() => {}} />);
+  await mount(
+    <EditSprintRail projectId="p1" sprint={future} onDone={() => {}} onDeleted={() => {}} />,
+  );
 
   await expect(page.getByTestId(ids.editSprintName)).toBeFocused();
 });
@@ -149,16 +192,107 @@ test('EditSprintRail_WhenAKeyIsTypedBackAfterATeammateChangedIt_ShouldNotSendIt'
   page,
 }) => {
   const patched = await stub(page, 's26');
-  const rail = await mount(<EditSprintRail projectId="p1" sprint={future} onDone={() => {}} />);
+  const rail = await mount(
+    <EditSprintRail projectId="p1" sprint={future} onDone={() => {}} onDeleted={() => {}} />,
+  );
   await page.getByTestId(ids.editSprintName).fill('Sprint 26b');
   await page.getByTestId(ids.editSprintGoal).fill('New goal');
 
   await rail.update(
-    <EditSprintRail projectId="p1" sprint={{ ...future, name: 'Renamed' }} onDone={() => {}} />,
+    <EditSprintRail
+      projectId="p1"
+      sprint={{ ...future, name: 'Renamed' }}
+      onDone={() => {}}
+      onDeleted={() => {}}
+    />,
   );
   await page.getByTestId(ids.editSprintName).fill('Sprint 26');
   await page.getByTestId(ids.editSprintSubmit).click();
 
   await expect.poll(() => patched.length).toBe(1);
   expect(patched[0]).toEqual({ name: null, startDate: null, endDate: null, goal: 'New goal' });
+});
+
+async function stubDelete(page: Page, refusal?: { error: string; code: string }) {
+  const deleted: string[] = [];
+  await page.route('**/api/projects/p1/sprints', (route) => route.fulfill({ json: [] }));
+  await page.route('**/api/sprints/s26', (route) => {
+    if (route.request().method() !== 'DELETE') return route.fallback();
+    if (refusal) return route.fulfill({ status: 409, json: refusal });
+    deleted.push(route.request().url());
+    return route.fulfill({ status: 204 });
+  });
+  return deleted;
+}
+
+test('EditSprintRail_WhenDeleteConfirmed_ShouldDeleteTheSprintAndReportIt', async ({
+  mount,
+  page,
+}) => {
+  const deleted = await stubDelete(page);
+  let gone = 0;
+  await mount(
+    <EditSprintRail
+      projectId="p1"
+      sprint={future}
+      onDone={() => {}}
+      onDeleted={() => (gone += 1)}
+    />,
+  );
+
+  await page.getByTestId(ids.deleteSprint).click();
+  await expect(page.getByTestId(ids.editSprint)).toContainText(
+    'Delete Sprint 26? Only a sprint with no work items can be deleted.',
+  );
+  await expect(page.getByTestId(ids.deleteSprintCancel)).toBeFocused();
+  await page.getByTestId(ids.deleteSprintConfirm).click();
+
+  await expect.poll(() => gone).toBe(1);
+  expect(deleted).toHaveLength(1);
+});
+
+test('EditSprintRail_WhenDeleteCancelled_ShouldSendNothingAndRefocusDelete', async ({
+  mount,
+  page,
+}) => {
+  const deleted = await stubDelete(page);
+  await mount(
+    <EditSprintRail projectId="p1" sprint={future} onDone={() => {}} onDeleted={() => {}} />,
+  );
+
+  await page.getByTestId(ids.deleteSprint).click();
+  await page.getByTestId(ids.deleteSprintCancel).click();
+
+  await expect(page.getByTestId(ids.deleteSprintConfirm)).toHaveCount(0);
+  await expect(page.getByTestId(ids.deleteSprint)).toBeFocused();
+  expect(deleted).toEqual([]);
+});
+
+test('EditSprintRail_WhenSprintHasWorkItems_ShouldShowTheRefusalAndStay', async ({
+  mount,
+  page,
+}) => {
+  await stubDelete(page, {
+    error:
+      "Sprint 26 has work items, so it can't be deleted. Move them to another sprint or the backlog first.",
+    code: 'conflict',
+  });
+  let gone = 0;
+  await mount(
+    <EditSprintRail
+      projectId="p1"
+      sprint={future}
+      onDone={() => {}}
+      onDeleted={() => (gone += 1)}
+    />,
+  );
+
+  await page.getByTestId(ids.deleteSprint).click();
+  await page.getByTestId(ids.deleteSprintConfirm).click();
+
+  await expect(page.getByTestId(ids.deleteSprintError)).toHaveText(
+    "Sprint 26 has work items, so it can't be deleted. Move them to another sprint or the backlog first.",
+  );
+  await expect(page.getByTestId(ids.deleteSprintConfirm)).toBeEnabled();
+  expect(gone).toBe(0);
 });

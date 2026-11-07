@@ -6,6 +6,7 @@ import { LevelHarness } from '../ct/LevelHarness';
 import { LevelSlotHarness } from '../ct/LevelSlotHarness';
 import { PROJECT } from '../ct/fixtures';
 import { stubLevel } from '../ct/stubLevels';
+import { criteriaTestIds } from '../../criteria/testIds';
 import { backlogTestIds as ids } from '../testIds';
 
 const features = { hooksConfig: { route: '/p/SHIP/backlogs/features' } };
@@ -159,6 +160,41 @@ test('Levels_WhenFilterOn_ShouldSendItAndKeepRowsWhenRefused', async ({ mount, p
   await expect.poll(() => server.reads.at(-1)).toContain(encodeURIComponent('Bad'));
   await expect(page.getByTestId(ids.filterError)).toBeVisible();
   await expect(page.getByTestId(ids.row)).toHaveCount(3);
+});
+
+test('Levels_WhenFilterOnState_ShouldOfferAndSendOnlyTheLevelsOwnStates', async ({
+  mount,
+  page,
+}) => {
+  const state = (id: string, type: string, name: string) => ({
+    id,
+    type,
+    name,
+    category: name === 'New' ? 'proposed' : 'inProgress',
+    order: 1,
+    itemCount: 1,
+  });
+  // As the server lists them: the Epic's New comes first, and a Feature can never be in it.
+  const server = await stubLevel(page, levelView('features', FEATURE_ROWS), {
+    states: [
+      state('11111111-0000-4000-8000-000000000001', 'epic', 'New'),
+      state('22222222-0000-4000-8000-000000000001', 'feature', 'New'),
+      state('22222222-0000-4000-8000-000000000002', 'feature', 'Active'),
+      state('33333333-0000-4000-8000-000000000001', 'story', 'New'),
+    ],
+  });
+  await mount(<LevelHarness project={PROJECT} level="features" />, features);
+  await expect(page.getByTestId(ids.row)).toHaveCount(3);
+
+  await page.getByTestId(ids.filterButton).click();
+  const panel = page.getByTestId(ids.filterPanel);
+  await panel.getByTestId(criteriaTestIds.field).selectOption('state');
+  const value = panel.getByTestId(criteriaTestIds.value);
+  await expect(value.locator('option')).toHaveText(['New', 'Active']);
+
+  await expect
+    .poll(() => server.reads.at(-1))
+    .toContain(encodeURIComponent('22222222-0000-4000-8000-000000000001'));
 });
 
 test('Levels_WhenLoadFails_ShouldSayItCouldNotLoad', async ({ mount, page }) => {

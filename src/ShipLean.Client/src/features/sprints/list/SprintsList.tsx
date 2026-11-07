@@ -33,6 +33,7 @@ export function SprintsList({ project, sprints }: { project: ProjectDto; sprints
             setEditingId(null);
             trigger.current?.focus();
           }}
+          onDeleted={() => setEditingId(null)}
         />
       )}
       <section className="overflow-x-auto rounded-md border border-edge bg-panel">

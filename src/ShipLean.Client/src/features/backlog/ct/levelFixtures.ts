@@ -76,11 +76,53 @@ export const EPIC_ROWS: BacklogRowDto[] = [
   }),
 ];
 
-export function levelView(level: 'features' | 'epics', rows: BacklogRowDto[]): BacklogViewDto {
+/**
+ * The Features tree: Epic SHIP-92 holding Reporting (SHIP-103) and its nested Dashboard widgets (SHIP-108), Epic SHIP-90 holding
+ * Checkout v2, then No parent holding Ops hygiene (SHIP-104).
+ */
+export const FEATURE_TREE_ROWS: BacklogRowDto[] = [
+  itemRow({ ...EPIC_ROWS[0], kind: 'group', rank: null }),
+  { ...FEATURE_ROWS[1], depth: 1 },
+  { ...FEATURE_ROWS[2], depth: 2 },
+  itemRow({
+    key: 'SHIP-90',
+    kind: 'group',
+    rank: null,
+    type: EPIC_TYPE,
+    title: 'Checkout conversion',
+    points: 40,
+  }),
+  { ...FEATURE_ROWS[0], depth: 1 },
+  itemRow({
+    key: '',
+    id: '00000000-0000-0000-0000-000000000000',
+    kind: 'noParentGroup',
+    type: null,
+    title: 'No parent',
+    state: null,
+    points: null,
+    rank: null,
+    rollups: [{ type: 'feature', open: 1, closed: 0 }],
+  }),
+  itemRow({
+    key: 'SHIP-104',
+    rank: 5,
+    depth: 1,
+    type: FEATURE_TYPE,
+    title: 'Ops hygiene',
+    points: 5,
+  }),
+];
+
+export function levelView(
+  level: 'features' | 'epics',
+  rows: BacklogRowDto[],
+  mode: 'list' | 'tree' = 'list',
+): BacklogViewDto {
   return {
     projectId: PROJECT.id,
     level,
-    mode: 'list',
+    mode,
     totalCount: rows.length,
     rows,
     sections: [],

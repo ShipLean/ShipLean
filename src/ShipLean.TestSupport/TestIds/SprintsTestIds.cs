@@ -35,6 +35,10 @@ public static class SprintsTestIds
     public const string EditSprintError = "sprints-edit-sprint-error";
     public const string EditSprintDatesHint = "sprints-edit-sprint-dates-hint";
     public const string EditSprintOpen = "sprints-edit-sprint-open";
+    public const string DeleteSprint = "sprints-delete-sprint";
+    public const string DeleteSprintConfirm = "sprints-delete-sprint-confirm";
+    public const string DeleteSprintCancel = "sprints-delete-sprint-cancel";
+    public const string DeleteSprintError = "sprints-delete-sprint-error";
     public const string RowEdit = "sprints-list-row-edit";
     public const string Backlog = "sprints-backlog";
     public const string BacklogLoadError = "sprints-backlog-load-error";

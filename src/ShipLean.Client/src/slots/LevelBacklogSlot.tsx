@@ -9,10 +9,19 @@ export interface LevelBacklogSlotProps {
   mode: BacklogMode;
 }
 
-export function LevelBacklogSlot({ project, level }: LevelBacklogSlotProps) {
+// Features take ?mode=tree (any other mode is List); Epics are always a list. Each mode starts fresh, as the Stories modes do.
+export function LevelBacklogSlot({ project, level, mode }: LevelBacklogSlotProps) {
+  const levelMode = level === 'features' && mode === 'tree' ? 'tree' : 'list';
   return (
     <div data-testid={pagesTestIds.slotLevelBacklog} className="flex min-h-0 flex-1 flex-col">
-      {level === 'stories' ? null : <LevelBacklog key={level} project={project} level={level} />}
+      {level === 'stories' ? null : (
+        <LevelBacklog
+          key={`${level}-${levelMode}`}
+          project={project}
+          level={level}
+          mode={levelMode}
+        />
+      )}
     </div>
   );
 }

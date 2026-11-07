@@ -7,7 +7,12 @@ import {
   treeRows,
   treeView,
 } from '../../features/backlog/ct/fixtures';
-import { EPIC_ROWS, FEATURE_ROWS, levelView } from '../../features/backlog/ct/levelFixtures';
+import {
+  EPIC_ROWS,
+  FEATURE_ROWS,
+  FEATURE_TREE_ROWS,
+  levelView,
+} from '../../features/backlog/ct/levelFixtures';
 import { stubBacklog } from '../../features/backlog/ct/stubApi';
 import { stubLevel } from '../../features/backlog/ct/stubLevels';
 import { backlogTestIds } from '../../features/backlog/testIds';
@@ -47,6 +52,16 @@ pageShots([
       await stubLevel(page, levelView('features', FEATURE_ROWS));
     },
     ready: (page) => expect(page.getByTestId(backlogTestIds.row)).toHaveCount(FEATURE_ROWS.length),
+  },
+  {
+    name: 'features-tree',
+    route: '/p/SHIP/backlogs/features?mode=tree',
+    shell: true,
+    arrange: async (page) => {
+      await stubShell(page);
+      await stubLevel(page, levelView('features', FEATURE_TREE_ROWS, 'tree'));
+    },
+    ready: (page) => expect(page.getByTestId(backlogTestIds.treeGroup)).toHaveCount(3),
   },
   {
     name: 'features-epics',

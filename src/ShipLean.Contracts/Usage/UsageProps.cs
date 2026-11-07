@@ -10,6 +10,9 @@ public static class UsageProps
     public const string Provider = "provider";
     public const string Count = "count";
 
+    // The backlog mode (list, planning or tree) on screen.viewed for a backlog screen, so a mode's views compare with the page's.
+    public const string Mode = "mode";
+
     // The client being connected, on agent.connected / agent.consent_denied; cut to 64 characters.
     public const string AgentName = "agent_name";
 

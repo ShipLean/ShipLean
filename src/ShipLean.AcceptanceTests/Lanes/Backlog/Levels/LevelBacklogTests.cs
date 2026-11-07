@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using ShipLean.AcceptanceTests.Harness;
 using ShipLean.AcceptanceTests.Pages.Backlog;
 
@@ -44,5 +45,26 @@ public class LevelBacklogTests : SeededAcceptanceTest
         await backlog.Level("Epics").ClickAsync();
         await Expect(backlog.PointsSum("SHIP-91")).ToHaveTextAsync("· Σ32");
         await Expect(backlog.PointsSum("SHIP-91")).ToHaveAttributeAsync("data-warn", "false");
+    }
+
+    [Test]
+    public async Task Features_WhenTreeChosen_ShouldNestFeaturesUnderEpicsAndFold()
+    {
+        var backlog = new LevelBacklog(Page);
+        await backlog.OpenAsync("SHIP", "features");
+
+        await backlog.Mode("Tree").ClickAsync();
+
+        await Expect(Page).ToHaveURLAsync(new Regex(@"/p/SHIP/backlogs/features\?mode=tree$"));
+        // Insights for merchants (SHIP-92) holds Reporting (SHIP-103), which holds Dashboard widgets (SHIP-108).
+        await Expect(backlog.TreeRows).ToHaveCountAsync(9);
+        await Expect(backlog.Caret("SHIP-103")).ToHaveAttributeAsync("aria-expanded", "true");
+        await backlog.Caret("SHIP-92").ClickAsync();
+        await Expect(backlog.TreeRows).ToHaveCountAsync(7);
+        await Expect(backlog.Row("SHIP-108")).ToHaveCountAsync(0);
+
+        await Page.ReloadAsync();
+        await Expect(backlog.Mode("Tree")).ToHaveAttributeAsync("aria-pressed", "true");
+        await Expect(backlog.TreeRows).ToHaveCountAsync(9);
     }
 }

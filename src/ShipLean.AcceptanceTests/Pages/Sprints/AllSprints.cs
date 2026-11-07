@@ -39,6 +39,14 @@ public sealed class AllSprints(IPage page)
     public Task<IResponse> SaveEditAsync(Guid sprintId) =>
         page.RunAndWaitForApiAsync($"/api/sprints/{sprintId}", "PATCH", () => page.GetByTestId(SprintsTestIds.EditSprintSubmit).ClickAsync());
 
+    public ILocator DeleteButton => page.GetByTestId(SprintsTestIds.DeleteSprint);
+
+    public ILocator DeleteError => page.GetByTestId(SprintsTestIds.DeleteSprintError);
+
+    // Presses Delete sprint in the question under the Edit sprint rail and returns the DELETE response.
+    public Task<IResponse> ConfirmDeleteAsync(Guid sprintId) =>
+        page.RunAndWaitForApiAsync($"/api/sprints/{sprintId}", "DELETE", () => page.GetByTestId(SprintsTestIds.DeleteSprintConfirm).ClickAsync());
+
     public async Task OpenAsync(string projectKey)
     {
         await page.GotoAsync(Links.Sprints(projectKey));
