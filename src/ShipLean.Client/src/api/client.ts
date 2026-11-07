@@ -1,6 +1,7 @@
-// The one way the SPA talks to the API. It sends the per-tab client header, throws ApiRequestError for any non-2xx,
-// and sends a lost session to the sign-in page.
+// The one way the SPA talks to the API. It sends the per-tab client and viewport headers, throws ApiRequestError for
+// any non-2xx, and sends a lost session to the sign-in page.
 import { isLoginPath, LOGIN_PATH } from '../loginPath';
+import { viewportOf } from '../touch/viewport';
 
 // The error body every endpoint returns (C#: ShipLean.Contracts.Errors.ApiError and ApiErrorCodes).
 export const apiErrorCodes = [
@@ -67,6 +68,11 @@ export function newClientId(): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
 }
 export const clientId = newClientId();
+
+// The window's viewport class, phone|tablet|desktop (K2; C#: ViewportHeader.Name), which the server stamps as the
+// `viewport` property on the usage events a request causes. Read from window.innerWidth as each request is sent, never
+// cached: the window can be resized or rotated between two requests.
+export const VIEWPORT_HEADER = 'X-ShipLean-Viewport';
 
 // The sign-in page this page load is already leaving for. When a session ends, several requests fail together: the
 // first answers session_ended and its response deletes the cookie, so the ones sent after it answer a plain 401. Each
@@ -143,7 +149,10 @@ async function request<T>(
   body: unknown,
   options: RequestOptions = {},
 ): Promise<T> {
-  const headers: Record<string, string> = { [CLIENT_HEADER]: clientId };
+  const headers: Record<string, string> = {
+    [CLIENT_HEADER]: clientId,
+    [VIEWPORT_HEADER]: viewportOf(window.innerWidth),
+  };
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   const response = await fetch(path, {
     method,
@@ -168,7 +177,7 @@ export async function sendForm<T>(
 ): Promise<T> {
   const response = await fetch(path, {
     method,
-    headers: { [CLIENT_HEADER]: clientId },
+    headers: { [CLIENT_HEADER]: clientId, [VIEWPORT_HEADER]: viewportOf(window.innerWidth) },
     body: form,
     credentials: 'same-origin',
   });
