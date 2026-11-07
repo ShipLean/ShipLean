@@ -265,9 +265,9 @@ The decisions are in [design/README.md › Sign in on a phone](../README.md#sign
 
 ## Feature board (SHIP-722)
 
-The board on a Feature's own page (`/p/SHIP/items/KEY/board`, the Taskboard's grid for one Feature) at 900px and below. It works like the SHIP-719 boards: one task state a page in a sideways pager with state chips above it; every open story or bug is a lane on every page (its compact index card, then its tasks in that state, or None); closed stories are one line each in backlog order, as on desktop (D8, changed 7 Nov in the SHIP-725 review). A ⋯ on every task opens its action sheet (Move to a state, another story, Assignee, Open), and a long press lifts it for touch drag (to another lane, or the screen's edge for another state). The toolbar is one row: Stories | People, Filter (n), ⋯, + Add. Above 900px nothing changes. The review page is [`feature-board.html`](feature-board.html); the decisions (D1–D12, settled by Joel on 7 Nov 2026) and acceptance criteria are on SHIP-722.
+The board on a Feature's own page (`/p/SHIP/items/KEY/board`, the Taskboard's grid for one Feature) at 900px and below. It works like the SHIP-719 boards: one task state a page in a sideways pager with state chips above it; every open story or bug is a lane on every page (its compact index card, then its tasks in that state, or None); closed stories wait behind “Show n closed”. A ⋯ on every task opens its action sheet (Move to a state, another story, Assignee, Open), and a long press lifts it for touch drag (to another lane, or the screen's edge for another state). The toolbar is one row: Stories | People, Filter (n), ⋯, + Add. Above 900px nothing changes. The review page is [`feature-board.html`](feature-board.html); the decisions (D1–D12, settled by Joel on 7 Nov 2026) and acceptance criteria are on SHIP-722.
 
-It is built in `../screens/feature-board-touch.css` and `feature-board-touch.js`, which `feature-board.html` loads (it exposes its state as `SL.fb` and fires `fb:render`). These address parameters open its states: `?col=active`, `?sheet=task|story|assign&task=KEY`, `?sheet=filter|more`, `?filter=mei,none`, `?drag=KEY&to=active`, `?add`, `?addtask=KEY`, `?at=KEY` (with `?shot` it hides what is above that lane), plus the board's own `?key=SHIP-103` and `?view=people`.
+It is built in `../screens/feature-board-touch.css` and `feature-board-touch.js`, which `feature-board.html` loads (it exposes its state as `SL.fb` and fires `fb:render`). These address parameters open its states: `?col=active`, `?sheet=task|story|assign&task=KEY`, `?sheet=filter|more`, `?filter=mei,none`, `?closed`, `?drag=KEY&to=active`, `?add`, `?addtask=KEY`, `?at=KEY` (with `?shot` it hides what is above that lane), plus the board's own `?key=SHIP-103` and `?view=people`.
 
 ### Today
 
@@ -287,7 +287,8 @@ It is built in `../screens/feature-board-touch.css` and `feature-board-touch.js`
 | Assignee | ![Assignee sheet, light](images/fboard-assign.light.png) | ![Assignee sheet, dark](images/fboard-assign.dark.png) |
 | Filter | ![Filter sheet, light](images/fboard-filter.light.png) | ![Filter sheet, dark](images/fboard-filter.dark.png) |
 | Filtered | ![Filtered, light](images/fboard-filtered.light.png) | ![Filtered, dark](images/fboard-filtered.dark.png) |
-| Closed stories, one line each | ![End of the page, light](images/fboard-end.light.png) | ![End of the page, dark](images/fboard-end.dark.png) |
+| Show n closed | ![End of the page, light](images/fboard-end.light.png) | ![End of the page, dark](images/fboard-end.dark.png) |
+| Closed shown | ![Closed stories shown, light](images/fboard-closed.light.png) | ![Closed stories shown, dark](images/fboard-closed.dark.png) |
 | ⋯ More | ![More sheet, light](images/fboard-more.light.png) | ![More sheet, dark](images/fboard-more.dark.png) |
 | + Add story or bug | ![Add row, light](images/fboard-add.light.png) | ![Add row, dark](images/fboard-add.dark.png) |
 | Parent Feature | ![Parent Feature, light](images/fboard-parent.light.png) | ![Parent Feature, dark](images/fboard-parent.dark.png) |
@@ -334,6 +335,51 @@ The Sprint backlog (`/p/:key/sprints/:id/backlog`) and the sprint header every s
 | Edit sprint | ![Edit sprint, light](images/sprint-backlog-edit.light.png) | ![Edit sprint, dark](images/sprint-backlog-edit.dark.png) |
 | Close sprint | ![Close sprint, light](images/sprint-backlog-close.light.png) | ![Close sprint, dark](images/sprint-backlog-close.dark.png) |
 | Someone else changed it | ![Conflict toast, light](images/sprint-backlog-conflict.light.png) | ![Conflict toast, dark](images/sprint-backlog-conflict.dark.png) |
+
+## Sprint retro on a phone (SHIP-727)
+
+The sprint Retro tab at 900px and below, inside the touch shell. Desktop is unchanged.
+
+| File | What it is |
+|---|---|
+| `../screens/retro-touch.css`, `retro-touch.js` | The touch layer, loaded by `sprint-retro.html`. `?cat=well\|unplanned\|bad\|improve`, `?sheet=filter\|more\|coverage\|actions\|recurring\|theme:<point>\|note:<point>`, `?open=KEY` (By work item), `?dialog=<point>` (New action item), `?alt=stack\|pager` (the D1 alternatives), plus the page's own `?view=items`, `?decide=open`, `?why=<point>` and `?adding=sprint:<category>`; `?notouch` shows the desktop page at any width. |
+| `sprint-retro-review.html` | The design review: today, the three ways to fit four categories, every state as a live frame, what changes, the decisions and the acceptance criteria. |
+| `images/sprint-retro*.png` | The Retro tab at 390 × 844, 2× scale, light and dark (made by `screenshots.sh`). |
+| `images/today-retro*.png` | The real SPA (main at 918cf067) at 390px and 768px, from the page-shot fixtures in a component harness. |
+
+### Today
+
+| Top of the page | The whole page | By work item | Tablet, 768px |
+|---|---|---|---|
+| ![Today: the rail drawn over the board](images/today-retro.png) | ![Today: the whole page, 3,300px](images/today-retro-long.png) | ![Today: By work item, 6,900px](images/today-retro-items.png) | ![Today: a tablet](images/today-retro-tablet.png) |
+
+1. The rail is always 18rem wide (`SprintRetroPanel.tsx`: `grid-cols-[minmax(0,1fr)_18rem]`), so at 390px it is drawn over the board.
+2. The board gets about 150px; notes wrap every two or three words.
+3. The page is 3,300px long, and By work item 6,900px.
+4. The toolbar wraps to three rows and is sticky.
+5. The numbers and the Recurring chip explain themselves only in hover tooltips; note buttons are 18–24px; text boxes are 11px.
+
+### The phone page
+
+| State | Light | Dark |
+|---|---|---|
+| Went well (top of the page) | ![Went well (top of the page), light](images/sprint-retro.light.png) | ![Went well (top of the page), dark](images/sprint-retro.dark.png) |
+| Not in the plan | ![Not in the plan, light](images/sprint-retro-unplanned.light.png) | ![Not in the plan, dark](images/sprint-retro-unplanned.dark.png) |
+| To decide on | ![To decide on, light](images/sprint-retro-decide.light.png) | ![To decide on, dark](images/sprint-retro-decide.dark.png) |
+| Not needed: the reason | ![Not needed: the reason, light](images/sprint-retro-why.light.png) | ![Not needed: the reason, dark](images/sprint-retro-why.dark.png) |
+| Move to theme | ![Move to theme, light](images/sprint-retro-theme.light.png) | ![Move to theme, dark](images/sprint-retro-theme.dark.png) |
+| ⋯ on your own point | ![⋯ on your own point, light](images/sprint-retro-note.light.png) | ![⋯ on your own point, dark](images/sprint-retro-note.dark.png) |
+| Coverage | ![Coverage, light](images/sprint-retro-coverage.light.png) | ![Coverage, dark](images/sprint-retro-coverage.dark.png) |
+| Action items | ![Action items, light](images/sprint-retro-actions.light.png) | ![Action items, dark](images/sprint-retro-actions.dark.png) |
+| Recurring themes | ![Recurring themes, light](images/sprint-retro-recurring.light.png) | ![Recurring themes, dark](images/sprint-retro-recurring.dark.png) |
+| Filter | ![Filter, light](images/sprint-retro-filter.light.png) | ![Filter, dark](images/sprint-retro-filter.dark.png) |
+| ⋯ More | ![⋯ More, light](images/sprint-retro-more.light.png) | ![⋯ More, dark](images/sprint-retro-more.dark.png) |
+| The sprint header's ⋯ | ![Sprint header ⋯, light](images/sprint-retro-sprint.light.png) | ![Sprint header ⋯, dark](images/sprint-retro-sprint.dark.png) |
+| By work item | ![By work item, light](images/sprint-retro-items.light.png) | ![By work item, dark](images/sprint-retro-items.dark.png) |
+| An item opened | ![An item opened, light](images/sprint-retro-item-open.light.png) | ![An item opened, dark](images/sprint-retro-item-open.dark.png) |
+| New action item | ![New action item, light](images/sprint-retro-action.light.png) | ![New action item, dark](images/sprint-retro-action.dark.png) |
+
+The decisions are in [design/README.md › Sprint retro on a phone](../README.md#sprint-retro-on-a-phone-ship-727).
 
 ## Sprint Taskboard (SHIP-725)
 

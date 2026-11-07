@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Regenerates images/<name>.<theme>.png: the touch shell (SHIP-713), the work item page (SHIP-714, item-* and
-# feature-*) and the boards (SHIP-719: board-*, features-board-*, epics-board-*) on the reference screens at 390 × 844,
-# 2× scale, the Feature board (SHIP-722, fboard-*) and the sprint Taskboard (SHIP-725, tboard-*), and the page stories' phone screens kept in this folder
+# feature-*), the boards (SHIP-719: board-*, features-board-*, epics-board-*) and the sprint Retro tab
+# (SHIP-727: sprint-retro-*), the Feature board (SHIP-722: fboard-*) and the sprint Taskboard (SHIP-725: tboard-*)
+# on the reference screens at 390 × 844,
+# 2× scale, and the page stories' phone screens kept in this folder
 # (an address starting ./, such as SHIP-715's attachment.html).
 # Usage: ./screenshots.sh [name ...]   (no names = all). CHROME=/path/to/chrome overrides the browser.
 # The today-*.png images are screenshots of the real app (main at 918cf067) and are not made here.
@@ -130,6 +132,22 @@ declare -A shots=(
   [epics-board-before]="features-board.html?level=epics&notouch"
   [epics-board]="features-board.html?level=epics"
   [epics-board-card]="features-board.html?level=epics&col=prog&sheet=card:SHIP-90"
+  # The sprint Retro tab (SHIP-727)
+  [sprint-retro]="sprint-retro.html"
+  [sprint-retro-unplanned]="sprint-retro.html?cat=unplanned"
+  [sprint-retro-decide]="sprint-retro.html?decide=open"
+  [sprint-retro-why]="sprint-retro.html?cat=unplanned&why=R-305.6"
+  [sprint-retro-theme]="sprint-retro.html?cat=unplanned&sheet=theme:R-305.6"
+  [sprint-retro-note]="sprint-retro.html?sheet=note:R-303.0"
+  [sprint-retro-coverage]="sprint-retro.html?sheet=coverage"
+  [sprint-retro-actions]="sprint-retro.html?sheet=actions"
+  [sprint-retro-recurring]="sprint-retro.html?sheet=recurring"
+  [sprint-retro-filter]="sprint-retro.html?sheet=filter"
+  [sprint-retro-more]="sprint-retro.html?sheet=more"
+  [sprint-retro-sprint]="sprint-retro.html?sheet=sprint"
+  [sprint-retro-items]="sprint-retro.html?view=items"
+  [sprint-retro-item-open]="sprint-retro.html?view=items&open=SHIP-141"
+  [sprint-retro-action]="sprint-retro.html?cat=unplanned&dialog=R-305.6"
   # The Feature board (SHIP-722)
   [fboard]="feature-board.html"
   [fboard-active]="feature-board.html?col=active"

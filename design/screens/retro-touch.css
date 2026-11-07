@@ -1,0 +1,192 @@
+/*
+ * The sprint Retro tab in the touch shell (SHIP-727). Loaded by sprint-retro.html after retro.css and retro-cards.css.
+ * Follows SHIP-805 (the shared mobile rules) and doesn't restate them. At 900px and below: the sprint header as on the
+ * other sprint tabs (SHIP-724 D10, built once in SprintHeader), the sprint tabs on their own row, one toolbar row (view · Filter (n) · ⋯), the four
+ * numbers as one row of buttons that open the rail's sections as bottom sheets, four category tiles that pick the one
+ * category on screen, notes full width (two a row on a tablet), By work item as collapsed item cards, the theme picker,
+ * a note's ⋯ and Filter as bottom sheets, and the New action item dialog full screen. retro-touch.js builds the
+ * tiles, the bar, the sheets and the item cards. Above 900px nothing changes.
+ */
+.rt-bar, .rt-tiles, .rt-sheet, .rt-hmore, .rt-sum, .rt-chev, .rt-catname { display: none; }
+
+@media (max-width: 900px) {
+  /* SHIP-805 rules 11 and 13 (48px bar, 32px targets) until the token change lands in tokens.css. */
+  :root { --touch-target: 32px; --mobile-bar-height: 48px; }
+  body { padding-bottom: env(safe-area-inset-bottom); }
+
+  /* Sprint header: as every sprint tab (SHIP-724 D10, one SprintHeader). Picker, state and the header's ⋯ on one line
+     (⋯ holds Edit goal, Edit sprint, All sprints and Close sprint), the dates under it, the goal clamped to two lines. */
+  .sprint-head { grid-template-columns: minmax(0, 1fr); gap: var(--space-2); padding: var(--space-3) var(--space-3) var(--space-2); border-bottom: 0; }
+  .sprint-head .row { gap: 8px; flex-wrap: nowrap; }
+  .sprint-head .row > a { display: none; }
+  .sprint-head .rt-hmore { display: inline-grid; place-items: center; width: var(--touch-target); height: var(--touch-target); margin-left: auto; padding: 0; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); cursor: pointer; }
+  .sprint-head .picker { height: var(--touch-target); font-size: 20px; }
+  .sprint-head .picker span { font-size: var(--text-sm); }
+  .sprint-head .sm.muted { font-size: var(--text-sm); }
+  .sprint-head .goal { margin-top: 4px; font-size: var(--text-base); }
+  .sprint-head .goal > span:last-child { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+  /* The four numbers: one row, each a button. Retros, Recurring and Action items open the rail's section as a sheet;
+     To decide turns the To decide filter on and off. */
+  .sprint-head .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .sprint-head .kpi { position: relative; display: grid; align-content: start; gap: 1px; min-height: 52px; padding: 6px 8px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-bg); cursor: pointer; text-align: left; }
+  .sprint-head .kpi .v { font-size: 18px; }
+  .sprint-head .kpi .l { font-size: var(--text-xs); line-height: 1.25; }
+  .sprint-head .kpi .l a { display: none; }
+  .sprint-head .kpi::after { content: "›"; position: absolute; top: 4px; right: 7px; color: var(--color-muted); font-size: var(--text-md); }
+  .sprint-head .kpi[data-k="decide"]::after { content: none; }
+  .sprint-head .kpi[aria-pressed="true"] { border-color: var(--color-accent); background: var(--color-accent-soft); }
+  .sprint-head .kpi[data-k="decide"] .v { color: var(--color-warn); }
+
+  /* Toolbar: the sprint tabs on their own row (rule 7), then one row of controls (rule 8). The Written by and Decision
+     controls live in the Filter sheet. The real app's toolbar is sticky; under 900px it scrolls with the page (rule 12). */
+  .toolbar { flex-wrap: wrap; gap: var(--space-2) 0; padding: 0 var(--space-3) var(--space-2); border-bottom: 0; background: var(--color-bg); }
+  .toolbar > :not(.rt-bar):not(.tabs) { display: none !important; }
+  .toolbar > .tabs { flex: 1 0 100%; margin: 0 calc(-1 * var(--space-3)); padding: 0 var(--space-3); background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+  .toolbar > .tabs .tab { height: 38px; padding: 0 12px; font-size: var(--text-base); }
+  .rt-bar { display: flex; align-items: center; gap: var(--space-2); width: 100%; min-width: 0; padding-top: var(--space-1); }
+  .rt-bar .seg { height: var(--touch-target); flex: none; }
+  .rt-bar .seg button { padding: 0 10px; font-size: var(--text-sm); }
+  .rt-bar .btn { height: var(--touch-target); font-size: var(--text-sm); flex: none; }
+  .rt-bar .spacer { flex: 1; }
+  .rt-bar .rt-filter[data-n] { border-color: var(--color-accent); background: var(--color-accent-soft); font-weight: var(--weight-semibold); }
+  .rt-bar .rt-filter .n { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--color-accent); color: var(--color-accent-fg); font-size: var(--text-2xs); font-variant-numeric: tabular-nums; }
+  .rt-bar .rt-more { width: var(--touch-target); padding: 0; justify-content: center; }
+
+  /* The rail is not on the page: its sections open as sheets from the numbers and ⋯ More. */
+  .split { display: block; }
+  .split > .scroll { border: 0; overflow: visible; }
+  .split > .rail { display: none; }
+  .page { padding: 0 var(--space-3) var(--space-5); gap: var(--space-2); }
+  .page > .callout { font-size: var(--text-sm); }
+
+  /* Category tiles: the four categories in their fixed order, two by two on a phone, four in a row on a tablet. The
+     one picked is on screen below; a tile shows its count and how many points still need deciding. */
+  .rt-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px; }
+  .rt-tile { --cat: var(--color-border); display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 2px 6px; min-height: 48px; padding: 6px 10px; border: 1px solid var(--color-border); border-left: 4px solid var(--cat); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); font: inherit; text-align: left; cursor: pointer; }
+  .rt-tile.well { --cat: var(--cat-well); } .rt-tile.bad { --cat: var(--cat-bad); } .rt-tile.improve { --cat: var(--cat-improve); } .rt-tile.unplanned { --cat: var(--cat-unplanned); }
+  .rt-tile b { font-size: var(--text-base); font-weight: var(--weight-semibold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rt-tile .n { font-size: var(--text-md); font-weight: var(--weight-semibold); font-variant-numeric: tabular-nums; }
+  .rt-tile .sub { grid-column: 1 / -1; font-size: var(--text-xs); color: var(--color-muted); }
+  .rt-tile .sub.todo { color: var(--color-warn); font-weight: var(--weight-semibold); }
+  .rt-tile[aria-pressed="true"] { background: color-mix(in srgb, var(--cat) 12%, var(--color-surface)); border-color: var(--cat); box-shadow: inset 0 0 0 1px var(--cat); }
+  .rt-tile.empty { opacity: .6; }
+
+  /* One category at a time. Its column keeps its colour edge; the header repeats the name so a screenshot reads. */
+  .rc-board[data-cat] { grid-template-columns: minmax(0, 1fr); }
+  .rc-board[data-cat="well"] > .rc-col:not(.well), .rc-board[data-cat="unplanned"] > .rc-col:not(.unplanned),
+  .rc-board[data-cat="bad"] > .rc-col:not(.bad), .rc-board[data-cat="improve"] > .rc-col:not(.improve) { display: none; }
+  .rc-board[data-cat] > .rc-col { grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); padding: var(--space-2); }
+  .rc-board[data-cat] > .rc-col > header, .rc-board[data-cat] > .rc-col > .rc-grp-h, .rc-board[data-cat] > .rc-col > .rc-add, .rc-board[data-cat] > .rc-col > .rc-editor { grid-column: 1 / -1; }
+  .rc-col > header { font-size: var(--text-base); min-height: 24px; }
+  .rc-grp-h { font-size: var(--text-sm); padding-top: 6px; }
+  .rc-grp-h .chip { cursor: pointer; }
+
+  /* Alternative (D1 b): all four stacked, as the desktop does at this width. */
+  :root[data-alt~="stack"] .rt-tiles { display: none; }
+  /* Alternative (D1 c): a sideways pager, one category a page with the next one peeking (as the boards, SHIP-719). */
+  :root[data-alt~="pager"] .rt-tiles { display: none; }
+  :root[data-alt~="pager"] .page > .rc-board { display: flex; gap: var(--space-2); margin: 0 calc(-1 * var(--space-3)); padding: 0 var(--space-3); overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 var(--space-3); scrollbar-width: none; }
+  :root[data-alt~="pager"] .page > .rc-board > .rc-col { flex: none; width: min(calc(100vw - 48px), 340px); scroll-snap-align: start; }
+
+  /* The note at touch size: the text at body size, the actions as 32px buttons, ⋯ a 32px target. */
+  .rc-note { gap: 8px; padding: 10px 12px; font-size: var(--text-base); }
+  .rc-note .cause, .rc-note .meta { font-size: var(--text-sm); }
+  .rc-note.has-more > p:first-of-type { padding-right: 26px; }
+  .rc-more { top: 2px; right: 2px; width: var(--touch-target); height: var(--touch-target); }
+  .rc-theme { min-height: 24px; font-size: var(--text-sm); }
+  .rc-acts { gap: var(--space-2); }
+  .rc-cta, .rc-link { height: var(--touch-target); padding: 0 12px; border-radius: var(--radius-sm); font-size: var(--text-sm); }
+  .rc-link { border: 1px solid var(--color-border); background: color-mix(in srgb, #ffffff 55%, transparent); }
+  .rc-link.quiet { color: var(--color-text); }
+  .rc-none .rc-link { height: auto; padding: 0; border: 0; background: none; text-decoration: underline; }
+  .rc-pin { min-height: var(--touch-target); padding: 4px 8px; font-size: var(--text-sm); }
+  .rc-pin .st { font-size: var(--text-sm); }
+  .rc-none { font-size: var(--text-sm); }
+  .rc-why textarea, .rc-editor textarea, .rc-editor select { font-size: 16px; padding: 6px 8px; }
+  .rc-editor select { height: 40px; }
+  .rc-mini { height: var(--touch-target); padding: 0 14px; font-size: var(--text-sm); }
+  .rc-add { height: 40px; font-size: var(--text-base); background: color-mix(in srgb, var(--color-surface) 50%, transparent); }
+  .rc-editor label { font-size: var(--text-sm); }
+  .agent { height: 20px; font-size: var(--text-xs); }
+
+  /* By work item: one card per item, collapsed to its counts. Tap the card's head to open it; its notes then show by
+     category, then the raw failure log. Open goes to the item's own retro page. */
+  .page .item-block { gap: 0; padding: 0; overflow: hidden; }
+  .page .item-block > header { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: 4px 8px; padding: 10px 12px; cursor: pointer; }
+  .page .item-block > header > .spacer, .item-block > header > .rc-prog, .item-block > header > .btn, .page .item-block > header > .muted { display: none; }
+  .page .item-block > header b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-base); }
+  .page .item-block > header .chip { grid-column: 3; justify-self: start; }
+  .rt-chev { display: block; grid-row: 1; grid-column: 4; color: var(--color-muted); transition: transform .15s; }
+  .page .item-block[data-open] .rt-chev { transform: rotate(90deg); }
+  .rt-sum { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; grid-column: 1 / -1; font-size: var(--text-sm); }
+  .rt-sum .rc-prog { margin-left: auto; }
+  .page .item-block > .rc-board, .item-block > .rawlog, .item-block > .rt-open { display: none; }
+  .page .item-block[data-open] > .rc-board { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-2); padding: 0 12px; }
+  .page .item-block[data-open] > .rawlog { display: block; margin: var(--space-2) 12px 0; }
+  .page .item-block[data-open] > .rt-open { display: flex; justify-content: flex-end; padding: var(--space-2) 12px 12px; }
+  .page .item-block[data-open] > header { border-bottom: 1px solid var(--color-border); margin-bottom: var(--space-2); }
+  .page .item-block .rc-col { border: 0; border-left: 3px solid var(--cat); border-radius: 0; padding: 4px 0 4px 10px; background: transparent; }
+  .page .item-block .rc-col.rt-empty { display: none; }
+  .rawlog summary { min-height: var(--touch-target); display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+  .rawlog dl { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .rawlog dd { margin-bottom: 8px; }
+  .rt-open .btn { height: var(--touch-target); font-size: var(--text-sm); }
+
+  /* One bottom sheet for Filter, ⋯ More, the rail's sections, the theme picker and a note's ⋯ (C4 recommendation). */
+  .rt-sheet { position: fixed; inset: auto 0 0 0; z-index: 70; display: flex; flex-direction: column; max-height: 85dvh; padding-bottom: env(safe-area-inset-bottom); background: var(--color-surface); border-top: 1px solid var(--color-border); border-radius: var(--radius-lg) var(--radius-lg) 0 0; box-shadow: 0 -12px 32px rgb(0 0 0 / .22); }
+  .rt-sheet[hidden] { display: none; }
+  .rt-sheet::before { content: ""; align-self: center; flex: none; width: 36px; height: 4px; margin-top: 6px; border-radius: 2px; background: var(--color-border); }
+  .rt-sheet .sheet-head { flex: none; gap: var(--space-2); }
+  .rt-sheet .sheet-head b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rt-sheet .sb { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 var(--space-4) var(--space-3); display: grid; gap: var(--space-2); align-content: start; }
+  .rt-sheet .grp { padding: 10px 0 0; font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--color-muted); text-transform: uppercase; letter-spacing: .04em; }
+  .rt-sheet .hint { margin: 0; font-size: var(--text-sm); color: var(--color-muted); }
+  .rt-sheet .srow { display: flex; align-items: center; gap: var(--space-2); min-height: 40px; padding: 0 var(--space-2); margin: 0 calc(-1 * var(--space-2)); border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--color-text); font: inherit; font-size: var(--text-base); text-align: left; cursor: pointer; text-decoration: none; }
+  .rt-sheet .srow:active, .rt-sheet .srow[aria-checked="true"] { background: var(--color-accent-soft); }
+  .rt-sheet .srow .ck { width: 16px; flex: none; color: var(--color-accent); font-weight: var(--weight-bold); }
+  .rt-sheet .srow .sub { margin-left: auto; font-size: var(--text-xs); color: var(--color-muted); white-space: nowrap; }
+  .rt-sheet .srow.danger { color: var(--color-danger); }
+  .rt-sheet .opt { display: grid; gap: 6px; padding: 6px 0; }
+  .rt-sheet .opt > span { font-size: var(--text-sm); font-weight: var(--weight-semibold); }
+  .rt-sheet .opt .seg { height: 36px; width: 100%; }
+  .rt-sheet .opt .seg button { flex: 1; justify-content: center; font-size: var(--text-base); }
+  .rt-sheet .foot { flex: none; display: flex; gap: var(--space-2); padding: var(--space-2) var(--space-4); border-top: 1px solid var(--color-border); }
+  .rt-sheet .foot[hidden] { display: none; }
+  .rt-sheet .foot .btn { flex: 1; justify-content: center; height: 40px; font-size: var(--text-base); }
+  .rt-sheet .ident { display: grid; gap: 4px; padding-bottom: var(--space-2); border-bottom: 1px solid var(--color-border); font-size: var(--text-base); }
+  .rt-sheet .ident small { font-size: var(--text-xs); color: var(--color-muted); }
+  /* The rail's sections, moved in while their sheet is open. */
+  .rt-sheet .cover, .rt-sheet .acts, .rt-sheet .recur { font-size: var(--text-base); gap: 0; }
+  .rt-sheet .cover .title-cell { min-height: 40px; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+  .rt-sheet .act-row { padding: 8px 0; }
+  .rt-sheet .recur-row { min-height: 44px; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+  .rt-sheet .ok-mark, .rt-sheet .miss { font-size: var(--text-sm); }
+  .rt-sheet .sb > .btn { justify-content: center; height: 40px; font-size: var(--text-base); }
+
+  /* New action item: full screen (rule 4). ✕ at the top left (C9 recommendation), Create at the top right; the body
+     scrolls under them. Cancel goes; ✕ does it. */
+  .rc-overlay { padding: 0; place-items: stretch; background: var(--color-bg); }
+  .rc-dialog { width: 100%; max-height: none; height: 100dvh; border: 0; border-radius: 0; box-shadow: none; }
+  .rc-dialog > header { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: 6px; min-height: var(--mobile-bar-height); padding: env(safe-area-inset-top) var(--space-2) 0; }
+  .rc-dialog > header .ib[data-close] { order: -1; width: var(--touch-target); height: var(--touch-target); font-size: 16px; }
+  .rc-dialog > header h2 { font-size: var(--text-md); }
+  .rc-dialog > header .seg { grid-column: 1 / -1; grid-row: 2; height: 36px; margin: 0 var(--space-2) var(--space-2); }
+  .rc-dialog > header .seg button { flex: 1; justify-content: center; font-size: var(--text-base); }
+  .rc-dialog > header .rt-create { grid-column: 4; grid-row: 1; height: var(--touch-target); font-size: var(--text-sm); }
+  .rc-dialog .body { flex: 1; padding: var(--space-3); padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom)); }
+  .rc-dialog > footer { display: none; }
+  .rc-dialog .rt-foot-note { margin: 0; font-size: var(--text-sm); color: var(--color-muted); }
+  .rc-dialog .field, .rc-dialog select.field { height: 40px; font-size: 16px; }
+  .rc-fix { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .rc-fix label { min-height: 52px; font-size: var(--text-base); }
+  .rc-fix label span { font-size: var(--text-xs); }
+  .rc-picks { max-height: none; }
+  .rc-pick { min-height: 40px; padding: 8px 6px; font-size: var(--text-base); }
+  .rc-pick input { width: 18px; height: 18px; }
+  .rc-pick small { font-size: var(--text-sm); }
+  .rc-field > label, .rc-field > .lbl { font-size: var(--text-sm); }
+
+  /* Tooltips are hover-only (rule 5): Recurring opens the Recurring sheet instead. */
+  .rc-tip { display: none !important; }
+}

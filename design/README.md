@@ -440,6 +440,20 @@ At 900px and below, Sign in, Choose your own password, No projects yet and proxy
 - **Choose your own password:** the checks list goes under Confirm at full width; Sign out instead is a centred 32px link in the footer.
 - **Measuring:** the page is anonymous, so its views and failed attempts aren't tracked. Compare phone `auth.signed_in` per week as a share of all sign-ins, and Google against password on phones per week, over the 4 weeks before and after release.
 
+## Sprint retro on a phone (SHIP-727)
+
+At 900px and below, the sprint Retro tab follows `screens/retro-touch.css` and `retro-touch.js`, which `sprint-retro.html` loads (images and review in [mobile/README.md](mobile/README.md#sprint-retro-on-a-phone-ship-727)). Above 900px the retro patterns still apply. The shared mobile rules are on SHIP-805 and aren't repeated here; nothing here changes them.
+
+**Decided 2026-11-07 (every recommendation kept):** four category tiles pick the one category on screen (D1); the rail's Coverage, Action items and Recurring open as bottom sheets from the four numbers and from ⋯ More (D2); Written by and To decide go in the Filter sheet, and the "Points to decide" number also turns To decide on and off (D3); By work item shows one collapsed card per item with its counts, and a tap opens it (D4); New action item is full screen with Create at the top right, opposite ✕ (D5); Add stays inline, with 16px text (D6); the page opens on Went well, the tile is kept in the address as `cat`, and turning on To decide moves to the first category with points to decide (D7); the touch note, the dialog and the sheets are built in the shared retro components, so SHIP-728 to SHIP-731 get them (D8); no new analytics: `viewport` on the existing `retro.*` events (D9).
+
+- **Header:** the shared sprint header and tabs (SHIP-724 D10, built once in `SprintHeader`): picker · status · ⋯, dates, goal, tabs. The four numbers become one row of 52px buttons (Retros, Recurring themes, Points to decide, Action items); ›  marks the three that open a sheet, and Points to decide shows pressed while To decide is on.
+- **Toolbar:** sprint tabs on their own row, then By category | By work item · Filter (n) · ⋯. Not sticky.
+- **Tiles:** the four categories in their fixed order, 2 × 2 on a phone and four in a row on a tablet. Each shows its count and "n to decide" (Went well says it never needs deciding). The picked one has its category colour.
+- **Category:** one column, full width, still grouped by theme, with Add at the end. On a tablet its notes fill two columns.
+- **Note:** "+ Action item" and "Not needed" are 32px buttons; ⋯ (your own points only) is a 32px target and opens Move to theme and Archive; # theme opens Move to theme; the Recurring chip opens the Recurring sheet. Text boxes are 16px; About is a native select.
+- **By work item:** a card per item with type, key, title, the four counts, "n to decide" and progress. Opened, it shows its notes by category (empty categories hidden), the raw failure log collapsed and "Open KEY retro ›".
+- **New action item:** full screen; ✕ top left, Create (Add for an existing item) top right, New | Add to existing under them; the "Starts in New" note at the end of the body. The title isn't focused on open.
+
 ## Backlog patterns (`screens/backlog.html`, `screens/features.html`)
 
 - **List and Planning are two modes of the Stories backlog.** List is the plain ranked backlog with Sprint and Assignee columns. Scheduled items stay in the list with a sprint chip, and the current sprint's chip is accent. Completed items are hidden unless **Completed** is ticked.
