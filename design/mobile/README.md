@@ -507,6 +507,7 @@ Retrospectives › Search at 900px and below, inside the touch shell. Desktop is
 |---|---|
 | `../screens/search-touch.css`, `search-touch.js` | The touch layer, loaded by `retros.html` (which exposes its state and rules as `window.SRCH`). The page's own filters in the address (`?q`, `?sprint`, `?category`, `?theme`, `?level`, `?role`, `?decision`, `?noSprint`, `?unthemed`, `?recurring`), `?selected=<retro>&point=<point>` (the retro open), `?sheet=filter\|theme:<point>\|note:<point>`, `?dialog=<point>` (New action item), and the alternatives `?alt=line\|grouped` (D1), `sheet\|inline` (D2), `selects` (D3), `nochips` (D4), `nostep` (D5), `split` (D6), several with `+`; `?notouch` shows the desktop page at any width. |
 | `search-review.html` | The design review: today, the three result rows, the three places to open the retro, every state as a live frame, what changes, the decisions and the acceptance criteria. |
+| `search-decisions.md` | The decision record: D1–D7 with why and the options not taken (and their `?alt=`), the SHIP-805 points it relies on, the smaller choices made in the design, and the mock-only changes. |
 | `images/retro-search*.png` | Search at 390 × 844, 2× scale, light and dark (made by `screenshots.sh`). |
 | `images/today-retro-search*.png` | The real SPA (PR #69 at 3c4b0bc3) at 390px and 768px, full page, from the page-shot fixtures in a component harness. |
 
@@ -537,7 +538,7 @@ Retrospectives › Search at 900px and below, inside the touch shell. Desktop is
 | Your own point's ⋯ | ![A point's ⋯, light](images/retro-search-note.light.png) | ![A point's ⋯, dark](images/retro-search-note.dark.png) |
 | New action item | ![New action item, light](images/retro-search-action.light.png) | ![New action item, dark](images/retro-search-action.dark.png) |
 
-The decisions are in [design/README.md › Retrospectives search on a phone](../README.md#retrospectives-search-on-a-phone-ship-730).
+The decisions are in [search-decisions.md](search-decisions.md) and, in short, in [design/README.md › Retrospectives search on a phone](../README.md#retrospectives-search-on-a-phone-ship-730).
 
 ## Sprint Taskboard (SHIP-725)
 
