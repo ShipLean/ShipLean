@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en" data-lavish-annotate="on">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SHIP-728 · Retro Features on a phone</title>
+<link rel="stylesheet" href="../tokens.css">
+<script type="application/json" data-lavish-revisions>
+[{ "id": "r1", "label": "Round 1", "timestamp": "2026-11-07T12:00:00Z", "summary": "Joel kept D1–D4 and D6; D5 changed to the desktop table from 600px" }]
+</script>
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+html { background: var(--color-bg); color: var(--color-text); }
+body { margin: 0; font: var(--text-base)/1.55 var(--font-sans); -webkit-font-smoothing: antialiased; }
+a { color: var(--color-accent); }
+code { font-family: var(--font-mono); font-size: .9em; padding: 0 4px; border-radius: var(--radius-xs); background: var(--color-surface-2); }
+.wrap { max-width: 1320px; margin: 0 auto; padding: 32px 28px 80px; display: grid; gap: 40px; }
+.wrap > * { min-width: 0; }
+header.top { display: grid; gap: 10px; }
+.eyebrow { font-size: var(--text-xs); font-weight: var(--weight-semibold); letter-spacing: .06em; text-transform: uppercase; color: var(--color-muted); }
+h1 { margin: 0; font-size: 28px; line-height: 1.2; letter-spacing: -.01em; }
+h2 { margin: 0 0 4px; font-size: 20px; }
+h3 { margin: 0; font-size: var(--text-md); }
+p { margin: 0; max-width: 860px; }
+.lead { font-size: var(--text-md); color: var(--color-muted); max-width: 920px; }
+.muted { color: var(--color-muted); }
+.sm { font-size: var(--text-sm); }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { display: inline-flex; align-items: center; gap: 6px; min-height: 24px; padding: 2px 10px; border-radius: 999px; background: var(--color-surface-2); font-size: var(--text-xs); font-weight: var(--weight-medium); }
+.chip.accent { background: var(--color-accent-soft); }
+.chip.warn { background: color-mix(in srgb, var(--color-warn) 20%, transparent); }
+section.block { display: grid; gap: 16px; }
+.sec-head { display: flex; align-items: end; gap: 16px; flex-wrap: wrap; }
+.sec-head > div { flex: 1; min-width: 280px; display: grid; gap: 4px; }
+.card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 16px 18px; }
+
+/* Phones */
+.phones { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 28px 20px; }
+.phone { display: grid; gap: 8px; justify-items: center; align-content: start; margin: 0; }
+.phone .frame { width: 328px; height: 691px; padding: 8px; border-radius: 34px; background: #0f1520; box-shadow: 0 1px 0 rgb(255 255 255 / .06) inset, 0 18px 40px rgb(0 0 0 / .22); }
+.phone .screen { width: 312px; height: 675px; overflow: hidden; border-radius: 26px; background: var(--color-surface); position: relative; }
+.phone iframe { width: 390px; height: 844px; border: 0; transform: scale(.8); transform-origin: 0 0; display: block; }
+.phone img { width: 312px; display: block; }
+.phone .screen.scroll { overflow-y: auto; scrollbar-width: thin; }
+.phone .cap { width: 328px; display: grid; gap: 2px; }
+.phone .cap b { font-size: var(--text-sm); }
+.phone .cap span { font-size: var(--text-xs); color: var(--color-muted); }
+.phone .cap a { font-size: var(--text-xs); }
+.today .frame { background: #3a1f22; }
+.bad { display: block; font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--color-danger) !important; }
+.tablet { grid-column: span 2; }
+.tablet .frame { width: 389px; height: 551px; padding: 10px; border-radius: 22px; }
+.tablet .screen { width: 369px; height: 531px; border-radius: 12px; }
+.tablet iframe { width: 820px; height: 1180px; transform: scale(.45); }
+.tablet .cap { width: 389px; }
+@media (max-width: 760px) { .tablet { grid-column: auto; } }
+.toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.seg { display: inline-flex; border: 1px solid var(--color-border); border-radius: var(--radius-sm); overflow: hidden; background: var(--color-surface); }
+.seg button { height: 30px; padding: 0 12px; border: 0; border-right: 1px solid var(--color-border); background: transparent; color: var(--color-muted); font: inherit; font-size: var(--text-sm); cursor: pointer; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--color-accent-soft); color: var(--color-text); font-weight: var(--weight-semibold); }
+.group-title { display: flex; gap: 10px; align-items: center; margin-top: 4px; }
+ol.issues { margin: 0; padding-left: 22px; display: grid; gap: 4px; font-size: var(--text-sm); max-width: 980px; }
+
+/* Layout options */
+.opts .phone { justify-items: start; }
+.opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.optc { display: grid; gap: 10px; align-content: start; }
+.optc.rec { border-color: var(--color-accent); box-shadow: 0 0 0 1px var(--color-accent); }
+.optc .phone { width: 100%; max-width: 240px; height: auto; justify-self: center; }
+.optc .tag { justify-self: start; font-size: var(--text-2xs); font-weight: var(--weight-semibold); text-transform: uppercase; letter-spacing: .05em; padding: 2px 8px; border-radius: 999px; background: var(--color-surface-2); color: var(--color-muted); }
+.optc.rec .tag { background: var(--color-accent); color: var(--color-accent-fg); }
+.optc ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: var(--text-sm); }
+.optc li.minus::marker { content: "− "; color: var(--color-danger); }
+.optc li.plus::marker { content: "+ "; color: var(--color-ok); }
+
+/* Rules table */
+table.rules { width: 100%; border-collapse: collapse; background: var(--color-surface); font-size: var(--text-sm); }
+table.rules th, table.rules td { padding: 10px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+table.rules th { background: var(--color-surface-2); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .05em; color: var(--color-muted); }
+table.rules td:first-child { font-weight: var(--weight-semibold); white-space: nowrap; }
+table.rules tr:last-child td { border-bottom: 0; }
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
+
+/* Decisions */
+.decisions { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 14px; }
+@media (max-width: 460px) { .decisions { grid-template-columns: minmax(0, 1fr); } }
+fieldset.d { margin: 0; display: grid; gap: 8px; align-content: start; padding: 14px 16px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); min-width: 0; }
+fieldset.d legend { float: left; width: 100%; padding: 0; display: flex; gap: 8px; align-items: baseline; font-weight: var(--weight-semibold); }
+fieldset.d legend .id { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-muted); }
+fieldset.d .why { font-size: var(--text-sm); color: var(--color-muted); }
+fieldset.d label.opt { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; align-items: start; padding: 8px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-md); cursor: pointer; font-size: var(--text-sm); }
+fieldset.d label.opt:has(input:checked) { border-color: var(--color-accent); background: var(--color-accent-soft); }
+fieldset.d label.opt input { margin: 2px 0 0; accent-color: var(--color-accent); }
+fieldset.d label.opt small { display: block; color: var(--color-muted); font-size: var(--text-xs); }
+fieldset.d .rec { font-size: var(--text-2xs); font-weight: var(--weight-semibold); text-transform: uppercase; letter-spacing: .05em; color: var(--color-ok); margin-left: 4px; }
+fieldset.d .same { font-size: var(--text-2xs); font-weight: var(--weight-semibold); color: var(--color-info); margin-left: 4px; }
+fieldset.d textarea { width: 100%; min-height: 34px; padding: 6px 8px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: inherit; font: inherit; font-size: var(--text-sm); resize: vertical; }
+.submit-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 14px 16px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); position: sticky; bottom: 12px; box-shadow: 0 8px 24px rgb(0 0 0 / .12); margin-top: 14px; }
+.btn { display: inline-flex; align-items: center; height: 34px; padding: 0 14px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); font: inherit; font-size: var(--text-sm); font-weight: var(--weight-medium); cursor: pointer; }
+.btn.primary { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-fg); }
+.status { font-size: var(--text-sm); color: var(--color-muted); }
+ol.ac { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 980px; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; }
+.two .card { display: grid; gap: 8px; align-content: start; }
+.two ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: var(--text-sm); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <span class="eyebrow">SHIP-728 · Mobile retrospective features · design for review</span>
+  <h1>Retrospectives › Features on a phone</h1>
+  <p class="lead">Retrospectives › Features is a table with one row per Feature: its state, how many retros, a count for each of the four categories, how many points are left to decide, the Decided bar, action items and the last retro. Stories and bugs with no Feature sit in their own group. Each row opens that item's retro page (SHIP-729). At 900px and below this design keeps every number and changes how they fit. <b>Each row becomes a short block in one list: key, state and date; the title; the four counts, what's left to decide and the Decided bar; then retros and action items. A legend names the colours once. The toolbar is one row: the Show filter, plus a Search button that opens the field in the same row. From 600 to 900px (tablets) the page stays the desktop table, at touch sizes.</b></p>
+  <div class="chips">
+    <span class="chip accent">Design only · nothing built</span>
+    <span class="chip">Branch <code>design/728-mobile-retro-features</code> on PR #69</span>
+    <span class="chip">New: <code>../screens/retro-features-touch.css</code>, <code>retro-features-touch.js</code>, loaded by <code>retros-features.html</code></span>
+    <span class="chip">Follows SHIP-805. Drawn as SHIP-805 recommends for C4 (sheet: Close on the right; picking a value applies and closes) and C9 (Cancel only beside a search field)</span>
+    <span class="chip accent" data-lavish-revision="r1">Decided 7 Nov: D1–D4 and D6 as recommended; D5 = the desktop table from 600px</span>
+    <span class="chip">Scope: this list only. One item's retros = SHIP-729, Search = SHIP-730, Insights = SHIP-731</span>
+  </div>
+</header>
+
+<section class="block">
+  <div class="sec-head"><div>
+    <h2>Today: the desktop table in a 390px window</h2>
+    <p class="muted sm">The reference screen with SHIP-713's shell, at 390 × 844 and 768 × 1024. The real SPA (<code>FeaturesTable.tsx</code>) has the same table in an <code>overflow-x-auto</code> box. Scroll sideways inside the phone to see the hidden columns.</p>
+  </div></div>
+  <div class="phones today" id="todayPhones"></div>
+  <ol class="issues">
+    <li>At 390px only Feature and State are on screen. The four counts, To decide, Decided, Actions and Last retro, which are what the page is for, are all off to the right, inside the table's box.</li>
+    <li>The Feature cell's <code>min-w-48</code> and nowrap title push the table to about 1,150px. On a 768px tablet the table is still cut after “Not in the plan”.</li>
+    <li>The toolbar is <code>sticky top-0</code> (rule 12) and wraps to three rows on a phone: Show, then search, then the count.</li>
+    <li>The search box is 13px, so iOS Safari zooms in (rule 14). The Show buttons are about 26px tall (rule 13).</li>
+    <li>Only the title link is a target. Its row is about 33px tall, and “No Feature retro yet” explains itself only in a hover tooltip (rule 5).</li>
+  </ol>
+</section>
+
+<section class="block">
+  <div class="sec-head"><div>
+    <h2>Three ways to fit a row (D1)</h2>
+    <p class="muted sm">Live mocks at 390px; scroll inside each. The other states below use the recommended layout.</p>
+  </div></div>
+  <div class="opts" id="optPhones"></div>
+</section>
+
+<section class="block">
+  <div class="sec-head"><div>
+    <h2>Three ways to fit the toolbar (D2)</h2>
+    <p class="muted sm">Show (All · To decide · No Feature retro yet) and the search box don't both fit on one 358px row.</p>
+  </div></div>
+  <div class="opts" id="barPhones"></div>
+</section>
+
+<section class="block">
+  <div class="sec-head"><div>
+    <h2>Proposed: 900px and below</h2>
+    <p class="muted sm">Live mocks: tap the filter, search and open rows. Nothing is saved. Open any of them full size in a narrow window to try it.</p>
+  </div>
+    <span class="seg" role="group" aria-label="Theme of the phones"><button type="button" data-theme="light" aria-pressed="true">Light</button><button type="button" data-theme="dark" aria-pressed="false">Dark</button></span>
+  </div>
+  <div class="phones" id="mainPhones"></div>
+</section>
+
+<section class="block">
+  <div class="sec-head"><div>
+    <h2>What changes at 900px and below</h2>
+    <p class="muted sm">Each part of the page and the SHIP-805 rule behind it. The shared rules aren't restated here.</p>
+  </div></div>
+  <div class="tbl-wrap"><table class="rules">
+    <thead><tr><th>Part</th><th>Desktop</th><th>900px and below</th></tr></thead>
+    <tbody>
+      <tr><td>Toolbar</td><td>Show, a 240px search box and the count on one row; sticky in the SPA</td><td>One row (rule 8): Show (All | To decide | No Feature retro yet) and a Search button. Search turns the row into a 16px field with Cancel beside it (C9); Cancel clears the search and closes it. While a search is set the button shows pressed. The count moves into the list's head. Nothing sticks (rule 12). The address keeps <code>show</code> and <code>q</code> as today.</td></tr>
+      <tr><td>Rows</td><td>A 12-column table; the title is the link</td><td>One list in a box. Each row is a link to the item's retro page (SHIP-729), with › on the right. Line 1: type, key, state, and the last retro on the right. Line 2: the title (up to two lines) and the “No Feature retro yet” chip. Line 3: the four counts in the fixed order, then “n to decide” and the Decided bar on the right. Line 4: “n retros · n action items”.</td></tr>
+      <tr><td>Category names</td><td>The four column heads</td><td>A legend in the list's head, under “n Features with retros”: the four colours with their names, in the same order as the counts.</td></tr>
+      <tr><td>Stories and bugs with no Feature</td><td>A group row, then the same rows</td><td>A group heading inside the list, then the same rows.</td></tr>
+      <tr><td>Nothing to show</td><td>“Nothing here.”</td><td>“Nothing left to decide.” under To decide. A search with no match says so and has a Clear search button.</td></tr>
+      <tr data-lavish-revision="r1"><td>Tablet (600–900px)</td><td>The table, cut off</td><td><b>D5:</b> the desktop table and toolbar, at touch sizes: 32px Show buttons, a 16px search box, 48px rows, and the whole row opens the item. The category heads wrap onto two lines; the Feature cell wraps (key and title, then the chip). The Feature column is pinned, and what doesn't fit (Actions and Last retro at 768px) scrolls sideways inside the table's box. The toolbar doesn't stick. The list and Search button are phones only (under 600px). SHIP-805 rules 1 and 7 now name this page.</td></tr>
+      <tr><td>Footnote</td><td>“Counts cover…” under the table</td><td>Unchanged, at 13px.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section class="block">
+  <div class="sec-head"><div>
+    <h2>Decisions</h2>
+    <p class="muted sm" data-lavish-revision="r1">Settled 7 Nov: you kept D1–D4 and D6 and changed D5 to the desktop table from 600px. The phones above show your choices. Change any, add a note, then Queue decisions and Send to agent.</p>
+  </div></div>
+  <form id="decisions" data-lavish-question="ship-728-decisions">
+    <div class="decisions" id="dlist"></div>
+    <div class="submit-row">
+      <button class="btn primary" type="submit">Queue decisions</button>
+      <span class="status" id="qstatus">Nothing queued yet.</span>
+      <span style="flex:1"></span>
+      <button class="btn" type="button" id="copyAll">Copy all answers</button>
+      <span class="status" data-lavish-copy-all-status role="status" aria-live="polite"></span>
+    </div>
+  </form>
+</section>
+
+<section class="block">
+  <div class="sec-head"><div>
+    <h2>Proposed acceptance criteria for SHIP-728</h2>
+    <p class="muted sm" data-lavish-revision="r1">With the decisions as settled on 7 Nov. They go on SHIP-728.</p>
+  </div></div>
+  <div class="card"><ol class="ac">
+    <li>At 390 × 844 and 768 × 1024, in both themes, Retrospectives › Features has no page-level sideways scroll with any filter, with a search open, or with no rows. Above 900px nothing changes.</li>
+    <li>Under 600px the toolbar is one row: Show (All | To decide | No Feature retro yet) and Search. Search turns the row into a 16px search field with Cancel; Cancel clears the search. Show and the search stay in the address as <code>show</code> and <code>q</code>. Nothing on the page sticks.</li>
+    <li>Under 600px each Feature, and each story or bug with no Feature, is one row in a single list. The whole row opens the item's retro page and is at least 32px tall. It shows the type, key, state, last retro date, title, the “No Feature retro yet” chip when it applies, the four category counts in the fixed order, “n to decide” when there is something to decide, the Decided bar (or “nothing to decide”), and the number of retros and action items.</li>
+    <li>The list's head shows “n Features with retros” and a legend with the four categories' colours and names in the fixed order.</li>
+    <li>Stories and bugs with no Feature appear under their own heading in the same list and are filtered by Show and the search, as on desktop.</li>
+    <li>A search with no match says “No Feature matches …” and offers Clear search. Under To decide with nothing to decide, the list says “Nothing left to decide.”</li>
+    <li data-lavish-revision="r1">From 600 to 900px the page is the desktop table and toolbar: Show buttons and rows at least 32px, a 16px search box, category heads on up to two lines, the Feature column pinned, and the columns that don't fit scrolling sideways inside the table's box only. The whole row opens the item's retro page. The phone list and Search button appear only under 600px.</li>
+    <li>“No Feature retro yet” needs no hover to understand. Hover-only tooltips are not relied on.</li>
+    <li>No new analytics events. <code>screen.viewed</code> for this page and for the item retro page carry <code>viewport</code> (SHIP-805 rule 16).</li>
+  </ol></div>
+</section>
+
+</div>
+
+<script>
+(() => {
+  let theme = 'light';
+  const url = u => `../screens/${u}${u.includes('?') ? '&' : '?'}shot&theme=${theme}`;
+  const frame = cls => ([u, title, sub, rec]) => `<figure class="phone${cls}"><div class="frame"><div class="screen"><iframe loading="lazy" src="${url(u)}" title="${title}"></iframe></div></div>
+    <figcaption class="cap"><b>${title}${rec ? ' <span class="chip accent">Recommended</span>' : ''}</b><span>${sub}</span><a href="${url(u)}" target="_blank" rel="noopener">Open</a></figcaption></figure>`;
+  const shot = ([src, title, sub, cls = '']) => `<figure class="phone${cls}"><div class="frame"><div class="screen scroll"><img src="${src}" alt="${title}" loading="lazy" style="width:${cls ? 369 : 312}px"></div></div>
+    <figcaption class="cap"><b>${title}</b><span class="bad">${sub}</span></figcaption></figure>`;
+  const TODAY = [
+    ['images/today-retros-features.png', 'Phone, 390px', 'Only Feature and State are on screen; every number is off to the right'],
+    ['images/today-retros-features-tablet.png', 'Tablet, 768px', 'Cut after “Not in the plan”; To decide and Decided are off screen', ' tablet'],
+  ];
+  const OPTS = [
+    ['retros-features.html', 'a · One list, a short block per row', 'Recommended. Every number is on screen without scrolling sideways, and the list reads as a single scan from top to bottom.', true],
+    ['retros-features.html?alt=cards', 'b · A card per row', 'The same content with a gap and a shadow around each row; two cards a row on a tablet. Roomier, but fewer Features fit on screen.'],
+    ['retros-features.html?alt=table', 'c · Keep the table, scroll sideways', 'Least to build: the Feature column stays pinned while the numbers scroll. Needs a rule 7 line, and the numbers are still out of sight.'],
+  ];
+  const BAR = [
+    ['retros-features.html', 'a · Show + Search button', 'Recommended. To decide is one tap and in view. Search is one tap away, and Cancel sits beside the field (C9).', true],
+    ['retros-features.html?alt=filter&sheet=filter', 'b · Search field + Filter (n)', 'The rule 8 pattern. The field is always there, but To decide (the main reason to come here) takes Filter, a pick and a sheet.'],
+    ['retros-features.html?alt=tworow', 'c · Two rows', 'Both always in view. Two toolbar rows break rule 8.'],
+  ];
+  const MAIN = [
+    ['retros-features.html', 'Top of the page', 'All Features; the legend in the list head'],
+    ['retros-features.html?show=open', 'To decide', 'Only Features with points to decide'],
+    ['retros-features.html?show=waiting', 'No Feature retro yet', 'Features whose own retro isn’t logged'],
+    ['retros-features.html?q=sign', 'Searching', 'The field and Cancel replace the row'],
+    ['retros-features.html?q=zzz', 'No match', 'Says so; Clear search'],
+    ['retros-features.html?alt=nometa', 'Without the retros line (D3 b)', 'One line shorter a row'],
+  ];
+  const render = () => {
+    document.getElementById('todayPhones').innerHTML = TODAY.map(shot).join('');
+    document.getElementById('optPhones').innerHTML = OPTS.map(frame('')).join('');
+    document.getElementById('barPhones').innerHTML = BAR.map(frame('')).join('');
+    document.getElementById('mainPhones').innerHTML = MAIN.map(frame('')).join('') + frame(' tablet')(['retros-features.html', 'Tablet, 820px (D5)', 'The desktop table at touch sizes; the Feature column pinned']);
+  };
+  render();
+  document.querySelector('[aria-label="Theme of the phones"]').addEventListener('click', e => {
+    const b = e.target.closest('[data-theme]'); if (!b) return;
+    theme = b.dataset.theme;
+    document.querySelectorAll('[data-theme]').forEach(x => x.setAttribute('aria-pressed', x === b));
+    render();
+  });
+
+  // [id, title, why, options [label, detail]]; the first option is the recommendation.
+  const D = [
+    ['D1', 'How a row fits', 'Twelve columns don’t fit across a phone. The options are compared above.', [
+      ['One list, a short block per row', 'Every number on screen; one scan from top to bottom.'],
+      ['A card per row (two a row on a tablet)', 'Roomier; fewer Features on screen.'],
+      ['Keep the table and scroll it sideways, Feature column pinned', 'Least to build; the numbers stay out of sight, and rule 7 needs a line.']]],
+    ['D2', 'The toolbar', 'Show and the search box don’t both fit on one row.', [
+      ['Show + a Search button that opens the field in the row, with Cancel', 'To decide is one tap; search is one tap.'],
+      ['Search field + Filter (n), with Show in a sheet', 'The rule 8 pattern; To decide takes three taps.'],
+      ['Show on one row, the search field on a second', 'Both always in view; breaks rule 8.']]],
+    ['D3', 'Retros and action items on each row', 'Desktop shows both as columns. They add a fourth line to each row on a phone.', [
+      ['Keep them as a small fourth line', 'Nothing from desktop goes missing.'],
+      ['Leave them off on phones', 'Shorter rows; the counts are on the item’s retro page.']]],
+    ['D4', 'Naming the four colours', 'Desktop names each category in its column head.', [
+      ['A legend once, in the list’s head', 'Names stay visible at the top; rows stay short.'],
+      ['No legend', 'The order and colours match every other retro page; screen readers get the name from each count’s label.']]],
+    ['D5', 'Tablets (600–900px)', 'Rule 1 gave tablets the phone layout; now amended for this page.', [
+      ['The same list, two lines a row, numbers lined up like columns', 'One layout, as rule 1 says, using the extra width.'],
+      ['The desktop table from 600px', 'Familiar, but still cut off at 768px, and rule 1 would need a second breakpoint.']]],
+    ['D6', 'Measuring it', 'The page has screen.viewed; SHIP-805 rule 16 adds viewport to every event.', [
+      ['Nothing new: viewport on screen.viewed', 'Per week on phones against desktop, before and after: the share of Features-page views followed by an item retro page view.'],
+      ['Also a client event when Show or the search changes', 'Shows whether people filter on phones; one more event to keep.']]],
+  ];
+  const CHOSEN = { D5: 1 }; // Joel, 7 Nov 2026; every other decision kept the recommendation.
+  document.getElementById('dlist').innerHTML = D.map(([id, title, why, opts]) => `<fieldset class="d" data-id="${id}">
+    <legend><span class="id">${id}</span>${title}</legend>
+    <span class="why">${why}</span>
+    ${opts.map(([o, s], i) => `<label class="opt"><input type="radio" name="${id}" value="${o.replace(/"/g, '&quot;')}"${i === (CHOSEN[id] ?? 0) ? ' checked' : ''}><span>${o}${i ? '' : '<span class="rec">Recommended</span>'}${i === (CHOSEN[id] ?? 0) ? '<span class="same">Decided 7 Nov</span>' : ''}<small>${s}</small></span></label>`).join('')}
+    <textarea name="${id}-note" placeholder="Note (optional)" aria-label="${id} note"></textarea>
+  </fieldset>`).join('');
+
+  const answers = () => D.map(([id, title, , opts]) => {
+    const v = document.querySelector(`input[name="${id}"]:checked`)?.value;
+    const note = document.querySelector(`textarea[name="${id}-note"]`).value.trim();
+    return { id, title, choice: v, recommended: v === opts[0][0], note };
+  });
+  document.getElementById('decisions').addEventListener('submit', e => {
+    e.preventDefault();
+    const items = answers();
+    const changed = items.filter(a => !a.recommended || a.note);
+    const text = items.map(a => `${a.id} ${a.title}: ${a.choice}${a.recommended ? ' (recommended)' : ' (changed)'}${a.note ? ` (note: ${a.note})` : ''}`).join('\n');
+    if (window.lavish?.queuePrompt) {
+      window.lavish.queuePrompt(`SHIP-728 design decisions. Apply each one to the Retrospectives › Features phone design (retro-features-touch.*, this page, the acceptance criteria) and give a per-ID receipt for D1–D6:\n${text}`,
+        { tag: 'tracked-batch', text: `SHIP-728 decisions: ${changed.length} changed or noted`, element: e.currentTarget, queueKey: 'ship-728-decisions', data: { items } });
+      document.getElementById('qstatus').textContent = `Queued ${items.length} decisions (${changed.length} changed or noted). Send to agent to deliver.`;
+    } else {
+      document.getElementById('qstatus').textContent = 'Lavish is not running. Use Copy all answers and paste them into the chat.';
+    }
+  });
+  document.getElementById('copyAll').addEventListener('click', async () => {
+    const text = answers().map(a => `${a.id} ${a.title}: ${a.choice}${a.note ? ` (note: ${a.note})` : ''}`).join('\n');
+    const st = document.querySelector('[data-lavish-copy-all-status]');
+    try { await navigator.clipboard.writeText(text); st.textContent = 'Answers copied.'; } catch { st.textContent = 'Clipboard unavailable.'; }
+  });
+})();
+</script>
+</body>
+</html>
