@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · SHIP-733 Your profile on a phone</title>
+<!-- SHIP-733 design review. Open directly in a browser (or over HTTP: iframes can render blank under file://). -->
+<script type="application/json" data-lavish-revisions>
+[{ "id": "r1", "label": "Round 1", "timestamp": "2026-11-07T12:00:00Z", "summary": "First draft: today at 390px, the proposed phone page, seven alternatives and D1–D8 for Joel" },
+ { "id": "r2", "label": "Round 2", "timestamp": "2026-11-07T13:00:00Z", "summary": "Joel kept all eight recommendations (D1–D8); recorded as settled" }]
+</script>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; background: var(--color-bg); color: var(--color-text); font-family: var(--font-sans); font-size: 14px; line-height: 1.5; }
+.wrap { max-width: 1340px; margin: 0 auto; padding: 28px 24px 90px; }
+h1 { margin: 0 0 6px; font-size: 26px; font-weight: 700; letter-spacing: -.01em; }
+h2 { margin: 0 0 4px; font-size: 20px; font-weight: 650; }
+h3 { margin: 0 0 4px; font-size: 15px; font-weight: 650; }
+p { margin: 0 0 8px; }
+.muted { color: var(--color-muted); }
+a { color: var(--color-accent); }
+code { font: 12px var(--font-mono); overflow-wrap: anywhere; }
+header.top { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+header.top .t { flex: 1; min-width: 300px; }
+.lede { max-width: 920px; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; background: var(--color-surface); border: 1px solid var(--color-border); font-size: 12px; }
+.seg { display: inline-flex; height: 30px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); overflow: hidden; background: var(--color-surface); }
+.seg button { padding: 0 12px; border: 0; border-right: 1px solid var(--color-border); background: transparent; color: var(--color-muted); font: inherit; font-size: 13px; cursor: pointer; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--color-accent-soft); color: var(--color-text); font-weight: 600; }
+section.block { margin-top: 44px; }
+.sub { margin: 0 0 14px; color: var(--color-muted); max-width: 960px; }
+.today { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; align-items: start; }
+@media (max-width: 1100px) { .today { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 700px) { .today { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+figure { margin: 0; min-width: 0; }
+figure img { display: block; width: 100%; height: auto; border: 1px solid var(--color-border); border-radius: 14px; }
+figcaption { margin-top: 6px; font-size: 12px; color: var(--color-muted); }
+.problems { margin: 16px 0 0; padding: 14px 16px 14px 34px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); display: grid; gap: 6px; max-width: 980px; }
+.problems li::marker { font-weight: 700; color: var(--color-danger); }
+.groups { display: grid; gap: 34px; }
+.grp h3 { font-size: 16px; margin-bottom: 10px; }
+.grp > p { max-width: 960px; }
+.phones { display: grid; grid-template-columns: repeat(auto-fill, minmax(404px, 1fr)); gap: 28px 20px; }
+.phone { min-width: 0; display: grid; gap: 8px; align-content: start; }
+.phone .ph { display: flex; gap: 8px; align-items: baseline; }
+.phone .no { flex: none; display: inline-grid; place-items: center; min-width: 30px; height: 22px; padding: 0 6px; border-radius: 6px; background: var(--color-accent); color: var(--color-accent-fg); font-weight: 700; font-size: 12px; }
+.phone .no.alt { background: var(--color-surface-2); color: var(--color-text); }
+.frame { width: 404px; max-width: 100%; padding: 7px; border-radius: 30px; background: #0b0f17; box-shadow: var(--shadow-raised); }
+.frame iframe { display: block; width: 390px; height: 844px; max-width: 100%; border: 0; border-radius: 24px; background: var(--color-surface); }
+.tablet { width: 424px; padding: 7px; border-radius: 22px; background: #0b0f17; box-shadow: var(--shadow-raised); max-width: 100%; }
+.tablet .vp { width: 410px; height: 590px; overflow: hidden; border-radius: 16px; }
+.tablet iframe { display: block; width: 820px; height: 1180px; border: 0; transform: scale(.5); transform-origin: 0 0; background: var(--color-surface); }
+.phone ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; font-size: 13px; max-width: 404px; }
+.dec { display: inline-block; padding: 0 6px; border-radius: 999px; background: var(--color-surface-2); font-size: 11px; font-weight: 600; white-space: nowrap; color: var(--color-text); text-decoration: none; }
+table.data { width: 100%; border-collapse: collapse; background: var(--color-surface); border: 1px solid var(--color-border); font-size: 13px; }
+table.data th { padding: 7px 10px; background: var(--color-surface-2); border-bottom: 1px solid var(--color-border); text-align: left; font-size: 12px; font-weight: 600; }
+table.data td { padding: 7px 10px; border-bottom: 1px solid var(--color-border); vertical-align: top; overflow-wrap: anywhere; }
+table.data tr:last-child td { border-bottom: 0; }
+.scroll-x { overflow-x: auto; }
+.qs { display: grid; gap: 12px; }
+.q { padding: 14px 16px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); display: grid; gap: 8px; }
+.q h3 { display: flex; gap: 8px; align-items: baseline; }
+.q h3 .id { flex: none; font: 700 12px var(--font-mono); color: var(--color-accent); }
+.q .see { font-size: 12px; }
+.opts { display: grid; gap: 6px; }
+.opts label { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: start; padding: 8px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); cursor: pointer; background: var(--color-bg); }
+.opts label:has(input:checked) { border-color: var(--color-accent); background: var(--color-accent-soft); }
+.opts input { margin-top: 3px; }
+.opts b { font-weight: 600; }
+.rec { margin-left: 6px; padding: 0 6px; border-radius: 999px; background: color-mix(in srgb, var(--color-ok) 18%, transparent); color: var(--color-ok); font-size: 11px; font-weight: 700; }
+.opts small { display: block; color: var(--color-muted); font-size: 12.5px; }
+.q textarea { width: 100%; min-height: 34px; padding: 6px 8px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-bg); color: var(--color-text); font: inherit; font-size: 13px; resize: vertical; }
+.submit { position: sticky; bottom: 0; margin-top: 16px; padding: 12px 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-dialog); }
+.submit .st { flex: 1; min-width: 200px; font-size: 13px; color: var(--color-muted); }
+.btn { height: 34px; padding: 0 14px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); font: inherit; font-size: 13px; cursor: pointer; }
+.btn.pri { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-fg); font-weight: 600; }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+@media (max-width: 900px) { .two { grid-template-columns: minmax(0, 1fr); } }
+.card { padding: 14px 16px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+.card ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+.rules { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.rules span { padding: 2px 8px; border-radius: 999px; background: var(--color-accent-soft); font-size: 12px; }
+.today figure.tall img { max-height: 760px; object-fit: cover; object-position: top; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="t">
+      <h1>SHIP-733 · Your profile on a phone</h1>
+      <p class="lede muted">Your profile (Profile, Password, Appearance, Your projects, Sessions and saved views, Connected agents) at 900px and below. The phones below are the reference screen at 390 × 844 with the new touch layer, in ShipLean's own tokens: scroll inside them, type, tap Change password, Leave, Revoke. Above 900px nothing changes, apart from D4 if you keep it. Instance settings are out of scope (the story says so).</p>
+      <div class="chips">
+        <span class="chip">Story · 3 pts · Sprint 2</span>
+        <span class="chip">Parent SHIP-707</span>
+        <span class="chip">Rules: SHIP-805</span>
+        <span class="chip">Mock: <code>design/screens/profile.html</code> + <code>profile-touch.css/js</code></span>
+        <span class="chip">PR ShipLean#69</span>
+      </div>
+      <div class="rules">Follows SHIP-805 without changes: <span>1 · 900px</span><span>5 · nothing hover-only</span><span>6 · safe areas</span><span>7 · no sideways page scroll</span><span>11 · 48px bar</span><span>12 · only the top bar pinned</span><span>13 · 32px minimum</span><span>14 · 16px inputs</span><span>15 · Save bar</span><span>16 · viewport on events</span></div>
+    </div>
+    <div class="seg" role="group" aria-label="Theme of the phones">
+      <button type="button" data-theme-set="light" aria-pressed="true">Light</button>
+      <button type="button" data-theme-set="dark" aria-pressed="false">Dark</button>
+    </div>
+  </header>
+
+  <section class="block" id="today">
+    <h2>Today, at 390 px</h2>
+    <p class="sub">The real app (<code>/profile</code> on a local seeded ShipLean, today's build), not the reference screen. It's already one column at every width, so nothing is cut off or scrolls sideways. It's a desktop form squeezed narrow, and 2,395px tall: almost three phone screens.</p>
+    <div class="today">
+      <figure class="tall"><img src="images/today-profile-full.png" alt="The whole profile page at 390px"><figcaption>The whole page, 2,395px</figcaption></figure>
+      <figure><img src="images/today-profile.png" alt="Profile at 390px"><figcaption>Profile: Save is at the bottom of the panel, a screen down</figcaption></figure>
+      <figure><img src="images/today-profile-password.png" alt="Password at 390px"><figcaption>Password: open all the time; Change password wraps to two lines</figcaption></figure>
+      <figure><img src="images/today-profile-agents.png" alt="Connected agents at 390px"><figcaption>The bottom: Your projects, Sessions, Connected agents; the Claude Code line is cut off</figcaption></figure>
+    </div>
+    <ol class="problems">
+      <li><b>12px fields.</b> iOS Safari zooms the page when you tap Display name or any password field, and stays zoomed (rule 14). The fields are a fixed 280px, not the width of the panel.</li>
+      <li><b>Save scrolls away.</b> Change your name and Save is at the bottom of the Profile panel, under Photo, Colour and Email; the panel's "Unsaved changes" is just as far down.</li>
+      <li><b>Password is always open:</b> three empty fields and four checks, about 380px, for something you do once a year.</li>
+      <li><b>Small targets.</b> Colour swatches are 20px; buttons and the Theme/Density segments are 28px (rule 13 says 32px).</li>
+      <li><b>Revoke has no second step.</b> It sits 28px from the next row's Revoke and cuts the agent off at once, mid-task.</li>
+      <li><b>The Claude Code line</b> is cut at the panel edge and scrolls sideways in its box. Nobody runs it on a phone, but you might copy it to send to your computer.</li>
+      <li><b>The heading repeats the bar:</b> "Your profile" is in the top bar's crumb and again as the page's first line.</li>
+    </ol>
+  </section>
+
+  <section class="block" id="proposed">
+    <h2>Proposed</h2>
+    <p class="sub">One column of panels in the app's order, 12px gutters. Labels above full-width 36px fields at 16px. Profile's Save and Discard move to the shared Save bar while something is unsaved. Password is one row until you tap Change password. Projects and agents are two- and three-line rows with Leave and Revoke always showing, and both ask first in the row. The page doesn't get shorter: closing Password saves about 370px, and the bigger fields and targets add about as much back (2,480px in the mock with three agents). Joel settled each decision on 7 Nov (below); the A-phones show the options turned down.</p>
+    <div class="groups" id="groups"></div>
+  </section>
+
+  <section class="block" id="scope">
+    <h2>Scope and boundaries</h2>
+    <div class="two">
+      <div class="card"><h3>In</h3><ul>
+        <li>Every panel on <code>/profile</code>: Profile (name, photo, colour, email, how others see you), Password, Appearance, Your projects, Sessions and saved views, Connected agents.</li>
+        <li>Proxy mode and Google-only accounts: Password isn't there (as today) and the name is read-only in proxy mode. Nothing else differs, so no extra screens.</li>
+        <li>The confirmations: Leave a project, Revoke an agent (D3, D4), and the errors each panel already shows.</li>
+      </ul></div>
+      <div class="card"><h3>Out</h3><ul>
+        <li>Instance settings, including Users (the story excludes them).</li>
+        <li>The top bar, drawer and user menu: they're SHIP-713's. This page uses them as they are.</li>
+        <li>The agent consent page (<code>/authorize</code>). SHIP-736 left it out too, so no story covers it yet. It's a signed-out-looking card like sign-in, about 1 point. Worth a story of its own?</li>
+        <li>Cropping a photo by hand: today it's cropped to the middle, and that doesn't change.</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section class="block" id="build">
+    <h2>What it takes to build</h2>
+    <p class="sub">In <code>src/ShipLean.Client/src/features/settings/profile/</code> and <code>features/agents/connected/</code>, on top of the SHIP-713 shell (its tokens and the shared <code>SaveBar</code>). No API change.</p>
+    <div class="scroll-x"><table class="data">
+      <thead><tr><th>File</th><th>Change at 900px and below</th></tr></thead>
+      <tbody>
+        <tr><td><code>pages/ProfilePage.tsx</code>, <code>InstallScreen.tsx</code></td><td>12px padding. The page has no heading of its own in the app today, so D7 needs nothing here; the reference screen loses its h1.</td></tr>
+        <tr><td><code>identity/FormRow.tsx</code></td><td>Labels above at 900px and below (today only under 640px, <code>max-sm</code>). Used by Profile and Password.</td></tr>
+        <tr><td><code>identity/NameField.tsx</code>, <code>PasswordPanel.tsx</code></td><td>Fields full width, 36px. 16px text comes from the shell's <code>.field</code> rule.</td></tr>
+        <tr><td><code>identity/ColourField.tsx</code></td><td>32px swatches, five to a row.</td></tr>
+        <tr><td><code>identity/SaveBar.tsx</code></td><td>At 900px and below, render the shell's shared <code>SaveBar</code> (fixed, Discard · Save) while dirty, instead of the panel footer.</td></tr>
+        <tr><td><code>account/PasswordPanel.tsx</code></td><td>D2: closed until Change password is tapped; Cancel clears the three fields and closes. Buttons share the footer row; the "Forgot it?" line goes under them.</td></tr>
+        <tr><td><code>account/SegmentedChoice.tsx</code></td><td>Full width, equal segments, 36px.</td></tr>
+        <tr><td><code>account/MyProjectRow.tsx</code>, <code>LeaveConfirm.tsx</code></td><td>Two lines (key; name over role); the confirmation stacks its text over two equal buttons.</td></tr>
+        <tr><td><code>account/SessionAction.tsx</code></td><td>Larger type, 36px buttons; no layout change.</td></tr>
+        <tr><td><code>agents/connected/ConnectedAgentsPanel.tsx</code></td><td>D4: a <code>RevokeConfirm</code> row like <code>LeaveConfirm</code>. D5: the line wraps at 900px and below, with a Copy button (clipboard API, toast).</td></tr>
+        <tr><td><code>ProfileIdentity.spec.tsx</code>, <code>ProfileAccount.spec.tsx</code>, <code>ConnectedAgentsPanel.spec.tsx</code></td><td>Page shots at 390 × 844 (top, Save bar, Password open, confirm rows; light and dark), inputs compute to 16px, Revoke asks first, Copy writes the line.</td></tr>
+      </tbody>
+    </table></div>
+    <p class="muted" style="margin-top:8px">3 points holds if SHIP-713's shared <code>SaveBar</code> is built first. If it isn't, this story builds it, about 1 point more. D4 at every width adds one desktop page shot.</p>
+  </section>
+
+  <section class="block" id="measure">
+    <h2>How we'll know it helped</h2>
+    <div class="two">
+      <div class="card"><h3>What exists</h3><ul>
+        <li><code>screen.viewed</code> for the profile route; <code>profile.updated</code>, <code>profile.photo_changed</code>, <code>auth.password_changed</code>, <code>auth.other_sessions_signed_out</code>, <code>project.left</code>, <code>agent.revoked</code>.</li>
+        <li>With SHIP-805 rule 16, every one carries <code>viewport</code> (phone, tablet, desktop).</li>
+      </ul></div>
+      <div class="card"><h3>What we'd compare</h3><ul>
+        <li>On phones: <code>profile.updated</code> per profile view, per week, over the 4 weeks before release and the 4 after, against the same ratio on the desktop over the same weeks.</li>
+        <li>Phone profile views per week as a share of all profile views, before and after.</li>
+        <li>If D8 adds them: Revoke and Leave cancels per week against completed revokes and leaves. Many cancels means the second step is catching mis-taps.</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section class="block" id="decisions">
+    <h2>Decisions</h2>
+    <p class="sub" data-lavish-revision="r2"><b>Settled 7 Nov 2026:</b> Joel kept every recommendation, D1 to D8. The form below still works if you want to change one.</p>
+    <form id="dform" class="qs" onsubmit="return false"></form>
+    <div class="submit">
+      <span class="st" id="dstatus">8 decisions, settled 7 Nov.</span>
+      <button type="button" class="btn" id="copyAll">Copy all answers</button>
+      <button type="button" class="btn pri" id="queue">Queue answers</button>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const SCREEN = `../screens/profile.html`;
+  const groups = [
+    { title: 'Profile', phones: [
+      { id: 'P1', q: '', title: 'Opening the page', dec: ['D1', 'D7'], notes: ['No heading: the bar says Your profile. The one-line intro stays.', 'A 56px avatar, then labels above full-width 36px fields at 16px.', 'Colour: 32px swatches, five to a row.', 'No Save footer: nothing is unsaved yet.'] },
+      { id: 'P2', q: 'dirty', title: 'Editing your name', dec: [], notes: ['The shared Save bar (rule 15) appears at the bottom: "Unsaved profile changes" · Discard · Save. It presses the same Save and Discard as the panel.', 'Empty the name and the bar says "Enter a name to save", with Save off.'] },
+      { id: 'P3', q: 'photo', title: 'With a photo', dec: [], notes: ['Replace photo and Remove side by side. On a phone the file picker offers the camera and the photo library.'] },
+    ] },
+    { title: 'Password and appearance', phones: [
+      { id: 'P4', q: 'at=password', title: 'Password, closed', dec: ['D2'], notes: ['One row: the heading, what changing it does, Change password.', 'It\'s 125px instead of about 490px open.'] },
+      { id: 'P5', q: 'pw=typed&at=password', title: 'Password, open and part typed', dec: ['D2'], notes: ['The three fields full width, the checks under them.', 'Cancel and Change password share the footer; "Forgot it?" goes under them. Cancel clears the fields and closes it.', 'Changing it closes the form and shows the toast.'] },
+      { id: 'P6', q: 'at=appearance', title: 'Appearance', dec: ['D6'], notes: ['Theme and Density full width with equal segments, 36px.', 'Both still apply at once, on every browser.'] },
+    ] },
+    { title: 'Projects, sessions and agents', phones: [
+      { id: 'P7', q: 'leave=PAY&at=projects', title: 'Leaving a project', dec: ['D3'], notes: ['Each project is two lines: the key, then its name over your role. Joined goes, as it already has in the app.', 'Leave is always showing (rule 5). It opens the confirmation under its row: the text, then Cancel and Leave side by side.', '"Only admin" stays in place of Leave on SHIP.'] },
+      { id: 'P8', q: 'at=sessions', title: 'Sessions and saved views', dec: [], notes: ['No change apart from size: the text on the left, its button on the right.'] },
+      { id: 'P9', q: 'revoke=cu&at=agents', title: 'Revoking an agent', dec: ['D4', 'D5'], notes: ['Three lines per agent: name and host (or unverified), what it can do, when it was used and connected.', 'Revoke asks first in the row, like Leave (D4).', 'The Claude Code line wraps, with Copy beside it (D5).'] },
+      { id: 'P10', q: 'agents=0&at=agents', title: 'No agents connected', dec: [], notes: ['One line, then the line to connect one.'] },
+    ] },
+    { title: 'Theme and tablet', phones: [
+      { id: 'P11', q: '', title: 'Dark', dec: [], forceTheme: 'dark', notes: ['No new colours: the desktop tokens.'] },
+    ] },
+    { title: 'Alternatives the decisions weigh', alt: true, intro: 'Not the recommendation. Each one changes one thing.', phones: [
+      { id: 'A1', q: 'alt=index', title: 'An index of sections', dec: ['D1'], notes: ['Six rows with a summary each; tapping one would open that panel alone, with ‹ back (not drawn).', 'Like iOS Settings, and very short. But it\'s six new routes or views, the Save bar has to guard leaving a section, and on a tablet it\'s mostly empty.'] },
+      { id: 'A2', q: 'alt=jump', title: 'Links to each section', dec: ['D1'], notes: ['A row of links under the intro that scrolls sideways in its own box and jumps down the page.', 'They scroll away with the page (rule 12), so they only help from the top.'] },
+      { id: 'A3', q: 'alt=pwopen&at=password', title: 'Password always open', dec: ['D2'], notes: ['As today, with the new sizes: about 490px of empty fields between Profile and Appearance.'] },
+      { id: 'A4', q: 'alt=leavesheet&leave=PAY&at=projects', title: 'Leave asks in a bottom sheet', dec: ['D3'], notes: ['A sheet with one red Leave PAY. Close or the scrim cancels.', 'Bigger target, but a second pattern for the same question the desktop asks in the row, and Revoke would want one too.'] },
+      { id: 'A5', q: 'alt=scroll&at=agents', title: 'The Claude Code line scrolls', dec: ['D5'], notes: ['As today: one line, cut at the edge, scrolling sideways in its box (rule 7 allows a code block to). No Copy.'] },
+      { id: 'A6', q: 'alt=nodensity&at=appearance', title: 'No Density on phones', dec: ['D6'], notes: ['Theme only. Density still applies to your desktop; you set it there.'] },
+      { id: 'A7', q: 'alt=heading', title: 'Keep the heading', dec: ['D7'], notes: ['"Your profile" on its own band under the bar, as on the desktop. 40px more before the first field.'] },
+    ] },
+  ];
+  let theme = 'light';
+  // ?shot hides the mock's Preview panel; with ?at it also hides the panels above that one.
+  const src = (q, force) => `${SCREEN}?${q ? q + '&' : ''}shot&theme=${force || theme}`;
+  document.getElementById('groups').innerHTML = groups.map(g => `<div class="grp"><h3>${g.title}</h3>${g.intro ? `<p class="muted">${g.intro}</p>` : ''}<div class="phones">${g.phones.map(p => `
+    <article class="phone" id="${p.id}">
+      <div class="ph"><span class="no${g.alt ? ' alt' : ''}">${p.id}</span><h3>${p.title}</h3></div>
+      <div class="frame"><iframe loading="lazy" title="${p.title}" data-q="${p.q}" ${p.forceTheme ? `data-force="${p.forceTheme}"` : ''} src="${src(p.q, p.forceTheme)}"></iframe></div>
+      <div>${p.dec.map(d => `<a class="dec" href="#q-${d}">${d}</a>`).join(' ')}</div>
+      <ul>${p.notes.map(n => `<li>${n}</li>`).join('')}</ul>
+    </article>`).join('')}${g.title === 'Theme and tablet' ? `
+    <article class="phone" id="T1">
+      <div class="ph"><span class="no">T1</span><h3>Tablet, 820 × 1180 (half size)</h3></div>
+      <div class="tablet"><div class="vp"><iframe loading="lazy" title="Tablet" data-q="" src="${src('')}"></iframe></div></div>
+      <div><a class="dec" href="#q-D1">D1</a></div>
+      <ul><li>The same single column, full width. The panels are short and the fields fill them, so a cap isn't needed.</li><li>Above 900px (a tablet held sideways, a laptop) it's the desktop page, unchanged.</li></ul>
+    </article>` : ''}</div></div>`).join('');
+  // A single-file copy of this page defines SL_SRCDOC(query) and embeds the mock as srcdoc.
+  const load = f => {
+    const q = src(f.dataset.q, f.dataset.force).split('?')[1];
+    if (window.SL_SRCDOC) { f.removeAttribute('src'); f.srcdoc = window.SL_SRCDOC(q); } else f.src = SCREEN + '?' + q;
+  };
+  if (window.SL_SRCDOC) document.querySelectorAll('iframe[data-q]').forEach(load);
+  document.querySelectorAll('[data-theme-set]').forEach(b => b.addEventListener('click', () => {
+    theme = b.dataset.themeSet;
+    document.querySelectorAll('[data-theme-set]').forEach(x => x.setAttribute('aria-pressed', x === b));
+    document.querySelectorAll('iframe[data-q]').forEach(f => { if (!f.dataset.force) load(f); });
+  }));
+
+  const Q = [
+    { id: 'D1', see: 'P1, T1, A1, A2', q: 'What shape is the page on a phone?', opts: [
+      ['long', 'One long page of panels, in the app\'s order', 'The same page and order as the desktop, so nothing new to build or route. About three screens, as today.', true],
+      ['jump', 'The same, with section links under the intro (A2)', 'Quicker to reach Connected agents from the top; the links scroll away with the page.'],
+      ['index', 'An index that opens one section at a time (A1)', 'Shortest screens, but six views, a back step and the Save bar guarding each one.'] ] },
+    { id: 'D2', see: 'P4, P5, A3', q: 'Is the Password form open all the time?', opts: [
+      ['closed', 'No: one row with Change password until it\'s tapped, phones and tablets only', 'Saves about 370px of empty fields. Cancel clears and closes; changing it closes too. The desktop stays open.', true],
+      ['everywhere', 'Closed until tapped at every width', 'One behaviour everywhere; changes the desktop panel.'],
+      ['open', 'Open, as today (A3)', 'No new state.'] ] },
+    { id: 'D3', see: 'P7, A4', q: 'Where does Leave ask first?', opts: [
+      ['row', 'In the row, as on the desktop: text, then Cancel and Leave side by side', 'The existing LeaveConfirm, restacked. Revoke (D4) uses the same pattern.', true],
+      ['sheet', 'In a bottom sheet (A4)', 'Bigger buttons, but a second pattern for one question.'] ] },
+    { id: 'D4', see: 'P9', q: 'Does Revoke ask first?', opts: [
+      ['all', 'Yes, in the row like Leave, at every width', 'It cuts an agent off mid-task and can\'t be undone; reconnecting means running the line again. One small component and one desktop page shot.', true],
+      ['phones', 'Yes, on phones and tablets only', 'Keeps the desktop as it is, but the same button behaves two ways.'],
+      ['no', 'No, it revokes at once, as today', 'One tap fewer. A mis-tap on a 32px row needs the agent reconnected.'] ] },
+    { id: 'D5', see: 'P9, A5', q: 'What happens to the Claude Code line on a phone?', opts: [
+      ['wrap', 'It wraps, with a Copy button beside it', 'All of it readable, and Copy is how you\'d get it to your computer. Copy is phones and tablets only; the desktop line stays as it is.', true],
+      ['scroll', 'One line that scrolls sideways, as today (A5)', 'No change; rule 7 allows it in its own box.'],
+      ['hide', 'Hidden on phones', 'You can\'t run it there, but then the panel never says how to connect one.'] ] },
+    { id: 'D6', see: 'P6, A6', q: 'Does Density show on phones?', opts: [
+      ['keep', 'Yes, as on the desktop', 'It\'s stored on your account and applies on every browser, so setting it on a phone is fine. Rule 13\'s 32px minimum holds either way.', true],
+      ['hide', 'No, Theme only (A6)', 'One less control on a phone, where touch sizes already decide most of the spacing.'] ] },
+    { id: 'D7', see: 'P1, A7', q: 'Does the page keep its "Your profile" heading?', opts: [
+      ['drop', 'No: the top bar already says it; the intro line stays', 'The first field is 40px higher. The app has no separate heading today, so this only changes the reference screen.', true],
+      ['keep', 'Keep it (A7)', 'Same as the desktop reference.'] ] },
+    { id: 'D8', see: 'How we\'ll know', q: 'Any new analytics events?', opts: [
+      ['none', 'None: compare the existing events by viewport', 'profile.updated, auth.password_changed, project.left and agent.revoked already exist, and rule 16 gives them viewport.', true],
+      ['cancels', 'Add agent.revoke_cancelled and project.leave_cancelled', 'Shows whether the second step catches mis-taps (D3, D4). Two self-emitted client events, no properties.'] ] },
+  ];
+  const form = document.getElementById('dform');
+  form.innerHTML = Q.map(q => `
+    <fieldset class="q" id="q-${q.id}" style="margin:0">
+      <h3><span class="id">${q.id}</span><span>${q.q}</span></h3>
+      <span class="see muted">See ${q.see}</span>
+      <div class="opts">${q.opts.map(([v, label, why, rec]) => `
+        <label><input type="radio" name="${q.id}" value="${v}" data-label="${label.replace(/"/g, '&quot;')}" ${rec ? 'checked' : ''}>
+          <span><b>${label}</b>${rec ? '<span class="rec">Recommended</span>' : ''}${why ? `<small>${why}</small>` : ''}</span></label>`).join('')}
+      </div>
+      <textarea name="${q.id}-note" aria-label="${q.id} note" placeholder="Note (optional)"></textarea>
+    </fieldset>`).join('');
+  function answers() {
+    return Q.map(q => {
+      const el = form.querySelector(`input[name="${q.id}"]:checked`);
+      const rec = q.opts.find(o => o[3])[0];
+      const note = form.querySelector(`textarea[name="${q.id}-note"]`).value.trim();
+      return { id: q.id, question: q.q, answer: el.dataset.label, value: el.value, recommended: el.value === rec, note };
+    });
+  }
+  const asText = list => list.map(a => `${a.id} ${a.question}\n  → ${a.answer}${a.recommended ? ' (recommended)' : ' (CHANGED from recommendation)'}${a.note ? `\n  Note: ${a.note}` : ''}`).join('\n');
+  document.getElementById('queue').addEventListener('click', () => {
+    const list = answers();
+    const changed = list.filter(a => !a.recommended).length;
+    const text = `SHIP-733 mobile profile design decisions (${changed} changed from the recommendation):\n${asText(list)}`;
+    const st = document.getElementById('dstatus');
+    if (window.lavish?.queuePrompt) {
+      window.lavish.queuePrompt(text, { tag: 'choice', text: `SHIP-733 decisions: ${changed} changed`, element: form, queueKey: 'ship-733-decisions', data: { question: 'ship-733-decisions', answers: list } });
+      st.textContent = `Queued: ${list.length} answers, ${changed} changed. Press Send in the Lavish bar to send them.`;
+    } else st.textContent = 'Lavish is not running. Use Copy all answers and paste them into the chat.';
+  });
+  document.getElementById('copyAll').addEventListener('click', async () => {
+    const st = document.getElementById('dstatus');
+    try { await navigator.clipboard.writeText(asText(answers())); st.textContent = 'Answers copied.'; }
+    catch { st.textContent = 'Clipboard unavailable here.'; }
+  });
+})();
+</script>
+</body>
+</html>

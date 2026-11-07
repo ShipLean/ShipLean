@@ -15,6 +15,7 @@
   Settings (Fields, Styles, Tag colours), which updates the board live.
     ?view=people        opens grouped by People
     ?dialog=settings    opens the Taskboard settings dialog (&pane=styles|tags for another section)
+  At 900px and below taskboard-touch.css/js show the phone layout (SHIP-725); its states are listed there.
   The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot).
 -->
 <link rel="stylesheet" href="../tokens.css">
@@ -118,6 +119,7 @@
   .crit .andor { text-align: left; }
 }
 </style>
+<link rel="stylesheet" href="taskboard-touch.css">
 </head>
 <body>
 <div id="appbar"></div>
@@ -233,6 +235,7 @@
     board.innerHTML = h;
     faces();
     if (S.adding) document.getElementById('quick')?.focus();
+    document.dispatchEvent(new CustomEvent('tb:render'));
   }
 
   function parentCell(p, collapsed) {
@@ -419,10 +422,13 @@
   };
   const reset = () => { Object.assign(S, seed()); S.nextKey = 184; S.filter.clear(); S.dismissed.clear(); S.adding = null; step = 0; render(); toast('Board reset'); };
 
+  // The phone layout (taskboard-touch.js) reads the same state and calls the same move.
+  SL.tb = { S, columns, cat, ORPHAN, swatch, parentOf, visible, ruleFor, move, render, setGroup, openSettings, teammate, reset: () => reset() };
   setGroup(S.group);
   if (params.get('dialog') === 'settings') { paneId = ['fields', 'styles', 'tags'].includes(params.get('pane')) ? params.get('pane') : 'fields'; openSettings(); }
   SL.preview([{ label: "Teammate's move", run: teammate }, { label: 'Settings', run: openSettings }, { label: 'Reset', run: reset }]);
 })();
 </script>
+<script src="taskboard-touch.js"></script>
 </body>
 </html>

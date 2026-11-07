@@ -8,12 +8,16 @@
   SHIP-82 mockup: Retrospectives › Search. Every point from every retro in the project, one row per point,
   filtered by text, sprint, category, theme, level, decision and who wrote it. Each row is one line; selecting it shows its
   whole retro on the right.
-  ?q=<text> prefills the search. Uses ../tokens.css, shiplean.css, shared.js and retro-data.js.
+  The filters live in the address, as in the real app: ?q&sprint&category&theme&level&role&decision&noSprint&unthemed&recurring
+  (level = stories|features, role = conductor|sub-agent|person, decision = undecided|actioned|notNeeded, the flags = true)
+  and ?selected=<retro id>&point=<point id>. Uses ../tokens.css, shiplean.css, shared.js and retro-data.js.
+  At 900px and below search-touch.css/js lay it out for touch (SHIP-730); the page exposes its state as window.SRCH.
 -->
 <link rel="stylesheet" href="../tokens.css">
 <link rel="stylesheet" href="shiplean.css">
 <link rel="stylesheet" href="retro.css">
 <link rel="stylesheet" href="retro-cards.css">
+<link rel="stylesheet" href="search-touch.css">
 <script src="shared.js"></script>
 <script src="retro-data.js"></script>
 <script src="retro-cards.js"></script>
@@ -32,10 +36,13 @@ table.list td.wrap { padding-top: 4px; padding-bottom: 4px; }
     <select class="field" id="fSprint" aria-label="Sprint"><option value="">Any sprint</option><option value="none">No sprint</option></select>
     <select class="field" id="fCat" aria-label="Category"><option value="">Any category</option></select>
     <select class="field" id="fTheme" aria-label="Theme"><option value="">Any theme</option></select>
-    <select class="field" id="fLevel" aria-label="Level"><option value="">Stories, bugs and features</option><option value="story">Stories and bugs</option><option value="feature">Features</option></select>
+    <select class="field" id="fLevel" aria-label="Level"><option value="">Stories, bugs and features</option><option value="stories">Stories and bugs</option><option value="features">Features</option></select>
     <select class="field" id="fBy" aria-label="Written by"><option value="">Anyone</option><option value="conductor">Conductors</option><option value="sub-agent">Sub-agents</option><option value="person">People</option></select>
-    <select class="field" id="fDecision" aria-label="Decision"><option value="">Any decision</option><option value="open">To decide</option><option value="action">Has an action item</option><option value="none">Not needed</option></select>
+    <select class="field" id="fDecision" aria-label="Decision"><option value="">Any decision</option><option value="undecided">Undecided</option><option value="actioned">Actioned</option><option value="notNeeded">Not needed</option></select>
+    <label class="check"><input type="checkbox" id="fNoSprint"> No sprint</label>
+    <label class="check"><input type="checkbox" id="fUnthemed"> Unthemed</label>
     <label class="check"><input type="checkbox" id="fRecur"> Recurring themes only</label>
+    <button class="btn ghost" type="button" id="fClear">Clear</button>
   </div>
   <span class="spacer"></span>
   <span class="muted sm" id="count"></span>
@@ -60,10 +67,17 @@ table.list td.wrap { padding-top: 4px; padding-bottom: 4px; }
   [...sprintNames].reverse().forEach(s => $('fSprint').insertAdjacentHTML('beforeend', `<option>${s}</option>`));
   RETRO.catOrder.map(k => [k, catLabel[k]]).forEach(([k, l]) => $('fCat').insertAdjacentHTML('beforeend', `<option value="${k}">${l}</option>`));
   Object.entries(themes).forEach(([k, t]) => $('fTheme').insertAdjacentHTML('beforeend', `<option value="${k}">${esc(t.name)}</option>`));
-  $('q').value = new URLSearchParams(location.search).get('q') ?? '';
+  // Every filter is in the address (as in the real app), so a link from Insights or a shared search opens filtered.
+  const addr = new URLSearchParams(location.search);
+  const SELECTS = { q: 'q', sprint: 'fSprint', category: 'fCat', theme: 'fTheme', level: 'fLevel', role: 'fBy', decision: 'fDecision' };
+  const FLAGS = { noSprint: 'fNoSprint', unthemed: 'fUnthemed', recurring: 'fRecur' };
+  // ?theme= is also shared.js's light|dark switch, so the theme filter takes only a theme's key.
+  const fromAddr = k => (k === 'theme' ? addr.getAll('theme').find(v => themes[v]) : addr.get(k));
+  Object.entries(SELECTS).forEach(([k, id]) => { if (fromAddr(k)) $(id).value = fromAddr(k); });
+  Object.entries(FLAGS).forEach(([k, id]) => { $(id).checked = addr.get(k) === 'true'; });
 
   const rows = retros.flatMap(r => r.points.map((p, i) => ({ r, p, id: r.id + '.' + i })));
-  let selected = null;
+  let selected = addr.get('point') || (addr.get('selected') ? addr.get('selected') + '.0' : null);
 
   const hi = (text, q) => {
     if (!q) return esc(text);
@@ -80,12 +94,20 @@ table.list td.wrap { padding-top: 4px; padding-bottom: 4px; }
     return rows.filter(({ r, p, id }) =>
       (!q || own({ r, p }) || logOnly.has(id)) &&
       (!$('fSprint').value || ($('fSprint').value === 'none' ? !r.sprint : r.sprint === $('fSprint').value)) &&
-      (!$('fDecision').value || ($('fDecision').value === 'open' ? RC.isOpen(p) : $('fDecision').value === 'action' ? !!p.action : !!p.none)) &&
+      (!$('fDecision').value || ($('fDecision').value === 'undecided' ? RC.isOpen(p) : $('fDecision').value === 'actioned' ? !!p.action : !!p.none)) &&
       (!$('fCat').value || p.cat === $('fCat').value) &&
       (!$('fTheme').value || p.theme === $('fTheme').value) &&
-      (!$('fLevel').value || ($('fLevel').value === 'feature' ? r.type === 'feature' : r.type !== 'feature')) &&
+      (!$('fLevel').value || ($('fLevel').value === 'features' ? r.type === 'feature' : r.type !== 'feature')) &&
       (!$('fBy').value || r.role === $('fBy').value) &&
+      (!$('fNoSprint').checked || !r.sprint) &&
+      (!$('fUnthemed').checked || p.theme === 'none') &&
       (!$('fRecur').checked || recurring(p.theme)));
+  }
+
+  function clearAll() {
+    Object.values(SELECTS).forEach(id => { $(id).value = ''; });
+    Object.values(FLAGS).forEach(id => { $(id).checked = false; });
+    render();
   }
 
   function render() {
@@ -101,6 +123,7 @@ table.list td.wrap { padding-top: 4px; padding-bottom: 4px; }
       <td title="${people[r.by].name}${r.agent ? ' · ' + esc(r.agent) : ''}">${av(r.by)}</td>
     </tr>`).join('') : `<tr><td colspan="6" class="muted" style="text-align:center;height:80px">No point matches. Try fewer filters.</td></tr>`;
     detail();
+    window.SRCH.after?.();
   }
 
   function detail() {
@@ -122,12 +145,18 @@ table.list td.wrap { padding-top: 4px; padding-bottom: 4px; }
   }
 
   RC.render = render;
-  RC.wire($('detail'), () => { const row = rows.find(x => x.id === selected); return row ? retros.filter(x => x.subject === row.r.subject) : []; });
+  const scope = () => { const row = rows.find(x => x.id === selected); return row ? retros.filter(x => x.subject === row.r.subject) : []; };
+  RC.wire($('detail'), scope);
   document.querySelector('.filters').addEventListener('input', render);
+  $('fClear').addEventListener('click', clearAll);
   $('rows').addEventListener('click', e => { const tr = e.target.closest('tr[data-id]'); if (!tr) return; selected = tr.dataset.id; render(); });
+  // For search-touch.js: the page's own state and rules, so the touch layout never filters or matches on its own.
+  window.SRCH = { rows, filtered, render, clearAll, hi, logText, scope, SELECTS, FLAGS,
+    get selected() { return selected; }, set selected(id) { selected = id; } };
   render();
   SL.preview([{ label: 'Clear search', run: () => { $('q').value = ''; render(); } }, { label: 'Recurring only', run: () => { $('fRecur').checked = !$('fRecur').checked; render(); } }]);
 })();
 </script>
+<script src="search-touch.js"></script>
 </body>
 </html>

@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · SHIP-715 Markdown attachments and images on a phone (design review)</title>
+<!-- SHIP-715 design review. Opens directly in a browser; the phones are live frames of attachment.html. -->
+<link rel="stylesheet" href="../tokens.css">
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; background: var(--color-bg); color: var(--color-text); font-family: var(--font-sans); font-size: 14px; line-height: 1.5; }
+.wrap { max-width: 1340px; margin: 0 auto; padding: 28px 24px 90px; }
+h1 { margin: 0 0 6px; font-size: 26px; font-weight: 700; letter-spacing: -.01em; }
+h2 { margin: 0 0 4px; font-size: 20px; font-weight: 650; }
+h3 { margin: 0 0 4px; font-size: 15px; font-weight: 650; }
+p { margin: 0 0 8px; }
+.muted { color: var(--color-muted); }
+a { color: var(--color-accent); }
+code { font: 12px var(--font-mono); overflow-wrap: anywhere; }
+header.top { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+header.top .t { flex: 1; min-width: 300px; }
+.lede { max-width: 900px; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; background: var(--color-surface); border: 1px solid var(--color-border); font-size: 12px; }
+.seg { display: inline-flex; height: 30px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); overflow: hidden; background: var(--color-surface); }
+.seg button { padding: 0 12px; border: 0; border-right: 1px solid var(--color-border); background: transparent; color: var(--color-muted); font: inherit; font-size: 13px; cursor: pointer; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--color-accent-soft); color: var(--color-text); font-weight: 600; }
+section.block { margin-top: 44px; }
+.sub { margin: 0 0 14px; color: var(--color-muted); max-width: 960px; }
+.today { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.3fr); gap: 16px; align-items: start; }
+@media (max-width: 1100px) { .today { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+figure { margin: 0; min-width: 0; }
+figure img { display: block; width: 100%; max-width: 390px; height: auto; border: 1px solid var(--color-border); border-radius: 14px; }
+figcaption { margin-top: 6px; font-size: 12px; color: var(--color-muted); }
+.problems { margin: 0; padding: 14px 16px 14px 34px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); display: grid; gap: 8px; }
+.problems li::marker { font-weight: 700; color: var(--color-danger); }
+.phones { display: grid; grid-template-columns: repeat(auto-fill, minmax(404px, 1fr)); gap: 28px 20px; }
+.phone { min-width: 0; display: grid; gap: 8px; align-content: start; }
+.phone .ph { display: flex; gap: 8px; align-items: baseline; }
+.phone .no { flex: none; display: inline-grid; place-items: center; min-width: 28px; height: 22px; padding: 0 6px; border-radius: 6px; background: var(--color-accent); color: var(--color-accent-fg); font-weight: 700; font-size: 12px; }
+.frame { width: 404px; max-width: 100%; padding: 7px; border-radius: 30px; background: #0b0f17; box-shadow: var(--shadow-raised); }
+.frame iframe { display: block; width: 390px; height: 844px; max-width: 100%; border: 0; border-radius: 24px; background: var(--color-surface); }
+.phone ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; font-size: 13px; max-width: 404px; }
+.dec { display: inline-block; padding: 0 6px; border-radius: 999px; background: var(--color-surface-2); font-size: 11px; font-weight: 600; white-space: nowrap; color: var(--color-text); text-decoration: none; }
+table.data { width: 100%; border-collapse: collapse; background: var(--color-surface); border: 1px solid var(--color-border); font-size: 13px; }
+table.data th { padding: 7px 10px; background: var(--color-surface-2); border-bottom: 1px solid var(--color-border); text-align: left; font-size: 12px; font-weight: 600; }
+table.data td { padding: 7px 10px; border-bottom: 1px solid var(--color-border); vertical-align: top; overflow-wrap: anywhere; }
+table.data tr:last-child td { border-bottom: 0; }
+.scroll-x { overflow-x: auto; }
+.qs { display: grid; gap: 12px; }
+.q { padding: 14px 16px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); display: grid; gap: 8px; }
+.q h3 { display: flex; gap: 8px; align-items: baseline; }
+.q h3 .id { flex: none; font: 700 12px var(--font-mono); color: var(--color-accent); }
+.opts { display: grid; gap: 6px; }
+.opts label { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: start; padding: 8px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); cursor: pointer; background: var(--color-bg); }
+.opts label:has(input:checked) { border-color: var(--color-accent); background: var(--color-accent-soft); }
+.opts input { margin-top: 3px; }
+.opts b { font-weight: 600; }
+.rec { margin-left: 6px; padding: 0 6px; border-radius: 999px; background: color-mix(in srgb, var(--color-ok) 18%, transparent); color: var(--color-ok); font-size: 11px; font-weight: 700; }
+.opts small { display: block; color: var(--color-muted); font-size: 12.5px; }
+.q textarea { width: 100%; min-height: 34px; padding: 6px 8px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-bg); color: var(--color-text); font: inherit; font-size: 13px; resize: vertical; }
+.submit { position: sticky; bottom: 0; margin-top: 16px; padding: 12px 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-dialog); }
+.submit .st { flex: 1; min-width: 200px; font-size: 13px; color: var(--color-muted); }
+.btn { height: 34px; padding: 0 14px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); font: inherit; font-size: 13px; cursor: pointer; }
+.btn.pri { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-fg); font-weight: 600; }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+@media (max-width: 900px) { .two { grid-template-columns: minmax(0, 1fr); } }
+.card { padding: 14px 16px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+.card ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="t">
+      <h1>SHIP-715 · Markdown attachments and images on a phone</h1>
+      <p class="lede">Designs for the <a href="https://prod.shiplean.app/p/SHIP/items/SHIP-715">SHIP-715</a> story under SHIP-707 (mobile web). It covers the Markdown attachment page (Rendered, Source, Edit, side panel) and the image preview a Feature's image attachments open. Below 900px the desktop page already drops to one column, so these designs take over at that width. Above it nothing changes. The phones below are live: tap, scroll and open sheets inside them.</p>
+      <div class="chips">
+        <span class="chip">Story · 3 pts (preliminary) · Sprint 2</span>
+        <span class="chip">Mock: <code>design/mobile/attachment.html</code></span>
+        <span class="chip">Inside the SHIP-713 touch shell</span>
+      </div>
+    </div>
+    <div>
+      <div class="muted" style="font-size:12px;margin-bottom:4px">Phones' theme</div>
+      <div class="seg" role="group" aria-label="Theme of the phone screens">
+        <button type="button" data-theme-set="light" aria-pressed="true">Light</button>
+        <button type="button" data-theme-set="dark" aria-pressed="false">Dark</button>
+      </div>
+    </div>
+  </header>
+
+  <section class="block" id="today">
+    <h2>Today, at 390 px</h2>
+    <p class="sub">The real screens at iPhone width, shot from the component test harness with the same fixtures as the page screenshots. The menu strip at the top is the old shell, which SHIP-713 replaces with the touch shell; these designs cover what sits under its top bar.</p>
+    <div class="today">
+      <figure><img src="images/today-attachment.png" alt="Today: attachment page rendered on a phone"><figcaption>Rendered. The toolbar wraps, and the side panel falls under the document.</figcaption></figure>
+      <figure><img src="images/today-attachment-edit.png" alt="Today: attachment Edit on a phone"><figcaption>Edit: the toolbar is three rows, the editor is a fixed 560 px, and Save sits below it, off screen.</figcaption></figure>
+      <figure><img src="images/today-image-preview.png" alt="Today: image preview dialog over the Feature form on a phone"><figcaption>Image preview: a small dialog over the Feature form. The form behind it is SHIP-714's.</figcaption></figure>
+      <ol class="problems">
+        <li>The header stacks the back link, a two-line facts line and five buttons. Replace… wraps onto its own row.</li>
+        <li>On this page, Images in this file, the no-history note and the item's other Markdown files all go under the document. You only find them by scrolling to the end.</li>
+        <li>On a long file there's no way to jump between sections.</li>
+        <li>Wide tables and code blocks have no scroll container of their own. The page only stays 390 px wide because the grid clips them.</li>
+        <li>Edit's Save is off screen until you scroll past a 560 px editor. With the keyboard up, that's most of the screen.</li>
+        <li>An image opens at dialog size (about 340 px wide), with no zoom and no way to the next image. A screenshot is unreadable.</li>
+        <li>The text is the desktop's compact 12–13 px, and the buttons are 28 px tall, below the 40–44 px a thumb needs.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="block" id="proposed">
+    <h2>Proposed</h2>
+    <p class="sub">Every screen uses ShipLean's own tokens. On a phone, body text goes up to 15 px and every target is at least 40 px. The top bar is SHIP-713's touch shell, and only it is sticky: the page header scrolls away and the breadcrumb keeps the file name in view. The tags link to the decisions further down.</p>
+    <div class="phones" id="phones"></div>
+  </section>
+
+  <section class="block" id="scope">
+    <h2>Scope and boundaries</h2>
+    <div class="two">
+      <div class="card">
+        <h3>In SHIP-715</h3>
+        <ul>
+          <li>The Markdown attachment page below 900 px: header, view switch, body, the side panel moved into sheets, Edit, and the "too large" and "not found" states.</li>
+          <li>How the Markdown renders on a phone: tables and code scroll inside themselves, and an attached image opens the viewer.</li>
+          <li>The image viewer, opened from the Feature's image attachments and from images in a Markdown file.</li>
+          <li>Page screenshots at 390×844 for these states, next to the desktop ones.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Not in SHIP-715</h3>
+        <ul>
+          <li><b>App shell and navigation</b>: SHIP-713. The top bar is drawn as it is there; the drawer and quick search live in <code>../screens/shared.js</code>.</li>
+          <li><b>The Attachments list on a work item</b> (rows, + Attach, remove): SHIP-714. This story covers what opening a row does.</li>
+          <li><b>Desktop</b>: unchanged above 900 px, unless you pick D9 B.</li>
+          <li><b>Other files</b>: a PDF opens in a new tab (D6, decided). A zip, CSV or anything else still downloads.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="build">
+    <h2>What it takes to build</h2>
+    <p class="sub">A rough map against today's code in <code>src/ShipLean.Client/src/features/attachment</code>, to check the 3-point estimate. No server changes: the page's one request already returns the outline, images and siblings.</p>
+    <div class="scroll-x">
+      <table class="data">
+        <thead><tr><th>Piece</th><th>Today</th><th>Change</th><th>Size</th></tr></thead>
+        <tbody>
+          <tr><td>Header</td><td><code>AttachmentHeader</code>, <code>ViewToggle</code>, <code>ReplaceButton</code></td><td>Below 900 px: a back row with ⋯, a name button that opens the files sheet, a short facts button, and the full-width segmented control. Collapses to one line on scroll. Download, Replace… and Copy link move into the ⋯ action sheet.</td><td>M</td></tr>
+          <tr><td>Side panel</td><td><code>AttachmentSidePanel</code> (4 panels)</td><td>The same panels, rendered in three bottom sheets. One new <code>BottomSheet</code> (a dialog with a grab handle and a scrim) that SHIP-713 and SHIP-714 can reuse.</td><td>M</td></tr>
+          <tr><td>Contents pill</td><td>none</td><td>A floating button that follows the current heading (IntersectionObserver over the outline anchors). Hidden when the outline has fewer than 2 entries.</td><td>S</td></tr>
+          <tr><td>Markdown body</td><td><code>Markdown</code> component</td><td>CSS only: tables and <code>pre</code> scroll sideways inside a wrapper with a fade, and images get <code>max-width:100%</code>. Tapping an attached image opens the viewer. This applies wherever Markdown renders, so descriptions benefit too.</td><td>S</td></tr>
+          <tr><td>Edit</td><td><code>AttachmentEditor</code> (MDEditor, height 560)</td><td>The editor fills the space that's left, the toolbar is one row that scrolls, Fullscreen is dropped, and Save and Cancel go in a bar fixed to the bottom.</td><td>S–M</td></tr>
+          <tr><td>Image viewer</td><td><code>ImagePreview</code> (a Dialog, 720 px)</td><td>A new full-screen viewer with pinch and double-tap zoom, swiping through the item's images, thumbnails, and a ⋯ menu (Download, Copy link, Open original). The gestures are the bulk of the work (D4).</td><td>M–L</td></tr>
+          <tr><td>PDF in a new tab (D6)</td><td><code>AttachmentFileResult</code> serves only images <code>inline</code>, and every file gets <code>Content-Security-Policy: sandbox</code></td><td>Serve <code>application/pdf</code> inline too, and open PDF rows with <code>target="_blank"</code> (the row itself is SHIP-714's). <b>Spike first:</b> the <code>sandbox</code> CSP can stop the browser's built-in PDF viewer, so check iOS Safari and Android Chrome before relaxing anything. If it does, look at a sandbox that allows the viewer, or fall back to download.</td><td>S + spike</td></tr>
+          <tr><td>Measure</td><td><code>screen.viewed</code> gains <code>viewport</code> (SHIP-713)</td><td>Two events, both with <code>viewport</code>: <code>attachment.viewer_opened</code> (<code>from</code>: rail or markdown) and <code>attachment.contents_jumped</code>. Each week, compare them with attachment-page views on phones, and compare phone views per week before and after release with desktop views as the baseline.</td><td>S</td></tr>
+          <tr><td>Tests</td><td>CT specs and desktop page shots</td><td>A phone viewport for the attachment page shots (rendered, contents sheet, edit, viewer), plus CT tests for opening and closing the sheets, the pill, and the viewer's next and previous.</td><td>M</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="muted" style="margin-top:8px">With D4 A and D6 B as decided, this reads more like <b>5 points</b> than 3. The viewer's gestures and the PDF spike are most of the difference.</p>
+  </section>
+
+  <section class="block" id="decisions">
+    <h2>Decisions</h2>
+    <p class="sub">Settled in review on 7 Nov. D6 went against the recommendation. D8 was amended afterwards to fit the touch shell's rule that only the top bar is sticky (SHIP-713 D7).</p>
+    <div class="scroll-x">
+      <table class="data">
+        <thead><tr><th>#</th><th>Question</th><th>Decided</th></tr></thead>
+        <tbody>
+          <tr id="q-D1"><td style="white-space:nowrap">D1</td><td>Where does the side panel (outline, images, no-history note, other files) go?</td><td>Bottom sheets: the Contents pill, the facts line, the file name.</td></tr>
+          <tr id="q-D2"><td style="white-space:nowrap">D2</td><td>Where do Download, Replace… and Copy link go?</td><td>A ⋯ action sheet.</td></tr>
+          <tr id="q-D3"><td style="white-space:nowrap">D3</td><td>Can you edit on a phone?</td><td>Yes: a full-screen editor, a one-row toolbar, and Save fixed to the bottom.</td></tr>
+          <tr id="q-D4"><td style="white-space:nowrap">D4</td><td>How far does the image viewer go?</td><td>Full screen, pinch and double-tap zoom, swiping through the item's images.</td></tr>
+          <tr id="q-D5"><td style="white-space:nowrap">D5</td><td>Does tapping an image in a Markdown file open the viewer?</td><td>Yes, at that image, with the item's other images to swipe to.</td></tr>
+          <tr id="q-D6"><td style="white-space:nowrap">D6</td><td>What do other files do?</td><td><b>PDFs open in a new tab; everything else downloads.</b> Changed from the recommendation (download, as today). Needs PDFs served inline, and a spike on the sandbox CSP.</td></tr>
+          <tr id="q-D7"><td style="white-space:nowrap">D7</td><td>When does the phone layout take over?</td><td>At 900 px and below, the touch shell's one breakpoint.</td></tr>
+          <tr id="q-D8"><td style="white-space:nowrap">D8</td><td>Should the header shrink once you scroll?</td><td><b>Amended:</b> the page header scrolls away and the top bar's breadcrumb keeps the file name in view. The pick in review was a header that shrinks to the name and ⋯, but SHIP-713 D7 allows only the top bar to be sticky. ⋯ is one scroll up.</td></tr>
+          <tr id="q-D9"><td style="white-space:nowrap">D9</td><td>Does the viewer replace the desktop dialog?</td><td>Phones only for now; the desktop keeps its dialog.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const SCREEN = 'attachment.html';
+  const phones = [
+    { id: 'P1', state: 'rendered', title: 'Rendered, at the top', dec: ['D1', 'D2', 'D7'], notes: ['Back to the item, then the file name; tapping the name lists the item\'s other Markdown files.', 'The facts line is shortened to one line; tapping it opens About this file.', 'One toolbar row, as SHIP-713 asks: Rendered / Source / Edit and ⋯, both 44 px.', 'Attached images fit the width and show an expand badge. Tapping one opens the viewer.'] },
+    { id: 'P2', state: 'scrolled', title: 'Scrolled into the file', dec: ['D8', 'D1'], notes: ['The page header has scrolled away. Only the top bar stays, and its breadcrumb ends in the file name (D8, amended to fit SHIP-713 D7).', 'Tables and code scroll sideways inside themselves, with a fade at the right edge. The page never scrolls sideways.', 'The Contents pill shows the heading you are in and where it falls (2 / 4).'] },
+    { id: 'P3', state: 'contents', title: 'On this page (Contents pill)', dec: ['D1'], notes: ['A bottom sheet with the outline, the current heading highlighted. Rows are 44 px.', 'Tapping a heading closes the sheet and scrolls to it.'] },
+    { id: 'P4', state: 'about', title: 'About this file (tap the facts line)', dec: ['D1'], notes: ['The facts in full, Images in this file, and the no-history note: the same panels as the desktop side panel, in a sheet.'] },
+    { id: 'P5', state: 'files', title: 'Markdown on SHIP-101 (tap the file name)', dec: ['D1'], notes: ['Switches between the item\'s Markdown files. The current file is marked.'] },
+    { id: 'P6', state: 'menu', title: 'The ⋯ action sheet', dec: ['D2'], notes: ['Download, Replace… and Copy link, which aren\'t needed often enough to take header space.', 'Replace… still opens the file picker and keeps the same-name replace rule.'] },
+    { id: 'P7', state: 'source', title: 'Source', dec: [], notes: ['Monospace at 13.5 px, wrapped, with no inner box. Long lines wrap rather than scroll.'] },
+    { id: 'P8', state: 'edit', title: 'Edit', dec: ['D3'], notes: ['The toolbar is one row that scrolls sideways (the desktop editor\'s commands, without Fullscreen).', 'The editor fills the screen at 16 px (smaller makes iOS Safari zoom). Save and Cancel sit in a bar fixed to the bottom, so they stay above the keyboard.', '"Saving replaces the file" repeats the replace rule where it matters.'] },
+    { id: 'P9', state: 'viewer', title: 'Image viewer', dec: ['D4', 'D5', 'D9'], notes: ['Full screen and always dark, so screenshots and photos read true in either theme.', 'Shows "1 of 3 · SHIP-101". Swipe or tap a thumbnail to move through the item\'s images.', '⋯ holds Download, Copy link and Open original.'] },
+    { id: 'P10', state: 'viewer-zoom', title: 'Image viewer, zoomed', dec: ['D4'], notes: ['Pinch or double-tap to zoom and drag to pan. A chip shows the zoom level and how to get back to fit.', 'This is what makes a desktop screenshot readable on a phone.'] },
+    { id: 'P11', state: 'toolarge', title: 'Too large to show', dec: ['D6'], notes: ['The server\'s own message (over 256 KB), with a full-width Download.', 'Same header, without the view switch.'] },
+  ];
+  let theme = 'light';
+  const holder = document.getElementById('phones');
+  holder.innerHTML = phones.map(p => `
+    <article class="phone" id="${p.id}">
+      <div class="ph"><span class="no">${p.id}</span><h3>${p.title}</h3></div>
+      <div class="frame"><iframe loading="lazy" title="${p.title}" data-state="${p.state}" src="${SCREEN}?state=${p.state}&theme=light"></iframe></div>
+      <div>${p.dec.map(d => `<a class="dec" href="#q-${d}">${d}</a>`).join(' ')}</div>
+      <ul>${p.notes.map(n => `<li>${n}</li>`).join('')}</ul>
+    </article>`).join('');
+
+  document.querySelectorAll('[data-theme-set]').forEach(b => b.addEventListener('click', () => {
+    theme = b.dataset.themeSet;
+    document.querySelectorAll('[data-theme-set]').forEach(x => x.setAttribute('aria-pressed', x === b));
+    document.querySelectorAll('.frame iframe').forEach(f => f.src = `${SCREEN}?state=${f.dataset.state}&theme=${theme}`);
+  }));
+
+})();
+</script>
+</body>
+</html>

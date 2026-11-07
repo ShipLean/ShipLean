@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Work item page on a phone (SHIP-714) · ShipLean design</title>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  :where(.grid, .flex) > * { min-width: 0; }
+  html { background: var(--color-bg); color: var(--color-text); }
+  body { margin: 0; font: var(--text-base)/1.55 var(--font-sans); -webkit-font-smoothing: antialiased; }
+  main { max-width: 1240px; margin: 0 auto; padding: 32px 28px 80px; }
+  h1 { font-size: 26px; line-height: 1.2; margin: 6px 0 8px; letter-spacing: -.01em; }
+  h2 { font-size: 19px; margin: 0 0 4px; letter-spacing: -.005em; }
+  h3 { font-size: var(--text-md); margin: 0 0 6px; }
+  p { margin: 0 0 10px; max-width: 78ch; }
+  .lede { font-size: 15px; color: var(--color-muted); max-width: 80ch; }
+  section { margin-top: 44px; }
+  .sub { color: var(--color-muted); margin-bottom: 18px; }
+  .over { font-size: var(--text-2xs); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--color-muted); }
+  .key { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--color-muted); }
+  .pill { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px; border-radius: 999px; background: var(--color-surface-2); font-size: var(--text-xs); font-weight: 500; white-space: nowrap; }
+  .pill.ok { background: color-mix(in srgb, var(--color-ok) 18%, transparent); }
+  .pill.warn { background: color-mix(in srgb, var(--color-warn) 22%, transparent); }
+  .pill.bad { background: color-mix(in srgb, var(--color-danger) 18%, transparent); }
+  .pill.accent { background: var(--color-accent-soft); }
+  .card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 16px 18px; }
+  .grid { display: grid; gap: 16px; }
+  .g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  @media (max-width: 980px) { .g2, .g3 { grid-template-columns: minmax(0, 1fr); } }
+  .bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .seg { display: inline-flex; border: 1px solid var(--color-border); border-radius: var(--radius-sm); overflow: hidden; background: var(--color-surface); }
+  .seg button { border: 0; border-right: 1px solid var(--color-border); background: transparent; padding: 5px 11px; font: inherit; font-size: var(--text-sm); color: var(--color-muted); cursor: pointer; }
+  .seg button:last-child { border-right: 0; }
+  .seg button[aria-pressed="true"] { background: var(--color-accent-soft); color: var(--color-text); font-weight: 600; }
+
+  /* Hero summary */
+  .hero { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+  @media (max-width: 980px) { .hero { grid-template-columns: minmax(0, 1fr); } }
+  .scope li { margin: 3px 0; }
+  .scope { margin: 6px 0 0; padding-left: 18px; }
+
+  /* Phones */
+  .phone { --s: .62; width: calc(390px * var(--s)); flex: none; }
+  .phone .glass { width: calc(390px * var(--s)); height: calc(844px * var(--s)); border-radius: calc(38px * var(--s)); border: calc(7px * var(--s)) solid #1d2433; overflow: hidden; background: #1d2433; box-shadow: 0 10px 30px rgb(0 0 0 / .18); position: relative; }
+  .phone img { display: block; border: 0; width: 390px; height: 844px; transform: scale(var(--s)); transform-origin: 0 0; border-radius: 30px; background: var(--color-bg); }
+  .phone .glass > * { width: 390px; height: 844px; }
+  .phone figcaption { margin-top: 8px; font-size: var(--text-sm); }
+  .phone figcaption b { display: block; }
+  .phone figcaption span { color: var(--color-muted); font-size: var(--text-xs); }
+  figure { margin: 0; }
+  .strip { display: flex; gap: 22px; overflow-x: auto; padding: 4px 2px 14px; }
+
+  /* Prototype */
+  .proto { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 28px; align-items: start; }
+  @media (max-width: 860px) { .proto { grid-template-columns: minmax(0, 1fr); } }
+  .proto .phone { --s: .82; }
+  .states { display: grid; gap: 6px; }
+  .states button { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; align-items: start; text-align: left; padding: 9px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-text); font: inherit; cursor: pointer; }
+  .states button[aria-pressed="true"] { border-color: var(--color-accent); background: var(--color-accent-soft); }
+  .states button .n { font: 600 var(--text-xs)/22px var(--font-mono); color: var(--color-muted); }
+  .states button b { display: block; font-size: var(--text-base); }
+  .states button span span { color: var(--color-muted); font-size: var(--text-sm); }
+  .hint { font-size: var(--text-xs); color: var(--color-muted); }
+
+  /* Problems */
+  .probs { counter-reset: p; display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+  .probs li { counter-increment: p; display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; }
+  .probs li::before { content: counter(p); display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: color-mix(in srgb, var(--color-danger) 18%, transparent); color: var(--color-text); font: 600 var(--text-xs)/1 var(--font-sans); }
+  .probs b { display: block; }
+  .probs span { color: var(--color-muted); font-size: var(--text-sm); }
+
+  /* Anatomy */
+  .anat { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 22px; }
+  .abar { display: flex; align-items: center; gap: 4px; height: 52px; max-width: 390px; padding: 0 4px; border: 1px dashed var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); position: relative; }
+  .abar .z { position: relative; display: grid; place-items: center; height: 44px; border-radius: 8px; outline: 1px dashed color-mix(in srgb, var(--color-accent) 60%, transparent); }
+  .abar .z i { position: absolute; top: -10px; right: -6px; width: 18px; height: 18px; border-radius: 50%; background: var(--color-accent); color: var(--color-accent-fg); font: 600 10px/18px var(--font-sans); text-align: center; font-style: normal; }
+  .abar .t { flex: 1; display: grid; place-items: start; line-height: 1.25; padding: 0 4px; height: 44px; align-content: center; }
+  .abar .t small { font-size: var(--text-2xs); color: var(--color-muted); }
+  .abar .t b { font-size: var(--text-md); }
+  .av { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; color: #fff; font: 600 9px/1 var(--font-sans); box-shadow: 0 0 0 2px var(--color-surface); }
+  .live { width: 7px; height: 7px; border-radius: 50%; background: var(--color-ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-ok) 22%, transparent); }
+  .legend { margin: 18px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+  .legend li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; font-size: var(--text-sm); }
+  .legend li i { width: 18px; height: 18px; border-radius: 50%; background: var(--color-accent); color: var(--color-accent-fg); font: 600 10px/18px var(--font-sans); text-align: center; font-style: normal; }
+  .legend li span { color: var(--color-muted); }
+
+  /* Rules table */
+  table.rules { width: 100%; border-collapse: collapse; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; }
+  table.rules th, table.rules td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--color-border); font-size: var(--text-sm); }
+  table.rules th { background: var(--color-surface-2); font-size: var(--text-xs); color: var(--color-muted); font-weight: 600; }
+  table.rules td:first-child { font-weight: 600; white-space: nowrap; }
+  table.rules tr:last-child td { border-bottom: 0; }
+  .wrap { overflow-x: auto; }
+
+  /* Mini mocks (static) */
+  .mini { width: 300px; border-radius: 22px; border: 6px solid #1d2433; background: var(--color-bg); overflow: hidden; font-size: 12px; box-shadow: 0 8px 22px rgb(0 0 0 / .15); }
+  .mini .mb { display: flex; align-items: center; gap: 6px; height: 44px; padding: 0 8px; background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+  .mini .mb .ham { font-size: 16px; width: 28px; text-align: center; }
+  .mini .mb .tt { flex: 1; line-height: 1.2; }
+  .mini .mb .tt small { display: block; font-size: 9.5px; color: var(--color-muted); }
+  .mini .tb { display: flex; gap: 6px; align-items: center; padding: 8px; background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+  .mini .b { display: inline-flex; align-items: center; height: 30px; padding: 0 9px; border: 1px solid var(--color-border); border-radius: 6px; background: var(--color-surface); font-size: 11.5px; white-space: nowrap; }
+  .mini .b.p { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-fg); }
+  .mini .b.on { background: var(--color-accent-soft); }
+  .mini .rows div { display: flex; gap: 6px; align-items: center; height: 40px; padding: 0 10px; border-bottom: 1px solid var(--color-border); background: var(--color-surface); }
+  .mini .ti { display: inline-grid; place-items: center; width: 14px; height: 14px; border-radius: 3px; color: #fff; font: 700 8px/1 var(--font-sans); background: var(--type-story); }
+  .mini .sheet { margin-top: -6px; border-radius: 14px 14px 0 0; background: var(--color-surface); border-top: 1px solid var(--color-border); box-shadow: 0 -10px 30px rgb(0 0 0 / .18); padding: 6px 0 10px; position: relative; }
+  .mini .sheet::before { content: ""; display: block; width: 32px; height: 4px; border-radius: 2px; margin: 0 auto 6px; background: var(--color-border); }
+  .mini .sheet .sh { display: flex; justify-content: space-between; padding: 2px 14px 6px; font-weight: 600; }
+  .mini .sheet .sh a { color: var(--color-accent); font-weight: 500; text-decoration: none; }
+  .mini .sheet .r { display: flex; align-items: center; justify-content: space-between; height: 42px; padding: 0 14px; border-top: 1px solid var(--color-border); }
+  .mini .tabs5 { display: grid; grid-template-columns: repeat(5, 1fr); height: 54px; background: var(--color-surface); border-top: 1px solid var(--color-border); font-size: 9.5px; text-align: center; color: var(--color-muted); }
+  .mini .tabs5 div { display: grid; align-content: center; gap: 2px; }
+  .mini .tabs5 div b { font-size: 15px; font-weight: 400; }
+  .mini .tabs5 .on { color: var(--color-accent); font-weight: 600; }
+  .mini .dim { opacity: .45; }
+  .tog { width: 28px; height: 16px; border-radius: 8px; background: var(--color-surface-2); border: 1px solid var(--color-border); position: relative; }
+  .tog.on { background: var(--color-accent); border-color: var(--color-accent); }
+  .tog::after { content: ""; position: absolute; top: 1px; left: 1px; width: 12px; height: 12px; border-radius: 50%; background: #fff; }
+  .tog.on::after { left: 13px; }
+
+  /* Options compare */
+  .opt { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 18px; align-items: start; }
+  @media (max-width: 760px) { .opt { grid-template-columns: minmax(0, 1fr); } }
+  .opt.rec { border-color: var(--color-accent); box-shadow: 0 0 0 1px var(--color-accent); }
+  .pc { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: var(--text-sm); }
+  .pc li::before { content: "+ "; color: var(--color-ok); font-weight: 700; }
+  .pc li.con::before { content: "− "; color: var(--color-danger); }
+
+  /* Decisions */
+  .dec { display: grid; gap: 12px; }
+  .q { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 14px 16px; }
+  .q legend { padding: 0; font-weight: 600; font-size: var(--text-md); }
+  .q fieldset { border: 0; margin: 0; padding: 0; }
+  .q .why { color: var(--color-muted); font-size: var(--text-sm); margin: 2px 0 8px; }
+  .q label { display: flex; gap: 8px; align-items: flex-start; padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer; font-size: var(--text-base); }
+  .q label:hover { background: var(--color-surface-2); }
+  .q label:has(input:checked) { background: var(--color-accent-soft); }
+  .q input[type=radio] { margin-top: 4px; accent-color: var(--color-accent); }
+  .q label small { color: var(--color-muted); display: block; font-size: var(--text-sm); }
+  .rec-tag { font-size: var(--text-2xs); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--color-accent); margin-left: 6px; }
+  .submit { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+  .btn { height: 34px; padding: 0 14px; border-radius: var(--radius-sm); border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); font: inherit; font-weight: 500; cursor: pointer; }
+  .btn.primary { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-fg); }
+  textarea { width: 100%; min-height: 70px; padding: 8px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); font: inherit; }
+  .status { font-size: var(--text-sm); color: var(--color-muted); }
+</style>
+<style>
+  ol.ac { margin: 0; padding-left: 22px; display: grid; gap: 6px; }
+</style>
+</head>
+<body>
+<main>
+
+<header class="hero">
+  <div>
+    <div class="bar"><span class="pill accent">SHIP-714</span><span class="pill">User Story · 8 pts · Sprint 2</span><span class="pill">Feature SHIP-707</span><span class="pill">Builds on SHIP-713</span></div>
+    <h1>Mobile work item details</h1>
+    <p class="lede">The work item page (stories, bugs, action items, Features and Epics) inside the touch shell at 900px and below: section chips to get around, fields as tiles, pickers as bottom sheets, a Save bar while something is unsaved, and stacked rows instead of tables. Above 900px nothing changes. Design agreed on 7 Nov 2026; nothing is built yet.</p>
+    <div class="bar" style="margin-top:12px">
+      <span class="hint">Theme for every phone on this page</span>
+      <div class="seg" role="group" aria-label="Theme" id="themeSeg">
+        <button type="button" data-t="light" aria-pressed="true">Light</button><button type="button" data-t="dark" aria-pressed="false">Dark</button>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="over">Scope</div>
+    <ul class="scope">
+      <li><b>In:</b> the work item page and its item modal (?item=KEY): header, fields, description, criteria and repro steps, tasks, Stories and bugs, retrospective rows, discussion and log, links, attachments, history, the Feature status band and Goal.</li>
+      <li><b>Out:</b> the frame around it (SHIP-713), the attachment viewer (SHIP-715), the retrospective page (SHIP-729), and how boards and backlogs open the modal (SHIP-716–722).</li>
+      <li><b>Where it lives:</b> <span class="key">design/screens/item-touch.css</span> and <span class="key">item-touch.js</span>, loaded by <span class="key">work-item.html</span> and <span class="key">feature.html</span>.</li>
+    </ul>
+  </div>
+</header>
+
+<section id="today">
+  <h2>Today on a phone</h2>
+  <p class="sub">The real app at 390px (main at 918cf067, from its page-screenshot fixtures).</p>
+  <div class="grid g2" style="align-items:start">
+    <div class="strip">
+      <figure class="phone"><div class="glass"><img src="images/today-item.png" data-today="today-item" alt="Today: a story at 390px"></div><figcaption><b>Story, top</b><span>The description is one letter wide</span></figcaption></figure>
+      <figure class="phone"><div class="glass"><img src="images/today-item-scrolled.png" data-today="today-item-scrolled" alt="Today: the story scrolled"></div><figcaption><b>Story, scrolled</b><span>8,000px of page</span></figcaption></figure>
+      <figure class="phone"><div class="glass"><img src="images/today-feature.png" data-today="today-feature" alt="Today: a Feature at 390px"></div><figcaption><b>Feature, top</b><span>The status band, one word a line</span></figcaption></figure>
+    </div>
+    <ol class="probs">
+      <li><span><b>The rail never stacks.</b> <span>WorkItemForm lays out its body as grid-cols-[minmax(0,1fr)_20rem] with no breakpoint, so the 20rem rail keeps its width and the main column shrinks to a letter.</span></span></li>
+      <li><span><b>The Feature form does the same.</b> <span>Its status band wraps one word a line and its field strip is cut off.</span></span></li>
+      <li><span><b>Everything is sized for a mouse.</b> <span>28px controls, ✕ and ⋯ that only show on hover, menus anchored under 120px fields.</span></span></li>
+      <li><span><b>Save is at the top of a very long page.</b> <span>Edit something in Tasks and Save is thousands of pixels away.</span></span></li>
+    </ol>
+  </div>
+</section>
+
+<section id="proto">
+  <h2>Proposed: try it</h2>
+  <p class="sub">Pick a state to see it. To use it for real, open the live screen (the reference screen in <span class="key">../screens/</span>) in a window narrower than 900px, or in the browser’s device mode.</p>
+  <div class="proto">
+    <figure class="phone"><div class="glass"><img id="protoImg" alt="Top of the page" src="images/item.light.png"></div></figure>
+    <div>
+      <div class="states" role="group" aria-label="Prototype state" id="states">
+        <button type="button" aria-pressed="true" data-img="item" data-live="work-item.html"><span class="n">1</span><span><b>Top of the page</b><span>The shell’s bar and crumbs, then section chips that stick under it. Type and key with copy, the title wrapping, the created/changed line, then fields as two-column tiles.</span></span></button>
+        <button type="button" aria-pressed="false" data-img="item-state" data-live="work-item.html?dirty&open=state"><span class="n">2</span><span><b>State as a bottom sheet</b><span>Over the shell’s scrim, with its sheet header and Done. 44px rows, the same groups and footnote as the desktop menu. Two unsaved edits sit behind it.</span></span></button>
+        <button type="button" aria-pressed="false" data-img="item-parent" data-live="work-item.html?open=parent"><span class="n">3</span><span><b>Parent picker</b><span>Search at the top; Features under their Epic; the key on the right.</span></span></button>
+        <button type="button" aria-pressed="false" data-img="item-tasks" data-live="work-item.html?dirty&at=Tasks"><span class="n">4</span><span><b>Tasks, with unsaved edits</b><span>Stacked rows: the title on top, then key, a native state select and the person. The Save bar names what is unsaved.</span></span></button>
+        <button type="button" aria-pressed="false" data-img="item-discussion" data-live="work-item.html?at=Discussion&mention"><span class="n">5</span><span><b>Comment with @mention</b><span>The list opens above the box, clear of the keyboard. Keyboard hints are hidden; Comment is 40px.</span></span></button>
+        <button type="button" aria-pressed="false" data-img="item-rail" data-live="work-item.html?at=Links"><span class="n">6</span><span><b>Links, attachments, history</b><span>The rail sections follow the main column. ✕ is always visible; History shows the newest three, then Show all.</span></span></button>
+        <button type="button" aria-pressed="false" data-img="item-conflict" data-live="work-item.html?conflict&at=Conflict"><span class="n">7</span><span><b>Someone saved first (409)</b><span>The page scrolls to the banner; Reload theirs and Re-apply mine go full width. Your edit stays in the Save bar.</span></span></button>
+        <button type="button" aria-pressed="false" data-img="item-bug" data-live="work-item.html?key=SHIP-153&at=Repro"><span class="n">8</span><span><b>Bug: repro and severity</b><span>Same layout. Severity is a native select.</span></span></button>
+        <button type="button" aria-pressed="false" data-img="item-action" data-live="work-item.html?key=SHIP-188"><span class="n">9</span><span><b>Action item</b><span>Why this exists: the quoted retro points, one column.</span></span></button>
+        <button type="button" aria-pressed="false" data-img="item-modal" data-live="work-item.html?peek&at=Tasks"><span class="n">10</span><span><b>Item modal (?item=KEY)</b><span>Opened from a board: full screen over the shell, with Close, the item, and Open full page.</span></span></button>
+        <button type="button" aria-pressed="false" data-img="feature" data-live="feature.html"><span class="n">11</span><span><b>Feature, top</b><span>Field tiles (State | Epic, Slug | Started, Stories and bugs, Tags), then the status band stacked: state, the status line, Verified, Still true and Edit status.</span></span></button>
+        <button type="button" aria-pressed="false" data-img="feature-status-edit" data-live="feature.html?band=edit"><span class="n">12</span><span><b>Edit status: Blocked</b><span>One-column editor; Blocked by is required.</span></span></button>
+        <button type="button" aria-pressed="false" data-img="feature-description" data-live="feature.html?at=Description"><span class="n">13</span><span><b>Feature description</b><span>Images shrink to the column; tables fit or scroll inside the description.</span></span></button>
+        <button type="button" aria-pressed="false" data-img="feature-links" data-live="feature.html?at=Links"><span class="n">14</span><span><b>Feature links</b><span>One column of cards; the PR/MR state stays on the title line.</span></span></button>
+        <button type="button" aria-pressed="false" data-img="feature-children" data-live="feature.html?at=Stories%20and%20bugs"><span class="n">15</span><span><b>Stories and bugs</b><span>Stacked rows: title, then key, sprint, state and person.</span></span></button>
+        <button type="button" aria-pressed="false" data-img="feature-log" data-live="feature.html?at=Log"><span class="n">16</span><span><b>Log</b><span>Entries full width; ⋯ always visible.</span></span></button>
+      </div>
+      <p style="margin-top:10px"><a id="liveLink" href="../screens/work-item.html">Open this state live ↗</a></p>
+      <p class="hint" style="margin-top:10px">Review states on the live screens: ?at=&lt;section&gt;, ?open=state|assignee|parent, ?dirty, ?conflict, ?mention, ?peek, plus each screen’s own (?key=SHIP-153, ?key=SHIP-188, ?band=edit).</p>
+    </div>
+  </div>
+</section>
+
+<section id="gallery">
+  <h2>Every state, side by side</h2>
+  <div class="strip" id="gallery-strip">
+    <figure class="phone"><div class="glass"><img loading="lazy" alt="Top of the page" data-img="item" src="images/item.light.png"></div><figcaption><b>Top of the page</b><span>The shell’s bar and crumbs, then section chips that stick under it</span></figcaption></figure>
+    <figure class="phone"><div class="glass"><img loading="lazy" alt="State as a bottom sheet" data-img="item-state" src="images/item-state.light.png"></div><figcaption><b>State as a bottom sheet</b><span>Over the shell’s scrim, with its sheet header and Done</span></figcaption></figure>
+    <figure class="phone"><div class="glass"><img loading="lazy" alt="Parent picker" data-img="item-parent" src="images/item-parent.light.png"></div><figcaption><b>Parent picker</b><span>Search at the top; Features under their Epic; the key on the right</span></figcaption></figure>
+    <figure class="phone"><div class="glass"><img loading="lazy" alt="Tasks, with unsaved edits" data-img="item-tasks" src="images/item-tasks.light.png"></div><figcaption><b>Tasks, with unsaved edits</b><span>Stacked rows: the title on top, then key, a native state select and the person</span></figcaption></figure>
+    <figure class="phone"><div class="glass"><img loading="lazy" alt="Comment with @mention" data-img="item-discussion" src="images/item-discussion.light.png"></div><figcaption><b>Comment with @mention</b><span>The list opens above the box, clear of the keyboard</span></figcaption></figure>
+    <figure class="phone"><div class="glass"><img loading="lazy" alt="Links, attachments, history" data-img="item-rail" src="images/item-rail.light.png"></div><figcaption><b>Links, attachments, history</b><span>The rail sections follow the main column</span></figcaption></figure>
+    <figure class="phone"><div class="glass"><img loading="lazy" alt="Someone saved first (409)" data-img="item-conflict" src="images/item-conflict.light.png"></div><figcaption><b>Someone saved first (409)</b><span>The page scrolls to the banner; Reload theirs and Re-apply mine go full width</span></figcaption></figure>
+    <figure class="phone"><div class="glass"><img loading="lazy" alt="Bug: repro and severity" data-img="item-bug" src="images/item-bug.light.png"></div><figcaption><b>Bug: repro and severity</b><span>Same layout</span></figcaption></figure>
+    <figure class="phone"><div class="glass"><img loading="lazy" alt="Action item" data-img="item-action" src="images/item-action.light.png"></div><figcaption><b>Action item</b><span>Why this exists: the quoted retro points, one column</span></figcaption></figure>
+    <figure class="phone"><div class="glass"><img loading="lazy" alt="Item modal (?item=KEY)" data-img="item-modal" src="images/item-modal.light.png"></div><figcaption><b>Item modal (?item=KEY)</b><span>Opened from a board: full screen over the shell, with Close, the item, and Open full page</span></figcaption></figure>
+    <figure class="phone"><div class="glass"><img loading="lazy" alt="Feature, top" data-img="feature" src="images/feature.light.png"></div><figcaption><b>Feature, top</b><span>Field tiles (State | Epic, Slug | Started, Stories and bugs, Tags), then the status band stacked: state, the status line, Verified, Still true and Edit status</span></figcaption></figure>
+    <figure class="phone"><div class="glass"><img loading="lazy" alt="Edit status: Blocked" data-img="feature-status-edit" src="images/feature-status-edit.light.png"></div><figcaption><b>Edit status: Blocked</b><span>One-column editor; Blocked by is required</span></figcaption></figure>
+    <figure class="phone"><div class="glass"><img loading="lazy" alt="Feature description" data-img="feature-description" src="images/feature-description.light.png"></div><figcaption><b>Feature description</b><span>Images shrink to the column; tables fit or scroll inside the description</span></figcaption></figure>
+    <figure class="phone"><div class="glass"><img loading="lazy" alt="Feature links" data-img="feature-links" src="images/feature-links.light.png"></div><figcaption><b>Feature links</b><span>One column of cards; the PR/MR state stays on the title line</span></figcaption></figure>
+    <figure class="phone"><div class="glass"><img loading="lazy" alt="Stories and bugs" data-img="feature-children" src="images/feature-children.light.png"></div><figcaption><b>Stories and bugs</b><span>Stacked rows: title, then key, sprint, state and person</span></figcaption></figure>
+    <figure class="phone"><div class="glass"><img loading="lazy" alt="Log" data-img="feature-log" src="images/feature-log.light.png"></div><figcaption><b>Log</b><span>Entries full width; ⋯ always visible</span></figcaption></figure>
+  </div>
+</section>
+
+<section id="rules">
+  <h2>What changes at 900px and below</h2>
+  <p class="sub">The rules item-touch.css and item-touch.js apply, written as requirements for the app.</p>
+  <div class="wrap"><table class="rules"><thead><tr><th>Area</th><th>Desktop today</th><th>900px and below</th></tr></thead><tbody>
+<tr><td>Layout</td><td>Main column + 20rem rail side by side</td><td>One column: main sections, then Links, Attachments, History.</td></tr>
+<tr><td>Top bar</td><td>Side menu, breadcrumbs, ← Back, Save in the header</td><td>The shell’s bar (SHIP-713): Menu, crumbs ending in the key, presence, Live, Search. ← Back is dropped; the crumbs and the system back do that.</td></tr>
+<tr><td>Finding your way</td><td>Everything visible at once</td><td>Section chips stick under the bar (Description, Criteria 2/5, Tasks 0/3, Discussion 3, Links 4…). The one on screen is highlighted; tapping one scrolls to it.</td></tr>
+<tr><td>Title</td><td>One-line input</td><td>Type and key with a copy button above it; the title wraps at 19px semibold; Enter finishes; the created/changed line under it.</td></tr>
+<tr><td>Fields</td><td>One strip of cells</td><td>Two-column tiles. Story: State | Assignee, Sprint | Story points, then Priority, Parent and Tags on rows of their own. Feature: State | Epic, Slug | Started, Stories and bugs, Tags. Inputs at 16px.</td></tr>
+<tr><td>Pickers</td><td>Menus under the field</td><td>Bottom sheets over the shell’s scrim with its sheet header and Done, 44px rows, the same groups and footnotes; Parent keeps its search. Sprint, Epic, Severity and task State stay native selects.</td></tr>
+<tr><td>Saving</td><td>Save and Discard in the header</td><td>A Save bar fixed to the bottom while something is unsaved, naming the fields. A 409 scrolls to the banner, whose buttons go full width.</td></tr>
+<tr><td>Tables</td><td>Tasks and Stories and bugs as table rows</td><td>Stacked rows: icon and title on top, then key, sprint, state and person. The Retrospectives rows scroll sideways.</td></tr>
+<tr><td>Touch</td><td>28px controls; ✕ and ⋯ on hover</td><td>36px controls, 32px icon buttons, 44px rows; nothing needs hover.</td></tr>
+<tr><td>Long content</td><td>Wide images and tables fit</td><td>Images and SVGs shrink to the column; Markdown tables scroll inside the description; every section grid is minmax(0, 1fr).</td></tr>
+<tr><td>Discussion and Log</td><td>Composer with keyboard hints</td><td>Bigger box, hints hidden, 40px Comment; the @mention list opens above the box.</td></tr>
+<tr><td>History</td><td>Every revision</td><td>The newest three, then Show all N revisions.</td></tr>
+<tr><td>Feature status band</td><td>One row</td><td>Stacked: the state chip, the status line, Verified, then Still true and Edit status as two 40px buttons. The editor is one column.</td></tr>
+<tr><td>Links (Feature)</td><td>Cards two across</td><td>One column of cards; the PR state stays on the title line; ✕ in the corner.</td></tr>
+<tr><td>Item modal</td><td>A centred dialog over the board</td><td>Full screen over the shell: Close, the item, Open full page.</td></tr>
+<tr><td>Attach</td><td>+ Attach, drop files, paste images</td><td>+ Attach opens the phone’s picker (camera and photos included); no drop overlay on touch.</td></tr>
+  </tbody></table></div>
+</section>
+
+<section id="decide">
+  <h2>Decisions</h2>
+  <p class="sub">Settled by Joel on 7 Nov 2026: eleven recommendations kept, one changed. The screens and images show the settled answers.</p>
+  <div class="wrap"><table class="rules"><thead><tr><th>#</th><th>Question</th><th>Answer</th><th></th></tr></thead><tbody>
+<tr><td>D1</td><td>Breakpoints</td><td>One breakpoint: the whole layout at 900px and below, as the shell. Tablets get it too.</td><td><span class="pill warn">Changed (recommended: rail stacks at 900px, phone layout at 640px)</span></td></tr>
+<tr><td>D2</td><td>Getting around a long page</td><td>Sticky section chips</td><td><span class="pill ok">As recommended</span></td></tr>
+<tr><td>D3</td><td>Saving</td><td>A Save bar at the bottom while something is unsaved</td><td><span class="pill ok">As recommended</span></td></tr>
+<tr><td>D4</td><td>Field pickers</td><td>Bottom sheets for State, Assignee and Parent; Sprint, Epic, Severity and task State stay native selects</td><td><span class="pill ok">As recommended</span></td></tr>
+<tr><td>D5</td><td>The fields block</td><td>Always open, two-column tiles</td><td><span class="pill ok">As recommended</span></td></tr>
+<tr><td>D6</td><td>Remove on touch</td><td>✕ and ⋯ always visible</td><td><span class="pill ok">As recommended</span></td></tr>
+<tr><td>D7</td><td>History</td><td>The newest three, then Show all</td><td><span class="pill ok">As recommended</span></td></tr>
+<tr><td>D8</td><td>Item modal on a phone</td><td>Full screen, with Close and Open full page</td><td><span class="pill ok">As recommended</span></td></tr>
+<tr><td>D9</td><td>Touch sizes</td><td>36px controls, 32px icon buttons, --touch-target rows and sheet options, at 900px and below only</td><td><span class="pill ok">As recommended</span></td></tr>
+<tr><td>D10</td><td>Section order</td><td>As on a desktop: main sections, then Links, Attachments, History</td><td><span class="pill ok">As recommended</span></td></tr>
+<tr><td>D11</td><td>Retrospective rows on the item</td><td>Scroll sideways for now; SHIP-729 redesigns them</td><td><span class="pill ok">As recommended</span></td></tr>
+<tr><td>D12</td><td>Measuring phone use</td><td>A viewport class header (phone, tablet, desktop) from the SPA, stamped on every web event, built in SHIP-713</td><td><span class="pill ok">As recommended</span></td></tr>
+  </tbody></table></div>
+</section>
+
+<section id="ac">
+  <h2>Acceptance criteria</h2>
+  <p class="sub">The same as SHIP-714’s checklist.</p>
+  <div class="card"><ol class="ac">
+      <li>At 390 × 844 the story, bug, action item, Feature and Epic pages have no horizontal scroll at any point, in both themes; only Markdown tables and the Retrospectives rows scroll sideways, inside their own box.</li>
+      <li>At 900px and below (phones, tablets and narrow windows alike) the side rail stacks under the main column and the phone layout applies: section chips, field tiles, bottom sheets, Save bar. Above 900px nothing changes.</li>
+      <li>Every field can be read and changed on a phone: title, State, Assignee, Sprint, Story points, Priority, Parent, Tags, Severity, Epic, the description and repro steps, criteria, the status band (including Blocked by and Parked reason) and Goal.</li>
+      <li>Tasks, Stories and bugs, Discussion, Log, Links, Attachments, History and Retrospectives are all reachable from the section chips, and the chip for the section on screen is highlighted.</li>
+      <li>Unsaved changes show the Save bar with the changed fields named; Save writes one revision as on desktop; a 409 brings the conflict banner into view with Reload theirs and Re-apply mine.</li>
+      <li>Every tappable control is at least 32px, list rows and sheet options at least 44px, and nothing needs hover (remove and ⋯ always visible).</li>
+      <li>The item modal (?item=KEY) opens full screen at 900px and below, with Close and Open full page.</li>
+      <li>Page screenshots at 390 × 844 in both themes for work-item, work-item-bug, work-item-action, feature and feature-status-edit, next to the existing 1440 × 900 ones; the reference screens in design/screens carry the phone layer (item-touch.css, item-touch.js).</li>
+      <li>Web events say whether they came from a phone, tablet or desktop (the viewport header from SHIP-713, D12), so edits and comments per item view can be compared week by week, phone against desktop.</li>
+  </ol></div>
+</section>
+
+</main>
+<script>
+  // Theme for the page and every phone image; the state buttons swap the big phone and the live link.
+  let theme = 'light';
+  // A self-contained copy (attached to SHIP-714) carries its images in window.IMG and has no live screens to open.
+  const pic = name => (window.IMG && window.IMG[name]) || `images/${name}.png`;
+  if (window.IMG) {
+    document.getElementById('liveLink').parentElement.remove();
+    document.querySelectorAll('img[data-today]').forEach(i => { i.src = pic(i.dataset.today); });
+  }
+  const root = document.documentElement;
+  const current = () => document.querySelector('#states [aria-pressed="true"]');
+  function draw() {
+    root.dataset.theme = theme;
+    document.querySelectorAll('#gallery-strip img[data-img]').forEach(i => { i.src = pic(`${i.dataset.img}.${theme}`); });
+    const b = current();
+    const img = document.getElementById('protoImg');
+    img.src = pic(`${b.dataset.img}.${theme}`);
+    img.alt = b.querySelector('b').textContent;
+    const live = b.dataset.live;
+    const link = document.getElementById('liveLink'); if (link) link.href = `../screens/${live}${live.includes('?') ? '&' : '?'}theme=${theme}`;
+  }
+  document.getElementById('themeSeg').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    theme = b.dataset.t;
+    document.querySelectorAll('#themeSeg button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    draw();
+  });
+  document.getElementById('states').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    document.querySelectorAll('#states button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    draw();
+  });
+  draw();
+</script>
+</body>
+</html>

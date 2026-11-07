@@ -1,0 +1,206 @@
+/*
+ * Retrospective insights in the touch shell (SHIP-731). Loaded by retro-insights.html after retro.css and
+ * retro-cards.css. Follows SHIP-805 (the shared mobile rules) and doesn't restate them. At 900px and below: the three
+ * views as one row of equal tabs, then Range ▾ and ⋯ on one row; Recurring themes as one card per theme with a heat
+ * strip; Action items as cards; Changes & impact one card a row; the theme, Range, ⋯ and What these mean as bottom
+ * sheets; Merge themes and New action item full screen. insights-touch.js builds the cards, the bar and the sheets.
+ * The sheet and the full-screen New action item are the same as the sprint Retro tab's (SHIP-727 D8: built once in
+ * the shared retro components); they're repeated here only because each mock page loads its own touch file.
+ * Above 900px nothing changes.
+ */
+.it-tabs, .it-bar, .it-sheet, .it-full { display: none; }
+
+@media (max-width: 900px) {
+  /* SHIP-805 rules 11 and 13 (48px bar, 32px targets) until the token change lands in tokens.css. */
+  :root { --touch-target: 32px; --mobile-bar-height: 48px; }
+  body { padding-bottom: env(safe-area-inset-bottom); }
+
+  /* Toolbar: the views on their own row of three equal tabs, then Range ▾ · ⋯ (rule 8). Merge themes… is in ⋯.
+     Nothing sticks (rule 12). */
+  .toolbar { flex-wrap: wrap; gap: 0; padding: 0; border-bottom: 0; background: var(--color-bg); }
+  .toolbar > :not(.it-tabs):not(.it-bar) { display: none !important; }
+  .it-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+  .it-tabs button { height: 40px; padding: 0 6px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--color-muted); font: inherit; font-size: var(--text-base); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .it-tabs button[aria-selected="true"] { color: var(--color-text); font-weight: var(--weight-semibold); border-bottom-color: var(--color-accent); }
+  .it-bar { display: flex; align-items: center; gap: var(--space-2); width: 100%; min-width: 0; padding: var(--space-2) var(--space-3) 0; }
+  .it-bar .btn { height: var(--touch-target); font-size: var(--text-sm); flex: none; }
+  .it-bar .it-range .caret { margin-left: 2px; color: var(--color-muted); font-size: var(--text-xs); }
+  .it-bar .spacer { flex: 1; }
+  .it-bar .it-more { width: var(--touch-target); padding: 0; justify-content: center; }
+
+  .scroll { overflow: visible; }
+  .ins { padding: var(--space-2) var(--space-3) var(--space-5); gap: var(--space-3); }
+  .ins > .callout { font-size: var(--text-sm); }
+  .it-link { padding: 0; border: 0; background: none; color: var(--color-accent); font: inherit; font-size: var(--text-sm); cursor: pointer; min-height: var(--touch-target); }
+  .it-intro { margin: 0; }
+  .it-intro .it-link { min-height: 0; }
+  .it-mini { display: inline-flex; align-items: center; height: var(--touch-target); padding: 0 12px; border: 1px dashed var(--color-border); border-radius: var(--radius-sm); background: transparent; color: var(--color-muted); font: inherit; font-size: var(--text-sm); cursor: pointer; text-decoration: none; white-space: nowrap; }
+  .it-mini.solid { border-style: solid; background: var(--color-surface); color: var(--color-text); }
+  .act-chip { height: 24px; font-size: var(--text-xs); }
+
+  /* Proposed merge: the pair stacked, two full-width buttons. */
+  .it-merge { display: grid; gap: 6px; padding: var(--space-3); border: 1px solid var(--color-border); border-left: 3px solid var(--color-accent); border-radius: var(--radius-md); background: var(--color-surface); font-size: var(--text-sm); }
+  .it-pair { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+  .it-pair .to { color: var(--color-muted); font-size: var(--text-xs); }
+  .it-pair .chip { height: 24px; white-space: normal; }
+  .it-two { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); margin-top: 4px; }
+  .it-two .btn { height: var(--touch-target); justify-content: center; font-size: var(--text-sm); }
+
+  /* A section: heading, a one-line note, then its cards. */
+  .it-sec { display: grid; gap: 6px; }
+  .it-sec > header { display: flex; align-items: center; gap: var(--space-2); }
+  .it-sec > header h2 { flex: 1; margin: 0; font-size: var(--text-md); }
+  .it-sub { margin: -4px 0 0; }
+
+  /* Recurring themes: the axis names the first and last column once, above the cards. */
+  .it-axis { display: grid; grid-template-columns: minmax(0, 1fr) 52px; padding: 0 13px; font-size: var(--text-2xs); color: var(--color-muted); font-variant-numeric: tabular-nums; }
+  .it-axis span { grid-row: 1; }
+  .it-axis span:first-child { grid-column: 1; justify-self: start; }
+  .it-axis span:nth-child(2) { grid-column: 1; justify-self: end; }
+  .it-axis span:last-child { grid-column: 2; justify-self: end; }
+  .it-themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: var(--space-2); }
+  .it-theme { display: grid; gap: 8px; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); cursor: pointer; }
+  .it-theme:active { border-color: var(--color-accent); }
+  .it-theme > header { display: flex; align-items: flex-start; gap: var(--space-2); }
+  .it-theme > header b, .it-theme > header i { flex: 1; min-width: 0; font-size: var(--text-base); line-height: 1.3; }
+  .it-theme > header .chip { height: 22px; }
+  .it-row { display: grid; grid-template-columns: minmax(0, 1fr) 52px; align-items: center; }
+  .it-strip { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 2px; }
+  .it-strip span { display: grid; place-items: center; height: 26px; border-radius: 3px; background: color-mix(in srgb, var(--color-border) 35%, transparent); font-size: var(--text-xs); font-variant-numeric: tabular-nums; }
+  .it-strip span.zero { color: var(--color-muted); }
+  .it-total { display: grid; justify-items: end; line-height: 1.1; }
+  .it-total b { font-size: var(--text-md); font-variant-numeric: tabular-nums; }
+  .it-total small { font-size: var(--text-2xs); color: var(--color-muted); white-space: nowrap; }
+  .it-theme > footer { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+  .it-theme > footer .spacer { flex: 1; }
+  .it-last { display: inline-flex; align-items: center; gap: 6px; }
+  .it-unthemed { border-style: dashed; background: var(--color-bg); }
+
+  /* What keeps working: name and count, the latest mention under them. */
+  .it-good { display: grid; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+  .it-good-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; padding: 10px 12px; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+  .it-good-row:last-child { border-bottom: 0; }
+  .it-good-row b { font-size: var(--text-base); }
+  .it-good-row .n { font-weight: var(--weight-semibold); font-variant-numeric: tabular-nums; }
+  .it-good-row .q { grid-column: 1 / -1; font-size: var(--text-sm); color: var(--color-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+  /* D1 (c): a short list. */
+  .it-list { display: grid; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+  .it-li { display: grid; grid-template-columns: minmax(0, 1fr) auto 28px 12px; align-items: center; gap: 8px; min-height: 44px; padding: 6px 12px; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); background: none; color: var(--color-text); font: inherit; font-size: var(--text-base); text-align: left; cursor: pointer; }
+  .it-li:last-child { border-bottom: 0; }
+  .it-li .n { text-align: right; font-weight: var(--weight-semibold); font-variant-numeric: tabular-nums; }
+  .it-li .chev { color: var(--color-muted); }
+  /* D1 (b): the desktop table scrolls sideways in its box with the theme pinned (needs a rule 7 change). */
+  :root[data-alt~="table"] .rc-rows th:first-child, :root[data-alt~="table"] .rc-rows td:first-child { position: sticky; left: 0; z-index: 1; min-width: 132px; background: var(--color-surface); box-shadow: 1px 0 0 var(--color-border); }
+  :root[data-alt~="table"] .panel > header { flex-wrap: wrap; }
+  :root[data-alt~="table"] .rc-merge { flex-wrap: wrap; }
+
+  /* Action items: one card each. */
+  .it-acthead { display: flex; align-items: center; gap: var(--space-2); }
+  .it-acthead .btn { height: var(--touch-target); font-size: var(--text-sm); }
+  .it-acts { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: var(--space-2); }
+  .it-grp { margin: var(--space-2) 0 0; font-size: var(--text-sm); color: var(--color-muted); }
+  .it-act { display: grid; gap: 6px; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); cursor: pointer; }
+  .it-act > header { display: flex; align-items: center; gap: 6px; font-size: var(--text-sm); }
+  .it-act > header .spacer, .it-act > footer .spacer { flex: 1; }
+  .it-act > header .pts { font-size: var(--text-xs); color: var(--color-muted); font-variant-numeric: tabular-nums; }
+  .it-act .t { font-size: var(--text-base); line-height: 1.35; }
+  .it-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: var(--text-sm); }
+  .it-meta.muted { font-size: var(--text-xs); }
+  .it-act > footer { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-height: var(--touch-target); }
+  .it-owner { display: inline-flex; align-items: center; gap: 6px; }
+
+  /* Changes & impact: one card a row (two on a tablet). Tapping a bar reads it out under the chart. */
+  .impact-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: var(--space-2); }
+  .impact { padding: 12px; }
+  .impact h3 { font-size: var(--text-base); }
+  .impact .title-cell { flex-wrap: wrap; }
+  .impact svg rect { cursor: pointer; }
+  .impact svg rect.it-on { stroke: var(--color-text); stroke-width: 1.5; }
+  .impact .nums { justify-content: space-between; }
+  .it-read { min-height: 18px; margin-top: -4px; }
+  .impact .callout { font-size: var(--text-sm); }
+
+  /* One bottom sheet, the same as the sprint Retro tab's (C4 recommendation). */
+  .it-sheet { position: fixed; inset: auto 0 0 0; z-index: 70; display: flex; flex-direction: column; max-height: 85dvh; padding-bottom: env(safe-area-inset-bottom); background: var(--color-surface); border-top: 1px solid var(--color-border); border-radius: var(--radius-lg) var(--radius-lg) 0 0; box-shadow: 0 -12px 32px rgb(0 0 0 / .22); }
+  .it-sheet[hidden] { display: none; }
+  .it-sheet::before { content: ""; align-self: center; flex: none; width: 36px; height: 4px; margin-top: 6px; border-radius: 2px; background: var(--color-border); }
+  .it-sheet .sheet-head { flex: none; gap: var(--space-2); }
+  .it-sheet .sheet-head b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .it-sheet .sb { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 var(--space-4) var(--space-3); display: grid; gap: var(--space-2); align-content: start; }
+  .it-sheet .grp { padding: 10px 0 0; font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--color-muted); text-transform: uppercase; letter-spacing: .04em; }
+  .it-sheet .hint { margin: 0; font-size: var(--text-sm); color: var(--color-muted); }
+  .it-sheet .srow { display: flex; align-items: center; gap: var(--space-2); min-height: 40px; padding: 0 var(--space-2); margin: 0 calc(-1 * var(--space-2)); border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--color-text); font: inherit; font-size: var(--text-base); text-align: left; cursor: pointer; text-decoration: none; }
+  .it-sheet .srow:active, .it-sheet .srow[aria-checked="true"] { background: var(--color-accent-soft); }
+  .it-sheet .srow .ck { width: 16px; flex: none; color: var(--color-accent); font-weight: var(--weight-bold); }
+  .it-sheet .srow .sub { margin-left: auto; font-size: var(--text-xs); color: var(--color-muted); white-space: nowrap; }
+  .it-sheet .foot { flex: none; display: flex; gap: var(--space-2); padding: var(--space-2) var(--space-4); border-top: 1px solid var(--color-border); }
+  .it-sheet .foot[hidden] { display: none; }
+  .it-sheet .foot .btn { flex: 1; justify-content: center; height: 40px; font-size: var(--text-base); }
+  .it-sheet .sb > .btn { justify-content: center; height: 40px; font-size: var(--text-base); }
+  /* What these mean, and a theme's status and verdict */
+  .it-def { display: grid; grid-template-columns: 120px minmax(0, 1fr); align-items: start; gap: 8px; padding: 8px; margin: 0 -8px; border-radius: var(--radius-sm); font-size: var(--text-sm); }
+  .it-def .chip { justify-self: start; height: 22px; }
+  .it-def.on { background: var(--color-bg); }
+  .it-sheet[data-kind="theme"] .it-def { grid-template-columns: auto minmax(0, 1fr); }
+  /* The theme sheet */
+  .it-bars { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 3px; }
+  .it-bars > div { display: grid; gap: 3px; justify-items: stretch; text-align: center; }
+  .it-bars span { display: grid; place-items: center; height: 34px; border-radius: 4px; background: color-mix(in srgb, var(--color-border) 35%, transparent); font-size: var(--text-sm); font-weight: var(--weight-semibold); font-variant-numeric: tabular-nums; }
+  .it-bars span.zero { color: var(--color-muted); font-weight: var(--weight-regular); }
+  .it-bars small { font-size: var(--text-2xs); line-height: 1.15; color: var(--color-muted); }
+  .it-sums { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px 14px; font-size: var(--text-sm); color: var(--color-muted); }
+  .it-sums b { color: var(--color-text); }
+  .it-arow { align-items: flex-start; padding-top: 6px; padding-bottom: 6px; }
+  .it-arow .t { min-width: 0; font-size: var(--text-sm); }
+  .it-wide { width: 100%; }
+  .it-quote { display: grid; gap: 2px; padding: 8px 0; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); font-size: var(--text-sm); }
+  .it-quote small { font-size: var(--text-xs); }
+  .it-rename { display: grid; gap: 4px; font-size: var(--text-sm); font-weight: var(--weight-semibold); }
+  .it-rename .field { height: 40px; font-size: 16px; font-weight: var(--weight-regular); }
+
+  /* Merge themes: full screen (rule 4). ✕ at the top left (C9 recommendation), Merge at the top right. */
+  .it-full { position: fixed; inset: 0; z-index: 80; display: flex; flex-direction: column; background: var(--color-surface); }
+  .it-full[hidden] { display: none; }
+  .it-full > header { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 6px; min-height: var(--mobile-bar-height); padding: env(safe-area-inset-top) var(--space-2) 0; border-bottom: 1px solid var(--color-border); }
+  .it-full > header h2 { margin: 0; font-size: var(--text-md); }
+  .it-full > header .ib { width: var(--touch-target); height: var(--touch-target); font-size: 16px; }
+  .it-full > header .btn { height: var(--touch-target); font-size: var(--text-sm); }
+  .it-full > header .btn:disabled { opacity: .5; }
+  .it-full .body { flex: 1; overflow-y: auto; padding: var(--space-3); padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom)); display: grid; gap: var(--space-3); align-content: start; }
+  .it-full fieldset { margin: 0; padding: 0; border: 0; display: grid; }
+  .it-full legend { margin-bottom: 4px; font-size: var(--text-sm); font-weight: var(--weight-semibold); }
+  .it-check { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 40px; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); font-size: var(--text-base); }
+  .it-check input { width: 18px; height: 18px; margin: 0; accent-color: var(--color-accent); }
+  .it-check:has(input:disabled) { opacity: .45; }
+  .it-check small { font-size: var(--text-sm); color: var(--color-muted); font-variant-numeric: tabular-nums; }
+  .it-into { display: grid; gap: 4px; font-size: var(--text-sm); font-weight: var(--weight-semibold); }
+  .it-into .field { height: 40px; font-size: 16px; font-weight: var(--weight-regular); }
+  .it-full .hint { margin: 0; font-size: var(--text-sm); color: var(--color-muted); }
+  :root[data-full] { overflow: hidden; }
+
+  /* New action item: full screen, as on the sprint Retro tab (SHIP-727 D5). */
+  .rc-overlay { padding: 0; place-items: stretch; background: var(--color-bg); }
+  .rc-dialog { width: 100%; max-height: none; height: 100dvh; border: 0; border-radius: 0; box-shadow: none; }
+  .rc-dialog > header { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: 6px; min-height: var(--mobile-bar-height); padding: env(safe-area-inset-top) var(--space-2) 0; }
+  .rc-dialog > header .ib[data-close] { order: -1; width: var(--touch-target); height: var(--touch-target); font-size: 16px; }
+  .rc-dialog > header h2 { font-size: var(--text-md); }
+  .rc-dialog > header .seg { grid-column: 1 / -1; grid-row: 2; height: 36px; margin: 0 var(--space-2) var(--space-2); }
+  .rc-dialog > header .seg button { flex: 1; justify-content: center; font-size: var(--text-base); }
+  .rc-dialog > header .rt-create { grid-column: 4; grid-row: 1; height: var(--touch-target); font-size: var(--text-sm); }
+  .rc-dialog .body { flex: 1; padding: var(--space-3); padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom)); }
+  .rc-dialog > footer { display: none; }
+  .rc-dialog .rt-foot-note { margin: 0; font-size: var(--text-sm); color: var(--color-muted); }
+  .rc-dialog .field, .rc-dialog select.field { height: 40px; font-size: 16px; }
+  .rc-fix { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .rc-fix label { min-height: 52px; font-size: var(--text-base); }
+  .rc-fix label span { font-size: var(--text-xs); }
+  .rc-picks { max-height: none; }
+  .rc-pick { min-height: 40px; padding: 8px 6px; font-size: var(--text-base); }
+  .rc-pick input { width: 18px; height: 18px; }
+  .rc-pick small { font-size: var(--text-sm); }
+  .rc-field > label, .rc-field > .lbl { font-size: var(--text-sm); }
+
+  /* Tooltips are hover-only (rule 5): the status and verdict chips open What these mean instead. */
+  .rc-tip { display: none !important; }
+}

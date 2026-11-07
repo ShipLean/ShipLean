@@ -14,6 +14,7 @@
   collapse rows and Feature sections; Group by Stories / People; the face filter. Moves never change a sprint.
     ?key=SHIP-103       a parent Feature (Reporting, with Dashboard widgets under it)
     ?view=people        opens grouped by People
+  At 900px and below feature-board-touch.css/js show the phone layout (SHIP-722); its states are listed there.
   The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot).
 -->
 <link rel="stylesheet" href="../tokens.css">
@@ -105,6 +106,7 @@
 .add:hover { background: var(--color-surface-2); color: var(--color-text); }
 @media (max-width: 900px) { .board { flex: none; max-height: 80vh; } }
 </style>
+<link rel="stylesheet" href="feature-board-touch.css">
 </head>
 <body>
 <div id="appbar"></div>
@@ -267,6 +269,7 @@
       return `<section class="fsec" id="sec-${f.key}">${sectionHead(f, i === 0)}${body}</section>`;
     }).join('');
     faces();
+    document.dispatchEvent(new CustomEvent('fb:render'));
   }
 
   function faces() {
@@ -324,9 +327,12 @@
   document.getElementById('groupSeg').addEventListener('click', e => { const b = e.target.closest('[data-g]'); if (b) setGroup(b.dataset.g); });
   const reset = () => { Object.assign(S, seed()); S.tasks = S.tasks.filter(t => S.parents.some(p => p.key === t.parent)); S.filter.clear(); S.closedSections.clear(); render(); toast('Board reset'); };
 
+  // The phone layout (feature-board-touch.js) reads the same state and calls the same move.
+  SL.fb = { S, columns, tree, cat, parentOf, featureOf, rollup, visible, ruleFor, sprintName, pill, move, render, setGroup, reset: () => reset(), KEY };
   setGroup(S.group);
   SL.preview([{ label: KEY === 'SHIP-101' ? 'Parent Feature' : 'Leaf Feature', run: () => { location.search = KEY === 'SHIP-101' ? '?key=SHIP-103' : ''; } }, { label: 'Reset', run: reset }]);
 })();
 </script>
+<script src="feature-board-touch.js"></script>
 </body>
 </html>

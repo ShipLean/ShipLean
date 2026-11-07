@@ -9,13 +9,15 @@
   Every retrospective whose work item finished (or rolled over) in the sprint, by category and grouped by theme.
   By work item shows each item's retros on one board, with the sub-agent's raw failure log underneath.
   SHIP-497: points are post-its in the fixed order Went well, Not in the plan, Went badly, Can be improved.
-  ?view=items opens By work item, ?decide=open shows only points to decide. Uses ../tokens.css, shiplean.css, shared.js,
+  ?view=items opens By work item, ?decide=open shows only points to decide. SHIP-727: retro-touch.css/js are the
+  phone and tablet layout (900px and below); their review states are listed in retro-touch.js. Uses ../tokens.css, shiplean.css, shared.js,
   retro-data.js and retro-cards.js; no build step.
 -->
 <link rel="stylesheet" href="../tokens.css">
 <link rel="stylesheet" href="shiplean.css">
 <link rel="stylesheet" href="retro.css">
 <link rel="stylesheet" href="retro-cards.css">
+<link rel="stylesheet" href="retro-touch.css">
 <script src="shared.js"></script>
 <script src="retro-data.js"></script>
 <script src="retro-cards.js"></script>
@@ -176,5 +178,6 @@
   SL.preview([{ label: 'By work item', run: () => document.querySelector('[data-view=items]').click() }]);
 })();
 </script>
+<script src="retro-touch.js"></script>
 </body>
 </html>

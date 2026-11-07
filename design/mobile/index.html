@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Touch shell (SHIP-713) · ShipLean design</title>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  :where(.grid, .flex) > * { min-width: 0; }
+  html { background: var(--color-bg); color: var(--color-text); }
+  body { margin: 0; font: var(--text-base)/1.55 var(--font-sans); -webkit-font-smoothing: antialiased; }
+  main { max-width: 1240px; margin: 0 auto; padding: 32px 28px 80px; }
+  h1 { font-size: 26px; line-height: 1.2; margin: 6px 0 8px; letter-spacing: -.01em; }
+  h2 { font-size: 19px; margin: 0 0 4px; letter-spacing: -.005em; }
+  h3 { font-size: var(--text-md); margin: 0 0 6px; }
+  p { margin: 0 0 10px; max-width: 78ch; }
+  .lede { font-size: 15px; color: var(--color-muted); max-width: 80ch; }
+  section { margin-top: 44px; }
+  .sub { color: var(--color-muted); margin-bottom: 18px; }
+  .over { font-size: var(--text-2xs); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--color-muted); }
+  .key { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--color-muted); }
+  .pill { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px; border-radius: 999px; background: var(--color-surface-2); font-size: var(--text-xs); font-weight: 500; white-space: nowrap; }
+  .pill.ok { background: color-mix(in srgb, var(--color-ok) 18%, transparent); }
+  .pill.warn { background: color-mix(in srgb, var(--color-warn) 22%, transparent); }
+  .pill.bad { background: color-mix(in srgb, var(--color-danger) 18%, transparent); }
+  .pill.accent { background: var(--color-accent-soft); }
+  .card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 16px 18px; }
+  .grid { display: grid; gap: 16px; }
+  .g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  @media (max-width: 980px) { .g2, .g3 { grid-template-columns: minmax(0, 1fr); } }
+  .bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .seg { display: inline-flex; border: 1px solid var(--color-border); border-radius: var(--radius-sm); overflow: hidden; background: var(--color-surface); }
+  .seg button { border: 0; border-right: 1px solid var(--color-border); background: transparent; padding: 5px 11px; font: inherit; font-size: var(--text-sm); color: var(--color-muted); cursor: pointer; }
+  .seg button:last-child { border-right: 0; }
+  .seg button[aria-pressed="true"] { background: var(--color-accent-soft); color: var(--color-text); font-weight: 600; }
+
+  /* Hero summary */
+  .hero { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+  @media (max-width: 980px) { .hero { grid-template-columns: minmax(0, 1fr); } }
+  .scope li { margin: 3px 0; }
+  .scope { margin: 6px 0 0; padding-left: 18px; }
+
+  /* Phones */
+  .phone { --s: .62; width: calc(390px * var(--s)); flex: none; }
+  .phone .glass { width: calc(390px * var(--s)); height: calc(844px * var(--s)); border-radius: calc(38px * var(--s)); border: calc(7px * var(--s)) solid #1d2433; overflow: hidden; background: #1d2433; box-shadow: 0 10px 30px rgb(0 0 0 / .18); position: relative; }
+  .phone img { display: block; border: 0; width: 390px; height: 844px; transform: scale(var(--s)); transform-origin: 0 0; border-radius: 30px; background: var(--color-bg); }
+  .phone .glass > * { width: 390px; height: 844px; }
+  .phone figcaption { margin-top: 8px; font-size: var(--text-sm); }
+  .phone figcaption b { display: block; }
+  .phone figcaption span { color: var(--color-muted); font-size: var(--text-xs); }
+  figure { margin: 0; }
+  .strip { display: flex; gap: 22px; overflow-x: auto; padding: 4px 2px 14px; }
+
+  /* Prototype */
+  .proto { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 28px; align-items: start; }
+  @media (max-width: 860px) { .proto { grid-template-columns: minmax(0, 1fr); } }
+  .proto .phone { --s: .82; }
+  .states { display: grid; gap: 6px; }
+  .states button { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; align-items: start; text-align: left; padding: 9px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-text); font: inherit; cursor: pointer; }
+  .states button[aria-pressed="true"] { border-color: var(--color-accent); background: var(--color-accent-soft); }
+  .states button .n { font: 600 var(--text-xs)/22px var(--font-mono); color: var(--color-muted); }
+  .states button b { display: block; font-size: var(--text-base); }
+  .states button span span { color: var(--color-muted); font-size: var(--text-sm); }
+  .hint { font-size: var(--text-xs); color: var(--color-muted); }
+
+  /* Problems */
+  .probs { counter-reset: p; display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+  .probs li { counter-increment: p; display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; }
+  .probs li::before { content: counter(p); display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: color-mix(in srgb, var(--color-danger) 18%, transparent); color: var(--color-text); font: 600 var(--text-xs)/1 var(--font-sans); }
+  .probs b { display: block; }
+  .probs span { color: var(--color-muted); font-size: var(--text-sm); }
+
+  /* Anatomy */
+  .anat { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 22px; }
+  .abar { display: flex; align-items: center; gap: 4px; height: 52px; max-width: 390px; padding: 0 4px; border: 1px dashed var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); position: relative; }
+  .abar .z { position: relative; display: grid; place-items: center; height: 44px; border-radius: 8px; outline: 1px dashed color-mix(in srgb, var(--color-accent) 60%, transparent); }
+  .abar .z i { position: absolute; top: -10px; right: -6px; width: 18px; height: 18px; border-radius: 50%; background: var(--color-accent); color: var(--color-accent-fg); font: 600 10px/18px var(--font-sans); text-align: center; font-style: normal; }
+  .abar .t { flex: 1; display: grid; place-items: start; line-height: 1.25; padding: 0 4px; height: 44px; align-content: center; }
+  .abar .t small { font-size: var(--text-2xs); color: var(--color-muted); }
+  .abar .t b { font-size: var(--text-md); }
+  .av { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; color: #fff; font: 600 9px/1 var(--font-sans); box-shadow: 0 0 0 2px var(--color-surface); }
+  .live { width: 7px; height: 7px; border-radius: 50%; background: var(--color-ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-ok) 22%, transparent); }
+  .legend { margin: 18px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+  .legend li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; font-size: var(--text-sm); }
+  .legend li i { width: 18px; height: 18px; border-radius: 50%; background: var(--color-accent); color: var(--color-accent-fg); font: 600 10px/18px var(--font-sans); text-align: center; font-style: normal; }
+  .legend li span { color: var(--color-muted); }
+
+  /* Rules table */
+  table.rules { width: 100%; border-collapse: collapse; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; }
+  table.rules th, table.rules td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--color-border); font-size: var(--text-sm); }
+  table.rules th { background: var(--color-surface-2); font-size: var(--text-xs); color: var(--color-muted); font-weight: 600; }
+  table.rules td:first-child { font-weight: 600; white-space: nowrap; }
+  table.rules tr:last-child td { border-bottom: 0; }
+  .wrap { overflow-x: auto; }
+
+  /* Mini mocks (static) */
+  .mini { width: 300px; border-radius: 22px; border: 6px solid #1d2433; background: var(--color-bg); overflow: hidden; font-size: 12px; box-shadow: 0 8px 22px rgb(0 0 0 / .15); }
+  .mini .mb { display: flex; align-items: center; gap: 6px; height: 44px; padding: 0 8px; background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+  .mini .mb .ham { font-size: 16px; width: 28px; text-align: center; }
+  .mini .mb .tt { flex: 1; line-height: 1.2; }
+  .mini .mb .tt small { display: block; font-size: 9.5px; color: var(--color-muted); }
+  .mini .tb { display: flex; gap: 6px; align-items: center; padding: 8px; background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+  .mini .b { display: inline-flex; align-items: center; height: 30px; padding: 0 9px; border: 1px solid var(--color-border); border-radius: 6px; background: var(--color-surface); font-size: 11.5px; white-space: nowrap; }
+  .mini .b.p { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-fg); }
+  .mini .b.on { background: var(--color-accent-soft); }
+  .mini .rows div { display: flex; gap: 6px; align-items: center; height: 40px; padding: 0 10px; border-bottom: 1px solid var(--color-border); background: var(--color-surface); }
+  .mini .ti { display: inline-grid; place-items: center; width: 14px; height: 14px; border-radius: 3px; color: #fff; font: 700 8px/1 var(--font-sans); background: var(--type-story); }
+  .mini .sheet { margin-top: -6px; border-radius: 14px 14px 0 0; background: var(--color-surface); border-top: 1px solid var(--color-border); box-shadow: 0 -10px 30px rgb(0 0 0 / .18); padding: 6px 0 10px; position: relative; }
+  .mini .sheet::before { content: ""; display: block; width: 32px; height: 4px; border-radius: 2px; margin: 0 auto 6px; background: var(--color-border); }
+  .mini .sheet .sh { display: flex; justify-content: space-between; padding: 2px 14px 6px; font-weight: 600; }
+  .mini .sheet .sh a { color: var(--color-accent); font-weight: 500; text-decoration: none; }
+  .mini .sheet .r { display: flex; align-items: center; justify-content: space-between; height: 42px; padding: 0 14px; border-top: 1px solid var(--color-border); }
+  .mini .tabs5 { display: grid; grid-template-columns: repeat(5, 1fr); height: 54px; background: var(--color-surface); border-top: 1px solid var(--color-border); font-size: 9.5px; text-align: center; color: var(--color-muted); }
+  .mini .tabs5 div { display: grid; align-content: center; gap: 2px; }
+  .mini .tabs5 div b { font-size: 15px; font-weight: 400; }
+  .mini .tabs5 .on { color: var(--color-accent); font-weight: 600; }
+  .mini .dim { opacity: .45; }
+  .tog { width: 28px; height: 16px; border-radius: 8px; background: var(--color-surface-2); border: 1px solid var(--color-border); position: relative; }
+  .tog.on { background: var(--color-accent); border-color: var(--color-accent); }
+  .tog::after { content: ""; position: absolute; top: 1px; left: 1px; width: 12px; height: 12px; border-radius: 50%; background: #fff; }
+  .tog.on::after { left: 13px; }
+
+  /* Options compare */
+  .opt { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 18px; align-items: start; }
+  @media (max-width: 760px) { .opt { grid-template-columns: minmax(0, 1fr); } }
+  .opt.rec { border-color: var(--color-accent); box-shadow: 0 0 0 1px var(--color-accent); }
+  .pc { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: var(--text-sm); }
+  .pc li::before { content: "+ "; color: var(--color-ok); font-weight: 700; }
+  .pc li.con::before { content: "− "; color: var(--color-danger); }
+
+  /* Decisions */
+  .dec { display: grid; gap: 12px; }
+  .q { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 14px 16px; }
+  .q legend { padding: 0; font-weight: 600; font-size: var(--text-md); }
+  .q fieldset { border: 0; margin: 0; padding: 0; }
+  .q .why { color: var(--color-muted); font-size: var(--text-sm); margin: 2px 0 8px; }
+  .q label { display: flex; gap: 8px; align-items: flex-start; padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer; font-size: var(--text-base); }
+  .q label:hover { background: var(--color-surface-2); }
+  .q label:has(input:checked) { background: var(--color-accent-soft); }
+  .q input[type=radio] { margin-top: 4px; accent-color: var(--color-accent); }
+  .q label small { color: var(--color-muted); display: block; font-size: var(--text-sm); }
+  .rec-tag { font-size: var(--text-2xs); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--color-accent); margin-left: 6px; }
+  .submit { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+  .btn { height: 34px; padding: 0 14px; border-radius: var(--radius-sm); border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); font: inherit; font-weight: 500; cursor: pointer; }
+  .btn.primary { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-fg); }
+  textarea { width: 100%; min-height: 70px; padding: 8px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); font: inherit; }
+  .status { font-size: var(--text-sm); color: var(--color-muted); }
+</style>
+</head>
+<body>
+<main>
+
+<header class="hero">
+  <div>
+    <div class="bar"><span class="pill accent">SHIP-713</span><span class="pill">User Story · 5 pts · Sprint 2</span><span class="pill">Feature SHIP-707</span></div>
+    <h1>Mobile navigation and shared app shell</h1>
+    <p class="lede">The frame every screen sits in, redesigned for phones: one top bar, a navigation drawer, the project picker as a bottom sheet and quick search taking the whole screen. Above 900px nothing changes.</p>
+    <div class="bar" style="margin-top:12px">
+      <span class="hint">Theme for every phone on this page</span>
+      <div class="seg" role="group" aria-label="Theme" id="themeSeg">
+        <button type="button" data-t="light" aria-pressed="true">Light</button><button type="button" data-t="dark" aria-pressed="false">Dark</button>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="over">Scope</div>
+    <ul class="scope">
+      <li><b>In:</b> the side menu, project picker, quick search, top bar (where you are, presence, Live), user menu, and the rules every page follows on a phone (toolbars, tabs, inputs, sheets, toasts, safe areas).</li>
+      <li><b>Out:</b> page bodies. Lists, boards and forms are SHIP-714 to SHIP-737, and they build on this. Instance settings stay desktop only.</li>
+      <li><b>Where it lives:</b> <span class="key">design/screens/shared.js</span> and <span class="key">shiplean.css</span>, so every reference screen gets the new frame under 900px. The rules are in <span class="key">design/README.md</span>, “Touch shell (SHIP-713)”.</li>
+    </ul>
+  </div>
+</header>
+
+<section id="today">
+  <h2>Today on a phone</h2>
+  <p class="sub">The real app at 390 × 844 (iPhone 14 size), seeded local instance, built from main at 918cf067.</p>
+  <div class="grid" style="grid-template-columns:auto minmax(0,1fr);gap:28px;align-items:start">
+    <div class="strip" style="padding:0">
+      <figure class="phone"><div class="glass"><img src="images/today-backlog.png" alt="Today: Stories backlog at 390px"></div><figcaption><b>Stories backlog</b><span>Menu strip wraps to three rows</span></figcaption></figure>
+      <figure class="phone"><div class="glass"><img src="images/today-picker.png" alt="Today: project picker at 390px"></div><figcaption><b>Project picker</b><span>A 300px desktop popover</span></figcaption></figure>
+      <figure class="phone"><div class="glass"><img src="images/today-search.png" alt="Today: quick search at 390px"></div><figcaption><b>Quick search</b><span>Close to right already</span></figcaption></figure>
+    </div>
+    <ol class="probs">
+      <li><div><b>165px of frame before any content</b><span>The menu strip wraps to three rows (about 125px) and the breadcrumb bar adds 38px. That is 20% of the screen, and it all scrolls away, so going somewhere else means scrolling back to the top.</span></div></li>
+      <li><div><b>Epics, Features, the current sprint and the retro pages can't be reached</b><span>Sub-items are hidden under 900px (<span class="key">NavItem.tsx:21</span>, <span class="key">max-[900px]:hidden</span>). Backlogs always opens Stories, Sprints always opens All sprints, and the toolbar has no level switch.</span></div></li>
+      <li><div><b>Text fields zoom the page on iPhone</b><span>The picker's search is 12px and quick search is 14px. iOS Safari zooms in on any field under 16px and doesn't zoom back out.</span></div></li>
+      <li><div><b>Desktop affordances on a touch screen</b><span>30px nav rows, an <span class="key">Esc</span> key cap in quick search, and "Search this list ( / )" and Keys in the backlog toolbar.</span></div></li>
+      <li><div><b>Two breakpoints that disagree by one pixel</b><span>The shell switches at <span class="key">max-[900px]</span> and quick search at <span class="key">max-[899px]</span>, so at exactly 900px you get a strip menu with a desktop dialog.</span></div></li>
+      <li><div><b>No safe areas</b><span>The viewport meta has no <span class="key">viewport-fit=cover</span> and nothing uses <span class="key">env(safe-area-inset-*)</span>, so toasts and sheets can sit under the home indicator.</span></div></li>
+    </ol>
+  </div>
+</section>
+
+<section id="proto">
+  <h2>Proposed: try it</h2>
+  <p class="sub">Pick a state to see it. To use it for real, open the live screen: it is the reference screen in <span class="key">../screens/</span>, so make the window narrower than 900px (or use the browser's device mode) and tap Menu, the project button, Search and the user.</p>
+  <div class="proto">
+    <figure class="phone"><div class="glass"><img id="protoImg" alt="Touch shell, closed" src="images/shell.light.png"></div></figure>
+    <div>
+      <div class="states" role="group" aria-label="Prototype state" id="states">
+        <button type="button" aria-pressed="true" data-img="shell" data-live="backlog.html"><span class="n">1</span><span><b>Any screen, closed</b><span>Menu · breadcrumb (cut from the left) · +n who else is here · Live · Search. The bar stays at the top while the page scrolls.</span></span></button>
+        <button type="button" aria-pressed="false" data-img="drawer" data-live="backlog.html?nav"><span class="n">2</span><span><b>Drawer</b><span>The side menu slides in over the page. Every sub-page shows, so any screen is one tap away: levels as a row of three, the current sprint and All sprints, and the retro pages.</span></span></button>
+        <button type="button" aria-pressed="false" data-img="picker" data-live="backlog.html?picker"><span class="n">3</span><span><b>Switch project</b><span>A bottom sheet over the drawer with 48px rows. The keyboard waits until you tap the field, so the list isn't covered. Picking a project opens the same screen there and closes everything.</span></span></button>
+        <button type="button" aria-pressed="false" data-img="search" data-live="backlog.html?search"><span class="n">4</span><span><b>Quick search</b><span>The whole screen, the field at the top with Cancel, a 16px font, no key caps. Same groups as today: Recent, then Actions.</span></span></button>
+        <button type="button" aria-pressed="false" data-img="search-results" data-live="backlog.html?search=pay"><span class="n">5</span><span><b>Quick search, typing “pay”</b><span>Work items, Sprints, Projects, then Actions. Rows are 52px with the key under the title.</span></span></button>
+        <button type="button" aria-pressed="false" data-img="user-menu" data-live="backlog.html?usermenu"><span class="n">6</span><span><b>User menu</b><span>At the bottom of the drawer, opening upwards as on a desktop, with 44px items.</span></span></button>
+        <button type="button" aria-pressed="false" data-img="reconnecting" data-live="taskboard.html?offline"><span class="n">7</span><span><b>Reconnecting</b><span>Live is just the dot on a phone. Reconnecting gets its word back, because that's the state you need to notice.</span></span></button>
+        <button type="button" aria-pressed="false" data-img="profile" data-live="profile.html"><span class="n">8</span><span><b>A page with no project</b><span>Your profile, New project: the trail starts at ShipLean and there's no Live dot. The drawer keeps the project you came from.</span></span></button>
+      </div>
+      <p style="margin-top:10px"><a id="liveLink" href="../screens/backlog.html">Open this state live ↗</a></p>
+      <p class="hint" style="margin-top:10px">These are the reference screens with the new frame. The pages inside them (tables, boards) are still desktop layouts; their phone versions are the other SHIP-707 stories.</p>
+    </div>
+  </div>
+</section>
+
+<section id="gallery">
+  <h2>Every state, side by side</h2>
+  <p class="sub">Swipe sideways. The theme switch at the top applies to all of them. <span class="key">screenshots.sh</span> regenerates these images.</p>
+  <div class="strip" id="gallery-strip">
+    <figure class="phone"><div class="glass"><img loading="lazy" alt="Backlog" data-img="shell" src="images/shell.light.png"></div><figcaption><b>Stories backlog</b><span>Closed: 52px bar instead of 165px</span></figcaption></figure>
+    <figure class="phone"><div class="glass"><img loading="lazy" alt="Drawer" data-img="drawer" src="images/drawer.light.png"></div><figcaption><b>Drawer</b><span>One tap to any screen</span></figcaption></figure>
+    <figure class="phone"><div class="glass"><img loading="lazy" alt="Drawer in Sprints" data-img="drawer-sprints" src="images/drawer-sprints.light.png"></div><figcaption><b>Drawer from the Taskboard</b><span>Sprints is the active section</span></figcaption></figure>
+    <figure class="phone"><div class="glass"><img loading="lazy" alt="Picker" data-img="picker" src="images/picker.light.png"></div><figcaption><b>Switch project</b><span>Bottom sheet</span></figcaption></figure>
+    <figure class="phone"><div class="glass"><img loading="lazy" alt="Search" data-img="search" src="images/search.light.png"></div><figcaption><b>Quick search</b><span>Recent and Actions</span></figcaption></figure>
+    <figure class="phone"><div class="glass"><img loading="lazy" alt="Search results" data-img="search-results" src="images/search-results.light.png"></div><figcaption><b>Quick search, “pay”</b><span>Results grouped</span></figcaption></figure>
+    <figure class="phone"><div class="glass"><img loading="lazy" alt="User menu" data-img="user-menu" src="images/user-menu.light.png"></div><figcaption><b>User menu</b><span>In the drawer</span></figcaption></figure>
+    <figure class="phone"><div class="glass"><img loading="lazy" alt="Sprint tabs" data-img="sprint-tabs" src="images/sprint-tabs.light.png"></div><figcaption><b>Sprint backlog</b><span>Sprint tabs scroll sideways</span></figcaption></figure>
+    <figure class="phone"><div class="glass"><img loading="lazy" alt="Reconnecting" data-img="reconnecting" src="images/reconnecting.light.png"></div><figcaption><b>Reconnecting</b><span>The word comes back</span></figcaption></figure>
+    <figure class="phone"><div class="glass"><img loading="lazy" alt="Profile" data-img="profile" src="images/profile.light.png"></div><figcaption><b>Your profile</b><span>No project, no Live</span></figcaption></figure>
+  </div>
+</section>
+
+<section id="anatomy">
+  <h2>The top bar</h2>
+  <p class="sub">52px under 900px (plus the notch), sticky. The page's own toolbar scrolls away under it.</p>
+  <div class="anat">
+    <div class="abar" aria-label="Top bar anatomy">
+      <span class="z" style="width:44px"><svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13"/></svg><i>1</i></span>
+      <span class="z t" style="display:flex;align-items:center;gap:5px;justify-content:flex-end;overflow:hidden;white-space:nowrap;-webkit-mask-image:linear-gradient(to right,transparent,#000 18px);mask-image:linear-gradient(to right,transparent,#000 18px)"><small style="font-size:var(--text-sm)">P › Sprints › Sprint 24 ›</small><b>Taskboard</b></span><span style="position:relative;width:0"><i style="position:absolute;top:-24px;right:4px;width:18px;height:18px;border-radius:50%;background:var(--color-accent);color:var(--color-accent-fg);font:600 10px/18px var(--font-sans);text-align:center;font-style:normal">2</i></span>
+      <span class="z" style="padding:0 4px;display:flex"><span class="pill" style="font-weight:600">+2</span><i>3</i></span>
+      <span class="z" style="width:20px"><span class="live"></span><i>4</i></span>
+      <span class="z" style="width:44px"><svg viewBox="0 0 16 16" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3.5 3.5" stroke-linecap="round"/></svg><i>5</i></span>
+    </div>
+    <ul class="legend">
+      <li><i>1</i><div><b>Menu</b> <span>44 × 44. Opens the drawer and moves focus to its Close button; Esc, Close or the scrim closes it.</span></div></li>
+      <li><i>2</i><div><b>Where you are</b> <span>The desktop breadcrumb on one line. When it doesn't fit, it is cut from the left behind a short fade, so the screen's name always shows (D4).</span></div></li>
+      <li><i>3</i><div><b>Presence</b> <span>A count only, +2 for two other people (avatars stay on a desktop). Tapping lists everyone, as today (D6).</span></div></li>
+      <li><i>4</i><div><b>Live</b> <span>The dot alone. Reconnecting shows the word, in the warn colour.</span></div></li>
+      <li><i>5</i><div><b>Search</b> <span>Opens quick search full screen. It replaces the ⌘P chip, which means nothing without a keyboard.</span></div></li>
+    </ul>
+  </div>
+</section>
+
+<section id="rules">
+  <h2>Rules every page follows on a phone</h2>
+  <p class="sub">The shell sets these once. The SHIP-714 to SHIP-737 page stories use them instead of each inventing their own. They'll go into <span class="key">design/README.md</span> as “Touch shell patterns”.</p>
+  <div class="wrap">
+  <table class="rules">
+    <thead><tr><th>Rule</th><th>What</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>One breakpoint: 900px</td><td>At 900px and below, the touch shell; above, the desktop shell. Quick search moves from 899 to 900 to match.</td><td>Phones and tablets in portrait get the same frame. One number to test.</td></tr>
+      <tr><td>Touch targets</td><td>Shell controls, drawer rows and sheet rows are at least <span class="key">--touch-target</span> (44px). Secondary chips are at least 36px. <b>Data rows keep the compact density.</b></td><td>Thumbs need the room on things you navigate with. Lists stay dense so you still see the backlog.</td></tr>
+      <tr><td>Inputs are 16px</td><td>Every text field, select and textarea uses <span class="key">--text-input-touch</span> under 900px.</td><td>Below 16px, iOS Safari zooms the page on focus and stays zoomed.</td></tr>
+      <tr><td>Only the top bar sticks</td><td>Page toolbars, sprint headers and filter strips scroll with the page.</td><td>Two sticky bars would take 100px+ of a 844px screen.</td></tr>
+      <tr><td>Toolbars: one row</td><td>Keep the page's primary action and the one control people use most. Everything else goes in a <b>⋯ More</b> bottom sheet. Filters get a <b>Filter</b> button with a count. Keyboard hints (<span class="key">/</span>, Keys) are hidden on touch.</td><td>Today's backlog toolbar is four rows tall on a phone.</td></tr>
+      <tr><td>Tabs scroll sideways</td><td>The sprint tabs (Backlog, Taskboard, Capacity, Retro, Demo) stay on one row and scroll, 36px tall.</td><td>Wrapping tabs read as two separate groups.</td></tr>
+      <tr><td>Menus and dialogs become sheets</td><td>Pickers and menus open as bottom sheets with a grab bar and Cancel. Dialogs that hold a form open full screen.</td><td>Popovers anchored to small buttons land off-screen or under the thumb.</td></tr>
+      <tr><td>Safe areas</td><td>Add <span class="key">viewport-fit=cover</span>; the top bar, drawer, sheets and toasts pad with <span class="key">env(safe-area-inset-*)</span>.</td><td>Notches and the home indicator.</td></tr>
+      <tr><td>No hover-only</td><td>Anything that shows only on hover (row actions, tooltips that hold information) needs a tap path.</td><td>There is no hover on a phone.</td></tr>
+      <tr><td>No swipe-to-open</td><td>The drawer opens from Menu only.</td><td>An edge swipe fights the browser's own back gesture on iOS and Android.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="grid g2" style="margin-top:18px">
+    <div class="card opt" style="grid-template-columns:auto minmax(0,1fr)">
+      <div class="mini" aria-label="Toolbar pattern mock" style="width:316px">
+        <div class="mb"><span class="ham">☰</span><span class="tt"><small>SHIP · Backlogs</small><b>Stories</b></span><span class="live" style="margin-right:6px"></span><span>⌕</span></div>
+        <div class="tb"><span class="b p">+ New</span><span class="b on">List</span><span class="b" style="margin-left:-7px;border-left:0">Planning</span><span style="flex:1"></span><span class="b">Filter 2</span><span class="b">⋯</span></div>
+        <div class="rows dim"><div><span class="ti">S</span>Pay with saved card</div><div><span class="ti">S</span>Address autocomplete</div></div>
+        <div class="sheet">
+          <div class="sh"><span>More</span><a href="#rules">Done</a></div>
+          <div class="r">Add many<span>›</span></div>
+          <div class="r">Show parents<span class="tog"></span></div>
+          <div class="r">Completed<span class="tog on"></span></div>
+          <div class="r">Columns<span>›</span></div>
+        </div>
+      </div>
+      <div><h3>Toolbar pattern, on the Stories backlog</h3><p class="hint">The four-row toolbar becomes one row: + New, the List/Planning switch, Filter with a count, and ⋯. Add many, Show parents, Completed and Columns move into the More sheet. Search this list moves into Filter. SHIP-716 builds this page; the shell provides the sheet and the ⋯ button.</p></div>
+    </div>
+    <div class="card">
+      <h3>What the shell provides to page stories</h3>
+      <ul class="scope">
+        <li><b>Sheet</b>: grab bar, title, Cancel or Done, safe-area padding, focus trap, closes on scrim or Esc.</li>
+        <li><b>More button</b> (⋯) that opens a Sheet with a page's overflow controls.</li>
+        <li><b>useTouchShell()</b>: true at 900px and below, so a page doesn't hard-code its own width.</li>
+        <li>Tokens: <span class="key">--touch-target</span>, <span class="key">--mobile-bar-height</span>, <span class="key">--drawer-width</span>, <span class="key">--text-input-touch</span> (added to <span class="key">tokens.css</span> and <span class="key">tokens.json</span>).</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="alts">
+  <h2>Navigation: drawer or bottom tabs</h2>
+  <p class="sub">The one choice that shapes the rest. I recommend the drawer.</p>
+  <div class="grid g2">
+    <div class="card opt rec">
+      <div class="mini" style="width:200px;font-size:10px">
+        <div class="mb" style="height:40px"><span class="ham">☰</span><span class="tt"><small>SHIP · Sprints · Sprint 24</small><b>Taskboard</b></span><span>⌕</span></div>
+        <div style="height:230px;background:repeating-linear-gradient(var(--color-bg) 0 34px, var(--color-surface-2) 34px 36px)"></div>
+      </div>
+      <div><h3>Drawer from a top bar <span class="rec-tag">Recommended</span></h3>
+        <ul class="pc"><li>Same menu as the desktop, so the model carries over and one component serves both</li><li>Room for everything: 6 sections and 11 sub-pages, one tap from the drawer</li><li>Boards and the Taskboard keep the full height</li><li class="con">Two taps to change section instead of one</li><li class="con">The menu is out of sight until you open it</li></ul>
+      </div>
+    </div>
+    <div class="card opt">
+      <div class="mini" style="width:200px;font-size:10px">
+        <div class="mb" style="height:40px"><span class="tt" style="padding-left:6px"><small>SHIP · Sprint 24</small><b>Taskboard</b></span><span>⌕</span></div>
+        <div style="height:176px;background:repeating-linear-gradient(var(--color-bg) 0 34px, var(--color-surface-2) 34px 36px)"></div>
+        <div class="tabs5"><div><b>☰</b>Backlogs</div><div><b>▦</b>Boards</div><div class="on"><b>◷</b>Sprints</div><div><b>↺</b>Retros</div><div><b>⋯</b>More</div></div>
+      </div>
+      <div><h3>Bottom tab bar</h3>
+        <ul class="pc"><li>One tap between the four main sections, in thumb reach</li><li>Familiar from native apps</li><li class="con">Another 54px plus the home indicator, on every screen, boards included</li><li class="con">Sub-pages still need a second control on each page (level switch, sprint tabs)</li><li class="con">Jira import, Settings and the project picker hide under More</li><li class="con">Two navigation models to build and test, desktop and phone</li></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="measure">
+  <h2>How we'll know it worked</h2>
+  <div class="card">
+    <p>Analytics are server-side (<span class="key">docs/analytics.md</span>), so the drawer opening isn't visible to them, but every screen view is. Proposal: add a <span class="key">viewport</span> property to <span class="key">screen.viewed</span> (<span class="key">phone</span> under 600px, <span class="key">tablet</span> up to 900px, <span class="key">desktop</span> above), sent by the SPA with the screen it already reports.</p>
+    <ul class="scope">
+      <li><b>Reach:</b> phone screen views per week as a share of all screen views, for the 4 weeks before release against the 4 weeks after.</li>
+      <li><b>Depth:</b> distinct screens per phone visit, against desktop visits in the same weeks. Today a phone visit can't reach Epics, Features or the retro pages, so this should rise.</li>
+      <li><b>Sub-pages:</b> phone views of Epics and Features backlogs and boards, the current sprint and Retrospectives › Insights per week. They are near zero now because there's no way to reach them.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="decide">
+  <h2>Decisions</h2>
+  <p class="sub">Settled by Joel on 7 Nov 2026: eight recommendations kept, two changed. The screens and images show the settled answers.</p>
+  <div class="wrap"><table class="rules"><thead><tr><th>#</th><th>Question</th><th>Answer</th><th></th></tr></thead><tbody><tr><td>D1</td><td>Navigation on phones</td><td>A drawer from a top-bar Menu button</td><td><span class="pill ok">As recommended</span></td></tr><tr><td>D2</td><td>Where the touch shell starts</td><td>900px and below: phones and portrait tablets</td><td><span class="pill ok">As recommended</span></td></tr><tr><td>D3</td><td>Sub-pages in the drawer</td><td>Always shown for every section</td><td><span class="pill ok">As recommended</span></td></tr><tr><td>D4</td><td>Where you are, in the top bar</td><td>The breadcrumb on one line, cut from the left</td><td><span class="pill warn">Changed: recommended two lines</span></td></tr><tr><td>D5</td><td>Quick search on a phone</td><td>The whole screen, with Cancel</td><td><span class="pill ok">As recommended</span></td></tr><tr><td>D6</td><td>Presence and Live on a phone</td><td>A count only (+3); Live as a dot, Reconnecting as a word</td><td><span class="pill warn">Changed: recommended two avatars then +n</span></td></tr><tr><td>D7</td><td>What sticks while scrolling</td><td>The top bar only; page toolbars scroll away</td><td><span class="pill ok">As recommended</span></td></tr><tr><td>D8</td><td>Density on phones</td><td>Shell controls 44px; data rows stay compact</td><td><span class="pill ok">As recommended</span></td></tr><tr><td>D9</td><td>Page toolbars</td><td>One shared pattern: one row, Filter, ⋯ More sheet</td><td><span class="pill ok">As recommended</span></td></tr><tr><td>D10</td><td>Measuring it</td><td>A viewport property (phone, tablet, desktop) on screen.viewed</td><td><span class="pill ok">As recommended</span></td></tr></tbody></table></div>
+</section>
+
+</main>
+<script>
+  // Theme for the page and every phone image; the state buttons swap the big phone and the live link.
+  let theme = 'light';
+  // A self-contained copy (attached to SHIP-713) carries its images in window.IMG and has no live screens to open.
+  const pic = name => (window.IMG && window.IMG[name]) || `images/${name}.png`;
+  if (window.IMG) document.getElementById('liveLink').parentElement.remove();
+  const root = document.documentElement;
+  const current = () => document.querySelector('#states [aria-pressed="true"]');
+  function draw() {
+    root.dataset.theme = theme;
+    document.querySelectorAll('#gallery-strip img[data-img]').forEach(i => { i.src = pic(`${i.dataset.img}.${theme}`); });
+    const b = current();
+    const img = document.getElementById('protoImg');
+    img.src = pic(`${b.dataset.img}.${theme}`);
+    img.alt = b.querySelector('b').textContent;
+    const live = b.dataset.live;
+    const link = document.getElementById('liveLink'); if (link) link.href = `../screens/${live}${live.includes('?') ? '&' : '?'}theme=${theme}`;
+  }
+  document.getElementById('themeSeg').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    theme = b.dataset.t;
+    document.querySelectorAll('#themeSeg button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    draw();
+  });
+  document.getElementById('states').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    document.querySelectorAll('#states button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    draw();
+  });
+  draw();
+</script>
+</body>
+</html>
