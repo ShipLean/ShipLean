@@ -176,10 +176,12 @@ public class AesGcmBackupCipherTests
         await Should.ThrowAsync<BackupDecryptException>(() => DecryptAsync(file));
     }
 
-    // uint.MaxValue iterations would take hours to derive, so finishing at all shows the header was refused first.
+    // int.MaxValue iterations would take many minutes to derive, so finishing within the minute shows the header was
+    // refused first.
     [TestCase(0u)]
     [TestCase(599_999u)]
     [TestCase(2_000_001u)]
+    [TestCase((uint)int.MaxValue)]
     [TestCase(uint.MaxValue)]
     public void Decrypt_WhenIterationsOutOfRange_ShouldThrowBeforeDeriving(uint iterations)
     {
