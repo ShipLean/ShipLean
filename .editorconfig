@@ -49,8 +49,9 @@ dotnet_naming_style.upper_case.capitalization = all_upper
 dotnet_naming_style.upper_case.word_separator = _
 
 # Analyzer tuning (SonarAnalyzer.CSharp + Agoda.Analyzers). Keep this list short; justify each line.
-# S1135: a plain `TODO:` comment is how temporary behaviour is marked (and listed in the slice report); the rule would fail the build on each.
-dotnet_diagnostic.S1135.severity = none
+# S1135: a plain `TODO:` comment is how temporary behaviour is marked (and listed in the slice report). Informational: each TODO
+# shows in the IDE's error list without failing the build (TreatWarningsAsErrors would turn a warning into an error).
+dotnet_diagnostic.S1135.severity = suggestion
 
 [src/ShipLean.WebApi.Tests/**.cs]
 # AG0010: fixtures inherit ApiFixture on purpose. It owns the cloned database, the running app and the
