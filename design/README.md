@@ -454,6 +454,22 @@ At 900px and below, the sprint Retro tab follows `screens/retro-touch.css` and `
 - **By work item:** a card per item with type, key, title, the four counts, "n to decide" and progress. Opened, it shows its notes by category (empty categories hidden), the raw failure log collapsed and "Open KEY retro ›".
 - **New action item:** full screen; ✕ top left, Create (Add for an existing item) top right, New | Add to existing under them; the "Starts in New" note at the end of the body. The title isn't focused on open.
 
+## Retrospective insights on a phone (SHIP-731)
+
+At 900px and below, Retrospective insights follows `screens/insights-touch.css` and `insights-touch.js`, which `retro-insights.html` loads (images and review in [mobile/README.md](mobile/README.md#retrospective-insights-on-a-phone-ship-731)). Above 900px nothing changes. The shared mobile rules are on SHIP-805 and aren't repeated here; nothing here changes them.
+
+**Decided 2026-11-07 (every recommendation kept):** one card per theme with a heat strip, tap for the rest (D1); three equal tabs, Themes | Action items | Impact (D2); Range ▾ opens a sheet with By sprint and By week, and Merge themes… goes in ⋯ (D3); everything about a theme in one bottom sheet (D4); a What these mean sheet from any chip, the heading and ⋯, and the theme sheet explains its own chips (D5); action items as cards, open first, then Done (D6); impact one card a row, the explanation folded into "How verdicts work", tap a bar to read it (D7); Merge themes full screen with ✕ top left and Merge top right, also offered from a theme's sheet (D8); Rename… in the theme sheet with Discard and Save (D9); no new analytics: `viewport` on `retro.themes_merged`, `retro.theme_renamed`, `retro.merge_kept_apart` and `retro.action_created` (D10).
+
+- **Toolbar:** three 40px tabs under the top bar, then Range ▾ · ⋯. ⋯ holds Merge themes…, Give unthemed points themes, What the statuses and verdicts mean, Search retrospectives and Retrospectives by Feature. Not sticky.
+- **Callouts:** the recurring callout as on desktop; a proposed merge stacks its two themes over full-width Keep apart and Merge.
+- **Theme card:** name and status chip; a heat strip of the shown sprints or weeks (12 cells at 12 weeks) with Total and "n no sprint"; action item chips or "+ Action item"; the last-change verdict. An axis line above the cards names the first and last column. Unthemed is last and dashed. Two a row on a tablet.
+- **Theme sheet:** what its status means; mentions per sprint or week with labels; no sprint and total; action items with titles and "+ Action item on n open points"; the last change with its meaning and before/after averages, and See it on Impact; the three latest mentions and All n in Search; Rename… and Merge into another theme….
+- **What keeps working:** a row per theme, the count on the right, the latest mention under it clamped to two lines.
+- **Action item card:** key, state, points; title; # theme (↻ Recurring); fix, covers, raised; sprint or Pull into the next sprint, owner, impact. Tapping opens the item full screen (SHIP-714).
+- **Impact card:** as desktop, one a row; tapping a bar outlines it and reads "S22: 3 mentions" under the chart.
+- **Merge themes:** full screen; 40px checkbox rows with point counts; Into is a 16px native select; Merge is disabled until a source and a target are picked.
+- **New action item:** the sprint Retro tab's full-screen dialog (SHIP-727 D5 and D8).
+
 ## Backlog patterns (`screens/backlog.html`, `screens/features.html`)
 
 - **List and Planning are two modes of the Stories backlog.** List is the plain ranked backlog with Sprint and Assignee columns. Scheduled items stay in the list with a sprint chip, and the current sprint's chip is accent. Completed items are hidden unless **Completed** is ticked.

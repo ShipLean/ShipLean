@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Regenerates images/<name>.<theme>.png: the touch shell (SHIP-713), the work item page (SHIP-714, item-* and
 # feature-*), the boards (SHIP-719: board-*, features-board-*, epics-board-*) and the sprint Retro tab
-# (SHIP-727: sprint-retro-*), the Feature board (SHIP-722: fboard-*) and the sprint Taskboard (SHIP-725: tboard-*)
+# (SHIP-727: sprint-retro-*), Retrospective insights (SHIP-731: insights-*), the Feature board (SHIP-722: fboard-*) and the sprint Taskboard (SHIP-725: tboard-*)
 # on the reference screens at 390 × 844,
 # 2× scale, and the page stories' phone screens kept in this folder
 # (an address starting ./, such as SHIP-715's attachment.html).
@@ -148,6 +148,19 @@ declare -A shots=(
   [sprint-retro-items]="sprint-retro.html?view=items"
   [sprint-retro-item-open]="sprint-retro.html?view=items&open=SHIP-141"
   [sprint-retro-action]="sprint-retro.html?cat=unplanned&dialog=R-305.6"
+  # Retrospective insights (SHIP-731)
+  [insights]="retro-insights.html"
+  [insights-weeks]="retro-insights.html?range=w12"
+  [insights-theme]="retro-insights.html?sheet=theme:shots"
+  [insights-unthemed]="retro-insights.html?sheet=theme:none"
+  [insights-rename]="retro-insights.html?sheet=rename:shots"
+  [insights-defs]="retro-insights.html?sheet=defs:recurring"
+  [insights-range]="retro-insights.html?sheet=range"
+  [insights-more]="retro-insights.html?sheet=more"
+  [insights-actions]="retro-insights.html?view=actions"
+  [insights-impact]="retro-insights.html?view=impact"
+  [insights-merge]="retro-insights.html?merge=ciShots,shots"
+  [insights-action]="retro-insights.html?dialog=merge"
   # The Feature board (SHIP-722)
   [fboard]="feature-board.html"
   [fboard-active]="feature-board.html?col=active"

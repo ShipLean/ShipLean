@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SHIP-731 · Retrospective insights on a phone</title>
 <link rel="stylesheet" href="../tokens.css">
+<script type="application/json" data-lavish-revisions>
+[{ "id": "r1", "label": "Round 1", "timestamp": "2026-11-07T11:30:00Z", "summary": "Joel kept every recommendation (D1–D10); marked decided, images and docs added to PR #69" }]
+</script>
 <style>
 *, *::before, *::after { box-sizing: border-box; }
 html { background: var(--color-bg); color: var(--color-text); }
@@ -113,10 +116,11 @@ ol.ac { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 980px
   <p class="lead">Insights has three views over every retro in the project: <b>Recurring themes</b> (a heat table of mentions per sprint or week, with status, action items and the last change), <b>Action items</b> (a 10-column table) and <b>Changes &amp; impact</b> (a chart per closed action item). At 900px and below this design keeps every number and every action, and changes how they fit. <b>Each theme becomes a card with a heat strip, and tapping it opens everything about the theme in one sheet. Action items become cards. Impact charts sit one a row, and you tap a bar to read it. The three views are equal tabs, Range and ⋯ share one row, and Merge themes opens full screen.</b></p>
   <div class="chips">
     <span class="chip accent">Design only · nothing built</span>
-    <span class="chip">Branch <code>design/731-mobile-retro-insights</code>, for PR #69</span>
+    <span class="chip">Branch <code>design/731-mobile-retro-insights</code> on PR #69</span>
     <span class="chip">New: <code>design/screens/insights-touch.css</code>, <code>insights-touch.js</code>, loaded by <code>retro-insights.html</code></span>
     <span class="chip">Follows SHIP-805. Drawn as SHIP-805 recommends for its open points: C4 (sheet with Close on the right), C5 (native select for Into) and C9 (✕ at the top left)</span>
     <span class="chip">Reuses SHIP-727's sheet and full-screen New action item dialog (its D8)</span>
+    <span class="chip accent" data-lavish-revision="r1">Decisions settled 7 Nov: every recommendation kept</span>
   </div>
 </header>
 
@@ -189,7 +193,7 @@ ol.ac { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 980px
 <section class="block">
   <div class="sec-head"><div>
     <h2>Decisions</h2>
-    <p class="muted sm">Each one is set to the recommendation. Change any, add a note, then Queue decisions and Send to agent.</p>
+    <p class="muted sm" data-lavish-revision="r1">Settled 7 Nov: you kept every recommendation, and the phones above show them. Change any, add a note, then Queue decisions and Send to agent.</p>
   </div></div>
   <form id="decisions" data-lavish-question="ship-731-decisions">
     <div class="decisions" id="dlist"></div>
@@ -206,7 +210,7 @@ ol.ac { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 980px
 <section class="block">
   <div class="sec-head"><div>
     <h2>Proposed acceptance criteria for SHIP-731</h2>
-    <p class="muted sm">These assume every recommendation is kept. They go on SHIP-731 once you've settled the decisions.</p>
+    <p class="muted sm">With the decisions as settled on 7 Nov. They're on SHIP-731.</p>
   </div></div>
   <div class="card"><ol class="ac">
     <li>At 390 × 844, in both themes, Retrospective insights has no page-level sideways scroll in any view, range (6, 3 and all sprints, 6 and 12 weeks), sheet or full-screen view. Above 900px nothing changes.</li>
@@ -341,7 +345,7 @@ ol.ac { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 980px
   document.getElementById('dlist').innerHTML = D.map(([id, title, why, opts]) => `<fieldset class="d" data-id="${id}">
     <legend><span class="id">${id}</span>${title}</legend>
     <span class="why">${why}</span>
-    ${opts.map(([o, s], i) => `<label class="opt"><input type="radio" name="${id}" value="${o.replace(/"/g, '&quot;')}"${i === 0 ? ' checked' : ''}><span>${o}${i ? '' : '<span class="rec">Recommended</span>'}<small>${s}</small></span></label>`).join('')}
+    ${opts.map(([o, s], i) => `<label class="opt"><input type="radio" name="${id}" value="${o.replace(/"/g, '&quot;')}"${i === 0 ? ' checked' : ''}><span>${o}${i ? '' : '<span class="rec">Recommended</span><span class="same">Decided 7 Nov</span>'}<small>${s}</small></span></label>`).join('')}
     <textarea name="${id}-note" placeholder="Note (optional)" aria-label="${id} note"></textarea>
   </fieldset>`).join('');
 

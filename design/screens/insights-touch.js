@@ -143,7 +143,7 @@
       const v = a.state === 'Closed' ? verdict(a.theme) : null;
       const covers = retros.flatMap(r => r.points).filter(p => p.action === a.key).length;
       return `<article class="it-act" data-open-item="${a.key}">
-        <header>${tIcon(a.type)}<span class="key">${a.key}</span>${SL.st(a.state)}<span class="spacer"></span><span class="pts">${a.points} pts</span></header>
+        <header>${tIcon(a.type)}<span class="key">${a.key}</span>${SL.st(a.state)}<span class="spacer"></span><span class="pts">${a.points} pt${a.points === 1 ? "" : "s"}</span></header>
         <b class="t">${esc(a.title)}</b>
         <div class="it-meta"><span># ${esc(themes[a.theme].name)}</span>${recurring(a.theme) ? '<span class="chip warn">↻ Recurring</span>' : ''}</div>
         <div class="it-meta muted">${a.fix ? `Fix: ${fixLabel(a.fix)} · ` : ''}covers ${covers} point${covers === 1 ? '' : 's'} · raised ${a.raised}</div>

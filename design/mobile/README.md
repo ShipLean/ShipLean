@@ -381,6 +381,48 @@ The sprint Retro tab at 900px and below, inside the touch shell. Desktop is unch
 
 The decisions are in [design/README.md › Sprint retro on a phone](../README.md#sprint-retro-on-a-phone-ship-727).
 
+## Retrospective insights on a phone (SHIP-731)
+
+Retrospective insights at 900px and below, inside the touch shell. Desktop is unchanged.
+
+| File | What it is |
+|---|---|
+| `../screens/insights-touch.css`, `insights-touch.js` | The touch layer, loaded by `retro-insights.html` (which exposes its state and rules as `window.INS`). `?sheet=range\|more\|defs\|defs:<status or verdict>\|theme:<theme>\|rename:<theme>`, `?merge=<theme>,<theme>` (Merge themes), `?dialog=<theme>` (New action item), `?alt=table\|list` (the D1 alternatives), plus the page's own `?view=themes\|actions\|impact` and `?range=6\|3\|all\|w6\|w12`; `?notouch` shows the desktop page at any width. |
+| `insights-review.html` | The design review: today, the three ways to fit the themes table, every state as a live frame, what changes, the decisions and the acceptance criteria. |
+| `images/insights*.png` | Insights at 390 × 844, 2× scale, light and dark (made by `screenshots.sh`). |
+| `images/today-insights*.png` | The real SPA (main at 918cf067) at 390px and 768px, full page, from the page-shot fixtures in a component harness. |
+
+### Today
+
+| Recurring themes | Action items | Changes & impact | Tablet, 768px |
+|---|---|---|---|
+| ![Today: Status, Action items and Last change off screen](images/today-insights.png) | ![Today: 10 columns](images/today-insights-actions.png) | ![Today: Changes & impact](images/today-insights-impact.png) | ![Today: a tablet](images/today-insights-tablet.png) |
+
+1. The view switch doesn't fit: "Changes & impact" is off screen.
+2. The themes table has 13 columns; Status, Action items and Last change are behind a sideways scroll. Theme names wrap every word.
+3. The Action items table has 10 columns; titles wrap to five lines.
+4. Status, Last change, No sprint and Unthemed explain themselves only in hover tooltips; ✎ and "+ Action item" are about 20px.
+5. Merge themes… is a 620px dialog with an 11px select.
+
+### The phone page
+
+| State | Light | Dark |
+|---|---|---|
+| Recurring themes | ![Recurring themes, light](images/insights.light.png) | ![Recurring themes, dark](images/insights.dark.png) |
+| Last 12 weeks | ![Last 12 weeks, light](images/insights-weeks.light.png) | ![Last 12 weeks, dark](images/insights-weeks.dark.png) |
+| A theme | ![A theme, light](images/insights-theme.light.png) | ![A theme, dark](images/insights-theme.dark.png) |
+| Unthemed | ![Unthemed, light](images/insights-unthemed.light.png) | ![Unthemed, dark](images/insights-unthemed.dark.png) |
+| Rename… | ![Rename…, light](images/insights-rename.light.png) | ![Rename…, dark](images/insights-rename.dark.png) |
+| What these mean | ![What these mean, light](images/insights-defs.light.png) | ![What these mean, dark](images/insights-defs.dark.png) |
+| Range | ![Range, light](images/insights-range.light.png) | ![Range, dark](images/insights-range.dark.png) |
+| ⋯ More | ![⋯ More, light](images/insights-more.light.png) | ![⋯ More, dark](images/insights-more.dark.png) |
+| Action items | ![Action items, light](images/insights-actions.light.png) | ![Action items, dark](images/insights-actions.dark.png) |
+| Changes & impact | ![Changes & impact, light](images/insights-impact.light.png) | ![Changes & impact, dark](images/insights-impact.dark.png) |
+| Merge themes | ![Merge themes, light](images/insights-merge.light.png) | ![Merge themes, dark](images/insights-merge.dark.png) |
+| New action item | ![New action item, light](images/insights-action.light.png) | ![New action item, dark](images/insights-action.dark.png) |
+
+The decisions are in [design/README.md › Retrospective insights on a phone](../README.md#retrospective-insights-on-a-phone-ship-731).
+
 ## Sprint Taskboard (SHIP-725)
 
 The sprint Taskboard (`/p/:key/sprints/:id/taskboard`) at 900px and below, inside the touch shell. Desktop is unchanged. The board works like the Feature board (SHIP-722): one task state a page in a sideways pager with state chips, every story a lane on every page, closed stories one line each, ⋯ and long-press drag. The header is SHIP-724's shared sprint header. What only the Taskboard has: Unparented as the last lane, Pick up always visible, "All tasks done" in the lane, a teammate's move pulsing its state chip, and Taskboard settings full screen. The decisions (D1–D20, settled by Joel on 7 Nov 2026) are in [design/README.md › Sprint Taskboard on a phone](../README.md#sprint-taskboard-on-a-phone-ship-725) and on SHIP-725.
