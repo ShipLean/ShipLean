@@ -2,7 +2,6 @@ using System.Diagnostics.Metrics;
 using System.Text;
 using Dapper;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;
 using Npgsql;
@@ -45,8 +44,7 @@ public class BackupJobTests
     private ScriptedMirror _mirror = null!;
     private RecordingUsageEvents _usage = null!;
     private RecordingLogger<BackupJob> _logger = null!;
-    private ServiceProvider _services = null!;
-    private IMeterFactory _meters = null!;
+    private ScopedMeterFactory _meters = null!;
     private DirectoryInfo _temp = null!;
     private BackupJob _job = null!;
 
@@ -63,8 +61,7 @@ public class BackupJobTests
         _mirror = new ScriptedMirror();
         _usage = new RecordingUsageEvents();
         _logger = new RecordingLogger<BackupJob>();
-        _services = new ServiceCollection().AddMetrics().BuildServiceProvider();
-        _meters = _services.GetRequiredService<IMeterFactory>();
+        _meters = new ScopedMeterFactory();
         _temp = Directory.CreateTempSubdirectory("shiplean-job-tests-");
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?> { [BackupTempFiles.TempKey] = _temp.FullName })
@@ -81,7 +78,7 @@ public class BackupJobTests
             await lease.DisposeAsync();
         }
         _leases.Clear();
-        await _services.DisposeAsync();
+        _meters.Dispose();
         await _dataSource.DisposeAsync();
         await _database.DisposeAsync();
         _temp.Delete(recursive: true);
@@ -155,17 +152,19 @@ public class BackupJobTests
     [Test]
     public async Task Run_WhenUploadFails_ShouldFailAndNotPrune()
     {
-        var config = Config(keepCount: 1, includeAttachments: true);
-        var first = await RunAsync(config);
+        var first = await RunAsync(Config(includeAttachments: true));
+        var second = await RunAsync(Config(includeAttachments: true));
         _destination.Fail(BackupProbeResult.WriteStep);
+        // KeepCount 1 would prune the first run, if a failed run pruned at all.
+        var config = Config(keepCount: 1, includeAttachments: true);
 
-        var second = await RunAsync(config);
+        var third = await RunAsync(config);
 
-        second.State.ShouldBe(BackupRunState.Failed);
-        second.Error.ShouldNotBeNull().ShouldStartWith("The upload failed: The in-memory destination was told to fail at write");
-        (await _log.UnprunedSuccessesAsync(config.DestinationId)).Select(r => r.Id).ShouldBe([first.Id]);
-        (await KeysAsync()).ShouldBe([first.DatabaseObjectKey!]);
-        _mirror.Calls.Count.ShouldBe(1);
+        third.State.ShouldBe(BackupRunState.Failed);
+        third.Error.ShouldNotBeNull().ShouldStartWith("The upload failed: The in-memory destination was told to fail at write");
+        (await _log.UnprunedSuccessesAsync(config.DestinationId)).Select(r => r.Id).ShouldBe([second.Id, first.Id]);
+        (await KeysAsync()).ShouldBe(new[] { first.DatabaseObjectKey!, second.DatabaseObjectKey! }.Order(StringComparer.Ordinal));
+        _mirror.Calls.Count.ShouldBe(2);
     }
 
     [Test]
@@ -239,15 +238,24 @@ public class BackupJobTests
     {
         var config = Config(keepCount: 1, includeAttachments: true);
         var first = await RunAsync(config);
+        var stepCancelled = false;
         _dumper.AfterWrite = async (_, token) =>
         {
             await TerminateLeaseConnectionAsync();
             _clock.Advance(BackupLease.CheckInterval);
-            await CancellationOfAsync(token);
+            try
+            {
+                await CancellationOfAsync(token);
+            }
+            finally
+            {
+                stepCancelled = token.IsCancellationRequested;
+            }
         };
 
         var second = await RunAsync(config);
 
+        stepCancelled.ShouldBeTrue();
         second.State.ShouldBe(BackupRunState.Failed);
         second.Error.ShouldBe(BackupJob.LeaseLostError);
         (await KeysAsync()).ShouldBe([first.DatabaseObjectKey!]);
