@@ -30,7 +30,7 @@ The screens here are reference designs for every page of the v1 domain model: **
 | `screens/feature-board.html` | **Feature board**: the Taskboard grid for one Feature's stories and bugs in any sprint, opened from **Task board** on the Feature form. A parent Feature gets one board section per Feature in its tree. `?key=SHIP-103` opens a parent Feature, `?view=people` groups by People. |
 | `screens/sprint-retro.html` | **Sprint Retro tab** (SHIP-82): every retrospective on items that finished or rolled over in the sprint. By category (Went well, Not in the plan, Went badly, Can be improved), grouped by theme, or By work item (`?view=items`) with each sub-agent's raw failure log. Points are post-its (SHIP-497). `?decide=open` shows only points to decide. Rail: coverage, action items, recurring themes. |
 | `screens/sprint-demo.html` | **Sprint Demo tab** (SHIP-303): Sprint 23's demo video, after Retro. `?state=closable\|none\|blocked\|working\|failed\|ready\|youtube-unlisted\|youtube-private\|youtube-failed` (default ready). |
-| `screens/retros.html` | **Retrospectives › Search** (SHIP-82): one row per point from every retro in the project, filtered by text, sprint, category, theme, level and author; the selected point's whole retro on the right. `?q=` prefills the search. |
+| `screens/retros.html` | **Retrospectives › Search** (SHIP-82): one row per point from every retro in the project, filtered by text, sprint, category, theme, level, author, decision, No sprint, Unthemed and Recurring; the selected point's whole retro on the right. Every filter is in the address, as in the real app (`?q=`, `?theme=`, …). At 900px and below, `search-touch.css`/`.js` (SHIP-730). |
 | `screens/retros-features.html` | **Retrospectives › Features** (SHIP-497): one row per Feature with counts per category and how many points are decided, plus stories and bugs with no Feature. `?show=open\|waiting` filters. |
 | `screens/retro-item.html` | **Retrospectives › one item** (SHIP-497): all of a work item's retros on one board, with a retro filter, raw failure logs and, for a Feature, a row per story and bug. `?key=`, `?retro=`, `?decide=open`, `?dialog=action`, `?why=<point>` and `?adding=<item>:<category>` open those states. |
 | `screens/retro-notes.html` | **Retro note states** (SHIP-497): every state of a point's post-it, side by side. A reference, not a page in the app. |
@@ -469,6 +469,20 @@ At 900px and below, Retrospective insights follows `screens/insights-touch.css` 
 - **Impact card:** as desktop, one a row; tapping a bar outlines it and reads "S22: 3 mentions" under the chart.
 - **Merge themes:** full screen; 40px checkbox rows with point counts; Into is a 16px native select; Merge is disabled until a source and a target are picked.
 - **New action item:** the sprint Retro tab's full-screen dialog (SHIP-727 D5 and D8).
+
+## Retrospectives search on a phone (SHIP-730)
+
+At 900px and below, Retrospectives › Search follows `screens/search-touch.css` and `search-touch.js`, which `retros.html` loads (images and review in [mobile/README.md](mobile/README.md#retrospectives-search-on-a-phone-ship-730)). Above 900px nothing changes. The shared mobile rules are on SHIP-805 and aren't repeated here; nothing here changes them.
+
+**Decided 2026-11-07 (every recommendation kept):** one row per point on three lines: category and key, the point on two lines with the match marked, theme, sprint and author (D1); the whole retro opens full screen, ✕ at the top left, the retro named in the title slot, scrolled to the point (D2); the Filter sheet has choice chips for Category, Level, Written by and Decision, native selects for Sprint and Theme, and switches for No sprint, Unthemed and Recurring themes only (D3); each active filter is a chip under the bar with ✕, and Clear all with two or more (D4); ‹ › at the top right of the open retro step through the results, with “Result n of m” (D5); tablets get the phone layout (D6); no new analytics: `viewport` on `retro.searched` (D7).
+
+- **Toolbar:** the search field alone on the first row, full width, 40px, 16px text, keyboard key Search; then Filter (n) and “n points in m retros”; then the filter chips. Not sticky.
+- **Filter sheet:** changes apply as you pick and go in the address; the foot has Clear and “Show n points” with the live count.
+- **Result row:** category · key; the point, two lines, the match marked; “Root cause: …” when it matched there, or “Match in the raw failure log”; # theme, ↻, sprint, avatar. The whole row opens the retro.
+- **The open retro:** the desktop panel full screen: author, role and date, Open the item's retros and Sprint retro, the four categories stacked, the point outlined, Compiled from and the raw log. Opening adds a history entry (`selected`, `point`), so Back closes it; ‹ › replace it.
+- **Notes:** SHIP-727's touch notes; the # theme opens Move to theme, ⋯ on your own point opens Move to theme… and Archive; New action item is the shared full-screen dialog (SHIP-727 D5 and D8).
+- **No results:** says what was searched, with Clear search and filters.
+- **Mock only:** `retros.html`'s desktop filters now match the real app (No sprint, Unthemed, Clear, Undecided / Actioned / Not needed, every filter in the address). `?theme=` is both the theme filter and `shared.js`'s light/dark switch; `shared.js` now takes only `light` or `dark`.
 
 ## Backlog patterns (`screens/backlog.html`, `screens/features.html`)
 

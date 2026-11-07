@@ -423,6 +423,46 @@ Retrospective insights at 900px and below, inside the touch shell. Desktop is un
 
 The decisions are in [design/README.md › Retrospective insights on a phone](../README.md#retrospective-insights-on-a-phone-ship-731).
 
+## Retrospectives search on a phone (SHIP-730)
+
+Retrospectives › Search at 900px and below, inside the touch shell. Desktop is unchanged.
+
+| File | What it is |
+|---|---|
+| `../screens/search-touch.css`, `search-touch.js` | The touch layer, loaded by `retros.html` (which exposes its state and rules as `window.SRCH`). The page's own filters in the address (`?q`, `?sprint`, `?category`, `?theme`, `?level`, `?role`, `?decision`, `?noSprint`, `?unthemed`, `?recurring`), `?selected=<retro>&point=<point>` (the retro open), `?sheet=filter\|theme:<point>\|note:<point>`, `?dialog=<point>` (New action item), and the alternatives `?alt=line\|grouped` (D1), `sheet\|inline` (D2), `selects` (D3), `nochips` (D4), `nostep` (D5), `split` (D6), several with `+`; `?notouch` shows the desktop page at any width. |
+| `search-review.html` | The design review: today, the three result rows, the three places to open the retro, every state as a live frame, what changes, the decisions and the acceptance criteria. |
+| `images/retro-search*.png` | Search at 390 × 844, 2× scale, light and dark (made by `screenshots.sh`). |
+| `images/today-retro-search*.png` | The real SPA (PR #69 at 3c4b0bc3) at 390px and 768px, full page, from the page-shot fixtures in a component harness. |
+
+### Today
+
+| Search | With a search typed | Tablet, 768px |
+|---|---|---|
+| ![Today: the results column is 0px wide](images/today-retro-search.png) | ![Today: the filters take 240px and stick](images/today-retro-search-q.png) | ![Today: each point cut to three words](images/today-retro-search-tablet.png) |
+
+1. The results column is 0px wide at 390px (two columns: results and a 380px retro), so no result can be seen or tapped.
+2. The filters wrap onto seven rows (about 240px) and stick.
+3. The search box and selects are 13px; the checkboxes are 13px targets.
+4. The retro panel sticks with its own scroll box.
+5. On a 768px tablet each point is cut to three words; the full text is only on hover.
+
+### The phone page
+
+| State | Light | Dark |
+|---|---|---|
+| All points | ![All points, light](images/retro-search.light.png) | ![All points, dark](images/retro-search.dark.png) |
+| Searching “screenshot” | ![Searching, light](images/retro-search-q.light.png) | ![Searching, dark](images/retro-search-q.dark.png) |
+| A root-cause match | ![A root-cause match, light](images/retro-search-cause.light.png) | ![A root-cause match, dark](images/retro-search-cause.dark.png) |
+| Three filters set | ![Three filters set, light](images/retro-search-chips.light.png) | ![Three filters set, dark](images/retro-search-chips.dark.png) |
+| No results | ![No results, light](images/retro-search-empty.light.png) | ![No results, dark](images/retro-search-empty.dark.png) |
+| Filter | ![Filter, light](images/retro-search-filter.light.png) | ![Filter, dark](images/retro-search-filter.dark.png) |
+| The open retro | ![The open retro, light](images/retro-search-retro.light.png) | ![The open retro, dark](images/retro-search-retro.dark.png) |
+| Move to theme | ![Move to theme, light](images/retro-search-theme.light.png) | ![Move to theme, dark](images/retro-search-theme.dark.png) |
+| Your own point's ⋯ | ![A point's ⋯, light](images/retro-search-note.light.png) | ![A point's ⋯, dark](images/retro-search-note.dark.png) |
+| New action item | ![New action item, light](images/retro-search-action.light.png) | ![New action item, dark](images/retro-search-action.dark.png) |
+
+The decisions are in [design/README.md › Retrospectives search on a phone](../README.md#retrospectives-search-on-a-phone-ship-730).
+
 ## Sprint Taskboard (SHIP-725)
 
 The sprint Taskboard (`/p/:key/sprints/:id/taskboard`) at 900px and below, inside the touch shell. Desktop is unchanged. The board works like the Feature board (SHIP-722): one task state a page in a sideways pager with state chips, every story a lane on every page, closed stories one line each, ⋯ and long-press drag. The header is SHIP-724's shared sprint header. What only the Taskboard has: Unparented as the last lane, Pick up always visible, "All tasks done" in the lane, a teammate's move pulsing its state chip, and Taskboard settings full screen. The decisions (D1–D20, settled by Joel on 7 Nov 2026) are in [design/README.md › Sprint Taskboard on a phone](../README.md#sprint-taskboard-on-a-phone-ship-725) and on SHIP-725.

@@ -57,11 +57,14 @@
   /* Keep the address in step with the filters and the open retro, as the real app does (Back closes the retro). */
   function writeAddress(push) {
     const p = new URLSearchParams(location.search);
+    // The mock's light|dark switch shares ?theme= with the theme filter (shared.js); keep it, after the filter.
+    const colour = p.getAll('theme').find(t => t === 'light' || t === 'dark');
     ['q', ...F.map(f => f.k), ...FLAGS.map(f => f.k), 'selected', 'point'].forEach(k => p.delete(k));
     if (byId('q').value.trim()) p.set('q', byId('q').value.trim());
     F.forEach(f => { if (valOf(f)) p.set(f.k, valOf(f)); });
     FLAGS.forEach(f => { if (byId(f.id).checked) p.set(f.k, 'true'); });
     if (open) { p.set('selected', open.split('.')[0]); p.set('point', open); }
+    if (colour) p.append('theme', colour);
     const url = `${location.pathname}?${p}`.replace(/\?$/, '');
     if (url === location.pathname + location.search) return;
     try { history[push ? 'pushState' : 'replaceState'](null, '', url); } catch { /* file:// in some browsers */ }

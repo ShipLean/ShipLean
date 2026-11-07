@@ -71,7 +71,9 @@ table.list td.wrap { padding-top: 4px; padding-bottom: 4px; }
   const addr = new URLSearchParams(location.search);
   const SELECTS = { q: 'q', sprint: 'fSprint', category: 'fCat', theme: 'fTheme', level: 'fLevel', role: 'fBy', decision: 'fDecision' };
   const FLAGS = { noSprint: 'fNoSprint', unthemed: 'fUnthemed', recurring: 'fRecur' };
-  Object.entries(SELECTS).forEach(([k, id]) => { if (addr.get(k)) $(id).value = addr.get(k); });
+  // ?theme= is also shared.js's light|dark switch, so the theme filter takes only a theme's key.
+  const fromAddr = k => (k === 'theme' ? addr.getAll('theme').find(v => themes[v]) : addr.get(k));
+  Object.entries(SELECTS).forEach(([k, id]) => { if (fromAddr(k)) $(id).value = fromAddr(k); });
   Object.entries(FLAGS).forEach(([k, id]) => { $(id).checked = addr.get(k) === 'true'; });
 
   const rows = retros.flatMap(r => r.points.map((p, i) => ({ r, p, id: r.id + '.' + i })));

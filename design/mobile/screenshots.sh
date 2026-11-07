@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Regenerates images/<name>.<theme>.png: the touch shell (SHIP-713), the work item page (SHIP-714, item-* and
 # feature-*), the boards (SHIP-719: board-*, features-board-*, epics-board-*) and the sprint Retro tab
-# (SHIP-727: sprint-retro-*), Retrospective insights (SHIP-731: insights-*), the Feature board (SHIP-722: fboard-*) and the sprint Taskboard (SHIP-725: tboard-*)
+# (SHIP-727: sprint-retro-*), Retrospective insights (SHIP-731: insights-*), Retrospectives search (SHIP-730: retro-search-*), the Feature board (SHIP-722: fboard-*) and the sprint Taskboard (SHIP-725: tboard-*)
 # on the reference screens at 390 × 844,
 # 2× scale, and the page stories' phone screens kept in this folder
 # (an address starting ./, such as SHIP-715's attachment.html).
@@ -161,6 +161,17 @@ declare -A shots=(
   [insights-impact]="retro-insights.html?view=impact"
   [insights-merge]="retro-insights.html?merge=ciShots,shots"
   [insights-action]="retro-insights.html?dialog=merge"
+  # Retrospectives search (SHIP-730)
+  [retro-search]="retros.html"
+  [retro-search-q]="retros.html?q=screenshot"
+  [retro-search-cause]="retros.html?q=rediscovered"
+  [retro-search-chips]="retros.html?theme=shots&decision=undecided&recurring=true"
+  [retro-search-empty]="retros.html?q=zzz&category=well"
+  [retro-search-filter]="retros.html?sheet=filter&category=bad&role=sub-agent&recurring=true"
+  [retro-search-retro]="retros.html?selected=R-305&point=R-305.2"
+  [retro-search-theme]="retros.html?selected=R-305&point=R-305.2&sheet=theme:R-305.2"
+  [retro-search-note]="retros.html?selected=R-303&point=R-303.0&sheet=note:R-303.0"
+  [retro-search-action]="retros.html?selected=R-305&point=R-305.7&dialog=R-305.7"
   # The Feature board (SHIP-722)
   [fboard]="feature-board.html"
   [fboard-active]="feature-board.html?col=active"

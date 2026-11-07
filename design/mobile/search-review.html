@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SHIP-730 · Retrospectives search on a phone</title>
 <link rel="stylesheet" href="../tokens.css">
+<script type="application/json" data-lavish-revisions>
+[{ "id": "r1", "label": "Round 1", "timestamp": "2026-11-07T12:00:00Z", "summary": "Joel kept every recommendation (D1–D7); marked decided, images and docs added to PR #69" }]
+</script>
 <style>
 *, *::before, *::after { box-sizing: border-box; }
 html { background: var(--color-bg); color: var(--color-text); }
@@ -119,6 +122,7 @@ ol.ac { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 980px
     <span class="chip">New: <code>design/screens/search-touch.css</code>, <code>search-touch.js</code>, loaded by <code>retros.html</code></span>
     <span class="chip">Follows SHIP-805. Drawn as SHIP-805 recommends for its open points: C4 (sheet with Close on the right), C5 (native selects for Sprint and Theme) and C9 (✕ at the top left)</span>
     <span class="chip">Reuses SHIP-727's sheet, theme picker, note ⋯ and full-screen New action item (its D8)</span>
+    <span class="chip accent" data-lavish-revision="r1">Decisions settled 7 Nov: every recommendation kept</span>
   </div>
 </header>
 
@@ -197,7 +201,7 @@ ol.ac { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 980px
 <section class="block">
   <div class="sec-head"><div>
     <h2>Decisions</h2>
-    <p class="muted sm">Each starts on the recommendation, which is what the phones above show. Every alternative can be viewed: the links under each decision open it in a new tab. Change any, add a note, then Queue decisions and Send to agent.</p>
+    <p class="muted sm" data-lavish-revision="r1">Settled 7 Nov: you kept every recommendation, and the phones above show them. Every alternative can still be viewed from the links under each decision.</p>
   </div></div>
   <form id="decisions" data-lavish-question="ship-730-decisions">
     <div class="decisions" id="dlist"></div>
@@ -214,7 +218,7 @@ ol.ac { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 980px
 <section class="block">
   <div class="sec-head"><div>
     <h2>Proposed acceptance criteria for SHIP-730</h2>
-    <p class="muted sm">Written for the recommendations. They change with the decisions, and go on SHIP-730 once you've settled them.</p>
+    <p class="muted sm" data-lavish-revision="r1">With the decisions as settled on 7 Nov. They're on SHIP-730.</p>
   </div></div>
   <div class="card"><ol class="ac">
     <li>At 390 × 844, in both themes, Retrospectives › Search has no page-level sideways scroll with any filter, search, open retro, sheet or full-screen view. Above 900px nothing changes.</li>
@@ -229,7 +233,7 @@ ol.ac { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 980px
     <li>+ Action item opens the shared full-screen New action item dialog from SHIP-727, seeded with the point.</li>
     <li>No results shows what was searched and a Clear search and filters button when anything is set.</li>
     <li>On a 768px tablet the layout is the phone's, rows at full width.</li>
-    <li>Page screenshots at 390 × 844 in both themes sit next to the desktop ones: retros-search, retros-search-filter, retros-search-retro and retros-search-empty.</li>
+    <li>Page screenshots at 390 × 844 in both themes sit next to the desktop ones: the results, the Filter sheet, the open retro and No results.</li>
     <li>Analytics: nothing new. The <code>viewport</code> stamped on <code>retro.searched</code> lets us compare searches per week on phones and on desktop, against the share of Search <code>screen.viewed</code> from phones, for four weeks before and after this ships.</li>
   </ol></div>
 </section>
@@ -246,7 +250,7 @@ ol.ac { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 980px
     <div class="card"><h3>Not in this design</h3><ul>
       <li>Matching and filtering don't change: the rows, counts and raw-log rule are the server's, as now.</li>
       <li>No sort, saved searches or recent searches: desktop has none either.</li>
-      <li>The mock's desktop filters caught up with the real app (No sprint, Unthemed, Clear, Undecided / Actioned / Not needed, every filter in the address). Its desktop look is otherwise unchanged; its page shots get regenerated with the phone ones.</li>
+      <li>The mock's desktop filters caught up with the real app (No sprint, Unthemed, Clear, Undecided / Actioned / Not needed, every filter in the address). Its desktop look is otherwise unchanged, and its page shots are regenerated.</li>
     </ul></div>
   </div>
 </section>
@@ -341,7 +345,7 @@ ol.ac { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 980px
   document.getElementById('dlist').innerHTML = D.map(([id, title, why, opts]) => `<fieldset class="d" data-id="${id}">
     <legend><span class="id">${id}</span>${title}</legend>
     <span class="why">${why}</span>
-    ${opts.map(([o, s, alt], i) => `<label class="opt"><input type="radio" name="${id}" value="${o.replace(/"/g, '&quot;')}"${i === 0 ? ' checked' : ''}><span>${o}${i ? '' : '<span class="rec">Recommended</span>'}<small>${s}${alt ? ` <a href="${href(alt)}" target="_blank" rel="noopener">View</a>` : ''}</small></span></label>`).join('')}
+    ${opts.map(([o, s, alt], i) => `<label class="opt"><input type="radio" name="${id}" value="${o.replace(/"/g, '&quot;')}"${i === 0 ? ' checked' : ''}><span>${o}${i ? '' : '<span class="rec">Recommended</span><span class="same">Decided 7 Nov</span>'}<small>${s}${alt ? ` <a href="${href(alt)}" target="_blank" rel="noopener">View</a>` : ''}</small></span></label>`).join('')}
     <textarea name="${id}-note" placeholder="Note (optional)" aria-label="${id} note"></textarea>
   </fieldset>`).join('');
 

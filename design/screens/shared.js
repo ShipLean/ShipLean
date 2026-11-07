@@ -12,7 +12,9 @@
 (() => {
   const params = new URLSearchParams(location.search);
   const root = document.documentElement;
-  if (params.get('theme')) root.dataset.theme = params.get('theme');
+  // Only light or dark: retros.html also uses ?theme= for its theme filter, as the real app does (SHIP-730).
+  const colour = params.getAll('theme').filter(t => t === 'light' || t === 'dark').pop();
+  if (colour) root.dataset.theme = colour;
   if (params.has('shot')) root.dataset.shot = '';
 
   const VELOCITY = 21; // average completed points over the last 3 sprints (20 · 22 · 21)
