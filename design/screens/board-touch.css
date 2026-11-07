@@ -1,0 +1,163 @@
+/*
+ * The Stories, Features and Epics boards in the touch shell (SHIP-719). Loaded after the board's own styles and
+ * shiplean.css by board.html and features-board.html. Follows SHIP-805 (the shared mobile rules); nothing here restates
+ * them, it only applies them to the boards. At 900px and below: one column at a time in a sideways pager (the next one
+ * peeks), a strip of column chips above it, the toolbar on one row (level · Filter · ⋯), Filter, ⋯ More, the card
+ * actions, the assignee menu, ⓘ and the Move to Done check as bottom sheets, a ⋯ on every card, and touch drag after
+ * a long press (the lifted card follows the finger; holding it at a screen edge turns the page). Above 900px nothing changes. board-touch.js builds the pager, the chips and the sheets.
+ */
+.bt-strip, .bt-pager, .bt-sheet, .bt-more, .card .bt-cm, .bt-meta, .bt-edge { display: none; }
+
+@media (max-width: 900px) {
+  /* SHIP-805 rules 11 and 13 (48px bar, 32px targets) until the token change lands in tokens.css. */
+  :root { --touch-target: 32px; --mobile-bar-height: 48px; --bt-col: min(calc(100vw - 48px), 340px); }
+  body { padding-bottom: env(safe-area-inset-bottom); }
+
+  /* Toolbar: one row, level · Filter (n) · ⋯ More (rule 8). Swimlanes, Cards and Board settings move into ⋯. */
+  .toolbar { flex-wrap: nowrap; gap: var(--space-2); padding: var(--space-2) var(--space-3) 0; border-bottom: 0; background: var(--color-bg); }
+  .toolbar #summary, .toolbar .check, .toolbar [aria-label="Cards"], .toolbar .sep, .toolbar a[href^="board-settings"] { display: none !important; }
+  .toolbar .seg button { height: var(--touch-target); padding: 0 10px; font-size: var(--text-sm); }
+  .toolbar #btnFilter { height: var(--touch-target); padding: 0 12px; font-size: var(--text-sm); }
+  .toolbar #btnFilter[data-n] { border-color: var(--color-accent); background: var(--color-accent-soft); color: var(--color-text); font-weight: var(--weight-semibold); }
+  .bt-more { display: inline-grid; place-items: center; width: var(--touch-target); height: var(--touch-target); flex: none; padding: 0; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); cursor: pointer; }
+  .bt-meta { display: flex; align-items: center; gap: 6px; padding: 6px var(--space-3) 0; font-size: var(--text-xs); color: var(--color-muted); background: var(--color-bg); }
+  .bt-meta b { color: var(--color-text); font-weight: var(--weight-semibold); }
+  .bt-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; }
+  .bt-meta .on { color: var(--color-accent); }
+
+  /* The filter bar lives in the Filter sheet; the desktop board is replaced by the pager. */
+  #fbar { display: none !important; }
+  .bt-sheet #fbar { display: grid !important; }
+  .board { flex: none; overflow: visible; }
+  .board > .bwrap { display: none; }
+  .banner { padding: 8px var(--space-3); flex-wrap: wrap; }
+
+  /* Column chips: one per column, its count against the WIP limit; the column on screen is highlighted. They scroll
+     with the page (rule 12), and sideways inside their own box when they don't fit. */
+  .bt-strip { display: flex; gap: 6px; padding: var(--space-2) var(--space-3); overflow-x: auto; scrollbar-width: none; background: var(--color-bg); }
+  .bt-strip::-webkit-scrollbar { display: none; }
+  .bt-strip button { flex: none; display: inline-flex; align-items: center; gap: 6px; height: var(--touch-target); padding: 0 12px; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-surface); color: var(--color-muted); font: inherit; font-size: var(--text-sm); font-weight: var(--weight-medium); cursor: pointer; }
+  .bt-strip button .n { font-size: var(--text-xs); font-variant-numeric: tabular-nums; }
+  .bt-strip button.over .n { padding: 0 5px; border-radius: 999px; background: color-mix(in srgb, var(--color-danger) 18%, transparent); color: var(--color-danger); font-weight: var(--weight-semibold); }
+  .bt-strip button[aria-current="true"] { border-color: var(--color-accent); background: var(--color-accent-soft); color: var(--color-text); font-weight: var(--weight-semibold); }
+
+  /* Pager: each column is a page, the next one peeks so you can see there is more. Snap per column; a tablet shows
+     two and a bit. */
+  .bt-pager { display: flex; align-items: flex-start; gap: var(--space-2); padding: 0 var(--space-3) var(--space-4); overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scroll-padding: 0 var(--space-3); scrollbar-width: none; }
+  .bt-pager::-webkit-scrollbar { display: none; }
+  .bt-page { flex: none; width: var(--bt-col); display: grid; gap: var(--space-2); align-content: start; scroll-snap-align: start; }
+  .bt-page .colh { position: static; grid-column: auto; padding: 8px 10px; }
+  .bt-page .colh .top { height: 24px; }
+  .bt-page .colh .nm { font-size: var(--text-md); }
+  .bt-page .colh .wip { font-size: var(--text-sm); }
+  .bt-page .colh .map, .bt-page .subh { font-size: var(--text-xs); height: auto; line-height: 1.4; white-space: normal; }
+  .bt-page .colh .ib { width: var(--touch-target); height: var(--touch-target); margin: -4px -6px -4px 0; font-size: var(--text-md); }
+  /* ⓘ as an icon: many phone fonts lack the glyph. */
+  .bt-page .colh .ib { font-size: 0; color: var(--color-muted); }
+  .bt-page .colh .ib::before { content: ""; width: 16px; height: 16px; background: currentColor; -webkit-mask: var(--info-icon) center / contain no-repeat; mask: var(--info-icon) center / contain no-repeat; }
+  :root { --info-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round'%3E%3Ccircle cx='8' cy='8' r='6.5'/%3E%3Cpath d='M8 7.2v4'/%3E%3Ccircle cx='8' cy='4.8' r='.4' fill='black'/%3E%3C/svg%3E"); }
+
+  /* Lanes inside a column: a short header per lane (Expedite, Default lane, or the Epic), then its cards. */
+  .bt-lane { display: grid; gap: 6px; }
+  .bt-lane .lane-h { position: static; height: auto; min-height: var(--touch-target); padding: 0; flex-wrap: wrap; row-gap: 0; }
+  .bt-lane .lane-h .ib { width: var(--touch-target); height: var(--touch-target); margin-left: -6px; }
+  .bt-lane .lane-h .chip { display: none; }
+  .bt-lane .lane-h b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bt-lane .lane-h .xs.muted { margin-left: auto; }
+  .bt-lane.collapsed .cell { display: none; }
+  .bt-sub { display: flex; align-items: baseline; gap: 6px; padding: 2px 2px 0; font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--color-muted); text-transform: uppercase; letter-spacing: .04em; }
+  .bt-sub b { color: var(--color-text); font-variant-numeric: tabular-nums; }
+  .bt-sub span { text-transform: none; letter-spacing: 0; font-weight: var(--weight-regular); }
+
+  .bt-page .cell { min-height: 48px; gap: var(--space-2); padding: var(--space-2); }
+  .bt-page .cell:empty::before { content: "No cards"; display: block; padding: 6px 4px; font-size: var(--text-xs); color: var(--color-muted); text-align: center; }
+  .bt-page .addc, .bt-page .cell .more { height: var(--touch-target); font-size: var(--text-sm); }
+  .bt-page .add-field .field { height: 36px; }
+
+  /* Cards: a little more air, a 32px ⋯ for the card's actions, and 32px people and roll-up buttons. */
+  .bt-page .card { padding: 8px 10px; gap: 6px; cursor: pointer; -webkit-touch-callout: none; user-select: none; }
+  .bt-page .card .r1 { min-height: 24px; }
+  .bt-page .card .r1 .key { font-size: var(--text-xs); }
+  .bt-page .card .cpts { margin-left: auto; }
+  .bt-page .card .ttl { font-size: var(--text-base); line-height: 1.4; }
+  .bt-page .card .pr { min-height: 24px; font-size: var(--text-xs); }
+  .bt-page .card .tag { height: 20px; font-size: var(--text-xs); }
+  .card .bt-cm { display: inline-grid; place-items: center; flex: none; width: var(--touch-target); height: var(--touch-target); margin: -6px -8px -6px -2px; padding: 0; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--color-muted); cursor: pointer; }
+  .card .bt-cm:active { background: var(--color-surface-2); }
+  .bt-page .take { width: var(--touch-target); height: var(--touch-target); place-items: center; margin: -4px -6px -4px 0; }
+  .bt-page .anns { height: var(--touch-target); padding: 0 8px 0 6px; margin-left: -6px; border-color: var(--color-border); font-size: var(--text-xs); }
+  .bt-page .alldone { padding: 4px 4px 4px 10px; }
+  .bt-page .alldone .btn { height: var(--touch-target); padding: 0 12px; font-size: var(--text-sm); }
+  .bt-page .kids { gap: 0; }
+  .bt-page .kid { height: auto; min-height: var(--touch-target); }
+  .bt-page .kid-add .btn { height: var(--touch-target); padding: 0 10px; font-size: var(--text-sm); }
+  /* Touch drag: the lifted card follows the finger; the original stays faded where it was; the edges light up while
+     holding there turns the page. */
+  :root[data-dragging] { user-select: none; -webkit-user-select: none; }
+  :root[data-dragging] .bt-pager { scroll-snap-type: none; }
+  .bt-ghost.card { position: fixed; left: 0; top: 0; z-index: 80; margin: 0; padding: 8px 10px; gap: 6px; pointer-events: none; box-shadow: 0 18px 36px rgb(0 0 0 / .3), 0 0 0 2px var(--color-accent); transition: none; }
+  .bt-ghost .ttl { font-size: var(--text-base); }
+  .bt-edge { position: fixed; top: calc(var(--mobile-bar-height) + env(safe-area-inset-top)); bottom: 0; z-index: 75; width: 28px; place-items: center; font-size: 22px; color: var(--color-accent); pointer-events: none; }
+  .bt-edge.left { left: 0; background: linear-gradient(to right, color-mix(in srgb, var(--color-accent) 22%, transparent), transparent); }
+  .bt-edge.right { right: 0; background: linear-gradient(to left, color-mix(in srgb, var(--color-accent) 22%, transparent), transparent); }
+  :root[data-dragging] .bt-edge { display: grid; opacity: .45; }
+  :root[data-dragging] .bt-edge.hot { opacity: 1; }
+  .bt-page .card.lifted { transform: scale(.98); box-shadow: 0 0 0 2px var(--color-accent); transition: transform .12s, box-shadow .12s; }
+
+  /* Bottom sheets (SHIP-805 C4 as recommended): grab bar, title left, Close right, scrim tap closes. */
+  .bt-sheet { position: fixed; inset: auto 0 0 0; z-index: 70; display: flex; flex-direction: column; max-height: 85dvh; padding-bottom: env(safe-area-inset-bottom); background: var(--color-surface); border-top: 1px solid var(--color-border); border-radius: var(--radius-lg) var(--radius-lg) 0 0; box-shadow: 0 -12px 32px rgb(0 0 0 / .22); }
+  .bt-sheet[hidden] { display: none; }
+  .bt-sheet::before { content: ""; align-self: center; flex: none; width: 36px; height: 4px; margin-top: 6px; border-radius: 2px; background: var(--color-border); }
+  .bt-sheet .sheet-head { flex: none; gap: var(--space-2); }
+  .bt-sheet .sheet-head b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bt-sheet .sb { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 var(--space-3) var(--space-3); display: grid; gap: var(--space-1); align-content: start; }
+  .bt-sheet .grp { padding: 10px 2px 2px; font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--color-muted); text-transform: uppercase; letter-spacing: .04em; }
+  .bt-sheet .row { display: flex; align-items: center; gap: var(--space-2); min-height: 40px; padding: 0 var(--space-2); border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--color-text); font: inherit; font-size: var(--text-base); text-align: left; cursor: pointer; width: 100%; }
+  .bt-sheet .row:active, .bt-sheet .row[aria-checked="true"] { background: var(--color-accent-soft); }
+  .bt-sheet .row .sub { margin-left: auto; font-size: var(--text-xs); color: var(--color-muted); white-space: nowrap; }
+  .bt-sheet .row .sub.over { color: var(--color-danger); font-weight: var(--weight-semibold); }
+  .bt-sheet .row .ck { width: 16px; flex: none; color: var(--color-accent); font-weight: var(--weight-bold); }
+  .bt-sheet .row[disabled] { cursor: default; color: var(--color-muted); }
+  .bt-sheet .row[disabled]:active { background: transparent; }
+  .bt-sheet .ident { display: grid; gap: 2px; padding: 2px 2px var(--space-2); border-bottom: 1px solid var(--color-border); }
+  .bt-sheet .ident .r { display: flex; align-items: center; gap: 6px; font-size: var(--text-xs); color: var(--color-muted); }
+  .bt-sheet .ident .t { font-size: var(--text-md); font-weight: var(--weight-semibold); line-height: 1.35; }
+  .bt-sheet .opt-row { display: flex; align-items: center; gap: var(--space-2); min-height: 44px; padding: 0 var(--space-2); font-size: var(--text-base); }
+  .bt-sheet .opt-row .seg { margin-left: auto; }
+  .bt-sheet .opt-row .seg button { height: var(--touch-target); padding: 0 12px; font-size: var(--text-sm); }
+  .bt-sheet .opt-row input[type=checkbox] { width: 20px; height: 20px; margin-left: auto; accent-color: var(--color-accent); }
+  .bt-sheet .opt-row + .opt-row { border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+  .bt-sheet a.row { text-decoration: none; }
+  .bt-sheet .hint { padding: 0 var(--space-2); font-size: var(--text-xs); color: var(--color-muted); }
+  .bt-sheet .foot { flex: none; display: flex; gap: var(--space-2); padding: var(--space-2) var(--space-3); border-top: 1px solid var(--color-border); }
+  .bt-sheet .foot .btn { flex: 1; justify-content: center; height: 40px; font-size: var(--text-base); }
+
+  /* Filter sheet: the desktop filter bar, one control per row */
+  .bt-sheet #fbar { gap: var(--space-3); padding: var(--space-2) 0 0; border: 0; background: transparent; font-size: var(--text-base); }
+  .bt-sheet #fbar .field[type=search] { width: 100%; height: 40px; }
+  .bt-sheet #fbar select.field { width: 100%; height: 40px; }
+  .bt-sheet #fbar .who { flex-wrap: wrap; gap: 6px; }
+  .bt-sheet #fbar .who > .sm { flex-basis: 100%; }
+  .bt-sheet #fbar .who button { height: var(--touch-target); min-width: var(--touch-target); }
+  .bt-sheet #fbar .who button .av { width: 26px; height: 26px; font-size: 11px; }
+  .bt-sheet #fbar #fclear, .bt-sheet #fbar .spacer { display: none; }
+  .bt-sheet #fbar #fcount { font-size: var(--text-xs); }
+
+  /* The page's popovers (ⓘ definition of done, Assign/Owner) and the Move to Done check become bottom sheets. */
+  .bpop { position: fixed; inset: auto 0 0 0 !important; z-index: 70; width: auto !important; max-height: 85dvh; overflow-y: auto; padding: 0 var(--space-4) calc(var(--space-4) + env(safe-area-inset-bottom)); border-radius: var(--radius-lg) var(--radius-lg) 0 0; border-width: 1px 0 0; box-shadow: 0 -12px 32px rgb(0 0 0 / .22); font-size: var(--text-base); }
+  .bpop::before { content: ""; justify-self: center; width: 36px; height: 4px; margin-top: 6px; border-radius: 2px; background: var(--color-border); }
+  .bpop .sheet-head { margin: 0 calc(-1 * var(--space-2)) 0 calc(-1 * var(--space-2)); padding-left: var(--space-2); }
+  .bpop > h3 { display: none; }
+  .bpop.menu { padding: 0 var(--space-3) calc(var(--space-3) + env(safe-area-inset-bottom)); }
+  .bpop.menu > .overline { display: none; }
+  .bpop.menu button { height: 40px; font-size: var(--text-base); }
+  .bpop.menu button .av { width: 24px; height: 24px; }
+  .bpop footer { font-size: var(--text-sm); }
+  .backdrop:has(.dialog.confirm) { place-items: end stretch; padding: 0; z-index: 70; }
+  .dialog.confirm { width: 100%; max-height: 85dvh; border-radius: var(--radius-lg) var(--radius-lg) 0 0; border-width: 1px 0 0; padding-bottom: env(safe-area-inset-bottom); }
+  .dialog.confirm > header { border-bottom: 0; padding-bottom: 0; }
+  .dialog.confirm > footer { flex-direction: column-reverse; align-items: stretch; background: transparent; border-top: 0; padding: var(--space-2) var(--space-4) var(--space-3); }
+  .dialog.confirm > footer .spacer { display: none; }
+  .dialog.confirm > footer .btn { justify-content: center; height: 40px; font-size: var(--text-base); }
+  .dialog.confirm .kid { min-height: var(--touch-target); }
+}
