@@ -423,6 +423,47 @@ Retrospective insights at 900px and below, inside the touch shell. Desktop is un
 
 The decisions are in [design/README.md › Retrospective insights on a phone](../README.md#retrospective-insights-on-a-phone-ship-731).
 
+## Your profile on a phone (SHIP-733)
+
+Your profile at 900px and below: Profile, Password, Appearance, Your projects, Sessions and saved views, and Connected agents. Built on the touch shell; above 900px nothing changes, except that Revoke now asks first at every width (D4).
+
+| File | What it is |
+|---|---|
+| `../screens/profile-touch.css`, `../screens/profile-touch.js` | The phone and tablet layout, loaded by `../screens/profile.html`. `?dirty` (name edited) or `?dirty=colour`, `?pw` (Password open) or `?pw=typed`, `?leave=PAY`, `?revoke=cu`, `?agents=0`, `?photo`, `?at=password\|appearance\|projects\|sessions\|agents` (scrolled there; with `?shot` the panels above are hidden), `?notouch`. `?alt=index\|jump\|pwopen\|leavesheet\|scroll\|nodensity\|heading` show the options the decisions turned down. |
+| `profile-review.html` | The design review: today on a phone, every state and alternative as a live frame, a tablet, scope, what it takes to build, measuring and the decisions. |
+| `images/profile*.png` | `../screens/profile.html` at 390 × 844, 2× scale, light and dark (made by `screenshots.sh`). |
+| `images/today-profile*.png` | Before this change: the real app's `/profile` at 390 × 844 (and 820 × 1180), on a local seeded ShipLean, 7 Nov 2026. |
+
+### Today
+
+| The whole page | Profile | Password | The bottom |
+|---|---|---|---|
+| ![Today: the whole profile page on a phone](images/today-profile-full.png) | ![Today: Profile on a phone](images/today-profile.png) | ![Today: Password on a phone](images/today-profile-password.png) | ![Today: projects, sessions and agents on a phone](images/today-profile-agents.png) |
+
+1. 12px fields, so iOS Safari zooms the page; the fields are a fixed 280px.
+2. Profile's Save is at the bottom of the panel, a screen below the name.
+3. Password is always open: about 380px of empty fields.
+4. 20px colour swatches; 28px buttons and segments.
+5. Revoke cuts an agent off at once, with no second step.
+6. The Claude Code line is cut off at the panel's edge.
+
+### The phone page
+
+| State | Light | Dark |
+|---|---|---|
+| Opening the page | ![Opening the page, light](images/profile.light.png) | ![Opening the page, dark](images/profile.dark.png) |
+| Editing your name (Save bar) | ![Editing your name, light](images/profile-dirty.light.png) | ![Editing your name, dark](images/profile-dirty.dark.png) |
+| With a photo | ![With a photo, light](images/profile-photo.light.png) | ![With a photo, dark](images/profile-photo.dark.png) |
+| Password, closed | ![Password, closed, light](images/profile-password.light.png) | ![Password, closed, dark](images/profile-password.dark.png) |
+| Password, open and part typed | ![Password, open, light](images/profile-password-open.light.png) | ![Password, open, dark](images/profile-password-open.dark.png) |
+| Appearance | ![Appearance, light](images/profile-appearance.light.png) | ![Appearance, dark](images/profile-appearance.dark.png) |
+| Leaving a project | ![Leaving a project, light](images/profile-leave.light.png) | ![Leaving a project, dark](images/profile-leave.dark.png) |
+| Sessions and saved views | ![Sessions, light](images/profile-sessions.light.png) | ![Sessions, dark](images/profile-sessions.dark.png) |
+| Revoking an agent | ![Revoking an agent, light](images/profile-revoke.light.png) | ![Revoking an agent, dark](images/profile-revoke.dark.png) |
+| No agents connected | ![No agents, light](images/profile-no-agents.light.png) | ![No agents, dark](images/profile-no-agents.dark.png) |
+
+The decisions are in [design/README.md › Your profile on a phone](../README.md#your-profile-on-a-phone-ship-733).
+
 ## Sprint Taskboard (SHIP-725)
 
 The sprint Taskboard (`/p/:key/sprints/:id/taskboard`) at 900px and below, inside the touch shell. Desktop is unchanged. The board works like the Feature board (SHIP-722): one task state a page in a sideways pager with state chips, every story a lane on every page, closed stories one line each, ⋯ and long-press drag. The header is SHIP-724's shared sprint header. What only the Taskboard has: Unparented as the last lane, Pick up always visible, "All tasks done" in the lane, a teammate's move pulsing its state chip, and Taskboard settings full screen. The decisions (D1–D20, settled by Joel on 7 Nov 2026) are in [design/README.md › Sprint Taskboard on a phone](../README.md#sprint-taskboard-on-a-phone-ship-725) and on SHIP-725.

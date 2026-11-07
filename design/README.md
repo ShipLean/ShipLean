@@ -470,6 +470,20 @@ At 900px and below, Retrospective insights follows `screens/insights-touch.css` 
 - **Merge themes:** full screen; 40px checkbox rows with point counts; Into is a 16px native select; Merge is disabled until a source and a target are picked.
 - **New action item:** the sprint Retro tab's full-screen dialog (SHIP-727 D5 and D8).
 
+## Your profile on a phone (SHIP-733)
+
+At 900px and below, Your profile follows `screens/profile-touch.css` and `profile-touch.js`, which `profile.html` loads (images and review in [mobile/README.md](mobile/README.md#your-profile-on-a-phone-ship-733)). Above 900px the page stays as it is, except Revoke (D4). The shared mobile rules are on SHIP-805 and aren't repeated here; nothing here changes them.
+
+**Decided 2026-11-07 (every recommendation kept):** one long page of panels in the app's order: Profile, Password, Appearance, Your projects, Sessions and saved views, Connected agents (D1); Password is one row with Change password until it's tapped, at 900px and below only (D2); Leave asks first in the row, as on the desktop (D3); **Revoke asks first in the row, like Leave, at every width** (D4); the Claude Code line wraps, with a Copy button at 900px and below (D5); Density stays on phones (D6); no "Your profile" heading, since the top bar says it, and the intro line stays (D7); no new analytics: `viewport` on the existing events (D8).
+
+- **Panels:** one column, 12px gutters. A panel's meta line goes under its heading, full width.
+- **Forms:** labels above (`FormRow` at 900px and below, not only under 640px); fields full width, 36px, 16px text; buttons and segments 36px, segments equal width.
+- **Profile:** a 56px avatar; 32px colour swatches, five to a row. Save and Discard move to the shared `SaveBar` (rule 15) while something is unsaved: "Unsaved profile changes" · Discard · Save, or "Enter a name to save" with Save off.
+- **Password:** closed, the heading, its meta and Change password. Open: the three fields and the checks; Cancel and Change password share the footer row and "Forgot it?" goes under them. Cancel clears the fields and closes; a change closes it with the toast. Proxy and Google-only accounts still have no Password panel.
+- **Your projects:** two-line rows: the key, then the name over the role; Leave (or "Only admin") on the right, always showing. The confirmation stacks its text over Cancel and Leave, equal width.
+- **Connected agents:** three lines (name and host or unverified; scopes; last used and connected) and Revoke. Revoke opens a confirmation row like Leave's ("It stops working straight away, even mid-task"); Revoke there disconnects and shows the toast.
+- **Measuring:** compare `profile.updated` per profile `screen.viewed` per week on phones against the desktop, and phone profile views as a share of all profile views, over the 4 weeks before and after release.
+
 ## Backlog patterns (`screens/backlog.html`, `screens/features.html`)
 
 - **List and Planning are two modes of the Stories backlog.** List is the plain ranked backlog with Sprint and Assignee columns. Scheduled items stay in the list with a sprint chip, and the current sprint's chip is accent. Completed items are hidden unless **Completed** is ticked.

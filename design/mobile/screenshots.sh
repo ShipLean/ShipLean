@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Regenerates images/<name>.<theme>.png: the touch shell (SHIP-713), the work item page (SHIP-714, item-* and
 # feature-*), the boards (SHIP-719: board-*, features-board-*, epics-board-*) and the sprint Retro tab
-# (SHIP-727: sprint-retro-*), Retrospective insights (SHIP-731: insights-*), the Feature board (SHIP-722: fboard-*) and the sprint Taskboard (SHIP-725: tboard-*)
+# (SHIP-727: sprint-retro-*), Retrospective insights (SHIP-731: insights-*), Your profile (SHIP-733: profile-*), the Feature board (SHIP-722: fboard-*) and the sprint Taskboard (SHIP-725: tboard-*)
 # on the reference screens at 390 × 844,
 # 2× scale, and the page stories' phone screens kept in this folder
 # (an address starting ./, such as SHIP-715's attachment.html).
@@ -148,6 +148,16 @@ declare -A shots=(
   [sprint-retro-items]="sprint-retro.html?view=items"
   [sprint-retro-item-open]="sprint-retro.html?view=items&open=SHIP-141"
   [sprint-retro-action]="sprint-retro.html?cat=unplanned&dialog=R-305.6"
+  # Your profile (SHIP-733). ?at=<panel> with ?shot hides the panels above it.
+  [profile-dirty]="profile.html?dirty"
+  [profile-photo]="profile.html?photo"
+  [profile-password]="profile.html?at=password"
+  [profile-password-open]="profile.html?pw=typed&at=password"
+  [profile-appearance]="profile.html?at=appearance"
+  [profile-leave]="profile.html?leave=PAY&at=projects"
+  [profile-sessions]="profile.html?at=sessions"
+  [profile-revoke]="profile.html?revoke=cu&at=agents"
+  [profile-no-agents]="profile.html?agents=0&at=agents"
   # Retrospective insights (SHIP-731)
   [insights]="retro-insights.html"
   [insights-weeks]="retro-insights.html?range=w12"

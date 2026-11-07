@@ -6,7 +6,8 @@
 <title>ShipLean · SHIP-733 Your profile on a phone</title>
 <!-- SHIP-733 design review. Open directly in a browser (or over HTTP: iframes can render blank under file://). -->
 <script type="application/json" data-lavish-revisions>
-[{ "id": "r1", "label": "Round 1", "timestamp": "2026-11-07T12:00:00Z", "summary": "First draft: today at 390px, the proposed phone page, seven alternatives and D1–D8 for Joel" }]
+[{ "id": "r1", "label": "Round 1", "timestamp": "2026-11-07T12:00:00Z", "summary": "First draft: today at 390px, the proposed phone page, seven alternatives and D1–D8 for Joel" },
+ { "id": "r2", "label": "Round 2", "timestamp": "2026-11-07T13:00:00Z", "summary": "Joel kept all eight recommendations (D1–D8); recorded as settled" }]
 </script>
 <link rel="stylesheet" href="../tokens.css">
 <style>
@@ -128,7 +129,7 @@ table.data tr:last-child td { border-bottom: 0; }
 
   <section class="block" id="proposed">
     <h2>Proposed</h2>
-    <p class="sub">One column of panels in the app's order, 12px gutters. Labels above full-width 36px fields at 16px. Profile's Save and Discard move to the shared Save bar while something is unsaved. Password is one row until you tap Change password. Projects and agents are two- and three-line rows with Leave and Revoke always showing, and both ask first in the row. The page doesn't get shorter: closing Password saves about 370px, and the bigger fields and targets add about as much back (2,480px in the mock with three agents). Each decision's recommendation is drawn here; the A-phones show the options.</p>
+    <p class="sub">One column of panels in the app's order, 12px gutters. Labels above full-width 36px fields at 16px. Profile's Save and Discard move to the shared Save bar while something is unsaved. Password is one row until you tap Change password. Projects and agents are two- and three-line rows with Leave and Revoke always showing, and both ask first in the row. The page doesn't get shorter: closing Password saves about 370px, and the bigger fields and targets add about as much back (2,480px in the mock with three agents). Joel settled each decision on 7 Nov (below); the A-phones show the options turned down.</p>
     <div class="groups" id="groups"></div>
   </section>
 
@@ -188,10 +189,10 @@ table.data tr:last-child td { border-bottom: 0; }
 
   <section class="block" id="decisions">
     <h2>Decisions</h2>
-    <p class="sub">Each one starts on the recommendation. Change any, add a note, then Queue answers and press Send in the Lavish bar.</p>
+    <p class="sub" data-lavish-revision="r2"><b>Settled 7 Nov 2026:</b> Joel kept every recommendation, D1 to D8. The form below still works if you want to change one.</p>
     <form id="dform" class="qs" onsubmit="return false"></form>
     <div class="submit">
-      <span class="st" id="dstatus">8 decisions, all on the recommendation.</span>
+      <span class="st" id="dstatus">8 decisions, settled 7 Nov.</span>
       <button type="button" class="btn" id="copyAll">Copy all answers</button>
       <button type="button" class="btn pri" id="queue">Queue answers</button>
     </div>
@@ -215,7 +216,7 @@ table.data tr:last-child td { border-bottom: 0; }
     { title: 'Projects, sessions and agents', phones: [
       { id: 'P7', q: 'leave=PAY&at=projects', title: 'Leaving a project', dec: ['D3'], notes: ['Each project is two lines: the key, then its name over your role. Joined goes, as it already has in the app.', 'Leave is always showing (rule 5). It opens the confirmation under its row: the text, then Cancel and Leave side by side.', '"Only admin" stays in place of Leave on SHIP.'] },
       { id: 'P8', q: 'at=sessions', title: 'Sessions and saved views', dec: [], notes: ['No change apart from size: the text on the left, its button on the right.'] },
-      { id: 'P9', q: 'revoke=cx&at=agents', title: 'Revoking an agent', dec: ['D4', 'D5'], notes: ['Three lines per agent: name and host (or unverified), what it can do, when it was used and connected.', 'Revoke asks first in the row, like Leave (D4).', 'The Claude Code line wraps, with Copy beside it (D5).'] },
+      { id: 'P9', q: 'revoke=cu&at=agents', title: 'Revoking an agent', dec: ['D4', 'D5'], notes: ['Three lines per agent: name and host (or unverified), what it can do, when it was used and connected.', 'Revoke asks first in the row, like Leave (D4).', 'The Claude Code line wraps, with Copy beside it (D5).'] },
       { id: 'P10', q: 'agents=0&at=agents', title: 'No agents connected', dec: [], notes: ['One line, then the line to connect one.'] },
     ] },
     { title: 'Theme and tablet', phones: [

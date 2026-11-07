@@ -130,7 +130,7 @@ tr.confirm td { height: auto; padding: 8px var(--space-3); background: color-mix
   // Agents signed in as you (the real panel: ConnectedAgentsPanel.tsx). Scopes are the consent page's labels.
   const agents = q.get('agents') === '0' ? [] : [
     { id: 'cc', name: 'Claude Code', host: 'claude.ai', verified: true, scopes: ['Read', 'Write', 'Plan'], lastUsed: '2h ago', connected: '20 Oct' },
-    { id: 'cx', name: 'Codex', host: 'chatgpt.com', verified: true, scopes: ['Read', 'Write'], lastUsed: 'Yesterday', connected: '3 Nov' },
+    { id: 'cu', name: 'Cursor', host: 'cursor.com', verified: true, scopes: ['Read', 'Write'], lastUsed: 'Yesterday', connected: '3 Nov' },
     { id: 'sc', name: 'release-notes-bot', host: null, verified: false, scopes: ['Read'], lastUsed: null, connected: 'Yesterday' },
   ];
   const MCP_LINE = `claude mcp add --transport http shiplean ${instance.baseUrl}/mcp`;
@@ -250,7 +250,7 @@ tr.confirm td { height: auto; padding: 8px var(--space-3); background: color-mix
   SL.preview([
     { label: 'With a photo', run: () => { S.p.photo = S.p.photo ? null : SAMPLE_PHOTO; render(); } },
     { label: 'Leave a project', run: () => { S.leaving = 'PAY'; render(); } },
-    { label: 'Revoke an agent', run: () => { S.revoking = 'cx'; render(); } },
+    { label: 'Revoke an agent', run: () => { S.revoking = 'cu'; render(); } },
   ]);
 })();
 </script>

@@ -10,8 +10,9 @@
  *     first in the row
  *   - the Claude Code line wraps, with Copy
  * Above 900px nothing changes; ?notouch shows the desktop page at any width.
- * Review states: ?dirty (name edited) | ?dirty=colour, ?pw (Password open) | ?pw=typed, ?leave=PAY, ?revoke=cx,
- * ?agents=0, ?photo, ?at=password|appearance|projects|sessions|agents (scrolled to that panel), and the decision
+ * Review states: ?dirty (name edited) | ?dirty=colour, ?pw (Password open) | ?pw=typed, ?leave=PAY, ?revoke=cu,
+ * ?agents=0, ?photo, ?at=password|appearance|projects|sessions|agents (scrolled to that panel; with ?shot the panels
+ * above it are hidden), and the decision
  * alternatives ?alt=index|jump|pwopen|leavesheet|scroll|nodensity|heading (combine with +).
  */
 (() => {
@@ -93,6 +94,12 @@
   }
 
   render();
+  // ?at scrolls to a panel; with ?shot it hides everything above it instead, since --screenshot ignores scrolling.
   const at = q.get('at');
-  if (at) requestAnimationFrame(() => goTo(at));
+  if (at && q.has('shot')) {
+    $('.head').hidden = true;
+    const order = [...document.querySelectorAll('[data-sec]')].map(x => x.dataset.sec);
+    const style = el('style', null, order.slice(0, order.indexOf(at)).map(k => `[data-sec="${k}"]`).join(', ') + ' { display: none !important; }');
+    document.head.append(style);
+  } else if (at) requestAnimationFrame(() => goTo(at));
 })();
