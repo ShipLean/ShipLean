@@ -3,6 +3,7 @@ import type { InstanceGeneralSlotProps } from '../slots/InstanceGeneralSlot';
 import type { InstanceAgentsSlotProps } from '../slots/InstanceAgentsSlot';
 import type { InstanceIntegrationsSlotProps } from '../slots/InstanceIntegrationsSlot';
 import type { InstanceAnalyticsSlotProps } from '../slots/InstanceAnalyticsSlot';
+import type { InstanceBackupsSlotProps } from '../slots/InstanceBackupsSlot';
 import type { InstanceProjectsSlotProps } from '../slots/InstanceProjectsSlot';
 import type { InstanceUsersSlotProps } from '../slots/InstanceUsersSlot';
 
@@ -13,6 +14,7 @@ export interface InstanceSettingsSlots {
   instanceIntegrations?: InstanceIntegrationsSlotProps;
   instanceAnalytics?: InstanceAnalyticsSlotProps;
   instanceAgents?: InstanceAgentsSlotProps;
+  instanceBackups?: InstanceBackupsSlotProps;
 }
 
 // Each instance settings tab has its own slot.
@@ -24,5 +26,6 @@ export function instanceSettingsSlots(tab: InstanceSettingsTab): InstanceSetting
     instanceIntegrations: tab === 'integrations' ? { tab } : undefined,
     instanceAnalytics: tab === 'analytics' ? { tab } : undefined,
     instanceAgents: tab === 'agents' ? { tab } : undefined,
+    instanceBackups: tab === 'backups' ? { tab } : undefined,
   };
 }

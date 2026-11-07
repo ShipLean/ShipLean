@@ -221,6 +221,7 @@ test('instanceSettingsSlots_ShouldMountTheSlotOfTheTabOnly', () => {
     instanceAnalytics: undefined,
     instanceAgents: { tab: 'agents' },
   });
+  expect(instanceSettingsSlots('backups')).toEqual({ instanceBackups: { tab: 'backups' } });
   expect(InstanceGeneralSlot).toBeDefined();
 });
 

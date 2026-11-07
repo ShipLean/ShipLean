@@ -5,7 +5,7 @@
 //   Install level (no project; the crumbs start at "ShipLean"):
 //     /login                      sign in            ?returnUrl=<path> is where to go afterwards
 //     /projects/new               new project
-//     /instance/:tab              instance settings  tab: general | users | projects | integrations | analytics | agents
+//     /instance/:tab              instance settings  tab: general | users | projects | integrations | analytics | agents | backups
 //     /profile                    your profile
 //     /import                     Jira import with no project yet (the stepper creates or picks one)
 //     /authorize                  connect an agent  ?request=<id> is the pending authorize request
@@ -61,6 +61,7 @@ export const instanceSettingsTabs = [
   'integrations',
   'analytics',
   'agents',
+  'backups',
 ] as const;
 export type InstanceSettingsTab = (typeof instanceSettingsTabs)[number];
 

@@ -9,6 +9,7 @@ const LABELS: Record<InstanceSettingsTab, string> = {
   integrations: 'Integrations',
   analytics: 'Analytics',
   agents: 'Agents',
+  backups: 'Backups',
 };
 
 // The tabs of the instance settings: each one is its own address, so this is how you get between them.
