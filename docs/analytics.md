@@ -53,7 +53,9 @@ Every event carries these (a key is left out when its value is null). The consta
 | `duration_ms`, `source` | `source` is `tool:<name>`, `api:<Controller>.<Action>`, `screen` or `system:<Class>` |
 | `shiplean_version`, `instance_host` | this build and this instance |
 
-Extra properties are the keys in `UsageProps` (`screen`, `board`, `provider`, `count`, `agent_name` on `agent.connected` and `agent.consent_denied`). A standard property wins over an extra one with the same key.
+Extra properties are the keys in `UsageProps` (`screen`, `board`, `provider`, `count`, `viewport`, `agent_name` on `agent.connected` and `agent.consent_denied`). A standard property wins over an extra one with the same key. A command adds an extra property to its web action's event with `IUsageScope.AddProperty(UsageProps.X, value)`; `UsageActionFilter` records the action's `board`, then what the command added, then `viewport`. Never parse the route or the action's arguments for one.
+
+**Viewport.** The SPA's API client sends `X-ShipLean-Viewport` (`ViewportHeader`, `src/ShipLean.Contracts/ViewportHeader.cs`) on every request, with the window's width class at send time: `phone`, `tablet` or `desktop` (`UsageViewports`). The three web seams (`UsageActionFilter`, `ScreenViews`, `SelfEmittedUsage.TrackOk`) read it through `IUsageScope.Viewport` and stamp it as `viewport`. A missing header or any other value (including another case, such as `Phone`) leaves the key out; there is no default. MCP and system events never carry it, and neither do top-level browser navigations, which are not API calls: the Google and proxy sign-in callbacks record `auth.signed_in` without a viewport, and only a password sign-in has one.
 
 The distinct id of an actor is `user:<guid>`, `agent:<authorizationId>` (`agent:gw-<userId>` for the gateway) or `system`. Person properties (`kind`, `user_id`, `agent_*`) go to the provider as an identify (Umami) or `$set` (PostHog). `name` and `email` are added for users only when the instance's **Send people's names** toggle is on, which is off by default.
 
