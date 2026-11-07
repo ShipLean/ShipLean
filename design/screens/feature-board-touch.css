@@ -1,0 +1,173 @@
+/*
+ * The Feature board in the touch shell (SHIP-722). Loaded by feature-board.html after its own styles. Follows SHIP-805
+ * (the shared mobile rules) and doesn't restate them; this file only applies them to the Feature board, the same way
+ * SHIP-719's board-touch.css does for the other boards. At 900px and below: one task state a page in a sideways pager
+ * (the next one peeks), state chips above it, the stories (or people) as lanes on every page, closed stories behind
+ * "Show n closed", the toolbar on one row (Group · Filter (n) · ⋯ · + Add), and a ⋯ on every task plus long-press drag
+ * instead of drag and drop. Above 900px nothing changes. feature-board-touch.js builds it.
+ */
+.fbt-bar, .fbt-strip, .fbt-pager, .fbt-sheet, .fbt-addstory, .fbt-edge { display: none; }
+
+@media (max-width: 900px) {
+  /* SHIP-805 rules 11 and 13 (48px bar, 32px targets) until the token change lands in tokens.css. */
+  :root { --touch-target: 32px; --mobile-bar-height: 48px; --fbt-col: min(calc(100vw - 48px), 340px); }
+  body { padding-bottom: env(safe-area-inset-bottom); }
+
+  /* Header: the Feature and its roll-up. The in-page back link and the "Feature board" label go: the top bar's crumbs
+     say both (SHIP-805 C13, D10). */
+  .fb-head { gap: 8px; padding: var(--space-3); }
+  .fb-head .back, .fb-title > .spacer, .fb-title > .xs.muted { display: none; }
+  .fb-title { row-gap: 4px; }
+  .fb-title h1 { flex-basis: 100%; order: 3; font-size: var(--text-xl, 20px); line-height: 1.25; }
+  .fb-title .key { font-size: var(--text-sm); }
+  .fb-stats { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; font-size: var(--text-sm); }
+  .fb-stats > span:first-child { grid-column: 1 / -1; }
+  .fb-stats > span:nth-child(2) { display: flex; align-items: center; white-space: pre; }
+  .fb-stats .bigbar { flex: 1; width: auto; height: 6px; margin-right: 10px; }
+  .fb-stats > span:last-child { grid-column: 1 / -1; flex-wrap: wrap; }
+  .sprint-pill { height: 24px; padding: 0 9px; font-size: var(--text-xs); }
+  .jump { gap: 6px; }
+  .jump > .xs { flex-basis: 100%; }
+  .jump a { height: var(--touch-target); padding: 0 10px; font-size: var(--text-sm); max-width: 100%; }
+  .jump a .key { font-size: var(--text-2xs); }
+
+  /* Toolbar: one row (rule 8, D5). The desktop controls are replaced by .fbt-bar. */
+  .toolbar { flex-wrap: nowrap; padding: var(--space-2) var(--space-3); border-bottom: 0; }
+  .toolbar > :not(.fbt-bar) { display: none !important; }
+  .fbt-bar { display: flex; align-items: center; gap: var(--space-2); width: 100%; min-width: 0; }
+  .fbt-bar .seg { height: var(--touch-target); flex: none; }
+  .fbt-bar .seg button { padding: 0 10px; font-size: var(--text-sm); }
+  .fbt-bar .btn { height: var(--touch-target); font-size: var(--text-sm); flex: none; }
+  .fbt-bar .fbt-filter[data-n] { border-color: var(--color-accent); background: var(--color-accent-soft); font-weight: var(--weight-semibold); }
+  .fbt-bar .fbt-filter .n { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--color-accent); color: var(--color-accent-fg); font-size: var(--text-2xs); font-variant-numeric: tabular-nums; }
+  .fbt-bar .fbt-more { width: var(--touch-target); padding: 0; justify-content: center; }
+  .fbt-bar .spacer { flex: 1; }
+  .fbt-bar .fbt-face-row { display: inline-flex; align-items: center; }
+  .fbt-bar .fbt-face-row .av { width: 18px; height: 18px; margin-left: -5px; box-shadow: 0 0 0 2px var(--color-accent-soft); font-size: 8px; }
+  .fbt-bar .fbt-face-row .av:first-child { margin-left: 0; }
+
+  /* + Add: the desktop's inline "Add story or bug" row, wrapped for a phone. */
+  .fbt-addstory:not([hidden]) { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--space-2); padding: 0 var(--space-3) var(--space-2); }
+  .fbt-addstory .field { height: 40px; }
+  .fbt-addstory .btn { height: 40px; }
+  .fbt-addstory .hint { grid-column: 1 / -1; margin: 0; font-size: var(--text-xs); color: var(--color-muted); }
+
+  /* The grid is replaced by the pager. */
+  .board { display: none; }
+
+  /* State chips: one per task state with its count; the page on screen is highlighted. They scroll with the page
+     (rule 12), and sideways in their own box when they don't fit (rule 7, as amended for SHIP-719). */
+  .fbt-strip { display: flex; gap: 6px; padding: 0 var(--space-3) var(--space-2); overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--color-border); }
+  .fbt-strip::-webkit-scrollbar { display: none; }
+  .fbt-strip button { flex: none; display: inline-flex; align-items: center; gap: 6px; height: var(--touch-target); padding: 0 12px; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-surface); color: var(--color-muted); font: inherit; font-size: var(--text-sm); font-weight: var(--weight-medium); cursor: pointer; }
+  .fbt-strip button .n { font-size: var(--text-xs); font-variant-numeric: tabular-nums; }
+  .fbt-strip button[aria-current="true"] { border-color: var(--color-accent); background: var(--color-accent-soft); color: var(--color-text); font-weight: var(--weight-semibold); }
+
+  /* Pager: each task state is a page, the next one peeks. Snap per page; a tablet shows two and a bit. */
+  .fbt-pager { display: flex; align-items: flex-start; gap: var(--space-2); padding: var(--space-3) var(--space-3) calc(var(--space-6, 32px) + env(safe-area-inset-bottom)); overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scroll-padding: 0 var(--space-3); scrollbar-width: none; }
+  .fbt-pager::-webkit-scrollbar { display: none; }
+  .fbt-page { flex: none; width: var(--fbt-col); display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-2); align-content: start; scroll-snap-align: start; }
+  .fbt-colh { display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 10px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+  .fbt-colh .st { font-size: var(--text-md); font-weight: var(--weight-semibold); }
+  .fbt-colh .n { color: var(--color-muted); font-variant-numeric: tabular-nums; }
+
+  /* Feature sections (a parent Feature): a band per Feature on every page, then its lanes. */
+  .fbt-fh { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 4px; min-height: 40px; padding: 2px 0; border-left: 3px solid var(--type-feature); border-radius: var(--radius-sm); background: color-mix(in srgb, var(--type-feature) 9%, var(--color-surface)); margin-top: 4px; }
+  .fbt-fh.direct { border-left-color: var(--color-border); background: var(--color-surface); }
+  .fbt-fh .ib { width: var(--touch-target); height: var(--touch-target); font-size: var(--text-xs); }
+  .fbt-fh .nm { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .fbt-fh .nm b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-sm); font-weight: var(--weight-semibold); }
+  .fbt-fh .n { font-size: var(--text-xs); color: var(--color-muted); white-space: nowrap; }
+  .fbt-fh .open { display: inline-grid; place-items: center; width: var(--touch-target); height: var(--touch-target); border-radius: var(--radius-sm); color: var(--color-muted); text-decoration: none; }
+  .fbt-empty { margin: 0; padding: 0 var(--space-2); font-size: var(--text-sm); color: var(--color-muted); }
+
+  /* Lanes: a story's index card (compact, it repeats on every page), then its tasks in this state, or None (D4). */
+  .fbt-lane { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; }
+  :root .fbt-pager .fbt-lane > .rowh:not(.orphan):not(.person) { position: relative; left: auto; z-index: 1; isolation: isolate; display: grid; gap: 0; padding: 2px 10px 4px 2px; border: 0; background: transparent; }
+  :root .fbt-pager .fbt-lane > .rowh:not(.orphan):not(.person)::before { inset: 0; border-radius: var(--radius-md); }
+  .fbt-lane > .rowh .top { display: flex; align-items: center; gap: 6px; min-height: var(--touch-target); }
+  .fbt-lane > .rowh .ib { width: var(--touch-target); height: var(--touch-target); flex: none; font-size: var(--text-xs); }
+  .fbt-lane > .rowh .t1 { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-base); font-weight: var(--weight-semibold); }
+  .fbt-lane > .rowh .meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding-left: 34px; min-height: var(--touch-target); font-size: var(--text-xs); }
+  .fbt-lane > .rowh .meta .key { font-size: var(--text-2xs); }
+  .fbt-lane > .rowh .top .pts { flex: none; font-size: var(--text-xs); font-weight: var(--weight-semibold); }
+  .fbt-lane > .rowh.collapsed .st { font-size: var(--text-xs); }
+  .fbt-lane .stsel select { height: 28px; padding: 0 4px; border-color: var(--color-border); background: var(--color-surface); font-size: var(--text-input-touch); }
+  .fbt-lane .stsel .st { width: 8px; }
+  :root .fbt-pager .fbt-lane > .rowh.collapsed:not(.orphan):not(.person) { display: flex; align-items: center; gap: 6px; min-height: 40px; padding: 2px 10px 2px 2px; }
+  .fbt-lane > .rowh.collapsed .cnt { font-size: var(--text-xs); color: var(--color-muted); white-space: nowrap; }
+  .fbt-lane > .rowh.collapsed .t1 { font-weight: var(--weight-medium); }
+
+  .fbt-cell { display: grid; gap: 6px; min-height: 40px; margin: -6px 0 0 12px; padding: 12px 8px 8px; border: 1px solid var(--color-border); border-top: 0; border-radius: 0 0 var(--radius-md) var(--radius-md); background: color-mix(in srgb, var(--color-surface-2) 55%, var(--color-bg)); transition: background .12s; }
+  .fbt-none { padding: 0 4px; font-size: var(--text-sm); color: var(--color-muted); }
+  .fbt-hidden { padding: 0 4px; font-size: var(--text-xs); color: var(--color-muted); }
+
+  /* Grouped by People: the person is the lane. */
+  .fbt-ph { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 8px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); position: relative; z-index: 1; }
+  .fbt-ph .av { width: 24px; height: 24px; font-size: 10px; }
+  .fbt-ph b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: var(--weight-semibold); }
+  .fbt-ph .hint { margin-left: auto; font-size: var(--text-xs); color: var(--color-muted); white-space: nowrap; }
+
+  /* Closed stories wait behind one button at the end of each Feature's lanes (D8). */
+  .fbt-closed { justify-self: start; display: inline-flex; align-items: center; gap: 6px; height: var(--touch-target); padding: 0 12px; border: 1px dashed var(--color-border); border-radius: 999px; background: transparent; color: var(--color-muted); font: inherit; font-size: var(--text-sm); cursor: pointer; }
+  .fbt-closed[aria-expanded="true"] { border-style: solid; }
+
+  /* Task card: the Taskboard's post-it with a 32px ⋯ (rule 5). Tapping it opens the task (D3). */
+  .fbt-pager .card, .fbt-ghost.card { grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 4px 6px; padding: 8px 4px 8px 10px; cursor: pointer; -webkit-touch-callout: none; user-select: none; }
+  .fbt-pager .card.styled, .fbt-ghost.card.styled { padding-left: 8px; }
+  .fbt-pager .card > .par, .fbt-ghost.card > .par { grid-column: 1 / -1; margin-right: 6px; }
+  .fbt-pager .card .ct, .fbt-ghost.card .ct { font-size: var(--text-base); line-height: 1.35; padding-top: 4px; }
+  .fbt-pager .card .ct .ti, .fbt-ghost.card .ct .ti { margin-top: 2px; }
+  .fbt-pager .card .cm, .fbt-ghost.card .cm { grid-column: 1 / -1; min-height: 22px; padding-right: 6px; }
+  .fbt-pager .card .tag, .fbt-ghost.card .tag { height: 20px; font-size: var(--text-xs); }
+  .fbt-cm { display: inline-grid; place-items: center; width: var(--touch-target); height: var(--touch-target); margin: -2px 0 0; padding: 0; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--color-muted); cursor: pointer; }
+  .fbt-cm:active { background: var(--color-surface-2); }
+  .fbt-pager .card.lifted { box-shadow: 0 0 0 2px var(--color-accent); }
+
+  .fbt-add { justify-self: start; height: var(--touch-target); padding: 0 6px; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--color-accent); font: inherit; font-size: var(--text-sm); font-weight: var(--weight-medium); cursor: pointer; }
+  .fbt-addtask { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; }
+  .fbt-addtask .field { height: 40px; }
+  .fbt-addtask .btn { height: 40px; }
+
+  /* Touch drag (D2, as SHIP-719): the lifted task follows the finger, the original stays faded, the target lane
+     lights up, and holding at the left or right edge turns the page. */
+  :root[data-dragging] { user-select: none; -webkit-user-select: none; }
+  :root[data-dragging] .fbt-pager { scroll-snap-type: none; }
+  .fbt-pager .card.dragging { opacity: .35; }
+  .fbt-cell.over { background: color-mix(in srgb, var(--color-accent-soft) 80%, transparent); box-shadow: inset 0 0 0 2px var(--color-accent); }
+  .fbt-cell .drop-before { box-shadow: 0 -3px 0 var(--color-accent); }
+  .fbt-cell.drop-end::after { content: ""; height: 3px; border-radius: 2px; background: var(--color-accent); }
+  .fbt-ghost.card { position: fixed; left: 0; top: 0; z-index: 80; margin: 0; pointer-events: none; box-shadow: 0 18px 36px rgb(0 0 0 / .3), 0 0 0 2px var(--color-accent); transition: none; }
+  .fbt-edge { position: fixed; top: calc(var(--mobile-bar-height) + env(safe-area-inset-top)); bottom: 0; z-index: 75; width: 28px; place-items: center; font-size: 22px; color: var(--color-accent); pointer-events: none; }
+  .fbt-edge.left { left: 0; background: linear-gradient(to right, color-mix(in srgb, var(--color-accent) 22%, transparent), transparent); }
+  .fbt-edge.right { right: 0; background: linear-gradient(to left, color-mix(in srgb, var(--color-accent) 22%, transparent), transparent); }
+  :root[data-dragging] .fbt-edge { display: grid; opacity: .45; }
+  :root[data-dragging] .fbt-edge.hot { opacity: 1; }
+
+  /* Bottom sheets (SHIP-805 rules 3, 4, 8, 9 and C4's recommended anatomy): grab bar, title, Close. */
+  .fbt-sheet:not([hidden]) { position: fixed; inset: auto 0 0 0; z-index: 70; display: flex; flex-direction: column; max-height: 85dvh; padding-bottom: env(safe-area-inset-bottom); border-radius: var(--radius-lg) var(--radius-lg) 0 0; border-top: 1px solid var(--color-border); background: var(--color-surface); box-shadow: 0 -12px 32px rgb(0 0 0 / .22); }
+  .fbt-sheet::before { content: ""; align-self: center; flex: none; width: 36px; height: 4px; margin-top: 6px; border-radius: 2px; background: var(--color-border); }
+  .fbt-sheet .sheet-head { flex: none; gap: var(--space-2); min-height: 44px; }
+  .fbt-sheet .sheet-head b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fbt-sheet .sheet-head .who { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .fbt-sheet .body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 var(--space-2) var(--space-3); }
+  .fbt-sheet .lbl { padding: 10px var(--space-2) 4px; font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--color-muted); text-transform: uppercase; letter-spacing: .04em; }
+  .fbt-sheet .opt { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 40px; padding: 4px var(--space-2); border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--color-text); font: inherit; font-size: var(--text-base); text-align: left; text-decoration: none; cursor: pointer; }
+  .fbt-sheet .opt:active { background: var(--color-surface-2); }
+  .fbt-sheet .opt[aria-checked="true"] { background: var(--color-accent-soft); font-weight: var(--weight-semibold); }
+  .fbt-sheet .opt .tx { flex: 1; min-width: 0; display: grid; gap: 1px; }
+  .fbt-sheet .opt .tx > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fbt-sheet .opt .tx small { font-size: var(--text-xs); font-weight: var(--weight-regular); color: var(--color-muted); }
+  .fbt-sheet .opt .chk { width: 18px; flex: none; color: var(--color-accent); text-align: center; font-weight: var(--weight-bold, 700); }
+  .fbt-sheet .opt .val { flex: none; max-width: 50%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-muted); font-size: var(--text-sm); font-weight: var(--weight-regular); }
+  .fbt-sheet .opt .go { flex: none; color: var(--color-muted); }
+  .fbt-sheet .opt .av { width: 24px; height: 24px; font-size: 10px; }
+  .fbt-sheet .opt input[type="checkbox"] { width: 18px; height: 18px; margin: 0; accent-color: var(--color-accent); flex: none; }
+  .fbt-sheet .opt .st { font-size: var(--text-base); }
+  .fbt-sheet .grp { padding: 10px var(--space-2) 2px; font-size: var(--text-xs); color: var(--color-muted); display: flex; align-items: center; gap: 6px; }
+  .fbt-sheet .msearch { padding: var(--space-1) var(--space-2) var(--space-2); }
+  .fbt-sheet .msearch .field { width: 100%; height: 40px; font-size: var(--text-input-touch); }
+  .fbt-sheet .note { margin: 6px var(--space-2) 0; font-size: var(--text-xs); color: var(--color-muted); }
+  .fbt-sheet hr { margin: 6px var(--space-2); border: 0; border-top: 1px solid var(--color-border); }
+  :root[data-sheet="fbt"] .scrim { display: block; position: fixed; inset: 0; z-index: 65; background: rgb(10 16 28 / .45); }
+}

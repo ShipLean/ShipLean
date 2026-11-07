@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ShipLean · Sprint backlog on a phone (SHIP-724 reference)</title>
+<!--
+  SHIP-724 reference: the Sprint backlog and the sprint header (picker, tabs, goal, Edit sprint, Close sprint) on a phone.
+  Designed at 390 × 844; it applies at 900px and below, inside the SHIP-713 touch shell, and follows the shared mobile
+  rules on SHIP-805 (it doesn't restate them). Open directly in a browser. Uses ../tokens.css only; no build step.
+  The data is the page-shot fixture's (src/pages/screenshots/fixtures/sprints.ts), so it lines up with today's shots.
+  The real app has no Filter and no Add on this page, so neither does this design.
+  SHIP-805 rules 11 and 13 (48px bar, 32px targets) aren't in tokens.css on this branch yet, so this page sets them.
+  ?sheet=picker|more|state:KEY|ready|active   ?edit=goal|sprint   ?close   ?burn=<day 0-4>   ?tasks=off
+  ?toast=conflict|state   ?at=list (hide what's above the list, for screenshots)   ?theme=light|dark   ?shot
+  Decisions D1–D11 settled by Joel on 7 Nov 2026 (every recommendation kept): design/README.md › Sprint backlog on a phone.
+-->
+<link rel="stylesheet" href="../tokens.css">
+<script>
+  (() => {
+    const p = new URLSearchParams(window.SL_QUERY ?? location.search); // SL_QUERY: set by a standalone review page (srcdoc)
+    if (p.get('theme')) document.documentElement.dataset.theme = p.get('theme');
+  })();
+</script>
+<style>
+:root { --touch-target: 32px; --mobile-bar-height: 48px; --m-pad: 12px; }
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; min-height: 100dvh; background: var(--color-bg); color: var(--color-text); font: 14px/1.4 var(--font-sans); -webkit-font-smoothing: antialiased; }
+:root[data-sheet] body { overflow: hidden; }
+button, select, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+a { color: var(--color-accent); }
+.ic { width: 16px; height: 16px; flex: none; }
+.muted { color: var(--color-muted); }
+.spacer { flex: 1; }
+
+/* The SHIP-713 top bar (only the top bar is pinned: SHIP-805 rule 12). */
+.appbar { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: 2px; height: calc(var(--mobile-bar-height) + env(safe-area-inset-top)); padding: env(safe-area-inset-top) 6px 0; background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.tbtn { display: inline-grid; place-items: center; width: 36px; height: 36px; flex: none; padding: 0; border: 0; border-radius: var(--radius-md); background: transparent; color: var(--color-text); }
+.tbtn .ic { width: 20px; height: 20px; }
+.crumbs { flex: 1; min-width: 0; display: flex; justify-content: flex-end; align-items: baseline; gap: 6px; overflow: hidden; white-space: nowrap; padding-left: 4px; font-size: 14px; color: var(--color-muted); -webkit-mask-image: linear-gradient(to right, transparent, #000 20px); mask-image: linear-gradient(to right, transparent, #000 20px); }
+.crumbs > * { flex: none; }
+.crumbs b { color: var(--color-text); font-size: 16px; font-weight: var(--weight-semibold); }
+.pcount { display: inline-grid; place-items: center; min-width: 26px; height: 22px; padding: 0 6px; border-radius: 999px; background: var(--color-surface-2); font-size: 12px; font-weight: var(--weight-semibold); }
+.live { display: inline-flex; align-items: center; padding: 0 6px; }
+.live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--color-ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-ok) 22%, transparent); }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: var(--touch-target); padding: 0 10px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); font-size: 14px; font-weight: var(--weight-medium); white-space: nowrap; flex: none; }
+.btn.pri { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-fg); font-weight: var(--weight-semibold); }
+.btn.ghost { border-color: transparent; background: none; color: var(--color-accent); }
+.btn.block { width: 100%; height: 40px; }
+.more { width: var(--touch-target); padding: 0; font-size: 18px; letter-spacing: 1px; line-height: 1; }
+.chip { display: inline-flex; align-items: center; gap: 5px; height: 20px; padding: 0 7px; border-radius: 999px; background: var(--color-surface-2); color: var(--color-text); font-size: 12px; font-weight: var(--weight-medium); white-space: nowrap; }
+.chip.accent { background: var(--color-accent-soft); color: var(--color-accent); }
+.chip.ok { background: color-mix(in srgb, var(--color-ok) 16%, transparent); color: var(--color-ok); }
+.overline { font-size: 11px; font-weight: var(--weight-semibold); letter-spacing: .06em; text-transform: uppercase; color: var(--color-muted); }
+
+/* Sprint header: it scrolls with the page (rule 12). Row 1 is the picker, the status and ⋯ (D5, D6). */
+.shead { display: grid; gap: 4px; padding: 10px var(--m-pad) 0; background: var(--color-surface); }
+.shead .r1 { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.picker { display: inline-flex; align-items: center; gap: 6px; height: var(--touch-target); margin-left: -6px; padding: 0 6px; border: 0; border-radius: var(--radius-sm); background: none; font-size: 19px; font-weight: var(--weight-semibold); min-width: 0; }
+.picker .car { font-size: 11px; color: var(--color-muted); }
+.picker[aria-expanded="true"] { background: var(--color-accent-soft); }
+.shead .when { font-size: 13px; color: var(--color-muted); }
+.shead .when b { color: var(--color-text); font-weight: var(--weight-semibold); }
+.goal { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: baseline; margin-top: 4px; padding: 0; border: 0; background: none; text-align: left; font-size: 15px; line-height: 1.4; }
+.goal .txt { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.goal.open .txt { display: block; }
+.goal.none .txt { color: var(--color-muted); font-style: italic; }
+.goaled { display: grid; gap: 6px; margin-top: 6px; }
+.goaled textarea { width: 100%; min-height: 76px; padding: 8px 10px; border: 1px solid var(--color-accent); border-radius: var(--radius-sm); background: var(--color-surface); font-size: var(--text-input-touch); line-height: 1.4; outline: 2px solid var(--color-accent-soft); resize: vertical; }
+.goaled .hint { font-size: 12px; color: var(--color-muted); }
+/* Sprint tabs: the one strip on this page that may scroll sideways, inside its own box (rule 7). */
+.tabs { display: flex; gap: 2px; margin: 6px calc(-1 * var(--m-pad)) 0; padding: 0 var(--m-pad); overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--color-border); }
+.tabs::-webkit-scrollbar { display: none; }
+.tabs a { flex: none; display: inline-flex; align-items: center; height: 38px; padding: 0 10px; border-bottom: 2px solid transparent; margin-bottom: -1px; color: var(--color-muted); font-size: 14px; font-weight: var(--weight-medium); text-decoration: none; }
+.tabs a[aria-current="page"] { color: var(--color-text); border-bottom-color: var(--color-accent); font-weight: var(--weight-semibold); }
+
+/* Figures (D7): one row of four tiles, then points by state as one bar. */
+.figs { display: grid; gap: 10px; padding: 12px var(--m-pad); }
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.kpi { display: grid; gap: 1px; min-width: 0; padding: 7px 8px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); text-align: left; text-decoration: none; color: inherit; }
+.kpi .v { font-size: 19px; font-weight: var(--weight-semibold); font-variant-numeric: tabular-nums; line-height: 1.2; white-space: nowrap; }
+.kpi .v small { font-size: 12px; font-weight: var(--weight-medium); color: var(--color-muted); }
+.kpi .l { font-size: 11.5px; color: var(--color-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+a.kpi .l::after { content: " ›"; }
+.pbs { display: grid; gap: 5px; }
+.pbs .bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--color-surface-2); }
+.pbs .bar i { display: block; height: 100%; }
+.pbs .leg { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 12px; color: var(--color-muted); }
+.pbs .leg span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.pbs .leg b { color: var(--color-text); font-weight: var(--weight-semibold); font-variant-numeric: tabular-nums; }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--state-proposed); }
+.dot.in-progress { background: var(--state-in-progress); } .dot.resolved { background: var(--state-resolved); } .dot.completed { background: var(--state-completed); }
+
+/* Burndown (D8): full width; tap or drag along it to read a day (nothing is hover-only: rule 5). */
+.burn { border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); padding: 8px 10px 4px; }
+.burn header { display: flex; align-items: baseline; gap: 8px; font-size: 13px; }
+.burn header b { font-weight: var(--weight-semibold); }
+.burn header .rd { margin-left: auto; font-size: 12.5px; color: var(--color-muted); font-variant-numeric: tabular-nums; }
+.burn header .rd b { color: var(--color-text); }
+.burn svg { display: block; width: 100%; height: 118px; touch-action: pan-y; }
+.burn svg text { font-size: 10px; fill: var(--color-muted); }
+
+/* Glance rows (D1): what the desktop rail shows, one tap away in a sheet. */
+.glance { display: grid; background: var(--color-surface); border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
+.glance button { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto 14px; align-items: center; gap: 10px; min-height: 48px; padding: 6px var(--m-pad); border: 0; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent); background: none; text-align: left; }
+.glance button:last-child { border-bottom: 0; }
+.glance .g { color: var(--color-muted); display: grid; place-items: center; }
+.glance .t { display: grid; min-width: 0; }
+.glance .t b { font-size: 14px; font-weight: var(--weight-semibold); }
+.glance .t span { font-size: 12.5px; color: var(--color-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.glance .chev { color: var(--color-muted); font-size: 16px; }
+.avs { display: flex; }
+.avs .av { margin-left: -6px; box-shadow: 0 0 0 2px var(--color-surface); }
+.avs .av:first-child { margin-left: 0; }
+
+/* The list (D2): two-line rows, never a table. */
+.listhead { display: flex; align-items: center; gap: 8px; padding: 14px var(--m-pad) 6px; font-size: 12.5px; color: var(--color-muted); }
+.listhead b { color: var(--color-text); font-weight: var(--weight-semibold); font-size: 14px; }
+.swl { display: inline-flex; align-items: center; gap: 8px; height: var(--touch-target); padding: 0 0 0 8px; border: 0; background: none; font-size: 13px; color: var(--color-text); }
+.sw { width: 36px; height: 22px; border-radius: 999px; background: var(--color-border); position: relative; flex: none; }
+.sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgb(0 0 0 / .2); }
+.sw.on { background: var(--color-accent); }
+.sw.on::after { left: 17px; }
+.list { list-style: none; margin: 0; padding: 0; background: var(--color-surface); border-top: 1px solid var(--color-border); }
+.row { display: grid; grid-template-columns: 30px minmax(0, 1fr) 40px; align-items: start; column-gap: 4px; min-height: 58px; padding: 8px 8px 8px 4px; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent); }
+.row .tog { width: 30px; height: 32px; margin-top: -4px; border: 0; background: none; color: var(--color-muted); font-size: 11px; border-radius: var(--radius-sm); }
+.row .main { display: grid; gap: 5px; min-width: 0; }
+.row .t { display: flex; gap: 7px; align-items: flex-start; font-size: 15px; font-weight: var(--weight-medium); line-height: 1.3; color: inherit; text-decoration: none; }
+.row .t > span:last-child { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.row .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0; font-size: 12.5px; color: var(--color-muted); padding-left: 23px; }
+.row .key { font: 12px var(--font-mono); color: var(--color-muted); }
+.row .side { display: grid; justify-items: end; gap: 6px; }
+.row .pts { font-size: 15px; font-weight: var(--weight-semibold); font-variant-numeric: tabular-nums; line-height: 1.3; }
+.row.task { grid-template-columns: 30px minmax(0, 1fr) 40px; min-height: 50px; padding-top: 7px; padding-bottom: 7px; background: color-mix(in srgb, var(--color-surface-2) 35%, var(--color-surface)); }
+.row.task .main { padding-left: 14px; gap: 4px; }
+.row.task .t { font-size: 14px; font-weight: var(--weight-regular); }
+.row.task .meta { padding-left: 21px; }
+.row.done .t { color: var(--color-muted); }
+.row.flash { background: color-mix(in srgb, var(--color-warn) 16%, var(--color-surface)); }
+.row.hit { background: var(--color-accent-soft); }
+/* The state control (D3): a 32px pill, always visible; it opens the States sheet. */
+.stbtn { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 8px; margin: -2px 0; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-surface); font-size: 13px; color: var(--color-text); position: relative; }
+.stbtn::after { content: ""; position: absolute; inset: -3px -2px; } /* 32px+ hit area around the 28px pill */
+.stbtn .car { font-size: 9px; color: var(--color-muted); }
+.stbtn[aria-expanded="true"] { border-color: var(--color-accent); background: var(--color-accent-soft); }
+.tasksn { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
+.tasksn.ok { color: var(--color-ok); font-weight: var(--weight-semibold); }
+
+.ti { display: inline-grid; place-items: center; width: 16px; height: 16px; margin-top: 2px; border-radius: var(--radius-xs); color: #fff; font: 700 9px/1 var(--font-sans); flex: none; }
+.ti.story { background: var(--type-story); } .ti.bug { background: var(--type-bug); } .ti.task { background: var(--type-task); }
+.row.task .ti { width: 14px; height: 14px; font-size: 8px; margin-top: 2px; }
+.av { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; color: #fff; font-size: 9.5px; font-weight: 700; flex: none; }
+.av.none { border: 1.5px dashed var(--color-border); background: none; }
+.av.lg { width: 30px; height: 30px; font-size: 11px; }
+
+/* Bottom sheets: SHIP-805 rule 3, C4 recommendation (grab bar, title left, Close right). */
+.scrim { position: fixed; inset: 0; z-index: 65; background: rgb(10 16 28 / .45); }
+.sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 70; max-height: 85dvh; display: flex; flex-direction: column; background: var(--color-surface); border-radius: var(--radius-lg) var(--radius-lg) 0 0; box-shadow: var(--shadow-dialog); padding-bottom: env(safe-area-inset-bottom); }
+.sheet .grab { flex: none; width: 36px; height: 4px; border-radius: 2px; background: var(--color-border); margin: 6px auto 2px; }
+.sheet-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 6px 2px var(--m-pad); }
+.sheet-head b { font-size: 16px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sheet-head .x { height: 36px; padding: 0 8px; border: 0; background: none; color: var(--color-accent); font-size: 16px; flex: none; }
+.sheet .sub { font-size: 13px; color: var(--color-muted); padding: 0 var(--m-pad) 6px; margin-top: -2px; }
+.sheet .sb { overflow: auto; padding: 0 var(--m-pad) 14px; display: grid; gap: 12px; align-content: start; }
+.acts-l { list-style: none; margin: 0 calc(-1 * var(--m-pad)); padding: 0; }
+.acts-l button, .acts-l a { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 44px; padding: 0 var(--m-pad); border: 0; background: none; text-align: left; font-size: 15px; color: var(--color-text); text-decoration: none; }
+.acts-l .g { width: 20px; display: grid; place-items: center; color: var(--color-muted); flex: none; }
+.acts-l .r { margin-left: auto; color: var(--color-muted); font-size: 13px; display: inline-flex; gap: 6px; align-items: center; white-space: nowrap; }
+.acts-l small { display: block; font-size: 12px; color: var(--color-muted); }
+.acts-l hr { border: 0; border-top: 1px solid var(--color-border); margin: 4px 0; }
+.acts-l [aria-selected="true"], .acts-l .cur { background: var(--color-accent-soft); }
+.acts-l .ck { color: var(--color-accent); }
+.acts-l .warn { color: var(--color-danger); }
+.plist { list-style: none; margin: 0 calc(-1 * var(--m-pad)); padding: 0; }
+.plist li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 10px; align-items: start; padding: 9px var(--m-pad); border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.plist li:first-child { border-top: 0; }
+.plist .nm { font-size: 15px; font-weight: var(--weight-medium); }
+.plist .nm span { color: var(--color-muted); font-weight: var(--weight-regular); }
+.plist .n { font-size: 12.5px; color: var(--color-muted); white-space: nowrap; padding-top: 2px; }
+.plist .its { grid-column: 2 / 4; display: grid; gap: 3px; margin: 0; padding: 0; list-style: none; font-size: 13px; color: var(--color-muted); }
+.plist .its li { display: flex; gap: 8px; align-items: baseline; min-height: 28px; padding: 4px 0; border: 0; }
+.plist .its a { color: var(--color-text); text-decoration: none; }
+.plist .its .key { font: 12px var(--font-mono); }
+.rlist { list-style: none; margin: 0 calc(-1 * var(--m-pad)); padding: 0; }
+.rlist a { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 8px; align-items: start; min-height: 48px; padding: 8px var(--m-pad); border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); color: inherit; text-decoration: none; }
+.rlist li:first-child a { border-top: 0; }
+.rlist b { display: block; font-size: 15px; font-weight: var(--weight-medium); }
+.rlist small { display: block; font-size: 12.5px; color: var(--color-muted); }
+.rlist .k { font: 12px var(--font-mono); color: var(--color-muted); padding-top: 3px; }
+
+/* Full-screen views (SHIP-805 rule 4; C9 recommendation: ✕ at the top left). */
+.full { position: fixed; inset: 0; z-index: 80; display: flex; flex-direction: column; background: var(--color-bg); }
+.fbar { flex: none; display: flex; align-items: center; gap: 4px; height: calc(var(--mobile-bar-height) + env(safe-area-inset-top)); padding: env(safe-area-inset-top) 6px 0; background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.fbar b { font-size: 16px; font-weight: var(--weight-semibold); }
+.fbody { flex: 1; overflow: auto; padding: 14px var(--m-pad) 120px; display: grid; gap: 14px; align-content: start; }
+.fld { display: grid; gap: 5px; }
+.fld label { font-size: 13px; color: var(--color-muted); font-weight: var(--weight-medium); }
+.fld input, .fld textarea, .fld select, select.field { width: 100%; height: 40px; padding: 0 10px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); font-size: var(--text-input-touch); }
+.fld textarea { height: auto; min-height: 84px; padding: 8px 10px; line-height: 1.4; }
+.fld input.dirty { border-color: var(--color-accent); outline: 2px solid var(--color-accent-soft); }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+.fhint { font-size: 12.5px; color: var(--color-muted); }
+.card { border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); padding: 10px 12px; display: grid; gap: 6px; }
+.card .ttl { display: flex; gap: 7px; font-size: 15px; font-weight: var(--weight-medium); }
+.card .m { font-size: 12.5px; color: var(--color-muted); padding-left: 23px; display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.card select.field { margin-left: 23px; width: calc(100% - 23px); }
+.callout { border-left: 3px solid var(--color-warn); background: color-mix(in srgb, var(--color-warn) 10%, var(--color-surface)); border-radius: var(--radius-sm); padding: 8px 10px; font-size: 13px; }
+.callout b { font-weight: var(--weight-semibold); }
+.fine { font-size: 12.5px; color: var(--color-muted); }
+
+/* The SHIP-713 SaveBar (rule 15) and a bottom action bar for Close sprint. */
+.savebar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 85; display: flex; align-items: center; gap: 8px; padding: 10px var(--m-pad) calc(10px + env(safe-area-inset-bottom)); background: var(--color-surface); border-top: 1px solid var(--color-border); box-shadow: 0 -6px 16px -10px rgb(0 0 0 / .25); font-size: 13px; color: var(--color-muted); }
+.savebar .msg { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.savebar .btn { height: 36px; }
+
+.toast { position: fixed; left: 12px; right: 12px; bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 90; display: flex; gap: 10px; align-items: center; padding: 10px 8px 10px 14px; border-radius: var(--radius-md); background: var(--color-text); color: var(--color-surface); font-size: 13px; box-shadow: var(--shadow-dialog); }
+.toast span { flex: 1; min-width: 0; }
+.toast button { border: 0; background: none; color: inherit; font-weight: 700; padding: 4px 6px; }
+.endpad { height: 40px; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-menu" viewBox="0 0 20 20"><path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+  <symbol id="i-search" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="m10.5 10.5 3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-close" viewBox="0 0 16 16"><path d="m4 4 8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+  <symbol id="i-check" viewBox="0 0 16 16"><path d="m3.5 8.5 3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 16 16"><path d="M10.5 2.5 13.5 5.5 6 13H3v-3z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 16 16"><rect x="2.5" y="3.5" width="11" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 16 16"><path d="M3.5 14V2.5M3.5 3h8l-1.6 3 1.6 3h-8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-list" viewBox="0 0 16 16"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-hand" viewBox="0 0 16 16"><path d="M5 8V3.5a1 1 0 0 1 2 0V7.5M7 7V2.5a1 1 0 0 1 2 0V7M9 7V3.5a1 1 0 0 1 2 0V8.5M11 6.5a1 1 0 0 1 2 0V10a4 4 0 0 1-4 4H8.5A3.5 3.5 0 0 1 5.4 12L3.2 8.6a1 1 0 0 1 1.6-1.1L5 8" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-people" viewBox="0 0 16 16"><circle cx="5.5" cy="5.5" r="2" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="11" cy="6" r="1.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M2 13c.4-2.2 1.8-3.4 3.5-3.4S8.6 10.8 9 13M9.5 10c.5-.6 1-.9 1.6-.9 1.4 0 2.3 1 2.6 2.9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol>
+</svg>
+
+<header class="appbar">
+  <button class="tbtn" type="button" aria-label="Menu"><svg class="ic"><use href="#i-menu"/></svg></button>
+  <nav class="crumbs" aria-label="Breadcrumb"><span>SHIP</span><span>›</span><span>Sprints</span><span>›</span><span>Sprint 24</span><span>›</span><b>Backlog</b></nav>
+  <span class="pcount" title="Also here">+2</span>
+  <span class="live" title="Live"></span>
+  <button class="tbtn" type="button" aria-label="Search"><svg class="ic"><use href="#i-search"/></svg></button>
+</header>
+
+<main id="page"></main>
+<div id="layer"></div>
+
+<script>
+(() => {
+  const P = new URLSearchParams(window.SL_QUERY ?? location.search);
+  const sheet = P.get('sheet') || '';
+  const edit = P.get('edit') || '';
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const ic = id => `<svg class="ic"><use href="#i-${id}"/></svg>`;
+
+  /* The page-shot fixture's Sprint 24 (src/pages/screenshots/fixtures/sprints.ts). Priya is "you". */
+  const ME = 'priya';
+  const people = { priya: ['Priya Shah', 'PS', '#2f7fd8'], tom: ['Tom Okafor', 'TO', '#16a089'], mei: ['Mei Lin', 'ML', '#7b4fc9'], sam: ['Sam Rivera', 'SR', '#c9611a'], ana: ['Ana Costa', 'AC', '#b83d7a'] };
+  const cat = { New: 'proposed', Active: 'in-progress', 'In review': 'resolved', Closed: 'completed' };
+  const catName = { proposed: 'Proposed', 'in-progress': 'In progress', resolved: 'Resolved', completed: 'Completed' };
+  const STATES = ['New', 'Active', 'In review', 'Closed'];
+  const sprints = [
+    ['Sprint 21', 'Past', '7 Sep – 18 Sep'], ['Sprint 22', 'Past', '21 Sep – 2 Oct'], ['Sprint 23', 'Past', '5 Oct – 16 Oct'],
+    ['Sprint 24', 'Current', '19 Oct – 30 Oct'], ['Sprint 25', 'Future', '2 Nov – 13 Nov'], ['Sprint 26', 'Future', '16 Nov – 27 Nov'],
+  ];
+  const S = (key, type, title, st, who, pts, tasks) => ({ key, type, title, st, who, pts, tasks: tasks.map(([k, t, s, w]) => ({ key: k, type: 'task', title: t, st: s, who: w, parent: title })) });
+  const stories = [
+    S('SHIP-141', 'story', 'Pay with saved card', 'Active', 'priya', 5, [['SHIP-302', 'API: tokenised card lookup', 'In review', 'priya'], ['SHIP-303', 'UI: saved card picker', 'Active', 'mei'], ['SHIP-304', 'E2E test', 'New', null]]),
+    S('SHIP-138', 'bug', 'Totals wrong when coupon removed', 'Closed', 'tom', 2, [['SHIP-307', 'Fix and regression test', 'Closed', 'tom']]),
+    S('SHIP-144', 'story', 'Address autocomplete', 'Active', 'mei', 3, [['SHIP-310', 'Provider spike', 'Closed', 'mei'], ['SHIP-311', 'Wire into the address form', 'New', null]]),
+    S('SHIP-129', 'story', 'Sign in with passkey', 'Active', 'sam', 8, [['SHIP-314', 'WebAuthn registration', 'Closed', 'sam'], ['SHIP-315', 'WebAuthn sign-in', 'Active', 'sam'], ['SHIP-316', 'Fallback to password', 'New', null], ['SHIP-317', 'Feature flag', 'Closed', 'ana']]),
+    S('SHIP-150', 'story', 'Order confirmation email', 'Closed', 'ana', 3, [['SHIP-320', 'Email template', 'Closed', 'ana']]),
+  ];
+  const all = stories.flatMap(s => [s, ...s.tasks]);
+  const byKey = k => all.find(i => i.key === k);
+  const GOAL = 'Customers can check out with a saved card; passkey sign-in behind a flag.';
+  const burnDays = ['19', '20', '21', '22', '23', '26', '27', '28', '29', '30'], burnActual = [21, 21, 19, 19, 16], burnIdeal = d => Math.round((21 - 21 * d / 9) * 10) / 10;
+
+  const av = (who, cls = '') => who ? `<span class="av ${cls}" style="background:${people[who][2]}" title="${people[who][0]}">${people[who][1]}</span>` : `<span class="av none ${cls}" title="Unassigned"></span>`;
+  const tIcon = t => `<span class="ti ${t}">${{ story: 'S', bug: 'B', task: 'T' }[t]}</span>`;
+  const stBtn = i => `<button class="stbtn" type="button" data-state="${i.key}" aria-haspopup="dialog" aria-expanded="${sheet === 'state:' + i.key}" aria-label="State of ${i.key}: ${i.st}"><span class="dot ${cat[i.st]}"></span>${i.st}<span class="car">▾</span></button>`;
+
+  let showTasks = P.get('tasks') !== 'off';
+  const closed = new Set();
+
+  function figures() {
+    const committed = stories.reduce((a, s) => a + s.pts, 0);
+    const by = { proposed: 0, 'in-progress': 0, resolved: 0, completed: 0 };
+    stories.forEach(s => { by[cat[s.st]] += s.pts; });
+    return { committed, done: by.completed, left: committed - by.completed, by };
+  }
+  function railSummary() {
+    const ready = [], active = {};
+    stories.forEach(s => [s, ...s.tasks].forEach(i => {
+      if (!i.who && cat[i.st] === 'proposed') ready.push(i);
+      if (i.who && cat[i.st] === 'in-progress') (active[i.who] ??= []).push(i);
+    }));
+    return { ready, active };
+  }
+
+  function header() {
+    const goalOpen = P.has('goalopen');
+    return `<section class="shead" aria-label="Sprint 24">
+      <div class="r1">
+        <button class="picker" type="button" data-sheet="picker" aria-haspopup="dialog" aria-expanded="${sheet === 'picker'}">Sprint 24 <span class="car">▾</span></button>
+        <span class="chip accent">Current</span><span class="spacer"></span>
+        <button class="btn more" type="button" data-sheet="more" aria-label="More sprint actions" aria-expanded="${sheet === 'more'}">⋯</button>
+      </div>
+      <div class="when">19 Oct – 30 Oct · <b>5 days left</b></div>
+      ${edit === 'goal' ? `<div class="goaled"><span class="overline">Goal</span><textarea aria-label="Sprint goal">${esc(GOAL)} Order emails go out from the new template.</textarea><span class="hint">Shown on the sprint's pages and to agents planning against it.</span></div>`
+        : `<button class="goal${goalOpen ? ' open' : ''}" type="button" data-goal aria-expanded="${goalOpen}"><span class="overline">Goal</span><span class="txt">${esc(GOAL)}</span></button>`}
+      <nav class="tabs" aria-label="Sprint">${['Backlog', 'Taskboard', 'Capacity', 'Retro', 'Demo'].map((t, n) => `<a href="#"${n ? '' : ' aria-current="page"'}>${t}</a>`).join('')}</nav>
+    </section>`;
+  }
+
+  function figs() {
+    const f = figures(), cap = 23;
+    const segs = Object.keys(f.by).filter(k => f.by[k]).map(k => `<i class="dot ${k}" style="width:${f.by[k] / f.committed * 100}%;border-radius:0"></i>`).join('');
+    return `<section class="figs" aria-label="Sprint figures">
+      <div class="kpis">
+        <a class="kpi" href="#" title="Capacity"><span class="v">${f.committed}<small>/${cap}</small></span><span class="l">Committed</span></a>
+        <div class="kpi"><span class="v">${f.done}<small> pts</small></span><span class="l">Completed</span></div>
+        <div class="kpi"><span class="v">${f.left}<small> pts</small></span><span class="l">Remaining</span></div>
+        <div class="kpi"><span class="v">5<small> days</small></span><span class="l">Time left</span></div>
+      </div>
+      <div class="pbs"><div class="bar" role="img" aria-label="Points by state">${segs}</div>
+        <div class="leg">${Object.keys(f.by).map(k => `<span><i class="dot ${k}"></i>${catName[k]} <b>${f.by[k]}</b></span>`).join('')}</div></div>
+      ${burndown()}
+    </section>`;
+  }
+
+  function burndown() {
+    const sel = P.has('burn') ? Math.min(+P.get('burn'), burnActual.length - 1) : null;
+    const W = 366, H = 118, L = 22, R = 8, T = 8, B = 18, total = 21;
+    const x = i => L + i * (W - L - R) / 9, y = v => T + (1 - v / total) * (H - T - B);
+    let g = `<line x1="${L}" y1="${H - B}" x2="${W - R}" y2="${H - B}" stroke="var(--color-border)"/>
+      <line x1="${x(0)}" y1="${y(total)}" x2="${x(9)}" y2="${y(0)}" stroke="var(--color-muted)" stroke-width="1.5" stroke-dasharray="3 3"/>
+      <polyline points="${burnActual.map((v, i) => `${x(i)},${y(v)}`).join(' ')}" fill="none" stroke="var(--chart-completed)" stroke-width="2.25" stroke-linejoin="round"/>
+      <text x="2" y="${y(total) + 3}">21</text><text x="8" y="${y(0) + 3}">0</text>`;
+    burnDays.forEach((d, i) => { g += `<text x="${x(i)}" y="${H - 4}" text-anchor="middle">${d}</text>`; });
+    if (sel !== null) g += `<line x1="${x(sel)}" y1="${T}" x2="${x(sel)}" y2="${H - B}" stroke="var(--color-accent)" stroke-width="1"/>`;
+    burnActual.forEach((v, i) => { g += `<circle cx="${x(i)}" cy="${y(v)}" r="${i === sel ? 5 : 3.5}" fill="var(--chart-completed)" stroke="var(--color-surface)" stroke-width="2"/>`; });
+    const rd = sel === null ? `<span class="rd">Tap a day</span>` : `<span class="rd">${burnDays[sel]} Oct · <b>${burnActual[sel]} left</b> · ideal ${burnIdeal(sel)}</span>`;
+    return `<div class="burn"><header><b>Burndown</b><span class="muted">${figures().left} pts left</span>${rd}</header>
+      <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Burndown: story points remaining per working day against the ideal line" data-burn>${g}</svg></div>`;
+  }
+
+  function glance() {
+    const { ready, active } = railSummary();
+    const who = Object.keys(active), n = who.reduce((a, p) => a + active[p].length, 0);
+    return `<div class="glance">
+      <button type="button" data-sheet="ready"><span class="g">${ic('hand')}</span><span class="t"><b>Ready to pick up · ${ready.length}</b><span>${esc(ready.map(r => r.title).join(' · '))}</span></span><span></span><span class="chev">›</span></button>
+      <button type="button" data-sheet="active"><span class="g">${ic('people')}</span><span class="t"><b>In progress now</b><span>${who.length} people · ${n} items</span></span><span class="avs">${who.map(p => av(p)).join('')}</span><span class="chev">›</span></button>
+    </div>`;
+  }
+
+  function list() {
+    const rows = stories.map(s => {
+      const done = s.tasks.filter(t => cat[t.st] === 'completed').length, open = showTasks && !closed.has(s.key);
+      const hit = sheet === 'state:' + s.key ? ' hit' : '', flash = P.get('toast') === 'conflict' && s.key === 'SHIP-141' ? ' flash' : '';
+      const story = `<li class="row${cat[s.st] === 'completed' ? ' done' : ''}${hit}${flash}" data-key="${s.key}">
+        <button class="tog" type="button" data-tog="${s.key}" aria-expanded="${open}" aria-label="${open ? 'Hide' : 'Show'} tasks of ${s.key}"${s.tasks.length && showTasks ? '' : ' style="visibility:hidden"'}>${open ? '▼' : '▶'}</button>
+        <div class="main"><a class="t" href="#">${tIcon(s.type)}<span>${esc(s.title)}</span></a>
+          <div class="meta"><span class="key">${s.key}</span>${stBtn(s)}<span class="tasksn${done === s.tasks.length ? ' ok' : ''}">☑ ${done}/${s.tasks.length}</span></div></div>
+        <div class="side"><span class="pts">${s.pts}</span>${av(s.who)}</div></li>`;
+      const tasks = open ? s.tasks.map(t => `<li class="row task${cat[t.st] === 'completed' ? ' done' : ''}${sheet === 'state:' + t.key ? ' hit' : ''}" data-key="${t.key}"><span></span>
+        <div class="main"><a class="t" href="#">${tIcon('task')}<span>${esc(t.title)}</span></a>
+          <div class="meta"><span class="key">${t.key}</span>${stBtn(t)}</div></div>
+        <div class="side">${av(t.who)}</div></li>`).join('') : '';
+      return story + tasks;
+    }).join('');
+    return `<div class="listhead" id="listtop"><b>Stories and bugs</b><span>${stories.length} · ${figures().committed} pts</span><span class="spacer"></span>
+      <button class="swl" type="button" role="switch" aria-checked="${showTasks}" data-tasks>Tasks <span class="sw${showTasks ? ' on' : ''}"></span></button></div>
+      <ul class="list">${rows}</ul><div class="endpad"></div>`;
+  }
+
+  function render() {
+    const at = P.get('at');
+    $('page').innerHTML = (at === 'list' ? '' : header() + figs() + glance()) + list();
+    layer();
+  }
+
+  /* Sheets and full-screen views. */
+  const sheetHtml = (title, body, sub = '') => `<div class="scrim" data-close></div><div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="grab"></div>
+    <div class="sheet-head"><b>${title}</b><button class="x" type="button" data-close>Close</button></div>${sub ? `<div class="sub">${sub}</div>` : ''}<div class="sb">${body}</div></div>`;
+
+  function layer() {
+    let h = '';
+    if (sheet === 'picker') {
+      h = sheetHtml('Sprints', `<ul class="acts-l">${sprints.map(([n, s, d]) => `<li><button type="button"${n === 'Sprint 24' ? ' aria-selected="true"' : ''}><span class="g">${n === 'Sprint 24' ? `<span class="ck">${ic('check')}</span>` : ''}</span><span>${n}<small>${d}</small></span><span class="r"><span class="chip${s === 'Current' ? ' accent' : ''}">${s}</span></span></button></li>`).join('')}
+        <li><hr></li><li><a href="#"><span class="g">${ic('list')}</span>All sprints<span class="r">›</span></a></li></ul>`, 'Opens the same tab (Backlog) of the sprint you pick.');
+    } else if (sheet === 'more') {
+      h = sheetHtml('Sprint 24', `<ul class="acts-l">
+        <li><button type="button" data-edit="goal"><span class="g">${ic('flag')}</span>Edit goal</button></li>
+        <li><button type="button" data-edit="sprint"><span class="g">${ic('edit')}</span><span>Edit sprint<small>Name, dates and goal</small></span></button></li>
+        <li><a href="#"><span class="g">${ic('list')}</span>All sprints<span class="r">›</span></a></li>
+        <li><hr></li>
+        <li><button type="button" data-closesprint><span class="g">${ic('check')}</span><span>Close sprint<small>Choose where unfinished work goes</small></span></button></li></ul>`);
+    } else if (sheet.startsWith('state:')) {
+      const i = byKey(sheet.slice(6));
+      h = sheetHtml(`State of ${i.key}`, `<ul class="acts-l">${STATES.map(s => `<li><button type="button" data-pick="${s}"${s === i.st ? ' aria-selected="true"' : ''}><span class="g"><span class="dot ${cat[s]}"></span></span>${s}<span class="r">${catName[cat[s]]}${s === i.st ? `<span class="ck">${ic('check')}</span>` : ''}</span></button></li>`).join('')}</ul>`, esc(i.title));
+    } else if (sheet === 'ready') {
+      const { ready } = railSummary();
+      h = sheetHtml(`Ready to pick up · ${ready.length}`, `<ul class="rlist">${ready.map(r => `<li><a href="#">${tIcon(r.type)}<span><b>${esc(r.title)}</b><small>${esc(r.parent || r.key)}</small></span><span class="k">${r.key}</span></a></li>`).join('')}</ul>`, 'Unassigned and not started, in backlog order. Tap one to open it.');
+    } else if (sheet === 'active') {
+      const { active } = railSummary();
+      h = sheetHtml('In progress now', `<ul class="plist">${Object.keys(people).map(p => {
+        const a = active[p] || [];
+        return `<li>${av(p, 'lg')}<span class="nm">${people[p][0]}${p === ME ? ' <span>(you)</span>' : ''}</span><span class="n">${a.length ? a.length + ' active' : 'Nothing active'}</span>${a.length ? `<ul class="its">${a.map(i => `<li><a href="#">${esc(i.title)}</a> <span class="key">${i.key}</span></li>`).join('')}</ul>` : ''}</li>`;
+      }).join('')}</ul>`, 'Who is working on what right now. The titles were a hover on the desktop rail.');
+    }
+    if (edit === 'sprint') {
+      h += `<div class="full" role="dialog" aria-modal="true" aria-label="Edit sprint"><div class="fbar"><button class="tbtn" type="button" data-close aria-label="Close">${ic('close')}</button><b>Edit Sprint 24</b></div>
+        <div class="fbody">
+          <div class="fld"><label for="es-n">Name</label><input id="es-n" value="Sprint 24"></div>
+          <div class="two"><div class="fld"><label for="es-s">Start</label><input id="es-s" type="date" value="2026-10-19"></div><div class="fld"><label for="es-e">End</label><input id="es-e" class="dirty" type="date" value="2026-11-02"></div></div>
+          <div class="fhint">Dates can't overlap another sprint. An ended sprint's dates are locked.</div>
+          <div class="fld"><label for="es-g">Goal</label><textarea id="es-g">${esc(GOAL)}</textarea></div>
+        </div></div>
+        <div class="savebar"><span class="msg">End date changed</span><button class="btn" type="button" data-close>Discard</button><button class="btn pri" type="button">Save</button></div>`;
+    }
+    if (edit === 'goal') h += `<div class="savebar"><span class="msg">Goal not saved</span><button class="btn" type="button" data-close>Discard</button><button class="btn pri" type="button">Save</button></div>`;
+    if (P.has('close')) {
+      const un = stories.filter(s => cat[s.st] !== 'completed');
+      const pts = un.reduce((a, s) => a + s.pts, 0);
+      h += `<div class="full" role="dialog" aria-modal="true" aria-label="Close Sprint 24"><div class="fbar"><button class="tbtn" type="button" data-close aria-label="Close">${ic('close')}</button><b>Close Sprint 24</b></div>
+        <div class="fbody">
+          <div><b>${un.length} items unfinished (${pts} pts)</b></div>
+          <div class="fld"><label for="cs-all">Set all to</label><select id="cs-all" class="field"><option>Move to Sprint 25</option><option>Back to top of backlog</option><option>Leave in Sprint 24</option></select></div>
+          ${un.map(s => `<div class="card"><div class="ttl">${tIcon(s.type)}<span>${esc(s.title)}</span></div><div class="m"><span class="key">${s.key}</span><span>${s.pts} pts</span><span>${s.tasks.filter(t => cat[t.st] !== 'completed').length} of ${s.tasks.length} tasks open</span></div>
+            <select class="field" aria-label="Where ${s.key} goes"><option>Move to Sprint 25</option><option>Back to top of backlog</option><option>Leave in Sprint 24</option></select></div>`).join('')}
+          <div class="callout"><b>Sprint 25 after this: 34 / 25 pts.</b> 9 over team capacity. A warning only; nothing is blocked.</div>
+          <p class="fine">Sprint 24 keeps 21 committed and 5 completed for velocity. Open tasks move with their story; closed tasks stay in Sprint 24.</p>
+        </div></div>
+        <div class="savebar"><span class="msg"></span><button class="btn pri block" type="button">Close Sprint 24</button></div>`;
+    }
+    const t = P.get('toast');
+    if (t === 'conflict') h += `<div class="toast" role="status"><span>SHIP-141 was changed by someone else, so its row is refreshed. Pick its state again.</span><button type="button" data-close aria-label="Dismiss">${ic('close')}</button></div>`;
+    if (t === 'state') h += `<div class="toast" role="status"><span>SHIP-304 E2E test is now Active.</span><button type="button" data-close>OK</button></div>`;
+    $('layer').innerHTML = h;
+    if (sheet || edit === 'sprint' || P.has('close')) document.documentElement.dataset.sheet = ''; else delete document.documentElement.dataset.sheet;
+  }
+
+  /* Review navigation: every control reloads the page in the state it opens, so a reviewer can click through. */
+  function go(changes) {
+    const n = new URLSearchParams(P);
+    ['sheet', 'edit', 'close', 'toast', 'burn'].forEach(k => n.delete(k));
+    for (const [k, v] of Object.entries(changes)) if (v !== null) n.set(k, v);
+    if (window.SL_QUERY !== undefined && window.frameElement && parent.SL_SRCDOC) { window.frameElement.srcdoc = parent.SL_SRCDOC(n.toString()); return; }
+    location.search = n.toString();
+  }
+  document.addEventListener('click', e => {
+    const el = e.target.closest('[data-sheet],[data-state],[data-close],[data-edit],[data-closesprint],[data-pick],[data-tog],[data-tasks],[data-goal],a[href="#"]');
+    if (!el) return;
+    e.preventDefault();
+    if (el.dataset.sheet) go({ sheet: el.dataset.sheet });
+    else if (el.dataset.state) go({ sheet: 'state:' + el.dataset.state });
+    else if (el.dataset.edit) go({ edit: el.dataset.edit });
+    else if (el.hasAttribute('data-closesprint')) go({ close: '' });
+    else if (el.dataset.pick) { const i = byKey(sheet.slice(6)); i.st = el.dataset.pick; P.delete('sheet'); render(); }
+    else if (el.hasAttribute('data-close')) go({});
+    else if (el.dataset.tog) { closed.has(el.dataset.tog) ? closed.delete(el.dataset.tog) : closed.add(el.dataset.tog); render(); }
+    else if (el.hasAttribute('data-tasks')) { showTasks = !showTasks; render(); }
+    else if (el.hasAttribute('data-goal')) { P.has('goalopen') ? P.delete('goalopen') : P.set('goalopen', ''); render(); }
+  });
+  /* Burndown: tap or drag along the chart to read a day. */
+  document.addEventListener('pointerdown', e => {
+    const svg = e.target.closest('[data-burn]'); if (!svg) return;
+    const read = ev => { const r = svg.getBoundingClientRect(); const i = Math.round(((ev.clientX - r.left) / r.width * 366 - 22) / ((366 - 30) / 9)); P.set('burn', Math.max(0, Math.min(burnActual.length - 1, i))); const o = svg.closest('.burn'); o.outerHTML = burndown(); };
+    read(e);
+  });
+  render();
+})();
+</script>
+</body>
+</html>

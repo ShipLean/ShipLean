@@ -6,7 +6,8 @@
 # (an address starting ./, such as SHIP-715's attachment.html).
 # Usage: ./screenshots.sh [name ...]   (no names = all). CHROME=/path/to/chrome overrides the browser.
 # The today-*.png images are screenshots of the real app (main at 918cf067) and are not made here.
-# (today-attachment-*.png come from the SPA's component harness at 390 × 844 with the page-shot fixtures.)
+# (today-attachment-*.png and today-fboard*.png come from the SPA's component harness at 390 × 844 with the page-shot
+# fixtures.)
 # Item shots use ?at=<section>, which with ?shot hides what is above the section: --screenshot ignores scrolling.
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -95,6 +96,20 @@ declare -A shots=(
   [sign-in-proxy-disabled]="./sign-in.html?state=proxy-disabled"
   [sign-in-proxy-ended]="./sign-in.html?state=proxy-ended"
   [sign-in-instance-shiplean]="./sign-in.html?inst=ShipLean"
+  # Sprint backlog and the sprint header (SHIP-724)
+  [sprint-backlog]="./sprint-backlog.html"
+  [sprint-backlog-list]="./sprint-backlog.html?at=list"
+  [sprint-backlog-no-tasks]="./sprint-backlog.html?at=list&tasks=off"
+  [sprint-backlog-burndown]="./sprint-backlog.html?burn=3"
+  [sprint-backlog-state]="./sprint-backlog.html?at=list&sheet=state:SHIP-304"
+  [sprint-backlog-picker]="./sprint-backlog.html?sheet=picker"
+  [sprint-backlog-more]="./sprint-backlog.html?sheet=more"
+  [sprint-backlog-ready]="./sprint-backlog.html?sheet=ready"
+  [sprint-backlog-active]="./sprint-backlog.html?sheet=active"
+  [sprint-backlog-goal]="./sprint-backlog.html?edit=goal"
+  [sprint-backlog-edit]="./sprint-backlog.html?edit=sprint"
+  [sprint-backlog-close]="./sprint-backlog.html?close"
+  [sprint-backlog-conflict]="./sprint-backlog.html?at=list&toast=conflict"
   # Boards: stories, features and epics (SHIP-719). *-before is the same screen with the touch layer off (?notouch).
   [board-before]="board.html?notouch"
   [board]="board.html"
@@ -131,6 +146,22 @@ declare -A shots=(
   [sprint-retro-items]="sprint-retro.html?view=items"
   [sprint-retro-item-open]="sprint-retro.html?view=items&open=SHIP-141"
   [sprint-retro-action]="sprint-retro.html?cat=unplanned&dialog=R-305.6"
+  # The Feature board (SHIP-722)
+  [fboard]="feature-board.html"
+  [fboard-active]="feature-board.html?col=active"
+  [fboard-drag]="feature-board.html?drag=SHIP-176&to=active"
+  [fboard-task]="feature-board.html?sheet=task&task=SHIP-172&col=active"
+  [fboard-story]="feature-board.html?sheet=story&task=SHIP-172"
+  [fboard-assign]="feature-board.html?sheet=assign&task=SHIP-176"
+  [fboard-filter]="feature-board.html?filter=mei&sheet=filter"
+  [fboard-filtered]="feature-board.html?filter=mei"
+  [fboard-end]="feature-board.html?at=SHIP-160"
+  [fboard-closed]="feature-board.html?closed&at=SHIP-160"
+  [fboard-more]="feature-board.html?sheet=more"
+  [fboard-add]="feature-board.html?add"
+  [fboard-parent]="feature-board.html?key=SHIP-103"
+  [fboard-parent-section]="feature-board.html?key=SHIP-103&at=SHIP-108"
+  [fboard-people]="feature-board.html?key=SHIP-103&view=people"
 )
 
 names=("$@")
