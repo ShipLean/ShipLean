@@ -261,3 +261,47 @@ The decisions are in [design/README.md › Boards on a phone](../README.md#board
 | Instance called ShipLean | ![Instance called ShipLean, light](images/sign-in-instance-shiplean.light.png) | ![Instance called ShipLean, dark](images/sign-in-instance-shiplean.dark.png) |
 
 The decisions are in [design/README.md › Sign in on a phone](../README.md#sign-in-on-a-phone-ship-736).
+
+## Sprint retro on a phone (SHIP-727)
+
+The sprint Retro tab at 900px and below, inside the touch shell. Desktop is unchanged.
+
+| File | What it is |
+|---|---|
+| `../screens/retro-touch.css`, `retro-touch.js` | The touch layer, loaded by `sprint-retro.html`. `?cat=well\|unplanned\|bad\|improve`, `?sheet=filter\|more\|coverage\|actions\|recurring\|theme:<point>\|note:<point>`, `?open=KEY` (By work item), `?dialog=<point>` (New action item), `?alt=stack\|pager` (the D1 alternatives), plus the page's own `?view=items`, `?decide=open`, `?why=<point>` and `?adding=sprint:<category>`; `?notouch` shows the desktop page at any width. |
+| `sprint-retro-review.html` | The design review: today, the three ways to fit four categories, every state as a live frame, what changes, the decisions and the acceptance criteria. |
+| `images/sprint-retro*.png` | The Retro tab at 390 × 844, 2× scale, light and dark (made by `screenshots.sh`). |
+| `images/today-retro*.png` | The real SPA (main at 918cf067) at 390px and 768px, from the page-shot fixtures in a component harness. |
+
+### Today
+
+| Top of the page | The whole page | By work item | Tablet, 768px |
+|---|---|---|---|
+| ![Today: the rail drawn over the board](images/today-retro.png) | ![Today: the whole page, 3,300px](images/today-retro-long.png) | ![Today: By work item, 6,900px](images/today-retro-items.png) | ![Today: a tablet](images/today-retro-tablet.png) |
+
+1. The rail is always 18rem wide (`SprintRetroPanel.tsx`: `grid-cols-[minmax(0,1fr)_18rem]`), so at 390px it is drawn over the board.
+2. The board gets about 150px; notes wrap every two or three words.
+3. The page is 3,300px long, and By work item 6,900px.
+4. The toolbar wraps to three rows and is sticky.
+5. The numbers and the Recurring chip explain themselves only in hover tooltips; note buttons are 18–24px; text boxes are 11px.
+
+### The phone page
+
+| State | Light | Dark |
+|---|---|---|
+| Went well (top of the page) | ![Went well (top of the page), light](images/sprint-retro.light.png) | ![Went well (top of the page), dark](images/sprint-retro.dark.png) |
+| Not in the plan | ![Not in the plan, light](images/sprint-retro-unplanned.light.png) | ![Not in the plan, dark](images/sprint-retro-unplanned.dark.png) |
+| To decide on | ![To decide on, light](images/sprint-retro-decide.light.png) | ![To decide on, dark](images/sprint-retro-decide.dark.png) |
+| Not needed: the reason | ![Not needed: the reason, light](images/sprint-retro-why.light.png) | ![Not needed: the reason, dark](images/sprint-retro-why.dark.png) |
+| Move to theme | ![Move to theme, light](images/sprint-retro-theme.light.png) | ![Move to theme, dark](images/sprint-retro-theme.dark.png) |
+| ⋯ on your own point | ![⋯ on your own point, light](images/sprint-retro-note.light.png) | ![⋯ on your own point, dark](images/sprint-retro-note.dark.png) |
+| Coverage | ![Coverage, light](images/sprint-retro-coverage.light.png) | ![Coverage, dark](images/sprint-retro-coverage.dark.png) |
+| Action items | ![Action items, light](images/sprint-retro-actions.light.png) | ![Action items, dark](images/sprint-retro-actions.dark.png) |
+| Recurring themes | ![Recurring themes, light](images/sprint-retro-recurring.light.png) | ![Recurring themes, dark](images/sprint-retro-recurring.dark.png) |
+| Filter | ![Filter, light](images/sprint-retro-filter.light.png) | ![Filter, dark](images/sprint-retro-filter.dark.png) |
+| ⋯ More | ![⋯ More, light](images/sprint-retro-more.light.png) | ![⋯ More, dark](images/sprint-retro-more.dark.png) |
+| By work item | ![By work item, light](images/sprint-retro-items.light.png) | ![By work item, dark](images/sprint-retro-items.dark.png) |
+| An item opened | ![An item opened, light](images/sprint-retro-item-open.light.png) | ![An item opened, dark](images/sprint-retro-item-open.dark.png) |
+| New action item | ![New action item, light](images/sprint-retro-action.light.png) | ![New action item, dark](images/sprint-retro-action.dark.png) |
+
+The decisions are in [design/README.md › Sprint retro on a phone](../README.md#sprint-retro-on-a-phone-ship-727).
