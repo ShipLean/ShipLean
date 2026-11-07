@@ -14,12 +14,14 @@ using ShipLean.TestSupport.Hosting;
 
 namespace ShipLean.WebApi.Tests.Auth;
 
-// What ends a session, and what keeps one. The clock is pinned so the once-a-minute stamp re-check can be stepped over.
+// What ends a session, and what keeps one. The clock is fake so the once-a-minute stamp re-check can be stepped over.
+// It starts at the real time: the cookie's expiry comes from this clock but the client's cookie jar checks it against the
+// real one, so a fixed date drops the cookie 14 days later and every signed-in request turns anonymous.
 [TestFixture]
 public class SessionTests : ApiFixture
 {
     private const string NewPassword = "a-brand-new-password";
-    private readonly FakeTimeProvider _clock = new(new DateTimeOffset(2026, 10, 24, 9, 0, 0, TimeSpan.Zero));
+    private readonly FakeTimeProvider _clock = new(TimeProvider.System.GetUtcNow());
 
     protected override TestUser SignedInAs => TestUser.Anonymous;
 
