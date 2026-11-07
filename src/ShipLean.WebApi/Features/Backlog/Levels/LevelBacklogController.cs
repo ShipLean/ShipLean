@@ -11,7 +11,8 @@ namespace ShipLean.WebApi.Features.Backlog.Levels;
 // GET api/projects/{id}/backlogs/{level}: the Features or Epics backlog (level = features | epics; anything else: 400 validation).
 // Query: filter = a URL-encoded CriteriaJson document applied to the level's own items, evaluated on the server (invalid: 400
 // validation); includeCompleted = false (default) leaves Completed-category Features or Epics out.
-// Rows are in stack order, always List mode (Level says which). Rank is the place in the whole level (honouring only includeCompleted),
+// mode = list (default) or tree; tree is Features only (planning, or tree on epics: 400 validation). In list mode rows are in stack
+// order (Level says which). Tree mode: see LevelBacklogTree. Rank is the place in the whole level (honouring only includeCompleted),
 // so a filter never renumbers it. Rollups are the per-type counts of everything under the row at any depth, closed included
 // whatever includeCompleted says, Tasks left out: Story and Bug entries drive Progress, Feature entries (nested ones too) are an
 // Epic's Features count. ChildPoints is the points of all stories and bugs under the row, open and closed (null when none is
@@ -23,9 +24,9 @@ public sealed class LevelBacklogController(ILevelBacklogReads reads, IProjectAcc
     [ProducesResponseType<BacklogViewDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ApiError>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ApiError>(StatusCodes.Status404NotFound)]
-    public async Task<BacklogViewDto> Get(Guid id, BoardLevel level, string? filter, bool includeCompleted, CancellationToken cancellationToken)
+    public async Task<BacklogViewDto> Get(Guid id, BoardLevel level, BacklogMode mode, string? filter, bool includeCompleted, CancellationToken cancellationToken)
     {
         await access.RequireAsync(id, ProjectRole.Member, cancellationToken);
-        return await reads.GetAsync(id, level, filter, includeCompleted, cancellationToken);
+        return await reads.GetAsync(id, level, mode, filter, includeCompleted, cancellationToken);
     }
 }

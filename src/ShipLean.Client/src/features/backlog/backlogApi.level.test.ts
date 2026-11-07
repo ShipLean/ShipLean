@@ -37,3 +37,16 @@ test.each(['features', 'epics'] as const)(
     );
   },
 );
+
+test('fetchBacklog_WhenFeaturesTree_ShouldReadTheFeaturesEndpointInTreeMode', async () => {
+  await fetchBacklog({
+    projectId: 'p1',
+    level: 'features',
+    mode: 'tree',
+    filter: '',
+    includeCompleted: false,
+  });
+  expect(api.get).toHaveBeenCalledWith(
+    '/api/projects/p1/backlogs/features?mode=tree&filter=&includeCompleted=false',
+  );
+});

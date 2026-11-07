@@ -12,8 +12,8 @@ export interface BacklogSlots {
   levelBacklog?: LevelBacklogSlotProps;
 }
 
-// Which slots a backlog page mounts, and with what. Stories show the mode ?mode= names, Features and Epics the one
-// list.
+// Which slots a backlog page mounts, and with what. Stories show the mode ?mode= names; Features and Epics mount the level
+// backlog, which reads the mode itself (Features: List or Tree).
 export function backlogSlots(project: ProjectDto, level: Level, mode: BacklogMode): BacklogSlots {
   const props = { project, level, mode };
   return {
