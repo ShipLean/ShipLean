@@ -294,3 +294,44 @@ It is built in `../screens/feature-board-touch.css` and `feature-board-touch.js`
 | Parent Feature | ![Parent Feature, light](images/fboard-parent.light.png) | ![Parent Feature, dark](images/fboard-parent.dark.png) |
 | A Feature under it | ![Feature band, light](images/fboard-parent-section.light.png) | ![Feature band, dark](images/fboard-parent-section.dark.png) |
 | Grouped by People | ![People lanes, light](images/fboard-people.light.png) | ![People lanes, dark](images/fboard-people.dark.png) |
+
+## Sprint backlog and the sprint header (SHIP-724)
+
+The Sprint backlog (`/p/:key/sprints/:id/backlog`) and the sprint header every sprint tab shares (picker, Current, ⋯, goal, tabs) at 900px and below, inside the touch shell. Desktop is unchanged. The decisions (D1–D11, settled by Joel on 7 Nov 2026) are in [design/README.md › Sprint backlog on a phone](../README.md#sprint-backlog-on-a-phone-ship-724) and on SHIP-724.
+
+| File | What it is |
+|---|---|
+| `sprint-backlog.html` | The phone screen, opened directly. `?sheet=picker\|more\|state:KEY\|ready\|active`, `?edit=goal\|sprint`, `?close`, `?burn=0-4`, `?tasks=off`, `?toast=conflict`, `?at=list` (with `?shot`, hides what is above the list) and `?theme=light\|dark`. It draws the touch shell's top bar itself. The data is the page-shot fixture's Sprint 24. |
+| `sprint-backlog-review.html` | The design review: today on a phone, every state as a live frame, what changes in the code, and the decisions. |
+| `images/sprint-backlog*.png` | `sprint-backlog.html` at 390 × 844, 2× scale, light and dark (made by `screenshots.sh`). |
+| `images/today-sprint-*.png` | The real Sprint backlog at 390 × 844 before this change (the SPA's component harness with the page-shot fixtures, 1×). |
+
+### Today
+
+| The whole page | Sprint picker | State menu | Dark |
+|---|---|---|---|
+| ![Today: the Sprint backlog at 390px](images/today-sprint-backlog-full.png) | ![Today: the sprint picker popover](images/today-sprint-picker.png) | ![Today: the state menu over the table](images/today-sprint-state-menu.png) | ![Today: dark](images/today-sprint-backlog.dark.png) |
+
+1. The 256px rail (Ready to pick up, In progress now, Points by state) sits on top of the table and hides it.
+2. The table keeps six columns, so state, assignee, tasks and points are a sideways scroll away.
+3. State menus and the sprint picker are popovers on 24px buttons.
+4. In progress now says who is active; what they're on is only a hover title.
+5. The header packs the picker, Current, All sprints and Close sprint on one line; Edit and Edit sprint squeeze beside the goal.
+
+### The phone page
+
+| State | Light | Dark |
+|---|---|---|
+| Top of the page | ![Sprint backlog, light](images/sprint-backlog.light.png) | ![Sprint backlog, dark](images/sprint-backlog.dark.png) |
+| The list | ![The list, light](images/sprint-backlog-list.light.png) | ![The list, dark](images/sprint-backlog-list.dark.png) |
+| Tasks switched off | ![Tasks off, light](images/sprint-backlog-no-tasks.light.png) | ![Tasks off, dark](images/sprint-backlog-no-tasks.dark.png) |
+| Reading the burndown | ![Burndown, light](images/sprint-backlog-burndown.light.png) | ![Burndown, dark](images/sprint-backlog-burndown.dark.png) |
+| States sheet | ![States sheet, light](images/sprint-backlog-state.light.png) | ![States sheet, dark](images/sprint-backlog-state.dark.png) |
+| Sprint picker | ![Sprint picker, light](images/sprint-backlog-picker.light.png) | ![Sprint picker, dark](images/sprint-backlog-picker.dark.png) |
+| Header ⋯ | ![Header actions, light](images/sprint-backlog-more.light.png) | ![Header actions, dark](images/sprint-backlog-more.dark.png) |
+| Ready to pick up | ![Ready to pick up, light](images/sprint-backlog-ready.light.png) | ![Ready to pick up, dark](images/sprint-backlog-ready.dark.png) |
+| In progress now | ![In progress now, light](images/sprint-backlog-active.light.png) | ![In progress now, dark](images/sprint-backlog-active.dark.png) |
+| Edit goal | ![Edit goal, light](images/sprint-backlog-goal.light.png) | ![Edit goal, dark](images/sprint-backlog-goal.dark.png) |
+| Edit sprint | ![Edit sprint, light](images/sprint-backlog-edit.light.png) | ![Edit sprint, dark](images/sprint-backlog-edit.dark.png) |
+| Close sprint | ![Close sprint, light](images/sprint-backlog-close.light.png) | ![Close sprint, dark](images/sprint-backlog-close.dark.png) |
+| Someone else changed it | ![Conflict toast, light](images/sprint-backlog-conflict.light.png) | ![Conflict toast, dark](images/sprint-backlog-conflict.dark.png) |

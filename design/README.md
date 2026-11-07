@@ -400,6 +400,20 @@ At 900px and below, the board on a Feature's own page (`/p/:key/items/:feature/b
 - **Sheets:** Filter (a checkbox row per person and Unassigned with their task counts, Show everyone's tasks) and ⋯ More (Collapse all, Expand all, Show or hide closed stories, Card settings, Open the Feature).
 - **Measuring:** compare `work_item.moved` from the Feature board per week by `method` and `viewport`: on phones against desktop, and the 4 weeks before and after release.
 
+## Sprint backlog on a phone (SHIP-724)
+
+At 900px and below, the Sprint backlog and the sprint header follow `mobile/sprint-backlog.html` (images and review in [mobile/README.md](mobile/README.md#sprint-backlog-and-the-sprint-header-ship-724)). Above 900px the [Sprint screens patterns](#sprint-screens-patterns) still apply. The shared mobile rules are on SHIP-805 and aren't repeated here; nothing here changes them.
+
+**Decided 2026-11-07 (every recommendation kept):** the rail becomes two glance rows above the list, Ready to pick up and In progress now, each opening a sheet (D1); two-line rows instead of the table, as SHIP-716 D1 (D2); the state is a pill that opens a States sheet with each state's category (D3); tasks are shown, with a Tasks switch in the list header, and each story keeps its ▼ (D4); the header is picker · Current · ⋯, and ⋯ holds Edit goal, Edit sprint, All sprints and Close sprint (D5); the picker is a sheet with dates and Past / Current / Future, All sprints at the foot (D6); one row of four figure tiles with points by state as one bar, Committed linking to Capacity (D7); the burndown is full width and reads a day on tap or drag (D8); the goal edits in place with the SaveBar, Edit sprint and Close sprint go full screen (D9); **the phone header is built once in `SprintHeader`**, so Taskboard (SHIP-725), Capacity, Retro and Demo get it, and on phones the Taskboard's slim header shows the tabs too (D10); a state conflict shows as a toast and the row flashes (D11).
+
+- **Header:** row 1 the picker (`Sprint 24 ▾`), the status chip and ⋯; row 2 the dates and time left; then the goal, clamped to two lines (tap to expand); then the tabs, 38px, scrolling sideways in their own box with the current tab scrolled into view. It scrolls with the page. Picking a sprint keeps the tab, as today.
+- **Figures:** Committed `/ capacity` (or `/ velocity`), Completed, Remaining, Time left in one row; Committed opens Capacity. Under them the points by state category as one bar with a legend.
+- **Burndown:** full width, about 118px tall. Tapping or dragging along it puts the day, points left and the ideal in its header.
+- **Glance rows:** "Ready to pick up · n" with the titles, and "In progress now" with faces. Ready lists unassigned, not-started items in backlog order; In progress lists every member with their active items under their name. Tapping an item opens the item modal.
+- **Row:** ▼ (stories with tasks), the type icon and title (up to two lines, opens the item modal), then key, the state pill (28px, 32px hit area) and tasks done; points and the assignee on the right. Tasks indent under their story with key, state pill and assignee; task points aren't shown.
+- **Edits:** Edit goal swaps the goal for a 16px textarea and shows the SaveBar. Edit sprint (name, start, end, goal) and the Close sprint dialog (SHIP-549's content) are full screen with ✕ at the top left; Close sprint's button sits at the bottom.
+- **Measuring:** no new events. With `viewport` on every web event (SHIP-805 rule 16), compare `work_item.updated` state changes per Sprint backlog `screen.viewed`, phone against desktop, per week over the 4 weeks before and after release.
+
 ## Sign in on a phone (SHIP-736)
 
 At 900px and below, Sign in, Choose your own password, No projects yet and proxy sign-in follow `mobile/sign-in.html` (images and review in [mobile/README.md](mobile/README.md#sign-in-on-a-phone-ship-736)). Above 900px, `screens/signin.html` and the account patterns below still apply. The shared mobile rules are on SHIP-805 and aren't repeated here; nothing here changes them.

@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Sprint backlog on a phone (SHIP-724 review)</title>
+<!-- SHIP-724 design review: today on a phone, every state of sprint-backlog.html as a live frame, what changes in the code, and the decisions (settled by Joel on 7 Nov 2026). Open over HTTP or directly; iframes may render blank under file:// in some browsers. -->
+<link rel="stylesheet" href="../tokens.css">
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; background: var(--color-bg); color: var(--color-text); font-family: var(--font-sans); font-size: 14px; line-height: 1.5; }
+.wrap { max-width: 1340px; margin: 0 auto; padding: 28px 24px 90px; }
+h1 { margin: 0 0 6px; font-size: 26px; font-weight: 700; letter-spacing: -.01em; }
+h2 { margin: 0 0 4px; font-size: 20px; font-weight: 650; }
+h3 { margin: 0 0 4px; font-size: 15px; font-weight: 650; }
+p { margin: 0 0 8px; }
+.muted { color: var(--color-muted); }
+a { color: var(--color-accent); }
+code { font: 12px var(--font-mono); overflow-wrap: anywhere; }
+.lede { max-width: 920px; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; background: var(--color-surface); border: 1px solid var(--color-border); font-size: 12px; }
+.seg { display: inline-flex; height: 30px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); overflow: hidden; background: var(--color-surface); vertical-align: middle; }
+.seg button { padding: 0 12px; border: 0; border-right: 1px solid var(--color-border); background: transparent; color: var(--color-muted); font: inherit; font-size: 13px; cursor: pointer; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--color-accent-soft); color: var(--color-text); font-weight: 600; }
+section.block { margin-top: 44px; }
+.sub { margin: 0 0 14px; color: var(--color-muted); max-width: 960px; }
+.today { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; align-items: start; }
+@media (max-width: 1000px) { .today { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+figure { margin: 0; min-width: 0; }
+figure img { display: block; width: 100%; height: auto; border: 1px solid var(--color-border); border-radius: 14px; }
+figure.tall img { max-height: 900px; object-fit: cover; object-position: top; }
+figcaption { margin-top: 6px; font-size: 12px; color: var(--color-muted); }
+.problems { margin: 16px 0 0; padding: 14px 16px 14px 34px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); display: grid; gap: 6px; max-width: 980px; }
+.problems li::marker { font-weight: 700; color: var(--color-danger); }
+.groups { display: grid; gap: 34px; }
+.grp h3 { font-size: 16px; margin-bottom: 10px; }
+.phones { display: grid; grid-template-columns: repeat(auto-fill, minmax(404px, 1fr)); gap: 28px 20px; }
+.phone { min-width: 0; display: grid; gap: 8px; align-content: start; }
+.phone .ph { display: flex; gap: 8px; align-items: baseline; }
+.phone .no { flex: none; display: inline-grid; place-items: center; min-width: 30px; height: 22px; padding: 0 6px; border-radius: 6px; background: var(--color-accent); color: var(--color-accent-fg); font-weight: 700; font-size: 12px; }
+.frame { width: 404px; max-width: 100%; padding: 7px; border-radius: 30px; background: #0b0f17; box-shadow: var(--shadow-raised); }
+.frame iframe { display: block; width: 390px; height: 844px; max-width: 100%; border: 0; border-radius: 24px; background: var(--color-surface); }
+.phone ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; font-size: 13px; max-width: 404px; }
+.dec { display: inline-block; padding: 0 6px; border-radius: 999px; background: var(--color-surface-2); font-size: 11px; font-weight: 600; white-space: nowrap; color: var(--color-text); text-decoration: none; }
+table.data { width: 100%; border-collapse: collapse; background: var(--color-surface); border: 1px solid var(--color-border); font-size: 13px; }
+table.data th { padding: 7px 10px; background: var(--color-surface-2); border-bottom: 1px solid var(--color-border); text-align: left; font-size: 12px; font-weight: 600; }
+table.data td { padding: 7px 10px; border-bottom: 1px solid var(--color-border); vertical-align: top; overflow-wrap: anywhere; }
+table.data tr:last-child td { border-bottom: 0; }
+.scroll-x { overflow-x: auto; }
+.qs { display: grid; gap: 12px; }
+.q { padding: 14px 16px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); display: grid; gap: 8px; scroll-margin-top: 16px; }
+.q h3 { display: flex; gap: 8px; align-items: baseline; }
+.q h3 .id { flex: none; font: 700 12px var(--font-mono); color: var(--color-accent); }
+.q .see { font-size: 12px; }
+.opts { display: grid; gap: 6px; }
+.opts label { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: start; padding: 8px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); cursor: pointer; background: var(--color-bg); }
+.opts label:has(input:checked) { border-color: var(--color-accent); background: var(--color-accent-soft); }
+.opts input { margin-top: 3px; }
+.opts b { font-weight: 600; }
+.rec { margin-left: 6px; padding: 0 6px; border-radius: 999px; background: color-mix(in srgb, var(--color-ok) 18%, transparent); color: var(--color-ok); font-size: 11px; font-weight: 700; }
+.opts small { display: block; color: var(--color-muted); font-size: 12.5px; }
+.q textarea { width: 100%; min-height: 34px; padding: 6px 8px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-bg); color: var(--color-text); font: inherit; font-size: 13px; resize: vertical; }
+.submit { position: sticky; bottom: 0; margin-top: 16px; padding: 12px 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-dialog); }
+.submit .st { flex: 1; min-width: 200px; font-size: 13px; color: var(--color-muted); }
+.btn { height: 34px; padding: 0 14px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); font: inherit; font-size: 13px; cursor: pointer; }
+.btn.pri { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-fg); font-weight: 600; }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+@media (max-width: 900px) { .two { grid-template-columns: minmax(0, 1fr); } }
+.card { padding: 14px 16px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+.card ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+.rules { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.rules span { padding: 2px 8px; border-radius: 999px; background: var(--color-accent-soft); font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>SHIP-724 · Sprint backlog on a phone</h1>
+    <p class="lede">The Sprint backlog and the sprint header (picker, tabs, goal, Edit sprint, Close sprint) at 900px and below, drawn at 390 × 844. It sits inside the SHIP-713 touch shell and follows the shared rules on <b>SHIP-805</b>, which this page doesn't restate. The phones below are the live mock (<code>design/mobile/sprint-backlog.html</code>), so tap through them. The data is the page-shot fixture's Sprint 24, the same as the "today" shots.</p>
+    <div class="chips">
+      <span class="chip">Story · 5 pts · Sprint 2</span><span class="chip">Parent SHIP-707</span><span class="chip">Design: ShipLean's own tokens (design/tokens.css)</span>
+      <span class="chip">Theme <span class="seg" id="theme"><button type="button" aria-pressed="true" data-t="light">Light</button><button type="button" aria-pressed="false" data-t="dark">Dark</button></span></span>
+    </div>
+    <div class="rules">SHIP-805 rules this design leans on: <span>1 · 900px</span><span>3 · bottom sheets</span><span>4 · forms full screen</span><span>5 · nothing hover-only</span><span>7 · tabs scroll sideways</span><span>8 · ⋯ = action sheet</span><span>12 · only the top bar pins</span><span>13 · 32px</span><span>14 · 16px inputs</span><span>15 · SaveBar / Discard</span><span>16 · viewport on events</span></div>
+  </header>
+
+  <section class="block">
+    <h2>Today at 390px</h2>
+    <p class="sub">The real app (this branch's SPA, page-shot fixtures, 390 × 844). The SHIP-713 drawer isn't built yet, so the old nav strip is still at the top.</p>
+    <div class="today">
+      <figure class="tall"><img src="images/today-sprint-backlog-full.png" alt="Today: the whole page"><figcaption>The whole page. The rail floats over the table; the table's State, Assigned, Tasks and Pts columns are off to the right.</figcaption></figure>
+      <figure><img src="images/today-sprint-picker.png" alt="Today: sprint picker"><figcaption>Sprint picker: a small popover with names only.</figcaption></figure>
+      <figure><img src="images/today-sprint-state-menu.png" alt="Today: state menu"><figcaption>After scrolling the table sideways: the state menu is a popover, and the rail still covers rows.</figcaption></figure>
+      <figure><img src="images/today-sprint-backlog.dark.png" alt="Today: dark"><figcaption>Dark. KPI tiles stack one per row; Edit and Edit sprint squeeze beside the goal.</figcaption></figure>
+    </div>
+    <ol class="problems">
+      <li>The 256px rail (Ready to pick up, In progress now, Points by state) sits on top of the table and hides it.</li>
+      <li>The table keeps six columns, so a row's state, assignee, task count and points are a sideways scroll away.</li>
+      <li>State menus and the sprint picker are popovers anchored to small 24px buttons.</li>
+      <li>"In progress now" lists who is active, but what they're on is only a hover title.</li>
+      <li>The header packs picker, Current, All sprints and Close sprint on one line, and the goal's two Edit buttons wrap beside it.</li>
+    </ol>
+  </section>
+
+  <section class="block">
+    <h2>Proposed</h2>
+    <p class="sub">Each phone is the mock in one state; numbers match the D-questions below. Everything scrolls with the page except the top bar.</p>
+    <div class="groups" id="groups"></div>
+  </section>
+
+  <section class="block">
+    <h2>What changes in the code</h2>
+    <p class="sub">Desktop stays as it is. Below 900px the same components render a different shape; nothing new on the server.</p>
+    <div class="scroll-x"><table class="data">
+      <thead><tr><th>Where</th><th>Today</th><th>At 900px and below</th><th>Size</th></tr></thead>
+      <tbody>
+        <tr><td><code>SprintHeader</code>, <code>SprintGoal</code></td><td>Picker · chip · All sprints · Close sprint on one row; goal with Edit and Edit sprint</td><td>Picker · Current · ⋯ (Edit goal, Edit sprint, All sprints, Close sprint). Goal clamps to two lines, tap to expand. Shared by every sprint tab (D10).</td><td>S</td></tr>
+        <tr><td><code>SprintPicker</code></td><td>Popover listbox</td><td>The SHIP-713 <code>Sheet</code>: names, dates, status chip, a tick on the current one, All sprints at the foot (D6). Keeps the tab, as today.</td><td>S</td></tr>
+        <tr><td><code>SprintTabs</code></td><td>Five links</td><td>The same links, 38px tall, scrolling sideways in their own box with the current one scrolled into view.</td><td>XS</td></tr>
+        <tr><td><code>BacklogKpis</code>, <code>PointsByState</code></td><td>Four tiles; points as chips in the rail</td><td>One row of four compact tiles; Committed links to Capacity (replaces "edit"). Points by state becomes one bar with a legend (D7).</td><td>S</td></tr>
+        <tr><td><code>Burndown</code></td><td>Fixed 232px SVG, hover titles</td><td>Full width; tap or drag to read a day (D8).</td><td>S</td></tr>
+        <tr><td><code>SprintRail</code></td><td>Aside beside the table</td><td>Two glance rows above the list; each opens a <code>Sheet</code> (D1). In progress now lists each person's items (no hover).</td><td>S</td></tr>
+        <tr><td><code>BacklogTable</code>, <code>StoryRow</code>, <code>TaskRow</code></td><td>Six-column table</td><td>Two-line rows: title, then key · state pill · tasks done; points and avatar on the right. Tasks indent under their story (D2, D4).</td><td>M</td></tr>
+        <tr><td><code>RowStateMenu</code></td><td>Portal popover</td><td>A 28px pill (32px hit area) opening a States sheet; picking applies and closes (D3). Conflict notice becomes a toast (D11).</td><td>S</td></tr>
+        <tr><td><code>SprintGoalEditor</code>, <code>EditSprintRail</code>, Close sprint dialog</td><td>Inline editor; side rail; dialog</td><td>Goal edits in place with the <code>SaveBar</code>; Edit sprint full screen with the <code>SaveBar</code>; the Close sprint dialog full screen with its button at the bottom (D9).</td><td>S</td></tr>
+      </tbody>
+    </table></div>
+    <div class="two" style="margin-top:16px">
+      <div class="card"><h3>Estimate</h3><p class="muted" style="margin:0">5 points holds if SHIP-713 ships <code>Sheet</code>, <code>SaveBar</code> and <code>useTouchShell()</code> first: this story only reshapes existing components. Without them it's 8.</p></div>
+      <div class="card"><h3>Measuring</h3><p class="muted" style="margin:0">No new events. With <code>viewport</code> on every web event (rule 16), compare <code>work_item.updated</code> state changes per sprint-backlog <code>screen.viewed</code>, phone against desktop, per week for the four weeks before and after release.</p></div>
+    </div>
+  </section>
+
+  <section class="block" id="decisions">
+    <h2>Decisions</h2>
+    <div class="card" style="margin-bottom:12px"><b>Decided 7 Nov 2026 by Joel:</b> every recommendation kept (D1–D11). The answers are shown selected below.</div>
+    <form id="dform" class="qs" data-lavish-question="ship-724-decisions"></form>
+  </section>
+</div>
+
+<script>
+(() => {
+  const Q = [
+    { id: 'D1', t: 'Where the rail goes', see: ['glance', 'ready', 'active'], o: [
+      ['glance', 'Two glance rows above the list, each opening a sheet', 'Ready to pick up · 3 with the titles, and In progress now with faces. The list stays near the top; the full lists are one tap away.', 1],
+      ['below', 'Rail sections stacked under the list', 'Nothing hidden, but on a 15-row sprint nobody scrolls that far.'],
+      ['above', 'Rail sections in full above the list', 'Everything visible at once; the list starts about two screens down.'],
+    ] },
+    { id: 'D2', t: 'Row shape', see: ['top', 'list'], o: [
+      ['two', 'Two-line rows, like SHIP-716 D1', 'Title on top; key, state and tasks done under it; points and avatar on the right. No sideways scroll.', 1],
+      ['table', 'Keep the table, scrolling sideways in its own box', 'Least work, but state and points sit off screen.'],
+    ] },
+    { id: 'D3', t: 'Changing a state', see: ['state'], o: [
+      ['sheet', 'State pill opens a States sheet', 'Shows each state\'s category, as the desktop menu does, so it fits C5\'s "sheet when there are footnotes".', 1],
+      ['select', 'A native select', 'Platform picker, less code, but loses the category column.'],
+    ] },
+    { id: 'D4', t: 'Tasks on a phone', see: ['list', 'notasks'], o: [
+      ['shown', 'Shown, as on the desktop, with a Tasks switch in the list header', 'Each story keeps its ▼. The switch replaces the "Show tasks" checkbox.', 1],
+      ['collapsed', 'Collapsed by default on phones', 'Shorter list; one more tap to see who is on which task.'],
+    ] },
+    { id: 'D5', t: 'Header actions', see: ['more', 'top'], o: [
+      ['more', 'Picker · Current · ⋯, with Edit goal, Edit sprint, All sprints and Close sprint in the ⋯ sheet', 'One row; rule 8.', 1],
+      ['button', 'Same, but Close sprint stays a visible button in the header', 'Easier to find at the end of a sprint; another button on every sprint tab all sprint long.'],
+    ] },
+    { id: 'D6', t: 'Sprint picker', see: ['picker'], o: [
+      ['sheet', 'A sheet with dates and Past / Current / Future, All sprints at the foot', 'Same order as today, current one ticked. Picking keeps the tab you\'re on.', 1],
+      ['select', 'A native select', 'Names only; All sprints stays a link elsewhere.'],
+    ] },
+    { id: 'D7', t: 'Figures', see: ['top'], o: [
+      ['row', 'One row of four compact tiles, points by state as one bar', 'Committed links to Capacity, replacing the small "edit" link.', 1],
+      ['grid', 'Tiles in a 2 × 2 grid', 'Bigger numbers, 70px taller.'],
+    ] },
+    { id: 'D8', t: 'Burndown', see: ['burn'], o: [
+      ['full', 'Full width, tap or drag to read a day', 'The day, points left and the ideal show in the chart header.', 1],
+      ['folded', 'Folded behind a Burndown row', 'Saves 150px; one more tap for the chart.'],
+    ] },
+    { id: 'D9', t: 'Editing and closing', see: ['goal', 'edit', 'close'], o: [
+      ['mixed', 'Goal edits in place with the SaveBar; Edit sprint and Close sprint go full screen', 'Edit sprint was a side rail, which rule 3 rules out. Close sprint is a dialog, so rule 4 makes it full screen.', 1],
+      ['allfull', 'Edit goal full screen as well', 'One pattern for all three; loses the page around the goal.'],
+    ] },
+    { id: 'D10', t: 'Other sprint tabs', see: ['top'], o: [
+      ['shared', 'Build the phone header once in SprintHeader, so Taskboard (SHIP-725), Capacity, Retro and Demo get it; on phones the Taskboard\'s slim header shows the tabs too', 'Today the Taskboard has no tabs, and the drawer only links Sprint 24\'s Backlog, so a phone has no other way between tabs.', 1],
+      ['own', 'Only the Backlog\'s header here; leave the slim variant to SHIP-725', 'Smaller story; the Taskboard may end up different.'],
+    ] },
+    { id: 'D11', t: 'State conflict notice', see: ['conflict'], o: [
+      ['toast', 'A toast at the bottom, and the row flashes', 'The text line above the table would be off screen when you change a row lower down.', 1],
+      ['banner', 'Keep it above the list', 'As today.'],
+    ] },
+  ];
+  const P = [
+    { g: 'The page', items: [
+      { id: 'top', q: '', title: 'Top of the page', dec: ['D5', 'D7', 'D10'], notes: ['Picker · Current · ⋯; dates and days left; goal clamps to two lines, tap to expand', 'Tabs scroll sideways in their own box', 'Tap Committed for Capacity'] },
+      { id: 'glance', q: 'at=&scrollto=glance', title: 'Rail as glance rows', dec: ['D1', 'D8'], notes: ['Scroll the phone to see the glance rows and the list', 'Tap the burndown to read a day'] },
+      { id: 'list', q: 'at=list', title: 'The list', dec: ['D2', 'D3', 'D4'], notes: ['Tap a title to open the item modal', 'Tap ▼ to fold a story\'s tasks; the Tasks switch folds all'] },
+      { id: 'notasks', q: 'at=list&tasks=off', title: 'Tasks switched off', dec: ['D4'], notes: ['Stories and bugs only'] },
+      { id: 'burn', q: 'burn=3', title: 'Reading the burndown', dec: ['D8'], notes: ['22 Oct: 19 left, ideal 14'] },
+    ] },
+    { g: 'Sheets', items: [
+      { id: 'state', q: 'at=list&sheet=state:SHIP-304', title: 'States sheet', dec: ['D3'], notes: ['Picking applies and closes (C4 recommendation)'] },
+      { id: 'picker', q: 'sheet=picker', title: 'Sprint picker', dec: ['D6'], notes: ['Keeps the Backlog tab'] },
+      { id: 'more', q: 'sheet=more', title: 'Header ⋯', dec: ['D5'], notes: ['Close sprint last, under a rule'] },
+      { id: 'ready', q: 'sheet=ready', title: 'Ready to pick up', dec: ['D1'], notes: ['Tap one to open it'] },
+      { id: 'active', q: 'sheet=active', title: 'In progress now', dec: ['D1'], notes: ['Each person\'s active items, which were a hover on the desktop'] },
+    ] },
+    { g: 'Editing, closing, notices', items: [
+      { id: 'goal', q: 'edit=goal', title: 'Edit goal', dec: ['D9'], notes: ['16px textarea; SaveBar with Discard'] },
+      { id: 'edit', q: 'edit=sprint', title: 'Edit sprint', dec: ['D9'], notes: ['Full screen, ✕ top left (C9); SaveBar'] },
+      { id: 'close', q: 'close', title: 'Close sprint', dec: ['D9'], notes: ['SHIP-549\'s dialog, full screen; native selects per item'] },
+      { id: 'conflict', q: 'at=list&toast=conflict', title: 'Someone else changed it', dec: ['D11'], notes: ['Toast; the row flashes'] },
+    ] },
+  ];
+  let theme = 'light';
+  const src = q => `sprint-backlog.html?${q.replace(/(^|&)scrollto=[^&]*/, '')}${q ? '&' : ''}theme=${theme}`;
+  function phones() {
+    let n = 0;
+    document.getElementById('groups').innerHTML = P.map(g => `<div class="grp"><h3>${g.g}</h3><div class="phones">${g.items.map(p => `
+      <article class="phone" id="${p.id}"><div class="ph"><span class="no">${++n}</span><b>${p.title}</b></div>
+        <div class="frame"><iframe loading="lazy" title="${p.title}" data-q="${p.q}" src="${src(p.q)}"></iframe></div>
+        <div>${p.dec.map(d => `<a class="dec" href="#q-${d}">${d}</a>`).join(' ')}</div>
+        <ul>${p.notes.map(x => `<li>${x}</li>`).join('')}</ul></article>`).join('')}</div></div>`).join('');
+    // Scroll the glance phone to its glance rows once loaded.
+    const f = document.querySelector('#glance iframe');
+    f.addEventListener('load', () => { try { const d = f.contentDocument; const el = d.querySelector('.glance'); d.scrollingElement.scrollTop = el.offsetTop - 300; } catch (e) {} });
+  }
+  phones();
+  document.getElementById('theme').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    theme = b.dataset.t;
+    document.querySelectorAll('#theme button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    document.querySelectorAll('.phone iframe').forEach(f => { f.src = src(f.dataset.q); });
+  });
+
+  const form = document.getElementById('dform');
+  form.innerHTML = Q.map(q => `<div class="q" id="q-${q.id}"><h3><span class="id">${q.id}</span>${q.t}</h3>
+    <div class="see">See ${q.see.map(s => `<a href="#${s}">${(P.flatMap(g => g.items).find(i => i.id === s) || {}).title}</a>`).join(', ')}</div>
+    <div class="opts">${q.o.map(([v, b, s, r]) => `<label><input type="radio" name="${q.id}" value="${v}"${r ? ' checked' : ''} data-label="${b.replace(/"/g, '&quot;')}"><span><b>${b}</b>${r ? '<span class="rec">Recommended</span>' : ''}<small>${s}</small></span></label>`).join('')}</div>
+    <textarea name="${q.id}-note" placeholder="Note (optional)"></textarea></div>`).join('') +
+    (window.lavish ? `<div class="submit"><span class="st" id="dstat">All ${Q.length} have a recommendation selected. Nothing is queued yet.</span><button class="btn pri" type="submit">Queue all ${Q.length} answers</button></div>` : '');
+  form.querySelectorAll('input,textarea').forEach(i => { i.disabled = !window.lavish; });
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const fd = new FormData(form);
+    const items = Q.map(q => {
+      const v = fd.get(q.id), opt = q.o.find(o => o[0] === v), note = (fd.get(q.id + '-note') || '').trim();
+      return { id: q.id, question: q.t, answer: opt[1], recommended: !!opt[3], note };
+    });
+    const changed = items.filter(i => !i.recommended || i.note);
+    const text = items.map(i => `${i.id} ${i.question}: ${i.answer}${i.recommended ? ' (recommended)' : ' (CHANGED)'}${i.note ? ' — note: ' + i.note : ''}`).join('\n');
+    if (window.lavish?.queuePrompt) {
+      window.lavish.queuePrompt(`SHIP-724 decisions. Apply each, update the mock and record them on the item. Account for D1–D11.\n${text}`,
+        { tag: 'decisions', text: `SHIP-724: ${items.length} answers, ${changed.length} changed or noted`, element: form, queueKey: 'ship-724-decisions', data: { items } });
+      document.getElementById('dstat').textContent = `Queued: ${items.length} answers (${changed.length} changed or noted). Press Send to Agent in the Lavish bar.`;
+    } else {
+      navigator.clipboard?.writeText(text);
+      document.getElementById('dstat').textContent = 'Not in Lavish: answers copied to the clipboard.';
+    }
+  });
+})();
+</script>
+</body>
+</html>
