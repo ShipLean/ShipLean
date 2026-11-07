@@ -11,7 +11,7 @@
 //     /authorize                  connect an agent  ?request=<id> is the pending authorize request
 //   Project level (everything under /p/:key, the project key; the crumbs start at the key):
 //     /p/:key/backlogs/stories    ?mode=list|planning|tree (list when absent)
-//     /p/:key/backlogs/features   ?mode=            (the Features level)
+//     /p/:key/backlogs/features   ?mode=list|tree   (the Features level; list when absent)
 //     /p/:key/backlogs/epics      ?mode=            (the Epics level)
 //     /p/:key/items/:itemKey      one work item, itemKey like SHIP-141
 //     /p/:key/items/:itemKey/attachments/:attachmentId   one attachment of that item, opened on its own page
