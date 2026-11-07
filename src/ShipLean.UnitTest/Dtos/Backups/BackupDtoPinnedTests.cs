@@ -96,4 +96,39 @@ public class BackupDtoPinnedTests
 
         JsonSerializer.SerializeToNode(run, Options)!["at"]!.GetValue<string>().ShouldBe("2026-10-24T14:00:00Z");
     }
+
+    private const string Secret = "example-secret-not-a-real-key-7Hq2";
+    private const string Passphrase = "correct horse battery staple";
+
+    private static S3DestinationSaveDto S3(string? secretKey) => new("us-east-1", null, "shiplean-backups", "shiplean/", false, "SHIPLEANEXAMPLEKEY01", secretKey);
+
+    [Test]
+    public void S3DestinationSaveDto_WhenPrinted_ShouldHideTheSecretKey()
+    {
+        var text = S3(Secret).ToString();
+
+        text.ShouldNotContain(Secret);
+        text.ShouldContain("SecretKey = ***");
+        text.ShouldContain("shiplean-backups");
+    }
+
+    [Test]
+    public void BackupDestinationSaveDto_WhenPrinted_ShouldHideTheSecretKey()
+    {
+        var text = new BackupDestinationSaveDto(BackupProvider.S3, S3(Secret)).ToString();
+
+        text.ShouldNotContain(Secret);
+        text.ShouldContain("SecretKey = ***");
+    }
+
+    [Test]
+    public void BackupSaveDto_WhenPrinted_ShouldHideThePassphraseAndSecretKey()
+    {
+        var text = new BackupSaveDto(true, new BackupDestinationSaveDto(BackupProvider.S3, S3(Secret)), "0 2 * * *", 14, true, Passphrase).ToString();
+
+        text.ShouldNotContain(Passphrase);
+        text.ShouldNotContain(Secret);
+        text.ShouldContain("Passphrase = ***");
+        text.ShouldContain("0 2 * * *");
+    }
 }
