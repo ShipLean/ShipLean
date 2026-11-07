@@ -35,8 +35,10 @@ internal static class WorkItemChecks
             throw ApiException.Validation("A BAU item can't be in a sprint.", "sprint");
         }
 
+        // FOR KEY SHARE holds the sprint until this write commits, so a sprint delete (FOR UPDATE, SprintStore.DeleteAsync)
+        // either waits and then counts this item, or archives first and this check finds no sprint.
         if (change.SprintId is { } sprint
-            && !await ExistsAsync(scope, "SELECT EXISTS (SELECT 1 FROM sprint WHERE id = @id AND project_id = @projectId AND archived_at IS NULL)", sprint, change.ProjectId, cancellationToken))
+            && !await ExistsAsync(scope, "SELECT EXISTS (SELECT 1 FROM sprint WHERE id = @id AND project_id = @projectId AND archived_at IS NULL FOR KEY SHARE)", sprint, change.ProjectId, cancellationToken))
         {
             throw ApiException.NotFound("Sprint not found.");
         }

@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { ProjectDto } from '../../api/projects';
 import type { SprintDto } from '../../api/sprints';
 import { routePath } from '../../routes';
@@ -26,6 +26,7 @@ export interface SprintHeaderProps {
 
 export function SprintHeader({ variant, project, sprint, sprints, tab }: SprintHeaderProps) {
   const slim = variant === 'slim';
+  const navigate = useNavigate();
   // The sprint whose Edit sprint rail is open; moving to another sprint closes it.
   const [editingId, setEditingId] = useState<string | null>(null);
   const editSprintRef = useRef<HTMLButtonElement>(null);
@@ -91,6 +92,8 @@ export function SprintHeader({ variant, project, sprint, sprints, tab }: SprintH
                 setEditingId(null);
                 editSprintRef.current?.focus();
               }}
+              // This page's sprint is gone, so the person lands on the list of the ones left.
+              onDeleted={() => void navigate(routePath('sprints', { key: project.key }))}
             />
           ) : null}
           <SprintTabs project={project} sprint={sprint} tab={tab} />

@@ -200,6 +200,7 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `sprint.created` | `create_sprint` | `ProjectSprints.Create` |
 | `sprint.planned` | `plan_sprint` |  |
 | `sprint.updated` |  | `Sprints.Update` |
+| `sprint.deleted` |  | `Sprints.Delete` |
 | `sprint.capacity_changed` |  | `SprintCapacity.Put` |
 | `sprint.ended` | `end_sprint` |  |
 | `sprint.rolled_over` |  | `SprintRollover.Apply` |
