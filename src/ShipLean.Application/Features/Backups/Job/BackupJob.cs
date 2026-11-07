@@ -23,6 +23,8 @@ public sealed class BackupJob(
     public const string ShutdownError = "Stopped: ShipLean shut down during the run.";
 
     private const string SetupStep = "The destination could not be set up";
+    private const string TempFileStep = "The temporary file could not be created";
+    private const string EncryptStep = "The encryption could not start";
     private const string DumpStep = "The database dump failed";
     private const string UploadStep = "The upload failed";
     private const string MirrorStep = "Copying the attachments failed";
@@ -42,11 +44,13 @@ public sealed class BackupJob(
             var prefix = PrefixOf(snapshot.Destination);
             var key = BackupObjectKeys.Database(prefix, run.StartedAt, run.Id, snapshot.PassphraseGeneration);
             long bytes;
+            step = TempFileStep;
             await using (var temp = tempFiles.Create())
             {
-                step = DumpStep;
+                step = EncryptStep;
                 await using (var encryptor = engine.Cipher.OpenEncryptor(temp, snapshot.Passphrase))
                 {
+                    step = DumpStep;
                     await engine.Dumper.DumpAsync(encryptor, token);
                 }
 
@@ -105,7 +109,7 @@ public sealed class BackupJob(
             return ShutdownError;
         }
 
-        return exception is DatabaseDumpException or BackupDestinationException or IOException
+        return WithheldException.IsTrusted(exception)
             ? $"{step}: {exception.Message}"
             : $"{step} ({exception.GetType().Name}).";
     }
@@ -115,14 +119,20 @@ public sealed class BackupJob(
     // claimed, so the warning names its key for manual cleanup.
     private async Task PruneAsync(BackupLease lease, BackupConfig snapshot, IBackupDestination destination, CancellationToken token)
     {
-        IReadOnlyList<BackupRunRow> claimed;
+        IReadOnlyList<BackupRunRow> claimed = [];
+        Exception? claimFailure = null;
         try
         {
             claimed = await runLog.ClaimPruneAsync(lease, snapshot.DestinationId, snapshot.KeepCount, token);
         }
         catch (Exception exception)
         {
-            logger.LogWarning(exception, "Backup run {RunId} succeeded, but no older backups were pruned: claiming them failed", lease.Run.Id);
+            claimFailure = exception;
+        }
+
+        if (claimFailure is not null)
+        {
+            logger.LogWarning(WithheldException.Loggable(claimFailure), "Backup run {RunId} succeeded, but no older backups were pruned: claiming them failed", lease.Run.Id);
             return;
         }
 
@@ -134,31 +144,51 @@ public sealed class BackupJob(
                 continue;
             }
 
-            try
+            if (await TryDeleteAsync(destination, key, token) is { } deleteFailure)
             {
-                await destination.DeleteAsync(key, token);
-                logger.LogInformation("Pruned backup {Key} of run {RunId}", key, old.Id);
+                logger.LogWarning(WithheldException.Loggable(deleteFailure), "Could not delete old backup {Key} of run {RunId}; its run is marked pruned, so delete it by hand", key, old.Id);
+                continue;
             }
-            catch (Exception exception)
-            {
-                logger.LogWarning(exception, "Could not delete old backup {Key} of run {RunId}; its run is marked pruned, so delete it by hand", key, old.Id);
-            }
+
+            logger.LogInformation("Pruned backup {Key} of run {RunId}", key, old.Id);
+        }
+    }
+
+    // The delete's failure, or null when it worked.
+    private static async Task<Exception?> TryDeleteAsync(IBackupDestination destination, string key, CancellationToken token)
+    {
+        try
+        {
+            await destination.DeleteAsync(key, token);
+            return null;
+        }
+        catch (Exception exception)
+        {
+            return exception;
         }
     }
 
     private async Task RecordFailureAsync(Guid runId, string error, Exception exception)
     {
-        logger.LogError(exception, "Backup run {RunId} failed: {Error}", runId, error);
+        logger.LogError(WithheldException.Loggable(exception), "Backup run {RunId} failed: {Error}", runId, error);
+        bool? recorded = null;
+        Exception? recordFailure = null;
         try
         {
-            if (!await runLog.FailAsync(runId, error, CancellationToken.None))
-            {
-                logger.LogWarning("Backup run {RunId} was no longer running when its failure was recorded", runId);
-            }
+            recorded = await runLog.FailAsync(runId, error, CancellationToken.None);
         }
         catch (Exception recording)
         {
-            logger.LogError(recording, "Could not record the failure of backup run {RunId}", runId);
+            recordFailure = recording;
+        }
+
+        if (recordFailure is not null)
+        {
+            logger.LogError(WithheldException.Loggable(recordFailure), "Could not record the failure of backup run {RunId}", runId);
+        }
+        else if (recorded == false)
+        {
+            logger.LogWarning("Backup run {RunId} was no longer running when its failure was recorded", runId);
         }
     }
 

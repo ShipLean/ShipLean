@@ -16,7 +16,6 @@ using ShipLean.Contracts.Usage;
 using ShipLean.LocalEnvironment.Database;
 using ShipLean.TestSupport.Backups;
 using ShipLean.TestSupport.Usage;
-using ShipLean.WebApi.Tests.Import.Jira;
 
 namespace ShipLean.WebApi.Tests.Backups.Job;
 
@@ -43,7 +42,7 @@ public class BackupJobTests
     private ScriptedDumper _dumper = null!;
     private ScriptedMirror _mirror = null!;
     private RecordingUsageEvents _usage = null!;
-    private RecordingLogger<BackupJob> _logger = null!;
+    private CapturingLogger<BackupJob> _logger = null!;
     private ScopedMeterFactory _meters = null!;
     private DirectoryInfo _temp = null!;
     private BackupJob _job = null!;
@@ -60,7 +59,7 @@ public class BackupJobTests
         _dumper = new ScriptedDumper();
         _mirror = new ScriptedMirror();
         _usage = new RecordingUsageEvents();
-        _logger = new RecordingLogger<BackupJob>();
+        _logger = new CapturingLogger<BackupJob>();
         _meters = new ScopedMeterFactory();
         _temp = Directory.CreateTempSubdirectory("shiplean-job-tests-");
         var configuration = new ConfigurationBuilder()
@@ -81,7 +80,11 @@ public class BackupJobTests
         _meters.Dispose();
         await _dataSource.DisposeAsync();
         await _database.DisposeAsync();
-        _temp.Delete(recursive: true);
+        _temp.Refresh();
+        if (_temp.Exists)
+        {
+            _temp.Delete(recursive: true);
+        }
     }
 
     [Test]
@@ -190,6 +193,55 @@ public class BackupJobTests
 
         run.State.ShouldBe(BackupRunState.Failed);
         run.Error.ShouldBe("The database dump failed (InvalidOperationException).");
+    }
+
+    [Test]
+    public async Task Run_WhenUnexpectedError_ShouldKeepItsMessageOutOfLogs()
+    {
+        _dumper.AfterWrite = (_, _) => throw new InvalidOperationException("Host=db;Password=hunter2");
+        _runLog.FailClaims = true;
+
+        // One run fails in the dump; the next succeeds and fails to claim.
+        (await RunAsync(Config())).State.ShouldBe(BackupRunState.Failed);
+        _dumper.AfterWrite = null;
+        (await RunAsync(Config(keepCount: 1))).State.ShouldBe(BackupRunState.Succeeded);
+
+        var entries = _logger.Entries;
+        entries.ShouldNotContain(e => e.Message.Contains("hunter2", StringComparison.Ordinal) || (e.Exception ?? string.Empty).Contains("hunter2", StringComparison.Ordinal));
+        entries.ShouldNotContain(e => (e.Exception ?? string.Empty).Contains("The claim failed.", StringComparison.Ordinal));
+        var failure = entries.Single(e => e.Level == LogLevel.Error);
+        failure.Exception.ShouldNotBeNull().ShouldContain("System.InvalidOperationException");
+        failure.Exception.ShouldContain(nameof(ScriptedDumper));
+    }
+
+    [Test]
+    public async Task Run_WhenTempFolderMissing_ShouldFailNamingTempFile()
+    {
+        _temp.Delete(recursive: true);
+
+        var run = await RunAsync(Config());
+
+        run.State.ShouldBe(BackupRunState.Failed);
+        run.Error.ShouldNotBeNull().ShouldStartWith("The temporary file could not be created: ");
+        _dumper.Calls.ShouldBe(0);
+    }
+
+    [Test]
+    public async Task Run_WhenMirrorFails_ShouldFailAndNotPrune()
+    {
+        var first = await RunAsync(Config(includeAttachments: true));
+        var second = await RunAsync(Config(includeAttachments: true));
+        _mirror.Step = () => throw new BackupDestinationException("The bucket refused attachments/g3/attachments/a.slbk.");
+        var config = Config(keepCount: 1, includeAttachments: true);
+
+        var third = await RunAsync(config);
+
+        third.State.ShouldBe(BackupRunState.Failed);
+        third.Error.ShouldBe("Copying the attachments failed: The bucket refused attachments/g3/attachments/a.slbk.");
+        third.DatabaseObjectKey.ShouldBeNull();
+        (await _log.UnprunedSuccessesAsync(config.DestinationId)).Select(r => r.Id).ShouldBe([second.Id, first.Id]);
+        (await KeysAsync()).ShouldContain(first.DatabaseObjectKey!);
+        (await KeysAsync()).ShouldContain(second.DatabaseObjectKey!);
     }
 
     [Test]
