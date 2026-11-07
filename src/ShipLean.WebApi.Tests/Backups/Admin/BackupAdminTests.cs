@@ -39,6 +39,8 @@ public class BackupAdminTests
     public async Task StartHost()
     {
         _database = await ShipLeanDatabase.CloneSeedAsync();
+        _clock = new FakeTimeProvider(Start);
+        _destinations = new RecordingDestinationFactory();
         StartHostWith(new Dictionary<string, string?>());
     }
 
@@ -433,8 +435,6 @@ public class BackupAdminTests
 
     private void StartHostWith(IReadOnlyDictionary<string, string?> settings)
     {
-        _clock ??= new FakeTimeProvider(Start);
-        _destinations ??= new RecordingDestinationFactory();
         _host = ShipLeanHost.Start(_database.ConnectionString, TestUser.Joel, services =>
         {
             services.AddSingleton<TimeProvider>(_clock);
