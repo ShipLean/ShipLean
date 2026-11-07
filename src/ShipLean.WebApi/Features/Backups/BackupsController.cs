@@ -6,7 +6,7 @@ using ShipLean.Contracts.Errors;
 using ShipLean.WebApi.Features.Auth;
 using ShipLean.WebApi.Infrastructure;
 
-namespace ShipLean.WebApi.Features.Instance;
+namespace ShipLean.WebApi.Features.Backups;
 
 // The instance admin's Backups tab: where backups go, when they run, how many are kept, and the run history.
 // GET  /api/instance/backups              -> BackupSettingsDto
