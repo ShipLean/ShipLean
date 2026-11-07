@@ -59,6 +59,7 @@ public static class ActionUsageMap
         Add(ActionUsage.Track(UsageEventNames.LinkCardRefreshed), "LinkCardsRefresh.Refresh");
         Add(ActionUsage.Track(UsageEventNames.SprintCreated), "ProjectSprints.Create");
         Add(ActionUsage.Track(UsageEventNames.SprintUpdated), "Sprints.Update");
+        Add(ActionUsage.Track(UsageEventNames.SprintDeleted), "Sprints.Delete");
         Add(ActionUsage.Track(UsageEventNames.SprintCapacityChanged), "SprintCapacity.Put");
         Add(ActionUsage.Track(UsageEventNames.SprintRolledOver), "SprintRollover.Apply");
         Add(ActionUsage.Track(UsageEventNames.BoardSettingsChanged), "BoardSettings.Put");

@@ -19,4 +19,14 @@ public sealed class SprintsController(ISprintStore store, IProjectAccess access)
         await access.RequireAsync(ProjectItem.Sprint, id, ProjectRole.Member, cancellationToken);
         return await store.UpdateAsync(id, update, cancellationToken);
     }
+
+    [HttpDelete]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ApiError>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ApiError>(StatusCodes.Status409Conflict)]
+    public async Task<NoContentResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        await access.RequireAsync(ProjectItem.Sprint, id, ProjectRole.Member, cancellationToken);
+        return await NoContentAfter(store.DeleteAsync(id, cancellationToken));
+    }
 }

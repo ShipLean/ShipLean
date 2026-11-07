@@ -40,6 +40,32 @@ public static class SprintDatabase
         return new Dates(Day(reader.GetString(0)), Day(reader.GetString(1)));
     }
 
+    // Adds a sprint with nothing in it to the project and returns its id.
+    public static async Task<Guid> InsertEmptySprintAsync(string connectionString, string projectKey, string name, DateOnly start, DateOnly end)
+    {
+        var id = Guid.NewGuid();
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+        await using var command = new NpgsqlCommand(
+            "INSERT INTO sprint (id, project_id, name, start_date, end_date) SELECT @id, p.id, @name, @start, @end FROM project p WHERE p.key = @key", connection);
+        command.Parameters.AddWithValue("id", id);
+        command.Parameters.AddWithValue("key", projectKey);
+        command.Parameters.AddWithValue("name", name);
+        command.Parameters.AddWithValue("start", start);
+        command.Parameters.AddWithValue("end", end);
+        (await command.ExecuteNonQueryAsync()).ShouldBe(1);
+        return id;
+    }
+
+    public static async Task<bool> IsArchivedAsync(string connectionString, Guid sprintId)
+    {
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+        await using var command = new NpgsqlCommand("SELECT archived_at IS NOT NULL FROM sprint WHERE id = @id", connection);
+        command.Parameters.AddWithValue("id", sprintId);
+        return (bool)(await command.ExecuteScalarAsync())!;
+    }
+
     // Clears every entered capacity (soft: archived), so no sprint has a team total and all plan against velocity.
     public static async Task ArchiveAllCapacityAsync(string connectionString)
     {

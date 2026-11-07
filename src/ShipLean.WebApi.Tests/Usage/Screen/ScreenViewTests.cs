@@ -48,6 +48,39 @@ public class ScreenViewTests : ApiFixture
     }
 
     [Test]
+    public async Task ScreenView_WhenBacklogMode_ShouldTrackTheMode()
+    {
+        using var response = await Api.PostJsonAsync("api/usage/screen", new ScreenViewDto("featuresBacklog", SeedIds.Projects.Ship, "tree"));
+
+        response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        var tracked = Recorder.Events.ShouldHaveSingleItem();
+        tracked.Properties[UsageProps.Screen].ShouldBe("featuresBacklog");
+        tracked.Properties[UsageProps.Mode].ShouldBe("tree");
+    }
+
+    [Test]
+    public async Task ScreenView_WhenNoMode_ShouldTrackNoMode()
+    {
+        using var response = await Api.PostJsonAsync("api/usage/screen", new ScreenViewDto("taskboard", SeedIds.Projects.Ship));
+
+        response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        Recorder.Events.ShouldHaveSingleItem().Properties.Keys.ShouldBe([UsageProps.Screen]);
+    }
+
+    [TestCase("")]
+    [TestCase("board")]
+    public async Task ScreenView_WhenModeInvalid_ShouldBeValidation(string mode)
+    {
+        using var response = await Api.PostJsonAsync("api/usage/screen", new ScreenViewDto("featuresBacklog", SeedIds.Projects.Ship, mode));
+
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        var error = await response.ReadApiErrorAsync();
+        error.Code.ShouldBe(ApiErrorCodes.Validation);
+        error.Field.ShouldBe("mode");
+        Recorder.Events.ShouldBeEmpty();
+    }
+
+    [Test]
     public async Task ScreenView_WhenNotMember_ShouldBeNotFoundAndTrackNothing()
     {
         using var response = await Api.PostJsonAsync("api/usage/screen", new ScreenViewDto("taskboard", SeedIds.Projects.Part));

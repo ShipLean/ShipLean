@@ -53,7 +53,7 @@ Every event carries these (a key is left out when its value is null). The consta
 | `duration_ms`, `source` | `source` is `tool:<name>`, `api:<Controller>.<Action>`, `screen` or `system:<Class>` |
 | `shiplean_version`, `instance_host` | this build and this instance |
 
-Extra properties are the keys in `UsageProps` (`screen`, `board`, `provider`, `count`, `column`, `direction`, `agent_name` on `agent.connected` and `agent.consent_denied`). A standard property wins over an extra one with the same key.
+Extra properties are the keys in `UsageProps` (`screen`, `board`, `provider`, `count`, `column`, `direction`, `mode` (the backlog mode on a backlog screen's `screen.viewed`), `agent_name` on `agent.connected` and `agent.consent_denied`). A standard property wins over an extra one with the same key.
 
 The distinct id of an actor is `user:<guid>`, `agent:<authorizationId>` (`agent:gw-<userId>` for the gateway) or `system`. Person properties (`kind`, `user_id`, `agent_*`) go to the provider as an identify (Umami) or `$set` (PostHog). `name` and `email` are added for users only when the instance's **Send people's names** toggle is on, which is off by default.
 
@@ -201,6 +201,7 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `sprint.created` | `create_sprint` | `ProjectSprints.Create` |
 | `sprint.planned` | `plan_sprint` |  |
 | `sprint.updated` |  | `Sprints.Update` |
+| `sprint.deleted` |  | `Sprints.Delete` |
 | `sprint.capacity_changed` |  | `SprintCapacity.Put` |
 | `sprint.ended` | `end_sprint` |  |
 | `sprint.rolled_over` |  | `SprintRollover.Apply` |

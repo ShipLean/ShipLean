@@ -2,7 +2,7 @@ using System.Data.Common;
 
 namespace ShipLean.Contracts.Sprints;
 
-// Sprints and their capacity. Callers check access first. Nothing is deleted.
+// Sprints and their capacity. Callers check access first. Nothing is deleted: DeleteAsync archives.
 public interface ISprintStore
 {
     // Joins the caller's transaction when given. Throws ApiException.NotFound (unknown project), ApiException.Validation (blank name, end before start, overlaps another sprint), ApiException.Conflict (name taken).
@@ -10,6 +10,10 @@ public interface ISprintStore
 
     // Throws ApiException.NotFound (unknown sprint), ApiException.Validation (blank name, end before start, overlaps another sprint), ApiException.Conflict (name taken).
     Task<SprintDto> UpdateAsync(Guid id, SprintUpdate update, CancellationToken cancellationToken = default);
+
+    // Archives a sprint nothing is planned into: no work item (in any state) and no retrospective names it. Throws
+    // ApiException.NotFound (unknown sprint), ApiException.Conflict (it has work items or a retrospective).
+    Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
 
     // Throws ApiException.NotFound (unknown sprint).
     Task<SprintCapacityDto> GetCapacityAsync(Guid sprintId, CancellationToken cancellationToken = default);
