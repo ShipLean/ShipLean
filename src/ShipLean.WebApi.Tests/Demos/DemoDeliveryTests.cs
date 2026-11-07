@@ -72,7 +72,7 @@ public class DemoDeliveryTests : ApiFixture
         var services = scope.ServiceProvider;
         token ??= await TokenAsync(demo);
         var grant = await services.GetRequiredService<ITransferTokens>().FindAsync(TransferKind.Demo, token)
-            ?? new TransferGrant(TransferKind.Demo, demo.ItemId, null, "sprint-demo.mp4", "video/mp4", SeedIds.Users.Joel, "Claude Code", new DateTimeOffset(2100, 1, 1, 0, 0, 0, TimeSpan.Zero));
+            ?? new TransferGrant(TransferKind.Demo, demo.ItemId, null, "sprint-demo.mp4", "video/mp4", SeedIds.Users.Joel, "Claude Code", TestDates.FarFuture);
         var effective = limits ?? services.GetRequiredService<AttachmentLimits>();
         var store = new AttachmentStore(
             services.GetRequiredService<NpgsqlDataSource>(), services.GetRequiredService<ICurrentUser>(), services.GetRequiredService<IBlobStore>(),

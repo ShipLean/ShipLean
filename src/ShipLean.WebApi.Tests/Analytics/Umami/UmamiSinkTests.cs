@@ -3,6 +3,7 @@ using System.Text.Json.Nodes;
 using ShipLean.Application.Features.Analytics.Umami;
 using ShipLean.Contracts.Analytics;
 using ShipLean.TestSupport.Analytics;
+using ShipLean.TestSupport;
 
 namespace ShipLean.WebApi.Tests.Analytics.Umami;
 
@@ -56,7 +57,7 @@ public class UmamiSinkTests
             ["ratio"] = 0.5,
         };
         var person = new AnalyticsPerson(distinctId, new Dictionary<string, object> { [AnalyticsProps.PersonKind] = "user", [AnalyticsProps.PersonUserId] = distinctId });
-        return new AnalyticsEvent(name, distinctId, "user", projectKey, DateTimeOffset.Parse("2026-11-02T01:02:03Z", System.Globalization.CultureInfo.InvariantCulture), props, person);
+        return new AnalyticsEvent(name, distinctId, "user", projectKey, TestDates.Today, props, person);
     }
 
     private JsonArray LastBody()
