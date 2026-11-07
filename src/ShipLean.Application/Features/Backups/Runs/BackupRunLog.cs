@@ -114,7 +114,7 @@ public sealed class BackupRunLog(NpgsqlDataSource dataSource, string leaseConnec
 
     public async Task<IReadOnlyList<BackupRunRow>> ClaimPruneAsync(BackupLease lease, string destinationId, int keepCount, CancellationToken cancellationToken = default)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(keepCount);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(keepCount);
         var rows = (await lease.Connection.UseAsync(
             connection => connection.QueryAsync<BackupRunColumns.Row>(new CommandDefinition(
                 ClaimPruneSql,

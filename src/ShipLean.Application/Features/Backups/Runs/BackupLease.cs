@@ -66,7 +66,7 @@ public sealed class BackupLease : IAsyncDisposable
         }
     }
 
-    // A failed check (an error as much as a missing lock) counts as lost.
+    // A failed check (any error as much as a missing lock) counts as lost; only disposing stops the checks quietly.
     private async Task<bool> CheckAsync()
     {
         try
@@ -74,7 +74,7 @@ public sealed class BackupLease : IAsyncDisposable
             await Connection.EnsureHeldAsync(_stop.Token);
             return true;
         }
-        catch (Exception exception) when (exception is BackupLeaseLostException or NpgsqlException or InvalidOperationException or TimeoutException)
+        catch (Exception exception) when (exception is not OperationCanceledException || !_stop.IsCancellationRequested)
         {
             return false;
         }

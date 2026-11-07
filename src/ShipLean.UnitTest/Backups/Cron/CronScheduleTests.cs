@@ -44,14 +44,21 @@ public class CronScheduleTests
         Schedule().Validate("* * * * *").ShouldBe(CronSchedule.TooOftenError);
     }
 
-    // On the 1st of each month only, 30 minutes apart: the first two occurrences are a week away. (The brief's example,
-    // "0,30 0 1 * *", puts the 30 in the hour field, so it doesn't parse; this is the schedule it means.)
+    // On the 1st of each month only, 30 minutes apart. From 00:15 on the 1st, the first gap (00:30 to Dec 1 00:00) is a
+    // month long and the 30-minute gap comes second, so a check of the first gap alone would allow it. (The brief's
+    // example, "0 0,30 1 * *", puts the 30 in the hour field, so it doesn't parse; this is the schedule it means.)
     [Test]
     public void Validate_WhenGapShortOnlyLater_ShouldRefuse()
     {
-        var schedule = Schedule();
+        var now = new DateTimeOffset(2026, 11, 1, 0, 15, 0, TimeSpan.Zero);
+        var schedule = new CronSchedule(new FakeTimeProvider(now));
 
-        schedule.Next("0,30 0 1 * *", PinnedNow).ShouldBe(new DateTimeOffset(2026, 11, 1, 0, 0, 0, TimeSpan.Zero));
+        schedule.Preview("0,30 0 1 * *", now, 3).NextRuns.ShouldBe(
+        [
+            new DateTimeOffset(2026, 11, 1, 0, 30, 0, TimeSpan.Zero),
+            new DateTimeOffset(2026, 12, 1, 0, 0, 0, TimeSpan.Zero),
+            new DateTimeOffset(2026, 12, 1, 0, 30, 0, TimeSpan.Zero),
+        ]);
         schedule.Validate("0,30 0 1 * *").ShouldBe(CronSchedule.TooOftenError);
     }
 

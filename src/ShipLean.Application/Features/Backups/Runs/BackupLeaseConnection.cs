@@ -23,6 +23,11 @@ internal sealed class BackupLeaseConnection(NpgsqlConnection connection) : IAsyn
             {
                 throw new BackupLeaseLostException("The backup lease was lost.");
             }
+            if (!IsOpen)
+            {
+                await SignalLostAsync();
+                throw new BackupLeaseLostException("The backup lease was lost: its connection closed.");
+            }
             return await command(connection);
         }
         catch (NpgsqlException exception) when (!IsOpen)

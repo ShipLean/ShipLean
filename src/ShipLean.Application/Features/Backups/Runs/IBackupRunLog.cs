@@ -16,7 +16,8 @@ public interface IBackupRunLog
     Task<IReadOnlyList<BackupRunRow>> UnprunedSuccessesAsync(string destinationId, CancellationToken cancellationToken = default);
 
     // Sets pruned_at on this destination's succeeded, unpruned runs beyond the newest keepCount, in one statement on the
-    // lease's own connection, and returns them (newest first): the caller deletes only these objects. Throws
+    // lease's own connection, and returns them (newest first): the caller deletes only these objects. keepCount is at
+    // least 1, so the run that just succeeded is never claimed. Throws
     // BackupLeaseLostException, claiming nothing, when the lease is lost.
     Task<IReadOnlyList<BackupRunRow>> ClaimPruneAsync(BackupLease lease, string destinationId, int keepCount, CancellationToken cancellationToken = default);
 

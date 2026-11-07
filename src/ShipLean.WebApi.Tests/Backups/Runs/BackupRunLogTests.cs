@@ -5,6 +5,7 @@ using ShipLean.Application.Database;
 using ShipLean.Application.Features.Backups.Modules;
 using ShipLean.Application.Features.Backups.Runs;
 using ShipLean.LocalEnvironment.Database;
+using ShipLean.WebApi.Tests.Schema;
 
 namespace ShipLean.WebApi.Tests.Backups.Runs;
 
@@ -144,6 +145,7 @@ public class BackupRunLogTests
         var stale = first with { PassphraseGeneration = 2, Passphrase = "protected-other", UpdatedAt = Start.AddMinutes(2) };
         (await rows.TryWriteAsync(stale, first.UpdatedAt)).ShouldBeFalse();
         (await rows.TryWriteAsync(stale, null)).ShouldBeFalse();
+        (await rows.TryWriteAsync(stale with { UpdatedAt = winner.UpdatedAt }, winner.UpdatedAt)).ShouldBeFalse();
 
         (await rows.ReadAsync()).ShouldBe(winner);
     }
@@ -196,6 +198,7 @@ public class BackupRunLogTests
         (await _log.UnprunedSuccessesAsync(DestinationA)).Select(r => r.Id).ShouldBe([a4, a3]);
         (await _log.UnprunedSuccessesAsync(DestinationB)).Select(r => r.Id).ShouldBe([b1]);
         (await _log.ClaimPruneAsync(lease, DestinationA, 2)).ShouldBeEmpty();
+        await Should.ThrowAsync<ArgumentOutOfRangeException>(() => _log.ClaimPruneAsync(lease, DestinationA, 0));
     }
 
     [Test]
@@ -216,6 +219,7 @@ public class BackupRunLogTests
         runs.Select(r => (r.Id, r.State)).ShouldBe([(lease.Run.Id, BackupRunState.Running), (dead, BackupRunState.Failed)]);
         var abandoned = runs[1];
         abandoned.Error.ShouldBe(BackupRunLog.AbandonedError);
+        abandoned.Error.ShouldBe(PinnedFiles.Read("backup-run.json")["abandoned"]!["error"]!.GetValue<string>());
         abandoned.FinishedAt.ShouldBe(_clock.GetUtcNow());
         (await _log.SucceedAsync(dead, Outcome())).ShouldBeFalse();
     }
@@ -320,6 +324,7 @@ public class BackupRunLogTests
 
         built.Pooling.ShouldBeFalse();
         built.Timezone.ShouldBe("UTC");
+        built.Options.ShouldBe("-c idle_session_timeout=60000");
     }
 
     private BackupRunLog NewInstance() => new(_dataSource, BackupRunLogServices.LeaseConnectionString(_database.ConnectionString), _clock);

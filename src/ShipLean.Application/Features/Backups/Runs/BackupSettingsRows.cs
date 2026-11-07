@@ -23,7 +23,8 @@ public sealed class BackupSettingsRows(NpgsqlDataSource dataSource)
             cancellationToken: cancellationToken));
     }
 
-    // False when the row changed (or appeared) since expectedUpdatedAt was read.
+    // False when the row changed (or appeared) since expectedUpdatedAt was read, or when row.UpdatedAt is not later than
+    // expectedUpdatedAt (two writers stamping the same instant must not both win).
     public async Task<bool> TryWriteAsync(BackupSettingsRow row, DateTimeOffset? expectedUpdatedAt, CancellationToken cancellationToken = default)
     {
         var parameters = new
@@ -50,7 +51,7 @@ public sealed class BackupSettingsRows(NpgsqlDataSource dataSource)
                     secret_last4 = @SecretLast4, cron = @Cron, keep_count = @KeepCount, include_attachments = @IncludeAttachments,
                     passphrase = @Passphrase, passphrase_generation = @PassphraseGeneration, passphrase_set_at = @PassphraseSetAt,
                     updated_at = @UpdatedAt, updated_by = @UpdatedBy
-                WHERE id = 1 AND updated_at = @Expected
+                WHERE id = 1 AND updated_at = @Expected AND @UpdatedAt > @Expected
                 """,
                 parameters, cancellationToken: cancellationToken));
         return written == 1;
