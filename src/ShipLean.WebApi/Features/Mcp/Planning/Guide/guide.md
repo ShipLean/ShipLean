@@ -8,7 +8,7 @@ If you fail at a task, do not apologize, make excuses, or minimize the error. Ad
 
 Never fabricate or assume results to compensate for a failure. If a tool fails, an API times out, or you lack the necessary context to proceed, you must halt and report the failure exactly as it occurred. Faking a successful outcome is the only true failure.
 
-Use this when a Feature or Epic is too big for one agent, or when you will run several agents side by side. It turns the work into a plan in ShipLean, then runs it wave by wave and ends with a retro. Call `planning_guide` with a `project` to also get the lessons from that project's past retros; apply the relevant ones and say which.
+Use this for every breakdown of a Feature or Epic into stories and tasks, whatever its size: Step 1 picks the mode, and a small job is one Story in Direct mode. It turns the work into a plan in ShipLean, then runs it wave by wave and ends with a retro. Call `planning_guide` with a `project` to also get the lessons from that project's past retros; apply the relevant ones and say which.
 
 When you plan an existing Feature, read its attachments with `read_attachment` and its log with `get_work_item` first, then capture the plan under that Feature's key.
 
@@ -140,6 +140,7 @@ Run these checks and fix what they find:
 6. **Definition of ready.** The plan is not handed over until the briefs and the common brief exist and have passed the plan review (any edit after the review is re-reviewed).
 7. **Open questions.** Anything whose answer changes the work (where data comes from, which environment, who approves) goes to the user now, batched in one set of questions. Do not build something you might throw away to find out.
 8. **Concurrency.** Size each wave's parallel sub-agents to the machine's test load (containers, browsers, cores), not a fixed agent count.
+9. **Test commands.** The common brief names the exact build and test commands (the filtered inner-loop command and each affected project's full run) and how long each took. Commands that ran green on the same host recently may be reused without a fresh run; say in the common brief when and where they last ran, and record it as a known gap in the plan. Run them before launch only when nothing recent exists, the host is new, or the plan changes test infrastructure. Do not block a Direct or small Orchestrated plan on a fresh full run.
 
 ## Step 4: Review the plan, then capture it
 
@@ -148,14 +149,14 @@ Write the plan, then put it in the backlog with `capture_plan`. The plan review 
 - `feature`: an existing Feature by `key`, or a new one with a `title`. Put what the Feature is for in `goal`, in a sentence or two, at most 1,000 characters. That is the Feature's Goal field; never write a Goal heading in the description. Put the contracts in `description`, in a section headed exactly "## Contracts".
 - The Feature's `description` opens with a `## Why` section of four bullets: Problem, Who, We believe and Measure. A measure not yet agreed says "to confirm". `create_sprint_demo` narrates this section.
 - `shared_branch`: the one branch every agent pushes to.
-- `common_brief`: what every agent reads before its own brief: the repository, environment, test tiers, banned patterns, git rules, the contract rule and the report rule.
+- `common_brief`: what every agent reads before its own brief: the repository, environment, test tiers, banned patterns, git rules (including which push variant of Step 6 applies), the contract rule and the report rule.
 - `plan_markdown`: the whole plan document, attached to the Feature.
 - `stories`: one per lane of a wave, each with a `title`, `wave` and `lane` (leave `lane` out when the wave has one lane), and its `tasks`. A task has a `title`, a `brief` (goal, exact reads, do-not-read, owned files, the contracts it builds against, named acceptance tests, tests to run), a `model` value (Step 2), and `context_k`.
 
 A plan has at most 60 items (stories plus tasks, plus the Feature when it is new). A task brief is at most 10 KB, the common brief at most 64 KB and `plan_markdown` at most 200 KB. `context_k` over 150 is an error and over 100 a warning. A wave without lanes holds one Story, and lane names are unique within a wave. An error in the preview names the field; fix it and preview again.
 
 1. Call `capture_plan` without `plan`. That is a preview: it shows the stories, the item count and any warnings about the plan's shape, and it returns a `plan` token that expires after `expires_in_minutes`. The token is the `plan` value in the result's JSON: copy it verbatim.
-2. Have a reviewer from a different model family than the author review the plan, using the `plan_reviewer` part. Give it the plan document, the common brief, the task briefs and the preview. Apply its findings, note which you rejected and why, and preview again after any change.
+2. Have a reviewer from a different model family than the author review the plan, using the `plan_reviewer` part. Give it the plan document, the common brief, the task briefs and the preview. Apply its findings, note which you rejected and why, and preview again after any change. If no model from another family is available in this session, use the strongest other model you can launch (a different model, or a fresh session of your own with no context of the plan), say which in the `Review · ` comment, and flag it in the retro under `went_badly`. The same fallback applies to code review in Step 7.
 3. Apply by calling `capture_plan` with exactly the same arguments plus that `plan`. Changed arguments are refused, so change nothing between the last preview and the apply.
 
 Do not launch anything before the review. After the apply, change a task's wording with `refine_work_item`; a change to the plan's structure needs a new Feature.
@@ -177,6 +178,8 @@ All agents push to the one shared branch, so conflicts show up early and small. 
 Inside the worktree the sub-agent pulls and pushes the shared branch directly: pull with rebase from the shared branch, then push HEAD to it, and on rejection pull with rebase again. If the rebase conflicts only in files the task owns, or in a small append to a shared file (keep both sides), resolve it and continue. Any other conflict: abort the rebase and report blocked with the files. A conflict outside owned files means the plan's file ownership was wrong; fix the plan, not just the conflict.
 
 Never force-push and never amend. Commit small and often with the task's key as the message prefix, so commits can be found by searching the log. Push after each green step. Keep the worktree until the review loop approves the task, then remove it.
+
+**Costly CI.** Where every push to the shared branch runs paid or slow CI (the repository's agent instructions say so, for example "batch work into few pushes"), use this variant instead, and say in the common brief which one applies. Agents commit to their own worktree branch and never push. The orchestrator (or the lead, for its lane) merges each approved task's branch into the shared branch locally, resolving conflicts by the same rule, runs the affected tests once, and pushes the shared branch once per wave, or once at the end. Reviewers read the task's own branch. Conflicts surface at integration instead of on every push, so file ownership (Step 3, check 4) matters more.
 
 ### Briefs
 

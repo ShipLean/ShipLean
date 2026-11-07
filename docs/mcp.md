@@ -86,7 +86,9 @@ A tool throws `ApiException` and never catches it. The call-tool filter turns it
 
 ## Planning
 
-Tools for running a plan of several agents working in parallel (#43). Code: `src/ShipLean.WebApi/Features/Mcp/{Tools/Planning,Planning}` and `src/ShipLean.Application/Features/Mcp/Planning`. The server instructions tell an agent to use ShipLean from the first idea (`planning_guide` part `work`) and to call `planning_guide` before it breaks a feature or epic down.
+Tools for running a plan of several agents working in parallel (#43). Code: `src/ShipLean.WebApi/Features/Mcp/{Tools/Planning,Planning}` and `src/ShipLean.Application/Features/Mcp/Planning`. The server instructions tell an agent to use ShipLean from the first idea (`planning_guide` part `work`) and to call `planning_guide` before any breakdown of a feature or epic into stories and tasks, whatever its size, naming the words people use ("break down", "breakdown", "plan this", "split into tasks"). The guide picks the mode (Direct for one story), so a small breakdown is not exempt.
+
+The instructions only reach an agent whose MCP is connected. For one that is not, `AGENTS.md` points at the guide file (`src/ShipLean.WebApi/Features/Mcp/Planning/Guide/guide.md`) and tells the agent to ask for the MCP before creating items, rather than building the tree over `/api`.
 
 Agents on REST, not MCP, follow the same rule: progress, reports, decisions and brief changes for a plan belong in ShipLean (comments, task descriptions, `attach_markdown`, `report_task`), not in files under the person's home directory.
 
