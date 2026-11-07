@@ -10,6 +10,8 @@ claude mcp add --transport http shiplean <base_url>/mcp
 
 `<base_url>` is `instance_settings.base_url`; the page "Your profile" shows the exact address. The agent calls `/mcp`, is refused with a link to the server's metadata, and opens the browser at ShipLean's consent page.
 
+**Remote sessions.** A Claude Code remote session (driven from a phone or the web) loads only the MCP servers that were already signed in when it started. Signing in afterwards does not reach it: `/mcp` in that session says there is no server named `shiplean`. Sign in to the MCP before starting a remote session, or start a new one after signing in. This is a Claude Code limitation, not ShipLean's.
+
 ## What the person sees
 
 1. If signed out, the sign-in page, then back to the consent page. A person who must change their password changes it first.
