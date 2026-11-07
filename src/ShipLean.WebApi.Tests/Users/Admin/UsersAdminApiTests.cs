@@ -203,7 +203,7 @@ public class UsersAdminApiTests : ApiFixture
     [Test]
     public async Task Unlock_WhenLocked_ShouldBeActiveAgain()
     {
-        var locked = await ArrangeAsync(b => b.LockedUntil(new DateTimeOffset(2099, 1, 1, 0, 0, 0, TimeSpan.Zero)));
+        var locked = await ArrangeAsync(b => b.LockedUntil(TestDates.FarFuture));
         (await RowAsync(locked.Id)).Status.ShouldBe(UserStatus.Locked);
 
         using var response = await Api.PostJsonAsync($"api/admin/users/{locked.Id}/unlock");
