@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · SHIP-716 Backlogs on a phone</title>
+<!-- SHIP-716 design review. Open directly in a browser (or over HTTP: iframes can render blank under file://). -->
+<script type="application/json" data-lavish-revisions>
+[{ "id": "r1", "label": "Round 1", "timestamp": "2026-11-07T12:00:00Z", "summary": "Recorded your 10 answers. D2 changed: rows reorder by touch drag on a handle, so Move to… is gone and two drag screens were added" }]
+</script>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; background: var(--color-bg); color: var(--color-text); font-family: var(--font-sans); font-size: 14px; line-height: 1.5; }
+.wrap { max-width: 1340px; margin: 0 auto; padding: 28px 24px 90px; }
+h1 { margin: 0 0 6px; font-size: 26px; font-weight: 700; letter-spacing: -.01em; }
+h2 { margin: 0 0 4px; font-size: 20px; font-weight: 650; }
+h3 { margin: 0 0 4px; font-size: 15px; font-weight: 650; }
+p { margin: 0 0 8px; }
+.muted { color: var(--color-muted); }
+a { color: var(--color-accent); }
+code { font: 12px var(--font-mono); overflow-wrap: anywhere; }
+header.top { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+header.top .t { flex: 1; min-width: 300px; }
+.lede { max-width: 920px; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; background: var(--color-surface); border: 1px solid var(--color-border); font-size: 12px; }
+.seg { display: inline-flex; height: 30px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); overflow: hidden; background: var(--color-surface); }
+.seg button { padding: 0 12px; border: 0; border-right: 1px solid var(--color-border); background: transparent; color: var(--color-muted); font: inherit; font-size: 13px; cursor: pointer; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--color-accent-soft); color: var(--color-text); font-weight: 600; }
+section.block { margin-top: 44px; }
+.sub { margin: 0 0 14px; color: var(--color-muted); max-width: 960px; }
+.today { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; align-items: start; }
+@media (max-width: 1100px) { .today { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 700px) { .today { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+figure { margin: 0; min-width: 0; }
+figure img { display: block; width: 100%; height: auto; border: 1px solid var(--color-border); border-radius: 14px; }
+figcaption { margin-top: 6px; font-size: 12px; color: var(--color-muted); }
+.problems { margin: 16px 0 0; padding: 14px 16px 14px 34px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); display: grid; gap: 6px; max-width: 980px; }
+.problems li::marker { font-weight: 700; color: var(--color-danger); }
+.groups { display: grid; gap: 34px; }
+.grp h3 { font-size: 16px; margin-bottom: 10px; }
+.phones { display: grid; grid-template-columns: repeat(auto-fill, minmax(404px, 1fr)); gap: 28px 20px; }
+.phone { min-width: 0; display: grid; gap: 8px; align-content: start; }
+.phone .ph { display: flex; gap: 8px; align-items: baseline; }
+.phone .no { flex: none; display: inline-grid; place-items: center; min-width: 30px; height: 22px; padding: 0 6px; border-radius: 6px; background: var(--color-accent); color: var(--color-accent-fg); font-weight: 700; font-size: 12px; }
+.frame { width: 404px; max-width: 100%; padding: 7px; border-radius: 30px; background: #0b0f17; box-shadow: var(--shadow-raised); }
+.frame iframe { display: block; width: 390px; height: 844px; max-width: 100%; border: 0; border-radius: 24px; background: var(--color-surface); }
+.phone ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; font-size: 13px; max-width: 404px; }
+.dec { display: inline-block; padding: 0 6px; border-radius: 999px; background: var(--color-surface-2); font-size: 11px; font-weight: 600; white-space: nowrap; color: var(--color-text); text-decoration: none; }
+table.data { width: 100%; border-collapse: collapse; background: var(--color-surface); border: 1px solid var(--color-border); font-size: 13px; }
+table.data th { padding: 7px 10px; background: var(--color-surface-2); border-bottom: 1px solid var(--color-border); text-align: left; font-size: 12px; font-weight: 600; }
+table.data td { padding: 7px 10px; border-bottom: 1px solid var(--color-border); vertical-align: top; overflow-wrap: anywhere; }
+table.data tr:last-child td { border-bottom: 0; }
+.scroll-x { overflow-x: auto; }
+.qs { display: grid; gap: 12px; }
+.q { padding: 14px 16px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); display: grid; gap: 8px; }
+.q h3 { display: flex; gap: 8px; align-items: baseline; }
+.q h3 .id { flex: none; font: 700 12px var(--font-mono); color: var(--color-accent); }
+.q .see { font-size: 12px; }
+.opts { display: grid; gap: 6px; }
+.opts label { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: start; padding: 8px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); cursor: pointer; background: var(--color-bg); }
+.opts label:has(input:checked) { border-color: var(--color-accent); background: var(--color-accent-soft); }
+.opts input { margin-top: 3px; }
+.opts b { font-weight: 600; }
+.rec { margin-left: 6px; padding: 0 6px; border-radius: 999px; background: color-mix(in srgb, var(--color-ok) 18%, transparent); color: var(--color-ok); font-size: 11px; font-weight: 700; }
+.opts small { display: block; color: var(--color-muted); font-size: 12.5px; }
+.q textarea { width: 100%; min-height: 34px; padding: 6px 8px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-bg); color: var(--color-text); font: inherit; font-size: 13px; resize: vertical; }
+.submit { position: sticky; bottom: 0; margin-top: 16px; padding: 12px 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-dialog); }
+.submit .st { flex: 1; min-width: 200px; font-size: 13px; color: var(--color-muted); }
+.btn { height: 34px; padding: 0 14px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); font: inherit; font-size: 13px; cursor: pointer; }
+.btn.pri { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-fg); font-weight: 600; }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+@media (max-width: 900px) { .two { grid-template-columns: minmax(0, 1fr); } }
+.card { padding: 14px 16px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+.card ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+.rules { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.rules span { padding: 2px 8px; border-radius: 999px; background: var(--color-accent-soft); font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="t">
+      <h1>SHIP-716 · Backlogs on a phone</h1>
+      <p class="lede">Designs for <a href="https://prod.shiplean.app/p/SHIP/items/SHIP-716">SHIP-716</a> (under SHIP-707, mobile web): the Stories backlog in List, Planning and Tree, and the Features and Epics backlogs. One treatment covers all three because they share the toolbar, rows and sheets. It applies at 900px and below, inside the SHIP-713 touch shell. Above 900px nothing changes. The phones below are live: tap the modes, ⋯, Filter, a row's ⋯ or a <b>?</b> estimate.</p>
+      <div class="rules"><span>Follows SHIP-805 rules 1–16</span><span>48px top bar, only it is pinned</span><span>32px targets</span><span>16px inputs</span><span>menus → bottom sheets</span><span>⋯ always visible</span><span>no page sideways scroll</span></div>
+      <div class="chips">
+        <span class="chip">Story · 13 pts (preliminary) · Sprint 2</span>
+        <span class="chip">Mock: <code>design/mobile/backlogs.html</code></span>
+        <span class="chip">On PR #69 with the touch shell</span>
+      </div>
+    </div>
+    <div>
+      <div class="muted" style="font-size:12px;margin-bottom:4px">Phones' theme</div>
+      <div class="seg" role="group" aria-label="Theme of the phone screens">
+        <button type="button" data-theme-set="light" aria-pressed="true">Light</button>
+        <button type="button" data-theme-set="dark" aria-pressed="false">Dark</button>
+      </div>
+    </div>
+  </header>
+
+  <section class="block" id="today">
+    <h2>Today, at 390 px</h2>
+    <p class="sub">The real pages at iPhone width, shot from the component test harness with the page-shot fixtures (main as on PR #69's base). The shell's nav on top is SHIP-713's job; everything under it is this story's.</p>
+    <div class="today">
+      <figure><img src="images/today-backlogs-stories.png" alt="Today: Stories list on a phone"><figcaption>Stories · List. The toolbar wraps to four rows and the table is cut off after State.</figcaption></figure>
+      <figure><img src="images/today-backlogs-planning.png" alt="Today: Planning on a phone"><figcaption>Planning. Sprint headers squash into cells: dates wrap to five lines, capacity is cut off.</figcaption></figure>
+      <figure><img src="images/today-backlogs-tree.png" alt="Today: Tree on a phone"><figcaption>Tree. Each level indents the title further, so titles wrap to 3–4 lines.</figcaption></figure>
+      <figure><img src="images/today-backlogs-features.png" alt="Today: Features on a phone"><figcaption>Features. State, Pts and Progress are off screen; keys break in two.</figcaption></figure>
+      <figure><img src="images/today-backlogs-epics.png" alt="Today: Epics on a phone"><figcaption>Epics. The Progress header wraps to six lines and its value is cut off.</figcaption></figure>
+    </div>
+    <ol class="problems">
+      <li>Every page is a desktop table, clipped at the right edge. Points, Sprint, Assignee and Progress, the columns you plan with, are the ones you can't see.</li>
+      <li>The toolbar wraps to 2–4 rows before the first item. Keys and keyboard hints still show.</li>
+      <li>Reordering, moving to a sprint and the pull line are drag-only. On a phone the drag either fights the page scroll or never starts.</li>
+      <li>Selecting many needs the checkbox column, which is one of the few columns still on screen, but the action bar and its menus are desktop popovers.</li>
+      <li>Filter is an inline panel of five side-by-side controls; Columns and Completed are popovers.</li>
+    </ol>
+  </section>
+
+  <section class="block" id="proposed">
+    <h2>Proposed</h2>
+    <p class="sub">ShipLean's own tokens, light and dark. Rows are two lines, never a table. The toolbar is one row. Everything that was a popover or inline panel is a bottom sheet. Stories rows drag by a handle at their left edge (D2). The tags link to the decisions further down.</p>
+    <div class="groups" id="groups"></div>
+  </section>
+
+  <section class="block" id="scope">
+    <h2>Scope and boundaries</h2>
+    <div class="two">
+      <div class="card">
+        <h3>In SHIP-716</h3>
+        <ul>
+          <li>Stories backlog: List, Planning and Tree below 900px, with the toolbar, ⋯ sheet, search, Filter sheet, inline add, row ⋯ sheet, touch drag on a handle, select mode with the bottom bar and its sheets, the Points sheet and the not-estimated queue.</li>
+          <li>Planning: sprint sections, capacity, the pull line, Forecast marks, Create sprint, the section ⋯ (Capacity, Open sprint, Add here).</li>
+          <li>Features and Epics backlogs: rows with progress, Filter, ⋯, + New.</li>
+          <li>Phone page shots (390 × 844) for these states, next to the desktop ones.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Not in SHIP-716</h3>
+        <ul>
+          <li><b>Shell</b> (top bar, drawer, quick search): SHIP-713. The bar here is drawn as SHIP-713 has it; C13 (back and slots) is still open on SHIP-805.</li>
+          <li><b>What a row opens</b>: the item modal, full screen on a phone (SHIP-714).</li>
+          <li><b>Sheet anatomy</b>: SHIP-805 C4. These sheets use the recommendation (title left, Close right).</li>
+          <li><b>New Feature and Add many dialogs</b>: they go full screen by rule 4 with no layout change of their own, so they aren't drawn.</li>
+          <li><b>Desktop</b>: unchanged above 900px.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="build">
+    <h2>What it takes to build</h2>
+    <p class="sub">A rough map against <code>src/ShipLean.Client/src/features/backlog</code>, to check the 13-point estimate. No server changes: every action already exists on the desktop (reorder, sprint move, reparent, bulk set, estimate), so the phone only needs new ways to call them.</p>
+    <div class="scroll-x">
+      <table class="data">
+        <thead><tr><th>Piece</th><th>Today</th><th>Change</th><th>Size</th></tr></thead>
+        <tbody>
+          <tr><td>Touch row</td><td><code>ListRow</code>, <code>PlanningRow</code>, <code>TreeItemRow</code>, <code>LevelRow</code> as table rows</td><td>One <code>TouchRow</code> (rank or checkbox, title, meta line, points and avatar, ⋯) that the four render below 900px, plus a progress line for Features and Epics. The tables become lists at that width.</td><td>M</td></tr>
+          <tr><td>Toolbar and ⋯</td><td><code>BacklogToolbar</code>, <code>ModeSwitch</code>, <code>ColumnsMenu</code></td><td>One row: + New, the mode switch, Filter (count), ⋯. Search, Add many, Select, Completed, Forecast and velocity move into the ⋯ sheet. Columns and Keys are hidden.</td><td>S</td></tr>
+          <tr><td>Filter</td><td><code>FilterPanel</code> inline</td><td>The same clauses, stacked, in the shared <code>Sheet</code>. Chips stay under the toolbar.</td><td>S</td></tr>
+          <tr data-lavish-revision="r1"><td>Touch drag (D2) and row ⋯</td><td><code>Grip</code> already takes the drag listeners alone, with <code>touch-none</code>; <code>ListDnd</code>, <code>PlanningDnd</code> and <code>TreeTable</code> use a 4px <code>PointerSensor</code></td><td>Below 900px the grip becomes the row's left edge (full height, rank on top). Turn on dnd-kit auto-scroll near the edges, and check that a lifted row over a sprint header or Feature header shows the drop hint. The writes are the desktop's. A row action sheet: Open, Points, Sprint, Parent, Move to top, Move to bottom, Select.</td><td>M</td></tr>
+          <tr><td>Select mode</td><td><code>SelectionProvider</code>, <code>BulkBar</code>, <code>BulkMenus</code></td><td>Enter from ⋯ or a row's ⋯; checkboxes replace the rank; the bulk bar sits at the bottom and its menus open as sheets (the Sprint sheet shows each sprint's sum).</td><td>M</td></tr>
+          <tr><td>Planning</td><td><code>SectionHeader</code>, <code>SectionCapacity</code>, pull line</td><td>Section headers as blocks with a full-width capacity bar and a section ⋯. The pull line keeps its sums and Pull, and gets ▲ ▼ to move it one item.</td><td>M</td></tr>
+          <tr><td>Tree</td><td><code>TreeGroupRow</code></td><td>Headers carry the path; item rows never indent.</td><td>S</td></tr>
+          <tr><td>Estimating</td><td><code>PointsCell</code>, <code>BeforeYouPlan</code>, <code>useCheckQueue</code></td><td>A Points sheet from the <b>?</b> chip, and the not-estimated queue reusing it ("1 of 3", Skip).</td><td>S</td></tr>
+          <tr><td>Tests</td><td>desktop page shots, CT specs</td><td>Phone page shots for list, planning, tree, features, epics and the main sheets; CT for Move to…, select mode and the pull line's ▲ ▼.</td><td>M</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="muted" style="margin-top:8px"><span data-lavish-revision="r1">With D2 as drag this still fits <b>13 points</b>: the handle-only drag exists already, so the work is the bigger handle, auto-scroll and testing on real phones, roughly what Move to… would have cost.</span></p>
+  </section>
+
+  <section class="block" id="decisions">
+    <h2>Decisions</h2>
+    <div class="card" data-lavish-revision="r1" style="margin-bottom:12px"><b>Answered 7 Nov.</b> Recommendations kept for D1 and D3–D10. <b>D2 changed:</b> rows reorder by touch drag on a handle at the row's edge. I read that as replacing Move to…, and kept Move to top and Move to bottom in the row's ⋯ (D3 needs that ⋯ for Select anyway). Say if you want those gone too.</div>
+    <p class="sub">The recommended option is selected. Change any you disagree with, add a note if you like, then press <b>Queue answers</b> once at the bottom. None of these changes a SHIP-805 rule, except D1 B, which would need rule 7 changed first.</p>
+    <form id="dform" class="qs" data-lavish-question="ship-716-decisions"></form>
+    <div class="submit">
+      <span class="st" id="dstatus">Nothing queued yet. Your choices stay on this page until you press Queue answers.</span>
+      <button type="button" class="btn" id="copyAll">Copy all answers</button>
+      <button type="button" class="btn pri" id="queue">Queue answers</button>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const SCREEN = 'backlogs.html';
+  const groups = [
+    { title: 'Stories · List', phones: [
+      { id: 'P1', q: '', title: 'List', dec: ['D1', 'D4', 'D7'], notes: ['Two-line rows: title on top; key, state, sprint and parent under it. Points and the assignee on the right, ⋯ always there.', 'The parent drops to its own line when the sprint chip leaves no room, rather than being cut to "Ch…".', 'One toolbar row: + New, List / Planning / Tree, Filter, ⋯.', 'The not-estimated strip becomes a one-line banner with Estimate (D9).'] },
+      { id: 'P2', q: 'state=more', title: '⋯ More', dec: ['D4'], notes: ['Search this list, Add many…, Select, Estimate what has no points, Show completed.', 'Columns and Keys aren\'t offered on a phone (D7).'] },
+      { id: 'P3', q: 'state=search', title: 'Search this list', dec: ['D4'], notes: ['Opens a 16px field under the toolbar; # keeps each item\'s place in the whole backlog.', 'Done closes it and clears the search.'] },
+      { id: 'P4', q: 'state=add', title: '+ New (inline add)', dec: [], notes: ['The desktop\'s inline row, kept: Story or Bug, a 16px title, Add. It stays open for the next one.', 'The new row flashes at the top with a <b>?</b> estimate; a toast offers Open.'] },
+      { id: 'P5', q: 'state=filter', title: 'Filter', dec: ['D10'], notes: ['The criteria builder in a bottom sheet: Match All / Any, then each clause stacked (field and operator, then value), native 16px selects.', 'It applies as you change it; the footer says how many show. Chips stay under the toolbar with ✕ each.', 'The "moving is off" banner, as on the desktop.'] },
+    ] },
+    { title: 'Stories · moving, selecting, estimating', phones: [
+      { id: 'P6', q: 'state=row', title: 'A row\'s ⋯', dec: ['D2'], notes: ['Open, Points, Sprint ›, Parent ›, Move to top, Move to bottom, Select.', 'Top and bottom stay here so a long list never means dragging across many screens.'] },
+      { id: 'P7', q: 'state=drag', title: 'Drag a row', dec: ['D2'], r: true, notes: ['Each Stories row has a handle at its left edge: the rank on top, ⠿ under it, the full row height. Only the handle starts a drag, so the rest of the row scrolls the page and a tap opens the item.', 'The held row lifts; the rows below make room; a line shows where it lands.', 'Holding near the top or bottom scrolls the list.', 'No handles while searching, filtering or selecting (as on the desktop, dragging is off with a filter).'] },
+      { id: 'P8', q: 'state=select', title: 'Select mode', dec: ['D3'], notes: ['Checkboxes take the rank\'s place. Select all and Done sit under the toolbar.', 'The bulk bar is fixed at the bottom where the Save bar goes: the count and sum, then State, Points, Sprint, ⋯ (Parent, Tags, Move to top / bottom).'] },
+      { id: 'P9', q: 'state=bulk-sprint', title: 'Select mode · Sprint', dec: ['D3'], notes: ['Each sprint shows what it would come to with the selection added, and its capacity bar.', 'Says when some of the selection has no estimate.'] },
+      { id: 'P10', q: 'state=points', title: 'Estimate (the ? chip, or the banner)', dec: ['D9'], notes: ['Tapping <b>?</b> on a row, or Estimate on the banner, opens the Points sheet.', 'From the banner it steps through the not-estimated items: "1 of 3", picking saves and moves on, Skip.'] },
+    ] },
+    { title: 'Stories · Planning and Tree', phones: [
+      { id: 'P11', q: 'mode=planning', title: 'Planning', dec: ['D5', 'D2'], notes: ['Each sprint is a header block: name, dates and count, then a full-width capacity bar with points, free or "+3 over".', 'The pull line stays a line in the list: the sprint to pull into, the sum, ▲ ▼ to move it one item, Pull.', 'Forecast marks ("→ Sprint 26") join the meta line.'] },
+      { id: 'P12', q: 'mode=planning&state=drag', title: 'Planning · drag into a sprint', dec: ['D2'], r: true, notes: ['Dragging a row over a sprint header lights it up and shows the sum it would come to ("8 + 2 = 10 / 22").', 'Letting go moves it into that sprint, the same write as the desktop drop.', 'The pull line gets the same handle, as well as ▲ ▼ (D5).'] },
+      { id: 'P13', q: 'mode=planning&state=more', title: 'Planning · ⋯ More', dec: ['D4', 'D5'], notes: ['Planning\'s own options: Forecast, Override velocity, Create sprint.', 'No Filter in Planning, as on the desktop.'] },
+      { id: 'P14', q: 'mode=planning&state=section', title: 'A sprint\'s ⋯', dec: ['D5'], notes: ['+ Add, Capacity and Open sprint move off the header into its ⋯, so the header fits on two lines.'] },
+      { id: 'P15', q: 'mode=tree', title: 'Tree', dec: ['D6'], notes: ['Epic and Feature headers name their path ("Insights for merchants › Reporting ›"), so nesting shows without indenting.', 'Item rows never indent; the title gets the full width.', 'Counts read "5 items · Σ 18 pts".', 'Rows drag by their handle; dropping on a Feature header reparents, as on the desktop.'] },
+    ] },
+    { title: 'Features and Epics', phones: [
+      { id: 'P16', q: 'level=features', title: 'Features', dec: ['D8'], notes: ['A third line: the progress bar (done, in progress), "4 / 8 done", and own points with the sum under it, warn when 25% over.', 'Parent Epic in the meta line; a nested Feature says so.'] },
+      { id: 'P17', q: 'level=epics', title: 'Epics', dec: ['D8'], notes: ['The same rows, with the Features count in the meta line.', 'No handle on Features and Epics rows: they don\'t drag on the desktop either.'] },
+    ] },
+  ];
+  let theme = 'light';
+  const src = q => `${SCREEN}?${q ? q + '&' : ''}theme=${theme}`;
+  document.getElementById('groups').innerHTML = groups.map(g => `<div class="grp"><h3>${g.title}</h3><div class="phones">${g.phones.map(p => `
+    <article class="phone" id="${p.id}"${p.r ? ' data-lavish-revision="r1"' : ''}>
+      <div class="ph"><span class="no">${p.id}</span><h3>${p.title}</h3></div>
+      <div class="frame"><iframe loading="lazy" title="${p.title}" data-q="${p.q}" src="${src(p.q)}"></iframe></div>
+      <div>${p.dec.map(d => `<a class="dec" href="#q-${d}">${d}</a>`).join(' ')}</div>
+      <ul>${p.notes.map(n => `<li>${n}</li>`).join('')}</ul>
+    </article>`).join('')}</div></div>`).join('');
+
+  document.querySelectorAll('[data-theme-set]').forEach(b => b.addEventListener('click', () => {
+    theme = b.dataset.themeSet;
+    document.querySelectorAll('[data-theme-set]').forEach(x => x.setAttribute('aria-pressed', x === b));
+    document.querySelectorAll('.frame iframe').forEach(f => { f.src = src(f.dataset.q); });
+  }));
+
+  const Q = [
+    { id: 'D1', see: 'P1', q: 'What does a backlog row look like on a phone?', opts: [
+      ['rows', 'Two-line rows, not a table', 'Title on top; key, state, sprint and parent under it; points and assignee on the right. Works for all three backlogs and all three modes.', true],
+      ['table', 'Keep the table, scrolling sideways in its own box', 'Closest to the desktop, but Points and Sprint start off screen. Needs SHIP-805 rule 7 changed first.'],
+      ['compact', 'One line: title and points only', 'Densest, but state, sprint and parent need a tap into the item.'] ] },
+    { id: 'D2', see: 'P6, P7, P12', q: 'How do you reorder and move items without a drag?', opts: [
+      ['sheet', 'A row\'s ⋯ sheet, with Move to… to pick a place', 'No drag below 900px, so the page always scrolls. Move to top / bottom, Sprint and Parent are one tap each; Move to… shows "Put it here" lines.', true],
+      ['drag', 'Touch drag on a handle at each row\'s edge', 'Familiar from the desktop. Chosen 7 Nov.'],
+      ['both', 'Both', 'The sheet plus handle drag. About 3 more points.'] ] },
+    { id: 'D3', see: 'P8, P9', q: 'How do you select many items?', opts: [
+      ['mode', 'A Select mode from ⋯ or a row\'s ⋯, with the bulk bar at the bottom', 'Checkboxes only while selecting, so rows keep their width. The bar sits where the Save bar goes.', true],
+      ['always', 'Checkboxes always shown', 'One tap to start, but every row loses 30px for something used now and then.'],
+      ['none', 'No bulk changes on a phone', 'Least work; bulk changes wait for a computer.'] ] },
+    { id: 'D4', see: 'P1, P2, P3', q: 'What stays in the toolbar?', opts: [
+      ['one', '+ New · List / Planning / Tree · Filter · ⋯', 'SHIP-805 rule 8. Search this list, Add many, Select and Show completed go in ⋯; search opens a field under the toolbar.', true],
+      ['search', 'Also keep the search field visible, on a second row', 'One tap less to search, but two toolbar rows on every visit.'] ] },
+    { id: 'D5', see: 'P11, P14', q: 'How does the pull line work on a phone?', opts: [
+      ['steps', 'Keep the line; ▲ ▼ move it one item, then Pull', 'The same idea and sums as the desktop, without a drag. Sprint actions move into each section\'s ⋯.', true],
+      ['sheet', 'Replace it with a "Pull into Sprint 25" sheet of the top items to tick', 'Easier to explain, but a second way of planning that the desktop doesn\'t have.'],
+      ['view', 'Planning is view-only on a phone', 'See sprints and capacity; move items with the row ⋯ only.'] ] },
+    { id: 'D6', see: 'P15', q: 'How does Tree show nesting?', opts: [
+      ['path', 'Headers name their path; rows never indent', 'Titles keep the full width. A nested Feature\'s header reads "Insights for merchants › Reporting ›".', true],
+      ['indent', 'Indent each level, as on the desktop (about 12px a level)', 'Shape at a glance, but three levels take 36px from every title.'] ] },
+    { id: 'D7', see: 'P1', q: 'What happens to Columns on a phone?', opts: [
+      ['fixed', 'A fixed set; Columns isn\'t offered below 900px', 'Key, state, sprint, parent, points and assignee always show; tags don\'t. Your desktop columns are untouched.', true],
+      ['sheet', 'Columns in ⋯ chooses what the meta line shows', 'Respects the per-user setting, but the desktop and phone would share one choice that suits neither.'] ] },
+    { id: 'D8', see: 'P16, P17', q: 'How much of Progress shows on Features and Epics?', opts: [
+      ['bar', 'A third line with the bar, "4 / 8 done" and points with the sum', 'The reason to open these backlogs, so it gets its own line.', true],
+      ['text', 'Two lines; "4 / 8 done" as text in the meta line', 'Shorter rows, no bar.'] ] },
+    { id: 'D9', see: 'P10', q: 'Can you estimate from the list?', opts: [
+      ['sheet', 'Yes: the ? chip opens a Points sheet, and the banner steps through every item without one', 'Keeps the desktop\'s "work through the rows with no estimate" flow. Picking saves and moves on.', true],
+      ['item', 'Only inside the item', 'Less to build; estimating a batch means opening each item.'] ] },
+    { id: 'D10', see: 'P5', q: 'Where does Filter open?', opts: [
+      ['sheet', 'A bottom sheet, clauses stacked, applying as you change it', 'You see the count change; Close keeps the filter, Clear removes it.', true],
+      ['full', 'Full screen with Apply', 'More room for many clauses, but it hides the list you are filtering.'] ] },
+  ];
+  const form = document.getElementById('dform');
+  form.innerHTML = Q.map(q => `
+    <fieldset class="q" id="q-${q.id}" style="margin:0">
+      <h3><span class="id">${q.id}</span><span>${q.q}</span></h3>
+      <span class="see muted">See ${q.see}</span>
+      <div class="opts">${q.opts.map(([v, label, why, rec]) => `
+        <label><input type="radio" name="${q.id}" value="${v}" data-label="${label.replace(/"/g, '&quot;')}" ${rec ? 'checked' : ''}>
+          <span><b>${label}</b>${rec ? '<span class="rec">Recommended</span>' : ''}${why ? `<small>${why}</small>` : ''}</span></label>`).join('')}
+      </div>
+      <textarea name="${q.id}-note" aria-label="${q.id} note" placeholder="Note (optional)"></textarea>
+    </fieldset>`).join('');
+
+  // Joel's answers, 7 Nov: only D2 differs from the recommendation.
+  form.querySelector('input[name="D2"][value="drag"]').checked = true;
+
+  function answers() {
+    return Q.map(q => {
+      const el = form.querySelector(`input[name="${q.id}"]:checked`);
+      const rec = q.opts.find(o => o[3])[0];
+      const note = form.querySelector(`textarea[name="${q.id}-note"]`).value.trim();
+      return { id: q.id, question: q.q, answer: el.dataset.label, value: el.value, recommended: el.value === rec, note };
+    });
+  }
+  const asText = list => list.map(a => `${a.id} ${a.question}\n  → ${a.answer}${a.recommended ? ' (recommended)' : ' (CHANGED from recommendation)'}${a.note ? `\n  Note: ${a.note}` : ''}`).join('\n');
+  document.getElementById('queue').addEventListener('click', () => {
+    const list = answers();
+    const changed = list.filter(a => !a.recommended).length;
+    const text = `SHIP-716 mobile backlogs design decisions (${changed} changed from the recommendation):\n${asText(list)}`;
+    const st = document.getElementById('dstatus');
+    if (window.lavish?.queuePrompt) {
+      window.lavish.queuePrompt(text, { tag: 'choice', text: `SHIP-716 decisions: ${changed} changed`, element: form, queueKey: 'ship-716-decisions', data: { question: 'ship-716-decisions', answers: list } });
+      st.textContent = `Queued: ${list.length} answers, ${changed} changed. Press Send in the Lavish bar to send them.`;
+    } else st.textContent = 'Lavish is not running. Use Copy all answers and paste them into the chat.';
+  });
+  document.getElementById('copyAll').addEventListener('click', async () => {
+    const st = document.getElementById('dstatus');
+    try { await navigator.clipboard.writeText(asText(answers())); st.textContent = 'Answers copied.'; }
+    catch { st.textContent = 'Clipboard unavailable here.'; }
+  });
+})();
+</script>
+</body>
+</html>

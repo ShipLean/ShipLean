@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ShipLean · Sign in on a phone (SHIP-736 reference)</title>
+<!--
+  SHIP-736 reference: /login and the steps around it on a phone, in password mode and proxy mode.
+  Designed at 390 × 844; it applies at 900px and below and follows the shared mobile rules on SHIP-805 (it doesn't
+  restate them). Above 900px the desktop reference (../screens/signin.html) is unchanged. Open directly in a browser.
+  Uses ../tokens.css only; no build step. SHIP-805 rules 11 and 13 (48px bar, 32px minimum) aren't in tokens.css on
+  this branch yet, so this page sets them.
+  ?state=                 (none) sign in · error · signed-out · ended · google-failed · google-refused
+                          change · no-projects · no-projects-member · proxy · proxy-disabled · proxy-ended
+  ?google=0               Google sign-in turned off on the instance (password only)
+  ?kb                     a phone keyboard is open over the bottom 336px (the Email field has focus)
+  ?typed                  change: a new password typed, Confirm not yet
+  ?inst=<name>            the instance's name (default Larkspur Engineering); ShipLean drops it from the top bar
+  ?theme=light|dark
+  Decisions D1–D8 (SHIP-736) settled by Joel on 7 Nov 2026: every recommendation kept. The ?alt= views below are
+  the options he turned down, kept so the review page can show them.
+  Alternatives the decisions weighed:
+  ?alt=centred            the card centred on the screen, as today (D1)
+  ?alt=flat               no card on a phone: the form sits on the page (D1)
+  ?alt=side               labels beside the fields, as today (D2)
+  ?alt=h32                fields and buttons 32px (D3)
+  ?alt=footer             Sign in right-aligned in the card footer, as today (D4)
+  ?alt=google-last        Google after Sign in (D5)
+-->
+<link rel="stylesheet" href="../tokens.css">
+<script>
+  (() => {
+    const p = new URLSearchParams(window.SL_QUERY ?? location.search); // SL_QUERY: set by a standalone review page (srcdoc)
+    if (p.get('theme')) document.documentElement.dataset.theme = p.get('theme');
+    for (const a of p.getAll('alt')) document.documentElement.classList.add('alt-' + a);
+    if (p.has('kb')) document.documentElement.classList.add('kb');
+  })();
+</script>
+<style>
+:root { --touch-target: 32px; --mobile-bar-height: 48px; --auth-control: 40px; --kb-height: 336px; }
+:root.alt-h32 { --auth-control: 32px; }
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; min-height: 100dvh; display: flex; flex-direction: column; background: var(--color-bg); color: var(--color-text); font: var(--text-base)/1.45 var(--font-sans); -webkit-font-smoothing: antialiased; }
+a { color: var(--color-accent); }
+b { font-weight: var(--weight-semibold); }
+
+/* Top bar (D7): 48px plus the safe area. The mark and the instance's name; no Menu or Search, there is nothing to open yet. */
+.topbar { flex: none; display: flex; align-items: center; gap: var(--space-2); height: calc(var(--mobile-bar-height) + env(safe-area-inset-top)); padding: env(safe-area-inset-top) max(var(--space-4), env(safe-area-inset-right)) 0 max(var(--space-4), env(safe-area-inset-left)); background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.logo { flex: none; display: flex; align-items: center; gap: 7px; font-size: 16px; font-weight: 700; letter-spacing: -.01em; }
+.logo i { width: 18px; height: 18px; border-radius: 5px; background: var(--color-accent); display: inline-block; }
+.inst { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: var(--text-md); color: var(--color-muted); }
+.inst::before { content: "·"; margin-right: var(--space-2); }
+
+/* The stage (D1): the card starts near the top, so the keyboard never pushes it around and the button stays above it. */
+.stage { flex: 1; display: flex; flex-direction: column; align-items: center; padding: var(--space-4) max(var(--space-4), env(safe-area-inset-right)) calc(var(--space-5) + env(safe-area-inset-bottom)) max(var(--space-4), env(safe-area-inset-left)); }
+@media (min-width: 600px) { .stage { padding-top: clamp(24px, 10vh, 120px); } }
+:root.alt-centred .stage { justify-content: center; }
+
+.card { width: min(440px, 100%); display: flex; flex-direction: column; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-raised); }
+.card > h1 { margin: 0; padding: var(--space-4); border-bottom: 1px solid var(--color-border); font-size: var(--text-lg); line-height: 1.25; font-weight: var(--weight-semibold); }
+.card > h1 small { display: block; margin-top: 3px; font-size: var(--text-base); font-weight: var(--weight-regular); color: var(--color-muted); overflow-wrap: anywhere; }
+.card .body { display: grid; gap: var(--space-4); padding: var(--space-4); }
+.card > footer { display: grid; gap: var(--space-3); padding: var(--space-3) var(--space-4) var(--space-4); border-top: 1px solid var(--color-border); background: var(--color-bg); border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+.card > footer .note { font-size: var(--text-sm); color: var(--color-muted); text-align: center; }
+:root.alt-flat .card { width: 100%; background: transparent; border: 0; box-shadow: none; }
+:root.alt-flat .card > h1 { padding: var(--space-2) 0 var(--space-3); border: 0; font-size: 22px; }
+:root.alt-flat .card .body { padding: var(--space-2) 0; }
+:root.alt-flat .card > footer { padding: var(--space-3) 0; border: 0; background: transparent; }
+:root.alt-flat .stage { background: var(--color-surface); }
+
+/* Fields (D2, D3): label above, full width, 16px text so iOS Safari doesn't zoom. */
+.fields { display: grid; gap: var(--space-3); }
+.fld { display: grid; gap: 6px; min-width: 0; }
+.fld label { font-size: var(--text-md); font-weight: var(--weight-medium, 500); }
+.field { width: 100%; height: var(--auth-control); padding: 0 12px; border: 1px solid var(--color-border-strong, var(--color-border)); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); font: inherit; font-size: var(--text-input-touch); }
+.field:focus, .field.focus { outline: 2px solid var(--color-accent); outline-offset: -1px; border-color: transparent; }
+.field::placeholder { color: var(--color-muted); }
+.reveal { position: relative; }
+.reveal .field { padding-right: 68px; }
+.reveal button { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); min-width: 56px; height: var(--touch-target); padding: 0 10px; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--color-muted); font: inherit; font-size: var(--text-md); cursor: pointer; }
+.reveal button:active { background: var(--color-surface-2); color: var(--color-text); }
+:root.alt-side .fld { grid-template-columns: 96px minmax(0, 1fr); align-items: center; gap: var(--space-3); }
+:root.alt-side .fld label { font-size: var(--text-sm); font-weight: 400; color: var(--color-muted); }
+:root.alt-side .checks { margin-left: 108px; }
+
+/* Buttons (D3, D4): full width, one primary. */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); height: var(--auth-control); padding: 0 16px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); font: inherit; font-size: 15px; font-weight: var(--weight-medium, 500); text-decoration: none; cursor: pointer; }
+.btn.primary { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-fg); font-weight: var(--weight-semibold); }
+.btn.block { width: 100%; }
+.btn[disabled] { opacity: .5; cursor: not-allowed; }
+.btn.google svg { width: 18px; height: 18px; flex: none; }
+:root.alt-footer .card > footer { display: flex; align-items: center; }
+:root.alt-footer .card > footer .note { flex: 1; text-align: left; font-size: var(--text-xs); }
+:root.alt-footer .card > footer .btn { width: auto; height: 32px; font-size: var(--text-sm); }
+.or { display: flex; align-items: center; gap: var(--space-3); font-size: var(--text-sm); color: var(--color-muted); }
+.or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--color-border); }
+.link { display: inline-flex; align-items: center; justify-content: center; min-height: var(--touch-target); padding: 0 var(--space-2); border: 0; background: transparent; color: var(--color-accent); font: inherit; font-size: var(--text-md); text-decoration: underline; cursor: pointer; }
+
+/* Banners: as on the desktop, a size up. */
+.alert { padding: 10px 12px; border: 1px solid var(--color-border); border-left: 3px solid var(--color-danger); border-radius: var(--radius-sm); background: color-mix(in srgb, var(--color-danger) 9%, var(--color-surface)); font-size: var(--text-md); line-height: 1.45; }
+.alert.info { border-left-color: var(--color-info); background: color-mix(in srgb, var(--color-info) 9%, var(--color-surface)); }
+.alert.ok { border-left-color: var(--color-ok); background: color-mix(in srgb, var(--color-ok) 9%, var(--color-surface)); }
+
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: var(--text-md); }
+.checks li::before { content: "✓"; display: inline-block; width: 20px; color: var(--color-ok); font-weight: 700; }
+.checks li.no { color: var(--color-muted); }
+.checks li.no::before { content: "○"; color: var(--color-muted); font-weight: 400; }
+
+.empty { display: grid; justify-items: center; gap: var(--space-3); text-align: center; padding: var(--space-5) var(--space-4); }
+.empty h2 { margin: 0; font-size: 16px; }
+.empty p { margin: 0; font-size: var(--text-md); color: var(--color-muted); }
+.me-line { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-md); }
+.av { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; color: #fff; font-size: 11px; font-weight: 700; }
+.stack { display: grid; gap: var(--space-2); width: 100%; }
+
+/* The keyboard (?kb): it covers the bottom 336px; the page underneath doesn't move (iOS keeps the layout viewport). */
+:root.kb body { height: 100dvh; min-height: 0; overflow: hidden; }
+.page { flex: 1; display: flex; flex-direction: column; }
+.kbd { position: fixed; inset: auto 0 0 0; height: var(--kb-height); background: #d1d4db; padding: 6px 3px 0; display: none; flex-direction: column; gap: 10px; font: 400 21px -apple-system, system-ui, sans-serif; color: #000; }
+:root[data-theme="dark"] .kbd { background: #2b2b2e; color: #fff; }
+:root.kb .kbd { display: flex; }
+.kbd .sugg { display: flex; justify-content: center; gap: 10px; height: 36px; align-items: center; font-size: 15px; }
+.kbd .sugg span { padding: 6px 12px; border-radius: 8px; background: rgb(255 255 255 / .55); }
+:root[data-theme="dark"] .kbd .sugg span { background: rgb(255 255 255 / .12); }
+.kbd .row { display: flex; justify-content: center; gap: 6px; }
+.kbd .row span { flex: 0 0 33px; height: 42px; display: grid; place-items: center; border-radius: 5px; background: #fff; box-shadow: 0 1px 0 rgb(0 0 0 / .3); font-size: 20px; }
+:root[data-theme="dark"] .kbd .row span { background: #6b6b6e; }
+.kbd .row span.w { flex: 0 0 46px; font-size: 13px; background: #adb2bb; }
+:root[data-theme="dark"] .kbd .row span.w { background: #48484b; }
+.kbd .row span.sp { flex: 1 1 auto; max-width: 180px; font-size: 14px; }
+.kbd .row span.go { flex: 0 0 88px; font-size: 15px; background: #2f7cf6; color: #fff; }
+
+/* Toast, as the app's: bottom centre, above the safe area. */
+.toast { position: fixed; left: 50%; bottom: calc(var(--space-5) + env(safe-area-inset-bottom)); transform: translateX(-50%); max-width: calc(100% - 32px); padding: 10px 14px; border-radius: var(--radius-md); background: var(--color-text); color: var(--color-bg); font-size: var(--text-md); box-shadow: var(--shadow-dialog); }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="topbar"><span class="logo"><i></i>ShipLean</span><span class="inst" id="inst"></span></header>
+  <main class="stage" id="stage"></main>
+</div>
+<div class="kbd" aria-hidden="true">
+  <div class="sugg"><span>ravi@larkspur.dev</span><span>Passwords</span></div>
+  <div class="row"><span>q</span><span>w</span><span>e</span><span>r</span><span>t</span><span>y</span><span>u</span><span>i</span><span>o</span><span>p</span></div>
+  <div class="row"><span>a</span><span>s</span><span>d</span><span>f</span><span>g</span><span>h</span><span>j</span><span>k</span><span>l</span></div>
+  <div class="row"><span class="w">⇧</span><span>z</span><span>x</span><span>c</span><span>v</span><span>b</span><span>n</span><span>m</span><span class="w">⌫</span></div>
+  <div class="row"><span class="w">123</span><span class="sp">space</span><span>@</span><span>.</span><span class="go">next</span></div>
+</div>
+<script>
+(() => {
+  const p = new URLSearchParams(window.SL_QUERY ?? location.search);
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const alt = new Set(p.getAll('alt'));
+  const state = p.get('state') || '';
+  const google = p.get('google') !== '0';
+  const kb = p.has('kb');
+  const instance = p.get('inst') || 'Larkspur Engineering';
+  // The top bar names the instance so people know which install this is; "ShipLean · ShipLean" says nothing (D7).
+  if (instance !== 'ShipLean') $('inst').textContent = instance; else $('inst').hidden = true;
+  document.title = 'Sign in · ' + instance;
+
+  const gMark = `<svg aria-hidden="true" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.83.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.97 10.72a5.41 5.41 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3.01-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.59A8.65 8.65 0 0 0 9 0 9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/></svg>`;
+  const googleBtn = `<a class="btn block google" href="#google">${gMark}Sign in with Google</a>`;
+  const banners = {
+    error: ['', `That email and password didn't work. Check them and try again, or ask your ShipLean admin.`],
+    'signed-out': ['ok', `You're signed out.`],
+    ended: ['info', `You were signed out because your password was changed or reset. Sign in again to carry on.`],
+    'google-failed': ['info', `Couldn't finish signing in with Google. Try again.`],
+    'google-refused': ['info', `This Google account can't sign in here. Ask your ShipLean admin.`],
+  };
+  const banner = s => banners[s] ? `<div class="alert ${banners[s][0]}" role="${banners[s][0] ? 'status' : 'alert'}">${banners[s][1]}</div>` : '';
+  const email = state === 'error' ? 'ravi@larkspur.dev' : '';
+
+  // Email field: the email keyboard, no capitals or autocorrect, "next" on the return key; Password: "go" (D6).
+  const fields = `<div class="fields">
+      <div class="fld"><label for="em">Email</label><input class="field${kb ? ' focus' : ''}" id="em" type="email" inputmode="email" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="next" autocomplete="username" value="${esc(email)}"></div>
+      <div class="fld"><label for="pw">Password</label><div class="reveal"><input class="field${state === 'error' ? ' focus' : ''}" id="pw" type="password" enterkeyhint="go" autocomplete="current-password"><button type="button" data-reveal="pw" aria-label="Show password">Show</button></div></div>
+    </div>`;
+  const signInBtn = `<button class="btn primary block" type="submit">Sign in</button>`;
+  const help = `<span class="note">No account, or forgot your password? Ask your ShipLean admin.</span>`;
+
+  function signIn() {
+    const gFirst = google && !alt.has('google-last');
+    const gLast = google && alt.has('google-last');
+    const inFooter = alt.has('footer');
+    return `<form class="card" id="f" novalidate>
+      <h1>Sign in<small>to ${esc(instance)}</small></h1>
+      <div class="body">
+        ${banner(state)}
+        ${gFirst ? googleBtn + '<div class="or">or with your email</div>' : ''}
+        ${fields}
+        ${inFooter ? '' : signInBtn}
+        ${gLast ? '<div class="or">or</div>' + googleBtn : ''}
+      </div>
+      <footer>${inFooter ? help + signInBtn : help}</footer>
+    </form>`;
+  }
+
+  function change() {
+    const typed = p.has('typed');
+    const a = typed ? 'correct-horse-7' : '', b = '';
+    const rules = [[a.length >= 10, 'At least 10 characters'], [a.length > 0 && a !== 'K7QX-2MPD-W4RT', 'Not the one-time password'], [a.length > 0 && a === b, 'Both match']];
+    return `<form class="card" id="chg" novalidate>
+      <h1>Choose your own password<small>Signed in as ravi@larkspur.dev</small></h1>
+      <div class="body">
+        <div class="alert info">You signed in with a one-time password from <b>Tom Okafor</b>. Pick one only you know before you carry on.</div>
+        <div class="fields">
+          <div class="fld"><label for="np">New password</label><div class="reveal"><input class="field${typed ? '' : ' focus'}" id="np" type="${typed ? 'text' : 'password'}" autocomplete="new-password" enterkeyhint="next" value="${a}"><button type="button" data-reveal="np" aria-label="${typed ? 'Hide' : 'Show'} password">${typed ? 'Hide' : 'Show'}</button></div></div>
+          <div class="fld"><label for="cp">Confirm</label><input class="field${typed ? ' focus' : ''}" id="cp" type="password" autocomplete="new-password" enterkeyhint="go"></div>
+          <ul class="checks" id="pwChecks">${rules.map(([ok, t]) => `<li class="${ok ? '' : 'no'}">${t}</li>`).join('')}</ul>
+        </div>
+        <button class="btn primary block" type="submit" id="chgGo" ${rules.every(r => r[0]) ? '' : 'disabled'}>Save and continue</button>
+      </div>
+      <footer><button class="link" type="button">Sign out instead</button></footer>
+    </form>`;
+  }
+
+  function noProjects(canCreate) {
+    return `<div class="card">
+      <h1>Welcome to ShipLean<small>${esc(instance)}</small></h1>
+      <div class="empty">
+        <div class="me-line"><span class="av" style="background:#3f7d5a">KT</span><span>Signed in as <b>Kai Turner</b></span></div>
+        <h2>You're not in any projects yet</h2>
+        <p>A project admin adds you from Project settings → Members. Once they do, the project opens here.</p>
+        ${canCreate ? `<div class="stack"><a class="btn primary block" href="#new">+ New project</a><a class="btn block" href="#import">Import from Jira</a></div>` : ''}
+        <span class="muted" style="font-size:var(--text-md);color:var(--color-muted)">Or <a href="#profile">set up your profile</a> while you wait.</span>
+      </div>
+      <footer><span class="note">Ask your ShipLean admin to add you.</span><button class="btn block" type="button">Sign out</button></footer>
+    </div>`;
+  }
+
+  const proxyMsg = {
+    proxy: `Sign-in is handled by your organisation's sign-in proxy, and no sign-in reached ShipLean. Open ShipLean through its usual address.`,
+    'proxy-disabled': `Your ShipLean account is disabled. Ask an instance admin to turn it back on.`,
+    'proxy-ended': `Your session ended. Reload the page to sign in again through your proxy. If it keeps happening, ask an instance admin.`,
+  };
+  function proxy() {
+    return `<div class="card">
+      <h1>Sign in<small>to ${esc(instance)}</small></h1>
+      <div class="body">
+        <div class="alert info" role="status">${proxyMsg[state]}</div>
+        <button class="btn primary block" type="button">Try again</button>
+      </div>
+    </div>`;
+  }
+
+  const views = { change, 'no-projects': () => noProjects(true), 'no-projects-member': () => noProjects(false) };
+  $('stage').innerHTML = (views[state] || (proxyMsg[state] ? proxy : signIn))();
+
+  if (kb) {
+    // The phone scrolls the focused field into view; the card already starts at the top, so nothing moves.
+    $('em').focus({ preventScroll: true });
+  }
+  $('stage').querySelectorAll('[data-reveal]').forEach(b => b.onclick = () => {
+    const i = $(b.dataset.reveal), show = i.type === 'password';
+    i.type = show ? 'text' : 'password'; b.textContent = show ? 'Hide' : 'Show'; b.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+  });
+  const f = $('f');
+  if (f) f.addEventListener('submit', e => {
+    e.preventDefault();
+    const em = $('em'), pw = $('pw');
+    if (!em.value.trim()) return em.focus();
+    if (!pw.value) return pw.focus();
+    const t = document.createElement('div'); t.className = 'toast'; t.textContent = 'Signed in. Opening where you were going';
+    document.body.append(t); setTimeout(() => t.remove(), 1800);
+  });
+  const chg = $('chg');
+  if (chg) chg.addEventListener('input', () => {
+    const a = $('np').value, b = $('cp').value;
+    const rules = [[a.length >= 10, 'At least 10 characters'], [a.length > 0 && a !== 'K7QX-2MPD-W4RT', 'Not the one-time password'], [a.length > 0 && a === b, 'Both match']];
+    $('pwChecks').innerHTML = rules.map(([ok, t]) => `<li class="${ok ? '' : 'no'}">${t}</li>`).join('');
+    $('chgGo').disabled = !rules.every(r => r[0]);
+  });
+})();
+</script>
+</body>
+</html>
