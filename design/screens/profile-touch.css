@@ -1,0 +1,135 @@
+/* Your profile in the touch shell (SHIP-733); behaviour in profile-touch.js. 900px and below only; above it nothing
+   changes. Follows SHIP-805 without changes. Alternatives for the decisions are under :root[data-alt~="…"]. */
+.savebar, .pf-index, .pf-jump { display: none; }
+@media (max-width: 900px) {
+  /* SHIP-805 rules 11 and 13 (48px bar, 32px targets) until the token change lands in tokens.css. */
+  :root { --touch-target: 32px; --mobile-bar-height: 48px; }
+
+  /* One column of panels, 12px gutters. The top bar already says "Your profile", so the heading goes (D7). */
+  .head { padding: var(--space-3) var(--space-3) 0; border-bottom: 0; background: var(--color-bg); }
+  .head h1 { display: none; }
+  .head .sm { font-size: var(--text-sm); }
+  :root[data-alt~="heading"] .head { padding: var(--space-3); background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+  :root[data-alt~="heading"] .head h1 { display: block; }
+  .content { overflow: visible; padding: var(--space-3) var(--space-3) calc(var(--space-6, 32px) + env(safe-area-inset-bottom)); }
+  .grid, .col { grid-template-columns: minmax(0, 1fr); gap: var(--space-3); }
+  .panel > header { min-height: 44px; }
+  .panel > header h2 { font-size: var(--text-md); }
+  .panel > header .meta { flex-basis: 100%; font-size: var(--text-sm); }
+
+  /* Forms: labels above, fields full width, 36px tall with 16px text (rule 14) */
+  .form { grid-template-columns: minmax(0, 1fr); }
+  .form > .lbl { padding: var(--space-3) var(--space-3) 4px; border-bottom: 0; font-size: var(--text-sm); }
+  .form > .ctl { padding: 0 var(--space-3) var(--space-3); justify-items: stretch; }
+  .form > .ctl .row { flex-wrap: wrap; }
+  .w-md { width: 100%; }
+  .field { height: 36px; }
+  .hint { font-size: var(--text-sm); }
+  .btn { height: 36px; padding: 0 14px; font-size: var(--text-base); }
+  .seg { height: 36px; display: flex; }
+  .seg button { flex: 1 1 auto; justify-content: center; padding: 0 12px; white-space: nowrap; font-size: var(--text-base); }
+  .pfoot { flex-wrap: wrap; padding: var(--space-2) var(--space-3); font-size: var(--text-sm); }
+
+  /* Profile: a bigger avatar, 32px colour targets five to a row, the preview wraps */
+  .idrow { padding: var(--space-3); }
+  .av.big { width: 56px; height: 56px; font-size: 20px; }
+  .idrow > span { min-width: 0; }
+  .idrow .muted { overflow-wrap: anywhere; }
+  .swatches { display: grid; grid-template-columns: repeat(5, 32px); gap: 10px 14px; }
+  .swatches button { width: 32px; height: 32px; }
+  .lookfor { justify-self: stretch; font-size: var(--text-sm); }
+  .readonly { height: 36px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; line-height: 34px; font-size: var(--text-base); }
+  /* Save and Discard move to the shared Save bar while something is unsaved (rule 15) */
+  [data-sec="profile"] .pfoot { display: none; }
+  .savebar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: flex; align-items: center; gap: var(--space-2); padding: 10px max(var(--space-3), env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(var(--space-3), env(safe-area-inset-left)); background: var(--color-surface); border-top: 1px solid var(--color-border); box-shadow: 0 -8px 24px rgb(0 0 0 / .12); }
+  .savebar[hidden] { display: none; }
+  .savebar .what { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; font-size: var(--text-sm); }
+  .savebar .what span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .savebar .what .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-warn); flex: none; }
+  .savebar .what.err { color: var(--color-danger); }
+  .savebar .btn { height: 40px; }
+  .savebar .btn.primary { padding: 0 20px; }
+  body.has-savebar .content { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
+  body.has-savebar .toast { bottom: calc(84px + env(safe-area-inset-bottom)); }
+
+  /* Password: one row with Change password until it's tapped (D2) */
+  .pw .pw-open { margin-left: auto; }
+  .pw.open .pw-open, .pw:not(.open) .form, .pw:not(.open) .pfoot { display: none; }
+  .pw:not(.open) > header { border-bottom: 0; }
+  .pw .pfoot { gap: var(--space-2); }
+  .pw .pfoot .pw-forgot { order: 3; flex-basis: 100%; }
+  .pw .pfoot .spacer { display: none; }
+  .pw .pfoot .btn { flex: 1; justify-content: center; }
+  .checks { font-size: var(--text-sm); gap: 4px; }
+  :root[data-alt~="pwopen"] .pw .form, :root[data-alt~="pwopen"] .pw .pfoot { display: grid; }
+  :root[data-alt~="pwopen"] .pw .pfoot { display: flex; }
+  :root[data-alt~="pwopen"] .pw .pw-open, :root[data-alt~="pwopen"] #pwCancel { display: none; }
+  :root[data-alt~="pwopen"] .pw > header { border-bottom: 1px solid var(--color-border); }
+
+  /* Appearance: density can be hidden (D6 alternative) */
+  :root[data-alt~="nodensity"] [data-sec="appearance"] .form > :nth-child(n+3) { display: none; }
+  :root[data-alt~="nodensity"] [data-sec="appearance"] .form > :nth-child(2) { border-bottom: 0; }
+
+  /* Your projects: the table becomes two-line rows, Leave always showing (rule 5); Joined goes, as in the app */
+  [data-sec="projects"] table.list, [data-sec="projects"] tbody { display: block; }
+  [data-sec="projects"] thead { display: none; }
+  [data-sec="projects"] tr.item { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; grid-template-rows: auto auto; align-items: center; column-gap: var(--space-2); padding: 8px var(--space-3); border-bottom: 1px solid var(--color-border); }
+  [data-sec="projects"] tr.item td { display: block; height: auto; padding: 0; border: 0; }
+  [data-sec="projects"] tr.item td:nth-child(1) { grid-row: 1 / 3; }
+  [data-sec="projects"] tr.item td:nth-child(2) { grid-column: 2; font-size: var(--text-base); font-weight: var(--weight-medium); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  [data-sec="projects"] tr.item td:nth-child(3) { grid-column: 2; grid-row: 2; }
+  [data-sec="projects"] tr.item td:nth-child(3) .chip { height: 18px; }
+  [data-sec="projects"] tr.item td:nth-child(4) { display: none; }
+  [data-sec="projects"] tr.item td:nth-child(5) { grid-column: 3; grid-row: 1 / 3; }
+  [data-sec="projects"] tr.item .pkey { height: 24px; min-width: 44px; font-size: var(--text-xs); }
+  [data-sec="projects"] tbody tr:last-child { border-bottom: 0; }
+  [data-sec="projects"] tr.confirm { display: block; border-bottom: 1px solid var(--color-border); }
+  [data-sec="projects"] tr.confirm td { display: block; padding: var(--space-3); }
+  [data-sec="projects"] tr.confirm .row { flex-wrap: wrap; gap: var(--space-2); }
+  [data-sec="projects"] tr.confirm .row > span:first-child { flex-basis: 100%; }
+  [data-sec="projects"] tr.confirm .spacer { display: none; }
+  [data-sec="projects"] tr.confirm .btn { flex: 1; justify-content: center; }
+
+  /* Sessions: text, then its button on the right */
+  .acts > div { padding: var(--space-3); align-items: center; }
+  .acts .tx { font-size: var(--text-base); }
+  .acts .tx span { font-size: var(--text-sm); }
+
+  /* Connected agents: three lines and Revoke; Revoke asks first (D4); the connect line wraps, with Copy (D5) */
+  .agents > li { padding: var(--space-3); align-items: center; }
+  .agents .tx { font-size: var(--text-base); }
+  .agents .tx .sc { font-size: var(--text-sm); }
+  .agents .tx .when { font-size: var(--text-sm); }
+  .agents > li.confirm .row { flex: 1 1 100%; gap: var(--space-2); }
+  .agents > li.confirm .btn { flex: 1; justify-content: center; }
+  .addline { padding: var(--space-3); font-size: var(--text-sm); gap: 6px; }
+  .addline .cmd { align-items: stretch; }
+  .addline code { white-space: normal; overflow-wrap: anywhere; overflow-x: visible; padding: 6px 8px; font-size: var(--text-sm); line-height: 1.45; }
+  .addline .copy { align-self: flex-start; }
+  :root[data-alt~="scroll"] .addline code { white-space: nowrap; overflow-x: auto; overflow-wrap: normal; }
+  :root[data-alt~="scroll"] .addline .copy { display: none; }
+
+  /* D1 alternatives: links to each section under the intro, or an index that opens one section at a time */
+  :root[data-alt~="jump"] .pf-jump { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: var(--space-2) var(--space-3) 0; }
+  .pf-jump a { flex: none; display: inline-flex; align-items: center; height: 32px; padding: 0 12px; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-surface); color: var(--color-text); font-size: var(--text-sm); text-decoration: none; }
+  :root[data-alt~="index"] .content { display: none; }
+  :root[data-alt~="index"] .pf-index { display: block; margin: var(--space-3); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+  .pf-index a { display: flex; align-items: center; gap: var(--space-3); min-height: 56px; padding: 8px var(--space-3); border-bottom: 1px solid var(--color-border); color: var(--color-text); text-decoration: none; }
+  .pf-index a:last-child { border-bottom: 0; }
+  .pf-index .tx { flex: 1; min-width: 0; display: grid; }
+  .pf-index .tx b { font-size: var(--text-md); font-weight: var(--weight-medium); }
+  .pf-index .tx span { font-size: var(--text-sm); color: var(--color-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pf-index .chev { color: var(--color-muted); }
+
+  /* D3 alternative: Leave asks in a bottom sheet */
+  .pf-sheet { position: fixed; inset: auto 0 0 0; z-index: 70; display: flex; flex-direction: column; padding: 0 var(--space-3) calc(var(--space-3) + env(safe-area-inset-bottom)); background: var(--color-surface); border-top: 1px solid var(--color-border); border-radius: var(--radius-lg) var(--radius-lg) 0 0; box-shadow: 0 -12px 32px rgb(0 0 0 / .22); }
+  .pf-sheet::before { content: ""; align-self: center; width: 36px; height: 4px; margin: 6px 0 4px; border-radius: 2px; background: var(--color-border); }
+  .pf-sheet[hidden] { display: none; }
+  .pf-sheet .sheet-head { padding: 2px 0 2px var(--space-1); }
+  .pf-sheet p { margin: 4px var(--space-1) var(--space-3); font-size: var(--text-base); }
+  .pf-sheet .btn { height: 40px; justify-content: center; }
+  .pf-sheet .btn.danger { background: var(--color-danger); border-color: var(--color-danger); color: #fff; }
+  :root[data-alt~="leavesheet"] [data-sec="projects"] tr.confirm { display: none; }
+  .pf-scrim { position: fixed; inset: 0; z-index: 65; background: rgb(10 16 28 / .45); }
+  .pf-scrim[hidden] { display: none; }
+}
