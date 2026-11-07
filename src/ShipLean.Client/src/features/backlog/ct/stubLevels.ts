@@ -30,6 +30,8 @@ export async function stubLevel(
   view: BacklogViewDto,
   options: {
     saved?: unknown;
+    // The project's states (every type's), for the filter's State list.
+    states?: unknown[];
     // Answers a read instead of `view` (a refused filter), or undefined to answer as usual.
     answer?: (search: URLSearchParams) => { status: number; body: unknown } | undefined;
   } = {},
@@ -43,7 +45,9 @@ export async function stubLevel(
     return route.fulfill(answer ? json(answer.body, answer.status) : json(view));
   });
   await page.route('**/api/projects/p1/members', (route) => route.fulfill(json([])));
-  await page.route('**/api/projects/p1/states', (route) => route.fulfill(json([])));
+  await page.route('**/api/projects/p1/states', (route) =>
+    route.fulfill(json(options.states ?? [])),
+  );
   await page.route('**/api/projects/p1/sprints', (route) => route.fulfill(json([])));
   await page.route('**/api/me/preferences/**', (route) => {
     if (route.request().method() === 'PUT') {

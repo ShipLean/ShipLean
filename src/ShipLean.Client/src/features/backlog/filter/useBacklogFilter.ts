@@ -66,7 +66,7 @@ export function useBacklogFilter(
   const sent = criteria.clauses.length === 0 ? '' : whole === '' ? filter : whole;
   if (sent !== filter) setFilter(sent);
   const filtering = isFiltering(criteria);
-  const lists = useFilterLists(project.id);
+  const lists = useFilterLists(project.id, level);
   const view = useBacklogView(level, columns);
   const backlog = useBacklog({
     projectId: project.id,
