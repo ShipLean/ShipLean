@@ -9,7 +9,7 @@
  *   - opens the theme picker, a note's ⋯ and the Recurring chip as sheets, and the New action item dialog full screen
  * Everything else (decide, Not needed, Add, the dialog itself) is the page's own code. Above 900px nothing changes;
  * ?notouch shows the desktop page at any width.
- * Review states: ?cat=well|unplanned|bad|improve, ?sheet=filter|more|coverage|actions|recurring|theme:<point>|note:<point>,
+ * Review states: ?cat=well|unplanned|bad|improve, ?sheet=filter|more|sprint|coverage|actions|recurring|theme:<point>|note:<point>,
  * ?open=<item key> (By work item), ?dialog=<point> (New action item), ?alt=stack|pager (D1 alternatives), plus the
  * page's own ?view=items, ?decide=open, ?why=<point> and ?adding=sprint:<category>.
  */
@@ -43,6 +43,11 @@
   bar.append(viewSeg, el('span', 'spacer'), filterBtn, moreBtn);
   toolbar.append(bar);
   const segHome = el('span'); segHome.hidden = true; toolbar.append(segHome, srcSeg, decSeg);
+
+  /* The sprint header's ⋯ (SHIP-724 D10): the same sheet on every sprint tab. Close sprint isn't offered on an ended sprint. */
+  const hmore = el('button', 'rt-hmore', dots);
+  hmore.type = 'button'; hmore.setAttribute('aria-label', 'Sprint actions'); hmore.setAttribute('aria-haspopup', 'dialog');
+  $('.sprint-head .row').append(hmore);
 
   /* The numbers as buttons */
   const kpis = [...document.querySelectorAll('.sprint-head .kpi')];
@@ -116,9 +121,16 @@
       <button class="srow" type="button" data-go="recurring">Recurring themes<span class="sub">${$('#kRecurring').textContent} ›</span></button>
       <div class="grp">Go to</div>
       <a class="srow" href="retro-insights.html">Retrospective insights<span class="sub">›</span></a>
-      <a class="srow" href="retros.html">Search retrospectives<span class="sub">›</span></a>
-      <a class="srow" href="sprints.html">All sprints<span class="sub">›</span></a>`);
+      <a class="srow" href="retros.html">Search retrospectives<span class="sub">›</span></a>`);
   }
+  function openSprint() {
+    openSheet('sprint', 'Sprint 24', `
+      <button class="srow" type="button">Edit goal</button>
+      <button class="srow" type="button">Edit sprint<span class="sub">name, dates, goal</span></button>
+      <a class="srow" href="sprints.html">All sprints<span class="sub">›</span></a>
+      <p class="hint">The sprint header's ⋯, the same on every sprint tab (SHIP-724). Close sprint shows only while the sprint is open.</p>`);
+  }
+  hmore.addEventListener('click', openSprint);
   sb.addEventListener('click', e => {
     const go = e.target.closest('[data-go]');
     if (go) { openRail(go.dataset.go); return; }
@@ -256,6 +268,7 @@
   const s = q.get('sheet');
   if (s === 'filter') openFilter();
   else if (s === 'more') openMore();
+  else if (s === 'sprint') openSprint();
   else if (['coverage', 'actions', 'recurring'].includes(s)) openRail(s);
   else if (s?.startsWith('theme:')) openTheme(s.slice(6));
   else if (s?.startsWith('note:')) openNote(s.slice(5));

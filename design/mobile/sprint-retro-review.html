@@ -118,7 +118,7 @@ ol.ac { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 980px
     <span class="chip">Branch <code>design/727-mobile-sprint-retro</code> on PR #69</span>
     <span class="chip">New: <code>design/screens/retro-touch.css</code>, <code>retro-touch.js</code>, loaded by <code>sprint-retro.html</code></span>
     <span class="chip">Follows SHIP-805. Drawn as SHIP-805 recommends for its open points: C4 (sheet: Close on the right), C5 (native select for About) and C9 (✕ top left)</span>
-    <span class="chip">Sprint header and tabs as SHIP-725 D10</span>
+    <span class="chip">Sprint header and tabs: the shared <code>SprintHeader</code> (SHIP-724 D10)</span>
     <span class="chip accent" data-lavish-revision="r1">Decisions settled 7 Nov: every recommendation kept</span>
   </div>
 </header>
@@ -171,9 +171,9 @@ ol.ac { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 980px
   <div class="tbl-wrap"><table class="rules">
     <thead><tr><th>Part</th><th>Desktop</th><th>900px and below</th></tr></thead>
     <tbody>
-      <tr><td>Sprint header</td><td>Picker, state, All sprints, dates, goal, four numbers on the right</td><td>Same as the other sprint tabs (SHIP-725 D10): picker and state on one line, then the dates, then the goal clamped to two lines. All sprints moves into ⋯ More.</td></tr>
+      <tr><td>Sprint header</td><td>Picker, state, All sprints, dates, goal, four numbers on the right</td><td>The shared <code>SprintHeader</code> (SHIP-724 D10): picker, state and ⋯ on one line (⋯ holds Edit goal, Edit sprint, All sprints and, while the sprint is open, Close sprint), then the dates, then the goal clamped to two lines, then the 38px tabs.</td></tr>
       <tr><td>Four numbers</td><td>Read-only, with an “insights” link</td><td>One row of four 52px buttons. Retros opens Coverage, Recurring opens Recurring themes and Action items opens Action items, each as a sheet. To decide turns the To decide filter on and off and shows pressed while it's on.</td></tr>
-      <tr><td>Toolbar</td><td>Sprint tabs, view, Written by and Decision on one row that wraps; sticky in the SPA</td><td>Sprint tabs on their own row (rule 7). Then one row: By category | By work item · Filter (n) · ⋯ (rule 8). Nothing sticks (rule 12).</td></tr>
+      <tr><td>Toolbar</td><td>Sprint tabs, view, Written by and Decision on one row that wraps; sticky in the SPA</td><td>The sprint tabs come with the header (rule 7). Then one row: By category | By work item · Filter (n) · ⋯ (rule 8). Nothing sticks (rule 12).</td></tr>
       <tr><td>Categories</td><td>Four columns side by side, or two by two below 1250px</td><td>Four tiles in the fixed order (two by two on a phone, four in a row on a tablet), each showing its count and how many points are left to decide. The picked category is the only column on screen, full width, still grouped by theme. Its notes fill two columns on a tablet.</td></tr>
       <tr><td>A note</td><td>13px text; 24px CTA; ⋯ appears on people's points</td><td>Text at 13px body size (C7 still open). “+ Action item” and “Not needed” are 32px buttons. ⋯ on your own points is a 32px target and opens a sheet with Move to theme and Archive. Tapping # theme opens Move to theme.</td></tr>
       <tr><td>Not needed and Add</td><td>Inline, with 11px text boxes</td><td>Still inline, with 16px text boxes, 32px buttons and a 40px Add. About is a native select (C5).</td></tr>
@@ -209,9 +209,9 @@ ol.ac { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 980px
   </div></div>
   <div class="card"><ol class="ac">
     <li>At 390 × 844, in both themes, the sprint Retro tab has no page-level sideways scroll in By category, in By work item, or with any sheet or the New action item dialog open. Only the sprint tabs scroll sideways, inside their own box. Above 900px nothing changes; the 18rem rail is still there.</li>
-    <li>The sprint header and tabs match the other sprint tabs (SHIP-725 D10) and come from the same component.</li>
+    <li>The sprint header and tabs are the shared <code>SprintHeader</code> from SHIP-724 (D10), the same on every sprint tab.</li>
     <li>The four numbers are one row of buttons. Retros, Recurring themes and Action items open Coverage, Recurring and Action items as bottom sheets with the rail's content. Points to decide turns To decide on and off and shows pressed while it's on.</li>
-    <li>The toolbar is one row: By category | By work item · Filter (n) · ⋯. Filter holds Written by and Points (All points | To decide), with Clear and Show points. ⋯ More holds the three rail sections, Retrospective insights, Search retrospectives and All sprints. Nothing on the page sticks.</li>
+    <li>The toolbar is one row: By category | By work item · Filter (n) · ⋯. Filter holds Written by and Points (All points | To decide), with Clear and Show points. ⋯ More holds the three rail sections, Retrospective insights and Search retrospectives; All sprints is in the sprint header's ⋯. Nothing on the page sticks.</li>
     <li>Four category tiles show each category's count and how many points are left to decide. Tapping a tile shows only that category, full width, grouped by theme. The tile is kept in the address as <code>cat</code>. Turning on To decide while Went well is showing moves to the first category with points to decide.</li>
     <li>On a note, “+ Action item”, “Not needed”, ⋯ and # theme are at least 32px. ⋯ (your own points only) opens Move to theme and Archive. # theme opens Move to theme as a sheet. The Recurring chip opens the Recurring sheet. No tooltip is hover-only.</li>
     <li>The Not needed reason, the Add text and root cause use 16px text. About is a native select. A point you add stays visible, as on desktop.</li>
@@ -228,7 +228,7 @@ ol.ac { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 980px
     <div class="card"><h3>Owned elsewhere</h3><ul>
       <li><b>SHIP-805</b>: the shared rules. Nothing here needs a rule changed. The tiles stay on screen without sideways scroll, so rule 7 is untouched.</li>
       <li><b>SHIP-713</b>: the top bar, drawer, <code>Sheet</code>, scrim and the <code>viewport</code> property.</li>
-      <li><b>SHIP-725</b> (and SHIP-724, SHIP-726): the sprint header and tabs (D10). This page copies that treatment; build it once for every sprint tab.</li>
+      <li><b>SHIP-724</b>: the sprint header and tabs, built once in <code>SprintHeader</code> for every sprint tab (its D10). The mock draws it, with the header's ⋯.</li>
       <li><b>SHIP-728 to SHIP-731</b>: the other retro pages use the same note (<code>RetroNote</code>), the same New action item dialog and the same theme picker (D8).</li>
     </ul></div>
     <div class="card"><h3>Not in this design</h3><ul>
@@ -268,6 +268,7 @@ ol.ac { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 980px
     ['sprint-retro.html?sheet=recurring', 'Recurring themes', 'From “Recurring themes” or a Recurring chip'],
     ['sprint-retro.html?sheet=filter', 'Filter', 'Written by and Points'],
     ['sprint-retro.html?sheet=more', '⋯ More', 'The rail sections and where to go next'],
+    ['sprint-retro.html?sheet=sprint', 'The sprint header\'s ⋯', 'Shared with every sprint tab (SHIP-724)'],
   ];
   const ITEMS = [
     ['sprint-retro.html?view=items', 'By work item', 'One card per item with its counts'],

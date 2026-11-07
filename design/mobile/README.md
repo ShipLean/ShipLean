@@ -374,6 +374,7 @@ The sprint Retro tab at 900px and below, inside the touch shell. Desktop is unch
 | Recurring themes | ![Recurring themes, light](images/sprint-retro-recurring.light.png) | ![Recurring themes, dark](images/sprint-retro-recurring.dark.png) |
 | Filter | ![Filter, light](images/sprint-retro-filter.light.png) | ![Filter, dark](images/sprint-retro-filter.dark.png) |
 | ⋯ More | ![⋯ More, light](images/sprint-retro-more.light.png) | ![⋯ More, dark](images/sprint-retro-more.dark.png) |
+| The sprint header's ⋯ | ![Sprint header ⋯, light](images/sprint-retro-sprint.light.png) | ![Sprint header ⋯, dark](images/sprint-retro-sprint.dark.png) |
 | By work item | ![By work item, light](images/sprint-retro-items.light.png) | ![By work item, dark](images/sprint-retro-items.dark.png) |
 | An item opened | ![An item opened, light](images/sprint-retro-item-open.light.png) | ![An item opened, dark](images/sprint-retro-item-open.dark.png) |
 | New action item | ![New action item, light](images/sprint-retro-action.light.png) | ![New action item, dark](images/sprint-retro-action.dark.png) |

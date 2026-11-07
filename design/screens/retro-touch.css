@@ -1,24 +1,25 @@
 /*
  * The sprint Retro tab in the touch shell (SHIP-727). Loaded by sprint-retro.html after retro.css and retro-cards.css.
  * Follows SHIP-805 (the shared mobile rules) and doesn't restate them. At 900px and below: the sprint header as on the
- * other sprint tabs (SHIP-725 D10), the sprint tabs on their own row, one toolbar row (view · Filter (n) · ⋯), the four
+ * other sprint tabs (SHIP-724 D10, built once in SprintHeader), the sprint tabs on their own row, one toolbar row (view · Filter (n) · ⋯), the four
  * numbers as one row of buttons that open the rail's sections as bottom sheets, four category tiles that pick the one
  * category on screen, notes full width (two a row on a tablet), By work item as collapsed item cards, the theme picker,
  * a note's ⋯ and Filter as bottom sheets, and the New action item dialog full screen. retro-touch.js builds the
  * tiles, the bar, the sheets and the item cards. Above 900px nothing changes.
  */
-.rt-bar, .rt-tiles, .rt-sheet, .rt-sum, .rt-chev, .rt-catname { display: none; }
+.rt-bar, .rt-tiles, .rt-sheet, .rt-hmore, .rt-sum, .rt-chev, .rt-catname { display: none; }
 
 @media (max-width: 900px) {
   /* SHIP-805 rules 11 and 13 (48px bar, 32px targets) until the token change lands in tokens.css. */
   :root { --touch-target: 32px; --mobile-bar-height: 48px; }
   body { padding-bottom: env(safe-area-inset-bottom); }
 
-  /* Sprint header: as the other sprint tabs (SHIP-725 D10). Picker and state on one line, the dates under it, the goal
-     clamped to two lines. "All sprints" moves into ⋯ More. */
+  /* Sprint header: as every sprint tab (SHIP-724 D10, one SprintHeader). Picker, state and the header's ⋯ on one line
+     (⋯ holds Edit goal, Edit sprint, All sprints and Close sprint), the dates under it, the goal clamped to two lines. */
   .sprint-head { grid-template-columns: minmax(0, 1fr); gap: var(--space-2); padding: var(--space-3) var(--space-3) var(--space-2); border-bottom: 0; }
   .sprint-head .row { gap: 8px; flex-wrap: nowrap; }
   .sprint-head .row > a { display: none; }
+  .sprint-head .rt-hmore { display: inline-grid; place-items: center; width: var(--touch-target); height: var(--touch-target); margin-left: auto; padding: 0; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); cursor: pointer; }
   .sprint-head .picker { height: var(--touch-target); font-size: 20px; }
   .sprint-head .picker span { font-size: var(--text-sm); }
   .sprint-head .sm.muted { font-size: var(--text-sm); }
@@ -42,7 +43,7 @@
   .toolbar { flex-wrap: wrap; gap: var(--space-2) 0; padding: 0 var(--space-3) var(--space-2); border-bottom: 0; background: var(--color-bg); }
   .toolbar > :not(.rt-bar):not(.tabs) { display: none !important; }
   .toolbar > .tabs { flex: 1 0 100%; margin: 0 calc(-1 * var(--space-3)); padding: 0 var(--space-3); background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
-  .toolbar > .tabs .tab { height: 40px; padding: 0 12px; font-size: var(--text-base); }
+  .toolbar > .tabs .tab { height: 38px; padding: 0 12px; font-size: var(--text-base); }
   .rt-bar { display: flex; align-items: center; gap: var(--space-2); width: 100%; min-width: 0; padding-top: var(--space-1); }
   .rt-bar .seg { height: var(--touch-target); flex: none; }
   .rt-bar .seg button { padding: 0 10px; font-size: var(--text-sm); }

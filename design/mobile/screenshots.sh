@@ -143,6 +143,7 @@ declare -A shots=(
   [sprint-retro-recurring]="sprint-retro.html?sheet=recurring"
   [sprint-retro-filter]="sprint-retro.html?sheet=filter"
   [sprint-retro-more]="sprint-retro.html?sheet=more"
+  [sprint-retro-sprint]="sprint-retro.html?sheet=sprint"
   [sprint-retro-items]="sprint-retro.html?view=items"
   [sprint-retro-item-open]="sprint-retro.html?view=items&open=SHIP-141"
   [sprint-retro-action]="sprint-retro.html?cat=unplanned&dialog=R-305.6"
