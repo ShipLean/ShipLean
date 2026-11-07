@@ -386,6 +386,19 @@ At 900px and below, the Stories, Features and Epics boards follow `screens/board
 - **Card ⋯:** Open, Assign (Owner on Features and Epics), Show what's under it, Move to (every column and sub-column with its WIP), Lane, Move to top, Move to bottom.
 - **Sheets:** Filter (keyword, people or owner, Sprint or Epic as a native select, Clear, Show cards), ⋯ More (Swimlanes or Lanes, Full or Compact cards, Board settings), ⓘ, Assign/Owner and the Move to Done check.
 
+## Sign in on a phone (SHIP-736)
+
+At 900px and below, Sign in, Choose your own password, No projects yet and proxy sign-in follow `mobile/sign-in.html` (images and review in [mobile/README.md](mobile/README.md#sign-in-on-a-phone-ship-736)). Above 900px, `screens/signin.html` and the account patterns below still apply. The shared mobile rules are on SHIP-805 and aren't repeated here; nothing here changes them.
+
+**Decided 2026-11-07 (every recommendation kept):** the card starts 16px under the bar, not centred, capped at 440px, with a 10vh top margin from 600px (D1); labels above the fields (D2); fields and buttons 40px on these screens only, since SHIP-805 rule 13 is a minimum (D3); the primary button spans the card under the fields on every card, and the help line goes in the footer under it (D4); **Sign in with Google comes first** on phones, above "or with your email", while the desktop order stays (D5); no autofocus at 900px and below (D6); a 48px bar with the mark and the instance name, which is left out when the instance is called ShipLean (D7); `auth.signed_in` gains `method` = `password` | `google` | `proxy` (D8).
+
+- **Top bar:** `--mobile-bar-height` plus the top safe area, not sticky. The mark, then the instance name cut with an ellipsis. No Menu or Search, since there's nothing to open yet.
+- **Card:** a heading at `--text-lg` with the instance under it, a body with 16px padding, and a footer for the help line or Sign out. On every card the one primary button is full width under the fields: Sign in, Save and continue, + New project, Try again. Any other buttons stack under it.
+- **Fields:** a 14px label above each one; 40px tall, with 16px text. Show/Hide is 32px tall. Email uses `inputmode="email"`, `autocapitalize="off"`, `autocorrect="off"`, `spellcheck=false` and `enterkeyhint="next"`; Password uses `enterkeyhint="go"`. These attributes apply at every width.
+- **Order (sign in):** the note if there is one, Sign in with Google, "or with your email", Email, Password, Sign in. Without Google the fields come straight under the heading.
+- **Choose your own password:** the checks list goes under Confirm at full width; Sign out instead is a centred 32px link in the footer.
+- **Measuring:** the page is anonymous, so its views and failed attempts aren't tracked. Compare phone `auth.signed_in` per week as a share of all sign-ins, and Google against password on phones per week, over the 4 weeks before and after release.
+
 ## Backlog patterns (`screens/backlog.html`, `screens/features.html`)
 
 - **List and Planning are two modes of the Stories backlog.** List is the plain ranked backlog with Sprint and Assignee columns. Scheduled items stay in the list with a sprint chip, and the current sprint's chip is accent. Completed items are hidden unless **Completed** is ticked.

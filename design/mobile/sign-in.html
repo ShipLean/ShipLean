@@ -30,7 +30,7 @@
 <link rel="stylesheet" href="../tokens.css">
 <script>
   (() => {
-    const p = new URLSearchParams(location.search);
+    const p = new URLSearchParams(window.SL_QUERY ?? location.search); // SL_QUERY: set by a standalone review page (srcdoc)
     if (p.get('theme')) document.documentElement.dataset.theme = p.get('theme');
     for (const a of p.getAll('alt')) document.documentElement.classList.add('alt-' + a);
     if (p.has('kb')) document.documentElement.classList.add('kb');
@@ -150,7 +150,7 @@ b { font-weight: var(--weight-semibold); }
 </div>
 <script>
 (() => {
-  const p = new URLSearchParams(location.search);
+  const p = new URLSearchParams(window.SL_QUERY ?? location.search);
   const $ = id => document.getElementById(id);
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const alt = new Set(p.getAll('alt'));

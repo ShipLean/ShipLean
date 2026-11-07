@@ -214,3 +214,50 @@ The Stories, Features and Epics boards at 900px and below, inside the touch shel
 | Epic card ⋯ | ![Epic card actions, light](images/epics-board-card.light.png) | ![Epic card actions, dark](images/epics-board-card.dark.png) |
 
 The decisions are in [design/README.md › Boards on a phone](../README.md#boards-on-a-phone-ship-719).
+
+## Sign in on a phone (SHIP-736)
+
+`/login` and the steps around it at 900px and below: sign in (password, with and without Google, and its notes), Choose your own password, No projects yet, and proxy sign-in. There's no touch shell here, since nobody is signed in yet. Desktop is unchanged.
+
+| File | What it is |
+|---|---|
+| `sign-in.html` | The phone screen, opened directly. `?state=error\|signed-out\|ended\|google-failed\|google-refused\|change\|no-projects\|no-projects-member\|proxy\|proxy-disabled\|proxy-ended`, `?google=0`, `?kb` (a phone keyboard over the bottom 336px), `?typed`, `?inst=<name>`, `?theme=light\|dark`. `?alt=centred\|flat\|side\|h32\|footer\|google-last` show the options the decisions turned down. |
+| `sign-in-review.html` | The design review: today on a phone, every state and alternative as a live frame, a tablet, scope, what it takes to build, measuring and the decisions. |
+| `images/sign-in*.png` | `sign-in.html` at 390 × 844, 2× scale, light and dark (made by `screenshots.sh`). |
+| `images/today-sign-in-*.png` | Before this change: `today-sign-in-prod.png` is prod's `/login` at 390 × 844 on 7 Nov 2026; the others are `../screens/signin.html` in a 390px window, which the SPA matches. |
+
+### Today
+
+| Prod | Failed | Choose your own password | No projects |
+|---|---|---|---|
+| ![Today: prod sign-in on a phone](images/today-sign-in-prod.png) | ![Today: failed sign-in on a phone](images/today-sign-in-error.png) | ![Today: choose your own password on a phone](images/today-sign-in-change.png) | ![Today: no projects on a phone](images/today-sign-in-no-projects.png) |
+
+1. 13px fields, so iOS Safari zooms the page.
+2. The card is centred, so Password and Sign in end up under the keyboard.
+3. A 96px label column leaves about 216px for an email address.
+4. Sign in is a small button in the footer's corner, after Google.
+5. Show/Hide is a 24px target. Email autofocuses and opens the letter keyboard with autocapitalise.
+6. The bar is 38px with no safe area; on prod it reads "ShipLean · ShipLean".
+
+### The phone page
+
+| State | Light | Dark |
+|---|---|---|
+| Sign in, Google on | ![Sign in, Google on, light](images/sign-in.light.png) | ![Sign in, Google on, dark](images/sign-in.dark.png) |
+| The keyboard is open | ![The keyboard is open, light](images/sign-in-keyboard.light.png) | ![The keyboard is open, dark](images/sign-in-keyboard.dark.png) |
+| Password only (Google off) | ![Password only (Google off), light](images/sign-in-password-only.light.png) | ![Password only (Google off), dark](images/sign-in-password-only.dark.png) |
+| Sign-in failed | ![Sign-in failed, light](images/sign-in-error.light.png) | ![Sign-in failed, dark](images/sign-in-error.dark.png) |
+| Signed out | ![Signed out, light](images/sign-in-signed-out.light.png) | ![Signed out, dark](images/sign-in-signed-out.dark.png) |
+| Session ended | ![Session ended, light](images/sign-in-ended.light.png) | ![Session ended, dark](images/sign-in-ended.dark.png) |
+| Google didn't finish | ![Google didn't finish, light](images/sign-in-google-failed.light.png) | ![Google didn't finish, dark](images/sign-in-google-failed.dark.png) |
+| Google account refused | ![Google account refused, light](images/sign-in-google-refused.light.png) | ![Google account refused, dark](images/sign-in-google-refused.dark.png) |
+| Choose your own password | ![Choose your own password, light](images/sign-in-change.light.png) | ![Choose your own password, dark](images/sign-in-change.dark.png) |
+| Choose your own password, part typed | ![Choose your own password, part typed, light](images/sign-in-change-typed.light.png) | ![Choose your own password, part typed, dark](images/sign-in-change-typed.dark.png) |
+| No projects yet (can create) | ![No projects yet (can create), light](images/sign-in-no-projects.light.png) | ![No projects yet (can create), dark](images/sign-in-no-projects.dark.png) |
+| No projects yet (can't create) | ![No projects yet (can't create), light](images/sign-in-no-projects-member.light.png) | ![No projects yet (can't create), dark](images/sign-in-no-projects-member.dark.png) |
+| Proxy: no sign-in reached ShipLean | ![Proxy: no sign-in reached ShipLean, light](images/sign-in-proxy.light.png) | ![Proxy: no sign-in reached ShipLean, dark](images/sign-in-proxy.dark.png) |
+| Proxy: account disabled | ![Proxy: account disabled, light](images/sign-in-proxy-disabled.light.png) | ![Proxy: account disabled, dark](images/sign-in-proxy-disabled.dark.png) |
+| Proxy: session ended | ![Proxy: session ended, light](images/sign-in-proxy-ended.light.png) | ![Proxy: session ended, dark](images/sign-in-proxy-ended.dark.png) |
+| Instance called ShipLean | ![Instance called ShipLean, light](images/sign-in-instance-shiplean.light.png) | ![Instance called ShipLean, dark](images/sign-in-instance-shiplean.dark.png) |
+
+The decisions are in [design/README.md › Sign in on a phone](../README.md#sign-in-on-a-phone-ship-736).
