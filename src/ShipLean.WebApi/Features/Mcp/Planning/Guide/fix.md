@@ -4,7 +4,7 @@
 
 Fix rounds stay in ShipLean: read blocking findings from the `Review · ` comment (via `get_work_item`), push new commits, and report with `report_task`. Do not track fix rounds in local files.
 
-A review of your commits found blocking issues. Fix each one with new commits (never amend, never force-push). Pull with rebase from the shared branch, push to it, and hand in a new report with `report_task` listing only the new commits.
+A review of your commits found blocking issues. Fix each one with new commits (never amend, never force-push). Pull with rebase from the shared branch, push to it (under the costly CI variant, commit to your own branch and do not push), and hand in a new report with `report_task` listing only the new commits.
 
 If you disagree with a finding, say why in the report instead of changing the code.
 

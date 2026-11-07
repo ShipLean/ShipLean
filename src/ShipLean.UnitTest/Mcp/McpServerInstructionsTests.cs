@@ -14,6 +14,17 @@ public class McpServerInstructionsTests
     }
 
     [Test]
+    public void Instructions_ShouldSendEveryBreakdownThroughThePlanningGuide()
+    {
+        McpServerServices.Instructions.ShouldContain("Before any breakdown of a feature or epic into stories and tasks, whatever its size");
+        McpServerServices.Instructions.ShouldNotContain("for several agents, call planning_guide");
+        foreach (var trigger in new[] { "break down", "breakdown", "plan this", "split into tasks", "capture_plan" })
+        {
+            McpServerServices.Instructions.ShouldContain(trigger);
+        }
+    }
+
+    [Test]
     public void Instructions_ShouldDescribeTheResultShapeAndTheOnlyWayIn()
     {
         McpServerServices.Instructions.ShouldContain("Every result is one summary line");
