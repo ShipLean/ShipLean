@@ -63,7 +63,7 @@ dotnet_diagnostic.AG0010.severity = none
 # browser context, so each fixture states only the journey it tests.
 dotnet_diagnostic.AG0010.severity = none
 # AG0012: the assertions are Playwright's Expect(...), which retries until the page settles; the rule
-# only recognises NUnit/Shouldly asserts and would push these onto non-retrying ones.
+# only recognises NUnit/Shouldly asserts and would push these onto non-retrying ones. Upstream: agoda-com/AgodaAnalyzers#254.
 dotnet_diagnostic.AG0012.severity = none
 
 [src/ShipLean.UnitTest/Contracts/**.cs]
