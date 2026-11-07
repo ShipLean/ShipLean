@@ -31,7 +31,7 @@ The screens here are reference designs for every page of the v1 domain model: **
 | `screens/sprint-retro.html` | **Sprint Retro tab** (SHIP-82): every retrospective on items that finished or rolled over in the sprint. By category (Went well, Not in the plan, Went badly, Can be improved), grouped by theme, or By work item (`?view=items`) with each sub-agent's raw failure log. Points are post-its (SHIP-497). `?decide=open` shows only points to decide. Rail: coverage, action items, recurring themes. |
 | `screens/sprint-demo.html` | **Sprint Demo tab** (SHIP-303): Sprint 23's demo video, after Retro. `?state=closable\|none\|blocked\|working\|failed\|ready\|youtube-unlisted\|youtube-private\|youtube-failed` (default ready). |
 | `screens/retros.html` | **Retrospectives › Search** (SHIP-82): one row per point from every retro in the project, filtered by text, sprint, category, theme, level and author; the selected point's whole retro on the right. `?q=` prefills the search. |
-| `screens/retros-features.html` | **Retrospectives › Features** (SHIP-497): one row per Feature with counts per category and how many points are decided, plus stories and bugs with no Feature. `?show=open\|waiting` filters. |
+| `screens/retros-features.html` | **Retrospectives › Features** (SHIP-497): one row per Feature with counts per category and how many points are decided, plus stories and bugs with no Feature. `?show=open\|waiting` filters. Under 600px it's a list (SHIP-728, `retro-features-touch.*`). |
 | `screens/retro-item.html` | **Retrospectives › one item** (SHIP-497): all of a work item's retros on one board, with a retro filter, raw failure logs and, for a Feature, a row per story and bug. `?key=`, `?retro=`, `?decide=open`, `?dialog=action`, `?why=<point>` and `?adding=<item>:<category>` open those states. |
 | `screens/retro-notes.html` | **Retro note states** (SHIP-497): every state of a point's post-it, side by side. A reference, not a page in the app. |
 | `screens/retro-insights.html` | **Retrospectives › Insights** (SHIP-82, SHIP-497): Recurring themes, Action items (`?view=actions`) and Changes & impact (`?view=impact`). `?range=6\|3\|all\|w6\|w12` picks sprints or weeks, and `?tip=status\|verdict` opens a tooltip. |
@@ -469,6 +469,18 @@ At 900px and below, Retrospective insights follows `screens/insights-touch.css` 
 - **Impact card:** as desktop, one a row; tapping a bar outlines it and reads "S22: 3 mentions" under the chart.
 - **Merge themes:** full screen; 40px checkbox rows with point counts; Into is a 16px native select; Merge is disabled until a source and a target are picked.
 - **New action item:** the sprint Retro tab's full-screen dialog (SHIP-727 D5 and D8).
+
+## Retrospectives › Features on a phone (SHIP-728)
+
+Under 600px, Retrospectives › Features follows `screens/retro-features-touch.css` and `retro-features-touch.js`, which `retros-features.html` loads (images and review in [mobile/README.md](mobile/README.md#retrospectives--features-on-a-phone-ship-728)). From 600px to 900px it keeps the desktop table at touch sizes. Above 900px nothing changes. The shared mobile rules are on SHIP-805 and aren't repeated here; rules 1 and 7 there name this page's tablet exception.
+
+**Decided 2026-11-07:** under 600px each row becomes a short block in one list (D1); the toolbar is one row, the Show filter plus a Search button that opens the field in that row with Cancel (D2); each row keeps a small fourth line with its retros and action items (D3); a legend names the four colours once, in the list's head (D4); **from 600px to 900px the page keeps the desktop table** (D5, Joel's choice over the recommended list; SHIP-805 rules 1 and 7 amended); no new analytics, just `viewport` on `screen.viewed` (D6).
+
+- **Toolbar (phones):** All | To decide | No Feature retro yet, then Search. Search turns the row into a 16px field with Cancel (C9); Cancel clears the search. The button shows pressed while a search is set. `show` and `q` stay in the address. Not sticky.
+- **List (phones):** a box with a head ("n Features with retros" and the legend), then one row per Feature, a "Stories and bugs with no Feature" heading, and their rows. The whole row is the link to `retros/items/KEY`, with › on the right. Line 1: type, key, state, the last retro on the right. Line 2: the title (two lines at most) and the "No Feature retro yet" chip. Line 3: the four counts in the fixed order, then "n to decide" and the Decided bar (or "nothing to decide") on the right. Line 4: "n retros · n action items".
+- **Empty:** "Nothing left to decide." under To decide; a search with no match says "No Feature matches …" with Clear search.
+- **Tablets (600–900px):** the desktop toolbar and table, with 32px Show buttons, a 16px search box and 48px rows; the whole row opens the item. The category heads wrap onto two lines and the Feature cell wraps (key and title, then the chip). The Feature column is pinned; what doesn't fit (Actions and Last retro at 768px) scrolls sideways inside the table's box. The toolbar doesn't stick.
+- **Measuring:** per week on phones against desktop, the 4 weeks before and after release: the share of Features-page `screen.viewed` followed by an item retro page view.
 
 ## Your profile on a phone (SHIP-733)
 

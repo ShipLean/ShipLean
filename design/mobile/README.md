@@ -423,6 +423,41 @@ Retrospective insights at 900px and below, inside the touch shell. Desktop is un
 
 The decisions are in [design/README.md › Retrospective insights on a phone](../README.md#retrospective-insights-on-a-phone-ship-731).
 
+## Retrospectives › Features on a phone (SHIP-728)
+
+Retrospectives › Features under 600px, inside the touch shell, and the desktop table at touch sizes from 600px to 900px. Desktop is unchanged.
+
+| File | What it is |
+|---|---|
+| `../screens/retro-features-touch.css`, `retro-features-touch.js` | The touch layer, loaded by `retros-features.html`. The page's own `?show=open\|waiting` and `?q=<text>` (opens the search). The options not chosen stay viewable: `?alt=cards\|table` (D1), `?alt=filter` with `?sheet=filter`, and `?alt=tworow` (D2), `?alt=nometa` (D3); combine them with `+`. `?notouch` shows the desktop page at any width. |
+| `retros-features-review.html` | The design review: today, the three ways to fit a row and the toolbar, every state as a live frame, what changes, the decisions and the acceptance criteria. |
+| `images/retros-features*.png` | The page at 390 × 844 (made by `screenshots.sh`) and at 820 × 1180 (`-tablet`, by hand), 2× scale, light and dark. |
+| `images/today-retros-features*.png` | The reference screen with the shell at 390px and 768px, before this change. The real SPA's `FeaturesTable.tsx` has the same table in an `overflow-x-auto` box. |
+
+### Today
+
+| Phone, 390px | Tablet, 768px |
+|---|---|
+| ![Today: only Feature and State on screen](images/today-retros-features.png) | ![Today: a tablet, cut after Not in the plan](images/today-retros-features-tablet.png) |
+
+1. At 390px only Feature and State are on screen; every number is off to the right inside the table's box.
+2. The Feature cell's `min-w-48` and nowrap title push the table to about 1,150px.
+3. The toolbar is `sticky top-0` and wraps to three rows; the search box is 13px and the Show buttons about 26px tall.
+4. Only the title is a target, in a row about 33px tall; "No Feature retro yet" explains itself only in a hover tooltip.
+
+### The phone page
+
+| State | Light | Dark |
+|---|---|---|
+| All Features (top of the page) | ![All Features (top of the page), light](images/retros-features.light.png) | ![All Features (top of the page), dark](images/retros-features.dark.png) |
+| To decide | ![To decide, light](images/retros-features-decide.light.png) | ![To decide, dark](images/retros-features-decide.dark.png) |
+| No Feature retro yet | ![No Feature retro yet, light](images/retros-features-waiting.light.png) | ![No Feature retro yet, dark](images/retros-features-waiting.dark.png) |
+| Searching | ![Searching, light](images/retros-features-search.light.png) | ![Searching, dark](images/retros-features-search.dark.png) |
+| No match | ![No match, light](images/retros-features-empty.light.png) | ![No match, dark](images/retros-features-empty.dark.png) |
+| Tablet, 820px (D5: the desktop table) | ![Tablet, light](images/retros-features-tablet.light.png) | ![Tablet, dark](images/retros-features-tablet.dark.png) |
+
+The decisions are in [design/README.md › Retrospectives › Features on a phone](../README.md#retrospectives--features-on-a-phone-ship-728).
+
 ## Your profile on a phone (SHIP-733)
 
 Your profile at 900px and below: Profile, Password, Appearance, Your projects, Sessions and saved views, and Connected agents. Built on the touch shell; above 900px nothing changes, except that Revoke now asks first at every width (D4).

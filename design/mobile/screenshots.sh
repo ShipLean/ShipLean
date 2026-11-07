@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Regenerates images/<name>.<theme>.png: the touch shell (SHIP-713), the work item page (SHIP-714, item-* and
 # feature-*), the boards (SHIP-719: board-*, features-board-*, epics-board-*) and the sprint Retro tab
-# (SHIP-727: sprint-retro-*), Retrospective insights (SHIP-731: insights-*), Your profile (SHIP-733: profile-*), the Feature board (SHIP-722: fboard-*) and the sprint Taskboard (SHIP-725: tboard-*)
+# (SHIP-727: sprint-retro-*), Retrospective insights (SHIP-731: insights-*), Retrospectives › Features (SHIP-728: retros-features-*), Your profile (SHIP-733: profile-*), the Feature board (SHIP-722: fboard-*) and the sprint Taskboard (SHIP-725: tboard-*)
 # on the reference screens at 390 × 844,
 # 2× scale, and the page stories' phone screens kept in this folder
 # (an address starting ./, such as SHIP-715's attachment.html).
@@ -148,6 +148,12 @@ declare -A shots=(
   [sprint-retro-items]="sprint-retro.html?view=items"
   [sprint-retro-item-open]="sprint-retro.html?view=items&open=SHIP-141"
   [sprint-retro-action]="sprint-retro.html?cat=unplanned&dialog=R-305.6"
+  # Retrospectives › Features (SHIP-728). The tablet images (retros-features-tablet.*) are made by hand at 820 × 1180.
+  [retros-features]="retros-features.html"
+  [retros-features-decide]="retros-features.html?show=open"
+  [retros-features-waiting]="retros-features.html?show=waiting"
+  [retros-features-search]="retros-features.html?q=sign"
+  [retros-features-empty]="retros-features.html?q=zzz"
   # Your profile (SHIP-733). ?at=<panel> with ?shot hides the panels above it.
   [profile-dirty]="profile.html?dirty"
   [profile-photo]="profile.html?photo"
