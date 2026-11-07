@@ -423,6 +423,82 @@ Retrospective insights at 900px and below, inside the touch shell. Desktop is un
 
 The decisions are in [design/README.md › Retrospective insights on a phone](../README.md#retrospective-insights-on-a-phone-ship-731).
 
+## Retrospectives › Features on a phone (SHIP-728)
+
+Retrospectives › Features under 600px, inside the touch shell, and the desktop table at touch sizes from 600px to 900px. Desktop is unchanged.
+
+| File | What it is |
+|---|---|
+| `../screens/retro-features-touch.css`, `retro-features-touch.js` | The touch layer, loaded by `retros-features.html`. The page's own `?show=open\|waiting` and `?q=<text>` (opens the search). The options not chosen stay viewable: `?alt=cards\|table` (D1), `?alt=filter` with `?sheet=filter`, and `?alt=tworow` (D2), `?alt=nometa` (D3); combine them with `+`. `?notouch` shows the desktop page at any width. |
+| `retros-features-review.html` | The design review: today, the three ways to fit a row and the toolbar, every state as a live frame, what changes, the decisions and the acceptance criteria. |
+| `images/retros-features*.png` | The page at 390 × 844 (made by `screenshots.sh`) and at 820 × 1180 (`-tablet`, by hand), 2× scale, light and dark. |
+| `images/today-retros-features*.png` | The reference screen with the shell at 390px and 768px, before this change. The real SPA's `FeaturesTable.tsx` has the same table in an `overflow-x-auto` box. |
+
+### Today
+
+| Phone, 390px | Tablet, 768px |
+|---|---|
+| ![Today: only Feature and State on screen](images/today-retros-features.png) | ![Today: a tablet, cut after Not in the plan](images/today-retros-features-tablet.png) |
+
+1. At 390px only Feature and State are on screen; every number is off to the right inside the table's box.
+2. The Feature cell's `min-w-48` and nowrap title push the table to about 1,150px.
+3. The toolbar is `sticky top-0` and wraps to three rows; the search box is 13px and the Show buttons about 26px tall.
+4. Only the title is a target, in a row about 33px tall; "No Feature retro yet" explains itself only in a hover tooltip.
+
+### The phone page
+
+| State | Light | Dark |
+|---|---|---|
+| All Features (top of the page) | ![All Features (top of the page), light](images/retros-features.light.png) | ![All Features (top of the page), dark](images/retros-features.dark.png) |
+| To decide | ![To decide, light](images/retros-features-decide.light.png) | ![To decide, dark](images/retros-features-decide.dark.png) |
+| No Feature retro yet | ![No Feature retro yet, light](images/retros-features-waiting.light.png) | ![No Feature retro yet, dark](images/retros-features-waiting.dark.png) |
+| Searching | ![Searching, light](images/retros-features-search.light.png) | ![Searching, dark](images/retros-features-search.dark.png) |
+| No match | ![No match, light](images/retros-features-empty.light.png) | ![No match, dark](images/retros-features-empty.dark.png) |
+| Tablet, 820px (D5: the desktop table) | ![Tablet, light](images/retros-features-tablet.light.png) | ![Tablet, dark](images/retros-features-tablet.dark.png) |
+
+The decisions are in [design/README.md › Retrospectives › Features on a phone](../README.md#retrospectives--features-on-a-phone-ship-728).
+
+## Your profile on a phone (SHIP-733)
+
+Your profile at 900px and below: Profile, Password, Appearance, Your projects, Sessions and saved views, and Connected agents. Built on the touch shell; above 900px nothing changes, except that Revoke now asks first at every width (D4).
+
+| File | What it is |
+|---|---|
+| `../screens/profile-touch.css`, `../screens/profile-touch.js` | The phone and tablet layout, loaded by `../screens/profile.html`. `?dirty` (name edited) or `?dirty=colour`, `?pw` (Password open) or `?pw=typed`, `?leave=PAY`, `?revoke=cu`, `?agents=0`, `?photo`, `?at=password\|appearance\|projects\|sessions\|agents` (scrolled there; with `?shot` the panels above are hidden), `?notouch`. `?alt=index\|jump\|pwopen\|leavesheet\|scroll\|nodensity\|heading` show the options the decisions turned down. |
+| `profile-review.html` | The design review: today on a phone, every state and alternative as a live frame, a tablet, scope, what it takes to build, measuring and the decisions. |
+| `images/profile*.png` | `../screens/profile.html` at 390 × 844, 2× scale, light and dark (made by `screenshots.sh`). |
+| `images/today-profile*.png` | Before this change: the real app's `/profile` at 390 × 844 (and 820 × 1180), on a local seeded ShipLean, 7 Nov 2026. |
+
+### Today
+
+| The whole page | Profile | Password | The bottom |
+|---|---|---|---|
+| ![Today: the whole profile page on a phone](images/today-profile-full.png) | ![Today: Profile on a phone](images/today-profile.png) | ![Today: Password on a phone](images/today-profile-password.png) | ![Today: projects, sessions and agents on a phone](images/today-profile-agents.png) |
+
+1. 12px fields, so iOS Safari zooms the page; the fields are a fixed 280px.
+2. Profile's Save is at the bottom of the panel, a screen below the name.
+3. Password is always open: about 380px of empty fields.
+4. 20px colour swatches; 28px buttons and segments.
+5. Revoke cuts an agent off at once, with no second step.
+6. The Claude Code line is cut off at the panel's edge.
+
+### The phone page
+
+| State | Light | Dark |
+|---|---|---|
+| Opening the page | ![Opening the page, light](images/profile.light.png) | ![Opening the page, dark](images/profile.dark.png) |
+| Editing your name (Save bar) | ![Editing your name, light](images/profile-dirty.light.png) | ![Editing your name, dark](images/profile-dirty.dark.png) |
+| With a photo | ![With a photo, light](images/profile-photo.light.png) | ![With a photo, dark](images/profile-photo.dark.png) |
+| Password, closed | ![Password, closed, light](images/profile-password.light.png) | ![Password, closed, dark](images/profile-password.dark.png) |
+| Password, open and part typed | ![Password, open, light](images/profile-password-open.light.png) | ![Password, open, dark](images/profile-password-open.dark.png) |
+| Appearance | ![Appearance, light](images/profile-appearance.light.png) | ![Appearance, dark](images/profile-appearance.dark.png) |
+| Leaving a project | ![Leaving a project, light](images/profile-leave.light.png) | ![Leaving a project, dark](images/profile-leave.dark.png) |
+| Sessions and saved views | ![Sessions, light](images/profile-sessions.light.png) | ![Sessions, dark](images/profile-sessions.dark.png) |
+| Revoking an agent | ![Revoking an agent, light](images/profile-revoke.light.png) | ![Revoking an agent, dark](images/profile-revoke.dark.png) |
+| No agents connected | ![No agents, light](images/profile-no-agents.light.png) | ![No agents, dark](images/profile-no-agents.dark.png) |
+
+The decisions are in [design/README.md › Your profile on a phone](../README.md#your-profile-on-a-phone-ship-733).
+
 ## Retrospectives search on a phone (SHIP-730)
 
 Retrospectives › Search at 900px and below, inside the touch shell. Desktop is unchanged.

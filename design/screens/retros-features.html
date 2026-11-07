@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="shiplean.css">
 <link rel="stylesheet" href="retro.css">
 <link rel="stylesheet" href="retro-cards.css">
+<link rel="stylesheet" href="retro-features-touch.css">
 <script src="shared.js"></script>
 <script src="retro-data.js"></script>
 <script src="retro-cards.js"></script>
@@ -72,7 +73,7 @@
       .map(x => ({ ...x, waiting: !x.rs.some(r => r.subject === x.f.key && r.role === 'conductor'), open: RC.counts(x.rs).open }))
       .filter(x => !q || x.f.title.toLowerCase().includes(q) || x.f.key.toLowerCase().includes(q))
       .filter(x => show === 'all' || (show === 'open' ? x.open > 0 : x.waiting));
-    const loose = retros.filter(r => featureOf[r.subject] === null && r.type !== 'feature').filter(r => show === 'all' || (show === 'open' && RC.counts([r]).open > 0));
+    const loose = retros.filter(r => featureOf[r.subject] === null && r.type !== 'feature').filter(r => !q || r.title.toLowerCase().includes(q) || r.subject.toLowerCase().includes(q)).filter(r => show === 'all' || (show === 'open' && RC.counts([r]).open > 0));
     $('rows').innerHTML = rows.map(({ f, rs, waiting }) => row(f.key, 'feature', f.title, f.state, rs, waiting)).join('')
       + (loose.length ? `<tr class="group"><td colspan="${catOrder.length + 7}">Stories and bugs with no Feature</td></tr>` + [...new Set(loose.map(r => r.subject))].map(k => { const rs = loose.filter(r => r.subject === k); return row(k, rs[0].type, rs[0].title, 'Closed', rs, false); }).join('') : '')
       || `<tr><td colspan="${catOrder.length + 7}" class="muted" style="text-align:center;height:80px">Nothing here.</td></tr>`;
@@ -86,5 +87,6 @@
   SL.preview([{ label: 'To decide', run: () => { show = 'open'; render(); } }]);
 })();
 </script>
+<script src="retro-features-touch.js"></script>
 </body>
 </html>
