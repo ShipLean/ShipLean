@@ -5,8 +5,7 @@ using ShipLean.Contracts;
 
 namespace ShipLean.Application.Features.Backups.Modules;
 
-// TODO: registers PendingBackupAdmin until BackupAdmin replaces it.
 public sealed class BackupAdminServices : IServiceModule
 {
-    public void AddServices(IServiceCollection services, IConfiguration configuration) => services.AddScoped<IBackupAdmin, PendingBackupAdmin>();
+    public void AddServices(IServiceCollection services, IConfiguration configuration) => services.AddScoped<IBackupAdmin, BackupAdmin>();
 }
