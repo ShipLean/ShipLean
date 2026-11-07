@@ -40,9 +40,58 @@ public abstract class CipherContract
         using var encrypted = await EncryptAsync(cipher, "the database", "correct horse");
         using var decrypted = new MemoryStream();
 
-        await Should.ThrowAsync<BackupDecryptException>(() => cipher.DecryptAsync(encrypted, decrypted, "wrong horse", CancellationToken.None));
+        var error = await Should.ThrowAsync<BackupDecryptException>(() => cipher.DecryptAsync(encrypted, decrypted, "wrong horse", CancellationToken.None));
 
         decrypted.Length.ShouldBe(0);
+        error.Message.ShouldNotContain("wrong horse");
+        error.Message.ShouldNotContain("correct horse");
+    }
+
+    [Test]
+    public async Task Decrypt_WhenNothingWasWritten_ShouldRoundTripEmpty()
+    {
+        var cipher = Create();
+        using var encrypted = new MemoryStream();
+        var encryptor = cipher.OpenEncryptor(encrypted, "correct horse");
+        await encryptor.DisposeAsync();
+
+        encrypted.Position = 0;
+        using var decrypted = new MemoryStream();
+        await cipher.DecryptAsync(encrypted, decrypted, "correct horse", CancellationToken.None);
+
+        encrypted.Length.ShouldBeGreaterThan(0);
+        decrypted.Length.ShouldBe(0);
+    }
+
+    [Test]
+    public async Task Encryptor_WhenDisposedSynchronously_ShouldWriteTheFinalChunk()
+    {
+        var cipher = Create();
+        using var encrypted = EncryptSynchronously(cipher, "the database", "correct horse");
+        using var decrypted = new MemoryStream();
+        await cipher.DecryptAsync(encrypted, decrypted, "correct horse", CancellationToken.None);
+
+        Encoding.UTF8.GetString(decrypted.ToArray()).ShouldBe("the database");
+    }
+
+    // Network streams return fewer bytes than asked for; a cipher must not assume a read fills its buffer.
+    [Test]
+    public async Task Decrypt_WhenReadsAreShort_ShouldRoundTrip()
+    {
+        var cipher = Create();
+        var plain = new byte[20_000];
+        new Random(780).NextBytes(plain);
+        using var encrypted = new MemoryStream();
+        await using (var encryptor = cipher.OpenEncryptor(encrypted, "correct horse"))
+        {
+            await encryptor.WriteAsync(plain);
+        }
+
+        encrypted.Position = 0;
+        using var decrypted = new MemoryStream();
+        await cipher.DecryptAsync(new ShortReads(encrypted), decrypted, "correct horse", CancellationToken.None);
+
+        decrypted.ToArray().ShouldBe(plain);
     }
 
     [Test]
@@ -63,6 +112,19 @@ public abstract class CipherContract
         Encoding.UTF8.GetString(decrypted.ToArray()).ShouldBe("the database");
     }
 
+    // Write and Dispose, the sync path, which an async method may not take.
+    private static MemoryStream EncryptSynchronously(IBackupCipher cipher, string text, string passphrase)
+    {
+        var encrypted = new MemoryStream();
+        using (var encryptor = cipher.OpenEncryptor(encrypted, passphrase))
+        {
+            encryptor.Write(Encoding.UTF8.GetBytes(text));
+        }
+
+        encrypted.Position = 0;
+        return encrypted;
+    }
+
     private static async Task<MemoryStream> EncryptAsync(IBackupCipher cipher, string text, string passphrase)
     {
         var encrypted = new MemoryStream();
@@ -73,5 +135,35 @@ public abstract class CipherContract
 
         encrypted.Position = 0;
         return encrypted;
+    }
+
+    // Reads at most 7 bytes at a time from the stream it wraps.
+    private sealed class ShortReads(Stream inner) : Stream
+    {
+        public override bool CanRead => true;
+
+        public override bool CanSeek => false;
+
+        public override bool CanWrite => false;
+
+        public override long Length => throw new NotSupportedException();
+
+        public override long Position
+        {
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
+        }
+
+        public override int Read(byte[] buffer, int offset, int count) => inner.Read(buffer, offset, Math.Min(count, 7));
+
+        public override void Flush()
+        {
+        }
+
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+
+        public override void SetLength(long value) => throw new NotSupportedException();
+
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
     }
 }

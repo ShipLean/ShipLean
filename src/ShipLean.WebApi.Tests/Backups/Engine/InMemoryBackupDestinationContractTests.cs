@@ -8,10 +8,12 @@ public class InMemoryBackupDestinationContractTests : BackupDestinationContract
 {
     protected override IBackupDestination Create() => new InMemoryBackupDestination();
 
-    protected override IBackupDestination CreateUnwritable()
+    protected override IBackupDestination CreateUnreachable()
     {
         var destination = new InMemoryBackupDestination();
         destination.Fail(BackupProbeResult.WriteStep);
+        destination.Fail(BackupProbeResult.ReadStep);
+        destination.Fail(BackupProbeResult.DeleteStep);
         return destination;
     }
 }

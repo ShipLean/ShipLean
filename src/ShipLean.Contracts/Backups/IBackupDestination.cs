@@ -18,7 +18,8 @@ public interface IBackupDestination
     // Every object whose key starts with prefix, with its size in bytes.
     IAsyncEnumerable<BackupObject> ListAsync(string prefix, CancellationToken cancellationToken);
 
-    // Writes, reads back and deletes a small object under the destination's prefix, stopping at the first step that
-    // fails. A failure is a result (Ok false, with the step), not an exception.
+    // Writes, reads back and deletes a small object named .shiplean-probe-<guid> under the destination's prefix,
+    // stopping at the first step that fails, and leaves nothing behind when it succeeds. A failure is a result (Ok
+    // false, with the step), not an exception.
     Task<BackupProbeResult> ProbeAsync(CancellationToken cancellationToken);
 }

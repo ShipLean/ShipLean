@@ -5,13 +5,14 @@ using ShipLean.Contracts.Backups;
 namespace ShipLean.TestSupport.Backups;
 
 // A dictionary-backed IBackupDestination for tests. Fail(step) makes that step fail from then on, in calls and in the
-// probe: write fails PutAsync, read fails ExistsAsync and ListAsync, delete fails DeleteAsync.
+// probe: write fails PutAsync, read fails ExistsAsync and ListAsync, delete fails DeleteAsync. Steps add up, so
+// failing all three makes a destination nothing works on.
 public sealed class InMemoryBackupDestination : IBackupDestination
 {
     private static readonly string[] Steps = [BackupProbeResult.WriteStep, BackupProbeResult.ReadStep, BackupProbeResult.DeleteStep];
 
     private readonly ConcurrentDictionary<string, byte[]> _objects = new(StringComparer.Ordinal);
-    private volatile string? _failing;
+    private readonly ConcurrentDictionary<string, bool> _failing = new(StringComparer.Ordinal);
 
     // BackupProbeResult.WriteStep, ReadStep or DeleteStep.
     public void Fail(string step)
@@ -21,7 +22,7 @@ public sealed class InMemoryBackupDestination : IBackupDestination
             throw new ArgumentOutOfRangeException(nameof(step), step, "Expected write, read or delete.");
         }
 
-        _failing = step;
+        _failing[step] = true;
     }
 
     // The bytes stored at key; KeyNotFoundException when it holds nothing.
@@ -68,12 +69,21 @@ public sealed class InMemoryBackupDestination : IBackupDestination
         {
             try
             {
-                await (step switch
+                if (step == BackupProbeResult.WriteStep)
                 {
-                    BackupProbeResult.WriteStep => PutAsync(key, new MemoryStream([1, 2, 3]), cancellationToken),
-                    BackupProbeResult.ReadStep => ExistsAsync(key, cancellationToken),
-                    _ => DeleteAsync(key, cancellationToken),
-                });
+                    await PutAsync(key, new MemoryStream([1, 2, 3]), cancellationToken);
+                }
+                else if (step == BackupProbeResult.ReadStep)
+                {
+                    if (!await ExistsAsync(key, cancellationToken))
+                    {
+                        return new BackupProbeResult(false, step, "The test object was not there after writing it.");
+                    }
+                }
+                else
+                {
+                    await DeleteAsync(key, cancellationToken);
+                }
             }
             catch (BackupDestinationException e)
             {
@@ -86,7 +96,7 @@ public sealed class InMemoryBackupDestination : IBackupDestination
 
     private void Check(string step, string key)
     {
-        if (string.Equals(_failing, step, StringComparison.Ordinal))
+        if (_failing.ContainsKey(step))
         {
             throw new BackupDestinationException($"The in-memory destination was told to fail at {step} ({key}).");
         }

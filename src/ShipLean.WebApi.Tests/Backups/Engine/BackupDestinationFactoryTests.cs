@@ -16,4 +16,12 @@ public class BackupDestinationFactoryTests : ApiFixture
 
         Should.Throw<BackupDestinationException>(() => factory.Create(config)).Message.ShouldContain("ftp");
     }
+
+    // Destinations come from the factory only; IBackupDestination is [MultipleImplementations], so ServiceModuleTests
+    // would not notice a registration.
+    [Test]
+    public void Destination_WhenHostBuilt_ShouldNotBeRegistered()
+    {
+        Host.Services.GetService<IBackupDestination>().ShouldBeNull();
+    }
 }
