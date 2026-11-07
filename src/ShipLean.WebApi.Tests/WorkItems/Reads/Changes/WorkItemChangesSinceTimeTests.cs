@@ -34,7 +34,7 @@ public class WorkItemChangesSinceTimeTests : WorkItemChangesTestBase
         var project = await Arrangement.ArrangeProjectAsync();
         var item = await AddItemAsync(project);
         await AddRevisionAsync(item, 2, T0, SeedIds.Users.Priya);
-        var future = new DateTimeOffset(2099, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        var future = TestDates.FarFuture;
 
         var empty = await Changes.SinceTimeAsync(project.ProjectId, future, 100, null);
         await AddCommentAsync(item, "Much later", future.AddMinutes(1), SeedIds.Users.Priya);
