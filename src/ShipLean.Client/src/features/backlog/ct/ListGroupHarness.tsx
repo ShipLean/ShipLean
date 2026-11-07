@@ -44,6 +44,8 @@ export function ListGroupHarness({ project }: { project: ProjectDto }) {
                 dragDisabled={false}
                 flashing={NONE}
                 filtered={false}
+                sort={null}
+                onSort={() => undefined}
               />
             </ListDnd>
           </AddBelowProvider>

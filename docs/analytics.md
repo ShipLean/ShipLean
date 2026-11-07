@@ -53,7 +53,7 @@ Every event carries these (a key is left out when its value is null). The consta
 | `duration_ms`, `source` | `source` is `tool:<name>`, `api:<Controller>.<Action>`, `screen` or `system:<Class>` |
 | `shiplean_version`, `instance_host` | this build and this instance |
 
-Extra properties are the keys in `UsageProps` (`screen`, `board`, `provider`, `count`, `agent_name` on `agent.connected` and `agent.consent_denied`). A standard property wins over an extra one with the same key.
+Extra properties are the keys in `UsageProps` (`screen`, `board`, `provider`, `count`, `column`, `direction`, `agent_name` on `agent.connected` and `agent.consent_denied`). A standard property wins over an extra one with the same key.
 
 The distinct id of an actor is `user:<guid>`, `agent:<authorizationId>` (`agent:gw-<userId>` for the gateway) or `system`. Person properties (`kind`, `user_id`, `agent_*`) go to the provider as an identify (Umami) or `$set` (PostHog). `name` and `email` are added for users only when the instance's **Send people's names** toggle is on, which is off by default.
 
@@ -182,6 +182,7 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `backlog.reviewed` | `review_backlog` |  |
 | `backlog.bulk_written` |  | `BacklogWrites.Bulk` |
 | `backlog.items_added` |  | `BacklogWrites.Add` |
+| `backlog.sorted` |  | self-emitted: ProjectUsage.BacklogSort (a column title clicked in list mode; `screen`, `column`, `direction` asc/desc/off) |
 | `changes.viewed` | `whats_changed_since` |  |
 | `search.performed` | `search` | `Search.Get` |
 | `comment.added` | `comment` | `WorkItemComments.Add` |

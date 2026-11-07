@@ -22,6 +22,7 @@ export const backlogTestIds = {
   loading: 'backlog-loading',
   loadFailed: 'backlog-load-failed',
   columnHeader: 'backlog-column-header',
+  columnSort: 'backlog-column-sort',
   row: 'backlog-row',
   rank: 'backlog-rank',
   key: 'backlog-key',

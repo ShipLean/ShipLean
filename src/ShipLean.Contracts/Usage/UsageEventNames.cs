@@ -47,6 +47,7 @@ public static class UsageEventNames
     public const string BacklogReviewed = "backlog.reviewed";
     public const string BacklogBulkWritten = "backlog.bulk_written";
     public const string BacklogItemsAdded = "backlog.items_added";
+    public const string BacklogSorted = "backlog.sorted";
     public const string ChangesViewed = "changes.viewed";
     public const string SearchPerformed = "search.performed";
     public const string CommentAdded = "comment.added";

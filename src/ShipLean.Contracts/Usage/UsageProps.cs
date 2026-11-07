@@ -10,6 +10,10 @@ public static class UsageProps
     public const string Provider = "provider";
     public const string Count = "count";
 
+    // A backlog column sort, on backlog.sorted: the column id and asc / desc / off.
+    public const string Column = "column";
+    public const string Direction = "direction";
+
     // The client being connected, on agent.connected / agent.consent_denied; cut to 64 characters.
     public const string AgentName = "agent_name";
 
