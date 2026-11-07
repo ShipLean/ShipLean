@@ -256,8 +256,8 @@ ol.ac { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 980px
 <script>
 (() => {
   const TODAY = [
-    ['images/today-search.png', 'Search (scroll)', 'Results 0px wide: only the first retro shows'],
-    ['images/today-search-q.png', 'With a search typed (scroll)', 'Still no results column; the filters take 240px and stick (the fixture returns the same 4 points)'],
+    ['images/today-retro-search.png', 'Search (scroll)', 'Results 0px wide: only the first retro shows'],
+    ['images/today-retro-search-q.png', 'With a search typed (scroll)', 'Still no results column; the filters take 240px and stick (the fixture returns the same 4 points)'],
   ];
   const R3 = 'selected=R-305&point=R-305.2';
   const OPTS = [
@@ -293,7 +293,7 @@ ol.ac { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 980px
     <figcaption class="cap"><b>${title}${rec === true ? ' <span class="chip accent">Recommended</span>' : ''}</b><span>${sub}</span><a href="${url(u)}" target="_blank" rel="noopener">Open</a></figcaption></figure>`;
   const shot = ([src, title, sub]) => `<figure class="phone"><div class="frame"><div class="screen scroll"><img src="${src}" alt="${title} today at 390px" loading="lazy" style="width:312px"></div></div>
     <figcaption class="cap"><b>${title}</b><span class="bad">${sub}</span></figcaption></figure>`;
-  const tabletShot = `<figure class="phone tablet today"><div class="frame"><div class="screen scroll"><img src="images/today-search-tablet.png" alt="Today at 768px" style="width:369px"></div></div><figcaption class="cap"><b>Tablet, 768px</b><span class="bad">Each point cut to three words; full text on hover only</span></figcaption></figure>`;
+  const tabletShot = `<figure class="phone tablet today"><div class="frame"><div class="screen scroll"><img src="images/today-retro-search-tablet.png" alt="Today at 768px" style="width:369px"></div></div><figcaption class="cap"><b>Tablet, 768px</b><span class="bad">Each point cut to three words; full text on hover only</span></figcaption></figure>`;
   const render = () => {
     document.getElementById('todayPhones').innerHTML = TODAY.map(shot).join('') + tabletShot;
     document.getElementById('optPhones').innerHTML = OPTS.map(frame('')).join('');
