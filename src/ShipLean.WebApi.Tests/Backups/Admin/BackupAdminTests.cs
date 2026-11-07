@@ -12,6 +12,7 @@ using ShipLean.Contracts.Backups;
 using ShipLean.Contracts.Errors;
 using ShipLean.LocalEnvironment.Database;
 using ShipLean.TestSupport;
+using ShipLean.TestSupport.Backups;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
 
@@ -440,6 +441,9 @@ public class BackupAdminTests
             services.AddSingleton<TimeProvider>(_clock);
             services.RemoveAll<IBackupDestinationFactory>();
             services.AddSingleton<IBackupDestinationFactory>(_destinations);
+            // Run now finishes before the 202 comes back, so the health checks after it never race the worker.
+            services.RemoveAll<IBackupTrigger>();
+            services.AddSingleton<IBackupTrigger, FakeBackupTrigger>();
         }, settings: settings);
         _client = _host.CreateClient();
         _api = new ApiClient(_client);

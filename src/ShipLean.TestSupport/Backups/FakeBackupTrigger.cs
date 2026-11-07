@@ -1,10 +1,11 @@
 using ShipLean.Application.Features.Backups.Runs;
 using ShipLean.Contracts.Errors;
 
-namespace ShipLean.Application.Fakes.Backups.Runs;
+namespace ShipLean.TestSupport.Backups;
 
 // IBackupTrigger with no config and no job: it takes the lease, records the run as succeeded at once, and releases the
-// lease. A Manual request that is Busy throws Conflict, as the real trigger does; it never throws NotConfigured.
+// lease, so a test that runs a backup over HTTP sees it finished when the 202 comes back. A Manual request that is Busy
+// throws Conflict, as the real trigger does; it never throws NotConfigured.
 public sealed class FakeBackupTrigger(IBackupRunLog runLog) : IBackupTrigger
 {
     public const string DestinationId = "fake";
