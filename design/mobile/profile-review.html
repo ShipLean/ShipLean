@@ -233,7 +233,8 @@ table.data tr:last-child td { border-bottom: 0; }
     ] },
   ];
   let theme = 'light';
-  const src = (q, force) => `${SCREEN}?${q ? q + '&' : ''}theme=${force || theme}`;
+  // ?shot hides the mock's Preview panel; with ?at it also hides the panels above that one.
+  const src = (q, force) => `${SCREEN}?${q ? q + '&' : ''}shot&theme=${force || theme}`;
   document.getElementById('groups').innerHTML = groups.map(g => `<div class="grp"><h3>${g.title}</h3>${g.intro ? `<p class="muted">${g.intro}</p>` : ''}<div class="phones">${g.phones.map(p => `
     <article class="phone" id="${p.id}">
       <div class="ph"><span class="no${g.alt ? ' alt' : ''}">${p.id}</span><h3>${p.title}</h3></div>
