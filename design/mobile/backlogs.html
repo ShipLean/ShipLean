@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ShipLean · Backlogs on a phone (SHIP-716 reference)</title>
+<!--
+  SHIP-716 reference: the Stories backlog (List, Planning, Tree), the Features backlog and the Epics backlog on a phone.
+  Designed at 390 × 844; it applies at 900px and below, inside the SHIP-713 touch shell, and follows the shared mobile
+  rules on SHIP-805 (it doesn't restate them). Open directly in a browser. Uses ../tokens.css only; no build step.
+  The touch shell's top bar is drawn here as ../screens/shared.js draws it; the drawer and quick search live there.
+  SHIP-805 rules 11 and 13 (48px bar, 32px targets) aren't in tokens.css on this branch yet, so this page sets them.
+  ?level=stories|features|epics   ?mode=list|planning|tree   ?theme=light|dark
+  ?state=more|filter|row|drag|select|add|points|search|section|bulk-sprint   (drag: a row on the list, or over a sprint
+  in Planning). Reordering is a touch drag on each row's handle (D2, Joel 7 Nov); a row's ⋯ keeps top, bottom, sprint, parent.
+-->
+<link rel="stylesheet" href="../tokens.css">
+<script>
+  (() => {
+    const p = new URLSearchParams(location.search);
+    if (p.get('theme')) document.documentElement.dataset.theme = p.get('theme');
+  })();
+</script>
+<style>
+:root { --touch-target: 32px; --mobile-bar-height: 48px; --m-pad: 12px; }
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; min-height: 100dvh; background: var(--color-bg); color: var(--color-text); font: 14px/1.4 var(--font-sans); -webkit-font-smoothing: antialiased; }
+:root[data-sheet] body { overflow: hidden; }
+button, select, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+.ic { width: 16px; height: 16px; flex: none; }
+.muted { color: var(--color-muted); }
+.mono { font-family: var(--font-mono); }
+
+/* The SHIP-713 top bar (only the top bar is pinned: SHIP-805 rule 12). */
+.appbar { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: 2px; height: calc(var(--mobile-bar-height) + env(safe-area-inset-top)); padding: env(safe-area-inset-top) 6px 0; background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.tbtn { display: inline-grid; place-items: center; width: 36px; height: 36px; flex: none; padding: 0; border: 0; border-radius: var(--radius-md); background: transparent; color: var(--color-text); }
+.tbtn .ic { width: 20px; height: 20px; }
+.crumbs { flex: 1; min-width: 0; display: flex; justify-content: flex-end; align-items: baseline; gap: 6px; overflow: hidden; white-space: nowrap; padding-left: 4px; font-size: 14px; color: var(--color-muted); -webkit-mask-image: linear-gradient(to right, transparent, #000 20px); mask-image: linear-gradient(to right, transparent, #000 20px); }
+.crumbs > * { flex: none; }
+.crumbs b { color: var(--color-text); font-size: 16px; font-weight: var(--weight-semibold); }
+.pcount { display: inline-grid; place-items: center; min-width: 26px; height: 22px; padding: 0 6px; border-radius: 999px; background: var(--color-surface-2); font-size: 12px; font-weight: var(--weight-semibold); }
+.live { display: inline-flex; align-items: center; padding: 0 6px; }
+.live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--color-ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-ok) 22%, transparent); }
+
+/* Toolbar: one row (SHIP-805 rule 8): primary action, the main control, Filter (count), ⋯ More. It scrolls away. */
+.toolbar { display: flex; align-items: center; gap: 5px; padding: 10px var(--m-pad); background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: var(--touch-target); padding: 0 10px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); font-size: 14px; font-weight: var(--weight-medium); white-space: nowrap; flex: none; }
+.btn.pri { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-fg); font-weight: var(--weight-semibold); }
+.btn.on { border-color: var(--color-accent); background: var(--color-accent-soft); }
+.btn.ghost { border-color: transparent; background: none; color: var(--color-accent); }
+.btn.block { width: 100%; }
+.btn.danger { color: var(--color-danger); }
+.more { width: var(--touch-target); padding: 0; font-size: 18px; letter-spacing: 1px; line-height: 1; }
+.seg { display: flex; height: var(--touch-target); padding: 2px; gap: 2px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-bg); flex: none; }
+.seg button { border: 0; border-radius: calc(var(--radius-sm) - 1px); background: none; padding: 0 8px; font-size: 14px; color: var(--color-muted); }
+.seg button[aria-pressed="true"] { background: var(--color-surface); color: var(--color-text); font-weight: var(--weight-semibold); box-shadow: var(--shadow-raised); }
+.spacer { flex: 1; }
+.count { display: inline-grid; place-items: center; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 999px; background: var(--color-accent); color: var(--color-accent-fg); font-size: 11px; font-weight: 700; }
+
+/* Under the toolbar: the search row, filter chips and banners. All scroll with the page. */
+.findrow { display: flex; gap: 6px; align-items: center; padding: 0 var(--m-pad) 10px; background: var(--color-surface); border-bottom: 1px solid var(--color-border); margin-top: -1px; }
+.findrow .field { flex: 1; min-width: 0; height: 36px; padding: 0 10px 0 32px; border: 1px solid var(--color-accent); border-radius: var(--radius-sm); background: var(--color-surface) no-repeat 10px 50%/14px; font-size: var(--text-input-touch); outline: 2px solid var(--color-accent-soft); }
+.findrow .wrap { position: relative; flex: 1; min-width: 0; display: flex; }
+.findrow .wrap .ic { position: absolute; left: 10px; top: 10px; color: var(--color-muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px var(--m-pad); background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.fchip { display: inline-flex; align-items: center; gap: 2px; height: 28px; padding: 0 2px 0 10px; border-radius: 999px; background: var(--color-accent-soft); font-size: 13px; font-weight: var(--weight-medium); }
+.fchip i { font-style: normal; color: var(--color-muted); font-weight: var(--weight-regular); }
+.fchip button { width: 26px; height: 26px; border: 0; background: none; border-radius: 50%; display: grid; place-items: center; color: var(--color-muted); }
+.banner { display: flex; gap: 8px; align-items: flex-start; padding: 8px var(--m-pad); font-size: 13px; border-bottom: 1px solid var(--color-border); background: var(--color-surface); border-left: 3px solid var(--color-info); }
+.banner.warn { border-left-color: var(--color-warn); background: color-mix(in srgb, var(--color-warn) 12%, var(--color-surface)); }
+.banner b { font-weight: var(--weight-semibold); }
+.banner .btn { margin-left: auto; height: 28px; font-size: 13px; }
+.listhead { display: flex; align-items: center; gap: 8px; padding: 6px var(--m-pad); font-size: 12px; color: var(--color-muted); }
+.listhead b { color: var(--color-text); font-weight: var(--weight-semibold); }
+
+/* Rows: two lines, never a table (D1). Title on top; key, state, sprint and parent under it; points and the assignee
+   on the right; ⋯ always visible (SHIP-805 rule 5). Tapping the row opens the item. */
+.list { list-style: none; margin: 0; padding: 0; background: var(--color-surface); }
+.row { position: relative; display: grid; grid-template-columns: 30px minmax(0, 1fr) 34px 32px; align-items: center; column-gap: 4px; min-height: 58px; padding: 7px 4px 7px 6px; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent); }
+.row .rk { align-self: start; padding-top: 2px; font-size: 12px; color: var(--color-muted); font-variant-numeric: tabular-nums; text-align: center; }
+/* The drag handle (D2): the row's left edge, full row height, rank on top. Only the handle starts a drag (touch-action:
+   none on it alone), so the rest of the row scrolls the page and a tap opens the item. */
+.grip { align-self: stretch; display: grid; grid-template-rows: auto 1fr; justify-items: center; gap: 2px; width: 30px; min-height: 44px; margin: -7px 0; padding: 9px 0 6px; border: 0; background: none; color: var(--color-muted); border-radius: var(--radius-sm); touch-action: none; cursor: grab; }
+.grip .n { font-size: 12px; font-variant-numeric: tabular-nums; line-height: 1; }
+.grip svg { width: 10px; height: 16px; align-self: center; opacity: .75; }
+.row.dragging { z-index: 5; background: var(--color-surface); border-radius: var(--radius-md); margin: 0 6px; box-shadow: 0 0 0 1.5px var(--color-accent), 0 14px 32px -8px rgb(0 0 0 / .35); transform: scale(1.02); }
+.row.dragging .grip { background: var(--color-accent-soft); color: var(--color-accent); }
+.dropline { height: 0; border-top: 2px solid var(--color-accent); position: relative; }
+.dropline::before { content: ""; position: absolute; left: 6px; top: -5px; width: 8px; height: 8px; border-radius: 50%; background: var(--color-accent); }
+.sec.over { box-shadow: inset 0 0 0 2px var(--color-accent); background: var(--color-accent-soft); }
+.sec .drophint { grid-column: 2 / 4; margin-top: 4px; font-size: 13px; color: var(--color-accent); font-weight: var(--weight-semibold); }
+.edgehint { position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 6; padding: 6px 12px; border-radius: 999px; background: var(--color-text); color: var(--color-surface); font-size: 12px; white-space: nowrap; box-shadow: var(--shadow-dialog); pointer-events: none; }
+.row .main { display: grid; gap: 3px; min-width: 0; }
+.row .t { display: flex; gap: 7px; align-items: flex-start; font-size: 15px; font-weight: var(--weight-medium); line-height: 1.3; }
+.row .t > span:last-child { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.row .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; min-width: 0; font-size: 12.5px; color: var(--color-muted); white-space: nowrap; padding-left: 23px; }
+.row .meta > * { flex: none; }
+.row .meta .par { flex: 0 1 auto; min-width: min(100%, 120px); max-width: 100%; overflow: hidden; text-overflow: ellipsis; display: inline-flex; gap: 4px; align-items: center; }
+.row .meta .par > span:last-child { overflow: hidden; text-overflow: ellipsis; }
+.row .key { font: 12px var(--font-mono); color: var(--color-muted); }
+.row .side { display: grid; justify-items: end; gap: 4px; align-self: stretch; align-content: center; }
+.row .pts { font-size: 15px; font-weight: var(--weight-semibold); font-variant-numeric: tabular-nums; }
+.rmore { width: 32px; height: 32px; border: 0; background: none; border-radius: var(--radius-sm); color: var(--color-muted); font-size: 17px; letter-spacing: 1px; }
+.row.done .t, .row.done .pts { color: var(--color-muted); }
+.row.done .t > span:last-child { text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--color-muted) 60%, transparent); }
+.row.lifted { background: var(--color-accent-soft); box-shadow: inset 3px 0 0 var(--color-accent); }
+.row.sel { background: var(--color-accent-soft); }
+.row.flash { background: color-mix(in srgb, var(--color-warn) 18%, var(--color-surface)); }
+.unest { display: inline-grid; place-items: center; min-width: 28px; height: 28px; padding: 0 6px; border: 1px dashed var(--color-warn); border-radius: var(--radius-sm); color: var(--color-warn); font-weight: 700; background: color-mix(in srgb, var(--color-warn) 10%, transparent); }
+.ptsbtn { border: 0; background: none; padding: 0; }
+.cb { width: 22px; height: 22px; border: 1.5px solid var(--color-border); border-radius: 5px; display: grid; place-items: center; background: var(--color-surface); align-self: start; }
+.cb.on { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-fg); }
+
+.ti { display: inline-grid; place-items: center; width: 16px; height: 16px; margin-top: 2px; border-radius: var(--radius-xs); color: #fff; font: 700 9px/1 var(--font-sans); flex: none; }
+.ti.story { background: var(--type-story); } .ti.bug { background: var(--type-bug); } .ti.feature { background: var(--type-feature); } .ti.epic { background: var(--type-epic); }
+.meta .ti, .gh .ti.s { width: 13px; height: 13px; font-size: 8px; margin: 0; }
+.st { display: inline-flex; align-items: center; gap: 5px; }
+.st::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--state-proposed); }
+.st.in-progress::before { background: var(--state-in-progress); } .st.resolved::before { background: var(--state-resolved); } .st.completed::before { background: var(--state-completed); }
+.chip { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 999px; background: var(--color-surface-2); color: var(--color-text); font-size: 12px; font-weight: var(--weight-medium); }
+.chip.accent { background: var(--color-accent-soft); color: var(--color-accent); }
+.fc { color: var(--color-accent); font-weight: var(--weight-semibold); }
+.av { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; color: #fff; font-size: 9px; font-weight: 700; }
+.av.none { border: 1.5px dashed var(--color-border); }
+
+/* Planning: a sprint section is a header block, not a table row (D5). */
+.sec { padding: 8px 4px 8px var(--m-pad); background: var(--color-surface-2); border-bottom: 1px solid var(--color-border); border-top: 1px solid var(--color-border); display: grid; grid-template-columns: 28px minmax(0, 1fr) 32px; column-gap: 4px; align-items: center; }
+.sec + .sec { border-top: 0; }
+.sec .car { width: 28px; height: 32px; border: 0; background: none; color: var(--color-muted); font-size: 11px; }
+.sec .h { display: flex; align-items: baseline; gap: 8px; min-width: 0; flex-wrap: wrap; }
+.sec .h b { font-size: 16px; }
+.sec .h .muted { font-size: 12.5px; }
+.sec .cap { grid-column: 2 / 4; display: flex; align-items: center; gap: 8px; padding-right: 8px; margin-top: 4px; font-size: 13px; }
+.bar { position: relative; flex: 1; height: 6px; border-radius: 3px; background: color-mix(in srgb, var(--color-border) 80%, transparent); overflow: hidden; }
+.bar i { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: var(--color-accent); }
+.bar.over i { background: var(--color-danger); }
+.bar.ok i { background: var(--color-ok); }
+.over-t { color: var(--color-danger); font-weight: var(--weight-semibold); }
+.pill-cur { padding: 0 6px; border-radius: 999px; background: var(--color-accent-soft); color: var(--color-accent); font-size: 11px; font-weight: 700; }
+.sec.backlog { background: color-mix(in srgb, var(--color-accent) 7%, var(--color-surface)); }
+.empty-sec { padding: 14px var(--m-pad); font-size: 13px; color: var(--color-muted); text-align: center; background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.mk { padding: 10px var(--m-pad); background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+/* The pull line: still a line in the list, moved with ▲ ▼ (or its handle), then Pull. */
+.pull { display: grid; gap: 8px; padding: 10px var(--m-pad); background: var(--color-surface); border-top: 2px solid var(--color-accent); border-bottom: 2px solid var(--color-accent); }
+.pull .l1 { display: flex; align-items: center; gap: 6px; font-size: 14px; flex-wrap: wrap; }
+.pull select { height: var(--touch-target); padding: 0 6px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); font-size: var(--text-input-touch); }
+.pull .l2 { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.pull .l2 .sum { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pull .step { display: flex; gap: 4px; }
+.pull .step button { width: var(--touch-target); height: var(--touch-target); border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); font-size: 12px; }
+
+/* Tree: group headers carry the path; rows never indent (D6). */
+.gh { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: center; column-gap: 4px; min-height: 44px; padding: 6px var(--m-pad) 6px 4px; background: var(--color-surface-2); border-bottom: 1px solid var(--color-border); }
+.gh .car { width: 28px; height: 32px; border: 0; background: none; color: var(--color-muted); font-size: 11px; }
+.gh .nm { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.gh .nm .tt { font-weight: var(--weight-semibold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gh .path { display: block; font-size: 11.5px; color: var(--color-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gh .n { font-size: 12px; color: var(--color-muted); white-space: nowrap; text-align: right; }
+.gh .n.warn { color: var(--color-warn); }
+.gh.epic { background: color-mix(in srgb, var(--type-epic) 9%, var(--color-surface)); }
+.gh.l2 { padding-left: 16px; }
+.gh .wrapnm { min-width: 0; }
+
+/* Features and Epics: a third line with progress (D8). */
+.row.lvl { grid-template-columns: 30px minmax(0, 1fr) 32px; }
+.row.lvl .prog { display: flex; align-items: center; gap: 8px; padding-left: 23px; font-size: 12px; color: var(--color-muted); white-space: nowrap; }
+.row.lvl .prog .bar { height: 5px; }
+.row.lvl .prog .bar i { background: var(--color-ok); }
+.row.lvl .prog .bar b { position: absolute; inset: 0 auto 0 0; background: var(--state-in-progress); opacity: .55; }
+.row.lvl .p2 { font-variant-numeric: tabular-nums; color: var(--color-text); }
+.row.lvl .p2 .sig { color: var(--color-muted); }
+.row.lvl .p2 .sig.warn { color: var(--color-warn); font-weight: var(--weight-semibold); }
+
+/* Inline add at the top of the list. */
+.addrow { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 10px var(--m-pad); background: var(--color-accent-soft); border-bottom: 1px solid var(--color-border); }
+.addrow .r { display: flex; gap: 6px; align-items: center; }
+.addrow .field { flex: 1; min-width: 0; height: 36px; padding: 0 10px; border: 1px solid var(--color-accent); border-radius: var(--radius-sm); background: var(--color-surface); font-size: var(--text-input-touch); }
+.addrow .seg button { padding: 0 8px; }
+.addrow .hint { font-size: 12px; color: var(--color-muted); }
+
+
+/* Bottom bar: the select bar sits where the SaveBar sits (rule 15), padded for the safe area. */
+.bbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: grid; gap: 8px; padding: 10px var(--m-pad) calc(10px + env(safe-area-inset-bottom)); background: var(--color-surface); border-top: 1px solid var(--color-border); box-shadow: 0 -6px 16px -10px rgb(0 0 0 / .25); }
+.bbar .l1 { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.bbar .l1 b { font-size: 14px; }
+.bbar .acts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.bbar .acts .btn { width: 100%; }
+.selhead { display: flex; align-items: center; gap: 10px; padding: 8px 4px 8px var(--m-pad); background: var(--color-surface); border-bottom: 1px solid var(--color-border); font-size: 14px; }
+.selhead .btn:last-child { margin-left: auto; }
+
+/* Bottom sheets (SHIP-805 rule 3 and the C4 recommendation: grab bar, title left, Close right). */
+.scrim { position: fixed; inset: 0; z-index: 65; background: rgb(10 16 28 / .45); }
+.sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 70; max-height: 85dvh; display: flex; flex-direction: column; background: var(--color-surface); border-radius: var(--radius-lg) var(--radius-lg) 0 0; box-shadow: var(--shadow-dialog); padding-bottom: env(safe-area-inset-bottom); }
+.sheet .grab { flex: none; width: 36px; height: 4px; border-radius: 2px; background: var(--color-border); margin: 6px auto 2px; }
+.sheet-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 6px 2px var(--m-pad); }
+.sheet-head b { font-size: 16px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sheet-head .x { height: 36px; padding: 0 8px; border: 0; background: none; color: var(--color-accent); font-size: 16px; flex: none; }
+.sheet .sb { overflow: auto; padding: 4px var(--m-pad) 14px; display: grid; gap: 12px; align-content: start; }
+.sheet .sub { font-size: 13px; color: var(--color-muted); padding: 0 var(--m-pad); margin-top: -2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.acts-l { list-style: none; margin: 0 calc(-1 * var(--m-pad)); padding: 0; }
+.acts-l button, .acts-l label { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 44px; padding: 0 var(--m-pad); border: 0; background: none; text-align: left; font-size: 15px; }
+.acts-l .g { width: 20px; display: grid; place-items: center; color: var(--color-muted); flex: none; }
+.acts-l .r { margin-left: auto; color: var(--color-muted); font-size: 13px; display: inline-flex; gap: 6px; align-items: center; }
+.acts-l small { display: block; font-size: 12px; color: var(--color-muted); }
+.acts-l hr { border: 0; border-top: 1px solid var(--color-border); margin: 4px 0; }
+.acts-l .dim { color: var(--color-muted); }
+.sw { width: 36px; height: 22px; border-radius: 999px; background: var(--color-border); position: relative; flex: none; }
+.sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgb(0 0 0 / .2); }
+.sw.on { background: var(--color-accent); }
+.sw.on::after { left: 17px; }
+.overline { font-size: 11px; font-weight: var(--weight-semibold); letter-spacing: .06em; text-transform: uppercase; color: var(--color-muted); }
+
+/* Filter sheet: clauses stacked, native selects at 16px. */
+.clause { display: grid; grid-template-columns: minmax(0, 1fr) 32px; gap: 6px; padding: 10px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg); }
+.clause .lab { grid-column: 1 / 3; font-size: 12px; color: var(--color-muted); }
+.clause .sels { display: grid; grid-template-columns: minmax(0, 1fr) 64px; gap: 6px; }
+.clause .sels select:last-child { grid-column: 1 / 3; }
+.clause select { height: 36px; padding: 0 8px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); font-size: var(--text-input-touch); min-width: 0; }
+.clause .x { align-self: start; width: 32px; height: 32px; border: 0; background: none; color: var(--color-muted); }
+.matchrow { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.sheet .foot { flex: none; display: flex; gap: 8px; align-items: center; padding: 10px var(--m-pad); border-top: 1px solid var(--color-border); font-size: 13px; color: var(--color-muted); }
+.sheet .foot .btn { margin-left: auto; }
+
+/* Points sheet. */
+.fib { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.fib button { height: 48px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); font-size: 18px; font-weight: var(--weight-semibold); font-variant-numeric: tabular-nums; }
+.fib button.cur { border-color: var(--color-accent); background: var(--color-accent-soft); }
+.qbar { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--color-muted); }
+.qbar .dots { display: flex; gap: 4px; }
+.qbar .dots i { width: 18px; height: 4px; border-radius: 2px; background: var(--color-border); }
+.qbar .dots i.on { background: var(--color-accent); }
+.itemcard { display: grid; gap: 4px; padding: 10px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg); }
+.itemcard .t { display: flex; gap: 7px; font-size: 15px; font-weight: var(--weight-medium); }
+.itemcard .m { font-size: 12.5px; color: var(--color-muted); padding-left: 23px; display: flex; gap: 8px; align-items: center; }
+
+.picklist { list-style: none; margin: 0 calc(-1 * var(--m-pad)); padding: 0; }
+.picklist li { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 4px var(--m-pad); border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); font-size: 15px; }
+.picklist li:first-child { border-top: 0; }
+.picklist li[aria-selected="true"] { background: var(--color-accent-soft); }
+.picklist .m { margin-left: auto; font-size: 12.5px; color: var(--color-muted); white-space: nowrap; }
+.picklist .bar { flex: none; width: 54px; }
+
+.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 90; max-width: calc(100vw - 32px); display: flex; gap: 10px; align-items: center; padding: 8px 8px 8px 14px; border-radius: var(--radius-md); background: var(--color-text); color: var(--color-surface); font-size: 13px; box-shadow: var(--shadow-dialog); white-space: nowrap; }
+.toast button { border: 0; background: none; color: inherit; font-weight: 700; padding: 4px 6px; text-decoration: underline; }
+.endpad { height: 90px; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-menu" viewBox="0 0 20 20"><path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+  <symbol id="i-search" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="m10.5 10.5 3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-close" viewBox="0 0 16 16"><path d="m4 4 8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+  <symbol id="i-check" viewBox="0 0 16 16"><path d="m3.5 8.5 3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+  <symbol id="i-up" viewBox="0 0 16 16"><path d="M8 13V3M4 7l4-4 4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-down" viewBox="0 0 16 16"><path d="M8 3v10M4 9l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-move" viewBox="0 0 16 16"><path d="M8 2v12M5 4.5 8 2l3 2.5M5 11.5 8 14l3-2.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-sprint" viewBox="0 0 16 16"><path d="M2.5 8a5.5 5.5 0 1 0 1.6-3.9M2.5 2.5v3h3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-parent" viewBox="0 0 16 16"><path d="M4 2.5v6a2 2 0 0 0 2 2h6M9.5 8l2.5 2.5L9.5 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-open" viewBox="0 0 16 16"><path d="M9 2.5h4.5V7M13.5 2.5 7.5 8.5M12 10v3.5H2.5V4H6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-select" viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="11" height="11" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m5.5 8 2 2 3-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-paste" viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="11" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6 2.5h4v2H6zM5.5 8h5M5.5 10.5h3.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-done" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m5.5 8 1.8 1.8 3.2-3.6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-est" viewBox="0 0 16 16"><path d="M3 13V8M6.5 13V5M10 13V9.5M13.5 13V3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-tag" viewBox="0 0 16 16"><path d="M2.5 2.5h5l6 6-5 5-6-6zM5.3 5.3h.01" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-cap" viewBox="0 0 16 16"><circle cx="5.5" cy="5.5" r="2" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="11" cy="6" r="1.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M2 13c.4-2.2 1.8-3.4 3.5-3.4S8.6 10.8 9 13M9.5 10c.5-.6 1-.9 1.6-.9 1.4 0 2.3 1.1 2.6 3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-grip" viewBox="0 0 10 16"><g fill="currentColor"><circle cx="3" cy="3" r="1.4"/><circle cx="7" cy="3" r="1.4"/><circle cx="3" cy="8" r="1.4"/><circle cx="7" cy="8" r="1.4"/><circle cx="3" cy="13" r="1.4"/><circle cx="7" cy="13" r="1.4"/></g></symbol>
+  <symbol id="i-gauge" viewBox="0 0 16 16"><path d="M2.5 11a5.5 5.5 0 1 1 11 0M8 11l2.5-3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+</svg>
+
+<header class="appbar">
+  <button class="tbtn" type="button" aria-label="Menu"><svg class="ic"><use href="#i-menu"/></svg></button>
+  <nav class="crumbs" aria-label="Breadcrumb" id="crumbs"></nav>
+  <span class="pcount" title="Also here">+2</span>
+  <span class="live" title="Live"></span>
+  <button class="tbtn" type="button" aria-label="Search"><svg class="ic"><use href="#i-search"/></svg></button>
+</header>
+
+<main id="page"></main>
+<div id="layer"></div>
+
+<script>
+(() => {
+  const P = new URLSearchParams(location.search);
+  const level = P.get('level') || 'stories';
+  const mode = level === 'stories' ? (P.get('mode') || 'list') : 'list';
+  const state = P.get('state') || '';
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const ic = (id, cls = 'ic') => `<svg class="${cls}"><use href="#i-${id}"/></svg>`;
+
+  /* Sample data: the reference screens' Storefront project ("today" is midway through Sprint 24). */
+  const people = { priya: ['PS', '#2f7fd8'], tom: ['TO', '#16a089'], mei: ['ML', '#7b4fc9'], sam: ['SR', '#c9611a'], ana: ['AC', '#b83d7a'] };
+  const cat = { New: 'proposed', Active: 'in-progress', Resolved: 'resolved', Closed: 'completed' };
+  const sprintName = { s24: 'Sprint 24', s25: 'Sprint 25', s26: 'Sprint 26' };
+  // [n, type, title, parent feature, state, points (null = not estimated), sprint, assignee]
+  const items = [
+    ['141', 'story', 'Pay with saved card', 'Checkout v2', 'Active', 5, 's24', 'priya'],
+    ['144', 'story', 'Address autocomplete', 'Checkout v2', 'Active', 3, 's24', 'mei'],
+    ['129', 'story', 'Sign in with passkey', 'Mobile sign-in', 'Active', 8, 's24', 'sam'],
+    ['151', 'story', 'Remember device for 30 days', 'Mobile sign-in', 'New', 5, 's25', null],
+    ['153', 'bug', 'Crash when the biometric prompt is cancelled', 'Mobile sign-in', 'New', 3, 's25', null],
+    ['147', 'story', 'Export sprint report to CSV', 'Reporting', 'New', 5, null, null],
+    ['156', 'story', 'Dashboard: cycle time widget', 'Dashboard widgets', 'New', 8, null, null],
+    ['160', 'bug', 'Session expires during checkout', 'Checkout v2', 'New', 2, null, null],
+    ['158', 'story', 'Gift card balance check', 'Checkout v2', 'New', null, null, null],
+    ['162', 'story', 'Rotate API keys from settings', 'Ops hygiene', 'New', 5, null, null],
+    ['165', 'story', 'Weekly digest email', 'Reporting', 'New', 8, null, null],
+    ['163', 'story', 'Audit log retention setting', 'Ops hygiene', 'New', null, null, null],
+    ['166', 'story', 'Saved filters on the dashboard', 'Dashboard widgets', 'New', null, null, null],
+    ['170', 'story', 'SSO via Okta', 'Mobile sign-in', 'New', 13, null, null],
+  ].map(([n, type, title, parent, st, pts, sprint, who]) => ({ key: 'SHIP-' + n, type, title, parent, st, pts, sprint, who }));
+  const done = [
+    { key: 'SHIP-138', type: 'bug', title: 'Totals wrong when a coupon is removed', parent: 'Checkout v2', st: 'Closed', pts: 2, sprint: 's24', who: 'tom' },
+    { key: 'SHIP-150', type: 'story', title: 'Order confirmation email', parent: 'Checkout v2', st: 'Closed', pts: 3, sprint: 's24', who: 'ana' },
+  ];
+  const epics = [
+    { key: 'SHIP-90', title: 'Checkout conversion', st: 'Active', pts: 40, sum: 31, features: 1, prog: [6, 2, 4] },
+    { key: 'SHIP-91', title: 'Account security', st: 'Active', pts: 30, sum: 37, features: 1, prog: [1, 1, 5] },
+    { key: 'SHIP-92', title: 'Insights for merchants', st: 'New', pts: 30, sum: 34, features: 2, prog: [1, 0, 5] },
+    { key: 'SHIP-93', title: 'Platform health', st: 'New', pts: 10, sum: 8, features: 1, prog: [1, 0, 2] },
+  ];
+  const features = [
+    { key: 'SHIP-101', title: 'Checkout v2', parent: 'Checkout conversion', ptype: 'epic', st: 'Active', pts: 20, sum: 26, prog: [4, 2, 2] },
+    { key: 'SHIP-102', title: 'Mobile sign-in', parent: 'Account security', ptype: 'epic', st: 'Active', pts: 21, sum: 37, prog: [1, 1, 5] },
+    { key: 'SHIP-103', title: 'Reporting', parent: 'Insights for merchants', ptype: 'epic', st: 'Active', pts: 13, sum: 13, prog: [1, 0, 2] },
+    { key: 'SHIP-108', title: 'Dashboard widgets', parent: 'Reporting', ptype: 'feature', st: 'New', pts: 8, sum: 8, prog: [0, 0, 2], nested: true },
+    { key: 'SHIP-104', title: 'Ops hygiene', parent: 'Platform health', ptype: 'epic', st: 'New', pts: 5, sum: 5, prog: [1, 0, 2] },
+  ];
+
+  const tIcon = t => `<span class="ti ${t}">${{ story: 'S', bug: 'B', feature: 'F', epic: 'E' }[t]}</span>`;
+  const stHtml = s => `<span class="st ${cat[s] || 'proposed'}">${s}</span>`;
+  const av = p => p ? `<span class="av" style="background:${people[p][1]}">${people[p][0]}</span>` : '<span class="av none" title="Unassigned"></span>';
+  const ptsHtml = it => it.pts == null ? `<button class="ptsbtn" type="button" data-est="${it.key}" aria-label="Estimate ${it.key}"><span class="unest">?</span></button>` : `<span class="pts">${it.pts}</span>`;
+
+  /* Which state shows what. */
+  const selectMode = state === 'select' || state === 'bulk-sprint';
+  const selected = new Set(selectMode ? ['SHIP-156', 'SHIP-160', 'SHIP-158'] : []);
+  const dragging = state === 'drag' ? (mode === 'planning' ? 'SHIP-160' : 'SHIP-158') : null;
+  const filtering = state === 'filter';
+  const searching = state === 'search';
+  const adding = state === 'add';
+  const flash = state === 'add' ? 'SHIP-171' : null;
+  if (adding) items.unshift({ key: 'SHIP-171', type: 'story', title: 'Apply a coupon from the cart', parent: null, st: 'New', pts: null, sprint: null, who: null });
+
+  const visible = () => {
+    let list = items;
+    if (filtering) list = list.filter(i => i.type === 'bug' || i.parent === 'Mobile sign-in');
+    if (searching) list = list.filter(i => /dash/i.test(i.title));
+    return list;
+  };
+
+  function itemRow(it, opts = {}) {
+    const rank = items.indexOf(it) + 1;
+    const sel = selected.has(it.key);
+    const num = opts.rank === false ? '' : rank;
+    // No handle while selecting (checkboxes take the place), searching or filtering (dragging is off, as on the desktop).
+    const left = selectMode ? `<span class="cb${sel ? ' on' : ''}" role="checkbox" aria-checked="${sel}" style="justify-self:center">${sel ? ic('check', 'ic') : ''}</span>`
+      : filtering || searching ? `<span class="rk">${num}</span>`
+      : `<button class="grip" type="button" aria-label="Drag ${it.key}${num ? `, number ${num}` : ''}"><span class="n">${num}</span>${ic('grip', '')}</button>`;
+    const sprint = opts.noSprint || !it.sprint ? '' : `<span class="chip${it.sprint === 's24' ? ' accent' : ''}">${sprintName[it.sprint]}</span>`;
+    const parent = opts.noParent || !it.parent ? '' : `<span class="par">${tIcon('feature')}<span>${esc(it.parent)}</span></span>`;
+    const fc = opts.forecast ? `<span class="fc">→ ${opts.forecast}</span>` : '';
+    const cls = ['row', sel && 'sel', it.key === dragging && 'dragging', it.key === flash && 'flash', it.st === 'Closed' && 'done'].filter(Boolean).join(' ');
+    return `<li class="${cls}" data-key="${it.key}">
+      ${left}
+      <div class="main"><div class="t">${tIcon(it.type)}<span>${esc(it.title)}</span></div>
+        <div class="meta"><span class="key">${it.key}</span>${stHtml(it.st)}${fc}${sprint}${parent}</div></div>
+      <div class="side">${ptsHtml(it)}${opts.noAv ? '' : av(it.who)}</div>
+      ${selectMode ? '<span></span>' : `<button class="rmore" type="button" aria-label="Actions for ${it.key}" data-row="${it.key}">⋯</button>`}
+    </li>`;
+  }
+
+  /* Toolbars */
+  function toolbar() {
+    const fcount = filtering ? 2 : 0;
+    const filterBtn = `<button class="btn${fcount ? ' on' : ''}" type="button" data-open="filter">Filter${fcount ? ` <span class="count">${fcount}</span>` : ''}</button>`;
+    const more = `<button class="btn more" type="button" data-open="more" aria-label="More">⋯</button>`;
+    if (level === 'stories') {
+      const m = (id, label) => `<button type="button" aria-pressed="${mode === id}" data-mode="${id}">${label}</button>`;
+      return `<div class="toolbar">
+        <button class="btn pri" type="button" data-add>${ic('plus')}New</button>
+        <div class="seg" role="group" aria-label="Mode">${m('list', 'List')}${m('planning', 'Planning')}${m('tree', 'Tree')}</div>
+        <span class="spacer"></span>${mode === 'planning' ? '' : filterBtn}${more}</div>`;
+    }
+    return `<div class="toolbar">
+      <button class="btn pri" type="button">${ic('plus')}${level === 'features' ? 'New Feature' : 'New Epic'}</button>
+      <span class="spacer"></span>${filterBtn}${more}</div>`;
+  }
+  function underToolbar() {
+    let h = '';
+    if (searching) h += `<div class="findrow"><span class="wrap">${ic('search')}<input class="field" type="search" value="dash" aria-label="Search this list"></span><button class="btn ghost" type="button">Done</button></div>`;
+    if (filtering) h += `<div class="chips"><span class="fchip">Type = Bug<button type="button" aria-label="Remove">${ic('close')}</button></span><span class="fchip"><i>or</i>&nbsp;Parent = Mobile sign-in<button type="button" aria-label="Remove">${ic('close')}</button></span></div>
+      <div class="banner"><span>Moving is off while a filter is on. <b>#</b> still shows each item's place in the whole backlog.</span></div>`;
+    if (selectMode) h += `<div class="selhead"><span><b>3 selected</b> <span class="muted">of 14</span></span><button class="btn ghost" type="button" style="padding:0 6px">Select all</button><button class="btn ghost" type="button">Done</button></div>`;
+    return h;
+  }
+
+  /* Pages */
+  function storiesList() {
+    const list = visible();
+    let h = toolbar() + underToolbar();
+    if (adding) h += `<div class="addrow"><div class="r"><div class="seg" role="group" aria-label="Type"><button type="button" aria-pressed="true">Story</button><button type="button" aria-pressed="false">Bug</button></div>
+        <input class="field" type="text" placeholder="Title" aria-label="Title" value="Show the delivery date"><button class="btn pri" type="button">Add</button></div>
+        <div class="r hint"><span>Adds at the top with the next key and stays open for the next one.</span><span class="spacer"></span><button class="btn ghost" type="button" style="height:28px">Close</button></div></div>`;
+    if (!filtering && !searching && !selectMode && !adding && !dragging) h += `<div class="banner warn"><span><b>3 not estimated</b> in the top 12.</span><button class="btn" type="button" data-open="points">Estimate</button></div>`;
+    h += `<div class="listhead"><b>${list.length} items</b> · ${list.reduce((a, i) => a + (i.pts || 0), 0)} pts open<span class="spacer"></span>${filtering ? `Showing ${list.length} of ${items.length}` : 'Completed hidden'}</div><ul class="list">`;
+    // Mid-drag: SHIP-158 (number 9) is held over number 6, so the rows below have made room for it.
+    const order = dragging ? (() => { const l = list.filter(i => i.key !== dragging); l.splice(5, 0, list.find(i => i.key === dragging)); return l; })() : list;
+    order.forEach(it => { h += it.key === dragging ? `<li class="dropline" aria-hidden="true"></li>${itemRow(it)}` : itemRow(it); });
+    return h + '</ul><div class="endpad"></div>';
+  }
+
+  function planning() {
+    let h = toolbar();
+    const sec = (o) => `<div class="sec${o.backlog ? ' backlog' : ''}${o.over ? ' over' : ''}">
+      <button class="car" type="button" aria-expanded="${o.open}">${o.open ? '▼' : '▶'}</button>
+      <div class="h"><b>${o.name}</b>${o.cur ? '<span class="pill-cur">Current</span>' : ''}<span class="muted">${o.sub}</span></div>
+      <button class="rmore" type="button" aria-label="${o.name} actions" data-open="section">⋯</button>
+      <div class="cap">${o.cap}</div>${o.hint ? `<div class="drophint">${o.hint}</div>` : ''}</div>`;
+    h += sec({ name: 'Sprint 24', cur: true, open: false, sub: '19 – 30 Oct · 7 items', cap: `<span class="bar over"><i style="width:100%"></i></span><span class="nowrap"><b>26</b> / 23 pts</span><span class="over-t">+3 over</span>` });
+    h += sec({ name: 'Sprint 25', open: true, over: !!dragging, sub: '2 – 13 Nov · 2 items', cap: dragging ? `<span class="bar"><i style="width:45%"></i></span><span><b>8 + 2 = 10</b> / 22 pts</span>` : `<span class="bar"><i style="width:36%"></i></span><span><b>8</b> / 22 pts</span><span class="muted">14 free</span>`, hint: dragging ? 'Let go to move SHIP-160 into Sprint 25' : '' });
+    if (dragging) h += '<ul class="list" style="background:none;padding:2px 0">' + itemRow(items.find(i => i.key === dragging), { noSprint: true }) + '</ul>';
+    h += '<ul class="list">' + items.filter(i => i.sprint === 's25').map(i => itemRow(i, { noSprint: true, rank: false })).join('') + '</ul>';
+    h += sec({ name: 'Sprint 26', open: false, sub: '16 – 27 Nov · 0 items', cap: `<span class="bar"><i style="width:0"></i></span><span><b>0</b> / 21 pts</span><span class="chip">velocity 21</span>` });
+    h += `<div class="mk"><button class="btn" type="button">${ic('plus')}Create sprint</button></div>`;
+    h += sec({ name: 'Backlog', backlog: true, open: true, sub: '9 items · 43 pts', cap: `<span class="muted">Forecast at velocity <b style="color:var(--color-text)">21</b> (20 · 22 · 21)</span>` });
+    const bl = items.filter(i => !i.sprint && i.key !== dragging);
+    const fc = { 'SHIP-160': 'Sprint 26', 'SHIP-158': 'Sprint 26', 'SHIP-162': 'Sprint 26', 'SHIP-165': 'Sprint 26', 'SHIP-163': 'Sprint 27', 'SHIP-166': 'Sprint 27', 'SHIP-170': 'Sprint 27' };
+    h += '<ul class="list">' + bl.slice(0, 2).map(i => itemRow(i, { noSprint: true })).join('') + '</ul>';
+    h += `<div class="pull" role="group" aria-label="Pull line">
+      <div class="l1"><button class="grip" type="button" aria-label="Drag the pull line" style="min-height:32px;margin:0;padding:8px 0;width:24px">${ic('grip', '')}</button>Above this line: <b>2 items</b> into <select aria-label="Sprint"><option>Sprint 25</option><option>Sprint 26</option></select></div>
+      <div class="l2"><span class="bar ok" style="max-width:110px"><i style="width:95%"></i></span><span class="sum">8 + 13 = <b>21</b> / 22</span><span class="spacer"></span>
+        <span class="step"><button type="button" aria-label="Line up one item">▲</button><button type="button" aria-label="Line down one item">▼</button></span>
+        <button class="btn pri" type="button">Pull</button></div></div>`;
+    h += '<ul class="list">' + bl.slice(2).map(i => itemRow(i, { noSprint: true, forecast: fc[i.key] })).join('') + '</ul>';
+    return h + '<div class="endpad"></div>';
+  }
+
+  function tree() {
+    let h = toolbar();
+    const gh = (o) => `<div class="gh ${o.cls || ''}"><button class="car" type="button" aria-expanded="${o.open !== false}">${o.open === false ? '▶' : '▼'}</button>
+      <div class="wrapnm">${o.path ? `<span class="path">${o.path}</span>` : ''}<div class="nm">${o.type ? tIcon(o.type) : ''}${o.key ? `<span class="key mono muted" style="font-size:12px">${o.key}</span>` : ''}<span class="tt">${o.title}</span></div></div>
+      <span class="n${o.warn ? ' warn' : ''}">${o.n}</span></div>`;
+    const rows = feat => '<ul class="list">' + items.filter(i => i.parent === feat).map(i => itemRow(i, { noParent: true, rank: false })).join('') + '</ul>';
+    h += gh({ cls: 'epic', type: 'epic', key: 'SHIP-90', title: 'Checkout conversion', n: '5 items · Σ 18 pts' });
+    h += gh({ cls: 'l2', type: 'feature', key: 'SHIP-101', title: 'Checkout v2', path: 'Checkout conversion ›', n: '5 items · Σ 18 pts' }) + rows('Checkout v2');
+    h += gh({ cls: 'epic', type: 'epic', key: 'SHIP-91', title: 'Account security', n: '5 items · Σ 32 pts' });
+    h += gh({ cls: 'l2', type: 'feature', key: 'SHIP-102', title: 'Mobile sign-in', path: 'Account security ›', n: '5 items · Σ 32 pts' }) + rows('Mobile sign-in');
+    h += gh({ cls: 'epic', type: 'epic', key: 'SHIP-92', title: 'Insights for merchants', n: '4 items · Σ 21 pts' });
+    h += gh({ cls: 'l2', type: 'feature', key: 'SHIP-103', title: 'Reporting', path: 'Insights for merchants ›', n: '2 items · Σ 13 pts' }) + rows('Reporting');
+    h += gh({ cls: 'l2', type: 'feature', key: 'SHIP-108', title: 'Dashboard widgets', path: 'Insights for merchants › Reporting ›', n: '2 items · 1 not estimated', warn: true }) + rows('Dashboard widgets');
+    h += gh({ title: '<span class="muted" style="font-weight:400">No parent</span>', n: '0' });
+    return h + '<div class="endpad"></div>';
+  }
+
+  function levelRows() {
+    const list = level === 'features' ? features : epics;
+    let h = toolbar() + underToolbar();
+    h += `<div class="listhead"><b>${list.length} ${level === 'features' ? 'Features' : 'Epics'}</b><span class="spacer"></span>Completed hidden</div><ul class="list">`;
+    list.forEach((f, i) => {
+      const [d, a, n] = f.prog, tot = d + a + n;
+      const warn = f.sum > f.pts * 1.25;
+      const parent = f.parent ? `<span class="par">${tIcon(f.ptype)}<span>${esc(f.parent)}</span>${f.nested ? '<span class="muted">(nested)</span>' : ''}</span>` : '';
+      h += `<li class="row lvl" data-key="${f.key}"><span class="rk">${i + 1}</span>
+        <div class="main"><div class="t">${tIcon(level === 'features' ? 'feature' : 'epic')}<span>${esc(f.title)}</span></div>
+          <div class="meta"><span class="key">${f.key}</span>${stHtml(f.st)}${level === 'epics' ? `<span>${f.features} Feature${f.features > 1 ? 's' : ''}</span>` : ''}${parent}</div>
+          <div class="prog"><span class="bar"><b style="width:${tot ? (d + a) / tot * 100 : 0}%"></b><i style="width:${tot ? d / tot * 100 : 0}%"></i></span><span>${d} / ${tot} done</span>
+            <span class="p2">${f.pts} <span class="sig${warn ? ' warn' : ''}">· Σ${f.sum}</span> pts</span></div></div>
+        <button class="rmore" type="button" aria-label="Actions for ${f.key}" data-row="${f.key}">⋯</button></li>`;
+    });
+    return h + '</ul><div class="endpad"></div>';
+  }
+
+  /* Sheets and bars */
+  const sheet = (title, body, opts = {}) => `<div class="scrim" data-close></div><section class="sheet" aria-label="${esc(title)}"><div class="grab"></div>
+    <div class="sheet-head"><b>${title}</b><button class="x" type="button" data-close>Close</button></div>${opts.sub ? `<div class="sub">${opts.sub}</div>` : ''}<div class="sb">${body}</div>${opts.foot || ''}</section>`;
+  const act = (icon, label, right = '', small = '') => `<li><button type="button"><span class="g">${icon ? ic(icon) : ''}</span><span>${label}${small ? `<small>${small}</small>` : ''}</span>${right ? `<span class="r">${right}</span>` : ''}</button></li>`;
+  const tog = (label, on, small = '') => `<li><label><span class="g"></span><span>${label}${small ? `<small>${small}</small>` : ''}</span><span class="r"><span class="sw${on ? ' on' : ''}" role="switch" aria-checked="${on}"></span></span></label></li>`;
+
+  function layer() {
+    const L = $('layer');
+    let h = '';
+    if (state === 'more') {
+      if (level === 'stories' && mode === 'planning') {
+        h = sheet('Planning', `<ul class="acts-l">${act('search', 'Search this list')}${act('paste', 'Add many…', '', 'Paste a list of titles, one per line')}${act('select', 'Select')}<hr>${tog('Forecast', true, 'Marks where each backlog item is likely to land')}${act('gauge', 'Override velocity', '21')}${act('plus', 'Create sprint')}</ul>`);
+      } else if (level === 'stories') {
+        h = sheet('Stories', `<ul class="acts-l">${act('search', 'Search this list')}${act('paste', 'Add many…', '', 'Paste a list of titles, one per line')}${act('select', 'Select', '', 'Then change state, points or sprint for many at once')}${act('est', 'Estimate what has no points', '3')}<hr>${tog('Show completed', false)}</ul>`);
+      } else {
+        h = sheet(level === 'features' ? 'Features' : 'Epics', `<ul class="acts-l">${act('search', 'Search this list')}${tog('Show completed', false)}</ul>`);
+      }
+    }
+    if (state === 'filter') {
+      const sel = (opts, v) => `<select aria-label="${opts[0]}">${opts.map(o => `<option${o === v ? ' selected' : ''}>${o}</option>`).join('')}</select>`;
+      const fields = ['Work item type', 'State', 'Parent', 'Sprint', 'Assignee', 'Tag'];
+      const clause = (lab, f, v, vals) => `<div class="clause"><span class="lab">${lab}</span><div class="sels">${sel(fields, f)}${sel(['=', '≠'], '=')}${sel(vals, v)}</div><button class="x" type="button" aria-label="Remove clause">${ic('close')}</button></div>`;
+      h = sheet('Filter', `<div class="matchrow"><span>Match</span><div class="seg" role="group" aria-label="Match"><button type="button" aria-pressed="false">All</button><button type="button" aria-pressed="true">Any</button></div><span class="muted" style="font-size:12px">of these</span></div>
+        ${clause('Where', 'Work item type', 'Bug', ['User Story', 'Bug'])}${clause('or', 'Parent', 'Mobile sign-in', ['Checkout v2', 'Mobile sign-in', 'Reporting', 'Dashboard widgets', 'Ops hygiene'])}
+        <button class="btn" type="button" style="justify-self:start">${ic('plus')}Add clause</button>`, { foot: `<div class="foot"><span>Showing 5 of 14 · applies as you change it</span><button class="btn ghost" type="button">Clear</button></div>` });
+    }
+    if (state === 'row') {
+      const it = items.find(i => i.key === 'SHIP-158');
+      h = sheet(it.key, `<ul class="acts-l">${act('open', 'Open')}${act('est', 'Points', '<span class="unest" style="height:24px;min-width:24px">?</span>')}${act('sprint', 'Sprint', 'Backlog ›')}${act('parent', 'Parent', 'Checkout v2 ›')}<hr>${act('up', 'Move to top')}${act('down', 'Move to bottom')}<hr>${act('select', 'Select', '', 'Select this and others')}</ul>`, { sub: esc(it.title) });
+    }
+    if (state === 'section') {
+      h = sheet('Sprint 25', `<ul class="acts-l">${act('plus', 'Add a story or bug here')}${act('cap', 'Capacity', '22 pts ›')}${act('open', 'Open sprint')}</ul>`, { sub: '2 – 13 Nov · 8 / 22 pts' });
+    }
+    if (state === 'points') {
+      const it = items.find(i => i.key === 'SHIP-158');
+      h = sheet('Estimate', `<div class="qbar"><span>Not estimated</span><span class="dots"><i class="on"></i><i></i><i></i></span><span>1 of 3</span></div>
+        <div class="itemcard"><div class="t">${tIcon(it.type)}<span>${esc(it.title)}</span></div><div class="m"><span class="key">${it.key}</span>${stHtml(it.st)}<span class="par">${tIcon('feature')} Checkout v2</span></div></div>
+        <div class="fib">${[1, 2, 3, 5, 8, 13, 21, '?'].map(n => `<button type="button">${n}</button>`).join('')}</div>
+        <div class="qbar"><span>Picking one saves it and goes to the next.</span><span class="spacer"></span><button class="btn" type="button">Skip</button></div>`);
+    }
+    if (state === 'bulk-sprint') {
+      const r = (n, sub, cap, w, cls = '', on = false) => `<li${on ? ' aria-selected="true"' : ''}><span>${n}<small class="muted" style="display:block;font-size:12px">${sub}</small></span><span class="m">${cap}</span><span class="bar ${cls}"><i style="width:${w}%"></i></span></li>`;
+      h = sheet('Move 3 items to', `<ul class="picklist">${r('Sprint 24', 'Current · 19 – 30 Oct', '26 + 10 = 36 / 23', 100, 'over')}${r('Sprint 25', '2 – 13 Nov', '8 + 10 = 18 / 22', 82)}${r('Sprint 26', '16 – 27 Nov', '0 + 10 = 10 / 21', 48)}${r('Backlog', 'Out of every sprint', '', 0)}</ul>
+        <p class="muted" style="margin:0;font-size:12.5px">SHIP-158 has no estimate, so it adds 0.</p>`, { sub: 'SHIP-156, SHIP-160, SHIP-158 · 10 pts' });
+    }
+    if (selectMode) {
+      h += `<div class="bbar" role="region" aria-label="Actions for the selected items"><div class="l1"><b>3 selected</b><span class="muted">· 10 pts · 1 not estimated</span></div>
+        <div class="acts"><button class="btn" type="button">State</button><button class="btn" type="button">Points</button><button class="btn${state === 'bulk-sprint' ? ' on' : ''}" type="button">Sprint</button><button class="btn more" type="button" style="width:100%" aria-label="More actions">⋯</button></div></div>`;
+    }
+    if (dragging) h += `<div class="edgehint">Hold near the top or bottom to scroll</div>`;
+    if (adding) h += `<div class="toast">Added SHIP-171 at the top<button type="button">Open</button></div>`;
+    L.innerHTML = h;
+    if (h.includes('class="sheet"')) document.documentElement.dataset.sheet = '';
+  }
+
+  /* Breadcrumb ends in the page's name; the mode is a control, not a crumb. */
+  const name = { stories: 'Stories', features: 'Features', epics: 'Epics' }[level];
+  $('crumbs').innerHTML = `<span>SHIP</span><span>›</span><span>Backlogs</span><span>›</span><b>${name}</b>`;
+  $('page').innerHTML = level !== 'stories' ? levelRows() : mode === 'planning' ? planning() : mode === 'tree' ? tree() : storiesList();
+  layer();
+
+  /* Enough wiring to click around: modes, levels, sheets. Each link keeps the theme. */
+  const go = q => { const n = new URLSearchParams(q); if (P.get('theme')) n.set('theme', P.get('theme')); if (P.has('shot')) n.set('shot', ''); location.search = n.toString(); };
+  document.addEventListener('click', e => {
+    const t = e.target.closest('[data-mode],[data-open],[data-row],[data-est],[data-close],[data-add]');
+    if (!t) return;
+    if (t.dataset.mode) go({ level, mode: t.dataset.mode });
+    else if (t.dataset.open) go({ level, mode, state: t.dataset.open });
+    else if (t.dataset.row) go({ level, mode, state: 'row' });
+    else if (t.dataset.est) go({ level, mode, state: 'points' });
+    else if (t.hasAttribute('data-add')) go({ level, mode, state: 'add' });
+    else if (t.hasAttribute('data-close')) go({ level, mode });
+  });
+})();
+</script>
+</body>
+</html>

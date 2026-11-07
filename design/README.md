@@ -40,7 +40,7 @@ The screens here are reference designs for every page of the v1 domain model: **
 | `screens/new-project.html` | **New project**: name, the permanent key (suggested, checked live, with free alternatives), start from defaults or another project's settings, members, working days and Sprint 1. |
 | `screens/instance.html` | **Instance settings** (instance admins only): General (name, base URL, who can create projects), Users (add, reset password, unlock, admin, disable) and Projects (every project, Join as admin). `?tab=general\|users\|projects\|integrations` (Integrations: the YouTube OAuth client, SHIP-303). |
 | `screens/profile.html` | **Your profile**: display name, optional photo and avatar colour (`?photo` opens with a photo), theme and density, password, your projects (Leave), sessions and saved views. |
-| `mobile/` | **Touch shell** (SHIP-713): the frame under 900px (drawer, top bar, project picker sheet, full-screen quick search), its review page `mobile/index.html`, phone images in light and dark, and today's phone screenshots. Also the **work item page** on a phone (SHIP-714): `mobile/work-item.html`, built in `screens/item-touch.css` and `item-touch.js`. See [Touch shell](#touch-shell-ship-713) and [`mobile/README.md`](mobile/README.md). |
+| `mobile/` | **Touch shell** (SHIP-713): the frame under 900px (drawer, top bar, project picker sheet, full-screen quick search), its review page `mobile/index.html`, phone images in light and dark, and today's phone screenshots. Also the **work item page** on a phone (SHIP-714): `mobile/work-item.html`, built in `screens/item-touch.css` and `item-touch.js`. The **backlogs** on a phone (SHIP-716): `mobile/backlogs.html`. See [Touch shell](#touch-shell-ship-713) and [`mobile/README.md`](mobile/README.md). |
 | `screenshots.sh` | Regenerates `screens/<name>.<theme>.png` (1440×900, 2× scale) with headless Chrome. Variants (such as `taskboard-people`, `backlog-tree`, `work-item-bug`, `import-run`) shoot one screen in another state. |
 | `logo/` | The logo: the mark, the light and dark lockups, and PNG exports. See [Logo](#logo). |
 
@@ -361,6 +361,18 @@ At 900px and below, the Markdown attachment page and the image viewer follow `mo
 - **Edit:** the editor at `--text-input-touch` fills the screen; the toolbar is one row that scrolls (no Fullscreen); Save and Cancel sit in a bar at the bottom, padded for the safe area.
 - **Viewer:** full screen and always dark; pinch and double-tap zoom; swipe or thumbnails through the item's images ("1 of 3 · SHIP-101"); ⋯ holds Download, Copy link and Open original.
 - **PDF in a new tab:** today only images are served `inline`, and every attachment gets `Content-Security-Policy: sandbox`. Check that iOS Safari and Android Chrome still show a PDF under that policy before relaxing anything, and fall back to download if they don't.
+
+## Backlogs on a phone (SHIP-716)
+
+At 900px and below, the Stories backlog (List, Planning, Tree) and the Features and Epics backlogs follow `mobile/backlogs.html` (images and review in [mobile/README.md](mobile/README.md#backlogs-stories-features-and-epics-ship-716)). Above 900px the patterns below still apply. The shared mobile rules are on SHIP-805 and aren't repeated here.
+
+**Decided 2026-11-07:** two-line rows instead of a table (D1); rows reorder by **touch drag on a handle at the row's left edge** (D2, against the recommendation of a ⋯ sheet with Move to…); a Select mode from ⋯ or a row's ⋯ with the bulk bar at the bottom (D3); one toolbar row: + New, List / Planning / Tree, Filter, ⋯ (D4); the pull line stays, moved with ▲ ▼ or its handle, then Pull (D5); Tree headers name their path and rows never indent (D6); no Columns below 900px (D7); a progress line on Feature and Epic rows (D8); a Points sheet from the ? chip and a not-estimated queue (D9); Filter in a bottom sheet that applies as you change it (D10).
+
+- **Row:** the handle (rank on top, ⠿ under it, full row height), then the type icon and title (up to 2 lines), then key, state, a sprint chip, Forecast's → Sprint n, and the parent, which wraps to its own line rather than being cut off. Points (a warn **?** when there's no estimate) and the assignee are on the right, then ⋯. Tapping the row opens the item.
+- **Drag:** only the handle starts a drag (`touch-action: none` on it alone), so the row still scrolls the page. Holding near the top or bottom auto-scrolls. Over a sprint header the header lights up with the sum it would come to; over a Feature header in Tree it reparents. There are no handles while searching, filtering or selecting, and none on Features and Epics rows (they don't drag on the desktop either).
+- **Row ⋯:** Open, Points, Sprint ›, Parent ›, Move to top, Move to bottom, Select.
+- **⋯ More:** Search this list (a 16px field under the toolbar), Add many…, Select, Estimate what has no points, Show completed. In Planning: Forecast, Override velocity, Create sprint. Columns and Keys aren't offered.
+- **Planning:** each sprint is a header block (name, dates, count, then a full-width capacity bar with free or over), and its + Add, Capacity and Open sprint move into the section's ⋯.
 
 ## Backlog patterns (`screens/backlog.html`, `screens/features.html`)
 

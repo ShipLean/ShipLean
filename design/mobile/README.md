@@ -122,3 +122,49 @@ The Markdown attachment page and the image viewer at 900px and below, inside the
 | Too large to show | ![Too large, light](images/attachment-toolarge.light.png) | ![Too large, dark](images/attachment-toolarge.dark.png) |
 
 The viewer is always dark, so both themes look the same there. The decisions are in [design/README.md › Markdown attachments on a phone](../README.md#markdown-attachments-on-a-phone-ship-715).
+
+## Backlogs: stories, features and epics (SHIP-716)
+
+The Stories backlog (List, Planning, Tree) and the Features and Epics backlogs at 900px and below, inside the touch shell. Desktop is unchanged.
+
+| File | What it is |
+|---|---|
+| `backlogs.html` | The phone screen, opened directly. `?level=stories\|features\|epics`, `?mode=list\|planning\|tree`, `?state=more\|search\|add\|filter\|row\|drag\|select\|bulk-sprint\|points\|section` and `?theme=light\|dark`. It draws the touch shell's top bar itself. |
+| `backlogs-review.html` | The design review: today on a phone, every state as a live frame, scope, what it takes to build, and the decisions. |
+| `images/backlogs*.png` | `backlogs.html` at 390 × 844, 2× scale, light and dark (made by `screenshots.sh`). |
+| `images/today-backlogs-*.png` | The real Stories (List, Planning, Tree), Features and Epics pages at 390 × 844 before this change (the SPA's component harness with the page-shot fixtures). |
+
+### Today
+
+| Stories | Planning | Tree | Features | Epics |
+|---|---|---|---|---|
+| ![Today: Stories on a phone](images/today-backlogs-stories.png) | ![Today: Planning on a phone](images/today-backlogs-planning.png) | ![Today: Tree on a phone](images/today-backlogs-tree.png) | ![Today: Features on a phone](images/today-backlogs-features.png) | ![Today: Epics on a phone](images/today-backlogs-epics.png) |
+
+1. Every page is a desktop table clipped at the right edge, so Points, Sprint, Assignee and Progress are off screen.
+2. The toolbar wraps to 2–4 rows, with keyboard hints.
+3. Planning's sprint headers squash into cells: dates wrap to five lines and capacity is cut off.
+4. Tree indents each level, so titles wrap to 3–4 lines.
+
+### The phone page
+
+| State | Light | Dark |
+|---|---|---|
+| List | ![List, light](images/backlogs.light.png) | ![List, dark](images/backlogs.dark.png) |
+| ⋯ More | ![⋯ More, light](images/backlogs-more.light.png) | ![⋯ More, dark](images/backlogs-more.dark.png) |
+| Search this list | ![Search this list, light](images/backlogs-search.light.png) | ![Search this list, dark](images/backlogs-search.dark.png) |
+| + New (inline add) | ![+ New (inline add), light](images/backlogs-add.light.png) | ![+ New (inline add), dark](images/backlogs-add.dark.png) |
+| Filter | ![Filter, light](images/backlogs-filter.light.png) | ![Filter, dark](images/backlogs-filter.dark.png) |
+| A row's ⋯ | ![A row's ⋯, light](images/backlogs-row.light.png) | ![A row's ⋯, dark](images/backlogs-row.dark.png) |
+| Drag a row by its handle | ![Drag a row by its handle, light](images/backlogs-drag.light.png) | ![Drag a row by its handle, dark](images/backlogs-drag.dark.png) |
+| Select mode | ![Select mode, light](images/backlogs-select.light.png) | ![Select mode, dark](images/backlogs-select.dark.png) |
+| Select mode · Sprint | ![Select mode · Sprint, light](images/backlogs-bulk-sprint.light.png) | ![Select mode · Sprint, dark](images/backlogs-bulk-sprint.dark.png) |
+| Estimate (? or the banner) | ![Estimate (? or the banner), light](images/backlogs-points.light.png) | ![Estimate (? or the banner), dark](images/backlogs-points.dark.png) |
+| Planning | ![Planning, light](images/backlogs-planning.light.png) | ![Planning, dark](images/backlogs-planning.dark.png) |
+| Planning · drag into a sprint | ![Planning · drag into a sprint, light](images/backlogs-planning-drag.light.png) | ![Planning · drag into a sprint, dark](images/backlogs-planning-drag.dark.png) |
+| Planning · ⋯ More | ![Planning · ⋯ More, light](images/backlogs-planning-more.light.png) | ![Planning · ⋯ More, dark](images/backlogs-planning-more.dark.png) |
+| A sprint's ⋯ | ![A sprint's ⋯, light](images/backlogs-planning-section.light.png) | ![A sprint's ⋯, dark](images/backlogs-planning-section.dark.png) |
+| Tree | ![Tree, light](images/backlogs-tree.light.png) | ![Tree, dark](images/backlogs-tree.dark.png) |
+| Features | ![Features, light](images/backlogs-features.light.png) | ![Features, dark](images/backlogs-features.dark.png) |
+| Epics | ![Epics, light](images/backlogs-epics.light.png) | ![Epics, dark](images/backlogs-epics.dark.png) |
+
+The decisions are in [design/README.md › Backlogs on a phone](../README.md#backlogs-on-a-phone-ship-716).
