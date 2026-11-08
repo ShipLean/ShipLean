@@ -19,8 +19,8 @@ namespace ShipLean.WebApi.Tests.IssueIntake.AgentMode;
 public class AgentModeTests : ApiFixture
 {
     private const string GitHubComment = "Mirrored from GitHub: it fails on Firefox too.";
-    private const string AgentComment = "An agent's note on the item.";
-    private const string PersonComment = "A maintainer's private note.";
+    private const string AgentComment = "An agent note on the item.";
+    private const string PersonComment = "A maintainer private note.";
 
     protected override Action<IServiceCollection>? ConfigureTestServices => services =>
     {
@@ -149,7 +149,8 @@ public class AgentModeTests : ApiFixture
 
     private async Task AddCommentsAsync(Guid item)
     {
-        var comments = Host.Services.GetRequiredService<ICommentStore>();
+        await using var scope = Host.Services.CreateAsyncScope();
+        var comments = scope.ServiceProvider.GetRequiredService<ICommentStore>();
         await comments.AddAsAgentAsync(item, new CommentCreate(GitHubComment), "GitHub @reporter", SeedIds.Users.Joel);
         await comments.AddAsAgentAsync(item, new CommentCreate(AgentComment), "Relay", SeedIds.Users.Joel);
         using var posted = await Api.PostJsonAsync($"api/work-items/{item}/comments", new { body = PersonComment });
