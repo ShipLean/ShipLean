@@ -116,9 +116,13 @@ public class EnqueueTests : ApiFixture
         var second = Outbox.EnqueueAsync(OutboxEntry.Close(issueId, NewKey("second"), CloseReason.Completed), secondTransaction);
         (await Outbox.EnqueueAsync(OutboxEntry.Comment(otherIssueId, NewKey("other"), "Hi"), otherTransaction)).ShouldBeTrue();
         (await Task.WhenAny(second, Task.Delay(TimeSpan.FromMilliseconds(500)))).ShouldNotBe(second);
+        // A reader on another connection sees neither entry before the first transaction commits.
+        (await RowsAsync(issueId)).ShouldBeEmpty();
 
         await firstTransaction.CommitAsync();
         (await second).ShouldBeTrue();
+        // Then only the first, until the second commits too.
+        (await RowsAsync(issueId)).Select(r => r.Kind).ShouldBe(["comment"]);
         await secondTransaction.CommitAsync();
         await otherTransaction.CommitAsync();
 
