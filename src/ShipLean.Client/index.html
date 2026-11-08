@@ -7,6 +7,17 @@
     <meta name="theme-color" content="#e8eef7" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#171e2d" media="(prefers-color-scheme: dark)" />
     <title>ShipLean</title>
+    <script>
+      // Before first paint: the appearance this browser last applied (src/theme.ts writes it), so a saved theme that
+      // differs from the OS does not flash the OS theme until the profile loads (SHIP-745).
+      try {
+        var a = JSON.parse(localStorage.getItem('shiplean.appearance') || 'null');
+        if (a && (a.theme === 'light' || a.theme === 'dark'))
+          document.documentElement.dataset.theme = a.theme;
+        if (a && a.density === 'comfortable')
+          document.documentElement.dataset.density = 'comfortable';
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

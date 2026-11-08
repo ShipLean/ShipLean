@@ -17,7 +17,9 @@ public class SprintDemoPromptTests
 
     private static string Template => File.ReadAllText(TemplatePath);
 
+#pragma warning disable AG0051 // the prompt prints this date as text; no clock reads it.
     private static readonly DemoUploadTarget Upload = new(UploadUrl, new DateTimeOffset(2026, 11, 5, 9, 30, 0, TimeSpan.Zero), 200L * 1024 * 1024, "BAU-7", "Sprint 24");
+#pragma warning restore AG0051
 
     private static readonly DemoBrand DefaultBrand = new(true, "<svg id=\"default-logo\"/>", null, null, null, true, ":root { --color-bg: #e8eef7; }", null);
 
@@ -574,8 +576,10 @@ public class SprintDemoPromptTests
     [Test]
     public void Render_WhenProjectBrand_ShouldCarryTheLogoLinkAndOverlaidTokensAndNoShipLeanSvg()
     {
+#pragma warning disable AG0051 // the prompt prints this date as text; no clock reads it.
         var brand = new DemoBrand(false, null, LogoUrl, "image/png", new DateTimeOffset(2026, 11, 5, 9, 30, 0, TimeSpan.Zero), false,
             ":root { --color-bg: #e8eef7; }\n:root { --color-accent: #c2410c; }", null);
+#pragma warning restore AG0051
 
         var text = Render(brand: brand);
 
@@ -698,6 +702,89 @@ public class SprintDemoPromptTests
     public void Prompt_ShouldNotAskForADemoModeNoOneDefined()
     {
         Template.ShouldNotContain("demo mode");
+    }
+
+    // SHIP-904: before and after stay next to each other, item by item.
+    [Test]
+    public void Prompt_ShouldKeepOneBeforeAndAfterForAFeatureOfThreeStoriesOrFewer()
+    {
+        Template.ShouldContain("**3 stories or fewer:** one before and after for the whole Feature.");
+    }
+
+    [Test]
+    public void Prompt_ShouldShowBeforeThenAfterPerStoryInAFeatureOfMoreThanThree()
+    {
+        Template.ShouldContain("**More than 3 stories:** inside the Feature's chapter, show each story's before and then its after, back to back");
+    }
+
+    [Test]
+    public void Prompt_ShouldGiveAStoryWithNoVisibleChangeOneLine()
+    {
+        Template.ShouldContain("A story with no visible change (contracts, skeleton, tests, docs) gets one spoken line and no before and after.");
+    }
+
+    [Test]
+    public void Prompt_ShouldGiveEveryBugItsOwnBeforeAndAfter()
+    {
+        Template.ShouldContain("**Every bug gets its own before and after**, the broken behaviour then the fix: inside its Feature's chapter, or under Other work");
+    }
+
+    [Test]
+    public void Prompt_ShouldKeepEachPairShort()
+    {
+        Template.ShouldContain("about 10 to 20 seconds a pair");
+    }
+
+    [Test]
+    public void Prompt_ShouldPutOtherWorkInItsOwnChapterBeforeAlsoThisSprint()
+    {
+        Template.ShouldContain("then an **Other work** chapter when `otherWork` has items, then a short **Also this sprint** section");
+        Template.ShouldContain("**Other work:** for `otherWork`, after the Features and before Also this sprint.");
+    }
+
+    [Test]
+    public void Prompt_ShouldMentionOtherWorkInOneLineInTheIntro()
+    {
+        Template.ShouldContain("Mention `otherWork` in one line");
+        Template.ShouldNotContain("one slide for `otherWork`");
+    }
+
+    [Test]
+    public void Prompt_ShouldOpenAFeatureOfMoreThanOneItemWithATitleSlide()
+    {
+        Template.ShouldContain("**A Feature with more than one item in its `stories` opens with its own title slide**");
+    }
+
+    [Test]
+    public void Prompt_ShouldKeepChaptersOnePerFeaturePlusOtherWork()
+    {
+        Template.ShouldContain("The Other work chapter has no `featureKey`, and there are no chapters per story or bug.");
+    }
+
+    [Test]
+    public void Prompt_ShouldHeadEachItemInTheScript()
+    {
+        Template.ShouldContain("a story or bug with its own lines gets its key and title as a heading above them");
+    }
+
+    [Test]
+    public void Render_WhenASprintMixesFeatureSizesAndBugs_ShouldCarryEachCaseAndTheRuleForIt()
+    {
+        var big = Feature("KEY-1") with { Stories = [.. Enumerable.Range(1, 5).Select(i => Story($"KEY-1{i}", "s", 1, 1)), Story("KEY-16", "s", 1, 1) with { Type = "bug" }] };
+        var small = Feature("KEY-2") with { Title = "Coupons", Stories = [Story("KEY-21", "s", 1, 1), Story("KEY-22", "s", 1, 1)] };
+        var data = Data("Run the app with make dev.", [big, small]) with { OtherWork = [Story("KEY-31", "s", 0, 0) with { Type = "bug" }] };
+
+        var text = Render(data);
+
+        text.ShouldContain("**More than 3 stories:**");
+        text.ShouldContain("**3 stories or fewer:**");
+        text.ShouldContain("**Every bug gets its own before and after**");
+        text.ShouldContain("**Other work:** for `otherWork`");
+        text.ShouldContain("opens with its own title slide");
+        text.ShouldContain("\"key\":\"KEY-16\",\"type\":\"bug\"");
+        text.ShouldContain("\"key\":\"KEY-31\",\"type\":\"bug\"");
+        CountOf(text, "\"type\":\"story\"").ShouldBe(7);
+        text.ShouldNotContain("{{");
     }
 
     private static int CountOf(string text, string needle)

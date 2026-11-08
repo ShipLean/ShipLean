@@ -12,6 +12,7 @@ import { KeysDialog } from '../commands/KeysDialog';
 import { ListKeysHost } from '../commands/ListKeysHost';
 import { OpenCommandHost } from '../commands/OpenCommandHost';
 import { useReorder } from '../drag/useReorder';
+import { BACKLOG_COLUMNS } from '../backlogApi';
 import { BacklogFrame } from '../filter/BacklogFrame';
 import type { BacklogFilterState } from '../filter/useBacklogFilter';
 import { useReconnectSummary } from '../realtime/useReconnectSummary';
@@ -19,6 +20,7 @@ import { useTeammateChanges } from '../realtime/useTeammateChanges';
 import { BacklogSearchBox } from '../search/BacklogSearchBox';
 import { useBacklogSearch } from '../search/useBacklogSearch';
 import { SelectionProvider } from '../selection/SelectionProvider';
+import { useColumnSort } from '../sort/useColumnSort';
 import { QueueFixedProvider } from '../strip/QueueFixedProvider';
 import { BeforeYouPlan } from '../strip/BeforeYouPlan';
 import { useCheckQueue } from '../strip/useCheckQueue';
@@ -37,11 +39,19 @@ export function ListScreen({ project, state }: { project: ProjectDto; state: Bac
   const search = useBacklogSearch();
   const items = useMemo(() => state.rows.filter((row) => row.kind === 'item'), [state.rows]);
   const queued = useMemo(() => queue.apply(items), [queue, items]);
-  const rows = useMemo(() => search.apply(queued), [search, queued]);
+  const searched = useMemo(() => search.apply(queued), [search, queued]);
+  const shown = useMemo(
+    () => BACKLOG_COLUMNS.filter((c) => !state.view.hidden.includes(c.id)).map((c) => c.id),
+    [state.view.hidden],
+  );
+  const sort = useColumnSort(project.id, 'storiesBacklog', searched, shown);
+  const rows = sort.rows;
   const flashing = useTeammateChanges(project.id, items);
-  // Drag stops for a filter, a search or a check queue; adding stops for a filter or a search only.
+  // Drag stops for a filter, a search, a check queue or a column sort; adding stops for a filter or a search only
+  // (a sort stops adding below a row, which ListTable handles).
   const addingOff = state.filtering || search.active;
-  const filtering = addingOff || queue.active;
+  const narrowed = addingOff || queue.active;
+  const filtering = narrowed || sort.sorted;
   useReconnectSummary(state.queryKey);
   useNewItemFromLink(STORY_KINDS, (kind) => state.openAdd(kind));
 
@@ -62,7 +72,11 @@ export function ListScreen({ project, state }: { project: ProjectDto; state: Bac
               options={() => <AddManyButton />}
               search={() => <BacklogSearchBox search={search} />}
               keys={() => <KeysButton />}
-              movingOffText="Reordering is off while a filter is on, because rank is relative to items you can't see. # shows each item's place in the full backlog."
+              movingOffText={
+                narrowed
+                  ? "Reordering is off while a filter is on, because rank is relative to items you can't see. # shows each item's place in the full backlog."
+                  : 'Reordering is off while the list is sorted by a column. Click the sorted title until the arrow goes to get rank order back.'
+              }
             >
               {(columns) => (
                 <>
@@ -88,6 +102,8 @@ export function ListScreen({ project, state }: { project: ProjectDto; state: Bac
                       flashing={flashing}
                       filtered={addingOff}
                       searched={search.active ? search.query.trim() : ''}
+                      sort={sort.sort}
+                      onSort={sort.onSort}
                     />
                   </ListDnd>
                   <BulkBar

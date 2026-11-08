@@ -205,6 +205,28 @@ export function useUpdateSprint(projectId: string, sprintId: string) {
   });
 }
 
+export const deleteSprint = (sprintId: string) =>
+  api.delete<undefined>(`/api/sprints/${encodeURIComponent(sprintId)}`);
+
+/**
+ * Deletes a sprint with nothing in it (the server refuses one with work items), then refetches what the sprint list
+ * feeds, directly (a tab ignores its own events).
+ */
+export function useDeleteSprint(projectId: string, sprint: SprintDto) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => deleteSprint(sprint.id),
+    onSuccess: async () => {
+      await Promise.all(
+        [projectSprintsKey(projectId), velocityKey(projectId), backlogRootKey(projectId)].map(
+          (queryKey) => queryClient.invalidateQueries({ queryKey }),
+        ),
+      );
+      showToast(`Deleted ${sprint.name}`, { tone: 'ok' });
+    },
+  });
+}
+
 /** Refetches the Sprint backlog's items and figures when another tab or person changes a work item, the states or the order. */
 export function useSprintBacklogRealtime(projectId: string) {
   useSprintsRealtime(projectId);

@@ -53,7 +53,7 @@ Every event carries these (a key is left out when its value is null). The consta
 | `duration_ms`, `source` | `source` is `tool:<name>`, `api:<Controller>.<Action>`, `screen` or `system:<Class>` |
 | `shiplean_version`, `instance_host` | this build and this instance |
 
-Extra properties are the keys in `UsageProps` (`screen`, `board`, `provider`, `count`, `viewport`, `agent_name` on `agent.connected` and `agent.consent_denied`, `method` on `work_item.moved` and `auth.signed_in`). A standard property wins over an extra one with the same key. A command adds an extra property to its web action's event with `IUsageScope.AddProperty(UsageProps.X, value)`; `UsageActionFilter` records the action's `board`, then what the command added, then `viewport`. Never parse the route or the action's arguments for one.
+Extra properties are the keys in `UsageProps` (`screen`, `board`, `provider`, `count`, `column`, `direction`, `mode` (the backlog mode on a backlog screen's `screen.viewed`), `viewport`, `agent_name` on `agent.connected` and `agent.consent_denied`, `method` on `work_item.moved` and `auth.signed_in`). A standard property wins over an extra one with the same key. A command adds an extra property to its web action's event with `IUsageScope.AddProperty(UsageProps.X, value)`; `UsageActionFilter` records the action's `board`, then what the command added, then `viewport`. Never parse the route or the action's arguments for one.
 
 **Viewport.** The SPA's API client sends `X-ShipLean-Viewport` (`ViewportHeader`, `src/ShipLean.Contracts/ViewportHeader.cs`) on every request, with the window's width class at send time: `phone`, `tablet` or `desktop` (`UsageViewports`). The three web seams (`UsageActionFilter`, `ScreenViews`, `SelfEmittedUsage.TrackOk`) read it through `IUsageScope.Viewport` and stamp it as `viewport`. A missing header or any other value (including another case, such as `Phone`) leaves the key out; there is no default. MCP and system events never carry it, and neither do top-level browser navigations, which are not API calls (no header is sent): a Google or proxy sign-in made by navigation records `auth.signed_in` without a viewport, while a sign-in recorded on an API request (a password sign-in, or a proxy re-sign-in on an `/api` call after the cookie lapses) has one.
 
@@ -184,6 +184,7 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `backlog.reviewed` | `review_backlog` |  |
 | `backlog.bulk_written` |  | `BacklogWrites.Bulk` |
 | `backlog.items_added` |  | `BacklogWrites.Add` |
+| `backlog.sorted` |  | self-emitted: ProjectUsage.BacklogSort (a column title clicked in list mode; `screen`, `column`, `direction` asc/desc/off) |
 | `changes.viewed` | `whats_changed_since` |  |
 | `search.performed` | `search` | `Search.Get` |
 | `comment.added` | `comment` | `WorkItemComments.Add` |
@@ -202,6 +203,7 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `sprint.created` | `create_sprint` | `ProjectSprints.Create` |
 | `sprint.planned` | `plan_sprint` |  |
 | `sprint.updated` |  | `Sprints.Update` |
+| `sprint.deleted` |  | `Sprints.Delete` |
 | `sprint.capacity_changed` |  | `SprintCapacity.Put` |
 | `sprint.ended` | `end_sprint` |  |
 | `sprint.rolled_over` |  | `SprintRollover.Apply` |

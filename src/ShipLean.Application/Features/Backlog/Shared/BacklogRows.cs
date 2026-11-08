@@ -16,9 +16,9 @@ public sealed class BacklogRows(IReadOnlyList<TagColourJson> tagColours)
     public BacklogRowDto Item(StackRowDto row, int depth, int? rank) =>
         Build(row, BacklogRowKind.Item, depth, rank, [], null, false);
 
-    // A Feature or Epic row in a level backlog: an item row that carries its roll-ups and the sum under it.
-    public BacklogRowDto LevelItem(StackRowDto row, int rank, IReadOnlyList<RollupCountDto> rollups, decimal? childPoints) =>
-        Build(row, BacklogRowKind.Item, 0, rank, rollups, childPoints, SumExceeds(row.Points, childPoints));
+    // A Feature or Epic row in a level backlog: an item row that carries its roll-ups and the sum under it (depth 0 in list mode).
+    public BacklogRowDto LevelItem(StackRowDto row, int depth, int rank, IReadOnlyList<RollupCountDto> rollups, decimal? childPoints) =>
+        Build(row, BacklogRowKind.Item, depth, rank, rollups, childPoints, SumExceeds(row.Points, childPoints));
 
     public BacklogRowDto Group(StackRowDto row, int depth, IReadOnlyList<RollupCountDto> rollups, decimal? childPoints) =>
         Build(row, BacklogRowKind.Group, depth, null, rollups, childPoints, SumExceeds(row.Points, childPoints));

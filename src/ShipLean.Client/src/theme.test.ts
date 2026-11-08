@@ -1,9 +1,43 @@
 import { afterEach, expect, test } from 'vitest';
-import { applyAppearance, initAppearance, setDensity, setTheme } from './theme';
+import {
+  appearanceStorageKey,
+  applyAppearance,
+  initAppearance,
+  setDensity,
+  setTheme,
+} from './theme';
 
 afterEach(() => {
   delete document.documentElement.dataset.theme;
   delete document.documentElement.dataset.density;
+  localStorage.clear();
+});
+
+test('theme_WhenAppearanceApplied_ShouldBeRestoredOnTheNextLoad', () => {
+  applyAppearance('light', 'comfortable');
+  delete document.documentElement.dataset.theme;
+  delete document.documentElement.dataset.density;
+
+  initAppearance();
+  expect(document.documentElement.dataset.theme).toBe('light');
+  expect(document.documentElement.dataset.density).toBe('comfortable');
+});
+
+test('theme_WhenRememberedThemeIsOs_ShouldFollowTheOs', () => {
+  applyAppearance('os', 'compact');
+  document.documentElement.dataset.theme = 'dark';
+
+  initAppearance();
+  expect(document.documentElement.dataset.theme).toBeUndefined();
+  expect(document.documentElement.dataset.density).toBe('compact');
+});
+
+test('theme_WhenStoredAppearanceIsUnreadable_ShouldUseTheDefaults', () => {
+  localStorage.setItem(appearanceStorageKey, '{not json');
+
+  initAppearance();
+  expect(document.documentElement.dataset.theme).toBeUndefined();
+  expect(document.documentElement.dataset.density).toBe('compact');
 });
 
 test('theme_WhenDarkSet_ShouldSetTheAttribute', () => {

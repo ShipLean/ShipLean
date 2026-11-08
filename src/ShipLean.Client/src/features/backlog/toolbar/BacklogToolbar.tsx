@@ -11,7 +11,7 @@ export interface BacklogToolbarProps {
   level: Level;
   // The mode the open page is in.
   mode: BacklogMode;
-  // The modes the switch offers, in order; none hides the switch (Features and Epics have no modes).
+  // The modes the switch offers, in order; none hides the switch (Epics have no modes, Features List and Tree).
   modes?: readonly BacklogMode[];
   onNewItem: () => void;
   // The New button's label; defaults to "+ New work item".

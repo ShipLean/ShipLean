@@ -59,6 +59,7 @@ public static class ActionUsageMap
         Add(ActionUsage.Track(UsageEventNames.LinkCardRefreshed), "LinkCardsRefresh.Refresh");
         Add(ActionUsage.Track(UsageEventNames.SprintCreated), "ProjectSprints.Create");
         Add(ActionUsage.Track(UsageEventNames.SprintUpdated), "Sprints.Update");
+        Add(ActionUsage.Track(UsageEventNames.SprintDeleted), "Sprints.Delete");
         Add(ActionUsage.Track(UsageEventNames.SprintCapacityChanged), "SprintCapacity.Put");
         Add(ActionUsage.Track(UsageEventNames.SprintRolledOver), "SprintRollover.Apply");
         Add(ActionUsage.Track(UsageEventNames.BoardSettingsChanged), "BoardSettings.Put");
@@ -104,8 +105,9 @@ public static class ActionUsageMap
             "UsersAdmin.Unlock");
         Add(ActionUsage.Track(UsageEventNames.InstanceSearchReindexed), "SearchAdmin.Reindex");
 
-        // Self-emitted: the action knows what the filter cannot (which sign-in, which decision, the new project, the screen).
-        Add(ActionUsage.SelfEmitted, "Auth.Login", "Consent.Decide", "ProjectCreation.Create", "Instance.Join", "Usage.Screen");
+        // Self-emitted: the action knows what the filter cannot (which sign-in, which decision, the new project, the screen, the sort).
+        Add(ActionUsage.SelfEmitted, "Auth.Login", "Consent.Decide", "ProjectCreation.Create", "Instance.Join", "Usage.Screen",
+            "ProjectUsage.BacklogSort");
 
         Add(
             ActionUsage.Untracked(Helper),

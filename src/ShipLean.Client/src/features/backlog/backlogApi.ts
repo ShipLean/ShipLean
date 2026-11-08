@@ -15,7 +15,7 @@ export { backlogKey, backlogRootKey };
 export interface BacklogQuery {
   projectId: string;
   level: Level;
-  // Stories only: Features and Epics have no modes.
+  // Stories: list, planning or tree. Features: list or tree. Epics: list.
   mode: BacklogMode;
   // The URL-encoded-by-us CriteriaJson text of the filter; '' for none.
   filter: string;
@@ -34,7 +34,7 @@ export const fetchBacklog = ({
   return api.get<BacklogViewDto>(
     level === 'stories'
       ? `/api/projects/${project}/backlog?mode=${mode}&${rest}`
-      : `/api/projects/${project}/backlogs/${level}?${rest}`,
+      : `/api/projects/${project}/backlogs/${level}?${mode === 'list' ? '' : `mode=${mode}&`}${rest}`,
   );
 };
 
