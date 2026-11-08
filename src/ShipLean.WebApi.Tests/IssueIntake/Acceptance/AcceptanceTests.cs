@@ -484,5 +484,11 @@ public class AcceptanceTests : ApiFixture
 
         public Task MarkPostedAsync(Guid id, string milestone, string value, DbTransaction? transaction = null, CancellationToken cancellationToken = default)
             => inner.MarkPostedAsync(id, milestone, value, transaction, cancellationToken);
+
+        public Task RequestRerunAsync(Guid id, DbTransaction? transaction = null, CancellationToken cancellationToken = default)
+            => inner.RequestRerunAsync(id, transaction, cancellationToken);
+
+        public Task<bool> TakeRerunAsync(Guid id, DbTransaction? transaction = null, CancellationToken cancellationToken = default)
+            => inner.TakeRerunAsync(id, transaction, cancellationToken);
     }
 }
