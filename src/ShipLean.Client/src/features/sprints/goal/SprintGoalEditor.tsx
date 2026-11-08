@@ -1,4 +1,5 @@
 import { useState, type FormEvent, type KeyboardEvent } from 'react';
+import { createPortal } from 'react-dom';
 import type { ProjectDto } from '../../../api/projects';
 import type { SprintDto } from '../../../api/sprints';
 import { ApiRequestError } from '../../../api/client';
@@ -56,13 +57,17 @@ export function SprintGoalEditor({ project, sprint, onDone }: SprintGoalEditorPr
           Shown on the sprint&apos;s pages and to agents planning against it.
         </span>
         {error}
-        <SaveBar
-          dirty
-          message={goal === sprint.goal ? 'No changes yet' : 'Goal not saved'}
-          onDiscard={onDone}
-          onSave={() => save.mutate(goal, { onSuccess: onDone })}
-          saving={save.isPending}
-        />
+        {/* At the end of the page, so its spacer lets the page scroll clear of it rather than opening a gap here. */}
+        {createPortal(
+          <SaveBar
+            dirty
+            message={goal === sprint.goal ? 'No changes yet' : 'Goal not saved'}
+            onDiscard={onDone}
+            onSave={() => save.mutate(goal, { onSuccess: onDone })}
+            saving={save.isPending}
+          />,
+          document.body,
+        )}
       </form>
     );
   }
