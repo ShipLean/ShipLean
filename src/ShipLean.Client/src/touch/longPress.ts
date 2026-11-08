@@ -87,7 +87,11 @@ function edgeAt(point: Point, area: Area): EdgeDirection | null {
 }
 
 // Fires every edge turn that is due by `at`, keeping the hold in step with the clock.
-function advanceEdge(state: LongPressState, at: number, effects: LongPressEffect[]): LongPressState {
+function advanceEdge(
+  state: LongPressState,
+  at: number,
+  effects: LongPressEffect[],
+): LongPressState {
   const dir = edgeAt(state.point, state.area);
   if (dir === null) return state.edge === null ? state : { ...state, edge: null };
   let edge = state.edge?.dir === dir ? state.edge : { dir, nextAt: at + EDGE_FIRST_MS };
@@ -111,14 +115,24 @@ export function step(state: LongPressState, event: LongPressEvent): Step {
   switch (event.type) {
     case 'press':
       return {
-        state: { ...idleState, phase: 'pressing', start: event.point, startAt: event.at, point: event.point, area: event.area },
+        state: {
+          ...idleState,
+          phase: 'pressing',
+          start: event.point,
+          startAt: event.at,
+          point: event.point,
+          area: event.area,
+        },
         effects,
       };
     case 'move': {
       let next = liftIfDue(state, event.at, effects);
       if (next.phase === 'pressing') {
         const scrolled = distance(event.point, next.start) > MOVE_TOLERANCE_PX;
-        return { state: scrolled ? { ...next, phase: 'cancelled' } : { ...next, point: event.point }, effects };
+        return {
+          state: scrolled ? { ...next, phase: 'cancelled' } : { ...next, point: event.point },
+          effects,
+        };
       }
       if (next.phase !== 'lifted') return { state: next, effects };
       next = {
@@ -136,7 +150,8 @@ export function step(state: LongPressState, event: LongPressEvent): Step {
     }
     case 'release': {
       const next = liftIfDue(state, event.at, effects);
-      if (next.phase !== 'lifted') return { state: { ...next, phase: 'cancelled', edge: null }, effects };
+      if (next.phase !== 'lifted')
+        return { state: { ...next, phase: 'cancelled', edge: null }, effects };
       effects.push(next.moved ? { type: 'drop', point: next.point } : { type: 'tap' });
       return { state: { ...next, phase: 'dropped', edge: null }, effects };
     }
@@ -154,8 +169,10 @@ export function scrollSpeed(state: LongPressState): number {
   const { y } = state.point;
   const { top, height } = state.area;
   const intoTop = top + SCROLL_ZONE_PX - y;
-  if (intoTop > 0) return -Math.ceil((Math.min(intoTop, SCROLL_ZONE_PX) / SCROLL_ZONE_PX) * SCROLL_MAX_PX);
+  if (intoTop > 0)
+    return -Math.ceil((Math.min(intoTop, SCROLL_ZONE_PX) / SCROLL_ZONE_PX) * SCROLL_MAX_PX);
   const intoBottom = y - (height - SCROLL_ZONE_PX);
-  if (intoBottom > 0) return Math.ceil((Math.min(intoBottom, SCROLL_ZONE_PX) / SCROLL_ZONE_PX) * SCROLL_MAX_PX);
+  if (intoBottom > 0)
+    return Math.ceil((Math.min(intoBottom, SCROLL_ZONE_PX) / SCROLL_ZONE_PX) * SCROLL_MAX_PX);
   return 0;
 }

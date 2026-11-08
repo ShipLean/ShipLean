@@ -40,12 +40,12 @@ const edges = (effects: LongPressEffect[]) => effects.filter((e) => e.type === '
 test('longPress_WhenHeld450ms_ShouldLift', () => {
   const early = run([
     { type: 'press', point: MIDDLE, at: 0, area: AREA },
-    { type: 'tick', at: LIFT_MS - 1 },
+    { type: 'tick', at: 449 },
   ]);
   expect(early.state.phase).toBe('pressing');
   expect(early.effects).toEqual([]);
 
-  const held = step(early.state, { type: 'tick', at: LIFT_MS });
+  const held = step(early.state, { type: 'tick', at: 450 });
   expect(held.state.phase).toBe('lifted');
   expect(held.effects).toEqual([{ type: 'lift', point: MIDDLE }]);
 });
@@ -95,7 +95,10 @@ test('longPress_WhenHeldAtTheRightEdge_ShouldFireEdgeAfter500msThenEvery800ms', 
   ({ state, effects } = run([{ type: 'tick', at: enteredAt + EDGE_FIRST_MS }], state));
   expect(edges(effects)).toEqual([{ type: 'edge', dir: 'right' }]);
 
-  ({ state, effects } = run([{ type: 'tick', at: enteredAt + EDGE_FIRST_MS + EDGE_REPEAT_MS - 1 }], state));
+  ({ state, effects } = run(
+    [{ type: 'tick', at: enteredAt + EDGE_FIRST_MS + EDGE_REPEAT_MS - 1 }],
+    state,
+  ));
   expect(edges(effects)).toEqual([]);
   ({ effects } = run([{ type: 'tick', at: enteredAt + EDGE_FIRST_MS + EDGE_REPEAT_MS }], state));
   expect(edges(effects)).toEqual([{ type: 'edge', dir: 'right' }]);
@@ -120,9 +123,15 @@ test('longPress_WhenNearTheBottom_ShouldAskToScrollDown', () => {
   const middle = lifted();
   expect(scrollSpeed(middle)).toBe(0);
 
-  const nearBottom = run([{ type: 'move', point: { x: MIDDLE.x, y: AREA.height - 10 }, at: 600 }], middle).state;
+  const nearBottom = run(
+    [{ type: 'move', point: { x: MIDDLE.x, y: AREA.height - 10 }, at: 600 }],
+    middle,
+  ).state;
   expect(scrollSpeed(nearBottom)).toBeGreaterThan(0);
 
-  const underTheBar = run([{ type: 'move', point: { x: MIDDLE.x, y: AREA.top + 10 }, at: 600 }], middle).state;
+  const underTheBar = run(
+    [{ type: 'move', point: { x: MIDDLE.x, y: AREA.top + 10 }, at: 600 }],
+    middle,
+  ).state;
   expect(scrollSpeed(underTheBar)).toBeLessThan(0);
 });

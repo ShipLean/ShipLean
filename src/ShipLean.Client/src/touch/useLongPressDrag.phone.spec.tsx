@@ -1,7 +1,9 @@
-import { expect, test, type Page } from '@playwright/experimental-ct-react';
+import { expect, test } from '@playwright/experimental-ct-react';
 import { DragHarness } from './ct/DragHarness';
 import { dragHarnessIds as ids } from './ct/dragHarnessIds';
 import { touchTestIds } from './testIds';
+
+type Page = Parameters<Parameters<typeof test>[2]>[0]['page'];
 
 // useLongPressDrag and TouchDragGhost (K6) through real touch input: CDP Input.dispatchTouchEvent, so the browser's own
 // touch pipeline (scrolling, cancelable touchmove) runs. Time is Playwright's clock, paused, and moved by hand.
@@ -95,7 +97,10 @@ test('LongPressDrag_WhenHeldAtTheEdge_ShouldCallOnEdge', async ({ mount, page })
   await touch.end();
 });
 
-test('LongPressDrag_WhenReleasedWithoutMoving_ShouldCallOnTapWithoutMove', async ({ mount, page }) => {
+test('LongPressDrag_WhenReleasedWithoutMoving_ShouldCallOnTapWithoutMove', async ({
+  mount,
+  page,
+}) => {
   await arrange(page);
   await mount(<DragHarness />);
   const touch = await touchInput(page);
@@ -119,14 +124,20 @@ test('LongPressDrag_WhenHandleOnly_ShouldOnlyStartOnTheHandle', async ({ mount, 
 
   const body = await card.boundingBox();
   if (!body) throw new Error('card a2 has no box');
-  await touch.start({ x: Math.round(body.x + body.width - 20), y: Math.round(body.y + body.height / 2) });
+  await touch.start({
+    x: Math.round(body.x + body.width - 20),
+    y: Math.round(body.y + body.height / 2),
+  });
   await page.clock.runFor(600);
   await touch.end();
   await expect(log(page)).toHaveCount(0);
 
   const grip = await handle.boundingBox();
   if (!grip) throw new Error('handle has no box');
-  await touch.start({ x: Math.round(grip.x + grip.width / 2), y: Math.round(grip.y + grip.height / 2) });
+  await touch.start({
+    x: Math.round(grip.x + grip.width / 2),
+    y: Math.round(grip.y + grip.height / 2),
+  });
   await page.clock.runFor(450);
   await expect(log(page)).toHaveText(['lift a2']);
   await touch.end();
@@ -150,15 +161,31 @@ test('LongPressDrag_WhenLifted_ShouldShowTheGhostUnderTheFinger', async ({ mount
   await expect
     .poll(async () => {
       const box = await ghost.boundingBox();
-      return box !== null && box.x < to.x && to.x < box.x + box.width && box.y < to.y && to.y < box.y + box.height;
+      return (
+        box !== null &&
+        box.x < to.x &&
+        to.x < box.x + box.width &&
+        box.y < to.y &&
+        to.y < box.y + box.height
+      );
     })
     .toBe(true);
-  const under = await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.closest('[data-drop-target]')?.getAttribute('data-drop-target'), to);
+  const under = await page.evaluate(
+    ({ x, y }) =>
+      document
+        .elementFromPoint(x, y)
+        ?.closest('[data-drop-target]')
+        ?.getAttribute('data-drop-target'),
+    to,
+  );
   expect(under).toBe('zone-b');
   await touch.end();
 });
 
-test('LongPressDrag_WhenLiftedNearTheTop_ShouldShowTheGhostAboveTheTopBar', async ({ mount, page }) => {
+test('LongPressDrag_WhenLiftedNearTheTop_ShouldShowTheGhostAboveTheTopBar', async ({
+  mount,
+  page,
+}) => {
   await arrange(page);
   await mount(<DragHarness />);
   const touch = await touchInput(page);
@@ -184,7 +211,10 @@ test('LongPressDrag_WhenLiftedNearTheTop_ShouldShowTheGhostAboveTheTopBar', asyn
     const ghostElement = document.querySelector<HTMLElement>('[data-testid="touch-drag-ghost"]');
     if (!ghostElement) return null;
     ghostElement.style.pointerEvents = 'auto';
-    const found = document.elementFromPoint(x, y)?.closest('[data-testid]')?.getAttribute('data-testid');
+    const found = document
+      .elementFromPoint(x, y)
+      ?.closest('[data-testid]')
+      ?.getAttribute('data-testid');
     ghostElement.style.pointerEvents = '';
     return found;
   }, top);
@@ -193,7 +223,10 @@ test('LongPressDrag_WhenLiftedNearTheTop_ShouldShowTheGhostAboveTheTopBar', asyn
 });
 
 for (const theme of ['light', 'dark'] as const) {
-  test(`LongPressDrag_WhenLifted_ShouldMatchItsScreenshot_drag-lifted_${theme}`, async ({ mount, page }) => {
+  test(`LongPressDrag_WhenLifted_ShouldMatchItsScreenshot_drag-lifted_${theme}`, async ({
+    mount,
+    page,
+  }) => {
     await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
     await arrange(page);
     await mount(<DragHarness />);

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import {
   LIFT_MS,
   idleState,
@@ -57,7 +57,9 @@ function currentArea(): Area {
 }
 
 function dropTargetAt(point: Point): HTMLElement | null {
-  return document.elementFromPoint(point.x, point.y)?.closest<HTMLElement>('[data-drop-target]') ?? null;
+  return (
+    document.elementFromPoint(point.x, point.y)?.closest<HTMLElement>('[data-drop-target]') ?? null
+  );
 }
 
 function touchPoint(event: TouchEvent): Point | null {
@@ -66,7 +68,11 @@ function touchPoint(event: TouchEvent): Point | null {
 }
 
 // Card variant: the item still scrolls the page before the lift; no long-press callout or text selection.
-const ITEM_STYLE: CSSProperties = { WebkitTouchCallout: 'none', userSelect: 'none', WebkitUserSelect: 'none' };
+const ITEM_STYLE: CSSProperties = {
+  WebkitTouchCallout: 'none',
+  userSelect: 'none',
+  WebkitUserSelect: 'none',
+};
 const HANDLE_STYLE: CSSProperties = { ...ITEM_STYLE, touchAction: 'none' };
 
 interface DragView {
@@ -75,9 +81,10 @@ interface DragView {
   y: number;
 }
 
-// The timers and listeners behind one hook instance. Callbacks are read through `options()` at the moment they fire,
-// so the lane can pass fresh closures on every render.
-function createDragEngine(options: () => LongPressDragOptions, setView: (view: DragView) => void) {
+// The timers and listeners behind one hook instance. The hook hands it the latest options after every render, so the
+// lane can pass fresh closures each time.
+function createDragEngine(initial: LongPressDragOptions, setView: (view: DragView) => void) {
+  let options = initial;
   let machine: LongPressState = idleState;
   let liftTimer: number | undefined;
   let frameId: number | undefined;
@@ -98,7 +105,7 @@ function createDragEngine(options: () => LongPressDragOptions, setView: (view: D
     if (speed !== 0) {
       const before = window.scrollY;
       window.scrollBy(0, speed);
-      if (window.scrollY !== before) options().onMove?.(dropTargetAt(machine.point), machine.point);
+      if (window.scrollY !== before) options.onMove?.(dropTargetAt(machine.point), machine.point);
     }
     frameId = window.requestAnimationFrame(frame);
   }
@@ -107,7 +114,7 @@ function createDragEngine(options: () => LongPressDragOptions, setView: (view: D
     const before = machine.phase;
     const { state, effects } = step(machine, event);
     machine = state;
-    const callbacks = options();
+    const callbacks = options;
     for (const effect of effects) {
       switch (effect.type) {
         case 'lift':
@@ -140,7 +147,10 @@ function createDragEngine(options: () => LongPressDragOptions, setView: (view: D
       if (event.touches.length !== 1 || point === null) return;
       stopTimers();
       dispatch({ type: 'press', point, at: performance.now(), area: currentArea() });
-      liftTimer = window.setTimeout(() => dispatch({ type: 'tick', at: performance.now() }), LIFT_MS);
+      liftTimer = window.setTimeout(
+        () => dispatch({ type: 'tick', at: performance.now() }),
+        LIFT_MS,
+      );
     };
     const onMove = (event: TouchEvent) => {
       const point = touchPoint(event);
@@ -173,18 +183,24 @@ function createDragEngine(options: () => LongPressDragOptions, setView: (view: D
     };
   }
 
-  return { attach, stop: () => dispatch({ type: 'cancel' }) };
+  return {
+    attach,
+    setOptions: (next: LongPressDragOptions) => {
+      options = next;
+    },
+    stop: () => dispatch({ type: 'cancel' }),
+  };
 }
 
 export function useLongPressDrag(options: LongPressDragOptions): LongPressDrag {
-  const optionsRef = useRef(options);
-  useEffect(() => {
-    optionsRef.current = options;
-  });
   const [view, setView] = useState<DragView>({ lifted: false, x: 0, y: 0 });
-  const [engine] = useState(() => createDragEngine(() => optionsRef.current, setView));
+  const [engine] = useState(() => createDragEngine(options, setView));
+  useEffect(() => engine.setOptions(options));
   useEffect(() => engine.stop, [engine]);
-  const ref = useCallback((element: HTMLElement | null) => (element ? engine.attach(element) : () => {}), [engine]);
+  const ref = useCallback(
+    (element: HTMLElement | null) => (element ? engine.attach(element) : () => {}),
+    [engine],
+  );
 
   return { props: { ref, style: options.handle ? HANDLE_STYLE : ITEM_STYLE }, ...view };
 }

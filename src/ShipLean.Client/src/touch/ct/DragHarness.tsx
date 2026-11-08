@@ -75,7 +75,12 @@ export function DragHarness({ handle = false }: { handle?: boolean }) {
             <h2 className="pb-2 text-xs font-semibold">{zone}</h2>
             <ul className="flex flex-col gap-2">
               {Array.from({ length: PER_ZONE }, (_, index) => (
-                <DragCard key={index} id={`${zone.slice(-1)}${index + 1}`} handle={handle} log={log} />
+                <DragCard
+                  key={index}
+                  id={`${zone.slice(-1)}${index + 1}`}
+                  handle={handle}
+                  log={log}
+                />
               ))}
             </ul>
           </section>
