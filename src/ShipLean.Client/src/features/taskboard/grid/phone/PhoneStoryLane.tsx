@@ -44,6 +44,7 @@ export function PhoneStoryLane({
     <div
       data-testid={ids.lane}
       data-row={rowId}
+      data-lane="story"
       data-collapsed={collapsed}
       className="grid min-w-0 grid-cols-[minmax(0,1fr)]"
     >

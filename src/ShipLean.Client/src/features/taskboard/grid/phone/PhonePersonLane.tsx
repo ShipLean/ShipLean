@@ -21,7 +21,7 @@ export function PhonePersonLane({
     <div
       data-testid={ids.lane}
       data-row={rowId}
-      data-person
+      data-lane="person"
       className="grid min-w-0 grid-cols-[minmax(0,1fr)]"
     >
       <div
