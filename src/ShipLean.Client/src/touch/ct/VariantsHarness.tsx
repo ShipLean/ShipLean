@@ -25,6 +25,8 @@ export function VariantsHarness() {
         aria-label="Inline"
       />
       <textarea data-testid={harnessTestIds.ctTextarea} className="field" aria-label="Notes" />
+      <input data-testid={harnessTestIds.ctCheckbox} type="checkbox" aria-label="Check" />
+      <input data-testid={harnessTestIds.ctRadio} type="radio" aria-label="Radio" />
       <select data-testid={harnessTestIds.ctSelect} className="field" aria-label="Pick">
         <option>One</option>
       </select>

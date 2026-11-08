@@ -13,6 +13,8 @@ const inputs = [
   harness.ctInlineInput,
   harness.ctTextarea,
   harness.ctSelect,
+  harness.ctCheckbox,
+  harness.ctRadio,
 ];
 
 test('Variants_WhenAt900_ShouldApplyTouch', async ({ mount, page }) => {
@@ -58,4 +60,5 @@ test('Inputs_WhenAbove900_ShouldKeepTheirSize', async ({ mount, page }) => {
   expect(await page.getByTestId(harness.ctUtilityInput).evaluate(size)).toBe(textSm);
   expect(await page.getByTestId(harness.ctInlineInput).evaluate(size)).toBe('12px');
   expect(await page.getByTestId(harness.ctTextarea).evaluate(size)).toBe(textSm);
+  expect(await page.getByTestId(harness.ctSelect).evaluate(size)).toBe(textSm);
 });

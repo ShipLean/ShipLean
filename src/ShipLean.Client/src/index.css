@@ -171,7 +171,7 @@
   outline-color: var(--theme-accent);
 }
 
-/* SHIP-805 rule 14: every text input is 16px at 900px and below, or iOS Safari zooms the page on focus. One rule for
+/* SHIP-805 rule 14: every input (checkboxes and radios too: W0-H1 TouchRules checks every visible input), textarea and select is 16px at 900px and below, or iOS Safari zooms the page on focus. One rule for
    the whole app, never page by page. It is unlayered and !important on purpose (the one sanctioned !important): it
    must beat .field in @layer components, Tailwind's text-* utilities, inline font sizes and @uiw/react-md-editor's
    own CSS. */

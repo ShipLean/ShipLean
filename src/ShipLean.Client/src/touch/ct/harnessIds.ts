@@ -7,4 +7,6 @@ export const harnessTestIds = {
   ctInlineInput: 'ct-inline-input',
   ctTextarea: 'ct-textarea',
   ctSelect: 'ct-select',
+  ctCheckbox: 'ct-checkbox',
+  ctRadio: 'ct-radio',
 } as const;
