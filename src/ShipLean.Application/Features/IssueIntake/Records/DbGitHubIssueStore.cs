@@ -125,6 +125,17 @@ public sealed class DbGitHubIssueStore(NpgsqlDataSource dataSource, TimeProvider
             transaction,
             cancellationToken);
 
+    public Task RequestRerunAsync(Guid id, DbTransaction? transaction = null, CancellationToken cancellationToken = default)
+        => ExecuteAsync(
+            "UPDATE github_issue SET rerun_requested = true, updated_at = @now WHERE id = @id", new { id, now = clock.GetUtcNow() }, transaction, cancellationToken);
+
+    public async Task<bool> TakeRerunAsync(Guid id, DbTransaction? transaction = null, CancellationToken cancellationToken = default)
+        => await ExecuteAsync(
+            "UPDATE github_issue SET rerun_requested = false, updated_at = @now WHERE id = @id AND rerun_requested",
+            new { id, now = clock.GetUtcNow() },
+            transaction,
+            cancellationToken) == 1;
+
     private async Task<GitHubIssueRecord?> QueryOneAsync(string sql, object parameters, DbTransaction? transaction, CancellationToken cancellationToken)
     {
         var row = await dataSource.RunAsync(

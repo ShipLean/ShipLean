@@ -105,9 +105,11 @@ public sealed class AgentSessionStarter(
     // with nothing done); load the context with no lock; lock the item row; insert the session, and if the live-session index refuses it roll back and
     // return LiveSession without calling winnerPrompt; call winnerPrompt on the transaction; render the body; insert the delivery; commit.
     // Anything thrown after the insert rolls back the session, the delivery and whatever winnerPrompt wrote.
+    // fence, when given, runs on the winning transaction right after the insert (before winnerPrompt): false rolls everything back
+    // and returns an outcome with neither a session nor a block.
     public async Task<AgentStartOutcome> StartWinnerAsync(
         Guid workItemId, Guid creatorId, string? fallbackBaseUrl, Guid? connectionId, Func<DbTransaction, CancellationToken, Task<string>> winnerPrompt, CancellationToken cancellationToken,
-        AgentSessionMode mode = AgentSessionMode.Implement, IReadOnlyList<AgentRelatedWork>? relatedItems = null)
+        AgentSessionMode mode = AgentSessionMode.Implement, IReadOnlyList<AgentRelatedWork>? relatedItems = null, Func<DbTransaction, CancellationToken, Task<bool>>? fence = null)
     {
         if (relatedItems?.Count > IAgentSessionStarter.MaxRelatedItems)
         {
@@ -132,6 +134,12 @@ public sealed class AgentSessionStarter(
         {
             await transaction.RollbackAsync(cancellationToken);
             return new AgentStartOutcome(null, AgentStartBlock.LiveSession);
+        }
+
+        if (fence is not null && !await fence(transaction, cancellationToken))
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return new AgentStartOutcome(null, null);
         }
 
         var prompt = await winnerPrompt(transaction, cancellationToken);

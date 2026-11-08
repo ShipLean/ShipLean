@@ -19,9 +19,12 @@ public interface IAgentSessionStarter
     // the issue's repository, number, title and body (from github_issue), the author's login, the comments mirrored through
     // IMirroredComments, and relatedItems (at most MaxRelatedItems; ignored in implement mode). Its `created` payload says
     // shipleanMode: propose, and leaves the issue url, labels and creator name empty (creator email stays, for the relay's allow-list).
+    // fence (optional) runs on the winning transaction after the session insert and before winnerPrompt, where the new session is
+    // the item's only live one; it returns false to abort the start: everything rolls back and the outcome has neither SessionId
+    // nor Block. A caller claims an idempotency key there (the round job worker's round-session:<jobKey>).
     Task<AgentStartOutcome> StartWinnerAsync(
         Guid workItemId, Guid creatorId, string? fallbackBaseUrl, Guid? connectionId, Func<DbTransaction, CancellationToken, Task<string>> winnerPrompt, CancellationToken cancellationToken,
-        AgentSessionMode mode = AgentSessionMode.Implement, IReadOnlyList<AgentRelatedWork>? relatedItems = null);
+        AgentSessionMode mode = AgentSessionMode.Implement, IReadOnlyList<AgentRelatedWork>? relatedItems = null, Func<DbTransaction, CancellationToken, Task<bool>>? fence = null);
 
     // The most related items a propose session takes (the rounds' "Closest existing items").
     public const int MaxRelatedItems = 8;

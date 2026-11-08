@@ -38,6 +38,12 @@ public interface IGitHubIssueStore
     // Accepted issues still open on GitHub, oldest first: what the progress reconcile loop walks.
     Task<IReadOnlyList<GitHubIssueRecord>> ListAcceptedOpenAsync(DbTransaction? transaction = null, CancellationToken cancellationToken = default);
 
+    // Sets rerun_requested: a reply came in after the pending round's session had already read the comments.
+    Task RequestRerunAsync(Guid id, DbTransaction? transaction = null, CancellationToken cancellationToken = default);
+
+    // Reads and clears rerun_requested in one statement: true for exactly one caller per request.
+    Task<bool> TakeRerunAsync(Guid id, DbTransaction? transaction = null, CancellationToken cancellationToken = default);
+
     // Records that `milestone` was posted for `value` (LastPosted[milestone] = value), keeping the other milestones.
     Task MarkPostedAsync(Guid id, string milestone, string value, DbTransaction? transaction = null, CancellationToken cancellationToken = default);
 }

@@ -40,6 +40,9 @@ CREATE TABLE github_issue (
     proposal_session_id uuid REFERENCES agent_session (id),
     rounds              integer NOT NULL DEFAULT 0 CHECK (rounds >= 0),
     open_on_github      boolean NOT NULL DEFAULT true,
+    -- A reply came in after the pending round's session had already read the comments: the inbox runs one more round after
+    -- posting that round's proposal, and clears it (IGitHubIssueStore.TakeRerunAsync).
+    rerun_requested     boolean NOT NULL DEFAULT false,
     -- GitHub's issue.updated_at of the last event applied to the text and to the open state: an event older than it is stale.
     text_updated_at     timestamptz,
     state_updated_at    timestamptz,

@@ -3,6 +3,7 @@ using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using ShipLean.Application.Features.IssueIntake.Rounds;
+using ShipLean.Contracts.Events;
 using ShipLean.Contracts.IssueIntake;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
@@ -46,14 +47,14 @@ public class RoundTests : ApiFixture
         var first = await RequestAsync(issue.Id, force: false);
         var second = await RequestAsync(issue.Id, force: false);
 
-        first.ShouldBe(RoundRequest.Held(RoundHolds.RateLimit));
+        first.ShouldBe(RoundRequest.Held(RoundHolds.RateLimit, Changed(issue)));
         second.ShouldBe(RoundRequest.Held(RoundHolds.RateLimit));
         var stored = await IssueAsync(issue.Id);
         stored.Phase.ShouldBe(IssuePhase.WaitingForMaintainer);
         stored.Rounds.ShouldBe(0);
         (await PendingRoundsAsync(issue.Id)).ShouldBeEmpty();
         var held = (await OutboxAsync(issue.Id)).ShouldHaveSingleItem();
-        held.DedupeKey.ShouldBe(RoundHolds.DedupeKey(issue.Id, RoundHolds.RateLimit, 0));
+        held.DedupeKey.ShouldStartWith($"hold:{issue.Id}:{RoundHolds.RateLimit}:");
         held.Body.ShouldBe(RoundHolds.Comment);
         (await ShipLeanCommentsAsync(issue.WorkItemId)).ShouldHaveSingleItem();
     }
@@ -66,7 +67,7 @@ public class RoundTests : ApiFixture
 
         var outcome = await RequestAsync(issue.Id, force: false);
 
-        outcome.ShouldBe(RoundRequest.Held(RoundHolds.RateLimit));
+        outcome.ShouldBe(RoundRequest.Held(RoundHolds.RateLimit, Changed(issue)));
         (await IssueAsync(issue.Id)).Phase.ShouldBe(IssuePhase.WaitingForMaintainer);
         var held = (await OutboxAsync(issue.Id)).ShouldHaveSingleItem();
         held.Body.ShouldBe(RoundHolds.Comment);
@@ -85,11 +86,11 @@ public class RoundTests : ApiFixture
 
         var outcome = await RequestAsync(issue.Id, force: false);
 
-        outcome.ShouldBe(RoundRequest.Held(RoundHolds.RoundCap));
+        outcome.ShouldBe(RoundRequest.Held(RoundHolds.RoundCap, Changed(issue)));
         (await IssueAsync(issue.Id)).Phase.ShouldBe(IssuePhase.WaitingForMaintainer);
         (await PendingRoundsAsync(issue.Id)).ShouldBeEmpty();
         var held = (await OutboxAsync(issue.Id)).ShouldHaveSingleItem();
-        held.DedupeKey.ShouldBe(RoundHolds.DedupeKey(issue.Id, RoundHolds.RoundCap, 1));
+        held.DedupeKey.ShouldStartWith($"hold:{issue.Id}:{RoundHolds.RoundCap}:");
         held.Body.ShouldBe(RoundHolds.Comment);
         (await ShipLeanCommentsAsync(issue.WorkItemId)).ShouldHaveSingleItem().Body.ShouldBe(
             $"Held for a maintainer: this issue had 1 proposal rounds, the project's maximum of 1. {IssueProposalSessions.Continue}");
@@ -101,7 +102,7 @@ public class RoundTests : ApiFixture
         var (_, _, issue) = await ArrangeAsync(maxRounds: 1);
         await SetRoundsAsync(issue.Id, 1);
 
-        (await RequestAsync(issue.Id, force: false)).ShouldBe(RoundRequest.Held(RoundHolds.RoundCap));
+        (await RequestAsync(issue.Id, force: false)).ShouldBe(RoundRequest.Held(RoundHolds.RoundCap, Changed(issue)));
         (await RequestAsync(issue.Id, force: false)).ShouldBe(RoundRequest.Held(RoundHolds.RoundCap));
 
         (await IssueAsync(issue.Id)).Phase.ShouldBe(IssuePhase.WaitingForMaintainer);
@@ -161,7 +162,7 @@ public class RoundTests : ApiFixture
         {
             await using var transaction = await database.BeginTransactionAsync();
             (await Sessions.RequestRoundAsync(issue.Id, false, transaction)).ShouldBe(RoundRequest.Requested);
-            (await Sessions.RequestRoundAsync(held.Id, false, transaction)).ShouldBe(RoundRequest.Held(RoundHolds.RateLimit));
+            (await Sessions.RequestRoundAsync(held.Id, false, transaction)).ShouldBe(RoundRequest.Held(RoundHolds.RateLimit, Changed(held)));
             await transaction.RollbackAsync();
         }
 
@@ -231,9 +232,142 @@ public class RoundTests : ApiFixture
         (await JobStatusesAsync(issue.Id)).ShouldBe(["done"]);
         (await IssueAsync(issue.Id)).Phase.ShouldBe(IssuePhase.WaitingForMaintainer);
         var held = (await OutboxAsync(issue.Id)).ShouldHaveSingleItem();
-        held.DedupeKey.ShouldBe(RoundHolds.DedupeKey(issue.Id, "noConnection", 1));
+        held.DedupeKey.ShouldStartWith($"hold:{issue.Id}:noConnection:");
         held.Body.ShouldBe(RoundHolds.Comment);
         (await ShipLeanCommentsAsync(item)).ShouldHaveSingleItem().Body.ShouldStartWith("Held for a maintainer: the proposal session could not start. This project has no agent connection.");
+    }
+
+    [Test]
+    public async Task RequestRound_WhenHeldAgainAfterResume_ShouldWriteNewNotices()
+    {
+        var (arranged, _, issue) = await ArrangeAsync();
+        await FillRateAsync(arranged, issue);
+        (await RequestAsync(issue.Id, force: false)).ShouldBe(RoundRequest.Held(RoundHolds.RateLimit, Changed(issue)));
+        // A maintainer's /shiplean moves the issue back to proposing (SHIP-756), with the same round count and the rate still full.
+        await SetPhaseAsync(issue.Id, IssuePhase.Proposing);
+
+        var again = await RequestAsync(issue.Id, force: false);
+
+        again.ShouldBe(RoundRequest.Held(RoundHolds.RateLimit, Changed(issue)));
+        (await IssueAsync(issue.Id)).Phase.ShouldBe(IssuePhase.WaitingForMaintainer);
+        var outbox = await OutboxAsync(issue.Id);
+        outbox.Count.ShouldBe(2);
+        outbox.Select(o => o.DedupeKey).Distinct().Count().ShouldBe(2);
+        (await ShipLeanCommentsAsync(issue.WorkItemId)).Count.ShouldBe(2);
+    }
+
+    [Test]
+    public async Task RequestRound_WhenClosedOnGitHub_ShouldSkipGitHubHoldComment()
+    {
+        var (_, _, issue) = await ArrangeAsync(maxRounds: 1);
+        await SetRoundsAsync(issue.Id, 1);
+        await using (var database = await OpenDatabaseAsync())
+        {
+            await database.ExecuteAsync("UPDATE github_issue SET open_on_github = false WHERE id = @Id", new { issue.Id });
+        }
+
+        var outcome = await RequestAsync(issue.Id, force: false);
+
+        outcome.ShouldBe(RoundRequest.Held(RoundHolds.RoundCap, Changed(issue)));
+        (await IssueAsync(issue.Id)).Phase.ShouldBe(IssuePhase.WaitingForMaintainer);
+        (await OutboxAsync(issue.Id)).ShouldBeEmpty();
+        (await ShipLeanCommentsAsync(issue.WorkItemId)).ShouldHaveSingleItem();
+    }
+
+    [Test]
+    public async Task RequestRound_WhenPendingRoundNotStarted_ShouldNotRequestRerun()
+    {
+        var (_, _, issue) = await ArrangeAsync();
+        (await RequestAsync(issue.Id, force: false)).ShouldBe(RoundRequest.Requested);
+
+        var reply = await RequestAsync(issue.Id, force: false);
+
+        reply.ShouldBe(RoundRequest.Requested);
+        (await IssueAsync(issue.Id)).Rounds.ShouldBe(1);
+        (await PendingRoundsAsync(issue.Id)).ShouldHaveSingleItem();
+        (await Host.Services.GetRequiredService<IGitHubIssueStore>().TakeRerunAsync(issue.Id)).ShouldBeFalse();
+    }
+
+    [Test]
+    public async Task RequestRound_WhenPendingRoundSessionStarted_ShouldRequestRerun()
+    {
+        var (_, item, issue) = await ArrangeAsync();
+        (await RequestAsync(issue.Id, force: false)).ShouldBe(RoundRequest.Requested);
+        (await Worker.RunNextAsync(CancellationToken.None)).ShouldBeTrue();
+        await using var database = await OpenDatabaseAsync();
+        // The session started and loaded the comments, but the job's completion hasn't committed yet: it is still pending.
+        await database.ExecuteAsync(
+            "UPDATE issue_job SET status = 'pending', done_at = NULL, leased_until = NULL, lease_token = NULL WHERE github_issue_id = @Id", new { issue.Id });
+
+        var reply = await RequestAsync(issue.Id, force: false);
+
+        reply.ShouldBe(RoundRequest.Requested);
+        (await IssueAsync(issue.Id)).Rounds.ShouldBe(1);
+        (await PendingRoundsAsync(issue.Id)).ShouldHaveSingleItem();
+        (await AgentDispatchArrange.SessionsAsync(database, item)).ShouldHaveSingleItem();
+        var store = Host.Services.GetRequiredService<IGitHubIssueStore>();
+        (await store.TakeRerunAsync(issue.Id)).ShouldBeTrue();
+        (await store.TakeRerunAsync(issue.Id)).ShouldBeFalse();
+    }
+
+    [Test]
+    public async Task RequestRound_WhenTwoIssuesRaceForLastRateSlot_ShouldRequestOne()
+    {
+        var (arranged, _, issue) = await ArrangeAsync();
+        var other = await AddIssueAsync(arranged, issue);
+        await FillRateAsync(arranged, issue, IssueProposalSessions.RatePerHour - 1);
+        await using var first = await OpenDatabaseAsync();
+        await using var firstTx = await first.BeginTransactionAsync();
+        await using var second = await OpenDatabaseAsync();
+        await using var secondTx = await second.BeginTransactionAsync();
+
+        var won = await Sessions.RequestRoundAsync(issue.Id, false, firstTx);
+        var losing = Sessions.RequestRoundAsync(other.Id, false, secondTx);
+        await WaitUntilBlockedAsync(second.ProcessID, losing);
+        await firstTx.CommitAsync();
+        var lost = await losing;
+        await secondTx.CommitAsync();
+
+        won.ShouldBe(RoundRequest.Requested);
+        lost.ShouldBe(RoundRequest.Held(RoundHolds.RateLimit, Changed(other)));
+        (await PendingRoundsAsync(issue.Id)).ShouldHaveSingleItem();
+        (await PendingRoundsAsync(other.Id)).ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task Worker_WhenLeaseStaleAndStartOverlaps_ShouldStartOneSession()
+    {
+        var (arranged, item, issue) = await ArrangeAsync();
+        (await RequestAsync(issue.Id, force: false)).ShouldBe(RoundRequest.Requested);
+        await using var other = await OpenDatabaseAsync();
+        await using var otherTx = await other.BeginTransactionAsync();
+        await other.ExecuteAsync(new CommandDefinition("SELECT id FROM work_item WHERE id = @item FOR UPDATE", new { item }, otherTx));
+
+        // The paused worker claims the job and waits at the start's item lock.
+        var paused = Worker.RunNextAsync(CancellationToken.None);
+        await WaitUntilBlockedByAsync(other.ProcessID, paused);
+        // Meanwhile its lease ran out: another worker claimed the job, started the session, and that session has already ended.
+        var job = (await PendingRoundsAsync(issue.Id)).ShouldHaveSingleItem();
+        var otherLease = Guid.NewGuid();
+        var otherSession = Guid.CreateVersion7();
+        await other.ExecuteAsync(new CommandDefinition(
+            "UPDATE issue_job SET lease_token = @otherLease WHERE github_issue_id = @Id AND kind = 'round'", new { otherLease, issue.Id }, otherTx));
+        await other.ExecuteAsync(new CommandDefinition(
+            """
+            INSERT INTO agent_session (id, work_item_id, connection_id, state, repo_url, base_branch, last_activity_at, created_by, created_at, mode, ended_at)
+            VALUES (@otherSession, @item, @ConnectionId, 'completed', 'https://github.com/shiplean-tests/rounds', 'main', now(), @joel, now(), 'propose', now())
+            """,
+            new { otherSession, item, arranged.ConnectionId, joel = SeedIds.Users.Joel }, otherTx));
+        (await Host.Services.GetRequiredService<IIssueEffects>().TryClaimAsync(
+            IssueProposalSessions.SessionKey(job.Key), issue.Id, otherSession, otherTx)).ShouldBeTrue();
+        await otherTx.CommitAsync();
+
+        (await paused).ShouldBeTrue();
+
+        (await AgentDispatchArrange.SessionsAsync(other, item)).ShouldHaveSingleItem().Id.ShouldBe(otherSession);
+        (await Host.Services.GetRequiredService<IIssueEffects>().FindAsync(IssueProposalSessions.SessionKey(job.Key))).ShouldBe(otherSession);
+        (await other.ExecuteScalarAsync<Guid>("SELECT lease_token FROM issue_job WHERE github_issue_id = @Id AND kind = 'round'", new { issue.Id })).ShouldBe(otherLease);
+        (await JobStatusesAsync(issue.Id)).ShouldBe(["pending"]);
     }
 
     [Test]
@@ -326,11 +460,21 @@ public class RoundTests : ApiFixture
         await scope.ServiceProvider.GetRequiredService<ShipLean.Contracts.Search.ISearchIndexer>().RunPassAsync(true);
     }
 
-    // RatePerHour round jobs of the project enqueued just now, already done, so none of them is a pending round of the issue.
-    private async Task FillRateAsync(AgentDispatchArrange arranged, GitHubIssueRecord issue)
+    private static CommentsChanged Changed(GitHubIssueRecord issue) => new(issue.ProjectId, issue.WorkItemId);
+
+    // A second issue of the same project and repository, on an item of its own.
+    private async Task<GitHubIssueRecord> AddIssueAsync(AgentDispatchArrange arranged, GitHubIssueRecord first)
+    {
+        var item = (await arranged.CreateItemAsync(Api)).Id;
+        return await Host.Services.GetRequiredService<IGitHubIssueStore>().InsertAsync(
+            first.Issue with { Number = 2 }, arranged.Project.Id, item, "reporter", "Another request", "Another body.", IssuePhase.Proposing);
+    }
+
+    // count (RatePerHour unless said) round jobs of the project enqueued just now, already done, so none is a pending round of the issue.
+    private async Task FillRateAsync(AgentDispatchArrange arranged, GitHubIssueRecord issue, int count = IssueProposalSessions.RatePerHour)
     {
         var jobs = Host.Services.GetRequiredService<IIssueJobs>();
-        for (var i = 0; i < IssueProposalSessions.RatePerHour; i++)
+        for (var i = 0; i < count; i++)
         {
             await jobs.EnqueueAsync(IssueJobKind.Round, $"rate:{i}:{issue.Id}", issue.Id, arranged.Project.Id, null);
         }
@@ -357,6 +501,18 @@ public class RoundTests : ApiFixture
             "SELECT EXISTS (SELECT 1 FROM pg_locks WHERE pid = @pid AND NOT granted)", new { pid }, cancellationToken: timeout.Token)))
         {
             losing.IsCompleted.ShouldBeFalse("the second request finished without waiting for the first");
+        }
+    }
+
+    // Polls pg_stat_activity until a backend waits on a lock that blocker holds; the paused task must not finish first.
+    private async Task WaitUntilBlockedByAsync(int blocker, Task paused)
+    {
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        await using var probe = await OpenDatabaseAsync();
+        while (!await probe.ExecuteScalarAsync<bool>(new CommandDefinition(
+            "SELECT EXISTS (SELECT 1 FROM pg_stat_activity WHERE @blocker = ANY(pg_blocking_pids(pid)))", new { blocker }, cancellationToken: timeout.Token)))
+        {
+            paused.IsCompleted.ShouldBeFalse("the paused worker finished without reaching the start's item lock");
         }
     }
 

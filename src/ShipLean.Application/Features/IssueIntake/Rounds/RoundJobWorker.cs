@@ -1,3 +1,4 @@
+using System.Data.Common;
 using System.Text.Json;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,7 +12,10 @@ namespace ShipLean.Application.Features.IssueIntake.Rounds;
 
 // Runs one `round` job at a time (D18): starts the issue's propose session as the project's run-as member (D8), with the round
 // prompt and the closest items. Resumable: a propose session on the item created since the job was enqueued means an earlier
-// claim got as far as the start, so the job only completes and nothing starts twice. A starter block (no connection, no
+// claim got as far as the start, so the job only completes and nothing starts twice. The start itself is fenced: its transaction
+// claims round-session:<jobKey> with the new session id, so a worker that lost its lease while paused, and overlaps a later
+// claim of the same job, starts nothing; it then completes the job with its own lease token, which a stale lease can't
+// (the job stays with its current holder). A starter block (no connection, no
 // repository, a live session) holds the issue and completes the job in one transaction. A project that no
 // longer takes the repository completes the job with nothing done. Anything thrown fails the job, which retries with backoff.
 public sealed class RoundJobWorker(
@@ -20,6 +24,7 @@ public sealed class RoundJobWorker(
     RoundHolds holds,
     ClosestItems closest,
     IAgentSessionStarter starter,
+    IIssueEffects effects,
     IServiceScopeFactory scopes,
     NpgsqlDataSource dataSource,
     IProjectEvents events,
@@ -71,7 +76,8 @@ public sealed class RoundJobWorker(
         var related = await closest.FindAsync(issue, runAs, cancellationToken);
         var prompt = RoundPrompt.Build(project.ProposalInstructions, round, related);
         var outcome = await starter.StartWinnerAsync(
-            issue.WorkItemId, runAs, null, null, (_, _) => Task.FromResult(prompt), cancellationToken, AgentSessionMode.Propose, related);
+            issue.WorkItemId, runAs, null, null, (_, _) => Task.FromResult(prompt), cancellationToken, AgentSessionMode.Propose, related,
+            (transaction, token) => ClaimSessionAsync(job, issue, transaction, token));
         if (outcome.Block is { } block)
         {
             await HoldAsync(job, block, runAs, cancellationToken);
@@ -79,6 +85,17 @@ public sealed class RoundJobWorker(
         }
 
         await jobs.CompleteAsync(job.Id, job.LeaseToken, null, cancellationToken);
+    }
+
+    // Inside the start's transaction, after the session insert: the new session is the item's only live one.
+    private async Task<bool> ClaimSessionAsync(IssueJob job, GitHubIssueRecord issue, DbTransaction transaction, CancellationToken cancellationToken)
+    {
+        var sessionId = await transaction.Connection!.QuerySingleAsync<Guid>(new CommandDefinition(
+            $"SELECT id FROM agent_session WHERE work_item_id = @WorkItemId AND state IN {AgentSessionLiveStates.Sql}",
+            new { issue.WorkItemId },
+            transaction,
+            cancellationToken: cancellationToken));
+        return await effects.TryClaimAsync(IssueProposalSessions.SessionKey(job.Key), issue.Id, sessionId, transaction, cancellationToken);
     }
 
     private async Task<bool> StartedSinceAsync(Guid workItemId, DateTimeOffset since, CancellationToken cancellationToken)

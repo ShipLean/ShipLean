@@ -2,6 +2,7 @@ using System.Data.Common;
 using System.Text.Json;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
+using ShipLean.Contracts.Events;
 using ShipLean.Contracts.IssueIntake;
 
 namespace ShipLean.Application.Features.IssueIntake.Rounds;
@@ -9,13 +10,14 @@ namespace ShipLean.Application.Features.IssueIntake.Rounds;
 // Asks for a proposal round (C4, D11, D16), all in the caller's transaction, under the project's advisory lock so the rate count,
 // the round count and the enqueue are one decision per project at a time:
 // - a round job of the issue that is still pending already covers this request (its session reads the comments when it starts),
-//   so a second request, concurrent or not, enqueues nothing more;
+//   so a second request, concurrent or not, enqueues nothing more; when that job's session has already started (its
+//   round-session:<jobKey> effect is claimed), the comments were read before this reply, so rerun_requested is set for the inbox;
 // - unless forced (a maintainer's /shiplean), at most RatePerHour round jobs per project in the last hour and rounds below the
 //   project's maximum; past either the issue is held, with its notices (RoundHolds);
 // - otherwise the rounds go up by one, the job is enqueued with key round:<n>:<issue>, and the phase becomes proposing.
-// An issue whose repository its project no longer takes is held with nothing posted (intakeOff).
+// An issue whose repository its project no longer takes is held with nothing written (intakeOff).
 public sealed class IssueProposalSessions(
-    IGitHubIssueStore issues, IIssueJobs jobs, RoundHolds holds, IServiceScopeFactory scopes, TimeProvider clock) : IIssueProposalSessions
+    IGitHubIssueStore issues, IIssueJobs jobs, IIssueEffects effects, RoundHolds holds, IServiceScopeFactory scopes, TimeProvider clock) : IIssueProposalSessions
 {
     public const int RatePerHour = 20;
 
@@ -26,6 +28,9 @@ public sealed class IssueProposalSessions(
     private static readonly IssuePhase[] Restartable = [IssuePhase.AwaitingReply, IssuePhase.AlreadyShipped, IssuePhase.WaitingForMaintainer];
 
     public static string JobKey(int round, Guid issueId) => $"round:{round}:{issueId}";
+
+    // Claimed with the session id inside the session start's transaction (RoundJobWorker), so a job starts one session at most.
+    public static string SessionKey(string jobKey) => $"round-session:{jobKey}";
 
     public async Task<RoundRequest> RequestRoundAsync(Guid issueId, bool force, DbTransaction transaction, CancellationToken cancellationToken = default)
     {
@@ -44,10 +49,16 @@ public sealed class IssueProposalSessions(
             return RoundRequest.Held(IntakeOff);
         }
 
-        if (await connection.ExecuteScalarAsync<bool>(new CommandDefinition(
-            "SELECT EXISTS (SELECT 1 FROM issue_job WHERE github_issue_id = @issueId AND kind = 'round' AND status = 'pending')",
-            new { issueId }, transaction, cancellationToken: cancellationToken)))
+        var pending = await connection.QueryFirstOrDefaultAsync<string?>(new CommandDefinition(
+            "SELECT key FROM issue_job WHERE github_issue_id = @issueId AND kind = 'round' AND status = 'pending' ORDER BY created_at DESC LIMIT 1",
+            new { issueId }, transaction, cancellationToken: cancellationToken));
+        if (pending is not null)
         {
+            if (await effects.FindAsync(SessionKey(pending), transaction, cancellationToken) is not null)
+            {
+                await issues.RequestRerunAsync(issueId, transaction, cancellationToken);
+            }
+
             return RoundRequest.Requested;
         }
 
@@ -72,13 +83,13 @@ public sealed class IssueProposalSessions(
         return RoundRequest.Requested;
     }
 
-    // The hold notices are written here, so every caller (intake, replies, /shiplean) gets them. The item's comment is not
-    // published live: the caller owns the transaction, and RoundRequest has no event to hand back.
+    // The hold notices are written here, so every caller (intake, replies, /shiplean) gets them. The caller owns the transaction,
+    // so it publishes RoundRequest.Changed after it commits.
     private async Task<RoundRequest> HoldAsync(
         GitHubIssueRecord issue, string reason, string explanation, IssueIntakeProject project, DbTransaction transaction, CancellationToken cancellationToken)
     {
         var runAs = project.RunAsUserId ?? throw new InvalidOperationException($"Project {project.ProjectKey} takes issues with no run-as member.");
-        await holds.HoldAsync(issue, reason, $"{explanation} {Continue}", runAs, transaction, cancellationToken);
-        return RoundRequest.Held(reason);
+        var noted = await holds.HoldAsync(issue, reason, $"{explanation} {Continue}", runAs, transaction, cancellationToken);
+        return RoundRequest.Held(reason, noted ? new CommentsChanged(issue.ProjectId, issue.WorkItemId) : null);
     }
 }

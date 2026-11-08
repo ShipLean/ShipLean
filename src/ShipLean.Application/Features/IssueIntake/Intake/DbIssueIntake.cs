@@ -131,6 +131,11 @@ public sealed class DbIssueIntake(
         }
 
         await transaction.CommitAsync(cancellationToken);
+        if (round.Changed is { } roundChanged)
+        {
+            await events.PublishAsync(roundChanged);
+        }
+
         return IssueOutcome.Processed((await workItems.GetAsync(record.WorkItemId, cancellationToken)).Key);
     }
 
@@ -152,8 +157,15 @@ public sealed class DbIssueIntake(
         var create = new WorkItemCreate(project.ProjectId, type, Truncate(issue.Title), null, null, changes);
         try
         {
-            var options = WriteOptions.FromWebhook($"GitHub {issue.Ref}", (transaction, token) => RecordAsync(project, issue, force, transaction, token));
-            return IssueOutcome.Processed((await workItems.CreateAsync(create, options, cancellationToken)).Written!.Key);
+            CommentsChanged? roundChanged = null;
+            var options = WriteOptions.FromWebhook($"GitHub {issue.Ref}", async (transaction, token) => roundChanged = await RecordAsync(project, issue, force, transaction, token));
+            var key = (await workItems.CreateAsync(create, options, cancellationToken)).Written!.Key;
+            if (roundChanged is not null)
+            {
+                await events.PublishAsync(roundChanged);
+            }
+
+            return IssueOutcome.Processed(key);
         }
         catch (IssueTakenException)
         {
@@ -164,7 +176,8 @@ public sealed class DbIssueIntake(
     }
 
     // Runs inside the work item create's transaction, which holds the project's item lock, so the newest item is ours.
-    private async Task RecordAsync(IssueIntakeProject project, NewIssue issue, bool force, DbTransaction transaction, CancellationToken cancellationToken)
+    // Returns the round request's CommentsChanged (a hold notice), for the caller to publish once the create has committed.
+    private async Task<CommentsChanged?> RecordAsync(IssueIntakeProject project, NewIssue issue, bool force, DbTransaction transaction, CancellationToken cancellationToken)
     {
         var itemId = await transaction.Connection!.ExecuteScalarAsync<Guid>(new CommandDefinition(
             "SELECT id FROM work_item WHERE project_id = @ProjectId ORDER BY number DESC LIMIT 1", new { project.ProjectId }, transaction, cancellationToken: cancellationToken));
@@ -180,6 +193,8 @@ public sealed class DbIssueIntake(
         {
             await issues.SetPhaseAsync(record.Id, [IssuePhase.Proposing], IssuePhase.WaitingForMaintainer, transaction, cancellationToken);
         }
+
+        return round.Changed;
     }
 
     private async Task<Guid> TriageStateAsync(Guid projectId, WorkItemTypeId type, CancellationToken cancellationToken)
