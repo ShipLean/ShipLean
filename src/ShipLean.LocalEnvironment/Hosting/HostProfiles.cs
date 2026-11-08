@@ -1,6 +1,7 @@
 using ShipLean.Application.Features.AgentDispatch;
 using ShipLean.Application.Features.Demos.YouTube;
 using ShipLean.Application.Features.Holidays;
+using ShipLean.Application.Features.IssueIntake.Acceptance;
 using ShipLean.Application.Features.IssueIntake.Inbox;
 using ShipLean.Application.Features.IssueIntake.Outbox;
 using ShipLean.Application.Features.IssueIntake.Rounds;
@@ -16,8 +17,8 @@ public static class HostProfiles
     // tests drive RoundJobWorker and ProposalJobWorker).
     public static IReadOnlyList<Type> RemovedHostedServices(HostProfile profile) => profile switch
     {
-        HostProfile.Test => [typeof(SearchIndexHostedService), typeof(HolidayRefreshService), typeof(AgentDeliveryService), typeof(AgentStaleService), typeof(DemoYouTubePublisher), typeof(GitHubOutboxDeliveryService), typeof(RoundJobService), typeof(ProposalJobService)],
-        HostProfile.Local => [typeof(HolidayRefreshService), typeof(AgentDeliveryService), typeof(AgentStaleService), typeof(DemoYouTubePublisher), typeof(GitHubOutboxDeliveryService), typeof(RoundJobService), typeof(ProposalJobService)],
+        HostProfile.Test => [typeof(SearchIndexHostedService), typeof(HolidayRefreshService), typeof(AgentDeliveryService), typeof(AgentStaleService), typeof(DemoYouTubePublisher), typeof(GitHubOutboxDeliveryService), typeof(RoundJobService), typeof(ProposalJobService), typeof(AcceptJobService)],
+        HostProfile.Local => [typeof(HolidayRefreshService), typeof(AgentDeliveryService), typeof(AgentStaleService), typeof(DemoYouTubePublisher), typeof(GitHubOutboxDeliveryService), typeof(RoundJobService), typeof(ProposalJobService), typeof(AcceptJobService)],
         _ => throw new ArgumentOutOfRangeException(nameof(profile), profile, "Unknown host profile."),
     };
 }

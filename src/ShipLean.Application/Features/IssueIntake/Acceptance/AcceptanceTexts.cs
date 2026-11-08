@@ -32,9 +32,14 @@ public static class AcceptanceTexts
 
     public static string QuestionsKey(long commentId) => $"needs-info:{commentId}";
 
+    // The outbox entry that posts a proposal again after the issue is reopened (proposal:<session> is the first post).
+    public static string ReopenedProposalKey(Guid sessionId) => $"proposal:{sessionId}:reopen";
+
     public static string JobKey(Guid sessionId) => $"accept:{sessionId}";
 
     public static string CreateKey(Guid sessionId) => $"accept-create:{sessionId}";
+
+    public static string PatchKey(Guid sessionId) => $"accept-patch:{sessionId}";
 
     public static string NoteKey(Guid sessionId, Guid itemId) => $"accept-note:{sessionId}:{itemId}";
 

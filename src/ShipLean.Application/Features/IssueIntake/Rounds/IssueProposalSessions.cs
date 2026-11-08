@@ -2,6 +2,7 @@ using System.Data.Common;
 using System.Text.Json;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
+using ShipLean.Application.Features.IssueIntake.Records;
 using ShipLean.Contracts.Events;
 using ShipLean.Contracts.IssueIntake;
 
@@ -15,13 +16,16 @@ namespace ShipLean.Application.Features.IssueIntake.Rounds;
 // - unless forced (a maintainer's /shiplean), at most RatePerHour round jobs per project in the last hour and rounds below the
 //   project's maximum; past either the issue is held, with its notices (RoundHolds);
 // - otherwise the rounds go up by one, the job is enqueued with key round:<n>:<issue>, and the phase becomes proposing.
-// An issue whose repository its project no longer takes is held with nothing written (intakeOff).
+// An issue whose repository its project no longer takes is held with nothing written (intakeOff). While an LGTM's accept job
+// runs (phase accepting) nothing is written either (accepting): the row lock here waits for the LGTM's commit, or wins first.
 public sealed class IssueProposalSessions(
     IGitHubIssueStore issues, IIssueJobs jobs, IIssueEffects effects, RoundHolds holds, IServiceScopeFactory scopes, TimeProvider clock) : IIssueProposalSessions
 {
     public const int RatePerHour = 20;
 
     public const string IntakeOff = "intakeOff";
+
+    public const string Accepting = "accepting";
 
     public const string Continue = "A maintainer can comment /shiplean on the GitHub issue to continue.";
 
@@ -40,6 +44,13 @@ public sealed class IssueProposalSessions(
             ?? throw new InvalidOperationException($"No github_issue {issueId}.");
         await connection.ExecuteAsync(new CommandDefinition(
             "SELECT pg_advisory_xact_lock(hashtextextended('issue_round:' || @projectId::text, 0))", new { projectId }, transaction, cancellationToken: cancellationToken));
+        var phase = await connection.QuerySingleAsync<string>(new CommandDefinition(
+            "SELECT phase FROM github_issue WHERE id = @issueId FOR UPDATE", new { issueId }, transaction, cancellationToken: cancellationToken));
+        if (IssueWire.ParsePhase(phase) == IssuePhase.Accepting)
+        {
+            return RoundRequest.Held(Accepting);
+        }
+
         var issue = await issues.FindByIdAsync(issueId, transaction, cancellationToken)
             ?? throw new InvalidOperationException($"No github_issue {issueId}.");
 

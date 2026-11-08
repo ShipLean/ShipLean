@@ -1,5 +1,7 @@
 using System.Globalization;
+using System.Text;
 using System.Text.Json;
+using ShipLean.Application.Features.IssueIntake.Inbox;
 using ShipLean.Application.Features.IssueIntake.Proposal;
 using ShipLean.Contracts.IssueIntake;
 using ShipLean.TestSupport;
@@ -233,6 +235,50 @@ public sealed class IssueProposalParserTests
         ok.ShouldBeFalse();
         proposal.ShouldBeNull();
         failure.ShouldNotBeNull().ShouldContain("nested too deeply");
+    }
+
+    // A6: the stored proposal (github_issue.proposal) reads with the same rules but no fence, so a fence in a field can't end it.
+    [Test]
+    public void ParseStored_WhenTitleHoldsTenBackticks_ShouldRead()
+    {
+        var stored = Stored("Show ``````````shiplean-proposal fences", "Ten ``````````\n``````````", 0);
+
+        IssueProposalParser.TryParseStored(stored, out var proposal, out var failure).ShouldBeTrue(failure);
+
+        proposal.Title.ShouldBe("Show ``````````shiplean-proposal fences");
+        proposal.Description.ShouldBe("Ten ``````````\n``````````");
+    }
+
+    // A6: escaped, a description within its limit is nearly 256 KB of JSON; the stored read has no response limit to trip on.
+    [Test]
+    public void ParseStored_WhenEscapedJsonNearly256Kb_ShouldRead()
+    {
+        var empty = Stored("Escaped", string.Empty, 0).Length;
+        var target = IssueProposalParser.MaxResponseBytes - 10;
+        var stored = Stored("Escaped", string.Empty, (target - empty) / 6);
+        stored += new string(' ', target - stored.Length);
+        Encoding.UTF8.GetByteCount(stored).ShouldBe(target);
+
+        IssueProposalParser.TryParseStored(stored, out var proposal, out var failure).ShouldBeTrue(failure);
+
+        proposal.Description.ShouldBe(new string('<', (target - empty) / 6));
+    }
+
+    [Test]
+    public void ParseStored_WhenFieldBreaksRule_ShouldFailWithReason()
+    {
+        IssueProposalParser.TryParseStored("""{"verdict":"new","type":"story","title":" "}""", out var proposal, out var failure).ShouldBeFalse();
+
+        proposal.ShouldBeNull();
+        failure.ShouldBe("The proposal needs a title.");
+    }
+
+    // The JSON as ProposalJobWorker stores it, with `escaped` characters that JSON writes as six bytes each appended to the description.
+    private static string Stored(string title, string description, int escaped)
+    {
+        var proposal = new IssueProposal(
+            ProposalVerdict.New, ProposalType.Story, title, description + new string('<', escaped), ["It works"], null, [], [], []);
+        return ProposalJobWorker.ProposalJson(proposal);
     }
 
     private static string? Utc(DateTimeOffset? at)

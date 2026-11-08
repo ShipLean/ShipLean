@@ -58,6 +58,14 @@ public static partial class IssueProposalParser
         return proposal is not null;
     }
 
+    // The C2 JSON as github_issue.proposal stores it: the same rules as a fresh response's block, with no fence to find and no
+    // response limit (the stored JSON is the block's content, already accepted once).
+    public static bool TryParseStored(string json, [NotNullWhen(true)] out IssueProposal? proposal, out string? failure)
+    {
+        failure = Read(json, out proposal);
+        return proposal is not null;
+    }
+
     private static string? FindBlock(string response, out FencedCodeBlock? block)
     {
         block = null;

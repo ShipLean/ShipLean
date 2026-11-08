@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using ShipLean.Application.Features.IssueIntake.Proposal;
+using ShipLean.Application.Features.IssueIntake.Records;
 using ShipLean.Application.Features.IssueIntake.Rounds;
 using ShipLean.Contracts.Comments;
 using ShipLean.Contracts.Events;
@@ -15,14 +16,18 @@ using ShipLean.Contracts.WorkItems;
 
 namespace ShipLean.Application.Features.IssueIntake.Acceptance;
 
-// Runs one `accept` job at a time (D6, D18, D19). Every step is idempotent and a retry re-runs them all, so a crash anywhere
-// finishes on the next claim with the same items:
+// Runs one `accept` job at a time (D6, D18, D19). The LGTM moved the phase to accepting, and only this job moves it on. Every step
+// is idempotent and a retry re-runs them all, so a crash anywhere finishes on the next claim with the same items. Every step
+// commits under the github_issue row lock (SELECT ... FOR UPDATE), rechecking that the issue is still accepting this session and
+// that this worker still holds the job's lease; otherwise the step rolls back and the run stops (AcceptanceLostException):
 // 1. create the item (the create claims accept-create:<session> with the new id inside its own transaction; a retry reads the id
-//    back) or patch the Triage item (a patch to the same values changes nothing);
+//    back) or patch the Triage item (the patch claims accept-patch:<session> in its transaction, so a retry never patches again
+//    over a maintainer's edit);
 // 2. repoint the issue at the item that carries the work;
 // 3. move the Triage item to Removed with a note, unless it carries the work or is already Removed;
-// 4. and 5. in one transaction: the GitHub reply (deduped in the outbox), then the phase (accepted, or closed for alreadyShipped)
-//    as a compare-and-set, with the job's completion. The phase is last, so progress never sees a half-done acceptance.
+// 4. and 5. in one transaction: the GitHub reply (deduped in the outbox), then the phase (accepting to accepted, or closed for
+//    alreadyShipped) as a compare-and-set, with the job's completion. The phase is last, so progress never sees a half-done
+//    acceptance. An issue closed on GitHub meanwhile still finishes, with no reply.
 // The reply passes PublicTextGuard first: an unsafe reply is never posted and holds the issue for a maintainer instead. ShipLean
 // notes on the items are by the project's run-as member as the agent "ShipLean". Anything thrown fails the job, which retries.
 public sealed class AcceptJobWorker(
@@ -37,7 +42,7 @@ public sealed class AcceptJobWorker(
     IProjectEvents events,
     ILogger<AcceptJobWorker> logger)
 {
-    private static readonly IssuePhase[] Acceptable = [IssuePhase.AwaitingReply, IssuePhase.AlreadyShipped];
+    private static readonly IssuePhase[] Accepting = [IssuePhase.Accepting];
 
     // False when no accept job was due.
     public async Task<bool> RunNextAsync(CancellationToken cancellationToken)
@@ -51,6 +56,12 @@ public sealed class AcceptJobWorker(
         try
         {
             await RunAsync(job, cancellationToken);
+        }
+        catch (AcceptanceLostException lost)
+        {
+            // Only this job moves the phase on, so the acceptance is finished or another worker has the job: nothing to retry.
+            logger.LogInformation(lost, "Accept job {JobId} stopped", job.Id);
+            await jobs.CompleteAsync(job.Id, job.LeaseToken, null, CancellationToken.None);
         }
         catch (Exception failed) when (failed is not OperationCanceledException)
         {
@@ -66,18 +77,21 @@ public sealed class AcceptJobWorker(
         var payload = JsonSerializer.Deserialize<AcceptJobPayload>(job.Payload) ?? throw new InvalidOperationException($"Accept job {job.Id} has no payload.");
         var issue = await issues.FindByIdAsync(job.GitHubIssueId, null, cancellationToken)
             ?? throw new InvalidOperationException($"No github_issue {job.GitHubIssueId}.");
-        var project = await TakingProject.FindAsync(scopes, issue, cancellationToken);
-        if (!Acceptable.Contains(issue.Phase) || issue.ProposalSessionId != payload.SessionId || project is null)
+        if (issue.Phase != IssuePhase.Accepting || issue.ProposalSessionId != payload.SessionId)
         {
-            // Accepted already, closed, held, superseded by a newer proposal, or no longer taken: nothing to do.
-            logger.LogInformation("Accept job {JobId}: {Issue} is no longer acceptable ({Phase})", job.Id, issue.Issue, issue.Phase);
+            // Accepted already, or a job left from before the accepting phase: nothing to do.
+            logger.LogInformation("Accept job {JobId}: {Issue} is not accepting this proposal ({Phase})", job.Id, issue.Issue, issue.Phase);
             await jobs.CompleteAsync(job.Id, job.LeaseToken, null, cancellationToken);
             return;
         }
 
-        if (!AcceptanceReads.TryReadProposal(issue.Proposal, out var proposal, out var failure))
+        var project = await TakingProject.FindAsync(scopes, issue, cancellationToken);
+        if (!AcceptanceReads.TryReadProposal(issue.Proposal, out var proposal, out var failure) || project is null)
         {
-            throw new InvalidOperationException($"The stored proposal of {issue.Issue} does not read: {failure}");
+            // No longer taken, or a stored proposal that doesn't read: the LGTM is let go and the issue waits for a reply again.
+            logger.LogWarning("Accept job {JobId}: {Issue} is not accepted ({Failure})", job.Id, issue.Issue, failure ?? "the repository is no longer taken");
+            await ReleaseAsync(job, issue.Id, proposal is null ? IssuePhase.AwaitingReply : PhaseBefore(proposal), cancellationToken);
+            return;
         }
 
         var runAs = project.RunAsUserId ?? throw new InvalidOperationException($"Project {project.ProjectKey} takes issues with no run-as member.");
@@ -100,7 +114,7 @@ public sealed class AcceptJobWorker(
                 break;
             case ProposalVerdict.NeedsInfo:
                 // IIssueAcceptance answers a needsInfo LGTM itself and enqueues no job; a job left from before changes nothing.
-                await jobs.CompleteAsync(job.Id, job.LeaseToken, null, cancellationToken);
+                await ReleaseAsync(job, issue.Id, IssuePhase.AwaitingReply, cancellationToken);
                 break;
             case ProposalVerdict.Duplicate when duplicate is not null:
                 await DuplicateAsync(run, triage, duplicate, cancellationToken);
@@ -133,18 +147,14 @@ public sealed class AcceptJobWorker(
         WorkItemSnapshot target;
         if (type == triage.Type)
         {
-            if (!await PatchAsync(run.Items, triage.Id, triage.Revision, changes, Options(run.Issue), cancellationToken))
-            {
-                throw new InvalidOperationException($"The Triage item {triage.Key} kept changing; the acceptance retries.");
-            }
-
+            await PatchTriageAsync(run, triage, changes, cancellationToken);
             target = triage;
         }
         else
         {
             target = await run.Items.GetAsync(await CreateAsync(run, triage, type, parent, changes, cancellationToken), cancellationToken);
             await events.PublishAsync(new CommentsChanged(run.Project.ProjectId, target.Id));
-            await issues.RepointAsync(run.Issue.Id, target.Id, null, cancellationToken);
+            await RepointAsync(run, target.Id, cancellationToken);
             await RemoveTriageAsync(run, triage, AcceptanceTexts.Became(target.Key), cancellationToken);
         }
 
@@ -159,7 +169,7 @@ public sealed class AcceptJobWorker(
             return;
         }
 
-        await issues.RepointAsync(run.Issue.Id, existing.Id, null, cancellationToken);
+        await RepointAsync(run, existing.Id, cancellationToken);
         await RemoveTriageAsync(run, triage, AcceptanceTexts.DuplicateOf(existing.Key), cancellationToken);
         await FinishAsync(run, triage, reply, null, IssuePhase.Accepted, cancellationToken);
     }
@@ -173,6 +183,48 @@ public sealed class AcceptJobWorker(
 
         await RemoveTriageAsync(run, triage, AcceptanceTexts.AlreadyShippedNote, cancellationToken);
         await FinishAsync(run, triage, AcceptanceTexts.Shipped, CloseReason.Completed, IssuePhase.Closed, cancellationToken);
+    }
+
+    // Patches the Triage item once: the patch claims accept-patch:<session> in its own transaction, so a retry after it (even
+    // after a maintainer edited the item since) skips it.
+    private async Task PatchTriageAsync(Run run, WorkItemSnapshot triage, WorkItemChanges changes, CancellationToken cancellationToken)
+    {
+        var key = AcceptanceTexts.PatchKey(run.Payload.SessionId);
+        if (await effects.FindAsync(key, null, cancellationToken) is not null)
+        {
+            return;
+        }
+
+        var options = Options(run.Issue) with { BeforePatch = (transaction, token) => ClaimPatchAsync(run, key, triage.Id, transaction, token) };
+        try
+        {
+            if (!await PatchAsync(run.Items, triage.Id, triage.Revision, changes, options, cancellationToken))
+            {
+                throw new InvalidOperationException($"The Triage item {triage.Key} kept changing; the acceptance retries.");
+            }
+        }
+        catch (AcceptStepTakenException)
+        {
+            // A concurrent run of the same job patched it first; this patch rolled back.
+        }
+    }
+
+    private async Task ClaimPatchAsync(Run run, string key, Guid itemId, DbTransaction transaction, CancellationToken cancellationToken)
+    {
+        await LockAsync(run, transaction, cancellationToken);
+        if (!await effects.TryClaimAsync(key, run.Issue.Id, itemId, transaction, cancellationToken))
+        {
+            throw new AcceptStepTakenException();
+        }
+    }
+
+    private async Task RepointAsync(Run run, Guid itemId, CancellationToken cancellationToken)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        await LockAsync(run, transaction, cancellationToken);
+        await issues.RepointAsync(run.Issue.Id, itemId, transaction, cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
     }
 
     // Creates the item of another type once: the claim of accept-create:<session> commits with the create, so a retry finds it.
@@ -200,7 +252,7 @@ public sealed class AcceptJobWorker(
             var options = WriteOptions.FromWebhook($"GitHub {run.Issue.Issue}", (transaction, token) => ClaimCreateAsync(run, triage, key, transaction, token));
             return (await run.Items.CreateAsync(create, options, cancellationToken)).Written!.Id;
         }
-        catch (AcceptCreateTakenException)
+        catch (AcceptStepTakenException)
         {
             // A concurrent claim of the same job created it first; this create rolled back.
             return await effects.FindAsync(key, null, cancellationToken) ?? throw new InvalidOperationException($"{key} was claimed with no item.");
@@ -211,11 +263,12 @@ public sealed class AcceptJobWorker(
     // item's "Came from" note commits with it (item links carry no title, so the related link alone can't say it).
     private async Task ClaimCreateAsync(Run run, WorkItemSnapshot triage, string key, DbTransaction transaction, CancellationToken cancellationToken)
     {
+        await LockAsync(run, transaction, cancellationToken);
         var itemId = await transaction.Connection!.ExecuteScalarAsync<Guid>(new CommandDefinition(
             "SELECT id FROM work_item WHERE project_id = @ProjectId ORDER BY number DESC LIMIT 1", new { run.Project.ProjectId }, transaction, cancellationToken: cancellationToken));
         if (!await effects.TryClaimAsync(key, run.Issue.Id, itemId, transaction, cancellationToken))
         {
-            throw new AcceptCreateTakenException();
+            throw new AcceptStepTakenException();
         }
 
         await run.Comments.AddAsAgentAsync(itemId, new CommentCreate(AcceptanceTexts.CameFrom(triage.Key)), RoundHolds.AgentName, run.RunAs, transaction, cancellationToken);
@@ -227,6 +280,7 @@ public sealed class AcceptJobWorker(
         await using (var connection = await dataSource.OpenConnectionAsync(cancellationToken))
         await using (var transaction = await connection.BeginTransactionAsync(cancellationToken))
         {
+            await LockAsync(run, transaction, cancellationToken);
             if (await effects.TryClaimAsync(AcceptanceTexts.NoteKey(run.Payload.SessionId, triage.Id), run.Issue.Id, null, transaction, cancellationToken))
             {
                 await run.Comments.AddAsAgentAsync(triage.Id, new CommentCreate(note), RoundHolds.AgentName, run.RunAs, transaction, cancellationToken);
@@ -243,14 +297,15 @@ public sealed class AcceptJobWorker(
 
         var removed = await reads.RemovedStateAsync(run.Project.ProjectId, current.Type, cancellationToken);
         var changes = new WorkItemChanges { State = new FieldSet<Guid>(removed) };
-        if (!await PatchAsync(run.Items, current.Id, current.Revision, changes, Options(run.Issue), cancellationToken))
+        var options = Options(run.Issue) with { BeforePatch = (transaction, token) => LockAsync(run, transaction, token) };
+        if (!await PatchAsync(run.Items, current.Id, current.Revision, changes, options, cancellationToken))
         {
             throw new InvalidOperationException($"The Triage item {current.Key} kept changing; the acceptance retries.");
         }
     }
 
-    // Checks the reply before anything is written. Unsafe: the issue is held for a maintainer (with why, on the Triage item) and
-    // the job completes, in one transaction, and nothing is accepted.
+    // Checks the reply before anything is written. Unsafe: the phase goes back from accepting, the issue is held for a maintainer
+    // (with why, on the Triage item) and the job completes, in one transaction, and nothing is accepted.
     private async Task<bool> PreCheckAsync(Run run, string reply, CancellationToken cancellationToken)
     {
         var guarded = run.Guard.Clean(reply, run.Issue.AuthorLogin);
@@ -262,6 +317,8 @@ public sealed class AcceptJobWorker(
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         var reason = guarded.Removed.Count == 0 ? "unknown" : guarded.Removed[^1];
+        await LockAsync(run, transaction, cancellationToken);
+        await issues.SetPhaseAsync(run.Issue.Id, Accepting, PhaseBefore(run.Proposal), transaction, cancellationToken);
         var noted = await holds.HoldAsync(run.Issue, AcceptanceTexts.UnsafeReason, AcceptanceTexts.Unsafe(reason), run.RunAs, transaction, cancellationToken);
         if (!await jobs.CompleteAsync(run.Job.Id, run.Job.LeaseToken, transaction, cancellationToken))
         {
@@ -290,8 +347,8 @@ public sealed class AcceptJobWorker(
 
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
-        var open = (await issues.FindByIdAsync(run.Issue.Id, transaction, cancellationToken))?.OpenOnGitHub == true;
-        if (await issues.SetPhaseAsync(run.Issue.Id, Acceptable, phase, transaction, cancellationToken) && open)
+        var open = await LockAsync(run, transaction, cancellationToken);
+        if (await issues.SetPhaseAsync(run.Issue.Id, Accepting, phase, transaction, cancellationToken) && open)
         {
             await outbox.EnqueueAsync(OutboxEntry.Comment(run.Issue.Id, AcceptanceTexts.ReplyKey(run.Payload.SessionId), guarded.Text), transaction, cancellationToken);
             if (close is { } reason)
@@ -308,6 +365,50 @@ public sealed class AcceptJobWorker(
         await transaction.CommitAsync(cancellationToken);
         await events.PublishAsync(new CommentsChanged(run.Issue.ProjectId, triage.Id));
     }
+
+    // The guard every step runs first in its transaction: locks the github_issue row, so a round, a reply, a hold or a close waits
+    // for the step, and checks that the issue is still accepting this job's session under this worker's lease. True when the
+    // issue is open on GitHub.
+    private static async Task<bool> LockAsync(Run run, DbTransaction transaction, CancellationToken cancellationToken)
+    {
+        var connection = transaction.Connection!;
+        var row = await connection.QuerySingleAsync<LockedIssue>(new CommandDefinition(
+            "SELECT phase AS Phase, proposal_session_id AS SessionId, open_on_github AS OpenOnGitHub FROM github_issue WHERE id = @Id FOR UPDATE",
+            new { run.Issue.Id },
+            transaction,
+            cancellationToken: cancellationToken));
+        var lease = await connection.ExecuteScalarAsync<Guid?>(new CommandDefinition(
+            "SELECT lease_token FROM issue_job WHERE id = @Id AND status = 'pending' FOR UPDATE",
+            new { run.Job.Id },
+            transaction,
+            cancellationToken: cancellationToken));
+        if (IssueWire.ParsePhase(row.Phase) != IssuePhase.Accepting || row.SessionId != run.Payload.SessionId)
+        {
+            throw new AcceptanceLostException($"{run.Issue.Issue} is no longer accepting session {run.Payload.SessionId} ({row.Phase}).");
+        }
+
+        if (lease != run.Job.LeaseToken)
+        {
+            throw new AcceptanceLostException($"Another worker holds accept job {run.Job.Id} now.");
+        }
+
+        return row.OpenOnGitHub;
+    }
+
+    // The LGTM is let go: accepting goes back to the phase it came from, with the job's completion.
+    private async Task ReleaseAsync(IssueJob job, Guid issueId, IssuePhase back, CancellationToken cancellationToken)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        await issues.SetPhaseAsync(issueId, Accepting, back, transaction, cancellationToken);
+        if (await jobs.CompleteAsync(job.Id, job.LeaseToken, transaction, cancellationToken))
+        {
+            await transaction.CommitAsync(cancellationToken);
+        }
+    }
+
+    private static IssuePhase PhaseBefore(IssueProposal proposal)
+        => proposal.Verdict == ProposalVerdict.AlreadyShipped ? IssuePhase.AlreadyShipped : IssuePhase.AwaitingReply;
 
     // A patch retried with the item's current revision when someone saved it meanwhile. False when every attempt was stale.
     private static async Task<bool> PatchAsync(IWorkItemStore store, Guid id, int revision, WorkItemChanges changes, WriteOptions options, CancellationToken cancellationToken)
@@ -327,6 +428,8 @@ public sealed class AcceptJobWorker(
     }
 
     private static WriteOptions Options(GitHubIssueRecord issue) => WriteOptions.FromWebhook($"GitHub {issue.Issue}");
+
+    private sealed record LockedIssue(string Phase, Guid? SessionId, bool OpenOnGitHub);
 
     private sealed record Run(
         IssueJob Job,

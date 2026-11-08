@@ -35,7 +35,7 @@ CREATE TABLE github_issue (
     author_login        text NOT NULL,
     title               text NOT NULL,
     body                text NOT NULL,
-    phase               text NOT NULL CHECK (phase IN ('proposing', 'awaitingReply', 'alreadyShipped', 'waitingForMaintainer', 'accepted', 'closed')),
+    phase               text NOT NULL CHECK (phase IN ('proposing', 'awaitingReply', 'alreadyShipped', 'waitingForMaintainer', 'accepting', 'accepted', 'closed')),
     proposal            jsonb,
     proposal_session_id uuid REFERENCES agent_session (id),
     rounds              integer NOT NULL DEFAULT 0 CHECK (rounds >= 0),

@@ -4,6 +4,7 @@ using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using ShipLean.Application.Features.IssueIntake.Acceptance;
+using ShipLean.Application.Features.IssueIntake.Inbox;
 using ShipLean.Application.Features.IssueIntake.Records;
 using ShipLean.Application.Features.IssueIntake.Rounds;
 using ShipLean.Contracts.IssueIntake;
@@ -155,7 +156,7 @@ public class AcceptanceTests : ApiFixture
 
         await Worker.RunNextAsync(CancellationToken.None);
 
-        (await RecordAsync(issue.Id)).Phase.ShouldBe(IssuePhase.AwaitingReply);
+        (await RecordAsync(issue.Id)).Phase.ShouldBe(IssuePhase.Accepting);
         (await Store.ListAcceptedOpenAsync()).ShouldNotContain(r => r.Id == issue.Id);
         (await OutboxAsync(issue.Id)).ShouldBeEmpty();
         await MakeJobsDueAsync(issue.Id);
@@ -280,6 +281,146 @@ public class AcceptanceTests : ApiFixture
         (await RecordAsync(issue.Id)).Phase.ShouldBe(IssuePhase.Accepted);
     }
 
+    [Test]
+    public async Task Accept_WhenLgtmBeforeProposalPosted_ShouldOnlyMirror()
+    {
+        var issue = await ArrangeAsync(Proposal("new", "story", "Not posted yet"), posted: null);
+
+        await AcceptAsync(issue, commentId: 10);
+
+        (await JobCountAsync(issue.Id)).ShouldBe(0);
+        (await RecordAsync(issue.Id)).Phase.ShouldBe(IssuePhase.AwaitingReply);
+        (await OutboxAsync(issue.Id)).ShouldBeEmpty();
+        (await MirroredAsync(issue.WorkItemId)).ShouldBe(1);
+    }
+
+    [Test]
+    public async Task Accept_WhenLgtmForEarlierProposal_ShouldOnlyMirror()
+    {
+        var issue = await ArrangeAsync(Proposal("new", "story", "Round one"), posted: 5);
+        await ProposeAsync(issue, Proposal("new", "story", "Round two"), posted: 20);
+
+        await AcceptAsync(issue, commentId: 10);
+
+        (await JobCountAsync(issue.Id)).ShouldBe(0);
+        (await RecordAsync(issue.Id)).Phase.ShouldBe(IssuePhase.AwaitingReply);
+        (await OutboxAsync(issue.Id)).ShouldBeEmpty();
+        (await MirroredAsync(issue.WorkItemId)).ShouldBe(1);
+        (await AcceptAsync(issue, commentId: 21)).Outcome.ShouldBe(WebhookOutcome.Processed);
+        (await JobCountAsync(issue.Id)).ShouldBe(1);
+    }
+
+    [Test]
+    public async Task Accept_WhenRoundRequestedWhileAccepting_ShouldHoldAndWriteNothing()
+    {
+        var issue = await ArrangeAsync(Proposal("new", "story", "Round while accepting"));
+        await AcceptAsync(issue);
+        (await RecordAsync(issue.Id)).Phase.ShouldBe(IssuePhase.Accepting);
+
+        RoundRequest request;
+        await using (var database = await OpenDatabaseAsync())
+        await using (var transaction = await database.BeginTransactionAsync())
+        {
+            var sessions = ActivatorUtilities.CreateInstance<IssueProposalSessions>(Host.Services);
+            request = await sessions.RequestRoundAsync(issue.Id, force: true, transaction);
+            await transaction.CommitAsync();
+        }
+
+        request.ShouldBe(RoundRequest.Held(IssueProposalSessions.Accepting));
+        var during = await RecordAsync(issue.Id);
+        during.Phase.ShouldBe(IssuePhase.Accepting);
+        during.Rounds.ShouldBe(issue.Rounds);
+        (await Worker.RunNextAsync(CancellationToken.None)).ShouldBeTrue();
+        (await RecordAsync(issue.Id)).Phase.ShouldBe(IssuePhase.Accepted);
+    }
+
+    [Test]
+    public async Task Accept_WhenClosedWhileAccepting_ShouldFinishWithoutReply()
+    {
+        var issue = await ArrangeAsync(Proposal("new", "story", "Closed while accepting"));
+        await AcceptAsync(issue);
+        (await Store.SetOpenOnGitHubAsync(issue.Id, false, DateTimeOffset.FromUnixTimeSeconds(1_900_000_000))).ShouldBeTrue();
+
+        await Worker.RunNextAsync(CancellationToken.None);
+
+        (await RecordAsync(issue.Id)).Phase.ShouldBe(IssuePhase.Accepted);
+        (await ItemAsync(issue.WorkItemId)).IsIntake.ShouldBeFalse();
+        (await OutboxAsync(issue.Id)).ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task Accept_WhenLgtmWhileAccepting_ShouldAddNothing()
+    {
+        var issue = await ArrangeAsync(Proposal("new", "story", "Second LGTM while accepting"));
+        await AcceptAsync(issue, commentId: 1);
+
+        var second = await AcceptAsync(issue, commentId: 2);
+
+        second.ShouldBe(IssueOutcome.Ignored);
+        (await JobCountAsync(issue.Id)).ShouldBe(1);
+        (await RecordAsync(issue.Id)).Phase.ShouldBe(IssuePhase.Accepting);
+        (await Worker.RunNextAsync(CancellationToken.None)).ShouldBeTrue();
+        (await Worker.RunNextAsync(CancellationToken.None)).ShouldBeFalse();
+        (await OutboxAsync(issue.Id)).ShouldHaveSingleItem();
+    }
+
+    [Test]
+    public async Task Accept_WhenCrashAfterPatch_ShouldKeepMaintainerEdit()
+    {
+        var issue = await ArrangeAsync(Proposal("new", "story", "Patched once"));
+        await AcceptAsync(issue);
+        Store.CrashOnAccepted = true;
+        await Worker.RunNextAsync(CancellationToken.None);
+        (await ItemAsync(issue.WorkItemId)).Title.ShouldBe("Patched once");
+        await using (var scope = Host.Services.CreateAsyncScope())
+        {
+            var items = scope.ServiceProvider.GetRequiredService<IWorkItemStore>();
+            var current = await items.GetAsync(issue.WorkItemId);
+            var edit = new WorkItemChanges { Title = new FieldSet<string>("The maintainer's title") };
+            (await items.PatchAsync(issue.WorkItemId, new WorkItemPatch(current.Revision, edit), WriteOptions.FromWebhook("GitHub tests"))).Written.ShouldNotBeNull();
+        }
+
+        await MakeJobsDueAsync(issue.Id);
+        await Worker.RunNextAsync(CancellationToken.None);
+
+        (await RecordAsync(issue.Id)).Phase.ShouldBe(IssuePhase.Accepted);
+        (await ItemAsync(issue.WorkItemId)).Title.ShouldBe("The maintainer's title");
+    }
+
+    [Test]
+    public async Task Accept_WhenReplyUnsafe_ShouldHoldWithNothingAccepted()
+    {
+        var issue = await ArrangeAsync(Proposal("new", "story", "Ask Joel **Dickson** today"));
+        await AcceptAsync(issue);
+
+        await Worker.RunNextAsync(CancellationToken.None);
+
+        var record = await RecordAsync(issue.Id);
+        record.Phase.ShouldBe(IssuePhase.WaitingForMaintainer);
+        record.WorkItemId.ShouldBe(issue.WorkItemId);
+        var item = await ItemAsync(issue.WorkItemId);
+        item.IsIntake.ShouldBeTrue();
+        item.Title.ShouldNotBe("Ask Joel **Dickson** today");
+        // Only the fixed hold notice goes out: no acceptance reply and no close.
+        (await OutboxAsync(issue.Id)).ShouldHaveSingleItem().Body.ShouldBe(RoundHolds.Comment);
+        (await ShipLeanCommentsAsync(issue.WorkItemId)).ShouldContain(c => c.Body.StartsWith("Held for a maintainer: the acceptance reply", StringComparison.Ordinal));
+        (await Worker.RunNextAsync(CancellationToken.None)).ShouldBeFalse();
+    }
+
+    [Test]
+    public async Task Accept_WhenParentKeyNamesOtherProject_ShouldNotMatchSameNumberHere()
+    {
+        var here = await CreateItemAsync(SeedIds.Projects.Ship, WorkItemTypeId.Feature, "A feature with the same number");
+        var otherKey = $"PAY-{here.Key["SHIP-".Length..]}";
+        var issue = await ArrangeAsync(Proposal("new", "story", "Parent key of another project", parentKey: otherKey));
+
+        await AcceptAsync(issue);
+        await Worker.RunNextAsync(CancellationToken.None);
+
+        (await ItemAsync(issue.WorkItemId)).ParentId.ShouldBeNull();
+        (await RecordAsync(issue.Id)).Phase.ShouldBe(IssuePhase.Accepted);
+    }
+
     private static string Proposal(string verdict, string type, string title, string? parentKey = null, string? existingKey = null, string[]? criteria = null)
         => JsonSerializer.Serialize(new
         {
@@ -294,8 +435,9 @@ public class AcceptanceTests : ApiFixture
             questions = verdict == "needsInfo" ? ["Which page?"] : Array.Empty<string>(),
         });
 
-    // Opens an issue through intake (a real Triage item), then stores the proposal and moves the phase as the proposal lane would.
-    private async Task<GitHubIssueRecord> ArrangeAsync(string proposalJson, IssuePhase phase = IssuePhase.AwaitingReply)
+    // Opens an issue through intake (a real Triage item), then stores the proposal and moves the phase as the proposal lane would;
+    // the proposal was posted on GitHub as comment `posted` (null: not delivered yet).
+    private async Task<GitHubIssueRecord> ArrangeAsync(string proposalJson, IssuePhase phase = IssuePhase.AwaitingReply, long? posted = 0)
     {
         var number = Interlocked.Increment(ref _number);
         var issueRef = new IssueRef(IssueRef.GitHubHost, _repository, number);
@@ -308,13 +450,30 @@ public class AcceptanceTests : ApiFixture
         }
 
         var record = (await Store.FindAsync(issueRef)).ShouldNotBeNull();
-        await Store.SaveProposalAsync(record.Id, await ProposeSessionAsync(record.WorkItemId), proposalJson);
+        await ProposeAsync(record, proposalJson, posted);
         if (phase != IssuePhase.Proposing)
         {
             (await Store.SetPhaseAsync(record.Id, [IssuePhase.Proposing], phase)).ShouldBeTrue();
         }
 
         return await RecordAsync(record.Id);
+    }
+
+    // A new proposal on the issue (its own propose session), with its outbox post: sent as GitHub comment `posted`, or still
+    // pending when posted is null.
+    private async Task<Guid> ProposeAsync(GitHubIssueRecord record, string proposalJson, long? posted)
+    {
+        var session = await ProposeSessionAsync(record.WorkItemId);
+        await Store.SaveProposalAsync(record.Id, session, proposalJson);
+        await using var database = await OpenDatabaseAsync();
+        await database.ExecuteAsync(
+            """
+            INSERT INTO github_outbox (id, github_issue_id, kind, body, dedupe_key, next_attempt_at, sent_at, github_comment_id, last_result, created_at)
+            VALUES (@id, @issueId, 'comment', 'The proposal.', @key, now(), CASE WHEN @posted::bigint IS NULL THEN NULL ELSE now() END, @posted,
+                    CASE WHEN @posted::bigint IS NULL THEN NULL ELSE 'ok' END, now())
+            """,
+            new { id = Guid.NewGuid(), issueId = record.Id, key = ProposalJobWorker.DedupeKey(session), posted });
+        return session;
     }
 
     // A finished propose session on the Triage item, as the proposal that is accepted was written by one.
@@ -400,7 +559,14 @@ public class AcceptanceTests : ApiFixture
     {
         await using var database = await OpenDatabaseAsync();
         return [.. await database.QueryAsync<OutboxRow>(
-            "SELECT dedupe_key AS dedupeKey, kind, body, reason FROM github_outbox WHERE github_issue_id = @issueId ORDER BY seq", new { issueId })];
+            "SELECT dedupe_key AS dedupeKey, kind, body, reason FROM github_outbox WHERE github_issue_id = @issueId AND dedupe_key NOT LIKE 'proposal:%' ORDER BY seq",
+            new { issueId })];
+    }
+
+    private async Task<int> MirroredAsync(Guid workItemId)
+    {
+        await using var database = await OpenDatabaseAsync();
+        return await database.ExecuteScalarAsync<int>("SELECT count(*)::int FROM comment WHERE work_item_id = @workItemId AND body LIKE '%LGTM%'", new { workItemId });
     }
 
     private async Task<int> JobCountAsync(Guid issueId)

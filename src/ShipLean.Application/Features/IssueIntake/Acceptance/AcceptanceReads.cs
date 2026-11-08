@@ -12,17 +12,14 @@ namespace ShipLean.Application.Features.IssueIntake.Acceptance;
 // duplicate it may name (same project only), and the public text guard for the project.
 public sealed class AcceptanceReads(NpgsqlDataSource dataSource)
 {
-    // Wider than any fence a JSON document can hold, so the stored proposal reads back as exactly one block.
     private const string AcceptedSql =
         "SELECT id FROM state WHERE project_id = @projectId AND type = @typeName AND category = 'proposed' AND NOT is_intake AND archived_at IS NULL ORDER BY sort_order LIMIT 1";
 
     private const string RemovedSql =
         "SELECT id FROM state WHERE project_id = @projectId AND type = @typeName AND category = 'removed' AND archived_at IS NULL ORDER BY sort_order LIMIT 1";
 
-    private const string Fence = "``````````";
-
-    // The stored proposal is the C2 JSON (github_issue.proposal); it goes through IssueProposalParser like a fresh response, so
-    // the same limits apply.
+    // The stored proposal is the C2 JSON (github_issue.proposal); IssueProposalParser checks it with the same rules as a fresh
+    // response, but with no fence around it and no response limit.
     public static bool TryReadProposal(string? json, [NotNullWhen(true)] out IssueProposal? proposal, out string? failure)
     {
         if (string.IsNullOrWhiteSpace(json))
@@ -32,7 +29,7 @@ public sealed class AcceptanceReads(NpgsqlDataSource dataSource)
             return false;
         }
 
-        return IssueProposalParser.TryParse($"{Fence}{IssueProposalParser.BlockTag}\n{json}\n{Fence}\n", out proposal, out _, out failure);
+        return IssueProposalParser.TryParseStored(json, out proposal, out failure);
     }
 
     public static WorkItemTypeId TypeOf(ProposalType type) => type switch
