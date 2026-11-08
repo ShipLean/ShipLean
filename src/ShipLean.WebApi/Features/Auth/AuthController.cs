@@ -21,7 +21,7 @@ namespace ShipLean.WebApi.Features.Auth;
 [Route("api/auth")]
 public sealed class AuthController(
     SignInService signIn, CookieSession cookie, MeReader me, IUserAccounts accounts, ICurrentUser currentUser,
-    IUsageEvents events, TimeProvider time) : ApiControllerBase
+    IUsageEvents events, IUsageScope scope, TimeProvider time) : ApiControllerBase
 {
     [AllowAnonymous]
     [PasswordSignInOnly]
@@ -36,7 +36,7 @@ public sealed class AuthController(
         var started = time.GetTimestamp();
         var userId = await signIn.SignInAsync(request, ct);
         await cookie.SignInAsync(userId, ct);
-        SelfEmittedUsage.TrackOk(events, time, started, UsageEventNames.AuthSignedIn, userId, "api:Auth.Login");
+        SelfEmittedUsage.TrackOk(events, scope, time, started, UsageEventNames.AuthSignedIn, userId, "api:Auth.Login");
         return await me.GetAsync(userId, ct);
     }
 

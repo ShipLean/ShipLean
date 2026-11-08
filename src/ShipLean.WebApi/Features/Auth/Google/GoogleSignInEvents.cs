@@ -20,6 +20,7 @@ public sealed class GoogleSignInEvents(
     NpgsqlDataSource dataSource,
     IOptions<ForwardedHeadersOptions> forwarding,
     IUsageEvents events,
+    IUsageScope scope,
     TimeProvider time,
     ILogger<GoogleSignInEvents> logger) : OpenIdConnectEvents
 {
@@ -67,7 +68,7 @@ public sealed class GoogleSignInEvents(
             return;
         }
         await cookie.SignInAsync(id, cancellationToken);
-        SelfEmittedUsage.TrackOk(events, time, started, UsageEventNames.AuthSignedIn, id, "system:GoogleSignInEvents");
+        SelfEmittedUsage.TrackOk(events, scope, time, started, UsageEventNames.AuthSignedIn, id, "system:GoogleSignInEvents");
         context.Response.Redirect(returnUrl);
     }
 

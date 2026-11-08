@@ -10,6 +10,9 @@ public static class UsageProps
     public const string Provider = "provider";
     public const string Count = "count";
 
+    // The SPA's width class (UsageViewports), on every event of a web request that sent a valid ViewportHeader.
+    public const string Viewport = "viewport";
+
     // The client being connected, on agent.connected / agent.consent_denied; cut to 64 characters.
     public const string AgentName = "agent_name";
 

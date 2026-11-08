@@ -17,7 +17,7 @@ namespace ShipLean.WebApi.Features.Instance;
 [InstanceAdmin]
 [Route("api/instance")]
 public sealed class InstanceController(InstanceSettings settings, InstanceProjects projects, PublicOrigin origins,
-    ICurrentUser currentUser, IUsageEvents events, TimeProvider time) : ApiControllerBase
+    ICurrentUser currentUser, IUsageEvents events, IUsageScope scope, TimeProvider time) : ApiControllerBase
 {
     [HttpGet("settings")]
     [ProducesResponseType<InstanceSettingsDto>(StatusCodes.Status200OK)]
@@ -52,7 +52,7 @@ public sealed class InstanceController(InstanceSettings settings, InstanceProjec
     {
         var started = time.GetTimestamp();
         await projects.JoinAsync(id, cancellationToken);
-        SelfEmittedUsage.TrackOk(events, time, started, UsageEventNames.ProjectJoined, currentUser.Id, "api:Instance.Join", id);
+        SelfEmittedUsage.TrackOk(events, scope, time, started, UsageEventNames.ProjectJoined, currentUser.Id, "api:Instance.Join", id);
         return NoContent();
     }
 }
