@@ -21,6 +21,9 @@
       and filter choices ShipLean remembers per board and backlog.
     Connected agents: each agent signed in as you (name, verified host or "unverified", scopes, last used), with
       Revoke, which asks first; and the line that connects Claude Code. ?agents=0 shows none.
+    Signed-in devices (SHIP-907): each phone signed in to the ShipLean app as you (the name the app sent, the session's
+      prefix, last used and signed in), with Sign out, which asks first in the row like Revoke. ?devices=0 shows none,
+      ?devout=<id> opens the confirmation. Password changes and Sign out everywhere else sign the phones out too.
   SHIP-733: profile-touch.css/js are the phone and tablet layout (900px and below); their review states are listed in
   profile-touch.js. ?revoke=<id> and ?leave=<key> open the two confirmations.
   The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot).
@@ -83,6 +86,8 @@
 .agents .tx .when { font-size: var(--text-xs); color: var(--color-muted); }
 .agents > li.confirm { display: flex; flex-wrap: wrap; gap: var(--space-2); background: color-mix(in srgb, var(--color-warn) 10%, var(--color-surface)); font-size: var(--text-sm); }
 .agents > li.confirm > span { flex: 1; min-width: 200px; }
+.agents .devic { flex: none; align-self: flex-start; width: 16px; height: 16px; margin-top: 2px; color: var(--color-muted); }
+.agents .tx .sc code { font: var(--text-xs) var(--font-mono); color: var(--color-muted); }
 .empty-line { margin: 0; padding: var(--space-3); font-size: var(--text-sm); color: var(--color-muted); }
 .addline { display: grid; gap: 4px; padding: var(--space-2) var(--space-3); border-top: 1px solid var(--color-border); background: var(--color-bg); border-radius: 0 0 var(--radius-md) var(--radius-md); font-size: var(--text-xs); color: var(--color-muted); }
 .addline .cmd { display: flex; gap: var(--space-2); align-items: center; min-width: 0; }
@@ -133,6 +138,14 @@ tr.confirm td { height: auto; padding: 8px var(--space-3); background: color-mix
     { id: 'cu', name: 'Cursor', host: 'cursor.com', verified: true, scopes: ['Read', 'Write'], lastUsed: 'Yesterday', connected: '3 Nov' },
     { id: 'sc', name: 'release-notes-bot', host: null, verified: false, scopes: ['Read'], lastUsed: null, connected: 'Yesterday' },
   ];
+  // Phones signed in to the ShipLean app (SHIP-907 device sessions): GET /api/auth/device-sessions, newest first.
+  // A browser's own session is a cookie, so no row is ever "this device" here.
+  const devices = q.get('devices') === '0' ? [] : [
+    { id: 'px', name: 'Priya’s Pixel 9', prefix: 'shl_dev_k3Xq9TbA', lastUsed: '4 min ago', signedIn: 'Mon 3 Nov' },
+    { id: 'ip', name: 'Priya’s old iPhone', prefix: 'shl_dev_P0aZ71mc', lastUsed: 'Thu 30 Oct', signedIn: 'Tue 28 Oct' },
+  ];
+  S.devOut = q.get('devout');
+  const PHONE = '<svg class="devic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="4" y="1.5" width="8" height="13" rx="1.8"/><path d="M7 12.2h2"/></svg>';
   const MCP_LINE = `claude mcp add --transport http shiplean ${instance.baseUrl}/mcp`;
   const initials = n => n.trim().split(/\s+/).map(w => w[0] || '').join('').slice(0, 2).toUpperCase() || '?';
   // With a photo, the colour sits behind it (shown while it loads, or if it can't); without one, initials on the colour.
@@ -160,7 +173,7 @@ tr.confirm td { height: auto; padding: 8px var(--space-3); background: color-mix
           <div class="pfoot">${dirty ? '<span class="dirty-t">Unsaved changes</span>' : 'Saved'}<span class="spacer"></span><button class="btn" type="button" id="pDiscard"${dirty ? '' : ' disabled'}>Discard</button><button class="btn primary" type="button" id="pSave"${dirty && nameOk ? '' : ' disabled'}>Save</button></div>
         </section>
 
-        <section class="panel pw${S.pwOpen || S.cur || S.nw || S.cf ? ' open' : ''}" data-sec="password"><header><h2>Password</h2><span class="meta">Changing it signs out your other sessions and disconnects your connected agents</span><button class="btn m-only pw-open" type="button" id="pwOpen">Change password</button></header>
+        <section class="panel pw${S.pwOpen || S.cur || S.nw || S.cf ? ' open' : ''}" data-sec="password"><header><h2>Password</h2><span class="meta">Changing it signs out your other sessions and your phones, and disconnects your connected agents</span><button class="btn m-only pw-open" type="button" id="pwOpen">Change password</button></header>
           <div class="form">
             <label class="lbl" for="pcur">Current</label><div class="ctl"><input class="field w-md" id="pcur" type="password" autocomplete="current-password" value="${esc(S.cur)}"></div>
             <label class="lbl" for="pnew">New</label><div class="ctl"><input class="field w-md" id="pnew" type="password" autocomplete="new-password" value="${esc(S.nw)}"></div>
@@ -188,10 +201,20 @@ tr.confirm td { height: auto; padding: 8px var(--space-3); background: color-mix
         </section>
 
         <section class="panel" data-sec="sessions"><header><h2>Sessions and saved views</h2></header><div class="acts">
-          <div><span class="tx"><b>Sign out everywhere else</b><span>Ends every other session, such as a browser you forgot to sign out of, and disconnects your connected agents. This one stays signed in.</span></span><button class="btn" type="button" id="outOthers">Sign out others</button></div>
+          <div><span class="tx"><b>Sign out everywhere else</b><span>Ends every other session, such as a browser you forgot to sign out of, signs out your phones and disconnects your connected agents. This one stays signed in.</span></span><button class="btn" type="button" id="outOthers">Sign out others</button></div>
           <div><span class="tx"><b>Reset saved views</b><span>Forgets the columns, lanes, toggles and last filters ShipLean remembers for you on each board and backlog.</span></span><button class="btn" type="button" id="resetViews">Reset</button></div>
           <div><span class="tx"><b>Sign out</b><span>Of ${esc(instance.name)} on this browser.</span></span><a class="btn" href="signin.html?state=signed-out">Sign out</a></div>
         </div></section>
+
+        <section class="panel" data-sec="devices"><header><h2>Signed-in devices</h2><span class="meta">Phones signed in to the ShipLean app as you</span></header>
+          ${devices.length === 0 ? '<p class="empty-line">No phones are signed in.</p>' : `<ul class="agents devices">${devices.map(d => `<li data-device="${d.id}">${PHONE}<span class="tx">
+              <span class="nm"><b>${esc(d.name)}</b></span>
+              <span class="sc"><code>${esc(d.prefix)}…</code></span>
+              <span class="when">Last used ${d.lastUsed} · Signed in ${d.signedIn}</span></span>
+              <button class="btn ghost" type="button" data-devout="${d.id}" aria-label="Sign out ${esc(d.name)}">Sign out</button></li>
+            ${S.devOut === d.id ? `<li class="confirm"><span>Sign out <b>${esc(d.name)}</b>? The app there goes back to Sign in straight away. Its server and email stay filled in.</span><span class="row"><button class="btn" type="button" data-devout-cancel>Cancel</button><button class="btn danger" type="button" data-devout-go="${d.id}">Sign out</button></span></li>` : ''}`).join('')}</ul>`}
+          <div class="addline"><span>To add a phone, sign in to <b>${esc(instance.baseUrl.replace(/^https?:\/\//, ''))}</b> from the ShipLean app.</span></div>
+        </section>
 
         <section class="panel" data-sec="agents"><header><h2>Connected agents</h2><span class="meta">Tools signed in as you. Revoking one cuts it off at once.</span></header>
           ${agents.length === 0 ? '<p class="empty-line">No agents are connected.</p>' : `<ul class="agents">${agents.map(a => `<li data-agent="${a.id}"><span class="tx">
@@ -207,7 +230,7 @@ tr.confirm td { height: auto; padding: 8px var(--space-3); background: color-mix
     PROF.after.forEach(f => f({ dirty, nameOk }));
   }
   // For profile-touch.js (SHIP-733): the state, render, and hooks that run after every render.
-  const PROF = window.PROF = { S, P0, me, mine, agents, render, after: [], SAMPLE_PHOTO };
+  const PROF = window.PROF = { S, P0, me, mine, agents, devices, render, after: [], SAMPLE_PHOTO };
 
   const grid = $('grid');
   grid.addEventListener('input', e => {
@@ -232,6 +255,9 @@ tr.confirm td { height: auto; padding: 8px var(--space-3); background: color-mix
     if (b.dataset.leave) { S.leaving = b.dataset.leave; return render(); }
     if (b.hasAttribute('data-leave-cancel')) { S.leaving = null; return render(); }
     if (b.dataset.leaveGo) { const k = b.dataset.leaveGo; mine.splice(mine.findIndex(m => m.key === k), 1); S.leaving = null; toast(`You left <b>${k}</b>`); return render(); }
+    if (b.dataset.devout) { S.devOut = b.dataset.devout; return render(); }
+    if (b.hasAttribute('data-devout-cancel')) { S.devOut = null; return render(); }
+    if (b.dataset.devoutGo) { const i = devices.findIndex(d => d.id === b.dataset.devoutGo); const [d] = devices.splice(i, 1); S.devOut = null; toast(`${esc(d.name)} is signed out.`); return render(); }
     if (b.dataset.revoke) { S.revoking = b.dataset.revoke; return render(); }
     if (b.hasAttribute('data-revoke-cancel')) { S.revoking = null; return render(); }
     if (b.dataset.revokeGo) { const i = agents.findIndex(a => a.id === b.dataset.revokeGo); const [a] = agents.splice(i, 1); S.revoking = null; toast(`${esc(a.name)} is disconnected.`); return render(); }
@@ -241,8 +267,8 @@ tr.confirm td { height: auto; padding: 8px var(--space-3); background: color-mix
     if (b.id === 'pSave') { Object.assign(P0, S.p); me.name = S.p.name; me.color = S.p.color; me.initials = initials(S.p.name); document.querySelectorAll('.side .me .av, .user-menu .who .av').forEach(a => { a.style.cssText = avStyle(S.p); a.textContent = S.p.photo ? '' : me.initials; }); document.querySelector('.side .me > span:nth-child(2)').textContent = me.name; toast('Profile saved. Everyone sees the change straight away'); return render(); }
     if (b.id === 'phRemove') { S.p.photo = null; return render(); }
     if (b.id === 'pDiscard') { S.p = { ...P0 }; return render(); }
-    if (b.id === 'pwGo') { S.cur = S.nw = S.cf = ''; S.pwOpen = false; toast('Password changed. Your other sessions are signed out and your connected agents disconnected'); return render(); }
-    if (b.id === 'outOthers') return toast('Signed out everywhere else and disconnected your connected agents');
+    if (b.id === 'pwGo') { S.cur = S.nw = S.cf = ''; S.pwOpen = false; toast('Password changed. Your other sessions and phones are signed out and your connected agents disconnected'); return render(); }
+    if (b.id === 'outOthers') return toast('Signed out everywhere else, including your phones, and disconnected your connected agents');
     if (b.id === 'resetViews') return toast('Saved views reset. Boards and backlogs open with their defaults');
   });
   if (q.has('photo')) S.p.photo = P0.photo = SAMPLE_PHOTO; // ?photo: a saved photo
@@ -251,6 +277,7 @@ tr.confirm td { height: auto; padding: 8px var(--space-3); background: color-mix
     { label: 'With a photo', run: () => { S.p.photo = S.p.photo ? null : SAMPLE_PHOTO; render(); } },
     { label: 'Leave a project', run: () => { S.leaving = 'PAY'; render(); } },
     { label: 'Revoke an agent', run: () => { S.revoking = 'cu'; render(); } },
+    { label: 'Sign out a phone', run: () => { S.devOut = 'px'; render(); } },
   ]);
 })();
 </script>
