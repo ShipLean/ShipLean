@@ -8,7 +8,7 @@ import { fetchWorkItem } from '../workItemApi';
 import { isWebUrl, linkTypeLabels } from './linkTypes';
 
 const buttonClass =
-  'inline-flex h-7 items-center rounded-control border px-3 text-[length:var(--text-sm)] font-medium focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-signal disabled:opacity-50';
+  'inline-flex h-7 touch:h-[var(--touch-target)] items-center rounded-control border px-3 text-[length:var(--text-sm)] font-medium focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-signal disabled:opacity-50';
 
 // Adds a link, or edits `initial`: a type, then a work item key of this project or a web address. A work item is looked
 // up by key when the form is submitted, so the link carries the item's id.
@@ -99,7 +99,7 @@ export function LinkForm({
   return (
     <form
       data-testid={ids.linkForm}
-      className="grid gap-1.5 rounded-panel border border-signal bg-panel p-2"
+      className="grid touch:grid-cols-[minmax(0,1fr)] gap-1.5 rounded-panel border border-signal bg-panel p-2"
       onSubmit={(event) => {
         event.preventDefault();
         void submit();
@@ -108,7 +108,7 @@ export function LinkForm({
       <select
         data-testid={ids.linkType}
         aria-label="Link type"
-        className={inputClass}
+        className={`${inputClass} touch:h-[var(--touch-target)]`}
         value={type}
         onChange={(event) => {
           setType(event.target.value as LinkType);
@@ -128,7 +128,7 @@ export function LinkForm({
             aria-label="URL"
             placeholder="https://"
             autoComplete="off"
-            className={inputClass}
+            className={`${inputClass} touch:h-[var(--touch-target)]`}
             value={url}
             onChange={(event) => setUrl(event.target.value)}
           />
@@ -137,7 +137,7 @@ export function LinkForm({
             aria-label="Link title"
             placeholder="Title (optional)"
             autoComplete="off"
-            className={inputClass}
+            className={`${inputClass} touch:h-[var(--touch-target)]`}
             value={title}
             onChange={(event) => setTitle(event.target.value)}
           />
@@ -148,7 +148,7 @@ export function LinkForm({
           aria-label="Work item key"
           placeholder="Work item key, such as SHIP-120"
           autoComplete="off"
-          className={inputClass}
+          className={`${inputClass} touch:h-[var(--touch-target)]`}
           value={key}
           onChange={(event) => setKey(event.target.value)}
         />
@@ -162,7 +162,7 @@ export function LinkForm({
           {error}
         </span>
       ) : null}
-      <div className="flex items-center gap-2">
+      <div className="flex touch:flex-wrap items-center gap-2">
         <button
           type="submit"
           data-testid={ids.linkSubmit}

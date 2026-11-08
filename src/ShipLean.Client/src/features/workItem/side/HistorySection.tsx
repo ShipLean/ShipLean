@@ -1,8 +1,12 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { ProjectDto } from '../../../api/projects';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { workItemTestIds as ids } from '../testIds';
 import { fetchHistory, useWorkItem, workItemHistoryKey } from '../workItemApi';
 import { RevisionItem } from './RevisionItem';
+
+const RECENT_ON_TOUCH = 3;
 
 // The item's field changes, newest first. The key sits under the item's, so the item's live refetch and Save reach it.
 export function HistorySection({ project, itemKey }: { project: ProjectDto; itemKey: string }) {
@@ -12,8 +16,13 @@ export function HistorySection({ project, itemKey }: { project: ProjectDto; item
     queryFn: () => fetchHistory(item?.id ?? ''),
     enabled: item !== undefined,
   });
+  const { touch } = useTouchShell();
+  const [showAll, setShowAll] = useState(false);
   if (!item) return null;
   const revisions = history.data?.revisions ?? [];
+  // On a phone the newest three show, then one control for the rest (SHIP-714 D7).
+  const truncated = touch && !showAll && revisions.length > RECENT_ON_TOUCH;
+  const shown = truncated ? revisions.slice(0, RECENT_ON_TOUCH) : revisions;
   return (
     <section
       data-testid={ids.history}
@@ -45,11 +54,21 @@ export function HistorySection({ project, itemKey }: { project: ProjectDto; item
         </p>
       ) : (
         <ol className="m-0 grid grid-cols-[minmax(0,1fr)] list-none p-0">
-          {revisions.map((revision) => (
+          {shown.map((revision) => (
             <RevisionItem key={revision.rev} revision={revision} />
           ))}
         </ol>
       )}
+      {truncated ? (
+        <button
+          type="button"
+          data-testid={ids.historyShowAll}
+          className="h-[var(--touch-target)] w-full rounded-control border border-dashed border-edge text-[length:var(--text-sm)] text-signal"
+          onClick={() => setShowAll(true)}
+        >
+          Show all {revisions.length} revisions
+        </button>
+      ) : null}
     </section>
   );
 }

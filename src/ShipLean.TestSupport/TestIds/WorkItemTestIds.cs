@@ -141,6 +141,9 @@ public static class WorkItemTestIds
 
     public const string ImportedFromHint = "work-item-imported-from-hint";
 
+    // History on a phone (SHIP-714): the newest three, then this
+    public const string HistoryShowAll = "work-item-history-show-all";
+
     // S0c save confirm (the before-save hook's prompt)
     public const string SaveConfirm = "work-item-save-confirm";
     public const string SaveConfirmMessage = "work-item-save-confirm-message";

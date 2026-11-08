@@ -42,7 +42,7 @@ export function AttachmentsSection({ project, itemKey }: { project: ProjectDto; 
           type="button"
           data-testid={ids.attachmentUpload}
           disabled={writes.upload.isPending}
-          className="ml-auto h-6 rounded-control px-2 text-[length:var(--text-xs)] text-signal hover:bg-signal-soft disabled:opacity-50"
+          className="ml-auto h-6 rounded-control px-2 text-[length:var(--text-xs)] text-signal hover:bg-signal-soft disabled:opacity-50 touch:h-[var(--touch-target)]"
           onClick={() => picker.current?.click()}
         >
           {writes.upload.isPending ? 'Attaching…' : '+ Attach'}
