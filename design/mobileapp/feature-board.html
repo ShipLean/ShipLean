@@ -124,7 +124,7 @@ const chips = (on = 'all') => `<div class="subbar">
   <button class="chip${on === 'needs' ? ' on' : ' ask'}">Needs you <span class="n">4</span></button>
   <button class="chip${on === 'risk' ? ' on' : ''}">${health('risk').replace('At risk', '')}At risk <span class="n">2</span></button>
   <button class="chip">${health('blocked').replace('Blocked', '')}Blocked <span class="n">1</span></button></div>`;
-const fbTop = () => topBar({ title: 'Features', sub: 'SHIP · 8 open Features, in backlog order', right: iconBtn('search') + iconBtn('filter', { label: 'Filter and group' }) });
+const fbTop = () => App.tabRoot({ title: 'Features', sub: '8 open Features', right: iconBtn('search') + iconBtn('filter', { label: 'Filter and group' }) });
 const digestBanner = `<div class="banner">${icon('spark', 'sm')}<span class="grow"><b>11 changes since yesterday</b> <span class="muted">· 2 need you</span></span>${icon('chevron', 'sm')}</div>`;
 
 // The board: a stacked list grouped by state, in board order (New sits after Active: what moves comes first).

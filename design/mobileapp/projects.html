@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=390">
+<!--
+  Projects and switching project on the phone app (SHIP-905). SHIP-907 D7 makes Projects the first signed-in screen;
+  this file shows how it fits with setup (SHIP-916) and the tab bar. Notes and decisions: projects.md.
+  ?state=<id>&theme=light|dark, ?list for ids.
+-->
+<link rel="stylesheet" href="app.css"><script src="app.js"></script>
+<style>
+/* The key tile (.pkey, .proj-btn) and App.tabRoot are in the kit: app.css, app.js. */
+.topbar .title small .chev { display: inline-block; vertical-align: -3px; }
+
+/* Projects screen rows */
+.prow { min-height: 64px; display: flex; align-items: center; gap: 12px; padding: 10px var(--app-gutter); border-bottom: 1px solid var(--color-border); background: var(--color-surface); position: relative; }
+.prow:last-child { border-bottom: 0; }
+.prow .main { flex: 1; min-width: 0; }
+.prow .t { font-size: var(--app-text); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prow .m { font-size: var(--app-text-sm); color: var(--color-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prow .m .here { color: var(--color-accent); font-weight: 600; }
+.prow .chev { color: var(--color-muted); }
+.prow.current { background: var(--color-accent-soft); }
+.prow.gone { opacity: .55; }
+.needs { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 9px; border-radius: 12px; background: var(--ask-soft); color: var(--ask); font-size: var(--app-text-xs); font-weight: 700; white-space: nowrap; flex: none; }
+.needs svg.i { width: 13px; height: 13px; stroke-width: 2.2; }
+.needs.new::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--ask); margin-left: 2px; }
+
+/* Download banner, copied from setup.html so the two read the same */
+.banner.dl { align-items: flex-start; }
+.banner.dl > svg { color: var(--voice); margin-top: 1px; }
+.banner.dl b { display: block; font-size: var(--app-text-sm); }
+.banner.dl .bar { height: 4px; border-radius: 2px; background: var(--color-surface-2); margin: 6px 0; overflow: hidden; }
+.banner.dl .bar i { display: block; height: 100%; background: var(--voice); }
+.banner.dl span { color: var(--color-muted); }
+.banner .chev { color: var(--color-muted); align-self: center; }
+
+/* Notices on the Projects screen */
+.notice { display: flex; gap: 10px; align-items: flex-start; margin: 12px var(--app-gutter) 0; padding: 12px 14px; border-radius: 12px; background: var(--ask-soft); border: 1px solid color-mix(in srgb, var(--ask) 35%, transparent); font-size: var(--app-text-sm); }
+.notice > svg { color: var(--ask); margin-top: 1px; }
+.notice b { display: block; font-size: var(--app-text); font-weight: 600; }
+.notice .grow { flex: 1; min-width: 0; }
+
+/* Projects dock: a mic for "open Payments" / "what needs me?" (no tab bar here) */
+.dock .say-line { flex: 1; min-width: 0; font-size: var(--app-text-sm); color: var(--color-muted); line-height: 1.3; }
+.dock .say-line b { display: block; color: var(--color-text); font-size: var(--app-text); font-weight: 600; }
+
+/* Coach mark pointing at the project tile (first time in a project) */
+.dim { position: absolute; inset: 0; background: var(--scrim); z-index: 10; }
+.lift { position: absolute; z-index: 11; left: 4px; top: calc(var(--app-status) + 2px); width: 52px; height: 44px; border-radius: 12px; background: var(--color-surface); display: grid; place-items: center; }
+.coach { position: absolute; z-index: 11; left: 12px; right: 40px; top: calc(var(--app-status) + 58px); background: var(--color-surface); border-radius: 14px; padding: 14px; box-shadow: var(--shadow-dialog); }
+.coach::before { content: ""; position: absolute; left: 22px; top: -7px; width: 14px; height: 14px; background: var(--color-surface); transform: rotate(45deg); border-radius: 2px; }
+.coach > b { display: block; font-size: var(--app-text-md); font-weight: 600; margin-bottom: 4px; }
+.coach p b { color: var(--color-text); }
+.coach p { margin: 0 0 6px; font-size: var(--app-text-sm); color: var(--color-muted); }
+.coach .say { color: var(--voice); font-weight: 600; }
+.coach .row-b { display: flex; justify-content: flex-end; margin-top: 8px; }
+
+/* Account sheet */
+.acct-head { display: flex; align-items: center; gap: 12px; margin: 4px 0 14px; }
+.acct-head .avatar { width: 48px; height: 48px; font-size: 17px; }
+.acct-head b { display: block; font-size: var(--app-text-md); }
+.acct-head div > span { font-size: var(--app-text-sm); color: var(--color-muted); }
+.kv { border: 1px solid var(--color-border); border-radius: 14px; overflow: hidden; margin-bottom: 12px; }
+.kv .r { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 8px 14px; border-bottom: 1px solid var(--color-border); font-size: var(--app-text); }
+.kv .r:last-child { border-bottom: 0; }
+.kv .r .k { flex: 1; min-width: 0; }
+.kv .r .v { color: var(--color-muted); font-size: var(--app-text-sm); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%; }
+.kv .r > svg { color: var(--color-muted); }
+.btn.danger { background: color-mix(in srgb, var(--color-danger) 12%, transparent); color: var(--color-danger); }
+.foot { text-align: center; font-size: var(--app-text-xs); color: var(--color-muted); margin-top: 10px; }
+
+/* Empty state */
+.empty { padding: 56px 28px 0; text-align: center; }
+.empty .art { width: 72px; height: 72px; border-radius: 20px; margin: 0 auto 18px; display: grid; place-items: center; background: var(--color-surface-2); color: var(--color-muted); }
+.empty .art svg.i { width: 34px; height: 34px; }
+.empty h2 { margin: 0 0 8px; font-size: var(--app-text-lg); }
+.empty p { margin: 0 0 8px; color: var(--color-muted); }
+.empty .who { margin-top: 18px; font-size: var(--app-text-sm); color: var(--color-muted); }
+.empty .btns { display: grid; gap: 10px; margin-top: 22px; }
+
+/* Alternative: switch sheet (the web's picker pattern) */
+.sw-search { height: var(--app-touch); border-radius: 12px; background: var(--color-surface-2); display: flex; align-items: center; gap: 8px; padding: 0 12px; color: var(--color-muted); margin: 10px 0 4px; }
+.sheet .section-h { padding-left: 0; padding-right: 0; }
+.sheet .prow { padding-left: 0; padding-right: 0; background: transparent; min-height: 56px; }
+.sheet .prow.current { background: var(--color-accent-soft); margin: 0 calc(-1 * var(--app-gutter)); padding: 10px var(--app-gutter); }
+.sheet-h { display: flex; align-items: center; justify-content: space-between; }
+.sheet-h .btn { height: 36px; padding: 0 4px; }
+
+/* Backlog rows used behind the tab-root states (a lighter copy of backlog.html) */
+.row { align-items: flex-start; }
+.row .rank { padding-top: 2px; }
+.prog-line { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: var(--app-text-xs); color: var(--color-muted); }
+.prog-line .progress { flex: 1; }
+.row .m > * { min-width: 0; }
+.hint { display: flex; align-items: center; gap: 8px; margin: 12px var(--app-gutter) 0; font-size: var(--app-text-sm); color: var(--color-muted); }
+.hint svg { color: var(--voice); }
+</style>
+</head>
+<body><div id="app"></div><script>
+const { frame, topBar, iconBtn, tabBar, projTile, tabRoot, type, state, health, progress, listening, toast, icon, avatar, esc } = App;
+const hot = (s) => `<span class="hot">${s}</span>`;
+
+/* ── Extra icons this file needs (kit candidates) ───────────────────── */
+const P2 = {
+  grid: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
+  logout: '<path d="M10 5H5v14h5M15 8l4 4-4 4M19 12H9"/>',
+  globe: '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.6 2.5 14.4 0 17M12 3.5c-2.5 2.6-2.5 14.4 0 17"/>',
+  phone: '<rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 18h2"/>',
+  refresh: '<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/>',
+};
+const ic = (name, cls = '') => P2[name] ? `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${P2[name]}</svg>` : icon(name, cls);
+
+/* ── Data ───────────────────────────────────────────────────────────── */
+// [key, name, sprint line, needs-you count, new since you last looked]
+const PROJECTS = {
+  SHIP: ['SHIP', 'ShipLean', 'Sprint 25 · 4 days left', 4, false],
+  PAY: ['PAY', 'Payments', 'Sprint 12 · ends today', 2, true],
+  MOB: ['MOB', 'Mobile App', 'Sprint 3 · 9 days left', 0, false],
+  DATA: ['DATA', 'Data Platform', 'No sprint running', 1, false],
+  OPS: ['OPS', 'Internal Tools', 'Sprint 7 · 2 days left', 0, false],
+  PART: ['PART', 'Partner Portal', 'No sprint running', 0, false],
+};
+const RECENT = ['SHIP', 'PAY', 'MOB'];
+const ALL = ['DATA', 'OPS', 'PART'];
+
+const needsPill = (n, fresh) => n ? `<span class="needs${fresh ? ' new' : ''}">${icon('inbox')}${n}</span>` : '';
+const prow = (k, { current = '', gone = false } = {}) => {
+  const [key, name, sprint, n, fresh] = PROJECTS[k];
+  return `<div class="prow${current ? ' current' : ''}${gone ? ' gone' : ''}"><span class="pkey${current ? ' cur' : ''}">${key}</span>
+    <div class="main"><div class="t">${name}</div><div class="m">${current ? `<span class="here">You're here · ${current}</span>` : sprint}</div></div>
+    ${needsPill(n, fresh)}${ic('chevron', 'sm chev')}</div>`;
+};
+const projectList = ({ current = '', recent = RECENT, all = ALL } = {}) => !recent.length
+  ? `<div class="section-h">Your projects</div><div class="list">${all.map((k) => prow(k)).join('')}</div>`
+  : `<div class="section-h">Recent</div><div class="list">${recent.map((k) => prow(k, { current: k === current ? 'Backlog' : '' })).join('')}</div>
+   <div class="section-h">All your projects</div><div class="list">${all.map((k) => prow(k)).join('')}</div>`;
+
+const dlBanner = ({ got = '2.0', of = '3.1', mins = 3, pct = 65 } = {}) => `<div class="banner dl">${icon('download')}<div class="grow"><b>Voice is getting ready</b><div class="bar"><i style="width:${pct}%"></i></div><span>${got} of ${of} GB on Wi-Fi · about ${mins} min. Read, tap and type in the meantime.</span></div>${icon('chevron', 'sm chev')}</div>`;
+
+/* ── Chrome ─────────────────────────────────────────────────────────── */
+// Projects: the root. Account at the top right (SHIP-907), search for long lists.
+const projectsBar = (sub = 'prod.shiplean.app') => topBar({ title: 'Projects', sub,
+  left: '<span style="width:8px"></span>',
+  right: iconBtn('search', { label: 'Search projects' }) + `<button class="icon-btn" aria-label="Account">${avatar('JD', { sm: true })}</button>` });
+const projectsDock = (mic = 'idle', [head, line] = ['Hold to talk', 'Say a project, or “what needs me?”']) => `<div class="dock"><div class="say-line"><b>${head}</b>${line}</div><button class="mic ${mic === 'idle' ? '' : mic}" aria-label="Hold to talk">${icon('mic')}</button></div>`;
+
+// Tab roots: the project's key tile at the top left opens Projects. A dot = something new in another project.
+const tabTop = (title, key = 'SHIP', o = {}) => tabRoot({ title, project: key, ...o, right: iconBtn('search', { label: 'Search' }) });
+
+/* A plain Backlog body behind the tab-root states */
+const F = {
+  SHIP: [['SHIP-707', 'Mobile web: touch shell and phone layouts', 'Active', 'in-progress', '', { done: 64, cur: 22 }, '9 of 14'],
+    ['SHIP-907', 'Mobile app foundations', 'Active', 'in-progress', 'risk', { done: 8, cur: 30, other: 12 }, '1 of 9'],
+    ['SHIP-892', 'Demo artifacts for the sprint demo agent', 'New', 'proposed', '', { other: 20 }, '0 of 4'],
+    ['SHIP-906', 'Voice commands on the mobile app with on-device models', 'New', 'proposed', 'risk', { done: 17, cur: 33 }, '1 of 6'],
+    ['SHIP-891', 'Features panel on the sprint page', 'New', 'proposed', '', {}, '0 of 4']],
+  PAY: [['PAY-41', 'Refunds to the original card', 'Active', 'in-progress', 'blocked', { done: 30, cur: 40 }, '3 of 8'],
+    ['PAY-38', 'Apple Pay in checkout', 'Active', 'in-progress', '', { done: 55, cur: 25 }, '5 of 9'],
+    ['PAY-52', 'Monthly statements by email', 'New', 'proposed', '', { other: 25 }, '0 of 5'],
+    ['PAY-29', 'Fraud score on every payment', 'New', 'proposed', 'risk', {}, '0 of 6'],
+    ['PAY-57', 'Payouts dashboard for finance', 'New', 'proposed', '', {}, '0 of 3']],
+};
+const backlogBody = (k = 'SHIP') => `<div class="subbar"><div class="seg">${['Epics', 'Features', 'Stories'].map((x) => `<button class="${x === 'Features' ? 'on' : ''}">${x}</button>`).join('')}</div></div>
+  <div class="hint">${icon('mic', 'sm')}Rank order. Hold the mic to move, or tap ${icon('rank', 'sm')}</div><div class="section-h">${F[k].length + 2} open Features</div>
+  <div class="list">${F[k].map(([key, t, s, cat, h, p, st], i) => `<div class="row"><span class="rank">${i + 1}</span><div class="main"><div class="t">${t}</div>
+    <div class="m">${type('feature')}<span class="key">${key}</span>${state(s, cat)}${h ? health(h) : ''}</div><div class="prog-line">${progress(p)}<span>${st}</span></div></div></div>`).join('')}</div>`;
+const backlog = (k = 'SHIP', { dot = false, ring = false, mic = 'idle', inbox = 4, overlay = '' } = {}) =>
+  frame({ top: tabTop('Backlog', k, { dot, ring }), body: backlogBody(k), bottom: tabBar('backlog', { inbox, mic }), overlay });
+
+/* A short Inbox body for the first-entry state (the real Inbox is inbox.html) */
+const inboxBody = () => `<div class="section-h">4 items wait on you</div><div class="list">${[
+  ['SHIP-907', 'Mobile app foundations', 'Decisions to confirm', '8 · D1–D8 from Claude Code'],
+  ['SHIP-906', 'Voice commands on the mobile app', 'Decisions to confirm', '2 · D10, D11'],
+  ['SHIP-892', 'Demo artifacts for the sprint demo agent', 'Needs input', 'Priya: show the mobile screens?'],
+  ['SHIP-911', 'Development build with the native modules', 'Needs input', 'Claude Code: which Expo SDK?']].map(([k, t, kind, line]) =>
+  `<div class="row ask"><div class="main"><div class="t">${t}</div><div class="m">${type(k === 'SHIP-911' ? 'story' : 'feature')}<span class="key">${k}</span><span class="needs">${icon(kind.startsWith('D') ? 'check' : 'message')}${kind}</span></div><div class="m">${line}</div></div></div>`).join('')}</div>`;
+
+/* ── States ─────────────────────────────────────────────────────────── */
+App.screen({ title: 'Projects', states: [
+  { id: 'first', title: 'Projects, first time', note: 'After setup’s “Use ShipLean while this downloads”: pick a project. Needs-you per project; Account at the top right.',
+    render: () => frame({ top: projectsBar(), body: dlBanner({ got: '1.4', pct: 45, mins: 5 }) + projectList({ recent: [], all: ['DATA', 'OPS', 'MOB', 'PART', 'PAY', 'SHIP'] }), bottom: projectsDock('off', ['Voice is getting ready', 'Tap a project to open it']) }) },
+
+  { id: 'first-entry', title: 'In a project, first time', note: 'A project opens on Inbox the first time. A one-time tip says the tile is how you switch.',
+    render: () => frame({ top: tabRoot({ title: 'Inbox', ring: true, right: iconBtn('search') }), body: inboxBody(), bottom: tabBar('inbox', { inbox: 4 }), overlay: `<div class="dim"></div><div class="lift">${projTile('SHIP')}</div>
+      <div class="coach"><b>You're in ShipLean</b><p>Every tab shows this project. Tap <b>SHIP</b> to switch project or open your account.</p><p>Or hold the mic and say <span class="say">“switch to Payments”</span>.</p><div class="row-b"><button class="btn sm primary">Got it</button></div></div>` }) },
+
+  { id: 'tab-root', title: 'Tab root, any project', note: 'The key tile replaces the avatar on every tab root. The dot: something new waits on you in another project.',
+    render: () => backlog('SHIP', { dot: true }) },
+
+  { id: 'projects', title: 'Back to Projects', note: 'Tap the tile (or swipe back): Projects, with where you are marked. Tap a row to go there.',
+    render: () => frame({ top: projectsBar(), body: projectList({ current: 'SHIP' }), bottom: projectsDock() }) },
+
+  { id: 'voice', title: 'Switch by voice', note: 'From any tab: “switch to Payments”. Project names and keys are hotwords. Nothing changes, so no preview.',
+    render: () => backlog('SHIP', { dot: true, mic: 'live', overlay: listening({ ctx: '<b>SHIP</b> · Backlog', words: `Switch to ${hot('Payments')}`, tries: ['open DATA', 'what needs me in Payments?', 'back to ShipLean'] }) }) },
+
+  { id: 'switched', title: 'Switched', note: 'Same tab in the new project. The toast offers the way back.',
+    render: () => backlog('PAY', { inbox: 2, overlay: toast('Now in Payments (PAY)', { bottom: 106, action: 'Back to SHIP' }) }) },
+
+  { id: 'account', title: 'Account', note: 'From the avatar on Projects: who and where you are signed in, Voice settings, Sign out.',
+    render: () => frame({ top: projectsBar(), body: projectList({ current: 'SHIP' }), bottom: projectsDock(),
+      overlay: `<div class="scrim"></div><div class="sheet"><div class="grab"></div>
+        <div class="acct-head">${avatar('JD')}<div><b>Joel Dickson</b><span>virtualjoel@gmail.com</span></div></div>
+        <div class="kv"><div class="r">${ic('globe', 'sm')}<span class="k">Server</span><span class="v">prod.shiplean.app</span></div>
+          <div class="r">${ic('spark', 'sm')}<span class="k">Server version</span><span class="v">ShipLean 1.9</span></div>
+          <div class="r">${ic('phone', 'sm')}<span class="k">This phone</span><span class="v">Galaxy S24 Ultra</span></div></div>
+        <div class="kv"><div class="r">${icon('mic', 'sm')}<span class="k">Voice</span><span class="v">Ready · Qwen3 4B</span>${icon('chevron', 'sm')}</div></div>
+        <button class="btn danger block">${ic('logout', 'sm')}Sign out</button>
+        <div class="foot">ShipLean for Android 1.0.0 (12) · Your server and email stay filled in</div></div>` }) },
+
+  { id: 'removed', title: 'Removed from a project', note: 'Launch reopens the last project; if you lost access, you land on Projects with the reason.',
+    render: () => frame({ top: projectsBar(),
+      body: `<div class="notice">${icon('alert')}<div class="grow"><b>You’re no longer in Partner Portal</b>Someone removed you, or the project was archived. Ask a project admin to add you again.</div></div>` +
+        projectList({ recent: ['SHIP', 'PAY', 'MOB'], all: ['DATA', 'OPS'] }), bottom: projectsDock() }) },
+
+  { id: 'empty', title: 'No projects', note: 'Signed in, but in no project. The app doesn’t create projects; it says who can add you.',
+    render: () => frame({ top: projectsBar(), body: `<div class="empty"><div class="art">${ic('grid')}</div>
+        <h2>You're not in any projects yet</h2>
+        <p>Ask a project admin to add you, using the email below. Projects you're added to show up here.</p>
+        <p>To start a project of your own, create it on the web.</p>
+        <div class="btns"><button class="btn primary block">${ic('refresh', 'sm')}Check again</button><button class="btn block">Open prod.shiplean.app</button></div>
+        <div class="who">Signed in as virtualjoel@gmail.com</div></div>`, bottom: '<div style="height:var(--app-home)"></div>' }) },
+
+  { id: 'alt-sheet', title: 'Alternative: switch sheet', note: 'Turned down (D1): the web’s picker as a bottom sheet over the tabs; Projects only at first run.',
+    render: () => backlog('SHIP', { overlay: `<div class="scrim"></div><div class="sheet" style="padding-bottom:calc(var(--app-home) + 4px)"><div class="grab"></div>
+      <div class="sheet-h"><h3>Switch project</h3><button class="btn ghost">Cancel</button></div>
+      <div class="sw-search">${icon('search', 'sm')}Search projects by name or key</div>
+      <div class="section-h">Recent</div>${RECENT.map((k) => prow(k, { current: k === 'SHIP' ? 'Backlog' : '' })).join('')}
+      <div class="section-h">All your projects</div>${ALL.slice(0, 2).map((k) => prow(k)).join('')}</div>` }) },
+
+  { id: 'alt-title', title: 'Alternative: name in the title', note: 'Turned down (D2): no tile; the project name under the title, with a chevron, opens Projects.',
+    render: () => frame({ top: topBar({ title: 'Backlog', sub: `ShipLean <span class="chev">${icon('down', 'sm')}</span>`, left: `<button class="icon-btn" aria-label="Account">${avatar('JD', { sm: true })}</button>`, right: iconBtn('search') }),
+      body: backlogBody('SHIP'), bottom: tabBar('backlog', { inbox: 4 }) }) },
+] });
+</script></body></html>
