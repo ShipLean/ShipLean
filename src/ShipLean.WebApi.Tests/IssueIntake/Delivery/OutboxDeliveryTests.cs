@@ -273,7 +273,7 @@ public class OutboxDeliveryTests : ApiFixture
     public async Task Deliver_WhenIssueClosed_ShouldSkipComments()
     {
         var (issueId, issue) = await NewIssueAsync();
-        await Host.Services.GetRequiredService<IGitHubIssueStore>().SetOpenOnGitHubAsync(issueId, false);
+        await Host.Services.GetRequiredService<IGitHubIssueStore>().SetOpenOnGitHubAsync(issueId, false, DateTimeOffset.FromUnixTimeSeconds(1_800_000_000));
         await EnqueueAsync(OutboxEntry.Comment(issueId, Key("closed"), "Update."));
         await EnqueueAsync(OutboxEntry.Reopen(issueId, Key("reopen")));
         var notes = await NotesAsync();

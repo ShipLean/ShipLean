@@ -241,6 +241,77 @@ public class IntakeTests : ApiFixture
         (await CommentsAsync(item)).ShouldBe(["The issue was edited on GitHub. New title: New title\n\n> New body"]);
     }
 
+    [Test]
+    public async Task Edited_WhenStaleAfterNewer_ShouldKeepNewerText()
+    {
+        var issue = Event(IssueAction.Opened);
+        var item = (await OpenedAsync(issue)).Item!;
+        var newer = issue with { Action = IssueAction.Edited, Title = "Newer", Body = "Newer body", UpdatedAt = issue.UpdatedAt.AddMinutes(5) };
+        var older = issue with { Action = IssueAction.Edited, Title = "Older", Body = "Older body", UpdatedAt = issue.UpdatedAt.AddMinutes(2) };
+
+        await ChangedAsync(newer);
+        await ChangedAsync(older);
+
+        (await RecordAsync(issue.Issue))!.Title.ShouldBe("Newer");
+        (await CommentsAsync(item)).ShouldBe(["The issue was edited on GitHub. New title: Newer\n\n> Newer body"]);
+    }
+
+    // The order is strictly by GitHub's updated_at, which has one-second resolution: on a tie the first delivery wins.
+    [Test]
+    public async Task Edited_WhenSameTimestampDifferentText_ShouldApplyOnce()
+    {
+        var issue = Event(IssueAction.Opened);
+        var item = (await OpenedAsync(issue)).Item!;
+        var at = issue.UpdatedAt.AddMinutes(2);
+
+        await ChangedAsync(issue with { Action = IssueAction.Edited, Title = "First", Body = "One", UpdatedAt = at });
+        await ChangedAsync(issue with { Action = IssueAction.Edited, Title = "Second", Body = "Two", UpdatedAt = at });
+
+        (await RecordAsync(issue.Issue))!.Title.ShouldBe("First");
+        (await CommentsAsync(item)).ShouldHaveSingleItem();
+    }
+
+    [Test]
+    public async Task ClosedThenReopened_WhenDeliveredReversed_ShouldEndOpen()
+    {
+        // The reopen (+3 minutes) arrives first; the older close (+1 minute) then arrives and must lose.
+        var other = Event(IssueAction.Opened);
+        var otherItem = (await OpenedAsync(other)).Item!;
+        await ChangedAsync(other with { Action = IssueAction.Closed, Open = false, UpdatedAt = other.UpdatedAt });
+        await ChangedAsync(other with { Action = IssueAction.Reopened, UpdatedAt = other.UpdatedAt.AddMinutes(3) });
+        await ChangedAsync(other with { Action = IssueAction.Closed, Open = false, UpdatedAt = other.UpdatedAt.AddMinutes(1) });
+
+        (await RecordAsync(other.Issue))!.OpenOnGitHub.ShouldBeTrue();
+        (await CommentsAsync(otherItem)).ShouldBe(["The issue was closed on GitHub.", "The issue was reopened on GitHub."]);
+    }
+
+    [Test]
+    public async Task ClosedAndReopened_WhenConcurrent_ShouldFollowNewestTimestamp()
+    {
+        var issue = Event(IssueAction.Opened);
+        var item = (await OpenedAsync(issue)).Item!;
+        var record = (await RecordAsync(issue.Issue))!;
+        await using var holder = await OpenDatabaseAsync();
+        await using var transaction = await holder.BeginTransactionAsync();
+        await using var scope = Host.Services.CreateAsyncScope();
+
+        // The newer reopen has written its row but not committed; the older close then runs on its own connection and must wait for it.
+        (await scope.ServiceProvider.GetRequiredService<IGitHubIssueStore>()
+            .SetOpenOnGitHubAsync(record.Id, true, issue.UpdatedAt.AddMinutes(2), transaction)).ShouldBeTrue();
+        var close = ChangedAsync(issue with { Action = IssueAction.Closed, Open = false, UpdatedAt = issue.UpdatedAt.AddMinutes(1) });
+        await using var observer = await OpenDatabaseAsync();
+        while (!close.IsCompleted && await observer.ExecuteScalarAsync<int>("SELECT count(*)::int FROM pg_locks WHERE NOT granted") == 0)
+        {
+            await Task.Yield();
+        }
+
+        await transaction.CommitAsync();
+        await close;
+
+        (await RecordAsync(issue.Issue))!.OpenOnGitHub.ShouldBeTrue();
+        (await CommentsAsync(item)).ShouldBeEmpty();
+    }
+
     [TestCase(IssueAction.Deleted)]
     [TestCase(IssueAction.Transferred)]
     public async Task Gone_WhenDeletedOrTransferred_ShouldSetNotOpenAndKeepItem(IssueAction action)

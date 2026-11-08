@@ -55,27 +55,25 @@ public sealed class DbIssueIntake(
             return IssueOutcome.Processed(itemKey);
         }
 
+        // Order comes from GitHub's updated_at, in one UPDATE inside this transaction: a stale event (an older edit delivered
+        // late, a close that lost to a newer reopen) changes nothing and writes no comment.
         string? note = null;
+        var at = issue.UpdatedAt;
         switch (issue.Action)
         {
-            case IssueAction.Edited:
-                await issues.UpdateTextAsync(record.Id, issue.Title, issue.Body, transaction, cancellationToken);
+            case IssueAction.Edited when await issues.UpdateTextAsync(record.Id, issue.Title, issue.Body, at, transaction, cancellationToken):
                 note = $"The issue was edited on GitHub. New title: {issue.Title}\n\n{Quote(issue.Body)}";
                 break;
-            case IssueAction.Closed when record.OpenOnGitHub:
-                await issues.SetOpenOnGitHubAsync(record.Id, false, transaction, cancellationToken);
+            case IssueAction.Closed when await issues.SetOpenOnGitHubAsync(record.Id, false, at, transaction, cancellationToken):
                 note = "The issue was closed on GitHub.";
                 break;
-            case IssueAction.Reopened when !record.OpenOnGitHub:
-                await issues.SetOpenOnGitHubAsync(record.Id, true, transaction, cancellationToken);
+            case IssueAction.Reopened when await issues.SetOpenOnGitHubAsync(record.Id, true, at, transaction, cancellationToken):
                 note = "The issue was reopened on GitHub.";
                 break;
-            case IssueAction.Deleted when record.OpenOnGitHub:
-                await issues.SetOpenOnGitHubAsync(record.Id, false, transaction, cancellationToken);
+            case IssueAction.Deleted when await issues.SetOpenOnGitHubAsync(record.Id, false, at, transaction, cancellationToken):
                 note = "The issue was deleted on GitHub. ShipLean no longer posts to it; this item stays open.";
                 break;
-            case IssueAction.Transferred when record.OpenOnGitHub:
-                await issues.SetOpenOnGitHubAsync(record.Id, false, transaction, cancellationToken);
+            case IssueAction.Transferred when await issues.SetOpenOnGitHubAsync(record.Id, false, at, transaction, cancellationToken):
                 note = "The issue was transferred to another repository on GitHub. ShipLean no longer posts to it; this item stays open.";
                 break;
             default:

@@ -59,12 +59,13 @@ public sealed class DbGitHubIssueStore(NpgsqlDataSource dataSource, TimeProvider
                ?? throw new InvalidOperationException($"github_issue {issue} was neither inserted nor found.");
     }
 
-    public Task UpdateTextAsync(Guid id, string title, string body, DbTransaction? transaction = null, CancellationToken cancellationToken = default)
-        => ExecuteAsync(
-            "UPDATE github_issue SET title = @title, body = @body, updated_at = @now WHERE id = @id",
-            new { id, title, body, now = clock.GetUtcNow() },
+    public async Task<bool> UpdateTextAsync(Guid id, string title, string body, DateTimeOffset eventUpdatedAt, DbTransaction? transaction = null, CancellationToken cancellationToken = default)
+        => await ExecuteAsync(
+            "UPDATE github_issue SET title = @title, body = @body, text_updated_at = @eventUpdatedAt, updated_at = @now "
+            + "WHERE id = @id AND (text_updated_at IS NULL OR text_updated_at < @eventUpdatedAt)",
+            new { id, title, body, eventUpdatedAt, now = clock.GetUtcNow() },
             transaction,
-            cancellationToken);
+            cancellationToken) == 1;
 
     public async Task<bool> SetPhaseAsync(Guid id, IReadOnlyList<IssuePhase> from, IssuePhase to, DbTransaction? transaction = null, CancellationToken cancellationToken = default)
         => await ExecuteAsync(
@@ -97,12 +98,13 @@ public sealed class DbGitHubIssueStore(NpgsqlDataSource dataSource, TimeProvider
             transaction,
             cancellationToken);
 
-    public Task SetOpenOnGitHubAsync(Guid id, bool open, DbTransaction? transaction = null, CancellationToken cancellationToken = default)
-        => ExecuteAsync(
-            "UPDATE github_issue SET open_on_github = @open, updated_at = @now WHERE id = @id",
-            new { id, open, now = clock.GetUtcNow() },
+    public async Task<bool> SetOpenOnGitHubAsync(Guid id, bool open, DateTimeOffset eventUpdatedAt, DbTransaction? transaction = null, CancellationToken cancellationToken = default)
+        => await ExecuteAsync(
+            "UPDATE github_issue SET open_on_github = @open, state_updated_at = @eventUpdatedAt, updated_at = @now "
+            + "WHERE id = @id AND (state_updated_at IS NULL OR state_updated_at < @eventUpdatedAt)",
+            new { id, open, eventUpdatedAt, now = clock.GetUtcNow() },
             transaction,
-            cancellationToken);
+            cancellationToken) == 1;
 
     public async Task<IReadOnlyList<GitHubIssueRecord>> ListAcceptedOpenAsync(DbTransaction? transaction = null, CancellationToken cancellationToken = default)
     {

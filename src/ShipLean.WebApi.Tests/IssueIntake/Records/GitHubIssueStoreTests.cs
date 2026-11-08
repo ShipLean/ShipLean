@@ -44,7 +44,7 @@ public class GitHubIssueStoreTests : ApiFixture
         var issue = NextIssue();
         var record = await InsertAsync(issue);
 
-        await Store.UpdateTextAsync(record.Id, "The edited title", "The edited body");
+        await Store.UpdateTextAsync(record.Id, "The edited title", "The edited body", DateTimeOffset.FromUnixTimeSeconds(1_800_000_000));
 
         var found = (await Store.FindByIdAsync(record.Id))!;
         found.Title.ShouldBe("The edited title");
@@ -129,7 +129,7 @@ public class GitHubIssueStoreTests : ApiFixture
 
         await Store.SaveProposalAsync(record.Id, sessionId, """{"verdict":"new"}""");
         await Store.RepointAsync(record.Id, SeedIds.WorkItems.Ship91);
-        await Store.SetOpenOnGitHubAsync(record.Id, false);
+        await Store.SetOpenOnGitHubAsync(record.Id, false, DateTimeOffset.FromUnixTimeSeconds(1_800_000_000));
         await Store.MarkPostedAsync(record.Id, "sprint", "Sprint 2");
         await Store.MarkPostedAsync(record.Id, "started", "Active");
 
@@ -149,7 +149,7 @@ public class GitHubIssueStoreTests : ApiFixture
     {
         var accepted = await InsertAsync(NextIssue(), IssuePhase.Accepted);
         var closedOnGitHub = await InsertAsync(NextIssue(), IssuePhase.Accepted);
-        await Store.SetOpenOnGitHubAsync(closedOnGitHub.Id, false);
+        await Store.SetOpenOnGitHubAsync(closedOnGitHub.Id, false, DateTimeOffset.FromUnixTimeSeconds(1_800_000_000));
         var proposing = await InsertAsync(NextIssue(), IssuePhase.Proposing);
 
         var listed = (await Store.ListAcceptedOpenAsync()).Select(r => r.Id).ToList();

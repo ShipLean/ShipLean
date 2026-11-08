@@ -16,8 +16,9 @@ public interface IGitHubIssueStore
     Task<GitHubIssueRecord> InsertAsync(
         IssueRef issue, Guid projectId, Guid workItemId, string authorLogin, string title, string body, IssuePhase phase, DbTransaction? transaction = null, CancellationToken cancellationToken = default);
 
-    // Replaces the issue's stored title and body (an `edited` issue event).
-    Task UpdateTextAsync(Guid id, string title, string body, DbTransaction? transaction = null, CancellationToken cancellationToken = default);
+    // Replaces the issue's stored title and body (an `edited` issue event) only when eventUpdatedAt (GitHub's issue.updated_at)
+    // is newer than the last text change: strictly newer, so on a tie the first delivery wins. False when the event is stale.
+    Task<bool> UpdateTextAsync(Guid id, string title, string body, DateTimeOffset eventUpdatedAt, DbTransaction? transaction = null, CancellationToken cancellationToken = default);
 
     // Compare and set: moves to `to` only when the current phase is one of `from`. False when it isn't (or the id is unknown).
     Task<bool> SetPhaseAsync(Guid id, IReadOnlyList<IssuePhase> from, IssuePhase to, DbTransaction? transaction = null, CancellationToken cancellationToken = default);
@@ -31,7 +32,8 @@ public interface IGitHubIssueStore
     // Points the issue at another item (the item an acceptance created, or the existing item of a duplicate).
     Task RepointAsync(Guid id, Guid workItemId, DbTransaction? transaction = null, CancellationToken cancellationToken = default);
 
-    Task SetOpenOnGitHubAsync(Guid id, bool open, DbTransaction? transaction = null, CancellationToken cancellationToken = default);
+    // Sets whether the issue is open on GitHub, with the same strictly-newer rule on the last state change. False when stale.
+    Task<bool> SetOpenOnGitHubAsync(Guid id, bool open, DateTimeOffset eventUpdatedAt, DbTransaction? transaction = null, CancellationToken cancellationToken = default);
 
     // Accepted issues still open on GitHub, oldest first: what the progress reconcile loop walks.
     Task<IReadOnlyList<GitHubIssueRecord>> ListAcceptedOpenAsync(DbTransaction? transaction = null, CancellationToken cancellationToken = default);

@@ -40,6 +40,9 @@ CREATE TABLE github_issue (
     proposal_session_id uuid REFERENCES agent_session (id),
     rounds              integer NOT NULL DEFAULT 0 CHECK (rounds >= 0),
     open_on_github      boolean NOT NULL DEFAULT true,
+    -- GitHub's issue.updated_at of the last event applied to the text and to the open state: an event older than it is stale.
+    text_updated_at     timestamptz,
+    state_updated_at    timestamptz,
     last_posted         jsonb NOT NULL DEFAULT '{}' CHECK (jsonb_typeof(last_posted) = 'object'),
     created_at          timestamptz NOT NULL,
     updated_at          timestamptz NOT NULL,
