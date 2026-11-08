@@ -1,5 +1,4 @@
 using Npgsql;
-using ShipLean.Application.Features.IssueIntake.Rounds;
 using ShipLean.Contracts.Events;
 using ShipLean.Contracts.IssueIntake;
 using ShipLean.Contracts.Persisted;
@@ -20,6 +19,10 @@ public sealed class DbIssueReplies(
     IWorkItemStore workItems,
     IProjectEvents events) : IIssueReplies
 {
+    // The reason IIssueProposalSessions documents for a request that wrote nothing.
+    private const string IntakeOff = "intakeOff";
+
+    // Only these phases wait for a round; any other phase (proposing, accepting, accepted, closed) means mirror only.
     private static readonly IssuePhase[] WaitingPhases = [IssuePhase.AwaitingReply, IssuePhase.AlreadyShipped, IssuePhase.WaitingForMaintainer];
 
     public async Task<IssueOutcome> MirrorAsync(IssueCommentEvent comment, CancellationToken cancellationToken)
@@ -80,7 +83,7 @@ public sealed class DbIssueReplies(
         }
 
         var round = await sessions.RequestRoundAsync(record.Id, force: false, transaction, cancellationToken);
-        if (round is { Outcome: RoundRequestOutcome.Held, Reason: IssueProposalSessions.IntakeOff })
+        if (round is { Outcome: RoundRequestOutcome.Held, Reason: IntakeOff })
         {
             // The project no longer takes this repository: nothing is written, not even the phase.
             await transaction.RollbackAsync(cancellationToken);
