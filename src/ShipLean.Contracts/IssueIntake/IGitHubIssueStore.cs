@@ -1,0 +1,37 @@
+using System.Data.Common;
+
+namespace ShipLean.Contracts.IssueIntake;
+
+// The github_issue rows. Every method joins the caller's transaction when given one, and opens its own connection otherwise.
+public interface IGitHubIssueStore
+{
+    Task<GitHubIssueRecord?> FindAsync(IssueRef issue, DbTransaction? transaction = null, CancellationToken cancellationToken = default);
+
+    Task<GitHubIssueRecord?> FindByIdAsync(Guid id, DbTransaction? transaction = null, CancellationToken cancellationToken = default);
+
+    Task<GitHubIssueRecord?> FindByWorkItemAsync(Guid workItemId, DbTransaction? transaction = null, CancellationToken cancellationToken = default);
+
+    // Idempotent: when the issue is already stored, returns the stored record unchanged (whatever the arguments say).
+    Task<GitHubIssueRecord> InsertAsync(
+        IssueRef issue, Guid projectId, Guid workItemId, string authorLogin, IssuePhase phase, DbTransaction? transaction = null, CancellationToken cancellationToken = default);
+
+    // Compare and set: moves to `to` only when the current phase is one of `from`. False when it isn't (or the id is unknown).
+    Task<bool> SetPhaseAsync(Guid id, IReadOnlyList<IssuePhase> from, IssuePhase to, DbTransaction? transaction = null, CancellationToken cancellationToken = default);
+
+    // Replaces the latest proposal: its JSON and the session that wrote it.
+    Task SaveProposalAsync(Guid id, Guid sessionId, string proposalJson, DbTransaction? transaction = null, CancellationToken cancellationToken = default);
+
+    // Adds one round atomically and returns the new count.
+    Task<int> IncrementRoundsAsync(Guid id, DbTransaction? transaction = null, CancellationToken cancellationToken = default);
+
+    // Points the issue at another item (the item an acceptance created, or the existing item of a duplicate).
+    Task RepointAsync(Guid id, Guid workItemId, DbTransaction? transaction = null, CancellationToken cancellationToken = default);
+
+    Task SetOpenOnGitHubAsync(Guid id, bool open, DbTransaction? transaction = null, CancellationToken cancellationToken = default);
+
+    // Accepted issues still open on GitHub, oldest first: what the progress reconcile loop walks.
+    Task<IReadOnlyList<GitHubIssueRecord>> ListAcceptedOpenAsync(DbTransaction? transaction = null, CancellationToken cancellationToken = default);
+
+    // Records that `milestone` was posted for `value` (LastPosted[milestone] = value), keeping the other milestones.
+    Task MarkPostedAsync(Guid id, string milestone, string value, DbTransaction? transaction = null, CancellationToken cancellationToken = default);
+}
