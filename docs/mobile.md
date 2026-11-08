@@ -13,25 +13,31 @@ phone tests work is in [`docs/testing.md` › Phone tests](testing.md#phone-test
   moves while you build the touch layout means the change leaked upwards.
 - Every new screen meets the rules below, and its route is in the route sweep (below) and passes it.
 
-## The rules (SHIP-805, as built)
+## The rules (SHIP-805, as built, with its rule numbers)
 
-1. **One breakpoint, 900px inclusive.** Nothing uses 899px or another width. The one exception is Retrospectives ›
-   Features (SHIP-728 D5): the desktop table from 600px to 900px, a phone list under 600px (`phone:`).
-2. **Navigation** is the drawer from the top bar's Menu; every sub-page is in it. The drawer is the only side sheet;
-   anything else that slides in is a bottom sheet.
-3. **Menus become bottom sheets; form dialogs go full screen.** The @mention list stays above the comment box.
-4. **Nothing is hover-only.** Row actions are always visible; keyboard hints and key caps are hidden at `touch:`.
-5. **Safe areas:** the app sets `viewport-fit=cover`; bars, sheets and toasts pad with `env(safe-area-inset-*)`.
-6. **No page-level sideways scroll.** Only tabs, Markdown tables and code, the Retrospectives rows, the boards' column
-   pager and chips, and the Retrospectives › Features table scroll sideways, each inside its own box.
-7. **⋯ opens an action sheet**, never a popover. Toolbars keep one row: primary action, main control, Filter (count),
-   ⋯ More.
-8. **Only the top bar is pinned** (48px plus the top safe area). An edit screen's toolbar takes its place while editing;
-   nothing else pins at the top.
-9. **Sizes:** buttons, controls, icon buttons and rows are at least `--touch-target` (32px).
-10. **Every text input, textarea and select is 16px** (`--text-input-touch`); smaller makes iOS Safari zoom. One base
-    rule in `index.css` gives this at `touch:`; don't override it smaller.
-11. **Save:** the shared `SaveBar` (message · **Discard** · Save), fixed to the bottom while something is unsaved.
+- **Rule 1:** **One breakpoint, 900px inclusive.** Nothing uses 899px or another width. The one exception is
+  Retrospectives › Features (SHIP-728 D5): the desktop table from 600px to 900px, a phone list under 600px (`phone:`).
+- **Rules 2–3:** **Navigation** is the drawer from the top bar's Menu; every sub-page is in it. The drawer is the only
+  side sheet; anything else that slides in is a bottom sheet.
+- **Rule 4:** **Menus become bottom sheets; form dialogs go full screen.** The @mention list stays above the comment
+  box.
+- **Rule 5:** **Nothing is hover-only.** Row actions are always visible; keyboard hints and key caps are hidden at
+  `touch:`.
+- **Rule 6:** **Safe areas:** the app sets `viewport-fit=cover`; bars, sheets and toasts pad with
+  `env(safe-area-inset-*)`.
+- **Rule 7:** **No page-level sideways scroll.** Only tabs, Markdown tables and code, the Retrospectives rows, the
+  boards' column pager and chips, and the Retrospectives › Features table scroll sideways, each inside its own box.
+- **Rule 8:** **⋯ opens an action sheet**, never a popover. Toolbars keep one row: primary action, main control, Filter
+  (count), ⋯ More.
+- **Rules 11–12:** **Only the top bar is pinned** (48px plus the top safe area). An edit screen's toolbar takes its
+  place while editing; nothing else pins at the top.
+- **Rule 13:** **Sizes:** buttons, controls, icon buttons and rows are at least `--touch-target` (32px).
+- **Rule 14:** **Every text input, textarea and select is 16px** (`--text-input-touch`); smaller makes iOS Safari zoom.
+  One base rule in `index.css` gives this at `touch:`; don't override it smaller.
+- **Rule 15:** **Save:** the shared `SaveBar` (message · **Discard** · Save), fixed to the bottom while something is
+  unsaved.
+- Rules 9 (scrim) and 10 (shared pieces) are under [Tokens](#tokens) and [The shared pieces](#the-shared-pieces);
+  rule 16 (`viewport` on web events) is under [Measuring](#measuring).
 
 The open points, built to SHIP-805's recommendations:
 
