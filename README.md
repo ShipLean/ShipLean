@@ -189,6 +189,7 @@ The house rules for anyone (or any agent) working in the repo are in [`AGENTS.md
 - [Issue #7](https://github.com/joeldickson/ShipLean/issues/7): the build plan v1 was built from.
 - [`design/README.md`](design/README.md): the design system, every reference screen, and the decisions made while designing them.
 - [`docs/`](docs/README.md): testing, sign-in and access, project events, navigation, MCP and connecting an agent.
+- [`docs/backups.md`](docs/backups.md): scheduled backups to S3, and the restore runbook.
 
 ## Logo
 
