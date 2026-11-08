@@ -99,7 +99,7 @@ export function LinkForm({
   return (
     <form
       data-testid={ids.linkForm}
-      className="grid grid-cols-[minmax(0,1fr)] gap-1.5 rounded-panel border border-signal bg-panel p-2"
+      className="grid touch:grid-cols-[minmax(0,1fr)] gap-1.5 rounded-panel border border-signal bg-panel p-2"
       onSubmit={(event) => {
         event.preventDefault();
         void submit();
@@ -162,7 +162,7 @@ export function LinkForm({
           {error}
         </span>
       ) : null}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex touch:flex-wrap items-center gap-2">
         <button
           type="submit"
           data-testid={ids.linkSubmit}

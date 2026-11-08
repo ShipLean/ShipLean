@@ -46,6 +46,33 @@ public class ItemSideTouchTests : SeededAcceptanceTest
     }
 
     [Test]
+    public async Task Sections_WhenItemHasLinkAndAttachmentOnPhone_ShouldMeetTouchRules()
+    {
+        // SHIP-147 is a story. A file attached through the API and a link added to the draft give both sections a row.
+        var screen = new WorkItemScreen(Page);
+        var side = new SideRailPanel(Page);
+        var links = new LinksPanel(Page);
+        await screen.OpenAsync("SHIP", "SHIP-147");
+        var upload = await side.UploadAsync(SeedIds.WorkItems.Ship147, "notes.txt", "hello"u8.ToArray(), "text/plain");
+        upload.Ok.ShouldBeTrue();
+        await Page.ReloadAsync();
+        await Expect(side.Attachments).ToHaveCountAsync(1);
+        await links.AddWorkItemLinkAsync("related", "SHIP-141");
+        await Expect(links.Rows).ToHaveCountAsync(1);
+        var linksSection = Page.GetByTestId(WorkItemTestIds.Links);
+        var attachments = Page.GetByTestId(WorkItemTestIds.Attachments);
+
+        await linksSection.ScrollIntoViewIfNeededAsync();
+        (await TouchRules.ViolationsAsync(Page, linksSection)).ShouldBeEmpty();
+        await Page.GetByTestId(WorkItemTestIds.LinkAdd).TapAsync();
+        await Expect(Page.GetByTestId(WorkItemTestIds.LinkForm)).ToBeVisibleAsync();
+        (await TouchRules.ViolationsAsync(Page, linksSection)).ShouldBeEmpty();
+
+        await attachments.ScrollIntoViewIfNeededAsync();
+        (await TouchRules.ViolationsAsync(Page, attachments)).ShouldBeEmpty();
+    }
+
+    [Test]
     public async Task ItemModal_WhenOpenedOnPhone_ShouldFillScreenWithCloseAndOpenFullPage()
     {
         var backlog = new StoriesBacklog(Page);
