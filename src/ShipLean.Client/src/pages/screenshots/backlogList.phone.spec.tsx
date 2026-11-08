@@ -16,6 +16,6 @@ phonePageShots([
       await stubShell(page);
       await stubBacklog(page, backlogView(ROWS));
     },
-    ready: (page) => expect(page.getByTestId(backlogTestIds.touchRow)).toHaveCount(ROWS.length),
+    ready: (page) => expect(page.getByTestId(backlogTestIds.row)).toHaveCount(ROWS.length),
   },
 ]);

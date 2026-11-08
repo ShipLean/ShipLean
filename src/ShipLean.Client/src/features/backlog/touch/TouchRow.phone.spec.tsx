@@ -24,19 +24,19 @@ const LONG_PARENT = itemRow({
 test('TouchRow_WhenNoEstimate_ShouldShowWarnQuestionMark', async ({ mount, page }) => {
   await mount(<TouchRowHarness rows={ROWS} />, route);
 
-  const unestimated = page.locator(`[data-testid="${ids.touchRow}"][data-key="SHIP-160"]`);
+  const unestimated = page.locator(`[data-testid="${ids.row}"][data-key="SHIP-160"]`);
   const points = unestimated.getByTestId(ids.points);
   await expect(points).toHaveText('?');
   await expect(points).toHaveClass(/text-caution/);
   await expect(
-    page.locator(`[data-testid="${ids.touchRow}"][data-key="SHIP-158"]`).getByTestId(ids.points),
+    page.locator(`[data-testid="${ids.row}"][data-key="SHIP-158"]`).getByTestId(ids.points),
   ).toHaveText('5');
 });
 
 test('TouchRow_WhenParentLong_ShouldWrapToOwnLine', async ({ mount, page }) => {
   await mount(<TouchRowHarness rows={[LONG_PARENT]} />, route);
 
-  const row = page.getByTestId(ids.touchRow);
+  const row = page.getByTestId(ids.row);
   const key = await row.getByTestId(ids.key).boundingBox();
   const parent = row.getByTestId(ids.parent);
   const box = await parent.boundingBox();
@@ -59,8 +59,8 @@ test('TouchRowList_WhenSelecting_ShouldShowCheckboxesInTheHandleSlot', async ({ 
   const slots = page.getByTestId(ids.touchRowHandle);
   await expect(slots.getByTestId(ids.touchRowSelect)).toHaveCount(ROWS.length);
   await expect(page.getByTestId(HARNESS_HANDLE_ID)).toHaveCount(0);
-  await page.getByTestId(ids.touchRow).first().tap();
-  await expect(page.getByTestId(ids.touchRow).first()).toHaveAttribute('data-selected', 'true');
+  await page.getByTestId(ids.row).first().tap();
+  await expect(page.getByTestId(ids.row).first()).toHaveAttribute('data-selected', 'true');
   await expect(slots.getByTestId(ids.touchRowSelect).first()).toBeChecked();
 });
 
@@ -83,7 +83,7 @@ test('TouchRowList_WhenFiltering_ShouldNotRenderHandles', async ({ mount, page }
 test('TouchRow_ShouldCarryItsDropTarget', async ({ mount, page }) => {
   await mount(<TouchRowHarness rows={ROWS} />, route);
 
-  await expect(page.getByTestId(ids.touchRow)).toHaveCount(ROWS.length);
+  await expect(page.getByTestId(ids.row)).toHaveCount(ROWS.length);
   for (const row of ROWS) {
     await expect(page.locator(`[data-drop-target="${row.id}"]`)).toHaveAttribute(
       'data-key',

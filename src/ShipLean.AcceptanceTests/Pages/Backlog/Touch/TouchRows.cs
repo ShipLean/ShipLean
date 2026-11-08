@@ -7,7 +7,7 @@ public sealed class TouchRows(IPage page)
 {
     public ILocator List => page.GetByTestId(BacklogTestIds.TouchRowList);
 
-    public ILocator Rows => page.GetByTestId(BacklogTestIds.TouchRow);
+    public ILocator Rows => List.GetByTestId(BacklogTestIds.Row);
 
     // How many <table> elements the row list holds (none at touch).
     public async Task<int> TableCountAsync() =>

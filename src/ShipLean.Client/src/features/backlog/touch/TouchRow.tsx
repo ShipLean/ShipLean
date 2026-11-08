@@ -25,9 +25,10 @@ const inside = 'a, button, input, select, textarea, label';
  * - `trailing?`: shown last on the right, after points and the assignee (the row's ⋯).
  * - `flash`: a teammate just changed the item; the row flashes.
  *
- * Every row carries `data-drop-target` with its id, so a drag can find the row under the finger. Tapping the row opens
- * the item modal, or in Select mode toggles the row; taps on controls inside it (links, buttons, inputs, labels) keep
- * their own. The points here are display only, with a warn ? when there's no estimate.
+ * The row's test id is `backlogTestIds.row`, as in every mode. Every row carries `data-drop-target` with its id, so a
+ * drag can find the row under the finger. Tapping the row opens the item modal, or in Select mode toggles the row; taps
+ * on controls inside it (links, buttons, inputs, labels) keep their own. The points here are display only, with a warn
+ * ? when there's no estimate.
  */
 export function TouchRow({
   row,
@@ -59,7 +60,7 @@ export function TouchRow({
       role="button"
       tabIndex={0}
       aria-label={`${row.key} ${row.title}`}
-      data-testid={ids.touchRow}
+      data-testid={ids.row}
       data-project-key={projectKey}
       data-key={row.key}
       data-row-id={row.id}

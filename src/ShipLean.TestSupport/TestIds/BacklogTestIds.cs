@@ -18,7 +18,6 @@ public static class BacklogTestIds
     public const string DragOffBanner = "backlog-drag-off-banner";
     public const string Grip = "backlog-grip";
     public const string TouchRowList = "backlog-touch-row-list";
-    public const string TouchRow = "backlog-touch-row";
     public const string TouchRowHandle = "backlog-touch-row-handle";
     public const string TouchRowMeta = "backlog-touch-row-meta";
     public const string TouchRowForecast = "backlog-touch-row-forecast";

@@ -14,9 +14,8 @@ export const backlogTestIds = {
   filterError: 'backlog-filter-error',
   dragOffBanner: 'backlog-drag-off-banner',
   grip: 'backlog-grip',
-  // The touch rows (900px and below, SHIP-716): the list, a row, its handle slot, meta line, forecast and select box.
+  // The touch rows (900px and below, SHIP-716; each row is `row`): the list, handle slot, meta line, forecast, select box.
   touchRowList: 'backlog-touch-row-list',
-  touchRow: 'backlog-touch-row',
   touchRowHandle: 'backlog-touch-row-handle',
   touchRowMeta: 'backlog-touch-row-meta',
   touchRowForecast: 'backlog-touch-row-forecast',
