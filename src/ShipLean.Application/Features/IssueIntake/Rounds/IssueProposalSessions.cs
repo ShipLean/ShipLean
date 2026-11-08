@@ -11,7 +11,7 @@ namespace ShipLean.Application.Features.IssueIntake.Rounds;
 // - a round job of the issue that is still pending already covers this request (its session reads the comments when it starts),
 //   so a second request, concurrent or not, enqueues nothing more;
 // - unless forced (a maintainer's /shiplean), at most RatePerHour round jobs per project in the last hour and rounds below the
-//   project's maximum; past either the issue is held (RoundHolds);
+//   project's maximum; past either the issue is held, with its notices (RoundHolds);
 // - otherwise the rounds go up by one, the job is enqueued with key round:<n>:<issue>, and the phase becomes proposing.
 // An issue whose repository its project no longer takes is held with nothing posted (intakeOff).
 public sealed class IssueProposalSessions(
@@ -20,6 +20,8 @@ public sealed class IssueProposalSessions(
     public const int RatePerHour = 20;
 
     public const string IntakeOff = "intakeOff";
+
+    public const string Continue = "A maintainer can comment /shiplean on the GitHub issue to continue.";
 
     private static readonly IssuePhase[] Restartable = [IssuePhase.AwaitingReply, IssuePhase.AlreadyShipped, IssuePhase.WaitingForMaintainer];
 
@@ -53,12 +55,14 @@ public sealed class IssueProposalSessions(
         {
             if (await jobs.CountSinceAsync(projectId, IssueJobKind.Round, clock.GetUtcNow() - TimeSpan.FromHours(1), transaction, cancellationToken) >= RatePerHour)
             {
-                return await holds.HoldAsync(issue, RoundHolds.RateLimit, transaction, cancellationToken);
+                return await HoldAsync(
+                    issue, RoundHolds.RateLimit, $"Held for a maintainer: this project already started {RatePerHour} proposal rounds in the last hour, its limit.", project, transaction, cancellationToken);
             }
 
             if (issue.Rounds >= project.MaxRounds)
             {
-                return await holds.HoldAsync(issue, RoundHolds.RoundCap, transaction, cancellationToken);
+                return await HoldAsync(
+                    issue, RoundHolds.RoundCap, $"Held for a maintainer: this issue had {issue.Rounds} proposal rounds, the project's maximum of {project.MaxRounds}.", project, transaction, cancellationToken);
             }
         }
 
@@ -66,5 +70,15 @@ public sealed class IssueProposalSessions(
         await jobs.EnqueueAsync(IssueJobKind.Round, JobKey(round, issueId), issueId, projectId, JsonSerializer.Serialize(new RoundJobPayload(round)), transaction, cancellationToken);
         await issues.SetPhaseAsync(issueId, Restartable, IssuePhase.Proposing, transaction, cancellationToken);
         return RoundRequest.Requested;
+    }
+
+    // The hold notices are written here, so every caller (intake, replies, /shiplean) gets them. The item's comment is not
+    // published live: the caller owns the transaction, and RoundRequest has no event to hand back.
+    private async Task<RoundRequest> HoldAsync(
+        GitHubIssueRecord issue, string reason, string explanation, IssueIntakeProject project, DbTransaction transaction, CancellationToken cancellationToken)
+    {
+        var runAs = project.RunAsUserId ?? throw new InvalidOperationException($"Project {project.ProjectKey} takes issues with no run-as member.");
+        await holds.HoldAsync(issue, reason, $"{explanation} {Continue}", runAs, transaction, cancellationToken);
+        return RoundRequest.Held(reason);
     }
 }

@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using ShipLean.Contracts.Agents;
+using ShipLean.Contracts.Events;
 using ShipLean.Contracts.IssueIntake;
 
 namespace ShipLean.Application.Features.IssueIntake.Rounds;
@@ -11,7 +12,7 @@ namespace ShipLean.Application.Features.IssueIntake.Rounds;
 // Runs one `round` job at a time (D18): starts the issue's propose session as the project's run-as member (D8), with the round
 // prompt and the closest items. Resumable: a propose session on the item created since the job was enqueued means an earlier
 // claim got as far as the start, so the job only completes and nothing starts twice. A starter block (no connection, no
-// repository, a live session) or no run-as member holds the issue and completes the job in one transaction. A project that no
+// repository, a live session) holds the issue and completes the job in one transaction. A project that no
 // longer takes the repository completes the job with nothing done. Anything thrown fails the job, which retries with backoff.
 public sealed class RoundJobWorker(
     IIssueJobs jobs,
@@ -21,6 +22,7 @@ public sealed class RoundJobWorker(
     IAgentSessionStarter starter,
     IServiceScopeFactory scopes,
     NpgsqlDataSource dataSource,
+    IProjectEvents events,
     ILogger<RoundJobWorker> logger)
 {
     // False when no round job was due.
@@ -63,12 +65,7 @@ public sealed class RoundJobWorker(
             return;
         }
 
-        if (project.RunAsUserId is not { } runAs)
-        {
-            await HoldAsync(job, RoundHolds.NoRunAs, cancellationToken);
-            return;
-        }
-
+        var runAs = project.RunAsUserId ?? throw new InvalidOperationException($"Project {project.ProjectKey} takes issues with no run-as member.");
         var round = JsonSerializer.Deserialize<RoundJobPayload>(job.Payload)?.Round
             ?? throw new InvalidOperationException($"Round job {job.Id} has no round.");
         var related = await closest.FindAsync(issue, runAs, cancellationToken);
@@ -77,7 +74,7 @@ public sealed class RoundJobWorker(
             issue.WorkItemId, runAs, null, null, (_, _) => Task.FromResult(prompt), cancellationToken, AgentSessionMode.Propose, related);
         if (outcome.Block is { } block)
         {
-            await HoldAsync(job, JsonNamingPolicy.CamelCase.ConvertName(block.ToString()), cancellationToken);
+            await HoldAsync(job, block, runAs, cancellationToken);
             return;
         }
 
@@ -93,17 +90,30 @@ public sealed class RoundJobWorker(
             cancellationToken: cancellationToken));
     }
 
-    // The hold and the job's completion commit together; a stale lease (another worker has the job now) drops both.
-    private async Task HoldAsync(IssueJob job, string reason, CancellationToken cancellationToken)
+    // The hold and the job's completion commit together; a stale lease (another worker has the job now) drops both. The item's
+    // hold comment is published after the commit.
+    private async Task HoldAsync(IssueJob job, AgentStartBlock block, Guid runAs, CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         var issue = await issues.FindByIdAsync(job.GitHubIssueId, transaction, cancellationToken)
             ?? throw new InvalidOperationException($"No github_issue {job.GitHubIssueId}.");
-        await holds.HoldAsync(issue, reason, transaction, cancellationToken);
-        if (await jobs.CompleteAsync(job.Id, job.LeaseToken, transaction, cancellationToken))
+        var noted = await holds.HoldAsync(
+            issue,
+            JsonNamingPolicy.CamelCase.ConvertName(block.ToString()),
+            $"Held for a maintainer: the proposal session could not start. {AgentStartMessages.For(block)} {IssueProposalSessions.Continue}",
+            runAs,
+            transaction,
+            cancellationToken);
+        if (!await jobs.CompleteAsync(job.Id, job.LeaseToken, transaction, cancellationToken))
         {
-            await transaction.CommitAsync(cancellationToken);
+            return;
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+        if (noted)
+        {
+            await events.PublishAsync(new CommentsChanged(issue.ProjectId, issue.WorkItemId));
         }
     }
 }

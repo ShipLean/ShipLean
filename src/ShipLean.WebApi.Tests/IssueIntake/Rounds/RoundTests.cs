@@ -53,12 +53,32 @@ public class RoundTests : ApiFixture
         stored.Rounds.ShouldBe(0);
         (await PendingRoundsAsync(issue.Id)).ShouldBeEmpty();
         var held = (await OutboxAsync(issue.Id)).ShouldHaveSingleItem();
-        held.DedupeKey.ShouldBe(RoundHolds.DedupeKey(issue.Id, RoundHolds.RateLimit));
+        held.DedupeKey.ShouldBe(RoundHolds.DedupeKey(issue.Id, RoundHolds.RateLimit, 0));
         held.Body.ShouldBe(RoundHolds.Comment);
+        (await ShipLeanCommentsAsync(issue.WorkItemId)).ShouldHaveSingleItem();
     }
 
     [Test]
-    public async Task RequestRound_WhenCapReached_ShouldHold()
+    public async Task RequestRound_WhenRateLimited_ShouldHoldWithOneCommentEach()
+    {
+        var (arranged, _, issue) = await ArrangeAsync();
+        await FillRateAsync(arranged, issue);
+
+        var outcome = await RequestAsync(issue.Id, force: false);
+
+        outcome.ShouldBe(RoundRequest.Held(RoundHolds.RateLimit));
+        (await IssueAsync(issue.Id)).Phase.ShouldBe(IssuePhase.WaitingForMaintainer);
+        var held = (await OutboxAsync(issue.Id)).ShouldHaveSingleItem();
+        held.Body.ShouldBe(RoundHolds.Comment);
+        held.Body!.ShouldContain("/shiplean");
+        var note = (await ShipLeanCommentsAsync(issue.WorkItemId)).ShouldHaveSingleItem();
+        note.AuthorId.ShouldBe(SeedIds.Users.Joel);
+        note.Body.ShouldBe(
+            $"Held for a maintainer: this project already started {IssueProposalSessions.RatePerHour} proposal rounds in the last hour, its limit. {IssueProposalSessions.Continue}");
+    }
+
+    [Test]
+    public async Task RequestRound_WhenCapReached_ShouldHoldWithOneCommentEach()
     {
         var (_, _, issue) = await ArrangeAsync(maxRounds: 1);
         await SetRoundsAsync(issue.Id, 1);
@@ -68,7 +88,25 @@ public class RoundTests : ApiFixture
         outcome.ShouldBe(RoundRequest.Held(RoundHolds.RoundCap));
         (await IssueAsync(issue.Id)).Phase.ShouldBe(IssuePhase.WaitingForMaintainer);
         (await PendingRoundsAsync(issue.Id)).ShouldBeEmpty();
-        (await OutboxAsync(issue.Id)).ShouldHaveSingleItem().DedupeKey.ShouldBe(RoundHolds.DedupeKey(issue.Id, RoundHolds.RoundCap));
+        var held = (await OutboxAsync(issue.Id)).ShouldHaveSingleItem();
+        held.DedupeKey.ShouldBe(RoundHolds.DedupeKey(issue.Id, RoundHolds.RoundCap, 1));
+        held.Body.ShouldBe(RoundHolds.Comment);
+        (await ShipLeanCommentsAsync(issue.WorkItemId)).ShouldHaveSingleItem().Body.ShouldBe(
+            $"Held for a maintainer: this issue had 1 proposal rounds, the project's maximum of 1. {IssueProposalSessions.Continue}");
+    }
+
+    [Test]
+    public async Task RequestRound_WhenHeldTwice_ShouldNotDuplicateComments()
+    {
+        var (_, _, issue) = await ArrangeAsync(maxRounds: 1);
+        await SetRoundsAsync(issue.Id, 1);
+
+        (await RequestAsync(issue.Id, force: false)).ShouldBe(RoundRequest.Held(RoundHolds.RoundCap));
+        (await RequestAsync(issue.Id, force: false)).ShouldBe(RoundRequest.Held(RoundHolds.RoundCap));
+
+        (await IssueAsync(issue.Id)).Phase.ShouldBe(IssuePhase.WaitingForMaintainer);
+        (await OutboxAsync(issue.Id)).ShouldHaveSingleItem();
+        (await ShipLeanCommentsAsync(issue.WorkItemId)).ShouldHaveSingleItem();
     }
 
     [Test]
@@ -133,6 +171,7 @@ public class RoundTests : ApiFixture
         (await PendingRoundsAsync(issue.Id)).ShouldBeEmpty();
         (await IssueAsync(held.Id)).Phase.ShouldBe(IssuePhase.Proposing);
         (await OutboxAsync(held.Id)).ShouldBeEmpty();
+        (await ShipLeanCommentsAsync(held.WorkItemId)).ShouldBeEmpty();
     }
 
     [Test]
@@ -192,8 +231,9 @@ public class RoundTests : ApiFixture
         (await JobStatusesAsync(issue.Id)).ShouldBe(["done"]);
         (await IssueAsync(issue.Id)).Phase.ShouldBe(IssuePhase.WaitingForMaintainer);
         var held = (await OutboxAsync(issue.Id)).ShouldHaveSingleItem();
-        held.DedupeKey.ShouldBe(RoundHolds.DedupeKey(issue.Id, "noConnection"));
+        held.DedupeKey.ShouldBe(RoundHolds.DedupeKey(issue.Id, "noConnection", 1));
         held.Body.ShouldBe(RoundHolds.Comment);
+        (await ShipLeanCommentsAsync(item)).ShouldHaveSingleItem().Body.ShouldStartWith("Held for a maintainer: the proposal session could not start. This project has no agent connection.");
     }
 
     [Test]
@@ -230,6 +270,8 @@ public class RoundTests : ApiFixture
     private sealed record OutboxRow(string DedupeKey, string? Body);
 
     private sealed record JobRow(string Key, string Payload);
+
+    private sealed record CommentRow(Guid AuthorId, string Body);
 
     private async Task<(AgentDispatchArrange Arranged, Guid Item, GitHubIssueRecord Issue)> ArrangeAsync(
         int maxRounds = 5, bool connection = true, string title = "Login button says Sing in")
@@ -351,5 +393,13 @@ public class RoundTests : ApiFixture
         await using var database = await OpenDatabaseAsync();
         return [.. await database.QueryAsync<OutboxRow>(
             "SELECT dedupe_key AS dedupeKey, body FROM github_outbox WHERE github_issue_id = @issueId ORDER BY seq", new { issueId })];
+    }
+
+    private async Task<List<CommentRow>> ShipLeanCommentsAsync(Guid workItemId)
+    {
+        await using var database = await OpenDatabaseAsync();
+        return [.. await database.QueryAsync<CommentRow>(
+            "SELECT author_id AS authorId, body FROM comment WHERE work_item_id = @workItemId AND agent_name = @AgentName ORDER BY created_at",
+            new { workItemId, RoundHolds.AgentName })];
     }
 }
