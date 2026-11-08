@@ -1,6 +1,7 @@
 using System.Data.Common;
 using Dapper;
 using Microsoft.Extensions.Logging;
+using ShipLean.Application.Features.IssueIntake.Settings;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Events;
@@ -35,6 +36,7 @@ public sealed partial class ProjectSettingsService
         }
 
         var general = await CheckHolidayCountryAsync(await CheckAgentAsync(KeepUnprovided(CheckGeneral(put.General), current), current.AgentConnectionId, cancellationToken), current.HolidayCountry, cancellationToken);
+        await RefuseRepoChangeWhileIntakeOnAsync(projectId, general.RepoUrl, current.RepoUrl, cancellationToken);
         CheckForecast(put.Sprints);
         put = put with { Sprints = put.Sprints with { SprintNaming = put.Sprints.SprintNaming ?? current.Forecast.SprintNaming } };
         var members = await ResolveMembersAsync(put.Members, cancellationToken);
@@ -122,6 +124,23 @@ public sealed partial class ProjectSettingsService
         }
 
         return new SettingsSaveResult(await GetAsync(projectId, cancellationToken), removedUsers);
+    }
+
+    // While GitHub issue intake is on, the repository it stored is the one issues are matched to: repo_url may be respelled but not pointed elsewhere.
+    private async Task RefuseRepoChangeWhileIntakeOnAsync(Guid projectId, string? wanted, string? saved, CancellationToken cancellationToken)
+    {
+        if (wanted == saved)
+        {
+            return;
+        }
+
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        var repository = await connection.QuerySingleOrDefaultAsync<string>(new CommandDefinition(
+            "SELECT repository FROM project_issue_intake WHERE project_id = @projectId AND enabled", new { projectId }, cancellationToken: cancellationToken));
+        if (repository is not null && !string.Equals(GitHubRepositoryName.FromRepoUrl(wanted), repository, StringComparison.OrdinalIgnoreCase))
+        {
+            throw ApiException.IntakeOn("Turn GitHub issue intake off before changing the repository.");
+        }
     }
 
     private static bool HasStateChanges(StateChanges changes)
