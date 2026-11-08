@@ -7,21 +7,27 @@ using ShipLean.Contracts.IssueIntake;
 namespace ShipLean.Application.Features.IssueIntake.Publish;
 
 // IImagePublications over the GitHub REST API (D14), through GitHubIssuesClient so the instance token has one path.
-// 1. GET /commits/{sha}: its committer date is when the fix reached main (a squash or merge on GitHub writes it then).
+// The rule behind every step: never report a run that might not be the first one; answer Unknown instead.
+// 1. GET /commits/{sha}: the full sha (used for every match, so an abbreviated input works) and its committer date. Callers pass the
+//    merge or squash commit, which GitHub dates at merge time; Margin covers a little clock skew on top of that assumption.
 // 2. GET /actions/workflows/docker-publish.yml/runs?branch=main&event=push&created=>=date: the publish runs since then (a 404 means
-//    the repository has no such workflow: NotApplicable).
-// 3. The successful runs, oldest first, at most MaxChecked: the first whose head_sha is the fix, or whose GET /compare/{fix}...{head}
-//    status is ahead or identical, is Published. A behind or diverged head doesn't contain the fix (another branch history).
+//    the repository has no such workflow: NotApplicable). A full last page (10 x 100) means more runs may exist: Unknown.
+// 3. The successful completed runs, first to finish first (updated_at of a completed run, then id), at most MaxChecked: the first
+//    whose head_sha is the fix, or whose GET /compare/{fix}...{head} status is ahead or identical, is Published, at its completion
+//    time. A behind or diverged head doesn't contain the fix. Candidates beyond MaxChecked left unchecked: Unknown.
 // 4. Otherwise a run for the fix that hasn't completed is Pending, and one that completed without success is Failed.
-// Anything GitHub doesn't answer is Unknown, so the caller asks again later. Published and NotApplicable are kept for CacheFor.
+// Anything GitHub doesn't answer is Unknown. Answers are kept per (repository, sha): Published 24 h, NotApplicable 1 h, the rest
+// 2 min. Concurrent lookups of the same key share one in-flight Task; a failed Task is dropped.
 public sealed class GitHubImagePublications(IServiceScopeFactory scopes, TimeProvider clock) : IImagePublications
 {
     public const string Workflow = "docker-publish.yml";
     public const int MaxChecked = 20;
     public static readonly TimeSpan CacheFor = TimeSpan.FromHours(24);
+    public static readonly TimeSpan NotApplicableFor = TimeSpan.FromHours(1);
+    public static readonly TimeSpan RetryAfter = TimeSpan.FromMinutes(2);
 
-    // A run is created when the push lands, a little after the committer date; this covers clocks that are slightly off.
-    private static readonly TimeSpan Margin = TimeSpan.FromMinutes(10);
+    // A run is created when the push lands, at or after the merge commit's date; this covers clocks that are off.
+    private static readonly TimeSpan Margin = TimeSpan.FromHours(1);
 
     // GitHub returns at most 1,000 filtered runs (10 pages of 100); a run object is a few KB, a compare page holds up to 300 files.
     private const int PageSize = 100;
@@ -30,53 +36,92 @@ public sealed class GitHubImagePublications(IServiceScopeFactory scopes, TimePro
 
     private static readonly string[] FailedConclusions = ["failure", "timed_out", "cancelled", "startup_failure"];
 
-    private readonly ConcurrentDictionary<string, Cached> _cache = new(StringComparer.Ordinal);
+    private readonly object _gate = new();
+    private readonly Dictionary<string, Entry> _entries = new(StringComparer.Ordinal);
 
     public async Task<ImagePublication> FindAsync(IssueRef repository, string sha, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var key = $"{repository.Repository.ToLowerInvariant()}@{sha.ToLowerInvariant()}";
-        var now = clock.GetUtcNow();
-        if (_cache.TryGetValue(key, out var cached) && now < cached.Until)
+        Entry entry;
+        lock (_gate)
         {
-            return cached.Answer;
+            var now = clock.GetUtcNow();
+            if (!_entries.TryGetValue(key, out entry!) || entry.IsExpired(now))
+            {
+                foreach (var expired in _entries.Where(e => e.Value.IsExpired(now)).Select(e => e.Key).ToList())
+                {
+                    _entries.Remove(expired);
+                }
+
+                entry = new Entry();
+                _entries[key] = entry;
+                entry.Answer = LoadAsync(key, entry, repository, sha);
+            }
         }
 
-        // The client reads the scoped integration settings, so it is resolved in a scope of its own.
-        await using var scope = scopes.CreateAsyncScope();
-        var client = scope.ServiceProvider.GetRequiredService<GitHubIssuesClient>();
-        var answer = await AskAsync(client, repository, sha, cancellationToken);
-        if (answer is ImagePublication.Published or ImagePublication.NotApplicable)
+        return await entry.Answer;
+    }
+
+    // The shared lookup does not take one caller's token: another caller is waiting on the same Task.
+    private async Task<ImagePublication> LoadAsync(string key, Entry entry, IssueRef repository, string sha)
+    {
+        try
         {
-            foreach (var expired in _cache.Where(e => now >= e.Value.Until).Select(e => e.Key).ToList())
+            // The client reads the scoped integration settings, so it is resolved in a scope of its own.
+            await using var scope = scopes.CreateAsyncScope();
+            var client = scope.ServiceProvider.GetRequiredService<GitHubIssuesClient>();
+            var answer = await AskAsync(client, repository, sha, CancellationToken.None);
+            lock (_gate)
             {
-                _cache.TryRemove(expired, out _);
+                entry.Until = clock.GetUtcNow() + answer switch
+                {
+                    ImagePublication.Published => CacheFor,
+                    ImagePublication.NotApplicable => NotApplicableFor,
+                    _ => RetryAfter,
+                };
             }
 
-            _cache[key] = new Cached(answer, now + CacheFor);
+            return answer;
+        }
+        catch (Exception) when (Forget(key, entry))
+        {
+            throw;
+        }
+    }
+
+    private bool Forget(string key, Entry entry)
+    {
+        lock (_gate)
+        {
+            if (_entries.TryGetValue(key, out var current) && ReferenceEquals(current, entry))
+            {
+                _entries.Remove(key);
+            }
         }
 
-        return answer;
+        return false;
     }
 
     private static async Task<ImagePublication> AskAsync(GitHubIssuesClient client, IssueRef repository, string sha, CancellationToken cancellationToken)
     {
-        var escapedSha = Uri.EscapeDataString(sha);
-        var (commitResult, commit) = await client.GetRepositoryAsync<CommitReply>(repository, $"commits/{escapedSha}", MaxBody, cancellationToken);
-        if (commitResult is not GitHubWriteResult.Ok || commit?.Commit?.Committer?.Date is not { } committedAt)
+        var (commitResult, commit) = await client.GetRepositoryAsync<CommitReply>(repository, $"commits/{Uri.EscapeDataString(sha)}", MaxBody, cancellationToken);
+        if (commitResult is not GitHubWriteResult.Ok || commit?.Commit?.Committer?.Date is not { } committedAt || string.IsNullOrEmpty(commit.Sha))
         {
             return new ImagePublication.Unknown();
         }
 
+        var fix = commit.Sha;
         var (stop, runs) = await ListRunsAsync(client, repository, committedAt - Margin, cancellationToken);
         if (stop is not null)
         {
             return stop;
         }
 
-        var ordered = runs.OrderBy(r => r.CreatedAt).ThenBy(r => r.Id).ToList();
-        foreach (var run in ordered.Where(r => r is { Status: "completed", Conclusion: "success" }).Take(MaxChecked))
+        var finished = runs.Where(r => r is { Status: "completed", Conclusion: "success" }).OrderBy(r => r.UpdatedAt).ThenBy(r => r.Id).ToList();
+        foreach (var run in finished.Take(MaxChecked))
         {
-            var contains = await ContainsAsync(client, repository, sha, run.HeadSha, cancellationToken);
+            var contains = await ContainsAsync(client, repository, fix, run.HeadSha, cancellationToken);
             switch (contains)
             {
                 case null:
@@ -87,7 +132,13 @@ public sealed class GitHubImagePublications(IServiceScopeFactory scopes, TimePro
             }
         }
 
-        var fixRuns = ordered.Where(r => string.Equals(r.HeadSha, sha, StringComparison.OrdinalIgnoreCase)).ToList();
+        if (finished.Count > MaxChecked)
+        {
+            // Unchecked candidates may contain the fix, so neither Failed nor "not yet" is known.
+            return new ImagePublication.Unknown();
+        }
+
+        var fixRuns = runs.Where(r => string.Equals(r.HeadSha, fix, StringComparison.OrdinalIgnoreCase)).OrderBy(r => r.CreatedAt).ThenBy(r => r.Id).ToList();
         if (fixRuns.Exists(r => r.Status != "completed"))
         {
             return new ImagePublication.Pending();
@@ -99,7 +150,7 @@ public sealed class GitHubImagePublications(IServiceScopeFactory scopes, TimePro
     }
 
     // The push runs on main created since `since`; or Stop: NotApplicable when the repository has no such workflow, Unknown when
-    // GitHub didn't answer every page.
+    // GitHub didn't answer every page or the last page was full (more runs may exist).
     private static async Task<(ImagePublication? Stop, List<RunReply> Runs)> ListRunsAsync(GitHubIssuesClient client, IssueRef repository, DateTimeOffset since, CancellationToken cancellationToken)
     {
         var created = Uri.EscapeDataString(">=" + since.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture));
@@ -124,11 +175,12 @@ public sealed class GitHubImagePublications(IServiceScopeFactory scopes, TimePro
             runs.AddRange(pageRuns.Where(r => !string.IsNullOrEmpty(r.HeadSha) && !string.IsNullOrEmpty(r.HtmlUrl)));
             if (pageRuns.Count < PageSize)
             {
-                break;
+                return (null, runs);
             }
         }
 
-        return (null, runs);
+        // The last page was full: runs beyond it may be the first to publish the fix.
+        return (new ImagePublication.Unknown(), runs);
     }
 
     // Whether head contains fix (compare status ahead or identical), or null when GitHub didn't say.
@@ -152,9 +204,17 @@ public sealed class GitHubImagePublications(IServiceScopeFactory scopes, TimePro
         } : null;
     }
 
-    private sealed record Cached(ImagePublication Answer, DateTimeOffset Until);
+    private sealed class Entry
+    {
+        public Task<ImagePublication> Answer { get; set; } = null!;
 
-    private sealed record CommitReply(CommitBody? Commit);
+        // Null while the lookup is in flight.
+        public DateTimeOffset? Until { get; set; }
+
+        public bool IsExpired(DateTimeOffset now) => Until is { } until && now >= until;
+    }
+
+    private sealed record CommitReply(string? Sha, CommitBody? Commit);
 
     private sealed record CommitBody(CommitPerson? Committer);
 

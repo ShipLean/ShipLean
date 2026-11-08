@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Globalization;
 using System.Net;
 using System.Text;
+using System.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
 using ShipLean.Application.Features.IssueIntake.GitHub;
@@ -49,16 +50,24 @@ public class GitHubImagePublicationsTests
 
     private static string RunUrl(long id) => $"https://github.com/acme/storefront/actions/runs/{id}";
 
-    private static string Run(long id, string sha, string status, string? conclusion, int minutesAfterMerge)
-        => $$"""
+    private static TestRun Run(long id, string sha, string status, string? conclusion, int minutesAfterMerge, int minutesToFinish = 6)
+        => new(MergedAt.AddMinutes(minutesAfterMerge), $$"""
              { "id": {{id}}, "head_sha": "{{sha}}", "status": "{{status}}", "conclusion": {{(conclusion is null ? "null" : $"\"{conclusion}\"")}},
                "html_url": "{{RunUrl(id)}}", "created_at": "{{GitHubTime(MergedAt.AddMinutes(minutesAfterMerge))}}",
-               "updated_at": "{{GitHubTime(MergedAt.AddMinutes(minutesAfterMerge + 6))}}" }
-             """;
+               "updated_at": "{{GitHubTime(MergedAt.AddMinutes(minutesAfterMerge + minutesToFinish))}}" }
+             """);
 
-    // Newest first, as GitHub lists them.
-    private void Runs(params string[] runs)
-        => _clients.Respond(RunsPath, $$"""{ "total_count": {{runs.Length}}, "workflow_runs": [{{string.Join(",", runs.Reverse())}}] }""");
+    // Newest first, as GitHub lists them, filtered by the created>= bound and cut into per_page pages like GitHub does.
+    private void Runs(params TestRun[] runs)
+        => _clients.RespondWith(RunsPath, uri =>
+        {
+            var query = HttpUtility.ParseQueryString(uri.Query);
+            var since = DateTimeOffset.Parse(query["created"]![2..], CultureInfo.InvariantCulture);
+            var page = runs.Where(r => r.Created >= since).OrderByDescending(r => r.Created).Skip((int.Parse(query["page"]!, CultureInfo.InvariantCulture) - 1) * 100).Take(100);
+            return $$"""{ "total_count": {{runs.Length}}, "workflow_runs": [{{string.Join(",", page.Select(r => r.Json))}}] }""";
+        });
+
+    private static string Sha(int n) => n.ToString("x", CultureInfo.InvariantCulture).PadLeft(40, 'd');
 
     private void Compare(string head, string status)
         => _clients.Respond($"{Repo}/compare/{Fix}...{head}", $$"""{ "status": "{{status}}", "ahead_by": 1, "behind_by": 0, "commits": [], "files": [] }""");
@@ -72,7 +81,7 @@ public class GitHubImagePublicationsTests
 
         found.ShouldBe(new ImagePublication.Published(MergedAt.AddMinutes(7), RunUrl(7), Fix));
         _clients.Sent.Single(p => p.StartsWith(RunsPath, StringComparison.Ordinal))
-            .ShouldBe($"{RunsPath}?branch=main&event=push&exclude_pull_requests=true&created=%3E%3D{GitHubTime(MergedAt.AddMinutes(-10)).Replace(":", "%3A", StringComparison.Ordinal)}&per_page=100&page=1");
+            .ShouldBe($"{RunsPath}?branch=main&event=push&exclude_pull_requests=true&created=%3E%3D{GitHubTime(MergedAt.AddHours(-1)).Replace(":", "%3A", StringComparison.Ordinal)}&per_page=100&page=1");
     }
 
     [Test]
@@ -155,17 +164,149 @@ public class GitHubImagePublicationsTests
     }
 
     [Test]
-    public async Task Find_WhenPending_ShouldAskAgain()
+    public async Task Find_WhenCommitDateIsAfterAnEarlierContainingRun_ShouldFindThatRun()
+    {
+        Runs(Run(7, Fix, "completed", "success", -30), Run(8, Later, "completed", "success", 20));
+        Compare(Later, "ahead");
+
+        var found = await Publications().FindAsync(Repository, Fix);
+
+        found.ShouldBe(new ImagePublication.Published(MergedAt.AddMinutes(-24), RunUrl(7), Fix));
+    }
+
+    [Test]
+    public async Task Find_WhenRunListIsTruncated_ShouldReturnUnknown()
+    {
+        Runs([.. Enumerable.Range(1, 1000).Select(i => Run(i, Sha(i), "completed", "failure", 1 + (i / 100))), Run(2000, Fix, "completed", "success", 30)]);
+
+        var found = await Publications().FindAsync(Repository, Fix);
+
+        found.ShouldBe(new ImagePublication.Unknown());
+    }
+
+    [Test]
+    public async Task Find_WhenMoreThanTheLimitIsUnchecked_ShouldReturnUnknown()
+    {
+        var runs = new List<TestRun> { Run(1, Fix, "completed", "failure", 1) };
+        foreach (var i in Enumerable.Range(10, GitHubImagePublications.MaxChecked + 1))
+        {
+            runs.Add(Run(i, Sha(i), "completed", "success", i));
+            Compare(Sha(i), "diverged");
+        }
+
+        Runs([.. runs]);
+
+        var found = await Publications().FindAsync(Repository, Fix);
+
+        found.ShouldBe(new ImagePublication.Unknown());
+        _clients.Sent.Count(p => p.Contains("/compare/", StringComparison.Ordinal)).ShouldBe(GitHubImagePublications.MaxChecked);
+    }
+
+    [Test]
+    public async Task Find_WhenALaterCreatedRunFinishedFirst_ShouldReportIt()
+    {
+        Runs(Run(7, Later, "completed", "success", 1, 40), Run(8, Divergent, "completed", "success", 5, 3));
+        Compare(Later, "ahead");
+        Compare(Divergent, "ahead");
+
+        var found = await Publications().FindAsync(Repository, Fix);
+
+        found.ShouldBe(new ImagePublication.Published(MergedAt.AddMinutes(8), RunUrl(8), Divergent));
+    }
+
+    [Test]
+    public async Task Find_WhenShaIsAbbreviatedAndRunIsPending_ShouldReturnPending()
+    {
+        _clients.Respond($"{Repo}/commits/{Fix[..7]}", _clients.Answer($"{Repo}/commits/{Fix}"));
+        Runs(Run(7, Fix, "in_progress", null, 1));
+
+        var found = await Publications().FindAsync(Repository, Fix[..7]);
+
+        found.ShouldBe(new ImagePublication.Pending());
+    }
+
+    [Test]
+    public async Task Find_WhenShaIsAbbreviatedAndRunFailed_ShouldReturnFailed()
+    {
+        _clients.Respond($"{Repo}/commits/{Fix[..7]}", _clients.Answer($"{Repo}/commits/{Fix}"));
+        Runs(Run(7, Fix, "completed", "failure", 1));
+
+        var found = await Publications().FindAsync(Repository, Fix[..7]);
+
+        found.ShouldBe(new ImagePublication.Failed(RunUrl(7)));
+    }
+
+    [Test]
+    public async Task Find_WhenPublished_ShouldExpireAfter24Hours()
+    {
+        Runs(Run(7, Fix, "completed", "success", 1));
+
+        (await KeptFor(GitHubImagePublications.CacheFor)).ShouldBe((true, true));
+    }
+
+    [Test]
+    public async Task Find_WhenNotApplicable_ShouldExpireAfterAnHour()
+    {
+        (await KeptFor(TimeSpan.FromHours(1))).ShouldBe((true, true));
+    }
+
+    [Test]
+    public async Task Find_WhenPending_ShouldExpireAfterTwoMinutes()
     {
         Runs(Run(7, Fix, "queued", null, 1));
+
+        (await KeptFor(TimeSpan.FromMinutes(2))).ShouldBe((true, true));
+    }
+
+    [Test]
+    public async Task Find_WhenFailed_ShouldExpireAfterTwoMinutes()
+    {
+        Runs(Run(7, Fix, "completed", "failure", 1));
+
+        (await KeptFor(TimeSpan.FromMinutes(2))).ShouldBe((true, true));
+    }
+
+    [Test]
+    public async Task Find_WhenUnknown_ShouldExpireAfterTwoMinutes()
+    {
+        Runs(Run(8, Later, "completed", "success", 10));
+
+        (await KeptFor(TimeSpan.FromMinutes(2))).ShouldBe((true, true));
+    }
+
+    [Test]
+    public async Task Find_WhenLookedUpConcurrently_ShouldMakeOneRequest()
+    {
+        Runs(Run(7, Fix, "completed", "success", 1));
+        var gate = new TaskCompletionSource();
+        _clients.Gate = gate.Task;
         var publications = Publications();
-        await publications.FindAsync(Repository, Fix);
+
+        var lookups = Enumerable.Range(0, 5).Select(_ => publications.FindAsync(Repository, Fix)).ToList();
+        gate.SetResult();
+        await Task.WhenAll(lookups);
+
+        _clients.Sent.Count(p => p.Contains("/commits/", StringComparison.Ordinal)).ShouldBe(1);
+        _clients.Sent.Count(p => p.StartsWith(RunsPath, StringComparison.Ordinal)).ShouldBe(1);
+    }
+
+    // Whether the answer was kept until `lifetime` had almost passed, and asked for again once it had.
+    private async Task<(bool Kept, bool AskedAgain)> KeptFor(TimeSpan lifetime)
+    {
+        var publications = Publications();
+        var first = await publications.FindAsync(Repository, Fix);
         var asked = _clients.Sent.Count;
 
-        await publications.FindAsync(Repository, Fix);
+        _clock.Advance(lifetime - TimeSpan.FromSeconds(1));
+        var again = await publications.FindAsync(Repository, Fix);
+        var kept = again.Equals(first) && _clients.Sent.Count == asked;
 
-        _clients.Sent.Count.ShouldBeGreaterThan(asked);
+        _clock.Advance(TimeSpan.FromSeconds(1));
+        await publications.FindAsync(Repository, Fix);
+        return (kept, _clients.Sent.Count > asked);
     }
+
+    private sealed record TestRun(DateTimeOffset Created, string Json);
 
     // Scopes whose provider hands out the one client (GitHubImagePublications resolves it per lookup).
     private sealed class ClientScopes(GitHubIssuesClient client) : IServiceScopeFactory, IServiceProvider
@@ -192,19 +333,30 @@ public class GitHubImagePublicationsTests
 
         public IReadOnlyList<string> Sent => [.. _sent];
 
+        private readonly ConcurrentDictionary<string, Func<Uri, string>> _dynamic = new(StringComparer.Ordinal);
+
+        // Awaited before every answer; a test holds it to keep lookups in flight.
+        public Task Gate { get; set; } = Task.CompletedTask;
+
         public void Respond(string path, string body) => _answers[path] = body;
 
-        public HttpClient CreateClient(string name) => new(new Answer(this));
+        public void RespondWith(string path, Func<Uri, string> body) => _dynamic[path] = body;
 
-        private sealed class Answer(FakeGitHub owner) : HttpMessageHandler
+        public string Answer(string path) => _answers[path];
+
+        public HttpClient CreateClient(string name) => new(new Answerer(this));
+
+        private sealed class Answerer(FakeGitHub owner) : HttpMessageHandler
         {
-            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             {
                 owner._sent.Enqueue(request.RequestUri!.PathAndQuery);
-                var response = owner._answers.TryGetValue(request.RequestUri.AbsolutePath, out var body)
+                await owner.Gate;
+                var path = request.RequestUri.AbsolutePath;
+                var body = owner._dynamic.TryGetValue(path, out var make) ? make(request.RequestUri) : owner._answers.GetValueOrDefault(path);
+                return body is not null
                     ? new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(body, Encoding.UTF8, "application/json") }
                     : new HttpResponseMessage(HttpStatusCode.NotFound) { Content = new StringContent("""{ "message": "Not Found" }""", Encoding.UTF8, "application/json") };
-                return Task.FromResult(response);
             }
         }
     }
