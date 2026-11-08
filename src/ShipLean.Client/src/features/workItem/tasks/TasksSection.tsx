@@ -24,21 +24,21 @@ export function TasksSection({ project, itemKey }: { project: ProjectDto; itemKe
       aria-label="Tasks"
       className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2"
     >
-      <header className="flex items-center gap-2">
+      <header className="flex items-center gap-2 touch:flex-wrap">
         <h2 className="text-[length:var(--text-md)] font-semibold">Tasks</h2>
         <span data-testid={ids.tasksCount}>
           <Chip tone={tasks.length > 0 && done === tasks.length ? 'ok' : 'muted'}>
             {done}/{tasks.length}
           </Chip>
         </span>
-        <span className="text-[length:var(--text-xs)] text-ink-muted">
+        <span className="text-[length:var(--text-xs)] text-ink-muted touch:order-last touch:basis-full">
           Each task is its own work item and saves straight away
         </span>
         {isAction ? null : (
           <button
             type="button"
             data-testid={ids.taskAdd}
-            className="ml-auto h-6 rounded-control px-2 text-[length:var(--text-xs)] text-signal hover:bg-signal-soft"
+            className="ml-auto h-6 rounded-control px-2 text-[length:var(--text-xs)] text-signal hover:bg-signal-soft touch:h-[var(--touch-target)]"
             onClick={() => setAdding(!adding)}
           >
             + Task
