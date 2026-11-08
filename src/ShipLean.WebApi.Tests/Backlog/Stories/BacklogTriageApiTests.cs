@@ -57,6 +57,9 @@ public class BacklogTriageApiTests : ApiFixture
     [Test]
     public async Task Backlog_WhenFilterNamesOneOfTwoIntakeStatesAmongOthers_ShouldKeepTheOtherHidden()
     {
+        // The Bug in Triage B also matches the assignee clause, so only the triage rule keeps it out.
+        await using var connection = await OpenDatabaseAsync();
+        await connection.ExecuteAsync("UPDATE work_item SET assigned_to = @ana WHERE key = @bug", new { ana = SeedIds.Users.Ana, bug = _bug });
         var filter = $$"""{"match":"any","clauses":[{"field":"state","op":"in","value":["{{_storyTriage}}"]},{"field":"assignee","op":"in","value":["{{SeedIds.Users.Ana}}"]}]}""";
 
         var view = await Api.GetBacklogAsync($"{Root}/backlog?mode=list&filter={Uri.EscapeDataString(filter)}");
