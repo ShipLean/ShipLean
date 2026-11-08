@@ -145,6 +145,9 @@ public sealed class DbIssueIntake(
 
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+
+        // The project's round lock before the issue row, the order every issue writer keeps (IIssueProposalSessions.LockProjectAsync).
+        await sessions.LockProjectAsync(record.ProjectId, transaction, cancellationToken);
         if (!await issues.SetPhaseAsync(record.Id, [IssuePhase.WaitingForMaintainer], IssuePhase.Proposing, transaction, cancellationToken))
         {
             return IssueOutcome.Ignored;

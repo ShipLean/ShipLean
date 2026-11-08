@@ -13,6 +13,8 @@ namespace ShipLean.Application.Features.IssueIntake.Rounds;
 // - a round job of the issue that is still pending already covers this request (its session reads the comments when it starts),
 //   so a second request, concurrent or not, enqueues nothing more; when that job's session has already started (its
 //   round-session:<jobKey> effect is claimed), the comments were read before this reply, so rerun_requested is set for the inbox;
+// - an unforced request while proposing with rounds > 0 and no pending job is a round in flight (its job is done, its session or
+//   its proposal isn't): rerun_requested is set, and a second round is never enqueued while proposing;
 // - unless forced (a maintainer's /shiplean), at most RatePerHour round jobs per project in the last hour and rounds below the
 //   project's maximum; past either the issue is held, with its notices (RoundHolds);
 // - otherwise the rounds go up by one, the job is enqueued with key round:<n>:<issue>, and the phase becomes proposing.
@@ -42,8 +44,7 @@ public sealed class IssueProposalSessions(
         var projectId = await connection.QuerySingleOrDefaultAsync<Guid?>(new CommandDefinition(
             "SELECT project_id FROM github_issue WHERE id = @issueId", new { issueId }, transaction, cancellationToken: cancellationToken))
             ?? throw new InvalidOperationException($"No github_issue {issueId}.");
-        await connection.ExecuteAsync(new CommandDefinition(
-            "SELECT pg_advisory_xact_lock(hashtextextended('issue_round:' || @projectId::text, 0))", new { projectId }, transaction, cancellationToken: cancellationToken));
+        await LockProjectAsync(projectId, transaction, cancellationToken);
         var phase = await connection.QuerySingleAsync<string>(new CommandDefinition(
             "SELECT phase FROM github_issue WHERE id = @issueId FOR UPDATE", new { issueId }, transaction, cancellationToken: cancellationToken));
         if (IssueWire.ParsePhase(phase) == IssuePhase.Accepting)
@@ -73,6 +74,15 @@ public sealed class IssueProposalSessions(
             return RoundRequest.Requested;
         }
 
+        // Proposing with a round behind it and no pending job: that round's session is running or its proposal is on the way to
+        // the inbox, which takes the flag once the proposal is posted. A forced request (a maintainer's /shiplean) and a new
+        // issue's first round set proposing themselves, in the same transaction, just before they ask.
+        if (!force && issue.Phase == IssuePhase.Proposing && issue.Rounds > 0)
+        {
+            await issues.RequestRerunAsync(issueId, transaction, cancellationToken);
+            return RoundRequest.Requested;
+        }
+
         if (!force)
         {
             if (await jobs.CountSinceAsync(projectId, IssueJobKind.Round, clock.GetUtcNow() - TimeSpan.FromHours(1), transaction, cancellationToken) >= RatePerHour)
@@ -92,6 +102,12 @@ public sealed class IssueProposalSessions(
         await jobs.EnqueueAsync(IssueJobKind.Round, JobKey(round, issueId), issueId, projectId, JsonSerializer.Serialize(new RoundJobPayload(round)), transaction, cancellationToken);
         await issues.SetPhaseAsync(issueId, Restartable, IssuePhase.Proposing, transaction, cancellationToken);
         return RoundRequest.Requested;
+    }
+
+    public async Task LockProjectAsync(Guid projectId, DbTransaction transaction, CancellationToken cancellationToken = default)
+    {
+        await transaction.Connection!.ExecuteAsync(new CommandDefinition(
+            "SELECT pg_advisory_xact_lock(hashtextextended('issue_round:' || @projectId::text, 0))", new { projectId }, transaction, cancellationToken: cancellationToken));
     }
 
     // The hold notices are written here, so every caller (intake, replies, /shiplean) gets them. The caller owns the transaction,

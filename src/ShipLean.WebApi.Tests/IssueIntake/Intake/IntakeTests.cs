@@ -424,5 +424,10 @@ public class IntakeTests : ApiFixture
 
             return Inner.RequestRoundAsync(issueId, force, transaction, cancellationToken);
         }
+
+        public Task LockProjectAsync(Guid projectId, DbTransaction transaction, CancellationToken cancellationToken = default)
+        {
+            return Inner.LockProjectAsync(projectId, transaction, cancellationToken);
+        }
     }
 }

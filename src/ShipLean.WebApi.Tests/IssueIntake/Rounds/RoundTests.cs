@@ -83,6 +83,7 @@ public class RoundTests : ApiFixture
     {
         var (_, _, issue) = await ArrangeAsync(maxRounds: 1);
         await SetRoundsAsync(issue.Id, 1);
+        await SetPhaseAsync(issue.Id, IssuePhase.AwaitingReply);
 
         var outcome = await RequestAsync(issue.Id, force: false);
 
@@ -101,6 +102,7 @@ public class RoundTests : ApiFixture
     {
         var (_, _, issue) = await ArrangeAsync(maxRounds: 1);
         await SetRoundsAsync(issue.Id, 1);
+        await SetPhaseAsync(issue.Id, IssuePhase.AwaitingReply);
 
         (await RequestAsync(issue.Id, force: false)).ShouldBe(RoundRequest.Held(RoundHolds.RoundCap, Changed(issue)));
         (await RequestAsync(issue.Id, force: false)).ShouldBe(RoundRequest.Held(RoundHolds.RoundCap));
@@ -274,6 +276,7 @@ public class RoundTests : ApiFixture
     {
         var (_, _, issue) = await ArrangeAsync(maxRounds: 1);
         await SetRoundsAsync(issue.Id, 1);
+        await SetPhaseAsync(issue.Id, IssuePhase.AwaitingReply);
         await using (var database = await OpenDatabaseAsync())
         {
             await database.ExecuteAsync("UPDATE github_issue SET open_on_github = false WHERE id = @Id", new { issue.Id });
@@ -285,6 +288,25 @@ public class RoundTests : ApiFixture
         (await IssueAsync(issue.Id)).Phase.ShouldBe(IssuePhase.WaitingForMaintainer);
         (await OutboxAsync(issue.Id)).ShouldBeEmpty();
         (await ShipLeanCommentsAsync(issue.WorkItemId)).ShouldHaveSingleItem();
+    }
+
+    // Round 1's job is done (its session ran) but its proposal isn't posted yet: the issue is still proposing.
+    [Test]
+    public async Task RequestRound_WhenProposingAfterRoundJobDone_ShouldRequestRerunNotSecondRound()
+    {
+        var (_, _, issue) = await ArrangeAsync();
+        (await RequestAsync(issue.Id, force: false)).ShouldBe(RoundRequest.Requested);
+        await using (var database = await OpenDatabaseAsync())
+        {
+            await database.ExecuteAsync("UPDATE issue_job SET status = 'done', done_at = now() WHERE github_issue_id = @Id", new { issue.Id });
+        }
+
+        var reply = await RequestAsync(issue.Id, force: false);
+
+        reply.ShouldBe(RoundRequest.Requested);
+        (await IssueAsync(issue.Id)).Rounds.ShouldBe(1);
+        (await PendingRoundsAsync(issue.Id)).ShouldBeEmpty();
+        (await Host.Services.GetRequiredService<IGitHubIssueStore>().TakeRerunAsync(issue.Id)).ShouldBeTrue();
     }
 
     [Test]

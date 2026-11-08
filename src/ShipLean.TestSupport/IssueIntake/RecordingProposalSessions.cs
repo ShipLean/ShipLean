@@ -18,6 +18,11 @@ public sealed class RecordingProposalSessions : IIssueProposalSessions
         _requests.Enqueue(new RecordedRoundRequest(issueId, force));
         return Task.FromResult(Next);
     }
+
+    public Task LockProjectAsync(Guid projectId, DbTransaction transaction, CancellationToken cancellationToken = default)
+    {
+        return Task.CompletedTask;
+    }
 }
 
 public sealed record RecordedRoundRequest(Guid IssueId, bool Force);

@@ -7,8 +7,11 @@ using ShipLean.Contracts.WorkItems;
 namespace ShipLean.Application.Features.IssueIntake.Replies;
 
 // IIssueReplies over the stores. Every comment on a taken issue is mirrored onto its item, once per GitHub URL. A reply from
-// the author or a maintainer also asks for the next round when the conversation is waiting for one (D11); the phase
-// compare-and-set, the round request and the effect claim share one transaction, so two deliveries of one reply start one round.
+// the author or a maintainer also asks for a round (D11) while the conversation can take one; the round service decides what
+// that means (a new round, a hold, or a rerun of the round in flight). The mirror, the claim of reply:<issueId>:<commentId> and
+// the round request are one transaction, so a crash between them leaves nothing and the retry does all three, and two deliveries
+// of one reply ask once. Lock order, as for every issue writer: the project's round lock first, then the comment's html_url
+// lock and the rows. The phase is never written here: RequestRoundAsync owns it.
 public sealed class DbIssueReplies(
     NpgsqlDataSource dataSource,
     IIssueIntakeSettings settings,
@@ -22,80 +25,81 @@ public sealed class DbIssueReplies(
     // The reason IIssueProposalSessions documents for a request that wrote nothing.
     private const string IntakeOff = "intakeOff";
 
-    // Only these phases wait for a round; any other phase (proposing, accepting, accepted, closed) means mirror only.
-    private static readonly IssuePhase[] WaitingPhases = [IssuePhase.AwaitingReply, IssuePhase.AlreadyShipped, IssuePhase.WaitingForMaintainer];
+    private const string RoundSavepoint = "reply_round";
 
-    public async Task<IssueOutcome> MirrorAsync(IssueCommentEvent comment, CancellationToken cancellationToken)
+    // A reply asks for a round in these phases (proposing: the round service reruns the round in flight). Any other phase
+    // (accepting: an LGTM's accept job runs; accepted, closed) means mirror only.
+    private static readonly IssuePhase[] RoundPhases = [IssuePhase.AwaitingReply, IssuePhase.AlreadyShipped, IssuePhase.WaitingForMaintainer, IssuePhase.Proposing];
+
+    public Task<IssueOutcome> MirrorAsync(IssueCommentEvent comment, CancellationToken cancellationToken)
     {
-        return await MirrorCoreAsync(comment, cancellationToken) is { } taken
-            ? IssueOutcome.Processed(taken.ItemKey)
-            : IssueOutcome.Ignored;
+        return HandleAsync(comment, reply: false, cancellationToken);
     }
 
-    public async Task<IssueOutcome> ReplyAsync(IssueCommentEvent comment, CancellationToken cancellationToken)
+    public Task<IssueOutcome> ReplyAsync(IssueCommentEvent comment, CancellationToken cancellationToken)
     {
-        if (await MirrorCoreAsync(comment, cancellationToken) is not { } taken)
+        return HandleAsync(comment, reply: true, cancellationToken);
+    }
+
+    // Intake is checked first: a repository its record's project no longer takes is Ignored, with nothing written.
+    private async Task<IssueOutcome> HandleAsync(IssueCommentEvent comment, bool reply, CancellationToken cancellationToken)
+    {
+        if (await settings.ForRepositoryAsync(comment.Issue, cancellationToken) is not { RunAsUserId: { } runAs } project
+            || await issues.FindAsync(comment.Issue, null, cancellationToken) is not { } found
+            || found.ProjectId != project.ProjectId)
         {
             return IssueOutcome.Ignored;
         }
 
-        if (WaitingPhases.Contains(taken.Record.Phase))
-        {
-            await RequestRoundAsync(taken.Record, comment, cancellationToken);
-        }
-
-        return IssueOutcome.Processed(taken.ItemKey);
-    }
-
-    private async Task<Taken?> MirrorCoreAsync(IssueCommentEvent comment, CancellationToken cancellationToken)
-    {
-        if (await settings.ForRepositoryAsync(comment.Issue, cancellationToken) is not { RunAsUserId: { } runAs }
-            || await issues.FindAsync(comment.Issue, null, cancellationToken) is not { } record)
-        {
-            return null;
-        }
-
-        var add = new MirroredComment(record.Id, comment.CommentId, comment.CommentUrl, comment.AuthorLogin, IssueEvent.Cap(comment.Body), comment.CreatedAt, runAs);
-        MirroredCommentAdd result;
+        MirroredCommentAdd mirror;
+        RoundRequest? round = null;
         await using (var connection = await dataSource.OpenConnectionAsync(cancellationToken))
         await using (var transaction = await connection.BeginTransactionAsync(cancellationToken))
         {
-            result = await mirrored.AddAsync(add, transaction, cancellationToken);
+            await sessions.LockProjectAsync(found.ProjectId, transaction, cancellationToken);
+            var record = await issues.FindByIdAsync(found.Id, transaction, cancellationToken) ?? found;
+            mirror = await mirrored.AddAsync(
+                new MirroredComment(record.Id, comment.CommentId, comment.CommentUrl, comment.AuthorLogin, IssueEvent.Cap(comment.Body), comment.CreatedAt, runAs),
+                transaction,
+                cancellationToken);
+            if (reply && RoundPhases.Contains(record.Phase))
+            {
+                round = await RequestRoundAsync(record, comment, transaction, cancellationToken);
+            }
+
             await transaction.CommitAsync(cancellationToken);
         }
 
-        if (result.Changed is { } changed)
+        if (mirror.Changed is { } mirrorChanged)
         {
-            await events.PublishAsync(changed);
+            await events.PublishAsync(mirrorChanged);
         }
 
-        return new Taken(record, (await workItems.GetAsync(record.WorkItemId, cancellationToken)).Key);
+        if (round?.Changed is { } roundChanged)
+        {
+            await events.PublishAsync(roundChanged);
+        }
+
+        return IssueOutcome.Processed((await workItems.GetAsync(found.WorkItemId, cancellationToken)).Key);
     }
 
-    private async Task RequestRoundAsync(GitHubIssueRecord record, IssueCommentEvent comment, CancellationToken cancellationToken)
+    // Null when this reply already asked (a replay) or the project stopped taking the repository since the check above; then the
+    // savepoint drops the claim too, so no round write is left.
+    private async Task<RoundRequest?> RequestRoundAsync(GitHubIssueRecord record, IssueCommentEvent comment, NpgsqlTransaction transaction, CancellationToken cancellationToken)
     {
-        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
-        if (!await effects.TryClaimAsync($"reply:{record.Id}:{comment.CommentId}", record.Id, null, transaction, cancellationToken)
-            || !await issues.SetPhaseAsync(record.Id, WaitingPhases, IssuePhase.Proposing, transaction, cancellationToken))
+        await transaction.SaveAsync(RoundSavepoint, cancellationToken);
+        if (!await effects.TryClaimAsync($"reply:{record.Id}:{comment.CommentId}", record.Id, null, transaction, cancellationToken))
         {
-            return;
+            return null;
         }
 
         var round = await sessions.RequestRoundAsync(record.Id, force: false, transaction, cancellationToken);
         if (round is { Outcome: RoundRequestOutcome.Held, Reason: IntakeOff })
         {
-            // The project no longer takes this repository: nothing is written, not even the phase.
-            await transaction.RollbackAsync(cancellationToken);
-            return;
+            await transaction.RollbackAsync(RoundSavepoint, cancellationToken);
+            return null;
         }
 
-        await transaction.CommitAsync(cancellationToken);
-        if (round.Changed is { } changed)
-        {
-            await events.PublishAsync(changed);
-        }
+        return round;
     }
-
-    private sealed record Taken(GitHubIssueRecord Record, string ItemKey);
 }
