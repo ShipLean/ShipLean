@@ -46,7 +46,7 @@ public class AttachmentMirrorTests
         result.Copied.ShouldBe(3);
         var stored = await _destination.ListAsync(Prefix, CancellationToken.None).ToListAsync();
         stored.Select(o => o.Key).ShouldBe(
-            ["attachments/a", "attachments/b", "avatars/u/c"].Select(k => BackupObjectKeys.Attachment(Prefix, 1, k)).Order(StringComparer.Ordinal));
+            new[] { "attachments/a", "attachments/b", "avatars/u/c" }.Select(k => BackupObjectKeys.Attachment(Prefix, 1, k)).Order(StringComparer.Ordinal));
         result.Bytes.ShouldBe(stored.Sum(o => o.Size));
     }
 
