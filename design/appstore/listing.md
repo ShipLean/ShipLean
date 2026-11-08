@@ -8,20 +8,20 @@ The description lists only what the app does in the mock-ups (SHIP-916 and the a
 
 | Field | Limit | Text |
 |---|---|---|
-| App name | 30 | ShipLean |
+| App name | 30 | ShipLean: Backlog by Voice |
 
 ## App Store (iOS)
 
 | Field | Limit | Text |
 |---|---|---|
-| Subtitle | 30 | Your backlog, by voice |
+| Subtitle | 30 | Plan with your team and agents |
 | Promotional text | 170 | Answer the questions and decisions waiting on you, see how every Feature is going, and move work by voice. Every change shows on screen before it applies. |
-| Keywords | 100 bytes | agile,scrum,sprint,kanban,planning,roadmap,retro,retrospective,features,team,project,agents,approval |
+| Keywords | 100 bytes | agile,scrum,sprint,kanban,planning,roadmap,retro,retrospective,features,project,approval,inbox,notes |
 | Primary category | | Productivity |
-| Secondary category | | Business |
+| Secondary category | | Developer Tools |
 | What's New | 4000 | (not shown for the first version) |
 
-Keywords leave out "ShipLean", "backlog" and "voice", because Apple already indexes the name and subtitle.
+Keywords leave out the words already in the name and subtitle (ShipLean, backlog, voice, team, agents), because Apple indexes those already.
 
 ## Google Play
 
@@ -70,13 +70,28 @@ You need a ShipLean account to use the app.
 
 | # | Screen (mock-up state) | Headline | Line under it |
 |---|---|---|---|
-| 1 | inbox · list | Everything waiting on you | Questions, decisions and approvals from people and agents, in one list. |
-| 2 | backlog · listening | Hold to talk | Say what to change. Keys and names on screen are matched as you speak. |
-| 3 | work-item · preview | Read it before it changes | Every voice command shows its changes first. Nothing applies until you say yes. |
+| 1 | backlog · listening | Hold to talk | Say what to change. Keys and names on screen are matched as you speak. |
+| 2 | work-item · preview | Read it before it changes | Every voice command shows its changes first. Nothing applies until you say yes. |
+| 3 | inbox · list | Everything waiting on you | Questions, decisions and approvals from people and agents, in one list. |
 | 4 | feature-board · board | See how every Feature is going | On track, at risk or blocked, and what needs you. |
 | 5 | work-item · ask | Ask, then read the answer | "What's left on this?" answered on screen, from the item as it is now. |
-| 6 | retro · retro | Run the retro from your phone | Add notes by voice and decide which become action items. |
+| 6 | retro · retro | Run the retro from your phone (tablets: from anywhere) | Add notes by voice and decide which become action items. |
 | 7 | search · results | Find any work item | The same search as ShipLean on the web, typed or spoken. |
-| 8 | setup · models | Speech recognised on your phone | Voice models download once and run on the phone. |
+| 8 | setup · models | Speech recognised on your phone (tablets: your tablet) | Voice models download once and run on the phone (tablets: the tablet). |
 
 The captions follow the app's tenet, speak in and read out. None of them promises read aloud or spoken answers. Google Play turns down words like "best", "#1", "new" and "free", and calls to action like "download now", so the captions avoid them.
+
+## Decisions (Joel, 9 Nov 2026, Lavish review)
+
+| # | Question | Answer |
+|---|---|---|
+| D1 | App name | **ShipLean: Backlog by Voice** (alternative). The iOS subtitle changed so it doesn't repeat the name |
+| D2 | Screenshot background | Brand gradient, white captions |
+| D3 | Theme of the screens | Light |
+| D4 | Data on the final shots | A made-up demo team project, retaken from the built app. The same account is the reviewers' sign-in |
+| D5 | Tablets | **Support iPad and Android tablets** (alternative). The draft tablet shots draw the phone layout at tablet size. The app needs a tablet layout before the final shots |
+| D6 | iOS 26 icon | Flat icons now. The Icon Composer file is made from the mark's SVG when the app is built |
+| D7 | Categories | **Productivity, with Developer Tools second on iOS** (alternative). Play takes one category: Productivity |
+| D8 | Preview video | None for the first release |
+| D9 | Feature graphic | As drawn |
+| D10 | Screenshot order | **Hold to talk, then Preview, then Inbox** (alternative) |

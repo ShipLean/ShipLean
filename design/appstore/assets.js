@@ -29,37 +29,43 @@
   };
 
   // Store screenshots: one caption over a real app screen (a mock-up state until the app is built).
+  // Order per D10 (Joel, 9 Nov 2026): Hold to talk, then Preview, then Inbox.
   const SHOTS = [
-    { n: 1, page: 'inbox', state: 'list', h: 'Everything waiting on you', s: 'Questions, decisions and approvals from people and agents, in one list.' },
-    { n: 2, page: 'backlog', state: 'listening', h: 'Hold to talk', s: 'Say what to change. Keys and names on screen are matched as you speak.' },
-    { n: 3, page: 'work-item', state: 'preview', h: 'Read it before it changes', s: 'Every voice command shows its changes first. Nothing applies until you say yes.' },
+    { n: 1, page: 'backlog', state: 'listening', h: 'Hold to talk', s: 'Say what to change. Keys and names on screen are matched as you speak.' },
+    { n: 2, page: 'work-item', state: 'preview', h: 'Read it before it changes', s: 'Every voice command shows its changes first. Nothing applies until you say yes.' },
+    { n: 3, page: 'inbox', state: 'list', h: 'Everything waiting on you', s: 'Questions, decisions and approvals from people and agents, in one list.' },
     { n: 4, page: 'feature-board', state: 'board', h: 'See how every Feature is going', s: 'On track, at risk or blocked, and what needs you.' },
     { n: 5, page: 'work-item', state: 'ask', h: 'Ask, then read the answer', s: '“What’s left on this?” answered on screen, from the item as it is now.' },
-    { n: 6, page: 'retro', state: 'retro', h: 'Run the retro from your phone', s: 'Add notes by voice and decide which become action items.' },
+    { n: 6, page: 'retro', state: 'retro', h: 'Run the retro from your phone', th: 'Run the retro from anywhere', s: 'Add notes by voice and decide which become action items.' },
     { n: 7, page: 'search', state: 'results', h: 'Find any work item', s: 'The same search as ShipLean on the web, typed or spoken.' },
-    { n: 8, page: 'setup', state: 'models', h: 'Speech recognised on your phone', s: 'Voice models download once and run on the phone.' },
+    { n: 8, page: 'setup', state: 'models', h: 'Speech recognised on your phone', th: 'Speech recognised on your tablet', s: 'Voice models download once and run on the phone.', ts: 'Voice models download once and run on the tablet.' },
   ];
+  // app = the app's size in points. Tablets (D5) draw the phone layout at tablet size until a tablet design exists.
   const DEVICES = {
-    'ios-69': { w: 1320, h: 2868, dir: 'ios/screenshots-6.9' },
-    'ios-65': { w: 1284, h: 2778, dir: 'ios/screenshots-6.5' },
-    'ios-63': { w: 1206, h: 2622, dir: 'ios/screenshots-6.3' },
-    'play':   { w: 1080, h: 1920, dir: 'play/phone-screenshots' },
+    'ios-69':    { w: 1320, h: 2868, app: [390, 844], dir: 'ios/screenshots-6.9' },
+    'ios-65':    { w: 1284, h: 2778, app: [390, 844], dir: 'ios/screenshots-6.5' },
+    'ios-63':    { w: 1206, h: 2622, app: [390, 844], dir: 'ios/screenshots-6.3' },
+    'ipad-13':   { w: 2064, h: 2752, app: [1032, 1376], dir: 'ios/screenshots-ipad-13' },
+    'play':      { w: 1080, h: 1920, app: [390, 844], dir: 'play/phone-screenshots' },
+    'play-tab7': { w: 1080, h: 1920, app: [600, 1067], dir: 'play/tablet-7-screenshots' },
+    'play-tab10':{ w: 1440, h: 2560, app: [800, 1422], dir: 'play/tablet-10-screenshots' },
   };
 
   function shot(dev, n, { style = 'brand', theme = 'light' } = {}) {
-    const { w, h } = DEVICES[dev];
+    const { w, h, app: [aw, ah] } = DEVICES[dev];
     const sh = SHOTS.find((x) => x.n === n);
     const capH = Math.round(h * 0.2);          // Google Play: a caption takes at most 20% of the screenshot
     const bottom = Math.round(h * 0.035);
-    const k = Math.min((w * 0.84) / 390, (h - capH - bottom) / 844);
-    const sw = Math.round(390 * k), shH = Math.round(844 * k);
-    const fs = Math.round(w * 0.066), ss = Math.round(w * 0.034);
+    const k = Math.min((w * 0.84) / aw, (h - capH - bottom) / ah);
+    const sw = Math.round(aw * k), shH = Math.round(ah * k);
+    const fs = Math.round(Math.min(w * 0.066, h * 0.042)), ss = Math.round(Math.min(w * 0.034, h * 0.022));
+    const size = aw === 390 ? '' : `&size=${aw}x${ah}`;
     return `<div class="shot ${style}" style="width:${w}px;height:${h}px">
       <div class="cap" style="height:${capH}px;padding:0 ${Math.round(w * 0.07)}px">
-        <h1 style="font-size:${fs}px">${sh.h}</h1><p style="font-size:${ss}px">${sh.s}</p>
+        <h1 style="font-size:${fs}px">${(aw !== 390 && sh.th) || sh.h}</h1><p style="font-size:${ss}px">${(aw !== 390 && sh.ts) || sh.s}</p>
       </div>
-      <div class="screen" style="width:${sw}px;height:${shH}px;border-radius:${Math.round(sw * 0.075)}px">
-        <iframe src="../mobileapp/${sh.page}.html?state=${sh.state}&theme=${theme}" width="390" height="844" scrolling="no" style="transform:scale(${k})"></iframe>
+      <div class="screen" style="width:${sw}px;height:${shH}px;border-radius:${Math.round(Math.min(sw, 390 * k) * 0.075)}px">
+        <iframe src="../mobileapp/${sh.page}.html?state=${sh.state}&theme=${theme}${size}" width="${aw}" height="${ah}" scrolling="no" style="transform:scale(${k})"></iframe>
       </div>
     </div>`;
   }
@@ -81,19 +87,12 @@
   ASSETS.push({ id: 'feature', file: 'play/feature-graphic.png', w: 1024, h: 500, alpha: false, note: 'Google Play feature graphic (required).' });
   for (const [dev, d] of Object.entries(DEVICES))
     for (const s of SHOTS) ASSETS.push({ id: `${dev}-${s.n}`, file: `${d.dir}/${s.n}-${s.page}-${s.state}.png`, w: d.w, h: d.h, alpha: false });
-  // Alternatives for the review only (D2 background, D3 theme), Play size, shots 1-3.
-  for (const n of [1, 2, 3]) {
-    ASSETS.push({ id: `alt-soft-${n}`, file: `_alternatives/soft-${n}.png`, w: 1080, h: 1920, alpha: false, alt: true });
-    ASSETS.push({ id: `alt-dark-${n}`, file: `_alternatives/dark-${n}.png`, w: 1080, h: 1920, alpha: false, alt: true });
-  }
 
   function render(id) {
     if (ICONS[id]) return ICONS[id].draw();
     if (id === 'feature') return feature();
-    let m = id.match(/^alt-(soft|dark)-(\d)$/);
-    if (m) return shot('play', +m[2], m[1] === 'soft' ? { style: 'soft' } : { theme: 'dark' });
-    m = id.match(/^(ios-69|ios-65|ios-63|play)-(\d)$/);
-    if (m) return shot(m[1], +m[2]);
+    const m = id.match(/^(.+)-(\d)$/);
+    if (m && DEVICES[m[1]]) return shot(m[1], +m[2]);
     return `Unknown asset ${id}`;
   }
 
