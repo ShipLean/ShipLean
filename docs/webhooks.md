@@ -54,7 +54,7 @@ The GitHub endpoint acts on `pull_request` actions `opened`, `edited`, `reopened
 
 Links are matched by URL, ignoring the scheme, the host's case, a trailing slash, a query or `#fragment`, GitLab's `/-/`, and anything after the number (`/files`, `/diffs`). The comparison is the SQL function `link_url_key`.
 
-Writes go through the work item store as webhook writes: the revision has no person (`changed_by` is null) and names the pull or merge request, "GitHub acme/api#12" or "GitLab acme/api!7", which History shows with a "webhook" mark. The board updates live like any other change. A webhook never creates work items.
+Writes go through the work item store as webhook writes: the revision has no person (`changed_by` is null) and names the pull or merge request, "GitHub acme/api#12" or "GitLab acme/api!7", which History shows with a "webhook" mark. The board updates live like any other change. GitHub issues and issue comments are handled separately: see [GitHub issue conversations](github-issues.md).
 
 The answer lists what happened: `{"outcome":"processed","linked":["SHIP-12"],"closed":["SHIP-12"]}`. GitHub and GitLab show it in the delivery log.
 

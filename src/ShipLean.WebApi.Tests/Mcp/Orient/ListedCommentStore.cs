@@ -1,3 +1,4 @@
+using System.Data.Common;
 using ShipLean.Contracts.Comments;
 using ShipLean.Contracts.Refs;
 
@@ -21,6 +22,8 @@ internal sealed class ListedCommentStore : ICommentStore
     }
 
     public Task<CommentDto> AddAsAgentAsync(Guid workItemId, CommentCreate create, string agentName, Guid authorId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+
+    public Task<CommentDto> AddAsAgentAsync(Guid workItemId, CommentCreate create, string agentName, Guid authorId, DbTransaction transaction, CancellationToken cancellationToken = default) => throw new NotSupportedException();
 
     public Task<CommentDto> EditAsync(Guid id, CommentEdit edit, CancellationToken cancellationToken = default) => throw new NotSupportedException();
 

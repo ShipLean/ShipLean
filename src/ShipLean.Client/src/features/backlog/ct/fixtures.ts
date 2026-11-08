@@ -88,6 +88,8 @@ export function backlogView(rows: BacklogRowDto[]): BacklogViewDto {
     tagColours: [],
     forecast: null,
     velocity: null,
+    triageCount: 0,
+    triageStateIds: [],
     review: null,
   };
 }

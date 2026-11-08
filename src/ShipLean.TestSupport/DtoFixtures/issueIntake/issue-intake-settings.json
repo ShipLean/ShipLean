@@ -1,0 +1,21 @@
+{
+  "enabled": true,
+  "repository": "ShipLean/ShipLean",
+  "runAs": {
+    "id": "00000001-0000-4000-8000-000000000002",
+    "name": "Priya Shah",
+    "initials": "PS",
+    "avatarColour": "#2f7fd8",
+    "photoUrl": null
+  },
+  "proposalInstructions": "",
+  "defaultProposalInstructions": "Write a proposal for this issue to the project's standards.",
+  "maxRounds": 5,
+  "readiness": {
+    "hasGitHubRepository": true,
+    "hasAgentConnection": true,
+    "hasGitHubToken": true,
+    "hasWebhookSecret": false,
+    "hasRunAs": true
+  }
+}

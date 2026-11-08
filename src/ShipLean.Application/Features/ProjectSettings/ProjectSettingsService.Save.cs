@@ -1,6 +1,7 @@
 using System.Data.Common;
 using Dapper;
 using Microsoft.Extensions.Logging;
+using ShipLean.Application.Integrations;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Events;
@@ -78,6 +79,7 @@ public sealed partial class ProjectSettingsService
         var options = new WriteOptions(
             async (transaction, token) =>
             {
+                await RefuseRepoChangeWhileIntakeOnAsync(transaction, projectId, general.RepoUrl, token);
                 await WriteProjectAsync(transaction, projectId, general, put.Sprints, token);
                 if (recomputeCapacity)
                 {
@@ -122,6 +124,25 @@ public sealed partial class ProjectSettingsService
         }
 
         return new SettingsSaveResult(await GetAsync(projectId, cancellationToken), removedUsers);
+    }
+
+    // While GitHub issue intake is on, the repository it stored is the one issues are matched to: repo_url may be respelled but not pointed elsewhere.
+    // Inside the write transaction, after the project-row lock the intake PUT takes too, so intake cannot be turned on between this check and the write.
+    private static async Task RefuseRepoChangeWhileIntakeOnAsync(DbTransaction transaction, Guid projectId, string? wanted, CancellationToken cancellationToken)
+    {
+        var saved = await transaction.Connection!.QuerySingleOrDefaultAsync<string?>(new CommandDefinition(
+            "SELECT COALESCE(repo_url, '') FROM project WHERE id = @projectId FOR NO KEY UPDATE", new { projectId }, transaction, cancellationToken: cancellationToken));
+        if (saved is null || (wanted ?? string.Empty) == saved)
+        {
+            return;
+        }
+
+        var repository = await transaction.Connection!.QuerySingleOrDefaultAsync<string>(new CommandDefinition(
+            "SELECT repository FROM project_issue_intake WHERE project_id = @projectId AND enabled", new { projectId }, transaction, cancellationToken: cancellationToken));
+        if (repository is not null && !string.Equals(GitHubRepositoryName.FromRepoUrl(wanted), repository, StringComparison.OrdinalIgnoreCase))
+        {
+            throw ApiException.IntakeOn("Turn GitHub issue intake off before changing the repository.");
+        }
     }
 
     private static bool HasStateChanges(StateChanges changes)
