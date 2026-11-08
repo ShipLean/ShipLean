@@ -60,6 +60,7 @@ New feature should have analytic events in them, we should be measuring impact o
 - [`docs/auth.md`](docs/auth.md): sign-in, sessions, the project access rule, how tests sign in, the access sweep.
 - [`docs/events.md`](docs/events.md): project events and the `X-ShipLean-Client` header.
 - [`docs/analytics.md`](docs/analytics.md): usage analytics: how events are captured, how to track a new action, the property rules, and running against a local Umami.
+- [`docs/mobile.md`](docs/mobile.md): what supporting mobile means for new work; check new UI at 390×844 and add its route to the sweep.
 - Debugging production: query Seq, VictoriaMetrics and Grafana from the arr host; recipes in home-setup `docs/sg-observability.md` (the OpenTelemetry settings are in [`docs/observability.md`](docs/observability.md)).
 - [`db/README.md`](db/README.md): schema rules. [`design/README.md`](design/README.md): tokens and reference screens.
 - [README configuration](README.md#configuration): every `SHIPLEAN_*` variable.
