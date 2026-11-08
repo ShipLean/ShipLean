@@ -232,9 +232,9 @@ public class IssueIntakeSettingsHttpTests : ApiFixture
             await database.ExecuteAsync(
                 """
                 INSERT INTO agent_connection (id, type, name, receiver_url, signing_secret_protected, signing_secret_last4, callback_token_hash, callback_token_last4, created_at, updated_at)
-                VALUES (@id, 'linear-compatible', 'Settings relay', 'https://relay.example.com/hook', 'x', 'xxxx', @hash, 'xxxx', now(), now())
+                VALUES (@id, 'linear-compatible', @name, 'https://relay.example.com/hook', 'x', 'xxxx', @hash, 'xxxx', now(), now())
                 """,
-                new { id = connection, hash = connection.Value.ToByteArray() });
+                new { id = connection, name = $"Settings relay {connection}", hash = connection.Value.ToByteArray() });
         }
 
         await database.ExecuteAsync("UPDATE project SET repo_url = @repoUrl, agent_connection_id = @connection WHERE id = @id", new { id = project.Id, repoUrl, connection });
