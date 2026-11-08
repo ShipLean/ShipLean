@@ -40,8 +40,6 @@ public static class TouchPendingRoutes
         ["retroFeatures"] = "SHIP-728",
         // SHIP-729
         ["retroItem"] = "SHIP-729",
-        // SHIP-731
-        ["retroInsights"] = "SHIP-731",
         // SHIP-732
         ["projectSettings"] = "SHIP-732",
         // SHIP-889
