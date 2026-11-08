@@ -2,6 +2,7 @@ using System.Data.Common;
 using System.Text;
 using Dapper;
 using Npgsql;
+using ShipLean.Application.Features.IssueIntake.Outbox;
 using ShipLean.Contracts.Comments;
 using ShipLean.Contracts.Events;
 using ShipLean.Contracts.IssueIntake;
@@ -22,6 +23,7 @@ public sealed class DbIssueIntake(
     IIssueProposalSessions sessions,
     IWorkItemStore workItems,
     ICommentStore comments,
+    IGitHubOutbox outbox,
     IProjectEvents events) : IIssueIntake
 {
     private const string ShipLeanAgent = "ShipLean";
@@ -69,6 +71,7 @@ public sealed class DbIssueIntake(
                 break;
             case IssueAction.Reopened when await issues.SetOpenOnGitHubAsync(record.Id, true, at, transaction, cancellationToken):
                 note = "The issue was reopened on GitHub.";
+                await RepostProposalAsync(record.Id, transaction, cancellationToken);
                 break;
             case IssueAction.Deleted when await issues.SetOpenOnGitHubAsync(record.Id, false, at, transaction, cancellationToken):
                 note = "The issue was deleted on GitHub. ShipLean no longer posts to it; this item stays open.";
@@ -95,6 +98,30 @@ public sealed class DbIssueIntake(
 
         return IssueOutcome.Processed(itemKey);
     }
+
+    // A proposal written while the issue was closed on GitHub was enqueued and then skipped by the deliverer (X3). On a reopen,
+    // while that proposal is still the one awaiting a reply, it is enqueued again once (dedupe proposal:<sessionId>:reopen).
+    // An entry still pending is left alone: the deliverer sends it now that the issue is open, so nothing posts twice.
+    private async Task RepostProposalAsync(Guid issueId, DbTransaction transaction, CancellationToken cancellationToken)
+    {
+        var skipped = await transaction.Connection!.QuerySingleOrDefaultAsync<SkippedProposal>(new CommandDefinition(
+            """
+            SELECT i.proposal_session_id AS sessionId, o.body
+            FROM github_issue i
+            JOIN github_outbox o ON o.github_issue_id = i.id AND o.dedupe_key = 'proposal:' || i.proposal_session_id::text
+            WHERE i.id = @issueId AND i.phase IN ('awaitingReply', 'alreadyShipped')
+              AND o.sent_at IS NOT NULL AND o.last_result = @skippedClosed AND o.body IS NOT NULL
+            """,
+            new { issueId, skippedClosed = OutboxClaims.SkippedClosed },
+            transaction,
+            cancellationToken: cancellationToken));
+        if (skipped is not null)
+        {
+            await outbox.EnqueueAsync(OutboxEntry.Comment(issueId, $"proposal:{skipped.SessionId}:reopen", skipped.Body), transaction, cancellationToken);
+        }
+    }
+
+    private sealed record SkippedProposal(Guid SessionId, string Body);
 
     public async Task<IssueOutcome> TakeAsync(IssueCommentEvent comment, CancellationToken cancellationToken)
     {

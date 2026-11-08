@@ -200,6 +200,19 @@ public class RoundTests : ApiFixture
     }
 
     [Test]
+    public async Task Worker_WhenSessionStarts_ShouldMakeItTheIssuesProposalSession()
+    {
+        var (_, item, issue) = await ArrangeAsync();
+        (await RequestAsync(issue.Id, force: false)).ShouldBe(RoundRequest.Requested);
+
+        (await Worker.RunNextAsync(CancellationToken.None)).ShouldBeTrue();
+
+        await using var database = await OpenDatabaseAsync();
+        var session = (await AgentDispatchArrange.SessionsAsync(database, item)).ShouldHaveSingleItem();
+        (await Host.Services.GetRequiredService<IGitHubIssueStore>().FindByIdAsync(issue.Id)).ShouldNotBeNull().ProposalSessionId.ShouldBe(session.Id);
+    }
+
+    [Test]
     public async Task Worker_WhenCrashAfterStart_ShouldNotStartTwice()
     {
         var (_, item, issue) = await ArrangeAsync();

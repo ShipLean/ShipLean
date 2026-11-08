@@ -14,7 +14,7 @@ namespace ShipLean.Application.Features.IssueIntake.Rounds;
 // prompt and the closest items. Resumable: a propose session on the item created since the job was enqueued means an earlier
 // claim got as far as the start, so the job only completes and nothing starts twice. The start itself is fenced: its transaction
 // claims round-session:<jobKey> with the new session id, so a worker that lost its lease while paused, and overlaps a later
-// claim of the same job, starts nothing; it then completes the job with its own lease token, which a stale lease can't
+// claim of the same job, starts nothing (the claim also makes the new session the issue's proposal_session_id); it then completes the job with its own lease token, which a stale lease can't
 // (the job stays with its current holder). A starter block (no connection, no
 // repository, a live session) holds the issue and completes the job in one transaction. A project that no
 // longer takes the repository completes the job with nothing done. Anything thrown fails the job, which retries with backoff.
@@ -95,7 +95,19 @@ public sealed class RoundJobWorker(
             new { issue.WorkItemId },
             transaction,
             cancellationToken: cancellationToken));
-        return await effects.TryClaimAsync(IssueProposalSessions.SessionKey(job.Key), issue.Id, sessionId, transaction, cancellationToken);
+        if (!await effects.TryClaimAsync(IssueProposalSessions.SessionKey(job.Key), issue.Id, sessionId, transaction, cancellationToken))
+        {
+            return false;
+        }
+
+        // The issue's active session (X2): the proposal worker moves the phase only for this session, so a late response of an
+        // older round can't post over this one.
+        await transaction.Connection!.ExecuteAsync(new CommandDefinition(
+            "UPDATE github_issue SET proposal_session_id = @sessionId, updated_at = now() WHERE id = @Id",
+            new { sessionId, issue.Id },
+            transaction,
+            cancellationToken: cancellationToken));
+        return true;
     }
 
     private async Task<bool> StartedSinceAsync(Guid workItemId, DateTimeOffset since, CancellationToken cancellationToken)
