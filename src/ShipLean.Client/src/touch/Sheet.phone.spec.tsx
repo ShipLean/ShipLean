@@ -133,9 +133,9 @@ test('Sheet_WhenContentIsLong_ShouldScrollItsBodyOnly', async ({ mount, page }) 
   // Dragging the list back down scrolls it back; it does not swipe the sheet closed.
   const scrolled = await body.evaluate((el) => el.scrollTop);
   await touchDrag(page, touchTestIds.sheetBody, 150, 10);
-  await expect.poll(() => body.evaluate((el) => el.scrollTop)).toBeLessThan(scrolled);
-  await expect(sheet).toBeVisible();
   await expect(page.getByTestId(sheetHarnessIds.ctSheetState)).toHaveText('open');
+  await expect(sheet).toBeVisible();
+  await expect.poll(() => body.evaluate((el) => el.scrollTop)).toBeLessThan(scrolled);
 });
 
 test('Sheet_WhenAFieldInsideHandledEsc_ShouldStayOpen', async ({ mount, page }) => {
