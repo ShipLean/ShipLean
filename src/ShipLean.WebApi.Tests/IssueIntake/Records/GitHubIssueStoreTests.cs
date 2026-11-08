@@ -31,7 +31,8 @@ public class GitHubIssueStoreTests : ApiFixture
         var first = await InsertAsync(issue);
         var second = await Store.InsertAsync(issue, SeedIds.Projects.Ship, SeedIds.WorkItems.Ship90, "someone-else", IssuePhase.Accepted);
 
-        second.ShouldBe(first);
+        (second with { LastPosted = first.LastPosted }).ShouldBe(first);
+        second.LastPosted.ShouldBeEmpty();
         await using var connection = await OpenDatabaseAsync();
         (await connection.ExecuteScalarAsync<int>(
             "SELECT count(*)::int FROM github_issue WHERE repository = @Repository AND number = @Number", new { issue.Repository, issue.Number })).ShouldBe(1);
@@ -44,7 +45,8 @@ public class GitHubIssueStoreTests : ApiFixture
 
         var record = await InsertAsync(issue);
 
-        (await Store.FindAsync(issue)).ShouldBe(record);
+        var found = (await Store.FindAsync(issue))!;
+        (found with { LastPosted = record.LastPosted }).ShouldBe(record);
         record.ShouldSatisfyAllConditions(
             () => record.Issue.ShouldBe(issue),
             () => record.ProjectId.ShouldBe(SeedIds.Projects.Ship),
@@ -179,11 +181,11 @@ public class GitHubIssueStoreTests : ApiFixture
         await connection.ExecuteAsync(
             """
             INSERT INTO agent_connection (id, type, name, receiver_url, signing_secret_protected, signing_secret_last4, callback_token_hash, callback_token_last4, created_at, updated_at)
-            VALUES (@connectionId, 'linear-compatible', 'Issue relay', 'https://relay.example.com/hook', 'x', 'xxxx', @hash, 'xxxx', now(), now());
+            VALUES (@connectionId, 'linear-compatible', @name, 'https://relay.example.com/hook', 'x', 'xxxx', @hash, 'xxxx', now(), now());
             INSERT INTO agent_session (id, work_item_id, connection_id, state, repo_url, base_branch, last_activity_at, created_by, created_at)
             VALUES (@sessionId, @itemId, @connectionId, 'completed', 'https://github.com/ShipLean/ShipLean.git', 'main', now(), @joel, now());
             """,
-            new { connectionId, sessionId, hash = connectionId.ToByteArray(), itemId = SeedIds.WorkItems.Ship89, joel = SeedIds.Users.Joel });
+            new { connectionId, sessionId, name = $"Issue relay {connectionId:N}", hash = connectionId.ToByteArray(), itemId = SeedIds.WorkItems.Ship89, joel = SeedIds.Users.Joel });
         return sessionId;
     }
 
