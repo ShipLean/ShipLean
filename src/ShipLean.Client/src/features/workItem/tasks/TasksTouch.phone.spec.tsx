@@ -31,7 +31,13 @@ test('TaskRow_WhenTouch_ShouldStackTitleOverMeta', async ({ mount, page }) => {
   const state = await box(ids.taskState);
   const rowBox = (await row.boundingBox())!;
   // The long title wraps (more than one line) and the key and the state sit below it, not beside it.
-  expect(title.height).toBeGreaterThan(30);
+  // (the link has a 32px min-height, so height alone proves nothing: check it is at least two lines and not clipped.)
+  const wrap = await row.getByTestId(ids.taskOpen).evaluate((el) => ({
+    lineHeight: parseFloat(getComputedStyle(el).lineHeight),
+    clipped: el.scrollWidth > el.clientWidth,
+  }));
+  expect(wrap.clipped).toBe(false);
+  expect(title.height).toBeGreaterThanOrEqual(wrap.lineHeight * 2 - 1);
   expect(key.y).toBeGreaterThanOrEqual(title.y + title.height - 1);
   expect(state.y).toBeGreaterThanOrEqual(title.y + title.height - 1);
   // The State select is a native select of at least 32px, 16px text, inside the row.
