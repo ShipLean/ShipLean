@@ -259,13 +259,15 @@ public class ProgressReconcilerTests : ApiFixture
         var repository = $"shiplean-tests/progress-{Guid.NewGuid():N}";
         var issue = await Issues.InsertAsync(
             new IssueRef(IssueRef.GitHubHost, repository, 1), dispatch.Project.Id, item, "reporter", "Please add the thing", "The issue body.", phase);
-        if (requires is not null)
-        {
-            await Issues.SaveProposalAsync(issue.Id, Guid.CreateVersion7(), $$"""{"verdict":"new","type":"story","title":"Add the thing","requires":["{{requires}}"]}""");
-        }
-
         await using (var database = await OpenDatabaseAsync())
         {
+            if (requires is not null)
+            {
+                // The accepted proposal as the inbox stores it; no agent session is needed to read its requires.
+                var proposal = $$"""{"verdict":"new","type":"story","title":"Add the thing","requires":["{{requires}}"]}""";
+                await database.ExecuteAsync("UPDATE github_issue SET proposal = @proposal::jsonb WHERE id = @id", new { proposal, id = issue.Id });
+            }
+
             var projectKey = await database.QuerySingleAsync<string>("SELECT key FROM project WHERE id = @id", new { id = dispatch.Project.Id });
             Host.Services.GetRequiredService<FixedIssueIntakeSettings>()
                 .Take(new IssueIntakeProject(dispatch.Project.Id, projectKey, repository, SeedIds.Users.Joel, "Instructions.", 5));
