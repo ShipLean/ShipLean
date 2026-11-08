@@ -1,6 +1,7 @@
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using ShipLean.Application.Database;
 using ShipLean.Application.Features.Backups.Cli;
 using ShipLean.Application.Features.Backups.Engine;
@@ -22,6 +23,7 @@ public class BackupCommandsTests
     private string _dir = null!;
     private string _blobRoot = null!;
     private IBackupCipher _cipher = null!;
+    private IHost _host = null!;
 
     [SetUp]
     public void CreateFolders()
@@ -29,13 +31,18 @@ public class BackupCommandsTests
         _dir = Path.Combine(Path.GetTempPath(), $"shiplean-cli-test-{Guid.NewGuid():N}");
         _blobRoot = Path.Combine(_dir, "blobs");
         Directory.CreateDirectory(_dir);
-        var services = new ServiceCollection();
-        new BackupCipherServices().AddServices(services, new ConfigurationBuilder().Build());
-        _cipher = services.BuildServiceProvider().GetRequiredService<IBackupCipher>();
+        var builder = Host.CreateEmptyApplicationBuilder(new HostApplicationBuilderSettings());
+        new BackupCipherServices().AddServices(builder.Services, builder.Configuration);
+        _host = builder.Build();
+        _cipher = _host.Services.GetRequiredService<IBackupCipher>();
     }
 
     [TearDown]
-    public void DeleteFolders() => Directory.Delete(_dir, recursive: true);
+    public void DeleteFolders()
+    {
+        _host.Dispose();
+        Directory.Delete(_dir, recursive: true);
+    }
 
     [Test]
     public async Task Decrypt_WhenFile_ShouldWriteDump()
