@@ -28,11 +28,13 @@ const stubPreview = async (page: Routable) => {
 test('fills the input from a preset', async ({ mount, page }) => {
   await stubPreview(page);
   const view = await mount(<CronFieldHarness />);
-  await view.getByTestId(ids.backupsCronPreset).filter({ hasText: 'Every 6 hours' }).click();
+  await view.getByTestId(ids.backupsCronPreset).filter({ hasText: 'Every 6 h' }).click();
   await expect(view.getByTestId(ids.backupsCronInput)).toHaveValue('0 */6 * * *');
-  await view.getByTestId(ids.backupsCronPreset).filter({ hasText: 'Weekly, Sunday 03:00' }).click();
-  await expect(view.getByTestId(ids.backupsCronInput)).toHaveValue('0 3 * * 0');
-  await view.getByTestId(ids.backupsCronPreset).filter({ hasText: 'Daily at 02:00' }).click();
+  await view.getByTestId(ids.backupsCronPreset).filter({ hasText: 'Sundays 02:00' }).click();
+  await expect(view.getByTestId(ids.backupsCronInput)).toHaveValue('0 2 * * 0');
+  await view.getByTestId(ids.backupsCronPreset).filter({ hasText: 'Hourly' }).click();
+  await expect(view.getByTestId(ids.backupsCronInput)).toHaveValue('0 * * * *');
+  await view.getByTestId(ids.backupsCronPreset).filter({ hasText: 'Daily 02:00' }).click();
   await expect(view.getByTestId(ids.backupsCronInput)).toHaveValue('0 2 * * *');
 });
 
@@ -44,8 +46,7 @@ test('shows description and five next runs', async ({ mount, page }) => {
     previews.valid.nextRuns.map((run) => run.label),
   );
   await expect(view.getByTestId(ids.backupsCronError)).toHaveCount(0);
-  const describedBy = await view.getByTestId(ids.backupsCronInput).getAttribute('aria-describedby');
-  await expect(view.locator(`[id="${describedBy}"]`)).toContainText('At 02:00');
+  await expect(view.getByTestId(ids.backupsCronInput)).toHaveAccessibleDescription(/At 02:00/);
 });
 
 test('shows the error for an invalid expression', async ({ mount, page }) => {
@@ -66,14 +67,33 @@ test('shows the too-often message', async ({ mount, page }) => {
 });
 
 test('reports invalid to the form', async ({ mount, page }) => {
-  await stubPreview(page);
+  let release = () => {};
+  const held = new Promise<void>((r) => (release = r));
+  await page.route('**/api/instance/backups/cron-preview', async (route) => {
+    const { cron } = route.request().postDataJSON() as { cron: string };
+    if (cron === '0 2 * * *') await held;
+    return route.fulfill({ json: cron === '0 2 * * *' ? previews.valid : previews.tooOften });
+  });
   const view = await mount(<CronFieldHarness initial="0 2 * * *" />);
   const reported = view.getByTestId('cron-harness-valid');
+  await expect(reported).toHaveText('false');
+  release();
   await expect(reported).toHaveText('true');
   await view.getByTestId(ids.backupsCronInput).fill('*/30 * * * *');
+  await expect(view.getByTestId(ids.backupsCronError)).toHaveText(previews.tooOften.error);
   await expect(reported).toHaveText('false');
+});
+
+test('asks for a schedule when empty and shows a failed preview', async ({ mount, page }) => {
+  await page.route('**/api/instance/backups/cron-preview', (route) =>
+    route.fulfill({ status: 500, json: { error: 'Preview is down.' } }),
+  );
+  const view = await mount(<CronFieldHarness />);
+  await expect(view.getByTestId(ids.backupsCronError)).toHaveText('Enter a schedule.');
+  await expect(view.getByTestId(ids.backupsCronNextRun)).toHaveCount(0);
   await view.getByTestId(ids.backupsCronInput).fill('0 2 * * *');
-  await expect(reported).toHaveText('true');
+  await expect(view.getByTestId(ids.backupsCronError)).not.toHaveText('Enter a schedule.');
+  await expect(view.getByTestId(ids.backupsCronError)).toHaveText(/\S/);
 });
 
 test('shows the save error from the server', async ({ mount, page }) => {
