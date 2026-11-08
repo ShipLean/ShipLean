@@ -306,7 +306,7 @@ public class OutboxDeliveryTests : ApiFixture
         await Deliverer().RunDueAsync(CancellationToken.None);
 
         // The issue is closed on GitHub after the next claim, while that claim reconciles.
-        _github = new HookedGitHubIssues(_recording).BeforeList(() => Host.Services.GetRequiredService<IGitHubIssueStore>().SetOpenOnGitHubAsync(issueId, false));
+        _github = new HookedGitHubIssues(_recording).BeforeList(() => Host.Services.GetRequiredService<IGitHubIssueStore>().SetOpenOnGitHubAsync(issueId, false, DateTimeOffset.FromUnixTimeSeconds(1_800_000_000)));
         _clock.Advance(TimeSpan.FromMinutes(1));
         (await Deliverer().RunDueAsync(CancellationToken.None)).ShouldBe(3);
 
