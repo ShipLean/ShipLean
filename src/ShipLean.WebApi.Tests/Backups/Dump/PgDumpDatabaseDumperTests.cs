@@ -177,6 +177,11 @@ public class PgDumpDatabaseDumperTests
         start.Environment["PATH"].ShouldBe("/usr/bin");
         start.Environment["LANG"].ShouldBe("C.UTF-8");
         start.Environment["TZ"].ShouldBe("UTC");
+        start.Environment.Keys.Order(StringComparer.Ordinal).ShouldBe(
+        [
+            "HOME", "LANG", "PATH", "PGAPPNAME", "PGDATABASE", "PGHOST", "PGPASSFILE", "PGPASSWORD", "PGPORT",
+            "PGSERVICEFILE", "PGSSLMODE", "PGSYSCONFDIR", "PGUSER", "TZ",
+        ]);
     }
 
     [Test]
