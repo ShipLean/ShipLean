@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
@@ -9,10 +10,18 @@ using ShipLean.Contracts.IssueIntake;
 namespace ShipLean.Application.Features.IssueIntake.Proposal;
 
 // Parses a proposal agent's response (C2): public Markdown, then one final ```shiplean-proposal block holding the JSON.
-// It never throws: a response it can't use fails with a reason. Text past the limits is cut to them, not refused.
+// It never throws: a response it can't use fails with a reason, and so does any field past its limit (nothing is cut).
 public static partial class IssueProposalParser
 {
     public const string BlockTag = "shiplean-proposal";
+
+    // The whole response, in UTF-8 bytes, checked before any parsing.
+    public const int MaxResponseBytes = 256 * 1024;
+
+    // Each acceptance criterion, requirement and question.
+    public const int MaxEntry = 1_000;
+
+    public const int MaxUrl = 2_048;
 
     private static readonly MarkdownPipeline Pipeline = new MarkdownPipelineBuilder().Build();
 
@@ -31,6 +40,13 @@ public static partial class IssueProposalParser
     {
         proposal = null;
         publicMarkdown = string.Empty;
+        var bytes = Encoding.UTF8.GetByteCount(response);
+        if (bytes > MaxResponseBytes)
+        {
+            failure = $"The response is {bytes} bytes, past the {MaxResponseBytes} limit.";
+            return false;
+        }
+
         failure = FindBlock(response, out var block);
         if (block is null)
         {
@@ -78,7 +94,7 @@ public static partial class IssueProposalParser
             return $"The {BlockTag} block is not valid JSON: {e.Message}";
         }
 
-        var failure = Check(raw);
+        var failure = Check(raw) ?? CheckLimits(raw!);
         if (failure is not null)
         {
             return failure;
@@ -87,13 +103,13 @@ public static partial class IssueProposalParser
         proposal = new IssueProposal(
             raw!.Verdict!.Value,
             raw.Type!.Value,
-            Cut(raw.Title!.Trim(), IssueProposal.MaxTitle),
-            raw.Description is null ? null : Cut(raw.Description, IssueProposal.MaxDescription),
-            Take(raw.AcceptanceCriteria, IssueProposal.MaxAcceptanceCriteria),
+            raw.Title!.Trim(),
+            raw.Description,
+            NonBlank(raw.AcceptanceCriteria),
             raw.ParentKey,
-            (raw.Existing ?? []).Take(IssueProposal.MaxExisting).ToList(),
-            Take(raw.Requires, IssueProposal.MaxRequires),
-            Take(raw.Questions, IssueProposal.MaxQuestions));
+            raw.Existing ?? [],
+            NonBlank(raw.Requires),
+            NonBlank(raw.Questions));
         return null;
     }
 
@@ -135,19 +151,51 @@ public static partial class IssueProposalParser
         return badCommit is null ? null : $"existing commit {badCommit.Commit} is not 7 to 40 hex characters.";
     }
 
-    private static string Cut(string text, int max)
+    // Every limit is a refusal, never a cut: a proposal past one goes to a maintainer, not into ShipLean shortened.
+    private static string? CheckLimits(ProposalJson raw)
     {
-        if (text.Length <= max)
+        var title = raw.Title!.Trim();
+        if (title.Length > IssueProposal.MaxTitle)
         {
-            return text;
+            return $"title is {title.Length} characters, past the {IssueProposal.MaxTitle} limit.";
         }
 
-        var keep = char.IsHighSurrogate(text[max - 1]) ? max - 1 : max;
-        return text[..keep];
+        if (raw.Description?.Length > IssueProposal.MaxDescription)
+        {
+            return $"description is {raw.Description.Length} characters, past the {IssueProposal.MaxDescription} limit.";
+        }
+
+        return CheckList("acceptanceCriteria", raw.AcceptanceCriteria, IssueProposal.MaxAcceptanceCriteria)
+            ?? CheckList("requires", raw.Requires, IssueProposal.MaxRequires)
+            ?? CheckList("questions", raw.Questions, IssueProposal.MaxQuestions)
+            ?? CheckExisting(raw.Existing ?? []);
     }
 
-    private static List<string> Take(IReadOnlyList<string?>? list, int max) =>
-        (list ?? []).Where(s => !string.IsNullOrWhiteSpace(s)).Take(max).Select(s => s!).ToList();
+    private static string? CheckList(string field, IReadOnlyList<string?>? list, int max)
+    {
+        var entries = list ?? [];
+        if (entries.Count > max)
+        {
+            return $"{field} has {entries.Count} entries, past the {max} limit.";
+        }
+
+        var index = entries.ToList().FindIndex(e => e?.Length > MaxEntry);
+        return index < 0 ? null : $"{field}[{index}] is {entries[index]!.Length} characters, past the {MaxEntry} limit.";
+    }
+
+    private static string? CheckExisting(IReadOnlyList<ProposalExisting> existing)
+    {
+        if (existing.Count > IssueProposal.MaxExisting)
+        {
+            return $"existing has {existing.Count} entries, past the {IssueProposal.MaxExisting} limit.";
+        }
+
+        var index = existing.ToList().FindIndex(e => e.PrUrl?.Length > MaxUrl || e.RunUrl?.Length > MaxUrl);
+        return index < 0 ? null : $"existing[{index}] has a URL past the {MaxUrl} character limit.";
+    }
+
+    private static List<string> NonBlank(IReadOnlyList<string?>? list) =>
+        (list ?? []).Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s!).ToList();
 
     [GeneratedRegex(@"^[A-Z]{2,4}-[0-9]+$")]
     private static partial Regex KeyPattern();

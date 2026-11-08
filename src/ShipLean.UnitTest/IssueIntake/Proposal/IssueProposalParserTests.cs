@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 using ShipLean.Application.Features.IssueIntake.Proposal;
 using ShipLean.Contracts.IssueIntake;
 using ShipLean.TestSupport;
@@ -103,17 +104,101 @@ public sealed class IssueProposalParserTests
         failure.ShouldNotBeNullOrWhiteSpace();
     }
 
+    // P2: a field past its limit is refused with a reason, never cut.
     [Test]
-    public void Parse_WhenOversized_ShouldCapEveryField()
+    public void Parse_WhenOversized_ShouldRejectWithReason()
     {
-        IssueProposalParser.TryParse(Golden("oversized"), out var proposal, out _).ShouldBeTrue();
+        var ok = IssueProposalParser.TryParse(Golden("oversized"), out var proposal, out _, out var failure);
+
+        ok.ShouldBeFalse();
+        proposal.ShouldBeNull();
+        failure.ShouldNotBeNull().ShouldContain("past the 255 limit");
+    }
+
+    [TestCase("title", "title is 256 characters")]
+    [TestCase("description", "description is 65537 characters")]
+    [TestCase("acceptanceCriteria", "acceptanceCriteria has 51 entries")]
+    [TestCase("criterion", "acceptanceCriteria[1] is 1001 characters")]
+    [TestCase("requires", "requires has 11 entries")]
+    [TestCase("requirement", "requires[0] is 1001 characters")]
+    [TestCase("questions", "questions has 4 entries")]
+    [TestCase("question", "questions[2] is 1001 characters")]
+    [TestCase("existing", "existing has 11 entries")]
+    [TestCase("prUrl", "existing[0] has a URL past the 2048 character limit")]
+    [TestCase("runUrl", "existing[0] has a URL past the 2048 character limit")]
+    public void Parse_WhenFieldPastLimit_ShouldRejectWithReason(string field, string reason)
+    {
+        var ok = IssueProposalParser.TryParse(Response(AtLimits(field)), out var proposal, out _, out var failure);
+
+        ok.ShouldBeFalse();
+        proposal.ShouldBeNull();
+        failure.ShouldNotBeNull().ShouldStartWith(reason);
+    }
+
+    [Test]
+    public void Parse_WhenEveryFieldAtLimit_ShouldKeepEveryField()
+    {
+        IssueProposalParser.TryParse(Response(AtLimits(string.Empty)), out var proposal, out _, out var failure).ShouldBeTrue(failure);
 
         proposal.Title.Length.ShouldBe(IssueProposal.MaxTitle);
         proposal.Description.ShouldNotBeNull().Length.ShouldBe(IssueProposal.MaxDescription);
         proposal.AcceptanceCriteria.Count.ShouldBe(IssueProposal.MaxAcceptanceCriteria);
+        proposal.AcceptanceCriteria.ShouldAllBe(c => c.Length == IssueProposalParser.MaxEntry);
         proposal.Existing.Count.ShouldBe(IssueProposal.MaxExisting);
+        proposal.Existing[0].PrUrl.ShouldNotBeNull().Length.ShouldBe(IssueProposalParser.MaxUrl);
         proposal.Requires.Count.ShouldBe(IssueProposal.MaxRequires);
         proposal.Questions.Count.ShouldBe(IssueProposal.MaxQuestions);
+    }
+
+    // P1: the whole response is bounded before Markdig or the JSON reader sees it.
+    [Test]
+    public void Parse_WhenResponsePast256Kb_ShouldRejectBeforeParsing()
+    {
+        var response = new string('x', 300 * 1024) + "\n\n" + Response("""{ "verdict": "needsInfo", "type": "bug", "title": "T" }""");
+
+        var ok = IssueProposalParser.TryParse(response, out var proposal, out var publicMarkdown, out var failure);
+
+        ok.ShouldBeFalse();
+        proposal.ShouldBeNull();
+        publicMarkdown.ShouldBeEmpty();
+        failure.ShouldNotBeNull().ShouldContain("past the 262144 limit");
+    }
+
+    [Test]
+    public void Parse_WhenQuestionIsTwoMegabytes_ShouldReject()
+    {
+        var json = JsonSerializer.Serialize(new { verdict = "needsInfo", type = "bug", title = "T", questions = new[] { new string('q', 2 * 1024 * 1024) } });
+
+        var ok = IssueProposalParser.TryParse(Response(json), out var proposal, out _, out var failure);
+
+        ok.ShouldBeFalse();
+        proposal.ShouldBeNull();
+        failure.ShouldNotBeNull().ShouldContain("bytes, past the");
+    }
+
+    // Every field at its limit, with the one named pushed one past it.
+    private static string AtLimits(string over)
+    {
+        var url = "https://github.com/ShipLean/ShipLean/pull/47?" + new string('a', IssueProposalParser.MaxUrl - 45);
+        var existing = Enumerable.Range(0, over == "existing" ? 11 : IssueProposal.MaxExisting)
+            .Select(i => new { key = $"SHIP-{i + 1}", prUrl = over == "prUrl" ? url + "a" : url, runUrl = over == "runUrl" ? url + "a" : url })
+            .ToList();
+        return JsonSerializer.Serialize(new
+        {
+            verdict = "new",
+            type = "story",
+            title = new string('t', over == "title" ? 256 : IssueProposal.MaxTitle),
+            description = new string('d', over == "description" ? IssueProposal.MaxDescription + 1 : IssueProposal.MaxDescription),
+            acceptanceCriteria = Entries(over == "acceptanceCriteria" ? 51 : IssueProposal.MaxAcceptanceCriteria, over == "criterion" ? 1 : -1),
+            existing,
+            requires = Entries(over == "requires" ? 11 : IssueProposal.MaxRequires, over == "requirement" ? 0 : -1),
+            questions = Entries(over == "questions" ? 4 : IssueProposal.MaxQuestions, over == "question" ? 2 : -1),
+        });
+    }
+
+    private static List<string> Entries(int count, int longIndex)
+    {
+        return Enumerable.Range(0, count).Select(i => new string('e', i == longIndex ? IssueProposalParser.MaxEntry + 1 : IssueProposalParser.MaxEntry)).ToList();
     }
 
     [Test]

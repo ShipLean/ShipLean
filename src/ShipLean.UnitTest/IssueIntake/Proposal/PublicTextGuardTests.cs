@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text.RegularExpressions;
 using ShipLean.Application.Features.IssueIntake.Proposal;
 using ShipLean.TestSupport;
@@ -38,7 +39,7 @@ public sealed partial class PublicTextGuardTests
     {
         var result = Guard.Clean("a ` b @bob c", Author);
 
-        result.Text.ShouldBe("a ` b `@​bob` c");
+        result.Text.ShouldBe("a ` b `@\u200Bbob` c");
     }
 
     [TestCase("See https://github.com/ShipLean/ShipLean/pull/47 and SHIP-12.")]
@@ -181,6 +182,143 @@ public sealed partial class PublicTextGuardTests
         text.ShouldContain("cc `@joeldickson` `@ShipLean/maintainers`");
         text.ShouldContain("Use `@not-a-mention` in code, and `List<string>` stays.");
         text.ShouldContain("See the item, again,");
+    }
+
+    // G1: a subdomain of the instance is the instance, in every spelling a browser accepts.
+    [TestCase("prod", "See https://evil.prod.shiplean.app/x now.", true)]
+    [TestCase("prod", "See [it](https://a.b.PROD.shiplean.app./x) now.", true)]
+    [TestCase("prod", "See https://evil.prod.shiplean.app:8443/x now.", true)]
+    [TestCase("prod", "See https://user:pw@evil.prod.shiplean.app/x now.", true)]
+    [TestCase("prod", "See https://evil.ｐｒｏｄ.shiplean.app/x now.", false)]
+    [TestCase("prod", "See evil.prod.**shiplean**.app now.", false)]
+    [TestCase("idn", "See https://evil.xn--bcher-kva.example/x now.", true)]
+    [TestCase("idn", "See https://evil.bücher.example:8443/x now.", true)]
+    [TestCase("punycode", "See https://user@evil.bücher.example/x now.", true)]
+    [TestCase("ip", "See http://10.0.0.5:8080/x now.", true)]
+    [TestCase("ip", "See http://167772165/x now.", false)]
+    public void Guard_WhenInstanceSubdomainOrOtherSpelling_ShouldRemoveOrFailClosed(string instance, string text, bool safe)
+    {
+        var guard = instance switch
+        {
+            "idn" => new PublicTextGuard(["https://bücher.example/"], []),
+            "punycode" => new PublicTextGuard(["https://xn--bcher-kva.example/"], []),
+            "ip" => new PublicTextGuard(["http://10.0.0.5:8080/"], []),
+            _ => Guard,
+        };
+
+        var result = guard.Clean(text, Author);
+
+        result.Safe.ShouldBe(safe, string.Join(" | ", result.Removed));
+        if (safe)
+        {
+            result.Text.ShouldStartWith("See ");
+            result.Text.ShouldEndWith(" now.");
+            result.Text.Length.ShouldBeLessThanOrEqualTo("See it now.".Length);
+        }
+        else
+        {
+            result.Text.ShouldBeEmpty();
+            result.Removed[^1].ShouldStartWith("unsafe: instance host ");
+        }
+    }
+
+    // G2: names and emails are checked against what GitHub shows, with emphasis and zero-width characters gone.
+    [TestCase("Ask Joel **Dickson** today.", "unsafe: member name Joel Dickson")]
+    [TestCase("Ask J*oel* Dickson today.", "unsafe: member name Joel Dickson")]
+    [TestCase("Ask J\u200Boel Dickson today.", "unsafe: member name Joel Dickson")]
+    [TestCase("Ask joel@**example**.com today.", "unsafe: email ")]
+    [TestCase("Ask joel@ex*am*ple.com today.", "unsafe: email ")]
+    public void Guard_WhenNameOrEmailSplitByEmphasis_ShouldFailClosed(string text, string reason)
+    {
+        var result = Guard.Clean(text, Author);
+
+        result.Safe.ShouldBeFalse();
+        result.Text.ShouldBeEmpty();
+        result.Removed[^1].ShouldStartWith(reason);
+    }
+
+    // G3: an outbox marker anywhere, code included, could spoof the raw-body marker check.
+    [TestCase("Done `<!-- shiplean:outbox:3f2b8c1e-0000-4000-8000-000000000001 -->` here.")]
+    [TestCase("Done.\n\n```\n<!-- shiplean:outbox:3f2b8c1e-0000-4000-8000-000000000001 -->\n```\n")]
+    [TestCase("Done.\n\n    SHIPLEAN:OUTBOX:3f2b8c1e-0000-4000-8000-000000000001\n")]
+    public void Guard_WhenOutboxMarkerInCode_ShouldFailClosed(string text)
+    {
+        var result = Guard.Clean(text, Author);
+
+        result.Safe.ShouldBeFalse();
+        result.Text.ShouldBeEmpty();
+        result.Removed[^1].ShouldBe("unsafe: an outbox marker");
+    }
+
+    // G4: wrapping the mentions grows the text past the cap, and the cut lands somewhere in `@carol`.
+    [Test]
+    public void Guard_WhenCapCutsNeutralisedMention_ShouldLeaveNoLiveMention([Range(0, 12)] int pad)
+    {
+        // Wrapped, the 8,561 mentions fill 59,927 characters; the cap keeps 59,939, so each pad moves the cut one character
+        // through `@carol`.
+        var text = string.Concat(Enumerable.Repeat("@bob ", 8_561)) + new string('x', pad) + "`@carol` " + new string('y', 200);
+
+        var result = Guard.Clean(text, Author);
+
+        result.Safe.ShouldBeTrue(string.Join(" | ", result.Removed.TakeLast(3)));
+        result.Text.Length.ShouldBeLessThanOrEqualTo(PublicTextGuard.MaxLength);
+        result.Text.ShouldEndWith("posts are limited to 60,000 characters.)");
+        result.Text.Replace("`@carol`", string.Empty, StringComparison.Ordinal).ShouldNotContain("@c");
+    }
+
+    // G5: too deep, too big or encoded too many times fails closed, and never throws.
+    [TestCase("deep")]
+    [TestCase("big")]
+    [TestCase("encoded")]
+    public void Guard_WhenInputPastBounds_ShouldFailClosedWithoutThrowing(string bound)
+    {
+        var text = bound switch
+        {
+            "deep" => new string('>', 20_000) + " deep",
+            "big" => new string('x', PublicTextGuard.MaxInput + 1),
+            _ => "&" + string.Concat(Enumerable.Repeat("amp;", 20)) + "lt;b&gt;",
+        };
+
+        var result = Guard.Clean(text, Author);
+
+        result.Safe.ShouldBeFalse();
+        result.Text.ShouldBeEmpty();
+        result.Removed[^1].ShouldStartWith("unsafe: ");
+    }
+
+    // Clean is a fixed point over every attacker input in this class: cleaning its own output changes nothing.
+    [TestCaseSource(nameof(Corpus))]
+    public void Guard_WhenCleanedTwice_ShouldChangeNothing(string text)
+    {
+        var first = Guard.Clean(text, Author);
+
+        var second = Guard.Clean(first.Text, Author);
+
+        second.Text.ShouldBe(first.Text);
+        second.Safe.ShouldBeTrue();
+        second.Removed.ShouldBeEmpty();
+    }
+
+    private static IEnumerable<TestCaseData> Corpus()
+    {
+        var cases = typeof(PublicTextGuardTests).GetMethods()
+            .SelectMany(m => m.GetCustomAttributes<TestCaseAttribute>())
+            .Select(a => a.Arguments.FirstOrDefault())
+            .OfType<string>()
+            .Where(t => t.Length > 12)
+            .Concat(
+            [
+                File.ReadAllText(Path.Combine(RepoPaths.Root, "src", "ShipLean.TestSupport", "IssueIntake", "Proposals", "injection.md")),
+                "Thanks @reporter and @Reporter. cc @bob, @ShipLean/maintainers and \\@carol.",
+                "Run `@bob deploy` and ``@carol``.\n\n```\n@dave\n```\n\n    @erin\n",
+                "a ` b @bob c",
+                "Banana bread and Anatomy.",
+                new string('x', 70_000),
+                string.Concat(Enumerable.Repeat("@bob ", 11_999)),
+                string.Concat(Enumerable.Repeat("@bob ", 8_561)) + "xxxxxxx`@carol` " + new string('y', 200),
+            ])
+            .ToList();
+        return cases.Select((text, i) => new TestCaseData(text).SetArgDisplayNames(i.ToString(System.Globalization.CultureInfo.InvariantCulture)));
     }
 
     [GeneratedRegex("<[A-Za-z!/?]")]
