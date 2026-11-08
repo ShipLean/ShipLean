@@ -24,7 +24,7 @@ Before this, the areas disagreed:
 - **The project tile on every tab root:** the key (2 to 4 capitals, so it always fits) in a filled accent tile at the top left of Inbox, Backlog, Features and Retro. The project name is the subtitle under the screen title. Tap the tile, or swipe back, to reach Projects. A dot on the tile means something new waits on you in another project. Detail screens (a work item, a Feature's board) keep their back button. The tile appears only on tab roots.
 - **First time in a project:** the project opens on **Inbox**. A one-time tip points at the tile: "Every tab shows this project. Tap SHIP to switch project or open your account. Or hold the mic and say 'switch to Payments'."
 - **Switch by voice:** from any tab, "switch to Payments", "open DATA" or "back to ShipLean". Project names and keys are hotwords. Switching changes no data, so there's no preview: the app goes straight to the same tab in the other project, and a toast says "Now in Payments (PAY)" with **Back to SHIP**.
-- **Account** (a sheet from the avatar on Projects): name, email, server, server version, this phone, a **Voice** row that opens Settings › Voice ("Ready · Qwen3 4B"), and **Sign out**. The footer gives the app version and "Your server and email stay filled in" (SHIP-907 §5).
+- **Account** (a sheet from the avatar on Projects): name and email, a **Settings** row that opens the Settings screen (Voice, Notifications, Shortcuts, Appearance, About; `settings.md`), server, server version, **Profile, password and devices** (opens the web), and **Sign out**. The footer gives the app version (SHIP-907 §5).
 - **Removed from a project:** when the app reopens a project you've lost access to, you land on Projects with "You're no longer in Partner Portal. Someone removed you, or the project was archived. Ask a project admin to add you again."
 - **No projects:** "You're not in any projects yet" (SHIP-907's wording), a line on how to get added, a pointer to create a project on the web, **Check again**, **Open prod.shiplean.app**, and the email you're signed in as.
 
@@ -45,7 +45,7 @@ Before this, the areas disagreed:
 | `projects` | Back on Projects from the tabs: Recent and All, with "You're here · Backlog" on SHIP. |
 | `voice` | Listening over Backlog: "Switch to **Payments**". |
 | `switched` | Payments' Backlog, with the toast "Now in Payments (PAY) · Back to SHIP". |
-| `account` | The Account sheet over Projects: server, version, phone, Voice, Sign out. |
+| `account` | The Account sheet over Projects: Settings, server, version, the profile on the web, Sign out (`settings.md`). |
 | `removed` | Projects with the "You're no longer in Partner Portal" notice. |
 | `empty` | No projects: how to get added, Check again, open the web. |
 | `alt-sheet` | D1 alternative: the web's switch sheet over the tabs. |
@@ -61,7 +61,7 @@ Before this, the areas disagreed:
 - The kit (`app.css`, `app.js`) has `.pkey`, `.proj-btn`, `App.projTile(key, { dot, ring })` and `App.tabRoot({ title, sub, project, dot, ring, right })`. Its subtitle is the project name, followed by `sub` when that is given.
 - `backlog.html`: the "S" avatar is now the SHIP tile, with "ShipLean" as the subtitle.
 - `feature-board.html` and `retro.html` have the tile, and "SHIP ·" became "ShipLean ·" (Features' subtitle is shortened to "8 open Features" to fit). The Inbox (`inbox.html`, in progress elsewhere) uses `App.tabRoot` too.
-- `setup.html`: the Backlog seen during and after the download (`app-downloading`, `mobile-data`, `ready`, `first-result`, `skipped`) has the tile instead of the JD avatar. In `setup.md`, *Use ShipLean while this downloads* leads to Projects, and Settings › Voice opens from Account.
+- `setup.html`: the Backlog seen during and after the download (`app-downloading`, `mobile-data`, `ready`, `first-result`, `skipped`) has the tile instead of the JD avatar. In `setup.md`, *Use ShipLean while this downloads* leads to Projects, and Settings › Voice opens from Account › Settings (`settings.md`).
 
 ## Decisions
 
@@ -70,7 +70,7 @@ Joel answered all eleven on 9 Nov 2026 in the Lavish review, each with the recom
 
 - **D1. Where does switching project live?** **Decided (recommended):** Projects is the root of the app, the project's tabs open on top of it, and the tile (or a swipe back) returns to it. That makes SHIP-907's Projects screen and Account the one place for both. Alternative: the web's switch sheet (SHIP-713) slides up over the tabs, and the Projects screen only appears at first run or with no project.
 - **D2. What on a tab root shows and switches the project?** **Decided (recommended):** the project's key tile at the top left of every tab root, replacing Backlog's "S" avatar and setup's "JD" avatar, with the project name as the subtitle. Alternative: the project name with a ⌄ under the screen title, and the Account avatar at the top left.
-- **D3. Where is Account?** **Decided (recommended):** only on Projects (the avatar at the top right, as in SHIP-907). It holds Sign out and the way into Settings › Voice. Alternative: on every tab root as well.
+- **D3. Where is Account?** **Decided (recommended):** only on Projects (the avatar at the top right, as in SHIP-907). It holds Sign out and the way into Settings (`settings.md` D1–D3). Alternative: on every tab root as well.
 - **D4. What does the app open on after the first run?** **Decided (recommended):** the last project, on the tab you left, with Projects one tap away. Alternative: always Projects.
 - **D5. What happens with exactly one project?** **Decided (recommended):** skip Projects after sign-in and setup and go straight in. The tile still opens Projects. Alternative: always show Projects first.
 - **D6. Which tab opens when you switch?** **Decided (recommended):** the tab you're on (Backlog leads to Payments' Backlog). A project you've never opened starts on Inbox. Alternative: each project remembers its own last tab.

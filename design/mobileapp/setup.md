@@ -25,7 +25,7 @@ Get someone from a fresh install to a working app with voice switched on, withou
 - **Not enough space**: the download stops and says how much more it needs and how much is free, and keeps what it has. It offers **Try again**, **Open phone storage**, or switching to Qwen3 1.7B, which fits once the partial 4B download is removed. The same page shows a resolved checksum retry on the Parakeet row: "The first copy didn't match its checksum, so it was downloaded again."
 - **Voice is ready**: shown once. A coach mark points at the mic: "Try it: hold the button and say 'What needs me?'", with Skip.
 - **First command answered**: the answer sheet, in the same look as work-item `ask`, lists the four items waiting on you with their counts (10 decisions, 3 questions). It says nothing was changed and suggests what to try next ("open an item and try 'add a note: …'"). Open Inbox or Done.
-- **Settings › Voice** (opened from the Voice row of the Account sheet on Projects, projects.md D3):
+- **Settings › Voice** (Account › Settings › Voice, settings.md D1–D3; the Settings screen and the rest of its pages are in `settings.html`):
   - status ("Voice is ready · Galaxy S24 Ultra · 12 GB memory");
   - **Models**: Command model (Auto · Qwen3 4B, opens the picker), Speech to text (fixed), and a greyed **Try other models**, marked *Later*;
   - **Download and storage**: Wi-Fi only, the storage used by each model, and **Delete models** ("Frees 3.1 GB. Voice turns off; your choices are kept.");
