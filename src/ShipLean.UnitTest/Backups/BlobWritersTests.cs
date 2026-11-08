@@ -24,6 +24,7 @@ public class BlobWritersTests
     [Test]
     public void Writers_WhenListed_ShouldMatchKnownFreshKeyWriters()
     {
+        // A new IBlobStore writer: check that its keys never change meaning, then list it above.
         var application = Path.Combine(RepoPaths.Root, "src", "ShipLean.Application");
         var writers = Directory.EnumerateFiles(application, "*.cs", SearchOption.AllDirectories)
             .Select(f => (Path: f, Parts: Path.GetRelativePath(application, f).Split(Path.DirectorySeparatorChar)))
@@ -34,7 +35,7 @@ public class BlobWritersTests
             .Order(StringComparer.Ordinal)
             .ToList();
 
-        writers.ShouldBe(KnownFreshKeyWriters, "A new IBlobStore writer: check that its keys never change meaning, then list it here.");
+        writers.ShouldBe(KnownFreshKeyWriters);
     }
 
     private static bool IsRestore(string[] parts)
