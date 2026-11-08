@@ -16,6 +16,10 @@ public static class BackupsTestIds
     public const string BackupsPrefix = "backups-prefix";
     public const string BackupsAccessKeyId = "backups-access-key-id";
     public const string BackupsSecretKey = "backups-secret-key";
+    public const string BackupsSecretKeyLastFour = "backups-secret-key-last-four";
+    public const string BackupsSecretKeyReplace = "backups-secret-key-replace";
+    public const string BackupsSecretKeyClear = "backups-secret-key-clear";
+    public const string BackupsSecretKeyEnv = "backups-secret-key-env";
     public const string BackupsPassphrase = "backups-passphrase";
     public const string BackupsPassphraseConfirm = "backups-passphrase-confirm";
     public const string BackupsPassphraseInfo = "backups-passphrase-info";
