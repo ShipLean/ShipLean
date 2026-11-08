@@ -31,9 +31,18 @@ describe('filterParamOf', () => {
 
 describe('triageCriteria', () => {
   it('triageCriteria_WhenStateIds_ShouldFilterByThoseStatesAsAWholeClause', () => {
-    const criteria = triageCriteria(['a', 'b']);
+    const criteria = triageCriteria([
+      '00000003-0000-4000-8001-000000000101',
+      '00000003-0000-4000-8001-000000000102',
+    ]);
 
-    expect(criteria.clauses).toEqual([{ field: 'state', op: 'in', value: ['a', 'b'] }]);
+    expect(criteria.clauses).toEqual([
+      {
+        field: 'state',
+        op: 'in',
+        value: ['00000003-0000-4000-8001-000000000101', '00000003-0000-4000-8001-000000000102'],
+      },
+    ]);
     expect(filterParamOf(criteria)).toBe(JSON.stringify(criteria));
   });
 });
