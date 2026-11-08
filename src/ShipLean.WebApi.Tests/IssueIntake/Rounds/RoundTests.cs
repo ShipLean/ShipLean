@@ -149,12 +149,13 @@ public class RoundTests : ApiFixture
         session.CreatedBy.ShouldBe(SeedIds.Users.Joel);
         (await database.ExecuteScalarAsync<string>("SELECT mode FROM agent_session WHERE id = @Id", new { session.Id })).ShouldBe("propose");
         var body = (await AgentDispatchArrange.DeliveriesAsync(database, item)).ShouldHaveSingleItem().Body;
-        body.ShouldContain(Instructions);
-        body.ShouldContain("This is round 1 of the proposal");
-        body.ShouldContain("Closest existing items");
-        body.ShouldContain(match.Key);
-        body.ShouldContain($"https://github.com/shiplean-tests/rounds/pull/{match.Pull}");
-        body.ShouldContain(match.Sha);
+        var prompt = JsonNode.Parse(body)!["guidance"]![0]!["body"]!.GetValue<string>();
+        prompt.ShouldStartWith(Instructions);
+        prompt.ShouldContain("This is round 1 of the proposal");
+        prompt.ShouldContain("## Closest existing items");
+        prompt.ShouldContain($"- {match.Key} (story, Resolved): Export the sprint burndown chart as an image");
+        prompt.ShouldContain($"pull request https://github.com/shiplean-tests/rounds/pull/{match.Pull}");
+        prompt.ShouldContain($"merge commit {match.Sha}");
         (await JobStatusesAsync(issue.Id)).ShouldBe(["done"]);
     }
 
