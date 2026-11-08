@@ -85,7 +85,7 @@ public class S3BackupDestinationTests
         var settings = S3ClientSettings.From(config);
 
         settings.Config.ForcePathStyle.ShouldBe(forcePathStyle);
-        settings.Config.ServiceURL.ShouldBe("https://s3.example.test");
+        new Uri(settings.Config.ServiceURL).ShouldBe(new Uri("https://s3.example.test"));
         settings.Config.AuthenticationRegion.ShouldBe("eu-west-1");
         settings.Credentials.ShouldNotBeNull();
     }
