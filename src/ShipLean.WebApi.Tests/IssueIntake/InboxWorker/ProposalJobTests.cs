@@ -73,11 +73,13 @@ public class ProposalJobTests : ApiFixture
         await EnqueueAsync(issue, sessionId, response);
         await DrainAsync();
 
-        await EnqueueAsync(issue, sessionId, response, key: $"proposal:{sessionId}:again");
+        await EnqueueAsync(issue, sessionId, Response("Another fix.", Valid.Replace("Fix the login label", "Another title", StringComparison.Ordinal)), key: $"proposal:{sessionId}:again");
         await DrainAsync();
 
-        (await OutboxAsync(issue.Id)).ShouldHaveSingleItem();
-        (await IssueAsync(issue.Id)).Phase.ShouldBe(IssuePhase.AwaitingReply);
+        (await OutboxAsync(issue.Id)).ShouldHaveSingleItem().Body.ShouldNotBeNull().ShouldStartWith("A fix is proposed.");
+        var stored = await IssueAsync(issue.Id);
+        stored.Phase.ShouldBe(IssuePhase.AwaitingReply);
+        JsonDocument.Parse(stored.Proposal!).RootElement.GetProperty("title").GetString().ShouldBe("Fix the login label");
         (await JobStatusesAsync(issue.Id)).ShouldBe(["done", "done"]);
     }
 
