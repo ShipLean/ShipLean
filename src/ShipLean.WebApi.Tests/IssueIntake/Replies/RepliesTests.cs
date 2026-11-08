@@ -4,6 +4,7 @@ using Shouldly;
 using ShipLean.Contracts.IssueIntake;
 using ShipLean.Contracts.Webhooks;
 using ShipLean.TestSupport;
+using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.IssueIntake;
 
 namespace ShipLean.WebApi.Tests.IssueIntake.Replies;
