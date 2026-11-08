@@ -4,6 +4,7 @@ import {
   EDGE_REPEAT_MS,
   LIFT_MS,
   idleState,
+  liftDelay,
   scrollSpeed,
   step,
   type Area,
@@ -50,11 +51,24 @@ test('longPress_WhenHeld450ms_ShouldLift', () => {
   expect(held.effects).toEqual([{ type: 'lift', point: MIDDLE }]);
 });
 
+test('longPress_WhenTheTimerFiresAHairEarly_ShouldWaitTheRestThenLift', () => {
+  const early = run([
+    { type: 'press', point: MIDDLE, at: 0, area: AREA },
+    { type: 'tick', at: 449.6 },
+  ]);
+  expect(early.state.phase).toBe('pressing');
+  expect(liftDelay(early.state, 449.6)).toBeCloseTo(0.4);
+
+  const held = step(early.state, { type: 'tick', at: 450 });
+  expect(held.state.phase).toBe('lifted');
+  expect(liftDelay(held.state, 450)).toBe(0);
+});
+
 test('longPress_WhenMovedBeforeTheLift_ShouldCancel', () => {
   const { state, effects } = run([
     { type: 'press', point: MIDDLE, at: 0, area: AREA },
     { type: 'move', point: { x: MIDDLE.x, y: MIDDLE.y + 4 }, at: 100 },
-    { type: 'move', point: { x: MIDDLE.x, y: MIDDLE.y + 20 }, at: 150 },
+    { type: 'move', point: { x: MIDDLE.x, y: MIDDLE.y + 9 }, at: 150 },
     { type: 'tick', at: LIFT_MS },
     { type: 'release', at: LIFT_MS + 10 },
   ]);
@@ -134,4 +148,22 @@ test('longPress_WhenNearTheBottom_ShouldAskToScrollDown', () => {
     middle,
   ).state;
   expect(scrollSpeed(underTheBar)).toBeLessThan(0);
+});
+
+test('longPress_WhenTheEdgeTickStalls_ShouldFireOnceThenKeepTheBeat', () => {
+  const enteredAt = 1000;
+  let { state } = run(
+    [{ type: 'move', point: { x: AREA.width - 10, y: MIDDLE.y }, at: enteredAt }],
+    lifted(),
+  );
+  const stalledTo = enteredAt + EDGE_FIRST_MS + 3 * EDGE_REPEAT_MS;
+
+  let effects: LongPressEffect[];
+  ({ state, effects } = run([{ type: 'tick', at: stalledTo }], state));
+  expect(edges(effects)).toEqual([{ type: 'edge', dir: 'right' }]);
+
+  ({ state, effects } = run([{ type: 'tick', at: stalledTo + 799 }], state));
+  expect(edges(effects)).toEqual([]);
+  ({ effects } = run([{ type: 'tick', at: stalledTo + 800 }], state));
+  expect(edges(effects)).toEqual([{ type: 'edge', dir: 'right' }]);
 });

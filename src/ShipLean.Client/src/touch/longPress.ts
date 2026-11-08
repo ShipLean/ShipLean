@@ -86,7 +86,8 @@ function edgeAt(point: Point, area: Area): EdgeDirection | null {
   return null;
 }
 
-// Fires every edge turn that is due by `at`, keeping the hold in step with the clock.
+// Fires the edge turn that is due by `at`, at most one per event: after a stall (a background tab, a long frame) the
+// pager turns one page, not one for every missed beat, and the beat restarts from now.
 function advanceEdge(
   state: LongPressState,
   at: number,
@@ -95,9 +96,10 @@ function advanceEdge(
   const dir = edgeAt(state.point, state.area);
   if (dir === null) return state.edge === null ? state : { ...state, edge: null };
   let edge = state.edge?.dir === dir ? state.edge : { dir, nextAt: at + EDGE_FIRST_MS };
-  while (at >= edge.nextAt) {
+  if (at >= edge.nextAt) {
     effects.push({ type: 'edge', dir });
-    edge = { dir, nextAt: edge.nextAt + EDGE_REPEAT_MS };
+    const onBeat = edge.nextAt + EDGE_REPEAT_MS;
+    edge = { dir, nextAt: at < onBeat ? onBeat : at + EDGE_REPEAT_MS };
   }
   return edge === state.edge ? state : { ...state, edge };
 }
@@ -107,6 +109,12 @@ function liftIfDue(state: LongPressState, at: number, effects: LongPressEffect[]
   if (state.phase !== 'pressing' || at - state.startAt < LIFT_MS) return state;
   effects.push({ type: 'lift', point: state.point });
   return { ...state, phase: 'lifted' };
+}
+
+/** How long until a press lifts, in ms: 0 when it is due (or not pressing). The hook re-arms its timer with this. */
+export function liftDelay(state: LongPressState, at: number): number {
+  if (state.phase !== 'pressing') return 0;
+  return Math.max(0, state.startAt + LIFT_MS - at);
 }
 
 /** Advances the machine by one event and says what the hook should do about it. */

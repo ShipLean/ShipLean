@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import {
   LIFT_MS,
   idleState,
+  liftDelay,
   scrollSpeed,
   step,
   type Area,
@@ -141,16 +142,23 @@ function createDragEngine(initial: LongPressDragOptions, setView: (view: DragVie
     if (!lifted && state.phase !== 'pressing') stopTimers();
   }
 
+  // A timer can fire a hair before performance.now() says LIFT_MS has passed; then it re-arms for the rest, so a still
+  // finger always lifts.
+  function armLift(delay: number) {
+    liftTimer = window.setTimeout(() => {
+      const at = performance.now();
+      dispatch({ type: 'tick', at });
+      if (machine.phase === 'pressing') armLift(Math.max(1, liftDelay(machine, at)));
+    }, delay);
+  }
+
   function attach(element: HTMLElement): () => void {
     const onStart = (event: TouchEvent) => {
       const point = touchPoint(event);
       if (event.touches.length !== 1 || point === null) return;
       stopTimers();
       dispatch({ type: 'press', point, at: performance.now(), area: currentArea() });
-      liftTimer = window.setTimeout(
-        () => dispatch({ type: 'tick', at: performance.now() }),
-        LIFT_MS,
-      );
+      armLift(LIFT_MS);
     };
     const onMove = (event: TouchEvent) => {
       const point = touchPoint(event);

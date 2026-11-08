@@ -33,8 +33,11 @@ async function touchInput(page: Page) {
   };
 }
 
+const cardOf = (page: Page, card: string) =>
+  page.getByTestId(ids.item).and(page.locator(`[data-card="${card}"]`));
+
 async function centreOf(page: Page, card: string): Promise<Point> {
-  const box = await page.locator(`[data-card="${card}"]`).boundingBox();
+  const box = await cardOf(page, card).boundingBox();
   if (!box) throw new Error(`card ${card} has no box`);
   return { x: Math.round(box.x + box.width / 2), y: Math.round(box.y + box.height / 2) };
 }
@@ -117,7 +120,7 @@ test('LongPressDrag_WhenHandleOnly_ShouldOnlyStartOnTheHandle', async ({ mount, 
   await arrange(page);
   await mount(<DragHarness handle />);
   const touch = await touchInput(page);
-  const card = page.locator('[data-card="a2"]');
+  const card = cardOf(page, 'a2');
   const handle = card.getByTestId(ids.handle);
   await expect(handle).toHaveCSS('touch-action', 'none');
   await expect(card).toHaveCSS('touch-action', 'auto');
@@ -157,7 +160,7 @@ test('LongPressDrag_WhenLifted_ShouldShowTheGhostUnderTheFinger', async ({ mount
   const ghost = page.getByTestId(touchTestIds.dragGhost);
   await expect(ghost).toContainText('Card a2');
   await expect(ghost).toHaveCSS('pointer-events', 'none');
-  await expect(page.locator('[data-card="a2"]')).toHaveCSS('opacity', '0.4');
+  await expect(cardOf(page, 'a2')).toHaveCSS('opacity', '0.4');
   await expect
     .poll(async () => {
       const box = await ghost.boundingBox();
