@@ -2,11 +2,14 @@ import { useState } from 'react';
 import type { CommentDto } from '../../../api/comments';
 import { Avatar } from '../../../components/Avatar';
 import { Markdown } from '../../../components/Markdown';
+import type { SheetAction } from '../../../touch/ActionSheet';
+import { MoreButton } from '../../../touch/MoreButton';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { textareaClass } from '../form/inputClasses';
 import { workItemTestIds as ids } from '../testIds';
 
 const iconButton =
-  'h-6 rounded-control px-2 text-[length:var(--text-xs)] text-ink-muted hover:bg-signal-soft focus-visible:outline-2 focus-visible:outline-signal';
+  'h-6 rounded-control px-2 text-[length:var(--text-xs)] text-ink-muted hover:bg-signal-soft focus-visible:outline-2 focus-visible:outline-signal touch:h-[var(--touch-target)]';
 
 // One comment: who, when (labels come from the server), the server-rendered markdown, and for the author edit, for the
 // author or a project admin archive. Any member can mark it superseded from the ⋯ menu: it stays, struck through. In the
@@ -32,12 +35,28 @@ export function CommentItem({
   onArchive: () => void;
   onSupersede: () => void;
 }) {
+  const { touch } = useTouchShell();
   const [editing, setEditing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [draft, setDraft] = useState(comment.body);
   const [saveError, setSaveError] = useState<string | null>(null);
   const body = draft.trim();
   const author = comment.author;
+  const startEdit = () => {
+    setDraft(comment.body);
+    setSaveError(null);
+    setEditing(true);
+  };
+  // At touch the desktop's inline Edit and Archive and its ⋯ menu are one action sheet (rule 8).
+  const actions: SheetAction[] = [
+    ...(canEdit && !editing ? [{ id: 'edit', label: 'Edit', onSelect: startEdit }] : []),
+    ...(comment.superseded
+      ? []
+      : [{ id: 'supersede', label: 'Mark superseded', onSelect: onSupersede }]),
+    ...(canArchive
+      ? [{ id: 'archive', label: 'Archive', onSelect: onArchive, tone: 'danger' as const }]
+      : []),
+  ];
   return (
     <li
       data-testid={ids.comment}
@@ -89,66 +108,68 @@ export function CommentItem({
               Superseded
             </span>
           ) : null}
-          <span className="relative ml-auto flex">
-            {canEdit && !editing ? (
-              <button
-                type="button"
-                data-testid={ids.commentEdit}
-                className={iconButton}
-                onClick={() => {
-                  setDraft(comment.body);
-                  setSaveError(null);
-                  setEditing(true);
-                }}
-              >
-                Edit
-              </button>
-            ) : null}
-            {comment.superseded ? null : (
-              <button
-                type="button"
-                data-testid={ids.commentMenu}
-                aria-label="Entry options"
-                aria-expanded={menuOpen}
-                className={iconButton}
-                onClick={() => setMenuOpen((open) => !open)}
-              >
-                ⋯
-              </button>
-            )}
-            {menuOpen ? (
-              <div className="absolute top-6 right-0 z-10 rounded-control border border-edge bg-canvas p-1 shadow-panel">
+          {touch ? (
+            <span className="ml-auto flex">
+              {actions.length > 0 ? <MoreButton label="Entry options" actions={actions} /> : null}
+            </span>
+          ) : (
+            <span className="relative ml-auto flex">
+              {canEdit && !editing ? (
                 <button
                   type="button"
-                  data-testid={ids.commentSupersede}
-                  className={`${iconButton} whitespace-nowrap`}
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onSupersede();
-                  }}
+                  data-testid={ids.commentEdit}
+                  className={iconButton}
+                  onClick={startEdit}
                 >
-                  Mark superseded
+                  Edit
                 </button>
-              </div>
-            ) : null}
-            {canArchive ? (
-              <button
-                type="button"
-                data-testid={ids.commentArchive}
-                className={iconButton}
-                onClick={onArchive}
-              >
-                Archive
-              </button>
-            ) : null}
-          </span>
+              ) : null}
+              {comment.superseded ? null : (
+                <button
+                  type="button"
+                  data-testid={ids.commentMenu}
+                  aria-label="Entry options"
+                  aria-expanded={menuOpen}
+                  className={iconButton}
+                  onClick={() => setMenuOpen((open) => !open)}
+                >
+                  ⋯
+                </button>
+              )}
+              {menuOpen ? (
+                <div className="absolute top-6 right-0 z-10 rounded-control border border-edge bg-canvas p-1 shadow-panel">
+                  <button
+                    type="button"
+                    data-testid={ids.commentSupersede}
+                    className={`${iconButton} whitespace-nowrap`}
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onSupersede();
+                    }}
+                  >
+                    Mark superseded
+                  </button>
+                </div>
+              ) : null}
+              {canArchive ? (
+                <button
+                  type="button"
+                  data-testid={ids.commentArchive}
+                  className={iconButton}
+                  onClick={onArchive}
+                >
+                  Archive
+                </button>
+              ) : null}
+            </span>
+          )}
         </div>
         {editing ? (
           <div className="grid gap-1.5">
             <textarea
               data-testid={ids.commentEditInput}
               aria-label="Edit comment"
-              className={`${textareaClass} min-h-14 font-[family-name:var(--font-sans)]`}
+              className={`${textareaClass} min-h-14 font-[family-name:var(--font-sans)] touch:min-h-24`}
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
             />
@@ -157,7 +178,7 @@ export function CommentItem({
                 type="button"
                 data-testid={ids.commentEditSave}
                 disabled={body === '' || body === comment.body || saving}
-                className="h-7 rounded-control bg-signal px-3 text-[length:var(--text-sm)] font-semibold text-signal-ink disabled:opacity-50"
+                className="h-7 rounded-control bg-signal px-3 text-[length:var(--text-sm)] font-semibold text-signal-ink disabled:opacity-50 touch:h-[var(--touch-target)]"
                 onClick={() =>
                   void onSave(body).then(
                     () => setEditing(false),
