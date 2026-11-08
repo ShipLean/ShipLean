@@ -1,6 +1,12 @@
 @import 'tailwindcss';
 @import './styles/tokens.css';
 
+/* The one touch breakpoint (SHIP-805 rules 1 and 16): `touch:` at 900px and below, `phone:` under 600px. Plain CSS
+   uses the same two media queries; src/touch/viewport.ts holds them for script. No other breakpoint shapes the touch
+   layout. */
+@custom-variant touch (@media (max-width: 900px));
+@custom-variant phone (@media (max-width: 599.98px));
+
 /* Playwright CT bundles each spec's components through its own virtual
    entry modules, which automatic content detection doesn't reliably walk —
    force an explicit scan of the whole source tree so utility classes used
@@ -163,4 +169,16 @@
 
 .paper-sheet:focus-visible {
   outline-color: var(--theme-accent);
+}
+
+/* SHIP-805 rule 14: every input (checkboxes and radios too: W0-H1 TouchRules checks every visible input), textarea and select is 16px at 900px and below, or iOS Safari zooms the page on focus. One rule for
+   the whole app, never page by page. It is unlayered and !important on purpose (the one sanctioned !important): it
+   must beat .field in @layer components, Tailwind's text-* utilities, inline font sizes and @uiw/react-md-editor's
+   own CSS. */
+@media (max-width: 900px) {
+  input,
+  textarea,
+  select {
+    font-size: var(--text-input-touch) !important;
+  }
 }

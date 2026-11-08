@@ -201,3 +201,33 @@ test('client_WhenSessionEndedFollowsAPlain401_ShouldOpenLoginWithState', async (
   await client.api.get('/api/me').catch(() => undefined);
   expect(assign).toHaveBeenCalledTimes(2);
 });
+
+test('client_ShouldSendTheViewportHeader', async () => {
+  const fetchStub = vi.fn(() => Promise.resolve(new Response('{}', { status: 200 })));
+  vi.stubGlobal('fetch', fetchStub);
+
+  vi.stubGlobal('innerWidth', 390);
+  await client.api.get('/api/things');
+  // Read at send time: a resize between two requests changes the second one's header.
+  vi.stubGlobal('innerWidth', 1280);
+  await client.api.post('/api/things', { name: 'x' });
+
+  const headersOf = (call: number) =>
+    (fetchStub.mock.calls[call] as unknown as [string, RequestInit])[1].headers;
+  expect(client.VIEWPORT_HEADER).toBe('X-ShipLean-Viewport');
+  expect(headersOf(0)).toMatchObject({ [client.VIEWPORT_HEADER]: 'phone' });
+  expect(headersOf(1)).toMatchObject({ [client.VIEWPORT_HEADER]: 'desktop' });
+});
+
+test('sendForm_ShouldSendTheViewportHeader', async () => {
+  const fetchStub = stubFetch(new Response(JSON.stringify({ ok: true }), { status: 200 }));
+  vi.stubGlobal('innerWidth', 700);
+
+  await client.sendForm('POST', '/api/files', new FormData(), 'Too large.');
+
+  const [, init] = fetchStub.mock.calls[0] as [string, RequestInit];
+  expect(init.headers).toMatchObject({
+    [client.CLIENT_HEADER]: client.clientId,
+    [client.VIEWPORT_HEADER]: 'tablet',
+  });
+});
