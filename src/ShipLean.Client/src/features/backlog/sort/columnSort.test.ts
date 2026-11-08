@@ -111,8 +111,16 @@ test('sortRows_WhenSprint_ShouldGoPastCurrentFutureThenByName', () => {
 test('sortRows_WhenProgress_ShouldCompareTheShareDoneAndPutNothingUnderLast', () => {
   const rows = [
     itemRow({ key: 'SHIP-1', rank: 1, rollups: [] }),
-    itemRow({ key: 'SHIP-2', rank: 2, rollups: [{ type: 'story', open: 1, closed: 3 }] }),
-    itemRow({ key: 'SHIP-3', rank: 3, rollups: [{ type: 'story', open: 3, closed: 1 }] }),
+    itemRow({
+      key: 'SHIP-2',
+      rank: 2,
+      rollups: [{ type: 'story', open: 1, closed: 3, inCurrentSprint: 0, inOtherSprint: 0 }],
+    }),
+    itemRow({
+      key: 'SHIP-3',
+      rank: 3,
+      rollups: [{ type: 'story', open: 3, closed: 1, inCurrentSprint: 0, inOtherSprint: 0 }],
+    }),
   ];
   expect(keys(sortRows(rows, { column: 'progress', direction: 'desc' }))).toEqual([
     'SHIP-2',

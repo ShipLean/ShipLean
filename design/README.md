@@ -276,6 +276,7 @@ Leave clear space around the mark of at least half its width. Don't recolour, st
 - **Accent is for action and state:** primary buttons, focus rings, selection, the current sprint, forecast lines and capacity bars. Use `--color-accent-soft` for selected and hover backgrounds. Surfaces stay neutral.
 - **State colour follows the state category, never its name.** States are custom per project, so use `--state-proposed | in-progress | resolved | completed | removed`, shown as a 7px dot plus the state's name. Totals that group by state group by category.
 - **Work item types** use `--type-epic | feature | story | bug | task`, only on the 16px type icon (a coloured square with a letter). Never use them for UI state.
+- **Feature and Epic progress bars** draw done (`--state-completed`), open in the current sprint (`--progress-current-sprint`, the strong blue) and open in another sprint (`--progress-other-sprint`, the soft blue) over the track; open work in no sprint is the bare track. The hover title names all four counts.
 - **Charts** use `--chart-committed` and `--chart-completed` (checked for colour-blind separation in both themes). Charts have one y-axis, a legend, direct labels on the latest values, hover tooltips, and a dashed reference line for velocity.
 - **Type scale:** `--text-lg` for screen titles, `--text-md` for section headings, `--text-base` for body, `--text-sm` for controls and table cells, `--text-xs`/`--text-2xs` for meta and overlines. Weights 400/500/600 only.
 

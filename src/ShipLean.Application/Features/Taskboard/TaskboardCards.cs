@@ -38,7 +38,7 @@ public sealed class TaskboardCards(NpgsqlDataSource dataSource, ICriteriaEvaluat
         Dictionary<Guid, string> styles, Dictionary<Guid, TaskboardCardExtras> extras)
     {
         var tags = row.Tags.Select(tag => new CardTagDto(tag, settings.TagColours.FirstOrDefault(c => string.Equals(c.Tag, tag, StringComparison.OrdinalIgnoreCase))?.Colour)).ToList();
-        var counts = rollups.Where(r => r.ParentId == row.Id).Select(r => new RollupCountDto(r.Type, r.Open, r.Closed)).ToList();
+        var counts = rollups.Where(r => r.ParentId == row.Id).Select(RollupCountDto.From).ToList();
         var setting = settings.CardFields.FirstOrDefault(f => f.Type == row.Type.Id);
         var extra = (setting?.ExtraFields ?? []).Where(id => !OnTheCard.Contains(id))
             .Select(id => Field(id, row, extras.GetValueOrDefault(row.Id)))
