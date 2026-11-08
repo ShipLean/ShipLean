@@ -13,7 +13,7 @@ public sealed class RoundServices : IServiceModule
         services.AddSingleton<IIssueProposalSessions, IssueProposalSessions>();
         services.AddSingleton<ClosestItems>();
         services.AddSingleton<RoundJobWorker>();
-        // TODO: register RoundJobService with AddHostedService once HostProfiles removes it from the Test profile (a file this lane
-        // doesn't own); until then round jobs wait in issue_job and tests drive RoundJobWorker.RunNextAsync directly.
+        // HostProfiles removes it in the Test and Local profiles, where tests drive RoundJobWorker.RunNextAsync directly.
+        services.AddHostedService<RoundJobService>();
     }
 }
