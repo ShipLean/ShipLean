@@ -112,5 +112,3 @@ public sealed class AcceptanceReads(NpgsqlDataSource dataSource)
 
     private sealed record ItemRow(Guid Id, string Type, string Title);
 }
-
-public sealed record ProjectItem(Guid Id, string Key, WorkItemTypeId Type, string Title);

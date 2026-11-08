@@ -320,7 +320,3 @@ public sealed class AcceptJobWorker(
         PublicTextGuard Guard);
 }
 
-// Thrown inside the create's hook so the item rolls back when a concurrent run of the same job created it first.
-public sealed class AcceptCreateTakenException : Exception
-{
-}
