@@ -11,6 +11,9 @@ public class CronScheduleTests
     // The instant the pinned backup-cron-preview.json examples are computed against.
     private static readonly DateTimeOffset PinnedNow = new(2026, 10, 24, 14, 0, 0, TimeSpan.Zero);
 
+    // Midnight on the 1st of a month, for the monthly schedule below; only fake clocks read it.
+    private static readonly DateTimeOffset FirstOfMonth = new(2026, 11, 1, 0, 0, 0, TimeSpan.Zero);
+
     private static CronSchedule Schedule() => new(new FakeTimeProvider(PinnedNow));
 
     [Test]
@@ -50,14 +53,14 @@ public class CronScheduleTests
     [Test]
     public void Validate_WhenGapShortOnlyLater_ShouldRefuse()
     {
-        var now = new DateTimeOffset(2026, 11, 1, 0, 15, 0, TimeSpan.Zero);
+        var now = FirstOfMonth.AddMinutes(15);
         var schedule = new CronSchedule(new FakeTimeProvider(now));
 
         schedule.Preview("0,30 0 1 * *", now, 3).NextRuns.ShouldBe(
         [
-            new DateTimeOffset(2026, 11, 1, 0, 30, 0, TimeSpan.Zero),
-            new DateTimeOffset(2026, 12, 1, 0, 0, 0, TimeSpan.Zero),
-            new DateTimeOffset(2026, 12, 1, 0, 30, 0, TimeSpan.Zero),
+            FirstOfMonth.AddMinutes(30),
+            FirstOfMonth.AddMonths(1),
+            FirstOfMonth.AddMonths(1).AddMinutes(30),
         ]);
         schedule.Validate("0,30 0 1 * *").ShouldBe(CronSchedule.TooOftenError);
     }
