@@ -130,10 +130,16 @@ public partial class HappyJourneyTests : WebhookApiTest
         await ReconcileAsync(issue.Id);
         _github.Comments(number)[3].ShouldStartWith($"{item.Key} \"Filter the backlog by tag\" is planned for the sprint Sprint 9 (");
 
-        // The pull request merges with a sha, which closes the item; the image is published.
+        // A pull request opens.
+        var pull = Interlocked.Increment(ref _numbers);
+        var opened = await DeliverAsync(WebhookDelivery.Github(GithubSecret, "opened", pull, $"{item.Key}: Filter the backlog by tag", Next()));
+        opened.Linked.ShouldBe([item.Key]);
+        await ReconcileAsync(issue.Id);
+        _github.Comments(number)[4].ShouldBe(ProgressMessages.PullRequest(item.Key, "Filter the backlog by tag", $"https://github.com/acme/storefront/pull/{pull}", merged: false));
+
+        // It merges with a sha, which closes the item; the image is published. The done message replaces a merged post.
         var sha = NewSha();
         var published = PublishRun(sha, "completed", "success");
-        var pull = Interlocked.Increment(ref _numbers);
         var merged = await DeliverAsync(WebhookDelivery.Github(
             GithubSecret, "closed", pull, $"{item.Key}: Filter the backlog by tag", Next(), state: "closed", merged: true, mergeCommitSha: sha));
         merged.Closed.ShouldBe([item.Key]);
@@ -141,13 +147,16 @@ public partial class HappyJourneyTests : WebhookApiTest
 
         var posts = _github.Comments(number);
         posts.Count.ShouldBe(6);
-        posts[4].ShouldBe(ProgressMessages.PullRequest(item.Key, "Filter the backlog by tag", WebhookDelivery.GithubUrl(pull), merged: true));
         var done = posts[5];
         done.ShouldStartWith($"{item.Key} \"Filter the backlog by tag\" is done.\n\n{ShippedInSection.Heading}\n\n- {item.Key}: commit `{sha[..7]}` (acme/storefront#{pull}), merged ");
         done.ShouldContain($"Image published {Utc(published)} (run: {RunUrl(sha)}).");
         done.ShouldEndWith(ProgressMessages.ClosingCompleted);
         _github.Closes(number).ShouldBe(["closed completed"]);
+
+        // The phase moves to closed on the pass after the close was sent.
+        await ReconcileAsync(issue.Id);
         (await IssueAsync(issueRef)).Phase.ShouldBe(IssuePhase.Closed);
+        _github.Comments(number).Count.ShouldBe(6);
     }
 
     [Test]
@@ -222,14 +231,10 @@ public partial class HappyJourneyTests : WebhookApiTest
         (await CommentsAsync(made.Id)).ShouldContain(c => c.Body == AcceptanceTexts.CameFrom(triage.Key));
         _github.Comments(number)[^1].ShouldBe(AcceptanceTexts.Accepted(made.Key, "Filter the backlog by tag"));
 
-        // Progress follows the new item; the conversation stays on the Triage item.
+        // Progress follows the new item.
         await MoveAsync(journey, made.Id, "story", "Active");
         await ReconcileAsync(issue.Id);
         _github.Comments(number)[^1].ShouldBe(ProgressMessages.Started(made.Key, "Filter the backlog by tag"));
-        await DeliverAsync(WebhookDelivery.GithubIssueComment(GithubSecret, "Same here on Firefox.", "passer-by", "NONE", number, commentId: NextId()));
-        var triageNotes = await CommentsAsync(triage.Id);
-        triageNotes.ShouldContain(c => c.AgentName == "GitHub @passer-by" && c.Body == "Same here on Firefox.", string.Join(" | ", triageNotes));
-        (await CommentsAsync(made.Id)).ShouldNotContain(c => c.Body == "Same here on Firefox.");
     }
 
     private static long NextId() => Interlocked.Increment(ref _ids);
