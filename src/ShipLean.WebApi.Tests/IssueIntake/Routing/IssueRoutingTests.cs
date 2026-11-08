@@ -1,5 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using ShipLean.Application.Features.IssueIntake;
 using ShipLean.Application.Features.Webhooks;
 using ShipLean.Contracts.IssueIntake;
 using ShipLean.Contracts.Webhooks;
@@ -85,7 +84,7 @@ public class IssueRoutingTests : WebhookApiTest
 
         var issue = CallsFor(107).ShouldHaveSingleItem().Event.ShouldBeOfType<IssueEvent>();
         issue.Body.Length.ShouldBe(IssueEvent.MaxTextLength);
-        issue.Body.ShouldEndWith(IssueCommentClassifier.TruncatedNote);
+        issue.Body.ShouldEndWith(IssueEvent.TruncatedNote);
     }
 
     [Test]

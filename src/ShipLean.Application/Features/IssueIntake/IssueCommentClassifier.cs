@@ -8,8 +8,6 @@ namespace ShipLean.Application.Features.IssueIntake;
 // GitHub's do. A maintainer is an author_association of OWNER, MEMBER or COLLABORATOR.
 public static partial class IssueCommentClassifier
 {
-    public const string TruncatedNote = "\n\n_(ShipLean cut this text: it was longer than 64 KB.)_";
-
     public static IssueCommentKind Classify(IssueCommentEvent comment, string selfLogin)
     {
         if (comment.OnPullRequest || comment.SenderIsBot || SameLogin(comment.AuthorLogin, selfLogin))
@@ -30,12 +28,6 @@ public static partial class IssueCommentClassifier
     }
 
     public static bool IsMaintainer(string authorAssociation) => authorAssociation is "OWNER" or "MEMBER" or "COLLABORATOR";
-
-    // Text from strangers is kept to IssueEvent.MaxTextLength characters, with a note where it was cut.
-    public static string Cap(string text)
-        => text.Length <= IssueEvent.MaxTextLength
-            ? text
-            : string.Concat(text.AsSpan(0, IssueEvent.MaxTextLength - TruncatedNote.Length), TruncatedNote);
 
     private static bool SameLogin(string login, string other) => string.Equals(login, other, StringComparison.OrdinalIgnoreCase);
 

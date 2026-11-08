@@ -7,7 +7,7 @@ namespace ShipLean.Application.Features.IssueIntake;
 // ChangedAsync. A comment is classified against ShipLean's own GitHub login, then a Command goes to intake's TakeAsync, an
 // Accept to acceptance, a Reply or a Mirror to replies, and an Ignore goes nowhere. The delivery dedupe runs before this,
 // but the lanes don't rely on it: each is idempotent (D18).
-public sealed class IssueRouter(IGitHubIdentity identity, IIssueIntake intake, IIssueReplies replies, IIssueAcceptance acceptance)
+public sealed class IssueRouter(IGitHubIdentity identity, IIssueIntake intake, IIssueReplies replies, IIssueAcceptance acceptance) : IIssueRouter
 {
     public async Task<WebhookResultDto> RouteAsync(IssueEvent issue, CancellationToken cancellationToken)
     {

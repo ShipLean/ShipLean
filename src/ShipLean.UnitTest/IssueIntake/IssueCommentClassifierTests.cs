@@ -93,10 +93,10 @@ public class IssueCommentClassifierTests
     [Test]
     public void Cap_WhenLongerThan64Kb_ShouldTruncateWithANote()
     {
-        var capped = IssueCommentClassifier.Cap(new string('a', IssueEvent.MaxTextLength + 10));
+        var capped = IssueEvent.Cap(new string('a', IssueEvent.MaxTextLength + 10));
 
         capped.Length.ShouldBe(IssueEvent.MaxTextLength);
-        capped.ShouldEndWith(IssueCommentClassifier.TruncatedNote);
-        IssueCommentClassifier.Cap("short").ShouldBe("short");
+        capped.ShouldEndWith(IssueEvent.TruncatedNote);
+        IssueEvent.Cap("short").ShouldBe("short");
     }
 }

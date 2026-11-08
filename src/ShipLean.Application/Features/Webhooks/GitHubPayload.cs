@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using ShipLean.Application.Features.IssueIntake;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.IssueIntake;
 using ShipLean.Contracts.Webhooks;
@@ -79,7 +78,7 @@ internal static partial class GitHubPayload
             RefOf(root, issue),
             PayloadJson.Text(issue, "html_url"),
             PayloadJson.Text(issue, "title"),
-            IssueCommentClassifier.Cap(PayloadJson.OptionalText(issue, "body") ?? string.Empty),
+            IssueEvent.Cap(PayloadJson.OptionalText(issue, "body") ?? string.Empty),
             PayloadJson.Text(PayloadJson.Object(issue, "user"), "login"),
             PayloadJson.Text(issue, "author_association"),
             LabelsOf(issue),
@@ -104,7 +103,7 @@ internal static partial class GitHubPayload
             issue.TryGetProperty("pull_request", out var pull) && pull.ValueKind == JsonValueKind.Object,
             comment.TryGetProperty("id", out var id) && id.TryGetInt64(out var commentId) ? commentId : throw ApiException.Validation("The payload has no comment id."),
             PayloadJson.Text(comment, "html_url"),
-            IssueCommentClassifier.Cap(PayloadJson.OptionalText(comment, "body") ?? string.Empty),
+            IssueEvent.Cap(PayloadJson.OptionalText(comment, "body") ?? string.Empty),
             PayloadJson.Text(author, "login"),
             PayloadJson.Text(comment, "author_association"),
             IsBot(PayloadJson.Object(root, "sender")) || IsBot(author),

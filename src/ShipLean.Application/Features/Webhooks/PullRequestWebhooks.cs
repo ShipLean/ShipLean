@@ -2,8 +2,8 @@ using System.Text.Json;
 using Agoda.IoC.Core;
 using Dapper;
 using Npgsql;
-using ShipLean.Application.Features.IssueIntake;
 using ShipLean.Contracts.Errors;
+using ShipLean.Contracts.IssueIntake;
 using ShipLean.Contracts.Usage;
 using ShipLean.Contracts.Webhooks;
 using ShipLean.Contracts.WorkItems;
@@ -11,11 +11,11 @@ using ShipLean.Contracts.WorkItems;
 namespace ShipLean.Application.Features.Webhooks;
 
 // A delivery whose signature has been checked: a delivery id seen before is a no-op; otherwise the provider's parser
-// reads the payload, PullRequestSync applies a pull or merge request event, IssueRouter sends a GitHub issue or issue
+// reads the payload, PullRequestSync applies a pull or merge request event, IIssueRouter sends a GitHub issue or issue
 // comment to its lane, and the delivery is recorded (after the work, so a delivery that failed half way is done again when
 // the provider retries it; every step is safe to repeat, and the issue lanes don't rely on this dedupe).
 [RegisterPerRequest]
-public sealed class PullRequestWebhooks(NpgsqlDataSource dataSource, PullRequestSync sync, IssueRouter issues, IUsageEvents usage, TimeProvider time)
+public sealed class PullRequestWebhooks(NpgsqlDataSource dataSource, PullRequestSync sync, IIssueRouter issues, IUsageEvents usage, TimeProvider time)
 {
     public async Task<WebhookResultDto> ReceiveAsync(WebhookProvider provider, string? deliveryId, string? eventName, ReadOnlyMemory<byte> body, CancellationToken cancellationToken)
     {
