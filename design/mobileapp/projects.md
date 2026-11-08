@@ -1,5 +1,7 @@
 # Projects and switching project (phone app)
 
+Feature: **SHIP-925** (under epic SHIP-905).
+
 Mock-ups: `projects.html` (`?state=<id>`). This area connects three things that were designed separately: SHIP-907 D7 (Projects is the first signed-in screen), SHIP-916's setup (which ends in the tab bar) and the tab bar (which had no project control).
 
 ## Purpose
@@ -58,7 +60,7 @@ Before this, the areas disagreed:
 
 - The kit (`app.css`, `app.js`) has `.pkey`, `.proj-btn`, `App.projTile(key, { dot, ring })` and `App.tabRoot({ title, sub, project, dot, ring, right })`. Its subtitle is the project name, followed by `sub` when that is given.
 - `backlog.html`: the "S" avatar is now the SHIP tile, with "ShipLean" as the subtitle.
-- `feature-board.html`, `retro.html` and `inbox.html` have the tile, and "SHIP ·" became "ShipLean ·".
+- `feature-board.html`, `retro.html` and `inbox.html` have the tile, and "SHIP ·" became "ShipLean ·" (Features' subtitle is shortened to "8 open Features" to fit).
 - `setup.html`: the Backlog seen during and after the download (`app-downloading`, `mobile-data`, `ready`, `first-result`, `skipped`) has the tile instead of the JD avatar. In `setup.md`, *Use ShipLean while this downloads* leads to Projects, and Settings › Voice opens from Account.
 
 ## Decisions
