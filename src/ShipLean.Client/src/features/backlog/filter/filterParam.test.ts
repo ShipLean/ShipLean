@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { filterParamOf, isFiltering, NO_CRITERIA } from './filterParam';
+import { filterParamOf, isFiltering, NO_CRITERIA, triageCriteria } from './filterParam';
 
 describe('filterParamOf', () => {
   it('filterParamOf_WhenNoClauses_ShouldBeEmpty', () => {
@@ -26,5 +26,14 @@ describe('filterParamOf', () => {
     };
     expect(filterParamOf(criteria)).toBe('');
     expect(isFiltering(criteria)).toBe(true);
+  });
+});
+
+describe('triageCriteria', () => {
+  it('triageCriteria_WhenStateIds_ShouldFilterByThoseStatesAsAWholeClause', () => {
+    const criteria = triageCriteria(['a', 'b']);
+
+    expect(criteria.clauses).toEqual([{ field: 'state', op: 'in', value: ['a', 'b'] }]);
+    expect(filterParamOf(criteria)).toBe(JSON.stringify(criteria));
   });
 });

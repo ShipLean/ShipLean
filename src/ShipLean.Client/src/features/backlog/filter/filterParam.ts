@@ -15,3 +15,9 @@ export function filterParamOf(criteria: CriteriaJson): string {
 
 /** Whether the panel has clauses, so the list is narrowed and reordering is off (even while one is half-typed). */
 export const isFiltering = (criteria: CriteriaJson): boolean => criteria.clauses.length > 0;
+
+/** The criteria the triage chip applies: the backlog's items in any of its intake states. */
+export const triageCriteria = (stateIds: readonly string[]): CriteriaJson => ({
+  match: 'all',
+  clauses: [{ field: 'state', op: 'in', value: [...stateIds] }],
+});

@@ -8,6 +8,7 @@ export const backlogTestIds = {
   columnsMenu: 'backlog-columns-menu',
   columnOption: 'backlog-column-option',
   filterSlot: 'backlog-filter-slot',
+  triageChip: 'backlog-triage-chip',
   filterButton: 'backlog-filter-button',
   filterPanel: 'backlog-filter-panel',
   filterClear: 'backlog-filter-clear',

@@ -67,6 +67,7 @@ export function LevelBacklog({
         level={level}
         mode={mode}
         modes={level === 'features' ? FEATURE_MODES : []}
+        triage={state.triage}
         onNewItem={() => (level === 'features' ? setNewFeatureOpen(true) : state.setAdding(true))}
         newItemLabel={level === 'features' ? '+ New Feature' : undefined}
         includeCompleted={state.includeCompleted}
