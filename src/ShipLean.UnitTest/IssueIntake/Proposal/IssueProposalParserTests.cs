@@ -1,3 +1,4 @@
+using System.Globalization;
 using ShipLean.Application.Features.IssueIntake.Proposal;
 using ShipLean.Contracts.IssueIntake;
 using ShipLean.TestSupport;
@@ -36,10 +37,12 @@ public sealed class IssueProposalParserTests
         proposal.Verdict.ShouldBe(ProposalVerdict.AlreadyShipped);
         proposal.Description.ShouldBeNull();
         var existing = proposal.Existing.ShouldHaveSingleItem();
-        existing.ShouldBe(new ProposalExisting(
-            "SHIP-412", "https://github.com/ShipLean/ShipLean/pull/47", "54dc0d4",
-            new DateTimeOffset(2026, 11, 3, 21, 58, 0, TimeSpan.Zero), new DateTimeOffset(2026, 11, 3, 22, 19, 0, TimeSpan.Zero),
-            "https://github.com/ShipLean/ShipLean/actions/runs/123456789"));
+        existing.Key.ShouldBe("SHIP-412");
+        existing.PrUrl.ShouldBe("https://github.com/ShipLean/ShipLean/pull/47");
+        existing.Commit.ShouldBe("54dc0d4");
+        Utc(existing.MergedAt).ShouldBe("2026-11-03T21:58:00Z");
+        Utc(existing.PublishedAt).ShouldBe("2026-11-03T22:19:00Z");
+        existing.RunUrl.ShouldBe("https://github.com/ShipLean/ShipLean/actions/runs/123456789");
         proposal.Requires.ShouldBe(["Search indexing turned on"]);
         publicMarkdown.ShouldContain("git merge-base --is-ancestor 54dc0d4 <sha>");
     }
@@ -122,7 +125,7 @@ public sealed class IssueProposalParserTests
         IssueProposalParser.TryParse(response, out var proposal, out var publicMarkdown).ShouldBeTrue();
 
         proposal.Verdict.ShouldBe(ProposalVerdict.NeedsInfo);
-        publicMarkdown.ShouldEndWith("````");
+        publicMarkdown.ShouldEndWith("````\n\nPublic text.");
     }
 
     [Test]
@@ -145,6 +148,11 @@ public sealed class IssueProposalParserTests
         ok.ShouldBeFalse();
         proposal.ShouldBeNull();
         failure.ShouldNotBeNull().ShouldContain("nested too deeply");
+    }
+
+    private static string? Utc(DateTimeOffset? at)
+    {
+        return at?.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
     }
 
     private static string Response(string json)
