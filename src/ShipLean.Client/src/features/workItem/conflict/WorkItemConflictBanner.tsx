@@ -1,5 +1,7 @@
+import { useEffect, useRef } from 'react';
 import { FIELD_IDS } from '../../../api/persisted';
 import type { ConflictDto } from '../../../api/workItems';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { workItemTestIds as ids } from '../testIds';
 import { fieldLabels, type DraftField } from '../form/draft';
 
@@ -8,11 +10,15 @@ const labelOf = (field: string): string =>
   fieldLabels[field as DraftField] ??
   field;
 
+// Full width and --touch-target tall at 900px and below.
+const touchButton = 'touch:h-[var(--touch-target)] touch:w-full touch:justify-center';
+
 const buttonClass =
   'inline-flex h-7 items-center rounded-control border px-3 text-[length:var(--text-sm)] font-medium focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-signal';
 
 // Shown when a save finds the item at a newer revision: who changed what since the revision the draft was edited from,
-// what the user has not saved, and the two ways out.
+// what the user has not saved, and the two ways out. At 900px and below (SHIP-714) it scrolls itself into view when it
+// appears, clear of the top bar, since Save is in the Save bar at the bottom, far from it; its two buttons go full width.
 export function WorkItemConflictBanner({
   conflict,
   baseRevision,
@@ -30,11 +36,18 @@ export function WorkItemConflictBanner({
   const whoOf = (revision: ConflictDto['theirChanges'][number]) =>
     revision.agentName ?? revision.changedBy?.name ?? 'Jira import';
   const newest = theirChanges[0];
+  const { touch } = useTouchShell();
+  const banner = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    // When it appears (or the window narrows to touch), never on a later rerender.
+    if (touch) banner.current?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }, [touch]);
   return (
     <div
+      ref={banner}
       data-testid={ids.conflict}
       role="alert"
-      className="grid gap-2 border-b border-edge bg-sunken px-4 py-2 text-[length:var(--text-sm)] text-ink"
+      className="grid gap-2 border-b border-edge bg-sunken px-4 py-2 text-[length:var(--text-sm)] text-ink touch:scroll-mt-[calc(var(--mobile-bar-height)+env(safe-area-inset-top)+8px)] touch:px-3"
       style={{ borderLeft: '3px solid var(--color-warn)' }}
     >
       <div data-testid={ids.conflictSummary}>
@@ -47,7 +60,7 @@ export function WorkItemConflictBanner({
           Nothing you typed is lost.
         </span>
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4 touch:grid-cols-1 touch:gap-2">
         <div className="grid content-start gap-1">
           <span className="text-[length:var(--text-xs)] font-semibold tracking-wide text-ink-muted uppercase">
             Changed by them
@@ -94,11 +107,11 @@ export function WorkItemConflictBanner({
           </ul>
         </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 touch:flex-col touch:items-stretch">
         <button
           type="button"
           data-testid={ids.conflictReloadTheirs}
-          className={`${buttonClass} border-edge bg-panel text-ink hover:bg-signal-soft`}
+          className={`${buttonClass} ${touchButton} border-edge bg-panel text-ink hover:bg-signal-soft`}
           onClick={onReloadTheirs}
         >
           Reload theirs
@@ -106,7 +119,7 @@ export function WorkItemConflictBanner({
         <button
           type="button"
           data-testid={ids.conflictReapplyMine}
-          className={`${buttonClass} border-signal bg-signal text-signal-ink`}
+          className={`${buttonClass} ${touchButton} border-signal bg-signal text-signal-ink`}
           onClick={onReapplyMine}
         >
           Re-apply mine
