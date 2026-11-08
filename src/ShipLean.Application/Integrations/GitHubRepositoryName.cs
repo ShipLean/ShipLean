@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace ShipLean.Application.Features.IssueIntake.Settings;
+namespace ShipLean.Application.Integrations;
 
 // The "owner/name" a project's repo_url names on github.com, or null when it names anything else (another host, a deeper
 // path, characters GitHub does not allow). Accepts https://github.com/o/n, ssh://git@github.com/o/n and git@github.com:o/n,

@@ -2,6 +2,7 @@ using Agoda.IoC.Core;
 using Dapper;
 using Npgsql;
 using ShipLean.Application.Features.Webhooks;
+using ShipLean.Application.Integrations;
 using ShipLean.Application.Identity;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
@@ -45,6 +46,7 @@ public sealed class IssueIntakeSettingsService(
 
         var fromUrl = GitHubRepositoryName.FromRepoUrl(row.RepoUrl);
         var runAs = row.Id is { } id ? new UserRef(id, row.Name!, row.Initials!, row.AvatarColour!, row.PhotoUrl) : null;
+        // The same rule as WebhookSecrets.For (another feature, so not called): the endpoint exists only while the secret is non-blank.
         var token = (await integrations.GetAsync(cancellationToken)).GitHubToken;
         return new IssueIntakeSettingsDto(
             row.Enabled,
@@ -53,7 +55,7 @@ public sealed class IssueIntakeSettingsService(
             row.Instructions ?? string.Empty,
             DefaultInstructions,
             row.MaxRounds,
-            new IssueIntakeReadiness(fromUrl is not null, row.HasConnection, !string.IsNullOrEmpty(token), WebhookSecrets.For(WebhookProvider.Github, configuration) is not null, runAs is not null));
+            new IssueIntakeReadiness(fromUrl is not null, row.HasConnection, !string.IsNullOrEmpty(token), !string.IsNullOrWhiteSpace(configuration[WebhookSecrets.GithubKey]), runAs is not null));
     }
 
     // Throws ApiException.NotFound (no such project), Validation (maxRounds under 1, instructions too long), NoRepoUrl

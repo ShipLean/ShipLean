@@ -1,7 +1,7 @@
 using System.Data.Common;
 using Dapper;
 using Microsoft.Extensions.Logging;
-using ShipLean.Application.Features.IssueIntake.Settings;
+using ShipLean.Application.Integrations;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Events;
