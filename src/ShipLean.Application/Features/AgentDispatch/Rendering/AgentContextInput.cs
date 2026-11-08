@@ -1,9 +1,14 @@
+using ShipLean.Contracts.Agents;
+
 namespace ShipLean.Application.Features.AgentDispatch.Rendering;
 
 // Everything the renderer needs, as plain values, so it depends on no table. AppUserId is the connection's id
 // (sent as appUserId and oauthClientId). TriggerCommentId marks the thread the session was started from, if any.
 // Ancestors is the whole chain above the item, nearest first, each with its description; when set, the promptContext renders it in place of the parent.
 // Guidance is the prompt of the automation (or the person) that started the session; Transition is the move that fired it.
+// Mode is the session's mode; only a propose session adds shipleanMode to the `created` payload. Propose is set exactly when Mode is
+// Propose: the loader then builds an allowlisted input (AgentContextLoader.LoadProposeAsync) and the promptContext is AgentProposePromptContext.
+// In propose mode Repository is the GitHub issue's repository (rendered as shipleanRepository, not in promptContext) and Project.Name is blank.
 public sealed record AgentContextInput(
     string SessionId,
     string AppUserId,
@@ -18,4 +23,6 @@ public sealed record AgentContextInput(
     string? TriggerCommentId,
     string? Guidance = null,
     AgentTransitionInput? Transition = null,
-    IReadOnlyList<AgentRelatedItemInput>? Ancestors = null);
+    IReadOnlyList<AgentRelatedItemInput>? Ancestors = null,
+    AgentSessionMode Mode = AgentSessionMode.Implement,
+    AgentProposeInput? Propose = null);

@@ -210,6 +210,7 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `sprint_demo.created` | `create_sprint_demo` | `SprintDemo.Create` |
 | `sprint_demo.youtube_retried` |  | `SprintDemo.RetryYouTube` |
 | `project_demo.settings_changed` |  | `ProjectDemoSettings.Put` |
+| `issue_intake.settings_changed` |  | `IssueIntakeSettings.Put` |
 | `project_demo.brand_changed` |  | `DemoBrand.ReplaceLogo`, `DemoBrand.RemoveLogo`, `DemoBrand.PutTokens` |
 | `project_youtube.changed` |  | `YouTube.Check`, `YouTube.Disconnect` |
 | `board.settings_changed` |  | `BoardSettings.Put` |

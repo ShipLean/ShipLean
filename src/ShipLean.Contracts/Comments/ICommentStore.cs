@@ -1,3 +1,5 @@
+using System.Data.Common;
+
 namespace ShipLean.Contracts.Comments;
 
 // A work item's discussion. Stores trust their caller: endpoints check IProjectAccess first. The author is ICurrentUser.
@@ -14,6 +16,11 @@ public interface ICommentStore
     // A bearer request has no signed-in user, so the caller names the author (the user who started the session). Only trusted
     // server code calls this; it is not reachable from a request body.
     Task<CommentDto> AddAsAgentAsync(Guid workItemId, CommentCreate create, string agentName, Guid authorId, CancellationToken cancellationToken = default);
+
+    // AddAsAgentAsync on the caller's transaction, so the comment commits with the caller's other writes (a comment mirrored from
+    // GitHub and its provenance row) or not at all. Publishes nothing: the caller publishes CommentsChanged(projectId, workItemId)
+    // through IProjectEvents after it commits, as IProjectEvents requires (IMirroredComments hands it the event to publish).
+    Task<CommentDto> AddAsAgentAsync(Guid workItemId, CommentCreate create, string agentName, Guid authorId, DbTransaction transaction, CancellationToken cancellationToken = default);
 
     // Author only. Throws NotFound for an unknown or archived comment, Forbidden for anyone else, Validation for a blank or too long body.
     Task<CommentDto> EditAsync(Guid id, CommentEdit edit, CancellationToken cancellationToken = default);

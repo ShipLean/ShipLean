@@ -37,6 +37,15 @@ public sealed class ApiException(string code, string message) : Exception(messag
 
     public static ApiException MarkdownTooLarge(string message) => new(ApiErrorCodes.MarkdownTooLarge, message);
 
+    // Issue intake settings: the field is the request field at fault (enabled, runAsUserId, repoUrl).
+    public static ApiException RepositoryTaken(string message) => new(ApiErrorCodes.RepositoryTaken, message) { Field = "enabled" };
+
+    public static ApiException NoRepoUrl(string message) => new(ApiErrorCodes.NoRepoUrl, message) { Field = "enabled" };
+
+    public static ApiException NotMember(string message) => new(ApiErrorCodes.NotMember, message) { Field = "runAsUserId" };
+
+    public static ApiException IntakeOn(string message) => new(ApiErrorCodes.IntakeOn, message) { Field = "repoUrl" };
+
     public static ApiException Ambiguous(string message) => new(ApiErrorCodes.Ambiguous, message);
 
     public static ApiException Ambiguous(string message, string field, IReadOnlyList<string> candidates)

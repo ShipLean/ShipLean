@@ -223,6 +223,19 @@ declare -A shots=(
   [tboard-settings]="taskboard.html?dialog=settings&pane=styles"
   [tboard-settings-fields]="taskboard.html?dialog=settings"
   [tboard-settings-tags]="taskboard.html?dialog=settings&pane=tags"
+  # Decisions and questions on the work item page (SHIP-922). ?from=<row> with ?shot hides what is above that row.
+  [decisions]="decisions.html?state=waiting"
+  [decisions-section]="decisions.html?state=waiting&at=Decisions"
+  [decisions-decision]="decisions.html?state=waiting&from=D1"
+  [decisions-menu]="decisions.html?state=waiting&menu=4&from=D4"
+  [decisions-change]="decisions.html?state=change&from=D1"
+  [decisions-settled-change]="decisions.html?state=settled-change&from=D2"
+  [decisions-history]="decisions.html?state=history&from=D3"
+  [decisions-reply]="decisions.html?state=reply&from=Q1"
+  [decisions-folded]="decisions.html?state=folded&at=Decisions"
+  [decisions-empty]="decisions.html?state=empty&at=Decisions"
+  [decisions-feature]="decisions.html?state=feature&at=Decisions"
+  [decisions-rail]="decisions.html?state=waiting&at=History"
 )
 
 names=("$@")

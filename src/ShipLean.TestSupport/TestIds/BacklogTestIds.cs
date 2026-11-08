@@ -11,6 +11,7 @@ public static class BacklogTestIds
     public const string ColumnsMenu = "backlog-columns-menu";
     public const string ColumnOption = "backlog-column-option";
     public const string FilterSlot = "backlog-filter-slot";
+    public const string TriageChip = "backlog-triage-chip";
     public const string FilterButton = "backlog-filter-button";
     public const string FilterPanel = "backlog-filter-panel";
     public const string FilterClear = "backlog-filter-clear";
