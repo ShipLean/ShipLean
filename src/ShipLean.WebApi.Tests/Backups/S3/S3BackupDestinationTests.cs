@@ -1,3 +1,5 @@
+using System.Net;
+using System.Net.Sockets;
 using Amazon.S3;
 using Amazon.S3.Model;
 using ShipLean.Application.Features.Backups.S3;
@@ -131,5 +133,92 @@ public class S3BackupDestinationTests
 
         using var client = S3ClientSettings.From(config).CreateClient();
         (await client.GetObjectMetadataAsync(config.Bucket, "small.slbk")).ETag.ShouldNotContain("-");
+    }
+
+    [Test]
+    public void Create_WhenOnlyAccessKey_ShouldThrow()
+    {
+        var config = new S3DestinationConfig("eu-west-1", null, "b", "", false, "id", null);
+
+        var thrown = Should.Throw<BackupDestinationException>(() => S3ClientSettings.From(config));
+
+        thrown.Message.ShouldBe("The s3 backup destination needs both an access key id and a secret key, or neither.");
+    }
+
+    [Test]
+    public void Create_WhenOnlySecretKeyEmptyId_ShouldThrow()
+    {
+        var config = new S3DestinationConfig("eu-west-1", null, "b", "", false, "", "secret");
+
+        Should.Throw<BackupDestinationException>(() => S3ClientSettings.From(config));
+    }
+
+    [Test]
+    public void Create_WhenEndpointEmpty_ShouldUseAws()
+    {
+        var config = new S3DestinationConfig("eu-west-1", "", "b", "", false, null, null);
+
+        var settings = S3ClientSettings.From(config);
+
+        settings.Config.ServiceURL.ShouldBeNull();
+        settings.Config.RegionEndpoint.SystemName.ShouldBe("eu-west-1");
+    }
+
+    [Test]
+    public void ToString_WhenCredentials_ShouldLeaveThemOut()
+    {
+        var config = new S3DestinationConfig("eu-west-1", "https://s3.example.test", "b", "", true, "the-key-id", "the-secret-value");
+
+        var text = S3ClientSettings.From(config).ToString();
+
+        text.ShouldNotContain("the-key-id");
+        text.ShouldNotContain("the-secret-value");
+    }
+
+    [Test]
+    public async Task Exists_WhenBucketMissing_ShouldThrow()
+    {
+        var config = await S3TestBucket.NewAsync();
+        using var destination = new S3BackupDestination(config with { Bucket = config.Bucket + "-gone" });
+
+        var thrown = await Should.ThrowAsync<BackupDestinationException>(() => destination.ExistsAsync("a.slbk", CancellationToken.None));
+
+        thrown.Message.ShouldContain(config.Bucket + "-gone");
+    }
+
+    [Test]
+    public async Task Put_WhenEndpointTimesOut_ShouldThrowDestinationException()
+    {
+        using var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        var config = new S3DestinationConfig(
+            "us-east-1", $"http://127.0.0.1:{((IPEndPoint)listener.LocalEndpoint).Port}", "b", "", true, "id", "secret");
+        var settings = S3ClientSettings.From(config);
+        settings.Config.Timeout = TimeSpan.FromMilliseconds(300);
+        settings.Config.MaxErrorRetry = 0;
+        using var destination = new S3BackupDestination(config, settings);
+
+        var thrown = await Should.ThrowAsync<BackupDestinationException>(
+            () => destination.PutAsync("a.slbk", new MemoryStream([1]), CancellationToken.None));
+
+        thrown.Message.ShouldContain("'b'");
+    }
+
+    [Test]
+    public async Task Probe_WhenEndpointTimesOut_ShouldReturnFailedStep()
+    {
+        using var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        var config = new S3DestinationConfig(
+            "us-east-1", $"http://127.0.0.1:{((IPEndPoint)listener.LocalEndpoint).Port}", "b", "", true, "id", "secret");
+        var settings = S3ClientSettings.From(config);
+        settings.Config.Timeout = TimeSpan.FromMilliseconds(300);
+        settings.Config.MaxErrorRetry = 0;
+        using var destination = new S3BackupDestination(config, settings);
+
+        var result = await destination.ProbeAsync(CancellationToken.None);
+
+        result.Ok.ShouldBeFalse();
+        result.Step.ShouldBe(BackupProbeResult.WriteStep);
     }
 }

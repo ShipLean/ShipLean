@@ -24,15 +24,21 @@ public sealed class S3BackupDestination : IBackupDestination, IDisposable
     private readonly AmazonS3Client _client;
 
     public S3BackupDestination(S3DestinationConfig config, long multipartThreshold = DefaultMultipartThreshold)
+        : this(config, S3ClientSettings.From(config), multipartThreshold)
+    {
+    }
+
+    // For a caller that tunes the client, such as its timeout and retries, beyond what the destination config sets.
+    public S3BackupDestination(S3DestinationConfig config, S3ClientSettings settings, long multipartThreshold = DefaultMultipartThreshold)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(multipartThreshold, MinimumMultipartThreshold);
         _config = config;
         _multipartThreshold = multipartThreshold;
-        _client = S3ClientSettings.From(config).CreateClient();
+        _client = settings.CreateClient();
     }
 
     public Task PutAsync(string key, Stream content, CancellationToken cancellationToken)
-        => Guard("write", () => PutCoreAsync(key, content, cancellationToken));
+        => Guard("write", () => PutCoreAsync(key, content, cancellationToken), cancellationToken);
 
     public Task<bool> ExistsAsync(string key, CancellationToken cancellationToken)
         => Guard("read", async () =>
@@ -52,10 +58,10 @@ public sealed class S3BackupDestination : IBackupDestination, IDisposable
 
                 return false;
             }
-        });
+        }, cancellationToken);
 
     public Task DeleteAsync(string key, CancellationToken cancellationToken)
-        => Guard("delete", () => _client.DeleteObjectAsync(_config.Bucket, key, cancellationToken));
+        => Guard("delete", () => _client.DeleteObjectAsync(_config.Bucket, key, cancellationToken), cancellationToken);
 
     public async IAsyncEnumerable<BackupObject> ListAsync(string prefix, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
@@ -63,7 +69,8 @@ public sealed class S3BackupDestination : IBackupDestination, IDisposable
         do
         {
             var page = await Guard("list", () => _client.ListObjectsV2Async(
-                new ListObjectsV2Request { BucketName = _config.Bucket, Prefix = prefix, ContinuationToken = token }, cancellationToken));
+                new ListObjectsV2Request { BucketName = _config.Bucket, Prefix = prefix, ContinuationToken = token }, cancellationToken),
+                cancellationToken);
             foreach (var item in page.S3Objects ?? [])
             {
                 yield return new BackupObject(item.Key, item.Size ?? 0);
@@ -92,6 +99,7 @@ public sealed class S3BackupDestination : IBackupDestination, IDisposable
                 await response.ResponseStream.CopyToAsync(read, cancellationToken);
                 if (!read.ToArray().AsSpan().SequenceEqual(payload))
                 {
+                    await DeleteQuietlyAsync(key);
                     return new BackupProbeResult(false, step, $"S3 read on bucket '{_config.Bucket}' returned different bytes than were written.");
                 }
             }
@@ -100,8 +108,13 @@ public sealed class S3BackupDestination : IBackupDestination, IDisposable
             await _client.DeleteObjectAsync(_config.Bucket, key, cancellationToken);
             return new BackupProbeResult(true, null, $"Wrote, read and deleted a test object in bucket '{_config.Bucket}'.");
         }
-        catch (Exception e) when (e is AmazonServiceException or AmazonClientException or HttpRequestException or IOException)
+        catch (Exception e) when (IsDestinationFailure(e, cancellationToken))
         {
+            if (step == BackupProbeResult.ReadStep)
+            {
+                await DeleteQuietlyAsync(key);
+            }
+
             return new BackupProbeResult(false, step, Describe(step, e));
         }
     }
@@ -154,6 +167,24 @@ public sealed class S3BackupDestination : IBackupDestination, IDisposable
         }
     }
 
+    // Best effort, for the probe object after a failed read: the failure being reported is the read's.
+    private async Task DeleteQuietlyAsync(string key)
+    {
+        try
+        {
+            await _client.DeleteObjectAsync(_config.Bucket, key);
+        }
+        catch (Exception e) when (e is AmazonServiceException or AmazonClientException or HttpRequestException or IOException or TimeoutException or OperationCanceledException)
+        {
+            // The probe object is left for the bucket's owner; the read failure is reported.
+        }
+    }
+
+    // What the SDK throws for a failed call. A timeout surfaces as a TimeoutException or as a cancellation the caller did not ask for.
+    private static bool IsDestinationFailure(Exception e, CancellationToken cancellationToken)
+        => e is AmazonServiceException or AmazonClientException or HttpRequestException or IOException or TimeoutException
+            || (e is OperationCanceledException && !cancellationToken.IsCancellationRequested);
+
     private async Task AbortQuietlyAsync(string key, string uploadId)
     {
         try
@@ -166,23 +197,23 @@ public sealed class S3BackupDestination : IBackupDestination, IDisposable
         }
     }
 
-    private async Task<T> Guard<T>(string step, Func<Task<T>> call)
+    private async Task<T> Guard<T>(string step, Func<Task<T>> call, CancellationToken cancellationToken)
     {
         try
         {
             return await call();
         }
-        catch (Exception e) when (e is AmazonServiceException or AmazonClientException or HttpRequestException or IOException)
+        catch (Exception e) when (IsDestinationFailure(e, cancellationToken))
         {
             throw new BackupDestinationException(Describe(step, e), e);
         }
     }
 
-    private Task Guard(string step, Func<Task> call) => Guard<object?>(step, async () =>
+    private Task Guard(string step, Func<Task> call, CancellationToken cancellationToken) => Guard<object?>(step, async () =>
     {
         await call();
         return null;
-    });
+    }, cancellationToken);
 
     private string Describe(string step, Exception e)
     {

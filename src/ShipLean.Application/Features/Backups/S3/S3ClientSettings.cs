@@ -19,7 +19,7 @@ public sealed record S3ClientSettings(AmazonS3Config Config, AWSCredentials? Cre
             ResponseChecksumValidation = ResponseChecksumValidation.WHEN_REQUIRED,
             ForcePathStyle = destination.ForcePathStyle,
         };
-        if (destination.EndpointUrl is not null)
+        if (!string.IsNullOrWhiteSpace(destination.EndpointUrl))
         {
             config.ServiceURL = destination.EndpointUrl;
             config.AuthenticationRegion = destination.Region;
@@ -29,11 +29,20 @@ public sealed record S3ClientSettings(AmazonS3Config Config, AWSCredentials? Cre
             config.RegionEndpoint = RegionEndpoint.GetBySystemName(destination.Region);
         }
 
-        AWSCredentials? credentials = destination.AccessKeyId is null || destination.SecretKey is null
-            ? null
-            : new BasicAWSCredentials(destination.AccessKeyId, destination.SecretKey);
+        var hasKeyId = !string.IsNullOrEmpty(destination.AccessKeyId);
+        var hasSecret = !string.IsNullOrEmpty(destination.SecretKey);
+        if (hasKeyId != hasSecret)
+        {
+            throw new BackupDestinationException("The s3 backup destination needs both an access key id and a secret key, or neither.");
+        }
+
+        AWSCredentials? credentials = hasKeyId ? new BasicAWSCredentials(destination.AccessKeyId, destination.SecretKey) : null;
         return new S3ClientSettings(config, credentials);
     }
+
+    // Leaves out the credentials, so the settings are safe to log.
+    public override string ToString()
+        => $"S3ClientSettings {{ ServiceURL = {Config.ServiceURL}, Region = {Config.RegionEndpoint?.SystemName ?? Config.AuthenticationRegion}, ForcePathStyle = {Config.ForcePathStyle}, Credentials = {(Credentials is null ? "default chain" : "***")} }}";
 
     public AmazonS3Client CreateClient() => Credentials is null ? new AmazonS3Client(Config) : new AmazonS3Client(Credentials, Config);
 }
