@@ -69,7 +69,7 @@ public sealed class GitHubOutboxDeliverer(
 
         if (claim.Kind == "comment" && claim.LastResult == "ambiguous")
         {
-            var found = await FindPostedAsync(claim, issue, github, services, cancellationToken);
+            var found = await FindPostedAsync(claim, issue, github, cancellationToken);
             if (found is not null)
             {
                 await RecordAsync(claim, issue, found, services, cancellationToken);
@@ -90,7 +90,7 @@ public sealed class GitHubOutboxDeliverer(
     // After an ambiguous POST: Ok with the comment's id when ShipLean's own comment carries the marker; null when it isn't there
     // (post again); Retry when the list or the login can't be read now (the entry stays ambiguous); Failed when GitHub refuses.
     private async Task<GitHubWriteResult?> FindPostedAsync(
-        OutboxClaim claim, IssueRef issue, IGitHubIssues github, IServiceProvider services, CancellationToken cancellationToken)
+        OutboxClaim claim, IssueRef issue, IGitHubIssues github, CancellationToken cancellationToken)
     {
         string self;
         try

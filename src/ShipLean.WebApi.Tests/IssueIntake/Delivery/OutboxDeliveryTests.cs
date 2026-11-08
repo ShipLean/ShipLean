@@ -259,7 +259,7 @@ public class OutboxDeliveryTests : ApiFixture
     [Test]
     public async Task Deliver_WhenRetry_ShouldBackOff()
     {
-        var (issueId, issue) = await NewIssueAsync();
+        var (issueId, _) = await NewIssueAsync();
         await EnqueueAsync(OutboxEntry.Comment(issueId, Key("retry"), "Update."));
         await EnqueueAsync(OutboxEntry.Comment(issueId, Key("behind"), "Next."));
         var notes = await NotesAsync();
