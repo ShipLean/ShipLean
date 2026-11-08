@@ -89,6 +89,7 @@ public sealed class PullRequestSync(NpgsqlDataSource dataSource, IWorkItemStore 
             new { itemId, via = Db(pullRequest.Provider), matchedOn = Db(matchedOn), url = pullRequest.Url }, transaction, cancellationToken: cancellationToken));
 
     // Only for a pull or merge request some item links to, so subscribing a busy org stores nothing for unlinked ones.
+    // A merged GitHub pull request also stores its merge commit and merge time (D14, "fixed in").
     // An event older than the stored one changes nothing and publishes nothing; a change publishes linksChanged once for each
     // work item with a live link to it, so open Feature pages refetch their cards.
     private async Task RecordStateAsync(PullRequestEvent pullRequest, CancellationToken cancellationToken)
@@ -97,13 +98,14 @@ public sealed class PullRequestSync(NpgsqlDataSource dataSource, IWorkItemStore 
         var items = await connection.QueryAsync<ChangedItem>(new CommandDefinition(
             """
             WITH changed AS (
-            INSERT INTO link_state (url_key, url, state, title, as_of, source, created_at, updated_at)
-            SELECT link_url_key(@url), @url, @state, @title, @asOf, @source, @now, @now
+            INSERT INTO link_state (url_key, url, state, title, as_of, source, merge_commit_sha, merged_at, created_at, updated_at)
+            SELECT link_url_key(@url), @url, @state, @title, @asOf, @source, @mergeCommitSha, @mergedAt, @now, @now
             WHERE EXISTS (SELECT 1 FROM work_item_link l
                           WHERE l.link_type = 'url' AND l.archived_at IS NULL AND link_url_key(l.url) = link_url_key(@url))
             ON CONFLICT (url_key) DO UPDATE
                 SET url = EXCLUDED.url, state = EXCLUDED.state, title = EXCLUDED.title, as_of = EXCLUDED.as_of,
-                    source = EXCLUDED.source, updated_at = EXCLUDED.updated_at
+                    source = EXCLUDED.source, merge_commit_sha = EXCLUDED.merge_commit_sha, merged_at = EXCLUDED.merged_at,
+                    updated_at = EXCLUDED.updated_at
                 WHERE link_state.as_of <= EXCLUDED.as_of
             RETURNING url_key)
             SELECT DISTINCT l.source_id AS workItemId, w.project_id AS projectId
@@ -118,6 +120,8 @@ public sealed class PullRequestSync(NpgsqlDataSource dataSource, IWorkItemStore 
                 title = pullRequest.Title,
                 asOf = pullRequest.AsOf,
                 source = Db(pullRequest.Provider),
+                mergeCommitSha = pullRequest.MergeCommitSha,
+                mergedAt = pullRequest.MergedAt,
                 now = time.GetUtcNow(),
             },
             cancellationToken: cancellationToken));

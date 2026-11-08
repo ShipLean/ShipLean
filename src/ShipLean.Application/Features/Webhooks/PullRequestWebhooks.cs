@@ -2,6 +2,7 @@ using System.Text.Json;
 using Agoda.IoC.Core;
 using Dapper;
 using Npgsql;
+using ShipLean.Application.Features.IssueIntake;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Usage;
 using ShipLean.Contracts.Webhooks;
@@ -10,10 +11,11 @@ using ShipLean.Contracts.WorkItems;
 namespace ShipLean.Application.Features.Webhooks;
 
 // A delivery whose signature has been checked: a delivery id seen before is a no-op; otherwise the provider's parser
-// reads the payload, PullRequestSync applies a pull or merge request event, and the delivery is recorded (after the work,
-// so a delivery that failed half way is done again when the provider retries it; every step is safe to repeat).
+// reads the payload, PullRequestSync applies a pull or merge request event, IssueRouter sends a GitHub issue or issue
+// comment to its lane, and the delivery is recorded (after the work, so a delivery that failed half way is done again when
+// the provider retries it; every step is safe to repeat, and the issue lanes don't rely on this dedupe).
 [RegisterPerRequest]
-public sealed class PullRequestWebhooks(NpgsqlDataSource dataSource, PullRequestSync sync, IUsageEvents usage, TimeProvider time)
+public sealed class PullRequestWebhooks(NpgsqlDataSource dataSource, PullRequestSync sync, IssueRouter issues, IUsageEvents usage, TimeProvider time)
 {
     public async Task<WebhookResultDto> ReceiveAsync(WebhookProvider provider, string? deliveryId, string? eventName, ReadOnlyMemory<byte> body, CancellationToken cancellationToken)
     {
@@ -23,7 +25,13 @@ public sealed class PullRequestWebhooks(NpgsqlDataSource dataSource, PullRequest
         }
 
         var parsed = Parse(provider, eventName, body);
-        var result = parsed.Event is { } pullRequest ? await sync.ApplyAsync(pullRequest, cancellationToken) : WebhookResultDto.Of(parsed.Outcome);
+        var result = parsed switch
+        {
+            { Event: { } pullRequest } => await sync.ApplyAsync(pullRequest, cancellationToken),
+            { Issue: { } issue } => await issues.RouteAsync(issue, cancellationToken),
+            { Comment: { } comment } => await issues.RouteAsync(comment, cancellationToken),
+            _ => WebhookResultDto.Of(parsed.Outcome),
+        };
         if (deliveryId is not null)
         {
             await RecordAsync(provider, deliveryId, eventName ?? string.Empty, parsed, cancellationToken);
@@ -96,7 +104,7 @@ public sealed class PullRequestWebhooks(NpgsqlDataSource dataSource, PullRequest
             VALUES (@provider, @deliveryId, @eventName, @repository, @url)
             ON CONFLICT (provider, delivery_id) DO NOTHING
             """,
-            new { provider = ProviderDb(provider), deliveryId, eventName, repository = parsed.Repository, url = parsed.Event?.Url },
+            new { provider = ProviderDb(provider), deliveryId, eventName, repository = parsed.Repository, url = parsed.Url },
             cancellationToken: cancellationToken));
     }
 

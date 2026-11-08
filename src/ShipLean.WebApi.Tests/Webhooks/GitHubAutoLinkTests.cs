@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Dapper;
 using ShipLean.Application.Features.Webhooks;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Webhooks;
@@ -205,5 +206,39 @@ public class GitHubAutoLinkTests : WebhookApiTest
 
         edited.Linked.ShouldBeEmpty();
         (await GetAsync(story.Id)).Links.ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task PullRequestMerged_ShouldStoreMergeCommitSha()
+    {
+        var story = await CreateAsync("story", "Fixed by a merge");
+        await DeliverAsync(WebhookDelivery.Github(GithubSecret, "opened", 48, $"{story.Key} Fix it", Next(), mergeCommitSha: "1111111111111111111111111111111111111111"));
+        (await MergeCommitAsync(48)).ShouldBe((null, null));
+
+        var mergedAt = Next();
+        await DeliverAsync(WebhookDelivery.Github(GithubSecret, "closed", 48, $"{story.Key} Fix it", mergedAt, state: "closed", merged: true, mergeCommitSha: "6DCB09B5B57875F334F61AEBED695E2E4193DB5E"));
+
+        (await MergeCommitAsync(48)).ShouldBe(("6dcb09b5b57875f334f61aebed695e2e4193db5e", mergedAt));
+    }
+
+    [Test]
+    public async Task PullRequestMerged_WhenOlderEvent_ShouldKeepSha()
+    {
+        var story = await CreateAsync("story", "Merged, then an old event arrives");
+        var opened = Next();
+        var mergedAt = Next();
+        await DeliverAsync(WebhookDelivery.Github(GithubSecret, "closed", 49, $"{story.Key} Fix it", mergedAt, state: "closed", merged: true, mergeCommitSha: "abcdef1234567"));
+
+        await DeliverAsync(WebhookDelivery.Github(GithubSecret, "edited", 49, $"{story.Key} Fix it", opened, mergeCommitSha: "2222222222222222222222222222222222222222"));
+
+        (await MergeCommitAsync(49)).ShouldBe(("abcdef1234567", mergedAt));
+    }
+
+    private async Task<(string? Sha, DateTimeOffset? MergedAt)> MergeCommitAsync(int number)
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var row = await connection.QuerySingleAsync<(string? Sha, DateTime? MergedAt)>(
+            "SELECT merge_commit_sha, merged_at FROM link_state WHERE url_key = link_url_key(@url)", new { url = WebhookDelivery.GithubUrl(number) });
+        return (row.Sha, row.MergedAt is { } at ? new DateTimeOffset(at, TimeSpan.Zero) : null);
     }
 }
