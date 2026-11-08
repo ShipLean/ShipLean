@@ -3,6 +3,7 @@ using ShipLean.Contracts;
 using ShipLean.Contracts.Boards;
 using ShipLean.Contracts.Criteria;
 using ShipLean.Contracts.Errors;
+using ShipLean.Contracts.Usage;
 using ShipLean.Contracts.Views;
 using ShipLean.Contracts.WorkItems;
 
@@ -12,10 +13,12 @@ namespace ShipLean.Application.Features.Boards.View;
 // writes the lane implies (a criteria lane's values, the default when leaving one, or the Epic a Feature joins), so they
 // share the one revision.
 [RegisterPerRequest]
-public sealed class BoardMoves(BoardReads reads, BoardLaneLayouts laneLayouts, ICriteriaEvaluator evaluator, ICurrentUser currentUser, IWorkItemStore store)
+public sealed class BoardMoves(BoardReads reads, BoardLaneLayouts laneLayouts, ICriteriaEvaluator evaluator, ICurrentUser currentUser, IWorkItemStore store, IUsageScope scope)
 {
+    // The caller (BoardViews) has checked access to the board.
     public async Task<WriteOutcome> MoveAsync(BoardSettingsDto board, BoardMoveRequest request, CancellationToken cancellationToken)
     {
+        MoveMethods.Record(scope, request.Method);
         var types = BoardLevels.TypesOf(board.Level);
         var card = (await reads.CardsAsync(board.ProjectId, BoardLevels.AllTypes, request.ItemId, cancellationToken)).SingleOrDefault()
             ?? throw ApiException.NotFound("That card isn't on this project.");

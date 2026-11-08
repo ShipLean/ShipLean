@@ -53,7 +53,7 @@ Every event carries these (a key is left out when its value is null). The consta
 | `duration_ms`, `source` | `source` is `tool:<name>`, `api:<Controller>.<Action>`, `screen` or `system:<Class>` |
 | `shiplean_version`, `instance_host` | this build and this instance |
 
-Extra properties are the keys in `UsageProps` (`screen`, `board`, `provider`, `count`, `viewport`, `agent_name` on `agent.connected` and `agent.consent_denied`). A standard property wins over an extra one with the same key. A command adds an extra property to its web action's event with `IUsageScope.AddProperty(UsageProps.X, value)`; `UsageActionFilter` records the action's `board`, then what the command added, then `viewport`. Never parse the route or the action's arguments for one.
+Extra properties are the keys in `UsageProps` (`screen`, `board`, `provider`, `count`, `viewport`, `agent_name` on `agent.connected` and `agent.consent_denied`, `method` on `work_item.moved` and `auth.signed_in`). A standard property wins over an extra one with the same key. A command adds an extra property to its web action's event with `IUsageScope.AddProperty(UsageProps.X, value)`; `UsageActionFilter` records the action's `board`, then what the command added, then `viewport`. Never parse the route or the action's arguments for one.
 
 **Viewport.** The SPA's API client sends `X-ShipLean-Viewport` (`ViewportHeader`, `src/ShipLean.Contracts/ViewportHeader.cs`) on every request, with the window's width class at send time: `phone`, `tablet` or `desktop` (`UsageViewports`). The three web seams (`UsageActionFilter`, `ScreenViews`, `SelfEmittedUsage.TrackOk`) read it through `IUsageScope.Viewport` and stamp it as `viewport`. A missing header or any other value (including another case, such as `Phone`) leaves the key out; there is no default. MCP and system events never carry it, and neither do top-level browser navigations, which are not API calls (no header is sent): a Google or proxy sign-in made by navigation records `auth.signed_in` without a viewport, while a sign-in recorded on an API request (a password sign-in, or a proxy re-sign-in on an `/api` call after the cookie lapses) has one.
 
@@ -143,7 +143,7 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 
 | Event | MCP tools | Web actions (`Controller.Action`), self-emitted and system |
 |---|---|---|
-| `auth.signed_in` |  | self-emitted: Auth.Login, ProxySignInHandler |
+| `auth.signed_in` |  | self-emitted: Auth.Login, ProxySignInHandler, GoogleSignInEvents; `method` (`SignInMethods`): `password`, `proxy` or `google`, set by the server on each path |
 | `auth.signed_out` |  | `Auth.Logout` |
 | `auth.password_changed` |  | `Auth.ChangePassword` |
 | `auth.other_sessions_signed_out` |  | `Auth.SignOutOthers` |
@@ -168,7 +168,7 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `work_item.status_set` | `set_status` |  |
 | `work_item.status_confirmed` |  | `WorkItemStatus.Confirm` |
 | `work_item.progress_updated` | `update_progress` |  |
-| `work_item.moved` |  | `BoardView.Move`, `FeatureBoard.Move`, `Taskboard.Move` |
+| `work_item.moved` |  | `BoardView.Move`, `FeatureBoard.Move`, `Taskboard.Move`; `method` (`MoveMethods`) when the request sends one: `drag`, `touch-drag`, `keyboard`, `sheet` or `pick-up`. A request without one records no `method`; an unknown one is a validation error (field `method`) and moves nothing |
 | `work_item.moved_to_sprint` | `move_to_sprint` |  |
 | `work_item.reordered` | `reorder` | `WorkItems.Reorder` |
 | `work_item.removed` |  | `WorkItems.Remove` |
