@@ -16,6 +16,9 @@ public static class UsageProps
     // The client being connected, on agent.connected / agent.consent_denied; cut to 64 characters.
     public const string AgentName = "agent_name";
 
+    // How a work item was moved (MoveMethods) on work_item.moved, or how the user signed in (SignInMethods) on auth.signed_in.
+    public const string Method = "method";
+
     public static readonly IReadOnlySet<string> All = typeof(UsageProps)
         .GetFields(BindingFlags.Public | BindingFlags.Static)
         .Where(f => f.IsLiteral)

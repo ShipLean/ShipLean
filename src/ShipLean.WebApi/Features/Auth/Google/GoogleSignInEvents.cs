@@ -68,7 +68,7 @@ public sealed class GoogleSignInEvents(
             return;
         }
         await cookie.SignInAsync(id, cancellationToken);
-        SelfEmittedUsage.TrackOk(events, scope, time, started, UsageEventNames.AuthSignedIn, id, "system:GoogleSignInEvents");
+        SelfEmittedUsage.TrackOk(events, scope, time, started, UsageEventNames.AuthSignedIn, id, "system:GoogleSignInEvents", properties: new Dictionary<string, object> { [UsageProps.Method] = SignInMethods.Google });
         context.Response.Redirect(returnUrl);
     }
 

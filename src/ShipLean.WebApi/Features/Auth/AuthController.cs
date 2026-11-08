@@ -36,7 +36,7 @@ public sealed class AuthController(
         var started = time.GetTimestamp();
         var userId = await signIn.SignInAsync(request, ct);
         await cookie.SignInAsync(userId, ct);
-        SelfEmittedUsage.TrackOk(events, scope, time, started, UsageEventNames.AuthSignedIn, userId, "api:Auth.Login");
+        SelfEmittedUsage.TrackOk(events, scope, time, started, UsageEventNames.AuthSignedIn, userId, "api:Auth.Login", properties: new Dictionary<string, object> { [UsageProps.Method] = SignInMethods.Password });
         return await me.GetAsync(userId, ct);
     }
 
