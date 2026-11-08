@@ -13,7 +13,7 @@ export interface PlaceContext {
   /** The future sprints the backlog view shows, in the order it shows them. */
   sprints: readonly SprintRef[];
   focused: BacklogRowDto | null;
-  /** The shown order of row ids, to find the row after the focused one. */
+  /** The shown row ids in rank order, to find the row after the focused one. */
   order: readonly string[];
   /** Planning: the focused row's own section, since each section is the one stack filtered by sprint. */
   sectionRows: readonly BacklogRowDto[] | null;
@@ -35,11 +35,14 @@ export function placeContext(
   const seen = new Map<string, SprintRef>();
   for (const ref of [...refs, ...rows.map((row) => row.sprint)])
     if (ref !== null && ref.status === 'future' && !seen.has(ref.id)) seen.set(ref.id, ref);
+  // The shown order put back in rank order: a list sorted by a column shows rows out of rank, and "below" means in rank.
+  const rankOf = new Map(rows.map((row) => [row.id, row.rank ?? Number.MAX_SAFE_INTEGER]));
+  const rank = (id: string) => rankOf.get(id) ?? Number.MAX_SAFE_INTEGER;
   return {
     rows,
     sprints: [...seen.values()],
     focused: rows.find((row) => row.id === focusedId) ?? null,
-    order,
+    order: [...order].sort((a, b) => rank(a) - rank(b)),
     sectionRows:
       view?.mode === 'planning'
         ? (view.sections.find((s) => s.rows.some((row) => row.id === focusedId))?.rows ?? null)

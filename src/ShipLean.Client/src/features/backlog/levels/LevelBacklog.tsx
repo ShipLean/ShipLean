@@ -10,6 +10,7 @@ import { BacklogToolbar } from '../toolbar/BacklogToolbar';
 import type { LevelBacklogLevel, LevelColumnId } from './levelColumns';
 import { LevelTable } from './LevelTable';
 import { LevelTree } from './LevelTree';
+import { useColumnSort } from '../sort/useColumnSort';
 import { useLevelBacklog } from './useLevelBacklog';
 
 const FEATURE_KINDS: readonly NewItemKind[] = ['feature'];
@@ -35,6 +36,13 @@ export function LevelBacklog({
     else state.setAdding(true);
   });
   const { backlog, view, refused, criteria, lists } = state;
+  const columns = state.specs.filter((c) => !view.hidden.includes(c.id)).map((c) => c.id);
+  const sort = useColumnSort(
+    project.id,
+    level === 'features' ? 'featuresBacklog' : 'epicsBacklog',
+    state.rows,
+    columns,
+  );
 
   if ((backlog.isError && refused === null) || view.failed) {
     return (
@@ -52,7 +60,6 @@ export function LevelBacklog({
     );
   }
 
-  const columns = state.specs.filter((c) => !view.hidden.includes(c.id)).map((c) => c.id);
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <BacklogToolbar
@@ -98,7 +105,7 @@ export function LevelBacklog({
         />
       ) : (
         <LevelTable
-          rows={state.rows}
+          rows={sort.rows}
           columns={columns as LevelColumnId[]}
           specs={state.specs}
           level={level}
@@ -107,6 +114,8 @@ export function LevelBacklog({
           adding={state.adding}
           onCloseAdd={() => state.setAdding(false)}
           filtered={state.filtering}
+          sort={sort.sort}
+          onSort={sort.onSort}
         />
       )}
       {newFeatureOpen ? (

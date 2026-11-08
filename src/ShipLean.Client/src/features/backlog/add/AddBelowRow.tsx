@@ -14,12 +14,20 @@ export interface AddBelowRowProps {
   projectKey: string;
   /** A filter, search or check queue is on: rank is relative to rows you can't see. */
   filtering: boolean;
+  /** The list is sorted by a column, so the row under this one is not the next in rank. */
+  sorted?: boolean;
 }
 
 // The inline add row under a row. One is mounted under every row; the `addBelow` command opens the one under the
 // focused row. Each Enter makes a row just below the one before, so the typed list keeps its order: the open row
 // then moves under the row it made.
-export function AddBelowRow({ row, columnCount, projectId, filtering }: AddBelowRowProps) {
+export function AddBelowRow({
+  row,
+  columnCount,
+  projectId,
+  filtering,
+  sorted = false,
+}: AddBelowRowProps) {
   const selection = useSelection();
   const state = useBelowState();
   const chain = useAddChain();
@@ -28,7 +36,7 @@ export function AddBelowRow({ row, columnCount, projectId, filtering }: AddBelow
 
   const command =
     selection.focusedId === row.id ? (
-      <AddBelowCommand rowId={row.id} filtering={filtering} />
+      <AddBelowCommand rowId={row.id} filtering={filtering} sorted={sorted} />
     ) : null;
   if (state === null || state.anchorId !== row.id) return command;
 
