@@ -3,6 +3,7 @@ import { Dialog } from './Dialog';
 import { DialogEscHarness } from './ct/DialogEscHarness';
 import { DialogHarness } from './ct/DialogHarness';
 import { harnessTestIds as harness } from './ct/harnessIds';
+import { touchTestIds } from '../touch/testIds';
 import { componentTestIds as ids } from './testIds';
 
 test('Dialog_WhenEscPressed_ShouldClose', async ({ mount, page }) => {
@@ -74,4 +75,21 @@ test('Dialog_WhenAFieldHandledEscape_ShouldNotClose', async ({ mount, page }) =>
 
   await page.getByTestId(ids.dialog).press('Escape');
   await expect(state).toHaveText('closed');
+});
+
+test('Dialog_WhenAbove900_ShouldNotRenderThePrimaryAction', async ({ mount, page }) => {
+  await mount(
+    <Dialog
+      title="New feature"
+      onClose={() => undefined}
+      primaryAction={<button type="button">Create</button>}
+    >
+      <span>body</span>
+    </Dialog>,
+  );
+  const dialog = page.getByTestId(ids.dialog);
+  await expect(dialog.getByTestId(ids.dialogClose)).toBeVisible();
+  await expect(dialog.getByTestId(touchTestIds.dialogPrimary)).toHaveCount(0);
+  await expect(dialog.getByTestId(touchTestIds.dialogClose)).toHaveCount(0);
+  await expect(dialog.getByRole('button', { name: 'Create' })).toHaveCount(0);
 });
