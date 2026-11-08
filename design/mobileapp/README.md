@@ -10,6 +10,7 @@ These are throwaway HTML mock-ups, not the Expo app. They use `../tokens.css`, s
 | `inbox.html`, `work-item.html`, `backlog.html`, `feature-board.html`, `retro.html`, `setup.html` | One file per area; each declares its states with `App.screen`. `inbox.html` is the first tab: everything waiting on you, answered from the list. `setup.html` is first run (sign in, choosing the voice models, the download) and Settings › Voice. |
 | `projects.html` | Projects (the app's root, SHIP-907 D7), the project key tile on every tab root, switching by tap or voice, Account, and no or lost projects. Decisions D1–D11 in `projects.md`; review page `projects-review.html`. |
 | `search.html` | Search (SHIP-928): the web's quick search popup (Ctrl/⌘+P) on the phone, with the same results, and the ways to reach it fast: the icon, holding the mic and sliding up, asking “where's…?”, the app icon's quick action, and Back Tap, the Action button or Siri. Decisions D1–D12 in `search.md`. |
+| `settings.html` | Account (the sheet from the avatar on Projects) and the Settings screen it leads to: Voice, Notifications, Shortcuts, Appearance, About, Sign out. Decisions D1–D9 in `settings.md` (answered 9 Nov 2026, all recommended). |
 | `<area>.md` | Design notes per area: what's on the screen, the voice commands it offers, decisions to confirm. |
 | `index.html` | The review page: every state of every area side by side, with each area's decisions and open questions. Rebuild it with `./build-index.py` after `./screenshots.sh`. `./build-index.py --inline inbox --out x.html` writes one self-contained page for attaching to a work item. |
 | `screenshots.sh` | Regenerates `images/<area>-<state>.<theme>.png` with headless Chrome. |
@@ -49,6 +50,6 @@ Open a state directly: `work-item.html?state=preview&theme=dark`. `?list` prints
 ## Projects and the tab bar (SHIP-925; Joel, 9 Nov 2026, Lavish review: all recommended)
 
 - **Projects is the root of the app.** A project's tabs open on top of it. Every tab root (Inbox, Backlog, Features, Retro) shows the project's key tile at the top left (`App.tabRoot`), with the project name as the subtitle. Tapping the tile, or swiping back, returns to Projects. Detail screens keep their back button.
-- **Account** is only on Projects (the avatar at the top right), together with Sign out and the way into Settings › Voice.
+- **Account** is only on Projects (the avatar at the top right), together with Sign out and the way into Settings (`settings.md`: Account is you on the server, Settings is this phone).
 - **After setup:** *Use ShipLean while this downloads* leads to Projects, or straight in with one project. A project you've never opened starts on Inbox. Later launches reopen the last project on the tab you left.
 - **Switching** keeps the tab you're on. "Switch to Payments" works by voice from any tab, with no preview (no data changes), only a toast with Back. A dot on the tile means something new waits on you in another project.
