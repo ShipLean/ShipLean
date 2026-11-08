@@ -12,9 +12,10 @@ export function QuickSearchFooter({ note }: { note: string | null }) {
   return (
     <footer
       data-testid={ids.footer}
-      className="flex items-center gap-3 border-t border-edge bg-canvas px-3 py-2 text-[length:var(--text-2xs)] text-ink-muted"
+      // At touch widths the key caps are hidden, so a footer without a note has nothing to show.
+      className={`flex items-center gap-3 border-t border-edge bg-canvas px-3 py-2 text-[length:var(--text-2xs)] text-ink-muted ${note === null ? 'touch:hidden' : ''}`}
     >
-      <span className="flex items-center gap-3 max-[899px]:hidden">
+      <span className="flex items-center gap-3 touch:hidden">
         <span className="flex items-center gap-1">
           <KeyCap>↑</KeyCap>
           <KeyCap>↓</KeyCap> move
