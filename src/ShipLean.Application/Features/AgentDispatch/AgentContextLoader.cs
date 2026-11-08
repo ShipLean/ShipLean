@@ -4,6 +4,7 @@ using Dapper;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using ShipLean.Application.Features.AgentDispatch.Rendering;
+using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Attachments;
 using ShipLean.Contracts.Blobs;
 using ShipLean.Contracts.Errors;
@@ -13,7 +14,8 @@ using ShipLean.Contracts.Persisted;
 namespace ShipLean.Application.Features.AgentDispatch;
 
 // Maps an item's rows onto the renderer's plain input. A comment's author is a name only (no email leaves for the receiver; the creator's does,
-// for the relay's allow-list). Reads only; the session id and creation time are the caller's.
+// for the relay's allow-list). In propose mode only the comments mirrored from GitHub (agent name "GitHub @login") are read: ShipLean-only
+// comments never reach a proposal session (D10). Reads only; the session id and creation time are the caller's.
 // Markdown attachments are read through the blob store, in upload order, up to InlineAttachmentBytes in all, counted as they will be sent (UTF-8 bytes
 // of the XML-escaped text); the first one that does not fit, and every attachment after it, is left as a link. One that cannot be read (missing or
 // failing blob) is a warning in the log, and it and the rest are links too. Without a blob store (a follow-up prompt, which sends no promptContext) all are links.
@@ -22,7 +24,8 @@ internal sealed class AgentContextLoader(NpgsqlDataSource dataSource, Lazy<IBlob
     public const int InlineAttachmentBytes = 200 * 1024;
 
     public async Task<AgentContextInput> LoadAsync(
-        Guid workItemId, Guid sessionId, DateTimeOffset createdAt, Guid connectionId, Guid creatorId, AgentRepositoryInput repository, string? fallbackBaseUrl, string? guidance, CancellationToken cancellationToken)
+        Guid workItemId, Guid sessionId, DateTimeOffset createdAt, Guid connectionId, Guid creatorId, AgentRepositoryInput repository, string? fallbackBaseUrl, string? guidance, CancellationToken cancellationToken,
+        AgentSessionMode mode = AgentSessionMode.Implement)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var item = await connection.QuerySingleOrDefaultAsync<AgentItemRow>(new CommandDefinition(
@@ -52,9 +55,10 @@ internal sealed class AgentContextLoader(NpgsqlDataSource dataSource, Lazy<IBlob
             SELECT c.id, c.author_id AS authorId, coalesce(u.name, '') AS authorName, c.created_at AS createdAt, c.body
             FROM comment c LEFT JOIN app_user u ON u.id = c.author_id
             WHERE c.work_item_id = @workItemId AND c.archived_at IS NULL
+              AND (NOT @githubOnly OR c.agent_name LIKE @githubPrefix)
             ORDER BY c.created_at, c.id
             """,
-            new { workItemId }, cancellationToken: cancellationToken))).ToList();
+            new { workItemId, githubOnly = mode == AgentSessionMode.Propose, githubPrefix = AgentSessionModes.GitHubCommentPrefix + "%" }, cancellationToken: cancellationToken))).ToList();
         var children = (await connection.QueryAsync<AgentChildRow>(new CommandDefinition(
             """
             SELECT c.key, c.title, s.name AS state
@@ -110,7 +114,8 @@ internal sealed class AgentContextLoader(NpgsqlDataSource dataSource, Lazy<IBlob
             null,
             guidance,
             null,
-            [.. ancestors.Select(a => Related(a) with { Type = a.Type })]);
+            [.. ancestors.Select(a => Related(a) with { Type = a.Type })],
+            mode);
     }
 
     private async Task<List<AgentAttachmentInput>> AttachmentsAsync(List<AgentAttachmentRow> rows, Func<AgentAttachmentRow, string> url, CancellationToken cancellationToken)

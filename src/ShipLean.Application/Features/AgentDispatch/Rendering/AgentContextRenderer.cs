@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using ShipLean.Contracts.Agents;
 
 namespace ShipLean.Application.Features.AgentDispatch.Rendering;
 
@@ -29,6 +30,13 @@ public static class AgentContextRenderer
     {
         var body = Envelope("created", input, input.SessionCreatedAt, AgentSessionStatuses.Pending, input.SessionCreatedAt);
         body["promptContext"] = AgentPromptContext.Render(input);
+        // ShipLean's own field, not Linear's: the relay runs a propose session read-only (D9). Implement sessions leave it out,
+        // so their payload stays as it was.
+        if (input.Mode == AgentSessionMode.Propose)
+        {
+            body["shipleanMode"] = AgentSessionModes.Propose;
+        }
+
         return body;
     }
 
