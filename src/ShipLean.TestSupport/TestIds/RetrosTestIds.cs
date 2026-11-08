@@ -8,6 +8,18 @@ public static class RetrosTestIds
     public const string RetroKpiWithRetro = "retro-kpi-with-retro";
     public const string RetroKpiRecurring = "retro-kpi-recurring";
     public const string RetroKpiActions = "retro-kpi-actions";
+    // L727b phone
+    public const string RetroNumbers = "retro-numbers";
+    public const string RetroNumberRetros = "retro-number-retros";
+    public const string RetroNumberRecurring = "retro-number-recurring";
+    public const string RetroNumberToDecide = "retro-number-to-decide";
+    public const string RetroNumberActions = "retro-number-actions";
+    public const string RetroToolbar = "retro-toolbar";
+    public const string RetroFilterOpen = "retro-filter-open";
+    public const string RetroFilterClear = "retro-filter-clear";
+    public const string RetroFilterShow = "retro-filter-show";
+    public const string RetroCategoryTiles = "retro-category-tiles";
+    public const string RetroCategoryTile = "retro-category-tile";
     // Sprint tab: view toggle
     public const string RetroViewByCategory = "retro-view-by-category";
     public const string RetroViewByItem = "retro-view-by-item";

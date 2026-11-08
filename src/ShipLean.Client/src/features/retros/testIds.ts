@@ -5,6 +5,18 @@ export const retrosTestIds = {
   retroKpiWithRetro: 'retro-kpi-with-retro',
   retroKpiRecurring: 'retro-kpi-recurring',
   retroKpiActions: 'retro-kpi-actions',
+  // L727b phone
+  retroNumbers: 'retro-numbers',
+  retroNumberRetros: 'retro-number-retros',
+  retroNumberRecurring: 'retro-number-recurring',
+  retroNumberToDecide: 'retro-number-to-decide',
+  retroNumberActions: 'retro-number-actions',
+  retroToolbar: 'retro-toolbar',
+  retroFilterOpen: 'retro-filter-open',
+  retroFilterClear: 'retro-filter-clear',
+  retroFilterShow: 'retro-filter-show',
+  retroCategoryTiles: 'retro-category-tiles',
+  retroCategoryTile: 'retro-category-tile',
   // Sprint tab: view toggle
   retroViewByCategory: 'retro-view-by-category',
   retroViewByItem: 'retro-view-by-item',
