@@ -136,6 +136,9 @@ export const workItemTestIds = {
   importedFromHost: 'work-item-imported-from-host',
   importedFromHint: 'work-item-imported-from-hint',
 
+  // History on a phone (SHIP-714): the newest three, then this
+  historyShowAll: 'work-item-history-show-all',
+
   // S0c save confirm (the before-save hook's prompt)
   saveConfirm: 'work-item-save-confirm',
   saveConfirmMessage: 'work-item-save-confirm-message',

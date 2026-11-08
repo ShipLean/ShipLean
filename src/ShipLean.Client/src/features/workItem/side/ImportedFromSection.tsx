@@ -20,14 +20,14 @@ export function ImportedFromSection({
       <span className="text-[length:var(--text-xs)] font-semibold tracking-wide text-ink-muted uppercase">
         Imported from {system}
       </span>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 touch:flex-wrap touch:min-h-[var(--touch-target)]">
         {original.url !== null ? (
           <a
             data-testid={ids.importedFromLink}
             href={original.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[length:var(--text-sm)] text-signal hover:underline"
+            className="text-[length:var(--text-sm)] text-signal hover:underline touch:inline-flex touch:min-h-[var(--touch-target)] touch:items-center"
           >
             {original.id} ↗
           </a>
