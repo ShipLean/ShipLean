@@ -144,6 +144,7 @@ public sealed class AcceptJobWorker(
         else
         {
             target = await run.Items.GetAsync(await CreateAsync(run, triage, type, parent, changes, cancellationToken), cancellationToken);
+            await events.PublishAsync(new CommentsChanged(run.Project.ProjectId, target.Id));
             await issues.RepointAsync(run.Issue.Id, target.Id, null, cancellationToken);
             await RemoveTriageAsync(run, triage, AcceptanceTexts.Became(target.Key), cancellationToken);
         }
@@ -192,12 +193,12 @@ public sealed class AcceptJobWorker(
             AddLinks =
             [
                 new LinkValue(LinkType.Url, null, null, $"https://github.com/{run.Issue.Issue.Repository}/issues/{run.Issue.Issue.Number}", $"GitHub {run.Issue.Issue}"),
-                new LinkValue(LinkType.Related, triage.Id, triage.Key, null, AcceptanceTexts.CameFrom(triage.Key)),
+                new LinkValue(LinkType.Related, triage.Id, triage.Key, null, null),
             ],
         });
         try
         {
-            var options = WriteOptions.FromWebhook($"GitHub {run.Issue.Issue}", (transaction, token) => ClaimCreateAsync(run, key, transaction, token));
+            var options = WriteOptions.FromWebhook($"GitHub {run.Issue.Issue}", (transaction, token) => ClaimCreateAsync(run, triage, key, transaction, token));
             return (await run.Items.CreateAsync(create, options, cancellationToken)).Written!.Id;
         }
         catch (AcceptCreateTakenException)
@@ -207,8 +208,9 @@ public sealed class AcceptJobWorker(
         }
     }
 
-    // Inside the create's transaction, which holds the project's item lock, so the newest item is the one just created.
-    private async Task ClaimCreateAsync(Run run, string key, DbTransaction transaction, CancellationToken cancellationToken)
+    // Inside the create's transaction, which holds the project's item lock, so the newest item is the one just created. The new
+    // item's "Came from" note commits with it (item links carry no title, so the related link alone can't say it).
+    private async Task ClaimCreateAsync(Run run, WorkItemSnapshot triage, string key, DbTransaction transaction, CancellationToken cancellationToken)
     {
         var itemId = await transaction.Connection!.ExecuteScalarAsync<Guid>(new CommandDefinition(
             "SELECT id FROM work_item WHERE project_id = @ProjectId ORDER BY number DESC LIMIT 1", new { run.Project.ProjectId }, transaction, cancellationToken: cancellationToken));
@@ -216,6 +218,8 @@ public sealed class AcceptJobWorker(
         {
             throw new AcceptCreateTakenException();
         }
+
+        await run.Comments.AddAsAgentAsync(itemId, new CommentCreate(AcceptanceTexts.CameFrom(triage.Key)), RoundHolds.AgentName, run.RunAs, transaction, cancellationToken);
     }
 
     // The note on the Triage item once per acceptance, then Removed unless it is already in a Removed state.

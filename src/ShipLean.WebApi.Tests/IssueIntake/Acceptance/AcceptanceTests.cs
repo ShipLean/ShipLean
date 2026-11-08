@@ -111,7 +111,8 @@ public class AcceptanceTests : ApiFixture
         made.StateName.ShouldBe(await AcceptedStateNameAsync("feature"));
         var links = await LinksAsync(made.Id);
         links.ShouldContain(l => l.Url == $"https://github.com/{_repository}/issues/{issue.Issue.Number}");
-        links.ShouldContain(l => l.TargetId == triage.Id && l.Title == AcceptanceTexts.CameFrom(triage.Key));
+        links.ShouldContain(l => l.TargetId == triage.Id && l.Type == "related");
+        (await ShipLeanCommentsAsync(made.Id)).ShouldHaveSingleItem().Body.ShouldBe(AcceptanceTexts.CameFrom(triage.Key));
         var removed = await ItemAsync(triage.Id);
         removed.Category.ShouldBe("removed");
         var note = (await ShipLeanCommentsAsync(triage.Id)).ShouldHaveSingleItem();
@@ -392,7 +393,7 @@ public class AcceptanceTests : ApiFixture
     {
         await using var database = await OpenDatabaseAsync();
         return [.. await database.QueryAsync<LinkRow>(
-            "SELECT target_id AS targetId, url, title FROM work_item_link WHERE source_id = @itemId AND archived_at IS NULL", new { itemId })];
+            "SELECT target_id AS targetId, link_type AS type, url FROM work_item_link WHERE source_id = @itemId AND archived_at IS NULL", new { itemId })];
     }
 
     private async Task<List<OutboxRow>> OutboxAsync(Guid issueId)
@@ -418,7 +419,7 @@ public class AcceptanceTests : ApiFixture
 
     private sealed record ItemRow(Guid Id, string Key, string Type, string Title, string Description, string StateName, string Category, bool IsIntake, Guid? ParentId, string Criteria);
 
-    private sealed record LinkRow(Guid? TargetId, string? Url, string? Title);
+    private sealed record LinkRow(Guid? TargetId, string Type, string? Url);
 
     private sealed record OutboxRow(string DedupeKey, string Kind, string? Body, string? Reason);
 
