@@ -305,4 +305,7 @@ export const settingsTestIds = {
   issueIntakeMaxRounds: 'settings-issue-intake-max-rounds',
   issueIntakeSave: 'settings-issue-intake-save',
   issueIntakeError: 'settings-issue-intake-error',
+  issueIntakeMembersLoading: 'settings-issue-intake-members-loading',
+  issueIntakeMembersError: 'settings-issue-intake-members-error',
+  issueIntakeMembersRetry: 'settings-issue-intake-members-retry',
 } as const;
