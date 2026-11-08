@@ -1,3 +1,6 @@
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json.Nodes;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Application.Features.AgentDispatch;
@@ -291,7 +294,6 @@ public class FailureJourneyTests : WebhookApiTest
 
         await DeliverAsync(WebhookDelivery.GithubIssue(GithubSecret, "closed", 713, state: "closed"));
         await CommentAsync(713, "LGTM", WebhookDelivery.IssueAuthor, "NONE");
-        await CommentAsync(713, "Actually, one more thing.", WebhookDelivery.IssueAuthor, "NONE");
         await DrainAsync();
 
         var closed = await IssueAsync(713);
@@ -301,7 +303,7 @@ public class FailureJourneyTests : WebhookApiTest
         (await PendingJobsAsync(issue.Id)).ShouldBeEmpty();
         CommentCalls(713).ShouldBe(1);
 
-        await DeliverAsync(WebhookDelivery.GithubIssue(GithubSecret, "reopened", 713));
+        await DeliverAsync(AnHourLater(WebhookDelivery.GithubIssue(GithubSecret, "reopened", 713)));
         await CommentAsync(713, "Please also cover Features.", WebhookDelivery.IssueAuthor, "NONE");
         await DrainAsync();
 
@@ -396,6 +398,139 @@ public class FailureJourneyTests : WebhookApiTest
         (await database.ExecuteScalarAsync<int>("SELECT count(*) FROM github_issue WHERE number = 718")).ShouldBe(1);
         (await database.ExecuteScalarAsync<int>("SELECT count(*) FROM work_item WHERE project_id = @ProjectId", new { issue.ProjectId })).ShouldBe(1);
         (await PendingJobsAsync(issue.Id)).ShouldBe(["round"]);
+    }
+
+    [Test]
+    public async Task GitHubIssue_WhenSameReplyTwiceAtOnce_ShouldAskOneRound()
+    {
+        var journey = await ArrangeAsync();
+        var issue = await OpenAsync(719);
+        await ProposeAsync(journey, 719, Golden("new.md"));
+        var reply = WebhookDelivery.GithubIssueComment(
+            GithubSecret, "Tags on Features too, please.", WebhookDelivery.IssueAuthor, "NONE", 719, commentId: Interlocked.Increment(ref _commentIds));
+
+        await Task.WhenAll(DeliverAsync(reply), DeliverAsync(reply));
+
+        (await PendingJobsAsync(issue.Id)).ShouldBe(["round"]);
+        (await MirroredAsync(issue.Id)).ShouldHaveSingleItem();
+        await DrainAsync();
+        (await IssueAsync(719)).Rounds.ShouldBe(2);
+    }
+
+    [Test]
+    public async Task GitHubIssue_WhenReplyDuringProposal_ShouldRunAnotherRoundAfterIt()
+    {
+        var journey = await ArrangeAsync();
+        var issue = await OpenAsync(720);
+        await DrainAsync();
+        var first = (await IssueAsync(720)).ProposalSessionId;
+
+        await CommentAsync(720, "It should work on mobile too.", WebhookDelivery.IssueAuthor, "NONE");
+        await RespondAsync(journey, 720, Golden("new.md"));
+        await DrainAsync();
+
+        var next = await IssueAsync(720);
+        next.Phase.ShouldBe(IssuePhase.Proposing);
+        next.Rounds.ShouldBe(2);
+        next.ProposalSessionId.ShouldNotBe(first);
+        (await SentBodiesAsync(issue.Id)).ShouldHaveSingleItem().ShouldStartWith("Thanks for the report.");
+    }
+
+    [Test]
+    public async Task GitHubIssue_WhenAcceptFailsForGood_ShouldReleaseAndAcceptRetry()
+    {
+        var journey = await ArrangeAsync();
+        var issue = await OpenAsync(721);
+        await ProposeAsync(journey, 721, Golden("new.md"));
+        await CommentAsync(721, "LGTM", WebhookDelivery.IssueAuthor, "NONE");
+        await using (var database = await OpenDatabaseAsync())
+        {
+            await database.ExecuteAsync(
+                "UPDATE issue_job SET attempts = @last WHERE github_issue_id = @Id AND kind = 'accept'", new { last = IIssueJobs.MaxAttempts - 1, issue.Id });
+        }
+
+        Outbox.CrashAfterEnqueue = true;
+        await DrainAsync();
+        Outbox.CrashAfterEnqueue = false;
+
+        (await IssueAsync(721)).Phase.ShouldBe(IssuePhase.AwaitingReply);
+        (await NotesAsync(issue.WorkItemId)).ShouldContain(AcceptanceTexts.Failed);
+        (await SentBodiesAsync(issue.Id)).ShouldHaveSingleItem();
+
+        await CommentAsync(721, "LGTM", WebhookDelivery.Maintainer, "MEMBER");
+        await DrainAsync();
+
+        (await IssueAsync(721)).Phase.ShouldBe(IssuePhase.Accepted);
+        (await StateNameAsync(issue.WorkItemId)).ShouldBe("New");
+        (await SentBodiesAsync(issue.Id)).Count.ShouldBe(2);
+    }
+
+    [Test]
+    public async Task GitHubIssue_WhenEachWorkerCrashesAfterEnqueue_ShouldResumeWithoutDuplicates()
+    {
+        var journey = await ArrangeAsync();
+        var issue = await OpenAsync(722);
+        await DrainAsync();
+
+        // The proposal worker dies after queueing the proposal; its retry posts it once.
+        await RespondAsync(journey, 722, Golden("new.md"));
+        await CrashThenResumeAsync(issue.Id);
+        (await IssueAsync(722)).Phase.ShouldBe(IssuePhase.AwaitingReply);
+        (await SentBodiesAsync(issue.Id)).Count.ShouldBe(1);
+
+        // The accept worker dies after queueing its reply.
+        await CommentAsync(722, "LGTM", WebhookDelivery.IssueAuthor, "NONE");
+        await CrashThenResumeAsync(issue.Id);
+        (await IssueAsync(722)).Phase.ShouldBe(IssuePhase.Accepted);
+        (await SentBodiesAsync(issue.Id)).Count.ShouldBe(2);
+
+        // The progress reconciler dies after queueing the removed message.
+        await RemoveAsync(journey, await IssueAsync(722));
+        var reconciler = Host.Services.GetRequiredService<ProgressReconciler>();
+        Outbox.CrashAfterEnqueue = true;
+        await reconciler.RunPassAsync(CancellationToken.None);
+        Outbox.CrashAfterEnqueue = false;
+        (await OutboxAsync(issue.Id)).Count.ShouldBe(2);
+        await reconciler.RunPassAsync(CancellationToken.None);
+        await DrainAsync();
+
+        var calls = GitHubCalls(722);
+        calls.Count(c => c.StartsWith("comment ", StringComparison.Ordinal)).ShouldBe(3);
+        calls.Count(c => c.StartsWith("close ", StringComparison.Ordinal)).ShouldBe(1);
+        calls[^1].ShouldBe($"close {Ref(722)} notPlanned");
+    }
+
+    [Test]
+    public async Task GitHubIssue_WhenRoundWorkerCrashesHolding_ShouldHoldOnce()
+    {
+        var journey = await ArrangeAsync();
+        await SetConnectionAsync(journey, null);
+        var issue = await OpenAsync(723);
+
+        await CrashThenResumeAsync(issue.Id);
+
+        (await IssueAsync(723)).Phase.ShouldBe(IssuePhase.WaitingForMaintainer);
+        (await SentBodiesAsync(issue.Id)).ShouldBe([RoundHolds.Comment]);
+        (await NotesAsync(issue.WorkItemId)).ShouldHaveSingleItem();
+    }
+
+    [Test]
+    public async Task GitHubIssue_WhenMemberCreatesItemAsIntakeDoes_ShouldCreateBoth()
+    {
+        var journey = await ArrangeAsync();
+
+        var created = Api.PostJsonAsync("api/work-items", new { projectId = journey.Arranged.Project.Id, type = "story", title = "A member's story", parentId = (Guid?)null, sprintId = (Guid?)null });
+        var opened = DeliverAsync(WebhookDelivery.GithubIssue(GithubSecret, "opened", 724));
+        await Task.WhenAll(created, opened);
+
+        using var response = await created;
+        response.IsSuccessStatusCode.ShouldBeTrue(await response.Content.ReadAsStringAsync());
+        (await opened).Outcome.ShouldBe(WebhookOutcome.Processed);
+        await using var database = await OpenDatabaseAsync();
+        var keys = (await database.QueryAsync<int>("SELECT number FROM work_item WHERE project_id = @Id", new { journey.Arranged.Project.Id })).ToList();
+        keys.Count.ShouldBe(2);
+        keys.Distinct().Count().ShouldBe(2);
+        (await StateNameAsync((await IssueAsync(724)).WorkItemId)).ShouldBe("Triage");
     }
 
     private async Task<Journey> ArrangeAsync(int maxRounds = 5)
@@ -498,6 +633,24 @@ public class FailureJourneyTests : WebhookApiTest
         await database.ExecuteAsync("UPDATE issue_job SET status = 'done', done_at = now() WHERE github_issue_id = @Id AND status = 'pending'", new { issue.Id });
     }
 
+    // Runs every worker once with the outbox crashing after each enqueue (the job fails and backs off), then makes the jobs due
+    // again and runs them normally.
+    private async Task CrashThenResumeAsync(Guid issueId)
+    {
+        Outbox.CrashAfterEnqueue = true;
+        await DrainAsync();
+        Outbox.CrashAfterEnqueue = false;
+        await using (var database = await OpenDatabaseAsync())
+        {
+            (await database.ExecuteScalarAsync<int>(
+                "SELECT count(*)::int FROM issue_job WHERE github_issue_id = @issueId AND status = 'pending' AND last_error IS NOT NULL", new { issueId })).ShouldBe(1);
+            await database.ExecuteAsync(
+                "UPDATE issue_job SET next_attempt_at = now(), leased_until = NULL WHERE github_issue_id = @issueId AND status = 'pending'", new { issueId });
+        }
+
+        await DrainAsync();
+    }
+
     private async Task MakeOutboxDueAsync(Guid issueId)
     {
         await using var database = await OpenDatabaseAsync();
@@ -508,6 +661,18 @@ public class FailureJourneyTests : WebhookApiTest
     private async Task<GitHubIssueRecord> IssueAsync(int number)
     {
         return (await Host.Services.GetRequiredService<IGitHubIssueStore>().FindAsync(Ref(number))).ShouldNotBeNull();
+    }
+
+    // The recorded payload carries one updated_at, and an older or equal event doesn't move the issue's open flag: a reopen comes
+    // later on GitHub, so its updated_at is moved an hour on and the body signed again.
+    private static WebhookDelivery AnHourLater(WebhookDelivery delivery)
+    {
+        var payload = JsonNode.Parse(delivery.Body)!;
+        var issue = payload["issue"]!;
+        issue["updated_at"] = issue["updated_at"]!.GetValue<string>().Replace("T08:", "T09:", StringComparison.Ordinal);
+        var body = payload.ToJsonString();
+        var signature = "sha256=" + Convert.ToHexStringLower(HMACSHA256.HashData(Encoding.UTF8.GetBytes(GithubSecret), Encoding.UTF8.GetBytes(body)));
+        return (delivery with { Body = body }).WithHeader("X-Hub-Signature-256", signature);
     }
 
     private static IssueRef Ref(int number) => new(IssueRef.GitHubHost, WebhookDelivery.GithubRepository, number);
