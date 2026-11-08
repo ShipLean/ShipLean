@@ -210,7 +210,9 @@ export function storiesBoard(overrides: Partial<BoardViewDto> = {}): BoardViewDt
 /** A features board: SHIP-102 in progress with 2 of 3 stories open, SHIP-104 with every story closed (offers Done), SHIP-90 in Done with one open. */
 export function featuresBoard(): BoardViewDto {
   const base = storiesBoard({ level: 'features' });
-  const stories = (open: number, closed: number) => [{ type: 'story' as const, open, closed }];
+  const stories = (open: number, closed: number) => [
+    { type: 'story' as const, open, closed, inCurrentSprint: 0, inOtherSprint: 0 },
+  ];
   return {
     ...base,
     lanes: [
@@ -257,8 +259,8 @@ export function rollupBoard(overrides: Partial<BoardViewDto> = {}): BoardViewDto
     title: 'Payout reports',
     type: { id: 'feature', name: 'Feature' },
     rollups: [
-      { type: 'story', open: 2, closed: 1 },
-      { type: 'bug', open: 1, closed: 0 },
+      { type: 'story', open: 2, closed: 1, inCurrentSprint: 0, inOtherSprint: 0 },
+      { type: 'bug', open: 1, closed: 0, inCurrentSprint: 0, inOtherSprint: 0 },
     ],
   });
   return storiesBoard({

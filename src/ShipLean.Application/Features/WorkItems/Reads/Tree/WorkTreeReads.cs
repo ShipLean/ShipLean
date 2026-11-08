@@ -37,18 +37,21 @@ public sealed class WorkTreeReads(NpgsqlDataSource dataSource, ICriteriaEvaluato
             return [];
         }
 
-        var parameters = new DynamicParameters(new { projectId, roots = parentIds.Distinct().ToArray() });
+        var parameters = new DynamicParameters(new { projectId, roots = parentIds.Distinct().ToArray(), today = SprintLabels.Today(time) });
         var sql =
             $"""
             {TreeSql.DescendantsCte}
             SELECT t.root_id AS parentId, w.type,
                    count(*) FILTER (WHERE {TreeSql.Open})::int AS open,
                    count(*) FILTER (WHERE {TreeSql.Closed})::int AS closed,
+                   count(*) FILTER (WHERE {TreeSql.OpenInCurrentSprint})::int AS openInCurrentSprint,
+                   count(*) FILTER (WHERE {TreeSql.OpenInOtherSprint})::int AS openInOtherSprint,
                    sum(w.story_points) FILTER (WHERE {TreeSql.Open}) AS openPoints,
                    sum(w.story_points) AS totalPoints,
                    count(*) FILTER (WHERE w.story_points IS NULL)::int AS unestimated
             FROM tree t JOIN work_item w ON w.id = t.id
             JOIN state s ON s.id = w.state_id
+            LEFT JOIN sprint sp ON sp.id = w.sprint_id
             WHERE {TreeSql.Live}{FilterSql(filter, parameters)}
             GROUP BY t.root_id, w.type
             ORDER BY t.root_id, w.type
@@ -124,8 +127,8 @@ public sealed class WorkTreeReads(NpgsqlDataSource dataSource, ICriteriaEvaluato
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var rows = await connection.QueryAsync<RollupRow>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
-        return [.. rows.Select(r => new WorkTreeRollupDto(r.ParentId, WorkItemTypes.Parse(r.Type), r.Open, r.Closed, r.OpenPoints, r.TotalPoints, r.Unestimated))];
+        return [.. rows.Select(r => new WorkTreeRollupDto(r.ParentId, WorkItemTypes.Parse(r.Type), r.Open, r.Closed, r.OpenPoints, r.TotalPoints, r.Unestimated, r.OpenInCurrentSprint, r.OpenInOtherSprint))];
     }
 
-    private sealed record RollupRow(Guid ParentId, string Type, int Open, int Closed, decimal? OpenPoints, decimal? TotalPoints, int Unestimated);
+    private sealed record RollupRow(Guid ParentId, string Type, int Open, int Closed, int OpenInCurrentSprint, int OpenInOtherSprint, decimal? OpenPoints, decimal? TotalPoints, int Unestimated);
 }

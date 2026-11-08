@@ -82,7 +82,7 @@ public class TaskboardReadApiTests : ApiFixture
         cards[board.BugTask].Tags.ShouldBe([new CardTagDto("Blocked", Swatch.Danger)]);
         cards[board.BugTask].StyleRuleId.ShouldBe("rule-blocked");
         cards[board.StoryOpenOne].StyleRuleId.ShouldBeNull();
-        view.Rows[0].Parent!.Rollups.ShouldBe([new RollupCountDto(WorkItemTypeId.Task, 2, 0)]);
+        view.Rows[0].Parent!.Rollups.ShouldBe([new RollupCountDto(WorkItemTypeId.Task, 2, 0, 0, 0)]);
     }
 
     [Test]

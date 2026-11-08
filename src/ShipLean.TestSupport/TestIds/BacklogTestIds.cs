@@ -72,6 +72,8 @@ public static class BacklogTestIds
     public const string PlanningOverrideError = "backlog-planning-override-error";
     public const string LevelProgress = "backlog-level-progress";
     public const string LevelProgressDone = "backlog-level-progress-done";
+    public const string LevelProgressCurrent = "backlog-level-progress-current";
+    public const string LevelProgressOther = "backlog-level-progress-other";
     public const string LevelProgressText = "backlog-level-progress-text";
     public const string LevelPoints = "backlog-level-points";
     public const string LevelPointsSum = "backlog-level-points-sum";

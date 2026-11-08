@@ -57,6 +57,21 @@ public abstract class WorkTreeReadsTestBase
         return id;
     }
 
+    // A sprint whose dates are days from today (UTC, as SprintLabels.Today), with its rollover decided or not, live or archived.
+    protected async Task<Guid> AddSprintAsync(ArrangedProject project, string name, int startDays, int endDays, string? rolloverStatus = null, bool archived = false)
+    {
+        var id = Guid.NewGuid();
+        var today = ShipLean.Core.SprintLabels.Today(TimeProvider.System);
+        await using var connection = await _arrangement.Database.OpenAsync();
+        await connection.ExecuteAsync(
+            """
+            INSERT INTO sprint (id, project_id, name, start_date, end_date, rollover_status, archived_at)
+            VALUES (@id, @projectId, @name, @start, @end, @rolloverStatus, CASE WHEN @archived THEN now() END)
+            """,
+            new { id, projectId = project.ProjectId, name, start = today.AddDays(startDays), end = today.AddDays(endDays), rolloverStatus, archived });
+        return id;
+    }
+
     protected async Task SetRevisionAsync(Guid itemId, int revision)
     {
         await using var connection = await _arrangement.Database.OpenAsync();

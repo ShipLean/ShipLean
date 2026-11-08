@@ -79,7 +79,9 @@
           {
             "type": "task",
             "open": 3,
-            "closed": 0
+            "closed": 0,
+            "inCurrentSprint": 0,
+            "inOtherSprint": 0
           }
         ],
         "offerDone": false,
@@ -264,7 +266,9 @@
           {
             "type": "task",
             "open": 0,
-            "closed": 1
+            "closed": 1,
+            "inCurrentSprint": 0,
+            "inOtherSprint": 0
           }
         ],
         "offerDone": false,
@@ -370,7 +374,9 @@
           {
             "type": "task",
             "open": 0,
-            "closed": 2
+            "closed": 2,
+            "inCurrentSprint": 0,
+            "inOtherSprint": 0
           }
         ],
         "offerDone": false,
@@ -529,7 +535,9 @@
           {
             "type": "task",
             "open": 2,
-            "closed": 2
+            "closed": 2,
+            "inCurrentSprint": 0,
+            "inOtherSprint": 0
           }
         ],
         "offerDone": false,
@@ -753,7 +761,9 @@
           {
             "type": "task",
             "open": 0,
-            "closed": 1
+            "closed": 1,
+            "inCurrentSprint": 0,
+            "inOtherSprint": 0
           }
         ],
         "offerDone": false,

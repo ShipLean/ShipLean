@@ -186,7 +186,7 @@ export function groupRow(
     points: null,
     rank: null,
     childPoints: 0,
-    rollups: [{ type: 'story', open: 0, closed: 0 }],
+    rollups: [{ type: 'story', open: 0, closed: 0, inCurrentSprint: 0, inOtherSprint: 0 }],
     ...overrides,
   });
 }
@@ -226,7 +226,7 @@ export function treeRows() {
     depth: 1,
     title: 'Checkout v2',
     childPoints: 11,
-    rollups: [{ type: 'story', open: 3, closed: 1 }],
+    rollups: [{ type: 'story', open: 3, closed: 1, inCurrentSprint: 0, inOtherSprint: 0 }],
     parent: parentOf(epic),
   });
   const nested = groupRow({
@@ -241,7 +241,7 @@ export function treeRows() {
     title: 'Mobile sign-in',
     childPoints: null,
     sumWarn: true,
-    rollups: [{ type: 'story', open: 1, closed: 0 }],
+    rollups: [{ type: 'story', open: 1, closed: 0, inCurrentSprint: 0, inOtherSprint: 0 }],
     parent: parentOf(epic),
   });
   const removed = { id: 'removed', key: 'SHIP-99', type: FEATURE, title: 'Old checkout' };
@@ -255,7 +255,10 @@ export function treeRows() {
     itemRow({ key: 'SHIP-150', rank: 3, depth: 3, parent: parentOf(nested) }),
     mobile,
     itemRow({ key: 'SHIP-129', rank: 4, depth: 2, parent: parentOf(mobile), revision: 6 }),
-    noParentRow({ rollups: [{ type: 'story', open: 1, closed: 0 }], childPoints: 3 }),
+    noParentRow({
+      rollups: [{ type: 'story', open: 1, closed: 0, inCurrentSprint: 0, inOtherSprint: 0 }],
+      childPoints: 3,
+    }),
     itemRow({ key: 'SHIP-170', rank: 6, depth: 1, parent: null, revision: 8 }),
   ];
   return { rows, epic, checkout, nested, mobile };

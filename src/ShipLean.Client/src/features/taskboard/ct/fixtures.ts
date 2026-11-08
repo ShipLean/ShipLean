@@ -80,14 +80,14 @@ const OPEN_STORY = story(
   'SHIP-141',
   { id: 'ps-active', name: 'Active', category: 'inProgress' },
   {
-    rollups: [{ type: 'task', open: 2, closed: 1 }],
+    rollups: [{ type: 'task', open: 2, closed: 1, inCurrentSprint: 0, inOtherSprint: 0 }],
   },
 );
 const DONE_STORY = story(
   'SHIP-138',
   { id: 'ps-closed', name: 'Closed', category: 'completed' },
   {
-    rollups: [{ type: 'task', open: 0, closed: 1 }],
+    rollups: [{ type: 'task', open: 0, closed: 1, inCurrentSprint: 0, inOtherSprint: 0 }],
   },
 );
 

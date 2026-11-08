@@ -31,8 +31,8 @@ export const FEATURE_ROWS: BacklogRowDto[] = [
     sumWarn: true,
     parent: epic('SHIP-90', 'Checkout conversion'),
     rollups: [
-      { type: 'story', open: 3, closed: 3 },
-      { type: 'bug', open: 1, closed: 1 },
+      { type: 'story', open: 3, closed: 3, inCurrentSprint: 0, inOtherSprint: 0 },
+      { type: 'bug', open: 1, closed: 1, inCurrentSprint: 0, inOtherSprint: 0 },
     ],
   }),
   itemRow({
@@ -45,8 +45,8 @@ export const FEATURE_ROWS: BacklogRowDto[] = [
     childPoints: 13,
     parent: epic('SHIP-92', 'Insights for merchants'),
     rollups: [
-      { type: 'story', open: 4, closed: 0 },
-      { type: 'feature', open: 1, closed: 0 },
+      { type: 'story', open: 4, closed: 0, inCurrentSprint: 0, inOtherSprint: 0 },
+      { type: 'feature', open: 1, closed: 0, inCurrentSprint: 0, inOtherSprint: 0 },
     ],
   }),
   itemRow({
@@ -70,8 +70,37 @@ export const EPIC_ROWS: BacklogRowDto[] = [
     points: 30,
     childPoints: 28,
     rollups: [
-      { type: 'story', open: 4, closed: 0 },
-      { type: 'feature', open: 2, closed: 0 },
+      { type: 'story', open: 4, closed: 0, inCurrentSprint: 0, inOtherSprint: 0 },
+      { type: 'feature', open: 2, closed: 0, inCurrentSprint: 0, inOtherSprint: 0 },
+    ],
+  }),
+];
+
+/** A Feature with 2 done, 2 open in the current sprint, 1 open in another sprint and 3 open in no sprint (8 in all). */
+export const SPRINT_FEATURE_ROWS: BacklogRowDto[] = [
+  itemRow({
+    key: 'SHIP-120',
+    rank: 1,
+    type: FEATURE_TYPE,
+    title: 'Saved carts',
+    state: ACTIVE,
+    rollups: [
+      { type: 'story', open: 5, closed: 2, inCurrentSprint: 2, inOtherSprint: 1 },
+      { type: 'bug', open: 1, closed: 0, inCurrentSprint: 0, inOtherSprint: 0 },
+    ],
+  }),
+];
+
+/** An Epic whose Features hold 2 done, 2 open in the current sprint, 2 in another sprint and 2 in none (8 in all). */
+export const SPRINT_EPIC_ROWS: BacklogRowDto[] = [
+  itemRow({
+    key: 'SHIP-95',
+    rank: 1,
+    type: EPIC_TYPE,
+    title: 'Repeat purchases',
+    rollups: [
+      { type: 'story', open: 6, closed: 2, inCurrentSprint: 2, inOtherSprint: 2 },
+      { type: 'feature', open: 2, closed: 0, inCurrentSprint: 0, inOtherSprint: 0 },
     ],
   }),
 ];
@@ -102,7 +131,7 @@ export const FEATURE_TREE_ROWS: BacklogRowDto[] = [
     state: null,
     points: null,
     rank: null,
-    rollups: [{ type: 'feature', open: 1, closed: 0 }],
+    rollups: [{ type: 'feature', open: 1, closed: 0, inCurrentSprint: 0, inOtherSprint: 0 }],
   }),
   itemRow({
     key: 'SHIP-104',

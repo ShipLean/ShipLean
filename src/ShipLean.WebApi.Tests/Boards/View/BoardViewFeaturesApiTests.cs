@@ -91,7 +91,7 @@ public class BoardViewFeaturesApiTests : ApiFixture
         board.Lanes.Select(l => l.Kind).ShouldBe([BoardLaneKind.Default]);
         var insights = board.Cards().Single(c => c.Key == "SHIP-92");
         insights.Rollups.Select(r => r.Type).ShouldBe([WorkItemTypeId.Feature, WorkItemTypeId.Story, WorkItemTypeId.Bug]);
-        insights.Rollups[0].ShouldBe(new RollupCountDto(WorkItemTypeId.Feature, 2, 0));
+        insights.Rollups[0].ShouldBe(new RollupCountDto(WorkItemTypeId.Feature, 2, 0, 0, 0));
         insights.Parent.ShouldBeNull();
     }
 }
