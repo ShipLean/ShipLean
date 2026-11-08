@@ -6,7 +6,7 @@ const initial: TouchPagerPage[] = [
   { id: 'todo', label: 'To do', count: 3, limit: 5 },
   { id: 'doing', label: 'Doing', count: 4, limit: 3 },
   { id: 'review', label: 'Review', count: 2 },
-  { id: 'done', label: 'Done', count: 12 },
+  { id: 'done', label: 'Done', count: 12, pulse: 5 },
 ];
 
 // Tall and short pages, so the track's height follows the tallest and the document scrolls vertically.
@@ -17,6 +17,7 @@ export function PagerHarness() {
   const [current, setCurrent] = useState('todo');
   const [reports, setReports] = useState<string[]>([]);
   const [inserted, setInserted] = useState(0);
+  const [, setTick] = useState(0);
 
   const insertBefore = () => {
     const at = pages.findIndex((page) => page.id === current);
@@ -36,6 +37,9 @@ export function PagerHarness() {
         <button data-testid={ids.ctPagerGoToLast} onClick={() => setCurrent('done')}>
           Go to Done
         </button>
+        <button data-testid={ids.ctPagerRerender} onClick={() => setTick((n) => n + 1)}>
+          Re-render
+        </button>
         <button
           data-testid={ids.ctPagerPulse}
           onClick={() =>
@@ -52,7 +56,7 @@ export function PagerHarness() {
       <p data-testid={ids.ctPagerCurrent}>{current}</p>
       <p data-testid={ids.ctPagerReports}>{reports.join(',')}</p>
       <TouchPager
-        pages={pages}
+        pages={pages.map((page) => ({ ...page }))}
         current={current}
         onPageChange={(id) => {
           setCurrent(id);

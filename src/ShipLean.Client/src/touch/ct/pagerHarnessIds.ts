@@ -2,6 +2,7 @@
 export const pagerHarnessIds = {
   ctPagerInsert: 'ct-pager-insert',
   ctPagerGoToLast: 'ct-pager-go-to-last',
+  ctPagerRerender: 'ct-pager-rerender',
   ctPagerPulse: 'ct-pager-pulse',
   ctPagerCurrent: 'ct-pager-current',
   ctPagerReports: 'ct-pager-reports',

@@ -79,9 +79,11 @@ export function TouchPager({
   );
 
   // Keep the page on screen after the pages change (inserted before it, new counts): restore by id, no animation.
+  // Keyed on the ids, not the array: a lane that builds `pages` inline must not snap the track back mid-swipe.
+  const idKey = pages.map((page) => page.id).join('\u0000');
   useLayoutEffect(() => {
     scrollToId(latest.current.current, false);
-  }, [pages, scrollToId]);
+  }, [idKey, scrollToId]);
 
   // A change of `current` from outside turns to it. One we reported ourselves is already on screen.
   useEffect(() => {
@@ -139,8 +141,9 @@ export function TouchPager({
   };
 
   const turnTo = (id: string) => {
-    if (id !== current) turnedTo.current = id;
     scrollToId(id, true);
+    if (id === current) return;
+    turnedTo.current = id;
     onPageChange(id);
   };
 

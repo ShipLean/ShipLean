@@ -106,16 +106,66 @@ test('TouchPager_WhenCurrentChangesFromOutside_ShouldTurnToIt', async ({ mount, 
   await expect(page.getByTestId(ids.ctPagerReports)).toHaveText('');
 });
 
+// Which chips carry the pulse class right now: one read, never retried, so a pulse that already ended can't hide.
+const pulsingChips = (page: Page) =>
+  page
+    .getByTestId(touchTestIds.pagerChip)
+    .evaluateAll((chips) =>
+      chips
+        .filter((chip) => chip.classList.contains('is-pulsing'))
+        .map((chip) => chip.getAttribute('data-page-id')),
+    );
+
 test('TouchPager_WhenPulseChanges_ShouldPulseThatChipAndStayOnThePage', async ({ mount, page }) => {
   await mount(<PagerHarness />);
-  await expect(chipById(page, 'review')).not.toHaveClass(/is-pulsing/);
+  // The Done page starts with a pulse value; nothing pulses on the first render.
+  expect(await pulsingChips(page)).toEqual([]);
   await page.getByTestId(ids.ctPagerPulse).click();
   await expect(chipById(page, 'review')).toHaveClass(/is-pulsing/);
-  await expect(chipById(page, 'todo')).not.toHaveClass(/is-pulsing/);
+  expect(await pulsingChips(page)).toEqual(['review']);
   await expect(chipById(page, 'todo')).toHaveAttribute('aria-current', 'true');
   await expect(chipById(page, 'review')).not.toHaveClass(/is-pulsing/);
   await expect(page.getByTestId(ids.ctPagerCurrent)).toHaveText('todo');
   expect((await pageById(page, 'todo').boundingBox())?.x).toBe(12);
+});
+
+test('TouchPager_WhenTheChipOnScreenIsTapped_ShouldNotReportAPageChange', async ({
+  mount,
+  page,
+}) => {
+  await mount(<PagerHarness />);
+  await chipById(page, 'todo').click();
+  await expect(chipById(page, 'todo')).toHaveAttribute('aria-current', 'true');
+  await expect(page.getByTestId(ids.ctPagerReports)).toHaveText('');
+  await chipById(page, 'doing').click();
+  await expect(page.getByTestId(ids.ctPagerReports)).toHaveText('doing');
+});
+
+test('TouchPager_WhenPagesIsRebuiltMidSwipe_ShouldStayWhereTheFingerIs', async ({
+  mount,
+  page,
+}) => {
+  await mount(<PagerHarness />);
+  const client = await page.context().newCDPSession(page);
+  await client.send('Input.dispatchTouchEvent', {
+    type: 'touchStart',
+    touchPoints: [{ x: 300, y: 400 }],
+  });
+  for (let i = 1; i <= 6; i++) {
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [{ x: 300 - i * 15, y: 400 }],
+    });
+    await page.evaluate(() => new Promise((done) => requestAnimationFrame(done)));
+  }
+  const track = page.getByTestId(touchTestIds.pager);
+  const before = await track.evaluate((el) => el.scrollLeft);
+  expect(before).toBeGreaterThan(40);
+  // A new but equal `pages` array, as a lane building it inline does on a live count update.
+  await page.getByTestId(ids.ctPagerRerender).evaluate((el) => (el as HTMLButtonElement).click());
+  await page.evaluate(() => new Promise((done) => requestAnimationFrame(done)));
+  expect(await track.evaluate((el) => el.scrollLeft)).toBeGreaterThanOrEqual(before);
+  await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
 });
 
 // On a mobile-emulated page `innerWidth` grows to fit overflowing content, so `scrollWidth <= innerWidth` can't fail;
