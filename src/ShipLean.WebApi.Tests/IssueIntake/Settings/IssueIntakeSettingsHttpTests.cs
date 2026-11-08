@@ -37,6 +37,16 @@ public class IssueIntakeSettingsHttpTests : ApiFixture
     }
 
     [Test]
+    public async Task Get_WhenNotMember_ShouldBeNotFound()
+    {
+        var project = await ArrangeAsync();
+
+        using var response = await Api.ActingAs(TestUser.Kai).GetAsync(PathOf(project));
+
+        (await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.NotFound)).Code.ShouldBe(ApiErrorCodes.NotFound);
+    }
+
+    [Test]
     public async Task Put_WhenMember_ShouldBeForbidden()
     {
         var project = await ArrangeAsync();

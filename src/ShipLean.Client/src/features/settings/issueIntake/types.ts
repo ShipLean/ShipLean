@@ -37,6 +37,7 @@ export const issueIntakeErrorCodes = [
   'repository_taken',
   'no_repo_url',
   'not_member',
+  'intake_on',
 ] as const satisfies readonly ApiErrorCode[];
 
 export type IssueIntakeErrorCode = (typeof issueIntakeErrorCodes)[number];

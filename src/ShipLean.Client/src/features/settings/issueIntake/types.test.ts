@@ -53,6 +53,12 @@ test('IssueIntakeSettingsDto_ShouldMatchThePinnedBody', () => {
 });
 
 test('IssueIntakeErrorCodes_ShouldBeKnownApiErrorCodes', () => {
+  expect([...issueIntakeErrorCodes]).toEqual([
+    'repository_taken',
+    'no_repo_url',
+    'not_member',
+    'intake_on',
+  ]);
   for (const code of issueIntakeErrorCodes) {
     expect(apiErrorCodes).toContain(code);
   }
