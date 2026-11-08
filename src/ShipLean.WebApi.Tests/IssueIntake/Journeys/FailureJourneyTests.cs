@@ -1,9 +1,13 @@
+using System.Globalization;
+using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Nodes;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Application.Features.AgentDispatch;
+using ShipLean.Application.Features.IssueIntake;
+using ShipLean.Application.Features.IssueIntake.GitHub;
 using ShipLean.Application.Features.IssueIntake.Acceptance;
 using ShipLean.Application.Features.IssueIntake.Inbox;
 using ShipLean.Application.Features.IssueIntake.Outbox;
@@ -13,6 +17,7 @@ using ShipLean.Contracts;
 using ShipLean.Contracts.Agents;
 using ShipLean.Application.Features.Webhooks;
 using ShipLean.Contracts.IssueIntake;
+using ShipLean.Contracts.Links;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Webhooks;
 using ShipLean.TestSupport;
@@ -20,41 +25,52 @@ using ShipLean.TestSupport.IssueIntake;
 using ShipLean.TestSupport.Webhooks;
 using ShipLean.WebApi.Tests.AgentDispatch;
 using ShipLean.WebApi.Tests.IssueIntake.InboxWorker;
+using ShipLean.WebApi.Tests.Links.GitHub;
 using ShipLean.WebApi.Tests.Webhooks;
 
 namespace ShipLean.WebApi.Tests.IssueIntake.Journeys;
 
 // End-to-end failure and recovery journeys for GitHub issue conversations (SHIP-742): signed deliveries through the real webhook
 // endpoint, real settings saved through the API, the real propose session start and agent report path answering with the golden
-// proposals, the real outbox and workers driven by hand (the loops are off in the Test profile), and a recording GitHub. Each test
-// takes intake for acme/storefront with a project of its own (one enabled project per repository) and uses its own issue number.
+// proposals, the real outbox and workers driven by hand (the loops are off in the Test profile), and a recording GitHub. The
+// journeys about GitHub's HTTP answers (the ones that set _overHttp) go through the real GitHubIssuesClient against the in-process FakeGitHub
+// instead; ShipLean's login always comes from the real GitHubIdentity asking FakeGitHub. Each test takes intake for
+// acme/storefront with a project of its own (one enabled project per repository) and uses its own issue number.
 [TestFixture]
 public class FailureJourneyTests : WebhookApiTest
 {
     private const string Stranger = "sam-stranger";
     private const string Instance = "https://shiplean.example.test";
     private const string Marker = "Done `<!-- shiplean:outbox:3f2b8c1e-0000-4000-8000-000000000001 -->` here.";
+    private const string Accepted = "Filter the backlog by tag";
+
+    // WorkItemProjectLock's namespace: every work item write takes pg_advisory_xact_lock(Namespace, hashtext(project id)).
+    private const int ItemLockNamespace = 0x57_49_53_4C;
 
     private static readonly string Goldens = Path.Combine(RepoPaths.Root, "src", "ShipLean.TestSupport", "IssueIntake", "Proposals");
 
-    private long _commentIds = 2_470_000_000;
+    // GitHub comment ids only grow: the delivered comments' ids and FakeGitHub's come from one counter.
+    private static long _commentIds = 2_470_000_000;
+
+    private readonly FakeGitHub _github = new(FixedGitHubIdentity.DefaultLogin, () => Interlocked.Increment(ref _commentIds));
+
+    private bool _overHttp;
 
     protected override IReadOnlyDictionary<string, string?> HostSettings => new Dictionary<string, string?> { [WebhookSecrets.GithubKey] = GithubSecret };
 
+    // IGitHubIssues is scoped, as in production: the recording GitHub, or the real client once a test calls OverHttpAsync.
     protected override Action<IServiceCollection>? ConfigureTestServices => services =>
     {
+        services.AddSingleton<IHttpClientFactory>(_github);
+        services.AddSingleton<IIntegrationSettings>(new FixedIntegrationSettings(new IntegrationSettingsDto("ghp_test_token", "https://api.github.test/", null, null, [])));
         services.AddSingleton<RecordingGitHubIssues>();
-        services.AddSingleton<JourneyGitHub>();
-        services.AddSingleton<IGitHubIssues>(sp => sp.GetRequiredService<JourneyGitHub>());
-        services.AddSingleton<IGitHubIdentity>(new FixedGitHubIdentity());
+        services.AddScoped<IGitHubIssues>(sp => _overHttp ? sp.GetRequiredService<GitHubIssuesClient>() : sp.GetRequiredService<RecordingGitHubIssues>());
         services.AddSingleton<DbGitHubOutbox>();
         services.AddSingleton<CrashingGitHubOutbox>();
         services.AddSingleton<IGitHubOutbox>(sp => sp.GetRequiredService<CrashingGitHubOutbox>());
     };
 
     private RecordingGitHubIssues GitHub => Host.Services.GetRequiredService<RecordingGitHubIssues>();
-
-    private JourneyGitHub Wire => Host.Services.GetRequiredService<JourneyGitHub>();
 
     private CrashingGitHubOutbox Outbox => Host.Services.GetRequiredService<CrashingGitHubOutbox>();
 
@@ -63,7 +79,8 @@ public class FailureJourneyTests : WebhookApiTest
     public async Task ResetAsync()
     {
         Outbox.CrashAfterEnqueue = false;
-        Wire.LandThenTimeOut = false;
+        _overHttp = false;
+        _github.Reset($"/repos/{WebhookDelivery.GithubRepository}");
         await using var database = await OpenDatabaseAsync();
         await database.ExecuteAsync("UPDATE issue_job SET status = 'done', done_at = now() WHERE status = 'pending'");
         await database.ExecuteAsync("UPDATE github_outbox SET failed_at = now() WHERE sent_at IS NULL AND failed_at IS NULL");
@@ -210,6 +227,8 @@ public class FailureJourneyTests : WebhookApiTest
         accepted.Phase.ShouldBe(IssuePhase.Accepted);
         accepted.WorkItemId.ShouldBe(existing.Id);
         (await StateNameAsync(issue.WorkItemId)).ShouldBe("Removed");
+        (await NotesAsync(issue.WorkItemId)).ShouldContain(AcceptanceTexts.DuplicateOf(existing.Key));
+        (await SentBodiesAsync(issue.Id))[^1].ShouldStartWith($"Thanks! This is the same as {existing.Key}: ");
     }
 
     [Test]
@@ -247,42 +266,105 @@ public class FailureJourneyTests : WebhookApiTest
         (await PendingJobsAsync(issue.Id)).ShouldBeEmpty();
     }
 
+    // GitHub's rate limit answers 403 with x-ratelimit-remaining 0: the real client makes it a retry, and the next try posts.
     [Test]
     public async Task GitHubIssue_WhenGitHubFailsThenRecovers_ShouldPostOnce()
     {
+        _overHttp = true;
         var journey = await ArrangeAsync();
         var issue = await OpenAsync(711);
-        GitHub.QueueResult(new GitHubWriteResult.Retry("rate limited"));
+        _github.PlanNextComment(711, new FakeGitHub.CommentAnswer(HttpStatusCode.Forbidden, RateLimitRemaining: "0"));
 
         await ProposeAsync(journey, 711, Golden("new.md"));
 
         var waiting = (await OutboxAsync(issue.Id)).ShouldHaveSingleItem();
-        waiting.SentAt.ShouldBeNull();
-        waiting.LastResult.ShouldBe("retry");
+        waiting.ShouldSatisfyAllConditions(
+            () => waiting.SentAt.ShouldBeNull(), () => waiting.LastResult.ShouldBe("retry"), () => waiting.LastError.ShouldBe("403"));
+        _github.Posts(711).ShouldBe(1);
+        _github.Comments(711).ShouldBeEmpty();
 
         await MakeOutboxDueAsync(issue.Id);
         await DrainAsync();
 
-        (await OutboxAsync(issue.Id)).ShouldHaveSingleItem().SentAt.ShouldNotBeNull();
-        (await LandedAsync(711)).ShouldBe(1);
+        var sent = (await OutboxAsync(issue.Id)).ShouldHaveSingleItem();
+        sent.ShouldSatisfyAllConditions(() => sent.SentAt.ShouldNotBeNull(), () => sent.LastResult.ShouldBe("ok"));
+        _github.Posts(711).ShouldBe(2);
+        _github.Comments(711).ShouldHaveSingleItem().ShouldStartWith("Thanks for the report.");
+        sent.GitHubCommentId.ShouldBe(OwnPosts(711, sent).ShouldHaveSingleItem().Id);
     }
 
+    // The POST times out after GitHub took the body: the entry is ambiguous, and the next try finds ShipLean's comment with the
+    // entry's marker in the list and records it without posting again.
     [Test]
     public async Task GitHubIssue_WhenCommentPostTimesOutButLanded_ShouldNotPostTwice()
     {
+        _overHttp = true;
         var journey = await ArrangeAsync();
         var issue = await OpenAsync(712);
-        Wire.LandThenTimeOut = true;
+        _github.PlanNextComment(712, new FakeGitHub.CommentAnswer(null, Lands: true));
 
         await ProposeAsync(journey, 712, Golden("new.md"));
+
+        var unsure = (await OutboxAsync(issue.Id)).ShouldHaveSingleItem();
+        unsure.ShouldSatisfyAllConditions(
+            () => unsure.SentAt.ShouldBeNull(), () => unsure.LastResult.ShouldBe("ambiguous"), () => unsure.LastError.ShouldBe("timeout"));
+        _github.Comments(712).Count.ShouldBe(1);
+
         await MakeOutboxDueAsync(issue.Id);
         await DrainAsync();
 
         var row = (await OutboxAsync(issue.Id)).ShouldHaveSingleItem();
-        row.SentAt.ShouldNotBeNull();
-        row.GitHubCommentId.ShouldNotBeNull();
-        (await LandedAsync(712)).ShouldBe(1);
-        CommentCalls(712).ShouldBe(1);
+        row.ShouldSatisfyAllConditions(() => row.SentAt.ShouldNotBeNull(), () => row.LastResult.ShouldBe("ok"));
+        row.GitHubCommentId.ShouldBe(OwnPosts(712, row).ShouldHaveSingleItem().Id);
+        _github.Comments(712).Count.ShouldBe(1);
+        _github.Posts(712).ShouldBe(1);
+    }
+
+    // R3: a comment carrying the entry's marker counts as landed only when ShipLean's own login wrote it (anyone can type a
+    // marker). Here a stranger's copy shows up while the POST answers 502: the complete list has no ShipLean comment with the
+    // marker, so the deliverer posts again.
+    [Test]
+    public async Task GitHubIssue_WhenMarkerListedFromAnotherLogin_ShouldPostAgain()
+    {
+        _overHttp = true;
+        var journey = await ArrangeAsync();
+        var issue = await OpenAsync(727);
+        _github.PlanNextComment(727, new FakeGitHub.CommentAnswer(HttpStatusCode.BadGateway, Plant: body => (Stranger, body)));
+
+        await ProposeAsync(journey, 727, Golden("new.md"));
+        (await OutboxAsync(issue.Id)).ShouldHaveSingleItem().LastResult.ShouldBe("ambiguous");
+        await MakeOutboxDueAsync(issue.Id);
+        await DrainAsync();
+
+        var row = (await OutboxAsync(issue.Id)).ShouldHaveSingleItem();
+        row.ShouldSatisfyAllConditions(() => row.SentAt.ShouldNotBeNull(), () => row.LastResult.ShouldBe("ok"));
+        var own = OwnPosts(727, row).ShouldHaveSingleItem();
+        row.GitHubCommentId.ShouldBe(own.Id);
+        _github.Listing(727).ShouldContain(c => c.Login == Stranger && c.Body.Contains(IssueMarkdown.OutboxMarker(row.Id), StringComparison.Ordinal));
+        _github.Posts(727).ShouldBe(2);
+    }
+
+    // R3: ShipLean's own comment counts only when it carries the entry's marker. Here a ShipLean comment without it shows up
+    // while the POST answers 502: it is not this entry, so the deliverer posts again.
+    [Test]
+    public async Task GitHubIssue_WhenOwnCommentListedWithoutMarker_ShouldPostAgain()
+    {
+        _overHttp = true;
+        var journey = await ArrangeAsync();
+        var issue = await OpenAsync(728);
+        _github.PlanNextComment(728, new FakeGitHub.CommentAnswer(HttpStatusCode.BadGateway, Plant: body => (_github.SelfLogin, StripMarker(body))));
+
+        await ProposeAsync(journey, 728, Golden("new.md"));
+        (await OutboxAsync(issue.Id)).ShouldHaveSingleItem().LastResult.ShouldBe("ambiguous");
+        await MakeOutboxDueAsync(issue.Id);
+        await DrainAsync();
+
+        var row = (await OutboxAsync(issue.Id)).ShouldHaveSingleItem();
+        row.ShouldSatisfyAllConditions(() => row.SentAt.ShouldNotBeNull(), () => row.LastResult.ShouldBe("ok"));
+        var own = OwnPosts(728, row).ShouldHaveSingleItem();
+        row.GitHubCommentId.ShouldBe(own.Id);
+        _github.Listing(728).Count(c => c.Login == _github.SelfLogin).ShouldBe(2);
+        _github.Posts(728).ShouldBe(2);
     }
 
     [Test]
@@ -324,24 +406,34 @@ public class FailureJourneyTests : WebhookApiTest
         await DrainAsync();
 
         GitHubCalls(714).TakeLast(2).ShouldBe([$"comment {Ref(714)}", $"close {Ref(714)} notPlanned"]);
+        (await SentBodiesAsync(issue.Id))[^1].ShouldBe(ProgressMessages.Removed(await KeyAsync(issue.WorkItemId), Accepted));
     }
 
+    // GitHub refuses the removed message with 422: the real client makes it a failure, and the close queued after it is held.
     [Test]
     public async Task GitHubIssue_WhenRemovedMessageFails_ShouldHoldClose()
     {
+        _overHttp = true;
         var journey = await ArrangeAsync();
         var issue = await AcceptNewAsync(journey, 715);
-        var before = GitHubCalls(715).Count;
+        var posts = _github.Posts(715);
 
         await RemoveAsync(journey, issue);
         await Host.Services.GetRequiredService<ProgressReconciler>().ReconcileAsync(issue.Id, CancellationToken.None);
-        GitHub.QueueResult(new GitHubWriteResult.Failed("422 Unprocessable"));
+        _github.PlanNextComment(715, new FakeGitHub.CommentAnswer(HttpStatusCode.UnprocessableEntity));
         await DrainAsync();
 
-        GitHubCalls(715).Skip(before).ShouldBe([$"comment {Ref(715)}"]);
+        _github.Posts(715).ShouldBe(posts + 1);
+        _github.Comments(715).Count.ShouldBe(posts);
+        _github.Closes(715).ShouldBeEmpty();
         var rows = await OutboxAsync(issue.Id);
-        rows.ShouldContain(r => r.Kind == "close" && r.SentAt == null);
-        (await NotesAsync(issue.WorkItemId)).ShouldContain(n => n.Contains("close", StringComparison.OrdinalIgnoreCase));
+        var removed = rows.Last(r => r.Kind == "comment");
+        removed.Body.ShouldBe(ProgressMessages.Removed(await KeyAsync(issue.WorkItemId), Accepted));
+        removed.ShouldSatisfyAllConditions(
+            () => removed.SentAt.ShouldBeNull(), () => removed.FailedAt.ShouldNotBeNull(), () => removed.LastResult.ShouldBe("failed"), () => removed.LastError.ShouldBe("422"));
+        var close = rows.Where(r => r.Kind == "close").ShouldHaveSingleItem();
+        close.ShouldSatisfyAllConditions(() => close.SentAt.ShouldBeNull(), () => close.FailedAt.ShouldNotBeNull(), () => close.LastResult.ShouldBe("failed"));
+        (await NotesAsync(issue.WorkItemId)).ShouldContain(n => n.Contains("(422)", StringComparison.Ordinal) && n.Contains("close", StringComparison.OrdinalIgnoreCase));
     }
 
     [Test]
@@ -352,13 +444,16 @@ public class FailureJourneyTests : WebhookApiTest
         await ProposeAsync(journey, 716, Golden("new.md"));
 
         var bot = await CommentAsync(716, "LGTM", "helper-app[bot]", "MEMBER", authorType: "Bot");
-        var self = await CommentAsync(716, "LGTM", FixedGitHubIdentity.DefaultLogin, "MEMBER");
+        var self = await CommentAsync(716, "LGTM", _github.SelfLogin, "MEMBER");
+        // The control: an ordinary stranger's comment on the same issue is mirrored.
+        var stranger = await CommentAsync(716, "Same problem here.", Stranger, "NONE");
         await DrainAsync();
 
         bot.Outcome.ShouldBe(WebhookOutcome.Ignored);
         self.Outcome.ShouldBe(WebhookOutcome.Ignored);
+        stranger.Outcome.ShouldBe(WebhookOutcome.Processed);
         (await IssueAsync(716)).Phase.ShouldBe(IssuePhase.AwaitingReply);
-        (await MirroredAsync(issue.Id)).ShouldBeEmpty();
+        (await MirroredAsync(issue.Id)).ShouldBe([$"{Stranger}: Same problem here."]);
         (await PendingJobsAsync(issue.Id)).ShouldBeEmpty();
     }
 
@@ -376,6 +471,19 @@ public class FailureJourneyTests : WebhookApiTest
         await DrainAsync();
         (await SentBodiesAsync(issue.Id))[^1].ShouldBe(AcceptanceTexts.Busy);
 
+        // The early LGTM accepted nothing: still proposing, no accept job ran, and the Triage item is the project's only item.
+        var busy = await IssueAsync(717);
+        busy.Phase.ShouldBe(IssuePhase.Proposing);
+        busy.WorkItemId.ShouldBe(issue.WorkItemId);
+        await using (var database = await OpenDatabaseAsync())
+        {
+            (await database.ExecuteScalarAsync<int>(
+                "SELECT count(*)::int FROM issue_job WHERE github_issue_id = @Id AND kind = 'accept' AND status = 'done'", new { issue.Id })).ShouldBe(0);
+            (await database.ExecuteScalarAsync<int>("SELECT count(*)::int FROM work_item WHERE project_id = @ProjectId", new { issue.ProjectId })).ShouldBe(1);
+        }
+
+        (await StateNameAsync(issue.WorkItemId)).ShouldBe("Triage");
+
         await RespondAsync(journey, 717, Golden("new.md").Replace("by tag", "by label", StringComparison.Ordinal));
         await DrainAsync();
         await CommentAsync(717, "LGTM", WebhookDelivery.IssueAuthor, "NONE");
@@ -385,15 +493,23 @@ public class FailureJourneyTests : WebhookApiTest
         (await TitleAsync(issue.WorkItemId)).ShouldBe("Filter the backlog by label");
     }
 
+    // R4: neither delivery is recorded yet, so both pass the delivery dedupe and reach the Triage item's create, which takes the
+    // project's work item lock. Held there until both wait, they overlap: the second finds the first's github_issue row and
+    // rolls its own item back.
     [Test]
     public async Task GitHubIssue_WhenSameDeliveryTwiceAtOnce_ShouldActOnce()
     {
-        await ArrangeAsync();
+        var journey = await ArrangeAsync();
         var opened = WebhookDelivery.GithubIssue(GithubSecret, "opened", 718);
 
-        await Task.WhenAll(DeliverAsync(opened), DeliverAsync(opened));
+        var (first, second) = await RaceAtLockAsync(ItemLock(journey), () => DeliverAsync(opened), () => DeliverAsync(opened));
 
+        first.Outcome.ShouldBe(WebhookOutcome.Processed);
+        second.Outcome.ShouldBe(WebhookOutcome.Processed);
         var issue = await IssueAsync(718);
+        var key = await KeyAsync(issue.WorkItemId);
+        first.Item.ShouldBe(key);
+        second.Item.ShouldBe(key);
         await using var database = await OpenDatabaseAsync();
         (await database.ExecuteScalarAsync<int>("SELECT count(*) FROM github_issue WHERE number = 718")).ShouldBe(1);
         (await database.ExecuteScalarAsync<int>("SELECT count(*) FROM work_item WHERE project_id = @ProjectId", new { issue.ProjectId })).ShouldBe(1);
@@ -409,8 +525,11 @@ public class FailureJourneyTests : WebhookApiTest
         var reply = WebhookDelivery.GithubIssueComment(
             GithubSecret, "Tags on Features too, please.", WebhookDelivery.IssueAuthor, "NONE", 719, commentId: Interlocked.Increment(ref _commentIds));
 
-        await Task.WhenAll(DeliverAsync(reply), DeliverAsync(reply));
+        // R4: a reply takes the project's round lock first; held there until both wait, the two deliveries overlap.
+        var (first, second) = await RaceAtLockAsync(RoundLock(journey), () => DeliverAsync(reply), () => DeliverAsync(reply));
 
+        first.Outcome.ShouldBe(WebhookOutcome.Processed);
+        second.Outcome.ShouldBe(WebhookOutcome.Processed);
         (await PendingJobsAsync(issue.Id)).ShouldBe(["round"]);
         (await MirroredAsync(issue.Id)).ShouldHaveSingleItem();
         await DrainAsync();
@@ -519,13 +638,18 @@ public class FailureJourneyTests : WebhookApiTest
     {
         var journey = await ArrangeAsync();
 
-        var created = Api.PostJsonAsync("api/work-items", new { projectId = journey.Arranged.Project.Id, type = "story", title = "A member's story", parentId = (Guid?)null, sprintId = (Guid?)null });
-        var opened = DeliverAsync(WebhookDelivery.GithubIssue(GithubSecret, "opened", 724));
-        await Task.WhenAll(created, opened);
+        // R4: both creates take the project's work item lock; held there until both wait, they overlap.
+        var (response, opened) = await RaceAtLockAsync(
+            ItemLock(journey),
+            () => Api.PostJsonAsync("api/work-items", new { projectId = journey.Arranged.Project.Id, type = "story", title = "A member's story", parentId = (Guid?)null, sprintId = (Guid?)null }),
+            () => DeliverAsync(WebhookDelivery.GithubIssue(GithubSecret, "opened", 724)));
 
-        using var response = await created;
-        response.IsSuccessStatusCode.ShouldBeTrue(await response.Content.ReadAsStringAsync());
-        (await opened).Outcome.ShouldBe(WebhookOutcome.Processed);
+        using (response)
+        {
+            response.IsSuccessStatusCode.ShouldBeTrue(await response.Content.ReadAsStringAsync());
+        }
+
+        opened.Outcome.ShouldBe(WebhookOutcome.Processed);
         await using var database = await OpenDatabaseAsync();
         var keys = (await database.QueryAsync<int>("SELECT number FROM work_item WHERE project_id = @Id", new { journey.Arranged.Project.Id })).ToList();
         keys.Count.ShouldBe(2);
@@ -582,6 +706,44 @@ public class FailureJourneyTests : WebhookApiTest
         after.ProposalSessionId.ShouldBeNull();
         (await RoundJobCountAsync(issue.Id)).ShouldBe(roundsBefore);
         (await OutboxAsync(issue.Id)).Count.ShouldBe(outboxBefore);
+    }
+
+    // WorkItemProjectLock's key for the journey's project.
+    private static HeldLock ItemLock(Journey journey) =>
+        new("SELECT pg_advisory_xact_lock(@ns, hashtext(@projectId::text))", new { ns = ItemLockNamespace, projectId = journey.Arranged.Project.Id });
+
+    // IIssueProposalSessions.LockProjectAsync's key for the journey's project.
+    private static HeldLock RoundLock(Journey journey) =>
+        new("SELECT pg_advisory_xact_lock(hashtextextended('issue_round:' || @projectId::text, 0))", new { projectId = journey.Arranged.Project.Id });
+
+    // Takes the lock in a transaction of its own, starts both requests, polls pg_locks until both wait on that lock (two requests
+    // for the same advisory key that are not granted), then commits to release it, so both are inside the section it guards at once.
+    // A request that finishes without waiting, or a poll that runs out (500 polls of 20 ms), fails the test.
+    private async Task<(T1 First, T2 Second)> RaceAtLockAsync<T1, T2>(HeldLock held, Func<Task<T1>> first, Func<Task<T2>> second)
+    {
+        const string Waiting =
+            """
+            SELECT count(*)::int
+            FROM pg_sleep(0.02) AS pause, pg_locks h
+            JOIN pg_locks w ON w.locktype = 'advisory' AND NOT w.granted AND w.database = h.database
+             AND w.classid = h.classid AND w.objid = h.objid AND w.objsubid = h.objsubid
+            WHERE h.locktype = 'advisory' AND h.granted AND h.pid = pg_backend_pid()
+            """;
+        await using var database = await OpenDatabaseAsync();
+        await using var transaction = await database.BeginTransactionAsync();
+        await database.ExecuteAsync(held.Sql, held.Args, transaction);
+        var one = first();
+        var two = second();
+        var waiting = 0;
+        for (var poll = 0; poll < 500 && waiting < 2 && !one.IsCompleted && !two.IsCompleted; poll++)
+        {
+            waiting = await database.ExecuteScalarAsync<int>(Waiting, transaction: transaction);
+        }
+
+        await transaction.CommitAsync();
+        var results = (await one, await two);
+        waiting.ShouldBe(2, "both requests wait at the held lock before it is released");
+        return results;
     }
 
     // Every round job of the issue, done or not.
@@ -722,12 +884,13 @@ public class FailureJourneyTests : WebhookApiTest
     }
 
     // The recorded payload carries one updated_at, and an older or equal event doesn't move the issue's open flag: a reopen comes
-    // later on GitHub, so its updated_at is moved an hour on and the body signed again.
+    // later on GitHub, so its updated_at is read, moved an hour on, written back in GitHub's format and the body signed again.
     private static WebhookDelivery AnHourLater(WebhookDelivery delivery)
     {
         var payload = JsonNode.Parse(delivery.Body)!;
         var issue = payload["issue"]!;
-        issue["updated_at"] = issue["updated_at"]!.GetValue<string>().Replace("T08:", "T09:", StringComparison.Ordinal);
+        var later = issue["updated_at"]!.GetValue<DateTimeOffset>().AddHours(1);
+        issue["updated_at"] = later.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
         var body = payload.ToJsonString();
         var signature = "sha256=" + Convert.ToHexStringLower(HMACSHA256.HashData(Encoding.UTF8.GetBytes(GithubSecret), Encoding.UTF8.GetBytes(body)));
         return (delivery with { Body = body }).WithHeader("X-Hub-Signature-256", signature);
@@ -742,19 +905,17 @@ public class FailureJourneyTests : WebhookApiTest
 
     private int CommentCalls(int number) => GitHubCalls(number).Count(c => c.StartsWith("comment ", StringComparison.Ordinal));
 
-    // The comments on the recording GitHub's issue now (the read records a list call, so a test reads it last).
-    private async Task<int> LandedAsync(int number)
-    {
-        var listed = (await GitHub.ListRecentCommentsAsync(Ref(number), DateTimeOffset.MinValue)).ShouldBeOfType<GitHubCommentList.Listed>();
-        return listed.Comments.Count;
-    }
+    // The comments on FakeGitHub's issue by ShipLean's login that carry the entry's marker.
+    private List<FakeGitHub.Listed> OwnPosts(int number, OutboxRow entry) =>
+        [.. _github.Listing(number).Where(c => c.Login == _github.SelfLogin && c.Body.Contains(IssueMarkdown.OutboxMarker(entry.Id), StringComparison.Ordinal))];
 
     private async Task<List<OutboxRow>> OutboxAsync(Guid issueId)
     {
         await using var database = await OpenDatabaseAsync();
         return [.. await database.QueryAsync<OutboxRow>(
             """
-            SELECT kind, dedupe_key AS dedupeKey, body, sent_at AS sentAt, github_comment_id AS gitHubCommentId, last_result AS lastResult
+            SELECT id, kind, dedupe_key AS dedupeKey, body, sent_at AS sentAt, failed_at AS failedAt, github_comment_id AS gitHubCommentId,
+                   last_result AS lastResult, last_error AS lastError
             FROM github_outbox WHERE github_issue_id = @issueId ORDER BY seq
             """,
             new { issueId })];
@@ -796,6 +957,12 @@ public class FailureJourneyTests : WebhookApiTest
         return await database.QuerySingleAsync<string>("SELECT s.name FROM work_item w JOIN state s ON s.id = w.state_id WHERE w.id = @workItemId", new { workItemId });
     }
 
+    private async Task<string> KeyAsync(Guid workItemId)
+    {
+        await using var database = await OpenDatabaseAsync();
+        return await database.QuerySingleAsync<string>("SELECT key FROM work_item WHERE id = @workItemId", new { workItemId });
+    }
+
     private async Task<string> TitleAsync(Guid workItemId)
     {
         await using var database = await OpenDatabaseAsync();
@@ -804,32 +971,8 @@ public class FailureJourneyTests : WebhookApiTest
 
     private sealed record Journey(AgentDispatchArrange Arranged);
 
-    private sealed record OutboxRow(string Kind, string DedupeKey, string? Body, DateTimeOffset? SentAt, long? GitHubCommentId, string? LastResult);
+    private sealed record HeldLock(string Sql, object Args);
 
-    // The recording GitHub, except that while LandThenTimeOut is set the next comment lands on GitHub and its POST still reports
-    // Ambiguous, as a timeout after GitHub took the body does.
-    private sealed class JourneyGitHub(RecordingGitHubIssues inner) : IGitHubIssues
-    {
-        public bool LandThenTimeOut { get; set; }
-
-        public async Task<GitHubWriteResult> CommentAsync(IssueRef issue, string body, CancellationToken cancellationToken = default)
-        {
-            var result = await inner.CommentAsync(issue, body, cancellationToken);
-            if (!LandThenTimeOut)
-            {
-                return result;
-            }
-
-            LandThenTimeOut = false;
-            return new GitHubWriteResult.Ambiguous("The request timed out after the body was sent.");
-        }
-
-        public Task<GitHubWriteResult> CloseAsync(IssueRef issue, CloseReason reason, CancellationToken cancellationToken = default) =>
-            inner.CloseAsync(issue, reason, cancellationToken);
-
-        public Task<GitHubWriteResult> ReopenAsync(IssueRef issue, CancellationToken cancellationToken = default) => inner.ReopenAsync(issue, cancellationToken);
-
-        public Task<GitHubCommentList> ListRecentCommentsAsync(IssueRef issue, DateTimeOffset since, CancellationToken cancellationToken = default) =>
-            inner.ListRecentCommentsAsync(issue, since, cancellationToken);
-    }
+    private sealed record OutboxRow(
+        Guid Id, string Kind, string DedupeKey, string? Body, DateTimeOffset? SentAt, DateTimeOffset? FailedAt, long? GitHubCommentId, string? LastResult, string? LastError);
 }

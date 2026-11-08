@@ -1,8 +1,5 @@
-using System.Collections.Concurrent;
 using System.Globalization;
 using System.Net;
-using System.Text;
-using System.Text.RegularExpressions;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -37,7 +34,7 @@ namespace ShipLean.WebApi.Tests.IssueIntake.Journeys;
 // so Settle drives the round, proposal and accept workers and the outbox deliverer until nothing is due, and the progress
 // reconciler is run by hand. The recorded payloads name acme/storefront, so each test maps it to a project of its own.
 [TestFixture]
-public partial class HappyJourneyTests : WebhookApiTest
+public class HappyJourneyTests : WebhookApiTest
 {
     private const string Instance = "https://shiplean.example.test";
     private const string SelfLogin = "shiplean-bot";
@@ -46,7 +43,7 @@ public partial class HappyJourneyTests : WebhookApiTest
     private static long _ids = 4_000_000_000;
     private static int _numbers = 7760;
 
-    private readonly FakeGitHub _github = new();
+    private readonly FakeGitHub _github = new(SelfLogin, NextId);
     private readonly SwitchableSettings _settings = new();
 
     // Each test owns a repository, so the unique enabled-repository index never clashes; SetUp picks it.
@@ -477,9 +474,6 @@ public partial class HappyJourneyTests : WebhookApiTest
         await AgentDispatchArrange.MoveAsync(Api, itemId, revision, stateId);
     }
 
-    [GeneratedRegex(@"\n\n<!-- shiplean:outbox:[0-9a-f-]{36} -->$")]
-    private static partial Regex Marker();
-
     // The fixture's one IIssueIntakeSettings; each test points acme/storefront at its own project.
     private sealed class SwitchableSettings : IIssueIntakeSettings
     {
@@ -494,77 +488,4 @@ public partial class HappyJourneyTests : WebhookApiTest
     private sealed record ItemRow(Guid Id, string Key, string Type, string Title, string State, string Category, bool IsIntake, string Criteria);
 
     private sealed record CommentRow(string? AgentName, string Body);
-
-    // An IHttpClientFactory whose clients play GitHub's REST API for acme/storefront: comments get growing ids, PATCH on an issue
-    // is a state change, GET /user is the token's login, comment lists are empty, and Respond sets other GET answers by path
-    // (404 for any other). The loopback HttpsStubServer can't serve these paths (it skips paths whose last segment has a dot).
-    private sealed class FakeGitHub : IHttpClientFactory
-    {
-        private string _repoPath = "/repos/acme/happy";
-        private readonly ConcurrentQueue<(int Number, string Kind, string Body)> _writes = new();
-        private readonly ConcurrentDictionary<string, string> _answers = new(StringComparer.Ordinal);
-
-        public void Reset(string repoPath)
-        {
-            _repoPath = repoPath;
-            _writes.Clear();
-            _answers.Clear();
-        }
-
-        public void Respond(string path, string body) => _answers[path] = body;
-
-        // The comment bodies posted on the issue, in order.
-        public IReadOnlyList<string> Comments(int number) => [.. _writes.Where(w => w.Number == number && w.Kind == "comment").Select(w => w.Body)];
-
-        // The state changes sent for the issue, as "closed completed".
-        // Every write for the issue in the order GitHub received it: the kind ("comment" or "state") and the body.
-        public IReadOnlyList<(string Kind, string Body)> Writes(int number) => [.. _writes.Where(w => w.Number == number).Select(w => (w.Kind, w.Body))];
-
-        public IReadOnlyList<string> Closes(int number) => [.. _writes.Where(w => w.Number == number && w.Kind == "state").Select(w => w.Body)];
-
-        public HttpClient CreateClient(string name) => new(new Answerer(this));
-
-        private sealed class Answerer(FakeGitHub owner) : HttpMessageHandler
-        {
-            private static HttpResponseMessage Json(HttpStatusCode status, string body) => new(status) { Content = new StringContent(body, Encoding.UTF8, "application/json") };
-
-            protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-            {
-                var path = request.RequestUri!.AbsolutePath;
-                var segments = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
-                var isIssue = path.StartsWith($"{owner._repoPath}/issues/", StringComparison.Ordinal);
-                var number = isIssue ? int.Parse(segments[4], CultureInfo.InvariantCulture) : 0;
-                if (request.Method == HttpMethod.Post && isIssue && segments.Length == 6 && segments[5] == "comments")
-                {
-                    var body = System.Text.Json.JsonDocument.Parse(await request.Content!.ReadAsStringAsync(cancellationToken)).RootElement.GetProperty("body").GetString()!;
-                    // The deliverer adds the outbox marker at send time; tests compare the text before it.
-                    var marker = Marker().Match(body);
-                    marker.Success.ShouldBeTrue("a posted comment carries the outbox marker");
-                    owner._writes.Enqueue((number, "comment", body[..marker.Index]));
-                    return Json(HttpStatusCode.Created, $$"""{ "id": {{NextId()}} }""");
-                }
-
-                if (request.Method == HttpMethod.Patch && isIssue && segments.Length == 5)
-                {
-                    var state = System.Text.Json.JsonDocument.Parse(await request.Content!.ReadAsStringAsync(cancellationToken)).RootElement;
-                    owner._writes.Enqueue((number, "state", $"{state.GetProperty("state").GetString()} {state.GetProperty("state_reason").GetString()}"));
-                    return Json(HttpStatusCode.OK, "{}");
-                }
-
-                if (request.Method == HttpMethod.Get && isIssue && segments.Length == 6 && segments[5] == "comments")
-                {
-                    return Json(HttpStatusCode.OK, "[]");
-                }
-
-                if (request.Method == HttpMethod.Get && path == "/user")
-                {
-                    return Json(HttpStatusCode.OK, $$"""{ "login": "{{SelfLogin}}" }""");
-                }
-
-                return request.Method == HttpMethod.Get && owner._answers.TryGetValue(path, out var answer)
-                    ? Json(HttpStatusCode.OK, answer)
-                    : Json(HttpStatusCode.NotFound, """{ "message": "Not Found" }""");
-            }
-        }
-    }
 }
