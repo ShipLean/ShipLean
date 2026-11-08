@@ -8,6 +8,7 @@ import { EncryptionFields } from './EncryptionFields';
 import { RetentionFields } from './RetentionFields';
 import {
   destinationProblems,
+  isDirty,
   toDestinationSaveDto,
   withEndpointMode,
   type BackupDraft,
@@ -52,6 +53,8 @@ export function BackupDestinationForm({
   const id = useId();
   const problems = destinationProblems(draft, settings);
   const valid = Object.keys(problems).length === 0;
+  // Nothing is flagged until the person has changed something.
+  const shown: typeof problems = isDirty(settings, draft) ? problems : {};
   useEffect(() => onValidityChange(valid), [valid, onValidityChange]);
 
   const test = useTestBackupDestination();
@@ -76,10 +79,10 @@ export function BackupDestinationForm({
     ];
     return parts.length === 0 ? undefined : parts.join(' ');
   };
-  const endpointMessage = errors['destination.s3.endpointUrl'] ?? problems.endpointUrl;
-  const regionMessage = errors['destination.s3.region'] ?? problems.region;
-  const bucketMessage = errors['destination.s3.bucket'] ?? problems.bucket;
-  const accessKeyMessage = errors['destination.s3.accessKeyId'] ?? problems.accessKeyId;
+  const endpointMessage = errors['destination.s3.endpointUrl'] ?? shown.endpointUrl;
+  const regionMessage = errors['destination.s3.region'] ?? shown.region;
+  const bucketMessage = errors['destination.s3.bucket'] ?? shown.bucket;
+  const accessKeyMessage = errors['destination.s3.accessKeyId'] ?? shown.accessKeyId;
   const error = (path: string, message: string | undefined) => (
     <span id={`${id}-${path}`}>
       <FieldError message={message} testId={backupsTestIds.backupsFieldError} />
@@ -150,6 +153,7 @@ export function BackupDestinationForm({
             <span id={`${id}-region-hint`} className={hint}>
               Whatever your store expects; most accept us-east-1.
             </span>
+            {error('region', regionMessage)}
             <label className="flex items-center gap-2 text-[length:var(--text-sm)] font-medium text-ink">
               <input
                 type="checkbox"
@@ -161,24 +165,26 @@ export function BackupDestinationForm({
             </label>
           </>
         ) : (
-          <label className={field}>
-            Region
-            <select
-              data-testid={backupsTestIds.backupsRegionSelect}
-              className={`${input} font-sans`}
-              value={draft.region}
-              aria-describedby={describedBy('region', regionMessage)}
-              onChange={(e) => change({ region: e.target.value })}
-            >
-              {settings.regions.map((r) => (
-                <option key={r.code} value={r.code}>
-                  {`${r.name} · ${r.code}`}
-                </option>
-              ))}
-            </select>
-          </label>
+          <>
+            <label className={field}>
+              Region
+              <select
+                data-testid={backupsTestIds.backupsRegionSelect}
+                className={`${input} font-sans`}
+                value={draft.region}
+                aria-describedby={describedBy('region', regionMessage)}
+                onChange={(e) => change({ region: e.target.value })}
+              >
+                {settings.regions.map((r) => (
+                  <option key={r.code} value={r.code}>
+                    {`${r.name} · ${r.code}`}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {error('region', regionMessage)}
+          </>
         )}
-        {error('region', regionMessage)}
         <label className={field}>
           Bucket
           <input
@@ -241,7 +247,7 @@ export function BackupDestinationForm({
             error: backupsTestIds.backupsFieldError,
           }}
           disabled={false}
-          error={problems.secretKey}
+          error={shown.secretKey}
           onChange={(edit) => {
             setReplaced(edit.replacing ? lastFour : undefined);
             change({ removeKeys: edit.clear, secretKey: edit.value });
@@ -282,14 +288,14 @@ export function BackupDestinationForm({
       <RetentionFields
         draft={draft}
         onChange={change}
-        error={errors.keepCount ?? problems.keepCount}
+        error={errors.keepCount ?? shown.keepCount}
       />
       <EncryptionFields
         settings={settings}
         draft={draft}
         onChange={change}
-        error={errors.passphrase ?? problems.passphrase}
-        mismatch={problems.passphraseConfirm}
+        error={errors.passphrase ?? shown.passphrase}
+        mismatch={draft.passphraseConfirm !== '' ? shown.passphraseConfirm : undefined}
       />
       <AttachmentsToggle
         store={settings.attachmentStore}

@@ -26,12 +26,12 @@ export function RetentionFields({ draft, onChange, error }: RetentionFieldsProps
           max={KEEP_COUNT_MAX}
           className="h-7 w-20 rounded-control border border-edge bg-panel px-2 text-[length:var(--text-sm)] text-ink"
           value={draft.keepCount}
-          aria-describedby={error === undefined ? undefined : errorId}
+          aria-describedby={error === undefined ? `${errorId}-hint` : `${errorId}-hint ${errorId}`}
           onChange={(e) => onChange({ keepCount: e.target.value })}
         />
         <span>database backups</span>
       </div>
-      <span className="font-normal text-ink-muted">
+      <span id={`${errorId}-hint`} className="font-normal text-ink-muted">
         {`${KEEP_COUNT_MIN} to ${KEEP_COUNT_MAX}. After each successful backup, older ones ShipLean wrote to this destination are deleted. Attachment copies are never deleted, and files ShipLean did not write are never touched.`}
       </span>
       <span id={errorId}>

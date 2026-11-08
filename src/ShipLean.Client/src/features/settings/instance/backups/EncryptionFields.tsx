@@ -34,7 +34,7 @@ export function EncryptionFields({
           <span data-testid={backupsTestIds.backupsPassphraseInfo} className="text-ink">
             {`Passphrase #${settings.passphraseGeneration}, set ${settings.passphraseSetLabel ?? ''}`}
           </span>
-          <span className="text-ink-muted">
+          <span id={`${id}-note`} className="text-ink-muted">
             Typing a new one below starts the next generation: attachments are copied again, and
             backups already in the destination keep the old passphrase.
           </span>
@@ -49,7 +49,11 @@ export function EncryptionFields({
         value={draft.passphrase}
         autoComplete="new-password"
         spellCheck={false}
-        aria-describedby={error === undefined ? undefined : `${id}-error`}
+        aria-describedby={
+          [...(saved ? [`${id}-note`] : []), ...(error === undefined ? [] : [`${id}-error`])].join(
+            ' ',
+          ) || undefined
+        }
         onChange={(e) => onChange({ passphrase: e.target.value })}
       />
       <label htmlFor={`${id}-confirm`}>Type it again</label>

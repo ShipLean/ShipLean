@@ -63,6 +63,9 @@ test('reports invalid until passphrases match', async ({ mount }) => {
   await expect(view.getByTestId(ids.backupsFieldError)).toHaveText(
     'The two passphrases do not match.',
   );
+  await expect(view.getByTestId(ids.backupsPassphraseConfirm)).toHaveAccessibleDescription(
+    /do not match/,
+  );
   await view.getByTestId(ids.backupsPassphraseConfirm).fill('a long phrase');
   await expect(view.getByTestId(validId)).toHaveText('true');
   await expect(view.getByTestId(ids.backupsFieldError)).toHaveCount(0);
@@ -71,6 +74,7 @@ test('reports invalid until passphrases match', async ({ mount }) => {
 
 test('explains why save is disabled on first setup', async ({ mount }) => {
   const view = await mount(<DestinationFormHarness settings={notConfigured} />);
+  await expect(view.getByTestId(ids.backupsFieldError)).toHaveCount(0);
   await view.getByTestId(ids.backupsBucket).fill('shiplean-backups');
   await expect(view.getByTestId(validId)).toHaveText('false');
   await expect(view.getByTestId(ids.backupsFieldError)).toHaveText(
@@ -84,9 +88,9 @@ test('explains why save is disabled on first setup', async ({ mount }) => {
 test('shows the passphrase generation once saved', async ({ mount }) => {
   const view = await mount(<DestinationFormHarness settings={configured} />);
   await expect(view.getByTestId(ids.backupsPassphraseInfo)).toHaveText('Passphrase #2, set 20 Oct');
-  await expect(
-    view.getByText('backups already in the destination keep the old passphrase'),
-  ).toBeVisible();
+  await expect(view.getByTestId(ids.backupsPassphrase)).toHaveAccessibleDescription(
+    /keep the old passphrase/,
+  );
   await expect(view.getByTestId(validId)).toHaveText('true');
 });
 
@@ -98,7 +102,9 @@ test('disables attachments when inside the database backup', async ({ mount }) =
   const view = await mount(<DestinationFormHarness settings={inDb} />);
   await expect(view.getByTestId(ids.backupsAttachmentsToggle)).toBeDisabled();
   await expect(view.getByTestId(ids.backupsAttachmentsToggle)).toBeChecked();
-  await expect(view.getByText('Already inside the database backup')).toBeVisible();
+  await expect(view.getByTestId(ids.backupsAttachmentsToggle)).toHaveAccessibleName(
+    'Already inside the database backup',
+  );
   await expect(view.getByTestId(ids.backupsAttachmentsNote)).toBeVisible();
 });
 
@@ -173,7 +179,7 @@ test('shows server field errors for endpoint, region, access key and passphrase'
     'Key is wrong.',
   );
   await expect(view.getByTestId(ids.backupsPassphrase)).toHaveAccessibleDescription(
-    'Passphrase is wrong.',
+    /Passphrase is wrong\./,
   );
   await expect(view.getByTestId(ids.backupsFieldError)).toHaveCount(4);
 });
