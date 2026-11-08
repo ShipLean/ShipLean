@@ -26,24 +26,26 @@ public sealed class BacklogTriage(NpgsqlDataSource dataSource)
         var rows = (await connection.QueryAsync<(Guid Id, int Count)>(new CommandDefinition(
             Sql, new { projectId, types = dbTypes }, cancellationToken: cancellationToken))).ToList();
         var ids = rows.Select(r => r.Id).ToList();
-        return new TriageRead(ids, rows.Sum(r => r.Count), NamesAny(criteria, ids) ? [] : [.. ids]);
+        return new TriageRead(ids, rows.Sum(r => r.Count), [.. ids.Except(Named(criteria, ids))]);
     }
 
-    // Whether a state clause picks one of the states by id (= or in).
-    private static bool NamesAny(CriteriaJson? criteria, IReadOnlyCollection<Guid> ids) =>
-        criteria is not null && criteria.Clauses.Any(c =>
-            c.Field == "state" && c.Op is CriteriaOp.Equal or CriteriaOp.In && Picks(c.Value, ids));
+    // The states a state clause picks by id (= or in). Every other intake state stays hidden, whatever the match mode.
+    private static HashSet<Guid> Named(CriteriaJson? criteria, IReadOnlyCollection<Guid> ids) =>
+        criteria is null
+            ? []
+            : [.. criteria.Clauses.Where(c => c.Field == "state" && c.Op is CriteriaOp.Equal or CriteriaOp.In)
+                .SelectMany(c => Picked(c.Value)).Where(ids.Contains)];
 
-    private static bool Picks(System.Text.Json.JsonElement value, IReadOnlyCollection<Guid> ids) =>
+    private static IEnumerable<Guid> Picked(System.Text.Json.JsonElement value) =>
         value.ValueKind switch
         {
-            System.Text.Json.JsonValueKind.String => Guid.TryParse(value.GetString(), out var id) && ids.Contains(id),
-            System.Text.Json.JsonValueKind.Array => value.EnumerateArray().Any(v => Picks(v, ids)),
-            _ => false,
+            System.Text.Json.JsonValueKind.String => Guid.TryParse(value.GetString(), out var id) ? [id] : [],
+            System.Text.Json.JsonValueKind.Array => value.EnumerateArray().SelectMany(Picked),
+            _ => [],
         };
 }
 
-// StateIds: every intake state of the types. Count: the items in them. Hidden: the states the read leaves out (none when the filter names one).
+// StateIds: every intake state of the types. Count: the items in them. Hidden: the intake states the read leaves out (those the filter doesn't name).
 public sealed record TriageRead(IReadOnlyList<Guid> StateIds, int Count, IReadOnlyList<Guid> Hidden)
 {
     // The rows outside the hidden states.

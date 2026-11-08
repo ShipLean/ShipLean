@@ -55,6 +55,17 @@ public class BacklogTriageApiTests : ApiFixture
     }
 
     [Test]
+    public async Task Backlog_WhenFilterNamesOneOfTwoIntakeStatesAmongOthers_ShouldKeepTheOtherHidden()
+    {
+        var filter = $$"""{"match":"any","clauses":[{"field":"state","op":"in","value":["{{_storyTriage}}"]},{"field":"assignee","op":"in","value":["{{SeedIds.Users.Ana}}"]}]}""";
+
+        var view = await Api.GetBacklogAsync($"{Root}/backlog?mode=list&filter={Uri.EscapeDataString(filter)}");
+
+        view.Rows.Select(row => row.Key).ShouldContain(_story);
+        view.Rows.Select(row => row.Key).ShouldNotContain(_bug);
+    }
+
+    [Test]
     public async Task Backlog_WhenTwoTypesHaveTriage_ShouldCountBoth()
     {
         var stories = await Api.GetBacklogAsync($"{Root}/backlog?mode=list");

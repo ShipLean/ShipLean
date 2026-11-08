@@ -37,8 +37,9 @@ public sealed class LevelBacklogReads(IWorkTreeReads reads, IBoardSettingsStore 
 
         if (mode == BacklogMode.Tree)
         {
-            var epics = waiting.Visible(await reads.StackAsync(projectId, StackLevel.Epic, null, true, cancellationToken));
-            var features = waiting.Visible(await reads.StackAsync(projectId, StackLevel.Feature, null, true, cancellationToken));
+            // Not hidden by triage: a hidden Triage Feature stays the group header (a Group row showing its state) of a visible Feature under it.
+            var epics = await reads.StackAsync(projectId, StackLevel.Epic, null, true, cancellationToken);
+            var features = await reads.StackAsync(projectId, StackLevel.Feature, null, true, cancellationToken);
             var layout = LevelBacklogTree.Layout(items, epics, features);
             var treeRollups = await RollupsAsync(projectId, [.. layout.Where(x => x.Row is not null).Select(x => x.Row!.Id)], cancellationToken);
             var treeRows = layout.Select(x =>
