@@ -37,13 +37,18 @@ public class GitHubIssuesClientTests
     private GitHubIssuesClient Client(string? token = Token)
         => new(_clients, new FixedIntegrationSettings(new IntegrationSettingsDto(token, _server.BaseAddress.AbsoluteUri, null, null, [])));
 
-    private static string CommentJson(long id, string login, string body, string createdAt)
-        => $$"""{ "id": {{id}}, "user": { "login": "{{login}}" }, "body": {{JsonSerializer.Serialize(body)}}, "created_at": "{{createdAt}}", "author_association": "OWNER" }""";
+    // Whole seconds in UTC, as GitHub writes times.
+    private static readonly DateTimeOffset Yesterday = DateTimeOffset.FromUnixTimeSeconds(TimeProvider.System.GetUtcNow().AddDays(-1).ToUnixTimeSeconds());
+
+    private static string CommentJson(long id, string login, string body, DateTimeOffset createdAt)
+        => $$"""{ "id": {{id}}, "user": { "login": "{{login}}" }, "body": {{JsonSerializer.Serialize(body)}}, "created_at": "{{GitHubTime(createdAt)}}", "author_association": "OWNER" }""";
+
+    private static string GitHubTime(DateTimeOffset at) => at.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", System.Globalization.CultureInfo.InvariantCulture);
 
     [Test]
     public async Task Comment_ShouldPostBodyAndReturnId()
     {
-        _server.Respond(CommentsPath, CommentJson(4_294_967_301, "shiplean-bot", "Thanks", "2026-11-08T06:00:00Z"), 201);
+        _server.Respond(CommentsPath, CommentJson(4_294_967_301, "shiplean-bot", "Thanks", Yesterday), 201);
 
         var result = await Client().CommentAsync(Issue, "Thanks for the report.\n\n<!-- shiplean:outbox:x -->");
 
@@ -87,7 +92,7 @@ public class GitHubIssuesClientTests
     public async Task Comment_WhenForbiddenByRateLimit_ShouldRetry()
     {
         _server.Respond(CommentsPath, """{ "message": "API rate limit exceeded" }""", 403);
-        _clients.ResponseHeaders["x-ratelimit-remaining"] = "0";
+        _clients.AddResponseHeader("x-ratelimit-remaining", "0");
 
         (await Client().CommentAsync(Issue, "Hi")).ShouldBe(new GitHubWriteResult.Retry("403"));
     }
@@ -103,7 +108,7 @@ public class GitHubIssuesClientTests
     [Test]
     public async Task Comment_WhenTimeout_ShouldBeAmbiguous()
     {
-        _server.Respond(CommentsPath, CommentJson(1, "shiplean-bot", "Hi", "2026-11-08T06:00:00Z"), 201);
+        _server.Respond(CommentsPath, CommentJson(1, "shiplean-bot", "Hi", Yesterday), 201);
         _clients.HangAfterSending = true;
 
         var result = await Client().CommentAsync(Issue, "Hi");
@@ -162,18 +167,19 @@ public class GitHubIssuesClientTests
     {
         _server.Respond(
             CommentsPath,
-            $"[{CommentJson(11, "reporter", "LGTM", "2026-11-07T10:00:05Z")}, {CommentJson(12, "shiplean-bot", "Done <!-- shiplean:outbox:a -->", "2026-11-07T10:01:00Z")}]");
+            $"[{CommentJson(11, "reporter", "LGTM", Yesterday.AddSeconds(5))}, {CommentJson(12, "shiplean-bot", "Done <!-- shiplean:outbox:a -->", Yesterday.AddMinutes(1))}]");
 
-        var result = await Client().ListRecentCommentsAsync(Issue, new DateTimeOffset(2026, 11, 7, 17, 0, 0, TimeSpan.FromHours(7)));
+        // Sent in UTC whatever the offset given.
+        var result = await Client().ListRecentCommentsAsync(Issue, Yesterday.ToOffset(TimeSpan.FromHours(7)));
 
         var sent = _clients.Sent.ShouldHaveSingleItem();
         sent.Method.ShouldBe("GET");
-        sent.PathAndQuery.ShouldBe($"{CommentsPath}?since=2026-11-07T10%3A00%3A00Z&per_page=100&page=1");
+        sent.PathAndQuery.ShouldBe($"{CommentsPath}?since={Uri.EscapeDataString(GitHubTime(Yesterday))}&per_page=100&page=1");
         result.ShouldBeOfType<GitHubCommentList.Listed>().ShouldSatisfyAllConditions(
             listed => listed.Complete.ShouldBeTrue(),
             listed => listed.Comments.ShouldBe([
-                new GitHubComment(11, "reporter", "LGTM", new DateTimeOffset(2026, 11, 7, 10, 0, 5, TimeSpan.Zero)),
-                new GitHubComment(12, "shiplean-bot", "Done <!-- shiplean:outbox:a -->", new DateTimeOffset(2026, 11, 7, 10, 1, 0, TimeSpan.Zero)),
+                new GitHubComment(11, "reporter", "LGTM", Yesterday.AddSeconds(5)),
+                new GitHubComment(12, "shiplean-bot", "Done <!-- shiplean:outbox:a -->", Yesterday.AddMinutes(1)),
             ]));
     }
 
@@ -181,7 +187,7 @@ public class GitHubIssuesClientTests
     public async Task ListRecent_WhenPagesStayFull_ShouldStopAtFiveHundred()
     {
         // The stub answers every page with the same 100 comments, so the client has to stop on its own.
-        _server.Respond(CommentsPath, $"[{string.Join(',', Enumerable.Range(1, 100).Select(i => CommentJson(i, "someone", "x", "2026-11-07T10:00:00Z")))}]");
+        _server.Respond(CommentsPath, $"[{string.Join(',', Enumerable.Range(1, 100).Select(i => CommentJson(i, "someone", "x", Yesterday)))}]");
 
         var result = await Client().ListRecentCommentsAsync(Issue, DateTimeOffset.UnixEpoch);
 
@@ -193,19 +199,18 @@ public class GitHubIssuesClientTests
 
     [Test]
     public async Task ListRecent_WhenNotFound_ShouldFail()
-        => (await Client().ListRecentCommentsAsync(Issue, DateTimeOffset.UnixEpoch)).ShouldBe(new GitHubCommentList.Failed("404"));
+    {
+        var result = await Client().ListRecentCommentsAsync(Issue, DateTimeOffset.UnixEpoch);
+
+        result.ShouldBe(new GitHubCommentList.Failed("404"));
+    }
 
     [Test]
     public async Task SelfLogin_ShouldAskGitHubOnceAnHour()
     {
         _server.Respond("/user", """{ "login": "shiplean-bot", "id": 7 }""");
-        var clock = new FakeTimeProvider(new DateTimeOffset(2026, 11, 8, 6, 0, 0, TimeSpan.Zero));
-        var services = new ServiceCollection()
-            .AddSingleton<IHttpClientFactory>(_clients)
-            .AddSingleton<IIntegrationSettings>(new FixedIntegrationSettings(new IntegrationSettingsDto(Token, _server.BaseAddress.AbsoluteUri, null, null, [])))
-            .AddScoped<GitHubIssuesClient>()
-            .BuildServiceProvider();
-        var identity = new GitHubIdentity(services.GetRequiredService<IServiceScopeFactory>(), clock);
+        var clock = new FakeTimeProvider(TimeProvider.System.GetUtcNow());
+        var identity = new GitHubIdentity(new ClientScopes(() => Client()), clock);
 
         (await identity.SelfLoginAsync()).ShouldBe("shiplean-bot");
         clock.Advance(TimeSpan.FromMinutes(59));
@@ -215,6 +220,23 @@ public class GitHubIssuesClientTests
         clock.Advance(TimeSpan.FromMinutes(1));
         await identity.SelfLoginAsync();
         _server.Requests.ShouldBe(["GET /user", "GET /user"]);
+    }
+
+    // Scopes that each hold one new client, standing in for the host's scopes (the client is scoped there).
+    private sealed class ClientScopes(Func<GitHubIssuesClient> create) : IServiceScopeFactory
+    {
+        public IServiceScope CreateScope() => new Scope(create());
+
+        private sealed class Scope(GitHubIssuesClient client) : IServiceScope, IServiceProvider
+        {
+            public IServiceProvider ServiceProvider => this;
+
+            public object? GetService(Type serviceType) => serviceType == typeof(GitHubIssuesClient) ? client : null;
+
+            public void Dispose()
+            {
+            }
+        }
     }
 
     // One request as it left the client, read before it was sent (the client disposes it afterwards).
@@ -230,7 +252,9 @@ public class GitHubIssuesClientTests
 
         public bool HangAfterSending { get; set; }
 
-        public Dictionary<string, string> ResponseHeaders { get; } = [];
+        private readonly Dictionary<string, string> _responseHeaders = [];
+
+        public void AddResponseHeader(string name, string value) => _responseHeaders[name] = value;
 
         public HttpClient CreateClient(string name)
         {
@@ -250,7 +274,7 @@ public class GitHubIssuesClientTests
                     string.Join(", ", request.Headers.Accept),
                     body));
                 var response = await base.SendAsync(request, cancellationToken);
-                foreach (var (header, value) in owner.ResponseHeaders)
+                foreach (var (header, value) in owner._responseHeaders)
                 {
                     response.Headers.TryAddWithoutValidation(header, value);
                 }
