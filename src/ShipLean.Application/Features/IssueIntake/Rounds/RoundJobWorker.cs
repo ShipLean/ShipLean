@@ -1,0 +1,109 @@
+using System.Text.Json;
+using Dapper;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Npgsql;
+using ShipLean.Contracts.Agents;
+using ShipLean.Contracts.IssueIntake;
+
+namespace ShipLean.Application.Features.IssueIntake.Rounds;
+
+// Runs one `round` job at a time (D18): starts the issue's propose session as the project's run-as member (D8), with the round
+// prompt and the closest items. Resumable: a propose session on the item created since the job was enqueued means an earlier
+// claim got as far as the start, so the job only completes and nothing starts twice. A starter block (no connection, no
+// repository, a live session) or no run-as member holds the issue and completes the job in one transaction. A project that no
+// longer takes the repository completes the job with nothing done. Anything thrown fails the job, which retries with backoff.
+public sealed class RoundJobWorker(
+    IIssueJobs jobs,
+    IGitHubIssueStore issues,
+    RoundHolds holds,
+    ClosestItems closest,
+    IAgentSessionStarter starter,
+    IServiceScopeFactory scopes,
+    NpgsqlDataSource dataSource,
+    ILogger<RoundJobWorker> logger)
+{
+    // False when no round job was due.
+    public async Task<bool> RunNextAsync(CancellationToken cancellationToken)
+    {
+        var job = await jobs.ClaimNextAsync(IssueJobKind.Round, cancellationToken);
+        if (job is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            await RunAsync(job, cancellationToken);
+        }
+        catch (Exception failed) when (failed is not OperationCanceledException)
+        {
+            logger.LogError(failed, "Round job {JobId} for github_issue {IssueId} failed", job.Id, job.GitHubIssueId);
+            await jobs.FailAsync(job.Id, job.LeaseToken, failed.Message, null, CancellationToken.None);
+        }
+
+        return true;
+    }
+
+    private async Task RunAsync(IssueJob job, CancellationToken cancellationToken)
+    {
+        var issue = await issues.FindByIdAsync(job.GitHubIssueId, null, cancellationToken)
+            ?? throw new InvalidOperationException($"No github_issue {job.GitHubIssueId}.");
+        if (await StartedSinceAsync(issue.WorkItemId, job.CreatedAt, cancellationToken))
+        {
+            await jobs.CompleteAsync(job.Id, job.LeaseToken, null, cancellationToken);
+            return;
+        }
+
+        var project = await TakingProject.FindAsync(scopes, issue, cancellationToken);
+        if (project is null)
+        {
+            logger.LogInformation("Round job {JobId}: {Issue} is no longer taken by its project", job.Id, issue.Issue);
+            await jobs.CompleteAsync(job.Id, job.LeaseToken, null, cancellationToken);
+            return;
+        }
+
+        if (project.RunAsUserId is not { } runAs)
+        {
+            await HoldAsync(job, RoundHolds.NoRunAs, cancellationToken);
+            return;
+        }
+
+        var round = JsonSerializer.Deserialize<RoundJobPayload>(job.Payload)?.Round
+            ?? throw new InvalidOperationException($"Round job {job.Id} has no round.");
+        var related = await closest.FindAsync(issue, runAs, cancellationToken);
+        var prompt = RoundPrompt.Build(project.ProposalInstructions, round, related);
+        var outcome = await starter.StartWinnerAsync(
+            issue.WorkItemId, runAs, null, null, (_, _) => Task.FromResult(prompt), cancellationToken, AgentSessionMode.Propose, related);
+        if (outcome.Block is { } block)
+        {
+            await HoldAsync(job, JsonNamingPolicy.CamelCase.ConvertName(block.ToString()), cancellationToken);
+            return;
+        }
+
+        await jobs.CompleteAsync(job.Id, job.LeaseToken, null, cancellationToken);
+    }
+
+    private async Task<bool> StartedSinceAsync(Guid workItemId, DateTimeOffset since, CancellationToken cancellationToken)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        return await connection.ExecuteScalarAsync<bool>(new CommandDefinition(
+            "SELECT EXISTS (SELECT 1 FROM agent_session WHERE work_item_id = @workItemId AND mode = 'propose' AND created_at >= @since)",
+            new { workItemId, since = since.ToUniversalTime() },
+            cancellationToken: cancellationToken));
+    }
+
+    // The hold and the job's completion commit together; a stale lease (another worker has the job now) drops both.
+    private async Task HoldAsync(IssueJob job, string reason, CancellationToken cancellationToken)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        var issue = await issues.FindByIdAsync(job.GitHubIssueId, transaction, cancellationToken)
+            ?? throw new InvalidOperationException($"No github_issue {job.GitHubIssueId}.");
+        await holds.HoldAsync(issue, reason, transaction, cancellationToken);
+        if (await jobs.CompleteAsync(job.Id, job.LeaseToken, transaction, cancellationToken))
+        {
+            await transaction.CommitAsync(cancellationToken);
+        }
+    }
+}
