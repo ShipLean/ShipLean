@@ -6,12 +6,15 @@ using ShipLean.Contracts.Events;
 namespace ShipLean.Application.Features.IssueIntake.Progress;
 
 // The hosted loop around ProgressReconciler (D13): a pass every 60 seconds, and one sooner when a WorkItemUpdated or LinksChanged
-// event nudges it (nudges that arrive during a pass coalesce into one more pass). The events only wake the loop: what to post is
+// event nudges it (nudges that arrive during a pass coalesce into one more pass). Only events of a project whose intake is on
+// nudge: the set is read again before each pass, so a project that turns intake on is picked up by the next timed pass. The events only wake the loop: what to post is
 // always worked out from stored state, so a lost event or a restart loses nothing. Like ProposalJobService it starts without the
 // starter's execution context, and a pass that fails is logged rather than allowed to stop the host.
 public sealed class ProgressService(ProgressReconciler reconciler, IProjectEvents events, TimeProvider time, ILogger<ProgressService> logger) : BackgroundService
 {
     private static readonly TimeSpan Every = TimeSpan.FromSeconds(60);
+
+    private volatile IReadOnlySet<Guid> _intakeProjects = new HashSet<Guid>();
 
     private readonly Channel<bool> _nudges = Channel.CreateBounded<bool>(new BoundedChannelOptions(1) { FullMode = BoundedChannelFullMode.DropWrite });
 
@@ -30,7 +33,7 @@ public sealed class ProgressService(ProgressReconciler reconciler, IProjectEvent
     {
         using var subscription = events.Subscribe(null, projectEvent =>
         {
-            if (projectEvent is WorkItemUpdated or LinksChanged)
+            if ((projectEvent is WorkItemUpdated or LinksChanged) && _intakeProjects.Contains(projectEvent.ProjectId))
             {
                 _nudges.Writer.TryWrite(true);
             }
@@ -74,6 +77,7 @@ public sealed class ProgressService(ProgressReconciler reconciler, IProjectEvent
     {
         try
         {
+            _intakeProjects = await reconciler.IntakeProjectsAsync(stoppingToken);
             await reconciler.RunPassAsync(stoppingToken);
         }
         catch (Exception failed) when (failed is not OperationCanceledException)

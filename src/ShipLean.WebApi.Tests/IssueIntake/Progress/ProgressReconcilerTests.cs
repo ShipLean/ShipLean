@@ -26,7 +26,8 @@ public class ProgressReconcilerTests : ApiFixture
         services.AddScoped<IIssueIntakeSettings>(sp => sp.GetRequiredService<FixedIssueIntakeSettings>());
         services.AddSingleton<IGitHubOutbox, DbGitHubOutbox>();
         services.AddSingleton<FixedImagePublications>();
-        services.AddSingleton<IImagePublications>(sp => sp.GetRequiredService<FixedImagePublications>());
+        services.AddSingleton<HookedImagePublications>();
+        services.AddSingleton<IImagePublications>(sp => sp.GetRequiredService<HookedImagePublications>());
     };
 
     private ProgressReconciler Reconciler => Host.Services.GetRequiredService<ProgressReconciler>();
@@ -100,7 +101,9 @@ public class ProgressReconcilerTests : ApiFixture
         body.ShouldEndWith(ProgressMessages.ClosingCompleted);
         outbox[1].Kind.ShouldBe("close");
         outbox[1].Reason.ShouldBe("completed");
-        (await IssueAsync(arranged.Issue.Id)).Phase.ShouldBe(IssuePhase.Closed);
+
+        // The close is only enqueued: the phase moves to closed once it was sent (Close_WhenSent_ShouldMovePhaseToClosed).
+        (await IssueAsync(arranged.Issue.Id)).Phase.ShouldBe(IssuePhase.Accepted);
     }
 
     [Test]
@@ -125,7 +128,7 @@ public class ProgressReconcilerTests : ApiFixture
         var outbox = await OutboxAsync(arranged.Issue.Id);
         outbox.Select(o => o.Kind).ShouldBe(["comment", "close"]);
         outbox[0].Body.ShouldNotBeNull().ShouldContain(ShippedInSection.NotYetPublished);
-        (await IssueAsync(arranged.Issue.Id)).Phase.ShouldBe(IssuePhase.Closed);
+        (await IssueAsync(arranged.Issue.Id)).Phase.ShouldBe(IssuePhase.Accepted);
     }
 
     [Test]
@@ -196,7 +199,7 @@ public class ProgressReconcilerTests : ApiFixture
         outbox.Select(o => o.Kind).ShouldBe(["comment", "close"]);
         outbox[0].Body.ShouldBe(ProgressMessages.Removed(arranged.Key, "Add the thing"));
         outbox[1].Reason.ShouldBe("not_planned");
-        (await IssueAsync(arranged.Issue.Id)).Phase.ShouldBe(IssuePhase.Closed);
+        (await IssueAsync(arranged.Issue.Id)).Phase.ShouldBe(IssuePhase.Accepted);
     }
 
     [Test]
@@ -243,6 +246,194 @@ public class ProgressReconcilerTests : ApiFixture
         held.Phase.ShouldBe(IssuePhase.Accepted);
         held.LastPosted[ProgressReconciler.HeldKey(ProgressReconciler.Removed)].ShouldBe(ProgressReconciler.NoBaseUrl);
         (await ShipLeanCommentsAsync(arranged.ItemId)).ShouldHaveSingleItem().ShouldContain("Set the instance base URL");
+    }
+
+    [Test]
+    public async Task Done_WhenItemReopenedWhileReading_ShouldPostNothing()
+    {
+        var arranged = await ArrangeAsync();
+        var pull = await AddPullAsync(arranged, "merged");
+        Host.Services.GetRequiredService<FixedImagePublications>().Set(pull.Sha, new ImagePublication.NotApplicable());
+        await MoveAsync(arranged, "completed");
+
+        // The facts are read before the transaction; the item is reopened right then, before the lock is taken.
+        Host.Services.GetRequiredService<HookedImagePublications>().Once(() => MoveAsync(arranged, "inProgress"));
+        await Reconciler.ReconcileAsync(arranged.Issue.Id, CancellationToken.None);
+
+        (await OutboxAsync(arranged.Issue.Id)).ShouldBeEmpty();
+        var issue = await IssueAsync(arranged.Issue.Id);
+        issue.Phase.ShouldBe(IssuePhase.Accepted);
+        issue.LastPosted.ShouldNotContainKey(ProgressReconciler.Done);
+    }
+
+    [Test]
+    public async Task Close_WhenItemReopenedBeforeDelivery_ShouldNotSendClose()
+    {
+        var arranged = await ArrangeAsync();
+        await MoveAsync(arranged, "completed");
+        await Reconciler.ReconcileAsync(arranged.Issue.Id, CancellationToken.None);
+        (await OutboxAsync(arranged.Issue.Id)).Select(o => o.Kind).ShouldBe(["comment", "close"]);
+
+        await MoveAsync(arranged, "inProgress");
+        await Reconciler.ReconcileAsync(arranged.Issue.Id, CancellationToken.None);
+
+        // Neither the pending close nor the pending done message goes out.
+        var doneKey = ProgressReconciler.DedupeKey(arranged.Issue.Id, ProgressReconciler.Done);
+        var closeKey = ProgressReconciler.DedupeKey(arranged.Issue.Id, ProgressReconciler.Close);
+        var cancelled = (await OutboxAsync(arranged.Issue.Id)).Where(o => o.DedupeKey == doneKey || o.DedupeKey == closeKey).ToList();
+        cancelled.Count.ShouldBe(2);
+        cancelled.ShouldAllBe(o => o.SentAt != null && o.LastResult == ProgressReconciler.SkippedItemReopened);
+        var reopened = await IssueAsync(arranged.Issue.Id);
+        reopened.Phase.ShouldBe(IssuePhase.Accepted);
+        reopened.LastPosted.ShouldNotContainKey(ProgressReconciler.Done);
+        reopened.LastPosted.ShouldNotContainKey(ProgressReconciler.Close);
+
+        // Done again: the done message and the close are due again, under fresh dedupe keys.
+        await MoveAsync(arranged, "completed");
+        await Reconciler.ReconcileAsync(arranged.Issue.Id, CancellationToken.None);
+        var due = (await OutboxAsync(arranged.Issue.Id))
+            .Where(o => o.SentAt is null && (o.DedupeKey.StartsWith(doneKey, StringComparison.Ordinal) || o.DedupeKey.StartsWith(closeKey, StringComparison.Ordinal)));
+        due.Select(o => o.DedupeKey).ShouldBe([doneKey + ":r1", closeKey + ":r1"]);
+    }
+
+    [Test]
+    public async Task Close_WhenIssueClosedBeforeDeliveryThenReopened_ShouldPostDoneAndCloseOnce()
+    {
+        var arranged = await ArrangeAsync();
+        await MoveAsync(arranged, "completed");
+        await Reconciler.ReconcileAsync(arranged.Issue.Id, CancellationToken.None);
+
+        // GitHub closes the issue before delivery, so the deliverer finishes both entries unsent.
+        (await Issues.SetOpenOnGitHubAsync(arranged.Issue.Id, false, Now)).ShouldBeTrue();
+        await FinishAllAsync(arranged.Issue.Id, "skipped: issue closed");
+        await Reconciler.RunPassAsync(CancellationToken.None);
+        (await OutboxAsync(arranged.Issue.Id)).Where(o => o.SentAt is null).ShouldBeEmpty();
+        (await IssueAsync(arranged.Issue.Id)).Phase.ShouldBe(IssuePhase.Accepted);
+
+        (await Issues.SetOpenOnGitHubAsync(arranged.Issue.Id, true, Now.AddSeconds(1))).ShouldBeTrue();
+        await Reconciler.ReconcileAsync(arranged.Issue.Id, CancellationToken.None);
+        await Reconciler.ReconcileAsync(arranged.Issue.Id, CancellationToken.None);
+        await FinishAllAsync(arranged.Issue.Id, "ok");
+        await Reconciler.ReconcileAsync(arranged.Issue.Id, CancellationToken.None);
+
+        var sent = (await OutboxAsync(arranged.Issue.Id)).Where(o => o.LastResult == "ok").ToList();
+        sent.Select(o => o.Kind).ShouldBe(["comment", "close"]);
+        sent[0].Body.ShouldNotBeNull().ShouldStartWith($"{arranged.Key} \"Add the thing\" is done.");
+        sent.Select(o => o.DedupeKey).ShouldAllBe(k => k.EndsWith(":r1", StringComparison.Ordinal));
+        (await IssueAsync(arranged.Issue.Id)).Phase.ShouldBe(IssuePhase.Closed);
+    }
+
+    [Test]
+    public async Task Close_WhenSent_ShouldMovePhaseToClosed()
+    {
+        var arranged = await ArrangeAsync();
+        await MoveAsync(arranged, "removed");
+        await Reconciler.ReconcileAsync(arranged.Issue.Id, CancellationToken.None);
+
+        await FinishAsync(arranged.Issue.Id, "comment", "ok");
+        await Reconciler.ReconcileAsync(arranged.Issue.Id, CancellationToken.None);
+        (await IssueAsync(arranged.Issue.Id)).Phase.ShouldBe(IssuePhase.Accepted);
+
+        // The close went out and GitHub's closed event came back, so the issue is no longer open: the pass still finishes it.
+        await FinishAsync(arranged.Issue.Id, "close", "ok");
+        (await Issues.SetOpenOnGitHubAsync(arranged.Issue.Id, false, Now)).ShouldBeTrue();
+        await Reconciler.RunPassAsync(CancellationToken.None);
+
+        (await IssueAsync(arranged.Issue.Id)).Phase.ShouldBe(IssuePhase.Closed);
+        (await OutboxAsync(arranged.Issue.Id)).Count.ShouldBe(2);
+    }
+
+    [Test]
+    public async Task Done_WhenFeatureHasTwelveChildren_ShouldFindEveryChildsCommit()
+    {
+        var arranged = await ArrangeAsync(type: "feature");
+        var children = await AddChildrenAsync(arranged, 12);
+        var pull = await AddPullAsync(arranged, "merged", children[11].Id);
+        Host.Services.GetRequiredService<FixedImagePublications>().Set(pull.Sha, new ImagePublication.NotApplicable());
+        await MoveAsync(arranged, "completed");
+
+        await Reconciler.ReconcileAsync(arranged.Issue.Id, CancellationToken.None);
+
+        var done = (await OutboxAsync(arranged.Issue.Id)).First(o => o.Kind == "comment");
+        done.Body.ShouldNotBeNull().ShouldContain($"- {children[11].Key}: commit `{pull.Sha[..7]}`");
+    }
+
+    [Test]
+    public async Task Done_WhenMergeCommitNotReported_ShouldWaitFiveMinutes()
+    {
+        var arranged = await ArrangeAsync();
+        await AddPullAsync(arranged, "merged", withoutSha: true);
+        await MoveAsync(arranged, "completed");
+
+        await Reconciler.ReconcileAsync(arranged.Issue.Id, CancellationToken.None);
+        (await OutboxAsync(arranged.Issue.Id)).ShouldBeEmpty();
+        (await IssueAsync(arranged.Issue.Id)).LastPosted.ShouldContainKey(ProgressReconciler.DoneSeen);
+
+        await Issues.MarkPostedAsync(arranged.Issue.Id, ProgressReconciler.DoneSeen, Now.AddMinutes(-4).ToString("O", CultureInfo.InvariantCulture));
+        await Reconciler.ReconcileAsync(arranged.Issue.Id, CancellationToken.None);
+        (await OutboxAsync(arranged.Issue.Id)).ShouldBeEmpty();
+
+        await Issues.MarkPostedAsync(arranged.Issue.Id, ProgressReconciler.DoneSeen, (Now - ProgressReconciler.MergeShaWait).AddMinutes(-1).ToString("O", CultureInfo.InvariantCulture));
+        await Reconciler.ReconcileAsync(arranged.Issue.Id, CancellationToken.None);
+        var outbox = await OutboxAsync(arranged.Issue.Id);
+        outbox.Select(o => o.Kind).ShouldBe(["comment", "close"]);
+        outbox[0].Body.ShouldNotBeNull().ShouldContain(ShippedInSection.Unconfirmed);
+    }
+
+    // A pull request posts its current link_state only: one opened and merged between two passes posts "merged" alone.
+    [Test]
+    public async Task PullRequest_WhenOpenedAndMergedInOnePass_ShouldPostMergedOnly()
+    {
+        var arranged = await ArrangeAsync();
+        var pull = await AddPullAsync(arranged, "merged");
+
+        await Reconciler.ReconcileAsync(arranged.Issue.Id, CancellationToken.None);
+
+        var posted = (await OutboxAsync(arranged.Issue.Id)).ShouldHaveSingleItem();
+        posted.DedupeKey.ShouldBe(ProgressReconciler.DedupeKey(
+            arranged.Issue.Id, ProgressReconciler.PullMilestone($"github.com/shiplean-tests/progress/pull/{pull.Number}", "merged")));
+    }
+
+    [Test]
+    public async Task Reconcile_WhenSprintChanged_ShouldPostNewSprint()
+    {
+        var arranged = await ArrangeAsync();
+        var first = await AddSprintAsync(arranged, "Sprint 4");
+        var second = await AddSprintAsync(arranged, "Sprint 5");
+        await SetSprintAsync(arranged.ItemId, first);
+        await Reconciler.ReconcileAsync(arranged.Issue.Id, CancellationToken.None);
+
+        await SetSprintAsync(arranged.ItemId, second);
+        await Reconciler.ReconcileAsync(arranged.Issue.Id, CancellationToken.None);
+
+        var outbox = await OutboxAsync(arranged.Issue.Id);
+        outbox.Select(o => o.DedupeKey).ShouldBe([
+            ProgressReconciler.DedupeKey(arranged.Issue.Id, ProgressReconciler.SprintMilestone(first)),
+            ProgressReconciler.DedupeKey(arranged.Issue.Id, ProgressReconciler.SprintMilestone(second))]);
+        outbox[1].Body.ShouldNotBeNull().ShouldContain("Sprint 5");
+    }
+
+    [Test]
+    public async Task Reconcile_WhenSprintAndChildTitlesHoldEmails_ShouldPostThemGuarded()
+    {
+        var arranged = await ArrangeAsync(type: "feature");
+        var sprintId = await AddSprintAsync(arranged, "Sprint for ann@example.com");
+        await SetSprintAsync(arranged.ItemId, sprintId);
+        var child = (await AddChildrenAsync(arranged, 1))[0];
+        await using (var database = await OpenDatabaseAsync())
+        {
+            await database.ExecuteAsync("UPDATE work_item SET title = 'Ask bob@example.com' WHERE id = @id", new { id = child.Id });
+        }
+
+        await SetCategoryAsync(arranged, child.Id, "story", "completed");
+        await Reconciler.ReconcileAsync(arranged.Issue.Id, CancellationToken.None);
+
+        var outbox = await OutboxAsync(arranged.Issue.Id);
+        outbox.Select(o => o.DedupeKey).ShouldBe([
+            ProgressReconciler.DedupeKey(arranged.Issue.Id, ProgressReconciler.SprintMilestone(sprintId)),
+            ProgressReconciler.DedupeKey(arranged.Issue.Id, ProgressReconciler.ChildMilestone(child.Id))]);
+        outbox.ShouldAllBe(o => !o.Body!.Contains("example.com"));
+        outbox[1].Body.ShouldNotBeNull().ShouldContain($"{child.Key} \"Ask");
     }
 
     private static DateTimeOffset Minute(DateTimeOffset at) => at.AddTicks(-(at.Ticks % TimeSpan.TicksPerMinute));
@@ -307,7 +498,38 @@ public class ProgressReconcilerTests : ApiFixture
         await database.ExecuteAsync("UPDATE work_item SET sprint_id = @sprintId WHERE id = @itemId", new { itemId, sprintId });
     }
 
-    private async Task<(int Number, string Sha)> AddPullAsync(Arranged arranged, string state)
+    private async Task<List<(Guid Id, string Key)>> AddChildrenAsync(Arranged arranged, int count)
+    {
+        var children = new List<(Guid Id, string Key)>();
+        for (var i = 0; i < count; i++)
+        {
+            var (id, key, _) = await arranged.Dispatch.CreateItemAsync(Api);
+            children.Add((id, key));
+            await using var database = await OpenDatabaseAsync();
+            await database.ExecuteAsync("UPDATE work_item SET parent_id = @parent, parent_type = 'feature' WHERE id = @id", new { parent = arranged.ItemId, id });
+        }
+
+        return children;
+    }
+
+    // Finishes the issue's pending entries as the deliverer would: 'ok' when sent, or a skip.
+    private async Task FinishAllAsync(Guid issueId, string result)
+    {
+        await using var database = await OpenDatabaseAsync();
+        await database.ExecuteAsync(
+            "UPDATE github_outbox SET sent_at = now(), last_result = @result WHERE github_issue_id = @issueId AND sent_at IS NULL", new { issueId, result });
+    }
+
+    private async Task FinishAsync(Guid issueId, string kind, string result)
+    {
+        await using var database = await OpenDatabaseAsync();
+        var finished = await database.ExecuteAsync(
+            "UPDATE github_outbox SET sent_at = now(), last_result = @result WHERE github_issue_id = @issueId AND kind = @kind AND sent_at IS NULL",
+            new { issueId, kind, result });
+        finished.ShouldBe(1);
+    }
+
+    private async Task<(int Number, string Sha)> AddPullAsync(Arranged arranged, string state, Guid? itemId = null, bool withoutSha = false)
     {
         var number = Random.Shared.Next(1, int.MaxValue);
         var sha = Convert.ToHexStringLower(Guid.NewGuid().ToByteArray());
@@ -319,13 +541,13 @@ public class ProgressReconcilerTests : ApiFixture
             INSERT INTO work_item_link (id, source_id, link_type, url, title, created_by, created_at)
             VALUES (@linkId, @item, 'url', @url, 'Pull request', @joel, now())
             """,
-            new { linkId = Guid.NewGuid(), item = arranged.ItemId, url, joel = SeedIds.Users.Joel });
+            new { linkId = Guid.NewGuid(), item = itemId ?? arranged.ItemId, url, joel = SeedIds.Users.Joel });
         await database.ExecuteAsync(
             """
             INSERT INTO link_state (url_key, url, state, as_of, source, merge_commit_sha, merged_at)
             VALUES (@urlKey, @url, @state, now(), 'github', @sha, CASE WHEN @merged THEN now() END)
             """,
-            new { urlKey = $"github.com/shiplean-tests/progress/pull/{number}", url, state, sha = merged ? sha : null, merged });
+            new { urlKey = $"github.com/shiplean-tests/progress/pull/{number}", url, state, sha = merged && !withoutSha ? sha : null, merged });
         return (number, sha);
     }
 
@@ -335,7 +557,7 @@ public class ProgressReconcilerTests : ApiFixture
     {
         await using var database = await OpenDatabaseAsync();
         return [.. await database.QueryAsync<OutboxRow>(
-            "SELECT dedupe_key AS dedupeKey, kind, body, reason FROM github_outbox WHERE github_issue_id = @issueId ORDER BY seq", new { issueId })];
+            "SELECT dedupe_key AS dedupeKey, kind, body, reason, sent_at AS sentAt, last_result AS lastResult FROM github_outbox WHERE github_issue_id = @issueId ORDER BY seq", new { issueId })];
     }
 
     private async Task<List<string>> ShipLeanCommentsAsync(Guid workItemId)
@@ -347,5 +569,27 @@ public class ProgressReconcilerTests : ApiFixture
 
     private sealed record Arranged(AgentDispatchArrange Dispatch, Guid ItemId, string Key, string Type, GitHubIssueRecord Issue);
 
-    private sealed record OutboxRow(string DedupeKey, string Kind, string? Body, string? Reason);
+    private sealed record OutboxRow(string DedupeKey, string Kind, string? Body, string? Reason, DateTimeOffset? SentAt, string? LastResult);
+
+    // FixedImagePublications with a one-time action before an answer: lets a test change the item while the facts are read.
+    private sealed class HookedImagePublications(FixedImagePublications answers) : IImagePublications
+    {
+        private Func<Task>? _once;
+
+        public void Once(Func<Task> action)
+        {
+            _once = action;
+        }
+
+        public async Task<ImagePublication> FindAsync(IssueRef repository, string sha, CancellationToken cancellationToken = default)
+        {
+            var action = Interlocked.Exchange(ref _once, null);
+            if (action is not null)
+            {
+                await action();
+            }
+
+            return await answers.FindAsync(repository, sha, cancellationToken);
+        }
+    }
 }
