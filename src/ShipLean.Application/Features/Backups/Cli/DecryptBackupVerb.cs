@@ -91,6 +91,7 @@ internal sealed class DecryptBackupVerb(IBackupCipher cipher)
     {
         var partial = target + ".partial";
         var created = false;
+        var published = false;
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(target))!);
@@ -102,16 +103,19 @@ internal sealed class DecryptBackupVerb(IBackupCipher cipher)
             }
 
             File.Move(partial, target, overwrite: false);
+            published = true;
             return null;
         }
         catch (Exception ex) when (ex is BackupDecryptException or IOException or UnauthorizedAccessException)
         {
-            if (created)
+            return ex.Message;
+        }
+        finally
+        {
+            if (created && !published)
             {
                 File.Delete(partial);
             }
-
-            return ex.Message;
         }
     }
 }

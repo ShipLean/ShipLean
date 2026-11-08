@@ -100,6 +100,18 @@ public class BackupCommandsTests
     }
 
     [Test]
+    public async Task Decrypt_WhenPassphraseOnStdin_ShouldDecrypt()
+    {
+        var source = Encrypted("in/db.slbk", Plain(100), Passphrase);
+        var target = Path.Combine(_dir, "out");
+
+        var run = await RunAsync(["decrypt-backup", "--in", source, "--out", target], null, null, new StringReader(Passphrase + "\n"));
+
+        run.Exit.ShouldBe(0, run.Error);
+        (await File.ReadAllBytesAsync(target)).ShouldBe(Plain(100));
+    }
+
+    [Test]
     public async Task Decrypt_WhenNoArguments_ShouldExitTwo()
     {
         var run = await RunAsync(["decrypt-backup"]);
@@ -150,6 +162,36 @@ public class BackupCommandsTests
         (await store.ExistsAsync("attachments/good", CancellationToken.None)).ShouldBeTrue();
         (await store.ExistsAsync("attachments/bad", CancellationToken.None)).ShouldBeFalse();
         run.Error.ShouldContain("bad.slbk");
+    }
+
+    [Test]
+    public async Task RestoreBlobs_WhenObjectTruncated_ShouldPutNothingForIt()
+    {
+        // Cut off after the first record has decrypted: the blob must not reach the store, as the whole file decrypts first.
+        await EncryptedBlobAsync("in/cut.slbk", "attachments/cut", "text/plain", new string('x', MultiRecordSize), Passphrase);
+        var source = Path.Combine(_dir, "in/cut.slbk");
+        var bytes = await File.ReadAllBytesAsync(source);
+        await File.WriteAllBytesAsync(source, bytes[..^100]);
+
+        var run = await RunAsync(["restore-blobs", "--in", Path.Combine(_dir, "in")]);
+
+        run.Exit.ShouldBe(1);
+        (await new LocalDiskBlobStore(_blobRoot).ExistsAsync("attachments/cut", CancellationToken.None)).ShouldBeFalse();
+        run.Error.ShouldContain("cut.slbk");
+    }
+
+    [Test]
+    public async Task RestoreBlobs_WhenStoreMisconfigured_ShouldExitOne()
+    {
+        await EncryptedBlobAsync("in/a.slbk", "attachments/one", "text/plain", "x", Passphrase);
+
+        var run = await RunAsync(
+            ["restore-blobs", "--in", Path.Combine(_dir, "in")],
+            Passphrase,
+            (BlobStoreServices.S3ConnectionKey, "nonsense=1"));
+
+        run.Exit.ShouldBe(1);
+        run.Error.ShouldContain("blob store from SHIPLEAN_BLOB_* could not be opened");
     }
 
     [Test]
@@ -215,7 +257,8 @@ public class BackupCommandsTests
         BackupCommands.Handles("restore-blobs").ShouldBeTrue();
     }
 
-    private async Task<CliRun> RunAsync(string[] args, string? passphrase = Passphrase, (string Key, string Value)? extra = null)
+    private async Task<CliRun> RunAsync(
+        string[] args, string? passphrase = Passphrase, (string Key, string Value)? extra = null, TextReader? input = null)
     {
         var settings = new Dictionary<string, string?>
         {
@@ -230,7 +273,7 @@ public class BackupCommandsTests
 
         var output = new StringWriter();
         var error = new StringWriter();
-        var exit = await BackupCommands.RunAsync(args, TextReader.Null, output, error, new ConfigurationBuilder().AddInMemoryCollection(settings).Build());
+        var exit = await BackupCommands.RunAsync(args, input ?? TextReader.Null, output, error, new ConfigurationBuilder().AddInMemoryCollection(settings).Build());
         return new CliRun(exit, output.ToString(), error.ToString());
     }
 

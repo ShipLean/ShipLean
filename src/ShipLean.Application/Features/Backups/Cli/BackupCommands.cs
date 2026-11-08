@@ -30,10 +30,10 @@ public static class BackupCommands
     public static bool Handles(string verb) => verb is "decrypt-backup" or "restore-blobs";
 
     public static Task<int> RunAsync(IReadOnlyList<string> args, TextReader input, TextWriter output, TextWriter error)
-        => RunAsync(args, input, output, error, null);
+        => RunAsync(args, input, output, error, new ConfigurationBuilder().AddEnvironmentVariables().Build());
 
-    // settings, when given, is read after the environment and so wins over it.
-    public static async Task<int> RunAsync(IReadOnlyList<string> args, TextReader input, TextWriter output, TextWriter error, IConfiguration? settings)
+    // configuration is the only source of settings: the host's appsettings and user secrets are never read.
+    public static async Task<int> RunAsync(IReadOnlyList<string> args, TextReader input, TextWriter output, TextWriter error, IConfiguration configuration)
     {
         var decrypt = args.Count > 0 && args[0] == "decrypt-backup";
         var (options, problem) = args.Count > 0 && Handles(args[0])
@@ -46,7 +46,7 @@ public static class BackupCommands
             return 2;
         }
 
-        using var host = Build(settings);
+        using var host = Build(configuration);
         var passphrase = host.Services.GetRequiredService<IConfiguration>()[PassphraseKey];
         if (string.IsNullOrEmpty(passphrase))
         {
@@ -66,14 +66,10 @@ public static class BackupCommands
     }
 
     // Only what the verbs need: the blob store, the cipher and the temp files. Build() never starts the hosted services.
-    private static IHost Build(IConfiguration? settings)
+    private static IHost Build(IConfiguration configuration)
     {
-        var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { ContentRootPath = AppContext.BaseDirectory });
-        builder.Logging.ClearProviders();
-        if (settings is not null)
-        {
-            builder.Configuration.AddConfiguration(settings);
-        }
+        var builder = Host.CreateEmptyApplicationBuilder(new HostApplicationBuilderSettings { ContentRootPath = AppContext.BaseDirectory });
+        builder.Configuration.AddConfiguration(configuration);
 
         new BlobStoreServices().AddServices(builder.Services, builder.Configuration);
         new BackupCipherServices().AddServices(builder.Services, builder.Configuration);
@@ -83,7 +79,18 @@ public static class BackupCommands
 
     private static async Task<int> RunRestoreAsync(IHost host, IBackupCipher cipher, CliOptions options, string passphrase, TextWriter output, TextWriter error)
     {
-        var store = host.Services.GetRequiredService<IBlobStore>();
+        IBlobStore store;
+        try
+        {
+            store = host.Services.GetRequiredService<IBlobStore>();
+        }
+        catch (Exception ex) when (ex is FormatException or ArgumentException or InvalidOperationException)
+        {
+            // These come from parsing the SHIPLEAN_BLOB_* settings; their messages name the setting, not its value.
+            await error.WriteLineAsync($"blob store from SHIPLEAN_BLOB_* could not be opened: {ex.GetType().Name}: {ex.Message}");
+            return 1;
+        }
+
         var tempFiles = host.Services.GetRequiredService<BackupTempFiles>();
         return await new RestoreBlobsVerb(cipher, store, tempFiles).RunAsync(options, passphrase, output, error, CancellationToken.None);
     }
