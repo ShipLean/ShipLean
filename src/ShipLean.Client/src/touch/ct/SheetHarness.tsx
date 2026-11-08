@@ -48,6 +48,13 @@ export function SheetHarness({ variant }: { variant: SheetHarnessVariant }) {
           data-testid={sheetHarnessIds.ctSheetSearch}
           type="search"
           placeholder="Search people"
+          // Like a real search field: Esc clears it first, and marks that Esc handled so the sheet stays open.
+          onKeyDown={(event) => {
+            if (event.key === 'Escape' && event.currentTarget.value !== '') {
+              event.currentTarget.value = '';
+              event.preventDefault();
+            }
+          }}
           className="h-10 rounded-control border border-edge bg-canvas px-2"
         />
       ) : null}

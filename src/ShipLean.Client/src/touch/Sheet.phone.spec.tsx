@@ -8,10 +8,11 @@ import { touchTestIds } from './testIds';
 const THEMES = ['light', 'dark'] as const;
 
 /**
- * A real touch drag (CDP), straight down by `dy` px in `steps` moves, from the centre of `testId`. With `stepMs`, the
- * page's fake clock (installed by the caller) advances that much before each move, so the drag's speed is exact.
+ * A real touch drag (CDP), straight down by `dy` px (up when negative) in `steps` moves, from the centre of `testId`.
+ * With `stepMs`, the page's fake clock (installed by the caller) advances that much before each move, so the drag's
+ * speed is exact.
  */
-async function swipeDown(page: Page, testId: string, dy: number, steps: number, stepMs?: number) {
+async function touchDrag(page: Page, testId: string, dy: number, steps: number, stepMs?: number) {
   const box = await page.getByTestId(testId).boundingBox();
   if (!box) throw new Error(`${testId} is not visible`);
   const x = box.x + box.width / 2;
@@ -80,7 +81,7 @@ test('Sheet_WhenCloseTapped_ShouldClose', async ({ mount, page }) => {
 
 test('Sheet_WhenSwipedDown_ShouldClose', async ({ mount, page }) => {
   await mount(<SheetHarness variant="basic" />);
-  await swipeDown(page, touchTestIds.sheetTitle, 200, 10);
+  await touchDrag(page, touchTestIds.sheetTitle, 200, 10);
   await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
   await expect(page.getByTestId(sheetHarnessIds.ctSheetState)).toHaveText('closed');
 });
@@ -91,7 +92,7 @@ test('Sheet_WhenSwipedALittle_ShouldStayOpen', async ({ mount, page }) => {
   const sheet = page.getByTestId(touchTestIds.sheet);
   const before = (await sheet.boundingBox())!.y;
   // 30px over 600ms (fake clock): neither past the 80px threshold nor a flick.
-  await swipeDown(page, touchTestIds.sheetTitle, 30, 10, 60);
+  await touchDrag(page, touchTestIds.sheetTitle, 30, 10, 60);
   await expect(sheet).toBeVisible();
   await expect(page.getByTestId(sheetHarnessIds.ctSheetState)).toHaveText('open');
   // It snaps back to where it was.
@@ -119,14 +120,37 @@ test('Sheet_WhenContentIsLong_ShouldScrollItsBodyOnly', async ({ mount, page }) 
   // The long title stays on one line.
   expect((await page.getByTestId(touchTestIds.sheetTitle).boundingBox())!.height).toBeLessThan(32);
 
-  await body.hover();
-  await page.mouse.wheel(0, 400);
+  // A finger dragging the list scrolls it (only the grab bar and head take the swipe) and leaves the sheet open.
+  await touchDrag(page, touchTestIds.sheetBody, -300, 10);
   await expect.poll(() => body.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+  await expect(page.getByTestId(sheetHarnessIds.ctSheetState)).toHaveText('open');
   // The grab bar and head stay put, and the page behind does not scroll.
   await expect(page.getByTestId(touchTestIds.sheetGrab)).toBeInViewport();
   await expect(page.getByTestId(touchTestIds.sheetClose)).toBeInViewport();
   expect(await page.evaluate(() => window.scrollY)).toBe(0);
   expect(await sheet.evaluate((el) => el.scrollTop)).toBe(0);
+
+  // Dragging the list back down scrolls it back; it does not swipe the sheet closed.
+  const scrolled = await body.evaluate((el) => el.scrollTop);
+  await touchDrag(page, touchTestIds.sheetBody, 150, 10);
+  await expect.poll(() => body.evaluate((el) => el.scrollTop)).toBeLessThan(scrolled);
+  await expect(sheet).toBeVisible();
+  await expect(page.getByTestId(sheetHarnessIds.ctSheetState)).toHaveText('open');
+});
+
+test('Sheet_WhenAFieldInsideHandledEsc_ShouldStayOpen', async ({ mount, page }) => {
+  await mount(<SheetHarness variant="search" />);
+  const search = page.getByTestId(sheetHarnessIds.ctSheetSearch);
+  await search.tap();
+  await search.fill('ann');
+  // The field uses this Esc itself (it clears the search) and marks it handled.
+  await page.keyboard.press('Escape');
+  await expect(search).toHaveValue('');
+  await expect(page.getByTestId(sheetHarnessIds.ctSheetState)).toHaveText('open');
+  await expect(page.getByTestId(touchTestIds.sheet)).toBeVisible();
+  // An Esc the field leaves alone (it is empty now) closes the sheet.
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
 });
 
 test('Sheet_WhenEscPressedInsideADialog_ShouldCloseOnlyTheSheet', async ({ mount, page }) => {
