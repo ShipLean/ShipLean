@@ -62,7 +62,21 @@ public class PhoneContextTests : SeededAcceptanceTest
         page.ShouldContain(line => line.StartsWith("page scrolls sideways in " + ShellMainDescription, StringComparison.Ordinal));
     }
 
-    private const string ShellMainDescription = "main [data-testid=" + AppTestIds.ShellMain + "]";
+    // A mobile context widens window.innerWidth to fit overflowing content, so the page check must use the layout
+    // viewport (documentElement.clientWidth), which stays at 390.
+    [Test]
+    public async Task TouchRules_WhenTheDocumentScrollsSideways_ShouldReportThePageScrolling()
+    {
+        await Page.GotoAsync(Links.Home());
+        await Expect(Page.GetByTestId(AppTestIds.ShellMain)).ToBeVisibleAsync();
+        await Page.EvaluateAsync("() => { const wide = document.createElement('div'); wide.style.width = '1200px'; wide.style.height = '1px'; document.body.append(wide); }");
+
+        var page = await TouchRules.ViolationsAsync(Page);
+
+        page.ShouldContain(line => line.StartsWith("page scrolls sideways: ", StringComparison.Ordinal));
+    }
+
+    private const string ShellMainDescription ="main [data-testid=" + AppTestIds.ShellMain + "]";
 
     private async Task OpenTaskboardAsync()
     {

@@ -26,7 +26,7 @@ public static class TouchRules
           const within = (selector) => [...(root.matches(selector) ? [root] : []), ...root.querySelectorAll(selector)].filter(visible);
           if (pageScroll) {
             const doc = document.documentElement;
-            if (doc.scrollWidth > window.innerWidth) lines.push(`page scrolls sideways: scrollWidth ${doc.scrollWidth} > innerWidth ${window.innerWidth}`);
+            if (doc.scrollWidth > doc.clientWidth) lines.push(`page scrolls sideways: scrollWidth ${doc.scrollWidth} > clientWidth ${doc.clientWidth}`);
             const main = document.querySelector(`[data-testid="${shellMainTestId}"]`);
             if (main && main.scrollWidth > main.clientWidth) lines.push(`page scrolls sideways in ${describe(main)}: scrollWidth ${main.scrollWidth} > clientWidth ${main.clientWidth}`);
           } else if (root.scrollWidth > root.clientWidth) {

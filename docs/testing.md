@@ -96,7 +96,7 @@ Screens that support phones (below 900px, see `docs/mobile.md`) are checked at 3
   the rules hold: no sideways scroll; every visible `input`, `textarea` and `select` at a computed font size of at least
   16px (named by its `data-testid`); every visible button, `a[href]` and `[role=button]` at least 32×32px, except links
   inside Markdown (`ComponentTestIds.Markdown`). `ViolationsAsync(page)` checks the whole page, including page-level
-  sideways scroll: the document's `scrollWidth <= innerWidth`, and the shell main's (`AppTestIds.ShellMain`)
+  sideways scroll: the document's `scrollWidth <= clientWidth` (not `innerWidth`, which a mobile context widens to fit overflow), and the shell main's (`AppTestIds.ShellMain`)
   `scrollWidth <= clientWidth`, because the main region has `overflow-auto` and scrolls in place of the document.
   `ViolationsAsync(page, within)` checks only the elements inside `within`, and `within`'s own `scrollWidth <=
   clientWidth` instead of the page's. **Lane tests use the `within` form on their own regions**: sibling tasks build the
