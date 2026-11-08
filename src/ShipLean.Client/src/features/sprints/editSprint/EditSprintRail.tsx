@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { ApiRequestError } from '../../../api/client';
+import { Dialog } from '../../../components/Dialog';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import type { SprintDto, SprintUpdate } from '../../../api/sprints';
 import { SprintForm, type SprintFormIds, type SprintFormValues } from '../form/SprintForm';
 import { useUpdateSprint } from '../sprintsApi';
@@ -26,9 +28,11 @@ interface EditSprintRailProps {
 /**
  * The Edit sprint form: the sprint's name, dates and goal, prefilled. An ended sprint's dates are shown but locked (the
  * server refuses them). It sends only what changed, so a name edit never touches the dates. A refusal from the server
- * (overlap, name taken) shows beside Save. Mount it with `key={sprint.id}` so a different sprint starts clean.
+ * (overlap, name taken) shows beside Save. Mount it with `key={sprint.id}` so a different sprint starts clean. At 900px
+ * and below it opens in the full-screen Dialog (SHIP-724 D9), whose ✕ cancels.
  */
 export function EditSprintRail({ projectId, sprint, onDone }: EditSprintRailProps) {
+  const { touch } = useTouchShell();
   const update = useUpdateSprint(projectId, sprint.id);
   // Only what the person has typed: the rest follows the sprint, so a refetch under the open form is not lost.
   const [edited, setEdited] = useState<Partial<SprintFormValues>>({});
@@ -88,6 +92,30 @@ export function EditSprintRail({ projectId, sprint, onDone }: EditSprintRailProp
         ? 'The sprint could not be saved.'
         : '';
 
+  const body = (
+    <SprintForm
+      idPrefix={`edit-sprint-${sprint.id}`}
+      ids={EDIT_SPRINT_IDS}
+      values={form}
+      nameRef={nameRef}
+      onChange={change}
+      onSubmit={submit}
+      submitLabel="Save"
+      pending={update.isPending}
+      error={error}
+      datesLocked={ended}
+      datesHint="This sprint has ended, so its dates can't change. Its name and goal can."
+      onCancel={onDone}
+    />
+  );
+
+  if (touch) {
+    return (
+      <Dialog title="Edit sprint" onClose={onDone}>
+        <div data-testid={ids.editSprint}>{body}</div>
+      </Dialog>
+    );
+  }
   return (
     <aside
       data-testid={ids.editSprint}
@@ -96,20 +124,7 @@ export function EditSprintRail({ projectId, sprint, onDone }: EditSprintRailProp
       <div className="text-[length:var(--text-xs)] font-semibold tracking-wide text-ink-muted uppercase">
         Edit sprint
       </div>
-      <SprintForm
-        idPrefix={`edit-sprint-${sprint.id}`}
-        ids={EDIT_SPRINT_IDS}
-        values={form}
-        nameRef={nameRef}
-        onChange={change}
-        onSubmit={submit}
-        submitLabel="Save"
-        pending={update.isPending}
-        error={error}
-        datesLocked={ended}
-        datesHint="This sprint has ended, so its dates can't change. Its name and goal can."
-        onCancel={onDone}
-      />
+      {body}
     </aside>
   );
 }
