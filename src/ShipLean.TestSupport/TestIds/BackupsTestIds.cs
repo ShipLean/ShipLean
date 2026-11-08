@@ -38,4 +38,5 @@ public static class BackupsTestIds
     public const string BackupsRunNowError = "backups-run-now-error";
     public const string BackupsRunRow = "backups-run-row";
     public const string BackupsRunError = "backups-run-error";
+    public const string BackupsRunErrorToggle = "backups-run-error-toggle";
 }

@@ -35,4 +35,5 @@ export const backupsTestIds = {
   backupsRunNowError: 'backups-run-now-error',
   backupsRunRow: 'backups-run-row',
   backupsRunError: 'backups-run-error',
+  backupsRunErrorToggle: 'backups-run-error-toggle',
 } as const;
