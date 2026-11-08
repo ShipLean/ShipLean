@@ -247,6 +247,55 @@ public class ProposalJobTests : ApiFixture
     }
 
     [Test]
+    public async Task Proposal_WhenReopenCopySkippedThenReopenedAgain_ShouldPostNextCopy()
+    {
+        var (issue, sessionId) = await ArrangeAsync();
+        var at = DateTimeOffset.FromUnixTimeSeconds(1_800_000_000);
+        await ChangedAsync(issue, IssueAction.Closed, at);
+        await EnqueueAsync(issue, sessionId, Response("A fix is proposed.", Valid));
+        await DrainAsync();
+        var original = (await OutboxAsync(issue.Id)).ShouldHaveSingleItem();
+        await SkipClosedAsync(issue.Id);
+        await ChangedAsync(issue, IssueAction.Reopened, at.AddMinutes(1));
+        await ChangedAsync(issue, IssueAction.Closed, at.AddMinutes(2));
+        await SkipClosedAsync(issue.Id);
+
+        await ChangedAsync(issue, IssueAction.Reopened, at.AddMinutes(3));
+
+        var rows = await OutboxAsync(issue.Id);
+        var key = ProposalJobWorker.DedupeKey(sessionId);
+        rows.Select(r => r.DedupeKey).ShouldBe([key, $"{key}:reopen", $"{key}:reopen:2"]);
+        var repost = rows[^1];
+        repost.Sent.ShouldBeFalse();
+        repost.Body.ShouldBe(original.Body);
+    }
+
+    [Test]
+    public async Task Proposal_WhenSkipCommitsDuringReopen_ShouldRepost()
+    {
+        var (issue, sessionId) = await ArrangeAsync();
+        var at = DateTimeOffset.FromUnixTimeSeconds(1_800_000_000);
+        await ChangedAsync(issue, IssueAction.Closed, at);
+        await EnqueueAsync(issue, sessionId, Response("A fix is proposed.", Valid));
+        await DrainAsync();
+
+        // The deliverer's skip, mid-transaction: it holds the outbox's per-issue lock and has marked the entry skipped.
+        await using var deliverer = await OpenDatabaseAsync();
+        await using var skip = await deliverer.BeginTransactionAsync();
+        await deliverer.ExecuteAsync("SELECT pg_advisory_xact_lock(hashtextextended('github_outbox:' || @Id::text, 0))", new { issue.Id }, skip);
+        await deliverer.ExecuteAsync(
+            "UPDATE github_outbox SET sent_at = now(), last_result = 'skipped: issue closed' WHERE github_issue_id = @Id AND sent_at IS NULL", new { issue.Id }, skip);
+        var pid = await deliverer.ExecuteScalarAsync<int>("SELECT pg_backend_pid()", transaction: skip);
+        var reopen = Task.Run(() => ChangedAsync(issue, IssueAction.Reopened, at.AddMinutes(1)));
+        await WaitUntilBlockedByAsync(pid, reopen);
+        await skip.CommitAsync();
+        await reopen;
+
+        var repost = (await OutboxAsync(issue.Id)).Where(o => !o.Sent).ShouldHaveSingleItem();
+        repost.DedupeKey.ShouldBe($"{ProposalJobWorker.DedupeKey(sessionId)}:reopen");
+    }
+
+    [Test]
     public async Task Proposal_WhenReopenedBeforeDelivery_ShouldNotEnqueueAgain()
     {
         var (issue, sessionId) = await ArrangeAsync();
@@ -465,6 +514,18 @@ public class ProposalJobTests : ApiFixture
             action != IssueAction.Closed, null, "reporter", false, at);
         await using var scope = Host.Services.CreateAsyncScope();
         await scope.ServiceProvider.GetRequiredService<IIssueIntake>().ChangedAsync(changed, CancellationToken.None);
+    }
+
+    // Polls pg_stat_activity (a round trip each, no sleep) until a backend waits on a lock that blocker holds.
+    private async Task WaitUntilBlockedByAsync(int blocker, Task paused)
+    {
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        await using var probe = await OpenDatabaseAsync();
+        while (!await probe.ExecuteScalarAsync<bool>(new CommandDefinition(
+            "SELECT EXISTS (SELECT 1 FROM pg_stat_activity WHERE @blocker = ANY(pg_blocking_pids(pid)))", new { blocker }, cancellationToken: timeout.Token)))
+        {
+            paused.IsCompleted.ShouldBeFalse("the reopen finished without waiting for the skip's lock");
+        }
     }
 
     // What the outbox deliverer does with an entry while the issue is closed on GitHub: finishes it unsent.

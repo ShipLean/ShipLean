@@ -100,28 +100,34 @@ public sealed class DbIssueIntake(
     }
 
     // A proposal written while the issue was closed on GitHub was enqueued and then skipped by the deliverer (X3). On a reopen,
-    // while that proposal is still the one awaiting a reply, it is enqueued again once (dedupe proposal:<sessionId>:reopen).
-    // An entry still pending is left alone: the deliverer sends it now that the issue is open, so nothing posts twice.
+    // while that proposal is still the one awaiting a reply, it is enqueued again when its latest copy was skipped: the first
+    // copy under proposal:<sessionId>:reopen, each later one under proposal:<sessionId>:reopen:<n> with the next n. A copy still
+    // pending is left alone: the deliverer sends it now that the issue is open, so nothing posts twice. The outbox's per-issue
+    // lock comes first (OutboxClaims.LockIssueAsync, as the deliverer's skip takes it), so the skip either commits before this
+    // check, which then reposts, or rechecks open_on_github after this reopen commits and sends instead of skipping.
     private async Task RepostProposalAsync(Guid issueId, DbTransaction transaction, CancellationToken cancellationToken)
     {
-        var skipped = await transaction.Connection!.QuerySingleOrDefaultAsync<SkippedProposal>(new CommandDefinition(
+        await OutboxClaims.LockIssueAsync(transaction, issueId, cancellationToken);
+        var copies = (await transaction.Connection!.QueryAsync<ProposalCopy>(new CommandDefinition(
             """
-            SELECT i.proposal_session_id AS sessionId, o.body
+            SELECT i.proposal_session_id AS sessionId, o.body, o.last_result AS lastResult, o.sent_at IS NOT NULL AS done
             FROM github_issue i
-            JOIN github_outbox o ON o.github_issue_id = i.id AND o.dedupe_key = 'proposal:' || i.proposal_session_id::text
-            WHERE i.id = @issueId AND i.phase IN ('awaitingReply', 'alreadyShipped')
-              AND o.sent_at IS NOT NULL AND o.last_result = @skippedClosed AND o.body IS NOT NULL
+            JOIN github_outbox o ON o.github_issue_id = i.id
+             AND (o.dedupe_key = 'proposal:' || i.proposal_session_id::text OR o.dedupe_key LIKE 'proposal:' || i.proposal_session_id::text || ':reopen%')
+            WHERE i.id = @issueId AND i.phase IN ('awaitingReply', 'alreadyShipped') AND o.body IS NOT NULL
+            ORDER BY o.seq
             """,
-            new { issueId, skippedClosed = OutboxClaims.SkippedClosed },
+            new { issueId },
             transaction,
-            cancellationToken: cancellationToken));
-        if (skipped is not null)
+            cancellationToken: cancellationToken))).ToList();
+        if (copies.Count > 0 && copies[^1] is { Done: true, LastResult: OutboxClaims.SkippedClosed } latest)
         {
-            await outbox.EnqueueAsync(OutboxEntry.Comment(issueId, $"proposal:{skipped.SessionId}:reopen", skipped.Body), transaction, cancellationToken);
+            var key = copies.Count == 1 ? $"proposal:{latest.SessionId}:reopen" : $"proposal:{latest.SessionId}:reopen:{copies.Count}";
+            await outbox.EnqueueAsync(OutboxEntry.Comment(issueId, key, latest.Body), transaction, cancellationToken);
         }
     }
 
-    private sealed record SkippedProposal(Guid SessionId, string Body);
+    private sealed record ProposalCopy(Guid SessionId, string Body, string? LastResult, bool Done);
 
     public async Task<IssueOutcome> TakeAsync(IssueCommentEvent comment, CancellationToken cancellationToken)
     {
