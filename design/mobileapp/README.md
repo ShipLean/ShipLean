@@ -8,6 +8,7 @@ These are throwaway HTML mock-ups, not the Expo app. They use `../tokens.css`, s
 |---|---|
 | `app.css`, `app.js` | The kit: phone frame (390 × 844), top bar, tab bar with the hold-to-talk button, detail-screen voice dock, rows, state pills, progress, ask cards, and the voice sheets (listening, preview, undo toast, voice notes). |
 | `work-item.html`, `backlog.html`, `feature-board.html`, `retro.html`, `setup.html` | One file per area; each declares its states with `App.screen`. `setup.html` is first run (sign in, choosing the voice models, the download) and Settings › Voice. |
+| `search.html` | Search (SHIP-928): the web's quick search popup (Ctrl/⌘+P) on the phone, with the same results, and the ways to reach it fast: the icon, holding the mic and sliding up, asking “where's…?”, the app icon's quick action, and Back Tap, the Action button or Siri. Decisions D1–D12 in `search.md`. |
 | `<area>.md` | Design notes per area: what's on the screen, the voice commands it offers, decisions to confirm. |
 | `index.html` | The review page: every state of every area side by side. |
 | `screenshots.sh` | Regenerates `images/<area>-<state>.<theme>.png` with headless Chrome. |
