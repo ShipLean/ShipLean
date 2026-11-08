@@ -68,6 +68,7 @@
   .menu:not(.mention-menu) .sheet-head { position: sticky; top: 0; z-index: 1; padding-left: var(--space-2); background: var(--color-surface); }
   .menu:not(.mention-menu) .opt { min-height: var(--touch-target); font-size: var(--text-base); white-space: normal; }
   .menu:not(.mention-menu) .grp { padding-top: 10px; }
+  .menu:not(.mention-menu) .opt .health { font-size: var(--text-base); }
   .menu:not(.mention-menu) .msearch .field { height: 40px; }
   .mention-menu { top: auto !important; bottom: calc(100% + 4px); left: 0 !important; right: 0; width: auto !important; }
   .mention-menu .opt { min-height: 40px; }
@@ -142,6 +143,10 @@
   /* Feature: status band, links as one column of cards */
   .band { padding: var(--space-3); gap: var(--space-2); }
   .band .stbig { justify-self: start; }
+  .band .bstate { justify-self: start; gap: var(--space-2); }
+  .band .hbtn { height: 36px; padding: 0 10px 0 12px; }
+  .hseg { width: 100%; }
+  .hseg button { flex: 1; justify-content: center; padding: 0 6px; }
   .band .acts { display: grid; grid-template-columns: 1fr 1fr; }
   .band .acts .btn { justify-content: center; height: 40px; }
   .band .txt { font-size: var(--text-md); line-height: 1.4; }
