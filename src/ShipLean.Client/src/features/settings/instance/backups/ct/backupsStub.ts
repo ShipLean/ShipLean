@@ -1,4 +1,5 @@
 import cronJson from '../../../../../../../ShipLean.TestSupport/PinnedShapes/backup-cron-preview.json' with { type: 'json' };
+import runJson from '../../../../../../../ShipLean.TestSupport/PinnedShapes/backup-run.json' with { type: 'json' };
 import settingsJson from '../../../../../../../ShipLean.TestSupport/PinnedShapes/backup-settings.json' with { type: 'json' };
 
 interface StubRoute {
@@ -15,6 +16,8 @@ export const backupsConfigured = settingsJson.configured;
 export const backupsNotConfigured = settingsJson.notConfigured;
 // The pinned valid answer of POST /api/instance/backups/cron-preview.
 export const cronPreviewValid = cronJson.valid;
+// The pinned runs (C-PIN): running, succeeded, failed, abandoned.
+export const backupRuns = runJson;
 
 export interface BackupsStubOptions {
   /** What GET returns. */
@@ -25,11 +28,15 @@ export interface BackupsStubOptions {
   rejectPut?: { error: string; field?: string; status?: number };
   /** What POST cron-preview answers for any cron (default: the pinned valid example). */
   cronPreview?: unknown;
+  /** When set, POST run answers this error (default status 409) instead of starting a run. */
+  rejectRun?: { error: string; code?: string; status?: number };
 }
 
 export interface BackupsStub {
   /** Every PUT body, in order. */
   puts: unknown[];
+  /** How many POST run requests came in. */
+  runs: number;
 }
 
 // Call before mounting. A PUT stores the fields it sets over the settings, and the next GET returns them.
@@ -38,10 +45,23 @@ export const stubBackupsApi = async (
   options: BackupsStubOptions = {},
 ): Promise<BackupsStub> => {
   let current = (options.initial ?? backupsConfigured) as Record<string, unknown>;
-  const stub: BackupsStub = { puts: [] };
+  const stub: BackupsStub = { puts: [], runs: 0 };
   await page.route('**/api/instance/backups/cron-preview', (route) =>
     route.fulfill({ json: options.cronPreview ?? cronPreviewValid }),
   );
+  // POST run starts the pinned running run: the next GET has it at the top of the history and health running.
+  await page.route('**/api/instance/backups/run', (route) => {
+    stub.runs += 1;
+    if (options.rejectRun) {
+      return route.fulfill({
+        status: options.rejectRun.status ?? 409,
+        json: { error: options.rejectRun.error, code: options.rejectRun.code ?? 'conflict' },
+      });
+    }
+    const runs = (current.runs ?? []) as unknown[];
+    current = { ...current, health: 'running', runs: [runJson.running, ...runs] };
+    return route.fulfill({ json: runJson.running });
+  });
   await page.route('**/api/instance/backups', (route) => {
     const request = route.request();
     if (request.method() === 'PUT') {
