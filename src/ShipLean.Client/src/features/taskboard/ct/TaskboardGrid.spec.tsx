@@ -25,8 +25,8 @@ test('TaskboardGrid_WhenItsScrollerScrolls_ShouldKeepTheColumnHeadersAtTheTop', 
   mount,
   page,
 }) => {
-  await page.setViewportSize({ width: 600, height: 500 });
-  await mount(<GridHarness rowIndexes={[0, 1, 2]} scrollerHeight={160} />, route);
+  await page.setViewportSize({ width: 901, height: 500 });
+  await mount(<GridHarness rowIndexes={[0, 1, 2]} scrollerHeight={160} extraColumns={2} />, route);
   const scroller = page.getByTestId('scroller');
   const header = page.getByTestId(ids.columnHeader).first();
 
