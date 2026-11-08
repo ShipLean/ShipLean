@@ -66,7 +66,14 @@ public sealed class AcceptJobWorker(
         catch (Exception failed) when (failed is not OperationCanceledException)
         {
             logger.LogError(failed, "Accept job {JobId} for github_issue {IssueId} failed", job.Id, job.GitHubIssueId);
-            await jobs.FailAsync(job.Id, job.LeaseToken, failed.Message, null, CancellationToken.None);
+            if (job.Attempts >= IIssueJobs.MaxAttempts)
+            {
+                await FailForGoodAsync(job, failed.Message, CancellationToken.None);
+            }
+            else
+            {
+                await jobs.FailAsync(job.Id, job.LeaseToken, failed.Message, null, CancellationToken.None);
+            }
         }
 
         return true;
@@ -393,6 +400,46 @@ public sealed class AcceptJobWorker(
         }
 
         return row.OpenOnGitHub;
+    }
+
+    // The last try failed: in one transaction the job fails for good, accepting goes back to the phase it came from (awaitingReply,
+    // or alreadyShipped for an alreadyShipped proposal), and a ShipLean note by the run-as member says a maintainer can retry. The
+    // note's CommentsChanged is published after commit. Only while the issue is still accepting this job's session.
+    private async Task FailForGoodAsync(IssueJob job, string error, CancellationToken cancellationToken)
+    {
+        var sessionId = JsonSerializer.Deserialize<AcceptJobPayload>(job.Payload)?.SessionId;
+        CommentsChanged? changed = null;
+        await using (var connection = await dataSource.OpenConnectionAsync(cancellationToken))
+        await using (var transaction = await connection.BeginTransactionAsync(cancellationToken))
+        {
+            if (!await jobs.FailAsync(job.Id, job.LeaseToken, error, transaction, cancellationToken))
+            {
+                return;
+            }
+
+            await connection.ExecuteAsync(new CommandDefinition(
+                "SELECT 1 FROM github_issue WHERE id = @GitHubIssueId FOR UPDATE", new { job.GitHubIssueId }, transaction, cancellationToken: cancellationToken));
+            var issue = await issues.FindByIdAsync(job.GitHubIssueId, transaction, cancellationToken);
+            if (issue is { Phase: IssuePhase.Accepting } && issue.ProposalSessionId == sessionId)
+            {
+                var back = AcceptanceReads.TryReadProposal(issue.Proposal, out var proposal, out _) ? PhaseBefore(proposal) : IssuePhase.AwaitingReply;
+                await issues.SetPhaseAsync(issue.Id, Accepting, back, transaction, cancellationToken);
+                if ((await TakingProject.FindAsync(scopes, issue, cancellationToken))?.RunAsUserId is { } runAs)
+                {
+                    await using var scope = scopes.CreateAsyncScope();
+                    await scope.ServiceProvider.GetRequiredService<ICommentStore>().AddAsAgentAsync(
+                        issue.WorkItemId, new CommentCreate(AcceptanceTexts.Failed), RoundHolds.AgentName, runAs, transaction, cancellationToken);
+                    changed = new CommentsChanged(issue.ProjectId, issue.WorkItemId);
+                }
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+        }
+
+        if (changed is not null)
+        {
+            await events.PublishAsync(changed);
+        }
     }
 
     // The LGTM is let go: accepting goes back to the phase it came from, with the job's completion.

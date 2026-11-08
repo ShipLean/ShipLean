@@ -28,6 +28,9 @@ public static class AcceptanceTexts
 
     public static string Unsafe(string reason) => $"Held for a maintainer: the acceptance reply did not pass the public text check ({reason}). Nothing was accepted.";
 
+    // The ShipLean note on the item when an accept job failed for good and the issue went back to waiting for a reply.
+    public const string Failed = "Accepting the proposal failed, and ShipLean stopped trying. Nothing more was accepted. A maintainer can retry: reply LGTM on the GitHub issue, or comment /shiplean there.";
+
     public static string BusyKey(long commentId) => $"busy:{commentId}";
 
     public static string QuestionsKey(long commentId) => $"needs-info:{commentId}";

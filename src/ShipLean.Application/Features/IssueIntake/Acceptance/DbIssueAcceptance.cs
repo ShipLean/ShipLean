@@ -1,3 +1,4 @@
+using System.Data.Common;
 using System.Text.Json;
 using Dapper;
 using Npgsql;
@@ -9,7 +10,7 @@ namespace ShipLean.Application.Features.IssueIntake.Acceptance;
 
 // IIssueAcceptance over the stores (D19). An LGTM acts only while the issue is open on GitHub and its phase is awaitingReply or
 // alreadyShipped, on the latest proposal, and only when it came after that proposal was posted: its GitHub comment id is greater
-// than the github_comment_id of the sent outbox entry proposal:<session> (or proposal:<session>:reopen). GitHub comment ids only
+// than the github_comment_id of the sent outbox entry proposal:<session> (or a proposal:<session>:reopen[:<n>] copy). GitHub comment ids only
 // grow, so no clock is needed; an LGTM for an earlier proposal, or one given before this one was posted, is only mirrored. It
 // writes nothing but the durable intent: an accept job keyed by the proposal session, enqueued in one transaction with the
 // compare-and-set of the phase to accepting (GitHub never redelivers, so the job is what finishes the acceptance; AcceptJobWorker
@@ -23,7 +24,8 @@ public sealed class DbIssueAcceptance(
     IIssueJobs jobs,
     IGitHubOutbox outbox,
     IIssueReplies replies,
-    IWorkItemStore workItems) : IIssueAcceptance
+    IWorkItemStore workItems,
+    TimeProvider clock) : IIssueAcceptance
 {
     private static readonly IssuePhase[] Acceptable = [IssuePhase.AwaitingReply, IssuePhase.AlreadyShipped];
 
@@ -59,17 +61,37 @@ public sealed class DbIssueAcceptance(
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         // The compare-and-set locks the row: a round or hold that moves the phase waits for this commit (and then finds accepting),
         // or wins first and this LGTM changes nothing. The transaction rolls back unless it commits below.
+        // A close that committed after the first read is seen here, under the row lock, and the LGTM changes nothing.
         if (!await issues.SetPhaseAsync(record.Id, [record.Phase], IssuePhase.Accepting, transaction, cancellationToken)
-            || (await issues.FindByIdAsync(record.Id, transaction, cancellationToken))?.ProposalSessionId != sessionId)
+            || await issues.FindByIdAsync(record.Id, transaction, cancellationToken) is not { OpenOnGitHub: true } locked
+            || locked.ProposalSessionId != sessionId)
         {
             return IssueOutcome.Ignored;
         }
 
         var payload = JsonSerializer.Serialize(new AcceptJobPayload(comment.CommentId, sessionId, record.WorkItemId));
-        await jobs.EnqueueAsync(IssueJobKind.Accept, AcceptanceTexts.JobKey(sessionId), record.Id, record.ProjectId, payload, transaction, cancellationToken);
+        if (!await jobs.EnqueueAsync(IssueJobKind.Accept, AcceptanceTexts.JobKey(sessionId), record.Id, record.ProjectId, payload, transaction, cancellationToken)
+            && !await RearmAsync(AcceptanceTexts.JobKey(sessionId), payload, transaction, cancellationToken))
+        {
+            return IssueOutcome.Ignored;
+        }
+
         await transaction.CommitAsync(cancellationToken);
         return IssueOutcome.Processed((await workItems.GetAsync(record.WorkItemId, cancellationToken)).Key);
     }
+
+    // A maintainer's retry: this session's accept job already ran and let the LGTM go (it failed for good, or was released), so it
+    // is made due again from its first attempt with this LGTM's payload. False when it is still pending (nothing more to do).
+    private async Task<bool> RearmAsync(string key, string payload, DbTransaction transaction, CancellationToken cancellationToken)
+        => await transaction.Connection!.ExecuteAsync(new CommandDefinition(
+            """
+            UPDATE issue_job SET status = 'pending', attempts = 0, next_attempt_at = @now, payload = @payload::jsonb, last_error = NULL,
+                                 done_at = NULL, leased_until = NULL, lease_token = NULL
+            WHERE key = @key AND status IN ('failed', 'done')
+            """,
+            new { key, payload, now = clock.GetUtcNow() },
+            transaction,
+            cancellationToken: cancellationToken)) == 1;
 
     // True when the LGTM's comment came after the proposal of this session was posted on GitHub.
     private async Task<bool> PostedBeforeAsync(Guid sessionId, long commentId, CancellationToken cancellationToken)
@@ -77,8 +99,8 @@ public sealed class DbIssueAcceptance(
         var key = ProposalJobWorker.DedupeKey(sessionId);
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var posted = await connection.ExecuteScalarAsync<long?>(new CommandDefinition(
-            "SELECT max(github_comment_id) FROM github_outbox WHERE dedupe_key IN (@key, @reopen) AND sent_at IS NOT NULL",
-            new { key, reopen = AcceptanceTexts.ReopenedProposalKey(sessionId) },
+            "SELECT max(github_comment_id) FROM github_outbox WHERE (dedupe_key = @key OR dedupe_key LIKE @reopen) AND sent_at IS NOT NULL",
+            new { key, reopen = AcceptanceTexts.ReopenedProposalKey(sessionId) + "%" },
             cancellationToken: cancellationToken));
         return posted is { } id && commentId > id;
     }

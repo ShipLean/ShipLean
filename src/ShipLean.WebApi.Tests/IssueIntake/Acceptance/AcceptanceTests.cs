@@ -267,6 +267,53 @@ public class AcceptanceTests : ApiFixture
     }
 
     [Test]
+    public async Task Accept_WhenClosedBetweenReadAndReserve_ShouldDoNothing()
+    {
+        var issue = await ArrangeAsync(Proposal("new", "story", "Closed while reserving"));
+
+        // The close is written but not committed: the LGTM reads the issue open, then waits on the row lock to reserve.
+        await using var closer = await OpenDatabaseAsync();
+        await using var close = await closer.BeginTransactionAsync();
+        await closer.ExecuteAsync("UPDATE github_issue SET open_on_github = false WHERE id = @Id", new { issue.Id }, close);
+        var pid = await closer.ExecuteScalarAsync<int>("SELECT pg_backend_pid()", transaction: close);
+        var accept = Task.Run(() => AcceptAsync(issue));
+        await WaitUntilBlockedByAsync(pid, accept);
+        await close.CommitAsync();
+
+        (await accept).ShouldBe(IssueOutcome.Ignored);
+        (await JobCountAsync(issue.Id)).ShouldBe(0);
+        (await RecordAsync(issue.Id)).Phase.ShouldBe(IssuePhase.AwaitingReply);
+    }
+
+    [Test]
+    public async Task Accept_WhenJobFailsForGood_ShouldReleaseAndNoteAndAllowRetry()
+    {
+        var issue = await ArrangeAsync(Proposal("new", "story", "Fails for good"));
+        await AcceptAsync(issue);
+        await using (var database = await OpenDatabaseAsync())
+        {
+            // The next claim is the last attempt.
+            await database.ExecuteAsync(
+                "UPDATE issue_job SET attempts = @last WHERE github_issue_id = @Id AND kind = 'accept'", new { last = IIssueJobs.MaxAttempts - 1, issue.Id });
+        }
+
+        Store.CrashOnAccepted = true;
+
+        (await Worker.RunNextAsync(CancellationToken.None)).ShouldBeTrue();
+
+        (await RecordAsync(issue.Id)).Phase.ShouldBe(IssuePhase.AwaitingReply);
+        var note = (await ShipLeanCommentsAsync(issue.WorkItemId)).ShouldHaveSingleItem();
+        note.Body.ShouldBe(AcceptanceTexts.Failed);
+        note.AuthorId.ShouldBe(SeedIds.Users.Joel);
+        (await OutboxAsync(issue.Id)).ShouldBeEmpty();
+
+        (await AcceptAsync(issue, commentId: 11)).Outcome.ShouldBe(WebhookOutcome.Processed);
+        (await RecordAsync(issue.Id)).Phase.ShouldBe(IssuePhase.Accepting);
+        (await Worker.RunNextAsync(CancellationToken.None)).ShouldBeTrue();
+        (await RecordAsync(issue.Id)).Phase.ShouldBe(IssuePhase.Accepted);
+    }
+
+    [Test]
     public async Task Accept_WhenParentInOtherProject_ShouldIgnoreParent()
     {
         var elsewhere = await CreateItemAsync(SeedIds.Projects.Pay, WorkItemTypeId.Feature, "A feature of another project");
@@ -509,6 +556,18 @@ public class AcceptanceTests : ApiFixture
         var written = (await scope.ServiceProvider.GetRequiredService<IWorkItemStore>()
             .CreateAsync(new WorkItemCreate(projectId, type, title, null, null, null), WriteOptions.FromWebhook("GitHub tests"))).Written!;
         return (written.Id, written.Key);
+    }
+
+    // Polls pg_stat_activity (a round trip each, no sleep) until a backend waits on a lock that blocker holds.
+    private async Task WaitUntilBlockedByAsync(int blocker, Task paused)
+    {
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        await using var probe = await OpenDatabaseAsync();
+        while (!await probe.ExecuteScalarAsync<bool>(new CommandDefinition(
+            "SELECT EXISTS (SELECT 1 FROM pg_stat_activity WHERE @blocker = ANY(pg_blocking_pids(pid)))", new { blocker }, cancellationToken: timeout.Token)))
+        {
+            paused.IsCompleted.ShouldBeFalse("the LGTM finished without waiting for the close's row lock");
+        }
     }
 
     private async Task<GitHubIssueRecord> RecordAsync(Guid id) => (await Store.FindByIdAsync(id)).ShouldNotBeNull();
