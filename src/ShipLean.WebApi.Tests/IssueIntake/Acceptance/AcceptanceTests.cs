@@ -307,13 +307,30 @@ public class AcceptanceTests : ApiFixture
         }
 
         var record = (await Store.FindAsync(issueRef)).ShouldNotBeNull();
-        await Store.SaveProposalAsync(record.Id, Guid.NewGuid(), proposalJson);
+        await Store.SaveProposalAsync(record.Id, await ProposeSessionAsync(record.WorkItemId), proposalJson);
         if (phase != IssuePhase.Proposing)
         {
             (await Store.SetPhaseAsync(record.Id, [IssuePhase.Proposing], phase)).ShouldBeTrue();
         }
 
         return await RecordAsync(record.Id);
+    }
+
+    // A finished propose session on the Triage item, as the proposal that is accepted was written by one.
+    private async Task<Guid> ProposeSessionAsync(Guid workItemId)
+    {
+        var connection = Guid.NewGuid();
+        var session = Guid.NewGuid();
+        await using var database = await OpenDatabaseAsync();
+        await database.ExecuteAsync(
+            """
+            INSERT INTO agent_connection (id, type, name, receiver_url, signing_secret_protected, signing_secret_last4, callback_token_hash, callback_token_last4, created_at, updated_at)
+            VALUES (@connection, 'linear-compatible', @name, 'https://relay.example.test', 'x', 'xxxx', @hash, 'xxxx', now(), now());
+            INSERT INTO agent_session (id, work_item_id, connection_id, state, repo_url, base_branch, last_activity_at, created_by, created_at, mode)
+            VALUES (@session, @workItemId, @connection, 'completed', 'https://github.com/shiplean-tests/accept', 'main', now(), @joel, now(), 'propose');
+            """,
+            new { connection, session, workItemId, name = $"accept-{connection:N}", hash = connection.ToByteArray(), joel = SeedIds.Users.Joel });
+        return session;
     }
 
     private async Task<IssueOutcome> AcceptAsync(GitHubIssueRecord issue, long commentId = 10)
