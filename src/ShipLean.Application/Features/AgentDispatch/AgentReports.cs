@@ -5,6 +5,7 @@ using Npgsql;
 using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Comments;
 using ShipLean.Contracts.Errors;
+using ShipLean.Contracts.IssueIntake;
 using ShipLean.Contracts.Persisted;
 using ShipLean.Contracts.Webhooks;
 
@@ -20,11 +21,15 @@ namespace ShipLean.Application.Features.AgentDispatch;
 // started another session (and if a start wins the race for the live slot, the activity is kept and the session stays stale). An ephemeral activity (thought and action only) is marked replaced (replaced_at, which every read leaves out) when the session's next activity arrives.
 // The body of a response or error is also posted as a comment, written as the user who started the session and stamped with the
 // connection name, so it never becomes a `prompted` webhook. The session changed event goes out after each commit.
+// A propose session's response (D9, C4) also enqueues a `proposal` issue_job (key proposal:<sessionId>, payload { sessionId, body }) in the
+// activity's own transaction, so the response and the job that processes it commit together or not at all.
 public sealed class AgentReports(
     NpgsqlDataSource dataSource,
     ICommentStore comments,
     IPullRequestLinks pullRequestLinks,
     AgentSessionNotifier notifier,
+    IGitHubIssueStore githubIssues,
+    IIssueJobs issueJobs,
     TimeProvider time,
     ILogger<AgentReports> logger) : IAgentReports
 {
@@ -77,6 +82,11 @@ public sealed class AgentReports(
             new { id, sessionId = create.SessionId, type = create.Type, body = create.Body, action = create.Action, parameter = create.Parameter, result = create.Result, ephemeral = create.Ephemeral, signal = create.Signal, now },
             transaction, cancellationToken: cancellationToken));
         var ended = await MoveStateAsync(connection, transaction, session, create, now, cancellationToken);
+        if (create.Type == Response && session.Mode == AgentSessionModes.Propose)
+        {
+            await EnqueueProposalAsync(transaction, session, create, cancellationToken);
+        }
+
         await transaction.CommitAsync(cancellationToken);
         await notifier.ChangedAsync(create.SessionId, ended);
 
@@ -158,7 +168,7 @@ public sealed class AgentReports(
         => await connection.QuerySingleOrDefaultAsync<LockedSession>(new CommandDefinition(
             """
             SELECT work_item_id AS workItemId, state, stop_requested_at AS stopRequestedAt, created_by AS createdBy,
-                   external_urls::text AS externalUrls, plan::text AS plan
+                   external_urls::text AS externalUrls, plan::text AS plan, mode
             FROM agent_session WHERE id = @sessionId AND connection_id = @connectionId FOR UPDATE
             """,
             new { sessionId, connectionId = reporter.ConnectionId }, transaction, cancellationToken: cancellationToken))
@@ -208,6 +218,15 @@ public sealed class AgentReports(
         }
 
         return moved > 0 && ended is not null ? next : null;
+    }
+
+    // A propose session runs only on a GitHub issue's item, so the issue is always there.
+    private async Task EnqueueProposalAsync(NpgsqlTransaction transaction, LockedSession session, AgentActivityCreate create, CancellationToken cancellationToken)
+    {
+        var issue = await githubIssues.FindByWorkItemAsync(session.WorkItemId, transaction, cancellationToken)
+            ?? throw new InvalidOperationException($"The propose session {create.SessionId} is on item {session.WorkItemId}, which has no GitHub issue.");
+        var payload = JsonSerializer.Serialize(new { sessionId = create.SessionId, body = create.Body }, Json);
+        await issueJobs.EnqueueAsync(IssueJobKind.Proposal, $"proposal:{create.SessionId}", issue.Id, issue.ProjectId, payload, transaction, cancellationToken);
     }
 
     // An ended session takes no more activities or updates; the relay posts its final response while the session is still live.
@@ -297,7 +316,7 @@ public sealed class AgentReports(
 
     private sealed record StoredUrl(string Url, string? Label);
 
-    private sealed record LockedSession(Guid WorkItemId, string State, DateTimeOffset? StopRequestedAt, Guid CreatedBy, string ExternalUrls, string Plan);
+    private sealed record LockedSession(Guid WorkItemId, string State, DateTimeOffset? StopRequestedAt, Guid CreatedBy, string ExternalUrls, string Plan, string Mode);
 
     private sealed record SessionOnItem(Guid WorkItemId, Guid CreatedBy);
 }

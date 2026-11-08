@@ -15,7 +15,8 @@ namespace ShipLean.Application.Features.AgentDispatch;
 
 // Maps an item's rows onto the renderer's plain input. A comment's author is a name only (no email leaves for the receiver; the creator's does,
 // for the relay's allow-list). In propose mode only the comments mirrored from GitHub (agent name "GitHub @login") are read: ShipLean-only
-// comments never reach a proposal session (D10). Reads only; the session id and creation time are the caller's.
+// comments never reach a proposal session (D10), and each is attributed to its stamp ("GitHub @login"), not to the run-as person
+// it was written as (D17: no people's names). Reads only; the session id and creation time are the caller's.
 // Markdown attachments are read through the blob store, in upload order, up to InlineAttachmentBytes in all, counted as they will be sent (UTF-8 bytes
 // of the XML-escaped text); the first one that does not fit, and every attachment after it, is left as a link. One that cannot be read (missing or
 // failing blob) is a warning in the log, and it and the rest are links too. Without a blob store (a follow-up prompt, which sends no promptContext) all are links.
@@ -52,7 +53,7 @@ internal sealed class AgentContextLoader(NpgsqlDataSource dataSource, Lazy<IBlob
             new { workItemId }, cancellationToken: cancellationToken))).ToList();
         var comments = (await connection.QueryAsync<AgentCommentRow>(new CommandDefinition(
             """
-            SELECT c.id, c.author_id AS authorId, coalesce(u.name, '') AS authorName, c.created_at AS createdAt, c.body
+            SELECT c.id, c.author_id AS authorId, CASE WHEN @githubOnly THEN c.agent_name ELSE coalesce(u.name, '') END AS authorName, c.created_at AS createdAt, c.body
             FROM comment c LEFT JOIN app_user u ON u.id = c.author_id
             WHERE c.work_item_id = @workItemId AND c.archived_at IS NULL
               AND (NOT @githubOnly OR c.agent_name LIKE @githubPrefix)
