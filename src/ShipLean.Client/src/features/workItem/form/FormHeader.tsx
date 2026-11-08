@@ -43,6 +43,7 @@ export function FormHeader({
   const names = changedFieldNames(changed);
   return (
     <section
+      data-testid={ids.header}
       aria-label="Work item header"
       className="grid gap-2 border-b border-edge bg-panel px-4 py-3"
     >
@@ -98,7 +99,7 @@ export function FormHeader({
             rows={1}
             enterKeyHint="done"
             // 19px over the 16px touch input rule (index.css): bigger, so iOS doesn't zoom either.
-            className="w-full resize-none overflow-hidden rounded-control border border-transparent bg-transparent px-1.5 py-1 text-[19px]! leading-[1.3] font-semibold text-ink [field-sizing:content] focus-visible:bg-panel focus-visible:outline-2 focus-visible:outline-signal"
+            className="-mx-1.5 w-[calc(100%+0.75rem)] resize-none overflow-hidden rounded-control border border-transparent bg-transparent px-1.5 py-1 text-[19px]! leading-[1.3] font-semibold text-ink [field-sizing:content] focus-visible:bg-panel focus-visible:outline-2 focus-visible:outline-signal"
             value={title}
             onChange={(event) => onTitleChange(event.target.value.replace(/\s*\n\s*/g, ' '))}
             onKeyDown={(event) => {
