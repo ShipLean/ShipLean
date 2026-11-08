@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { WorkItemTypeId } from '../../../api/refs';
 import type { ParentRefDto, WorkItemDto } from '../../../api/workItems';
 import { TypeIcon } from '../../../components/TypeIcon';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { workItemTestIds as ids } from '../testIds';
 import { useWorkItemsOfType } from '../workItemApi';
 import { inputClass } from './inputClasses';
@@ -25,6 +26,8 @@ export function ParentCandidates({
   value: ParentRefDto | null;
   onPick: (parent: ParentRefDto | null) => void;
 }) {
+  // At touch the search sits in a sheet and is not focused until tapped, so no keyboard covers the list (C4).
+  const { touch } = useTouchShell();
   const [query, setQuery] = useState('');
   // The type list is fixed per item type, so the hooks below run in the same order every render.
   const first = useWorkItemsOfType(projectId, types[0], true);
@@ -44,11 +47,11 @@ export function ParentCandidates({
   return (
     <>
       <input
-        autoFocus
+        autoFocus={!touch}
         data-testid={ids.parentSearch}
         aria-label="Search parents"
         placeholder="Search by title or key"
-        className={`${inputClass} m-1`}
+        className={`${inputClass} m-1 touch:mx-0 touch:h-10`}
         value={query}
         onChange={(event) => setQuery(event.target.value)}
       />

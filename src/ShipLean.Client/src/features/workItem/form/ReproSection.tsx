@@ -55,7 +55,7 @@ export function ReproSection({
         }}
         onChange={onReproChange}
       />
-      <div data-field="severity" className="flex items-center gap-2">
+      <div data-field="severity" className="flex items-center gap-2 touch:flex-wrap">
         <label
           htmlFor={severityId}
           className="flex items-center gap-1 text-[length:var(--text-sm)] font-semibold"
@@ -72,7 +72,7 @@ export function ReproSection({
         <select
           id={severityId}
           data-testid={ids.severity}
-          className={selectClass}
+          className={`${selectClass} touch:h-9 touch:min-w-0 touch:flex-1`}
           value={severity ?? ''}
           onChange={(event) =>
             onSeverityChange(event.target.value === '' ? null : Number(event.target.value))
@@ -85,7 +85,7 @@ export function ReproSection({
             </option>
           ))}
         </select>
-        <span className="text-[length:var(--text-xs)] text-ink-muted">
+        <span className="text-[length:var(--text-xs)] text-ink-muted touch:basis-full">
           How bad it is for the people it hits. Priority is when we fix it.
         </span>
       </div>
