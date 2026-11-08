@@ -53,10 +53,7 @@ test('TouchRow_WhenParentLong_ShouldWrapToOwnLine', async ({ mount, page }) => {
   expect(cut).toBe(false);
 });
 
-test('TouchRowList_WhenSelecting_ShouldShowCheckboxesInTheHandleSlot', async ({
-  mount,
-  page,
-}) => {
+test('TouchRowList_WhenSelecting_ShouldShowCheckboxesInTheHandleSlot', async ({ mount, page }) => {
   await mount(<TouchRowHarness rows={ROWS} withHandle selecting />, route);
 
   const slots = page.getByTestId(ids.touchRowHandle);

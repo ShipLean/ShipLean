@@ -10,6 +10,9 @@ import { useSelection } from '../selection/useSelection';
 import { backlogTestIds as ids } from '../testIds';
 import { useTouchSelectMode } from './selectMode';
 
+// Taps on these keep their own behaviour instead of opening or selecting the row.
+const inside = 'a, button, input, select, textarea, label';
+
 /**
  * One backlog item as a two-line touch row (900px and below, SHIP-716 D1). List, Planning and Tree all render it.
  *
@@ -110,7 +113,11 @@ export function TouchRow({
       </div>
       <div className="flex flex-none items-center gap-2 pr-3">
         {row.points === null ? (
-          <span data-testid={ids.points} title="Not estimated" className="font-semibold text-caution">
+          <span
+            data-testid={ids.points}
+            title="Not estimated"
+            className="font-semibold text-caution"
+          >
             ?
           </span>
         ) : (
@@ -126,5 +133,3 @@ export function TouchRow({
     </div>
   );
 }
-
-const inside = 'a, button, input, select, textarea, label';
