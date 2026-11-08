@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
+import { touchTestIds } from '../touch/testIds';
+import { MarkdownTouchHarness } from './ct/MarkdownTouchHarness';
 import { Markdown } from './Markdown';
 import { componentTestIds as ids } from './testIds';
 
@@ -58,4 +60,10 @@ test('Markdown_WhenMermaidBlockIsInvalid_ShouldKeepTheCodeAndSaySo', async ({ mo
   const markdown = page.getByTestId(ids.markdown);
   await expect(markdown.locator('[data-md-diagram-error]')).toContainText('could not be drawn');
   await expect(markdown.locator('code.language-mermaid')).toHaveText('not a diagram at all');
+});
+
+test('Markdown_WhenAnImageIsClickedAbove900_ShouldNotOpenTheViewer', async ({ mount, page }) => {
+  await mount(<MarkdownTouchHarness variant="twoImages" />);
+  await page.locator('figure[data-md-image=attached] img').first().click();
+  await expect(page.getByTestId(touchTestIds.imageViewer)).toHaveCount(0);
 });

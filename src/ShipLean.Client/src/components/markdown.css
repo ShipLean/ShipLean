@@ -1,0 +1,46 @@
+/* Markdown at touch (K7). Above 900px the scroll boxes Markdown.tsx wraps tables and code blocks in add no box at all,
+   so desktop layout stays as it was. At 900px and below the box scrolls sideways, never the page, and a fade on its
+   right edge shows while there is more to scroll to (Markdown.tsx sets data-more). */
+[data-md-scroll] {
+  display: contents;
+}
+
+@media (max-width: 900px) {
+  [data-md-root] {
+    font-size: var(--text-body-touch);
+  }
+
+  [data-md-scroll] {
+    display: block;
+    position: relative;
+    overflow-x: auto;
+    margin: 0.75rem 0;
+  }
+
+  [data-md-scroll][data-more] {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  }
+
+  /* The box is what scrolls, so the table and the code block size to their content inside it. */
+  [data-md-scroll] > table {
+    max-width: none;
+  }
+
+  [data-md-scroll] > pre {
+    overflow: visible;
+    width: max-content;
+    min-width: 100%;
+    box-sizing: border-box;
+  }
+
+  [data-md-root] figure[data-md-image='attached'] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  [data-md-root] figure[data-md-image='attached'] img {
+    max-width: 100%;
+    height: auto;
+    cursor: zoom-in;
+  }
+}

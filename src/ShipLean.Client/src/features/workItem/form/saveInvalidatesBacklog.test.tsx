@@ -44,6 +44,12 @@ let host: HTMLElement;
 let queryClient: QueryClient;
 beforeEach(() => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  // jsdom has no matchMedia, which Markdown reads (through useTouchShell) to know whether the touch layout applies.
+  vi.stubGlobal('matchMedia', () => ({
+    matches: false,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+  }));
   patches.bodies = [];
   host = document.createElement('div');
   document.body.append(host);
@@ -53,6 +59,7 @@ beforeEach(() => {
   root = createRoot(host);
 });
 afterEach(() => {
+  vi.unstubAllGlobals();
   act(() => root.unmount());
   host.remove();
 });
