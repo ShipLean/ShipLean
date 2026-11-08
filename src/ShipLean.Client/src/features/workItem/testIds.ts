@@ -29,6 +29,8 @@ export const workItemTestIds = {
   tags: 'work-item-tags',
   tagInput: 'work-item-tag-input',
   menu: 'work-item-menu',
+  // L714b: a Bug's repro block (repro steps and severity), for its phone shot.
+  reproBlock: 'work-item-repro-block',
   description: 'work-item-description',
   descriptionEdit: 'work-item-description-edit',
   descriptionView: 'work-item-description-view',

@@ -32,7 +32,7 @@ export function ReproSection({
 }) {
   const severityId = useId();
   return (
-    <div className="grid gap-3">
+    <div data-testid={ids.reproBlock} className="grid gap-3">
       <MarkdownSection
         title="Repro steps"
         field="reproSteps"

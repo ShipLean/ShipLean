@@ -32,6 +32,7 @@ public static class WorkItemTestIds
     public const string Tags = "work-item-tags";
     public const string TagInput = "work-item-tag-input";
     public const string Menu = "work-item-menu";
+    public const string ReproBlock = "work-item-repro-block";
     public const string Description = "work-item-description";
     public const string DescriptionEdit = "work-item-description-edit";
     public const string DescriptionView = "work-item-description-view";
