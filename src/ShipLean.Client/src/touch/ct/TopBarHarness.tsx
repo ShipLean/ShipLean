@@ -24,7 +24,10 @@ export function TopBarHarness({ variant }: { variant: TopBarHarnessVariant }) {
 
 function HarnessPage({ variant }: { variant: TopBarHarnessVariant }) {
   useTopBar({
-    back: variant === 'plain' ? undefined : { to: '/p/SHIP/backlogs/stories', label: 'Back to Stories' },
+    back:
+      variant === 'plain'
+        ? undefined
+        : { to: '/p/SHIP/backlogs/stories', label: 'Back to Stories' },
     title: variant === 'plain' ? undefined : 'SHIP-101',
     action: (
       <button

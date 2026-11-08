@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from '@playwright/experimental-ct-react';
+import { expect, test } from '@playwright/experimental-ct-react';
 import { AppRoutes } from '../AppRoutes';
 import { realtimeTestIds } from '../features/realtime/testIds';
 import { shellTestIds } from '../features/shell/testIds';
@@ -14,6 +14,9 @@ import { touchTestIds as ids } from './testIds';
 const ROUTE = '/p/SHIP/backlogs/stories';
 const THEMES = ['light', 'dark'] as const;
 
+type Fixtures = Parameters<Parameters<typeof test>[2]>[0];
+type Page = Fixtures['page'];
+
 async function lefts(page: Page, testIds: string[]): Promise<number[]> {
   const boxes = await Promise.all(testIds.map((id) => page.getByTestId(id).first().boundingBox()));
   return boxes.map((box) => box!.x);
@@ -23,13 +26,16 @@ function ascending(values: number[]): boolean {
   return values.every((value, index) => index === 0 || value > values[index - 1]!);
 }
 
-async function mountShell(mount: (c: React.JSX.Element, o: object) => Promise<Locator>, page: Page) {
+async function mountShell(mount: Fixtures['mount'], page: Page) {
   await stubShell(page);
   await mount(<AppRoutes />, { hooksConfig: { route: ROUTE } });
   await expect(page.getByTestId(ids.topBar)).toBeVisible();
 }
 
-test('TouchTopBar_WhenNoBack_ShouldShowMenuTitleRealtimeActionSearchInOrder', async ({ mount, page }) => {
+test('TouchTopBar_WhenNoBack_ShouldShowMenuTitleRealtimeActionSearchInOrder', async ({
+  mount,
+  page,
+}) => {
   await stubShell(page);
   await mount(<TopBarHarness variant="plain" />, { hooksConfig: { route: ROUTE } });
   await expect(page.getByTestId(ids.topBarTitle)).toContainText('Stories');
@@ -148,7 +154,10 @@ test('TouchDrawer_WhenScrimEscOrCloseUsed_ShouldClose', async ({ mount, page }) 
 for (const theme of THEMES) {
   for (const variant of ['plain', 'back'] as const) {
     const name = variant === 'plain' ? 'touch-top-bar' : 'touch-top-bar-back';
-    test(`TouchTopBar_WhenShown_ShouldMatchItsScreenshot_${name}_${theme}`, async ({ mount, page }) => {
+    test(`TouchTopBar_WhenShown_ShouldMatchItsScreenshot_${name}_${theme}`, async ({
+      mount,
+      page,
+    }) => {
       await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
       await stubShell(page);
       await mount(<TopBarHarness variant={variant} />, { hooksConfig: { route: ROUTE } });
@@ -159,7 +168,10 @@ for (const theme of THEMES) {
     });
   }
 
-  test(`TouchDrawer_WhenOpen_ShouldMatchItsScreenshot_touch-drawer_${theme}`, async ({ mount, page }) => {
+  test(`TouchDrawer_WhenOpen_ShouldMatchItsScreenshot_touch-drawer_${theme}`, async ({
+    mount,
+    page,
+  }) => {
     await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
     await mountShell(mount, page);
     await page.getByTestId(ids.topBarMenu).tap();
