@@ -13,6 +13,10 @@ public static class WorkItemTestIds
     public const string SaveState = "work-item-save-state";
     public const string Save = "work-item-save";
     public const string Discard = "work-item-discard";
+    // L714a: the item frame on touch (section chips, copy key).
+    public const string SectionChips = "work-item-section-chips";
+    public const string SectionChip = "work-item-section-chip";
+    public const string CopyKey = "work-item-copy-key";
     public const string SaveError = "work-item-save-error";
     public const string Fields = "work-item-fields";
     public const string StateButton = "work-item-state-button";

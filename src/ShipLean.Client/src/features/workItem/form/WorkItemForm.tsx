@@ -6,14 +6,22 @@ import type { ProjectDto } from '../../../api/projects';
 import { ApiRequestError } from '../../../api/client';
 import { isApiError } from '../../../api/client';
 import { isStoryLevel } from '../../../api/workItemTypes';
+import type { WorkItemTypeId } from '../../../api/refs';
 import { conflictOf, type ConflictDto, type WorkItemDto } from '../../../api/workItems';
 import { showToast } from '../../../components/toastStore';
+import { routePath } from '../../../routes';
+import { SaveBar } from '../../../touch/SaveBar';
+import { useTopBar } from '../../../touch/TopBar';
+import { useTouchShell } from '../../../touch/useTouchShell';
+import { useInItemPeek } from '../../itemPeek/ItemPeekContext';
 import { useRememberItem } from '../../quickSearch/start/recent/useRememberItem';
 import { AgentPanel } from '../../agentPanel/AgentPanel';
 import { FeatureForm } from '../../feature/FeatureForm';
 import type { FeatureRegionProps } from '../../feature/FeatureRegionProps';
 import { WorkItemConflictBanner } from '../conflict/WorkItemConflictBanner';
 import { workItemTestIds as ids } from '../testIds';
+import { changedFieldNames } from '../touch/changedFieldNames';
+import { SectionChips } from '../touch/SectionChips';
 import { fetchWorkItem, patchWorkItem, workItemHistoryKey, workItemKey } from '../workItemApi';
 import { useInvalidateBacklog } from '../useInvalidateBacklog';
 import { BeforeSaveContext } from './beforeSave';
@@ -32,6 +40,14 @@ export const STALE_MESSAGE =
   'Someone else saved this item first. Your changes are still here; they were not saved.';
 export const PICKED_UP_MESSAGE = 'Assigned to you';
 export const TITLE_REQUIRED_MESSAGE = 'A work item needs a title.';
+
+// The touch top bar's ‹ (C13): the item's backlog at its level, the route's "Backlogs" crumb. A link, not history back.
+function backlogOf(type: WorkItemTypeId, key: string) {
+  if (type === 'epic') return { to: routePath('epicsBacklog', { key }), label: 'Epics backlog' };
+  if (type === 'feature')
+    return { to: routePath('featuresBacklog', { key }), label: 'Features backlog' };
+  return { to: routePath('storiesBacklog', { key }), label: 'Stories backlog' };
+}
 
 // The form for one loaded item: the draft, dirty tracking, and Save writing one revision. The page's other four nodes
 // are laid out around it. A Feature gets its own layout (FeatureForm), which takes no nodes: its regions are its own.
@@ -70,6 +86,10 @@ export function WorkItemForm({
     setDraft(draftOf(item));
   }
   useUnsavedGuard(dirty);
+  const { touch } = useTouchShell();
+  // The item modal has its own bar and scrolls inside itself; the page's bar and chips are the page's.
+  const inModal = useInItemPeek();
+  useTopBar(inModal ? {} : { back: backlogOf(base.type.id, projectKey) });
   const gate = useBeforeSaveGate();
   const fail = (message: string, field: string | null = null) => setError({ message, field });
 
@@ -167,6 +187,13 @@ export function WorkItemForm({
     return () => window.removeEventListener('keydown', onKeyDown);
   });
 
+  const discard = () => {
+    setDraft(baseDraft);
+    setError(null);
+    setConflict(null);
+    gate.cancel();
+  };
+
   const isChanged = (field: (typeof changed)[number]) => changed.includes(field);
   const type = base.type.id;
   const header = (
@@ -178,14 +205,10 @@ export function WorkItemForm({
       saving={save.isPending || conflict !== null}
       onTitleChange={(title) => edit({ title })}
       onSave={submit}
-      onDiscard={() => {
-        setDraft(baseDraft);
-        setError(null);
-        setConflict(null);
-        gate.cancel();
-      }}
+      onDiscard={discard}
     />
   );
+  const chips = touch && !inModal ? <SectionChips item={base} draft={draft} /> : null;
   const banners = (
     <>
       {conflict ? (
@@ -265,7 +288,12 @@ export function WorkItemForm({
                 saveError: error,
                 projectKey,
               }}
-              header={header}
+              header={
+                <>
+                  {header}
+                  {chips}
+                </>
+              }
               banners={banners}
               description={description}
               agent={<AgentPanel project={project} itemKey={item.key} />}
@@ -274,9 +302,10 @@ export function WorkItemForm({
           ) : (
             <>
               {header}
+              {chips}
               <FieldsStrip item={base} draft={draft} changed={changed} onChange={edit} />
               {banners}
-              <div className="grid grid-cols-[minmax(0,1fr)_20rem] gap-4 p-4">
+              <div className="grid grid-cols-[minmax(0,1fr)_20rem] gap-4 p-4 touch:grid-cols-[minmax(0,1fr)] touch:p-3">
                 <div className="grid grid-cols-[minmax(0,1fr)] content-start gap-6">
                   {description}
                   {type === 'story' ? (
@@ -308,6 +337,19 @@ export function WorkItemForm({
               </div>
             </>
           )}
+          <SaveBar
+            dirty={dirty}
+            message={
+              <span className="inline-flex items-center gap-1.5">
+                <span aria-hidden="true" className="size-2 shrink-0 rounded-full bg-caution" />
+                <span className="truncate">{changedFieldNames(changed)}</span>
+              </span>
+            }
+            onDiscard={discard}
+            onSave={submit}
+            saveDisabled={conflict !== null}
+            saving={save.isPending}
+          />
         </div>
       </DraftContext.Provider>
     </BeforeSaveContext.Provider>

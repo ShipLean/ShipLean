@@ -10,6 +10,10 @@ export const workItemTestIds = {
   saveState: 'work-item-save-state',
   save: 'work-item-save',
   discard: 'work-item-discard',
+  // L714a: the item frame on touch (section chips, copy key).
+  sectionChips: 'work-item-section-chips',
+  sectionChip: 'work-item-section-chip',
+  copyKey: 'work-item-copy-key',
   saveError: 'work-item-save-error',
   fields: 'work-item-fields',
   stateButton: 'work-item-state-button',
