@@ -11,7 +11,7 @@
  *   - the Claude Code line wraps, with Copy
  * Above 900px nothing changes; ?notouch shows the desktop page at any width.
  * Review states: ?dirty (name edited) | ?dirty=colour, ?pw (Password open) | ?pw=typed, ?leave=PAY, ?revoke=cu,
- * ?agents=0, ?photo, ?at=password|appearance|projects|sessions|agents (scrolled to that panel; with ?shot the panels
+ * ?agents=0, ?photo, ?at=password|appearance|projects|sessions|devices|agents (scrolled to that panel; with ?shot the panels
  * above it are hidden), and the decision
  * alternatives ?alt=index|jump|pwopen|leavesheet|scroll|nodensity|heading (combine with +).
  */
@@ -70,7 +70,7 @@
   });
 
   /* D1 alternatives: section links under the intro (jump), or an index of sections (index) */
-  const SECS = [['profile', 'Profile'], ['password', 'Password'], ['appearance', 'Appearance'], ['projects', 'Your projects'], ['sessions', 'Sessions'], ['agents', 'Connected agents']];
+  const SECS = [['profile', 'Profile'], ['password', 'Password'], ['appearance', 'Appearance'], ['projects', 'Your projects'], ['sessions', 'Sessions'], ['devices', 'Signed-in devices'], ['agents', 'Connected agents']];
   const goTo = sec => { const t = $(`[data-sec="${sec}"]`); if (t) window.scrollTo(0, t.getBoundingClientRect().top + scrollY - (parseFloat(getComputedStyle(root).getPropertyValue('--mobile-bar-height')) || 48) - 12); };
   if (hasAlt('jump')) {
     const j = el('nav', 'pf-jump', SECS.map(([k, l]) => `<a href="#${k}" data-go="${k}">${l}</a>`).join(''));
@@ -86,6 +86,7 @@
       appearance: `${{ os: 'Match my OS', light: 'Light', dark: 'Dark' }[S.theme]} · ${S.density === 'compact' ? 'Compact' : 'Comfortable'}`,
       projects: `${mine.length} projects`,
       sessions: 'Sign out everywhere else, reset saved views, sign out',
+      devices: PROF.devices.length ? `${PROF.devices.length} signed in` : 'No phones',
       agents: agents.length ? `${agents.length} connected` : 'None connected',
     };
     const ix = el('nav', 'pf-index', SECS.map(([k, l]) => `<a href="#${k}"><span class="tx"><b>${l}</b><span>${sum[k]}</span></span><span class="chev" aria-hidden="true">›</span></a>`).join(''));

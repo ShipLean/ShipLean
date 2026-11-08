@@ -150,6 +150,9 @@
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const tIcon = t => `<span class="ti ${t}" title="${typeName[t]}">${typeLetter[t]}</span>`;
   const st = s => `<span class="st ${stateCategory[s]}">${s}</span>`;
+  // Health of a Feature: ok | risk | blocked, or null for not set. health(h) is the dot and label; health(h, true) the dot alone.
+  const HEALTH = { ok: 'On track', risk: 'At risk', blocked: 'Blocked' };
+  const health = (h, dotOnly) => (!h ? '' : dotOnly ? `<span class="health ${h}" role="img" aria-label="Health: ${HEALTH[h]}" title="Health: ${HEALTH[h]}"></span>` : `<span class="health ${h}">${HEALTH[h]}</span>`);
   const av = p => (p ? `<span class="av" style="background:${people[p].color}" title="${people[p].name}">${people[p].initials}</span>` : '<span class="av none" title="Unassigned"></span>');
 
   // Shell: the side menu (project picker + navigation) and the top bar (where you are, who else is here, Live).
@@ -428,5 +431,5 @@
     document.body.append(p);
   }
 
-  window.SL = { VELOCITY, ME, instance, people, stateCategory, states, sprints, history, items, tasks, unparentedTasks, epics, features, doneItems, featureByTitle, projects, PROJECT, presence, teamCapacity, committed, sum, esc, tIcon, st, av, appBar, setLive, sprintTabs, toast, hover, preview };
+  window.SL = { VELOCITY, ME, instance, people, stateCategory, states, sprints, history, items, tasks, unparentedTasks, epics, features, doneItems, featureByTitle, projects, PROJECT, presence, teamCapacity, committed, sum, esc, tIcon, st, av, HEALTH, health, appBar, setLive, sprintTabs, toast, hover, preview };
 })();
