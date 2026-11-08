@@ -15,8 +15,6 @@ export const breakpointAllowlist = [
   { file: 'features/quickSearch/rows/ItemRow.tsx', count: 3, owner: 'SHIP-713' },
   { file: 'features/quickSearch/rows/SprintRow.tsx', count: 3, owner: 'SHIP-713' },
   // W01-O2: the settings field panes
-  { file: 'features/boardSettings/panes/FieldsPane.tsx', count: 1, owner: 'W01-O2' },
-  { file: 'features/taskboardSettings/panes/FieldsPane.tsx', count: 1, owner: 'W01-O2' },
   // SHIP-715: the attachment page
   { file: 'features/attachment/AttachmentScreen.tsx', count: 1, owner: 'SHIP-715' },
   // SHIP-714: the Feature page's link dialog
