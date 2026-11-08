@@ -53,16 +53,21 @@ public sealed record WebhookDelivery(string Path, string Body, IReadOnlyDictiona
         return Signed(secret, payload.ToJsonString(), "pull_request");
     }
 
-    // An "issues" delivery: action opened, edited, closed, reopened (or another, which ShipLean ignores). state "open" or
-    // "closed". body and labels null keep the recorded ones. senderType "Bot" for an app.
+    // An "issues" delivery: action opened, edited, closed, reopened, deleted, transferred (or another, which ShipLean
+    // ignores). state "open" or "closed", or null to leave it out (it is optional on some actions). body and labels null keep
+    // the recorded ones. senderType "Bot" for an app. authorDeleted sends issue.user as null, as GitHub does for a deleted account.
     public static WebhookDelivery GithubIssue(
         string secret, string action, int number = 64, string title = "Filter the backlog by Epic", string author = IssueAuthor, string association = "NONE",
-        string? body = null, string state = "open", IReadOnlyList<string>? labels = null, string senderType = "User")
+        string? body = null, string? state = "open", IReadOnlyList<string>? labels = null, string senderType = "User", bool authorDeleted = false)
     {
         var payload = Load("github-issues.json");
         payload["action"] = action;
         var issue = payload["issue"]!;
         SetIssue(issue, number, title, author, state);
+        if (authorDeleted)
+        {
+            issue["user"] = null;
+        }
         issue["author_association"] = association;
         if (body is not null)
         {
@@ -77,10 +82,11 @@ public sealed record WebhookDelivery(string Path, string Body, IReadOnlyDictiona
     }
 
     // An "issue_comment" delivery on issue number by author (with GitHub's author_association), on a pull request when
-    // onPullRequest. authorType "Bot" for an app's comment. action other than created is ignored by ShipLean.
+    // onPullRequest. authorType "Bot" for an app's comment. action other than created is ignored by ShipLean. authorDeleted
+    // sends comment.user as null, as GitHub does for a deleted account.
     public static WebhookDelivery GithubIssueComment(
         string secret, string body, string author = Maintainer, string association = "MEMBER", int number = 64, string issueAuthor = IssueAuthor,
-        bool onPullRequest = false, string authorType = "User", long commentId = 2470000001, string action = "created")
+        bool onPullRequest = false, string authorType = "User", long commentId = 2470000001, string action = "created", bool authorDeleted = false)
     {
         var payload = Load("github-issue-comment.json");
         payload["action"] = action;
@@ -100,7 +106,7 @@ public sealed record WebhookDelivery(string Path, string Body, IReadOnlyDictiona
         comment["html_url"] = $"{GithubIssueUrl(number)}#issuecomment-{commentId}";
         comment["body"] = body;
         comment["author_association"] = association;
-        comment["user"] = User(author, authorType);
+        comment["user"] = authorDeleted ? null : User(author, authorType);
         payload["sender"] = User(author, authorType);
         return Signed(secret, payload.ToJsonString(), "issue_comment");
     }
@@ -162,12 +168,19 @@ public sealed record WebhookDelivery(string Path, string Body, IReadOnlyDictiona
             ["X-Hub-Signature-256"] = "sha256=" + Convert.ToHexStringLower(HMACSHA256.HashData(Encoding.UTF8.GetBytes(secret), Encoding.UTF8.GetBytes(body))),
         });
 
-    private static void SetIssue(JsonNode issue, int number, string title, string author, string state)
+    private static void SetIssue(JsonNode issue, int number, string title, string author, string? state)
     {
         issue["number"] = number;
         issue["html_url"] = GithubIssueUrl(number);
         issue["title"] = title;
-        issue["state"] = state;
+        if (state is null)
+        {
+            issue.AsObject().Remove("state");
+        }
+        else
+        {
+            issue["state"] = state;
+        }
         issue["user"] = User(author, "User");
     }
 

@@ -1,3 +1,4 @@
+using System.Text;
 using ShipLean.Application.Features.IssueIntake;
 using ShipLean.Contracts.IssueIntake;
 
@@ -93,10 +94,45 @@ public class IssueCommentClassifierTests
     [Test]
     public void Cap_WhenLongerThan64Kb_ShouldTruncateWithANote()
     {
-        var capped = IssueEvent.Cap(new string('a', IssueEvent.MaxTextLength + 10));
+        var capped = IssueEvent.Cap(new string('a', IssueEvent.MaxTextBytes + 10));
 
-        capped.Length.ShouldBe(IssueEvent.MaxTextLength);
+        capped.Length.ShouldBe(IssueEvent.MaxTextBytes);
         capped.ShouldEndWith(IssueEvent.TruncatedNote);
         IssueEvent.Cap("short").ShouldBe("short");
+    }
+
+    // 30,000 three-byte characters are about 90 KB of UTF-8 but only 30,000 UTF-16 code units.
+    [Test]
+    public void Cap_WhenMultiByteTextIsOver64Kb_ShouldKeepUtf8BytesWithinCap()
+    {
+        var capped = IssueEvent.Cap(new string('\u20AC', 30_000));
+
+        Encoding.UTF8.GetByteCount(capped).ShouldBeLessThanOrEqualTo(IssueEvent.MaxTextBytes);
+        capped.ShouldEndWith(IssueEvent.TruncatedNote);
+        capped[..^IssueEvent.TruncatedNote.Length].ShouldBe(new string('\u20AC', capped.Length - IssueEvent.TruncatedNote.Length));
+    }
+
+    // spare is how many bytes are left for the four-byte emoji (a surrogate pair) when it reaches the cut: 4 fits exactly.
+    [TestCase(2, false)]
+    [TestCase(3, false)]
+    [TestCase(4, true)]
+    public void Cap_WhenSurrogatePairIsAtTheCut_ShouldKeepItWhole(int spare, bool kept)
+    {
+        var budget = IssueEvent.MaxTextBytes - Encoding.UTF8.GetByteCount(IssueEvent.TruncatedNote);
+        var lead = new string('a', budget - spare);
+
+        var capped = IssueEvent.Cap(lead + "\U0001F600" + new string('b', 100));
+
+        capped.ShouldBe(lead + (kept ? "\U0001F600" : string.Empty) + IssueEvent.TruncatedNote);
+        Encoding.UTF8.GetByteCount(capped).ShouldBeLessThanOrEqualTo(IssueEvent.MaxTextBytes);
+    }
+
+    [Test]
+    public void Cap_WhenAsciiTextIsAtOrUnderCap_ShouldStayUnchanged()
+    {
+        var atCap = new string('a', IssueEvent.MaxTextBytes);
+
+        IssueEvent.Cap(atCap).ShouldBeSameAs(atCap);
+        IssueEvent.Cap("Filter the backlog by Epic").ShouldBe("Filter the backlog by Epic");
     }
 }

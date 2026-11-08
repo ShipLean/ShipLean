@@ -56,6 +56,8 @@ public class IssueRoutingTests : WebhookApiTest
     [TestCase("edited", 102, "open")]
     [TestCase("closed", 103, "closed")]
     [TestCase("reopened", 104, "open")]
+    [TestCase("deleted", 108, "open")]
+    [TestCase("transferred", 109, "closed")]
     public async Task IssueChanged_WhenDelivered_ShouldRouteToIntakeChanged(string action, int number, string state)
     {
         await DeliverAsync(WebhookDelivery.GithubIssue(GithubSecret, action, number, state: state));
@@ -80,11 +82,33 @@ public class IssueRoutingTests : WebhookApiTest
     [Test]
     public async Task IssueOpened_WhenBodyIsOver64Kb_ShouldPassItCapped()
     {
-        await DeliverAsync(WebhookDelivery.GithubIssue(GithubSecret, "opened", 107, body: new string('x', IssueEvent.MaxTextLength + 1)));
+        await DeliverAsync(WebhookDelivery.GithubIssue(GithubSecret, "opened", 107, body: new string('x', IssueEvent.MaxTextBytes + 1)));
 
         var issue = CallsFor(107).ShouldHaveSingleItem().Event.ShouldBeOfType<IssueEvent>();
-        issue.Body.Length.ShouldBe(IssueEvent.MaxTextLength);
+        issue.Body.Length.ShouldBe(IssueEvent.MaxTextBytes);
         issue.Body.ShouldEndWith(IssueEvent.TruncatedNote);
+    }
+
+    // GitHub's schema: issue.user is nullable (a deleted account) and issue.state is optional on opened.
+    [Test]
+    public async Task IssueOpened_WhenAuthorDeletedAndNoState_ShouldRouteAsGhostAndOpen()
+    {
+        await DeliverAsync(WebhookDelivery.GithubIssue(GithubSecret, "opened", 110, state: null, authorDeleted: true));
+
+        var issue = CallsFor(110).ShouldHaveSingleItem().Event.ShouldBeOfType<IssueEvent>();
+        issue.AuthorLogin.ShouldBe("ghost");
+        issue.Open.ShouldBeTrue();
+    }
+
+    // GitHub's schema: comment.user is nullable (a deleted account).
+    [Test]
+    public async Task IssueComment_WhenAuthorDeleted_ShouldRouteAsGhost()
+    {
+        await DeliverAsync(WebhookDelivery.GithubIssueComment(GithubSecret, "Same here", "passer-by", "NONE", 141, authorDeleted: true));
+
+        var call = CallsFor(141).ShouldHaveSingleItem();
+        call.Method.ShouldBe(nameof(IIssueReplies.MirrorAsync));
+        call.Event.ShouldBeOfType<IssueCommentEvent>().AuthorLogin.ShouldBe("ghost");
     }
 
     [Test]
