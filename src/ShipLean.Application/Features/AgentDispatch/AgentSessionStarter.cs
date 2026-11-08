@@ -70,7 +70,8 @@ public sealed class AgentSessionStarter(
     // fallbackBaseUrl is the origin of the request, for an instance that has not set its base URL. connectionId and prompt: see PlanAsync;
     // the prompt goes to the agent as guidance and the session stores the connection it ran with.
     // transition is the move that fired an automation, carried in the context; null for a person's Start agent.
-    // mode is stored on the session (implement unless said otherwise).
+    // mode is stored on the session (implement unless said otherwise); a propose session needs the item's github_issue (Validation
+    // otherwise, before anything is written) and gets the allowlisted context (IAgentSessionStarter.StartWinnerAsync).
     public async Task<AgentStartOutcome> StartAsync(
         Guid workItemId, Guid creatorId, string? fallbackBaseUrl, Guid? connectionId, string? prompt, AgentTransitionInput? transition, CancellationToken cancellationToken,
         AgentSessionMode mode = AgentSessionMode.Implement)
@@ -83,8 +84,7 @@ public sealed class AgentSessionStarter(
 
         var sessionId = Guid.CreateVersion7();
         var now = time.GetUtcNow();
-        var input = await _loader.LoadAsync(
-            workItemId, sessionId, now, plan.ConnectionId, creatorId, new AgentRepositoryInput(plan.RepoUrl, plan.BaseBranch), fallbackBaseUrl, plan.Prompt, cancellationToken, mode) with { Transition = transition };
+        var input = await LoadAsync(workItemId, sessionId, now, plan, creatorId, fallbackBaseUrl, plan.Prompt, mode, null, cancellationToken) with { Transition = transition };
         var body = RenderBody(input, workItemId);
 
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
@@ -107,8 +107,13 @@ public sealed class AgentSessionStarter(
     // Anything thrown after the insert rolls back the session, the delivery and whatever winnerPrompt wrote.
     public async Task<AgentStartOutcome> StartWinnerAsync(
         Guid workItemId, Guid creatorId, string? fallbackBaseUrl, Guid? connectionId, Func<DbTransaction, CancellationToken, Task<string>> winnerPrompt, CancellationToken cancellationToken,
-        AgentSessionMode mode = AgentSessionMode.Implement)
+        AgentSessionMode mode = AgentSessionMode.Implement, IReadOnlyList<AgentRelatedWork>? relatedItems = null)
     {
+        if (relatedItems?.Count > IAgentSessionStarter.MaxRelatedItems)
+        {
+            throw new ArgumentOutOfRangeException(nameof(relatedItems), $"A propose session takes at most {IAgentSessionStarter.MaxRelatedItems} related items.");
+        }
+
         var plan = await PlanAsync(workItemId, connectionId, null, cancellationToken);
         if (plan.Block is { } block)
         {
@@ -117,8 +122,7 @@ public sealed class AgentSessionStarter(
 
         var sessionId = Guid.CreateVersion7();
         var now = time.GetUtcNow();
-        var input = await _loader.LoadAsync(
-            workItemId, sessionId, now, plan.ConnectionId, creatorId, new AgentRepositoryInput(plan.RepoUrl, plan.BaseBranch), fallbackBaseUrl, null, cancellationToken, mode);
+        var input = await LoadAsync(workItemId, sessionId, now, plan, creatorId, fallbackBaseUrl, null, mode, relatedItems, cancellationToken);
 
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
@@ -136,6 +140,17 @@ public sealed class AgentSessionStarter(
         await transaction.CommitAsync(cancellationToken);
         await notifier.ChangedAsync(sessionId);
         return new AgentStartOutcome(sessionId, null);
+    }
+
+    // A propose session's input is the allowlisted one (it throws Validation when the item has no github_issue, so nothing is written).
+    private Task<AgentContextInput> LoadAsync(
+        Guid workItemId, Guid sessionId, DateTimeOffset now, AgentStartPlan plan, Guid creatorId, string? fallbackBaseUrl, string? prompt, AgentSessionMode mode,
+        IReadOnlyList<AgentRelatedWork>? relatedItems, CancellationToken cancellationToken)
+    {
+        var repository = new AgentRepositoryInput(plan.RepoUrl, plan.BaseBranch);
+        return mode == AgentSessionMode.Propose
+            ? _loader.LoadProposeAsync(workItemId, sessionId, now, plan.ConnectionId, creatorId, repository, prompt, relatedItems ?? [], cancellationToken)
+            : _loader.LoadAsync(workItemId, sessionId, now, plan.ConnectionId, creatorId, repository, fallbackBaseUrl, prompt, cancellationToken);
     }
 
     // False when the partial unique index ux_agent_session_live finds the item taken.

@@ -1,3 +1,4 @@
+using System.Data.Common;
 using Dapper;
 using Npgsql;
 using ShipLean.Application.Markdown;
@@ -41,12 +42,23 @@ public sealed class CommentStore(
             ? throw new ArgumentException("An agent comment needs an agent name.", nameof(agentName))
             : AddStampedAsync(workItemId, create, agentName, authorId, cancellationToken);
 
+    public Task<CommentDto> AddAsAgentAsync(Guid workItemId, CommentCreate create, string agentName, Guid authorId, DbTransaction transaction, CancellationToken cancellationToken = default)
+        => string.IsNullOrWhiteSpace(agentName)
+            ? throw new ArgumentException("An agent comment needs an agent name.", nameof(agentName))
+            : AddOnAsync((NpgsqlConnection)transaction.Connection!, (NpgsqlTransaction)transaction, workItemId, create, agentName, authorId, cancellationToken);
+
     // Never starts a `prompted` webhook: only CommentEndpoints (a person's session) does that, so MCP tools, imports and agent writes never prompt.
     private async Task<CommentDto> AddStampedAsync(Guid workItemId, CommentCreate create, string? agentName, Guid authorId, CancellationToken cancellationToken)
     {
-        var body = RequireBody(create?.Body);
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-        await RequireWorkItemAsync(connection, workItemId, cancellationToken);
+        return await AddOnAsync(connection, null, workItemId, create, agentName, authorId, cancellationToken);
+    }
+
+    private async Task<CommentDto> AddOnAsync(
+        NpgsqlConnection connection, NpgsqlTransaction? transaction, Guid workItemId, CommentCreate create, string? agentName, Guid authorId, CancellationToken cancellationToken)
+    {
+        var body = RequireBody(create?.Body);
+        await RequireWorkItemAsync(connection, workItemId, cancellationToken, transaction);
         var id = Guid.NewGuid();
         var now = clock.GetUtcNow();
         await connection.ExecuteAsync(new CommandDefinition(
@@ -55,9 +67,10 @@ public sealed class CommentStore(
             VALUES (@id, @workItemId, @authorId, @body, @now, @now, @agentName)
             """,
             new { id, workItemId, authorId, body, now, agentName },
+            transaction,
             cancellationToken: cancellationToken));
-        var added = await ReadAsync(connection, id, cancellationToken);
-        await PublishChangedAsync(connection, workItemId, cancellationToken);
+        var added = await ReadAsync(connection, id, cancellationToken, transaction);
+        await PublishChangedAsync(connection, workItemId, cancellationToken, transaction);
         return added;
     }
 
@@ -148,10 +161,10 @@ public sealed class CommentStore(
         throw live ? ApiException.Forbidden("Only the author can edit a comment.") : ApiException.NotFound("That comment does not exist.");
     }
 
-    private async Task PublishChangedAsync(NpgsqlConnection connection, Guid workItemId, CancellationToken cancellationToken)
+    private async Task PublishChangedAsync(NpgsqlConnection connection, Guid workItemId, CancellationToken cancellationToken, NpgsqlTransaction? transaction = null)
     {
         var projectId = await connection.ExecuteScalarAsync<Guid>(new CommandDefinition(
-            "SELECT project_id FROM work_item WHERE id = @workItemId", new { workItemId }, cancellationToken: cancellationToken));
+            "SELECT project_id FROM work_item WHERE id = @workItemId", new { workItemId }, transaction, cancellationToken: cancellationToken));
         await events.PublishAsync(new CommentsChanged(projectId, workItemId));
     }
 
@@ -166,19 +179,19 @@ public sealed class CommentStore(
         return body;
     }
 
-    private static async Task RequireWorkItemAsync(NpgsqlConnection connection, Guid workItemId, CancellationToken cancellationToken)
+    private static async Task RequireWorkItemAsync(NpgsqlConnection connection, Guid workItemId, CancellationToken cancellationToken, NpgsqlTransaction? transaction = null)
     {
         var exists = await connection.ExecuteScalarAsync<bool>(new CommandDefinition(
-            "SELECT EXISTS (SELECT 1 FROM work_item WHERE id = @workItemId)", new { workItemId }, cancellationToken: cancellationToken));
+            "SELECT EXISTS (SELECT 1 FROM work_item WHERE id = @workItemId)", new { workItemId }, transaction, cancellationToken: cancellationToken));
         if (!exists)
         {
             throw ApiException.NotFound("That work item does not exist.");
         }
     }
 
-    private async Task<CommentDto> ReadAsync(NpgsqlConnection connection, Guid id, CancellationToken cancellationToken)
+    private async Task<CommentDto> ReadAsync(NpgsqlConnection connection, Guid id, CancellationToken cancellationToken, NpgsqlTransaction? transaction = null)
     {
-        var row = await connection.QuerySingleAsync<CommentRow>(new CommandDefinition(SelectLive, new { id }, cancellationToken: cancellationToken));
+        var row = await connection.QuerySingleAsync<CommentRow>(new CommandDefinition(SelectLive, new { id }, transaction, cancellationToken: cancellationToken));
         return row.ToDto(renderer, clock);
     }
 }

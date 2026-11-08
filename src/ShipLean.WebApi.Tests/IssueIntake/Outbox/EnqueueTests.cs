@@ -24,7 +24,7 @@ public class EnqueueTests : ApiFixture
     {
         var issue = new IssueRef(IssueRef.GitHubHost, "shiplean-tests/outbox", Interlocked.Increment(ref _number));
         var record = await Host.Services.GetRequiredService<IGitHubIssueStore>()
-            .InsertAsync(issue, SeedIds.Projects.Ship, SeedIds.WorkItems.Ship89, "reporter", IssuePhase.Proposing);
+            .InsertAsync(issue, SeedIds.Projects.Ship, SeedIds.WorkItems.Ship89, "reporter", "Title", "Body", IssuePhase.Proposing);
         return record.Id;
     }
 

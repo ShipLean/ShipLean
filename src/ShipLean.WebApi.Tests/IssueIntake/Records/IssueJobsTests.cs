@@ -25,7 +25,7 @@ public class IssueJobsTests : ApiFixture
     public async Task InsertIssueAsync()
     {
         var issue = await Host.Services.GetRequiredService<IGitHubIssueStore>()
-            .InsertAsync(new IssueRef(IssueRef.GitHubHost, "shiplean-tests/jobs", 1), SeedIds.Projects.Ship, SeedIds.WorkItems.Ship89, "reporter", IssuePhase.Proposing);
+            .InsertAsync(new IssueRef(IssueRef.GitHubHost, "shiplean-tests/jobs", 1), SeedIds.Projects.Ship, SeedIds.WorkItems.Ship89, "reporter", "Title", "Body", IssuePhase.Proposing);
         _issueId = issue.Id;
     }
 

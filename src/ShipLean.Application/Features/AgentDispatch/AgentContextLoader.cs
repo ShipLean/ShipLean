@@ -14,9 +14,7 @@ using ShipLean.Contracts.Persisted;
 namespace ShipLean.Application.Features.AgentDispatch;
 
 // Maps an item's rows onto the renderer's plain input. A comment's author is a name only (no email leaves for the receiver; the creator's does,
-// for the relay's allow-list). In propose mode only the comments mirrored from GitHub (agent name "GitHub @login") are read: ShipLean-only
-// comments never reach a proposal session (D10), and each is attributed to its stamp ("GitHub @login"), not to the run-as person
-// it was written as (D17: no people's names). Reads only; the session id and creation time are the caller's.
+// for the relay's allow-list). A propose session has its own allowlisted loader, LoadProposeAsync. Reads only; the session id and creation time are the caller's.
 // Markdown attachments are read through the blob store, in upload order, up to InlineAttachmentBytes in all, counted as they will be sent (UTF-8 bytes
 // of the XML-escaped text); the first one that does not fit, and every attachment after it, is left as a link. One that cannot be read (missing or
 // failing blob) is a warning in the log, and it and the rest are links too. Without a blob store (a follow-up prompt, which sends no promptContext) all are links.
@@ -25,8 +23,7 @@ internal sealed class AgentContextLoader(NpgsqlDataSource dataSource, Lazy<IBlob
     public const int InlineAttachmentBytes = 200 * 1024;
 
     public async Task<AgentContextInput> LoadAsync(
-        Guid workItemId, Guid sessionId, DateTimeOffset createdAt, Guid connectionId, Guid creatorId, AgentRepositoryInput repository, string? fallbackBaseUrl, string? guidance, CancellationToken cancellationToken,
-        AgentSessionMode mode = AgentSessionMode.Implement)
+        Guid workItemId, Guid sessionId, DateTimeOffset createdAt, Guid connectionId, Guid creatorId, AgentRepositoryInput repository, string? fallbackBaseUrl, string? guidance, CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var item = await connection.QuerySingleOrDefaultAsync<AgentItemRow>(new CommandDefinition(
@@ -53,13 +50,12 @@ internal sealed class AgentContextLoader(NpgsqlDataSource dataSource, Lazy<IBlob
             new { workItemId }, cancellationToken: cancellationToken))).ToList();
         var comments = (await connection.QueryAsync<AgentCommentRow>(new CommandDefinition(
             """
-            SELECT c.id, c.author_id AS authorId, CASE WHEN @githubOnly THEN c.agent_name ELSE coalesce(u.name, '') END AS authorName, c.created_at AS createdAt, c.body
+            SELECT c.id, c.author_id AS authorId, coalesce(u.name, '') AS authorName, c.created_at AS createdAt, c.body
             FROM comment c LEFT JOIN app_user u ON u.id = c.author_id
             WHERE c.work_item_id = @workItemId AND c.archived_at IS NULL
-              AND (NOT @githubOnly OR c.agent_name LIKE @githubPrefix)
             ORDER BY c.created_at, c.id
             """,
-            new { workItemId, githubOnly = mode == AgentSessionMode.Propose, githubPrefix = AgentSessionModes.GitHubCommentPrefix + "%" }, cancellationToken: cancellationToken))).ToList();
+            new { workItemId }, cancellationToken: cancellationToken))).ToList();
         var children = (await connection.QueryAsync<AgentChildRow>(new CommandDefinition(
             """
             SELECT c.key, c.title, s.name AS state
@@ -115,8 +111,57 @@ internal sealed class AgentContextLoader(NpgsqlDataSource dataSource, Lazy<IBlob
             null,
             guidance,
             null,
-            [.. ancestors.Select(a => Related(a) with { Type = a.Type })],
-            mode);
+            [.. ancestors.Select(a => Related(a) with { Type = a.Type })]);
+    }
+
+    // A propose session's input, built from an allowlist, not by filtering the one above (D10, D17): the github_issue's repository,
+    // number, title, body and author login; the comments that have a github_issue_comment provenance row, each by its GitHub login;
+    // and the related items given. The item contributes only its id and key, the project its id, key and name, and the creator
+    // their id and email (the relay checks the email against its allow-list). No description, criteria, ancestors, assignee,
+    // attachments, links, instance URLs or people's names. Throws Validation when the item has no github_issue.
+    public async Task<AgentContextInput> LoadProposeAsync(
+        Guid workItemId, Guid sessionId, DateTimeOffset createdAt, Guid connectionId, Guid creatorId, AgentRepositoryInput repository, string? guidance,
+        IReadOnlyList<AgentRelatedWork> related, CancellationToken cancellationToken)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        var issue = await connection.QuerySingleOrDefaultAsync<ProposeIssueRow>(new CommandDefinition(
+            """
+            SELECT g.id, w.id AS itemId, w.key AS itemKey, p.id AS projectId, p.key AS projectKey, p.name AS projectName,
+                   g.repository, g.number, g.author_login AS authorLogin, g.title, g.body
+            FROM github_issue g JOIN work_item w ON w.id = g.work_item_id JOIN project p ON p.id = w.project_id
+            WHERE g.work_item_id = @workItemId
+            ORDER BY g.created_at LIMIT 1
+            """,
+            new { workItemId }, cancellationToken: cancellationToken))
+            ?? throw ApiException.Validation("A propose session needs a work item that a GitHub issue opened.", "mode");
+        var creatorEmail = await connection.QuerySingleAsync<string>(new CommandDefinition(
+            "SELECT email FROM app_user WHERE id = @creatorId", new { creatorId }, cancellationToken: cancellationToken));
+        var comments = (await connection.QueryAsync<ProposeCommentRow>(new CommandDefinition(
+            """
+            SELECT c.id, m.author_login AS authorLogin, c.created_at AS createdAt, c.body
+            FROM github_issue_comment m JOIN comment c ON c.id = m.comment_id
+            WHERE m.github_issue_id = @issueId AND c.archived_at IS NULL
+            ORDER BY c.created_at, c.id
+            """,
+            new { issueId = issue.Id }, cancellationToken: cancellationToken))).ToList();
+
+        return new AgentContextInput(
+            sessionId.ToString(),
+            connectionId.ToString(),
+            createdAt,
+            new AgentUserInput(creatorId.ToString(), string.Empty, creatorEmail),
+            new AgentProjectInput(issue.ProjectId.ToString(), issue.ProjectKey, issue.ProjectName),
+            repository,
+            new AgentItemInput(issue.ItemId.ToString(), issue.ItemKey, issue.Title, Blank(issue.Body), string.Empty, [], []),
+            null,
+            null,
+            [.. comments.Select(c => new AgentCommentInput(c.Id.ToString(), new AgentUserInput(string.Empty, c.AuthorLogin, string.Empty), c.CreatedAt, c.Body))],
+            null,
+            guidance,
+            null,
+            null,
+            AgentSessionMode.Propose,
+            new AgentProposeInput(issue.Repository, issue.Number, issue.AuthorLogin, related));
     }
 
     private async Task<List<AgentAttachmentInput>> AttachmentsAsync(List<AgentAttachmentRow> rows, Func<AgentAttachmentRow, string> url, CancellationToken cancellationToken)

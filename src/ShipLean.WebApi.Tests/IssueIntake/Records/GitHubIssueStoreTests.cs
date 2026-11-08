@@ -21,7 +21,7 @@ public class GitHubIssueStoreTests : ApiFixture
     private static IssueRef NextIssue() => new(IssueRef.GitHubHost, Repository, Interlocked.Increment(ref _number));
 
     private Task<GitHubIssueRecord> InsertAsync(IssueRef issue, IssuePhase phase = IssuePhase.Proposing)
-        => Store.InsertAsync(issue, SeedIds.Projects.Ship, SeedIds.WorkItems.Ship89, "reporter", phase);
+        => Store.InsertAsync(issue, SeedIds.Projects.Ship, SeedIds.WorkItems.Ship89, "reporter", "The title", "The body", phase);
 
     [Test]
     public async Task Insert_WhenSameIssueTwice_ShouldReturnOneRecord()
@@ -29,13 +29,27 @@ public class GitHubIssueStoreTests : ApiFixture
         var issue = NextIssue();
 
         var first = await InsertAsync(issue);
-        var second = await Store.InsertAsync(issue, SeedIds.Projects.Ship, SeedIds.WorkItems.Ship90, "someone-else", IssuePhase.Accepted);
+        var second = await Store.InsertAsync(issue, SeedIds.Projects.Ship, SeedIds.WorkItems.Ship90, "someone-else", "Another title", "Another body", IssuePhase.Accepted);
 
         (second with { LastPosted = first.LastPosted }).ShouldBe(first);
         second.LastPosted.ShouldBeEmpty();
         await using var connection = await OpenDatabaseAsync();
         (await connection.ExecuteScalarAsync<int>(
             "SELECT count(*)::int FROM github_issue WHERE repository = @Repository AND number = @Number", new { issue.Repository, issue.Number })).ShouldBe(1);
+    }
+
+    [Test]
+    public async Task UpdateText_WhenIssueEdited_ShouldReplaceTitleAndBodyOnly()
+    {
+        var issue = NextIssue();
+        var record = await InsertAsync(issue);
+
+        await Store.UpdateTextAsync(record.Id, "The edited title", "The edited body");
+
+        var found = (await Store.FindByIdAsync(record.Id))!;
+        found.Title.ShouldBe("The edited title");
+        found.Body.ShouldBe("The edited body");
+        (found with { Title = record.Title, Body = record.Body, LastPosted = record.LastPosted, UpdatedAt = record.UpdatedAt }).ShouldBe(record);
     }
 
     [Test]
@@ -99,7 +113,7 @@ public class GitHubIssueStoreTests : ApiFixture
         await using (var connection = await dataSource.OpenConnectionAsync())
         await using (var transaction = await connection.BeginTransactionAsync())
         {
-            await Store.InsertAsync(issue, SeedIds.Projects.Ship, SeedIds.WorkItems.Ship89, "reporter", IssuePhase.Proposing, transaction);
+            await Store.InsertAsync(issue, SeedIds.Projects.Ship, SeedIds.WorkItems.Ship89, "reporter", "Title", "Body", IssuePhase.Proposing, transaction);
             (await Store.FindAsync(issue, transaction)).ShouldNotBeNull();
             await transaction.RollbackAsync();
         }

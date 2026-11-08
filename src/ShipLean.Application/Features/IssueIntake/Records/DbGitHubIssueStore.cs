@@ -11,17 +11,17 @@ public sealed class DbGitHubIssueStore(NpgsqlDataSource dataSource, TimeProvider
 {
     private const string Columns =
         """
-        id, host, repository, number, project_id AS projectId, work_item_id AS workItemId, author_login AS authorLogin, phase,
+        id, host, repository, number, project_id AS projectId, work_item_id AS workItemId, author_login AS authorLogin, title, body, phase,
         proposal::text AS proposal, proposal_session_id AS proposalSessionId, rounds, open_on_github AS openOnGitHub,
         last_posted::text AS lastPosted, created_at AS createdAt, updated_at AS updatedAt
         """;
 
     private sealed record Row(
-        Guid Id, string Host, string Repository, int Number, Guid ProjectId, Guid WorkItemId, string AuthorLogin, string Phase, string? Proposal,
+        Guid Id, string Host, string Repository, int Number, Guid ProjectId, Guid WorkItemId, string AuthorLogin, string Title, string Body, string Phase, string? Proposal,
         Guid? ProposalSessionId, int Rounds, bool OpenOnGitHub, string LastPosted, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt)
     {
         public GitHubIssueRecord ToRecord() => new(
-            Id, new IssueRef(Host, Repository, Number), ProjectId, WorkItemId, AuthorLogin, IssueWire.ParsePhase(Phase), Proposal, ProposalSessionId,
+            Id, new IssueRef(Host, Repository, Number), ProjectId, WorkItemId, AuthorLogin, Title, Body, IssueWire.ParsePhase(Phase), Proposal, ProposalSessionId,
             Rounds, OpenOnGitHub, JsonSerializer.Deserialize<Dictionary<string, string>>(LastPosted) ?? [], CreatedAt, UpdatedAt);
     }
 
@@ -38,19 +38,19 @@ public sealed class DbGitHubIssueStore(NpgsqlDataSource dataSource, TimeProvider
             $"SELECT {Columns} FROM github_issue WHERE work_item_id = @workItemId ORDER BY created_at LIMIT 1", new { workItemId }, transaction, cancellationToken);
 
     public async Task<GitHubIssueRecord> InsertAsync(
-        IssueRef issue, Guid projectId, Guid workItemId, string authorLogin, IssuePhase phase, DbTransaction? transaction = null, CancellationToken cancellationToken = default)
+        IssueRef issue, Guid projectId, Guid workItemId, string authorLogin, string title, string body, IssuePhase phase, DbTransaction? transaction = null, CancellationToken cancellationToken = default)
     {
         // ON CONFLICT DO NOTHING waits for a concurrent insert of the same issue to commit, so the read after it sees that row.
         const string Insert =
             """
-            INSERT INTO github_issue (id, host, repository, number, project_id, work_item_id, author_login, phase, created_at, updated_at)
-            VALUES (@id, @Host, @Repository, @Number, @projectId, @workItemId, @authorLogin, @phase, @now, @now)
+            INSERT INTO github_issue (id, host, repository, number, project_id, work_item_id, author_login, title, body, phase, created_at, updated_at)
+            VALUES (@id, @Host, @Repository, @Number, @projectId, @workItemId, @authorLogin, @title, @body, @phase, @now, @now)
             ON CONFLICT (host, repository, number) DO NOTHING
             """;
         await dataSource.RunAsync(
             (connection, tx) => connection.ExecuteAsync(new CommandDefinition(
                 Insert,
-                new { id = Guid.CreateVersion7(), issue.Host, issue.Repository, issue.Number, projectId, workItemId, authorLogin, phase = IssueWire.Phase(phase), now = clock.GetUtcNow() },
+                new { id = Guid.CreateVersion7(), issue.Host, issue.Repository, issue.Number, projectId, workItemId, authorLogin, title, body, phase = IssueWire.Phase(phase), now = clock.GetUtcNow() },
                 tx,
                 cancellationToken: cancellationToken)),
             transaction,
@@ -58,6 +58,13 @@ public sealed class DbGitHubIssueStore(NpgsqlDataSource dataSource, TimeProvider
         return await FindAsync(issue, transaction, cancellationToken)
                ?? throw new InvalidOperationException($"github_issue {issue} was neither inserted nor found.");
     }
+
+    public Task UpdateTextAsync(Guid id, string title, string body, DbTransaction? transaction = null, CancellationToken cancellationToken = default)
+        => ExecuteAsync(
+            "UPDATE github_issue SET title = @title, body = @body, updated_at = @now WHERE id = @id",
+            new { id, title, body, now = clock.GetUtcNow() },
+            transaction,
+            cancellationToken);
 
     public async Task<bool> SetPhaseAsync(Guid id, IReadOnlyList<IssuePhase> from, IssuePhase to, DbTransaction? transaction = null, CancellationToken cancellationToken = default)
         => await ExecuteAsync(

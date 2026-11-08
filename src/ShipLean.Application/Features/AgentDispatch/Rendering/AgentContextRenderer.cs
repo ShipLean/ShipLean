@@ -29,12 +29,18 @@ public static class AgentContextRenderer
     public static JsonObject RenderCreated(AgentContextInput input)
     {
         var body = Envelope("created", input, input.SessionCreatedAt, AgentSessionStatuses.Pending, input.SessionCreatedAt);
-        body["promptContext"] = AgentPromptContext.Render(input);
         // ShipLean's own field, not Linear's: the relay runs a propose session read-only (D9). Implement sessions leave it out,
-        // so their payload stays as it was.
+        // so their payload stays as it was. A propose session's promptContext is the allowlisted one; its envelope carries only what
+        // the allowlisted input holds (the issue's title and body, no url, labels or creator name).
         if (input.Mode == AgentSessionMode.Propose)
         {
+            body["promptContext"] = AgentProposePromptContext.Render(
+                input, input.Propose ?? throw new ArgumentException("A propose session's input needs its GitHub issue (Propose).", nameof(input)));
             body["shipleanMode"] = AgentSessionModes.Propose;
+        }
+        else
+        {
+            body["promptContext"] = AgentPromptContext.Render(input);
         }
 
         return body;

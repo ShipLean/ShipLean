@@ -22,7 +22,8 @@ namespace ShipLean.Application.Features.AgentDispatch;
 // The body of a response or error is also posted as a comment, written as the user who started the session and stamped with the
 // connection name, so it never becomes a `prompted` webhook. The session changed event goes out after each commit.
 // A propose session's response (D9, C4) also enqueues a `proposal` issue_job (key proposal:<sessionId>, payload { sessionId, body }) in the
-// activity's own transaction, so the response and the job that processes it commit together or not at all.
+// activity's own transaction, so the response and the job that processes it commit together or not at all. When the item has no
+// GitHub issue, the response still commits but the session ends failed, with no job (a warning names the session).
 public sealed class AgentReports(
     NpgsqlDataSource dataSource,
     ICommentStore comments,
@@ -82,9 +83,9 @@ public sealed class AgentReports(
             new { id, sessionId = create.SessionId, type = create.Type, body = create.Body, action = create.Action, parameter = create.Parameter, result = create.Result, ephemeral = create.Ephemeral, signal = create.Signal, now },
             transaction, cancellationToken: cancellationToken));
         var ended = await MoveStateAsync(connection, transaction, session, create, now, cancellationToken);
-        if (create.Type == Response && session.Mode == AgentSessionModes.Propose)
+        if (create.Type == Response && session.Mode == AgentSessionModes.Propose && !await EnqueueProposalAsync(transaction, session, create, cancellationToken))
         {
-            await EnqueueProposalAsync(transaction, session, create, cancellationToken);
+            ended = await FailAsync(connection, transaction, create.SessionId, now, cancellationToken);
         }
 
         await transaction.CommitAsync(cancellationToken);
@@ -220,13 +221,29 @@ public sealed class AgentReports(
         return moved > 0 && ended is not null ? next : null;
     }
 
-    // A propose session runs only on a GitHub issue's item, so the issue is always there.
-    private async Task EnqueueProposalAsync(NpgsqlTransaction transaction, LockedSession session, AgentActivityCreate create, CancellationToken cancellationToken)
+    // False when the session's item has no GitHub issue. The starter refuses that, so it means the issue was repointed or the session
+    // was started some other way: the response is kept, no job is made, and the caller fails the session, so the relay stops retrying.
+    private async Task<bool> EnqueueProposalAsync(NpgsqlTransaction transaction, LockedSession session, AgentActivityCreate create, CancellationToken cancellationToken)
     {
-        var issue = await githubIssues.FindByWorkItemAsync(session.WorkItemId, transaction, cancellationToken)
-            ?? throw new InvalidOperationException($"The propose session {create.SessionId} is on item {session.WorkItemId}, which has no GitHub issue.");
+        var issue = await githubIssues.FindByWorkItemAsync(session.WorkItemId, transaction, cancellationToken);
+        if (issue is null)
+        {
+            logger.LogWarning("Propose session {SessionId} answered on item {WorkItemId}, which has no GitHub issue; the session is failed and no proposal job is made", create.SessionId, session.WorkItemId);
+            return false;
+        }
+
         var payload = JsonSerializer.Serialize(new { sessionId = create.SessionId, body = create.Body }, Json);
         await issueJobs.EnqueueAsync(IssueJobKind.Proposal, $"proposal:{create.SessionId}", issue.Id, issue.ProjectId, payload, transaction, cancellationToken);
+        return true;
+    }
+
+    // Ends the session as failed (terminal, so its item can start another); returns the new state for the changed event.
+    private static async Task<string> FailAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, Guid sessionId, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        await connection.ExecuteAsync(new CommandDefinition(
+            "UPDATE agent_session SET state = @failed, ended_at = coalesce(ended_at, @now), last_activity_at = @now WHERE id = @sessionId",
+            new { sessionId, failed = AgentSessionStates.Failed, now }, transaction, cancellationToken: cancellationToken));
+        return AgentSessionStates.Failed;
     }
 
     // An ended session takes no more activities or updates; the relay posts its final response while the session is still live.

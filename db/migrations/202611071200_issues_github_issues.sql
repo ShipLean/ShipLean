@@ -33,6 +33,8 @@ CREATE TABLE github_issue (
     project_id          uuid NOT NULL REFERENCES project (id),
     work_item_id        uuid NOT NULL REFERENCES work_item (id),
     author_login        text NOT NULL,
+    title               text NOT NULL,
+    body                text NOT NULL,
     phase               text NOT NULL CHECK (phase IN ('proposing', 'awaitingReply', 'alreadyShipped', 'waitingForMaintainer', 'accepted', 'closed')),
     proposal            jsonb,
     proposal_session_id uuid REFERENCES agent_session (id),
@@ -45,6 +47,19 @@ CREATE TABLE github_issue (
 );
 CREATE INDEX ix_github_issue_work_item ON github_issue (work_item_id);
 CREATE INDEX ix_github_issue_accepted_open ON github_issue (project_id) WHERE phase = 'accepted' AND open_on_github;
+
+-- Provenance of a comment mirrored from GitHub: only a comment with a row here counts as the reporter's words in a propose
+-- session (D10, D17). An agent name such as "GitHub @login" proves nothing, because any agent can choose its name. html_url is
+-- GitHub's link to the comment, so mirroring one twice finds the first; created_at is GitHub's time for the comment.
+CREATE TABLE github_issue_comment (
+    comment_id        uuid PRIMARY KEY REFERENCES comment (id),
+    github_issue_id   uuid NOT NULL REFERENCES github_issue (id),
+    github_comment_id bigint NOT NULL,
+    html_url          text NOT NULL UNIQUE,
+    author_login      text NOT NULL,
+    created_at        timestamptz NOT NULL
+);
+CREATE INDEX ix_github_issue_comment_issue ON github_issue_comment (github_issue_id);
 
 -- The effect ledger (D18): a step that creates something claims its key with the new id inside the create's own
 -- transaction, so a retried or concurrent step finds the claim instead of creating twice.

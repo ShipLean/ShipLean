@@ -27,14 +27,29 @@ public sealed class AgentContextProposeTests
         body.ContainsKey("shipleanMode").ShouldBeFalse();
     }
 
-    // A Triage item with the issue's opening text and one comment mirrored from GitHub, and the project's proposal instructions as guidance.
-    private static AgentContextInput Propose() => AgentContextSamples.Minimal() with
+    // A propose input as AgentContextLoader.LoadProposeAsync builds it: the issue's text from github_issue, no item url, labels,
+    // criteria, parent or creator name; one comment mirrored from GitHub; two related items; the round's instructions as guidance.
+    private static AgentContextInput Propose()
     {
-        Item = AgentContextSamples.Minimal().Item with { Description = "The login page says \"Sing in\".\n\nReported on GitHub as ShipLean/ShipLean#64." },
-        Comments = [new AgentCommentInput("9c1d2e3f-4a5b-4c6d-8e7f-0a1b2c3d4e5f", new AgentUserInput("", "GitHub @reporter", ""), AgentContextSamples.Created.AddMinutes(-5), "It is on the sign-in button too.")],
-        Guidance = "Write a proposal for this GitHub issue to the project's standards. Do not change any file.",
-        Mode = AgentSessionMode.Propose,
-    };
+        var minimal = AgentContextSamples.Minimal();
+        return minimal with
+        {
+            Creator = minimal.Creator with { Name = "" },
+            Item = new AgentItemInput(minimal.Item.Id, minimal.Item.Key, "Login button says Sing in", "The login page says \"Sing in\".\n\nIt should say \"Sign in\".", "", [], []),
+            Parent = null,
+            Feature = null,
+            Ancestors = null,
+            Comments = [new AgentCommentInput("9c1d2e3f-4a5b-4c6d-8e7f-0a1b2c3d4e5f", new AgentUserInput("", "reporter", ""), AgentContextSamples.Created.AddMinutes(-5), "It is on the sign-in button too.")],
+            Guidance = "Write a proposal for this GitHub issue to the project's standards. Do not change any file.",
+            Mode = AgentSessionMode.Propose,
+            Propose = new AgentProposeInput("ShipLean/ShipLean", 64, "reporter",
+            [
+                new AgentRelatedWork("SHIP-12", "story", "Done", "Fix sign-in copy", ["https://github.com/ShipLean/ShipLean/pull/40"],
+                    [new AgentMergeCommit("0a1b2c3d4e5f60718293a4b5c6d7e8f901234567", AgentContextSamples.Created.AddDays(-3))]),
+                new AgentRelatedWork("SHIP-30", "bug", "New", "Sign-in page typos", [], []),
+            ]),
+        };
+    }
 
     private static string Actual(System.Text.Json.Nodes.JsonObject body) => AgentContextRenderer.ToJson(body) + "\n";
 

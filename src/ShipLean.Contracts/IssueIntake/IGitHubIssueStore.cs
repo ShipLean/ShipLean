@@ -12,8 +12,12 @@ public interface IGitHubIssueStore
     Task<GitHubIssueRecord?> FindByWorkItemAsync(Guid workItemId, DbTransaction? transaction = null, CancellationToken cancellationToken = default);
 
     // Idempotent: when the issue is already stored, returns the stored record unchanged (whatever the arguments say).
+    // title and body are the issue's text from GitHub (the caller caps it); UpdateTextAsync replaces them when the issue is edited.
     Task<GitHubIssueRecord> InsertAsync(
-        IssueRef issue, Guid projectId, Guid workItemId, string authorLogin, IssuePhase phase, DbTransaction? transaction = null, CancellationToken cancellationToken = default);
+        IssueRef issue, Guid projectId, Guid workItemId, string authorLogin, string title, string body, IssuePhase phase, DbTransaction? transaction = null, CancellationToken cancellationToken = default);
+
+    // Replaces the issue's stored title and body (an `edited` issue event).
+    Task UpdateTextAsync(Guid id, string title, string body, DbTransaction? transaction = null, CancellationToken cancellationToken = default);
 
     // Compare and set: moves to `to` only when the current phase is one of `from`. False when it isn't (or the id is unknown).
     Task<bool> SetPhaseAsync(Guid id, IReadOnlyList<IssuePhase> from, IssuePhase to, DbTransaction? transaction = null, CancellationToken cancellationToken = default);

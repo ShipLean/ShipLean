@@ -6,7 +6,8 @@ namespace ShipLean.Application.Features.AgentDispatch.Rendering;
 // (sent as appUserId and oauthClientId). TriggerCommentId marks the thread the session was started from, if any.
 // Ancestors is the whole chain above the item, nearest first, each with its description; when set, the promptContext renders it in place of the parent.
 // Guidance is the prompt of the automation (or the person) that started the session; Transition is the move that fired it.
-// Mode is the session's mode; only a propose session adds shipleanMode to the `created` payload.
+// Mode is the session's mode; only a propose session adds shipleanMode to the `created` payload. Propose is set exactly when Mode is
+// Propose: the loader then builds an allowlisted input (AgentContextLoader.LoadProposeAsync) and the promptContext is AgentProposePromptContext.
 public sealed record AgentContextInput(
     string SessionId,
     string AppUserId,
@@ -22,4 +23,5 @@ public sealed record AgentContextInput(
     string? Guidance = null,
     AgentTransitionInput? Transition = null,
     IReadOnlyList<AgentRelatedItemInput>? Ancestors = null,
-    AgentSessionMode Mode = AgentSessionMode.Implement);
+    AgentSessionMode Mode = AgentSessionMode.Implement,
+    AgentProposeInput? Propose = null);

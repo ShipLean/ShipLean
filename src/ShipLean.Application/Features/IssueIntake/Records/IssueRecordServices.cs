@@ -12,5 +12,6 @@ public sealed class IssueRecordServices : IServiceModule
         services.AddSingleton<IGitHubIssueStore, DbGitHubIssueStore>();
         services.AddSingleton<IIssueEffects, DbIssueEffects>();
         services.AddSingleton<IIssueJobs, DbIssueJobs>();
+        services.AddScoped<IMirroredComments, DbMirroredComments>();
     }
 }
