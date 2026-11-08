@@ -142,15 +142,16 @@ public sealed class AgentSessionStarter(
         return new AgentStartOutcome(sessionId, null);
     }
 
-    // A propose session's input is the allowlisted one (it throws Validation when the item has no github_issue, so nothing is written).
+    // A propose session's input is the allowlisted one (it throws Validation when the item has no github_issue, so nothing is written); it
+    // never sees plan.RepoUrl, only the base branch.
     private Task<AgentContextInput> LoadAsync(
         Guid workItemId, Guid sessionId, DateTimeOffset now, AgentStartPlan plan, Guid creatorId, string? fallbackBaseUrl, string? prompt, AgentSessionMode mode,
         IReadOnlyList<AgentRelatedWork>? relatedItems, CancellationToken cancellationToken)
     {
-        var repository = new AgentRepositoryInput(plan.RepoUrl, plan.BaseBranch);
         return mode == AgentSessionMode.Propose
-            ? _loader.LoadProposeAsync(workItemId, sessionId, now, plan.ConnectionId, creatorId, repository, prompt, relatedItems ?? [], cancellationToken)
-            : _loader.LoadAsync(workItemId, sessionId, now, plan.ConnectionId, creatorId, repository, fallbackBaseUrl, prompt, cancellationToken);
+            ? _loader.LoadProposeAsync(workItemId, sessionId, now, plan.ConnectionId, creatorId, plan.BaseBranch, prompt, relatedItems ?? [], cancellationToken)
+            : _loader.LoadAsync(
+                workItemId, sessionId, now, plan.ConnectionId, creatorId, new AgentRepositoryInput(plan.RepoUrl, plan.BaseBranch), fallbackBaseUrl, prompt, cancellationToken);
     }
 
     // False when the partial unique index ux_agent_session_live finds the item taken.

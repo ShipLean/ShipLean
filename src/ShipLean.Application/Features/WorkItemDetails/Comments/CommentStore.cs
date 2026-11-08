@@ -12,7 +12,8 @@ namespace ShipLean.Application.Features.WorkItemDetails.Comments;
 // ICommentStore over Postgres. The author is ICurrentUser; an agent acting for them is stamped on the row (AgentStamp).
 // Archiving sets archived_at and keeps the row. An import never touches the archived mark or the created time and writes
 // updated_at = created_at, so "edited" (updated_at after created_at) is never true for an imported comment.
-// Add, edit, supersede and archive publish commentsChanged after the write; an import publishes nothing (it reports through importProgress).
+// Add, edit, supersede and archive publish commentsChanged after the write; an import publishes nothing (it reports through importProgress),
+// and neither does an add on the caller's transaction (the caller publishes after it commits).
 public sealed class CommentStore(
     NpgsqlDataSource dataSource,
     ICurrentUser currentUser,
@@ -70,7 +71,11 @@ public sealed class CommentStore(
             transaction,
             cancellationToken: cancellationToken));
         var added = await ReadAsync(connection, id, cancellationToken, transaction);
-        await PublishChangedAsync(connection, workItemId, cancellationToken, transaction);
+        // On the caller's transaction nothing is published: the caller publishes after it commits (ICommentStore).
+        if (transaction is null)
+        {
+            await PublishChangedAsync(connection, workItemId, cancellationToken);
+        }
         return added;
     }
 
@@ -161,10 +166,10 @@ public sealed class CommentStore(
         throw live ? ApiException.Forbidden("Only the author can edit a comment.") : ApiException.NotFound("That comment does not exist.");
     }
 
-    private async Task PublishChangedAsync(NpgsqlConnection connection, Guid workItemId, CancellationToken cancellationToken, NpgsqlTransaction? transaction = null)
+    private async Task PublishChangedAsync(NpgsqlConnection connection, Guid workItemId, CancellationToken cancellationToken)
     {
         var projectId = await connection.ExecuteScalarAsync<Guid>(new CommandDefinition(
-            "SELECT project_id FROM work_item WHERE id = @workItemId", new { workItemId }, transaction, cancellationToken: cancellationToken));
+            "SELECT project_id FROM work_item WHERE id = @workItemId", new { workItemId }, cancellationToken: cancellationToken));
         await events.PublishAsync(new CommentsChanged(projectId, workItemId));
     }
 

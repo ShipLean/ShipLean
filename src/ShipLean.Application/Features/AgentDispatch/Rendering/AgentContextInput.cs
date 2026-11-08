@@ -8,6 +8,7 @@ namespace ShipLean.Application.Features.AgentDispatch.Rendering;
 // Guidance is the prompt of the automation (or the person) that started the session; Transition is the move that fired it.
 // Mode is the session's mode; only a propose session adds shipleanMode to the `created` payload. Propose is set exactly when Mode is
 // Propose: the loader then builds an allowlisted input (AgentContextLoader.LoadProposeAsync) and the promptContext is AgentProposePromptContext.
+// In propose mode Repository is the GitHub issue's repository (rendered as shipleanRepository, not in promptContext) and Project.Name is blank.
 public sealed record AgentContextInput(
     string SessionId,
     string AppUserId,

@@ -16,6 +16,9 @@ public sealed class AgentContextProposeTests
         var body = AgentContextRenderer.RenderCreated(Propose());
 
         body["shipleanMode"]!.GetValue<string>().ShouldBe("propose");
+        body["shipleanRepository"]!["url"]!.GetValue<string>().ShouldBe("https://github.com/ShipLean/ShipLean");
+        body["promptContext"]!.GetValue<string>().ShouldNotContain("<guidance");
+        body["promptContext"]!.GetValue<string>().ShouldNotContain("<repository");
         GoldenFor("agent-created-propose", body).ShouldBe(Actual(body));
     }
 
@@ -28,13 +31,15 @@ public sealed class AgentContextProposeTests
     }
 
     // A propose input as AgentContextLoader.LoadProposeAsync builds it: the issue's text from github_issue, no item url, labels,
-    // criteria, parent or creator name; one comment mirrored from GitHub; two related items; the round's instructions as guidance.
+    // criteria, parent, creator name or project name; the GitHub issue's repository as the checkout; one comment mirrored from GitHub; two related items; the round's instructions as guidance.
     private static AgentContextInput Propose()
     {
         var minimal = AgentContextSamples.Minimal();
         return minimal with
         {
             Creator = minimal.Creator with { Name = "" },
+            Project = minimal.Project with { Name = "" },
+            Repository = new AgentRepositoryInput("https://github.com/ShipLean/ShipLean", "main"),
             Item = new AgentItemInput(minimal.Item.Id, minimal.Item.Key, "Login button says Sing in", "The login page says \"Sing in\".\n\nIt should say \"Sign in\".", "", [], []),
             Parent = null,
             Feature = null,

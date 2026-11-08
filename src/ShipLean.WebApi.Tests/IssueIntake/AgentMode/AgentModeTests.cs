@@ -102,6 +102,17 @@ public class AgentModeTests : ApiFixture
     {
         var (arranged, item) = await ArrangeItemAsync();
         string[] sentinels = await ArrangePrivateTextAsync(arranged, item);
+        var projectName = $"private-project-name-sentinel-{Guid.NewGuid():N}";
+        const string RepoUrl = "https://private-repo-sentinel.example/acme/api.git";
+        const string BaseRef = "private-base-ref-sentinel";
+        const string Guidance = "private-guidance-sentinel";
+        await using (var database = await OpenDatabaseAsync())
+        {
+            await database.ExecuteAsync(
+                "UPDATE project SET name = @projectName, repo_url = @RepoUrl, repo_base_branch = @BaseRef WHERE id = @id",
+                new { projectName, RepoUrl, BaseRef, id = arranged.Project.Id });
+        }
+        sentinels = [.. sentinels, projectName, RepoUrl];
         var fallback = "https://private-instance-sentinel.example";
         string instance;
         await using (var database = await OpenDatabaseAsync())
@@ -113,7 +124,7 @@ public class AgentModeTests : ApiFixture
         // Control: an implement session on the same item carries every sentinel, so each one is really reachable.
         var implement = (await Starter.StartAsync(item, SeedIds.Users.Joel, fallback, null, null, null, CancellationToken.None)).SessionId!.Value;
         var implementBody = await CreatedOfModeAsync(item, "implement");
-        foreach (var sentinel in sentinels.Append(instance))
+        foreach (var sentinel in sentinels.Append(instance).Append(BaseRef))
         {
             implementBody.ShouldContain(sentinel);
         }
@@ -122,7 +133,7 @@ public class AgentModeTests : ApiFixture
         var issue = await InsertIssueAsync(arranged, item);
         await MirrorAsync(issue, GitHubComment);
         await Starter.StartWinnerAsync(
-            item, SeedIds.Users.Joel, fallback, null, (_, _) => Task.FromResult("Propose."), CancellationToken.None, AgentSessionMode.Propose,
+            item, SeedIds.Users.Joel, fallback, null, (_, _) => Task.FromResult(Guidance), CancellationToken.None, AgentSessionMode.Propose,
             [new AgentRelatedWork("SHIP-12", "story", "Done", "Related title", ["https://github.com/o/r/pull/4"], [new AgentMergeCommit("abc1234", null)])]);
 
         var body = await CreatedOfModeAsync(item, "propose");
@@ -141,6 +152,44 @@ public class AgentModeTests : ApiFixture
         session["issue"]!["labels"]!.AsArray().ShouldBeEmpty();
         session["creator"]!["name"]!.GetValue<string>().ShouldBeEmpty();
         session["creator"]!["email"]!.GetValue<string>().ShouldNotBeNullOrWhiteSpace();
+        session["issue"]!["team"]!["name"]!.GetValue<string>().ShouldBeEmpty();
+        session["issue"]!["team"]!["key"]!.GetValue<string>().ShouldBe(arranged.Project.Key);
+
+        // Guidance (the session prompt) and the checkout are envelope-only: the relay reads them, the agent's promptContext never has them.
+        var guidance = created["guidance"]!.AsArray().ShouldHaveSingleItem()!;
+        guidance["body"]!.GetValue<string>().ShouldBe(Guidance);
+        guidance["origin"]!["team"]!["name"]!.GetValue<string>().ShouldBeEmpty();
+        guidance["origin"]!["team"]!["displayName"]!.GetValue<string>().ShouldBeEmpty();
+        created["shipleanRepository"]!["url"]!.GetValue<string>().ShouldBe($"https://github.com/{issue.Issue.Repository}");
+        created["shipleanRepository"]!["baseRef"]!.GetValue<string>().ShouldBe(BaseRef);
+        var rest = created.AsObject();
+        rest.Remove("guidance");
+        rest.Remove("shipleanRepository");
+        var outsideEnvelopeFields = rest.ToJsonString();
+        outsideEnvelopeFields.ShouldNotContain(Guidance);
+        outsideEnvelopeFields.ShouldNotContain(BaseRef);
+        var promptContext = rest["promptContext"]!.GetValue<string>();
+        promptContext.ShouldNotContain(Guidance);
+        promptContext.ShouldNotContain(BaseRef);
+        promptContext.ShouldNotContain("<repository");
+    }
+
+    [Test]
+    public async Task Context_WhenMirroredCommentEditedInShipLean_ShouldKeepGitHubText()
+    {
+        var (arranged, item) = await ArrangeItemAsync();
+        var issue = await InsertIssueAsync(arranged, item);
+        var mirrored = await MirrorAsync(issue, GitHubComment);
+        await using (var database = await OpenDatabaseAsync())
+        {
+            await database.ExecuteAsync("UPDATE comment SET body = 'Edited in ShipLean by the run-as user' WHERE id = @id", new { id = mirrored.CommentId });
+        }
+
+        await Starter.StartWinnerAsync(item, SeedIds.Users.Joel, null, null, (_, _) => Task.FromResult("Propose."), CancellationToken.None, AgentSessionMode.Propose);
+
+        var context = (await CreatedBodyAsync(item))["promptContext"]!.GetValue<string>();
+        context.ShouldContain(GitHubComment);
+        context.ShouldNotContain("Edited in ShipLean");
     }
 
     [Test]
@@ -278,16 +327,17 @@ public class AgentModeTests : ApiFixture
             "Login button says Sing in", "The login page says Sing in.", IssuePhase.Proposing);
 
     // A GitHub comment mirrored with its provenance row, as the replies lane does it.
-    private async Task MirrorAsync(GitHubIssueRecord issue, string body)
+    private async Task<MirroredCommentAdd> MirrorAsync(GitHubIssueRecord issue, string body)
     {
         await using var scope = Host.Services.CreateAsyncScope();
         await using var database = await OpenDatabaseAsync();
         await using var transaction = await database.BeginTransactionAsync();
         var githubId = Random.Shared.NextInt64(1, long.MaxValue);
-        await scope.ServiceProvider.GetRequiredService<IMirroredComments>().AddAsync(
+        var added = await scope.ServiceProvider.GetRequiredService<IMirroredComments>().AddAsync(
             new MirroredComment(issue.Id, githubId, $"https://github.com/{issue.Issue.Repository}/issues/{issue.Issue.Number}#issuecomment-{githubId}", "reporter", body, Host.Services.GetRequiredService<TimeProvider>().GetUtcNow(), SeedIds.Users.Joel),
             transaction);
         await transaction.CommitAsync();
+        return added;
     }
 
     // Private text in every place a propose session must not read: the item's description, a parent's description, an attachment's

@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Data.Common;
+using ShipLean.Contracts.Events;
 using ShipLean.Contracts.IssueIntake;
 
 namespace ShipLean.TestSupport.IssueIntake;
@@ -14,13 +15,13 @@ public sealed class RecordingMirroredComments : IMirroredComments
     public Task<Guid?> FindByUrlAsync(string htmlUrl, DbTransaction? transaction = null, CancellationToken cancellationToken = default)
         => Task.FromResult(_added.TryGetValue(htmlUrl, out var found) ? found.Id : (Guid?)null);
 
-    public Task<Guid> AddAsync(MirroredComment comment, DbTransaction transaction, CancellationToken cancellationToken = default)
+    // A second add of one HtmlUrl returns the first id and no event, as the real one does. The event names no real project or
+    // work item (Guid.Empty): this double knows neither.
+    public Task<MirroredCommentAdd> AddAsync(MirroredComment comment, DbTransaction transaction, CancellationToken cancellationToken = default)
     {
         var id = Guid.CreateVersion7();
-        if (!_added.TryAdd(comment.HtmlUrl, (id, comment)))
-        {
-            throw new InvalidOperationException($"{comment.HtmlUrl} is already mirrored.");
-        }
-        return Task.FromResult(id);
+        return Task.FromResult(_added.TryAdd(comment.HtmlUrl, (id, comment))
+            ? new MirroredCommentAdd(id, new CommentsChanged(Guid.Empty, Guid.Empty))
+            : new MirroredCommentAdd(_added[comment.HtmlUrl].Id, null));
     }
 }

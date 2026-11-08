@@ -6,7 +6,8 @@ namespace ShipLean.Application.Features.AgentDispatch.Rendering;
 
 // A propose session's promptContext (D10, D17), rendered only from the allowlisted input: the GitHub issue (repository, number,
 // author login, title, body), the comments mirrored from it by GitHub login, the related items (key, type, state, title, pull
-// request URLs, merge commits), the guidance and the code repository the relay checks out. Nothing else of the item is rendered.
+// request URLs, merge commits). Nothing else is rendered: the guidance travels in the envelope's guidance (the session prompt)
+// and the checkout in its shipleanRepository, which the relay reads and never puts in the agent's prompt.
 internal static class AgentProposePromptContext
 {
     public static string Render(AgentContextInput input, AgentProposeInput propose)
@@ -33,18 +34,7 @@ internal static class AgentProposePromptContext
         }
 
         AppendRelated(xml, propose.Related);
-
-        if (string.IsNullOrWhiteSpace(input.Guidance))
-        {
-            xml.Append("<guidance/>\n");
-        }
-        else
-        {
-            xml.Append("<guidance>").Append(AgentXml.Escape(input.Guidance)).Append("</guidance>\n");
-        }
-        xml.Append("<repository url=\"").Append(AgentXml.Escape(input.Repository.Url))
-            .Append("\" base-ref=\"").Append(AgentXml.Escape(input.Repository.BaseRef)).Append("\"/>");
-        return xml.ToString();
+        return xml.ToString().TrimEnd('\n');
     }
 
     private static void AppendRelated(StringBuilder xml, IReadOnlyList<AgentRelatedWork> related)

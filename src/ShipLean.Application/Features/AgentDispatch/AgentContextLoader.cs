@@ -8,6 +8,7 @@ using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Attachments;
 using ShipLean.Contracts.Blobs;
 using ShipLean.Contracts.Errors;
+using ShipLean.Contracts.IssueIntake;
 using ShipLean.Contracts.Mcp;
 using ShipLean.Contracts.Persisted;
 
@@ -115,18 +116,20 @@ internal sealed class AgentContextLoader(NpgsqlDataSource dataSource, Lazy<IBlob
     }
 
     // A propose session's input, built from an allowlist, not by filtering the one above (D10, D17): the github_issue's repository,
-    // number, title, body and author login; the comments that have a github_issue_comment provenance row, each by its GitHub login;
-    // and the related items given. The item contributes only its id and key, the project its id, key and name, and the creator
-    // their id and email (the relay checks the email against its allow-list). No description, criteria, ancestors, assignee,
-    // attachments, links, instance URLs or people's names. Throws Validation when the item has no github_issue.
+    // number, title, body and author login; the comments that have a github_issue_comment provenance row, each by its GitHub login
+    // and with the GitHub text stored on that row (never comment.body, which the run-as user can edit); and the related items given.
+    // The item contributes only its id and key, the project its id and key (its name is blank), and the creator their id and email
+    // (the relay checks the email against its allow-list). The repository is the GitHub issue's own, https://github.com/{owner}/{name},
+    // never the project's repo_url, with the given base ref. No description, criteria, ancestors, assignee, attachments, links,
+    // instance URLs, project name or people's names. Throws Validation when the item has no github_issue.
     public async Task<AgentContextInput> LoadProposeAsync(
-        Guid workItemId, Guid sessionId, DateTimeOffset createdAt, Guid connectionId, Guid creatorId, AgentRepositoryInput repository, string? guidance,
+        Guid workItemId, Guid sessionId, DateTimeOffset createdAt, Guid connectionId, Guid creatorId, string baseRef, string? guidance,
         IReadOnlyList<AgentRelatedWork> related, CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var issue = await connection.QuerySingleOrDefaultAsync<ProposeIssueRow>(new CommandDefinition(
             """
-            SELECT g.id, w.id AS itemId, w.key AS itemKey, p.id AS projectId, p.key AS projectKey, p.name AS projectName,
+            SELECT g.id, w.id AS itemId, w.key AS itemKey, p.id AS projectId, p.key AS projectKey,
                    g.repository, g.number, g.author_login AS authorLogin, g.title, g.body
             FROM github_issue g JOIN work_item w ON w.id = g.work_item_id JOIN project p ON p.id = w.project_id
             WHERE g.work_item_id = @workItemId
@@ -138,7 +141,7 @@ internal sealed class AgentContextLoader(NpgsqlDataSource dataSource, Lazy<IBlob
             "SELECT email FROM app_user WHERE id = @creatorId", new { creatorId }, cancellationToken: cancellationToken));
         var comments = (await connection.QueryAsync<ProposeCommentRow>(new CommandDefinition(
             """
-            SELECT c.id, m.author_login AS authorLogin, c.created_at AS createdAt, c.body
+            SELECT c.id, m.author_login AS authorLogin, c.created_at AS createdAt, m.body
             FROM github_issue_comment m JOIN comment c ON c.id = m.comment_id
             WHERE m.github_issue_id = @issueId AND c.archived_at IS NULL
             ORDER BY c.created_at, c.id
@@ -150,8 +153,8 @@ internal sealed class AgentContextLoader(NpgsqlDataSource dataSource, Lazy<IBlob
             connectionId.ToString(),
             createdAt,
             new AgentUserInput(creatorId.ToString(), string.Empty, creatorEmail),
-            new AgentProjectInput(issue.ProjectId.ToString(), issue.ProjectKey, issue.ProjectName),
-            repository,
+            new AgentProjectInput(issue.ProjectId.ToString(), issue.ProjectKey, string.Empty),
+            new AgentRepositoryInput($"{Uri.UriSchemeHttps}://{IssueRef.GitHubHost}/{issue.Repository}", baseRef),
             new AgentItemInput(issue.ItemId.ToString(), issue.ItemKey, issue.Title, Blank(issue.Body), string.Empty, [], []),
             null,
             null,

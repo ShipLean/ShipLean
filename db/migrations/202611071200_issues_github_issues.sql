@@ -50,13 +50,15 @@ CREATE INDEX ix_github_issue_accepted_open ON github_issue (project_id) WHERE ph
 
 -- Provenance of a comment mirrored from GitHub: only a comment with a row here counts as the reporter's words in a propose
 -- session (D10, D17). An agent name such as "GitHub @login" proves nothing, because any agent can choose its name. html_url is
--- GitHub's link to the comment, so mirroring one twice finds the first; created_at is GitHub's time for the comment.
+-- GitHub's link to the comment, so mirroring one twice finds the first; created_at is GitHub's time for the comment. body is
+-- the GitHub text (capped at 64 KB by the caller): a propose session reads it, never comment.body, which the run-as user can edit.
 CREATE TABLE github_issue_comment (
     comment_id        uuid PRIMARY KEY REFERENCES comment (id),
     github_issue_id   uuid NOT NULL REFERENCES github_issue (id),
     github_comment_id bigint NOT NULL,
     html_url          text NOT NULL UNIQUE,
     author_login      text NOT NULL,
+    body              text NOT NULL,
     created_at        timestamptz NOT NULL
 );
 CREATE INDEX ix_github_issue_comment_issue ON github_issue_comment (github_issue_id);

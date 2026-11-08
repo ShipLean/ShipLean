@@ -30,7 +30,7 @@
       "team": {
         "id": "a1c4e7f0-2b36-4d58-9e71-6f0b3d8c5a24",
         "key": "SHIP",
-        "name": "ShipLean"
+        "name": ""
       },
       "url": "",
       "labels": []
@@ -44,12 +44,16 @@
         "team": {
           "id": "a1c4e7f0-2b36-4d58-9e71-6f0b3d8c5a24",
           "key": "SHIP",
-          "name": "ShipLean",
-          "displayName": "ShipLean"
+          "name": "",
+          "displayName": ""
         }
       }
     }
   ],
-  "promptContext": "<github-issue repository=\"ShipLean/ShipLean\" number=\"64\" author-login=\"reporter\">\n  <title>Login button says Sing in</title>\n  <body>The login page says &quot;Sing in&quot;.\n\nIt should say &quot;Sign in&quot;.</body>\n</github-issue>\n<github-comments>\n  <comment author-login=\"reporter\" created-at=\"2026-10-28 09:25:00\">It is on the sign-in button too.</comment>\n</github-comments>\n<related-items>\n  <item identifier=\"SHIP-12\" type=\"story\" state=\"Done\">\n    <title>Fix sign-in copy</title>\n    <pull-request url=\"https://github.com/ShipLean/ShipLean/pull/40\"/>\n    <merge-commit sha=\"0a1b2c3d4e5f60718293a4b5c6d7e8f901234567\" merged-at=\"2026-10-25T09:30:00Z\"/>\n  </item>\n  <item identifier=\"SHIP-30\" type=\"bug\" state=\"New\">\n    <title>Sign-in page typos</title>\n  </item>\n</related-items>\n<guidance>Write a proposal for this GitHub issue to the project&apos;s standards. Do not change any file.</guidance>\n<repository url=\"https://github.com/ShipLean/ShipLean.git\" base-ref=\"main\"/>",
-  "shipleanMode": "propose"
+  "promptContext": "<github-issue repository=\"ShipLean/ShipLean\" number=\"64\" author-login=\"reporter\">\n  <title>Login button says Sing in</title>\n  <body>The login page says &quot;Sing in&quot;.\n\nIt should say &quot;Sign in&quot;.</body>\n</github-issue>\n<github-comments>\n  <comment author-login=\"reporter\" created-at=\"2026-10-28 09:25:00\">It is on the sign-in button too.</comment>\n</github-comments>\n<related-items>\n  <item identifier=\"SHIP-12\" type=\"story\" state=\"Done\">\n    <title>Fix sign-in copy</title>\n    <pull-request url=\"https://github.com/ShipLean/ShipLean/pull/40\"/>\n    <merge-commit sha=\"0a1b2c3d4e5f60718293a4b5c6d7e8f901234567\" merged-at=\"2026-10-25T09:30:00Z\"/>\n  </item>\n  <item identifier=\"SHIP-30\" type=\"bug\" state=\"New\">\n    <title>Sign-in page typos</title>\n  </item>\n</related-items>",
+  "shipleanMode": "propose",
+  "shipleanRepository": {
+    "url": "https://github.com/ShipLean/ShipLean",
+    "baseRef": "main"
+  }
 }

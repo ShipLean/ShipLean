@@ -10,7 +10,9 @@ public interface IMirroredComments
     Task<Guid?> FindByUrlAsync(string htmlUrl, DbTransaction? transaction = null, CancellationToken cancellationToken = default);
 
     // Writes the comment on the issue's work item through ICommentStore.AddAsAgentAsync (agent name "GitHub @login", written as
-    // RunAsUserId) and its provenance row, both in the caller's transaction. Returns the ShipLean comment's id. Not idempotent on
-    // its own: a second comment with the same HtmlUrl fails on the unique index, so call FindByUrlAsync first in the same transaction.
-    Task<Guid> AddAsync(MirroredComment comment, DbTransaction transaction, CancellationToken cancellationToken = default);
+    // RunAsUserId) and its provenance row (with the GitHub text, Body, which a propose session reads), both in the caller's
+    // transaction. Idempotent per HtmlUrl: it first takes pg_advisory_xact_lock(hashtextextended('github_issue_comment:' || html_url, 0))
+    // in the caller's transaction, so two deliveries of one GitHub comment serialise, and the second gets the first one's comment id
+    // back with no event. Publishes nothing: after the caller commits, it publishes the result's Changed through IProjectEvents.
+    Task<MirroredCommentAdd> AddAsync(MirroredComment comment, DbTransaction transaction, CancellationToken cancellationToken = default);
 }

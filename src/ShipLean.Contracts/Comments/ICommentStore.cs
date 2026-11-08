@@ -18,7 +18,8 @@ public interface ICommentStore
     Task<CommentDto> AddAsAgentAsync(Guid workItemId, CommentCreate create, string agentName, Guid authorId, CancellationToken cancellationToken = default);
 
     // AddAsAgentAsync on the caller's transaction, so the comment commits with the caller's other writes (a comment mirrored from
-    // GitHub and its provenance row) or not at all. commentsChanged goes out when the comment is written, before the caller commits.
+    // GitHub and its provenance row) or not at all. Publishes nothing: the caller publishes CommentsChanged(projectId, workItemId)
+    // through IProjectEvents after it commits, as IProjectEvents requires (IMirroredComments hands it the event to publish).
     Task<CommentDto> AddAsAgentAsync(Guid workItemId, CommentCreate create, string agentName, Guid authorId, DbTransaction transaction, CancellationToken cancellationToken = default);
 
     // Author only. Throws NotFound for an unknown or archived comment, Forbidden for anyone else, Validation for a blank or too long body.
