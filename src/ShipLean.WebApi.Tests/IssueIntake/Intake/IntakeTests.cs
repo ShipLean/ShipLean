@@ -115,7 +115,8 @@ public class IntakeTests : ApiFixture
         outcomes[0].Item.ShouldNotBeNull();
         outcomes[1].Item.ShouldBe(outcomes[0].Item);
         (await ItemsTitledAsync(issue.Title)).ShouldBe(1);
-        _rounds.Requests.Count(r => r.IssueId == RecordAsync(issue.Issue).Result!.Id).ShouldBe(1);
+        var record = (await RecordAsync(issue.Issue))!;
+        _rounds.Requests.Count(r => r.IssueId == record.Id).ShouldBe(1);
     }
 
     [Test]
@@ -221,7 +222,7 @@ public class IntakeTests : ApiFixture
         await ChangedAsync(issue with { Action = IssueAction.Reopened, UpdatedAt = issue.UpdatedAt.AddMinutes(1) });
 
         (await RecordAsync(issue.Issue))!.OpenOnGitHub.ShouldBeTrue();
-        (await CommentsAsync(item)).Last().ShouldBe("The issue was reopened on GitHub.");
+        (await CommentsAsync(item))[^1].ShouldBe("The issue was reopened on GitHub.");
     }
 
     [Test]
@@ -307,13 +308,6 @@ public class IntakeTests : ApiFixture
             new { project = SeedIds.Projects.Ship, key });
     }
 
-    private async Task<ItemRow> ItemAsync(Guid id)
-    {
-        await using var connection = await OpenDatabaseAsync();
-        return await connection.QuerySingleAsync<ItemRow>(
-            "SELECT w.id, w.type, w.title, w.description, s.name AS stateName FROM work_item w JOIN state s ON s.id = w.state_id WHERE w.id = @id", new { id });
-    }
-
     private async Task<int> ItemsTitledAsync(string title)
     {
         await using var connection = await OpenDatabaseAsync();
@@ -323,7 +317,7 @@ public class IntakeTests : ApiFixture
     private async Task<IReadOnlyList<string>> LinkUrlsAsync(Guid itemId)
     {
         await using var connection = await OpenDatabaseAsync();
-        return [.. await connection.QueryAsync<string>("SELECT url FROM link WHERE work_item_id = @itemId AND url IS NOT NULL", new { itemId })];
+        return [.. await connection.QueryAsync<string>("SELECT url FROM work_item_link WHERE source_id = @itemId AND url IS NOT NULL", new { itemId })];
     }
 
     private async Task<IReadOnlyList<string>> CommentsAsync(string key)
@@ -332,12 +326,6 @@ public class IntakeTests : ApiFixture
         return [.. await connection.QueryAsync<string>(
             "SELECT c.body FROM comment c JOIN work_item w ON w.id = c.work_item_id WHERE w.project_id = @project AND @key = 'SHIP-' || w.number ORDER BY c.created_at, c.id",
             new { project = SeedIds.Projects.Ship, key })];
-    }
-
-    private async Task<IReadOnlyList<string>> CommentsAsync(Guid itemId)
-    {
-        await using var connection = await OpenDatabaseAsync();
-        return [.. await connection.QueryAsync<string>("SELECT body FROM comment WHERE work_item_id = @itemId ORDER BY created_at, id", new { itemId })];
     }
 
     private async Task SetPhaseAsync(Guid id, IssuePhase phase)
