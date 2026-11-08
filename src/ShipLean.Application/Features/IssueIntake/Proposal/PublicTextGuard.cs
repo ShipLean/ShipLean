@@ -52,15 +52,15 @@ public sealed partial class PublicTextGuard
             .ToList();
 
         // The ASCII and Unicode spellings of each host; the lookbehind lets a subdomain match, but not another host that ends
-        // with the same letters (notprod.<host>).
+        // with the same letters (notprod.<host>), and the lookahead rejects a longer host that starts with it (<host>.example.com).
         hosts = asciiHosts
             .SelectMany(h => new[] { h, UnicodeOf(h) })
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Select(h => new Regex($"(?<![a-z0-9-]){Regex.Escape(h)}(?![a-z0-9-])", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, MatchTimeout))
+            .Select(h => new Regex($"(?<![a-z0-9-]){Regex.Escape(h)}(?![a-z0-9-]|\\.[a-z0-9-])", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, MatchTimeout))
             .ToList();
         names = memberNames
-            .Select(n => n.Trim())
-            .Where(n => n.Length >= 2)
+            .Select(n => Whitespace().Replace(n.Trim(), " "))
+            .Where(n => n.Contains(' ')) // a single word ("Mark") is an ordinary word, so only full names are matched
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderByDescending(n => n.Length)
             .Select(n => (n, NamePattern(n)))

@@ -12,7 +12,7 @@ public sealed partial class PublicTextGuardTests
 {
     private const string Author = "reporter";
 
-    private static readonly PublicTextGuard Guard = new(["https://prod.shiplean.app/"], ["Joel Dickson", "Ana Silva", "Ana"]);
+    private static readonly PublicTextGuard Guard = new(["https://prod.shiplean.app/"], ["Joel Dickson", "Ana Silva", "Mark"]);
 
     [Test]
     public void Guard_WhenMentionsOthers_ShouldNeutralise()
@@ -124,14 +124,49 @@ public sealed partial class PublicTextGuardTests
     [TestCase("Ask `joel@example.com` today.", "Ask `` today.")]
     [TestCase("Ask Joel Dickson today.", "Ask  today.")]
     [TestCase("Ask JOEL\nDICKSON today.", "Ask  today.")]
-    [TestCase("Ask ana silva and Ana today.", "Ask  and  today.")]
-    [TestCase("Ask An&#97; today.", "Ask  today.")]
+    [TestCase("Ask ana silva and ANA   SILVA today.", "Ask  and  today.")]
+    [TestCase("Ask An&#97; Silva today.", "Ask  today.")]
     public void Guard_WhenEmailOrMemberName_ShouldRemove(string text, string expected)
     {
         var result = Guard.Clean(text, Author);
 
         result.Text.ShouldBe(expected);
         result.Removed.ShouldNotBeEmpty();
+    }
+
+    [TestCase("https://github.io.example.com/path", true)]
+    [TestCase("https://x.github.io/a", false)]
+    [TestCase("https://github.io/a", false)]
+    [TestCase("https://shiplean.example.com.evil.net/", true)]
+    [TestCase("https://sub.shiplean.example.com/", false)]
+    public void Guard_WhenHostOnlyStartsWithInstance_ShouldKeepIt(string url, bool survives)
+    {
+        var guard = new PublicTextGuard([url.Contains("shiplean") ? "https://shiplean.example.com/" : "https://github.io/"], []);
+
+        var result = guard.Clean($"See {url} now.", Author);
+
+        result.Text.Contains(url, StringComparison.Ordinal).ShouldBe(survives, string.Join(" | ", result.Removed));
+        result.Safe.ShouldBeTrue(string.Join(" | ", result.Removed));
+    }
+
+    [Test]
+    public void Guard_WhenSingleWordMemberName_ShouldKeepOrdinaryWord()
+    {
+        var result = Guard.Clean("Mark this issue as complete", Author);
+
+        result.Safe.ShouldBeTrue(string.Join(" | ", result.Removed));
+        result.Text.ShouldBe("Mark this issue as complete");
+    }
+
+    [TestCase("Mark Smith said hi")]
+    [TestCase("Mark **Smith** said hi")]
+    public void Guard_WhenTwoWordMemberName_ShouldRemoveOrFailClosed(string text)
+    {
+        var guard = new PublicTextGuard(["https://prod.shiplean.app/"], ["Mark Smith"]);
+
+        var result = guard.Clean(text, Author);
+
+        (result.Safe ? result.Text : string.Empty).ShouldNotContain("Smith");
     }
 
     [Test]
