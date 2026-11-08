@@ -295,6 +295,52 @@ public class OutboxDeliveryTests : ApiFixture
     }
 
     [Test]
+    public async Task Deliver_WhenCommentSkippedThenIssueReopens_ShouldNotSendCloseBehindIt()
+    {
+        var (issueId, issue) = await NewIssueAsync();
+        var store = Host.Services.GetRequiredService<IGitHubIssueStore>();
+        await store.SetOpenOnGitHubAsync(issueId, false, DateTimeOffset.FromUnixTimeSeconds(1_800_000_000));
+        await EnqueueAsync(OutboxEntry.Comment(issueId, Key("skipped"), "Update."));
+        var close = await EnqueueAsync(OutboxEntry.Close(issueId, Key("close"), CloseReason.Completed));
+        await using (var connection = await DataSource.OpenConnectionAsync())
+        {
+            // Not due on the first run, so only the skip of the comment can decide it.
+            await connection.ExecuteAsync("UPDATE github_outbox SET next_attempt_at = @later WHERE id = @close", new { close, later = _clock.GetUtcNow() + TimeSpan.FromHours(1) });
+        }
+
+        await Deliverer().RunDueAsync(CancellationToken.None);
+        await store.SetOpenOnGitHubAsync(issueId, true, DateTimeOffset.FromUnixTimeSeconds(1_800_000_100));
+        _clock.Advance(TimeSpan.FromHours(2));
+        await Deliverer().RunDueAsync(CancellationToken.None);
+
+        _recording.Calls.ShouldBeEmpty($"nothing may reach {issue}: the comment was skipped, so the close behind it is too");
+        (await RowsAsync(issueId)).Select(r => (r.Kind, r.Sent, r.Failed, r.LastResult))
+            .ShouldBe([("comment", true, false, "skipped: issue closed"), ("close", true, false, "skipped: issue closed")]);
+    }
+
+    [Test]
+    public async Task Deliver_WhenReopenCommitsDuringSkip_ShouldSendComment()
+    {
+        var (issueId, issue) = await NewIssueAsync();
+        await Host.Services.GetRequiredService<IGitHubIssueStore>().SetOpenOnGitHubAsync(issueId, false, DateTimeOffset.FromUnixTimeSeconds(1_800_000_000));
+        await EnqueueAsync(OutboxEntry.Comment(issueId, Key("reopening"), "Update."));
+
+        // A reopen, mid-transaction: it holds the outbox's per-issue lock (its repost check) and has set the issue open.
+        await using var connection = await DataSource.OpenConnectionAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+        await connection.ExecuteAsync("SELECT pg_advisory_xact_lock(hashtextextended('github_outbox:' || @issueId::text, 0))", new { issueId }, transaction);
+        await connection.ExecuteAsync("UPDATE github_issue SET open_on_github = true WHERE id = @issueId", new { issueId }, transaction);
+        var deliver = Task.Run(() => Deliverer().RunDueAsync(CancellationToken.None));
+        await WaitForEnqueueLockWaitAsync(deliver);
+        deliver.IsCompleted.ShouldBeFalse("the skip did not wait for the reopen's lock");
+        await transaction.CommitAsync();
+        await deliver;
+
+        _recording.Calls.ShouldBe([$"comment {issue}"]);
+        (await RowsAsync(issueId)).Select(r => (r.Kind, r.Sent, r.LastResult)).ShouldBe([("comment", true, "ok")]);
+    }
+
+    [Test]
     public async Task Deliver_WhenIssueClosesBeforeSend_ShouldSkipCommentAndClose()
     {
         var (issueId, issue) = await NewIssueAsync();
@@ -308,7 +354,9 @@ public class OutboxDeliveryTests : ApiFixture
         // The issue is closed on GitHub after the next claim, while that claim reconciles.
         _github = new HookedGitHubIssues(_recording).BeforeList(() => Host.Services.GetRequiredService<IGitHubIssueStore>().SetOpenOnGitHubAsync(issueId, false, DateTimeOffset.FromUnixTimeSeconds(1_800_000_000)));
         _clock.Advance(TimeSpan.FromMinutes(1));
-        (await Deliverer().RunDueAsync(CancellationToken.None)).ShouldBe(3);
+
+        // Two claims: the comment's skip also skips the close queued behind it (SHIP-766 E3), then the reopen.
+        (await Deliverer().RunDueAsync(CancellationToken.None)).ShouldBe(2);
 
         _recording.Calls.ShouldBe([$"comment {issue}", $"list {issue}", $"reopen {issue}"]);
         var rows = await RowsAsync(issueId);

@@ -69,17 +69,51 @@ internal static class OutboxClaims
             cancellationToken: cancellationToken));
     }
 
-    // Finished unsent: the issue is closed on GitHub, so a comment or close is skipped (nothing went wrong).
-    public static async Task<bool> MarkSkippedAsync(NpgsqlDataSource dataSource, OutboxClaim claim, DateTimeOffset now, CancellationToken cancellationToken)
+    // Finished unsent: the issue is closed on GitHub, so a comment or close is skipped (nothing went wrong). A skipped comment also
+    // skips every close queued behind it on the issue, the same way, so the issue is never closed after an update it should have
+    // carried was dropped (a reopen in between would otherwise let the close go). One transaction that first takes the issue's
+    // enqueue lock (LockIssueAsync) and then rechecks open_on_github: a reopen's repost check (DbIssueIntake) takes the same lock,
+    // so either it sees this skip committed and reposts, or this sees the reopen committed. True when skipped; false when the
+    // issue is open again (send the entry); null when another worker took the entry over.
+    public static async Task<bool?> MarkSkippedAsync(NpgsqlDataSource dataSource, OutboxClaim claim, DateTimeOffset now, CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-        return await connection.ExecuteAsync(new CommandDefinition(
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        await LockIssueAsync(transaction, claim.GitHubIssueId, cancellationToken);
+        if (await connection.ExecuteScalarAsync<bool>(new CommandDefinition(
+            "SELECT open_on_github FROM github_issue WHERE id = @GitHubIssueId", new { claim.GitHubIssueId }, transaction, cancellationToken: cancellationToken)))
+        {
+            return false;
+        }
+
+        var seq = await connection.QuerySingleOrDefaultAsync<long?>(new CommandDefinition(
             $"""
             UPDATE github_outbox SET sent_at = @now, last_result = '{SkippedClosed}', last_error = NULL, leased_until = NULL
             WHERE {Held}
+            RETURNING seq
             """,
             new { claim.Id, claim.LeaseToken, now },
-            cancellationToken: cancellationToken)) == 1;
+            transaction,
+            cancellationToken: cancellationToken));
+        if (seq is null)
+        {
+            return null;
+        }
+
+        if (claim.Kind == "comment")
+        {
+            await connection.ExecuteAsync(new CommandDefinition(
+                $"""
+                UPDATE github_outbox SET sent_at = @now, last_result = '{SkippedClosed}', last_error = NULL, leased_until = NULL
+                WHERE github_issue_id = @GitHubIssueId AND kind = 'close' AND seq > @seq AND sent_at IS NULL AND failed_at IS NULL
+                """,
+                new { claim.GitHubIssueId, seq, now },
+                transaction,
+                cancellationToken: cancellationToken));
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+        return true;
     }
 
     // Sent: the claim still holds its lease. False when another worker took the entry over.

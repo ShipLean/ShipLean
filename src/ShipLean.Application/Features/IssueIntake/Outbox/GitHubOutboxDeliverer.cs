@@ -73,15 +73,16 @@ public sealed class GitHubOutboxDeliverer(
             return;
         }
 
-        switch (await OutboxClaims.MarkSendingAsync(dataSource, claim, clock.GetUtcNow(), cancellationToken))
+        var open = await OutboxClaims.MarkSendingAsync(dataSource, claim, clock.GetUtcNow(), cancellationToken);
+        if (open is null)
         {
-            case null:
-                Stale(false, claim);
-                return;
-            case false when claim.Kind != "reopen":
-                Stale(await OutboxClaims.MarkSkippedAsync(dataSource, claim, clock.GetUtcNow(), cancellationToken), claim);
-                logger.LogInformation("GitHub outbox entry {EntryId} ({Kind}) for {Issue} was not sent: the issue is closed on GitHub", claim.Id, claim.Kind, issue);
-                return;
+            Stale(false, claim);
+            return;
+        }
+
+        if (open == false && claim.Kind != "reopen" && await SkipAsync(claim, issue, cancellationToken))
+        {
+            return;
         }
 
         var result = claim.Kind switch
@@ -92,6 +93,23 @@ public sealed class GitHubOutboxDeliverer(
             _ => throw new InvalidOperationException($"github_outbox entry {claim.Id} has an unknown kind."),
         };
         await RecordAsync(claim, issue, result, services, cancellationToken);
+    }
+
+    // The issue is closed on GitHub: the comment or close is finished unsent, with every close queued behind a skipped comment
+    // (OutboxClaims.MarkSkippedAsync). False when the issue was reopened meanwhile, so the entry is sent after all.
+    private async Task<bool> SkipAsync(OutboxClaim claim, IssueRef issue, CancellationToken cancellationToken)
+    {
+        switch (await OutboxClaims.MarkSkippedAsync(dataSource, claim, clock.GetUtcNow(), cancellationToken))
+        {
+            case null:
+                Stale(false, claim);
+                return true;
+            case true:
+                logger.LogInformation("GitHub outbox entry {EntryId} ({Kind}) for {Issue} was not sent: the issue is closed on GitHub", claim.Id, claim.Kind, issue);
+                return true;
+            default:
+                return false;
+        }
     }
 
     // After a POST that may have reached GitHub: Ok with the comment's id when ShipLean's own comment carries the marker; null only
