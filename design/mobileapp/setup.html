@@ -240,7 +240,7 @@ const needs = (x) => x ? `<span class="needs">${icon(x.kind)}${x.n}</span>` : ''
 const fRow = ([key, t, s, cat, h, p, st, ask], i) => `<div class="row${ask ? ' ask' : ''}"><span class="rank">${i + 1}</span><div class="main"><div class="t">${t}</div>
   <div class="m">${type('feature')}<span class="key">${key}</span>${state(s, cat)}${h ? health(h) : ''}${needs(ask)}</div>
   <div class="prog-line">${progress(p)}<span>${st}</span></div></div></div>`;
-const appBar = () => topBar({ title: 'Backlog', sub: 'SHIP · ShipLean', left: `<button class="icon-btn" aria-label="Account">${avatar('JD', { sm: true })}</button>`, right: iconBtn('search', { label: 'Search' }) });
+const appBar = () => App.tabRoot({ title: 'Backlog', right: iconBtn('search', { label: 'Search' }) }); // the key tile; Account is on Projects (projects.md D2, D3)
 const seg = () => `<div class="subbar"><div class="seg"><button>Epics</button><button class="on">Features</button><button>Stories</button></div></div>`;
 const backlog = (banner = '') => `${banner}<div class="section-h">7 open Features</div><div class="list">${F.map(fRow).join('')}</div>`;
 const tabs = (mic = 'idle') => tabBar('backlog', { inbox: 4, mic });

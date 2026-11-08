@@ -1,3 +1,4 @@
+using System.Data.Common;
 using ShipLean.Application.Markdown;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Comments;
@@ -53,6 +54,10 @@ public sealed class InMemoryCommentStore(ICurrentUser currentUser, MarkdownRende
         => string.IsNullOrWhiteSpace(agentName)
             ? throw new ArgumentException("An agent comment needs an agent name.", nameof(agentName))
             : Add(workItemId, create, agentName, authorId);
+
+    // In memory there is no transaction to join: the comment is added at once.
+    public Task<CommentDto> AddAsAgentAsync(Guid workItemId, CommentCreate create, string agentName, Guid authorId, DbTransaction transaction, CancellationToken cancellationToken = default)
+        => AddAsAgentAsync(workItemId, create, agentName, authorId, cancellationToken);
 
     private Task<CommentDto> Add(Guid workItemId, CommentCreate create, string? agentName, Guid authorId)
     {

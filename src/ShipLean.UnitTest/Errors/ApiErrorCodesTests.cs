@@ -20,6 +20,10 @@ public class ApiErrorCodesTests
     [TestCase(ApiErrorCodes.LinkInvalidUrl, 400)]
     [TestCase(ApiErrorCodes.NotMarkdown, 400)]
     [TestCase(ApiErrorCodes.MarkdownTooLarge, 400)]
+    [TestCase(ApiErrorCodes.RepositoryTaken, 409)]
+    [TestCase(ApiErrorCodes.NoRepoUrl, 400)]
+    [TestCase(ApiErrorCodes.NotMember, 400)]
+    [TestCase(ApiErrorCodes.IntakeOn, 409)]
     public void StatusFor_WhenANarrowedCode_ShouldMatchItsParent(string code, int status)
     {
         ApiErrorCodes.StatusFor(code).ShouldBe(status);

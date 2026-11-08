@@ -12,7 +12,7 @@
   const root = document.documentElement;
   const $ = s => document.querySelector(s);
   const touch = () => matchMedia('(max-width: 900px)').matches;
-  const SHORT = { 'Acceptance criteria': 'Criteria', 'Repro steps': 'Repro', Retrospectives: 'Retros', 'Why this exists': 'Why', 'Imported from Jira': 'Jira' };
+  const SHORT = { 'Acceptance criteria': 'Criteria', 'Repro steps': 'Repro', Retrospectives: 'Retros', 'Why this exists': 'Why', 'Imported from Jira': 'Jira', 'Decisions and questions': 'Decisions' };
   const svg = d => `<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
 
   /* The item modal: over the shell, with its own bar (Close · the item · Open full page). */
@@ -129,7 +129,8 @@
         more.addEventListener('click', () => { allRevs = true; syncRevs(); });
         ol.after(more);
       }
-      const label = `Show all ${n} revisions`;
+      // With SHIP-922's decision and question lines in it, the list isn't only revisions.
+      const label = ol.querySelector('.revno.ask') ? `Show all ${n}` : `Show all ${n} revisions`;
       if (more.textContent !== label) more.textContent = label;
     });
   };

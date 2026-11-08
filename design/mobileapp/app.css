@@ -57,6 +57,13 @@ svg.i.lg { width: 26px; height: 26px; }
 .icon-btn { width: var(--app-touch); height: var(--app-touch); display: grid; place-items: center; border-radius: 50%; color: var(--color-muted); position: relative; }
 .icon-btn.on { color: var(--color-accent); }
 .icon-btn .dot { position: absolute; top: 9px; right: 9px; width: 8px; height: 8px; border-radius: 50%; background: var(--ask); border: 2px solid var(--color-surface); }
+/* Project key tile (projects.md): the key (2–4 capitals) in a rounded square; filled when it is the current project */
+.pkey { display: inline-grid; place-items: center; min-width: 40px; height: 26px; padding: 0 6px; border-radius: 7px; font: 700 11.5px/1 var(--font-mono); letter-spacing: .02em; background: var(--color-surface-2); color: var(--color-text); flex: none; }
+.pkey.cur { background: var(--color-accent); color: var(--color-accent-fg); }
+.proj-btn { height: var(--app-touch); min-width: var(--app-touch); padding: 0 4px; display: grid; place-items: center; position: relative; border-radius: 12px; flex: none; }
+.proj-btn .pkey { min-width: 34px; height: 28px; font-size: 10.5px; }
+.proj-btn .dot { position: absolute; top: 6px; right: 0; width: 10px; height: 10px; border-radius: 50%; background: var(--ask); border: 2px solid var(--color-surface); }
+.proj-btn.ring .pkey { box-shadow: 0 0 0 3px var(--color-surface), 0 0 0 5px var(--voice); }
 .avatar { width: 28px; height: 28px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 11px; font-weight: 600; color: #fff; background: var(--color-purple); flex: none; }
 .avatar.agent { background: var(--color-info); }
 .avatar.sm { width: 22px; height: 22px; font-size: 9.5px; }

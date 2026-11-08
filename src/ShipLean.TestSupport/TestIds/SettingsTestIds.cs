@@ -299,4 +299,20 @@ public static class SettingsTestIds
     public const string AnalyticsHostError = "instance-analytics-host-error";
     public const string AnalyticsSiteKeyError = "instance-analytics-site-key-error";
     public const string AnalyticsProviderError = "instance-analytics-provider-error";
+
+    // Project settings, GitHub issues
+    public const string IssueIntakePanel = "settings-issue-intake-panel";
+    public const string IssueIntakeRepository = "settings-issue-intake-repository";
+    public const string IssueIntakeReadiness = "settings-issue-intake-readiness";
+    public const string IssueIntakeMissing = "settings-issue-intake-missing";
+    public const string IssueIntakeEnabled = "settings-issue-intake-enabled";
+    public const string IssueIntakeRunAs = "settings-issue-intake-run-as";
+    public const string IssueIntakeInstructions = "settings-issue-intake-instructions";
+    public const string IssueIntakeReset = "settings-issue-intake-reset";
+    public const string IssueIntakeMaxRounds = "settings-issue-intake-max-rounds";
+    public const string IssueIntakeSave = "settings-issue-intake-save";
+    public const string IssueIntakeError = "settings-issue-intake-error";
+    public const string IssueIntakeMembersLoading = "settings-issue-intake-members-loading";
+    public const string IssueIntakeMembersError = "settings-issue-intake-members-error";
+    public const string IssueIntakeMembersRetry = "settings-issue-intake-members-retry";
 }

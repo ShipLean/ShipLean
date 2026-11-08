@@ -83,6 +83,7 @@ public static class ActionUsageMap
         Add(ActionUsage.Track(UsageEventNames.SprintDemoCreated), "SprintDemo.Create");
         Add(ActionUsage.Track(UsageEventNames.SprintDemoYouTubeRetried), "SprintDemo.RetryYouTube");
         Add(ActionUsage.Track(UsageEventNames.ProjectDemoSettingsChanged), "ProjectDemoSettings.Put");
+        Add(ActionUsage.Track(UsageEventNames.IssueIntakeSettingsChanged), "IssueIntakeSettings.Put");
         Add(ActionUsage.Track(UsageEventNames.ProjectDemoBrandChanged), "DemoBrand.ReplaceLogo", "DemoBrand.RemoveLogo", "DemoBrand.PutTokens");
         Add(ActionUsage.Track(UsageEventNames.ProjectYouTubeChanged), "YouTube.Check", "YouTube.Disconnect");
         Add(ActionUsage.Track(UsageEventNames.InstanceSettingsChanged), "Instance.PutSettings");
@@ -161,6 +162,7 @@ public static class ActionUsageMap
             "ImportJobs.ListForProject",
             "ImportJobs.Log",
             "Instance.GetSettings",
+            "IssueIntakeSettings.Get",
             "Instance.ListProjects",
             "Integrations.Get",
             "Jira.Get",

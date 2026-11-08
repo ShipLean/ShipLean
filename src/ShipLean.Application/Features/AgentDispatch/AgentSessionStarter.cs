@@ -70,8 +70,11 @@ public sealed class AgentSessionStarter(
     // fallbackBaseUrl is the origin of the request, for an instance that has not set its base URL. connectionId and prompt: see PlanAsync;
     // the prompt goes to the agent as guidance and the session stores the connection it ran with.
     // transition is the move that fired an automation, carried in the context; null for a person's Start agent.
+    // mode is stored on the session (implement unless said otherwise); a propose session needs the item's github_issue (Validation
+    // otherwise, before anything is written) and gets the allowlisted context (IAgentSessionStarter.StartWinnerAsync).
     public async Task<AgentStartOutcome> StartAsync(
-        Guid workItemId, Guid creatorId, string? fallbackBaseUrl, Guid? connectionId, string? prompt, AgentTransitionInput? transition, CancellationToken cancellationToken)
+        Guid workItemId, Guid creatorId, string? fallbackBaseUrl, Guid? connectionId, string? prompt, AgentTransitionInput? transition, CancellationToken cancellationToken,
+        AgentSessionMode mode = AgentSessionMode.Implement)
     {
         var plan = await PlanAsync(workItemId, connectionId, prompt, cancellationToken);
         if (plan.Block is { } block)
@@ -81,13 +84,12 @@ public sealed class AgentSessionStarter(
 
         var sessionId = Guid.CreateVersion7();
         var now = time.GetUtcNow();
-        var input = await _loader.LoadAsync(
-            workItemId, sessionId, now, plan.ConnectionId, creatorId, new AgentRepositoryInput(plan.RepoUrl, plan.BaseBranch), fallbackBaseUrl, plan.Prompt, cancellationToken) with { Transition = transition };
+        var input = await LoadAsync(workItemId, sessionId, now, plan, creatorId, fallbackBaseUrl, plan.Prompt, mode, null, cancellationToken) with { Transition = transition };
         var body = RenderBody(input, workItemId);
 
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
-        if (!await InsertSessionAsync(connection, transaction, sessionId, workItemId, plan, now, creatorId, cancellationToken))
+        if (!await InsertSessionAsync(connection, transaction, sessionId, workItemId, plan, now, creatorId, mode, cancellationToken))
         {
             return new AgentStartOutcome(null, AgentStartBlock.LiveSession);
         }
@@ -103,9 +105,17 @@ public sealed class AgentSessionStarter(
     // with nothing done); load the context with no lock; lock the item row; insert the session, and if the live-session index refuses it roll back and
     // return LiveSession without calling winnerPrompt; call winnerPrompt on the transaction; render the body; insert the delivery; commit.
     // Anything thrown after the insert rolls back the session, the delivery and whatever winnerPrompt wrote.
+    // fence, when given, runs on the winning transaction right after the insert (before winnerPrompt): false rolls everything back
+    // and returns an outcome with neither a session nor a block.
     public async Task<AgentStartOutcome> StartWinnerAsync(
-        Guid workItemId, Guid creatorId, string? fallbackBaseUrl, Guid? connectionId, Func<DbTransaction, CancellationToken, Task<string>> winnerPrompt, CancellationToken cancellationToken)
+        Guid workItemId, Guid creatorId, string? fallbackBaseUrl, Guid? connectionId, Func<DbTransaction, CancellationToken, Task<string>> winnerPrompt, CancellationToken cancellationToken,
+        AgentSessionMode mode = AgentSessionMode.Implement, IReadOnlyList<AgentRelatedWork>? relatedItems = null, Func<DbTransaction, CancellationToken, Task<bool>>? fence = null)
     {
+        if (relatedItems?.Count > IAgentSessionStarter.MaxRelatedItems)
+        {
+            throw new ArgumentOutOfRangeException(nameof(relatedItems), $"A propose session takes at most {IAgentSessionStarter.MaxRelatedItems} related items.");
+        }
+
         var plan = await PlanAsync(workItemId, connectionId, null, cancellationToken);
         if (plan.Block is { } block)
         {
@@ -114,17 +124,22 @@ public sealed class AgentSessionStarter(
 
         var sessionId = Guid.CreateVersion7();
         var now = time.GetUtcNow();
-        var input = await _loader.LoadAsync(
-            workItemId, sessionId, now, plan.ConnectionId, creatorId, new AgentRepositoryInput(plan.RepoUrl, plan.BaseBranch), fallbackBaseUrl, null, cancellationToken);
+        var input = await LoadAsync(workItemId, sessionId, now, plan, creatorId, fallbackBaseUrl, null, mode, relatedItems, cancellationToken);
 
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         await connection.ExecuteAsync(new CommandDefinition(
             "SELECT id FROM work_item WHERE id = @workItemId FOR NO KEY UPDATE", new { workItemId }, transaction, cancellationToken: cancellationToken));
-        if (!await InsertSessionAsync(connection, transaction, sessionId, workItemId, plan, now, creatorId, cancellationToken))
+        if (!await InsertSessionAsync(connection, transaction, sessionId, workItemId, plan, now, creatorId, mode, cancellationToken))
         {
             await transaction.RollbackAsync(cancellationToken);
             return new AgentStartOutcome(null, AgentStartBlock.LiveSession);
+        }
+
+        if (fence is not null && !await fence(transaction, cancellationToken))
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return new AgentStartOutcome(null, null);
         }
 
         var prompt = await winnerPrompt(transaction, cancellationToken);
@@ -135,16 +150,28 @@ public sealed class AgentSessionStarter(
         return new AgentStartOutcome(sessionId, null);
     }
 
+    // A propose session's input is the allowlisted one (it throws Validation when the item has no github_issue, so nothing is written); it
+    // never sees plan.RepoUrl, only the base branch.
+    private Task<AgentContextInput> LoadAsync(
+        Guid workItemId, Guid sessionId, DateTimeOffset now, AgentStartPlan plan, Guid creatorId, string? fallbackBaseUrl, string? prompt, AgentSessionMode mode,
+        IReadOnlyList<AgentRelatedWork>? relatedItems, CancellationToken cancellationToken)
+    {
+        return mode == AgentSessionMode.Propose
+            ? _loader.LoadProposeAsync(workItemId, sessionId, now, plan.ConnectionId, creatorId, plan.BaseBranch, prompt, relatedItems ?? [], cancellationToken)
+            : _loader.LoadAsync(
+                workItemId, sessionId, now, plan.ConnectionId, creatorId, new AgentRepositoryInput(plan.RepoUrl, plan.BaseBranch), fallbackBaseUrl, prompt, cancellationToken);
+    }
+
     // False when the partial unique index ux_agent_session_live finds the item taken.
     private static async Task<bool> InsertSessionAsync(
-        NpgsqlConnection connection, DbTransaction transaction, Guid sessionId, Guid workItemId, AgentStartPlan plan, DateTimeOffset now, Guid creatorId, CancellationToken cancellationToken)
+        NpgsqlConnection connection, DbTransaction transaction, Guid sessionId, Guid workItemId, AgentStartPlan plan, DateTimeOffset now, Guid creatorId, AgentSessionMode mode, CancellationToken cancellationToken)
         => await connection.ExecuteAsync(new CommandDefinition(
             $"""
-            INSERT INTO agent_session (id, work_item_id, connection_id, state, repo_url, base_branch, last_activity_at, created_by, created_at)
-            VALUES (@sessionId, @workItemId, @connectionId, 'submitted', @repoUrl, @baseBranch, @now, @creatorId, @now)
+            INSERT INTO agent_session (id, work_item_id, connection_id, state, repo_url, base_branch, last_activity_at, created_by, created_at, mode)
+            VALUES (@sessionId, @workItemId, @connectionId, 'submitted', @repoUrl, @baseBranch, @now, @creatorId, @now, @mode)
             ON CONFLICT (work_item_id) WHERE state IN {AgentSessionStates.LiveSql} DO NOTHING
             """,
-            new { sessionId, workItemId, connectionId = plan.ConnectionId, repoUrl = plan.RepoUrl, baseBranch = plan.BaseBranch, now, creatorId }, transaction, cancellationToken: cancellationToken)) > 0;
+            new { sessionId, workItemId, connectionId = plan.ConnectionId, repoUrl = plan.RepoUrl, baseBranch = plan.BaseBranch, now, creatorId, mode = AgentSessionModes.ToWire(mode) }, transaction, cancellationToken: cancellationToken)) > 0;
 
     private static Task InsertDeliveryAsync(NpgsqlConnection connection, DbTransaction transaction, Guid sessionId, string body, DateTimeOffset now, CancellationToken cancellationToken)
         => connection.ExecuteAsync(new CommandDefinition(

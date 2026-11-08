@@ -1,0 +1,65 @@
+{
+  "action": "opened",
+  "issue": {
+    "url": "https://api.github.com/repos/Acme/Storefront/issues/64",
+    "repository_url": "https://api.github.com/repos/Acme/Storefront",
+    "html_url": "https://github.com/Acme/Storefront/issues/64",
+    "id": 3612345601,
+    "node_id": "I_kwDOKqDYhs7XyZ12",
+    "number": 64,
+    "title": "Filter the backlog by Epic",
+    "user": {
+      "login": "rita-reporter",
+      "id": 5551201,
+      "type": "User",
+      "site_admin": false
+    },
+    "labels": [
+      {
+        "id": 7001,
+        "node_id": "LA_kwDOKqDYhs8AAAABb",
+        "name": "enhancement",
+        "color": "a2eeef",
+        "default": true,
+        "description": "New feature or request"
+      }
+    ],
+    "state": "open",
+    "locked": false,
+    "assignee": null,
+    "assignees": [],
+    "milestone": null,
+    "comments": 0,
+    "created_at": "2026-11-06T08:12:40Z",
+    "updated_at": "2026-11-06T08:12:40Z",
+    "closed_at": null,
+    "author_association": "NONE",
+    "active_lock_reason": null,
+    "body": "On the Stories backlog I want to see only the stories under one Epic.",
+    "state_reason": null
+  },
+  "repository": {
+    "id": 715175046,
+    "node_id": "R_kgDOKqDYhg",
+    "name": "storefront",
+    "full_name": "Acme/Storefront",
+    "private": false,
+    "owner": {
+      "login": "Acme",
+      "id": 9919,
+      "type": "Organization"
+    },
+    "html_url": "https://github.com/Acme/Storefront",
+    "default_branch": "main"
+  },
+  "organization": {
+    "login": "Acme",
+    "id": 9919
+  },
+  "sender": {
+    "login": "rita-reporter",
+    "id": 5551201,
+    "type": "User",
+    "site_admin": false
+  }
+}

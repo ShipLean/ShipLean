@@ -158,6 +158,8 @@ export function levelView(
     tagColours: [],
     forecast: null,
     velocity: null,
+    triageCount: 0,
+    triageStateIds: [],
     review: null,
   };
 }

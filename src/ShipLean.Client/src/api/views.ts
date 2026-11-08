@@ -257,6 +257,10 @@ export interface BacklogViewDto {
   tagColours: TagColourJson[];
   forecast: ForecastDto | null;
   velocity: VelocityDto | null;
+  /** The items waiting in an intake (Triage) state, which the rows leave out unless the filter names that state. */
+  triageCount: number;
+  /** The intake states of the backlog's types: what the triage chip filters by. */
+  triageStateIds: string[];
   /** Filled for the Stories level in list and planning mode, null for tree and the other levels. */
   review: BacklogReviewDto | null;
 }

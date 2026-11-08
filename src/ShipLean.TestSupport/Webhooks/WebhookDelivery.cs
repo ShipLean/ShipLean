@@ -15,15 +15,23 @@ public sealed record WebhookDelivery(string Path, string Body, IReadOnlyDictiona
     public const string GithubRepository = "acme/storefront";
     public const string GitlabRepository = "acme/shop/storefront";
 
+    // The recorded issue payloads name the repository "Acme/Storefront"; ShipLean lower-cases it to GithubRepository.
+    public const string IssueAuthor = "rita-reporter";
+    public const string Maintainer = "maya-maintainer";
+
     public string DeliveryId => Headers.TryGetValue("X-GitHub-Delivery", out var github) ? github : Headers["X-Gitlab-Event-UUID"];
 
     public static string GithubUrl(int number) => $"https://github.com/{GithubRepository}/pull/{number}";
 
     public static string GitlabUrl(int iid) => $"https://gitlab.example.com/{GitlabRepository}/-/merge_requests/{iid}";
 
+    public static string GithubIssueUrl(int number) => $"https://github.com/Acme/Storefront/issues/{number}";
+
     // action: opened, edited, reopened, closed. state "open" or "closed"; merged only with closed. body null keeps the recorded one.
+    // mergeCommitSha and the merge time (updatedAt) are sent only when merged.
     public static WebhookDelivery Github(
-        string secret, string action, int number, string title, DateTimeOffset updatedAt, string branch = "fix/rate-grid", string state = "open", bool merged = false, string? body = null)
+        string secret, string action, int number, string title, DateTimeOffset updatedAt, string branch = "fix/rate-grid", string state = "open", bool merged = false, string? body = null,
+        string? mergeCommitSha = null)
     {
         var payload = Load("github-pull-request.json");
         payload["action"] = action;
@@ -34,13 +42,73 @@ public sealed record WebhookDelivery(string Path, string Body, IReadOnlyDictiona
         pull["title"] = title;
         pull["state"] = state;
         pull["merged"] = merged;
-        pull["updated_at"] = updatedAt.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
+        pull["updated_at"] = Timestamp(updatedAt);
         pull["head"]!["ref"] = branch;
+        pull["merge_commit_sha"] = mergeCommitSha;
+        pull["merged_at"] = merged ? Timestamp(updatedAt) : null;
         if (body is not null)
         {
             pull["body"] = body;
         }
         return Signed(secret, payload.ToJsonString(), "pull_request");
+    }
+
+    // An "issues" delivery: action opened, edited, closed, reopened, deleted, transferred (or another, which ShipLean
+    // ignores). state "open" or "closed", or null to leave it out (it is optional on some actions). body and labels null keep
+    // the recorded ones. senderType "Bot" for an app. authorDeleted sends issue.user as null, as GitHub does for a deleted account.
+    public static WebhookDelivery GithubIssue(
+        string secret, string action, int number = 64, string title = "Filter the backlog by Epic", string author = IssueAuthor, string association = "NONE",
+        string? body = null, string? state = "open", IReadOnlyList<string>? labels = null, string senderType = "User", bool authorDeleted = false)
+    {
+        var payload = Load("github-issues.json");
+        payload["action"] = action;
+        var issue = payload["issue"]!;
+        SetIssue(issue, number, title, author, state);
+        if (authorDeleted)
+        {
+            issue["user"] = null;
+        }
+        issue["author_association"] = association;
+        if (body is not null)
+        {
+            issue["body"] = body;
+        }
+        if (labels is not null)
+        {
+            issue["labels"] = new JsonArray([.. labels.Select(name => (JsonNode)new JsonObject { ["name"] = name })]);
+        }
+        payload["sender"] = User(author, senderType);
+        return Signed(secret, payload.ToJsonString(), "issues");
+    }
+
+    // An "issue_comment" delivery on issue number by author (with GitHub's author_association), on a pull request when
+    // onPullRequest. authorType "Bot" for an app's comment. action other than created is ignored by ShipLean. authorDeleted
+    // sends comment.user as null, as GitHub does for a deleted account.
+    public static WebhookDelivery GithubIssueComment(
+        string secret, string body, string author = Maintainer, string association = "MEMBER", int number = 64, string issueAuthor = IssueAuthor,
+        bool onPullRequest = false, string authorType = "User", long commentId = 2470000001, string action = "created", bool authorDeleted = false)
+    {
+        var payload = Load("github-issue-comment.json");
+        payload["action"] = action;
+        var issue = payload["issue"]!;
+        SetIssue(issue, number, "Filter the backlog by Epic", issueAuthor, "open");
+        if (onPullRequest)
+        {
+            issue["pull_request"] = new JsonObject
+            {
+                ["url"] = $"https://api.github.com/repos/Acme/Storefront/pulls/{number}",
+                ["html_url"] = $"https://github.com/Acme/Storefront/pull/{number}",
+                ["merged_at"] = null,
+            };
+        }
+        var comment = payload["comment"]!;
+        comment["id"] = commentId;
+        comment["html_url"] = $"{GithubIssueUrl(number)}#issuecomment-{commentId}";
+        comment["body"] = body;
+        comment["author_association"] = association;
+        comment["user"] = authorDeleted ? null : User(author, authorType);
+        payload["sender"] = User(author, authorType);
+        return Signed(secret, payload.ToJsonString(), "issue_comment");
     }
 
     // GitHub's ping when a webhook is added.
@@ -99,6 +167,26 @@ public sealed record WebhookDelivery(string Path, string Body, IReadOnlyDictiona
             ["X-GitHub-Delivery"] = Guid.NewGuid().ToString(),
             ["X-Hub-Signature-256"] = "sha256=" + Convert.ToHexStringLower(HMACSHA256.HashData(Encoding.UTF8.GetBytes(secret), Encoding.UTF8.GetBytes(body))),
         });
+
+    private static void SetIssue(JsonNode issue, int number, string title, string author, string? state)
+    {
+        issue["number"] = number;
+        issue["html_url"] = GithubIssueUrl(number);
+        issue["title"] = title;
+        if (state is null)
+        {
+            issue.AsObject().Remove("state");
+        }
+        else
+        {
+            issue["state"] = state;
+        }
+        issue["user"] = User(author, "User");
+    }
+
+    private static JsonObject User(string login, string type) => new() { ["login"] = login, ["id"] = 5551299, ["type"] = type, ["site_admin"] = false };
+
+    private static string Timestamp(DateTimeOffset at) => at.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
 
     private static JsonNode Load(string name)
         => JsonNode.Parse(File.ReadAllText(System.IO.Path.Combine(RepoPaths.Root, "src", "ShipLean.TestSupport", "Webhooks", "Payloads", name)))!;
