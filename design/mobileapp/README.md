@@ -8,6 +8,7 @@ These are throwaway HTML mock-ups, not the Expo app. They use `../tokens.css`, s
 |---|---|
 | `app.css`, `app.js` | The kit: phone frame (390 × 844), top bar, tab bar with the hold-to-talk button, detail-screen voice dock, rows, state pills, progress, ask cards, and the voice sheets (listening, preview, undo toast, voice notes). |
 | `work-item.html`, `backlog.html`, `feature-board.html`, `retro.html`, `setup.html` | One file per area; each declares its states with `App.screen`. `setup.html` is first run (sign in, choosing the voice models, the download) and Settings › Voice. |
+| `projects.html` | Projects (the app's root, SHIP-907 D7), the project key tile on every tab root, switching by tap or voice, Account, and no or lost projects. Decisions D1–D11 in `projects.md`; review page `projects-review.html`. |
 | `<area>.md` | Design notes per area: what's on the screen, the voice commands it offers, decisions to confirm. |
 | `index.html` | The review page: every state of every area side by side. |
 | `screenshots.sh` | Regenerates `images/<area>-<state>.<theme>.png` with headless Chrome. |
@@ -32,3 +33,10 @@ Open a state directly: `work-item.html?state=preview&theme=dark`. `?list` prints
 - S6: Needs you on a Feature counts the questions and decisions on its stories, everywhere.
 - S7: the app uses native sizes (44px tap targets, 15px body); SHIP-805 stays the rule for the mobile web.
 - Agents never wait for an answer: anything asked of a person is answered on the work item, for the next agent that picks it up (Work item D7).
+
+## Projects and the tab bar (SHIP-925; Joel, 9 Nov 2026, Lavish review: all recommended)
+
+- **Projects is the root of the app.** A project's tabs open on top of it. Every tab root (Inbox, Backlog, Features, Retro) shows the project's key tile at the top left (`App.tabRoot`), with the project name as the subtitle. Tapping the tile, or swiping back, returns to Projects. Detail screens keep their back button.
+- **Account** is only on Projects (the avatar at the top right), together with Sign out and the way into Settings › Voice.
+- **After setup:** *Use ShipLean while this downloads* leads to Projects, or straight in with one project. A project you've never opened starts on Inbox. Later launches reopen the last project on the tab you left.
+- **Switching** keeps the tab you're on. "Switch to Payments" works by voice from any tab, with no preview (no data changes), only a toast with Back. A dot on the tile means something new waits on you in another project.

@@ -109,7 +109,7 @@ const storyRow = ([key, t, s, cat, parent, who, tasks, ask], rank, { flash = fal
     <button class="move-btn" aria-label="Move">${icon('rank')}</button></div>`;
 
 /* ── Chrome ─────────────────────────────────────────────────────────── */
-const bar = () => topBar({ title: 'Backlog', sub: 'SHIP · ShipLean', left: `<button class="icon-btn" aria-label="Projects">${avatar('S', { sm: true, color: 'var(--color-accent)' })}</button>`, right: iconBtn('search', { label: 'Search' }) });
+const bar = () => App.tabRoot({ title: 'Backlog', right: iconBtn('search', { label: 'Search' }) });
 const seg = (on) => `<div class="seg">${['Epics', 'Features', 'Stories'].map((x) => `<button class="${x === on ? 'on' : ''}">${x}</button>`).join('')}</div>`;
 const chips = (needsOn = false, level = 'Features') => `<div class="subbar chips"><span class="chip ask${needsOn ? ' on' : ''}">${icon('inbox', 'sm')}Needs me <span class="n">${level === 'Features' ? 3 : 1}</span></span><span class="chip">Open</span><span class="chip">All epics ${icon('down', 'sm')}</span></div>`;
 const sub = (level, needsOn) => `<div class="subbar">${seg(level)}</div>${chips(needsOn, level)}`;

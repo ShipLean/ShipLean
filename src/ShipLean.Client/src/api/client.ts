@@ -24,6 +24,10 @@ export const apiErrorCodes = [
   'link_duplicate',
   'not_markdown',
   'markdown_too_large',
+  'repository_taken',
+  'no_repo_url',
+  'not_member',
+  'intake_on',
 ] as const;
 
 export type ApiErrorCode = (typeof apiErrorCodes)[number];

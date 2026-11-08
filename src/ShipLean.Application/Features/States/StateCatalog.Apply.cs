@@ -52,7 +52,7 @@ public sealed partial class StateCatalog
             }
 
             var order = drafts.Where(d => d.Type == add.Type).Select(d => d.Order).DefaultIfEmpty(0).Max() + 1;
-            drafts.Add(new StateDraft(add.Id, add.Type, add.Name.Trim(), add.Category, order, isNew: true));
+            drafts.Add(new StateDraft(add.Id, add.Type, add.Name.Trim(), add.Category, order, isNew: true) { IsIntake = add.IsIntake });
             touched.Add(add.Type);
             renumber.Add(add.Type);
         }
@@ -160,7 +160,7 @@ public sealed partial class StateCatalog
             "UPDATE state SET name = id::text WHERE id = ANY(@ids)", new { ids = renamed.Select(d => d.Id).ToArray() }, transaction, cancellationToken: cancellationToken));
         foreach (var draft in plan.Remaining.Where(d => d.IsNew))
         {
-            await InsertAsync(connection, transaction, draft.Id, projectId, draft.Type, draft.Name, draft.Category, draft.Order, cancellationToken);
+            await InsertAsync(connection, transaction, draft.Id, projectId, draft.Type, draft.Name, draft.Category, draft.Order, draft.IsIntake, cancellationToken);
         }
 
         foreach (var draft in plan.Remaining.Where(d => d.Changed))

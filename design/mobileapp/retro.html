@@ -138,7 +138,7 @@ const th = (name, n, recurring = false) => `<div class="th"><span class="nm">${n
 const tiles = (on) => `<div class="cats">${[['well', 'Went well', 5, ''], ['unplanned', 'Not in the plan', 3, '2 to decide'], ['bad', 'Went badly', 7, '3 to decide'], ['improve', 'Can be improved', 4, '1 to decide']]
   .map(([c, l, n, d]) => `<button class="cat ${c}${on === c ? ' on' : ''}"><b>${n}</b><span>${l}</span>${d ? `<small>${d}</small>` : ''}</button>`).join('')}</div>`;
 
-const retroTop = () => topBar({ title: 'Sprint 25 retro', sub: 'SHIP · 2–13 Nov · 9 retros so far', right: iconBtn('search') + iconBtn('more') });
+const retroTop = () => App.tabRoot({ title: 'Sprint 25 retro', sub: '2–13 Nov · 9 retros so far', right: iconBtn('search') + iconBtn('more') });
 const seg = (on) => `<div class="subbar"><div class="seg"><button class="${on === 'notes' ? 'on' : ''}">Notes</button><button class="${on === 'decide' ? 'on' : ''}">To decide · 6</button><button class="${on === 'features' ? 'on' : ''}">Features</button></div></div>`;
 
 // ── Went badly, grouped by theme (largest first) ──

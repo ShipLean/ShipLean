@@ -52,6 +52,7 @@ export function BacklogFrame({
       options={options}
       search={search}
       keys={keys}
+      triage={state.triage}
       onNewItem={() => state.setAdding(true)}
       includeCompleted={state.includeCompleted}
       onIncludeCompletedChange={state.setIncludeCompleted}

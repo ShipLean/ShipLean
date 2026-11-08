@@ -14,7 +14,7 @@ import {
   useBacklogView,
   type ColumnSpec,
 } from '../backlogApi';
-import { filterParamOf, isFiltering, NO_CRITERIA } from './filterParam';
+import { filterParamOf, isFiltering, NO_CRITERIA, triageCriteria } from './filterParam';
 import { useFilterLists } from './useFilterLists';
 
 const NO_ROWS: BacklogRowDto[] = [];
@@ -92,7 +92,14 @@ export function useBacklogFilter(
     setFilterOpen(!filterOpen);
   };
 
+  // The chip's data: the items waiting in Triage, and a click that filters to the intake states.
+  const triage = {
+    count: read?.triageCount ?? 0,
+    onShow: () => setCriteria(triageCriteria(read?.triageStateIds ?? [])),
+  };
+
   return {
+    triage,
     specs: columns,
     includeCompleted,
     setIncludeCompleted,

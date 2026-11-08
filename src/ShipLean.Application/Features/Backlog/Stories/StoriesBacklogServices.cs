@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using ShipLean.Application.Features.Backlog.Shared;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Backlog;
 
@@ -9,6 +11,7 @@ public sealed class StoriesBacklogServices : IServiceModule
 {
     public void AddServices(IServiceCollection services, IConfiguration configuration)
     {
+        services.TryAddScoped<BacklogTriage>();
         services.AddScoped<BacklogPlanning>();
         services.AddScoped<IStoriesBacklogReads, StoriesBacklogReads>();
     }
