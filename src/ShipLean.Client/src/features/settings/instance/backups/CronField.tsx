@@ -33,7 +33,7 @@ export function CronField({ value, onChange, error, onValidityChange }: CronFiel
   const valid = current?.valid === true;
   useEffect(() => onValidityChange(valid), [valid, onValidityChange]);
 
-  const shown = preview.isPlaceholderData || settled !== text ? preview.data : current;
+  const shown = preview.data;
   const message = current?.error ?? error;
   const stale = shown !== undefined && current === undefined;
 
@@ -64,8 +64,8 @@ export function CronField({ value, onChange, error, onValidityChange }: CronFiel
         onChange={(e) => onChange(e.target.value)}
       />
       <span className="text-[length:var(--text-xs)] text-ink-muted">
-        Five fields in UTC: minute, hour, day of month, month, day of week (UTC). Runs must be at
-        least 1 hour apart.
+        Five fields: minute, hour, day of month, month, day of week (UTC). Runs must be at least 1
+        hour apart.
       </span>
       <div
         id={previewId}
