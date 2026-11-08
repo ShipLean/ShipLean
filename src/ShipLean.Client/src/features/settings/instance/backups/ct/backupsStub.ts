@@ -1,3 +1,4 @@
+import cronJson from '../../../../../../../ShipLean.TestSupport/PinnedShapes/backup-cron-preview.json' with { type: 'json' };
 import settingsJson from '../../../../../../../ShipLean.TestSupport/PinnedShapes/backup-settings.json' with { type: 'json' };
 
 interface StubRoute {
@@ -12,6 +13,8 @@ interface Routable {
 // The pinned examples of GET /api/instance/backups (C-PIN).
 export const backupsConfigured = settingsJson.configured;
 export const backupsNotConfigured = settingsJson.notConfigured;
+// The pinned valid answer of POST /api/instance/backups/cron-preview.
+export const cronPreviewValid = cronJson.valid;
 
 export interface BackupsStubOptions {
   /** What GET returns. */
@@ -20,6 +23,8 @@ export interface BackupsStubOptions {
   failGet?: { error: string; status?: number };
   /** When set, PUT answers this error body instead of storing. */
   rejectPut?: { error: string; field?: string; status?: number };
+  /** What POST cron-preview answers for any cron (default: the pinned valid example). */
+  cronPreview?: unknown;
 }
 
 export interface BackupsStub {
@@ -34,6 +39,9 @@ export const stubBackupsApi = async (
 ): Promise<BackupsStub> => {
   let current = (options.initial ?? backupsConfigured) as Record<string, unknown>;
   const stub: BackupsStub = { puts: [] };
+  await page.route('**/api/instance/backups/cron-preview', (route) =>
+    route.fulfill({ json: options.cronPreview ?? cronPreviewValid }),
+  );
   await page.route('**/api/instance/backups', (route) => {
     const request = route.request();
     if (request.method() === 'PUT') {
