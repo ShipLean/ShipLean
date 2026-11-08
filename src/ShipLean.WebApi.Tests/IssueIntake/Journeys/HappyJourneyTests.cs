@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Globalization;
 using System.Net;
 using System.Text;
+using System.Text.RegularExpressions;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -35,7 +36,7 @@ namespace ShipLean.WebApi.Tests.IssueIntake.Journeys;
 // so Settle drives the round, proposal and accept workers and the outbox deliverer until nothing is due, and the progress
 // reconciler is run by hand. The recorded payloads name acme/storefront, so each test maps it to a project of its own.
 [TestFixture]
-public class HappyJourneyTests : WebhookApiTest
+public partial class HappyJourneyTests : WebhookApiTest
 {
     private const string Instance = "https://shiplean.example.test";
     private const string SelfLogin = "shiplean-bot";
@@ -46,7 +47,7 @@ public class HappyJourneyTests : WebhookApiTest
     private static int _numbers = 7760;
 
     private readonly FakeGitHub _github = new();
-    private readonly FixedIssueIntakeSettings _settings = new();
+    private readonly SwitchableSettings _settings = new();
 
     protected override IReadOnlyDictionary<string, string?> HostSettings => new Dictionary<string, string?> { [WebhookSecrets.GithubKey] = GithubSecret };
 
@@ -226,7 +227,8 @@ public class HappyJourneyTests : WebhookApiTest
         await ReconcileAsync(issue.Id);
         _github.Comments(number)[^1].ShouldBe(ProgressMessages.Started(made.Key, "Filter the backlog by tag"));
         await DeliverAsync(WebhookDelivery.GithubIssueComment(GithubSecret, "Same here on Firefox.", "passer-by", "NONE", number, commentId: NextId()));
-        (await CommentsAsync(triage.Id)).ShouldContain(c => c.AgentName == "GitHub @passer-by" && c.Body == "Same here on Firefox.");
+        var triageNotes = await CommentsAsync(triage.Id);
+        triageNotes.ShouldContain(c => c.AgentName == "GitHub @passer-by" && c.Body == "Same here on Firefox.", string.Join(" | ", triageNotes));
         (await CommentsAsync(made.Id)).ShouldNotContain(c => c.Body == "Same here on Firefox.");
     }
 
@@ -273,7 +275,7 @@ public class HappyJourneyTests : WebhookApiTest
         }
 
         var key = await database.QuerySingleAsync<string>("SELECT key FROM project WHERE id = @id", new { id = arranged.Project.Id });
-        _settings.Take(new IssueIntakeProject(arranged.Project.Id, key, WebhookDelivery.GithubRepository, SeedIds.Users.Joel, "Write a proposal.", 5));
+        _settings.Current = new FixedIssueIntakeSettings().Take(new IssueIntakeProject(arranged.Project.Id, key, WebhookDelivery.GithubRepository, SeedIds.Users.Joel, "Write a proposal.", 5));
         return arranged;
     }
 
@@ -373,6 +375,17 @@ public class HappyJourneyTests : WebhookApiTest
         await AgentDispatchArrange.MoveAsync(Api, itemId, revision, stateId);
     }
 
+    [GeneratedRegex(@"\n\n<!-- shiplean:outbox:[0-9a-f-]{36} -->$")]
+    private static partial Regex Marker();
+
+    // The fixture's one IIssueIntakeSettings; each test points acme/storefront at its own project.
+    private sealed class SwitchableSettings : IIssueIntakeSettings
+    {
+        public FixedIssueIntakeSettings Current { get; set; } = new();
+
+        public Task<IssueIntakeProject?> ForRepositoryAsync(IssueRef issue, CancellationToken cancellationToken = default) => Current.ForRepositoryAsync(issue, cancellationToken);
+    }
+
     private sealed record ItemRow(Guid Id, string Key, string Type, string Title, string State, string Category, bool IsIntake, string Criteria);
 
     private sealed record CommentRow(string? AgentName, string Body);
@@ -414,14 +427,17 @@ public class HappyJourneyTests : WebhookApiTest
                 if (request.Method == HttpMethod.Post && isIssue && segments.Length == 6 && segments[5] == "comments")
                 {
                     var body = System.Text.Json.JsonDocument.Parse(await request.Content!.ReadAsStringAsync(cancellationToken)).RootElement.GetProperty("body").GetString()!;
-                    owner._writes.Enqueue((number, "comment", body));
+                    // The deliverer adds the outbox marker at send time; tests compare the text before it.
+                    var marker = Marker().Match(body);
+                    marker.Success.ShouldBeTrue("a posted comment carries the outbox marker");
+                    owner._writes.Enqueue((number, "comment", body[..marker.Index]));
                     return Json(HttpStatusCode.Created, $$"""{ "id": {{NextId()}} }""");
                 }
 
                 if (request.Method == HttpMethod.Patch && isIssue && segments.Length == 5)
                 {
                     var state = System.Text.Json.JsonDocument.Parse(await request.Content!.ReadAsStringAsync(cancellationToken)).RootElement;
-                    owner._writes.Enqueue((number, "state", $"{state.GetProperty("state").GetString()} {state.GetProperty("stateReason").GetString()}"));
+                    owner._writes.Enqueue((number, "state", $"{state.GetProperty("state").GetString()} {state.GetProperty("state_reason").GetString()}"));
                     return Json(HttpStatusCode.OK, "{}");
                 }
 
