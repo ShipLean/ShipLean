@@ -70,7 +70,7 @@ export function SprintGoal({
         type="button"
         data-testid={ids.goalToggle}
         aria-expanded={expanded}
-        className="mt-1 grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-2 border-0 bg-transparent p-0 text-left text-[15px] leading-snug text-ink"
+        className="mt-1 grid min-h-[var(--touch-target)] grid-cols-[auto_minmax(0,1fr)] items-baseline gap-2 border-0 bg-transparent p-0 text-left text-[15px] leading-snug text-ink"
         onClick={() => setExpanded(!expanded)}
       >
         <span className="text-[length:var(--text-xs)] font-semibold tracking-wide text-ink-muted uppercase">
