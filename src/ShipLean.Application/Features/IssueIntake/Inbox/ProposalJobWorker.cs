@@ -109,8 +109,7 @@ public sealed class ProposalJobWorker(
 
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
-        await connection.ExecuteAsync(new CommandDefinition(
-            "SELECT pg_advisory_xact_lock(hashtextextended('issue_round:' || @ProjectId::text, 0))", new { project.ProjectId }, transaction, cancellationToken: cancellationToken));
+        await sessions.LockProjectAsync(project.ProjectId, transaction, cancellationToken);
         var issue = await issues.FindByIdAsync(job.GitHubIssueId, transaction, cancellationToken)
             ?? throw new InvalidOperationException($"No github_issue {job.GitHubIssueId}.");
         var changed = parsed

@@ -60,6 +60,39 @@ public class RoundTests : ApiFixture
     }
 
     [Test]
+    public async Task Take_WhenRoundRequestedConcurrently_ShouldNotDeadlock()
+    {
+        var (arranged, _, issue) = await ArrangeAsync();
+        (await Host.Services.GetRequiredService<IGitHubIssueStore>().SetPhaseAsync(issue.Id, [IssuePhase.Proposing], IssuePhase.WaitingForMaintainer)).ShouldBeTrue();
+
+        // A round request that already holds the project lock when a maintainer's /shiplean take arrives.
+        await using var database = await OpenDatabaseAsync();
+        await using var round = await database.BeginTransactionAsync();
+        await database.ExecuteAsync(
+            "SELECT pg_advisory_xact_lock(hashtextextended('issue_round:' || @Id::text, 0))", new { arranged.Project.Id }, round);
+        var pid = await database.ExecuteScalarAsync<int>("SELECT pg_backend_pid()", transaction: round);
+        var url = $"https://github.com/{issue.Issue.Repository}/issues/{issue.Issue.Number}";
+        var comment = new IssueCommentEvent(
+            issue.Issue, url, issue.Title, "reporter", true, false, 77, $"{url}#issuecomment-77", "/shiplean", "maintainer", "OWNER", false,
+            DateTimeOffset.FromUnixTimeSeconds(1_800_000_100));
+        var take = Task.Run(async () =>
+        {
+            await using var scope = Host.Services.CreateAsyncScope();
+            return await scope.ServiceProvider.GetRequiredService<IIssueIntake>().TakeAsync(comment, CancellationToken.None);
+        });
+        await WaitUntilBlockedByAsync(pid, take);
+
+        var requested = await Sessions.RequestRoundAsync(issue.Id, force: true, round);
+        await round.CommitAsync();
+        var taken = await take;
+
+        requested.ShouldBe(RoundRequest.Requested);
+        taken.ShouldBe(IssueOutcome.Ignored);
+        (await IssueAsync(issue.Id)).Phase.ShouldBe(IssuePhase.Proposing);
+        (await PendingRoundsAsync(issue.Id)).ShouldHaveSingleItem();
+    }
+
+    [Test]
     public async Task RequestRound_WhenRateLimited_ShouldHoldWithOneCommentEach()
     {
         var (arranged, _, issue) = await ArrangeAsync();
