@@ -105,8 +105,9 @@ public static class ActionUsageMap
             "UsersAdmin.Unlock");
         Add(ActionUsage.Track(UsageEventNames.InstanceSearchReindexed), "SearchAdmin.Reindex");
 
-        // Self-emitted: the action knows what the filter cannot (which sign-in, which decision, the new project, the screen).
-        Add(ActionUsage.SelfEmitted, "Auth.Login", "Consent.Decide", "ProjectCreation.Create", "Instance.Join", "Usage.Screen");
+        // Self-emitted: the action knows what the filter cannot (which sign-in, which decision, the new project, the screen, the sort).
+        Add(ActionUsage.SelfEmitted, "Auth.Login", "Consent.Decide", "ProjectCreation.Create", "Instance.Join", "Usage.Screen",
+            "ProjectUsage.BacklogSort");
 
         Add(
             ActionUsage.Untracked(Helper),

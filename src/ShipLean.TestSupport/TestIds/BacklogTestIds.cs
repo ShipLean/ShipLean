@@ -25,6 +25,7 @@ public static class BacklogTestIds
     public const string Loading = "backlog-loading";
     public const string LoadFailed = "backlog-load-failed";
     public const string ColumnHeader = "backlog-column-header";
+    public const string ColumnSort = "backlog-column-sort";
     public const string Row = "backlog-row";
     public const string Rank = "backlog-rank";
     public const string Key = "backlog-key";

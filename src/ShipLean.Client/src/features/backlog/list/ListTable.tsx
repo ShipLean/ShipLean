@@ -6,6 +6,8 @@ import { backlogTestIds as ids } from '../testIds';
 import { SelectAllCell } from '../selection/SelectAllCell';
 import { useSelection } from '../selection/useSelection';
 import { AddBelowRow } from '../add/AddBelowRow';
+import type { ColumnSort } from '../sort/columnSort';
+import { SortableHeader } from '../sort/SortableHeader';
 import { ListRow } from './ListRow';
 import { NewItemRow } from './NewItemRow';
 
@@ -34,6 +36,8 @@ export function ListTable({
   filtered,
   searched = '',
   flashing,
+  sort,
+  onSort,
 }: {
   rows: BacklogRowDto[];
   columns: readonly BacklogColumnId[];
@@ -52,6 +56,9 @@ export function ListTable({
   searched?: string;
   // Ids of the rows a teammate just changed.
   flashing: ReadonlySet<string>;
+  // The column the rows are sorted by (null = rank order), and what a click on a column title does.
+  sort: ColumnSort;
+  onSort: (column: string) => void;
 }) {
   // The select column and the grip column come before the data columns.
   const columnCount = columns.length + 2;
@@ -71,15 +78,16 @@ export function ListTable({
             <SelectAllCell />
             <th className="w-6" />
             {columns.map((column) => (
-              <th
+              <SortableHeader
                 key={column}
-                data-testid={ids.columnHeader}
-                data-column={column}
-                className={`px-2 font-semibold ${numeric.includes(column) ? 'text-right' : ''}`}
-                style={{ width: widths[column] }}
+                column={column}
+                sort={sort}
+                onSort={onSort}
+                numeric={numeric.includes(column)}
+                width={widths[column]}
               >
                 {BACKLOG_COLUMNS.find((c) => c.id === column)?.label}
-              </th>
+              </SortableHeader>
             ))}
           </tr>
         </thead>
@@ -109,6 +117,7 @@ export function ListTable({
                 projectId={projectId}
                 projectKey={projectKey}
                 filtering={filtered}
+                sorted={sort !== null}
               />
             </Fragment>
           ))}
