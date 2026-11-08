@@ -76,6 +76,35 @@ export const EPIC_ROWS: BacklogRowDto[] = [
   }),
 ];
 
+/** A Feature with 2 done, 2 open in the current sprint, 1 open in another sprint and 3 open in no sprint (8 in all). */
+export const SPRINT_FEATURE_ROWS: BacklogRowDto[] = [
+  itemRow({
+    key: 'SHIP-120',
+    rank: 1,
+    type: FEATURE_TYPE,
+    title: 'Saved carts',
+    state: ACTIVE,
+    rollups: [
+      { type: 'story', open: 5, closed: 2, inCurrentSprint: 2, inOtherSprint: 1 },
+      { type: 'bug', open: 1, closed: 0, inCurrentSprint: 0, inOtherSprint: 0 },
+    ],
+  }),
+];
+
+/** An Epic whose Features hold 2 done, 2 open in the current sprint, 2 in another sprint and 2 in none (8 in all). */
+export const SPRINT_EPIC_ROWS: BacklogRowDto[] = [
+  itemRow({
+    key: 'SHIP-95',
+    rank: 1,
+    type: EPIC_TYPE,
+    title: 'Repeat purchases',
+    rollups: [
+      { type: 'story', open: 6, closed: 2, inCurrentSprint: 2, inOtherSprint: 2 },
+      { type: 'feature', open: 2, closed: 0, inCurrentSprint: 0, inOtherSprint: 0 },
+    ],
+  }),
+];
+
 /**
  * The Features tree: Epic SHIP-92 holding Reporting (SHIP-103) and its nested Dashboard widgets (SHIP-108), Epic SHIP-90 holding
  * Checkout v2, then No parent holding Ops hygiene (SHIP-104).

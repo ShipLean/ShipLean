@@ -1,7 +1,13 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import type { Page } from 'playwright';
 import { Link } from 'react-router-dom';
-import { EPIC_ROWS, FEATURE_ROWS, levelView } from '../ct/levelFixtures';
+import {
+  EPIC_ROWS,
+  FEATURE_ROWS,
+  levelView,
+  SPRINT_EPIC_ROWS,
+  SPRINT_FEATURE_ROWS,
+} from '../ct/levelFixtures';
 import { LevelHarness } from '../ct/LevelHarness';
 import { LevelSlotHarness } from '../ct/LevelSlotHarness';
 import { PROJECT } from '../ct/fixtures';
@@ -86,6 +92,57 @@ test('Levels_WhenEpicsLoaded_ShouldShowTheFeaturesCountInPlaceOfParent', async (
   ]);
   await expect(page.getByTestId(ids.levelFeatureCount)).toHaveText('2');
   await expect(page.getByTestId(ids.levelProgressText)).toHaveText('0 / 4 done');
+});
+
+test('Levels_WhenStoriesInSprints_ShouldShowDoneCurrentAndOtherSprintBands', async ({
+  mount,
+  page,
+}) => {
+  await stubLevel(page, levelView('features', SPRINT_FEATURE_ROWS));
+  await mount(<LevelHarness project={PROJECT} level="features" />, features);
+
+  const feature = row(page, 'SHIP-120');
+  await expect(feature.getByTestId(ids.levelProgressText)).toHaveText('2 / 8 done');
+  await expect(feature.getByTestId(ids.levelProgressDone)).toHaveAttribute('style', /width: 25%/);
+  await expect(feature.getByTestId(ids.levelProgressCurrent)).toHaveAttribute(
+    'style',
+    /width: 25%/,
+  );
+  await expect(feature.getByTestId(ids.levelProgressOther)).toHaveAttribute(
+    'style',
+    /width: 12.5%/,
+  );
+  await expect(feature.getByTestId(ids.levelProgressDone).locator('..')).toHaveAttribute(
+    'title',
+    '2 done · 2 in current sprint · 1 in another sprint · 3 not in a sprint',
+  );
+});
+
+test('Levels_WhenNoStoryInASprint_ShouldDrawOnlyTheDoneBand', async ({ mount, page }) => {
+  await stubLevel(page, levelView('features', FEATURE_ROWS));
+  await mount(<LevelHarness project={PROJECT} level="features" />, features);
+
+  const checkout = row(page, 'SHIP-101');
+  await expect(checkout.getByTestId(ids.levelProgressDone)).toHaveAttribute('style', /width: 50%/);
+  await expect(checkout.getByTestId(ids.levelProgressCurrent)).toHaveCount(0);
+  await expect(checkout.getByTestId(ids.levelProgressOther)).toHaveCount(0);
+  await expect(checkout.getByTestId(ids.levelProgressDone).locator('..')).toHaveAttribute(
+    'title',
+    '4 done · 0 in current sprint · 0 in another sprint · 4 not in a sprint',
+  );
+});
+
+test('Levels_WhenEpicsLoaded_ShouldShowSprintBandsOverStoriesUnderFeatures', async ({
+  mount,
+  page,
+}) => {
+  await stubLevel(page, levelView('epics', SPRINT_EPIC_ROWS));
+  await mount(<LevelHarness project={PROJECT} level="epics" />, epics);
+
+  const epic = row(page, 'SHIP-95');
+  await expect(epic.getByTestId(ids.levelProgressText)).toHaveText('2 / 8 done');
+  await expect(epic.getByTestId(ids.levelProgressCurrent)).toHaveAttribute('style', /width: 25%/);
+  await expect(epic.getByTestId(ids.levelProgressOther)).toHaveAttribute('style', /width: 25%/);
 });
 
 test('Levels_WhenColumnsSaved_ShouldHideThemPerLevelAndKeepKeyAndTitle', async ({
