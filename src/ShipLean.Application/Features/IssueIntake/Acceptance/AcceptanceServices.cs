@@ -9,12 +9,10 @@ public sealed class AcceptanceServices : IServiceModule
 {
     public void AddServices(IServiceCollection services, IConfiguration configuration)
     {
-        // TODO: the real acceptance lane (an accept job that applies the latest proposal and sets the phase last) replaces this no-op.
-        services.AddScoped<IIssueAcceptance, NoOpIssueAcceptance>();
-    }
-
-    private sealed class NoOpIssueAcceptance : IIssueAcceptance
-    {
-        public Task<IssueOutcome> AcceptAsync(IssueCommentEvent comment, CancellationToken cancellationToken) => Task.FromResult(IssueOutcome.Ignored);
+        services.AddScoped<IIssueAcceptance, DbIssueAcceptance>();
+        services.AddSingleton<AcceptanceReads>();
+        services.AddSingleton<AcceptJobWorker>();
+        // TODO: register AcceptJobService with AddHostedService once HostProfiles removes it from the Test profile (a file this lane
+        // doesn't own); until then accept jobs wait in issue_job and tests drive AcceptJobWorker.RunNextAsync directly.
     }
 }
