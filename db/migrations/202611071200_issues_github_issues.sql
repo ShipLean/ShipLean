@@ -83,7 +83,8 @@ CREATE INDEX ix_github_outbox_due ON github_outbox (next_attempt_at) WHERE sent_
 
 -- Durable multi-step work (D18): a round, a proposal or an acceptance, enqueued in the transaction of the state change
 -- that asks for it, claimed with FOR UPDATE SKIP LOCKED and a lease, retried with backoff. key makes an enqueue idempotent.
--- attempts counts claims; created_at also feeds the per-project rate limit (D16).
+-- attempts counts claims; created_at also feeds the per-project rate limit (D16). lease_token is new on every claim, and only
+-- its holder can complete or fail the job, so a worker that overran its lease cannot touch the next worker's claim.
 CREATE TABLE issue_job (
     id              uuid PRIMARY KEY,
     kind            text NOT NULL CHECK (kind IN ('round', 'proposal', 'accept')),
@@ -95,6 +96,7 @@ CREATE TABLE issue_job (
     attempts        integer NOT NULL DEFAULT 0 CHECK (attempts >= 0),
     next_attempt_at timestamptz NOT NULL,
     leased_until    timestamptz,
+    lease_token     uuid,
     last_error      text,
     created_at      timestamptz NOT NULL,
     done_at         timestamptz

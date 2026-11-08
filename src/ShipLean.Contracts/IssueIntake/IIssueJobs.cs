@@ -16,13 +16,16 @@ public interface IIssueJobs
     Task<bool> EnqueueAsync(
         IssueJobKind kind, string key, Guid issueId, Guid projectId, string? payloadJson, DbTransaction? transaction = null, CancellationToken cancellationToken = default);
 
-    // The oldest due job of this kind, leased to the caller (FOR UPDATE SKIP LOCKED), or null when none is due.
+    // The oldest due job of this kind, leased to the caller (FOR UPDATE SKIP LOCKED) under a new lease token, or null when none
+    // is due. A job whose lease on its last attempt ended first is failed for good.
     Task<IssueJob?> ClaimNextAsync(IssueJobKind kind, CancellationToken cancellationToken = default);
 
-    Task CompleteAsync(Guid jobId, DbTransaction? transaction = null, CancellationToken cancellationToken = default);
+    // False when the claim is stale: the job was claimed again under another token, or is no longer pending.
+    Task<bool> CompleteAsync(Guid jobId, Guid leaseToken, DbTransaction? transaction = null, CancellationToken cancellationToken = default);
 
-    // Retries after 1 min, 10 min, 1 h, then 6 h; after MaxAttempts claims the job is failed for good.
-    Task FailAsync(Guid jobId, string error, DbTransaction? transaction = null, CancellationToken cancellationToken = default);
+    // Retries after 1 min, 10 min, 1 h, then 6 h; after MaxAttempts claims the job is failed for good. False when the claim is
+    // stale, as for CompleteAsync.
+    Task<bool> FailAsync(Guid jobId, Guid leaseToken, string error, DbTransaction? transaction = null, CancellationToken cancellationToken = default);
 
     // How many jobs of this kind the project enqueued since `since` (the rate limit, D16).
     Task<int> CountSinceAsync(Guid projectId, IssueJobKind kind, DateTimeOffset since, DbTransaction? transaction = null, CancellationToken cancellationToken = default);

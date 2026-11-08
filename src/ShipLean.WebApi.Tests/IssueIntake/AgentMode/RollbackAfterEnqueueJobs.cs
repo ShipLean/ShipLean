@@ -19,9 +19,11 @@ internal sealed class RollbackAfterEnqueueJobs(DbIssueJobs inner) : IIssueJobs
 
     public Task<IssueJob?> ClaimNextAsync(IssueJobKind kind, CancellationToken cancellationToken = default) => inner.ClaimNextAsync(kind, cancellationToken);
 
-    public Task CompleteAsync(Guid jobId, DbTransaction? transaction = null, CancellationToken cancellationToken = default) => inner.CompleteAsync(jobId, transaction, cancellationToken);
+    public Task<bool> CompleteAsync(Guid jobId, Guid leaseToken, DbTransaction? transaction = null, CancellationToken cancellationToken = default)
+        => inner.CompleteAsync(jobId, leaseToken, transaction, cancellationToken);
 
-    public Task FailAsync(Guid jobId, string error, DbTransaction? transaction = null, CancellationToken cancellationToken = default) => inner.FailAsync(jobId, error, transaction, cancellationToken);
+    public Task<bool> FailAsync(Guid jobId, Guid leaseToken, string error, DbTransaction? transaction = null, CancellationToken cancellationToken = default)
+        => inner.FailAsync(jobId, leaseToken, error, transaction, cancellationToken);
 
     public Task<int> CountSinceAsync(Guid projectId, IssueJobKind kind, DateTimeOffset since, DbTransaction? transaction = null, CancellationToken cancellationToken = default)
         => inner.CountSinceAsync(projectId, kind, since, transaction, cancellationToken);

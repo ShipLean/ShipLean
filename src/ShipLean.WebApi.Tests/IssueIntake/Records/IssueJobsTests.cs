@@ -110,7 +110,7 @@ public class IssueJobsTests : ApiFixture
         await EnqueueAsync(NewKey("complete"));
         var job = (await _jobs.ClaimNextAsync(IssueJobKind.Round))!;
 
-        await _jobs.CompleteAsync(job.Id);
+        (await _jobs.CompleteAsync(job.Id, job.LeaseToken)).ShouldBeTrue();
         _clock.Advance(TimeSpan.FromDays(1));
 
         (await _jobs.ClaimNextAsync(IssueJobKind.Round)).ShouldBeNull();
@@ -125,7 +125,7 @@ public class IssueJobsTests : ApiFixture
         foreach (var wait in waits)
         {
             var job = (await _jobs.ClaimNextAsync(IssueJobKind.Round))!;
-            await _jobs.FailAsync(job.Id, "boom");
+            (await _jobs.FailAsync(job.Id, job.LeaseToken, "boom")).ShouldBeTrue();
 
             _clock.Advance(wait - TimeSpan.FromSeconds(1));
             (await _jobs.ClaimNextAsync(IssueJobKind.Round)).ShouldBeNull($"before the {wait} wait after attempt {job.Attempts}");
@@ -134,13 +134,106 @@ public class IssueJobsTests : ApiFixture
 
         var last = (await _jobs.ClaimNextAsync(IssueJobKind.Round))!;
         last.Attempts.ShouldBe(IIssueJobs.MaxAttempts);
-        await _jobs.FailAsync(last.Id, "boom again");
+        (await _jobs.FailAsync(last.Id, last.LeaseToken, "boom again")).ShouldBeTrue();
         _clock.Advance(TimeSpan.FromDays(2));
         (await _jobs.ClaimNextAsync(IssueJobKind.Round)).ShouldBeNull();
         await using var connection = await OpenDatabaseAsync();
         var row = await connection.QuerySingleAsync<(string Status, string LastError)>(
             "SELECT status, last_error FROM issue_job WHERE id = @id", new { id = last.Id });
         row.ShouldBe(("failed", "boom again"));
+    }
+
+    [Test]
+    public async Task Jobs_WhenFinalLeaseExpires_ShouldFail()
+    {
+        await EnqueueAsync(NewKey("final-lease"));
+        IssueJob job = null!;
+        for (var attempt = 1; attempt <= IIssueJobs.MaxAttempts; attempt++)
+        {
+            job = (await _jobs.ClaimNextAsync(IssueJobKind.Round))!;
+            job.Attempts.ShouldBe(attempt);
+            _clock.Advance(IIssueJobs.Lease);
+        }
+
+        (await _jobs.ClaimNextAsync(IssueJobKind.Round)).ShouldBeNull();
+
+        await using var connection = await OpenDatabaseAsync();
+        var row = await connection.QuerySingleAsync<(string Status, string LastError, bool Done)>(
+            "SELECT status, last_error, done_at IS NOT NULL FROM issue_job WHERE id = @id", new { id = job.Id });
+        row.ShouldBe(("failed", "The lease expired on the last attempt.", true));
+    }
+
+    [Test]
+    public async Task Complete_WhenLeaseWasReclaimed_ShouldReturnFalse()
+    {
+        await EnqueueAsync(NewKey("complete-stale"));
+        var first = (await _jobs.ClaimNextAsync(IssueJobKind.Round))!;
+        _clock.Advance(IIssueJobs.Lease);
+        var second = (await _jobs.ClaimNextAsync(IssueJobKind.Round))!;
+
+        (await _jobs.CompleteAsync(first.Id, first.LeaseToken)).ShouldBeFalse();
+
+        await using var connection = await OpenDatabaseAsync();
+        (await connection.QuerySingleAsync<string>("SELECT status FROM issue_job WHERE id = @id", new { id = second.Id })).ShouldBe("pending");
+        (await _jobs.CompleteAsync(second.Id, second.LeaseToken)).ShouldBeTrue();
+    }
+
+    [Test]
+    public async Task Fail_WhenLeaseWasReclaimed_ShouldReturnFalse()
+    {
+        await EnqueueAsync(NewKey("fail-stale"));
+        var first = (await _jobs.ClaimNextAsync(IssueJobKind.Round))!;
+        _clock.Advance(IIssueJobs.Lease);
+        var second = (await _jobs.ClaimNextAsync(IssueJobKind.Round))!;
+
+        (await _jobs.FailAsync(first.Id, first.LeaseToken, "late")).ShouldBeFalse();
+
+        (await _jobs.ClaimNextAsync(IssueJobKind.Round)).ShouldBeNull("the second worker's lease still holds");
+        await using var connection = await OpenDatabaseAsync();
+        var lastError = await connection.QuerySingleAsync<string?>("SELECT last_error FROM issue_job WHERE id = @id", new { id = second.Id });
+        lastError.ShouldBeNull();
+        (await _jobs.CompleteAsync(second.Id, second.LeaseToken)).ShouldBeTrue();
+    }
+
+    [Test]
+    public async Task Fail_WhenCompletedConcurrently_ShouldNotResurrect()
+    {
+        await EnqueueAsync(NewKey("race"));
+        var job = (await _jobs.ClaimNextAsync(IssueJobKind.Round))!;
+        await using var completer = await OpenDatabaseAsync();
+        await using var transaction = await completer.BeginTransactionAsync();
+        (await _jobs.CompleteAsync(job.Id, job.LeaseToken, transaction)).ShouldBeTrue();
+
+        // The fail waits on the completing transaction's row lock, then re-reads the row it updates once that commits.
+        var fail = _jobs.FailAsync(job.Id, job.LeaseToken, "late");
+        await WaitForLockWaitAsync();
+        await transaction.CommitAsync();
+
+        (await fail).ShouldBeFalse();
+        await using var connection = await OpenDatabaseAsync();
+        var row = await connection.QuerySingleAsync<(string Status, string? LastError)>(
+            "SELECT status, last_error FROM issue_job WHERE id = @id", new { id = job.Id });
+        row.ShouldBe(("done", (string?)null));
+    }
+
+    // Polls the server (each poll a round trip, no sleep) until a backend is blocked on an issue_job row lock.
+    private async Task WaitForLockWaitAsync()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+        while (!timeout.IsCancellationRequested)
+        {
+            var waiting = await connection.ExecuteScalarAsync<int>(
+                "SELECT count(*)::int FROM pg_stat_activity WHERE datname = current_database() AND wait_event_type = 'Lock' AND query ILIKE '%UPDATE issue_job%'");
+            if (waiting > 0)
+            {
+                return;
+            }
+
+            await Task.Yield();
+        }
+
+        throw new TimeoutException("The fail never waited on the completing transaction's row lock.");
     }
 
     [Test]
