@@ -8,6 +8,8 @@ public sealed class InboxServices : IServiceModule
 {
     public void AddServices(IServiceCollection services, IConfiguration configuration)
     {
-        // TODO: the inbox worker (it processes proposal jobs: parse, guard, store, post) is registered here.
+        services.AddSingleton<ProposalJobWorker>();
+        // HostProfiles removes it in the Test and Local profiles, where tests drive ProposalJobWorker.RunNextAsync directly.
+        services.AddHostedService<ProposalJobService>();
     }
 }
