@@ -61,8 +61,9 @@ export function BackupDestinationForm({
   };
 
   const lastFour = settings.destination?.s3.secretKeyLast4 ?? null;
-  const [replacing, setReplacing] = useState(false);
-  useEffect(() => setReplacing(false), [lastFour]);
+  // Replace was pressed for this saved secret; a new saved secret (after Save) starts untouched again.
+  const [replaced, setReplaced] = useState<string | null | undefined>(undefined);
+  const replacing = replaced === lastFour;
   const secretEdit: TokenEdit = { replacing, clear: draft.removeKeys, value: draft.secretKey };
 
   const custom = draft.endpointMode === 'custom';
@@ -219,7 +220,7 @@ export function BackupDestinationForm({
           disabled={false}
           error={problems.secretKey}
           onChange={(edit) => {
-            setReplacing(edit.replacing);
+            setReplaced(edit.replacing ? lastFour : undefined);
             change({ removeKeys: edit.clear, secretKey: edit.value });
           }}
         />
