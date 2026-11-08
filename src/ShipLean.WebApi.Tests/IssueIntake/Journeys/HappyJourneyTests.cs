@@ -14,6 +14,7 @@ using ShipLean.Application.Features.IssueIntake.Inbox;
 using ShipLean.Application.Features.IssueIntake.Outbox;
 using ShipLean.Application.Features.IssueIntake.Progress;
 using ShipLean.Application.Features.IssueIntake.Rounds;
+using ShipLean.Application.Features.IssueIntake.Settings;
 using ShipLean.Application.Features.IssueIntake.ShippedIn;
 using ShipLean.Application.Features.Webhooks;
 using ShipLean.Contracts.Agents;
@@ -40,7 +41,6 @@ public partial class HappyJourneyTests : WebhookApiTest
 {
     private const string Instance = "https://shiplean.example.test";
     private const string SelfLogin = "shiplean-bot";
-    private const string Repo = "/repos/acme/storefront";
 
     // GitHub comment ids only grow: the fake's ids and the delivered comments' ids come from one counter.
     private static long _ids = 4_000_000_000;
@@ -48,6 +48,10 @@ public partial class HappyJourneyTests : WebhookApiTest
 
     private readonly FakeGitHub _github = new();
     private readonly SwitchableSettings _settings = new();
+
+    // Each test owns a repository, so the unique enabled-repository index never clashes; SetUp picks it.
+    private string _repository = "acme/happy";
+    private bool _eager;
 
     protected override IReadOnlyDictionary<string, string?> HostSettings => new Dictionary<string, string?> { [WebhookSecrets.GithubKey] = GithubSecret };
 
@@ -58,22 +62,31 @@ public partial class HappyJourneyTests : WebhookApiTest
         services.AddSingleton<IIntegrationSettings>(new FixedIntegrationSettings(new IntegrationSettingsDto("ghp_test_token", "https://api.github.test/", null, null, [])));
     };
 
+    private string RepoPath => $"/repos/{_repository}";
+
     private DateTimeOffset Now => Host.Services.GetRequiredService<TimeProvider>().GetUtcNow();
 
     [SetUp]
     public async Task BaseUrlAsync()
     {
-        _github.Reset();
+        _repository = $"acme/happy-{Guid.NewGuid().ToString("N")[..8]}";
+        _eager = false;
+        _github.Reset(RepoPath);
+        _settings.Fallback = () => new DbIssueIntakeSettings(Host.Services.GetRequiredService<NpgsqlDataSource>());
+        _settings.Current = null;
         await using var database = await OpenDatabaseAsync();
         await database.ExecuteAsync("UPDATE instance_settings SET base_url = @Instance", new { Instance });
     }
 
-    [Test]
-    public async Task GitHubIssue_WhenAcceptedAndShipped_ShouldConverseAndClose()
+    // Eager delivers after every single worker step; the other mode delivers once the workers are drained. Both end the same.
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task GitHubIssue_WhenAcceptedAndShipped_ShouldConverseAndClose(bool eager)
     {
+        _eager = eager;
         var journey = await ArrangeAsync();
         var number = Interlocked.Increment(ref _numbers);
-        var issueRef = new IssueRef(IssueRef.GitHubHost, WebhookDelivery.GithubRepository, number);
+        var issueRef = new IssueRef(IssueRef.GitHubHost, _repository, number);
 
         // Opened: a Triage Story and a first round.
         (await DeliverAsync(WebhookDelivery.GithubIssue(GithubSecret, "opened", number, title: "Filter by tag", body: "I want a tag filter."))).Outcome.ShouldBe(WebhookOutcome.Processed);
@@ -135,7 +148,7 @@ public partial class HappyJourneyTests : WebhookApiTest
         var opened = await DeliverAsync(WebhookDelivery.Github(GithubSecret, "opened", pull, $"{item.Key}: Filter the backlog by tag", Next()));
         opened.Linked.ShouldBe([item.Key]);
         await ReconcileAsync(issue.Id);
-        _github.Comments(number)[4].ShouldBe(ProgressMessages.PullRequest(item.Key, "Filter the backlog by tag", $"https://github.com/acme/storefront/pull/{pull}", merged: false));
+        _github.Comments(number)[4].ShouldBe(ProgressMessages.PullRequest(item.Key, "Filter the backlog by tag", $"https://github.com/{_repository}/pull/{pull}", merged: false));
 
         // It merges with a sha, which closes the item; the image is published. The done message replaces a merged post.
         var sha = NewSha();
@@ -148,10 +161,14 @@ public partial class HappyJourneyTests : WebhookApiTest
         var posts = _github.Comments(number);
         posts.Count.ShouldBe(6);
         var done = posts[5];
-        done.ShouldStartWith($"{item.Key} \"Filter the backlog by tag\" is done.\n\n{ShippedInSection.Heading}\n\n- {item.Key}: commit `{sha[..7]}` (acme/storefront#{pull}), merged ");
+        done.ShouldStartWith($"{item.Key} \"Filter the backlog by tag\" is done.\n\n{ShippedInSection.Heading}\n\n- {item.Key}: commit `{sha[..7]}` ({_repository}#{pull}), merged ");
         done.ShouldContain($"Image published {Utc(published)} (run: {RunUrl(sha)}).");
         done.ShouldEndWith(ProgressMessages.ClosingCompleted);
         _github.Closes(number).ShouldBe(["closed completed"]);
+
+        // Everything GitHub received, in order: the done message comes before the close.
+        _github.Writes(number).Select(w => Label(w.Kind, w.Body, item.Key)).ShouldBe(
+            ["questions", "proposal", "accepted", "planned", "pull request", "done", "close completed"]);
 
         // The phase moves to closed on the pass after the close was sent.
         await ReconcileAsync(issue.Id);
@@ -173,7 +190,7 @@ public partial class HappyJourneyTests : WebhookApiTest
         (await ItemAsync(shippedId)).Category.ShouldBe("completed");
 
         var number = Interlocked.Increment(ref _numbers);
-        var issueRef = new IssueRef(IssueRef.GitHubHost, WebhookDelivery.GithubRepository, number);
+        var issueRef = new IssueRef(IssueRef.GitHubHost, _repository, number);
         await DeliverAsync(WebhookDelivery.GithubIssue(GithubSecret, "opened", number));
         await SettleAsync();
         var issue = await IssueAsync(issueRef);
@@ -184,7 +201,7 @@ public partial class HappyJourneyTests : WebhookApiTest
         await SettleAsync();
         var reply = _github.Comments(number).ShouldHaveSingleItem();
         reply.ShouldStartWith("This already shipped.");
-        reply.ShouldContain($"{ShippedInSection.Heading}\n\n- {shippedKey}: commit `{sha[..7]}` (acme/storefront#{pull}), merged ");
+        reply.ShouldContain($"{ShippedInSection.Heading}\n\n- {shippedKey}: commit `{sha[..7]}` ({_repository}#{pull}), merged ");
         reply.ShouldContain(ShippedInSection.NotYetPublished);
         reply.ShouldContain("It works only when:\n- Search indexing turned on");
         reply.ShouldNotContain("123456789");
@@ -197,6 +214,7 @@ public partial class HappyJourneyTests : WebhookApiTest
         _github.Comments(number).Count.ShouldBe(2);
         _github.Comments(number)[1].ShouldBe(AcceptanceTexts.Shipped);
         _github.Closes(number).ShouldBe(["closed completed"]);
+        _github.Writes(number).Select(w => Label(w.Kind, w.Body, shippedKey)).ShouldBe(["already shipped", "shipped", "close completed"]);
         (await IssueAsync(issueRef)).Phase.ShouldBe(IssuePhase.Closed);
         (await ItemAsync(issue.WorkItemId)).Category.ShouldBe("removed");
         (await CommentsAsync(issue.WorkItemId)).ShouldContain(c => c.AgentName == "ShipLean" && c.Body == AcceptanceTexts.AlreadyShippedNote);
@@ -207,7 +225,7 @@ public partial class HappyJourneyTests : WebhookApiTest
     {
         var journey = await ArrangeAsync();
         var number = Interlocked.Increment(ref _numbers);
-        var issueRef = new IssueRef(IssueRef.GitHubHost, WebhookDelivery.GithubRepository, number);
+        var issueRef = new IssueRef(IssueRef.GitHubHost, _repository, number);
 
         // A bug label makes a Triage Bug; the proposal is a Story.
         await DeliverAsync(WebhookDelivery.GithubIssue(GithubSecret, "opened", number, title: "Tags can't be filtered", labels: ["bug"]));
@@ -215,6 +233,10 @@ public partial class HappyJourneyTests : WebhookApiTest
         (await ItemAsync(issue.WorkItemId)).Type.ShouldBe("bug");
         await SettleAsync();
         await RespondAsync(journey, (await IssueAsync(issueRef)).ProposalSessionId.ShouldNotBeNull(), Golden("new"));
+        await SettleAsync();
+
+        // F1: a comment made before acceptance stays on the Triage item.
+        (await DeliverAsync(WebhookDelivery.GithubIssueComment(GithubSecret, "Same here before the vote.", "pat-passerby", "NONE", number, commentId: NextId()))).Outcome.ShouldBe(WebhookOutcome.Processed);
         await SettleAsync();
 
         (await DeliverAsync(WebhookDelivery.GithubIssueComment(GithubSecret, "LGTM", WebhookDelivery.IssueAuthor, "NONE", number, commentId: NextId()))).Outcome.ShouldBe(WebhookOutcome.Processed);
@@ -231,11 +253,60 @@ public partial class HappyJourneyTests : WebhookApiTest
         (await CommentsAsync(made.Id)).ShouldContain(c => c.Body == AcceptanceTexts.CameFrom(triage.Key));
         _github.Comments(number)[^1].ShouldBe(AcceptanceTexts.Accepted(made.Key, "Filter the backlog by tag"));
 
+        // F1: a stranger's comment after acceptance goes on the item that carries the work; the earlier one stays on Triage.
+        (await DeliverAsync(WebhookDelivery.GithubIssueComment(GithubSecret, "Same here after the vote.", "pat-passerby", "NONE", number, commentId: NextId()))).Outcome.ShouldBe(WebhookOutcome.Processed);
+        await SettleAsync();
+        (await CommentsAsync(made.Id)).ShouldContain(c => c.Body.Contains("Same here after the vote.", StringComparison.Ordinal));
+        (await CommentsAsync(made.Id)).ShouldNotContain(c => c.Body.Contains("Same here before the vote.", StringComparison.Ordinal));
+        (await CommentsAsync(triage.Id)).ShouldContain(c => c.Body.Contains("Same here before the vote.", StringComparison.Ordinal));
+        (await CommentsAsync(triage.Id)).ShouldNotContain(c => c.Body.Contains("Same here after the vote.", StringComparison.Ordinal));
+
         // Progress follows the new item.
         await MoveAsync(journey, made.Id, "story", "Active");
         await ReconcileAsync(issue.Id);
         _github.Comments(number)[^1].ShouldBe(ProgressMessages.Started(made.Key, "Filter the backlog by tag"));
     }
+
+    private new async Task<WebhookResultDto> DeliverAsync(WebhookDelivery delivery) => await base.DeliverAsync(HappyDelivery.Retarget(delivery, _repository, GithubSecret));
+
+    [Test]
+    public async Task GitHubIssue_WhenIntakeEnabledThroughSettings_ShouldOpenAndPropose()
+    {
+        // The settings PUT (admin Joel, run-as Joel) is the only arrangement: it creates the Triage states and takes the repository.
+        var journey = await ArrangeAsync(throughSettings: true);
+        await using (var database = await OpenDatabaseAsync())
+        {
+            (await database.ExecuteScalarAsync<int>(
+                "SELECT count(*)::int FROM state WHERE project_id = @id AND is_intake AND name = 'Triage'", new { id = journey.Project.Id })).ShouldBe(3);
+        }
+
+        var number = Interlocked.Increment(ref _numbers);
+        var issueRef = new IssueRef(IssueRef.GitHubHost, _repository, number);
+        (await DeliverAsync(WebhookDelivery.GithubIssue(GithubSecret, "opened", number, title: "Filter by tag", body: "I want a tag filter."))).Outcome.ShouldBe(WebhookOutcome.Processed);
+        var triage = await ItemAsync((await IssueAsync(issueRef)).WorkItemId);
+        triage.ShouldSatisfyAllConditions(() => triage.State.ShouldBe("Triage"), () => triage.IsIntake.ShouldBeTrue());
+        await SettleAsync();
+        await RespondAsync(journey, (await IssueAsync(issueRef)).ProposalSessionId.ShouldNotBeNull(), Golden("needsInfo"));
+        await SettleAsync();
+
+        _github.Writes(number).Select(w => Label(w.Kind, w.Body, triage.Key)).ShouldBe(["questions"]);
+        (await IssueAsync(issueRef)).Phase.ShouldBe(IssuePhase.AwaitingReply);
+    }
+
+    // A name for each write, so a whole sequence is one assertion.
+    private static string Label(string kind, string body, string key) => kind == "state" ? $"close {body.Split(' ')[1]}" : body switch
+    {
+        _ when body.Contains("1. Which page were you on?", StringComparison.Ordinal) => "questions",
+        _ when body.StartsWith("Thanks for the report.", StringComparison.Ordinal) => "proposal",
+        _ when body.StartsWith("This already shipped.", StringComparison.Ordinal) => "already shipped",
+        _ when body == AcceptanceTexts.Shipped => "shipped",
+        _ when body.Contains("is planned for the sprint", StringComparison.Ordinal) => "planned",
+        _ when body.StartsWith(key + " \"Filter the backlog by tag\" is done.", StringComparison.Ordinal) => "done",
+        _ when body.Contains("pull/", StringComparison.Ordinal) && body.Contains(key, StringComparison.Ordinal) => "pull request",
+        _ when body.StartsWith("Thanks! This is now ", StringComparison.Ordinal) => "accepted",
+        _ when body == ProgressMessages.Started(key, "Filter the backlog by tag") => "started",
+        _ => body,
+    };
 
     private static long NextId() => Interlocked.Increment(ref _ids);
 
@@ -248,7 +319,7 @@ public partial class HappyJourneyTests : WebhookApiTest
 
     private static string Utc(DateTimeOffset at) => at.ToString("yyyy-MM-dd HH:mm 'UTC'", CultureInfo.InvariantCulture);
 
-    private static string RunUrl(string sha) => $"https://github.com/acme/storefront/actions/runs/{sha[..6]}";
+    private string RunUrl(string sha) => $"https://github.com/{_repository}/actions/runs/{sha[..6]}";
 
     // The commit (merged an hour ago) and one docker-publish.yml run on it that started 5 minutes later and, when completed,
     // finished 11 minutes after the merge. Returns that finish time, in whole seconds as GitHub writes it.
@@ -256,9 +327,9 @@ public partial class HappyJourneyTests : WebhookApiTest
     {
         var mergedAt = DateTimeOffset.FromUnixTimeSeconds(Now.AddHours(-1).ToUnixTimeSeconds());
         var finished = mergedAt.AddMinutes(11);
-        _github.Respond($"{Repo}/commits/{sha}", $$"""{ "sha": "{{sha}}", "commit": { "committer": { "date": "{{GitHubTime(mergedAt)}}" } } }""");
+        _github.Respond($"{RepoPath}/commits/{sha}", $$"""{ "sha": "{{sha}}", "commit": { "committer": { "date": "{{GitHubTime(mergedAt)}}" } } }""");
         var runId = long.Parse(sha[..6], NumberStyles.HexNumber, CultureInfo.InvariantCulture);
-        _github.Respond($"{Repo}/actions/workflows/docker-publish.yml/runs", $$"""
+        _github.Respond($"{RepoPath}/actions/workflows/docker-publish.yml/runs", $$"""
             { "total_count": 1, "workflow_runs": [{ "id": {{runId}}, "head_sha": "{{sha}}", "status": "{{status}}",
               "conclusion": {{(conclusion is null ? "null" : $"\"{conclusion}\"")}}, "html_url": "{{RunUrl(sha)}}",
               "created_at": "{{GitHubTime(mergedAt.AddMinutes(5))}}", "updated_at": "{{GitHubTime(finished)}}" }] }
@@ -268,10 +339,20 @@ public partial class HappyJourneyTests : WebhookApiTest
 
     // A project of its own with a live relay connection, Triage states for Story, Bug and Feature, and acme/storefront taken by it
     // with Joel as the run-as member.
-    private async Task<AgentDispatchArrange> ArrangeAsync()
+    private async Task<AgentDispatchArrange> ArrangeAsync(bool throughSettings = false)
     {
         await using var database = await OpenDatabaseAsync();
         var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
+        await database.ExecuteAsync("UPDATE project SET repo_url = @repoUrl WHERE id = @id", new { id = arranged.Project.Id, repoUrl = $"https://github.com/{_repository}" });
+        if (throughSettings)
+        {
+            // The real enablement seam: the settings PUT as the project's admin creates the Triage states and takes the repository.
+            using var saved = await Api.PutJsonAsync(
+                $"api/projects/{arranged.Project.Id}/settings/issue-intake", new { enabled = true, runAsUserId = SeedIds.Users.Joel, proposalInstructions = "Write a proposal.", maxRounds = 5 });
+            saved.StatusCode.ShouldBe(HttpStatusCode.OK, await saved.Content.ReadAsStringAsync());
+            return arranged;
+        }
+
         foreach (var type in new[] { "story", "bug", "feature" })
         {
             await database.ExecuteAsync(
@@ -280,7 +361,7 @@ public partial class HappyJourneyTests : WebhookApiTest
         }
 
         var key = await database.QuerySingleAsync<string>("SELECT key FROM project WHERE id = @id", new { id = arranged.Project.Id });
-        _settings.Current = new FixedIssueIntakeSettings().Take(new IssueIntakeProject(arranged.Project.Id, key, WebhookDelivery.GithubRepository, SeedIds.Users.Joel, "Write a proposal.", 5));
+        _settings.Current = new FixedIssueIntakeSettings().Take(new IssueIntakeProject(arranged.Project.Id, key, _repository, SeedIds.Users.Joel, "Write a proposal.", 5));
         return arranged;
     }
 
@@ -292,18 +373,34 @@ public partial class HappyJourneyTests : WebhookApiTest
             new AgentReporter(journey.ConnectionId!.Value, "Relay"), new AgentActivityCreate(sessionId, "response", body, null, null, null, false, null, null));
     }
 
-    // Runs the round, proposal and accept workers and the outbox deliverer until none has anything due.
+    // Runs the round, proposal and accept workers and the outbox deliverer until none has anything due. Eager delivers after every
+    // single worker step, the way a live deliverer racing the workers would; otherwise it delivers once the workers are drained.
     private async Task SettleAsync()
     {
         var rounds = Host.Services.GetRequiredService<RoundJobWorker>();
         var proposals = Host.Services.GetRequiredService<ProposalJobWorker>();
         var accepts = Host.Services.GetRequiredService<AcceptJobWorker>();
+        var steps = new Func<CancellationToken, Task<bool>>[] { rounds.RunNextAsync, proposals.RunNextAsync, accepts.RunNextAsync };
         for (var pass = 0; pass < 20; pass++)
         {
             var worked = false;
-            while (await rounds.RunNextAsync(CancellationToken.None) | await proposals.RunNextAsync(CancellationToken.None) | await accepts.RunNextAsync(CancellationToken.None))
+            if (_eager)
             {
-                worked = true;
+                foreach (var step in steps)
+                {
+                    if (await step(CancellationToken.None))
+                    {
+                        worked = true;
+                        await DeliverDueAsync();
+                    }
+                }
+            }
+            else
+            {
+                while (await rounds.RunNextAsync(CancellationToken.None) | await proposals.RunNextAsync(CancellationToken.None) | await accepts.RunNextAsync(CancellationToken.None))
+                {
+                    worked = true;
+                }
             }
 
             if (await DeliverDueAsync() == 0 && !worked)
@@ -386,9 +483,12 @@ public partial class HappyJourneyTests : WebhookApiTest
     // The fixture's one IIssueIntakeSettings; each test points acme/storefront at its own project.
     private sealed class SwitchableSettings : IIssueIntakeSettings
     {
-        public FixedIssueIntakeSettings Current { get; set; } = new();
+        public FixedIssueIntakeSettings? Current { get; set; }
 
-        public Task<IssueIntakeProject?> ForRepositoryAsync(IssueRef issue, CancellationToken cancellationToken = default) => Current.ForRepositoryAsync(issue, cancellationToken);
+        // The real lookup over project_issue_intake, for the journey that turns intake on through the settings PUT.
+        public Func<IIssueIntakeSettings>? Fallback { get; set; }
+
+        public Task<IssueIntakeProject?> ForRepositoryAsync(IssueRef issue, CancellationToken cancellationToken = default) => (Current as IIssueIntakeSettings ?? Fallback!()).ForRepositoryAsync(issue, cancellationToken);
     }
 
     private sealed record ItemRow(Guid Id, string Key, string Type, string Title, string State, string Category, bool IsIntake, string Criteria);
@@ -400,11 +500,13 @@ public partial class HappyJourneyTests : WebhookApiTest
     // (404 for any other). The loopback HttpsStubServer can't serve these paths (it skips paths whose last segment has a dot).
     private sealed class FakeGitHub : IHttpClientFactory
     {
+        private string _repoPath = "/repos/acme/happy";
         private readonly ConcurrentQueue<(int Number, string Kind, string Body)> _writes = new();
         private readonly ConcurrentDictionary<string, string> _answers = new(StringComparer.Ordinal);
 
-        public void Reset()
+        public void Reset(string repoPath)
         {
+            _repoPath = repoPath;
             _writes.Clear();
             _answers.Clear();
         }
@@ -415,6 +517,9 @@ public partial class HappyJourneyTests : WebhookApiTest
         public IReadOnlyList<string> Comments(int number) => [.. _writes.Where(w => w.Number == number && w.Kind == "comment").Select(w => w.Body)];
 
         // The state changes sent for the issue, as "closed completed".
+        // Every write for the issue in the order GitHub received it: the kind ("comment" or "state") and the body.
+        public IReadOnlyList<(string Kind, string Body)> Writes(int number) => [.. _writes.Where(w => w.Number == number).Select(w => (w.Kind, w.Body))];
+
         public IReadOnlyList<string> Closes(int number) => [.. _writes.Where(w => w.Number == number && w.Kind == "state").Select(w => w.Body)];
 
         public HttpClient CreateClient(string name) => new(new Answerer(this));
@@ -427,7 +532,7 @@ public partial class HappyJourneyTests : WebhookApiTest
             {
                 var path = request.RequestUri!.AbsolutePath;
                 var segments = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
-                var isIssue = path.StartsWith($"{Repo}/issues/", StringComparison.Ordinal);
+                var isIssue = path.StartsWith($"{owner._repoPath}/issues/", StringComparison.Ordinal);
                 var number = isIssue ? int.Parse(segments[4], CultureInfo.InvariantCulture) : 0;
                 if (request.Method == HttpMethod.Post && isIssue && segments.Length == 6 && segments[5] == "comments")
                 {
