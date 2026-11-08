@@ -20,6 +20,8 @@ namespace ShipLean.Application.Features.IssueIntake.Rounds;
 // - otherwise the rounds go up by one, the job is enqueued with key round:<n>:<issue>, and the phase becomes proposing.
 // An issue whose repository its project no longer takes is held with nothing written (intakeOff). While an LGTM's accept job
 // runs (phase accepting) nothing is written either (accepting): the row lock here waits for the LGTM's commit, or wins first.
+// An issue closed on GitHub is held with nothing written too (issueClosed), forced or not: a round ends in a post, and nothing
+// posts while the issue is closed (D13), so a reply or a maintainer's /shiplean does nothing until the issue is reopened.
 public sealed class IssueProposalSessions(
     IGitHubIssueStore issues, IIssueJobs jobs, IIssueEffects effects, RoundHolds holds, IServiceScopeFactory scopes, TimeProvider clock) : IIssueProposalSessions
 {
@@ -28,6 +30,8 @@ public sealed class IssueProposalSessions(
     public const string IntakeOff = "intakeOff";
 
     public const string Accepting = "accepting";
+
+    public const string IssueClosed = "issueClosed";
 
     public const string Continue = "A maintainer can comment /shiplean on the GitHub issue to continue.";
 
@@ -54,6 +58,10 @@ public sealed class IssueProposalSessions(
 
         var issue = await issues.FindByIdAsync(issueId, transaction, cancellationToken)
             ?? throw new InvalidOperationException($"No github_issue {issueId}.");
+        if (!issue.OpenOnGitHub)
+        {
+            return RoundRequest.Held(IssueClosed);
+        }
 
         var project = await TakingProject.FindAsync(scopes, issue, cancellationToken);
         if (project is null)

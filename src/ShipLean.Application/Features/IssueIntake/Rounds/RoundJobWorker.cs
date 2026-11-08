@@ -17,7 +17,10 @@ namespace ShipLean.Application.Features.IssueIntake.Rounds;
 // claim of the same job, starts nothing (the claim also makes the new session the issue's proposal_session_id); it then completes the job with its own lease token, which a stale lease can't
 // (the job stays with its current holder). A starter block (no connection, no
 // repository, a live session) holds the issue and completes the job in one transaction. A project that no
-// longer takes the repository completes the job with nothing done. Anything thrown fails the job, which retries with backoff.
+// longer takes the repository completes the job with nothing done. An issue closed on GitHub since the job was enqueued starts
+// no session (D13: a round ends in a post): the issue is held the same way, so once it is reopened an author's reply or a
+// maintainer's /shiplean can ask for a round again (left proposing, it would wait for a proposal that never comes). Anything
+// thrown fails the job, which retries with backoff.
 public sealed class RoundJobWorker(
     IIssueJobs jobs,
     IGitHubIssueStore issues,
@@ -30,6 +33,9 @@ public sealed class RoundJobWorker(
     IProjectEvents events,
     ILogger<RoundJobWorker> logger)
 {
+    public const string ClosedExplanation =
+        "Held for a maintainer: the issue was closed on GitHub before its proposal session started, so none was started. Once it is reopened, a maintainer can comment /shiplean on the GitHub issue to continue.";
+
     // False when no round job was due.
     public async Task<bool> RunNextAsync(CancellationToken cancellationToken)
     {
@@ -71,6 +77,12 @@ public sealed class RoundJobWorker(
         }
 
         var runAs = project.RunAsUserId ?? throw new InvalidOperationException($"Project {project.ProjectKey} takes issues with no run-as member.");
+        if (!issue.OpenOnGitHub)
+        {
+            await HoldAsync(job, IssueProposalSessions.IssueClosed, ClosedExplanation, runAs, cancellationToken);
+            return;
+        }
+
         var round = JsonSerializer.Deserialize<RoundJobPayload>(job.Payload)?.Round
             ?? throw new InvalidOperationException($"Round job {job.Id} has no round.");
         var related = await closest.FindAsync(issue, runAs, cancellationToken);
@@ -80,7 +92,12 @@ public sealed class RoundJobWorker(
             (transaction, token) => ClaimSessionAsync(job, issue, transaction, token));
         if (outcome.Block is { } block)
         {
-            await HoldAsync(job, block, runAs, cancellationToken);
+            await HoldAsync(
+                job,
+                JsonNamingPolicy.CamelCase.ConvertName(block.ToString()),
+                $"Held for a maintainer: the proposal session could not start. {AgentStartMessages.For(block)} {IssueProposalSessions.Continue}",
+                runAs,
+                cancellationToken);
             return;
         }
 
@@ -121,19 +138,13 @@ public sealed class RoundJobWorker(
 
     // The hold and the job's completion commit together; a stale lease (another worker has the job now) drops both. The item's
     // hold comment is published after the commit.
-    private async Task HoldAsync(IssueJob job, AgentStartBlock block, Guid runAs, CancellationToken cancellationToken)
+    private async Task HoldAsync(IssueJob job, string reason, string explanation, Guid runAs, CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         var issue = await issues.FindByIdAsync(job.GitHubIssueId, transaction, cancellationToken)
             ?? throw new InvalidOperationException($"No github_issue {job.GitHubIssueId}.");
-        var noted = await holds.HoldAsync(
-            issue,
-            JsonNamingPolicy.CamelCase.ConvertName(block.ToString()),
-            $"Held for a maintainer: the proposal session could not start. {AgentStartMessages.For(block)} {IssueProposalSessions.Continue}",
-            runAs,
-            transaction,
-            cancellationToken);
+        var noted = await holds.HoldAsync(issue, reason, explanation, runAs, transaction, cancellationToken);
         if (!await jobs.CompleteAsync(job.Id, job.LeaseToken, transaction, cancellationToken))
         {
             return;

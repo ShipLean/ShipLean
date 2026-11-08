@@ -304,23 +304,47 @@ public class RoundTests : ApiFixture
         (await ShipLeanCommentsAsync(issue.WorkItemId)).Count.ShouldBe(2);
     }
 
-    [Test]
-    public async Task RequestRound_WhenClosedOnGitHub_ShouldSkipGitHubHoldComment()
+    // D13: a round ends in a post and nothing posts while the issue is closed on GitHub, so a request (a reply, or a maintainer's
+    // /shiplean when forced) writes nothing at all: no hold notice, no phase change, no round, no job. Past the round cap, too:
+    // the closed check comes before the hold.
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task RequestRound_WhenClosedOnGitHub_ShouldHoldAndWriteNothing(bool force)
     {
         var (_, _, issue) = await ArrangeAsync(maxRounds: 1);
         await SetRoundsAsync(issue.Id, 1);
-        await SetPhaseAsync(issue.Id, IssuePhase.AwaitingReply);
-        await using (var database = await OpenDatabaseAsync())
-        {
-            await database.ExecuteAsync("UPDATE github_issue SET open_on_github = false WHERE id = @Id", new { issue.Id });
-        }
+        await SetPhaseAsync(issue.Id, force ? IssuePhase.WaitingForMaintainer : IssuePhase.AwaitingReply);
+        await CloseOnGitHubAsync(issue.Id);
 
-        var outcome = await RequestAsync(issue.Id, force: false);
+        var outcome = await RequestAsync(issue.Id, force);
 
-        outcome.ShouldBe(RoundRequest.Held(RoundHolds.RoundCap, Changed(issue)));
+        outcome.ShouldBe(RoundRequest.Held(IssueProposalSessions.IssueClosed));
+        var stored = await IssueAsync(issue.Id);
+        stored.Phase.ShouldBe(force ? IssuePhase.WaitingForMaintainer : IssuePhase.AwaitingReply);
+        stored.Rounds.ShouldBe(1);
+        (await JobStatusesAsync(issue.Id)).ShouldBeEmpty();
+        (await OutboxAsync(issue.Id)).ShouldBeEmpty();
+        (await ShipLeanCommentsAsync(issue.WorkItemId)).ShouldBeEmpty();
+        (await Host.Services.GetRequiredService<IGitHubIssueStore>().TakeRerunAsync(issue.Id)).ShouldBeFalse();
+    }
+
+    // A round job enqueued while the issue was open and claimed after it closed starts no session. The issue is held without the
+    // public GitHub notice (it is closed), so after a reopen a reply or a /shiplean can ask again.
+    [Test]
+    public async Task Worker_WhenClosedOnGitHubAfterRequest_ShouldHoldWithoutStarting()
+    {
+        var (_, item, issue) = await ArrangeAsync();
+        (await RequestAsync(issue.Id, force: false)).ShouldBe(RoundRequest.Requested);
+        await CloseOnGitHubAsync(issue.Id);
+
+        (await Worker.RunNextAsync(CancellationToken.None)).ShouldBeTrue();
+
+        await using var database = await OpenDatabaseAsync();
+        (await AgentDispatchArrange.SessionsAsync(database, item)).ShouldBeEmpty();
+        (await JobStatusesAsync(issue.Id)).ShouldBe(["done"]);
         (await IssueAsync(issue.Id)).Phase.ShouldBe(IssuePhase.WaitingForMaintainer);
         (await OutboxAsync(issue.Id)).ShouldBeEmpty();
-        (await ShipLeanCommentsAsync(issue.WorkItemId)).ShouldHaveSingleItem();
+        (await ShipLeanCommentsAsync(item)).ShouldHaveSingleItem().Body.ShouldBe(RoundJobWorker.ClosedExplanation);
     }
 
     // Round 1's job is done (its session ran) but its proposal isn't posted yet: the issue is still proposing.
@@ -591,6 +615,12 @@ public class RoundTests : ApiFixture
     {
         await using var database = await OpenDatabaseAsync();
         await database.ExecuteAsync("UPDATE github_issue SET rounds = @rounds WHERE id = @id", new { id, rounds });
+    }
+
+    private async Task CloseOnGitHubAsync(Guid id)
+    {
+        await using var database = await OpenDatabaseAsync();
+        await database.ExecuteAsync("UPDATE github_issue SET open_on_github = false WHERE id = @id", new { id });
     }
 
     private async Task SetPhaseAsync(Guid id, IssuePhase phase)

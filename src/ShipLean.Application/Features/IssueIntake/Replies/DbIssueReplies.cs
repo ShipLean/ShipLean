@@ -11,7 +11,9 @@ namespace ShipLean.Application.Features.IssueIntake.Replies;
 // that means (a new round, a hold, or a rerun of the round in flight). The mirror, the claim of reply:<issueId>:<commentId> and
 // the round request are one transaction, so a crash between them leaves nothing and the retry does all three, and two deliveries
 // of one reply ask once. Lock order, as for every issue writer: the project's round lock first, then the comment's html_url
-// lock and the rows. The phase is never written here: RequestRoundAsync owns it.
+// lock and the rows. The phase is never written here: RequestRoundAsync owns it. A reply on an issue closed on GitHub is mirrored
+// and claimed but asks for no round (D13: nothing posts while it is closed, and a round ends in a post), so a redelivery of that
+// reply after a reopen asks for none either.
 public sealed class DbIssueReplies(
     NpgsqlDataSource dataSource,
     IIssueIntakeSettings settings,
@@ -83,12 +85,14 @@ public sealed class DbIssueReplies(
         return IssueOutcome.Processed((await workItems.GetAsync(found.WorkItemId, cancellationToken)).Key);
     }
 
-    // Null when this reply already asked (a replay) or the project stopped taking the repository since the check above; then the
-    // savepoint drops the claim too, so no round write is left.
+    // Null when this reply already asked (a replay), the issue is closed on GitHub (the claim is kept), or the project stopped
+    // taking the repository since the check above (the savepoint drops the claim too, so no round write is left). A close that
+    // commits after the record was read comes back as Held(issueClosed) with nothing written, and the claim is kept as well.
     private async Task<RoundRequest?> RequestRoundAsync(GitHubIssueRecord record, IssueCommentEvent comment, NpgsqlTransaction transaction, CancellationToken cancellationToken)
     {
         await transaction.SaveAsync(RoundSavepoint, cancellationToken);
-        if (!await effects.TryClaimAsync($"reply:{record.Id}:{comment.CommentId}", record.Id, null, transaction, cancellationToken))
+        if (!await effects.TryClaimAsync($"reply:{record.Id}:{comment.CommentId}", record.Id, null, transaction, cancellationToken)
+            || !record.OpenOnGitHub)
         {
             return null;
         }

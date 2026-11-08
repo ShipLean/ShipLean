@@ -533,6 +533,64 @@ public class FailureJourneyTests : WebhookApiTest
         (await StateNameAsync((await IssueAsync(724)).WorkItemId)).ShouldBe("Triage");
     }
 
+    // D13 (SHIP-921): a round ends in a post and nothing posts while the issue is closed on GitHub, so the author's reply on a
+    // closed issue is only mirrored.
+    [Test]
+    public async Task GitHubIssue_WhenAuthorRepliesWhileClosed_ShouldOnlyMirror()
+    {
+        var journey = await ArrangeAsync();
+        var issue = await OpenAsync(725);
+        await ProposeAsync(journey, 725, Golden("new.md"));
+        await DeliverAsync(WebhookDelivery.GithubIssue(GithubSecret, "closed", 725, state: "closed"));
+        await DrainAsync();
+        var before = await IssueAsync(725);
+        var outboxBefore = (await OutboxAsync(issue.Id)).Count;
+        var roundsBefore = await RoundJobCountAsync(issue.Id);
+
+        (await CommentAsync(725, "Please also cover Features.", WebhookDelivery.IssueAuthor, "NONE")).Outcome.ShouldBe(WebhookOutcome.Processed);
+        await DrainAsync();
+
+        var after = await IssueAsync(725);
+        after.OpenOnGitHub.ShouldBeFalse();
+        after.Phase.ShouldBe(before.Phase);
+        after.Rounds.ShouldBe(before.Rounds);
+        (await RoundJobCountAsync(issue.Id)).ShouldBe(roundsBefore);
+        (await PendingJobsAsync(issue.Id)).ShouldBeEmpty();
+        (await OutboxAsync(issue.Id)).Count.ShouldBe(outboxBefore);
+        (await MirroredAsync(issue.Id)).ShouldBe([$"{WebhookDelivery.IssueAuthor}: Please also cover Features."]);
+    }
+
+    // A maintainer's /shiplean on a held issue that is closed on GitHub does nothing until the issue is reopened.
+    [Test]
+    public async Task GitHubIssue_WhenSlashShipleanWhileClosed_ShouldStayHeld()
+    {
+        var journey = await ArrangeAsync();
+        await SetConnectionAsync(journey, null);
+        var issue = await OpenAsync(726);
+        await DrainAsync();
+        await DeliverAsync(WebhookDelivery.GithubIssue(GithubSecret, "closed", 726, state: "closed"));
+        await SetConnectionAsync(journey, journey.Arranged.ConnectionId);
+        var roundsBefore = await RoundJobCountAsync(issue.Id);
+        var outboxBefore = (await OutboxAsync(issue.Id)).Count;
+
+        await CommentAsync(726, "/shiplean", WebhookDelivery.Maintainer, "MEMBER");
+        await DrainAsync();
+
+        var after = await IssueAsync(726);
+        after.Phase.ShouldBe(IssuePhase.WaitingForMaintainer);
+        after.Rounds.ShouldBe(1);
+        after.ProposalSessionId.ShouldBeNull();
+        (await RoundJobCountAsync(issue.Id)).ShouldBe(roundsBefore);
+        (await OutboxAsync(issue.Id)).Count.ShouldBe(outboxBefore);
+    }
+
+    // Every round job of the issue, done or not.
+    private async Task<int> RoundJobCountAsync(Guid issueId)
+    {
+        await using var database = await OpenDatabaseAsync();
+        return await database.ExecuteScalarAsync<int>("SELECT count(*)::int FROM issue_job WHERE github_issue_id = @issueId AND kind = 'round'", new { issueId });
+    }
+
     private async Task<Journey> ArrangeAsync(int maxRounds = 5)
     {
         await using var database = await OpenDatabaseAsync();
