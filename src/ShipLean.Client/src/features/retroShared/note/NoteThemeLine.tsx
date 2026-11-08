@@ -103,6 +103,15 @@ export function NoteThemeSheet({
           }}
         />
       ) : null}
+      {/* TODO: wire New theme… to a name field; until then it shows as drawn, disabled. */}
+      <button
+        type="button"
+        data-testid={ids.retroThemeSheetNew}
+        disabled
+        className="flex min-h-[var(--touch-target)] w-full items-center gap-2 rounded-control px-2 text-left text-[length:var(--text-base)] text-signal disabled:cursor-default disabled:opacity-60"
+      >
+        <span aria-hidden="true">+</span>New theme…
+      </button>
     </Sheet>
   );
 }

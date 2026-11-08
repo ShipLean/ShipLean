@@ -43,4 +43,5 @@ export const retroSharedTestIds = {
   // L727a touch
   retroActionCreate: 'retro-action-create',
   retroActionStartsNote: 'retro-action-starts-note',
+  retroThemeSheetNew: 'retro-theme-sheet-new',
 } as const;

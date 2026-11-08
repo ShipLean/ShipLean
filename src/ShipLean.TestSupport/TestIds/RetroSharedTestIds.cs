@@ -47,4 +47,5 @@ public static class RetroSharedTestIds
     // L727a touch
     public const string RetroActionCreate = "retro-action-create";
     public const string RetroActionStartsNote = "retro-action-starts-note";
+    public const string RetroThemeSheetNew = "retro-theme-sheet-new";
 }

@@ -8,6 +8,9 @@ public sealed class RetroTouchNotePart(IPage page, ILocator root)
 {
     public RetroNotePart Note { get; } = new(root);
 
+    // The note's ⋯ (K5 MoreButton), only on your own points.
+    public ILocator More => root.GetByTestId(TouchTestIds.MoreButton);
+
     public ILocator Sheet => page.GetByTestId(TouchTestIds.Sheet);
 
     public ILocator SheetTitle => page.GetByTestId(TouchTestIds.SheetTitle);
@@ -17,6 +20,9 @@ public sealed class RetroTouchNotePart(IPage page, ILocator root)
 
     // The theme picker inside the Move to theme sheet.
     public ILocator ThemePicker => Sheet.GetByTestId(RetroSharedTestIds.RetroThemePicker);
+
+    // "New theme…" in the theme sheet: drawn, disabled.
+    public ILocator NewTheme => Sheet.GetByTestId(RetroSharedTestIds.RetroThemeSheetNew);
 
     // The full-screen dialog's ✕ at the top left (K5).
     public ILocator DialogClose => page.GetByTestId(TouchTestIds.DialogClose);

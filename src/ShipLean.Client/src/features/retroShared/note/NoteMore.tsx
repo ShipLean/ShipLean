@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { ActionSheet } from '../../../touch/ActionSheet';
+import { MoreButton } from '../../../touch/MoreButton';
 import { retroSharedTestIds as ids } from '../testIds';
 import type { RetroNoteWrites } from './useRetroNoteWrites';
 
 /**
  * The ⋯ menu; it shows only where the server says the point can be archived. With `onMoveTheme` (the touch layout) it is
- * a 32px target that opens an action sheet of Move to theme and Archive; without it, the desktop popover with Archive.
+ * K5's MoreButton (a 32px ⋯ opening an action sheet of Move to theme and Archive); without it, the desktop popover with Archive.
  */
 export function NoteMore({
   pointId,
@@ -20,20 +20,7 @@ export function NoteMore({
   if (onMoveTheme) {
     return (
       <span className="absolute top-0.5 right-0.5">
-        <button
-          type="button"
-          data-testid={ids.retroNoteMore}
-          aria-label="More"
-          aria-haspopup="dialog"
-          aria-expanded={open}
-          className="inline-grid size-[var(--touch-target)] cursor-pointer place-items-center rounded-control border-0 bg-transparent p-0 text-[length:var(--text-md)] leading-none text-ink-muted active:bg-sunken"
-          onClick={() => setOpen(true)}
-        >
-          ⋯
-        </button>
-        <ActionSheet
-          open={open}
-          title="Point"
+        <MoreButton
           actions={[
             { id: 'theme', label: 'Move to theme', onSelect: onMoveTheme },
             {
@@ -44,7 +31,6 @@ export function NoteMore({
               onSelect: () => writes.archive.mutate(pointId),
             },
           ]}
-          onClose={() => setOpen(false)}
         />
       </span>
     );

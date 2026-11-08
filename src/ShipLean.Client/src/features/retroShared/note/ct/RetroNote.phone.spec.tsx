@@ -24,7 +24,7 @@ test('RetroNote_WhenMoreTappedOnPhone_ShouldOfferMoveToThemeAndArchive', async (
 }) => {
   const stub = await stubRetros(page);
   await mount(<RetroNoteHarness point={own} />);
-  const more = page.getByTestId(ids.retroNoteMore);
+  const more = page.getByTestId(ids.retroNote).getByTestId(touchTestIds.moreButton);
   const box = (await more.boundingBox())!;
   expect(box.width).toBeGreaterThanOrEqual(32);
   expect(box.height).toBeGreaterThanOrEqual(32);
@@ -45,6 +45,7 @@ test('RetroNote_WhenMoreTappedOnPhone_ShouldOfferMoveToThemeAndArchive', async (
   await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(1);
   await expect(page.getByTestId(touchTestIds.sheetTitle)).toHaveText('Move to theme');
   await expect(page.getByTestId(ids.retroThemePicker)).toBeVisible();
+  await expect(page.getByTestId(ids.retroThemeSheetNew)).toBeDisabled();
   await page.getByTestId(touchTestIds.sheetClose).tap();
   await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
 
@@ -55,6 +56,14 @@ test('RetroNote_WhenMoreTappedOnPhone_ShouldOfferMoveToThemeAndArchive', async (
     .poll(() => stub.writes().map((w) => `${w.method} ${w.path}`))
     .toEqual([`POST /api/retros/points/${own.id}/archive`]);
   await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
+});
+
+test('RetroNote_WhenSomeoneElsesPointOnPhone_ShouldShowNoMore', async ({ mount, page }) => {
+  await stubRetros(page);
+  await mount(<RetroNoteHarness point={{ ...own, canArchive: false }} />);
+  await expect(page.getByTestId(ids.retroNoteTheme)).toBeEnabled();
+  await expect(page.getByTestId(touchTestIds.moreButton)).toHaveCount(0);
+  await expect(page.getByTestId(ids.retroNoteMore)).toHaveCount(0);
 });
 
 test('RetroNote_WhenThemeTappedOnPhone_ShouldOpenThemeSheetWithoutFocusingSearch', async ({
