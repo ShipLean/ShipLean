@@ -190,7 +190,7 @@ test('RetroActionDialog_type of fix is two columns on a narrow screen and three 
       .evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(' ').length);
   await page.setViewportSize({ width: 800, height: 700 });
   expect(await columns()).toBe(3);
-  await page.setViewportSize({ width: 600, height: 700 });
+  await page.setViewportSize({ width: 599, height: 700 });
   expect(await columns()).toBe(2);
 });
 

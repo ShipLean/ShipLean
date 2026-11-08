@@ -13,7 +13,7 @@ export interface AddNoteProps {
   onAdded?: (point: RetroPointDto) => void;
 }
 
-/** Under a column's last card: the dashed `+ Add` button, or the blank note it opens. */
+/** Under a column's last card: the dashed `+ Add` button, or the blank note it opens. Inline at every width; 40px tall at 900px and below. */
 export function AddNote({ category, add, open, onOpen, onClose, onAdded }: AddNoteProps) {
   if (open) {
     return <NoteEditor category={category} add={add} onClose={onClose} onAdded={onAdded} />;
@@ -24,7 +24,7 @@ export function AddNote({ category, add, open, onOpen, onClose, onAdded }: AddNo
       data-testid={ids.retroBoardAdd}
       data-category={category}
       style={{ borderColor: 'color-mix(in srgb, var(--cat) 45%, var(--color-edge))' }}
-      className="h-7 w-full cursor-pointer rounded-sm border border-dashed bg-transparent text-[length:var(--text-sm)] text-ink-muted hover:border-solid hover:bg-surface hover:text-ink"
+      className="h-7 w-full cursor-pointer rounded-sm border border-dashed bg-transparent text-[length:var(--text-sm)] text-ink-muted hover:border-solid hover:bg-surface hover:text-ink touch:h-10 touch:text-[length:var(--text-base)]"
       onClick={onOpen}
     >
       + Add

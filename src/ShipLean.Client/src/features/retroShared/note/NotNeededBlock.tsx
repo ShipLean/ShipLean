@@ -14,7 +14,7 @@ export function NotNeededBlock({
   return (
     <div
       data-testid={ids.retroNoteNone}
-      className="grid gap-0.5 border-l-2 border-ink-muted px-1.5 py-1 text-[length:var(--text-xs)] text-ink-muted"
+      className="grid gap-0.5 border-l-2 border-ink-muted px-1.5 py-1 text-[length:var(--text-xs)] text-ink-muted touch:text-[length:var(--text-sm)]"
     >
       <b className="font-semibold text-ink">Not needed</b>
       <span>{notNeeded.reason}</span>
@@ -26,7 +26,7 @@ export function NotNeededBlock({
           type="button"
           data-testid={ids.retroNoteUndo}
           disabled={writes.undoNotNeeded.isPending}
-          className="cursor-pointer border-0 bg-transparent p-0 text-ink-muted hover:underline"
+          className="cursor-pointer border-0 bg-transparent p-0 text-ink-muted hover:underline touch:min-h-[var(--touch-target)] touch:min-w-[var(--touch-target)] touch:underline"
           onClick={() => writes.undoNotNeeded.mutate(pointId)}
         >
           Undo
