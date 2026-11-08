@@ -94,6 +94,14 @@ declare -A variants=(
   [decisions-folded]="decisions.html?state=folded"
   [decisions-empty]="decisions.html?state=empty"
   [decisions-feature]="decisions.html?state=feature"
+  # SHIP-907: Health on Features (S5) and Your profile › Signed-in devices
+  [feature-health-menu]="feature.html?menu=health"
+  [feature-health-none]="feature.html?health=none"
+  [features-board-compact]="features-board.html?compact"
+  [features-board-health-filter]="features-board.html?fhealth=risk"
+  [profile-devices]="profile.html?at=sessions"
+  [profile-devices-signout]="profile.html?at=sessions&devout=px"
+  [profile-devices-none]="profile.html?at=sessions&devices=0"
 )
 
 names=("$@")

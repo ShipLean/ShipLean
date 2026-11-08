@@ -273,6 +273,14 @@ tr.confirm td { height: auto; padding: 8px var(--space-3); background: color-mix
   });
   if (q.has('photo')) S.p.photo = P0.photo = SAMPLE_PHOTO; // ?photo: a saved photo
   render();
+  // ?shot&at=<section> above 900px: only that panel and the ones after it, one column, for the reference images
+  // (--screenshot ignores scrolling). At 900px and below profile-touch.js handles ?at.
+  if (q.has('shot') && q.get('at') && !matchMedia('(max-width: 900px)').matches) {
+    const at = q.get('at'), order = ['profile', 'password', 'appearance', 'projects', 'sessions', 'devices', 'agents'];
+    const st = document.createElement('style');
+    st.textContent = order.slice(0, order.indexOf(at)).map(k => `[data-sec="${k}"]`).join(', ') + ' { display: none !important; } .grid { grid-template-columns: minmax(0, 1fr); max-width: 720px; }' + (order.indexOf(at) >= 2 ? ' #grid > .col:first-child { display: none; }' : '');
+    document.head.append(st);
+  }
   SL.preview([
     { label: 'With a photo', run: () => { S.p.photo = S.p.photo ? null : SAMPLE_PHOTO; render(); } },
     { label: 'Leave a project', run: () => { S.leaving = 'PAY'; render(); } },
