@@ -15,6 +15,8 @@ namespace ShipLean.Application.Features.IssueIntake.Proposal;
 // Remove, then verify, then fail closed: the removal passes and the cap repeat until the text stops changing (so a cap can't
 // undo a removal, and Clean is a fixed point), then the exact output is checked again, raw and as rendered plain text. If the
 // check finds anything, or the input is too big or too deep to read, the result is unsafe and its text is empty.
+// Secret-shaped text (a token, key, JWT, private key header or long random-looking run) in the input or the output makes the
+// whole post unsafe, never redacted; the reason names the kind of secret only, so neither it nor Removed repeats the secret.
 public sealed partial class PublicTextGuard
 {
     public const int MaxLength = 60_000;
@@ -27,6 +29,14 @@ public sealed partial class PublicTextGuard
     private const int MaxDecodePasses = 8;
     private const string OutboxMarker = "shiplean:outbox";
     private const string CutNote = "\n\n(The rest was cut: posts are limited to 60,000 characters.)";
+
+    // A run of 32+ characters must clear both bars to count as a secret. Entropy: 20,000 simulated random 32-character base62 strings
+    // scored 3.90 to 5.0 bits per character (median 4.54), so 3.8 catches all of them while repeated or low-variety runs
+    // (aB3aB3..., 1.6) stay below it. Word share: long code identifiers score 4.0 to 4.6 bits too, the same as random text, but
+    // at least half of their letters and digits sit in words (Base64UrlEncoderV2ServiceTests is 0.68, random text has a
+    // median of 0.16), so a run is only random-looking when less than half of it is words.
+    private const double MinSecretEntropy = 3.8;
+    private const double MaxSecretWordShare = 0.5;
 
     private static readonly TimeSpan MatchTimeout = TimeSpan.FromSeconds(2);
     private static readonly IdnMapping Idn = new();
@@ -77,6 +87,13 @@ public sealed partial class PublicTextGuard
 
         try
         {
+            // Checked before anything is removed too, so a secret inside removed HTML or a removed link never reaches Removed.
+            var secret = SecretIn(markdown);
+            if (secret is not null)
+            {
+                return Unsafe(secret, removed);
+            }
+
             var text = Cap(markdown, removed);
             for (var round = 0; round < MaxRounds; round++)
             {
@@ -139,6 +156,12 @@ public sealed partial class PublicTextGuard
     // The check on the exact output: null when it may be posted, otherwise what was found.
     private string? Verify(string text, string issueAuthor)
     {
+        var secret = SecretIn(text);
+        if (secret is not null)
+        {
+            return secret;
+        }
+
         var raw = Normalise(text);
         if (raw.Contains(OutboxMarker, StringComparison.OrdinalIgnoreCase))
         {
@@ -177,9 +200,53 @@ public sealed partial class PublicTextGuard
         return null;
     }
 
+    // The kind of secret-shaped text in the raw text, the raw text without tags, or the rendered plain text; null if none. The
+    // views keep underscores (tokens have them) and drop *, ~ and format characters, so emphasis markup or a zero-width
+    // character inside a token can't hide it.
+    private static string? SecretIn(string text)
+    {
+        var views = new[] { text, Tag().Replace(text, string.Empty), Markdig.Markdown.ToPlainText(text, GitHubLike) }
+            .Select(v => Normalise(v, "*~"))
+            .ToList();
+        (Regex Pattern, string Kind)[] patterns =
+        [
+            (GitHubToken(), "GitHub token"),
+            (AwsAccessKeyId(), "AWS access key id"),
+            (AwsSecretKey(), "AWS secret access key"),
+            (SlackToken(), "Slack token"),
+            (SlackWebhook(), "Slack webhook URL"),
+            (AnthropicKey(), "Anthropic API key"),
+            (SkKey(), "sk- API key"),
+            (JsonWebToken(), "JSON web token"),
+            (PrivateKeyHeader(), "private key"),
+        ];
+
+        // The named kinds first, in every view, so the reason names a token rather than its random-looking body.
+        var kind = patterns.FirstOrDefault(p => views.Any(p.Pattern.IsMatch)).Kind
+            ?? (views.Any(v => SecretRun().Matches(v).Any(m => LooksRandom(m.Value))) ? "high-entropy string" : null);
+        return kind is null ? null : $"secret-shaped text: {kind}";
+    }
+
+    // Upper case, lower case and digits mixed, high Shannon entropy, and less than half of it words (see the thresholds).
+    private static bool LooksRandom(string run)
+    {
+        if (!run.Any(char.IsAsciiLetterUpper) || !run.Any(char.IsAsciiLetterLower) || !run.Any(char.IsAsciiDigit))
+        {
+            return false;
+        }
+
+        var entropy = run.GroupBy(c => c)
+            .Select(g => (double)g.Count() / run.Length)
+            .Sum(p => -p * Math.Log2(p));
+        var words = Word().Matches(run).Sum(m => m.Length);
+        return entropy >= MinSecretEntropy && words < MaxSecretWordShare * run.Count(char.IsAsciiLetterOrDigit);
+    }
+
     // What a reader sees: entities and percent-escapes decoded, format characters (zero-width, soft hyphen) and emphasis
     // markers dropped, whitespace collapsed.
-    private static string Normalise(string text)
+    private static string Normalise(string text) => Normalise(text, "*_~");
+
+    private static string Normalise(string text, string markers)
     {
         var decoded = text;
         for (var pass = 0; pass < MaxDecodePasses; pass++)
@@ -196,7 +263,7 @@ public sealed partial class PublicTextGuard
         var kept = new StringBuilder(decoded.Length);
         foreach (var c in decoded)
         {
-            if (c is not ('*' or '_' or '~') && char.GetUnicodeCategory(c) != UnicodeCategory.Format)
+            if (!markers.Contains(c, StringComparison.Ordinal) && char.GetUnicodeCategory(c) != UnicodeCategory.Format)
             {
                 kept.Append(char.IsWhiteSpace(c) ? ' ' : c);
             }
@@ -453,6 +520,49 @@ public sealed partial class PublicTextGuard
 
     [GeneratedRegex(" {2,}", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
     private static partial Regex Whitespace();
+
+    [GeneratedRegex("<[^<>]*>", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
+    private static partial Regex Tag();
+
+    // ghp_, gho_, ghu_, ghs_ and ghr_ with 30+ base62 characters, or a fine-grained github_pat_ token.
+    [GeneratedRegex("gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{20,}", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
+    private static partial Regex GitHubToken();
+
+    [GeneratedRegex("(?<![A-Za-z0-9])(?:AKIA|ASIA)[A-Z0-9]{16}", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
+    private static partial Regex AwsAccessKeyId();
+
+    // aws_secret_access_key = "<40 base64>", AWS_SECRET_ACCESS_KEY=..., "SecretAccessKey": "...".
+    [GeneratedRegex(@"(?:aws_?)?secret_?access_?key[""']?\s*[:=]\s*[""']?[A-Za-z0-9/+=]{40}", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
+    private static partial Regex AwsSecretKey();
+
+    [GeneratedRegex("xox[abprs]-[A-Za-z0-9-]{10,}", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
+    private static partial Regex SlackToken();
+
+    [GeneratedRegex(@"hooks\.slack\.com/services/[A-Za-z0-9]", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
+    private static partial Regex SlackWebhook();
+
+    [GeneratedRegex("(?<![A-Za-z0-9_-])sk-ant-[A-Za-z0-9_-]{20,}", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
+    private static partial Regex AnthropicKey();
+
+    // OpenAI style: sk- or sk-proj- with 32+ characters, not the end of a hyphenated word (task-...).
+    [GeneratedRegex("(?<![A-Za-z0-9_-])sk-[A-Za-z0-9_-]{32,}", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
+    private static partial Regex SkKey();
+
+    // Header and payload base64url JSON (eyJ is "{"), then the signature, which an unsigned token leaves empty.
+    [GeneratedRegex(@"eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]*", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
+    private static partial Regex JsonWebToken();
+
+    // -----BEGIN PRIVATE KEY-----, -----BEGIN RSA PRIVATE KEY-----, -----BEGIN PGP PRIVATE KEY BLOCK----- and the like.
+    [GeneratedRegex(@"-----\s*BEGIN [A-Z0-9 ]*PRIVATE KEY[A-Z ]*-----", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
+    private static partial Regex PrivateKeyHeader();
+
+    // A long run of base64 and base64url characters; / is left out so paths and URLs are judged one segment at a time.
+    [GeneratedRegex("[A-Za-z0-9+=_-]{32,}", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
+    private static partial Regex SecretRun();
+
+    // A word inside an identifier: Word, word (PascalCase, camelCase and snake_case parts).
+    [GeneratedRegex("[A-Z]?[a-z]{3,}", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
+    private static partial Regex Word();
 
     private sealed record Edit(int Start, int End, string Replacement, string Kind);
 }
