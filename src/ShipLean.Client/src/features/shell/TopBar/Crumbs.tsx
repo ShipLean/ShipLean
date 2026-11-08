@@ -20,11 +20,14 @@ function useCutFromLeft(touch: boolean, trail: readonly string[]) {
     if (!touch || element === null) return undefined;
     // Overflowing on the right while aligned to the start, or on the left once aligned to the end.
     const measure = () => {
-      const first = element.firstElementChild;
-      const leftCut =
-        first !== null &&
-        first.getBoundingClientRect().left < element.getBoundingClientRect().left - 0.5;
-      setCut(leftCut || element.scrollWidth > element.clientWidth + 0.5);
+      const box = element.getBoundingClientRect();
+      const first = element.firstElementChild?.getBoundingClientRect();
+      const last = element.lastElementChild?.getBoundingClientRect();
+      setCut(
+        first !== undefined &&
+          last !== undefined &&
+          (first.left < box.left - 0.5 || last.right > box.right + 0.5),
+      );
     };
     measure();
     const observer = new ResizeObserver(measure);
@@ -84,7 +87,7 @@ export function Crumbs() {
       data-testid={ids.crumbs}
       data-cut={touch ? cut : undefined}
       aria-label="You are here"
-      className={`flex min-w-0 items-center gap-1.5 text-[length:var(--text-sm)] text-ink-muted touch:flex-1 touch:overflow-hidden ${cut ? `justify-end ${FADE}` : ''}`}
+      className={`flex min-w-0 items-center gap-1.5 text-[length:var(--text-sm)] text-ink-muted touch:flex-1 ${cut ? `justify-end ${FADE}` : ''}`}
     >
       {trail.map((crumb, index) => (
         <span key={`${index}-${crumb}`} className="flex items-center gap-1.5 touch:flex-none">
