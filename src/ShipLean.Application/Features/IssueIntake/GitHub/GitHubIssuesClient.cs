@@ -2,8 +2,10 @@ using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Net.Sockets;
 using System.Text.Json;
 using ShipLean.Application.Features.Links.GitHub;
+using ShipLean.Application.Http;
 using ShipLean.Contracts.IssueIntake;
 using ShipLean.Contracts.Links;
 
@@ -13,7 +15,9 @@ namespace ShipLean.Application.Features.IssueIntake.GitHub;
 // (pinned, address-checked connector, no redirects), so the token only goes to the configured https API address.
 // Results (GitHub's documented statuses): 401, 403, 404, 410, 422 and other 4xx are Failed, except a rate-limited 403
 // (x-ratelimit-remaining 0, or retry-after) which is Retry, as is 429. A 5xx is Retry, except on a POST, where GitHub may
-// already have acted on the body, so it is Ambiguous; the same goes for a timeout. A connection that never opened is Retry.
+// already have acted on the body, so it is Ambiguous; the same goes for a timeout, any other transport failure and a 2xx whose body
+// breaks off or has no id. A POST is Retry only when the host never resolved or refused the connection (see NeverConnected).
+// A list page that can't be read, isn't a list or is over MaxListBody is Retry: the deliverer's reconciliation must try again.
 public sealed class GitHubIssuesClient(IHttpClientFactory clients, IIntegrationSettings settings) : IGitHubIssues
 {
     // The largest list page body read (100 comments of up to 65,536 characters each are about 6.5 MB at worst).
@@ -33,7 +37,7 @@ public sealed class GitHubIssuesClient(IHttpClientFactory clients, IIntegrationS
         using var response = sent.Response!;
         var created = await ReadAsync<CommentReply>(response.Content, GitHubLimits.MaxBody, cancellationToken);
         // GitHub answered 2xx, so the comment exists; without its id the outbox marker is how a retry finds it.
-        return created is null ? new GitHubWriteResult.Ambiguous("unreadableReply") : new GitHubWriteResult.Ok(created.Id);
+        return created is { Id: > 0 } ? new GitHubWriteResult.Ok(created.Id) : new GitHubWriteResult.Ambiguous("unreadableReply");
     }
 
     public Task<GitHubWriteResult> CloseAsync(IssueRef issue, CloseReason reason, CancellationToken cancellationToken = default)
@@ -61,7 +65,7 @@ public sealed class GitHubIssuesClient(IHttpClientFactory clients, IIntegrationS
             var replies = await ReadAsync<List<CommentReply>>(response.Content, MaxListBody, cancellationToken);
             if (replies is null)
             {
-                return new GitHubCommentList.Failed("unreadableReply");
+                return new GitHubCommentList.Retry("unreadableReply");
             }
 
             comments.AddRange(replies.Select(r => new GitHubComment(r.Id, r.User?.Login, r.Body ?? "", r.CreatedAt)));
@@ -143,8 +147,8 @@ public sealed class GitHubIssuesClient(IHttpClientFactory clients, IIntegrationS
         }
         catch (HttpRequestException exception)
         {
-            var neverSent = exception.HttpRequestError is HttpRequestError.ConnectionError or HttpRequestError.NameResolutionError or HttpRequestError.SecureConnectionError;
-            return (isPost && !neverSent ? new GitHubWriteResult.Ambiguous(exception.HttpRequestError.ToString()) : new GitHubWriteResult.Retry(exception.HttpRequestError.ToString()), null);
+            var error = exception.HttpRequestError.ToString();
+            return (isPost && !NeverConnected(exception) ? new GitHubWriteResult.Ambiguous(error) : new GitHubWriteResult.Retry(error), null);
         }
         // FormatException: a token the header rules refuse. Its message quotes the value, so it is not kept.
         catch (FormatException)
@@ -160,6 +164,33 @@ public sealed class GitHubIssuesClient(IHttpClientFactory clients, IIntegrationS
 
         response.Dispose();
         return (result, null);
+    }
+
+    // True only when the request can't have left: the name didn't resolve, the pinned connector refused the address, or the
+    // socket connect was refused (ECONNREFUSED only comes from connect; HostNotFound, TryAgain and NoData only from DNS). HttpRequestError alone isn't proof: its categories
+    // describe the failure, not whether request bytes went out, so ConnectionError, SecureConnectionError, ResponseEnded and
+    // the rest stay Ambiguous on a POST.
+    private static bool NeverConnected(HttpRequestException exception)
+    {
+        if (exception.HttpRequestError == HttpRequestError.NameResolutionError)
+        {
+            return true;
+        }
+
+        if (exception.HttpRequestError != HttpRequestError.ConnectionError)
+        {
+            return false;
+        }
+
+        for (var inner = exception.InnerException; inner is not null; inner = inner.InnerException)
+        {
+            if (inner is AddressRefusedException or SocketException { SocketErrorCode: SocketError.ConnectionRefused or SocketError.HostNotFound or SocketError.TryAgain or SocketError.NoData })
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static GitHubWriteResult Classify(HttpResponseMessage response, bool isPost)
@@ -197,28 +228,30 @@ public sealed class GitHubIssuesClient(IHttpClientFactory clients, IIntegrationS
         _ => "ok",
     };
 
-    // The body parsed as T, or null when it is larger than max or isn't T's JSON.
+    // The body parsed as T, or null when it is larger than max, isn't T's JSON, or the stream broke off (the response is then
+    // unknown, which the caller maps). A cancelled cancellationToken still throws.
     private static async Task<T?> ReadAsync<T>(HttpContent content, int max, CancellationToken cancellationToken)
     {
-        await using var stream = await content.ReadAsStreamAsync(cancellationToken);
-        using var buffer = new MemoryStream();
-        var chunk = new byte[8192];
-        int read;
-        while ((read = await stream.ReadAsync(chunk, cancellationToken)) > 0)
-        {
-            buffer.Write(chunk.AsSpan(0, read));
-            if (buffer.Length > max)
-            {
-                return default;
-            }
-        }
-
-        buffer.Position = 0;
         try
         {
+            await using var stream = await content.ReadAsStreamAsync(cancellationToken);
+            using var buffer = new MemoryStream();
+            var chunk = new byte[8192];
+            int read;
+            while ((read = await stream.ReadAsync(chunk, cancellationToken)) > 0)
+            {
+                buffer.Write(chunk.AsSpan(0, read));
+                if (buffer.Length > max)
+                {
+                    return default;
+                }
+            }
+
+            buffer.Position = 0;
             return await JsonSerializer.DeserializeAsync<T>(buffer, Wire, cancellationToken);
         }
-        catch (JsonException)
+        catch (Exception exception) when (exception is JsonException or HttpRequestException or IOException
+                                          || (exception is OperationCanceledException && !cancellationToken.IsCancellationRequested))
         {
             return default;
         }

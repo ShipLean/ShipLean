@@ -1,4 +1,7 @@
 using System.Collections.Concurrent;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
@@ -34,8 +37,8 @@ public class GitHubIssuesClientTests
     [TearDown]
     public async Task StopTheStub() => await _server.DisposeAsync();
 
-    private GitHubIssuesClient Client(string? token = Token)
-        => new(_clients, new FixedIntegrationSettings(new IntegrationSettingsDto(token, _server.BaseAddress.AbsoluteUri, null, null, [])));
+    private GitHubIssuesClient Client(string? token = Token, string? apiUrl = null)
+        => new(_clients, new FixedIntegrationSettings(new IntegrationSettingsDto(token, apiUrl ?? _server.BaseAddress.AbsoluteUri, null, null, [])));
 
     // Whole seconds in UTC, as GitHub writes times.
     private static readonly DateTimeOffset Yesterday = DateTimeOffset.FromUnixTimeSeconds(TimeProvider.System.GetUtcNow().AddDays(-1).ToUnixTimeSeconds());
@@ -115,6 +118,72 @@ public class GitHubIssuesClientTests
 
         result.ShouldBe(new GitHubWriteResult.Ambiguous("timeout"));
         _server.Requests.ShouldBe([$"POST {CommentsPath}"]);
+    }
+
+    [Test]
+    public async Task Comment_WhenConnectionRefused_ShouldRetry()
+    {
+        // A loopback port nothing listens on: the connect is refused, so no request bytes can have gone out.
+        var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        var port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        listener.Stop();
+
+        (await Client(apiUrl: $"https://127.0.0.1:{port}/").CommentAsync(Issue, "Hi")).ShouldBe(new GitHubWriteResult.Retry("ConnectionError"));
+    }
+
+    [TestCase(HttpRequestError.ConnectionError)]
+    [TestCase(HttpRequestError.SecureConnectionError)]
+    [TestCase(HttpRequestError.ResponseEnded)]
+    public async Task Comment_WhenTransportFailsAfterSending_ShouldBeAmbiguous(HttpRequestError error)
+    {
+        _server.Respond(CommentsPath, CommentJson(1, "shiplean-bot", "Hi", Yesterday), 201);
+        _clients.FailAfterSending = () => new HttpRequestException(error, "Connection reset by peer", new IOException("reset", new SocketException((int)SocketError.ConnectionReset)));
+
+        var result = await Client().CommentAsync(Issue, "Hi");
+
+        result.ShouldBe(new GitHubWriteResult.Ambiguous(error.ToString()));
+        _server.Requests.ShouldBe([$"POST {CommentsPath}"]);
+    }
+
+    [Test]
+    public async Task Close_WhenTransportFailsAfterSending_ShouldRetry()
+    {
+        _server.Respond(IssuePath, """{ "number": 64, "state": "closed" }""");
+        _clients.FailAfterSending = () => new HttpRequestException(HttpRequestError.ResponseEnded, "ended");
+
+        (await Client().CloseAsync(Issue, CloseReason.Completed)).ShouldBe(new GitHubWriteResult.Retry("ResponseEnded"));
+    }
+
+    [Test]
+    public async Task Comment_WhenReplyBodyBreaksOff_ShouldBeAmbiguous()
+    {
+        _server.Respond(CommentsPath, CommentJson(1, "shiplean-bot", "Hi", Yesterday), 201);
+        _clients.ReplaceBody = () => ScriptedStream.Breaking("""{ "id": 7, "body": "H""");
+
+        (await Client().CommentAsync(Issue, "Hi")).ShouldBe(new GitHubWriteResult.Ambiguous("unreadableReply"));
+    }
+
+    [Test]
+    public async Task Comment_WhenCancelledWhileReadingReply_ShouldThrow()
+    {
+        using var cancellation = new CancellationTokenSource();
+        _server.Respond(CommentsPath, CommentJson(1, "shiplean-bot", "Hi", Yesterday), 201);
+        _clients.ReplaceBody = () => new ScriptedStream(1, _ => (byte)'{', () =>
+        {
+            cancellation.Cancel();
+            cancellation.Token.ThrowIfCancellationRequested();
+        });
+
+        await Should.ThrowAsync<OperationCanceledException>(() => Client().CommentAsync(Issue, "Hi", cancellation.Token));
+    }
+
+    [Test]
+    public async Task Comment_WhenReplyHasNoId_ShouldBeAmbiguous()
+    {
+        _server.Respond(CommentsPath, """{ "body": "Hi", "user": { "login": "shiplean-bot" } }""", 201);
+
+        (await Client().CommentAsync(Issue, "Hi")).ShouldBe(new GitHubWriteResult.Ambiguous("unreadableReply"));
     }
 
     [Test]
@@ -206,6 +275,36 @@ public class GitHubIssuesClientTests
     }
 
     [Test]
+    public async Task ListRecent_WhenPageIsNotAList_ShouldRetry()
+    {
+        _server.Respond(CommentsPath, """{ "message": "not a list" }""");
+
+        (await Client().ListRecentCommentsAsync(Issue, DateTimeOffset.UnixEpoch)).ShouldBe(new GitHubCommentList.Retry("unreadableReply"));
+    }
+
+    [Test]
+    public async Task ListRecent_WhenPageIsOverSixteenMegabytes_ShouldRetry()
+    {
+        // A valid empty list padded with whitespace past the 16 MB cap.
+        const long length = (16 * 1024 * 1024) + 2;
+        _server.Respond(CommentsPath, "[]");
+        _clients.ReplaceBody = () => new ScriptedStream(length, i => i == 0 ? (byte)'[' : SpaceOrClose(i, length));
+
+        (await Client().ListRecentCommentsAsync(Issue, DateTimeOffset.UnixEpoch)).ShouldBe(new GitHubCommentList.Retry("unreadableReply"));
+    }
+
+    private static byte SpaceOrClose(long i, long length) => i == length - 1 ? (byte)']' : (byte)' ';
+
+    [Test]
+    public async Task ListRecent_WhenPageBodyBreaksOff_ShouldRetry()
+    {
+        _server.Respond(CommentsPath, "[]");
+        _clients.ReplaceBody = () => ScriptedStream.Breaking("""[{ "id": 1""");
+
+        (await Client().ListRecentCommentsAsync(Issue, DateTimeOffset.UnixEpoch)).ShouldBe(new GitHubCommentList.Retry("unreadableReply"));
+    }
+
+    [Test]
     public async Task SelfLogin_ShouldAskGitHubOnceAnHour()
     {
         _server.Respond("/user", """{ "login": "shiplean-bot", "id": 7 }""");
@@ -244,6 +343,7 @@ public class GitHubIssuesClientTests
 
     // An IHttpClientFactory whose clients call the stub (accepting its self-signed certificate) and keep each request's shape.
     // HangAfterSending makes a client time out after the stub has received the request; ResponseHeaders are added to answers.
+    // FailAfterSending throws its exception once the stub has the request; ReplaceBody swaps the answer's body for a stream.
     private sealed class CapturingClients : IHttpClientFactory
     {
         private readonly ConcurrentQueue<SentRequest> _sent = new();
@@ -251,6 +351,10 @@ public class GitHubIssuesClientTests
         public IReadOnlyList<SentRequest> Sent => [.. _sent];
 
         public bool HangAfterSending { get; set; }
+
+        public Func<Exception>? FailAfterSending { get; set; }
+
+        public Func<Stream>? ReplaceBody { get; set; }
 
         private readonly Dictionary<string, string> _responseHeaders = [];
 
@@ -279,6 +383,17 @@ public class GitHubIssuesClientTests
                     response.Headers.TryAddWithoutValidation(header, value);
                 }
 
+                if (owner.FailAfterSending is { } fail)
+                {
+                    response.Dispose();
+                    throw fail();
+                }
+
+                if (owner.ReplaceBody is { } replace)
+                {
+                    response.Content = new StreamContent(replace());
+                }
+
                 if (owner.HangAfterSending)
                 {
                     response.Dispose();
@@ -288,5 +403,59 @@ public class GitHubIssuesClientTests
                 return response;
             }
         }
+    }
+
+    // A read-only body of length bytes, byteAt(i) each; at the end it calls atEnd (which may throw), else it ends.
+    private sealed class ScriptedStream(long length, Func<long, byte> byteAt, Action? atEnd = null) : Stream
+    {
+        private long _position;
+
+        public override bool CanRead => true;
+
+        public override bool CanSeek => false;
+
+        public override bool CanWrite => false;
+
+        public override long Length => throw new NotSupportedException();
+
+        public override long Position
+        {
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
+        }
+
+        // The text, then the connection drops as HttpClient reports it.
+        public static ScriptedStream Breaking(string text)
+        {
+            var bytes = Encoding.UTF8.GetBytes(text);
+            return new ScriptedStream(bytes.Length, i => bytes[i], () => throw new HttpIOException(HttpRequestError.ResponseEnded));
+        }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            if (_position == length)
+            {
+                atEnd?.Invoke();
+                return 0;
+            }
+
+            var read = (int)Math.Min(count, length - _position);
+            for (var i = 0; i < read; i++)
+            {
+                buffer[offset + i] = byteAt(_position++);
+            }
+
+            return read;
+        }
+
+        public override void Flush()
+        {
+        }
+
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+
+        public override void SetLength(long value) => throw new NotSupportedException();
+
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
     }
 }
