@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.Versioning;
 using Dapper;
 using Microsoft.Extensions.Configuration;
 using Npgsql;
@@ -55,18 +56,29 @@ public class PgDumpDatabaseDumperTests
         }
     }
 
+    // The shared test server trusts loopback connections, so a real wrong password is never refused here. A stand-in
+    // pg_dump fails the way a refused password does and echoes the password it was given, as libpq can in a conninfo
+    // error: the dumper must scrub it, and keep only the pg_dump: lines.
     [Test]
+    [SupportedOSPlatform("linux")]
     public async Task Dump_WhenPasswordWrong_ShouldThrowWithoutPassword()
     {
-        await using var source = await ShipLeanDatabase.CloneSeedAsync();
-        var wrong = new NpgsqlConnectionStringBuilder(source.ConnectionString) { Password = Secret }.ConnectionString;
+        var script = Path.Combine(NewFolder(), "refusing-pg_dump");
+        await File.WriteAllTextAsync(
+            script,
+            "#!/bin/sh\n"
+            + "echo \"detail that is not a pg_dump line: $PGPASSWORD\" >&2\n"
+            + "echo \"pg_dump: error: connection to server failed: password authentication failed (password $PGPASSWORD)\" >&2\n"
+            + "exit 1\n");
+        File.SetUnixFileMode(script, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
 
         var thrown = await Should.ThrowAsync<DatabaseDumpException>(
-            () => Dumper(wrong).DumpAsync(new MemoryStream(), CancellationToken.None));
+            () => Dumper(ConnectionOnly, script).DumpAsync(new MemoryStream(), CancellationToken.None));
 
-        thrown.Message.ShouldContain("pg_dump:");
-        thrown.Message.ShouldContain("password authentication failed");
+        thrown.Message.ShouldContain("pg_dump: error: connection to server failed: password authentication failed");
+        thrown.Message.ShouldContain("exit code 1");
         thrown.Message.ShouldNotContain(Secret);
+        thrown.Message.ShouldNotContain("not a pg_dump line");
     }
 
     [Test]
@@ -82,6 +94,7 @@ public class PgDumpDatabaseDumperTests
     }
 
     [Test]
+    [SupportedOSPlatform("linux")]
     public async Task Dump_WhenCancelled_ShouldKillProcess()
     {
         var script = Path.Combine(NewFolder(), "slow-pg_dump");
@@ -228,10 +241,10 @@ public class PgDumpDatabaseDumperTests
         start.ArgumentList.Add("--clean");
         start.ArgumentList.Add("--if-exists");
         start.ArgumentList.Add("--exit-on-error");
+        start.ArgumentList.Add("--dbname=" + builder.Database);
         start.ArgumentList.Add(file);
         start.Environment["PGHOST"] = builder.Host;
         start.Environment["PGPORT"] = builder.Port.ToString();
-        start.Environment["PGDATABASE"] = builder.Database;
         start.Environment["PGUSER"] = builder.Username;
         start.Environment["PGPASSWORD"] = builder.Password;
         using var process = Process.Start(start)!;

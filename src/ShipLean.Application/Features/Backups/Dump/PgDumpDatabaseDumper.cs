@@ -21,7 +21,7 @@ public sealed class PgDumpDatabaseDumper(IConfiguration configuration) : IDataba
         var home = Directory.CreateTempSubdirectory("shiplean-pgdump-");
         try
         {
-            var startInfo = PgDumpStartInfo.Create(connectionString, binary, home.FullName, new ProcessStartInfo().Environment);
+            var startInfo = PgDumpStartInfo.Create(connectionString, binary, home.FullName, new Dictionary<string, string?>(new ProcessStartInfo().Environment));
             await RunAsync(startInfo, binary, new NpgsqlConnectionStringBuilder(connectionString).Password, output, cancellationToken);
         }
         finally
