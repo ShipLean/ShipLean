@@ -70,6 +70,6 @@ public static class LevelBacklogTree
     {
         var under = layout.SkipWhile(x => x.Row is not null).Skip(1).Where(x => x.Matches).Select(x => x.Row!).ToList();
         var open = under.Count(f => f.State.Category != StateCategory.Completed);
-        return BacklogRows.NoParent([new RollupCountDto(WorkItemTypeId.Feature, open, under.Count - open)], null);
+        return BacklogRows.NoParent([new RollupCountDto(WorkItemTypeId.Feature, open, under.Count - open, 0, 0)], null);
     }
 }

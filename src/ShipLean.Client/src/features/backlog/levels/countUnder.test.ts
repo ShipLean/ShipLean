@@ -5,9 +5,9 @@ import { countUnder } from './countUnder';
 const row = itemRow({
   key: 'SHIP-103',
   rollups: [
-    { type: 'story', open: 4, closed: 1 },
-    { type: 'bug', open: 0, closed: 1 },
-    { type: 'feature', open: 1, closed: 0 },
+    { type: 'story', open: 4, closed: 1, inCurrentSprint: 0, inOtherSprint: 0 },
+    { type: 'bug', open: 0, closed: 1, inCurrentSprint: 0, inOtherSprint: 0 },
+    { type: 'feature', open: 1, closed: 0, inCurrentSprint: 0, inOtherSprint: 0 },
   ],
 });
 

@@ -250,8 +250,8 @@ test('DoneConfirm_WhenFeatureHasOpenActionItems_ShouldCountThemWithTheStories', 
   const board = featuresBoard();
   const open = board.lanes[0].cells.flatMap((c) => c.cards).find((c) => c.key === 'SHIP-102')!;
   open.rollups = [
-    { type: 'story', open: 1, closed: 1 },
-    { type: 'action', open: 1, closed: 0 },
+    { type: 'story', open: 1, closed: 1, inCurrentSprint: 0, inOtherSprint: 0 },
+    { type: 'action', open: 1, closed: 0, inCurrentSprint: 0, inOtherSprint: 0 },
   ];
   const server = await stubBoard(page, board, { level: 'features' });
   await stubChildren(page);

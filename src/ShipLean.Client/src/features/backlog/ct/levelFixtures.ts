@@ -31,8 +31,8 @@ export const FEATURE_ROWS: BacklogRowDto[] = [
     sumWarn: true,
     parent: epic('SHIP-90', 'Checkout conversion'),
     rollups: [
-      { type: 'story', open: 3, closed: 3 },
-      { type: 'bug', open: 1, closed: 1 },
+      { type: 'story', open: 3, closed: 3, inCurrentSprint: 0, inOtherSprint: 0 },
+      { type: 'bug', open: 1, closed: 1, inCurrentSprint: 0, inOtherSprint: 0 },
     ],
   }),
   itemRow({
@@ -45,8 +45,8 @@ export const FEATURE_ROWS: BacklogRowDto[] = [
     childPoints: 13,
     parent: epic('SHIP-92', 'Insights for merchants'),
     rollups: [
-      { type: 'story', open: 4, closed: 0 },
-      { type: 'feature', open: 1, closed: 0 },
+      { type: 'story', open: 4, closed: 0, inCurrentSprint: 0, inOtherSprint: 0 },
+      { type: 'feature', open: 1, closed: 0, inCurrentSprint: 0, inOtherSprint: 0 },
     ],
   }),
   itemRow({
@@ -70,8 +70,8 @@ export const EPIC_ROWS: BacklogRowDto[] = [
     points: 30,
     childPoints: 28,
     rollups: [
-      { type: 'story', open: 4, closed: 0 },
-      { type: 'feature', open: 2, closed: 0 },
+      { type: 'story', open: 4, closed: 0, inCurrentSprint: 0, inOtherSprint: 0 },
+      { type: 'feature', open: 2, closed: 0, inCurrentSprint: 0, inOtherSprint: 0 },
     ],
   }),
 ];
@@ -102,7 +102,7 @@ export const FEATURE_TREE_ROWS: BacklogRowDto[] = [
     state: null,
     points: null,
     rank: null,
-    rollups: [{ type: 'feature', open: 1, closed: 0 }],
+    rollups: [{ type: 'feature', open: 1, closed: 0, inCurrentSprint: 0, inOtherSprint: 0 }],
   }),
   itemRow({
     key: 'SHIP-104',

@@ -27,9 +27,9 @@ const feature: Partial<CardDto> & { key: string } = {
     title: 'Onboarding',
   },
   rollups: [
-    { type: 'story', open: 2, closed: 3 },
-    { type: 'bug', open: 0, closed: 1 },
-    { type: 'task', open: 4, closed: 4 },
+    { type: 'story', open: 2, closed: 3, inCurrentSprint: 0, inOtherSprint: 0 },
+    { type: 'bug', open: 0, closed: 1, inCurrentSprint: 0, inOtherSprint: 0 },
+    { type: 'task', open: 4, closed: 4, inCurrentSprint: 0, inOtherSprint: 0 },
   ],
 };
 
@@ -49,7 +49,7 @@ test('Card_WhenFull_ShouldShowKeyPointsTitleParentTagsAndAssignee', async ({ mou
       { name: 'Payments', colour: 'info' },
       { name: 'misc', colour: null },
     ],
-    rollups: [{ type: 'task', open: 2, closed: 2 }],
+    rollups: [{ type: 'task', open: 2, closed: 2, inCurrentSprint: 0, inOtherSprint: 0 }],
   });
   await mount(
     <Card
@@ -105,7 +105,7 @@ test('Card_WhenCompact_ShouldDropParentTagsAndRollupsOnStories', async ({ mount,
       title: 'Mobile',
     },
     tags: [{ name: 'Payments', colour: 'info' }],
-    rollups: [{ type: 'task', open: 2, closed: 2 }],
+    rollups: [{ type: 'task', open: 2, closed: 2, inCurrentSprint: 0, inOtherSprint: 0 }],
   });
   await mount(
     <Card
@@ -507,8 +507,8 @@ test('Card_WhenFeatureHasActionItems_ShouldCountThemInTheRollups', async ({ moun
       card={card({
         ...feature,
         rollups: [
-          { type: 'story', open: 1, closed: 1 },
-          { type: 'action', open: 1, closed: 2 },
+          { type: 'story', open: 1, closed: 1, inCurrentSprint: 0, inOtherSprint: 0 },
+          { type: 'action', open: 1, closed: 2, inCurrentSprint: 0, inOtherSprint: 0 },
         ],
       })}
       projectKey="SHIP"

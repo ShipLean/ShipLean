@@ -57,7 +57,7 @@ public class StoriesBacklogTreeApiTests : ApiFixture
         var last = view.Rows[^2];
         (last.Kind, last.Id, last.Key, last.Title, last.SumWarn).ShouldBe((BacklogRowKind.NoParentGroup, Guid.Empty, string.Empty, "No parent", false));
         last.Type.ShouldBeNull();
-        last.Rollups.ShouldBe([new RollupCountDto(WorkItemTypeId.Story, 1, 17), new RollupCountDto(WorkItemTypeId.Bug, 0, 5)]);
+        last.Rollups.ShouldBe([new RollupCountDto(WorkItemTypeId.Story, 1, 17, 0, 0), new RollupCountDto(WorkItemTypeId.Bug, 0, 5, 0, 0)]);
         last.ChildPoints.ShouldBe(95m);
         var member = view.Rows[^1];
         (member.Key, member.Depth, member.Kind).ShouldBe(("SHIP-170", 1, BacklogRowKind.Item));

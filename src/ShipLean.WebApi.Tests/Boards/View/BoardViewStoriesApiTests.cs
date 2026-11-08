@@ -135,7 +135,7 @@ public class BoardViewStoriesApiTests : ApiFixture
         passkey.Assignee!.Name.ShouldNotBeNullOrEmpty();
         passkey.ExtraFields.Select(f => f.FieldId).ShouldBe(["priority", "sprint"]);
         passkey.ExtraFields[0].Text.ShouldBe("2");
-        passkey.Rollups.ShouldBe([new RollupCountDto(WorkItemTypeId.Task, 2, 2)]);
+        passkey.Rollups.ShouldBe([new RollupCountDto(WorkItemTypeId.Task, 2, 2, 2, 0)]);
     }
 
     [Test]
