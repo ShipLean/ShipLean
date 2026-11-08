@@ -2,13 +2,6 @@
 // src/ShipLean.Client/src/, grouped by the task or lane that converts them to touch:/phone:. A file must have exactly
 // its count: converting a use means lowering the count, and deleting the line once it reaches zero. Never add a line.
 export const breakpointAllowlist = [
-  // W01-S: the shell
-  { file: 'Shell.tsx', count: 3, owner: 'W01-S' },
-  { file: 'features/shell/SideMenu/SideMenu.tsx', count: 8, owner: 'W01-S' },
-  { file: 'features/shell/SideMenu/NavItem.tsx', count: 1, owner: 'W01-S' },
-  { file: 'features/shell/SideMenu/ProjectButton.tsx', count: 2, owner: 'W01-S' },
-  { file: 'features/shell/ProjectPicker/ProjectPicker.tsx', count: 1, owner: 'W01-S' },
-  { file: 'features/shell/UserMenu/UserMenu.tsx', count: 15, owner: 'W01-S' },
   // SHIP-713 (L713b, wave 1): quick search
   { file: 'features/quickSearch/QuickSearchDialog.tsx', count: 4, owner: 'SHIP-713' },
   { file: 'features/quickSearch/QuickSearchFooter.tsx', count: 1, owner: 'SHIP-713' },

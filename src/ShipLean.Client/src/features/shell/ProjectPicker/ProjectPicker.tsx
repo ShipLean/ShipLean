@@ -66,7 +66,7 @@ export function ProjectPicker({
       aria-label="Switch project"
       data-testid={ids.picker}
       onKeyDown={onDialogKeyDown}
-      className="absolute top-[72px] left-2 z-50 flex w-[300px] flex-col overflow-hidden rounded-panel border border-edge bg-panel shadow-[0_12px_32px_rgb(0_0_0/0.18)] max-[900px]:top-full"
+      className="absolute top-[72px] left-2 z-50 flex w-[300px] flex-col overflow-hidden rounded-panel border border-edge bg-panel shadow-[0_12px_32px_rgb(0_0_0/0.18)]"
     >
       <div className="border-b border-edge p-2">
         <input

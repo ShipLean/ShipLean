@@ -18,7 +18,7 @@ export function NavItem({
   children: ReactNode;
 }) {
   const shape = sub
-    ? 'h-[26px] pl-8 text-[length:var(--text-sm)] font-normal max-[900px]:hidden'
+    ? 'h-[26px] pl-8 text-[length:var(--text-sm)] font-normal'
     : 'h-[30px] font-medium';
   const state = active
     ? sub

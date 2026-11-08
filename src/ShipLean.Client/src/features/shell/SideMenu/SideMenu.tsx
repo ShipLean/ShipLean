@@ -67,9 +67,9 @@ export function SideMenu() {
       ref={side}
       data-testid={ids.sideMenu}
       aria-label="Project navigation"
-      className="relative z-20 flex w-(--sidebar-width) flex-none flex-col gap-0.5 border-r border-edge bg-sunken p-2 max-[900px]:w-auto max-[900px]:flex-row max-[900px]:flex-wrap max-[900px]:items-center max-[900px]:border-r-0 max-[900px]:border-b"
+      className="relative z-20 flex w-(--sidebar-width) flex-none flex-col gap-0.5 border-r border-edge bg-sunken p-2"
     >
-      <div className="flex h-[26px] items-center justify-between max-[900px]:hidden">
+      <div className="flex h-[26px] items-center justify-between">
         <span className="flex items-center gap-[7px] px-2 text-[length:var(--text-sm)] font-bold tracking-tight text-ink-muted">
           <i className="inline-block size-3.5 rounded-[4px] bg-signal" />
           ShipLean
@@ -93,16 +93,6 @@ export function SideMenu() {
         open={picking}
         onClick={() => setPicking(!picking)}
       />
-      <button
-        type="button"
-        data-testid={ids.searchIconButton}
-        aria-label="Quick search"
-        title={`Quick search (${label})`}
-        className="hidden size-[30px] items-center justify-center rounded-control border border-edge bg-panel text-ink-muted hover:border-signal hover:text-ink max-[900px]:flex"
-        onClick={openQuickSearch}
-      >
-        <SearchIcon className="size-4" />
-      </button>
       {key ? (
         <>
           <NavItem
