@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Writes every store asset (SHIP-930) to out/<file> at its exact pixel size, then checks size and alpha.
+# Writes every store asset (SHIP-930) to exports/<file> at its exact pixel size, then checks size and alpha.
 # Usage: ./export.sh [id-prefix ...]   (no args = all). CHROME=/path/to/chrome overrides the browser.
 # On the shared host: CHROME=~/.cache/ms-playwright/chromium_headless_shell-1234/*/chrome-headless-shell
 #                     LD_LIBRARY_PATH=~/.local/pwlibs/usr/lib/x86_64-linux-gnu
@@ -23,12 +23,12 @@ for a in assets:
     print("\t".join([a["id"], str(a["w"]), str(a["h"]), a["file"], "1" if a["alpha"] else "0"]))
 PY
 while IFS=$'\t' read -r id w h file alpha; do
-  mkdir -p "out/$(dirname "$file")"
+  mkdir -p "exports/$(dirname "$file")"
   extra=(); [[ "$alpha" == 1 ]] && extra=(--default-background-color=00000000)
-  "$chrome" "${base[@]}" "${extra[@]}" --window-size="$w,$h" --screenshot="out/$file" "$here/asset.html?id=$id" >/dev/null 2>&1
+  "$chrome" "${base[@]}" "${extra[@]}" --window-size="$w,$h" --screenshot="exports/$file" "$here/asset.html?id=$id" >/dev/null 2>&1
   # Chrome writes a fully opaque page as RGB even on a clear background; the alpha assets must be RGBA.
-  [[ "$alpha" == 1 ]] && python3 -I ./to-rgba.py "out/$file"
-  echo "out/$file"
+  [[ "$alpha" == 1 ]] && python3 -I ./to-rgba.py "exports/$file"
+  echo "exports/$file"
 done < out.tsv
 python3 -I ./check-png.py out.tsv
 rm -f out.tsv

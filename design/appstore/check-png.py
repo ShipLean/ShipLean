@@ -8,7 +8,7 @@ COLOR = {0: "gray", 2: "RGB", 3: "palette", 4: "gray+alpha", 6: "RGBA"}
 bad = 0
 for line in Path(sys.argv[1]).read_text().splitlines():
     id_, w, h, file, alpha = line.split("\t")
-    p = Path("out") / file
+    p = Path("exports") / file
     data = p.read_bytes()[:33]
     width, height, _, ctype = struct.unpack(">IIBB", data[16:26])
     has_alpha = ctype in (4, 6)
