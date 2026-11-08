@@ -3,7 +3,6 @@ using System.Globalization;
 using Dapper;
 using Npgsql;
 using ShipLean.Application.Features.IssueIntake.Proposal;
-using ShipLean.Application.Features.WorkItems;
 using ShipLean.Contracts.IssueIntake;
 using ShipLean.Contracts.Refs;
 
@@ -73,15 +72,24 @@ public sealed class AcceptanceReads(NpgsqlDataSource dataSource)
             "SELECT id, type, title FROM work_item WHERE project_id = @projectId AND number = @number",
             new { projectId, number },
             cancellationToken: cancellationToken));
-        return row is null ? null : new ProjectItem(row.Id, $"{projectKey}-{number}", WorkItemTypes.Parse(row.Type), row.Title);
+        return row is null ? null : new ProjectItem(row.Id, $"{projectKey}-{number}", Enum.Parse<WorkItemTypeId>(row.Type, ignoreCase: true), row.Title);
     }
 
     // The parent the proposal names, only when it is a Feature or Epic of this project that the type allows.
     public async Task<Guid?> ParentAsync(Guid projectId, string projectKey, WorkItemTypeId type, string? parentKey, CancellationToken cancellationToken)
     {
         var parent = await FindItemAsync(projectId, projectKey, parentKey, cancellationToken);
-        return parent is { Type: WorkItemTypeId.Feature or WorkItemTypeId.Epic } && WorkItemTypes.IsAllowedParent(type, parent.Type) ? parent.Id : null;
+        return parent is { Type: WorkItemTypeId.Feature or WorkItemTypeId.Epic } && AllowsParent(type, parent.Type) ? parent.Id : null;
     }
+
+    // The schema's parent rule (ck_work_item_parent_type_allowed) for the types a proposal can make; Features reach other features
+    // only through ShipLean.Contracts, so it is restated here for Feature and Epic parents.
+    private static bool AllowsParent(WorkItemTypeId type, WorkItemTypeId parent) => type switch
+    {
+        WorkItemTypeId.Feature => parent is WorkItemTypeId.Epic or WorkItemTypeId.Feature,
+        WorkItemTypeId.Story or WorkItemTypeId.Bug => parent == WorkItemTypeId.Feature,
+        _ => false,
+    };
 
     // A guard for one post: the instance's base URL and the names of the project's members.
     public async Task<PublicTextGuard> GuardAsync(Guid projectId, CancellationToken cancellationToken)
@@ -102,7 +110,7 @@ public sealed class AcceptanceReads(NpgsqlDataSource dataSource)
     private async Task<Guid> StateAsync(Guid projectId, WorkItemTypeId type, string sql, string what, CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-        var typeName = WorkItemTypes.Db(type);
+        var typeName = type.ToString().ToLowerInvariant();
         return await connection.ExecuteScalarAsync<Guid?>(new CommandDefinition(
             sql,
             new { projectId, typeName },

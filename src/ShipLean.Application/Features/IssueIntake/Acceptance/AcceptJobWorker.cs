@@ -6,7 +6,6 @@ using Microsoft.Extensions.Logging;
 using Npgsql;
 using ShipLean.Application.Features.IssueIntake.Proposal;
 using ShipLean.Application.Features.IssueIntake.Rounds;
-using ShipLean.Application.Features.Webhooks;
 using ShipLean.Contracts.Comments;
 using ShipLean.Contracts.Events;
 using ShipLean.Contracts.IssueIntake;
@@ -134,7 +133,7 @@ public sealed class AcceptJobWorker(
         WorkItemSnapshot target;
         if (type == triage.Type)
         {
-            if (!await LinkWrites.PatchAsync(run.Items, triage.Id, triage.Revision, changes, Options(run.Issue), cancellationToken))
+            if (!await PatchAsync(run.Items, triage.Id, triage.Revision, changes, Options(run.Issue), cancellationToken))
             {
                 throw new InvalidOperationException($"The Triage item {triage.Key} kept changing; the acceptance retries.");
             }
@@ -244,7 +243,7 @@ public sealed class AcceptJobWorker(
 
         var removed = await reads.RemovedStateAsync(run.Project.ProjectId, current.Type, cancellationToken);
         var changes = new WorkItemChanges { State = new FieldSet<Guid>(removed) };
-        if (!await LinkWrites.PatchAsync(run.Items, current.Id, current.Revision, changes, Options(run.Issue), cancellationToken))
+        if (!await PatchAsync(run.Items, current.Id, current.Revision, changes, Options(run.Issue), cancellationToken))
         {
             throw new InvalidOperationException($"The Triage item {current.Key} kept changing; the acceptance retries.");
         }
@@ -308,6 +307,23 @@ public sealed class AcceptJobWorker(
 
         await transaction.CommitAsync(cancellationToken);
         await events.PublishAsync(new CommentsChanged(run.Issue.ProjectId, triage.Id));
+    }
+
+    // A patch retried with the item's current revision when someone saved it meanwhile. False when every attempt was stale.
+    private static async Task<bool> PatchAsync(IWorkItemStore store, Guid id, int revision, WorkItemChanges changes, WriteOptions options, CancellationToken cancellationToken)
+    {
+        for (var attempt = 0; attempt < 3; attempt++)
+        {
+            var outcome = await store.PatchAsync(id, new WorkItemPatch(revision, changes), options, cancellationToken);
+            if (outcome.Written is not null)
+            {
+                return true;
+            }
+
+            revision = outcome.Conflict!.Current.Revision;
+        }
+
+        return false;
     }
 
     private static WriteOptions Options(GitHubIssueRecord issue) => WriteOptions.FromWebhook($"GitHub {issue.Issue}");
