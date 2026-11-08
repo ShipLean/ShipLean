@@ -5,6 +5,7 @@ using Microsoft.Extensions.Time.Testing;
 using Npgsql;
 using Shouldly;
 using ShipLean.Application.Features.IssueIntake;
+using ShipLean.Application.Features.IssueIntake.GitHub;
 using ShipLean.Application.Features.IssueIntake.Outbox;
 using ShipLean.Contracts.IssueIntake;
 using ShipLean.TestSupport;
@@ -200,26 +201,33 @@ public class OutboxDeliveryTests : ApiFixture
     {
         var (issueId, issue) = await NewIssueAsync();
         await EnqueueAsync(OutboxEntry.Comment(issueId, Key("lease"), "Update."));
-        var gate = new GatedGitHubIssues(_recording);
-        _github = gate;
+        var stalled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _github = new HookedGitHubIssues(_recording).AfterComment(async () =>
+        {
+            stalled.SetResult();
+            await release.Task;
+        });
 
-        // Worker one claims the entry and stalls past its lease.
+        // Worker one's post reaches GitHub, then the worker stalls past its lease before recording it.
         var one = Task.Run(() => Deliverer().RunDueAsync(CancellationToken.None));
-        await gate.Entered.Task;
+        await stalled.Task;
         (await Deliverer().RunDueAsync(CancellationToken.None)).ShouldBe(0);
         _clock.Advance(GitHubOutboxDeliverer.Lease + TimeSpan.FromSeconds(1));
 
-        // Worker two takes it over and sends it.
+        // Worker two takes it over, finds the post by its marker and records it.
         (await Deliverer().RunDueAsync(CancellationToken.None)).ShouldBe(1);
         var sent = (await RowsAsync(issueId)).ShouldHaveSingleItem();
         sent.Sent.ShouldBeTrue();
         sent.Attempts.ShouldBe(2);
+        sent.CommentId.ShouldNotBeNull();
 
-        // Worker one's late answer changes nothing: the entry is worker two's.
-        gate.Release.SetResult();
+        // Worker one's late answer changes nothing, and GitHub got one post.
+        release.SetResult();
         await one;
         (await RowsAsync(issueId)).ShouldHaveSingleItem().CommentId.ShouldBe(sent.CommentId);
-        _recording.Calls.ShouldBe([$"comment {issue}", $"comment {issue}"]);
+        _recording.Calls.ShouldBe([$"comment {issue}", $"list {issue}"]);
+        _recording.CommentBodies.Count.ShouldBe(1);
     }
 
     [Test]
@@ -238,18 +246,18 @@ public class OutboxDeliveryTests : ApiFixture
         var two = Task.Run(() => Deliverer().RunDueAsync(CancellationToken.None));
         await inner.Entered.Task;
 
-        // Worker one answers late, with a result that would free the entry; worker two still holds the claim.
+        // Worker one answers late, with a result that would free the entry; worker two, reconciling, still holds the claim.
         _recording.QueueResult(new GitHubWriteResult.Retry("502"));
         outer.Release.SetResult();
         await one;
         var held = (await RowsAsync(issueId)).ShouldHaveSingleItem();
-        held.LastResult.ShouldBeNull();
+        held.LastResult.ShouldBe("sending");
         held.Attempts.ShouldBe(2);
 
         inner.Release.SetResult();
         await two;
         (await RowsAsync(issueId)).ShouldHaveSingleItem().Sent.ShouldBeTrue();
-        _recording.Calls.ShouldBe([$"comment {issue}", $"comment {issue}"]);
+        _recording.Calls.ShouldBe([$"comment {issue}", $"list {issue}", $"comment {issue}"]);
     }
 
     [Test]
@@ -282,8 +290,150 @@ public class OutboxDeliveryTests : ApiFixture
 
         _recording.Calls.ShouldBe([$"reopen {issue}"]);
         var rows = await RowsAsync(issueId);
-        rows.Select(r => (r.Kind, r.Sent, r.Failed, r.LastError)).ShouldBe([("comment", false, true, "issue closed"), ("reopen", true, false, (string?)null)]);
+        rows.Select(r => (r.Kind, r.Sent, r.Failed, r.LastResult, r.CommentId)).ShouldBe([("comment", true, false, "skipped: issue closed", (long?)null), ("reopen", true, false, "ok", null)]);
         (await NotesAsync()).ShouldBe(notes);
+    }
+
+    [Test]
+    public async Task Deliver_WhenIssueClosesBeforeSend_ShouldSkipCommentAndClose()
+    {
+        var (issueId, issue) = await NewIssueAsync();
+        await EnqueueAsync(OutboxEntry.Comment(issueId, Key("closing"), "Update."));
+        await EnqueueAsync(OutboxEntry.Close(issueId, Key("close"), CloseReason.Completed));
+        await EnqueueAsync(OutboxEntry.Reopen(issueId, Key("reopen")));
+        var notes = await NotesAsync();
+        _recording.QueueResult(new GitHubWriteResult.Ambiguous("timeout"));
+        await Deliverer().RunDueAsync(CancellationToken.None);
+
+        // The issue is closed on GitHub after the next claim, while that claim reconciles.
+        _github = new HookedGitHubIssues(_recording).BeforeList(() => Host.Services.GetRequiredService<IGitHubIssueStore>().SetOpenOnGitHubAsync(issueId, false));
+        _clock.Advance(TimeSpan.FromMinutes(1));
+        (await Deliverer().RunDueAsync(CancellationToken.None)).ShouldBe(3);
+
+        _recording.Calls.ShouldBe([$"comment {issue}", $"list {issue}", $"reopen {issue}"]);
+        var rows = await RowsAsync(issueId);
+        rows.Select(r => (r.Kind, r.Sent, r.Failed, r.LastResult)).ShouldBe(
+            [("comment", true, false, "skipped: issue closed"), ("close", true, false, "skipped: issue closed"), ("reopen", true, false, "ok")]);
+        (await NotesAsync()).ShouldBe(notes);
+    }
+
+    [Test]
+    public void CommentTimeout_WhenComparedWithLease_ShouldBeAtMostAThird()
+    {
+        GitHubIssuesClient.CommentTimeout.ShouldBeLessThanOrEqualTo(GitHubOutboxDeliverer.Lease / 3);
+    }
+
+    [Test]
+    public async Task Deliver_WhenCrashAfterSend_ShouldNotPostAgain()
+    {
+        var (issueId, issue) = await NewIssueAsync();
+        await EnqueueAsync(OutboxEntry.Comment(issueId, Key("crash-after"), "Update."));
+        _github = new HookedGitHubIssues(_recording).AfterComment(() => throw new InvalidOperationException("The worker died."));
+
+        await Should.ThrowAsync<InvalidOperationException>(() => Deliverer().RunDueAsync(CancellationToken.None));
+        (await RowsAsync(issueId)).ShouldHaveSingleItem().LastResult.ShouldBe("sending");
+
+        _clock.Advance(GitHubOutboxDeliverer.Lease + TimeSpan.FromSeconds(1));
+        (await Deliverer().RunDueAsync(CancellationToken.None)).ShouldBe(1);
+
+        _recording.Calls.ShouldBe([$"comment {issue}", $"list {issue}"]);
+        _recording.CommentBodies.Count.ShouldBe(1);
+        var row = (await RowsAsync(issueId)).ShouldHaveSingleItem();
+        row.Sent.ShouldBeTrue();
+        row.CommentId.ShouldNotBeNull();
+    }
+
+    [Test]
+    public async Task Deliver_WhenCrashBeforeSend_ShouldPostOnce()
+    {
+        var (issueId, issue) = await NewIssueAsync();
+        await EnqueueAsync(OutboxEntry.Comment(issueId, Key("crash-before"), "Update."));
+        _github = new HookedGitHubIssues(_recording).BeforeComment(() => throw new InvalidOperationException("The worker died."));
+
+        await Should.ThrowAsync<InvalidOperationException>(() => Deliverer().RunDueAsync(CancellationToken.None));
+        (await RowsAsync(issueId)).ShouldHaveSingleItem().LastResult.ShouldBe("sending");
+
+        _clock.Advance(GitHubOutboxDeliverer.Lease + TimeSpan.FromSeconds(1));
+        (await Deliverer().RunDueAsync(CancellationToken.None)).ShouldBe(1);
+
+        // A complete list without the marker: the post never left, so it goes now, once.
+        _recording.Calls.ShouldBe([$"list {issue}", $"comment {issue}"]);
+        _recording.CommentBodies.Count.ShouldBe(1);
+        (await RowsAsync(issueId)).ShouldHaveSingleItem().Sent.ShouldBeTrue();
+    }
+
+    [Test]
+    public async Task Deliver_WhenAmbiguousAndListIncomplete_ShouldNotPostAgain()
+    {
+        var (issueId, issue) = await NewIssueAsync();
+        await EnqueueAsync(OutboxEntry.Comment(issueId, Key("incomplete"), "Proposal."));
+        var notes = await NotesAsync();
+        _recording.QueueResult(new GitHubWriteResult.Ambiguous("timeout"));
+        await Deliverer().RunDueAsync(CancellationToken.None);
+
+        // The list stopped at its limit without the marker: the post may be further on, so it backs off instead.
+        _recording.QueueList(new GitHubCommentList.Listed([], Complete: false));
+        _clock.Advance(TimeSpan.FromMinutes(1));
+        await Deliverer().RunDueAsync(CancellationToken.None);
+        var row = (await RowsAsync(issueId)).ShouldHaveSingleItem();
+        (row.Sent, row.Failed, row.LastResult, row.LastError).ShouldBe((false, false, "ambiguous", "incompleteList"));
+        row.NextAttemptAt.ShouldBe(_clock.GetUtcNow() + TimeSpan.FromMinutes(10), TimeSpan.FromMilliseconds(1));
+
+        // On the last try it fails with the note, still without posting again.
+        await using (var connection = await DataSource.OpenConnectionAsync())
+        {
+            await connection.ExecuteAsync(
+                "UPDATE github_outbox SET attempts = @attempts WHERE github_issue_id = @issueId", new { attempts = GitHubOutboxDeliverer.MaxAttempts - 1, issueId });
+        }
+
+        _recording.QueueList(new GitHubCommentList.Listed([], Complete: false));
+        _clock.Advance(TimeSpan.FromMinutes(10));
+        await Deliverer().RunDueAsync(CancellationToken.None);
+
+        _recording.Calls.ShouldBe([$"comment {issue}", $"list {issue}", $"list {issue}"]);
+        var failed = (await RowsAsync(issueId)).ShouldHaveSingleItem();
+        (failed.Sent, failed.Failed, failed.LastResult, failed.Attempts).ShouldBe((false, true, "ambiguous", GitHubOutboxDeliverer.MaxAttempts));
+        (await NotesAsync()).ShouldBe(notes + 1);
+    }
+
+    [Test]
+    public async Task Deliver_WhenCloseEnqueuedDuringFailure_ShouldHoldClose()
+    {
+        var (issueId, issue) = await NewIssueAsync();
+        await EnqueueAsync(OutboxEntry.Comment(issueId, Key("fails"), "Done in SHIP-1."));
+        _recording.QueueResult(new GitHubWriteResult.Failed("422"));
+
+        // A close is enqueued in a transaction still open while the comment fails.
+        await using var connection = await DataSource.OpenConnectionAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+        (await Host.Services.GetRequiredService<IGitHubOutbox>().EnqueueAsync(OutboxEntry.Close(issueId, Key("close"), CloseReason.Completed), transaction)).ShouldBeTrue();
+        var deliver = Task.Run(() => Deliverer().RunDueAsync(CancellationToken.None));
+        await WaitForEnqueueLockWaitAsync(deliver);
+        await transaction.CommitAsync();
+        await deliver;
+
+        _recording.Calls.ShouldBe([$"comment {issue}"]);
+        var rows = await RowsAsync(issueId);
+        rows.Select(r => (r.Kind, r.Failed, r.LastError)).ShouldBe([("comment", true, "422"), ("close", true, "previous update failed")]);
+    }
+
+    // Polls the server (a round trip each, no sleep) until a backend waits on an advisory lock, or the delivery has finished.
+    private async Task WaitForEnqueueLockWaitAsync(Task delivery)
+    {
+        await using var connection = await DataSource.OpenConnectionAsync();
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+        while (!delivery.IsCompleted)
+        {
+            timeout.Token.ThrowIfCancellationRequested();
+            var waiting = await connection.ExecuteScalarAsync<int>(
+                "SELECT count(*)::int FROM pg_stat_activity WHERE datname = current_database() AND wait_event_type = 'Lock' AND wait_event = 'advisory'");
+            if (waiting > 0)
+            {
+                return;
+            }
+
+            await Task.Yield();
+        }
     }
 
     [Test]

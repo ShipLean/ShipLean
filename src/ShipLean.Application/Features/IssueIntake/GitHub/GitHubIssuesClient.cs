@@ -26,7 +26,26 @@ public sealed class GitHubIssuesClient(IHttpClientFactory clients, IIntegrationS
 
     private static readonly JsonSerializerOptions Wire = new(JsonSerializerDefaults.Web) { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
 
+    // The most a comment POST takes, its reply included. The outbox deliverer's lease is at least three times this, so a sender
+    // whose lease ran out is never still in flight when another worker takes the entry over.
+    public static readonly TimeSpan CommentTimeout = TimeSpan.FromSeconds(60);
+
     public async Task<GitHubWriteResult> CommentAsync(IssueRef issue, string body, CancellationToken cancellationToken = default)
+    {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(CommentTimeout);
+        try
+        {
+            return await PostCommentAsync(issue, body, timeout.Token);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            // GitHub may have the comment already.
+            return new GitHubWriteResult.Ambiguous("timeout");
+        }
+    }
+
+    private async Task<GitHubWriteResult> PostCommentAsync(IssueRef issue, string body, CancellationToken cancellationToken)
     {
         var sent = await SendAsync(HttpMethod.Post, IssuePath(issue, "/comments"), new { body }, cancellationToken);
         if (sent.Result is not GitHubWriteResult.Ok)

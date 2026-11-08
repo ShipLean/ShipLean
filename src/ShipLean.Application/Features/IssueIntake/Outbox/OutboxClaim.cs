@@ -1,7 +1,7 @@
 namespace ShipLean.Application.Features.IssueIntake.Outbox;
 
-// A leased github_outbox entry and the issue it writes to. Attempts counts claims, this one included. LeaseToken is the stored
-// leased_until, which the claim's writes must match.
+// A leased github_outbox entry and the issue it writes to. Attempts counts claims, this one included. LeaseToken is the new
+// lease_token this claim set, which every write it makes must match.
 internal sealed record OutboxClaim(
     Guid Id,
     Guid GitHubIssueId,
@@ -11,8 +11,7 @@ internal sealed record OutboxClaim(
     int Attempts,
     string? LastResult,
     DateTimeOffset CreatedAt,
-    DateTimeOffset LeaseToken,
+    Guid LeaseToken,
     string Host,
     string Repository,
-    int Number,
-    bool OpenOnGitHub);
+    int Number);

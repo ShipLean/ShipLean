@@ -79,8 +79,11 @@ CREATE TABLE github_issue_effect (
 );
 
 -- Every GitHub write (D15), delivered one at a time per issue in created_at order. dedupe_key makes an enqueue
--- idempotent. leased_until is a sender's lease; last_result is what the last attempt returned (an ambiguous POST is
--- reconciled through the hidden outbox marker before it is sent again).
+-- idempotent. leased_until is a sender's lease and lease_token its holder: every claim sets a new token, and only a write
+-- that names it records a result, so a worker that overran its lease cannot touch the next claim. last_result is what the
+-- last attempt returned: 'sending' is committed before each request, so a claim that finds 'sending' (the sender may have
+-- died after GitHub acted) or 'ambiguous' reconciles through the hidden outbox marker before it sends again. A comment or
+-- close found at send time to be for an issue closed on GitHub is finished unsent, as 'skipped: issue closed'.
 -- seq is the per-issue delivery order: EnqueueAsync takes a per-issue advisory lock in the caller's transaction before it
 -- inserts, so the entries of one issue commit in seq order (created_at can tie, and commit order can differ from it).
 CREATE TABLE github_outbox (
@@ -94,10 +97,11 @@ CREATE TABLE github_outbox (
     attempts          integer NOT NULL DEFAULT 0 CHECK (attempts >= 0),
     next_attempt_at   timestamptz NOT NULL,
     leased_until      timestamptz,
+    lease_token       uuid,
     sent_at           timestamptz,
     failed_at         timestamptz,
     github_comment_id bigint,
-    last_result       text CHECK (last_result IN ('ok', 'retry', 'ambiguous', 'failed')),
+    last_result       text CHECK (last_result IN ('sending', 'ok', 'retry', 'ambiguous', 'failed', 'skipped: issue closed')),
     last_error        text,
     created_at        timestamptz NOT NULL
 );

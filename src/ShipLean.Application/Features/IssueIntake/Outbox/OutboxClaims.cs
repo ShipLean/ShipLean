@@ -9,11 +9,17 @@ namespace ShipLean.Application.Features.IssueIntake.Outbox;
 // issues whose oldest pending entry is due and not leased, take a transaction-scoped advisory lock on one of them (skipping an
 // issue another worker holds), lease that issue's oldest pending entry by id with FOR UPDATE SKIP LOCKED, and commit. The lease
 // is the per-issue lock while sending: the issue has a leased entry, so no other worker picks it until the lease runs out.
-// leased_until, as stored, is the claim's token: every later write names it, so a worker that overran its lease changes nothing.
+// Each claim sets a new lease_token, and every later write names it, so a worker that overran its lease changes nothing.
 internal static class OutboxClaims
 {
-    // Longer than a post plus a reconcile of up to five list pages.
+    // Longer than a reconcile of up to five list pages; MarkSendingAsync renews it, and a comment request times out within a
+    // third of it (GitHubIssuesClient.CommentTimeout), so a sender is never still in flight when its entry is taken over.
     public static readonly TimeSpan Lease = TimeSpan.FromMinutes(5);
+
+    // last_result while a request may be in flight: committed before it, so a claim that finds it reconciles first.
+    public const string Sending = "sending";
+    public const string Ambiguous = "ambiguous";
+    public const string SkippedClosed = "skipped: issue closed";
 
     private const int CandidateIssues = 20;
 
@@ -46,6 +52,34 @@ internal static class OutboxClaims
 
         await transaction.CommitAsync(cancellationToken);
         return null;
+    }
+
+    // Committed right before a request: last_result 'sending' and a renewed lease. Returns the issue's open_on_github as it is
+    // now, or null when another worker took the entry over (send nothing).
+    public static async Task<bool?> MarkSendingAsync(NpgsqlDataSource dataSource, OutboxClaim claim, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        return await connection.QuerySingleOrDefaultAsync<bool?>(new CommandDefinition(
+            $"""
+            UPDATE github_outbox SET last_result = '{Sending}', leased_until = @until
+            WHERE {Held}
+            RETURNING (SELECT g.open_on_github FROM github_issue g WHERE g.id = github_outbox.github_issue_id)
+            """,
+            new { claim.Id, claim.LeaseToken, until = now + Lease },
+            cancellationToken: cancellationToken));
+    }
+
+    // Finished unsent: the issue is closed on GitHub, so a comment or close is skipped (nothing went wrong).
+    public static async Task<bool> MarkSkippedAsync(NpgsqlDataSource dataSource, OutboxClaim claim, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        return await connection.ExecuteAsync(new CommandDefinition(
+            $"""
+            UPDATE github_outbox SET sent_at = @now, last_result = '{SkippedClosed}', last_error = NULL, leased_until = NULL
+            WHERE {Held}
+            """,
+            new { claim.Id, claim.LeaseToken, now },
+            cancellationToken: cancellationToken)) == 1;
     }
 
     // Sent: the claim still holds its lease. False when another worker took the entry over.
@@ -86,6 +120,15 @@ internal static class OutboxClaims
             transaction,
             cancellationToken: cancellationToken)) == 1;
 
+    // The per-issue lock DbGitHubOutbox.EnqueueAsync takes (same key, same hash), held to the end of the caller's transaction, so a
+    // close enqueued at the same time is either seen by HoldNextCloseAsync or enqueued after the failure commits.
+    public static Task LockIssueAsync(DbTransaction transaction, Guid issueId, CancellationToken cancellationToken)
+        => transaction.Connection!.ExecuteAsync(new CommandDefinition(
+            "SELECT pg_advisory_xact_lock(hashtextextended('github_outbox:' || @issueId::text, 0))",
+            new { issueId },
+            transaction,
+            cancellationToken: cancellationToken));
+
     // Fails the issue's next pending entry when it is a close, so an issue is never closed after an update it should have carried
     // was lost. True when there was one.
     public static async Task<bool> HoldNextCloseAsync(DbTransaction transaction, Guid issueId, string error, DateTimeOffset now, CancellationToken cancellationToken)
@@ -118,7 +161,7 @@ internal static class OutboxClaims
             cancellationToken: cancellationToken));
 
     // The entry is still this claim's: pending, and leased with the claim's token.
-    private const string Held = "id = @Id AND leased_until = @LeaseToken AND sent_at IS NULL AND failed_at IS NULL";
+    private const string Held = "id = @Id AND lease_token = @LeaseToken AND sent_at IS NULL AND failed_at IS NULL";
 
     private static async Task<OutboxClaim?> TryClaimAsync(
         NpgsqlConnection connection, NpgsqlTransaction transaction, Guid issueId, DateTimeOffset now, CancellationToken cancellationToken)
@@ -149,13 +192,13 @@ internal static class OutboxClaims
                 SELECT id FROM github_outbox
                 WHERE id = @head AND sent_at IS NULL AND failed_at IS NULL AND next_attempt_at <= @now AND (leased_until IS NULL OR leased_until <= @now)
                 FOR UPDATE SKIP LOCKED)
-            UPDATE github_outbox o SET leased_until = @until, attempts = o.attempts + 1
+            UPDATE github_outbox o SET leased_until = @until, lease_token = @token, attempts = o.attempts + 1
             FROM head, github_issue g
             WHERE o.id = head.id AND g.id = o.github_issue_id
             RETURNING o.id, o.github_issue_id AS gitHubIssueId, o.kind, o.body, o.reason, o.attempts, o.last_result AS lastResult,
-                      o.created_at AS createdAt, o.leased_until AS leaseToken, g.host, g.repository, g.number, g.open_on_github AS openOnGitHub
+                      o.created_at AS createdAt, o.lease_token AS leaseToken, g.host, g.repository, g.number
             """,
-            new { head, now, until = now + Lease },
+            new { head, now, until = now + Lease, token = Guid.NewGuid() },
             transaction,
             cancellationToken: cancellationToken));
     }

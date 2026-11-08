@@ -8,10 +8,13 @@ using ShipLean.Contracts.IssueIntake;
 namespace ShipLean.Application.Features.IssueIntake.Outbox;
 
 // Delivers github_outbox (D15): one entry at a time per issue, in seq order, each claimed with a lease (OutboxClaims).
-// - A comment carries its entry's marker, added at send time. While the issue is closed on GitHub a comment is not sent (it fails
-//   with "issue closed"); closes and reopens still go.
-// - After an ambiguous POST the next try first lists the issue's comments since the entry was made and marks it sent only when a
-//   comment by ShipLean's own login carries the marker (anyone can type one). Not found: it posts again.
+// - Right before each request it commits last_result 'sending' (renewing the lease) and re-reads open_on_github. While the issue
+//   is closed on GitHub a comment or close is not sent: it is finished as 'skipped: issue closed', with no note and nothing held.
+//   A reopen still goes. A comment carries its entry's marker, added at send time.
+// - A claim that finds 'sending' (the last sender may have died after GitHub acted) or 'ambiguous' on a comment first lists the
+//   issue's comments since the entry was made, and marks it sent only when a comment by ShipLean's own login carries the marker
+//   (anyone can type one). It posts again only after a complete list without the marker; a list that is cut short or can't be
+//   read leaves the entry ambiguous, backed off like any other try.
 // - Retry and Ambiguous back off 1 min, 10 min, 1 h, then 6 h, and fail after MaxAttempts claims.
 // - A write that fails for good also fails the issue's next entry when it is a close (the close is held), and leaves one ShipLean
 //   comment on the issue's item for the maintainers.
@@ -25,7 +28,6 @@ public sealed class GitHubOutboxDeliverer(
     // How long a claim holds its entry (and so its issue) before another worker may take it over.
     public static readonly TimeSpan Lease = OutboxClaims.Lease;
 
-    private const string ClosedError = "issue closed";
     private const string HeldError = "previous update failed";
 
     // A margin under the entry's created_at for the reconcile list, against clock skew between ShipLean and GitHub.
@@ -55,19 +57,7 @@ public sealed class GitHubOutboxDeliverer(
     private async Task DeliverAsync(OutboxClaim claim, IGitHubIssues github, IServiceProvider services, CancellationToken cancellationToken)
     {
         var issue = new IssueRef(claim.Host, claim.Repository, claim.Number);
-        if (claim.Attempts > MaxAttempts)
-        {
-            await FailAsync(claim, issue, "retry", "the last try's lease expired", services, cancellationToken);
-            return;
-        }
-
-        if (claim.Kind == "comment" && !claim.OpenOnGitHub)
-        {
-            await FailQuietlyAsync(claim, issue, cancellationToken);
-            return;
-        }
-
-        if (claim.Kind == "comment" && claim.LastResult == "ambiguous")
+        if (claim.Kind == "comment" && claim.LastResult is OutboxClaims.Sending or OutboxClaims.Ambiguous)
         {
             var found = await FindPostedAsync(claim, issue, github, cancellationToken);
             if (found is not null)
@@ -75,6 +65,23 @@ public sealed class GitHubOutboxDeliverer(
                 await RecordAsync(claim, issue, found, services, cancellationToken);
                 return;
             }
+        }
+
+        if (claim.Attempts > MaxAttempts)
+        {
+            await FailAsync(claim, issue, "retry", "the last try's lease expired", services, cancellationToken);
+            return;
+        }
+
+        switch (await OutboxClaims.MarkSendingAsync(dataSource, claim, clock.GetUtcNow(), cancellationToken))
+        {
+            case null:
+                Stale(false, claim);
+                return;
+            case false when claim.Kind != "reopen":
+                Stale(await OutboxClaims.MarkSkippedAsync(dataSource, claim, clock.GetUtcNow(), cancellationToken), claim);
+                logger.LogInformation("GitHub outbox entry {EntryId} ({Kind}) for {Issue} was not sent: the issue is closed on GitHub", claim.Id, claim.Kind, issue);
+                return;
         }
 
         var result = claim.Kind switch
@@ -87,8 +94,9 @@ public sealed class GitHubOutboxDeliverer(
         await RecordAsync(claim, issue, result, services, cancellationToken);
     }
 
-    // After an ambiguous POST: Ok with the comment's id when ShipLean's own comment carries the marker; null when it isn't there
-    // (post again); Retry when the list or the login can't be read now (the entry stays ambiguous); Failed when GitHub refuses.
+    // After a POST that may have reached GitHub: Ok with the comment's id when ShipLean's own comment carries the marker; null only
+    // when a complete list doesn't have it (post again); Ambiguous when the list is cut short or it or the login can't be read now
+    // (the entry stays ambiguous, so the next try reconciles again); Failed when GitHub refuses.
     private async Task<GitHubWriteResult?> FindPostedAsync(
         OutboxClaim claim, IssueRef issue, IGitHubIssues github, CancellationToken cancellationToken)
     {
@@ -109,8 +117,8 @@ public sealed class GitHubOutboxDeliverer(
         {
             GitHubCommentList.Listed listed => listed.Comments
                 .Where(c => string.Equals(c.AuthorLogin, self, StringComparison.OrdinalIgnoreCase) && c.Body.Contains(marker, StringComparison.Ordinal))
-                .Select(c => new GitHubWriteResult.Ok(c.Id))
-                .FirstOrDefault(),
+                .Select(GitHubWriteResult (c) => new GitHubWriteResult.Ok(c.Id))
+                .FirstOrDefault() ?? (listed.Complete ? null : new GitHubWriteResult.Ambiguous("incompleteList")),
             GitHubCommentList.Retry retry => new GitHubWriteResult.Ambiguous(retry.Error),
             GitHubCommentList.Failed failed => new GitHubWriteResult.Failed(failed.Error),
             _ => throw new InvalidOperationException("Unknown comment list result."),
@@ -131,7 +139,7 @@ public sealed class GitHubOutboxDeliverer(
                 await BackOffAsync(claim, issue, "retry", retry.Error, services, cancellationToken);
                 return;
             case GitHubWriteResult.Ambiguous ambiguous:
-                await BackOffAsync(claim, issue, "ambiguous", ambiguous.Error, services, cancellationToken);
+                await BackOffAsync(claim, issue, OutboxClaims.Ambiguous, ambiguous.Error, services, cancellationToken);
                 return;
             default:
                 throw new InvalidOperationException("Unknown GitHub write result.");
@@ -152,18 +160,8 @@ public sealed class GitHubOutboxDeliverer(
         Stale(await OutboxClaims.BackOffAsync(dataSource, claim, lastResult, error, clock.GetUtcNow() + wait, cancellationToken), claim);
     }
 
-    // A comment on an issue closed on GitHub: nothing went wrong, so nothing is held and no one is told.
-    private async Task FailQuietlyAsync(OutboxClaim claim, IssueRef issue, CancellationToken cancellationToken)
-    {
-        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
-        Stale(await OutboxClaims.FailAsync(transaction, claim, "failed", ClosedError, clock.GetUtcNow(), cancellationToken), claim);
-        await transaction.CommitAsync(cancellationToken);
-        logger.LogInformation("GitHub outbox entry {EntryId} for {Issue} was not sent: the issue is closed on GitHub", claim.Id, issue);
-    }
-
-    // Fails the entry, holds a close queued next, and adds one note on the item, all in one transaction; the note's
-    // CommentsChanged is published after commit.
+    // Fails the entry, holds a close queued next, and adds one note on the item, all in one transaction that first takes the issue's
+    // enqueue lock, so a close enqueued meanwhile is held too; the note's CommentsChanged is published after commit.
     private async Task FailAsync(OutboxClaim claim, IssueRef issue, string lastResult, string error, IServiceProvider services, CancellationToken cancellationToken)
     {
         var now = clock.GetUtcNow();
@@ -171,6 +169,7 @@ public sealed class GitHubOutboxDeliverer(
         await using (var connection = await dataSource.OpenConnectionAsync(cancellationToken))
         await using (var transaction = await connection.BeginTransactionAsync(cancellationToken))
         {
+            await OutboxClaims.LockIssueAsync(transaction, claim.GitHubIssueId, cancellationToken);
             if (!await OutboxClaims.FailAsync(transaction, claim, lastResult, error, now, cancellationToken))
             {
                 Stale(false, claim);
