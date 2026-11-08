@@ -101,7 +101,7 @@ CREATE TABLE github_outbox (
     sent_at           timestamptz,
     failed_at         timestamptz,
     github_comment_id bigint,
-    last_result       text CHECK (last_result IN ('sending', 'ok', 'retry', 'ambiguous', 'failed', 'skipped: issue closed')),
+    last_result       text CHECK (last_result IN ('sending', 'ok', 'retry', 'ambiguous', 'failed', 'skipped: issue closed', 'skipped: item reopened')),
     last_error        text,
     created_at        timestamptz NOT NULL
 );
