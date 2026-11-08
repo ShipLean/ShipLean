@@ -106,6 +106,8 @@ const P2 = {
   globe: '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.6 2.5 14.4 0 17M12 3.5c-2.5 2.6-2.5 14.4 0 17"/>',
   phone: '<rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 18h2"/>',
   refresh: '<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/>',
+  gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
+  ext: '<path d="M14 4h6v6M20 4l-9 9M18 14v5H5V6h5"/>',
 };
 const ic = (name, cls = '') => P2[name] ? `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${P2[name]}</svg>` : icon(name, cls);
 
@@ -195,16 +197,16 @@ App.screen({ title: 'Projects', states: [
   { id: 'switched', title: 'Switched', note: 'Same tab in the new project. The toast offers the way back.',
     render: () => backlog('PAY', { inbox: 2, overlay: toast('Now in Payments (PAY)', { bottom: 106, action: 'Back to SHIP' }) }) },
 
-  { id: 'account', title: 'Account', note: 'From the avatar on Projects: who and where you are signed in, Voice settings, Sign out.',
+  { id: 'account', title: 'Account', note: 'From the avatar on Projects: who you are, Settings (settings.html), the server, your profile on the web, Sign out.',
     render: () => frame({ top: projectsBar(), body: projectList({ current: 'SHIP' }), bottom: projectsDock(),
       overlay: `<div class="scrim"></div><div class="sheet"><div class="grab"></div>
         <div class="acct-head">${avatar('JD')}<div><b>Joel Dickson</b><span>virtualjoel@gmail.com</span></div></div>
+        <div class="kv"><div class="r">${ic('gear', 'sm')}<span class="k">Settings</span><span class="v">Voice, notifications, more</span>${icon('chevron', 'sm')}</div></div>
         <div class="kv"><div class="r">${ic('globe', 'sm')}<span class="k">Server</span><span class="v">prod.shiplean.app</span></div>
           <div class="r">${ic('spark', 'sm')}<span class="k">Server version</span><span class="v">ShipLean 1.9</span></div>
-          <div class="r">${ic('phone', 'sm')}<span class="k">This phone</span><span class="v">Galaxy S24 Ultra</span></div></div>
-        <div class="kv"><div class="r">${icon('mic', 'sm')}<span class="k">Voice</span><span class="v">Ready · Qwen3 4B</span>${icon('chevron', 'sm')}</div></div>
+          <div class="r">${icon('user', 'sm')}<span class="k">Profile, password and devices</span><span class="v">On the web</span>${ic('ext', 'sm')}</div></div>
         <button class="btn danger block">${ic('logout', 'sm')}Sign out</button>
-        <div class="foot">ShipLean for Android 1.0.0 (12) · Your server and email stay filled in</div></div>` }) },
+        <div class="foot">ShipLean for Android 1.0.0 (12)</div></div>` }) },
 
   { id: 'removed', title: 'Removed from a project', note: 'Launch reopens the last project; if you lost access, you land on Projects with the reason.',
     render: () => frame({ top: projectsBar(),

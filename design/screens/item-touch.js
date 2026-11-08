@@ -108,7 +108,7 @@
     else if (root.dataset.sheet === 'field') delete root.dataset.sheet;
     if (m && !m.querySelector('.sheet-head')) {
       const opener = $('[aria-expanded="true"]');
-      const name = opener?.closest('.fcell')?.querySelector('.lbl')?.textContent || 'Choose';
+      const name = opener?.closest('.fcell')?.querySelector('.lbl')?.textContent || opener?.dataset.sheetTitle || 'Choose';
       m.insertAdjacentHTML('afterbegin', `<header class="sheet-head m-only"><b>${name}</b><button class="btn ghost" type="button" data-sheet-done>Done</button></header>`);
       m.querySelector('[data-sheet-done]').addEventListener('click', e => { e.stopPropagation(); document.body.click(); });
     }
