@@ -120,14 +120,33 @@ public sealed class GitHubIssuesClient(IHttpClientFactory clients, IIntegrationS
         return sent.Result is GitHubWriteResult.Ok ? new GitHubWriteResult.Ok(null) : sent.Result;
     }
 
+    // A GET of `rest` under the repository of `repository` (its Number is ignored), for reads outside the issue itself (the image
+    // publications lookup). Ok comes with the body parsed as T, or a null body when it is over maxBody or not T's JSON; any other
+    // result has none. Statuses map as for every other request (a 404 is Failed("404")).
+    public async Task<(GitHubWriteResult Result, T? Body)> GetRepositoryAsync<T>(IssueRef repository, string rest, int maxBody, CancellationToken cancellationToken = default)
+        where T : class
+    {
+        var sent = await SendAsync(HttpMethod.Get, $"{RepositoryPath(repository)}/{rest}", null, cancellationToken);
+        if (sent.Result is not GitHubWriteResult.Ok)
+        {
+            return (sent.Result, null);
+        }
+
+        using var response = sent.Response!;
+        return (sent.Result, await ReadAsync<T>(response.Content, maxBody, cancellationToken));
+    }
+
     private static string IssuePath(IssueRef issue, string rest)
+        => $"{RepositoryPath(issue)}/issues/{issue.Number.ToString(CultureInfo.InvariantCulture)}{rest}";
+
+    private static string RepositoryPath(IssueRef issue)
     {
         if (issue.Host != IssueRef.GitHubHost || issue.Repository.Split('/') is not [var owner, var name] || owner.Length == 0 || name.Length == 0)
         {
             throw new ArgumentException($"Not a github.com issue: {issue}.", nameof(issue));
         }
 
-        return $"repos/{Uri.EscapeDataString(owner)}/{Uri.EscapeDataString(name)}/issues/{issue.Number.ToString(CultureInfo.InvariantCulture)}{rest}";
+        return $"repos/{Uri.EscapeDataString(owner)}/{Uri.EscapeDataString(name)}";
     }
 
     // Sends one request. Result Ok comes with the (undisposed) response; any other result has none.

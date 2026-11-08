@@ -16,7 +16,5 @@ public sealed class GitHubWriteServices : IServiceModule
         services.AddScoped<IGitHubIssues>(sp => sp.GetRequiredService<GitHubIssuesClient>());
         services.AddSingleton<IGitHubIdentity, GitHubIdentity>();
         services.AddSingleton<IGitHubOutbox, DbGitHubOutbox>();
-        // TODO: the real image publications replace this registration and UnknownImagePublications.
-        services.AddSingleton<IImagePublications, UnknownImagePublications>();
     }
 }
