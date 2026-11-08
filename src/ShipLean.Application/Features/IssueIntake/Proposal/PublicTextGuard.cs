@@ -17,6 +17,8 @@ namespace ShipLean.Application.Features.IssueIntake.Proposal;
 // check finds anything, or the input is too big or too deep to read, the result is unsafe and its text is empty.
 // Secret-shaped text (a token, key, JWT, private key header or long random-looking run) in the input or the output makes the
 // whole post unsafe, never redacted; the reason names the kind of secret only, so neither it nor Removed repeats the secret.
+// A token split across lines (a soft or hard break, a <br>, one character per line) still reads whole to a person, so the named
+// patterns also run with all whitespace removed; a run split by / is scored whole unless it is a URL or a path.
 public sealed partial class PublicTextGuard
 {
     public const int MaxLength = 60_000;
@@ -35,9 +37,18 @@ public sealed partial class PublicTextGuard
     // (aB3aB3..., 1.6) stay below it. Word share: long code identifiers score 4.0 to 4.6 bits too, the same as random text, but
     // at least half of their letters and digits sit in words (Base64UrlEncoderV2ServiceTests is 0.68, random text has a
     // median of 0.16), so a run is only random-looking when less than half of it is words.
+    private const int MinSecretRun = 32;
     private const double MinSecretEntropy = 3.8;
     private const double MaxSecretWordShare = 0.5;
 
+    // Joined prose can look like a token body ("ghp_ is the classic prefix" reads ghp_istheclassicprefix...), so a match in the
+    // joined view whose first 32 characters hold three or more words is prose. A token split in halves or one character per
+    // line has at most two.
+    private const int ProseWindow = 32;
+    private const int MinProseWords = 3;
+    private const string PrivateKeyKind = "private key";
+
+    private static readonly char[] TokenPunctuation = ['(', ')', '[', ']', '<', '>', '"', '\'', '`', '.', ',', ';', ':', '!', '?'];
     private static readonly TimeSpan MatchTimeout = TimeSpan.FromSeconds(2);
     private static readonly IdnMapping Idn = new();
 
@@ -47,6 +58,19 @@ public sealed partial class PublicTextGuard
         .UseAutoLinks()
         .UsePreciseSourceLocation()
         .Build();
+
+    private static readonly (Regex Pattern, string Kind)[] NamedSecrets =
+    [
+        (GitHubToken(), "GitHub token"),
+        (AwsAccessKeyId(), "AWS access key id"),
+        (AwsSecretKey(), "AWS secret access key"),
+        (SlackToken(), "Slack token"),
+        (SlackWebhook(), "Slack webhook URL"),
+        (AnthropicKey(), "Anthropic API key"),
+        (SkKey(), "sk- API key"),
+        (JsonWebToken(), "JSON web token"),
+        (PrivateKeyHeader(), PrivateKeyKind),
+    ];
 
     private readonly IReadOnlyList<string> asciiHosts;
     private readonly IReadOnlyList<IPAddress> addresses;
@@ -208,23 +232,112 @@ public sealed partial class PublicTextGuard
         var views = new[] { text, Tag().Replace(text, string.Empty), Markdig.Markdown.ToPlainText(text, GitHubLike) }
             .Select(v => Normalise(v, "*~"))
             .ToList();
-        (Regex Pattern, string Kind)[] patterns =
-        [
-            (GitHubToken(), "GitHub token"),
-            (AwsAccessKeyId(), "AWS access key id"),
-            (AwsSecretKey(), "AWS secret access key"),
-            (SlackToken(), "Slack token"),
-            (SlackWebhook(), "Slack webhook URL"),
-            (AnthropicKey(), "Anthropic API key"),
-            (SkKey(), "sk- API key"),
-            (JsonWebToken(), "JSON web token"),
-            (PrivateKeyHeader(), "private key"),
-        ];
 
-        // The named kinds first, in every view, so the reason names a token rather than its random-looking body.
-        var kind = patterns.FirstOrDefault(p => views.Any(p.Pattern.IsMatch)).Kind
-            ?? (views.Any(v => SecretRun().Matches(v).Any(m => LooksRandom(m.Value))) ? "high-entropy string" : null);
+        // The named kinds first, in every view and then joined, so the reason names a token rather than its random-looking body.
+        var kind = NamedSecrets.FirstOrDefault(p => views.Any(p.Pattern.IsMatch)).Kind
+            ?? views.Select(JoinedSecret).FirstOrDefault(k => k is not null)
+            ?? (views.Any(HasRandomRun) ? "high-entropy string" : null);
         return kind is null ? null : $"secret-shaped text: {kind}";
+    }
+
+    // The named patterns on a view with its spaces removed (Normalise has already made every line break one space), so a token
+    // split by a soft or hard break, a <br> or one character per line reads whole again. Never the entropy check: joined prose
+    // looks random. A match that starts with prose doesn't count, except a private key header, whose words are part of it.
+    private static string? JoinedSecret(string view)
+    {
+        var at = new List<int>(view.Length);
+        var joined = new StringBuilder(view.Length);
+        for (var i = 0; i < view.Length; i++)
+        {
+            if (view[i] != ' ')
+            {
+                at.Add(i);
+                joined.Append(view[i]);
+            }
+        }
+
+        var text = joined.ToString();
+        foreach (var (pattern, kind) in NamedSecrets)
+        {
+            var found = pattern.Matches(text).Any(m =>
+                string.Equals(kind, PrivateKeyKind, StringComparison.Ordinal)
+                || !IsProse(view[at[m.Index]..(at[m.Index + m.Length - 1] + 1)]));
+            if (found)
+            {
+                return kind;
+            }
+        }
+
+        return null;
+    }
+
+    // Three or more words among the pieces that start in the first ProseWindow characters of a joined match.
+    private static bool IsProse(string span)
+    {
+        var words = 0;
+        var read = 0;
+        foreach (var piece in span.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+        {
+            if (read >= ProseWindow)
+            {
+                break;
+            }
+
+            words += ProseWord().IsMatch(piece) ? 1 : 0;
+            read += piece.Length;
+        }
+
+        return words >= MinProseWords;
+    }
+
+    // Each run is scored one /-separated segment at a time, and a run with a / is also scored whole unless it is part of a URL
+    // or a path, so a secret split by a / can't pass as two short segments.
+    private static bool HasRandomRun(string view) =>
+        SecretRun().Matches(view).Any(m =>
+            m.Value.Split('/').Any(s => s.Length >= MinSecretRun && LooksRandom(s))
+            || (m.Value.Contains('/', StringComparison.Ordinal) && !InUrlOrPath(view, m) && LooksRandom(m.Value)));
+
+    // The whitespace-separated token around the run has http:// or https:// before it, starts like a path (/, ./, ../, ~/ or a
+    // drive), or has two or more slashes with every segment a name (a number, up to 3 characters, or at least half words). In
+    // NAME=value the value is the token (SHIPLEAN_AUTH_PROXY_SIGN_OUT_URL=/oauth2/sign_out is a path).
+    private static bool InUrlOrPath(string view, Match run)
+    {
+        var start = view.LastIndexOf(' ', run.Index) + 1;
+        var before = view[start..run.Index];
+        if (before.Contains("http://", StringComparison.OrdinalIgnoreCase) || before.Contains("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        var slash = view.IndexOf('/', run.Index);
+        var equals = view.LastIndexOf('=', slash, slash - start + 1);
+        if (equals >= 0)
+        {
+            start = equals + 1;
+        }
+
+        var end = view.IndexOf(' ', run.Index + run.Length);
+        var token = view[start..(end < 0 ? view.Length : end)].Trim(TokenPunctuation);
+
+        if (PathStart().IsMatch(token))
+        {
+            return true;
+        }
+
+        var segments = token.Split('/');
+        return segments.Length > 2 && segments.All(IsName);
+    }
+
+    private static bool IsName(string segment)
+    {
+        if (!FileName().IsMatch(segment))
+        {
+            return false;
+        }
+
+        var alphanumeric = segment.Count(char.IsAsciiLetterOrDigit);
+        return segment.All(c => !char.IsAsciiLetter(c)) || segment.Length <= 3
+            || Word().Matches(segment).Sum(m => m.Length) >= MaxSecretWordShare * alphanumeric;
     }
 
     // Upper case, lower case and digits mixed, high Shannon entropy, and less than half of it words (see the thresholds).
@@ -552,17 +665,30 @@ public sealed partial class PublicTextGuard
     [GeneratedRegex(@"eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]*", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
     private static partial Regex JsonWebToken();
 
-    // -----BEGIN PRIVATE KEY-----, -----BEGIN RSA PRIVATE KEY-----, -----BEGIN PGP PRIVATE KEY BLOCK----- and the like.
-    [GeneratedRegex(@"-----\s*BEGIN [A-Z0-9 ]*PRIVATE KEY[A-Z ]*-----", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
+    // -----BEGIN PRIVATE KEY-----, -----BEGIN RSA PRIVATE KEY-----, -----BEGIN PGP PRIVATE KEY BLOCK----- and the like, with or
+    // without the spaces (the joined view has none).
+    [GeneratedRegex(@"-----\s*BEGIN[A-Z0-9 ]*PRIVATE ?KEY[A-Z ]*-----", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
     private static partial Regex PrivateKeyHeader();
 
-    // A long run of base64 and base64url characters; / is left out so paths and URLs are judged one segment at a time.
-    [GeneratedRegex("[A-Za-z0-9+=_-]{32,}", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
+    // A long run of base64 and base64url characters, / included (HasRandomRun decides whether to score it whole).
+    [GeneratedRegex("[A-Za-z0-9+/=_-]{32,}", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
     private static partial Regex SecretRun();
 
     // A word inside an identifier: Word, word (PascalCase, camelCase and snake_case parts).
     [GeneratedRegex("[A-Z]?[a-z]{3,}", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
     private static partial Regex Word();
+
+    // A word in joined prose: two or more letters, with at most one trailing punctuation mark.
+    [GeneratedRegex("^[A-Za-z]{2,}[.,;:!?]?$", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
+    private static partial Regex ProseWord();
+
+    // /x, ./x, ../x, ~/x, C:/x or C:\x.
+    [GeneratedRegex(@"^(?:/|\.{1,2}/|~/|[A-Za-z]:[\\/])", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
+    private static partial Regex PathStart();
+
+    // A file or directory name: letters, digits, _, . and -.
+    [GeneratedRegex(@"^[A-Za-z0-9_.-]+$", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
+    private static partial Regex FileName();
 
     private sealed record Edit(int Start, int End, string Replacement, string Kind);
 }

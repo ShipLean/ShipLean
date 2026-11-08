@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 using ShipLean.Application.Features.IssueIntake.Proposal;
 using ShipLean.TestSupport;
 using Shouldly;
@@ -15,7 +16,12 @@ public sealed class PublicTextGuardSecretTests
     private static readonly PublicTextGuard Guard = new(["https://prod.shiplean.app/"], ["Joel Dickson"]);
     private static readonly string Goldens = Path.Combine(RepoPaths.Root, "src", "ShipLean.TestSupport", "IssueIntake", "Proposals");
 
+    // Responses the parser refuses on purpose (IssueProposalParserTests), and the guard's attack sample (PublicTextGuardTests):
+    // none has public Markdown to post.
+    private static readonly string[] NotProposals = ["badJson.md", "injection.md", "noBlock.md", "oversized.md", "twoBlocks.md"];
+
     [TestCaseSource(nameof(Secrets))]
+    [TestCaseSource(nameof(Split))]
     public void Guard_WhenSecret_ShouldFailClosedNamingOnlyTheKind(string secret, string kind)
     {
         var result = Guard.Clean($"Here is the fix.\n\n{secret}\n\nThanks!", Author);
@@ -37,6 +43,17 @@ public sealed class PublicTextGuardSecretTests
         result.Removed.ShouldAllBe(r => !r.Contains(piece));
     }
 
+    // Decided on SHIP-751: long mixed-case base64 is held for a maintainer to look at, even when it is legitimate. It is rare in
+    // a proposal, and a hold only asks someone to read it.
+    [TestCaseSource(nameof(LongBase64))]
+    public void Guard_WhenLongMixedCaseBase64_ShouldHoldItAsHighEntropy(string text)
+    {
+        var result = Guard.Clean(text, Author);
+
+        result.Safe.ShouldBeFalse();
+        result.Removed.ShouldHaveSingleItem().ShouldBe("unsafe: secret-shaped text: high-entropy string");
+    }
+
     [TestCase("Fixed in 3f2b8c1 and 3f2b8c1e9a0d4b7c8e1f2a3b4c5d6e7f8a9b0c1d.")]
     [TestCase("Fixed in 3F2B8C1E9A0D4B7C8E1F2A3B4C5D6E7F8A9B0C1D.")]
     [TestCase("See https://github.com/ShipLean/ShipLean/commit/3f2b8c1e9a0d4b7c8e1f2a3b4c5d6e7f8a9b0c1d now.")]
@@ -51,6 +68,19 @@ public sealed class PublicTextGuardSecretTests
     [TestCase("Branches task-runner-for-github-issue-outbox-delivery-v2 and sk-learn are fine.")]
     [TestCase("Set `aws_secret_access_key` in your own profile. The ghp_ prefix marks a classic token, eyJ starts a JWT.")]
     [TestCase("Paste the -----BEGIN PUBLIC KEY----- or -----BEGIN CERTIFICATE----- block, never a private one.")]
+    [TestCase("The base64 `SGVsbG8gSGVsbG8gSGVsbG8gSGVsbG8gSGVsbG8g` repeats, so it is not random.")]
+    [TestCase("Edit src/ShipLean.Application/Features/IssueIntake/Proposal/PublicTextGuard.cs and ./src/ShipLean.Client/src/Base64V2/QuickSearchDialog.tsx.")]
+    [TestCase("The build log is in /tmp/tmpQ7xK2mZ9/build/Ab3Xk9Qz/out on the runner.")]
+    [TestCase("Set SHIPLEAN_AUTH_PROXY_SIGN_OUT_URL=/oauth2/sign_out on the proxy.")]
+    [TestCase("See https://github.com/ShipLean/ShipLean/blob/3f2b8c1e9a0d4b7c8e1f2a3b4c5d6e7f8a9b0c1d/src/ShipLean.Application/Features/IssueIntake/Proposal/PublicTextGuard.cs#L10-L20 for it.")]
+    [TestCase("Compare https://github.com/ShipLean/ShipLean/compare/main...feat/742-github-issues-Base64UrlV2 first.")]
+    [TestCase("Pull ghcr.io/shiplean/shiplean@sha256:9b2c4e6f8a0b1c3d5e7f9a1b3c5d7e9f0a2b4c6d8e0f1a3b5c7d9e1f3a5b7c9d to roll back.")]
+    [TestCase("Classic tokens start with ghp_ and\nare followed by thirty six random letters and digits; fine-grained ones start with github_pat_ followed by more.")]
+    [TestCase("Slack bot tokens start with xoxb- and the rest is random characters you should never paste here.")]
+    [TestCase("An AWS key id looks like (AKIA THEN SIXTEEN UPPER CASE LETTERS OR DIGITS).")]
+    [TestCase("eyJ starts a JWT. The header comes first. The payload is next. A signature ends it.")]
+    [TestCase("The risk - small as it is - is that a long unbroken line of characters gets held for a maintainer.")]
+    [TestCase("Set aws_secret_access_key = the forty character value from your own IAM console page.")]
     public void Guard_WhenOnlySecretLooking_ShouldKeepIt(string text)
     {
         var result = Guard.Clean(text, Author);
@@ -62,17 +92,45 @@ public sealed class PublicTextGuardSecretTests
     [TestCaseSource(nameof(GoldenNames))]
     public void Guard_WhenGolden_ShouldStaySafe(string name)
     {
-        var response = File.ReadAllText(Path.Combine(Goldens, name));
-        var text = IssueProposalParser.TryParse(response, out _, out var publicMarkdown) ? publicMarkdown : response;
+        var parsed = IssueProposalParser.TryParse(File.ReadAllText(Path.Combine(Goldens, name)), out _, out var publicMarkdown);
 
-        var result = Guard.Clean(text, Author);
+        var result = Guard.Clean(publicMarkdown, Author);
 
+        parsed.ShouldBeTrue();
         result.Safe.ShouldBeTrue(string.Join(" | ", result.Removed));
     }
 
     private static IEnumerable<string> GoldenNames()
     {
-        return Directory.GetFiles(Goldens, "*.md").Select(f => Path.GetFileName(f)).Order(StringComparer.Ordinal);
+        return Directory.GetFiles(Goldens, "*.md").Select(f => Path.GetFileName(f)).Except(NotProposals).Order(StringComparer.Ordinal);
+    }
+
+    // Split where GitHub would show it on successive lines: low-entropy bodies, so only the named pattern can catch them.
+    private static IEnumerable<TestCaseData> Split()
+    {
+        var github = "gh" + "p_" + new string('a', 36);
+        var aws = "AK" + "IA" + Fake(16, 3).ToUpperInvariant();
+        var key = "-----BEGIN RSA " + "PRIVATE" + " KEY-----";
+        (string Secret, string Kind, int Cut)[] secrets = [(github, "GitHub token", 22), (aws, "AWS access key id", 10), (key, "private key", 18)];
+        (string Separator, string Way)[] ways = [("\n", "newline"), ("<br>", "br"), ("<br>\n", "br and newline"), ("  \n", "hard break")];
+        var halves = secrets.SelectMany(s => ways.Select(w =>
+            new TestCaseData(s.Secret[..s.Cut] + w.Separator + s.Secret[s.Cut..], s.Kind)
+                .SetArgDisplayNames(s.Kind + " split by " + w.Way)));
+        var perLine = secrets.Select(s =>
+            new TestCaseData(string.Join('\n', s.Secret.ToCharArray()), s.Kind).SetArgDisplayNames(s.Kind + " one character per line"));
+        return halves.Concat(perLine);
+    }
+
+    private static IEnumerable<TestCaseData> LongBase64()
+    {
+        (string Text, string Way)[] cases =
+        [
+            ("Lockfile: \"integrity\": \"sha512-" + Convert.ToBase64String(Bytes(64, 30)) + "\"", "npm integrity"),
+            ("Logo: ![logo](data:image/png;base64," + Convert.ToBase64String(Bytes(48, 31)) + ")", "data URI"),
+            ("Sample:\n\n```csharp\nvar key = Convert.FromBase64String(\"" + Convert.ToBase64String(Bytes(60, 32)) + "\");\n```\n", "code sample"),
+            ("The header `" + Convert.ToBase64String(Encoding.UTF8.GetBytes("Thanks for the report, here is the fix!")) + "` is base64.", "32+ characters of base64 text"),
+        ];
+        return cases.Select(c => new TestCaseData(c.Text).SetArgDisplayNames(c.Way));
     }
 
     private static IEnumerable<TestCaseData> Secrets()
@@ -97,6 +155,9 @@ public sealed class PublicTextGuardSecretTests
             ("-----BEGIN PGP " + "PRIVATE" + " KEY BLOCK-----", "private key"),
             (Fake(40, 14), "high-entropy string"),
             (Fake(20, 15) + "+" + Fake(19, 16) + "=", "high-entropy string"),
+            (Fake(20, 17) + "/" + Fake(20, 18), "high-entropy string"),
+            (Fake(14, 19) + "/" + Fake(13, 21) + "/" + Fake(13, 22), "high-entropy string"),
+            ("https://api.example.org/v1/items?key=" + Fake(40, 23), "high-entropy string"),
         ];
         return github.Concat(keys).Concat(others)
             .Select((s, i) => new TestCaseData(s.Item1, s.Item2).SetArgDisplayNames(i.ToString(CultureInfo.InvariantCulture) + ": " + s.Item2));
@@ -126,6 +187,20 @@ public sealed class PublicTextGuardSecretTests
             ("Fix:\n\n```\nexport GH_TOKEN=" + token + "\n```\n", "code block"),
         ];
         return cases.Select(c => new TestCaseData(c.Text, token).SetArgDisplayNames(c.Way));
+    }
+
+    // Fixed, random-looking bytes from the same generator.
+    private static byte[] Bytes(int length, int seed)
+    {
+        var state = (uint)seed * 2_654_435_761u;
+        var bytes = new byte[length];
+        for (var i = 0; i < length; i++)
+        {
+            state = (state * 1_664_525u) + 1_013_904_223u;
+            bytes[i] = (byte)(state >> 16);
+        }
+
+        return bytes;
     }
 
     // A fixed, random-looking base62 string (a linear congruential generator), so no secret-shaped literal is committed.
