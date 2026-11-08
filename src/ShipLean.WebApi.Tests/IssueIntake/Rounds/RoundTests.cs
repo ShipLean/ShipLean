@@ -202,7 +202,7 @@ public class RoundTests : ApiFixture
         var match = await AddMatchAsync(arranged, "Archive old retrospectives");
         await using var database = await OpenDatabaseAsync();
         await database.ExecuteAsync(
-            "UPDATE work_item SET description = 'private-match-description-sentinel', assignee_id = @joel WHERE id = @Id", new { match.Id, joel = SeedIds.Users.Joel });
+            "UPDATE work_item SET description = 'private-match-description-sentinel', assigned_to = @joel WHERE id = @Id", new { match.Id, joel = SeedIds.Users.Joel });
         using (var posted = await Api.PostJsonAsync($"api/work-items/{match.Id}/comments", new { body = "private-match-comment-sentinel" }))
         {
             posted.EnsureSuccessStatusCode();
