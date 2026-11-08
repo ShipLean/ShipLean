@@ -16,30 +16,25 @@ namespace ShipLean.WebApi.Tests.Storage.Inventory;
 [TestFixture]
 public class S3BlobInventoryContractTests : BlobInventoryContract
 {
-    private readonly List<IDisposable> _owned = [];
+    private S3BlobStore _store = null!;
+    private S3BlobInventory _inventory = null!;
+
+    [SetUp]
+    public async Task CreateBucket()
+    {
+        var connection = await S3Server.NewBucketAsync();
+        _store = new S3BlobStore(connection);
+        _inventory = new S3BlobInventory(connection);
+    }
 
     [TearDown]
     public void DisposeClients()
     {
-        foreach (var owned in _owned)
-        {
-            owned.Dispose();
-        }
-
-        _owned.Clear();
+        _store.Dispose();
+        _inventory.Dispose();
     }
 
-    protected override (IBlobStore Store, IBlobInventory Inventory) Create() => Create("");
-
-    private (IBlobStore Store, IBlobInventory Inventory) Create(string prefix)
-    {
-        var connection = S3Server.NewBucketAsync(prefix).GetAwaiter().GetResult();
-        var store = new S3BlobStore(connection);
-        var inventory = new S3BlobInventory(connection);
-        _owned.Add(store);
-        _owned.Add(inventory);
-        return (store, inventory);
-    }
+    protected override (IBlobStore Store, IBlobInventory Inventory) Create() => (_store, _inventory);
 
     [Test]
     public async Task ListKeys_WhenPrefixConfigured_ShouldStripIt()

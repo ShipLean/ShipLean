@@ -12,36 +12,27 @@ namespace ShipLean.WebApi.Tests.Storage.Inventory;
 [TestFixture]
 public class PostgresBlobInventoryContractTests : BlobInventoryContract
 {
-    private readonly List<FreshDatabase> _databases = [];
-    private readonly List<IAsyncDisposable> _owned = [];
+    private FreshDatabase _database = null!;
+    private PostgresBlobStore _store = null!;
+    private PostgresBlobInventory _inventory = null!;
+
+    [SetUp]
+    public async Task CreateDatabase()
+    {
+        _database = await FreshDatabase.CreateAsync(includeSeed: false);
+        var pinned = DatabaseServices.PinUtc(_database.ConnectionString);
+        PostgresBlobStore.ApplySchema(pinned);
+        _store = new PostgresBlobStore(pinned);
+        _inventory = new PostgresBlobInventory(pinned);
+    }
 
     [TearDown]
-    public async Task DropDatabases()
+    public async Task DropDatabase()
     {
-        foreach (var owned in _owned)
-        {
-            await owned.DisposeAsync();
-        }
-
-        foreach (var database in _databases)
-        {
-            await database.DisposeAsync();
-        }
-
-        _owned.Clear();
-        _databases.Clear();
+        await _inventory.DisposeAsync();
+        await _store.DisposeAsync();
+        await _database.DisposeAsync();
     }
 
-    protected override (IBlobStore Store, IBlobInventory Inventory) Create()
-    {
-        var database = FreshDatabase.CreateAsync(includeSeed: false).GetAwaiter().GetResult();
-        _databases.Add(database);
-        var pinned = DatabaseServices.PinUtc(database.ConnectionString);
-        PostgresBlobStore.ApplySchema(pinned);
-        var store = new PostgresBlobStore(pinned);
-        var inventory = new PostgresBlobInventory(pinned);
-        _owned.Add(store);
-        _owned.Add(inventory);
-        return (store, inventory);
-    }
+    protected override (IBlobStore Store, IBlobInventory Inventory) Create() => (_store, _inventory);
 }

@@ -13,9 +13,9 @@ public sealed class PostgresBlobInventory(string connectionString) : IBlobInvent
     public async IAsyncEnumerable<string> ListKeysAsync([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
     {
         await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken);
-        var command = new CommandDefinition("SELECT key FROM blob", cancellationToken: cancellationToken);
-        await foreach (var key in connection.QueryUnbufferedAsync<string>(command).WithCancellation(cancellationToken))
+        await foreach (var key in connection.QueryUnbufferedAsync<string>("SELECT key FROM blob"))
         {
+            cancellationToken.ThrowIfCancellationRequested();
             yield return key;
         }
     }

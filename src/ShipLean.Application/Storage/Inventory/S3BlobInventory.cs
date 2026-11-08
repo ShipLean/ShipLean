@@ -26,12 +26,9 @@ public sealed class S3BlobInventory : IBlobInventory, IDisposable
         do
         {
             page = await _client.ListObjectsV2Async(request, cancellationToken);
-            foreach (var item in page.S3Objects ?? [])
+            foreach (var item in (page.S3Objects ?? []).Where(item => !item.Key.EndsWith(BlobKey.TempSuffix, StringComparison.Ordinal)))
             {
-                if (!item.Key.EndsWith(BlobKey.TempSuffix, StringComparison.Ordinal))
-                {
-                    yield return item.Key[_connection.Prefix.Length..];
-                }
+                yield return item.Key[_connection.Prefix.Length..];
             }
 
             request.ContinuationToken = page.NextContinuationToken;
