@@ -24,7 +24,7 @@ Get someone from a fresh install to a working app with voice switched on, withou
 - **Mobile data**: when Wi-Fi drops, the banner switches to "Voice download paused · waiting for Wi-Fi" and a sheet asks "Continue on mobile data?", showing how much is left (1.1 GB). The choices are **Wait for Wi-Fi** (primary) or **Use mobile data for this download**.
 - **Not enough space**: the download stops and says how much more it needs and how much is free, and keeps what it has. It offers **Try again**, **Open phone storage**, or switching to Qwen3 1.7B, which fits once the partial 4B download is removed. The same page shows a resolved checksum retry on the Parakeet row: "The first copy didn't match its checksum, so it was downloaded again."
 - **Voice is ready**: shown once. A coach mark points at the mic: "Try it: hold the button and say 'What needs me?'", with Skip.
-- **First command answered**: the answer sheet, in the same look as work-item `ask`, lists the four items waiting on you with their counts (10 decisions, 3 questions). It says nothing was changed and suggests what to try next ("open an item and try 'add a note: …'"). Open Inbox or Done.
+- **First command answered**: the answer sheet, in the same look as work-item `ask`, lists the six items waiting on you with their counts (10 decisions, 3 questions, a mention, a status line to check), in the Inbox's order. It says nothing was changed and suggests what to try next ("open an item and try 'add a note: …'"). Open Inbox or Done.
 - **Settings › Voice** (Account › Settings › Voice, settings.md D1–D3; the Settings screen and the rest of its pages are in `settings.html`):
   - status ("Voice is ready · Galaxy S24 Ultra · 12 GB memory");
   - **Models**: Command model (Auto · Qwen3 4B, opens the picker), Speech to text (fixed), and a greyed **Try other models**, marked *Later*;
@@ -48,7 +48,7 @@ Get someone from a fresh install to a working app with voice switched on, withou
 | `mobile-data` | Wi-Fi lost: paused banner, and a sheet asking before 1.1 GB on mobile data. |
 | `no-space` | Stopped at 74%: needs 0.8 GB more with 0.3 GB free; a checksum retry on Parakeet that succeeded. |
 | `ready` | Coach mark at the mic: "hold the button and say 'What needs me?'". |
-| `first-result` | The answer: 4 items, 10 decisions and 3 questions; nothing changed; what to try next. |
+| `first-result` | The answer: 6 items (10 decisions, 3 questions, a mention, a status line to check) in the Inbox's order; nothing changed; what to try next. |
 | `settings` | Settings › Voice: models, Try other models (Later), Wi-Fi only, storage, Delete models, Microphone, licences. |
 | `change-model` | Switching Auto (4B) to 1.7B: 1.1 GB download, 4B kept until the new model is checked. |
 | `skipped` | Voice skipped: a "Voice is off · Set up" banner; the mic labelled Set up voice. |

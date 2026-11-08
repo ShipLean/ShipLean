@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=390">
+<link rel="stylesheet" href="app.css"><script src="app.js"></script>
+<style>
+/* Page-local components (kit candidates, see inbox.md). */
+
+/* Inbox row: one work item and what waits on you there */
+.irow { padding: 12px var(--app-gutter) 14px; border-bottom: 1px solid var(--color-border); background: var(--color-surface); position: relative; }
+.irow:last-child { border-bottom: 0; }
+.irow.flash { background: var(--voice-soft); }
+.irow .l1 { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: var(--app-text-sm); }
+.irow .l1 > * { min-width: 0; flex: none; }
+.irow .l1 .ttl { flex: 1 1 auto; font-weight: 600; color: var(--color-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.irow .age { color: var(--color-muted); font-size: var(--app-text-xs); white-space: nowrap; }
+.irow .age.old { color: var(--color-warn); font-weight: 600; }
+.irow .in { margin: 2px 0 0 24px; font-size: var(--app-text-xs); color: var(--color-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.irow.child { padding-left: 32px; }
+.irow.child::before { content: ""; position: absolute; left: 22px; top: 0; bottom: 50%; width: 1px; background: var(--color-border); }
+.kindl { display: flex; align-items: center; gap: 6px; margin-top: 10px; font-size: var(--app-text-xs); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ask); }
+.kindl .muted { font-weight: 500; letter-spacing: 0; text-transform: none; }
+.irow .q { margin-top: 4px; font-size: var(--app-text); line-height: 1.35; overflow-wrap: anywhere; }
+.irow .rec { margin-top: 4px; font-size: var(--app-text-sm); color: var(--color-muted); overflow-wrap: anywhere; }
+.irow .rec b { color: var(--color-text); font-weight: 500; }
+.irow .from { margin-top: 6px; font-size: var(--app-text-sm); color: var(--color-muted); display: flex; align-items: center; gap: 6px; min-width: 0; }
+.irow .from .blk { color: var(--color-text); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.irow .opts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.irow .opts .btn { padding: 0 12px; }
+.irow .moreasks { display: flex; align-items: center; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--color-border); font-size: var(--app-text-sm); color: var(--color-accent); font-weight: 500; }
+.irow .moreasks .grow { flex: 1; }
+.irow .sub { margin-top: 12px; padding-top: 2px; border-top: 1px dashed var(--color-border); }
+.queued { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 14px; background: var(--color-surface-2); color: var(--color-muted); font-size: var(--app-text-sm); font-weight: 500; margin-top: 10px; }
+.decided { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--color-border); font-size: var(--app-text-sm); color: var(--color-muted); }
+.decided .ic { color: var(--color-ok); display: grid; }
+.decided b { color: var(--color-text); font-weight: 600; }
+
+
+/* A summary card with a chevron (empty state) */
+.go-thru { display: flex; align-items: center; gap: 12px; margin: 12px var(--app-gutter); padding: 10px 12px; border-radius: 14px; background: var(--color-surface); border: 1px solid var(--color-border); }
+.go-thru .pl { width: 36px; height: 36px; border-radius: 50%; background: var(--voice-soft); color: var(--voice); display: grid; place-items: center; flex: none; }
+.go-thru .grow { flex: 1; min-width: 0; font-size: var(--app-text-sm); color: var(--color-muted); }
+.go-thru .grow b { display: block; color: var(--color-text); font-size: var(--app-text); font-weight: 600; }
+
+/* One-time tip after arriving from setup's "Open Inbox" */
+.tipcard { margin: 12px var(--app-gutter) 0; padding: 12px 14px; border-radius: 14px; background: var(--voice-soft); font-size: var(--app-text-sm); }
+.tipcard b { display: block; font-size: var(--app-text); font-weight: 600; margin-bottom: 2px; }
+.tipcard .say { color: var(--voice); font-weight: 600; }
+.tipcard .row-b { display: flex; justify-content: flex-end; margin-top: 6px; }
+
+/* Answered: what you answered, and what happened next */
+.arow2 { padding: 12px var(--app-gutter); border-bottom: 1px solid var(--color-border); background: var(--color-surface); }
+.arow2:last-child { border-bottom: 0; }
+.arow2 .l1 { display: flex; align-items: center; gap: 6px; font-size: var(--app-text-sm); min-width: 0; }
+.arow2 .l1 .ttl { flex: 1; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.arow2 .said { margin-top: 4px; font-size: var(--app-text); overflow-wrap: anywhere; }
+.arow2 .said .who { color: var(--color-muted); font-size: var(--app-text-sm); display: block; }
+.arow2 .next { margin-top: 6px; display: flex; align-items: center; gap: 6px; font-size: var(--app-text-sm); color: var(--color-muted); }
+.arow2 .next.ok { color: var(--color-ok); font-weight: 500; }
+.arow2 .next .i { flex: none; }
+
+/* Sheets: reply, and reviewing a batch of decisions */
+.reply .qcard { margin: 10px 0 12px; padding: 12px; border-radius: 12px; background: var(--ask-soft); }
+.reply .qcard .from { display: flex; align-items: center; gap: 6px; font-size: var(--app-text-sm); color: var(--color-muted); }
+.reply .qcard .q { margin-top: 6px; font-size: var(--app-text); font-weight: 500; line-height: 1.35; }
+.reply .lbl { font-size: var(--app-text-xs); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--color-muted); margin: 0 0 6px; }
+.reply .quick { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.reply .where { display: flex; gap: 8px; font-size: var(--app-text-sm); color: var(--color-muted); margin-bottom: 14px; }
+.reply .where .i { flex: none; margin-top: 1px; }
+.reply .bar2 { display: flex; align-items: center; gap: 10px; }
+.reply .bar2 .type-field { flex: 1; height: var(--app-touch); border-radius: 22px; background: var(--color-surface-2); color: var(--color-muted); display: flex; align-items: center; padding: 0 16px; }
+.reply .bar2 .mic { position: static; transform: none; width: 52px; height: 52px; box-shadow: none; }
+.reply .bar2 .mic.live { box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-danger) 22%, transparent), 0 0 0 14px color-mix(in srgb, var(--color-danger) 10%, transparent); }
+.reply .transcript { min-height: 0; margin: 4px 0 6px; }
+.reply .wave { height: 30px; margin: 4px 0 10px; }
+
+.sheet.tall { top: 56px; display: flex; flex-direction: column; padding-bottom: 0; }
+.sheet.tall .sc { flex: 1; min-height: 0; overflow-y: auto; margin: 0 calc(-1 * var(--app-gutter)); padding: 0 var(--app-gutter); scrollbar-width: none; }
+.sheet.tall .foot { flex: none; padding: 12px 0 calc(var(--app-home) + 8px); border-top: 1px solid var(--color-border); margin: 0 calc(-1 * var(--app-gutter)); padding-left: var(--app-gutter); padding-right: var(--app-gutter); background: var(--color-surface); }
+.sheet.tall .foot .go { display: flex; gap: 10px; } .sheet.tall .foot .go .btn { flex: 1; }
+.sheet .lead2 { font-size: var(--app-text-sm); color: var(--color-muted); margin: 2px 0 12px; }
+.decs { border: 1px solid var(--color-border); border-radius: 14px; overflow: hidden; margin-bottom: 12px; }
+.dec { padding: 11px 12px; border-bottom: 1px solid var(--color-border); }
+.dec:last-child { border-bottom: 0; }
+.dec .h { display: flex; align-items: baseline; gap: 8px; }
+.dec .h .id { font-size: var(--app-text-sm); font-weight: 700; color: var(--color-muted); width: 24px; flex: none; }
+.dec .h .t { flex: 1; min-width: 0; font-size: var(--app-text); font-weight: 500; line-height: 1.3; }
+.dec .pick { margin: 4px 0 0 32px; display: flex; align-items: center; gap: 6px; font-size: var(--app-text-sm); color: var(--color-muted); }
+.dec .pick b { color: var(--color-text); font-weight: 500; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.dec .pick .chg { color: var(--color-accent); font-weight: 500; flex: none; }
+.dec .radios { margin: 8px 0 0 32px; display: grid; gap: 6px; }
+.radio { display: flex; gap: 10px; align-items: flex-start; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--color-border); font-size: var(--app-text-sm); }
+.radio .rd { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--color-border); flex: none; margin-top: 1px; }
+.radio.on { border-color: var(--color-accent); background: var(--voice-soft); }
+.radio.on .rd { border: 5px solid var(--color-accent); }
+.radio small { display: block; font-size: 11px; font-weight: 600; color: var(--color-muted); text-transform: uppercase; letter-spacing: .04em; }
+.radio span { min-width: 0; overflow-wrap: anywhere; }
+.dec .h .tag { font-size: 11px; font-weight: 600; color: var(--color-warn); flex: none; }
+.note2 { display: flex; gap: 8px; font-size: var(--app-text-sm); color: var(--color-muted); margin: 0 0 14px; }
+.note2 .i { flex: none; margin-top: 1px; }
+
+/* Loading skeleton */
+.sk { background: var(--color-surface-2); border-radius: 6px; height: 12px; }
+.skrow { padding: 14px var(--app-gutter) 16px; border-bottom: 1px solid var(--color-border); background: var(--color-surface); }
+.skrow .r1 { display: flex; gap: 8px; align-items: center; }
+.skrow .r1 .sq { width: 18px; height: 18px; border-radius: 5px; }
+.skrow .btns { display: flex; gap: 8px; margin-top: 14px; } .skrow .btns .sk { height: 36px; border-radius: 10px; }
+.updating { height: 3px; background: var(--color-surface-2); position: relative; overflow: hidden; }
+.updating i { position: absolute; left: 18%; width: 34%; top: 0; bottom: 0; background: var(--voice); border-radius: 2px; }
+.seg.dis button { color: var(--color-muted); opacity: .6; }
+
+/* Empty */
+.empty { text-align: center; padding: 44px 32px 12px; }
+.empty .art { width: 104px; height: 104px; margin: 0 auto 16px; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--color-ok) 12%, transparent); color: var(--color-ok); }
+.empty .art.neutral { background: var(--color-surface-2); color: var(--color-muted); }
+.empty .art svg { width: 52px; height: 52px; stroke-width: 1.6; }
+.empty h2 { margin: 0 0 6px; font-size: var(--app-text-lg); font-weight: 600; }
+.empty p { margin: 0 auto; max-width: 300px; color: var(--color-muted); font-size: var(--app-text); }
+.empty .try { justify-content: center; margin-top: 16px; }
+.kinds { margin: 18px var(--app-gutter) 0; display: grid; gap: 0; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; overflow: hidden; text-align: left; }
+.kinds > div { display: flex; gap: 12px; padding: 12px; border-bottom: 1px solid var(--color-border); }
+.kinds > div:last-child { border-bottom: 0; }
+.kinds .ic { width: 32px; height: 32px; border-radius: 9px; background: var(--ask-soft); color: var(--ask); display: grid; place-items: center; flex: none; }
+.kinds .ic.v { background: var(--voice-soft); color: var(--voice); }
+.kinds b { display: block; font-size: var(--app-text); font-weight: 600; }
+.kinds span { font-size: var(--app-text-sm); color: var(--color-muted); }
+.today { margin: 18px var(--app-gutter) 0; }
+
+/* Offline banner */
+.banner.off { background: var(--ask-soft); border-color: transparent; align-items: flex-start; }
+.banner.off b { display: block; font-size: var(--app-text); font-weight: 600; }
+
+</style></head>
+<body><div id="app"></div><script>
+const { frame, topBar, iconBtn, tabBar, type, avatar, listening, preview, toast, icon, bars } = App;
+const svg = (d, cls = '') => `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
+const cloudOff = svg('<path d="M3 3l18 18"/><path d="M8.5 6.6A6 6 0 0 1 17.7 10H18a4 4 0 0 1 2.3 7.3M16 18H7a4.5 4.5 0 0 1-1.4-8.8"/>');
+const hot = (s) => `<span class="hot">${s}</span>`;
+
+// ── Data: what waits on Joel in SHIP on Mon 9 Nov, 9:41. The same 6 items setup's “What needs me?” answer lists, 15 asks:
+// 10 decisions (8 on SHIP-907, 2 on SHIP-906), 3 questions (SHIP-892, SHIP-924, SHIP-906), a mention (SHIP-742) and a status check (SHIP-743).
+const CC = avatar('AI', { agent: true, sm: true });
+const PR = avatar('PR', { sm: true, color: '#b4527a' });
+const SA = avatar('SA', { sm: true, color: '#2f7d6b' });
+const D907 = [
+  { id: 'D1', t: 'How people sign in on the phone', rec: 'Browser handoff, so Google sign-in works', alt: 'An email and password form in the app' },
+  { id: 'D2', t: 'Where the app code lives', rec: 'This repo, under src/, one workspace', alt: 'A repo of its own' },
+  { id: 'D3', t: 'Client code shared with the web', rec: 'A @shiplean/core package used by both', alt: 'Copy what the app needs' },
+  { id: 'D4', t: 'How a phone stays signed in', rec: 'A device session per phone, signed out from Account', alt: 'Reuse the web’s cookie' },
+  { id: 'D5', t: 'App framework', rec: 'Expo with development builds', alt: 'Bare React Native' },
+  { id: 'D6', t: 'Where the app’s colours come from', rec: 'Generated from tokens.css', alt: 'A theme written for the app' },
+  { id: 'D7', t: 'Screens in the first build', rec: 'Sign in, Projects, Account', alt: 'Sign in and Inbox' },
+  { id: 'D8', t: 'Tests in CI', rec: 'Unit tests and one smoke flow per platform', alt: 'Unit tests only' },
+];
+const Q906 = 'The S22 takes 6.1 s once warm, over the 5 s target. Ship 1.7B as it is, or try FunctionGemma 270M on the S22 first?';
+const Q924 = 'The iPhone build needs an Apple developer team. Use your personal team for now, or wait for the ShipLean org account?';
+const Q892 = 'Q7: what size cap for demo videos? 20 MB keeps attachments light; 50 MB fits a two-minute screen recording.';
+const REPLY924 = 'Use my personal team for now, I’ll move it to the org once Apple approves the account';
+const REPLY892 = '50 MB, and trim anything longer than two minutes';
+
+const KIND = { dec: ['check', 'Decision'], q: ['message', 'Needs input'], at: ['user', 'Mentioned you'], st: ['clock', 'Status line to check'] };
+const kindl = (k, extra = '') => `<div class="kindl">${icon(KIND[k][0], 'sm')}${KIND[k][1]}${extra ? ` <span class="muted">${extra}</span>` : ''}</div>`;
+const head = (t, key, title, age, { old = false } = {}) => `<div class="l1">${type(t)}<span class="key">${key}</span><span class="ttl">${title}</span><span class="age${old ? ' old' : ''}">${age}</span></div>`;
+
+// Rows, longest waiting first (D2); a Story's row stays under its Feature's row (D3), the pair placed by its oldest ask.
+const row743 = () => `<div class="irow">${head('feature', 'SHIP-743', 'Nightly backups', '4d', { old: true })}
+  ${kindl('st', '· you own this')}<div class="q">“Blocked: the host has no pg_dump 18 and no Docker.”</div>
+  <div class="from">${SA}Sam wrote it<span class="sep"></span><span class="blk">4 days ago</span></div>
+  <div class="opts"><button class="btn sm">${icon('check', 'sm')}Still true</button><button class="btn sm">${icon('mic', 'sm')}New status</button></div></div>`;
+const row742 = () => `<div class="irow">${head('feature', 'SHIP-742', 'GitHub issues sync', '14h')}
+  ${kindl('at', '· in a note')}<div class="q">“@Joel lane C needs the GitHub app installed on the org before Thursday’s import test.”</div>
+  <div class="from">${PR}Priya</div>
+  <div class="opts"><button class="btn sm">${icon('mic', 'sm')}Reply</button><button class="btn sm">${icon('check', 'sm')}Seen</button></div></div>`;
+const row907 = ({ flash = false } = {}) => `<div class="irow${flash ? ' flash' : ''}">${head('feature', 'SHIP-907', 'Mobile app foundations', '1d')}
+  <div class="kindl">${icon('check', 'sm')}8 decisions <span class="muted">· D1–D8</span></div>
+  <div class="q">Sign in through a browser handoff, a shared core package, device sessions, and 5 more.</div>
+  <div class="from">${CC}Claude Code<span class="sep"></span><span class="blk">SHIP-906 waits on this</span></div>
+  <div class="opts"><button class="btn sm">Review all 8</button><button class="btn sm primary">${icon('check', 'sm')}Approve all 8</button></div></div>`;
+const row924 = ({ queued = false } = {}) => `<div class="irow child">${head('story', 'SHIP-924', 'Development build on both test phones', '5h')}
+  ${kindl('q')}<div class="q">${Q924}</div>
+  <div class="from">${CC}Claude Code</div>
+  ${queued ? `<span class="queued">${icon('clock', 'sm')}“Personal team” sends when you’re online</span>` : `<div class="opts"><button class="btn sm">Personal team</button><button class="btn sm">Wait for org</button><button class="btn sm">${icon('mic', 'sm')}Reply</button></div>`}</div>`;
+const row906 = ({ open = false, d10 = 'ask' } = {}) => `<div class="irow">${head('feature', 'SHIP-906', 'Voice commands', '2h')}
+  ${kindl('q')}<div class="q">${Q906}</div>
+  <div class="from">${CC}Claude Code</div>
+  <div class="opts"><button class="btn sm">${icon('mic', 'sm')}Reply</button></div>
+  ${open ? `${d10 === 'ask' ? `<div class="sub">${kindl('dec', '· D10')}<div class="q">Download the models on Wi-Fi only, and ask before using mobile data?</div>
+      <div class="opts"><button class="btn sm primary">${icon('check', 'sm')}Approve</button><button class="btn sm">Discuss</button></div></div>`
+      : `<div class="decided"><span class="ic">${icon('check')}</span><span><b>D10 approved</b> · just now · Wi-Fi only</span></div>`}
+    <div class="sub">${kindl('dec', '· D11')}<div class="q">Where does the voice button sit on detail screens?</div>
+      <div class="rec">Recommended: <b>in a dock at the bottom, next to a typed fallback</b></div>
+      <div class="opts"><button class="btn sm primary">${icon('check', 'sm')}Approve</button><button class="btn sm">Discuss</button></div></div>
+    <div class="moreasks"><span class="grow">Open SHIP-906</span>${icon('chevron', 'sm')}</div>`
+  : `<div class="moreasks">${icon('check', 'sm')}<span class="grow">2 decisions too · D10, D11</span>${icon('down', 'sm')}</div>`}</div>`;
+const row892 = () => `<div class="irow">${head('feature', 'SHIP-892', 'Demo artifacts', '2d', { old: true })}
+  ${kindl('q')}<div class="q">${Q892}</div>
+  <div class="from">${PR}Priya</div>
+  <div class="opts"><button class="btn sm">20 MB</button><button class="btn sm">50 MB</button><button class="btn sm">${icon('mic', 'sm')}Reply</button></div></div>`;
+
+const seg = (on = 'waiting', n = 15, done = 0) => `<div class="subbar"><div class="seg"><button class="${on === 'waiting' ? 'on' : ''}">Waiting on you${n ? ` · ${n}` : ''}</button><button class="${on === 'answered' ? 'on' : ''}">Answered${done ? ` · ${done}` : ''}</button></div></div>`;
+const inboxTop = (sub = 'SHIP · 15 asks on 6 items') => App.tabRoot({ title: 'Inbox', sub: sub.replace(/^SHIP( · )?/, ''), right: iconBtn('search') }); // the project name replaces “SHIP” (projects.md D2)
+const list = (rows) => `<div class="list">${rows.join('')}</div>`;
+const fullList = () => list([row743(), row892(), row907(), row924(), row742(), row906()]);
+const tabs = (opts = {}) => tabBar('inbox', { inbox: 15, ...opts });
+
+// ── Reply sheet: answer one question from the list, by voice or typing ──
+const replySheet = ({ live = false, words = '', partial = '' } = {}) => `<div class="scrim"></div><div class="sheet reply"><div class="grab"></div>
+  <div class="voice-ctx">${live ? '<span class="live-dot"></span>Listening' : `${icon('message', 'sm')}Answer`}<span class="sep"></span><b>SHIP-924</b> Development build</div>
+  <div class="qcard"><div class="from">${CC}Claude Code asks<span class="sep"></span>5h</div><div class="q">${Q924}</div></div>
+  ${live ? `<div class="transcript">${words}${partial ? ` <span class="partial">${partial}</span>` : ''}</div>${App.wave(30)}`
+    : `<div class="lbl">Tap to answer with just this</div><div class="quick"><button class="chip">Personal team</button><button class="chip">Wait for org</button></div>`}
+  <div class="where">${icon('eye', 'sm')}<span>Posted on SHIP-924 as your answer and clears Needs input. Claude Code isn’t waiting: the next agent to pick up SHIP-924 reads it.</span></div>
+  <div class="bar2"><div class="type-field">${live ? 'Release to preview' : 'Type an answer'}</div><button class="mic${live ? ' live' : ''}" aria-label="Hold to answer">${icon('mic')}</button></div>
+  ${live ? '' : '<div class="voice-hint" style="margin-top:8px">Hold the mic to answer by voice</div>'}</div>`;
+
+// ── Review sheet: the 8 decisions on SHIP-907, recommended answers chosen ──
+const reviewSheet = () => `<div class="scrim"></div><div class="sheet tall"><div class="grab"></div>
+  <h3>Confirm D1–D8 on SHIP-907</h3><div class="lead2">Mobile app foundations · from Claude Code, yesterday. The recommended answers are chosen; change any you disagree with.</div>
+  <div class="sc"><div class="decs">${D907.map((d) => d.id === 'D4'
+    ? `<div class="dec changed"><div class="h"><span class="id">${d.id}</span><span class="t">${d.t}</span><span class="tag">Changed</span></div>
+        <div class="radios"><div class="radio"><span class="rd"></span><span><small>Recommended</small>${d.rec}</span></div>
+        <div class="radio on"><span class="rd"></span><span><small>Alternative</small>${d.alt}</span></div></div>
+        <div class="pick" style="margin-top:8px">${icon('mic', 'sm')}<b style="color:var(--color-muted);font-weight:400">Add why (optional)</b></div></div>`
+    : `<div class="dec"><div class="h"><span class="id">${d.id}</span><span class="t">${d.t}</span></div><div class="pick">${icon('check', 'sm')}<b>${d.rec}</b><span class="chg">Change</span></div></div>`).join('')}</div>
+  <div class="note2">${icon('eye', 'sm')}<span>Posted on SHIP-907 as your answers: 7 recommended, D4 changed. The next agent to pick up SHIP-907 reads them.</span></div></div>
+  <div class="foot"><div class="go"><button class="btn">Cancel</button><button class="btn primary">Confirm 8</button></div></div></div>`;
+
+// ── Answered: what you answered, and what happened next ──
+const answeredBody = `<div class="section-h">Today</div><div class="list">
+  <div class="arow2"><div class="l1">${type('story')}<span class="key">SHIP-924</span><span class="ttl">Development build on both test phones</span><span class="key">9:40</span></div>
+    <div class="said"><span class="who">You answered Claude Code</span>“${REPLY924}.”</div>
+    <div class="next">${icon('clock', 'sm')}No agent has picked it up yet</div></div>
+  <div class="arow2"><div class="l1">${type('feature')}<span class="key">SHIP-893</span><span class="ttl">Progress bar on sprints</span><span class="key">9:05</span></div>
+    <div class="said"><span class="who">You approved</span>The dark-mode colours for the sprint progress bar</div>
+    <div class="next ok">${icon('check', 'sm')}Claude Code picked it up at 9:31 and set it to Closed</div></div></div>
+  <div class="section-h">Yesterday</div><div class="list">
+  <div class="arow2"><div class="l1">${type('feature')}<span class="key">SHIP-743</span><span class="ttl">Nightly backups</span><span class="key">Sun</span></div>
+    <div class="said"><span class="who">You answered Sam</span>“Run them in a container, we’re not putting Postgres 18 on the host.”</div>
+    <div class="next ok">${SA}Sam replied: “Doing that today.”</div></div>
+  <div class="arow2"><div class="l1">${type('feature')}<span class="key">SHIP-708</span><span class="ttl">Delete a sprint</span><span class="key">Sun</span></div>
+    <div class="said"><span class="who">You confirmed</span>D1–D6, 5 recommended and D3 changed</div>
+    <div class="next ok">${icon('check', 'sm')}Claude Code picked it up · PR #72 updated</div></div></div>`;
+
+// ── Loading skeleton ──
+const skrow = (w1, w2) => `<div class="skrow"><div class="r1"><span class="sk sq"></span><span class="sk" style="width:64px"></span><span class="sk" style="width:${w1}px"></span></div>
+  <div class="sk" style="width:90px;margin-top:14px;height:10px"></div><div class="sk" style="width:100%;margin-top:8px"></div><div class="sk" style="width:${w2}%;margin-top:6px"></div>
+  <div class="btns"><span class="sk" style="width:96px"></span><span class="sk" style="width:120px"></span></div></div>`;
+
+
+App.screen({ title: 'Inbox', states: [
+  { id: 'list', title: 'Waiting on you', note: '15 asks on 6 items, longest waiting first, each answerable from its row.',
+    render: () => frame({ top: inboxTop(), sub: seg(), body: fullList(), bottom: tabs() }) },
+  { id: 'from-setup', title: 'Arriving from setup', note: 'After “Open Inbox” at the end of setup: the same 6 items, with a one-time tip.',
+    render: () => frame({ top: inboxTop(), sub: seg(), body: `<div class="tipcard"><b>The 6 items from your answer</b>Tap an answer on a row, or hold the mic and say it, like <span class="say">“approve D1 to D8 on 907”</span>.<div class="row-b"><button class="btn ghost sm">Got it</button></div></div>` + `<div style="height:12px"></div>` + fullList(), bottom: tabs() }) },
+  { id: 'loading', title: 'Loading', note: 'First open with nothing saved on the phone: skeleton rows, no badge.',
+    render: () => frame({ top: inboxTop('SHIP · Loading…'), sub: `<div class="subbar"><div class="seg dis"><button class="on">Waiting on you</button><button>Answered</button></div></div><div class="updating"><i></i></div>`,
+      body: `<div style="height:12px"></div><div class="list">${skrow(150, 70)}${skrow(190, 55)}${skrow(120, 80)}</div>`, bottom: tabBar('inbox', {}) }) },
+  { id: 'offline', title: 'Offline', note: 'Shows the Inbox as last loaded; taps and answers wait and send when back online.',
+    render: () => frame({ top: inboxTop('SHIP · as of 9:12'), sub: seg(),
+      body: `<div class="banner off">${cloudOff}<div class="grow" style="min-width:0"><b>You’re offline</b><span class="muted">This is your Inbox as of 9:12. Answers are sent when you’re back online. Voice still works: the models are on this phone.</span></div></div><div style="height:12px"></div>` + list([row743(), row892(), row907(), row924({ queued: true }), row742(), row906()]), bottom: tabs() }) },
+  { id: 'expanded', title: 'All asks on one item', note: 'SHIP-906 opened in place: the question plus D10 and D11, each with its own buttons.',
+    render: () => frame({ top: inboxTop(), sub: seg(), body: list([row742(), row906({ open: true })]), bottom: tabs() }) },
+  { id: 'approved', title: 'Approved with one tap', note: 'Tapping Approve on D10 applies it at once, with Undo; the item stays while asks are left.',
+    render: () => frame({ top: inboxTop('SHIP · 14 asks on 6 items'), sub: seg('waiting', 14, 1), body: list([row742(), row906({ open: true, d10: 'done' })]), bottom: tabs(),
+      overlay: toast('D10 approved on SHIP-906', { bottom: 104 }) }) },
+  { id: 'review', title: 'Review a batch', note: 'Review all 8: every decision with its recommended answer chosen; D4 changed. Nothing is sent until Confirm.',
+    render: () => frame({ top: inboxTop(), sub: seg(), body: fullList(), bottom: tabs(), overlay: reviewSheet() }) },
+  { id: 'reply', title: 'Reply sheet', note: 'Reply on a question: quick answers, where the answer goes, then type or hold to talk.',
+    render: () => frame({ top: inboxTop(), sub: seg(), body: fullList(), bottom: tabs(), overlay: replySheet() }) },
+  { id: 'reply-listening', title: 'Replying by voice', note: 'Holding the mic in the sheet: the question is the context, so no key needs saying.',
+    render: () => frame({ top: inboxTop(), sub: seg(), body: fullList(), bottom: tabs(),
+      overlay: replySheet({ live: true, words: `Use my ${hot('personal team')} for now,`, partial: 'I’ll move it to the org once Apple approves the account' }) }) },
+  { id: 'reply-preview', title: 'Reply preview', note: 'The answer word for word; Apply posts it on SHIP-924.',
+    render: () => frame({ top: inboxTop(), sub: seg(), body: fullList(), bottom: tabs({ mic: 'busy' }),
+      overlay: preview({ ctx: 'Answering on <b>SHIP-924</b>', heard: REPLY924, acts: [
+        { kind: 'ask', title: 'Answer on SHIP-924', detail: 'To Claude Code’s “Use your personal team…” · clears Needs input · the next agent to pick it up reads it', quote: REPLY924 + '.' }] }) }) },
+  { id: 'answered', title: 'Answered', note: 'The row leaves Waiting at once; Undo for a few seconds; the badge drops to 14.',
+    render: () => frame({ top: inboxTop('SHIP · 14 asks on 5 items'), sub: seg('waiting', 14, 1), body: list([row743(), row892(), row907(), row742(), row906()]), bottom: tabBar('inbox', { inbox: 14 }),
+      overlay: toast('Answer posted on SHIP-924', { bottom: 104 }) }) },
+  { id: 'voice-listening', title: 'Voice across items', note: 'Holding the tab-bar mic: keys, names and D-numbers matched against the whole Inbox.',
+    render: () => frame({ top: inboxTop(), sub: seg(), body: fullList(), bottom: tabs({ mic: 'live' }),
+      overlay: listening({ ctx: '<b>Inbox</b> · 6 items', words: `Approve ${hot('D1 to D8')} on ${hot('907')}, and tell ${hot('Priya')}:`, partial: '50 MB, and trim anything longer than two minutes', tries: ['still true on 743', 'what’s waited longest?'] }) }) },
+  { id: 'voice-preview', title: 'Voice preview across items', note: 'Two items in one breath; the batch approval warns that you haven’t opened the 8.',
+    render: () => frame({ top: inboxTop(), sub: seg(), body: fullList(), bottom: tabs({ mic: 'busy' }),
+      overlay: preview({ ctx: '<b>Inbox</b>', heard: `Approve D1 to D8 on 907, and tell Priya: ${REPLY892}`, acts: [
+        { kind: 'approve', title: 'Confirm D1–D8 on SHIP-907', detail: 'All 8 recommended answers · you haven’t opened them yet · <span style="color:var(--color-accent);font-weight:500">See each</span>' },
+        { kind: 'ask', title: 'Answer Priya on SHIP-892', detail: 'To “Q7: what size cap for demo videos?” · Priya is notified', quote: REPLY892 + '.' }] }) }) },
+  { id: 'answered-tab', title: 'Answered tab', note: 'What you answered and what happened next: picked up by an agent, or a person replied.',
+    render: () => frame({ top: inboxTop('SHIP · answered by you this week'), sub: seg('answered', 14, 4), body: answeredBody, bottom: tabBar('inbox', { inbox: 14 }) }) },
+  { id: 'empty', title: 'All clear', note: 'Nothing waits on you: what you answered today, and something to try.',
+    render: () => frame({ top: inboxTop('SHIP · nothing waiting'), sub: seg('waiting', 0, 6),
+      body: `<div class="empty"><div class="art">${icon('check')}</div><h2>Nothing waits on you</h2>
+        <p>When an agent or a person needs a decision or an answer from you, it lands here. Agents carry on with other work meanwhile.</p>
+        <div class="try"><span class="chip">“what changed since yesterday?”</span></div></div>
+        <div class="today"><div class="go-thru"><span class="pl" style="background:color-mix(in srgb,var(--color-ok) 14%,transparent);color:var(--color-ok)">${icon('check', 'sm')}</span><div class="grow"><b>You answered 6 today</b>Agents have picked up 4 of them</div>${icon('chevron', 'sm')}</div></div>`,
+      bottom: tabBar('inbox', {}) }) },
+  { id: 'empty-new', title: 'Nothing yet', note: 'A new person, nothing has ever waited on them: what will land here, and a push opt-in.',
+    render: () => frame({ top: inboxTop('SHIP'), sub: seg('waiting', 0, 0),
+      body: `<div class="empty" style="padding-top:16px"><div class="art neutral" style="width:64px;height:64px;margin-bottom:10px">${icon('inbox')}</div><h2>Nothing here yet</h2>
+        <p>This is where people and agents ask you for things.</p><div class="today" style="margin:14px 0 0"><button class="btn sm primary">Notify me when something lands</button></div></div>
+        <div class="kinds"><div><span class="ic">${icon('check')}</span><div><b>Decisions to confirm</b><span>Options with a recommended answer: approve, change or discuss.</span></div></div>
+          <div><span class="ic">${icon('message')}</span><div><b>Questions</b><span>Answer with a tap, by typing, or by voice.</span></div></div>
+          <div><span class="ic">${icon('user')}</span><div><b>Mentions and status checks</b><span>A note that @mentions you, or your Feature’s status line once it’s 3 days old.</span></div></div>
+          <div><span class="ic v">${icon('note')}</span><div><b>Answers go on the work item</b><span>Agents never wait; the next one to pick it up reads it.</span></div></div></div>
+`,
+      bottom: tabBar('inbox', {}) }) },
+]});
+</script></body></html>

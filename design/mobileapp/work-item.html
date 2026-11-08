@@ -222,7 +222,7 @@ App.screen({ title: 'Work item', states: [
         </div>
         <div class="a">1 task is blocked: the checksum check on <span class="nw">SHIP-921</span> waits on <span class="nw">SHIP-907</span>. You have D10, D11 and a question from Claude Code.</div>
         <div class="src" style="margin-top:10px">${icon('eye', 'sm')}From SHIP-906 as it is now · nothing was changed</div>
-        <div class="go"><button class="btn">${icon('speaker', 'sm')}Read aloud</button><button class="btn primary">Done</button></div></div>` }) },
+        <div class="go"><button class="btn primary">Done</button></div></div>` }) },
 
   { id: 'downloading', title: 'Voice not ready', note: 'Mic off while models download; everything else works.',
     render: () => frame({ top: wiBar(), body: `<div class="banner dl" style="margin-bottom:12px">${icon('download')}<div class="grow"><b>Voice is getting ready</b><div class="bar"><i></i></div><span>1.1 of 1.7 GB on Wi-Fi · about 4 min. Read, tap and type in the meantime.</span></div></div>

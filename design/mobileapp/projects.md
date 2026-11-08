@@ -60,7 +60,7 @@ Before this, the areas disagreed:
 
 - The kit (`app.css`, `app.js`) has `.pkey`, `.proj-btn`, `App.projTile(key, { dot, ring })` and `App.tabRoot({ title, sub, project, dot, ring, right })`. Its subtitle is the project name, followed by `sub` when that is given.
 - `backlog.html`: the "S" avatar is now the SHIP tile, with "ShipLean" as the subtitle.
-- `feature-board.html` and `retro.html` have the tile, and "SHIP ·" became "ShipLean ·" (Features' subtitle is shortened to "8 open Features" to fit). The Inbox (`inbox.html`, in progress elsewhere) uses `App.tabRoot` too.
+- `feature-board.html`, `retro.html` and `inbox.html` have the tile, and "SHIP ·" became "ShipLean ·" (Features' subtitle is shortened to "8 open Features" to fit).
 - `setup.html`: the Backlog seen during and after the download (`app-downloading`, `mobile-data`, `ready`, `first-result`, `skipped`) has the tile instead of the JD avatar. In `setup.md`, *Use ShipLean while this downloads* leads to Projects, and Settings › Voice opens from Account › Settings (`settings.md`).
 
 ## Decisions

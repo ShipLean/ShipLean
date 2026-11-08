@@ -7,16 +7,25 @@ These are throwaway HTML mock-ups, not the Expo app. They use `../tokens.css`, s
 | File | What it is |
 |---|---|
 | `app.css`, `app.js` | The kit: phone frame (390 × 844), top bar, tab bar with the hold-to-talk button, detail-screen voice dock, rows, state pills, progress, ask cards, and the voice sheets (listening, preview, undo toast, voice notes). |
-| `work-item.html`, `backlog.html`, `feature-board.html`, `retro.html`, `setup.html` | One file per area; each declares its states with `App.screen`. `setup.html` is first run (sign in, choosing the voice models, the download) and Settings › Voice. |
+| `inbox.html`, `work-item.html`, `backlog.html`, `feature-board.html`, `retro.html`, `setup.html` | One file per area; each declares its states with `App.screen`. `inbox.html` is the first tab: everything waiting on you, answered from the list. `setup.html` is first run (sign in, choosing the voice models, the download) and Settings › Voice. |
 | `projects.html` | Projects (the app's root, SHIP-907 D7), the project key tile on every tab root, switching by tap or voice, Account, and no or lost projects. Decisions D1–D11 in `projects.md`; review page `projects-review.html`. |
 | `search.html` | Search (SHIP-928): the web's quick search popup (Ctrl/⌘+P) on the phone, with the same results, and the ways to reach it fast: the icon, holding the mic and sliding up, asking “where's…?”, the app icon's quick action, and Back Tap, the Action button or Siri. Decisions D1–D12 in `search.md`. |
 | `settings.html` | Account (the sheet from the avatar on Projects) and the Settings screen it leads to: Voice, Notifications, Shortcuts, Appearance, About, Sign out. Decisions D1–D9 in `settings.md` (answered 9 Nov 2026, all recommended). |
 | `<area>.md` | Design notes per area: what's on the screen, the voice commands it offers, decisions to confirm. |
-| `index.html` | The review page: every state of every area side by side. |
+| `index.html` | The review page: every state of every area side by side, with each area's decisions and open questions. Rebuild it with `./build-index.py` after `./screenshots.sh`. `./build-index.py --inline inbox --out x.html` writes one self-contained page for attaching to a work item. |
 | `screenshots.sh` | Regenerates `images/<area>-<state>.<theme>.png` with headless Chrome. |
 | `voice.html` | Voice failures: nothing heard, nothing matched, no valid action, the Fix flow, Apply failing on the network, and Undo after it applies (22 states, on the work item and Backlog). Rules and decisions D1–D22 in `voice.md` (Joel, 9 Nov 2026: all recommended). |
 
 Open a state directly: `work-item.html?state=preview&theme=dark`. `?list` prints a file's state ids.
+
+## Tenet: speak in, read out (Joel, 9 Nov 2026)
+
+**Reading is faster than listening, and speaking is faster than typing.** So the app is built for speaking going in and reading coming out:
+
+- Input is voice first: hold to talk is the main way to add notes, answer, approve and reorder. Taps and typing are the fallback.
+- Output is always on screen. Answers, previews, digests and Inbox items are text to read. The app does not narrate the screen: no Read aloud, no text to speech, no "go through my inbox" walk-through that reads each item out.
+- **Why:** a person reads a sheet in a few seconds, but hearing the same text takes far longer and can't be skimmed. Speaking a reply is quicker than typing one on a phone. Each direction uses the faster channel.
+- **How to apply:** don't propose narration, spoken answers or audio-first modes in new designs. If something feels like it needs reading aloud, make it shorter on screen instead. Voice notes keep their clip (S3) because they are input someone may need to check, not narration.
 
 ## Shared voice model (from SHIP-906)
 
@@ -30,9 +39,9 @@ Open a state directly: `work-item.html?state=preview&theme=dark`. `?list` prints
 ## Shared decisions (Joel, 8 Nov 2026, Lavish review: all recommended)
 
 - S1: "Feature board" in the app is progress across all Features; one Feature's own board is a read-only drill-in.
-- S2: a fifth tab, Inbox, holds everything waiting on you (not mocked up yet).
+- S2: a fifth tab, Inbox, holds everything waiting on you (`inbox.html`, decisions D1–D13 answered 9 Nov 2026 in `inbox.md`).
 - S3: a voice note keeps its audio clip next to the transcript for 30 days, playable by project members.
-- S4: answers to spoken questions show on screen (a sheet when short, a screen when long), with Read aloud by on-device text to speech.
+- S4: answers to spoken questions show on screen (a sheet when short, a screen when long). Amended 9 Nov 2026 by the tenet above: no Read aloud or text to speech.
 - S5: Health (On track / At risk / Blocked) is a new Feature field, set by people and agents, shown on the web too.
 - S6: Needs you on a Feature counts the questions and decisions on its stories, everywhere.
 - S7: the app uses native sizes (44px tap targets, 15px body); SHIP-805 stays the rule for the mobile web.

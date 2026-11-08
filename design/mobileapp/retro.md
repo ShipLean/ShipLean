@@ -24,7 +24,6 @@ States in `retro.html`: `retro`, `dictate`, `dictate-preview`, `agree`, `action-
 | 7 | Answer an agent's theme merge | "merge them", "keep them apart" |
 | 8 | Show a category or view | "show went badly", "what's left to decide?" |
 | 9 | Ask about the retro (answered in a sheet) | "what keeps going wrong?" |
-| 10 | Read the current answer out | "read it out" |
 
 Notes are always the transcript word for word, without the command words ("retro note:", "went badly:").
 

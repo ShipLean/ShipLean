@@ -31,7 +31,7 @@ A **Story** shows the same header, then the tasks as counts with only the blocke
 | `applied` | The new note and the two change events at the top of Notes, highlighted; top bar shows Active; Undo toast. |
 | `reply` | Replying to Claude Code's "Needs input" question by voice; the reply is quoted word for word. |
 | `story` | SHIP-921: tasks as counts (3 of 7 done, 2 in progress, 1 to do, 1 blocked) with the blocked task named. |
-| `ask` | "What's left on this?" answered in a sheet from this item's data; Read aloud, nothing to apply. |
+| `ask` | "What's left on this?" answered in a sheet from this item's data; nothing to apply. |
 | `downloading` | First run: a banner with download progress, the mic off, the "Or say" hints hidden. Typing and buttons still work. |
 
 ## Voice actions on this screen
@@ -84,7 +84,7 @@ One utterance can carry several actions (state + decision + note); the preview l
 - D6: recommended.
 - D7: recommended, clarified: agents don't stay running to wait for an answer; they finish with a summary. The reply is posted on the work item as the answer, clears Needs input, and whichever agent picks the item up next reads it. The `reply` state says so.
 - D8: recommended.
-- D9: recommended.
+- D9: recommended. Amended 9 Nov 2026 by the tenet "speak in, read out" (README): answers are on screen only, with no Read aloud.
 - D10: recommended.
 
 ## Open questions
