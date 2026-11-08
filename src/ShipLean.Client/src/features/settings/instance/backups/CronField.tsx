@@ -36,7 +36,8 @@ export function CronField({ value, onChange, error, onValidityChange }: CronFiel
 
   const empty = text === '';
   const shown = empty ? undefined : preview.data;
-  const failed = !empty && settled === text && preview.isError ? errorText(preview.error) : undefined;
+  const failed =
+    !empty && settled === text && preview.isError ? errorText(preview.error) : undefined;
   const message = empty ? 'Enter a schedule.' : (current?.error ?? failed ?? error);
   const stale = shown !== undefined && current === undefined;
 
@@ -75,10 +76,17 @@ export function CronField({ value, onChange, error, onValidityChange }: CronFiel
         className={`grid gap-1 text-[length:var(--text-sm)] ${stale ? 'opacity-60' : ''}`}
       >
         {shown?.description != null ? (
-          <span aria-live="polite" data-testid={backupsTestIds.backupsCronDescription}>{shown.description} (UTC)</span>
+          <span aria-live="polite" data-testid={backupsTestIds.backupsCronDescription}>
+            {shown.description} (UTC)
+          </span>
         ) : null}
         {message !== undefined && message !== null ? (
-          <span role="alert" aria-live="polite" data-testid={backupsTestIds.backupsCronError} className="text-alert">
+          <span
+            role="alert"
+            aria-live="polite"
+            data-testid={backupsTestIds.backupsCronError}
+            className="text-alert"
+          >
             {message}
           </span>
         ) : null}
