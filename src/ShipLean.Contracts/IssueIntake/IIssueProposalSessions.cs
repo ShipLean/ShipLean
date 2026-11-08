@@ -11,8 +11,9 @@ namespace ShipLean.Contracts.IssueIntake;
 // take (IGitHubIssueStore.TakeRerunAsync) once that round's proposal is posted. An unforced request for an issue that is
 // proposing with a round behind it (rounds > 0) and no pending round job is a round in flight too: it sets rerun_requested and
 // returns Requested, and never enqueues a second round.
-// The one exception: Held("intakeOff") writes nothing at all, no phase change and no notices, because the issue's project no
-// longer takes its repository and posting on its behalf would be wrong.
+// The exceptions write nothing at all, no phase change and no notices: Held("intakeOff"), because the issue's project no
+// longer takes its repository and posting on its behalf would be wrong, and Held("issueClosed"), forced or not, because the
+// issue is closed on GitHub and nothing posts while it is closed (D13).
 public interface IIssueProposalSessions
 {
     Task<RoundRequest> RequestRoundAsync(Guid issueId, bool force, DbTransaction transaction, CancellationToken cancellationToken = default);
