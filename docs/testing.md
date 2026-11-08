@@ -92,18 +92,24 @@ Screens that support phones (below 900px, see `docs/mobile.md`) are checked at 3
 - **Phone context:** override `Viewport => AcceptanceViewport.Phone;` in an acceptance class (`ShipLean.TestSupport.Fixtures`).
   Phone is 390×844, `HasTouch`, `IsMobile`, device scale factor 1; the default `AcceptanceViewport.Desktop` is the
   1280×800 context every other class uses. The class keeps the shared host, database clone and browser.
-- **Touch rules** (`TouchRules`, `ShipLean.AcceptanceTests.Harness`) return one readable line per violation, empty when the
-  rules hold: no sideways scroll; every visible `input`, `textarea` and `select` at a computed font size of at least 16px
-  (named by its `data-testid`); every visible button, `a[href]` and `[role=button]` at least 32×32px, except links inside
-  Markdown (`ComponentTestIds.Markdown`). `ViolationsAsync(page)` checks the whole page, including page-level sideways
-  scroll. `ViolationsAsync(page, within)` checks only the elements inside `within`, and `within`'s own
-  `scrollWidth <= clientWidth` instead of the page's. **Lane tests use the `within` form on their own regions**: sibling
-  tasks build the rest of the screen, so a whole-screen check can't pass in one lane.
+- **Touch rules** (`TouchRules`, `ShipLean.AcceptanceTests.Harness`) return one readable line per violation, empty when
+  the rules hold: no sideways scroll; every visible `input`, `textarea` and `select` at a computed font size of at least
+  16px (named by its `data-testid`); every visible button, `a[href]` and `[role=button]` at least 32×32px, except links
+  inside Markdown (`ComponentTestIds.Markdown`). `ViolationsAsync(page)` checks the whole page, including page-level
+  sideways scroll: the document's `scrollWidth <= innerWidth`, and the shell main's (`AppTestIds.ShellMain`)
+  `scrollWidth <= clientWidth`, because the main region has `overflow-auto` and scrolls in place of the document.
+  `ViolationsAsync(page, within)` checks only the elements inside `within`, and `within`'s own `scrollWidth <=
+  clientWidth` instead of the page's. **Lane tests use the `within` form on their own regions**: sibling tasks build the
+  rest of the screen, so a whole-screen check can't pass in one lane.
 - **The route sweep** (`Lanes/Touch/TouchRouteSweepTests`, and `TouchSignedOutRouteSweepTests` for `login`) opens every
-  route in `ScreenIds.All` at 390×844 on the seed, waits for its ready test id and runs `TouchRules.ViolationsAsync(page)`.
-  One route: `--filter "FullyQualifiedName~TouchRouteSweepTests&Name~storiesBacklog"`.
-- **`TouchRoutes`** (`Lanes/Touch/TouchRoutes.cs`) is how the sweep opens each route: its seeded URL, its ready test id and
-  whether it is opened signed out. Adding a route means one line here, or `TouchRoutes_ShouldCoverEveryScreen` fails.
+  route in `ScreenIds.All` not in `TouchExemptRoutes` at 390×844 on the seed, waits for its ready test ids and runs
+  `TouchRules.ViolationsAsync(page)`. One route: `--filter
+  "FullyQualifiedName~TouchRouteSweepTests&Name~storiesBacklog"`.
+- **`TouchRoutes`** (`Lanes/Touch/TouchRoutes.cs`) is how the sweep opens each route: its seeded URL, its ready test
+  ids and whether it is opened signed out. The ready ids must render only once the route's data has (a seeded row, card
+  or the item's key; where the seed has nothing, an element the loaded query renders), one per query the screen waits
+  on, never the `PagesTestIds` page wrapper, which shows first and would let the sweep pass a skeleton. Adding a route
+  means one line here, or `TouchRoutes_ShouldCoverEveryScreen` fails.
 - **`TouchPendingRoutes`** lists the routes not yet mobile, screen id → owning story key, one line each. A listed route
   must still break the rules: once your route passes, the sweep fails with "delete its line from TouchPendingRoutes", so
   delete your line.
