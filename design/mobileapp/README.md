@@ -12,6 +12,7 @@ These are throwaway HTML mock-ups, not the Expo app. They use `../tokens.css`, s
 | `<area>.md` | Design notes per area: what's on the screen, the voice commands it offers, decisions to confirm. |
 | `index.html` | The review page: every state of every area side by side. |
 | `screenshots.sh` | Regenerates `images/<area>-<state>.<theme>.png` with headless Chrome. |
+| `voice.html` | Voice failures: nothing heard, nothing matched, no valid action, the Fix flow, Apply failing on the network, and Undo after it applies (22 states, on the work item and Backlog). Rules and decisions D1–D22 in `voice.md` (Joel, 9 Nov 2026: all recommended). |
 
 Open a state directly: `work-item.html?state=preview&theme=dark`. `?list` prints a file's state ids.
 
@@ -21,6 +22,7 @@ Open a state directly: `work-item.html?state=preview&theme=dark`. `?list` prints
 - While held, a **listening sheet** shows what the model will act on (the screen's context), the live transcript, and keys, names and states matched against the screen's words in the accent colour.
 - On release, a **preview** lists each change the command will make. Notes are quoted word for word from the transcript. Nothing changes until **Apply** or “yes”; each change can be removed, and **Fix** re-records.
 - After applying, an **undo toast**.
+- When it goes wrong, see `voice.md`: a toast for silence, a sheet only when there's a choice, the heard words always kept, Apply all or nothing, offline changes wait to send, and Undo for 10 minutes on the voice change row.
 - Each screen offers a small set of voice actions (about 5–12), so a small on-device model is enough.
 
 ## Shared decisions (Joel, 8 Nov 2026, Lavish review: all recommended)
