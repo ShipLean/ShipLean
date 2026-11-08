@@ -7,7 +7,8 @@
 <!--
   Reference Features and Epics backlogs: the same ranked list one and two levels up, with roll-ups.
   Open directly in a browser. Uses ../tokens.css, shiplean.css and shared.js only; no build step.
-  ?level=epics opens the Epics level. Planning mode is a Stories-level thing, so it isn't offered here.
+  ?level=epics opens the Epics level. The Features level has a Health column after State (on by default; Epics have no
+  Health). Planning mode is a Stories-level thing, so it isn't offered here.
   Points show the item's own estimate with the sum of everything under it greyed beside it; Progress counts
   child stories and bugs by state category, including those under nested Features.
   + New work item at the Features level opens the New Feature dialog (#2): title, Epic, a slug suggested from the title
@@ -59,7 +60,7 @@ a.t:hover { color: var(--color-accent); text-decoration: underline; }
 
 <script>
 (() => {
-  const { items, doneItems, epics, features, stateCategory, tIcon, st, esc, toast } = SL;
+  const { items, doneItems, epics, features, stateCategory, tIcon, st, esc, toast, health } = SL;
   const level = new URLSearchParams(location.search).get('level') === 'epics' ? 'epics' : 'features';
   document.getElementById('appbar').outerHTML = SL.appBar('backlogs');
   document.getElementById(level === 'epics' ? 'lvEpics' : 'lvFeatures').setAttribute('aria-pressed', 'true');
@@ -68,6 +69,9 @@ a.t:hover { color: var(--color-accent); text-decoration: underline; }
   document.getElementById('lvFeatures').onclick = () => { location.href = 'features.html'; };
   document.getElementById('btnAdd').onclick = () => (level === 'epics' ? toast('New Epic: Epics hold only Features') : newFeature());
 
+  // Health per Feature (page-local; the board uses the same values). Set by people and agents, never computed; null = not set.
+  const HEALTH_OF = { 'SHIP-101': 'risk', 'SHIP-102': 'blocked', 'SHIP-103': 'ok', 'SHIP-108': null, 'SHIP-104': 'ok' };
+  const healthCell = k => (HEALTH_OF[k] ? health(HEALTH_OF[k]) : '<span class="muted" title="Health not set">—</span>');
   const all = [...items, ...doneItems];
   // Stories and bugs under a Feature, including those under its nested Features.
   const under = f => [...all.filter(i => i.parent === f.title), ...features.filter(c => c.parent === f.key).flatMap(under)];
@@ -87,8 +91,8 @@ a.t:hover { color: var(--color-accent); text-decoration: underline; }
 
   const head = level === 'epics'
     ? ['', '#', 'Key', 'Title', 'State', 'Features', 'Pts', 'Progress (stories and bugs)']
-    : ['', '#', 'Key', 'Title', 'Parent', 'State', 'Pts', 'Progress (stories and bugs)'];
-  const widths = level === 'epics' ? [22, 32, 90, null, 110, 80, 110, 240] : [22, 32, 90, null, 190, 110, 110, 240];
+    : ['', '#', 'Key', 'Title', 'Parent', 'State', 'Health', 'Pts', 'Progress (stories and bugs)'];
+  const widths = level === 'epics' ? [22, 32, 90, null, 110, 80, 110, 240] : [22, 32, 90, null, 190, 110, 96, 110, 240];
   document.getElementById('head').innerHTML = '<tr>' + head.map((h, i) => `<th${['#', 'Pts', 'Features'].includes(h) ? ' class="num"' : ''}${widths[i] ? ` style="width:${widths[i]}px"` : ''}>${h}</th>`).join('') + '</tr>';
 
   const rows = level === 'epics'
@@ -103,7 +107,7 @@ a.t:hover { color: var(--color-accent); text-decoration: underline; }
         return `<tr class="item"><td class="grip">⠿</td><td class="num muted sm">${i + 1}</td><td class="key">${f.key}</td>
           <td><div class="title-cell">${tIcon('feature')}${f.key === 'SHIP-101' ? `<a class="t" href="feature.html">${esc(f.title)}</a>` : `<span class="t">${esc(f.title)}</span>`}</div></td>
           <td><span class="parent">${tIcon(features.includes(p) ? 'feature' : 'epic')}${esc(p.title)}${nested ? ' <span class="nested">(nested)</span>' : ''}</span></td>
-          <td>${st(f.state)}</td><td class="pts">${points(f.points, ptsOf(list))}</td><td>${progress(list)}</td></tr>`;
+          <td>${st(f.state)}</td><td>${healthCell(f.key)}</td><td class="pts">${points(f.points, ptsOf(list))}</td><td>${progress(list)}</td></tr>`;
       });
   document.getElementById('rows').innerHTML = rows.join('');
 

@@ -9,9 +9,11 @@ These are throwaway HTML mock-ups, not the Expo app. They use `../tokens.css`, s
 | `app.css`, `app.js` | The kit: phone frame (390 × 844), top bar, tab bar with the hold-to-talk button, detail-screen voice dock, rows, state pills, progress, ask cards, and the voice sheets (listening, preview, undo toast, voice notes). |
 | `inbox.html`, `work-item.html`, `backlog.html`, `feature-board.html`, `retro.html`, `setup.html` | One file per area; each declares its states with `App.screen`. `inbox.html` is the first tab: everything waiting on you, answered from the list. `setup.html` is first run (sign in, choosing the voice models, the download) and Settings › Voice. |
 | `projects.html` | Projects (the app's root, SHIP-907 D7), the project key tile on every tab root, switching by tap or voice, Account, and no or lost projects. Decisions D1–D11 in `projects.md`; review page `projects-review.html`. |
+| `search.html` | Search (SHIP-928): the web's quick search popup (Ctrl/⌘+P) on the phone, with the same results, and the ways to reach it fast: the icon, holding the mic and sliding up, asking “where's…?”, the app icon's quick action, and Back Tap, the Action button or Siri. Decisions D1–D12 in `search.md`. |
 | `<area>.md` | Design notes per area: what's on the screen, the voice commands it offers, decisions to confirm. |
 | `index.html` | The review page: every state of every area side by side, with each area's decisions and open questions. Rebuild it with `./build-index.py` after `./screenshots.sh`. `./build-index.py --inline inbox --out x.html` writes one self-contained page for attaching to a work item. |
 | `screenshots.sh` | Regenerates `images/<area>-<state>.<theme>.png` with headless Chrome. |
+| `voice.html` | Voice failures: nothing heard, nothing matched, no valid action, the Fix flow, Apply failing on the network, and Undo after it applies (22 states, on the work item and Backlog). Rules and decisions D1–D22 in `voice.md` (Joel, 9 Nov 2026: all recommended). |
 
 Open a state directly: `work-item.html?state=preview&theme=dark`. `?list` prints a file's state ids.
 
@@ -30,6 +32,7 @@ Open a state directly: `work-item.html?state=preview&theme=dark`. `?list` prints
 - While held, a **listening sheet** shows what the model will act on (the screen's context), the live transcript, and keys, names and states matched against the screen's words in the accent colour.
 - On release, a **preview** lists each change the command will make. Notes are quoted word for word from the transcript. Nothing changes until **Apply** or “yes”; each change can be removed, and **Fix** re-records.
 - After applying, an **undo toast**.
+- When it goes wrong, see `voice.md`: a toast for silence, a sheet only when there's a choice, the heard words always kept, Apply all or nothing, offline changes wait to send, and Undo for 10 minutes on the voice change row.
 - Each screen offers a small set of voice actions (about 5–12), so a small on-device model is enough.
 
 ## Shared decisions (Joel, 8 Nov 2026, Lavish review: all recommended)

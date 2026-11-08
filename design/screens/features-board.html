@@ -22,7 +22,9 @@
   Features board: Lanes None or By Epic (?lanes=epic), one lane per Epic in backlog order; dropping a Feature
   into another Epic's lane makes that Epic its parent. ?open=SHIP-101 opens that card's child list.
   Keyboard, filter (keyword, people, Epic), Done showing the 4 most recent, and real time all work as on the
-  Stories board. The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot).
+  Stories board. Features board cards show Health (set by people and agents, never computed): dot and label at the end of
+  the parent line on Full cards, the dot alone after the key on Compact cards (?compact), hidden in Done; Filter has a
+  Health select (?fhealth=ok|risk|blocked|none). Epics have no Health. The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot).
 -->
 <link rel="stylesheet" href="../tokens.css">
 <link rel="stylesheet" href="shiplean.css">
@@ -95,6 +97,9 @@
 .card .pr { display: flex; align-items: center; gap: 5px; min-width: 0; font-size: var(--text-xs); color: var(--color-muted); }
 .card .pr .ti, .anns .ti, .kid .ti { width: 14px; height: 14px; font-size: 8px; }
 .card .pr .n { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Health: dot and label at the end of the parent line on Full cards; the dot alone after the key on Compact cards. */
+.card .pr .health { flex: none; margin-left: auto; }
+.card .r1 .health { margin-left: 2px; }
 .card .ft { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 .tag { display: inline-flex; align-items: center; height: 16px; padding: 0 6px; border-radius: var(--radius-xs); font-size: var(--text-2xs); font-weight: var(--weight-medium); white-space: nowrap; color: var(--color-text); background: color-mix(in srgb, var(--tag, var(--color-muted)) 20%, transparent); }
 .take { flex: none; padding: 0; border: 0; background: none; border-radius: 50%; cursor: pointer; display: inline-grid; }
@@ -162,6 +167,7 @@
   <input class="field" type="search" id="fq" placeholder="Filter by keyword or key" aria-label="Filter by keyword">
   <span class="who" id="fwho" role="group" aria-label="People"></span>
   <select class="field" id="fepic" aria-label="Epic"></select>
+  <select class="field" id="fhealth" aria-label="Health"></select>
   <button class="btn ghost" type="button" id="fclear">Clear</button>
   <span class="spacer"></span><span class="xs muted" id="fcount"></span>
 </div>
@@ -170,7 +176,7 @@
 
 <script>
 (() => {
-  const { ME, people, items, doneItems, epics, features, stateCategory, tIcon, st, av, esc, toast } = SL;
+  const { ME, people, items, doneItems, epics, features, stateCategory, tIcon, st, av, esc, toast, HEALTH, health } = SL;
   const params = new URLSearchParams(location.search);
   const LEVEL = params.get('level') === 'epics' ? 'epics' : 'features';
   const TYPE = LEVEL === 'epics' ? 'epic' : 'feature';
@@ -222,6 +228,10 @@
     ['128', 'story', 'Card updater webhook', 'Card account updater', 'Closed', 3], ['130', 'bug', 'Updated card not shown until refresh', 'Card account updater', 'Closed', 2],
   ].map(([n, type, title, parent, state, points]) => ({ key: 'SHIP-' + n, type, title, parent, state, points }));
   const leaves = [...items, ...doneItems, ...extraKids]; // stories and bugs, in backlog order
+  // Health per Feature (same values as the Features backlog). Set by people and agents, never computed; null = not set.
+  // Epics have no Health. Cards in Done don't show it: a closed Feature's health is history.
+  const HEALTH_OF = { 'SHIP-101': 'risk', 'SHIP-102': 'blocked', 'SHIP-103': 'ok', 'SHIP-108': null, 'SHIP-104': 'ok', 'SHIP-106': null, 'SHIP-109': null,
+    'SHIP-107': 'risk', 'SHIP-111': 'ok', 'SHIP-105': 'ok', 'SHIP-110': 'ok', 'SHIP-112': 'ok', 'SHIP-113': 'ok' };
 
   // [key, column, owner, tags] in column_order; Done is newest first.
   const featureLayout = [
@@ -239,7 +249,7 @@
   // Feature states come from the Features board, so the Epics board's Feature roll-ups agree with it.
   const FEATURE_STATE = { new: 'New', shaping: 'New', prog: 'Active', release: 'Resolved', done: 'Closed' };
   allFeatures.forEach(f => { const l = featureLayout.find(x => x[0] === f.key); f.state = FEATURE_STATE[l[1]]; });
-  const toCards = (layout, src) => layout.map(([key, track, assignee, tags]) => ({ ...src.find(x => x.key === key), track, assignee, tags: [...tags] }));
+  const toCards = (layout, src) => layout.map(([key, track, assignee, tags]) => ({ ...src.find(x => x.key === key), track, assignee, tags: [...tags], health: LEVEL === 'features' ? HEALTH_OF[key] ?? null : null }));
   const cards = LEVEL === 'features' ? toCards(featureLayout, allFeatures) : toCards(epicLayout, allEpics);
   let nextKey = LEVEL === 'features' ? 114 : 95;
 
@@ -269,13 +279,14 @@
   const openCount = r => ANN.map(([t, label]) => [r[t][1] - r[t][0], label]).filter(([n]) => n);
   const openText = r => openCount(r).map(([n, label]) => `${n} ${n === 1 ? label.replace(/s$/, '').replace('storie', 'story') : label}`).join(', ').replace(/, ([^,]*)$/, ' and $1');
 
-  const view = { lanes: LEVEL === 'features' && params.get('lanes') === 'epic' ? 'epic' : 'none', compact: false, collapsed: new Set(), open: new Set(params.get('open') ? [params.get('open')] : []), showOlder: false, adding: false, q: '', who: new Set(), epic: '', filterOpen: false };
+  const view = { lanes: LEVEL === 'features' && params.get('lanes') === 'epic' ? 'epic' : 'none', compact: params.has('compact'), health: '', collapsed: new Set(), open: new Set(params.get('open') ? [params.get('open')] : []), showOlder: false, adding: false, q: '', who: new Set(), epic: '', filterOpen: false };
   const laneOf = c => (view.lanes === 'epic' ? 'epic:' + (rootEpic(c)?.key || 'none') : 'all');
-  const filtering = () => !!(view.q || view.who.size || view.epic);
+  const filtering = () => !!(view.q || view.who.size || view.epic || view.health);
   const passes = c => {
     if (view.q) { const q = view.q.toLowerCase(); if (!c.title.toLowerCase().includes(q) && !c.key.toLowerCase().includes(q) && !c.tags.some(t => t.toLowerCase().includes(q))) return false; }
     if (view.who.size && !view.who.has(c.assignee || '')) return false;
     if (view.epic && rootEpic(c)?.key !== view.epic) return false;
+    if (view.health && (c.health || 'none') !== view.health) return false;
     return true;
   };
 
@@ -329,14 +340,14 @@
     const pts = `<span class="cpts" title="Own estimate · sum of the stories and bugs below">${own}${r.sum ? ` <span class="sig${big ? ' big' : ''}">· Σ${r.sum}</span>` : ''}</span>`;
     const who = `<button class="take" type="button" data-assign="${c.key}" aria-haspopup="menu" title="${c.assignee ? 'Owner ' + people[c.assignee].name + ' · change' : 'No owner · set one'}">${av(c.assignee)}</button>`;
     const tags = c.tags.map(t => `<span class="tag" style="--tag: var(${TAG_COLOUR[t] || '--color-muted'})">${esc(t)}</span>`).join('');
-    const p = LEVEL === 'features' ? byKey(c.parent) : null;
-    const parent = p ? `<div class="pr">${tIcon(allEpics.includes(p) ? 'epic' : 'feature')}<span class="n">${esc(p.title)}</span></div>` : '';
+    const p = LEVEL === 'features' ? byKey(c.parent) : null, h = inDone ? null : c.health;
+    const parent = p || h ? `<div class="pr">${p ? `${tIcon(allEpics.includes(p) ? 'epic' : 'feature')}<span class="n">${esc(p.title)}</span>` : ''}${health(h)}</div>` : '';
     const total = ANN.reduce((a, [t]) => a + r[t][1], 0), done = ANN.reduce((a, [t]) => a + r[t][0], 0);
     const prompt = total && done === total && !inDone
       ? `<div class="alldone">All ${total} closed<button class="btn" type="button" data-finish="${c.key}">Move to Done</button></div>` : '';
     return `<div class="card${rule ? ' ' + rule.cls : ''}${inDone ? ' done-col' : ''}" data-key="${c.key}" draggable="true" tabindex="0"
-        aria-label="${c.key} ${esc(c.title)}, ${state}${rule ? ', ' + rule.name : ''}" title="${rule ? `Style rule: ${rule.name} · ` : ''}State ${state}">
-      <div class="r1">${tIcon(TYPE)}<span class="key">${c.key}</span>${pts}</div>
+        aria-label="${c.key} ${esc(c.title)}, ${state}${h ? ', health ' + HEALTH[h] : ''}${rule ? ', ' + rule.name : ''}" title="${rule ? `Style rule: ${rule.name} · ` : ''}State ${state}${h ? ` · Health ${HEALTH[h]}` : ''}">
+      <div class="r1">${tIcon(TYPE)}<span class="key">${c.key}</span>${view.compact ? health(h, true) : ''}${pts}</div>
       <div class="ttl">${esc(c.title)}</div>
       ${view.compact ? '' : parent}
       <div class="ar">${annHtml(c, r)}<span class="spacer"></span>${who}</div>
@@ -407,7 +418,7 @@
   function renderFilter() {
     $('fbar').hidden = !view.filterOpen;
     $('btnFilter').setAttribute('aria-expanded', view.filterOpen);
-    const n = [view.q, view.who.size, view.epic].filter(Boolean).length;
+    const n = [view.q, view.who.size, view.epic, view.health].filter(Boolean).length;
     $('btnFilter').textContent = n ? `Filter (${n})` : 'Filter';
     $('fwho').innerHTML = '<span class="sm muted" style="margin-right:4px">Owner</span>' + Object.keys(people).map(p => `<button type="button" data-who="${p}" aria-pressed="${view.who.has(p)}" title="${people[p].name}">${av(p)}</button>`).join('') +
       `<button type="button" class="un" data-who="" aria-pressed="${view.who.has('')}">${av(null)}No owner</button>`;
@@ -598,12 +609,15 @@
     b.onclick = () => { view.compact = b.dataset.cards === 'compact'; document.querySelectorAll('[data-cards]').forEach(x => x.setAttribute('aria-pressed', x === b)); render(); };
   });
   $('fepic').hidden = LEVEL === 'epics';
+  $('fhealth').hidden = LEVEL === 'epics';
+  $('fhealth').innerHTML = '<option value="">Any health</option>' + Object.entries(HEALTH).map(([k, l]) => `<option value="${k}">${l}</option>`).join('') + '<option value="none">Not set</option>';
+  $('fhealth').onchange = e => { view.health = e.target.value; render(); };
   $('fepic').innerHTML = '<option value="">Any Epic</option>' + allEpics.map(e => `<option value="${e.key}">${esc(e.title)}</option>`).join('');
   $('btnFilter').onclick = () => { view.filterOpen = !view.filterOpen; render(); if (view.filterOpen) $('fq').focus(); };
   $('fq').oninput = e => { view.q = e.target.value.trim(); render(); };
   $('fepic').onchange = e => { view.epic = e.target.value; render(); };
   $('fwho').onclick = e => { const b = e.target.closest('[data-who]'); if (!b) return; const p = b.dataset.who; view.who.has(p) ? view.who.delete(p) : view.who.add(p); render(); };
-  $('fclear').onclick = () => { view.q = ''; view.epic = ''; view.who.clear(); $('fq').value = ''; $('fepic').value = ''; render(); };
+  $('fclear').onclick = () => { view.q = ''; view.epic = ''; view.health = ''; view.who.clear(); $('fq').value = ''; $('fepic').value = ''; $('fhealth').value = ''; render(); };
 
   /* Real-time simulations (Preview panel) */
   const closings = [['mei', 'SHIP-144'], ['sam', 'SHIP-129'], ['tom', 'SHIP-158']];
@@ -639,12 +653,16 @@
     $('banners').onclick = e => { if (e.target.id === 'retry') back(); };
   }
 
+  if (view.compact) document.querySelectorAll('[data-cards]').forEach(x => x.setAttribute('aria-pressed', x.dataset.cards === 'compact'));
+  if (LEVEL === 'features' && ['ok', 'risk', 'blocked', 'none'].includes(params.get('fhealth'))) { view.health = params.get('fhealth'); view.filterOpen = true; $('fhealth').value = view.health; }
   render();
   if (params.get('confirm') && cards.some(c => c.key === params.get('confirm'))) guardDone(params.get('confirm'), 'done', () => { const r = move(params.get('confirm'), 'done', null, null); render(); toast(describe(r)); });
   SL.preview([
     { label: 'Teammate closes a story', run: teammateCloses },
     { label: 'Teammate moves a card', run: teammateMove },
     { label: 'Drop connection', run: dropConnection },
+    ...(LEVEL === 'features' ? [{ label: 'Compact cards (health dot)', run: () => document.querySelector('[data-cards="compact"]').click() },
+      { label: 'Filter: At risk', run: () => { view.health = 'risk'; view.filterOpen = true; $('fhealth').value = 'risk'; render(); } }] : []),
     ...(LEVEL === 'features' ? [{ label: view.lanes === 'epic' ? 'No lanes' : 'Lanes by Epic', run: () => { view.lanes = view.lanes === 'epic' ? 'none' : 'epic'; syncLanes(); render(); } }] : []),
   ]);
 })();
