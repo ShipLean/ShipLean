@@ -33,6 +33,8 @@ public static class RetroSharedTestIds
     public const string RetroBoardAddAbout = "retro-board-add-about";
     public const string RetroBoardAddSave = "retro-board-add-save";
     public const string RetroBoardAddCancel = "retro-board-add-cancel";
+    // L727b board
+    public const string RetroThemeRecurring = "retro-theme-recurring";
     public const string RetroActionDialog = "retro-action-dialog";
     public const string RetroActionModeNew = "retro-action-mode-new";
     public const string RetroActionModeExisting = "retro-action-mode-existing";

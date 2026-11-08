@@ -29,6 +29,8 @@ export const retroSharedTestIds = {
   retroBoardAddAbout: 'retro-board-add-about',
   retroBoardAddSave: 'retro-board-add-save',
   retroBoardAddCancel: 'retro-board-add-cancel',
+  // L727b board
+  retroThemeRecurring: 'retro-theme-recurring',
   retroActionDialog: 'retro-action-dialog',
   retroActionModeNew: 'retro-action-mode-new',
   retroActionModeExisting: 'retro-action-mode-existing',

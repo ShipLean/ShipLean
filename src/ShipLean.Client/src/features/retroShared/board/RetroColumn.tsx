@@ -6,7 +6,13 @@ import { retroSharedTestIds as ids } from '../testIds';
 import { AddNote } from './AddNote';
 import type { AddTarget } from './AddTarget';
 import type { NoteOptions } from './NoteOptions';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { ThemeGroupHeading } from './ThemeGroupHeading';
+
+// At touch the notes fill two columns on a tablet (600–900px) and one on a phone; a theme heading spans the row.
+// Applied only at touch, so the desktop markup stays as it was.
+const TOUCH_NOTES = 'grid gap-2 grid-cols-2 phone:grid-cols-[minmax(0,1fr)]';
+const TOUCH_GROUP = `${TOUCH_NOTES} [&>:first-child]:col-span-full`;
 
 /** One category's column: title, the number of notes shown, how many still need a decision, the notes, then Add. */
 export function RetroColumn({
@@ -20,6 +26,7 @@ export function RetroColumn({
   onOpenAdd,
   onCloseAdd,
   onAdded,
+  onRecurring,
 }: {
   column: RetroCategoryColumnDto;
   groupByTheme: boolean;
@@ -31,7 +38,10 @@ export function RetroColumn({
   onOpenAdd: () => void;
   onCloseAdd: () => void;
   onAdded?: (point: RetroPointDto) => void;
+  /** At touch, the page's Recurring sheet, opened from a theme heading's Recurring chip. */
+  onRecurring?: () => void;
 }) {
+  const { touch } = useTouchShell();
   const groups = column.groups
     .map((group) => ({ ...group, points: group.points.filter(filter) }))
     .filter((group) => group.points.length > 0);
@@ -48,6 +58,7 @@ export function RetroColumn({
       scope={scope}
     />
   );
+  const flatNotes = groups.flatMap((group) => group.points).map((point) => renderNote(point, true));
   return (
     <section
       data-testid={ids.retroBoardColumn}
@@ -75,17 +86,25 @@ export function RetroColumn({
           </span>
         ) : null}
       </header>
-      {groupByTheme
-        ? groups.map((group) => (
-            <div
-              key={group.theme?.id ?? 'unthemed'}
-              className="grid grid-cols-[minmax(0,1fr)] gap-2"
-            >
-              <ThemeGroupHeading theme={group.theme} recurring={group.recurring} />
-              {group.points.map((point) => renderNote(point, false))}
-            </div>
-          ))
-        : groups.flatMap((group) => group.points).map((point) => renderNote(point, true))}
+      {groupByTheme ? (
+        groups.map((group) => (
+          <div
+            key={group.theme?.id ?? 'unthemed'}
+            className={touch ? TOUCH_GROUP : 'grid grid-cols-[minmax(0,1fr)] gap-2'}
+          >
+            <ThemeGroupHeading
+              theme={group.theme}
+              recurring={group.recurring}
+              onRecurring={onRecurring}
+            />
+            {group.points.map((point) => renderNote(point, false))}
+          </div>
+        ))
+      ) : touch ? (
+        <div className={TOUCH_NOTES}>{flatNotes}</div>
+      ) : (
+        flatNotes
+      )}
       <AddNote
         category={column.category}
         add={add}
