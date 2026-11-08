@@ -61,13 +61,16 @@ export function EncryptionFields({
         value={draft.passphraseConfirm}
         autoComplete="new-password"
         spellCheck={false}
+        aria-describedby={mismatch === undefined ? undefined : `${id}-mismatch`}
         onChange={(e) => onChange({ passphraseConfirm: e.target.value })}
       />
       <span className="font-normal text-caution">
         Without this passphrase these backups can&apos;t be restored. Keep it somewhere other than
         this server.
       </span>
-      <FieldError message={mismatch} testId={backupsTestIds.backupsFieldError} />
+      <span id={`${id}-mismatch`}>
+        <FieldError message={mismatch} testId={backupsTestIds.backupsFieldError} />
+      </span>
       <span id={`${id}-error`}>
         <FieldError message={error} testId={backupsTestIds.backupsFieldError} />
       </span>

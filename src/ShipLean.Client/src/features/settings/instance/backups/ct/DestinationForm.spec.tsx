@@ -37,7 +37,7 @@ test('warns about http endpoints', async ({ mount }) => {
 test('keeps the saved secret unless replaced', async ({ mount, page }) => {
   const stub = await stubBackupsApi(page);
   const view = await mount(<BackupsHarness />);
-  const lastFour = view.getByTestId(`${ids.backupsSecretKey}-last-four`);
+  const lastFour = view.getByTestId(ids.backupsSecretKeyLastFour);
   await expect(lastFour).toContainText('x9Qm');
   await expect(view.getByTestId(ids.backupsSecretKey)).toHaveCount(0);
   await view.getByTestId(ids.backupsBucket).fill('other-bucket');
@@ -45,7 +45,7 @@ test('keeps the saved secret unless replaced', async ({ mount, page }) => {
   await expect.poll(() => stub.puts.length).toBe(1);
   const kept = stub.puts[0] as { destination: { s3: { secretKey: string | null } } };
   expect(kept.destination.s3.secretKey).toBeNull();
-  await view.getByTestId(`${ids.backupsSecretKey}-replace`).click();
+  await view.getByTestId(ids.backupsSecretKeyReplace).click();
   await view.getByTestId(ids.backupsSecretKey).fill('brand-new-secret');
   await view.getByTestId(ids.backupsSaveButton).click();
   await expect.poll(() => stub.puts.length).toBe(2);
@@ -69,12 +69,21 @@ test('reports invalid until passphrases match', async ({ mount }) => {
   await expect(view.getByTestId(draftId)).toContainText('"passphrase":"a long phrase"');
 });
 
+test('explains why save is disabled on first setup', async ({ mount }) => {
+  const view = await mount(<DestinationFormHarness settings={notConfigured} />);
+  await view.getByTestId(ids.backupsBucket).fill('shiplean-backups');
+  await expect(view.getByTestId(validId)).toHaveText('false');
+  await expect(view.getByTestId(ids.backupsFieldError)).toHaveText(
+    'Set a passphrase. Backups can not be opened without it.',
+  );
+  await expect(view.getByTestId(ids.backupsPassphrase)).toHaveAccessibleDescription(
+    'Set a passphrase. Backups can not be opened without it.',
+  );
+});
+
 test('shows the passphrase generation once saved', async ({ mount }) => {
   const view = await mount(<DestinationFormHarness settings={configured} />);
   await expect(view.getByTestId(ids.backupsPassphraseInfo)).toHaveText('Passphrase #2, set 20 Oct');
-  await expect(view.getByText('old backups keep the old passphrase', { exact: false })).toHaveCount(
-    0,
-  );
   await expect(
     view.getByText('backups already in the destination keep the old passphrase'),
   ).toBeVisible();
@@ -91,6 +100,17 @@ test('disables attachments when inside the database backup', async ({ mount }) =
   await expect(view.getByTestId(ids.backupsAttachmentsToggle)).toBeChecked();
   await expect(view.getByText('Already inside the database backup')).toBeVisible();
   await expect(view.getByTestId(ids.backupsAttachmentsNote)).toBeVisible();
+});
+
+test('hints that S3 attachments are already stored', async ({ mount }) => {
+  const inS3 = {
+    ...configured,
+    attachmentStore: { kind: 's3', inDatabaseBackup: false },
+  } as BackupSettings;
+  const view = await mount(<DestinationFormHarness settings={inS3} />);
+  await expect(view.getByTestId(ids.backupsAttachmentsNote)).toHaveText(
+    'Your attachments are already in S3; turn this on only if you want a second copy.',
+  );
 });
 
 test('shows the failing step from test connection', async ({ mount, page }) => {

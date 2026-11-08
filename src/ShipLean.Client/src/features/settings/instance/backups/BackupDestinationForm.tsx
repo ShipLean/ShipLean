@@ -69,8 +69,17 @@ export function BackupDestinationForm({
   const custom = draft.endpointMode === 'custom';
   const switchMode = (mode: EndpointMode) =>
     change({ ...withEndpointMode(draft, mode, settings), forcePathStyle: mode === 'custom' });
-  const describedBy = (path: string, message: string | undefined) =>
-    message === undefined ? undefined : `${id}-${path}`;
+  const describedBy = (path: string, message: string | undefined, ...extra: string[]) => {
+    const parts = [
+      ...extra.map((e) => `${id}-${e}`),
+      ...(message === undefined ? [] : [`${id}-${path}`]),
+    ];
+    return parts.length === 0 ? undefined : parts.join(' ');
+  };
+  const endpointMessage = errors['destination.s3.endpointUrl'] ?? problems.endpointUrl;
+  const regionMessage = errors['destination.s3.region'] ?? problems.region;
+  const bucketMessage = errors['destination.s3.bucket'] ?? problems.bucket;
+  const accessKeyMessage = errors['destination.s3.accessKeyId'] ?? problems.accessKeyId;
   const error = (path: string, message: string | undefined) => (
     <span id={`${id}-${path}`}>
       <FieldError message={message} testId={backupsTestIds.backupsFieldError} />
@@ -94,30 +103,38 @@ export function BackupDestinationForm({
         </label>
         {custom ? (
           <>
-            <label className={field}>
-              Endpoint URL
-              <input
-                data-testid={backupsTestIds.backupsEndpointUrl}
-                className={input}
-                value={draft.endpointUrl}
-                spellCheck={false}
-                autoComplete="off"
-                aria-describedby={describedBy('endpoint', errors['destination.s3.endpointUrl'])}
-                onChange={(e) => change({ endpointUrl: e.target.value })}
-              />
-              <span className={hint}>
+            <div className="grid gap-1">
+              <label className={field}>
+                Endpoint URL
+                <input
+                  data-testid={backupsTestIds.backupsEndpointUrl}
+                  className={input}
+                  value={draft.endpointUrl}
+                  spellCheck={false}
+                  autoComplete="off"
+                  aria-describedby={describedBy(
+                    'endpoint',
+                    endpointMessage,
+                    'endpoint-hint',
+                    ...(isHttp(draft.endpointUrl) ? ['endpoint-warning'] : []),
+                  )}
+                  onChange={(e) => change({ endpointUrl: e.target.value })}
+                />
+              </label>
+              <span id={`${id}-endpoint-hint`} className={hint}>
                 Private addresses are fine. No user name, query or fragment in the URL.
               </span>
               {isHttp(draft.endpointUrl) ? (
                 <span
+                  id={`${id}-endpoint-warning`}
                   data-testid={backupsTestIds.backupsHttpWarning}
                   className="font-normal text-caution"
                 >
                   Keys are sent unencrypted over http
                 </span>
               ) : null}
-            </label>
-            {error('endpoint', errors['destination.s3.endpointUrl'])}
+            </div>
+            {error('endpoint', endpointMessage)}
             <label className={field}>
               Signing region
               <input
@@ -126,11 +143,13 @@ export function BackupDestinationForm({
                 value={draft.region}
                 spellCheck={false}
                 autoComplete="off"
-                aria-describedby={describedBy('region', errors['destination.s3.region'])}
+                aria-describedby={describedBy('region', regionMessage, 'region-hint')}
                 onChange={(e) => change({ region: e.target.value })}
               />
-              <span className={hint}>Whatever your store expects; most accept us-east-1.</span>
             </label>
+            <span id={`${id}-region-hint`} className={hint}>
+              Whatever your store expects; most accept us-east-1.
+            </span>
             <label className="flex items-center gap-2 text-[length:var(--text-sm)] font-medium text-ink">
               <input
                 type="checkbox"
@@ -148,7 +167,7 @@ export function BackupDestinationForm({
               data-testid={backupsTestIds.backupsRegionSelect}
               className={`${input} font-sans`}
               value={draft.region}
-              aria-describedby={describedBy('region', errors['destination.s3.region'])}
+              aria-describedby={describedBy('region', regionMessage)}
               onChange={(e) => change({ region: e.target.value })}
             >
               {settings.regions.map((r) => (
@@ -159,7 +178,7 @@ export function BackupDestinationForm({
             </select>
           </label>
         )}
-        {error('region', errors['destination.s3.region'])}
+        {error('region', regionMessage)}
         <label className={field}>
           Bucket
           <input
@@ -169,26 +188,29 @@ export function BackupDestinationForm({
             placeholder="shiplean-backups"
             spellCheck={false}
             autoComplete="off"
-            aria-describedby={describedBy('bucket', errors['destination.s3.bucket'])}
+            aria-describedby={describedBy('bucket', bucketMessage)}
             onChange={(e) => change({ bucket: e.target.value })}
           />
         </label>
-        {error('bucket', errors['destination.s3.bucket'])}
-        <label className={field}>
-          Prefix
-          <input
-            data-testid={backupsTestIds.backupsPrefix}
-            className={input}
-            value={draft.prefix}
-            spellCheck={false}
-            autoComplete="off"
-            onChange={(e) => change({ prefix: e.target.value })}
-          />
-          <span className={hint}>
+        {error('bucket', bucketMessage)}
+        <div className="grid gap-1">
+          <label className={field}>
+            Prefix
+            <input
+              data-testid={backupsTestIds.backupsPrefix}
+              className={input}
+              value={draft.prefix}
+              spellCheck={false}
+              autoComplete="off"
+              aria-describedby={`${id}-prefix-hint`}
+              onChange={(e) => change({ prefix: e.target.value })}
+            />
+          </label>
+          <span id={`${id}-prefix-hint`} className={hint}>
             A folder inside the bucket. Database backups go in {draft.prefix}database/, attachments
             in {draft.prefix}attachments/.
           </span>
-        </label>
+        </div>
         <label className={field}>
           Access key ID
           <input
@@ -199,11 +221,11 @@ export function BackupDestinationForm({
             placeholder="Optional"
             spellCheck={false}
             autoComplete="off"
-            aria-describedby={describedBy('access-key', errors['destination.s3.accessKeyId'])}
+            aria-describedby={describedBy('access-key', accessKeyMessage)}
             onChange={(e) => change({ accessKeyId: e.target.value })}
           />
         </label>
-        {error('access-key', errors['destination.s3.accessKeyId'] ?? problems.accessKeyId)}
+        {error('access-key', accessKeyMessage)}
         <TokenField
           label="Secret key"
           hint="Stored encrypted and never shown again. Leave it blank to keep the saved one."
@@ -212,10 +234,11 @@ export function BackupDestinationForm({
           edit={secretEdit}
           ids={{
             input: backupsTestIds.backupsSecretKey,
-            lastFour: `${backupsTestIds.backupsSecretKey}-last-four`,
-            replace: `${backupsTestIds.backupsSecretKey}-replace`,
-            clear: `${backupsTestIds.backupsSecretKey}-clear`,
-            env: `${backupsTestIds.backupsSecretKey}-env`,
+            lastFour: backupsTestIds.backupsSecretKeyLastFour,
+            replace: backupsTestIds.backupsSecretKeyReplace,
+            clear: backupsTestIds.backupsSecretKeyClear,
+            env: backupsTestIds.backupsSecretKeyEnv,
+            error: backupsTestIds.backupsFieldError,
           }}
           disabled={false}
           error={problems.secretKey}
@@ -265,7 +288,7 @@ export function BackupDestinationForm({
         settings={settings}
         draft={draft}
         onChange={change}
-        error={errors.passphrase}
+        error={errors.passphrase ?? problems.passphrase}
         mismatch={problems.passphraseConfirm}
       />
       <AttachmentsToggle
