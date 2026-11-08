@@ -17,6 +17,11 @@ public static class BacklogTestIds
     public const string FilterError = "backlog-filter-error";
     public const string DragOffBanner = "backlog-drag-off-banner";
     public const string Grip = "backlog-grip";
+    public const string TouchRowList = "backlog-touch-row-list";
+    public const string TouchRowHandle = "backlog-touch-row-handle";
+    public const string TouchRowMeta = "backlog-touch-row-meta";
+    public const string TouchRowForecast = "backlog-touch-row-forecast";
+    public const string TouchRowSelect = "backlog-touch-row-select";
     public const string Conflict = "backlog-conflict";
     public const string List = "backlog-list";
     public const string TreeGroup = "backlog-tree-group";
