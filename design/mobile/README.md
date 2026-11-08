@@ -10,6 +10,7 @@ The frame every screen sits in, at 900px wide and below: one sticky top bar, a n
 | `screenshots.sh` | Regenerates `images/<state>.<theme>.png` from `../screens/` with headless Chrome. |
 | `work-item.html` | The design review for the **work item page** (SHIP-714): today, every state, the rules, the decisions and the acceptance criteria. Its images are `images/item*.png`, `images/feature*.png` and `images/today-item*.png`, `today-feature.png`. |
 | `feature-board.html` | The design review for the **Feature board** (SHIP-722): today, the three layouts considered, every state, the rules, the decisions and the acceptance criteria. Its images are `images/fboard*.png` and `images/today-fboard*.png`. |
+| `decisions-review.html` | The design review for **Decisions and questions** on a phone (SHIP-922): what changes under 900px, every phone state, the desktop screens for reference and the phone decisions M1–M6. Its images are `images/decisions*.png`. |
 
 The shell itself is built in `../screens/shared.js` and `../screens/shiplean.css`, so any reference screen shows it in a window narrower than 900px. These address parameters open its states: `?nav` (drawer), `?picker`, `?search` or `?search=pay`, `?usermenu`, `?offline` (Reconnecting).
 
@@ -585,3 +586,30 @@ The sprint Taskboard (`/p/:key/sprints/:id/taskboard`) at 900px and below, insid
 | Settings: Styles | ![Settings styles, light](images/tboard-settings.light.png) | ![Settings styles, dark](images/tboard-settings.dark.png) |
 | Settings: Fields | ![Settings fields, light](images/tboard-settings-fields.light.png) | ![Settings fields, dark](images/tboard-settings-fields.dark.png) |
 | Settings: Tag colours | ![Settings tag colours, light](images/tboard-settings-tags.light.png) | ![Settings tag colours, dark](images/tboard-settings-tags.dark.png) |
+
+## Decisions and questions on a phone (SHIP-922)
+
+The Decisions and questions section of the work item page at 900px and below, inside the SHIP-714 touch layout and following the shared rules on SHIP-805. The section, its rules and D1–D12 / UI1–UI12 (settled 9 Nov 2026) are on SHIP-922; the phone decisions M1–M6 are in the review page and on SHIP-922.
+
+| File | What it is |
+|---|---|
+| `../screens/decisions.html` | The screen, desktop and phone. It loads `item-touch.css` and `item-touch.js`. Phone review aids: `?menu=<n>` opens D<n>'s ⋯ action sheet; with `?shot`, `?from=D3` or `?from=Q1` hides what is above that row, and `?at=Decisions` or `?at=History` start at a section. |
+| `decisions-review.html` | The design review: what changes on a phone, the phone states, the desktop screens and M1–M6. |
+| `images/decisions*.png` | `../screens/decisions.html` at 390 × 844, 2× scale, light and dark (made by `screenshots.sh`). |
+
+There is no "today": the section is new.
+
+| State | Light | Dark |
+|---|---|---|
+| Top of the page | ![Top of the page, light](images/decisions.light.png) | ![Top of the page, dark](images/decisions.dark.png) |
+| The section | ![The section, light](images/decisions-section.light.png) | ![The section, dark](images/decisions-section.dark.png) |
+| Decision rows | ![Decision rows, light](images/decisions-decision.light.png) | ![Decision rows, dark](images/decisions-decision.dark.png) |
+| ⋯ action sheet | ![⋯ action sheet, light](images/decisions-menu.light.png) | ![⋯ action sheet, dark](images/decisions-menu.dark.png) |
+| Change an open decision | ![Change an open decision, light](images/decisions-change.light.png) | ![Change an open decision, dark](images/decisions-change.dark.png) |
+| Change a confirmed decision | ![Change a confirmed decision, light](images/decisions-settled-change.light.png) | ![Change a confirmed decision, dark](images/decisions-settled-change.dark.png) |
+| History under a decision | ![History under a decision, light](images/decisions-history.light.png) | ![History under a decision, dark](images/decisions-history.dark.png) |
+| Reply to a question | ![Reply to a question, light](images/decisions-reply.light.png) | ![Reply to a question, dark](images/decisions-reply.dark.png) |
+| Nothing waiting | ![Nothing waiting, light](images/decisions-folded.light.png) | ![Nothing waiting, dark](images/decisions-folded.dark.png) |
+| None yet | ![None yet, light](images/decisions-empty.light.png) | ![None yet, dark](images/decisions-empty.dark.png) |
+| Feature with Stories waiting | ![Feature with Stories waiting, light](images/decisions-feature.light.png) | ![Feature with Stories waiting, dark](images/decisions-feature.dark.png) |
+| History rail | ![History rail, light](images/decisions-rail.light.png) | ![History rail, dark](images/decisions-rail.dark.png) |
