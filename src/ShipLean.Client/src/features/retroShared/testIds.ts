@@ -40,4 +40,7 @@ export const retroSharedTestIds = {
   retroActionFixOption: 'retro-action-fix-option',
   retroActionPickCheck: 'retro-action-pick-check',
   retroActionSave: 'retro-action-save',
+  // L727a touch
+  retroActionCreate: 'retro-action-create',
+  retroActionStartsNote: 'retro-action-starts-note',
 } as const;

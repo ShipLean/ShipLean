@@ -7,10 +7,12 @@ import { retroSharedTestIds as ids } from '../testIds';
 import type { AddTarget } from './AddTarget';
 import { useCreatePoint } from './useCreatePoint';
 
+// At 900px and below (SHIP-727 D6) every field is 16px (K1's base rule), About stays a native select (C5) 40px tall,
+// and Add and Cancel are 32px.
 const fieldClass =
-  'w-full resize-y rounded-[var(--radius-xs)] border border-edge bg-white px-1.5 py-1 text-[length:var(--text-xs)] text-ink';
+  'w-full resize-y rounded-[var(--radius-xs)] border border-edge bg-white px-1.5 py-1 text-[length:var(--text-xs)] text-ink touch:px-2 touch:py-1.5';
 const miniClass =
-  'h-[22px] cursor-pointer rounded-[var(--radius-xs)] border px-2 text-[length:var(--text-xs)] disabled:cursor-default disabled:opacity-60';
+  'h-[22px] cursor-pointer rounded-[var(--radius-xs)] border px-2 text-[length:var(--text-xs)] disabled:cursor-default disabled:opacity-60 touch:h-[var(--touch-target)] touch:px-3.5 touch:text-[length:var(--text-sm)]';
 
 /** The blank note a column opens: text, a root cause on Went badly, an About choice in a sprint. Never names a retro: the server finds or makes the person's own. */
 export function NoteEditor({
@@ -62,7 +64,7 @@ export function NoteEditor({
   }
 
   return (
-    <article className="paper paper-postit paper-sheet relative grid min-w-0 gap-1.5 rounded-[2px] border px-2.5 py-2 text-[length:var(--text-xs)]">
+    <article className="paper paper-postit paper-sheet relative grid min-w-0 gap-1.5 rounded-[2px] border px-2.5 py-2 text-[length:var(--text-xs)] touch:gap-2 touch:px-3 touch:py-2.5 touch:text-[length:var(--text-sm)]">
       <textarea
         ref={field}
         data-testid={ids.retroBoardAddText}
@@ -92,7 +94,7 @@ export function NoteEditor({
           <select
             data-testid={ids.retroBoardAddAbout}
             value={about}
-            className={fieldClass}
+            className={`${fieldClass} touch:h-10`}
             onChange={(event) => setAbout(event.target.value)}
           >
             {add.about.map((option) => (
@@ -103,7 +105,7 @@ export function NoteEditor({
           </select>
         </label>
       ) : null}
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5 touch:gap-2">
         <button
           type="button"
           data-testid={ids.retroBoardAddSave}

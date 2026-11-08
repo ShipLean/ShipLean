@@ -3,7 +3,11 @@ import type { KeyboardEvent } from 'react';
 import type { RetroThemeMode, RetroThemeOptionDto } from '../../api/retros';
 import { retroSharedTestIds as ids } from './testIds';
 
-/** Pick a theme from the project's list or add a new name. Typing filters the list case-insensitively; a name that matches none offers "Add 'X'". */
+/**
+ * Pick a theme from the project's list or add a new name. Typing filters the list case-insensitively; a name that matches
+ * none offers "Add 'X'". At 900px and below it fills the sheet it sits in, with 32px rows; the search is never focused
+ * until tapped.
+ */
 export function ThemePicker({
   themes,
   mode,
@@ -51,13 +55,13 @@ export function ThemePicker({
   }
 
   const optionClass = (i: number) =>
-    `flex cursor-pointer items-center justify-between gap-2 rounded-xs px-2 py-1 text-[length:var(--text-sm)] ${i === active ? 'bg-signal-soft' : ''}`;
+    `flex cursor-pointer items-center justify-between gap-2 rounded-xs px-2 py-1 text-[length:var(--text-sm)] touch:min-h-[var(--touch-target)] touch:text-[length:var(--text-base)] ${i === active ? 'bg-signal-soft' : ''}`;
 
   return (
     <div
       data-testid={ids.retroThemePicker}
       data-mode={mode}
-      className="grid w-64 gap-1 rounded-md border border-edge bg-panel p-1.5"
+      className="grid w-64 gap-1 rounded-md border border-edge bg-panel p-1.5 touch:w-full touch:border-0 touch:bg-transparent touch:px-0"
     >
       <input
         type="text"
@@ -68,7 +72,7 @@ export function ThemePicker({
         aria-activedescendant={optionCount > 0 ? `${listId}-${active}` : undefined}
         placeholder={current ? current.theme.name : 'Pick or add a theme'}
         value={query}
-        className="h-7 rounded-sm border border-edge bg-canvas px-2 text-[length:var(--text-sm)] text-ink"
+        className="h-7 rounded-sm border border-edge bg-canvas px-2 text-[length:var(--text-sm)] text-ink touch:h-10"
         onChange={(e) => {
           setQuery(e.target.value);
           setActive(0);

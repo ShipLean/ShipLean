@@ -44,4 +44,7 @@ public static class RetroSharedTestIds
     public const string RetroActionFixOption = "retro-action-fix-option";
     public const string RetroActionPickCheck = "retro-action-pick-check";
     public const string RetroActionSave = "retro-action-save";
+    // L727a touch
+    public const string RetroActionCreate = "retro-action-create";
+    public const string RetroActionStartsNote = "retro-action-starts-note";
 }
