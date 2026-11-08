@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
 using System.Globalization;
+using System.Net;
+using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
 using ShipLean.Application.Features.IssueIntake.GitHub;
@@ -11,8 +13,9 @@ using Shouldly;
 
 namespace ShipLean.WebApi.Tests.IssueIntake.Publish;
 
-// D14: GitHubImagePublications against a stub of the GitHub REST API over https on loopback. The stub answers by path, so each
-// test sets the commit, the docker-publish.yml runs and the compare answers it needs.
+// D14: GitHubImagePublications through the real GitHubIssuesClient against a fake GitHub REST API (an in-process handler; the
+// loopback HttpsStubServer's fallback route skips paths whose last segment has a dot, as compare/{fix}...{head} does). It answers
+// by path, so each test sets the commit, the docker-publish.yml runs and the compare answers it needs; any other path is a 404.
 [TestFixture]
 public class GitHubImagePublicationsTests
 {
@@ -27,33 +30,20 @@ public class GitHubImagePublicationsTests
     // Whole seconds in UTC, as GitHub writes times.
     private static readonly DateTimeOffset MergedAt = DateTimeOffset.FromUnixTimeSeconds(TimeProvider.System.GetUtcNow().AddDays(-1).ToUnixTimeSeconds());
 
-    private HttpsStubServer _server = null!;
-    private CapturingClients _clients = null!;
+    private FakeGitHub _clients = null!;
     private FakeTimeProvider _clock = null!;
-    private ServiceProvider _services = null!;
+    private ClientScopes _scopes = null!;
 
     [SetUp]
-    public async Task StartTheStub()
+    public void StartTheFake()
     {
-        _server = await HttpsStubServer.StartAsync();
-        _clients = new CapturingClients();
+        _clients = new FakeGitHub();
         _clock = new FakeTimeProvider(TimeProvider.System.GetUtcNow());
-        _services = new ServiceCollection()
-            .AddSingleton<IHttpClientFactory>(_clients)
-            .AddSingleton<IIntegrationSettings>(new FixedIntegrationSettings(new IntegrationSettingsDto("ghp_test_token", _server.BaseAddress.AbsoluteUri, null, null, [])))
-            .AddScoped<GitHubIssuesClient>()
-            .BuildServiceProvider();
-        _server.Respond($"{Repo}/commits/{Fix}", $$"""{ "sha": "{{Fix}}", "commit": { "committer": { "date": "{{GitHubTime(MergedAt)}}" } } }""");
+        _scopes = new ClientScopes(new GitHubIssuesClient(_clients, new FixedIntegrationSettings(new IntegrationSettingsDto("ghp_test_token", "https://api.github.test/", null, null, []))));
+        _clients.Respond($"{Repo}/commits/{Fix}", $$"""{ "sha": "{{Fix}}", "commit": { "committer": { "date": "{{GitHubTime(MergedAt)}}" } } }""");
     }
 
-    [TearDown]
-    public async Task StopTheStub()
-    {
-        await _services.DisposeAsync();
-        await _server.DisposeAsync();
-    }
-
-    private GitHubImagePublications Publications() => new(_services.GetRequiredService<IServiceScopeFactory>(), _clock);
+    private GitHubImagePublications Publications() => new(_scopes, _clock);
 
     private static string GitHubTime(DateTimeOffset at) => at.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
 
@@ -68,10 +58,10 @@ public class GitHubImagePublicationsTests
 
     // Newest first, as GitHub lists them.
     private void Runs(params string[] runs)
-        => _server.Respond(RunsPath, $$"""{ "total_count": {{runs.Length}}, "workflow_runs": [{{string.Join(",", runs.Reverse())}}] }""");
+        => _clients.Respond(RunsPath, $$"""{ "total_count": {{runs.Length}}, "workflow_runs": [{{string.Join(",", runs.Reverse())}}] }""");
 
     private void Compare(string head, string status)
-        => _server.Respond($"{Repo}/compare/{Fix}...{head}", $$"""{ "status": "{{status}}", "ahead_by": 1, "behind_by": 0, "commits": [], "files": [] }""");
+        => _clients.Respond($"{Repo}/compare/{Fix}...{head}", $$"""{ "status": "{{status}}", "ahead_by": 1, "behind_by": 0, "commits": [], "files": [] }""");
 
     [Test]
     public async Task Find_WhenFixRunSucceeded_ShouldReturnPublished()
@@ -177,25 +167,44 @@ public class GitHubImagePublicationsTests
         _clients.Sent.Count.ShouldBeGreaterThan(asked);
     }
 
-    // An IHttpClientFactory whose clients call the stub (accepting its self-signed certificate) and keep each request's path and query.
-    private sealed class CapturingClients : IHttpClientFactory
+    // Scopes whose provider hands out the one client (GitHubImagePublications resolves it per lookup).
+    private sealed class ClientScopes(GitHubIssuesClient client) : IServiceScopeFactory, IServiceProvider
+    {
+        public IServiceScope CreateScope() => new Scope(this);
+
+        public object? GetService(Type serviceType) => serviceType == typeof(GitHubIssuesClient) ? client : null;
+
+        private sealed class Scope(IServiceProvider provider) : IServiceScope
+        {
+            public IServiceProvider ServiceProvider => provider;
+
+            public void Dispose()
+            {
+            }
+        }
+    }
+
+    // An IHttpClientFactory whose clients answer from Respond by path (404 for any other) and keep each request's path and query.
+    private sealed class FakeGitHub : IHttpClientFactory
     {
         private readonly ConcurrentQueue<string> _sent = new();
+        private readonly ConcurrentDictionary<string, string> _answers = new(StringComparer.Ordinal);
 
         public IReadOnlyList<string> Sent => [.. _sent];
 
-        public HttpClient CreateClient(string name)
-        {
-            var inner = new HttpClientHandler { AllowAutoRedirect = false, UseProxy = false, ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator };
-            return new HttpClient(new Capture(this, inner)) { Timeout = TimeSpan.FromSeconds(15) };
-        }
+        public void Respond(string path, string body) => _answers[path] = body;
 
-        private sealed class Capture(CapturingClients owner, HttpMessageHandler inner) : DelegatingHandler(inner)
+        public HttpClient CreateClient(string name) => new(new Answer(this));
+
+        private sealed class Answer(FakeGitHub owner) : HttpMessageHandler
         {
             protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             {
                 owner._sent.Enqueue(request.RequestUri!.PathAndQuery);
-                return base.SendAsync(request, cancellationToken);
+                var response = owner._answers.TryGetValue(request.RequestUri.AbsolutePath, out var body)
+                    ? new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(body, Encoding.UTF8, "application/json") }
+                    : new HttpResponseMessage(HttpStatusCode.NotFound) { Content = new StringContent("""{ "message": "Not Found" }""", Encoding.UTF8, "application/json") };
+                return Task.FromResult(response);
             }
         }
     }
