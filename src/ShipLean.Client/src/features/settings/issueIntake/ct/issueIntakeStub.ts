@@ -6,7 +6,10 @@ import type { IssueIntakeSaveDto, IssueIntakeSettingsDto } from '../types';
 export const issueIntakeSample: IssueIntakeSettingsDto = sample;
 
 /** Answers GET with `settings` and PUT with the saved fields over it; returns the PUT bodies the page sent. */
-export async function stubIssueIntake(page: Page, settings: IssueIntakeSettingsDto = issueIntakeSample) {
+export async function stubIssueIntake(
+  page: Page,
+  settings: IssueIntakeSettingsDto = issueIntakeSample,
+) {
   const saves: IssueIntakeSaveDto[] = [];
   await page.route('**/api/projects/*/settings/issue-intake', async (route) => {
     if (route.request().method() !== 'PUT') {

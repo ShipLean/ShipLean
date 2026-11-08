@@ -42,7 +42,13 @@ test('IssueIntakeSettingsDto_ShouldMatchThePinnedBody', () => {
     ].sort(),
   );
   expect(Object.keys(settings.readiness).sort()).toEqual(
-    ['hasAgentConnection', 'hasGitHubRepository', 'hasGitHubToken', 'hasRunAs', 'hasWebhookSecret'].sort(),
+    [
+      'hasAgentConnection',
+      'hasGitHubRepository',
+      'hasGitHubToken',
+      'hasRunAs',
+      'hasWebhookSecret',
+    ].sort(),
   );
 });
 
