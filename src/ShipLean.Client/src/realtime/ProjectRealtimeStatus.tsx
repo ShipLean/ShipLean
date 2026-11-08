@@ -33,7 +33,7 @@ export function ProjectRealtimeStatus({
   useRefreshMembersOnArrival(projectId, userIds);
   return (
     <>
-      <span className="flex items-center gap-3">
+      <span className="flex items-center gap-3 touch:gap-1">
         <PresenceStack userIds={userIds} members={members ?? []} meId={meId} />
         <LiveDot state={state} />
       </span>
