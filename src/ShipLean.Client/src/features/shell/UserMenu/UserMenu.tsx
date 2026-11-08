@@ -11,10 +11,11 @@ import { shellTestIds as ids } from '../testIds';
 import { useMe } from '../useShellQueries';
 
 const itemClass =
-  'flex h-[30px] items-center gap-2 rounded-control px-2 text-[length:var(--text-sm)] text-ink hover:bg-signal-soft focus-visible:bg-signal-soft focus-visible:outline-0';
+  'flex h-[30px] touch:h-(--touch-target) items-center gap-2 rounded-control px-2 text-[length:var(--text-sm)] text-ink hover:bg-signal-soft focus-visible:bg-signal-soft focus-visible:outline-0';
 
 // The signed-in user at the bottom of the side menu, and the menu it opens upwards: who you are, Your profile,
-// Instance settings (instance admins only) and Sign out.
+// Instance settings (instance admins only) and Sign out. In the touch drawer it opens upwards from the drawer's bottom too,
+// with 32px rows.
 export function UserMenu() {
   const meQuery = useMe();
   const me = meQuery.data;
@@ -63,6 +64,8 @@ export function UserMenu() {
       const step = event.key === 'ArrowDown' ? 1 : -1;
       items[(at + step + items.length) % items.length]?.focus();
     } else if (event.key === 'Escape') {
+      // Handled here, so the touch drawer around the menu stays open.
+      event.preventDefault();
       setOpen(false);
       button.current?.focus();
     }

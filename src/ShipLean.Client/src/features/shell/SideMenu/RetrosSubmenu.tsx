@@ -4,18 +4,19 @@ import { useRetroInsights } from '../../retros/useRetroQueries';
 import { shellTestIds as ids } from '../testIds';
 import { NavItem } from './NavItem';
 
-// Under Retrospectives while you are in it: Search, Features, and Insights with how many themes are recurring.
+// Under Retrospectives: Search, Features, and Insights. While you are in Retrospectives (`counted`), Insights also says how
+// many themes are recurring; the touch drawer lists the three from every section without fetching the count.
 export function RetrosSubmenu({
   projectId,
   projectKey,
   route,
+  counted = true,
 }: {
   projectId: string;
   projectKey: string;
   route: MatchedRoute | undefined;
+  counted?: boolean;
 }) {
-  const insights = useRetroInsights(projectId, '6');
-  const recurring = insights.data?.themes.filter((theme) => theme.status === 'recurring').length;
   return (
     <>
       <NavItem
@@ -41,12 +42,18 @@ export function RetrosSubmenu({
         active={route?.id === 'retroInsights'}
       >
         Insights
-        {recurring ? (
-          <span className="ml-auto" data-testid={ids.navRetrosInsightsCount}>
-            <Chip tone="warn">{recurring} recurring</Chip>
-          </span>
-        ) : null}
+        {counted ? <RecurringCount projectId={projectId} /> : null}
       </NavItem>
     </>
   );
+}
+
+function RecurringCount({ projectId }: { projectId: string }) {
+  const insights = useRetroInsights(projectId, '6');
+  const recurring = insights.data?.themes.filter((theme) => theme.status === 'recurring').length;
+  return recurring ? (
+    <span className="ml-auto" data-testid={ids.navRetrosInsightsCount}>
+      <Chip tone="warn">{recurring} recurring</Chip>
+    </span>
+  ) : null;
 }
