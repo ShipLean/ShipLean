@@ -7,8 +7,11 @@ import { touchTestIds } from './testIds';
 
 const THEMES = ['light', 'dark'] as const;
 
-/** A real touch drag (CDP), straight down by `dy` px in `steps` moves `stepMs` apart, from the centre of `testId`. */
-async function swipeDown(page: Page, testId: string, dy: number, steps: number, stepMs: number) {
+/**
+ * A real touch drag (CDP), straight down by `dy` px in `steps` moves, from the centre of `testId`. With `stepMs`, the
+ * page's fake clock (installed by the caller) advances that much before each move, so the drag's speed is exact.
+ */
+async function swipeDown(page: Page, testId: string, dy: number, steps: number, stepMs?: number) {
   const box = await page.getByTestId(testId).boundingBox();
   if (!box) throw new Error(`${testId} is not visible`);
   const x = box.x + box.width / 2;
@@ -16,7 +19,7 @@ async function swipeDown(page: Page, testId: string, dy: number, steps: number, 
   const cdp = await page.context().newCDPSession(page);
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
   for (let step = 1; step <= steps; step++) {
-    await page.waitForTimeout(stepMs);
+    if (stepMs) await page.clock.runFor(stepMs);
     await cdp.send('Input.dispatchTouchEvent', {
       type: 'touchMove',
       touchPoints: [{ x, y: y + (dy * step) / steps }],
@@ -77,16 +80,17 @@ test('Sheet_WhenCloseTapped_ShouldClose', async ({ mount, page }) => {
 
 test('Sheet_WhenSwipedDown_ShouldClose', async ({ mount, page }) => {
   await mount(<SheetHarness variant="basic" />);
-  await swipeDown(page, touchTestIds.sheetTitle, 200, 10, 16);
+  await swipeDown(page, touchTestIds.sheetTitle, 200, 10);
   await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
   await expect(page.getByTestId(sheetHarnessIds.ctSheetState)).toHaveText('closed');
 });
 
 test('Sheet_WhenSwipedALittle_ShouldStayOpen', async ({ mount, page }) => {
+  await page.clock.install();
   await mount(<SheetHarness variant="basic" />);
   const sheet = page.getByTestId(touchTestIds.sheet);
   const before = (await sheet.boundingBox())!.y;
-  // 30px over about 600ms: neither past the 80px threshold nor a flick.
+  // 30px over 600ms (fake clock): neither past the 80px threshold nor a flick.
   await swipeDown(page, touchTestIds.sheetTitle, 30, 10, 60);
   await expect(sheet).toBeVisible();
   await expect(page.getByTestId(sheetHarnessIds.ctSheetState)).toHaveText('open');
