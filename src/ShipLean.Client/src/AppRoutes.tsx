@@ -25,44 +25,51 @@ import { TaskboardPage } from './pages/TaskboardPage';
 import { WorkItemPage } from './pages/WorkItemPage';
 import { routePattern } from './routes';
 import { Shell } from './Shell';
+import { ImageViewerHost } from './touch/imageViewer';
 
 // The full route table, separate from main.tsx (which owns the router) so component tests can mount the exact routing
 // the real app uses. Paths and ids are in routes.ts; docs/navigation.md lists the pages and their slots.
 export function AppRoutes() {
   return (
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route element={<Shell />}>
-        <Route path={routePattern('newProject')} element={<NewProjectPage />} />
-        <Route path={routePattern('instanceSettings')} element={<InstanceSettingsPage />} />
-        <Route path={routePattern('profile')} element={<ProfilePage />} />
-        <Route path={routePattern('importStart')} element={<ImportPage />} />
-        <Route path={routePattern('authorize')} element={<AuthorizePage />} />
-        <Route path={routePattern('storiesBacklog')} element={<BacklogPage level="stories" />} />
-        <Route path={routePattern('featuresBacklog')} element={<BacklogPage level="features" />} />
-        <Route path={routePattern('epicsBacklog')} element={<BacklogPage level="epics" />} />
-        <Route path={routePattern('workItem')} element={<WorkItemPage />} />
-        <Route path={routePattern('workItemAttachment')} element={<AttachmentPage />} />
-        <Route path={routePattern('featureBoard')} element={<FeatureBoardPage />} />
-        <Route path={routePattern('storiesBoard')} element={<BoardPage level="stories" />} />
-        <Route path={routePattern('featuresBoard')} element={<BoardPage level="features" />} />
-        <Route path={routePattern('epicsBoard')} element={<BoardPage level="epics" />} />
-        <Route path={routePattern('sprints')} element={<SprintsPage />} />
-        <Route path={routePattern('sprintBacklog')} element={<SprintBacklogPage />} />
-        <Route path={routePattern('taskboard')} element={<TaskboardPage />} />
-        <Route path={routePattern('capacity')} element={<CapacityPage />} />
-        <Route path={routePattern('sprintRetro')} element={<SprintRetroPage />} />
-        <Route path={routePattern('sprintDemo')} element={<SprintDemoPage />} />
-        <Route path={routePattern('retros')} element={<RetrosPage />} />
-        <Route path={routePattern('retroFeatures')} element={<RetroFeaturesPage />} />
-        <Route path={routePattern('retroItem')} element={<RetroItemPage />} />
-        <Route path={routePattern('retroInsights')} element={<RetroInsightsPage />} />
-        <Route path={routePattern('jiraImport')} element={<ImportPage />} />
-        <Route path={routePattern('projectSettings')} element={<ProjectSettingsPage />} />
-        <Route path="/p/:key/*" element={<NotFoundPage />} />
-        <Route path="*" element={<NotFoundPage />} />
-      </Route>
-      <Route path="/" element={<RootRedirect />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route element={<Shell />}>
+          <Route path={routePattern('newProject')} element={<NewProjectPage />} />
+          <Route path={routePattern('instanceSettings')} element={<InstanceSettingsPage />} />
+          <Route path={routePattern('profile')} element={<ProfilePage />} />
+          <Route path={routePattern('importStart')} element={<ImportPage />} />
+          <Route path={routePattern('authorize')} element={<AuthorizePage />} />
+          <Route path={routePattern('storiesBacklog')} element={<BacklogPage level="stories" />} />
+          <Route
+            path={routePattern('featuresBacklog')}
+            element={<BacklogPage level="features" />}
+          />
+          <Route path={routePattern('epicsBacklog')} element={<BacklogPage level="epics" />} />
+          <Route path={routePattern('workItem')} element={<WorkItemPage />} />
+          <Route path={routePattern('workItemAttachment')} element={<AttachmentPage />} />
+          <Route path={routePattern('featureBoard')} element={<FeatureBoardPage />} />
+          <Route path={routePattern('storiesBoard')} element={<BoardPage level="stories" />} />
+          <Route path={routePattern('featuresBoard')} element={<BoardPage level="features" />} />
+          <Route path={routePattern('epicsBoard')} element={<BoardPage level="epics" />} />
+          <Route path={routePattern('sprints')} element={<SprintsPage />} />
+          <Route path={routePattern('sprintBacklog')} element={<SprintBacklogPage />} />
+          <Route path={routePattern('taskboard')} element={<TaskboardPage />} />
+          <Route path={routePattern('capacity')} element={<CapacityPage />} />
+          <Route path={routePattern('sprintRetro')} element={<SprintRetroPage />} />
+          <Route path={routePattern('sprintDemo')} element={<SprintDemoPage />} />
+          <Route path={routePattern('retros')} element={<RetrosPage />} />
+          <Route path={routePattern('retroFeatures')} element={<RetroFeaturesPage />} />
+          <Route path={routePattern('retroItem')} element={<RetroItemPage />} />
+          <Route path={routePattern('retroInsights')} element={<RetroInsightsPage />} />
+          <Route path={routePattern('jiraImport')} element={<ImportPage />} />
+          <Route path={routePattern('projectSettings')} element={<ProjectSettingsPage />} />
+          <Route path="/p/:key/*" element={<NotFoundPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
+        <Route path="/" element={<RootRedirect />} />
+      </Routes>
+      <ImageViewerHost />
+    </>
   );
 }
