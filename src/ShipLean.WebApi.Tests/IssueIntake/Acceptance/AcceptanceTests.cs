@@ -198,7 +198,7 @@ public class AcceptanceTests : ApiFixture
         var posts = await OutboxAsync(issue.Id);
         posts.Count.ShouldBe(2);
         posts[0].ShouldBe(new OutboxRow(AcceptanceTexts.ReplyKey(record.ProposalSessionId!.Value), "comment", AcceptanceTexts.Shipped, null));
-        posts[1].ShouldBe(new OutboxRow(AcceptanceTexts.CloseKey(record.ProposalSessionId!.Value), "close", null, "completed"));
+        posts[1].ShouldBe(new OutboxRow(AcceptanceTexts.CloseKey(record.ProposalSessionId.Value), "close", null, "completed"));
     }
 
     [Test]
