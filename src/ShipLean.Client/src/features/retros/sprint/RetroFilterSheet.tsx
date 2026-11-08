@@ -58,6 +58,9 @@ export function RetroFilterSheet({
           <span>Points</span>
           <DecideFilter decide={decide} onChange={(value) => onDecide(value === 'open')} />
         </div>
+        <p className="m-0 text-[length:var(--text-xs)] text-ink-muted">
+          To decide hides Went well and every point that has an action item or is marked Not needed.
+        </p>
       </div>
     </Sheet>
   );

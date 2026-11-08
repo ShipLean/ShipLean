@@ -6,10 +6,13 @@ import { retroSharedTestIds as ids } from '../testIds';
 import { AddNote } from './AddNote';
 import type { AddTarget } from './AddTarget';
 import type { NoteOptions } from './NoteOptions';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { ThemeGroupHeading } from './ThemeGroupHeading';
 
-// At touch the notes fill two columns on a tablet (600–900px) and one on a phone.
-const TABLET_TWO_COLUMNS = 'touch:grid-cols-2 phone:grid-cols-[minmax(0,1fr)]';
+// At touch the notes fill two columns on a tablet (600–900px) and one on a phone; a theme heading spans the row.
+// Applied only at touch, so the desktop markup stays as it was.
+const TOUCH_NOTES = 'grid gap-2 grid-cols-2 phone:grid-cols-[minmax(0,1fr)]';
+const TOUCH_GROUP = `${TOUCH_NOTES} [&>:first-child]:col-span-full`;
 
 /** One category's column: title, the number of notes shown, how many still need a decision, the notes, then Add. */
 export function RetroColumn({
@@ -38,6 +41,7 @@ export function RetroColumn({
   /** At touch, the page's Recurring sheet, opened from a theme heading's Recurring chip. */
   onRecurring?: () => void;
 }) {
+  const { touch } = useTouchShell();
   const groups = column.groups
     .map((group) => ({ ...group, points: group.points.filter(filter) }))
     .filter((group) => group.points.length > 0);
@@ -54,6 +58,7 @@ export function RetroColumn({
       scope={scope}
     />
   );
+  const flatNotes = groups.flatMap((group) => group.points).map((point) => renderNote(point, true));
   return (
     <section
       data-testid={ids.retroBoardColumn}
@@ -85,7 +90,7 @@ export function RetroColumn({
         groups.map((group) => (
           <div
             key={group.theme?.id ?? 'unthemed'}
-            className={`grid grid-cols-[minmax(0,1fr)] gap-2 ${TABLET_TWO_COLUMNS}`}
+            className={touch ? TOUCH_GROUP : 'grid grid-cols-[minmax(0,1fr)] gap-2'}
           >
             <ThemeGroupHeading
               theme={group.theme}
@@ -95,11 +100,10 @@ export function RetroColumn({
             {group.points.map((point) => renderNote(point, false))}
           </div>
         ))
+      ) : touch ? (
+        <div className={TOUCH_NOTES}>{flatNotes}</div>
       ) : (
-        // `contents` above 900px, so the notes stay the section's own grid items there.
-        <div className={`contents touch:grid touch:gap-2 ${TABLET_TWO_COLUMNS}`}>
-          {groups.flatMap((group) => group.points).map((point) => renderNote(point, true))}
-        </div>
+        flatNotes
       )}
       <AddNote
         category={column.category}

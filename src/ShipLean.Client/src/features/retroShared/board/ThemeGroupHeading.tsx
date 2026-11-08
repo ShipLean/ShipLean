@@ -18,13 +18,13 @@ export function ThemeGroupHeading({
 }) {
   if (!recurring || !onRecurring) {
     return (
-      <div className="px-0.5 pt-1 touch:col-span-full">
+      <div className="px-0.5 pt-1">
         <ThemeChip theme={theme} recurring={recurring} />
       </div>
     );
   }
   return (
-    <div className="flex items-center justify-between gap-1.5 px-0.5 pt-1 touch:col-span-full">
+    <div className="flex items-center justify-between gap-1.5 px-0.5 pt-1">
       <ThemeChip theme={theme} />
       <button
         type="button"

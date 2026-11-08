@@ -57,27 +57,29 @@ public class SprintRetroPhoneTests : SeededAcceptanceTest
     [Test]
     public async Task SprintRetro_WhenPointsToDecideTappedOnPhone_ShouldFilterAndMoveToFirstCategoryToDecide()
     {
-        var (unplanned, decided) = ($"Standups ran long {Guid.NewGuid():N}", $"Estimates ignore latency {Guid.NewGuid():N}");
-        await SeedAsync(new RetroSeedPoint(RetroCategory.NotInPlan, unplanned), new RetroSeedPoint(RetroCategory.NotInPlan, decided, NotNeededReason: "A one-off"));
+        var (decided, badly) = ($"Standups ran long {Guid.NewGuid():N}", $"Reviews waited on one person {Guid.NewGuid():N}");
+        // Not in the plan (straight after Went well) has only a decided point, so the first category to decide is Went badly.
+        await SeedAsync(new RetroSeedPoint(RetroCategory.NotInPlan, decided, NotNeededReason: "A one-off"), new RetroSeedPoint(RetroCategory.WentBadly, badly));
         var (retro, phone) = await OpenAsync();
         await Expect(phone.NumberToDecide).ToHaveAttributeAsync("aria-pressed", "false");
+        await Expect(phone.Tile("Not in the plan")).ToContainTextAsync("nothing to decide");
         (await TouchRules.ViolationsAsync(Page, phone.Numbers)).ShouldBeEmpty();
 
-        // Not in the plan comes straight after Went well, and has a point to decide.
         await phone.NumberToDecide.TapAsync();
         await Expect(phone.NumberToDecide).ToHaveAttributeAsync("aria-pressed", "true");
-        await Expect(Page).ToHaveURLAsync(new Regex("decide=open.*cat=notInPlan|cat=notInPlan.*decide=open"));
-        await Expect(phone.Tile("Not in the plan")).ToHaveAttributeAsync("aria-pressed", "true");
-        await Expect(retro.Columns).ToHaveAttributeAsync("data-category", "notInPlan");
-        await Expect(retro.PointOf(unplanned)).ToBeVisibleAsync();
-        await Expect(retro.PointOf(decided)).ToHaveCountAsync(0);
+        await Expect(Page).ToHaveURLAsync(new Regex("decide=open.*cat=wentBadly|cat=wentBadly.*decide=open"));
+        await Expect(phone.Tile("Went badly")).ToHaveAttributeAsync("aria-pressed", "true");
+        await Expect(retro.Columns).ToHaveAttributeAsync("data-category", "wentBadly");
+        await Expect(retro.PointOf(badly)).ToBeVisibleAsync();
         await Expect(phone.FilterOpen).ToHaveAttributeAsync("data-count", "1");
 
-        // Tapped again, To decide goes off and the decided point is back; the category stays.
+        // To decide hides the decided point; tapped again it is back, and the category stays.
+        await phone.Tile("Not in the plan").TapAsync();
+        await Expect(retro.PointOf(decided)).ToHaveCountAsync(0);
         await phone.NumberToDecide.TapAsync();
         await Expect(phone.NumberToDecide).ToHaveAttributeAsync("aria-pressed", "false");
-        await Expect(retro.PointOf(decided)).ToBeVisibleAsync();
         await Expect(retro.Columns).ToHaveAttributeAsync("data-category", "notInPlan");
+        await Expect(retro.PointOf(decided)).ToBeVisibleAsync();
     }
 
     [Test]
