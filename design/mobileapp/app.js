@@ -51,6 +51,16 @@
   const iconBtn = (name, { on = false, dot = false, label = '' } = {}) =>
     `<button class="icon-btn${on ? ' on' : ''}" aria-label="${esc(label || name)}">${icon(name)}${dot ? '<span class="dot"></span>' : ''}</button>`;
 
+  // Projects (projects.md): every tab root shows its project as a key tile at the top left; tapping it opens Projects.
+  const PROJECTS = { SHIP: 'ShipLean', PAY: 'Payments', MOB: 'Mobile App', DATA: 'Data Platform', OPS: 'Internal Tools', PART: 'Partner Portal' };
+  // projTile(key, { dot, ring }): dot = something new waits on you in another project; ring = highlighted by a tip.
+  const projTile = (key = 'SHIP', { dot = false, ring = false } = {}) =>
+    `<button class="proj-btn${ring ? ' ring' : ''}" aria-label="Projects (now ${esc(key)})"><span class="pkey cur">${esc(key)}</span>${dot ? '<span class="dot"></span>' : ''}</button>`;
+  // tabRoot({ title, sub, project, dot, ring, right }): the top bar of Inbox, Backlog, Features and Retro.
+  // The subtitle is the project's name, then sub when given ("ShipLean · 8 open Features").
+  const tabRoot = ({ title = '', sub = '', project = 'SHIP', dot = false, ring = false, right = '' } = {}) =>
+    topBar({ title, sub: [PROJECTS[project] || project, sub].filter(Boolean).join(' · '), left: projTile(project, { dot, ring }), right });
+
   // tabBar(active, { inbox: 3, mic: 'idle'|'live'|'busy'|'off' }): Inbox · Backlog · [hold to talk] · Features · Retro.
   const tabBar = (active, { inbox = 0, mic = 'idle' } = {}) => {
     const t = (id, label, ic, badge = 0) => `<button class="tab${active === id ? ' on' : ''}">${icon(ic)}${label}${badge ? `<span class="badge">${badge}</span>` : ''}</button>`;
@@ -142,5 +152,5 @@
     mount.innerHTML = s.render();
   }
 
-  window.App = { icon, esc, statusBar, topBar, iconBtn, tabBar, dock, type, state, health, progress, avatar, wave, bars, askCard, listening, act, preview, toast, voiceNote, frame, screen };
+  window.App = { icon, esc, statusBar, topBar, iconBtn, PROJECTS, projTile, tabRoot, tabBar, dock, type, state, health, progress, avatar, wave, bars, askCard, listening, act, preview, toast, voiceNote, frame, screen };
 })();

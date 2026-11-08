@@ -124,7 +124,7 @@ const chips = (on = 'all') => `<div class="subbar">
   <button class="chip${on === 'needs' ? ' on' : ' ask'}">Needs you <span class="n">4</span></button>
   <button class="chip${on === 'risk' ? ' on' : ''}">${health('risk').replace('At risk', '')}At risk <span class="n">2</span></button>
   <button class="chip">${health('blocked').replace('Blocked', '')}Blocked <span class="n">1</span></button></div>`;
-const fbTop = () => topBar({ title: 'Features', sub: 'SHIP · 8 open Features, in backlog order', right: iconBtn('search') + iconBtn('filter', { label: 'Filter and group' }) });
+const fbTop = () => App.tabRoot({ title: 'Features', sub: '8 open Features', right: iconBtn('search') + iconBtn('filter', { label: 'Filter and group' }) });
 const digestBanner = `<div class="banner">${icon('spark', 'sm')}<span class="grow"><b>11 changes since yesterday</b> <span class="muted">· 2 need you</span></span>${icon('chevron', 'sm')}</div>`;
 
 // The board: a stacked list grouped by state, in board order (New sits after Active: what moves comes first).
@@ -151,7 +151,7 @@ const answerSheet = ({ ctx, heard, lead, rows, primary }) => `<div class="scrim"
   <div class="heard" style="margin-top:10px">“${heard}”</div>
   <div class="lead">${lead}</div>
   <div class="ans-list">${rows.join('')}</div>
-  <div class="go"><button class="btn">${icon('speaker', 'sm')}Read it out</button><button class="btn primary">${primary}</button></div>
+  <div class="go"><button class="btn">Done</button><button class="btn primary">${primary}</button></div>
   <div class="say-yes">Hold the mic to ask a follow-up <span class="sep"></span> nothing was changed</div></div>`;
 const ansRow = (t, key, title, why, extra = '') => `<div class="ans-row"><div class="main"><div class="m1">${type(t)}<span class="key">${key}</span>${extra}</div><div class="t">${title}</div><div class="why">${why}</div></div>${icon('chevron', 'sm')}</div>`;
 
@@ -190,7 +190,7 @@ const featureBoard = `<div class="sum">
 // ── Digest: what changed since yesterday ──
 const digestBody = `<div class="asked">${icon('mic', 'sm')}You asked “what changed since yesterday?”</div>
   <div class="dg-lead"><p>11 changes on 6 Features since Sat 9:00. 2 need you.</p>
-  <div class="btns"><button class="btn">${icon('speaker', 'sm')}Read it out</button><button class="btn">${icon('check', 'sm')}Mark as seen</button></div></div>
+  <div class="btns"><button class="btn">${icon('check', 'sm')}Mark as seen</button></div></div>
   <div class="section-h">Needs you <a>2 new</a></div><div class="list">
     <div class="chg ask"><div class="l1">${type('feature')}<span class="key">SHIP-906</span><span class="tt">Voice commands</span></div><div class="q"><b>Needs input:</b> Claude Code asks Parakeet or Whisper on 4 GB phones?</div></div>
     <div class="chg ask"><div class="l1">${type('feature')}<span class="key">SHIP-893</span><span class="tt">Progress bar on sprints</span></div><div class="q"><b>Decision:</b> Claude Code asks you to approve the dark-mode colours.</div></div></div>
@@ -204,31 +204,31 @@ const digestBody = `<div class="asked">${icon('mic', 'sm')}You asked “what cha
 
 App.screen({ title: 'Feature board', states: [
   { id: 'board', title: 'Features by state', note: 'Features by state: health, status line and age, progress, needs you.',
-    render: () => frame({ top: fbTop(), sub: chips('all'), body: board(), bottom: tabBar('features', { inbox: 5 }) }) },
+    render: () => frame({ top: fbTop(), sub: chips('all'), body: board(), bottom: tabBar('features', { inbox: 15 }) }) },
   { id: 'needs-you', title: 'Needs you', note: 'Every decision or question waiting on a person.',
-    render: () => frame({ top: fbTop(), sub: chips('needs'), body: needsBody, bottom: tabBar('features', { inbox: 5 }) }) },
+    render: () => frame({ top: fbTop(), sub: chips('needs'), body: needsBody, bottom: tabBar('features', { inbox: 15 }) }) },
   { id: 'blocked-answer', title: 'What’s blocked?', note: '“What’s blocked?” answered on screen.',
-    render: () => frame({ top: fbTop(), sub: chips('all'), body: board(), bottom: tabBar('features', { inbox: 5 }),
+    render: () => frame({ top: fbTop(), sub: chips('all'), body: board(), bottom: tabBar('features', { inbox: 15 }),
       overlay: answerSheet({ ctx: '<b>Features</b>', heard: 'What’s blocked?', lead: '1 Feature and 1 story are blocked.', primary: 'Show on board',
         rows: [ansRow('feature', 'SHIP-743', 'Nightly backups', 'No pg_dump 18 or Docker on the host · Sam', health('blocked')),
           ansRow('story', 'SHIP-911', 'Sign in through a browser handoff', 'Waits on your D1 decision · in SHIP-907', health('blocked'))] }) }) },
   { id: 'move-listening', title: 'Listening: move and note', note: 'Holding the mic: key and state matched as hotwords.',
-    render: () => frame({ top: fbTop(), sub: chips('all'), body: board(), bottom: tabBar('features', { mic: 'live', inbox: 5 }),
+    render: () => frame({ top: fbTop(), sub: chips('all'), body: board(), bottom: tabBar('features', { mic: 'live', inbox: 15 }),
       overlay: listening({ ctx: '<b>Features</b> · 8 open', words: 'Move <span class="hot">SHIP&#8209;907</span> to <span class="hot">Active</span> and note: the Expo shell builds on both test phones,', partial: 'start with the sign-in story', tries: ['what’s blocked?', 'status: …', 'what changed since yesterday?'] }) }) },
   { id: 'move-preview', title: 'Preview: move and note', note: 'Two changes; the note is word for word.',
-    render: () => frame({ top: fbTop(), sub: chips('all'), body: board(), bottom: tabBar('features', { mic: 'busy', inbox: 5 }),
+    render: () => frame({ top: fbTop(), sub: chips('all'), body: board(), bottom: tabBar('features', { mic: 'busy', inbox: 15 }),
       overlay: preview({ ctx: '<b>SHIP-907</b>', heard: 'Move SHIP-907 to Active and note: the Expo shell builds on both test phones, start with the sign-in story',
         acts: [{ kind: 'field', icon: 'flag', title: 'SHIP-907: New → Active', detail: 'Mobile app foundations · keeps its rank' }, { kind: 'note', title: 'Note on SHIP-907', quote: 'The Expo shell builds on both test phones, start with the sign-in story.' }] }) }) },
   { id: 'move-applied', title: 'Applied, with undo', note: 'Applied: SHIP-907 in Active, note shown, undo.',
-    render: () => frame({ top: fbTop(), sub: chips('all'), body: board({ f907: 'active', expand907: more907(), banner: false }), bottom: tabBar('features', { inbox: 5 }),
+    render: () => frame({ top: fbTop(), sub: chips('all'), body: board({ f907: 'active', expand907: more907(), banner: false }), bottom: tabBar('features', { inbox: 15 }),
       overlay: toast('SHIP-907 moved to Active, note added', { bottom: 124 }) }) },
   { id: 'status-update', title: 'Voice status update', note: '“Status: …” previewed as a status line and health change.',
-    render: () => frame({ top: fbTop(), sub: chips('all'), body: board({ f907: 'active', expand907: more907({ note: false }), banner: false, from907: true }), bottom: tabBar('features', { mic: 'busy', inbox: 5 }),
+    render: () => frame({ top: fbTop(), sub: chips('all'), body: board({ f907: 'active', expand907: more907({ note: false }), banner: false, from907: true }), bottom: tabBar('features', { mic: 'busy', inbox: 15 }),
       overlay: preview({ ctx: '<b>SHIP-907</b> open on screen', heard: 'Status: blocked on the sign-in decision',
         acts: [{ kind: 'field', icon: 'message', title: 'Status line on SHIP-907', detail: 'Replaces “D1–D8 wait for Joel…” from yesterday', quote: 'Blocked on the sign-in decision.' }, { kind: 'field', icon: 'alert', title: 'Health: At risk → Blocked', detail: 'Because you said “blocked”' }] }) }) },
   { id: 'feature', title: 'One Feature’s board (read-only)', note: 'One Feature’s board, read-only, tasks counted.',
     render: () => frame({ top: topBar({ title: 'SHIP-906 board', sub: 'Voice commands with on-device models', back: true, right: iconBtn('more') }), body: featureBoard, bottom: dock({ placeholder: 'Ask about SHIP-906 or add a note' }) }) },
   { id: 'digest', title: 'What changed since yesterday', note: '“What changed since yesterday?” as a screen.',
-    render: () => frame({ top: topBar({ title: 'Since yesterday', sub: 'Sat 7 Nov 9:00 → now', back: true, right: iconBtn('speaker', { label: 'Read it out' }) }), body: digestBody, bottom: dock({ placeholder: 'Ask a follow-up' }) }) },
+    render: () => frame({ top: topBar({ title: 'Since yesterday', sub: 'Sat 7 Nov 9:00 → now', back: true }), body: digestBody, bottom: dock({ placeholder: 'Ask a follow-up' }) }) },
 ]});
 </script></body></html>

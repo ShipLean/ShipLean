@@ -10,7 +10,7 @@ States in `feature-board.html`: `board`, `needs-you`, `blocked-answer`, `move-li
 - **Needs you.** Every decision or question waiting on a person, grouped under its Feature, using the kit's ask cards. Each can be answered by a tap or by voice.
 - **Expanded Feature** (after a voice command, or on tap). Shows the latest note, the open decision, the status history, and the Change state and Open board buttons.
 - **One Feature's board** (`feature`). Read-only. It shows the state, health and status line, four figures (stories, bugs, tasks, points), the progress bar and a "Read-only. Tasks move on the web" link. Below that are stories and bugs grouped by state. Each one shows its sprint, owner, a Needs you pill and a done / doing / to do bar for its tasks. There are never task cards.
-- **Digest** (`digest`). A long answer opens as a screen, not a sheet: Needs you first, then state and health changes, status lines and agent work. It has Read it out and Mark as seen.
+- **Digest** (`digest`). A long answer opens as a screen, not a sheet: Needs you first, then state and health changes, status lines and agent work. It has Mark as seen.
 
 ## Voice actions (Features tab)
 
@@ -26,7 +26,6 @@ States in `feature-board.html`: `board`, `needs-you`, `blocked-answer`, `move-li
 | 8 | Approve a decision | "approve D1 to D8 on SHIP-907" |
 | 9 | Change priority (backlog rank) | "move SHIP-743 above SHIP-742" |
 | 10 | Filter or open | "show what needs me", "open SHIP-906's board" |
-| 11 | Read the current answer out | "read it out" |
 
 When a Feature is open (expanded, or on its board), the key can be left out: "status: blocked on the sign-in decision". On the read-only board, actions 3 to 8 apply to that Feature, and questions about it are answered in a sheet ("how far is SHIP-914?").
 
@@ -48,7 +47,7 @@ When a Feature is open (expanded, or on its board), the key can be left out: "st
 - **D8.** When a Feature with open stories is moved to Closed, should the preview warn ("3 stories still open") and still allow Apply? *Recommended:* warn and allow, matching the web's "Move to Done anyway". *Alternative:* refuse in the app and point to the web.
 - **D9.** Should one Feature's board be in the app, read-only, with stories by state and task counts? *Recommended:* yes. *Alternative:* no drill-in, just Open on web.
 - **D10.** Should short answers show in a sheet and long ones (the digest) open as a screen? *Recommended:* yes. *Alternative:* always a sheet.
-- **D11.** Should Read it out use on-device text to speech in v1? *Recommended:* yes. *Alternative:* answers are on screen only in v1.
+- **D11.** Should Read it out use on-device text to speech in v1? *Recommended:* yes. *Alternative:* answers are on screen only in v1. **Settled 9 Nov 2026 by the tenet "speak in, read out" (README): no read-aloud; answers are on screen only.**
 - **D12.** Should "since yesterday" in the banner mean since you last pressed Mark as seen? *Recommended:* since last seen. *Alternative:* a fixed 24 hours.
 
 ## Open questions
@@ -63,7 +62,7 @@ When a Feature is open (expanded, or on its board), the key can be left out: "st
 - `.row.frow`: a Feature row with health, status line, freshness (`.stale`) and progress.
 - `.needs`: the "Needs you" pill (also used in `retro.html`).
 - `.grp-h`: a group header with a state pill and count.
-- `.answer` sheet with `.lead`, `.ans-list` and `.ans-row`: a voice answer with Read it out and no Apply (also in `retro.html`).
+- `.answer` sheet with `.lead`, `.ans-list` and `.ans-row`: a voice answer with Done and no Apply (also in `retro.html`).
 - `.figs` (roll-up figure tiles), `.srow` and `.tbar` (a story with its tasks aggregated), `.sprint` pill.
 - `.chg` (digest change row), `.asked` ("You asked …" line).
 

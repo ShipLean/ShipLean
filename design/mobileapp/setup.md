@@ -19,13 +19,13 @@ Get someone from a fresh install to a working app with voice switched on, withou
   - **8 GB** (S22, iPhone 16 Pro): Auto picks 1.7B. 4B can still be chosen, with a warning: "Not recommended with 8 GB: slow, and may be closed when memory runs low."
   - **6 GB** (iPhone 15): Auto picks 1.7B. 4B is greyed out with the reason: "Needs 8 GB of memory. This phone has 6 GB."
 - **Microphone** (step 3 of 3): what the permission is for, shown before the phone's own prompt. It listens only while you hold the button, with no wake word; speech becomes text on the phone; a voice note keeps its clip for 30 days (shared decision S3). A thin line at the top shows the download already running (4%). Continue, which opens the phone's prompt, or Not now.
-- **Downloading**: a page you can leave. It shows the overall percentage and GB, the time left on Wi-Fi, a row per file (Parakeet "downloaded and checked", Qwen3 4B in progress), and four promises: it carries on in the background, resumes after a dropped connection, asks before using mobile data, and checks each file. Actions: **Use ShipLean while this downloads** and Pause download.
-- **The app while downloading**: the banner from work-item `downloading` (the same title, bar and wording: "Voice is getting ready · 2.0 of 3.1 GB on Wi-Fi · about 3 min. Read, tap and type in the meantime.") at the top of list and detail screens. Tapping it opens the Downloading page. The mic is off and labelled Downloading.
+- **Downloading**: a page you can leave. It shows the overall percentage and GB, the time left on Wi-Fi, a row per file (Parakeet "downloaded and checked", Qwen3 4B in progress), and four promises: it carries on in the background, resumes after a dropped connection, asks before using mobile data, and checks each file. Actions: **Use ShipLean while this downloads** and Pause download. Use ShipLean leads to **Projects** (`projects.html` `first`), or straight into the project when there is only one (projects.md D5).
+- **The app while downloading**: inside a project, its key tile at the top left (projects.md D2) and the banner from work-item `downloading` (the same title, bar and wording: "Voice is getting ready · 2.0 of 3.1 GB on Wi-Fi · about 3 min. Read, tap and type in the meantime.") at the top of list and detail screens. Tapping it opens the Downloading page. The mic is off and labelled Downloading.
 - **Mobile data**: when Wi-Fi drops, the banner switches to "Voice download paused · waiting for Wi-Fi" and a sheet asks "Continue on mobile data?", showing how much is left (1.1 GB). The choices are **Wait for Wi-Fi** (primary) or **Use mobile data for this download**.
 - **Not enough space**: the download stops and says how much more it needs and how much is free, and keeps what it has. It offers **Try again**, **Open phone storage**, or switching to Qwen3 1.7B, which fits once the partial 4B download is removed. The same page shows a resolved checksum retry on the Parakeet row: "The first copy didn't match its checksum, so it was downloaded again."
 - **Voice is ready**: shown once. A coach mark points at the mic: "Try it: hold the button and say 'What needs me?'", with Skip.
-- **First command answered**: the answer sheet, in the same look as work-item `ask`, lists the four items waiting on you with their counts (10 decisions, 3 questions). It says nothing was changed and suggests what to try next ("open an item and try 'add a note: …'"). Open Inbox or Done.
-- **Settings › Voice**:
+- **First command answered**: the answer sheet, in the same look as work-item `ask`, lists the six items waiting on you with their counts (10 decisions, 3 questions, a mention, a status line to check), in the Inbox's order. It says nothing was changed and suggests what to try next ("open an item and try 'add a note: …'"). Open Inbox or Done.
+- **Settings › Voice** (opened from the Voice row of the Account sheet on Projects, projects.md D3):
   - status ("Voice is ready · Galaxy S24 Ultra · 12 GB memory");
   - **Models**: Command model (Auto · Qwen3 4B, opens the picker), Speech to text (fixed), and a greyed **Try other models**, marked *Later*;
   - **Download and storage**: Wi-Fi only, the storage used by each model, and **Delete models** ("Frees 3.1 GB. Voice turns off; your choices are kept.");
@@ -48,7 +48,7 @@ Get someone from a fresh install to a working app with voice switched on, withou
 | `mobile-data` | Wi-Fi lost: paused banner, and a sheet asking before 1.1 GB on mobile data. |
 | `no-space` | Stopped at 74%: needs 0.8 GB more with 0.3 GB free; a checksum retry on Parakeet that succeeded. |
 | `ready` | Coach mark at the mic: "hold the button and say 'What needs me?'". |
-| `first-result` | The answer: 4 items, 10 decisions and 3 questions; nothing changed; what to try next. |
+| `first-result` | The answer: 6 items (10 decisions, 3 questions, a mention, a status line to check) in the Inbox's order; nothing changed; what to try next. |
 | `settings` | Settings › Voice: models, Try other models (Later), Wi-Fi only, storage, Delete models, Microphone, licences. |
 | `change-model` | Switching Auto (4B) to 1.7B: 1.1 GB download, 4B kept until the new model is checked. |
 | `skipped` | Voice skipped: a "Voice is off · Set up" banner; the mic labelled Set up voice. |
