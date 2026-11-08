@@ -223,6 +223,36 @@ public class OutboxDeliveryTests : ApiFixture
     }
 
     [Test]
+    public async Task Deliver_WhenStaleWorkerAnswers_ShouldNotTouchNewClaim()
+    {
+        var (issueId, issue) = await NewIssueAsync();
+        await EnqueueAsync(OutboxEntry.Comment(issueId, Key("stale"), "Update."));
+        // Worker one's call waits on the outer gate, worker two's on the inner one.
+        var inner = new GatedGitHubIssues(_recording);
+        var outer = new GatedGitHubIssues(inner);
+        _github = outer;
+
+        var one = Task.Run(() => Deliverer().RunDueAsync(CancellationToken.None));
+        await outer.Entered.Task;
+        _clock.Advance(GitHubOutboxDeliverer.Lease + TimeSpan.FromSeconds(1));
+        var two = Task.Run(() => Deliverer().RunDueAsync(CancellationToken.None));
+        await inner.Entered.Task;
+
+        // Worker one answers late, with a result that would free the entry; worker two still holds the claim.
+        _recording.QueueResult(new GitHubWriteResult.Retry("502"));
+        outer.Release.SetResult();
+        await one;
+        var held = (await RowsAsync(issueId)).ShouldHaveSingleItem();
+        held.LastResult.ShouldBeNull();
+        held.Attempts.ShouldBe(2);
+
+        inner.Release.SetResult();
+        await two;
+        (await RowsAsync(issueId)).ShouldHaveSingleItem().Sent.ShouldBeTrue();
+        _recording.Calls.ShouldBe([$"comment {issue}", $"comment {issue}"]);
+    }
+
+    [Test]
     public async Task Deliver_WhenCommentFails_ShouldHoldClose()
     {
         var (issueId, issue) = await NewIssueAsync();
