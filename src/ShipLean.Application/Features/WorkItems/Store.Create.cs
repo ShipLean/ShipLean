@@ -32,7 +32,7 @@ public sealed partial class WorkItemStore
         var stateId = await scope.Connection.QuerySingleOrDefaultAsync<Guid?>(new CommandDefinition(
             """
             SELECT id FROM state
-            WHERE project_id = @projectId AND type = @type AND category = 'proposed' AND archived_at IS NULL
+            WHERE project_id = @projectId AND type = @type AND category = 'proposed' AND NOT is_intake AND archived_at IS NULL
             ORDER BY sort_order LIMIT 1
             """,
             new { projectId = create.ProjectId, type = WorkItemTypes.Db(create.Type) }, scope.Transaction, cancellationToken: cancellationToken))

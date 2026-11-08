@@ -155,7 +155,11 @@ public sealed class IssueIntakeSettingsService(
             return false;
         }
 
-        var adds = missing.Select(t => new StateAdd(Guid.CreateVersion7(), t, "Triage", StateCategory.Proposed, IsIntake: true)).ToArray();
+        // "Triage" unless the type already has a state of that name that is not intake: names are unique per type, and that state stays as it is.
+        var taken = (await connection.QueryAsync<string>(new CommandDefinition(
+            "SELECT type FROM state WHERE project_id = @projectId AND lower(name) = 'triage' AND archived_at IS NULL", new { projectId }, transaction, cancellationToken: cancellationToken)))
+            .Select(t => Enum.Parse<WorkItemTypeId>(t, ignoreCase: true)).ToHashSet();
+        var adds = missing.Select(t => new StateAdd(Guid.CreateVersion7(), t, taken.Contains(t) ? "GitHub triage" : "Triage", StateCategory.Proposed, IsIntake: true)).ToArray();
         await states.ApplyAsync(projectId, new StateChanges(adds, [], [.. adds.Select(a => new StateReorder(a.Type, [a.Id]))], []), transaction, cancellationToken);
         return true;
     }

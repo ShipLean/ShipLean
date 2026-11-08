@@ -201,6 +201,117 @@ public class IssueIntakeSettingsHttpTests : ApiFixture
         respelled.StatusCode.ShouldBe(HttpStatusCode.OK, await respelled.Content.ReadAsStringAsync());
     }
 
+    [Test]
+    public async Task SaveGeneral_WhenIntakeEnabledMidSave_ShouldRefuse()
+    {
+        var project = await ArrangeAsync();
+        await using (var database = await OpenDatabaseAsync())
+        {
+            await ArrangeIntakeAsync(database, project, "https://github.com/Acme/Raced", withConnection: false);
+        }
+
+        var body = await GeneralBodyAsync(project, "https://github.com/Acme/Elsewhere");
+        await using var holder = await OpenDatabaseAsync();
+        await using var transaction = await holder.BeginTransactionAsync();
+        await holder.ExecuteAsync("SELECT 1 FROM project WHERE id = @id FOR NO KEY UPDATE", new { id = project.Id }, transaction);
+        await holder.ExecuteAsync(
+            "INSERT INTO project_issue_intake (project_id, enabled, repository, run_as_user_id) VALUES (@id, true, 'Acme/Raced', @priya)",
+            new { id = project.Id, priya = SeedIds.Users.Priya }, transaction);
+
+        var save = Api.PutJsonAsync($"api/projects/{project.Id}/settings", body);
+        await WaitUntilAnyLockWaitAsync(save);
+        await transaction.CommitAsync();
+
+        using var response = await save;
+        var error = await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.Conflict);
+        error.Code.ShouldBe(ApiErrorCodes.IntakeOn);
+        await using var check = await OpenDatabaseAsync();
+        (await check.ExecuteScalarAsync<string>("SELECT repo_url FROM project WHERE id = @id", new { id = project.Id })).ShouldBe("https://github.com/Acme/Raced");
+    }
+
+    [Test]
+    public async Task Put_WhenSameProjectEnabledTwiceAtOnce_ShouldAddOneSetOfTriageStates()
+    {
+        var project = await ArrangeAsync();
+        await using (var database = await OpenDatabaseAsync())
+        {
+            await ArrangeIntakeAsync(database, project, "https://github.com/Acme/Twice", withConnection: false);
+        }
+
+        var responses = await Task.WhenAll(
+            Api.PutJsonAsync(PathOf(project), Save(enabled: true, SeedIds.Users.Priya)),
+            Api.PutJsonAsync(PathOf(project), Save(enabled: true, SeedIds.Users.Priya)));
+
+        foreach (var response in responses)
+        {
+            response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+            response.Dispose();
+        }
+
+        await using var check = await OpenDatabaseAsync();
+        (await check.QueryAsync<string>("SELECT type FROM state WHERE project_id = @id AND is_intake AND archived_at IS NULL ORDER BY type", new { id = project.Id }))
+            .ShouldBe(["bug", "feature", "story"]);
+    }
+
+    [Test]
+    public async Task Create_WhenIntakeEnabled_ShouldLandInTheOldDefaultState()
+    {
+        var project = await ArrangeAsync();
+        Guid oldDefault;
+        await using (var database = await OpenDatabaseAsync())
+        {
+            await ArrangeIntakeAsync(database, project, "https://github.com/Acme/Created", withConnection: false);
+            oldDefault = await database.ExecuteScalarAsync<Guid>(
+                "SELECT id FROM state WHERE project_id = @id AND type = 'story' AND category = 'proposed' AND archived_at IS NULL ORDER BY sort_order LIMIT 1", new { id = project.Id });
+        }
+
+        using var on = await Api.PutJsonAsync(PathOf(project), Save(enabled: true, SeedIds.Users.Priya));
+        using var created = await Api.PostJsonAsync("api/work-items", new JsonObject
+        {
+            ["projectId"] = project.Id, ["type"] = "story", ["title"] = "After intake", ["parentId"] = null, ["sprintId"] = null, ["changes"] = null, ["slug"] = null,
+        });
+
+        on.StatusCode.ShouldBe(HttpStatusCode.OK, await on.Content.ReadAsStringAsync());
+        created.StatusCode.ShouldBe(HttpStatusCode.OK, await created.Content.ReadAsStringAsync());
+        await using var check = await OpenDatabaseAsync();
+        var landed = await check.QuerySingleAsync<(Guid StateId, bool IsIntake)>(
+            "SELECT w.state_id, s.is_intake FROM work_item w JOIN state s ON s.id = w.state_id WHERE w.project_id = @id", new { id = project.Id });
+        landed.IsIntake.ShouldBeFalse();
+        landed.StateId.ShouldBe(oldDefault);
+    }
+
+    [Test]
+    public async Task Put_WhenTriageNameTaken_ShouldNameTheIntakeStateGitHubTriage()
+    {
+        var project = await ArrangeAsync();
+        await using (var database = await OpenDatabaseAsync())
+        {
+            await ArrangeIntakeAsync(database, project, "https://github.com/Acme/Named", withConnection: false);
+            await database.ExecuteAsync(
+                "UPDATE state SET name = 'Triage' WHERE project_id = @id AND type = 'story' AND category = 'proposed' AND archived_at IS NULL", new { id = project.Id });
+        }
+
+        using var on = await Api.PutJsonAsync(PathOf(project), Save(enabled: true, SeedIds.Users.Priya));
+
+        on.StatusCode.ShouldBe(HttpStatusCode.OK, await on.Content.ReadAsStringAsync());
+        await using var check = await OpenDatabaseAsync();
+        var states = (await check.QueryAsync<(string Type, string Name, bool IsIntake)>(
+            "SELECT type, name, is_intake FROM state WHERE project_id = @id AND lower(name) LIKE '%triage' AND archived_at IS NULL ORDER BY type, name", new { id = project.Id })).ToList();
+        states.ShouldBe([("bug", "Triage", true), ("feature", "Triage", true), ("story", "GitHub triage", true), ("story", "Triage", false)]);
+    }
+
+    // Polls pg_locks until some connection waits on a lock; the save must not finish first.
+    private async Task WaitUntilAnyLockWaitAsync(Task<HttpResponseMessage> waiting)
+    {
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        await using var probe = await OpenDatabaseAsync();
+        while (!await probe.ExecuteScalarAsync<bool>(new CommandDefinition(
+            "SELECT EXISTS (SELECT 1 FROM pg_locks WHERE NOT granted AND pid <> pg_backend_pid())", cancellationToken: timeout.Token)))
+        {
+            waiting.IsCompleted.ShouldBeFalse("the general save finished without waiting for the intake transaction");
+        }
+    }
+
     private async Task<JsonElement> GeneralBodyAsync(ArrangedProject project, string repoUrl)
     {
         using var response = await Api.GetAsync($"api/projects/{project.Id}/settings");

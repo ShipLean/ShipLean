@@ -36,7 +36,6 @@ public sealed partial class ProjectSettingsService
         }
 
         var general = await CheckHolidayCountryAsync(await CheckAgentAsync(KeepUnprovided(CheckGeneral(put.General), current), current.AgentConnectionId, cancellationToken), current.HolidayCountry, cancellationToken);
-        await RefuseRepoChangeWhileIntakeOnAsync(projectId, general.RepoUrl, current.RepoUrl, cancellationToken);
         CheckForecast(put.Sprints);
         put = put with { Sprints = put.Sprints with { SprintNaming = put.Sprints.SprintNaming ?? current.Forecast.SprintNaming } };
         var members = await ResolveMembersAsync(put.Members, cancellationToken);
@@ -80,6 +79,7 @@ public sealed partial class ProjectSettingsService
         var options = new WriteOptions(
             async (transaction, token) =>
             {
+                await RefuseRepoChangeWhileIntakeOnAsync(transaction, projectId, general.RepoUrl, token);
                 await WriteProjectAsync(transaction, projectId, general, put.Sprints, token);
                 if (recomputeCapacity)
                 {
@@ -127,16 +127,18 @@ public sealed partial class ProjectSettingsService
     }
 
     // While GitHub issue intake is on, the repository it stored is the one issues are matched to: repo_url may be respelled but not pointed elsewhere.
-    private async Task RefuseRepoChangeWhileIntakeOnAsync(Guid projectId, string? wanted, string? saved, CancellationToken cancellationToken)
+    // Inside the write transaction, after the project-row lock the intake PUT takes too, so intake cannot be turned on between this check and the write.
+    private static async Task RefuseRepoChangeWhileIntakeOnAsync(DbTransaction transaction, Guid projectId, string? wanted, CancellationToken cancellationToken)
     {
-        if (wanted == saved)
+        var saved = await transaction.Connection!.QuerySingleOrDefaultAsync<string?>(new CommandDefinition(
+            "SELECT COALESCE(repo_url, '') FROM project WHERE id = @projectId FOR NO KEY UPDATE", new { projectId }, transaction, cancellationToken: cancellationToken));
+        if (saved is null || (wanted ?? string.Empty) == saved)
         {
             return;
         }
 
-        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-        var repository = await connection.QuerySingleOrDefaultAsync<string>(new CommandDefinition(
-            "SELECT repository FROM project_issue_intake WHERE project_id = @projectId AND enabled", new { projectId }, cancellationToken: cancellationToken));
+        var repository = await transaction.Connection!.QuerySingleOrDefaultAsync<string>(new CommandDefinition(
+            "SELECT repository FROM project_issue_intake WHERE project_id = @projectId AND enabled", new { projectId }, transaction, cancellationToken: cancellationToken));
         if (repository is not null && !string.Equals(GitHubRepositoryName.FromRepoUrl(wanted), repository, StringComparison.OrdinalIgnoreCase))
         {
             throw ApiException.IntakeOn("Turn GitHub issue intake off before changing the repository.");
