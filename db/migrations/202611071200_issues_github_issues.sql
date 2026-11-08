@@ -58,8 +58,11 @@ CREATE TABLE github_issue_effect (
 -- Every GitHub write (D15), delivered one at a time per issue in created_at order. dedupe_key makes an enqueue
 -- idempotent. leased_until is a sender's lease; last_result is what the last attempt returned (an ambiguous POST is
 -- reconciled through the hidden outbox marker before it is sent again).
+-- seq is the per-issue delivery order: EnqueueAsync takes a per-issue advisory lock in the caller's transaction before it
+-- inserts, so the entries of one issue commit in seq order (created_at can tie, and commit order can differ from it).
 CREATE TABLE github_outbox (
     id                uuid PRIMARY KEY,
+    seq               bigint GENERATED ALWAYS AS IDENTITY,
     github_issue_id   uuid NOT NULL REFERENCES github_issue (id),
     kind              text NOT NULL CHECK (kind IN ('comment', 'close', 'reopen')),
     body              text,
@@ -75,7 +78,7 @@ CREATE TABLE github_outbox (
     last_error        text,
     created_at        timestamptz NOT NULL
 );
-CREATE INDEX ix_github_outbox_issue_pending ON github_outbox (github_issue_id, created_at) WHERE sent_at IS NULL AND failed_at IS NULL;
+CREATE INDEX ix_github_outbox_issue_pending ON github_outbox (github_issue_id, seq) WHERE sent_at IS NULL AND failed_at IS NULL;
 CREATE INDEX ix_github_outbox_due ON github_outbox (next_attempt_at) WHERE sent_at IS NULL AND failed_at IS NULL;
 
 -- Durable multi-step work (D18): a round, a proposal or an acceptance, enqueued in the transaction of the state change
