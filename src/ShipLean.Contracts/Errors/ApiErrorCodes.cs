@@ -9,8 +9,11 @@ namespace ShipLean.Contracts.Errors;
 // signed-in user who must replace their one-time password before anything else. `slug_taken` and `link_duplicate` (409)
 // are a value another row already holds (a Feature's slug; a URL or work item already linked), `link_invalid_url` (400) is a
 // link address that is not an http(s) URL, and `not_markdown` and `markdown_too_large` (400) are an attachment the Markdown
-// view refuses; each is a narrower `conflict` or `validation` that the UI can tell apart by code, with the field at fault
-// (slug, url, targetKey) in ApiError.Field where there is one.
+// view refuses; `repository_taken` (409, another project takes that GitHub repository's issues), `no_repo_url` (400, the
+// project's repo_url names no github.com repository), `not_member` (400, the chosen person is not a member of the project)
+// and `intake_on` (409, the repo_url can't change while issue intake is on) are the issue intake settings' refusals; each
+// is a narrower `conflict` or `validation` that the UI can tell apart by code, with the field at fault (slug, url,
+// targetKey, enabled, runAsUserId, repoUrl) in ApiError.Field where there is one.
 public static class ApiErrorCodes
 {
     public const string NotFound = "not_found";
@@ -32,23 +35,27 @@ public static class ApiErrorCodes
     public const string LinkDuplicate = "link_duplicate";
     public const string NotMarkdown = "not_markdown";
     public const string MarkdownTooLarge = "markdown_too_large";
+    public const string RepositoryTaken = "repository_taken";
+    public const string NoRepoUrl = "no_repo_url";
+    public const string NotMember = "not_member";
+    public const string IntakeOn = "intake_on";
 
     public static IReadOnlyList<string> All { get; } =
-        [NotFound, Ambiguous, Conflict, OutOfScope, Blocked, NeedsConfirmation, Validation, NotConfigured, Unauthorized, Forbidden, RateLimited, SessionEnded, PasswordChangeRequired, Internal, SlugTaken, LinkInvalidUrl, LinkDuplicate, NotMarkdown, MarkdownTooLarge];
+        [NotFound, Ambiguous, Conflict, OutOfScope, Blocked, NeedsConfirmation, Validation, NotConfigured, Unauthorized, Forbidden, RateLimited, SessionEnded, PasswordChangeRequired, Internal, SlugTaken, LinkInvalidUrl, LinkDuplicate, NotMarkdown, MarkdownTooLarge, RepositoryTaken, NoRepoUrl, NotMember, IntakeOn];
 
     // not_found 404; validation 400; out_of_scope and blocked 422 (understood, refused);
     // conflict, ambiguous, needs_confirmation, slug_taken and link_duplicate 409 (state must change or the caller must decide).
     public static int StatusFor(string code) => code switch
     {
         NotFound => 404,
-        Validation or LinkInvalidUrl or NotMarkdown or MarkdownTooLarge => 400,
+        Validation or LinkInvalidUrl or NotMarkdown or MarkdownTooLarge or NoRepoUrl or NotMember => 400,
         Unauthorized or SessionEnded => 401,
         Forbidden or PasswordChangeRequired => 403,
         RateLimited => 429,
         Internal => 500,
         NotConfigured => 503,
         OutOfScope or Blocked => 422,
-        Conflict or Ambiguous or NeedsConfirmation or SlugTaken or LinkDuplicate => 409,
+        Conflict or Ambiguous or NeedsConfirmation or SlugTaken or LinkDuplicate or RepositoryTaken or IntakeOn => 409,
         _ => throw new ArgumentOutOfRangeException(nameof(code), code, "Unknown API error code."),
     };
 }

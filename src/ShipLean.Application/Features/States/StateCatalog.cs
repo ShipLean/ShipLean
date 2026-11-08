@@ -54,7 +54,7 @@ public sealed partial class StateCatalog(NpgsqlDataSource dataSource) : IStateCa
             var defaults = type is WorkItemTypeId.Action or WorkItemTypeId.Bau ? ActionDefaults : Defaults;
             for (var i = 0; i < defaults.Length; i++)
             {
-                await InsertAsync(connection, transaction, Guid.CreateVersion7(), projectId, type, defaults[i].Name, defaults[i].Category, i + 1, cancellationToken);
+                await InsertAsync(connection, transaction, Guid.CreateVersion7(), projectId, type, defaults[i].Name, defaults[i].Category, i + 1, isIntake: false, cancellationToken);
             }
         }
     }
@@ -67,11 +67,14 @@ public sealed partial class StateCatalog(NpgsqlDataSource dataSource) : IStateCa
         var source = await connection.QueryAsync<StateRow>(new CommandDefinition(
             $"SELECT {StateRow.Columns} FROM state s WHERE s.project_id = @fromProjectId AND s.archived_at IS NULL ORDER BY s.type, s.sort_order",
             new { fromProjectId }, transaction, cancellationToken: cancellationToken));
+        var intake = (await connection.QueryAsync<Guid>(new CommandDefinition(
+            "SELECT id FROM state WHERE project_id = @fromProjectId AND archived_at IS NULL AND is_intake",
+            new { fromProjectId }, transaction, cancellationToken: cancellationToken))).ToHashSet();
         var map = new Dictionary<Guid, Guid>();
         foreach (var state in source)
         {
             var id = Guid.CreateVersion7();
-            await InsertAsync(connection, transaction, id, toProjectId, state.TypeId, state.Name, state.CategoryId, state.SortOrder, cancellationToken);
+            await InsertAsync(connection, transaction, id, toProjectId, state.TypeId, state.Name, state.CategoryId, state.SortOrder, intake.Contains(state.Id), cancellationToken);
             map[state.Id] = id;
         }
 
@@ -89,8 +92,8 @@ public sealed partial class StateCatalog(NpgsqlDataSource dataSource) : IStateCa
     }
 
     private static Task InsertAsync(
-        DbConnection connection, DbTransaction transaction, Guid id, Guid projectId, WorkItemTypeId type, string name, StateCategory category, int order, CancellationToken cancellationToken)
+        DbConnection connection, DbTransaction transaction, Guid id, Guid projectId, WorkItemTypeId type, string name, StateCategory category, int order, bool isIntake, CancellationToken cancellationToken)
         => connection.ExecuteAsync(new CommandDefinition(
-            "INSERT INTO state (id, project_id, type, name, category, sort_order) VALUES (@id, @projectId, @type, @name, @category, @order)",
-            new { id, projectId, type = StateRow.TypeText(type), name, category = StateRow.CategoryText(category), order }, transaction, cancellationToken: cancellationToken));
+            "INSERT INTO state (id, project_id, type, name, category, sort_order, is_intake) VALUES (@id, @projectId, @type, @name, @category, @order, @isIntake)",
+            new { id, projectId, type = StateRow.TypeText(type), name, category = StateRow.CategoryText(category), order, isIntake }, transaction, cancellationToken: cancellationToken));
 }
