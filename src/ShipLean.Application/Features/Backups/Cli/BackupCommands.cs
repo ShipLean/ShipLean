@@ -35,12 +35,12 @@ public static class BackupCommands
             return Usage;
         }
 
-        var work = line.Verb == BackupCommandLine.DecryptVerb
-            ? DecryptBackupCommand.Plan(line.In, line.Out!, out problem)
-            : RestoreBlobsCommand.Plan(line.In, out problem);
-        if (work is null)
+        var plan = line.Verb == BackupCommandLine.DecryptVerb
+            ? DecryptBackupCommand.Plan(line.In, line.Out!)
+            : RestoreBlobsCommand.Plan(line.In);
+        if (plan.Problem is not null)
         {
-            await error.WriteLineAsync(problem);
+            await error.WriteLineAsync(plan.Problem);
             return Usage;
         }
 
@@ -55,7 +55,7 @@ public static class BackupCommands
         var cipher = host.Services.GetRequiredService<IBackupCipher>();
         if (line.Verb == BackupCommandLine.DecryptVerb)
         {
-            return await new DecryptBackupCommand(cipher, output, error).RunAsync(work, passphrase, CancellationToken.None);
+            return await new DecryptBackupCommand(cipher, output, error).RunAsync(plan.Files, passphrase, CancellationToken.None);
         }
 
         var restore = new RestoreBlobsCommand(
@@ -66,7 +66,7 @@ public static class BackupCommands
             configuration,
             output,
             error);
-        return await restore.RunAsync(work, line.Overwrite, passphrase, CancellationToken.None);
+        return await restore.RunAsync(plan.Files, line.Overwrite, passphrase, CancellationToken.None);
     }
 
     // Only what the verbs need: the blob store SHIPLEAN_BLOB_* select, the cipher and the temp files. Built, never started.

@@ -31,12 +31,14 @@ public sealed record BackupCommandLine(string Verb, string In, string? Out, bool
         string? inPath = null;
         string? outPath = null;
         var overwrite = false;
-        for (var i = 1; i < args.Count; i++)
+        var i = 1;
+        while (i < args.Count)
         {
             var option = args[i];
             if (option == "--overwrite" && verb == RestoreVerb && !overwrite)
             {
                 overwrite = true;
+                i++;
                 continue;
             }
 
@@ -53,15 +55,16 @@ public sealed record BackupCommandLine(string Verb, string In, string? Out, bool
                 return null;
             }
 
-            i++;
             if (option == "--in")
             {
-                inPath = args[i];
+                inPath = args[i + 1];
             }
             else
             {
-                outPath = args[i];
+                outPath = args[i + 1];
             }
+
+            i += 2;
         }
 
         if (inPath is null || (verb == DecryptVerb && outPath is null))

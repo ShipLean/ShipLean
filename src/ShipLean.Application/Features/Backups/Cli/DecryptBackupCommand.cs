@@ -8,10 +8,9 @@ namespace ShipLean.Application.Features.Backups.Cli;
 // the first file that fails; the ones before it stay published.
 public sealed class DecryptBackupCommand(IBackupCipher cipher, TextWriter output, TextWriter error)
 {
-    // The files to decrypt with their targets, or null with a usage problem. Nothing is written.
-    public static IReadOnlyList<CliFile>? Plan(string inPath, string outPath, out string problem)
+    // The files to decrypt with their targets, or a usage problem. Nothing is written.
+    public static CliPlan Plan(string inPath, string outPath)
     {
-        problem = "";
         IReadOnlyList<CliFile> files;
         if (File.Exists(inPath))
         {
@@ -21,15 +20,13 @@ public sealed class DecryptBackupCommand(IBackupCipher cipher, TextWriter output
         {
             if (CliPaths.Taken(outPath) && !Directory.Exists(outPath))
             {
-                problem = $"decrypt-backup: --out {outPath} is a file; give a folder for a folder of backups.";
-                return null;
+                return CliPlan.Refuse($"decrypt-backup: --out {outPath} is a file; give a folder for a folder of backups.");
             }
 
             var sources = CliPaths.EncryptedFiles(inPath);
             if (sources.Count == 0)
             {
-                problem = $"decrypt-backup: there are no {CliPaths.EncryptedSuffix} files under {inPath}.";
-                return null;
+                return CliPlan.Refuse($"decrypt-backup: there are no {CliPaths.EncryptedSuffix} files under {inPath}.");
             }
 
             files = sources
@@ -38,8 +35,7 @@ public sealed class DecryptBackupCommand(IBackupCipher cipher, TextWriter output
         }
         else
         {
-            problem = $"decrypt-backup: --in {inPath} does not exist.";
-            return null;
+            return CliPlan.Refuse($"decrypt-backup: --in {inPath} does not exist.");
         }
 
         foreach (var file in files)
@@ -47,19 +43,17 @@ public sealed class DecryptBackupCommand(IBackupCipher cipher, TextWriter output
             var target = file.Target!;
             if (Path.GetFileName(target).Length == 0)
             {
-                problem = $"decrypt-backup: {file.Source} has no name before {CliPaths.EncryptedSuffix}.";
-                return null;
+                return CliPlan.Refuse($"decrypt-backup: {file.Source} has no name before {CliPaths.EncryptedSuffix}.");
             }
 
             var taken = new[] { target, target + CliPaths.PartialSuffix }.FirstOrDefault(CliPaths.Taken);
             if (taken is not null)
             {
-                problem = $"decrypt-backup: {taken} already exists; nothing was written. Move it away and run again.";
-                return null;
+                return CliPlan.Refuse($"decrypt-backup: {taken} already exists; nothing was written. Move it away and run again.");
             }
         }
 
-        return files;
+        return new CliPlan(files, null);
     }
 
     public async Task<int> RunAsync(IReadOnlyList<CliFile> files, string passphrase, CancellationToken cancellationToken)

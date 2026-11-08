@@ -20,24 +20,21 @@ public sealed class RestoreBlobsCommand(
     TextWriter output,
     TextWriter error)
 {
-    // The objects to restore, or null with a usage problem.
-    public static IReadOnlyList<CliFile>? Plan(string inPath, out string problem)
+    // The objects to restore, or a usage problem.
+    public static CliPlan Plan(string inPath)
     {
-        problem = "";
         if (!Directory.Exists(inPath))
         {
-            problem = $"restore-blobs: --in {inPath} is not a folder.";
-            return null;
+            return CliPlan.Refuse($"restore-blobs: --in {inPath} is not a folder.");
         }
 
         var sources = CliPaths.EncryptedFiles(inPath);
         if (sources.Count == 0)
         {
-            problem = $"restore-blobs: there are no {CliPaths.EncryptedSuffix} files under {inPath}.";
-            return null;
+            return CliPlan.Refuse($"restore-blobs: there are no {CliPaths.EncryptedSuffix} files under {inPath}.");
         }
 
-        return sources.Select(source => new CliFile(source, null)).ToList();
+        return new CliPlan(sources.Select(source => new CliFile(source, null)).ToList(), null);
     }
 
     public async Task<int> RunAsync(IReadOnlyList<CliFile> files, bool overwrite, string passphrase, CancellationToken cancellationToken)
