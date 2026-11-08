@@ -21,11 +21,16 @@ export type BacklogRowKind = (typeof BACKLOG_ROW_KINDS)[number];
 export const BACKLOG_MODES = ['list', 'tree', 'planning'] as const;
 export type BacklogMode = (typeof BACKLOG_MODES)[number];
 
-/** Descendants of one type. closed = Completed category. */
+/**
+ * Descendants of one type. closed = Completed category. inCurrentSprint and inOtherSprint are the open ones planned into the
+ * current sprint or another live sprint (both ≤ open); the rest of open is in no sprint. No parent rows send 0 and 0.
+ */
 export interface RollupCountDto {
   type: WorkItemTypeId;
   open: number;
   closed: number;
+  inCurrentSprint: number;
+  inOtherSprint: number;
 }
 
 /** colour is null for a tag the board gives no colour. */

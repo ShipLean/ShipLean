@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=390">
+<link rel="stylesheet" href="app.css"><script src="app.js"></script>
+<style>
+/* Page-local components (kit candidates, see retro.md). Category colours as in ../screens/retro.css. */
+:root { --cat-well: var(--color-ok); --cat-bad: var(--color-danger); --cat-improve: var(--color-accent); --cat-unplanned: var(--color-purple); }
+.well { --cat: var(--cat-well); } .bad { --cat: var(--cat-bad); } .improve { --cat: var(--cat-improve); } .unplanned { --cat: var(--cat-unplanned); }
+
+/* Category tiles: the four categories in their fixed order; the picked one is on screen */
+.cats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 12px var(--app-gutter) 2px; }
+.cat { text-align: left; border: 1px solid var(--color-border); background: var(--color-surface); border-radius: 12px; padding: 8px 8px 7px; min-height: 84px; display: flex; flex-direction: column; }
+.cat::before { content: ""; width: 18px; height: 4px; border-radius: 2px; background: var(--cat); margin-bottom: 6px; }
+.cat b { font-size: 20px; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.cat span { font-size: 11.5px; line-height: 1.2; color: var(--color-muted); margin-top: 2px; }
+.cat small { font-size: 11px; font-weight: 600; color: var(--ask); margin-top: auto; padding-top: 3px; }
+.cat.on { border-color: var(--cat); background: color-mix(in srgb, var(--cat) 12%, var(--color-surface)); }
+.cat.on span { color: var(--color-text); }
+
+/* Theme group header */
+.th { display: flex; align-items: center; gap: 8px; padding: 16px var(--app-gutter) 8px; font-size: var(--app-text-sm); font-weight: 600; min-width: 0; }
+.th .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.th .nm::before { content: "# "; color: var(--color-muted); }
+.th .grow { flex: 1; }
+.th .n { color: var(--color-muted); font-weight: 500; }
+.recurring { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px; border-radius: 10px; font-size: 11px; font-weight: 600; color: var(--color-danger); background: color-mix(in srgb, var(--color-danger) 12%, transparent); white-space: nowrap; flex: none; }
+
+/* Retro point: who (person or agent), the item it is about, text word for word, +1 and the decision */
+.rnote { display: flex; gap: 10px; padding: 12px var(--app-gutter); border-bottom: 1px solid var(--color-border); background: var(--color-surface); position: relative; }
+.rnote:last-child { border-bottom: 0; }
+.rnote.sel { background: var(--voice-soft); }
+.rnote.sel::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 0 2px 2px 0; background: var(--voice); }
+.rnote .body { flex: 1; min-width: 0; }
+.rnote .who { display: flex; align-items: center; gap: 6px; font-size: var(--app-text-sm); color: var(--color-muted); min-width: 0; }
+.rnote .who b { color: var(--color-text); font-weight: 600; white-space: nowrap; }
+.rnote .who .grow { flex: 1; }
+.rnote .text { margin-top: 3px; font-size: var(--app-text); line-height: 1.38; }
+.rnote .cause { margin-top: 4px; font-size: var(--app-text-sm); color: var(--color-muted); }
+.rnote .cause b { color: var(--color-text); font-weight: 600; }
+.rnote .catline { display: inline-flex; align-items: center; gap: 5px; font-size: var(--app-text-xs); font-weight: 600; color: var(--color-muted); margin-bottom: 3px; }
+.rnote .catline::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--cat); }
+.agent-chip { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 10px; font-size: 11px; font-weight: 600; color: var(--color-purple); background: color-mix(in srgb, var(--color-purple) 14%, transparent); white-space: nowrap; }
+.foot { display: flex; align-items: center; gap: 8px; margin-top: 9px; }
+.foot .grow { flex: 1; }
+.agree { display: inline-flex; align-items: center; gap: 5px; height: 32px; padding: 0 11px; border-radius: 16px; border: 1px solid var(--color-border); font-size: var(--app-text-sm); font-weight: 600; color: var(--color-muted); }
+.agree.on { background: var(--voice-soft); border-color: transparent; color: var(--voice); }
+.voters { display: flex; }
+.voters .avatar { width: 20px; height: 20px; font-size: 8.5px; border: 2px solid var(--color-surface); margin-left: -5px; }
+.voters .avatar:first-child { margin-left: 0; }
+.decided { display: inline-flex; align-items: center; gap: 6px; font-size: var(--app-text-sm); color: var(--color-muted); white-space: nowrap; }
+.decided .key { color: var(--color-text); }
+.foot .btn.sm { height: 32px; padding: 0 10px; white-space: nowrap; gap: 4px; }
+.foot .btn.sm.ghost { padding: 0 6px; }
+.agree { white-space: nowrap; }
+
+/* Category picker inside a voice preview: the model's pick, changeable with one tap */
+.alt-pick { margin: -4px 0 14px; }
+.alt-pick .lbl { font-size: var(--app-text-sm); color: var(--color-muted); margin-bottom: 8px; }
+.alt-pick .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.alt-pick .chip { justify-content: flex-start; gap: 7px; }
+.alt-pick .chip::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--cat); }
+.alt-pick .chip.on { background: color-mix(in srgb, var(--cat) 14%, var(--color-surface)); border-color: var(--cat); }
+
+/* Feature retro block on To decide */
+.fretro-h { display: flex; align-items: center; gap: 6px; padding: 12px var(--app-gutter) 4px; background: var(--color-surface); border-top: 1px solid var(--color-border); min-width: 0; }
+.fretro-h .t { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.fretro-h .grow { flex: 1; }
+.fretro-sub { padding: 0 var(--app-gutter) 10px; background: var(--color-surface); font-size: var(--app-text-sm); color: var(--color-muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; border-bottom: 1px solid var(--color-border); }
+.needs { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; border-radius: 11px; background: var(--ask-soft); color: var(--color-text); font-size: var(--app-text-xs); font-weight: 600; white-space: nowrap; }
+.needs::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--ask); }
+.log-row { display: flex; align-items: center; gap: 8px; padding: 12px var(--app-gutter); background: var(--color-surface); font-size: var(--app-text-sm); color: var(--color-muted); border-bottom: 1px solid var(--color-border); }
+.log-row .grow { flex: 1; }
+
+/* Features with retros, and recurring themes over time */
+.heat-card .hd { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.heat-card .hd .nm { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.heat-card .hd .nm::before { content: "# "; color: var(--color-muted); }
+.heat-card .hd .grow { flex: 1; }
+.heat { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin-top: 10px; }
+.heat i { height: 22px; border-radius: 5px; background: color-mix(in srgb, var(--color-danger) calc(var(--v) * 22%), var(--color-surface-2)); display: grid; place-items: center; font-style: normal; font-size: 11px; font-weight: 600; color: var(--color-text); }
+.heat-ax { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin-top: 3px; font-size: 10.5px; color: var(--color-muted); text-align: center; }
+.heat-card .ft { display: flex; align-items: center; gap: 6px; margin-top: 10px; font-size: var(--app-text-sm); color: var(--color-muted); flex-wrap: wrap; }
+.heat-card + .heat-card { margin-top: 0; }
+.frr { padding: 12px var(--app-gutter); border-bottom: 1px solid var(--color-border); }
+.frr:last-child { border-bottom: 0; }
+.frr .l1 { display: flex; align-items: center; gap: 6px; font-size: var(--app-text-sm); color: var(--color-muted); }
+.frr .l1 .grow { flex: 1; }
+.frr .t { font-size: var(--app-text); font-weight: 600; margin-top: 3px; }
+.frr .l3 { display: flex; align-items: center; gap: 10px; margin-top: 8px; font-size: var(--app-text-xs); color: var(--color-muted); font-variant-numeric: tabular-nums; }
+.frr .l3 .grow { flex: 1; }
+.catbar { display: flex; height: 8px; width: 120px; border-radius: 4px; overflow: hidden; gap: 2px; flex: none; }
+.catbar i { display: block; height: 100%; background: var(--cat); }
+.no-fr { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 10px; border: 1px dashed var(--color-border); font-size: 11px; color: var(--color-muted); white-space: nowrap; }
+.legend { display: grid; grid-template-columns: auto auto; justify-content: start; column-gap: 16px; row-gap: 4px; padding: 0 var(--app-gutter) 8px; font-size: var(--app-text-xs); color: var(--color-muted); flex-wrap: wrap; }
+.legend span { display: inline-flex; align-items: center; gap: 4px; }
+.legend span::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--cat); }
+
+/* Overflow safety: long keys and names wrap instead of pushing past 390px */
+.rnote .text, .rnote .cause, .frr .t, .ans-row .why, .answer .lead, .heat-card .ft { overflow-wrap: anywhere; }
+.foot > *, .frr .l1 > *, .th > * { min-width: 0; }
+
+/* Voice answer sheet (same as feature-board.html) */
+.answer .lead { font-size: var(--app-text-md); font-weight: 600; line-height: 1.35; margin: 0 0 12px; }
+.ans-list { border: 1px solid var(--color-border); border-radius: 14px; overflow: hidden; margin-bottom: 14px; }
+.ans-row { display: flex; gap: 10px; align-items: center; padding: 11px 12px; border-bottom: 1px solid var(--color-border); }
+.ans-row:last-child { border-bottom: 0; }
+.ans-row .main { flex: 1; min-width: 0; }
+.ans-row .t { font-size: var(--app-text); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ans-row .t::before { content: "# "; color: var(--color-muted); }
+.ans-row .why { font-size: var(--app-text-sm); color: var(--color-muted); margin-top: 2px; }
+.ans-row > .i { color: var(--color-muted); }
+</style></head>
+<body><div id="app"></div><script>
+const { frame, topBar, iconBtn, tabBar, type, state, avatar, listening, preview, toast, askCard, icon, bars } = App;
+
+// ── People and agents ──
+const who = {
+  joel: { name: 'Joel', av: () => avatar('JD') },
+  priya: { name: 'Priya', av: () => avatar('PR', { color: '#b4527a' }) },
+  sam: { name: 'Sam', av: () => avatar('SA', { color: '#2f7d6b' }) },
+  cc: { name: 'Claude Code', av: () => avatar('AI', { agent: true }) },
+};
+const vsm = { JD: avatar('JD', { sm: true }), PR: avatar('PR', { sm: true, color: '#b4527a' }), SA: avatar('SA', { sm: true, color: '#2f7d6b' }) };
+const clip = (secs, seed) => `<span class="clip"><span class="play">${icon('play', 'sm')}</span><span class="bars">${bars(24, 18, seed).map((h) => `<i style="height:${h}px"></i>`).join('')}</span>0:${String(secs).padStart(2, '0')}</span>`;
+
+// rnote({ by, lane, t, key, text, voice, plus, on, voters, decision, sel, cat, cause })
+// decision: 'open' (undecided: + Action item / Not needed), 'well' (never decided), or { key, st, cat } for an action item.
+const rnote = ({ by, lane = '', t = 'story', key, text, voice = 0, plus = 0, on = false, voters = [], decision = 'open', sel = false, cat = '', cause = '' }) => {
+  const p = who[by];
+  const dec = decision === 'open' ? `<button class="btn sm">${icon('plus', 'sm')}Action item</button><button class="btn sm ghost">Not needed</button>`
+    : decision === 'well' ? '' : `<span class="decided">${type('action')}<span class="key">${decision.key}</span>${state(decision.st, decision.cat)}</span>`;
+  return `<div class="rnote${sel ? ' sel' : ''}">${p.av()}<div class="body">
+    ${cat ? `<div class="catline ${cat[0]}">${cat[1]}</div>` : ''}
+    <div class="who"><b>${p.name}</b>${lane ? `<span class="agent-chip">${lane}</span>` : ''}${voice ? `<span class="via-voice">${icon('mic', 'sm')}voice</span>` : ''}<span class="grow"></span>${type(t)}<span class="key">${key}</span></div>
+    <div class="text">${text}</div>${cause ? `<div class="cause"><b>Root cause:</b> ${cause}</div>` : ''}${voice ? clip(voice, p.name.charCodeAt(0)) : ''}
+    <div class="foot"><button class="agree${on ? ' on' : ''}">${icon('thumb', 'sm')}${plus || '+1'}</button>${voters.length ? `<span class="voters">${voters.map((v) => vsm[v]).join('')}</span>` : ''}<span class="grow"></span>${dec}</div></div></div>`;
+};
+const th = (name, n, recurring = false) => `<div class="th"><span class="nm">${name}</span>${recurring ? `<span class="recurring">${icon('retro', 'sm')}Recurring</span>` : ''}<span class="grow"></span><span class="n">${n}</span></div>`;
+const tiles = (on) => `<div class="cats">${[['well', 'Went well', 5, ''], ['unplanned', 'Not in the plan', 3, '2 to decide'], ['bad', 'Went badly', 7, '3 to decide'], ['improve', 'Can be improved', 4, '1 to decide']]
+  .map(([c, l, n, d]) => `<button class="cat ${c}${on === c ? ' on' : ''}"><b>${n}</b><span>${l}</span>${d ? `<small>${d}</small>` : ''}</button>`).join('')}</div>`;
+
+const retroTop = () => topBar({ title: 'Sprint 25 retro', sub: 'SHIP · 2–13 Nov · 9 retros so far', right: iconBtn('search') + iconBtn('more') });
+const seg = (on) => `<div class="subbar"><div class="seg"><button class="${on === 'notes' ? 'on' : ''}">Notes</button><button class="${on === 'decide' ? 'on' : ''}">To decide · 6</button><button class="${on === 'features' ? 'on' : ''}">Features</button></div></div>`;
+
+// ── Went badly, grouped by theme (largest first) ──
+const wentBadly = ({ agreed = false } = {}) => `${tiles('bad')}
+  ${th('Shared-branch merge conflicts', 2, true)}<div class="list">
+    ${rnote({ by: 'cc', lane: 'lane C', key: 'SHIP-751', text: 'Lanes A and C both added a migration named 20261105_*; lane C rebased twice.', plus: agreed ? 4 : 3, on: agreed, voters: agreed ? ['PR', 'SA', 'JD'] : ['PR', 'SA'] })}
+    ${rnote({ by: 'priya', key: 'SHIP-707', t: 'feature', text: 'Two lanes edited the same sidebar file and one merge undid the other’s fix.', voice: 11, plus: 1, voters: ['SA'] })}</div>
+  ${th('Screenshot baselines need CI', 2, true)}<div class="list">
+    ${rnote({ by: 'cc', lane: 'lane B', key: 'SHIP-748', text: 'Spent 3 retries on local CT screenshots before finding that baselines come from the CI report.', plus: 2, voters: ['JD', 'PR'] })}
+    ${rnote({ by: 'sam', key: 'SHIP-893', t: 'feature', text: 'Page shots went stale on main again and only showed up on my CSS pull request.', voice: 9, decision: { key: 'SHIP-960', st: 'New', cat: 'proposed' } })}</div>
+  ${th('Host memory', 1)}<div class="list">
+    ${rnote({ by: 'joel', key: 'SHIP-742', t: 'feature', text: 'Ten parallel agents ran the host out of memory and two lanes lost their work.', voice: 7, plus: 2, voters: ['PR', 'SA'], decision: { key: 'SHIP-958', st: 'Active', cat: 'in-progress' } })}</div>`;
+
+// ── Can be improved, with the note "that" refers to selected ──
+const canImprove = ({ sel = true, skipTiles = false } = {}) => `${skipTiles ? '' : tiles('improve')}
+  ${th('Shared-branch merge conflicts', 2, true)}<div class="list">
+    ${rnote({ by: 'cc', lane: 'conductor', t: 'feature', key: 'SHIP-742', text: 'Give each lane its own migration number range in the plan.', plus: 2, on: true, voters: ['JD', 'SA'], sel })}
+    ${rnote({ by: 'priya', key: 'SHIP-707', t: 'feature', text: 'Name the files each lane owns in the brief, so two lanes never touch one.', voice: 8, plus: 1, voters: ['JD'], decision: 'well' })}</div>
+  ${th('Host memory', 1)}<div class="list">
+    ${rnote({ by: 'cc', lane: 'conductor', t: 'feature', key: 'SHIP-742', text: 'Cap test-running agents at three on this host, reviewers included.', plus: 3, voters: ['JD', 'PR', 'SA'], decision: { key: 'SHIP-958', st: 'Active', cat: 'in-progress' } })}</div>`;
+
+// ── Preview with a category picker spliced in above the buttons ──
+const withPicker = (html, picked) => html.replace('<div class="go">', `<div class="alt-pick"><div class="lbl">Picked from “we should”. Wrong category? Tap or say it.</div><div class="row2">${[['well', 'Went well'], ['unplanned', 'Not in the plan'], ['bad', 'Went badly'], ['improve', 'Can be improved']].map(([c, l]) => `<button class="chip ${c}${picked === c ? ' on' : ''}">${l}</button>`).join('')}</div></div><div class="go">`);
+
+// ── To decide: proposals from agents, then Feature retros with undecided points ──
+const decideBody = `  <div class="section-h">Feature retros <a>4 to decide</a></div>
+  <div class="fretro-h">${type('feature')}<span class="key">SHIP-742</span><span class="t">GitHub issues sync</span><span class="grow"></span><span class="needs">3 to decide</span></div>
+  <div class="fretro-sub">Feature retro by Claude Code<span class="agent-chip">conductor</span><span class="sep"></span>1h ago</div>
+  <div class="list" style="border-top:0">
+    ${rnote({ by: 'cc', lane: 'lane A', key: 'SHIP-749', cat: ['unplanned', 'Not in the plan'], text: 'GitHub rate-limits the import at 5,000 calls an hour; the plan assumed one pass.', plus: 1, voters: ['SA'] })}
+    ${rnote({ by: 'cc', lane: 'lane B', key: 'SHIP-748', cat: ['bad', 'Went badly'], text: 'Lane B waited 40 minutes for the webhook payload contract.', cause: 'The plan’s wave 0 contract list missed the webhook payload.' })}
+    <div class="log-row">${icon('list', 'sm')}<span class="grow">Raw failure log · 3 entries</span>${icon('down', 'sm')}</div></div>
+  <div class="section-h">Theme merge proposed by an agent</div>
+  ${askCard({ kind: 'approval', q: 'Merge the theme “CI screenshots” into “Screenshot baselines need CI”? 2 points would move.', from: 'Claude Code', when: '1h ago', opts: ['Merge', 'Keep apart'], say: 'merge them' })}`;
+
+// ── Features with retros, with recurring themes over the last six sprints first ──
+const heat = (vals) => `<div class="heat">${vals.map((v) => `<i style="--v:${v}">${v || ''}</i>`).join('')}</div><div class="heat-ax">${['S20', 'S21', 'S22', 'S23', 'S24', 'S25'].map((s) => `<span>${s}</span>`).join('')}</div>`;
+const catbar = (a) => `<span class="catbar">${[['well', a[0]], ['unplanned', a[1]], ['bad', a[2]], ['improve', a[3]]].filter(([, n]) => n).map(([c, n]) => `<i class="${c}" style="flex:${n}"></i>`).join('')}</span>`;
+const frr = ({ key, t, st, when, counts, decide, retros, noFr = false }) => `<div class="frr"><div class="l1">${type('feature')}<span class="key">${key}</span>${state(st[0], st[1])}<span class="grow"></span>${when}</div>
+  <div class="t">${t}</div>${noFr ? '<div style="margin-top:4px"><span class="no-fr">No Feature retro yet</span></div>' : ''}
+  <div class="l3">${catbar(counts)}<span>${counts.join(' · ')}</span><span class="grow"></span>${decide ? `<span class="needs">${decide} to decide</span>` : '<span>nothing to decide</span>'}</div>
+  <div class="l3" style="margin-top:4px">${retros}</div></div>`;
+const featuresBody = `<div class="section-h">Recurring <a>Last 6 sprints</a></div>
+  <div class="card heat-card"><div class="hd"><span class="nm">Shared-branch merge conflicts</span><span class="grow"></span><span class="recurring">Recurring</span></div>${heat([0, 1, 0, 2, 2, 3])}
+    <div class="ft">No action item yet<span class="sep"></span>8 mentions</div></div>
+  <div class="card heat-card"><div class="hd"><span class="nm">Screenshot baselines need CI</span><span class="grow"></span><span class="recurring">Recurring</span></div>${heat([2, 2, 3, 2, 3, 2])}
+    <div class="ft">${type('action')}<span class="key">SHIP-960</span>${state('New', 'proposed')}<span class="sep"></span>14 mentions</div></div>
+  <div class="section-h">Features with retros</div>
+  <div class="legend"><span class="well">Went well</span><span class="unplanned">Not in the plan</span><span class="bad">Went badly</span><span class="improve">Can be improved</span></div>
+  <div class="list">
+    ${frr({ key: 'SHIP-742', t: 'GitHub issues sync', st: ['Active', 'in-progress'], when: '1h ago', counts: [3, 2, 4, 3], decide: 3, retros: '5 retros · 1 action item' })}
+    ${frr({ key: 'SHIP-743', t: 'Nightly backups', st: ['Active', 'in-progress'], when: '4d ago', counts: [0, 1, 1, 0], decide: 1, retros: '1 story retro · 0 action items', noFr: true })}
+    ${frr({ key: 'SHIP-707', t: 'Mobile web', st: ['Active', 'in-progress'], when: 'yesterday', counts: [6, 1, 3, 4], decide: 0, retros: '7 retros · 2 action items' })}</div>`;
+
+const answerSheet = `<div class="scrim"></div><div class="sheet preview answer"><div class="grab"></div>
+  <div class="voice-ctx">${icon('spark', 'sm')}Answer<span class="sep"></span><b>Sprint 25 retro</b></div>
+  <div class="heard" style="margin-top:10px">“What keeps going wrong?”</div>
+  <div class="lead">2 themes came up in 3 of the last 4 sprints, and neither has a fix that helped yet.</div>
+  <div class="ans-list">
+    <div class="ans-row"><div class="main"><div class="t">Shared-branch merge conflicts</div><div class="why">3 this sprint, up from 0 in S21 · no action item yet</div></div>${icon('chevron', 'sm')}</div>
+    <div class="ans-row"><div class="main"><div class="t">Screenshot baselines need CI</div><div class="why">2 this sprint · SHIP-960 is still in New</div></div>${icon('chevron', 'sm')}</div></div>
+  <div class="go"><button class="btn">${icon('speaker', 'sm')}Read it out</button><button class="btn primary">Show themes</button></div>
+  <div class="say-yes">Try “make an action for the first one”</div></div>`;
+
+App.screen({ title: 'Retro', states: [
+  { id: 'retro', title: 'Sprint retro', note: 'Current sprint’s retro: one category, grouped by theme.',
+    render: () => frame({ top: retroTop(), sub: seg('notes'), body: wentBadly(), bottom: tabBar('retro', { inbox: 5 }) }) },
+  { id: 'dictate', title: 'Dictating a note', note: 'Dictating a point; no category said.',
+    render: () => frame({ top: retroTop(), sub: seg('notes'), body: wentBadly(), bottom: tabBar('retro', { mic: 'live', inbox: 5 }),
+      overlay: listening({ ctx: '<b>Sprint 25 retro</b> · your points', words: 'Retro note: we should profile the small model on the S22 before <span class="hot">SHIP&#8209;906</span>', partial: 'gets more voice actions', tries: ['plus one that', 'make that an action for…', 'what keeps going wrong?'] }) }) },
+  { id: 'dictate-preview', title: 'Preview: new point', note: 'Word-for-word point; the model picked the category.',
+    render: () => frame({ top: retroTop(), sub: seg('notes'), body: wentBadly(), bottom: tabBar('retro', { mic: 'busy', inbox: 5 }),
+      overlay: withPicker(preview({ ctx: '<b>Your retro</b> · Sprint 25', heard: 'Retro note: we should profile the small model on the S22 before SHIP-906 gets more voice actions',
+        acts: [{ kind: 'note', title: 'New point in Can be improved', detail: 'About SHIP-906 · ShipLean picks the theme', quote: 'We should profile the small model on the S22 before SHIP&#8209;906 gets more voice actions.' }] }), 'improve') }) },
+  { id: 'agree', title: '+1 on a point', note: '+1 on a point, with undo.',
+    render: () => frame({ top: retroTop(), sub: seg('notes'), body: wentBadly({ agreed: true }), bottom: tabBar('retro', { inbox: 5 }), overlay: toast('+1 added to lane C’s point', { bottom: 124 }) }) },
+  { id: 'action-preview', title: 'Make that an action', note: '“Make that an action for Priya” on the touched point.',
+    render: () => frame({ top: retroTop(), sub: seg('notes'), body: canImprove({ skipTiles: true }), bottom: tabBar('retro', { mic: 'busy', inbox: 5 }),
+      overlay: preview({ ctx: '<b>Point</b> by Claude Code', heard: 'Make that an action for Priya',
+        acts: [{ kind: 'field', icon: 'plus', title: 'New action item', detail: 'Starts in New, no sprint', quote: 'Give each lane its own migration number range in the plan.' },
+          { kind: 'field', icon: 'user', title: 'Owner: Priya' },
+          { kind: 'approve', title: 'Point decided: actioned', detail: 'Linked to the new action item' }] }) }) },
+  { id: 'decide', title: 'To decide', note: 'Agent retros waiting on a person.',
+    render: () => frame({ top: retroTop(), sub: seg('decide'), body: decideBody, bottom: tabBar('retro', { inbox: 5 }) }) },
+  { id: 'features', title: 'Features and recurring themes', note: 'Recurring themes over 6 sprints, then Features.',
+    render: () => frame({ top: retroTop(), sub: seg('features'), body: featuresBody, bottom: tabBar('retro', { inbox: 5 }) }) },
+  { id: 'answer', title: 'What keeps going wrong?', note: 'A question answered on screen.',
+    render: () => frame({ top: retroTop(), sub: seg('notes'), body: wentBadly(), bottom: tabBar('retro', { inbox: 5 }), overlay: answerSheet }) },
+]});
+</script></body></html>

@@ -90,7 +90,7 @@ public class LevelBacklogTreeApiTests : ApiFixture
         feature.Rollups.ShouldBe(list.Rows.Single(row => row.Key == "SHIP-101").Rollups);
         feature.ChildPoints.ShouldBe(list.Rows.Single(row => row.Key == "SHIP-101").ChildPoints);
         tree.Rows.Single(row => row.Key == "SHIP-90").Rollups.ShouldBe(epics.Rows.Single(row => row.Key == "SHIP-90").Rollups);
-        tree.Rows.Single(row => row.Kind == BacklogRowKind.NoParentGroup).Rollups.ShouldBe([new RollupCountDto(WorkItemTypeId.Feature, 1, 0)]);
+        tree.Rows.Single(row => row.Kind == BacklogRowKind.NoParentGroup).Rollups.ShouldBe([new RollupCountDto(WorkItemTypeId.Feature, 1, 0, 0, 0)]);
     }
 
     [TestCase("epics?mode=tree")]

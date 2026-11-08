@@ -30,6 +30,6 @@ public class BoardViewOfferDoneApiTests : ApiFixture
         board.Cards().Single(c => c.Id == feature).OfferDone.ShouldBeTrue();
         board.Cards().Single(c => c.Id == stillOpen).OfferDone.ShouldBeFalse();
         board.Cards().Single(c => c.Id == inDone).OfferDone.ShouldBeFalse();
-        board.Cards().Single(c => c.Id == feature).Rollups.ShouldBe([new RollupCountDto(WorkItemTypeId.Story, 0, 1)]);
+        board.Cards().Single(c => c.Id == feature).Rollups.ShouldBe([new RollupCountDto(WorkItemTypeId.Story, 0, 1, 0, 0)]);
     }
 }

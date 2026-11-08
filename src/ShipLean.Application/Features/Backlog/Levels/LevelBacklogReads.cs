@@ -64,7 +64,7 @@ public sealed class LevelBacklogReads(IWorkTreeReads reads, IBoardSettingsStore 
 
     // Tasks are not drawn here; the progress counts story-level items, and Epics count Features.
     private static List<RollupCountDto> Shown(IEnumerable<WorkTreeRollupDto> own) =>
-        [.. own.Where(r => r.Type != WorkItemTypeId.Task).Select(r => new RollupCountDto(r.Type, r.Open, r.Closed))];
+        [.. own.Where(r => r.Type != WorkItemTypeId.Task).Select(RollupCountDto.From)];
 
     // Everything estimated under the item: story-level items, open and closed, nested Features' included. Null when none is.
     private static decimal? ChildPoints(IEnumerable<WorkTreeRollupDto> own)

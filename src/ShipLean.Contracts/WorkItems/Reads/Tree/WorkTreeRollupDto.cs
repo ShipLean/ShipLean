@@ -13,4 +13,9 @@ namespace ShipLean.Contracts.WorkItems.Reads.Tree;
 // entries and drop the Task entries. A type with no counted descendants has no entry at all: a missing entry means zero.
 // Tasks under a closed story still count as open here, so a board's offerDone check (offer Done once everything is closed)
 // must ignore them rather than read them from this roll-up.
-public sealed record WorkTreeRollupDto(Guid ParentId, WorkItemTypeId Type, int Open, int Closed, decimal? OpenPoints, decimal? TotalPoints, int Unestimated);
+//
+// OpenInCurrentSprint and OpenInOtherSprint split the open items by where they are planned (both <= Open; the rest of Open is
+// in no sprint or an archived one). The rule is TreeSql's: the current sprint has started and has not ended, or has ended
+// and its end is not decided yet; another sprint is any other live one.
+public sealed record WorkTreeRollupDto(
+    Guid ParentId, WorkItemTypeId Type, int Open, int Closed, decimal? OpenPoints, decimal? TotalPoints, int Unestimated, int OpenInCurrentSprint, int OpenInOtherSprint);

@@ -12,6 +12,19 @@ internal static class TreeSql
 
     public const string Open = "s.category NOT IN ('completed', 'removed')";
 
+    // Where open work is planned, with `sp` the item's sprint (LEFT JOIN on w.sprint_id) and @today the UTC day
+    // (SprintLabels.Today). The current sprint is a live one that has started and has not ended, or has ended but whose
+    // end is not decided yet (rollover_status). Another sprint is any other live one. No sprint, or an archived one, is
+    // neither, and closed work is never in either.
+    public const string OpenInCurrentSprint =
+        $"{Open} AND {CurrentSprint}";
+
+    public const string OpenInOtherSprint =
+        $"{Open} AND sp.id IS NOT NULL AND sp.archived_at IS NULL AND NOT ({CurrentSprint})";
+
+    private const string CurrentSprint =
+        "sp.archived_at IS NULL AND sp.start_date <= @today AND (sp.end_date >= @today OR sp.rollover_status IS DISTINCT FROM 'decided')";
+
     // Stack order: what WorkItemOrdering writes (backlog_order, then id).
     public const string StackOrder = "w.backlog_order, w.id";
 

@@ -53,9 +53,9 @@ describe('cardStyle', () => {
 
   it('visibleRollups_WhenAnnotationOff_ShouldDropThatType', () => {
     const rollups = [
-      { type: 'story', open: 1, closed: 2 },
-      { type: 'task', open: 1, closed: 0 },
-      { type: 'feature', open: 0, closed: 1 },
+      { type: 'story', open: 1, closed: 2, inCurrentSprint: 0, inOtherSprint: 0 },
+      { type: 'task', open: 1, closed: 0, inCurrentSprint: 0, inOtherSprint: 0 },
+      { type: 'feature', open: 0, closed: 1, inCurrentSprint: 0, inOtherSprint: 0 },
     ] as const;
     const shown = visibleRollups([...rollups], {
       tasks: false,

@@ -1,8 +1,11 @@
 using System.Net;
+using Dapper;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Views;
+using ShipLean.Core;
 using ShipLean.TestSupport;
+using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.WebApi.Tests.Backlog.Stories;
 
@@ -27,11 +30,11 @@ public class LevelBacklogRollupApiTests : ApiFixture
         view.Rows.Select(row => row.Rank).ShouldBe([1, 2, 3, 4, 5]);
         var nested = view.Rows.Single(row => row.Key == "SHIP-108");
         nested.Parent.ShouldNotBeNull().Key.ShouldBe("SHIP-103");
-        Count(nested, WorkItemTypeId.Story).ShouldBe(new RollupCountDto(WorkItemTypeId.Story, 2, 0));
+        Count(nested, WorkItemTypeId.Story).ShouldBe(new RollupCountDto(WorkItemTypeId.Story, 2, 0, 0, 0));
         var parent = view.Rows.Single(row => row.Key == "SHIP-103");
-        Count(parent, WorkItemTypeId.Story).ShouldBe(new RollupCountDto(WorkItemTypeId.Story, 4, 0));
-        Count(parent, WorkItemTypeId.Bug).ShouldBe(new RollupCountDto(WorkItemTypeId.Bug, 0, 1));
-        Count(view.Rows.Single(row => row.Key == "SHIP-101"), WorkItemTypeId.Story).ShouldBe(new RollupCountDto(WorkItemTypeId.Story, 3, 3));
+        Count(parent, WorkItemTypeId.Story).ShouldBe(new RollupCountDto(WorkItemTypeId.Story, 4, 0, 0, 1));
+        Count(parent, WorkItemTypeId.Bug).ShouldBe(new RollupCountDto(WorkItemTypeId.Bug, 0, 1, 0, 0));
+        Count(view.Rows.Single(row => row.Key == "SHIP-101"), WorkItemTypeId.Story).ShouldBe(new RollupCountDto(WorkItemTypeId.Story, 3, 3, 2, 0));
         view.Rows.ShouldAllBe(row => row.Rollups.All(r => r.Type != WorkItemTypeId.Task));
     }
 
@@ -43,9 +46,33 @@ public class LevelBacklogRollupApiTests : ApiFixture
         view.Level.ShouldBe(ShipLean.Contracts.Boards.BoardLevel.Epics);
         view.Rows.Select(row => row.Key).ShouldBe(["SHIP-90", "SHIP-91", "SHIP-92", "SHIP-93"]);
         var withNested = view.Rows.Single(row => row.Key == "SHIP-92");
-        Count(withNested, WorkItemTypeId.Feature).ShouldBe(new RollupCountDto(WorkItemTypeId.Feature, 2, 0));
-        Count(withNested, WorkItemTypeId.Story).ShouldBe(new RollupCountDto(WorkItemTypeId.Story, 4, 0));
+        Count(withNested, WorkItemTypeId.Feature).ShouldBe(new RollupCountDto(WorkItemTypeId.Feature, 2, 0, 0, 0));
+        Count(withNested, WorkItemTypeId.Story).ShouldBe(new RollupCountDto(WorkItemTypeId.Story, 4, 0, 0, 1));
         Count(view.Rows.Single(row => row.Key == "SHIP-90"), WorkItemTypeId.Feature).Open.ShouldBe(1);
+    }
+
+    // Built in the empty seeded project, so the SHIP rows the other tests read are untouched.
+    [Test]
+    public async Task Features_WhenStoriesInSprints_ShouldCarrySprintCounts()
+    {
+        var project = SeedIds.Projects.Empt;
+        var today = SprintLabels.Today(TimeProvider.System);
+        await using var connection = await OpenDatabaseAsync();
+        var current = Guid.NewGuid();
+        var next = Guid.NewGuid();
+        await connection.ExecuteAsync(
+            "INSERT INTO sprint (id, project_id, name, start_date, end_date) VALUES (@current, @project, 'Rollup current', @start, @end), (@next, @project, 'Rollup next', @nextStart, @nextEnd)",
+            new { current, next, project, start = today.AddDays(-3), end = today.AddDays(3), nextStart = today.AddDays(4), nextEnd = today.AddDays(17) });
+        var outer = await new WorkItemBuilder(project).WithType("feature").WithTitle("Outer").InsertAsync(connection);
+        var inner = await new WorkItemBuilder(project).WithType("feature").WithTitle("Inner").WithParent(outer).InsertAsync(connection);
+        await new WorkItemBuilder(project).WithParent(outer).WithSprint(current).InsertAsync(connection);
+        await new WorkItemBuilder(project).WithParent(inner).WithSprint(next).InsertAsync(connection);
+        await new WorkItemBuilder(project).WithParent(inner).InsertAsync(connection);
+
+        var view = await Api.GetBacklogAsync($"api/projects/{project}/backlogs/features");
+
+        Count(view.Rows.Single(row => row.Id == outer), WorkItemTypeId.Story).ShouldBe(new RollupCountDto(WorkItemTypeId.Story, 3, 0, 1, 1));
+        Count(view.Rows.Single(row => row.Id == inner), WorkItemTypeId.Story).ShouldBe(new RollupCountDto(WorkItemTypeId.Story, 2, 0, 0, 1));
     }
 
     [Test]

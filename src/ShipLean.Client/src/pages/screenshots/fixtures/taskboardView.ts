@@ -39,7 +39,9 @@ function card(key: string, type: TypeRef, state: StateRef, over: Partial<CardDto
 }
 
 const parentOf = (p: CardDto) => ({ id: p.id, key: p.key, type: p.type, title: p.title });
-const rollup = (open: number, closed: number) => [{ type: 'task' as const, open, closed }];
+const rollup = (open: number, closed: number) => [
+  { type: 'task' as const, open, closed, inCurrentSprint: 0, inOtherSprint: 0 },
+];
 
 const saved = card('SHIP-141', STORY, PS_ACTIVE, {
   title: 'Pay with saved card',

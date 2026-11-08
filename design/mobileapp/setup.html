@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=390">
+<!--
+  First-run install and setup on the phone app (SHIP-905, voice from SHIP-906, sign-in from SHIP-907): welcome, sign in
+  through the browser, choose the voice models, microphone, the background download, ready, and Settings › Voice.
+  Design notes and decisions: setup.md. ?state=<id>&theme=light|dark, ?list for ids.
+-->
+<link rel="stylesheet" href="app.css"><script src="app.js"></script>
+<style>
+/* Setup pages: a plain surface, content in the middle, actions pinned at the foot */
+.setup .content, .setup .status { background: var(--color-surface); }
+.setup .topbar { border-bottom: 0; }
+.pad { padding: 0 var(--app-gutter); }
+.lead, .opt .sub, .note-list li, .err, .sheet p, .field-check, .coachmark p, .settings .row .t, .settings .row .m { overflow-wrap: anywhere; min-width: 0; }
+h1.big { font-size: 26px; line-height: 1.2; font-weight: 700; letter-spacing: -.015em; margin: 0 0 8px; }
+h2.h { font-size: var(--app-text-lg); line-height: 1.25; font-weight: 650; letter-spacing: -.01em; margin: 6px 0 6px; }
+.lead { font-size: var(--app-text); color: var(--color-muted); margin: 0; }
+.foot { flex: none; padding: 10px var(--app-gutter) calc(var(--app-home) - 2px); background: var(--color-surface); border-top: 1px solid var(--color-border); display: flex; flex-direction: column; gap: 4px; position: relative; z-index: 5; }
+.foot .small { text-align: center; font-size: var(--app-text-xs); color: var(--color-muted); padding-top: 4px; }
+.nw { white-space: nowrap; }
+
+/* Logo: copies of design/logo, never redrawn */
+.logo { display: block; height: 40px; width: auto; }
+.logo.on-dark { display: none; }
+:root[data-theme="dark"] .logo.on-light { display: none; }
+:root[data-theme="dark"] .logo.on-dark { display: block; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .logo.on-light { display: none; } :root:not([data-theme="light"]) .logo.on-dark { display: block; } }
+
+/* Welcome */
+.welcome { padding: 56px var(--app-gutter) 0; }
+.welcome .logo { height: 44px; margin-bottom: 40px; }
+.points { list-style: none; margin: 28px 0 0; padding: 0; display: flex; flex-direction: column; gap: 20px; }
+.points li { display: flex; gap: 14px; align-items: flex-start; min-width: 0; }
+.points .ic { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--voice-soft); color: var(--voice); flex: none; }
+.points b { display: block; font-weight: 600; }
+.points span { display: block; font-size: var(--app-text-sm); color: var(--color-muted); margin-top: 2px; }
+
+/* Sign in */
+.signin { padding: 20px var(--app-gutter) 0; }
+.lbl { font-size: var(--app-text-sm); font-weight: 600; margin: 24px 0 6px; display: block; }
+.input { height: 48px; border-radius: 12px; border: 1px solid var(--color-border); background: var(--color-bg); display: flex; align-items: center; padding: 0 14px; font-size: var(--app-text); gap: 8px; min-width: 0; }
+.input .v { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.field-check { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: var(--app-text-sm); color: var(--color-muted); }
+.field-check .ok-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-ok); flex: none; }
+.field-check b { color: var(--color-text); font-weight: 600; }
+.how { display: flex; gap: 12px; margin-top: 24px; padding: 14px; border-radius: 14px; background: var(--color-surface-2); font-size: var(--app-text-sm); color: var(--color-muted); min-width: 0; }
+.how svg { color: var(--voice); margin-top: 1px; }
+.how b { color: var(--color-text); font-weight: 600; display: block; font-size: var(--app-text); margin-bottom: 2px; }
+
+/* Model choice */
+.choose { padding: 0 var(--app-gutter) 0; }
+.choose h2.h { margin-top: 2px; }
+.choose .lead { margin-top: 2px; }
+.group-h { font-size: var(--app-text-xs); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--color-muted); margin: 14px 0 6px; display: flex; justify-content: space-between; align-items: baseline; }
+.group-h span { text-transform: none; letter-spacing: 0; font-weight: 500; }
+.opts { border: 1px solid var(--color-border); border-radius: 14px; overflow: hidden; }
+.opt { display: flex; gap: 12px; padding: 11px 14px; border-bottom: 1px solid var(--color-border); align-items: flex-start; min-width: 0; }
+.opt:last-child { border-bottom: 0; }
+.opt.on { background: color-mix(in srgb, var(--voice-soft) 55%, transparent); }
+.opt .rd { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--color-border); flex: none; margin-top: 1px; display: grid; place-items: center; }
+.opt.on .rd { border-color: var(--voice); }
+.opt.on .rd::after { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--voice); }
+.opt .main { flex: 1; min-width: 0; }
+.opt .name { display: flex; align-items: center; gap: 8px; font-weight: 600; min-width: 0; }
+.opt .name .size { margin-left: auto; font-weight: 500; font-size: var(--app-text-sm); color: var(--color-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.opt .sub { font-size: var(--app-text-sm); color: var(--color-muted); margin-top: 2px; }
+.opt .pick { display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; padding: 3px 10px; border-radius: 8px; background: var(--color-surface); border: 1px solid var(--color-border); font-size: var(--app-text-sm); color: var(--color-text); }
+.opt .pick b { font-weight: 600; }
+.opt .warn { display: flex; gap: 6px; align-items: flex-start; margin-top: 6px; font-size: var(--app-text-sm); color: var(--color-text); }
+.opt .warn svg { color: var(--ask); margin-top: 1px; }
+.opt.off { opacity: .55; }
+.opt.off .rd { background: var(--color-surface-2); }
+.opt.fixed .rd { border: 0; color: var(--color-ok); }
+.rec { font-size: 10.5px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--voice); background: var(--voice-soft); border-radius: 5px; padding: 2px 6px; white-space: nowrap; }
+.later { font-size: 10.5px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--color-muted); background: var(--color-surface-2); border-radius: 5px; padding: 2px 6px; white-space: nowrap; }
+
+/* Download summary: size, space, Wi-Fi only */
+.sum { margin-top: 12px; border: 1px solid var(--color-border); border-radius: 14px; padding: 10px 14px; }
+.sum .line { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: var(--app-text-sm); color: var(--color-muted); }
+.sum .line b { font-size: var(--app-text-md); color: var(--color-text); font-weight: 650; }
+.space { display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: var(--color-surface-2); margin: 8px 0 10px; }
+.space i { display: block; height: 100%; }
+.space .used { background: var(--color-muted); opacity: .45; }
+.space .dl { background: var(--voice); }
+.tog { display: flex; align-items: center; gap: 12px; padding-top: 10px; border-top: 1px solid var(--color-border); min-width: 0; }
+.tog .main { flex: 1; min-width: 0; }
+.tog b { display: block; font-weight: 600; font-size: var(--app-text); }
+.tog span { display: block; font-size: var(--app-text-sm); color: var(--color-muted); }
+.switch { width: 51px; height: 31px; border-radius: 16px; background: var(--color-surface-2); border: 1px solid var(--color-border); position: relative; flex: none; }
+.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 25px; height: 25px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+.switch.on { background: var(--voice); border-color: var(--voice); }
+.switch.on::after { left: 22px; }
+.tiny-dl { display: flex; align-items: center; gap: 8px; margin: 8px var(--app-gutter) 0; font-size: var(--app-text-sm); color: var(--color-muted); }
+.tiny-dl .progress { flex: 1; max-width: 120px; }
+
+/* Microphone explainer */
+.mic-intro { padding: 32px var(--app-gutter) 0; }
+.mic-big { width: 88px; height: 88px; border-radius: 50%; display: grid; place-items: center; background: var(--voice-soft); color: var(--voice); margin-bottom: 24px; }
+.mic-big svg.i { width: 40px; height: 40px; stroke-width: 1.8; }
+.note-list { list-style: none; margin: 20px 0 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.note-list li { display: flex; gap: 12px; align-items: flex-start; font-size: var(--app-text); }
+.note-list li > svg { color: var(--voice); margin-top: 2px; }
+.note-list li span { color: var(--color-muted); font-size: var(--app-text-sm); display: block; }
+.os-next { margin-top: 22px; font-size: var(--app-text-sm); color: var(--color-muted); }
+
+/* Download progress page */
+.dlpage { padding: 12px var(--app-gutter) 0; }
+.pct { font-size: 44px; font-weight: 700; letter-spacing: -.02em; line-height: 1; font-variant-numeric: tabular-nums; }
+.bigbar { height: 10px; border-radius: 5px; background: var(--color-surface-2); overflow: hidden; margin: 14px 0 8px; }
+.bigbar i { display: block; height: 100%; background: var(--voice); border-radius: 5px; }
+.bigbar.paused i { background: var(--color-muted); }
+.bigbar.bad i { background: var(--ask); }
+.files { margin-top: 18px; border: 1px solid var(--color-border); border-radius: 14px; overflow: hidden; }
+.file-row { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-bottom: 1px solid var(--color-border); min-width: 0; }
+.file-row:last-child { border-bottom: 0; }
+.file-row .st { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; flex: none; background: var(--color-surface-2); color: var(--color-muted); }
+.file-row .st.done { background: color-mix(in srgb, var(--color-ok) 16%, transparent); color: var(--color-ok); }
+.file-row .st.go { background: var(--voice-soft); color: var(--voice); }
+.file-row .st.bad { background: var(--ask-soft); color: var(--ask); }
+.file-row .main { flex: 1; min-width: 0; }
+.file-row .n { display: flex; gap: 8px; font-weight: 600; }
+.file-row .n .size { margin-left: auto; font-weight: 500; font-size: var(--app-text-sm); color: var(--color-muted); white-space: nowrap; }
+.file-row .s { font-size: var(--app-text-sm); color: var(--color-muted); margin-top: 2px; overflow-wrap: anywhere; }
+.file-row .progress { margin-top: 8px; }
+.file-row .progress i { background: var(--voice); }
+.file-row.bad .progress i { background: var(--ask); }
+.err { margin-top: 16px; padding: 14px; border-radius: 14px; background: var(--ask-soft); border: 1px solid color-mix(in srgb, var(--ask) 35%, transparent); font-size: var(--app-text-sm); }
+.err .t { display: flex; gap: 8px; align-items: center; font-weight: 700; font-size: var(--app-text); color: var(--color-text); }
+.err .t svg { color: var(--ask); }
+.err p { margin: 6px 0 12px; color: var(--color-text); }
+.err .row-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.err .alt { margin-top: 10px; color: var(--color-accent); font-weight: 600; }
+
+/* In-app download banner (same copy and look as work-item `downloading`) */
+.banner.dl { align-items: flex-start; }
+.banner.dl > svg { color: var(--voice); margin-top: 1px; }
+.banner.dl b { display: block; font-weight: 600; font-size: var(--app-text); }
+.banner.dl .grow { min-width: 0; }
+.banner.dl .grow > span { color: var(--color-muted); }
+.banner.dl .bar { height: 6px; border-radius: 3px; background: var(--color-surface-2); margin: 8px 0 6px; overflow: hidden; }
+.banner.dl .bar i { display: block; height: 100%; background: var(--voice); }
+.banner.dl.paused > svg { color: var(--color-muted); }
+.banner.dl.paused .bar i { background: var(--color-muted); }
+.banner.off > svg { color: var(--color-muted); }
+.banner .chev { color: var(--color-muted); align-self: center; }
+
+/* Backlog rows behind the app states (simplified from backlog.html) */
+.row { align-items: flex-start; }
+.row .rank { padding-top: 2px; }
+.row .m > * { min-width: 0; }
+.prog-line { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: var(--app-text-xs); color: var(--color-muted); }
+.prog-line .progress { flex: 1; }
+.needs { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; border-radius: 11px; background: var(--ask-soft); color: var(--ask); font-size: var(--app-text-xs); font-weight: 700; white-space: nowrap; }
+.needs svg.i { width: 13px; height: 13px; stroke-width: 2.2; }
+
+/* Coach mark: the guided first command */
+.dim { position: absolute; left: 0; right: 0; top: 0; bottom: calc(var(--app-tabs) + var(--app-home)); background: var(--scrim); z-index: 6; }
+.coachmark { position: absolute; left: var(--app-gutter); right: var(--app-gutter); bottom: calc(var(--app-tabs) + var(--app-home) + 46px); z-index: 7; background: var(--color-surface); border-radius: 16px; padding: 16px; box-shadow: var(--shadow-dialog); }
+.coachmark::after { content: ""; position: absolute; left: 50%; bottom: -8px; width: 16px; height: 16px; background: var(--color-surface); transform: translateX(-50%) rotate(45deg); }
+.coachmark .ok { display: flex; align-items: center; gap: 8px; font-size: var(--app-text-sm); font-weight: 600; color: var(--color-ok); }
+.coachmark h3 { margin: 8px 0 4px; font-size: var(--app-text-md); font-weight: 600; }
+.coachmark .say { font-size: var(--app-text-voice); font-weight: 600; color: var(--voice); margin: 6px 0 8px; }
+.coachmark p { margin: 0; font-size: var(--app-text-sm); color: var(--color-muted); }
+.coachmark .acts2 { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+.mic.coach { box-shadow: 0 0 0 5px var(--color-surface), 0 0 0 10px color-mix(in srgb, var(--voice) 35%, transparent), 0 0 0 16px color-mix(in srgb, var(--voice) 15%, transparent); z-index: 8; }
+
+/* Answer sheet (same look as work-item `ask`) */
+.answer .q { font-size: var(--app-text-md); font-weight: 600; margin: 10px 0 8px; }
+.answer .a { font-size: var(--app-text); overflow-wrap: anywhere; }
+.answer .alist { border: 1px solid var(--color-border); border-radius: 14px; overflow: hidden; margin: 10px 0 10px; }
+.answer .arow { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--color-border); font-size: var(--app-text-sm); min-width: 0; }
+.answer .arow:last-child { border-bottom: 0; }
+.answer .arow .t { flex: 1; min-width: 0; font-size: var(--app-text); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.answer .arow .key { flex: none; }
+.answer .src { font-size: var(--app-text-xs); color: var(--color-muted); margin: 0 0 8px; display: flex; align-items: center; gap: 6px; }
+.answer .tip { display: flex; gap: 8px; align-items: flex-start; font-size: var(--app-text-sm); color: var(--color-muted); margin-bottom: 12px; padding: 10px 12px; border-radius: 10px; background: var(--color-surface-2); }
+.answer .tip svg { color: var(--voice); margin-top: 1px; }
+.answer .go { display: flex; gap: 10px; }
+.answer .go .btn { flex: 1; }
+
+/* Settings › Voice */
+.settings .row { min-height: 52px; align-items: center; }
+.settings .row .val { font-size: var(--app-text-sm); color: var(--color-muted); white-space: nowrap; flex: none; }
+.settings .row .val b { color: var(--color-text); font-weight: 600; }
+.settings .row.dim-row { opacity: .5; }
+.settings .row.danger .t { color: var(--color-danger); }
+.settings .section-h { padding-top: 14px; }
+.ready-card { display: flex; gap: 12px; align-items: center; margin: 12px var(--app-gutter) 0; padding: 12px 14px; border-radius: 14px; background: color-mix(in srgb, var(--color-ok) 12%, var(--color-surface)); border: 1px solid color-mix(in srgb, var(--color-ok) 35%, transparent); }
+.ready-card > svg { color: var(--color-ok); }
+.ready-card b { display: block; font-weight: 600; }
+.ready-card span { font-size: var(--app-text-sm); color: var(--color-muted); }
+.store { margin-top: 8px; display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: var(--color-surface-2); }
+.store i { display: block; height: 100%; }
+.key-dot { display: inline-flex; align-items: center; gap: 5px; margin-right: 10px; }
+.key-dot::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--d); }
+
+/* Sheets on setup and settings */
+.sheet p { margin: 4px 0 12px; font-size: var(--app-text); color: var(--color-muted); }
+.sheet .stack-btns { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.sheet .sm-note { text-align: center; font-size: var(--app-text-sm); color: var(--color-muted); margin-top: 10px; }
+.sheet .ic-big { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--ask-soft); color: var(--ask); margin-bottom: 10px; }
+.sheet .opts { margin: 8px 0 12px; }
+.sheet .facts { margin: 0 0 14px; padding: 12px 14px; border-radius: 12px; background: var(--color-surface-2); font-size: var(--app-text-sm); color: var(--color-text); display: flex; flex-direction: column; gap: 6px; }
+.sheet .facts div { display: flex; gap: 8px; align-items: flex-start; }
+.sheet .facts svg { color: var(--voice); margin-top: 1px; }
+.sheet .go { display: flex; gap: 10px; }
+.sheet .go .btn { flex: 1; }
+</style>
+</head>
+<body><div id="app"></div><script>
+const { frame, topBar, iconBtn, tabBar, type, state, health, progress, icon, avatar } = App;
+
+/* ── Phones used as examples ────────────────────────────────────────── */
+// name, memory as advertised (rounded up from what the phone reports), free space, Auto's pick, speech-to-reply estimates
+const PHONES = {
+  s24: { name: 'Galaxy S24 Ultra', ram: 12, cap: 256, free: 87, auto: '4B', fast: '1 s', slow: '2 s' },
+  s22: { name: 'Galaxy S22', ram: 8, cap: 128, free: 41, auto: '1.7B', fast: '5 s', slow: '12 s' },
+  ip15: { name: 'iPhone 15', ram: 6, cap: 128, free: 52, auto: '1.7B', fast: '3 s', slow: '' },
+};
+const SIZE = { stt: 0.6, '1.7B': 1.1, '4B': 2.5 };
+const total = (m) => (SIZE.stt + SIZE[m]).toFixed(1);
+
+/* ── Chrome ─────────────────────────────────────────────────────────── */
+const logo = () => `<img class="logo on-light" src="../logo/shiplean-logo-on-light.svg" alt="ShipLean"><img class="logo on-dark" src="../logo/shiplean-logo-on-dark.svg" alt="ShipLean">`;
+const setupFrame = (o) => `<div class="setup">${frame(o)}</div>`;
+const stepBar = (title, step, back = true) => topBar({ title, sub: step ? `Step ${step} of 3` : '', back });
+const foot = (primary, secondary = '', small = '') => `<div class="foot"><button class="btn primary block">${primary}</button>${secondary ? `<button class="btn ghost block">${secondary}</button>` : ''}${small ? `<div class="small">${small}</div>` : ''}</div>`;
+const sw = (on) => `<span class="switch${on ? ' on' : ''}" role="switch" aria-checked="${on}"></span>`;
+
+/* ── Backlog behind the app states ──────────────────────────────────── */
+const F = [
+  ['SHIP-707', 'Mobile web: touch shell and phone layouts', 'Active', 'in-progress', '', { done: 64, cur: 22 }, '9 of 14', null],
+  ['SHIP-907', 'Mobile app foundations', 'Active', 'in-progress', 'risk', { done: 8, cur: 30, other: 12 }, '1 of 9', { n: 8, kind: 'check' }],
+  ['SHIP-892', 'Demo artifacts for the sprint demo agent', 'New', 'proposed', '', { other: 20 }, '0 of 4', { n: 1, kind: 'message' }],
+  ['SHIP-906', 'Voice commands on the mobile app with on-device models', 'New', 'proposed', 'risk', { done: 17, cur: 33 }, '1 of 6', { n: 3, kind: 'check' }],
+  ['SHIP-891', 'Features panel on the sprint page', 'New', 'proposed', '', {}, '0 of 4', null],
+  ['SHIP-246', 'Client notes on the work item page', 'New', 'proposed', '', {}, '0 of 6', null],
+];
+const needs = (x) => x ? `<span class="needs">${icon(x.kind)}${x.n}</span>` : '';
+const fRow = ([key, t, s, cat, h, p, st, ask], i) => `<div class="row${ask ? ' ask' : ''}"><span class="rank">${i + 1}</span><div class="main"><div class="t">${t}</div>
+  <div class="m">${type('feature')}<span class="key">${key}</span>${state(s, cat)}${h ? health(h) : ''}${needs(ask)}</div>
+  <div class="prog-line">${progress(p)}<span>${st}</span></div></div></div>`;
+const appBar = () => topBar({ title: 'Backlog', sub: 'SHIP · ShipLean', left: `<button class="icon-btn" aria-label="Account">${avatar('JD', { sm: true })}</button>`, right: iconBtn('search', { label: 'Search' }) });
+const seg = () => `<div class="subbar"><div class="seg"><button>Epics</button><button class="on">Features</button><button>Stories</button></div></div>`;
+const backlog = (banner = '') => `${banner}<div class="section-h">7 open Features</div><div class="list">${F.map(fRow).join('')}</div>`;
+const tabs = (mic = 'idle') => tabBar('backlog', { inbox: 4, mic });
+
+// The banner matches work-item `downloading`: same title, bar and wording.
+const dlBanner = ({ got, of, mins, pct }) => `<div class="banner dl">${icon('download')}<div class="grow"><b>Voice is getting ready</b><div class="bar"><i style="width:${pct}%"></i></div><span>${got} of ${of} GB on Wi-Fi · about ${mins} min. Read, tap and type in the meantime.</span></div>${icon('chevron', 'sm chev')}</div>`;
+const pausedBanner = () => `<div class="banner dl paused">${icon('pause')}<div class="grow"><b>Voice download paused</b><div class="bar"><i style="width:65%"></i></div><span>2.0 of 3.1 GB · waiting for Wi-Fi.</span></div>${icon('chevron', 'sm chev')}</div>`;
+
+/* ── Voice setup: choose models ─────────────────────────────────────── */
+const choose = (p, pick = 'auto') => {
+  const P = PHONES[p];
+  const chosen = pick === 'auto' ? P.auto : pick;
+  const can4 = P.ram >= 8;
+  const warn4 = P.ram < 11 && can4;
+  const opt = (id, name, size, sub, extra = '', { off = false, tag = '' } = {}) => `<div class="opt${pick === id ? ' on' : ''}${off ? ' off' : ''}"><span class="rd"></span><div class="main">
+    <div class="name"><span class="nw">${name}</span>${id === 'auto' ? '<span class="rec">Recommended</span>' : ''}${tag ? `<span class="later">${tag}</span>` : ''}${size ? `<span class="size">${size}</span>` : ''}</div>
+    <div class="sub">${sub}</div>${extra}</div></div>`;
+  return `<div class="choose"><h2 class="h">Choose your voice models</h2>
+    <p class="lead">Voice runs on this phone, so it needs two models. You can change them later.</p>
+    <div class="group-h">Command model <span>Qwen3</span></div>
+    <div class="opts">
+      ${opt('auto', 'Auto', '', `<span class="pick">${icon('spark', 'sm')}This phone: ${P.ram} GB → <b>Qwen3 ${P.auto}</b></span>`)}
+      ${opt('1.7B', 'Qwen3 1.7B', '1.1 GB', `About ${P.fast} a command here. Best for short ones.`, '', { tag: 'Quicker' })}
+      ${can4 ? opt('4B', 'Qwen3 4B', '2.5 GB', `About ${P.slow} a command here. Better with long ones that make several changes.`,
+        warn4 ? `<div class="warn">${icon('alert', 'sm')}<span>Not recommended with ${P.ram} GB: slow, and may be closed when memory runs low.</span></div>` : '', { tag: 'More accurate' })
+      : opt('4B', 'Qwen3 4B', '2.5 GB', `Needs 8 GB of memory. This phone has ${P.ram} GB.`, '', { off: true, tag: 'More accurate' })}
+    </div>
+    <div class="group-h">Speech to text <span>Same on every phone</span></div>
+    <div class="opts"><div class="opt fixed"><span class="rd">${icon('check', 'sm')}</span><div class="main"><div class="name"><span class="nw">Parakeet TDT 0.6B</span><span class="size">0.6 GB</span></div><div class="sub">Turns what you say into text.</div></div></div></div>
+    <div class="sum"><div class="line"><b>Download ${total(chosen)} GB</b><span>${P.free} GB free on this phone</span></div>
+      <div class="space"><i class="used" style="width:${(P.cap - P.free) / P.cap * 100}%"></i><i class="dl" style="width:${Math.max(4, total(chosen) / P.cap * 100)}%"></i></div>
+      <div class="tog"><div class="main"><b>Wi-Fi only</b><span>Ask before using mobile data</span></div>${sw(true)}</div></div></div>`;
+};
+
+/* ── Download page ──────────────────────────────────────────────────── */
+const fileRow = ({ st, name, size, s, pct }) => `<div class="file-row ${st}"><span class="st ${st}">${icon({ done: 'check', go: 'download', bad: 'alert', wait: 'clock' }[st], 'sm')}</span><div class="main">
+  <div class="n"><span class="nw">${name}</span><span class="size">${size}</span></div><div class="s">${s}</div>${pct != null ? progress({ done: pct }) : ''}</div></div>`;
+
+/* ── Settings › Voice ───────────────────────────────────────────────── */
+const settingsBody = () => `<div class="ready-card">${icon('check')}<div><b>Voice is ready</b><span>Galaxy S24 Ultra · 12 GB memory</span></div></div>
+  <div class="section-h">Models</div><div class="list">
+    <div class="row"><div class="main"><div class="t">Command model</div><div class="m">Auto picks by memory</div></div><span class="val"><b>Auto</b> · Qwen3 4B</span>${icon('chevron', 'sm muted')}</div>
+    <div class="row"><div class="main"><div class="t">Speech to text</div><div class="m">Fixed in this version</div></div><span class="val">Parakeet TDT 0.6B</span></div>
+    <div class="row dim-row"><div class="main"><div class="t">Try other models</div><div class="m">Download and compare models on this phone</div></div><span class="later">Later</span></div></div>
+  <div class="section-h">Download and storage</div><div class="list">
+    <div class="row"><div class="main"><div class="t">Wi-Fi only</div><div class="m">Ask before using mobile data</div></div>${sw(true)}</div>
+    <div class="row" style="display:block"><div style="display:flex;justify-content:space-between;gap:8px"><span class="t" style="font-weight:500">Voice models</span><span class="val"><b>3.1 GB</b> · 87 GB free</span></div>
+      <div class="store"><i style="width:80%;background:var(--voice)"></i><i style="width:20%;background:var(--color-purple)"></i></div>
+      <div class="m" style="margin-top:6px"><span class="key-dot" style="--d:var(--voice)">Qwen3 4B 2.5 GB</span><span class="key-dot" style="--d:var(--color-purple)">Parakeet TDT 0.6B 0.6 GB</span></div></div>
+    <div class="row danger"><div class="main"><div class="t">Delete models</div><div class="m">Frees 3.1 GB. Voice turns off; your choices are kept.</div></div></div></div>
+  <div class="section-h">Privacy and licences</div><div class="list">
+    <div class="row"><div class="main"><div class="t">Microphone</div><div class="m">Only while you hold the button</div></div><span class="val">Allowed</span>${icon('chevron', 'sm muted')}</div>
+    <div class="row"><div class="main"><div class="t">Model licences</div><div class="m">Parakeet TDT 0.6B (CC-BY-4.0) · Qwen3 (Apache 2.0)</div></div>${icon('chevron', 'sm muted')}</div></div>`;
+const settingsBar = () => topBar({ title: 'Voice', sub: 'Settings', back: true });
+
+/* ── States ─────────────────────────────────────────────────────────── */
+App.screen({ title: 'Install and setup', states: [
+  { id: 'welcome', title: 'Welcome', note: 'First open: what the app does, and that voice runs on the phone.',
+    render: () => setupFrame({ body: `<div class="welcome">${logo()}<h1 class="big">Work on ShipLean from your phone</h1>
+      <p class="lead">See your backlog, Features and retros, and change things by speaking.</p>
+      <ul class="points">
+        <li><span class="ic">${icon('mic')}</span><div><b>Hold to talk</b><span>Say “add a note” or “move this above SHIP-907”. You check every change before it’s made.</span></div></li>
+        <li><span class="ic">${icon('spark')}</span><div><b>Runs on this phone</b><span>Speech is understood on the phone itself, by two models that download once.</span></div></li>
+        <li><span class="ic">${icon('inbox')}</span><div><b>What needs you, first</b><span>Decisions and questions from people and agents wait in your Inbox.</span></div></li>
+      </ul></div>`,
+      bottom: foot('Get started', '', 'Setup takes about a minute. The download carries on in the background.') }) },
+
+  { id: 'sign-in', title: 'Sign in', note: 'Server prefilled and checked; Sign in opens the system browser (SHIP-907 §4).',
+    render: () => setupFrame({ top: stepBar('Sign in', 1), body: `<div class="signin"><h2 class="h">Sign in to your server</h2>
+      <p class="lead">Use the address you open ShipLean at on the web.</p>
+      <label class="lbl">Server</label><div class="input"><span class="v">https://prod.shiplean.app</span>${icon('x', 'sm muted')}</div>
+      <div class="field-check"><span class="ok-dot"></span><span><b>ShipLean 1.9</b> · connected</span></div>
+      <div class="how">${icon('link')}<div><b>Sign in opens your browser</b>Password, Google and password changes work just as they do on the web. The app never asks for your password.</div></div></div>`,
+      bottom: foot('Sign in', '', 'App version 1.0.0 (412)') }) },
+
+  { id: 'models', title: 'Choose models (12 GB)', note: 'The key screen. Galaxy S24 Ultra: Auto picks Qwen3 4B, 3.1 GB in all.',
+    render: () => setupFrame({ top: stepBar('Set up voice', 2), body: choose('s24'), bottom: foot('Download and continue', 'Skip voice for now') }) },
+
+  { id: 'models-8gb', title: 'Choose models (8 GB)', note: 'Galaxy S22: Auto picks 1.7B. 4B stays selectable, with a warning.',
+    render: () => setupFrame({ top: stepBar('Set up voice', 2), body: choose('s22'), bottom: foot('Download and continue', 'Skip voice for now') }) },
+
+  { id: 'models-6gb', title: 'Choose models (6 GB)', note: 'iPhone 15, under the 8 GB floor: 1.7B only, 4B shown with the reason.',
+    render: () => setupFrame({ top: stepBar('Set up voice', 2), body: choose('ip15'), bottom: foot('Download and continue', 'Skip voice for now') }) },
+
+  { id: 'microphone', title: 'Microphone', note: 'Explains the permission before the phone asks. The download has already started.',
+    render: () => setupFrame({ top: stepBar('Microphone', 3), body: `<div class="tiny-dl">${icon('download', 'sm')}Voice models downloading<span class="sep"></span>4%</div>
+      <div class="mic-intro"><div class="mic-big">${icon('mic')}</div><h2 class="h">Allow the microphone</h2>
+      <p class="lead">Voice needs it to hear your commands.</p>
+      <ul class="note-list">
+        <li>${icon('check', 'sm')}<div>Listens only while you hold the button<span>There’s no wake word and nothing listens in the background.</span></div></li>
+        <li>${icon('check', 'sm')}<div>Turned into text on this phone<span>The models run here, so commands work without a voice service.</span></div></li>
+        <li>${icon('check', 'sm')}<div>Voice notes keep their clip<span>A note you dictate keeps its audio for 30 days so your team can play it.</span></div></li>
+      </ul><div class="os-next">Next, your phone asks for permission. You can change it any time in Settings.</div></div>`,
+      bottom: foot('Continue', 'Not now') }) },
+
+  { id: 'downloading', title: 'Downloading', note: 'A page you can leave: progress per file, and what happens if you go.',
+    render: () => setupFrame({ top: topBar({ title: 'Voice models', sub: 'Galaxy S24 Ultra · Wi-Fi' }), body: `<div class="dlpage">
+      <div class="pct">39%</div><div class="bigbar"><i style="width:39%"></i></div>
+      <div class="muted" style="font-size:var(--app-text-sm)">1.2 of 3.1 GB · about 6 min on Wi-Fi</div>
+      <div class="files">
+        ${fileRow({ st: 'done', name: 'Parakeet TDT 0.6B', size: '0.6 GB', s: 'Speech to text · downloaded and checked' })}
+        ${fileRow({ st: 'go', name: 'Qwen3 4B', size: '2.5 GB', s: 'Command model · 0.6 of 2.5 GB', pct: 24 })}
+      </div>
+      <ul class="note-list">
+        <li>${icon('check', 'sm')}<div>Carries on if you leave the app or lock the phone</div></li>
+        <li>${icon('check', 'sm')}<div>Picks up where it stopped if the connection drops</div></li>
+        <li>${icon('check', 'sm')}<div>Stops and asks before using mobile data</div></li>
+        <li>${icon('check', 'sm')}<div>Each file is checked before voice turns on</div></li>
+      </ul></div>`,
+      bottom: foot('Use ShipLean while this downloads', 'Pause download') }) },
+
+  { id: 'app-downloading', title: 'App while downloading', note: 'Same banner as work-item `downloading`; mic off, everything else works.',
+    render: () => frame({ top: appBar(), sub: seg(), body: backlog(dlBanner({ got: '2.0', of: '3.1', mins: 3, pct: 65 })), bottom: tabs('off') }) },
+
+  { id: 'mobile-data', title: 'Asks before mobile data', note: 'Wi-Fi dropped: the download pauses and asks, showing what is left.',
+    render: () => frame({ top: appBar(), sub: seg(), body: backlog(pausedBanner()), bottom: tabs('off'),
+      overlay: `<div class="scrim"></div><div class="sheet"><div class="grab"></div><div class="ic-big">${icon('download')}</div>
+        <h3>Continue on mobile data?</h3>
+        <p>You’re off Wi-Fi. 1.1 GB of the voice models is left to download.</p>
+        <div class="stack-btns"><button class="btn primary block">Wait for Wi-Fi</button><button class="btn block">Use mobile data for this download</button></div>
+        <div class="sm-note">Change the default in Settings › Voice</div></div>` }) },
+
+  { id: 'no-space', title: 'Not enough space', note: 'The download stops, keeps what it has, and says what to free. A file that failed its checksum was fetched again.',
+    render: () => setupFrame({ top: topBar({ title: 'Voice models', sub: 'Galaxy S24 Ultra · Wi-Fi', back: true }), body: `<div class="dlpage">
+      <div class="pct">74%</div><div class="bigbar bad"><i style="width:74%"></i></div>
+      <div class="muted" style="font-size:var(--app-text-sm)">2.3 of 3.1 GB · stopped</div>
+      <div class="err"><div class="t">${icon('alert', 'sm')}Not enough space to finish</div>
+        <p>Qwen3 4B needs 0.8 GB more, and this phone has 0.3 GB free. What’s downloaded so far is kept.</p>
+        <div class="row-btns"><button class="btn sm primary">Try again</button><button class="btn sm">Open phone storage</button></div>
+        <div class="alt">Use Qwen3 1.7B instead: 1.1 GB, fits once the 4B download is removed</div></div>
+      <div class="files">
+        ${fileRow({ st: 'done', name: 'Parakeet TDT 0.6B', size: '0.6 GB', s: 'Checked. The first copy didn’t match its checksum, so it was downloaded again.' })}
+        ${fileRow({ st: 'bad', name: 'Qwen3 4B', size: '2.5 GB', s: 'Stopped at 1.7 of 2.5 GB · needs 0.8 GB more space', pct: 68 })}
+      </div></div>`,
+      bottom: foot('Use ShipLean while you sort this out') }) },
+
+  { id: 'ready', title: 'Voice is ready', note: 'Once, after both models pass: a guided first command at the mic.',
+    render: () => frame({ top: appBar(), sub: seg(), body: backlog(), bottom: tabs().replace('class="mic "', 'class="mic coach"'),
+      overlay: `<div class="dim"></div><div class="coachmark"><div class="ok">${icon('check', 'sm')}Voice is ready</div>
+        <h3>Try it: hold the button and say</h3><div class="say">“What needs me?”</div>
+        <p>Let go when you’ve finished. Questions just get an answer; changes always wait for your OK.</p>
+        <div class="acts2"><button class="btn ghost sm" style="padding:0">Skip</button><span class="muted" style="font-size:var(--app-text-sm)">Hold ${icon('arrowdown', 'sm')}</span></div></div>` }) },
+
+  { id: 'first-result', title: 'First command answered', note: 'The answer to “What needs me?”, plus a hint for the next thing to try.',
+    render: () => frame({ top: appBar(), sub: seg(), body: backlog(), bottom: tabs('busy'),
+      overlay: `<div class="scrim"></div><div class="sheet answer"><div class="grab"></div>
+        <div class="voice-ctx">${icon('spark', 'sm')}Answer <span class="sep"></span> <b>Your first command</b></div>
+        <div class="q">“What needs me?”</div>
+        <div class="a">4 items wait on you: 10 decisions and 3 questions.</div>
+        <div class="alist">
+          <div class="arow">${type('feature')}<span class="t">Mobile app foundations</span><span class="needs">${icon('check')}8</span></div>
+          <div class="arow">${type('feature')}<span class="t">Voice commands</span><span class="needs">${icon('check')}3</span></div>
+          <div class="arow">${type('feature')}<span class="t">Demo artifacts</span><span class="needs">${icon('message')}1</span></div>
+          <div class="arow">${type('story')}<span class="t">Development build</span><span class="needs">${icon('message')}1</span></div>
+        </div>
+        <div class="src">${icon('eye', 'sm')}From your Inbox as it is now · nothing was changed</div>
+        <div class="tip">${icon('mic', 'sm')}<span>Next, open an item and try “add a note: …”</span></div>
+        <div class="go"><button class="btn">Open Inbox</button><button class="btn primary">Done</button></div></div>` }) },
+
+  { id: 'settings', title: 'Settings › Voice', note: 'Models, Wi-Fi only, storage, delete, microphone, licences; other models marked Later.',
+    render: () => `<div class="settings">${frame({ top: settingsBar(), body: settingsBody() })}</div>` },
+
+  { id: 'change-model', title: 'Change model', note: 'Switching downloads the new model first; the old one stays until the new one is checked.',
+    render: () => `<div class="settings">${frame({ top: settingsBar(), body: settingsBody(),
+      overlay: `<div class="scrim"></div><div class="sheet"><div class="grab"></div><h3>Command model</h3>
+        <div class="opts">
+          <div class="opt"><span class="rd"></span><div class="main"><div class="name">Auto<span class="rec">Recommended</span><span class="size">Qwen3 4B</span></div><div class="sub">This phone: 12 GB → Qwen3 4B</div></div></div>
+          <div class="opt on"><span class="rd"></span><div class="main"><div class="name">Qwen3 1.7B<span class="later">Quicker</span><span class="size">1.1 GB</span></div><div class="sub">About 1 s a command. Best for short ones.</div></div></div>
+          <div class="opt"><span class="rd"></span><div class="main"><div class="name">Qwen3 4B<span class="later">More accurate</span><span class="size">Installed</span></div><div class="sub">About 2 s a command. Better with long ones.</div></div></div>
+        </div>
+        <div class="facts">
+          <div>${icon('download', 'sm')}<span>Downloads 1.1 GB on Wi-Fi, about 2 min.</span></div>
+          <div>${icon('mic', 'sm')}<span>Voice keeps using Qwen3 4B until the new model is downloaded and checked.</span></div>
+          <div>${icon('check', 'sm')}<span>Then Qwen3 4B is deleted, freeing 2.5 GB.</span></div>
+        </div>
+        <div class="go"><button class="btn">Cancel</button><button class="btn primary">Download 1.1 GB</button></div></div>` })}</div>` },
+
+  { id: 'skipped', title: 'Voice skipped', note: 'No download. The banner and the mic both lead back to voice setup.',
+    render: () => frame({ top: appBar(), sub: seg(), body: backlog(`<div class="banner off">${icon('mic')}<div class="grow" style="min-width:0"><b style="display:block;font-size:var(--app-text);font-weight:600">Voice is off</b><span class="muted">Change things by speaking. Downloads 3.1 GB once.</span></div><button class="btn sm primary">Set up</button></div>`),
+      bottom: tabs('off').replace('>Downloading<', '>Set up voice<') }) },
+]});
+</script></body></html>

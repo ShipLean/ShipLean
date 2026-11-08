@@ -68,6 +68,8 @@ export const backlogTestIds = {
   planningOverrideError: 'backlog-planning-override-error',
   levelProgress: 'backlog-level-progress',
   levelProgressDone: 'backlog-level-progress-done',
+  levelProgressCurrent: 'backlog-level-progress-current',
+  levelProgressOther: 'backlog-level-progress-other',
   levelProgressText: 'backlog-level-progress-text',
   levelPoints: 'backlog-level-points',
   levelPointsSum: 'backlog-level-points-sum',
