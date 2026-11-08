@@ -9,16 +9,6 @@ public sealed class IntakeServices : IServiceModule
 {
     public void AddServices(IServiceCollection services, IConfiguration configuration)
     {
-        // TODO: the real intake (Triage item, issue record and round on open; edits, closes and reopens; "/shiplean") replaces this no-op.
-        services.AddScoped<IIssueIntake, NoOpIssueIntake>();
-    }
-
-    private sealed class NoOpIssueIntake : IIssueIntake
-    {
-        public Task<IssueOutcome> OpenedAsync(IssueEvent issue, CancellationToken cancellationToken) => Task.FromResult(IssueOutcome.Ignored);
-
-        public Task<IssueOutcome> ChangedAsync(IssueEvent issue, CancellationToken cancellationToken) => Task.FromResult(IssueOutcome.Ignored);
-
-        public Task<IssueOutcome> TakeAsync(IssueCommentEvent comment, CancellationToken cancellationToken) => Task.FromResult(IssueOutcome.Ignored);
+        services.AddScoped<IIssueIntake, DbIssueIntake>();
     }
 }
