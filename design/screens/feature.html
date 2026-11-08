@@ -328,6 +328,8 @@ svg text { fill: currentColor; }
   const HP = params.get('health');
   if (HP in HEALTH || HP === 'none') initial.health = HP === 'none' ? null : HP;
   if (!initial.health) initial.healthSet = null;
+  // H3 (Joel, 9 Nov): a Health change is a status write, so it moves Verified at too. Sam set it on its own on Sat 24 Oct.
+  else if (!VARIANTS[params.get('band')]) initial.verified = { days: 1, when: 'Sat 24 Oct, 17:40', by: 'sam', via: '' };
   let saved = { rev: 9, form: clone(initial) };
   let draft = clone(initial);
 
@@ -338,8 +340,8 @@ svg text { fill: currentColor; }
     { rev: 6, by: 'agent', when: 'Wed 14 Oct, 17:30', changes: [['state', 'Active', 'Blocked'], ['blockedBy', null, 'Vault team (Tom Okafor), since Wed 14 Oct']] },
     { rev: 1, by: 'ana', when: 'Mon 21 Sep, 10:00', changes: [], note: 'Created as Feature in Idea' },
   ];
-  // Sam changed the health on its own the day after the agent's status update (shows as "Health set by" in the band).
-  if (initial.health) { revs.unshift({ rev: 10, by: 'sam', when: 'Sat 24 Oct, 17:40', changes: [['health', initial.health === 'ok' ? 'risk' : initial.health === 'risk' ? 'ok' : 'risk', initial.health]] }); saved.rev = 10; }
+  // Sam changed the health on its own the day after the agent's status update; that write moves Verified at (H3).
+  if (initial.health) { revs.unshift({ rev: 10, by: 'sam', when: 'Sat 24 Oct, 17:40', changes: [['health', initial.health === 'ok' ? 'risk' : initial.health === 'risk' ? 'ok' : 'risk', initial.health], ...(VARIANTS[params.get('band')] ? [] : [['verified', null, 'Sat 24 Oct']])] }); saved.rev = 10; }
   const children = [...items, ...doneItems].filter(i => i.parent === 'Checkout v2');
   const links = [
     { kind: 'item', type: 'Related', key: 'SHIP-129' },
@@ -489,7 +491,7 @@ svg text { fill: currentColor; }
           <div class="f"><label class="lbl" for="pRevive">Revive when</label><input class="field" id="pRevive" value="${esc(d.parkedRevive)}" placeholder="What would bring it back"></div>`
         : '<div class="f" style="grid-column:2/4"></div>'}
         <div class="f wide"><span class="lbl" id="hLbl">Health</span><div class="seg hseg" role="radiogroup" aria-labelledby="hLbl">${[...Object.keys(HEALTH), ''].map(h => `<button type="button" role="radio" aria-checked="${(d.health || '') === h}" aria-pressed="${(d.health || '') === h}" data-ed-health="${h}">${h ? health(h) : 'Not set'}</button>`).join('')}</div></div>
-        <div class="f wide"><label class="lbl" for="bLine">Status · one honest line</label><textarea class="field" id="bLine" rows="2">${esc(d.status)}</textarea><span class="hintline">Saving sets Verified at to now. The old line and health stay in History.</span></div>
+        <div class="f wide"><label class="lbl" for="bLine">Status · one honest line</label><textarea class="field" id="bLine" rows="2">${esc(d.status)}</textarea><span class="hintline">Saving sets Verified at to now, and so does changing Health. The old line and health stay in History.</span></div>
         <div class="ed-acts"><button class="btn" type="button" id="bDone">Done editing</button><span class="xs muted">Save in the header writes it with any other changes.</span></div>
       </div><datalist id="peopleList">${Object.values(people).map(p => `<option value="${esc(p.name)}">`).join('')}</datalist>`;
       return;
@@ -497,7 +499,7 @@ svg text { fill: currentColor; }
     const v = d.verified, stale = v.days > 14;
     const age = v.days === 0 ? 'just now' : v.days === 1 ? '1 day ago' : `${v.days} days ago`;
     $('band').className = `band ${cls}`;
-    const hs = d.healthSet, healthNewer = d.health && hs && !hs.withStatus && same(d.health, saved.form.health);
+    const hs = d.healthSet, healthNewer = false; // H3: a health change moves Verified at, so there's no separate "Health set by"
     $('band').innerHTML = `<div class="bstate"><span class="stbig">${stH(d.state)}</span><span class="pop-wrap" data-f="health"><button class="hbtn" type="button" id="healthBtn" aria-haspopup="menu" aria-expanded="false" data-sheet-title="Health" aria-label="Health: ${d.health ? HEALTH[d.health] : 'not set'}. Change" title="Health: set by people and agents, never computed">${d.health ? health(d.health) : '<span class="health none">Set health</span>'}<span class="car">▾</span></button></span></div>
       <div class="line">
         <span class="txt${d.status ? '' : ' none'}">${d.status ? esc(d.status) : 'No status yet. One honest line: where it is and what\'s next.'}</span>
@@ -505,7 +507,7 @@ svg text { fill: currentColor; }
         ${d.state === 'Parked' ? `<dl class="why"><dt>Why parked</dt><dd>${esc(d.parkedWhy)}</dd><dt>Revive when</dt><dd>${esc(d.parkedRevive || '—')}</dd></dl>` : ''}
         <span class="meta"><span class="vchip ${stale ? 'stale' : 'ok'}" title="${stale ? 'Not confirmed for over two weeks' : ''}">${stale ? '⚠' : '✓'} Verified ${age}</span>${esc(v.when)} · ${v.by === 'agent' ? `${agent.name} (agent)` : esc(people[v.by].name)}${v.via ? ` through <code>${v.via}</code>` : ''}${healthNewer ? ` · <span class="hset">Health set by ${hs.by === 'agent' ? `${agent.name} (agent)` : esc(people[hs.by].name)}, ${esc(hs.when)}${hs.via ? ` through <code>${hs.via}</code>` : ''}</span>` : ''}</span>
       </div>
-      <div class="acts"><button class="btn" type="button" id="stillTrue" title="Confirms the status is still true and bumps Verified at">✓ Still true</button><button class="btn" type="button" id="editStatus">Edit status</button></div>`;
+      <div class="acts"><button class="btn" type="button" id="stillTrue" title="Confirms the status line and health are still true and bumps Verified at">✓ Still true</button><button class="btn" type="button" id="editStatus">Edit status</button></div>`;
   }
   function readBand() {
     const g = id => $(id)?.value ?? null;
@@ -625,7 +627,7 @@ svg text { fill: currentColor; }
     if (err) { ui.bandEdit = true; renderBand(); toast(err); return; }
     const dirty = changedFields(saved.form, draft);
     if (!dirty.length) return;
-    const statusChanged = dirty.some(f => ['state', 'status', 'blockedBy', 'parkedWhy', 'parkedRevive'].includes(f));
+    const statusChanged = dirty.some(f => ['state', 'status', 'blockedBy', 'parkedWhy', 'parkedRevive', 'health'].includes(f)); // H3: health counts
     if (statusChanged) draft.verified = { days: 0, when: `${TODAY}, now`, by: ME, via: '' };
     if (dirty.includes('health')) draft.healthSet = draft.health ? { by: ME, when: `${TODAY}, now`, via: '', withStatus: statusChanged } : null;
     const changes = changedFields(saved.form, draft).filter(f => f !== 'healthSet').map(f => [f, f === 'verified' ? null : saved.form[f], f === 'verified' ? TODAY : draft[f]]);
