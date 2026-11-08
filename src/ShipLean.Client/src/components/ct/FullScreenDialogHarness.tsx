@@ -2,7 +2,10 @@ import { useState } from 'react';
 import { saveBarHarnessIds as ids } from '../../touch/ct/saveBarHarnessIds';
 import { Dialog } from '../Dialog';
 
-/** CT-only: an opener and a dialog with a primary action, a footer and a body as long as `rows`. */
+/**
+ * CT-only: an opener and a dialog with a primary action, a footer and a body as long as `rows`. Its width is narrower
+ * than a phone, so a desktop inline width leaking onto the touch panel shows up as a box under the screen's width.
+ */
 export function FullScreenDialogHarness({ rows = 3 }: { rows?: number }) {
   const [open, setOpen] = useState(true);
   return (
@@ -14,6 +17,7 @@ export function FullScreenDialogHarness({ rows = 3 }: { rows?: number }) {
       {open ? (
         <Dialog
           title="New feature"
+          width="20rem"
           onClose={() => setOpen(false)}
           primaryAction={
             <button type="button" data-testid={ids.ctDialogPrimaryButton} className="btn-signal">
