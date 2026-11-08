@@ -76,7 +76,7 @@ const WIDGET_STORY = {
   id: 'id-SHIP-150',
   key: 'SHIP-150',
   title: 'Resize widgets',
-  rollups: [{ type: 'task' as const, open: 1, closed: 0 }],
+  rollups: [{ type: 'task' as const, open: 1, closed: 0, inCurrentSprint: 0, inOtherSprint: 0 }],
 };
 const WIDGET_TASK = task(
   'SHIP-190',

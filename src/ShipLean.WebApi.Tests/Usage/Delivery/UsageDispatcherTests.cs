@@ -19,7 +19,7 @@ public class UsageDispatcherTests : ApiFixture
 {
     private static readonly TimeSpan Limit = TimeSpan.FromSeconds(30);
 
-    private readonly FakeTimeProvider _clock = new(new DateTimeOffset(2026, 11, 2, 9, 0, 0, TimeSpan.Zero));
+    private readonly FakeTimeProvider _clock = new(TestDates.Today.AddHours(9));
     private readonly FixedAnalyticsSettingsReader _reader = new();
     private readonly ProbeSink _umami = new(AnalyticsProvider.Umami);
     private readonly ProbeSink _postHog = new(AnalyticsProvider.PostHog);

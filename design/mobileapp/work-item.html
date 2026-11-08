@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=390">
+<!--
+  Work item on the phone app (SHIP-905): a Feature (SHIP-906) and a Story (SHIP-921). Notes and decisions first;
+  tasks only as counts. Design notes and voice actions: work-item.md. ?state=<id>&theme=light|dark, ?list for ids.
+-->
+<link rel="stylesheet" href="app.css"><script src="app.js"></script>
+<style>
+/* Header: key, title, state, health, owner */
+.wi-head h1, .status-card .line, .goal, .vnote .text, .answer .a, .crit li, .blocked-task div, .decided div { overflow-wrap: anywhere; min-width: 0; }
+.wi-head .pills > *, .tally .v > *, .links div > * { min-width: 0; }
+.wi-head { padding: 14px var(--app-gutter) 14px; background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.wi-head .k { display: flex; align-items: center; gap: 6px; font-size: var(--app-text-sm); color: var(--color-muted); }
+.wi-head .k .crumb { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wi-head h1 { font-size: var(--app-text-lg); line-height: 1.25; font-weight: 650; margin: 6px 0 10px; letter-spacing: -.01em; }
+.wi-head .pills { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: var(--app-text-sm); color: var(--color-muted); }
+.wi-head .pills .who { display: inline-flex; align-items: center; gap: 6px; }
+
+/* Compact progress in the header */
+.mini-prog { margin-top: 12px; }
+.mp-line { display: flex; align-items: center; gap: 4px; margin-top: 6px; font-size: var(--app-text-sm); color: var(--color-muted); min-width: 0; }
+.mp-line b { color: var(--color-text); font-weight: 600; }
+.mp-line .blk { color: var(--color-danger); font-weight: 600; }
+.mp-line svg { margin-left: auto; }
+/* Overline inside a card */
+.over { font-size: var(--app-text-xs); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--color-muted); margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; }
+.over a { text-transform: none; letter-spacing: 0; color: var(--color-accent); font-weight: 500; font-size: var(--app-text-sm); }
+.stack { padding-top: 12px; }
+
+/* Status line with when it was last confirmed */
+.status-card { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--color-border); }
+.status-card .line { font-size: var(--app-text); }
+.status-card .ver { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: var(--app-text-sm); color: var(--color-muted); }
+.status-card .ver .grow { flex: 1; min-width: 0; }
+
+/* Tally: aggregated counts with coloured dots (stories, tasks) */
+.legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; font-size: var(--app-text-xs); color: var(--color-muted); }
+.legend span { display: inline-flex; align-items: center; gap: 5px; }
+.legend span::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--d); }
+.tally { display: flex; align-items: baseline; gap: 10px; padding: 10px 0 0; margin-top: 10px; min-width: 0; border-top: 1px solid var(--color-border); font-size: var(--app-text-sm); }
+.tally + .tally { margin-top: 0; }
+.tally .lbl { width: 52px; flex: none; color: var(--color-muted); }
+.tally .v { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 2px 10px; }
+.tally .v b { font-weight: 600; }
+.tally .v .n { display: inline-flex; align-items: center; gap: 5px; color: var(--color-muted); }
+.tally .v .n::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--d); }
+.tally .v .n.blocked { color: var(--color-danger); font-weight: 600; }
+
+/* A decision already confirmed (collapsed ask card) */
+.decided { display: flex; align-items: center; gap: 10px; margin: 0 var(--app-gutter) 12px; padding: 12px 14px; border-radius: 14px; background: color-mix(in srgb, var(--color-ok) 12%, var(--color-surface)); border: 1px solid color-mix(in srgb, var(--color-ok) 35%, transparent); font-size: var(--app-text-sm); }
+.decided .ic { color: var(--color-ok); display: grid; }
+.decided b { font-weight: 600; display: block; font-size: var(--app-text); }
+.decided span { color: var(--color-muted); }
+.more-asks { margin: -2px var(--app-gutter) 0; font-size: var(--app-text-sm); color: var(--color-accent); font-weight: 500; }
+
+/* Goal, clamped */
+.goal { font-size: var(--app-text); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.links { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--color-border); font-size: var(--app-text-sm); color: var(--color-muted); }
+.links div { display: flex; align-items: center; gap: 6px; }
+
+/* Notes: filters, events between notes, attachment chip */
+.notes-h { display: flex; gap: 8px; padding: 0 var(--app-gutter) 10px; }
+.notes-h .chip { height: 30px; }
+.event { display: flex; align-items: center; gap: 8px; padding: 9px var(--app-gutter) 9px 54px; font-size: var(--app-text-sm); color: var(--color-muted); background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.event b { color: var(--color-text); font-weight: 500; }
+.file { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; height: 30px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--color-border); font-size: var(--app-text-sm); color: var(--color-text); }
+.file svg { color: var(--color-muted); }
+.vnote.new, .event.new { background: var(--voice-soft); }
+.hl { background: var(--voice-soft); border-radius: 8px; box-shadow: 0 0 0 6px var(--voice-soft); }
+.agent-tag { font-size: 10.5px; font-weight: 600; color: var(--color-info); background: color-mix(in srgb, var(--color-info) 14%, transparent); border-radius: 4px; padding: 1px 5px; }
+
+/* Child rows (stories under a feature) */
+.row .side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; font-size: var(--app-text-xs); color: var(--color-muted); flex: none; }
+
+/* Story: acceptance criteria, blocked task callout */
+.crit { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: var(--app-text); }
+.crit li { display: flex; gap: 10px; }
+.crit li::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--color-muted); margin-top: 8px; flex: none; }
+.blocked-task { display: flex; gap: 10px; margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: color-mix(in srgb, var(--color-danger) 10%, var(--color-surface)); font-size: var(--app-text-sm); }
+.blocked-task svg { color: var(--color-danger); margin-top: 1px; }
+.blocked-task b { display: block; font-weight: 600; font-size: var(--app-text); }
+.blocked-task span { color: var(--color-muted); }
+.web-only { display: flex; align-items: center; gap: 6px; margin-top: 10px; font-size: var(--app-text-sm); color: var(--color-muted); }
+
+/* Answer sheet: voice answering a question about this item (read-only, nothing to apply) */
+.answer .q { font-size: var(--app-text-md); font-weight: 600; margin: 10px 0 8px; }
+.answer .a { font-size: var(--app-text); }
+.answer .alist { border: 1px solid var(--color-border); border-radius: 14px; overflow: hidden; margin: 10px 0 10px; }
+.answer .arow { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--color-border); font-size: var(--app-text-sm); }
+.answer .arow:last-child { border-bottom: 0; }
+.answer .arow .t { flex: 1; min-width: 0; font-size: var(--app-text); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.answer .arow .key { flex: none; }
+.answer .src { font-size: var(--app-text-xs); color: var(--color-muted); margin: 0 0 12px; display: flex; align-items: center; gap: 6px; }
+.answer .go { display: flex; gap: 10px; }
+.answer .go .btn { flex: 1; }
+
+.nw { white-space: nowrap; }
+/* Model download banner with progress */
+.banner.dl { align-items: flex-start; }
+.banner.dl > svg { color: var(--voice); margin-top: 1px; }
+.banner.dl b { display: block; font-weight: 600; font-size: var(--app-text); }
+.banner.dl .grow > span { color: var(--color-muted); }
+.banner.dl .bar { height: 6px; border-radius: 3px; background: var(--color-surface-2); margin: 8px 0 6px; overflow: hidden; }
+.banner.dl .bar i { display: block; height: 100%; width: 65%; background: var(--voice); }
+</style>
+</head>
+<body><div id="app"></div><script>
+const { frame, topBar, iconBtn, dock, type, state, health, progress, listening, preview, toast, askCard, voiceNote, icon, avatar } = App;
+
+/* ── Data ───────────────────────────────────────────────────────────── */
+const hot = (s) => `<span class="hot">${s}</span>`;
+const NOTE = 'the S22 numbers are fine for v1, keep the 4B path for phones with 12 gigs';
+const REPLY = 'try FunctionGemma on the S22 for one day, and if it isn\'t faster, ship 1.7B';
+const colors = { JD: '', PR: '#1f8f6a', SA: '#c2353b', AI: '' };
+const av = (i) => i ? avatar(i, { sm: true, agent: i === 'AI', color: colors[i] }) : '<span class="muted">Unassigned</span>';
+/* ── Feature sections ───────────────────────────────────────────────── */
+const featureTop = ({ st = ['New', 'proposed'], flashState = false } = {}) => `<div class="wi-head">
+  <div class="k">${type('feature')}<span>Feature in</span><span class="crumb">${type('epic')} Mobile App</span></div>
+  <h1>Voice commands on the mobile app with on-device models</h1>
+  <div class="pills"><span${flashState ? ' class="hl"' : ''}>${state(...st)}</span>${health('risk')}<span class="who">${avatar('JD', { sm: true })}Joel</span></div>
+  <div class="mini-prog">${progress({ done: 17, cur: 33 })}<div class="mp-line"><span><b>1 of 6</b> stories done</span><span class="sep"></span><span>tasks 7/15</span><span class="sep"></span><span class="blk">1 blocked</span>${icon('chevron', 'sm')}</div></div>${statusCard()}</div>`;
+
+const statusCard = () => `<div class="status-card">
+  <div class="line">Spike done: Qwen3 1.7B reaches the preview in 4.8 s on a cool S22, 6.1 s once it is warm. Model download is under way; D10 and D11 wait on Joel.</div>
+  <div class="ver">${icon('check', 'sm')}<span class="grow">Verified 2h ago by Claude Code</span><button class="btn ghost sm">Still true</button></div></div>`;
+
+const progressCard = () => `<div class="card">
+  ${progress({ done: 17, cur: 33 })}
+  <div class="legend"><span style="--d:var(--color-ok)">Done 1</span><span style="--d:var(--progress-current-sprint)">Sprint 14: 2</span><span style="--d:var(--color-surface-2)">Not planned 3</span></div>
+  <div class="tally"><span class="lbl">Stories</span><span class="v"><b>1 of 6 done</b><span class="n" style="--d:var(--state-in-progress)">2 active</span><span class="n" style="--d:var(--state-proposed)">3 new</span></span></div>
+  <div class="tally"><span class="lbl">Tasks</span><span class="v"><b>7 of 15 done</b><span class="n" style="--d:var(--state-in-progress)">3 in progress</span><span class="n blocked" style="--d:var(--color-danger)">1 blocked</span></span></div></div>`;
+
+const askD10 = (say = true) => askCard({ kind: 'approval', q: 'D10: Download the models on Wi-Fi only, and ask before using mobile data?', from: 'Claude Code', when: '2h ago', opts: ['Approve', 'Discuss'], say: say ? 'approve D10' : '' });
+const askAgent = (say = true) => askCard({ kind: 'feedback', q: 'The S22 takes 6.1 s once warm, over the 5 s target. Ship 1.7B as it is, or try FunctionGemma 270M on the S22 first?', from: 'Claude Code', when: '2h ago', opts: ['Reply'], say: say ? 'reply: …' : '' });
+const needsYou = ({ d10 = 'ask', say = true } = {}) => `<div class="section-h">Needs you <a>3</a></div>
+  ${d10 === 'ask' ? askD10(say) : `<div class="decided"><span class="ic">${icon('check')}</span><div><b>D10 approved</b><span>By you, just now · Wi-Fi only, ask before mobile data</span></div></div>`}
+  ${askAgent(say)}<div class="more-asks">D11: where the voice button sits ›</div>`;
+
+const details = () => `<div class="section-h">Goal and details</div><div class="list"><div class="row"><div class="main"><div class="goal">Let people work an item on their phone by speaking instead of tapping: “set this to Active and add a note: …” turns into a previewed action that they apply with a tap or “yes”.</div>
+  <div class="m">${icon('alert', 'sm')}Blocked by SHIP-907<span class="sep"></span>2 links<span class="sep"></span>1 file</div></div>${icon('chevron', 'muted')}</div></div>`;
+
+const notes = ({ fresh = false } = {}) => `<div class="section-h">Notes <a>Newest first</a></div>
+  <div class="notes-h"><span class="chip on">All <span class="n">14</span></span><span class="chip">Notes <span class="n">9</span></span><span class="chip">Changes <span class="n">5</span></span></div>
+  <div class="list">
+  ${fresh ? `<div class="vnote new">${avatar('JD')}<div class="body"><div class="who"><b>Joel</b><span>just now</span><span class="via-voice">${icon('mic', 'sm')}voice</span></div><div class="text">${NOTE[0].toUpperCase() + NOTE.slice(1)}</div><span class="clip"><span class="play">${icon('play', 'sm')}</span><span class="bars">${App.bars(28, 18, 74).map((h) => `<i style="height:${h}px"></i>`).join('')}</span>0:06</span></div></div>
+  <div class="event new">${icon('check', 'sm')}<span><b>Joel</b> approved D10 · just now</span></div>
+  <div class="event new">${icon('flag', 'sm')}<span><b>Joel</b> set the state to Active · just now</span></div>` : ''}
+  <div class="vnote">${avatar('AI', { agent: true })}<div class="body"><div class="who"><b>Claude Code</b><span class="agent-tag">Agent</span><span>2h</span></div>
+    <div class="text">Spike results (SHIP-922): 214 spoken commands on an S22. Right action 93%, note text exact 100%. Release to preview 4.8 s cool, 6.1 s after ten minutes of use.</div>
+    <span class="file">${icon('note', 'sm')}spike-s22.md</span></div></div>
+  <div class="event">${icon('flag', 'sm')}<span><b>Claude Code</b> updated the status line · 2h</span></div>
+  ${voiceNote({ who: 'Joel', initials: 'JD', when: '5h', secs: 14, text: 'Priya, the listening sheet has to show which item it acts on before I let go. Yesterday I nearly put a note on the wrong story.' })}
+  ${voiceNote({ who: 'Priya', initials: 'PR', color: colors.PR, when: '1d', secs: 9, text: 'Agreed, the key and title go at the top of the sheet. Also the S22 gets warm after about a minute of dictation.' })}
+  <div class="event">${icon('flag', 'sm')}<span><b>Priya</b> set SHIP-923 to Active · 1d</span></div>
+  ${voiceNote({ who: 'Sam', initials: 'SA', color: colors.SA, when: '1d', text: 'The small path is 1.7 GB in total. That fits in one store asset pack, so Android needs no CDN.' })}
+  </div>`;
+
+const wiBar = (sub = 'Feature · New') => topBar({ title: 'SHIP-906', sub, back: true, right: iconBtn('more', { label: 'More' }) });
+const featureBody = (o = {}) => `${featureTop(o)}${needsYou(o)}<div class="section-h">Progress <a>6 stories ›</a></div>${progressCard()}${details()}${notes()}`;
+
+/* ── Story ─────────────────────────────────────────────────────────── */
+const storyBody = () => `<div class="wi-head">
+  <div class="k">${type('story')}<span>Story in</span><span class="crumb">${type('feature')} SHIP-906 Voice commands</span></div>
+  <h1>Download the speech and command models on first run</h1>
+  <div class="pills">${state('Active', 'in-progress')}<span class="who">${avatar('PR', { sm: true, color: colors.PR })}Priya</span><span>Sprint 14 · 5 pts</span></div></div>
+  <div class="stack"><div class="card"><div class="over">Tasks</div>
+    ${progress({ done: 43, cur: 29 })}
+    <div class="tally" style="border-top:0;margin-top:2px"><span class="v"><b>3 of 7 done</b><span class="n" style="--d:var(--state-in-progress)">2 in progress</span><span class="n" style="--d:var(--state-proposed)">1 to do</span><span class="n blocked" style="--d:var(--color-danger)">1 blocked</span></span></div>
+    <div class="blocked-task">${icon('alert', 'sm')}<div><b>Check model files against checksums</b><span>Sam · blocked 1d · waits on the CDN bucket (SHIP-907)</span></div></div>
+    <div class="web-only">${icon('board', 'sm')}Tasks are moved on the task board on the web</div></div>
+  <div class="card"><div class="over">Acceptance criteria</div><ul class="crit">
+    <li>Both models download on first run, with progress, and resume after the app is closed.</li>
+    <li>Wi-Fi by default; mobile data only after asking.</li>
+    <li>The hold-to-talk button stays off until both models pass their checksum.</li></ul></div></div>
+  <div class="section-h">Notes <a>Newest first</a></div><div class="list">
+  ${voiceNote({ who: 'Priya', initials: 'PR', color: colors.PR, when: '3h', secs: 11, text: 'Resume works on Android. On iPhone the download stops when the app goes to the background, trying a background session next.' })}
+  ${voiceNote({ who: 'Joel', initials: 'JD', when: '1d', text: 'If D10 goes through we only need the mobile data prompt, not a setting.' })}</div>`;
+
+/* ── States ─────────────────────────────────────────────────────────── */
+App.screen({ title: 'Work item', states: [
+  { id: 'feature', title: 'Feature: top', note: 'What waits on you comes first, under the status line.',
+    render: () => frame({ top: wiBar(), body: featureBody(), bottom: dock({ placeholder: 'Type a note' }) }) },
+
+  { id: 'notes', title: 'Feature: notes', note: 'Notes are the main section: voice notes, agents, changes.',
+    render: () => frame({ top: wiBar(), body: `<div style="margin-top:-56px">${details()}</div>${notes()}`, bottom: dock({ placeholder: 'Type a note' }) }) },
+
+  { id: 'listening', title: 'Listening', note: 'State, decision and note in one breath.',
+    render: () => frame({ top: wiBar(), body: featureBody(), bottom: dock({ mic: 'live' }),
+      overlay: listening({ ctx: `<b>SHIP-906</b> Voice commands`, words: `Set this to ${hot('Active')}, approve ${hot('D10')}, and add a note: the ${hot('S22')} numbers are fine for v1,`, partial: 'keep the 4B path for phones with 12 gigs', tries: [] }) }) },
+
+  { id: 'preview', title: 'Preview', note: 'Three changes; the note is word for word.',
+    render: () => frame({ top: wiBar(), body: featureBody(), bottom: dock({ mic: 'busy' }),
+      overlay: preview({ ctx: '<b>SHIP-906</b>', heard: `Set this to Active, approve D10, and add a note: ${NOTE}`, acts: [
+        { kind: 'field', icon: 'flag', title: 'State: New → Active', detail: 'SHIP-906 Voice commands' },
+        { kind: 'approve', title: 'Approve D10', detail: 'Wi-Fi only, ask before mobile data' },
+        { kind: 'note', title: 'Note on SHIP-906', detail: 'Word for word, with the 6 s clip', quote: NOTE[0].toUpperCase() + NOTE.slice(1) },
+      ] }) }) },
+
+  { id: 'applied', title: 'Applied', note: 'The note and both changes land at the top of Notes.',
+    render: () => frame({ top: wiBar('Feature · Active'), body: `<div style="margin-top:-56px">${details()}</div>${notes({ fresh: true })}`,
+      bottom: dock(), overlay: toast('3 changes applied to SHIP-906', { bottom: 112 }) }) },
+
+  { id: 'reply', title: 'Reply to an agent', note: 'The answer is posted on the item for whichever agent picks it up next.',
+    render: () => frame({ top: wiBar(), body: `<div style="margin-top:-212px">${needsYou()}</div>${details()}`, bottom: dock({ mic: 'busy' }),
+      overlay: preview({ ctx: 'Answering on <b>SHIP-906</b>', heard: `Reply: ${REPLY}`, acts: [
+        { kind: 'ask', title: 'Answer on SHIP-906', detail: 'To Claude Code’s “Ship 1.7B as it is, or try FunctionGemma…” · clears Needs input · the next agent to pick it up reads it', quote: REPLY[0].toUpperCase() + REPLY.slice(1) + '.' },
+      ] }) }) },
+
+  { id: 'story', title: 'Story', note: 'Tasks only as counts, plus the one that is blocked.',
+    render: () => frame({ top: topBar({ title: 'SHIP-921', sub: 'Story · SHIP-906', back: true, right: iconBtn('more', { label: 'More' }) }), body: storyBody(), bottom: dock({ placeholder: 'Type a note' }) }) },
+
+  { id: 'ask', title: 'Question answered', note: 'Voice answers a question; nothing to apply.',
+    render: () => frame({ top: wiBar(), body: featureBody(), bottom: dock({ mic: 'busy' }),
+      overlay: `<div class="scrim"></div><div class="sheet answer"><div class="grab"></div>
+        <div class="voice-ctx">${icon('spark', 'sm')}Answer <span class="sep"></span> <b>SHIP-906</b></div>
+        <div class="q">“What’s left on this?”</div>
+        <div class="a">5 of 6 stories are open. Two are under way; three haven’t started.</div>
+        <div class="alist">
+          <div class="arow">${type('story')}<span class="t">Download models on first run</span>${state('Active', 'in-progress')}</div>
+          <div class="arow">${type('story')}<span class="t">Hold-to-talk button and sheet</span>${state('Active', 'in-progress')}</div>
+          <div class="arow">${type('story')}<span class="t">3 more stories</span>${state('New', 'proposed')}</div>
+        </div>
+        <div class="a">1 task is blocked: the checksum check on <span class="nw">SHIP-921</span> waits on <span class="nw">SHIP-907</span>. You have D10, D11 and a question from Claude Code.</div>
+        <div class="src" style="margin-top:10px">${icon('eye', 'sm')}From SHIP-906 as it is now · nothing was changed</div>
+        <div class="go"><button class="btn primary">Done</button></div></div>` }) },
+
+  { id: 'downloading', title: 'Voice not ready', note: 'Mic off while models download; everything else works.',
+    render: () => frame({ top: wiBar(), body: `<div class="banner dl" style="margin-bottom:12px">${icon('download')}<div class="grow"><b>Voice is getting ready</b><div class="bar"><i></i></div><span>1.1 of 1.7 GB on Wi-Fi · about 4 min. Read, tap and type in the meantime.</span></div></div>
+        ${featureTop()}${needsYou({ say: false })}`,
+      bottom: dock({ mic: 'off', placeholder: 'Type a note' }) }) },
+]});
+</script></body></html>

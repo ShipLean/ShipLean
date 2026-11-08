@@ -3,6 +3,7 @@ import { backlogModes, type BacklogMode, type Level } from '../../../routes';
 import { backlogTestIds as ids } from '../testIds';
 import { ColumnsMenu, type ColumnsMenuProps } from './ColumnsMenu';
 import { ModeSwitch } from './ModeSwitch';
+import { TriageChip } from './TriageChip';
 
 // FROZEN: the filter, every backlog level and every mode render this one toolbar. Add optional props, never rename or
 // remove one. A control whose props are absent is hidden.
@@ -11,7 +12,7 @@ export interface BacklogToolbarProps {
   level: Level;
   // The mode the open page is in.
   mode: BacklogMode;
-  // The modes the switch offers, in order; none hides the switch (Features and Epics have no modes).
+  // The modes the switch offers, in order; none hides the switch (Epics have no modes, Features List and Tree).
   modes?: readonly BacklogMode[];
   onNewItem: () => void;
   // The New button's label; defaults to "+ New work item".
@@ -29,6 +30,8 @@ export interface BacklogToolbarProps {
   search?: () => ReactNode;
   // Renders the keyboard shortcuts button at the right end. Absent, nothing shows.
   keys?: () => ReactNode;
+  // The items waiting in Triage and what the chip does when clicked (filters the backlog to them). No chip while the count is 0 or absent.
+  triage?: { count: number; onShow: () => void };
 }
 
 export function BacklogToolbar({
@@ -45,6 +48,7 @@ export function BacklogToolbar({
   filter,
   search,
   keys,
+  triage,
 }: BacklogToolbarProps) {
   return (
     <div
@@ -61,6 +65,7 @@ export function BacklogToolbar({
         {filter?.()}
       </div>
       {search?.()}
+      {triage ? <TriageChip count={triage.count} onShow={triage.onShow} /> : null}
       <span className="flex-1" />
       {options?.()}
       {includeCompleted !== undefined && onIncludeCompletedChange ? (

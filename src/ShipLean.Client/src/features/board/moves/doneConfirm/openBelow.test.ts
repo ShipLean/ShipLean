@@ -9,7 +9,9 @@ const target = (columnId: string) => ({
   done: false,
   beforeItemId: null,
 });
-const rollups = (open: number, closed = 1): RollupCountDto[] => [{ type: 'story', open, closed }];
+const rollups = (open: number, closed = 1): RollupCountDto[] => [
+  { type: 'story', open, closed, inCurrentSprint: 0, inOtherSprint: 0 },
+];
 
 function boardWith(held: ReturnType<typeof card>, columnId = 'col-prog'): BoardViewDto {
   const base = storiesBoard();

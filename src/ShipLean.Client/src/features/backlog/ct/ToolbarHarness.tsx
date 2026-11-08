@@ -8,12 +8,15 @@ export function ToolbarHarness({
   withFilter = false,
   bare = false,
   withOptions = false,
+  triageCount,
 }: {
   mode?: BacklogToolbarProps['mode'];
   withFilter?: boolean;
   // No Completed pair and no columns: the toolbar of a mode that has neither.
   bare?: boolean;
   withOptions?: boolean;
+  // Gives the toolbar a triage chip with this count; a click is shown in harness-state.
+  triageCount?: number;
 }) {
   const { pathname, search } = useLocation();
   const [completed, setCompleted] = useState(false);
@@ -24,6 +27,11 @@ export function ToolbarHarness({
         projectKey="SHIP"
         level="stories"
         mode={mode}
+        triage={
+          triageCount === undefined
+            ? undefined
+            : { count: triageCount, onShow: () => setHidden([...hidden, 'triage-shown']) }
+        }
         onNewItem={() => setHidden([...hidden, 'new-clicked'])}
         includeCompleted={bare ? undefined : completed}
         onIncludeCompletedChange={bare ? undefined : setCompleted}

@@ -59,6 +59,7 @@ public static class ActionUsageMap
         Add(ActionUsage.Track(UsageEventNames.LinkCardRefreshed), "LinkCardsRefresh.Refresh");
         Add(ActionUsage.Track(UsageEventNames.SprintCreated), "ProjectSprints.Create");
         Add(ActionUsage.Track(UsageEventNames.SprintUpdated), "Sprints.Update");
+        Add(ActionUsage.Track(UsageEventNames.SprintDeleted), "Sprints.Delete");
         Add(ActionUsage.Track(UsageEventNames.SprintCapacityChanged), "SprintCapacity.Put");
         Add(ActionUsage.Track(UsageEventNames.SprintRolledOver), "SprintRollover.Apply");
         Add(ActionUsage.Track(UsageEventNames.BoardSettingsChanged), "BoardSettings.Put");
@@ -82,6 +83,7 @@ public static class ActionUsageMap
         Add(ActionUsage.Track(UsageEventNames.SprintDemoCreated), "SprintDemo.Create");
         Add(ActionUsage.Track(UsageEventNames.SprintDemoYouTubeRetried), "SprintDemo.RetryYouTube");
         Add(ActionUsage.Track(UsageEventNames.ProjectDemoSettingsChanged), "ProjectDemoSettings.Put");
+        Add(ActionUsage.Track(UsageEventNames.IssueIntakeSettingsChanged), "IssueIntakeSettings.Put");
         Add(ActionUsage.Track(UsageEventNames.ProjectDemoBrandChanged), "DemoBrand.ReplaceLogo", "DemoBrand.RemoveLogo", "DemoBrand.PutTokens");
         Add(ActionUsage.Track(UsageEventNames.ProjectYouTubeChanged), "YouTube.Check", "YouTube.Disconnect");
         Add(ActionUsage.Track(UsageEventNames.InstanceSettingsChanged), "Instance.PutSettings");
@@ -107,8 +109,9 @@ public static class ActionUsageMap
         Add(ActionUsage.Track(UsageEventNames.BackupConnectionTested), "Backups.Test");
         Add(ActionUsage.Track(UsageEventNames.BackupRunStarted), "Backups.Run");
 
-        // Self-emitted: the action knows what the filter cannot (which sign-in, which decision, the new project, the screen).
-        Add(ActionUsage.SelfEmitted, "Auth.Login", "Consent.Decide", "ProjectCreation.Create", "Instance.Join", "Usage.Screen");
+        // Self-emitted: the action knows what the filter cannot (which sign-in, which decision, the new project, the screen, the sort).
+        Add(ActionUsage.SelfEmitted, "Auth.Login", "Consent.Decide", "ProjectCreation.Create", "Instance.Join", "Usage.Screen",
+            "ProjectUsage.BacklogSort");
 
         Add(
             ActionUsage.Untracked(Helper),
@@ -164,6 +167,7 @@ public static class ActionUsageMap
             "ImportJobs.ListForProject",
             "ImportJobs.Log",
             "Instance.GetSettings",
+            "IssueIntakeSettings.Get",
             "Instance.ListProjects",
             "Integrations.Get",
             "Jira.Get",

@@ -85,6 +85,12 @@
   --sidebar-width: 216px; /* left side menu: project picker + navigation */
   --dialog-width: 680px; /* wide dialogs (sprint end) */
 
+  /* Touch shell (SHIP-713): the frame under 900px. Only the shell's own controls grow; data rows keep the density. */
+  --touch-target: 44px; /* menu, search and close buttons, drawer rows, sheet rows */
+  --mobile-bar-height: 52px; /* top bar under 900px */
+  --drawer-width: 304px; /* navigation drawer under 900px (never more than 86vw) */
+  --text-input-touch: 16px; /* text inputs under 900px: below 16px, iOS Safari zooms the page on focus */
+
   /* Work item types: a separate palette from the UI colours above. Use only on type icons. */
   --type-epic: #d0731c;
   --type-feature: #7b4fc9;
@@ -97,6 +103,8 @@
   /* Charts (validated for CVD separation against --color-surface) */
   --chart-committed: #16a089;
   --chart-completed: #2563c9;
+  --progress-current-sprint: #1d4ea6; /* progress bar: open work in the current sprint (dark blue) */
+  --progress-other-sprint: #8fb5ee; /* progress bar: open work in another sprint (light blue) */
 }
 
 :root[data-density='comfortable'] {
@@ -146,6 +154,8 @@
     --type-bau: #a3b1c2;
     --chart-committed: #1fa88c;
     --chart-completed: #3b82e0;
+    --progress-current-sprint: #4a8fef;
+    --progress-other-sprint: #2e5f96;
   }
 }
 
@@ -182,6 +192,8 @@
   --type-bau: #a3b1c2;
   --chart-committed: #1fa88c;
   --chart-completed: #3b82e0;
+  --progress-current-sprint: #4a8fef;
+  --progress-other-sprint: #2e5f96;
 }
 
 /* State category → colour. States are custom per project, so colour follows the category, never the name. */

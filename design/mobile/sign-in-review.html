@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · SHIP-736 Sign in on a phone</title>
+<!-- SHIP-736 design review. Open directly in a browser (or over HTTP: iframes can render blank under file://). -->
+<script type="application/json" data-lavish-revisions>
+[{ "id": "r1", "label": "Round 1", "timestamp": "2026-11-07T11:00:00Z", "summary": "Joel kept all eight recommendations (D1–D8); recorded as settled" }]
+</script>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; background: var(--color-bg); color: var(--color-text); font-family: var(--font-sans); font-size: 14px; line-height: 1.5; }
+.wrap { max-width: 1340px; margin: 0 auto; padding: 28px 24px 90px; }
+h1 { margin: 0 0 6px; font-size: 26px; font-weight: 700; letter-spacing: -.01em; }
+h2 { margin: 0 0 4px; font-size: 20px; font-weight: 650; }
+h3 { margin: 0 0 4px; font-size: 15px; font-weight: 650; }
+p { margin: 0 0 8px; }
+.muted { color: var(--color-muted); }
+a { color: var(--color-accent); }
+code { font: 12px var(--font-mono); overflow-wrap: anywhere; }
+header.top { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+header.top .t { flex: 1; min-width: 300px; }
+.lede { max-width: 920px; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; background: var(--color-surface); border: 1px solid var(--color-border); font-size: 12px; }
+.seg { display: inline-flex; height: 30px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); overflow: hidden; background: var(--color-surface); }
+.seg button { padding: 0 12px; border: 0; border-right: 1px solid var(--color-border); background: transparent; color: var(--color-muted); font: inherit; font-size: 13px; cursor: pointer; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--color-accent-soft); color: var(--color-text); font-weight: 600; }
+section.block { margin-top: 44px; }
+.sub { margin: 0 0 14px; color: var(--color-muted); max-width: 960px; }
+.today { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; align-items: start; }
+@media (max-width: 1100px) { .today { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 700px) { .today { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+figure { margin: 0; min-width: 0; }
+figure img { display: block; width: 100%; height: auto; border: 1px solid var(--color-border); border-radius: 14px; }
+figcaption { margin-top: 6px; font-size: 12px; color: var(--color-muted); }
+.problems { margin: 16px 0 0; padding: 14px 16px 14px 34px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); display: grid; gap: 6px; max-width: 980px; }
+.problems li::marker { font-weight: 700; color: var(--color-danger); }
+.groups { display: grid; gap: 34px; }
+.grp h3 { font-size: 16px; margin-bottom: 10px; }
+.grp > p { max-width: 960px; }
+.phones { display: grid; grid-template-columns: repeat(auto-fill, minmax(404px, 1fr)); gap: 28px 20px; }
+.phone { min-width: 0; display: grid; gap: 8px; align-content: start; }
+.phone .ph { display: flex; gap: 8px; align-items: baseline; }
+.phone .no { flex: none; display: inline-grid; place-items: center; min-width: 30px; height: 22px; padding: 0 6px; border-radius: 6px; background: var(--color-accent); color: var(--color-accent-fg); font-weight: 700; font-size: 12px; }
+.phone .no.alt { background: var(--color-surface-2); color: var(--color-text); }
+.frame { width: 404px; max-width: 100%; padding: 7px; border-radius: 30px; background: #0b0f17; box-shadow: var(--shadow-raised); }
+.frame iframe { display: block; width: 390px; height: 844px; max-width: 100%; border: 0; border-radius: 24px; background: var(--color-surface); }
+.tablet { width: 424px; padding: 7px; border-radius: 22px; background: #0b0f17; box-shadow: var(--shadow-raised); max-width: 100%; }
+.tablet .vp { width: 410px; height: 590px; overflow: hidden; border-radius: 16px; }
+.tablet iframe { display: block; width: 820px; height: 1180px; border: 0; transform: scale(.5); transform-origin: 0 0; background: var(--color-surface); }
+.phone ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; font-size: 13px; max-width: 404px; }
+.dec { display: inline-block; padding: 0 6px; border-radius: 999px; background: var(--color-surface-2); font-size: 11px; font-weight: 600; white-space: nowrap; color: var(--color-text); text-decoration: none; }
+table.data { width: 100%; border-collapse: collapse; background: var(--color-surface); border: 1px solid var(--color-border); font-size: 13px; }
+table.data th { padding: 7px 10px; background: var(--color-surface-2); border-bottom: 1px solid var(--color-border); text-align: left; font-size: 12px; font-weight: 600; }
+table.data td { padding: 7px 10px; border-bottom: 1px solid var(--color-border); vertical-align: top; overflow-wrap: anywhere; }
+table.data tr:last-child td { border-bottom: 0; }
+.scroll-x { overflow-x: auto; }
+.qs { display: grid; gap: 12px; }
+.q { padding: 14px 16px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); display: grid; gap: 8px; }
+.q h3 { display: flex; gap: 8px; align-items: baseline; }
+.q h3 .id { flex: none; font: 700 12px var(--font-mono); color: var(--color-accent); }
+.q .see { font-size: 12px; }
+.opts { display: grid; gap: 6px; }
+.opts label { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: start; padding: 8px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); cursor: pointer; background: var(--color-bg); }
+.opts label:has(input:checked) { border-color: var(--color-accent); background: var(--color-accent-soft); }
+.opts input { margin-top: 3px; }
+.opts b { font-weight: 600; }
+.rec { margin-left: 6px; padding: 0 6px; border-radius: 999px; background: color-mix(in srgb, var(--color-ok) 18%, transparent); color: var(--color-ok); font-size: 11px; font-weight: 700; }
+.opts small { display: block; color: var(--color-muted); font-size: 12.5px; }
+.q textarea { width: 100%; min-height: 34px; padding: 6px 8px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-bg); color: var(--color-text); font: inherit; font-size: 13px; resize: vertical; }
+.submit { position: sticky; bottom: 0; margin-top: 16px; padding: 12px 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-dialog); }
+.submit .st { flex: 1; min-width: 200px; font-size: 13px; color: var(--color-muted); }
+.btn { height: 34px; padding: 0 14px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); font: inherit; font-size: 13px; cursor: pointer; }
+.btn.pri { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-fg); font-weight: 600; }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+@media (max-width: 900px) { .two { grid-template-columns: minmax(0, 1fr); } }
+.card { padding: 14px 16px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+.card ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+.rules { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.rules span { padding: 2px 8px; border-radius: 999px; background: var(--color-accent-soft); font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="t">
+      <h1>SHIP-736 · Sign in on a phone</h1>
+      <p class="lede muted">Sign in, the steps right after it (choose your own password, no projects yet) and proxy sign-in, at 900px and below. The phones below are a live mock at 390 × 844 in ShipLean's own tokens: tap into the fields, Show, Sign in. Above 900px nothing changes. Instance settings are out of scope (the story says so).</p>
+      <div class="chips">
+        <span class="chip">Story · 3 pts · Sprint 2</span>
+        <span class="chip">Parent SHIP-707</span>
+        <span class="chip">Rules: SHIP-805</span>
+        <span class="chip">Mock: <code>design/mobile/sign-in.html</code></span>
+        <span class="chip">Images: <code>design/mobile/images/sign-in*.png</code></span>
+        <span class="chip">PR ShipLean#69</span>
+      </div>
+      <div class="rules">Follows SHIP-805 without changes: <span>1 · 900px</span><span>6 · safe areas</span><span>11 · 48px bar</span><span>12 · only the top bar pinned</span><span>13 · 32px minimum</span><span>14 · 16px inputs</span><span>16 · viewport on events</span></div>
+    </div>
+    <div class="seg" role="group" aria-label="Theme of the phones">
+      <button type="button" data-theme-set="light" aria-pressed="true">Light</button>
+      <button type="button" data-theme-set="dark" aria-pressed="false">Dark</button>
+    </div>
+  </header>
+
+  <section class="block" id="today">
+    <h2>Today, at 390 px</h2>
+    <p class="sub">The first is prod (<code>prod.shiplean.app/login</code>, taken today). The rest are the desktop reference screen (<code>design/screens/signin.html</code>) in a phone window, which the SPA matches. It isn't broken: the 380px card fits. It just isn't a phone page yet.</p>
+    <div class="today">
+      <figure><img src="images/today-sign-in-prod.png" alt="Prod sign-in at 390px"><figcaption>Prod: sign in, Google on. The instance is called ShipLean, so the bar reads "ShipLean · ShipLean".</figcaption></figure>
+      <figure><img src="images/today-sign-in-error.png" alt="Failed sign-in at 390px"><figcaption>Failed sign-in</figcaption></figure>
+      <figure><img src="images/today-sign-in-change.png" alt="Choose your own password at 390px"><figcaption>Choose your own password</figcaption></figure>
+      <figure><img src="images/today-sign-in-no-projects.png" alt="No projects at 390px"><figcaption>No projects yet</figcaption></figure>
+    </div>
+    <ol class="problems">
+      <li><b>13px fields.</b> iOS Safari zooms the page when you tap Email or Password, and it stays zoomed after you sign in (SHIP-805 rule 14).</li>
+      <li><b>Centred card.</b> When the keyboard opens, Password and Sign in are under it (A1), and on a short or landscape phone the page jumps as the keyboard comes and goes.</li>
+      <li><b>96px label column.</b> Leaves about 216px for an email address; labels are 12px grey.</li>
+      <li><b>Sign in is a small button in the footer's corner</b>, after the Google button, beside a three-line note. The order reads Email, Password, Google, Sign in.</li>
+      <li><b>Show is a 24px target</b> inside the field; rule 13 says 32px.</li>
+      <li><b>Email opens on the letter keyboard with autocapitalise.</b> The field autofocuses, so the keyboard covers half the page before you've read it.</li>
+      <li><b>The bar is 38px, with no safe area</b>; on prod it repeats "ShipLean".</li>
+      <li><b>Proxy mode</b> (not shown, no reference screen) has the same card with one right-aligned Try again.</li>
+    </ol>
+  </section>
+
+  <section class="block" id="proposed">
+    <h2>Proposed</h2>
+    <p class="sub">One treatment for every card on <code>/login</code>: the card starts 16px under the bar with 16px gutters, labels sit above full-width 40px fields at 16px, and the one primary button spans the card under the fields. The help line moves under it, centred. Joel settled each of these on 7 Nov (decisions below); the A-phones show the options turned down.</p>
+    <div class="groups" id="groups"></div>
+  </section>
+
+  <section class="block" id="scope">
+    <h2>Scope and boundaries</h2>
+    <div class="two">
+      <div class="card"><h3>In</h3><ul>
+        <li><code>/login</code> in password mode: sign in, with and without Google, and the notes for failed, signed out, session ended, Google failed and Google refused.</li>
+        <li>Choose your own password (<code>?state=change</code>) and No projects (<code>?state=no-projects</code>, with and without project creation).</li>
+        <li>Proxy sign-in: no sign-in reached, account disabled, session ended.</li>
+        <li>The sign-in top bar (<code>LoginTopBar</code>).</li>
+      </ul></div>
+      <div class="card"><h3>Out</h3><ul>
+        <li>Instance settings, including Users and one-time passwords (the story excludes them).</li>
+        <li>The desktop layout: above 900px the card, labels, footer and order stay as they are.</li>
+        <li>Google's own pages, and the proxy's sign-in page: they're not ShipLean's.</li>
+        <li>The agent consent page (<code>/authorize</code>, <code>AuthorizePage.tsx</code>). It's also a signed-out-looking card. Say if you want it here; it's about 1 point more.</li>
+        <li>Sign-up, forgot password, passkeys: none exist, and this story adds none.</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section class="block" id="build">
+    <h2>What it takes to build</h2>
+    <p class="sub">All in <code>src/ShipLean.Client/src/features/auth/</code>, on top of the SHIP-713 shell's tokens. No API change, unless D8 adds a property.</p>
+    <div class="scroll-x"><table class="data">
+      <thead><tr><th>File</th><th>Change at 900px and below</th></tr></thead>
+      <tbody>
+        <tr><td><code>LoginPage.tsx</code></td><td>The stage starts at the top (<code>place-items: start center</code>), with safe-area padding at the bottom. 10vh top margin from 600px, so tablets aren't top-heavy.</td></tr>
+        <tr><td><code>LoginTopBar.tsx</code></td><td><code>--mobile-bar-height</code> plus the top safe area. The instance name is cut with an ellipsis, and left out when it is "ShipLean".</td></tr>
+        <tr><td><code>FormField.tsx</code></td><td>Label above; 40px, 16px text; Show/Hide 32px tall. Email gets <code>inputmode="email"</code>, <code>autocapitalize="off"</code>, <code>autocorrect="off"</code>, <code>spellcheck=false</code> and <code>enterkeyhint</code> (next / go). These attributes are harmless on the desktop, so they apply everywhere.</td></tr>
+        <tr><td><code>SignInForm.tsx</code></td><td>Sign in moves into the body under the fields, full width; the help line stays in the footer. Google goes first, above "or with your email". No <code>autoFocus</code> on a touch screen (<code>matchMedia('(max-width: 900px)')</code>).</td></tr>
+        <tr><td><code>ChangePasswordForm.tsx</code></td><td>Same field and button treatment; the checks list loses its column offset; Sign out instead becomes a centred 32px link in the footer.</td></tr>
+        <tr><td><code>NoProjectsCard.tsx</code>, <code>ProxySignInPage.tsx</code></td><td>Buttons full width and stacked. Sign out moves under the help line.</td></tr>
+        <tr><td><code>GoogleSignInLink.tsx</code></td><td>40px, full width, 15px text.</td></tr>
+        <tr><td><code>LoginPage.spec.tsx</code></td><td>Page shots at 390 × 844 for each state above (light and dark), plus a check that the inputs compute to 16px and the Show button to 32px.</td></tr>
+      </tbody>
+    </table></div>
+    <p class="muted" style="margin-top:8px">The 3-point estimate holds. It's mostly CSS plus one reorder in <code>SignInForm</code>; the baselines are the slow part (hand-run CI, as for the other mobile stories).</p>
+  </section>
+
+  <section class="block" id="measure">
+    <h2>How we'll know it helped</h2>
+    <div class="two">
+      <div class="card"><h3>What exists</h3><ul>
+        <li><code>auth.signed_in</code> fires for password, Google and proxy sign-ins. With SHIP-805 rule 16 it carries <code>viewport</code> (phone, tablet, desktop).</li>
+        <li>The sign-in page is anonymous, so its views and failed attempts aren't tracked (<code>docs/analytics.md</code>: anonymous requests emit nothing).</li>
+      </ul></div>
+      <div class="card"><h3>What we'd compare</h3><ul>
+        <li>Phone sign-ins per week as a share of all sign-ins, over the 4 weeks before release and the 4 weeks after.</li>
+        <li>Google against password sign-ins on phones over the same weeks, if D8 adds <code>method</code>. That shows whether putting Google first moved people to it.</li>
+        <li>Phone sign-ins per week against phone <code>screen.viewed</code> per week: how often a phone session starts with a sign-in.</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section class="block" id="decisions">
+    <h2>Decisions</h2>
+    <p class="sub" data-lavish-revision="r1"><b>Settled 7 Nov 2026:</b> Joel kept every recommendation, D1 to D8. The form below still works if you want to change one.</p>
+    <form id="dform" class="qs" onsubmit="return false"></form>
+    <div class="submit">
+      <span class="st" id="dstatus">8 decisions, settled 7 Nov.</span>
+      <button type="button" class="btn" id="copyAll">Copy all answers</button>
+      <button type="button" class="btn pri" id="queue">Queue answers</button>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const SCREEN = 'sign-in.html';
+  const groups = [
+    { title: 'Password sign-in', phones: [
+      { id: 'P1', q: '', title: 'Sign in, Google on', dec: ['D1', 'D2', 'D3', 'D4', 'D5', 'D7'], notes: ['The card starts 16px under the bar, not in the middle.', 'Google first, then "or with your email", then the two fields with labels above.', 'Sign in spans the card under Password; the help line sits under it, centred.', 'Fields and buttons 40px; field text 16px.'] },
+      { id: 'P2', q: 'kb', title: 'The keyboard is open', dec: ['D1', 'D6'], notes: ['Email has focus: the email keyboard (@ and .), no capitals, "next" on the return key, so it jumps to Password. Password\'s return key says "go".', 'Both fields and Sign in stay above the keyboard on a 390 × 844 phone, with nothing scrolled.', 'The card doesn\'t autofocus Email on a touch screen (D6). The keyboard opens when you tap a field, or the password manager fills both.'] },
+      { id: 'P3', q: 'google=0', title: 'Password only (Google off)', dec: ['D5'], notes: ['No Google and no "or": the fields come straight under the heading.'] },
+      { id: 'P4', q: 'state=error', title: 'Sign-in failed', dec: [], notes: ['The same one sentence whatever the reason, as on the desktop, now 14px.', 'Email kept, Password cleared and focused.'] },
+      { id: 'P5', q: 'state=signed-out', title: 'Signed out', dec: [], notes: ['The green note above Google, so it\'s the first thing read.'] },
+      { id: 'P6', q: 'state=ended', title: 'Session ended', dec: [], notes: ['Blue note; the text wraps to three lines.'] },
+      { id: 'P7', q: 'state=google-failed', title: 'Google didn\'t finish', dec: ['D5'], notes: ['Google stays first, right under the note, so trying again is one tap.'] },
+      { id: 'P8', q: 'state=google-refused', title: 'Google account refused', dec: [], notes: ['Same place. The fields are still there for someone with a password.'] },
+    ] },
+    { title: 'Right after signing in', phones: [
+      { id: 'P9', q: 'state=change', title: 'Choose your own password', dec: ['D2', 'D3', 'D4'], notes: ['Labels above; the checks list sits under Confirm at full width, 14px.', 'Save and continue is the full-width primary under the checks, disabled until all three are met.', 'Sign out instead is a centred 32px link in the footer.'] },
+      { id: 'P10', q: 'state=change&typed', title: 'Choose your own password, part typed', dec: [], notes: ['Hide shown after Show; two of three checks met.'] },
+      { id: 'P11', q: 'state=no-projects', title: 'No projects yet (can create)', dec: ['D4'], notes: ['+ New project and Import from Jira stack, full width.', 'Sign out goes full width under the help line.'] },
+      { id: 'P12', q: 'state=no-projects-member', title: 'No projects yet (can\'t create)', dec: [], notes: ['No buttons in the middle; only the profile link and Sign out.'] },
+    ] },
+    { title: 'Proxy sign-in', phones: [
+      { id: 'P13', q: 'state=proxy', title: 'No sign-in reached ShipLean', dec: ['D4'], notes: ['One note and a full-width Try again. Nothing to type in proxy mode.'] },
+      { id: 'P14', q: 'state=proxy-disabled', title: 'Account disabled', dec: [], notes: ['Try again stays, as today: reloading is how a re-enabled account gets in.'] },
+      { id: 'P15', q: 'state=proxy-ended', title: 'Session ended', dec: [], notes: ['The same card as P13.'] },
+    ] },
+    { title: 'Bar and theme', phones: [
+      { id: 'P16', q: 'inst=ShipLean', title: 'Prod: the instance is called ShipLean', dec: ['D7'], notes: ['The bar shows the mark alone; the card still says "to ShipLean".', 'A long name is cut with an ellipsis; the card heading wraps it in full.'] },
+      { id: 'P17', q: 'theme=dark', title: 'Dark', dec: [], forceTheme: 'dark', notes: ['No new colours: the desktop tokens. The Google mark keeps Google\'s colours on both themes.'] },
+    ] },
+    { title: 'Alternatives the decisions weigh', alt: true, intro: 'Not the recommendation. Each one changes one thing from P1, except A1, which is today\'s layout with the keyboard open.', phones: [
+      { id: 'A1', q: 'kb&alt=centred&alt=side&alt=footer&alt=h32', title: 'Today\'s layout, keyboard open', dec: ['D1', 'D4'], notes: ['Centred card, labels beside, 32px fields, Sign in in the footer corner.', 'Password and Sign in are both under the keyboard; you close it or scroll to reach them.'] },
+      { id: 'A2', q: 'alt=flat', title: 'No card on a phone', dec: ['D1'], notes: ['The form sits on a plain page, heading 22px, no border or shadow.', 'Looks more like an app. But the banners, footer and the no-projects card lose their frame, and tablets get a 820px-wide form unless it\'s capped.'] },
+      { id: 'A3', q: 'alt=side', title: 'Labels beside the fields', dec: ['D2'], notes: ['Today\'s 96px column. Fields are about 216px; an email address of 30 characters doesn\'t show whole at 16px.'] },
+      { id: 'A4', q: 'alt=h32', title: '32px fields and buttons', dec: ['D3'], notes: ['Like every other phone page (rule 13). Fits more, but these screens have nothing else to fit.'] },
+      { id: 'A5', q: 'alt=google-last', title: 'Google after Sign in', dec: ['D5'], notes: ['Password first, then "or", then Google. Keeps the desktop\'s idea that Google is the extra option.'] },
+      { id: 'A6', q: 'alt=footer', title: 'Sign in in the footer', dec: ['D4'], notes: ['As today: right-aligned beside the help line. Familiar, but it\'s the button under the keyboard in A1.'] },
+    ] },
+  ];
+  let theme = 'light';
+  const src = (q, force) => `${SCREEN}?${q ? q + '&' : ''}theme=${force || theme}`;
+  document.getElementById('groups').innerHTML = groups.map(g => `<div class="grp"><h3>${g.title}</h3>${g.intro ? `<p class="muted">${g.intro}</p>` : ''}<div class="phones">${g.phones.map(p => `
+    <article class="phone" id="${p.id}">
+      <div class="ph"><span class="no${g.alt ? ' alt' : ''}">${p.id}</span><h3>${p.title}</h3></div>
+      <div class="frame"><iframe loading="lazy" title="${p.title}" data-q="${p.q}" ${p.forceTheme ? `data-force="${p.forceTheme}"` : ''} src="${src(p.q, p.forceTheme)}"></iframe></div>
+      <div>${p.dec.map(d => `<a class="dec" href="#q-${d}">${d}</a>`).join(' ')}</div>
+      <ul>${p.notes.map(n => `<li>${n}</li>`).join('')}</ul>
+    </article>`).join('')}${g.title === 'Bar and theme' ? `
+    <article class="phone" id="T1">
+      <div class="ph"><span class="no">T1</span><h3>Tablet, 820 × 1180 (half size)</h3></div>
+      <div class="tablet"><div class="vp"><iframe loading="lazy" title="Tablet" data-q="" src="${src('')}"></iframe></div></div>
+      <div><a class="dec" href="#q-D1">D1</a></div>
+      <ul><li>The same layout: the card is capped at 440px and centred across, and starts 10% of the height down, so it isn't stuck to the bar.</li><li>Above 900px (a tablet held sideways, a laptop) it's the desktop card, unchanged.</li></ul>
+    </article>` : ''}</div></div>`).join('');
+  // A single-file copy of this page (attached to SHIP-736) defines SL_SRCDOC(query) and embeds the mock as srcdoc.
+  const load = f => {
+    const q = src(f.dataset.q, f.dataset.force).split('?')[1];
+    if (window.SL_SRCDOC) { f.removeAttribute('src'); f.srcdoc = window.SL_SRCDOC(q); } else f.src = SCREEN + '?' + q;
+  };
+  if (window.SL_SRCDOC) document.querySelectorAll('iframe[data-q]').forEach(load);
+  document.querySelectorAll('[data-theme-set]').forEach(b => b.addEventListener('click', () => {
+    theme = b.dataset.themeSet;
+    document.querySelectorAll('[data-theme-set]').forEach(x => x.setAttribute('aria-pressed', x === b));
+    document.querySelectorAll('iframe[data-q]').forEach(f => { if (!f.dataset.force) load(f); });
+  }));
+
+  const Q = [
+    { id: 'D1', see: 'P1, P2, T1, A1, A2', q: 'Where does the card sit on a phone?', opts: [
+      ['top', 'Near the top, 16px under the bar, in a card', 'The keyboard never covers the button and the page never jumps. Tablets get a 10vh top margin and a 440px card.', true],
+      ['flat', 'No card: the form sits on the page (A2)', 'More app-like and 2px wider each side, but the notes, footer and no-projects screen lose their frame.'],
+      ['centred', 'Centred, as today (A1)', 'No change, but Sign in is under the keyboard.'] ] },
+    { id: 'D2', see: 'P1, P9, A3', q: 'Where do the labels go?', opts: [
+      ['above', 'Above each field, 14px', 'Fields get the full width (about 324px). The usual phone form.', true],
+      ['side', 'Beside, in today\'s 96px column (A3)', 'Same as the desktop, but the fields are about 216px.'] ] },
+    { id: 'D3', see: 'P1, A4', q: 'How tall are the fields and buttons on these screens?', opts: [
+      ['40', '40px, on the sign-in screens only', 'Rule 13 is a minimum, so this needs no SHIP-805 change. Two fields and one button on the screen; it\'s the first thing anyone does on a phone.', true],
+      ['32', '32px, like every other phone page (A4)', 'One size everywhere.'] ] },
+    { id: 'D4', see: 'P1, P9, P11, P13, A6', q: 'Where is the primary button?', opts: [
+      ['body', 'Full width under the fields; the help line under it in the footer', 'Same on every card: Sign in, Save and continue, + New project, Try again.', true],
+      ['footer', 'In the footer, right-aligned, as today (A6)', 'Matches the desktop; small and under the keyboard.'] ] },
+    { id: 'D5', see: 'P1, P3, P7, A5', q: 'Where does Sign in with Google go, when it\'s on?', opts: [
+      ['first', 'First, above "or with your email"', 'One tap against typing two fields on a phone keyboard. The password manager still fills the fields below. Phones only; the desktop order stays.', true],
+      ['last', 'After Sign in, under "or" (A5)', 'Password stays the main way, as on the desktop. Still fixes today\'s Email, Password, Google, Sign in order.'],
+      ['everywhere', 'First, on the desktop too', 'One order at every width. Changes the desktop card, which this story doesn\'t otherwise touch.'] ] },
+    { id: 'D6', see: 'P2', q: 'Does Email take focus when the page opens on a touch screen?', opts: [
+      ['no', 'No autofocus at 900px and below', 'The page is readable first, and the password manager\'s prompt appears when a field is tapped. The desktop keeps autofocus.', true],
+      ['yes', 'Keep autofocus, as today', 'One tap fewer; on iOS the keyboard doesn\'t open from autofocus anyway, but on Android it does and covers half the page.'] ] },
+    { id: 'D7', see: 'P1, P16', q: 'What does the top bar show?', opts: [
+      ['bar', '48px bar: the mark and the instance name; the name is left out when it\'s "ShipLean"', 'Same height as the app\'s bar, so signing in doesn\'t make the page jump. No Menu or Search: there\'s nothing to open yet.', true],
+      ['none', 'No bar on a phone; the mark sits in the card\'s heading', '48px more room, but the sign-in page stops looking like the app it opens into.'] ] },
+    { id: 'D8', see: 'How we\'ll know', q: 'Should auth.signed_in say how someone signed in?', opts: [
+      ['method', 'Yes: add method = password | google | proxy', 'Without it we can\'t tell whether putting Google first (D5) moved phone sign-ins to Google. Three self-emitted calls, one property.', true],
+      ['no', 'No: compare phone and desktop sign-ins only', 'No API change in this story.'] ] },
+  ];
+  const form = document.getElementById('dform');
+  form.innerHTML = Q.map(q => `
+    <fieldset class="q" id="q-${q.id}" style="margin:0">
+      <h3><span class="id">${q.id}</span><span>${q.q}</span></h3>
+      <span class="see muted">See ${q.see}</span>
+      <div class="opts">${q.opts.map(([v, label, why, rec]) => `
+        <label><input type="radio" name="${q.id}" value="${v}" data-label="${label.replace(/"/g, '&quot;')}" ${rec ? 'checked' : ''}>
+          <span><b>${label}</b>${rec ? '<span class="rec">Recommended</span>' : ''}${why ? `<small>${why}</small>` : ''}</span></label>`).join('')}
+      </div>
+      <textarea name="${q.id}-note" aria-label="${q.id} note" placeholder="Note (optional)"></textarea>
+    </fieldset>`).join('');
+  function answers() {
+    return Q.map(q => {
+      const el = form.querySelector(`input[name="${q.id}"]:checked`);
+      const rec = q.opts.find(o => o[3])[0];
+      const note = form.querySelector(`textarea[name="${q.id}-note"]`).value.trim();
+      return { id: q.id, question: q.q, answer: el.dataset.label, value: el.value, recommended: el.value === rec, note };
+    });
+  }
+  const asText = list => list.map(a => `${a.id} ${a.question}\n  → ${a.answer}${a.recommended ? ' (recommended)' : ' (CHANGED from recommendation)'}${a.note ? `\n  Note: ${a.note}` : ''}`).join('\n');
+  document.getElementById('queue').addEventListener('click', () => {
+    const list = answers();
+    const changed = list.filter(a => !a.recommended).length;
+    const text = `SHIP-736 mobile sign-in design decisions (${changed} changed from the recommendation):\n${asText(list)}`;
+    const st = document.getElementById('dstatus');
+    if (window.lavish?.queuePrompt) {
+      window.lavish.queuePrompt(text, { tag: 'choice', text: `SHIP-736 decisions: ${changed} changed`, element: form, queueKey: 'ship-736-decisions', data: { question: 'ship-736-decisions', answers: list } });
+      st.textContent = `Queued: ${list.length} answers, ${changed} changed. Press Send in the Lavish bar to send them.`;
+    } else st.textContent = 'Lavish is not running. Use Copy all answers and paste them into the chat.';
+  });
+  document.getElementById('copyAll').addEventListener('click', async () => {
+    const st = document.getElementById('dstatus');
+    try { await navigator.clipboard.writeText(asText(answers())); st.textContent = 'Answers copied.'; }
+    catch { st.textContent = 'Clipboard unavailable here.'; }
+  });
+})();
+</script>
+</body>
+</html>

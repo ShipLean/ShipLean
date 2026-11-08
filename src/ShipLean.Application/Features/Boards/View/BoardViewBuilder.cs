@@ -130,7 +130,7 @@ public sealed class BoardViewBuilder(
             row.Points is { } points && childPoints is { } sum && sum > points * 1.25m,
             row.ParentId is { } parent ? new ParentRefDto(parent, row.ParentKey!, TypeRef(Enum.Parse<WorkItemTypeId>(row.ParentType!, ignoreCase: true)), row.ParentTitle!) : null,
             [.. row.TagNames.Select(t => new CardTagDto(t, board.Settings.TagColours.FirstOrDefault(c => string.Equals(c.Tag, t, StringComparison.OrdinalIgnoreCase))?.Colour))],
-            [.. shown.Select(r => new RollupCountDto(r.Type, r.Open, r.Closed))],
+            [.. shown.Select(RollupCountDto.From)],
             aboveStories && !inDone && shown.Count > 0 && shown.All(r => r.Open == 0),
             board.Settings.StyleRules.FirstOrDefault(r => r.Enabled && evaluator.Matches(r.Criteria, values))?.Id,
             extraFields.For(row, type, board.Settings.CardFields),

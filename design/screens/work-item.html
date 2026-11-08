@@ -203,6 +203,7 @@ li:hover > .rm, li:focus-within > .rm, tr:hover .rm { opacity: 1; }
   .fcell, .fcell.shrink { border-right: 0; max-width: 100%; }
 }
 </style>
+<link rel="stylesheet" href="item-touch.css">
 </head>
 <body>
 <div id="appbar"></div>
@@ -724,5 +725,6 @@ li:hover > .rm, li:focus-within > .rm, tr:hover .rm { opacity: 1; }
 })();
   if (new URLSearchParams(location.search).has('retros')) requestAnimationFrame(() => { const sec = document.querySelector('[data-testid="retro-section"]'); if (sec) sec.closest('.scroll').scrollTop = sec.offsetTop - sec.closest('.scroll').offsetTop; });
 </script>
+<script src="item-touch.js"></script>
 </body>
 </html>

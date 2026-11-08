@@ -31,6 +31,9 @@ internal sealed class StateDraft
 
     public bool IsNew { get; }
 
+    // Written only when the state is new; an existing state keeps its flag.
+    public bool IsIntake { get; init; }
+
     public bool Renamed => !IsNew && Name != _originalName;
 
     public bool Changed => !IsNew && (Name != _originalName || Category != _originalCategory || Order != _originalOrder);

@@ -1,0 +1,227 @@
+/*
+ * ShipLean native app (SHIP-905) mock-up kit: the phone frame, navigation and the voice components every
+ * app screen shares. Colours, fonts and radii come from ../tokens.css; this file only adds app-scale sizes.
+ * Each screen is a page at exactly 390 × 844 (the phone's viewport), so a screenshot or an iframe of that
+ * size is the phone. See README.md in this folder.
+ */
+@import url("../tokens.css");
+
+:root {
+  /* App scale: native phone sizes, larger than the web's compact density. */
+  --app-w: 390px;
+  --app-h: 844px;
+  --app-status: 47px;      /* status bar / notch area */
+  --app-home: 34px;        /* home indicator area */
+  --app-bar: 48px;         /* top bar (SHIP-805 rule: 48px) */
+  --app-tabs: 56px;        /* tab bar, above the home indicator */
+  --app-touch: 44px;       /* rows, buttons, chips you tap */
+  --app-mic: 64px;         /* the hold-to-talk button */
+  --app-text-xs: 12px;     /* overlines, counts */
+  --app-text-sm: 13px;     /* meta */
+  --app-text: 15px;        /* body */
+  --app-text-md: 17px;     /* row titles, sheet titles */
+  --app-text-lg: 22px;     /* screen titles */
+  --app-text-voice: 20px;  /* live transcript */
+  --app-gutter: 16px;
+  --voice: var(--color-accent);
+  --voice-soft: var(--color-accent-soft);
+  --ask: var(--color-warn);          /* something waits for a human */
+  --ask-soft: color-mix(in srgb, var(--color-warn) 14%, var(--color-surface));
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  width: var(--app-w);
+  height: var(--app-h);
+  overflow: hidden;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: var(--app-text)/1.4 var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+svg.i { width: 20px; height: 20px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+svg.i.sm { width: 16px; height: 16px; }
+svg.i.lg { width: 26px; height: 26px; }
+
+/* ── Frame ─────────────────────────────────────────────────────────────── */
+.phone { position: relative; width: var(--app-w); height: var(--app-h); display: flex; flex-direction: column; overflow: hidden; }
+.status { height: var(--app-status); flex: none; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 28px 8px 34px; font-size: 15px; font-weight: 600; background: var(--color-surface); }
+.status .sys { display: flex; gap: 6px; align-items: center; }
+.status .sys svg { width: 17px; height: 12px; fill: currentColor; stroke: none; }
+.topbar { height: var(--app-bar); flex: none; display: flex; align-items: center; gap: 4px; padding: 0 8px; background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.topbar .title { flex: 1; min-width: 0; padding: 0 4px; }
+.topbar .title b { display: block; font-size: var(--app-text-md); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.topbar .title small { display: block; font-size: var(--app-text-xs); color: var(--color-muted); margin-top: -1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.icon-btn { width: var(--app-touch); height: var(--app-touch); display: grid; place-items: center; border-radius: 50%; color: var(--color-muted); position: relative; }
+.icon-btn.on { color: var(--color-accent); }
+.icon-btn .dot { position: absolute; top: 9px; right: 9px; width: 8px; height: 8px; border-radius: 50%; background: var(--ask); border: 2px solid var(--color-surface); }
+/* Project key tile (projects.md): the key (2–4 capitals) in a rounded square; filled when it is the current project */
+.pkey { display: inline-grid; place-items: center; min-width: 40px; height: 26px; padding: 0 6px; border-radius: 7px; font: 700 11.5px/1 var(--font-mono); letter-spacing: .02em; background: var(--color-surface-2); color: var(--color-text); flex: none; }
+.pkey.cur { background: var(--color-accent); color: var(--color-accent-fg); }
+.proj-btn { height: var(--app-touch); min-width: var(--app-touch); padding: 0 4px; display: grid; place-items: center; position: relative; border-radius: 12px; flex: none; }
+.proj-btn .pkey { min-width: 34px; height: 28px; font-size: 10.5px; }
+.proj-btn .dot { position: absolute; top: 6px; right: 0; width: 10px; height: 10px; border-radius: 50%; background: var(--ask); border: 2px solid var(--color-surface); }
+.proj-btn.ring .pkey { box-shadow: 0 0 0 3px var(--color-surface), 0 0 0 5px var(--voice); }
+.avatar { width: 28px; height: 28px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 11px; font-weight: 600; color: #fff; background: var(--color-purple); flex: none; }
+.avatar.agent { background: var(--color-info); }
+.avatar.sm { width: 22px; height: 22px; font-size: 9.5px; }
+
+.content { flex: 1; min-height: 0; overflow: hidden; position: relative; }
+.scroll { height: 100%; overflow-y: auto; padding-bottom: 24px; scrollbar-width: none; }
+.scroll::-webkit-scrollbar { display: none; }
+
+/* Segmented control and filter chips under the top bar */
+.subbar { flex: none; display: flex; gap: 8px; padding: 8px var(--app-gutter); background: var(--color-surface); border-bottom: 1px solid var(--color-border); overflow-x: auto; scrollbar-width: none; }
+.seg { display: flex; flex: 1; background: var(--color-surface-2); border-radius: 9px; padding: 2px; }
+.seg button { flex: 1; height: 32px; border-radius: 7px; font-size: var(--app-text-sm); font-weight: 500; color: var(--color-muted); white-space: nowrap; padding: 0 8px; }
+.seg button.on { background: var(--color-surface); color: var(--color-text); box-shadow: var(--shadow-raised); }
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 16px; border: 1px solid var(--color-border); background: var(--color-surface); font-size: var(--app-text-sm); white-space: nowrap; flex: none; }
+.chip.on { background: var(--color-accent-soft); border-color: transparent; color: var(--color-text); font-weight: 500; }
+.chip.ask { background: var(--ask-soft); border-color: transparent; }
+.chip .n { font-size: var(--app-text-xs); color: var(--color-muted); }
+
+/* ── Tab bar with the hold-to-talk button in the middle ─────────────────── */
+.tabs { flex: none; height: calc(var(--app-tabs) + var(--app-home)); padding-bottom: var(--app-home); display: grid; grid-template-columns: 1fr 1fr 84px 1fr 1fr; align-items: stretch; background: var(--color-surface); border-top: 1px solid var(--color-border); position: relative; z-index: 5; }
+.tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 10.5px; font-weight: 500; color: var(--color-muted); position: relative; }
+.tab.on { color: var(--color-accent); }
+.tab .badge { position: absolute; top: 4px; left: calc(50% + 6px); min-width: 17px; height: 17px; padding: 0 5px; border-radius: 9px; background: var(--ask); color: #fff; font-size: 10.5px; font-weight: 600; display: grid; place-items: center; }
+:root[data-theme="dark"] .tab .badge { color: #1c1400; }
+.mic-slot { position: relative; }
+.mic { position: absolute; left: 50%; top: -26px; transform: translateX(-50%); width: var(--app-mic); height: var(--app-mic); border-radius: 50%; display: grid; place-items: center; background: var(--voice); color: var(--color-accent-fg); box-shadow: 0 6px 18px -4px color-mix(in srgb, var(--voice) 60%, transparent), 0 0 0 5px var(--color-surface); }
+.mic svg.i { width: 28px; height: 28px; stroke-width: 2; }
+.mic-label { position: absolute; left: 0; right: 0; bottom: 4px; text-align: center; font-size: 10.5px; font-weight: 500; color: var(--color-muted); }
+.mic.live { background: var(--color-danger); box-shadow: 0 0 0 5px var(--color-surface), 0 0 0 12px color-mix(in srgb, var(--color-danger) 22%, transparent), 0 0 0 22px color-mix(in srgb, var(--color-danger) 10%, transparent); }
+.mic.busy { background: var(--color-surface-2); color: var(--color-muted); box-shadow: 0 0 0 5px var(--color-surface); }
+.mic.off { background: var(--color-surface-2); color: var(--color-muted); box-shadow: 0 0 0 5px var(--color-surface); }
+
+/* On a detail screen there are no tabs: a voice dock holds the mic and a typed fallback. */
+.dock { flex: none; padding: 10px var(--app-gutter) calc(var(--app-home) + 4px); background: var(--color-surface); border-top: 1px solid var(--color-border); display: flex; align-items: center; gap: 10px; position: relative; z-index: 5; }
+.dock .type-field { flex: 1; height: var(--app-touch); border-radius: 22px; background: var(--color-surface-2); color: var(--color-muted); display: flex; align-items: center; padding: 0 16px; font-size: var(--app-text); }
+.dock .mic { position: static; transform: none; width: 52px; height: 52px; box-shadow: none; }
+.dock .mic svg.i { width: 24px; height: 24px; }
+.dock .mic.live { box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-danger) 22%, transparent), 0 0 0 14px color-mix(in srgb, var(--color-danger) 10%, transparent); }
+
+/* ── Lists, cards, sections ─────────────────────────────────────────────── */
+.section-h { display: flex; align-items: baseline; justify-content: space-between; padding: 18px var(--app-gutter) 8px; font-size: var(--app-text-xs); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--color-muted); }
+.section-h a { text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--color-accent); font-size: var(--app-text-sm); }
+.list { background: var(--color-surface); border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
+.row { min-height: 60px; display: flex; align-items: center; gap: 12px; padding: 10px var(--app-gutter); border-bottom: 1px solid var(--color-border); position: relative; }
+.row:last-child { border-bottom: 0; }
+.row .main { flex: 1; min-width: 0; }
+.row .t { font-size: var(--app-text); font-weight: 500; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.row .m { font-size: var(--app-text-sm); color: var(--color-muted); display: flex; align-items: center; gap: 6px; margin-top: 3px; flex-wrap: wrap; }
+.row .rank { width: 22px; text-align: right; font-size: var(--app-text-sm); color: var(--color-muted); font-variant-numeric: tabular-nums; flex: none; }
+.row.flash { background: var(--voice-soft); }
+.row.ask::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 0 2px 2px 0; background: var(--ask); }
+.card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; margin: 0 var(--app-gutter) 12px; padding: 14px; box-shadow: var(--shadow-raised); }
+.key { font-size: var(--app-text-sm); color: var(--color-muted); font-variant-numeric: tabular-nums; font-weight: 500; }
+.muted { color: var(--color-muted); }
+.sep::before { content: "·"; margin: 0 2px; color: var(--color-muted); }
+
+/* Type icon: a small rounded square in the type colour */
+.type { width: 18px; height: 18px; border-radius: 5px; display: inline-grid; place-items: center; flex: none; color: #fff; font-size: 10px; font-weight: 700; }
+.type.epic { background: var(--type-epic); } .type.feature { background: var(--type-feature); } .type.story { background: var(--type-story); }
+.type.bug { background: var(--type-bug); } .type.task { background: var(--type-task); } .type.action { background: var(--type-action); }
+
+/* State pill: colour follows the state category, never the name */
+.state { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border-radius: 11px; font-size: var(--app-text-xs); font-weight: 600; color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); white-space: nowrap; }
+.state::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.state.proposed { --c: var(--state-proposed); } .state.in-progress { --c: var(--state-in-progress); }
+.state.resolved { --c: var(--state-resolved); } .state.completed { --c: var(--state-completed); } .state.removed { --c: var(--state-removed); }
+
+/* Progress bar: done / in the current sprint / in another sprint / not planned */
+.progress { display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: var(--color-surface-2); }
+.progress i { display: block; height: 100%; }
+.progress .done { background: var(--color-ok); } .progress .cur { background: var(--progress-current-sprint); } .progress .other { background: var(--progress-other-sprint); }
+
+/* Health: on track / at risk / blocked */
+.health { display: inline-flex; align-items: center; gap: 5px; font-size: var(--app-text-xs); font-weight: 600; }
+.health::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.health.ok { color: var(--color-ok); } .health.risk { color: var(--color-warn); } .health.blocked { color: var(--color-danger); }
+
+/* ── Something waits for a human: approval or feedback ──────────────────── */
+.ask-card { margin: 0 var(--app-gutter) 12px; border-radius: 14px; background: var(--ask-soft); border: 1px solid color-mix(in srgb, var(--ask) 35%, transparent); padding: 14px; }
+.ask-card .kind { display: flex; align-items: center; gap: 6px; font-size: var(--app-text-xs); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ask); }
+.ask-card .q { font-size: var(--app-text); font-weight: 500; margin: 6px 0 4px; }
+.ask-card .from { font-size: var(--app-text-sm); color: var(--color-muted); display: flex; align-items: center; gap: 6px; }
+.ask-card .opts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.ask-card .say { margin-top: 10px; font-size: var(--app-text-sm); color: var(--color-muted); display: flex; align-items: center; gap: 6px; }
+
+/* Buttons */
+.btn { height: var(--app-touch); padding: 0 18px; border-radius: 12px; font-size: var(--app-text); font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: var(--color-surface-2); color: var(--color-text); }
+.btn.primary { background: var(--color-accent); color: var(--color-accent-fg); }
+.btn.ghost { background: transparent; color: var(--color-accent); }
+.btn.sm { height: 36px; padding: 0 14px; font-size: var(--app-text-sm); border-radius: 10px; }
+.btn.block { width: 100%; }
+
+/* ── Voice ──────────────────────────────────────────────────────────────── */
+.scrim { position: absolute; inset: 0; background: var(--scrim); z-index: 10; }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 11; background: var(--color-surface); border-radius: 20px 20px 0 0; box-shadow: var(--shadow-dialog); padding: 8px var(--app-gutter) calc(var(--app-home) + 12px); }
+.sheet .grab { width: 36px; height: 5px; border-radius: 3px; background: var(--color-border); margin: 0 auto 12px; }
+.sheet h3 { margin: 0 0 4px; font-size: var(--app-text-md); font-weight: 600; }
+
+/* Context line: what the model knows you are talking about */
+.voice-ctx { display: flex; align-items: center; gap: 8px; font-size: var(--app-text-sm); color: var(--color-muted); }
+.voice-ctx b { color: var(--color-text); font-weight: 600; }
+.voice-ctx .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-danger); box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-danger) 20%, transparent); }
+
+/* Live transcript: settled words in text colour, the words still being recognised lighter */
+.transcript { font-size: var(--app-text-voice); line-height: 1.35; font-weight: 500; margin: 14px 0 12px; min-height: 84px; }
+.transcript .partial { color: var(--color-muted); }
+.transcript .hot { color: var(--voice); }       /* a key, name or state matched against the screen's words */
+.wave { display: flex; align-items: center; justify-content: center; gap: 3px; height: 40px; margin: 6px 0 10px; }
+.wave i { width: 4px; border-radius: 2px; background: var(--color-danger); opacity: .85; }
+.voice-hint { text-align: center; font-size: var(--app-text-sm); color: var(--color-muted); }
+.try { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 12px; }
+.try .chip { height: 30px; font-size: var(--app-text-sm); color: var(--color-muted); }
+
+/* Preview: what the voice command will do, applied with a tap or "yes" */
+.preview .heard { font-size: var(--app-text-sm); color: var(--color-muted); font-style: italic; margin: 2px 0 12px; padding-left: 10px; border-left: 3px solid var(--color-border); }
+.preview .acts { border: 1px solid var(--color-border); border-radius: 14px; overflow: hidden; margin-bottom: 14px; }
+.act { display: flex; gap: 12px; padding: 12px; border-bottom: 1px solid var(--color-border); align-items: flex-start; }
+.act:last-child { border-bottom: 0; }
+.act .ic { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; background: var(--voice-soft); color: var(--voice); flex: none; }
+.act-note .ic { background: color-mix(in srgb, var(--color-purple) 15%, transparent); color: var(--color-purple); }
+.act-approve .ic { background: color-mix(in srgb, var(--color-ok) 16%, transparent); color: var(--color-ok); }
+.act-rank .ic { background: color-mix(in srgb, var(--color-info) 16%, transparent); color: var(--color-info); }
+.act .what { flex: 1; min-width: 0; }
+.act .what b { display: block; font-size: var(--app-text); font-weight: 600; }
+.act .what span { display: block; font-size: var(--app-text-sm); color: var(--color-muted); margin-top: 2px; }
+.act .quote { margin-top: 6px; font-size: var(--app-text); color: var(--color-text); background: var(--color-surface-2); border-radius: 8px; padding: 8px 10px; }
+.act .x { color: var(--color-muted); }
+.preview .go { display: flex; gap: 10px; }
+.preview .go .btn { flex: 1; }
+.preview .say-yes { text-align: center; margin-top: 10px; font-size: var(--app-text-sm); color: var(--color-muted); }
+.thinking { display: flex; align-items: center; gap: 10px; padding: 18px 0; color: var(--color-muted); font-size: var(--app-text); }
+.thinking .dots { display: flex; gap: 4px; } .thinking .dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--voice); opacity: .4; } .thinking .dots i:nth-child(2) { opacity: .7; } .thinking .dots i:nth-child(3) { opacity: 1; }
+
+/* Undo toast after applying */
+.toast { position: absolute; left: var(--app-gutter); right: var(--app-gutter); z-index: 12; display: flex; align-items: center; gap: 10px; padding: 0 8px 0 14px; height: 48px; border-radius: 12px; background: var(--color-text); color: var(--color-bg); font-size: var(--app-text-sm); box-shadow: var(--shadow-dialog); }
+.toast .grow { flex: 1; }
+.toast button { color: var(--color-accent-soft); font-weight: 600; padding: 0 10px; height: 36px; }
+:root[data-theme="dark"] .toast button { color: #1d4ea6; }
+
+/* A note left by voice: transcript first, the clip optional */
+.vnote { display: flex; gap: 10px; padding: 12px var(--app-gutter); border-bottom: 1px solid var(--color-border); background: var(--color-surface); }
+.vnote .body { flex: 1; min-width: 0; }
+.vnote .who { font-size: var(--app-text-sm); color: var(--color-muted); display: flex; align-items: center; gap: 6px; }
+.vnote .who b { color: var(--color-text); font-weight: 600; }
+.vnote .text { margin-top: 3px; font-size: var(--app-text); }
+.clip { display: inline-flex; align-items: center; gap: 8px; margin-top: 8px; height: 34px; padding: 0 12px 0 4px; border-radius: 17px; background: var(--color-surface-2); font-size: var(--app-text-xs); color: var(--color-muted); }
+.clip .play { width: 26px; height: 26px; border-radius: 50%; background: var(--color-surface); display: grid; place-items: center; color: var(--color-text); }
+.clip .bars { display: flex; align-items: center; gap: 2px; height: 18px; }
+.clip .bars i { width: 2px; border-radius: 1px; background: var(--color-muted); }
+.via-voice { display: inline-flex; align-items: center; gap: 3px; font-size: var(--app-text-xs); color: var(--voice); }
+
+/* Model download banner (voice off until models are ready) */
+.banner { display: flex; gap: 10px; align-items: center; margin: 12px var(--app-gutter) 0; padding: 10px 12px; border-radius: 12px; background: var(--color-surface); border: 1px solid var(--color-border); font-size: var(--app-text-sm); }
+.banner .grow { flex: 1; }
+
+/* Gallery helpers: annotations are never part of the phone */
+body.annot-free .annot { display: none; }
+
+/* Long context lines truncate instead of wrapping (fix from the first round) */
+.voice-ctx { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.voice-ctx > * { flex: none; }

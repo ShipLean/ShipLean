@@ -17,7 +17,7 @@ internal sealed class GuideTools(ProjectResolver projects, IProjectAccess access
     private const string DefaultPart = "guide";
 
     [McpServerTool(Name = "planning_guide"), McpScope(McpScopes.Read)]
-    [Description("How work moves through ShipLean from idea to done (part work), and how to break a feature or epic down for several agents working in parallel (part guide and the templates). Returns one part as Markdown, the names of every part, and what the project's past retros said to change next time. Read work when research might become work; read guide before you plan.")]
+    [Description("How work moves through ShipLean from idea to done (part work), and how to break a feature or epic down into stories and tasks, from one story to several agents working in parallel (part guide and the templates). Returns one part as Markdown, the names of every part, and what the project's past retros said to change next time. Read work when research might become work; read guide before any breakdown, whatever its size.")]
     public async Task<CallToolResult> PlanningGuide(
         [Description("Which part: work (idea to done), guide (the default for planning), brief, report, plan_reviewer, code_reviewer, fix, lead or retro.")] string? part = null,
         [Description("The project key whose past retros the lessons come from, such as SHIP. Leave out for the guide alone; with it, the lessons come from that project's retros.")] string? project = null,

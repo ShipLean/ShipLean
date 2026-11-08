@@ -5,6 +5,7 @@ using ShipLean.TestSupport.AccessSweep;
 namespace ShipLean.WebApi.Tests.Sprints;
 
 // The sprint write routes. Each sprint route points at a SHIP sprint no other row uses; the list route is the shell's.
+// The delete row targets a sprint with work items, so the allowed sweep is refused (409) and changes nothing.
 // The rollover row targets a sprint that has not ended: the sweep only proves access, and the apply itself is the rollover API tests.
 public sealed class SprintsRows : IAccessSweepRows
 {
@@ -12,6 +13,7 @@ public sealed class SprintsRows : IAccessSweepRows
     [
         new("POST", "api/projects/{id:guid}/sprints", ProjectRole.Member, Body: """{"name":"Sweep sprint","startDate":"2090-01-01","endDate":"2090-01-14","goal":""}"""),
         new("PATCH", "api/sprints/{id:guid}", ProjectRole.Member, Body: "{}", Url: $"api/sprints/{SeedIds.Sprints.Sprint20}"),
+        new("DELETE", "api/sprints/{id:guid}", ProjectRole.Member, Url: $"api/sprints/{SeedIds.Sprints.Sprint23}"),
         new("GET", "api/sprints/{id:guid}/capacity", ProjectRole.Member, Url: $"api/sprints/{SeedIds.Sprints.Sprint21}/capacity"),
         new("PUT", "api/sprints/{id:guid}/capacity", ProjectRole.Member, Body: """{"members":[]}""", Url: $"api/sprints/{SeedIds.Sprints.Sprint26}/capacity"),
         new("GET", "api/sprints/{id:guid}/rollover", ProjectRole.Member, Url: $"api/sprints/{SeedIds.Sprints.Sprint19}/rollover"),

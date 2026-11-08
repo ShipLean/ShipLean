@@ -66,7 +66,7 @@ public static class BacklogTree
                 continue;
             }
             var entries = rollups[row.Id];
-            rows.Add(factory.Group(row, depth, [.. entries.Where(e => e.Type != WorkItemTypeId.Task).OrderBy(e => e.Type).Select(e => new RollupCountDto(e.Type, e.Open, e.Closed))], ChildPoints(entries)));
+            rows.Add(factory.Group(row, depth, [.. entries.Where(e => e.Type != WorkItemTypeId.Task).OrderBy(e => e.Type).Select(RollupCountDto.From)], ChildPoints(entries)));
         }
 
         var orphans = stories.Where(s => !home.ContainsKey(s.Id)).ToList();
@@ -131,7 +131,7 @@ public static class BacklogTree
 
     private static List<RollupCountDto> OrphanRollups(IEnumerable<StackRowDto> orphans) =>
         [.. orphans.GroupBy(s => s.Type.Id).OrderBy(g => g.Key)
-            .Select(g => new RollupCountDto(g.Key, g.Count(s => s.State.Category != StateCategory.Completed), g.Count(s => s.State.Category == StateCategory.Completed)))];
+            .Select(g => new RollupCountDto(g.Key, g.Count(s => s.State.Category != StateCategory.Completed), g.Count(s => s.State.Category == StateCategory.Completed), 0, 0))];
 
     private static decimal? OrphanPoints(IEnumerable<StackRowDto> orphans) =>
         SumOrNull(orphans.Select(s => s.Points));

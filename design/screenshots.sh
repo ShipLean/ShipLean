@@ -86,6 +86,22 @@ declare -A variants=(
   [settings-demos-yt-refused]="settings.html?tab=demos&yt=refused"
   [settings-demos-yt-connected]="settings.html?tab=demos&yt=connected"
   [instance-integrations]="instance.html?tab=integrations"
+  # Decisions and questions on the work item page (SHIP-922)
+  [decisions-change]="decisions.html?state=change"
+  [decisions-settled-change]="decisions.html?state=settled-change"
+  [decisions-history]="decisions.html?state=history"
+  [decisions-reply]="decisions.html?state=reply"
+  [decisions-folded]="decisions.html?state=folded"
+  [decisions-empty]="decisions.html?state=empty"
+  [decisions-feature]="decisions.html?state=feature"
+  # SHIP-907: Health on Features (S5) and Your profile › Signed-in devices
+  [feature-health-menu]="feature.html?menu=health"
+  [feature-health-none]="feature.html?health=none"
+  [features-board-compact]="features-board.html?compact"
+  [features-board-health-filter]="features-board.html?fhealth=risk"
+  [profile-devices]="profile.html?at=sessions"
+  [profile-devices-signout]="profile.html?at=sessions&devout=px"
+  [profile-devices-none]="profile.html?at=sessions&devices=0"
 )
 
 names=("$@")

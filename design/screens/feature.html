@@ -19,7 +19,10 @@
   Save/Discard, Description View/Edit with paste-to-attach and an external-image warning, + Add link (paste a URL:
   GitHub, gitlab.example.com, a private host or any public page), drop files anywhere to attach, Log (Ctrl+Enter),
   ⋯ on a log entry marks it superseded, a Markdown attachment opens attachment.html.
-  ?band=blocked|parked|edit, ?menu=state, ?edit, ?drop and ?addlink=og|github|private open those states.
+  Health (On track / At risk / Blocked) sits beside the state pill: set by hand or by an agent, never computed, waits
+  for Save like the other band fields, and has a row in the band editor. It is independent of State.
+  ?band=blocked|parked|edit, ?menu=state|health, ?health=ok|risk|blocked|none (default risk), ?edit, ?drop and
+  ?addlink=og|github|private open those states.
   The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot).
 -->
 <link rel="stylesheet" href="../tokens.css">
@@ -83,6 +86,20 @@
 .band .txt.none { color: var(--color-muted); font-weight: var(--weight-regular); }
 .band .meta { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-size: var(--text-xs); color: var(--color-muted); }
 .band .acts { display: flex; gap: 6px; }
+/* Health sits beside the state pill: a pill-shaped button with the dot and label (or Set health) that opens a menu. */
+.bstate { display: flex; align-items: center; gap: 6px; }
+.hbtn { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 6px 0 9px; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-surface); cursor: pointer; white-space: nowrap; }
+.hbtn:hover, .hbtn[aria-expanded="true"] { border-color: color-mix(in srgb, var(--color-accent) 55%, var(--color-border)); }
+.hbtn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+.hbtn .car { font-size: var(--text-2xs); color: var(--color-muted); }
+.hbtn .health.none { font-size: var(--text-xs); }
+[data-f="health"].changed .hbtn::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--color-accent); }
+.menu .opt[disabled] { color: var(--color-muted); cursor: default; background: none; }
+.menu .sep { height: 1px; margin: 3px 0; background: var(--color-border); }
+.hset { display: inline-flex; align-items: center; gap: 4px; }
+/* Health in the band editor: a segmented control, the dot in colour and the label in ink */
+.hseg { width: fit-content; }
+.hseg .health { color: inherit; font-size: inherit; font-weight: inherit; }
 .why { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 2px var(--space-3); margin: 3px 0 2px; font-size: var(--text-sm); }
 .why dt { color: var(--color-muted); font-size: var(--text-xs); padding-top: 1px; }
 .why dd { margin: 0; display: flex; align-items: center; gap: 6px; }
@@ -243,6 +260,7 @@ svg text { fill: currentColor; }
   .box { overflow-x: auto; }
 }
 </style>
+<link rel="stylesheet" href="item-touch.css">
 </head>
 <body>
 <div id="appbar"></div>
@@ -271,7 +289,7 @@ svg text { fill: currentColor; }
 
 <script>
 (() => {
-  const { ME, people, items, doneItems, epics, esc, tIcon, av, toast } = SL;
+  const { ME, people, items, doneItems, epics, esc, tIcon, av, toast, HEALTH, health } = SL;
   const $ = id => document.getElementById(id);
   const params = new URLSearchParams(location.search);
   document.getElementById('appbar').outerHTML = SL.appBar('backlogs');
@@ -298,6 +316,8 @@ svg text { fill: currentColor; }
     status: 'Saved cards are on staging; Apple Pay and the confirmation email shipped. Load testing waits on the vault rate limit.',
     verified: { days: 2, when: 'Fri 23 Oct, 18:02', by: 'agent', via: 'set_status' },
     blockedBy: null, blockedSince: null, parkedWhy: '', parkedRevive: '',
+    // Health: ok | risk | blocked | null (not set). Set by people and agents, never computed. healthSet = who set it last.
+    health: 'risk', healthSet: { by: 'sam', when: 'Sat 24 Oct, 17:40', via: '' },
     description: '### Key facts\n- Cards live in the **vault** as tokens; we never store a card number.\n- Most mobile drop-off is at Payment, so saved cards go first:\n\n![](checkout-funnel.png)\n\n### Decisions\n| Decision | Why | When |\n|---|---|---|\n| Tokens stay in the vault | Keeps us out of PCI scope | Fri 2 Oct |\n| Radio rows, not cards, in the picker | Still works with six or more saved cards | Fri 23 Oct |\n\n### Next\n- [x] Apple Pay button\n- [ ] Saved card picker (SHIP-141)\n- [ ] Gift card balance check, after SHIP-141',
   };
   const VARIANTS = {
@@ -305,6 +325,11 @@ svg text { fill: currentColor; }
     parked: { state: 'Parked', status: 'Saved cards shipped; the rest waits until passkey sign-in is out.', parkedWhy: 'Mobile sign-in needs the whole team for two sprints.', parkedRevive: 'Sprint 26 planning, or mobile conversion dropping below 58%.', verified: { days: 19, when: 'Tue 6 Oct, 16:40', by: 'agent', via: 'set_status' } },
   };
   if (VARIANTS[params.get('band')]) Object.assign(initial, VARIANTS[params.get('band')]);
+  const HP = params.get('health');
+  if (HP in HEALTH || HP === 'none') initial.health = HP === 'none' ? null : HP;
+  if (!initial.health) initial.healthSet = null;
+  // H3 (Joel, 9 Nov): a Health change is a status write, so it moves Verified at too. Sam set it on its own on Sat 24 Oct.
+  else if (!VARIANTS[params.get('band')]) initial.verified = { days: 1, when: 'Sat 24 Oct, 17:40', by: 'sam', via: '' };
   let saved = { rev: 9, form: clone(initial) };
   let draft = clone(initial);
 
@@ -315,6 +340,8 @@ svg text { fill: currentColor; }
     { rev: 6, by: 'agent', when: 'Wed 14 Oct, 17:30', changes: [['state', 'Active', 'Blocked'], ['blockedBy', null, 'Vault team (Tom Okafor), since Wed 14 Oct']] },
     { rev: 1, by: 'ana', when: 'Mon 21 Sep, 10:00', changes: [], note: 'Created as Feature in Idea' },
   ];
+  // Sam changed the health on its own the day after the agent's status update; that write moves Verified at (H3).
+  if (initial.health) { revs.unshift({ rev: 10, by: 'sam', when: 'Sat 24 Oct, 17:40', changes: [['health', initial.health === 'ok' ? 'risk' : initial.health === 'risk' ? 'ok' : 'risk', initial.health], ...(VARIANTS[params.get('band')] ? [] : [['verified', null, 'Sat 24 Oct']])] }); saved.rev = 10; }
   const children = [...items, ...doneItems].filter(i => i.parent === 'Checkout v2');
   const links = [
     { kind: 'item', type: 'Related', key: 'SHIP-129' },
@@ -340,11 +367,12 @@ svg text { fill: currentColor; }
   if (ui.bandEdit) { draft.state = 'Blocked'; draft.blockedSince = TODAY; draft.status = 'Load testing stopped: the vault returns 429 above 40 requests a second.'; }
 
   /* Field names and from → to (History and the save state). */
-  const FIELDS = { title: 'Title', state: 'State', epic: 'Epic', tags: 'Tags', goal: 'Goal', status: 'Status', verified: 'Verified at', blockedBy: 'Blocked by', blockedSince: 'Blocked since', parkedWhy: 'Parked reason', parkedRevive: 'Revive when', description: 'Description' };
+  const FIELDS = { title: 'Title', state: 'State', epic: 'Epic', tags: 'Tags', goal: 'Goal', status: 'Status', verified: 'Verified at', blockedBy: 'Blocked by', blockedSince: 'Blocked since', parkedWhy: 'Parked reason', parkedRevive: 'Revive when', health: 'Health', healthSet: 'Health set', description: 'Description' };
   const changedFields = (a, b) => Object.keys(b).filter(f => !same(a[f], b[f]));
   const blockedText = b => (b ? [b.person && people[b.person].name, b.text].filter(Boolean).join(', ') : '');
   const fmt = v => (v == null || v === '' ? 'none' : typeof v === 'object' ? blockedText(v) || v.when || 'none' : v);
-  const diffHtml = (f, from, to) => (f === 'description' || f === 'goal' ? 'edited' : `${from == null ? '' : `<span class="muted">${esc(fmt(from))}</span> → `}<b>${esc(fmt(to))}</b>`);
+  const healthH = h => (h ? health(h) : '<span class="health none">Not set</span>');
+  const diffHtml = (f, from, to) => (f === 'health' ? `${healthH(from)} → ${healthH(to)}` : f === 'description' || f === 'goal' ? 'edited' : `${from == null ? '' : `<span class="muted">${esc(fmt(from))}</span> → `}<b>${esc(fmt(to))}</b>`);
 
   /* Markdown subset: ### headings, - lists, - [ ] task lists, | tables |, ![](images), **bold**, `code`, keys. */
   const imgAttached = n => attachments.find(a => a.name === n && a.kind === 'image');
@@ -415,7 +443,27 @@ svg text { fill: currentColor; }
     btn.parentElement.append(m);
     m.querySelector('[aria-checked="true"]')?.focus();
   }
-  function closeMenu() { document.querySelectorAll('.menu').forEach(m => m.remove()); $('stateBtn')?.setAttribute('aria-expanded', 'false'); }
+  function closeMenu() { document.querySelectorAll('.menu').forEach(m => m.remove()); $('stateBtn')?.setAttribute('aria-expanded', 'false'); $('healthBtn')?.setAttribute('aria-expanded', 'false'); }
+  /* Health menu: the three values and Clear. Waits for Save like the rest of the band. */
+  const HEALTH_HINT = { ok: 'going to plan', risk: 'may miss the goal or date', blocked: "can't move until something changes" };
+  function openHealthMenu() {
+    closeMenu();
+    const btn = $('healthBtn'); if (!btn) return;
+    btn.setAttribute('aria-expanded', 'true');
+    const m = document.createElement('div'); m.className = 'menu'; m.setAttribute('role', 'menu');
+    m.innerHTML = '<div class="grp d-only">Health</div>' + Object.keys(HEALTH).map(h =>
+      `<button class="opt" type="button" role="menuitemradio" aria-checked="${h === draft.health}" data-pick-health="${h}">${health(h)}${h === draft.health ? '<span class="tick">✓</span>' : `<span class="need">${HEALTH_HINT[h]}</span>`}</button>`).join('')
+      + `<div class="sep"></div><button class="opt" type="button" role="menuitem" data-pick-health=""${draft.health ? '' : ' disabled'}>Clear health</button>`
+      + '<div class="foot">Set by people and by agents (<code>set_status</code>), never worked out from the stories. Independent of State.</div>';
+    btn.parentElement.append(m);
+    (m.querySelector('[aria-checked="true"]') || m.querySelector('.opt'))?.focus();
+  }
+  function pickHealth(h) {
+    closeMenu();
+    draft.health = h || null;
+    renderBand(); refreshDirty();
+    $('healthBtn')?.focus();
+  }
   function pickState(n) {
     closeMenu();
     draft.state = n;
@@ -442,7 +490,8 @@ svg text { fill: currentColor; }
         : d.state === 'Parked' ? `<div class="f"><label class="lbl" for="pWhy">Why parked <span class="req">*</span></label><input class="field${err ? ' bad' : ''}" id="pWhy" value="${esc(d.parkedWhy)}" placeholder="What stopped it">${err ? `<span class="err">${err}</span>` : ''}</div>
           <div class="f"><label class="lbl" for="pRevive">Revive when</label><input class="field" id="pRevive" value="${esc(d.parkedRevive)}" placeholder="What would bring it back"></div>`
         : '<div class="f" style="grid-column:2/4"></div>'}
-        <div class="f wide"><label class="lbl" for="bLine">Status · one honest line</label><textarea class="field" id="bLine" rows="2">${esc(d.status)}</textarea><span class="hintline">Saving sets Verified at to now. The old line stays in History.</span></div>
+        <div class="f wide"><span class="lbl" id="hLbl">Health</span><div class="seg hseg" role="radiogroup" aria-labelledby="hLbl">${[...Object.keys(HEALTH), ''].map(h => `<button type="button" role="radio" aria-checked="${(d.health || '') === h}" aria-pressed="${(d.health || '') === h}" data-ed-health="${h}">${h ? health(h) : 'Not set'}</button>`).join('')}</div></div>
+        <div class="f wide"><label class="lbl" for="bLine">Status · one honest line</label><textarea class="field" id="bLine" rows="2">${esc(d.status)}</textarea><span class="hintline">Saving sets Verified at to now, and so does changing Health. The old line and health stay in History.</span></div>
         <div class="ed-acts"><button class="btn" type="button" id="bDone">Done editing</button><span class="xs muted">Save in the header writes it with any other changes.</span></div>
       </div><datalist id="peopleList">${Object.values(people).map(p => `<option value="${esc(p.name)}">`).join('')}</datalist>`;
       return;
@@ -450,14 +499,15 @@ svg text { fill: currentColor; }
     const v = d.verified, stale = v.days > 14;
     const age = v.days === 0 ? 'just now' : v.days === 1 ? '1 day ago' : `${v.days} days ago`;
     $('band').className = `band ${cls}`;
-    $('band').innerHTML = `<span class="stbig">${stH(d.state)}</span>
+    const hs = d.healthSet, healthNewer = false; // H3: a health change moves Verified at, so there's no separate "Health set by"
+    $('band').innerHTML = `<div class="bstate"><span class="stbig">${stH(d.state)}</span><span class="pop-wrap" data-f="health"><button class="hbtn" type="button" id="healthBtn" aria-haspopup="menu" aria-expanded="false" data-sheet-title="Health" aria-label="Health: ${d.health ? HEALTH[d.health] : 'not set'}. Change" title="Health: set by people and agents, never computed">${d.health ? health(d.health) : '<span class="health none">Set health</span>'}<span class="car">▾</span></button></span></div>
       <div class="line">
         <span class="txt${d.status ? '' : ' none'}">${d.status ? esc(d.status) : 'No status yet. One honest line: where it is and what\'s next.'}</span>
         ${d.state === 'Blocked' ? `<dl class="why"><dt>Blocked by</dt><dd>${d.blockedBy?.person ? av(d.blockedBy.person) : ''}${esc(blockedText(d.blockedBy))}${d.blockedSince ? ` <span class="muted">· since ${esc(d.blockedSince)}</span>` : ''}</dd></dl>` : ''}
         ${d.state === 'Parked' ? `<dl class="why"><dt>Why parked</dt><dd>${esc(d.parkedWhy)}</dd><dt>Revive when</dt><dd>${esc(d.parkedRevive || '—')}</dd></dl>` : ''}
-        <span class="meta"><span class="vchip ${stale ? 'stale' : 'ok'}" title="${stale ? 'Not confirmed for over two weeks' : ''}">${stale ? '⚠' : '✓'} Verified ${age}</span>${esc(v.when)} · ${v.by === 'agent' ? `${agent.name} (agent)` : esc(people[v.by].name)}${v.via ? ` through <code>${v.via}</code>` : ''}</span>
+        <span class="meta"><span class="vchip ${stale ? 'stale' : 'ok'}" title="${stale ? 'Not confirmed for over two weeks' : ''}">${stale ? '⚠' : '✓'} Verified ${age}</span>${esc(v.when)} · ${v.by === 'agent' ? `${agent.name} (agent)` : esc(people[v.by].name)}${v.via ? ` through <code>${v.via}</code>` : ''}${healthNewer ? ` · <span class="hset">Health set by ${hs.by === 'agent' ? `${agent.name} (agent)` : esc(people[hs.by].name)}, ${esc(hs.when)}${hs.via ? ` through <code>${hs.via}</code>` : ''}</span>` : ''}</span>
       </div>
-      <div class="acts"><button class="btn" type="button" id="stillTrue" title="Confirms the status is still true and bumps Verified at">✓ Still true</button><button class="btn" type="button" id="editStatus">Edit status</button></div>`;
+      <div class="acts"><button class="btn" type="button" id="stillTrue" title="Confirms the status line and health are still true and bumps Verified at">✓ Still true</button><button class="btn" type="button" id="editStatus">Edit status</button></div>`;
   }
   function readBand() {
     const g = id => $(id)?.value ?? null;
@@ -577,8 +627,10 @@ svg text { fill: currentColor; }
     if (err) { ui.bandEdit = true; renderBand(); toast(err); return; }
     const dirty = changedFields(saved.form, draft);
     if (!dirty.length) return;
-    if (dirty.some(f => ['state', 'status', 'blockedBy', 'parkedWhy', 'parkedRevive'].includes(f))) draft.verified = { days: 0, when: `${TODAY}, now`, by: ME, via: '' };
-    const changes = changedFields(saved.form, draft).map(f => [f, f === 'verified' ? null : saved.form[f], f === 'verified' ? TODAY : draft[f]]);
+    const statusChanged = dirty.some(f => ['state', 'status', 'blockedBy', 'parkedWhy', 'parkedRevive', 'health'].includes(f)); // H3: health counts
+    if (statusChanged) draft.verified = { days: 0, when: `${TODAY}, now`, by: ME, via: '' };
+    if (dirty.includes('health')) draft.healthSet = draft.health ? { by: ME, when: `${TODAY}, now`, via: '', withStatus: statusChanged } : null;
+    const changes = changedFields(saved.form, draft).filter(f => f !== 'healthSet').map(f => [f, f === 'verified' ? null : saved.form[f], f === 'verified' ? TODAY : draft[f]]);
     revs.forEach(r => { r.fresh = false; });
     revs.unshift({ rev: saved.rev + 1, by: ME, when: `${TODAY}, now`, changes, fresh: true });
     saved = { rev: saved.rev + 1, form: clone(draft) };
@@ -646,6 +698,9 @@ svg text { fill: currentColor; }
     const t = e.target;
     if (t.closest('#stateBtn')) { if (document.querySelector('.menu')) closeMenu(); else openStateMenu(); return; }
     const ps = t.closest('[data-pick-state]'); if (ps) { pickState(ps.dataset.pickState); return; }
+    if (t.closest('#healthBtn')) { if ($('healthBtn').getAttribute('aria-expanded') === 'true') closeMenu(); else openHealthMenu(); return; }
+    const ph = t.closest('[data-pick-health]'); if (ph) { if (!ph.disabled) pickHealth(ph.dataset.pickHealth); return; }
+    const eh = t.closest('[data-ed-health]'); if (eh) { draft.health = eh.dataset.edHealth || null; document.querySelectorAll('[data-ed-health]').forEach(b => { const on = b === eh; b.setAttribute('aria-pressed', on); b.setAttribute('aria-checked', on); }); refreshDirty(); return; }
     if (!t.closest('.menu')) closeMenu();
     if (t.closest('#copyKey')) { toast(`Copied ${KEY}`); return; }
     if (t.closest('#editStatus')) { ui.bandEdit = true; renderBand(); $('bLine').focus(); return; }
@@ -685,6 +740,7 @@ svg text { fill: currentColor; }
 
   /* Screenshot states */
   if (params.get('menu') === 'state') openStateMenu();
+  if (params.get('menu') === 'health') openHealthMenu();
   if (params.has('drop')) dropCard(['design-v0.2.md', 'brief-gift-cards.md', 'picker-on-ios.png', 'funnel-nov.csv']);
   if (params.has('edit')) {
     draft.description = draft.description.replace('![](checkout-funnel.png)\n', '![](checkout-funnel.png)\n\n![](screenshot-2026-10-25-1412.png)\n\n![](https://i.imgur.com/r8Kd2.png)\n');
@@ -703,11 +759,15 @@ svg text { fill: currentColor; }
   SL.preview([
     { label: 'Blocked', run: () => { location.search = '?band=blocked'; } },
     { label: 'Parked (stale)', run: () => { location.search = '?band=parked'; } },
+    ...[['ok', 'On track'], ['risk', 'At risk'], ['blocked', 'Blocked'], ['none', 'Not set']].map(([h, l]) => ({ label: `Health: ${l}`, run: () => { const q = new URLSearchParams(location.search); q.set('health', h); q.delete('menu'); location.search = q; } })),
+    { label: 'Health menu', run: () => { if (ui.bandEdit) { ui.bandEdit = false; renderBand(); } openHealthMenu(); } },
+    { label: 'Edit status and health', run: () => { $('editStatus')?.click(); } },
     { label: 'Paste a screenshot', run: () => { if (ui.descMode !== 'edit') { ui.descMode = 'edit'; renderMain(); } attachPasted(`screenshot-2026-10-25-14${String(12 + shotNo++).padStart(2, '0')}.png`); } },
     { label: 'Drop files', run: () => dropCard(['design-v0.2.md', 'brief-gift-cards.md', 'picker-on-ios.png', 'funnel-nov.csv']) },
   ]);
 })();
   if (new URLSearchParams(location.search).has('retros')) requestAnimationFrame(() => { const sec = document.querySelector('[data-testid="retro-section"]'); if (sec) sec.closest('.scroll').scrollTop = sec.offsetTop - sec.closest('.scroll').offsetTop; });
 </script>
+<script src="item-touch.js"></script>
 </body>
 </html>

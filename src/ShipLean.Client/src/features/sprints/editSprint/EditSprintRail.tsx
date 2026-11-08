@@ -4,6 +4,7 @@ import type { SprintDto, SprintUpdate } from '../../../api/sprints';
 import { SprintForm, type SprintFormIds, type SprintFormValues } from '../form/SprintForm';
 import { useUpdateSprint } from '../sprintsApi';
 import { sprintsTestIds as ids } from '../testIds';
+import { DeleteSprint } from './DeleteSprint';
 
 const EDIT_SPRINT_IDS: SprintFormIds = {
   name: ids.editSprintName,
@@ -21,14 +22,17 @@ interface EditSprintRailProps {
   sprint: SprintDto;
   /** Called after a successful save (the sprint list is already refreshed) and on Cancel. */
   onDone: () => void;
+  /** Called after the sprint is deleted (the sprint list is already refreshed): it is gone, so the host moves on. */
+  onDeleted: () => void;
 }
 
 /**
  * The Edit sprint form: the sprint's name, dates and goal, prefilled. An ended sprint's dates are shown but locked (the
  * server refuses them). It sends only what changed, so a name edit never touches the dates. A refusal from the server
- * (overlap, name taken) shows beside Save. Mount it with `key={sprint.id}` so a different sprint starts clean.
+ * (overlap, name taken) shows beside Save. Delete sprint sits under the form. Mount it with `key={sprint.id}` so a
+ * different sprint starts clean.
  */
-export function EditSprintRail({ projectId, sprint, onDone }: EditSprintRailProps) {
+export function EditSprintRail({ projectId, sprint, onDone, onDeleted }: EditSprintRailProps) {
   const update = useUpdateSprint(projectId, sprint.id);
   // Only what the person has typed: the rest follows the sprint, so a refetch under the open form is not lost.
   const [edited, setEdited] = useState<Partial<SprintFormValues>>({});
@@ -110,6 +114,7 @@ export function EditSprintRail({ projectId, sprint, onDone }: EditSprintRailProp
         datesHint="This sprint has ended, so its dates can't change. Its name and goal can."
         onCancel={onDone}
       />
+      <DeleteSprint projectId={projectId} sprint={sprint} onDeleted={onDeleted} />
     </aside>
   );
 }

@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=390">
+<link rel="stylesheet" href="app.css"><script src="app.js"></script>
+<style>
+/* Page-local components (kit candidates, see feature-board.md). */
+
+/* Feature row: a .row turned into a block with health, status line, freshness and progress */
+.row.frow { display: block; padding: 12px var(--app-gutter) 12px; }
+.frow .l1 { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.frow .l1 .grow { flex: 1; }
+.frow .t { font-size: var(--app-text); font-weight: 600; line-height: 1.3; margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.frow .st { margin-top: 4px; font-size: var(--app-text-sm); line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.frow .by { margin-top: 2px; font-size: var(--app-text-xs); color: var(--color-muted); display: flex; align-items: center; gap: 4px; }
+.frow .by .stale { color: var(--color-warn); font-weight: 600; }
+.frow .pg { display: flex; align-items: center; gap: 10px; margin-top: 9px; }
+.frow .pg .progress { flex: 1; }
+.frow .pg span { font-size: var(--app-text-xs); color: var(--color-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.frow .not-started { font-size: var(--app-text-xs); color: var(--color-muted); }
+.needs { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; border-radius: 11px; background: var(--ask-soft); color: var(--color-text); font-size: var(--app-text-xs); font-weight: 600; white-space: nowrap; }
+.needs::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--ask); }
+
+/* The expanded Feature: status history, what waits on you, latest note, actions */
+.frow .more { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--color-border); }
+.frow .more .lbl { font-size: var(--app-text-xs); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--color-muted); margin: 0 0 6px; }
+.frow .hist { margin: 0 0 12px; padding: 0; list-style: none; font-size: var(--app-text-sm); }
+.frow .hist li { display: flex; gap: 8px; padding: 3px 0; color: var(--color-muted); }
+.frow .hist li b { color: var(--color-text); font-weight: 500; flex: 1; min-width: 0; }
+.frow .ask-card { margin: 0 0 12px; }
+.frow .vnote { padding: 0 0 12px; border: 0; background: transparent; }
+.frow .btns { display: flex; gap: 8px; }
+.frow .btns .btn { flex: 1; padding: 0 10px; }
+
+.subbar { gap: 6px; } .subbar .chip { padding: 0 10px; }
+
+/* Group header: state pill + count, for the stacked grouped list */
+.grp-h { display: flex; align-items: center; gap: 8px; padding: 16px var(--app-gutter) 8px; font-size: var(--app-text-sm); color: var(--color-muted); }
+.grp-h .grow { flex: 1; }
+.grp-h .closed-line { color: var(--color-accent); font-weight: 500; }
+
+/* Voice answer sheet: a question answered on screen; never changes anything */
+.answer .lead { font-size: var(--app-text-md); font-weight: 600; line-height: 1.35; margin: 0 0 12px; }
+.ans-list { border: 1px solid var(--color-border); border-radius: 14px; overflow: hidden; margin-bottom: 14px; }
+.ans-row { display: flex; gap: 10px; align-items: center; padding: 11px 12px; border-bottom: 1px solid var(--color-border); }
+.ans-row:last-child { border-bottom: 0; }
+.ans-row .main { flex: 1; min-width: 0; }
+.ans-row .m1 { display: flex; align-items: center; gap: 6px; font-size: var(--app-text-sm); }
+.ans-row .t { font-size: var(--app-text); font-weight: 500; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ans-row .why { font-size: var(--app-text-sm); color: var(--color-muted); margin-top: 2px; }
+.ans-row > .i { color: var(--color-muted); }
+
+/* One Feature's read-only board: roll-up figures and stories with their tasks aggregated */
+.sum { padding: 14px var(--app-gutter); background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.sum .l1 { display: flex; align-items: center; gap: 8px; }
+.sum .st { margin-top: 6px; font-size: var(--app-text); line-height: 1.35; }
+.sum .by { font-size: var(--app-text-xs); color: var(--color-muted); margin-top: 2px; display: flex; gap: 4px; }
+.figs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
+.figs div { background: var(--color-surface-2); border-radius: 10px; padding: 8px 10px; }
+.figs b { display: block; font-size: var(--app-text-md); font-weight: 600; font-variant-numeric: tabular-nums; }
+.figs small { font-size: var(--app-text-xs); color: var(--color-muted); }
+.ro { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: var(--app-text-sm); color: var(--color-muted); }
+.ro .i { color: var(--color-muted); }
+.ro a { color: var(--color-accent); font-weight: 500; margin-left: auto; text-decoration: none; }
+.srow { padding: 11px var(--app-gutter); border-bottom: 1px solid var(--color-border); position: relative; }
+.srow:last-child { border-bottom: 0; }
+.srow .l1 { display: flex; align-items: center; gap: 6px; font-size: var(--app-text-sm); }
+.srow .l1 .grow { flex: 1; }
+.srow .t { font-size: var(--app-text); font-weight: 500; margin-top: 3px; line-height: 1.3; }
+.srow .tk { display: flex; align-items: center; gap: 10px; margin-top: 8px; font-size: var(--app-text-xs); color: var(--color-muted); font-variant-numeric: tabular-nums; }
+.srow .tk .none { font-style: italic; }
+.sprint { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 10px; font-size: 11px; font-weight: 600; background: var(--color-accent-soft); color: var(--color-text); white-space: nowrap; }
+.sprint.backlog { background: transparent; border: 1px dashed var(--color-border); color: var(--color-muted); }
+.tbar { display: flex; width: 96px; height: 6px; border-radius: 3px; overflow: hidden; background: var(--color-surface-2); flex: none; }
+.tbar i { display: block; height: 100%; }
+.tbar .d { background: var(--state-completed); } .tbar .p { background: var(--state-in-progress); }
+
+/* Overflow safety: long keys and names wrap instead of pushing past 390px */
+.frow .st, .frow .t, .srow .t, .sum .st, .ans-row .why, .chg .q, .chg .m, .dg-lead p, .answer .lead { overflow-wrap: anywhere; }
+.frow .l1 > *, .srow .l1 > *, .chg .l1 > *, .ans-row .m1 > * { min-width: 0; }
+
+/* Digest: what changed since a time, grouped by kind of change */
+.asked { display: flex; align-items: center; gap: 8px; margin: 12px var(--app-gutter) 0; font-size: var(--app-text-sm); color: var(--color-muted); }
+.asked .i { color: var(--voice); }
+.dg-lead { margin: 10px var(--app-gutter) 0; }
+.dg-lead p { margin: 0 0 12px; font-size: var(--app-text-md); font-weight: 600; line-height: 1.35; }
+.dg-lead .btns { display: flex; gap: 8px; }
+.dg-lead .btns .btn { flex: 1; }
+.chg { padding: 10px var(--app-gutter); border-bottom: 1px solid var(--color-border); position: relative; }
+.chg:last-child { border-bottom: 0; }
+.chg .l1 { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: var(--app-text-sm); }
+.chg .l1 .tt { font-size: var(--app-text); font-weight: 500; color: var(--color-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.chg .m { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 4px; font-size: var(--app-text-sm); color: var(--color-muted); }
+.chg .m .arrow { color: var(--color-muted); }
+.chg .q { margin-top: 4px; font-size: var(--app-text-sm); }
+.chg .q b { font-weight: 600; }
+.chg.ask::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 0 2px 2px 0; background: var(--ask); }
+</style></head>
+<body><div id="app"></div><script>
+const { frame, topBar, iconBtn, tabBar, dock, type, state, health, progress, avatar, listening, preview, toast, askCard, voiceNote, icon } = App;
+
+// ── Data: SHIP's open Features under the Mobile App epic and beyond (Sun 8 Nov, 9:41) ──
+const S = { New: 'proposed', Active: 'in-progress', Resolved: 'resolved', Closed: 'completed' };
+const F = {
+  906: { key: 'SHIP-906', t: 'Voice commands with on-device models', st: 'Active', h: 'risk', status: 'Parakeet runs at 1.4× real time on the S22; the 4 GB phone fallback is still open.', by: 'Claude Code', when: '3h ago', pg: { done: 28, cur: 30, other: 8 }, roll: 'S 2/9 · B 0/1', needs: 1 },
+  907: { key: 'SHIP-907', t: 'Mobile app foundations', st: 'New', h: 'risk', status: 'D1–D8 wait for Joel before the Expo shell can start.', by: 'Claude Code', when: 'yesterday', pg: { done: 0, cur: 12, other: 0 }, roll: 'S 0/6', needs: 1 },
+  742: { key: 'SHIP-742', t: 'GitHub issues sync', st: 'Active', h: 'ok', status: 'Wave 0 merged; lanes B and C are building the import.', by: 'Claude Code', when: '40m ago', pg: { done: 45, cur: 35, other: 0 }, roll: 'S 5/11', needs: 0 },
+  743: { key: 'SHIP-743', t: 'Nightly backups', st: 'Active', h: 'blocked', status: 'Blocked: the host has no pg_dump 18 and no Docker.', by: 'Sam', when: '4 days old', stale: true, pg: { done: 20, cur: 10, other: 0 }, roll: 'S 1/7', needs: 1 },
+  707: { key: 'SHIP-707', t: 'Mobile web', st: 'Active', h: 'ok', status: 'Retro and insights screens built; touch drag is in review.', by: 'Priya', when: 'yesterday', pg: { done: 72, cur: 18, other: 0 }, roll: 'S 18/24 · B 3/4', needs: 0 },
+  893: { key: 'SHIP-893', t: 'Progress bar on sprints', st: 'Resolved', h: 'ok', status: 'Built; dark-mode colours wait for approval.', by: 'Claude Code', when: '2d ago', pg: { done: 100, cur: 0, other: 0 }, roll: 'S 4/4', needs: 1 },
+  256: { key: 'SHIP-256', t: 'Web vitals on every page', st: 'New', h: null, status: '', pg: {}, roll: 'S 0/5', needs: 0 },
+  892: { key: 'SHIP-892', t: 'Demo artifacts for the sprint demo agent', st: 'New', h: null, status: '', pg: {}, roll: 'No stories yet', needs: 0 },
+};
+const healthOrDash = (f) => (f.h ? health(f.h) : '<span class="not-started">Not started</span>');
+
+// frow(f, { flash, open, more }): one Feature on the board.
+const frow = (f, { flash = false, more = '' } = {}) => `<div class="row frow${f.needs ? ' ask' : ''}${flash ? ' flash' : ''}">
+  <div class="l1">${type('feature')}<span class="key">${f.key}</span>${healthOrDash(f)}<span class="grow"></span>${f.needs ? `<span class="needs">${f.needs === 1 ? 'Needs you' : `${f.needs} need you`}</span>` : ''}</div>
+  <div class="t">${f.t}</div>
+  ${f.status ? `<div class="st">${f.status}</div><div class="by">${f.by}<span class="sep"></span>${f.stale ? `<span class="stale">${f.when}</span>` : f.when}</div>` : ''}
+  <div class="pg">${progress(f.pg)}<span>${f.roll}</span></div>${more}</div>`;
+const grp = (name, n, right = '') => `<div class="grp-h">${state(name, S[name])}<span>${n}</span><span class="grow"></span>${right}</div>`;
+
+const chips = (on = 'all') => `<div class="subbar">
+  <button class="chip${on === 'all' ? ' on' : ''}">All <span class="n">9</span></button>
+  <button class="chip${on === 'needs' ? ' on' : ' ask'}">Needs you <span class="n">4</span></button>
+  <button class="chip${on === 'risk' ? ' on' : ''}">${health('risk').replace('At risk', '')}At risk <span class="n">2</span></button>
+  <button class="chip">${health('blocked').replace('Blocked', '')}Blocked <span class="n">1</span></button></div>`;
+const fbTop = () => App.tabRoot({ title: 'Features', sub: '8 open Features', right: iconBtn('search') + iconBtn('filter', { label: 'Filter and group' }) });
+const digestBanner = `<div class="banner">${icon('spark', 'sm')}<span class="grow"><b>11 changes since yesterday</b> <span class="muted">· 2 need you</span></span>${icon('chevron', 'sm')}</div>`;
+
+// The board: a stacked list grouped by state, in board order (New sits after Active: what moves comes first).
+const board = ({ f907 = 'new', expand907 = '', banner = true, from907 = false } = {}) => {
+  const s907 = { ...F[907], st: f907 === 'new' ? 'New' : 'Active' };
+  const active = f907 === 'new' ? [F[906], F[742], F[743], F[707]] : from907 ? [s907, F[742], F[743], F[707]] : [F[906], s907, F[742], F[743], F[707]];
+  return `${banner ? digestBanner : ''}
+    ${from907 ? '' : grp('Active', active.length, `<span>${active.filter((f) => f.needs).length} need you</span>`)}<div class="list">${active.map((f) => frow(f, f === s907 ? { flash: !!expand907, more: expand907 } : {})).join('')}</div>
+    ${grp('Resolved', 1)}<div class="list">${frow(F[893])}</div>
+    ${grp('New', f907 === 'new' ? 3 : 2)}<div class="list">${(f907 === 'new' ? [F[907], F[256], F[892]] : [F[256], F[892]]).map((f) => frow(f)).join('')}</div>
+    ${grp('Closed', 2, '<span class="closed-line">2 this week ›</span>')}`;
+};
+
+// SHIP-907 expanded after a voice command: status history, the open decision, the latest note, actions.
+const more907 = ({ note = true } = {}) => `<div class="more">
+  ${note ? `<div class="lbl">Latest note</div>${voiceNote({ who: 'Joel', initials: 'JD', when: 'just now', text: 'The Expo shell builds on both test phones, start with the sign-in story.', secs: 6 })}` : `<div class="lbl">Status history</div>
+  <ul class="hist"><li><b>D1–D8 wait for Joel before the Expo shell can start.</b>yesterday</li><li><b>Research done; 8 decisions drafted.</b>Thu</li></ul>`}
+  ${askCard({ kind: 'approval', q: 'Confirm D1–D8 for the mobile foundations', from: 'Claude Code', when: 'yesterday', opts: ['Review D1–D8', 'Approve all'], primary: 0 })}
+  <div class="btns"><button class="btn sm">${icon('flag', 'sm')}Change state</button><button class="btn sm">${icon('board', 'sm')}Open board</button></div></div>`;
+
+// ── Answer sheet (no Apply: a question changes nothing) ──
+const answerSheet = ({ ctx, heard, lead, rows, primary }) => `<div class="scrim"></div><div class="sheet preview answer"><div class="grab"></div>
+  <div class="voice-ctx">${icon('spark', 'sm')}Answer<span class="sep"></span>${ctx}</div>
+  <div class="heard" style="margin-top:10px">“${heard}”</div>
+  <div class="lead">${lead}</div>
+  <div class="ans-list">${rows.join('')}</div>
+  <div class="go"><button class="btn">Done</button><button class="btn primary">${primary}</button></div>
+  <div class="say-yes">Hold the mic to ask a follow-up <span class="sep"></span> nothing was changed</div></div>`;
+const ansRow = (t, key, title, why, extra = '') => `<div class="ans-row"><div class="main"><div class="m1">${type(t)}<span class="key">${key}</span>${extra}</div><div class="t">${title}</div><div class="why">${why}</div></div>${icon('chevron', 'sm')}</div>`;
+
+// ── Needs you: what waits on a human, grouped by Feature ──
+const fh = (f) => `<div class="grp-h" style="padding-top:14px">${type('feature')}<span class="key">${f.key}</span><b style="color:var(--color-text);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f.t}</b></div>`;
+const needsBody = `
+  ${fh(F[907])}${askCard({ kind: 'approval', q: 'Confirm D1–D8 for the mobile foundations: Expo in this repo, sign-in through a browser handoff, and 6 more.', from: 'Claude Code', when: 'yesterday', opts: ['Review D1–D8', 'Approve all'], say: 'approve D1 to D8' })}
+  ${fh(F[906])}${askCard({ kind: 'feedback', q: 'Parakeet or Whisper on phones with 4 GB of RAM? Parakeet is faster; Whisper copes better with accents.', from: 'Claude Code', when: '3h ago', opts: ['Parakeet', 'Whisper', `${icon('mic', 'sm')}Reply`], primary: -1, say: 'answer: Parakeet, because…' })}
+  ${fh(F[743])}${askCard({ kind: 'feedback', q: 'Install pg_dump 18 on the host, or run the backups in a container?', from: 'Sam', agent: false, when: '4d ago', opts: [`${icon('mic', 'sm')}Reply`], primary: -1 })}
+  ${fh(F[893])}${askCard({ kind: 'approval', q: 'Approve the dark-mode colours for the sprint progress bar?', from: 'Claude Code', when: '2d ago', opts: ['Approve', 'See colours'] })}`;
+
+// ── One Feature's board, read-only and aggregated ──
+const tbar = (d, p, todo) => { const n = d + p + todo; return `<span class="tbar"><i class="d" style="width:${(d / n) * 100}%"></i><i class="p" style="width:${(p / n) * 100}%"></i></span><span>${d} done · ${p} doing · ${todo} to do</span>`; };
+const srow = ({ t = 'story', key, title, who, sprint = 'Sprint 25', tasks, needs = false }) => `<div class="srow${needs ? ' row ask' : ''}" ${needs ? 'style="display:block;min-height:0"' : ''}>
+  <div class="l1">${type(t)}<span class="key">${key}</span>${sprint ? `<span class="sprint${sprint === 'Backlog' ? ' backlog' : ''}">${sprint}</span>` : ''}<span class="grow"></span>${needs ? '<span class="needs">Needs you</span>' : ''}${who}</div>
+  <div class="t">${title}</div><div class="tk">${tasks ? tbar(...tasks) : '<span class="none">No tasks yet</span>'}</div></div>`;
+const cc = avatar('AI', { agent: true, sm: true });
+const pr = avatar('PR', { sm: true, color: '#b4527a' });
+const sa = avatar('SA', { sm: true, color: '#2f7d6b' });
+const featureBoard = `<div class="sum">
+  <div class="l1">${state('Active', 'in-progress')}${health('risk')}</div>
+  <div class="st">Parakeet runs at 1.4× real time on the S22; the 4 GB phone fallback is still open.</div>
+  <div class="by">Claude Code<span class="sep"></span>3h ago</div>
+  <div class="figs"><div><b>2/9</b><small>Stories</small></div><div><b>0/1</b><small>Bugs</small></div><div><b>19/41</b><small>Tasks</small></div><div><b>13/34</b><small>Points</small></div></div>
+  <div style="margin-top:12px">${progress({ done: 28, cur: 30, other: 8 })}</div>
+  <div class="ro">${icon('eye', 'sm')}Read-only. Tasks move on the web.<a>Open on web</a></div></div>
+  ${grp('Active', 3)}<div class="list">
+    ${srow({ key: 'SHIP-913', title: 'Hold to talk and transcribe on the phone', who: cc, tasks: [4, 2, 1] })}
+    ${srow({ key: 'SHIP-914', title: 'Map speech onto the screen’s actions with the small model', who: pr, tasks: [1, 3, 4], needs: true })}
+    ${srow({ t: 'bug', key: 'SHIP-918', title: 'Transcript drops the first word on the S22', who: sa, tasks: [0, 1, 1] })}</div>
+  ${grp('Resolved', 1)}<div class="list">
+    ${srow({ key: 'SHIP-919', title: 'Microphone permission flow', who: cc, tasks: [5, 0, 0] })}</div>
+  ${grp('New', 3)}<div class="list">
+    ${srow({ key: 'SHIP-915', title: 'Preview, apply and undo sheet', who: '', sprint: 'Backlog', tasks: null })}</div>`;
+
+// ── Digest: what changed since yesterday ──
+const digestBody = `<div class="asked">${icon('mic', 'sm')}You asked “what changed since yesterday?”</div>
+  <div class="dg-lead"><p>11 changes on 6 Features since Sat 9:00. 2 need you.</p>
+  <div class="btns"><button class="btn">${icon('check', 'sm')}Mark as seen</button></div></div>
+  <div class="section-h">Needs you <a>2 new</a></div><div class="list">
+    <div class="chg ask"><div class="l1">${type('feature')}<span class="key">SHIP-906</span><span class="tt">Voice commands</span></div><div class="q"><b>Needs input:</b> Claude Code asks Parakeet or Whisper on 4 GB phones?</div></div>
+    <div class="chg ask"><div class="l1">${type('feature')}<span class="key">SHIP-893</span><span class="tt">Progress bar on sprints</span></div><div class="q"><b>Decision:</b> Claude Code asks you to approve the dark-mode colours.</div></div></div>
+  <div class="section-h">State and health</div><div class="list">
+    <div class="chg"><div class="l1">${type('feature')}<span class="key">SHIP-743</span><span class="tt">Nightly backups</span></div><div class="m">${health('risk')}<span class="arrow">→</span>${health('blocked')}<span class="sep"></span>Sam<span class="sep"></span>Sat 17:40</div></div>
+    <div class="chg"><div class="l1">${type('story')}<span class="key">SHIP-910</span><span class="tt">Pick the speech model per RAM tier</span></div><div class="m">${state('Active', 'in-progress')}<span class="arrow">→</span>${state('Closed', 'completed')}<span class="sep"></span>Claude Code<span class="sep"></span>Sat 21:05</div></div></div>
+  <div class="section-h">Status lines</div><div class="list">
+    <div class="chg"><div class="l1">${type('feature')}<span class="key">SHIP-742</span><span class="tt">GitHub issues sync</span></div><div class="q">Wave 0 merged; lanes B and C are building the import.</div><div class="m">Claude Code<span class="sep"></span>40m ago</div></div></div>
+  <div class="section-h">Agents</div><div class="list">
+    <div class="chg"><div class="l1">${avatar('AI', { agent: true, sm: true })}<span class="tt">Claude Code closed 7 tasks</span></div><div class="m">4 on SHIP-906, 3 on SHIP-742 <span class="sep"></span> logged 2 retrospectives</div></div></div>`;
+
+App.screen({ title: 'Feature board', states: [
+  { id: 'board', title: 'Features by state', note: 'Features by state: health, status line and age, progress, needs you.',
+    render: () => frame({ top: fbTop(), sub: chips('all'), body: board(), bottom: tabBar('features', { inbox: 15 }) }) },
+  { id: 'needs-you', title: 'Needs you', note: 'Every decision or question waiting on a person.',
+    render: () => frame({ top: fbTop(), sub: chips('needs'), body: needsBody, bottom: tabBar('features', { inbox: 15 }) }) },
+  { id: 'blocked-answer', title: 'What’s blocked?', note: '“What’s blocked?” answered on screen.',
+    render: () => frame({ top: fbTop(), sub: chips('all'), body: board(), bottom: tabBar('features', { inbox: 15 }),
+      overlay: answerSheet({ ctx: '<b>Features</b>', heard: 'What’s blocked?', lead: '1 Feature and 1 story are blocked.', primary: 'Show on board',
+        rows: [ansRow('feature', 'SHIP-743', 'Nightly backups', 'No pg_dump 18 or Docker on the host · Sam', health('blocked')),
+          ansRow('story', 'SHIP-911', 'Sign in through a browser handoff', 'Waits on your D1 decision · in SHIP-907', health('blocked'))] }) }) },
+  { id: 'move-listening', title: 'Listening: move and note', note: 'Holding the mic: key and state matched as hotwords.',
+    render: () => frame({ top: fbTop(), sub: chips('all'), body: board(), bottom: tabBar('features', { mic: 'live', inbox: 15 }),
+      overlay: listening({ ctx: '<b>Features</b> · 8 open', words: 'Move <span class="hot">SHIP&#8209;907</span> to <span class="hot">Active</span> and note: the Expo shell builds on both test phones,', partial: 'start with the sign-in story', tries: ['what’s blocked?', 'status: …', 'what changed since yesterday?'] }) }) },
+  { id: 'move-preview', title: 'Preview: move and note', note: 'Two changes; the note is word for word.',
+    render: () => frame({ top: fbTop(), sub: chips('all'), body: board(), bottom: tabBar('features', { mic: 'busy', inbox: 15 }),
+      overlay: preview({ ctx: '<b>SHIP-907</b>', heard: 'Move SHIP-907 to Active and note: the Expo shell builds on both test phones, start with the sign-in story',
+        acts: [{ kind: 'field', icon: 'flag', title: 'SHIP-907: New → Active', detail: 'Mobile app foundations · keeps its rank' }, { kind: 'note', title: 'Note on SHIP-907', quote: 'The Expo shell builds on both test phones, start with the sign-in story.' }] }) }) },
+  { id: 'move-applied', title: 'Applied, with undo', note: 'Applied: SHIP-907 in Active, note shown, undo.',
+    render: () => frame({ top: fbTop(), sub: chips('all'), body: board({ f907: 'active', expand907: more907(), banner: false }), bottom: tabBar('features', { inbox: 15 }),
+      overlay: toast('SHIP-907 moved to Active, note added', { bottom: 124 }) }) },
+  { id: 'status-update', title: 'Voice status update', note: '“Status: …” previewed as a status line and health change.',
+    render: () => frame({ top: fbTop(), sub: chips('all'), body: board({ f907: 'active', expand907: more907({ note: false }), banner: false, from907: true }), bottom: tabBar('features', { mic: 'busy', inbox: 15 }),
+      overlay: preview({ ctx: '<b>SHIP-907</b> open on screen', heard: 'Status: blocked on the sign-in decision',
+        acts: [{ kind: 'field', icon: 'message', title: 'Status line on SHIP-907', detail: 'Replaces “D1–D8 wait for Joel…” from yesterday', quote: 'Blocked on the sign-in decision.' }, { kind: 'field', icon: 'alert', title: 'Health: At risk → Blocked', detail: 'Because you said “blocked”' }] }) }) },
+  { id: 'feature', title: 'One Feature’s board (read-only)', note: 'One Feature’s board, read-only, tasks counted.',
+    render: () => frame({ top: topBar({ title: 'SHIP-906 board', sub: 'Voice commands with on-device models', back: true, right: iconBtn('more') }), body: featureBoard, bottom: dock({ placeholder: 'Ask about SHIP-906 or add a note' }) }) },
+  { id: 'digest', title: 'What changed since yesterday', note: '“What changed since yesterday?” as a screen.',
+    render: () => frame({ top: topBar({ title: 'Since yesterday', sub: 'Sat 7 Nov 9:00 → now', back: true }), body: digestBody, bottom: dock({ placeholder: 'Ask a follow-up' }) }) },
+]});
+</script></body></html>

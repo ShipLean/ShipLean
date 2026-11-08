@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en" data-lavish-annotate="on">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SHIP-731 · Retrospective insights on a phone</title>
+<link rel="stylesheet" href="../tokens.css">
+<script type="application/json" data-lavish-revisions>
+[{ "id": "r1", "label": "Round 1", "timestamp": "2026-11-07T11:30:00Z", "summary": "Joel kept every recommendation (D1–D10); marked decided, images and docs added to PR #69" }]
+</script>
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+html { background: var(--color-bg); color: var(--color-text); }
+body { margin: 0; font: var(--text-base)/1.55 var(--font-sans); -webkit-font-smoothing: antialiased; }
+a { color: var(--color-accent); }
+code { font-family: var(--font-mono); font-size: .9em; padding: 0 4px; border-radius: var(--radius-xs); background: var(--color-surface-2); }
+.wrap { max-width: 1320px; margin: 0 auto; padding: 32px 28px 80px; display: grid; gap: 40px; }
+.wrap > * { min-width: 0; }
+header.top { display: grid; gap: 10px; }
+.eyebrow { font-size: var(--text-xs); font-weight: var(--weight-semibold); letter-spacing: .06em; text-transform: uppercase; color: var(--color-muted); }
+h1 { margin: 0; font-size: 28px; line-height: 1.2; letter-spacing: -.01em; }
+h2 { margin: 0 0 4px; font-size: 20px; }
+h3 { margin: 0; font-size: var(--text-md); }
+p { margin: 0; max-width: 860px; }
+.lead { font-size: var(--text-md); color: var(--color-muted); max-width: 920px; }
+.muted { color: var(--color-muted); }
+.sm { font-size: var(--text-sm); }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { display: inline-flex; align-items: center; gap: 6px; min-height: 24px; padding: 2px 10px; border-radius: 999px; background: var(--color-surface-2); font-size: var(--text-xs); font-weight: var(--weight-medium); }
+.chip.accent { background: var(--color-accent-soft); }
+.chip.warn { background: color-mix(in srgb, var(--color-warn) 20%, transparent); }
+section.block { display: grid; gap: 16px; }
+.sec-head { display: flex; align-items: end; gap: 16px; flex-wrap: wrap; }
+.sec-head > div { flex: 1; min-width: 280px; display: grid; gap: 4px; }
+.card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 16px 18px; }
+
+/* Phones */
+.phones { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 28px 20px; }
+.phone { display: grid; gap: 8px; justify-items: center; align-content: start; margin: 0; }
+.phone .frame { width: 328px; height: 691px; padding: 8px; border-radius: 34px; background: #0f1520; box-shadow: 0 1px 0 rgb(255 255 255 / .06) inset, 0 18px 40px rgb(0 0 0 / .22); }
+.phone .screen { width: 312px; height: 675px; overflow: hidden; border-radius: 26px; background: var(--color-surface); position: relative; }
+.phone iframe { width: 390px; height: 844px; border: 0; transform: scale(.8); transform-origin: 0 0; display: block; }
+.phone img { width: 312px; display: block; }
+.phone .screen.scroll { overflow-y: auto; scrollbar-width: thin; }
+.phone .cap { width: 328px; display: grid; gap: 2px; }
+.phone .cap b { font-size: var(--text-sm); }
+.phone .cap span { font-size: var(--text-xs); color: var(--color-muted); }
+.phone .cap a { font-size: var(--text-xs); }
+.today .frame { background: #3a1f22; }
+.bad { display: block; font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--color-danger) !important; }
+.tablet { grid-column: span 2; }
+.tablet .frame { width: 389px; height: 551px; padding: 10px; border-radius: 22px; }
+.tablet .screen { width: 369px; height: 531px; border-radius: 12px; }
+.tablet iframe { width: 820px; height: 1180px; transform: scale(.45); }
+.tablet .cap { width: 389px; }
+@media (max-width: 760px) { .tablet { grid-column: auto; } }
+.toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.seg { display: inline-flex; border: 1px solid var(--color-border); border-radius: var(--radius-sm); overflow: hidden; background: var(--color-surface); }
+.seg button { height: 30px; padding: 0 12px; border: 0; border-right: 1px solid var(--color-border); background: transparent; color: var(--color-muted); font: inherit; font-size: var(--text-sm); cursor: pointer; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--color-accent-soft); color: var(--color-text); font-weight: var(--weight-semibold); }
+.group-title { display: flex; gap: 10px; align-items: center; margin-top: 4px; }
+ol.issues { margin: 0; padding-left: 22px; display: grid; gap: 4px; font-size: var(--text-sm); max-width: 980px; }
+
+/* Layout options */
+.opts .phone { justify-items: start; }
+.opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.optc { display: grid; gap: 10px; align-content: start; }
+.optc.rec { border-color: var(--color-accent); box-shadow: 0 0 0 1px var(--color-accent); }
+.optc .phone { width: 100%; max-width: 240px; height: auto; justify-self: center; }
+.optc .tag { justify-self: start; font-size: var(--text-2xs); font-weight: var(--weight-semibold); text-transform: uppercase; letter-spacing: .05em; padding: 2px 8px; border-radius: 999px; background: var(--color-surface-2); color: var(--color-muted); }
+.optc.rec .tag { background: var(--color-accent); color: var(--color-accent-fg); }
+.optc ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: var(--text-sm); }
+.optc li.minus::marker { content: "− "; color: var(--color-danger); }
+.optc li.plus::marker { content: "+ "; color: var(--color-ok); }
+
+/* Rules table */
+table.rules { width: 100%; border-collapse: collapse; background: var(--color-surface); font-size: var(--text-sm); }
+table.rules th, table.rules td { padding: 10px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+table.rules th { background: var(--color-surface-2); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .05em; color: var(--color-muted); }
+table.rules td:first-child { font-weight: var(--weight-semibold); white-space: nowrap; }
+table.rules tr:last-child td { border-bottom: 0; }
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
+
+/* Decisions */
+.decisions { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 14px; }
+@media (max-width: 460px) { .decisions { grid-template-columns: minmax(0, 1fr); } }
+fieldset.d { margin: 0; display: grid; gap: 8px; align-content: start; padding: 14px 16px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); min-width: 0; }
+fieldset.d legend { float: left; width: 100%; padding: 0; display: flex; gap: 8px; align-items: baseline; font-weight: var(--weight-semibold); }
+fieldset.d legend .id { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-muted); }
+fieldset.d .why { font-size: var(--text-sm); color: var(--color-muted); }
+fieldset.d label.opt { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; align-items: start; padding: 8px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-md); cursor: pointer; font-size: var(--text-sm); }
+fieldset.d label.opt:has(input:checked) { border-color: var(--color-accent); background: var(--color-accent-soft); }
+fieldset.d label.opt input { margin: 2px 0 0; accent-color: var(--color-accent); }
+fieldset.d label.opt small { display: block; color: var(--color-muted); font-size: var(--text-xs); }
+fieldset.d .rec { font-size: var(--text-2xs); font-weight: var(--weight-semibold); text-transform: uppercase; letter-spacing: .05em; color: var(--color-ok); margin-left: 4px; }
+fieldset.d .same { font-size: var(--text-2xs); font-weight: var(--weight-semibold); color: var(--color-info); margin-left: 4px; }
+fieldset.d textarea { width: 100%; min-height: 34px; padding: 6px 8px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: inherit; font: inherit; font-size: var(--text-sm); resize: vertical; }
+.submit-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 14px 16px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); position: sticky; bottom: 12px; box-shadow: 0 8px 24px rgb(0 0 0 / .12); margin-top: 14px; }
+.btn { display: inline-flex; align-items: center; height: 34px; padding: 0 14px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); font: inherit; font-size: var(--text-sm); font-weight: var(--weight-medium); cursor: pointer; }
+.btn.primary { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-fg); }
+.status { font-size: var(--text-sm); color: var(--color-muted); }
+ol.ac { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 980px; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; }
+.two .card { display: grid; gap: 8px; align-content: start; }
+.two ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: var(--text-sm); }
+</style>
+<style>.opts3 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <span class="eyebrow">SHIP-731 · Mobile retrospective insights · design for review</span>
+  <h1>Retrospective insights on a phone</h1>
+  <p class="lead">Insights has three views over every retro in the project: <b>Recurring themes</b> (a heat table of mentions per sprint or week, with status, action items and the last change), <b>Action items</b> (a 10-column table) and <b>Changes &amp; impact</b> (a chart per closed action item). At 900px and below this design keeps every number and every action, and changes how they fit. <b>Each theme becomes a card with a heat strip, and tapping it opens everything about the theme in one sheet. Action items become cards. Impact charts sit one a row, and you tap a bar to read it. The three views are equal tabs, Range and ⋯ share one row, and Merge themes opens full screen.</b></p>
+  <div class="chips">
+    <span class="chip accent">Design only · nothing built</span>
+    <span class="chip">Branch <code>design/731-mobile-retro-insights</code> on PR #69</span>
+    <span class="chip">New: <code>design/screens/insights-touch.css</code>, <code>insights-touch.js</code>, loaded by <code>retro-insights.html</code></span>
+    <span class="chip">Follows SHIP-805. Drawn as SHIP-805 recommends for its open points: C4 (sheet with Close on the right), C5 (native select for Into) and C9 (✕ at the top left)</span>
+    <span class="chip">Reuses SHIP-727's sheet and full-screen New action item dialog (its D8)</span>
+    <span class="chip accent" data-lavish-revision="r1">Decisions settled 7 Nov: every recommendation kept</span>
+  </div>
+</header>
+
+<section class="block">
+  <div class="sec-head"><div>
+    <h2>Today: the desktop page in a 390px window</h2>
+    <p class="muted sm">The real SPA (main at 918cf067) at 390 × 844 and 768 × 1024, using the page-shot fixtures and without SHIP-713's shell. Scroll inside each phone to see the whole page.</p>
+  </div></div>
+  <div class="phones today" id="todayPhones"></div>
+  <ol class="issues">
+    <li>The view switch doesn't fit: “Recurring themes” wraps onto two lines, “Action items” is cut to “Acti…” and “Changes &amp; impact” is off the screen, so the third view can't be reached.</li>
+    <li>The themes table has 13 columns. At 390px you see the theme and four sprints; S24, No sprint, Total, <b>Status</b>, <b>Action items</b> and <b>Last change</b> are behind a sideways scroll inside the panel. The status is the point of the page, and it's off screen.</li>
+    <li>Theme names wrap every word (“Shared- / branch / merge / conflicts”), so each row is about 70px tall.</li>
+    <li>The Action items table has 10 columns. The title column wraps to five lines and Theme, Raised, State, Sprint, Pts, Owner and Impact need a sideways scroll.</li>
+    <li>Status, Last change, No sprint and Unthemed explain themselves only in hover tooltips (rule 5). The ✎ rename button and the “+ Action item” buttons are about 20px.</li>
+    <li>Changes &amp; impact already fits: the charts and numbers read well at 390px. The bars' values show only on hover, and a long explanation sits above the first card.</li>
+    <li>Merge themes… is a 620px dialog with 13px checkboxes and an 11px select, so iOS Safari zooms in (rule 14).</li>
+  </ol>
+</section>
+
+<section class="block">
+  <div class="sec-head"><div>
+    <h2>Three ways to fit the themes table (D1)</h2>
+    <p class="muted sm">These are live mocks at 390px. Scroll inside each one. The other states below use the recommended layout.</p>
+  </div></div>
+  <div class="opts opts3" id="optPhones"></div>
+</section>
+
+<section class="block">
+  <div class="sec-head"><div>
+    <h2>Proposed: 900px and below</h2>
+    <p class="muted sm">These are live mocks. Tap, scroll and switch views in them, but nothing is saved. Open any of them full size in a narrow window to try it.</p>
+  </div>
+    <span class="seg" role="group" aria-label="Theme of the phones"><button type="button" data-theme="light" aria-pressed="true">Light</button><button type="button" data-theme="dark" aria-pressed="false">Dark</button></span>
+  </div>
+  <h3 class="group-title">Recurring themes</h3>
+  <div class="phones" id="themePhones"></div>
+  <h3 class="group-title">A theme, and what the chips mean, as sheets</h3>
+  <div class="phones" id="sheetPhones"></div>
+  <h3 class="group-title">Action items and Changes &amp; impact</h3>
+  <div class="phones" id="viewPhones"></div>
+  <h3 class="group-title">Range, ⋯ More, and the full-screen views</h3>
+  <div class="phones" id="morePhones"></div>
+</section>
+
+<section class="block">
+  <div class="sec-head"><div>
+    <h2>What changes at 900px and below</h2>
+    <p class="muted sm">Each part of the page and the SHIP-805 rule behind it. The shared rules aren't restated here.</p>
+  </div></div>
+  <div class="tbl-wrap"><table class="rules">
+    <thead><tr><th>Part</th><th>Desktop</th><th>900px and below</th></tr></thead>
+    <tbody>
+      <tr><td>Views</td><td>Recurring themes | Action items | Changes &amp; impact, a segmented control</td><td>Three equal 40px tabs under the top bar: <b>Themes | Action items | Impact</b>. Short labels, so all three fit at 320px. The view stays in the address as <code>view</code>.</td></tr>
+      <tr><td>Toolbar</td><td>Views · Range select · Merge themes…</td><td>One row: <b>Range ▾</b> · ⋯ (rule 8). Range opens a sheet with its two groups, By sprint and By week (C5: it has groups). ⋯ holds Merge themes…, Give unthemed points themes, What the statuses and verdicts mean, then Search and By Feature. Nothing sticks (rule 12).</td></tr>
+      <tr><td>Callouts</td><td>“n themes keep coming back” and the proposed merge, side by side with their buttons</td><td>The same text at 13px. The proposed merge stacks the two themes, then Keep apart and Merge as two full-width 32px buttons.</td></tr>
+      <tr><td>Themes table</td><td>Theme × 6 or 12 columns, No sprint, Total, Status, Action items, Last change</td><td><b>One card per theme</b>, in the desktop order: the name and status chip, then a heat strip of the shown sprints or weeks with Total (and “n no sprint”) at the end, then the action item chips or “+ Action item”, and the last change. An axis line above the cards names the first and last column once. Unthemed is the last card, dashed, with Give them themes. Two cards a row on a tablet.</td></tr>
+      <tr><td>A theme</td><td>Spread across the row; rename with ✎</td><td>Tapping a card opens a sheet: what its status means, mentions per sprint or week with every label, no-sprint and total, its action items with titles and “+ Action item on n open points”, the last change with what it means and before/after averages (and a link to its Impact card), the three latest mentions with All n in Search, then Rename… and Merge into another theme….</td></tr>
+      <tr><td>Rename</td><td>✎ turns the name into a field</td><td>Rename… in the theme sheet: a 16px field at the top and Discard / Save in the sheet's foot.</td></tr>
+      <tr><td>Tooltips</td><td>Hover on Status, Last change, No sprint, Unthemed and every chip</td><td>None (rule 5). A chip opens “What these mean” with that entry highlighted; the theme sheet says what its own status and verdict mean; “What these mean” sits by the section heading and in ⋯.</td></tr>
+      <tr><td>What keeps working</td><td>Theme · Mentions · Latest table</td><td>One row per theme: name and count, the latest mention under them, clamped to two lines.</td></tr>
+      <tr><td>Action items</td><td>10 columns, open first</td><td><b>One card per item</b>: key, state and points; the title; # theme with ↻ Recurring; Fix, covers and raised; then the sprint or Pull into Sprint 25, the owner and the impact. Open first, then Done. Tapping a card opens the item full screen (SHIP-714). “+ Action item” stays at the top.</td></tr>
+      <tr><td>Changes &amp; impact</td><td>Cards in a grid, explanation above, values on hover</td><td>One card a row (two on a tablet). The explanation shortens to one line plus <b>How verdicts work</b>, which opens the What these mean sheet. Tapping a bar outlines it and reads it out under the chart (“S22: 3 mentions”).</td></tr>
+      <tr><td>Merge themes</td><td>620px dialog</td><td>Full screen (rule 4): ✕ at the top left, Merge at the top right, disabled until there's a source and a target. 40px checkbox rows with point counts, Into as a 16px native select (C5), the preview under it. Opened from a theme's sheet, the theme starts ticked.</td></tr>
+      <tr><td>New action item</td><td>620px dialog</td><td>The sprint Retro tab's full-screen dialog (SHIP-727 D5, built once per its D8), seeded with the theme's open points.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section class="block">
+  <div class="sec-head"><div>
+    <h2>Decisions</h2>
+    <p class="muted sm" data-lavish-revision="r1">Settled 7 Nov: you kept every recommendation, and the phones above show them. Change any, add a note, then Queue decisions and Send to agent.</p>
+  </div></div>
+  <form id="decisions" data-lavish-question="ship-731-decisions">
+    <div class="decisions" id="dlist"></div>
+    <div class="submit-row">
+      <button class="btn primary" type="submit">Queue decisions</button>
+      <span class="status" id="qstatus">Nothing queued yet.</span>
+      <span style="flex:1"></span>
+      <button class="btn" type="button" id="copyAll">Copy all answers</button>
+      <span class="status" data-lavish-copy-all-status role="status" aria-live="polite"></span>
+    </div>
+  </form>
+</section>
+
+<section class="block">
+  <div class="sec-head"><div>
+    <h2>Proposed acceptance criteria for SHIP-731</h2>
+    <p class="muted sm">With the decisions as settled on 7 Nov. They're on SHIP-731.</p>
+  </div></div>
+  <div class="card"><ol class="ac">
+    <li>At 390 × 844, in both themes, Retrospective insights has no page-level sideways scroll in any view, range (6, 3 and all sprints, 6 and 12 weeks), sheet or full-screen view. Above 900px nothing changes.</li>
+    <li>The three views are one row of equal tabs (Themes | Action items | Impact) that all fit at 320px; the view is kept in the address as <code>view</code>.</li>
+    <li>Under the tabs, one row: Range ▾ and ⋯. Range opens a bottom sheet with By sprint (Last 6, Last 3, All sprints) and By week (Last 6, Last 12 weeks); picking one applies it and closes. ⋯ holds Merge themes…, Give unthemed points themes (with the count), What the statuses and verdicts mean, Search retrospectives and Retrospectives by Feature. Nothing on the page sticks.</li>
+    <li>Recurring themes shows one card per Went badly / Not in the plan theme in the desktop order: name, status chip, a heat strip with one cell per shown sprint or week (12 at 12 weeks), Total and its no-sprint count, the action item chips or “+ Action item”, and the last-change verdict. An axis line names the first and last column. Unthemed is last and links to Give them themes.</li>
+    <li>Tapping a theme card opens a bottom sheet with what its status means, its count for every shown column with labels, no-sprint and total, its action items, “+ Action item” on its open points, the last change with its meaning and averages, the three latest mentions, All n in Search, Rename… and Merge into another theme….</li>
+    <li>Rename… shows a 16px name field in the sheet with Discard and Save; Save renames the theme everywhere.</li>
+    <li>No tooltip is hover-only: Status, Last change, No sprint and Unthemed are explained in a What these mean sheet, opened from a chip (that entry highlighted), from the section heading, from ⋯ and from How verdicts work.</li>
+    <li>The proposed merge stacks its two themes and shows Keep apart and Merge as full-width buttons of at least 32px.</li>
+    <li>Action items shows one card per item, open first then Done: key, state, points, title, theme (↻ when recurring), fix, covers, raised, sprint or Pull into the next sprint, owner and impact. Tapping a card opens the item full screen.</li>
+    <li>Changes &amp; impact shows one card a row. Tapping a bar marks it and reads out its column and count under the chart.</li>
+    <li>Merge themes… is full screen with ✕ at the top left and Merge at the top right, 40px checkbox rows, a 16px Into select and the combined preview. Merge stays disabled until a source and a target are picked.</li>
+    <li>“+ Action item” opens the shared full-screen New action item dialog from SHIP-727.</li>
+    <li>On a 768px tablet the theme, action item and impact cards sit two a row.</li>
+    <li>Page screenshots at 390 × 844 in both themes sit next to the desktop ones: retro-insights, retro-insights-weeks, retro-insights-theme, retro-insights-actions and retro-insights-impact.</li>
+    <li>Analytics: nothing new. The <code>viewport</code> stamped on <code>retro.themes_merged</code>, <code>retro.theme_renamed</code>, <code>retro.merge_kept_apart</code> and <code>retro.action_created</code> lets us compare those per week on phones and on desktop, against the share of Insights <code>screen.viewed</code> from phones, for four weeks before and after this ships.</li>
+  </ol></div>
+</section>
+
+<section class="block">
+  <div class="two">
+    <div class="card"><h3>Owned elsewhere</h3><ul>
+      <li><b>SHIP-805</b>: the shared rules. D1 (a) needs no rule change; D1 (b) would add the themes table to rule 7's sideways-scroll list.</li>
+      <li><b>SHIP-713</b>: the top bar, drawer (Insights with its “3 recurring” count), <code>Sheet</code>, scrim and the <code>viewport</code> property.</li>
+      <li><b>SHIP-727</b>: the sheet and the full-screen New action item dialog, built once in the shared retro components (its D8).</li>
+      <li><b>SHIP-714</b>: the item opened full screen from an action item card.</li>
+    </ul></div>
+    <div class="card"><h3>Not in this design</h3><ul>
+      <li>Search (<code>retros.html</code>) and By Feature are SHIP-728 and SHIP-730; the links go there.</li>
+      <li>The Range sheet, the theme sheet and What these mean are new sheets on the shared <code>Sheet</code>; nothing here builds its own.</li>
+      <li>The rules behind Recurring and the verdicts don't change.</li>
+    </ul></div>
+  </div>
+</section>
+
+</div>
+
+<script>
+(() => {
+  const TODAY = [
+    ['images/today-insights.png', 'Recurring themes (scroll)', 'Status, Action items and Last change are off screen'],
+    ['images/today-insights-actions.png', 'Action items (scroll)', '10 columns; titles wrap to five lines'],
+    ['images/today-insights-impact.png', 'Changes & impact (scroll)', 'Fits, but the view tab is off screen'],
+  ];
+  const OPTS = [
+    ['retro-insights.html?', 'a · A card per theme', 'Recommended. Status, total, action items and the last change are on screen for every theme; the strip keeps the heat pattern. Tap for the rest.', true],
+    ['retro-insights.html?alt=table', 'b · The table, sideways in its box', 'Least to build, and the same table as desktop with the theme pinned. Status and action items are still off screen, and it needs a rule 7 change.'],
+    ['retro-insights.html?alt=list', 'c · A short list', 'Shortest page: name, status and total. The heat pattern and the action items are only in the sheet.'],
+  ];
+  const THEMES = [
+    ['retro-insights.html?', 'Recurring themes', 'Last 6 sprints; Recurring first'],
+    ['retro-insights.html?range=w12', 'Last 12 weeks', 'Twelve cells a strip; no No sprint'],
+    ['retro-insights.html?range=all', 'Further down', 'Unthemed, then What keeps working', 'bottom'],
+  ];
+  const SHEETS = [
+    ['retro-insights.html?sheet=theme:shots', 'A theme', 'Tapped “Screenshot baselines need CI”'],
+    ['retro-insights.html?sheet=theme:none', 'Unthemed', 'Counts, latest mentions, Give them themes'],
+    ['retro-insights.html?sheet=rename:shots', 'Rename…', '16px field; Discard and Save in the foot'],
+    ['retro-insights.html?sheet=defs:recurring', 'What these mean', 'From the Recurring chip'],
+  ];
+  const VIEWS = [
+    ['retro-insights.html?view=actions', 'Action items', 'Open first; Pull into Sprint 25'],
+    ['retro-insights.html?view=actions', 'Action items, Done', 'Closed ones with their verdict', 'bottom'],
+    ['retro-insights.html?view=impact', 'Changes & impact', 'Tap a bar to read it'],
+  ];
+  const MORE = [
+    ['retro-insights.html?sheet=range', 'Range', 'By sprint and By week'],
+    ['retro-insights.html?sheet=more', '⋯ More', 'Merge themes…, Give them themes, What these mean'],
+    ['retro-insights.html?merge=ciShots,shots', 'Merge themes', 'Full screen; from the theme sheet, CI screenshots starts ticked'],
+    ['retro-insights.html?dialog=merge', 'New action item', 'The shared full-screen dialog (SHIP-727)'],
+  ];
+  let theme = 'light';
+  const url = u => `../screens/${u}${u.endsWith('?') ? '' : '&'}shot&theme=${theme}`;
+  const frame = cls => ([u, title, sub, rec]) => `<figure class="phone${cls}"><div class="frame"><div class="screen"><iframe loading="lazy" src="${url(u)}" title="${title}"${rec === 'bottom' ? ' data-bottom' : ''}></iframe></div></div>
+    <figcaption class="cap"><b>${title}${rec === true ? ' <span class="chip accent">Recommended</span>' : ''}</b><span>${sub}</span><a href="${url(u)}" target="_blank" rel="noopener">Open</a></figcaption></figure>`;
+  const shot = ([src, title, sub]) => `<figure class="phone"><div class="frame"><div class="screen scroll"><img src="${src}" alt="${title} today at 390px" loading="lazy" style="width:312px"></div></div>
+    <figcaption class="cap"><b>${title}</b><span class="bad">${sub}</span></figcaption></figure>`;
+  const tabletShot = `<figure class="phone tablet today"><div class="frame"><div class="screen scroll"><img src="images/today-insights-tablet.png" alt="Today at 768px" style="width:369px"></div></div><figcaption class="cap"><b>Tablet, 768px</b><span class="bad">The table still scrolls sideways; Last change is off screen</span></figcaption></figure>`;
+  const render = () => {
+    document.getElementById('todayPhones').innerHTML = TODAY.map(shot).join('') + tabletShot;
+    document.getElementById('optPhones').innerHTML = OPTS.map(frame('')).join('');
+    document.getElementById('themePhones').innerHTML = THEMES.map(frame('')).join('') + frame(' tablet')(['retro-insights.html?', 'Tablet, 820px', 'Theme cards two a row']);
+    document.getElementById('sheetPhones').innerHTML = SHEETS.map(frame('')).join('');
+    document.getElementById('viewPhones').innerHTML = VIEWS.map(frame('')).join('');
+    document.getElementById('morePhones').innerHTML = MORE.map(frame('')).join('');
+    document.querySelectorAll('iframe[data-bottom]').forEach(f => f.addEventListener('load', () => { try { f.contentWindow.scrollTo(0, f.contentDocument.body.scrollHeight); } catch {} }));
+  };
+  render();
+  document.querySelector('[aria-label="Theme of the phones"]').addEventListener('click', e => {
+    const b = e.target.closest('[data-theme]'); if (!b) return;
+    theme = b.dataset.theme;
+    document.querySelectorAll('[data-theme]').forEach(x => x.setAttribute('aria-pressed', x === b));
+    render();
+  });
+
+  // [id, title, why, options [label, detail]]; the first option is the recommendation.
+  const D = [
+    ['D1', 'Fitting the themes table', 'Thirteen columns don\'t fit across a phone. The three options are compared above.', [
+      ['A card per theme with a heat strip; tap for the rest', 'Status, total, action items and the last change on screen for every theme; the heat pattern stays.'],
+      ['The desktop table, scrolling sideways in its box with the theme pinned', 'Least to build; Status and action items are still off screen; needs a rule 7 change.'],
+      ['A short list: name, status and total', 'Shortest page; the heat pattern and action items only in the sheet.']]],
+    ['D2', 'Switching views', 'The three labels don\'t fit a segmented control at 390px today.', [
+      ['Three equal tabs with short labels: Themes | Action items | Impact', 'All three visible at 320px; one tap to switch.'],
+      ['A select: “Recurring themes ▾”', 'Keeps the full names; the other views are hidden behind it.'],
+      ['The full names as tabs that scroll sideways (rule 7 allows tabs)', 'Same names as desktop; “Changes & impact” starts off screen.']]],
+    ['D3', 'Range and Merge themes…', 'Rule 8: one toolbar row: main control, Filter, ⋯.', [
+      ['Range ▾ opens a sheet with By sprint and By week; Merge themes… goes in ⋯', 'C5: the range has groups, so a sheet. The row keeps two controls.'],
+      ['Range as a native select with its groups; Merge themes… stays a button on the row', 'Less to build; the native picker shows the groups on iOS and Android, and the row is tight at 320px.']]],
+    ['D4', 'A theme\'s details', 'The card shows the summary; the labels, meanings and mentions need room.', [
+      ['One bottom sheet with everything about the theme', 'The list stays put; the sheet has the labels, meanings, action items, latest mentions, Rename and Merge.'],
+      ['The card expands in place', 'No sheet; the list grows and jumps as cards open.']]],
+    ['D5', 'What the chips mean', 'Status, Last change, No sprint and Unthemed are explained only on hover today (rule 5).', [
+      ['A What these mean sheet from any chip (that entry highlighted), the heading and ⋯; the theme sheet says what its own chips mean', 'Explained where you look, without a legend taking room.'],
+      ['A legend always shown under the themes', 'Nothing to tap; about 300px more page.']]],
+    ['D6', 'Action items', 'Ten columns.', [
+      ['One card per item, open first, then Done', 'Everything on screen; Pull into Sprint is a 32px button.'],
+      ['The table, sideways in its box with the action pinned', 'Same as desktop; most columns off screen; a rule 7 change.']]],
+    ['D7', 'Changes & impact', 'The cards already fit. Values show only on hover.', [
+      ['One card a row; the explanation becomes “How verdicts work”; tap a bar to read it out', 'The first chart is higher up, and every value can be read.'],
+      ['As today: the paragraph above, no tap readout', 'Nothing to build; values can\'t be read on a phone.']]],
+    ['D8', 'Merge themes…', 'Rule 4: form dialogs go full screen.', [
+      ['Full screen, ✕ at the top left, Merge at the top right; also “Merge into another theme…” in a theme\'s sheet, with it ticked', 'Merge is always on screen; merging starts where you notice two themes overlap.'],
+      ['A bottom sheet', 'Feels lighter; with 11+ themes it scrolls inside the sheet, under the keyboard of the select.']]],
+    ['D9', 'Renaming a theme', 'Desktop renames in place with ✎.', [
+      ['Rename… in the theme sheet: a 16px field with Discard and Save in the sheet\'s foot', 'One place to manage a theme on a phone.'],
+      ['Desktop only', 'Less to build; a drifted name can\'t be fixed from a phone.']]],
+    ['D10', 'Measuring it', 'The merge, rename and action item events already fire from the server.', [
+      ['Nothing new: viewport on retro.themes_merged, theme_renamed, merge_kept_apart and action_created', 'Those per week on phones against desktop, alongside the share of Insights views from phones, four weeks before and after.'],
+      ['Also a client event when a theme sheet opens', 'Shows which themes people look into on phones; one more event to keep.']]],
+  ];
+  document.getElementById('dlist').innerHTML = D.map(([id, title, why, opts]) => `<fieldset class="d" data-id="${id}">
+    <legend><span class="id">${id}</span>${title}</legend>
+    <span class="why">${why}</span>
+    ${opts.map(([o, s], i) => `<label class="opt"><input type="radio" name="${id}" value="${o.replace(/"/g, '&quot;')}"${i === 0 ? ' checked' : ''}><span>${o}${i ? '' : '<span class="rec">Recommended</span><span class="same">Decided 7 Nov</span>'}<small>${s}</small></span></label>`).join('')}
+    <textarea name="${id}-note" placeholder="Note (optional)" aria-label="${id} note"></textarea>
+  </fieldset>`).join('');
+
+  const answers = () => D.map(([id, title, , opts]) => {
+    const v = document.querySelector(`input[name="${id}"]:checked`)?.value;
+    const note = document.querySelector(`textarea[name="${id}-note"]`).value.trim();
+    return { id, title, choice: v, recommended: v === opts[0][0], note };
+  });
+  document.getElementById('decisions').addEventListener('submit', e => {
+    e.preventDefault();
+    const items = answers();
+    const changed = items.filter(a => !a.recommended || a.note);
+    const text = items.map(a => `${a.id} ${a.title}: ${a.choice}${a.recommended ? ' (recommended)' : ' (changed)'}${a.note ? ` (note: ${a.note})` : ''}`).join('\n');
+    if (window.lavish?.queuePrompt) {
+      window.lavish.queuePrompt(`SHIP-731 design decisions. Apply each one to the insights phone design (insights-touch.*, this page, the acceptance criteria) and give a per-ID receipt for D1–D10:\n${text}`,
+        { tag: 'tracked-batch', text: `SHIP-731 decisions: ${changed.length} changed or noted`, element: e.currentTarget, queueKey: 'ship-731-decisions', data: { items } });
+      document.getElementById('qstatus').textContent = `Queued ${items.length} decisions (${changed.length} changed or noted). Send to agent to deliver.`;
+    } else {
+      document.getElementById('qstatus').textContent = 'Lavish is not running. Use Copy all answers and paste them into the chat.';
+    }
+  });
+  document.getElementById('copyAll').addEventListener('click', async () => {
+    const text = answers().map(a => `${a.id} ${a.title}: ${a.choice}${a.note ? ` (note: ${a.note})` : ''}`).join('\n');
+    const st = document.querySelector('[data-lavish-copy-all-status]');
+    try { await navigator.clipboard.writeText(text); st.textContent = 'Answers copied.'; } catch { st.textContent = 'Clipboard unavailable.'; }
+  });
+})();
+</script>
+</body>
+</html>

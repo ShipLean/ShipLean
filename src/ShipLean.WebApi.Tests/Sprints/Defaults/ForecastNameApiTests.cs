@@ -13,15 +13,19 @@ namespace ShipLean.WebApi.Tests.Sprints.Defaults;
 [TestFixture]
 public class ForecastNameApiTests : ApiFixture
 {
+    private static readonly DateTimeOffset Now = TestDates.Today.AddYears(5);
+
+    private static readonly DateOnly SprintStart = DateOnly.FromDateTime(Now.AddYears(-1).UtcDateTime);
+
     protected override Action<IServiceCollection>? ConfigureTestServices => services =>
-        services.AddSingleton<TimeProvider>(new FakeTimeProvider(new DateTimeOffset(2031, 1, 1, 0, 0, 0, TimeSpan.Zero)));
+        services.AddSingleton<TimeProvider>(new FakeTimeProvider(Now));
 
     [Test]
     public async Task Forecast_WhenALastSprintNameEndsInANumberTooLargeToCount_ShouldNameTheNextOnesByCount()
     {
         using var created = await Api.PostJsonAsync(
             $"api/projects/{SeedIds.Projects.Ship}/sprints",
-            new SprintCreate("Build 20261024123456", new DateOnly(2030, 1, 7), new DateOnly(2030, 1, 18), string.Empty));
+            new SprintCreate("Build 20261024123456", SprintStart, SprintStart.AddDays(11), string.Empty));
         created.StatusCode.ShouldBe(HttpStatusCode.OK, await created.Content.ReadAsStringAsync());
         using var set = await Api.PutJsonAsync($"api/projects/{SeedIds.Projects.Ship}/forecast", new VelocityOverridePut(30m));
         set.StatusCode.ShouldBe(HttpStatusCode.NoContent);

@@ -7,7 +7,7 @@ import type { RouteId } from '../routes';
 import { projectDto } from './pagesFixtures';
 
 const useScreenPresence = vi.fn<(routeId: RouteId) => void>();
-const useScreenView = vi.fn<(routeId: RouteId, projectId: string | null) => void>();
+const useScreenView = vi.fn<(routeId: RouteId, projectId: string | null, mode?: string) => void>();
 vi.mock('../realtime', () => ({ useScreenPresence }));
 vi.mock('../realtime/useScreenView', () => ({ useScreenView }));
 
@@ -19,17 +19,20 @@ beforeEach(() => {
   useScreenView.mockClear();
 });
 
-function renderScreen(queryClient: QueryClient) {
-  const router = createMemoryRouter([
-    {
-      path: '*',
-      element: (
-        <ProjectScreen routeId="capacity" testId="x">
-          {() => null}
-        </ProjectScreen>
-      ),
-    },
-  ]);
+function renderScreen(queryClient: QueryClient, routeId: RouteId = 'capacity', at = '/') {
+  const router = createMemoryRouter(
+    [
+      {
+        path: '*',
+        element: (
+          <ProjectScreen routeId={routeId} testId="x">
+            {() => null}
+          </ProjectScreen>
+        ),
+      },
+    ],
+    { initialEntries: [at] },
+  );
   const root = createRoot(document.createElement('div'));
   act(() => {
     root.render(
@@ -84,5 +87,15 @@ test('projectScreen_WhenRendered_ShouldReportPresenceUnderItsRouteId', () => {
     );
   });
   expect(useScreenPresence).toHaveBeenCalledWith('capacity');
+  act(() => root.unmount());
+});
+
+test('projectScreen_WhenFeaturesBacklogInTree_ShouldReportTheScreenViewWithTheMode', () => {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const project = projectDto('SHIP');
+  // The route is '*', so the screen reads the project under an empty key.
+  queryClient.setQueryData(['projects', 'by-key', ''], project);
+  const root = renderScreen(queryClient, 'featuresBacklog', '/p/SHIP/backlogs/features?mode=tree');
+  expect(useScreenView).toHaveBeenCalledWith('featuresBacklog', project.id, 'tree');
   act(() => root.unmount());
 });

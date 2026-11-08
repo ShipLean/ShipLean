@@ -11,12 +11,14 @@
   SHIP-497: the range also picks sprints or weeks, which drives Recurring and the verdicts as well as the columns. Sprint mode
   has a No sprint column; week mode doesn't need one. An Unthemed row sits last. Status and verdict chips have tooltips.
   ?view=themes|actions|impact picks the view, ?range=6|3|all|w6|w12 the range, ?tip=status|verdict opens a tooltip.
-  Uses ../tokens.css, shiplean.css, shared.js, retro-data.js and retro-cards.js.
+  SHIP-731: insights-touch.css/js are the phone and tablet layout (900px and below); their review states are listed in
+  insights-touch.js. Uses ../tokens.css, shiplean.css, shared.js, retro-data.js and retro-cards.js.
 -->
 <link rel="stylesheet" href="../tokens.css">
 <link rel="stylesheet" href="shiplean.css">
 <link rel="stylesheet" href="retro.css">
 <link rel="stylesheet" href="retro-cards.css">
+<link rel="stylesheet" href="insights-touch.css">
 <script src="shared.js"></script>
 <script src="retro-data.js"></script>
 <script src="retro-cards.js"></script>
@@ -74,13 +76,14 @@
   });
 
   const mentions = k => retros.flatMap(r => r.points.filter(p => p.theme === k));
-  function status(k) {
+  function statusOf(k) {
     const v = verdict(k), open = actions.some(a => a.theme === k && a.state !== 'Closed');
-    if (recurring(k)) return '<span class="chip warn" data-rc-tip="recurring" tabindex="0">Recurring</span>';
-    if (v && v.tone === 'ok') return '<span class="chip ok" data-rc-tip="resolved" tabindex="0">Resolved</span>';
-    if (open) return '<span class="chip accent" data-rc-tip="addressed" tabindex="0">Being addressed</span>';
-    return '<span class="chip" data-rc-tip="quiet" tabindex="0">Quiet</span>';
+    if (recurring(k)) return { id: 'recurring', label: 'Recurring', tone: 'warn' };
+    if (v && v.tone === 'ok') return { id: 'resolved', label: 'Resolved', tone: 'ok' };
+    if (open) return { id: 'addressed', label: 'Being addressed', tone: 'accent' };
+    return { id: 'quiet', label: 'Quiet', tone: '' };
   }
+  function status(k) { const s = statusOf(k); return `<span class="chip ${s.tone}" data-rc-tip="${s.id}" tabindex="0">${s.label}</span>`; }
   const verdictChip = k => { const v = verdict(k); return v ? `<span class="chip ${v.tone}" data-rc-tip="${v.label}" tabindex="0">${v.label}</span>` : '<span class="muted xs">no change shipped</span>'; };
 
   const heat = (n, max) => `<td class="rc-heat${n ? '' : ' zero'}"${n ? ` style="background:color-mix(in srgb, var(--color-warn) ${Math.round(10 + (n / max) * 45)}%, transparent)"` : ''}>${n}</td>`;
@@ -163,16 +166,21 @@
     setSeries(weekMode() ? 'weeks' : 'sprints');
     document.getElementById('range').value = range;
     document.getElementById('ins').innerHTML = view === 'actions' ? actionsView() : view === 'impact' ? impactView() : themesView();
+    window.INS?.after?.();
   }
   document.querySelector('[aria-label="Insight"]').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (!b) return; view = b.dataset.v; render(); });
   document.getElementById('ins').addEventListener('click', e => { const pl = e.target.closest('[data-pull]'); if (pl) { toast(`${tIcon('action')} ${pl.dataset.pull} pulled into Sprint 25`); return; } const m = e.target.closest('[data-make]'); if (m) { const key = Object.keys(themes).find(k => themes[k].name === m.dataset.make); RC.openActionDialog(retros.flatMap(r => r.points.filter(p => p.theme === key && RC.isOpen(p)).map(p => RC.idOf(r, p))), retros); return; } const mg = e.target.closest('[data-merge]'); if (mg) toast(mg.dataset.merge === 'yes' ? 'Merged: its points and action items moved to Screenshot baselines need CI.' : 'Kept apart. This pair is not proposed again.'); });
   document.getElementById('range').addEventListener('change', e => { range = e.target.value; render(); });
   RC.render = render;
+  // For insights-touch.js (SHIP-731): the page's state and rules, so the phone layout reuses them.
+  window.INS = { get view() { return view; }, get range() { return range; }, setView: v => { view = v; render(); }, setRange: r => { range = r; render(); },
+    weekMode, shownCount, unit, statusOf, recurringRule, STATUS_TEXT, VERDICT_TEXT, mentions, render, after: window.INS?.after };
   document.getElementById('merge').addEventListener('click', () => toast('ShipLean clusters points into themes. Merge two clusters, rename one, or move a point to another theme.'));
   render();
   if (params.get('tip')) { const t = document.getElementById(params.get('tip') === 'verdict' ? 'tipVerdict' : 'tipStatus'); t?.dispatchEvent(new MouseEvent('mouseover', { bubbles: true })); }
   SL.preview([{ label: 'Themes', run: () => { view = 'themes'; render(); } }, { label: 'Actions', run: () => { view = 'actions'; render(); } }, { label: 'Impact', run: () => { view = 'impact'; render(); } }]);
 })();
 </script>
+<script src="insights-touch.js"></script>
 </body>
 </html>

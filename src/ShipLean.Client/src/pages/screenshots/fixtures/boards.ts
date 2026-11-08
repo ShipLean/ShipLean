@@ -39,6 +39,8 @@ const roll = (type: 'story' | 'bug' | 'feature', closed: number, total: number) 
   type,
   open: total - closed,
   closed,
+  inCurrentSprint: 0,
+  inOtherSprint: 0,
 });
 
 const epicRef = (n: number, title: string) => ({

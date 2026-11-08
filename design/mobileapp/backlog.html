@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=390">
+<!--
+  Backlog on the phone app (SHIP-905): Features and Stories in rank order. Reordering by voice is the main job, with a
+  Move sheet as the touch fallback. Design notes and voice actions: backlog.md. ?state=<id>&theme=light|dark, ?list for ids.
+-->
+<link rel="stylesheet" href="app.css"><script src="app.js"></script>
+<style>
+/* Row extras: progress line, needs-you marker, move button */
+.row .t, .ask-line, .move-sheet .item .t, .pick .t { overflow-wrap: anywhere; }
+.row .m > *, .move-sheet .item > div, .pick .main, .opt { min-width: 0; }
+.row { align-items: flex-start; }
+.row .rank { padding-top: 2px; }
+.row .t { font-size: var(--app-text); }
+.prog-line { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: var(--app-text-xs); color: var(--color-muted); }
+.prog-line .progress { flex: 1; }
+.needs { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; border-radius: 11px; background: var(--ask-soft); color: var(--ask); font-size: var(--app-text-xs); font-weight: 700; white-space: nowrap; }
+.needs svg.i { width: 13px; height: 13px; stroke-width: 2.2; }
+.move-btn { width: 36px; height: 36px; margin: -4px -8px 0 0; display: grid; place-items: center; border-radius: 10px; color: var(--color-muted); flex: none; }
+.row.flash .move-btn { color: var(--voice); }
+.ask-line { margin-top: 6px; font-size: var(--app-text-sm); color: var(--color-text); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ask-line .who { color: var(--color-muted); }
+.blk { color: var(--color-danger); font-weight: 600; }
+.moved { display: inline-flex; align-items: center; gap: 3px; font-size: var(--app-text-xs); font-weight: 600; color: var(--voice); }
+.moved svg.i { width: 13px; height: 13px; stroke-width: 2.2; }
+.hint { display: flex; align-items: center; gap: 8px; margin: 12px var(--app-gutter) 0; font-size: var(--app-text-sm); color: var(--color-muted); }
+.hint svg { color: var(--voice); }
+.subbar.chips { padding-top: 0; }
+
+.m2 { display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: var(--app-text-sm); color: var(--color-muted); white-space: nowrap; min-width: 0; }
+.m2 .type { width: 14px; height: 14px; font-size: 8px; border-radius: 4px; }
+.m2 .pt { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.m2 .tk, .m2 .type, .m2 .sep { flex: none; }
+/* Rank diff inside a preview row: before → after for every row that moves */
+.act .what .rdiff { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; padding: 10px 12px; border-radius: 8px; background: var(--color-surface-2); }
+.act .what .rdiff .r { display: flex; align-items: center; gap: 8px; margin: 0; font-size: var(--app-text-sm); color: var(--color-muted); }
+.act .what .rdiff .r span { display: inline; margin: 0; font-size: inherit; color: inherit; }
+.act .what .rdiff .pos { flex: none; width: 46px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.act .what .rdiff .pos s { text-decoration: none; opacity: .7; }
+.act .what .rdiff .r .ttl { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.act .what .rdiff .r.me { color: var(--color-text); font-weight: 600; }
+.act .what .rdiff .r.me .pos { color: var(--voice); }
+.act .what .rdiff .warn { display: flex; gap: 6px; align-items: flex-start; margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--color-border); font-size: var(--app-text-sm); color: var(--color-text); }
+.act .what .rdiff .warn svg { color: var(--ask); margin-top: 1px; }
+.act .what .rdiff .warn span { display: inline; margin: 0; color: inherit; font-size: inherit; }
+
+/* Move sheet (touch fallback for reordering) */
+.move-sheet .item { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 14px; }
+.move-sheet .item .t { font-size: var(--app-text-md); font-weight: 600; line-height: 1.3; }
+.move-sheet .item .m { font-size: var(--app-text-sm); color: var(--color-muted); margin-top: 2px; }
+.opts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.opt { height: 56px; border-radius: 12px; background: var(--color-surface-2); display: flex; align-items: center; gap: 10px; padding: 0 14px; font-weight: 600; font-size: var(--app-text); white-space: nowrap; }
+.opt .to { margin-left: auto; font-size: var(--app-text-xs); color: var(--color-muted); font-weight: 500; font-variant-numeric: tabular-nums; }
+.opt.wide { grid-column: 1 / -1; }
+.move-sheet .say { margin-top: 12px; display: flex; justify-content: center; align-items: center; gap: 6px; font-size: var(--app-text-sm); color: var(--color-muted); }
+
+/* Disambiguation: which item did you mean? */
+.pick { display: flex; gap: 12px; align-items: center; padding: 12px; border-bottom: 1px solid var(--color-border); }
+.pick:last-child { border-bottom: 0; }
+.pick .n { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--voice-soft); color: var(--voice); font-size: var(--app-text-sm); font-weight: 700; flex: none; }
+.pick .main { flex: 1; min-width: 0; }
+.pick .t { font-weight: 600; }
+.pick .m { font-size: var(--app-text-sm); color: var(--color-muted); display: flex; gap: 6px; align-items: center; margin-top: 2px; flex-wrap: wrap; }
+</style>
+</head>
+<body><div id="app"></div><script>
+const { frame, topBar, iconBtn, tabBar, type, state, health, progress, listening, preview, toast, icon, avatar } = App;
+const hot = (s) => `<span class="hot">${s}</span>`;
+
+/* ── Data ───────────────────────────────────────────────────────────── */
+// [key, title, state, category, health, progress {done,cur,other}, stories label, needs-you { n, kind, line }]
+const F = {
+  707: ['SHIP-707', 'Mobile web: touch shell and phone layouts', 'Active', 'in-progress', 'ok', { done: 64, cur: 22 }, '9 of 14'],
+  907: ['SHIP-907', 'Mobile app foundations', 'Active', 'in-progress', 'risk', { done: 8, cur: 30, other: 12 }, '1 of 9',
+    { n: 8, kind: 'check', line: '<span class="who">Claude Code · 1d:</span> D1–D8 wait for you, starting with “sign in through the browser handoff?”' }],
+  892: ['SHIP-892', 'Demo artifacts for the sprint demo agent', 'New', 'proposed', '', { other: 20 }, '0 of 4',
+    { n: 1, kind: 'message', line: '<span class="who">Priya · 1d:</span> Q6: should the demo show the mobile screens or skip them?' }],
+  906: ['SHIP-906', 'Voice commands on the mobile app with on-device models', 'New', 'proposed', 'risk', { done: 17, cur: 33 }, '1 of 6',
+    { n: 3, kind: 'check', line: '<span class="who">Claude Code · 2h:</span> D10, D11 and “ship 1.7B as it is, or try FunctionGemma first?”' }],
+  891: ['SHIP-891', 'Features panel on the sprint page', 'New', 'proposed', '', {}, '0 of 4'],
+  246: ['SHIP-246', 'Client notes on the work item page', 'New', 'proposed', '', {}, '0 of 6'],
+  256: ['SHIP-256', 'Measure web vitals on every page', 'New', 'proposed', '', {}, '0 of 3'],
+};
+const ORDER = [707, 907, 892, 906, 891, 246, 256];
+const AFTER = [707, 906, 907, 892, 891, 246, 256];
+
+const needs = (x) => x ? `<span class="needs">${icon(x.kind)}${x.n}</span>` : '';
+const featureRow = (id, rank, { flash = false, moved = '', askLine = false } = {}) => {
+  const [key, t, s, cat, h, p, st, ask] = F[id];
+  return `<div class="row${ask ? ' ask' : ''}${flash ? ' flash' : ''}"><span class="rank">${rank}</span><div class="main"><div class="t">${t}</div>
+    <div class="m">${type('feature')}<span class="key">${key}</span>${state(s, cat)}${h && h !== 'ok' ? health(h) : ''}${needs(ask)}${moved}</div>
+    ${askLine && ask ? `<div class="ask-line">${ask.line}</div>` : `<div class="prog-line">${progress(p)}<span>${st}</span></div>`}</div>
+    <button class="move-btn" aria-label="Move">${icon('rank')}</button></div>`;
+};
+const featureList = (order = ORDER, o = {}) => `<div class="list">${order.map((id, i) => featureRow(id, i + 1, typeof o === 'function' ? o(id) : o)).join('')}</div>`;
+
+const S = [
+  ['SHIP-921', 'Download the speech and command models on first run', 'Active', 'in-progress', 'SHIP-906 Voice commands', ['PR', '#1f8f6a'], 'Tasks 3/7 · <span class="blk">1 blocked</span>'],
+  ['SHIP-923', 'Hold-to-talk button and listening sheet', 'Active', 'in-progress', 'SHIP-906 Voice commands', ['SA', '#c2353b'], 'Tasks 2/3'],
+  ['SHIP-911', 'Development build with the native audio and model modules', 'Active', 'in-progress', 'SHIP-907 Mobile app foundations', ['AI', ''], 'Tasks 1/4', { n: 1, kind: 'message' }],
+  ['SHIP-912', 'Sign in on the phone through the browser', 'New', 'proposed', 'SHIP-907 Mobile app foundations', null, ''],
+  ['SHIP-924', 'Note action copies words from the transcript', 'New', 'proposed', 'SHIP-906 Voice commands', null, ''],
+  ['SHIP-736', 'Sign-in screen on mobile web', 'New', 'proposed', 'SHIP-707 Mobile web', null, ''],
+  ['SHIP-925', 'Preview, apply and undo for voice actions', 'New', 'proposed', 'SHIP-906 Voice commands', null, ''],
+];
+const storyRow = ([key, t, s, cat, parent, who, tasks, ask], rank, { flash = false, fresh = false } = {}) =>
+  `<div class="row${ask ? ' ask' : ''}${flash ? ' flash' : ''}"><span class="rank">${rank}</span><div class="main"><div class="t">${t}</div>
+    <div class="m">${type('story')}<span class="key">${key}</span>${state(s, cat)}${needs(ask)}${who ? avatar(who[0], { sm: true, agent: who[0] === 'AI', color: who[1] }) : ''}</div><div class="m2">${tasks ? `<span class="tk">${tasks}</span><span class="sep"></span>` : ''}${type('feature')}<span class="pt">${parent}</span></div></div>
+    <button class="move-btn" aria-label="Move">${icon('rank')}</button></div>`;
+
+/* ── Chrome ─────────────────────────────────────────────────────────── */
+const bar = () => App.tabRoot({ title: 'Backlog', right: iconBtn('search', { label: 'Search' }) });
+const seg = (on) => `<div class="seg">${['Epics', 'Features', 'Stories'].map((x) => `<button class="${x === on ? 'on' : ''}">${x}</button>`).join('')}</div>`;
+const chips = (needsOn = false, level = 'Features') => `<div class="subbar chips"><span class="chip ask${needsOn ? ' on' : ''}">${icon('inbox', 'sm')}Needs me <span class="n">${level === 'Features' ? 3 : 1}</span></span><span class="chip">Open</span><span class="chip">All epics ${icon('down', 'sm')}</span></div>`;
+const sub = (level, needsOn) => `<div class="subbar">${seg(level)}</div>${chips(needsOn, level)}`;
+const tabs = (mic = 'idle') => tabBar('backlog', { inbox: 15, mic });
+
+const featuresBody = (order, o) => `<div class="hint">${icon('mic', 'sm')}Rank order. Hold the mic to move, or tap ${icon('rank', 'sm')}</div><div class="section-h">7 open Features</div>${featureList(order, o)}`;
+const storiesBody = (o = {}) => `<div class="section-h">12 open Stories</div><div class="list">${S.map((s, i) => storyRow(s, i + 1, o[i] || {})).join('')}</div>`;
+
+const rdiff = (rows, warn = '') => `<div class="rdiff">${rows.map(([from, to, key, t, me]) =>
+  `<div class="r${me ? ' me' : ''}"><span class="pos"><s>${from}</s> → ${to}</span><span class="ttl">${key} ${t}</span></div>`).join('')}${warn ? `<div class="warn">${icon('alert', 'sm')}<span>${warn}</span></div>` : ''}</div>`;
+
+/* ── States ─────────────────────────────────────────────────────────── */
+App.screen({ title: 'Backlog', states: [
+  { id: 'features', title: 'Features', note: 'Features in rank order; orange marks what waits on you.',
+    render: () => frame({ top: bar(), sub: sub('Features'), body: featuresBody(), bottom: tabs() }) },
+
+  { id: 'stories', title: 'Stories', note: 'Stories with their Feature and task counts, never the tasks.',
+    render: () => frame({ top: bar(), sub: sub('Stories'), body: storiesBody(), bottom: tabs() }) },
+
+  { id: 'listening', title: 'Listening', note: 'Reordering by voice: keys are hotwords.',
+    render: () => frame({ top: bar(), sub: sub('Features'), body: featuresBody(), bottom: tabs('live'),
+      overlay: listening({ ctx: '<b>Features</b> backlog', words: `Move ${hot('SHIP-906')} above ${hot('SHIP-907')}`, tries: ['put SHIP-906 at the top', 'what needs me?', 'add a story to SHIP-906: …'] }) }) },
+
+  { id: 'preview', title: 'Preview', note: 'Before → after for every row that moves, plus a warning.',
+    render: () => frame({ top: bar(), sub: sub('Features'), body: featuresBody(), bottom: tabs('busy'),
+      overlay: preview({ ctx: '<b>Features</b> backlog', heard: 'Move SHIP-906 above SHIP-907', acts: [
+        { kind: 'rank', title: 'Move SHIP-906 up to 2', detail: 'Above SHIP-907, two places up' + rdiff([[4, 2, 'SHIP-906', 'Voice commands', true], [2, 3, 'SHIP-907', 'Mobile app foundations'], [3, 4, 'SHIP-892', 'Demo artifacts']],
+            'SHIP-906 is blocked by SHIP-907, so it can’t start first.') },
+      ] }) }) },
+
+  { id: 'applied', title: 'Applied', note: 'The moved row is highlighted; Undo puts all three back.',
+    render: () => frame({ top: bar(), sub: sub('Features'),
+      body: featuresBody(AFTER, (id) => (id === 906 ? { flash: true, moved: `<span class="moved">${icon('up')}from 4</span>` } : {})),
+      bottom: tabs(), overlay: toast('SHIP-906 moved from 4 to 2', { bottom: 124 }) }) },
+
+  { id: 'move', title: 'Move sheet', note: 'Touch fallback: four big targets, no drag.',
+    render: () => frame({ top: bar(), sub: sub('Features'), body: featuresBody(), bottom: tabs(),
+      overlay: `<div class="scrim"></div><div class="sheet move-sheet"><div class="grab"></div>
+        <div class="item">${type('feature')}<div><div class="t">Voice commands on the mobile app with on-device models</div><div class="m">SHIP-906 · rank 4 of 7 open Features</div></div></div>
+        <div class="opts-grid">
+          <button class="opt">${icon('up')}Top<span class="to">to 1</span></button>
+          <button class="opt">${icon('arrowdown')}Bottom<span class="to">to 7</span></button>
+          <button class="opt">${icon('up')}Up one<span class="to">to 3</span></button>
+          <button class="opt">${icon('arrowdown')}Down one<span class="to">to 5</span></button>
+          <button class="opt wide">${icon('search')}Above or below another item…</button>
+        </div>
+        <div class="say">${icon('mic', 'sm')} Or hold the mic: “move this above SHIP-907”</div></div>` }) },
+
+  { id: 'needs-me', title: 'Needs me', note: 'Only Features where someone waits on you, question inline.',
+    render: () => frame({ top: bar(), sub: sub('Features', true),
+      body: `<div class="section-h">3 Features wait on you</div><div class="list">${[907, 892, 906].map((id) => featureRow(id, ORDER.indexOf(id) + 1, { askLine: true })).join('')}</div>
+        <div class="hint">${icon('mic', 'sm')}Say “approve D1 on SHIP-907” or open one to reply</div>`,
+      bottom: tabs() }) },
+
+  { id: 'capture', title: 'Quick capture', note: 'A new Story by voice; the title is word for word.',
+    render: () => frame({ top: bar(), sub: sub('Stories'), body: storiesBody(), bottom: tabs('busy'),
+      overlay: preview({ ctx: '<b>Stories</b> backlog', heard: 'Add a story to SHIP-906: show a banner while the models download', acts: [
+        { kind: 'field', icon: 'plus', title: 'New Story in SHIP-906', detail: 'State New · not in a sprint', quote: 'Show a banner while the models download' },
+        { kind: 'rank', title: 'At the top: rank 1', detail: 'New items land at the top so they get looked at; say “at the bottom” to change' },
+      ] }) }) },
+
+  { id: 'which', title: 'Which one?', note: 'Two Stories match, so the phone asks instead of guessing.',
+    render: () => frame({ top: bar(), sub: sub('Stories'), body: storiesBody(), bottom: tabs('busy'),
+      overlay: `<div class="scrim"></div><div class="sheet preview"><div class="grab"></div>
+        <div class="voice-ctx">${icon('spark', 'sm')}Two Stories match <span class="sep"></span> <b>Stories</b> backlog</div>
+        <div class="heard" style="margin-top:10px">“Put the sign-in story at the top”</div>
+        <div class="acts">
+          <div class="pick"><span class="n">1</span><div class="main"><div class="t">Sign in on the phone through the browser</div><div class="m">${type('story')}SHIP-912 · rank 4 · in SHIP-907</div></div>${icon('chevron', 'muted')}</div>
+          <div class="pick"><span class="n">2</span><div class="main"><div class="t">Sign-in screen on mobile web</div><div class="m">${type('story')}SHIP-736 · rank 6 · in SHIP-707</div></div>${icon('chevron', 'muted')}</div>
+        </div>
+        <div class="go"><button class="btn">${icon('x', 'sm')}Cancel</button><button class="btn">${icon('mic', 'sm')}Say again</button></div>
+        <div class="say-yes">Tap one, or say “the first one” or its key</div></div>` }) },
+]});
+</script></body></html>

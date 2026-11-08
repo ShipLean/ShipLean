@@ -176,7 +176,9 @@
                 {
                   "type": "story",
                   "open": 2,
-                  "closed": 0
+                  "closed": 0,
+                  "inCurrentSprint": 0,
+                  "inOtherSprint": 0
                 }
               ],
               "offerDone": false,
@@ -241,12 +243,16 @@
                 {
                   "type": "story",
                   "open": 5,
-                  "closed": 3
+                  "closed": 3,
+                  "inCurrentSprint": 0,
+                  "inOtherSprint": 0
                 },
                 {
                   "type": "bug",
                   "open": 1,
-                  "closed": 1
+                  "closed": 1,
+                  "inCurrentSprint": 0,
+                  "inOtherSprint": 0
                 }
               ],
               "offerDone": false,
@@ -353,12 +359,16 @@
                 {
                   "type": "story",
                   "open": 6,
-                  "closed": 1
+                  "closed": 1,
+                  "inCurrentSprint": 0,
+                  "inOtherSprint": 0
                 },
                 {
                   "type": "bug",
                   "open": 1,
-                  "closed": 0
+                  "closed": 0,
+                  "inCurrentSprint": 0,
+                  "inOtherSprint": 0
                 }
               ],
               "offerDone": false,
@@ -447,7 +457,9 @@
                 {
                   "type": "story",
                   "open": 2,
-                  "closed": 0
+                  "closed": 0,
+                  "inCurrentSprint": 0,
+                  "inOtherSprint": 0
                 }
               ],
               "offerDone": false,
@@ -500,12 +512,16 @@
                 {
                   "type": "story",
                   "open": 2,
-                  "closed": 0
+                  "closed": 0,
+                  "inCurrentSprint": 0,
+                  "inOtherSprint": 0
                 },
                 {
                   "type": "feature",
                   "open": 1,
-                  "closed": 0
+                  "closed": 0,
+                  "inCurrentSprint": 0,
+                  "inOtherSprint": 0
                 }
               ],
               "offerDone": false,
@@ -605,7 +621,9 @@
                 {
                   "type": "story",
                   "open": 1,
-                  "closed": 1
+                  "closed": 1,
+                  "inCurrentSprint": 0,
+                  "inOtherSprint": 0
                 }
               ],
               "offerDone": false,

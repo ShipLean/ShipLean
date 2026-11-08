@@ -1,11 +1,18 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import type { Page } from 'playwright';
 import { Link } from 'react-router-dom';
-import { EPIC_ROWS, FEATURE_ROWS, levelView } from '../ct/levelFixtures';
+import {
+  EPIC_ROWS,
+  FEATURE_ROWS,
+  levelView,
+  SPRINT_EPIC_ROWS,
+  SPRINT_FEATURE_ROWS,
+} from '../ct/levelFixtures';
 import { LevelHarness } from '../ct/LevelHarness';
 import { LevelSlotHarness } from '../ct/LevelSlotHarness';
 import { PROJECT } from '../ct/fixtures';
 import { stubLevel } from '../ct/stubLevels';
+import { criteriaTestIds } from '../../criteria/testIds';
 import { backlogTestIds as ids } from '../testIds';
 
 const features = { hooksConfig: { route: '/p/SHIP/backlogs/features' } };
@@ -87,6 +94,57 @@ test('Levels_WhenEpicsLoaded_ShouldShowTheFeaturesCountInPlaceOfParent', async (
   await expect(page.getByTestId(ids.levelProgressText)).toHaveText('0 / 4 done');
 });
 
+test('Levels_WhenStoriesInSprints_ShouldShowDoneCurrentAndOtherSprintBands', async ({
+  mount,
+  page,
+}) => {
+  await stubLevel(page, levelView('features', SPRINT_FEATURE_ROWS));
+  await mount(<LevelHarness project={PROJECT} level="features" />, features);
+
+  const feature = row(page, 'SHIP-120');
+  await expect(feature.getByTestId(ids.levelProgressText)).toHaveText('2 / 8 done');
+  await expect(feature.getByTestId(ids.levelProgressDone)).toHaveAttribute('style', /width: 25%/);
+  await expect(feature.getByTestId(ids.levelProgressCurrent)).toHaveAttribute(
+    'style',
+    /width: 25%/,
+  );
+  await expect(feature.getByTestId(ids.levelProgressOther)).toHaveAttribute(
+    'style',
+    /width: 12.5%/,
+  );
+  await expect(feature.getByTestId(ids.levelProgressDone).locator('..')).toHaveAttribute(
+    'title',
+    '2 done · 2 in current sprint · 1 in another sprint · 3 not in a sprint',
+  );
+});
+
+test('Levels_WhenNoStoryInASprint_ShouldDrawOnlyTheDoneBand', async ({ mount, page }) => {
+  await stubLevel(page, levelView('features', FEATURE_ROWS));
+  await mount(<LevelHarness project={PROJECT} level="features" />, features);
+
+  const checkout = row(page, 'SHIP-101');
+  await expect(checkout.getByTestId(ids.levelProgressDone)).toHaveAttribute('style', /width: 50%/);
+  await expect(checkout.getByTestId(ids.levelProgressCurrent)).toHaveCount(0);
+  await expect(checkout.getByTestId(ids.levelProgressOther)).toHaveCount(0);
+  await expect(checkout.getByTestId(ids.levelProgressDone).locator('..')).toHaveAttribute(
+    'title',
+    '4 done · 0 in current sprint · 0 in another sprint · 4 not in a sprint',
+  );
+});
+
+test('Levels_WhenEpicsLoaded_ShouldShowSprintBandsOverStoriesUnderFeatures', async ({
+  mount,
+  page,
+}) => {
+  await stubLevel(page, levelView('epics', SPRINT_EPIC_ROWS));
+  await mount(<LevelHarness project={PROJECT} level="epics" />, epics);
+
+  const epic = row(page, 'SHIP-95');
+  await expect(epic.getByTestId(ids.levelProgressText)).toHaveText('2 / 8 done');
+  await expect(epic.getByTestId(ids.levelProgressCurrent)).toHaveAttribute('style', /width: 25%/);
+  await expect(epic.getByTestId(ids.levelProgressOther)).toHaveAttribute('style', /width: 25%/);
+});
+
 test('Levels_WhenColumnsSaved_ShouldHideThemPerLevelAndKeepKeyAndTitle', async ({
   mount,
   page,
@@ -159,6 +217,41 @@ test('Levels_WhenFilterOn_ShouldSendItAndKeepRowsWhenRefused', async ({ mount, p
   await expect.poll(() => server.reads.at(-1)).toContain(encodeURIComponent('Bad'));
   await expect(page.getByTestId(ids.filterError)).toBeVisible();
   await expect(page.getByTestId(ids.row)).toHaveCount(3);
+});
+
+test('Levels_WhenFilterOnState_ShouldOfferAndSendOnlyTheLevelsOwnStates', async ({
+  mount,
+  page,
+}) => {
+  const state = (id: string, type: string, name: string) => ({
+    id,
+    type,
+    name,
+    category: name === 'New' ? 'proposed' : 'inProgress',
+    order: 1,
+    itemCount: 1,
+  });
+  // As the server lists them: the Epic's New comes first, and a Feature can never be in it.
+  const server = await stubLevel(page, levelView('features', FEATURE_ROWS), {
+    states: [
+      state('11111111-0000-4000-8000-000000000001', 'epic', 'New'),
+      state('22222222-0000-4000-8000-000000000001', 'feature', 'New'),
+      state('22222222-0000-4000-8000-000000000002', 'feature', 'Active'),
+      state('33333333-0000-4000-8000-000000000001', 'story', 'New'),
+    ],
+  });
+  await mount(<LevelHarness project={PROJECT} level="features" />, features);
+  await expect(page.getByTestId(ids.row)).toHaveCount(3);
+
+  await page.getByTestId(ids.filterButton).click();
+  const panel = page.getByTestId(ids.filterPanel);
+  await panel.getByTestId(criteriaTestIds.field).selectOption('state');
+  const value = panel.getByTestId(criteriaTestIds.value);
+  await expect(value.locator('option')).toHaveText(['New', 'Active']);
+
+  await expect
+    .poll(() => server.reads.at(-1))
+    .toContain(encodeURIComponent('22222222-0000-4000-8000-000000000001'));
 });
 
 test('Levels_WhenLoadFails_ShouldSayItCouldNotLoad', async ({ mount, page }) => {

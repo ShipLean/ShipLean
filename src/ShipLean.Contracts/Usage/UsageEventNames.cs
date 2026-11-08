@@ -47,6 +47,7 @@ public static class UsageEventNames
     public const string BacklogReviewed = "backlog.reviewed";
     public const string BacklogBulkWritten = "backlog.bulk_written";
     public const string BacklogItemsAdded = "backlog.items_added";
+    public const string BacklogSorted = "backlog.sorted";
     public const string ChangesViewed = "changes.viewed";
     public const string SearchPerformed = "search.performed";
     public const string CommentAdded = "comment.added";
@@ -65,6 +66,7 @@ public static class UsageEventNames
     public const string SprintCreated = "sprint.created";
     public const string SprintPlanned = "sprint.planned";
     public const string SprintUpdated = "sprint.updated";
+    public const string SprintDeleted = "sprint.deleted";
     public const string SprintCapacityChanged = "sprint.capacity_changed";
     public const string SprintEnded = "sprint.ended";
     public const string SprintRolledOver = "sprint.rolled_over";
@@ -105,6 +107,7 @@ public static class UsageEventNames
     public const string SprintDemoCreated = "sprint_demo.created";
     public const string SprintDemoYouTubeRetried = "sprint_demo.youtube_retried";
     public const string ProjectDemoSettingsChanged = "project_demo.settings_changed";
+    public const string IssueIntakeSettingsChanged = "issue_intake.settings_changed";
     public const string ProjectDemoBrandChanged = "project_demo.brand_changed";
     public const string ProjectYouTubeChanged = "project_youtube.changed";
     public const string BackupSettingsSaved = "backup.settings_saved";

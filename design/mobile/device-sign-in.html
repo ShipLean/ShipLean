@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ShipLean · Sign in the app (reference)</title>
+<!--
+  Reference confirm page for the phone app's browser handoff (SHIP-907 §4): /mobile/sign-in?challenge=…&state=…&device=…
+  The app opens it in the phone's system browser (iOS auth session sheet, Android Custom Tab). It needs a session:
+  with none, the person goes through /login?returnUrl=… first (sign-in.html?for=device shows that). Signed in, it asks
+  "Sign in to ShipLean on <device>?", says in words what that does (another app could start this flow), and either
+  posts the code and navigates to shiplean://signed-in?code=…&state=…, or Cancel navigates to
+  shiplean://signed-in?error=cancelled&state=…. The browser sheet closes itself on that navigation; the done states
+  below are only seen when the page was opened outside the app.
+  Same family as sign-in.html (SHIP-736): the bare 48px top bar, a top-aligned card, labels and a full-width primary.
+  The card's content follows the agent consent page (/authorize): who is asking, as whom, a warning, two buttons.
+  Open directly in a browser. Uses ../tokens.css only; no build step.
+  ?state=        (none) confirm · working · error · done · cancelled · missing · proxy · long
+  ?tab=ios|android   draws the system browser's chrome above the page (a review aid)
+  ?alt=shell     the alternative for D1: inside the app's shell (touch top bar with Menu), like /authorize
+  ?alt=side      the alternative for D4: Cancel and Sign in side by side in the footer, as on /authorize
+  ?theme=light|dark
+-->
+<link rel="stylesheet" href="../tokens.css">
+<script>
+  (() => {
+    const p = new URLSearchParams(window.SL_QUERY ?? location.search);
+    if (p.get('theme')) document.documentElement.dataset.theme = p.get('theme');
+    for (const a of p.getAll('alt')) document.documentElement.classList.add('alt-' + a);
+    if (p.get('tab')) document.documentElement.classList.add('tab-' + p.get('tab'));
+  })();
+</script>
+<style>
+:root { --touch-target: 32px; --mobile-bar-height: 48px; --auth-control: 40px; }
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; min-height: 100dvh; display: flex; flex-direction: column; background: var(--color-bg); color: var(--color-text); font: var(--text-base)/1.45 var(--font-sans); -webkit-font-smoothing: antialiased; }
+a { color: var(--color-accent); }
+b { font-weight: var(--weight-semibold); }
+
+/* The system browser around the page (?tab=): not part of the design, it shows where the page is seen. */
+.systab { display: none; flex: none; align-items: center; gap: 10px; height: 52px; padding: 0 10px; background: #f2f2f7; color: #000; border-bottom: 1px solid #c6c6c8; font: 15px -apple-system, system-ui, sans-serif; }
+:root[data-theme="dark"] .systab { background: #1c1c1e; color: #fff; border-color: #38383a; }
+:root.tab-ios .systab.ios, :root.tab-android .systab.android { display: flex; }
+.systab .host { flex: 1; min-width: 0; text-align: center; font-size: 13px; }
+.systab .host b { display: block; font-size: 15px; font-weight: 600; }
+.systab .host span { color: #6c6c70; }
+.systab .x { width: 40px; color: #007aff; font-size: 17px; }
+.systab.android { justify-content: flex-start; background: #fff; border-color: #dadce0; font-family: Roboto, system-ui, sans-serif; }
+:root[data-theme="dark"] .systab.android { background: #202124; border-color: #3c4043; }
+.systab.android .host { text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.systab.android .host b { overflow: hidden; text-overflow: ellipsis; }
+.systab.android .x { width: 32px; color: inherit; font-size: 20px; text-align: center; }
+.systab.android .dots { width: 24px; text-align: center; font-size: 18px; }
+
+/* Top bar: as sign-in.html (SHIP-736 D7). The mark and the instance's name, nothing to open. */
+.topbar { flex: none; display: flex; align-items: center; gap: var(--space-2); height: calc(var(--mobile-bar-height) + env(safe-area-inset-top)); padding: env(safe-area-inset-top) max(var(--space-4), env(safe-area-inset-right)) 0 max(var(--space-4), env(safe-area-inset-left)); background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.logo { flex: none; display: flex; align-items: center; gap: 7px; font-size: 16px; font-weight: 700; letter-spacing: -.01em; }
+.logo i { width: 18px; height: 18px; border-radius: 5px; background: var(--color-accent); display: inline-block; }
+.inst { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: var(--text-md); color: var(--color-muted); }
+.inst::before { content: "·"; margin-right: var(--space-2); }
+/* ?alt=shell: the app's touch top bar (SHIP-713): Menu, the page's name, Search. */
+.shellbar { display: none; }
+:root.alt-shell .topbar { display: none; }
+:root.alt-shell .shellbar { flex: none; display: flex; align-items: center; gap: var(--space-2); height: var(--mobile-bar-height); padding: 0 var(--space-2); background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.shellbar .ib { width: 40px; height: 40px; display: grid; place-items: center; border: 0; background: transparent; color: var(--color-text); font-size: 20px; }
+.shellbar .t { flex: 1; font-size: 16px; font-weight: var(--weight-semibold); }
+
+.stage { flex: 1; display: flex; flex-direction: column; align-items: center; padding: var(--space-4) max(var(--space-4), env(safe-area-inset-right)) calc(var(--space-5) + env(safe-area-inset-bottom)) max(var(--space-4), env(safe-area-inset-left)); }
+@media (min-width: 600px) { .stage { padding-top: clamp(24px, 10vh, 120px); } }
+
+.card { width: min(440px, 100%); display: flex; flex-direction: column; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-raised); }
+.card > h1 { margin: 0; padding: var(--space-4); border-bottom: 1px solid var(--color-border); font-size: var(--text-lg); line-height: 1.3; font-weight: var(--weight-semibold); overflow-wrap: anywhere; }
+.card > h1 small { display: block; margin-top: 3px; font-size: var(--text-base); font-weight: var(--weight-regular); color: var(--color-muted); }
+.card .body { display: grid; gap: var(--space-4); padding: var(--space-4); }
+.card > footer { display: grid; gap: var(--space-3); padding: var(--space-3) var(--space-4) var(--space-4); border-top: 1px solid var(--color-border); background: var(--color-bg); border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+.card > footer .note { font-size: var(--text-sm); color: var(--color-muted); text-align: center; }
+
+/* Who and where: the account and the server, as the consent page's Host line. */
+.facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px var(--space-3); align-items: start; margin: 0; font-size: var(--text-md); }
+.facts dt { color: var(--color-muted); line-height: 28px; }
+.facts dd { align-items: flex-start; }
+.facts dd { margin: 0; min-width: 0; display: flex; align-items: center; gap: var(--space-2); overflow-wrap: anywhere; }
+.facts dd .sub { display: block; font-size: var(--text-sm); color: var(--color-muted); }
+.av { flex: none; display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; color: #fff; font-size: 11px; font-weight: 700; }
+.dev { flex: none; width: 28px; height: 28px; display: inline-grid; place-items: center; border-radius: 7px; background: var(--color-surface-2); color: var(--color-muted); }
+.dev svg { width: 16px; height: 16px; }
+
+/* What it does: plain words, because another app could start this flow. */
+.does { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; font-size: var(--text-md); }
+.does li { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 6px; }
+.does li::before { content: "•"; color: var(--color-muted); text-align: center; }
+.does-h { margin: 0 0 -8px; font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--color-muted); text-transform: uppercase; letter-spacing: .04em; }
+
+/* Banners: as sign-in.html. warn is the consent page's WarnCallout. */
+.alert { padding: 10px 12px; border: 1px solid var(--color-border); border-left: 3px solid var(--color-danger); border-radius: var(--radius-sm); background: color-mix(in srgb, var(--color-danger) 9%, var(--color-surface)); font-size: var(--text-md); line-height: 1.45; }
+.alert.warn { border-left-color: var(--color-warn); background: color-mix(in srgb, var(--color-warn) 10%, var(--color-surface)); }
+.alert.info { border-left-color: var(--color-info); background: color-mix(in srgb, var(--color-info) 9%, var(--color-surface)); }
+.alert.ok { border-left-color: var(--color-ok); background: color-mix(in srgb, var(--color-ok) 9%, var(--color-surface)); }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); height: var(--auth-control); padding: 0 16px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); font: inherit; font-size: 15px; font-weight: var(--weight-medium, 500); text-decoration: none; cursor: pointer; }
+.btn.primary { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-fg); font-weight: var(--weight-semibold); }
+.btn.block { width: 100%; }
+.btn[disabled] { opacity: .55; cursor: default; }
+.btns { display: grid; gap: var(--space-2); }
+/* ?alt=side: the /authorize footer: Cancel and Sign in side by side, on the right. */
+:root.alt-side .btns { display: flex; justify-content: flex-end; }
+:root.alt-side .btns .btn { width: auto; height: 32px; font-size: var(--text-sm); }
+:root.alt-side .btns .btn.primary { order: 2; }
+.spin { width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+.empty { display: grid; justify-items: center; gap: var(--space-3); text-align: center; padding: var(--space-5) var(--space-4); }
+.empty h2 { margin: 0; font-size: 16px; }
+.empty p { margin: 0; font-size: var(--text-md); color: var(--color-muted); }
+.empty .ic { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; background: color-mix(in srgb, var(--color-ok) 14%, var(--color-surface)); color: var(--color-ok); }
+.empty .ic.muted { background: var(--color-surface-2); color: var(--color-muted); }
+.empty .ic svg { width: 22px; height: 22px; }
+</style>
+</head>
+<body>
+<div class="systab ios" aria-hidden="true"><span class="x">Cancel</span><span class="host"><b>Sign in</b><span>shiplean.larkspur.dev</span></span><span class="x" style="text-align:right">AA</span></div>
+<div class="systab android" aria-hidden="true"><span class="x">✕</span><span class="host"><b>Sign in the app · Larkspur Engineering</b><span>shiplean.larkspur.dev</span></span><span class="dots">⋮</span></div>
+<header class="topbar"><span class="logo"><i></i>ShipLean</span><span class="inst">Larkspur Engineering</span></header>
+<header class="shellbar"><button class="ib" aria-label="Menu">☰</button><span class="t">Sign in the app</span><button class="ib" aria-label="Search">⌕</button></header>
+<main class="stage" id="stage"></main>
+
+<script>
+(() => {
+  const p = new URLSearchParams(window.SL_QUERY ?? location.search);
+  const state = p.get('state') || '';
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const me = { name: 'Priya Shah', email: 'priya@larkspur.dev', color: '#2f7fd8', initials: 'PS' };
+  const host = 'shiplean.larkspur.dev';
+  // The name the app sent (expo-device's device name, trimmed, 1–100 characters). Shown as text, never trusted.
+  const device = state === 'long' ? 'Priya’s Samsung Galaxy Z Fold6 (work profile, the one with the cracked outer screen)' : 'Priya’s Pixel 9';
+  const phone = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="1.5" width="8" height="13" rx="1.8"/><path d="M7 12.2h2"/></svg>';
+  const tick = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  const cross = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg>';
+
+  const facts = `<dl class="facts">
+      <dt>As</dt><dd><span class="av" style="background:${me.color}">${me.initials}</span><span><b>${esc(me.name)}</b><span class="sub">${esc(me.email)}</span></span></dd>
+      <dt>On</dt><dd><span class="dev">${phone}</span><span><b>${esc(device)}</b><span class="sub">The name the app sent</span></span></dd>
+      <dt>To</dt><dd><span class="dev"><i style="width:12px;height:12px;border-radius:3px;background:var(--color-accent);display:block"></i></span><span><b>Larkspur Engineering</b><span class="sub">${host}</span></span></dd>
+    </dl>`;
+  const does = `<p class="does-h">What this does</p><ul class="does">
+      <li>The ShipLean app on that phone can see and change everything you can here.</li>
+      <li>It stays signed in until you sign it out, or until it goes 90 days unused.</li>
+      <li>Sign it out any time from Your profile › Signed-in devices.</li>
+    </ul>`;
+  const warn = '<div class="alert warn">Only sign in if you just tapped <b>Sign in</b> in the ShipLean app. If you didn’t, tap Cancel.</div>';
+  const working = state === 'working';
+  const buttons = `<div class="btns">
+      <button class="btn primary block" type="button"${working ? ' disabled' : ''}>${working ? '<span class="spin" aria-hidden="true"></span>Signing in…' : 'Sign in'}</button>
+      <button class="btn block" type="button"${working ? ' disabled' : ''}>Cancel</button></div>`;
+
+  const card = (h1, body, foot = '') => `<section class="card" aria-labelledby="h"><h1 id="h">${h1}</h1><div class="body">${body}</div>${foot ? `<footer>${foot}</footer>` : ''}</section>`;
+  const title = `Sign in to ShipLean on ${esc(device)}?<small>The ShipLean app wants to sign in as you</small>`;
+  let html;
+  if (state === 'missing') {
+    html = card('Sign in the app', '<p style="margin:0;font-size:var(--text-md);color:var(--color-muted)">This page opens from the ShipLean app. Start signing in there to get here.</p>',
+      '<span class="note">If you were signing in, go back to the app and tap Sign in again.</span>');
+  } else if (state === 'done') {
+    html = card('Sign in the app', `<div class="empty"><span class="ic">${tick}</span><h2>Signed in on ${esc(device)}</h2><p>Go back to the ShipLean app. If it didn’t open, open it yourself and tap Sign in again.</p><a class="btn block" href="#">Open the app</a></div>`);
+  } else if (state === 'cancelled') {
+    html = card('Sign in the app', `<div class="empty"><span class="ic muted">${cross}</span><h2>Nothing was signed in</h2><p>You can close this page.</p></div>`);
+  } else if (state === 'proxy') {
+    html = card(title, `${facts}<div class="alert info">The ShipLean app can’t sign in to ${host} yet: this server signs you in through your company’s sign-in page. Use ShipLean in your phone’s browser instead.</div>`,
+      `<div class="btns"><button class="btn primary block" type="button">Back to the app</button></div><span class="note">Your admin can tell you more.</span>`);
+  } else {
+    const err = state === 'error' ? '<div class="alert">Couldn’t reach ShipLean. Check your connection and try again.</div>' : '';
+    html = card(title, `${facts}${does}${warn}${err}`, buttons);
+  }
+  document.getElementById('stage').innerHTML = html;
+  document.title = 'Sign in the app · Larkspur Engineering';
+})();
+</script>
+</body>
+</html>

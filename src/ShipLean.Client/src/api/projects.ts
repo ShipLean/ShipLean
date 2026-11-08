@@ -139,6 +139,8 @@ export interface StateAdd {
   type: WorkItemTypeId;
   name: string;
   category: StateCategory;
+  /** Marks the state issue intake files new issues in; defaults to false on the server. */
+  isIntake?: boolean;
 }
 
 /** Rename and/or recategorise; the state keeps its id and items. */

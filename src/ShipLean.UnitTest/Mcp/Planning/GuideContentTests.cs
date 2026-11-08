@@ -83,6 +83,35 @@ public class GuideContentTests
     }
 
     [Test]
+    public void GuideContent_ShouldCoverEveryBreakdownWhateverItsSize()
+    {
+        Guide.ShouldContain("Use this for every breakdown of a Feature or Epic into stories and tasks, whatever its size");
+        Guide.ShouldNotContain("too big for one agent");
+    }
+
+    [Test]
+    public void GuideContent_ShouldOfferACostlyCiVariantThatPushesOnce()
+    {
+        Guide.ShouldContain("**Costly CI.**");
+        Guide.ShouldContain("which push variant of Step 6 applies");
+        PlanGuide.Read(PlanGuidePart.Brief).ShouldContain("costly CI variant");
+        PlanGuide.Read(PlanGuidePart.Fix).ShouldContain("costly CI variant");
+    }
+
+    [Test]
+    public void GuideContent_ShouldSayWhatToDoWithoutAReviewerFromAnotherFamily()
+    {
+        Guide.ShouldContain("If no model from another family is available");
+    }
+
+    [Test]
+    public void GuideContent_ShouldLetASmallPlanReuseRecentTestCommands()
+    {
+        Guide.ShouldContain("**Test commands.**");
+        Guide.ShouldContain("may be reused without a fresh run");
+    }
+
+    [Test]
     public void GuideContent_FixTemplate_ShouldReadTheReviewWithGetWorkItem()
     {
         var fix = PlanGuide.Read(PlanGuidePart.Fix);

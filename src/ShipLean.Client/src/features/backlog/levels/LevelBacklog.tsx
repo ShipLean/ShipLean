@@ -9,27 +9,40 @@ import { backlogTestIds as ids } from '../testIds';
 import { BacklogToolbar } from '../toolbar/BacklogToolbar';
 import type { LevelBacklogLevel, LevelColumnId } from './levelColumns';
 import { LevelTable } from './LevelTable';
+import { LevelTree } from './LevelTree';
+import { useColumnSort } from '../sort/useColumnSort';
 import { useLevelBacklog } from './useLevelBacklog';
 
 const FEATURE_KINDS: readonly NewItemKind[] = ['feature'];
 const EPIC_KINDS: readonly NewItemKind[] = ['epic'];
+const FEATURE_MODES = ['list', 'tree'] as const;
 
 // The Features or Epics backlog: the shared toolbar (with the level picker), the filter, and one row per Feature or Epic
-// with its progress, points and, on Epics, its Features count.
+// with its progress, points and, on Epics, its Features count. Features also have Tree mode (the List · Tree switch); Epics are
+// always a list.
 export function LevelBacklog({
   project,
   level,
+  mode = 'list',
 }: {
   project: ProjectDto;
   level: LevelBacklogLevel;
+  mode?: 'list' | 'tree';
 }) {
-  const state = useLevelBacklog(project, level);
+  const state = useLevelBacklog(project, level, mode);
   const [newFeatureOpen, setNewFeatureOpen] = useState(false);
   useNewItemFromLink(level === 'features' ? FEATURE_KINDS : EPIC_KINDS, (kind) => {
     if (kind === 'feature') setNewFeatureOpen(true);
     else state.setAdding(true);
   });
   const { backlog, view, refused, criteria, lists } = state;
+  const columns = state.specs.filter((c) => !view.hidden.includes(c.id)).map((c) => c.id);
+  const sort = useColumnSort(
+    project.id,
+    level === 'features' ? 'featuresBacklog' : 'epicsBacklog',
+    state.rows,
+    columns,
+  );
 
   if ((backlog.isError && refused === null) || view.failed) {
     return (
@@ -47,14 +60,14 @@ export function LevelBacklog({
     );
   }
 
-  const columns = state.specs.filter((c) => !view.hidden.includes(c.id)).map((c) => c.id);
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <BacklogToolbar
         projectKey={project.key}
         level={level}
-        mode="list"
-        modes={[]}
+        mode={mode}
+        modes={level === 'features' ? FEATURE_MODES : []}
+        triage={state.triage}
         onNewItem={() => (level === 'features' ? setNewFeatureOpen(true) : state.setAdding(true))}
         newItemLabel={level === 'features' ? '+ New Feature' : undefined}
         includeCompleted={state.includeCompleted}
@@ -83,17 +96,29 @@ export function LevelBacklog({
           lists={lists}
         />
       ) : null}
-      <LevelTable
-        rows={state.rows}
-        columns={columns as LevelColumnId[]}
-        specs={state.specs}
-        level={level}
-        projectId={project.id}
-        projectKey={project.key}
-        adding={state.adding}
-        onCloseAdd={() => state.setAdding(false)}
-        filtered={state.filtering}
-      />
+      {mode === 'tree' ? (
+        <LevelTree
+          rows={state.rows}
+          columns={columns as LevelColumnId[]}
+          specs={state.specs}
+          projectKey={project.key}
+          filtered={state.filtering}
+        />
+      ) : (
+        <LevelTable
+          rows={sort.rows}
+          columns={columns as LevelColumnId[]}
+          specs={state.specs}
+          level={level}
+          projectId={project.id}
+          projectKey={project.key}
+          adding={state.adding}
+          onCloseAdd={() => state.setAdding(false)}
+          filtered={state.filtering}
+          sort={sort.sort}
+          onSort={sort.onSort}
+        />
+      )}
       {newFeatureOpen ? (
         <NewFeatureDialog project={project} onClose={() => setNewFeatureOpen(false)} />
       ) : null}

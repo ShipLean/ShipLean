@@ -1,5 +1,7 @@
 import type { BacklogRowDto } from '../../../api/views';
 import type { ColumnSpec } from '../backlogApi';
+import type { ColumnSort } from '../sort/columnSort';
+import { SortableHeader } from '../sort/SortableHeader';
 import { backlogTestIds as ids } from '../testIds';
 import type { LevelBacklogLevel, LevelColumnId } from './levelColumns';
 import { LevelNewItemRow } from './LevelNewItemRow';
@@ -27,6 +29,8 @@ export function LevelTable({
   adding,
   onCloseAdd,
   filtered,
+  sort,
+  onSort,
 }: {
   rows: BacklogRowDto[];
   columns: readonly LevelColumnId[];
@@ -38,6 +42,9 @@ export function LevelTable({
   onCloseAdd: () => void;
   // A filter is on: an empty list means nothing matches it.
   filtered: boolean;
+  // The column the rows are sorted by (null = rank order), and what a click on a column title does.
+  sort: ColumnSort;
+  onSort: (column: string) => void;
 }) {
   return (
     <div data-testid={ids.list} className="flex-1 overflow-auto">
@@ -45,15 +52,16 @@ export function LevelTable({
         <thead>
           <tr className="h-8 border-b border-edge text-left text-[length:var(--text-xs)] text-ink-muted">
             {columns.map((column) => (
-              <th
+              <SortableHeader
                 key={column}
-                data-testid={ids.columnHeader}
-                data-column={column}
-                className={`px-2 font-semibold ${numeric.includes(column) ? 'text-right' : ''}`}
-                style={{ width: widths[column] }}
+                column={column}
+                sort={sort}
+                onSort={onSort}
+                numeric={numeric.includes(column)}
+                width={widths[column]}
               >
                 {specs.find((c) => c.id === column)?.label}
-              </th>
+              </SortableHeader>
             ))}
           </tr>
         </thead>

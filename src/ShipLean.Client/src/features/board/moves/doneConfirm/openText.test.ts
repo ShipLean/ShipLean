@@ -2,9 +2,9 @@ import { expect, test } from 'vitest';
 import { boardOfChildren, openText } from './openText';
 
 const rollups = [
-  { type: 'feature' as const, open: 1, closed: 0 },
-  { type: 'story' as const, open: 2, closed: 1 },
-  { type: 'bug' as const, open: 1, closed: 3 },
+  { type: 'feature' as const, open: 1, closed: 0, inCurrentSprint: 0, inOtherSprint: 0 },
+  { type: 'story' as const, open: 2, closed: 1, inCurrentSprint: 0, inOtherSprint: 0 },
+  { type: 'bug' as const, open: 1, closed: 3, inCurrentSprint: 0, inOtherSprint: 0 },
 ];
 
 test('openText_WhenSeveralTypesAreOpenOnFeatures_ShouldCountEachByType', () => {
@@ -16,11 +16,21 @@ test('openText_WhenSeveralTypesAreOpenOnEpics_ShouldListFeaturesFirst', () => {
 });
 
 test('openText_WhenOneTypeHasOneOpen_ShouldUseTheSingular', () => {
-  expect(openText([{ type: 'story', open: 1, closed: 0 }], 'features')).toBe('1 story');
+  expect(
+    openText(
+      [{ type: 'story', open: 1, closed: 0, inCurrentSprint: 0, inOtherSprint: 0 }],
+      'features',
+    ),
+  ).toBe('1 story');
 });
 
 test('openText_WhenNothingIsOpen_ShouldBeEmpty', () => {
-  expect(openText([{ type: 'story', open: 0, closed: 4 }], 'features')).toBe('');
+  expect(
+    openText(
+      [{ type: 'story', open: 0, closed: 4, inCurrentSprint: 0, inOtherSprint: 0 }],
+      'features',
+    ),
+  ).toBe('');
 });
 
 test('boardOfChildren_WhenEpics_ShouldBeTheFeaturesBoard', () => {
@@ -29,7 +39,10 @@ test('boardOfChildren_WhenEpics_ShouldBeTheFeaturesBoard', () => {
 });
 
 test('openText_WhenActionItemsAreOpen_ShouldCountThemAfterBugs', () => {
-  const withAction = [...rollups, { type: 'action' as const, open: 2, closed: 0 }];
+  const withAction = [
+    ...rollups,
+    { type: 'action' as const, open: 2, closed: 0, inCurrentSprint: 0, inOtherSprint: 0 },
+  ];
   expect(openText(withAction, 'features')).toBe(
     '2 stories, 1 bug, 2 action items and 1 nested Feature',
   );

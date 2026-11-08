@@ -6,16 +6,27 @@ Work through the numbered steps in order. Commands are meant to be pasted. Every
 
 ## 1. What to make
 
-One video: an intro, then one chapter per Feature in the data, then a short **Also this sprint** section, then a closing **What we'll measure**.
+One video: an intro, then one chapter per Feature in the data, then an **Other work** chapter when `otherWork` has items, then a short **Also this sprint** section, then a closing **What we'll measure**.
 
-- **Intro:** the sprint name and goal, the dates, the presenters (step 2), and one slide for `otherWork`. Say that all data on screen is made up. The title slide says the presenters are synthetic voices.
+- **Intro:** the sprint name and goal, the dates and the presenters (step 2). Mention `otherWork` in one line: how many stories and bugs have no Feature, shown later under Other work. Say that all data on screen is made up. The title slide says the presenters are synthetic voices.
 - **Each Feature**, in this order: why, before and after, a walkthrough clip, the implementation, how the agents built it (waves, review rounds, journeys, from `plan` and the stories), its retro items, its measure.
+- **A Feature with more than one item in its `stories` opens with its own title slide**: the Feature's title and key, alone on the slide, before its why.
+- **Other work:** for `otherWork`, after the Features and before Also this sprint. Each bug gets a before and after. Each story gets one spoken line, or a before and after if it changed something visible.
 - **Also this sprint:** the sprint's own retro points (`sprintRetro`) and the `actionItems`.
 - **What we'll measure:** every Feature's stated measure, one after another.
 
 **The data is enough: work from it.** You don't need to open any item. If you open one anyway, its comments, reports and any failure log are raw working material and never go in the script, a chapter, a slide or the narration. Numbers come from the data, or from an item you read.
 
 If `truncated` is true, say in the intro that the sprint was summarised.
+
+### Before and after, item by item
+
+A sprint can hold dozens of items. Keep each before next to its own after, so the viewer can connect them. Count the items in a Feature's `stories` whose `type` is `story`:
+
+- **3 stories or fewer:** one before and after for the whole Feature.
+- **More than 3 stories:** inside the Feature's chapter, show each story's before and then its after, back to back, in the order `stories` lists them. A story with no visible change (contracts, skeleton, tests, docs) gets one spoken line and no before and after.
+- **Every bug gets its own before and after**, the broken behaviour then the fix: inside its Feature's chapter, or under Other work when it has no Feature.
+- **Keep each pair short:** one before shot and one after shot, about 10 to 20 seconds a pair.
 
 ## 2. Presenters
 
@@ -24,7 +35,7 @@ Three named presenters, all synthetic voices.
 | Presenter | Voice | lang | Sections |
 |---|---|---|---|
 | Ann | `af_heart` | `en-us` | the intro, each Feature's why and its measure, the closing measure |
-| Keith | `bm_george` | `en-gb` | before and after, the clip, the implementation |
+| Keith | `bm_george` | `en-gb` | before and after, the clip, the implementation, Other work |
 | Becky | `bf_emma` | `en-gb` | how the agents built it, the retro items, Also this sprint |
 
 Each presenter introduces themselves once, the first time they speak ("I'm Keith"). Each section ends with a spoken handover to the next presenter, for example "I'll pass over to Keith for the implementation". **A handover is its own narration segment**, so the screen doesn't move while it is said. Keep one slide up for it. When the next section is the same presenter's, there is no handover.
@@ -91,14 +102,14 @@ for f in s*.wav; do $FF -hide_banner -v error -y -i "$f" -af loudnorm=I=-16:TP=-
 
 ## 8. The clip
 
-For each Feature, record one walkthrough with Playwright (`recordVideo`, 1280x720) against the local instance from step 5, scripted from the Feature's page and its stories (and their criteria, where the data has them). Sign in before you start recording, so the clip never shows the sign-in:
+For each Feature, and for Other work, record one walkthrough with Playwright (`recordVideo`, 1280x720) against the local instance from step 5, scripted from the Feature's page and its stories (and their criteria, where the data has them). Sign in before you start recording, so the clip never shows the sign-in:
 
 - An init script draws a visible cursor. Slow every action down. Zoom only at key moments.
 - Each segment acts, then waits out its narration (from `durations.json`), and writes its start time to `marks.json`, in seconds since the recording page was created. That number is the `-ss` of its clip segment in step 11.
 - **Wait until the app answers before you act** (a known search returns results). Never act on a blank page.
 - **The clip shows the local copy, not the data above.** The copy holds the standard seed, so a clip can lack what the data lists (a `why`, tasks) or hold more (other stories). Narrate only what the clip shows, and say in the intro that the clips come from a separate seeded copy. Names of people shown in the app are made-up seed data: never read them out.
 - Use `data-testid` locators. Opening an item can lay its page over the one underneath, so scope each locator to the part you mean.
-- Before and after: if "before" can't be shown, say so in the narration and skip it.
+- Before and after: if "before" can't be shown, say so in the narration and skip it. Record an item's before and after as consecutive segments, so they play back to back.
 
 ```js
 // Pass this string to context.addInitScript (any language) before any page loads. It runs itself: a bare function would only be defined.
@@ -175,7 +186,7 @@ Write `chapters.json` with the same chapters:
 { "durationSeconds": 142.6, "chapters": [ { "title": "Intro", "startSeconds": 0 }, { "title": "A Feature's title", "startSeconds": 15.2, "featureKey": "KEY-1" } ] }
 ```
 
-The first chapter starts at 0, starts ascend strictly, each is below `durationSeconds`, titles are 1 to 200 characters, and a Feature's chapter carries its `featureKey`. `script.md` holds every narrated line under its chapter, with the presenter's name on each.
+The first chapter starts at 0, starts ascend strictly, each is below `durationSeconds`, titles are 1 to 200 characters, and a Feature's chapter carries its `featureKey`. The Other work chapter has no `featureKey`, and there are no chapters per story or bug. `script.md` holds every narrated line under its chapter, with the presenter's name on each. Inside a chapter, a story or bug with its own lines gets its key and title as a heading above them.
 
 ## 12. Check before you upload
 

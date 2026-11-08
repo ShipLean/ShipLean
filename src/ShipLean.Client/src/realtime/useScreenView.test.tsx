@@ -1,16 +1,24 @@
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { beforeEach, expect, test, vi } from 'vitest';
-import type { RouteId } from '../routes';
+import type { BacklogMode, RouteId } from '../routes';
 
 const postScreenView =
-  vi.fn<(body: { screen: string; projectId: string | null }) => Promise<void>>();
+  vi.fn<(body: { screen: string; projectId: string | null; mode?: string }) => Promise<void>>();
 vi.mock('../api/usageApi', () => ({ postScreenView }));
 
 const { useScreenView } = await import('./useScreenView');
 
-function Probe({ routeId, projectId }: { routeId: RouteId; projectId: string | null }) {
-  useScreenView(routeId, projectId);
+function Probe({
+  routeId,
+  projectId,
+  mode,
+}: {
+  routeId: RouteId;
+  projectId: string | null;
+  mode?: BacklogMode;
+}) {
+  useScreenView(routeId, projectId, mode);
   return null;
 }
 
@@ -39,6 +47,20 @@ test('useScreenView_WhenRouteChanges_ShouldPostAgain', () => {
   act(() => root.render(<Probe routeId="capacity" projectId="p2" />));
   expect(postScreenView).toHaveBeenCalledTimes(3);
   expect(postScreenView).toHaveBeenLastCalledWith({ screen: 'capacity', projectId: 'p2' });
+  act(() => root.unmount());
+});
+
+test('useScreenView_WhenBacklogModeChanges_ShouldPostAgainWithTheMode', () => {
+  const root = createRoot(document.createElement('div'));
+  act(() => root.render(<Probe routeId="featuresBacklog" projectId="p1" mode="list" />));
+  act(() => root.render(<Probe routeId="featuresBacklog" projectId="p1" mode="tree" />));
+  act(() => root.render(<Probe routeId="featuresBacklog" projectId="p1" mode="tree" />));
+  expect(postScreenView).toHaveBeenCalledTimes(2);
+  expect(postScreenView).toHaveBeenLastCalledWith({
+    screen: 'featuresBacklog',
+    projectId: 'p1',
+    mode: 'tree',
+  });
   act(() => root.unmount());
 });
 
