@@ -41,6 +41,8 @@ public class IssueIntakeSettingsHttpTests : ApiFixture
         await using (var database = await OpenDatabaseAsync())
         {
             await ArrangeIntakeAsync(database, project, "https://github.com/ShipLean/ShipLean", withConnection: true);
+            // The pinned body has no photo, and seeded Priya has one; this fixture's database is its own.
+            await database.ExecuteAsync("UPDATE app_user SET avatar_photo_blob = NULL WHERE id = @priya", new { priya = SeedIds.Users.Priya });
             await database.ExecuteAsync(
                 "INSERT INTO project_issue_intake (project_id, enabled, repository, run_as_user_id) VALUES (@id, true, 'ShipLean/ShipLean', @priya)",
                 new { id = project.Id, priya = SeedIds.Users.Priya });
@@ -252,7 +254,7 @@ public class IssueIntakeSettingsHttpTests : ApiFixture
     public async Task Put_WhenMember_ShouldBeForbidden()
     {
         var project = await ArrangeAsync();
-        var save = new { enabled = true, runAsUserId = (Guid?)null, proposalInstructions = "", maxRounds = 5 };
+        var save = new { enabled = false, runAsUserId = (Guid?)null, proposalInstructions = "", maxRounds = 5 };
 
         using var refused = await Api.ActingAs(TestUser.Priya).PutJsonAsync(PathOf(project), save);
         using var saved = await Api.PutJsonAsync(PathOf(project), save);
