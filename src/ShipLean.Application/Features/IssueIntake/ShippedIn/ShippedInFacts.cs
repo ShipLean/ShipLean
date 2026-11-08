@@ -44,7 +44,10 @@ public sealed partial class ShippedInFacts(NpgsqlDataSource dataSource, IImagePu
         {
             var pull = PullKey().Match(row.UrlKey);
             var sha = row.MergeSha.Trim().ToLowerInvariant();
-            if (!pull.Success || !Sha().IsMatch(sha) || facts.Exists(f => f.MergeCommitSha == sha && f.Key == row.Key))
+            if (!pull.Success
+                || !int.TryParse(pull.Groups["number"].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var number)
+                || !Sha().IsMatch(sha)
+                || facts.Exists(f => f.MergeCommitSha == sha && f.Key == row.Key))
             {
                 continue;
             }
@@ -52,7 +55,7 @@ public sealed partial class ShippedInFacts(NpgsqlDataSource dataSource, IImagePu
             var repository = $"{pull.Groups["owner"].Value}/{pull.Groups["repo"].Value}";
             var publication = await publications.FindAsync(new IssueRef(IssueRef.GitHubHost, repository, 0), sha, cancellationToken);
             facts.Add(new ShippedFact(
-                row.Key, repository, int.Parse(pull.Groups["number"].Value, CultureInfo.InvariantCulture), sha, row.MergedAt.ToUniversalTime(), publication));
+                row.Key, repository, number, sha, row.MergedAt.ToUniversalTime(), publication));
         }
 
         return facts;
@@ -61,7 +64,7 @@ public sealed partial class ShippedInFacts(NpgsqlDataSource dataSource, IImagePu
     [GeneratedRegex(@"^[A-Z][A-Z0-9]{0,9}-[0-9]{1,9}$", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 1000)]
     private static partial Regex ItemKey();
 
-    [GeneratedRegex(@"^github\.com/(?<owner>[A-Za-z0-9-]+)/(?<repo>[A-Za-z0-9._-]+)/pull/(?<number>[0-9]{1,9})$", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 1000)]
+    [GeneratedRegex(@"^github\.com/(?<owner>[A-Za-z0-9-]+)/(?<repo>[A-Za-z0-9._-]+)/pull/(?<number>[0-9]{1,10})$", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 1000)]
     private static partial Regex PullKey();
 
     [GeneratedRegex("^[0-9a-f]{7,40}$", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 1000)]
