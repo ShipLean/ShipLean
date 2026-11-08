@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Decisions and questions (reference)</title>
+<!--
+  SHIP-922 design: the Decisions and questions section on the work item page. A Story (SHIP-141) or a Feature
+  (SHIP-101, ?state=feature) with the decisions agents recorded (D1, D2…) and the questions they asked (Q1, Q2…),
+  stored on the item and answered here.
+  Open directly in a browser. Uses ../tokens.css, shiplean.css and shared.js; no build step. The rest of the page is a
+  trimmed copy of work-item.html and feature.html, only so the section sits in context.
+  Rules shown: an ask is for the item's owner (the assignee, or the creator when nobody is assigned); anyone who can
+  edit the item can answer; an open decision stands as recommended; a change after a decision was settled posts a
+  comment; nothing is deleted (withdrawn decisions stay listed).
+  Joel's answers (9 Nov): D6 alternative, so a remote agent session's elicitation stays in the agent panel and only
+  the ask tool raises a Question; UI2 no "Waiting on" chip in the item header; UI9 an item with none shows the
+  section with an empty line; UI10 every ask event is also a line in the History rail.
+  Working: Confirm, Confirm all recommended, Change (pick an alternative or write your own, optional note), Discuss
+  (a comment quoting the decision), Reply to a question (posts the answer to Discussion), ⋯ › Withdraw, History under
+  a decision, fold and unfold.
+  ?state=waiting (default) | other | unassigned | change | settled-change | history | reply | discuss | answered |
+  folded | empty | feature opens those states. At 900px and below the page is the SHIP-714 touch layout (item-touch.css,
+  item-touch.js) with the phone rules of SHIP-805. Phone review aids: ?menu=<n> opens D<n>'s ⋯ action sheet, and with
+  ?shot, ?from=D3|Q1 hides what is above that row (Chrome's --screenshot ignores scrolling); ?at=<section> as in
+  item-touch.js. The Preview panel bottom-left is a review aid (hide it with ?shot).
+-->
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="shiplean.css">
+<script src="shared.js"></script>
+<style>
+[hidden] { display: none !important; }
+/* Header and field strip: as on work-item.html */
+.wi-head { flex: none; display: grid; gap: 2px; padding: var(--space-2) var(--space-4); background: var(--color-surface); border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.wi-top { display: flex; align-items: center; gap: var(--space-2); min-height: 20px; }
+.back { color: var(--color-muted); text-decoration: none; font-size: var(--text-sm); }
+.wi-title { display: flex; align-items: center; gap: var(--space-2); min-height: 36px; }
+.ident { display: inline-flex; align-items: center; gap: 6px; flex: none; }
+.ident .key { font-size: var(--text-sm); color: var(--color-text); }
+.title-in { flex: 1; min-width: 0; height: 34px; margin-left: 2px; padding: 0 6px; border: 1px solid transparent; border-radius: var(--radius-sm); background: transparent; font-size: var(--text-lg); font-weight: var(--weight-semibold); }
+.save-state { font-size: var(--text-sm); color: var(--color-muted); white-space: nowrap; }
+.btn:disabled { opacity: .45; cursor: default; filter: none; }
+.btn.tiny { height: 22px; padding: 0 7px; font-size: var(--text-xs); }
+.fields { flex: none; display: flex; padding: 0 var(--space-2); background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.fcell { flex: none; display: grid; align-content: center; gap: 2px; min-height: 54px; padding: 6px var(--space-3) 6px var(--space-2); border-right: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.fcell:last-child { border-right: 0; }
+.fcell.grow { flex: 1 1 0; min-width: 160px; }
+.lbl { font-size: var(--text-2xs); font-weight: var(--weight-semibold); color: var(--color-muted); text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
+.fval { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-sm); white-space: nowrap; min-height: var(--control-height); }
+.tags { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.slug { font-family: var(--font-mono); font-size: var(--text-xs); padding: 1px 6px; border-radius: var(--radius-xs); background: var(--color-surface-2); }
+.wait-chip { text-decoration: none; color: var(--color-text); gap: 5px; }
+.wait-chip:hover { filter: brightness(1.05); text-decoration: underline; }
+.wait-chip .av { width: 16px; height: 16px; font-size: 7px; }
+
+/* Body */
+.wi-split { grid-template-columns: minmax(0, 1fr) calc(var(--rail-width) + 72px); }
+.wi-main { background: var(--color-surface); position: relative; }
+.sec { display: grid; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.sec:last-child { border-bottom: 0; }
+.sec-h { display: flex; align-items: center; gap: var(--space-2); min-height: 24px; flex-wrap: wrap; }
+.sec-h h2 { margin: 0; font-size: var(--text-md); font-weight: var(--weight-semibold); }
+.cnt { font-size: var(--text-xs); color: var(--color-muted); font-variant-numeric: tabular-nums; }
+.goal { padding: var(--space-3) var(--space-4); border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.goal p { margin: 2px 0 0; max-width: 780px; font-size: var(--text-md); line-height: 1.5; }
+.md { max-width: 780px; font-size: var(--text-base); }
+.md p { margin: 0 0 6px; }
+.md ul { margin: 0 0 6px; padding-left: 20px; }
+.md code { padding: 0 4px; border-radius: var(--radius-xs); background: var(--color-surface-2); font-size: var(--text-xs); }
+.crit { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; max-width: 780px; font-size: var(--text-sm); }
+.crit li { display: flex; gap: 8px; align-items: baseline; }
+.crit input { margin: 0; accent-color: var(--color-accent); }
+.box { border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+.av.agent { background: var(--color-surface-2); color: var(--color-text); border: 1px solid var(--color-border); }
+.chip.agent { height: 16px; font-size: var(--text-2xs); background: color-mix(in srgb, var(--color-purple) 16%, transparent); }
+
+/* ── The Decisions and questions section (SHIP-922) ─────────────────────────────── */
+.asks { display: grid; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); border-left: 3px solid transparent; scroll-margin-top: 8px; }
+.asks.waiting { border-left-color: var(--color-warn); background: color-mix(in srgb, var(--color-warn) 5%, var(--color-surface)); }
+.asks.folded { padding-top: var(--space-2); padding-bottom: var(--space-2); border-left-color: var(--state-completed); }
+.asks .sec-h .summary { font-size: var(--text-sm); color: var(--color-muted); }
+.asks .sec-h .summary b { color: var(--color-text); font-weight: var(--weight-medium); }
+.fold { width: 22px; height: 22px; font-size: var(--text-xs); color: var(--color-muted); }
+.asks-body { display: grid; gap: var(--space-3); max-width: 940px; }
+.agrp { display: grid; gap: 4px; }
+.agrp-h { display: flex; align-items: center; gap: 6px; min-height: 18px; }
+.agrp-h .hint { font-size: var(--text-xs); color: var(--color-muted); }
+.alist { list-style: none; margin: 0; padding: 0; display: grid; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+.ar { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 2px var(--space-2); align-items: start; padding: 8px var(--space-2) 8px var(--space-2); border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.ar:first-child { border-top: 0; }
+.ar.fresh { animation: flash 1.8s ease-out; }
+.num { grid-row: 1 / span 3; display: grid; place-items: center; width: 28px; height: 20px; margin-top: 1px; border: 1px solid var(--color-border); border-radius: var(--radius-xs); background: var(--color-surface); font: var(--weight-semibold) var(--text-2xs)/1 var(--font-mono); color: var(--color-muted); }
+.ar.open .num { border-color: color-mix(in srgb, var(--color-warn) 70%, var(--color-border)); background: color-mix(in srgb, var(--color-warn) 14%, var(--color-surface)); color: var(--color-text); }
+.ar .q { font-size: var(--text-sm); font-weight: var(--weight-semibold); line-height: 1.4; }
+.ar .ans { grid-column: 2; display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 6px; font-size: var(--text-sm); line-height: 1.45; }
+.ar .ans .k { font-size: var(--text-2xs); font-weight: var(--weight-semibold); color: var(--color-muted); text-transform: uppercase; letter-spacing: .05em; }
+.ar .ans .v { min-width: 0; }
+.ar .by { grid-column: 2; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; font-size: var(--text-xs); color: var(--color-muted); }
+.ar .by .av { width: 16px; height: 16px; font-size: 7px; }
+.ar .by a { color: var(--color-muted); }
+.ar .by a:hover { color: var(--color-accent); }
+.ar .acts { grid-column: 3; grid-row: 1 / span 2; display: flex; align-items: center; gap: 4px; }
+.ar .acts .pop-wrap { position: relative; display: inline-flex; }
+.chip.rec { height: 16px; font-size: var(--text-2xs); background: var(--color-accent-soft); }
+.chip.sm { height: 18px; font-size: var(--text-2xs); }
+.ar.withdrawn .q, .ar.withdrawn .ans .v { color: var(--color-muted); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--color-muted) 55%, transparent); font-weight: var(--weight-regular); }
+.answer { grid-column: 2 / -1; display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 6px; margin-top: 2px; padding: 6px var(--space-2); border-left: 2px solid var(--state-completed); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; background: var(--color-bg); font-size: var(--text-sm); }
+.answer .av { width: 16px; height: 16px; font-size: 7px; }
+.answer .meta { display: block; font-size: var(--text-xs); color: var(--color-muted); }
+/* Under a decision: its history */
+.hist { grid-column: 2 / -1; list-style: none; margin: 4px 0 0; padding: 0 0 0 2px; display: grid; gap: 0; }
+.hist li { position: relative; display: grid; gap: 1px; padding: 0 0 6px 18px; font-size: var(--text-xs); }
+.hist li::before { content: ""; position: absolute; left: 4px; top: 5px; width: 7px; height: 7px; border-radius: 50%; background: var(--color-border); }
+.hist li::after { content: ""; position: absolute; left: 7px; top: 14px; bottom: 0; width: 1px; background: var(--color-border); }
+.hist li:last-child::after { display: none; }
+.hist li.changed::before { background: var(--color-accent); }
+.hist li.confirmed::before { background: var(--color-ok); }
+.hist li.withdrawn::before { background: var(--color-muted); }
+.hist .what { color: var(--color-text); }
+.hist .when { color: var(--color-muted); }
+.hist .note { color: var(--color-muted); font-style: italic; }
+.hist .from { color: var(--color-muted); text-decoration: line-through; }
+.htoggle { border: 0; background: none; padding: 0; font: inherit; font-size: var(--text-xs); color: var(--color-muted); cursor: pointer; }
+.htoggle:hover { color: var(--color-accent); text-decoration: underline; }
+/* Inline editors: Change, Reply, Discuss */
+.ed { grid-column: 2 / -1; display: grid; gap: 6px; margin-top: 6px; padding: var(--space-2) var(--space-3); background: var(--color-bg); border: 1px solid var(--color-accent); border-radius: var(--radius-md); }
+.ed .opts { display: grid; gap: 4px; }
+.ed label.o { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; gap: 8px; align-items: start; padding: 6px var(--space-2); border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); font-size: var(--text-sm); cursor: pointer; }
+.ed label.o:has(input:checked) { border-color: var(--color-accent); background: var(--color-accent-soft); }
+.ed label.o input { margin: 3px 0 0; accent-color: var(--color-accent); }
+.ed label.o .tagline { font-size: var(--text-2xs); color: var(--color-muted); white-space: nowrap; padding-top: 2px; }
+.ed textarea.field { width: 100%; height: auto; min-height: 52px; padding: 6px 8px; resize: vertical; }
+.ed input.field { width: 100%; }
+.ed .flab { font-size: var(--text-xs); color: var(--color-muted); font-weight: var(--weight-medium); }
+.ed .row { flex-wrap: wrap; }
+.quote { margin: 0; padding: 4px var(--space-2); border-left: 2px solid var(--color-border); color: var(--color-muted); font-size: var(--text-sm); }
+.quote b { color: var(--color-text); font-weight: var(--weight-semibold); }
+/* Feature roll-up (D10) */
+.roll > li { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto auto; gap: var(--space-2); align-items: center; min-height: 34px; padding: 4px var(--space-2); border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); font-size: var(--text-sm); }
+.roll > li:first-child { border-top: 0; }
+.roll .t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text); text-decoration: none; }
+.roll a.t:hover { color: var(--color-accent); text-decoration: underline; }
+.roll .ow { display: inline-flex; align-items: center; gap: 5px; font-size: var(--text-xs); color: var(--color-muted); white-space: nowrap; }
+.roll .ow .av { width: 16px; height: 16px; font-size: 7px; }
+.roll .c { display: inline-flex; gap: 4px; }
+/* Menus */
+.menu { position: absolute; top: calc(100% + 4px); right: 0; z-index: 30; min-width: 240px; padding: var(--space-1); display: grid; gap: 1px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-raised); }
+.menu .opt { display: flex; align-items: center; gap: var(--space-2); height: 28px; padding: 0 var(--space-2); border: 0; border-radius: var(--radius-sm); background: none; font-size: var(--text-sm); text-align: left; cursor: pointer; white-space: nowrap; }
+.menu .opt:hover { background: var(--color-accent-soft); }
+.menu .foot { padding: 6px var(--space-2) 2px; margin-top: 2px; border-top: 1px solid var(--color-border); font-size: var(--text-xs); color: var(--color-muted); white-space: normal; }
+
+/* Discussion */
+.comments { list-style: none; margin: 0; padding: 0; display: grid; max-width: 780px; }
+.cm { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: var(--space-2); padding: var(--space-2) 0; border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.cm:first-child { border-top: 0; padding-top: 0; }
+.cm-h { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); flex-wrap: wrap; }
+.cm-h b { font-weight: var(--weight-semibold); }
+.cm .md { font-size: var(--text-sm); }
+.cm .quote { margin-bottom: 4px; }
+.cm.fresh { animation: flash 1.8s ease-out; }
+.cm-new { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: var(--space-2); max-width: 780px; padding-top: var(--space-2); }
+.cm-new textarea { width: 100%; min-height: 44px; height: auto; padding: 6px 8px; }
+
+/* Rail */
+.wi-side { gap: var(--space-4); }
+.sec-h2 { display: flex; align-items: center; gap: 6px; min-height: 22px; }
+.lst { list-style: none; margin: 0; padding: 0; display: grid; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+.lst > li { display: flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 6px 0 var(--space-2); border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); font-size: var(--text-sm); }
+.lst > li:first-child { border-top: 0; }
+.lst .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text); text-decoration: none; }
+.lst .meta { font-size: var(--text-xs); color: var(--color-muted); white-space: nowrap; }
+.ext.md { font: 700 8px/1 var(--font-mono); color: var(--color-text); border: 1px solid var(--color-border); border-radius: var(--radius-xs); padding: 2px 3px; background: var(--color-surface-2); }
+.revs { list-style: none; margin: 0; padding: 0; display: grid; }
+.rev { position: relative; padding: 0 0 var(--space-3) 30px; }
+.rev::before { content: ""; position: absolute; left: 10px; top: 22px; bottom: 2px; width: 1px; background: var(--color-border); }
+.rev:last-child { padding-bottom: 0; }
+.rev:last-child::before { display: none; }
+.revno.ask { width: 26px; left: -2px; border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-border)); color: var(--color-text); }
+.revno.ask.confirmed { border-color: color-mix(in srgb, var(--color-ok) 60%, var(--color-border)); }
+.revno.ask.withdrawn { border-style: dashed; color: var(--color-muted); }
+.revno { position: absolute; left: 0; top: 0; width: 21px; height: 20px; display: grid; place-items: center; border: 1px solid var(--color-border); border-radius: var(--radius-xs); background: var(--color-surface); font: var(--weight-semibold) var(--text-2xs)/1 var(--font-mono); color: var(--color-muted); }
+.rev-h { display: flex; align-items: center; gap: 6px; min-height: 20px; font-size: var(--text-sm); flex-wrap: wrap; }
+.rev-h b { font-weight: var(--weight-medium); }
+.diffs { list-style: none; margin: 2px 0 0; padding: 0; display: grid; gap: 1px; font-size: var(--text-xs); }
+.diffs .f { color: var(--color-muted); margin-right: 4px; }
+@keyframes flash { 0%, 30% { background: color-mix(in srgb, var(--color-warn) 22%, transparent); } 100% { background: transparent; } }
+
+@media (max-width: 900px) {
+  .wi-split { grid-template-columns: minmax(0, 1fr); }
+  .wi-top, .wi-title { flex-wrap: wrap; }
+  .title-in { flex-basis: 100%; order: 5; margin-left: -6px; }
+  .fields { flex-wrap: wrap; }
+  .fcell { border-right: 0; }
+  .asks, .sec, .goal { padding-left: var(--space-3); padding-right: var(--space-3); }
+  .ar { grid-template-columns: 30px minmax(0, 1fr); }
+  .ar .acts { grid-column: 2; grid-row: auto; order: 1; flex-wrap: wrap; margin-top: 4px; }
+  .ar .hist, .ar .ed, .ar .answer { order: 2; }
+  .ar .acts .btn { height: 32px; padding: 0 12px; font-size: var(--text-sm); }
+  .ar .acts .ib { width: 32px; height: 32px; }
+  .asks .sec-h .spacer { display: none; }
+  .asks .sec-h [data-confirm-all] { height: 32px; font-size: var(--text-sm); }
+  .asks .fold { width: 32px; height: 32px; margin-left: -8px; }
+  .ar .q, .ar .ans { font-size: var(--text-md); }
+  .htoggle { min-height: 32px; font-size: var(--text-sm); }
+  .agrp-h .hint { display: none; }
+  .menu .sheet-head b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-md); }
+  .menu .opt { height: var(--touch-target); }
+  .ar .menu { grid-template-columns: minmax(0, 1fr); }
+  .roll > li { grid-template-columns: auto auto minmax(0, 1fr); }
+  .roll .ow, .roll .c { grid-column: 3; }
+  .ed label.o { grid-template-columns: 16px minmax(0, 1fr); }
+  .ed label.o .tagline { grid-column: 2; padding-top: 0; }
+}
+</style>
+<link rel="stylesheet" href="item-touch.css">
+</head>
+<body>
+<div id="appbar"></div>
+<section class="wi-head" aria-label="Work item header">
+  <div class="wi-top">
+    <a class="back" href="#" id="back"></a>
+    <span class="spacer"></span>
+    <span class="xs muted" id="meta"></span>
+  </div>
+  <div class="wi-title">
+    <span class="ident" id="ident"></span>
+    <input class="title-in" id="title" aria-label="Title" autocomplete="off">
+    <span class="save-state">Saved · revision 6</span>
+    <button class="btn" type="button" disabled>Save</button>
+  </div>
+</section>
+<div class="fields" id="fields" aria-label="Fields"></div>
+<div class="split wi-split">
+  <div class="scroll wi-main" id="main"></div>
+  <aside class="rail wi-side" id="side" aria-label="Links, attachments and history"></aside>
+</div>
+
+<script>
+(() => {
+  const { ME, people, esc, tIcon, av, toast } = SL;
+  const $ = id => document.getElementById(id);
+  const params = new URLSearchParams(location.search);
+  const STATE = params.get('state') || 'waiting';
+  document.getElementById('appbar').outerHTML = SL.appBar('backlogs');
+  const NOW = 'Sat 24 Oct, just now';
+
+  /* People and agents. An agent's write shows the person whose token it used, plus the agent's name. */
+  const AGENT = 'Claude Code';
+  const avH = id => (id === 'agent' ? `<span class="av agent" title="Agent: ${AGENT}">AI</span>` : av(id));
+  const whoH = id => (id === 'agent' ? `${AGENT} <span class="chip agent">Agent</span>` : esc(people[id].name));
+  const nameOf = id => (id === 'agent' ? AGENT : people[id].name);
+  const first = id => people[id].name.split(' ')[0];
+
+  /* A Story's asks. hist is newest first: raised → confirmed / changed / withdrawn, every answer kept. */
+  const story = () => ({
+    key: 'SHIP-141', type: 'story', title: 'Pay with saved card', assignee: 'priya', creator: 'ana',
+    questions: [
+      { n: 1, state: 'open', by: 'agent', src: 'mcp', when: 'Sat 24 Oct, 09:10',
+        text: 'Load testing the picker stops at 40 requests a second because the vault sandbox returns 429. Should I run the load test against staging’s real vault tonight, or wait for payments/vault!57 to raise the limit?' },
+      { n: 2, state: 'answered', by: 'agent', src: 'mcp', when: 'Fri 23 Oct, 17:42',
+        text: 'Should each saved card show the card brand’s mark, or text only?',
+        answer: { by: 'priya', when: 'Fri 23 Oct, 18:12', text: 'Brand mark plus the last four digits. The marks are in design-v0.2.md.' } },
+    ],
+    decisions: [
+      { n: 1, q: 'Where the saved cards go on the payment step', rec: 'Radio rows above the new card form', alts: ['A dropdown above the form', 'A step of its own before payment'], state: 'open',
+        hist: [{ kind: 'raised', by: 'agent', when: 'Fri 23 Oct, 17:40', to: 'Radio rows above the new card form' }] },
+      { n: 2, q: 'Which card is selected when the page opens', rec: 'The card used last', alts: ['The newest card', 'None, so the customer picks'], state: 'confirmed',
+        hist: [{ kind: 'confirmed', by: 'priya', when: 'Fri 23 Oct, 18:10', to: 'The card used last' }, { kind: 'raised', by: 'agent', when: 'Fri 23 Oct, 17:40', to: 'The card used last' }] },
+      { n: 3, q: 'What an expired saved card does', rec: 'Shown greyed out with “Expired”, and can’t be picked', alts: ['Hidden from the list'], state: 'changed', cur: 'Hidden, with “1 expired card · Update” under the list',
+        hist: [
+          { kind: 'changed', by: 'tom', when: 'Sat 24 Oct, 11:02', from: 'Shown greyed out with “Expired”, and can’t be picked', to: 'Hidden, with “1 expired card · Update” under the list', note: 'Support saw people tapping the greyed card and giving up. Mei agreed at stand-up.', own: true },
+          { kind: 'confirmed', by: 'priya', when: 'Fri 23 Oct, 18:10', to: 'Shown greyed out with “Expired”, and can’t be picked' },
+          { kind: 'raised', by: 'agent', when: 'Fri 23 Oct, 17:40', to: 'Shown greyed out with “Expired”, and can’t be picked' }] },
+      { n: 4, q: 'Ask for the CVV when paying with a saved card', rec: 'Every time', alts: ['Only above £50', 'Never; the vault token is enough'], state: 'open',
+        hist: [{ kind: 'raised', by: 'agent', when: 'Fri 23 Oct, 17:40', to: 'Every time' }] },
+      { n: 5, q: 'How many saved cards show before “Show all”', rec: '3', alts: ['5', 'All of them'], state: 'confirmed',
+        hist: [{ kind: 'confirmed', by: 'priya', when: 'Fri 23 Oct, 18:10', to: '3' }, { kind: 'raised', by: 'agent', when: 'Fri 23 Oct, 17:40', to: '3' }] },
+      { n: 6, q: 'Build a Manage cards page in this story', rec: 'No; it gets a story of its own', alts: ['Yes, a minimal one'], state: 'withdrawn',
+        hist: [{ kind: 'withdrawn', by: 'agent', when: 'Sat 24 Oct, 08:55', note: 'Mei moved card management out of Checkout v2, so there is nothing to decide here.' }, { kind: 'raised', by: 'agent', when: 'Fri 23 Oct, 17:40', to: 'No; it gets a story of its own' }] },
+    ],
+    comments: [
+      { by: 'agent', when: 'Fri 23 Oct, 17:45', body: 'Picker built behind `checkout_v2_cards` with the recommended answers to D1–D5. Asked Q2 about brand marks. Nothing waits on these: the next agent carries on with whatever stands.' },
+      { by: 'priya', when: 'Fri 23 Oct, 18:12', answer: 2, body: 'Brand mark plus the last four digits. The marks are in design-v0.2.md.' },
+      { by: 'tom', when: 'Sat 24 Oct, 11:02', changed: 3, body: '**D3 changed** from “Shown greyed out with “Expired”, and can’t be picked” to “Hidden, with “1 expired card · Update” under the list” by Tom Okafor. Note: Support saw people tapping the greyed card and giving up. Mei agreed at stand-up.' },
+    ],
+  });
+
+  /* A Feature's own asks, plus the Stories under it that wait on someone (D10). */
+  const feature = () => ({
+    key: 'SHIP-101', type: 'feature', title: 'Checkout v2', assignee: null, creator: 'ana',
+    questions: [],
+    decisions: [
+      { n: 1, q: 'Where card numbers are stored', rec: 'Only as tokens in the vault', alts: ['Encrypted in our database'], state: 'confirmed', backfill: true,
+        hist: [{ kind: 'confirmed', by: 'priya', when: 'Fri 2 Oct', to: 'Only as tokens in the vault', note: 'Recorded from the description’s Decisions table. The answer was already in the text.' }, { kind: 'raised', by: 'agent', when: 'Mon 2 Nov, 10:14', to: 'Only as tokens in the vault' }] },
+      { n: 2, q: 'Saved cards picker style', rec: 'Radio rows, not cards', alts: ['Card tiles'], state: 'confirmed', backfill: true,
+        hist: [{ kind: 'confirmed', by: 'priya', when: 'Fri 23 Oct', to: 'Radio rows, not cards' }, { kind: 'raised', by: 'agent', when: 'Mon 2 Nov, 10:14', to: 'Radio rows, not cards' }] },
+      { n: 3, q: 'What turns Checkout v2 on for everyone', rec: 'Mobile conversion at 66% or more for a week on 25% of traffic', alts: ['A date: Mon 30 Nov', 'Ana decides on the day'], state: 'open',
+        hist: [{ kind: 'raised', by: 'agent', when: 'Sat 24 Oct, 10:30', to: 'Mobile conversion at 66% or more for a week on 25% of traffic' }] },
+    ],
+    rollup: [
+      { key: 'SHIP-141', type: 'story', title: 'Pay with saved card', owner: 'priya', q: 1, d: 2 },
+      { key: 'SHIP-144', type: 'story', title: 'Address autocomplete', owner: 'mei', q: 0, d: 1 },
+      { key: 'SHIP-158', type: 'story', title: 'Gift card balance check', owner: 'ana', ownerWhy: 'creator', q: 1, d: 0 },
+    ],
+    comments: [{ by: 'agent', when: 'Mon 2 Nov, 10:14', body: 'Recorded the description’s Decisions table as D1 and D2, confirmed by Priya on the dates in the table. The table stays in the description as text.' }],
+  });
+
+  const it = STATE === 'feature' ? feature() : story();
+  const ui = { folded: false, editing: null, replying: null, discussing: null, hist: new Set(), menu: null, choice: null, ownText: '', note: '', draft: '' };
+
+  /* Scenario setup */
+  if (STATE === 'other') it.assignee = 'mei';
+  if (STATE === 'unassigned') it.assignee = null;
+  if (STATE === 'change') { ui.editing = 1; ui.choice = 'alt:0'; }
+  if (STATE === 'settled-change') { ui.editing = 2; ui.choice = 'own'; ui.ownText = 'The card used last, unless it expires this month'; ui.note = 'Cards about to expire fail more often at the bank.'; }
+  if (STATE === 'history') ui.hist.add(3);
+  if (STATE === 'reply') { ui.replying = 1; ui.draft = 'Wait for !57. Don’t load test against the real vault: it’s shared with the stores in production.'; }
+  if (STATE === 'discuss') { ui.discussing = 4; ui.draft = '@Tom does the vault let us skip CVV for tokens it issued? If so I’d take “Only above £50”.'; }
+  if (STATE === 'empty') { it.questions = []; it.decisions = []; it.comments = it.comments.slice(0, 0); }
+  if (STATE === 'answered' || STATE === 'folded') {
+    const q = it.questions[0]; q.state = 'answered'; q.answer = { by: 'priya', when: 'Sat 24 Oct, 12:20', text: 'Wait for !57. Don’t load test against the real vault: it’s shared with the stores in production.' };
+    it.comments.push({ by: 'priya', when: 'Sat 24 Oct, 12:20', answer: 1, body: q.answer.text });
+    it.decisions.filter(d => d.state === 'open').forEach(d => { d.state = 'confirmed'; d.hist.unshift({ kind: 'confirmed', by: 'priya', when: 'Sat 24 Oct, 12:21', to: d.rec }); });
+    if (STATE === 'folded') ui.folded = true;
+  }
+
+  /* Derived */
+  const owner = () => it.assignee || it.creator;
+  const ownerWhy = () => (it.assignee ? 'assignee' : 'creator; nobody is assigned');
+  const cur = d => d.cur || d.rec;
+  const openQs = () => it.questions.filter(q => q.state === 'open');
+  const openDs = () => it.decisions.filter(d => d.state === 'open');
+  const waiting = () => openQs().length + openDs().length;
+  const rollWaiting = () => (it.rollup || []).reduce((a, r) => a + r.q + r.d, 0);
+  const plural = (n, one, many) => `${n} ${n === 1 ? one : many || one + 's'}`;
+  const waitingOn = () => (owner() === ME ? 'you' : people[owner()].name);
+
+  function summary() {
+    const ds = it.decisions, by = s => ds.filter(d => d.state === s).length;
+    const parts = [];
+    if (ds.length) parts.push(`${plural(ds.length, 'decision')}: ${[['confirmed', 'confirmed'], ['changed', 'changed'], ['open', 'going with recommended'], ['withdrawn', 'withdrawn']].filter(([s]) => by(s)).map(([s, l]) => `${by(s)} ${l}`).join(', ')}`);
+    if (it.questions.length) { const a = it.questions.filter(q => q.state === 'answered').length; parts.push(a === it.questions.length ? `${plural(a, 'question')} answered` : `${plural(it.questions.length, 'question')}, ${openQs().length} open`); }
+    return parts.join(' · ');
+  }
+
+  /* One decision row */
+  const histWord = { raised: 'raised it, recommending', confirmed: 'confirmed', changed: 'changed it to', withdrawn: 'withdrew it' };
+  function histHtml(d) {
+    return `<ul class="hist" aria-label="D${d.n} history">${d.hist.map(h => `<li class="${h.kind}">
+      <span><span class="what"><b>${esc(nameOf(h.by))}</b>${h.by === 'agent' ? ' (agent)' : ''} ${histWord[h.kind]}${h.to ? ` “${esc(h.to)}”` : ''}</span>${h.from ? ` <span class="muted">from</span> <span class="from">${esc(h.from)}</span>` : ''}</span>
+      ${h.note ? `<span class="note">${esc(h.note)}</span>` : ''}<span class="when">${esc(h.when)}${h.kind === 'changed' && h.posted !== false ? ' · posted to Discussion' : ''}</span></li>`).join('')}</ul>`;
+  }
+  function stateLine(d) {
+    const last = d.hist[0];
+    if (d.state === 'open') return `<span class="chip warn sm" title="Agents carry on with the recommended answer. It stays open until someone confirms or changes it.">Going with recommended</span><span>raised by ${whoH(d.hist[d.hist.length - 1].by)} · ${esc(d.hist[d.hist.length - 1].when)}</span>`;
+    if (d.state === 'confirmed') return `<span class="chip ok sm">✓ Confirmed</span>${avH(last.by)}<span>${esc(nameOf(last.by))} · ${esc(last.when)}</span>${d.backfill ? '<span title="Recorded from a Markdown table by an agent, with the answer already given in the text">· from the description</span>' : ''}`;
+    if (d.state === 'changed') return `<span class="chip accent sm">Changed</span>${avH(last.by)}<span>${esc(nameOf(last.by))} · ${esc(last.when)}</span>`;
+    return `<span class="chip sm">Withdrawn</span><span>${esc(nameOf(last.by))}${last.by === 'agent' ? ' (agent)' : ''} · ${esc(last.when)}${last.note ? ` · “${esc(last.note)}”` : ''}</span>`;
+  }
+  function changeEditor(d) {
+    const settled = d.state === 'confirmed' || d.state === 'changed';
+    const opts = [['rec', d.rec, 'Recommended'], ...d.alts.map((a, i) => [`alt:${i}`, a, 'Alternative'])];
+    if (d.cur && ![d.rec, ...d.alts].includes(d.cur)) opts.push(['cur', d.cur, 'Current answer']);
+    const isCur = v => v === cur(d);
+    return `<div class="ed" data-ed="change">
+      <span class="flab">Change D${d.n}: pick an answer or write your own</span>
+      <div class="opts" role="radiogroup" aria-label="Answer for D${d.n}">
+        ${opts.map(([v, text, tag]) => `<label class="o"><input type="radio" name="dc${d.n}" value="${v}"${(ui.choice || (isCur(text) ? v : '')) === v ? ' checked' : ''}><span>${esc(text)}</span><span class="tagline">${tag}${isCur(text) ? ' · current' : ''}</span></label>`).join('')}
+        <label class="o"><input type="radio" name="dc${d.n}" value="own"${ui.choice === 'own' ? ' checked' : ''}><span style="display:grid;gap:4px">Your own answer<textarea class="field" id="ownText" rows="2" placeholder="Write the answer the next agent should follow">${esc(ui.ownText)}</textarea></span><span class="tagline">Your words</span></label>
+      </div>
+      <label class="flab" for="noteIn">Note (optional): why</label>
+      <input class="field" id="noteIn" value="${esc(ui.note)}" placeholder="Shown in the history and in the comment" autocomplete="off">
+      ${settled ? `<div class="callout warn"><b>D${d.n} is already ${d.state}.</b>Saving a different answer posts a comment on ${it.key} (“D${d.n} changed from … to … by ${esc(people[ME].name)}”) so the next agent picks it up. The old answer stays in the history.</div>` : ''}
+      <div class="row"><button class="btn primary" type="button" data-save-change="${d.n}">Save answer</button><button class="btn ghost" type="button" data-cancel>Cancel</button><span class="spacer"></span><span class="xs muted">Saves straight away, not with the item’s Save</span></div>
+    </div>`;
+  }
+  function composer(kind, n, quote) {
+    const label = kind === 'reply' ? `Answer Q${n}` : `Discuss D${n}`;
+    const help = kind === 'reply' ? `Posts to Discussion as the answer to Q${n} and closes it. The next agent reads it in its brief.` : `Posts to Discussion with D${n} quoted. D${n} stays open.`;
+    return `<div class="ed" data-ed="${kind}">
+      <span class="flab">${label}</span>
+      ${kind === 'discuss' ? `<blockquote class="quote"><b>D${n}</b> · ${esc(quote)}</blockquote>` : ''}
+      <textarea class="field" id="draftIn" rows="3" placeholder="${kind === 'reply' ? 'Your answer. Markdown and @mentions' : 'Your comment. Markdown and @mentions'}">${esc(ui.draft)}</textarea>
+      <div class="row"><button class="btn primary" type="button" data-post="${kind}:${n}">${kind === 'reply' ? 'Post answer' : 'Comment'}</button><button class="btn ghost" type="button" data-cancel>Cancel</button><span class="spacer"></span><span class="xs muted">${help}</span></div>
+    </div>`;
+  }
+  function decisionRow(d) {
+    const own = d.cur && ![d.rec, ...d.alts].includes(d.cur), isRec = cur(d) === d.rec;
+    const discussed = it.comments.filter(c => c.quote === d.n).length;
+    const acts = d.state === 'withdrawn' ? ''
+      : `${d.state === 'open' ? `<button class="btn tiny" type="button" data-confirm="${d.n}" title="Accept “${esc(d.rec)}”">✓ Confirm</button>` : ''}
+         <button class="btn tiny${d.state === 'open' ? '' : ' ghost'}" type="button" data-change="${d.n}"${ui.editing === d.n ? ' aria-expanded="true"' : ''}>Change</button>
+         <button class="btn tiny ghost" type="button" data-discuss="${d.n}">Discuss</button>
+         <span class="pop-wrap"><button class="ib" type="button" data-menu="${d.n}" aria-haspopup="menu" aria-label="More for D${d.n}">⋯</button>${ui.menu === d.n ? `<div class="menu" role="menu"><header class="sheet-head m-only"><b>D${d.n} · ${esc(d.q)}</b><button class="btn ghost" type="button" data-sheet-close>Close</button></header><button class="opt" type="button" role="menuitem" data-withdraw="${d.n}">Withdraw D${d.n}</button><button class="opt" type="button" role="menuitem" data-copy="${d.n}">Copy link to D${d.n}</button><div class="foot">Withdrawn decisions stay listed, struck through. Nothing is deleted.</div></div>` : ''}</span>`;
+    const hs = d.hist.length - 1;
+    return `<li class="ar ${d.state}${d.fresh ? ' fresh' : ''}" id="D${d.n}">
+      <span class="num">D${d.n}</span>
+      <span class="q">${esc(d.q)}</span>
+      <span class="acts">${acts}</span>
+      <span class="ans"><span class="k">${d.state === 'withdrawn' ? 'Was' : 'Answer'}</span><span class="v">${esc(cur(d))}</span>${isRec ? '<span class="chip rec">Recommended</span>' : own ? '<span class="chip sm" title="Written by a person, not one of the listed options (D12)">Own answer</span>' : '<span class="chip sm">Alternative</span>'}</span>
+      <span class="by">${stateLine(d)}${hs > 0 || d.state === 'changed' ? `<span>·</span><button class="htoggle" type="button" data-hist="${d.n}" aria-expanded="${ui.hist.has(d.n)}">${ui.hist.has(d.n) ? 'Hide history' : `History (${d.hist.length})`}</button>` : ''}${discussed ? `<span>·</span><a href="#discSec">${plural(discussed, 'comment')}</a>` : ''}</span>
+      ${ui.hist.has(d.n) ? histHtml(d) : ''}
+      ${ui.editing === d.n ? changeEditor(d) : ''}
+      ${ui.discussing === d.n ? composer('discuss', d.n, d.q + ': ' + cur(d)) : ''}
+    </li>`;
+  }
+  function questionRow(q) {
+    const src = `through MCP · ${esc(q.when)}`;
+    return `<li class="ar ${q.state === 'open' ? 'open' : 'answered'}${q.fresh ? ' fresh' : ''}" id="Q${q.n}">
+      <span class="num">Q${q.n}</span>
+      <span class="q">${esc(q.text)}</span>
+      <span class="acts">${q.state === 'open' ? `<button class="btn tiny${ui.replying === q.n ? '' : ' primary'}" type="button" data-reply="${q.n}">Reply</button><span class="pop-wrap"><button class="ib" type="button" data-qmenu="${q.n}" aria-label="More for Q${q.n}">⋯</button>${ui.menu === 'q' + q.n ? `<div class="menu" role="menu"><header class="sheet-head m-only"><b>Q${q.n}</b><button class="btn ghost" type="button" data-sheet-close>Close</button></header><button class="opt" type="button" role="menuitem" data-qwithdraw="${q.n}">Withdraw Q${q.n}</button><div class="foot">For a question that no longer matters. It stays listed.</div></div>` : ''}</span>` : ''}</span>
+      <span class="by">${q.state === 'open' ? '<span class="chip warn sm">Needs an answer</span>' : q.state === 'answered' ? '<span class="chip ok sm">✓ Answered</span>' : '<span class="chip sm">Withdrawn</span>'}<span>asked by ${whoH(q.by)} · ${src}</span></span>
+      ${q.answer ? `<div class="answer">${avH(q.answer.by)}<span>${esc(q.answer.text)}<span class="meta">${esc(nameOf(q.answer.by))} · ${esc(q.answer.when)} · <a href="#discSec">in Discussion</a></span></span></div>` : ''}
+      ${ui.replying === q.n ? composer('reply', q.n) : ''}
+    </li>`;
+  }
+
+  function renderAsks() {
+    const w = waiting(), rw = rollWaiting(), any = w + rw > 0;
+    const el = $('asks');
+    el.className = `asks${any ? ' waiting' : ''}${ui.folded ? ' folded' : ''}`;
+    const ownerChip = `<span class="chip warn wait-chip" title="The item's owner: its ${ownerWhy()}. Anyone who can edit ${it.key} can answer.">${av(owner())}Waiting on ${esc(waitingOn())}</span>`;
+    const openBits = [openQs().length && plural(openQs().length, 'question'), openDs().length && `${plural(openDs().length, 'decision')} going with recommended`].filter(Boolean).join(' · ');
+    const head = `<div class="sec-h">
+      <button class="ib fold" type="button" data-fold aria-expanded="${!ui.folded}" aria-label="${ui.folded ? 'Show' : 'Fold'} decisions and questions">${ui.folded ? '▸' : '▾'}</button>
+      <h2>Decisions and questions</h2>
+      ${w ? `<span class="cnt" title="Waiting">${w}</span>` : ''}${w ? ownerChip : ''}
+      <span class="summary">${w ? `<b>${openBits}</b>${owner() !== ME ? ' · you can answer too' : ''}` : any ? `<b>Nothing here waits.</b> ${plural(rw, 'ask')} on ${plural(it.rollup.filter(r => r.q + r.d).length, 'story', 'stories')} below` : `<span class="chip ok sm">✓ Nothing waiting</span> ${summary()}`}</span>
+      <span class="spacer"></span>
+      ${!ui.folded && openDs().length > 1 ? `<button class="btn tiny" type="button" data-confirm-all title="Confirm every decision that's going with its recommended answer">✓ Confirm ${openDs().length} recommended</button>` : ''}
+    </div>`;
+    if (!it.questions.length && !it.decisions.length && !it.rollup) {
+      el.className = 'asks';
+      el.innerHTML = `<div class="sec-h"><h2>Decisions and questions</h2><span class="summary">No decisions or questions yet.</span></div><p class="xs muted" style="margin:0">When an agent records a decision with <code>record_decisions</code> or asks with <code>ask</code>, it shows here for ${owner() === ME ? 'you' : esc(people[owner()].name)} to answer.</p>`;
+      return;
+    }
+    if (ui.folded) { el.innerHTML = head; return; }
+    const qs = it.questions, ds = it.decisions;
+    el.innerHTML = `${head}<div class="asks-body">
+      ${qs.length ? `<div class="agrp"><div class="agrp-h"><span class="overline">Questions</span><span class="cnt">${qs.length}</span><span class="hint">· asked by agents with <code>ask</code>. Only a Reply answers one.</span></div><ul class="alist">${[...qs].sort((a, b) => (a.state === 'open') === (b.state === 'open') ? a.n - b.n : a.state === 'open' ? -1 : 1).map(questionRow).join('')}</ul></div>` : ''}
+      ${ds.length ? `<div class="agrp"><div class="agrp-h"><span class="overline">Decisions</span><span class="cnt">${ds.length}</span><span class="hint">· in number order. An open one stands as recommended until someone answers it.</span></div><ul class="alist">${ds.map(decisionRow).join('')}</ul></div>` : ''}
+      ${it.rollup ? `<div class="agrp"><div class="agrp-h"><span class="overline">Stories and bugs waiting</span><span class="cnt">${it.rollup.length}</span><span class="hint">· their asks are answered on each item</span></div><ul class="alist roll">${it.rollup.map(r => `<li>${tIcon(r.type)}<span class="key">${r.key}</span><a class="t" href="decisions.html${r.key === 'SHIP-141' ? '' : '?state=other'}">${esc(r.title)}</a><span class="ow" title="${r.ownerWhy === 'creator' ? 'Nobody is assigned, so it waits on the creator' : 'The assignee'}">${av(r.owner)}Waiting on ${r.owner === ME ? 'you' : esc(people[r.owner].name)}${r.ownerWhy ? ` (${r.ownerWhy})` : ''}</span><span class="c">${r.q ? `<span class="chip warn sm">${plural(r.q, 'question')}</span>` : ''}${r.d ? `<span class="chip sm">${plural(r.d, 'decision')} open</span>` : ''}</span></li>`).join('')}</ul></div>` : ''}
+    </div>`;
+  }
+
+  /* The rest of the page, trimmed */
+  function renderChrome() {
+    const isF = it.type === 'feature';
+    $('back').textContent = isF ? '← Back to Features backlog' : '← Back to Stories backlog';
+    $('ident').innerHTML = `${tIcon(it.type)}<span class="sm muted">${isF ? 'Feature' : 'User Story'}</span><span class="key">${it.key}</span>`;
+    $('title').value = it.title;
+    $('meta').textContent = `Created by Ana Costa, ${isF ? 'Mon 21 Sep' : 'Mon 12 Oct'} · revision 6`;
+    $('fields').innerHTML = isF
+      ? `<div class="fcell"><span class="lbl">State</span><span class="fval">${SL.st('Active')}</span></div>
+         <div class="fcell"><span class="lbl">Epic</span><span class="fval">${tIcon('epic')}Checkout conversion</span></div>
+         <div class="fcell"><span class="lbl">Slug</span><span class="fval"><span class="slug">checkout-v2</span></span></div>
+         <div class="fcell"><span class="lbl">Started</span><span class="fval">Mon 21 Sep</span></div>
+         <div class="fcell"><span class="lbl">Stories and bugs</span><span class="fval">2 of 7 closed</span></div>
+         <div class="fcell grow"><span class="lbl">Tags</span><div class="tags"><span class="chip">Checkout</span><span class="chip">Mobile</span></div></div>`
+      : `<div class="fcell"><span class="lbl">State</span><span class="fval">${SL.st('Active')}</span></div>
+         <div class="fcell" style="min-width:150px"><span class="lbl">Assignee</span><span class="fval">${av(it.assignee)}<span class="${it.assignee ? '' : 'muted'}">${it.assignee ? esc(people[it.assignee].name) : 'Unassigned'}</span></span></div>
+         <div class="fcell"><span class="lbl">Sprint</span><span class="fval">Sprint 24 (current)</span></div>
+         <div class="fcell"><span class="lbl">Story points</span><span class="fval">5</span></div>
+         <div class="fcell"><span class="lbl">Priority</span><span class="fval">2</span></div>
+         <div class="fcell"><span class="lbl">Parent</span><span class="fval"><span class="muted">Checkout conversion ›</span>${tIcon('feature')}Checkout v2</span></div>
+         <div class="fcell grow"><span class="lbl">Tags</span><div class="tags"><span class="chip">Checkout</span><span class="chip">Payments</span></div></div>`;
+  }
+  function renderDiscussion() {
+    const tag = c => (c.answer ? `<span class="chip ok sm" title="Posted from Q${c.answer}'s Reply">Answer to <a href="#Q${c.answer}">Q${c.answer}</a></span>` : c.changed ? `<span class="chip accent sm" title="Posted when a settled decision changed">D${c.changed} changed</span>` : c.quote ? `<span class="chip sm">On <a href="#D${c.quote}">D${c.quote}</a></span>` : '');
+    const md = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<code>$1</code>').replace(/(design-v0\.2\.md)/g, '<a href="#">$1</a>').replace(/@(\w+)/g, '<a href="#">@$1</a>');
+    return `<div class="sec-h"><h2>Discussion</h2><span class="cnt">${it.comments.length}</span></div>
+      <ol class="comments">${it.comments.map(c => `<li class="cm${c.fresh ? ' fresh' : ''}">${avH(c.by)}<div><div class="cm-h"><b>${whoH(c.by)}</b><span class="xs muted">${esc(c.when)}${c.by === 'agent' ? ' · via MCP' : ''}</span>${tag(c)}</div>
+        ${c.quoteText ? `<blockquote class="quote"><b>D${c.quote}</b> · ${esc(c.quoteText)}</blockquote>` : ''}<div class="md"><p>${md(c.body)}</p></div></div></li>`).join('')}</ol>
+      <div class="cm-new">${av(ME)}<textarea class="field" placeholder="Add a comment. Markdown, @ to mention, Ctrl+Enter posts. A plain comment doesn't answer a question (D7)."></textarea></div>`;
+  }
+  function renderMain() {
+    const isF = it.type === 'feature';
+    $('main').innerHTML = `
+      ${isF ? '<div class="goal"><span class="lbl">Goal</span><p>Returning customers pay in two taps, so mobile checkout conversion goes from 61% to 68% by the end of Q4.</p></div>' : ''}
+      <section id="asks" aria-label="Decisions and questions" data-testid="asks-section"></section>
+      <section class="sec"><div class="sec-h"><h2>Description</h2><span class="xs muted">6 revisions</span></div>
+        <div class="md">${isF ? '<p>Key facts, the Decisions table (now recorded as D1 and D2 above) and next steps. Unchanged by this design.</p>' : '<p>Customers with a card in the vault pick it on the payment step instead of typing it again. Behind <code>checkout_v2_cards</code>.</p><ul><li>Cards come from the vault as tokens; we never see the number.</li><li>Design: design-v0.2.md §3 (radio rows).</li></ul>'}</div></section>
+      ${isF ? '' : `<section class="sec"><div class="sec-h"><h2>Acceptance criteria</h2><span class="chip">2/4</span></div><ul class="crit">
+        <li><input type="checkbox" checked disabled>Saved cards are listed above the new card form</li><li><input type="checkbox" checked disabled>The card used last is selected</li>
+        <li><input type="checkbox" disabled>Expired cards follow D3</li><li><input type="checkbox" disabled>Load test passes at 100 requests a second</li></ul></section>`}
+      <section class="sec" id="discSec">${renderDiscussion()}</section>`;
+    renderAsks();
+  }
+  function renderSide() {
+    $('side').innerHTML = `
+      <section><div class="sec-h2"><span class="overline">Links</span><span class="cnt">2</span></div><ul class="lst">
+        <li><span class="ext">GH</span><a class="t" href="#">acme/storefront#418 Saved card picker</a><span class="meta">Merged</span></li>
+        <li><span class="ext">GL</span><a class="t" href="#">payments/vault!57 Raise the rate limit</a><span class="meta">Draft</span></li></ul></section>
+      <section><div class="sec-h2"><span class="overline">Attachments</span><span class="cnt">1</span></div><ul class="lst">
+        <li><span class="ext md">MD</span><a class="t" href="#">design-v0.2.md</a><span class="meta">14 KB</span></li></ul></section>
+      <section><div class="sec-h2"><span class="overline">History</span><span class="cnt">6 revisions</span></div>
+        <ul class="revs">${historyItems().map(h => h.html).join('')}</ul>
+        <p class="hint">Decisions and questions aren't fields, so they don't add a revision. Each one raised, answered, changed or withdrawn is still a line here, with its D or Q badge.</p></section>`;
+  }
+  /* UI10: ask events sit in History next to the item's revisions, newest first. */
+  const MON = { Sep: 9, Oct: 10, Nov: 11 };
+  const tkey = w => { const m = /(\d+) (\w{3})(?:, (\d+):(\d+))?/.exec(w) || []; const just = /just now/.test(w); return ((MON[m[2]] || 0) * 100 + +(m[1] || 0)) * 10000 + (just ? 2359 : (+(m[3] || 0)) * 100 + +(m[4] || 0)); };
+  const evWord = { raised: 'raised', confirmed: 'confirmed', changed: 'changed', withdrawn: 'withdrew' };
+  function askEvents() {
+    const ev = [];
+    it.decisions.forEach(d => d.hist.forEach(h => ev.push({ who: h.by, when: h.when, badge: `D${d.n}`, kind: h.kind, text: h.kind === 'raised' ? `raised D${d.n}` : h.kind === 'withdrawn' ? `withdrew D${d.n}` : `${evWord[h.kind]} D${d.n}`, to: h.kind === 'withdrawn' ? '' : h.to, from: h.from })));
+    it.questions.forEach(q => {
+      ev.push({ who: q.by, when: q.when, badge: `Q${q.n}`, kind: 'raised', text: `asked Q${q.n}` });
+      if (q.answer) ev.push({ who: q.answer.by, when: q.answer.when, badge: `Q${q.n}`, kind: 'confirmed', text: `answered Q${q.n}`, to: q.answer.text });
+      if (q.withdrawn) ev.push({ who: q.withdrawn.by, when: q.withdrawn.when, badge: `Q${q.n}`, kind: 'withdrawn', text: `withdrew Q${q.n}` });
+    });
+    return ev.filter(e => e.kind !== 'raised');
+  }
+  function historyItems() {
+    const revs = [
+      { when: 'Fri 23 Oct, 18:20', html: `<li class="rev"><span class="revno">6</span><div class="rev-h">${av('priya')}<b>Priya Shah</b><span class="xs muted">Fri 23 Oct, 18:20</span></div><ul class="diffs"><li><span class="f">State</span><span class="muted">New</span> → <b>Active</b></li></ul></li>` },
+      { when: 'Fri 23 Oct, 17:30', html: `<li class="rev"><span class="revno">5</span><div class="rev-h"><span class="av agent">AI</span><b>${AGENT}</b><span class="xs muted">Fri 23 Oct, 17:30</span></div><ul class="diffs"><li><span class="f">Description</span>edited</li></ul></li>` },
+    ];
+    // Raises by the same agent at the same minute fold into one line ("raised D1–D5").
+    const raised = {};
+    it.decisions.forEach(d => d.hist.filter(h => h.kind === 'raised').forEach(h => { (raised[h.by + '|' + h.when] ||= []).push(`D${d.n}`); }));
+    it.questions.forEach(q => { (raised[q.by + '|' + q.when] ||= []).push(`Q${q.n}`); });
+    const rows = Object.entries(raised).map(([k, ids]) => { const [who, when] = k.split('|'); return { when, html: `<li class="rev"><span class="revno ask">${ids[0]}</span><div class="rev-h">${avH(who)}<b>${esc(nameOf(who))}</b><span class="xs muted">${esc(when)}</span></div><ul class="diffs"><li>${ids[0][0] === 'Q' ? 'asked' : 'raised'} <b>${ids.length > 2 && ids.every(i => i[0] === 'D') ? `${ids[0]}–${ids[ids.length - 1]}` : ids.join(', ')}</b></li></ul></li>` }; });
+    askEvents().forEach(e => rows.push({ when: e.when, html: `<li class="rev${e.fresh ? ' fresh' : ''}"><span class="revno ask ${e.kind}">${e.badge}</span><div class="rev-h">${avH(e.who)}<b>${esc(nameOf(e.who))}</b><span class="xs muted">${esc(e.when)}</span></div><ul class="diffs"><li>${esc(e.text)}${e.to ? `: <b>${esc(e.to.length > 60 ? e.to.slice(0, 58) + '…' : e.to)}</b>` : ''}</li></ul></li>` }));
+    return [...revs, ...rows].sort((a, b) => tkey(b.when) - tkey(a.when));
+  }
+  function renderAll() { renderChrome(); renderMain(); renderSide(); }
+
+  /* Actions */
+  const clearFresh = () => { it.decisions.forEach(d => { d.fresh = false; }); it.questions.forEach(q => { q.fresh = false; }); it.comments.forEach(c => { c.fresh = false; }); };
+  const closeEditors = () => { ui.editing = ui.replying = ui.discussing = null; ui.menu = null; ui.choice = null; ui.ownText = ui.note = ui.draft = ''; };
+  function confirm(n, quiet) {
+    const d = it.decisions.find(x => x.n === n);
+    d.state = 'confirmed'; d.fresh = true; d.hist.unshift({ kind: 'confirmed', by: ME, when: NOW, to: cur(d) });
+    if (!quiet) toast(`D${n} confirmed: “${esc(cur(d))}”`);
+  }
+  function saveChange(n) {
+    const d = it.decisions.find(x => x.n === n), pick = document.querySelector(`input[name="dc${n}"]:checked`)?.value;
+    const text = pick === 'own' ? $('ownText').value.trim() : pick === 'rec' ? d.rec : pick === 'cur' ? d.cur : pick ? d.alts[+pick.split(':')[1]] : null;
+    if (!text) { toast(pick === 'own' ? 'Write your answer first' : 'Pick an answer'); return; }
+    const note = $('noteIn').value.trim(), was = cur(d), settled = d.state === 'confirmed' || d.state === 'changed';
+    if (text === was && d.state !== 'open') { closeEditors(); renderMain(); toast(`D${n} unchanged`); return; }
+    clearFresh();
+    const next = text === d.rec ? 'confirmed' : 'changed';
+    d.hist.unshift(next === 'confirmed' && text === was ? { kind: 'confirmed', by: ME, when: NOW, to: text, note } : { kind: next === 'confirmed' ? 'confirmed' : 'changed', by: ME, when: NOW, from: was, to: text, note, posted: settled });
+    d.state = next; d.cur = text === d.rec ? null : text; d.fresh = true;
+    if (settled && text !== was) it.comments.push({ by: ME, when: NOW, changed: n, fresh: true, body: `**D${n} changed** from “${was}” to “${text}” by ${people[ME].name}.${note ? ` Note: ${note}` : ''}` });
+    closeEditors(); renderAll();
+    toast(settled ? `D${n} changed · comment posted for the next agent` : `D${n} ${next}`);
+  }
+  function post(kind, n) {
+    const body = $('draftIn').value.trim();
+    if (!body) { toast('Write something first'); return; }
+    clearFresh();
+    if (kind === 'reply') {
+      const q = it.questions.find(x => x.n === n);
+      q.state = 'answered'; q.fresh = true; q.answer = { by: ME, when: NOW, text: body };
+      it.comments.push({ by: ME, when: NOW, answer: n, body, fresh: true });
+      toast(`Q${n} answered · posted to Discussion`);
+    } else {
+      const d = it.decisions.find(x => x.n === n);
+      it.comments.push({ by: ME, when: NOW, quote: n, quoteText: `${d.q}: ${cur(d)}`, body, fresh: true });
+      toast(`Comment posted · D${n} stays ${d.state === 'open' ? 'open' : d.state}`);
+    }
+    closeEditors(); renderAll();
+  }
+
+  document.addEventListener('click', e => {
+    const t = e.target, g = a => t.closest(`[${a}]`);
+    let b;
+    if ((b = g('data-fold'))) { ui.folded = !ui.folded; closeEditors(); renderAsks(); return; }
+    if ((b = g('data-confirm-all'))) { clearFresh(); const n = openDs().length; openDs().forEach(d => confirm(d.n, true)); closeEditors(); renderAll(); toast(`${n} decisions confirmed as recommended`); return; }
+    if ((b = g('data-confirm'))) { clearFresh(); confirm(+b.dataset.confirm); closeEditors(); renderAll(); return; }
+    if ((b = g('data-change'))) { const n = +b.dataset.change; const open = ui.editing === n; closeEditors(); ui.editing = open ? null : n; renderAsks(); return; }
+    if ((b = g('data-discuss'))) { const n = +b.dataset.discuss; const open = ui.discussing === n; closeEditors(); ui.discussing = open ? null : n; renderAsks(); $('draftIn')?.focus(); return; }
+    if ((b = g('data-reply'))) { const n = +b.dataset.reply; const open = ui.replying === n; closeEditors(); ui.replying = open ? null : n; renderAsks(); $('draftIn')?.focus(); return; }
+    if ((b = g('data-cancel'))) { closeEditors(); renderAsks(); return; }
+    if ((b = g('data-save-change'))) { saveChange(+b.dataset.saveChange); return; }
+    if ((b = g('data-post'))) { const [k, n] = b.dataset.post.split(':'); post(k, +n); return; }
+    if ((b = g('data-hist'))) { const n = +b.dataset.hist; ui.hist.has(n) ? ui.hist.delete(n) : ui.hist.add(n); renderAsks(); return; }
+    if ((b = g('data-menu'))) { const n = +b.dataset.menu; ui.menu = ui.menu === n ? null : n; renderAsks(); return; }
+    if ((b = g('data-qmenu'))) { const n = 'q' + b.dataset.qmenu; ui.menu = ui.menu === n ? null : n; renderAsks(); return; }
+    if ((b = g('data-withdraw'))) { const d = it.decisions.find(x => x.n === +b.dataset.withdraw); clearFresh(); d.state = 'withdrawn'; d.fresh = true; d.hist.unshift({ kind: 'withdrawn', by: ME, when: NOW }); closeEditors(); renderAll(); toast(`D${d.n} withdrawn. It stays listed.`); return; }
+    if ((b = g('data-qwithdraw'))) { const q = it.questions.find(x => x.n === +b.dataset.qwithdraw); clearFresh(); q.state = 'withdrawn'; q.fresh = true; q.withdrawn = { by: ME, when: NOW }; closeEditors(); renderAll(); toast(`Q${q.n} withdrawn. It stays listed.`); return; }
+    if ((b = g('data-sheet-close'))) { ui.menu = null; renderAsks(); return; }
+    if ((b = g('data-copy'))) { ui.menu = null; renderAsks(); toast(`Copied a link to ${it.key} D${b.dataset.copy}`); return; }
+    if (ui.menu != null && !t.closest('.menu')) { ui.menu = null; renderAsks(); }
+  });
+  document.addEventListener('input', e => {
+    if (e.target.id === 'ownText') { ui.ownText = e.target.value; const r = e.target.closest('label').querySelector('input[type=radio]'); if (r) r.checked = true; ui.choice = 'own'; }
+    if (e.target.id === 'noteIn') ui.note = e.target.value;
+    if (e.target.id === 'draftIn') ui.draft = e.target.value;
+    if (e.target.name?.startsWith('dc')) ui.choice = e.target.value;
+  });
+  document.addEventListener('keydown', e => {
+    if (e.target.id === 'draftIn' && e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { const b = document.querySelector('[data-post]'); if (b) b.click(); }
+    if (e.key === 'Escape') { closeEditors(); renderAsks(); }
+  });
+
+  if (params.get('menu')) ui.menu = /^q/.test(params.get('menu')) ? params.get('menu') : +params.get('menu');
+  renderAll();
+  const focusOn = { history: 'D3', discuss: 'D4', 'settled-change': 'D2' }[STATE];
+  if (focusOn && !params.has('from')) requestAnimationFrame(() => $(focusOn)?.scrollIntoView({ block: 'start' }));
+  /* ?shot&from=D3: the page as if scrolled to that row, for the phone screenshots. */
+  const from = params.has('shot') && params.get('from');
+  if (from && matchMedia('(max-width: 900px)').matches) {
+    const hideFrom = () => {
+      const row = $(from); if (!row) return;
+      document.querySelectorAll('.wi-head, .fields, .goal, .jump').forEach(el => el.style.setProperty('display', 'none', 'important'));
+      const all = [...document.querySelectorAll('#asks .agrp, #asks .ar')];
+      all.forEach(el => { if (!el.contains(row) && (el.compareDocumentPosition(row) & Node.DOCUMENT_POSITION_FOLLOWING)) el.style.setProperty('display', 'none', 'important'); });
+    };
+    requestAnimationFrame(() => requestAnimationFrame(hideFrom));
+  }
+
+  const go = s => () => { location.search = `?state=${s}${params.has('theme') ? `&theme=${params.get('theme')}` : ''}`; };
+  SL.preview([
+    { label: 'Waiting on you', run: go('waiting') },
+    { label: 'Waiting on Mei', run: go('other') },
+    { label: 'Unassigned', run: go('unassigned') },
+    { label: 'All answered', run: go('folded') },
+    { label: 'Feature', run: go('feature') },
+  ]);
+})();
+</script>
+<script src="item-touch.js"></script>
+</body>
+</html>
