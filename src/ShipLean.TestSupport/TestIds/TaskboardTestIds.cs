@@ -36,6 +36,18 @@ public static class TaskboardTestIds
     public const string RowOfferDismiss = "taskboard-row-offer-dismiss";
     public const string Cell = "taskboard-cell";
     public const string CellCount = "taskboard-cell-count";
+
+    // L722a phone grid
+    public const string PhoneGrid = "taskboard-phone-grid";
+    public const string PhonePageHead = "taskboard-phone-page-head";
+    public const string Lane = "taskboard-lane";
+    public const string LaneTasks = "taskboard-lane-tasks";
+    public const string LaneNone = "taskboard-lane-none";
+    public const string LaneHidden = "taskboard-lane-hidden";
+    public const string LaneCount = "taskboard-lane-count";
+    public const string ClosedLine = "taskboard-closed-line";
+    public const string ClosedLineDone = "taskboard-closed-line-done";
+
     public const string Card = "taskboard-card";
     public const string CardTitle = "taskboard-card-title";
     public const string CardKey = "taskboard-card-key";

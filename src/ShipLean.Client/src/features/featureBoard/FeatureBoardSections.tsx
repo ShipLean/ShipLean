@@ -1,6 +1,8 @@
 import type { UserRef } from '../../api/refs';
 import type { FeatureBoardViewDto } from '../../api/views';
 import { TaskboardGrid } from '../taskboard/grid/TaskboardGrid';
+import { TaskboardPhoneGrid } from '../taskboard/grid/phone/TaskboardPhoneGrid';
+import { useTouchShell } from '../../touch/useTouchShell';
 import type { TaskboardGrouping } from '../taskboard/taskboardApi';
 import type { TaskboardScope } from '../taskboard/taskboardScope';
 import { featureBoardLayout, sectionDomId } from './featureBoardLayout';
@@ -38,6 +40,7 @@ export function FeatureBoardSections({
   onToggle: (rowId: string, completed: boolean) => void;
   onSetState: (parentId: string, key: string, revision: number, stateId: string) => void;
 }) {
+  const { touch } = useTouchShell();
   const grid = (rows: FeatureBoardViewDto['rows'], label: string) => (
     <TaskboardGrid
       projectKey={projectKey}
@@ -57,6 +60,47 @@ export function FeatureBoardSections({
   const layout = featureBoardLayout(view);
   const boardName = `Feature board: ${view.header.key} ${view.header.title}`;
   if (grouping === 'people' || layout.length === 0) return grid(view.rows, boardName);
+  if (touch) {
+    // One pager holds every section: each page starts each Feature's lanes with its band (SHIP-722).
+    return (
+      <TaskboardPhoneGrid
+        projectKey={projectKey}
+        projectId={projectId}
+        scope={scope}
+        view={view}
+        sections={layout.map(({ section, rows, direct }) => ({
+          id: section.id,
+          band: (
+            <FeatureSectionHeader
+              band
+              projectKey={projectKey}
+              section={section}
+              direct={direct}
+              collapsed={closedSections.has(section.id)}
+              onToggle={() => onToggleSection(section.id)}
+            />
+          ),
+          closed: closedSections.has(section.id),
+          rows,
+          empty: (
+            <p
+              data-testid={ids.sectionEmpty}
+              className="m-0 px-2 text-[length:var(--text-sm)] text-ink-muted"
+            >
+              No stories or bugs yet.
+            </p>
+          ),
+        }))}
+        grouping={grouping}
+        faces={faces}
+        me={me}
+        isCollapsed={isCollapsed}
+        onToggle={onToggle}
+        onSetState={onSetState}
+        label={boardName}
+      />
+    );
+  }
   return (
     <>
       {layout.map(({ section, rows, direct, empty }) => {

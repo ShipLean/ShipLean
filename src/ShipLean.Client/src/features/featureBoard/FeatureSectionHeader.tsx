@@ -16,6 +16,7 @@ export function FeatureSectionHeader({
   collapsed,
   controls,
   onToggle,
+  band = false,
 }: {
   projectKey: string;
   section: FeatureBoardSectionDto;
@@ -24,7 +25,72 @@ export function FeatureSectionHeader({
   /** The id of the body the toggle shows and hides; none while the body is not drawn. */
   controls?: string;
   onToggle: () => void;
+  /** The band that starts the Feature's lanes on each phone page (SHIP-722): ▼, key, title, ↗. */
+  band?: boolean;
 }) {
+  if (band) {
+    return (
+      <div
+        data-testid={ids.band}
+        data-section={section.key}
+        data-collapsed={collapsed}
+        className={`mt-1 grid min-h-10 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-1 rounded-sm border-l-[3px] py-0.5 ${
+          direct
+            ? 'border-l-edge bg-panel'
+            : 'border-l-[var(--type-feature)] bg-[color-mix(in_srgb,var(--type-feature)_9%,var(--color-surface))]'
+        }`}
+      >
+        <button
+          type="button"
+          data-testid={ids.sectionToggle}
+          aria-expanded={!collapsed}
+          aria-label={`${collapsed ? 'Expand' : 'Collapse'} ${section.key}`}
+          className="grid size-[var(--touch-target)] cursor-pointer place-items-center border-0 bg-transparent text-[length:var(--text-xs)] text-ink-muted"
+          onClick={onToggle}
+        >
+          {collapsed ? '▶' : '▼'}
+        </button>
+        <span className="flex min-w-0 items-center gap-1.5">
+          {direct ? (
+            <b
+              data-testid={ids.sectionTitle}
+              className="min-w-0 truncate text-[length:var(--text-sm)] font-semibold"
+            >
+              Directly under {section.key}
+            </b>
+          ) : (
+            <>
+              <TypeIcon type="feature" />
+              <span
+                data-testid={ids.sectionKey}
+                className="whitespace-nowrap text-[length:var(--text-xs)] text-ink-muted"
+              >
+                {section.key}
+              </span>
+              <b
+                data-testid={ids.sectionTitle}
+                className="min-w-0 truncate text-[length:var(--text-sm)] font-semibold"
+              >
+                {section.title}
+              </b>
+            </>
+          )}
+        </span>
+        {direct ? (
+          <span />
+        ) : (
+          <Link
+            data-testid={ids.sectionOpen}
+            aria-label={`Open ${section.key}`}
+            to={routePath('workItem', { key: projectKey, itemKey: section.key })}
+            className="grid size-[var(--touch-target)] place-items-center rounded-sm text-ink-muted no-underline"
+          >
+            ↗
+          </Link>
+        )}
+      </div>
+    );
+  }
   const stories = percent(section.storiesClosed, section.storiesTotal);
   return (
     <div
