@@ -7,4 +7,6 @@ export const realtimeTestIds = {
   presenceList: 'realtime-presence-list',
   presenceListItem: 'realtime-presence-list-item',
   banner: 'realtime-banner',
+  presenceCount: 'realtime-presence-count',
+  presenceSheetItem: 'realtime-presence-sheet-item',
 } as const;

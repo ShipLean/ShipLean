@@ -3,12 +3,15 @@ import type { MemberDto } from '../api/projects';
 import type { UserRef } from '../api/refs';
 import { Avatar } from '../components/Avatar';
 import { realtimeTestIds as ids } from '../features/realtime/testIds';
+import { useTouchShell } from '../touch/useTouchShell';
 import { withoutMe } from './presence';
+import { PresenceSheet } from './PresenceSheet';
 
 const SHOWN = 3;
 
 /**
- * Who else has this screen open: up to three avatars, then +n; a click lists everyone. `userIds` are the ids the hub
+ * Who else has this screen open: up to three avatars, then +n; a click lists everyone. At touch widths it is a count
+ * only (`+3`) that opens a sheet listing everyone (SHIP-713). `userIds` are the ids the hub
  * listed on the screen and `members` the project's members (their `UserRef`s carry the photo); `meId` is left out, and
  * so is anyone who is not (yet) a known member.
  */
@@ -22,18 +25,37 @@ export function PresenceStack({
   meId: string | undefined;
 }) {
   const [open, setOpen] = useState(false);
+  const { touch } = useTouchShell();
   const users = withoutMe(userIds, meId).flatMap((id): UserRef[] => {
     const member = members.find((m) => m.user.id === id);
     return member === undefined ? [] : [member.user];
   });
   if (users.length === 0) return null;
+  const label = `${users.length} ${users.length === 1 ? 'person' : 'people'} on this screen`;
+  if (touch) {
+    return (
+      <span data-testid={ids.presenceStack} className="inline-flex items-center">
+        <button
+          type="button"
+          data-testid={ids.presenceCount}
+          aria-expanded={open}
+          aria-label={label}
+          className="inline-flex size-(--touch-target) items-center justify-center rounded-control border-0 bg-transparent text-[length:var(--text-sm)] font-semibold text-ink"
+          onClick={() => setOpen(true)}
+        >
+          +{users.length}
+        </button>
+        <PresenceSheet open={open} users={users} onClose={() => setOpen(false)} />
+      </span>
+    );
+  }
   return (
     <span data-testid={ids.presenceStack} className="relative inline-flex items-center">
       <button
         type="button"
         data-testid={ids.presenceToggle}
         aria-expanded={open}
-        aria-label={`${users.length} ${users.length === 1 ? 'person' : 'people'} on this screen`}
+        aria-label={label}
         className="inline-flex items-center rounded-full border-0 bg-transparent px-1 py-0.5 hover:bg-sunken focus-visible:outline-2 focus-visible:outline-signal"
         onClick={() => setOpen((value) => !value)}
       >
