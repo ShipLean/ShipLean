@@ -10,16 +10,29 @@ const NO_FACES: ReadonlySet<string> = new Set();
 export function GridHarness({
   rowIndexes,
   scrollerHeight,
+  extraColumns = 0,
 }: {
   rowIndexes: number[];
   /** Puts the grid in a scroller this tall, as the shell's main area is. */
   scrollerHeight?: number;
+  /** Empty task states added after VIEW's three, to make the grid wider than a desktop screen. */
+  extraColumns?: number;
 }) {
+  const view: typeof VIEW = {
+    ...VIEW,
+    columns: [
+      ...VIEW.columns,
+      ...Array.from({ length: extraColumns }, (_, i) => ({
+        state: { id: `t-extra-${i}`, name: `Extra ${i + 1}`, category: 'inProgress' as const },
+        count: 0,
+      })),
+    ],
+  };
   const grid = (
     <TaskboardDnd
       projectId={PROJECT.id}
       scope={scope}
-      view={VIEW}
+      view={view}
       grouping="stories"
       me={undefined}
       onLanded={() => undefined}
@@ -28,8 +41,8 @@ export function GridHarness({
         projectKey={PROJECT.key}
         projectId={PROJECT.id}
         scope={scope}
-        view={VIEW}
-        rows={rowIndexes.map((i) => VIEW.rows[i])}
+        view={view}
+        rows={rowIndexes.map((i) => view.rows[i])}
         grouping="stories"
         faces={NO_FACES}
         me={undefined}

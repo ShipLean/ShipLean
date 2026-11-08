@@ -26,4 +26,6 @@ export const featureBoardTestIds = {
   sectionPoints: 'feature-board-section-points',
   sectionOpen: 'feature-board-section-open',
   sectionEmpty: 'feature-board-section-empty',
+  // L722a phone grid
+  band: 'feature-board-band',
 } as const;

@@ -38,6 +38,8 @@ export function StoryRowHeader({
   onToggle,
   onSetState,
   onMoveToResolved,
+  compact = false,
+  laneCount,
 }: {
   projectKey: string;
   parent: CardDto;
@@ -58,12 +60,122 @@ export function StoryRowHeader({
   onSetState: (stateId: string) => void;
   /** Sets the story to its first Resolved state; null when its type has none. */
   onMoveToResolved: (() => void) | null;
+  /** The phone lane's card (SHIP-722): ▼, type, title, points; then key, state, assignee and progress. */
+  compact?: boolean;
+  /** On a collapsed phone lane: its tasks on the page on screen. */
+  laneCount?: number;
 }) {
   const [dismissed, setDismissed] = useState(false);
   const states = parentStates.find((s) => s.type === parent.type.id)?.states ?? [];
   const tasks = parent.rollups.find((r) => r.type === 'task');
   const total = tasks ? tasks.open + tasks.closed : 0;
   const paper = `paper relative isolate ${parent.type.id === 'bug' ? 'paper-bug' : ''}`;
+  const offer =
+    offerResolve && onMoveToResolved && !dismissed ? (
+      <div
+        data-testid={ids.rowOffer}
+        className="flex flex-wrap items-center gap-1.5 rounded-control border border-good bg-sunken px-2 py-1 text-[length:var(--text-xs)]"
+      >
+        {/* Compact controls that never break their labels; a narrow card wraps the buttons below the text. */}
+        <b className="whitespace-nowrap">All tasks done.</b>
+        <button
+          type="button"
+          data-testid={ids.rowOfferResolve}
+          className="btn-signal ml-auto h-[22px] whitespace-nowrap px-[7px] text-[length:var(--text-xs)] touch:h-[var(--touch-target)]"
+          onClick={onMoveToResolved}
+        >
+          Move story to Resolved
+        </button>
+        <button
+          type="button"
+          data-testid={ids.rowOfferDismiss}
+          aria-label="Dismiss"
+          className="btn-ghost h-[22px] px-1.5 text-[length:var(--text-xs)] touch:h-[var(--touch-target)] touch:min-w-[var(--touch-target)]"
+          onClick={() => setDismissed(true)}
+        >
+          ✕
+        </button>
+      </div>
+    ) : null;
+  const title = (
+    <ItemLink
+      testId={ids.rowTitle}
+      itemKey={parent.key}
+      projectKey={projectKey}
+      className="block min-w-0 flex-1 truncate leading-[var(--touch-target)] text-ink no-underline"
+    >
+      {parent.title}
+    </ItemLink>
+  );
+  if (compact && collapsed) {
+    return (
+      <div
+        data-testid={ids.rowHeader}
+        className={`${paper} flex min-h-10 items-center gap-1.5 py-0.5 pl-0.5 pr-2.5`}
+      >
+        <CardLayer collapsed />
+        <RowToggle collapsed onToggle={onToggle} label={parent.key} />
+        <TypeIcon type={parent.type.id} />
+        {title}
+        <span
+          data-testid={ids.laneCount}
+          className="whitespace-nowrap text-[length:var(--text-xs)] text-ink-muted"
+        >
+          {laneCount ?? 0}
+        </span>
+        <StateDot category={parent.state.category} name={parent.state.name} />
+      </div>
+    );
+  }
+  if (compact) {
+    return (
+      <div data-testid={ids.rowHeader} className={`${paper} grid pb-1 pl-0.5 pr-2.5 pt-0.5`}>
+        <CardLayer collapsed={false} />
+        <div className="flex min-h-[var(--touch-target)] items-center gap-1.5">
+          <RowToggle collapsed={false} onToggle={onToggle} label={parent.key} />
+          <TypeIcon type={parent.type.id} />
+          <span className="flex min-w-0 flex-1 font-semibold">{title}</span>
+          {fields.showPoints && (parent.points !== null || fields.showEmptyFields) ? (
+            <span
+              data-testid={ids.rowPoints}
+              className="flex-none text-[length:var(--text-xs)] font-semibold"
+            >
+              {parent.points ?? '–'} pts
+            </span>
+          ) : null}
+        </div>
+        <div className="flex min-h-[var(--touch-target)] flex-wrap items-center gap-2 pl-[34px] text-[length:var(--text-xs)]">
+          {fields.showKey ? (
+            <span className="text-[length:var(--text-2xs)] text-ink-muted">{parent.key}</span>
+          ) : null}
+          {fields.extraFields.includes('state') ? (
+            <select
+              data-testid={ids.rowState}
+              aria-label={`State of ${parent.key}`}
+              className="field h-[var(--touch-target)]"
+              value={parent.state.id}
+              onChange={(event) => onSetState(event.target.value)}
+            >
+              {states.map((state) => (
+                <option key={state.id} value={state.id}>
+                  {state.name}
+                </option>
+              ))}
+            </select>
+          ) : null}
+          {fields.showAssignee && (parent.assignee !== null || fields.showEmptyFields) ? (
+            <Avatar {...(parent.assignee ?? {})} />
+          ) : null}
+          {total > 0 && showProgress ? (
+            <span data-testid={ids.rowProgress} className="text-ink-muted">
+              ☑ {tasks?.closed}/{total}
+            </span>
+          ) : null}
+        </div>
+        {offer}
+      </div>
+    );
+  }
   if (collapsed) {
     return (
       <div
@@ -141,32 +253,7 @@ export function StoryRowHeader({
         ) : null}
       </div>
       <CardExtraFields fields={parent.extraFields} />
-      {offerResolve && onMoveToResolved && !dismissed ? (
-        <div
-          data-testid={ids.rowOffer}
-          className="flex flex-wrap items-center gap-1.5 rounded-control border border-good bg-sunken px-2 py-1 text-[length:var(--text-xs)]"
-        >
-          {/* Compact controls that never break their labels; a narrow card wraps the buttons below the text. */}
-          <b className="whitespace-nowrap">All tasks done.</b>
-          <button
-            type="button"
-            data-testid={ids.rowOfferResolve}
-            className="btn-signal ml-auto h-[22px] whitespace-nowrap px-[7px] text-[length:var(--text-xs)]"
-            onClick={onMoveToResolved}
-          >
-            Move story to Resolved
-          </button>
-          <button
-            type="button"
-            data-testid={ids.rowOfferDismiss}
-            aria-label="Dismiss"
-            className="btn-ghost h-[22px] px-1.5 text-[length:var(--text-xs)]"
-            onClick={() => setDismissed(true)}
-          >
-            ✕
-          </button>
-        </div>
-      ) : null}
+      {offer}
     </div>
   );
 }
