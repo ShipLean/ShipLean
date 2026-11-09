@@ -139,4 +139,63 @@ public class AskHistoryApiTests : ApiFixture
         history.Asks.ShouldBeEmpty();
         history.Revisions.Select(r => r.Rev).ShouldBe([1]);
     }
+
+    [Test]
+    public async Task History_WhenNumbersHaveGap_ShouldFoldOnlyConsecutive()
+    {
+        var item = await ArrangeItemAsync();
+        var at = TestDates.Today.AddHours(5);
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            await RaisedAsync(connection, item, at);
+            await RaisedAsync(connection, item, at);
+            await new DecisionBuilder(item).RaisedBy(SeedIds.Users.Joel, Agent, at).BuildAsync(connection);
+            await RaisedAsync(connection, item, at);
+        }
+
+        var asks = (await ReadHistoryAsync(item)).Asks;
+
+        asks.Select(a => a.Badge).ShouldBe(["D4", "D1–D2"]);
+    }
+
+    [Test]
+    public async Task History_WhenDecisionWithdrawn_ShouldHaveNullTo()
+    {
+        var item = await ArrangeItemAsync();
+        var at = TestDates.Today.AddHours(6);
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            var decision = await RaisedAsync(connection, item, at);
+            await new AskEventBuilder(item).ForDecision(decision).Kind("withdrawn").To("Stale answer")
+                .By(SeedIds.Users.Joel, Agent).At(at.AddHours(1)).BuildAsync(connection);
+        }
+
+        var asks = (await ReadHistoryAsync(item)).Asks;
+
+        asks[0].Kind.ShouldBe(AskEventKind.Withdrawn);
+        asks[0].To.ShouldBeNull();
+    }
+
+    [Test]
+    public async Task History_WhenFolded_ShouldHaveNullFromAndNote()
+    {
+        var item = await ArrangeItemAsync();
+        var at = TestDates.Today.AddHours(7);
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            for (var n = 0; n < 2; n++)
+            {
+                var (id, _) = await new DecisionBuilder(item).RaisedBy(SeedIds.Users.Joel, Agent, at).BuildAsync(connection);
+                await new AskEventBuilder(item).ForDecision(id).Kind("raised").From("Earlier").To("The recommended answer")
+                    .ToKind("recommended").Note("A note.").By(SeedIds.Users.Joel, Agent).At(at).BuildAsync(connection);
+            }
+        }
+
+        var line = (await ReadHistoryAsync(item)).Asks.ShouldHaveSingleItem();
+
+        line.Badge.ShouldBe("D1–D2");
+        line.From.ShouldBeNull();
+        line.To.ShouldBeNull();
+        line.Note.ShouldBeNull();
+    }
 }

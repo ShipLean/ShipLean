@@ -22,6 +22,7 @@ public sealed class AskHistory(NpgsqlDataSource dataSource, TimeProvider clock) 
             LEFT JOIN decision d ON d.id = e.decision_id
             LEFT JOIN question q ON q.id = e.question_id
             WHERE e.work_item_id = @workItemId
+            ORDER BY e.at, COALESCE(d.number, q.number), e.id
             """,
             new { workItemId }, cancellationToken: cancellationToken))).ToList();
         var users = (await connection.QueryAsync<UserRef>(new CommandDefinition(
@@ -43,7 +44,7 @@ public sealed class AskHistory(NpgsqlDataSource dataSource, TimeProvider clock) 
                 var first = run[0];
                 lines.Add(run.Count == 1
                     ? (first.Number, Line(first, Badge(first), users))
-                    : (first.Number, Line(first, $"{Prefix(first)}{first.Number}–{Prefix(first)}{run[^1].Number}", users) with { To = null }));
+                    : (first.Number, Line(first, $"{Prefix(first)}{first.Number}–{Prefix(first)}{run[^1].Number}", users) with { From = null, To = null, Note = null }));
             }
         }
 

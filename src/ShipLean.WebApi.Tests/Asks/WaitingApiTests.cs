@@ -174,7 +174,7 @@ public class WaitingApiTests : ApiFixture
     {
         using var response = await Api.ActingAs(TestUser.Anonymous).GetAsync("api/me/waiting");
 
-        (await ApiClient.ReadApiErrorAsync(response)).Code.ShouldBe(ApiErrorCodes.Unauthorized);
+        (await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.Unauthorized)).Code.ShouldBe(ApiErrorCodes.Unauthorized);
     }
 
     [Test]
