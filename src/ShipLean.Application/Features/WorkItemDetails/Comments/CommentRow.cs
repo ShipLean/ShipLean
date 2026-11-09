@@ -1,4 +1,5 @@
 using ShipLean.Application.Identity;
+using ShipLean.Contracts.Asks;
 using ShipLean.Contracts.Comments;
 using ShipLean.Contracts.Refs;
 using ShipLean.Core;
@@ -25,7 +26,9 @@ internal sealed record CommentRow(
     string? SupersededByName = null,
     string? SupersededByInitials = null,
     string? SupersededByColour = null,
-    string? SupersededByPhotoUrl = null)
+    string? SupersededByPhotoUrl = null,
+    string? TagKind = null,
+    string? TagLabel = null)
 {
     public const string Columns =
         $"""
@@ -33,10 +36,12 @@ internal sealed record CommentRow(
         u.id AS authorId, u.name AS authorName, u.initials AS authorInitials, u.avatar_colour AS authorColour, {UserRefs.PhotoUrlSql} AS authorPhotoUrl,
         c.superseded_at AS supersededAt, s.id AS supersededById, s.name AS supersededByName, s.initials AS supersededByInitials,
         s.avatar_colour AS supersededByColour,
-        CASE WHEN s.avatar_photo_blob IS NOT NULL THEN '/api/users/' || s.id::text || '/photo?v=' || s.photo_version END AS supersededByPhotoUrl
+        CASE WHEN s.avatar_photo_blob IS NOT NULL THEN '/api/users/' || s.id::text || '/photo?v=' || s.photo_version END AS supersededByPhotoUrl,
+        t.kind AS tagKind, CASE WHEN t.question_id IS NOT NULL THEN 'Q' || q.number::text ELSE 'D' || d.number::text END AS tagLabel
         """;
 
-    public const string From = "FROM comment c LEFT JOIN app_user u ON u.id = c.author_id LEFT JOIN app_user s ON s.id = c.superseded_by";
+    public const string From = "FROM comment c LEFT JOIN app_user u ON u.id = c.author_id LEFT JOIN app_user s ON s.id = c.superseded_by"
+        + " LEFT JOIN comment_ask_tag t ON t.comment_id = c.id LEFT JOIN decision d ON d.id = t.decision_id LEFT JOIN question q ON q.id = t.question_id";
 
     public CommentDto ToDto(Markdown.MarkdownRenderer renderer, TimeProvider clock)
     {
@@ -51,6 +56,8 @@ internal sealed record CommentRow(
             CreatedAt, DisplayDate.Relative(CreatedAt, clock),
             edited, edited is { } at ? DisplayDate.Relative(at, clock) : null,
             AgentName, superseded,
-            AskTag: null); // TODO: the comment_ask_tag join replaces this
+            AskTag: TagKind is { } kind
+                ? new CommentAskTagDto(Enum.Parse<AskTagKind>(kind, ignoreCase: true), TagLabel!)
+                : null);
     }
 }

@@ -118,6 +118,8 @@ public static class ActionUsageMap
         Add(ActionUsage.SelfEmitted, "WorkItemDecisions.Confirm", "WorkItemDecisions.Change");
 
         // Asks: questions (SV-Q)
+        Add(ActionUsage.Track(UsageEventNames.QuestionAnswered), "WorkItemQuestions.Answer");
+        Add(ActionUsage.Track(UsageEventNames.QuestionWithdrawn), "WorkItemQuestions.Withdraw");
 
         // Asks: history and waiting (SV-W)
 
