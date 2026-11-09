@@ -110,6 +110,7 @@ public static class ActionUsageMap
         Add(ActionUsage.Track(UsageEventNames.BackupRunStarted), "Backups.Run");
 
         // Asks: item read (R1)
+        Add(ActionUsage.Untracked(ScreenCounts), "WorkItemAsks.Get");
 
         // Asks: decisions (SV-D2)
 
