@@ -88,7 +88,7 @@ None during setup: setup is touch-first, because voice isn't there until the mod
 - On Android, the models could come through Play for On-device AI packs, which can arrive with the install itself. If the speech model ships with the install, does the first-run download shrink to the command model only?
 - iOS background downloads (Background Assets or a background `URLSession`) may pause when the app is closed by the person. Does the Downloading page need a line about that on iPhone?
 - If the 4B model passes the size check but fails the memory check when it loads, should voice fall back to 1.7B? That means downloading another 1.1 GB, or keeping 1.7B on the phone as a fallback.
-- If the microphone is refused, what does the mic do: open an explainer with "Open phone settings", or stay greyed with a label?
+- ~~If the microphone is refused, what does the mic do?~~ Drawn in `microphone.html`, decisions in `microphone.md`.
 - Do self-hosted servers download the models from our CDN, or does the ShipLean server host them, for instances with no internet access?
 - Should the download pause on low battery or in battery saver?
 - Should Delete models also be offered when the phone is low on space, for example from the system's storage warnings?
