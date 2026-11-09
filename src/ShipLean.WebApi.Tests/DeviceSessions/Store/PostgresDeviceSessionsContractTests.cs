@@ -20,9 +20,15 @@ public sealed class PostgresDeviceSessionsContractTests : DeviceSessionsContract
     public async Task CloneDatabase()
     {
         _database = await PostgresAgentDatabase.CreateAsync();
+        _sessions = new PostgresStore(_database.DataSource);
+    }
+
+    // Fresh users per test, so one test's sessions never show in another's list.
+    [SetUp]
+    public async Task InsertUsers()
+    {
         _userId = await _database.InsertUserAsync();
         _otherUserId = await _database.InsertUserAsync();
-        _sessions = new PostgresStore(_database.DataSource);
     }
 
     [OneTimeTearDown]
