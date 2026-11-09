@@ -40,14 +40,23 @@ function typed<T>() {
   return <U extends DeepWiden<T>>(value: U & NoExtraKeys<U, DeepWiden<T>>): DeepWiden<T> => value;
 }
 
-const sorted = (values: Iterable<string | null>) => [...new Set(values)].filter((v) => v !== null).sort();
+const sorted = (values: Iterable<string | null>) =>
+  [...new Set(values)].filter((v) => v !== null).sort();
 
 test('asks_ShouldTypeEveryFixture', () => {
   const items = [typed<ItemAsksDto>()(story), typed<ItemAsksDto>()(feature)];
   const lines = typed<HistoryDto>()(history);
   const waitingOnMe = typed<WaitingDto>()(waiting);
 
-  expect(items[0].decisions.map((d) => d.label)).toEqual(['D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7']);
+  expect(items[0].decisions.map((d) => d.label)).toEqual([
+    'D1',
+    'D2',
+    'D3',
+    'D4',
+    'D5',
+    'D6',
+    'D7',
+  ]);
   expect(items[1].waitingChildren.filter((c) => c.ownerIsCreator)).toHaveLength(1);
   expect(lines.asks.length).toBeGreaterThan(0);
   expect(waitingOnMe.items.length).toBeGreaterThan(0);
@@ -59,10 +68,14 @@ test('asks_ShouldCoverEveryWireEnumValue', () => {
   const events = decisions.flatMap((d) => d.history);
   const lines = typed<HistoryDto>()(history).asks;
 
-  expect(sorted(items.flatMap((i) => i.questions).map((q) => q.state))).toEqual([...QUESTION_STATES].sort());
+  expect(sorted(items.flatMap((i) => i.questions).map((q) => q.state))).toEqual(
+    [...QUESTION_STATES].sort(),
+  );
   expect(sorted(decisions.map((d) => d.state))).toEqual([...DECISION_STATES].sort());
   expect(sorted([...decisions.map((d) => d.answerKind), ...events.map((e) => e.toKind)])).toEqual(
     [...ANSWER_KINDS].sort(),
   );
-  expect(sorted([...lines.map((l) => l.kind), ...events.map((e) => e.kind)])).toEqual([...ASK_EVENT_KINDS].sort());
+  expect(sorted([...lines.map((l) => l.kind), ...events.map((e) => e.kind)])).toEqual(
+    [...ASK_EVENT_KINDS].sort(),
+  );
 });
