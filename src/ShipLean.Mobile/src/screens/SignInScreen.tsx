@@ -1,4 +1,5 @@
-import { meKey } from '@shiplean/core/api/me';
+import { exchangeSignInCode } from '@shiplean/core/api/deviceSessions';
+import { getMe, meKey } from '@shiplean/core/api/me';
 import Constants from 'expo-constants';
 import { getRandomBytes } from 'expo-crypto';
 import * as Device from 'expo-device';
@@ -10,7 +11,7 @@ import { queryClient } from '../queryClient';
 import { session } from '../session/session';
 import { normaliseServerAddress } from '../session/serverAddress';
 import { checkLine, checkServer, type ServerCheck } from '../session/serverCheck';
-import { coreSignInCalls, createSignIn } from '../session/signIn';
+import { createSignIn } from '../session/signIn';
 import { useSession } from '../session/useSession';
 import { Button } from '../ui/Button';
 import { Screen } from '../ui/Screen';
@@ -29,7 +30,8 @@ function deviceName(): string {
 const flow = createSignIn({
   session,
   openAuthSession: (url, redirect) => openAuthSessionAsync(url, redirect),
-  ...coreSignInCalls,
+  exchange: exchangeSignInCode,
+  getMe,
   seedMe: (me) => queryClient.setQueryData(meKey, me),
   deviceName,
   randomBytes: getRandomBytes,

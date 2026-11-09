@@ -1,5 +1,7 @@
 // The sign-in flow against the real session store, the real core client and a fake server at fetch. Only the browser,
 // the device name, the randomness and the cache are fakes.
+import { exchangeSignInCode } from '@shiplean/core/api/deviceSessions';
+import { getMe } from '@shiplean/core/api/me';
 import { appRedirect, challengeFor, confirmUrl, APP_REDIRECT } from '@shiplean/core/handoff';
 import { configurePlatform, memoryStore } from '@shiplean/core/platform';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
@@ -12,7 +14,8 @@ import {
   type ApiTable,
   type FakeApi,
 } from '../test-support/fakeApi';
-import { coreSignInCalls, createSignIn, signInMessages, type AuthSessionResult } from './signIn';
+import { normaliseServerAddress } from './serverAddress';
+import { createSignIn, signInMessages, type AuthSessionResult } from './signIn';
 import {
   EMAIL_KEY,
   SECRET_KEY,
@@ -92,7 +95,8 @@ function setup({
       opened.push(url);
       return browser(url);
     },
-    ...coreSignInCalls,
+    exchange: exchangeSignInCode,
+    getMe,
     seedMe: (me) => seeded.push(me),
     deviceName: () => 'Pixel 9',
     randomBytes: (n) => Uint8Array.from({ length: n }, () => bytes++ * 5 + 1),
@@ -313,6 +317,20 @@ describe('createSignIn', () => {
 
     const exchange = s.api.callsTo('POST /api/auth/device-sessions/exchange');
     expect(exchange.map((c) => c.origin)).toEqual([A_ORIGIN]);
+  });
+
+  test('signIn_WhenTheTypedAddressHasTheDefaultPort_ShouldMatchTheIssWithoutOne', async () => {
+    const s = setup({
+      browser: (url) => ({
+        type: 'success',
+        url: appRedirect({ code: 'the-code', state: stateOf(url), iss: A_ORIGIN }),
+      }),
+    });
+    // The Server field normalises first, so the flow is handed the origin it makes from the typed address.
+    const typed = normaliseServerAddress('https://a.test:443');
+    expect(typed.ok && typed.origin).toBe(A_ORIGIN);
+
+    expect(await s.flow.signIn(typed.ok ? typed.origin : '')).toEqual({ kind: 'signedIn' });
   });
 
   test.each([['cancelled' as const], ['unsupported' as const]])(

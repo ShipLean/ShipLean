@@ -8,7 +8,7 @@
 // A redirect counts only as the answer to the signIn call that opened the browser: there is no other way in. A stray
 // shiplean://signed-in deep link with no sign-in running is kept off the router by app/+native-intent.ts
 // (nativeIntent.test.ts) and never reaches this flow.
-import { api, ApiRequestError, type RequestOptions } from '@shiplean/core/api/client';
+import { ApiRequestError, type RequestOptions } from '@shiplean/core/api/client';
 import type { DeviceSignInDto, ExchangeSignInCodeRequest } from '@shiplean/core/api/deviceSessions';
 import type { MeDto } from '@shiplean/core/api/me';
 import { APP_REDIRECT, confirmUrl, parseAppRedirect } from '@shiplean/core/handoff';
@@ -25,6 +25,7 @@ export interface SignInDeps {
   session: Pick<SessionStore, 'beginSignIn' | 'setPendingSecret' | 'commit' | 'abandon'>;
   openAuthSession(url: string, redirect: string): Promise<AuthSessionResult>;
   // Both are sent with { signIn: true }, so a refusal is the sign-in's and never a lost session, and a timeout signal.
+  // The app passes the core's exchangeSignInCode and getMe.
   exchange(request: ExchangeSignInCodeRequest, options: RequestOptions): Promise<DeviceSignInDto>;
   // GET /api/me with whatever the session sends now: the pending secret.
   getMe(options: RequestOptions): Promise<MeDto>;
@@ -36,14 +37,6 @@ export interface SignInDeps {
 }
 
 export const SIGN_IN_TIMEOUT_MS = 15_000;
-
-// The exchange and `me` through the core client. The core's exchangeSignInCode and getMe take no options, and these
-// calls need a signal and, for `me`, signIn: true.
-export const coreSignInCalls: Pick<SignInDeps, 'exchange' | 'getMe'> = {
-  exchange: (request, options) =>
-    api.post<DeviceSignInDto>('/api/auth/device-sessions/exchange', request, options),
-  getMe: (options) => api.get<MeDto>('/api/me', options),
-};
 
 export type SignInOutcome =
   | { kind: 'signedIn' }

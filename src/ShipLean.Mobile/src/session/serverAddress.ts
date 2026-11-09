@@ -14,6 +14,8 @@ export type ServerAddress =
 const SCHEME = /^([A-Za-z][A-Za-z0-9+.-]*):\/\//;
 const HOSTNAME = /^[A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?$/;
 const IPV6 = /^\[[0-9A-Fa-f:.]+\]$/;
+const HEXTET = /^[0-9A-Fa-f]{1,4}$/;
+const IPV4 = /^\d{1,3}(\.\d{1,3}){3}$/;
 const PORT = /^\d{1,5}$/;
 
 // Trims; adds https:// when there is no scheme; keeps a typed http://; refuses any other scheme and a user name or
@@ -30,20 +32,39 @@ export function normaliseServerAddress(input: string): ServerAddress {
   const authority = rest.slice(0, rest.search(/[/?#]|$/));
   if (authority.includes('@')) return { ok: false, error: addressErrors.userinfo };
 
-  const host = hostOf(authority);
+  const host = hostOf(authority, scheme === 'https' ? '443' : '80');
   if (host === null) return { ok: false, error: addressErrors.unparsable };
   return { ok: true, origin: `${scheme}://${host}`, host };
 }
 
-// host[:port], lower-cased, or null when it isn't one.
-function hostOf(authority: string): string | null {
+// The inside of [...]: up to eight hextets, one `::` at most, an IPv4 tail allowed.
+function validIpv6(inner: string): boolean {
+  const halves = inner.split('::');
+  if (halves.length > 2) return false;
+  const groups = halves.flatMap((half) => (half === '' ? [] : half.split(':')));
+  const last = groups[groups.length - 1];
+  const tail = last !== undefined && last.includes('.');
+  if (tail && !IPV4.test(last)) return false;
+  const hextets = tail ? groups.slice(0, -1) : groups;
+  if (!hextets.every((g) => HEXTET.test(g))) return false;
+  const count = hextets.length + (tail ? 2 : 0);
+  return halves.length === 2 ? count < 8 : count === 8;
+}
+
+// host[:port], lower-cased, or null when it isn't one. The scheme's default port is dropped, so `https://a:443` and the
+// confirm page's iss `https://a` are the same server.
+function hostOf(authority: string, defaultPort: string): string | null {
   const colon = authority.startsWith('[') ? authority.indexOf(']') + 1 : authority.indexOf(':');
   const name = colon > 0 && colon < authority.length ? authority.slice(0, colon) : authority;
   const port = name === authority ? null : authority.slice(colon + 1);
   const portOk = port === null || (authority[colon] === ':' && PORT.test(port));
   if (!portOk) return null;
-  if (!HOSTNAME.test(name) && !IPV6.test(name)) return null;
-  return port === null ? name.toLowerCase() : `${name.toLowerCase()}:${port}`;
+  if (!HOSTNAME.test(name) && !(IPV6.test(name) && validIpv6(name.slice(1, -1)))) return null;
+  const number = port === null ? null : String(Number(port));
+  if (number !== null && Number(number) > 65535) return null;
+  return number === null || number === defaultPort
+    ? name.toLowerCase()
+    : `${name.toLowerCase()}:${number}`;
 }
 
 // The host part of an origin this module made ('https://shiplean.test' -> 'shiplean.test').

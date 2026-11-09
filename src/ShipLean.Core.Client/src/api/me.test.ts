@@ -1,6 +1,7 @@
-import { expect, test } from 'vitest';
+import { expect, test, vi } from 'vitest';
 import me from '../../../ShipLean.TestSupport/PinnedShapes/me.json';
-import { DENSITIES, THEMES, type MeDto } from './me';
+import { configurePlatform, platform, type UnauthorizedReason } from '../platform';
+import { DENSITIES, THEMES, getMe, type MeDto } from './me';
 
 // Typecheck fails if the fixture lacks a field, has one of the wrong type, or has one the type doesn't declare.
 type DeepWiden<T> = T extends string
@@ -39,4 +40,26 @@ test('me_ShouldTypeTheFixture', () => {
   const preference = (key: string) => me.preferences.find((row) => row.key === key)?.json;
   expect(THEMES).toContain(preference('theme'));
   expect(DENSITIES).toContain(preference('density'));
+});
+
+test('getMe_ShouldPassTheSignalAndSignIn', async () => {
+  const fetchStub = vi.fn().mockResolvedValue(new Response(JSON.stringify(me.me), { status: 200 }));
+  vi.stubGlobal('fetch', fetchStub);
+  const reasons: UnauthorizedReason[] = [];
+  const original = platform();
+  configurePlatform({ ...original, onUnauthorized: (reason) => reasons.push(reason) });
+  try {
+    const signal = new AbortController().signal;
+    expect(await getMe({ signal, signIn: true })).toEqual(me.me);
+    expect((fetchStub.mock.calls[0] as [string, RequestInit])[1].signal).toBe(signal);
+
+    fetchStub.mockResolvedValue(
+      new Response('{"error":"x","code":"unauthorized"}', { status: 401 }),
+    );
+    await getMe({ signIn: true }).catch(() => undefined);
+    expect(reasons).toEqual([]);
+  } finally {
+    vi.unstubAllGlobals();
+    configurePlatform(original);
+  }
 });

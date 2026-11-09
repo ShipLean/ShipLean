@@ -1,5 +1,5 @@
 // The signed-in user. C#: ShipLean.Contracts.Users.MeDto.
-import { api } from './client';
+import { api, type RequestOptions } from './client';
 import type { UserDto } from './users';
 
 export const THEMES = ['os', 'light', 'dark'] as const;
@@ -17,4 +17,4 @@ export interface MeDto extends UserDto {
 
 // GET /api/me, shared by every screen of both clients under one key.
 export const meKey = ['me'] as const;
-export const getMe = () => api.get<MeDto>('/api/me');
+export const getMe = (options?: RequestOptions) => api.get<MeDto>('/api/me', options);

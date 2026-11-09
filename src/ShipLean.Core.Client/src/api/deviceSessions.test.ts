@@ -176,3 +176,34 @@ test('endCurrentDeviceSession_ShouldDeleteTheCurrentSession', async () => {
     body: undefined,
   });
 });
+
+test('exchangeSignInCode_ShouldPassTheSignalAndAlwaysSendSignIn', async () => {
+  const fetchStub = stubFetch(new Response(JSON.stringify(signIn), { status: 201 }));
+  const signal = new AbortController().signal;
+  await exchangeSignInCode(exchange, { signal });
+  expect((fetchStub.mock.calls[0] as [string, RequestInit])[1].signal).toBe(signal);
+
+  // A caller cannot turn signIn off: a refusal still never reaches onUnauthorized.
+  const reasons: UnauthorizedReason[] = [];
+  configurePlatform({ ...original, onUnauthorized: (reason) => reasons.push(reason) });
+  stubFetch(new Response(JSON.stringify({ error: 'x', code: 'unauthorized' }), { status: 401 }));
+  await exchangeSignInCode(exchange, { signIn: false }).catch(() => undefined);
+  expect(reasons).toEqual([]);
+});
+
+test('endCurrentDeviceSession_ShouldPassTheSignalAndSignIn', async () => {
+  const fetchStub = stubFetch(new Response(null, { status: 204 }));
+  const signal = new AbortController().signal;
+  await endCurrentDeviceSession({ signIn: true, signal });
+  expect((fetchStub.mock.calls[0] as [string, RequestInit])[1].signal).toBe(signal);
+
+  // signIn: true keeps a late 401 away from onUnauthorized.
+  const reasons: UnauthorizedReason[] = [];
+  configurePlatform({ ...original, onUnauthorized: (reason) => reasons.push(reason) });
+  stubFetch(new Response(JSON.stringify({ error: 'x', code: 'session_ended' }), { status: 401 }));
+  await endCurrentDeviceSession({ signIn: true }).catch(() => undefined);
+  expect(reasons).toEqual([]);
+  stubFetch(new Response(JSON.stringify({ error: 'x', code: 'session_ended' }), { status: 401 }));
+  await endCurrentDeviceSession().catch(() => undefined);
+  expect(reasons).toHaveLength(1);
+});

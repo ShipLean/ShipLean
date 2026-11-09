@@ -1,6 +1,6 @@
 // Device sessions: how the phone app signs in (a browser handoff, then a bearer secret) and how a person sees and ends
 // them. C#: ShipLean.Contracts.Auth device-session DTOs. Nothing is omitted: absent values are null.
-import { api } from './client';
+import { api, type RequestOptions } from './client';
 import type { MeDto } from './me';
 
 export interface DeviceSessionDto {
@@ -53,13 +53,16 @@ export const createSignInCode = (req: CreateSignInCodeRequest) =>
   api.post<SignInCodeDto>(`${BASE}/codes`, req);
 
 // Anonymous. Its 400 is a refused sign-in, not a lost session, so it never reaches onUnauthorized.
-export const exchangeSignInCode = (req: ExchangeSignInCodeRequest) =>
-  api.post<DeviceSignInDto>(`${BASE}/exchange`, req, { signIn: true });
+// `options` adds a signal; signIn: true is always sent.
+export const exchangeSignInCode = (req: ExchangeSignInCodeRequest, options?: RequestOptions) =>
+  api.post<DeviceSignInDto>(`${BASE}/exchange`, req, { ...options, signIn: true });
 
 export const listDeviceSessions = () => api.get<DeviceSessionDto[]>(BASE);
 
 export const revokeDeviceSession = (id: string) =>
   api.delete<void>(`${BASE}/${encodeURIComponent(id)}`);
 
-// Ends the session this request used (the app's Sign out).
-export const endCurrentDeviceSession = () => api.delete<void>(`${BASE}/current`);
+// Ends the session this request used (the app's Sign out). The app passes { signIn: true } so a late 401 never reaches
+// onUnauthorized after the person has signed in again, and a signal to bound the wait.
+export const endCurrentDeviceSession = (options?: RequestOptions) =>
+  api.delete<void>(`${BASE}/current`, options);
