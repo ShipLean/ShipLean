@@ -13,7 +13,6 @@ namespace ShipLean.WebApi.Tests.Mcp.Payloads;
 
 // The K1 contract end to end over the real route and the real IToolPayloads (no doubles): create_payload_upload issues,
 // PUT api/uploads/payloads/{token} stores once, and FindAsync returns the body only to the same user, authorization and tool.
-// Red until SHIP-984 replaces the stub store (Upload and Find throw NotImplementedException until then).
 [TestFixture]
 public class PayloadUploadContractTests : McpFixture
 {
