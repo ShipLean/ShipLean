@@ -61,22 +61,21 @@ public sealed class DeviceSessions(NpgsqlDataSource dataSource) : IDeviceSession
             return null;
         }
         var secret = DeviceSecret.New();
-        var session = new DeviceSessionRecord(
-            Guid.CreateVersion7(now), claimed.UserId, claimed.DeviceName, DeviceSecret.TokenPrefix(secret), claimed.SecurityStamp,
-            now, now, now + DeviceSessionLimits.SessionLifetime, null);
-        await connection.ExecuteAsync(new CommandDefinition(
-            """
+        // Read back what Postgres stored (microsecond times), so the returned session equals what FindBySecret returns.
+        var row = await connection.QuerySingleAsync<SessionRow>(new CommandDefinition(
+            $"""
             INSERT INTO device_session (id, user_id, name, token_hash, token_prefix, security_stamp, created_at, last_used_at, expires_at)
-            VALUES (@Id, @UserId, @Name, @hash, @TokenPrefix, @SecurityStamp, @CreatedAt, @LastUsedAt, @ExpiresAt)
+            VALUES (@id, @UserId, @name, @hash, @tokenPrefix, @SecurityStamp, @now, @now, @expiresAt)
+            RETURNING {Columns}
             """,
             new
             {
-                session.Id, session.UserId, session.Name, session.TokenPrefix, session.SecurityStamp,
-                session.CreatedAt, session.LastUsedAt, session.ExpiresAt, hash = DeviceSecret.Hash(secret),
+                id = Guid.CreateVersion7(now), claimed.UserId, name = claimed.DeviceName, hash = DeviceSecret.Hash(secret),
+                tokenPrefix = DeviceSecret.TokenPrefix(secret), claimed.SecurityStamp, now, expiresAt = now + DeviceSessionLimits.SessionLifetime,
             },
             transaction, cancellationToken: cancellationToken));
         await transaction.CommitAsync(cancellationToken);
-        return new DeviceSignIn(session, secret);
+        return new DeviceSignIn(row.ToRecord(), secret);
     }
 
     public async Task<DeviceSessionRecord?> FindBySecretAsync(string secret, CancellationToken cancellationToken = default)
