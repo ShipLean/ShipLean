@@ -22,7 +22,7 @@ export function DecisionsSection({ item }: { item: AsksItem }) {
     <section
       data-testid={ids.section}
       aria-label="Decisions and questions"
-      className={`grid max-w-[940px] min-w-0 gap-2 border-l-[3px] px-4 py-3 max-[900px]:px-3 ${
+      className={`grid min-w-0 gap-2 border-b border-l-[3px] border-b-edge/60 px-4 py-3 max-[900px]:px-3 ${
         waiting
           ? 'border-l-caution bg-[color-mix(in_srgb,var(--color-warn)_5%,var(--color-surface))]'
           : folded
@@ -44,7 +44,7 @@ export function DecisionsSection({ item }: { item: AsksItem }) {
           </button>
         ) : null}
         <h2 className="text-[length:var(--text-md)] font-semibold">Decisions and questions</h2>
-        {asks.data ? <AsksHeader item={item} asks={asks.data} /> : null}
+        {asks.data ? <AsksHeader item={item} asks={asks.data} folded={folded} /> : null}
       </header>
       {asks.isError ? (
         <p
@@ -62,7 +62,7 @@ export function DecisionsSection({ item }: { item: AsksItem }) {
             {asks.data.ownerIsMe ? 'you' : (asks.data.owner?.name ?? 'the owner')} to answer.
           </p>
         ) : folded ? null : (
-          <div className="grid min-w-0 gap-3">
+          <div className="grid max-w-[940px] min-w-0 gap-3">
             <QuestionList item={item} asks={asks.data} />
             <DecisionList item={item} asks={asks.data} />
             {item.type.id === 'feature' ? <WaitingChildren item={item} asks={asks.data} /> : null}

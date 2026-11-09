@@ -24,7 +24,6 @@ export function QuestionRow({ item, question }: { item: AsksItem; question: Ques
   const writes = useAskWrites(item.projectId, item.key, item.id);
   const { answer } = question;
   const open = question.state === 'open';
-  const withdrawn = question.state === 'withdrawn';
   return (
     <li
       id={question.label}
@@ -43,7 +42,7 @@ export function QuestionRow({ item, question }: { item: AsksItem; question: Ques
       </span>
       <span
         className={`min-w-0 text-[length:var(--text-sm)] leading-[1.4] break-words max-[900px]:text-[length:var(--text-md)] ${
-          withdrawn ? 'text-ink-muted line-through' : 'font-semibold'
+          open ? 'font-semibold' : 'text-ink-muted'
         }`}
       >
         {question.text}
@@ -99,9 +98,6 @@ export function QuestionRow({ item, question }: { item: AsksItem; question: Ques
             question.askedBy.name
           )}{' '}
           · {question.askedAtLabel}
-          {withdrawn && question.withdrawnAtLabel
-            ? ` · withdrawn ${question.withdrawnAtLabel}`
-            : ''}
         </span>
       </span>
       {answer ? (
@@ -124,6 +120,15 @@ export function QuestionRow({ item, question }: { item: AsksItem; question: Ques
             </span>
           </span>
         </div>
+      ) : null}
+      {writes.withdrawQuestion.error ? (
+        <span
+          data-testid={ids.questionWithdrawError}
+          role="alert"
+          className="col-span-2 col-start-2 text-[length:var(--text-xs)] text-alert max-[900px]:col-span-1"
+        >
+          {writes.withdrawQuestion.error.message}
+        </span>
       ) : null}
       {replying ? (
         <QuestionReply question={question} writes={writes} onClose={() => setReplying(false)} />

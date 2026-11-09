@@ -89,3 +89,16 @@ test('QuestionMenu_WhenWithdrawChosen_ShouldPostWithdraw', async ({ mount, page 
   await expect.poll(() => asks.writes.length).toBe(1);
   expect(asks.writes[0].url).toBe(`/api/work-items/${waiting.workItemId}/questions/1/withdraw`);
 });
+
+test('QuestionMenu_WhenWithdrawRefused_ShouldShowError', async ({ mount, page }) => {
+  const asks = await stubAsks(page, waiting);
+  asks.failNext(409, { error: 'Q1 is no longer open.', code: 'conflict' });
+  const component = await mount(view(waiting));
+
+  await row(page, 'Q1').getByTestId(ids.questionMore).click();
+  await component.getByTestId(ids.questionWithdraw).click();
+
+  await expect(row(page, 'Q1').getByTestId(ids.questionWithdrawError)).toHaveText(
+    'Q1 is no longer open.',
+  );
+});

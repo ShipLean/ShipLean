@@ -55,7 +55,10 @@ export function QuestionReply({
           type="button"
           data-testid={ids.questionReplyCancel}
           className="h-7 rounded-control px-3 text-[length:var(--text-sm)] text-ink hover:bg-signal-soft"
-          onClick={onClose}
+          onClick={() => {
+            answer.reset();
+            onClose();
+          }}
         >
           Cancel
         </button>

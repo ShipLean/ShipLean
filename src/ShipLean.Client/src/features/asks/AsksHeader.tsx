@@ -43,7 +43,7 @@ function settledSummary(asks: ItemAsksDto): string {
 
 // The rest of the section's header row, after the fold button and the heading (DecisionsSection owns those): the count,
 // who it waits on, and the one-line summary.
-export function AsksHeader({ item, asks }: AsksRegionProps) {
+export function AsksHeader({ item, asks, folded = false }: AsksRegionProps & { folded?: boolean }) {
   const openQuestions = asks.questions.filter(isOpen).length;
   const openDecisions = asks.decisions.filter(isOpen).length;
   const waiting = openQuestions + openDecisions;
@@ -110,7 +110,7 @@ export function AsksHeader({ item, asks }: AsksRegionProps) {
         )}
       </span>
       <span className="ml-auto" />
-      <BulkConfirm item={item} asks={asks} />
+      {folded ? null : <BulkConfirm item={item} asks={asks} />}
     </>
   );
 }

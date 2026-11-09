@@ -66,19 +66,31 @@ test('AsksHeader_WhenUnassigned_ShouldNoteCreator', async ({ mount }) => {
 });
 
 test('AsksHeader_WhenOnlyChildrenWait_ShouldPointToStoriesBelow', async ({ mount }) => {
-  const asks = featureChildrenOnly;
-  const asksBelow = asks.waitingChildren.reduce((n, c) => n + c.openQuestions + c.openDecisions, 0);
   const component = await mount(
     <RegionHarness>
-      <AsksHeader item={{ ...item, type: { id: 'feature', name: 'Feature' } }} asks={asks} />
+      <AsksHeader
+        item={{ ...item, type: { id: 'feature', name: 'Feature' } }}
+        asks={featureChildrenOnly}
+      />
     </RegionHarness>,
   );
 
   await expect(component.getByTestId(ids.summary)).toHaveText(
-    `Nothing here waits. ${asksBelow} asks on ${asks.waitingChildren.length} stories below`,
+    'Nothing here waits. 7 asks on 2 stories below',
   );
   await expect(component.getByTestId(ids.waitingOn)).toHaveCount(0);
   await expect(component.getByTestId(ids.count)).toHaveCount(0);
+});
+
+test('AsksHeader_WhenFolded_ShouldHideBulkConfirm', async ({ mount }) => {
+  const component = await mount(
+    <RegionHarness>
+      <AsksHeader item={item} asks={waiting} folded />
+      <AsksHeader item={item} asks={waiting} />
+    </RegionHarness>,
+  );
+
+  await expect(component.getByTestId(ids.bulkConfirm)).toHaveCount(1);
 });
 
 test('DecisionsSection_WhenNothingWaiting_ShouldFoldToSummaryAndUnfold', async ({
@@ -107,8 +119,9 @@ test('DecisionsSection_WhenEmpty_ShouldShowEmptyLine', async ({ mount, page }) =
 
   await expect(component.getByTestId(ids.summary)).toHaveText('No decisions or questions yet.');
   const hint = component.getByTestId(ids.empty);
-  await expect(hint).toContainText('record_decisions');
-  await expect(hint).toContainText('ask');
+  await expect(hint).toHaveText(
+    'When an agent records a decision with record_decisions or asks with ask, it shows here for the owner to answer.',
+  );
   await expect(component.getByTestId(ids.foldToggle)).toHaveCount(0);
 });
 

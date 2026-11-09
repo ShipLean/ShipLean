@@ -74,15 +74,10 @@ test('DecisionsSection_WhenOtherItemAsksChange_ShouldNotRefetch', async ({ mount
     clientId: null,
     workItemId: 'other-item',
   });
+  // Events are handled in order, so a refetch caused by the other item's event was already sent before this one's.
+  const sentinel = page.waitForResponse((response) => response.url().endsWith(`/${item.id}/asks`));
   await hub.push({ type: 'asksChanged', projectId: 'p1', clientId: null, workItemId: item.id });
-  await expect.poll(() => asks.reads()).toBe(2);
-  await hub.push({
-    type: 'asksChanged',
-    projectId: 'p1',
-    clientId: null,
-    workItemId: 'other-item',
-  });
-  await hub.push({ type: 'asksChanged', projectId: 'p1', clientId: null, workItemId: item.id });
+  await sentinel;
 
-  await expect.poll(() => asks.reads()).toBe(3);
+  expect(asks.reads()).toBe(2);
 });

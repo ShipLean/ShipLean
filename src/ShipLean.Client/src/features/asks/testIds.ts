@@ -55,6 +55,7 @@ export const asksTestIds = {
   commentAskTag: 'asks-comment-ask-tag',
   // W1
   questionReplyError: 'asks-question-reply-error',
+  questionWithdrawError: 'asks-question-withdraw-error',
   // W2a
   // W2b
   // W3

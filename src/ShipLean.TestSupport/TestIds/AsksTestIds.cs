@@ -58,6 +58,7 @@ public static class AsksTestIds
     public const string CommentAskTag = "asks-comment-ask-tag";
     // W1
     public const string QuestionReplyError = "asks-question-reply-error";
+    public const string QuestionWithdrawError = "asks-question-withdraw-error";
     // W2a
     // W2b
     // W3
