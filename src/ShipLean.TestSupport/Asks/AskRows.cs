@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Dapper;
 using Npgsql;
 using ShipLean.Application.Database;
@@ -14,6 +15,18 @@ public static class AskRows
         string AnswerKind, int? AlternativeIndex, string State, Guid CreatedByUserId, string? CreatedAgentName, DateTimeOffset CreatedAt,
         Guid? AnsweredByUserId, string? AnsweredAgentName, DateTimeOffset? AnsweredAt, bool FromDescription, DateTimeOffset UpdatedAt);
 
+    // As read: alternatives is the jsonb array's text, parsed into Decision.Alternatives.
+    private sealed record DecisionRow(
+        Guid Id, Guid WorkItemId, int Number, string Question, string Recommended, string Alternatives, string CurrentAnswer,
+        string AnswerKind, int? AlternativeIndex, string State, Guid CreatedByUserId, string? CreatedAgentName, DateTimeOffset CreatedAt,
+        Guid? AnsweredByUserId, string? AnsweredAgentName, DateTimeOffset? AnsweredAt, bool FromDescription, DateTimeOffset UpdatedAt)
+    {
+        public Decision ToDecision() => new(
+            Id, WorkItemId, Number, Question, Recommended, JsonSerializer.Deserialize<string[]>(Alternatives)!, CurrentAnswer, AnswerKind,
+            AlternativeIndex, State, CreatedByUserId, CreatedAgentName, CreatedAt, AnsweredByUserId, AnsweredAgentName, AnsweredAt,
+            FromDescription, UpdatedAt);
+    }
+
     public sealed record Question(
         Guid Id, Guid WorkItemId, int Number, string Text, string State, Guid CreatedByUserId, string? CreatedAgentName, DateTimeOffset CreatedAt,
         Guid? AnswerCommentId, Guid? AnsweredByUserId, DateTimeOffset? AnsweredAt, Guid? WithdrawnByUserId, DateTimeOffset? WithdrawnAt);
@@ -23,7 +36,7 @@ public static class AskRows
     private const string DecisionColumns =
         """
         id AS Id, work_item_id AS WorkItemId, number AS Number, question AS Question, recommended AS Recommended,
-        ARRAY(SELECT jsonb_array_elements_text(alternatives)) AS Alternatives, current_answer AS CurrentAnswer,
+        alternatives::text AS Alternatives, current_answer AS CurrentAnswer,
         answer_kind AS AnswerKind, alternative_index AS AlternativeIndex, state AS State, created_by_user_id AS CreatedByUserId,
         created_agent_name AS CreatedAgentName, created_at AS CreatedAt, answered_by_user_id AS AnsweredByUserId,
         answered_agent_name AS AnsweredAgentName, answered_at AS AnsweredAt, from_description AS FromDescription, updated_at AS UpdatedAt
@@ -45,14 +58,13 @@ public static class AskRows
     public static async Task<Decision> DecisionAsync(NpgsqlConnection connection, Guid id)
     {
         DapperTypeHandlers.Register();
-        return await connection.QuerySingleAsync<Decision>(DecisionById, new { id });
+        return (await connection.QuerySingleAsync<DecisionRow>(DecisionById, new { id })).ToDecision();
     }
 
     public static async Task<IReadOnlyList<Decision>> DecisionsAsync(NpgsqlConnection connection, Guid workItemId)
     {
         DapperTypeHandlers.Register();
-        return [.. await connection.QueryAsync<Decision>(
-            DecisionsByItem, new { workItemId })];
+        return [.. (await connection.QueryAsync<DecisionRow>(DecisionsByItem, new { workItemId })).Select(r => r.ToDecision())];
     }
 
     public static async Task<Question> QuestionAsync(NpgsqlConnection connection, Guid id)
