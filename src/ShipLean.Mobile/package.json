@@ -13,6 +13,7 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:screens": "jest",
+    "theme": "node scripts/generate-theme.mjs",
     "bundle": "expo export --platform android --output-dir .expo/bundle-check"
   },
   "dependencies": {

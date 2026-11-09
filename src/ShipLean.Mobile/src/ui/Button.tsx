@@ -1,4 +1,5 @@
 import { ActivityIndicator, Pressable, Text } from 'react-native';
+import { useTheme } from '../theme';
 
 export type ButtonVariant = 'primary' | 'ghost' | 'danger';
 
@@ -12,10 +13,22 @@ export interface ButtonProps {
   testID: string;
 }
 
-// TODO: unstyled; the themed button (variants, touch size) replaces this body without changing props or test ids.
-// variant is read by the themed body.
-export function Button({ label, onPress, disabled, busy, testID }: ButtonProps) {
+export function Button({
+  label,
+  onPress,
+  variant = 'primary',
+  disabled,
+  busy,
+  testID,
+}: ButtonProps) {
+  const theme = useTheme();
+  const { colors } = theme;
   const off = disabled === true || busy === true;
+  const look = {
+    primary: { bg: colors.accent, fg: colors.accentFg, border: colors.accent },
+    ghost: { bg: 'transparent', fg: colors.accent, border: colors.border },
+    danger: { bg: 'transparent', fg: colors.danger, border: colors.danger },
+  }[variant];
   return (
     <Pressable
       testID={testID}
@@ -24,9 +37,30 @@ export function Button({ label, onPress, disabled, busy, testID }: ButtonProps) 
       accessibilityState={{ disabled: off, busy: busy === true }}
       disabled={off}
       onPress={onPress}
+      style={({ pressed }) => ({
+        minHeight: theme.touch.control,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: theme.space[2],
+        paddingHorizontal: theme.space[4],
+        borderRadius: theme.radius.md,
+        borderWidth: 1,
+        backgroundColor: look.bg,
+        borderColor: look.border,
+        opacity: off ? 0.5 : pressed ? 0.8 : 1,
+      })}
     >
-      {busy ? <ActivityIndicator /> : null}
-      <Text>{label}</Text>
+      {busy ? <ActivityIndicator color={look.fg} /> : null}
+      <Text
+        style={{
+          color: look.fg,
+          fontSize: theme.font.size.md,
+          fontWeight: theme.font.weight.semibold,
+        }}
+      >
+        {label}
+      </Text>
     </Pressable>
   );
 }

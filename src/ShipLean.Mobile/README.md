@@ -16,6 +16,8 @@ Install once from the workspace root: `cd src && pnpm install`. Then, in `src/Sh
 | `pnpm run test:screens` | Jest with `jest-expo` and React Native Testing Library: `src/**/*.spec.tsx`.                                                                                         |
 | `pnpm run bundle`       | A Metro Android export into `.expo/bundle-check` (gitignored). It proves every import resolves, without a device or an Android SDK. Memory-heavy: run it on its own. |
 
+**Regenerating the theme.** The app's colours, sizes and spacing come from `design/tokens.json`. After editing it, run `pnpm run theme` and commit `src/theme/tokens.generated.ts`; never edit that file by hand. `pnpm test` fails (`src/theme/tokens.test.ts`) when it is stale, and CI runs that test.
+
 CI runs all six in the `build, lint, typecheck` job. On a pull request it skips them when the diff touches nothing under this folder, the core, the workspace files or `design/tokens.json`.
 
 Filter a run with a path: `pnpm exec vitest run src/session`, `pnpm exec jest src/screens/SignIn`.

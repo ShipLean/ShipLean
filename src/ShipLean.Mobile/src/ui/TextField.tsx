@@ -1,4 +1,5 @@
 import { Text, TextInput, View } from 'react-native';
+import { useTheme } from '../theme';
 import { fieldErrorId, fieldHintId } from './testIds';
 
 export interface TextFieldProps {
@@ -14,8 +15,6 @@ export interface TextFieldProps {
   testID: string;
 }
 
-// TODO: unstyled; the themed field (label, touch size, 16pt input text) replaces this body without changing props or
-// test ids.
 export function TextField({
   label,
   value,
@@ -25,9 +24,19 @@ export function TextField({
   error,
   testID,
 }: TextFieldProps) {
+  const theme = useTheme();
+  const { colors } = theme;
   return (
-    <View>
-      <Text>{label}</Text>
+    <View style={{ gap: theme.space[1] }}>
+      <Text
+        style={{
+          color: colors.text,
+          fontSize: theme.font.size.sm,
+          fontWeight: theme.font.weight.semibold,
+        }}
+      >
+        {label}
+      </Text>
       <TextInput
         testID={testID}
         accessibilityLabel={label}
@@ -36,13 +45,33 @@ export function TextField({
         onBlur={onBlur}
         autoCapitalize="none"
         autoCorrect={false}
+        placeholderTextColor={colors.muted}
+        style={{
+          minHeight: theme.touch.control,
+          paddingHorizontal: theme.space[3],
+          borderRadius: theme.radius.md,
+          borderWidth: 1,
+          borderColor: error !== undefined ? colors.danger : colors.border,
+          backgroundColor: colors.surface,
+          color: colors.text,
+          fontSize: theme.font.size.input,
+        }}
       />
       {error !== undefined ? (
-        <Text testID={fieldErrorId(testID)} accessibilityRole="alert">
+        <Text
+          testID={fieldErrorId(testID)}
+          accessibilityRole="alert"
+          style={{ color: colors.danger, fontSize: theme.font.size.sm }}
+        >
           {error}
         </Text>
       ) : hint !== undefined ? (
-        <Text testID={fieldHintId(testID)}>{hint}</Text>
+        <Text
+          testID={fieldHintId(testID)}
+          style={{ color: colors.muted, fontSize: theme.font.size.sm }}
+        >
+          {hint}
+        </Text>
       ) : null}
     </View>
   );
