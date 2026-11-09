@@ -4,11 +4,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 import { links } from '../links';
+import { Button } from '../ui/Button';
 import { EmptyState } from '../ui/EmptyState';
 import { ErrorState } from '../ui/ErrorState';
 import { Row } from '../ui/Row';
 import { Screen } from '../ui/Screen';
 import { TopBar } from '../ui/TopBar';
+import { uiIds } from '../ui/testIds';
 import { projectRowId, projectsIds } from './projects/testIds';
 import { screenIds } from './testIds';
 
@@ -31,35 +33,40 @@ export function ProjectsScreen() {
   return (
     <Screen testID={screenIds.projects}>
       <TopBar title="Projects" right={avatar} />
-      {projects.isPending ? (
-        <View testID={projectsIds.loading}>
-          <ActivityIndicator />
-        </View>
-      ) : projects.isError ? (
-        <ErrorState
-          title="Couldn't load your projects."
-          body={projects.error.message}
-          action={{ label: 'Retry', onPress: () => void projects.refetch() }}
-        />
-      ) : projects.data.length === 0 ? (
-        <EmptyState title="You're not in any projects yet." />
-      ) : (
-        <FlatList
-          testID={projectsIds.list}
-          data={projects.data}
-          keyExtractor={(project) => project.id}
-          refreshControl={
-            <RefreshControl
-              refreshing={projects.isRefetching}
-              onRefresh={() => void projects.refetch()}
-            />
-          }
-          renderItem={({ item }) => (
-            // TODO: open the project's tabs here, with the first product feature.
-            <Row title={item.name} subtitle={item.key} testID={projectRowId(item.key)} />
-          )}
-        />
-      )}
+      <FlatList
+        testID={projectsIds.list}
+        data={projects.data ?? []}
+        keyExtractor={(project) => project.id}
+        refreshControl={
+          <RefreshControl
+            refreshing={projects.isRefetching}
+            onRefresh={() => void projects.refetch()}
+          />
+        }
+        ListEmptyComponent={
+          projects.isPending ? (
+            <View testID={projectsIds.loading}>
+              <ActivityIndicator />
+            </View>
+          ) : projects.isError ? (
+            <View>
+              <ErrorState title="Couldn't load your projects." body={projects.error.message} />
+              <Button
+                label="Retry"
+                busy={projects.isFetching}
+                testID={uiIds.errorStateAction}
+                onPress={() => void projects.refetch()}
+              />
+            </View>
+          ) : (
+            <EmptyState title="You're not in any projects yet." />
+          )
+        }
+        renderItem={({ item }) => (
+          // TODO: open the project's tabs here, with the first product feature.
+          <Row title={item.name} subtitle={item.key} testID={projectRowId(item.key)} />
+        )}
+      />
     </Screen>
   );
 }

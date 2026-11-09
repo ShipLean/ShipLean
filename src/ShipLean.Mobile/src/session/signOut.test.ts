@@ -74,3 +74,15 @@ test('clears when the server answers 404', async () => {
   expect(s.api.callsTo(END)).toHaveLength(1);
   signedOutAndNothingStored(s);
 });
+
+test('clears while the server hangs', () => {
+  const s = setup({ [END]: () => new Promise<never>(() => undefined) });
+  void s.run();
+  // No await: the phone is signed out before the DELETE answers, and the DELETE still carried the bearer.
+  signedOutAndNothingStored(s);
+  const calls = s.api.callsTo(END);
+  expect(calls).toHaveLength(1);
+  expect(calls[0].headers.Authorization ?? calls[0].headers.authorization).toBe(
+    `Bearer ${TEST_SECRET}`,
+  );
+});

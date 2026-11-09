@@ -1,5 +1,6 @@
 import { act, fireEvent, screen } from '@testing-library/react-native';
-import { apiError, fakeApi } from '../test-support/fakeApi';
+import { aProject } from '../test-support/builders';
+import { apiError, fakeApi, type ApiAnswer } from '../test-support/fakeApi';
 import { renderApp } from '../test-support/renderApp';
 import { signedInApi } from '../test-support/signedInApi';
 import { uiIds } from '../ui/testIds';
@@ -50,11 +51,17 @@ test('error then Retry loads', async () => {
   let failing = true;
   const api = fakeApi({
     ...signedInApi(),
-    [PROJECTS]: () => (failing ? apiError(500, 'server_error') : signedInApi()[PROJECTS]) as never,
+    [PROJECTS]: (): ApiAnswer => (failing ? apiError(500, 'internal_error') : [aProject()]),
   });
   await renderApp({ api });
 
-  expect(await screen.findByTestId(uiIds.errorState, {}, { timeout: 5000 })).toBeOnTheScreen();
+  expect(
+    await screen.findByTestId(
+      uiIds.errorState,
+      {},
+      { timeout: 5000 /* react-query retries once after a 1 s delay */ },
+    ),
+  ).toBeOnTheScreen();
   failing = false;
   await fireEvent.press(screen.getByTestId(uiIds.errorStateAction));
 

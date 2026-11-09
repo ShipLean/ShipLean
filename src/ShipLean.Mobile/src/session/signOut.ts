@@ -1,4 +1,4 @@
-// Sign out: end this phone's session on the server, then forget it here whatever the server answered. A phone that is
+// Sign out: forget the session here at once and ask the server to end it, whatever it answers. A phone that is
 // offline, or a server that says 404, must still end up signed out: the secret never outlives the tap.
 export interface SignOutDeps {
   // DELETE /api/auth/device-sessions/current with the bearer.
@@ -7,12 +7,14 @@ export interface SignOutDeps {
   clear: () => void;
 }
 
-export async function signOut({ endSession, clear }: SignOutDeps): Promise<void> {
-  try {
-    await endSession();
-  } catch {
-    // Whatever went wrong (offline, 404, 5xx) the phone still signs out; a session the server keeps expires there.
-  } finally {
-    clear();
-  }
+export function signOut({ endSession, clear }: SignOutDeps): Promise<void> {
+  // The core reads the bearer and origin before its first await, so the DELETE still carries them after clear().
+  const ending = endSession();
+  clear();
+  // Nobody waits on the network: a black-holed request must not leave the person signed in. Whatever the server
+  // answers (offline, 404, 5xx), the phone is already signed out; a session the server keeps expires there.
+  return ending.then(
+    () => undefined,
+    () => undefined,
+  );
 }

@@ -1,6 +1,7 @@
 import { getMe, meKey } from '@shiplean/core/api/me';
-import { act, screen } from '@testing-library/react-native';
+import { act, screen, waitFor } from '@testing-library/react-native';
 import { queryClient } from '../queryClient';
+import { projectsIds } from '../screens/projects/testIds';
 import { screenIds } from '../screens/testIds';
 import { TEST_ORIGIN, TEST_SECRET, aMe } from '../test-support/builders';
 import { fakeApi, sessionEnded } from '../test-support/fakeApi';
@@ -26,7 +27,7 @@ test('gate_WhenARequestAnswersSessionEnded_ShouldReturnToSignInWithTheServerKept
   await renderApp({ api: fakeApi(signedInApi()) });
   await screen.findByTestId(screenIds.projects);
   // Projects reads me itself, so the request that ends the session is made once it has settled.
-  await screen.findByText('JD');
+  await waitFor(() => expect(screen.getByTestId(projectsIds.avatar)).toHaveTextContent(/JD/));
   const api = fakeApi({ ...signedInApi(), 'GET /api/me': sessionEnded() });
   queryClient.setQueryData(meKey, aMe());
 

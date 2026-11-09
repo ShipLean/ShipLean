@@ -12,6 +12,8 @@ import { accountIds } from './account/testIds';
 import { signOutNow } from './account/signOutNow';
 import { screenIds } from './testIds';
 
+const UNAVAILABLE = 'Unavailable';
+
 const hostOf = (origin: string | null) =>
   origin === null ? '' : origin.replace(/^[a-z]+:\/\//i, '');
 
@@ -20,7 +22,6 @@ export function AccountSheet() {
   const me = useQuery({ queryKey: meKey, queryFn: getMe });
   const health = useQuery({ queryKey: ['health'], queryFn: () => getHealth() });
   const [confirming, setConfirming] = useState(false);
-  const [busy, setBusy] = useState(false);
   const host = hostOf(origin);
 
   if (confirming) {
@@ -33,18 +34,15 @@ export function AccountSheet() {
           <Button
             label="Sign out"
             variant="danger"
-            busy={busy}
             testID={accountIds.confirmYes}
             onPress={() => {
-              setBusy(true);
-              // The gate takes this sheet away once the secret is cleared.
+              // The secret is cleared at once, without waiting on the DELETE, and the gate takes this sheet away.
               void signOutNow();
             }}
           />
           <Button
             label="Cancel"
             variant="ghost"
-            disabled={busy}
             testID={accountIds.confirmCancel}
             onPress={() => setConfirming(false)}
           />
@@ -55,11 +53,19 @@ export function AccountSheet() {
 
   return (
     <Sheet title="Account" testID={screenIds.account}>
-      <Row title={me.data?.name ?? ''} subtitle="Name" testID={accountIds.name} />
-      <Row title={me.data?.email ?? email} subtitle="Email" testID={accountIds.email} />
+      <Row
+        title={me.isError ? UNAVAILABLE : (me.data?.name ?? '')}
+        subtitle="Name"
+        testID={accountIds.name}
+      />
+      <Row
+        title={me.isError ? (email ?? UNAVAILABLE) : (me.data?.email ?? email)}
+        subtitle="Email"
+        testID={accountIds.email}
+      />
       <Row title={host} subtitle="Server" testID={accountIds.host} />
       <Row
-        title={health.data?.version ?? ''}
+        title={health.isError ? UNAVAILABLE : (health.data?.version ?? '')}
         subtitle="Server version"
         testID={accountIds.version}
       />

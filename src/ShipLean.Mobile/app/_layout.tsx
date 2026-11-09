@@ -12,6 +12,9 @@ import { useTheme } from '../src/theme/useTheme';
 configurePlatform(mobilePlatform);
 connectReactQuery();
 
+// Opening /account directly still has Projects under it.
+export const unstable_settings = { anchor: 'index' };
+
 // The gate: the session decides which screens exist. Losing the session (sign-out, or any request answering 401)
 // clears the secret, the signed-in screens drop out of the stack and Sign in shows with the server and email kept.
 export default function RootLayout() {
