@@ -235,8 +235,8 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `decision.withdrawn` |  | `WorkItemDecisions.Withdraw` |
 | `decision.discussed` |  | `WorkItemDecisions.Discuss` |
 | `question.asked` | `ask` |  |
-| `question.answered` | `answer_question` | the questions answer endpoint |
-| `question.withdrawn` |  | the questions withdraw endpoint |
+| `question.answered` | `answer_question` | `WorkItemQuestions.Answer` |
+| `question.withdrawn` |  | `WorkItemQuestions.Withdraw` |
 | `import.started` |  | `ImportJobs.Start` |
 | `import.job_changed` |  | `ImportJobs.Rerun`, `ImportJobs.Retry`, `ImportJobs.Skip`, `ImportJobs.Stop` |
 | `import.jira_connected` |  | `Jira.Put` |
