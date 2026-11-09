@@ -122,6 +122,7 @@ public static class ActionUsageMap
         Add(ActionUsage.Track(UsageEventNames.QuestionWithdrawn), "WorkItemQuestions.Withdraw");
 
         // Asks: history and waiting (SV-W)
+        Add(ActionUsage.Untracked(ScreenCounts), "Waiting.Get");
 
         // Self-emitted: the action knows what the filter cannot (which sign-in, which decision, the new project, the screen, the sort).
         Add(ActionUsage.SelfEmitted, "Auth.Login", "Consent.Decide", "ProjectCreation.Create", "Instance.Join", "Usage.Screen",
