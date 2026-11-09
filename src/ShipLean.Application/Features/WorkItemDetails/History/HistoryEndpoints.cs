@@ -30,6 +30,7 @@ public sealed class HistoryEndpoints(IProjectAccess access, IWorkItemStore items
             r.Origin,
             r.Changes,
             r.AgentName,
-            r.Webhook))]);
+            r.Webhook))],
+            []); // TODO: the ask lines from IAskHistory replace this
     }
 }

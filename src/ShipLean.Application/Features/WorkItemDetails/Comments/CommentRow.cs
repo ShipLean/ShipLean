@@ -50,6 +50,7 @@ internal sealed record CommentRow(
             Id, WorkItemId, author, rendered.Markdown, rendered.Html,
             CreatedAt, DisplayDate.Relative(CreatedAt, clock),
             edited, edited is { } at ? DisplayDate.Relative(at, clock) : null,
-            AgentName, superseded);
+            AgentName, superseded,
+            AskTag: null); // TODO: the comment_ask_tag join replaces this
     }
 }
