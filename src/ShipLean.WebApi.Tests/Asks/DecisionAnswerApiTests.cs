@@ -192,7 +192,7 @@ public class DecisionAnswerApiTests : ApiFixture
     {
         var item = await NewItemAsync();
         var (id, _) = await new DecisionBuilder(item).Number(6).Recommended("Yes").Alternatives("No", "Maybe")
-            .State("changed").Answer("alternative", "No", 0).AnsweredBy(SeedIds.Users.Mei, DateTimeOffset.UtcNow.AddDays(-1))
+            .State("changed").Answer("alternative", "No", 0).AnsweredBy(SeedIds.Users.Mei, Earlier)
             .BuildAsync(await OpenDatabaseAsync());
 
         using var response = await Api.PostJsonAsync(Url(item, "6/change"), new { kind = "recommended" });
@@ -316,6 +316,8 @@ public class DecisionAnswerApiTests : ApiFixture
         (tracked.Source, tracked.Properties[UsageProps.Count]).ShouldBe(("api:WorkItemDecisions.Confirm", 1));
     }
 
+    private static readonly DateTimeOffset Earlier = new(2026, 11, 9, 0, 0, 0, TimeSpan.Zero);
+
     private static string Url(Guid item, string tail) => $"api/work-items/{item}/decisions/{tail}";
 
     private ProjectEventWatch Watch() => new(Host.Services.GetRequiredService<IProjectEvents>(), SeedIds.Projects.Ship);
@@ -333,7 +335,7 @@ public class DecisionAnswerApiTests : ApiFixture
         var builder = new DecisionBuilder(item).Number(number).Recommended("Yes").Alternatives("No", "Maybe").State(state);
         if (state == "confirmed")
         {
-            builder.AnsweredBy(SeedIds.Users.Joel, DateTimeOffset.UtcNow.AddDays(-1));
+            builder.AnsweredBy(SeedIds.Users.Joel, Earlier);
         }
 
         return await builder.BuildAsync(connection);
