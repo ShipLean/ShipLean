@@ -89,6 +89,26 @@ jobs:
       - name: Core format, lint, typecheck, test
         working-directory: src/ShipLean.Core.Client
         run: pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm test
+      # The phone app (Expo). bundle is a Metro Android export: it proves every import resolves, with no device or
+      # Android SDK. On a pull request the step runs only when the diff reaches what the app depends on: its own folder,
+      # the core, the workspace files and the design tokens its theme is generated from.
+      - name: Mobile format, lint, typecheck, vitest, jest, bundle
+        working-directory: src/ShipLean.Mobile
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            changed=$(git diff --name-only "$BASE_SHA")
+            if ! grep -Eq '^(src/(pnpm-lock\.yaml|package\.json|pnpm-workspace\.yaml)|src/ShipLean\.Mobile/.*|src/ShipLean\.Core\.Client/.*|design/tokens\.json)$' <<<"$changed"; then
+              echo "Skipping the mobile checks: this pull request changes nothing under src/ShipLean.Mobile, the core, the workspace files or design/tokens.json"
+              exit 0
+            fi
+          fi
+          pnpm run format:check && pnpm run lint && pnpm run typecheck
+          pnpm test && pnpm run test:screens
+          pnpm run bundle
       # A hand run (workflow_dispatch) has no base, so it runs the whole suite. package.json and
       # vite.config.ts already make Vitest do that (--changed forceRerunTriggers). The workspace files,
       # the lockfile, the core package (outside the SPA's folder) and the token files do not:
