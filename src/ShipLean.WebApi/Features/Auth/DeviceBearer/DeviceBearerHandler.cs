@@ -12,7 +12,8 @@ namespace ShipLean.WebApi.Features.Auth.DeviceBearer;
 // IDeviceSessions whatever its state; this handler decides. A live session gives the device principal and is touched
 // (sliding 90 days). A revoked one, or one that has expired, or whose user is disabled or whose security stamp moved on
 // since the sign-in, is ended and marked ended, so the challenge, forwarded to the cookie scheme, answers 401
-// session_ended. The stamp and the disabled flag come from UserSessions (at most a minute old, as for a cookie). A user
+// session_ended. The stamp and the disabled flag come from UserSessions (at most a minute old, as for a cookie), and are
+// read again fresh before a session is ended over them. A user
 // on a one-time password is let through: PasswordChangeFilter answers 403 password_change_required for them.
 public sealed class DeviceBearerHandler(
     IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder,
@@ -54,7 +55,11 @@ public sealed class DeviceBearerHandler(
             CookieSessionEvents.MarkEnded(Context.Items);
             return AuthenticateResult.Fail("The device session ended.");
         }
-        await sessions.TouchAsync(session.Id, now, ct);
+        // The store would skip a write inside the interval anyway; checking here saves the round trip.
+        if (session.LastUsedAt <= now - DeviceSessionLimits.TouchInterval)
+        {
+            await sessions.TouchAsync(session.Id, now, ct);
+        }
         var principal = AuthPrincipal.ForDevice(session.UserId, session.SecurityStamp, session.Id);
         return AuthenticateResult.Success(new AuthenticationTicket(principal, Scheme));
     }
@@ -66,7 +71,17 @@ public sealed class DeviceBearerHandler(
         {
             return DeviceSessionEndReasons.Expired;
         }
-        var user = await users.GetAsync(session.UserId, ct);
+        // Ending is for good, and the cached user can be up to a minute behind (another instance may have signed this
+        // session in under a stamp this one has not seen yet), so a cached answer that would end it is read again fresh.
+        if (UserEndReason(session, await users.GetAsync(session.UserId, ct)) is null)
+        {
+            return null;
+        }
+        return UserEndReason(session, await users.GetFreshAsync(session.UserId, ct));
+    }
+
+    private static string? UserEndReason(DeviceSessionRecord session, UserSnapshot? user)
+    {
         if (user is null or { Disabled: true })
         {
             return DeviceSessionEndReasons.UserDisabled;

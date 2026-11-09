@@ -159,15 +159,47 @@ public class DeviceBearerApiTests : ApiFixture
         (await Store.FindBySecretAsync(phone.SignIn.Secret)).ShouldBe(before);
     }
 
+    // A real agent access token (minted as for /mcp) is no credential on /api: answered as if no header had been sent.
     [Test]
     public async Task Api_WhenMcpAccessToken_ShouldReturn401()
     {
+        var token = await Host.IssueAgentToken(TestUser.Mei);
         using var client = AuthClient.Create(Host);
-        client.DefaultRequestHeaders.Add("Authorization", $"Bearer {DeviceSecret.New().Replace("shl_dev_", "shl_mcp_")}");
+        client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+        using var plain = AuthClient.Create(Host);
 
         using var response = await client.GetAsync("/api/me");
+        using var without = await plain.GetAsync("/api/me");
 
+        (await Describe(response)).ShouldBe(await Describe(without));
         (await response.ReadApiErrorAsync(HttpStatusCode.Unauthorized)).Code.ShouldBe(ApiErrorCodes.Unauthorized);
+    }
+
+    // Another instance can sign a session in under a stamp this instance has not seen yet (its UserSessions entry is up
+    // to a minute old). The stale entry must not end the session for good: the handler reads the user again first.
+    [Test]
+    public async Task Api_WhenCachedStampIsStale_ShouldConfirmFreshAndNotEndTheSession()
+    {
+        var (userId, _) = await ArrangeUserAsync();
+        var users = Host.Services.GetRequiredService<UserSessions>();
+        var cached = (await users.GetAsync(userId))!.SecurityStamp;
+        // Changed behind this instance's back, as another instance's password change would be: no Forget here.
+        const string newStamp = "stamp-from-another-instance";
+        await using (var db = await OpenDatabaseAsync())
+        {
+            await db.ExecuteAsync("UPDATE app_user SET security_stamp = @newStamp WHERE id = @userId", new { newStamp, userId });
+        }
+        (await users.GetAsync(userId))!.SecurityStamp.ShouldBe(cached);
+        const string verifier = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk";
+        var code = await Store.CreateCodeAsync(userId, newStamp, DeviceSecret.ChallengeFor(verifier), "Phone", Now);
+        var signIn = (await Store.ExchangeAsync(code, verifier, Now)).ShouldNotBeNull();
+        using var phone = DeviceBearerClient.For(Host, signIn.Secret);
+
+        using var response = await phone.GetAsync("/api/me");
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await Store.FindBySecretAsync(signIn.Secret)).ShouldNotBeNull().IsLiveAt(Now).ShouldBeTrue();
+        Recorder.Events.ShouldNotContain(e => e.Name == UsageEventNames.DeviceSessionEnded);
     }
 
     // A device bearer on a path an agent reaches with its own credentials is answered as if no Authorization header had
