@@ -13,6 +13,7 @@ using ShipLean.Application.Identity;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
 using ShipLean.WebApi.Features.Auth.Proxy;
+using ShipLean.WebApi.Features.DeviceSessions;
 using ShipLean.WebApi.Infrastructure;
 
 namespace ShipLean.WebApi.Features.Auth;
@@ -68,9 +69,18 @@ public sealed class AuthServices : IServiceModule
             .AddPolicyScheme(SessionScheme, SessionScheme, options =>
             {
                 options.ForwardDefaultSelector = context =>
-                    context.RequestServices.GetRequiredService<ProxySignInSettings>().IsProxy && !ProxySignInPaths.IsSkipped(context.Request.Path)
-                        ? ProxySignInHandler.Scheme
+                {
+                    var isProxy = context.RequestServices.GetRequiredService<ProxySignInSettings>().IsProxy;
+                    if (isProxy && !ProxySignInPaths.IsSkipped(context.Request.Path))
+                    {
+                        return ProxySignInHandler.Scheme;
+                    }
+                    // The phone app's device bearer, in password mode only.
+                    // TODO: hardened next: /hubs/* and SignalR's access_token there, and the /api paths a bearer is refused on.
+                    return !isProxy && DeviceBearerRequest.Applies(context.Request.Path, context.Request.Headers.Authorization)
+                        ? DeviceBearerHandler.Scheme
                         : CookieScheme;
+                };
                 options.ForwardChallenge = CookieScheme;
                 options.ForwardForbid = CookieScheme;
                 options.ForwardSignIn = CookieScheme;
