@@ -1,3 +1,4 @@
+using System.Text.Json;
 using ShipLean.Contracts;
 using ShipLean.TestSupport.AccessSweep.Mcp;
 using ShipLean.TestSupport.Hosting;
@@ -45,8 +46,34 @@ public class McpSweepSelfTests : McpFixture
             new McpSweepRow("probe_ambiguous", McpScopes.Read, ProjectRole.Member, ReadOnly: true),
         };
 
-        var problems = await McpSweep.CallProblemsAsync((tool, arguments) => CallToolAsync(token, tool, arguments), rows);
+        var problems = await McpSweep.CallProblemsAsync((tool, arguments) => CallToolAsync(token, tool, arguments), await InputSchemasAsync(token), rows);
 
         problems.ShouldBe(["probe_whoami answered ok to Joel; expected not_found", "probe_ambiguous answered ambiguous to Joel; expected not_found"]);
     }
+
+    [Test]
+    public async Task McpAccessSweep_WhenProjectToolSaysNoProject_ShouldFail()
+    {
+        var token = await TokenAsync(TestUser.Joel, ReadWritePlan);
+        var rows = new[] { new McpSweepRow("sprint_status", McpScopes.Read, ProjectRole.Member, ReadOnly: true, NoProject: "Says it names no project.") };
+
+        var problems = await McpSweep.CallProblemsAsync((tool, arguments) => CallToolAsync(token, tool, arguments), await InputSchemasAsync(token), rows);
+
+        problems.ShouldBe(["sprint_status takes a project argument, so it can't be a NoProject row"]);
+    }
+
+    [TestCase("")]
+    [TestCase("  ")]
+    public async Task McpAccessSweep_WhenNoProjectReasonIsBlank_ShouldFail(string reason)
+    {
+        var token = await TokenAsync(TestUser.Joel, ReadWritePlan);
+        var rows = new[] { new McpSweepRow("probe_whoami", McpScopes.Read, ProjectRole.Member, ReadOnly: true, NoProject: reason) };
+
+        var problems = await McpSweep.CallProblemsAsync((tool, arguments) => CallToolAsync(token, tool, arguments), await InputSchemasAsync(token), rows);
+
+        problems.ShouldBe(["probe_whoami is a NoProject row with a blank reason"]);
+    }
+
+    private async Task<IReadOnlyDictionary<string, JsonElement>> InputSchemasAsync(string token)
+        => McpSweep.InputSchemas(await PostAsync(token, """{"jsonrpc":"2.0","id":1,"method":"tools/list"}"""));
 }
