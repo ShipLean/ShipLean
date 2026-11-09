@@ -20,7 +20,14 @@ public class DiskBlobInventoryContractTests : BlobInventoryContract
     public void MakeRoot() => _root = Path.Combine(Path.GetTempPath(), $"shiplean-inventory-{Guid.NewGuid():N}");
 
     [TearDown]
-    public void RemoveRoot() => Directory.Delete(_root, recursive: true);
+    public void RemoveRoot()
+    {
+        // The module test never writes, so its folder may not exist.
+        if (Directory.Exists(_root))
+        {
+            Directory.Delete(_root, recursive: true);
+        }
+    }
 
     protected override (IBlobStore Store, IBlobInventory Inventory) Create()
         => (new LocalDiskBlobStore(_root), new LocalDiskBlobInventory(_root));

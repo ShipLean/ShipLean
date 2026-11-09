@@ -61,8 +61,7 @@ public class S3BlobInventoryContractTests : BlobInventoryContract
 
         var listed = await inventory.ListKeysAsync(CancellationToken.None).ToListAsync();
 
-        listed.Count.ShouldBe(1);
-        listed[0].ShouldEndWith("attachments/a");
+        listed.ShouldBe(["attachments/a"]);
     }
 
     [Test]
