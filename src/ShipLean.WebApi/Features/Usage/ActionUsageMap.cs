@@ -113,6 +113,9 @@ public static class ActionUsageMap
         Add(ActionUsage.Untracked(ScreenCounts), "WorkItemAsks.Get");
 
         // Asks: decisions (SV-D2)
+        Add(ActionUsage.Track(UsageEventNames.DecisionWithdrawn), "WorkItemDecisions.Withdraw");
+        Add(ActionUsage.Track(UsageEventNames.DecisionDiscussed), "WorkItemDecisions.Discuss");
+        Add(ActionUsage.SelfEmitted, "WorkItemDecisions.Confirm", "WorkItemDecisions.Change");
 
         // Asks: questions (SV-Q)
 

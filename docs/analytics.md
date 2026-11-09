@@ -230,10 +230,10 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `retro.actions_decided` | `decide_retro_actions` |  |
 | `decision.recorded` | `record_decisions` |  |
 | `decision.answered` | `answer_decision` |  |
-| `decision.confirmed` |  | self-emitted: the decisions confirm endpoint (properties `count`, `answer_kind`) |
-| `decision.changed` |  | self-emitted: the decisions change endpoint (properties `count`, `answer_kind`) |
-| `decision.withdrawn` |  | the decisions withdraw endpoint |
-| `decision.discussed` |  | the decisions discuss endpoint |
+| `decision.confirmed` |  | self-emitted: `WorkItemDecisions.Confirm` (property `count`) |
+| `decision.changed` |  | self-emitted: `WorkItemDecisions.Change` (property `answer_kind`) |
+| `decision.withdrawn` |  | `WorkItemDecisions.Withdraw` |
+| `decision.discussed` |  | `WorkItemDecisions.Discuss` |
 | `question.asked` | `ask` |  |
 | `question.answered` | `answer_question` | the questions answer endpoint |
 | `question.withdrawn` |  | the questions withdraw endpoint |
