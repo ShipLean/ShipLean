@@ -4,7 +4,7 @@ using ShipLean.Application.Features.DeviceSessions;
 using ShipLean.Contracts.DeviceSessions;
 using ShipLean.TestSupport.Contracts.DeviceSessions;
 using ShipLean.WebApi.Tests.Agents.Stores;
-using Store = ShipLean.Application.Features.DeviceSessions.DeviceSessions;
+using PostgresStore = ShipLean.Application.Features.DeviceSessions.DeviceSessions;
 
 namespace ShipLean.WebApi.Tests.DeviceSessions.Store;
 
@@ -12,7 +12,7 @@ namespace ShipLean.WebApi.Tests.DeviceSessions.Store;
 public sealed class PostgresDeviceSessionsContractTests : DeviceSessionsContract
 {
     private PostgresAgentDatabase _database = null!;
-    private Store _sessions = null!;
+    private PostgresStore _sessions = null!;
     private Guid _userId;
     private Guid _otherUserId;
 
@@ -22,7 +22,7 @@ public sealed class PostgresDeviceSessionsContractTests : DeviceSessionsContract
         _database = await PostgresAgentDatabase.CreateAsync();
         _userId = await _database.InsertUserAsync();
         _otherUserId = await _database.InsertUserAsync();
-        _sessions = new Store(_database.DataSource);
+        _sessions = new PostgresStore(_database.DataSource);
     }
 
     [OneTimeTearDown]
