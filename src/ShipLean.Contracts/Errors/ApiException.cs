@@ -20,6 +20,8 @@ public sealed class ApiException(string code, string message) : Exception(messag
 
     public static ApiException NotFound(string message) => new(ApiErrorCodes.NotFound, message);
 
+    public static ApiException NotFound(string message, string field) => new(ApiErrorCodes.NotFound, message) { Field = field };
+
     public static ApiException Conflict(string message) => new(ApiErrorCodes.Conflict, message);
 
     public static ApiException Validation(string message) => new(ApiErrorCodes.Validation, message);

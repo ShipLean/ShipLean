@@ -159,6 +159,8 @@ A plan has at most 60 items (stories plus tasks, plus the Feature when it is new
 2. Have a reviewer from a different model family than the author review the plan, using the `plan_reviewer` part. Give it the plan document, the common brief, the task briefs and the preview. Apply its findings, note which you rejected and why, and preview again after any change. If no model from another family is available in this session, use the strongest other model you can launch (a different model, or a fresh session of your own with no context of the plan), say which in the `Review · ` comment, and flag it in the retro under `went_badly`. The same fallback applies to code review in Step 7.
 3. Apply by calling `capture_plan` with exactly the same arguments plus that `plan`. Changed arguments are refused, so change nothing between the last preview and the apply.
 
+**A large plan goes by payload.** When the plan is already in a file or is over about 20 KB, write the `capture_plan` arguments to a JSON file, call `create_payload_upload` with tool `capture_plan`, and run the `curl -T` it returns. Preview with `payload` in place of the arguments, then apply with the same `payload` plus `plan`. With no shell, send the arguments inline and keep each call small.
+
 Do not launch anything before the review. After the apply, change a task's wording with `refine_work_item`; a change to the plan's structure needs a new Feature.
 
 After applying the plan, give every Story a rough estimate in story points, following the team's convention. Use your best guess from the plan and task budgets; do not spend much time investigating or trying to make it precise. Set `points` with `refine_work_item`. These Story estimates are separate from the task context budgets used to size work.

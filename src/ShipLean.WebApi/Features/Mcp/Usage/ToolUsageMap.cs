@@ -34,6 +34,7 @@ public static class ToolUsageMap
         ["attach_markdown"] = UsageEventNames.AttachmentAdded,
         ["attach_file"] = UsageEventNames.AttachmentAdded,
         ["read_attachment"] = UsageEventNames.AttachmentViewed,
+        ["create_payload_upload"] = UsageEventNames.PayloadUploadIssued,
         ["link"] = UsageEventNames.LinkAdded,
         ["report_link_state"] = UsageEventNames.LinkStateReported,
         ["create_sprint"] = UsageEventNames.SprintCreated,

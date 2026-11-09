@@ -46,15 +46,19 @@ public sealed class ApiErrorServices : IServiceModule
                 {
                     if (e is not ApiException)
                     {
+                        // The route template, never the raw path: upload paths (api/uploads/{token}) carry a credential.
                         context.RequestServices.GetRequiredService<ILoggerFactory>()
                             .CreateLogger<ApiErrorServices>()
-                            .LogError(e, "Unhandled exception for {Method} {Path}", context.Request.Method, context.Request.Path);
+                            .LogError(e, "Unhandled exception for {Method} {Path}", context.Request.Method, RouteTemplate(context.GetEndpoint()));
                     }
                     await ApiErrorWriter.WriteAsync(context.Response, e, context.RequestAborted);
                 }
             });
             next(app);
         };
+
+        private static string RouteTemplate(Endpoint? endpoint)
+            => (endpoint as RouteEndpoint)?.RoutePattern.RawText ?? "(no matched route)";
 
         private static bool IsBodilessApiError(PathString path, HttpResponse response)
             => path.StartsWithSegments("/api")

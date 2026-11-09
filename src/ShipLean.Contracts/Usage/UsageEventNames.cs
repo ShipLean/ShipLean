@@ -59,6 +59,7 @@ public static class UsageEventNames
     public const string AttachmentAdded = "attachment.added";
     public const string AttachmentViewed = "attachment.viewed";
     public const string AttachmentArchived = "attachment.archived";
+    public const string PayloadUploadIssued = "payload_upload.issued";
     public const string LinkAdded = "link.added";
     public const string LinkStateReported = "link.state_reported";
     public const string LinkCardAdded = "link_card.added";

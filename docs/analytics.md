@@ -54,7 +54,7 @@ Every event carries these (a key is left out when its value is null). The consta
 | `duration_ms`, `source` | `source` is `tool:<name>`, `api:<Controller>.<Action>`, `screen` or `system:<Class>` |
 | `shiplean_version`, `instance_host` | this build and this instance |
 
-Extra properties are the keys in `UsageProps` (`screen`, `board`, `provider`, `count`, `column`, `direction`, `mode` (the backlog mode on a backlog screen's `screen.viewed`), `agent_name` on `agent.connected` and `agent.consent_denied`, `trigger` (`scheduled` or `manual`) on `backup.run_finished`, `reason` (`app_sign_out`, `web_sign_out`, `expired`, `stamp_changed` or `user_disabled`) on `device_session.ended`). A standard property wins over an extra one with the same key.
+Extra properties are the keys in `UsageProps` (`screen`, `board`, `provider`, `count`, `column`, `direction`, `mode` (the backlog mode on a backlog screen's `screen.viewed`), `agent_name` on `agent.connected` and `agent.consent_denied`, `trigger` (`scheduled` or `manual`) on `backup.run_finished`, `reason` (`app_sign_out`, `web_sign_out`, `expired`, `stamp_changed` or `user_disabled`) on `device_session.ended`, `input` (`payload` or `inline`) on the events of the six tools that take a `payload`: `capture_plan`, `capture_work`, `break_down`, `attach_markdown`, `refine_work_item` and `create_feature`, set when the call's arguments came by a payload from `create_payload_upload`; other tools' events don't carry it). A standard property wins over an extra one with the same key.
 
 The distinct id of an actor is `user:<guid>`, `agent:<authorizationId>` (`agent:gw-<userId>` for the gateway) or `system`. Person properties (`kind`, `user_id`, `agent_*`) go to the provider as an identify (Umami) or `$set` (PostHog). `name` and `email` are added for users only when the instance's **Send people's names** toggle is on, which is off by default.
 
@@ -195,6 +195,7 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `attachment.added` | `attach_markdown`, `attach_file` | `WorkItemAttachments.Upload` |
 | `attachment.viewed` | `read_attachment` | `Attachments.Download`, `AttachmentMarkdown.View` |
 | `attachment.archived` |  | `Attachments.Archive` |
+| `payload_upload.issued` | `create_payload_upload` |  |
 | `link.added` | `link` | `WorkItemLinks.Add` |
 | `link.state_reported` | `report_link_state` |  |
 | `link_card.added` |  | `LinkCards.Add` |
@@ -255,4 +256,4 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 
 `analytics.test` is not in the catalogue: the test send goes straight to the sink.
 
-The demo's anonymous and token routes are untracked on purpose, each with its reason in `ActionUsageMap`: `DemoUpload.Upload` and `DemoLogoDownload.Download` (the demo's creation is counted by `sprint_demo.created`), and `YouTube.Start` and `YouTube.Callback` (the connection they lead to is counted when the person's check runs, by `project_youtube.changed`).
+The demo's anonymous and token routes are untracked on purpose, each with its reason in `ActionUsageMap`: `DemoUpload.Upload` and `DemoLogoDownload.Download` (the demo's creation is counted by `sprint_demo.created`), and `YouTube.Start` and `YouTube.Callback` (the connection they lead to is counted when the person's check runs, by `project_youtube.changed`). `PayloadUploads.Upload` is untracked for the same reason: the upload URL's issue is counted by `payload_upload.issued`, and the call that uses the payload by its own tool's event.
