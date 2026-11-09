@@ -26,15 +26,19 @@ public static class PayloadFilter
                 || request.Params is not { Arguments: { } arguments } parameters
                 || !arguments.TryGetValue(McpPayloadTargets.ArgumentName, out var argument)
                 || argument.ValueKind == JsonValueKind.Null
-                || request.User?.FindFirstValue(ClaimTypes.NameIdentifier) is not { } userText
                 || request.Services is not { } services)
             {
-                // No caller: the scope backstop refuses the call.
+                // No payload: JSON null is an omitted optional argument, so the call passes through unexpanded.
                 return await next(request, cancellationToken);
             }
             if (argument.ValueKind != JsonValueKind.String)
             {
                 throw ApiException.Validation("payload must be the id create_payload_upload returned.", McpPayloadTargets.ArgumentName);
+            }
+            if (request.User?.FindFirstValue(ClaimTypes.NameIdentifier) is not { } userText)
+            {
+                // Fail closed: a caller with no user id can own no payload, so it gets the unknown-payload refusal without a lookup.
+                throw ApiException.NotFound(NotValid, McpPayloadTargets.ArgumentName);
             }
 
             var authorization = request.User.FindFirstValue(AgentClaims.AuthorizationClaim);

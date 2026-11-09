@@ -1,10 +1,12 @@
 using System.Net;
+using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using ModelContextProtocol.Server;
 using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Errors;
 using ShipLean.TestSupport;
@@ -25,6 +27,9 @@ public class PayloadFilterTests : McpFixture
 
     private readonly ProxyTokenReaderTests.LogLines _logs = new();
 
+    // Set by a test that needs the principal to reach the payload filter without a name identifier (test filter above).
+    private bool _dropUserId;
+
     private string _featureKey = string.Empty;
     private string _storyKey = string.Empty;
     private Guid _storyId;
@@ -37,6 +42,15 @@ public class PayloadFilterTests : McpFixture
         services.RemoveAll<IToolPayloads>();
         services.AddSingleton<FakeToolPayloads>();
         services.AddSingleton<IToolPayloads>(sp => sp.GetRequiredService<FakeToolPayloads>());
+        // First in the list is outermost, so this filter runs before the payload filter and changes who it sees.
+        services.PostConfigure<McpServerOptions>(options => options.Filters.Request.CallToolFilters.Insert(0, next => (request, cancellationToken) =>
+        {
+            if (_dropUserId && request.User is { } user)
+            {
+                request.User = new ClaimsPrincipal(new ClaimsIdentity(user.Claims.Where(claim => claim.Type != ClaimTypes.NameIdentifier), user.Identity?.AuthenticationType));
+            }
+            return next(request, cancellationToken);
+        }));
         services.RemoveAll<ILoggerFactory>();
         services.AddSingleton<ILoggerFactory>(new LoggerFactory([_logs]));
     };
@@ -291,6 +305,29 @@ public class PayloadFilterTests : McpFixture
         var lines = _logs.Lines.Skip(seen).ToList();
         lines.ShouldNotBeEmpty();
         lines.ShouldNotContain(line => line.Contains(payload, StringComparison.Ordinal) || line.Contains(refused, StringComparison.Ordinal) || line.Contains(marker, StringComparison.Ordinal));
+    }
+
+    [Test]
+    public async Task CallTool_WhenCallerHasNoUserId_ShouldRefusePayload()
+    {
+        var (token, authorization) = await AgentAsync(ReadWrite);
+        var payload = Payloads.AddObject("capture_plan", PlanFixture.FeatureEditor.Arguments().ToJsonString(), SeedIds.Users.Joel, authorization);
+        var looked = Payloads.Lookups.Count;
+        _dropUserId = true;
+
+        McpReply reply;
+        try
+        {
+            reply = await CallToolAsync(token, "capture_plan", $$"""{"project":"SHIP","payload":"{{payload}}"}""");
+        }
+        finally
+        {
+            _dropUserId = false;
+        }
+
+        reply.IsToolError().ShouldBeTrue(reply.Body);
+        ErrorOf(reply).ShouldBe((ApiErrorCodes.NotFound, "payload"));
+        Payloads.Lookups.Count.ShouldBe(looked);
     }
 
     [Test]
