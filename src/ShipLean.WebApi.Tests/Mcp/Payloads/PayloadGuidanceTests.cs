@@ -1,4 +1,5 @@
 using ShipLean.TestSupport;
+using ShipLean.TestSupport.Hosting;
 using ShipLean.WebApi.Features.Mcp.Transport;
 using ShipLean.WebApi.Tests.Mcp.Transport;
 
@@ -20,10 +21,13 @@ public class PayloadGuidanceTests : McpFixture
         var listed = await PostAsync(token, """{"jsonrpc":"2.0","id":1,"method":"tools/list"}""");
 
         var tools = listed.Json().GetProperty("result").GetProperty("tools").EnumerateArray().ToList();
-        foreach (var name in PayloadTools)
-        {
-            tools.Single(tool => tool.GetProperty("name").GetString() == name).GetProperty("description").GetString().ShouldContain("create_payload_upload", name);
-        }
+        var missing = tools
+            .Where(tool => PayloadTools.Contains(tool.GetProperty("name").GetString()!))
+            .Where(tool => tool.GetProperty("description").GetString()?.Contains("create_payload_upload") != true)
+            .Select(tool => tool.GetProperty("name").GetString())
+            .ToList();
+        missing.ShouldBeEmpty();
+        tools.Count(tool => PayloadTools.Contains(tool.GetProperty("name").GetString()!)).ShouldBe(PayloadTools.Length);
     }
 
     [Test]
