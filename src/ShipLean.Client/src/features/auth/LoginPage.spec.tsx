@@ -428,3 +428,30 @@ test('info line names the device from returnUrl', async ({ mount, page }) => {
   );
   await expect(page.getByTestId(ids.subtitle)).toHaveText('to Larkspur, for the ShipLean app');
 });
+
+test('a returnUrl that only starts like the confirm page shows no app subtitle or line', async ({
+  mount,
+  page,
+}) => {
+  await stubInstance(page);
+  const look = `/mobile/sign-inX?${appReturn.slice(appReturn.indexOf('?') + 1)}`;
+  await mount(<AppRoutes />, {
+    hooksConfig: { route: `/login?returnUrl=${encodeURIComponent(look)}` },
+  });
+  await expect(page.getByTestId(ids.subtitle)).toHaveText('to Larkspur');
+  await expect(page.getByTestId(ids.appInfo)).toHaveCount(0);
+});
+
+test('the app line stays after a failed sign-in', async ({ mount, page }) => {
+  await stubInstance(page);
+  await stubJson(
+    page,
+    '/api/auth/login',
+    { error: 'Incorrect email or password.', code: 'rate_limited' },
+    429,
+  );
+  await mount(<AppRoutes />, { hooksConfig: { route: appRoute } });
+  await signInWithPassword(page);
+  await expect(page.getByTestId(ids.failure)).toBeVisible();
+  await expect(page.getByTestId(ids.appInfo)).toBeVisible();
+});

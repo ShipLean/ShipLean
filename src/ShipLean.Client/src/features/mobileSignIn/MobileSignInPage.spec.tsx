@@ -19,6 +19,20 @@ async function open(mount: Mount, page: Page, query = validQuery) {
   await mount(<AppRoutes />, { hooksConfig: { route: `/mobile/sign-in?${query}` } });
 }
 
+// Counts POSTs to the codes route; the handler answers 201 so a stray post would also finish the flow.
+async function countCodePosts(page: Page) {
+  const calls = { count: 0 };
+  await page.route('**/api/auth/device-sessions/codes', (route) => {
+    calls.count += 1;
+    return route.fulfill({
+      status: 201,
+      contentType: 'application/json',
+      body: JSON.stringify({ code: 'code-123' }),
+    });
+  });
+  return calls;
+}
+
 async function look(page: Page, theme: 'light' | 'dark', size: { width: number; height: number }) {
   await page.setViewportSize(size);
   await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
@@ -167,15 +181,59 @@ test('buttons are off while posting', async ({ mount, page }) => {
 });
 
 test('nothing is posted on load', async ({ mount, page }) => {
-  const posts: string[] = [];
-  page.on('request', (request) => {
-    if (request.method() === 'POST' && request.url().includes('/device-sessions/'))
-      posts.push(request.url());
-  });
+  const codes = await countCodePosts(page);
   await open(mount, page);
-  await expect(page.getByTestId(ids.signIn)).toBeVisible();
+  await expect(page.getByTestId(ids.signIn)).toBeEnabled();
+  await expect(page.getByTestId(ids.signIn)).toHaveText('Sign in');
   await expect(page.getByTestId(ids.does)).toBeVisible();
-  expect(posts).toEqual([]);
+  expect(codes.count).toBe(0);
+});
+
+test('Cancel posts nothing', async ({ mount, page }) => {
+  const codes = await countCodePosts(page);
+  await open(mount, page);
+  await expect(page.getByTestId(ids.signIn)).toBeEnabled();
+  await page.getByTestId(ids.cancel).click();
+  await expect(page.getByTestId(ids.cancelled)).toBeVisible();
+  expect(codes.count).toBe(0);
+});
+
+test('on an identity-proxy instance nothing is posted and Back to the app says unsupported', async ({
+  mount,
+  page,
+}) => {
+  const codes = await countCodePosts(page);
+  await stubProxyInstance(page);
+  await stubJson(page, '/api/me', meDto());
+  await mount(<AppRoutes />, { hooksConfig: { route: `/mobile/sign-in?${validQuery}` } });
+  await expect(page.getByTestId(ids.proxyMessage)).toBeVisible();
+  await expect(page.getByTestId(ids.signIn)).toHaveCount(0);
+  const navigation = page.waitForRequest(
+    (request) => request.isNavigationRequest() && request.url().startsWith('shiplean:'),
+    { timeout: 5000 },
+  );
+  await page.getByTestId(ids.backToApp).click();
+  const target = new URL((await navigation.catch(() => null))?.url() ?? 'shiplean://missing');
+  const origin = await page.evaluate(() => window.location.origin);
+  expect(target.searchParams.get('error')).toBe('unsupported');
+  expect(target.searchParams.get('state')).toBe(stateValue);
+  expect(target.searchParams.get('iss')).toBe(origin);
+  expect(codes.count).toBe(0);
+});
+
+test('when /api/me fails with a 500 the card shows the banner and nothing is posted', async ({
+  mount,
+  page,
+}) => {
+  const codes = await countCodePosts(page);
+  await stubInstance(page);
+  await stubJson(page, '/api/me', { code: 'internal_error', error: 'Boom' }, 500);
+  await mount(<AppRoutes />, { hooksConfig: { route: `/mobile/sign-in?${validQuery}` } });
+  await expect(page.getByTestId(ids.failure)).toHaveText(
+    "Couldn't reach ShipLean. Check your connection and try again.",
+  );
+  await expect(page.getByTestId(ids.signIn)).toHaveCount(0);
+  expect(codes.count).toBe(0);
 });
 
 test('a device name with markup renders as text', async ({ mount, page }) => {

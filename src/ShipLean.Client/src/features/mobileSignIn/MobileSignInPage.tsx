@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
+import { ApiRequestError } from '@shiplean/core/api/client';
 import { createSignInCode } from '@shiplean/core/api/deviceSessions';
 import { appRedirect, parseConfirmQuery, type ConfirmQuery } from '@shiplean/core/handoff';
 import { fetchMe, meKey } from '../../queries/shared';
@@ -62,14 +63,62 @@ function Note({ children }: { children: ReactNode }) {
   );
 }
 
-function Empty({ title, children }: { title: string; children: ReactNode }) {
+function Empty({ title, icon, children }: { title: string; icon: ReactNode; children: ReactNode }) {
   return (
     <div className="grid justify-items-center gap-2 px-2 py-4 text-center">
+      {icon}
       <h2 className="m-0 text-[length:var(--text-md)] font-semibold [overflow-wrap:anywhere]">
         {title}
       </h2>
       {children}
     </div>
+  );
+}
+
+const tick = (
+  <svg
+    aria-hidden="true"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.4"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className="size-[22px]"
+  >
+    <path d="M5 12.5l4.5 4.5L19 7.5" />
+  </svg>
+);
+const cross = (
+  <svg
+    aria-hidden="true"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.2"
+    strokeLinecap="round"
+    className="size-[22px]"
+  >
+    <path d="M7 7l10 10M17 7L7 17" />
+  </svg>
+);
+
+function Badge({ tone, children }: { tone: 'ok' | 'muted'; children: ReactNode }) {
+  return (
+    <span
+      className={`inline-grid size-11 place-items-center rounded-full ${
+        tone === 'ok' ? 'bg-good/15 text-good' : 'bg-sunken text-ink-muted'
+      }`}
+    >
+      {children}
+    </span>
+  );
+}
+
+function sessionGone(error: unknown): boolean {
+  return (
+    error instanceof ApiRequestError &&
+    (error.status === 401 || (error.status === 403 && error.code === 'password_change_required'))
   );
 }
 
@@ -85,6 +134,14 @@ export function MobileSignInPage() {
   const me = useQuery({ queryKey: meKey, queryFn: fetchMe, retry: false });
   const [outcome, setOutcome] = useState<Outcome>(null);
   const host = window.location.host;
+
+  useEffect(() => {
+    const before = document.title;
+    document.title = instance.data ? `Sign in the app · ${instance.data.name}` : 'Sign in the app';
+    return () => {
+      document.title = before;
+    };
+  }, [instance.data]);
   // The app refuses a redirect whose iss isn't the server it opened, so a code minted here can't be replayed through
   // another server that bounced the browser to this page.
   const iss = window.location.origin;
@@ -107,7 +164,7 @@ export function MobileSignInPage() {
           testId={ids.missing}
           footer={<Note>If you were signing in, go back to the app and tap Sign in again.</Note>}
         >
-          <p className="m-0 text-[length:var(--text-sm)] text-ink-muted">
+          <p className="m-0 text-[length:var(--text-md)] text-ink-muted">
             This page opens from the ShipLean app. Start signing in there to get here.
           </p>
         </Card>
@@ -116,7 +173,7 @@ export function MobileSignInPage() {
     if (outcome?.kind === 'signedIn') {
       return (
         <Card heading="Sign in the app" testId={ids.done}>
-          <Empty title={`Signed in on ${query.device}`}>
+          <Empty title={`Signed in on ${query.device}`} icon={<Badge tone="ok">{tick}</Badge>}>
             <p className="m-0 text-[length:var(--text-sm)] text-ink-muted">
               Go back to the ShipLean app. If it didn't open, open it yourself and tap Sign in
               again.
@@ -135,11 +192,24 @@ export function MobileSignInPage() {
     if (outcome?.kind === 'cancelled') {
       return (
         <Card heading="Sign in the app" testId={ids.cancelled}>
-          <Empty title="Nothing was signed in">
+          <Empty title="Nothing was signed in" icon={<Badge tone="muted">{cross}</Badge>}>
             <p className="m-0 text-[length:var(--text-sm)] text-ink-muted">
               You can close this page.
             </p>
           </Empty>
+        </Card>
+      );
+    }
+    // A session that is gone is on its way to /login; any other failure to read who is signed in says so.
+    if (me.isError && !sessionGone(me.error)) {
+      return (
+        <Card
+          heading="Sign in the app"
+          footer={<Note>If you were signing in, go back to the app and tap Sign in again.</Note>}
+        >
+          <Banner tone="danger" testId={ids.failure}>
+            {unreachable}
+          </Banner>
         </Card>
       );
     }
@@ -194,7 +264,17 @@ export function MobileSignInPage() {
                 post.mutate(query);
               }}
             >
-              {post.isPending ? 'Signing in…' : 'Sign in'}
+              {post.isPending ? (
+                <>
+                  <span
+                    aria-hidden="true"
+                    className="size-3.5 animate-spin rounded-full border-2 border-current border-r-transparent motion-reduce:animate-none"
+                  />
+                  Signing in…
+                </>
+              ) : (
+                'Sign in'
+              )}
             </button>
             <button
               type="button"

@@ -14,12 +14,15 @@ const unreachable = "Couldn't reach ShipLean. Check your connection and try agai
 export function SignInForm({
   instanceName,
   note,
+  appInfo = null,
   onSignedIn,
   googleHref,
   forApp = false,
 }: {
   instanceName: string | undefined;
   note: ReactNode;
+  /** The line saying the sign-in is for the phone app; it follows the state banner and stays after a failed attempt. */
+  appInfo?: ReactNode;
   onSignedIn: (me: MeDto, password: string) => void;
   /** Where the Google button goes; null hides it. */
   googleHref: string | null;
@@ -82,6 +85,7 @@ export function SignInForm({
         ) : (
           note
         )}
+        {appInfo}
         <div className="grid grid-cols-[96px_minmax(0,1fr)] items-center gap-3">
           <FormField
             id="sign-in-email"

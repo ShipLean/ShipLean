@@ -108,7 +108,7 @@ export function LoginPage() {
     ) : null;
 
   // Sent here by the phone app: say so, naming the device the confirm page will ask about.
-  const forApp = returnUrl.startsWith(CONFIRM_PATH);
+  const forApp = returnUrl === CONFIRM_PATH || returnUrl.startsWith(`${CONFIRM_PATH}?`);
   const appQuery = forApp ? parseConfirmQuery(returnUrl.slice(returnUrl.indexOf('?') + 1)) : null;
   const appInfo =
     appQuery !== null && !('error' in appQuery) ? (
@@ -143,12 +143,8 @@ export function LoginPage() {
     return (
       <SignInForm
         instanceName={instance.data?.name}
-        note={
-          <>
-            {appInfo}
-            {note}
-          </>
-        }
+        note={note}
+        appInfo={appInfo}
         forApp={forApp}
         onSignedIn={onSignedIn}
         googleHref={
