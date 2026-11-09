@@ -6,4 +6,6 @@ module.exports = {
   testMatch: ['<rootDir>/src/**/*.spec.tsx'],
   // Busy CI runners blow the 5 s default on screen specs.
   testTimeout: 15000,
+  // Native modules faked in memory: secure store, kv-store, web browser, NetInfo, colour scheme, safe area.
+  setupFilesAfterEnv: ['<rootDir>/src/test-support/jest.setup.ts'],
 };
