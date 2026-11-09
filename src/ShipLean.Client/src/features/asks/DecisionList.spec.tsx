@@ -16,10 +16,12 @@ const itemFor = (asks: ItemAsksDto): AsksItem => ({
   type: { id: 'story', name: 'Story' },
 });
 
-const rowOf = (root: Locator, label: string) =>
-  root.getByTestId(ids.decisionRow).filter({
-    has: root.getByTestId(ids.decisionLabel).filter({ hasText: new RegExp(`^${label}$`) }),
+const rowOf = (root: Locator, label: string) => {
+  const page = root.page();
+  return page.getByTestId(ids.decisionRow).filter({
+    has: page.getByTestId(ids.decisionLabel).filter({ hasText: new RegExp(`^${label}$`) }),
   });
+};
 
 test('DecisionRow_WhenOpen_ShouldSayGoingWithRecommended', async ({ mount }) => {
   const component = await mount(
