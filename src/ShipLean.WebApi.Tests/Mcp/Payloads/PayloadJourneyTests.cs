@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json.Nodes;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
+using ShipLean.Application.Features.WorkItemDetails.Attachments;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Usage;
 using ShipLean.TestSupport;
@@ -54,11 +55,16 @@ public class PayloadJourneyTests : McpFixture
         (await connection.QuerySingleAsync<int>(
             "SELECT count(*)::int FROM work_item t JOIN work_item s ON s.id = t.parent_id JOIN work_item f ON f.id = s.parent_id WHERE f.key = @key",
             new { key })).ShouldBe(40);
-        var files = (await connection.QueryAsync<(string Name, string? Text)>(
-            "SELECT a.name AS Name, a.search_text AS Text FROM attachment a JOIN work_item f ON f.id = a.work_item_id WHERE f.key = @key", new { key })).ToList();
-        files.Count.ShouldBe(2);
-        files.ShouldContain(file => file.Text == commonBrief);
-        files.ShouldContain(file => file.Text == planMarkdown);
+        var ids = (await connection.QueryAsync<Guid>(
+            "SELECT a.id FROM attachment a JOIN work_item f ON f.id = a.work_item_id WHERE f.key = @key", new { key })).ToList();
+        ids.Count.ShouldBe(2);
+        var stored = new List<byte[]>();
+        foreach (var id in ids)
+        {
+            stored.Add(await ReadStoredAsync(id));
+        }
+        stored.ShouldContain(content => content.SequenceEqual(Encoding.UTF8.GetBytes(commonBrief)), "no attachment holds the common brief's uploaded bytes");
+        stored.ShouldContain(content => content.SequenceEqual(Encoding.UTF8.GetBytes(planMarkdown)), "no attachment holds the plan document's uploaded bytes");
     }
 
     [Test]
@@ -68,16 +74,16 @@ public class PayloadJourneyTests : McpFixture
         await using var connection = await OpenDatabaseAsync();
         var feature = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("feature").WithTitle("Journey attach target").InsertAsync(connection);
         var key = await connection.QuerySingleAsync<string>("SELECT key FROM work_item WHERE id = @feature", new { feature });
+        var expected = Encoding.UTF8.GetBytes(text);
         var token = await AgentAsync(ReadWrite);
-        var uploaded = await UploadAsync(token, "attach_markdown", "content", Encoding.UTF8.GetBytes(text));
+        var uploaded = await UploadAsync(token, "attach_markdown", "content", expected);
 
         var reply = await CallToolAsync(token, "attach_markdown", $$"""{"feature":"{{key}}","name":"from-file.md","payload":"{{uploaded.Payload}}"}""");
 
         uploaded.Status.ShouldBe(HttpStatusCode.OK);
         reply.IsToolError().ShouldBeFalse(reply.Body);
-        var stored = await connection.QuerySingleAsync<string?>(
-            "SELECT search_text FROM attachment WHERE id = @id", new { id = reply.Structured().GetProperty("attachment_id").GetGuid() });
-        stored.ShouldBe(text);
+        var stored = await ReadStoredAsync(reply.Structured().GetProperty("attachment_id").GetGuid());
+        stored.ShouldBe(expected);
     }
 
     [Test]
@@ -209,6 +215,17 @@ public class PayloadJourneyTests : McpFixture
 
     // An agent token of Joel's under a client of its own, so each token is its own authorization.
     private Task<string> AgentAsync(string[] scopes) => TokenAsync(TestUser.Joel, scopes, $"Journey agent {Guid.NewGuid():N}");
+
+    // The bytes the attachment store serves for the download (the blob itself, not the search text kept beside it).
+    private async Task<byte[]> ReadStoredAsync(Guid attachmentId)
+    {
+        await using var scope = Host.Services.CreateAsyncScope();
+        var (_, blob) = await scope.ServiceProvider.GetRequiredService<AttachmentStore>().OpenAsync(attachmentId);
+        await using var content = blob.Content;
+        using var memory = new MemoryStream();
+        await content.CopyToAsync(memory);
+        return memory.ToArray();
+    }
 
     private async Task<int> CountItemsAsync()
     {
