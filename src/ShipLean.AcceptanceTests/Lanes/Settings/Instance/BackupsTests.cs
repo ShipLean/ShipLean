@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using ShipLean.AcceptanceTests.Harness;
-using ShipLean.AcceptanceTests.Pages.Realtime;
 using ShipLean.AcceptanceTests.Pages.Settings;
+using ShipLean.Application.Storage;
 using ShipLean.TestSupport.Hosting;
 using ShipLean.TestSupport.Storage;
 using ShipLean.TestSupport.TestIds;
@@ -32,7 +32,6 @@ public class BackupsTests : SeededAcceptanceTest
     {
         var backups = new InstanceBackupsPage(Page);
         await backups.OpenAsync();
-        await new LiveStatus(Page).WaitUntilLiveAsync();
 
         await backups.FillDestinationAsync(Endpoint, _bucket.Bucket, AccessKey, SecretKey, Passphrase);
         await backups.Preset("Daily 02:00").ClickAsync();
@@ -54,7 +53,6 @@ public class BackupsTests : SeededAcceptanceTest
     {
         var backups = new InstanceBackupsPage(Page);
         await backups.OpenAsync();
-        await new LiveStatus(Page).WaitUntilLiveAsync();
         await backups.FillDestinationAsync(Endpoint, _bucket.Bucket, AccessKey, SecretKey, Passphrase);
         await backups.Preset("Daily 02:00").ClickAsync();
         await Expect(backups.SaveButton).ToBeEnabledAsync();
@@ -74,7 +72,6 @@ public class BackupsTests : SeededAcceptanceTest
     {
         var backups = new InstanceBackupsPage(Page);
         await backups.OpenAsync();
-        await new LiveStatus(Page).WaitUntilLiveAsync();
         await backups.FillDestinationAsync(Endpoint, _bucket.Bucket, AccessKey, SecretKey, Passphrase);
         await backups.Preset("Hourly").ClickAsync();
         await Expect(backups.SaveButton).ToBeEnabledAsync();
@@ -95,7 +92,6 @@ public class BackupsTests : SeededAcceptanceTest
     {
         var backups = new InstanceBackupsPage(Page);
         await backups.OpenAsync();
-        await new LiveStatus(Page).WaitUntilLiveAsync();
         await backups.FillDestinationAsync(Endpoint, "Bad_Bucket", AccessKey, SecretKey, Passphrase);
         await backups.Preset("Hourly").ClickAsync();
         await Expect(backups.SaveButton).ToBeEnabledAsync();
@@ -113,7 +109,6 @@ public class BackupsTests : SeededAcceptanceTest
     {
         var backups = new InstanceBackupsPage(Page);
         await backups.OpenAsync();
-        await new LiveStatus(Page).WaitUntilLiveAsync();
         var missing = $"missing-{Guid.NewGuid():N}"[..30];
         await backups.FillDestinationAsync(Endpoint, missing, AccessKey, SecretKey, Passphrase);
 
@@ -130,7 +125,6 @@ public class BackupsTests : SeededAcceptanceTest
         await SignInAsync(TestUser.Mei.Email!, TestUser.Mei.Password!);
         var backups = new InstanceBackupsPage(Page);
         await Page.GotoAsync(Links.InstanceSettings("backups"));
-        await new LiveStatus(Page).WaitUntilLiveAsync();
 
         await Expect(new InstanceGeneralPage(Page).Denied).ToBeVisibleAsync();
         await Expect(backups.Panel).ToHaveCountAsync(0);
