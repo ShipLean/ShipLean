@@ -14,13 +14,14 @@ namespace ShipLean.AcceptanceTests.Lanes.Settings.Instance;
 [TestFixture]
 public class BackupsTests : SeededAcceptanceTest
 {
-    private const string AccessKey = "shiplean";
-    private const string SecretKey = "shiplean-secret";
-    private const string SecretLastFour = "cret";
     private const string Passphrase = "larkspur passphrase 17";
     private const int RunTimeoutMs = 120_000;
 
     private S3BlobConnection _bucket = null!;
+
+    private string AccessKey => _bucket.AccessKey!;
+
+    private string SecretKey => _bucket.SecretKey!;
 
     private string Endpoint => _bucket.ServiceUrl!.ToString().TrimEnd('/');
 
@@ -34,18 +35,33 @@ public class BackupsTests : SeededAcceptanceTest
         await backups.OpenAsync();
 
         await backups.FillDestinationAsync(Endpoint, _bucket.Bucket, AccessKey, SecretKey, Passphrase);
-        await backups.Preset("Daily 02:00").ClickAsync();
+        await backups.Preset("Sundays 02:00").ClickAsync();
         await Expect(backups.CronNextRuns.First).ToBeVisibleAsync();
+        await backups.EnabledToggle.CheckAsync();
         await Expect(backups.SaveButton).ToBeEnabledAsync();
+        await backups.TestButton.ClickAsync();
+        await Expect(backups.TestResult).ToHaveAttributeAsync("role", "status");
         await backups.SaveAsync();
         await Page.ReloadAsync();
 
         await Expect(backups.Bucket).ToHaveValueAsync(_bucket.Bucket);
         await Expect(backups.EndpointUrl).ToHaveValueAsync(Endpoint);
-        await Expect(backups.CronInput).ToHaveValueAsync("0 2 * * *");
-        await Expect(backups.SecretKeyLastFour).ToHaveTextAsync($"•••• {SecretLastFour}");
+        await Expect(backups.CronInput).ToHaveValueAsync("0 2 * * 0");
+        await Expect(backups.EnabledToggle).ToBeCheckedAsync();
+        await Expect(backups.CronDescription).ToContainTextAsync("Sunday");
+        await Expect(backups.SecretKeyLastFour).ToHaveTextAsync($"•••• {SecretKey[^4..]}");
         await Expect(backups.CronNextRuns.First).ToBeVisibleAsync();
+        foreach (var label in await backups.CronNextRuns.AllTextContentsAsync())
+        {
+            label.ShouldMatch(@"^\d{4}-\d{2}-\d{2} 02:00 UTC$");
+        }
+
         await Expect(backups.Panel).Not.ToContainTextAsync(SecretKey);
+        await Expect(backups.Panel).Not.ToContainTextAsync(Passphrase);
+        var read = await Page.Context.APIRequest.GetAsync("/api/instance/backups");
+        var body = await read.TextAsync();
+        body.ShouldNotContain(SecretKey);
+        body.ShouldNotContain(Passphrase);
     }
 
     [Test]
@@ -64,7 +80,12 @@ public class BackupsTests : SeededAcceptanceTest
 
         await Expect(backups.RunRows).ToHaveCountAsync(before + 1, new() { Timeout = RunTimeoutMs });
         await Expect(backups.RunRows.First).ToHaveAttributeAsync("data-state", "succeeded", new() { Timeout = RunTimeoutMs });
+        await Expect(backups.RunRows.First).ToContainTextAsync("Manual");
         await Expect(backups.Health).ToHaveAttributeAsync("data-health", "ok", new() { Timeout = RunTimeoutMs });
+
+        using var client = S3Server.CreateClient(_bucket);
+        var listed = await client.ListObjectsV2Async(new() { BucketName = _bucket.Bucket, Prefix = "shiplean/database/" });
+        listed.S3Objects.Count.ShouldBe(1);
     }
 
     [Test]
@@ -83,8 +104,8 @@ public class BackupsTests : SeededAcceptanceTest
 
         await backups.Preset("Hourly").ClickAsync();
 
-        await Expect(backups.CronError).ToHaveCountAsync(0);
         await Expect(backups.SaveButton).ToBeEnabledAsync();
+        await Expect(backups.CronError).ToHaveCountAsync(0);
     }
 
     [Test]
@@ -96,10 +117,11 @@ public class BackupsTests : SeededAcceptanceTest
         await backups.Preset("Hourly").ClickAsync();
         await Expect(backups.SaveButton).ToBeEnabledAsync();
 
-        await backups.SaveAsync();
+        var response = await backups.SaveAsync();
 
+        response.Status.ShouldBe(400);
         // The client only checks that a bucket is given, so this message is the server's, shown next to the bucket input.
-        await Expect(backups.Bucket).ToHaveAccessibleDescriptionAsync(new Regex(@"\S"));
+        await Expect(backups.Bucket).ToHaveAccessibleDescriptionAsync(new Regex("lowercase letters"));
         await Expect(Page.GetByTestId(BackupsTestIds.BackupsFieldError)).ToHaveCountAsync(1);
         await Expect(Page.GetByTestId(BackupsTestIds.BackupsFormError)).ToHaveCountAsync(0);
     }
@@ -110,8 +132,13 @@ public class BackupsTests : SeededAcceptanceTest
         var backups = new InstanceBackupsPage(Page);
         await backups.OpenAsync();
         var missing = $"missing-{Guid.NewGuid():N}"[..30];
-        await backups.FillDestinationAsync(Endpoint, missing, AccessKey, SecretKey, Passphrase);
+        await backups.FillDestinationAsync(Endpoint, _bucket.Bucket, AccessKey, SecretKey, Passphrase);
 
+        await backups.TestButton.ClickAsync();
+
+        await Expect(backups.TestResult).ToHaveAttributeAsync("role", "status");
+
+        await backups.Bucket.FillAsync(missing);
         await backups.TestButton.ClickAsync();
 
         await Expect(backups.TestResult).ToContainTextAsync("Write failed");

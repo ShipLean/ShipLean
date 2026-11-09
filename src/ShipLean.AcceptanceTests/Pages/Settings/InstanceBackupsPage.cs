@@ -33,6 +33,10 @@ public sealed class InstanceBackupsPage(IPage page)
 
     public ILocator CronInput => page.GetByTestId(BackupsTestIds.BackupsCronInput);
 
+    public ILocator CronDescription => page.GetByTestId(BackupsTestIds.BackupsCronDescription);
+
+    public ILocator EnabledToggle => page.GetByTestId(BackupsTestIds.BackupsEnabledToggle);
+
     public ILocator CronError => page.GetByTestId(BackupsTestIds.BackupsCronError);
 
     public ILocator CronNextRuns => page.GetByTestId(BackupsTestIds.BackupsCronNextRun);
@@ -57,7 +61,7 @@ public sealed class InstanceBackupsPage(IPage page)
     }
 
     // Types a custom-endpoint destination, a secret and a passphrase into the form without saving. A secret already
-    // saved by an earlier test of the class is replaced; a passphrase typed again starts the next generation.
+    // saved by an earlier test of the class is replaced; the same passphrase typed again keeps its generation.
     public async Task FillDestinationAsync(string endpoint, string bucket, string accessKey, string secretKey, string passphrase)
     {
         await EndpointMode.SelectOptionAsync("custom");
@@ -76,6 +80,6 @@ public sealed class InstanceBackupsPage(IPage page)
     }
 
     // Saves and waits for the response, so a following reload does not abort the write.
-    public async Task SaveAsync() =>
+    public async Task<IResponse> SaveAsync() =>
         await page.RunAndWaitForApiAsync("/api/instance/backups", "PUT", () => SaveButton.ClickAsync());
 }
