@@ -14,6 +14,7 @@ using ShipLean.TestSupport.Asks;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Contracts.Mcp;
 using ShipLean.TestSupport.Fixtures;
+using ShipLean.TestSupport.Hosting;
 
 namespace ShipLean.WebApi.Tests.Asks;
 
