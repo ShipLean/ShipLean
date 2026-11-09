@@ -24,6 +24,6 @@ public static class AskNumbers
             "SELECT coalesce(max(number), 0)::int + 1 FROM question WHERE work_item_id = @workItemId",
             new { workItemId }, transaction, cancellationToken: cancellationToken));
 
-    internal static DbConnection ConnectionOf(DbTransaction transaction)
+    private static DbConnection ConnectionOf(DbTransaction transaction)
         => transaction.Connection ?? throw new InvalidOperationException("The transaction is no longer open.");
 }
