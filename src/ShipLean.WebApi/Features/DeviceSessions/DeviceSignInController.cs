@@ -66,7 +66,8 @@ public sealed class DeviceSignInController(
         var signIn = await sessions.ExchangeAsync(request.Code ?? string.Empty, request.Verifier ?? string.Empty, time.GetUtcNow(), ct)
                      ?? throw ApiException.Validation(Expired);
         var session = signIn.Session;
-        SelfEmittedUsage.TrackOk(events, time, started, UsageEventNames.DeviceSessionCreated, session.UserId, "api:DeviceSignIn.Exchange");
+        SelfEmittedUsage.TrackOk(events, time, started, UsageEventNames.DeviceSessionCreated, session.UserId, "api:DeviceSignIn.Exchange",
+            surface: UsageSurface.App);
         var dto = new DeviceSignInDto(DeviceSessionDtos.From(session, current: false, time), signIn.Secret, await me.GetAsync(session.UserId, ct));
         return StatusCode(StatusCodes.Status201Created, dto);
     }

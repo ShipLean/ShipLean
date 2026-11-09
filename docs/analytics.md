@@ -7,7 +7,8 @@ The code is the source of truth. `UsageEventNames`, `ActionUsageMap` and `ToolUs
 ## What is tracked
 
 - **Events count actions, not objects.** `work.captured` is one event even if it made five items. Object counts live in the database.
-- **People and agents are tracked side by side.** The same action has the same event name whether a person did it in the web app or an agent did it over MCP. Every event says which kind of actor did it (`actor_kind`: `user`, `agent` or `system`) and on which surface (`surface`: `web`, `mcp` or `system`).
+- **People and agents are tracked side by side.** The same action has the same event name whether a person did it in the web app or an agent did it over MCP. Every event says which kind of actor did it (`actor_kind`: `user`, `agent` or `system`) and on which surface (`surface`: `web`, `mcp`, `system` or `app`).
+- **`app` is the phone app.** `app` is a request made with a device bearer (the phone app), told by the device-session claim on the authenticated principal, never by a header. `device_session.created` is tagged `app` at the anonymous exchange, which only the app calls, because that request has no bearer yet.
 - **Every event carries its project** (`project_id`, `project_key`) when the request touched exactly one project, and `project_count` says how many it touched.
 - **What is not tracked:** reads that a screen view already counts, helper calls, protocol noise and webhooks (counted as system events where handled). Each is listed in `ActionUsageMap` with a reason. Requests refused before the action runs (a 403 from the MCP gate, a web authorization failure, a model-binding failure) never reach a capture filter and are not tracked.
 
@@ -45,7 +46,7 @@ Every event carries these (a key is left out when its value is null). The consta
 
 | Property | Meaning |
 |---|---|
-| `surface`, `actor_kind` | `web` / `mcp` / `system`; `user` / `agent` / `system` |
+| `surface`, `actor_kind` | `web` / `mcp` / `system` / `app`; `user` / `agent` / `system` |
 | `user_id` | the user (for an agent, the user it acts for) |
 | `agent_id`, `agent_name`, `agent_host`, `agent_verified` | agent actors only; name and host are client-supplied and cut to 64 characters |
 | `project_id`, `project_key`, `project_count` | see above |

@@ -4,6 +4,7 @@ using ShipLean.Contracts;
 using ShipLean.Contracts.DeviceSessions;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Usage;
+using ShipLean.WebApi.Features.Usage;
 using ShipLean.WebApi.Features.Auth;
 using ShipLean.WebApi.Infrastructure;
 
@@ -62,5 +63,6 @@ public sealed class DeviceSessionsController(IDeviceSessions sessions, ICurrentU
     private void TrackEnded(long started, string reason, string source)
         => SelfEmittedUsage.TrackOk(
             events, time, started, UsageEventNames.DeviceSessionEnded, currentUser.Id, source,
-            properties: new Dictionary<string, object> { [UsageProps.Reason] = reason });
+            properties: new Dictionary<string, object> { [UsageProps.Reason] = reason },
+            surface: UsageSurfaces.Of(HttpContext));
 }
