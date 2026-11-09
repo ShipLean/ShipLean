@@ -40,6 +40,7 @@ export function TextField({
       <TextInput
         testID={testID}
         accessibilityLabel={label}
+        accessibilityHint={error ?? hint}
         value={value}
         onChangeText={onChangeText}
         onBlur={onBlur}

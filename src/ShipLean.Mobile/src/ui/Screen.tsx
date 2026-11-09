@@ -3,8 +3,8 @@ import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme';
 
-// Fills the window with the theme background and keeps its content inside the safe area (a TopBar sits below the
-// status bar because of this).
+// Fills the window with the theme background and keeps its content out of the left, right and bottom insets. The top
+// inset is the TopBar's: it paints the status-bar strip.
 export interface ScreenProps {
   children: ReactNode;
   // The screen's root id from src/screens/testIds.ts.
@@ -20,7 +20,6 @@ export function Screen({ children, testID }: ScreenProps) {
       style={{
         flex: 1,
         backgroundColor: theme.colors.bg,
-        paddingTop: insets.top,
         paddingBottom: insets.bottom,
         paddingLeft: insets.left,
         paddingRight: insets.right,

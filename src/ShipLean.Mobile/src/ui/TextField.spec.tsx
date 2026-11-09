@@ -19,6 +19,7 @@ describe.each(['light', 'dark'] as const)('TextField (%s)', (scheme) => {
 
     expect(screen.getByTestId('srv-hint')).toBeOnTheScreen();
     expect(screen.queryByTestId('srv-error')).toBeNull();
+    expect(screen.getByTestId('srv').props.accessibilityHint).toBe('Its address');
   });
 
   test('render_WhenHintAndError_ShouldShowTheErrorInsteadOfTheHint', async () => {
@@ -36,5 +37,6 @@ describe.each(['light', 'dark'] as const)('TextField (%s)', (scheme) => {
 
     expect(screen.getByTestId('srv-error')).toBeOnTheScreen();
     expect(screen.queryByTestId('srv-hint')).toBeNull();
+    expect(screen.getByTestId('srv').props.accessibilityHint).toBe('Not reachable');
   });
 });

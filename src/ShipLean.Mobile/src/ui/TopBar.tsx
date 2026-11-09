@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme';
 import { uiIds } from './testIds';
 
@@ -11,17 +12,21 @@ export interface TopBarProps {
 
 export function TopBar({ title, left, right }: TopBarProps) {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const { colors } = theme;
   return (
     <View
       testID={uiIds.topBar}
       accessibilityRole="header"
       style={{
-        height: theme.touch.bar,
+        // The bar paints the status-bar strip too (the mock-ups' surface colour), so it grows by the top inset.
+        height: theme.touch.bar + insets.top,
+        paddingTop: insets.top,
         flexDirection: 'row',
         alignItems: 'center',
         gap: theme.space[2],
-        paddingHorizontal: theme.space[4],
+        paddingLeft: Math.max(theme.space[4], insets.left),
+        paddingRight: Math.max(theme.space[4], insets.right),
         backgroundColor: colors.surface,
         borderBottomWidth: 1,
         borderBottomColor: colors.border,

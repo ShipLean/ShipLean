@@ -9,13 +9,14 @@ import { Image, Text, View } from 'react-native';
 import logo from '../../assets/splash-icon.png';
 import { queryClient } from '../queryClient';
 import { session } from '../session/session';
-import { normaliseServerAddress } from '../session/serverAddress';
+import { hostOfOrigin, normaliseServerAddress } from '../session/serverAddress';
 import { checkLine, checkServer, type ServerCheck } from '../session/serverCheck';
 import { createSignIn } from '../session/signIn';
 import { useSession } from '../session/useSession';
 import { Button } from '../ui/Button';
 import { Screen } from '../ui/Screen';
 import { TextField } from '../ui/TextField';
+import { TopBar } from '../ui/TopBar';
 import { signInIds } from './signIn/testIds';
 import { screenIds } from './testIds';
 
@@ -121,13 +122,18 @@ export function SignInScreen() {
 
   return (
     <Screen testID={screenIds.signIn}>
+      <TopBar
+        title={remembered === null ? 'ShipLean' : `ShipLean · ${hostOfOrigin(remembered)}`}
+        left={
+          <Image
+            testID={signInIds.logo}
+            accessibilityLabel="ShipLean"
+            source={logo}
+            style={{ width: 24, height: 24 }}
+          />
+        }
+      />
       <View>
-        <Image
-          testID={signInIds.logo}
-          accessibilityLabel="ShipLean"
-          source={logo}
-          style={{ width: 72, height: 72 }}
-        />
         <TextField
           label="Server"
           value={text}
