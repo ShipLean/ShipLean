@@ -75,9 +75,8 @@ public sealed class AuthServices : IServiceModule
                     {
                         return ProxySignInHandler.Scheme;
                     }
-                    // The phone app's device bearer, in password mode only.
-                    // TODO: hardened next: /hubs/* and SignalR's access_token there, and the /api paths a bearer is refused on.
-                    return !isProxy && DeviceBearerRequest.Applies(context.Request.Path, context.Request.Headers.Authorization)
+                    // The phone app's device bearer, in password mode only, on /api and /hubs and nowhere a bearer is refused.
+                    return !isProxy && DeviceBearerRequest.Applies(context.Request)
                         ? DeviceBearerHandler.Scheme
                         : CookieScheme;
                 };

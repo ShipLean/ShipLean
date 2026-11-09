@@ -69,6 +69,8 @@ public sealed class DeviceSignInController(
         SelfEmittedUsage.TrackOk(events, time, started, UsageEventNames.DeviceSessionCreated, session.UserId, "api:DeviceSignIn.Exchange",
             surface: UsageSurface.App);
         var dto = new DeviceSignInDto(DeviceSessionDtos.From(session, current: false, time), signIn.Secret, await me.GetAsync(session.UserId, ct));
+        // The response holds the secret: no cache keeps it (RFC 6749 §5.1).
+        Response.Headers.CacheControl = "no-store";
         return StatusCode(StatusCodes.Status201Created, dto);
     }
 }

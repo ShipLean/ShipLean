@@ -108,6 +108,7 @@ public class DeviceSessionsApiTests : ApiFixture
         using var response = await ExchangeAsync(code, Verifier);
 
         response.StatusCode.ShouldBe(HttpStatusCode.Created);
+        response.Headers.CacheControl!.NoStore.ShouldBeTrue();
         var body = (await response.Content.ReadFromJsonAsync<DeviceSignInDto>(AuthClient.Json))!;
         DeviceSecret.HasShape(body.Secret).ShouldBeTrue();
         body.Session.Name.ShouldBe("Joel's iPad");

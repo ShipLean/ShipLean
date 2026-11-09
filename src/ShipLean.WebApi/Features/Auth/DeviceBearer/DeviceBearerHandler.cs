@@ -1,40 +1,76 @@
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
+using ShipLean.Application.Identity;
 using ShipLean.Contracts.DeviceSessions;
+using ShipLean.Contracts.Usage;
+using ShipLean.WebApi.Infrastructure;
 
 namespace ShipLean.WebApi.Features.Auth.DeviceBearer;
 
-// The phone app's bearer: `Authorization: Bearer shl_dev_…`, sent here by the Session selector (AuthServices) on /api/*
-// in password mode. A live session gives the device principal and is touched (sliding 90 days). A revoked or expired
-// one is marked ended, so the challenge, forwarded to the cookie scheme, answers 401 session_ended.
-// TODO: hardened next: the user disabled or their security stamp moved on (ended), one-time password (403
-// password_change_required), /hubs/* with access_token, and the paths a bearer is never accepted on.
+// The phone app's bearer, sent here by the Session selector (AuthServices) in password mode. The record comes from
+// IDeviceSessions whatever its state; this handler decides. A live session gives the device principal and is touched
+// (sliding 90 days). A revoked one, or one that has expired, or whose user is disabled or whose security stamp moved on
+// since the sign-in, is ended and marked ended, so the challenge, forwarded to the cookie scheme, answers 401
+// session_ended. The stamp and the disabled flag come from UserSessions (at most a minute old, as for a cookie). A user
+// on a one-time password is let through: PasswordChangeFilter answers 403 password_change_required for them.
 public sealed class DeviceBearerHandler(
-    IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder, IDeviceSessions sessions, TimeProvider time)
+    IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder,
+    IDeviceSessions sessions, UserSessions users, IUsageEvents events, TimeProvider time)
     : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
 {
     public new const string Scheme = "DeviceBearer";
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        if (DeviceBearerRequest.Secret(Request.Headers.Authorization) is not { } secret)
+        if (DeviceBearerRequest.Secret(Request) is not { } secret)
         {
             return AuthenticateResult.NoResult();
         }
-        var session = await sessions.FindBySecretAsync(secret, Context.RequestAborted);
+        var started = time.GetTimestamp();
+        var ct = Context.RequestAborted;
+        var session = await sessions.FindBySecretAsync(secret, ct);
         if (session is null)
         {
             return AuthenticateResult.Fail("Unknown device session.");
         }
         var now = time.GetUtcNow();
-        if (!session.IsLiveAt(now))
+        if (session.RevokedAt != null)
         {
+            // Whoever revoked it tracked that; nothing more to record.
+            CookieSessionEvents.MarkEnded(Context.Items);
+            return AuthenticateResult.Fail("The device session was revoked.");
+        }
+        if (await EndReasonAsync(session, now, ct) is { } reason)
+        {
+            // Only the call that ends the session tracks it.
+            if (await sessions.EndAsync(session.Id, now, ct))
+            {
+                SelfEmittedUsage.TrackOk(
+                    events, time, started, UsageEventNames.DeviceSessionEnded, session.UserId, "auth:DeviceBearer",
+                    properties: new Dictionary<string, object> { [UsageProps.Reason] = reason },
+                    surface: UsageSurface.App);
+            }
             CookieSessionEvents.MarkEnded(Context.Items);
             return AuthenticateResult.Fail("The device session ended.");
         }
-        await sessions.TouchAsync(session.Id, now, Context.RequestAborted);
+        await sessions.TouchAsync(session.Id, now, ct);
         var principal = AuthPrincipal.ForDevice(session.UserId, session.SecurityStamp, session.Id);
         return AuthenticateResult.Success(new AuthenticationTicket(principal, Scheme));
+    }
+
+    // Why a session that is not revoked is over, or null when it still counts.
+    private async Task<string?> EndReasonAsync(DeviceSessionRecord session, DateTimeOffset now, CancellationToken ct)
+    {
+        if (!session.IsLiveAt(now))
+        {
+            return DeviceSessionEndReasons.Expired;
+        }
+        var user = await users.GetAsync(session.UserId, ct);
+        if (user is null or { Disabled: true })
+        {
+            return DeviceSessionEndReasons.UserDisabled;
+        }
+        return user.SecurityStamp == session.SecurityStamp ? null : DeviceSessionEndReasons.StampChanged;
     }
 }
