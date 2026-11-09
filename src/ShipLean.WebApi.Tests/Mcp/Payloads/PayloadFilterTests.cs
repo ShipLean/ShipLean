@@ -192,7 +192,7 @@ public class PayloadFilterTests : McpFixture
         reply.Status.ShouldBe(HttpStatusCode.OK);
         reply.IsToolError().ShouldBeTrue(reply.Body);
         ErrorOf(reply).ShouldBe((ApiErrorCodes.NotFound, "payload"));
-        reply.Structured().GetProperty("error").GetProperty("message").GetString().ShouldContain("create_payload_upload");
+        reply.Structured().GetProperty("error").GetProperty("message").GetString()!.ShouldContain("create_payload_upload");
     }
 
     [Test]
