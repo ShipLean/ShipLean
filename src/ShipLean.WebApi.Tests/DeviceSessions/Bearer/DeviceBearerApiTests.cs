@@ -14,6 +14,7 @@ using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.DeviceSessions;
 using ShipLean.TestSupport.Fixtures;
+using ShipLean.TestSupport.Hosting;
 using ShipLean.TestSupport.Usage;
 using ShipLean.WebApi.Tests.Auth;
 using ShipLean.WebApi.Tests.Realtime;
