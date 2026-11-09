@@ -109,6 +109,14 @@ public static class ActionUsageMap
         Add(ActionUsage.Track(UsageEventNames.BackupConnectionTested), "Backups.Test");
         Add(ActionUsage.Track(UsageEventNames.BackupRunStarted), "Backups.Run");
 
+        // Asks: item read (R1)
+
+        // Asks: decisions (SV-D2)
+
+        // Asks: questions (SV-Q)
+
+        // Asks: history and waiting (SV-W)
+
         // Self-emitted: the action knows what the filter cannot (which sign-in, which decision, the new project, the screen, the sort).
         Add(ActionUsage.SelfEmitted, "Auth.Login", "Consent.Decide", "ProjectCreation.Create", "Instance.Join", "Usage.Screen",
             "ProjectUsage.BacklogSort");

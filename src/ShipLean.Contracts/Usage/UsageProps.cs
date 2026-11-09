@@ -23,6 +23,9 @@ public static class UsageProps
     // What started a backup run, on backup.run_finished: "scheduled" or "manual".
     public const string Trigger = "trigger";
 
+    // How a decision was answered, on decision.confirmed / decision.changed: recommended, alternative or own.
+    public const string AnswerKind = "answer_kind";
+
     public static readonly IReadOnlySet<string> All = typeof(UsageProps)
         .GetFields(BindingFlags.Public | BindingFlags.Static)
         .Where(f => f.IsLiteral)
