@@ -1,5 +1,6 @@
 import { memoryStore, type KeyValueStore } from '@shiplean/core/platform';
 import { describe, expect, test } from 'vitest';
+import { createConnectivity, createMobilePlatform } from '../mobilePlatformCore';
 import {
   DEFAULT_ORIGIN,
   EMAIL_KEY,
@@ -30,9 +31,14 @@ function kvWith(initial: Record<string, string> = {}): KeyValueStore {
   return kv;
 }
 
+// The stored format: the secret bound to its server.
+function bound(origin: string, secret: string): string {
+  return JSON.stringify({ origin, secret });
+}
+
 function signedInStores() {
   return {
-    secure: secureStore({ [SECRET_KEY]: 'shl_dev_old' }),
+    secure: secureStore({ [SECRET_KEY]: bound('https://a.test', 'shl_dev_old') }),
     kv: kvWith({ [SERVER_KEY]: 'https://a.test', [EMAIL_KEY]: 'a@a.test' }),
   };
 }
@@ -81,7 +87,7 @@ describe('createSessionStore', () => {
     store.setPendingSecret('shl_dev_new');
     store.commit('b@b.test');
 
-    expect(secure.values).toEqual(new Map([[SECRET_KEY, 'shl_dev_new']]));
+    expect(secure.values).toEqual(new Map([[SECRET_KEY, bound('https://b.test', 'shl_dev_new')]]));
     expect(kv.getItem(SERVER_KEY)).toBe('https://b.test');
     expect(kv.getItem(EMAIL_KEY)).toBe('b@b.test');
     expect([kv.getItem(SECRET_KEY), kv.getItem('secret')]).toEqual([null, null]);
@@ -111,7 +117,7 @@ describe('createSessionStore', () => {
   });
 
   test('clearSecret_WhenTheSecureStoreRejects_ShouldStillSignOut', async () => {
-    const secure = secureStore({ [SECRET_KEY]: 'shl_dev_old' });
+    const secure = secureStore({ [SECRET_KEY]: bound('https://a.test', 'shl_dev_old') });
     secure.deleteItemAsync = () => Promise.reject(new Error('keystore locked'));
     const store = createSessionStore({ secure, kv: kvWith({ [SERVER_KEY]: 'https://a.test' }) });
 
@@ -122,7 +128,7 @@ describe('createSessionStore', () => {
   });
 
   test('clearSecret_WhenTheSecureStoreThrows_ShouldStillSignOut', () => {
-    const secure = secureStore({ [SECRET_KEY]: 'shl_dev_old' });
+    const secure = secureStore({ [SECRET_KEY]: bound('https://a.test', 'shl_dev_old') });
     secure.deleteItemAsync = () => {
       throw new Error('no native module');
     };
@@ -196,6 +202,105 @@ describe('createSessionStore', () => {
     store.beginSignIn('https://b.test');
 
     expect(() => store.commit('b@b.test')).toThrow();
+  });
+
+  // An iOS reinstall: the Keychain survives the uninstall, the key-value store doesn't.
+  test('createSessionStore_WhenSecretHasNoStoredServer_ShouldBeSignedOut', () => {
+    const secure = secureStore({ [SECRET_KEY]: 'shl_dev_selfhosted' });
+    const store = createSessionStore({ secure, kv: kvWith(), defaultOrigin: DEFAULT_ORIGIN });
+
+    expect(store.get()).toEqual({
+      origin: DEFAULT_ORIGIN,
+      email: '',
+      secret: null,
+      signedIn: false,
+      pending: null,
+    });
+    expect(secure.values.has(SECRET_KEY)).toBe(false);
+  });
+
+  test('createSessionStore_WhenABoundSecretHasNoStoredServer_ShouldSignInToTheBoundOriginOnly', () => {
+    const secure = secureStore({ [SECRET_KEY]: bound('https://selfhosted.test', 'shl_dev_s') });
+    const store = createSessionStore({ secure, kv: kvWith(), defaultOrigin: DEFAULT_ORIGIN });
+
+    expect(store.get()).toMatchObject({
+      origin: 'https://selfhosted.test',
+      secret: 'shl_dev_s',
+      signedIn: true,
+    });
+  });
+
+  test.each([
+    ['not JSON', '{origin'],
+    ['not an object', '"shl_dev_s"'],
+    ['no origin', JSON.stringify({ secret: 'shl_dev_s' })],
+    ['a non-string secret', JSON.stringify({ origin: 'https://a.test', secret: 7 })],
+  ])('createSessionStore_WhenTheSecureValueIsMalformed_ShouldBeSignedOut (%s)', (_, raw) => {
+    const store = createSessionStore({
+      secure: secureStore({ [SECRET_KEY]: raw }),
+      kv: kvWith({ [SERVER_KEY]: 'https://a.test' }),
+    });
+
+    expect(store.get()).toMatchObject({ origin: 'https://a.test', secret: null, signedIn: false });
+  });
+
+  // A crash mid-commit under the old order, or a later sign-in whose secure write never landed.
+  test('createSessionStore_WhenKvServerDiffersFromBoundOrigin_ShouldUseTheBoundOrigin', () => {
+    const store = createSessionStore({
+      secure: secureStore({ [SECRET_KEY]: bound('https://a.test', 'shl_dev_a') }),
+      kv: kvWith({ [SERVER_KEY]: 'https://b.test', [EMAIL_KEY]: 'b@b.test' }),
+      defaultOrigin: DEFAULT_ORIGIN,
+    });
+
+    expect(store.get()).toMatchObject({
+      origin: 'https://a.test',
+      secret: 'shl_dev_a',
+      signedIn: true,
+    });
+  });
+
+  test('commit_WhenInterruptedBeforeTheSecureWrite_ShouldStaySignedOut', () => {
+    const secure = secureStore();
+    secure.setItem = () => {
+      throw new Error('killed');
+    };
+    const kv = kvWith();
+    const store = createSessionStore({ secure, kv, defaultOrigin: DEFAULT_ORIGIN });
+
+    store.beginSignIn('https://b.test');
+    store.setPendingSecret('shl_dev_new');
+
+    expect(() => store.commit('b@b.test')).toThrow('killed');
+    expect(store.get()).toMatchObject({ secret: null, signedIn: false });
+    // The relaunch: the server is kept for the prefill, but nothing is signed in.
+    expect(createSessionStore({ secure, kv, defaultOrigin: DEFAULT_ORIGIN }).get()).toMatchObject({
+      origin: 'https://b.test',
+      secret: null,
+      signedIn: false,
+    });
+  });
+
+  test('authHeaders_WhenTheStoredServersDisagree_ShouldSendTheBearerOnlyToTheBoundOrigin', () => {
+    const fromStorage = (secureValue: string) =>
+      createMobilePlatform({
+        session: createSessionStore({
+          secure: secureStore({ [SECRET_KEY]: secureValue }),
+          kv: kvWith({ [SERVER_KEY]: 'https://b.test' }),
+          defaultOrigin: DEFAULT_ORIGIN,
+        }),
+        kv: memoryStore(),
+        connectivity: createConnectivity(),
+        lostSession: () => undefined,
+      });
+
+    const boundToA = fromStorage(bound('https://a.test', 'shl_dev_a'));
+    const legacy = fromStorage('shl_dev_a');
+
+    expect([boundToA.apiOrigin(), boundToA.authHeaders()]).toEqual([
+      'https://a.test',
+      { Authorization: 'Bearer shl_dev_a' },
+    ]);
+    expect([legacy.apiOrigin(), legacy.authHeaders()]).toEqual(['https://b.test', {}]);
   });
 
   test('subscribe_WhenTheStateChanges_ShouldNotifyWithANewSnapshot', () => {

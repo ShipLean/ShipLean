@@ -1,7 +1,8 @@
-import { getMe } from '@shiplean/core/api/me';
+import { getMe, meKey } from '@shiplean/core/api/me';
 import { act, screen } from '@testing-library/react-native';
+import { queryClient } from '../queryClient';
 import { screenIds } from '../screens/testIds';
-import { TEST_ORIGIN, TEST_SECRET } from '../test-support/builders';
+import { TEST_ORIGIN, TEST_SECRET, aMe } from '../test-support/builders';
 import { fakeApi, sessionEnded } from '../test-support/fakeApi';
 import { renderApp } from '../test-support/renderApp';
 import { signedInApi } from '../test-support/signedInApi';
@@ -25,6 +26,7 @@ test('gate_WhenARequestAnswersSessionEnded_ShouldReturnToSignInWithTheServerKept
   const api = fakeApi({ ...signedInApi(), 'GET /api/me': sessionEnded() });
   await renderApp({ api });
   await screen.findByTestId(screenIds.projects);
+  queryClient.setQueryData(meKey, aMe());
 
   await act(async () => {
     await getMe().catch(() => undefined);
@@ -38,5 +40,6 @@ test('gate_WhenARequestAnswersSessionEnded_ShouldReturnToSignInWithTheServerKept
       headers: expect.objectContaining({ Authorization: `Bearer ${TEST_SECRET}` }),
     }),
   ]);
-  expect([...secureValues.values()]).not.toContain(TEST_SECRET);
+  expect(queryClient.getQueryCache().getAll()).toEqual([]);
+  expect([...secureValues.values()].join('\n')).not.toContain(TEST_SECRET);
 });
