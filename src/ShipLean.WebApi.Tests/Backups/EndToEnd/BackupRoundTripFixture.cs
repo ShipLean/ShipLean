@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Amazon.S3;
+using ShipLean.Application.Storage;
 using Amazon.S3.Model;
 using ShipLean.Contracts.Backups.Dtos;
 using ShipLean.Contracts.Errors;
@@ -174,7 +175,7 @@ public abstract class BackupRoundTripFixture : ApiFixture
         var decrypt = await RestoreRunbook.DecryptAsync(dumpFile, plainDump, passphrase);
         decrypt.ExitCode.ShouldBe(0, decrypt.Error);
 
-        var database = await RestoreRunbook.CreateEmptyDatabaseAsync();
+        var database = await RestoreRunbook.CreateEmptyDatabaseAsync(ConnectionString);
         try
         {
             var restore = await database.PgRestoreAsync(plainDump);

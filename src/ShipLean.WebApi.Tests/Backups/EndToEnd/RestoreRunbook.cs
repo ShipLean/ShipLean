@@ -9,7 +9,7 @@ namespace ShipLean.WebApi.Tests.Backups.EndToEnd;
 // The steps of docs/backups.md that run in a shell, done from the test: decrypt-backup and restore-blobs through
 // BackupCommands.RunAsync (the entry point Program.cs calls), and pg_restore as a process. The restore target is an
 // empty database on the shared test server, dropped on dispose.
-internal sealed class RestoreRunbook : IAsyncDisposable
+public sealed class RestoreRunbook : IAsyncDisposable
 {
     private readonly string _admin;
 
@@ -24,10 +24,19 @@ internal sealed class RestoreRunbook : IAsyncDisposable
 
     public string ConnectionString { get; }
 
-    // Runbook step 4's "CREATE DATABASE": new and empty, with the locale the app runs on, and no ShipLean tables.
-    public static async Task<RestoreRunbook> CreateEmptyDatabaseAsync()
+    public async Task<NpgsqlConnection> OpenAsync()
     {
-        var admin = await PostgresServer.AdminConnectionStringAsync();
+        var connection = new NpgsqlConnection(ConnectionString);
+        await connection.OpenAsync();
+        return connection;
+    }
+
+    // Runbook step 4's "CREATE DATABASE": new and empty, with the locale the app runs on, and no ShipLean tables. It is made
+    // on the server the app's own test database is on (sameServerAs), through that database's credentials and the server's
+    // maintenance database.
+    public static async Task<RestoreRunbook> CreateEmptyDatabaseAsync(string sameServerAs)
+    {
+        var admin = new NpgsqlConnectionStringBuilder(sameServerAs) { Database = "postgres", Pooling = false, Timezone = "UTC" }.ConnectionString;
         var name = $"shiplean_restore_{Guid.NewGuid():N}"[..40];
         await using var connection = new NpgsqlConnection(admin);
         await connection.OpenAsync();
