@@ -9,6 +9,7 @@ using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Mcp;
 using ShipLean.Contracts.Refs;
 using ShipLean.WebApi.Features.Mcp.Contracts;
+using ShipLean.WebApi.Features.Mcp.Payloads;
 using ShipLean.WebApi.Features.Mcp.Resolve;
 using ShipLean.WebApi.Features.Mcp.Tools.Capture;
 using ShipLean.WebApi.Infrastructure;
@@ -26,20 +27,25 @@ internal sealed class AttachTools(
     private const string MarkdownType = "text/markdown";
     private const int MaxNameLength = 255;
 
-    [McpServerTool(Name = "attach_markdown"), McpScope(McpScopes.Write)]
+    [McpServerTool(Name = "attach_markdown"), McpScope(McpScopes.Write), McpPayload]
     [Description("Attach research findings, analyses, comparisons, plans and retros as Markdown on a work item instead of keeping them in local files. The name must end in .md. Attaching a name the item already has replaces that file. It shows on the item as attached by you through this tool, and its text is searchable.")]
     public async Task<CallToolResult> AttachMarkdown(
         [Description("The item's key, such as SHIP-12.")] string feature,
         [Description("The file name, ending in .md, such as design.md.")] string name,
-        [Description("The Markdown text.")] string content,
+        [Description("The Markdown text.")] string? content = null,
+        [Description(McpPayloadTargets.ArgumentDescription)] string? payload = null,
         CancellationToken cancellationToken = default)
     {
         var resolved = await itemResolver.ResolveAsync(feature, ProjectRole.Member, field: "feature", cancellationToken: cancellationToken);
+        if (content is null)
+        {
+            throw ApiException.Validation("Pass content, or upload it with create_payload_upload and pass payload.", "content");
+        }
         if (!name.Trim().EndsWith(".md", StringComparison.OrdinalIgnoreCase))
         {
             throw ApiException.Validation("The name of a Markdown file must end in .md.", "name");
         }
-        var bytes = Encoding.UTF8.GetBytes(content ?? string.Empty);
+        var bytes = Encoding.UTF8.GetBytes(content);
         return await AddAsync(resolved, name, MarkdownType, bytes, MarkdownVia, cancellationToken);
     }
 

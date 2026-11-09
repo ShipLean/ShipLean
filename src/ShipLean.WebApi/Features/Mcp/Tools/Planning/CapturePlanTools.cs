@@ -6,6 +6,7 @@ using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Mcp;
 using ShipLean.WebApi.Features.Mcp.Contracts;
+using ShipLean.WebApi.Features.Mcp.Payloads;
 using ShipLean.WebApi.Features.Mcp.Plan;
 using ShipLean.WebApi.Features.Mcp.Planning;
 using ShipLean.WebApi.Features.Mcp.Planning.Capture;
@@ -21,27 +22,36 @@ internal sealed class CapturePlanTools(
     private const string PlanKind = "capture_plan";
     private const string ArgumentsChanged = "The arguments changed since the preview. Send the same arguments as the preview, or preview again.";
 
-    [McpServerTool(Name = "capture_plan"), McpScope(McpScopes.Write, PreviewScope = McpScopes.Read)]
+    [McpServerTool(Name = "capture_plan"), McpScope(McpScopes.Write, PreviewScope = McpScopes.Read), McpPayload]
     [Description("Put a plan for several agents in the backlog: a feature (an existing one by key, or a new one), its stories (one per lane of a wave) and their tasks (one per agent brief), with the shared branch, the common brief and the plan document attached to the feature. A call without a plan comes back as a preview and a plan, with any warnings about the plan's shape; call again with the same arguments and that plan to create exactly what was previewed in one go; changed arguments are refused. Follow planning_guide when you write the plan.")]
     public async Task<CallToolResult> CapturePlan(
-        [Description("The feature the plan lands under.")] CapturePlanFeature feature,
-        [Description("The git branch every agent of the plan pushes to.")] string shared_branch,
-        [Description("The brief every agent reads before its own, in Markdown.")] string common_brief,
-        [Description("The stories, one per lane of a wave, each with its tasks.")] IReadOnlyList<CapturePlanStory> stories,
+        [Description("The feature the plan lands under.")] CapturePlanFeature? feature = null,
+        [Description("The git branch every agent of the plan pushes to.")] string? shared_branch = null,
+        [Description("The brief every agent reads before its own, in Markdown.")] string? common_brief = null,
+        [Description("The stories, one per lane of a wave, each with its tasks.")] IReadOnlyList<CapturePlanStory>? stories = null,
         [Description("The project key, such as SHIP. Needed when the user is in more than one project.")] string? project = null,
         [Description("The whole plan document, in Markdown, attached to the feature.")] string? plan_markdown = null,
         [Description("The plan a preview returned. Send it with the same arguments as the preview to create exactly what was previewed; changed arguments are refused.")] string? plan = null,
+        [Description(McpPayloadTargets.ArgumentDescription)] string? payload = null,
         CancellationToken cancellationToken = default)
     {
         var resolved = await projects.ResolveAsync(project, forWrite: true, cancellationToken);
         await access.RequireAsync(resolved.Id, ProjectRole.Member, cancellationToken);
         if (feature is null)
         {
-            throw ApiException.Validation("Pass the feature: a key, or a title and goal.", "feature");
+            throw ApiException.Validation("Pass the feature: a key, or a title and goal. Or upload it with create_payload_upload and pass payload.", "feature");
         }
         if (stories is null)
         {
-            throw ApiException.Validation("Pass the stories: one per lane of a wave, each with its tasks.", "stories");
+            throw ApiException.Validation("Pass the stories: one per lane of a wave, each with its tasks. Or upload them with create_payload_upload and pass payload.", "stories");
+        }
+        if (shared_branch is null)
+        {
+            throw ApiException.Validation("Pass shared_branch, or upload it with create_payload_upload and pass payload.", "shared_branch");
+        }
+        if (common_brief is null)
+        {
+            throw ApiException.Validation("Pass common_brief, or upload it with create_payload_upload and pass payload.", "common_brief");
         }
 
         var issuer = (await addresses.ForCurrentRequestAsync(cancellationToken)).Issuer;

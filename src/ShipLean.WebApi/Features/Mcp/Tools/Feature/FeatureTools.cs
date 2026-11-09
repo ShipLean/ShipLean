@@ -9,6 +9,7 @@ using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.WorkItems;
 using ShipLean.Core;
 using ShipLean.WebApi.Features.Mcp.Contracts;
+using ShipLean.WebApi.Features.Mcp.Payloads;
 using ShipLean.WebApi.Features.Mcp.Resolve;
 using ShipLean.WebApi.Features.Mcp.Tools.Capture;
 using ShipLean.WebApi.Features.Mcp.Writes;
@@ -52,7 +53,7 @@ internal sealed class FeatureTools(
         return CaptureSupport.Reply(result, $"{resolved.Key} status is \"{result.Status}\", verified {result.Verified?.Label}, revision {result.Revision}.");
     }
 
-    [McpServerTool(Name = "create_feature"), McpScope(McpScopes.Write)]
+    [McpServerTool(Name = "create_feature"), McpScope(McpScopes.Write), McpPayload]
     [Description("Create a Feature when an idea first comes up, before any research: search first, then use this with a goal. Optionally set its one-line status, state, epic and slug. The slug is its short name in addresses; it defaults to one made from the title and can't be changed later. Name the project when the user is in more than one.")]
     public async Task<CallToolResult> CreateFeature(
         [Description("The Feature's title.")] string title,
@@ -62,6 +63,7 @@ internal sealed class FeatureTools(
         [Description("Lower-case words joined by hyphens, at most 64 characters. Defaults to one made from the title.")] string? slug = null,
         [Description("The one-line status. Stamps it verified now, by you.")] string? status = null,
         [Description("Start the Feature in this state, by name.")] string? state = null,
+        [Description(McpPayloadTargets.ArgumentDescription)] string? payload = null,
         CancellationToken cancellationToken = default)
     {
         var resolved = await projects.ResolveAsync(project, forWrite: true, cancellationToken);
