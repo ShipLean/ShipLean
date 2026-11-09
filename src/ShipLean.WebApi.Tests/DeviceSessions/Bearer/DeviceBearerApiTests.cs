@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Dapper;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Application.Identity;
@@ -17,6 +18,7 @@ using ShipLean.TestSupport.DeviceSessions;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
 using ShipLean.TestSupport.Usage;
+using ShipLean.WebApi.Realtime;
 using ShipLean.WebApi.Tests.Auth;
 using ShipLean.WebApi.Tests.Realtime;
 
@@ -82,6 +84,63 @@ public class DeviceBearerApiTests : ApiFixture
 
         await Should.ThrowAsync<HttpRequestException>(() => HubReceiver.StartAsync(
             Host, configure: options => options.AccessTokenProvider = () => Task.FromResult<string?>(phone.SignIn.Secret)));
+    }
+
+    // A socket outlives the bearer check made when it opened: revoking the phone, or the session expiring, must end it.
+    [Test]
+    public async Task Hub_WhenDeviceSessionRevokedAfterConnect_ShouldBeDroppedBySweep()
+    {
+        var (userId, _) = await ArrangeUserAsync(member: true);
+        using var phone = await DeviceBearerClient.CreateAsync(Host, userId);
+        await using var receiver = await PhoneHubAsync(phone);
+        await receiver.Connection.InvokeAsync("JoinProject", SeedIds.Projects.Ship);
+        var closed = ClosedAsync(receiver);
+        await SweepAsync();
+        receiver.Connection.State.ShouldBe(HubConnectionState.Connected);
+        (await Store.RevokeAsync(userId, phone.Id, Now)).ShouldBeTrue();
+
+        await SweepAsync();
+
+        await closed;
+        receiver.Connection.State.ShouldBe(HubConnectionState.Disconnected);
+    }
+
+    [Test]
+    public async Task Hub_WhenDeviceSessionRevokedAfterConnect_ShouldRefuseInvocation()
+    {
+        var (userId, _) = await ArrangeUserAsync(member: true);
+        using var phone = await DeviceBearerClient.CreateAsync(Host, userId);
+        await using var receiver = await PhoneHubAsync(phone);
+        await receiver.Connection.InvokeAsync("JoinProject", SeedIds.Projects.Ship);
+        var closed = ClosedAsync(receiver);
+        (await Store.RevokeAsync(userId, phone.Id, Now)).ShouldBeTrue();
+
+        // As for a cookie whose stamp moved on: the drop can overtake the refusal's reply, and the client then sees the
+        // call cancelled.
+        var refused = await Should.ThrowAsync<Exception>(() => receiver.Connection.InvokeAsync("JoinProject", SeedIds.Projects.Ship));
+
+        (refused is HubException ? refused.Message : "HubException: session_ended: ").ShouldContain("HubException: session_ended: ");
+        await closed;
+        receiver.Connection.State.ShouldBe(HubConnectionState.Disconnected);
+    }
+
+    [Test]
+    public async Task Hub_WhenDeviceSessionExpiredAfterConnect_ShouldBeDroppedBySweep()
+    {
+        var (userId, _) = await ArrangeUserAsync(member: true);
+        using var phone = await DeviceBearerClient.CreateAsync(Host, userId);
+        await using var receiver = await PhoneHubAsync(phone);
+        await receiver.Connection.InvokeAsync("JoinProject", SeedIds.Projects.Ship);
+        var closed = ClosedAsync(receiver);
+        await using (var db = await OpenDatabaseAsync())
+        {
+            await db.ExecuteAsync("UPDATE device_session SET expires_at = now() - interval '1 minute' WHERE id = @id", new { id = phone.Id });
+        }
+
+        await SweepAsync();
+
+        await closed;
+        receiver.Connection.State.ShouldBe(HubConnectionState.Disconnected);
     }
 
     [Test]
@@ -279,6 +338,23 @@ public class DeviceBearerApiTests : ApiFixture
         {
             return ((int)response.StatusCode, string.Empty);
         }
+    }
+
+    private Task<HubReceiver> PhoneHubAsync(DeviceBearerSession phone) => HubReceiver.StartAsync(
+        Host, configure: options => options.AccessTokenProvider = () => Task.FromResult<string?>(phone.SignIn.Secret));
+
+    private Task SweepAsync() => Host.Services.GetRequiredService<HubSessionSweep>().SweepAsync(CancellationToken.None);
+
+    private static Task ClosedAsync(HubReceiver receiver)
+    {
+        var closed = new TaskCompletionSource();
+        new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token.Register(() => closed.TrySetCanceled());
+        receiver.Connection.Closed += _ =>
+        {
+            closed.TrySetResult();
+            return Task.CompletedTask;
+        };
+        return closed.Task;
     }
 
     private Task<HttpClient> AdminAsync() => AuthClient.SignedInAsync(Host, "joel@shiplean.local", SeedIds.Passwords.Joel);

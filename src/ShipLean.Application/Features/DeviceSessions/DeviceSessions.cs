@@ -89,6 +89,15 @@ public sealed class DeviceSessions(NpgsqlDataSource dataSource) : IDeviceSession
         return row?.ToRecord();
     }
 
+    public async Task<DeviceSessionRecord?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        var row = await connection.QuerySingleOrDefaultAsync<SessionRow>(new CommandDefinition(
+            $"SELECT {Columns} FROM device_session WHERE id = @id",
+            new { id }, cancellationToken: cancellationToken));
+        return row?.ToRecord();
+    }
+
     public async Task TouchAsync(Guid id, DateTimeOffset now, CancellationToken cancellationToken = default)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);

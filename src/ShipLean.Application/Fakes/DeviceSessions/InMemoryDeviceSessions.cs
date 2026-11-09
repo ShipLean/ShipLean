@@ -59,6 +59,14 @@ public sealed class InMemoryDeviceSessions : IDeviceSessions
         }
     }
 
+    public Task<DeviceSessionRecord?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        lock (_gate)
+        {
+            return Task.FromResult(_sessions.FirstOrDefault(s => s.Id == id)?.ToRecord());
+        }
+    }
+
     public Task TouchAsync(Guid id, DateTimeOffset now, CancellationToken cancellationToken = default)
     {
         lock (_gate)

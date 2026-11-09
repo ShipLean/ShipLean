@@ -8,7 +8,8 @@ namespace ShipLean.Contracts.DeviceSessions;
 // - ExchangeAsync: single use, valid for DeviceSessionLimits.CodeLifetime, S256 check of the verifier against the
 //   challenge. A wrong verifier still uses up the code. Of two concurrent exchanges of one code exactly one wins.
 //   Null for a bad, used or expired code or a wrong verifier.
-// - FindBySecretAsync returns the session whatever its state (revoked and expired included); the caller decides.
+// - FindBySecretAsync and FindByIdAsync return the session whatever its state (revoked and expired included); the
+//   caller decides. Null for an unknown secret or id.
 // - TouchAsync slides ExpiresAt to now + DeviceSessionLimits.SessionLifetime and sets LastUsedAt, at most one write per
 //   DeviceSessionLimits.TouchInterval per session.
 // - ListAsync: the user's sessions that are neither revoked nor expired at now, newest CreatedAt first.
@@ -21,6 +22,8 @@ public interface IDeviceSessions
     Task<DeviceSignIn?> ExchangeAsync(string code, string verifier, DateTimeOffset now, CancellationToken cancellationToken = default);
 
     Task<DeviceSessionRecord?> FindBySecretAsync(string secret, CancellationToken cancellationToken = default);
+
+    Task<DeviceSessionRecord?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task TouchAsync(Guid id, DateTimeOffset now, CancellationToken cancellationToken = default);
 

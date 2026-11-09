@@ -149,6 +149,25 @@ public abstract class DeviceSessionsContract
     }
 
     [Test]
+    public async Task FindById_ShouldReturnTheSessionWhateverItsState()
+    {
+        var live = await SignInAsync(name: "Live");
+        var revoked = await SignInAsync(name: "Revoked");
+        await Sessions.RevokeAsync(UserId, revoked.Session.Id, _now);
+        var expired = await SignInAsync(name: "Expired", at: _now - DeviceSessionLimits.SessionLifetime - TimeSpan.FromMinutes(1));
+
+        (await Sessions.FindByIdAsync(live.Session.Id)).ShouldBe(await Sessions.FindBySecretAsync(live.Secret));
+        (await Sessions.FindByIdAsync(revoked.Session.Id)).ShouldNotBeNull().RevokedAt.ShouldNotBeNull();
+        (await Sessions.FindByIdAsync(expired.Session.Id)).ShouldNotBeNull().IsLiveAt(_now).ShouldBeFalse();
+    }
+
+    [Test]
+    public async Task FindById_WhenUnknown_ShouldReturnNull()
+    {
+        (await Sessions.FindByIdAsync(Guid.NewGuid())).ShouldBeNull();
+    }
+
+    [Test]
     public async Task Touch_WhenUnderAMinuteSinceLastUse_ShouldNotWrite()
     {
         var signIn = await SignInAsync();
