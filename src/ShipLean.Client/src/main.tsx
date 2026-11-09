@@ -1,3 +1,4 @@
+import { configurePlatform } from '@shiplean/core/platform';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -5,9 +6,11 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { AppRoutes } from './AppRoutes';
 import { retryUnlessClientError } from './queries/retry';
 import { initAppearance } from './theme';
+import { webPlatform } from './webPlatform';
 import '@fontsource-variable/inter';
 import './index.css';
 
+configurePlatform(webPlatform);
 initAppearance();
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: retryUnlessClientError } },

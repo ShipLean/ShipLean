@@ -10,7 +10,19 @@ const viewImports = {
     (name) => ({ name, message: platformNeutral }),
   ),
   patterns: [
-    { group: ['react-dom/*', '@dnd-kit/*', '@uiw/*', 'mermaid/*'], message: platformNeutral },
+    {
+      // paths match exact names only, so subpaths such as react/jsx-runtime are caught here.
+      group: [
+        'react/*',
+        'react-dom/*',
+        'react-router-dom/*',
+        '@tanstack/react-query/*',
+        '@dnd-kit/*',
+        '@uiw/*',
+        'mermaid/*',
+      ],
+      message: platformNeutral,
+    },
     {
       group: [
         '**/ShipLean.Client',
@@ -26,6 +38,18 @@ const testSupport = {
   group: ['**/test-support', '**/test-support/**'],
   message: 'src/test-support/ is for *.test.ts files only.',
 };
+
+// A declared global passes both tsc and no-restricted-globals, so declaring one is refused outright.
+const declaredGlobals = [
+  {
+    selector: 'VariableDeclaration[declare=true]',
+    message: `Declaring a global hides a host dependency. ${notInReactNative}`,
+  },
+  {
+    selector: 'TSModuleDeclaration[kind="global"]',
+    message: `Declaring a global hides a host dependency. ${notInReactNative}`,
+  },
+];
 
 const browserGlobals = [
   'window',
@@ -59,6 +83,7 @@ export default tseslint.config(
         'error',
         { ...viewImports, patterns: [...viewImports.patterns, testSupport] },
       ],
+      'no-restricted-syntax': ['error', ...declaredGlobals],
     },
   },
 );

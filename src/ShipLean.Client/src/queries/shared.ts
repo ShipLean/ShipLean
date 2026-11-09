@@ -1,7 +1,12 @@
 import { api } from '@shiplean/core/api/client';
 import type { BoardSummaryDto } from '@shiplean/core/api/boards';
-import type { MeDto } from '@shiplean/core/api/me';
-import type { MemberDto, ProjectDto, ProjectSummaryDto } from '@shiplean/core/api/projects';
+import { getMe, meKey } from '@shiplean/core/api/me';
+import {
+  listProjects,
+  projectsKey,
+  type MemberDto,
+  type ProjectDto,
+} from '@shiplean/core/api/projects';
 import type { UserPreferenceDto } from '@shiplean/core/api/preferences';
 import type { SprintDto } from '@shiplean/core/api/sprints';
 
@@ -20,16 +25,16 @@ import type { SprintDto } from '@shiplean/core/api/sprints';
 // The cache entry of ['preferences', key] holds the preference's value (the parsed JSON, `UserPreferenceDto.json`),
 // never the DTO. The endpoint answers 204 when nothing is saved; that maps to the empty value the reader passes
 // (fetchPreference), so react-query never holds `undefined`.
-export const meKey = ['me'] as const;
-export const projectsKey = ['projects'] as const;
+// The phone app shares these two with the SPA, so they live in the core.
+export { meKey, projectsKey };
 export const projectByKeyKey = (key: string) => ['projects', 'by-key', key] as const;
 export const projectSprintsKey = (projectId: string) => ['projects', projectId, 'sprints'] as const;
 export const projectMembersKey = (projectId: string) => ['projects', projectId, 'members'] as const;
 export const projectBoardsKey = (projectId: string) => ['projects', projectId, 'boards'] as const;
 export const preferenceKey = (key: string) => ['preferences', key] as const;
 
-export const fetchMe = () => api.get<MeDto>('/api/me');
-export const fetchProjects = () => api.get<ProjectSummaryDto[]>('/api/projects');
+export const fetchMe = getMe;
+export const fetchProjects = listProjects;
 export const fetchProjectByKey = (key: string) =>
   api.get<ProjectDto>(`/api/projects/by-key/${encodeURIComponent(key)}`);
 export const fetchSprints = (projectId: string) =>
