@@ -31,6 +31,7 @@ export const comment = (id: string, author: UserRef | null, body: string): Comme
   editedLabel: null,
   agentName: null,
   superseded: null,
+  askTag: null,
 });
 
 /** Stubs the comment endpoints and `GET /api/me` for a signed-in `me`. `failNext` makes the next write answer a 400. */

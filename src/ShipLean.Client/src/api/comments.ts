@@ -1,5 +1,6 @@
 // Comments on a work item. C#: ShipLean.Contracts.Comments. Nothing is omitted: absent values are null; timestamps are
 // ISO strings and labels are formatted by the server. Archived comments are never returned.
+import type { CommentAskTagDto } from './asks';
 import type { UserRef } from './refs';
 
 export interface CommentDto {
@@ -18,6 +19,8 @@ export interface CommentDto {
   agentName: string | null;
   /** Null until any member marks the comment superseded: kept, struck through, with who and when. */
   superseded: CommentSuperseded | null;
+  /** Set when the comment answers a question, records a settled decision changing, or discusses a decision; otherwise null. */
+  askTag: CommentAskTagDto | null;
 }
 
 export interface CommentSuperseded {

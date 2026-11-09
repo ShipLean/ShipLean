@@ -33,4 +33,5 @@ test('comments_ShouldTypeEveryFixture', () => {
   const items = typed<CommentDto[]>()(fixture.comments);
   expect(items.length).toBeGreaterThan(0);
   expect(items.some((item) => item.author === null)).toBe(true);
+  expect(items.some((item) => item.askTag !== null)).toBe(true);
 });

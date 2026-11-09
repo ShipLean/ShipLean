@@ -83,6 +83,7 @@ test('workItems_ShouldTypeEveryFixture', () => {
   );
   expect(history.revisions.some((revision) => revision.agentName === null)).toBe(true);
   expect(history.revisions.map((revision) => revision.rev)).toEqual([6, 5, 4, 3, 2, 1]);
+  expect(history.asks).toEqual([]);
   expect(conflict.theirChanges.every((revision) => revision.rev > 6)).toBe(true);
   expect(items[1].originalSystem?.system).toBe('jira');
 });

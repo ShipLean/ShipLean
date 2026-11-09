@@ -87,6 +87,7 @@ const logEntry = (
   editedLabel: null,
   agentName,
   superseded: null,
+  askTag: null,
 });
 
 // Newest first is the screen's job; the API lists oldest first.

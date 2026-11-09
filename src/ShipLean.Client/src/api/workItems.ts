@@ -1,5 +1,6 @@
 // Work item shapes. C#: ShipLean.Contracts.WorkItems. Nothing is omitted on the wire: absent values are null and lists are [].
 // Timestamps are ISO 8601 strings with a UTC offset, each next to a server-formatted label.
+import type { AskHistoryLineDto } from './asks';
 import { ApiRequestError } from './client';
 import type { ChecklistItem, FieldChange, LinkType, LinkValue } from './persisted';
 import type { SprintRef, StateRef, TypeRef, UserRef, WorkItemTypeId } from './refs';
@@ -209,9 +210,10 @@ export interface RevisionDto {
   webhook: string | null;
 }
 
-/** Newest first. */
+/** Newest first: the field changes, and separately the decision and question lines. */
 export interface HistoryDto {
   revisions: RevisionDto[];
+  asks: AskHistoryLineDto[];
 }
 
 /** The 409 body for a stale expectedRevision: an ApiError plus the item as it is now and the revisions since the caller's, newest first. */
