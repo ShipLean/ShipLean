@@ -20,6 +20,6 @@ public class BackupPruneTests : BackupRoundTripFixture
         // The run turns succeeded before the prune, so the history settles a moment later.
         var settings = await SettingsWhereAsync(s => s.Runs.Single(r => r.Id == first.Id).Pruned);
         settings.Runs.Single(r => r.Id == second.Id).Pruned.ShouldBeFalse();
-        (await ListAsync($"{BackupPrefix}database/")).Select(o => o.Key).ShouldBe([second.DatabaseObjectKey!]);
+        (await KeysWhenAsync($"{BackupPrefix}database/", [second.DatabaseObjectKey!])).ShouldBe([second.DatabaseObjectKey!]);
     }
 }

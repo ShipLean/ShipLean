@@ -12,7 +12,18 @@ public class BackupObjectKeysTests
 
         var key = BackupObjectKeys.Database("shiplean/", startedAt, Guid.Parse("0123abcd-4567-89ef-0123-456789abcdef"), 3);
 
-        key.ShouldBe("shiplean/database/shiplean-20261024T140005Z-0123abcd-g3.dump.slbk");
+        key.ShouldBe("shiplean/database/shiplean-20261024T140005Z-89abcdef-g3.dump.slbk");
+    }
+
+    [Test]
+    public void ObjectKeys_WhenTwoRunsStartInSameSecond_ShouldDiffer()
+    {
+        var startedAt = new DateTimeOffset(2026, 10, 24, 14, 0, 5, TimeSpan.Zero);
+
+        var first = BackupObjectKeys.Database("shiplean/", startedAt, Guid.CreateVersion7(startedAt), 1);
+        var second = BackupObjectKeys.Database("shiplean/", startedAt, Guid.CreateVersion7(startedAt), 1);
+
+        first.ShouldNotBe(second);
     }
 
     [Test]

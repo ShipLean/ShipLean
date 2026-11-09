@@ -7,11 +7,13 @@ namespace ShipLean.Application.Features.Backups.Engine;
 // generation that encrypted it.
 public static class BackupObjectKeys
 {
-    // <prefix>database/shiplean-<yyyyMMddTHHmmssZ>-<first 8 hex of the run id>-g<generation>.dump.slbk, startedAt in UTC.
+    // <prefix>database/shiplean-<yyyyMMddTHHmmssZ>-<last 8 hex of the run id>-g<generation>.dump.slbk, startedAt in UTC.
+    // Run ids are version 7 GUIDs, whose first 8 hex are the clock and repeat for about a minute; the last 8 are random,
+    // so two runs started in the same second still get different keys.
     public static string Database(string prefix, DateTimeOffset startedAt, Guid runId, int generation)
         => string.Create(
             CultureInfo.InvariantCulture,
-            $"{prefix}database/shiplean-{startedAt.UtcDateTime:yyyyMMdd'T'HHmmss'Z'}-{runId.ToString("N")[..8]}-g{generation}.dump.slbk");
+            $"{prefix}database/shiplean-{startedAt.UtcDateTime:yyyyMMdd'T'HHmmss'Z'}-{runId.ToString("N")[^8..]}-g{generation}.dump.slbk");
 
     // <prefix>attachments/g<generation>/, the folder one generation's attachment objects live in.
     public static string AttachmentPrefix(string prefix, int generation)

@@ -29,7 +29,7 @@ Under the prefix you set (empty, or ending in `/`):
 <prefix>attachments/g<n>/<blob key>.slbk
 ```
 
-- `database/…` is one file per run. The time is UTC. `<id8>` is the first 8 hex characters of the run id. Names sort
+- `database/…` is one file per run. The time is UTC. `<id8>` is the last 8 hex characters of the run id, so two runs in the same second never share a name. Names sort
   oldest to newest.
 - `g<n>` is the **passphrase generation** that encrypted the file. See [Passphrases](#passphrases).
 - `attachments/g<n>/…` holds one file per attachment or photo.

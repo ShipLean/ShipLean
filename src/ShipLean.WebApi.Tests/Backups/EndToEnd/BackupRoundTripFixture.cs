@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using Amazon.S3;
 using ShipLean.Application.Storage;
 using Amazon.S3.Model;
@@ -24,6 +25,12 @@ public abstract class BackupRoundTripFixture : ApiFixture
     protected const string BackupPrefix = "backups/e2e/";
 
     private static readonly TimeSpan RunLimit = TimeSpan.FromSeconds(120);
+
+    // The wire format: enums cross as camelCase strings ("s3", "succeeded"), which JsonSerializerOptions.Web alone can't read or write.
+    private static readonly JsonSerializerOptions Wire = new(JsonSerializerOptions.Web)
+    {
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, allowIntegerValues: false) },
+    };
 
     private S3BlobConnection _bucket = null!;
     private AmazonS3Client _s3 = null!;
@@ -66,10 +73,10 @@ public abstract class BackupRoundTripFixture : ApiFixture
         var destination = new S3DestinationSaveDto("us-east-1", _bucket.ServiceUrl!.ToString(), _bucket.Bucket, BackupPrefix, true, _bucket.AccessKey, _bucket.SecretKey);
         using var response = await Api.PutJsonAsync(
             "api/instance/backups",
-            new BackupSaveDto(true, new BackupDestinationSaveDto(BackupProvider.S3, destination), "0 2 * * *", keepCount, includeAttachments, passphrase));
+            JsonSerializer.SerializeToNode(new BackupSaveDto(true, new BackupDestinationSaveDto(BackupProvider.S3, destination), "0 2 * * *", keepCount, includeAttachments, passphrase), Wire));
         var text = await response.Content.ReadAsStringAsync();
         response.StatusCode.ShouldBe(HttpStatusCode.OK, text);
-        return JsonSerializer.Deserialize<BackupSettingsDto>(text, JsonSerializerOptions.Web)!;
+        return JsonSerializer.Deserialize<BackupSettingsDto>(text, Wire)!;
     }
 
     // POST run, then GET until the run is no longer running. A run turns succeeded before the job prunes and releases the
@@ -81,7 +88,7 @@ public abstract class BackupRoundTripFixture : ApiFixture
         var started = await StartAsync(limit.Token);
         while (!limit.IsCancellationRequested)
         {
-            var settings = await Api.GetJsonAsync<BackupSettingsDto>("api/instance/backups");
+            var settings = await GetSettingsAsync();
             var run = settings.Runs.Single(r => r.Id == started.Id);
             if (run.State != BackupRunState.Running)
             {
@@ -103,7 +110,7 @@ public abstract class BackupRoundTripFixture : ApiFixture
             }
             var text = await response.Content.ReadAsStringAsync(limit);
             response.StatusCode.ShouldBe(HttpStatusCode.Accepted, text);
-            return JsonSerializer.Deserialize<BackupRunDto>(text, JsonSerializerOptions.Web)!;
+            return JsonSerializer.Deserialize<BackupRunDto>(text, Wire)!;
         }
         throw new TimeoutException($"A backup could not be started within {RunLimit}.");
     }
@@ -115,13 +122,39 @@ public abstract class BackupRoundTripFixture : ApiFixture
         using var limit = new CancellationTokenSource(RunLimit);
         while (!limit.IsCancellationRequested)
         {
-            var settings = await Api.GetJsonAsync<BackupSettingsDto>("api/instance/backups");
+            var settings = await GetSettingsAsync();
             if (predicate(settings))
             {
                 return settings;
             }
         }
         throw new TimeoutException($"The backup settings did not reach the expected state within {RunLimit}.");
+    }
+
+    // GET /api/instance/backups, read with the wire format.
+    protected async Task<BackupSettingsDto> GetSettingsAsync()
+    {
+        using var response = await Api.GetAsync("api/instance/backups");
+        var text = await response.Content.ReadAsStringAsync();
+        response.StatusCode.ShouldBe(HttpStatusCode.OK, text);
+        return JsonSerializer.Deserialize<BackupSettingsDto>(text, Wire)!;
+    }
+
+    // The same wait, on the bucket: the job marks old runs pruned before it deletes their objects, so a listing taken as
+    // soon as the history says pruned can still hold them. Lists until the keys under prefix are exactly expected.
+    protected async Task<IReadOnlyList<string>> KeysWhenAsync(string prefix, IReadOnlyList<string> expected)
+    {
+        using var limit = new CancellationTokenSource(RunLimit);
+        IReadOnlyList<string> keys = [];
+        while (!limit.IsCancellationRequested)
+        {
+            keys = [.. (await ListAsync(prefix)).Select(o => o.Key).Order(StringComparer.Ordinal)];
+            if (keys.SequenceEqual(expected.Order(StringComparer.Ordinal)))
+            {
+                return keys;
+            }
+        }
+        throw new TimeoutException($"The keys under {prefix} were still [{string.Join(", ", keys)}] after {RunLimit}, not [{string.Join(", ", expected)}].");
     }
 
     // Every object under a bucket prefix, as the AWS CLI would list them.
