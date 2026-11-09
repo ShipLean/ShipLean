@@ -11,7 +11,7 @@ const signedOut: SessionState = {
   pending: null,
 };
 
-function platformFor(state: SessionState, lostSession = () => undefined) {
+function platformFor(state: SessionState, lostSession: () => void = () => undefined) {
   return createMobilePlatform({
     session: { get: () => state },
     kv: memoryStore(),

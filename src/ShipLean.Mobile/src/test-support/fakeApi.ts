@@ -24,9 +24,10 @@ export interface ApiReply {
   body?: unknown;
 }
 
-export type ApiAnswer = unknown;
+// A JSON body (answered 200) or a reply with its own status.
+export type ApiAnswer = ApiReply | object | string | number | boolean | null;
 export type ApiHandler = (request: FakeRequest) => ApiAnswer | Promise<ApiAnswer>;
-export type ApiTable = Record<string, ApiAnswer | ApiHandler>;
+export type ApiTable = Record<string, ApiHandler | ApiAnswer>;
 
 export interface FakeApi {
   readonly calls: readonly FakeRequest[];

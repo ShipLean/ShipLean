@@ -21,8 +21,8 @@ test('entry_WhenTheRuntimeHasNoCrypto_ShouldPolyfillItBeforeTheCoreLoads', () =>
   try {
     let clientId: unknown;
     jest.isolateModules(() => {
-      require('../index');
-      clientId = (require('expo-router/entry') as { clientId: string }).clientId;
+      jest.requireActual('../index');
+      clientId = jest.requireMock<{ clientId: string }>('expo-router/entry').clientId;
     });
 
     expect(clientId).toBe('00000000-0000-4000-8000-00000000c0de');

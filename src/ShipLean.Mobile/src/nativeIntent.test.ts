@@ -19,3 +19,8 @@ test('redirectSystemPath_WhenAnyOtherLinkArrives_ShouldPassItThrough', () => {
   );
   expect(redirectSystemPath({ path: '/account', initial: false })).toBe('/account');
 });
+
+test('redirectSystemPath_WhenTheRedirectArrivesAsARouterPath_ShouldTreatItTheSame', () => {
+  expect(redirectSystemPath({ path: '/signed-in?code=x&state=y', initial: false })).toBeNull();
+  expect(redirectSystemPath({ path: '/signed-in?code=x&state=y', initial: true })).toBe('/sign-in');
+});
