@@ -57,16 +57,18 @@ public class PayloadStoreTests : McpFixture
         (await Payloads.FindAsync(withBom.PayloadId, "attach_markdown", SeedIds.Users.Joel, null))!.Body.ShouldBe(markdown);
     }
 
-    [Test]
-    public async Task PayloadUpload_WhenBodyOverLimit_ShouldRefuseAndAllowRetry()
+    // Chunked (no Content-Length) and with a Content-Length.
+    [TestCase(true)]
+    [TestCase(false)]
+    public async Task PayloadUpload_WhenBodyOverLimit_ShouldRefuseAndAllowRetry(bool chunked)
     {
         var issued = await IssueAsync(SeedIds.Users.Joel, null, "attach_markdown", "content");
         var tooBig = new byte[IToolPayloads.MaxBytes + 1];
         Array.Fill(tooBig, (byte)'a');
         using var content = new StreamContent(new MemoryStream(tooBig));
-        content.Headers.ContentLength = null;
+        content.Headers.ContentLength = chunked ? null : tooBig.Length;
         using var request = new HttpRequestMessage(HttpMethod.Put, issued.Path) { Content = content };
-        request.Headers.TransferEncodingChunked = true;
+        request.Headers.TransferEncodingChunked = chunked;
 
         using var refused = await Client.SendAsync(request);
 

@@ -86,13 +86,14 @@ public sealed class ToolPayloads(NpgsqlDataSource dataSource, TimeProvider clock
             new { payloadId, tool, userId, authorizationId, now = clock.GetUtcNow() }, cancellationToken: cancellationToken));
     }
 
-    // Counts while it reads and stops at the first byte past MaxBytes, so it never holds more than MaxBytes.
+    // Asks each read for at most the bytes left before MaxBytes plus one, so it never takes more than MaxBytes + 1 bytes off
+    // the request and refuses at the first byte past MaxBytes.
     private static async Task<byte[]> ReadAsync(Stream body, CancellationToken cancellationToken)
     {
         using var memory = new MemoryStream();
         var buffer = new byte[81920];
         int read;
-        while ((read = await body.ReadAsync(buffer, cancellationToken)) > 0)
+        while ((read = await body.ReadAsync(buffer.AsMemory(0, (int)Math.Min(buffer.Length, IToolPayloads.MaxBytes + 1 - memory.Length)), cancellationToken)) > 0)
         {
             if (memory.Length + read > IToolPayloads.MaxBytes)
             {
