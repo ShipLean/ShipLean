@@ -98,7 +98,7 @@ public sealed class ToolPayloads(NpgsqlDataSource dataSource, TimeProvider clock
             {
                 throw ApiException.Validation($"The upload is too large: a payload can be at most {IToolPayloads.MaxBytes / (1024 * 1024)} MB. Send the arguments inline, or split the work into smaller calls.");
             }
-            memory.Write(buffer, 0, read);
+            await memory.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
         }
         return memory.ToArray();
     }
