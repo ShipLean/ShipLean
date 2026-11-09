@@ -69,17 +69,11 @@ public sealed class ItemAsks(NpgsqlDataSource dataSource, ICurrentUser currentUs
 
         var owner = item.AssignedTo ?? item.CreatedBy;
         var userIds = new HashSet<Guid>();
-        void Add(Guid? id)
-        {
-            if (id is { } value)
-            {
-                userIds.Add(value);
-            }
-        }
+        void Add(params Guid?[] ids) => userIds.UnionWith(ids.OfType<Guid>());
 
         Add(owner);
-        questions.ForEach(q => { Add(q.AskedBy); Add(q.AnswerAuthor); });
-        decisions.ForEach(d => { Add(d.RaisedBy); Add(d.AnsweredBy); });
+        questions.ForEach(q => Add(q.AskedBy, q.AnswerAuthor));
+        decisions.ForEach(d => Add(d.RaisedBy, d.AnsweredBy));
         events.ForEach(e => Add(e.ByUser));
         children.ForEach(c => Add(c.Owner));
         var users = (await connection.QueryAsync<UserRef>(new CommandDefinition(
