@@ -1,5 +1,6 @@
 // Projects, members, states and the instance. C#: ShipLean.Contracts.Projects and ShipLean.Contracts.Instance. Nothing is
 // omitted: absent values are null.
+import { api } from './client';
 import type { StateCategory, UserRef, WorkItemTypeId } from './refs';
 import type { SprintCreate } from './sprints';
 import type { UserStatus } from './users';
@@ -183,3 +184,7 @@ export interface InstanceProjectDto {
   itemCount: number;
   yourRole: ProjectRole | null;
 }
+
+// GET /api/projects: the caller's projects, shared by both clients under one key.
+export const projectsKey = ['projects'] as const;
+export const listProjects = () => api.get<ProjectSummaryDto[]>('/api/projects');
