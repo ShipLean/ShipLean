@@ -18,7 +18,7 @@ namespace ShipLean.WebApi.Features.Mcp.Tools.Capture;
 internal sealed class RefineTools(ItemResolver itemResolver, IWorkItemStore store, NoteWriter notes, StaleWrites writes, CaptureSupport support)
 {
     [McpServerTool(Name = "refine_work_item"), McpScope(McpScopes.Write), McpPayload]
-    [Description("Improve one work item: rewrite its title, description or acceptance criteria, and set its points, tags, priority, severity or parent. A rewritten checklist keeps the ticked state of every line whose text is unchanged. Pass expected_revision (from get_work_item) to refuse if someone has edited it since you read it. A note becomes a comment explaining the change.")]
+    [Description("Improve one work item: rewrite its title, description or acceptance criteria, and set its points, tags, priority, severity or parent. A rewritten checklist keeps the ticked state of every line whose text is unchanged. Pass expected_revision (from get_work_item) to refuse if someone has edited it since you read it. A note becomes a comment explaining the change. When the new description is already in a file or is over about 20 KB, upload it with create_payload_upload (curl -T) and pass payload.")]
     public async Task<CallToolResult> RefineWorkItem(
         [Description("The item's key, such as SHIP-12.")] string item,
         [Description("A new title.")] string? title = null,

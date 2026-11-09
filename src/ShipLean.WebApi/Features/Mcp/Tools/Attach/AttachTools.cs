@@ -28,7 +28,7 @@ internal sealed class AttachTools(
     private const int MaxNameLength = 255;
 
     [McpServerTool(Name = "attach_markdown"), McpScope(McpScopes.Write), McpPayload]
-    [Description("Attach research findings, analyses, comparisons, plans and retros as Markdown on a work item instead of keeping them in local files. The name must end in .md. Attaching a name the item already has replaces that file. It shows on the item as attached by you through this tool, and its text is searchable.")]
+    [Description("Attach research findings, analyses, comparisons, plans and retros as Markdown on a work item instead of keeping them in local files. The name must end in .md. Attaching a name the item already has replaces that file. It shows on the item as attached by you through this tool, and its text is searchable. When the Markdown is already a file, use create_payload_upload with field content (curl -T) and pass payload.")]
     public async Task<CallToolResult> AttachMarkdown(
         [Description("The item's key, such as SHIP-12.")] string feature,
         [Description("The file name, ending in .md, such as design.md.")] string name,

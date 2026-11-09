@@ -154,6 +154,21 @@ The tools the richer Feature editor added. Each slice that adds a tool appends i
 
 **Demo logo URLs.** When a project has its own demo logo, the prompt carries `GET /api/downloads/demo-logo?token=`, a link of its own kind that lives 24 hours, reads that project's current logo and nothing else, and isn't spent. It dies with a retry, an expiry, a revoked agent or a disabled user, and answers 404 once the logo is removed. It sets `nosniff`, `Cross-Origin-Resource-Policy: same-origin` and a sandboxing CSP, and is served as an attachment. Behind a proxy, `/api/downloads/` is skipped as for `read_attachment`. See [A project's logo and tokens](sprint-demos.md#a-projects-logo-and-tokens).
 
+### Payload uploads
+
+Six tools take a `payload` argument for large arguments: `capture_plan`, `capture_work`, `break_down`, `attach_markdown`, `refine_work_item` and `create_feature`. The rule agents are given: upload when the content is already in a file or is over about 20 KB, otherwise send it inline. With no shell, send inline and keep each call small.
+
+1. The agent calls `create_payload_upload` with the tool it is for and gets a one-time `upload_url`, a `curl -T` command and a payload id.
+2. It sends the file (a JSON object of the tool's arguments, or the raw text of one field) with `PUT /api/uploads/payloads/{token}`. Like `PUT /api/uploads/{token}` it needs no header, cookie or bearer.
+3. It calls the tool with `payload` set to the id, in place of the large arguments.
+
+- **Limits:** the URL lives 10 minutes to upload; the stored payload lives 60 minutes after upload. A payload holds at most 2 MiB.
+- **Inline wins:** an argument sent inline replaces the same argument in the payload.
+- **No `plan` inside:** the preview's `plan` token is always sent as its own argument. For `capture_plan` and `capture_work` the same payload serves the preview and the apply.
+- **Rate limit:** shared with attachment uploads (60 a minute per client address).
+- **Usage:** the six tools' events carry `input` = `payload` or `inline` ([`analytics.md`](analytics.md)). A payload id, token or content never goes in an event or a log.
+- Behind a proxy, `/api/uploads/` is already skipped ([`auth.md`](auth.md#paths-the-proxy-must-skip)); the payload path is under it.
+
 ### Download URLs
 
 `read_attachment` on a file it cannot return as text (any non-Markdown file, or Markdown over 200 KB) issues a download token for that attachment and adds `download_url` (absolute, built like `upload_url`), `expires_at` and `command` to its reply. Small Markdown keeps returning its text and no URL. This is how an agent fetches a pasted screenshot: run the command, then read the saved file.

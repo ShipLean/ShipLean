@@ -54,7 +54,7 @@ internal sealed class FeatureTools(
     }
 
     [McpServerTool(Name = "create_feature"), McpScope(McpScopes.Write), McpPayload]
-    [Description("Create a Feature when an idea first comes up, before any research: search first, then use this with a goal. Optionally set its one-line status, state, epic and slug. The slug is its short name in addresses; it defaults to one made from the title and can't be changed later. Name the project when the user is in more than one.")]
+    [Description("Create a Feature when an idea first comes up, before any research: search first, then use this with a goal. Optionally set its one-line status, state, epic and slug. The slug is its short name in addresses; it defaults to one made from the title and can't be changed later. Name the project when the user is in more than one. When the arguments are already in a file or are over about 20 KB, upload them with create_payload_upload (curl -T) and pass payload.")]
     public async Task<CallToolResult> CreateFeature(
         [Description("The Feature's title.")] string title,
         [Description("The goal: what the Feature is for.")] string goal,
