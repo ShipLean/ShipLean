@@ -4,7 +4,6 @@ using ShipLean.Contracts;
 using ShipLean.Contracts.DeviceSessions;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Usage;
-using ShipLean.WebApi.Features.Usage;
 using ShipLean.WebApi.Features.Auth;
 using ShipLean.WebApi.Infrastructure;
 

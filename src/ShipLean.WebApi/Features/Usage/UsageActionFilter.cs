@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Usage;
 using ShipLean.Contracts.WorkItems;
+using ShipLean.WebApi.Infrastructure;
 
 namespace ShipLean.WebApi.Features.Usage;
 
