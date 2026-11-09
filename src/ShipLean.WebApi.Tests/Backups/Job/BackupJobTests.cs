@@ -9,6 +9,7 @@ using ShipLean.Application.Database;
 using ShipLean.Application.Fakes.Backups.Engine;
 using ShipLean.Application.Features.Backups.Engine;
 using ShipLean.Application.Features.Backups.Job;
+using ShipLean.Application.Features.Backups.Mirror;
 using ShipLean.Application.Features.Backups.Modules;
 using ShipLean.Application.Features.Backups.Runs;
 using ShipLean.Contracts.Backups;
@@ -242,6 +243,17 @@ public class BackupJobTests
         (await _log.UnprunedSuccessesAsync(config.DestinationId)).Select(r => r.Id).ShouldBe([second.Id, first.Id]);
         (await KeysAsync()).ShouldContain(first.DatabaseObjectKey!);
         (await KeysAsync()).ShouldContain(second.DatabaseObjectKey!);
+    }
+
+    [Test]
+    public async Task Run_WhenMirrorBlobUnreadable_ShouldStoreErrorNamingKey()
+    {
+        _mirror.Step = () => throw new BlobUnreadableException("attachments/gone");
+
+        var run = await RunAsync(Config(includeAttachments: true));
+
+        run.State.ShouldBe(BackupRunState.Failed);
+        run.Error.ShouldBe("Copying the attachments failed: Blob 'attachments/gone' is listed but can't be read.");
     }
 
     [Test]

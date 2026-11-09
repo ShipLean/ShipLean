@@ -13,7 +13,11 @@ public static class BackupObjectKeys
             CultureInfo.InvariantCulture,
             $"{prefix}database/shiplean-{startedAt.UtcDateTime:yyyyMMdd'T'HHmmss'Z'}-{runId.ToString("N")[..8]}-g{generation}.dump.slbk");
 
+    // <prefix>attachments/g<generation>/, the folder one generation's attachment objects live in.
+    public static string AttachmentPrefix(string prefix, int generation)
+        => string.Create(CultureInfo.InvariantCulture, $"{prefix}attachments/g{generation}/");
+
     // <prefix>attachments/g<generation>/<blob key>.slbk
     public static string Attachment(string prefix, int generation, string blobKey)
-        => string.Create(CultureInfo.InvariantCulture, $"{prefix}attachments/g{generation}/{blobKey}.slbk");
+        => $"{AttachmentPrefix(prefix, generation)}{blobKey}.slbk";
 }
