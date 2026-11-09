@@ -71,10 +71,8 @@ public sealed class PostgresDeviceSessionsContractTests : DeviceSessionsContract
 
         await using var connection = await OpenAsync();
         var rows = new List<string>();
-        foreach (var table in new[] { "device_session", "device_sign_in_code" })
-        {
-            rows.AddRange(await connection.QueryAsync<string>($"SELECT to_jsonb(t)::text FROM {table} t WHERE security_stamp = 'stamp-clear'"));
-        }
+        rows.AddRange(await connection.QueryAsync<string>("SELECT to_jsonb(t)::text FROM device_session t WHERE security_stamp = 'stamp-clear'"));
+        rows.AddRange(await connection.QueryAsync<string>("SELECT to_jsonb(t)::text FROM device_sign_in_code t WHERE security_stamp = 'stamp-clear'"));
         rows.Count.ShouldBe(2);
         foreach (var row in rows)
         {

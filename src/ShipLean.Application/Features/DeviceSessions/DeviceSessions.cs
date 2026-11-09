@@ -95,7 +95,7 @@ public sealed class DeviceSessions(NpgsqlDataSource dataSource) : IDeviceSession
         await connection.ExecuteAsync(new CommandDefinition(
             """
             UPDATE device_session SET last_used_at = @now, expires_at = @expiresAt
-            WHERE id = @id AND revoked_at IS NULL AND last_used_at <= @threshold
+            WHERE id = @id AND revoked_at IS NULL AND expires_at > @now AND last_used_at <= @threshold
             """,
             new { id, now, expiresAt = now + DeviceSessionLimits.SessionLifetime, threshold = now - DeviceSessionLimits.TouchInterval },
             cancellationToken: cancellationToken));

@@ -22,7 +22,7 @@ CREATE TABLE device_sign_in_code (
     challenge      text NOT NULL,
     user_id        uuid NOT NULL REFERENCES app_user (id),
     security_stamp text NOT NULL,
-    device_name    text NOT NULL,
+    device_name    text NOT NULL CHECK (length(device_name) BETWEEN 1 AND 100),
     created_at     timestamptz NOT NULL,
     expires_at     timestamptz NOT NULL,
     used_at        timestamptz

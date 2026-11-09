@@ -187,6 +187,19 @@ public abstract class DeviceSessionsContract
     }
 
     [Test]
+    public async Task Touch_WhenExpired_ShouldNotRevive()
+    {
+        var signIn = await SignInAsync();
+        var afterExpiry = signIn.Session.ExpiresAt + TimeSpan.FromMinutes(1);
+
+        await Sessions.TouchAsync(signIn.Session.Id, afterExpiry);
+
+        var found = (await Sessions.FindBySecretAsync(signIn.Secret)).ShouldNotBeNull();
+        found.ExpiresAt.ShouldBe(signIn.Session.ExpiresAt);
+        found.IsLiveAt(afterExpiry).ShouldBeFalse();
+    }
+
+    [Test]
     public async Task List_ShouldLeaveOutRevokedExpiredAndOtherUsers_NewestFirst()
     {
         var older = await SignInAsync(name: "Older", at: _now - TimeSpan.FromDays(2));

@@ -63,7 +63,7 @@ public sealed class InMemoryDeviceSessions : IDeviceSessions
     {
         lock (_gate)
         {
-            if (_sessions.FirstOrDefault(s => s.Id == id) is { RevokedAt: null } session && now - session.LastUsedAt >= DeviceSessionLimits.TouchInterval)
+            if (_sessions.FirstOrDefault(s => s.Id == id) is { RevokedAt: null } session && session.ExpiresAt > now && now - session.LastUsedAt >= DeviceSessionLimits.TouchInterval)
             {
                 session.LastUsedAt = now;
                 session.ExpiresAt = now + DeviceSessionLimits.SessionLifetime;
