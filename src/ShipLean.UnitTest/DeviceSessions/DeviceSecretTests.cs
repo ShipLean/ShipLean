@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
-using ShipLean.Application.Features.DeviceSessions;
+using ShipLean.Application.Identity;
 using Shouldly;
 
 namespace ShipLean.UnitTest.DeviceSessions;

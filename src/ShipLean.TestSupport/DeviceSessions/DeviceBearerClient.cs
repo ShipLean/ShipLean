@@ -1,5 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using ShipLean.Application.Features.DeviceSessions;
 using ShipLean.Application.Identity;
 using ShipLean.Contracts.DeviceSessions;
 using ShipLean.TestSupport.Hosting;

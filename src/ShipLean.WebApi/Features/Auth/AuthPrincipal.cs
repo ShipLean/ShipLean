@@ -21,7 +21,7 @@ public static class AuthPrincipal
     {
         var claims = SessionClaims(userId, stamp);
         claims.Add(new Claim(DeviceSessionClaim, deviceSessionId.ToString()));
-        return new ClaimsPrincipal(new ClaimsIdentity(claims, DeviceSessions.DeviceBearerHandler.Scheme));
+        return new ClaimsPrincipal(new ClaimsIdentity(claims, DeviceBearer.DeviceBearerHandler.Scheme));
     }
 
     // The proxy name claim is left out when the provider sent no name.

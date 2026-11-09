@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.Extensions.DependencyInjection;
-using ShipLean.Application.Features.DeviceSessions;
+using ShipLean.Application.Identity;
 using ShipLean.Contracts.DeviceSessions;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Usage;

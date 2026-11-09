@@ -12,8 +12,8 @@ using Npgsql;
 using ShipLean.Application.Identity;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
+using ShipLean.WebApi.Features.Auth.DeviceBearer;
 using ShipLean.WebApi.Features.Auth.Proxy;
-using ShipLean.WebApi.Features.DeviceSessions;
 using ShipLean.WebApi.Infrastructure;
 
 namespace ShipLean.WebApi.Features.Auth;

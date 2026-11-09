@@ -2,7 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using ShipLean.Application.Features.Agents.Stores;
 
-namespace ShipLean.Application.Features.DeviceSessions;
+namespace ShipLean.Application.Identity;
 
 // The device-session secret and sign-in code, shared by every IDeviceSessions. A secret is "shl_dev_" and 43 base62
 // characters (256 bits); a code is 32 random bytes, base64url. Only their SHA-256 is stored. The PKCE pieces are S256

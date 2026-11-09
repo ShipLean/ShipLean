@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
-using ShipLean.Application.Features.DeviceSessions;
+using ShipLean.Application.Identity;
 
-namespace ShipLean.WebApi.Features.DeviceSessions;
+namespace ShipLean.WebApi.Features.Auth.DeviceBearer;
 
 // Reads a device secret from an Authorization header: "Bearer " and a value with the secret's shape, or null. Any
 // other bearer (an MCP access token) is not this scheme's.

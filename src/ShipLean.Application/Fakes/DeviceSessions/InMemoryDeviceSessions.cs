@@ -1,4 +1,4 @@
-using ShipLean.Application.Features.DeviceSessions;
+using ShipLean.Application.Identity;
 using ShipLean.Contracts.DeviceSessions;
 
 namespace ShipLean.Application.Fakes.DeviceSessions;

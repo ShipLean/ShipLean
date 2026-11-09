@@ -2,7 +2,6 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using ShipLean.Application.Features.DeviceSessions;
 using ShipLean.Application.Identity;
 using ShipLean.Contracts;
 using ShipLean.Contracts.DeviceSessions;

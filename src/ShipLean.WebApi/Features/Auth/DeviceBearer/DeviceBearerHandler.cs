@@ -2,9 +2,8 @@ using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 using ShipLean.Contracts.DeviceSessions;
-using ShipLean.WebApi.Features.Auth;
 
-namespace ShipLean.WebApi.Features.DeviceSessions;
+namespace ShipLean.WebApi.Features.Auth.DeviceBearer;
 
 // The phone app's bearer: `Authorization: Bearer shl_dev_…`, sent here by the Session selector (AuthServices) on /api/*
 // in password mode. A live session gives the device principal and is touched (sliding 90 days). A revoked or expired

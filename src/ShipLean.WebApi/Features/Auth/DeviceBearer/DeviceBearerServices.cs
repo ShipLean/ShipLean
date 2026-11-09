@@ -1,8 +1,7 @@
 using Microsoft.AspNetCore.Authentication;
 using ShipLean.Contracts;
-using ShipLean.WebApi.Features.Auth;
 
-namespace ShipLean.WebApi.Features.DeviceSessions;
+namespace ShipLean.WebApi.Features.Auth.DeviceBearer;
 
 // The DeviceBearer scheme. Its challenge and forbid go to the cookie scheme, so CookieSessionEvents writes the 401
 // (session_ended once the handler marked the session ended) and the 403, as for a cookie.
