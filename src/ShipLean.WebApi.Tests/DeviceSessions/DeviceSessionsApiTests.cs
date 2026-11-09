@@ -9,10 +9,10 @@ using ShipLean.Contracts.Users;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.DeviceSessions;
 using ShipLean.TestSupport.Fixtures;
+using ShipLean.TestSupport.Hosting;
 using ShipLean.TestSupport.Usage;
 using ShipLean.WebApi.Features.DeviceSessions;
 using ShipLean.WebApi.Tests.Auth;
-using ShipLean.WebApi.Tests.Support;
 
 namespace ShipLean.WebApi.Tests.DeviceSessions;
 
@@ -43,7 +43,7 @@ public class DeviceSessionsApiTests : ApiFixture
     [SetUp]
     public void ClearRecordedEvents() => Recorder.Clear();
 
-    private Task<HttpResponseMessage> PostCodesAsync(HttpClient client, string? challenge = Challenge, string? deviceName = "Joel's iPad")
+    private static Task<HttpResponseMessage> PostCodesAsync(HttpClient client, string? challenge = Challenge, string? deviceName = "Joel's iPad")
         => client.PostAsJsonAsync($"{Base}/codes", new CreateSignInCodeRequest(challenge, deviceName));
 
     private async Task<string> CodeAsync()
@@ -127,9 +127,9 @@ public class DeviceSessionsApiTests : ApiFixture
 
         var error = await wrong.ReadApiErrorAsync(HttpStatusCode.BadRequest);
         error.Code.ShouldBe(ApiErrorCodes.Validation);
-        error.Message.ShouldBe("Sign-in expired. Try again.");
+        error.Error.ShouldBe("Sign-in expired. Try again.");
         error.Field.ShouldBeNull();
-        (await retry.ReadApiErrorAsync(HttpStatusCode.BadRequest)).Message.ShouldBe("Sign-in expired. Try again.");
+        (await retry.ReadApiErrorAsync(HttpStatusCode.BadRequest)).Error.ShouldBe("Sign-in expired. Try again.");
     }
 
     [Test]

@@ -15,7 +15,7 @@ public sealed class DeviceBearerHandler(
     IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder, IDeviceSessions sessions, TimeProvider time)
     : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
 {
-    public const string Scheme = "DeviceBearer";
+    public new const string Scheme = "DeviceBearer";
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {

@@ -18,11 +18,16 @@ public class DeviceSecretTests
     }
 
     [Test]
-    public void New_WhenCalledTwice_ShouldDiffer() => DeviceSecret.New().ShouldNotBe(DeviceSecret.New());
+    public void New_WhenCalledTwice_ShouldDiffer()
+    {
+        DeviceSecret.New().ShouldNotBe(DeviceSecret.New());
+    }
 
     [Test]
     public void TokenPrefix_ShouldBeThePrefixAndTheNextEightCharacters()
-        => DeviceSecret.TokenPrefix("shl_dev_Vn4cH8sEIrjwAm24iPoRv1IfEtBuDwpe1qj7hLDqlTa").ShouldBe("shl_dev_Vn4cH8sE");
+    {
+        DeviceSecret.TokenPrefix("shl_dev_Vn4cH8sEIrjwAm24iPoRv1IfEtBuDwpe1qj7hLDqlTa").ShouldBe("shl_dev_Vn4cH8sE");
+    }
 
     [Test]
     public void Hash_ShouldBeTheSha256OfTheUtf8Secret()
@@ -57,15 +62,24 @@ public class DeviceSecretTests
     [TestCase("shl_dev_Vn4cH8sEIrjwAm24iPoRv1IfEtBuDwpe1qj7hLDql-a", false)]
     [TestCase("shl_xyz_Vn4cH8sEIrjwAm24iPoRv1IfEtBuDwpe1qj7hLDqlTa", false)]
     [TestCase("", false)]
-    public void HasShape_ShouldAcceptOnlyTheSecretShape(string value, bool expected) => DeviceSecret.HasShape(value).ShouldBe(expected);
+    public void HasShape_ShouldAcceptOnlyTheSecretShape(string value, bool expected)
+    {
+        DeviceSecret.HasShape(value).ShouldBe(expected);
+    }
 
     // RFC 7636 appendix B.
     [Test]
-    public void ChallengeFor_ShouldBeS256() => DeviceSecret.ChallengeFor("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk").ShouldBe("E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM");
+    public void ChallengeFor_ShouldBeS256()
+    {
+        DeviceSecret.ChallengeFor("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk").ShouldBe("E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM");
+    }
 
     [TestCase("E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM", true)]
     [TestCase("E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-c", false)]
     [TestCase("E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw+cM", false)]
     [TestCase(null, false)]
-    public void IsChallenge_ShouldAcceptOnly43Base64UrlCharacters(string? value, bool expected) => DeviceSecret.IsChallenge(value).ShouldBe(expected);
+    public void IsChallenge_ShouldAcceptOnly43Base64UrlCharacters(string? value, bool expected)
+    {
+        DeviceSecret.IsChallenge(value).ShouldBe(expected);
+    }
 }

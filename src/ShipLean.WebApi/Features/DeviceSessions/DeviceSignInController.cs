@@ -9,6 +9,7 @@ using ShipLean.Contracts.DeviceSessions;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Usage;
 using ShipLean.WebApi.Features.Auth;
+using ShipLean.WebApi.Features.Auth.Proxy;
 using ShipLean.WebApi.Infrastructure;
 
 namespace ShipLean.WebApi.Features.DeviceSessions;

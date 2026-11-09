@@ -5,7 +5,6 @@ using ShipLean.TestSupport;
 using ShipLean.TestSupport.DeviceSessions;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.WebApi.Features.DeviceSessions;
-using ShipLean.WebApi.Tests.Support;
 
 namespace ShipLean.WebApi.Tests.DeviceSessions;
 
@@ -22,7 +21,7 @@ public class DeviceSessionsProxyTests : ProxyApiFixture
 
         var error = await response.ReadApiErrorAsync(HttpStatusCode.BadRequest);
         error.Code.ShouldBe(ApiErrorCodes.Validation);
-        error.Message.ShouldBe(DeviceSignInController.ProxyRefusal);
+        error.Error.ShouldBe(DeviceSignInController.ProxyRefusal);
     }
 
     [Test]
