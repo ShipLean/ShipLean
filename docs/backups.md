@@ -252,6 +252,11 @@ docker run --rm --network "$NETWORK" postgres:18 psql "$ADMIN_URL" -c "DROP DATA
 docker run --rm --network "$NETWORK" postgres:18 psql "$ADMIN_URL" -c "CREATE DATABASE $DB_NAME"
 ```
 
+The dump doesn't carry the database's locale, and text sorting depends on it. The `postgres:18` image defaults to
+`en_US.UTF-8`, which is what ShipLean runs on. On a server with another default
+(`psql "$ADMIN_URL" -c "SELECT datcollate FROM pg_database WHERE datname = 'template1'"`), create it with that locale
+instead: `CREATE DATABASE $DB_NAME TEMPLATE template0 ENCODING 'UTF8' LOCALE 'en_US.UTF-8'`.
+
 Skip the drop and the create if the database exists and is empty (a fresh compose volume creates an empty `shiplean`).
 Then restore with the `pg_restore` from the `postgres:18` image:
 
