@@ -164,7 +164,9 @@ settings:
 
 importers:
 
-  .:
+  .: {}
+
+  ShipLean.Client:
     dependencies:
       '@dnd-kit/core':
         specifier: ^6.3.1

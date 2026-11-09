@@ -26,7 +26,7 @@ Self-hosted lean planning tool (backlogs, boards, sprints, a sprint taskboard) b
 | `src/ShipLean.WebApi.Tests/` | API tests: real app on Kestrel over a cloned Postgres database |
 | `src/ShipLean.AcceptanceTests/` | Playwright (.NET) against the built SPA. CI shards on namespaces `Harness`, `Journeys`, `Lanes.<Area>` |
 | `src/ShipLean.UnitTest/` | Last resort: pure helpers and architecture guard rails (see its `CLAUDE.md`) |
-| `src/ShipLean.Client/` | React SPA, own pnpm project. `pnpm run build` writes into `ShipLean.WebApi/wwwroot`. `*.spec.tsx` = Playwright CT, `*.test.ts(x)` = vitest |
+| `src/ShipLean.Client/` | React SPA (`shiplean-client`) in the pnpm workspace rooted at `src/` (one lockfile, `src/pnpm-lock.yaml`). `pnpm run build` writes into `ShipLean.WebApi/wwwroot`. `*.spec.tsx` = Playwright CT, `*.test.ts(x)` = vitest |
 | `db/schema`, `db/migrations`, `db/seed` | Applied in that order by DbUp. Migrations are additive: `<yyyyMMddHHmm>_<area>_<name>.sql` |
 | `.claude/skills/` | Repo skills referenced below (testing, UTC, API view models, IoC, …) |
 
@@ -43,7 +43,7 @@ CI runs on GitHub-hosted runners (about 6 jobs per pull request), so:
 ```bash
 dotnet build src/ShipLean.slnx -c Release                                   # warnings are errors
 shiplean-test src/ShipLean.WebApi.Tests --filter "FullyQualifiedName~HealthTests"
-(cd src/ShipLean.Client && pnpm install && pnpm run build)                  # acceptance tests serve this bundle; rebuild after client changes
+(cd src && pnpm install && cd ShipLean.Client && pnpm run build)          # pnpm workspace at src/; acceptance tests serve this bundle; rebuild after client changes
 shiplean-test src/ShipLean.AcceptanceTests --filter "FullyQualifiedName~ShipLean.AcceptanceTests.Lanes.Board."
 cd src/ShipLean.Client && pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm test && pnpm run test-ct
 ```

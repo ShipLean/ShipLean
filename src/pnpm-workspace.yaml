@@ -1,0 +1,6 @@
+packages:
+  - ShipLean.Client
+  - ShipLean.Core.Client
+  - ShipLean.Mobile
+allowBuilds:
+  agoda-devfeedback-common: false
