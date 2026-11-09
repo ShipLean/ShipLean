@@ -111,7 +111,15 @@ public abstract class DeviceSessionsContract
     {
         var code = await Sessions.CreateCodeAsync(UserId, "stamp-1", Challenge, "Phone", _now);
 
-        var results = await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => Task.Run(() => Sessions.ExchangeAsync(code, Verifier, _now))));
+        // Every call waits at the gate and is released together, so the exchanges really overlap.
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var exchanges = Enumerable.Range(0, 8).Select(_ => Task.Run(async () =>
+        {
+            await gate.Task;
+            return await Sessions.ExchangeAsync(code, Verifier, _now);
+        })).ToList();
+        gate.SetResult();
+        var results = await Task.WhenAll(exchanges);
 
         results.Count(r => r != null).ShouldBe(1);
     }
@@ -150,6 +158,19 @@ public abstract class DeviceSessionsContract
         var found = (await Sessions.FindBySecretAsync(signIn.Secret)).ShouldNotBeNull();
         found.LastUsedAt.ShouldBe(signIn.Session.LastUsedAt);
         found.ExpiresAt.ShouldBe(signIn.Session.ExpiresAt);
+    }
+
+    [Test]
+    public async Task Touch_WhenExactlyAMinuteSinceLastUse_ShouldSlide()
+    {
+        var signIn = await SignInAsync();
+        var later = _now + DeviceSessionLimits.TouchInterval;
+
+        await Sessions.TouchAsync(signIn.Session.Id, later);
+
+        var found = (await Sessions.FindBySecretAsync(signIn.Secret)).ShouldNotBeNull();
+        found.LastUsedAt.ShouldBe(later, TimeSpan.FromMilliseconds(1));
+        found.ExpiresAt.ShouldBe(later + DeviceSessionLimits.SessionLifetime, TimeSpan.FromMilliseconds(1));
     }
 
     [Test]
