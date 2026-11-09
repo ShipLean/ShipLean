@@ -1,5 +1,6 @@
 using Dapper;
 using Npgsql;
+using ShipLean.Application.Identity;
 using ShipLean.Contracts.Asks;
 using ShipLean.Contracts.Refs;
 using ShipLean.Core;
