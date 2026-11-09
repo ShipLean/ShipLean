@@ -29,7 +29,7 @@ export function PasswordPanel() {
       setNext('');
       setConfirm('');
       showToast(
-        'Password changed. Your other sessions are signed out and your connected agents disconnected',
+        'Password changed. Your other sessions and phones are signed out and your connected agents disconnected',
         { tone: 'ok' },
       );
       change.reset();
@@ -67,7 +67,7 @@ export function PasswordPanel() {
   return (
     <PanelFrame
       title="Password"
-      meta="Changing it signs out your other sessions and disconnects your connected agents"
+      meta="Changing it signs out your other sessions and your phones, and disconnects your connected agents"
       testId={settingsTestIds.passwordPanel}
     >
       <form

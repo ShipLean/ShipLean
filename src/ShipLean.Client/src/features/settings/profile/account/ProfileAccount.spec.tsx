@@ -264,10 +264,10 @@ test('Password_ShouldSayAgentsAreDisconnected', async ({ mount, page }) => {
   const view = await mount(<ProfileAccount />);
 
   await expect(view.getByTestId(ids.passwordPanel)).toContainText(
-    'disconnects your connected agents',
+    'Changing it signs out your other sessions and your phones, and disconnects your connected agents',
   );
   await expect(view.getByTestId(ids.sessionsPanel)).toContainText(
-    'disconnects your connected agents',
+    'signs out your phones and disconnects your connected agents',
   );
 });
 
