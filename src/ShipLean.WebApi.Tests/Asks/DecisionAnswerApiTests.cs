@@ -24,6 +24,9 @@ public class DecisionAnswerApiTests : ApiFixture
 {
     private RecordingUsageEvents Recorder => (RecordingUsageEvents)Host.Services.GetRequiredService<IUsageEvents>();
 
+    [SetUp]
+    public void ClearUsage() => Recorder.Clear();
+
     [Test]
     public async Task Confirm_WhenOpen_ShouldConfirmAndKeepRecommended()
     {
