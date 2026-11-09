@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Amazon;
 using Amazon.Runtime;
 using Amazon.S3;
@@ -19,16 +20,23 @@ public sealed class S3BlobInventory : IBlobInventory, IDisposable
         _client = CreateClient(connection);
     }
 
-    public async IAsyncEnumerable<string> ListKeysAsync([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+    public async IAsyncEnumerable<string> ListKeysAsync([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var request = new ListObjectsV2Request { BucketName = _connection.Bucket, Prefix = _connection.Prefix };
         ListObjectsV2Response page;
         do
         {
             page = await _client.ListObjectsV2Async(request, cancellationToken);
-            foreach (var item in (page.S3Objects ?? []).Where(item => !item.Key.EndsWith(BlobKey.TempSuffix, StringComparison.Ordinal)))
+            foreach (var item in page.S3Objects ?? [])
             {
-                yield return item.Key[_connection.Prefix.Length..];
+                // A "folder" placeholder (an empty object ending in "/", or the prefix itself) and a store's own temp file are not keys.
+                var key = item.Key[_connection.Prefix.Length..];
+                if (key.Length == 0 || key.EndsWith('/') || key.EndsWith(BlobKey.TempSuffix, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                yield return key;
             }
 
             request.ContinuationToken = page.NextContinuationToken;

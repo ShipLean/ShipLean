@@ -52,6 +52,36 @@ public class S3BlobInventoryContractTests : BlobInventoryContract
     }
 
     [Test]
+    public async Task ListKeys_WhenPrefixLacksTrailingSlash_ShouldStripIt()
+    {
+        var connection = await S3Server.NewBucketAsync("backups-test");
+        using var store = new S3BlobStore(connection);
+        using var inventory = new S3BlobInventory(connection);
+        await store.PutAsync("attachments/a", new MemoryStream("x"u8.ToArray()), "text/plain", CancellationToken.None);
+
+        var listed = await inventory.ListKeysAsync(CancellationToken.None).ToListAsync();
+
+        listed.Count.ShouldBe(1);
+        listed[0].ShouldEndWith("attachments/a");
+    }
+
+    [Test]
+    public async Task ListKeys_WhenFolderPlaceholderPresent_ShouldSkipIt()
+    {
+        var connection = await S3Server.NewBucketAsync("backups-test/");
+        using var store = new S3BlobStore(connection);
+        using var inventory = new S3BlobInventory(connection);
+        using var client = S3Server.CreateClient(connection);
+        await client.PutObjectAsync(new PutObjectRequest { BucketName = connection.Bucket, Key = "backups-test/", ContentBody = "" });
+        await client.PutObjectAsync(new PutObjectRequest { BucketName = connection.Bucket, Key = "backups-test/attachments/", ContentBody = "" });
+        await store.PutAsync("attachments/a", new MemoryStream("x"u8.ToArray()), "text/plain", CancellationToken.None);
+
+        var listed = await inventory.ListKeysAsync(CancellationToken.None).ToListAsync();
+
+        listed.ShouldBe(["attachments/a"]);
+    }
+
+    [Test]
     public async Task ListKeys_WhenMoreThanOnePage_ShouldReturnEveryKey()
     {
         var (store, inventory) = Create();
