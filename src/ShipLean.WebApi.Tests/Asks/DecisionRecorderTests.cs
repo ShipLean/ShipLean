@@ -267,6 +267,154 @@ public class DecisionRecorderTests : ApiFixture
         (await AskRows.DecisionsAsync(connection, item)).Select(d => (d.Number, d.State)).ShouldBe([(1, "open"), (2, "withdrawn"), (3, "open")]);
     }
 
+    [Test]
+    public async Task Record_WhenMixedNumberedAndUnnumbered_ShouldReturnNumbersInInputOrder()
+    {
+        var item = await NewItemAsync();
+        await using var connection = await OpenDatabaseAsync();
+        await new DecisionBuilder(item).Number(1).BuildAsync(connection);
+        await new DecisionBuilder(item).Number(2).BuildAsync(connection);
+
+        var recorded = await RecordAsync(item, Open(null, "Unnumbered?", "Yes"), Open(4, "Numbered?", "Yes"), Open(2, "Edit two?", "Yes"), Open(1, "Edit one?", "Yes"));
+
+        recorded.Created.ShouldBe([5, 4]);
+        recorded.Updated.ShouldBe([2, 1]);
+    }
+
+    [Test]
+    public async Task Record_WhenNumbersRepeat_ShouldFailValidationNamingTheNumber()
+    {
+        var item = await NewItemAsync();
+
+        var refused = await RefusedAsync(item, Open(3, "One?", "Yes"), Open(3, "Two?", "Yes"));
+
+        refused.Message.ShouldStartWith("D3: ");
+        await NothingWrittenAsync(item);
+    }
+
+    [TestCase(0)]
+    [TestCase(-2)]
+    public async Task Record_WhenNumberIsNotPositive_ShouldFailValidationNamingTheNumber(int number)
+    {
+        var item = await NewItemAsync();
+
+        var refused = await RefusedAsync(item, Open(number, "Zero?", "Yes"));
+
+        refused.Message.ShouldStartWith($"D{number}: ");
+        await NothingWrittenAsync(item);
+    }
+
+    [Test]
+    public async Task Record_WhenQuestionIsOver500Characters_ShouldFailValidation()
+    {
+        var item = await NewItemAsync();
+
+        var refused = await RefusedAsync(item, Open(null, new string('q', 501), "Yes"));
+
+        refused.Message.ShouldStartWith("Decision 1: ");
+        await NothingWrittenAsync(item);
+    }
+
+    [Test]
+    public async Task Record_WhenRecommendedAnswerIsOver500Characters_ShouldFailValidation()
+    {
+        var item = await NewItemAsync();
+
+        var refused = await RefusedAsync(item, Open(null, "Fine?", "Yes"), Open(null, "Long?", new string('a', 501)));
+
+        refused.Message.ShouldStartWith("Decision 2: ");
+        await NothingWrittenAsync(item);
+    }
+
+    [Test]
+    public async Task Record_WhenMoreThanSixAlternatives_ShouldFailValidation()
+    {
+        var item = await NewItemAsync();
+
+        var refused = await RefusedAsync(item, Open(2, "Many?", "A", "B", "C", "D", "E", "F", "G", "H"));
+
+        refused.Message.ShouldStartWith("D2: ");
+        await NothingWrittenAsync(item);
+    }
+
+    [Test]
+    public async Task Record_WhenSettledOnAnOpenNumber_ShouldRefuseAndChangeNothing()
+    {
+        var item = await NewItemAsync();
+        await using var connection = await OpenDatabaseAsync();
+        var (id, _) = await new DecisionBuilder(item).Number(1).Question("Still open?").BuildAsync(connection);
+        var on = DateOnly.FromDateTime(TestDates.Today.UtcDateTime);
+
+        var refused = await RefusedAsync(item, Settled(1, "Now settled?", "Yes", new SettledAnswer(SeedIds.Users.Joel, on, AnswerKind.Recommended, null, null)));
+
+        refused.Message.ShouldStartWith("D1 ");
+        var decision = await AskRows.DecisionAsync(connection, id);
+        (decision.Question, decision.State).ShouldBe(("Still open?", "open"));
+        (await AskRows.EventsAsync(connection, item)).ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task Record_WhenSentAgainUnchanged_ShouldWriteNothing()
+    {
+        var item = await NewItemAsync();
+        await RecordAsync(item, Open(null, "Same?", "Yes", "No"));
+        await using var connection = await OpenDatabaseAsync();
+        var before = await AskRows.DecisionsAsync(connection, item);
+        var eventsBefore = await AskRows.EventsAsync(connection, item);
+
+        var recorded = await RecordAsync(item, Open(1, "Same?", "Yes", "No"));
+
+        recorded.Created.ShouldBeEmpty();
+        recorded.Updated.ShouldBeEmpty();
+        (await AskRows.DecisionsAsync(connection, item)).Select(d => (d.Id, d.Question, d.Recommended, d.UpdatedAt))
+            .ShouldBe(before.Select(d => (d.Id, d.Question, d.Recommended, d.UpdatedAt)));
+        (await AskRows.EventsAsync(connection, item)).Count.ShouldBe(eventsBefore.Count);
+    }
+
+    [TestCase("Yes", "recommended")]
+    [TestCase("  Maybe ", "alternative")]
+    public async Task Record_WhenSettledOwnAnswerRepeatsAnAnswer_ShouldFailValidation(string own, string _)
+    {
+        var item = await NewItemAsync();
+        var on = DateOnly.FromDateTime(TestDates.Today.UtcDateTime);
+
+        var refused = await RefusedAsync(item, Settled(7, "Own?", "Yes", new SettledAnswer(SeedIds.Users.Joel, on, AnswerKind.Own, null, own), "Maybe"));
+
+        refused.Message.ShouldStartWith("D7: ");
+        await NothingWrittenAsync(item);
+    }
+
+    [Test]
+    public async Task Record_WhenSettled_ShouldStampTheRaisedEventFromTheClockNotOn()
+    {
+        var item = await NewItemAsync();
+        var on = DateOnly.FromDateTime(TestDates.Today.AddDays(-3).UtcDateTime);
+        var before = TimeProvider.System.GetUtcNow();
+
+        await RecordAsync(item, Settled(null, "Old?", "Yes", new SettledAnswer(SeedIds.Users.Tom, on, AnswerKind.Recommended, null, null)));
+
+        var after = TimeProvider.System.GetUtcNow();
+        await using var connection = await OpenDatabaseAsync();
+        var raised = (await AskRows.EventsAsync(connection, item)).Single(e => e.Kind == "raised");
+        raised.At.ShouldBeInRange(before.AddSeconds(-1), after.AddSeconds(1));
+        (await AskRows.DecisionsAsync(connection, item)).Single().CreatedAt.ShouldBeInRange(before.AddSeconds(-1), after.AddSeconds(1));
+    }
+
+    private async Task<ApiException> RefusedAsync(Guid item, params DecisionRecord[] records)
+    {
+        var refused = await Should.ThrowAsync<ApiException>(() => RecordAsync(item, records));
+        refused.Code.ShouldBe(ApiErrorCodes.Validation);
+        refused.Field.ShouldBe("decisions");
+        return refused;
+    }
+
+    private async Task NothingWrittenAsync(Guid item)
+    {
+        await using var connection = await OpenDatabaseAsync();
+        (await AskRows.DecisionsAsync(connection, item)).ShouldBeEmpty();
+        (await AskRows.EventsAsync(connection, item)).ShouldBeEmpty();
+    }
+
     private static DecisionRecord Open(int? number, string question, string recommended, params string[] alternatives)
         => new(number, question, recommended, alternatives, null);
 

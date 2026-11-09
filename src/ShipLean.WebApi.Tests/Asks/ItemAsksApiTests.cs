@@ -5,6 +5,7 @@ using Dapper;
 using Npgsql;
 using ShipLean.Contracts.Asks;
 using ShipLean.Contracts.Errors;
+using ShipLean.Core;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Asks;
 using ShipLean.TestSupport.Builders;
@@ -21,7 +22,7 @@ public class ItemAsksApiTests : ApiFixture
     // The wire carries enums as camelCase strings, which JsonSerializerOptions.Web (what GetJsonAsync reads with) does not.
     private static readonly JsonSerializerOptions WireOptions = new(JsonSerializerDefaults.Web)
     {
-        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, allowIntegerValues: false) },
     };
 
     private async Task<ItemAsksDto> GetAsksAsync(string url)
@@ -34,7 +35,7 @@ public class ItemAsksApiTests : ApiFixture
 
     private static string Url(Guid id) => $"api/work-items/{id}/asks";
 
-    private static async Task<Guid> ItemAsync(NpgsqlConnection connection, string type, Guid createdBy, Guid? assignee = null, Guid? parent = null)
+    private static async Task<Guid> ItemAsync(NpgsqlConnection connection, string type, Guid createdBy, Guid? assignee = null, Guid? parent = null, string? backlogOrder = null, Guid? state = null)
     {
         var builder = new WorkItemBuilder(SeedIds.Projects.Ship).WithType(type);
         if (assignee is { } a)
@@ -45,6 +46,16 @@ public class ItemAsksApiTests : ApiFixture
         if (parent is { } p)
         {
             builder.WithParent(p);
+        }
+
+        if (backlogOrder is not null)
+        {
+            builder.WithBacklogOrder(backlogOrder);
+        }
+
+        if (state is { } st)
+        {
+            builder.WithState(st);
         }
 
         var id = await builder.InsertAsync(connection);
@@ -80,6 +91,19 @@ public class ItemAsksApiTests : ApiFixture
         asks.Owner.ShouldNotBeNull().Id.ShouldBe(SeedIds.Users.Mei);
         asks.OwnerIsCreator.ShouldBeTrue();
         asks.OwnerIsMe.ShouldBeFalse();
+    }
+
+    [Test]
+    public async Task GetAsks_WhenCallerCreatedItUnassigned_ShouldBeMine()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var item = await ItemAsync(connection, "story", SeedIds.Users.Joel);
+
+        var asks = await GetAsksAsync(Url(item));
+
+        asks.Owner.ShouldNotBeNull().Id.ShouldBe(SeedIds.Users.Joel);
+        asks.OwnerIsCreator.ShouldBeTrue();
+        asks.OwnerIsMe.ShouldBeTrue();
     }
 
     [Test]
@@ -122,7 +146,9 @@ public class ItemAsksApiTests : ApiFixture
     {
         await using var connection = await OpenDatabaseAsync();
         var item = await ItemAsync(connection, "story", SeedIds.Users.Mei);
-        var comment = await new CommentBuilder(item).WithAuthor(SeedIds.Users.Mei).WithBody("**Yes**, behind a flag").InsertAsync(connection);
+        var written = TestDates.Today.AddDays(-10);
+        var comment = await new CommentBuilder(item).WithAuthor(SeedIds.Users.Mei).WithBody("**Yes**, behind a flag").WithCreatedAt(written).InsertAsync(connection);
+        await connection.ExecuteAsync("UPDATE comment SET agent_name = @name WHERE id = @comment", new { name = "Claude Code (test)", comment });
         await new QuestionBuilder(item).Answered(comment, SeedIds.Users.Mei, AskDefaults.Now()).BuildAsync(connection);
 
         var asks = await GetAsksAsync(Url(item));
@@ -134,6 +160,8 @@ public class ItemAsksApiTests : ApiFixture
         answer.Body.ShouldBe("**Yes**, behind a flag");
         answer.BodyHtml.ShouldContain("<strong>Yes</strong>");
         answer.By.ShouldNotBeNull().Id.ShouldBe(SeedIds.Users.Mei);
+        answer.AgentName.ShouldBe("Claude Code (test)");
+        answer.AtLabel.ShouldBe(DisplayDate.Relative(answer.At, TimeProvider.System));
         asks.OpenQuestions.ShouldBe(0);
     }
 
@@ -185,6 +213,25 @@ public class ItemAsksApiTests : ApiFixture
         child.Owner.ShouldNotBeNull().Id.ShouldBe(SeedIds.Users.Mei);
         asks.WaitingChildren.ShouldNotContain(c => c.Id == quiet || c.Id == settled);
         (await GetAsksAsync(Url(waiting))).WaitingChildren.ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task GetAsks_WhenFeatureHasSeveralWaitingChildren_ShouldListThemInBacklogOrderWithoutRemovedOnes()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var feature = await ItemAsync(connection, "feature", SeedIds.Users.Joel);
+        var later = await ItemAsync(connection, "story", SeedIds.Users.Mei, parent: feature, backlogOrder: "m2");
+        var earlier = await ItemAsync(connection, "bug", SeedIds.Users.Mei, parent: feature, backlogOrder: "m1");
+        var removed = await ItemAsync(connection, "story", SeedIds.Users.Mei, parent: feature, backlogOrder: "m0", state: SeedIds.States.Ship.StoryRemoved);
+        // The removed child is ranked first and the later-ranked story is built first, so only the filter and the ORDER BY give this result.
+        foreach (var child in new[] { later, earlier, removed })
+        {
+            await new QuestionBuilder(child).BuildAsync(connection);
+        }
+
+        var asks = await GetAsksAsync(Url(feature));
+
+        asks.WaitingChildren.Select(c => c.Id).ShouldBe([earlier, later]);
     }
 
     [Test]

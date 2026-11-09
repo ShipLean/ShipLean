@@ -36,10 +36,12 @@ public sealed class DecisionRecorder(
             ?? throw ApiException.NotFound("That work item does not exist.");
         await RequireSettlersAsync(connection, transaction, projectId, cleaned, cancellationToken);
 
-        var created = new List<int>();
-        var updated = new List<int>();
-        foreach (var record in cleaned.Where(r => r.Number is not null).Concat(cleaned.Where(r => r.Number is null)))
+        // Numbers are reported in input order, so a caller can match them to what it sent.
+        var created = new SortedDictionary<int, int>();
+        var updated = new SortedDictionary<int, int>();
+        foreach (var position in Enumerable.Range(0, cleaned.Count).OrderBy(i => cleaned[i].Number is null))
         {
+            var record = cleaned[position];
             var existing = record.Number is { } number
                 ? await connection.QuerySingleOrDefaultAsync<ExistingDecision>(new CommandDefinition(
                     """
@@ -52,7 +54,7 @@ public sealed class DecisionRecorder(
             {
                 var next = record.Number ?? await AskNumbers.NextDecisionAsync(transaction, workItemId, cancellationToken);
                 await CreateAsync(transaction, workItemId, next, record, actor, cancellationToken);
-                created.Add(next);
+                created.Add(position, next);
             }
             else if (existing.State != "open")
             {
@@ -64,7 +66,7 @@ public sealed class DecisionRecorder(
             }
             else if (await EditAsync(transaction, workItemId, existing, record, actor, cancellationToken))
             {
-                updated.Add(record.Number!.Value);
+                updated.Add(position, record.Number!.Value);
             }
         }
 
@@ -74,7 +76,7 @@ public sealed class DecisionRecorder(
             await events.PublishAsync(new AsksChanged(projectId, workItemId));
         }
 
-        return new RecordedDecisions(created, updated);
+        return new RecordedDecisions(created.Values.ToList(), updated.Values.ToList());
     }
 
     private static async Task CreateAsync(
@@ -155,14 +157,19 @@ public sealed class DecisionRecorder(
     private static async Task RequireSettlersAsync(
         NpgsqlConnection connection, NpgsqlTransaction transaction, Guid projectId, IReadOnlyList<DecisionRecord> records, CancellationToken cancellationToken)
     {
-        foreach (var userId in records.Select(r => r.Settled?.ByUserId).OfType<Guid>().Distinct())
+        for (var position = 0; position < records.Count; position++)
         {
+            if (records[position].Settled?.ByUserId is not { } userId)
+            {
+                continue;
+            }
+
             var member = await connection.ExecuteScalarAsync<bool>(new CommandDefinition(
                 "SELECT EXISTS (SELECT 1 FROM project_member WHERE project_id = @projectId AND user_id = @userId AND archived_at IS NULL)",
                 new { projectId, userId }, transaction, cancellationToken: cancellationToken));
             if (!member)
             {
-                throw ApiException.Validation("A settled decision must be answered by a member of the project.", Field);
+                throw ApiException.Validation($"{Label(records[position], position)}: a settled decision must be answered by a member of the project.", Field);
             }
         }
     }
@@ -176,63 +183,77 @@ public sealed class DecisionRecorder(
         }
 
         var cleaned = new List<DecisionRecord>(records.Count);
-        foreach (var record in records)
+        for (var position = 0; position < records.Count; position++)
         {
+            var record = records[position];
             if (record is null)
             {
-                throw ApiException.Validation("A decision cannot be empty.", Field);
+                throw ApiException.Validation($"Decision {position + 1}: a decision cannot be empty.", Field);
             }
 
-            var question = Required(record.Question, "question");
-            var recommended = Required(record.Recommended, "recommended answer");
+            var label = Label(record, position);
+            var question = Required(record.Question, "question", label);
+            var recommended = Required(record.Recommended, "recommended answer", label);
             if (record.Number is <= 0)
             {
-                throw ApiException.Validation("A decision number must be greater than 0.", Field);
+                throw ApiException.Validation($"{label}: a decision number must be greater than 0.", Field);
             }
 
-            var alternatives = (record.Alternatives ?? []).Select(a => Required(a, "alternative")).ToList();
+            var alternatives = (record.Alternatives ?? []).Select(a => Required(a, "alternative", label)).ToList();
             if (alternatives.Count > MaxAlternatives)
             {
-                throw ApiException.Validation($"A decision has at most {MaxAlternatives} alternatives.", Field);
+                throw ApiException.Validation($"{label}: a decision has at most {MaxAlternatives} alternatives.", Field);
             }
 
             if (alternatives.Contains(recommended, StringComparer.Ordinal))
             {
-                throw ApiException.Validation("An alternative must differ from the recommended answer.", Field);
+                throw ApiException.Validation($"{label}: an alternative must differ from the recommended answer.", Field);
             }
 
-            var settled = record.Settled is { } s ? ValidSettled(s, alternatives) : null;
+            var settled = record.Settled is { } s ? ValidSettled(s, recommended, alternatives, label) : null;
             cleaned.Add(new DecisionRecord(record.Number, question, recommended, alternatives, settled));
         }
 
-        if (cleaned.Where(r => r.Number is not null).GroupBy(r => r.Number).Any(g => g.Count() > 1))
+        if (cleaned.Where(r => r.Number is not null).GroupBy(r => r.Number).FirstOrDefault(g => g.Count() > 1) is { } duplicate)
         {
-            throw ApiException.Validation("Each decision number can appear once in a call.", Field);
+            throw ApiException.Validation($"D{duplicate.Key}: each decision number can appear once in a call.", Field);
         }
 
         return cleaned;
     }
 
-    private static SettledAnswer ValidSettled(SettledAnswer settled, IReadOnlyList<string> alternatives) => settled.Kind switch
+    private static string Label(DecisionRecord record, int position) =>
+        record.Number is { } number ? $"D{number}" : $"Decision {position + 1}";
+
+    private static SettledAnswer ValidSettled(SettledAnswer settled, string recommended, IReadOnlyList<string> alternatives, string label) => settled.Kind switch
     {
         AnswerKind.Recommended => settled with { AlternativeIndex = null, Text = null },
         AnswerKind.Alternative when settled.AlternativeIndex is { } index && index >= 0 && index < alternatives.Count
             => settled with { Text = null },
-        AnswerKind.Alternative => throw ApiException.Validation("A settled alternative needs the index of one of the alternatives.", Field),
-        AnswerKind.Own => settled with { AlternativeIndex = null, Text = Required(settled.Text, "own answer") },
-        _ => throw ApiException.Validation("A settled decision needs an answer kind.", Field),
+        AnswerKind.Alternative => throw ApiException.Validation($"{label}: a settled alternative needs the index of one of the alternatives.", Field),
+        AnswerKind.Own => OwnAnswer(settled, recommended, alternatives, label),
+        _ => throw ApiException.Validation($"{label}: a settled decision needs an answer kind.", Field),
     };
 
-    private static string Required(string? text, string what)
+    // An own answer that repeats the recommended answer or an alternative is the same answer: refuse it rather than store a second spelling.
+    private static SettledAnswer OwnAnswer(SettledAnswer settled, string recommended, IReadOnlyList<string> alternatives, string label)
+    {
+        var text = Required(settled.Text, "own answer", label);
+        return text == recommended || alternatives.Contains(text, StringComparer.Ordinal)
+            ? throw ApiException.Validation($"{label}: an own answer must differ from the recommended answer and the alternatives; settle with that answer instead.", Field)
+            : settled with { AlternativeIndex = null, Text = text };
+    }
+
+    private static string Required(string? text, string what, string label)
     {
         if (string.IsNullOrWhiteSpace(text))
         {
-            throw ApiException.Validation($"A decision needs its {what}.", Field);
+            throw ApiException.Validation($"{label}: a decision needs its {what}.", Field);
         }
 
         var trimmed = text.Trim();
         return trimmed.Length > MaxText
-            ? throw ApiException.Validation($"A decision's {what} is at most {MaxText} characters.", Field)
+            ? throw ApiException.Validation($"{label}: a decision's {what} is at most {MaxText} characters.", Field)
             : trimmed;
     }
 

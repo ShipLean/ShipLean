@@ -26,6 +26,7 @@ public sealed class ItemAsks(NpgsqlDataSource dataSource, ICurrentUser currentUs
             throw ApiException.NotFound("That work item does not exist.");
         }
 
+        // The answer comment is joined with no archived filter: an archived comment still shows as the answer.
         var questions = (await connection.QueryAsync<QuestionRow>(new CommandDefinition(
             """
             SELECT q.id, q.number, q.text, q.state, q.created_by_user_id AS askedBy, q.created_agent_name AS agentName, q.created_at AS askedAt,
