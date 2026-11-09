@@ -1,20 +1,11 @@
-// @vitest-environment jsdom
-// TODO: jsdom only for the sign-in redirect cases, which read window.location; they move to the SPA's
-// webPlatform.test.ts with the platform seam, and this file then runs in plain Node like the rest of the core.
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import errors from '../../../ShipLean.TestSupport/DtoFixtures/errors/api-error.json';
+import type { Platform, UnauthorizedReason } from '../platform';
 
-// A fresh module per test, as each page load gets: the client remembers a sign-in redirect it has started.
+// A fresh module per test, as each page load gets a new client id; the platform module is fresh with it.
 let client: typeof import('./client');
-
-const assign = vi.fn();
-const HERE = encodeURIComponent('/p/SHIP/sprints?x=1');
-const STATE_ENDED = `/login?state=ended&returnUrl=${HERE}`;
-const STATE_CHANGE = `/login?state=change&returnUrl=${HERE}`;
-
-function stubLocation(pathname: string, search = '') {
-  vi.stubGlobal('location', { pathname, search, assign });
-}
+let seam: typeof import('../platform');
+let reasons: UnauthorizedReason[];
 
 function stubFetch(response: Response) {
   const fetchStub = vi.fn().mockResolvedValue(response);
@@ -25,11 +16,21 @@ function stubFetch(response: Response) {
 const apiError = (status: number, code: string, error: string) =>
   new Response(JSON.stringify({ error, code }), { status });
 
+// A host that records what the client tells it, with its own origin, headers and credentials when a test gives them.
+function host(overrides: Partial<Platform> = {}): Platform {
+  return {
+    ...seam.platform(),
+    onUnauthorized: (reason) => reasons.push(reason),
+    ...overrides,
+  };
+}
+
 beforeEach(async () => {
-  assign.mockReset();
-  stubLocation('/p/SHIP/sprints', '?x=1');
   vi.resetModules();
+  seam = await import('../platform');
   client = await import('./client');
+  reasons = [];
+  seam.configurePlatform(host());
 });
 
 afterEach(() => {
@@ -47,7 +48,7 @@ test('client_WhenApiErrors_ShouldThrowApiRequestError', async () => {
     code: 'conflict',
     message: 'Someone else changed it.',
   });
-  expect(assign).not.toHaveBeenCalled();
+  expect(reasons).toEqual([]);
 });
 
 test('client_WhenErrorCarriesAField_ShouldKeepItOnTheBody', async () => {
@@ -97,40 +98,6 @@ test('client_WhenErrorBodyIsNotJson_ShouldBeInternalError', async () => {
   expect(error).toMatchObject({ status: 502, code: 'internal_error' });
 });
 
-test('client_When401_ShouldRedirectToLogin', async () => {
-  stubFetch(apiError(401, 'unauthorized', 'Sign in.'));
-
-  const error = await client.api.get('/api/things').catch((e: unknown) => e);
-
-  expect(error).toMatchObject({ status: 401, code: 'unauthorized' });
-  expect(assign).toHaveBeenCalledWith(
-    '/login?returnUrl=' + encodeURIComponent('/p/SHIP/sprints?x=1'),
-  );
-});
-
-test('client_When401OnLogin_ShouldNotRedirect', async () => {
-  stubLocation('/login', '?returnUrl=%2F');
-  stubFetch(apiError(401, 'unauthorized', 'Wrong email or password.'));
-
-  const error = await client.api.post('/api/auth/login', {}).catch((e: unknown) => e);
-
-  expect(error).toMatchObject({ status: 401, message: 'Wrong email or password.' });
-  expect(assign).not.toHaveBeenCalled();
-});
-
-test.each([['/LOGIN'], ['/login/'], ['/login//']])(
-  'client_When401OnAnotherSpellingOfTheSignInPage_ShouldNotRedirect (%s)',
-  async (pathname) => {
-    stubLocation(pathname);
-    stubFetch(apiError(401, 'unauthorized', 'Wrong email or password.'));
-
-    const error = await client.api.post('/api/auth/login', {}).catch((e: unknown) => e);
-
-    expect(error).toMatchObject({ status: 401, message: 'Wrong email or password.' });
-    expect(assign).not.toHaveBeenCalled();
-  },
-);
-
 test('client_ShouldSendTheClientHeader', async () => {
   const fetchStub = stubFetch(new Response(JSON.stringify({ ok: true }), { status: 200 }));
 
@@ -164,43 +131,107 @@ test('client_WhenRandomUuidIsMissing_ShouldBuildAnIdFromRandomValues', () => {
   expect(client.newClientId()).toBe('ab'.repeat(16));
 });
 
-test('client_WhenSessionEnded_ShouldOpenLoginWithState', async () => {
+test.each([
+  [401, 'unauthorized', 'unauthorized'],
+  [401, 'session_ended', 'session_ended'],
+  [403, 'password_change_required', 'password_change_required'],
+] as const)(
+  'client_WhenTheSessionIsLost_ShouldTellTheHostWhy (%s %s)',
+  async (status, code, reason) => {
+    stubFetch(apiError(status, code, 'Sign in.'));
+
+    const error = await client.api.get('/api/things').catch((e: unknown) => e);
+
+    expect(error).toMatchObject({ status, code });
+    expect(reasons).toEqual([reason]);
+  },
+);
+
+test('client_WhenA401HasNoErrorBody_ShouldTellTheHostUnauthorized', async () => {
+  stubFetch(new Response(null, { status: 401 }));
+
+  await client.api.get('/api/things').catch(() => undefined);
+
+  expect(reasons).toEqual(['unauthorized']);
+});
+
+test('client_WhenAFormIsRefusedForALostSession_ShouldTellTheHost', async () => {
   stubFetch(apiError(401, 'session_ended', 'Your session ended. Sign in again.'));
 
-  const error = await client.api.get('/api/things').catch((e: unknown) => e);
+  const error = await client
+    .sendForm('POST', '/api/things', new FormData(), 'Too large.')
+    .catch((e: unknown) => e);
 
   expect(error).toMatchObject({ status: 401, code: 'session_ended' });
-  expect(assign).toHaveBeenCalledWith(STATE_ENDED);
+  expect(reasons).toEqual(['session_ended']);
 });
 
-test('client_WhenPasswordChangeRequired_ShouldOpenLoginWithState', async () => {
-  stubFetch(apiError(403, 'password_change_required', 'Choose your own password first.'));
+test('client_WhenForbiddenForAnotherReason_ShouldNotTellTheHost', async () => {
+  stubFetch(apiError(403, 'forbidden', 'Not yours.'));
 
-  const error = await client.api.get('/api/things').catch((e: unknown) => e);
+  await client.api.get('/api/things').catch(() => undefined);
 
-  expect(error).toMatchObject({ status: 403, code: 'password_change_required' });
-  expect(assign).toHaveBeenCalledWith(STATE_CHANGE);
+  expect(reasons).toEqual([]);
 });
 
-test('client_WhenPlain401sFollowSessionEnded_ShouldKeepTheEndedRedirect', async () => {
-  // The session_ended answer deletes the cookie, so requests sent after it answer a plain 401 before the page has left.
-  stubFetch(apiError(401, 'session_ended', 'Your session ended. Sign in again.'));
-  await client.api.get('/api/me').catch(() => undefined);
-  stubFetch(apiError(401, 'unauthorized', 'Sign in to continue.'));
-  await client.api.get('/api/projects').catch(() => undefined);
+test.each([
+  [400, 'validation'],
+  [401, 'unauthorized'],
+  [401, 'session_ended'],
+  [403, 'password_change_required'],
+] as const)(
+  'client_WhenASignInRequestIsRefused_ShouldNeverTellTheHost (%s %s)',
+  async (status, code) => {
+    stubFetch(apiError(status, code, 'Sign-in expired. Try again.'));
 
-  expect(assign).toHaveBeenCalledTimes(1);
-  expect(assign).toHaveBeenCalledWith(STATE_ENDED);
+    const error = await client.api
+      .post('/api/auth/device-sessions/exchange', {}, { signIn: true })
+      .catch((e: unknown) => e);
+
+    expect(error).toMatchObject({ status, code });
+    expect(reasons).toEqual([]);
+  },
+);
+
+test('client_ShouldSendToTheHostsOriginWithItsHeadersAndCredentials', async () => {
+  seam.configurePlatform(
+    host({
+      apiOrigin: () => 'https://ship.example.com:8443',
+      authHeaders: () => ({ Authorization: 'Bearer shl_dev_k3Xq9TbA' }),
+      credentials: () => 'omit',
+    }),
+  );
+  const fetchStub = stubFetch(new Response(JSON.stringify({ ok: true }), { status: 200 }));
+
+  await client.api.put('/api/things/1', { name: 'x' });
+
+  const [url, init] = fetchStub.mock.calls[0] as [string, RequestInit];
+  expect(url).toBe('https://ship.example.com:8443/api/things/1');
+  expect(init.credentials).toBe('omit');
+  expect(init.headers).toEqual({
+    Authorization: 'Bearer shl_dev_k3Xq9TbA',
+    [client.CLIENT_HEADER]: client.clientId,
+    'Content-Type': 'application/json',
+  });
 });
 
-test('client_WhenSessionEndedFollowsAPlain401_ShouldOpenLoginWithState', async () => {
-  stubFetch(apiError(401, 'unauthorized', 'Sign in to continue.'));
-  await client.api.get('/api/projects').catch(() => undefined);
-  stubFetch(apiError(401, 'session_ended', 'Your session ended. Sign in again.'));
-  await client.api.get('/api/me').catch(() => undefined);
+test('client_WhenSendingAForm_ShouldUseTheHostsOriginHeadersAndCredentials', async () => {
+  seam.configurePlatform(
+    host({
+      apiOrigin: () => 'https://ship.example.com',
+      authHeaders: () => ({ Authorization: 'Bearer shl_dev_k3Xq9TbA' }),
+      credentials: () => 'omit',
+    }),
+  );
+  const fetchStub = stubFetch(new Response(JSON.stringify({ ok: true }), { status: 200 }));
 
-  expect(assign).toHaveBeenLastCalledWith(STATE_ENDED);
-  stubFetch(apiError(401, 'session_ended', 'Your session ended. Sign in again.'));
-  await client.api.get('/api/me').catch(() => undefined);
-  expect(assign).toHaveBeenCalledTimes(2);
+  await client.sendForm('POST', '/api/uploads', new FormData(), 'Too large.');
+
+  const [url, init] = fetchStub.mock.calls[0] as [string, RequestInit];
+  expect(url).toBe('https://ship.example.com/api/uploads');
+  expect(init.credentials).toBe('omit');
+  expect(init.headers).toEqual({
+    Authorization: 'Bearer shl_dev_k3Xq9TbA',
+    [client.CLIENT_HEADER]: client.clientId,
+  });
 });

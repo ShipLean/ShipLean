@@ -1,12 +1,6 @@
-// The one way the SPA talks to the API. It sends the per-tab client header, throws ApiRequestError for any non-2xx,
-// and sends a lost session to the sign-in page.
-import { isLoginPath, LOGIN_PATH } from '../loginPath';
-
-// TODO: the core has no DOM types; this is the one place it still reaches the browser, to send a lost session to the
-// sign-in page. The platform seam's onUnauthorized replaces it (and this declaration) in the next wave.
-declare const window: {
-  location: { pathname: string; search: string; assign(url: string): void };
-};
+// The one way the clients talk to the API. It sends the per-tab client header and the host's credentials, throws
+// ApiRequestError for any non-2xx, and tells the host when the session is lost.
+import { platform } from '../platform';
 
 // The error body every endpoint returns (C#: ShipLean.Contracts.Errors.ApiError and ApiErrorCodes).
 export const apiErrorCodes = [
@@ -78,32 +72,6 @@ export function newClientId(): string {
 }
 export const clientId = newClientId();
 
-// The sign-in page this page load is already leaving for. When a session ends, several requests fail together: the
-// first answers session_ended and its response deletes the cookie, so the ones sent after it answer a plain 401. Each
-// later assign() would replace the navigation already under way (location.pathname only changes once it commits), so
-// the first redirect stands, except that a named state replaces a plain one.
-let leavingFor: 'plain' | 'state' | undefined;
-
-// A 401 means the session is gone. Not on the sign-in page itself, where it is a wrong password.
-function sendToLogin() {
-  const { pathname, search } = window.location;
-  if (isLoginPath(pathname) || leavingFor !== undefined) return;
-  leavingFor = 'plain';
-  window.location.assign(`${LOGIN_PATH}?returnUrl=${encodeURIComponent(pathname + search)}`);
-}
-
-// The two sign-in states the server names with a code: the session ended (password or stamp changed elsewhere, or the
-// account was disabled), or the one-time password must be replaced first. Both open the sign-in page in that state,
-// with the path to come back to.
-function sendToLoginState(state: 'ended' | 'change') {
-  const { pathname, search } = window.location;
-  if (isLoginPath(pathname) || leavingFor === 'state') return;
-  leavingFor = 'state';
-  window.location.assign(
-    `${LOGIN_PATH}?state=${state}&returnUrl=${encodeURIComponent(pathname + search)}`,
-  );
-}
-
 async function errorOf(response: Response): Promise<ApiRequestError> {
   try {
     const body: unknown = await response.json();
@@ -118,12 +86,15 @@ async function errorOf(response: Response): Promise<ApiRequestError> {
   );
 }
 
-// Every non-2xx throws an ApiRequestError, and a lost session goes to sign-in; JSON and multipart requests share this.
-async function refuse(response: Response): Promise<ApiRequestError> {
+// Every non-2xx throws an ApiRequestError, and a lost session goes to the host; JSON and multipart requests share this.
+// A sign-in call's 401 or 400 is a refusal, not a lost session, so it never tells the host.
+async function refuse(response: Response, signIn: boolean): Promise<ApiRequestError> {
   const error = await errorOf(response);
-  if (error.code === 'session_ended') sendToLoginState('ended');
-  else if (error.code === 'password_change_required') sendToLoginState('change');
-  else if (response.status === 401) sendToLogin();
+  if (signIn) return error;
+  if (error.code === 'session_ended') platform().onUnauthorized('session_ended');
+  else if (error.code === 'password_change_required')
+    platform().onUnauthorized('password_change_required');
+  else if (response.status === 401) platform().onUnauthorized('unauthorized');
   return error;
 }
 
@@ -145,6 +116,8 @@ async function readBody<T>(response: Response): Promise<T> {
 
 export interface RequestOptions {
   signal?: AbortSignal;
+  // A sign-in call (the device-session exchange): its refusal never reaches the host's onUnauthorized.
+  signIn?: boolean;
 }
 
 async function request<T>(
@@ -153,21 +126,22 @@ async function request<T>(
   body: unknown,
   options: RequestOptions = {},
 ): Promise<T> {
-  const headers: Record<string, string> = { [CLIENT_HEADER]: clientId };
+  const host = platform();
+  const headers: Record<string, string> = { ...host.authHeaders(), [CLIENT_HEADER]: clientId };
   if (body !== undefined) headers['Content-Type'] = 'application/json';
-  const response = await fetch(path, {
+  const response = await fetch(host.apiOrigin() + path, {
     method,
     headers,
     body: body === undefined ? undefined : JSON.stringify(body),
-    credentials: 'same-origin',
+    credentials: host.credentials(),
     signal: options.signal,
   });
-  if (!response.ok) throw await refuse(response);
+  if (!response.ok) throw await refuse(response, options.signIn === true);
   return readBody<T>(response);
 }
 
 /**
- * Sends multipart form data; the browser sets the form's content type and boundary. Errors and sign-in redirects are
+ * Sends multipart form data; the browser sets the form's content type and boundary. Errors and lost sessions are
  * the JSON requests'. The server's request cap answers 413 with no body, so `tooLarge` is the message for that.
  */
 export async function sendForm<T>(
@@ -176,14 +150,15 @@ export async function sendForm<T>(
   form: FormData,
   tooLarge: string,
 ): Promise<T> {
-  const response = await fetch(path, {
+  const host = platform();
+  const response = await fetch(host.apiOrigin() + path, {
     method,
-    headers: { [CLIENT_HEADER]: clientId },
+    headers: { ...host.authHeaders(), [CLIENT_HEADER]: clientId },
     body: form,
-    credentials: 'same-origin',
+    credentials: host.credentials(),
   });
   if (!response.ok) {
-    const error = await refuse(response);
+    const error = await refuse(response, false);
     throw response.status === 413 && error.code === 'internal_error'
       ? new ApiRequestError(tooLarge, 413, 'validation')
       : error;
