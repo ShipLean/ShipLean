@@ -101,13 +101,17 @@ jobs:
           set -euo pipefail
           if [ "$EVENT_NAME" = "pull_request" ]; then
             changed=$(git diff --name-only "$BASE_SHA")
-            if ! grep -Eq '^(src/(pnpm-lock\.yaml|package\.json|pnpm-workspace\.yaml)|src/ShipLean\.Mobile/.*|src/ShipLean\.Core\.Client/.*|design/tokens\.json)$' <<<"$changed"; then
-              echo "Skipping the mobile checks: this pull request changes nothing under src/ShipLean.Mobile, the core, the workspace files or design/tokens.json"
+            if ! grep -Eq '^(src/(pnpm-lock\.yaml|package\.json|pnpm-workspace\.yaml)|src/ShipLean\.Mobile/.*|src/ShipLean\.Core\.Client/.*|design/tokens\.json|\.github/workflows/ci\.yml)$' <<<"$changed"; then
+              echo "Skipping the mobile checks: this pull request changes nothing under src/ShipLean.Mobile, the core, the workspace files, design/tokens.json or ci.yml"
               exit 0
             fi
           fi
-          pnpm run format:check && pnpm run lint && pnpm run typecheck
-          pnpm test && pnpm run test:screens
+          # One command per line: under set -e a failure before the last command of an && list doesn't stop the script.
+          pnpm run format:check
+          pnpm run lint
+          pnpm run typecheck
+          pnpm test
+          pnpm run test:screens
           pnpm run bundle
       # A hand run (workflow_dispatch) has no base, so it runs the whole suite. package.json and
       # vite.config.ts already make Vitest do that (--changed forceRerunTriggers). The workspace files,
@@ -124,7 +128,9 @@ jobs:
           DEVFEEDBACK_TEST_TOKEN: ${{ secrets.DEVFEEDBACK_TEST_TOKEN }}
         run: |
           set -euo pipefail
-          pnpm run format:check && pnpm run lint && pnpm run typecheck
+          pnpm run format:check
+          pnpm run lint
+          pnpm run typecheck
           if [ "$EVENT_NAME" != "pull_request" ]; then
             pnpm test
           else
