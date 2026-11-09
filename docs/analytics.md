@@ -53,7 +53,7 @@ Every event carries these (a key is left out when its value is null). The consta
 | `duration_ms`, `source` | `source` is `tool:<name>`, `api:<Controller>.<Action>`, `screen` or `system:<Class>` |
 | `shiplean_version`, `instance_host` | this build and this instance |
 
-Extra properties are the keys in `UsageProps` (`screen`, `board`, `provider`, `count`, `column`, `direction`, `mode` (the backlog mode on a backlog screen's `screen.viewed`), `agent_name` on `agent.connected` and `agent.consent_denied`, `trigger` (`scheduled` or `manual`) on `backup.run_finished`, `answer_kind` (`recommended`, `alternative` or `own`) on `decision.confirmed` and `decision.changed`). A standard property wins over an extra one with the same key.
+Extra properties are the keys in `UsageProps` (`screen`, `board`, `provider`, `count`, `column`, `direction`, `mode` (the backlog mode on a backlog screen's `screen.viewed`), `agent_name` on `agent.connected` and `agent.consent_denied`, `trigger` (`scheduled` or `manual`) on `backup.run_finished`, `answer_kind` (`recommended`, `alternative` or `own`) on `decision.changed`). A standard property wins over an extra one with the same key.
 
 The distinct id of an actor is `user:<guid>`, `agent:<authorizationId>` (`agent:gw-<userId>` for the gateway) or `system`. Person properties (`kind`, `user_id`, `agent_*`) go to the provider as an identify (Umami) or `$set` (PostHog). `name` and `email` are added for users only when the instance's **Send people's names** toggle is on, which is off by default.
 
@@ -230,8 +230,8 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `retro.actions_decided` | `decide_retro_actions` |  |
 | `decision.recorded` | `record_decisions` |  |
 | `decision.answered` | `answer_decision` |  |
-| `decision.confirmed` |  | self-emitted: `WorkItemDecisions.Confirm` (property `count`) |
-| `decision.changed` |  | self-emitted: `WorkItemDecisions.Change` (property `answer_kind`) |
+| `decision.confirmed` |  | self-emitted: `WorkItemDecisions.Confirm` (property `count` only) |
+| `decision.changed` |  | self-emitted: `WorkItemDecisions.Change` (properties `answer_kind` and `count`, always 1) |
 | `decision.withdrawn` |  | `WorkItemDecisions.Withdraw` |
 | `decision.discussed` |  | `WorkItemDecisions.Discuss` |
 | `question.asked` | `ask` |  |

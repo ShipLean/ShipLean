@@ -141,6 +141,11 @@ public sealed class DecisionAnswers(
             throw ApiException.Conflict($"D{decision.Number} is withdrawn: it cannot be changed.");
         }
 
+        if (decision.State == "confirmed" && change.Kind == AnswerKind.Recommended)
+        {
+            throw ApiException.Conflict($"D{decision.Number} is already confirmed on the recommended answer.");
+        }
+
         var (text, kind, index, state) = change.Kind switch
         {
             AnswerKind.Recommended => (decision.Recommended, "recommended", (int?)null, "confirmed"),

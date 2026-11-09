@@ -9,12 +9,14 @@ using ShipLean.Contracts;
 using ShipLean.Contracts.Asks;
 using ShipLean.Contracts.Comments;
 using ShipLean.Contracts.Errors;
+using ShipLean.Contracts.Events;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Asks;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Contracts.Mcp;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
+using ShipLean.WebApi.Tests.Sprints.Api;
 
 namespace ShipLean.WebApi.Tests.Asks;
 
@@ -86,10 +88,13 @@ public class QuestionApiTests : ApiFixture
     public async Task Answer_WhenOpen_ShouldPostTaggedCommentAndMarkAnswered()
     {
         var (item, question) = await OpenQuestionAsync();
+        using var watch = new ProjectEventWatch(Host.Services.GetRequiredService<IProjectEvents>(), SeedIds.Projects.Ship);
 
         using var response = await Api.PostJsonAsync(AnswerUrl(item, 1), new AnswerQuestionRequest("Use Visa."));
 
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        (await watch.NextAsync<AsksChanged>(e => e.WorkItemId == item)).ProjectId.ShouldBe(SeedIds.Projects.Ship);
+        (await watch.NextAsync<CommentsChanged>(e => e.WorkItemId == item)).ProjectId.ShouldBe(SeedIds.Projects.Ship);
         await using var connection = await OpenDatabaseAsync();
         var stored = await AskRows.QuestionAsync(connection, question);
         (stored.State, stored.AnsweredByUserId).ShouldBe(("answered", SeedIds.Users.Joel));
@@ -102,6 +107,45 @@ public class QuestionApiTests : ApiFixture
         var tag = (await AskRows.TagAsync(connection, comment.Id)).ShouldNotBeNull();
         (tag.Kind, tag.QuestionId).ShouldBe(("answer", question));
         (await AskRows.EventsAsync(connection, item)).Select(e => (e.QuestionId, e.Kind, e.ByUserId)).ShouldBe([(question, "answered", SeedIds.Users.Joel)]);
+    }
+
+    [Test]
+    public async Task Ask_WhenTextBlank_ShouldFailValidation()
+    {
+        var item = await NewItemAsync();
+
+        var thrown = await Should.ThrowAsync<ApiException>(() => AskAsync(item, "   "));
+
+        thrown.Code.ShouldBe(ApiErrorCodes.Validation);
+        await using var connection = await OpenDatabaseAsync();
+        (await AskRows.QuestionsAsync(connection, item)).ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task Ask_WhenTextTooLong_ShouldFailValidation()
+    {
+        var item = await NewItemAsync();
+
+        var thrown = await Should.ThrowAsync<ApiException>(() => AskAsync(item, new string('x', 2_001)));
+
+        thrown.Code.ShouldBe(ApiErrorCodes.Validation);
+        await using var connection = await OpenDatabaseAsync();
+        (await AskRows.QuestionsAsync(connection, item)).ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task Answer_WhenAnswerCommentEdited_ShouldKeepAskTag()
+    {
+        var (item, _) = await OpenQuestionAsync();
+        (await Api.PostJsonAsync(AnswerUrl(item, 1), new AnswerQuestionRequest("Use Visa."))).EnsureSuccessStatusCode();
+        var comment = (await CommentsAsync(Api, item)).ShouldHaveSingleItem();
+
+        using var edit = await Api.PatchJsonAsync($"api/comments/{comment.Id}", new CommentEdit("Use Mastercard."));
+
+        edit.StatusCode.ShouldBe(HttpStatusCode.OK, await edit.Content.ReadAsStringAsync());
+        var after = (await CommentsAsync(Api, item)).ShouldHaveSingleItem();
+        after.Body.ShouldBe("Use Mastercard.");
+        (after.AskTag!.Kind, after.AskTag.Label).ShouldBe((AskTagKind.Answer, "Q1"));
     }
 
     [Test]

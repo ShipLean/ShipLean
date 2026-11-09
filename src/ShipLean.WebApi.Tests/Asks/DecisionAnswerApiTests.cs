@@ -149,6 +149,8 @@ public class DecisionAnswerApiTests : ApiFixture
 
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
         (await Api.GetJsonAsync<List<CommentDto>>($"api/work-items/{item}/comments")).ShouldBeEmpty();
+        await using var connection = await OpenDatabaseAsync();
+        (await AskRows.TagsAsync(connection, item)).ShouldBeEmpty();
     }
 
     [Test]
@@ -194,9 +196,10 @@ public class DecisionAnswerApiTests : ApiFixture
     public async Task Change_WhenBackToRecommended_ShouldConfirmAndRecordChange()
     {
         var item = await NewItemAsync();
+        await using var arrange = await OpenDatabaseAsync();
         var (id, _) = await new DecisionBuilder(item).Number(6).Recommended("Yes").Alternatives("No", "Maybe")
             .State("changed").Answer("alternative", "No", 0).AnsweredBy(SeedIds.Users.Mei, Earlier)
-            .BuildAsync(await OpenDatabaseAsync());
+            .BuildAsync(arrange);
 
         using var response = await Api.PostJsonAsync(Url(item, "6/change"), new { kind = "recommended" });
 
@@ -207,6 +210,48 @@ public class DecisionAnswerApiTests : ApiFixture
         var changed = (await AskRows.EventsAsync(connection, item)).Single(e => e.Kind == "changed");
         (changed.FromAnswer, changed.ToAnswer, changed.ToKind).ShouldBe(("No", "Yes", "recommended"));
         (await AskRows.TagsAsync(connection, item)).ShouldHaveSingleItem().Kind.ShouldBe("changed");
+    }
+
+    [Test]
+    public async Task Change_WhenKindMissing_ShouldFailValidationOnKind()
+    {
+        var item = await NewItemAsync();
+        var (id, _) = await NewDecisionAsync(item, 1);
+
+        using var response = await Api.PostJsonAsync(Url(item, "1/change"), new { note = "no kind" });
+
+        var error = await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.BadRequest);
+        (error.Code, error.Field).ShouldBe((ApiErrorCodes.Validation, "kind"));
+        await using var connection = await OpenDatabaseAsync();
+        (await AskRows.DecisionAsync(connection, id)).State.ShouldBe("open");
+    }
+
+    [Test]
+    public async Task Change_WhenConfirmedToRecommended_ShouldBeConflict()
+    {
+        var item = await NewItemAsync();
+        var (id, _) = await NewDecisionAsync(item, 1, "confirmed");
+
+        using var response = await Api.PostJsonAsync(Url(item, "1/change"), new { kind = "recommended" });
+
+        (await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.Conflict)).Code.ShouldBe(ApiErrorCodes.Conflict);
+        await using var connection = await OpenDatabaseAsync();
+        (await AskRows.DecisionAsync(connection, id)).State.ShouldBe("confirmed");
+        (await AskRows.EventsAsync(connection, item)).ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task ConfirmMany_WhenAnyNumberUnknown_ShouldBeNotFoundAndConfirmNothing()
+    {
+        var item = await NewItemAsync();
+        var (id, _) = await NewDecisionAsync(item, 1);
+
+        using var response = await Api.PostJsonAsync(Url(item, "confirm"), new { numbers = new[] { 1, 9 } });
+
+        (await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.NotFound)).Code.ShouldBe(ApiErrorCodes.NotFound);
+        await using var connection = await OpenDatabaseAsync();
+        (await AskRows.DecisionAsync(connection, id)).State.ShouldBe("open");
+        (await AskRows.EventsAsync(connection, item)).ShouldBeEmpty();
     }
 
     [Test]
@@ -319,7 +364,7 @@ public class DecisionAnswerApiTests : ApiFixture
         (tracked.Source, tracked.Properties[UsageProps.Count]).ShouldBe(("api:WorkItemDecisions.Confirm", 1));
     }
 
-    private static readonly DateTimeOffset Earlier = new(2026, 11, 9, 0, 0, 0, TimeSpan.Zero);
+    private static DateTimeOffset Earlier => TestDates.Today.AddDays(-1);
 
     private static string Url(Guid item, string tail) => $"api/work-items/{item}/decisions/{tail}";
 
