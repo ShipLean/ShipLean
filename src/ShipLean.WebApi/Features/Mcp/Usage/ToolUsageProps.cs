@@ -9,7 +9,7 @@ public static class ToolUsageProps
     public const string InputPayload = "payload";
     public const string InputInline = "inline";
 
-    public static Dictionary<string, object> For(bool toolTakesPayload, bool payloadUsed)
+    public static IReadOnlyDictionary<string, object> For(bool toolTakesPayload, bool payloadUsed)
     {
         var props = new Dictionary<string, object>();
         if (toolTakesPayload)
