@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Dapper;
 using Npgsql;
 using ShipLean.Application.Features.Backups.Engine;
@@ -10,10 +11,10 @@ public sealed class PostgresBlobInventory(string connectionString) : IBlobInvent
 {
     private readonly NpgsqlDataSource _dataSource = NpgsqlDataSource.Create(connectionString);
 
-    public async IAsyncEnumerable<string> ListKeysAsync([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+    public async IAsyncEnumerable<string> ListKeysAsync([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken);
-        await foreach (var key in connection.QueryUnbufferedAsync<string>("SELECT key FROM blob"))
+        await foreach (var key in connection.QueryUnbufferedAsync<string>("SELECT key FROM blob").WithCancellation(cancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
             yield return key;

@@ -35,4 +35,14 @@ public class PostgresBlobInventoryContractTests : BlobInventoryContract
     }
 
     protected override (IBlobStore Store, IBlobInventory Inventory) Create() => (_store, _inventory);
+
+    [Test]
+    public async Task ListKeys_WhenCancelled_ShouldThrow()
+    {
+        await _store.PutAsync("attachments/a", new MemoryStream("x"u8.ToArray()), "text/plain", CancellationToken.None);
+        using var cancelled = new CancellationTokenSource();
+        await cancelled.CancelAsync();
+
+        await Should.ThrowAsync<OperationCanceledException>(async () => await _inventory.ListKeysAsync(cancelled.Token).ToListAsync());
+    }
 }
