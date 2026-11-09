@@ -1,0 +1,511 @@
+{
+  "workItemId": "00000005-0000-4000-8001-000000000141",
+  "owner": {
+    "id": "0199f000-0000-7000-8000-000000000001",
+    "name": "Joel Dickson",
+    "initials": "JD",
+    "avatarColour": "#5b6b8c",
+    "photoUrl": null
+  },
+  "ownerIsCreator": false,
+  "ownerIsMe": true,
+  "openQuestions": 1,
+  "openDecisions": 4,
+  "questions": [
+    {
+      "id": "0000000f-0000-4000-8001-000000000001",
+      "number": 1,
+      "label": "Q1",
+      "text": "Should a card that expires this month still be selectable?",
+      "state": "open",
+      "askedBy": {
+        "id": "0199f000-0000-7000-8000-000000000001",
+        "name": "Joel Dickson",
+        "initials": "JD",
+        "avatarColour": "#5b6b8c",
+        "photoUrl": null
+      },
+      "agentName": "Claude Code (claude.ai)",
+      "askedAt": "2026-11-03T09:15:00+00:00",
+      "askedAtLabel": "3 Nov",
+      "answer": null,
+      "withdrawnAt": null,
+      "withdrawnAtLabel": null
+    },
+    {
+      "id": "0000000f-0000-4000-8001-000000000002",
+      "number": 2,
+      "label": "Q2",
+      "text": "Is there a design for the empty state, when the customer has no saved cards?",
+      "state": "answered",
+      "askedBy": {
+        "id": "0199f000-0000-7000-8000-000000000001",
+        "name": "Joel Dickson",
+        "initials": "JD",
+        "avatarColour": "#5b6b8c",
+        "photoUrl": null
+      },
+      "agentName": "Claude Code (claude.ai)",
+      "askedAt": "2026-11-03T09:16:00+00:00",
+      "askedAtLabel": "3 Nov",
+      "answer": {
+        "commentId": "00000008-0000-4000-8001-000000000901",
+        "body": "No empty state: with no saved cards, go straight to the **new-card form**.",
+        "bodyHtml": "<p>No empty state: with no saved cards, go straight to the <strong>new-card form</strong>.</p>\n",
+        "by": {
+          "id": "0199f000-0000-7000-8000-000000000001",
+          "name": "Joel Dickson",
+          "initials": "JD",
+          "avatarColour": "#5b6b8c",
+          "photoUrl": null
+        },
+        "agentName": null,
+        "at": "2026-11-04T08:40:00+00:00",
+        "atLabel": "4 Nov"
+      },
+      "withdrawnAt": null,
+      "withdrawnAtLabel": null
+    }
+  ],
+  "decisions": [
+    {
+      "id": "0000000e-0000-4000-8001-000000000001",
+      "number": 1,
+      "label": "D1",
+      "question": "Which card is selected when the page opens?",
+      "recommended": "The card used last",
+      "alternatives": [
+        "The newest card",
+        "No card: the customer picks one"
+      ],
+      "currentAnswer": "The card used last",
+      "answerKind": "recommended",
+      "alternativeIndex": null,
+      "state": "open",
+      "raisedBy": {
+        "id": "0199f000-0000-7000-8000-000000000001",
+        "name": "Joel Dickson",
+        "initials": "JD",
+        "avatarColour": "#5b6b8c",
+        "photoUrl": null
+      },
+      "raisedAgentName": "Claude Code (claude.ai)",
+      "raisedAt": "2026-11-03T09:12:00+00:00",
+      "raisedAtLabel": "3 Nov",
+      "answeredBy": null,
+      "answeredAgentName": null,
+      "answeredAt": null,
+      "answeredAtLabel": null,
+      "fromDescription": false,
+      "history": [
+        {
+          "kind": "raised",
+          "from": null,
+          "to": "The card used last",
+          "toKind": "recommended",
+          "note": null,
+          "by": {
+            "id": "0199f000-0000-7000-8000-000000000001",
+            "name": "Joel Dickson",
+            "initials": "JD",
+            "avatarColour": "#5b6b8c",
+            "photoUrl": null
+          },
+          "agentName": "Claude Code (claude.ai)",
+          "at": "2026-11-03T09:12:00+00:00",
+          "atLabel": "3 Nov",
+          "fromDescription": false
+        }
+      ]
+    },
+    {
+      "id": "0000000e-0000-4000-8001-000000000002",
+      "number": 2,
+      "label": "D2",
+      "question": "How are expired cards shown?",
+      "recommended": "Greyed out and not selectable",
+      "alternatives": [
+        "Hidden",
+        "Shown with an Update button"
+      ],
+      "currentAnswer": "Greyed out and not selectable",
+      "answerKind": "recommended",
+      "alternativeIndex": null,
+      "state": "open",
+      "raisedBy": {
+        "id": "0199f000-0000-7000-8000-000000000001",
+        "name": "Joel Dickson",
+        "initials": "JD",
+        "avatarColour": "#5b6b8c",
+        "photoUrl": null
+      },
+      "raisedAgentName": "Claude Code (claude.ai)",
+      "raisedAt": "2026-11-03T09:12:00+00:00",
+      "raisedAtLabel": "3 Nov",
+      "answeredBy": null,
+      "answeredAgentName": null,
+      "answeredAt": null,
+      "answeredAtLabel": null,
+      "fromDescription": false,
+      "history": [
+        {
+          "kind": "raised",
+          "from": null,
+          "to": "Greyed out",
+          "toKind": "recommended",
+          "note": null,
+          "by": {
+            "id": "0199f000-0000-7000-8000-000000000001",
+            "name": "Joel Dickson",
+            "initials": "JD",
+            "avatarColour": "#5b6b8c",
+            "photoUrl": null
+          },
+          "agentName": "Claude Code (claude.ai)",
+          "at": "2026-11-03T09:12:00+00:00",
+          "atLabel": "3 Nov",
+          "fromDescription": false
+        },
+        {
+          "kind": "edited",
+          "from": "Greyed out",
+          "to": "Greyed out and not selectable",
+          "toKind": "recommended",
+          "note": null,
+          "by": {
+            "id": "0199f000-0000-7000-8000-000000000001",
+            "name": "Joel Dickson",
+            "initials": "JD",
+            "avatarColour": "#5b6b8c",
+            "photoUrl": null
+          },
+          "agentName": "Claude Code (claude.ai)",
+          "at": "2026-11-03T09:40:00+00:00",
+          "atLabel": "3 Nov",
+          "fromDescription": false
+        }
+      ]
+    },
+    {
+      "id": "0000000e-0000-4000-8001-000000000003",
+      "number": 3,
+      "label": "D3",
+      "question": "What shows when the vault service is down?",
+      "recommended": "The new-card form with a notice",
+      "alternatives": [
+        "An error page",
+        "A retry button"
+      ],
+      "currentAnswer": "The new-card form with a notice",
+      "answerKind": "recommended",
+      "alternativeIndex": null,
+      "state": "open",
+      "raisedBy": {
+        "id": "0199f000-0000-7000-8000-000000000001",
+        "name": "Joel Dickson",
+        "initials": "JD",
+        "avatarColour": "#5b6b8c",
+        "photoUrl": null
+      },
+      "raisedAgentName": "Claude Code (claude.ai)",
+      "raisedAt": "2026-11-03T09:12:00+00:00",
+      "raisedAtLabel": "3 Nov",
+      "answeredBy": null,
+      "answeredAgentName": null,
+      "answeredAt": null,
+      "answeredAtLabel": null,
+      "fromDescription": false,
+      "history": [
+        {
+          "kind": "raised",
+          "from": null,
+          "to": "The new-card form with a notice",
+          "toKind": "recommended",
+          "note": null,
+          "by": {
+            "id": "0199f000-0000-7000-8000-000000000001",
+            "name": "Joel Dickson",
+            "initials": "JD",
+            "avatarColour": "#5b6b8c",
+            "photoUrl": null
+          },
+          "agentName": "Claude Code (claude.ai)",
+          "at": "2026-11-03T09:12:00+00:00",
+          "atLabel": "3 Nov",
+          "fromDescription": false
+        }
+      ]
+    },
+    {
+      "id": "0000000e-0000-4000-8001-000000000004",
+      "number": 4,
+      "label": "D4",
+      "question": "Where does the saved-card list come from?",
+      "recommended": "GET /cards on the vault service",
+      "alternatives": [
+        "A copy in our database"
+      ],
+      "currentAnswer": "GET /cards on the vault service",
+      "answerKind": "recommended",
+      "alternativeIndex": null,
+      "state": "open",
+      "raisedBy": {
+        "id": "0199f000-0000-7000-8000-000000000001",
+        "name": "Joel Dickson",
+        "initials": "JD",
+        "avatarColour": "#5b6b8c",
+        "photoUrl": null
+      },
+      "raisedAgentName": "Claude Code (claude.ai)",
+      "raisedAt": "2026-11-03T09:12:00+00:00",
+      "raisedAtLabel": "3 Nov",
+      "answeredBy": null,
+      "answeredAgentName": null,
+      "answeredAt": null,
+      "answeredAtLabel": null,
+      "fromDescription": false,
+      "history": [
+        {
+          "kind": "raised",
+          "from": null,
+          "to": "GET /cards on the vault service",
+          "toKind": "recommended",
+          "note": null,
+          "by": {
+            "id": "0199f000-0000-7000-8000-000000000001",
+            "name": "Joel Dickson",
+            "initials": "JD",
+            "avatarColour": "#5b6b8c",
+            "photoUrl": null
+          },
+          "agentName": "Claude Code (claude.ai)",
+          "at": "2026-11-03T09:12:00+00:00",
+          "atLabel": "3 Nov",
+          "fromDescription": false
+        }
+      ]
+    },
+    {
+      "id": "0000000e-0000-4000-8001-000000000005",
+      "number": 5,
+      "label": "D5",
+      "question": "How many saved cards are shown before \"Show all\"?",
+      "recommended": "Three",
+      "alternatives": [
+        "Five",
+        "All of them"
+      ],
+      "currentAnswer": "Three",
+      "answerKind": "recommended",
+      "alternativeIndex": null,
+      "state": "confirmed",
+      "raisedBy": {
+        "id": "0199f000-0000-7000-8000-000000000001",
+        "name": "Joel Dickson",
+        "initials": "JD",
+        "avatarColour": "#5b6b8c",
+        "photoUrl": null
+      },
+      "raisedAgentName": "Claude Code (claude.ai)",
+      "raisedAt": "2026-11-03T09:12:00+00:00",
+      "raisedAtLabel": "3 Nov",
+      "answeredBy": {
+        "id": "0199f000-0000-7000-8000-000000000001",
+        "name": "Joel Dickson",
+        "initials": "JD",
+        "avatarColour": "#5b6b8c",
+        "photoUrl": null
+      },
+      "answeredAgentName": null,
+      "answeredAt": "2026-11-04T08:30:00+00:00",
+      "answeredAtLabel": "4 Nov",
+      "fromDescription": false,
+      "history": [
+        {
+          "kind": "raised",
+          "from": null,
+          "to": "Three",
+          "toKind": "recommended",
+          "note": null,
+          "by": {
+            "id": "0199f000-0000-7000-8000-000000000001",
+            "name": "Joel Dickson",
+            "initials": "JD",
+            "avatarColour": "#5b6b8c",
+            "photoUrl": null
+          },
+          "agentName": "Claude Code (claude.ai)",
+          "at": "2026-11-03T09:12:00+00:00",
+          "atLabel": "3 Nov",
+          "fromDescription": false
+        },
+        {
+          "kind": "confirmed",
+          "from": null,
+          "to": null,
+          "toKind": null,
+          "note": null,
+          "by": {
+            "id": "0199f000-0000-7000-8000-000000000001",
+            "name": "Joel Dickson",
+            "initials": "JD",
+            "avatarColour": "#5b6b8c",
+            "photoUrl": null
+          },
+          "agentName": null,
+          "at": "2026-11-04T08:30:00+00:00",
+          "atLabel": "4 Nov",
+          "fromDescription": false
+        }
+      ]
+    },
+    {
+      "id": "0000000e-0000-4000-8001-000000000006",
+      "number": 6,
+      "label": "D6",
+      "question": "Do saved cards show the cardholder name?",
+      "recommended": "No, brand and last four digits only",
+      "alternatives": [
+        "Yes, under the number",
+        "Only when two cards share a brand"
+      ],
+      "currentAnswer": "Only when two cards share a brand",
+      "answerKind": "alternative",
+      "alternativeIndex": 1,
+      "state": "changed",
+      "raisedBy": {
+        "id": "0199f000-0000-7000-8000-000000000001",
+        "name": "Joel Dickson",
+        "initials": "JD",
+        "avatarColour": "#5b6b8c",
+        "photoUrl": null
+      },
+      "raisedAgentName": "Claude Code (claude.ai)",
+      "raisedAt": "2026-11-03T09:12:00+00:00",
+      "raisedAtLabel": "3 Nov",
+      "answeredBy": {
+        "id": "0199f000-0000-7000-8000-000000000001",
+        "name": "Joel Dickson",
+        "initials": "JD",
+        "avatarColour": "#5b6b8c",
+        "photoUrl": null
+      },
+      "answeredAgentName": null,
+      "answeredAt": "2026-11-04T08:32:00+00:00",
+      "answeredAtLabel": "4 Nov",
+      "fromDescription": false,
+      "history": [
+        {
+          "kind": "raised",
+          "from": null,
+          "to": "No, brand and last four digits only",
+          "toKind": "recommended",
+          "note": null,
+          "by": {
+            "id": "0199f000-0000-7000-8000-000000000001",
+            "name": "Joel Dickson",
+            "initials": "JD",
+            "avatarColour": "#5b6b8c",
+            "photoUrl": null
+          },
+          "agentName": "Claude Code (claude.ai)",
+          "at": "2026-11-03T09:12:00+00:00",
+          "atLabel": "3 Nov",
+          "fromDescription": false
+        },
+        {
+          "kind": "changed",
+          "from": "No, brand and last four digits only",
+          "to": "Only when two cards share a brand",
+          "toKind": "alternative",
+          "note": "Two Visa cards look the same otherwise.",
+          "by": {
+            "id": "0199f000-0000-7000-8000-000000000001",
+            "name": "Joel Dickson",
+            "initials": "JD",
+            "avatarColour": "#5b6b8c",
+            "photoUrl": null
+          },
+          "agentName": null,
+          "at": "2026-11-04T08:32:00+00:00",
+          "atLabel": "4 Nov",
+          "fromDescription": false
+        }
+      ]
+    },
+    {
+      "id": "0000000e-0000-4000-8001-000000000007",
+      "number": 7,
+      "label": "D7",
+      "question": "Should the picker offer to delete a saved card?",
+      "recommended": "Yes, from a menu on each row",
+      "alternatives": [
+        "No, only from Account settings"
+      ],
+      "currentAnswer": "Yes, from a menu on each row",
+      "answerKind": "recommended",
+      "alternativeIndex": null,
+      "state": "withdrawn",
+      "raisedBy": {
+        "id": "0199f000-0000-7000-8000-000000000001",
+        "name": "Joel Dickson",
+        "initials": "JD",
+        "avatarColour": "#5b6b8c",
+        "photoUrl": null
+      },
+      "raisedAgentName": "Claude Code (claude.ai)",
+      "raisedAt": "2026-11-03T09:12:00+00:00",
+      "raisedAtLabel": "3 Nov",
+      "answeredBy": {
+        "id": "0199f000-0000-7000-8000-000000000001",
+        "name": "Joel Dickson",
+        "initials": "JD",
+        "avatarColour": "#5b6b8c",
+        "photoUrl": null
+      },
+      "answeredAgentName": "Claude Code (claude.ai)",
+      "answeredAt": "2026-11-04T10:05:00+00:00",
+      "answeredAtLabel": "4 Nov",
+      "fromDescription": false,
+      "history": [
+        {
+          "kind": "raised",
+          "from": null,
+          "to": "Yes, from a menu on each row",
+          "toKind": "recommended",
+          "note": null,
+          "by": {
+            "id": "0199f000-0000-7000-8000-000000000001",
+            "name": "Joel Dickson",
+            "initials": "JD",
+            "avatarColour": "#5b6b8c",
+            "photoUrl": null
+          },
+          "agentName": "Claude Code (claude.ai)",
+          "at": "2026-11-03T09:12:00+00:00",
+          "atLabel": "3 Nov",
+          "fromDescription": false
+        },
+        {
+          "kind": "withdrawn",
+          "from": null,
+          "to": null,
+          "toKind": null,
+          "note": "Card management is out of scope for this Story.",
+          "by": {
+            "id": "0199f000-0000-7000-8000-000000000001",
+            "name": "Joel Dickson",
+            "initials": "JD",
+            "avatarColour": "#5b6b8c",
+            "photoUrl": null
+          },
+          "agentName": "Claude Code (claude.ai)",
+          "at": "2026-11-04T10:05:00+00:00",
+          "atLabel": "4 Nov",
+          "fromDescription": false
+        }
+      ]
+    }
+  ],
+  "waitingChildren": []
+}

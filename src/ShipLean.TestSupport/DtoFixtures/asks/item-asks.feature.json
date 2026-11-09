@@ -1,0 +1,145 @@
+{
+  "workItemId": "00000005-0000-4000-8001-000000000101",
+  "owner": {
+    "id": "00000001-0000-4000-8000-000000000002",
+    "name": "Priya Shah",
+    "initials": "PS",
+    "avatarColour": "#2f7fd8",
+    "photoUrl": null
+  },
+  "ownerIsCreator": true,
+  "ownerIsMe": false,
+  "openQuestions": 0,
+  "openDecisions": 0,
+  "questions": [
+    {
+      "id": "0000000f-0000-4000-8001-000000000011",
+      "number": 1,
+      "label": "Q1",
+      "text": "Is Checkout v2 behind a feature flag?",
+      "state": "withdrawn",
+      "askedBy": {
+        "id": "00000001-0000-4000-8000-000000000002",
+        "name": "Priya Shah",
+        "initials": "PS",
+        "avatarColour": "#2f7fd8",
+        "photoUrl": null
+      },
+      "agentName": "Claude Code (claude.ai)",
+      "askedAt": "2026-11-02T14:00:00+00:00",
+      "askedAtLabel": "2 Nov",
+      "answer": null,
+      "withdrawnAt": "2026-11-02T14:20:00+00:00",
+      "withdrawnAtLabel": "2 Nov"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "0000000e-0000-4000-8001-000000000011",
+      "number": 1,
+      "label": "D1",
+      "question": "Which payment methods ship first?",
+      "recommended": "Saved cards and Apple Pay",
+      "alternatives": [
+        "Saved cards only"
+      ],
+      "currentAnswer": "Saved cards, Apple Pay and Google Pay",
+      "answerKind": "own",
+      "alternativeIndex": null,
+      "state": "changed",
+      "raisedBy": {
+        "id": "00000001-0000-4000-8000-000000000002",
+        "name": "Priya Shah",
+        "initials": "PS",
+        "avatarColour": "#2f7fd8",
+        "photoUrl": null
+      },
+      "raisedAgentName": null,
+      "raisedAt": "2026-10-20T00:00:00+00:00",
+      "raisedAtLabel": "20 Oct",
+      "answeredBy": {
+        "id": "00000001-0000-4000-8000-000000000002",
+        "name": "Priya Shah",
+        "initials": "PS",
+        "avatarColour": "#2f7fd8",
+        "photoUrl": null
+      },
+      "answeredAgentName": null,
+      "answeredAt": "2026-10-20T00:00:00+00:00",
+      "answeredAtLabel": "20 Oct",
+      "fromDescription": true,
+      "history": [
+        {
+          "kind": "raised",
+          "from": null,
+          "to": "Saved cards and Apple Pay",
+          "toKind": "recommended",
+          "note": null,
+          "by": {
+            "id": "00000001-0000-4000-8000-000000000002",
+            "name": "Priya Shah",
+            "initials": "PS",
+            "avatarColour": "#2f7fd8",
+            "photoUrl": null
+          },
+          "agentName": null,
+          "at": "2026-10-20T00:00:00+00:00",
+          "atLabel": "20 Oct",
+          "fromDescription": true
+        },
+        {
+          "kind": "changed",
+          "from": "Saved cards and Apple Pay",
+          "to": "Saved cards, Apple Pay and Google Pay",
+          "toKind": "own",
+          "note": null,
+          "by": {
+            "id": "00000001-0000-4000-8000-000000000002",
+            "name": "Priya Shah",
+            "initials": "PS",
+            "avatarColour": "#2f7fd8",
+            "photoUrl": null
+          },
+          "agentName": null,
+          "at": "2026-10-20T00:00:00+00:00",
+          "atLabel": "20 Oct",
+          "fromDescription": true
+        }
+      ]
+    }
+  ],
+  "waitingChildren": [
+    {
+      "id": "00000005-0000-4000-8001-000000000141",
+      "key": "SHIP-141",
+      "type": "story",
+      "title": "Pay with saved card",
+      "owner": {
+        "id": "0199f000-0000-7000-8000-000000000001",
+        "name": "Joel Dickson",
+        "initials": "JD",
+        "avatarColour": "#5b6b8c",
+        "photoUrl": null
+      },
+      "ownerIsCreator": false,
+      "openQuestions": 1,
+      "openDecisions": 4
+    },
+    {
+      "id": "00000005-0000-4000-8001-000000000144",
+      "key": "SHIP-144",
+      "type": "story",
+      "title": "Address autocomplete",
+      "owner": {
+        "id": "00000001-0000-4000-8000-000000000003",
+        "name": "Tom Okafor",
+        "initials": "TO",
+        "avatarColour": "#16a089",
+        "photoUrl": null
+      },
+      "ownerIsCreator": true,
+      "openQuestions": 2,
+      "openDecisions": 0
+    }
+  ]
+}
