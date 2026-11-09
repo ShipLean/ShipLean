@@ -54,6 +54,7 @@ export const asksTestIds = {
   historyLine: 'asks-history-line',
   commentAskTag: 'asks-comment-ask-tag',
   // W1
+  questionReplyError: 'asks-question-reply-error',
   // W2a
   // W2b
   // W3

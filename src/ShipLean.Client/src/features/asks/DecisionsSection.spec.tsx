@@ -58,3 +58,31 @@ test('DecisionsSection_WhenAsksChangedEventArrives_ShouldRefetch', async ({ moun
   await expect.poll(() => asks.reads()).toBe(2);
   await expect(component.getByTestId(ids.loadFailed)).toHaveCount(0);
 });
+
+test('DecisionsSection_WhenOtherItemAsksChange_ShouldNotRefetch', async ({ mount, page }) => {
+  await stubShell(page);
+  const asks = await stubAsks(page, waiting);
+  const hub = await stubHub(page);
+  const component = await mount(view);
+  await expect(component.getByTestId(ids.section)).toBeVisible();
+  await expect(page.getByTestId(realtimeTestIds.liveDot)).toHaveAttribute('data-state', 'live');
+  await expect.poll(() => asks.reads()).toBe(1);
+
+  await hub.push({
+    type: 'asksChanged',
+    projectId: 'p1',
+    clientId: null,
+    workItemId: 'other-item',
+  });
+  await hub.push({ type: 'asksChanged', projectId: 'p1', clientId: null, workItemId: item.id });
+  await expect.poll(() => asks.reads()).toBe(2);
+  await hub.push({
+    type: 'asksChanged',
+    projectId: 'p1',
+    clientId: null,
+    workItemId: 'other-item',
+  });
+  await hub.push({ type: 'asksChanged', projectId: 'p1', clientId: null, workItemId: item.id });
+
+  await expect.poll(() => asks.reads()).toBe(3);
+});
