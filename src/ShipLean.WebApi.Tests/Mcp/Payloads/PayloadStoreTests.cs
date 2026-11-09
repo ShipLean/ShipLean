@@ -78,13 +78,25 @@ public class PayloadStoreTests : McpFixture
         retry.StatusCode.ShouldBe(HttpStatusCode.OK);
     }
 
+    // Both PUTs send Expect: 100-continue, and Kestrel answers it only when the action first reads the body, which UploadAsync
+    // does after the token lookup. So once both bodies have started to send, both uploads are past the lookup; only then does the
+    // gate let the bodies through, and only the UPDATE's own uploaded_at check can keep the second from storing.
     [Test]
     public async Task PayloadUpload_WhenTwoUploadsRace_ShouldStoreOne()
     {
         var issued = await IssueAsync(SeedIds.Users.Joel, null, "attach_markdown", "content");
         var bodies = new[] { Encoding.UTF8.GetBytes("First."), Encoding.UTF8.GetBytes("Second.") };
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var contents = bodies.Select(body => new GatedContent(body, gate.Task)).ToArray();
+        using var client = new HttpClient(new SocketsHttpHandler { Expect100ContinueTimeout = TimeSpan.FromMinutes(5) }) { BaseAddress = Client.BaseAddress };
+        client.DefaultRequestHeaders.ExpectContinue = true;
 
-        var responses = await Task.WhenAll(bodies.Select(body => PutAsync(issued.Path, body)));
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+
+        var sending = contents.Select(content => client.PutAsync(issued.Path, content, timeout.Token)).ToArray();
+        await WithinAsync(Task.WhenAll(contents.Select(content => content.Reading)), timeout.Token);
+        gate.SetResult();
+        var responses = await Task.WhenAll(sending);
 
         responses.Select(r => r.StatusCode).Order().ToArray().ShouldBe(new[] { HttpStatusCode.OK, HttpStatusCode.NotFound });
         var winner = bodies[Array.FindIndex(responses, r => r.StatusCode == HttpStatusCode.OK)];
@@ -92,6 +104,10 @@ public class PayloadStoreTests : McpFixture
         foreach (var response in responses)
         {
             response.Dispose();
+        }
+        foreach (var content in contents)
+        {
+            content.Dispose();
         }
     }
 
@@ -305,7 +321,40 @@ public class PayloadStoreTests : McpFixture
         await connection.ExecuteAsync(sql, parameters);
     }
 
+    // Awaits the task, or throws once the timeout fires first (AG0032 bans Task.WaitAsync).
+    private static async Task WithinAsync(Task task, CancellationToken timeout)
+    {
+        var expired = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        await using var registration = timeout.Register(() => expired.TrySetCanceled(timeout));
+        await await Task.WhenAny(task, expired.Task);
+    }
+
     private Task<HttpResponseMessage> PutAsync(string path, byte[] bytes) => Client.PutAsync(path, new ByteArrayContent(bytes));
 
     private sealed record Issued(string PayloadId, string Path);
+
+    // A request body that holds back until the gate opens. With Expect: 100-continue the client starts sending it only after
+    // the server's 100 Continue, which Kestrel sends when the action first reads the body; Reading completes at that moment.
+    private sealed class GatedContent(byte[] bytes, Task gate) : HttpContent
+    {
+        private readonly TaskCompletionSource _reading = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task Reading => _reading.Task;
+
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context)
+            => SerializeToStreamAsync(stream, context, CancellationToken.None);
+
+        protected override async Task SerializeToStreamAsync(Stream stream, TransportContext? context, CancellationToken cancellationToken)
+        {
+            _reading.TrySetResult();
+            await WithinAsync(gate, cancellationToken);
+            await stream.WriteAsync(bytes, cancellationToken);
+        }
+
+        protected override bool TryComputeLength(out long length)
+        {
+            length = bytes.Length;
+            return true;
+        }
+    }
 }
