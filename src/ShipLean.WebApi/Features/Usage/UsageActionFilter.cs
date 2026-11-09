@@ -35,7 +35,7 @@ public sealed class UsageActionFilter(IUsageEvents events, IUsageScope scope, Ti
             : [];
         events.Track(new UsageEvent(
             tracked.EventName!,
-            UsageSurfaces.Of(context.HttpContext),
+            UsageSurfaces.Of(context.HttpContext.User),
             actor,
             scope.ProjectId,
             scope.ProjectCount,

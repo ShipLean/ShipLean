@@ -64,5 +64,5 @@ public sealed class DeviceSessionsController(IDeviceSessions sessions, ICurrentU
         => SelfEmittedUsage.TrackOk(
             events, time, started, UsageEventNames.DeviceSessionEnded, currentUser.Id, source,
             properties: new Dictionary<string, object> { [UsageProps.Reason] = reason },
-            surface: UsageSurfaces.Of(HttpContext));
+            surface: UsageSurfaces.Of(User));
 }
