@@ -1,0 +1,8 @@
+node_modules/
+# Expo's caches, generated types and `pnpm run bundle` output (.expo/bundle-check).
+.expo/
+dist/
+expo-env.d.ts
+# Native projects come from `npx expo prebuild` and are never committed (D6: no device builds here).
+/ios
+/android

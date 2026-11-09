@@ -4,3 +4,5 @@ packages:
   - ShipLean.Mobile
 allowBuilds:
   agoda-devfeedback-common: false
+  # Jest's file watcher (via jest-expo). Prebuilt binaries ship as optional packages; CI never watches.
+  '@parcel/watcher': false
