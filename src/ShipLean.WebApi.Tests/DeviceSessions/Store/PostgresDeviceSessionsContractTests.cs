@@ -1,6 +1,6 @@
 using Dapper;
 using Npgsql;
-using ShipLean.Application.Features.DeviceSessions;
+using ShipLean.Application.Identity;
 using ShipLean.Contracts.DeviceSessions;
 using ShipLean.TestSupport.Contracts.DeviceSessions;
 using ShipLean.WebApi.Tests.Agents.Stores;
