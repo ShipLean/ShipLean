@@ -6,11 +6,9 @@ using System.Web;
 using ShipLean.AcceptanceTests.Harness;
 using ShipLean.AcceptanceTests.Pages.Devices;
 using ShipLean.AcceptanceTests.Pages.MobileSignIn;
-using ShipLean.AcceptanceTests.Pages.Realtime;
 using ShipLean.Contracts;
 using ShipLean.Contracts.DeviceSessions;
 using ShipLean.Contracts.Errors;
-using ShipLean.Contracts.Users;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.DeviceSessions;
 using ShipLean.TestSupport.Fixtures;
@@ -28,7 +26,7 @@ public class MobileSignInJourneyTests : SeededAcceptanceTest
     private const string Verifier = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk";
     private const string Challenge = "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM";
 
-    private async Task<NameValueCollection> ConfirmAsync(MobileSignInPage confirm, string device, string state)
+    private static async Task<NameValueCollection> ConfirmAsync(MobileSignInPage confirm, string device, string state)
     {
         await confirm.OpenAsync(Challenge, state, device);
         await confirm.SignIn.ClickAsync();
@@ -66,14 +64,14 @@ public class MobileSignInJourneyTests : SeededAcceptanceTest
         using var exchange = await ExchangeAsync(code);
         exchange.StatusCode.ShouldBe(HttpStatusCode.Created);
         exchange.Headers.CacheControl?.NoStore.ShouldBe(true);
-        var signedIn = await exchange.Content.ReadFromJsonAsync<DeviceSignInDto>(JsonSerializerOptions.Web);
-        signedIn.ShouldNotBeNull();
-        signedIn.Session.Name.ShouldBe("Joel's Pixel");
+        var signedIn = await exchange.Content.ReadFromJsonAsync<JsonElement>();
+        signedIn.GetProperty("session").GetProperty("name").GetString().ShouldBe("Joel's Pixel");
+        signedIn.GetProperty("me").GetProperty("id").GetGuid().ShouldBe(SeedIds.Users.Joel);
 
-        using var bearer = DeviceBearerClient.For(Host, signedIn.Secret);
+        using var bearer = DeviceBearerClient.For(Host, signedIn.GetProperty("secret").GetString()!);
         using var me = await bearer.GetAsync("/api/me");
         me.StatusCode.ShouldBe(HttpStatusCode.OK);
-        (await me.Content.ReadFromJsonAsync<MeDto>(JsonSerializerOptions.Web))!.Id.ShouldBe(SeedIds.Users.Joel);
+        (await me.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid().ShouldBe(SeedIds.Users.Joel);
         using var projects = await bearer.GetAsync("/api/projects");
         projects.StatusCode.ShouldBe(HttpStatusCode.OK);
     }
@@ -85,7 +83,7 @@ public class MobileSignInJourneyTests : SeededAcceptanceTest
         var redirect = await ConfirmAsync(new MobileSignInPage(Page), "Kitchen tablet", "state-two");
         using var exchange = await ExchangeAsync(redirect["code"]!);
         exchange.StatusCode.ShouldBe(HttpStatusCode.Created);
-        var secret = (await exchange.Content.ReadFromJsonAsync<DeviceSignInDto>(JsonSerializerOptions.Web))!.Secret;
+        var secret = (await exchange.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("secret").GetString()!;
         using var bearer = DeviceBearerClient.For(Host, secret);
         using (var before = await bearer.GetAsync("/api/me"))
         {
@@ -94,7 +92,6 @@ public class MobileSignInJourneyTests : SeededAcceptanceTest
 
         var devices = new SignedInDevicesPanel(Page);
         await devices.OpenAsync();
-        await new LiveStatus(Page).WaitUntilLiveAsync();
         await Expect(devices.Row("Kitchen tablet")).ToBeVisibleAsync();
         await devices.SignOutAsync("Kitchen tablet");
 
