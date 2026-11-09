@@ -62,6 +62,17 @@ public class McpSweepSelfTests : McpFixture
         problems.ShouldBe(["sprint_status takes a project argument, so it can't be a NoProject row"]);
     }
 
+    [Test]
+    public async Task McpAccessSweep_WhenKeyScopedToolSaysNoProject_ShouldFail()
+    {
+        var token = await TokenAsync(TestUser.Joel, ReadWritePlan);
+        var rows = new[] { new McpSweepRow("get_work_item", McpScopes.Read, ProjectRole.Member, ReadOnly: true, NoProject: "Says it names no project.") };
+
+        var problems = await McpSweep.CallProblemsAsync((tool, arguments) => CallToolAsync(token, tool, arguments), await InputSchemasAsync(token), rows);
+
+        problems.ShouldBe(["get_work_item is a NoProject row but is not in McpSweep.ProjectFreeTools"]);
+    }
+
     [TestCase("")]
     [TestCase("  ")]
     public async Task McpAccessSweep_WhenNoProjectReasonIsBlank_ShouldFail(string reason)

@@ -10,10 +10,19 @@ namespace ShipLean.WebApi.Tests.Mcp.Sweep;
 
 // The MCP access sweep: every registered tool has a row, no row names a tool that is not registered, and each row's call
 // (but a NoProject row's, which names no project to refuse) made as Joel answers not_found. Rows name an entity in a project Joel is not a member of (the seeded PART), so the only
-// thing that can refuse the call is the project access rule. A NoProject row is only skipped when it gives a reason and its
+// thing that can refuse the call is the project access rule. A NoProject row is only skipped when its tool is in ProjectFreeTools, it gives a reason and its
 // tool's input schema (from tools/list) has no project argument; otherwise it is a problem, so a project-scoped tool can't opt out.
 public static class McpSweep
 {
+    // The tools reviewed as naming no project at all, so the sweep has no project to refuse them. A tool addressed by a key or an
+    // id (get_work_item) is project-scoped without a project argument, so the schema check alone can't tell; only this set can.
+    // Adding a name needs a reason in review. list_projects and planning_guide are not here: their rows are called and answer not_found.
+    public static readonly IReadOnlySet<string> ProjectFreeTools = new HashSet<string>(StringComparer.Ordinal)
+    {
+        // The payload is bound to the caller, their agent authorization and the tool; the tool that uses it checks project access.
+        "create_payload_upload",
+    };
+
     // Every IMcpSweepRows in this test assembly, one file per tool area.
     public static IReadOnlyList<McpSweepRow> AllRows()
         => typeof(McpSweep).Assembly.GetTypes()
@@ -60,19 +69,26 @@ public static class McpSweep
         return problems;
     }
 
+    // The set check comes last and only speaks when nothing else is wrong with the row, so each row reports its first cause.
     private static IEnumerable<string> NoProjectProblems(McpSweepRow row, IReadOnlyDictionary<string, JsonElement> inputSchemas)
     {
+        var problems = new List<string>();
         if (string.IsNullOrWhiteSpace(row.NoProject))
         {
-            yield return $"{row.Tool} is a NoProject row with a blank reason";
+            problems.Add($"{row.Tool} is a NoProject row with a blank reason");
         }
         if (!inputSchemas.TryGetValue(row.Tool, out var schema))
         {
-            yield return $"{row.Tool} is a NoProject row but is not in tools/list";
+            problems.Add($"{row.Tool} is a NoProject row but is not in tools/list");
         }
         else if (schema.TryGetProperty("properties", out var properties) && properties.TryGetProperty("project", out _))
         {
-            yield return $"{row.Tool} takes a project argument, so it can't be a NoProject row";
+            problems.Add($"{row.Tool} takes a project argument, so it can't be a NoProject row");
         }
+        if (problems.Count == 0 && !ProjectFreeTools.Contains(row.Tool))
+        {
+            problems.Add($"{row.Tool} is a NoProject row but is not in McpSweep.ProjectFreeTools");
+        }
+        return problems;
     }
 }
