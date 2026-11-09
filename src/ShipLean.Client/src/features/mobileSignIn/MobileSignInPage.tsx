@@ -85,12 +85,15 @@ export function MobileSignInPage() {
   const me = useQuery({ queryKey: meKey, queryFn: fetchMe, retry: false });
   const [outcome, setOutcome] = useState<Outcome>(null);
   const host = window.location.host;
+  // The app refuses a redirect whose iss isn't the server it opened, so a code minted here can't be replayed through
+  // another server that bounced the browser to this page.
+  const iss = window.location.origin;
 
   const post = useMutation({
     mutationFn: (q: ConfirmQuery) =>
       createSignInCode({ challenge: q.challenge, deviceName: q.device }),
     onSuccess: ({ code }, q) => {
-      const url = appRedirect({ code, state: q.state });
+      const url = appRedirect({ code, state: q.state, iss });
       setOutcome({ kind: 'signedIn', url });
       openApp(url);
     },
@@ -159,7 +162,7 @@ export function MobileSignInPage() {
                 data-testid={ids.backToApp}
                 className={`btn-signal ${fullWidth}`}
                 onClick={() => {
-                  openApp(appRedirect({ error: 'unsupported', state: query.state }));
+                  openApp(appRedirect({ error: 'unsupported', state: query.state, iss }));
                 }}
               >
                 Back to the app
@@ -200,7 +203,7 @@ export function MobileSignInPage() {
               disabled={post.isPending}
               onClick={() => {
                 setOutcome({ kind: 'cancelled' });
-                openApp(appRedirect({ error: 'cancelled', state: query.state }));
+                openApp(appRedirect({ error: 'cancelled', state: query.state, iss }));
               }}
             >
               Cancel

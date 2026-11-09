@@ -1,5 +1,7 @@
 // The browser handoff that signs the phone app in. The app opens the server's confirm page with a PKCE challenge, a
-// state and its device name; the page sends the browser back to the app's fixed redirect with a code (or why not).
+// state and its device name; the page sends the browser back to the app's fixed redirect with a code (or why not),
+// plus its own origin as `iss`, so the app can refuse a code that another server's page minted (RFC 9207's mix-up
+// defence).
 // Hand-parsed rather than through URL/URLSearchParams, because React Native's URL support is incomplete. No
 // randomness here: the app makes the verifier and the state.
 
@@ -16,13 +18,18 @@ export type ConfirmQueryResult = ConfirmQuery | { error: 'missing' };
 
 export type AppRedirectError = 'cancelled' | 'unsupported';
 
+// iss is the origin of the server whose confirm page sent the browser back: scheme, host and port, with no path.
 export type AppRedirect =
-  { code: string; state: string } | { error: AppRedirectError; state: string };
+  | { code: string; state: string; iss: string }
+  | { error: AppRedirectError; state: string; iss: string };
 
 const MAX_STATE = 128;
 const MAX_DEVICE = 100;
 const CHALLENGE = /^[A-Za-z0-9_-]{43}$/;
 const VERIFIER = /^[A-Za-z0-9\-._~]{43,128}$/;
+// An origin as window.location.origin gives it: http(s), a host name or a bracketed IPv6 address, an optional port, and
+// nothing after (no path, query, fragment or user info).
+const ORIGIN = /^https?:\/\/(?:[A-Za-z0-9.-]+|\[[0-9A-Fa-f:.]+\])(?::\d{1,5})?$/;
 
 function queryString(pairs: [string, string][]): string {
   return pairs.map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&');
@@ -73,14 +80,17 @@ export function appRedirect(redirect: AppRedirect): string {
     ? `${APP_REDIRECT}?${queryString([
         ['code', redirect.code],
         ['state', redirect.state],
+        ['iss', redirect.iss],
       ])}`
     : `${APP_REDIRECT}?${queryString([
         ['error', redirect.error],
         ['state', redirect.state],
+        ['iss', redirect.iss],
       ])}`;
 }
 
-// What the browser handed back to the app; null for anything that isn't exactly one of appRedirect's URLs.
+// What the browser handed back to the app; null for anything that isn't exactly one of appRedirect's URLs, including
+// one whose iss is missing or isn't a bare origin. Whether iss is the server the app meant is the caller's check.
 export function parseAppRedirect(url: string): AppRedirect | null {
   const prefix = `${APP_REDIRECT}?`;
   if (!url.startsWith(prefix)) return null;
@@ -88,13 +98,15 @@ export function parseAppRedirect(url: string): AppRedirect | null {
   const values = parseQuery(url.slice(prefix.length, hash < 0 ? undefined : hash));
   const state = values?.get('state');
   if (values === null || state === undefined || state === '') return null;
+  const iss = values.get('iss');
+  if (iss === undefined || !ORIGIN.test(iss)) return null;
   const code = values.get('code');
   const error = values.get('error');
   if (error !== undefined) {
     if (code !== undefined) return null;
-    return error === 'cancelled' || error === 'unsupported' ? { error, state } : null;
+    return error === 'cancelled' || error === 'unsupported' ? { error, state, iss } : null;
   }
-  return code !== undefined && code !== '' ? { code, state } : null;
+  return code !== undefined && code !== '' ? { code, state, iss } : null;
 }
 
 // RFC 7636: a verifier is 43–128 unreserved characters.

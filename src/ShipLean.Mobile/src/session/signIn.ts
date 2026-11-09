@@ -7,7 +7,7 @@ import { APP_REDIRECT, confirmUrl, parseAppRedirect } from '@shiplean/core/hando
 import type { DeviceSignInDto, ExchangeSignInCodeRequest } from '@shiplean/core/api/deviceSessions';
 import type { MeDto } from '@shiplean/core/api/me';
 import { createPkce, type RandomBytes } from './pkce';
-import { hostOfOrigin } from './serverAddress';
+import { hostOfOrigin, normaliseServerAddress } from './serverAddress';
 import type { SessionStore } from './sessionStore';
 
 export interface AuthSessionResult {
@@ -53,6 +53,13 @@ export interface SignIn {
   handleRedirect(url: string | undefined): Promise<SignInOutcome>;
 }
 
+// Both sides normalised as the Server field's address is, so only a different scheme, host or port differs.
+function sameServer(iss: string, origin: string): boolean {
+  const a = normaliseServerAddress(iss);
+  const b = normaliseServerAddress(origin);
+  return a.ok && b.ok && a.origin === b.origin;
+}
+
 export function createSignIn(deps: SignInDeps): SignIn {
   let attempt: Attempt | null = null;
   let running = false;
@@ -67,6 +74,10 @@ export function createSignIn(deps: SignInDeps): SignIn {
     if (redirect === null || redirect.state !== current.state) {
       return fail(signInMessages.mismatch);
     }
+    // The issuer check (RFC 9207): the page that answered must be the server the person typed. Otherwise a typed
+    // server could bounce the browser to another server's confirm page and replay the code and verifier the app then
+    // sends it. Error redirects are checked too.
+    if (!sameServer(redirect.iss, current.origin)) return fail(signInMessages.mismatch);
     if ('error' in redirect) {
       if (redirect.error === 'cancelled') {
         deps.session.abandon();

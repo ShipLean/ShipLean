@@ -18,11 +18,13 @@ const field = screenIds.signInServerField;
 const EXCHANGE = 'POST /api/auth/device-sessions/exchange';
 
 const stateOf = (url: string) => /[?&]state=([^&]+)/.exec(url)?.[1] ?? '';
+// The confirm page's origin, which it sends back as iss.
+const issOf = (url: string) => /^[a-z]+:\/\/[^/?#]+/.exec(url)?.[0] ?? '';
 
-// The browser comes back with what `redirect` builds from the state it was opened with.
-function browserReturns(redirect: (state: string) => string | null) {
+// The browser comes back with what `redirect` builds from the state it was opened with and the page's origin.
+function browserReturns(redirect: (state: string, iss: string) => string | null) {
   jest.mocked(openAuthSessionAsync).mockImplementationOnce(async (url: string) => {
-    const back = redirect(stateOf(url));
+    const back = redirect(stateOf(url), issOf(url));
     return (
       back === null ? { type: 'cancel' } : { type: 'success', url: back }
     ) as WebBrowserAuthSessionResult;
@@ -150,7 +152,7 @@ test('error=unsupported', async () => {
   api();
   await renderScreen(<SignInScreen />);
   await waitFor(() => expect(enabled()).toBe(true));
-  browserReturns((state) => appRedirect({ error: 'unsupported', state }));
+  browserReturns((state, iss) => appRedirect({ error: 'unsupported', state, iss }));
 
   await fireEvent.press(signInButton());
 
@@ -165,7 +167,7 @@ test('state mismatch', async () => {
   const server = api();
   await renderScreen(<SignInScreen />);
   await waitFor(() => expect(enabled()).toBe(true));
-  browserReturns(() => appRedirect({ code: 'the-code', state: 'not-ours' }));
+  browserReturns((_, iss) => appRedirect({ code: 'the-code', state: 'not-ours', iss }));
 
   await fireEvent.press(signInButton());
 
@@ -180,7 +182,7 @@ test('failed exchange shows the status', async () => {
   api({ [EXCHANGE]: apiError(400, 'validation') });
   await renderScreen(<SignInScreen />);
   await waitFor(() => expect(enabled()).toBe(true));
-  browserReturns((state) => appRedirect({ code: 'the-code', state }));
+  browserReturns((state, iss) => appRedirect({ code: 'the-code', state, iss }));
 
   await fireEvent.press(signInButton());
 
@@ -197,7 +199,7 @@ test('browser success signs in', async () => {
   await renderApp({ signedIn: false, api: server });
   await screen.findByTestId(screenIds.signIn);
   await waitFor(() => expect(enabled()).toBe(true));
-  browserReturns((state) => appRedirect({ code: 'the-code', state }));
+  browserReturns((state, iss) => appRedirect({ code: 'the-code', state, iss }));
 
   await fireEvent.press(signInButton());
 

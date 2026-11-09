@@ -25,6 +25,10 @@ import {
 
 const NEW_ORIGIN = 'https://new.test';
 const OLD_ORIGIN = 'https://old.test';
+const A_ORIGIN = 'https://a.test';
+const B_ORIGIN = 'https://b.test';
+// The new server's iss, as a query pair.
+const ISS = `iss=${encodeURIComponent(NEW_ORIGIN)}`;
 const OLD_SECRET = 'shl_dev_OldSession0000000000000000000000000000000';
 
 function setup({
@@ -90,9 +94,12 @@ function setup({
 const stateOf = (url: string) => new URL(url).searchParams.get('state') ?? '';
 
 // A browser that comes back with a code for the state it was given.
+// The confirm page's own origin, as it puts it in the redirect's iss.
+const issOf = (url: string) => new URL(url).origin;
+
 const approves = (url: string): AuthSessionResult => ({
   type: 'success',
-  url: appRedirect({ code: 'the-code', state: stateOf(url) }),
+  url: appRedirect({ code: 'the-code', state: stateOf(url), iss: issOf(url) }),
 });
 
 beforeEach(() => configurePlatform(null as never));
@@ -157,7 +164,7 @@ describe('createSignIn', () => {
     const s = setup({
       browser: (url) => ({
         type: 'success',
-        url: appRedirect({ error: 'cancelled', state: stateOf(url) }),
+        url: appRedirect({ error: 'cancelled', state: stateOf(url), iss: issOf(url) }),
       }),
     });
 
@@ -172,7 +179,7 @@ describe('createSignIn', () => {
     const s = setup({
       browser: (url) => ({
         type: 'success',
-        url: appRedirect({ error: 'unsupported', state: stateOf(url) }),
+        url: appRedirect({ error: 'unsupported', state: stateOf(url), iss: issOf(url) }),
       }),
     });
 
@@ -188,9 +195,9 @@ describe('createSignIn', () => {
 
   test('signIn_WhenTheStateDiffers_ShouldRefuseWithoutExchanging', async () => {
     const s = setup({
-      browser: () => ({
+      browser: (url) => ({
         type: 'success',
-        url: appRedirect({ code: 'the-code', state: 'attacker' }),
+        url: appRedirect({ code: 'the-code', state: 'attacker', iss: issOf(url) }),
       }),
     });
 
@@ -206,9 +213,9 @@ describe('createSignIn', () => {
 
   test('signIn_WhenAnErrorRedirectCarriesTheWrongState_ShouldBeAMismatchNotACancel', async () => {
     const s = setup({
-      browser: () => ({
+      browser: (url) => ({
         type: 'success',
-        url: appRedirect({ error: 'cancelled', state: 'attacker' }),
+        url: appRedirect({ error: 'cancelled', state: 'attacker', iss: issOf(url) }),
       }),
     });
 
@@ -219,10 +226,17 @@ describe('createSignIn', () => {
   });
 
   test.each([
-    ['another scheme', (state: string) => `evil://signed-in?code=the-code&state=${state}`],
-    ['another path', (state: string) => `${APP_REDIRECT}/steal?code=the-code&state=${state}`],
-    ['a web page', (state: string) => `https://evil.test/signed-in?code=the-code&state=${state}`],
-    ['no state', () => `${APP_REDIRECT}?code=the-code`],
+    ['another scheme', (state: string) => `evil://signed-in?code=the-code&state=${state}&${ISS}`],
+    [
+      'another path',
+      (state: string) => `${APP_REDIRECT}/steal?code=the-code&state=${state}&${ISS}`,
+    ],
+    [
+      'a web page',
+      (state: string) => `https://evil.test/signed-in?code=the-code&state=${state}&${ISS}`,
+    ],
+    ['no state', () => `${APP_REDIRECT}?code=the-code&${ISS}`],
+    ['no iss', (state: string) => `${APP_REDIRECT}?code=the-code&state=${state}`],
   ])('signIn_WhenTheRedirectHas%s_ShouldRefuseWithoutExchanging', async (_name, build) => {
     const s = setup({ browser: (url) => ({ type: 'success', url: build(stateOf(url)) }) });
 
@@ -234,6 +248,61 @@ describe('createSignIn', () => {
     expect(s.api.callsTo('POST /api/auth/device-sessions/exchange')).toEqual([]);
     nothingStored(s);
   });
+
+  test('signIn_WhenRedirectIssuerIsAnotherServer_ShouldRefuseWithoutExchange', async () => {
+    // The mix-up: the person typed server A, A bounced the browser to the real server B, and B's page approved. The
+    // state and code are good; only the iss says the code came from B.
+    const s = setup({
+      browser: (url) => ({
+        type: 'success',
+        url: appRedirect({ code: 'b-code', state: stateOf(url), iss: B_ORIGIN }),
+      }),
+    });
+
+    expect(await s.flow.signIn(A_ORIGIN)).toEqual({
+      kind: 'failed',
+      message: signInMessages.mismatch,
+    });
+
+    expect(s.api.calls.filter((c) => c.method === 'POST' && c.path.endsWith('/exchange'))).toEqual(
+      [],
+    );
+    expect(s.session.get()).toMatchObject({ signedIn: false, pending: null, secret: null });
+    nothingStored(s);
+  });
+
+  test('signIn_WhenRedirectIssuerIsTheTypedServer_ShouldExchangeThere', async () => {
+    const s = setup({
+      browser: (url) => ({
+        type: 'success',
+        // Written differently from the typed origin, but the same server once normalised.
+        url: appRedirect({ code: 'the-code', state: stateOf(url), iss: 'https://A.test' }),
+      }),
+    });
+
+    expect(await s.flow.signIn(A_ORIGIN)).toEqual({ kind: 'signedIn' });
+
+    const exchange = s.api.callsTo('POST /api/auth/device-sessions/exchange');
+    expect(exchange.map((c) => c.origin)).toEqual([A_ORIGIN]);
+  });
+
+  test.each([['cancelled' as const], ['unsupported' as const]])(
+    'signIn_WhenAnErrorRedirectsIssuerIsAnotherServer_ShouldBeAMismatch (%s)',
+    async (error) => {
+      const s = setup({
+        browser: (url) => ({
+          type: 'success',
+          url: appRedirect({ error, state: stateOf(url), iss: B_ORIGIN }),
+        }),
+      });
+
+      expect(await s.flow.signIn(A_ORIGIN)).toEqual({
+        kind: 'failed',
+        message: signInMessages.mismatch,
+      });
+      expect(s.api.calls).toEqual([]);
+    },
+  );
 
   test('signIn_WhenSuccessCarriesNoUrl_ShouldCountAsAMismatch', async () => {
     const s = setup({ browser: () => ({ type: 'success' }) });
@@ -248,7 +317,9 @@ describe('createSignIn', () => {
   test('handleRedirect_WhenNoSignInIsInProgress_ShouldChangeNothing', async () => {
     const s = setup({ browser: approves });
 
-    const outcome = await s.flow.handleRedirect(appRedirect({ code: 'x', state: 'old-state' }));
+    const outcome = await s.flow.handleRedirect(
+      appRedirect({ code: 'x', state: 'old-state', iss: NEW_ORIGIN }),
+    );
 
     expect(outcome).toEqual({ kind: 'ignored' });
     expect(s.api.calls).toEqual([]);
@@ -259,7 +330,7 @@ describe('createSignIn', () => {
     let redirect = '';
     const s = setup({
       browser: (url) => {
-        redirect = appRedirect({ code: 'the-code', state: stateOf(url) });
+        redirect = appRedirect({ code: 'the-code', state: stateOf(url), iss: issOf(url) });
         return { type: 'success', url: redirect };
       },
     });

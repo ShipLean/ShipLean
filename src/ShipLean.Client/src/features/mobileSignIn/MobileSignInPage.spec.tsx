@@ -130,16 +130,17 @@ test('Sign in posts the challenge and device name', async ({ mount, page }) => {
   expect(body).toEqual({ challenge, deviceName });
 });
 
-test('after Sign in, Open the app links to shiplean://signed-in with the code and state', async ({
+test('after Sign in, Open the app links to shiplean://signed-in with the code, state and iss', async ({
   mount,
   page,
 }) => {
   await open(mount, page);
   await stubCodes(page, 'abc 123');
   await page.getByTestId(ids.signIn).click();
+  const origin = await page.evaluate(() => window.location.origin);
   await expect(page.getByTestId(ids.openApp)).toHaveAttribute(
     'href',
-    `shiplean://signed-in?code=abc%20123&state=${stateValue}`,
+    `shiplean://signed-in?code=abc%20123&state=${stateValue}&iss=${encodeURIComponent(origin)}`,
   );
 });
 

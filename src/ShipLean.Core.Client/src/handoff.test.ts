@@ -82,23 +82,69 @@ test.each([
   expect(parseConfirmQuery(search)).toEqual({ error: 'missing' });
 });
 
-test('appRedirect_WhenGivenACode_ShouldRoundTrip', () => {
-  const url = appRedirect({ code: 'c0de/+=', state: 'st 1' });
+const iss = 'https://ship.example.com:8443';
+const issQuery = 'iss=https%3A%2F%2Fship.example.com%3A8443';
 
-  expect(url).toBe('shiplean://signed-in?code=c0de%2F%2B%3D&state=st%201');
+test('appRedirect_WhenGivenACode_ShouldRoundTrip', () => {
+  const url = appRedirect({ code: 'c0de/+=', state: 'st 1', iss });
+
+  expect(url).toBe(`shiplean://signed-in?code=c0de%2F%2B%3D&state=st%201&${issQuery}`);
   expect(url.startsWith(APP_REDIRECT)).toBe(true);
-  expect(parseAppRedirect(url)).toEqual({ code: 'c0de/+=', state: 'st 1' });
+  expect(parseAppRedirect(url)).toEqual({ code: 'c0de/+=', state: 'st 1', iss });
 });
 
 test.each([['cancelled' as const], ['unsupported' as const]])(
   'appRedirect_WhenGivenAnError_ShouldRoundTrip (%s)',
   (error) => {
-    const url = appRedirect({ error, state: 'st-1' });
+    const url = appRedirect({ error, state: 'st-1', iss });
 
-    expect(url).toBe(`shiplean://signed-in?error=${error}&state=st-1`);
-    expect(parseAppRedirect(url)).toEqual({ error, state: 'st-1' });
+    expect(url).toBe(`shiplean://signed-in?error=${error}&state=st-1&${issQuery}`);
+    expect(parseAppRedirect(url)).toEqual({ error, state: 'st-1', iss });
   },
 );
+
+test.each([
+  ['http with a host only', 'http://localhost'],
+  ['an IP and a port', 'http://10.0.0.5:5080'],
+  ['a bracketed IPv6 address', 'https://[::1]:8443'],
+])('parseAppRedirect_WhenIssIsABareOrigin_ShouldAccept (%s)', (_, origin) => {
+  const url = appRedirect({ code: 'c', state: 's', iss: origin });
+
+  expect(parseAppRedirect(url)).toEqual({ code: 'c', state: 's', iss: origin });
+});
+
+test.each([
+  ['a code with no iss', 'shiplean://signed-in?code=c&state=s'],
+  ['an error with no iss', 'shiplean://signed-in?error=cancelled&state=s'],
+  ['an empty iss', 'shiplean://signed-in?code=c&state=s&iss='],
+  [
+    'an iss with a path',
+    `shiplean://signed-in?code=c&state=s&iss=${encodeURIComponent('https://a.test/x')}`,
+  ],
+  [
+    'an iss with a trailing slash',
+    `shiplean://signed-in?code=c&state=s&iss=${encodeURIComponent('https://a.test/')}`,
+  ],
+  [
+    'an iss with a query',
+    `shiplean://signed-in?code=c&state=s&iss=${encodeURIComponent('https://a.test?x=1')}`,
+  ],
+  [
+    'an iss with user info',
+    `shiplean://signed-in?code=c&state=s&iss=${encodeURIComponent('https://u@a.test')}`,
+  ],
+  [
+    'an iss with another scheme',
+    `shiplean://signed-in?code=c&state=s&iss=${encodeURIComponent('ftp://a.test')}`,
+  ],
+  ['an iss that is a bare host', 'shiplean://signed-in?code=c&state=s&iss=a.test'],
+  [
+    'an error whose iss has a path',
+    `shiplean://signed-in?error=unsupported&state=s&iss=${encodeURIComponent('https://a.test/x')}`,
+  ],
+])('parseAppRedirect_WhenIssIsMissingOrNotAnOrigin_ShouldBeNull (%s)', (_, url) => {
+  expect(parseAppRedirect(url)).toBeNull();
+});
 
 test.each([
   ['another scheme', 'https://signed-in?code=c&state=s'],
@@ -115,7 +161,10 @@ test.each([
   ['both a code and an error', 'shiplean://signed-in?code=c&error=cancelled&state=s'],
   ['broken percent-encoding', 'shiplean://signed-in?code=%zz&state=s'],
 ])('parseAppRedirect_WhenNotOneOfOurUrls_ShouldBeNull (%s)', (_, url) => {
-  expect(parseAppRedirect(url)).toBeNull();
+  // With a good iss, so each URL is null for its own reason and not for want of one.
+  const withIss = url.includes('?') ? `${url}&${issQuery}` : url;
+
+  expect(parseAppRedirect(withIss)).toBeNull();
 });
 
 test('challengeFor_ShouldMatchTheRfc7636Vector', () => {

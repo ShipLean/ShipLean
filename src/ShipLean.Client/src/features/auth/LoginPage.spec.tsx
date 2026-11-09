@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
+import { confirmUrl } from '@shiplean/core/handoff';
 import { AppRoutes } from '../../AppRoutes';
 import { componentTestIds } from '../../components/testIds';
 import { appTestIds } from '../../testIds';
@@ -403,7 +404,7 @@ test('LoginPage_WhenGoogleRefused_ShouldSayWhoToAsk', async ({ mount, page }) =>
   await expect(page.getByTestId(ids.note)).toContainText('Ask your ShipLean admin');
 });
 
-const appReturn = `/mobile/sign-in?challenge=${challenge}&state=st-1&device=${encodeURIComponent('Priya’s Pixel 9')}`;
+const appReturn = confirmUrl('', { challenge, state: 'st-1', device: 'Priya’s Pixel 9' });
 const appRoute = `/login?returnUrl=${encodeURIComponent(appReturn)}`;
 
 for (const theme of ['light', 'dark'] as const) {
