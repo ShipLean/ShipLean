@@ -66,6 +66,22 @@ public class AttachmentMirrorTests
     }
 
     [Test]
+    public async Task Mirror_WhenRunTwice_ShouldNotCheckEachKey()
+    {
+        await PutAsync("attachments/a", "alpha", "text/plain");
+        await PutAsync("attachments/b", "bravo", "text/plain");
+        var inventory = new InMemoryBlobInventory(_blobs);
+        await MirrorAsync(inventory, 1);
+        var counting = new CountingDestination(_destination);
+
+        var again = await MirrorAsync(inventory, 1, counting);
+
+        again.ShouldBe(new MirrorResult(0, 0));
+        counting.ExistsCalls.ShouldBe(0);
+        counting.ListCalls.ShouldBe(1);
+    }
+
+    [Test]
     public async Task Mirror_WhenGenerationChanges_ShouldCopyAllAgain()
     {
         await PutAsync("attachments/a", "alpha", "text/plain");
@@ -84,8 +100,9 @@ public class AttachmentMirrorTests
     {
         await PutAsync("attachments/a", "alpha", "text/plain");
 
-        var thrown = await Should.ThrowAsync<InvalidOperationException>(() => MirrorAsync(new ListedInventory("attachments/a", "attachments/gone"), 1));
+        var thrown = await Should.ThrowAsync<BlobUnreadableException>(() => MirrorAsync(new ListedInventory("attachments/a", "attachments/gone"), 1));
 
+        thrown.BlobKey.ShouldBe("attachments/gone");
         thrown.Message.ShouldBe("Blob 'attachments/gone' is listed but can't be read.");
     }
 
@@ -133,13 +150,13 @@ public class AttachmentMirrorTests
     private Task PutAsync(string key, string text, string contentType)
         => _blobs.PutAsync(key, new MemoryStream(Encoding.UTF8.GetBytes(text)), contentType, CancellationToken.None);
 
-    private Task<MirrorResult> MirrorAsync(IBlobInventory inventory, int generation)
+    private Task<MirrorResult> MirrorAsync(IBlobInventory inventory, int generation, IBackupDestination? destination = null)
     {
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?> { [BackupTempFiles.TempKey] = _folder })
             .Build();
         var mirror = new AttachmentMirror(inventory, _blobs, _cipher, new BackupTempFiles(configuration));
-        return mirror.MirrorAsync(_destination, Prefix, generation, Passphrase, CancellationToken.None);
+        return mirror.MirrorAsync(destination ?? _destination, Prefix, generation, Passphrase, CancellationToken.None);
     }
 
     // Lists the given keys whether or not the store holds them.
@@ -154,5 +171,31 @@ public class AttachmentMirrorTests
 
             await Task.CompletedTask;
         }
+    }
+
+    // Forwards to the in-memory destination and counts the calls the mirror makes to check what it holds.
+    private sealed class CountingDestination(InMemoryBackupDestination inner) : IBackupDestination
+    {
+        public int ExistsCalls { get; private set; }
+
+        public int ListCalls { get; private set; }
+
+        public Task PutAsync(string key, Stream content, CancellationToken cancellationToken) => inner.PutAsync(key, content, cancellationToken);
+
+        public Task<bool> ExistsAsync(string key, CancellationToken cancellationToken)
+        {
+            ExistsCalls++;
+            return inner.ExistsAsync(key, cancellationToken);
+        }
+
+        public Task DeleteAsync(string key, CancellationToken cancellationToken) => inner.DeleteAsync(key, cancellationToken);
+
+        public IAsyncEnumerable<BackupObject> ListAsync(string prefix, CancellationToken cancellationToken)
+        {
+            ListCalls++;
+            return inner.ListAsync(prefix, cancellationToken);
+        }
+
+        public Task<BackupProbeResult> ProbeAsync(CancellationToken cancellationToken) => inner.ProbeAsync(cancellationToken);
     }
 }

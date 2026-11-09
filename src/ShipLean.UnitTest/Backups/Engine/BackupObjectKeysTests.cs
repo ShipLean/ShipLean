@@ -22,4 +22,13 @@ public class BackupObjectKeysTests
 
         key.ShouldBe("shiplean/attachments/g2/attachments/9f1c2d3e.slbk");
     }
+
+    [Test]
+    public void ObjectKeys_WhenAttachmentPrefix_ShouldBeFolderOfAttachmentKeys()
+    {
+        var prefix = BackupObjectKeys.AttachmentPrefix("shiplean/", 2);
+
+        prefix.ShouldBe("shiplean/attachments/g2/");
+        BackupObjectKeys.Attachment("shiplean/", 2, "attachments/9f1c2d3e").ShouldStartWith(prefix);
+    }
 }
