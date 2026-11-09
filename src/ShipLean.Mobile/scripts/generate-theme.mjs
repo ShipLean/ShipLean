@@ -18,8 +18,9 @@ const px = (value) => {
   return String(Number(n.toFixed(2)));
 };
 // Font size keys start with a digit in the tokens ("2xs"); the app's keys are identifiers (xxs).
-const sizeKey = (key) => key.replace(/^2/, 'xx').replace(/^(x+)xs$/, '$1s');
-const sorted = (entries) => [...entries].sort(([a], [b]) => a.localeCompare(b));
+const sizeKey = (key) => key.replace(/^(\d)x/, (_, n) => 'x'.repeat(Number(n)));
+// Plain code-unit order, so the output is byte-identical on every host whatever its locale.
+const sorted = (entries) => [...entries].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
 
 function object(entries, indent) {
   const pad = '  '.repeat(indent);

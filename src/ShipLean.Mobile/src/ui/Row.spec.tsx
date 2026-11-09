@@ -18,6 +18,6 @@ describe.each(['light', 'dark'] as const)('Row (%s)', (scheme) => {
     await renderScreen(<Row title="Alpha" testID="row" />, { scheme });
 
     expect(screen.getByTestId('row')).toBeOnTheScreen();
-    expect(screen.queryByRole('button')).toBeNull();
+    expect(screen.getByTestId('row').props.accessibilityRole).toBeUndefined();
   });
 });
