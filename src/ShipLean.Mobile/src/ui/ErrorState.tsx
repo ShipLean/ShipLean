@@ -41,7 +41,12 @@ export function ErrorState({ title, body, action }: ErrorStateProps) {
       ) : null}
       {action ? (
         <View style={{ marginTop: theme.space[2], alignSelf: 'stretch' }}>
-          <Button label={action.label} onPress={action.onPress} testID={uiIds.errorStateAction} />
+          <Button
+            label={action.label}
+            onPress={action.onPress}
+            busy={action.busy}
+            testID={uiIds.errorStateAction}
+          />
         </View>
       ) : null}
     </View>

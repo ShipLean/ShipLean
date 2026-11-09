@@ -4,13 +4,11 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 import { links } from '../links';
-import { Button } from '../ui/Button';
 import { EmptyState } from '../ui/EmptyState';
 import { ErrorState } from '../ui/ErrorState';
 import { Row } from '../ui/Row';
 import { Screen } from '../ui/Screen';
 import { TopBar } from '../ui/TopBar';
-import { uiIds } from '../ui/testIds';
 import { projectRowId, projectsIds } from './projects/testIds';
 import { screenIds } from './testIds';
 
@@ -49,15 +47,15 @@ export function ProjectsScreen() {
               <ActivityIndicator />
             </View>
           ) : projects.isError ? (
-            <View>
-              <ErrorState title="Couldn't load your projects." body={projects.error.message} />
-              <Button
-                label="Retry"
-                busy={projects.isFetching}
-                testID={uiIds.errorStateAction}
-                onPress={() => void projects.refetch()}
-              />
-            </View>
+            <ErrorState
+              title="Couldn't load your projects."
+              body={projects.error.message}
+              action={{
+                label: 'Retry',
+                busy: projects.isFetching,
+                onPress: () => void projects.refetch(),
+              }}
+            />
           ) : (
             <EmptyState title="You're not in any projects yet." />
           )

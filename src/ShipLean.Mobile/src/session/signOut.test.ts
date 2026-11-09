@@ -86,3 +86,14 @@ test('clears while the server hangs', () => {
     `Bearer ${TEST_SECRET}`,
   );
 });
+
+test('asks the server with signIn and a timeout signal, so a late 401 never signs out a new session', async () => {
+  const seen: { signIn?: boolean; signal?: AbortSignal }[] = [];
+  await signOut({
+    endSession: async (options) => void seen.push(options),
+    clear: () => undefined,
+  });
+  expect(seen).toHaveLength(1);
+  expect(seen[0].signIn).toBe(true);
+  expect(seen[0].signal).toBeInstanceOf(AbortSignal);
+});

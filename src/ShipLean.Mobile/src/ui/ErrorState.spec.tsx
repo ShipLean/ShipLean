@@ -20,4 +20,17 @@ describe.each(['light', 'dark'] as const)('ErrorState (%s)', (scheme) => {
 
     expect(onPress).toHaveBeenCalledTimes(1);
   });
+
+  test('press_WhenTheActionIsBusy_ShouldShowBusyAndNotCallIt', async () => {
+    const onPress = jest.fn();
+    await renderScreen(
+      <ErrorState title="Oops" action={{ label: 'Retry', onPress, busy: true }} />,
+      { scheme },
+    );
+
+    await fireEvent.press(screen.getByTestId('error-state-action'));
+
+    expect(screen.getByTestId('error-state-action')).toBeBusy();
+    expect(onPress).not.toHaveBeenCalled();
+  });
 });
