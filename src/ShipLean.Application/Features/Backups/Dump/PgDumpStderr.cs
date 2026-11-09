@@ -2,7 +2,9 @@ using System.Text;
 
 namespace ShipLean.Application.Features.Backups.Dump;
 
-// What of pg_dump's stderr is kept for a failure message: its own "pg_dump:" lines, the password scrubbed, 2 KB at most.
+// What of pg_dump's stderr is kept for a failure message: its own "pg_dump:" lines, the password scrubbed from the
+// text after the prefix, 2 KB at most. When the limit is reached the tail is kept (the oldest text is dropped), because
+// the last line is usually the real error.
 public sealed class PgDumpStderr(string? password)
 {
     public const int MaxBytes = 2048;
@@ -15,27 +17,29 @@ public sealed class PgDumpStderr(string? password)
         {
             return;
         }
-        var clean = string.IsNullOrEmpty(password) ? line : line.Replace(password, "***", StringComparison.Ordinal);
+        var text = line[Prefix.Length..];
+        var clean = Prefix + (string.IsNullOrEmpty(password) ? text : text.Replace(password, "***", StringComparison.Ordinal));
         if (_kept.Length > 0)
         {
             _kept.Append('\n');
         }
         _kept.Append(clean);
-        if (Encoding.UTF8.GetByteCount(_kept.ToString()) > MaxBytes)
+        if (_kept.Length > MaxBytes)
         {
-            Trim();
+            _kept.Remove(0, _kept.Length - MaxBytes);
         }
     }
 
-    public override string ToString() => _kept.ToString();
-
-    private void Trim()
+    public override string ToString()
     {
         var text = _kept.ToString();
-        while (Encoding.UTF8.GetByteCount(text) > MaxBytes)
+        var bytes = Encoding.UTF8.GetByteCount(text);
+        var cut = 0;
+        while (bytes > MaxBytes)
         {
-            text = text[..^1];
+            bytes -= Encoding.UTF8.GetByteCount(text.AsSpan(cut, 1));
+            cut++;
         }
-        _kept.Clear().Append(text);
+        return text[cut..];
     }
 }

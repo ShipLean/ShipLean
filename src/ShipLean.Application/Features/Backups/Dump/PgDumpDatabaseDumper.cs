@@ -53,8 +53,10 @@ public sealed class PgDumpDatabaseDumper(IConfiguration configuration) : IDataba
                 await process.WaitForExitAsync(cancellationToken);
             }
         }
-        catch (OperationCanceledException)
+        catch
         {
+            // Any failure, a full disk or a throwing encryptor as much as a cancel: pg_dump would stay blocked on a full
+            // stdout pipe and the stderr read below would never end.
             Kill(process);
             await process.WaitForExitAsync(CancellationToken.None);
             throw;
@@ -74,9 +76,16 @@ public sealed class PgDumpDatabaseDumper(IConfiguration configuration) : IDataba
 
     private static async Task ReadErrorsAsync(Process process, PgDumpStderr stderr)
     {
-        while (await process.StandardError.ReadLineAsync() is { } line)
+        try
         {
-            stderr.Add(line);
+            while (await process.StandardError.ReadLineAsync() is { } line)
+            {
+                stderr.Add(line);
+            }
+        }
+        catch (IOException)
+        {
+            // A broken stderr only loses the detail of a failure; it must not replace the error being thrown.
         }
     }
 

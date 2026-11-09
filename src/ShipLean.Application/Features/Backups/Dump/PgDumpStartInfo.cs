@@ -22,6 +22,7 @@ public static class PgDumpStartInfo
     private static readonly HashSet<string> Mapped = new(StringComparer.OrdinalIgnoreCase)
     {
         "Host", "Port", "Database", "Username", "Password", "SSL Mode", "Root Certificate", "SSL Certificate", "SSL Key",
+        "Gss Encryption Mode",
     };
 
     // inheritedEnvironment is the host's environment; only PATH, LANG and TZ are taken from it. homeFolder must be an
@@ -74,6 +75,7 @@ public static class PgDumpStartInfo
         Set(environment, "PGSSLROOTCERT", builder.RootCertificate);
         Set(environment, "PGSSLCERT", builder.SslCertificate);
         Set(environment, "PGSSLKEY", builder.SslKey);
+        environment["PGGSSENCMODE"] = GssEncryptionMode(builder.GssEncryptionMode);
         environment["PGAPPNAME"] = "shiplean-backup";
         return startInfo;
     }
@@ -122,6 +124,14 @@ public static class PgDumpStartInfo
             environment[name] = value;
         }
     }
+
+    private static string GssEncryptionMode(GssEncryptionMode mode) => mode switch
+    {
+        Npgsql.GssEncryptionMode.Disable => "disable",
+        Npgsql.GssEncryptionMode.Prefer => "prefer",
+        Npgsql.GssEncryptionMode.Require => "require",
+        _ => throw new DatabaseDumpException($"GSS encryption mode '{mode}' {NotSupported}."),
+    };
 
     private static string SslMode(SslMode mode) => mode switch
     {

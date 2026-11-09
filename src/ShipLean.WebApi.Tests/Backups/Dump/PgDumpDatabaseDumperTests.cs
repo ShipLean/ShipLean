@@ -42,6 +42,7 @@ public class PgDumpDatabaseDumperTests
             await using (var output = File.Create(file))
             {
                 await Dumper(source.ConnectionString).DumpAsync(output, CancellationToken.None);
+                output.CanWrite.ShouldBeTrue();
             }
 
             await RestoreAsync(target.ConnectionString, file);
@@ -81,6 +82,36 @@ public class PgDumpDatabaseDumperTests
         thrown.Message.ShouldNotContain("not a pg_dump line");
     }
 
+    // A real refused login: the test server trusts known roles, but an unknown role is still refused.
+    [Test]
+    public async Task Dump_WhenRoleMissing_ShouldThrowWithoutPassword()
+    {
+        await using var source = await ShipLeanDatabase.CloneSeedAsync();
+        const string password = "distinct-secret-7c1e4d";
+        var real = new NpgsqlConnectionStringBuilder(source.ConnectionString);
+        var connection = $"Host={real.Host};Port={real.Port};Database={real.Database};Username=shiplean_no_such_role_{Guid.NewGuid():N};Password={password}";
+
+        var thrown = await Should.ThrowAsync<DatabaseDumpException>(
+            () => Dumper(connection).DumpAsync(new MemoryStream(), CancellationToken.None));
+
+        thrown.Message.ShouldContain("pg_dump:");
+        thrown.Message.ShouldNotContain(password);
+    }
+
+    [Test]
+    [SupportedOSPlatform("linux")]
+    public async Task Dump_WhenOutputFails_ShouldStopProcess()
+    {
+        var script = Path.Combine(NewFolder(), "big-pg_dump");
+        await File.WriteAllTextAsync(script, "#!/bin/sh\nhead -c 1048576 /dev/zero\n");
+        File.SetUnixFileMode(script, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+
+        // AG0032 bans Task.Wait*, so the bound is a token: a hang ends as OperationCanceledException after 30 s and fails the assertion.
+        using var bound = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+
+        await Should.ThrowAsync<IOException>(() => Dumper(ConnectionOnly, script).DumpAsync(new FailingStream(), bound.Token));
+    }
+
     [Test]
     public async Task Dump_WhenBinaryMissing_ShouldNameSetting()
     {
@@ -98,7 +129,7 @@ public class PgDumpDatabaseDumperTests
     public async Task Dump_WhenCancelled_ShouldKillProcess()
     {
         var script = Path.Combine(NewFolder(), "slow-pg_dump");
-        await File.WriteAllTextAsync(script, "#!/bin/sh\nsleep 300 &\necho \"$$ $!\"\nwait\n");
+        await File.WriteAllTextAsync(script, "#!/bin/sh\nsleep 300 </dev/null >/dev/null 2>&1 &\necho \"$$ $!\"\nwait\n");
         File.SetUnixFileMode(script, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
         var output = new SignalingStream();
         using var cancel = new CancellationTokenSource();
@@ -179,7 +210,7 @@ public class PgDumpDatabaseDumperTests
         start.Environment["TZ"].ShouldBe("UTC");
         start.Environment.Keys.Order(StringComparer.Ordinal).ShouldBe(
         [
-            "HOME", "LANG", "PATH", "PGAPPNAME", "PGDATABASE", "PGHOST", "PGPASSFILE", "PGPASSWORD", "PGPORT",
+            "HOME", "LANG", "PATH", "PGAPPNAME", "PGDATABASE", "PGGSSENCMODE", "PGHOST", "PGPASSFILE", "PGPASSWORD", "PGPORT",
             "PGSERVICEFILE", "PGSSLMODE", "PGSYSCONFDIR", "PGUSER", "TZ",
         ]);
     }
@@ -193,6 +224,12 @@ public class PgDumpDatabaseDumperTests
         start.Environment["PGSSLROOTCERT"].ShouldBe("/certs/ca.pem");
         start.Environment["PGSSLCERT"].ShouldBe("/certs/c.pem");
         start.Environment["PGSSLKEY"].ShouldBe("/certs/k.pem");
+    }
+
+    [Test]
+    public void Start_WhenGssEncryptionRequired_ShouldMapIt()
+    {
+        Create(ConnectionOnly + ";Gss Encryption Mode=Require").Environment["PGGSSENCMODE"].ShouldBe("require");
     }
 
     [Test]
