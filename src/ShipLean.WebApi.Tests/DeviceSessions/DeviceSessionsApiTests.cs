@@ -143,6 +143,7 @@ public class DeviceSessionsApiTests : ApiFixture
         var tracked = Recorder.Events.ShouldHaveSingleItem();
         tracked.Name.ShouldBe(UsageEventNames.DeviceSessionCreated);
         tracked.Actor.ShouldBe(UsageActor.ForUser(SeedIds.Users.Joel));
+        tracked.Surface.ShouldBe(UsageSurface.App);
     }
 
     [Test]
@@ -220,6 +221,7 @@ public class DeviceSessionsApiTests : ApiFixture
         var tracked = Recorder.Events.ShouldHaveSingleItem();
         tracked.Name.ShouldBe(UsageEventNames.DeviceSessionEnded);
         tracked.Properties[UsageProps.Reason].ShouldBe(DeviceSessionEndReasons.WebSignOut);
+        tracked.Surface.ShouldBe(UsageSurface.Web);
     }
 
     [Test]
@@ -267,6 +269,7 @@ public class DeviceSessionsApiTests : ApiFixture
         var tracked = Recorder.Events.ShouldHaveSingleItem();
         tracked.Name.ShouldBe(UsageEventNames.DeviceSessionEnded);
         tracked.Properties[UsageProps.Reason].ShouldBe(DeviceSessionEndReasons.AppSignOut);
+        tracked.Surface.ShouldBe(UsageSurface.App);
     }
 
     // Outside /api the selector never sends the bearer to DeviceBearer: a page load with only a bearer is not signed in.
