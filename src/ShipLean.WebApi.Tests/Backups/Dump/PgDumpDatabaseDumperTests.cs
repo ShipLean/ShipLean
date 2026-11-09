@@ -106,10 +106,8 @@ public class PgDumpDatabaseDumperTests
         await File.WriteAllTextAsync(script, "#!/bin/sh\nhead -c 1048576 /dev/zero\n");
         File.SetUnixFileMode(script, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
 
-        // AG0032 bans Task.Wait*, so the bound is a token: a hang ends as OperationCanceledException after 30 s and fails the assertion.
-        using var bound = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-
-        await Should.ThrowAsync<IOException>(() => Dumper(ConnectionOnly, script).DumpAsync(new FailingStream(), bound.Token));
+        // Without the fix this hangs (AG0032 bans Task.Wait*/WaitAsync, so the test cannot bound it itself).
+        await Should.ThrowAsync<IOException>(() => Dumper(ConnectionOnly, script).DumpAsync(new FailingStream(), CancellationToken.None));
     }
 
     [Test]
