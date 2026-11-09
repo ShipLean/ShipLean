@@ -161,7 +161,9 @@ public class ItemAsksApiTests : ApiFixture
         answer.BodyHtml.ShouldContain("<strong>Yes</strong>");
         answer.By.ShouldNotBeNull().Id.ShouldBe(SeedIds.Users.Mei);
         answer.AgentName.ShouldBe("Claude Code (test)");
-        answer.AtLabel.ShouldBe(DisplayDate.Relative(answer.At, TimeProvider.System));
+        // Ten days old reads as a short day, "d MMM" within this year and "d MMM yyyy" before it; spelled out here, not taken from DisplayDate.
+        var format = written.Year == TimeProvider.System.GetUtcNow().Year ? "d MMM" : "d MMM yyyy";
+        answer.AtLabel.ShouldBe(written.ToString(format, System.Globalization.CultureInfo.InvariantCulture));
         asks.OpenQuestions.ShouldBe(0);
     }
 

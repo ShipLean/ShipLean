@@ -289,6 +289,7 @@ public class DecisionRecorderTests : ApiFixture
         var refused = await RefusedAsync(item, Open(3, "One?", "Yes"), Open(3, "Two?", "Yes"));
 
         refused.Message.ShouldStartWith("D3: ");
+        refused.Message.ShouldContain("can appear once");
         await NothingWrittenAsync(item);
     }
 
@@ -301,6 +302,7 @@ public class DecisionRecorderTests : ApiFixture
         var refused = await RefusedAsync(item, Open(number, "Zero?", "Yes"));
 
         refused.Message.ShouldStartWith($"D{number}: ");
+        refused.Message.ShouldContain("greater than 0");
         await NothingWrittenAsync(item);
     }
 
@@ -312,6 +314,7 @@ public class DecisionRecorderTests : ApiFixture
         var refused = await RefusedAsync(item, Open(null, new string('q', 501), "Yes"));
 
         refused.Message.ShouldStartWith("Decision 1: ");
+        refused.Message.ShouldContain("at most 500 characters");
         await NothingWrittenAsync(item);
     }
 
@@ -323,6 +326,7 @@ public class DecisionRecorderTests : ApiFixture
         var refused = await RefusedAsync(item, Open(null, "Fine?", "Yes"), Open(null, "Long?", new string('a', 501)));
 
         refused.Message.ShouldStartWith("Decision 2: ");
+        refused.Message.ShouldContain("at most 500 characters");
         await NothingWrittenAsync(item);
     }
 
@@ -334,6 +338,7 @@ public class DecisionRecorderTests : ApiFixture
         var refused = await RefusedAsync(item, Open(2, "Many?", "A", "B", "C", "D", "E", "F", "G", "H"));
 
         refused.Message.ShouldStartWith("D2: ");
+        refused.Message.ShouldContain("at most 6 alternatives");
         await NothingWrittenAsync(item);
     }
 
@@ -347,7 +352,8 @@ public class DecisionRecorderTests : ApiFixture
 
         var refused = await RefusedAsync(item, Settled(1, "Now settled?", "Yes", new SettledAnswer(SeedIds.Users.Joel, on, AnswerKind.Recommended, null, null)));
 
-        refused.Message.ShouldStartWith("D1 ");
+        refused.Message.ShouldStartWith("D1: ");
+        refused.Message.ShouldContain("can only be created, not edited");
         var decision = await AskRows.DecisionAsync(connection, id);
         (decision.Question, decision.State).ShouldBe(("Still open?", "open"));
         (await AskRows.EventsAsync(connection, item)).ShouldBeEmpty();
@@ -362,18 +368,23 @@ public class DecisionRecorderTests : ApiFixture
         var before = await AskRows.DecisionsAsync(connection, item);
         var eventsBefore = await AskRows.EventsAsync(connection, item);
 
+        using var watch = new ProjectEventWatch(Host.Services.GetRequiredService<IProjectEvents>(), SeedIds.Projects.Ship);
+
         var recorded = await RecordAsync(item, Open(1, "Same?", "Yes", "No"));
+        var sentinel = await NewItemAsync();
+        await RecordAsync(sentinel, Open(null, "Sentinel?", "Yes"));
 
         recorded.Created.ShouldBeEmpty();
         recorded.Updated.ShouldBeEmpty();
         (await AskRows.DecisionsAsync(connection, item)).Select(d => (d.Id, d.Question, d.Recommended, d.UpdatedAt))
             .ShouldBe(before.Select(d => (d.Id, d.Question, d.Recommended, d.UpdatedAt)));
         (await AskRows.EventsAsync(connection, item)).Count.ShouldBe(eventsBefore.Count);
+        (await watch.NextAsync<AsksChanged>(_ => true)).WorkItemId.ShouldBe(sentinel);
     }
 
-    [TestCase("Yes", "recommended")]
-    [TestCase("  Maybe ", "alternative")]
-    public async Task Record_WhenSettledOwnAnswerRepeatsAnAnswer_ShouldFailValidation(string own, string _)
+    [TestCase("Yes")]
+    [TestCase("  Maybe ")]
+    public async Task Record_WhenSettledOwnAnswerRepeatsAnAnswer_ShouldFailValidation(string own)
     {
         var item = await NewItemAsync();
         var on = DateOnly.FromDateTime(TestDates.Today.UtcDateTime);
@@ -381,6 +392,7 @@ public class DecisionRecorderTests : ApiFixture
         var refused = await RefusedAsync(item, Settled(7, "Own?", "Yes", new SettledAnswer(SeedIds.Users.Joel, on, AnswerKind.Own, null, own), "Maybe"));
 
         refused.Message.ShouldStartWith("D7: ");
+        refused.Message.ShouldContain("must differ from the recommended answer and the alternatives");
         await NothingWrittenAsync(item);
     }
 

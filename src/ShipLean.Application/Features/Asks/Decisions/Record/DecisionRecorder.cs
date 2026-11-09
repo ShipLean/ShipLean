@@ -58,11 +58,11 @@ public sealed class DecisionRecorder(
             }
             else if (existing.State != "open")
             {
-                throw ApiException.Validation($"D{record.Number} is {existing.State}: only an open decision can be edited.", Field);
+                throw ApiException.Validation($"D{record.Number}: is {existing.State}, so it can't be edited; only an open decision can be edited.", Field);
             }
             else if (record.Settled is not null)
             {
-                throw ApiException.Validation($"D{record.Number} is open: a settled decision can only be created, not edited.", Field);
+                throw ApiException.Validation($"D{record.Number}: is open, so a settled decision can only be created, not edited.", Field);
             }
             else if (await EditAsync(transaction, workItemId, existing, record, actor, cancellationToken))
             {
