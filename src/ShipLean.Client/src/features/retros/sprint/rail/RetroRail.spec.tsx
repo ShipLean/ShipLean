@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { ProjectDto } from '../../../../api/projects';
-import type { SprintDto } from '../../../../api/sprints';
+import type { ProjectDto } from '@shiplean/core/api/projects';
+import type { SprintDto } from '@shiplean/core/api/sprints';
 import { sprintRetro } from '../../ct/retroFixtures';
 import { retroSharedTestIds as shared } from '../../../retroShared/testIds';
 import { retrosTestIds as ids } from '../../testIds';

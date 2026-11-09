@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { fetchSearch } from '../../../api/search';
+import { fetchSearch } from '@shiplean/core/api/search';
 import { useProjects } from '../../shell/useShellQueries';
 import { useShellProject } from '../../shell/useShellProject';
 import { useDebouncedValue } from '../../workItem/form/description/useDebouncedValue';

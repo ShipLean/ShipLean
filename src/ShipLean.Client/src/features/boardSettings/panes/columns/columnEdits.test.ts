@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
-import type { BoardColumnJson } from '../../../../api/persisted';
-import type { BoardTypeStatesDto } from '../../../../api/boards';
+import type { BoardColumnJson } from '@shiplean/core/api/persisted';
+import type { BoardTypeStatesDto } from '@shiplean/core/api/boards';
 import {
   blankColumn,
   columnForState,

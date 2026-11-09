@@ -1,5 +1,5 @@
-import type { WorkItemDto } from '../../../api/workItems';
-import { isStoryLevel } from '../../../api/workItemTypes';
+import type { WorkItemDto } from '@shiplean/core/api/workItems';
+import { isStoryLevel } from '@shiplean/core/api/workItemTypes';
 
 export interface SprintStory {
   story: WorkItemDto;

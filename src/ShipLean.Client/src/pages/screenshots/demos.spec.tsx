@@ -4,7 +4,7 @@ import { demosTestIds as ids } from '../../features/demos/testIds';
 import { workItemTestIds } from '../../features/workItem/testIds';
 import { stubApi } from '../../features/workItem/ct/stubApi';
 import { stubSide } from '../../features/workItem/ct/stubSide';
-import type { SprintDemoDto } from '../../api/demos';
+import type { SprintDemoDto } from '@shiplean/core/api/demos';
 import {
   bauAttachments,
   bauItem,

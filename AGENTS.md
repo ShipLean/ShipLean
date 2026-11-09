@@ -26,7 +26,8 @@ Self-hosted lean planning tool (backlogs, boards, sprints, a sprint taskboard) b
 | `src/ShipLean.WebApi.Tests/` | API tests: real app on Kestrel over a cloned Postgres database |
 | `src/ShipLean.AcceptanceTests/` | Playwright (.NET) against the built SPA. CI shards on namespaces `Harness`, `Journeys`, `Lanes.<Area>` |
 | `src/ShipLean.UnitTest/` | Last resort: pure helpers and architecture guard rails (see its `CLAUDE.md`) |
-| `src/ShipLean.Client/` | React SPA, own pnpm project. `pnpm run build` writes into `ShipLean.WebApi/wwwroot`. `*.spec.tsx` = Playwright CT, `*.test.ts(x)` = vitest |
+| `src/ShipLean.Client/` | React SPA (`shiplean-client`) in the pnpm workspace rooted at `src/` (one lockfile, `src/pnpm-lock.yaml`). `pnpm run build` writes into `ShipLean.WebApi/wwwroot`. `*.spec.tsx` = Playwright CT, `*.test.ts(x)` = vitest |
+| `src/ShipLean.Core.Client/` | `@shiplean/core`: the platform-neutral API layer (`@shiplean/core/api/<module>`) the SPA and the phone app share. No React, no DOM (tsconfig lib and eslint enforce it). Checks: `cd src/ShipLean.Core.Client && pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm test` |
 | `db/schema`, `db/migrations`, `db/seed` | Applied in that order by DbUp. Migrations are additive: `<yyyyMMddHHmm>_<area>_<name>.sql` |
 | `.claude/skills/` | Repo skills referenced below (testing, UTC, API view models, IoC, …) |
 
@@ -43,7 +44,7 @@ CI runs on GitHub-hosted runners (about 6 jobs per pull request), so:
 ```bash
 dotnet build src/ShipLean.slnx -c Release                                   # warnings are errors
 shiplean-test src/ShipLean.WebApi.Tests --filter "FullyQualifiedName~HealthTests"
-(cd src/ShipLean.Client && pnpm install && pnpm run build)                  # acceptance tests serve this bundle; rebuild after client changes
+(cd src && pnpm install && cd ShipLean.Client && pnpm run build)          # pnpm workspace at src/; acceptance tests serve this bundle; rebuild after client changes
 shiplean-test src/ShipLean.AcceptanceTests --filter "FullyQualifiedName~ShipLean.AcceptanceTests.Lanes.Board."
 cd src/ShipLean.Client && pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm test && pnpm run test-ct
 ```
@@ -72,7 +73,7 @@ New feature should have analytic events in them, we should be measuring impact o
 - **Access first:** every command or query taking a project id calls `IProjectAccess.RequireAsync(...)` before validating the body; non-members get `not_found`, and instance admins get no implicit access.
 - **Endpoints and DI:** never edit `Program.cs`. Features register via `IServiceModule` and expose HTTP through one-line controllers on `ApiControllerBase` with full `api/...` attribute routes and `[ProducesResponseType]`. `IEndpointModule` is only for non-MVC endpoints (hub, health). Own types use Agoda.IoC attributes; each `ShipLean.Contracts` interface gets exactly one registration in its own `IServiceModule` (`ServiceModuleTests`). Read configuration at resolve time, not in `AddServices`, or test overrides miss it.
 - **Breaking down a ShipLean item** (a Feature or Epic into stories and tasks, any size, including a pasted `…/items/SHIP-n` link): follow the planning guide (`planning_guide` over the `shiplean` MCP) and capture the plan with `capture_plan`. Without the MCP, read `src/ShipLean.WebApi/Features/Mcp/Planning/Guide/guide.md` and ask the person to connect the MCP (`/mcp`) before creating any items. Never hand-build the tree over `/api`.
-- **Agents (MCP):** `/mcp` takes a bearer token, never the cookie; `/api/*` never accepts a bearer. The `/oauth/*` and `/.well-known/*` controllers must stay `[AllowAnonymous]`, or the cookie fallback policy refuses an agent with no session.
+- **Agents (MCP):** `/mcp` takes a bearer token, never the cookie; `/api/*` and `/hubs/*` accept only the device-session bearer (`shl_dev_…`, on `/hubs` also as `access_token`; docs/auth.md), which never works on `/mcp`; `/mcp` tokens never work on `/api`. The `/oauth/*` and `/.well-known/*` controllers must stay `[AllowAnonymous]`, or the cookie fallback policy refuses an agent with no session.
 - **Dapper:** maps columns onto record constructors by name and exact type: cast in SQL (`count(*)::int`); pass timestamps as UTC (Npgsql rejects other offsets).
 - **Reuse, don't rewrite:** `MarkdownRenderer` (server-side Markdig + sanitizer), `DisplayDate.Relative`/`ShortDay` for date labels (tests compute expected labels with them), `IRequestOrigin.ClientId` for which tab sent a request.
 - **UTC everywhere**, no `Date` objects in the SPA (`.claude/skills/utc-everywhere/`). One request per screen with view models (`.claude/skills/api-response-for-browser/`).

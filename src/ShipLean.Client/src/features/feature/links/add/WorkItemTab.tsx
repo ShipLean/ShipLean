@@ -1,4 +1,4 @@
-import { LINK_TYPES, type LinkType } from '../../../../api/persisted';
+import { LINK_TYPES, type LinkType } from '@shiplean/core/api/persisted';
 import { inputClass, selectClass } from '../../../workItem/form/inputClasses';
 import { linkTypeLabels } from '../../../workItem/links/linkTypes';
 import { featureTestIds as ids } from '../../testIds';

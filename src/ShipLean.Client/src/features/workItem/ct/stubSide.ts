@@ -1,7 +1,7 @@
-import type { AttachmentDto } from '../../../api/attachments';
-import type { FieldChange } from '../../../api/persisted';
-import type { UserRef } from '../../../api/refs';
-import type { RevisionDto } from '../../../api/workItems';
+import type { AttachmentDto } from '@shiplean/core/api/attachments';
+import type { FieldChange } from '@shiplean/core/api/persisted';
+import type { UserRef } from '@shiplean/core/api/refs';
+import type { RevisionDto } from '@shiplean/core/api/workItems';
 
 // The part of Playwright's Page and Route these stubs use (the CT package does not re-export the types).
 interface StubRoute {

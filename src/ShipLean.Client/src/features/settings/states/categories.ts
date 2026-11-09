@@ -1,4 +1,4 @@
-import { STATE_CATEGORIES, type StateCategory, type WorkItemTypeId } from '../../../api/refs';
+import { STATE_CATEGORIES, type StateCategory, type WorkItemTypeId } from '@shiplean/core/api/refs';
 
 export const CATEGORY_LABELS: Record<StateCategory, string> = {
   proposed: 'Proposed',

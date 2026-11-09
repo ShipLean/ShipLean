@@ -1,5 +1,5 @@
-import type { SprintRef, UserRef } from '../../../api/refs';
-import type { TaskboardRowDto } from '../../../api/views';
+import type { SprintRef, UserRef } from '@shiplean/core/api/refs';
+import type { TaskboardRowDto } from '@shiplean/core/api/views';
 import { StateDot } from '../../../components/StateDot';
 import { PersonRow } from '../rows/PersonRow';
 import { StoryRow } from '../rows/StoryRow';

@@ -1,6 +1,6 @@
 import { Chip } from '../../../../components/Chip';
 import { TypeIcon } from '../../../../components/TypeIcon';
-import type { RetroCardDto } from '../../../../api/retros';
+import type { RetroCardDto } from '@shiplean/core/api/retros';
 import { AuthorChip } from '../../../retroShared/AuthorChip';
 import { FeatureChip } from '../../../retroShared/FeatureChip';
 

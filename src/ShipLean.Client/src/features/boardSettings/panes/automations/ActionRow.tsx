@@ -1,4 +1,4 @@
-import type { ActionJson } from '../../../../api/persisted';
+import type { ActionJson } from '@shiplean/core/api/persisted';
 import { Markdown } from '../../../../components/Markdown';
 import { useRenderedMarkdown } from '../../../workItem/workItemApi';
 import { boardSettingsTestIds as ids } from '../../testIds';

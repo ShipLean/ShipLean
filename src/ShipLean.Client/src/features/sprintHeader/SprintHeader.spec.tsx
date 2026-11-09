@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { ProjectDto } from '../../api/projects';
-import type { SprintDto } from '../../api/sprints';
+import type { ProjectDto } from '@shiplean/core/api/projects';
+import type { SprintDto } from '@shiplean/core/api/sprints';
 import { componentTestIds } from '../../components/testIds';
 import { sprintsTestIds } from '../sprints/testIds';
 import { SprintGoalHarness } from './ct/SprintGoalHarness';

@@ -1,5 +1,5 @@
-import { FIELD_IDS } from '../../../api/persisted';
-import type { ConflictDto } from '../../../api/workItems';
+import { FIELD_IDS } from '@shiplean/core/api/persisted';
+import type { ConflictDto } from '@shiplean/core/api/workItems';
 import { workItemTestIds as ids } from '../testIds';
 import { fieldLabels, type DraftField } from '../form/draft';
 

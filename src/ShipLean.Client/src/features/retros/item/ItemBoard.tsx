@@ -1,4 +1,4 @@
-import type { RetroItemDto, RetroPointDto } from '../../../api/retros';
+import type { RetroItemDto, RetroPointDto } from '@shiplean/core/api/retros';
 import { RetroBoard } from '../../retroShared/board/RetroBoard';
 import type { RetroItemAddress } from './retroItemAddress';
 

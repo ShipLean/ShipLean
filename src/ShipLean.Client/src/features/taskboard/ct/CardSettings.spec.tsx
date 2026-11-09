@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { CardFieldSettingJson } from '../../../api/persisted';
-import type { CardDto, TaskboardViewDto } from '../../../api/views';
+import type { CardFieldSettingJson } from '@shiplean/core/api/persisted';
+import type { CardDto, TaskboardViewDto } from '@shiplean/core/api/views';
 import { TaskboardSlot } from '../../../slots/TaskboardSlot';
 import { componentTestIds } from '../../../components/testIds';
 import { boardTestIds } from '../../board/testIds';

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { WorkItemTypeId } from '../../../api/refs';
-import type { ParentRefDto, WorkItemDto } from '../../../api/workItems';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
+import type { ParentRefDto, WorkItemDto } from '@shiplean/core/api/workItems';
 import { TypeIcon } from '../../../components/TypeIcon';
 import { workItemTestIds as ids } from '../testIds';
 import { useWorkItemsOfType } from '../workItemApi';

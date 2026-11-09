@@ -1,4 +1,4 @@
-import type { ConflictDto } from '../../../api/workItems';
+import type { ConflictDto } from '@shiplean/core/api/workItems';
 import { backlogTestIds as ids } from '../testIds';
 
 /**

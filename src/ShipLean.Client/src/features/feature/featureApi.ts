@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../api/client';
+import { api } from '@shiplean/core/api/client';
 import type {
   AttachmentCheckDto,
   AttachmentCheckRequest,
   AttachmentMarkdownDto,
-} from '../../api/attachments';
+} from '@shiplean/core/api/attachments';
 import type {
   AddLinkCardRequest,
   AddWorkItemLinkRequest,
@@ -14,8 +14,8 @@ import type {
   LinkCardsDto,
   LinkPreviewDto,
   WorkItemLinkRowDto,
-} from '../../api/linkCards';
-import type { RenderedMarkdownDto } from '../../api/markdown';
+} from '@shiplean/core/api/linkCards';
+import type { RenderedMarkdownDto } from '@shiplean/core/api/markdown';
 import { registerInvalidation } from '../../realtime';
 import { workItemKey } from '../workItem/workItemApi';
 

@@ -1,6 +1,6 @@
-import type { ProjectDto } from '../../../api/projects';
-import type { SprintRetroDto } from '../../../api/retros';
-import type { SprintDto } from '../../../api/sprints';
+import type { ProjectDto } from '@shiplean/core/api/projects';
+import type { SprintRetroDto } from '@shiplean/core/api/retros';
+import type { SprintDto } from '@shiplean/core/api/sprints';
 import { RetroActionDialogProvider } from '../../retroShared/actionDialog/RetroActionDialogProvider';
 import { ByWorkItem } from '../sprint/views/ByWorkItem';
 

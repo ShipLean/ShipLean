@@ -1,8 +1,13 @@
 import { beforeMount } from '@playwright/experimental-ct-react/hooks';
+import { configurePlatform } from '@shiplean/core/platform';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import '@fontsource-variable/inter';
 import '../src/index.css';
+import { webPlatform } from '../src/webPlatform';
+
+// The web platform, as main.tsx configures it.
+configurePlatform(webPlatform);
 
 type HooksConfig = {
   route?: string;

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import type { AttachmentDto } from '../../../api/attachments';
+import type { AttachmentDto } from '@shiplean/core/api/attachments';
 import { routePath } from '../../../routes';
 import { formatSize } from '../../workItem/side/fileSize';
 import { attachmentTestIds as ids } from '../testIds';

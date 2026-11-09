@@ -1,6 +1,6 @@
-import type { BacklogRowDto, BacklogViewDto } from '../../../api/views';
-import type { WorkItemChanges, WorkItemDto } from '../../../api/workItems';
-import type { BulkPlacement } from '../../../api/backlogWrites';
+import type { BacklogRowDto, BacklogViewDto } from '@shiplean/core/api/views';
+import type { WorkItemChanges, WorkItemDto } from '@shiplean/core/api/workItems';
+import type { BulkPlacement } from '@shiplean/core/api/backlogWrites';
 import { changesOf } from './changesOf';
 import type { BulkOutcome, BulkPlan } from './useBulkRun';
 

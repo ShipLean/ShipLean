@@ -1,5 +1,5 @@
-import type { ParentRefDto } from '../../../api/workItems';
-import type { BacklogRowDto, BacklogViewDto } from '../../../api/views';
+import type { ParentRefDto } from '@shiplean/core/api/workItems';
+import type { BacklogRowDto, BacklogViewDto } from '@shiplean/core/api/views';
 import { itemRow, PROJECT } from './fixtures';
 
 const epic = (key: string, title: string): ParentRefDto => ({

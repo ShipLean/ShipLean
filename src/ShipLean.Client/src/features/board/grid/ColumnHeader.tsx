@@ -1,6 +1,6 @@
 import './board.css';
 import { boardTestIds as ids } from '../testIds';
-import type { BoardColumnDto } from '../../../api/views';
+import type { BoardColumnDto } from '@shiplean/core/api/views';
 import { DodButton } from '../dod/DodButton';
 import { mappedStates } from './layout';
 

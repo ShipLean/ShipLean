@@ -1,4 +1,4 @@
-import type { CardFieldDto } from '../../../api/views';
+import type { CardFieldDto } from '@shiplean/core/api/views';
 import { boardTestIds as ids } from '../testIds';
 
 // The extra fields the board's card settings add; an empty one reads as a dash (the server only sends it when the

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { CardDto } from '../../../api/views';
+import type { CardDto } from '@shiplean/core/api/views';
 import { componentTestIds } from '../../../components/testIds';
 import { boardTestIds as ids } from '../testIds';
 import { Card } from './Card';

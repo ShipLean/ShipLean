@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { BoardViewDto } from '../../../api/views';
+import type { BoardViewDto } from '@shiplean/core/api/views';
 import type { Level } from '../../../routes';
 import { BoardGrid } from '../grid/BoardGrid';
 import type { BoardContext } from '../grid/boardContext';

@@ -5,8 +5,8 @@ import {
   getConsentRequest,
   type ConsentRequestDto,
   type ConsentResult,
-} from '../../../api/agents';
-import { ApiRequestError } from '../../../api/client';
+} from '@shiplean/core/api/agents';
+import { ApiRequestError } from '@shiplean/core/api/client';
 import { Chip } from '../../../components/Chip';
 import { Banner } from '../../auth/Banner';
 import { WarnCallout } from './WarnCallout';

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { StateDto } from '../../../api/projects';
-import type { WorkItemTypeId } from '../../../api/refs';
+import type { StateDto } from '@shiplean/core/api/projects';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
 import { levelStates } from './useFilterLists';
 
 const state = (type: WorkItemTypeId, name: string): StateDto => ({

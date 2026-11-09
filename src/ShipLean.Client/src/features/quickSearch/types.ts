@@ -1,4 +1,4 @@
-import type { StateCategory, WorkItemTypeId } from '../../api/refs';
+import type { StateCategory, WorkItemTypeId } from '@shiplean/core/api/refs';
 
 export type QuickSearchStatus = 'ready' | 'loading' | 'error';
 

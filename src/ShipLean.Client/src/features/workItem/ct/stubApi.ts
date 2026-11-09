@@ -1,4 +1,4 @@
-import type { WorkItemDto, WorkItemPatch } from '../../../api/workItems';
+import type { WorkItemDto, WorkItemPatch } from '@shiplean/core/api/workItems';
 import { members, sprints, states } from './fixtures';
 
 // The part of Playwright's Page and Route these stubs use (the CT package does not re-export the types).

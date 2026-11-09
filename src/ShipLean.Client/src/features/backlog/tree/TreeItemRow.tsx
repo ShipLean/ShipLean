@@ -1,5 +1,5 @@
 import { useDraggable, useDroppable } from '@dnd-kit/core';
-import type { BacklogRowDto } from '../../../api/views';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import type { BacklogColumnId } from '../backlogApi';
 import { Grip } from '../drag/Grip';
 import { ListCell } from '../list/ListCell';

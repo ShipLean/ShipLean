@@ -1,9 +1,9 @@
 import type { Locator, Page } from 'playwright';
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { ProjectDto } from '../../../api/projects';
-import type { SprintCapacityDto, SprintDto, SprintMetricsDto } from '../../../api/sprints';
-import type { StateCategory, UserRef } from '../../../api/refs';
-import type { ChildSummaryDto, WorkItemDto } from '../../../api/workItems';
+import type { ProjectDto } from '@shiplean/core/api/projects';
+import type { SprintCapacityDto, SprintDto, SprintMetricsDto } from '@shiplean/core/api/sprints';
+import type { StateCategory, UserRef } from '@shiplean/core/api/refs';
+import type { ChildSummaryDto, WorkItemDto } from '@shiplean/core/api/workItems';
 import { componentTestIds } from '../../../components/testIds';
 import { ToastHost } from '../../../components/ToastHost';
 import { itemPeekTestIds } from '../../itemPeek/testIds';

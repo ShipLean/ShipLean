@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { ApiRequestError } from '../../../api/client';
-import type { ProjectDto } from '../../../api/projects';
+import { ApiRequestError } from '@shiplean/core/api/client';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { useImportJobs } from '../importApi';
 import { importTestIds as ids } from '../testIds';
 import { JobRow } from './JobRow';

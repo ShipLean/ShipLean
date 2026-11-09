@@ -1,4 +1,4 @@
-import type { ProjectEvent, ProjectEventType } from '../api/events';
+import type { ProjectEvent, ProjectEventType } from '@shiplean/core/api/events';
 
 // The events that come back to the tab that caused them: an import's progress and who is on a screen are not changes
 // that tab made itself, so they are never filtered by clientId.

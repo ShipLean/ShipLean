@@ -1,5 +1,5 @@
-import type { BacklogRowDto, BacklogViewDto } from '../../../api/views';
-import type { ParentRefDto } from '../../../api/workItems';
+import type { BacklogRowDto, BacklogViewDto } from '@shiplean/core/api/views';
+import type { ParentRefDto } from '@shiplean/core/api/workItems';
 
 /** Where the dropped row goes at once, before the server answers. */
 export type TreePlacement = { before: string } | { under: string };

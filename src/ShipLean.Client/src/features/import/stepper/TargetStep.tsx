@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import type { JiraProjectDto } from '../../../api/import';
-import type { ProjectDto } from '../../../api/projects';
+import type { JiraProjectDto } from '@shiplean/core/api/import';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { routePath } from '../../../routes';
 import { importTestIds as ids } from '../testIds';
 import { targetOf } from './stepModel';

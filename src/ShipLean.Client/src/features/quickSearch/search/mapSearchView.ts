@@ -1,4 +1,4 @@
-import type { SearchItemDto, SearchViewDto } from '../../../api/search';
+import type { SearchItemDto, SearchViewDto } from '@shiplean/core/api/search';
 import type { QuickSearchGroup, QuickSearchItem, QuickSearchMatch, QuickSearchRow } from '../types';
 
 export const SEARCH_LIMIT = 8;

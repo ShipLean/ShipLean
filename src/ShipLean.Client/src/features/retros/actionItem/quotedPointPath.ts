@@ -1,4 +1,4 @@
-import type { RetroPointDto } from '../../../api/retros';
+import type { RetroPointDto } from '@shiplean/core/api/retros';
 import { routePath } from '../../../routes';
 
 /** Where a quoted point lives: its work item's retro page, or for a sprint-level point the sprint's Retro tab. The note there highlights `point=`. */

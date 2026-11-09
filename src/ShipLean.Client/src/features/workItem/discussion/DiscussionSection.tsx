@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import type { ProjectDto } from '../../../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { fetchMe, meKey } from '../../../queries/shared';
 import { workItemTestIds as ids } from '../testIds';
 import { fetchComments, useProjectMembers, useWorkItem, workItemCommentsKey } from '../workItemApi';

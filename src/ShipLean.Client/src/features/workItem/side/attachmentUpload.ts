@@ -1,5 +1,5 @@
-import { sendForm } from '../../../api/client';
-import type { AttachmentDto } from '../../../api/attachments';
+import { sendForm } from '@shiplean/core/api/client';
+import type { AttachmentDto } from '@shiplean/core/api/attachments';
 
 /** Attaches one file as multipart form data. */
 export function uploadAttachment(workItemId: string, file: File): Promise<AttachmentDto> {

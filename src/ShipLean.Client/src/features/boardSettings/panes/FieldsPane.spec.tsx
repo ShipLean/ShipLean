@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { BoardSettingsDto, BoardSettingsPut } from '../../../api/boards';
-import type { CardFieldSettingJson } from '../../../api/persisted';
+import type { BoardSettingsDto, BoardSettingsPut } from '@shiplean/core/api/boards';
+import type { CardFieldSettingJson } from '@shiplean/core/api/persisted';
 import { boardTestIds as cardIds } from '../../board/testIds';
 import { settingsDialogTestIds as dialogIds } from '../../settingsDialog/testIds';
 import { BoardSettingsDialog } from '../BoardSettingsDialog';

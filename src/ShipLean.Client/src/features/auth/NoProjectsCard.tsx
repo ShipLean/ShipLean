@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import type { MeDto } from '../../api/me';
+import type { MeDto } from '@shiplean/core/api/me';
 import { routePath } from '../../routes';
 import { SignOutInstead } from './SignOutInstead';
 import { authTestIds } from './testIds';

@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
-import type { CardAnnotationsJson, StyleRuleJson, Swatch } from '../../../api/persisted';
-import type { WorkItemTypeId } from '../../../api/refs';
-import type { RollupCountDto } from '../../../api/views';
+import type { CardAnnotationsJson, StyleRuleJson, Swatch } from '@shiplean/core/api/persisted';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
+import type { RollupCountDto } from '@shiplean/core/api/views';
 
 /** The colour token a swatch names. */
 export const swatchVar = (swatch: Swatch) => `var(--color-${swatch})`;

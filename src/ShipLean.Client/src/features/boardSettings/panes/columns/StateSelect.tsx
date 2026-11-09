@@ -1,4 +1,4 @@
-import type { StateRef, WorkItemTypeId } from '../../../../api/refs';
+import type { StateRef, WorkItemTypeId } from '@shiplean/core/api/refs';
 import { boardSettingsTestIds as ids } from '../../testIds';
 import { typeNames } from './columnEdits';
 

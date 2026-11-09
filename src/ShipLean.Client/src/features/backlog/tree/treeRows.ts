@@ -1,5 +1,5 @@
-import type { BacklogRowDto } from '../../../api/views';
-import { isStoryLevel } from '../../../api/workItemTypes';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
+import { isStoryLevel } from '@shiplean/core/api/workItemTypes';
 
 /** The rows shown: everything under a collapsed row (the rows deeper than it, up to the next row as shallow) is hidden. */
 export function visibleRows(

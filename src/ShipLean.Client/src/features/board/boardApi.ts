@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../api/client';
-import type { BoardViewDto } from '../../api/views';
-import type { WorkItemCreate, WriteResult } from '../../api/workItems';
+import { api } from '@shiplean/core/api/client';
+import type { BoardViewDto } from '@shiplean/core/api/views';
+import type { WorkItemCreate, WriteResult } from '@shiplean/core/api/workItems';
 import { registerInvalidation } from '../../realtime';
 import type { Level } from '../../routes';
 import { movesPending } from './moves/pendingMoves';

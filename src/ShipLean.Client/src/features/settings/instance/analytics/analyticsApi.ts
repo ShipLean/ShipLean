@@ -1,4 +1,4 @@
-import { api } from '../../../../api/client';
+import { api } from '@shiplean/core/api/client';
 
 /** Wire values of the C4 contract. */
 export type AnalyticsProvider = 'none' | 'umami' | 'posthog';

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
-import { SWATCHES, type StyleRuleJson, type Swatch } from '../../../../api/persisted';
-import type { CriteriaJson } from '../../../../api/persisted';
+import { SWATCHES, type StyleRuleJson, type Swatch } from '@shiplean/core/api/persisted';
+import type { CriteriaJson } from '@shiplean/core/api/persisted';
 import { CriteriaBuilder } from '../../../../criteria/CriteriaBuilder';
 import { checkCriteria } from '../../../../criteria/validate';
 import type { PickLists } from '../../../../criteria/valueOptions';

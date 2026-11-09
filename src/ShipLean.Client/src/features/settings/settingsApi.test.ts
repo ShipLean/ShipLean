@@ -12,6 +12,9 @@ beforeEach(async () => {
   assign.mockReset();
   vi.stubGlobal('location', { pathname: '/settings/profile', search: '', assign });
   vi.resetModules();
+  // resetModules also drops the platform vitestSetup configured, so the fresh client gets the web platform again.
+  const { configurePlatform } = await import('@shiplean/core/platform');
+  configurePlatform((await import('../../webPlatform')).webPlatform);
   settings = await import('./settingsApi');
 });
 

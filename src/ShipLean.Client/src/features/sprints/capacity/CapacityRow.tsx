@@ -1,4 +1,4 @@
-import type { UserRef } from '../../../api/refs';
+import type { UserRef } from '@shiplean/core/api/refs';
 import { Avatar } from '../../../components/Avatar';
 import { sprintsTestIds as ids } from '../testIds';
 import type { CapacityShape, DraftRow } from './capacityDraft';

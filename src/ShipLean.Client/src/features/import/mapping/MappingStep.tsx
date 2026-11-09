@@ -1,4 +1,4 @@
-import type { ImportMappingDto } from '../../../api/import';
+import type { ImportMappingDto } from '@shiplean/core/api/import';
 import { useProjectMembers, useProjectStates } from '../../workItem/workItemApi';
 import { importTestIds as ids } from '../testIds';
 import { FieldsSection } from './FieldsSection';

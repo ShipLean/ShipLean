@@ -1,5 +1,5 @@
-import type { SprintRef } from '../../../api/refs';
-import type { BacklogRowDto, BacklogSectionDto } from '../../../api/views';
+import type { SprintRef } from '@shiplean/core/api/refs';
+import type { BacklogRowDto, BacklogSectionDto } from '@shiplean/core/api/views';
 import { changesOf } from '../bulk/changesOf';
 import { moveToSprintPlan } from '../bulk/movePlan';
 import type { BulkPlan } from '../bulk/useBulkRun';

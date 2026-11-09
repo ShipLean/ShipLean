@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import type { ProjectEvent } from '../../../api/events';
+import type { ProjectEvent } from '@shiplean/core/api/events';
 import { importJob } from '../ct/fixtures';
 import { importJobKey } from './runApi';
 

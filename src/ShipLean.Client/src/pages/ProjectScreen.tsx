@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { useParams } from 'react-router-dom';
-import type { ProjectDto } from '../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { ItemPeekHost } from '../features/itemPeek/ItemPeekHost';
 import { UnsavedGuardHost } from '../features/workItem/form/UnsavedGuardHost';
 import { useScreenPresence } from '../realtime';

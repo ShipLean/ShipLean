@@ -1,6 +1,6 @@
-import type { BoardSettingsDto } from '../../../api/boards';
-import type { ProjectSettingsDto, StateDto } from '../../../api/projects';
-import type { StateCategory, WorkItemTypeId } from '../../../api/refs';
+import type { BoardSettingsDto } from '@shiplean/core/api/boards';
+import type { ProjectSettingsDto, StateDto } from '@shiplean/core/api/projects';
+import type { StateCategory, WorkItemTypeId } from '@shiplean/core/api/refs';
 import { emptySettings } from '../../../features/boardSettings/ct/boardSettingsFixtures';
 import { SHELL_MEMBERS, SHELL_PROJECT } from '../shellStub';
 

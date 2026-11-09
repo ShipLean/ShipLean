@@ -1,4 +1,4 @@
-import type { BacklogCheckId, BacklogReviewDto } from '../../../api/backlogWrites';
+import type { BacklogCheckId, BacklogReviewDto } from '@shiplean/core/api/backlogWrites';
 import { useListCommand } from '../commands/listCommands';
 import { backlogTestIds as ids } from '../testIds';
 import { useQueueFixed } from './queueFixed';

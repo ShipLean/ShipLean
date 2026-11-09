@@ -1,6 +1,6 @@
-import type { ProjectCreate } from '../../../api/projects';
-import type { SprintCreate } from '../../../api/sprints';
-import type { UserRef } from '../../../api/refs';
+import type { ProjectCreate } from '@shiplean/core/api/projects';
+import type { SprintCreate } from '@shiplean/core/api/sprints';
+import type { UserRef } from '@shiplean/core/api/refs';
 
 export interface NewProjectMember {
   email: string;

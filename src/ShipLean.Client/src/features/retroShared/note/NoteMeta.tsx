@@ -1,4 +1,4 @@
-import type { RetroPointDto } from '../../../api/retros';
+import type { RetroPointDto } from '@shiplean/core/api/retros';
 import { TypeIcon } from '../../../components/TypeIcon';
 import { AuthorChip } from '../AuthorChip';
 import { ItemLink } from '../../itemPeek/ItemLink';

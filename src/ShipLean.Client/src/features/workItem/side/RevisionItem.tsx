@@ -1,4 +1,4 @@
-import type { RevisionDto } from '../../../api/workItems';
+import type { RevisionDto } from '@shiplean/core/api/workItems';
 import { Avatar } from '../../../components/Avatar';
 import { workItemTestIds as ids } from '../testIds';
 import { RevisionChange } from './RevisionChange';

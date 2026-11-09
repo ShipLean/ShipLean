@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { ApiRequestError } from '../../../api/client';
+import { ApiRequestError } from '@shiplean/core/api/client';
 import { routePath } from '../../../routes';
 import { createProject, useKeyCheck } from '../importApi';
 import { importTestIds as ids } from '../testIds';

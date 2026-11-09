@@ -3,7 +3,7 @@ import type { Locator, Page } from 'playwright';
 import { TaskboardSlot } from '../../../slots/TaskboardSlot';
 import { ToastHost } from '../../../components/ToastHost';
 import { componentTestIds } from '../../../components/testIds';
-import type { CardDto, TaskboardViewDto } from '../../../api/views';
+import type { CardDto, TaskboardViewDto } from '@shiplean/core/api/views';
 import { taskboardTestIds as ids } from '../testIds';
 import { PRIYA, PROJECT, SPRINT, SPRINTS, VIEW } from './fixtures';
 import { componentTestIds as c } from '../../../components/testIds';

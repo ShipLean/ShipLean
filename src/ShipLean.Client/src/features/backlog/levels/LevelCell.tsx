@@ -1,4 +1,4 @@
-import type { BacklogRowDto } from '../../../api/views';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import { StateDot } from '../../../components/StateDot';
 import { TypeIcon } from '../../../components/TypeIcon';
 import { ItemLink } from '../../itemPeek/ItemLink';

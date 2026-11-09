@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { ChildSummaryDto } from '../../../../api/workItems';
+import type { ChildSummaryDto } from '@shiplean/core/api/workItems';
 import { BoardHarness } from '../../ct/BoardHarness';
 import { featuresBoard } from '../../ct/fixtures';
 import { stubBoard } from '../../ct/stubApi';

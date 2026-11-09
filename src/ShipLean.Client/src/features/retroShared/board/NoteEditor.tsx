@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { RetroCategory, RetroPointDto } from '../../../api/retros';
+import type { RetroCategory, RetroPointDto } from '@shiplean/core/api/retros';
 import { showToast } from '../../../components/toastStore';
 import { useRetroActionDialog } from '../actionDialog/useRetroActionDialog';
 import { retroCategoryLabels } from '../retroCategories';

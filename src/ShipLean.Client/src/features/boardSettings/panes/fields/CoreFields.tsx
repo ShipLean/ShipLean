@@ -1,4 +1,4 @@
-import type { CardFieldSettingJson } from '../../../../api/persisted';
+import type { CardFieldSettingJson } from '@shiplean/core/api/persisted';
 import { boardSettingsTestIds as ids } from '../../testIds';
 import type { CoreField } from './fieldEdits';
 

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { ProjectSettingsDto, ProjectSettingsPut } from '../../../api/projects';
-import { WORK_ITEM_TYPE_IDS } from '../../../api/refs';
+import type { ProjectSettingsDto, ProjectSettingsPut } from '@shiplean/core/api/projects';
+import { WORK_ITEM_TYPE_IDS } from '@shiplean/core/api/refs';
 import demoSettings from '../../../../../ShipLean.TestSupport/DtoFixtures/demos/project-demo-settings.json' with { type: 'json' };
 import { demosTestIds as demosIds } from '../../demos/testIds';
 import { settingsTestIds as ids } from '../testIds';

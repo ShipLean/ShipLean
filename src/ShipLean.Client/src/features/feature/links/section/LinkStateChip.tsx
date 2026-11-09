@@ -1,5 +1,5 @@
 import { Chip, type ChipTone } from '../../../../components/Chip';
-import type { LinkState } from '../../../../api/linkCards';
+import type { LinkState } from '@shiplean/core/api/linkCards';
 
 const chips: Record<LinkState, { label: string; tone: ChipTone }> = {
   open: { label: 'Open', tone: 'ok' },

@@ -1,4 +1,4 @@
-import type { CardDto } from '../../../api/views';
+import type { CardDto } from '@shiplean/core/api/views';
 import type { TaskboardGridView } from '../taskboardGridView';
 import type { TaskboardGrouping, TaskboardMoveRequest } from '../taskboardApi';
 import { UNASSIGNED, UNPARENTED } from './applyMove';

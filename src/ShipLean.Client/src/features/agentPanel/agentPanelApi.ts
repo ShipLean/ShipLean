@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../api/client';
-import type { AgentPanelDto } from '../../api/agentSessions';
+import { api } from '@shiplean/core/api/client';
+import type { AgentPanelDto } from '@shiplean/core/api/agentSessions';
 import { registerInvalidation } from '../../realtime';
 import { useWorkItem, workItemKey } from '../workItem/workItemApi';
 

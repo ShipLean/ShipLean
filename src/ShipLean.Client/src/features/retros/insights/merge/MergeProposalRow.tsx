@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { ProjectDto } from '../../../../api/projects';
-import type { RetroMergeProposalDto } from '../../../../api/retros';
-import { keepThemeProposalApart, mergeThemeProposal } from '../../../../api/retrosApi';
+import type { ProjectDto } from '@shiplean/core/api/projects';
+import type { RetroMergeProposalDto } from '@shiplean/core/api/retros';
+import { keepThemeProposalApart, mergeThemeProposal } from '@shiplean/core/api/retrosApi';
 import { showToast } from '../../../../components/toastStore';
 import { retrosTestIds as ids } from '../../testIds';
 import { retrosRootKey } from '../../useRetroQueries';

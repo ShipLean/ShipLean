@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation } from 'react-router-dom';
-import type { ProjectDto } from '../../../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { ToastHost } from '../../../components/ToastHost';
 import { FormSlot } from '../../../slots/FormSlot';
 import { LinksSlot } from '../../../slots/LinksSlot';

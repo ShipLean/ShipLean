@@ -1,4 +1,4 @@
-import type { ImportMappingDto } from '../../../api/import';
+import type { ImportMappingDto } from '@shiplean/core/api/import';
 import { importTestIds as ids } from '../testIds';
 import { setInclude, setStoryPointsField } from './mappingEdits';
 import type { IncludeOption } from './mappingEdits';

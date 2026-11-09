@@ -1,5 +1,5 @@
-import type { ApiErrorCode } from '../../../api/client';
-import type { UserRef } from '../../../api/refs';
+import type { ApiErrorCode } from '@shiplean/core/api/client';
+import type { UserRef } from '@shiplean/core/api/refs';
 
 /** C#: ShipLean.Contracts.IssueIntake.IssueIntakeReadiness. Each is true when that part is in place. */
 export interface IssueIntakeReadiness {

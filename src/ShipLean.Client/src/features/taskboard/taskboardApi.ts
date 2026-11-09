@@ -1,15 +1,15 @@
 // The Taskboard's write shapes. C#: ShipLean.Contracts.Taskboard. The read model (TaskboardViewDto) is in api/views.ts.
 import { useEffect, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../api/client';
-import type { WorkItemTypeId } from '../../api/refs';
-import type { TaskboardViewDto } from '../../api/views';
+import { api } from '@shiplean/core/api/client';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
+import type { TaskboardViewDto } from '@shiplean/core/api/views';
 import {
   conflictOf,
   type WorkItemChanges,
   type WorkItemCreate,
   type WriteResult,
-} from '../../api/workItems';
+} from '@shiplean/core/api/workItems';
 import { showToast } from '../../components/toastStore';
 import { registerInvalidation } from '../../realtime';
 import { fetchPreference, preferenceKey } from '../../queries/shared';

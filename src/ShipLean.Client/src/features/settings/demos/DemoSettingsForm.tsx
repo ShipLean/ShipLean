@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { ProjectDemoSettingsDto } from '../../../api/demos';
-import type { ProjectDto } from '../../../api/projects';
+import type { ProjectDemoSettingsDto } from '@shiplean/core/api/demos';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { showToast } from '../../../components/toastStore';
 import { routePath } from '../../../routes';
 import { demosTestIds as ids } from '../../demos/testIds';

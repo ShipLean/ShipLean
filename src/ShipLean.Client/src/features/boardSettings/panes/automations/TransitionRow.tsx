@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { TransitionJson } from '../../../../api/persisted';
+import type { TransitionJson } from '@shiplean/core/api/persisted';
 import { boardSettingsTestIds as ids } from '../../testIds';
 import { actionSummary, transitionLabel } from './transitionEdits';
 

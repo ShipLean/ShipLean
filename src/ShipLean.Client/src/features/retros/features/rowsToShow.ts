@@ -1,4 +1,4 @@
-import type { RetroFeatureRowDto } from '../../../api/retros';
+import type { RetroFeatureRowDto } from '@shiplean/core/api/retros';
 import type { RetroFeaturesAddress } from './retroFeaturesAddress';
 
 function matches(row: RetroFeatureRowDto, { show, q }: RetroFeaturesAddress): boolean {

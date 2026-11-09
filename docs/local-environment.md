@@ -84,8 +84,8 @@ application layer hit. The default options apply: port 5113, `fresh`, database
 The host serves whatever is in `src/ShipLean.WebApi/wwwroot`. Two ways to get a client:
 
 ```bash
-cd src/ShipLean.Client && pnpm install && pnpm run build   # once; writes the bundle into the WebApi's wwwroot
-cd src/ShipLean.Client && pnpm run dev                     # or: Vite on :3000 with hot reload
+cd src && pnpm install && cd ShipLean.Client && pnpm run build   # once; the workspace is src/; writes the bundle into the WebApi's wwwroot
+cd src/ShipLean.Client && pnpm run dev                                    # or: Vite on :3000 with hot reload
 ```
 
 `pnpm run dev` proxies `/api` to `localhost:5113`, so use it with the default port (and keep `--port 5113`). Open

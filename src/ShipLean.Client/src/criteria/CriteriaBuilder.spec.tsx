@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { CriteriaClause, CriteriaJson } from '../api/persisted';
+import type { CriteriaClause, CriteriaJson } from '@shiplean/core/api/persisted';
 import { componentTestIds } from '../components/testIds';
 import { criteriaTestIds as ids } from '../features/criteria/testIds';
 import { CriteriaBuilderHarness } from './ct/CriteriaBuilderHarness';

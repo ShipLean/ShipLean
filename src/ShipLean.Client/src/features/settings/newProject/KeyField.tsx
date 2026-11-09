@@ -1,4 +1,4 @@
-import type { KeyCheckDto, ProjectSummaryDto } from '../../../api/projects';
+import type { KeyCheckDto, ProjectSummaryDto } from '@shiplean/core/api/projects';
 import { settingsTestIds as ids } from '../testIds';
 import type { FormProps } from './formProps';
 import { keyHasLength, keyHasOnlyLetters, suggestKey } from './model';

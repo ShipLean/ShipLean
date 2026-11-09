@@ -1,6 +1,6 @@
 import { componentTestIds } from './testIds';
 
-import type { WorkItemTypeId } from '../api/refs';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
 
 export type WorkItemType = WorkItemTypeId;
 

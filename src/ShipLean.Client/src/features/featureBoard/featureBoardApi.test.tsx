@@ -6,8 +6,8 @@ import { taskboardKey, useCreateOnTaskboard } from '../taskboard/taskboardApi';
 import { useFeatureBoard } from './featureBoardApi';
 
 const reads = vi.hoisted(() => ({ paths: [] as string[] }));
-vi.mock('../../api/client', async (original) => ({
-  ...(await original<typeof import('../../api/client')>()),
+vi.mock('@shiplean/core/api/client', async (original) => ({
+  ...(await original<typeof import('@shiplean/core/api/client')>()),
   api: {
     get: vi.fn(async (path: string) => {
       reads.paths.push(path);

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ToastHost } from '../../../components/ToastHost';
 import type { PaneProps } from '../../../components/SettingsDialog/types';
-import type { BoardSettingsJson } from '../../../api/persisted';
+import type { BoardSettingsJson } from '@shiplean/core/api/persisted';
 import { boardHarnessIds } from './harnessIds';
 import { BoardSettingsView } from '../BoardSettingsView';
 import type { BoardPaneGroup, BoardSettingsContext } from '../panes';

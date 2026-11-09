@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRef } from 'react';
-import { api } from '../../../api/client';
-import { conflictOf } from '../../../api/workItems';
+import { api } from '@shiplean/core/api/client';
+import { conflictOf } from '@shiplean/core/api/workItems';
 import { showToast } from '../../../components/toastStore';
 import {
   taskboardKey,

@@ -1,5 +1,5 @@
 import type { KeyboardEvent } from 'react';
-import { SWATCHES, type StyleRuleJson, type Swatch } from '../../../../api/persisted';
+import { SWATCHES, type StyleRuleJson, type Swatch } from '@shiplean/core/api/persisted';
 import { CriteriaBuilder } from '../../../../criteria/CriteriaBuilder';
 import type { PickLists } from '../../../../criteria/valueOptions';
 import { boardSettingsTestIds as ids } from '../../testIds';

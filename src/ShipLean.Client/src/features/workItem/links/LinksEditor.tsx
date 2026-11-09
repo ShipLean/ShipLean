@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { LINK_TYPES } from '../../../api/persisted';
-import type { ProjectDto } from '../../../api/projects';
+import { LINK_TYPES } from '@shiplean/core/api/persisted';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { useDraftLinks } from '../form/DraftContext';
 import { workItemTestIds as ids } from '../testIds';
 import { LinkForm } from './LinkForm';

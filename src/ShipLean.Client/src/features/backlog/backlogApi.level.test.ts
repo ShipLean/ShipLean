@@ -1,9 +1,9 @@
 import { afterEach, expect, test, vi } from 'vitest';
-import { api } from '../../api/client';
+import { api } from '@shiplean/core/api/client';
 import { fetchBacklog } from './backlogApi';
 
-vi.mock('../../api/client', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../../api/client')>()),
+vi.mock('@shiplean/core/api/client', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@shiplean/core/api/client')>()),
   api: { get: vi.fn().mockResolvedValue({}) },
 }));
 

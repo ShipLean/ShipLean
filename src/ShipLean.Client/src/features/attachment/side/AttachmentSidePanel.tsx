@@ -1,4 +1,4 @@
-import type { AttachmentMarkdownDto } from '../../../api/attachments';
+import type { AttachmentMarkdownDto } from '@shiplean/core/api/attachments';
 import { ImagesPanel } from './ImagesPanel';
 import { NoHistoryNote } from './NoHistoryNote';
 import { OutlinePanel } from './OutlinePanel';

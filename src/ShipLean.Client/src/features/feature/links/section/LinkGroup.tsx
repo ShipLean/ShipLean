@@ -1,4 +1,4 @@
-import type { LinkCardDto } from '../../../../api/linkCards';
+import type { LinkCardDto } from '@shiplean/core/api/linkCards';
 import { featureTestIds as ids } from '../../testIds';
 import { LinkCard } from './LinkCard';
 

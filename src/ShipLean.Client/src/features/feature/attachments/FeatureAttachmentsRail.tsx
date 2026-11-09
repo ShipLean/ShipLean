@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import type { AttachmentDto } from '../../../api/attachments';
+import type { AttachmentDto } from '@shiplean/core/api/attachments';
 import { useProjectByKey } from '../../../realtime/useProjectByKey';
 import { useAttachmentEvents } from '../../workItem/side/useAttachmentEvents';
 import { useAttachmentWrites } from '../../workItem/side/useAttachmentWrites';

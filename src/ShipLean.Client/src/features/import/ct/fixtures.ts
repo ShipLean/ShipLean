@@ -8,9 +8,9 @@ import type {
   JiraProjectDto,
   JiraStatusCategory,
   StatusMappingDto,
-} from '../../../api/import';
-import type { MemberDto, ProjectDto, StateDto } from '../../../api/projects';
-import type { UserRef } from '../../../api/refs';
+} from '@shiplean/core/api/import';
+import type { MemberDto, ProjectDto, StateDto } from '@shiplean/core/api/projects';
+import type { UserRef } from '@shiplean/core/api/refs';
 
 export const project: ProjectDto = {
   id: 'p-ship',

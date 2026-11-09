@@ -1,5 +1,5 @@
 import { useDroppable } from '@dnd-kit/core';
-import type { BoardCellDto } from '../../../api/views';
+import type { BoardCellDto } from '@shiplean/core/api/views';
 import { DraggableCard } from '../cards/DraggableCard';
 import { DropLine } from '../cards/DropLine';
 import { boardTestIds as ids } from '../testIds';

@@ -1,6 +1,6 @@
 import type { Page } from 'playwright';
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { RetroCardDto } from '../../../api/retros';
+import type { RetroCardDto } from '@shiplean/core/api/retros';
 import { AppRoutes } from '../../../AppRoutes';
 import { stubShell } from '../../../pages/screenshots/shellStub';
 import { retroSharedTestIds as shared } from '../../retroShared/testIds';

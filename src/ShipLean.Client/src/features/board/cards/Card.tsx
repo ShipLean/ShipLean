@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react';
 import { TypeIcon } from '../../../components/TypeIcon';
-import type { BoardViewDto, CardDto } from '../../../api/views';
-import type { WorkItemTypeId } from '../../../api/refs';
+import type { BoardViewDto, CardDto } from '@shiplean/core/api/views';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
 import type { Level } from '../../../routes';
 import { ItemLink } from '../../itemPeek/ItemLink';
 import { boardTestIds as ids } from '../testIds';

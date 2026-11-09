@@ -1,5 +1,5 @@
-import type { ImportMappingDto, UserMappingDto } from '../../../api/import';
-import type { UserRef } from '../../../api/refs';
+import type { ImportMappingDto, UserMappingDto } from '@shiplean/core/api/import';
+import type { UserRef } from '@shiplean/core/api/refs';
 import { importTestIds as ids } from '../testIds';
 import { NewChip } from './NewChip';
 import { CREATE_USER, JIRA_IMPORT_USER, setUser } from './mappingEdits';

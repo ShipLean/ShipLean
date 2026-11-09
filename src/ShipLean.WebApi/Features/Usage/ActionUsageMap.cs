@@ -113,6 +113,11 @@ public static class ActionUsageMap
         Add(ActionUsage.SelfEmitted, "Auth.Login", "Consent.Decide", "ProjectCreation.Create", "Instance.Join", "Usage.Screen",
             "ProjectUsage.BacklogSort");
 
+        // Device sessions: the exchange is the sign-in event; revoke and current carry the reason they ended.
+        Add(ActionUsage.Untracked("Issues a code; the exchange is the event."), "DeviceSignIn.Codes");
+        Add(ActionUsage.SelfEmitted, "DeviceSignIn.Exchange", "DeviceSessions.Revoke", "DeviceSessions.Current");
+        Add(ActionUsage.Untracked(ScreenCounts), "DeviceSessions.List");
+
         Add(
             ActionUsage.Untracked(Helper),
             "Markdown.Render",

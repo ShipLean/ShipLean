@@ -1,4 +1,4 @@
-import type { LinkType } from '../../../api/persisted';
+import type { LinkType } from '@shiplean/core/api/persisted';
 
 export const linkTypeLabels: Record<LinkType, string> = {
   predecessor: 'Predecessor',

@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import type { ProjectEvent } from '../api/events';
+import type { ProjectEvent } from '@shiplean/core/api/events';
 import { createRemoteChanges } from './remoteChanges';
 
 const own = 'tab-1';

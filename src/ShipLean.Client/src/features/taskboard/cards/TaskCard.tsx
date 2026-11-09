@@ -1,5 +1,5 @@
 import { useCallback, type KeyboardEvent } from 'react';
-import type { CardDto, TaskboardViewDto } from '../../../api/views';
+import type { CardDto, TaskboardViewDto } from '@shiplean/core/api/views';
 import { useCardDrag } from '../moves/useCardDrag';
 import { useTaskboardMoves } from '../moves/TaskboardMovesContext';
 import { TaskCardFace } from './TaskCardFace';

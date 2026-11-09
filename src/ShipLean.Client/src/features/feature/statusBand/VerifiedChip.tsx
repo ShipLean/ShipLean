@@ -1,4 +1,4 @@
-import type { WorkItemDto } from '../../../api/workItems';
+import type { WorkItemDto } from '@shiplean/core/api/workItems';
 import { featureTestIds as ids } from '../testIds';
 
 // When the status was last written or confirmed, and who by. The label and staleness are the server's.

@@ -1,0 +1,16 @@
+export const devicesTestIds = {
+  slotDevices: 'slot-profileDevices',
+  panel: 'devices-panel',
+  row: 'devices-row',
+  name: 'devices-name',
+  prefix: 'devices-prefix',
+  when: 'devices-when',
+  signOut: 'devices-sign-out',
+  confirm: 'devices-confirm',
+  confirmCancel: 'devices-confirm-cancel',
+  confirmGo: 'devices-confirm-go',
+  empty: 'devices-empty',
+  failed: 'devices-failed',
+  signOutError: 'devices-sign-out-error',
+  addLine: 'devices-add-line',
+} as const;

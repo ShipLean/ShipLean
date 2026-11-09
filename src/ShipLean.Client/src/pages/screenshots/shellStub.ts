@@ -1,6 +1,6 @@
-import type { MeDto } from '../../api/me';
-import type { MemberDto, ProjectDto, ProjectSummaryDto } from '../../api/projects';
-import type { SprintDto } from '../../api/sprints';
+import type { MeDto } from '@shiplean/core/api/me';
+import type { MemberDto, ProjectDto, ProjectSummaryDto } from '@shiplean/core/api/projects';
+import type { SprintDto } from '@shiplean/core/api/sprints';
 import { meDto } from '../../features/auth/authFixtures';
 import type { Page } from './shoot';
 

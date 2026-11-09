@@ -12,6 +12,7 @@ using Npgsql;
 using ShipLean.Application.Identity;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
+using ShipLean.WebApi.Features.Auth.DeviceBearer;
 using ShipLean.WebApi.Features.Auth.Proxy;
 using ShipLean.WebApi.Infrastructure;
 
@@ -68,9 +69,17 @@ public sealed class AuthServices : IServiceModule
             .AddPolicyScheme(SessionScheme, SessionScheme, options =>
             {
                 options.ForwardDefaultSelector = context =>
-                    context.RequestServices.GetRequiredService<ProxySignInSettings>().IsProxy && !ProxySignInPaths.IsSkipped(context.Request.Path)
-                        ? ProxySignInHandler.Scheme
+                {
+                    var isProxy = context.RequestServices.GetRequiredService<ProxySignInSettings>().IsProxy;
+                    if (isProxy && !ProxySignInPaths.IsSkipped(context.Request.Path))
+                    {
+                        return ProxySignInHandler.Scheme;
+                    }
+                    // The phone app's device bearer, in password mode only, on /api and /hubs and nowhere a bearer is refused.
+                    return !isProxy && DeviceBearerRequest.Applies(context.Request)
+                        ? DeviceBearerHandler.Scheme
                         : CookieScheme;
+                };
                 options.ForwardChallenge = CookieScheme;
                 options.ForwardForbid = CookieScheme;
                 options.ForwardSignIn = CookieScheme;

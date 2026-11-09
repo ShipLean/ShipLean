@@ -2,12 +2,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, useEffect } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import type { ChildSummaryDto } from '../../../api/workItems';
+import type { ChildSummaryDto } from '@shiplean/core/api/workItems';
 import { backlogKey } from '../../../queries/backlogKeys';
 import { story } from '../ct/fixtures';
 
-vi.mock('../../../api/client', async (original) => ({
-  ...(await original<typeof import('../../../api/client')>()),
+vi.mock('@shiplean/core/api/client', async (original) => ({
+  ...(await original<typeof import('@shiplean/core/api/client')>()),
   api: {
     get: vi.fn(async () => ({ ...story, revision: 4 })),
     patch: vi.fn(async () => ({

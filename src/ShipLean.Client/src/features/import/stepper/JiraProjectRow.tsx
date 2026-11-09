@@ -1,4 +1,4 @@
-import type { JiraProjectDto } from '../../../api/import';
+import type { JiraProjectDto } from '@shiplean/core/api/import';
 import { importTestIds as ids } from '../testIds';
 
 export function JiraProjectRow({

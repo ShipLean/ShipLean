@@ -1,6 +1,6 @@
 import { Fragment, useMemo, type RefObject } from 'react';
-import type { VelocityDto } from '../../../api/sprints';
-import type { BacklogRowDto, BacklogSectionDto } from '../../../api/views';
+import type { VelocityDto } from '@shiplean/core/api/sprints';
+import type { BacklogRowDto, BacklogSectionDto } from '@shiplean/core/api/views';
 import { AddInButton, AddInSection } from '../add/AddInSection';
 import { BACKLOG_COLUMNS, type BacklogColumnId } from '../backlogApi';
 import { NewItemRow } from '../list/NewItemRow';

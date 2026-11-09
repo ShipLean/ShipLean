@@ -1,4 +1,4 @@
-import type { StateCategory } from '../../../api/refs';
+import type { StateCategory } from '@shiplean/core/api/refs';
 import { StateDot } from '../../../components/StateDot';
 import { settingsTestIds } from '../testIds';
 import { CATEGORIES, CATEGORY_LABELS, parseCategory } from './categories';

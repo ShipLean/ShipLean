@@ -1,4 +1,4 @@
-import type { CriteriaJson } from '../../../api/persisted';
+import type { CriteriaJson } from '@shiplean/core/api/persisted';
 import { CriteriaChips } from '../../../criteria/CriteriaChips';
 import type { PickLists } from '../../../criteria/valueOptions';
 import { backlogTestIds as ids } from '../testIds';

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef } from 'react';
-import type { BacklogSectionDto } from '../../../api/views';
+import type { BacklogSectionDto } from '@shiplean/core/api/views';
 import { showToast } from '../../../components/toastStore';
 import {
   BACKLOG_COLUMNS,

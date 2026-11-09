@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import type { AgentConnectionOption } from '../../../../api/projects';
+import type { AgentConnectionOption } from '@shiplean/core/api/projects';
 import { fetchProjectSettings, projectSettingsKey } from '../../../settings/settingsApi';
 
 /** What the connection select offers: the non-archived connections and the project's default, by name. */

@@ -2,7 +2,7 @@ import type {
   RetroInsightColumnDto,
   RetroInsightsMode,
   RetroThemeInsightDto,
-} from '../../../../api/retros';
+} from '@shiplean/core/api/retros';
 import { ActionChip } from '../../../retroShared/ActionChip';
 import { retrosTestIds as ids } from '../../testIds';
 import { MentionCell } from './MentionCell';

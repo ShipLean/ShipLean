@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { LinkCardsDto } from '../../../../api/linkCards';
+import type { LinkCardsDto } from '@shiplean/core/api/linkCards';
 import { linkCardsKey, refreshLinkCards } from '../../featureApi';
 
 /** Once per mount, when any loaded card is due, asks the server to read those again and takes its answer as the list. */

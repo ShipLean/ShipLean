@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import type { WorkItemDto } from '../../../api/workItems';
+import type { WorkItemDto } from '@shiplean/core/api/workItems';
 import { registerInvalidation } from '../../../realtime';
 import { workItemKey } from '../workItemApi';
 

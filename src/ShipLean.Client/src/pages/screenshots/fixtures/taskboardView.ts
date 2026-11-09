@@ -1,6 +1,6 @@
-import type { StateRef, TypeRef, UserRef } from '../../../api/refs';
-import type { CardDto, TaskboardCellDto, TaskboardViewDto } from '../../../api/views';
-import type { CardFieldSettingJson, StyleRuleJson } from '../../../api/persisted';
+import type { StateRef, TypeRef, UserRef } from '@shiplean/core/api/refs';
+import type { CardDto, TaskboardCellDto, TaskboardViewDto } from '@shiplean/core/api/views';
+import type { CardFieldSettingJson, StyleRuleJson } from '@shiplean/core/api/persisted';
 import { PEOPLE } from '../shellStub';
 
 // Sprint 24's Taskboard as design/screens/taskboard.html draws it: five stories and bugs, four Task states.

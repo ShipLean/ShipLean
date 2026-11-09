@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo } from 'react';
-import { api } from '../../api/client';
-import type { FeatureBoardViewDto } from '../../api/views';
+import { api } from '@shiplean/core/api/client';
+import type { FeatureBoardViewDto } from '@shiplean/core/api/views';
 import { registerInvalidation } from '../../realtime';
 import { taskboardKey, taskboardMoveKey, TASKBOARD_EVENTS } from '../taskboard/taskboardApi';
 import type { TaskboardScope } from '../taskboard/taskboardScope';

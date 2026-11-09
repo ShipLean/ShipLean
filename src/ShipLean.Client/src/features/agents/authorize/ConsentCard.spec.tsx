@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { ConsentRequestDto } from '../../../api/agents';
+import type { ConsentRequestDto } from '@shiplean/core/api/agents';
 import { agentsTestIds as ids } from '../testIds';
 import type { StubbablePage } from './stubPage';
 import { ConsentCard } from './ConsentCard';

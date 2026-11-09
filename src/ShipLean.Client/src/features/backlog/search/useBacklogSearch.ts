@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { BacklogRowDto } from '../../../api/views';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import { useListCommand } from '../commands/listCommands';
 
 export interface BacklogSearch {

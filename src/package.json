@@ -1,0 +1,5 @@
+{
+  "name": "shiplean-workspace",
+  "private": true,
+  "packageManager": "pnpm@12.8.1"
+}

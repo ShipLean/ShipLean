@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { RetroInsightsDto } from '../../../api/retros';
+import type { RetroInsightsDto } from '@shiplean/core/api/retros';
 import { itemPeekTestIds } from '../../itemPeek/testIds';
 import { insightsWeeks, retroInsights, stubRetros } from '../ct/retroFixtures';
 import { retrosTestIds as ids } from '../testIds';

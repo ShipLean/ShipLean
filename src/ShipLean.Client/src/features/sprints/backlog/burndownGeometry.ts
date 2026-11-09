@@ -1,4 +1,4 @@
-import type { BurndownPoint } from '../../../api/sprints';
+import type { BurndownPoint } from '@shiplean/core/api/sprints';
 
 export const BURNDOWN_WIDTH = 232;
 export const BURNDOWN_HEIGHT = 74;

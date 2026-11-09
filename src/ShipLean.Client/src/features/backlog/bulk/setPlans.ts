@@ -1,6 +1,6 @@
-import type { StateDto } from '../../../api/projects';
-import type { WorkItemTypeId } from '../../../api/refs';
-import type { BacklogRowDto } from '../../../api/views';
+import type { StateDto } from '@shiplean/core/api/projects';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import { changesOf } from './changesOf';
 import type { BulkPlan } from './useBulkRun';
 

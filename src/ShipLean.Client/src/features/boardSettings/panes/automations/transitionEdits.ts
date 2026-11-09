@@ -1,7 +1,7 @@
-import type { BoardLevel, BoardTypeStatesDto } from '../../../../api/boards';
-import type { StateRefJson, TransitionJson } from '../../../../api/persisted';
-import { WORK_ITEM_TYPE_IDS, type StateRef, type WorkItemTypeId } from '../../../../api/refs';
-import { isStoryLevel, typeName } from '../../../../api/workItemTypes';
+import type { BoardLevel, BoardTypeStatesDto } from '@shiplean/core/api/boards';
+import type { StateRefJson, TransitionJson } from '@shiplean/core/api/persisted';
+import { WORK_ITEM_TYPE_IDS, type StateRef, type WorkItemTypeId } from '@shiplean/core/api/refs';
+import { isStoryLevel, typeName } from '@shiplean/core/api/workItemTypes';
 
 /** Transition types are labelled by their display name, except a story, which reads "Story" in a transition. */
 export const TRANSITION_TYPE_LABELS: Partial<Record<WorkItemTypeId, string>> = {

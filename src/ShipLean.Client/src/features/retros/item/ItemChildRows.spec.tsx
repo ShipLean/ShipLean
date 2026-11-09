@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { RetroItemDto } from '../../../api/retros';
-import { RETRO_CATEGORIES } from '../../../api/retros';
+import type { RetroItemDto } from '@shiplean/core/api/retros';
+import { RETRO_CATEGORIES } from '@shiplean/core/api/retros';
 import { retroItem } from '../ct/retroFixtures';
 import { retrosTestIds as ids } from '../testIds';
 import { ItemChildRows } from './ItemChildRows';

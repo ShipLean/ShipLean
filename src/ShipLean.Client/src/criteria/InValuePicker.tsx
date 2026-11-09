@@ -1,4 +1,4 @@
-import type { CriteriaValue } from '../api/persisted';
+import type { CriteriaValue } from '@shiplean/core/api/persisted';
 import { criteriaTestIds } from '../features/criteria/testIds';
 import type { ValueOption } from './valueOptions';
 

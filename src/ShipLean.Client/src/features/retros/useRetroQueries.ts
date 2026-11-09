@@ -13,7 +13,7 @@ import {
   type RetroActionDialogQuery,
   type RetroRange,
   type RetroSearchQuery,
-} from '../../api/retrosApi';
+} from '@shiplean/core/api/retrosApi';
 import { registerInvalidation } from '../../realtime';
 
 // Every retrospective read lives under ['projects', projectId, 'retros'], so a reconnect refreshes them with the rest.

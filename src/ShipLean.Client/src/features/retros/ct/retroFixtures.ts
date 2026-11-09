@@ -12,7 +12,7 @@ import type {
   RetroThemeRefDto,
   SprintRetroDto,
   WorkItemRetrosDto,
-} from '../../../api/retros';
+} from '@shiplean/core/api/retros';
 import actionDetailFixture from '../../../../../ShipLean.TestSupport/DtoFixtures/retros/retro-action-detail.json' with { type: 'json' };
 import actionDialogFixture from '../../../../../ShipLean.TestSupport/DtoFixtures/retros/retro-action-dialog.json' with { type: 'json' };
 import featuresFixture from '../../../../../ShipLean.TestSupport/DtoFixtures/retros/retro-features.json' with { type: 'json' };

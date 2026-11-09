@@ -1,4 +1,4 @@
-import type { BacklogRowDto } from '../../../api/views';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import { backlogTestIds as ids } from '../testIds';
 
 // The item's own estimate with the sum of everything under it greyed beside it (`20 · Σ26`), in warn when the server says

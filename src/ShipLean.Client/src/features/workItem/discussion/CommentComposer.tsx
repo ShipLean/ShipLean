@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import type { UserRef } from '../../../api/refs';
+import type { UserRef } from '@shiplean/core/api/refs';
 import { textareaClass } from '../form/inputClasses';
 import { workItemTestIds as ids } from '../testIds';
 import { MentionMenu } from './MentionMenu';

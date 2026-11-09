@@ -1,4 +1,4 @@
-import { ApiRequestError } from '../../../../api/client';
+import { ApiRequestError } from '@shiplean/core/api/client';
 
 /** GET/PUT api/instance/integrations. A token is never in it, only its last four characters (C#: IntegrationsSettingsDto). */
 export interface IntegrationsSettingsDto {

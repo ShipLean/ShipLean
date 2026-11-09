@@ -11,7 +11,7 @@ import { SelectionProvider } from '../selection/SelectionProvider';
 import { useRowGestures } from '../selection/useRowGestures';
 import { useSelection } from '../selection/useSelection';
 import { backlogTestIds as ids } from '../testIds';
-import type { BacklogRowDto } from '../../../api/views';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import { itemRow } from './fixtures';
 
 const KEYS = ['SHIP-1', 'SHIP-2', 'SHIP-3', 'SHIP-4'];

@@ -1,4 +1,4 @@
-import type { BacklogSectionDto } from '../../../api/views';
+import type { BacklogSectionDto } from '@shiplean/core/api/views';
 import { backlogTestIds as ids } from '../testIds';
 import { useSectionDrop } from './useSectionDrop';
 

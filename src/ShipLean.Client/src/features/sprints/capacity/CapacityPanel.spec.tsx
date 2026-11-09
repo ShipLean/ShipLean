@@ -1,13 +1,13 @@
 import type { Page } from 'playwright';
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { ProjectDto } from '../../../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import type {
   MemberCapacityDto,
   SprintCapacityDto,
   SprintCapacityPut,
   SprintDto,
   VelocityDto,
-} from '../../../api/sprints';
+} from '@shiplean/core/api/sprints';
 import { ToastHost } from '../../../components/ToastHost';
 import { CapacitySlot } from '../../../slots/CapacitySlot';
 import { componentTestIds } from '../../../components/testIds';

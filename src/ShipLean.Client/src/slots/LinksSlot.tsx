@@ -1,4 +1,4 @@
-import type { ProjectDto } from '../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { LinksEditor } from '../features/workItem/links/LinksEditor';
 
 export interface LinksSlotProps {

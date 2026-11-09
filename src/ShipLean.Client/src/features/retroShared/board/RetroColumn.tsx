@@ -1,4 +1,4 @@
-import type { RetroCategoryColumnDto, RetroPointDto } from '../../../api/retros';
+import type { RetroCategoryColumnDto, RetroPointDto } from '@shiplean/core/api/retros';
 import type { RetroActionScope } from '../actionDialog/RetroActionScope';
 import { retroCategoryColours, retroCategoryLabels } from '../retroCategories';
 import { RetroNote } from '../note/RetroNote';

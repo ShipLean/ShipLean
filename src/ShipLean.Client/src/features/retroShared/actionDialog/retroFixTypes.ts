@@ -1,4 +1,4 @@
-import type { RetroFixType } from '../../../api/retros';
+import type { RetroFixType } from '@shiplean/core/api/retros';
 
 /** The six types of fix an action item can have, in the order the dialog lists them, with the hint under each. */
 export const retroFixOptions: { id: RetroFixType; label: string; hint: string }[] = [

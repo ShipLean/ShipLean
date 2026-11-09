@@ -1,11 +1,11 @@
-import type { ProjectDto } from '../../../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import type {
   BoardCellDto,
   BoardColumnDto,
   BoardLaneDto,
   BoardViewDto,
   CardDto,
-} from '../../../api/views';
+} from '@shiplean/core/api/views';
 
 export const PROJECT: ProjectDto = {
   id: 'p1',

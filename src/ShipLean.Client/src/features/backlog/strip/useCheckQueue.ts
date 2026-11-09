@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
-import type { BacklogCheckId } from '../../../api/backlogWrites';
-import type { BacklogRowDto } from '../../../api/views';
+import type { BacklogCheckId } from '@shiplean/core/api/backlogWrites';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 
 export interface CheckQueue {
   /** The rows of the check being worked through, in their order. */

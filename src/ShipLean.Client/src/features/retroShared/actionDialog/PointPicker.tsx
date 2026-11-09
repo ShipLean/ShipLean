@@ -1,4 +1,4 @@
-import type { RetroCategory, RetroPointDto } from '../../../api/retros';
+import type { RetroCategory, RetroPointDto } from '@shiplean/core/api/retros';
 import { PointGroup } from './PointGroup';
 
 const offeredGroups: { category: RetroCategory; label: string }[] = [

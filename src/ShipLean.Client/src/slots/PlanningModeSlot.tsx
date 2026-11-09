@@ -1,4 +1,4 @@
-import type { ProjectDto } from '../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import type { Level, BacklogMode } from '../routes';
 import { PlanningMode } from '../features/backlog/planning/PlanningMode';
 import { pagesTestIds } from '../features/pages/testIds';

@@ -7,7 +7,7 @@ import { TitleCell } from '../selection/TitleCell';
 import { useRowGestures } from '../selection/useRowGestures';
 import { useSelection } from '../selection/useSelection';
 import { backlogTestIds as ids } from '../testIds';
-import type { BacklogRowDto } from '../../../api/views';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import { CommandHarness } from './CommandHarness';
 import { itemRow, PROJECT } from './fixtures';
 

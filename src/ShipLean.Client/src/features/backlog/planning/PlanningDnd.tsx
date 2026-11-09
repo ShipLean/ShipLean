@@ -15,8 +15,8 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
-import type { VelocityDto } from '../../../api/sprints';
-import type { BacklogRowDto, BacklogSectionDto } from '../../../api/views';
+import type { VelocityDto } from '@shiplean/core/api/sprints';
+import type { BacklogRowDto, BacklogSectionDto } from '@shiplean/core/api/views';
 import { runClearingSelection } from '../bulk/runClearingSelection';
 import { useBulkRunner } from '../bulk/useBulkRun';
 import { DragBadge } from '../drag/DragBadge';

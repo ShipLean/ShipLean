@@ -1,4 +1,4 @@
-import type { CardDto } from '../../../api/views';
+import type { CardDto } from '@shiplean/core/api/views';
 import type { Level } from '../../../routes';
 import { boardTestIds as ids } from '../testIds';
 import { pointsText } from './cardStyle';

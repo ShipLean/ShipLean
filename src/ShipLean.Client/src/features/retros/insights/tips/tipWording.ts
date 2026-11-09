@@ -1,4 +1,4 @@
-import type { RetroInsightsMode, RetroThemeStatus, RetroVerdict } from '../../../../api/retros';
+import type { RetroInsightsMode, RetroThemeStatus, RetroVerdict } from '@shiplean/core/api/retros';
 
 const unit = (mode: RetroInsightsMode) => (mode === 'week' ? 'week' : 'sprint');
 

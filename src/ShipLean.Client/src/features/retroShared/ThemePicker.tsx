@@ -1,6 +1,6 @@
 import { useId, useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import type { RetroThemeMode, RetroThemeOptionDto } from '../../api/retros';
+import type { RetroThemeMode, RetroThemeOptionDto } from '@shiplean/core/api/retros';
 import { retroSharedTestIds as ids } from './testIds';
 
 /** Pick a theme from the project's list or add a new name. Typing filters the list case-insensitively; a name that matches none offers "Add 'X'". */

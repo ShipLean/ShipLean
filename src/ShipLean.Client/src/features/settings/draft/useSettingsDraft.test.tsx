@@ -2,8 +2,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { expect, test, vi } from 'vitest';
-import type { ProjectSettingsDto, ProjectSettingsPut } from '../../../api/projects';
-import { WORK_ITEM_TYPE_IDS } from '../../../api/refs';
+import type { ProjectSettingsDto, ProjectSettingsPut } from '@shiplean/core/api/projects';
+import { WORK_ITEM_TYPE_IDS } from '@shiplean/core/api/refs';
 
 const puts: ProjectSettingsPut[] = [];
 vi.mock('../settingsApi', () => ({

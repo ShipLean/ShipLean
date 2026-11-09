@@ -1,5 +1,5 @@
 import { Chip, type ChipTone } from '../../../../components/Chip';
-import type { RetroInsightsMode, RetroVerdict } from '../../../../api/retros';
+import type { RetroInsightsMode, RetroVerdict } from '@shiplean/core/api/retros';
 import { Tip } from '../tips/Tip';
 import { verdictWording } from '../tips/tipWording';
 

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import type { ImportJobDto } from '../../../api/import';
+import type { ImportJobDto } from '@shiplean/core/api/import';
 import { routePath } from '../../../routes';
 import { importTestIds as ids } from '../testIds';
 

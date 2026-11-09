@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { MemberDto } from '../api/projects';
-import type { UserRef } from '../api/refs';
+import type { MemberDto } from '@shiplean/core/api/projects';
+import type { UserRef } from '@shiplean/core/api/refs';
 import { Avatar } from '../components/Avatar';
 import { realtimeTestIds as ids } from '../features/realtime/testIds';
 import { withoutMe } from './presence';

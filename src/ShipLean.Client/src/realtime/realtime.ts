@@ -1,4 +1,4 @@
-import { api, clientId } from '../api/client';
+import { api, clientId } from '@shiplean/core/api/client';
 import { createProjectConnection } from './connection';
 import { createRealtime } from './createRealtime';
 

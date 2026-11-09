@@ -1,4 +1,4 @@
-import type { ImportJobState } from '../../../api/persisted';
+import type { ImportJobState } from '@shiplean/core/api/persisted';
 import type { ChipTone } from '../../../components/Chip';
 
 /** How each state of an import job reads. */

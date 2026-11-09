@@ -1,5 +1,5 @@
-import type { SprintRef } from '../../../api/refs';
-import type { BacklogSectionDto } from '../../../api/views';
+import type { SprintRef } from '@shiplean/core/api/refs';
+import type { BacklogSectionDto } from '@shiplean/core/api/views';
 
 /** Where a dragged row goes in Planning, and what to send for it. */
 export interface PlanningDrop {
