@@ -11,6 +11,7 @@ import { asksTestIds as ids } from './testIds';
 const item: AsksItem = {
   id: waiting.workItemId,
   projectId: 'p1',
+  projectKey: 'SHIP',
   key: 'SHIP-141',
   type: { id: 'story', name: 'Story' },
 };

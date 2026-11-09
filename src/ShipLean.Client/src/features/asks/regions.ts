@@ -11,6 +11,8 @@ import type { TypeRef } from '../../api/refs';
 export interface AsksItem {
   id: string;
   projectId: string;
+  /** The project's key, for routePath('workItem', { key: item.projectKey, itemKey: item.key }) and ItemLink. */
+  projectKey: string;
   key: string;
   type: TypeRef;
 }

@@ -279,7 +279,7 @@ export function WorkItemForm({
               {banners}
               <div className="grid grid-cols-[minmax(0,1fr)_20rem] gap-4 p-4">
                 <div className="grid grid-cols-[minmax(0,1fr)] content-start gap-6">
-                  <DecisionsSection item={item} />
+                  <DecisionsSection item={{ ...item, projectKey }} />
                   {description}
                   {type === 'story' ? (
                     <CriteriaSection

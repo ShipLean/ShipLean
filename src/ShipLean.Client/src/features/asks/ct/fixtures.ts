@@ -37,7 +37,18 @@ export const waiting = fresh(story);
 export const other: ItemAsksDto = { ...fresh(story), owner: featureAsks.owner, ownerIsMe: false };
 
 /** Nobody assigned, so it waits on the creator. */
-export const unassigned: ItemAsksDto = { ...fresh(story), ownerIsCreator: true };
+export const unassigned: ItemAsksDto = {
+  ...fresh(story),
+  owner: {
+    id: '0199f000-0000-7000-8000-000000000002',
+    name: 'Ana Costa',
+    initials: 'AC',
+    avatarColour: '#2f7fd8',
+    photoUrl: null,
+  },
+  ownerIsMe: false,
+  ownerIsCreator: true,
+};
 
 /** The first open question answered and every open decision confirmed with its recommended answer. */
 export const answered: ItemAsksDto = (() => {

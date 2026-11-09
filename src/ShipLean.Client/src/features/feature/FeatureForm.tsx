@@ -44,7 +44,7 @@ export function FeatureForm({
             className="grid grid-cols-[minmax(0,1fr)] content-start gap-6"
           >
             <GoalSection {...region} />
-            <DecisionsSection item={region.item} />
+            <DecisionsSection item={{ ...region.item, projectKey: region.projectKey }} />
             {description}
             <FeatureLinksSection {...region} />
             <StoriesAndBugs {...region} />
