@@ -29,6 +29,8 @@ const panel = (
 async function look(page: Page, theme: 'light' | 'dark', size: { width: number; height: number }) {
   await page.setViewportSize(size);
   await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+  // The footer names the configured host once mcp-url answers; shots wait for it so they show the settled panel.
+  await stubMcp(page);
 }
 
 for (const theme of ['light', 'dark'] as const) {
@@ -37,6 +39,7 @@ for (const theme of ['light', 'dark'] as const) {
     await stubList(page, twoDevices);
     await mount(panel);
     await expect(page.getByTestId(ids.row)).toHaveCount(2);
+    await expect(page.getByTestId(ids.addLine)).toContainText('shiplean.larkspur.dev');
     await expect(page).toHaveScreenshot(`two-devices-1440x900.${theme}.png`, {
       animations: 'disabled',
     });
@@ -48,6 +51,7 @@ for (const theme of ['light', 'dark'] as const) {
     await mount(panel);
     await page.getByTestId(ids.signOut).first().click();
     await expect(page.getByTestId(ids.confirm)).toBeVisible();
+    await expect(page.getByTestId(ids.addLine)).toContainText('shiplean.larkspur.dev');
     await expect(page).toHaveScreenshot(`sign-out-confirmation-1440x900.${theme}.png`, {
       animations: 'disabled',
     });
@@ -59,6 +63,7 @@ for (const theme of ['light', 'dark'] as const) {
     await mount(panel);
     await page.getByTestId(ids.signOut).first().click();
     await expect(page.getByTestId(ids.confirm)).toBeVisible();
+    await expect(page.getByTestId(ids.addLine)).toContainText('shiplean.larkspur.dev');
     await expect(page).toHaveScreenshot(`sign-out-confirmation-390x844.${theme}.png`, {
       animations: 'disabled',
     });
@@ -69,6 +74,7 @@ for (const theme of ['light', 'dark'] as const) {
     await stubList(page, []);
     await mount(panel);
     await expect(page.getByTestId(ids.empty)).toHaveText('No phones are signed in.');
+    await expect(page.getByTestId(ids.addLine)).toContainText('shiplean.larkspur.dev');
     await expect(page).toHaveScreenshot(`no-phones.${theme}.png`, { animations: 'disabled' });
   });
 
@@ -77,6 +83,7 @@ for (const theme of ['light', 'dark'] as const) {
     await stubList(page, twoDevices);
     await mount(panel);
     await expect(page.getByTestId(ids.row)).toHaveCount(2);
+    await expect(page.getByTestId(ids.addLine)).toContainText('shiplean.larkspur.dev');
     await expect(page).toHaveScreenshot(`two-devices-390x844.${theme}.png`, {
       animations: 'disabled',
     });
@@ -97,6 +104,7 @@ for (const theme of ['light', 'dark'] as const) {
     await expect(page.getByTestId(ids.failed)).toHaveText(
       "Couldn't load your signed-in devices. Reload the page to try again.",
     );
+    await expect(page.getByTestId(ids.addLine)).toContainText('shiplean.larkspur.dev');
     await expect(page).toHaveScreenshot(`load-failed.${theme}.png`, { animations: 'disabled' });
   });
 }
