@@ -59,7 +59,7 @@ public sealed class DecisionEndpoints(IProjectAccess access, IDecisionAnswers an
 
     private void Track(string name, string key, Guid projectId, long started, int count, AnswerKind? kind)
     {
-        var props = new Dictionary<string, object>();
+        var props = new Dictionary<string, object> { [UsageProps.Count] = count };
         if (kind is { } k)
         {
             props[UsageProps.AnswerKind] = k.ToString().ToLowerInvariant();
@@ -70,7 +70,7 @@ public sealed class DecisionEndpoints(IProjectAccess access, IDecisionAnswers an
             UsageSurface.Web,
             UsageActor.ForUser(currentUser.Id),
             projectId,
-            count,
+            1,
             UsageOutcome.Ok,
             null,
             (long)clock.GetElapsedTime(started).TotalMilliseconds,
