@@ -63,7 +63,7 @@ public class MobileSignInJourneyTests : SeededAcceptanceTest
         code.ShouldNotBeNullOrEmpty();
         using var exchange = await ExchangeAsync(code);
         exchange.StatusCode.ShouldBe(HttpStatusCode.Created);
-        exchange.Headers.CacheControl?.NoStore.ShouldBe(true);
+        exchange.Headers.CacheControl.ShouldNotBeNull().NoStore.ShouldBeTrue();
         var signedIn = await exchange.Content.ReadFromJsonAsync<JsonElement>();
         signedIn.GetProperty("session").GetProperty("name").GetString().ShouldBe("Joel's Pixel");
         signedIn.GetProperty("me").GetProperty("id").GetGuid().ShouldBe(SeedIds.Users.Joel);

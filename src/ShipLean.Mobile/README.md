@@ -71,11 +71,11 @@ Plain `http` works in development: iOS allows local networking (`NSAllowsLocalNe
 
 ## Manual run against a local server
 
-1. Start the server: `dotnet run --project src/ShipLean.LocalHost -- --port 5113`. It binds loopback only. `LocalHost` has no switch for `0.0.0.0` yet (`AppHostOptions.ListenOnAllInterfaces` exists but isn't a flag), so a phone on the LAN can't reach it as it is; use an emulator or simulator.
-2. Open the app (`pnpm start`) on the Android emulator (server `http://10.0.2.2:5113`) or iOS simulator (`http://localhost:5113`).
+1. Start the server (needs Docker, see `docs/local-environment.md`): `dotnet run --project src/ShipLean.LocalHost -- --port 5113`. It binds loopback only. `LocalHost` has no switch for `0.0.0.0` yet (`AppHostOptions.ListenOnAllInterfaces` exists but isn't a flag), so a phone on the LAN can't reach it as it is; use an emulator or simulator.
+2. Open the app in a **development build**, not Expo Go: Expo Go doesn't register the `shiplean://` scheme, so on Android the sign-in redirect never reaches the app. Android emulator: `npx expo run:android` (needs the Android SDK; server `http://10.0.2.2:5113`). iOS simulator: `npx expo run:ios` (server `http://localhost:5113`).
 3. Type the server address; Sign in enables once the server check passes.
 4. The browser opens the confirm page. Sign in as `joel@shiplean.local` (password in `docs/local-environment.md`), check the device name, tap Sign in, then Open the app.
 5. The app shows the projects. Open Account and check the signed-in name.
 6. On the web, open Your profile > Signed-in devices: the phone is listed. Sign it out there and confirm.
-7. Watch the app return to Sign in (it ends on its next request or reconnect).
+7. In the app, pull down on Projects: the next request answers `session_ended` and the app returns to Sign in.
 8. Sign in again, then sign out from the app's Account (it asks first) and check the web list no longer shows the phone.

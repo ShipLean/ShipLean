@@ -183,7 +183,7 @@ The ShipLean phone app signs in through the browser and then calls `/api` with a
 ### Lifetime and what ends a session
 
 - 90 days, sliding: use extends it (touched at most once a minute). A session that has expired is never revived by use.
-- A request with a revoked or expired secret, a disabled user, or a changed security stamp answers 401 `session_ended`. The stamp changes on a password change, "Sign out everywhere else", an admin's one-time password and an email change.
+- A request with a revoked or expired secret, a disabled user, or a changed security stamp answers 401 `session_ended`. The stamp changes on a password change, "Sign out everywhere else", an admin's one-time password, an email change, disabling the user, and linking Google sign-in to the account.
 - The person revokes a phone from Your profile > Signed-in devices (`DELETE /api/auth/device-sessions/{id}`); the app signs itself out with `DELETE /api/auth/device-sessions/current`.
 - A revoked or expired session's open hub socket is dropped (SHIP-1054, fixed). The hub check used to compare only the stamp.
 
@@ -201,7 +201,7 @@ Accepted deviations in the app: its server check is a plain `fetch` to the typed
 
 ### Analytics
 
-`device_session.created` (tagged with the `app` surface at the exchange call site, not by the client header) and `device_session.ended` (with a `reason`: `app_sign_out`, `web_sign_out`, `expired`, `stamp_changed`, `user_disabled`).
+Every tracked action made with a device bearer carries the `app` surface, decided from the authenticated principal's device-session claim (`UsageSurfaces.Of`), never from a header. `device_session.created` (tagged `app` explicitly at the exchange call site, since that request has no bearer yet) and `device_session.ended` (with a `reason`: `app_sign_out`, `web_sign_out`, `expired`, `stamp_changed`, `user_disabled`).
 
 ### Accepted risks and behaviour
 
