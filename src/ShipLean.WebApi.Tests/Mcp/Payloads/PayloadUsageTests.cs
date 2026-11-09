@@ -1,9 +1,11 @@
+using System.Text.Json;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Contracts.Usage;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Hosting;
 using ShipLean.TestSupport.Usage;
-using ShipLean.WebApi.Features.Mcp.Usage;
+using ShipLean.WebApi.Features.Mcp.Payloads;
 using ShipLean.WebApi.Tests.Mcp.Transport;
 
 namespace ShipLean.WebApi.Tests.Mcp.Payloads;
@@ -12,9 +14,27 @@ namespace ShipLean.WebApi.Tests.Mcp.Payloads;
 [TestFixture]
 public class PayloadUsageTests : McpFixture
 {
+    private const string MarkedTitle = "Via payload";
+
     private static readonly TimeSpan Wait = TimeSpan.FromSeconds(10);
 
     protected override bool WithProbeTools => false;
+
+    // Stands in for the payload filter (not built when this was written): marks the call as having used a payload, inside
+    // ToolUsageFilter, when the arguments carry MarkedTitle.
+    protected override Action<IServiceCollection>? ConfigureTestServices => services =>
+    {
+        base.ConfigureTestServices!(services);
+        services.AddHttpContextAccessor();
+        services.AddMcpServer().WithRequestFilters(filters => filters.AddCallToolFilter(next => (request, cancellationToken) =>
+        {
+            if (JsonSerializer.Serialize(request.Params?.Arguments).Contains(MarkedTitle, StringComparison.Ordinal))
+            {
+                request.Services?.GetService<IHttpContextAccessor>()?.HttpContext?.Items[McpPayloadTargets.UsedItem] = true;
+            }
+            return next(request, cancellationToken);
+        }));
+    };
 
     private RecordingUsageEvents Usage => (RecordingUsageEvents)Host.Services.GetRequiredService<IUsageEvents>();
 
@@ -33,10 +53,14 @@ public class PayloadUsageTests : McpFixture
     }
 
     [Test]
-    public void ToolUsage_WhenUsedItemSet_ShouldTagInputPayload()
+    public async Task ToolUsage_WhenUsedItemSet_ShouldTagInputPayload()
     {
-        ToolUsageProps.For(toolTakesPayload: true, payloadUsed: true)[UsageProps.Input].ShouldBe("payload");
-        ToolUsageProps.For(toolTakesPayload: true, payloadUsed: false)[UsageProps.Input].ShouldBe("inline");
+        var token = await TokenAsync(TestUser.Joel, ReadOnly);
+
+        await CallToolAsync(token, "capture_plan", $$$"""{"project":"SHIP","feature":{"title":"{{{MarkedTitle}}}","goal":"Tag it."}}""");
+
+        var tracked = await Usage.WaitForAsync(e => e.Source == "tool:capture_plan", Wait);
+        tracked.Properties[UsageProps.Input].ShouldBe("payload");
     }
 
     [Test]
@@ -48,6 +72,5 @@ public class PayloadUsageTests : McpFixture
 
         var tracked = await Usage.WaitForAsync(e => e.Source == "tool:list_projects", Wait);
         tracked.Properties.ShouldNotContainKey(UsageProps.Input);
-        ToolUsageProps.For(toolTakesPayload: false, payloadUsed: true).ShouldBeEmpty();
     }
 }

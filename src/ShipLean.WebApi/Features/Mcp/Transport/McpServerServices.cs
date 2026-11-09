@@ -14,7 +14,7 @@ public sealed class McpServerServices : IServiceModule
         + "a state by its name, a person by name or email, and a project by its key. Leave project out on a read and you get "
         + "the user's most recent project; a write that cannot tell the project from an item key needs it when the user is in "
         + "more than one. Anything that moves many items returns a preview and a plan first: look at the preview, then call "
-        + "again with that plan to apply exactly it. Large arguments go by create_payload_upload and then payload: upload when the content is already in a file or is over about 20 KB, otherwise send it inline. A tool error comes back as {ok:false, error:{code, message, field, "
+        + "again with that plan to apply exactly it. Large arguments go by create_payload_upload and then payload: upload when the content is already in a file or is over about 20 KB, otherwise send it inline; with no shell, send inline and keep each call small. A tool error comes back as {ok:false, error:{code, message, field, "
         + "candidates}}: when the code is ambiguous, pick one of the candidates and call again. For the full flow from idea to "
         + "done, call planning_guide with part work. Before any breakdown of a feature or epic into stories and tasks, whatever "
         + "its size (when asked to break down, do a breakdown, plan this or split into tasks), call planning_guide first and "
