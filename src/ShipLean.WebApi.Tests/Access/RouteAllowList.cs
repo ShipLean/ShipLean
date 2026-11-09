@@ -22,7 +22,7 @@ public static class RouteAllowList
         new("GET", "api/downloads/demo-logo", "An agent's curl has no session; the project-logo URL token in the query is the proof, and every token that is not live is 404."),
         new("GET", "api/youtube/callback", "Google's browser comes back with no session of its own; the service validates the signed state, the signed-in user and their Admin role, and a signed-out caller is redirected with youtube=error and nothing stored."),
         new("POST", "api/webhooks/github", "GitHub delivers pull request events with no session; the shared secret's signature is the proof, and the endpoint is 404 while its secret is unset."),
-        new("POST", "api/auth/device-sessions/exchange", "The phone app has no session yet: the single-use code and its PKCE verifier are the proof; anything else is 400 Sign-in expired."),
+        new("POST", "api/auth/device-sessions/exchange", "The phone app has no session yet: the single-use code and its PKCE verifier are the proof; anything else is 400 Sign-in expired.", Body: """{"code":"sweep-code","verifier":"sweep-verifier"}"""),
         new("POST", "api/webhooks/gitlab", "GitLab delivers merge request events with no session; the shared secret token is the proof, and the endpoint is 404 while its secret is unset."),
     ];
 
