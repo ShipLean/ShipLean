@@ -1,5 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Contracts;
@@ -22,6 +24,11 @@ namespace ShipLean.WebApi.Tests.Asks;
 [TestFixture]
 public class DecisionAnswerApiTests : ApiFixture
 {
+    private static readonly JsonSerializerOptions WireOptions = new(JsonSerializerDefaults.Web)
+    {
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
+    };
+
     private RecordingUsageEvents Recorder => (RecordingUsageEvents)Host.Services.GetRequiredService<IUsageEvents>();
 
     [SetUp]
@@ -116,7 +123,7 @@ public class DecisionAnswerApiTests : ApiFixture
         using var response = await Api.PostJsonAsync(Url(item, "3/change"), new { kind = "own", text = "Not yet", note = "Legal says wait" });
 
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent, await response.Content.ReadAsStringAsync());
-        var comment = (await Api.GetJsonAsync<List<CommentDto>>($"api/work-items/{item}/comments")).ShouldHaveSingleItem();
+        var comment = (await CommentsAsync(item)).ShouldHaveSingleItem();
         comment.Body.ShouldBe("D3 changed from “Yes” to “Not yet” by Joel Dickson.\n\nLegal says wait");
         comment.Author.ShouldNotBeNull().Id.ShouldBe(SeedIds.Users.Joel);
         await using var connection = await OpenDatabaseAsync();
@@ -134,7 +141,7 @@ public class DecisionAnswerApiTests : ApiFixture
         using var response = await Api.PostJsonAsync(Url(item, "1/change"), new { kind = "alternative", alternativeIndex = 0 });
 
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent, await response.Content.ReadAsStringAsync());
-        var comment = (await Api.GetJsonAsync<List<CommentDto>>($"api/work-items/{item}/comments")).ShouldHaveSingleItem();
+        var comment = (await CommentsAsync(item)).ShouldHaveSingleItem();
         comment.AgentName.ShouldBeNull();
         comment.Body.ShouldBe("D1 changed from “Yes” to “No” by Joel Dickson.");
     }
@@ -148,7 +155,7 @@ public class DecisionAnswerApiTests : ApiFixture
         using var response = await Api.PostJsonAsync(Url(item, "1/change"), new { kind = "own", text = "Something else" });
 
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
-        (await Api.GetJsonAsync<List<CommentDto>>($"api/work-items/{item}/comments")).ShouldBeEmpty();
+        (await CommentsAsync(item)).ShouldBeEmpty();
         await using var connection = await OpenDatabaseAsync();
         (await AskRows.TagsAsync(connection, item)).ShouldBeEmpty();
     }
@@ -280,7 +287,7 @@ public class DecisionAnswerApiTests : ApiFixture
         using var response = await Api.PostJsonAsync(Url(item, "4/discuss"), new { body = "> Yes\n\nAre we sure?" });
 
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent, await response.Content.ReadAsStringAsync());
-        var comment = (await Api.GetJsonAsync<List<CommentDto>>($"api/work-items/{item}/comments")).ShouldHaveSingleItem();
+        var comment = (await CommentsAsync(item)).ShouldHaveSingleItem();
         comment.Body.ShouldBe("> Yes\n\nAre we sure?");
         await using var connection = await OpenDatabaseAsync();
         var tag = (await AskRows.TagAsync(connection, comment.Id)).ShouldNotBeNull();
@@ -365,6 +372,14 @@ public class DecisionAnswerApiTests : ApiFixture
     }
 
     private static DateTimeOffset Earlier => TestDates.Today.AddDays(-1);
+
+    private async Task<List<CommentDto>> CommentsAsync(Guid item)
+    {
+        using var response = await Api.GetAsync($"api/work-items/{item}/comments");
+        var text = await response.Content.ReadAsStringAsync();
+        response.StatusCode.ShouldBe(HttpStatusCode.OK, text);
+        return JsonSerializer.Deserialize<List<CommentDto>>(text, WireOptions)!;
+    }
 
     private static string Url(Guid item, string tail) => $"api/work-items/{item}/decisions/{tail}";
 
