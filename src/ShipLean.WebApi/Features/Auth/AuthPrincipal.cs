@@ -11,6 +11,9 @@ public static class AuthPrincipal
     public const string ProxyEmailClaim = "shiplean:proxy-email";
     public const string ProxyNameClaim = "shiplean:proxy-name";
 
+    // On a device bearer's principal only: the device session's id (DELETE …/device-sessions/current reads it).
+    public const string DeviceSessionClaim = "shiplean:device-session";
+
     public static ClaimsPrincipal For(Guid userId, string stamp) => Principal(SessionClaims(userId, stamp));
 
     // The proxy name claim is left out when the provider sent no name.

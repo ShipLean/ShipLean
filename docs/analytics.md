@@ -53,7 +53,7 @@ Every event carries these (a key is left out when its value is null). The consta
 | `duration_ms`, `source` | `source` is `tool:<name>`, `api:<Controller>.<Action>`, `screen` or `system:<Class>` |
 | `shiplean_version`, `instance_host` | this build and this instance |
 
-Extra properties are the keys in `UsageProps` (`screen`, `board`, `provider`, `count`, `column`, `direction`, `mode` (the backlog mode on a backlog screen's `screen.viewed`), `agent_name` on `agent.connected` and `agent.consent_denied`, `trigger` (`scheduled` or `manual`) on `backup.run_finished`). A standard property wins over an extra one with the same key.
+Extra properties are the keys in `UsageProps` (`screen`, `board`, `provider`, `count`, `column`, `direction`, `mode` (the backlog mode on a backlog screen's `screen.viewed`), `agent_name` on `agent.connected` and `agent.consent_denied`, `trigger` (`scheduled` or `manual`) on `backup.run_finished`, `reason` (`app_sign_out`, `web_sign_out`, `expired`, `stamp_changed` or `user_disabled`) on `device_session.ended`). A standard property wins over an extra one with the same key.
 
 The distinct id of an actor is `user:<guid>`, `agent:<authorizationId>` (`agent:gw-<userId>` for the gateway) or `system`. Person properties (`kind`, `user_id`, `agent_*`) go to the provider as an identify (Umami) or `$set` (PostHog). `name` and `email` are added for users only when the instance's **Send people's names** toggle is on, which is off by default.
 
@@ -145,6 +145,8 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `auth.signed_out` |  | `Auth.Logout` |
 | `auth.password_changed` |  | `Auth.ChangePassword` |
 | `auth.other_sessions_signed_out` |  | `Auth.SignOutOthers` |
+| `device_session.created` |  | self-emitted: DeviceSignIn.Exchange |
+| `device_session.ended` (`reason`: `app_sign_out`, `web_sign_out`, `expired`, `stamp_changed`, `user_disabled`) |  | self-emitted: DeviceSessions.Current (`app_sign_out`), DeviceSessions.Revoke (`web_sign_out`) |
 | `agent.connected` |  | self-emitted: Consent.Decide (allow) |
 | `agent.consent_denied` |  | self-emitted: Consent.Decide (deny) |
 | `agent.revoked` |  | `ConnectedAgents.Revoke` |
