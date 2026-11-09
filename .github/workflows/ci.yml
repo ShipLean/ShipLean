@@ -148,6 +148,16 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
+      # pg_dump 18 for the backup tests (the server is Postgres 18). The runner has an older client, so 18's bin goes first on PATH.
+      - name: Install postgresql-client-18 (PGDG)
+        run: |
+          set -euo pipefail
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends postgresql-client-18
+          echo /usr/lib/postgresql/18/bin >> "$GITHUB_PATH"
       # One cache per job: each restores different projects, so a shared key would keep whichever job finished first.
       - uses: actions/cache@v4
         with:
@@ -271,6 +281,17 @@ jobs:
         if: needs.changes.outputs.code != 'false'
         with:
           dotnet-version: 10.0.x
+      # pg_dump 18 for the backup tests (the server is Postgres 18). The runner has an older client, so 18's bin goes first on PATH.
+      - name: Install postgresql-client-18 (PGDG)
+        if: needs.changes.outputs.code != 'false'
+        run: |
+          set -euo pipefail
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends postgresql-client-18
+          echo /usr/lib/postgresql/18/bin >> "$GITHUB_PATH"
       # One cache per job: each restores different projects, so a shared key would keep whichever job finished first.
       - uses: actions/cache@v4
         if: needs.changes.outputs.code != 'false'
@@ -360,6 +381,16 @@ jobs:
       - name: Check the model is in the image
         # sha256sum runs as $APP_UID, so this also proves the files are readable by the app user.
         run: docker run --rm --entrypoint sha256sum shiplean:ci /app/models/multilingual-e5-small/model.onnx /app/models/multilingual-e5-small/sentencepiece.bpe.model /app/models/multilingual-e5-small/shiplean-model.json
+      # The backup CLI verbs answer before the web host is built (no arguments = usage, exit 2), and the image's pg_dump is 18.
+      - name: Check the backup CLI and pg_dump
+        run: |
+          set -u
+          status=0
+          docker run --rm shiplean:ci decrypt-backup || status=$?
+          [ "$status" -eq 2 ] || { echo "expected decrypt-backup to exit 2, got $status"; exit 1; }
+          version=$(docker run --rm --entrypoint pg_dump shiplean:ci --version)
+          echo "$version"
+          echo "$version" | grep -Eq '^pg_dump \(PostgreSQL\) 18\.' || { echo "expected pg_dump 18"; exit 1; }
       # Smoke: the image starts against a real Postgres and serves. Everything runs on one user-defined network and
       # the checks come from a curl container on it. The app migrates once at startup and exits if Postgres is not
       # ready yet, so the app restarts on failure (the restart loop plus curl's retries wait for Postgres; the health check on Postgres is for inspection).

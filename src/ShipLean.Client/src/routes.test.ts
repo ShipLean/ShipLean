@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest';
 import {
   crumbTrail,
+  instanceSettingsTabs,
   isInstanceLevel,
   matchRoute,
   newItemPath,
@@ -213,6 +214,13 @@ test('routes_WhenSettingsTabIsDemos_ShouldMatchItAfterIntegrations', () => {
 
 test('routes_WhenInstanceTabIsAgents_ShouldMatchIt', () => {
   expect(matchRoute('/instance/agents')?.id).toBe('instanceSettings');
+});
+
+test('routes_WhenInstanceTabIsBackups_ShouldMatchItAfterAgents', () => {
+  expect(matchRoute('/instance/backups')?.id).toBe('instanceSettings');
+  expect(routePath('instanceSettings', { tab: 'backups' })).toBe('/instance/backups');
+  expect(instanceSettingsTabs.at(-1)).toBe('backups');
+  expect(instanceSettingsTabs.at(-2)).toBe('agents');
 });
 
 test('routes_WhenInstanceTabIsIntegrations_ShouldMatchIt', () => {

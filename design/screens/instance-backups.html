@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Instance settings › Backups (SHIP-743 mockup)</title>
+<!--
+  SHIP-743 / SHIP-784 reference: the Instance settings › Backups tab, for Joel's approval before it is built.
+  Open directly in a browser. Uses ../tokens.css, shiplean.css and shared.js only; no build step. Same shell,
+  side tabs, panels and form rows as instance.html.
+
+  The page stacks every state the tab has to draw, top to bottom. The small grey numbered labels between them
+  are review notes, not part of the design:
+    1. Configured, health ok, with Back up now and the history (one failed run with its error, one pruned row, greyed).
+    2. Not configured: empty destination, passphrase required, with the "write it down" warning.
+    3. The schedule helper: presets, a valid expression with its description and next 5 runs, an invalid one and
+       one that runs too often.
+    4. Destination: Amazon S3 by region (keys blank = the AWS default credential chain), and a custom endpoint with
+       path-style addressing and the http warning, plus both Test connection results.
+    5. The attachments toggle: off, on, and disabled ("Already inside the database backup").
+    6. Health failing and overdue (and never run).
+    7. A run in progress: Back up now disabled, the running row at the top of the history.
+    8. The passphrase generation, while changing it and after saving.
+
+  Content comes from the pinned shapes in src/ShipLean.TestSupport/PinnedShapes/backup-*.json (labels computed
+  against 2026-10-24 14:00 UTC). Only the person is swapped: the pinned runs say Joel Dickson, these screens' cast is
+  Priya Shah. Every date label is a server label from the DTO; the SPA formats only byte sizes.
+
+  Screenshot: this page is taller than 900px, so it is shot full height (1440 wide, 2x scale), not with
+  screenshots.sh's fixed 1440x900 window, which would crop it. The command is in design/README.md, next to the row.
+-->
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="shiplean.css">
+<script src="shared.js"></script>
+<style>
+/* A tall stacked page: let the document grow instead of scrolling inside the shell. */
+body { height: auto; min-height: 100dvh; overflow: visible; }
+.head { display: flex; gap: var(--space-3); align-items: center; padding: var(--space-3) var(--space-4); background: var(--color-surface); border-bottom: 1px solid var(--color-border); flex: none; flex-wrap: wrap; }
+.head h1 { margin: 0; font-size: var(--text-lg); font-weight: var(--weight-semibold); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.sbody { flex: 1; display: grid; grid-template-columns: 200px minmax(0, 1fr); }
+.stabs { display: flex; flex-direction: column; gap: 2px; padding: var(--space-3) var(--space-2); background: var(--color-surface); border-right: 1px solid var(--color-border); }
+.stab { display: flex; align-items: center; gap: var(--space-2); height: 30px; padding: 0 var(--space-2); border-radius: var(--radius-sm); color: var(--color-muted); font-size: var(--text-base); font-weight: var(--weight-medium); text-decoration: none; }
+.stab:hover { background: var(--color-surface-2); color: var(--color-text); }
+.stab[aria-current="page"] { background: var(--color-accent-soft); color: var(--color-text); font-weight: var(--weight-semibold); }
+.content { padding: var(--space-4); display: grid; gap: var(--space-3); align-content: start; background: var(--color-bg); }
+.panel { max-width: 1120px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.panel > header { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; min-height: 44px; padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-border); }
+.panel > header h2 { margin: 0; font-size: var(--text-md); font-weight: var(--weight-semibold); }
+.panel > header .meta { font-size: var(--text-xs); color: var(--color-muted); }
+.panel table.list { background: transparent; }
+.panel table.list th { position: static; }
+.pfoot { display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; padding: var(--space-2) var(--space-3); border-top: 1px solid var(--color-border); background: var(--color-bg); border-radius: 0 0 var(--radius-md) var(--radius-md); font-size: var(--text-xs); color: var(--color-muted); }
+.form { display: grid; grid-template-columns: 190px minmax(0, 1fr); }
+.form > .lbl, .form > .ctl { padding: 10px var(--space-3); border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.form > .lbl { font-size: var(--text-sm); font-weight: var(--weight-medium); color: var(--color-muted); padding-top: 15px; }
+.form > .ctl { display: grid; gap: 5px; justify-items: start; align-content: start; font-size: var(--text-sm); }
+.form > :nth-last-child(-n+2) { border-bottom: 0; }
+.form .changed { box-shadow: inset 3px 0 0 var(--color-warn); }
+.hint { font-size: var(--text-xs); color: var(--color-muted); max-width: 640px; }
+.ok-t { font-size: var(--text-xs); color: var(--color-ok); font-weight: var(--weight-medium); }
+.warn-t { font-size: var(--text-xs); color: var(--color-warn); font-weight: var(--weight-medium); }
+.bad-t { font-size: var(--text-xs); color: var(--color-danger); font-weight: var(--weight-medium); }
+.w-md { width: 340px; max-width: 100%; }
+.w-num { width: 72px; }
+.field.bad { border-color: var(--color-danger); }
+.status { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-sm); white-space: nowrap; }
+.status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--color-ok); flex: none; }
+.status.attn::before { background: var(--color-warn); }
+.status.bad::before { background: var(--color-danger); }
+.status.run::before { background: var(--color-info); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-info) 22%, transparent); }
+.status.off::before { background: var(--color-muted); }
+td .sub { display: block; font-size: var(--text-xs); color: var(--color-muted); }
+tr.disabled td { color: var(--color-muted); }
+tr.disabled td .num-v { text-decoration: line-through; }
+tr.err td { height: auto; padding-top: 0; padding-bottom: 8px; }
+tr.has-err td { border-bottom: 0; }
+.who { display: inline-flex; align-items: center; gap: 6px; }
+.banner { display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; max-width: 1120px; padding: 8px var(--space-3); border: 1px solid var(--color-border); border-left: 3px solid var(--color-info); border-radius: var(--radius-sm); background: var(--color-surface); font-size: var(--text-sm); }
+.banner.ok { border-left-color: var(--color-ok); }
+.banner.warn { border-left-color: var(--color-warn); }
+.banner.bad { border-left-color: var(--color-danger); }
+.banner.off { border-left-color: var(--color-muted); }
+.banner .status { font-weight: var(--weight-semibold); }
+.callout { max-width: 640px; }
+.callout.bad { border-left-color: var(--color-danger); }
+/* Schedule helper: the expression and presets on the left, what it means on the right. */
+.cron { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-3); width: 100%; }
+.cron > div { display: grid; gap: 6px; align-content: start; justify-items: start; }
+.runs { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; }
+.runs li { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text); }
+.runs.dim li { color: var(--color-muted); }
+.runs-box { min-width: 220px; padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-bg); display: grid; gap: 6px; }
+.seg button { white-space: nowrap; }
+.hint code { font-size: var(--text-xs); }
+td .sub.mono { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 380px; }
+.banner > .muted { flex: 1 1 360px; }
+.cols .check { white-space: normal; }
+.cols .seg button { padding: 0 6px; font-size: var(--text-xs); }
+.secret { display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; }
+/* The stacked states. */
+.state-label { max-width: 1120px; margin-top: var(--space-4); padding-top: var(--space-3); border-top: 1px dashed var(--color-border); }
+.state-label:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+.cols { display: grid; gap: var(--space-3); max-width: 1120px; align-items: start; }
+.cols.c2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.cols.c3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.cols .form { grid-template-columns: 130px minmax(0, 1fr); }
+.cols .cron { grid-template-columns: minmax(0, 1fr); }
+.cols .w-md { width: 100%; }
+.stack { display: grid; gap: var(--space-2); }
+.case { font-size: var(--text-xs); color: var(--color-muted); font-weight: var(--weight-medium); }
+@media (max-width: 900px) { .sbody { grid-template-columns: minmax(0, 1fr); } .stabs { flex-direction: row; flex-wrap: wrap; border-right: 0; border-bottom: 1px solid var(--color-border); } .form, .cols.c2, .cols.c3, .cron { grid-template-columns: minmax(0, 1fr); } .form > .lbl { padding-bottom: 0; border-bottom: 0; } .panel { overflow-x: auto; } }
+</style>
+</head>
+<body>
+<div id="appbar"></div>
+<section class="head" aria-label="Instance settings">
+  <h1>Instance settings</h1>
+  <span class="sm muted" id="sub"></span>
+  <span class="spacer"></span>
+  <span class="chip">Instance admins only</span>
+</section>
+<div class="sbody">
+  <nav class="stabs" id="tabs" aria-label="Instance settings sections"></nav>
+  <main class="content" id="content"></main>
+</div>
+
+<script>
+(() => {
+  const { instance, people, esc } = SL;
+  // shared.js has no crumbs for this file: borrow the instance page's shell and name the tab.
+  document.getElementById('appbar').outerHTML = SL.appBar('instance')
+    .replace(/<nav class="crumbs"[\s\S]*?<\/nav>/, '<nav class="crumbs" aria-label="You are here"><span>ShipLean</span><span>›</span><span>Instance settings</span><span>›</span><b>Backups</b></nav>')
+    .replace(/<span class="live"[^>]*>Live<\/span>/, '');
+  const $ = id => document.getElementById(id);
+  $('sub').textContent = `${instance.name} · applies to everyone on this install`;
+  // The real app's tabs, plus Backups. No count or dot on the tab (plan review: the tab-label dot was dropped).
+  $('tabs').innerHTML = [['general', 'General'], ['users', 'Users'], ['projects', 'Projects'], ['integrations', 'Integrations'], ['analytics', 'Analytics'], ['agents', 'Agents'], ['backups', 'Backups']]
+    .map(([id, label]) => `<a class="stab" href="${id === 'backups' ? '#' : `instance.html?tab=${id}`}"${id === 'backups' ? ' aria-current="page"' : ''}>${label}</a>`).join('');
+
+  // ---- Data: the pinned shapes (backup-settings.json "configured", backup-run.json, backup-cron-preview.json) ----
+  const ME = 'priya';
+  const regions = [['us-east-1', 'US East (N. Virginia)'], ['us-west-2', 'US West (Oregon)'], ['eu-west-1', 'Europe (Ireland)'], ['eu-central-1', 'Europe (Frankfurt)'], ['ap-southeast-1', 'Asia Pacific (Singapore)'], ['ap-southeast-2', 'Asia Pacific (Sydney)']];
+  const nextRuns = ['2026-10-25 02:00 UTC', '2026-10-26 02:00 UTC', '2026-10-27 02:00 UTC', '2026-10-28 02:00 UTC', '2026-10-29 02:00 UTC'];
+  const preview = {
+    valid: { valid: true, error: null, description: 'At 02:00', nextRuns },
+    invalid: { valid: false, error: 'Enter 5 fields: minute, hour, day of month, month and day of week.', description: null, nextRuns: [] },
+    tooOften: { valid: false, error: 'Runs must be at least 1 hour apart.', description: 'Every 30 minutes', nextRuns: ['2026-10-24 14:30 UTC', '2026-10-24 15:00 UTC', '2026-10-24 15:30 UTC', '2026-10-24 16:00 UTC', '2026-10-24 16:30 UTC'] },
+  };
+  const presets = [['0 2 * * *', 'Daily 02:00'], ['0 */6 * * *', 'Every 6 h'], ['0 2 * * 0', 'Sundays 02:00'], ['0 * * * *', 'Hourly']];
+  const run = {
+    running: { trigger: 'manual', state: 'running', startedLabel: '2m ago', durationLabel: null, startedBy: ME, gen: 2 },
+    succeeded: { trigger: 'scheduled', state: 'succeeded', startedLabel: '12h ago', durationLabel: '47s', gen: 2, key: 'shiplean/database/shiplean-20261024T020000Z-a41d0e7c-g2.dump.slbk', db: 48213504, files: 12, filesBytes: 3145728 },
+    failed: { trigger: 'scheduled', state: 'failed', startedLabel: 'Yesterday', durationLabel: '9s', gen: 2, error: 'The bucket refused the upload: Access Denied (403).' },
+    manual: { trigger: 'manual', state: 'succeeded', startedLabel: '22 Oct', durationLabel: '52s', startedBy: ME, gen: 2, key: 'shiplean/database/shiplean-20261022T101412Z-7be3d915-g2.dump.slbk', db: 47906304, files: 3, filesBytes: 412160 },
+    abandoned: { trigger: 'scheduled', state: 'failed', startedLabel: '22 Oct', durationLabel: null, gen: 2, error: 'Abandoned: the instance running it stopped.' },
+    pruned: { trigger: 'scheduled', state: 'succeeded', startedLabel: '21 Oct', durationLabel: '44s', gen: 2, key: 'shiplean/database/shiplean-20261021T020000Z-1c84f0a2-g2.dump.slbk', db: 47710208, files: 9, filesBytes: 2621440, pruned: true },
+  };
+  // Byte sizes are the only thing the SPA formats itself.
+  const mb = n => `${(n / 1048576).toFixed(1)} MB`;
+
+  // ---- Pieces ----
+  const health = (kind, opts = {}) => {
+    const busy = kind === 'running', off = kind === 'notConfigured';
+    const h = {
+      ok: ['ok', '', 'Healthy', 'Last backup 11h ago, took 47s. Next run 2026-10-25 02:00 UTC.'],
+      running: ['run', '', 'Backing up now', `Started 2m ago by ${esc(people[ME].name)}.`],
+      failing: ['bad', 'bad', 'Last backup failed', 'Yesterday: The bucket refused the upload: Access Denied (403). Last success 22 Oct. Next run 2026-10-25 02:00 UTC.'],
+      overdue: ['attn', 'warn', 'Overdue', 'The run due 2026-10-24 02:00 UTC didn\'t happen. Last success 2 days ago. ShipLean may have been stopped at that time.'],
+      neverRun: ['off', 'off', 'No backups yet', 'Set up 2m ago. First run 2026-10-25 02:00 UTC, or back up now.'],
+      notConfigured: ['off', 'off', 'Not set up', 'Nothing is backed up yet. Add a destination and a passphrase, then save.'],
+    }[kind];
+    const why = off ? 'Save the settings first' : busy ? 'One is already running' : '';
+    return `<div class="banner ${h[1] || (kind === 'ok' ? 'ok' : '')}" data-health="${kind}"><span class="status ${h[0] === 'ok' ? '' : h[0]}">${h[2]}</span><span class="muted">${h[3]}</span>
+      ${why ? `<span class="xs muted">${why}</span>` : ''}<button class="btn" type="button"${why || opts.disabled ? ' disabled' : ''}>Back up now</button></div>`;
+  };
+
+  // mode: aws | custom | empty. test: ok | failed | null
+  const destination = (mode, opts = {}) => {
+    const empty = mode === 'empty', custom = mode === 'custom';
+    const s3 = custom
+      ? { endpoint: 'http://ceph.lab.internal:7480', region: 'us-east-1', bucket: 'shiplean-backups', prefix: 'shiplean/', path: true, key: 'SHIPLEANEXAMPLEKEY01', last4: null }
+      : { region: 'ap-southeast-1', bucket: empty ? '' : 'shiplean-backups', prefix: empty ? 'shiplean/' : 'shiplean/', path: false, key: empty || opts.noKeys ? '' : 'SHIPLEANEXAMPLEKEY02', last4: empty || opts.noKeys ? null : 'x9Qm' };
+    const test = opts.test === 'ok' ? '<span class="ok-t">✓ Wrote, read and deleted a test object in shiplean-backups.</span>'
+      : opts.test === 'failed' ? '<span class="bad-t">✕ Write failed: The bucket refused the test object: Access Denied (403).</span>' : '';
+    const keysHint = s3.key || custom ? '' : '<span class="hint">Both blank: ShipLean uses the AWS default credential chain (instance role, environment, or shared config on the server).</span>';
+    return `<section class="panel"><header><h2>Destination</h2><span class="meta">S3, or any S3-compatible store such as Ceph or MinIO</span></header><div class="form">
+        <span class="lbl">Service</span><div class="ctl"><div class="seg" role="group" aria-label="Service"><button type="button" aria-pressed="${!custom}">Amazon S3</button><button type="button" aria-pressed="${custom}">S3-compatible endpoint</button></div></div>
+        ${custom ? `<label class="lbl">Endpoint URL</label><div class="ctl"><input class="field w-md mono" value="${s3.endpoint}" spellcheck="false">
+            <span class="warn-t">⚠ http sends your access keys in the clear. The backups themselves are encrypted with your passphrase either way.</span>
+            <span class="hint">Private addresses are fine (an on-premises Ceph, for example). No user name, query or fragment in the URL.</span></div>
+          <label class="lbl">Signing region</label><div class="ctl"><input class="field mono" style="width:140px" value="${s3.region}" spellcheck="false"><span class="hint">Whatever your store expects; most accept us-east-1.</span></div>
+          <span class="lbl">Addressing</span><div class="ctl"><label class="check" style="color:var(--color-text)"><input type="checkbox"${s3.path ? ' checked' : ''}> Path-style (bucket in the path, not the host name)</label><span class="hint">Most Ceph and MinIO setups need this.</span></div>`
+        : `<label class="lbl">Region</label><div class="ctl"><select class="field w-md">${regions.map(([c, n]) => `<option${c === s3.region ? ' selected' : ''}>${n} · ${c}</option>`).join('')}</select></div>`}
+        <label class="lbl">Bucket</label><div class="ctl"><input class="field w-md mono${opts.bucketError ? ' bad' : ''}" value="${s3.bucket}" placeholder="shiplean-backups" spellcheck="false">${opts.bucketError ? '<span class="bad-t">Enter the bucket name.</span>' : ''}</div>
+        <label class="lbl">Prefix</label><div class="ctl"><input class="field w-md mono" value="${s3.prefix}" spellcheck="false"><span class="hint">A folder inside the bucket. Database backups go in <code>${s3.prefix}database/</code>, attachments in <code>${s3.prefix}attachments/</code>.</span></div>
+        <label class="lbl">Access key ID</label><div class="ctl"><input class="field w-md mono" value="${s3.key}" placeholder="Optional" spellcheck="false" autocomplete="off"></div>
+        <label class="lbl">Secret key</label><div class="ctl">${s3.last4
+          ? `<div class="secret"><input class="field mono" style="width:220px" type="password" placeholder="Saved · ends ${s3.last4}" autocomplete="off"><button class="btn ghost" type="button">Remove keys</button></div><span class="hint">Stored encrypted and never shown again. Leave it blank to keep the saved one.</span>`
+          : `<input class="field w-md mono" type="password" placeholder="${custom ? 'Paste the secret' : 'Optional'}" value="${custom ? 'xxxxxxxxxxxxxxxxxx' : ''}" autocomplete="off">${keysHint}`}</div>
+      </div>
+      <div class="pfoot"><button class="btn" type="button"${empty ? ' disabled' : ''}>Test connection</button>${test || (empty ? 'Writes, reads and deletes one small test object.' : '')}</div></section>`;
+  };
+
+  // kind: valid | invalid | tooOften
+  const cronHelper = (kind, opts = {}) => {
+    const p = preview[kind];
+    const expr = { valid: '0 2 * * *', invalid: '0 2 * *', tooOften: '*/30 * * * *' }[kind];
+    const presetSeg = `<div class="seg" role="group" aria-label="Presets">${presets.map(([c, l]) => `<button type="button" aria-pressed="${c === expr}">${l}</button>`).join('')}</div>`;
+    const meaning = p.valid
+      ? `<span class="ok-t">✓ ${p.description} (UTC)</span>`
+      : `${p.description ? `<span class="sm">${p.description} (UTC)</span>` : ''}<span class="bad-t">✕ ${p.error}</span>`;
+    const runs = p.nextRuns.length
+      ? `<span class="overline">Next ${p.nextRuns.length} runs</span><ol class="runs${p.valid ? '' : ' dim'}">${p.nextRuns.map(l => `<li>${l}</li>`).join('')}</ol>`
+      : '<span class="xs muted">No runs until the expression is fixed.</span>';
+    return `<div class="cron"><div>
+        ${opts.noPresets ? '' : presetSeg}
+        <input class="field mono${p.valid ? '' : ' bad'}" style="width:200px" value="${expr}" spellcheck="false" aria-label="Cron expression">
+        <span class="hint">Five fields in UTC: minute, hour, day of month, month, day of week. Runs must be at least 1 hour apart.</span></div>
+      <div><div class="runs-box">${meaning}${runs}</div></div></div>`;
+  };
+
+  const schedule = (kind = 'valid', enabled = true) => `<section class="panel"><header><h2>Schedule</h2><span class="meta">All times UTC</span></header><div class="form">
+      <span class="lbl">Scheduled backups</span><div class="ctl"><div class="seg" role="group" aria-label="Scheduled backups"><button type="button" aria-pressed="${enabled}">On</button><button type="button" aria-pressed="${!enabled}">Off</button></div><span class="hint">Off keeps the settings and Back up now still works.</span></div>
+      <span class="lbl">When</span><div class="ctl">${cronHelper(kind)}</div>
+    </div></section>`;
+
+  const retention = () => `<section class="panel"><header><h2>Retention</h2></header><div class="form">
+      <label class="lbl">Keep</label><div class="ctl"><div class="row"><span>the last</span><input class="field w-num" type="number" value="14" min="1" max="365"><span>database backups</span></div>
+        <span class="hint">1 to 365. After each successful backup, older ones ShipLean wrote to this destination are deleted. Attachment copies are never deleted, and files ShipLean didn't write are never touched.</span></div>
+    </div></section>`;
+
+  // mode: set | first | changing | changed
+  const encryption = mode => {
+    const ctl = {
+      set: `<span class="sm"><b>Set 20 Oct</b> · generation 2</span><button class="btn" type="button">Change passphrase…</button>
+        <span class="hint">Every file is encrypted with it before it leaves ShipLean. Restoring a file needs the passphrase of its generation: <code>-g2</code> in the file name.</span>`,
+      first: `<input class="field w-md" type="password" placeholder="A long phrase you'll keep" autocomplete="new-password"><input class="field w-md" type="password" placeholder="Type it again" autocomplete="new-password">
+        <div class="callout warn"><b>Write it down before you save</b>Backups can't be opened without the passphrase, and ShipLean can't show it again or recover it. Keep it in your password manager, away from this server.</div>`,
+      changing: `<input class="field w-md" type="password" value="xxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="new-password"><input class="field w-md" type="password" value="xxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="new-password">
+        <div class="callout warn"><b>Saving starts generation 3</b>Backups already in the bucket stay generation 2 and open only with the current passphrase. Keep it until the last <code>-g2</code> file is pruned. Attachments are copied again under <code>shiplean/attachments/g3/</code> on the next run.</div>`,
+      changed: `<span class="sm"><b>Set just now</b> · generation 3</span><button class="btn" type="button">Change passphrase…</button>
+        <div class="callout"><b>New files are generation 3</b>From the next run, database files end in <code>-g3</code> and attachments go under <code>shiplean/attachments/g3/</code>. Files ending <code>-g2</code> still need the old passphrase.</div>`,
+    }[mode];
+    return `<section class="panel"><header><h2>Encryption</h2><span class="meta">Required</span></header><div class="form">
+        <span class="lbl${mode === 'changing' ? ' changed' : ''}">Passphrase</span><div class="ctl">${ctl}</div>
+      </div>${mode === 'changing' ? '<div class="pfoot"><span class="warn-t">Unsaved changes</span><span class="spacer"></span><button class="btn" type="button">Discard</button><button class="btn primary" type="button">Save</button></div>' : ''}</section>`;
+  };
+
+  // mode: off | on | inDb
+  const attachments = mode => {
+    const ctl = {
+      off: `<label class="check" style="color:var(--color-text)"><input type="checkbox"> Also back up attachments</label>
+        <span class="hint">Attachments are on this server's local disk. Each one is copied once per passphrase generation, so later runs copy only new ones.</span>`,
+      on: `<label class="check" style="color:var(--color-text)"><input type="checkbox" checked> Also back up attachments</label>
+        <span class="hint">Attachments are on this server's local disk. Each one is copied once per passphrase generation, so later runs copy only new ones. The last run copied 12 (3.0 MB).</span>`,
+      inDb: `<label class="check"><input type="checkbox" checked disabled> Already inside the database backup</label>
+        <span class="hint">Attachments are stored in Postgres, in the same database, so every database backup has them.</span>`,
+    }[mode];
+    return `<section class="panel"><header><h2>Attachments</h2>${mode === 'off' ? '<span class="meta">Off by default</span>' : ''}</header><div class="form"><span class="lbl">Include</span><div class="ctl">${ctl}</div></div></section>`;
+  };
+
+  const saveBar = (dirty, note) => `<section class="panel"><div class="pfoot" style="border-top:0;border-radius:var(--radius-md)">${dirty ? '<span class="warn-t">Unsaved changes</span>' : note || 'Saved 20 Oct'}<span class="spacer"></span><button class="btn" type="button"${dirty ? '' : ' disabled'}>Discard</button><button class="btn primary" type="button"${dirty ? '' : ' disabled'}>Save</button></div></section>`;
+
+  const runRow = r => {
+    const trig = r.trigger === 'manual' ? `<span class="who">${SL.av(r.startedBy)}Manual</span>` : 'Scheduled';
+    const result = r.state === 'running' ? '<span class="status run">Running</span>'
+      : r.state === 'failed' ? '<span class="status bad">Failed</span>'
+      : `<span class="status${r.pruned ? ' off' : ''}">Succeeded</span>${r.pruned ? ' <span class="chip">Pruned</span>' : ''}`;
+    const db = r.key ? `<span class="num-v">${mb(r.db)}</span><span class="sub mono">${esc(r.key.split('/').pop())}</span>` : '<span class="muted">—</span>';
+    const files = r.files != null ? `${r.files} · ${mb(r.filesBytes)}` : '<span class="muted">—</span>';
+    return `<tr class="item${r.pruned ? ' disabled' : ''}${r.error ? ' has-err' : ''}"><td class="sm">${r.startedLabel}</td><td class="sm">${trig}</td><td>${result}</td><td class="sm">${r.durationLabel || (r.state === 'running' ? '…' : '<span class="muted">—</span>')}</td>
+        <td class="sm">${db}</td><td class="sm">${files}</td><td class="sm mono">g${r.gen}</td></tr>
+      ${r.error ? `<tr class="err"><td></td><td colspan="6"><span class="bad-t">${esc(r.error)}</span></td></tr>` : ''}`;
+  };
+  const history = (runs, opts = {}) => `<section class="panel"><header><h2>History</h2><span class="meta">The last 20 runs, newest first</span></header>
+      ${runs.length ? `<table class="list"><thead><tr><th style="width:110px">Started</th><th style="width:140px">Trigger</th><th style="width:170px">Result</th><th style="width:70px">Took</th><th>Database</th><th style="width:130px">Attachments</th><th style="width:50px">Gen</th></tr></thead>
+        <tbody>${runs.map(runRow).join('')}</tbody></table>` : `<div class="hint" style="padding:var(--space-3);max-width:none">${opts.empty || 'No backups yet.'}</div>`}
+      <div class="pfoot">${opts.foot || 'A pruned backup was deleted from the bucket to keep the newest 14; its row stays here.'}</div></section>`;
+
+  const label = (n, text) => `<div class="overline state-label">${n} · ${text}</div>`;
+  const panelOnly = (title, body, meta = '') => `<section class="panel"><header><h2>${title}</h2>${meta ? `<span class="meta">${meta}</span>` : ''}</header>${body}</section>`;
+
+  // ---- The page: every state, stacked ----
+  $('content').innerHTML = [
+    label(1, 'Configured, healthy. History trimmed to 4 runs for the mockup'),
+    health('ok'),
+    destination('aws', { test: 'ok' }),
+    schedule('valid'),
+    retention(),
+    encryption('set'),
+    attachments('on'),
+    saveBar(false),
+    history([run.succeeded, run.failed, run.manual, run.pruned]),
+
+    label(2, 'Not configured'),
+    health('notConfigured'),
+    `<div class="cols c2"><div class="stack">${destination('empty')}</div><div class="stack">${encryption('first')}${history([], { empty: 'No backups yet. The first one runs at the next scheduled time after you save, or when you press Back up now.', foot: 'Nothing has been written to any bucket.' })}</div></div>`,
+
+    label(3, 'The schedule helper: valid, invalid, too often'),
+    `<div class="cols c3">${['valid', 'invalid', 'tooOften'].map(k => `<div class="stack"><span class="case">${{ valid: 'Valid: a preset', invalid: 'Invalid: four fields', tooOften: 'Too often: every 30 minutes' }[k]}</span>
+      ${panelOnly('Schedule', `<div style="padding:var(--space-3)">${cronHelper(k)}</div>`, 'All times UTC')}
+      ${k === 'valid' ? '' : '<span class="xs muted">Save is disabled until the schedule is valid.</span>'}</div>`).join('')}</div>`,
+
+    label(4, 'Destination: Amazon S3 by region (no keys), and a custom http endpoint with path style'),
+    `<div class="cols c2"><div class="stack"><span class="case">Amazon S3, keys left blank</span>${destination('aws', { noKeys: true, test: 'ok' })}</div>
+      <div class="stack"><span class="case">S3-compatible endpoint over http, test failed</span>${destination('custom', { test: 'failed' })}</div></div>`,
+
+    label(5, 'Attachments: off, on, disabled'),
+    `<div class="cols c3">${[['off', 'Off (the default)'], ['on', 'On'], ['inDb', 'Disabled: the blob store is Postgres']].map(([m, t]) => `<div class="stack"><span class="case">${t}</span>${attachments(m)}</div>`).join('')}</div>`,
+
+    label(6, 'Health: failing, overdue, never run'),
+    health('failing'),
+    health('overdue'),
+    health('neverRun'),
+    history([run.failed, run.abandoned], { foot: 'Failing: the newest run failed. An abandoned run is one whose instance stopped mid-run; the next scheduled run goes ahead as normal.' }),
+
+    label(7, 'A run in progress'),
+    health('running'),
+    history([run.running, run.succeeded], { foot: 'Back up now is disabled while a run is going. Only one backup runs at a time across every instance.' }),
+
+    label(8, 'The passphrase generation: changing it, then saved'),
+    `<div class="cols c2"><div class="stack"><span class="case">Changing the passphrase (draft)</span>${encryption('changing')}</div>
+      <div class="stack"><span class="case">Saved: generation 3</span>${encryption('changed')}</div></div>`,
+    history([{ ...run.running, state: 'succeeded', startedLabel: 'Just now', durationLabel: '49s', gen: 3, key: 'shiplean/database/shiplean-20261024T140210Z-e2a7c0b6-g3.dump.slbk', db: 48234496, files: 214, filesBytes: 61341696 }, run.succeeded], { foot: 'The first generation 3 run copies every attachment again (214 here); later runs copy only new ones.' }),
+  ].join('');
+
+  SL.preview();
+})();
+</script>
+</body>
+</html>

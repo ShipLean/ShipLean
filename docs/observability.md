@@ -55,6 +55,7 @@ The `ShipLean` meter:
 | `shiplean.search.index_queue` | observable gauge | |
 | `shiplean.search.indexed` | counter | |
 | `shiplean.realtime.presence_screens` | observable gauge | |
+| `shiplean.backup.runs` | counter | `outcome` (`succeeded` or `failed`) |
 
 Tag cardinality is kept bounded: no item keys, user ids or free text. The project key is the most specific tag allowed.
 

@@ -1,9 +1,13 @@
 using System.Net;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using ShipLean.Application.Features.Backups.Admin;
 using ShipLean.Application.Fakes.Blobs;
+using ShipLean.Contracts.Backups.Dtos;
 using ShipLean.Contracts.Blobs;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.AccessSweep;
+using ShipLean.TestSupport.Backups;
 using ShipLean.LocalEnvironment.Blobs;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
@@ -19,7 +23,19 @@ namespace ShipLean.WebApi.Tests.Access;
 public class AllowedSweepTests : ApiFixture
 {
     // Seeded attachments are rows only; their bytes go into an in-memory blob store so a download row can succeed.
-    protected override Action<IServiceCollection>? ConfigureTestServices => services => services.AddSingleton<IBlobStore, InMemoryBlobStore>();
+    // The backup routes answer 503 not_configured until an instance has backups set up, and the allowed leg refuses a
+    // 5xx: the host answers them from the pinned shapes, since the sweep checks access, not backup configuration.
+    protected override Action<IServiceCollection>? ConfigureTestServices => services =>
+    {
+        services.AddSingleton<IBlobStore, InMemoryBlobStore>();
+        services.RemoveAll<IBackupAdmin>();
+        services.AddSingleton<IBackupAdmin>(new FakeBackupAdmin(
+            get: () => FakeBackupAdmin.Pinned<BackupSettingsDto>("backup-settings.json", "configured"),
+            save: _ => FakeBackupAdmin.Pinned<BackupSettingsDto>("backup-settings.json", "configured"),
+            test: _ => FakeBackupAdmin.Pinned<BackupTestResultDto>("backup-test-result.json", "ok"),
+            previewCron: _ => FakeBackupAdmin.Pinned<CronPreviewDto>("backup-cron-preview.json", "valid"),
+            runNow: () => FakeBackupAdmin.Pinned<BackupRunDto>("backup-run.json", "running")));
+    };
 
     // The YouTube routes answer 404 while no OAuth client is set, and the allowed leg refuses a 404 (Y3): the host has one, from the environment's names.
     protected override IReadOnlyDictionary<string, string?> HostSettings => new Dictionary<string, string?>

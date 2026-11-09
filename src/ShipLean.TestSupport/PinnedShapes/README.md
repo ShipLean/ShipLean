@@ -13,6 +13,11 @@ These files are the contract between the database seed (`db/seed`, `SeedIds`) an
 | `me.json` | `MeDto` (Joel, as `GET /api/me` returns him), `UserDto` in every `UserStatus`, and the `user_preference` values `MeDto` reads | `app_user` + `user_preference` (read model, not stored as one document) |
 | `analytics-settings.json` | `AnalyticsSettingsDto` (`GET`/`PUT /api/instance/analytics`); provider wire values `none`, `umami`, `posthog` | `instance_settings.analytics_*` columns |
 | `analytics-test-result.json` | `AnalyticsTestResultDto` (`POST /api/instance/analytics/test`) | Not stored |
+| `backup-settings.json` | `BackupSettingsDto` (`GET`/`PUT /api/instance/backups`), examples `configured` and `notConfigured` | `backup_settings` (one row) + recent `backup_run` rows (read model) |
+| `backup-save.json` | `BackupSaveDto` (`PUT /api/instance/backups`), examples `first` and `keepSecrets` | `backup_settings` (secrets protected) |
+| `backup-run.json` | `BackupRunDto`, examples `running`, `succeeded`, `failed` and `abandoned` | `backup_run` |
+| `backup-cron-preview.json` | `CronPreviewDto` (`POST /api/instance/backups/cron-preview`, and `schedule` in the settings), examples `valid`, `invalid` and `tooOften` | Not stored |
+| `backup-test-result.json` | `BackupTestResultDto` (`POST /api/instance/backups/test`), examples `ok` and `failed` | Not stored |
 
 ## Conventions (every file)
 
@@ -245,6 +250,19 @@ Read-side DTO pieces (C# `Contracts/Refs`, TS `api/refs.ts`), never stored insid
 **`UserStatus`** is derived from `app_user`, first match wins: `disabled` (`disabled_at` set) → `noPassword` (`password_hash` null: created by a Jira import or by an admin before sign-in was set up) → `locked` (`locked_until` later than now) → `oneTimePassword` (`must_change_password`) → `active`.
 
 **Preference keys** (`user_preference.key`; `json` is the value itself, not wrapped): `theme` (`"os"`/`"light"`/`"dark"`), `density` (`"compact"`/`"comfortable"`), `recentProjects` (project ids, most recent first), and `view:<screen>` keys owned by the screen that writes them. Reset saved views sets every `view:*` row's `json` to JSON `null`; rows are never deleted. Reading a key with no row, or with JSON `null`, means the default.
+
+---
+
+## `backup-*.json` — instance backups (SHIP-743)
+
+C# DTOs in `ShipLean.Contracts.Backups`, round-tripped per example by the C# DTO tests (S0c); TS types in the client's `features/settings/instance/backups/backupsApi.ts`, round-tripped by its vitest (S0d). Each file is an object whose keys are the example names; each value is one document of the typed shape. Labels are server strings (`DisplayDate.Relative` for `startedLabel`, `lastSuccessLabel`, `passphraseSetLabel`, `updatedLabel`; `DisplayDate.Format` for a next run's `label`), computed here against 2026-10-24T14:00:00Z. A `null` timestamp has a `null` label.
+
+- **Enums:** `provider` `s3`; `trigger` `scheduled` \| `manual`; `state` `running` \| `succeeded` \| `failed` (a `skipped` row is never returned as a run); `health` `ok` \| `running` \| `failing` \| `overdue` \| `neverRun` \| `notConfigured`; `attachmentStore.kind` `localDisk` \| `postgres` \| `s3`; test `step` `write` \| `read` \| `delete` \| `null`.
+- **Secrets never come back:** the settings carry `secretKeyLast4` (`null` when no secret key is saved) and no passphrase, only `passphraseGeneration` (0 = none set) and when it was set.
+- **`backup-save.json`:** `secretKey` `null` keeps the saved one and `""` clears it (then `accessKeyId` must be `null`); `passphrase` `null` keeps the saved one and is required when none is saved. `keepSecrets` is `configured` saved again without re-entering either.
+- **`runs`** are newest first, at most 20. `configured.runs` are the `succeeded`, `failed` and `abandoned` examples of `backup-run.json`.
+- **Abandoned** is not a state: it is `failed` with the error "Abandoned: the instance running it stopped.", `finishedAt` when another instance marked it, and `durationLabel` `null`.
+- **`backup-cron-preview.json`:** `invalid` doesn't parse, so it has no description or runs. `tooOften` parses but breaks the 1-hour rule, so it keeps its description and next runs to show why.
 
 ---
 

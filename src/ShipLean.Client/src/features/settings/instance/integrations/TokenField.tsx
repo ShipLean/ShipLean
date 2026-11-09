@@ -11,6 +11,8 @@ export interface TokenFieldIds {
   replace: string;
   clear: string;
   env: string;
+  /** The id on the field's error message; the integrations field-error id when left out. */
+  error?: string;
 }
 
 interface TokenFieldProps {
@@ -91,7 +93,7 @@ export function TokenField({
         </div>
       )}
       <span className="font-normal text-ink-muted">{hint}</span>
-      <FieldError message={error} />
+      <FieldError message={error} testId={ids.error} />
     </div>
   );
 }

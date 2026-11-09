@@ -59,9 +59,18 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0
 # Links the GHCR package to this repo when the image is published.
 LABEL org.opencontainers.image.source="https://github.com/ShipLean/ShipLean"
 # curl: the HEALTHCHECK below calls GET /health with it.
+# postgresql-client-18 from PGDG: backups run pg_dump, which must be at least the server's major version (Postgres 18).
+# The suite matches the base image's release (VERSION_CODENAME), and pg_dump --version fails the build if it's missing.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get install -y --no-install-recommends curl ca-certificates \
+    && install -d /usr/share/postgresql-common/pgdg \
+    && curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+    && . /etc/os-release \
+    && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends postgresql-client-18 \
+    && rm -rf /var/lib/apt/lists/* \
+    && pg_dump --version
 
 WORKDIR /app
 # Before the app, so a code change doesn't invalidate this layer. World-readable, so $APP_UID can load it.

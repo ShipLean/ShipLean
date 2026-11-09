@@ -105,6 +105,9 @@ public static class ActionUsageMap
             "UsersAdmin.SetInstanceAdmin",
             "UsersAdmin.Unlock");
         Add(ActionUsage.Track(UsageEventNames.InstanceSearchReindexed), "SearchAdmin.Reindex");
+        Add(ActionUsage.Track(UsageEventNames.BackupSettingsSaved), "Backups.Put");
+        Add(ActionUsage.Track(UsageEventNames.BackupConnectionTested), "Backups.Test");
+        Add(ActionUsage.Track(UsageEventNames.BackupRunStarted), "Backups.Run");
 
         // Self-emitted: the action knows what the filter cannot (which sign-in, which decision, the new project, the screen, the sort).
         Add(ActionUsage.SelfEmitted, "Auth.Login", "Consent.Decide", "ProjectCreation.Create", "Instance.Join", "Usage.Screen",
@@ -120,7 +123,8 @@ public static class ActionUsageMap
             "ProjectCreation.KeyCheck",
             "FeatureSlug.Check",
             "BacklogWrites.Duplicates",
-            "Analytics.Test");
+            "Analytics.Test",
+            "Backups.CronPreview");
         Add(
             ActionUsage.Untracked(Noise),
             "Preferences.Get",
@@ -147,6 +151,7 @@ public static class ActionUsageMap
             "AgentSession.Availability",
             "AgentSession.Sessions",
             "Analytics.Get",
+            "Backups.Get",
             "Auth.Instance",
             "GoogleSignIn.Start",
             "BoardSettings.Get",

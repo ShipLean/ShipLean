@@ -84,6 +84,8 @@ Everything is an environment variable prefixed `SHIPLEAN_`.
 | `SHIPLEAN_ATTACHMENT_MAX_BYTES` | Largest attachment accepted, in bytes (uploads and imports). Default `26214400` (25 MiB). |
 | `SHIPLEAN_ATTACHMENT_MAX_ITEM_BYTES` | Most attachment bytes one work item may hold, counting live files only (a replaced file stops counting). Default `262144000` (250 MiB). A file is still held to `SHIPLEAN_ATTACHMENT_MAX_BYTES`. |
 | `SHIPLEAN_DEMO_MAX_BYTES` | Largest sprint demo video accepted, in bytes. Default `209715200` (200 MiB). Never above `SHIPLEAN_ATTACHMENT_MAX_ITEM_BYTES`: the app refuses to start naming this setting if it is. |
+| `SHIPLEAN_BACKUP_PG_DUMP` | The `pg_dump` that scheduled backups run (a path, or a name looked up on `PATH`). Default `pg_dump` on `PATH`; the image ships PostgreSQL 18's. It must be at least the database server's major version. |
+| `SHIPLEAN_BACKUP_TEMP` | Folder for a backup's temporary files (the encrypted dump before upload, an attachment while it's restored). Default the system temp folder. They're owner-only and deleted when done; give it room for one encrypted dump. |
 | `SHIPLEAN_YOUTUBE_CLIENT_ID`, `SHIPLEAN_YOUTUBE_CLIENT_SECRET` | The Google OAuth client for YouTube on sprint demos. Both or neither: one without the other stops startup. Separate from `SHIPLEAN_GOOGLE_*` (Sign in with Google). A value saved in Instance settings › Integrations wins. Unset, YouTube is off and its routes answer 404. The redirect URI to register is `<base_url>/api/youtube/callback`. The check against Google is not proven yet: see [sprint-demos.md](docs/sprint-demos.md). |
 | `SHIPLEAN_GITHUB_TOKEN` | A GitHub token that can read pull requests and issues. With it, a pull request or issue link on a Feature shows its live title and state, including in private repositories; without it only public ones can be read. It is sent only to an https API address. |
 | `SHIPLEAN_GITHUB_API_URL` | The GitHub API address, for GitHub Enterprise Server (`https://github.example.com/api/v3`). Default `https://api.github.com`. |
@@ -187,6 +189,7 @@ The house rules for anyone (or any agent) working in the repo are in [`AGENTS.md
 - [Issue #7](https://github.com/joeldickson/ShipLean/issues/7): the build plan v1 was built from.
 - [`design/README.md`](design/README.md): the design system, every reference screen, and the decisions made while designing them.
 - [`docs/`](docs/README.md): testing, sign-in and access, project events, navigation, MCP and connecting an agent.
+- [`docs/backups.md`](docs/backups.md): scheduled backups to S3, and the restore runbook.
 
 ## Logo
 

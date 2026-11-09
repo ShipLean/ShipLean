@@ -1,0 +1,12 @@
+{
+  "ok": {
+    "ok": true,
+    "step": null,
+    "message": "Wrote, read and deleted a test object in shiplean-backups."
+  },
+  "failed": {
+    "ok": false,
+    "step": "write",
+    "message": "The bucket refused the test object: Access Denied (403)."
+  }
+}

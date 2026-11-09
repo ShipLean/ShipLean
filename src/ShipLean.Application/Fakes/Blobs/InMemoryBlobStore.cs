@@ -9,6 +9,9 @@ public sealed class InMemoryBlobStore : IBlobStore
 {
     private readonly ConcurrentDictionary<string, (byte[] Bytes, string ContentType)> _blobs = new(StringComparer.Ordinal);
 
+    // Every key stored, live: enumerating it while other threads put is safe.
+    public IEnumerable<string> Keys => _blobs.Keys;
+
     public async Task<long> PutAsync(string key, Stream content, string contentType, CancellationToken cancellationToken)
     {
         Check(key);
