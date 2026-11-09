@@ -1,6 +1,6 @@
-import type { BoardTypeStatesDto } from '../../../api/boards';
-import type { SprintRef, StateRef } from '../../../api/refs';
-import type { TaskboardRowDto, TaskboardViewDto } from '../../../api/views';
+import type { BoardTypeStatesDto } from '@shiplean/core/api/boards';
+import type { SprintRef, StateRef } from '@shiplean/core/api/refs';
+import type { TaskboardRowDto, TaskboardViewDto } from '@shiplean/core/api/views';
 import { passesFaces } from '../grid/faceFilter';
 import { gridColumns } from '../grid/gridColumns';
 import type { TaskboardScope } from '../taskboardScope';

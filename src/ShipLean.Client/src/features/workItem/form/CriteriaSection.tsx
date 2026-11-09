@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { ChecklistItem } from '../../../api/persisted';
+import type { ChecklistItem } from '@shiplean/core/api/persisted';
 import { Chip } from '../../../components/Chip';
 import { workItemTestIds as ids } from '../testIds';
 import { inputClass } from './inputClasses';

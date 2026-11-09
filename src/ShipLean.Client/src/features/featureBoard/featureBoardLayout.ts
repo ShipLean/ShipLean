@@ -2,7 +2,7 @@ import type {
   FeatureBoardRowDto,
   FeatureBoardSectionDto,
   FeatureBoardViewDto,
-} from '../../api/views';
+} from '@shiplean/core/api/views';
 
 /** One section as drawn: the board's own stories are `direct` ("Directly under …"), a Feature with no rows is `empty`. */
 export interface FeatureBoardSectionLayout {

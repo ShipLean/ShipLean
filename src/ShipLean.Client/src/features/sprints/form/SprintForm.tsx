@@ -1,5 +1,5 @@
 import type { FormEvent, Ref } from 'react';
-import type { SprintCreate } from '../../../api/sprints';
+import type { SprintCreate } from '@shiplean/core/api/sprints';
 
 /** The four fields a sprint is made of, as the form holds them (dates as `yyyy-MM-dd`). */
 export type SprintFormValues = SprintCreate;

@@ -1,6 +1,5 @@
 // The project event wire format. C#: ShipLean.Contracts.Events (ProjectEvent and its derived types). Ids only: a client
 // refetches what it shows. clientId is the tab whose request caused the event (null when none); a tab ignores its own.
-import type { RouteId } from '../routes';
 import type { ImportJobState } from './persisted';
 import type { WorkItemTypeId } from './refs';
 
@@ -88,7 +87,8 @@ export type StatesChanged = ProjectEventBase<'statesChanged'>;
 export type ProjectChanged = ProjectEventBase<'projectChanged'>;
 
 export interface PresenceChanged extends ProjectEventBase<'presenceChanged'> {
-  screenId: RouteId;
+  /** A screen's route id (the SPA's RouteId). Off the wire it is any string: the SPA keeps only known ones. */
+  screenId: string;
   userIds: string[];
   /** Grows with every presence change: a list with a lower sequence than the last one for its screen is older. */
   sequence: number;

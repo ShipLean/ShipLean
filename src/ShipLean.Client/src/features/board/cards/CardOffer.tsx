@@ -1,4 +1,4 @@
-import type { CardDto } from '../../../api/views';
+import type { CardDto } from '@shiplean/core/api/views';
 import { boardTestIds as ids } from '../testIds';
 
 // Every child below the card is closed and the card is not in Done: it offers the move, and nothing moves on its own.

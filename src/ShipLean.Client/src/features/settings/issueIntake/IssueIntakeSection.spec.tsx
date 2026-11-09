@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { ProjectDto } from '../../../api/projects';
-import type { UserRef } from '../../../api/refs';
+import type { ProjectDto } from '@shiplean/core/api/projects';
+import type { UserRef } from '@shiplean/core/api/refs';
 import { settingsTestIds as ids } from '../testIds';
 import { issueIntakeSample, stubIssueIntake } from './ct/issueIntakeStub';
 import { IssueIntakeSection } from './IssueIntakeSection';

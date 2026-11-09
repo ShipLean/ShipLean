@@ -4,7 +4,7 @@ import {
   markPointNotNeeded,
   putRetroPointTheme,
   undoPointNotNeeded,
-} from '../../../api/retrosApi';
+} from '@shiplean/core/api/retrosApi';
 import { showToast } from '../../../components/toastStore';
 import { retrosRootKey } from '../../retros/useRetroQueries';
 

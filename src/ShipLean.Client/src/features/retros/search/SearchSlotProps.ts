@@ -1,6 +1,6 @@
-import type { ProjectDto } from '../../../api/projects';
-import type { RetroSearchQuery } from '../../../api/retrosApi';
-import type { RetroSearchDto } from '../../../api/retros';
+import type { ProjectDto } from '@shiplean/core/api/projects';
+import type { RetroSearchQuery } from '@shiplean/core/api/retrosApi';
+import type { RetroSearchDto } from '@shiplean/core/api/retros';
 
 // What the parts of the search screen are given: the project, the filters as the address holds them, the result, and the
 // ways to change them. `change` merges into the filters (an undefined value clears one) and drops the open retro unless

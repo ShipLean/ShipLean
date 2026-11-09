@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import type { ProjectDto } from '../../../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { routePath } from '../../../routes';
 import { settingsTestIds as ids } from '../testIds';
 import type { IssueIntakeReadiness as Readiness } from './types';

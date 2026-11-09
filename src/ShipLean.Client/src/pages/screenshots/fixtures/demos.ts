@@ -6,9 +6,13 @@ import youtubeFailed from '../../../../../ShipLean.TestSupport/DtoFixtures/demos
 import working from '../../../../../ShipLean.TestSupport/DtoFixtures/demos/sprint-demo-working.json' with { type: 'json' };
 import settingsDefault from '../../../../../ShipLean.TestSupport/DtoFixtures/demos/project-demo-settings.json' with { type: 'json' };
 import settingsBranded from '../../../../../ShipLean.TestSupport/DtoFixtures/demos/project-demo-settings-branded.json' with { type: 'json' };
-import type { ProjectDemoSettingsDto, SprintDemoDto, YouTubeProjectDto } from '../../../api/demos';
-import type { SprintDto } from '../../../api/sprints';
-import type { WorkItemDto } from '../../../api/workItems';
+import type {
+  ProjectDemoSettingsDto,
+  SprintDemoDto,
+  YouTubeProjectDto,
+} from '@shiplean/core/api/demos';
+import type { SprintDto } from '@shiplean/core/api/sprints';
+import type { WorkItemDto } from '@shiplean/core/api/workItems';
 import { attachment, change, revision } from '../../../features/workItem/ct/stubSide';
 import { PEOPLE } from '../shellStub';
 import { sprintsWithGoals } from './sprints';

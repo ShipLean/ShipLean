@@ -1,8 +1,8 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { ApiRequestError, api } from '../../../api/client';
-import type { KeyCheckDto, ProjectCreate, ProjectDto } from '../../../api/projects';
-import type { SprintCreate } from '../../../api/sprints';
+import { ApiRequestError, api } from '@shiplean/core/api/client';
+import type { KeyCheckDto, ProjectCreate, ProjectDto } from '@shiplean/core/api/projects';
+import type { SprintCreate } from '@shiplean/core/api/sprints';
 import { registerInvalidation } from '../../../realtime';
 import { fetchMe, fetchProjects, meKey, projectsKey } from '../../../queries/shared';
 import { keyIsWellFormed } from './model';

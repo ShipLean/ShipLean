@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { ProjectDto } from '../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import type { ProjectSettingsTab } from '../routes';
 import { pagesTestIds } from '../features/pages/testIds';
 import { SettingsDraftFrame } from '../features/settings/draft/SettingsDraftFrame';

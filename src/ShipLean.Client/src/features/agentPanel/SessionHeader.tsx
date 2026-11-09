@@ -1,4 +1,4 @@
-import type { AgentSessionDto, AgentSessionState } from '../../api/agentSessions';
+import type { AgentSessionDto, AgentSessionState } from '@shiplean/core/api/agentSessions';
 import { Chip, type ChipTone } from '../../components/Chip';
 import { agentPanelTestIds as ids } from './testIds';
 

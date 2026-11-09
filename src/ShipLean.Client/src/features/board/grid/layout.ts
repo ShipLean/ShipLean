@@ -1,4 +1,4 @@
-import type { BoardCellDto, BoardColumnDto, BoardLaneDto } from '../../../api/views';
+import type { BoardCellDto, BoardColumnDto, BoardLaneDto } from '@shiplean/core/api/views';
 
 /** One track of the grid: a column, or one half of a split column. */
 export interface Track {

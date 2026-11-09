@@ -3,8 +3,8 @@ import {
   type BoardSettingsJson,
   type CardFieldSettingJson,
   type FieldDefinition,
-} from '../../../../api/persisted';
-import type { WorkItemTypeId } from '../../../../api/refs';
+} from '@shiplean/core/api/persisted';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
 
 const definitions: readonly FieldDefinition[] = FIELD_IDS;
 

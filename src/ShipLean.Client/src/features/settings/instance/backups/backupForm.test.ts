@@ -1,6 +1,6 @@
 import type { Query } from '@tanstack/react-query';
 import { describe, expect, test } from 'vitest';
-import { ApiRequestError } from '../../../../api/client';
+import { ApiRequestError } from '@shiplean/core/api/client';
 import runJson from '../../../../../../ShipLean.TestSupport/PinnedShapes/backup-run.json';
 import saveJson from '../../../../../../ShipLean.TestSupport/PinnedShapes/backup-save.json';
 import settingsJson from '../../../../../../ShipLean.TestSupport/PinnedShapes/backup-settings.json';

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import type { ProjectDto } from '../../../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { workItemTestIds as ids } from '../testIds';
 import { fetchHistory, useWorkItem, workItemHistoryKey } from '../workItemApi';
 import { RevisionItem } from './RevisionItem';

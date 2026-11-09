@@ -1,4 +1,4 @@
-import type { SprintMetricsDto } from '../../../api/sprints';
+import type { SprintMetricsDto } from '@shiplean/core/api/sprints';
 import { sprintsTestIds as ids } from '../testIds';
 import { BURNDOWN_HEIGHT, BURNDOWN_WIDTH, burndownShape } from './burndownGeometry';
 

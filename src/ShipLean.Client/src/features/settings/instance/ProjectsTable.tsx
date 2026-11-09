@@ -1,4 +1,4 @@
-import type { InstanceProjectDto } from '../../../api/projects';
+import type { InstanceProjectDto } from '@shiplean/core/api/projects';
 import { settingsTestIds } from '../testIds';
 import { ProjectRow } from './ProjectRow';
 

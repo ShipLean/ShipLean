@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { BoardSettingsJson, StyleRuleJson } from '../../../api/persisted';
+import type { BoardSettingsJson, StyleRuleJson } from '@shiplean/core/api/persisted';
 import type { PaneProps } from '../../../components/SettingsDialog/types';
 import type { BoardSettingsContext } from '../panes';
 import { boardSettingsTestIds as ids } from '../testIds';

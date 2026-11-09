@@ -1,5 +1,5 @@
-import type { ProjectDto } from '../api/projects';
-import type { SprintDto } from '../api/sprints';
+import type { ProjectDto } from '@shiplean/core/api/projects';
+import type { SprintDto } from '@shiplean/core/api/sprints';
 import { pagesTestIds } from '../features/pages/testIds';
 import { SprintBacklog } from '../features/sprints/backlog/SprintBacklog';
 

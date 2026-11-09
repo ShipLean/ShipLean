@@ -1,4 +1,4 @@
-import type { AttachmentDto, AttachmentKind } from '../../../api/attachments';
+import type { AttachmentDto, AttachmentKind } from '@shiplean/core/api/attachments';
 import { featureTestIds as ids } from '../testIds';
 import { RailItem } from './RailItem';
 

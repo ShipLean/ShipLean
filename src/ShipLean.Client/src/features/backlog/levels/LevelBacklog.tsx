@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { ProjectDto } from '../../../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import type { NewItemKind } from '../../../routes';
 import { useNewItemFromLink } from '../useNewItemFromLink';
 import { FilterButton } from '../filter/FilterButton';

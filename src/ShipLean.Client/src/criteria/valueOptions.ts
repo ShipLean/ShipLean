@@ -1,5 +1,5 @@
-import type { FieldDefinition, CriteriaOp } from '../api/persisted';
-import type { SprintRef, StateRef, UserRef } from '../api/refs';
+import type { FieldDefinition, CriteriaOp } from '@shiplean/core/api/persisted';
+import type { SprintRef, StateRef, UserRef } from '@shiplean/core/api/refs';
 import { ME } from './fieldDefinition';
 
 /** What the caller knows about the people, states and sprints a clause can pick; the builder never fetches them. */

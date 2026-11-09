@@ -1,4 +1,4 @@
-import type { BoardSettingsJson } from '../../api/persisted';
+import type { BoardSettingsJson } from '@shiplean/core/api/persisted';
 import type { BoardPaneGroup } from '../boardSettings/panes';
 import { FieldsPane } from './panes/FieldsPane';
 import { StylesPane } from './panes/StylesPane';

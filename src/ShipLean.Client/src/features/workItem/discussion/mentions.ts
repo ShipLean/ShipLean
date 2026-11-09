@@ -1,4 +1,4 @@
-import type { UserRef } from '../../../api/refs';
+import type { UserRef } from '@shiplean/core/api/refs';
 
 export interface MentionQuery {
   /** Where the `@` is in the text. */

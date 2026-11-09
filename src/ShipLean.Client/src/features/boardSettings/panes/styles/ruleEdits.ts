@@ -1,4 +1,4 @@
-import type { CriteriaJson, StyleRuleJson } from '../../../../api/persisted';
+import type { CriteriaJson, StyleRuleJson } from '@shiplean/core/api/persisted';
 import { newClause } from '../../../../criteria/defaultClause';
 import type { PickLists } from '../../../../criteria/valueOptions';
 

@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
-import type { StateCategory } from '../../../api/refs';
-import type { WorkItemDto } from '../../../api/workItems';
+import type { StateCategory } from '@shiplean/core/api/refs';
+import type { WorkItemDto } from '@shiplean/core/api/workItems';
 import { doneTaskCount, sprintStories, unparentedTasks } from './sprintStories';
 
 const item = (

@@ -1,4 +1,4 @@
-import type { CardTagDto } from '../../../api/views';
+import type { CardTagDto } from '@shiplean/core/api/views';
 import { Chip } from '../../../components/Chip';
 import { backlogTestIds as ids } from '../testIds';
 

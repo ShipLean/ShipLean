@@ -1,5 +1,5 @@
 import type { CSSProperties, HTMLAttributes, Ref } from 'react';
-import type { CardDto, TaskboardViewDto } from '../../../api/views';
+import type { CardDto, TaskboardViewDto } from '@shiplean/core/api/views';
 import { Avatar } from '../../../components/Avatar';
 import { Chip } from '../../../components/Chip';
 import { TypeIcon } from '../../../components/TypeIcon';

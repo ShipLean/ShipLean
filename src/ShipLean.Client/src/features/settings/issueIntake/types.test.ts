@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import fixture from '../../../../../ShipLean.TestSupport/DtoFixtures/issueIntake/issue-intake-settings.json';
-import { apiErrorCodes } from '../../../api/client';
+import { apiErrorCodes } from '@shiplean/core/api/client';
 import { issueIntakeErrorCodes, type IssueIntakeSettingsDto } from './types';
 
 // Typecheck fails if the pinned GET body (the same file the HTTP shape test compares with) lacks a field, has one of the

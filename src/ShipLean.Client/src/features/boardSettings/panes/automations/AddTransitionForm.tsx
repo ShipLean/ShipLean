@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import type { BoardTypeStatesDto } from '../../../../api/boards';
-import type { TransitionJson } from '../../../../api/persisted';
-import type { WorkItemTypeId } from '../../../../api/refs';
+import type { BoardTypeStatesDto } from '@shiplean/core/api/boards';
+import type { TransitionJson } from '@shiplean/core/api/persisted';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
 import { boardSettingsTestIds as ids } from '../../testIds';
 import { liveStatesOf, newTransition, refusalFor, TRANSITION_TYPE_LABELS } from './transitionEdits';
 

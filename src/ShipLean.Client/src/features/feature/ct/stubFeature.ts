@@ -2,22 +2,22 @@ import featureFixture from '../../../../../ShipLean.TestSupport/DtoFixtures/work
 import linkCardsFixture from '../../../../../ShipLean.TestSupport/DtoFixtures/links/link-cards.json' with { type: 'json' };
 import markdownViewFixture from '../../../../../ShipLean.TestSupport/DtoFixtures/attachments/attachment-markdown.json' with { type: 'json' };
 import renderedFixture from '../../../../../ShipLean.TestSupport/DtoFixtures/markdown/rendered-images.json' with { type: 'json' };
-import type { ApiError } from '../../../api/client';
+import type { ApiError } from '@shiplean/core/api/client';
 import type {
   AttachmentCheckDto,
   AttachmentCheckRequest,
   AttachmentMarkdownDto,
   AttachmentOutcome,
-} from '../../../api/attachments';
+} from '@shiplean/core/api/attachments';
 import type {
   LinkCardDto,
   LinkCardsDto,
   LinkPreviewDto,
   WorkItemLinkRowDto,
-} from '../../../api/linkCards';
-import type { RenderedMarkdownDto } from '../../../api/markdown';
-import type { WorkItemDto } from '../../../api/workItems';
-import type { ProjectDto } from '../../../api/projects';
+} from '@shiplean/core/api/linkCards';
+import type { RenderedMarkdownDto } from '@shiplean/core/api/markdown';
+import type { WorkItemDto } from '@shiplean/core/api/workItems';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 
 // The part of Playwright's Page and Route these stubs use (the CT package does not re-export the types).
 interface StubRoute {

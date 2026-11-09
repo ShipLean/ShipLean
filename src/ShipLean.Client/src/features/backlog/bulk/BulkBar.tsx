@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import { showToast } from '../../../components/toastStore';
-import type { SprintRef, WorkItemTypeId } from '../../../api/refs';
-import { BULK_MAX_ROWS } from '../../../api/backlogWrites';
-import type { BacklogRowDto, BacklogSectionDto, BacklogViewDto } from '../../../api/views';
+import type { SprintRef, WorkItemTypeId } from '@shiplean/core/api/refs';
+import { BULK_MAX_ROWS } from '@shiplean/core/api/backlogWrites';
+import type { BacklogRowDto, BacklogSectionDto, BacklogViewDto } from '@shiplean/core/api/views';
 import { useProjectSprints, useProjectStates } from '../../workItem/workItemApi';
 import { parentTypesOf } from '../../workItem/form/ParentField';
 import { useListCommand } from '../commands/listCommands';

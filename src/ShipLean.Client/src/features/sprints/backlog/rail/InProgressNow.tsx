@@ -1,4 +1,4 @@
-import type { MemberDto } from '../../../../api/projects';
+import type { MemberDto } from '@shiplean/core/api/projects';
 import { Avatar } from '../../../../components/Avatar';
 import { sprintsTestIds as ids } from '../../testIds';
 

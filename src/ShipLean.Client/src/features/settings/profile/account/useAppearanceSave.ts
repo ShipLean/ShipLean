@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { MeDto } from '../../../../api/me';
+import type { MeDto } from '@shiplean/core/api/me';
 import { meKey } from '../../../../queries/shared';
 import { applyAppearance } from '../../../../theme';
 import { savePreference } from '../../settingsApi';

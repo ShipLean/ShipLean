@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { ProjectDto } from '../../../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { Chip } from '../../../components/Chip';
 import { workItemTestIds as ids } from '../testIds';
 import { useWorkItem } from '../workItemApi';

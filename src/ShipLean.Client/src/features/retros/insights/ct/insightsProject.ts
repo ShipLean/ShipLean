@@ -1,4 +1,4 @@
-import type { ProjectDto } from '../../../../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 
 export const insightsProject: ProjectDto = {
   id: '00000002-0000-4000-8001-000000000001',

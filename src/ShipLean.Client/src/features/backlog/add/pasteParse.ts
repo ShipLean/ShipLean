@@ -1,4 +1,4 @@
-import type { WorkItemTypeId } from '../../../api/refs';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
 
 /** One pasted line, as the review grid shows it. A task belongs to the nearest item above it. */
 export interface PasteRow {

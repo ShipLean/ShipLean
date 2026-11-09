@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { DENSITIES, THEMES, type Density, type Theme } from '../../../../api/me';
+import { DENSITIES, THEMES, type Density, type Theme } from '@shiplean/core/api/me';
 import { fetchMe, meKey } from '../../../../queries/shared';
 import { settingsTestIds } from '../../testIds';
 import { FormRow } from '../identity/FormRow';

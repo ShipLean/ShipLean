@@ -1,5 +1,5 @@
 import { createContext, useContext, type ClipboardEventHandler } from 'react';
-import type { WorkItemTypeId } from '../../../api/refs';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
 import { lineCount } from './pasteParse';
 
 /** Opens the paste review on some text, with the type that rows without a `bug:` prefix get. */

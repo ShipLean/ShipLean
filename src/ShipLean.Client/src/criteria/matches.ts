@@ -1,6 +1,6 @@
-import type { CardDto } from '../api/views';
-import type { WorkItemDto } from '../api/workItems';
-import type { CriteriaClause, CriteriaJson, FieldKind } from '../api/persisted';
+import type { CardDto } from '@shiplean/core/api/views';
+import type { WorkItemDto } from '@shiplean/core/api/workItems';
+import type { CriteriaClause, CriteriaJson, FieldKind } from '@shiplean/core/api/persisted';
 import { criteriaField, ME } from './fieldDefinition';
 
 /** A work item's field values by field id, in the JSON shapes of the field kind: null or absent when empty, an array for tags. */

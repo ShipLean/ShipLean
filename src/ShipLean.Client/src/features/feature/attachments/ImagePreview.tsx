@@ -1,4 +1,4 @@
-import type { AttachmentDto } from '../../../api/attachments';
+import type { AttachmentDto } from '@shiplean/core/api/attachments';
 import { Dialog } from '../../../components/Dialog';
 import { featureTestIds as ids } from '../testIds';
 

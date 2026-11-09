@@ -1,9 +1,9 @@
-import type { ConnectedAgentDto, ConsentRequestDto } from '../../../api/agents';
+import type { ConnectedAgentDto, ConsentRequestDto } from '@shiplean/core/api/agents';
 import type {
   InstanceProjectDto,
   InstanceSettingsDto,
   ProjectSummaryDto,
-} from '../../../api/projects';
+} from '@shiplean/core/api/projects';
 import type {
   AdminUserDto,
   AdminUsersDto,

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ApiRequestError } from '../../../api/client';
+import { ApiRequestError } from '@shiplean/core/api/client';
 import { fetchUserByEmail } from '../settingsApi';
 import { settingsTestIds } from '../testIds';
 import type { TabProps } from './tabProps';

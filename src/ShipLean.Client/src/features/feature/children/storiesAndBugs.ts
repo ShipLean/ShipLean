@@ -1,5 +1,5 @@
-import type { ChildSummaryDto } from '../../../api/workItems';
-import { isStoryLevel } from '../../../api/workItemTypes';
+import type { ChildSummaryDto } from '@shiplean/core/api/workItems';
+import { isStoryLevel } from '@shiplean/core/api/workItemTypes';
 
 const isClosed = (child: ChildSummaryDto) =>
   child.state.category === 'completed' || child.state.category === 'removed';

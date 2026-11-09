@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { ProjectDto } from '../../../api/projects';
-import type { RolloverDto, SprintDto } from '../../../api/sprints';
+import type { ProjectDto } from '@shiplean/core/api/projects';
+import type { RolloverDto, SprintDto } from '@shiplean/core/api/sprints';
 import { Dialog } from '../../../components/Dialog';
 import { showToast } from '../../../components/toastStore';
 import {

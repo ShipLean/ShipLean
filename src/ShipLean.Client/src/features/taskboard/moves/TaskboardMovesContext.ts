@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import type { CardDto } from '../../../api/views';
+import type { CardDto } from '@shiplean/core/api/views';
 import type { DropTarget } from './moveRequests';
 
 /** What a card and a cell need from the board to move cards: set up once by `TaskboardDnd`. */

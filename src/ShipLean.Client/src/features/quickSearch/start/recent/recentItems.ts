@@ -1,4 +1,4 @@
-import { STATE_CATEGORIES, WORK_ITEM_TYPE_IDS } from '../../../../api/refs';
+import { STATE_CATEGORIES, WORK_ITEM_TYPE_IDS } from '@shiplean/core/api/refs';
 import type { QuickSearchItem } from '../../types';
 
 export const MAX_RECENT = 8;

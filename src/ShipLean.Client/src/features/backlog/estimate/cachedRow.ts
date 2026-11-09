@@ -1,5 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query';
-import type { BacklogRowDto, BacklogViewDto } from '../../../api/views';
+import type { BacklogRowDto, BacklogViewDto } from '@shiplean/core/api/views';
 
 /** A row as the backlog queries hold it now, with the project whose backlog holds it. */
 export interface CachedRow {

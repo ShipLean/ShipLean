@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { RetroPointDto } from '../../../../api/retros';
+import type { RetroPointDto } from '@shiplean/core/api/retros';
 import type { SprintRetroSlotProps } from '../SprintRetroSlotProps';
 import { ItemBoard } from './byWorkItem/ItemBoard';
 import { filterPoints, matchesWrittenBy, type WrittenBy } from './byCategory/writtenBy';

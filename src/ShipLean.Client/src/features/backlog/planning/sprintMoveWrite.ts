@@ -1,10 +1,10 @@
-import { api } from '../../../api/client';
+import { api } from '@shiplean/core/api/client';
 import {
   conflictOf,
   type ReorderRequest,
   type WorkItemChanges,
   type WriteResult,
-} from '../../../api/workItems';
+} from '@shiplean/core/api/workItems';
 
 const NO_CHANGES: WorkItemChanges = {
   title: null,

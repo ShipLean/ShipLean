@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import { YOU_TUBE_VISIBILITIES, type YouTubeVisibility } from '../../../../api/demos';
+import { YOU_TUBE_VISIBILITIES, type YouTubeVisibility } from '@shiplean/core/api/demos';
 import { demosTestIds as ids } from '../../../demos/testIds';
 
 const labels: Record<YouTubeVisibility, string> = {

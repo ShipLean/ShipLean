@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { StateCategory } from '../../../api/refs';
+import type { StateCategory } from '@shiplean/core/api/refs';
 import { settingsTestIds } from '../testIds';
 import { CATEGORIES, CATEGORY_LABELS, parseCategory } from './categories';
 

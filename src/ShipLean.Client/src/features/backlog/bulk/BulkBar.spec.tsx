@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import type { Page } from 'playwright';
-import type { StateDto } from '../../../api/projects';
-import type { BacklogViewDto } from '../../../api/views';
+import type { StateDto } from '@shiplean/core/api/projects';
+import type { BacklogViewDto } from '@shiplean/core/api/views';
 import { ToastHost } from '../../../components/ToastHost';
 import { bug, story } from '../../workItem/ct/fixtures';
 import { backlogView, itemRow, PROJECT, planningManyView } from '../ct/fixtures';

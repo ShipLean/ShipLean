@@ -27,6 +27,7 @@ Self-hosted lean planning tool (backlogs, boards, sprints, a sprint taskboard) b
 | `src/ShipLean.AcceptanceTests/` | Playwright (.NET) against the built SPA. CI shards on namespaces `Harness`, `Journeys`, `Lanes.<Area>` |
 | `src/ShipLean.UnitTest/` | Last resort: pure helpers and architecture guard rails (see its `CLAUDE.md`) |
 | `src/ShipLean.Client/` | React SPA (`shiplean-client`) in the pnpm workspace rooted at `src/` (one lockfile, `src/pnpm-lock.yaml`). `pnpm run build` writes into `ShipLean.WebApi/wwwroot`. `*.spec.tsx` = Playwright CT, `*.test.ts(x)` = vitest |
+| `src/ShipLean.Core.Client/` | `@shiplean/core`: the platform-neutral API layer (`@shiplean/core/api/<module>`) the SPA and the phone app share. No React, no DOM (tsconfig lib and eslint enforce it). Checks: `cd src/ShipLean.Core.Client && pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm test` |
 | `db/schema`, `db/migrations`, `db/seed` | Applied in that order by DbUp. Migrations are additive: `<yyyyMMddHHmm>_<area>_<name>.sql` |
 | `.claude/skills/` | Repo skills referenced below (testing, UTC, API view models, IoC, …) |
 

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { BoardViewDto } from '../../../api/views';
+import type { BoardViewDto } from '@shiplean/core/api/views';
 import { componentTestIds as toastIds } from '../../../components/testIds';
 import { BoardHarness } from '../ct/BoardHarness';
 import { GridHarness } from '../ct/GridHarness';

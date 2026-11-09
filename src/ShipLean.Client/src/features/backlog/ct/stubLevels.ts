@@ -1,5 +1,5 @@
-import type { BacklogViewDto } from '../../../api/views';
-import type { WorkItemCreate } from '../../../api/workItems';
+import type { BacklogViewDto } from '@shiplean/core/api/views';
+import type { WorkItemCreate } from '@shiplean/core/api/workItems';
 
 // The part of Playwright's Page and Route these stubs use (the CT package does not re-export the types).
 interface StubRoute {

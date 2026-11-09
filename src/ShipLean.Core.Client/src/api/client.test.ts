@@ -1,3 +1,6 @@
+// @vitest-environment jsdom
+// TODO: jsdom only for the sign-in redirect cases, which read window.location; they move to the SPA's
+// webPlatform.test.ts with the platform seam, and this file then runs in plain Node like the rest of the core.
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import errors from '../../../ShipLean.TestSupport/DtoFixtures/errors/api-error.json';
 

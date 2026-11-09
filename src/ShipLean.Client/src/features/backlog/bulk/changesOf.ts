@@ -1,4 +1,4 @@
-import type { WorkItemChanges } from '../../../api/workItems';
+import type { WorkItemChanges } from '@shiplean/core/api/workItems';
 
 /** A WorkItemChanges that changes nothing; spread the one field a bulk action sets over it. */
 export function changesOf(set: Partial<WorkItemChanges>): WorkItemChanges {

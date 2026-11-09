@@ -1,6 +1,6 @@
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { useCallback, type CSSProperties } from 'react';
-import type { CardDto } from '../../../api/views';
+import type { CardDto } from '@shiplean/core/api/views';
 
 /**
  * A task card that can be dragged and dropped on (a card dropped on it goes above it). `rowId` is the row the card sits in.

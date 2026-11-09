@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import type { RetroItemDto } from '../../../api/retros';
+import type { RetroItemDto } from '@shiplean/core/api/retros';
 import { Chip } from '../../../components/Chip';
 import { StateDot } from '../../../components/StateDot';
 import { TypeIcon } from '../../../components/TypeIcon';

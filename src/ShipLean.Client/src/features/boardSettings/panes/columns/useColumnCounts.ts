@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import type { BoardViewDto } from '../../../../api/views';
+import type { BoardViewDto } from '@shiplean/core/api/views';
 import { registerInvalidation } from '../../../../realtime';
 import { boardKey, boardRootKey, fetchBoard } from '../../../board/boardApi';
 

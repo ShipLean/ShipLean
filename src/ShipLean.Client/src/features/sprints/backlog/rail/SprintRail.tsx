@@ -1,4 +1,4 @@
-import type { WorkItemDto } from '../../../../api/workItems';
+import type { WorkItemDto } from '@shiplean/core/api/workItems';
 import { useMe } from '../../../shell/useShellQueries';
 import { useProjectMembers } from '../../../workItem/workItemApi';
 import { sprintsTestIds as ids } from '../../testIds';

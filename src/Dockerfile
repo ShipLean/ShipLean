@@ -13,8 +13,10 @@ WORKDIR /source/src
 # phone app's dependencies never enter this image.
 COPY src/package.json src/pnpm-workspace.yaml src/pnpm-lock.yaml ./
 COPY src/ShipLean.Client/package.json ./ShipLean.Client/
+COPY src/ShipLean.Core.Client/package.json ./ShipLean.Core.Client/
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store pnpm install --frozen-lockfile --filter shiplean-client...
 COPY src/ShipLean.Client/ ./ShipLean.Client/
+COPY src/ShipLean.Core.Client/ ./ShipLean.Core.Client/
 WORKDIR /source/src/ShipLean.Client
 # Bundle only: CI's build job typechecks (tsc also covers tests).
 RUN pnpm exec vite build

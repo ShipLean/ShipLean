@@ -3,7 +3,7 @@ import type {
   RetroInsightColumnDto,
   RetroInsightsMode,
   RetroUnthemedDto,
-} from '../../../../api/retros';
+} from '@shiplean/core/api/retros';
 import { routePath } from '../../../../routes';
 import { retrosTestIds as ids } from '../../testIds';
 import { UnthemedTip } from '../tips/UnthemedTip';

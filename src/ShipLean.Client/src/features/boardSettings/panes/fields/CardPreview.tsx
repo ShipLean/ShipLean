@@ -1,5 +1,5 @@
-import type { BoardLevel } from '../../../../api/boards';
-import type { BoardSettingsJson, CardFieldSettingJson } from '../../../../api/persisted';
+import type { BoardLevel } from '@shiplean/core/api/boards';
+import type { BoardSettingsJson, CardFieldSettingJson } from '@shiplean/core/api/persisted';
 import { boardSettingsTestIds as ids } from '../../testIds';
 import { BoardCardPreview } from './BoardCardPreview';
 import { styledOutcome } from '../styles/styleSamples';

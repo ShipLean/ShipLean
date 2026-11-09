@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { BoardTypeStatesDto } from '../../../../api/boards';
-import type { BoardColumnJson } from '../../../../api/persisted';
+import type { BoardTypeStatesDto } from '@shiplean/core/api/boards';
+import type { BoardColumnJson } from '@shiplean/core/api/persisted';
 import { TypeIcon } from '../../../../components/TypeIcon';
 import { boardSettingsTestIds as ids } from '../../testIds';
 import {

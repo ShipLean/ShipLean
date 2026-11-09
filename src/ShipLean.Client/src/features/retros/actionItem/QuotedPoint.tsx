@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import type { RetroPointDto } from '../../../api/retros';
+import type { RetroPointDto } from '@shiplean/core/api/retros';
 import { TypeIcon } from '../../../components/TypeIcon';
 import { retroCategoryLabels } from '../../retroShared/retroCategories';
 import { retrosTestIds as ids } from '../testIds';

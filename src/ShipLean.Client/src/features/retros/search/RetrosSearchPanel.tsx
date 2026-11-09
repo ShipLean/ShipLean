@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import type { ProjectDto } from '../../../api/projects';
-import type { RetroDecision } from '../../../api/retros';
-import type { RetroSearchQuery } from '../../../api/retrosApi';
+import type { ProjectDto } from '@shiplean/core/api/projects';
+import type { RetroDecision } from '@shiplean/core/api/retros';
+import type { RetroSearchQuery } from '@shiplean/core/api/retrosApi';
 import { RetroActionDialogProvider } from '../../retroShared/actionDialog/RetroActionDialogProvider';
 import { pagesTestIds } from '../../pages/testIds';
 import { RetroQueryState } from '../RetroQueryState';

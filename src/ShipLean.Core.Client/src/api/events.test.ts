@@ -1,6 +1,5 @@
 import { expect, test } from 'vitest';
 import events from '../../../ShipLean.TestSupport/DtoFixtures/events/events.json';
-import { routeIds } from '../routes';
 import {
   PROJECT_EVENT_TYPES,
   type BoardSettingsChanged,
@@ -110,7 +109,6 @@ test('projectEvents_ShouldTypeEveryFixture', () => {
   expect(Object.keys(examples)).toHaveLength(PROJECT_EVENT_TYPES.length);
   expect(WORK_ITEM_TYPE_IDS).toContain(examples.workItemCreated.workItemType);
   expect(IMPORT_JOB_STATES).toContain(examples.importProgress.state);
-  expect(routeIds).toContain(examples.presenceChanged.screenId);
   for (const section of examples.boardSettingsChanged.sections) {
     expect(BOARD_SECTIONS).toContain(section);
   }

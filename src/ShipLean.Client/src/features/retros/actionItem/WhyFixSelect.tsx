@@ -1,4 +1,4 @@
-import type { RetroFixType } from '../../../api/retros';
+import type { RetroFixType } from '@shiplean/core/api/retros';
 import { retroFixOptions } from '../../retroShared/actionDialog/retroFixTypes';
 import { retrosTestIds as ids } from '../testIds';
 

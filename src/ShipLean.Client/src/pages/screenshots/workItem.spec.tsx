@@ -27,7 +27,7 @@ import {
 import { retroActionDetail, stubRetros } from '../../features/retros/ct/retroFixtures';
 import { retrosTestIds } from '../../features/retros/testIds';
 import { pageShots, type Page } from './shoot';
-import type { WorkItemDto } from '../../api/workItems';
+import type { WorkItemDto } from '@shiplean/core/api/workItems';
 
 async function stubItem(page: Page, item: WorkItemDto, itemAttachments = attachments) {
   await stubShell(page);

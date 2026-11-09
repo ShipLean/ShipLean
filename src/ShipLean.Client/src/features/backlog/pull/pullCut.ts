@@ -1,4 +1,4 @@
-import { BULK_MAX_ROWS } from '../../../api/backlogWrites';
+import { BULK_MAX_ROWS } from '@shiplean/core/api/backlogWrites';
 
 export interface PullCut {
   /** How many rows from the top of the stack go into the sprint. */

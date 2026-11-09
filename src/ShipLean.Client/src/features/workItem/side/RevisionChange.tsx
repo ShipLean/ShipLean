@@ -1,5 +1,5 @@
-import { FIELD_IDS } from '../../../api/persisted';
-import type { FieldChange } from '../../../api/persisted';
+import { FIELD_IDS } from '@shiplean/core/api/persisted';
+import type { FieldChange } from '@shiplean/core/api/persisted';
 import { workItemTestIds as ids } from '../testIds';
 
 const labelOf = (field: string): string =>

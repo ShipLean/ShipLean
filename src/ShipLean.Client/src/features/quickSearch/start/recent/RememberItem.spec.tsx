@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { ParentRefDto } from '../../../../api/workItems';
+import type { ParentRefDto } from '@shiplean/core/api/workItems';
 import { feature, stubFeature } from '../../../feature/ct/stubFeature';
 import { priya, story } from '../../../workItem/ct/fixtures';
 import { stubApi } from '../../../workItem/ct/stubApi';

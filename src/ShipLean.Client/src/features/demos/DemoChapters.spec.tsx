@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import ready from '../../../../ShipLean.TestSupport/DtoFixtures/demos/sprint-demo-ready.json' with { type: 'json' };
 import unlisted from '../../../../ShipLean.TestSupport/DtoFixtures/demos/sprint-demo-youtube-unlisted.json' with { type: 'json' };
-import type { SprintDemoDto } from '../../api/demos';
+import type { SprintDemoDto } from '@shiplean/core/api/demos';
 import { DemoPlayerHarness } from './ct/DemoPlayerHarness';
 import { demosTestIds as ids } from './testIds';
 

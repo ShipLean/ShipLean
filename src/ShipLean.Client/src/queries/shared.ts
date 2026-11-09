@@ -1,9 +1,9 @@
-import { api } from '../api/client';
-import type { BoardSummaryDto } from '../api/boards';
-import type { MeDto } from '../api/me';
-import type { MemberDto, ProjectDto, ProjectSummaryDto } from '../api/projects';
-import type { UserPreferenceDto } from '../api/preferences';
-import type { SprintDto } from '../api/sprints';
+import { api } from '@shiplean/core/api/client';
+import type { BoardSummaryDto } from '@shiplean/core/api/boards';
+import type { MeDto } from '@shiplean/core/api/me';
+import type { MemberDto, ProjectDto, ProjectSummaryDto } from '@shiplean/core/api/projects';
+import type { UserPreferenceDto } from '@shiplean/core/api/preferences';
+import type { SprintDto } from '@shiplean/core/api/sprints';
 
 // The react-query keys every component shares, with the fetcher each one stands for: one fetch serves them all, and
 // one invalidation reaches them all. Anything else is keyed under ['projects', projectId, …] (project data) or the

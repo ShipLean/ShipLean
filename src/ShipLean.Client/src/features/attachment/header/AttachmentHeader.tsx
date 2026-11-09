@@ -1,4 +1,4 @@
-import type { AttachmentMarkdownDto } from '../../../api/attachments';
+import type { AttachmentMarkdownDto } from '@shiplean/core/api/attachments';
 import { BackToFeature } from '../BackToFeature';
 import { attachmentTestIds as ids } from '../testIds';
 import { attachmentMeta } from './attachmentMeta';

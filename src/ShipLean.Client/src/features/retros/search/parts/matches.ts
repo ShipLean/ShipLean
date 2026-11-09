@@ -1,4 +1,4 @@
-import type { RetroPointDto, RetroSearchDto } from '../../../../api/retros';
+import type { RetroPointDto, RetroSearchDto } from '@shiplean/core/api/retros';
 
 /** The row highlighted in the open retro: the clicked point when it is a result of that retro, else the retro's first row. */
 export function highlightedRow(

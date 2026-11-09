@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import type { ProjectDto, SprintNaming } from '../../../api/projects';
+import type { ProjectDto, SprintNaming } from '@shiplean/core/api/projects';
 import { routePath } from '../../../routes';
 import { settingsTestIds } from '../testIds';
 import { FieldErrorText } from './FieldErrorText';

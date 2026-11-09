@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { MeDto } from '../../../../api/me';
+import type { MeDto } from '@shiplean/core/api/me';
 import { meDto } from '../../../shell/shellFixtures';
 import { quickSearchTestIds as ids } from '../../testIds';
 import { recentHarnessIds } from './ct/harnessIds';

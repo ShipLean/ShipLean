@@ -1,4 +1,4 @@
-import type { ProjectDto } from '../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import type { ImportRunSlotProps } from '../slots/ImportRunSlot';
 import type { ImportStepperSlotProps } from '../slots/ImportStepperSlot';
 

@@ -2,6 +2,12 @@
 // and sends a lost session to the sign-in page.
 import { isLoginPath, LOGIN_PATH } from '../loginPath';
 
+// TODO: the core has no DOM types; this is the one place it still reaches the browser, to send a lost session to the
+// sign-in page. The platform seam's onUnauthorized replaces it (and this declaration) in the next wave.
+declare const window: {
+  location: { pathname: string; search: string; assign(url: string): void };
+};
+
 // The error body every endpoint returns (C#: ShipLean.Contracts.Errors.ApiError and ApiErrorCodes).
 export const apiErrorCodes = [
   'not_found',

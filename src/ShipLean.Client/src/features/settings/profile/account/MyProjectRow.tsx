@@ -1,4 +1,4 @@
-import type { ProjectSummaryDto } from '../../../../api/projects';
+import type { ProjectSummaryDto } from '@shiplean/core/api/projects';
 import { settingsTestIds } from '../../testIds';
 
 const ROLE_LABELS = { admin: 'Admin', member: 'Member' } as const;

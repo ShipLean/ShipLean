@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useQueryClient, type QueryKey } from '@tanstack/react-query';
-import type { BacklogViewDto } from '../../../api/views';
+import type { BacklogViewDto } from '@shiplean/core/api/views';
 import { showToast } from '../../../components/toastStore';
 import { onReconnected } from '../../../realtime';
 import { changesText, countChanges } from './countChanges';

@@ -1,4 +1,4 @@
-import type { RetroRange } from '../../../api/retrosApi';
+import type { RetroRange } from '@shiplean/core/api/retrosApi';
 import { retrosTestIds as ids } from '../testIds';
 
 const SPRINT_RANGES = [

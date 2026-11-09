@@ -1,6 +1,6 @@
 import type { KeyboardEvent } from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
-import type { BacklogRowDto } from '../../../api/views';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import type { BacklogColumnId } from '../backlogApi';
 import { RowSelectCell } from '../selection/RowSelectCell';
 import { useRowGestures } from '../selection/useRowGestures';

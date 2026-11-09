@@ -1,7 +1,7 @@
 import { useDndContext, useDraggable, useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { useCallback, type CSSProperties } from 'react';
-import type { CardDto } from '../../../api/views';
+import type { CardDto } from '@shiplean/core/api/views';
 import type { Place } from './applyMove';
 
 /** A card that can be dragged and dropped on (a card dropped on it goes above it). `place` is where the card sits. */

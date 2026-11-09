@@ -1,4 +1,4 @@
-import type { SprintDto } from '../../../api/sprints';
+import type { SprintDto } from '@shiplean/core/api/sprints';
 import { boardTestIds as ids } from '../testIds';
 import { NONE } from './filterQuery';
 

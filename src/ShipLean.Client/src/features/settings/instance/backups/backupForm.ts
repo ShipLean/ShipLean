@@ -1,4 +1,4 @@
-import { ApiRequestError } from '../../../../api/client';
+import { ApiRequestError } from '@shiplean/core/api/client';
 import { errorText } from '../model';
 import type { BackupDestinationSave, BackupSave, BackupSettings } from './backupsApi';
 

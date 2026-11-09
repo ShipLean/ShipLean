@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import type { AttachmentDto } from '../../../api/attachments';
+import type { AttachmentDto } from '@shiplean/core/api/attachments';
 import { showToast } from '../../../components/toastStore';
 import { routePath } from '../../../routes';
 import { uploadAttachment } from '../../workItem/side/attachmentUpload';

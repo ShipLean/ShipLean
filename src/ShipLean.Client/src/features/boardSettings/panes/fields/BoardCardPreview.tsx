@@ -1,6 +1,6 @@
-import type { BoardLevel } from '../../../../api/boards';
-import type { BoardSettingsJson } from '../../../../api/persisted';
-import type { CardDto } from '../../../../api/views';
+import type { BoardLevel } from '@shiplean/core/api/boards';
+import type { BoardSettingsJson } from '@shiplean/core/api/persisted';
+import type { CardDto } from '@shiplean/core/api/views';
 import { Card } from '../../../board/cards/Card';
 import { PREVIEW_PROJECT_KEY } from './samplePreview';
 

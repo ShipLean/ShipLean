@@ -1,4 +1,4 @@
-import { ApiRequestError } from '../api/client';
+import { ApiRequestError } from '@shiplean/core/api/client';
 import { LoadFailedState } from './LoadFailedState';
 import { NotFoundState } from './NotFoundState';
 

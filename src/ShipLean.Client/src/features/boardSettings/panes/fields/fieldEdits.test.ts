@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import type { CardFieldSettingJson } from '../../../../api/persisted';
+import type { CardFieldSettingJson } from '@shiplean/core/api/persisted';
 import {
   addableFields,
   addExtra,

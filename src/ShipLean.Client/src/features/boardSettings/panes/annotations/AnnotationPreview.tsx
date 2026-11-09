@@ -1,5 +1,5 @@
-import type { BoardLevel } from '../../../../api/boards';
-import type { CardAnnotationsJson } from '../../../../api/persisted';
+import type { BoardLevel } from '@shiplean/core/api/boards';
+import type { CardAnnotationsJson } from '@shiplean/core/api/persisted';
 import { TypeIcon } from '../../../../components/TypeIcon';
 import { boardSettingsTestIds as ids } from '../../testIds';
 import { annotationRowsFor, hasEffect } from './annotationRows';

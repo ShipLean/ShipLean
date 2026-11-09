@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import type { ProjectSummaryDto } from '../../../api/projects';
+import type { ProjectSummaryDto } from '@shiplean/core/api/projects';
 import { pickerGroups } from './pickerList';
 
 const project = (key: string, name: string): ProjectSummaryDto => ({

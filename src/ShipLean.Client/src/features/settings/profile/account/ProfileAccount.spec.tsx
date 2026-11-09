@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { MeDto } from '../../../../api/me';
-import type { ProjectSummaryDto } from '../../../../api/projects';
+import type { MeDto } from '@shiplean/core/api/me';
+import type { ProjectSummaryDto } from '@shiplean/core/api/projects';
 import { settingsTestIds as ids } from '../../testIds';
 import { ProfileAccount } from './ProfileAccount';
 

@@ -1,5 +1,5 @@
 import { useDroppable } from '@dnd-kit/core';
-import type { BacklogRowDto } from '../../../api/views';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import { StateDot } from '../../../components/StateDot';
 import { TypeIcon } from '../../../components/TypeIcon';
 import { backlogTestIds as ids } from '../testIds';

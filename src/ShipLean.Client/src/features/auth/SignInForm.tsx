@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useRef, useState, type FormEvent, type ReactNode } from 'react';
-import { ApiRequestError } from '../../api/client';
-import type { MeDto } from '../../api/me';
+import { ApiRequestError } from '@shiplean/core/api/client';
+import type { MeDto } from '@shiplean/core/api/me';
 import { login } from './authApi';
 import { Banner } from './Banner';
 import { FormField } from './FormField';

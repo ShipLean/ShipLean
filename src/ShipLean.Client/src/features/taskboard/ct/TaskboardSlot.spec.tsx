@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/experimental-ct-react';
 import type { Page } from 'playwright';
 import { ToastHost } from '../../../components/ToastHost';
 import { componentTestIds } from '../../../components/testIds';
-import type { TaskboardViewDto } from '../../../api/views';
+import type { TaskboardViewDto } from '@shiplean/core/api/views';
 import { TaskboardSlot } from '../../../slots/TaskboardSlot';
 import { taskboardTestIds as ids } from '../testIds';
 import { PROJECT, SPRINT, SPRINTS, VIEW } from './fixtures';

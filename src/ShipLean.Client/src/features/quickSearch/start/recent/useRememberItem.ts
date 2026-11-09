@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import type { WorkItemDto } from '../../../../api/workItems';
+import type { WorkItemDto } from '@shiplean/core/api/workItems';
 import { useMe } from '../../../shell/useShellQueries';
 import { rememberRecent } from './recentItems';
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { LinkCardDto } from '../../../../api/linkCards';
+import type { LinkCardDto } from '@shiplean/core/api/linkCards';
 import { archiveLinkCard, editLinkCard, linkCardsKey } from '../../featureApi';
 import { featureTestIds as ids } from '../../testIds';
 import { LinkCardEditor } from './LinkCardEditor';

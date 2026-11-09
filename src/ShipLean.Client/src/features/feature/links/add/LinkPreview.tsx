@@ -1,4 +1,4 @@
-import type { LinkPreviewDto } from '../../../../api/linkCards';
+import type { LinkPreviewDto } from '@shiplean/core/api/linkCards';
 import { featureTestIds as ids } from '../../testIds';
 import { LinkStateChip } from '../section/LinkStateChip';
 import { kindBadge } from '../section/linkSource';

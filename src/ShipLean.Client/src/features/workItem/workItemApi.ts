@@ -1,17 +1,17 @@
 import { useEffect } from 'react';
 import { useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query';
-import { api } from '../../api/client';
-import type { AttachmentDto } from '../../api/attachments';
-import type { CommentCreate, CommentDto, CommentEdit } from '../../api/comments';
-import type { StateDto } from '../../api/projects';
-import type { WorkItemTypeId } from '../../api/refs';
+import { api } from '@shiplean/core/api/client';
+import type { AttachmentDto } from '@shiplean/core/api/attachments';
+import type { CommentCreate, CommentDto, CommentEdit } from '@shiplean/core/api/comments';
+import type { StateDto } from '@shiplean/core/api/projects';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
 import type {
   HistoryDto,
   WorkItemCreate,
   WorkItemDto,
   WorkItemPatch,
   WriteResult,
-} from '../../api/workItems';
+} from '@shiplean/core/api/workItems';
 import { registerInvalidation } from '../../realtime';
 import {
   fetchMembers,

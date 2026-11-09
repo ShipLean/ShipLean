@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { RetroActionDetailDto, RetroFixType } from '../../../api/retros';
+import type { RetroActionDetailDto, RetroFixType } from '@shiplean/core/api/retros';
 import { ToastHost } from '../../../components/ToastHost';
 import { componentTestIds } from '../../../components/testIds';
 import { RetroActionDialogProvider } from '../../retroShared/actionDialog/RetroActionDialogProvider';

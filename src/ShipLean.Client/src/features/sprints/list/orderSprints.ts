@@ -1,4 +1,4 @@
-import type { SprintDto } from '../../../api/sprints';
+import type { SprintDto } from '@shiplean/core/api/sprints';
 
 const order: Record<SprintDto['status'], number> = { current: 0, future: 1, past: 2 };
 

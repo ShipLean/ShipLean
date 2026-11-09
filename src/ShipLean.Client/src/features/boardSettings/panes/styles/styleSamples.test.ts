@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
-import type { BoardLevel } from '../../../../api/boards';
-import type { BoardSettingsJson, StyleRuleJson } from '../../../../api/persisted';
+import type { BoardLevel } from '@shiplean/core/api/boards';
+import type { BoardSettingsJson, StyleRuleJson } from '@shiplean/core/api/persisted';
 import { sampleOutcomes, unpreviewableRules, type Viewer } from './styleSamples';
 
 const viewer: Viewer = {

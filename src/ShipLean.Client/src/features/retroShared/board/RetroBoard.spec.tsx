@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import { RETRO_CATEGORIES } from '../../../api/retros';
+import { RETRO_CATEGORIES } from '@shiplean/core/api/retros';
 import { sprintRetro, stubRetros } from '../../retros/ct/retroFixtures';
 import { retroSharedTestIds as ids } from '../testIds';
 import { RetroBoardHarness } from './ct/RetroBoardHarness';

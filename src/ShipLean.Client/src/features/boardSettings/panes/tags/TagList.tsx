@@ -1,4 +1,4 @@
-import type { BoardSettingsJson } from '../../../../api/persisted';
+import type { BoardSettingsJson } from '@shiplean/core/api/persisted';
 import { boardSettingsTestIds as ids } from '../../testIds';
 import { colourOfTag, withTagColour } from './tagEdits';
 import { TagRow } from './TagRow';

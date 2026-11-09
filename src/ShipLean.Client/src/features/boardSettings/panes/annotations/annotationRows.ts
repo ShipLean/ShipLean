@@ -1,6 +1,6 @@
-import type { BoardLevel } from '../../../../api/boards';
-import type { CardAnnotationsJson } from '../../../../api/persisted';
-import type { WorkItemTypeId } from '../../../../api/refs';
+import type { BoardLevel } from '@shiplean/core/api/boards';
+import type { CardAnnotationsJson } from '@shiplean/core/api/persisted';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
 import { boardSettingsTestIds as ids } from '../../testIds';
 
 export interface AnnotationRow {

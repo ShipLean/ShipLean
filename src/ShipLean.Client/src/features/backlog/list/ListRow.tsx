@@ -1,6 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { BacklogRowDto } from '../../../api/views';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import type { BacklogColumnId } from '../backlogApi';
 import { useGroupDragged } from '../drag/GroupDragContext';
 import { Grip } from '../drag/Grip';

@@ -84,6 +84,11 @@ jobs:
       - run: dotnet build src/ShipLean.slnx --configuration Release
       - run: pnpm install --frozen-lockfile
         working-directory: src
+      # The platform-neutral core the SPA (and the phone app) import as @shiplean/core. Its tests are few and run in
+      # plain Node, so they always run in full.
+      - name: Core format, lint, typecheck, test
+        working-directory: src/ShipLean.Core.Client
+        run: pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm test
       # A hand run (workflow_dispatch) has no base, so it runs the whole suite. package.json and
       # vite.config.ts already make Vitest do that (--changed forceRerunTriggers). The workspace files,
       # the lockfile, the core package (outside the SPA's folder) and the token files do not:

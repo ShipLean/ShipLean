@@ -5,8 +5,8 @@ import {
   useQueryClient,
   type Query,
 } from '@tanstack/react-query';
-import { api } from '../../../../api/client';
-import type { UserRef } from '../../../../api/refs';
+import { api } from '@shiplean/core/api/client';
+import type { UserRef } from '@shiplean/core/api/refs';
 
 // The wire shapes of the C-PIN and C-HTTP contracts (SHIP-743): the types here are round-tripped against the pinned
 // `backup-*.json` files by backupsApi.test.ts. Every label is the server's; nothing here builds a date.

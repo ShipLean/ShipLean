@@ -1,5 +1,5 @@
 import { TypeIcon } from '../../../../components/TypeIcon';
-import type { RetroItemRefDto } from '../../../../api/retros';
+import type { RetroItemRefDto } from '@shiplean/core/api/retros';
 import { ItemLink } from '../../../itemPeek/ItemLink';
 
 /** The items a retro was compiled from, below its board; nothing is drawn when there are none. */

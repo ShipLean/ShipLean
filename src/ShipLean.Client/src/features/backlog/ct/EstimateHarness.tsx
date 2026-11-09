@@ -4,7 +4,7 @@ import { PointsCell } from '../estimate/PointsCell';
 import { SelectionProvider } from '../selection/SelectionProvider';
 import { useRowGestures } from '../selection/useRowGestures';
 import { useSelection } from '../selection/useSelection';
-import type { BacklogRowDto } from '../../../api/views';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import { backlogTestIds as ids } from '../testIds';
 
 const IDS = ESTIMATE_ROWS.map((row) => row.id);

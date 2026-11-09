@@ -1,7 +1,7 @@
 import { useRef, useState, type KeyboardEvent } from 'react';
-import { ApiRequestError } from '../../../api/client';
-import { WORK_ITEM_TYPE_IDS, type WorkItemTypeId } from '../../../api/refs';
-import { isStoryLevel, typeName } from '../../../api/workItemTypes';
+import { ApiRequestError } from '@shiplean/core/api/client';
+import { WORK_ITEM_TYPE_IDS, type WorkItemTypeId } from '@shiplean/core/api/refs';
+import { isStoryLevel, typeName } from '@shiplean/core/api/workItemTypes';
 import { useCreateOnTaskboard } from '../taskboardApi';
 import type { TaskboardScope } from '../taskboardScope';
 import { taskboardTestIds as ids } from '../testIds';

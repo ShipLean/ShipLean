@@ -1,4 +1,4 @@
-import type { RetroThemeRefDto } from '../../../api/retros';
+import type { RetroThemeRefDto } from '@shiplean/core/api/retros';
 import { ThemeChip } from '../ThemeChip';
 
 /** A theme's heading over its notes in a column: the name (Unthemed last, as the server sends it) and a Recurring chip. */

@@ -1,4 +1,4 @@
-import type { CardDto } from '../../../api/views';
+import type { CardDto } from '@shiplean/core/api/views';
 
 /** The id a face stands for when it is the Unassigned face. */
 export const UNASSIGNED_FACE = 'unassigned';

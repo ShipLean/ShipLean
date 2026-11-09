@@ -1,5 +1,5 @@
 import { newItemPath, routePath, type NewItemKind } from '../../../../routes';
-import type { Theme } from '../../../../api/me';
+import type { Theme } from '@shiplean/core/api/me';
 import type { QuickSearchRow } from '../../types';
 
 export interface ActionContext {

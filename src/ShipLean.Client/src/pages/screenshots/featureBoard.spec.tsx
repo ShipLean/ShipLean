@@ -1,4 +1,4 @@
-import type { FeatureBoardViewDto } from '../../api/views';
+import type { FeatureBoardViewDto } from '@shiplean/core/api/views';
 import { expect } from '@playwright/experimental-ct-react';
 import { stubFeatureBoard } from '../../features/featureBoard/ct/stubFeatureBoard';
 import { taskboardBoard, stubSettings } from '../../features/taskboardSettings/ct/stubSettings';

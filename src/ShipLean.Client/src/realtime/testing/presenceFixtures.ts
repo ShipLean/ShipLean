@@ -1,4 +1,4 @@
-import type { MemberDto } from '../../api/projects';
+import type { MemberDto } from '@shiplean/core/api/projects';
 
 // Members for the component tests (nothing here is production code).
 export function member(n: number, photoUrl: string | null = null): MemberDto {

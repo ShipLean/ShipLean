@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { RetroPointDto } from '../../../api/retros';
+import type { RetroPointDto } from '@shiplean/core/api/retros';
 import type { RetroActionScope } from '../actionDialog/RetroActionScope';
 import { useRetroActionDialog } from '../actionDialog/useRetroActionDialog';
 import { retroSharedTestIds as ids } from '../testIds';

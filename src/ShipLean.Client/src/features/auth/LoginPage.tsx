@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import type { MeDto } from '../../api/me';
+import type { MeDto } from '@shiplean/core/api/me';
 import { ToastHost } from '../../components/ToastHost';
 import { showToast } from '../../components/toastStore';
 import { appTestIds } from '../../testIds';

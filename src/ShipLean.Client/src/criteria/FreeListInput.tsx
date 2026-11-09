@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { CriteriaValue, FieldKind } from '../api/persisted';
+import type { CriteriaValue, FieldKind } from '@shiplean/core/api/persisted';
 import { criteriaTestIds } from '../features/criteria/testIds';
 
 type Element = string | number | null;

@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import type { ProjectDto } from '../../../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { workItemTestIds as ids } from '../testIds';
 import { fetchAttachments, useWorkItem, workItemAttachmentsKey } from '../workItemApi';
 import { AttachmentRow } from './AttachmentRow';

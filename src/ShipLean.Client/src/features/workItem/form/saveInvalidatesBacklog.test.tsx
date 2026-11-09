@@ -3,15 +3,15 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import type { ProjectDto } from '../../../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { backlogKey } from '../../../queries/backlogKeys';
 import { story } from '../ct/fixtures';
 import { workItemTestIds as ids } from '../testIds';
 import { workItemKey } from '../workItemApi';
 
 const patches = vi.hoisted(() => ({ bodies: [] as unknown[] }));
-vi.mock('../../../api/client', async (original) => ({
-  ...(await original<typeof import('../../../api/client')>()),
+vi.mock('@shiplean/core/api/client', async (original) => ({
+  ...(await original<typeof import('@shiplean/core/api/client')>()),
   api: {
     get: vi.fn(async (url: string) =>
       url.includes('/work-items/by-key/') ? { ...story, revision: 6, title: 'Renamed' } : [],

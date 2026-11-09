@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
-import type { ProjectDto } from '../api/projects';
-import type { UserRef } from '../api/refs';
-import type { SprintDto } from '../api/sprints';
+import type { ProjectDto } from '@shiplean/core/api/projects';
+import type { UserRef } from '@shiplean/core/api/refs';
+import type { SprintDto } from '@shiplean/core/api/sprints';
 import { fetchMe, meKey } from '../queries/shared';
 import { AddStoryBox } from '../features/taskboard/grid/AddStoryBox';
 import { TaskboardGrid } from '../features/taskboard/grid/TaskboardGrid';

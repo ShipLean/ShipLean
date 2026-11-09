@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react';
-import type { VelocityDto } from '../../../api/sprints';
-import type { BacklogRowDto, BacklogSectionDto } from '../../../api/views';
+import type { VelocityDto } from '@shiplean/core/api/sprints';
+import type { BacklogRowDto, BacklogSectionDto } from '@shiplean/core/api/views';
 import { sprintSum, type SprintSum } from '../bulk/sprintSum';
 
 /** A selection being dragged: its rows in rank order, and the section the pointer is over. */

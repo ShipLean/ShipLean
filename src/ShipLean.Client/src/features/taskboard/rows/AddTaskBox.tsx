@@ -1,5 +1,5 @@
 import { useRef, useState, type KeyboardEvent } from 'react';
-import { ApiRequestError } from '../../../api/client';
+import { ApiRequestError } from '@shiplean/core/api/client';
 import { useCreateOnTaskboard } from '../taskboardApi';
 import type { TaskboardScope } from '../taskboardScope';
 import { taskboardTestIds as ids } from '../testIds';

@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import type { StyleRuleJson } from '../../../../api/persisted';
+import type { StyleRuleJson } from '@shiplean/core/api/persisted';
 import { blankRule, moveRule, replaceRule } from './ruleEdits';
 
 const rule = (id: string): StyleRuleJson => ({ ...blankRule({}), id, name: id });

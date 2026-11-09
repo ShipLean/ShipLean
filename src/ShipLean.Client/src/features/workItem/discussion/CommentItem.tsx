@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { CommentDto } from '../../../api/comments';
+import type { CommentDto } from '@shiplean/core/api/comments';
 import { Avatar } from '../../../components/Avatar';
 import { Markdown } from '../../../components/Markdown';
 import { textareaClass } from '../form/inputClasses';

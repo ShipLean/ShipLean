@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import type { BoardLevel } from '../../../api/boards';
-import type { WorkItemTypeId } from '../../../api/refs';
+import type { BoardLevel } from '@shiplean/core/api/boards';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
 import { fetchBoards, projectBoardsKey } from '../../../queries/shared';
 import { boardSettingsKey, fetchBoardSettings } from '../../boardSettings/boardSettingsApi';
 

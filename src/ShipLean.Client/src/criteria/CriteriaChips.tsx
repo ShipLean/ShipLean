@@ -1,4 +1,4 @@
-import type { CriteriaJson } from '../api/persisted';
+import type { CriteriaJson } from '@shiplean/core/api/persisted';
 import { Chip } from '../components/Chip';
 import { criteriaTestIds } from '../features/criteria/testIds';
 import { clauseText } from './clauseText';

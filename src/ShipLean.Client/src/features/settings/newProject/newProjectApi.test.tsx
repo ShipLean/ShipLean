@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { expect, test, vi } from 'vitest';
-import type { ProjectCreate } from '../../../api/projects';
+import type { ProjectCreate } from '@shiplean/core/api/projects';
 import { projectsKey } from '../../../queries/shared';
 
 const handlers: [string, () => void][] = [];
@@ -12,7 +12,7 @@ vi.mock('../../../realtime', () => ({
     return () => {};
   },
 }));
-vi.mock('../../../api/client', () => ({
+vi.mock('@shiplean/core/api/client', () => ({
   api: { post: vi.fn(() => Promise.resolve({ id: 'p-new', key: 'CSH' })) },
 }));
 

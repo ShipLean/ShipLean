@@ -11,7 +11,7 @@ import { retrosTestIds as ids } from '../testIds';
 import { highlightedRow } from './parts/matches';
 import type { RetroActionScope } from '../../retroShared/actionDialog/RetroActionScope';
 import type { AddTarget } from '../../retroShared/board/AddTarget';
-import type { RetroCardDto } from '../../../api/retros';
+import type { RetroCardDto } from '@shiplean/core/api/retros';
 import type { RetrosSearchSlotProps } from './SearchSlotProps';
 
 /** The whole retro of the selected point as a board of the same notes and buttons as everywhere else, the clicked point highlighted, and the raw log open when that point matched only there. */
