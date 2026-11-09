@@ -1,7 +1,5 @@
 // The sign-in flow against the real session store, the real core client and a fake server at fetch. Only the browser,
 // the device name, the randomness and the cache are fakes.
-import { exchangeSignInCode } from '@shiplean/core/api/deviceSessions';
-import { getMe } from '@shiplean/core/api/me';
 import { appRedirect, challengeFor, confirmUrl, APP_REDIRECT } from '@shiplean/core/handoff';
 import { configurePlatform, memoryStore } from '@shiplean/core/platform';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
@@ -14,7 +12,7 @@ import {
   type ApiTable,
   type FakeApi,
 } from '../test-support/fakeApi';
-import { createSignIn, signInMessages, type AuthSessionResult } from './signIn';
+import { coreSignInCalls, createSignIn, signInMessages, type AuthSessionResult } from './signIn';
 import {
   EMAIL_KEY,
   SECRET_KEY,
@@ -34,10 +32,12 @@ const OLD_SECRET = 'shl_dev_OldSession0000000000000000000000000000000';
 function setup({
   table = {},
   earlierSession = false,
+  timeoutMs,
   browser,
 }: {
   table?: ApiTable;
   earlierSession?: boolean;
+  timeoutMs?: number;
   // What the browser does, given the URL it was opened with.
   browser: (url: string) => AuthSessionResult | Promise<AuthSessionResult>;
 }) {
@@ -54,12 +54,16 @@ function setup({
     kv.setItem(EMAIL_KEY, 'old@old.test');
   }
   const session = createSessionStore({ secure, kv });
+  const lost: unknown[] = [];
   configurePlatform(
     createMobilePlatform({
       session,
       kv,
       connectivity: createConnectivity(),
-      lostSession: () => session.clearSecret(),
+      lostSession: () => {
+        lost.push(true);
+        session.clearSecret();
+      },
     }),
   );
   const api: FakeApi = fakeApi({
@@ -70,10 +74,16 @@ function setup({
   const opened: string[] = [];
   const seeded: unknown[] = [];
   const committed: string[] = [];
+  const began: string[] = [];
   const realCommit = session.commit;
   session.commit = (email) => {
     committed.push(email);
     realCommit(email);
+  };
+  const realBegin = session.beginSignIn;
+  session.beginSignIn = (origin) => {
+    began.push(origin);
+    realBegin(origin);
   };
   let bytes = 0;
   const flow = createSignIn({
@@ -82,13 +92,13 @@ function setup({
       opened.push(url);
       return browser(url);
     },
-    exchange: exchangeSignInCode,
-    getMe,
+    ...coreSignInCalls,
     seedMe: (me) => seeded.push(me),
     deviceName: () => 'Pixel 9',
     randomBytes: (n) => Uint8Array.from({ length: n }, () => bytes++ * 5 + 1),
+    timeoutMs,
   });
-  return { flow, session, api, opened, seeded, committed, secureValues };
+  return { flow, session, api, opened, seeded, committed, began, lost, secureValues };
 }
 
 const stateOf = (url: string) => new URL(url).searchParams.get('state') ?? '';
@@ -109,6 +119,28 @@ afterEach(() => {
 
 const nothingStored = (s: { secureValues: Map<string, string> }) =>
   expect([...s.secureValues.values()].join('\n')).not.toContain('shl_dev_');
+
+// Settled before the exchange: the session was never touched.
+const neverBegan = (s: ReturnType<typeof setup>) => {
+  expect(s.began).toEqual([]);
+  expect(s.session.get()).toMatchObject({ signedIn: false, pending: null });
+  nothingStored(s);
+};
+
+// A server that never answers `path`: like a real fetch, it rejects only when the request's signal fires.
+function hangs(path: string) {
+  const answering = globalThis.fetch;
+  globalThis.fetch = ((input: string, init?: RequestInit) => {
+    if (!input.endsWith(path)) return answering(input, init);
+    return new Promise((_resolve, reject) => {
+      init?.signal?.addEventListener('abort', () => reject(init.signal?.reason));
+    });
+  }) as typeof fetch;
+}
+
+// A redirect with no sign-in running, or a replay of an old one, never reaches the flow: the only redirect it reads is
+// the one openAuthSession hands back to the signIn call that opened it, and app/+native-intent.ts keeps a stray
+// shiplean://signed-in deep link off the router (nativeIntent.test.ts).
 
 describe('createSignIn', () => {
   test('signIn_WhenTheBrowserApproves_ShouldCommitAfterMeAnswers', async () => {
@@ -150,17 +182,16 @@ describe('createSignIn', () => {
     );
   });
 
-  test('signIn_WhenTheBrowserIsClosed_ShouldCancelWithNoErrorAndNoSecret', async () => {
+  test('signIn_WhenTheBrowserIsClosed_ShouldCancelStoreNoSecretAndNeverBeginSignIn', async () => {
     const s = setup({ browser: () => ({ type: 'dismiss' }) });
 
     expect(await s.flow.signIn(NEW_ORIGIN)).toEqual({ kind: 'cancelled' });
 
     expect(s.api.calls).toEqual([]);
-    expect(s.session.get()).toMatchObject({ signedIn: false, pending: null });
-    nothingStored(s);
+    neverBegan(s);
   });
 
-  test('signIn_WhenThePageSaysCancelled_ShouldCancelAbandonAndStoreNoSecret', async () => {
+  test('signIn_WhenThePageSaysCancelled_ShouldCancelStoreNoSecretAndNeverBeginSignIn', async () => {
     const s = setup({
       browser: (url) => ({
         type: 'success',
@@ -171,11 +202,10 @@ describe('createSignIn', () => {
     expect(await s.flow.signIn(NEW_ORIGIN)).toEqual({ kind: 'cancelled' });
 
     expect(s.api.calls).toEqual([]);
-    expect(s.session.get()).toMatchObject({ signedIn: false, pending: null });
-    nothingStored(s);
+    neverBegan(s);
   });
 
-  test('signIn_WhenThePageSaysUnsupported_ShouldFailAbandonAndStoreNoSecret', async () => {
+  test('signIn_WhenThePageSaysUnsupported_ShouldFailStoreNoSecretAndNeverBeginSignIn', async () => {
     const s = setup({
       browser: (url) => ({
         type: 'success',
@@ -189,11 +219,10 @@ describe('createSignIn', () => {
     });
 
     expect(s.api.calls).toEqual([]);
-    expect(s.session.get()).toMatchObject({ signedIn: false, pending: null });
-    nothingStored(s);
+    neverBegan(s);
   });
 
-  test('signIn_WhenTheStateDiffers_ShouldRefuseWithoutExchanging', async () => {
+  test('signIn_WhenTheStateDiffers_ShouldRefuseStoreNoSecretAndNeverBeginSignIn', async () => {
     const s = setup({
       browser: (url) => ({
         type: 'success',
@@ -207,8 +236,7 @@ describe('createSignIn', () => {
     });
 
     expect(s.api.callsTo('POST /api/auth/device-sessions/exchange')).toEqual([]);
-    expect(s.session.get()).toMatchObject({ signedIn: false, pending: null });
-    nothingStored(s);
+    neverBegan(s);
   });
 
   test('signIn_WhenAnErrorRedirectCarriesTheWrongState_ShouldBeAMismatchNotACancel', async () => {
@@ -269,6 +297,7 @@ describe('createSignIn', () => {
     );
     expect(s.session.get()).toMatchObject({ signedIn: false, pending: null, secret: null });
     nothingStored(s);
+    expect(s.began).toEqual([]);
   });
 
   test('signIn_WhenRedirectIssuerIsTheTypedServer_ShouldExchangeThere', async () => {
@@ -314,34 +343,6 @@ describe('createSignIn', () => {
     expect(s.api.calls).toEqual([]);
   });
 
-  test('handleRedirect_WhenNoSignInIsInProgress_ShouldChangeNothing', async () => {
-    const s = setup({ browser: approves });
-
-    const outcome = await s.flow.handleRedirect(
-      appRedirect({ code: 'x', state: 'old-state', iss: NEW_ORIGIN }),
-    );
-
-    expect(outcome).toEqual({ kind: 'ignored' });
-    expect(s.api.calls).toEqual([]);
-    expect(s.session.get()).toMatchObject({ signedIn: false, pending: null });
-  });
-
-  test('handleRedirect_WhenReplayedAfterTheSignInFinished_ShouldChangeNothing', async () => {
-    let redirect = '';
-    const s = setup({
-      browser: (url) => {
-        redirect = appRedirect({ code: 'the-code', state: stateOf(url), iss: issOf(url) });
-        return { type: 'success', url: redirect };
-      },
-    });
-    await s.flow.signIn(NEW_ORIGIN);
-    const callsAfter = s.api.calls.length;
-
-    expect(await s.flow.handleRedirect(redirect)).toEqual({ kind: 'ignored' });
-
-    expect(s.api.calls).toHaveLength(callsAfter);
-  });
-
   test('signIn_WhenTheExchangeIsRefused_ShouldShowTheStatusAbandonAndStoreNoSecret', async () => {
     const s = setup({
       browser: approves,
@@ -377,6 +378,40 @@ describe('createSignIn', () => {
     nothingStored(s);
   });
 
+  test.each([
+    ['TheExchange', '/api/auth/device-sessions/exchange'],
+    ['Me', '/api/me'],
+  ])('signIn_WhenTheServerHangsOn%s_ShouldTimeOutAsUnreachableAndAbandon', async (_name, path) => {
+    const s = setup({ browser: approves, timeoutMs: 20 });
+    hangs(path);
+
+    expect(await s.flow.signIn(NEW_ORIGIN)).toEqual({
+      kind: 'failed',
+      message: "Couldn't reach new.test. Check the address and your connection.",
+    });
+
+    expect(s.committed).toEqual([]);
+    expect(s.session.get()).toMatchObject({ signedIn: false, pending: null, secret: null });
+    nothingStored(s);
+  });
+
+  test('signIn_WhenTheExchangeThrowsSomethingElse_ShouldAbandonAndRethrow', async () => {
+    const s = setup({
+      browser: approves,
+      table: {
+        'POST /api/auth/device-sessions/exchange': () => {
+          throw new RangeError('a bug, not the network');
+        },
+      },
+    });
+
+    await expect(s.flow.signIn(NEW_ORIGIN)).rejects.toThrow('a bug, not the network');
+
+    expect(s.began).toEqual([NEW_ORIGIN]);
+    expect(s.session.get()).toMatchObject({ signedIn: false, pending: null });
+    nothingStored(s);
+  });
+
   test('signIn_WhenMeIsRefusedWithThePendingSecret_ShouldNeverCommitAndAbandon', async () => {
     const s = setup({
       browser: approves,
@@ -392,6 +427,8 @@ describe('createSignIn', () => {
     expect(s.seeded).toEqual([]);
     expect(s.session.get()).toMatchObject({ signedIn: false, pending: null, secret: null });
     nothingStored(s);
+    // Sent as a sign-in call: its 401 is this sign-in's refusal, not a lost session.
+    expect(s.lost).toEqual([]);
   });
 
   test('signIn_WhileMeIsAsked_ShouldHoldTheSecretOnlyAsPending', async () => {
@@ -461,7 +498,7 @@ describe('createSignIn', () => {
     const s = setup({ browser: () => new Promise((resolve) => (release = resolve)) });
     const first = s.flow.signIn(NEW_ORIGIN);
 
-    expect(await s.flow.signIn(NEW_ORIGIN)).toEqual({ kind: 'ignored' });
+    expect(await s.flow.signIn(NEW_ORIGIN)).toEqual({ kind: 'busy' });
 
     release({ type: 'cancel' });
     expect(await first).toEqual({ kind: 'cancelled' });

@@ -3,7 +3,7 @@ import { fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { openAuthSessionAsync, type WebBrowserAuthSessionResult } from 'expo-web-browser';
 import { session } from '../session/session';
 import { DEFAULT_ORIGIN } from '../session/sessionStore';
-import { TEST_SECRET, aDeviceSignIn, aHealth, aMe } from '../test-support/builders';
+import { aDeviceSignIn, aHealth } from '../test-support/builders';
 import { apiError, fakeApi, type ApiTable } from '../test-support/fakeApi';
 import { renderApp } from '../test-support/renderApp';
 import { renderScreen } from '../test-support/renderScreen';
@@ -39,6 +39,18 @@ async function typeAddress(text: string, { leave = true } = {}) {
   await fireEvent.changeText(screen.getByTestId(field), text);
   if (leave) await fireEvent(screen.getByTestId(field), 'blur');
 }
+
+let began: jest.SpiedFunction<typeof session.beginSignIn>;
+beforeEach(() => {
+  began = jest.spyOn(session, 'beginSignIn');
+});
+
+// Back to signed out with nothing pending, through the store's own API, whatever the spec left behind.
+afterEach(() => {
+  began.mockRestore();
+  session.abandon();
+  session.clearSecret();
+});
 
 const signInButton = () => screen.getByTestId(signInIds.button);
 const enabled = () => signInButton().props.accessibilityState?.disabled !== true;
@@ -146,6 +158,8 @@ test('cancel stays on Sign in with no error', async () => {
   await waitFor(() => expect(enabled()).toBe(true));
   expect(screen.queryByTestId(signInIds.error)).toBeNull();
   expect(session.get().signedIn).toBe(false);
+  expect(began).not.toHaveBeenCalled();
+  expect([...secureValues.keys()]).toEqual([]);
 });
 
 test('error=unsupported', async () => {
@@ -160,6 +174,7 @@ test('error=unsupported', async () => {
     "This server doesn't support the app yet.",
   );
   expect(session.get()).toMatchObject({ signedIn: false, pending: null });
+  expect(began).not.toHaveBeenCalled();
   expect([...secureValues.keys()]).toEqual([]);
 });
 
@@ -175,6 +190,7 @@ test('state mismatch', async () => {
     "Sign-in didn't finish. Try again.",
   );
   expect(server.callsTo(EXCHANGE)).toEqual([]);
+  expect(began).not.toHaveBeenCalled();
   expect([...secureValues.keys()]).toEqual([]);
 });
 
@@ -193,7 +209,6 @@ test('failed exchange shows the status', async () => {
   expect([...secureValues.keys()]).toEqual([]);
 });
 
-// Last: it leaves the shared session store signed in.
 test('browser success signs in', async () => {
   const server = api();
   await renderApp({ signedIn: false, api: server });
@@ -204,7 +219,4 @@ test('browser success signs in', async () => {
   await fireEvent.press(signInButton());
 
   expect(await screen.findByTestId(screenIds.projects)).toBeOnTheScreen();
-  const secret = JSON.parse([...secureValues.values()].join('')) as { secret: string };
-  expect(secret.secret).toBe(TEST_SECRET);
-  expect(session.get().email).toBe(aMe().email);
 });
