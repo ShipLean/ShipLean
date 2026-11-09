@@ -11,6 +11,7 @@ import {
   stubJson,
   stubProxyInstance,
 } from './authFixtures';
+import { challenge } from '../mobileSignIn/fixtures';
 import { authTestIds as ids } from './testIds';
 
 test('LoginPage_WhenOpened_ShouldShowTheInstanceNameAndTheFooter', async ({ mount, page }) => {
@@ -400,4 +401,29 @@ test('LoginPage_WhenGoogleRefused_ShouldSayWhoToAsk', async ({ mount, page }) =>
   await stubGoogleInstance(page);
   await mount(<AppRoutes />, { hooksConfig: { route: '/login?state=google-refused' } });
   await expect(page.getByTestId(ids.note)).toContainText('Ask your ShipLean admin');
+});
+
+const appReturn = `/mobile/sign-in?challenge=${challenge}&state=st-1&device=${encodeURIComponent('Priya’s Pixel 9')}`;
+const appRoute = `/login?returnUrl=${encodeURIComponent(appReturn)}`;
+
+for (const theme of ['light', 'dark'] as const) {
+  test(`for the app at 390x844 ${theme}`, async ({ mount, page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    await stubInstance(page);
+    await mount(<AppRoutes />, { hooksConfig: { route: appRoute } });
+    await expect(page.getByTestId(ids.appInfo)).toBeVisible();
+    await expect(page).toHaveScreenshot(`for-the-app-390x844.${theme}.png`, {
+      animations: 'disabled',
+    });
+  });
+}
+
+test('info line names the device from returnUrl', async ({ mount, page }) => {
+  await stubInstance(page);
+  await mount(<AppRoutes />, { hooksConfig: { route: appRoute } });
+  await expect(page.getByTestId(ids.appInfo)).toHaveText(
+    'Sign in here to sign in the ShipLean app on Priya’s Pixel 9. You confirm it on the next page.',
+  );
+  await expect(page.getByTestId(ids.subtitle)).toHaveText('to Larkspur, for the ShipLean app');
 });

@@ -16,12 +16,15 @@ export function SignInForm({
   note,
   onSignedIn,
   googleHref,
+  forApp = false,
 }: {
   instanceName: string | undefined;
   note: ReactNode;
   onSignedIn: (me: MeDto, password: string) => void;
   /** Where the Google button goes; null hides it. */
   googleHref: string | null;
+  /** The sign-in is for the phone app (returnUrl is its confirm page): the subtitle says so. */
+  forApp?: boolean;
 }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -60,9 +63,14 @@ export function SignInForm({
     >
       <h1 className="m-0 border-b border-edge px-4 py-3 text-[length:var(--text-md)] font-semibold">
         Sign in
-        {instanceName ? (
-          <small className="mt-0.5 block text-[length:var(--text-xs)] font-normal text-ink-muted">
-            to {instanceName}
+        {instanceName || forApp ? (
+          <small
+            data-testid={authTestIds.subtitle}
+            className="mt-0.5 block text-[length:var(--text-xs)] font-normal text-ink-muted"
+          >
+            {instanceName ? `to ${instanceName}` : ''}
+            {instanceName && forApp ? ', ' : ''}
+            {forApp ? 'for the ShipLean app' : ''}
           </small>
         ) : null}
       </h1>

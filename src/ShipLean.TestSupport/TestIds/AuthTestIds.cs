@@ -5,6 +5,8 @@ public static class AuthTestIds
     public const string InstanceName = "auth-instance-name";
     public const string SignInForm = "auth-sign-in-form";
     public const string Note = "auth-note";
+    public const string AppInfo = "auth-app-info";
+    public const string Subtitle = "auth-subtitle";
     public const string Failure = "auth-failure";
     public const string Email = "auth-email";
     public const string Password = "auth-password";

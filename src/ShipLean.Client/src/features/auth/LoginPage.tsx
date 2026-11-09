@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { MeDto } from '@shiplean/core/api/me';
+import { CONFIRM_PATH, parseConfirmQuery } from '@shiplean/core/handoff';
 import { ToastHost } from '../../components/ToastHost';
 import { showToast } from '../../components/toastStore';
 import { appTestIds } from '../../testIds';
@@ -106,6 +107,17 @@ export function LoginPage() {
       </Banner>
     ) : null;
 
+  // Sent here by the phone app: say so, naming the device the confirm page will ask about.
+  const forApp = returnUrl.startsWith(CONFIRM_PATH);
+  const appQuery = forApp ? parseConfirmQuery(returnUrl.slice(returnUrl.indexOf('?') + 1)) : null;
+  const appInfo =
+    appQuery !== null && !('error' in appQuery) ? (
+      <Banner tone="info" testId={authTestIds.appInfo}>
+        Sign in here to sign in the ShipLean app on <b>{appQuery.device}</b>. You confirm it on the
+        next page.
+      </Banner>
+    ) : null;
+
   const card = cardFor();
 
   function cardFor() {
@@ -131,7 +143,13 @@ export function LoginPage() {
     return (
       <SignInForm
         instanceName={instance.data?.name}
-        note={note}
+        note={
+          <>
+            {appInfo}
+            {note}
+          </>
+        }
+        forApp={forApp}
         onSignedIn={onSignedIn}
         googleHref={
           instance.data?.googleSignIn
