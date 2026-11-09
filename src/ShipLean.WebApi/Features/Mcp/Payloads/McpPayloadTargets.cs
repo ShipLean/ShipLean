@@ -23,21 +23,14 @@ public static class McpPayloadTargets
         {
             return null;
         }
-        var fields = new HashSet<string>(StringComparer.Ordinal);
-        if (tool.ProtocolTool.InputSchema.TryGetProperty("properties", out var properties) && properties.ValueKind == JsonValueKind.Object)
-        {
-            foreach (var property in properties.EnumerateObject())
-            {
-                if (!NotText.Contains(property.Name) && IsString(property.Value))
-                {
-                    fields.Add(property.Name);
-                }
-            }
-        }
+        var fields = tool.ProtocolTool.InputSchema.TryGetProperty("properties", out var properties) && properties.ValueKind == JsonValueKind.Object
+            ? properties.EnumerateObject().Where(property => !NotText.Contains(property.Name) && IsString(property.Value)).Select(property => property.Name).ToHashSet(StringComparer.Ordinal)
+            : [];
         return new PayloadTarget(tool.ProtocolTool.Name, fields);
     }
 
-    public static IReadOnlyList<PayloadTarget> All(McpServerToolCollection tools)
+    // tools is McpServerOptions.ToolCollection.
+    public static IReadOnlyList<PayloadTarget> All(McpServerPrimitiveCollection<McpServerTool> tools)
         => tools.Select(For).OfType<PayloadTarget>().ToList();
 
     // "type": "string", or "type": ["string", "null"].

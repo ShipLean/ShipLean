@@ -69,7 +69,11 @@ public class PayloadSurfaceTests : McpFixture
              "stories":[{"title":"Only lane","wave":"1","tasks":[{"title":"Only task","brief":"Do it.","model":"strong","context_k":30}]}]}
             """);
 
-        ShouldNameTheArgument(reply, "common_brief");
+        reply.IsToolError().ShouldBeTrue(reply.Body);
+        var (code, field, message) = ErrorOf(reply);
+        code.ShouldBe(ApiErrorCodes.Validation);
+        field.ShouldBe("common_brief");
+        message.ShouldContain("create_payload_upload");
     }
 
     [Test]
@@ -79,7 +83,11 @@ public class PayloadSurfaceTests : McpFixture
 
         var reply = await CallToolAsync(token, "break_down", $$"""{"parent":"{{_storyKey}}"}""");
 
-        ShouldNameTheArgument(reply, "children");
+        reply.IsToolError().ShouldBeTrue(reply.Body);
+        var (code, field, message) = ErrorOf(reply);
+        code.ShouldBe(ApiErrorCodes.Validation);
+        field.ShouldBe("children");
+        message.ShouldContain("create_payload_upload");
     }
 
     [Test]
@@ -89,16 +97,17 @@ public class PayloadSurfaceTests : McpFixture
 
         var reply = await CallToolAsync(token, "attach_markdown", $$"""{"feature":"{{_featureKey}}","name":"empty.md"}""");
 
-        ShouldNameTheArgument(reply, "content");
+        reply.IsToolError().ShouldBeTrue(reply.Body);
+        var (code, field, message) = ErrorOf(reply);
+        code.ShouldBe(ApiErrorCodes.Validation);
+        field.ShouldBe("content");
+        message.ShouldContain("create_payload_upload");
     }
 
-    private static void ShouldNameTheArgument(McpReply reply, string field)
+    private static (string? Code, string? Field, string Message) ErrorOf(McpReply reply)
     {
-        reply.IsToolError().ShouldBeTrue(reply.Body);
         var error = reply.Structured().GetProperty("error");
-        error.GetProperty("code").GetString().ShouldBe(ApiErrorCodes.Validation);
-        error.GetProperty("field").GetString().ShouldBe(field);
-        error.GetProperty("message").GetString().ShouldContain("create_payload_upload");
+        return (error.GetProperty("code").GetString(), error.GetProperty("field").GetString(), error.GetProperty("message").GetString() ?? string.Empty);
     }
 
     private async Task<IReadOnlyList<JsonElement>> ListToolsAsync()
