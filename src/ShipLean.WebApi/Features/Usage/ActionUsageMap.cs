@@ -140,6 +140,7 @@ public static class ActionUsageMap
             "LinkCardImages.Favicon",
             "LinkCardImages.Image");
         Add(ActionUsage.Untracked("Anonymous, one-time upload token: the delivery that follows publishes SprintDemoChanged, and the demo's creation is counted by SprintDemo.Create."), "DemoUpload.Upload");
+        Add(ActionUsage.Untracked("Anonymous, one-time upload token: the upload URL's issue is counted by create_payload_upload, and the call that uses the payload by its own tool."), "PayloadUploads.Upload");
         Add(ActionUsage.Untracked("Only builds Google's consent address; nothing changes until the callback and the check, and the check is counted by YouTube.Check."), "YouTube.Start");
         Add(ActionUsage.Untracked("Anonymous browser redirect from Google with no session of its own; the connection it stores is counted by YouTube.Check when the person confirms it."), "YouTube.Callback");
         Add(ActionUsage.Untracked("Anonymous, token-authenticated download of the project's logo for the agent making a demo; the demo's creation is counted by SprintDemo.Create."), "DemoLogoDownload.Download");

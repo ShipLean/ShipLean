@@ -192,6 +192,7 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `attachment.added` | `attach_markdown`, `attach_file` | `WorkItemAttachments.Upload` |
 | `attachment.viewed` | `read_attachment` | `Attachments.Download`, `AttachmentMarkdown.View` |
 | `attachment.archived` |  | `Attachments.Archive` |
+| `payload_upload.issued` | `create_payload_upload` |  |
 | `link.added` | `link` | `WorkItemLinks.Add` |
 | `link.state_reported` | `report_link_state` |  |
 | `link_card.added` |  | `LinkCards.Add` |
@@ -252,4 +253,4 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 
 `analytics.test` is not in the catalogue: the test send goes straight to the sink.
 
-The demo's anonymous and token routes are untracked on purpose, each with its reason in `ActionUsageMap`: `DemoUpload.Upload` and `DemoLogoDownload.Download` (the demo's creation is counted by `sprint_demo.created`), and `YouTube.Start` and `YouTube.Callback` (the connection they lead to is counted when the person's check runs, by `project_youtube.changed`).
+The demo's anonymous and token routes are untracked on purpose, each with its reason in `ActionUsageMap`: `DemoUpload.Upload` and `DemoLogoDownload.Download` (the demo's creation is counted by `sprint_demo.created`), and `YouTube.Start` and `YouTube.Callback` (the connection they lead to is counted when the person's check runs, by `project_youtube.changed`). `PayloadUploads.Upload` is untracked for the same reason: the upload URL's issue is counted by `payload_upload.issued`, and the call that uses the payload by its own tool's event.

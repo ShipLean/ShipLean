@@ -18,6 +18,7 @@ public static class RouteAllowList
         new("GET", "api/health", "Liveness probe."),
         new("GET", "api/downloads/{token}", "An agent's curl has no session; the short-lived URL token is the proof, and every token that is not live is 404."),
         new("PUT", "api/uploads/{token}", "An agent's curl has no session; the one-time URL token is the proof, and every token that is not live is 404."),
+        new("PUT", "api/uploads/payloads/{token}", "An agent's curl has no session; the one-time URL token is the proof, and every token that is not live is 404."),
         new("POST", "api/uploads/demo", "An agent's curl has no session; the one-time URL token in the query is the proof, and every token that is not live is 404."),
         new("GET", "api/downloads/demo-logo", "An agent's curl has no session; the project-logo URL token in the query is the proof, and every token that is not live is 404."),
         new("GET", "api/youtube/callback", "Google's browser comes back with no session of its own; the service validates the signed state, the signed-in user and their Admin role, and a signed-out caller is redirected with youtube=error and nothing stored."),
@@ -71,7 +72,7 @@ public static class RouteAllowList
     private static readonly string[] AnyUserRoutes = ["api/users/{id:guid}/photo"];
 
     // The parameter is a secret token that is itself the credential; an unknown one is not_found.
-    private static readonly string[] TokenRoutes = ["api/downloads/{token}", "api/uploads/{token}"];
+    private static readonly string[] TokenRoutes = ["api/downloads/{token}", "api/uploads/{token}", "api/uploads/payloads/{token}"];
 
     public static bool Contains(IReadOnlyList<Entry> list, ApiAction action)
         => list.Any(e => e.Method == action.Method && e.Template == action.Template);

@@ -183,7 +183,7 @@ If `base_url` is blank and an agent request that reads the agent address (an OAu
 1. A class marked `[McpServerToolType]`, **internal**, under `Features/Mcp/Tools/<Area>/`, with `[McpScope]` on each tool or on the class.
 2. No Dapper and no Npgsql in the tool: it calls the contracts (`IWorkItemStore`, `IProjectAccess`, ...) or a read in `Application/Features/Mcp/<Area>/`.
 3. Do not catch `ApiException`. Return the result through your area's reply helper (`WorkReply`, `PlanningReply`, ...), which calls `McpToolResult.Of`; never build a `CallToolResult` by hand.
-4. A sweep-rows file `WebApi.Tests/Mcp/<Area>/<Area>McpRows.cs` implementing `IMcpSweepRows`, with a row per tool. `McpAccessSweepTests` fails for a tool without one, and calls each row as Joel; a row's arguments name an entity in the seeded `PART` project (Joel is not a member), and the call must answer `not_found`.
+4. A sweep-rows file `WebApi.Tests/Mcp/<Area>/<Area>McpRows.cs` implementing `IMcpSweepRows`, with a row per tool. `McpAccessSweepTests` fails for a tool without one, and calls each row as Joel; a row's arguments name an entity in the seeded `PART` project (Joel is not a member), and the call must answer `not_found`. A tool that names no project at all (`create_payload_upload`) sets the row's `NoProject` to the reason instead, and the sweep does not call it.
 5. Tests go through `McpTestClient` and `ShipLeanHost.IssueAgentToken`. A tool that only the tests need is registered through `ConfigureTestServices` (`services.AddMcpServer().WithTools<T>()`), never in production code.
 
 The server also sends `instructions` (naming rules, previews, errors, the result shape, how to run a captured plan, and that these tools are the only way in): `McpServerServices.Instructions`.

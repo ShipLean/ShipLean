@@ -8,8 +8,8 @@ using ShipLean.WebApi.Tests.Mcp.Transport;
 
 namespace ShipLean.WebApi.Tests.Mcp.Sweep;
 
-// The MCP access sweep: every registered tool has a row, no row names a tool that is not registered, and each row's call,
-// made as Joel, answers not_found. Rows name an entity in a project Joel is not a member of (the seeded PART), so the only
+// The MCP access sweep: every registered tool has a row, no row names a tool that is not registered, and each row's call
+// (but a NoProject row's, which names no project to refuse) made as Joel answers not_found. Rows name an entity in a project Joel is not a member of (the seeded PART), so the only
 // thing that can refuse the call is the project access rule.
 public static class McpSweep
 {
@@ -35,7 +35,7 @@ public static class McpSweep
     public static async Task<IReadOnlyList<string>> CallProblemsAsync(Func<string, string, Task<McpReply>> call, IEnumerable<McpSweepRow> rows)
     {
         var problems = new List<string>();
-        foreach (var row in rows)
+        foreach (var row in rows.Where(row => row.NoProject is null))
         {
             var reply = await call(row.Tool, row.Arguments ?? "{}");
             var code = reply.IsToolError() ? reply.Structured().GetProperty("error").GetProperty("code").GetString() : "ok";
