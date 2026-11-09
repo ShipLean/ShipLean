@@ -10,6 +10,7 @@ using ShipLean.Contracts.DeviceSessions;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Usage;
 using ShipLean.Contracts.Users;
+using ShipLean.Contracts.Users.Admin;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.DeviceSessions;
@@ -36,6 +37,8 @@ public class DeviceBearerApiTests : ApiFixture
     protected override TestUser SignedInAs => TestUser.Anonymous;
 
     private RecordingUsageEvents Recorder => (RecordingUsageEvents)Host.Services.GetRequiredService<IUsageEvents>();
+
+    private static DateTimeOffset Now => TimeProvider.System.GetUtcNow();
 
     private IDeviceSessions Store => Host.Services.GetRequiredService<IDeviceSessions>();
 
@@ -75,7 +78,7 @@ public class DeviceBearerApiTests : ApiFixture
     {
         var (userId, _) = await ArrangeUserAsync(member: true);
         using var phone = await DeviceBearerClient.CreateAsync(Host, userId);
-        (await Store.RevokeAsync(userId, phone.Id, DateTimeOffset.UtcNow)).ShouldBeTrue();
+        (await Store.RevokeAsync(userId, phone.Id, Now)).ShouldBeTrue();
 
         await Should.ThrowAsync<HttpRequestException>(() => HubReceiver.StartAsync(
             Host, configure: options => options.AccessTokenProvider = () => Task.FromResult<string?>(phone.SignIn.Secret)));
@@ -85,7 +88,7 @@ public class DeviceBearerApiTests : ApiFixture
     public async Task Api_WhenAccessTokenQuery_ShouldNotAuthenticate()
     {
         var (userId, _) = await ArrangeUserAsync();
-        using var phone = await DeviceBearerClient.CreateAsync(Host, userId, now: DateTimeOffset.UtcNow.AddHours(-2));
+        using var phone = await DeviceBearerClient.CreateAsync(Host, userId, now: Now.AddHours(-2));
         var before = await Store.FindBySecretAsync(phone.SignIn.Secret);
         using var plain = AuthClient.Create(Host);
 
@@ -118,7 +121,7 @@ public class DeviceBearerApiTests : ApiFixture
     public async Task RefusedPath_WhenDeviceBearer_ShouldAnswerAsWithoutAuthorization(string method, string path)
     {
         var (userId, _) = await ArrangeUserAsync();
-        using var phone = await DeviceBearerClient.CreateAsync(Host, userId, now: DateTimeOffset.UtcNow.AddHours(-2));
+        using var phone = await DeviceBearerClient.CreateAsync(Host, userId, now: Now.AddHours(-2));
         var before = await Store.FindBySecretAsync(phone.SignIn.Secret);
         using var plain = AuthClient.Create(Host);
 
@@ -156,7 +159,7 @@ public class DeviceBearerApiTests : ApiFixture
     public async Task Api_WhenUsedWithinWindow_ShouldSlide()
     {
         var (userId, _) = await ArrangeUserAsync();
-        var now = DateTimeOffset.UtcNow;
+        var now = Now;
         using var phone = await DeviceBearerClient.CreateAsync(Host, userId, now: now.AddDays(-89));
         (await Store.FindBySecretAsync(phone.SignIn.Secret))!.ExpiresAt.ShouldBe(now.AddDays(1), TimeSpan.FromMinutes(1));
 
@@ -171,18 +174,18 @@ public class DeviceBearerApiTests : ApiFixture
     {
         var (userId, _) = await ArrangeUserAsync();
         using var phone = await DeviceBearerClient.CreateAsync(Host, userId);
-        (await Store.RevokeAsync(userId, phone.Id, DateTimeOffset.UtcNow)).ShouldBeTrue();
+        (await Store.RevokeAsync(userId, phone.Id, Now)).ShouldBeTrue();
 
-        await ShouldBeEndedAsync(phone, reason: null);
+        (await EndedReasonsAsync(phone)).ShouldBeEmpty();
     }
 
     [Test]
     public async Task Api_WhenSessionExpired_ShouldReturnSessionEnded()
     {
         var (userId, _) = await ArrangeUserAsync();
-        using var phone = await DeviceBearerClient.CreateAsync(Host, userId, now: DateTimeOffset.UtcNow.AddDays(-91));
+        using var phone = await DeviceBearerClient.CreateAsync(Host, userId, now: Now.AddDays(-91));
 
-        await ShouldBeEndedAsync(phone, DeviceSessionEndReasons.Expired);
+        (await EndedReasonsAsync(phone)).ShouldBe([DeviceSessionEndReasons.Expired]);
     }
 
     [Test]
@@ -195,7 +198,7 @@ public class DeviceBearerApiTests : ApiFixture
         using var disabled = await admin.PutAsJsonAsync($"/api/admin/users/{userId}/disabled", new SetDisabledRequest(true));
 
         disabled.StatusCode.ShouldBe(HttpStatusCode.NoContent);
-        await ShouldBeEndedAsync(phone, DeviceSessionEndReasons.UserDisabled);
+        (await EndedReasonsAsync(phone)).ShouldBe([DeviceSessionEndReasons.UserDisabled]);
     }
 
     [Test]
@@ -208,7 +211,7 @@ public class DeviceBearerApiTests : ApiFixture
         using var changed = await browser.PostAsJsonAsync("/api/auth/password", new ChangePasswordRequest(AppUserBuilder.ArrangedPassword, NewPassword));
 
         changed.StatusCode.ShouldBe(HttpStatusCode.OK);
-        await ShouldBeEndedAsync(phone, DeviceSessionEndReasons.StampChanged);
+        (await EndedReasonsAsync(phone)).ShouldBe([DeviceSessionEndReasons.StampChanged]);
     }
 
     [Test]
@@ -221,7 +224,7 @@ public class DeviceBearerApiTests : ApiFixture
         using var signedOut = await browser.PostAsync("/api/auth/sign-out-others", null);
 
         signedOut.StatusCode.ShouldBe(HttpStatusCode.NoContent);
-        await ShouldBeEndedAsync(phone, DeviceSessionEndReasons.StampChanged);
+        (await EndedReasonsAsync(phone)).ShouldBe([DeviceSessionEndReasons.StampChanged]);
     }
 
     [Test]
@@ -234,7 +237,7 @@ public class DeviceBearerApiTests : ApiFixture
         using var issued = await admin.PostAsync($"/api/admin/users/{userId}/one-time-password", null);
 
         issued.StatusCode.ShouldBe(HttpStatusCode.OK);
-        await ShouldBeEndedAsync(phone, DeviceSessionEndReasons.StampChanged);
+        (await EndedReasonsAsync(phone)).ShouldBe([DeviceSessionEndReasons.StampChanged]);
     }
 
     [Test]
@@ -247,12 +250,13 @@ public class DeviceBearerApiTests : ApiFixture
         using var changed = await admin.PutAsJsonAsync($"/api/admin/users/{userId}/email", new ChangeEmailRequest($"moved-{Guid.NewGuid():N}@shiplean.local"));
 
         changed.StatusCode.ShouldBe(HttpStatusCode.NoContent);
-        await ShouldBeEndedAsync(phone, DeviceSessionEndReasons.StampChanged);
+        (await EndedReasonsAsync(phone)).ShouldBe([DeviceSessionEndReasons.StampChanged]);
     }
 
-    // 401 session_ended on the next call and on the one after; device_session.ended (surface app) is tracked once, with
-    // the reason, by the call that ended it. A revoked session ends with no event here: whoever revoked it tracked that.
-    private async Task ShouldBeEndedAsync(DeviceBearerSession phone, string? reason)
+    // 401 session_ended on the next call and on the one after. Returns the reasons of the device_session.ended events
+    // (surface app) tracked meanwhile: one for the call that ended the session, none for a revoked one (whoever revoked
+    // it tracked that).
+    private async Task<List<string>> EndedReasonsAsync(DeviceBearerSession phone)
     {
         for (var call = 0; call < 2; call++)
         {
@@ -260,28 +264,21 @@ public class DeviceBearerApiTests : ApiFixture
             (await response.ReadApiErrorAsync(HttpStatusCode.Unauthorized)).Code.ShouldBe(ApiErrorCodes.SessionEnded);
         }
         var ended = Recorder.Events.Where(e => e.Name == UsageEventNames.DeviceSessionEnded).ToList();
-        if (reason is null)
-        {
-            ended.ShouldBeEmpty();
-            return;
-        }
-        var tracked = ended.ShouldHaveSingleItem();
-        tracked.Properties[UsageProps.Reason].ShouldBe(reason);
-        tracked.Surface.ShouldBe(UsageSurface.App);
+        ended.ShouldAllBe(e => e.Surface == UsageSurface.App);
+        return ended.Select(e => (string)e.Properties[UsageProps.Reason]).ToList();
     }
 
     private static async Task<(int Status, string Code)> Describe(HttpResponseMessage response)
     {
         var body = await response.Content.ReadAsStringAsync();
-        var code = string.Empty;
         try
         {
-            code = JsonDocument.Parse(body).RootElement.TryGetProperty("code", out var c) ? c.GetString() ?? string.Empty : string.Empty;
+            return ((int)response.StatusCode, JsonDocument.Parse(body).RootElement.TryGetProperty("code", out var c) ? c.GetString() ?? string.Empty : string.Empty);
         }
         catch (JsonException)
         {
+            return ((int)response.StatusCode, string.Empty);
         }
-        return ((int)response.StatusCode, code);
     }
 
     private Task<HttpClient> AdminAsync() => AuthClient.SignedInAsync(Host, "joel@shiplean.local", SeedIds.Passwords.Joel);

@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Contracts.DeviceSessions;
+using ShipLean.TestSupport;
 using ShipLean.TestSupport.DeviceSessions;
 using ShipLean.TestSupport.Fixtures;
 
@@ -18,7 +19,7 @@ public class DeviceBearerProxyTests : ProxyApiFixture
     [Test]
     public async Task Api_WhenProxyModeAndDeviceBearer_ShouldNotAuthenticate()
     {
-        using var phone = await DeviceBearerClient.CreateAsync(Host, SeedIds.Users.Joel, now: DateTimeOffset.UtcNow.AddHours(-2));
+        using var phone = await DeviceBearerClient.CreateAsync(Host, SeedIds.Users.Joel, now: TimeProvider.System.GetUtcNow().AddHours(-2));
         var before = await Store.FindBySecretAsync(phone.SignIn.Secret);
         using var plain = new HttpClient { BaseAddress = new Uri(Host.BaseUrl) };
 
@@ -34,7 +35,7 @@ public class DeviceBearerProxyTests : ProxyApiFixture
     [TestCase("GET", "/api/downloads/not-a-live-token")]
     public async Task RefusedPath_WhenProxyModeAndDeviceBearerOnUploadsOrDownloads_ShouldNotSignIn(string method, string path)
     {
-        using var phone = await DeviceBearerClient.CreateAsync(Host, SeedIds.Users.Joel, now: DateTimeOffset.UtcNow.AddHours(-2));
+        using var phone = await DeviceBearerClient.CreateAsync(Host, SeedIds.Users.Joel, now: TimeProvider.System.GetUtcNow().AddHours(-2));
         var before = await Store.FindBySecretAsync(phone.SignIn.Secret);
         using var plain = new HttpClient { BaseAddress = new Uri(Host.BaseUrl) };
 
