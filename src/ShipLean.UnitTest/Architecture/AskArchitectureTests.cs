@@ -22,7 +22,8 @@ public class AskArchitectureTests
             .SelectMany(t => TypeReferences.Of(t).Where(AskWrites.Contains).Select(r => $"{t.FullName} -> {r.FullName}"))
             .ToList();
 
-        dispatch.ShouldNotBeEmpty();
+        foreach (var assembly in assemblies)
+            assembly.GetTypes().Count(t => FeatureScan.FeatureOf(t) == "AgentDispatch").ShouldBeGreaterThan(0, assembly.GetName().Name);
         violations.ShouldBeEmpty();
     }
 }

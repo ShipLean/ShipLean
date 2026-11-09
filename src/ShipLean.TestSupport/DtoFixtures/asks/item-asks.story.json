@@ -342,8 +342,8 @@
         {
           "kind": "confirmed",
           "from": null,
-          "to": null,
-          "toKind": null,
+          "to": "Three",
+          "toKind": "recommended",
           "note": null,
           "by": {
             "id": "0199f000-0000-7000-8000-000000000001",
