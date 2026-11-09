@@ -27,6 +27,29 @@ Filter a run with a path: `pnpm exec vitest run src/session`, `pnpm exec jest sr
 
 The two patterns never overlap. Put specs next to the code they test under `src/`, **never under `app/`**: expo-router treats every file in `app/` as a route. Only `*.test.ts` and `*.spec.tsx` may import `src/test-support/` (a lint rule enforces it).
 
+## Session and sign-in gate
+
+- **`src/session/sessionStore.ts`** (pure, vitest) holds `{ origin, email, secret, signedIn, pending }`. It reads storage synchronously when it is created, so the first render already knows which side of the gate the user is on. The secret lives only in expo-secure-store (Keychain or Keystore). The server and email live in expo-sqlite's `kv-store` and are kept after sign-out, so Sign in comes back filled in. A sign-in in progress calls `beginSignIn(origin)`, then `setPendingSecret(secret)`: requests go to that server with that secret while the app still counts as signed out, until `commit(email)` or `abandon()`. `clearSecret()` never throws.
+- **`src/session/session.ts`** binds the real storage; `useSession()` reads it with `useSyncExternalStore`.
+- **`src/mobilePlatform.ts`** is the core's `Platform`: the kv store, NetInfo for offline, the session's server and `Authorization: Bearer` secret, `credentials: 'omit'`, and `lostSession()` on any 401 (or 403 `password_change_required`). `lostSession()` clears the query cache and the secret.
+- **`app/_layout.tsx`** configures the platform at module level and gates the stack with `Stack.Protected`: `index` (Projects) and `account` (a sheet) when signed in, `sign-in` when not. Clearing the secret is all it takes to land on Sign in.
+- **`app/+native-intent.ts`** keeps the browser handoff's `shiplean://signed-in?…` redirect away from the router. On Android it arrives as an ordinary deep link as well as reaching `openAuthSessionAsync`, and would otherwise show "Unmatched route".
+- **`index.ts`** loads `src/polyfills.ts` before `expo-router/entry`, because the core reads `crypto.randomUUID` when it loads. `src/entry.spec.tsx` proves the order.
+- **`src/links.ts`** is the only place a route path is written: `router.push(links.account())`.
+- Screen root test ids are in `src/screens/testIds.ts`; a screen's own ids go in `src/screens/<screen>/testIds.ts`. UI primitives (`src/ui/`) and the theme (`src/theme/`) have their final props and shape; their looks come later.
+
+## Test harness (`src/test-support/`)
+
+Only `*.test.ts` and `*.spec.tsx` may import it.
+
+- **`fakeApi(table)`** replaces `fetch`; the real core client runs. Keys are `"METHOD /path"`; a value is a body (200), `{ status, body }`, or a function of the request. Unlisted requests answer 404 `not_found`. `api.callsTo('GET /api/me')` lists the recorded requests (method, path, origin, headers, body). `apiError(status, code)` and `sessionEnded()` build error replies.
+- **`signedInApi()`** is the table a signed-in app reads (`/api/me`, `/api/projects`, `/api/health`); spread it and override routes.
+- **Builders:** `aMe`, `aProject`, `aHealth`, `aDeviceSession`, `aDeviceSignIn` (from the pinned fixtures in `src/ShipLean.TestSupport/DtoFixtures`), `TEST_ORIGIN` (`https://shiplean.test`) and `TEST_SECRET`.
+- **`renderScreen(ui, { scheme })`** renders a screen on a 390×844 notched phone with its own query cache (`retry: false`, `gcTime: Infinity`).
+- **`renderApp({ url, api, scheme, signedIn = true })`** renders the real `app/` through `expo-router/testing-library`, signed in to `https://shiplean.test` as `aMe()`. `signedIn: false` starts signed out with that server and email kept. It turns on jest's fake timers, as `renderRouter` does.
+- **Jest setup** (`jest.setup.ts`) fakes expo-secure-store and kv-store in memory (`storage.ts`), expo-web-browser (`jest.mocked(openAuthSessionAsync)`), NetInfo (`setConnected(false)` from `netInfo.ts`), the colour scheme and the safe area.
+- Specs assert root ids and test ids, never placeholder text.
+
 ## Expo Go or a development build
 
 - **Expo Go** (from the app store) runs the app with no native build: `pnpm start` and scan the QR code. It only works while this SDK's Expo Go is the one in the store.
