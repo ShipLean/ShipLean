@@ -1,4 +1,6 @@
 using System.Net;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Dapper;
 using Npgsql;
 using ShipLean.Contracts.Asks;
@@ -16,6 +18,20 @@ namespace ShipLean.WebApi.Tests.Asks;
 [TestFixture]
 public class ItemAsksApiTests : ApiFixture
 {
+    // The wire carries enums as camelCase strings, which JsonSerializerOptions.Web (what GetJsonAsync reads with) does not.
+    private static readonly JsonSerializerOptions WireOptions = new(JsonSerializerDefaults.Web)
+    {
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
+    };
+
+    private async Task<ItemAsksDto> GetAsksAsync(string url)
+    {
+        using var response = await Api.GetAsync(url);
+        var text = await response.Content.ReadAsStringAsync();
+        response.StatusCode.ShouldBe(HttpStatusCode.OK, text);
+        return JsonSerializer.Deserialize<ItemAsksDto>(text, WireOptions)!;
+    }
+
     private static string Url(Guid id) => $"api/work-items/{id}/asks";
 
     private static async Task<Guid> ItemAsync(NpgsqlConnection connection, string type, Guid createdBy, Guid? assignee = null, Guid? parent = null)
@@ -42,7 +58,7 @@ public class ItemAsksApiTests : ApiFixture
         await using var connection = await OpenDatabaseAsync();
         var item = await ItemAsync(connection, "story", SeedIds.Users.Mei);
 
-        var asks = await Api.GetJsonAsync<ItemAsksDto>(Url(item));
+        var asks = await GetAsksAsync(Url(item));
 
         asks.WorkItemId.ShouldBe(item);
         asks.Questions.ShouldBeEmpty();
@@ -59,7 +75,7 @@ public class ItemAsksApiTests : ApiFixture
         await using var connection = await OpenDatabaseAsync();
         var item = await ItemAsync(connection, "story", SeedIds.Users.Mei);
 
-        var asks = await Api.GetJsonAsync<ItemAsksDto>(Url(item));
+        var asks = await GetAsksAsync(Url(item));
 
         asks.Owner.ShouldNotBeNull().Id.ShouldBe(SeedIds.Users.Mei);
         asks.OwnerIsCreator.ShouldBeTrue();
@@ -73,7 +89,7 @@ public class ItemAsksApiTests : ApiFixture
         // Joel (the caller) created it, Mei is assigned: the owner is Mei, so it is not mine.
         var item = await ItemAsync(connection, "story", SeedIds.Users.Joel, assignee: SeedIds.Users.Mei);
 
-        var asks = await Api.GetJsonAsync<ItemAsksDto>(Url(item));
+        var asks = await GetAsksAsync(Url(item));
 
         asks.Owner.ShouldNotBeNull().Id.ShouldBe(SeedIds.Users.Mei);
         asks.OwnerIsCreator.ShouldBeFalse();
@@ -91,7 +107,7 @@ public class ItemAsksApiTests : ApiFixture
         await new QuestionBuilder(item).Withdrawn(SeedIds.Users.Mei, AskDefaults.Now()).BuildAsync(connection);
         await new QuestionBuilder(item).BuildAsync(connection);
 
-        var asks = await Api.GetJsonAsync<ItemAsksDto>(Url(item));
+        var asks = await GetAsksAsync(Url(item));
 
         asks.OpenDecisions.ShouldBe(1);
         asks.OpenQuestions.ShouldBe(1);
@@ -109,7 +125,7 @@ public class ItemAsksApiTests : ApiFixture
         var comment = await new CommentBuilder(item).WithAuthor(SeedIds.Users.Mei).WithBody("**Yes**, behind a flag").InsertAsync(connection);
         await new QuestionBuilder(item).Answered(comment, SeedIds.Users.Mei, AskDefaults.Now()).BuildAsync(connection);
 
-        var asks = await Api.GetJsonAsync<ItemAsksDto>(Url(item));
+        var asks = await GetAsksAsync(Url(item));
 
         var question = asks.Questions.Single();
         question.State.ShouldBe(QuestionState.Answered);
@@ -134,7 +150,7 @@ public class ItemAsksApiTests : ApiFixture
             .By(SeedIds.Users.Mei, null).At(start.AddHours(1)).BuildAsync(connection);
         await new AskEventBuilder(item).ForDecision(decision).Kind("raised").To("A").ToKind("recommended").At(start).BuildAsync(connection);
 
-        var asks = await Api.GetJsonAsync<ItemAsksDto>(Url(item));
+        var asks = await GetAsksAsync(Url(item));
 
         var history = asks.Decisions.Single().History;
         history.Select(e => e.Kind).ShouldBe([AskEventKind.Raised, AskEventKind.Changed]);
@@ -158,7 +174,7 @@ public class ItemAsksApiTests : ApiFixture
         await new DecisionBuilder(waiting).BuildAsync(connection);
         await new DecisionBuilder(settled).State("withdrawn").BuildAsync(connection);
 
-        var asks = await Api.GetJsonAsync<ItemAsksDto>(Url(feature));
+        var asks = await GetAsksAsync(Url(feature));
 
         var child = asks.WaitingChildren.ShouldHaveSingleItem();
         child.Id.ShouldBe(waiting);
@@ -168,7 +184,7 @@ public class ItemAsksApiTests : ApiFixture
         child.OwnerIsCreator.ShouldBeTrue();
         child.Owner.ShouldNotBeNull().Id.ShouldBe(SeedIds.Users.Mei);
         asks.WaitingChildren.ShouldNotContain(c => c.Id == quiet || c.Id == settled);
-        (await Api.GetJsonAsync<ItemAsksDto>(Url(waiting))).WaitingChildren.ShouldBeEmpty();
+        (await GetAsksAsync(Url(waiting))).WaitingChildren.ShouldBeEmpty();
     }
 
     [Test]
@@ -179,7 +195,7 @@ public class ItemAsksApiTests : ApiFixture
         var action = await ItemAsync(connection, "action", SeedIds.Users.Mei, parent: feature);
         await new QuestionBuilder(action).BuildAsync(connection);
 
-        var asks = await Api.GetJsonAsync<ItemAsksDto>(Url(feature));
+        var asks = await GetAsksAsync(Url(feature));
 
         asks.WaitingChildren.ShouldBeEmpty();
     }
