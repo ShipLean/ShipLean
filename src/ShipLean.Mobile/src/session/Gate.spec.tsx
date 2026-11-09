@@ -23,9 +23,11 @@ test('gate_WhenSignedIn_ShouldShowProjects', async () => {
 });
 
 test('gate_WhenARequestAnswersSessionEnded_ShouldReturnToSignInWithTheServerKept', async () => {
-  const api = fakeApi({ ...signedInApi(), 'GET /api/me': sessionEnded() });
-  await renderApp({ api });
+  await renderApp({ api: fakeApi(signedInApi()) });
   await screen.findByTestId(screenIds.projects);
+  // Projects reads me itself, so the request that ends the session is made once it has settled.
+  await screen.findByText('JD');
+  const api = fakeApi({ ...signedInApi(), 'GET /api/me': sessionEnded() });
   queryClient.setQueryData(meKey, aMe());
 
   await act(async () => {
