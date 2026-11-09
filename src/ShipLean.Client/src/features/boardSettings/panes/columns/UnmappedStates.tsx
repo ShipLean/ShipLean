@@ -1,5 +1,5 @@
-import type { BoardTypeStatesDto } from '../../../../api/boards';
-import type { BoardColumnJson } from '../../../../api/persisted';
+import type { BoardTypeStatesDto } from '@shiplean/core/api/boards';
+import type { BoardColumnJson } from '@shiplean/core/api/persisted';
 import { boardSettingsTestIds as ids } from '../../testIds';
 import { fixFor, typeNames, type Fix, type UnmappedState } from './columnEdits';
 

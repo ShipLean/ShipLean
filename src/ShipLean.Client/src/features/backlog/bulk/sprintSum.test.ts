@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
-import type { VelocityDto } from '../../../api/sprints';
-import type { BacklogSectionDto } from '../../../api/views';
+import type { VelocityDto } from '@shiplean/core/api/sprints';
+import type { BacklogSectionDto } from '@shiplean/core/api/views';
 import { itemRow } from '../ct/fixtures';
 import { sprintSum } from './sprintSum';
 

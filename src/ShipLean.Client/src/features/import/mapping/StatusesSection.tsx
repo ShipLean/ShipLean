@@ -1,5 +1,5 @@
-import type { ImportMappingDto } from '../../../api/import';
-import type { StateDto } from '../../../api/projects';
+import type { ImportMappingDto } from '@shiplean/core/api/import';
+import type { StateDto } from '@shiplean/core/api/projects';
 import { TypeIcon } from '../../../components/TypeIcon';
 import { importTestIds as ids } from '../testIds';
 import { StatusRow } from './StatusRow';

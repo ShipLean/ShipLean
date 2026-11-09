@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import type { MountResult } from '@playwright/experimental-ct-react';
 import type { Page } from 'playwright';
-import type { ImportMappingDto } from '../../../api/import';
+import type { ImportMappingDto } from '@shiplean/core/api/import';
 import { ImportStepper } from '../stepper/ImportStepper';
 import {
   connection,

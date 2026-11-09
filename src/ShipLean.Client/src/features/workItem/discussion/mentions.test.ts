@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { UserRef } from '../../../api/refs';
+import type { UserRef } from '@shiplean/core/api/refs';
 import { applyMention, mentionAt, suggestMentions } from './mentions';
 
 const person = (id: string, name: string): UserRef => ({

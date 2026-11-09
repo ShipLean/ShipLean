@@ -1,6 +1,6 @@
 import { Fragment, useMemo } from 'react';
-import type { WorkItemTypeId } from '../../../api/refs';
-import type { BacklogRowDto } from '../../../api/views';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import { BACKLOG_COLUMNS, type BacklogColumnId } from '../backlogApi';
 import { backlogTestIds as ids } from '../testIds';
 import { SelectAllCell } from '../selection/SelectAllCell';

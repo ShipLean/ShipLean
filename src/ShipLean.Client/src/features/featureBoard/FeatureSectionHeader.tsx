@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import type { FeatureBoardSectionDto } from '../../api/views';
+import type { FeatureBoardSectionDto } from '@shiplean/core/api/views';
 import { StateDot } from '../../components/StateDot';
 import { TypeIcon } from '../../components/TypeIcon';
 import { routePath } from '../../routes';

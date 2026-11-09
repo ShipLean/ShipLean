@@ -1,4 +1,4 @@
-import type { OriginalSystemDto } from '../../../api/workItems';
+import type { OriginalSystemDto } from '@shiplean/core/api/workItems';
 import { workItemTestIds as ids } from '../testIds';
 
 // Where an imported item came from: the system, the item's id there, a link to it when the import kept one and that link's host.

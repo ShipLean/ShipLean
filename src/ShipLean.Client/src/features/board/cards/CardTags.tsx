@@ -1,4 +1,4 @@
-import type { CardTagDto } from '../../../api/views';
+import type { CardTagDto } from '@shiplean/core/api/views';
 import { boardTestIds as ids } from '../testIds';
 import { tagStyle } from './cardStyle';
 

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { BoardLevel, BoardSettingsDto, BoardSettingsPut } from '../../../api/boards';
-import type { TransitionJson } from '../../../api/persisted';
+import type { BoardLevel, BoardSettingsDto, BoardSettingsPut } from '@shiplean/core/api/boards';
+import type { TransitionJson } from '@shiplean/core/api/persisted';
 import { settingsDialogTestIds as dialogIds } from '../../settingsDialog/testIds';
 import { BoardSettingsDialog } from '../BoardSettingsDialog';
 import { BOARD_ID, boardSettingsDto, emptySettings, PROJECT_ID } from '../ct/boardSettingsFixtures';

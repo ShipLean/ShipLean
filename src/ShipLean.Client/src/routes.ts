@@ -9,6 +9,7 @@
 //     /profile                    your profile
 //     /import                     Jira import with no project yet (the stepper creates or picks one)
 //     /authorize                  connect an agent  ?request=<id> is the pending authorize request
+//     /mobile/sign-in             confirm signing in the phone app  ?challenge=&state=&device= (no shell)
 //   Project level (everything under /p/:key, the project key; the crumbs start at the key):
 //     /p/:key/backlogs/stories    ?mode=list|planning|tree (list when absent)
 //     /p/:key/backlogs/features   ?mode=list|tree   (the Features level; list when absent)
@@ -100,6 +101,7 @@ export interface RouteParams {
   jiraImport: ProjectParams;
   projectSettings: ProjectParams & { tab: ProjectSettingsTab };
   authorize: Record<string, never>;
+  mobileSignIn: Record<string, never>;
 }
 
 export type RouteId = keyof RouteParams;
@@ -110,6 +112,10 @@ export interface RouteQuery {
   settings?: string;
   returnUrl?: string;
   request?: string;
+  // The phone app's sign-in handoff (core handoff.ts): PKCE challenge, state and the device's name.
+  challenge?: string;
+  state?: string;
+  device?: string;
   // A work item open in a modal over a project page (its key, like SHIP-12). Only project-level routes carry it.
   item?: string;
   // The backlogs open their new-item row (or dialog) with this type, then drop it from the address.
@@ -321,6 +327,12 @@ const routeDefs: { [I in RouteId]: RouteDef<I> } = {
     query: ['request'],
     installLevel: true,
     crumbs: () => ['Connect an agent'],
+  },
+  mobileSignIn: {
+    pattern: '/mobile/sign-in',
+    query: ['challenge', 'state', 'device'],
+    installLevel: true,
+    crumbs: () => ['Sign in to the app'],
   },
 };
 

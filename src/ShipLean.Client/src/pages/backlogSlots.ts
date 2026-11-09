@@ -1,4 +1,4 @@
-import type { ProjectDto } from '../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import type { BacklogMode, Level } from '../routes';
 import type { LevelBacklogSlotProps } from '../slots/LevelBacklogSlot';
 import type { ListModeSlotProps } from '../slots/ListModeSlot';

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { StyleRuleJson } from '../../../api/persisted';
+import type { StyleRuleJson } from '@shiplean/core/api/persisted';
 import { boardTestIds as cardIds } from '../../board/testIds';
 import { settingsDialogTestIds as dialogIds } from '../../settingsDialog/testIds';
 import { BoardSettingsDialog } from '../BoardSettingsDialog';

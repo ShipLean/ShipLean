@@ -1,13 +1,14 @@
-import type { ConnectedAgentDto, ConsentRequestDto } from '../../../api/agents';
+import type { ConnectedAgentDto, ConsentRequestDto } from '@shiplean/core/api/agents';
 import type {
   InstanceProjectDto,
   InstanceSettingsDto,
   ProjectSummaryDto,
-} from '../../../api/projects';
+} from '@shiplean/core/api/projects';
 import type {
   AdminUserDto,
   AdminUsersDto,
 } from '../../../features/settings/instanceUsers/usersAdminApi';
+import { twoDevices } from '../../../features/devices/fixtures';
 import { PEOPLE } from '../shellStub';
 import type { Page } from '../shoot';
 
@@ -232,4 +233,8 @@ export async function stubNewProject(page: Page) {
   await page.route('**/api/users/by-email**', (route) =>
     route.fulfill({ json: { ...PEOPLE.mei } }),
   );
+}
+
+export async function stubDevices(page: Page) {
+  await page.route('**/api/auth/device-sessions', (route) => route.fulfill({ json: twoDevices }));
 }

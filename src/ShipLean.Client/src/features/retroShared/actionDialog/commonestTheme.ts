@@ -1,4 +1,4 @@
-import type { RetroPointDto, RetroThemeRefDto } from '../../../api/retros';
+import type { RetroPointDto, RetroThemeRefDto } from '@shiplean/core/api/retros';
 
 /** The theme most of the points have; a tie goes to the point listed first. Points with no theme are ignored. */
 export function commonestTheme(points: RetroPointDto[]): RetroThemeRefDto | null {

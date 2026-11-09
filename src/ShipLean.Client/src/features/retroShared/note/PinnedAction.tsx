@@ -1,4 +1,4 @@
-import type { RetroActionRefDto } from '../../../api/retros';
+import type { RetroActionRefDto } from '@shiplean/core/api/retros';
 import { StateDot } from '../../../components/StateDot';
 import { TypeIcon } from '../../../components/TypeIcon';
 import { ItemLink } from '../../itemPeek/ItemLink';

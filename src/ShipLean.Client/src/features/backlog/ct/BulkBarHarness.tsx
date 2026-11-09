@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import type { BacklogViewDto } from '../../../api/views';
+import type { BacklogViewDto } from '@shiplean/core/api/views';
 import { backlogKey } from '../../../queries/backlogKeys';
 import { BulkBar } from '../bulk/BulkBar';
 import { BulkRunProvider } from '../bulk/BulkRunProvider';

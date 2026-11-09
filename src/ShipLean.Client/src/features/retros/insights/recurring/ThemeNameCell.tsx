@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ApiRequestError } from '../../../../api/client';
-import type { RetroThemeRefDto } from '../../../../api/retros';
-import { renameRetroTheme } from '../../../../api/retrosApi';
+import { ApiRequestError } from '@shiplean/core/api/client';
+import type { RetroThemeRefDto } from '@shiplean/core/api/retros';
+import { renameRetroTheme } from '@shiplean/core/api/retrosApi';
 import { retrosTestIds as ids } from '../../testIds';
 import { retrosRootKey } from '../../useRetroQueries';
 

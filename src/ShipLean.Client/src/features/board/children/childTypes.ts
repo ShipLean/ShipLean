@@ -1,5 +1,5 @@
-import { WORK_ITEM_TYPE_IDS, type WorkItemTypeId } from '../../../api/refs';
-import { isStoryLevel, typeName } from '../../../api/workItemTypes';
+import { WORK_ITEM_TYPE_IDS, type WorkItemTypeId } from '@shiplean/core/api/refs';
+import { isStoryLevel, typeName } from '@shiplean/core/api/workItemTypes';
 import type { Level } from '../../../routes';
 
 const storyLevel = WORK_ITEM_TYPE_IDS.filter(isStoryLevel).map((type) => ({

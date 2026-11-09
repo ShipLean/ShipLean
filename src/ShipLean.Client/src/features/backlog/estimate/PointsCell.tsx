@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import type { BacklogRowDto } from '../../../api/views';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import { ConflictBanner } from '../../../components/ConflictBanner';
 import { backlogTestIds as ids } from '../testIds';
 import { PointsInput } from './PointsInput';

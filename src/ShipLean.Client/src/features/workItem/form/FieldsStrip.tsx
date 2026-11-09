@@ -1,4 +1,4 @@
-import type { WorkItemDto } from '../../../api/workItems';
+import type { WorkItemDto } from '@shiplean/core/api/workItems';
 import { workItemTestIds as ids } from '../testIds';
 import { AssigneeField } from './AssigneeField';
 import type { Draft, DraftField } from './draft';
@@ -8,7 +8,7 @@ import { PriorityField } from './PriorityField';
 import { SprintField } from './SprintField';
 import { StateField } from './StateField';
 import { TagsField } from './TagsField';
-import { isStoryLevel } from '../../../api/workItemTypes';
+import { isStoryLevel } from '@shiplean/core/api/workItemTypes';
 
 // State, Assignee, Sprint, Story points, Priority, Parent and Tags across the full width.
 export function FieldsStrip({

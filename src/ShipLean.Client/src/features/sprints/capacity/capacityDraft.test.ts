@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
-import type { MemberDto } from '../../../api/projects';
-import type { UserRef } from '../../../api/refs';
-import type { SprintCapacityDto } from '../../../api/sprints';
+import type { MemberDto } from '@shiplean/core/api/projects';
+import type { UserRef } from '@shiplean/core/api/refs';
+import type { SprintCapacityDto } from '@shiplean/core/api/sprints';
 import {
   draftOf,
   draftTotals,

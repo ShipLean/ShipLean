@@ -1,4 +1,4 @@
-import type { RollupCountDto } from '../../../../api/views';
+import type { RollupCountDto } from '@shiplean/core/api/views';
 import type { Level } from '../../../../routes';
 
 type Noun = [singular: string, plural: string];

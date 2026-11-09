@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { ProjectSettingsDto, StateDto } from '../../../api/projects';
-import { WORK_ITEM_TYPE_IDS } from '../../../api/refs';
+import type { ProjectSettingsDto, StateDto } from '@shiplean/core/api/projects';
+import { WORK_ITEM_TYPE_IDS } from '@shiplean/core/api/refs';
 import { changesBetween, parse, rebase, toDraft, toPut, validate } from './model';
 
 const user = { id: 'u1', name: 'Joel', initials: 'J', avatarColour: '#5b6b8c', photoUrl: null };

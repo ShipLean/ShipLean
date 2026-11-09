@@ -3,9 +3,9 @@ import type {
   ImportTypeTarget,
   JiraStatusCategory,
   StatusMappingDto,
-} from '../../../api/import';
-import type { StateDto } from '../../../api/projects';
-import type { StateCategory, UserRef } from '../../../api/refs';
+} from '@shiplean/core/api/import';
+import type { StateDto } from '@shiplean/core/api/projects';
+import type { StateCategory, UserRef } from '@shiplean/core/api/refs';
 
 // Every edit returns a new mapping; the server's totals and warnings stay as read until the run.
 export const typeLabels: Record<ImportTypeTarget, string> = {

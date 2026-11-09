@@ -1,4 +1,4 @@
-import type { LinkCardDto } from '../../../../api/linkCards';
+import type { LinkCardDto } from '@shiplean/core/api/linkCards';
 
 const providerOf = (kind: LinkCardDto['kind']) => (kind.startsWith('gitlab') ? 'GitLab' : 'GitHub');
 

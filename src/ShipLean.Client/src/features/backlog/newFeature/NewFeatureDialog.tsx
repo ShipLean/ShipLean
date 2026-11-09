@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ApiRequestError } from '../../../api/client';
-import type { ProjectDto } from '../../../api/projects';
+import { ApiRequestError } from '@shiplean/core/api/client';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { Dialog } from '../../../components/Dialog';
 import { TypeIcon } from '../../../components/TypeIcon';
 import { routePath } from '../../../routes';

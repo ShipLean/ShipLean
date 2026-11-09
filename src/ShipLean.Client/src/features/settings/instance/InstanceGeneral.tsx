@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { InstanceSettingsDto } from '../../../api/projects';
+import type { InstanceSettingsDto } from '@shiplean/core/api/projects';
 import { settingsTestIds } from '../testIds';
 import { Panel } from '../draft/Panel';
 import { AccessState } from './AccessState';

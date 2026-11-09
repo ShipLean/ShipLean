@@ -1,6 +1,6 @@
-import type { ImportMappingDto, ImportTypeTarget } from '../../../api/import';
-import { IMPORT_TYPE_TARGETS } from '../../../api/import';
-import type { StateDto } from '../../../api/projects';
+import type { ImportMappingDto, ImportTypeTarget } from '@shiplean/core/api/import';
+import { IMPORT_TYPE_TARGETS } from '@shiplean/core/api/import';
+import type { StateDto } from '@shiplean/core/api/projects';
 import { importTestIds as ids } from '../testIds';
 import { NewChip } from './NewChip';
 import { setTypeTarget, typeLabels } from './mappingEdits';

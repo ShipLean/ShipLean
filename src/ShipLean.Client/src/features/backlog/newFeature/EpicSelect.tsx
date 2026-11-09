@@ -1,4 +1,4 @@
-import type { WorkItemDto } from '../../../api/workItems';
+import type { WorkItemDto } from '@shiplean/core/api/workItems';
 import { useWorkItemsOfType } from '../../workItem/workItemApi';
 import { parentTypesOf } from '../../workItem/form/ParentField';
 import { backlogTestIds as ids } from '../testIds';

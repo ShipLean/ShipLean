@@ -1,4 +1,4 @@
-import type { RetroAggregateDto } from '../../../api/retros';
+import type { RetroAggregateDto } from '@shiplean/core/api/retros';
 
 /** How many decidable points are decided, as a bar and "decided/decidable"; "nothing to decide" when there are none. */
 export function DecidedProgress({

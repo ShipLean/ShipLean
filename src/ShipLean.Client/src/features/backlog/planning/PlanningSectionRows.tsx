@@ -1,5 +1,5 @@
 import { Fragment, type ReactNode } from 'react';
-import type { BacklogRowDto, BacklogSectionDto } from '../../../api/views';
+import type { BacklogRowDto, BacklogSectionDto } from '@shiplean/core/api/views';
 import type { BacklogColumnId } from '../backlogApi';
 import { AddBelowRow } from '../add/AddBelowRow';
 import { PlanningRow } from './PlanningRow';

@@ -1,5 +1,5 @@
-import { ApiRequestError } from '../../../api/client';
-import type { WorkItemTypeId } from '../../../api/refs';
+import { ApiRequestError } from '@shiplean/core/api/client';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
 import { useRetroActionDialog } from '../../retroShared/actionDialog/useRetroActionDialog';
 import { RetroQueryState } from '../RetroQueryState';
 import { retrosTestIds as ids } from '../testIds';

@@ -1,8 +1,8 @@
-import { api, sendForm } from '../../api/client';
-import type { MeDto } from '../../api/me';
-import type { HolidayCountryDto } from '../../api/holidays';
-import type { ProjectSettingsDto, ProjectSettingsPut } from '../../api/projects';
-import type { UserRef } from '../../api/refs';
+import { api, sendForm } from '@shiplean/core/api/client';
+import type { MeDto } from '@shiplean/core/api/me';
+import type { HolidayCountryDto } from '@shiplean/core/api/holidays';
+import type { ProjectSettingsDto, ProjectSettingsPut } from '@shiplean/core/api/projects';
+import type { UserRef } from '@shiplean/core/api/refs';
 
 /** Keyed under the project like the rest of its data; a save sets it to the document the server returned. */
 export const projectSettingsKey = (projectId: string) =>

@@ -1,7 +1,7 @@
 import { useState, type FormEvent, type KeyboardEvent } from 'react';
-import type { ProjectDto } from '../../../api/projects';
-import type { SprintDto } from '../../../api/sprints';
-import { ApiRequestError } from '../../../api/client';
+import type { ProjectDto } from '@shiplean/core/api/projects';
+import type { SprintDto } from '@shiplean/core/api/sprints';
+import { ApiRequestError } from '@shiplean/core/api/client';
 import { useSaveSprintGoal } from '../sprintsApi';
 import { sprintsTestIds as ids } from '../testIds';
 

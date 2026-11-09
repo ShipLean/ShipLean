@@ -1,4 +1,4 @@
-import type { BacklogRowDto } from '../../../api/views';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 
 // The pure rules of a selection over the rows the screen shows. `order` is every shown row's id in screen order,
 // across sprint sections; a selection may hold more rows than one action sends.

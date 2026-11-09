@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import type { RetroFeatureRowDto } from '../../../api/retros';
-import { RETRO_CATEGORIES } from '../../../api/retros';
+import type { RetroFeatureRowDto } from '@shiplean/core/api/retros';
+import { RETRO_CATEGORIES } from '@shiplean/core/api/retros';
 import { StateDot } from '../../../components/StateDot';
 import { TypeIcon } from '../../../components/TypeIcon';
 import { routePath } from '../../../routes';

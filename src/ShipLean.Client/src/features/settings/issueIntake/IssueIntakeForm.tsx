@@ -1,7 +1,7 @@
 import { useEffect, useId, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ApiRequestError } from '../../../api/client';
-import type { ProjectDto } from '../../../api/projects';
+import { ApiRequestError } from '@shiplean/core/api/client';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { useProjectMembers } from '../../workItem/workItemApi';
 import { Panel } from '../draft/Panel';
 import { settingsTestIds as ids } from '../testIds';

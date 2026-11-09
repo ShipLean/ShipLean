@@ -1,7 +1,7 @@
 import { Avatar } from '../../../../components/Avatar';
 import { Chip } from '../../../../components/Chip';
 import { TypeIcon } from '../../../../components/TypeIcon';
-import type { RetroPointDto } from '../../../../api/retros';
+import type { RetroPointDto } from '@shiplean/core/api/retros';
 import { retroCategoryColours, retroCategoryLabels } from '../../../retroShared/retroCategories';
 import { retrosTestIds as ids } from '../../testIds';
 import { Highlight } from './Highlight';

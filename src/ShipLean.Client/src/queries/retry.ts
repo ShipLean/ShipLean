@@ -1,4 +1,4 @@
-import { ApiRequestError } from '../api/client';
+import { ApiRequestError } from '@shiplean/core/api/client';
 
 const MAX_RETRIES = 3;
 

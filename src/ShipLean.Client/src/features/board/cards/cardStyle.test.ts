@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { StyleRuleJson } from '../../../api/persisted';
+import type { StyleRuleJson } from '@shiplean/core/api/persisted';
 import { pointsText, ruleCardStyle, ruleTitleStyle, tagStyle, visibleRollups } from './cardStyle';
 
 const rule = (overrides: Partial<StyleRuleJson>): StyleRuleJson => ({

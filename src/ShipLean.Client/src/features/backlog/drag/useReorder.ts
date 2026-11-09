@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useQueryClient, type QueryKey } from '@tanstack/react-query';
-import { api } from '../../../api/client';
-import { conflictOf, type ReorderRequest } from '../../../api/workItems';
-import type { BacklogViewDto } from '../../../api/views';
+import { api } from '@shiplean/core/api/client';
+import { conflictOf, type ReorderRequest } from '@shiplean/core/api/workItems';
+import type { BacklogViewDto } from '@shiplean/core/api/views';
 import { showToast } from '../../../components/toastStore';
 import { backlogRootKey } from '../backlogApi';
 

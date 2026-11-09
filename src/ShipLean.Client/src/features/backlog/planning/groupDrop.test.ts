@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { itemRow } from '../ct/fixtures';
 import { groupDropOnRow, groupDropOnSection, groupPlan, landsOnSelection } from './groupDrop';
-import type { BacklogSectionDto } from '../../../api/views';
+import type { BacklogSectionDto } from '@shiplean/core/api/views';
 
 const sprint = { id: 'sp1', name: 'Sprint 1', status: 'future' } as const;
 const rows = ['a', 'b', 'c', 'd'].map((k, i) => itemRow({ key: `K-${k}`, rank: i + 1 }));

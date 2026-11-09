@@ -1,5 +1,5 @@
-import type { UserRef } from '../../../api/refs';
-import type { CardDto, TaskboardCellDto } from '../../../api/views';
+import type { UserRef } from '@shiplean/core/api/refs';
+import type { CardDto, TaskboardCellDto } from '@shiplean/core/api/views';
 import type { TaskboardGridView } from '../taskboardGridView';
 import type { TaskboardGrouping } from '../taskboardApi';
 

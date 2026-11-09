@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../../api/client';
-import type { InstanceProjectDto, InstanceSettingsDto } from '../../../api/projects';
+import { api } from '@shiplean/core/api/client';
+import type { InstanceProjectDto, InstanceSettingsDto } from '@shiplean/core/api/projects';
 import { registerInvalidation } from '../../../realtime';
 import type { SettingsEdit } from './model';
 import { instanceUsersKey } from '../instanceUsers/usersAdminApi';

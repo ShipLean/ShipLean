@@ -1,5 +1,5 @@
 import { settingsTestIds } from '../testIds';
-import type { InstanceProjectDto } from '../../../api/projects';
+import type { InstanceProjectDto } from '@shiplean/core/api/projects';
 
 /** One flagged project: nobody active can change its settings or members until an admin is made. */
 export function NoAdminBanner({

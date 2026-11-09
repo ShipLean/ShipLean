@@ -1,4 +1,4 @@
-import type { LinkCardsDto } from '../../../../api/linkCards';
+import type { LinkCardsDto } from '@shiplean/core/api/linkCards';
 import { LinkGroup } from './LinkGroup';
 import { WorkItemLinkRow } from './WorkItemLinkRow';
 

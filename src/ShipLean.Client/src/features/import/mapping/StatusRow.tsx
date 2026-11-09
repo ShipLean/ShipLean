@@ -1,7 +1,7 @@
-import type { ImportMappingDto, StatusMappingDto } from '../../../api/import';
-import type { StateDto } from '../../../api/projects';
-import { STATE_CATEGORIES } from '../../../api/refs';
-import type { StateCategory } from '../../../api/refs';
+import type { ImportMappingDto, StatusMappingDto } from '@shiplean/core/api/import';
+import type { StateDto } from '@shiplean/core/api/projects';
+import { STATE_CATEGORIES } from '@shiplean/core/api/refs';
+import type { StateCategory } from '@shiplean/core/api/refs';
 import { StateDot } from '../../../components/StateDot';
 import { importTestIds as ids } from '../testIds';
 import { NewChip } from './NewChip';

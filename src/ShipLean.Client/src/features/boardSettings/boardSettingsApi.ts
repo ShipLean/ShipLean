@@ -1,7 +1,11 @@
 import type { QueryClient } from '@tanstack/react-query';
-import type { BoardSettingsDto, BoardSettingsPut, BoardSettingsPutResult } from '../../api/boards';
-import type { BoardSettingsJson } from '../../api/persisted';
-import { api, ApiRequestError } from '../../api/client';
+import type {
+  BoardSettingsDto,
+  BoardSettingsPut,
+  BoardSettingsPutResult,
+} from '@shiplean/core/api/boards';
+import type { BoardSettingsJson } from '@shiplean/core/api/persisted';
+import { api, ApiRequestError } from '@shiplean/core/api/client';
 import type { SaveOutcome } from '../../components/SettingsDialog/types';
 import { boardRootKey } from '../board/boardApi';
 

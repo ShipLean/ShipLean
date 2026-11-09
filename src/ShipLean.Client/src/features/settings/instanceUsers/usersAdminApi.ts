@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../../api/client';
-import type { ProjectRole } from '../../../api/projects';
-import type { OneTimePasswordDto, UserStatus } from '../../../api/users';
+import { api } from '@shiplean/core/api/client';
+import type { ProjectRole } from '@shiplean/core/api/projects';
+import type { OneTimePasswordDto, UserStatus } from '@shiplean/core/api/users';
 import { meKey } from '../../../queries/shared';
 import { registerInvalidation } from '../../../realtime';
 

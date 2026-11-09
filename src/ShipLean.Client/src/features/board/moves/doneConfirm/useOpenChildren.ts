@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../../../api/client';
-import type { ChildSummaryDto } from '../../../../api/workItems';
+import { api } from '@shiplean/core/api/client';
+import type { ChildSummaryDto } from '@shiplean/core/api/workItems';
 import { registerInvalidation } from '../../../../realtime';
 
 /** Everything below a card that is neither completed nor removed. Tasks are no part of a Feature's or Epic's roll-ups. */

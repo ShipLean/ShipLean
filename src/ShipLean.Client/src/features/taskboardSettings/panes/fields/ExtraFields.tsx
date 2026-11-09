@@ -1,4 +1,4 @@
-import type { CardFieldSettingJson } from '../../../../api/persisted';
+import type { CardFieldSettingJson } from '@shiplean/core/api/persisted';
 import { Chip } from '../../../../components/Chip';
 import {
   addExtra,

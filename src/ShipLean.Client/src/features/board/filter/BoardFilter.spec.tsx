@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { BoardViewDto } from '../../../api/views';
+import type { BoardViewDto } from '@shiplean/core/api/views';
 import { BoardHarness } from '../ct/BoardHarness';
 import { COLUMNS, TOM, column, featuresBoard, storiesBoard } from '../ct/fixtures';
 import { stubBoard } from '../ct/stubApi';

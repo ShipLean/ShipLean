@@ -1,8 +1,8 @@
 import { useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
-import { BULK_MAX_ROWS } from '../../../api/backlogWrites';
-import type { SprintRef } from '../../../api/refs';
-import type { VelocityDto } from '../../../api/sprints';
-import type { BacklogRowDto, BacklogSectionDto } from '../../../api/views';
+import { BULK_MAX_ROWS } from '@shiplean/core/api/backlogWrites';
+import type { SprintRef } from '@shiplean/core/api/refs';
+import type { VelocityDto } from '@shiplean/core/api/sprints';
+import type { BacklogRowDto, BacklogSectionDto } from '@shiplean/core/api/views';
 import { moveToSprintPlan } from '../bulk/movePlan';
 import { sprintSum, type SprintSum } from '../bulk/sprintSum';
 import { useBulkRunner } from '../bulk/useBulkRun';

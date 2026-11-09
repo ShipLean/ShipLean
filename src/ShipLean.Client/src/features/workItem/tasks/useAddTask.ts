@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { WorkItemDto } from '../../../api/workItems';
+import type { WorkItemDto } from '@shiplean/core/api/workItems';
 import { useInvalidateBacklog } from '../useInvalidateBacklog';
 import { createWorkItem, workItemKey } from '../workItemApi';
 

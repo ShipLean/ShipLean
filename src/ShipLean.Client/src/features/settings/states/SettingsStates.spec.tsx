@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { ProjectSettingsDto, ProjectSettingsPut, StateDto } from '../../../api/projects';
+import type { ProjectSettingsDto, ProjectSettingsPut, StateDto } from '@shiplean/core/api/projects';
 import { componentTestIds } from '../../../components/testIds';
 import { PROJECT_ID } from '../draft/ct/projectDto';
 import { StatesHarness } from '../ct/StatesHarness';

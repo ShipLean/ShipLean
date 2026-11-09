@@ -1,5 +1,5 @@
-import type { RetroFeatureRowDto } from '../../../api/retros';
-import { RETRO_CATEGORIES } from '../../../api/retros';
+import type { RetroFeatureRowDto } from '@shiplean/core/api/retros';
+import { RETRO_CATEGORIES } from '@shiplean/core/api/retros';
 import { retrosTestIds as ids } from '../testIds';
 import { CategoryHead } from './CategoryHead';
 import { FeatureRow } from './FeatureRow';

@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../api/client';
-import type { WorkItemCreate, WriteResult } from '../../api/workItems';
-import type { BacklogViewDto } from '../../api/views';
+import { api } from '@shiplean/core/api/client';
+import type { WorkItemCreate, WriteResult } from '@shiplean/core/api/workItems';
+import type { BacklogViewDto } from '@shiplean/core/api/views';
 import { registerInvalidation } from '../../realtime';
 import { fetchPreference, preferenceKey } from '../../queries/shared';
 import type { BacklogMode, Level } from '../../routes';

@@ -3,7 +3,7 @@ import { act } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { createRoot } from 'react-dom/client';
 import { beforeEach, expect, test, vi } from 'vitest';
-import type { ProjectDto } from '../../../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { importJobsKey, jiraProjectsKey } from '../importApi';
 import { projectByKeyKey } from '../../../queries/shared';
 

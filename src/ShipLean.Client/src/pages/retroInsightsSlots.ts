@@ -1,4 +1,4 @@
-import type { ProjectDto } from '../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import type { RetroInsightsSlotProps } from '../slots/RetroInsightsSlot';
 
 // Retrospectives › Insights is one slot.

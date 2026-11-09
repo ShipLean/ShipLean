@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import type { StateDto } from '../../../api/projects';
-import type { WorkItemDto } from '../../../api/workItems';
+import type { StateDto } from '@shiplean/core/api/projects';
+import type { WorkItemDto } from '@shiplean/core/api/workItems';
 import { StateDot } from '../../../components/StateDot';
 import { StateMenu } from '../../../components/StateMenu';
 import { sprintsTestIds as ids } from '../testIds';

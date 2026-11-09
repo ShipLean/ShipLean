@@ -1,8 +1,8 @@
-import type { BoardViewDto } from '../../../api/views';
-import type { UserRef } from '../../../api/refs';
-import type { MemberDto } from '../../../api/projects';
-import type { SprintDto } from '../../../api/sprints';
-import type { ChildSummaryDto, WorkItemCreate, WriteResult } from '../../../api/workItems';
+import type { BoardViewDto } from '@shiplean/core/api/views';
+import type { UserRef } from '@shiplean/core/api/refs';
+import type { MemberDto } from '@shiplean/core/api/projects';
+import type { SprintDto } from '@shiplean/core/api/sprints';
+import type { ChildSummaryDto, WorkItemCreate, WriteResult } from '@shiplean/core/api/workItems';
 import type { BoardMoveRequest } from '../boardApi';
 import { BOARD_ID } from './fixtures';
 

@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import type { RolloverItemDto } from '../../../api/sprints';
+import type { RolloverItemDto } from '@shiplean/core/api/sprints';
 import {
   defaultChoices,
   destinationOf,

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { SprintDemoDto } from '../../../api/demos';
+import type { SprintDemoDto } from '@shiplean/core/api/demos';
 import { ToastHost } from '../../../components/ToastHost';
 import { DemoStatusBand } from '../DemoStatusBand';
 import { newPlayerHandle } from '../playerHandle';

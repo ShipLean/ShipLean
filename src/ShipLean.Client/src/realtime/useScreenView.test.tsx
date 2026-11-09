@@ -5,7 +5,7 @@ import type { BacklogMode, RouteId } from '../routes';
 
 const postScreenView =
   vi.fn<(body: { screen: string; projectId: string | null; mode?: string }) => Promise<void>>();
-vi.mock('../api/usageApi', () => ({ postScreenView }));
+vi.mock('@shiplean/core/api/usageApi', () => ({ postScreenView }));
 
 const { useScreenView } = await import('./useScreenView');
 

@@ -1,4 +1,4 @@
-import type { WorkItemCreate } from '../../../../api/workItems';
+import type { WorkItemCreate } from '@shiplean/core/api/workItems';
 import type { SlugCheck } from '../newFeatureApi';
 
 // The part of Playwright's Page and Route these stubs use (the CT package does not re-export the types).

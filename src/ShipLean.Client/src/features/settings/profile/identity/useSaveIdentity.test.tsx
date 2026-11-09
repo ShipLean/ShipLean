@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, expect, test, vi } from 'vitest';
-import type { MeDto } from '../../../../api/me';
+import type { MeDto } from '@shiplean/core/api/me';
 import { projectMembersKey, meKey } from '../../../../queries/shared';
 import { useSaveIdentity } from './useSaveIdentity';
 

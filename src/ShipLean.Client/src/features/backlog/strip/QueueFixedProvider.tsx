@@ -1,6 +1,6 @@
 import { useMemo, type ReactNode } from 'react';
-import type { BacklogReviewDto } from '../../../api/backlogWrites';
-import type { BacklogRowDto } from '../../../api/views';
+import type { BacklogReviewDto } from '@shiplean/core/api/backlogWrites';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import type { CheckQueue } from './useCheckQueue';
 import { QueueFixedContext, type QueueFixed } from './queueFixed';
 

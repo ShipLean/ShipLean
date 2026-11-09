@@ -1,4 +1,4 @@
-import type { ImportCounts } from '../../../api/persisted';
+import type { ImportCounts } from '@shiplean/core/api/persisted';
 import { importTestIds as ids } from '../testIds';
 
 const labels: Record<keyof ImportCounts, string> = {

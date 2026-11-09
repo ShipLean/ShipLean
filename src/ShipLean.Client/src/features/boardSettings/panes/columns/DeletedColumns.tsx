@@ -1,4 +1,4 @@
-import type { BoardColumnJson } from '../../../../api/persisted';
+import type { BoardColumnJson } from '@shiplean/core/api/persisted';
 import { boardSettingsTestIds as ids } from '../../testIds';
 
 export interface DeletedColumn {

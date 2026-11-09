@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
-import type { ProjectDto } from '../api/projects';
-import type { UserRef } from '../api/refs';
-import type { FeatureBoardViewDto } from '../api/views';
+import type { ProjectDto } from '@shiplean/core/api/projects';
+import type { UserRef } from '@shiplean/core/api/refs';
+import type { FeatureBoardViewDto } from '@shiplean/core/api/views';
 import { useFeatureBoard } from '../features/featureBoard/featureBoardApi';
 import { featureBoardLayout, featureOfStory } from '../features/featureBoard/featureBoardLayout';
 import { FeatureBoardHeader } from '../features/featureBoard/FeatureBoardHeader';

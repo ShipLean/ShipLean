@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { ProjectDto } from '../../../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { BACKLOG_COLUMNS, type BacklogColumnId } from '../backlogApi';
 import { ReorderConflict } from '../drag/ReorderConflict';
 import type { useReorder } from '../drag/useReorder';

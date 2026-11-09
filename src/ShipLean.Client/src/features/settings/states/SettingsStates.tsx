@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { Fragment, useContext, useEffect, useState } from 'react';
-import type { StateDto } from '../../../api/projects';
-import { WORK_ITEM_TYPE_IDS, type WorkItemTypeId } from '../../../api/refs';
+import type { StateDto } from '@shiplean/core/api/projects';
+import { WORK_ITEM_TYPE_IDS, type WorkItemTypeId } from '@shiplean/core/api/refs';
 import { registerInvalidation } from '../../../realtime';
 import { showToast } from '../../../components/toastStore';
 import { SettingsDraftContext } from '../draft/LoadedSettings';

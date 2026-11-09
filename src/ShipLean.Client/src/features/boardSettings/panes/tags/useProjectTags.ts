@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { api } from '../../../../api/client';
+import { api } from '@shiplean/core/api/client';
 import { registerInvalidation } from '../../../../realtime';
 
 export const projectTagsKey = (projectId: string) => ['projects', projectId, 'tags'] as const;

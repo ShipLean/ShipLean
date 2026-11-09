@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import type { BacklogViewDto } from '../../../api/views';
+import type { BacklogViewDto } from '@shiplean/core/api/views';
 import { backlogRootKey } from '../../../queries/backlogKeys';
 import { useBacklogAdd } from '../bulk/useBacklogAdd';
 import { useSelection } from '../selection/useSelection';

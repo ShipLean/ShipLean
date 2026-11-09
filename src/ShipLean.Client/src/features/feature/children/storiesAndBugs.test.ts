@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
-import type { WorkItemTypeId } from '../../../api/refs';
-import type { ChildSummaryDto } from '../../../api/workItems';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
+import type { ChildSummaryDto } from '@shiplean/core/api/workItems';
 import { closedCount, storiesAndBugsOf } from './storiesAndBugs';
 
 const child = (key: string, type: WorkItemTypeId, category = 'proposed') =>

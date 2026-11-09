@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import type { UserRef } from '../../../../api/refs';
+import type { UserRef } from '@shiplean/core/api/refs';
 import { applyIssueIntakeSave, issueIntakeSample } from './issueIntakeStub';
 
 const tom: UserRef = {

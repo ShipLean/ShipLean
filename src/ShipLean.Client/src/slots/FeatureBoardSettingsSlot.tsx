@@ -1,4 +1,4 @@
-import type { ProjectDto } from '../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { useFeatureBoard } from '../features/featureBoard/featureBoardApi';
 import { pagesTestIds } from '../features/pages/testIds';
 import type { TaskboardScope } from '../features/taskboard/taskboardScope';

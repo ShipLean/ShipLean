@@ -1,4 +1,4 @@
-import type { BoardColumnDto } from '../../../api/views';
+import type { BoardColumnDto } from '@shiplean/core/api/views';
 import type { BoardFilterQuery } from '../boardApi';
 
 /** The value that stands for "no one" (assignee, owner) or "none" (sprint, epic) in a filter. */

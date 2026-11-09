@@ -1,4 +1,4 @@
-import type { ProjectDto } from '../../../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { newClause } from '../../../criteria/defaultClause';
 import { useBacklogFilter } from '../filter/useBacklogFilter';
 import { columnsOf, type LevelBacklogLevel } from './levelColumns';

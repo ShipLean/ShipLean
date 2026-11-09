@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../api/client';
+import { api } from '@shiplean/core/api/client';
 import type {
   ImportJobDto,
   ImportMappingDto,
@@ -8,8 +8,8 @@ import type {
   JiraConnectionPut,
   JiraProjectDto,
   JiraTestResultDto,
-} from '../../api/import';
-import type { KeyCheckDto, ProjectCreate, ProjectDto } from '../../api/projects';
+} from '@shiplean/core/api/import';
+import type { KeyCheckDto, ProjectCreate, ProjectDto } from '@shiplean/core/api/projects';
 import { registerInvalidation } from '../../realtime';
 
 // The Jira import's react-query keys and calls. Project data is keyed under ['projects', projectId, 'import', …].

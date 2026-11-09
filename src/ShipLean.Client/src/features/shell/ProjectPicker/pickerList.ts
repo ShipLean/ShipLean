@@ -1,4 +1,4 @@
-import type { ProjectSummaryDto } from '../../../api/projects';
+import type { ProjectSummaryDto } from '@shiplean/core/api/projects';
 
 export interface PickerGroup {
   // Absent while searching: a flat list of matches.

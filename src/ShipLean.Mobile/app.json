@@ -1,0 +1,56 @@
+{
+  "expo": {
+    "name": "ShipLean",
+    "slug": "shiplean",
+    "scheme": "shiplean",
+    "version": "0.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "icon": "./assets/ios-icon.png",
+    "ios": {
+      "bundleIdentifier": "app.shiplean.mobile",
+      "supportsTablet": false,
+      "icon": {
+        "light": "./assets/ios-icon.png",
+        "dark": "./assets/ios-icon-dark.png",
+        "tinted": "./assets/ios-icon-tinted.png"
+      },
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsLocalNetworking": true
+        }
+      }
+    },
+    "android": {
+      "package": "app.shiplean.mobile",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/android-adaptive-foreground.png",
+        "backgroundImage": "./assets/android-adaptive-background.png",
+        "monochromeImage": "./assets/android-monochrome.png"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#f7f9fd",
+          "dark": {
+            "image": "./assets/splash-icon-dark.png",
+            "backgroundColor": "#171e2d"
+          }
+        }
+      ],
+      "expo-status-bar",
+      "expo-secure-store",
+      "expo-sqlite",
+      "expo-web-browser"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

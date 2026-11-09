@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { StateDto } from '../../../api/projects';
-import type { WorkItemPatch } from '../../../api/workItems';
+import type { StateDto } from '@shiplean/core/api/projects';
+import type { WorkItemPatch } from '@shiplean/core/api/workItems';
 import { priya } from '../../workItem/ct/fixtures';
 import { stubApi } from '../../workItem/ct/stubApi';
 import { stubComments } from '../../workItem/ct/stubDetails';

@@ -1,7 +1,7 @@
 import { useContext, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import type { BacklogRowDto } from '../../../api/views';
-import { conflictOf } from '../../../api/workItems';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
+import { conflictOf } from '@shiplean/core/api/workItems';
 import { showToast } from '../../../components/toastStore';
 import { patchWorkItem } from '../../workItem/workItemApi';
 import { changesOf } from '../bulk/changesOf';

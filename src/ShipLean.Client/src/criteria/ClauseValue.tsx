@@ -1,4 +1,4 @@
-import type { CriteriaClause, CriteriaValue, FieldDefinition } from '../api/persisted';
+import type { CriteriaClause, CriteriaValue, FieldDefinition } from '@shiplean/core/api/persisted';
 import { criteriaTestIds } from '../features/criteria/testIds';
 import { FreeListInput } from './FreeListInput';
 import { InValuePicker } from './InValuePicker';

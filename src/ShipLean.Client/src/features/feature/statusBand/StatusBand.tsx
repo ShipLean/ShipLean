@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ApiRequestError } from '../../../api/client';
-import { conflictOf } from '../../../api/workItems';
+import { ApiRequestError } from '@shiplean/core/api/client';
+import { conflictOf } from '@shiplean/core/api/workItems';
 import { StateDot } from '../../../components/StateDot';
 import { cacheIfNewer } from '../../workItem/form/cacheIfNewer';
 import { workItemHistoryKey, workItemKey } from '../../workItem/workItemApi';

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { RetroPointDto } from '../../../../api/retros';
+import type { RetroPointDto } from '@shiplean/core/api/retros';
 import { RetroBoard } from '../../../retroShared/board/RetroBoard';
 import type { SprintRetroSlotProps } from '../SprintRetroSlotProps';
 import { FeatureRetroCallout } from './byCategory/FeatureRetroCallout';

@@ -1,4 +1,4 @@
-import type { AutoLinkDto, LinkCardDto } from '../../../api/workItems';
+import type { AutoLinkDto, LinkCardDto } from '@shiplean/core/api/workItems';
 import { workItemTestIds as ids } from '../testIds';
 
 const stateLabels: Record<LinkCardDto['state'], string> = {

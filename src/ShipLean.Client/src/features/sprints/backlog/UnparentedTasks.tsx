@@ -1,4 +1,4 @@
-import type { WorkItemDto } from '../../../api/workItems';
+import type { WorkItemDto } from '@shiplean/core/api/workItems';
 import { sprintsTestIds as ids } from '../testIds';
 import type { StateChanger } from './RowStateMenu';
 import { TaskRow } from './TaskRow';

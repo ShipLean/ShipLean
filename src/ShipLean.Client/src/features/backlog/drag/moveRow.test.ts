@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import type { BacklogRowDto } from '../../../api/views';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import { backlogView, itemRow } from '../ct/fixtures';
 import { moveRow } from './useReorder';
 

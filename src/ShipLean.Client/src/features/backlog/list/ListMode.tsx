@@ -1,4 +1,4 @@
-import type { ProjectDto } from '../../../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { BulkRunProvider } from '../bulk/BulkRunProvider';
 import { ListCommandsProvider } from '../commands/listCommands';
 import { useBacklogFilter } from '../filter/useBacklogFilter';

@@ -1,6 +1,11 @@
 import { useState } from 'react';
-import type { CriteriaValidationError } from '../api/criteria';
-import type { CriteriaClause, CriteriaJson, CriteriaMatch, FieldId } from '../api/persisted';
+import type { CriteriaValidationError } from '@shiplean/core/api/criteria';
+import type {
+  CriteriaClause,
+  CriteriaJson,
+  CriteriaMatch,
+  FieldId,
+} from '@shiplean/core/api/persisted';
 import { criteriaTestIds } from '../features/criteria/testIds';
 import { CriteriaChips } from './CriteriaChips';
 import { ClauseRow } from './ClauseRow';

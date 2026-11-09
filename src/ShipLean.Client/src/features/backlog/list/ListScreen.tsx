@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import type { ProjectDto } from '../../../api/projects';
-import { isStoryLevel } from '../../../api/workItemTypes';
+import type { ProjectDto } from '@shiplean/core/api/projects';
+import { isStoryLevel } from '@shiplean/core/api/workItemTypes';
 import { NEW_ITEM_KINDS, type NewItemKind } from '../../../routes';
 import { AddBelowProvider } from '../add/AddBelowProvider';
 import { AddManyButton } from '../add/AddManyButton';

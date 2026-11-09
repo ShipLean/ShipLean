@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { BoardLevel, BoardSettingsDto, BoardSettingsPut } from '../../../../api/boards';
-import type { SwimlaneJson } from '../../../../api/persisted';
+import type { BoardLevel, BoardSettingsDto, BoardSettingsPut } from '@shiplean/core/api/boards';
+import type { SwimlaneJson } from '@shiplean/core/api/persisted';
 import { criteriaTestIds } from '../../../criteria/testIds';
 import { settingsDialogTestIds as dialogIds } from '../../../settingsDialog/testIds';
 import { BoardSettingsDialog } from '../../BoardSettingsDialog';

@@ -1,7 +1,7 @@
 import { createContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { ProjectDto, ProjectSettingsDto } from '../../../api/projects';
-import type { WorkItemTypeId } from '../../../api/refs';
+import type { ProjectDto, ProjectSettingsDto } from '@shiplean/core/api/projects';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
 import { routePath, type ProjectSettingsTab } from '../../../routes';
 import { settingsTestIds } from '../testIds';
 import { GeneralTab } from './GeneralTab';

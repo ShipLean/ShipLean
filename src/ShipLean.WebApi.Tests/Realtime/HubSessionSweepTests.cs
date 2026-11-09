@@ -6,6 +6,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Time.Testing;
 using Npgsql;
+using ShipLean.Application.Fakes.DeviceSessions;
 using ShipLean.Application.Identity;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.WebApi.Features.Auth;
@@ -72,7 +73,7 @@ public class HubSessionSweepTests
     private static (HubSessionSweep Sweep, HubConnections Connections) Arrange(TimeProvider clock, StubSessions? sessions = null)
     {
         var connections = new HubConnections();
-        var check = new HubSessionCheck(sessions ?? new StubSessions());
+        var check = new HubSessionCheck(sessions ?? new StubSessions(), new InMemoryDeviceSessions(), clock);
         // No connection joins a project here, so the membership half of the sweep has nothing to read.
         var members = new ProjectGroupMembers(new FakeHubContext(new RecordingGroups()), new PresenceTracker(new NullBus()));
         var membership = new HubMembership(NpgsqlDataSource.Create("Host=localhost"));

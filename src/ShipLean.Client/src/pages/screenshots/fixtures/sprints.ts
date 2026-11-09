@@ -6,10 +6,10 @@ import type {
   SprintDto,
   SprintMetricsDto,
   VelocityDto,
-} from '../../../api/sprints';
-import type { StateDto } from '../../../api/projects';
-import type { StateCategory, UserRef } from '../../../api/refs';
-import type { ChildSummaryDto, WorkItemDto } from '../../../api/workItems';
+} from '@shiplean/core/api/sprints';
+import type { StateDto } from '@shiplean/core/api/projects';
+import type { StateCategory, UserRef } from '@shiplean/core/api/refs';
+import type { ChildSummaryDto, WorkItemDto } from '@shiplean/core/api/workItems';
 import { PEOPLE, SHELL_SPRINTS } from '../shellStub';
 import type { Page } from '../shoot';
 

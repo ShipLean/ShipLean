@@ -1,4 +1,4 @@
-import type { ProjectCreation } from '../../../api/projects';
+import type { ProjectCreation } from '@shiplean/core/api/projects';
 import { settingsTestIds } from '../testIds';
 
 const options: { value: ProjectCreation; label: string; testId: string }[] = [

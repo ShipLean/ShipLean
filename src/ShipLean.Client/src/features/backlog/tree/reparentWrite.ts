@@ -1,5 +1,5 @@
-import { api } from '../../../api/client';
-import type { ReorderRequest, WorkItemChanges, WriteResult } from '../../../api/workItems';
+import { api } from '@shiplean/core/api/client';
+import type { ReorderRequest, WorkItemChanges, WriteResult } from '@shiplean/core/api/workItems';
 
 const NO_CHANGES: WorkItemChanges = {
   title: null,

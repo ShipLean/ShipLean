@@ -1,4 +1,4 @@
-import type { BoardCellDto, BoardColumnDto, BoardViewDto, CardDto } from '../../../api/views';
+import type { BoardCellDto, BoardColumnDto, BoardViewDto, CardDto } from '@shiplean/core/api/views';
 
 /** Where a card sits, or is dropped: a lane, a column, and its Doing (false) or Done (true) half. */
 export interface Place {

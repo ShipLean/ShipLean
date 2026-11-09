@@ -1,5 +1,5 @@
 import { useCallback, useState, type ReactNode } from 'react';
-import type { WorkItemTypeId } from '../../../api/refs';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
 import { PasteReview } from './PasteReview';
 import { PasteContext } from './usePasteIntake';
 

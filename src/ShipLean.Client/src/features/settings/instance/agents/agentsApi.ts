@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../../../api/client';
+import { api } from '@shiplean/core/api/client';
 import type { AgentConnectionDto, AgentConnectionIssuedDto, AgentConnectionPut } from './model';
 
 export const agentConnectionsKey = ['instance', 'agent-connections'] as const;

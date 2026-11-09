@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { ProjectDemoBrandDto } from '../../../../api/demos';
+import type { ProjectDemoBrandDto } from '@shiplean/core/api/demos';
 import { showToast } from '../../../../components/toastStore';
 import { useSaveDemoTokens } from '../../../demos/demosApi';
 import { demosTestIds as ids } from '../../../demos/testIds';

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { InstanceSettingsDto } from '../../../api/projects';
+import type { InstanceSettingsDto } from '@shiplean/core/api/projects';
 import { settingsTestIds as ids } from '../testIds';
 import { InstanceGeneral } from './InstanceGeneral';
 

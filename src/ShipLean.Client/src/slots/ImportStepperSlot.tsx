@@ -1,4 +1,4 @@
-import type { ProjectDto } from '../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { CreateProjectFirst } from '../features/import/stepper/CreateProjectFirst';
 import { ImportStepper } from '../features/import/stepper/ImportStepper';
 import { pagesTestIds } from '../features/pages/testIds';

@@ -1,0 +1,28 @@
+{
+  "session": {
+    "id": "5a05fee2-97ad-4bb6-90c5-09e150bf3a49",
+    "name": "Joel's iPad",
+    "tokenPrefix": "shl_dev_Vn4cH8sE",
+    "createdAt": "2026-10-24T12:00:00Z",
+    "createdLabel": "24 Oct",
+    "lastUsedAt": "2026-10-24T12:00:00Z",
+    "lastUsedLabel": "just now",
+    "expiresAt": "2027-01-22T12:00:00Z",
+    "current": false
+  },
+  "secret": "shl_dev_Vn4cH8sEIrjwAm24iPoRv1IfEtBuDwpe1qj7hLDqlTa",
+  "me": {
+    "id": "0199f000-0000-7000-8000-000000000001",
+    "name": "Joel Dickson",
+    "email": "joel@shiplean.local",
+    "initials": "JD",
+    "avatarColour": "#5b6b8c",
+    "photoUrl": null,
+    "isInstanceAdmin": true,
+    "status": "active",
+    "hasProjects": true,
+    "canCreateProjects": true,
+    "theme": "os",
+    "density": "compact"
+  }
+}

@@ -1,4 +1,4 @@
-import type { ImportJobState } from '../../../api/persisted';
+import type { ImportJobState } from '@shiplean/core/api/persisted';
 import { Chip } from '../../../components/Chip';
 import { importTestIds as ids } from '../testIds';
 import { jobStates } from './jobStates';

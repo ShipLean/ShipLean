@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { BoardColumnDto } from '../../../api/views';
+import type { BoardColumnDto } from '@shiplean/core/api/views';
 import { boardTestIds as ids } from '../testIds';
 import { useCloseOnHorizontalScroll } from '../useCloseOnHorizontalScroll';
 import { DodPopover } from './DodPopover';

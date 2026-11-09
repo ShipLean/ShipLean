@@ -4,7 +4,7 @@ import {
   getMcpUrl,
   revokeConnectedAgent,
   type ConnectedAgentDto,
-} from '../../../api/agents';
+} from '@shiplean/core/api/agents';
 import { Chip } from '../../../components/Chip';
 import { showToast } from '../../../components/toastStore';
 import { agentScopes } from '../authorize/scopes';

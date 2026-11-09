@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ApiRequestError } from '../../api/client';
+import { ApiRequestError } from '@shiplean/core/api/client';
 import type { AttachmentSlotProps } from '../../slots/AttachmentSlot';
 import { useAttachmentMarkdown } from '../feature/featureApi';
 import { AttachmentUnavailable } from './AttachmentUnavailable';

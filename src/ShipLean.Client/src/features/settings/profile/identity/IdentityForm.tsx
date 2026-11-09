@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { MeDto } from '../../../../api/me';
+import type { MeDto } from '@shiplean/core/api/me';
 import { useSignInMode } from '../../../auth/useSignInMode';
 import { settingsTestIds } from '../../testIds';
 import { ColourField } from './ColourField';

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { ProjectDto } from '../../../api/projects';
-import type { RetroItemDto, RetroPointDto } from '../../../api/retros';
+import type { ProjectDto } from '@shiplean/core/api/projects';
+import type { RetroItemDto, RetroPointDto } from '@shiplean/core/api/retros';
 import { retroSharedTestIds as shared } from '../../retroShared/testIds';
 import { retroItem, stubRetros } from '../ct/retroFixtures';
 import { retrosTestIds as ids } from '../testIds';

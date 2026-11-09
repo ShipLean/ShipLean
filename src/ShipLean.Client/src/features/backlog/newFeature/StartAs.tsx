@@ -1,4 +1,4 @@
-import type { StateDto } from '../../../api/projects';
+import type { StateDto } from '@shiplean/core/api/projects';
 import { backlogTestIds as ids } from '../testIds';
 
 // The states a new Feature can start in: the type's first Proposed state and its first In Progress state (Idea, Active).

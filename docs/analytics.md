@@ -7,7 +7,8 @@ The code is the source of truth. `UsageEventNames`, `ActionUsageMap` and `ToolUs
 ## What is tracked
 
 - **Events count actions, not objects.** `work.captured` is one event even if it made five items. Object counts live in the database.
-- **People and agents are tracked side by side.** The same action has the same event name whether a person did it in the web app or an agent did it over MCP. Every event says which kind of actor did it (`actor_kind`: `user`, `agent` or `system`) and on which surface (`surface`: `web`, `mcp` or `system`).
+- **People and agents are tracked side by side.** The same action has the same event name whether a person did it in the web app or an agent did it over MCP. Every event says which kind of actor did it (`actor_kind`: `user`, `agent` or `system`) and on which surface (`surface`: `web`, `mcp`, `system` or `app`).
+- **`app` is the phone app.** Tracked actions (the action filter) and `device_session.*` events carry `app` when the request was made with a device bearer, told by the device-session claim on the authenticated principal, never by a header. `device_session.created` is tagged `app` at the anonymous exchange, which only the app calls, because that request has no bearer yet. Other self-emitted events (`project.created`, `project.joined`) and screen views stay `web` for now.
 - **Every event carries its project** (`project_id`, `project_key`) when the request touched exactly one project, and `project_count` says how many it touched.
 - **What is not tracked:** reads that a screen view already counts, helper calls, protocol noise and webhooks (counted as system events where handled). Each is listed in `ActionUsageMap` with a reason. Requests refused before the action runs (a 403 from the MCP gate, a web authorization failure, a model-binding failure) never reach a capture filter and are not tracked.
 
@@ -45,7 +46,7 @@ Every event carries these (a key is left out when its value is null). The consta
 
 | Property | Meaning |
 |---|---|
-| `surface`, `actor_kind` | `web` / `mcp` / `system`; `user` / `agent` / `system` |
+| `surface`, `actor_kind` | `web` / `mcp` / `system` / `app`; `user` / `agent` / `system` |
 | `user_id` | the user (for an agent, the user it acts for) |
 | `agent_id`, `agent_name`, `agent_host`, `agent_verified` | agent actors only; name and host are client-supplied and cut to 64 characters |
 | `project_id`, `project_key`, `project_count` | see above |
@@ -53,7 +54,7 @@ Every event carries these (a key is left out when its value is null). The consta
 | `duration_ms`, `source` | `source` is `tool:<name>`, `api:<Controller>.<Action>`, `screen` or `system:<Class>` |
 | `shiplean_version`, `instance_host` | this build and this instance |
 
-Extra properties are the keys in `UsageProps` (`screen`, `board`, `provider`, `count`, `column`, `direction`, `mode` (the backlog mode on a backlog screen's `screen.viewed`), `agent_name` on `agent.connected` and `agent.consent_denied`, `trigger` (`scheduled` or `manual`) on `backup.run_finished`). A standard property wins over an extra one with the same key.
+Extra properties are the keys in `UsageProps` (`screen`, `board`, `provider`, `count`, `column`, `direction`, `mode` (the backlog mode on a backlog screen's `screen.viewed`), `agent_name` on `agent.connected` and `agent.consent_denied`, `trigger` (`scheduled` or `manual`) on `backup.run_finished`, `reason` (`app_sign_out`, `web_sign_out`, `expired`, `stamp_changed` or `user_disabled`) on `device_session.ended`). A standard property wins over an extra one with the same key.
 
 The distinct id of an actor is `user:<guid>`, `agent:<authorizationId>` (`agent:gw-<userId>` for the gateway) or `system`. Person properties (`kind`, `user_id`, `agent_*`) go to the provider as an identify (Umami) or `$set` (PostHog). `name` and `email` are added for users only when the instance's **Send people's names** toggle is on, which is off by default.
 
@@ -145,6 +146,8 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `auth.signed_out` |  | `Auth.Logout` |
 | `auth.password_changed` |  | `Auth.ChangePassword` |
 | `auth.other_sessions_signed_out` |  | `Auth.SignOutOthers` |
+| `device_session.created` |  | self-emitted: DeviceSignIn.Exchange |
+| `device_session.ended` (`reason`: `app_sign_out`, `web_sign_out`, `expired`, `stamp_changed`, `user_disabled`) |  | self-emitted: DeviceSessions.Current (`app_sign_out`), DeviceSessions.Revoke (`web_sign_out`) |
 | `agent.connected` |  | self-emitted: Consent.Decide (allow) |
 | `agent.consent_denied` |  | self-emitted: Consent.Decide (deny) |
 | `agent.revoked` |  | `ConnectedAgents.Revoke` |

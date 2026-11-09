@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { MeDto } from '../../../../api/me';
+import type { MeDto } from '@shiplean/core/api/me';
 import { ToastHost } from '../../../../components/ToastHost';
 import { componentTestIds } from '../../../../components/testIds';
 import { settingsTestIds as ids } from '../../testIds';

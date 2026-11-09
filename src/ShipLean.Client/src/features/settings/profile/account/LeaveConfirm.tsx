@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import type { ProjectSummaryDto } from '../../../../api/projects';
+import type { ProjectSummaryDto } from '@shiplean/core/api/projects';
 import { settingsTestIds } from '../../testIds';
 
 /** The question under a project's row. A refusal shows the server's own message. */

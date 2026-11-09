@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import type { WorkItemTypeId } from '../../../api/refs';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
 import type { Level } from '../../../routes';
 import { boardTestIds as ids } from '../testIds';
 import { useCloseOnHorizontalScroll } from '../useCloseOnHorizontalScroll';

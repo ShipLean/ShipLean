@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '../../../api/client';
-import type { MeDto } from '../../../api/me';
+import { api } from '@shiplean/core/api/client';
+import type { MeDto } from '@shiplean/core/api/me';
 import { showToast } from '../../../components/toastStore';
 import { settingsTestIds } from '../testIds';
 import {

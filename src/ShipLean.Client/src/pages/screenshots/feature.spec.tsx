@@ -6,7 +6,7 @@ import { checkoutV2, designView, staleCheckoutV2, stubFeaturePage } from './fixt
 import { stubRetros } from '../../features/retros/ct/retroFixtures';
 import { retrosTestIds } from '../../features/retros/testIds';
 import { pageShots, type Page } from './shoot';
-import type { WorkItemDto } from '../../api/workItems';
+import type { WorkItemDto } from '@shiplean/core/api/workItems';
 
 const featureReady = async (page: Page) => {
   await expect(page.getByTestId(featureTestIds.statusBand)).toBeVisible();

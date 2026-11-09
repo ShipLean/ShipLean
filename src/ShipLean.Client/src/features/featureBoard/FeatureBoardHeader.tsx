@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Chip } from '../../components/Chip';
 import { StateDot } from '../../components/StateDot';
 import { TypeIcon } from '../../components/TypeIcon';
-import type { FeatureBoardHeaderDto } from '../../api/views';
+import type { FeatureBoardHeaderDto } from '@shiplean/core/api/views';
 import { routePath } from '../../routes';
 import { SprintPill } from '../taskboard/rows/SprintPill';
 import { sectionDomId, type FeatureBoardSectionLayout } from './featureBoardLayout';

@@ -1,5 +1,5 @@
-import type { BacklogRowDto, BacklogSectionDto } from '../../../api/views';
-import type { VelocityDto } from '../../../api/sprints';
+import type { BacklogRowDto, BacklogSectionDto } from '@shiplean/core/api/views';
+import type { VelocityDto } from '@shiplean/core/api/sprints';
 
 export interface SprintSum {
   /** The points the section holds now. */

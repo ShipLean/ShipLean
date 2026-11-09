@@ -2,13 +2,13 @@ import { act, useEffect } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import { api } from '../../../api/client';
-import type { BacklogAddRequest } from '../../../api/backlogWrites';
+import { api } from '@shiplean/core/api/client';
+import type { BacklogAddRequest } from '@shiplean/core/api/backlogWrites';
 import { backlogRootKey } from '../../../queries/backlogKeys';
 import { useBacklogAdd, useDuplicateCheck } from './useBacklogAdd';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
-vi.mock('../../../api/client', () => ({ api: { post: vi.fn() } }));
+vi.mock('@shiplean/core/api/client', () => ({ api: { post: vi.fn() } }));
 
 const post = vi.mocked(api.post);
 let queryClient: QueryClient;

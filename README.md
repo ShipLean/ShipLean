@@ -134,7 +134,7 @@ You need the .NET 10 SDK, Node 24 with pnpm (via corepack), and Docker.
 
 ```bash
 dotnet run --project src/ShipLean.LocalHost            # seeded ShipLean on :5113; Postgres in a container, nothing else to install
-cd src/ShipLean.Client && pnpm install && pnpm run dev # SPA on :3000, proxies /api to :5113
+cd src && pnpm install && cd ShipLean.Client && pnpm run dev # SPA on :3000, proxies /api to :5113; the pnpm workspace is src/
 ```
 
 Sign in as `joel@shiplean.local` / `joel-dev-password`. In an IDE, start the `LocalHost` launch profile (F5) to debug. The

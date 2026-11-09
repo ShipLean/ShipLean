@@ -1,6 +1,6 @@
 import { useDroppable } from '@dnd-kit/core';
 import type { ReactNode } from 'react';
-import type { CardDto, TaskboardViewDto } from '../../../api/views';
+import type { CardDto, TaskboardViewDto } from '@shiplean/core/api/views';
 import { TaskCard } from '../cards/TaskCard';
 import { taskboardTestIds as ids } from '../testIds';
 

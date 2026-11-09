@@ -1,15 +1,15 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ApiRequestError } from '../../../api/client';
+import { ApiRequestError } from '@shiplean/core/api/client';
 import {
   BULK_MAX_ROWS,
   type BacklogAddItem,
   type BacklogAddRequest,
   type DuplicateItem,
-} from '../../../api/backlogWrites';
-import type { WorkItemTypeId } from '../../../api/refs';
+} from '@shiplean/core/api/backlogWrites';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
 import { Dialog } from '../../../components/Dialog';
-import type { BacklogViewDto } from '../../../api/views';
+import type { BacklogViewDto } from '@shiplean/core/api/views';
 import { showToast } from '../../../components/toastStore';
 import { backlogRootKey } from '../../../queries/backlogKeys';
 import { useBacklogAdd, useDuplicateCheck } from '../bulk/useBacklogAdd';

@@ -1,4 +1,4 @@
-import { ApiRequestError } from '../../../../api/client';
+import { ApiRequestError } from '@shiplean/core/api/client';
 
 /** The server's own words for a refusal; anything else is a network failure. */
 export const errorText = (error: unknown, fallback: string) =>

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { ProjectDto } from '../../../api/projects';
-import type { RetroFeaturesDto } from '../../../api/retros';
+import type { ProjectDto } from '@shiplean/core/api/projects';
+import type { RetroFeaturesDto } from '@shiplean/core/api/retros';
 import { stubRetros } from '../ct/retroFixtures';
 import { retrosTestIds as ids } from '../testIds';
 import { featureRow, sampleFeatures } from './ct/featureRows';

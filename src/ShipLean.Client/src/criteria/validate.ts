@@ -1,5 +1,5 @@
-import type { CriteriaValidationError } from '../api/criteria';
-import type { CriteriaClause, CriteriaJson, FieldDefinition } from '../api/persisted';
+import type { CriteriaValidationError } from '@shiplean/core/api/criteria';
+import type { CriteriaClause, CriteriaJson, FieldDefinition } from '@shiplean/core/api/persisted';
 import { criteriaField, ME } from './fieldDefinition';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

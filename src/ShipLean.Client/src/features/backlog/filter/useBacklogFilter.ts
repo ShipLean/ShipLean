@@ -1,11 +1,11 @@
 import { useCallback, useState } from 'react';
-import { ApiRequestError } from '../../../api/client';
-import type { CriteriaJson } from '../../../api/persisted';
-import type { ProjectDto } from '../../../api/projects';
-import type { WorkItemTypeId } from '../../../api/refs';
-import type { BacklogRowDto, BacklogViewDto } from '../../../api/views';
+import { ApiRequestError } from '@shiplean/core/api/client';
+import type { CriteriaJson } from '@shiplean/core/api/persisted';
+import type { ProjectDto } from '@shiplean/core/api/projects';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
+import type { BacklogRowDto, BacklogViewDto } from '@shiplean/core/api/views';
 import { newClause } from '../../../criteria/defaultClause';
-import type { CriteriaClause } from '../../../api/persisted';
+import type { CriteriaClause } from '@shiplean/core/api/persisted';
 import type { Level } from '../../../routes';
 import {
   backlogKey,

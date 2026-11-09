@@ -1,4 +1,4 @@
-import type { MarkdownOutlineEntryDto } from '../../../api/markdown';
+import type { MarkdownOutlineEntryDto } from '@shiplean/core/api/markdown';
 import { attachmentTestIds as ids } from '../testIds';
 import { PanelHeading } from './PanelHeading';
 

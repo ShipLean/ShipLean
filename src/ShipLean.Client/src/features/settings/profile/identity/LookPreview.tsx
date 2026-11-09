@@ -1,4 +1,4 @@
-import type { MeDto } from '../../../../api/me';
+import type { MeDto } from '@shiplean/core/api/me';
 import { Avatar } from '../../../../components/Avatar';
 import { settingsTestIds } from '../../testIds';
 import { previewInitials, shownPhoto, type IdentityDraft } from './model';

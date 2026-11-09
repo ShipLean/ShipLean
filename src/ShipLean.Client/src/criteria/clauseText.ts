@@ -1,4 +1,4 @@
-import type { CriteriaClause, CriteriaOp, FieldKind } from '../api/persisted';
+import type { CriteriaClause, CriteriaOp, FieldKind } from '@shiplean/core/api/persisted';
 import { criteriaField } from './fieldDefinition';
 import { valueOptions, type PickLists } from './valueOptions';
 

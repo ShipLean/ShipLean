@@ -1,4 +1,4 @@
-import type { ActionJson, TransitionJson } from '../../../../api/persisted';
+import type { ActionJson, TransitionJson } from '@shiplean/core/api/persisted';
 import { boardSettingsTestIds as ids } from '../../testIds';
 import { ActionRow } from './ActionRow';
 import { newActionId } from './transitionEdits';

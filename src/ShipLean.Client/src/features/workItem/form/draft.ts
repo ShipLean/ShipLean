@@ -1,5 +1,5 @@
-import type { ChecklistItem, LinkType, LinkValue } from '../../../api/persisted';
-import type { SprintRef, StateRef, UserRef } from '../../../api/refs';
+import type { ChecklistItem, LinkType, LinkValue } from '@shiplean/core/api/persisted';
+import type { SprintRef, StateRef, UserRef } from '@shiplean/core/api/refs';
 import type {
   AutoLinkDto,
   LinkCardDto,
@@ -7,7 +7,7 @@ import type {
   ParentRefDto,
   WorkItemChanges,
   WorkItemDto,
-} from '../../../api/workItems';
+} from '@shiplean/core/api/workItems';
 
 /** A link in the draft. A saved link has its row id; one added in the form has `id: null` until a save. `uid` tells draft entries apart. */
 export interface DraftLink {

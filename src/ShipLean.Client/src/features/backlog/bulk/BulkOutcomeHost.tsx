@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSelection } from '../selection/useSelection';
 import { ChangedRows } from './ChangedRows';
 import { UndoToast } from './UndoToast';
-import type { WorkItemDto, WriteResult } from '../../../api/workItems';
+import type { WorkItemDto, WriteResult } from '@shiplean/core/api/workItems';
 import { isUndoPlan, undoOf } from './undoOf';
 import { useBulkRunner, type BulkOutcome, type BulkPlan } from './useBulkRun';
 

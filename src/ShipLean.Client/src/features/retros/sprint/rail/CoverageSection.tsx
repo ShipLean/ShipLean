@@ -1,5 +1,5 @@
 import { TypeIcon } from '../../../../components/TypeIcon';
-import type { RetroCoverageRowDto } from '../../../../api/retros';
+import type { RetroCoverageRowDto } from '@shiplean/core/api/retros';
 import { ItemLink } from '../../../itemPeek/ItemLink';
 import { retrosTestIds as ids } from '../../testIds';
 import { RailSection } from './RailSection';

@@ -1,8 +1,8 @@
 import { expect, test, type MountResult } from '@playwright/experimental-ct-react';
 import type { Locator } from 'playwright';
-import type { RenderedMarkdownDto } from '../../../../api/markdown';
+import type { RenderedMarkdownDto } from '@shiplean/core/api/markdown';
 import { feature, stubFeature } from '../../../feature/ct/stubFeature';
-import type { WorkItemDto } from '../../../../api/workItems';
+import type { WorkItemDto } from '@shiplean/core/api/workItems';
 import { bug, priya } from '../../ct/fixtures';
 import { stubApi } from '../../ct/stubApi';
 import { stubComments } from '../../ct/stubDetails';

@@ -1,4 +1,4 @@
-import type { BacklogRowDto } from '../../../api/views';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import { useOpenItem } from '../../quickSearch/host/useOpenItem';
 import { useSelection } from '../selection/useSelection';
 import { useListCommand } from './listCommands';

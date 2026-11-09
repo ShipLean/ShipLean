@@ -39,6 +39,12 @@ const samples: {
     path: '/authorize?request=r-1',
     crumbs: ['ShipLean', 'Connect an agent'],
   },
+  mobileSignIn: {
+    params: {},
+    query: { challenge: 'c', state: 's', device: 'Pixel' },
+    path: '/mobile/sign-in?challenge=c&state=s&device=Pixel',
+    crumbs: ['ShipLean', 'Sign in to the app'],
+  },
   storiesBacklog: {
     params: project,
     query: { mode: 'planning' },
@@ -191,6 +197,7 @@ test('routes_ShouldFlagInstanceLevelPages', () => {
     'importStart',
     'instanceSettings',
     'login',
+    'mobileSignIn',
     'newProject',
     'profile',
   ]);

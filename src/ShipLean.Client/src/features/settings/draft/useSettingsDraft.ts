@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { ApiRequestError } from '../../../api/client';
-import type { ProjectSettingsDto } from '../../../api/projects';
+import { ApiRequestError } from '@shiplean/core/api/client';
+import type { ProjectSettingsDto } from '@shiplean/core/api/projects';
 import { projectsKey } from '../../../queries/shared';
 import { projectSettingsKey, saveProjectSettings } from '../settingsApi';
 import {

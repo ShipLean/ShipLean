@@ -1,5 +1,5 @@
 import { TypeIcon } from '../../../components/TypeIcon';
-import type { ChildSummaryDto } from '../../../api/workItems';
+import type { ChildSummaryDto } from '@shiplean/core/api/workItems';
 import { ItemLink } from '../../itemPeek/ItemLink';
 import { boardTestIds as ids } from '../testIds';
 

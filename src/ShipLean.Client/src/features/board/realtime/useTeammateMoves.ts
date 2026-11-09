@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import type { BoardViewDto } from '../../../api/views';
+import type { BoardViewDto } from '@shiplean/core/api/views';
 import { showToast } from '../../../components/toastStore';
 import { registerInvalidation } from '../../../realtime';
 import { fetchWorkItem, workItemKey } from '../../workItem/workItemApi';

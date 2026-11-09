@@ -1,4 +1,4 @@
-import type { StateRef, WorkItemTypeId } from '../../../api/refs';
+import type { StateRef, WorkItemTypeId } from '@shiplean/core/api/refs';
 import { StateDot } from '../../../components/StateDot';
 import { StateMenu } from '../../../components/StateMenu';
 import { FieldCell } from './FieldCell';

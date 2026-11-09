@@ -1,5 +1,5 @@
 import { ToastHost } from '../../../components/ToastHost';
-import type { ProjectDto } from '../../../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { backlogKey, useBacklog } from '../backlogApi';
 import { BulkOutcomeHost } from '../bulk/BulkOutcomeHost';
 import { AddBelowProvider } from '../add/AddBelowProvider';

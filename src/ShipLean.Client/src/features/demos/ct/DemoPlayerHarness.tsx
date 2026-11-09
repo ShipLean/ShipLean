@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { ToastHost } from '../../../components/ToastHost';
-import type { SprintDemoDto } from '../../../api/demos';
+import type { SprintDemoDto } from '@shiplean/core/api/demos';
 import fixtureUrl from '../../../../../ShipLean.TestSupport/DemoFixtures/demo-fixture.mp4?url';
 import { DemoChapters } from '../DemoChapters';
 import { DemoFeatures } from '../DemoFeatures';

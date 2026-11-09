@@ -1,4 +1,4 @@
-import type { MeDto } from '../../../../api/me';
+import type { MeDto } from '@shiplean/core/api/me';
 
 /** The identity colours (design/screens/profile.html); the server accepts only these. */
 export const AVATAR_COLOURS = [

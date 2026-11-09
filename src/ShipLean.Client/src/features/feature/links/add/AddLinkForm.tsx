@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ApiRequestError } from '../../../../api/client';
+import { ApiRequestError } from '@shiplean/core/api/client';
 import { addLinkCard, addWorkItemLink, linkCardsKey } from '../../featureApi';
 import { featureTestIds as ids } from '../../testIds';
 import { UrlTab } from './UrlTab';

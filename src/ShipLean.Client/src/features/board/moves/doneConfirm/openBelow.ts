@@ -1,4 +1,4 @@
-import type { BoardViewDto, CardDto } from '../../../../api/views';
+import type { BoardViewDto, CardDto } from '@shiplean/core/api/views';
 import type { Level } from '../../../../routes';
 import { openText } from './openText';
 import { locate, type DropTarget } from '../applyMove';

@@ -1,5 +1,5 @@
-import { api } from '../../api/client';
-import type { MeDto } from '../../api/me';
+import { api } from '@shiplean/core/api/client';
+import type { MeDto } from '@shiplean/core/api/me';
 
 // C#: ShipLean.Contracts.Auth.InstanceDto.
 export interface InstanceDto {

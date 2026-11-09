@@ -1,7 +1,7 @@
 import type { MouseEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import type { WorkItemRetroRowDto } from '../../../api/retros';
-import { RETRO_CATEGORIES } from '../../../api/retros';
+import type { WorkItemRetroRowDto } from '@shiplean/core/api/retros';
+import { RETRO_CATEGORIES } from '@shiplean/core/api/retros';
 import { routePath } from '../../../routes';
 import { AuthorChip } from '../../retroShared/AuthorChip';
 import { CategoryCount } from '../features/CategoryCount';

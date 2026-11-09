@@ -1,4 +1,4 @@
-import type { ProjectDto } from '../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import type { FeatureBoardSettingsSlotProps } from '../slots/FeatureBoardSettingsSlot';
 import type { FeatureBoardSlotProps } from '../slots/FeatureBoardSlot';
 import { settingsDialogProps, type SetSearchParams } from './settingsDialogProps';

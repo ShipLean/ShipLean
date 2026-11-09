@@ -1,7 +1,7 @@
 import type { Page } from 'playwright';
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { ProjectDto } from '../../../api/projects';
-import type { SprintCapacityDto, SprintDto } from '../../../api/sprints';
+import type { ProjectDto } from '@shiplean/core/api/projects';
+import type { SprintCapacityDto, SprintDto } from '@shiplean/core/api/sprints';
 import { componentTestIds } from '../../../components/testIds';
 import { sprintsTestIds as ids } from '../testIds';
 import { SprintsList } from './SprintsList';

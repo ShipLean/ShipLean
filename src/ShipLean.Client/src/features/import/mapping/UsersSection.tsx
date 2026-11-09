@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { ImportMappingDto } from '../../../api/import';
-import type { UserRef } from '../../../api/refs';
+import type { ImportMappingDto } from '@shiplean/core/api/import';
+import type { UserRef } from '@shiplean/core/api/refs';
 import { importTestIds as ids } from '../testIds';
 import { UserRow } from './UserRow';
 

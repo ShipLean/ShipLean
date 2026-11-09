@@ -1,4 +1,4 @@
-import type { ApiRequestError } from '../../../api/client';
+import type { ApiRequestError } from '@shiplean/core/api/client';
 import { settingsTestIds as ids } from '../testIds';
 
 /** The id a field's error carries, so the control can name it in aria-describedby. */

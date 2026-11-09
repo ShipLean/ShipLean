@@ -1,4 +1,4 @@
-import type { SprintRef } from '../../../api/refs';
+import type { SprintRef } from '@shiplean/core/api/refs';
 import { taskboardTestIds as ids } from '../testIds';
 
 /** Where a story or bug sits on a Feature board: its sprint (the current one tinted), or a dashed Backlog when it has none. */

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { BoardLaneDto } from '../../../api/views';
+import type { BoardLaneDto } from '@shiplean/core/api/views';
 import { swatchVar } from '../cards/cardStyle';
 import { boardTestIds as ids } from '../testIds';
 import type { BoardContext } from './boardContext';

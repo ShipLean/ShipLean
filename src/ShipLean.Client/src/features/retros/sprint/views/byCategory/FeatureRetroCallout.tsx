@@ -1,4 +1,4 @@
-import type { RetroCardDto } from '../../../../../api/retros';
+import type { RetroCardDto } from '@shiplean/core/api/retros';
 import { TypeIcon } from '../../../../../components/TypeIcon';
 import { retrosTestIds as ids } from '../../../testIds';
 

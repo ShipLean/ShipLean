@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { StateChanges, StateDto } from '../../../api/projects';
+import type { StateChanges, StateDto } from '@shiplean/core/api/projects';
 import {
   addState,
   defaultTarget,

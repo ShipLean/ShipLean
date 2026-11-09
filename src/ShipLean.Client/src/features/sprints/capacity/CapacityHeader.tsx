@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import type { ProjectDto } from '../../../api/projects';
-import type { SprintCapacityDto } from '../../../api/sprints';
+import type { ProjectDto } from '@shiplean/core/api/projects';
+import type { SprintCapacityDto } from '@shiplean/core/api/sprints';
 import { routePath } from '../../../routes';
 import { sprintsTestIds as ids } from '../testIds';
 

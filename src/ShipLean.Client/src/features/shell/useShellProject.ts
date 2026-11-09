@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom';
-import type { ProjectSummaryDto } from '../../api/projects';
+import type { ProjectSummaryDto } from '@shiplean/core/api/projects';
 import { useProjects, useRecentProjectIds } from './useShellQueries';
 
 export interface ShellProject {
