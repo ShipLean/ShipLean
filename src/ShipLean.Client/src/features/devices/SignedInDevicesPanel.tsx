@@ -1,4 +1,7 @@
+import { useQuery } from '@tanstack/react-query';
 import { Fragment, useState } from 'react';
+import { getMcpUrl } from '@shiplean/core/api/agents';
+import { mcpUrlKey } from '../agents/connected/ConnectedAgentsPanel';
 import { errorText } from '../settings/profile/account/errorText';
 import { DeviceRow } from './DeviceRow';
 import { DeviceSignOutConfirm } from './DeviceSignOutConfirm';
@@ -10,6 +13,9 @@ export function SignedInDevicesPanel() {
   const devices = useDeviceSessions();
   const [asking, setAsking] = useState<string | null>(null);
   const signOut = useSignOutDevice(() => setAsking(null));
+  const mcp = useQuery({ queryKey: mcpUrlKey, queryFn: () => getMcpUrl() });
+  // The host the app signs in to is the configured one, which can differ from the address this page was opened on.
+  const host = mcp.data ? new URL(mcp.data.mcpUrl).host : window.location.host;
 
   return (
     <section data-testid={ids.slotDevices} className="panel mt-3 max-w-[560px] bg-panel">
@@ -72,7 +78,7 @@ export function SignedInDevicesPanel() {
         data-testid={ids.addLine}
         className="rounded-b-panel border-t border-edge bg-canvas px-3 py-2 text-[length:var(--text-xs)] text-ink-muted"
       >
-        To add a phone, sign in to <b>{window.location.host}</b> from the ShipLean app.
+        To add a phone, sign in to <b>{host}</b> from the ShipLean app.
       </footer>
     </section>
   );

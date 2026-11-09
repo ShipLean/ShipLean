@@ -1,4 +1,3 @@
-import type { DeviceSessionDto } from '@shiplean/core/api/deviceSessions';
 import type { ConnectedAgentDto, ConsentRequestDto } from '@shiplean/core/api/agents';
 import type {
   InstanceProjectDto,
@@ -9,6 +8,7 @@ import type {
   AdminUserDto,
   AdminUsersDto,
 } from '../../../features/settings/instanceUsers/usersAdminApi';
+import { twoDevices } from '../../../features/devices/fixtures';
 import { PEOPLE } from '../shellStub';
 import type { Page } from '../shoot';
 
@@ -236,29 +236,5 @@ export async function stubNewProject(page: Page) {
 }
 
 export async function stubDevices(page: Page) {
-  const devices: DeviceSessionDto[] = [
-    {
-      id: 'd-1',
-      name: 'Priya’s iPhone',
-      tokenPrefix: 'shl_dev_k3Xq9TbA',
-      createdAt: '2026-11-03T08:10:00Z',
-      createdLabel: '3 Nov',
-      lastUsedAt: '2026-10-24T13:05:41Z',
-      lastUsedLabel: '2h ago',
-      expiresAt: '2027-02-01T08:10:00Z',
-      current: false,
-    },
-    {
-      id: 'd-2',
-      name: 'Pixel 8 Pro (work)',
-      tokenPrefix: 'shl_dev_P7mR2wQz',
-      createdAt: '2026-09-14T17:40:00Z',
-      createdLabel: '14 Sep',
-      lastUsedAt: '2026-10-23T19:30:00Z',
-      lastUsedLabel: 'Yesterday',
-      expiresAt: '2027-01-21T19:30:00Z',
-      current: false,
-    },
-  ];
-  await page.route('**/api/auth/device-sessions', (route) => route.fulfill({ json: devices }));
+  await page.route('**/api/auth/device-sessions', (route) => route.fulfill({ json: twoDevices }));
 }

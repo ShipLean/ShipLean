@@ -11,6 +11,11 @@ const LIST = '**/api/auth/device-sessions';
 const phone = { width: 390, height: 844 };
 const desktop = { width: 1440, height: 900 };
 
+const stubMcp = (page: Page) =>
+  page.route('**/api/agents/mcp-url', (route) =>
+    route.fulfill({ json: { mcpUrl: 'https://shiplean.larkspur.dev/mcp' } }),
+  );
+
 const stubList = (page: Page, list: DeviceSessionDto[]) =>
   page.route(LIST, (route) => route.fulfill({ json: list }));
 
@@ -89,20 +94,23 @@ for (const theme of ['light', 'dark'] as const) {
       }),
     );
     await mount(panel);
-    await expect(page.getByTestId(ids.failed)).toBeVisible();
+    await expect(page.getByTestId(ids.failed)).toHaveText(
+      "Couldn't load your signed-in devices. Reload the page to try again.",
+    );
     await expect(page).toHaveScreenshot(`load-failed.${theme}.png`, { animations: 'disabled' });
   });
 }
 
 test('rows show the server labels, the prefix and the host', async ({ mount, page }) => {
   await stubList(page, twoDevices);
+  await stubMcp(page);
   await mount(panel);
   const first = page.getByTestId(ids.row).first();
   await expect(first.getByTestId(ids.name)).toHaveText(iphone.name);
   await expect(first.getByTestId(ids.prefix)).toHaveText('shl_dev_k3Xq9TbA…');
   await expect(first.getByTestId(ids.when)).toHaveText('Last used 2h ago · Signed in 3 Nov');
   await expect(page.getByTestId(ids.addLine)).toHaveText(
-    `To add a phone, sign in to ${new URL(page.url()).host} from the ShipLean app.`,
+    'To add a phone, sign in to shiplean.larkspur.dev from the ShipLean app.',
   );
 });
 
@@ -150,8 +158,15 @@ test('Cancel leaves the device listed', async ({ mount, page }) => {
   expect(deletes).toBe(0);
 });
 
-test('a failed revoke shows the error and keeps the row', async ({ mount, page }) => {
-  await stubList(page, twoDevices);
+test('a failed revoke shows the error, closes the confirm and reads the list again', async ({
+  mount,
+  page,
+}) => {
+  let reads = 0;
+  await page.route(LIST, (route) => {
+    reads += 1;
+    return route.fulfill({ json: twoDevices });
+  });
   await page.route('**/api/auth/device-sessions/*', (route) =>
     route.fulfill({
       status: 404,
@@ -164,5 +179,7 @@ test('a failed revoke shows the error and keeps the row', async ({ mount, page }
   await page.getByTestId(ids.confirmGo).click();
 
   await expect(page.getByTestId(ids.signOutError)).toHaveText('That device is already signed out.');
+  await expect(page.getByTestId(ids.confirm)).toHaveCount(0);
+  await expect.poll(() => reads).toBe(2);
   await expect(page.getByTestId(ids.row)).toHaveCount(2);
 });

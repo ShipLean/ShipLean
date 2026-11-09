@@ -35,7 +35,7 @@ export function DeviceSignOutConfirm({
         <button
           type="button"
           data-testid={ids.confirmGo}
-          className="btn-ghost !border-alert !text-alert"
+          className="btn-ghost text-alert hover:text-alert"
           disabled={pending}
           onClick={onConfirm}
         >
