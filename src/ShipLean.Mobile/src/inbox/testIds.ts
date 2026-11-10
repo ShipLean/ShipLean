@@ -21,6 +21,10 @@ export const inboxIds = {
   answerApply: 'sheet-answer-apply',
   // A3b
   reviewSheet: 'sheet-review',
+  reviewScroll: 'sheet-review-scroll',
+  reviewNote: 'sheet-review-note',
+  reviewCancel: 'sheet-review-cancel',
+  reviewConfirm: 'sheet-review-confirm',
   // A4 (answeredRowId below)
   answeredList: 'answered-list',
 } as const;
@@ -44,3 +48,11 @@ export const answeredRowId = (key: string) => `answered-row-${key}`;
 
 // A3a
 export const answerQuickId = (index: number) => `sheet-answer-quick-${index}`;
+
+// A3b: one decision's block, its Change button, its radios (choice is 'recommended', 'alt-<index>' or 'own'), the own
+// answer's field and the typed Add why field.
+export const reviewDecisionId = (n: number) => `sheet-review-d${n}`;
+export const reviewChangeId = (n: number) => `sheet-review-d${n}-change`;
+export const reviewChoiceId = (n: number, choice: string) => `sheet-review-d${n}-${choice}`;
+export const reviewOwnId = (n: number) => `sheet-review-d${n}-own-field`;
+export const reviewWhyId = (n: number) => `sheet-review-d${n}-why`;
