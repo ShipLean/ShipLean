@@ -114,6 +114,7 @@ class PushListingTests(unittest.TestCase):
             "--metadata_path", self.staged + "/android/metadata",
             "--skip_upload_aab", "true",
             "--skip_upload_apk", "true",
+            "--skip_upload_changelogs", "true",
             "--track", "internal",
         ])
 
@@ -127,6 +128,7 @@ class PushListingTests(unittest.TestCase):
             "--metadata_path", self.staged + "/android/metadata",
             "--skip_upload_aab", "true",
             "--skip_upload_apk", "true",
+            "--skip_upload_changelogs", "true",
             "--track", "internal",
             "--validate_only", "true",
         ])

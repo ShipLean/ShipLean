@@ -83,6 +83,10 @@ else
     --metadata_path "$STAGED/android/metadata"
     --skip_upload_aab true
     --skip_upload_apk true
+    # Release notes (changelogs/) belong to a release's version code, and this push sends no
+    # binary. Without the skip, supply 2.241.2 fails "Cannot find changelog because no version
+    # code given". EAS submit ships the binary.
+    --skip_upload_changelogs true
     --track internal
   )
   if [ "$mode" = verify ]; then

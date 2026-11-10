@@ -10,7 +10,7 @@ Everything the App Store and Google Play listings show for the phone app, kept i
 | `ios/metadata/primary_category.txt`, `secondary_category.txt` | App Store categories as App Store Connect identifiers: `PRODUCTIVITY`, `DEVELOPER_TOOLS`. |
 | `ios/metadata/review_information/notes.txt` | Notes for App Review. Only the notes: the contact and demo login are set by hand (the repo is public). |
 | `ios/age_rating.json` | The age-rating answers, in App Store Connect's attribute names (fastlane's `app_rating_config_path` file). |
-| `android/metadata/en-US/` | Play text: `title.txt`, `short_description.txt`, `full_description.txt`, and `changelogs/default.txt` (release notes for any version without its own `changelogs/<versionCode>.txt`). |
+| `android/metadata/en-US/` | Play text: `title.txt`, `short_description.txt`, `full_description.txt`, and `changelogs/default.txt` (release notes for any version without its own `changelogs/<versionCode>.txt`). The listing push doesn't send them: release notes belong to a release, and it sends no binary. |
 | `stage_images.py` | Stages the text and the images from `design/appstore/exports/` into fastlane's layout at run time, for each locale (below). |
 | `push_listing.sh` | The only place fastlane is called: `push_listing.sh <ios\|android> <push\|verify>`. |
 | `tests/` | `python3 -I -m unittest discover -s store/tests -v` |
