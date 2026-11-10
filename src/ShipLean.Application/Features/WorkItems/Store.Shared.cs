@@ -26,7 +26,7 @@ public sealed partial class WorkItemStore(
     ICurrentAgent currentAgent) : IWorkItemStore
 {
     // The store reads only conflict bodies (inside its transaction), which never apply the extras.
-    private readonly WorkItemReads _reads = new(dataSource, renderer, time, new WorkItemExtras());
+    private readonly WorkItemReads _reads = new(dataSource, renderer, time, IWorkItemExtras.None);
 
     // Opens the transaction and runs body in it. The body says whether to commit (false = a conflict: nothing was written).
     private async Task<T> WriteAsync<T>(WriteOptions options, Func<WriteScope, Task<(T Result, bool Commit)>> body, CancellationToken cancellationToken)
