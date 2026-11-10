@@ -2,6 +2,7 @@
 
 // F1
 export const featureRowId = (key: string) => `feature-row-${key}`;
+export const featureRowExpandId = (key: string) => `feature-expand-${key}`;
 export const featureGroupId = (category: string) => `feature-group-${category}`;
 export const featureGroupCountId = (category: string) => `feature-group-${category}-count`;
 export const featureWhoId = (key: string) => `feature-who-${key}`;

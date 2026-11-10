@@ -1,6 +1,7 @@
 import type { BacklogRowDto } from '@shiplean/core/api/views';
-import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { UNDO } from '../actions/undo';
+import { undoToastId } from '../actions/UndoToastHost.testIds';
 import {
   backlogMoveButtonId,
   backlogMovedId,
@@ -17,7 +18,7 @@ import {
   featureDigestItemId,
   featureHealthButtonId,
   featureHealthOptionId,
-  featureRowId,
+  featureRowExpandId,
   featuresIds,
 } from '../features/testIds';
 import {
@@ -30,7 +31,7 @@ import {
 import { projectRowId } from '../screens/projects/testIds';
 import { screenIds, tabIds } from '../screens/testIds';
 import { aBacklogView, backlogApi, designFeatures } from '../test-support/backlog';
-import { aMe, aMember, aProject } from '../test-support/builders';
+import { aMe, aMember, aProject, aStory } from '../test-support/builders';
 import { designOverview, featuresApi } from '../test-support/features';
 import { designRetro, retroApi } from '../test-support/retro';
 import { controlledApi } from '../test-support/controlledApi';
@@ -135,6 +136,8 @@ describe('Screens journeys', () => {
     await fireEvent.press(await screen.findByTestId(moveOptionId('top')));
     await fireEvent.press(screen.getByTestId(moveApplyId));
     await advance(2000);
+    // The move is pending: the toast names it (rank 2 to the top).
+    expect(await screen.findByTestId(undoToastId)).toHaveTextContent(/SHIP-906 2 → 1/);
     await fireEvent.press(await screen.findByTestId(primitiveIds.toastAction));
     await advance(10_000);
     expect(api.callsTo(bulk)).toHaveLength(1);
@@ -152,9 +155,7 @@ describe('Screens journeys', () => {
     await openTab(api, 'features');
 
     // 1. Expand SHIP-906 and pick Blocked (it is At risk already, and a tap on the current value does nothing).
-    await fireEvent.press(
-      within(await screen.findByTestId(featureRowId('SHIP-906'))).getByRole('button'),
-    );
+    await fireEvent.press(await screen.findByTestId(featureRowExpandId('SHIP-906')));
     await fireEvent.press(await screen.findByTestId(featureHealthButtonId('SHIP-906')));
     await fireEvent.press(await screen.findByTestId(featureHealthOptionId('blocked')));
     await advance(UNDO.tap.ms - 1);
@@ -196,6 +197,7 @@ describe('Screens journeys', () => {
       plusOne.supporters = on ? [meRef] : [];
       return { status: 204 };
     };
+    const byKeyRoute = `GET /api/projects/${PROJECT}/work-items/by-key/SHIP-901`;
     const support = `/api/retros/points/${plusOne.id}/support`;
     const api = retroApi(
       {
@@ -203,6 +205,7 @@ describe('Screens journeys', () => {
         [`GET /api/projects/${PROJECT}/members`]: [priya],
         [`POST ${support}`]: () => setSupport(true),
         [`DELETE ${support}`]: () => setSupport(false),
+        [byKeyRoute]: aStory({ id: newAction.workItemId, key: 'SHIP-901', revision: 7 }),
       },
       { projectId: PROJECT, retro, newAction },
     );
@@ -211,7 +214,8 @@ describe('Screens journeys', () => {
     await openTab(api, 'retro');
 
     // 1. Went badly: +1 is sent at once, and a second tap takes it back.
-    // The tab opens on the first category with points to decide (D2): Not in plan in the design. Pick Went badly.
+    // design/mobileapp/retro.md D2: the tab opens on the first category with points to decide, which is Not in the plan
+    // with designRetro(). Tap the Went badly tile.
     await fireEvent.press(await screen.findByTestId(retroTileId('wentBadly')));
     await fireEvent.press(await screen.findByTestId(retroPlusId(plusOne.id)));
     await waitFor(() => expect(api.callsTo(`POST ${support}`)).toHaveLength(1));
@@ -224,6 +228,7 @@ describe('Screens journeys', () => {
     await fireEvent.press(screen.getByTestId(retroAddActionId(decide.id)));
     await fireEvent.press(await screen.findByTestId(retroDecideOwnerId('user-priya')));
     await fireEvent.press(screen.getByTestId(retroIds.decideSubmit));
+    const sentFrom = api.calls.length;
     await advance(UNDO.tap.ms - 1);
     expect(api.callsTo(create)).toHaveLength(0);
     await advance(1);
@@ -235,17 +240,16 @@ describe('Screens journeys', () => {
       pointIds: [decide.id],
     });
     expect(api.callsTo(patch)[0]!.body).toMatchObject({
+      expectedRevision: 7,
       changes: { assignee: { value: 'user-priya' } },
     });
-    const order = api.calls
+    // Amendment 29: read the retro, create, read by key, assign. Anchored on the create, so refetches around it don't matter.
+    const retroRead = `GET /api/sprints/${retro.sprint.id}/retro`;
+    const sent = api.calls
+      .slice(sentFrom)
       .map((c) => `${c.method} ${c.path}`)
-      .filter((r) =>
-        [create, `GET /api/projects/${PROJECT}/work-items/by-key/SHIP-901`, patch].includes(r),
-      );
-    expect(order).toEqual([
-      create,
-      `GET /api/projects/${PROJECT}/work-items/by-key/SHIP-901`,
-      patch,
-    ]);
+      .filter((r) => [retroRead, create, byKeyRoute, patch].includes(r));
+    const at = sent.indexOf(create);
+    expect(sent.slice(at - 1, at + 3)).toEqual([retroRead, create, byKeyRoute, patch]);
   });
 });
