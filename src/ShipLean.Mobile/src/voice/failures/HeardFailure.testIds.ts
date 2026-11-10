@@ -4,3 +4,4 @@ export const heardFailureNoteId = 'voice-failure-heard-note';
 export const heardFailureFixId = 'voice-failure-heard-fix';
 export const heardFailureWhatCanISayId = 'voice-failure-heard-what-can-i-say';
 export const heardFailureNothingChangedId = 'voice-failure-heard-nothing-changed';
+export const heardFailureSheetId = 'sheet-voice-failure-heard';

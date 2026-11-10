@@ -13,6 +13,7 @@ import { useVoice } from '../VoiceProvider';
 import {
   heardFailureFixId,
   heardFailureId,
+  heardFailureSheetId,
   heardFailureLeadId,
   heardFailureNoteId,
   heardFailureNothingChangedId,
@@ -41,8 +42,15 @@ export interface HeardFailureProps {
 // with the heard words and a way on (D9, typed D6). A failure over an open preview never reaches here: the provider
 // restores the preview without a message.
 export function HeardFailure(props: HeardFailureProps) {
-  if (props.failure.kind === 'unclear') return <UnclearSheet {...props} />;
-  return <SilentFailure {...props} />;
+  return (
+    <View testID={heardFailureId}>
+      {props.failure.kind === 'unclear' ? (
+        <UnclearSheet {...props} />
+      ) : (
+        <SilentFailure {...props} />
+      )}
+    </View>
+  );
 }
 
 // A tap or silence: a toast and no sheet, or the mic check on the third silent hold in a row.
@@ -97,7 +105,7 @@ function UnclearSheet({
     if (source === 'typed') voice.apply();
   };
   return (
-    <BottomSheet title={copy.title} open onClose={onClose} testID={heardFailureId}>
+    <BottomSheet title={copy.title} open onClose={onClose} testID={heardFailureSheetId}>
       <View style={{ gap: theme.space[3] }}>
         <HeardQuote text={text} source={source} misses={[]} testID={heardQuoteId} />
         <View>

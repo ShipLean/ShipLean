@@ -12,6 +12,7 @@ import { renderScreen } from '../test-support/renderScreen';
 import { renderWithRunner } from '../test-support/renderWithRunner';
 import { installFakeEngines, renderWithVoice } from '../test-support/voiceUi';
 import { primitiveIds } from '../ui/testIds';
+import { ToastHost } from '../ui/Toast';
 import { VoiceChangeRow } from './after/VoiceChangeRow';
 import { voiceChangeRowId } from './after/VoiceChangeRow.testIds';
 import { VoiceSendFailedBanner } from './after/VoiceSendFailedBanner';
@@ -131,7 +132,7 @@ describe('voice seams', () => {
       removable: true,
     };
     await renderScreen(
-      <>
+      <ToastHost>
         <MicSlot placement="tabBar" />
         <MicSlot placement="dock" />
         <ListeningSheet
@@ -190,7 +191,7 @@ describe('voice seams', () => {
         <VoiceSendFailedBanner />
         <MicPermissionSheet open status="deniedFinal" onClose={noop} onTypeInstead={noop} />
         <MicPermissionSheet open={false} status="granted" onClose={noop} onTypeInstead={noop} />
-      </>,
+      </ToastHost>,
     );
     for (const id of [
       'mic-tabBar',
@@ -458,7 +459,7 @@ describe('voice seams', () => {
       />
     );
     for (const failure of [...heardKinds, ...correctionKinds]) {
-      const view = await renderScreen(sheet(failure));
+      const view = await renderScreen(<ToastHost>{sheet(failure)}</ToastHost>);
       const heard = heardKinds.includes(failure);
       expect(screen.getByTestId(voiceFailureSheetId)).toBeOnTheScreen();
       expect(screen.queryByTestId(heardFailureId) !== null).toBe(heard);

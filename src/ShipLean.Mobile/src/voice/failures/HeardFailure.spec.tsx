@@ -7,9 +7,9 @@ import { heardQuoteId, heardQuoteLabelId, heardQuoteTextId } from '../sheets/Hea
 import { HeardFailure, type HeardFailureProps } from './HeardFailure';
 import {
   heardFailureFixId,
-  heardFailureId,
   heardFailureNoteId,
   heardFailureNothingChangedId,
+  heardFailureSheetId,
   heardFailureWhatCanISayId,
 } from './HeardFailure.testIds';
 import { micCheckId, micCheckInputId } from './MicCheck.testIds';
@@ -61,7 +61,8 @@ describe('HeardFailure', () => {
     expect(screen.getByTestId(primitiveIds.toast)).toHaveTextContent(
       'Hold the mic while you speak',
     );
-    expect(screen.queryByTestId(heardFailureId)).toBeNull();
+    expect(screen.queryByTestId(heardFailureSheetId)).toBeNull();
+    expect(screen.queryByTestId(primitiveIds.sheetBackdrop)).toBeNull();
     expect(screen.queryByTestId(micCheckId)).toBeNull();
     expect(p.onClose).toHaveBeenCalledTimes(1);
 
@@ -84,7 +85,8 @@ describe('HeardFailure', () => {
     expect(screen.getByTestId(primitiveIds.toast)).toHaveTextContent(
       "Didn't hear anything · nothing was changed · AirPods Pro",
     );
-    expect(screen.queryByTestId(heardFailureId)).toBeNull();
+    expect(screen.queryByTestId(heardFailureSheetId)).toBeNull();
+    expect(screen.queryByTestId(primitiveIds.sheetBackdrop)).toBeNull();
     expect(screen.queryByTestId(micCheckId)).toBeNull();
     expect(p.onClose).toHaveBeenCalledTimes(1);
   });
@@ -146,6 +148,7 @@ describe('HeardFailure', () => {
     const voice = fakeVoice();
     const v = props(unclear(voiceHeard), { heard: voiceHeard, source: 'voice' });
     const first = await renderWithVoice(<HeardFailure {...v} />, { voice });
+    expect(screen.getByTestId(heardFailureSheetId)).toBeOnTheScreen();
     expect(screen.getByTestId(heardFailureNoteId)).toHaveTextContent('Add as a note');
     expect(screen.getByTestId(heardFailureFixId)).toHaveTextContent('Fix');
     await fireEvent.press(screen.getByTestId(heardFailureNoteId));
