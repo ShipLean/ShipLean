@@ -93,7 +93,9 @@ export function DecisionChange({ item, decision, onClose }: DecisionEditorProps)
           showToast(
             settled
               ? `${decision.label} changed · comment posted for the next agent`
-              : `${decision.label} changed`,
+              : pick === 'recommended' && open
+                ? `${decision.label} confirmed`
+                : `${decision.label} changed`,
           );
           onClose();
         },
@@ -170,7 +172,7 @@ export function DecisionChange({ item, decision, onClose }: DecisionEditorProps)
         value={note}
         onChange={(event) => setNote(event.target.value)}
       />
-      {settled && me ? (
+      {settled ? (
         <div
           data-testid={ids.changeSettledWarning}
           className="rounded-control border border-caution bg-[color-mix(in_srgb,var(--color-warn)_10%,var(--color-surface))] px-2 py-1.5 text-[length:var(--text-sm)]"
@@ -179,7 +181,8 @@ export function DecisionChange({ item, decision, onClose }: DecisionEditorProps)
             {decision.label} is already {decision.state}.
           </b>
           Saving a different answer posts a comment on {item.key} (“{decision.label} changed from …
-          to … by {me.name}”) so the next agent picks it up. The old answer stays in the history.
+          to … by {me?.name ?? 'you'}”) so the next agent picks it up. The old answer stays in the
+          history.
         </div>
       ) : null}
       <div className="flex flex-wrap items-center gap-2">

@@ -33,7 +33,7 @@ export function DecisionDiscuss({ item, decision, onClose }: DecisionEditorProps
         Discuss {decision.label}
       </span>
       <blockquote className="m-0 border-l-2 border-edge pl-2 text-[length:var(--text-sm)] text-ink-muted">
-        <b>{decision.label}</b> · {decision.question}
+        <b>{decision.label}</b> · {decision.question}: {decision.currentAnswer}
       </blockquote>
       <textarea
         data-testid={ids.discussInput}

@@ -44,6 +44,9 @@ async function setUp(page: Page, asks: ItemAsksDto, number: number) {
   return { stub, closed, view };
 }
 const toast = (page: Page) => page.getByTestId(componentTestIds.toast);
+const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// A toast reads its message then the dismiss glyph; anchoring both ends keeps a longer message from matching.
+const toastText = (message: string) => new RegExp(`^${escape(message)}\\s*×$`);
 const path = (asks: ItemAsksDto, rest: string) => `/api/work-items/${asks.workItemId}/${rest}`;
 
 test('DecisionChange_WhenAlternativePicked_ShouldPostAlternativeIndexAndNote', async ({
@@ -65,7 +68,7 @@ test('DecisionChange_WhenAlternativePicked_ShouldPostAlternativeIndexAndNote', a
     text: null,
     note: 'The picker is a list',
   });
-  await expect(toast(page)).toContainText('D1 changed');
+  await expect(toast(page)).toHaveText(toastText('D1 changed'));
   await expect.poll(() => closed.count).toBe(1);
 });
 
@@ -114,7 +117,7 @@ test('DecisionChange_WhenSettled_ShouldWarnAboutComment', async ({ mount, page }
   await component.getByTestId(ids.changeSave).click();
   await expect.poll(() => stub.writes.length).toBe(1);
   expect(stub.writes[0].url).toBe(path(waiting, 'decisions/5/change'));
-  await expect(toast(page)).toContainText('D5 changed · comment posted for the next agent');
+  await expect(toast(page)).toHaveText(toastText('D5 changed · comment posted for the next agent'));
   await expect.poll(() => closed.count).toBe(1);
 });
 
@@ -135,7 +138,7 @@ test('DecisionChange_WhenRecommendedOnOpen_ShouldConfirm', async ({ mount, page 
   await expect.poll(() => stub.writes.length).toBe(1);
   expect(stub.writes[0].url).toBe(path(waiting, 'decisions/confirm'));
   expect(stub.writes[0].body).toEqual({ numbers: [1] });
-  await expect(toast(page)).toContainText('D1 confirmed');
+  await expect(toast(page)).toHaveText(toastText('D1 confirmed'));
   await expect.poll(() => closed.count).toBe(1);
 });
 
@@ -157,7 +160,7 @@ test('DecisionChange_WhenRecommendedOnOpenWithNote_ShouldPostChangeWithNote', as
     text: null,
     note: 'Checked with Mei',
   });
-  await expect(toast(page)).toContainText('D1 changed');
+  await expect(toast(page)).toHaveText(toastText('D1 confirmed'));
 });
 
 test('DecisionChange_WhenCurrentAnswerSavedOnSettled_ShouldCloseWithoutPosting', async ({
@@ -170,7 +173,7 @@ test('DecisionChange_WhenCurrentAnswerSavedOnSettled_ShouldCloseWithoutPosting',
   await expect(component.getByTestId(ids.changeOption).first()).toBeChecked();
   await component.getByTestId(ids.changeSave).click();
 
-  await expect(toast(page)).toContainText('D5 unchanged');
+  await expect(toast(page)).toHaveText(toastText('D5 unchanged'));
   await expect.poll(() => closed.count).toBe(1);
   expect(stub.writes).toHaveLength(0);
 });
@@ -192,7 +195,7 @@ test('DecisionChange_WhenAnswerIsOwn_ShouldOfferCurrentAnswerBetweenAlternatives
   await expect(current.locator('xpath=..')).toContainText('Current answer · current');
 
   await component.getByTestId(ids.changeSave).click();
-  await expect(toast(page)).toContainText(`${d1.label} unchanged`);
+  await expect(toast(page)).toHaveText(toastText(`${d1.label} unchanged`));
   await expect.poll(() => closed.count).toBe(1);
   expect(stub.writes).toHaveLength(0);
 });
@@ -241,6 +244,7 @@ for (const [name, asks, number, prepare] of shots) {
       const { view } = await setUp(page, asks, number);
       const component = await mount(view);
       await prepare(page);
+      if (number === 5) await expect(component.getByTestId(ids.changeSettledWarning)).toBeVisible();
       await expect(component.getByTestId(ids.decisionChange)).toBeVisible();
       await expect(component.getByTestId(ids.decisionChange)).toHaveScreenshot(
         `decision-${name}.${theme}.png`,

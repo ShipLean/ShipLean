@@ -43,6 +43,9 @@ test('DecisionDiscuss_WhenPosted_ShouldPostQuotedBodyToDiscussRouteAndClose', as
   const { stub, closed, view } = await setUp(page);
   const component = await mount(view);
 
+  await expect(component.locator('blockquote')).toHaveText(
+    `D1 · ${d1.question}: ${d1.currentAnswer}`,
+  );
   await expect(component).toContainText('Posts to Discussion with D1 quoted. D1 stays open.');
   await component.getByTestId(ids.discussInput).fill('Does the vault skip CVV for tokens?');
   await component.getByTestId(ids.discussPost).click();
@@ -52,8 +55,8 @@ test('DecisionDiscuss_WhenPosted_ShouldPostQuotedBodyToDiscussRouteAndClose', as
   expect(stub.writes[0].body).toEqual({
     body: `> **D1** · ${d1.question}: ${d1.currentAnswer}\n\nDoes the vault skip CVV for tokens?`,
   });
-  await expect(page.getByTestId(componentTestIds.toast)).toContainText(
-    'Comment posted · D1 stays open',
+  await expect(page.getByTestId(componentTestIds.toast)).toHaveText(
+    /^Comment posted · D1 stays open\s*×$/,
   );
   await expect.poll(() => closed.count).toBe(1);
 });
@@ -88,6 +91,7 @@ for (const theme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
     const { view } = await setUp(page);
     const component = await mount(view);
+    await expect(component.getByTestId(ids.decisionDiscuss)).toBeVisible();
     await component
       .getByTestId(ids.discussInput)
       .fill(
