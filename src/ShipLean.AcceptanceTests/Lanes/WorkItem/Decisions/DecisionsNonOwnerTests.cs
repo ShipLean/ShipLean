@@ -20,12 +20,14 @@ public class DecisionsNonOwnerTests : SeededAcceptanceTest
         await new WorkItemScreen(Page).OpenAsync("SHIP", key);
         var panel = new DecisionsPanel(Page, id);
         await Expect(panel.WaitingOn).ToContainTextAsync("Joel");
+        // The hint shows only while something waits, so it is checked before the confirm.
+        await Expect(panel.Summary).ToContainTextAsync("you can answer too");
 
         var response = await panel.ConfirmAsync(1);
 
         response.Ok.ShouldBeTrue();
         await Expect(panel.Toasts.Filter(new() { HasText = "D1 confirmed: “Postgres”" })).ToBeVisibleAsync();
-        await Expect(panel.Summary).ToContainTextAsync("you can answer too");
+        await Expect(panel.Summary).ToContainTextAsync("✓ Nothing waiting");
         await Page.ReloadAsync();
         await Expect(panel.FoldToggle).ToBeVisibleAsync();
         await panel.ExpandAsync();
