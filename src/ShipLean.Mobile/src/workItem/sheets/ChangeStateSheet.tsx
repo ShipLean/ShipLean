@@ -29,6 +29,7 @@ export const ChangeStateSheet: FC<ChangeStateSheetProps> = ({ item, open, onClos
     if (state.id === item.state.id) return;
     dispatch({
       area: 'workItem',
+      projectId: item.projectId,
       kind: 'setState',
       itemId: item.id,
       key: item.key,

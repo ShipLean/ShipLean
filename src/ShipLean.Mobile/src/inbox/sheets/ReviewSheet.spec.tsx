@@ -57,6 +57,26 @@ describe.each<Scheme>(['light', 'dark'])('ReviewSheet (%s)', (scheme) => {
     }
     expect(screen.queryByTestId(reviewDecisionId(9))).toBeNull();
     expect(screen.getByLabelText('Confirm 8')).toBeTruthy();
+    expect(screen.getByTestId(inboxIds.reviewNote)).toHaveTextContent(
+      'Posted on SHIP-907 as your answers: 8 recommended. The next agent to pick up SHIP-907 reads them.',
+    );
+  });
+
+  it('gives the own answer only the design copy', async () => {
+    await open(scheme);
+    await fireEvent.press(screen.getByTestId(reviewChangeId(2)));
+    expect(screen.getByTestId(reviewChoiceId(2, 'own'))).toHaveTextContent(/^Your own answer$/);
+    await fireEvent.press(screen.getByTestId(reviewChoiceId(2, 'own')));
+    expect(screen.getByTestId(reviewChoiceId(2, 'own'))).toHaveTextContent(/^Your own answer$/);
+    expect(screen.getByTestId(reviewOwnId(2)).props.placeholder).toBe('Type an answer');
+  });
+
+  it('leads with who raised the decisions and when', async () => {
+    const { item } = await open(scheme);
+    const ask = item.asks[0]!;
+    expect(screen.getByTestId(inboxIds.reviewLead)).toHaveTextContent(
+      `${item.title} · from ${ask.agentName ?? ask.from?.name}, ${ask.atLabel}.`,
+    );
   });
 
   it('dispatches a review with the change when D4 is changed to the alternative', async () => {
@@ -65,6 +85,9 @@ describe.each<Scheme>(['light', 'dark'])('ReviewSheet (%s)', (scheme) => {
     await fireEvent.press(screen.getByTestId(reviewChoiceId(4, 'alt-0')));
     await fireEvent.changeText(screen.getByTestId(reviewWhyId(4)), ' Keychain only is too strict ');
     expect(screen.getByTestId(reviewDecisionId(4))).toHaveTextContent(/Changed/);
+    expect(screen.getByTestId(inboxIds.reviewNote)).toHaveTextContent(
+      'Posted on SHIP-907 as your answers: 7 recommended, D4 changed. The next agent to pick up SHIP-907 reads them.',
+    );
     await fireEvent.press(confirm());
     expect(actions.dispatched).toEqual([
       {
@@ -100,13 +123,24 @@ describe.each<Scheme>(['light', 'dark'])('ReviewSheet (%s)', (scheme) => {
     });
   });
 
-  it('opens scrolled to Confirm from Approve all', async () => {
+  it('opens scrolled to Confirm from Approve all, once', async () => {
     const spy = jest.spyOn(ScrollView.prototype, 'scrollToEnd');
     try {
       await open(scheme, true);
-      fireEvent(screen.getByTestId(inboxIds.reviewScroll), 'contentSizeChange', 300, 900);
-      expect(spy).toHaveBeenCalled();
-      spy.mockClear();
+      await fireEvent(screen.getByTestId(inboxIds.reviewScroll), 'contentSizeChange', 300, 900);
+      await fireEvent(screen.getByTestId(inboxIds.reviewScroll), 'contentSizeChange', 300, 1200);
+      expect(spy).toHaveBeenCalledTimes(1);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('stays at the top when Review all opens it', async () => {
+    const spy = jest.spyOn(ScrollView.prototype, 'scrollToEnd');
+    try {
+      await open(scheme, false);
+      await fireEvent(screen.getByTestId(inboxIds.reviewScroll), 'contentSizeChange', 300, 900);
+      expect(spy).not.toHaveBeenCalled();
     } finally {
       spy.mockRestore();
     }

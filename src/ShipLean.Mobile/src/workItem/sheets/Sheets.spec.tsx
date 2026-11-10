@@ -33,7 +33,7 @@ const ref = (s: (typeof FEATURE_STATES)[number]) => ({
   category: s.category,
 });
 
-const child = (type: 'story' | 'feature', n: number): ChildSummaryDto => ({
+const child = (type: 'story' | 'bug' | 'feature', n: number): ChildSummaryDto => ({
   id: `child-${type}-${n}`,
   key: `SHIP-${1000 + n}`,
   type: { id: type, name: type },
@@ -99,6 +99,7 @@ describe.each<Scheme>(['light', 'dark'])('Work item sheets (%s)', (scheme) => {
     expect(runner.dispatched[0].batch).toEqual([
       {
         area: 'workItem',
+        projectId: PROJECT,
         kind: 'setState',
         itemId: item.id,
         key: item.key,
@@ -109,6 +110,13 @@ describe.each<Scheme>(['light', 'dark'])('Work item sheets (%s)', (scheme) => {
         fromStateName: active.name,
       },
     ]);
+  });
+
+  it('dispatches nothing when the current state is picked', async () => {
+    const { runner } = await open(feature(), scheme);
+    await fireEvent.press(screen.getByTestId(ids.changeStateButtonId));
+    await fireEvent.press(await screen.findByTestId(ids.stateOptionId(active.name)));
+    expect(runner.dispatched).toHaveLength(0);
   });
 
   it('lists members and No owner and dispatches assign', async () => {
@@ -122,6 +130,11 @@ describe.each<Scheme>(['light', 'dark'])('Work item sheets (%s)', (scheme) => {
       .getAllByTestId(/^wi-owner-option-(?!none)/)
       .map((n) => n.props.testID as string);
     expect(people).toHaveLength(2);
+    // No owner comes first, then the members in the order the server sends them (the web's AssigneeField).
+    const flat = JSON.stringify(screen.toJSON());
+    const at = [ids.noOwnerOptionId, ...people].map((id) => flat.indexOf(`"${id}"`));
+    expect(at.every((i) => i >= 0)).toBe(true);
+    expect(at).toEqual([...at].sort((a, b) => a - b));
 
     await fireEvent.press(screen.getByTestId(people[0]));
     await fireEvent.press(screen.getByTestId(ids.assignButtonId));
@@ -129,6 +142,7 @@ describe.each<Scheme>(['light', 'dark'])('Work item sheets (%s)', (scheme) => {
     const [first, second] = runner.dispatched.map((d) => d.batch[0]);
     expect(first).toMatchObject({
       kind: 'assign',
+      projectId: PROJECT,
       itemId: item.id,
       revision: 7,
       userId: people[0].replace('wi-owner-option-', ''),
@@ -156,6 +170,14 @@ describe.each<Scheme>(['light', 'dark'])('Work item sheets (%s)', (scheme) => {
     expect(mockPush).toHaveBeenCalledWith(
       links.backlog('SHIP', { level: 'stories', feature: item.key }),
     );
+  });
+
+  it('counts every story-level child of a Feature, bugs included', async () => {
+    await open(
+      feature({ children: [...[1, 2, 3, 4, 5].map((n) => child('story', n)), child('bug', 6)] }),
+      scheme,
+    );
+    expect(screen.getByText('6 stories ›')).toBeTruthy();
   });
 
   it('opens the Backlog at Features filtered to the Epic from an Epic', async () => {

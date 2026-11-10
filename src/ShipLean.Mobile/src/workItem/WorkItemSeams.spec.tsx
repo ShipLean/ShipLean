@@ -23,6 +23,7 @@ import { WorkItemActionsProvider, useWorkItemActions } from './WorkItemActions';
 
 const note: WorkItemAction = {
   area: 'workItem',
+  projectId: 'p1',
   kind: 'addNote',
   itemId: 'i1',
   key: 'SHIP-1',

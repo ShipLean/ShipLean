@@ -7,12 +7,14 @@ import {
 import { addComment, archiveComment, listComments } from '@shiplean/core/api/commentsApi';
 import { getMe } from '@shiplean/core/api/me';
 import { confirmStatus, setStatusLine } from '@shiplean/core/api/status';
-import { patchItem } from '@shiplean/core/api/workItem';
-import type { WorkItemChanges } from '@shiplean/core/api/workItems';
+import { getItemByKey, patchItem } from '@shiplean/core/api/workItem';
+import type { WorkItemChanges, WorkItemDto } from '@shiplean/core/api/workItems';
 import type { Api, Executor, Pending, PreviewLine, SendReceipt } from '../actions/types';
 import type { WorkItemAction } from './actions';
 
 type Kind = WorkItemAction['kind'];
+type Of<K extends Kind> = Extract<WorkItemAction, { kind: K }>;
+type FieldAction = Of<'setState' | 'assign' | 'setHealth' | 'setStatus'>;
 
 const REVERSIBLE: Record<Kind, boolean> = {
   setState: true,
@@ -47,7 +49,26 @@ const NO_CHANGES: WorkItemChanges = {
 // The device clock that stamped Pending.createdAt and the server clock that stamped a comment can differ.
 const CLOCK_SKEW_MS = 2 * 60 * 1000;
 
-const healthLabel = (health: Extract<WorkItemAction, { kind: 'setHealth' }>['health']): string =>
+// Undo of a field change (amendments 9 and 12.4). The send moved the revision, so read the item again: if the field no
+// longer holds what the send wrote, someone changed it since and Undo writes nothing; otherwise put the old value back
+// at the item's own revision (a 409 fails too, never a blind retry).
+async function undoField(
+  a: FieldAction,
+  holds: (item: WorkItemDto) => boolean,
+  write: (revision: number) => Promise<unknown>,
+): Promise<void> {
+  const item = await getItemByKey(a.projectId, a.key);
+  if (!holds(item)) throw new Error(`${a.key} has changed since, so the change can't be undone.`);
+  await write(item.revision);
+}
+
+const holdsState = (a: Of<'setState'>) => (item: WorkItemDto) => item.state.id === a.stateId;
+const holdsOwner = (a: Of<'assign'>) => (item: WorkItemDto) =>
+  (item.assignee?.id ?? null) === a.userId;
+const holdsHealth = (a: Of<'setHealth'>) => (item: WorkItemDto) => item.health === a.health;
+const holdsStatus = (a: Of<'setStatus'>) => (item: WorkItemDto) => item.statusLine === a.text;
+
+const healthLabel = (health: Of<'setHealth'>['health']): string =>
   health === 'onTrack'
     ? 'On track'
     : health === 'atRisk'
@@ -170,13 +191,22 @@ async function undo(a: WorkItemAction, receipt?: SendReceipt | null): Promise<vo
         throw new Error('The note was not recorded, so it cannot be undone.');
       return archiveComment(receipt.createdId);
     case 'setState':
+      return undoField(a, holdsState(a), (revision) =>
+        patchItem(a.itemId, revision, { ...NO_CHANGES, state: { value: a.fromStateId } }),
+      );
     case 'assign':
+      return undoField(a, holdsOwner(a), (revision) =>
+        patchItem(a.itemId, revision, { ...NO_CHANGES, assignee: { value: a.fromUserId } }),
+      );
     case 'setHealth':
+      return undoField(a, holdsHealth(a), (revision) =>
+        patchItem(a.itemId, revision, { ...NO_CHANGES, health: { value: a.from } }),
+      );
     case 'setStatus':
-      // TODO: read the item with getItemByKey(projectId, a.key), fail unless the field still holds what the send
-      // wrote, then PATCH the from value back at the item's current revision (a 409 fails too). WorkItemAction has no
-      // projectId, so the read has no project to ask.
-      throw new Error(`${a.key} can't be undone from here yet.`);
+      // A Feature that had no line has it cleared.
+      return undoField(a, holdsStatus(a), (revision) =>
+        setStatusLine(a.itemId, revision, a.from ?? ''),
+      );
     case 'approve':
     case 'discuss':
     case 'reply':
@@ -191,6 +221,7 @@ async function reconcileOne(
   caller: () => Promise<string>,
 ): Promise<'sent' | 'notSent'> {
   const a = p.action as WorkItemAction;
+  const item = () => getItemByKey(a.projectId, a.key);
   const since = Date.parse(p.createdAt) - CLOCK_SKEW_MS;
   const commentedBy = async (body: string): Promise<boolean> => {
     const me = await caller();
@@ -216,13 +247,18 @@ async function reconcileOne(
         : 'sent';
     }
     case 'setState':
+      return holdsState(a)(await item()) ? 'sent' : 'notSent';
     case 'assign':
+      return holdsOwner(a)(await item()) ? 'sent' : 'notSent';
     case 'setHealth':
+      return holdsHealth(a)(await item()) ? 'sent' : 'notSent';
     case 'setStatus':
+      return holdsStatus(a)(await item()) ? 'sent' : 'notSent';
     case 'confirmStatus':
-      // TODO: read the item with getItemByKey(projectId, a.key) and say 'sent' when it holds the change. WorkItemAction
-      // has no projectId, so the read has no project to ask.
-      throw new Error(`${a.key} can't be checked from here yet.`);
+      // A confirmation changes no field, but it is a revision of its own (StatusConfirm.cs). The action carries no
+      // earlier verified stamp to compare with, so the rule is the revision: past a.revision means it went through.
+      // If someone else's change moved it instead, a resend at a.revision would only be a 409, so 'sent' loses nothing.
+      return (await item()).revision > a.revision ? 'sent' : 'notSent';
   }
 }
 
@@ -234,8 +270,21 @@ export const workItemExecutor: Executor<WorkItemAction> = {
   reversible: (kind) => REVERSIBLE[kind],
   undo: (a, _api: Api, receipt) => undo(a, receipt),
   async reconcile(items) {
+    // The caller is the same for the whole batch: read it once, and only when a comment check needs it.
     let me: Promise<string> | null = null;
     const caller = () => (me ??= getMe().then((u) => u.id));
-    return Promise.all(items.map((p) => reconcileOne(p, caller)));
+    // A read that fails gives that Pending no verdict, so the runner keeps it uncertain and asks again later
+    // (runner.ts: a missing verdict keeps it uncertain). It never takes the rest of the batch down with it.
+    const verdicts: ('sent' | 'notSent')[] = [];
+    await Promise.all(
+      items.map(async (p, i) => {
+        try {
+          verdicts[i] = await reconcileOne(p, caller);
+        } catch {
+          // No verdict: still uncertain.
+        }
+      }),
+    );
+    return verdicts;
   },
 };

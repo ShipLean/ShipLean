@@ -397,6 +397,11 @@ export function backlogVoiceSpec(ctx: BacklogVoiceContext): ScreenVoiceSpec<Back
     screen: 'backlog',
     actions: BACKLOG_ACTIONS,
     context: () => ({
+      // The keys the correction sheets read: the items on screen in display order, the states the screen can set
+      // (none: the phone Backlog sets no state) and the focused item (none: the list has no focus).
+      rows: ctx.rows.map((r) => ({ key: r.key, title: r.title })),
+      states: [],
+      key: null,
       level: ctx.level,
       filters: ctx.filters,
       items: ctx.rows.map((r) => ({

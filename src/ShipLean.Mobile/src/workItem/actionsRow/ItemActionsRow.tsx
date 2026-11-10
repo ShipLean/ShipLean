@@ -1,3 +1,4 @@
+import { isStoryLevel } from '@shiplean/core/api/workItemTypes';
 import type { WorkItemDto } from '@shiplean/core/api/workItems';
 import { useRouter } from 'expo-router';
 import { useState, type FC } from 'react';
@@ -22,13 +23,14 @@ export const ItemActionsRow: FC<ItemActionsRowProps> = ({ item, projectKey }) =>
   const [stateOpen, setStateOpen] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
 
+  // A Feature counts every story-level child (stories, bugs, action items), as the Backlog at Stories level lists them.
   const below =
     item.type.id === 'feature'
-      ? { child: 'story', one: 'story', many: 'stories' }
+      ? { counts: isStoryLevel, one: 'story', many: 'stories' }
       : item.type.id === 'epic'
-        ? { child: 'feature', one: 'feature', many: 'features' }
+        ? { counts: (type: string) => type === 'feature', one: 'feature', many: 'features' }
         : null;
-  const count = below === null ? 0 : item.children.filter((c) => c.type.id === below.child).length;
+  const count = below === null ? 0 : item.children.filter((c) => below.counts(c.type.id)).length;
 
   const open = () => {
     if (below === null) return;
