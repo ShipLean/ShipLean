@@ -70,10 +70,11 @@ public sealed class BacklogRowExtras(NpgsqlDataSource dataSource, INeedsYouCount
             WHERE w.id = ANY(@ids)
             """,
             new { ids = ids.ToArray() }, cancellationToken: cancellationToken));
-        return rows.ToDictionary(r => r.Id, r => new Stored(r.Health, r.BlockedBy));
+        return rows.ToDictionary(r => r.Id, r => new Stored(r.Health, (string[])r.BlockedBy));
     }
 
-    private sealed record StoredRow(Guid Id, string? Health, string[] BlockedBy);
+    // BlockedBy is an Array: Npgsql reports text[] as one, and it is always a string[].
+    private sealed record StoredRow(Guid Id, string? Health, Array BlockedBy);
 
     private sealed record Stored(string? Health, IReadOnlyList<string> BlockedBy);
 }
