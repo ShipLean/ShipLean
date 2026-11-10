@@ -15,7 +15,8 @@ export function toHotwords(hotwords: string[]): string {
   for (const hotword of hotwords) {
     // A colon followed by a number would be read as the line's own boost score, so none goes through.
     const phrase = hotword.replace(/:/g, ' ').replace(/\s+/g, ' ').trim();
-    if (!phrase) continue;
+    // sherpa-onnx rejects the whole file if a line has no letter ("42", "#1"), so such a line is dropped.
+    if (!/\p{L}/u.test(phrase)) continue;
     const group = [phrase, ...spokenKey(phrase)].filter((line) => !seen.has(line.toLowerCase()));
     if (group.length === 0) continue;
     if (lines.length + group.length > MAX_HOTWORDS) continue;
