@@ -1,5 +1,6 @@
 import {
   featuresKeys,
+  type DigestItemDto,
   getFeatureDigest,
   type FeatureDigestDto,
 } from '@shiplean/core/api/featuresOverview';
@@ -16,7 +17,24 @@ export interface DigestPages {
   // What sits below the last loaded page.
   tail: DigestTail;
   loadMore: () => void;
+  // Pull to refresh: back to the first page, read again.
+  refresh: () => void;
+  refreshing: boolean;
   retryTail: () => void;
+}
+
+// The server pages by change, so one item can come back on two pages. Items keep the place where they first appear and
+// later pages' lines are appended to them.
+export function mergeItems(lists: DigestItemDto[][]): DigestItemDto[] {
+  const byId = new Map<string, DigestItemDto>();
+  for (const item of lists.flat()) {
+    const seen = byId.get(item.id);
+    byId.set(
+      item.id,
+      seen === undefined ? item : { ...seen, lines: [...seen.lines, ...item.lines] },
+    );
+  }
+  return [...byId.values()];
 }
 
 // The digest read a page at a time: the first page, then one more for each cursor asked for. Each page keeps its own
@@ -48,6 +66,12 @@ export function useDigestPages(projectId: string): DigestPages {
   }, [next]);
 
   const first = results[0];
+  const [refreshing, setRefreshing] = useState(false);
+  const refresh = () => {
+    setCursors([]);
+    setRefreshing(true);
+    void first.refetch().finally(() => setRefreshing(false));
+  };
   return {
     first: {
       isError: first.isError,
@@ -57,6 +81,8 @@ export function useDigestPages(projectId: string): DigestPages {
     pages,
     tail,
     loadMore,
+    refresh,
+    refreshing,
     retryTail: () => void last.refetch(),
   };
 }

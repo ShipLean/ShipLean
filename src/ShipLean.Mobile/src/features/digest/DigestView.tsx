@@ -2,6 +2,7 @@ import type { DigestItemDto } from '@shiplean/core/api/featuresOverview';
 import { useRouter } from 'expo-router';
 import { useRef } from 'react';
 import {
+  RefreshControl,
   ScrollView,
   Text,
   View,
@@ -18,7 +19,7 @@ import { Skeleton } from '../../ui/Skeleton';
 import { TopBar } from '../../ui/TopBar';
 import { featureDigestIds } from '../testIds';
 import { DigestItem } from './DigestItem';
-import { useDigestPages } from './useDigestPages';
+import { mergeItems, useDigestPages } from './useDigestPages';
 import { useMarkSeen } from './useMarkSeen';
 
 // How far from the end of the list the next page starts to load.
@@ -106,8 +107,8 @@ function Digest({ projectId, projectKey }: DigestProps) {
     );
   }
 
-  const needsYou = digest.pages.flatMap((p) => p.needsYou);
-  const changed = digest.pages.flatMap((p) => p.changed);
+  const needsYou = mergeItems(digest.pages.map((p) => p.needsYou));
+  const changed = mergeItems(digest.pages.map((p) => p.changed));
   const open = (key: string) => router.push(links.item(projectKey, key));
   const section = (testID: string, title: string, items: DigestItemDto[]) =>
     items.length === 0 ? null : (
@@ -145,6 +146,9 @@ function Digest({ projectId, projectKey }: DigestProps) {
       <Bar projectKey={projectKey} onSeen={markSeen} />
       <ScrollView
         testID={featureDigestIds.scroll}
+        refreshControl={
+          <RefreshControl refreshing={digest.refreshing} onRefresh={digest.refresh} />
+        }
         scrollEventThrottle={64}
         onScroll={onScroll}
         onLayout={(e) => {

@@ -5,7 +5,6 @@ import type {
 } from '@shiplean/core/api/featuresOverview';
 import { Pressable, Text, View } from 'react-native';
 import { useTheme } from '../../theme';
-import { layout } from '../../ui/layout';
 import {
   featureDigestItemId,
   featureDigestItemTypeId,
@@ -20,10 +19,10 @@ import {
 // One mark per kind of change (feature-board.html .chg): the glyph is decoration, the label is what a reader hears.
 const KINDS: Record<DigestLineKind, { glyph: string; label: string }> = {
   state: { glyph: '→', label: 'State' },
-  health: { glyph: '♥', label: 'Health' },
+  health: { glyph: '♥\uFE0E', label: 'Health' },
   statusLine: { glyph: '¶', label: 'Status line' },
-  comment: { glyph: '✉', label: 'Note' },
-  agentWork: { glyph: '⚙', label: 'Agent work' },
+  comment: { glyph: '✉\uFE0E', label: 'Note' },
+  agentWork: { glyph: '⚙\uFE0E', label: 'Agent work' },
   ask: { glyph: '?', label: 'Question' },
 };
 
@@ -53,7 +52,7 @@ export function DigestItem({ item, onOpen }: DigestItemProps) {
         accessibilityLabel={`Open ${item.key}`}
         onPress={() => onOpen(item.key)}
         style={{
-          minHeight: layout.listRow / 2,
+          minHeight: theme.touch.row,
           flexDirection: 'row',
           alignItems: 'center',
           gap: theme.space[2],

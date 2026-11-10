@@ -16,10 +16,11 @@ import {
 // The manifest's sizes are all 0 until they are pinned: sized entries, with Parakeet split over two files as the
 // pinned manifest may have it.
 const SIZES = { parakeet: 600_000_000, 'qwen3-1.7b': 1_100_000_000, 'qwen3-4b': 2_500_000_000 };
+const PARAKEET_FILES = MODEL_FILES.filter((f) => f.model === 'parakeet').length;
 const FILES: ModelFile[] = [
   ...MODEL_FILES.filter((f) => f.model === 'parakeet').flatMap((f) => [
-    { ...f, id: `${f.id}-a`, bytes: SIZES.parakeet / 2 },
-    { ...f, id: `${f.id}-b`, bytes: SIZES.parakeet / 2 },
+    { ...f, id: `${f.id}-a`, bytes: SIZES.parakeet / (2 * PARAKEET_FILES) },
+    { ...f, id: `${f.id}-b`, bytes: SIZES.parakeet / (2 * PARAKEET_FILES) },
   ]),
   ...MODEL_FILES.filter((f) => f.model !== 'parakeet').map((f) => ({
     ...f,
@@ -45,7 +46,7 @@ function status(partial: Partial<ModelStatus> = {}): ModelStatus {
       ...idsOf('parakeet').map((id) => ({
         id,
         state: 'checked' as const,
-        bytes: SIZES.parakeet / 2,
+        bytes: SIZES.parakeet / (2 * PARAKEET_FILES),
       })),
       ...idsOf('qwen3-4b').map((id) => ({
         id,
