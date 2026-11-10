@@ -1,4 +1,4 @@
-import type { BoardSettingsJson } from '../../../api/persisted';
+import type { BoardSettingsJson } from '@shiplean/core/api/persisted';
 import type { PaneProps } from '../../../components/SettingsDialog/types';
 import type { BoardSettingsContext } from '../../boardSettings/panes';
 import { listedTags } from '../../boardSettings/panes/tags/tagEdits';

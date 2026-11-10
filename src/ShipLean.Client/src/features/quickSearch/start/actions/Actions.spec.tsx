@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { MeDto } from '../../../../api/me';
+import type { MeDto } from '@shiplean/core/api/me';
 import { ActionsHarness } from './ct/ActionsHarness';
 import { actionsHarnessIds as ids } from './ct/harnessIds';
 

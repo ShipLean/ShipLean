@@ -1,4 +1,4 @@
-import type { RolloverItemDto, RolloverMove } from '../../../api/sprints';
+import type { RolloverItemDto, RolloverMove } from '@shiplean/core/api/sprints';
 
 /** Where one unfinished item goes: the next sprint, the top of the backlog, or nowhere (it stays in the ended sprint). */
 export type Destination = 'next' | 'backlog' | 'stay';

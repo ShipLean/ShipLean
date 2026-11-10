@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import type { BacklogSectionDto } from '../../../api/views';
+import type { BacklogSectionDto } from '@shiplean/core/api/views';
 import { Chip } from '../../../components/Chip';
 import { routePath } from '../../../routes';
 import { useSectionPreview } from '../drag/GroupDragContext';

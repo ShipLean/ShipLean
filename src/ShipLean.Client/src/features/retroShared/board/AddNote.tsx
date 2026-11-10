@@ -1,4 +1,4 @@
-import type { RetroCategory, RetroPointDto } from '../../../api/retros';
+import type { RetroCategory, RetroPointDto } from '@shiplean/core/api/retros';
 import { retroSharedTestIds as ids } from '../testIds';
 import type { AddTarget } from './AddTarget';
 import { NoteEditor } from './NoteEditor';

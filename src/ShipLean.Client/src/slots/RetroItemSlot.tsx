@@ -1,4 +1,4 @@
-import type { ProjectDto } from '../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { pagesTestIds } from '../features/pages/testIds';
 import { RetroItemPanel } from '../features/retros/item/RetroItemPanel';
 

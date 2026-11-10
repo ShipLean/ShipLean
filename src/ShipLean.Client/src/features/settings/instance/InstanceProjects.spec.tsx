@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { InstanceProjectDto } from '../../../api/projects';
+import type { InstanceProjectDto } from '@shiplean/core/api/projects';
 import { settingsTestIds as ids } from '../testIds';
 import { ToastHost } from '../../../components/ToastHost';
 import { componentTestIds } from '../../../components/testIds';

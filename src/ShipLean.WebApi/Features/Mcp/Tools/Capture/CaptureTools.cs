@@ -8,6 +8,7 @@ using ShipLean.Contracts.Mcp;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.WorkItems;
 using ShipLean.WebApi.Features.Mcp.Contracts;
+using ShipLean.WebApi.Features.Mcp.Payloads;
 using ShipLean.WebApi.Features.Mcp.Plan;
 using ShipLean.WebApi.Features.Mcp.Resolve;
 
@@ -19,12 +20,13 @@ internal sealed class CaptureTools(
 {
     private const string PlanKind = "capture_work";
 
-    [McpServerTool(Name = "capture_work"), McpScope(McpScopes.Write, PreviewScope = McpScopes.Read, PreviewWhenManyOf = "items")]
-    [Description("Put new work in the backlog: up to 100 epics, features, stories, bugs or tasks from the conversation, each with its title, description, acceptance criteria, repro steps, severity, points, tags, priority, parent and sprint. One item is created straight away. Several items come back as a preview and a plan; call again with that plan to create exactly those items in one go. Name the project when the user is in more than one.")]
+    [McpServerTool(Name = "capture_work"), McpScope(McpScopes.Write, PreviewScope = McpScopes.Read, PreviewWhenManyOf = "items"), McpPayload]
+    [Description("Put new work in the backlog: up to 100 epics, features, stories, bugs or tasks from the conversation, each with its title, description, acceptance criteria, repro steps, severity, points, tags, priority, parent and sprint. One item is created straight away. Several items come back as a preview and a plan; call again with that plan to create exactly those items in one go. Name the project when the user is in more than one. When the items are already in a file or are over about 20 KB, upload a JSON object holding them, like {\"items\": [...]}, with create_payload_upload (curl -T) and pass payload instead of items.")]
     public async Task<CallToolResult> CaptureWork(
         [Description("The items to create, 1 to 100. Left out when you pass a plan.")] IReadOnlyList<CaptureItem>? items = null,
         [Description("The project key, such as SHIP. Needed when the user is in more than one project.")] string? project = null,
         [Description("The plan a preview returned. Creates exactly what it holds and ignores items.")] string? plan = null,
+        [Description(McpPayloadTargets.ArgumentDescription)] string? payload = null,
         CancellationToken cancellationToken = default)
     {
         var resolved = await projects.ResolveAsync(project, forWrite: true, cancellationToken);
@@ -68,15 +70,20 @@ internal sealed class CaptureTools(
         return CaptureSupport.Reply(preview, $"Preview of {planned.Count} items for {resolved.Key}; nothing is created yet. Call capture_work again with the `plan` value from the JSON below to create them.");
     }
 
-    [McpServerTool(Name = "break_down"), McpScope(McpScopes.Write)]
-    [Description("Split a story, bug or action item into child tasks, or a feature into stories (or an epic into features), from a list of titles with optional points, description (Markdown) and tags. Up to 100 children, created together. They take the parent's sprint; the parent's state is left alone.")]
+    [McpServerTool(Name = "break_down"), McpScope(McpScopes.Write), McpPayload]
+    [Description("Split a story, bug or action item into child tasks, or a feature into stories (or an epic into features), from a list of titles with optional points, description (Markdown) and tags. Up to 100 children, created together. They take the parent's sprint; the parent's state is left alone. When the children are already in a file or are over about 20 KB, upload a JSON object holding them, like {\"children\": [...]}, with create_payload_upload (curl -T) and pass payload instead of children.")]
     public async Task<CallToolResult> BreakDown(
         [Description("The parent's key, such as SHIP-12.")] string parent,
-        [Description("The children, 1 to 100.")] IReadOnlyList<BreakDownChild> children,
+        [Description("The children, 1 to 100.")] IReadOnlyList<BreakDownChild>? children = null,
+        [Description(McpPayloadTargets.ArgumentDescription)] string? payload = null,
         CancellationToken cancellationToken = default)
     {
         var resolved = await itemResolver.ResolveAsync(parent, ProjectRole.Member, field: "parent", cancellationToken: cancellationToken);
-        if (children is null || children.Count == 0 || children.Count > CaptureSupport.MaxItems)
+        if (children is null)
+        {
+            throw ApiException.Validation("Pass children, or upload them with create_payload_upload and pass payload.", "children");
+        }
+        if (children.Count == 0 || children.Count > CaptureSupport.MaxItems)
         {
             throw ApiException.Validation($"Pass 1 to {CaptureSupport.MaxItems} children.", "children");
         }

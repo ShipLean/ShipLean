@@ -1,5 +1,5 @@
-import type { ProjectDemoBrandDto } from '../../../api/demos';
-import type { ProjectDto } from '../../../api/projects';
+import type { ProjectDemoBrandDto } from '@shiplean/core/api/demos';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { demosTestIds as ids } from '../../demos/testIds';
 import { Panel } from '../draft/Panel';
 import { LogoField } from './brand/LogoField';

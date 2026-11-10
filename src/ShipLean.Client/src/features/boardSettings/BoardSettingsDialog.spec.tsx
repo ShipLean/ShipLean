@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { BoardSettingsDto, BoardSettingsPut } from '../../api/boards';
+import type { BoardSettingsDto, BoardSettingsPut } from '@shiplean/core/api/boards';
 import { componentTestIds } from '../../components/testIds';
 import { settingsDialogTestIds as ids } from '../settingsDialog/testIds';
 import { BoardSettingsDialog } from './BoardSettingsDialog';

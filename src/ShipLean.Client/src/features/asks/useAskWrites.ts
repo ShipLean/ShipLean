@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { ApiRequestError } from '../../api/client';
+import type { ApiRequestError } from '@shiplean/core/api/client';
 import { workItemCommentsKey, workItemHistoryKey } from '../workItem/workItemApi';
 import {
   answerQuestion,

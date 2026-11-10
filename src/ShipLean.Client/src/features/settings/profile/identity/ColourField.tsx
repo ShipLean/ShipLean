@@ -1,4 +1,4 @@
-import type { MeDto } from '../../../../api/me';
+import type { MeDto } from '@shiplean/core/api/me';
 import { settingsTestIds } from '../../testIds';
 import { FormRow } from './FormRow';
 import { LookPreview } from './LookPreview';

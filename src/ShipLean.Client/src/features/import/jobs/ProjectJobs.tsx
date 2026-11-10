@@ -1,4 +1,4 @@
-import type { ProjectDto } from '../../../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { JobsPanel } from './JobsPanel';
 
 // "Import jobs" under the stepper. Only an admin can read the list, so a member's page asks for nothing.

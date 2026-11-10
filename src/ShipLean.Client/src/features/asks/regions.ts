@@ -1,5 +1,5 @@
-import type { AskHistoryLineDto, DecisionDto, ItemAsksDto } from '../../api/asks';
-import type { TypeRef } from '../../api/refs';
+import type { AskHistoryLineDto, DecisionDto, ItemAsksDto } from '@shiplean/core/api/asks';
+import type { TypeRef } from '@shiplean/core/api/refs';
 
 // The pinned props of the section's regions. The section fetches the asks once (useItemAsks) and hands them down: no
 // region fetches. Writes go through useAskWrites(item.projectId, item.key, item.id).

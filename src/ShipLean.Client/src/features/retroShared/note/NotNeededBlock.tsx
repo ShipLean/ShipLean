@@ -1,4 +1,4 @@
-import type { RetroNotNeededDto } from '../../../api/retros';
+import type { RetroNotNeededDto } from '@shiplean/core/api/retros';
 import { retroSharedTestIds as ids } from '../testIds';
 import type { RetroNoteWrites } from './useRetroNoteWrites';
 

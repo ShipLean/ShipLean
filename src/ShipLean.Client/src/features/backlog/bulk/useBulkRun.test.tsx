@@ -2,15 +2,15 @@ import { act, useEffect } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import { api } from '../../../api/client';
-import { BULK_MAX_ROWS, type BulkWriteRequest } from '../../../api/backlogWrites';
+import { api } from '@shiplean/core/api/client';
+import { BULK_MAX_ROWS, type BulkWriteRequest } from '@shiplean/core/api/backlogWrites';
 import { backlogView, itemRow } from '../ct/fixtures';
 import { backlogKey, backlogRootKey } from '../../../queries/backlogKeys';
 import { moveToEdgePlan } from './movePlan';
 import { useBulkRun, type BulkRunner } from './useBulkRun';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
-vi.mock('../../../api/client', () => ({ api: { post: vi.fn() } }));
+vi.mock('@shiplean/core/api/client', () => ({ api: { post: vi.fn() } }));
 
 const post = vi.mocked(api.post);
 const key = backlogKey('p1', 'stories', 'list', '', false);

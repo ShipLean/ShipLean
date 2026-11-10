@@ -11,7 +11,18 @@ public static class AuthPrincipal
     public const string ProxyEmailClaim = "shiplean:proxy-email";
     public const string ProxyNameClaim = "shiplean:proxy-name";
 
+    // On a device bearer's principal only: the device session's id (DELETE …/device-sessions/current reads it).
+    public const string DeviceSessionClaim = "shiplean:device-session";
+
     public static ClaimsPrincipal For(Guid userId, string stamp) => Principal(SessionClaims(userId, stamp));
+
+    // A device bearer's principal: the cookie principal's claims, with the stamp stored at sign-in, plus the session id.
+    public static ClaimsPrincipal ForDevice(Guid userId, string stamp, Guid deviceSessionId)
+    {
+        var claims = SessionClaims(userId, stamp);
+        claims.Add(new Claim(DeviceSessionClaim, deviceSessionId.ToString()));
+        return new ClaimsPrincipal(new ClaimsIdentity(claims, DeviceBearer.DeviceBearerHandler.Scheme));
+    }
 
     // The proxy name claim is left out when the provider sent no name.
     public static ClaimsPrincipal ForProxy(Guid userId, string stamp, string email, string? name)

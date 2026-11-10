@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { ApiRequestError } from '../../../api/client';
-import type { VelocityDto } from '../../../api/sprints';
+import { ApiRequestError } from '@shiplean/core/api/client';
+import type { VelocityDto } from '@shiplean/core/api/sprints';
 import { backlogTestIds as ids } from '../testIds';
 import { useVelocityOverride } from './planningApi';
 

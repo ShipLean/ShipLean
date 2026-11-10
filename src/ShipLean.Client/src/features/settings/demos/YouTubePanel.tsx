@@ -4,8 +4,8 @@ import type {
   YouTubeDisconnectDto,
   YouTubeProjectDto,
   YouTubeVisibility,
-} from '../../../api/demos';
-import type { ProjectDto } from '../../../api/projects';
+} from '@shiplean/core/api/demos';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { Chip } from '../../../components/Chip';
 import { showToast } from '../../../components/toastStore';
 import { routePath } from '../../../routes';

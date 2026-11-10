@@ -1,4 +1,4 @@
-import type { AttachmentDto, AttachmentKind } from '../../../api/attachments';
+import type { AttachmentDto, AttachmentKind } from '@shiplean/core/api/attachments';
 
 export const attachmentGroups: { kind: AttachmentKind; title: string; hint: string }[] = [
   { kind: 'markdown', title: 'Markdown', hint: 'opens rendered' },

@@ -1,4 +1,4 @@
-import type { BacklogRowDto } from '../../../api/views';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import type { ColumnSpec } from '../backlogApi';
 import type { ColumnSort } from '../sort/columnSort';
 import { SortableHeader } from '../sort/SortableHeader';

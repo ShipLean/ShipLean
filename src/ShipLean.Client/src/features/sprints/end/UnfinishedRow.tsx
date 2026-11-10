@@ -1,5 +1,5 @@
-import type { RolloverItemDto } from '../../../api/sprints';
-import type { SprintRef } from '../../../api/refs';
+import type { RolloverItemDto } from '@shiplean/core/api/sprints';
+import type { SprintRef } from '@shiplean/core/api/refs';
 import { Avatar } from '../../../components/Avatar';
 import { Chip } from '../../../components/Chip';
 import { StateDot } from '../../../components/StateDot';

@@ -3,8 +3,8 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { expect, test, vi } from 'vitest';
 
-vi.mock('../../../api/client', async (original) => ({
-  ...(await original<typeof import('../../../api/client')>()),
+vi.mock('@shiplean/core/api/client', async (original) => ({
+  ...(await original<typeof import('@shiplean/core/api/client')>()),
   api: { post: vi.fn().mockResolvedValue(undefined) },
 }));
 

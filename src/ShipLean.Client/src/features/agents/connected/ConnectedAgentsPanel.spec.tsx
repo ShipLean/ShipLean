@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { ConnectedAgentDto } from '../../../api/agents';
+import type { ConnectedAgentDto } from '@shiplean/core/api/agents';
 import { agentsTestIds as ids } from '../testIds';
 import type { StubbablePage } from '../authorize/stubPage';
 import { ConnectedAgentsPanel } from './ConnectedAgentsPanel';

@@ -2,14 +2,14 @@ import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-quer
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import { api } from '../../../api/client';
-import type { SprintCapacityDto } from '../../../api/sprints';
+import { api } from '@shiplean/core/api/client';
+import type { SprintCapacityDto } from '@shiplean/core/api/sprints';
 import { backlogRootKey } from '../../backlog/backlogApi';
 import { projectSprintsKey } from '../../../queries/shared';
 
 const calls = vi.hoisted(() => ({ reads: [] as string[], saved: null as unknown }));
-vi.mock('../../../api/client', async (original) => ({
-  ...(await original<typeof import('../../../api/client')>()),
+vi.mock('@shiplean/core/api/client', async (original) => ({
+  ...(await original<typeof import('@shiplean/core/api/client')>()),
   api: {
     get: vi.fn(async (path: string) => {
       calls.reads.push(path);

@@ -1,4 +1,4 @@
-import type { VelocityDto } from '../../../api/sprints';
+import type { VelocityDto } from '@shiplean/core/api/sprints';
 import { sprintsTestIds as ids } from '../testIds';
 import { velocityScale } from './velocityScale';
 

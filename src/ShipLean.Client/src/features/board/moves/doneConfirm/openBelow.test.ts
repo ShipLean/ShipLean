@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { BoardViewDto, RollupCountDto } from '../../../../api/views';
+import type { BoardViewDto, RollupCountDto } from '@shiplean/core/api/views';
 import { card, cell, lane, storiesBoard } from '../../ct/fixtures';
 import { openBelow } from './openBelow';
 

@@ -1,5 +1,5 @@
-import type { RetroMentionStripDto } from '../../../../api/retros';
-import type { SprintRef } from '../../../../api/refs';
+import type { RetroMentionStripDto } from '@shiplean/core/api/retros';
+import type { SprintRef } from '@shiplean/core/api/refs';
 import { MentionStrip } from '../../../retroShared/MentionStrip';
 import { retrosTestIds as ids } from '../../testIds';
 import { RailSection } from './RailSection';

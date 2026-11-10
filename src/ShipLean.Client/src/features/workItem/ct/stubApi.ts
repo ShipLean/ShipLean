@@ -1,4 +1,4 @@
-import type { WorkItemDto, WorkItemPatch } from '../../../api/workItems';
+import type { WorkItemDto, WorkItemPatch } from '@shiplean/core/api/workItems';
 import { emptyAsks } from '../../asks/ct/fixtures';
 import { members, sprints, states } from './fixtures';
 

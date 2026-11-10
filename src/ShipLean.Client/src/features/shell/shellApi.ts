@@ -1,4 +1,4 @@
-import { api } from '../../api/client';
+import { api } from '@shiplean/core/api/client';
 import { fetchPreference, preferenceKey } from '../../queries/shared';
 
 export const recentProjectsKey = preferenceKey('recentProjects');

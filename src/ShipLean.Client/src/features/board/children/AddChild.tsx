@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { ApiRequestError } from '../../../api/client';
+import { ApiRequestError } from '@shiplean/core/api/client';
 import type { Level } from '../../../routes';
 import { boardTestIds as ids } from '../testIds';
 import { useCreateChild } from './childrenApi';

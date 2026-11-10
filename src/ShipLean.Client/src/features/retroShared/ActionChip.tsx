@@ -1,6 +1,6 @@
 import { StateDot } from '../../components/StateDot';
 import { TypeIcon } from '../../components/TypeIcon';
-import type { RetroActionRefDto } from '../../api/retros';
+import type { RetroActionRefDto } from '@shiplean/core/api/retros';
 import { ItemLink } from '../itemPeek/ItemLink';
 
 /** A point's action item (found by the item link's test id and `data-item-key`): type icon, key and state, as a link to the work item (the design's `.act-chip`). */

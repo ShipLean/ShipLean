@@ -1,4 +1,4 @@
-import type { BacklogRowDto } from '../../../api/views';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import { backlogTestIds as ids } from '../testIds';
 import { LevelCell } from './LevelCell';
 import type { LevelColumnId } from './levelColumns';

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { QuestionDto } from '../../api/asks';
+import type { QuestionDto } from '@shiplean/core/api/asks';
 import { Avatar } from '../../components/Avatar';
 import { Chip } from '../../components/Chip';
 import { Markdown } from '../../components/Markdown';

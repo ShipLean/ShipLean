@@ -6,8 +6,8 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import { api } from '../../api/client';
-import type { WorkItemChanges, WorkItemDto } from '../../api/workItems';
+import { api } from '@shiplean/core/api/client';
+import type { WorkItemChanges, WorkItemDto } from '@shiplean/core/api/workItems';
 import type {
   RolloverDto,
   RolloverRequest,
@@ -18,7 +18,7 @@ import type {
   SprintMetricsDto,
   SprintUpdate,
   VelocityDto,
-} from '../../api/sprints';
+} from '@shiplean/core/api/sprints';
 import { showToast } from '../../components/toastStore';
 import { registerInvalidation } from '../../realtime';
 import { projectMembersKey, projectSprintsKey } from '../../queries/shared';

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ApiRequestError } from '../../../../api/client';
-import type { MeDto } from '../../../../api/me';
+import { ApiRequestError } from '@shiplean/core/api/client';
+import type { MeDto } from '@shiplean/core/api/me';
 import { showToast } from '../../../../components/toastStore';
 import { meKey } from '../../../../queries/shared';
 import { removePhoto, saveProfile, uploadPhoto } from '../../settingsApi';

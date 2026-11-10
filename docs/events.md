@@ -41,7 +41,7 @@ JSON objects, camelCase, enums as camelCase strings, nothing omitted. Every even
 | `sprintClosed` | `sprintId`, `closedBy` | a sprint's rollover is decided (Close sprint or the MCP `end_sprint`), after its `sprintChanged`. Starts the project's automatic demo when that setting is on |
 | `sprintDemoChanged` | `sprintId` | every write to a sprint's demo: a run starts or is handed over, a blocked message is stored or cleared, a video is delivered, the YouTube state moves or is retried. Open Demo tabs refetch |
 
-Pinned by `src/ShipLean.TestSupport/DtoFixtures/events/events.json` (one example per type), C# types in `src/ShipLean.Contracts/Events/`, TypeScript twin in `src/ShipLean.Client/src/api/events.ts`.
+Pinned by `src/ShipLean.TestSupport/DtoFixtures/events/events.json` (one example per type), C# types in `src/ShipLean.Contracts/Events/`, TypeScript twin in `src/ShipLean.Core.Client/src/api/events.ts`.
 
 ## The hub
 

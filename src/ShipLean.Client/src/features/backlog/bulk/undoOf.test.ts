@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
-import type { WriteResult } from '../../../api/workItems';
-import type { BacklogRowDto } from '../../../api/views';
+import type { WriteResult } from '@shiplean/core/api/workItems';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import { backlogView, itemRow, planningView } from '../ct/fixtures';
 import { story } from '../../workItem/ct/fixtures';
 import { changesOf } from './changesOf';

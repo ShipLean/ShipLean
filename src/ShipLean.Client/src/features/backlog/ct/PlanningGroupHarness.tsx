@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ToastHost } from '../../../components/ToastHost';
-import type { ProjectDto } from '../../../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { backlogKey, useBacklog } from '../backlogApi';
 import { BulkRunProvider } from '../bulk/BulkRunProvider';
 import { ListCommandsProvider } from '../commands/listCommands';

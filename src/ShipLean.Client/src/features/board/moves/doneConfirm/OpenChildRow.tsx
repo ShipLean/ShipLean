@@ -1,6 +1,6 @@
 import { StateDot } from '../../../../components/StateDot';
 import { TypeIcon } from '../../../../components/TypeIcon';
-import type { ChildSummaryDto } from '../../../../api/workItems';
+import type { ChildSummaryDto } from '@shiplean/core/api/workItems';
 import { boardTestIds as ids } from '../../testIds';
 
 // One child still open: its type, title and state.

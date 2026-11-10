@@ -1,5 +1,5 @@
-import { RETRO_CATEGORIES } from '../../../api/retros';
-import type { RetroDecision } from '../../../api/retros';
+import { RETRO_CATEGORIES } from '@shiplean/core/api/retros';
+import type { RetroDecision } from '@shiplean/core/api/retros';
 import { retroCategoryLabels } from '../../retroShared/retroCategories';
 import { retrosTestIds as ids } from '../testIds';
 import { SearchBox } from './parts/SearchBox';

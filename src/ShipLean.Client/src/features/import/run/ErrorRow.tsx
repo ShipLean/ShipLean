@@ -1,4 +1,4 @@
-import type { ImportErrorDto } from '../../../api/import';
+import type { ImportErrorDto } from '@shiplean/core/api/import';
 import { importTestIds as ids } from '../testIds';
 
 // One row that did not import. A retry that fails again leaves a new pending row, so Skip is offered on any pending row.

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import { postBacklogSort } from '../../../api/usageApi';
-import type { BacklogRowDto } from '../../../api/views';
+import { postBacklogSort } from '@shiplean/core/api/usageApi';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import type { RouteId } from '../../../routes';
 import { nextSort, sortRows, type ColumnSort } from './columnSort';
 

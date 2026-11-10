@@ -1,4 +1,4 @@
-import { WORK_ITEM_TYPE_IDS, type WorkItemTypeId } from '../../../api/refs';
+import { WORK_ITEM_TYPE_IDS, type WorkItemTypeId } from '@shiplean/core/api/refs';
 import { TypeIcon } from '../../../components/TypeIcon';
 import { settingsTestIds } from '../testIds';
 import { TYPE_LABELS } from './categories';

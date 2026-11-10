@@ -1,4 +1,4 @@
-import type { RetroItemDto } from '../../../api/retros';
+import type { RetroItemDto } from '@shiplean/core/api/retros';
 import { useRetroActionDialog } from '../../retroShared/actionDialog/useRetroActionDialog';
 import { retrosTestIds as ids } from '../testIds';
 import { ItemToggleGroup } from './ItemToggleGroup';

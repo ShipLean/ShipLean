@@ -1,7 +1,7 @@
-import type { CardFieldSettingJson } from '../../../../api/persisted';
-import type { ParentRefDto } from '../../../../api/workItems';
-import type { TypeRef, WorkItemTypeId } from '../../../../api/refs';
-import type { CardDto } from '../../../../api/views';
+import type { CardFieldSettingJson } from '@shiplean/core/api/persisted';
+import type { ParentRefDto } from '@shiplean/core/api/workItems';
+import type { TypeRef, WorkItemTypeId } from '@shiplean/core/api/refs';
+import type { CardDto } from '@shiplean/core/api/views';
 import { ALWAYS_DRAWN_FIELDS, fieldLabel } from './fieldEdits';
 
 /** The project key the sample cards carry. */

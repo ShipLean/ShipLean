@@ -3,7 +3,7 @@ import { CriteriaBuilder } from '../../../../criteria/CriteriaBuilder';
 import { newClause } from '../../../../criteria/defaultClause';
 import type { PickLists } from '../../../../criteria/valueOptions';
 import { SWATCH_NAMES } from '../swatchNames';
-import { SWATCHES, type Swatch, type SwimlaneJson } from '../../../../api/persisted';
+import { SWATCHES, type Swatch, type SwimlaneJson } from '@shiplean/core/api/persisted';
 import { boardSettingsTestIds as ids } from '../../testIds';
 import { acceptsDrops, withColour, withCriteria } from './laneEdits';
 

@@ -1,4 +1,4 @@
-import type { RolloverDto, SprintMetricsDto } from '../../../api/sprints';
+import type { RolloverDto, SprintMetricsDto } from '@shiplean/core/api/sprints';
 import { Dialog } from '../../../components/Dialog';
 import { sprintsTestIds as ids } from '../testIds';
 import { EndsEarlyNote } from './EndsEarlyNote';

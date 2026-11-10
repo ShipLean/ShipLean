@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { ProjectDto } from '../../../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import type { Level } from '../../../routes';
 import { ChildList } from '../children/ChildList';
 import { useChildList } from '../children/useChildList';

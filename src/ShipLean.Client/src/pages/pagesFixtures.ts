@@ -1,5 +1,5 @@
-import type { ProjectDto } from '../api/projects';
-import type { SprintDto } from '../api/sprints';
+import type { ProjectDto } from '@shiplean/core/api/projects';
+import type { SprintDto } from '@shiplean/core/api/sprints';
 import { meDto } from '../features/auth/authFixtures';
 
 // Stubs for the component tests of the routes and pages (page.route answers; nothing here is production code).

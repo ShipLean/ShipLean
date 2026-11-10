@@ -1,4 +1,4 @@
-import type { RetroFeatureRowDto, RetroFeaturesDto } from '../../../../api/retros';
+import type { RetroFeatureRowDto, RetroFeaturesDto } from '@shiplean/core/api/retros';
 
 const inProgress = {
   id: 'state-in-progress',

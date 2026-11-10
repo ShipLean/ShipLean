@@ -1,5 +1,5 @@
-import type { BoardSettingsDto, BoardSettingsPut } from '../../../api/boards';
-import type { BoardSettingsJson } from '../../../api/persisted';
+import type { BoardSettingsDto, BoardSettingsPut } from '@shiplean/core/api/boards';
+import type { BoardSettingsJson } from '@shiplean/core/api/persisted';
 import {
   boardSettingsDto,
   emptySettings,

@@ -1,4 +1,4 @@
-import type { RetroPointDto } from '../../../api/retros';
+import type { RetroPointDto } from '@shiplean/core/api/retros';
 import { PointPickRow } from './PointPickRow';
 
 /** One labelled run of points in the picker. */

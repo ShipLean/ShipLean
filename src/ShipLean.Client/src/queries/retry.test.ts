@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { ApiRequestError } from '../api/client';
+import { ApiRequestError } from '@shiplean/core/api/client';
 import { retryUnlessClientError } from './retry';
 
 test('retryUnlessClientError_WhenClientError_ShouldNotRetry', () => {

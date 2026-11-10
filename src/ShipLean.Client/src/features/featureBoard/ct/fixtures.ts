@@ -1,4 +1,4 @@
-import type { FeatureBoardRowDto, FeatureBoardViewDto } from '../../../api/views';
+import type { FeatureBoardRowDto, FeatureBoardViewDto } from '@shiplean/core/api/views';
 import { PRIYA, TOM, VIEW, task } from '../../taskboard/ct/fixtures';
 
 export const FEATURE_ID = 'f-checkout';

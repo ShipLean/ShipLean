@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { RetroThemeOptionDto } from '../../api/retros';
+import type { RetroThemeOptionDto } from '@shiplean/core/api/retros';
 import { retroSharedTestIds as ids } from './testIds';
 import { ThemePicker } from './ThemePicker';
 

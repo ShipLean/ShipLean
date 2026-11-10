@@ -3,7 +3,7 @@ import ready from '../../../../ShipLean.TestSupport/DtoFixtures/demos/sprint-dem
 import unlisted from '../../../../ShipLean.TestSupport/DtoFixtures/demos/sprint-demo-youtube-unlisted.json' with { type: 'json' };
 import privateDemo from '../../../../ShipLean.TestSupport/DtoFixtures/demos/sprint-demo-youtube-private.json' with { type: 'json' };
 import failed from '../../../../ShipLean.TestSupport/DtoFixtures/demos/sprint-demo-youtube-failed.json' with { type: 'json' };
-import type { SprintDemoDto } from '../../api/demos';
+import type { SprintDemoDto } from '@shiplean/core/api/demos';
 import { DemoPlayerHarness } from './ct/DemoPlayerHarness';
 import { demosTestIds as ids } from './testIds';
 

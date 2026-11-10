@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { BoardSettingsPut } from '../../api/boards';
+import type { BoardSettingsPut } from '@shiplean/core/api/boards';
 import { TaskboardSettingsSlot } from '../../slots/TaskboardSettingsSlot';
 import { TaskboardSlot } from '../../slots/TaskboardSlot';
 import {

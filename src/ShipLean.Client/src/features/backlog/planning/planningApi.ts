@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../../api/client';
-import type { VelocityOverridePut } from '../../../api/sprints';
+import { api } from '@shiplean/core/api/client';
+import type { VelocityOverridePut } from '@shiplean/core/api/sprints';
 import { backlogRootKey } from '../backlogApi';
 
 /**

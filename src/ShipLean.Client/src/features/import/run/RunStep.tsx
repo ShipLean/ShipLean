@@ -1,5 +1,5 @@
-import type { ImportMappingDto, JiraProjectDto } from '../../../api/import';
-import type { ProjectDto } from '../../../api/projects';
+import type { ImportMappingDto, JiraProjectDto } from '@shiplean/core/api/import';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { importTestIds as ids } from '../testIds';
 import { JobView } from './JobView';
 import { RunReady } from './RunReady';

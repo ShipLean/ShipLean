@@ -1,6 +1,6 @@
 import { authTestIds as ids } from './testIds';
-import type { MeDto } from '../../api/me';
-import type { ProjectSummaryDto } from '../../api/projects';
+import type { MeDto } from '@shiplean/core/api/me';
+import type { ProjectSummaryDto } from '@shiplean/core/api/projects';
 
 // Stubs for the component tests of the auth feature (page.route answers; nothing here is production code).
 export function meDto(overrides: Partial<MeDto> = {}): MeDto {

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import type { ProjectDto } from '../../../api/projects';
-import type { BacklogViewDto } from '../../../api/views';
+import type { ProjectDto } from '@shiplean/core/api/projects';
+import type { BacklogViewDto } from '@shiplean/core/api/views';
 import { AddBelowProvider } from '../add/AddBelowProvider';
 import { AddManyButton } from '../add/AddManyButton';
 import { PasteHost } from '../add/PasteHost';
@@ -26,7 +26,7 @@ import type { PlanningDrop } from './planningTarget';
 import { PlanningDnd } from './PlanningDnd';
 import { PlanningSections } from './PlanningSections';
 import type { SectionCollapse } from './useSectionCollapse';
-import type { BacklogRowDto } from '../../../api/views';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 
 const NO_MARKS: ReturnType<typeof forecastMarks> = new Map();
 

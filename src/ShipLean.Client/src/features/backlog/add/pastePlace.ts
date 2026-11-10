@@ -1,6 +1,6 @@
-import type { BacklogAddRequest } from '../../../api/backlogWrites';
-import type { SprintRef } from '../../../api/refs';
-import type { BacklogRowDto, BacklogViewDto } from '../../../api/views';
+import type { BacklogAddRequest } from '@shiplean/core/api/backlogWrites';
+import type { SprintRef } from '@shiplean/core/api/refs';
+import type { BacklogRowDto, BacklogViewDto } from '@shiplean/core/api/views';
 
 /** The "Put them" choices: the top, the bottom, just below the focused row, or the top of a future sprint. */
 export interface PlaceOption {

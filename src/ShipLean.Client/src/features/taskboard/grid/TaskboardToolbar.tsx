@@ -1,5 +1,5 @@
 import { useSearchParams } from 'react-router-dom';
-import type { UserRef } from '../../../api/refs';
+import type { UserRef } from '@shiplean/core/api/refs';
 import type { TaskboardGrouping } from '../taskboardApi';
 import { taskboardTestIds as ids } from '../testIds';
 import { FaceFilter } from './FaceFilter';

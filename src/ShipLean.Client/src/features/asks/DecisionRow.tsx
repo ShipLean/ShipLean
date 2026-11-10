@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Avatar } from '../../components/Avatar';
 import { Chip } from '../../components/Chip';
 import { showToast } from '../../components/toastStore';
-import type { DecisionDto } from '../../api/asks';
+import type { DecisionDto } from '@shiplean/core/api/asks';
 import { DecisionChange } from './DecisionChange';
 import { DecisionDiscuss } from './DecisionDiscuss';
 import { DecisionHistory } from './DecisionHistory';

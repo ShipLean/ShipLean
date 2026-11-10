@@ -1,6 +1,6 @@
 import { useLocation } from 'react-router-dom';
 import { ToastHost } from '../../../components/ToastHost';
-import type { ProjectDto } from '../../../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { AttachmentScreen } from '../AttachmentScreen';
 import { harnessLocationTestId } from './harnessIds';
 

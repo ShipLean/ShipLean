@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { CriteriaValidationError } from '../../api/criteria';
-import type { CriteriaJson, FieldId } from '../../api/persisted';
+import type { CriteriaValidationError } from '@shiplean/core/api/criteria';
+import type { CriteriaJson, FieldId } from '@shiplean/core/api/persisted';
 import type { PickLists } from '../valueOptions';
 import { CriteriaBuilder } from '../CriteriaBuilder';
 import { criteriaHarnessTestIds } from './harnessIds';

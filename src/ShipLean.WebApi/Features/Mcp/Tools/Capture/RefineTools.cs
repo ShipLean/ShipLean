@@ -7,6 +7,7 @@ using ShipLean.Contracts.Mcp;
 using ShipLean.Contracts.Persisted;
 using ShipLean.Contracts.WorkItems;
 using ShipLean.WebApi.Features.Mcp.Contracts;
+using ShipLean.WebApi.Features.Mcp.Payloads;
 using ShipLean.WebApi.Features.Mcp.Notes;
 using ShipLean.WebApi.Features.Mcp.Resolve;
 using ShipLean.WebApi.Features.Mcp.Writes;
@@ -16,8 +17,8 @@ namespace ShipLean.WebApi.Features.Mcp.Tools.Capture;
 [McpServerToolType]
 internal sealed class RefineTools(ItemResolver itemResolver, IWorkItemStore store, NoteWriter notes, StaleWrites writes, CaptureSupport support)
 {
-    [McpServerTool(Name = "refine_work_item"), McpScope(McpScopes.Write)]
-    [Description("Improve one work item: rewrite its title, description or acceptance criteria, and set its points, tags, priority, severity or parent. A rewritten checklist keeps the ticked state of every line whose text is unchanged. Pass expected_revision (from get_work_item) to refuse if someone has edited it since you read it. A note becomes a comment explaining the change.")]
+    [McpServerTool(Name = "refine_work_item"), McpScope(McpScopes.Write), McpPayload]
+    [Description("Improve one work item: rewrite its title, description or acceptance criteria, and set its points, tags, priority, severity or parent. A rewritten checklist keeps the ticked state of every line whose text is unchanged. Pass expected_revision (from get_work_item) to refuse if someone has edited it since you read it. A note becomes a comment explaining the change. When the new description is already in a file or is over about 20 KB, upload it with create_payload_upload (curl -T) and pass payload.")]
     public async Task<CallToolResult> RefineWorkItem(
         [Description("The item's key, such as SHIP-12.")] string item,
         [Description("A new title.")] string? title = null,
@@ -30,6 +31,7 @@ internal sealed class RefineTools(ItemResolver itemResolver, IWorkItemStore stor
         [Description("The parent's key, or none to detach it.")] string? parent = null,
         [Description("The revision you read. A stale write is refused as a conflict.")] int? expected_revision = null,
         [Description("Why you changed it. Added as a comment after the change.")] string? note = null,
+        [Description(McpPayloadTargets.ArgumentDescription)] string? payload = null,
         CancellationToken cancellationToken = default)
     {
         var resolved = await itemResolver.ResolveAsync(item, ProjectRole.Member, cancellationToken: cancellationToken);

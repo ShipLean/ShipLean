@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import type { BoardLevel } from '../../api/boards';
+import type { BoardLevel } from '@shiplean/core/api/boards';
 import { fetchBoards, projectBoardsKey } from '../../queries/shared';
 
 /** The id of the project's board of one level, from the shared boards list. */

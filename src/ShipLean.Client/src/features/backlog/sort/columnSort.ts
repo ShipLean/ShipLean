@@ -1,5 +1,5 @@
-import { SPRINT_STATUSES, STATE_CATEGORIES } from '../../../api/refs';
-import type { BacklogRowDto } from '../../../api/views';
+import { SPRINT_STATUSES, STATE_CATEGORIES } from '@shiplean/core/api/refs';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import { countStoryLevelUnder, countUnder } from '../levels/countUnder';
 
 export type SortDirection = 'asc' | 'desc';

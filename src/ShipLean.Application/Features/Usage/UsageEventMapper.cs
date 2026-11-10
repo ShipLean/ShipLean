@@ -79,6 +79,7 @@ public sealed class UsageEventMapper(ProjectKeyLookup projects, PersonLookup peo
     {
         UsageSurface.Web => "web",
         UsageSurface.Mcp => "mcp",
+        UsageSurface.App => "app",
         _ => "system",
     };
 

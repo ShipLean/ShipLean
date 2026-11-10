@@ -1,4 +1,4 @@
-import type { AttachmentMarkdownDto } from '../../../api/attachments';
+import type { AttachmentMarkdownDto } from '@shiplean/core/api/attachments';
 import { Markdown } from '../../../components/Markdown';
 import type { AttachmentView } from '../header/ViewToggle';
 import { attachmentTestIds as ids } from '../testIds';

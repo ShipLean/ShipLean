@@ -1,5 +1,5 @@
 import type { ChangeEvent } from 'react';
-import type { BacklogRowDto } from '../../../api/views';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import { backlogTestIds as ids } from '../testIds';
 import { useSelection } from './useSelection';
 

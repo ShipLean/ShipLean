@@ -1,5 +1,5 @@
-import { ApiRequestError } from '../../../api/client';
-import type { ImportJobDto } from '../../../api/import';
+import { ApiRequestError } from '@shiplean/core/api/client';
+import type { ImportJobDto } from '@shiplean/core/api/import';
 import { importTestIds as ids } from '../testIds';
 import { ErrorRow } from './ErrorRow';
 import { isFinished, useImportJobErrors, useRetryImportError, useSkipImportError } from './runApi';

@@ -1,5 +1,5 @@
 import type { MouseEvent } from 'react';
-import type { BacklogRowDto } from '../../../api/views';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import { TypeIcon } from '../../../components/TypeIcon';
 import { ItemLink } from '../../itemPeek/ItemLink';
 import { QueueDoneMark } from '../strip/QueueDoneMark';

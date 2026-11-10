@@ -4,7 +4,7 @@ import type {
   AgentPanelDto,
   AgentSessionDto,
   AgentStartAvailabilityDto,
-} from '../../api/agentSessions';
+} from '@shiplean/core/api/agentSessions';
 import { mei, story } from '../workItem/ct/fixtures';
 import { stubApi } from '../workItem/ct/stubApi';
 import { stubComments } from '../workItem/ct/stubDetails';

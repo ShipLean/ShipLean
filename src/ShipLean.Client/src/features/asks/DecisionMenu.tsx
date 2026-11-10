@@ -1,7 +1,7 @@
 import { FieldMenu } from '../workItem/form/FieldMenu';
 import { routePath } from '../../routes';
 import { showToast } from '../../components/toastStore';
-import type { DecisionDto } from '../../api/asks';
+import type { DecisionDto } from '@shiplean/core/api/asks';
 import type { AsksItem } from './regions';
 import { asksTestIds as ids } from './testIds';
 

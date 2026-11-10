@@ -1,4 +1,4 @@
-import type { BoardViewDto } from '../../../api/views';
+import type { BoardViewDto } from '@shiplean/core/api/views';
 import { boardTestIds as ids } from '../testIds';
 import type { BoardContext } from './boardContext';
 import { ColumnHeader } from './ColumnHeader';

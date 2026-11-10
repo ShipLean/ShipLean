@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
-import type { StateCategory, UserRef } from '../../../../api/refs';
-import type { WorkItemDto } from '../../../../api/workItems';
+import type { StateCategory, UserRef } from '@shiplean/core/api/refs';
+import type { WorkItemDto } from '@shiplean/core/api/workItems';
 import { railSummary } from './railSummary';
 
 const priya = { id: 'u1', name: 'Priya' } as UserRef;

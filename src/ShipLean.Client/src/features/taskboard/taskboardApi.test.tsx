@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, useEffect } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import type { ProjectDto } from '../../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { fakeConnection } from '../../realtime/testing/fakeConnection';
 
 const hub = fakeConnection();
@@ -11,8 +11,8 @@ vi.mock('../../realtime/connection', async (original) => ({
   createProjectConnection: () => hub.connection,
 }));
 const reads = vi.hoisted(() => ({ count: 0 }));
-vi.mock('../../api/client', async (original) => ({
-  ...(await original<typeof import('../../api/client')>()),
+vi.mock('@shiplean/core/api/client', async (original) => ({
+  ...(await original<typeof import('@shiplean/core/api/client')>()),
   api: {
     get: vi.fn(async () => {
       reads.count += 1;
@@ -23,7 +23,7 @@ vi.mock('../../api/client', async (original) => ({
 }));
 
 const { useProjectRealtime } = await import('../../realtime/useProjectRealtime');
-const { api } = await import('../../api/client');
+const { api } = await import('@shiplean/core/api/client');
 const { taskboardKey, taskboardMoveKey, taskboardMovesPath, useCreateOnTaskboard, useTaskboard } =
   await import('./taskboardApi');
 

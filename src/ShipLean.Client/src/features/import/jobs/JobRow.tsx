@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
-import type { ImportJobDto } from '../../../api/import';
-import type { ProjectDto } from '../../../api/projects';
+import type { ImportJobDto } from '@shiplean/core/api/import';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { routePath } from '../../../routes';
 import { jobStates } from '../run/jobStates';
 import { useRerunJob } from '../run/useRerunJob';

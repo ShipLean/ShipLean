@@ -1,5 +1,5 @@
-import type { BoardSettingsDto } from '../../../api/boards';
-import type { BoardSettingsJson } from '../../../api/persisted';
+import type { BoardSettingsDto } from '@shiplean/core/api/boards';
+import type { BoardSettingsJson } from '@shiplean/core/api/persisted';
 
 // Stubs for the component tests of the board settings dialogs (page.route answers; nothing here is production code).
 export const BOARD_ID = '00000000-0000-4000-8000-0000000000b1';

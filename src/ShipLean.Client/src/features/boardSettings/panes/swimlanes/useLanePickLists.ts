@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import type { PickLists } from '../../../../criteria/valueOptions';
-import type { BoardTypeStatesDto } from '../../../../api/boards';
-import type { StateRef } from '../../../../api/refs';
+import type { BoardTypeStatesDto } from '@shiplean/core/api/boards';
+import type { StateRef } from '@shiplean/core/api/refs';
 import {
   fetchMembers,
   fetchSprints,

@@ -1,4 +1,4 @@
-import type { AttachmentDto } from '../../../api/attachments';
+import type { AttachmentDto } from '@shiplean/core/api/attachments';
 import { formatSize } from '../../workItem/side/fileSize';
 
 /** "14 KB · uploaded by Claude Code (agent) through attach_markdown, 24 Oct · replaced twice", from the DTO alone. */

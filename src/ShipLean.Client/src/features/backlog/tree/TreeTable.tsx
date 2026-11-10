@@ -10,7 +10,7 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core';
 import { useState } from 'react';
-import type { BacklogRowDto } from '../../../api/views';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import { BACKLOG_COLUMNS, type BacklogColumnId } from '../backlogApi';
 import { NewItemRow } from '../list/NewItemRow';
 import { backlogTestIds as ids } from '../testIds';

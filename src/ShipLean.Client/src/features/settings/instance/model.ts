@@ -1,5 +1,5 @@
-import { ApiRequestError } from '../../../api/client';
-import type { InstanceSettingsDto } from '../../../api/projects';
+import { ApiRequestError } from '@shiplean/core/api/client';
+import type { InstanceSettingsDto } from '@shiplean/core/api/projects';
 
 export type SettingsEdit = Partial<InstanceSettingsDto>;
 

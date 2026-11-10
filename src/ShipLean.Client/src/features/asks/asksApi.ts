@@ -1,5 +1,10 @@
-import { api } from '../../api/client';
-import type { AnswerKind, ChangeDecisionRequest, ItemAsksDto, WaitingDto } from '../../api/asks';
+import { api } from '@shiplean/core/api/client';
+import type {
+  AnswerKind,
+  ChangeDecisionRequest,
+  ItemAsksDto,
+  WaitingDto,
+} from '@shiplean/core/api/asks';
 import { workItemKey } from '../workItem/workItemApi';
 
 // Decisions and questions on a work item (K4). Reads return DTOs; every write returns 204 and the caller refetches.

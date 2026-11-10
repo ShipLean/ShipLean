@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { KeyCheckDto, ProjectCreate } from '../../../api/projects';
+import type { KeyCheckDto, ProjectCreate } from '@shiplean/core/api/projects';
 import { settingsTestIds as ids } from '../testIds';
 import { NewProject } from './NewProject';
 

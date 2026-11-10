@@ -32,6 +32,7 @@ builder.Services.AddSerilog((services, logger) =>
     var configuration = services.GetRequiredService<IConfiguration>();
     logger.ReadFrom.Configuration(configuration)
         .Enrich.FromLogContext()
+        .Enrich.With(new TokenRoutePathEnricher(() => services.GetRequiredService<IHttpContextAccessor>().HttpContext?.GetEndpoint()))
         .Enrich.WithProperty("Application", "shiplean")
         .WriteTo.Console();
     var seqUrl = configuration["SHIPLEAN_SEQ_URL"];

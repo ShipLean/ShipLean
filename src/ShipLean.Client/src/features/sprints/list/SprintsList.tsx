@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
-import type { ProjectDto } from '../../../api/projects';
-import type { SprintDto } from '../../../api/sprints';
+import type { ProjectDto } from '@shiplean/core/api/projects';
+import type { SprintDto } from '@shiplean/core/api/sprints';
 import { EditSprintRailSlot } from '../../../slots/EditSprintRailSlot';
 import { useSprintFigures, useSprintsRealtime, useVelocity } from '../sprintsApi';
 import { sprintsTestIds as ids } from '../testIds';

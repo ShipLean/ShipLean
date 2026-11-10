@@ -1,4 +1,4 @@
-import type { StateDto } from '../../../api/projects';
+import type { StateDto } from '@shiplean/core/api/projects';
 import { StateDot } from '../../../components/StateDot';
 import { backlogTestIds as ids } from '../testIds';
 import { menuOptionClass } from './BulkMenus';

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import type { WorkItemTypeId } from '../../../api/refs';
-import type { BoardColumnDto } from '../../../api/views';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
+import type { BoardColumnDto } from '@shiplean/core/api/views';
 import { Markdown } from '../../../components/Markdown';
 import { StateDot } from '../../../components/StateDot';
 import { TypeIcon } from '../../../components/TypeIcon';

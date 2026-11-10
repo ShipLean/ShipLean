@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { BoardColumnDto, BoardLaneDto } from '../../../api/views';
+import type { BoardColumnDto, BoardLaneDto } from '@shiplean/core/api/views';
 import { cellOf, mappedStates, showsLaneHeaders, tracksOf } from './layout';
 
 const column = (id: string, split = false): BoardColumnDto => ({

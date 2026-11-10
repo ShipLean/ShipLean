@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ApiRequestError } from '../../../api/client';
+import { ApiRequestError } from '@shiplean/core/api/client';
 import { useJiraProjects } from '../importApi';
 import { importTestIds as ids } from '../testIds';
 import { JiraProjectRow } from './JiraProjectRow';

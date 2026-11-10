@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { putRetroAction } from '../../../api/retrosApi';
-import type { RetroActionPut } from '../../../api/retros';
+import { putRetroAction } from '@shiplean/core/api/retrosApi';
+import type { RetroActionPut } from '@shiplean/core/api/retros';
 import { showToast } from '../../../components/toastStore';
 import { retrosRootKey } from '../useRetroQueries';
 

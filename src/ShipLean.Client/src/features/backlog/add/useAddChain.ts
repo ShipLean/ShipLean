@@ -1,13 +1,13 @@
 import { createContext, useContext, useSyncExternalStore } from 'react';
-import { ApiRequestError } from '../../../api/client';
+import { ApiRequestError } from '@shiplean/core/api/client';
 import type {
   BacklogAddRequest,
   BacklogAddResult,
   BulkPlacement,
-} from '../../../api/backlogWrites';
-import type { WorkItemTypeId } from '../../../api/refs';
-import type { BacklogViewDto } from '../../../api/views';
-import type { ParentRefDto } from '../../../api/workItems';
+} from '@shiplean/core/api/backlogWrites';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
+import type { BacklogViewDto } from '@shiplean/core/api/views';
+import type { ParentRefDto } from '@shiplean/core/api/workItems';
 import { showToast } from '../../../components/toastStore';
 import { defaultPlace, placeContext, placeRequest } from './pastePlace';
 

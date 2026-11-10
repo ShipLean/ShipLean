@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import type { ProjectDto } from '../../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { fakeConnection } from '../../realtime/testing/fakeConnection';
 
 const hub = fakeConnection();
@@ -11,8 +11,8 @@ vi.mock('../../realtime/connection', async (original) => ({
   createProjectConnection: () => hub.connection,
 }));
 const reads = vi.hoisted(() => ({ paths: [] as string[] }));
-vi.mock('../../api/client', async (original) => ({
-  ...(await original<typeof import('../../api/client')>()),
+vi.mock('@shiplean/core/api/client', async (original) => ({
+  ...(await original<typeof import('@shiplean/core/api/client')>()),
   api: {
     get: vi.fn(async (path: string) => {
       reads.paths.push(path);

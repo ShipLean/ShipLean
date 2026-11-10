@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { bug, story } from '../ct/fixtures';
-import type { LinkDto } from '../../../api/workItems';
+import type { LinkDto } from '@shiplean/core/api/workItems';
 import { changedFields, changesOf, draftOf, newDraftLink, rebase, type Draft } from './draft';
 
 describe('draft', () => {

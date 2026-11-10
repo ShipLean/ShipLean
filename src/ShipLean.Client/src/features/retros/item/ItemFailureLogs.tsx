@@ -1,4 +1,4 @@
-import type { RetroItemDto } from '../../../api/retros';
+import type { RetroItemDto } from '@shiplean/core/api/retros';
 import { FailureLog } from '../sprint/views/byWorkItem/FailureLog';
 import { retrosTestIds as ids } from '../testIds';
 import type { RetroItemAddress } from './retroItemAddress';

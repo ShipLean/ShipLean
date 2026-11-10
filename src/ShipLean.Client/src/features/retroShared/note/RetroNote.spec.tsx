@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { RetroPointDto } from '../../../api/retros';
+import type { RetroPointDto } from '@shiplean/core/api/retros';
 import { noteStates, retroItem, stubRetros } from '../../retros/ct/retroFixtures';
 import { retroSharedTestIds as ids } from '../testIds';
 import { componentTestIds } from '../../../components/testIds';

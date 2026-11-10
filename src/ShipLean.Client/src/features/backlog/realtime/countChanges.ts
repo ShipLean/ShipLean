@@ -1,4 +1,4 @@
-import type { BacklogRowDto } from '../../../api/views';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 
 type Row = Pick<BacklogRowDto, 'id' | 'revision'>;
 

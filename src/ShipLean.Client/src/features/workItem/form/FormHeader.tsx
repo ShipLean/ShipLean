@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import type { WorkItemDto } from '../../../api/workItems';
+import type { WorkItemDto } from '@shiplean/core/api/workItems';
 import { TypeIcon } from '../../../components/TypeIcon';
 import { routePath } from '../../../routes';
 import { useInItemPeek } from '../../itemPeek/ItemPeekContext';

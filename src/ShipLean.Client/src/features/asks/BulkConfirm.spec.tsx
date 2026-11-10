@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { ItemAsksDto } from '../../api/asks';
+import type { ItemAsksDto } from '@shiplean/core/api/asks';
 import { BulkConfirm } from './BulkConfirm';
 import type { AsksItem } from './regions';
 import { asksTestIds as ids } from './testIds';

@@ -2,12 +2,14 @@ import { expect } from '@playwright/experimental-ct-react';
 import { meDto } from '../../features/auth/authFixtures';
 import { authTestIds as auth } from '../../features/auth/testIds';
 import { agentsTestIds } from '../../features/agents/testIds';
+import { devicesTestIds } from '../../features/devices/testIds';
 import { pagesTestIds } from '../../features/pages/testIds';
 import { settingsTestIds as ids } from '../../features/settings/testIds';
 import { appTestIds } from '../../testIds';
 import {
   MY_PROJECTS,
   stubAdminUsers,
+  stubDevices,
   stubAgents,
   stubConsent,
   stubInstanceProjects,
@@ -59,12 +61,14 @@ const profileArrange = async (page: Page, photo: boolean) => {
   });
   await stubPhoto(page);
   await stubAgents(page);
+  await stubDevices(page);
 };
 
 const profileReady = async (page: Page) => {
   await expect(page.getByTestId(pagesTestIds.profilePage)).toBeVisible();
   await expect(page.getByTestId(ids.myProjectsList)).toBeVisible();
   await expect(page.getByTestId(agentsTestIds.connectedRow)).toHaveCount(1);
+  await expect(page.getByTestId(devicesTestIds.row)).toHaveCount(2);
 };
 
 const instanceArrange = async (page: Page) => {

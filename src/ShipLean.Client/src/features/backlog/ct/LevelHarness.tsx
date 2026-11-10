@@ -1,5 +1,5 @@
 import { useLocation } from 'react-router-dom';
-import type { ProjectDto } from '../../../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { LevelBacklog } from '../levels/LevelBacklog';
 import type { LevelBacklogLevel } from '../levels/levelColumns';
 

@@ -75,18 +75,48 @@ jobs:
           restore-keys: nuget-${{ github.job }}-
       - uses: pnpm/action-setup@v4
         with:
-          package_json_file: src/ShipLean.Client/package.json
+          package_json_file: src/package.json
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: pnpm
-          cache-dependency-path: src/ShipLean.Client/pnpm-lock.yaml
+          cache-dependency-path: src/pnpm-lock.yaml
       - run: dotnet build src/ShipLean.slnx --configuration Release
       - run: pnpm install --frozen-lockfile
-        working-directory: src/ShipLean.Client
+        working-directory: src
+      # The platform-neutral core the SPA (and the phone app) import as @shiplean/core. Its tests are few and run in
+      # plain Node, so they always run in full.
+      - name: Core format, lint, typecheck, test
+        working-directory: src/ShipLean.Core.Client
+        run: pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm test
+      # The phone app (Expo). bundle is a Metro Android export: it proves every import resolves, with no device or
+      # Android SDK. On a pull request the step runs only when the diff reaches what the app depends on: its own folder,
+      # the core, the workspace files and the design tokens its theme is generated from.
+      - name: Mobile format, lint, typecheck, vitest, jest, bundle
+        working-directory: src/ShipLean.Mobile
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            changed=$(git diff --name-only "$BASE_SHA")
+            if ! grep -Eq '^(src/(pnpm-lock\.yaml|package\.json|pnpm-workspace\.yaml)|src/ShipLean\.Mobile/.*|src/ShipLean\.Core\.Client/.*|design/tokens\.json|\.github/workflows/ci\.yml)$' <<<"$changed"; then
+              echo "Skipping the mobile checks: this pull request changes nothing under src/ShipLean.Mobile, the core, the workspace files, design/tokens.json or ci.yml"
+              exit 0
+            fi
+          fi
+          # One command per line: under set -e a failure before the last command of an && list doesn't stop the script.
+          pnpm run format:check
+          pnpm run lint
+          pnpm run typecheck
+          pnpm test
+          pnpm run test:screens
+          pnpm run bundle
       # A hand run (workflow_dispatch) has no base, so it runs the whole suite. package.json and
-      # vite.config.ts already make Vitest do that (--changed forceRerunTriggers). The lockfile and
-      # the token files do not: tokens.test.ts reads them with readFileSync, which the import graph misses.
+      # vite.config.ts already make Vitest do that (--changed forceRerunTriggers). The workspace files,
+      # the lockfile, the core package (outside the SPA's folder) and the token files do not:
+      # tokens.test.ts reads the token files with readFileSync, which the import graph misses.
       - name: Format, lint, typecheck, vitest, build
         working-directory: src/ShipLean.Client
         env:
@@ -98,12 +128,14 @@ jobs:
           DEVFEEDBACK_TEST_TOKEN: ${{ secrets.DEVFEEDBACK_TEST_TOKEN }}
         run: |
           set -euo pipefail
-          pnpm run format:check && pnpm run lint && pnpm run typecheck
+          pnpm run format:check
+          pnpm run lint
+          pnpm run typecheck
           if [ "$EVENT_NAME" != "pull_request" ]; then
             pnpm test
           else
             changed=$(git diff --name-only "$BASE_SHA")
-            if printf '%s\n' "$changed" | grep -Eq '^(src/ShipLean.Client/(pnpm-lock\.yaml|tsconfig\.json|src/styles/tokens\.css)|design/tokens\.css)$'; then
+            if printf '%s\n' "$changed" | grep -Eq '^(src/(package\.json|pnpm-workspace\.yaml|pnpm-lock\.yaml)|src/ShipLean\.Core\.Client/.*|src/ShipLean.Client/(tsconfig\.json|src/styles/tokens\.css)|design/tokens\.css)$'; then
               echo "Change is outside Vitest's import graph; running the full suite"
               pnpm test
             else
@@ -211,8 +243,9 @@ jobs:
           fetch-depth: 0
       - uses: pnpm/action-setup@v4
         with:
-          package_json_file: src/ShipLean.Client/package.json
-      - run: pnpm install --frozen-lockfile
+          package_json_file: src/package.json
+      # Only the SPA and what it depends on (the core), not the phone app.
+      - run: pnpm install --frozen-lockfile --filter shiplean-client...
       # Playwright's default is half the visible CPUs (2 on a 4-vCPU runner). Pin it.
       # --only-changed follows what a spec's components import. The harness (playwright/),
       # global CSS, and the CT config wrap every mount and are not in that graph, so a
@@ -239,7 +272,7 @@ jobs:
             exit 0
           fi
           changed=$(git diff --name-only "$BASE_SHA")
-          if printf '%s\n' "$changed" | grep -Eq '^src/ShipLean.Client/(playwright-ct\.config\.ts|playwright/|tsconfig\.json|package\.json|pnpm-lock\.yaml|src/index\.css|src/styles/)'; then
+          if printf '%s\n' "$changed" | grep -Eq '^src/((package\.json|pnpm-workspace\.yaml|pnpm-lock\.yaml)$|ShipLean\.Core\.Client/|ShipLean.Client/(playwright-ct\.config\.ts|playwright/|tsconfig\.json|package\.json|src/index\.css|src/styles/))'; then
             echo "Change is outside Playwright's component graph; running the full suite"
             pnpm run test-ct --workers=2
           elif printf '%s\n' "$changed" | grep -q '^src/ShipLean.Client/'; then
@@ -302,15 +335,15 @@ jobs:
       - uses: pnpm/action-setup@v4
         if: needs.changes.outputs.code != 'false'
         with:
-          package_json_file: src/ShipLean.Client/package.json
+          package_json_file: src/package.json
       - uses: actions/setup-node@v4
         if: needs.changes.outputs.code != 'false'
         with:
           node-version: 24
           cache: pnpm
-          cache-dependency-path: src/ShipLean.Client/pnpm-lock.yaml
+          cache-dependency-path: src/pnpm-lock.yaml
       # The tests serve the real bundle, so it is built first (into ShipLean.WebApi/wwwroot).
-      - run: pnpm install --frozen-lockfile && pnpm run build
+      - run: pnpm install --frozen-lockfile --filter shiplean-client... && pnpm run build
         if: needs.changes.outputs.code != 'false'
         working-directory: src/ShipLean.Client
       - run: dotnet build src/ShipLean.AcceptanceTests --configuration Release

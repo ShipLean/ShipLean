@@ -10,6 +10,7 @@ public sealed class AntiFramingTests : AuthorizeFixtureBase
     [TestCase("/authorize?request=00000000-0000-0000-0000-000000000000")]
     [TestCase("/oauth/authorize")]
     [TestCase("/api/no-such-route")]
+    [TestCase("/mobile/sign-in")]
     public async Task Responses_ShouldForbidFraming(string path)
     {
         using var response = await Client.GetAsync(path);

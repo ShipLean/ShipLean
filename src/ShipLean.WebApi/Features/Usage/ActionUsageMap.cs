@@ -128,6 +128,11 @@ public static class ActionUsageMap
         Add(ActionUsage.SelfEmitted, "Auth.Login", "Consent.Decide", "ProjectCreation.Create", "Instance.Join", "Usage.Screen",
             "ProjectUsage.BacklogSort");
 
+        // Device sessions: the exchange is the sign-in event; revoke and current carry the reason they ended.
+        Add(ActionUsage.Untracked("Issues a code; the exchange is the event."), "DeviceSignIn.Codes");
+        Add(ActionUsage.SelfEmitted, "DeviceSignIn.Exchange", "DeviceSessions.Revoke", "DeviceSessions.Current");
+        Add(ActionUsage.Untracked(ScreenCounts), "DeviceSessions.List");
+
         Add(
             ActionUsage.Untracked(Helper),
             "Markdown.Render",
@@ -155,6 +160,7 @@ public static class ActionUsageMap
             "LinkCardImages.Favicon",
             "LinkCardImages.Image");
         Add(ActionUsage.Untracked("Anonymous, one-time upload token: the delivery that follows publishes SprintDemoChanged, and the demo's creation is counted by SprintDemo.Create."), "DemoUpload.Upload");
+        Add(ActionUsage.Untracked("Anonymous, one-time upload token: the upload URL's issue is counted by create_payload_upload, and the call that uses the payload by its own tool."), "PayloadUploads.Upload");
         Add(ActionUsage.Untracked("Only builds Google's consent address; nothing changes until the callback and the check, and the check is counted by YouTube.Check."), "YouTube.Start");
         Add(ActionUsage.Untracked("Anonymous browser redirect from Google with no session of its own; the connection it stores is counted by YouTube.Check when the person confirms it."), "YouTube.Callback");
         Add(ActionUsage.Untracked("Anonymous, token-authenticated download of the project's logo for the agent making a demo; the demo's creation is counted by SprintDemo.Create."), "DemoLogoDownload.Download");

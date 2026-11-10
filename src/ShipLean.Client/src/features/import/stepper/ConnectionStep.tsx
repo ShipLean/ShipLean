@@ -1,4 +1,4 @@
-import type { JiraTestResultDto } from '../../../api/import';
+import type { JiraTestResultDto } from '@shiplean/core/api/import';
 import { ConnectionPanel } from '../connection/ConnectionPanel';
 
 export function ConnectionStep({

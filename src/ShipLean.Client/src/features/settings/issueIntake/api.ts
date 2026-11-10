@@ -1,4 +1,4 @@
-import { api } from '../../../api/client';
+import { api } from '@shiplean/core/api/client';
 import type { IssueIntakeSaveDto, IssueIntakeSettingsDto } from './types';
 
 /** Keyed under the project like the rest of its settings. */

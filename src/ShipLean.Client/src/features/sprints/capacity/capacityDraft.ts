@@ -1,5 +1,5 @@
-import type { MemberDto } from '../../../api/projects';
-import type { SprintCapacityDto, SprintCapacityPut } from '../../../api/sprints';
+import type { MemberDto } from '@shiplean/core/api/projects';
+import type { SprintCapacityDto, SprintCapacityPut } from '@shiplean/core/api/sprints';
 
 /**
  * What the form holds for one member: whether they are in the table, the text of the days input (empty means the

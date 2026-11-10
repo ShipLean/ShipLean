@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import type { Locator } from 'playwright';
-import type { ItemAsksDto } from '../../api/asks';
+import type { ItemAsksDto } from '@shiplean/core/api/asks';
 import { DecisionList } from './DecisionList';
 import type { AsksItem } from './regions';
 import { asksTestIds as ids } from './testIds';

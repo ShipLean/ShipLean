@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { MeDto } from '../../../../api/me';
-import type { ProjectSummaryDto } from '../../../../api/projects';
+import type { MeDto } from '@shiplean/core/api/me';
+import type { ProjectSummaryDto } from '@shiplean/core/api/projects';
 import { settingsTestIds as ids } from '../../testIds';
 import { ProfileAccount } from './ProfileAccount';
 
@@ -264,10 +264,10 @@ test('Password_ShouldSayAgentsAreDisconnected', async ({ mount, page }) => {
   const view = await mount(<ProfileAccount />);
 
   await expect(view.getByTestId(ids.passwordPanel)).toContainText(
-    'disconnects your connected agents',
+    'Changing it signs out your other sessions and your phones, and disconnects your connected agents',
   );
   await expect(view.getByTestId(ids.sessionsPanel)).toContainText(
-    'disconnects your connected agents',
+    'signs out your phones and disconnects your connected agents',
   );
 });
 

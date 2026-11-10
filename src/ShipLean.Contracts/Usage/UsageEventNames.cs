@@ -10,6 +10,8 @@ public static class UsageEventNames
     public const string AuthSignedOut = "auth.signed_out";
     public const string AuthPasswordChanged = "auth.password_changed";
     public const string AuthOtherSessionsSignedOut = "auth.other_sessions_signed_out";
+    public const string DeviceSessionCreated = "device_session.created";
+    public const string DeviceSessionEnded = "device_session.ended";
     public const string AgentConnected = "agent.connected";
     public const string AgentConsentDenied = "agent.consent_denied";
     public const string AgentRevoked = "agent.revoked";
@@ -57,6 +59,7 @@ public static class UsageEventNames
     public const string AttachmentAdded = "attachment.added";
     public const string AttachmentViewed = "attachment.viewed";
     public const string AttachmentArchived = "attachment.archived";
+    public const string PayloadUploadIssued = "payload_upload.issued";
     public const string LinkAdded = "link.added";
     public const string LinkStateReported = "link.state_reported";
     public const string LinkCardAdded = "link_card.added";

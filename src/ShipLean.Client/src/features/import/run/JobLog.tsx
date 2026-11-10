@@ -1,4 +1,4 @@
-import type { ImportJobDto } from '../../../api/import';
+import type { ImportJobDto } from '@shiplean/core/api/import';
 import { importTestIds as ids } from '../testIds';
 import { useImportJobLog } from './runApi';
 

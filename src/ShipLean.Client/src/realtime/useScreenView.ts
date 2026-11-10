@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { postScreenView } from '../api/usageApi';
+import { postScreenView } from '@shiplean/core/api/usageApi';
 import type { BacklogMode, RouteId } from '../routes';
 
 // Reports one screen view to the server when the caller mounts, and again when the route id, the project or the backlog mode

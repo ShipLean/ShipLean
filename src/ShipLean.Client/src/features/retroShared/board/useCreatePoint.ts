@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { RetroPointCreate } from '../../../api/retros';
-import { createRetroPoint } from '../../../api/retrosApi';
+import type { RetroPointCreate } from '@shiplean/core/api/retros';
+import { createRetroPoint } from '@shiplean/core/api/retrosApi';
 import { retrosRootKey } from '../../retros/useRetroQueries';
 
 /** POST api/projects/{id}/retros/points, then refetch the project's retro reads. */

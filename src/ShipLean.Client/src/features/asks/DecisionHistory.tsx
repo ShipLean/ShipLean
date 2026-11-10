@@ -1,4 +1,4 @@
-import type { DecisionDto, DecisionEventDto } from '../../api/asks';
+import type { DecisionDto, DecisionEventDto } from '@shiplean/core/api/asks';
 import { asksTestIds as ids } from './testIds';
 
 const verb: Partial<Record<DecisionEventDto['kind'], string>> = {

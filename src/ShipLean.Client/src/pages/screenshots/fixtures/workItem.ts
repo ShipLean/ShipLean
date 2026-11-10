@@ -1,6 +1,6 @@
-import type { CommentDto } from '../../../api/comments';
-import type { StateDto } from '../../../api/projects';
-import type { LinkDto, WorkItemDto } from '../../../api/workItems';
+import type { CommentDto } from '@shiplean/core/api/comments';
+import type { StateDto } from '@shiplean/core/api/projects';
+import type { LinkDto, WorkItemDto } from '@shiplean/core/api/workItems';
 import { story } from '../../../features/workItem/ct/fixtures';
 import { attachment, change, revision } from '../../../features/workItem/ct/stubSide';
 import { PEOPLE, SHELL_SPRINTS } from '../shellStub';

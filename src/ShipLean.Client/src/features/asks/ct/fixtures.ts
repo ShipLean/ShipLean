@@ -1,8 +1,8 @@
 import historyJson from '../../../../../ShipLean.TestSupport/DtoFixtures/asks/history-asks.json' with { type: 'json' };
 import featureJson from '../../../../../ShipLean.TestSupport/DtoFixtures/asks/item-asks.feature.json' with { type: 'json' };
 import storyJson from '../../../../../ShipLean.TestSupport/DtoFixtures/asks/item-asks.story.json' with { type: 'json' };
-import type { DecisionDto, ItemAsksDto, QuestionDto } from '../../../api/asks';
-import type { HistoryDto } from '../../../api/workItems';
+import type { DecisionDto, ItemAsksDto, QuestionDto } from '@shiplean/core/api/asks';
+import type { HistoryDto } from '@shiplean/core/api/workItems';
 
 // ItemAsksDto values named after the design's states (decisions.html?state=…), all built from the C# fixture JSON so a
 // fixture correction flows through. api/asks.test.ts pins the JSON against the types.

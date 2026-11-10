@@ -1,5 +1,5 @@
 import { Avatar } from '../../components/Avatar';
-import type { RetroAuthorDto } from '../../api/retros';
+import type { RetroAuthorDto } from '@shiplean/core/api/retros';
 import { retroSharedTestIds as ids } from './testIds';
 
 /** Who wrote a point or retro: the person's avatar and first name, plus the agent's name in a square-cornered purple tag (the design's `.agent`) when an agent wrote it. */

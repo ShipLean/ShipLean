@@ -2,8 +2,8 @@ import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from '@tan
 import { act, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import type { ProjectDto } from '../../../api/projects';
-import type { BacklogRowDto, BacklogViewDto } from '../../../api/views';
+import type { ProjectDto } from '@shiplean/core/api/projects';
+import type { BacklogRowDto, BacklogViewDto } from '@shiplean/core/api/views';
 import { getToasts } from '../../../components/toastStore';
 import { fakeConnection } from '../../../realtime/testing/fakeConnection';
 import { BURST_WINDOW_MS } from './teammateBurst';

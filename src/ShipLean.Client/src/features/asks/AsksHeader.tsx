@@ -1,6 +1,6 @@
 import { Avatar } from '../../components/Avatar';
 import { Chip } from '../../components/Chip';
-import type { ItemAsksDto } from '../../api/asks';
+import type { ItemAsksDto } from '@shiplean/core/api/asks';
 import { BulkConfirm } from './BulkConfirm';
 import type { AsksRegionProps } from './regions';
 import { asksState } from './regions';

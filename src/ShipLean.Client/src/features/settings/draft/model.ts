@@ -5,8 +5,8 @@ import type {
   SprintNaming,
   StateChanges,
   StateDto,
-} from '../../../api/projects';
-import { WORK_ITEM_TYPE_IDS, type UserRef, type WorkItemTypeId } from '../../../api/refs';
+} from '@shiplean/core/api/projects';
+import { WORK_ITEM_TYPE_IDS, type UserRef, type WorkItemTypeId } from '@shiplean/core/api/refs';
 import { TYPE_LABELS } from '../states/categories';
 import { rebaseStates, removeLabel, rowsOf, typeProblems } from '../states/stateModel';
 

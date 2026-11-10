@@ -21,6 +21,10 @@ public sealed class CookieSessionEvents(UserSessions sessions) : CookieAuthentic
     // ended session, and a page load opens the sign-in page with the disabled note.
     public const string DisabledItem = "shiplean.proxy-user-disabled";
 
+    // Marks the request's session as ended, so its challenge answers 401 session_ended (a device bearer that is revoked
+    // or expired, DeviceBearerHandler). Takes HttpContext.Items, not the context (AG0003).
+    public static void MarkEnded(IDictionary<object, object?> items) => items[EndedItem] = true;
+
     public override async Task ValidatePrincipal(CookieValidatePrincipalContext context)
     {
         var principal = context.Principal;

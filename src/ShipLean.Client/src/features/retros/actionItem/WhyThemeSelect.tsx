@@ -1,4 +1,4 @@
-import type { RetroThemeRefDto } from '../../../api/retros';
+import type { RetroThemeRefDto } from '@shiplean/core/api/retros';
 import { useRetroThemes } from '../useRetroQueries';
 import { retrosTestIds as ids } from '../testIds';
 

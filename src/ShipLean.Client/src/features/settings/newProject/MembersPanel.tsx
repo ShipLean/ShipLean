@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ApiRequestError } from '../../../api/client';
+import { ApiRequestError } from '@shiplean/core/api/client';
 import { Panel } from '../draft/Panel';
 import { fetchUserByEmail } from '../settingsApi';
 import { settingsTestIds as ids } from '../testIds';

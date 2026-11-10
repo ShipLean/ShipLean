@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { VelocityDto } from '../../../api/sprints';
+import type { VelocityDto } from '@shiplean/core/api/sprints';
 import { sprintsTestIds as ids } from '../testIds';
 import { VelocityCard } from './VelocityCard';
 

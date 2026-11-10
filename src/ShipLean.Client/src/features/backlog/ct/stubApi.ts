@@ -1,12 +1,12 @@
-import type { BacklogViewDto } from '../../../api/views';
-import type { SprintCreate, SprintDto } from '../../../api/sprints';
+import type { BacklogViewDto } from '@shiplean/core/api/views';
+import type { SprintCreate, SprintDto } from '@shiplean/core/api/sprints';
 import type {
   BacklogAddRequest,
   BulkWriteRequest,
   DuplicateCheckRequest,
   DuplicateMatch,
-} from '../../../api/backlogWrites';
-import type { ConflictDto, WorkItemCreate, WriteResult } from '../../../api/workItems';
+} from '@shiplean/core/api/backlogWrites';
+import type { ConflictDto, WorkItemCreate, WriteResult } from '@shiplean/core/api/workItems';
 import { story } from '../../workItem/ct/fixtures';
 
 // The part of Playwright's Page and Route these stubs use (the CT package does not re-export the types).

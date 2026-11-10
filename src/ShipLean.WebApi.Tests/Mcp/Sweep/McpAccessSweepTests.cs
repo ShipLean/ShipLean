@@ -23,7 +23,9 @@ public class McpAccessSweepTests : McpFixture
     {
         var token = await TokenAsync(TestUser.Joel, ReadWritePlan);
 
-        var problems = await McpSweep.CallProblemsAsync((tool, arguments) => CallToolAsync(token, tool, arguments), McpSweep.AllRows());
+        var schemas = McpSweep.InputSchemas(await PostAsync(token, """{"jsonrpc":"2.0","id":1,"method":"tools/list"}"""));
+
+        var problems = await McpSweep.CallProblemsAsync((tool, arguments) => CallToolAsync(token, tool, arguments), schemas, McpSweep.AllRows());
 
         problems.ShouldBeEmpty();
     }

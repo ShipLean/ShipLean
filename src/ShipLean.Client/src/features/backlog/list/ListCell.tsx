@@ -1,6 +1,6 @@
 import { Avatar } from '../../../components/Avatar';
 import { StateDot } from '../../../components/StateDot';
-import type { BacklogRowDto } from '../../../api/views';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import { PointsCell } from '../estimate/PointsCell';
 import { TitleCell } from '../selection/TitleCell';
 import type { BacklogColumnId } from '../backlogApi';

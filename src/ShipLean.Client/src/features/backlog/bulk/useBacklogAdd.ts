@@ -1,11 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../../api/client';
+import { api } from '@shiplean/core/api/client';
 import type {
   BacklogAddRequest,
   BacklogAddResult,
   DuplicateCheckRequest,
   DuplicateCheckResult,
-} from '../../../api/backlogWrites';
+} from '@shiplean/core/api/backlogWrites';
 import { backlogRootKey } from '../../../queries/backlogKeys';
 
 /** Creates many rows (K2) and reads the backlog and the project's counters again, as useCreateWorkItem does. */

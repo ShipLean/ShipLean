@@ -1,11 +1,11 @@
-import type { BoardLevel } from '../../../../api/boards';
+import type { BoardLevel } from '@shiplean/core/api/boards';
 import type {
   BoardSettingsJson,
   CardFieldSettingJson,
   StyleRuleJson,
-} from '../../../../api/persisted';
-import type { WorkItemTypeId } from '../../../../api/refs';
-import type { CardDto } from '../../../../api/views';
+} from '@shiplean/core/api/persisted';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
+import type { CardDto } from '@shiplean/core/api/views';
 import { fieldValuesOf, matches, type FieldValues } from '../../../../criteria/matches';
 import { checkCriteria } from '../../../../criteria/validate';
 import { previewCard, sampleRuleValues, SAMPLE_PEOPLE } from '../fields/samplePreview';

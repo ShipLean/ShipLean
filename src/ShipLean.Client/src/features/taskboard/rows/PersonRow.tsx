@@ -1,5 +1,5 @@
-import type { StateRef } from '../../../api/refs';
-import type { TaskboardPersonRowDto, TaskboardViewDto } from '../../../api/views';
+import type { StateRef } from '@shiplean/core/api/refs';
+import type { TaskboardPersonRowDto, TaskboardViewDto } from '@shiplean/core/api/views';
 import { Avatar } from '../../../components/Avatar';
 import { passesFaces } from '../grid/faceFilter';
 import { gridColumns } from '../grid/gridColumns';

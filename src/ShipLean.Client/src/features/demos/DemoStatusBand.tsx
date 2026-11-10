@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import type { SprintDemoDto, SprintDemoStatus } from '../../api/demos';
+import type { SprintDemoDto, SprintDemoStatus } from '@shiplean/core/api/demos';
 import { Chip, type ChipTone } from '../../components/Chip';
 import { showToast } from '../../components/toastStore';
 import { useCreateSprintDemo } from './demosApi';

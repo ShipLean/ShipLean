@@ -1,6 +1,6 @@
 import type { Page } from 'playwright';
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { SprintCreate } from '../../../api/sprints';
+import type { SprintCreate } from '@shiplean/core/api/sprints';
 import { sprintsTestIds as ids } from '../testIds';
 import { NewSprintRail } from './NewSprintRail';
 

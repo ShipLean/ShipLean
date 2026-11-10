@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { ConflictDto } from '../../../api/workItems';
+import type { ConflictDto } from '@shiplean/core/api/workItems';
 import { componentTestIds } from '../../../components/testIds';
 import { mei, story } from '../ct/fixtures';
 import { workItemHarnessIds as harness } from '../ct/harnessIds';

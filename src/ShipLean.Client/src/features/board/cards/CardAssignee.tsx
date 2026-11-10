@@ -1,5 +1,5 @@
 import { Avatar } from '../../../components/Avatar';
-import type { CardDto } from '../../../api/views';
+import type { CardDto } from '@shiplean/core/api/views';
 import { boardTestIds as ids } from '../testIds';
 
 // The assignee (the Owner on Features and Epics); an unassigned card shows the dashed avatar.

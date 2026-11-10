@@ -1,5 +1,5 @@
 import { useLocation } from 'react-router-dom';
-import type { ProjectRole } from '../../../api/projects';
+import type { ProjectRole } from '@shiplean/core/api/projects';
 import { ToastHost } from '../../../components/ToastHost';
 import { projectSettingsTabs, type ProjectSettingsTab } from '../../../routes';
 import { SettingsDraftSlot } from '../../../slots/SettingsDraftSlot';

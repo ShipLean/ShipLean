@@ -1,5 +1,5 @@
-import type { ItemAsksDto } from '../../../api/asks';
-import type { ApiError } from '../../../api/client';
+import type { ItemAsksDto } from '@shiplean/core/api/asks';
+import type { ApiError } from '@shiplean/core/api/client';
 
 // Stubs the asks routes of one work item (K4). GET asks answers the current asks; each write is recorded and answers 204,
 // and the GET after it is served from whatever setAsks() set (the server's state after the write is the test's call).

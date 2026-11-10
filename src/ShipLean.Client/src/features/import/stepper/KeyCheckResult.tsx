@@ -1,4 +1,4 @@
-import type { KeyCheckDto } from '../../../api/projects';
+import type { KeyCheckDto } from '@shiplean/core/api/projects';
 import { importTestIds as ids } from '../testIds';
 
 function reasonText(check: KeyCheckDto): string {

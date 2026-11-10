@@ -1,4 +1,4 @@
-import type { RetroPointDto } from '../../../../api/retros';
+import type { RetroPointDto } from '@shiplean/core/api/retros';
 import { ToastHost } from '../../../../components/ToastHost';
 import { RetroActionDialogProvider } from '../../actionDialog/RetroActionDialogProvider';
 import { useRetroItem } from '../../../retros/useRetroQueries';

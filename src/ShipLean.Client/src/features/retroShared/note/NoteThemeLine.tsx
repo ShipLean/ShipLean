@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { RetroPointDto } from '../../../api/retros';
+import type { RetroPointDto } from '@shiplean/core/api/retros';
 import { useRetroThemes } from '../../retros/useRetroQueries';
 import { useRetroActionDialog } from '../actionDialog/useRetroActionDialog';
 import { ThemePicker } from '../ThemePicker';

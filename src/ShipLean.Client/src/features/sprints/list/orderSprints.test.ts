@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import type { SprintDto } from '../../../api/sprints';
+import type { SprintDto } from '@shiplean/core/api/sprints';
 import { orderSprints } from './orderSprints';
 
 const sprint = (name: string, status: SprintDto['status'], startDate: string): SprintDto => ({

@@ -1,6 +1,6 @@
 import { useContext } from 'react';
 import { useLocation } from 'react-router-dom';
-import type { ProjectRole } from '../../../../api/projects';
+import type { ProjectRole } from '@shiplean/core/api/projects';
 import { projectSettingsTabs, type ProjectSettingsTab } from '../../../../routes';
 import { projectDto } from './projectDto';
 import { SettingsDraftContext } from '../LoadedSettings';

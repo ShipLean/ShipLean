@@ -1,4 +1,4 @@
-import type { ProjectDto } from '../../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { SessionBody } from './SessionBody';
 import { SessionHeader } from './SessionHeader';
 import { useAgentPanel } from './agentPanelApi';

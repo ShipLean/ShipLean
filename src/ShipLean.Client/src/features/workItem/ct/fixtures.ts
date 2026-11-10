@@ -1,7 +1,7 @@
-import type { StateDto, MemberDto } from '../../../api/projects';
-import type { SprintDto } from '../../../api/sprints';
-import type { UserRef } from '../../../api/refs';
-import type { WorkItemDto } from '../../../api/workItems';
+import type { StateDto, MemberDto } from '@shiplean/core/api/projects';
+import type { SprintDto } from '@shiplean/core/api/sprints';
+import type { UserRef } from '@shiplean/core/api/refs';
+import type { WorkItemDto } from '@shiplean/core/api/workItems';
 
 export const priya: UserRef = {
   id: 'u-priya',

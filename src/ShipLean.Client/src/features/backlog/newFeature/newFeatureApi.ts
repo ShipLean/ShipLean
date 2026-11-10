@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../../api/client';
-import type { WorkItemChanges, WorkItemCreate, WriteResult } from '../../../api/workItems';
+import { api } from '@shiplean/core/api/client';
+import type { WorkItemChanges, WorkItemCreate, WriteResult } from '@shiplean/core/api/workItems';
 import { backlogRootKey } from '../backlogApi';
 
 // C#: SlugCheckDto. `reason` is set for an invalid slug; a taken one is just `available: false`.

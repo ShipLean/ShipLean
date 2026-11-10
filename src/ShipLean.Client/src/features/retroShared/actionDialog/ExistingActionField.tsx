@@ -1,4 +1,4 @@
-import type { RetroActionRefDto } from '../../../api/retros';
+import type { RetroActionRefDto } from '@shiplean/core/api/retros';
 import { retroSharedTestIds as ids } from '../testIds';
 
 /** Add to existing: the open action items, one chosen. */

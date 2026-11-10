@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import type { Page } from 'playwright';
-import type { ItemAsksDto } from '../../api/asks';
+import type { ItemAsksDto } from '@shiplean/core/api/asks';
 import { RegionHarness } from './ct/RegionHarness';
 import { waiting } from './ct/fixtures';
 import { stubAsks } from './ct/stubAsks';

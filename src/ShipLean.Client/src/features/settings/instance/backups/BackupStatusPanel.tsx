@@ -1,6 +1,6 @@
 import { useEffect, useId } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { ApiRequestError } from '../../../../api/client';
+import { ApiRequestError } from '@shiplean/core/api/client';
 import { backupsTestIds } from '../../../backups/testIds';
 import { Panel } from '../../draft/Panel';
 import { errorText } from '../model';

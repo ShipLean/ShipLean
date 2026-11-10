@@ -1,5 +1,5 @@
-import type { VelocityDto } from '../../../api/sprints';
-import type { BacklogRowDto, BacklogSectionDto } from '../../../api/views';
+import type { VelocityDto } from '@shiplean/core/api/sprints';
+import type { BacklogRowDto, BacklogSectionDto } from '@shiplean/core/api/views';
 import type { BacklogColumnId } from '../backlogApi';
 import { PullLineRow } from '../pull/PullLineRow';
 import { usePullLine } from '../pull/usePullLine';

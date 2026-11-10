@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import type { ProjectDto } from '../../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { Dialog } from '../../components/Dialog';
 import { workItemSlots } from '../../pages/workItemSlots';
 import { routePath } from '../../routes';

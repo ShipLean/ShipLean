@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import type { ProjectDto, ProjectRole } from '../../../api/projects';
+import type { ProjectDto, ProjectRole } from '@shiplean/core/api/projects';
 import { ToastHost } from '../../../components/ToastHost';
 import { DiscussionSlot } from '../../../slots/DiscussionSlot';
 import { FormSlot } from '../../../slots/FormSlot';

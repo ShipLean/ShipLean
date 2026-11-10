@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query';
-import { api, ApiRequestError } from '../../../api/client';
-import type { BoardViewDto } from '../../../api/views';
-import { conflictOf, type WriteResult } from '../../../api/workItems';
+import { api, ApiRequestError } from '@shiplean/core/api/client';
+import type { BoardViewDto } from '@shiplean/core/api/views';
+import { conflictOf, type WriteResult } from '@shiplean/core/api/workItems';
 import { showToast } from '../../../components/toastStore';
 import type { Level } from '../../../routes';
 import { boardRootKey, type BoardMoveRequest } from '../boardApi';

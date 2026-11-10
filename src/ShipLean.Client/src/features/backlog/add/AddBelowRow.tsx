@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import type { BacklogRowDto } from '../../../api/views';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import { useSelection } from '../selection/useSelection';
 import { AddBelowCommand } from './AddBelowCommand';
 import { AddRowFields } from './AddRowFields';

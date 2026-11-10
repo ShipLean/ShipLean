@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../../api/client';
-import type { WorkItemTypeId } from '../../../api/refs';
-import type { ChildSummaryDto, WorkItemCreate, WriteResult } from '../../../api/workItems';
+import { api } from '@shiplean/core/api/client';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
+import type { ChildSummaryDto, WorkItemCreate, WriteResult } from '@shiplean/core/api/workItems';
 import { registerInvalidation } from '../../../realtime';
 import { boardRootKey } from '../boardApi';
 import { movesPending } from '../moves/pendingMoves';

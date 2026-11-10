@@ -1,4 +1,4 @@
-import type { JiraTestResultDto } from '../../../api/import';
+import type { JiraTestResultDto } from '@shiplean/core/api/import';
 import { importTestIds as ids } from '../testIds';
 
 // What Test connection found: who you are connected as, or what to check.

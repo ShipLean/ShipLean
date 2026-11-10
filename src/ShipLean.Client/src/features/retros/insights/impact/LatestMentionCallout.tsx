@@ -1,4 +1,4 @@
-import type { RetroPointDto } from '../../../../api/retros';
+import type { RetroPointDto } from '@shiplean/core/api/retros';
 import { ActionChip } from '../../../retroShared/ActionChip';
 
 /** For an action that did not help: the latest mention of the theme and the follow-up action item, if one was raised. */

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { ProjectDto } from '../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { WorkItemScreen } from '../features/workItem/form/WorkItemScreen';
 import { pagesTestIds } from '../features/pages/testIds';
 

@@ -1,6 +1,6 @@
 import { StateDot } from '../../../../components/StateDot';
 import { TypeIcon } from '../../../../components/TypeIcon';
-import type { RetroActionRowDto } from '../../../../api/retros';
+import type { RetroActionRowDto } from '@shiplean/core/api/retros';
 import { ItemLink } from '../../../itemPeek/ItemLink';
 import { retrosTestIds as ids } from '../../testIds';
 import { RailSection } from './RailSection';

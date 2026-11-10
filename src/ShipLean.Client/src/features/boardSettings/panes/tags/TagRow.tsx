@@ -1,4 +1,4 @@
-import { SWATCHES, type Swatch } from '../../../../api/persisted';
+import { SWATCHES, type Swatch } from '@shiplean/core/api/persisted';
 import { tagStyle } from '../../../board/cards/cardStyle';
 import { SWATCH_NAMES } from '../swatchNames';
 import { boardSettingsTestIds as ids } from '../../testIds';

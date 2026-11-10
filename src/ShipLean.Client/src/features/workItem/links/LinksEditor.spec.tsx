@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { LinkDto } from '../../../api/workItems';
+import type { LinkDto } from '@shiplean/core/api/workItems';
 import { bug, story } from '../ct/fixtures';
 import { stubApi } from '../ct/stubApi';
 import { workItemHarnessIds as harness } from '../ct/harnessIds';

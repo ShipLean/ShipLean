@@ -1,4 +1,4 @@
-import type { WorkItemDto } from '../../../api/workItems';
+import type { WorkItemDto } from '@shiplean/core/api/workItems';
 import { workItemTestIds as ids } from '../testIds';
 import { workItemAttachmentsKey } from '../workItemApi';
 import { MarkdownSection } from './MarkdownSection';

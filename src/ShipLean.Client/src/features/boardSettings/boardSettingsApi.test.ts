@@ -1,13 +1,13 @@
 import { QueryClient } from '@tanstack/react-query';
 import { expect, test, vi } from 'vitest';
-import type { BoardSettingsDto } from '../../api/boards';
-import type { BoardSettingsJson } from '../../api/persisted';
+import type { BoardSettingsDto } from '@shiplean/core/api/boards';
+import type { BoardSettingsJson } from '@shiplean/core/api/persisted';
 import { boardKey, boardRootKey } from '../board/boardApi';
 import { saveBoardSettings } from './boardSettingsApi';
 
 const result = { board: { settings: {} } as BoardSettingsDto, mergedSections: [] };
-vi.mock('../../api/client', async (original) => ({
-  ...(await original<typeof import('../../api/client')>()),
+vi.mock('@shiplean/core/api/client', async (original) => ({
+  ...(await original<typeof import('@shiplean/core/api/client')>()),
   api: { put: vi.fn(async () => result) },
 }));
 

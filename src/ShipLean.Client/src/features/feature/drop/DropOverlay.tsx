@@ -1,4 +1,4 @@
-import type { AttachmentOutcome } from '../../../api/attachments';
+import type { AttachmentOutcome } from '@shiplean/core/api/attachments';
 import { Dialog } from '../../../components/Dialog';
 import { formatSize } from '../../workItem/side/fileSize';
 import { limitsNote } from '../attachments/attachmentGroups';

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import type { SprintCapacityDto, SprintDto } from '../../../api/sprints';
+import type { SprintCapacityDto, SprintDto } from '@shiplean/core/api/sprints';
 import { Chip } from '../../../components/Chip';
 import { routePath } from '../../../routes';
 import type { SprintFigures } from '../sprintsApi';

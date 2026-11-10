@@ -1,4 +1,4 @@
-import type { CriteriaJson, Swatch, SwimlaneJson } from '../../../../api/persisted';
+import type { CriteriaJson, Swatch, SwimlaneJson } from '@shiplean/core/api/persisted';
 
 /** The fields a card can be dropped into a criteria lane for: the board writes the lane's `=` value onto the card. */
 const DROP_FIELDS = ['priority', 'severity', 'points', 'assignee', 'sprint'];

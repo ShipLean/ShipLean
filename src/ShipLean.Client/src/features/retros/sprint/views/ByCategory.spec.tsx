@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { ProjectDto } from '../../../../api/projects';
-import type { RetroPointDto, SprintRetroDto } from '../../../../api/retros';
-import type { SprintDto } from '../../../../api/sprints';
+import type { ProjectDto } from '@shiplean/core/api/projects';
+import type { RetroPointDto, SprintRetroDto } from '@shiplean/core/api/retros';
+import type { SprintDto } from '@shiplean/core/api/sprints';
 import { SprintRetroAddressHarness } from '../../ct/SprintRetroAddressHarness';
 import { ByCategoryHarness } from '../../ct/ByCategoryHarness';
 import { sprintRetro, stubRetros } from '../../ct/retroFixtures';

@@ -1,7 +1,7 @@
 import { TypeIcon } from '../../../components/TypeIcon';
-import type { CardAnnotationsJson } from '../../../api/persisted';
-import type { WorkItemTypeId } from '../../../api/refs';
-import type { RollupCountDto } from '../../../api/views';
+import type { CardAnnotationsJson } from '@shiplean/core/api/persisted';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
+import type { RollupCountDto } from '@shiplean/core/api/views';
 import type { Level } from '../../../routes';
 import { boardTestIds as ids } from '../testIds';
 import { visibleRollups } from './cardStyle';

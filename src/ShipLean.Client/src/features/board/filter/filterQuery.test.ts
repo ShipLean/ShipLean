@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { BoardColumnDto } from '../../../api/views';
+import type { BoardColumnDto } from '@shiplean/core/api/views';
 import { filterCount, hiddenCards, toggled } from './filterQuery';
 
 describe('filterCount', () => {

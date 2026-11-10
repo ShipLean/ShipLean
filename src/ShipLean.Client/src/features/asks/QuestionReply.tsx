@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { QuestionDto } from '../../api/asks';
+import type { QuestionDto } from '@shiplean/core/api/asks';
 import { textareaClass } from '../workItem/form/inputClasses';
 import { asksTestIds as ids } from './testIds';
 import type { AskWrites } from './useAskWrites';

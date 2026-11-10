@@ -1,4 +1,4 @@
-import type { CriteriaJson } from '../../../api/persisted';
+import type { CriteriaJson } from '@shiplean/core/api/persisted';
 import { checkClause } from '../../../criteria/validate';
 
 export const NO_CRITERIA: CriteriaJson = { match: 'all', clauses: [] };

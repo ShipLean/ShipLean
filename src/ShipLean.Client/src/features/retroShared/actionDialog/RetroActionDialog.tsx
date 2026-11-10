@@ -1,5 +1,5 @@
 import { Dialog } from '../../../components/Dialog';
-import type { RetroActionDialogQuery } from '../../../api/retrosApi';
+import type { RetroActionDialogQuery } from '@shiplean/core/api/retrosApi';
 import { RetroQueryState } from '../../retros/RetroQueryState';
 import { useRetroActionDialogData } from '../../retros/useRetroQueries';
 import { retroSharedTestIds as ids } from '../testIds';

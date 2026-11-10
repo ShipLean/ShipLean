@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { CriteriaClause, SwimlaneJson } from '../../../../api/persisted';
+import type { CriteriaClause, SwimlaneJson } from '@shiplean/core/api/persisted';
 import { acceptsDrops, blankLane, moveLane, withCriteria } from './laneEdits';
 
 const lane = (id: string, clauses: CriteriaClause[] | null): SwimlaneJson => ({

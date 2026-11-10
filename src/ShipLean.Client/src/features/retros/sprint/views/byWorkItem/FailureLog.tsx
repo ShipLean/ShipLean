@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { RetroFailureLogDto } from '../../../../../api/retros';
+import type { RetroFailureLogDto } from '@shiplean/core/api/retros';
 import { RetroLogSection } from '../../../../retroShared/RetroLogSection';
 import { retroSharedTestIds as ids } from '../../../../retroShared/testIds';
 

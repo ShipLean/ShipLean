@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { ChildSummaryDto, WorkItemChanges } from '../../../api/workItems';
+import type { ChildSummaryDto, WorkItemChanges } from '@shiplean/core/api/workItems';
 import { useInvalidateBacklog } from '../useInvalidateBacklog';
 import { fetchWorkItem, patchWorkItem, workItemKey } from '../workItemApi';
 

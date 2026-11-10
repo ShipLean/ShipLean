@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import type { WorkItemDto } from '../../../api/workItems';
-import type { BacklogRowDto } from '../../../api/views';
+import type { WorkItemDto } from '@shiplean/core/api/workItems';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import { showToast } from '../../../components/toastStore';
 import { registerInvalidation } from '../../../realtime';
 import { BURST_WINDOW_MS, burstText, isBurst } from './teammateBurst';
