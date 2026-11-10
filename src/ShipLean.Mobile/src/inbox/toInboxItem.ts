@@ -37,10 +37,10 @@ const decisionAsk = (d: DecisionDto): InboxAskDto => ({
   status: null,
 });
 
-// A Feature's status line as an ask, or null when the item isn't a Feature or has no line. As on the server (K2): at is
-// when it was last verified, or the Feature's creation when never; from is who verified it.
+// A Feature's status line as an ask, or null when it has none (statusLine is "" on every other type). As on the server
+// (K2): at is when it was last verified, or the Feature's creation when never; from is who verified it.
 export function statusAsk(item: WorkItemDto): InboxAskDto | null {
-  if (item.type.id !== 'feature' || item.statusLine === '') return null;
+  if (item.statusLine === '') return null;
   const verified = item.statusVerified;
   return {
     kind: 'status',
