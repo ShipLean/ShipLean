@@ -1,4 +1,5 @@
 import { waitFor } from '@testing-library/react-native';
+import { AudioModule } from 'expo-audio';
 import { File, Paths } from 'expo-file-system';
 import { createSTT } from 'react-native-sherpa-onnx/stt';
 import type { SttEngine, SttRecognitionResult } from 'react-native-sherpa-onnx/stt';
@@ -306,5 +307,100 @@ describe('speechAdapter', () => {
     models.set({ phase: 'none' });
     expect(recognizer.ready()).toBe(false);
     expect(engine.destroy).toHaveBeenCalledTimes(1);
+  });
+
+  it('a rejected hotwords file still records without hotwords', async () => {
+    const { recognizer } = setUp();
+    await waitFor(() => expect(recognizer.ready()).toBe(true));
+    const engine = await engineOf();
+    engine.setConfig.mockRejectedValueOnce(new Error('INVALID_HOTWORDS_FILE'));
+
+    const session = await recognizer.start({ hotwords: ['SHIP-906'] });
+
+    expect(engine.setConfig).toHaveBeenCalledTimes(2);
+    expect(engine.setConfig).toHaveBeenLastCalledWith({
+      decodingMethod: 'modified_beam_search',
+      maxActivePaths: 4,
+      hotwordsFile: '',
+    });
+    emitAudio(tone(16000));
+    engine.transcribeSamples.mockResolvedValueOnce(result('set ship'));
+    expect((await session.stop()).text).toBe('set ship');
+  });
+
+  it('a load that start() began and that failed is tried again by the next start()', async () => {
+    native.files.set(TOKENS_URI, TOKENS_TXT);
+    const models = new FakeModelStore();
+    models.set({ phase: 'downloading' });
+    const recognizer = new NativeSpeechRecognizer({ files: new FakeModelFiles(), models });
+    jest.mocked(createSTT).mockRejectedValueOnce(new Error('out of memory'));
+
+    await expect(recognizer.start({ hotwords: [] })).rejects.toThrow('out of memory');
+    const session = await recognizer.start({ hotwords: [] });
+
+    expect(jest.mocked(createSTT)).toHaveBeenCalledTimes(2);
+    expect(recognizer.ready()).toBe(true);
+    session.cancel();
+  });
+
+  it('deleteAll while Parakeet is loading frees it when the load ends and never becomes ready', async () => {
+    native.files.set(TOKENS_URI, TOKENS_TXT);
+    const models = new FakeModelStore();
+    models.set({ phase: 'downloading' });
+    const recognizer = new NativeSpeechRecognizer({ files: new FakeModelFiles(), models });
+    const engine = { destroy: jest.fn(async () => undefined) } as unknown as SttEngine;
+    let finish: (engine: SttEngine) => void = () => undefined;
+    jest
+      .mocked(createSTT)
+      .mockImplementationOnce(() => new Promise<SttEngine>((resolve) => (finish = resolve)));
+    models.set({ phase: 'ready' });
+    await waitFor(() => expect(jest.mocked(createSTT)).toHaveBeenCalledTimes(1));
+
+    models.set({ phase: 'none' });
+    finish(engine);
+
+    await waitFor(() => expect(engine.destroy).toHaveBeenCalledTimes(1));
+    expect(recognizer.ready()).toBe(false);
+  });
+
+  it('stops the stream at the 2-minute cap and still returns what was kept', async () => {
+    const { recognizer } = setUp();
+    const session = await recognizer.start({ hotwords: [] });
+    const engine = await engineOf();
+    const stops = () => native.streamCalls.filter((c) => c.call === 'stop').length;
+
+    // 13 buffers of 10 s: the 13th one does not fit.
+    for (let i = 0; i < 13; i++) emitAudio(tone(160_000));
+
+    expect(stops()).toBe(1);
+    expect(native.audioListeners).toHaveLength(0);
+    engine.transcribeSamples.mockResolvedValueOnce(result('kept'));
+    const transcript = await session.stop();
+    expect(transcript.text).toBe('kept');
+    expect(transcript.durationMs).toBe(MAX_HOLD_MS);
+    expect(stops()).toBe(1);
+  });
+
+  it('cleans up the listener and the partials when the stream will not start', async () => {
+    const { recognizer } = setUp();
+    jest
+      .spyOn(AudioModule.AudioStream.prototype, 'start')
+      .mockRejectedValueOnce(new Error('microphone busy'));
+
+    await expect(recognizer.start({ hotwords: [] })).rejects.toThrow('microphone busy');
+
+    expect(native.audioListeners).toHaveLength(0);
+    expect(partials.stopped).toBe(1);
+    expect(native.streamCalls[native.streamCalls.length - 1]).toEqual({ call: 'stop' });
+  });
+
+  it('deleteAll removes the bpe vocab with the models', async () => {
+    const { recognizer, models } = setUp();
+    await waitFor(() => expect(recognizer.ready()).toBe(true));
+    expect(native.files.has(VOCAB_URI)).toBe(true);
+
+    models.set({ phase: 'none' });
+
+    expect(native.files.has(VOCAB_URI)).toBe(false);
   });
 });
