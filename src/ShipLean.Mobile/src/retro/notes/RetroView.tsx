@@ -1,11 +1,8 @@
 import { ApiRequestError } from '@shiplean/core/api/client';
 import { getMe, meKey } from '@shiplean/core/api/me';
-import {
-  RETRO_CATEGORIES,
-  type RetroCategory,
-  type RetroPointDto,
-} from '@shiplean/core/api/retros';
-import { useQuery } from '@tanstack/react-query';
+import type { RetroCategory, RetroPointDto } from '@shiplean/core/api/retros';
+import { projectsKey } from '@shiplean/core/api/projects';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { RefreshControl, ScrollView, View } from 'react-native';
@@ -45,14 +42,13 @@ import {
   retroSprints,
   shownSprint,
   themeGroups,
+  viewFromIntent,
   withMySupport,
 } from './notesModel';
 import { PointCard } from './PointCard';
 import { ThemeGroupHeading } from './ThemeGroup';
 
 type Segment = 'notes' | 'toDecide' | 'features';
-
-const VIEWS: readonly string[] = [...RETRO_CATEGORIES, 'toDecide', 'features'];
 
 export interface RetroViewProps {
   projectKey: string;
@@ -62,6 +58,7 @@ export interface RetroViewProps {
 export function RetroView({ projectKey }: RetroViewProps) {
   const router = useRouter();
   const { project, error } = useProject(projectKey);
+  const queryClient = useQueryClient();
   if (project === undefined) {
     return (
       <>
@@ -70,7 +67,17 @@ export function RetroView({ projectKey }: RetroViewProps) {
           title="Retro"
           onTilePress={() => router.dismissTo(links.projects())}
         />
-        {error === null ? <Skeleton rows={6} /> : <ErrorState title="Couldn't load the retro." />}
+        {error === null ? (
+          <Skeleton rows={6} />
+        ) : (
+          <ErrorState
+            title="Couldn't load the retro."
+            action={{
+              label: 'Retry',
+              onPress: () => void queryClient.invalidateQueries({ queryKey: projectsKey }),
+            }}
+          />
+        )}
       </>
     );
   }
@@ -175,11 +182,11 @@ function RetroTab({ projectKey, projectId }: RetroTabProps) {
     }),
     {
       onView: (intent) => {
-        const target = intent.command === 'show' ? intent.args.view : undefined;
-        if (typeof target !== 'string' || !VIEWS.includes(target)) return;
+        const target = intent.command === 'show' ? viewFromIntent(intent.args) : null;
+        if (target === null) return;
         if (target === 'toDecide' || target === 'features') return setSegment(target);
         setSegment('notes');
-        choose(target as RetroCategory);
+        choose(target);
       },
     },
   );

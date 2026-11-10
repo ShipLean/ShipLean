@@ -218,7 +218,7 @@ export function PointCard({
               color: point.supportedByMe ? colors.accent : colors.muted,
             }}
           >
-            {supporters.length > 0 ? `+${supporters.length}` : '+1'}
+            {`👍 ${supporters.length || '+1'}`}
           </Text>
         </Pressable>
         {supporters.length === 0 ? null : (

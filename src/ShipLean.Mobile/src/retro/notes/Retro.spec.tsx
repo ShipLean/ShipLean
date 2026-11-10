@@ -206,6 +206,8 @@ describe('Retro tab', () => {
       const point = pointText(retro, 'Two agents edited the same file.');
 
       expect(screen.queryByTestId(retroFaceId(point.id, ME.id))).toBeNull();
+      // At zero the button says +1; with a supporter it is the bare count.
+      expect(screen.getByTestId(retroPlusId(point.id))).toHaveTextContent('👍 +1');
       await fireEvent.press(screen.getByTestId(retroPlusId(point.id)));
 
       expect(runner.dispatched).toHaveLength(1);
@@ -216,8 +218,7 @@ describe('Retro tab', () => {
       await act(async () => runner.setPending([aPending({ action: support(point.id) })]));
       expect(screen.getByTestId(retroFaceId(point.id, ME.id))).toBeTruthy();
       expect(screen.getByTestId(retroPlusId(point.id))).toBeSelected();
-      expect(screen.getByTestId(retroPlusId(point.id))).toHaveTextContent('1');
-      expect(screen.getByTestId(retroPlusId(point.id))).not.toHaveTextContent('+1');
+      expect(screen.getByTestId(retroPlusId(point.id))).toHaveTextContent('👍 1');
     });
 
     it('takes a +1 back with a second tap', async () => {

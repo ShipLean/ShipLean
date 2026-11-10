@@ -19,6 +19,16 @@ export const CATEGORY_LABELS: Record<RetroCategory, string> = {
   improve: 'Can be improved',
 };
 
+// What a voice screen view can show: `command: 'show'` with a category, or a segment, in args.view.
+export type RetroView = RetroCategory | 'toDecide' | 'features';
+export type RetroViewArgs = { view: RetroView };
+
+const VIEWS: readonly unknown[] = [...RETRO_CATEGORIES, 'toDecide', 'features'];
+
+export function viewFromIntent(args: { [K in keyof RetroViewArgs]?: unknown }): RetroView | null {
+  return VIEWS.includes(args.view) ? (args.view as RetroView) : null;
+}
+
 // The columns in the web's order, whatever order the server sent them in.
 export function orderedColumns(retro: SprintRetroDto): RetroCategoryColumnDto[] {
   return RETRO_CATEGORIES.flatMap((category) =>
@@ -94,6 +104,8 @@ export function withMySupport(
       'pointId' in p.action &&
       p.action.pointId === point.id &&
       p.state !== 'failed' &&
+      // Once sent, the re-read carries the truth, so a +1 taken back elsewhere shows.
+      p.state !== 'sent' &&
       p.undoOutcome === null,
   );
   const last = mine.at(-1);
