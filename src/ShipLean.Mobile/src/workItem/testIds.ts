@@ -74,3 +74,12 @@ export const timelineChangeId = (id: string, index: number) => `wi-timeline-chan
 export const itemActionsRowId = 'wi-actions-row';
 export const changeStateSheetId = 'sheet-change-state';
 export const assignSheetId = 'sheet-assign';
+export const changeStateButtonId = 'wi-change-state';
+export const assignButtonId = 'wi-assign';
+export const childrenLinkId = 'wi-children-link';
+// A state by its name, a member by their user id.
+export const stateOptionId = (name: string) => `wi-state-option-${name}`;
+export const stateSheetErrorId = 'wi-state-error';
+export const ownerOptionId = (userId: string) => `wi-owner-option-${userId}`;
+export const noOwnerOptionId = 'wi-owner-option-none';
+export const ownerSheetErrorId = 'wi-owner-error';
