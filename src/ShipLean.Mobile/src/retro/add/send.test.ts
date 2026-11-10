@@ -138,6 +138,30 @@ describe('retro point executor', () => {
     expect(answers).toEqual(['notSent']);
   });
 
+  it('reconciles an unknown item key as notSent alone and reads each retro once', async () => {
+    const me = aMe();
+    const retro = designRetro();
+    const mine = aRetroPoint({
+      category: 'improve',
+      text: 'Profile the small model first.',
+      author: { ...aRetroPoint().author, user: { ...aRetroPoint().author.user, id: me.id } },
+    });
+    retro.categories[3].groups.push({ theme: null, recurring: false, points: [mine] });
+    const fake = retroApi({ 'GET /api/me': me }, { projectId, retro });
+    const pending = (a: AddPoint): Pending =>
+      aPending({ action: a, state: 'uncertain', retryable: true });
+    const answers = await reconcilePoint(
+      [
+        pending(add({ sprintId: retro.sprint.id })),
+        pending(add({ key: 'SHIP-9999', sprintId: null })),
+        pending(add({ sprintId: retro.sprint.id, text: 'Something never sent.' })),
+      ],
+      api,
+    );
+    expect(answers).toEqual(['sent', 'notSent', 'notSent']);
+    expect(fake.callsTo(`GET /api/sprints/${retro.sprint.id}/retro`)).toHaveLength(1);
+  });
+
   it('supports and unsupports, and undoes one with the other', async () => {
     const retro = designRetro();
     const id = retro.categories[2].groups[0].points[0].id;
@@ -153,11 +177,15 @@ describe('retro point executor', () => {
     const unsupport: PointAction = { ...support, kind: 'unsupport' };
 
     expect(await sendPoint(support, api)).toBeUndefined();
+    expect(fake.callsTo(route('POST'))).toHaveLength(1);
+    expect(fake.callsTo(route('DELETE'))).toHaveLength(0);
     await undoPoint(support, api);
     expect(fake.callsTo(route('POST'))).toHaveLength(1);
     expect(fake.callsTo(route('DELETE'))).toHaveLength(1);
 
     expect(await sendPoint(unsupport, api)).toBeUndefined();
+    expect(fake.callsTo(route('DELETE'))).toHaveLength(2);
+    expect(fake.callsTo(route('POST'))).toHaveLength(1);
     await undoPoint(unsupport, api);
     expect(fake.callsTo(route('DELETE'))).toHaveLength(2);
     expect(fake.callsTo(route('POST'))).toHaveLength(2);

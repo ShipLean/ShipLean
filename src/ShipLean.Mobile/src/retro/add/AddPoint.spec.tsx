@@ -87,6 +87,30 @@ describe.each<Scheme>(['light', 'dark'])('Add point sheet (%s)', (scheme) => {
     expect(runner.dispatched).toEqual([]);
   });
 
+  it('keeps Add off while the projects read is pending, even for a text naming an item', async () => {
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    retroApi(
+      {
+        'GET /api/projects': async () => {
+          await held;
+          return [project];
+        },
+      },
+      { projectId: project.id },
+    );
+    const { runner, queryClient } = await renderWithRunner(sheet('improve'), { scheme });
+    await type('Profile the small model before SHIP-906 gets more voice actions.');
+    expect(screen.getByTestId(retroIds.addSubmit)).toBeDisabled();
+    await add();
+    expect(runner.dispatched).toEqual([]);
+    release();
+    await waitFor(() => expect(queryClient.getQueryState(projectsKey)?.status).toBe('success'));
+    await waitFor(() => expect(screen.getByTestId(retroIds.addSubmit)).toBeEnabled());
+  });
+
   it('preselects the category of the open view and none otherwise', async () => {
     await renderSheet('improve', { scheme });
     expect(screen.getByTestId(retroAddCategoryId('improve'))).toBeSelected();
