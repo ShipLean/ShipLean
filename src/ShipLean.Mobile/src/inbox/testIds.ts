@@ -14,6 +14,11 @@ export const inboxIds = {
   offlineBanner: 'inbox-offline-banner',
   // A3a
   answerSheet: 'sheet-answer',
+  answerWhere: 'sheet-answer-where',
+  answerQuote: 'sheet-answer-quote',
+  answerField: 'sheet-answer-field',
+  answerError: 'sheet-answer-error',
+  answerApply: 'sheet-answer-apply',
   // A3b
   reviewSheet: 'sheet-review',
   // A4 (answeredRowId below)
@@ -36,3 +41,6 @@ export const inboxOpenId = (key: string) => `inbox-open-${key}`;
 
 // A4
 export const answeredRowId = (key: string) => `answered-row-${key}`;
+
+// A3a
+export const answerQuickId = (index: number) => `sheet-answer-quick-${index}`;
