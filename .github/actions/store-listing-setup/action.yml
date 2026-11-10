@@ -1,0 +1,80 @@
+name: Store listing setup
+description: >-
+  Prepares a job to run store/push_listing.sh (contract C4): Ruby and fastlane from
+  store/Gemfile, the listing images staged into fastlane's layout, and the store key files
+  written by store/write_keys.py. Every input is optional; a key that isn't given isn't written.
+
+inputs:
+  asc_key_id:
+    description: App Store Connect API key id (ASC_API_KEY_ID)
+    required: false
+    default: ""
+  asc_issuer_id:
+    description: App Store Connect API key issuer id (ASC_API_KEY_ISSUER_ID)
+    required: false
+    default: ""
+  asc_key_p8:
+    description: App Store Connect API key, the .p8 text (ASC_API_KEY_P8)
+    required: false
+    default: ""
+  play_json:
+    description: Google Play service account key JSON (GOOGLE_PLAY_SERVICE_ACCOUNT_JSON)
+    required: false
+    default: ""
+
+outputs:
+  staged:
+    description: The staged images folder, for STAGED
+    value: ${{ steps.stage.outputs.staged }}
+  asc_key_path:
+    description: The App Store Connect key JSON, for ASC_KEY_PATH; empty when not written
+    value: ${{ steps.keys.outputs.asc_key_path }}
+  play_key_path:
+    description: The Play service account JSON, for PLAY_KEY_PATH; empty when not written
+    value: ${{ steps.keys.outputs.play_key_path }}
+
+runs:
+  using: composite
+  steps:
+    # Secrets are already masked by the runner; this also masks values passed in some other way.
+    # The value is escaped (%, CR, LF) so a multi-line key stays inside its one ::add-mask:: line.
+    - name: Mask the key inputs
+      shell: bash
+      env:
+        ASC_KEY_ID: ${{ inputs.asc_key_id }}
+        ASC_ISSUER_ID: ${{ inputs.asc_issuer_id }}
+        ASC_KEY_P8: ${{ inputs.asc_key_p8 }}
+        PLAY_JSON: ${{ inputs.play_json }}
+      run: |
+        set -euo pipefail
+        for value in "$ASC_KEY_ID" "$ASC_ISSUER_ID" "$ASC_KEY_P8" "$PLAY_JSON"; do
+          if [ -n "$value" ]; then
+            value=${value//'%'/%25}
+            value=${value//$'\r'/%0D}
+            value=${value//$'\n'/%0A}
+            echo "::add-mask::$value"
+          fi
+        done
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: "3.3"
+        bundler-cache: true
+        working-directory: store
+    - id: stage
+      name: Stage the listing images
+      shell: bash
+      run: |
+        set -euo pipefail
+        python3 -I store/stage_images.py "$RUNNER_TEMP/store-staged"
+        echo "staged=$RUNNER_TEMP/store-staged" >> "$GITHUB_OUTPUT"
+    - id: keys
+      name: Write the store key files
+      shell: bash
+      env:
+        ASC_KEY_ID: ${{ inputs.asc_key_id }}
+        ASC_ISSUER_ID: ${{ inputs.asc_issuer_id }}
+        ASC_KEY_P8: ${{ inputs.asc_key_p8 }}
+        PLAY_JSON: ${{ inputs.play_json }}
+      run: |
+        set -euo pipefail
+        python3 -I store/write_keys.py "$RUNNER_TEMP" >> "$GITHUB_OUTPUT"
