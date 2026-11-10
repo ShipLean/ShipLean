@@ -4,6 +4,8 @@ import type { AskHistoryLineDto } from './asks';
 import { ApiRequestError } from './client';
 import type { ChecklistItem, FieldChange, LinkType, LinkValue } from './persisted';
 import type { SprintRef, StateRef, TypeRef, UserRef, WorkItemTypeId } from './refs';
+import type { FeatureHealth, HealthSetDto, NeedsYouDto } from './screens';
+import type { RollupCountDto } from './views';
 
 export const REVISION_ORIGINS = ['user', 'jira', 'webhook'] as const;
 export type RevisionOrigin = (typeof REVISION_ORIGINS)[number];
@@ -113,6 +115,13 @@ export interface WorkItemDto {
   /** yyyy-MM-dd, a UTC calendar day. */
   startedOn: string | null;
   startedLabel: string | null;
+  /** A Feature's health and when it was set; null on other types. */
+  health: FeatureHealth | null;
+  healthSet: HealthSetDto | null;
+  /** Set on Epics, Features and Stories (a Story's tasks); [] elsewhere. */
+  rollups: RollupCountDto[];
+  /** Null when nothing waits on the caller. */
+  needsYou: NeedsYouDto | null;
 }
 
 /** When a Feature's status line was last written or confirmed. `stale` is the server's call: older than 14 days. `agent` and `via` are null for a change made in the app. */
@@ -148,6 +157,8 @@ export interface WorkItemChanges {
   goal?: FieldSet<string> | null;
   statusLine?: FieldSet<string> | null;
   confirmStatus?: boolean;
+  /** Feature only. `{ value: null }` clears the health. */
+  health?: FieldSet<FeatureHealth | null> | null;
   addLinks: LinkValue[];
   removeLinkIds: string[];
 }

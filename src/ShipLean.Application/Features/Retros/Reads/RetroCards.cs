@@ -95,7 +95,10 @@ public sealed class RetroCards(NpgsqlDataSource dataSource, TimeProvider clock) 
             action,
             role == RetroRole.Person,
             decision,
-            notNeeded);
+            notNeeded,
+            // TODO: read supporters from retro_point_support.
+            [],
+            false);
     }
 
     private static RetroDecision? Decide(string category, RetroActionRefDto? action, string? notNeededReason)

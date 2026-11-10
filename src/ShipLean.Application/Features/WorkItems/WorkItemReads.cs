@@ -178,7 +178,12 @@ public sealed class WorkItemReads(NpgsqlDataSource dataSource, MarkdownRenderer 
                 : null,
             row.Slug,
             row.StartedOn,
-            row.StartedOn is { } started ? DisplayDate.ShortDay(DisplayDate.StartOfDay(started, time.LocalTimeZone), time.GetUtcNow(), time.LocalTimeZone) : null);
+            row.StartedOn is { } started ? DisplayDate.ShortDay(DisplayDate.StartOfDay(started, time.LocalTimeZone), time.GetUtcNow(), time.LocalTimeZone) : null,
+            // TODO: read health from work_item.health, roll up the children's counts and count open asks for NeedsYou.
+            null,
+            null,
+            [],
+            null);
     }
 
     private static UserRef? Lookup(IReadOnlyDictionary<Guid, UserRef> users, Guid? id) => id is { } value ? users.GetValueOrDefault(value) : null;

@@ -50,7 +50,10 @@
           "inOtherSprint": 0
         }
       ],
-      "revision": 1
+      "revision": 1,
+      "health": null,
+      "needsYou": null,
+      "blockedBy": []
     },
     {
       "kind": "group",
@@ -110,7 +113,10 @@
           "inOtherSprint": 0
         }
       ],
-      "revision": 1
+      "revision": 1,
+      "health": null,
+      "needsYou": null,
+      "blockedBy": []
     },
     {
       "kind": "item",
@@ -159,7 +165,10 @@
         }
       ],
       "rollups": [],
-      "revision": 1
+      "revision": 1,
+      "health": null,
+      "needsYou": null,
+      "blockedBy": []
     },
     {
       "kind": "item",
@@ -203,7 +212,10 @@
       "rank": 2,
       "tags": [],
       "rollups": [],
-      "revision": 1
+      "revision": 1,
+      "health": null,
+      "needsYou": null,
+      "blockedBy": []
     },
     {
       "kind": "group",
@@ -244,7 +256,10 @@
           "inOtherSprint": 0
         }
       ],
-      "revision": 1
+      "revision": 1,
+      "health": null,
+      "needsYou": null,
+      "blockedBy": []
     },
     {
       "kind": "group",
@@ -299,7 +314,10 @@
           "inOtherSprint": 0
         }
       ],
-      "revision": 1
+      "revision": 1,
+      "health": null,
+      "needsYou": null,
+      "blockedBy": []
     },
     {
       "kind": "item",
@@ -337,7 +355,10 @@
       "rank": 3,
       "tags": [],
       "rollups": [],
-      "revision": 1
+      "revision": 1,
+      "health": null,
+      "needsYou": null,
+      "blockedBy": []
     },
     {
       "kind": "group",
@@ -379,7 +400,10 @@
           "inOtherSprint": 0
         }
       ],
-      "revision": 1
+      "revision": 1,
+      "health": null,
+      "needsYou": null,
+      "blockedBy": []
     },
     {
       "kind": "item",
@@ -413,7 +437,10 @@
       "rank": 4,
       "tags": [],
       "rollups": [],
-      "revision": 1
+      "revision": 1,
+      "health": null,
+      "needsYou": null,
+      "blockedBy": []
     },
     {
       "kind": "noParentGroup",
@@ -440,7 +467,10 @@
           "inOtherSprint": 0
         }
       ],
-      "revision": 0
+      "revision": 0,
+      "health": null,
+      "needsYou": null,
+      "blockedBy": []
     },
     {
       "kind": "item",
@@ -466,7 +496,10 @@
       "rank": 5,
       "tags": [],
       "rollups": [],
-      "revision": 1
+      "revision": 1,
+      "health": null,
+      "needsYou": null,
+      "blockedBy": []
     }
   ],
   "sections": [],

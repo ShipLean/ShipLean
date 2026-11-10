@@ -97,6 +97,9 @@ export interface RetroPointDto {
   /** Null for a Went well point. */
   decision: RetroDecision | null;
   notNeeded: RetroNotNeededDto | null;
+  /** The people who +1'd the point. */
+  supporters: UserRef[];
+  supportedByMe: boolean;
 }
 
 /** Position order within each list. */

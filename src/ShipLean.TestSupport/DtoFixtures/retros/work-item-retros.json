@@ -44,7 +44,9 @@
           "action": null,
           "canArchive": false,
           "decision": null,
-          "notNeeded": null
+          "notNeeded": null,
+          "supporters": [],
+          "supportedByMe": false
         },
         {
           "id": "00000011-0000-4000-8001-000000000001",
@@ -71,7 +73,9 @@
           "action": null,
           "canArchive": false,
           "decision": "undecided",
-          "notNeeded": null
+          "notNeeded": null,
+          "supporters": [],
+          "supportedByMe": false
         },
         {
           "id": "00000011-0000-4000-8001-000000000003",
@@ -107,7 +111,9 @@
           },
           "canArchive": false,
           "decision": "actioned",
-          "notNeeded": null
+          "notNeeded": null,
+          "supporters": [],
+          "supportedByMe": false
         },
         {
           "id": "00000011-0000-4000-8001-000000000004",
@@ -134,7 +140,9 @@
           "action": null,
           "canArchive": false,
           "decision": "undecided",
-          "notNeeded": null
+          "notNeeded": null,
+          "supporters": [],
+          "supportedByMe": false
         }
       ],
       "failureLog": {
@@ -187,7 +195,9 @@
           "action": null,
           "canArchive": true,
           "decision": null,
-          "notNeeded": null
+          "notNeeded": null,
+          "supporters": [],
+          "supportedByMe": false
         }
       ],
       "failureLog": {

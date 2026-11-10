@@ -45,7 +45,9 @@ public sealed class FeatureBoardViews(
         {
             var parent = stack[r.Story];
             var rowTasks = tasksByParent[parent.Id].ToList();
-            return new FeatureBoardRowDto(byId[parent.Id], TaskboardGrid.OfferResolve(parent, rowTasks), TaskboardGrid.Cells(rowTasks, states), r.Section, parent.Sprint);
+            return new FeatureBoardRowDto(byId[parent.Id], TaskboardGrid.OfferResolve(parent, rowTasks), TaskboardGrid.Cells(rowTasks, states), r.Section, parent.Sprint,
+                // TODO: count open asks for NeedsYou.
+                null);
         }).ToList();
 
         var rowsBySection = rows.ToLookup(r => r.FeatureId);

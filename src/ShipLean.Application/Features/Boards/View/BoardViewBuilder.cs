@@ -134,7 +134,9 @@ public sealed class BoardViewBuilder(
             aboveStories && !inDone && shown.Count > 0 && shown.All(r => r.Open == 0),
             board.Settings.StyleRules.FirstOrDefault(r => r.Enabled && evaluator.Matches(r.Criteria, values))?.Id,
             extraFields.For(row, type, board.Settings.CardFields),
-            row.Revision);
+            row.Revision,
+            // TODO: read health from work_item.health on Features board cards.
+            null);
     }
 
     // The points of every story-level item below the card, nested Features included; null when none of them has points.
