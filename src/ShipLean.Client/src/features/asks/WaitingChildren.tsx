@@ -1,6 +1,7 @@
 import { TypeIcon } from '../../components/TypeIcon';
 import { Avatar } from '../../components/Avatar';
 import { Chip } from '../../components/Chip';
+import { useMe } from '../shell/useShellQueries';
 import { ItemLink } from '../itemPeek/ItemLink';
 import type { AsksRegionProps } from './regions';
 import { asksTestIds as ids } from './testIds';
@@ -9,6 +10,7 @@ const plural = (n: number, one: string) => `${n} ${n === 1 ? one : `${one}s`}`;
 
 // A Feature's roll-up: one row for each Story or Bug below it with open asks. They are answered on each item.
 export function WaitingChildren({ item, asks }: AsksRegionProps) {
+  const me = useMe().data;
   const children = asks.waitingChildren;
   if (children.length === 0) return null;
   return (
@@ -45,7 +47,8 @@ export function WaitingChildren({ item, asks }: AsksRegionProps) {
               className="inline-flex items-center gap-1 text-[length:var(--text-xs)] text-ink-muted"
             >
               {child.owner ? <Avatar {...child.owner} /> : null}
-              Waiting on {child.owner?.name ?? 'nobody'}
+              Waiting on{' '}
+              {child.owner && child.owner.id === me?.id ? 'you' : (child.owner?.name ?? 'nobody')}
               {child.ownerIsCreator ? ' (creator)' : ''}
             </span>
             <span className="inline-flex gap-1">

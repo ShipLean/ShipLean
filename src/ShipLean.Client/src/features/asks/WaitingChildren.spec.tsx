@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
+import { meDto, stubShell } from '../shell/shellFixtures';
 import { RegionHarness } from './ct/RegionHarness';
 import { empty, feature, featureChildrenOnly } from './ct/fixtures';
 import { WaitingChildren } from './WaitingChildren';
@@ -13,7 +14,8 @@ const item: AsksItem = {
   type: { id: 'feature', name: 'Feature' },
 };
 
-test('WaitingChildren_WhenTwoChildrenWait_ShouldListBothWithCounts', async ({ mount }) => {
+test('WaitingChildren_WhenTwoChildrenWait_ShouldListBothWithCounts', async ({ mount, page }) => {
+  await stubShell(page);
   const component = await mount(
     <RegionHarness>
       <WaitingChildren item={item} asks={feature} />
@@ -36,7 +38,8 @@ test('WaitingChildren_WhenTwoChildrenWait_ShouldListBothWithCounts', async ({ mo
   await expect(rows.nth(1)).not.toContainText('decision');
 });
 
-test('WaitingChildren_WhenUnassigned_ShouldNoteCreator', async ({ mount }) => {
+test('WaitingChildren_WhenUnassigned_ShouldNoteCreator', async ({ mount, page }) => {
+  await stubShell(page);
   const component = await mount(
     <RegionHarness>
       <WaitingChildren item={item} asks={feature} />
@@ -48,7 +51,8 @@ test('WaitingChildren_WhenUnassigned_ShouldNoteCreator', async ({ mount }) => {
   await expect(rows.nth(0)).not.toContainText('(creator)');
 });
 
-test('WaitingChildren_WhenNone_ShouldRenderNothing', async ({ mount }) => {
+test('WaitingChildren_WhenNone_ShouldRenderNothing', async ({ mount, page }) => {
+  await stubShell(page);
   const component = await mount(
     <RegionHarness>
       <WaitingChildren item={item} asks={{ ...empty, workItemId: item.id }} />
@@ -59,12 +63,29 @@ test('WaitingChildren_WhenNone_ShouldRenderNothing', async ({ mount }) => {
   await expect(component).not.toContainText('Stories and bugs waiting');
 });
 
+test('WaitingChildren_WhenOwnerIsMe_ShouldSayYou', async ({ mount, page }) => {
+  const owner = feature.waitingChildren[0]?.owner;
+  if (!owner) throw new Error('The first fixture child has no owner');
+  await stubShell(page, { me: meDto({ id: owner.id, name: owner.name }) });
+  const component = await mount(
+    <RegionHarness>
+      <WaitingChildren item={item} asks={feature} />
+    </RegionHarness>,
+  );
+
+  const rows = component.getByTestId(ids.waitingChildRow);
+  await expect(rows.nth(0)).toContainText('Waiting on you');
+  await expect(rows.nth(0)).not.toContainText(owner.name);
+  await expect(rows.nth(1)).toContainText('Waiting on Tom Okafor (creator)');
+});
+
 for (const theme of ['light', 'dark'] as const) {
   test(`WaitingChildren_WhenRendered_ShouldMatchItsScreenshot_${theme}`, async ({
     mount,
     page,
   }) => {
     await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    await stubShell(page);
     const component = await mount(
       <RegionHarness>
         <WaitingChildren item={item} asks={featureChildrenOnly} />
