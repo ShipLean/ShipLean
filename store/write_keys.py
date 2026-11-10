@@ -37,9 +37,10 @@ def _is_service_account(text):
 
 def _write_private(path, text):
     fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    # The open mode only applies to a new file; tighten an existing one before writing the secret.
+    os.fchmod(fd, 0o600)
     with os.fdopen(fd, "w") as handle:
         handle.write(text)
-    os.chmod(path, 0o600)
 
 
 def main(argv):
