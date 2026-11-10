@@ -93,7 +93,7 @@ internal sealed class InMemoryDtoBuilder(
             item.Slug,
             item.StartedOn,
             item.StartedOn is { } started ? DisplayDate.ShortDay(DisplayDate.StartOfDay(started, time.LocalTimeZone), time.GetUtcNow(), time.LocalTimeZone) : null,
-            // TODO: read health from work_item.health, roll up the children's counts and count open asks for NeedsYou.
+            // TODO: carry health from the in-memory item, roll up the children's counts and count open asks for NeedsYou.
             null,
             null,
             [],

@@ -3,6 +3,7 @@ using System.Text.Json.Nodes;
 using ShipLean.Contracts.Asks;
 using ShipLean.Contracts.Inbox;
 using ShipLean.TestSupport;
+using ShipLean.UnitTest.Dtos.WorkItems;
 using Shouldly;
 
 namespace ShipLean.UnitTest.Dtos.Inbox;
@@ -17,13 +18,10 @@ public class InboxDtoTests
     private static JsonNode Read(string folder, string name)
         => JsonNode.Parse(File.ReadAllText(Path.Combine(RepoPaths.Root, "src", "ShipLean.TestSupport", "DtoFixtures", folder, name)))!;
 
-    private static bool SurvivesRoundTrip<T>(JsonNode node)
-        => JsonNode.DeepEquals(node, JsonSerializer.SerializeToNode(node.Deserialize<T>(Options), Options));
-
     [Test]
     public void InboxDto_WhenRoundTripped_ShouldMatchFixture()
     {
-        SurvivesRoundTrip<InboxDto>(Read("inbox", "inbox.json")).ShouldBeTrue();
+        WorkItemDtoFixture.SurvivesRoundTrip<InboxDto>(Read("inbox", "inbox.json")).ShouldBeTrue();
     }
 
     // The fixture covers what the app's rows rely on: every ask kind, two mentions labelled per item, a Story under its
@@ -49,7 +47,7 @@ public class InboxDtoTests
     public void AnsweredDto_WhenRoundTripped_ShouldMatchFixture()
     {
         var node = Read("inbox", "answered.json");
-        SurvivesRoundTrip<AnsweredDto>(node).ShouldBeTrue();
+        WorkItemDtoFixture.SurvivesRoundTrip<AnsweredDto>(node).ShouldBeTrue();
 
         var answered = node.Deserialize<AnsweredDto>(Options)!;
         answered.Rows.Select(r => r.Next?.Kind).ShouldBe([AnsweredNextKind.PersonReplied, AnsweredNextKind.AgentPickedUp, null]);
@@ -58,14 +56,14 @@ public class InboxDtoTests
     [Test]
     public void MentionReplyRequest_WhenRoundTripped_ShouldMatchFixture()
     {
-        SurvivesRoundTrip<MentionReplyRequest>(Read("inbox", "mention-reply.json")).ShouldBeTrue();
+        WorkItemDtoFixture.SurvivesRoundTrip<MentionReplyRequest>(Read("inbox", "mention-reply.json")).ShouldBeTrue();
     }
 
     [Test]
     public void QuestionDto_WhenOptionsSet_ShouldRoundTrip()
     {
         var node = Read("asks", "item-asks.story.json");
-        SurvivesRoundTrip<ItemAsksDto>(node).ShouldBeTrue();
+        WorkItemDtoFixture.SurvivesRoundTrip<ItemAsksDto>(node).ShouldBeTrue();
 
         var story = node.Deserialize<ItemAsksDto>(Options)!;
         story.Questions.Select(q => q.Options.Count).ShouldBe([2, 0]);

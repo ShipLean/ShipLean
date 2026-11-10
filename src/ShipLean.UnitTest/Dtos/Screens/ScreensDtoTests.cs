@@ -136,7 +136,7 @@ public class ScreensDtoTests
 
         var absent = JsonSerializer.Deserialize<WorkItemChanges>("""{"title":{"value":"New"}}""", Options)!;
         absent.Health.ShouldBeNull();
-        JsonSerializer.SerializeToNode(absent, Options)!["health"].ShouldBeNull();
+        JsonSerializer.Deserialize<WorkItemChanges>("{\"health\":null}", Options)!.Health.ShouldBeNull();
     }
 
     [Test]

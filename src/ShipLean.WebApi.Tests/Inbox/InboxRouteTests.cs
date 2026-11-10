@@ -52,12 +52,20 @@ public class InboxRouteTests : ApiFixture
         (await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.NotFound)).Code.ShouldBe(ApiErrorCodes.NotFound);
     }
 
-    [TestCase("seen")]
-    [TestCase("reply")]
-    public async Task MentionRoutes_WhenUnknownId_ShouldReturnNotFound(string route)
+    [Test]
+    public async Task MentionSeen_WhenUnknownId_ShouldReturnNotFound()
+    {
+        // Seen takes no body.
+        using var response = await Api.ActingAs(TestUser.Tom).PostJsonAsync($"api/mentions/{Guid.NewGuid()}/seen");
+
+        (await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.NotFound)).Code.ShouldBe(ApiErrorCodes.NotFound);
+    }
+
+    [Test]
+    public async Task MentionReply_WhenUnknownId_ShouldReturnNotFound()
     {
         using var response = await Api.ActingAs(TestUser.Tom)
-            .PostJsonAsync($"api/mentions/{Guid.NewGuid()}/{route}", new MentionReplyRequest("Thanks, looking now."));
+            .PostJsonAsync($"api/mentions/{Guid.NewGuid()}/reply", new MentionReplyRequest("Thanks, looking now."));
 
         (await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.NotFound)).Code.ShouldBe(ApiErrorCodes.NotFound);
     }
