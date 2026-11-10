@@ -47,7 +47,8 @@ public class InboxOrderingTests
         var feature = Guid.NewGuid();
         var (newest, oldest, middle) = (Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
 
-        Placed(Entry(newest, 5, feature), Entry(feature, 100), Entry(oldest, 90, feature), Entry(middle, 50, feature))
+        // The Feature (10h) is newer than its Stories, yet leads them: they are siblings after it, oldest first.
+        Placed(Entry(newest, 5, feature), Entry(feature, 10), Entry(oldest, 90, feature), Entry(middle, 50, feature))
             .Select(p => p.Id).ShouldBe([feature, oldest, middle, newest]);
     }
 
