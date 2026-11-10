@@ -77,6 +77,13 @@ describe('inbox model', () => {
     expect(badgeCount(undefined, [])).toBeNull();
   });
 
+  it('keeps an item with no asks out of the item drop, as the list keeps it', () => {
+    const bare = anInboxItem({ asks: [] });
+    const inbox = anInbox({ items: [item, bare], openAsks: 3, openItems: 2 });
+    expect(visibleItems(inbox.items, [])).toEqual([item, bare]);
+    expect(inboxCounts(inbox, [])).toEqual({ asks: 3, items: 2 });
+  });
+
   it('writes "15 asks on 6 items" for the design data', () => {
     const inbox = designInbox('p1');
     const counts = inboxCounts(inbox, []);
