@@ -46,6 +46,11 @@ export const inboxOpenId = (key: string) => `inbox-open-${key}`;
 
 // A4
 export const answeredRowId = (key: string) => `answered-row-${key}`;
+export const answeredNextId = (key: string) => `answered-next-${key}`;
+// An answer still on the phone: its row, its status line and its Retry (id is the pending answer's id).
+export const answeredPendingId = (id: string) => `answered-pending-${id}`;
+export const answeredPendingStatusId = (id: string) => `answered-pending-status-${id}`;
+export const answeredRetryId = (id: string) => `answered-retry-${id}`;
 
 // A3a
 export const answerQuickId = (index: number) => `sheet-answer-quick-${index}`;
