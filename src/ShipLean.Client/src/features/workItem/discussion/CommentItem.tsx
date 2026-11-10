@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { CommentDto } from '@shiplean/core/api/comments';
+import { AskTagChip } from '../../asks/AskTagChip';
 import { Avatar } from '../../../components/Avatar';
 import { Markdown } from '../../../components/Markdown';
 import { textareaClass } from '../form/inputClasses';
@@ -41,6 +42,7 @@ export function CommentItem({
   return (
     <li
       data-testid={ids.comment}
+      id={`comment-${comment.id}`}
       data-comment-id={comment.id}
       className="grid grid-cols-[20px_minmax(0,1fr)] gap-2 border-t border-edge/60 py-2 first:border-t-0 first:pt-0"
     >
@@ -80,6 +82,7 @@ export function CommentItem({
               via {comment.agentName}
             </span>
           ) : null}
+          {comment.askTag ? <AskTagChip tag={comment.askTag} /> : null}
           {comment.superseded ? (
             <span
               data-testid={ids.commentSuperseded}

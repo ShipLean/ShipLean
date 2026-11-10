@@ -90,6 +90,19 @@ public static class UsageEventNames
     public const string RetroNotNeededUndone = "retro.not_needed_undone";
     public const string RetroMergeKeptApart = "retro.merge_kept_apart";
     public const string RetroActionsDecided = "retro.actions_decided";
+
+    // Decisions and questions on work items (SHIP-922). decision.answered is an MCP answer_decision; on the web a confirm or change
+    // is decision.confirmed or decision.changed (self-emitted with count and answer_kind), so an answer counts once.
+    public const string DecisionRecorded = "decision.recorded";
+    public const string DecisionAnswered = "decision.answered";
+    public const string DecisionConfirmed = "decision.confirmed";
+    public const string DecisionChanged = "decision.changed";
+    public const string DecisionWithdrawn = "decision.withdrawn";
+    public const string DecisionDiscussed = "decision.discussed";
+    public const string QuestionAsked = "question.asked";
+    public const string QuestionAnswered = "question.answered";
+    public const string QuestionWithdrawn = "question.withdrawn";
+
     public const string ImportStarted = "import.started";
     public const string ImportJobChanged = "import.job_changed";
     public const string ImportJiraConnected = "import.jira_connected";

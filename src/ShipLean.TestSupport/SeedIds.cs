@@ -457,6 +457,19 @@ public static class SeedIds
         public static readonly Guid Ship101PageToArchive = new("00000005-0000-4000-8004-000000000102");
     }
 
+    // On SHIP-124, Tom's Story (db/seed/0012_asks.sql), all open: the access sweep's asks rows (D1 confirm, D2 change, D3 withdraw,
+    // D4 discuss, Q1 answer, Q2 withdraw). Item is a property, not a field: it is WorkItems.Ship124, and every field must be distinct.
+    public static class Asks
+    {
+        public static Guid Item => WorkItems.Ship124;
+        public static readonly Guid D1 = new("0000000b-0000-4000-8001-000000000001");
+        public static readonly Guid D2 = new("0000000b-0000-4000-8001-000000000002");
+        public static readonly Guid D3 = new("0000000b-0000-4000-8001-000000000003");
+        public static readonly Guid D4 = new("0000000b-0000-4000-8001-000000000004");
+        public static readonly Guid Q1 = new("0000000b-0000-4000-8002-000000000001");
+        public static readonly Guid Q2 = new("0000000b-0000-4000-8002-000000000002");
+    }
+
     public static class ImportJobs
     {
         public static readonly Guid MobImport = new("00000006-0000-4000-8000-000000000001");

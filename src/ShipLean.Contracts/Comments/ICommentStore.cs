@@ -22,6 +22,11 @@ public interface ICommentStore
     // through IProjectEvents after it commits, as IProjectEvents requires (IMirroredComments hands it the event to publish).
     Task<CommentDto> AddAsAgentAsync(Guid workItemId, CommentCreate create, string agentName, Guid authorId, DbTransaction transaction, CancellationToken cancellationToken = default);
 
+    // A person's comment on the caller's transaction: agentName is null for a comment typed by a person (a web Reply or Change) and
+    // stored as the agent stamp when given. Publishes nothing, like the AddAsAgentAsync overload above. Throws NotFound for an
+    // unknown work item, Validation for a blank or too long body.
+    Task<CommentDto> AddInTransactionAsync(Guid workItemId, CommentCreate create, string? agentName, Guid authorId, DbTransaction transaction, CancellationToken cancellationToken = default);
+
     // Author only. Throws NotFound for an unknown or archived comment, Forbidden for anyone else, Validation for a blank or too long body.
     Task<CommentDto> EditAsync(Guid id, CommentEdit edit, CancellationToken cancellationToken = default);
 

@@ -48,6 +48,9 @@ public sealed class CommentStore(
             ? throw new ArgumentException("An agent comment needs an agent name.", nameof(agentName))
             : AddOnAsync((NpgsqlConnection)transaction.Connection!, (NpgsqlTransaction)transaction, workItemId, create, agentName, authorId, cancellationToken);
 
+    public Task<CommentDto> AddInTransactionAsync(Guid workItemId, CommentCreate create, string? agentName, Guid authorId, DbTransaction transaction, CancellationToken cancellationToken = default)
+        => AddOnAsync((NpgsqlConnection)transaction.Connection!, (NpgsqlTransaction)transaction, workItemId, create, agentName, authorId, cancellationToken);
+
     // Never starts a `prompted` webhook: only CommentEndpoints (a person's session) does that, so MCP tools, imports and agent writes never prompt.
     private async Task<CommentDto> AddStampedAsync(Guid workItemId, CommentCreate create, string? agentName, Guid authorId, CancellationToken cancellationToken)
     {

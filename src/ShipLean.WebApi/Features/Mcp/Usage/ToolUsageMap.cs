@@ -46,5 +46,9 @@ public static class ToolUsageMap
         ["log_retrospective"] = UsageEventNames.RetroPointAdded,
         ["list_retrospectives"] = UsageEventNames.RetroListed,
         ["decide_retro_actions"] = UsageEventNames.RetroActionsDecided,
+        ["record_decisions"] = UsageEventNames.DecisionRecorded,
+        ["ask"] = UsageEventNames.QuestionAsked,
+        ["answer_decision"] = UsageEventNames.DecisionAnswered,
+        ["answer_question"] = UsageEventNames.QuestionAnswered,
     };
 }

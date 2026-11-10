@@ -109,6 +109,21 @@ public static class ActionUsageMap
         Add(ActionUsage.Track(UsageEventNames.BackupConnectionTested), "Backups.Test");
         Add(ActionUsage.Track(UsageEventNames.BackupRunStarted), "Backups.Run");
 
+        // Asks: item read (R1)
+        Add(ActionUsage.Untracked(ScreenCounts), "WorkItemAsks.Get");
+
+        // Asks: decisions (SV-D2)
+        Add(ActionUsage.Track(UsageEventNames.DecisionWithdrawn), "WorkItemDecisions.Withdraw");
+        Add(ActionUsage.Track(UsageEventNames.DecisionDiscussed), "WorkItemDecisions.Discuss");
+        Add(ActionUsage.SelfEmitted, "WorkItemDecisions.Confirm", "WorkItemDecisions.Change");
+
+        // Asks: questions (SV-Q)
+        Add(ActionUsage.Track(UsageEventNames.QuestionAnswered), "WorkItemQuestions.Answer");
+        Add(ActionUsage.Track(UsageEventNames.QuestionWithdrawn), "WorkItemQuestions.Withdraw");
+
+        // Asks: history and waiting (SV-W)
+        Add(ActionUsage.Untracked(ScreenCounts), "Waiting.Get");
+
         // Self-emitted: the action knows what the filter cannot (which sign-in, which decision, the new project, the screen, the sort).
         Add(ActionUsage.SelfEmitted, "Auth.Login", "Consent.Decide", "ProjectCreation.Create", "Instance.Join", "Usage.Screen",
             "ProjectUsage.BacklogSort");

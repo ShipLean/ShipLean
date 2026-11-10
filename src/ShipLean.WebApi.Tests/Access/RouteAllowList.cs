@@ -30,6 +30,7 @@ public static class RouteAllowList
     public static IReadOnlyList<Entry> SignedIn { get; } =
     [
         new("GET", "api/me", "The caller's own account."),
+        new("GET", "api/me/waiting", "Lists only the open asks on items the caller owns, in projects they are a live member of."),
         new("GET", "api/import/jobs", "Lists only the import jobs of projects the caller administers; a caller who administers none gets an empty list."),
         new("POST", "api/auth/password", "The caller changes their own password."),
         new("POST", "api/auth/sign-out-others", "The caller ends their own other sessions."),

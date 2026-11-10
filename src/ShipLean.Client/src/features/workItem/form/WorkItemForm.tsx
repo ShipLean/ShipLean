@@ -10,6 +10,7 @@ import { conflictOf, type ConflictDto, type WorkItemDto } from '@shiplean/core/a
 import { showToast } from '../../../components/toastStore';
 import { useRememberItem } from '../../quickSearch/start/recent/useRememberItem';
 import { AgentPanel } from '../../agentPanel/AgentPanel';
+import { DecisionsSection } from '../../asks/DecisionsSection';
 import { FeatureForm } from '../../feature/FeatureForm';
 import type { FeatureRegionProps } from '../../feature/FeatureRegionProps';
 import { WorkItemConflictBanner } from '../conflict/WorkItemConflictBanner';
@@ -278,6 +279,7 @@ export function WorkItemForm({
               {banners}
               <div className="grid grid-cols-[minmax(0,1fr)_20rem] gap-4 p-4">
                 <div className="grid grid-cols-[minmax(0,1fr)] content-start gap-6">
+                  <DecisionsSection item={{ ...item, projectKey }} />
                   {description}
                   {type === 'story' ? (
                     <CriteriaSection

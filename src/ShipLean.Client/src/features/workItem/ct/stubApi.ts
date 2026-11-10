@@ -1,4 +1,5 @@
 import type { WorkItemDto, WorkItemPatch } from '@shiplean/core/api/workItems';
+import { emptyAsks } from '../../asks/ct/fixtures';
 import { members, sprints, states } from './fixtures';
 
 // The part of Playwright's Page and Route these stubs use (the CT package does not re-export the types).
@@ -76,6 +77,10 @@ export async function stubApi(
     const { markdown } = route.request().postDataJSON() as { markdown: string };
     return route.fulfill(json({ markdown, html: `<p>rendered:${markdown}</p>`, images: [] }));
   });
+  // The Decisions and questions section on every item page: none by default. stubAsks (asks/ct) registered later wins.
+  await page.route('**/api/work-items/*/asks', (route) =>
+    route.fulfill(json(emptyAsks(new URL(route.request().url()).pathname.split('/').at(-2) ?? ''))),
+  );
   return {
     patches,
     holdPatches: () => {

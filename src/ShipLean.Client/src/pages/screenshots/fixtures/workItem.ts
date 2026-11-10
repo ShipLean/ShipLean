@@ -165,6 +165,7 @@ const comment = (
     editedLabel: null,
     agentName: null,
     superseded: null,
+    askTag: null,
   }) satisfies CommentDto;
 
 export const comments: CommentDto[] = [

@@ -182,6 +182,17 @@ Six tools take a `payload` argument for large arguments: `capture_plan`, `captur
 
 **Retrospective tools.** `log_retrospective` and `list_retrospectives` carry the learning-from-failure text first, then say what to log: every agent logs on its own story when it stops, with a raw failure log; the conductor compiles the Feature's retro with `compiled_from`. `decide_retro_actions` follows it as a `planning_guide` step; it is never automatic. The server instructions mention them in one sentence, and the planning guide's `work`, `guide`, `report` and `lead` parts say the same. What the points mean, the theme modes and how verdicts are computed are in [retrospectives.md](retrospectives.md).
 
+## Decisions and questions tools
+
+Agents record the decisions they made and the questions they need answered on a work item, and answer them as the item's owner. The key names the project, so there is no `project` argument, and the agent is stamped from the token (no `agent_name`). The next agent to pick the item up reads the answers; nothing waits for them. Each `open_url` ends with the anchor of what it touched (`#D3` or `#Q2`; for `record_decisions`, the first decision).
+
+| Tool | Scope | Does |
+|---|---|---|
+| `record_decisions` | write | `item`, `decisions` `[{number?, question, recommended, alternatives?, settled?: {by, on, answer}}]`. No number takes the next D-number; a free number takes exactly it; an open number is edited; a settled or withdrawn number is `validation` on `decisions` and nothing is written (each message starts `D3: `, or `Decision 2: ` for an unnumbered record). `settled` backfills a decision already answered: `by` is a member (`me`, email, name), `on` is `yyyy-MM-dd`, `answer` is `recommended`, `alternative:<n>` (1 is the first alternative) or the owner's own words. Result: `key`, `created`, `updated` (numbers, input order; an open decision re-sent unchanged is in neither). The Markdown has a line per decision: `- D3 (new\|updated\|unchanged): question → answer · state`. |
+| `ask` | write | `item`, `text`. Asks the owner a question. Result: `key`, `number`, `label` (`Q2`). |
+| `answer_decision` | write | `item`, `number`, `action` (`confirm`, `change` or `withdraw`), `answer?` (change only: `recommended`, `alternative:<n>` counting from 1, or own words), `note?`. A confirm on a decision that isn't open, and a change or withdraw on a withdrawn one, are `conflict`; an unknown number is `not_found`. Result: `key`, `number`, `state`, `current_answer`. Counts as `decision.answered`. |
+| `answer_question` | write | `item`, `number`, `answer` (Markdown). Posts the answer as a comment tagged to the question and marks it answered; a question that isn't open is `conflict`. Result: `key`, `number`, `comment_id`. |
+
 ## Behind a gateway
 
 An MCP gateway that dials ShipLean on its in-cluster service name (`shiplean.<namespace>.svc`) does not, by itself, tell ShipLean the public host. Set `instance_settings.base_url` to that public origin. That is enough. Changing it changes the token audience, so every agent has to reconnect.

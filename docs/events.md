@@ -33,6 +33,7 @@ JSON objects, camelCase, enums as camelCase strings, nothing omitted. Every even
 | `presenceChanged` | `screenId` (route id), `userIds`, `sequence` | the people on a screen change (`sequence` grows with every change: a client keeps the list with the highest one per screen) |
 | `importProgress` | `jobId`, `percent`, `state`, `message` | an import job reports progress |
 | `commentsChanged` | `workItemId` | a comment on the work item is added, edited or archived |
+| `asksChanged` | `workItemId` | a decision or question on the work item is raised, edited, answered, changed or withdrawn (published after commit; a write that also posts a comment publishes `commentsChanged` too) |
 | `attachmentsChanged` | `workItemId` | an attachment on the work item is added or archived |
 | `linksChanged` | `workItemId` | a link on the work item is added, edited or archived, or a link card's state or preview is refreshed |
 | `retroChanged` | `sprintIds`, `workItemIds` | a retrospective point is logged, archived, moved to another theme, marked Not needed or un-marked (undo), added to an action item as one of its points, turned into an action item, or a theme is renamed or merged (empty lists, for a rename or merge, mean refetch every retro view) |

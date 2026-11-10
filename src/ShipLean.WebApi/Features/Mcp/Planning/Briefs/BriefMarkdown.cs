@@ -3,6 +3,7 @@ using ShipLean.Application.Features.Mcp.Planning.Markers;
 using ShipLean.Application.Features.Mcp.Planning.Tree;
 using ShipLean.Application.Features.Mcp.Planning.Waves;
 using ShipLean.Application.Plans;
+using ShipLean.Contracts.Asks;
 
 namespace ShipLean.WebApi.Features.Mcp.Planning.Briefs;
 
@@ -71,6 +72,44 @@ public static class BriefMarkdown
                 .Append(" | ").Append(task.Tags.ContextK is { } k ? $"{k}k" : Dash).Append(" | ").Append(Cell(task.StateName)).AppendLine(" |");
         }
         return text.ToString().TrimEnd();
+    }
+
+    // The decisions and questions on the brief's item and its plan parents, so an agent sees what its owner already
+    // settled and what still waits. Withdrawn decisions and questions are left out. Null when no item has any.
+    public static string? Asks(IReadOnlyList<(string Key, ItemAsksDto Asks)> items)
+    {
+        var sections = new List<string>();
+        foreach (var (key, asks) in items)
+        {
+            var lines = new List<string>();
+            lines.AddRange(asks.Decisions.Where(d => d.State != DecisionState.Withdrawn).Select(DecisionLine));
+            lines.AddRange(asks.Questions.Where(q => q.State != QuestionState.Withdrawn).Select(QuestionLine));
+            if (lines.Count > 0)
+            {
+                sections.Add($"### {key}\n\n" + string.Join("\n", lines));
+            }
+        }
+        return sections.Count == 0 ? null : "## Decisions and questions\n\n" + string.Join("\n\n", sections);
+    }
+
+    private static string DecisionLine(DecisionDto d)
+    {
+        var how = d.AnswerKind == AnswerKind.Alternative ? $"alternative {d.AlternativeIndex + 1}" : d.AnswerKind.ToString().ToLowerInvariant();
+        return $"- {d.Label} ({d.State.ToString().ToLowerInvariant()}, {how}): {Line(d.Question)} → {Line(d.CurrentAnswer)}";
+    }
+
+    // A one-line answer sits on the bullet; a longer one goes under it, every line indented four spaces so a list item holds it.
+    private static string QuestionLine(QuestionDto q)
+    {
+        if (q.Answer is not { } a)
+        {
+            return $"- {q.Label} (open): {Line(q.Text)}";
+        }
+        var head = $"- {q.Label} (answered): {Line(q.Text)}";
+        var body = a.Body.ReplaceLineEndings("\n").Trim();
+        return body.Contains('\n', StringComparison.Ordinal)
+            ? head + " →\n" + string.Join("\n", body.Split('\n').Select(l => l.Length == 0 ? l : "    " + l))
+            : $"{head} → {body}";
     }
 
     // A title as one line, for a heading: a line break in it would start a section of its own.

@@ -23,6 +23,7 @@ namespace ShipLean.Contracts.Events;
 [JsonDerivedType(typeof(RetroChanged), "retroChanged")]
 [JsonDerivedType(typeof(SprintClosed), "sprintClosed")]
 [JsonDerivedType(typeof(SprintDemoChanged), "sprintDemoChanged")]
+[JsonDerivedType(typeof(AsksChanged), "asksChanged")]
 public abstract record ProjectEvent(Guid ProjectId)
 {
     // The browser tab whose request caused the event (its ClientHeader), stamped by the bus when the event is published;

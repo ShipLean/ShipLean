@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import { agentPanelTestIds } from '../agentPanel/testIds';
 import { componentTestIds } from '../../components/testIds';
+import { asksTestIds } from '../asks/testIds';
 import { priya, story } from '../workItem/ct/fixtures';
 import { workItemHarnessIds as harness } from '../workItem/ct/harnessIds';
 import { stubApi } from '../workItem/ct/stubApi';
@@ -181,4 +182,16 @@ test('FeatureForm_WhenTheFeatureHasAnAgentSession_ShouldShowTheAgentPanelAboveTh
     .locator(inDocumentOrder([agentPanelTestIds.panel, ids.log]))
     .evaluateAll((nodes) => nodes.map((node) => node.getAttribute('data-testid')));
   expect(order).toEqual([agentPanelTestIds.panel, ids.log]);
+});
+
+test('FeatureForm_WhenFeature_ShouldPlaceSectionAfterGoal', async ({ mount, page }) => {
+  await stubAll(page);
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-100" />, route('SHIP-100'));
+
+  const section = screen.getByTestId(asksTestIds.section);
+  await expect(section.getByRole('heading', { name: 'Decisions and questions' })).toBeVisible();
+  const previous = await section.evaluate(
+    (element) => element.previousElementSibling?.getAttribute('data-testid') ?? null,
+  );
+  expect(previous).toBe(ids.goal);
 });

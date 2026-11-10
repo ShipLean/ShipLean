@@ -20,6 +20,9 @@ public abstract class CommentStoreContract
 
     protected abstract Task<Guid> ArrangeWorkItemAsync();
 
+    // Adds on the caller's transaction and commits it, so the comment is there for a later read.
+    protected abstract Task<CommentDto> AddInTransactionAndCommitAsync(ICommentStore store, Guid workItemId, CommentCreate create, string? agentName, Guid authorId);
+
     [Test]
     public async Task Add_WhenListed_ShouldReturnTheCommentOldestFirst()
     {
@@ -67,6 +70,24 @@ public abstract class CommentStoreContract
         added.BodyHtml.ShouldContain("<strong>merged</strong>");
         var listed = await CreateStore(Joel).ListAsync(workItem);
         listed.Select(c => c.AgentName).ShouldBe(["Relay"]);
+    }
+
+    [Test]
+    public async Task AddInTransaction_WhenPersonAndNoAgent_ShouldStoreWithoutAgentName()
+    {
+        var workItem = await ArrangeWorkItemAsync();
+        var store = CreateStore(Joel);
+
+        var added = await AddInTransactionAndCommitAsync(store, workItem, new CommentCreate("A **person** replies"), null, Priya);
+
+        added.AgentName.ShouldBeNull();
+        added.Author.ShouldNotBeNull().Id.ShouldBe(Priya);
+        added.BodyHtml.ShouldContain("<strong>person</strong>");
+        var listed = await store.ListAsync(workItem);
+        var stored = listed.ShouldHaveSingleItem();
+        stored.Id.ShouldBe(added.Id);
+        stored.AgentName.ShouldBeNull();
+        stored.Author.ShouldNotBeNull().Id.ShouldBe(Priya);
     }
 
     [Test]

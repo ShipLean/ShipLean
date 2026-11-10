@@ -7,6 +7,7 @@ using ShipLean.Application.Features.Mcp.Planning.Tree;
 using ShipLean.Application.Features.Mcp.Planning.Waves;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Agents;
+using ShipLean.Contracts.Asks;
 using ShipLean.Contracts.Attachments;
 using ShipLean.Contracts.Comments;
 using ShipLean.Contracts.Mcp;
@@ -18,7 +19,7 @@ using ShipLean.WebApi.Features.Mcp.Resolve;
 namespace ShipLean.WebApi.Features.Mcp.Tools.Planning;
 
 [McpServerToolType]
-internal sealed class BriefTools(ItemResolver items, IPlanReads plans, IAttachmentStore attachments, ICommentStore comments, IAgentAddresses addresses)
+internal sealed class BriefTools(ItemResolver items, IPlanReads plans, IAttachmentStore attachments, ICommentStore comments, IAgentAddresses addresses, IItemAsks asks)
 {
     [McpServerTool(Name = "get_brief"), McpScope(McpScopes.Read)]
     [Description("The brief to work from for an item of a plan capture_plan created. For a task, the whole brief its agent follows: the common brief, the task's own brief, the shared branch and the report to send back with report_task. For a story, the lead's brief for that lane. For a feature, the conductor's view: its waves in order, each with its stories and whether they are done, and the first wave that can start.")]
@@ -33,18 +34,19 @@ internal sealed class BriefTools(ItemResolver items, IPlanReads plans, IAttachme
         var openUrl = McpOpenUrls.WorkItem(issuer, projectKey, resolved.Key);
 
         var prefix = await BriefPlanContext.PrefixAsync(attachments, comments, tree, StoryId(tree, itemId), cancellationToken);
+        var asksMarkdown = await AsksAsync(tree, itemId, cancellationToken);
         BriefResult result;
         if (itemId == tree.Feature.Id)
         {
-            result = FeatureBrief(tree, projectKey, openUrl, prefix);
+            result = FeatureBrief(tree, projectKey, openUrl, prefix, asksMarkdown);
         }
         else if (tree.Stories.FirstOrDefault(story => story.Id == itemId) is { } story)
         {
-            result = new BriefResult(projectKey, openUrl, resolved.Key, "story", Prefix(prefix, BriefMarkdown.ForStory(tree, story)), null, null);
+            result = new BriefResult(projectKey, openUrl, resolved.Key, "story", Prefix(prefix, WithAsks(asksMarkdown, BriefMarkdown.ForStory(tree, story))), null, null);
         }
         else
         {
-            result = await TaskBriefAsync(tree, itemId, projectKey, openUrl, resolved.Key, prefix, cancellationToken);
+            result = await TaskBriefAsync(tree, itemId, projectKey, openUrl, resolved.Key, prefix, asksMarkdown, cancellationToken);
         }
         return PlanningReply.Of(result, $"The brief for {resolved.Key}; the Markdown follows.", result.Markdown);
     }
@@ -53,9 +55,33 @@ internal sealed class BriefTools(ItemResolver items, IPlanReads plans, IAttachme
         => tree.Stories.FirstOrDefault(story => story.Id == itemId)?.Id
             ?? tree.Stories.FirstOrDefault(story => story.Tasks.Any(task => task.Id == itemId))?.Id;
 
+    private static string WithAsks(string? asksMarkdown, string body) => asksMarkdown is null ? body : asksMarkdown + "\n\n" + body;
+
+    // The item's own decisions and questions first, then those of its plan parents: task, story, Feature.
+    private async Task<string?> AsksAsync(PlanTree tree, Guid itemId, CancellationToken cancellationToken)
+    {
+        var story = tree.Stories.FirstOrDefault(s => s.Id == itemId) ?? tree.Stories.FirstOrDefault(s => s.Tasks.Any(t => t.Id == itemId));
+        var chain = new List<(Guid Id, string Key)>();
+        if (itemId != tree.Feature.Id && itemId != story?.Id)
+        {
+            chain.Add((itemId, story!.Tasks.First(t => t.Id == itemId).Key));
+        }
+        if (story is not null)
+        {
+            chain.Add((story.Id, story.Key));
+        }
+        chain.Add((tree.Feature.Id, tree.Feature.Key));
+        var read = new List<(string Key, ItemAsksDto Asks)>();
+        foreach (var (id, key) in chain)
+        {
+            read.Add((key, await asks.GetAsync(id, cancellationToken)));
+        }
+        return BriefMarkdown.Asks(read);
+    }
+
     private static string Prefix(string rule, string markdown) => rule + "\n\n" + markdown;
 
-    private static BriefResult FeatureBrief(PlanTree tree, string projectKey, string openUrl, string prefix)
+    private static BriefResult FeatureBrief(PlanTree tree, string projectKey, string openUrl, string prefix, string? asksMarkdown)
     {
         var waves = PlanWaves.Group(tree);
         var startable = PlanWaves.Startable(tree);
@@ -63,14 +89,14 @@ internal sealed class BriefTools(ItemResolver items, IPlanReads plans, IAttachme
             wave.Wave.Text,
             wave.Done,
             [.. wave.Stories.Select(story => new BriefStory(story.Key, story.Title, story.Lane, story.StateName, PlanWaves.IsDone(story)))])).ToList();
-        return new BriefResult(projectKey, openUrl, tree.Feature.Key, "feature", Prefix(prefix, BriefMarkdown.ForFeature(tree, waves, startable)), view, startable?.Text);
+        return new BriefResult(projectKey, openUrl, tree.Feature.Key, "feature", Prefix(prefix, WithAsks(asksMarkdown, BriefMarkdown.ForFeature(tree, waves, startable))), view, startable?.Text);
     }
 
-    private async Task<BriefResult> TaskBriefAsync(PlanTree tree, Guid taskId, string projectKey, string openUrl, string key, string prefix, CancellationToken cancellationToken)
+    private async Task<BriefResult> TaskBriefAsync(PlanTree tree, Guid taskId, string projectKey, string openUrl, string key, string prefix, string? asksMarkdown, CancellationToken cancellationToken)
     {
         var task = tree.Stories.SelectMany(story => story.Tasks).First(candidate => candidate.Id == taskId);
         var markdown = BriefMarkdown.ForTask(tree, task, await CommonBriefAsync(tree.Feature.Id, cancellationToken), PlanGuide.Read(PlanGuidePart.Report));
-        return new BriefResult(projectKey, openUrl, key, "task", Prefix(prefix, markdown), null, null);
+        return new BriefResult(projectKey, openUrl, key, "task", Prefix(prefix, WithAsks(asksMarkdown, markdown)), null, null);
     }
 
     // The Feature's live common-brief.md, null when it has none.
