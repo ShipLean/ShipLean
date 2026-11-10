@@ -36,9 +36,11 @@ export interface ActionRunnerDeps {
   now(): Date;
 }
 
-// The runner of one session. stop() is for its owner (runner.tsx) when the session ends or the slot unmounts: no
-// timer, connection or late answer touches the outbox after it.
+// The runner of one session, running from creation. stop() is for its owner (runner.tsx) when the session ends or
+// the slot unmounts: no timer, connection or late answer touches the outbox after it. start() resumes a stopped
+// runner (an effect that runs again over the same runner).
 export interface SessionRunner extends ActionRunner {
+  start(): void;
   stop(): void;
 }
 
@@ -89,13 +91,6 @@ export function createActionRunner(deps: ActionRunnerDeps): SessionRunner {
         } else notify();
       }, delay),
     );
-  }
-
-  for (const p of box.items) {
-    if (p.undoUntil === null || timers.has(p.batchId)) continue;
-    if (p.state === 'undo') watchWindow(p.batchId, p.undoUntil, 'hold');
-    else if (Date.parse(p.undoUntil) > now().getTime())
-      watchWindow(p.batchId, p.undoUntil, 'after');
   }
 
   // The first queued action, in dispatch order, whose area can send it and that no earlier action of its batch is
@@ -228,12 +223,27 @@ export function createActionRunner(deps: ActionRunnerDeps): SessionRunner {
       );
   }
 
-  const stopOnline = deps.onOnline(() => {
-    if (stopped) return;
-    set(notLive(box));
+  let stopOnline = () => {};
+
+  // Listens for the connection, watches the open undo windows and sends what is ready. Runs once at creation, and
+  // again on start() after a stop().
+  function resume() {
+    stopOnline = deps.onOnline(() => {
+      if (stopped) return;
+      set(notLive(box));
+      reconcileAll();
+      void pump();
+    });
+    for (const p of box.items) {
+      if (p.undoUntil === null || timers.has(p.batchId)) continue;
+      if (p.state === 'undo') watchWindow(p.batchId, p.undoUntil, 'hold');
+      else if (Date.parse(p.undoUntil) > now().getTime())
+        watchWindow(p.batchId, p.undoUntil, 'after');
+    }
     reconcileAll();
     void pump();
-  });
+  }
+  resume();
 
   function describe(a: AppAction): PreviewLine {
     const executor = executors.get(a.area);
@@ -321,6 +331,12 @@ export function createActionRunner(deps: ActionRunnerDeps): SessionRunner {
       return () => {
         conflictListeners.delete(cb);
       };
+    },
+
+    start(): void {
+      if (!stopped) return;
+      stopped = false;
+      resume();
     },
 
     stop(): void {

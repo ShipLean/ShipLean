@@ -64,8 +64,9 @@ async function open(api: ControlledApi = apiWith()) {
   await goOnline();
   mockSlot.runner = null;
   const app = await renderApp({ url: URL, api });
-  await waitFor(() => expect(mockSlot.runner).not.toBeNull());
-  return { ...app, runner: mockSlot.runner as ActionRunner };
+  const slotRunner = (): ActionRunner | null => mockSlot.runner;
+  await waitFor(() => expect(slotRunner()).not.toBeNull());
+  return { ...app, runner: slotRunner() as ActionRunner };
 }
 
 async function queue(runner: ActionRunner, ...ids: string[]) {
