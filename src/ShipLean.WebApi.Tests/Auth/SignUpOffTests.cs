@@ -9,7 +9,7 @@ using ShipLean.TestSupport.Hosting;
 
 namespace ShipLean.WebApi.Tests.Auth;
 
-// Sign-up with SHIPLEAN_SIGNUP_ENABLED set to anything but true.
+// Sign-up with SHIPLEAN_SIGNUP_ENABLED unset (the default) or set to anything but true.
 [TestFixture]
 public class SignUpOffTests : ApiFixture
 {
