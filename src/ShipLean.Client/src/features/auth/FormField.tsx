@@ -14,7 +14,7 @@ export function FormField({
 }: {
   id: string;
   label: string;
-  type: 'text' | 'email' | 'password';
+  type: 'email' | 'password';
   value: string;
   onChange: (value: string) => void;
   autoComplete: string;

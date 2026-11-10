@@ -24,16 +24,6 @@ public class ProxyPasswordRefusalTests : ApiFixture
     }
 
     [Test]
-    public async Task SignUp_WhenProxyMode_ShouldBeForbidden()
-    {
-        using var response = await Api.ActingAs(TestUser.Anonymous).PostJsonAsync("api/auth/signup", new { name = "Proxy Person", email = "proxy-signup@example.test", password = "a-reviewer-password" });
-
-        (await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.Forbidden)).Code.ShouldBe(ApiErrorCodes.Forbidden);
-        await using var connection = await OpenDatabaseAsync();
-        (await connection.ExecuteScalarAsync<int>("SELECT count(*)::int FROM app_user WHERE email = 'proxy-signup@example.test'")).ShouldBe(0);
-    }
-
-    [Test]
     public async Task ChangePassword_WhenProxyMode_ShouldBeForbidden()
     {
         using var response = await Api.PostJsonAsync("api/auth/password", new { current = SeedIds.Passwords.Joel, @new = "a-brand-new-password" });

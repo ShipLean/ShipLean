@@ -4,7 +4,7 @@ The address of every screen is in `src/ShipLean.Client/src/routes.ts` (ids, path
 
 ## Routes
 
-`/login` and `/signup` are outside the shell. Everything else renders inside `<Shell />` (top bar, side menu) with the page in its outlet. `/` is `RootRedirect`.
+`/login` is outside the shell. Everything else renders inside `<Shell />` (top bar, side menu) with the page in its outlet. `/` is `RootRedirect`.
 
 | Level | Route id | Path | Query |
 |---|---|---|---|

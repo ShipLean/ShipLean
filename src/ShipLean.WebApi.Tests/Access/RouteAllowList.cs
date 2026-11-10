@@ -12,7 +12,6 @@ public static class RouteAllowList
     public static IReadOnlyList<Entry> Anonymous { get; } =
     [
         new("POST", "api/auth/login", "Signs a user in.", Body: LoginBody),
-        new("POST", "api/auth/signup", "Creates a password user and signs them in; 404 while SHIPLEAN_SIGNUP_ENABLED is off.", Body: """{"name":"Sweep Person","email":"sweep-signup@example.test","password":"a-sweep-password"}"""),
         new("POST", "api/auth/logout", "Ends the cookie session, valid or not."),
         new("GET", "api/auth/instance", "The sign-in page's instance name."),
         new("GET", "api/auth/google/start", "Sends someone with no session to Google; 404 while Google sign-in is off."),
