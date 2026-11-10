@@ -25,12 +25,15 @@ import {
 import {
   RECOMMENDED,
   canConfirm,
-  changedCount,
+  decisionLabels,
   choose,
   initialReview,
   isChanged,
   openDecisions,
   reviewAction,
+  reviewLead,
+  reviewNote,
+  reviewTitle,
   setNote,
   type ReviewChoice,
   type ReviewState,
@@ -53,7 +56,7 @@ function Radio({
 }: {
   testID: string;
   label: string;
-  caption: string;
+  caption?: string;
   on: boolean;
   onPress: () => void;
 }) {
@@ -91,7 +94,9 @@ function Radio({
         ) : null}
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ color: colors.muted, fontSize: theme.font.size.sm }}>{caption}</Text>
+        {caption === undefined ? null : (
+          <Text style={{ color: colors.muted, fontSize: theme.font.size.sm }}>{caption}</Text>
+        )}
         <Text style={{ color: colors.text, fontSize: theme.font.size.body15 }}>{label}</Text>
       </View>
     </Pressable>
@@ -100,6 +105,7 @@ function Radio({
 
 function Decision({
   decision,
+  id,
   state,
   editing,
   onEdit,
@@ -107,6 +113,7 @@ function Decision({
   onNote,
 }: {
   decision: InboxDecisionDto;
+  id: string;
   state: ReviewState;
   editing: boolean;
   onEdit: () => void;
@@ -140,7 +147,7 @@ function Decision({
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: theme.space[2] }}>
-        <Text style={{ color: colors.muted, fontSize: theme.font.size.sm }}>D{n}</Text>
+        <Text style={{ color: colors.muted, fontSize: theme.font.size.sm }}>{id}</Text>
         <Text style={{ flex: 1, color: colors.text, fontSize: theme.font.size.body15 }}>
           {decision.question}
         </Text>
@@ -169,8 +176,7 @@ function Decision({
           ))}
           <Radio
             testID={reviewChoiceId(n, 'own')}
-            caption="Your own answer"
-            label={s.choice.kind === 'own' ? 'Typed below' : 'Type your answer'}
+            label="Your own answer"
             on={s.choice.kind === 'own'}
             onPress={() =>
               onChoose({ kind: 'own', text: s.choice.kind === 'own' ? s.choice.text : '' })
@@ -189,7 +195,7 @@ function Decision({
           <Pressable
             testID={reviewChangeId(n)}
             accessibilityRole="button"
-            accessibilityLabel={`Change D${n}`}
+            accessibilityLabel={`Change ${id}`}
             onPress={onEdit}
             style={{
               minHeight: theme.touch.control,
@@ -205,11 +211,11 @@ function Decision({
       {s.choice.kind === 'own' ? (
         <TextInput
           testID={reviewOwnId(n)}
-          accessibilityLabel={`Your own answer for D${n}`}
+          accessibilityLabel={`Your own answer for ${id}`}
           multiline
           value={s.choice.text}
           onChangeText={(text) => onChoose({ kind: 'own', text })}
-          placeholder="Type your answer"
+          placeholder="Type an answer"
           placeholderTextColor={colors.muted}
           style={input}
         />
@@ -217,7 +223,7 @@ function Decision({
       {changed ? (
         <TextInput
           testID={reviewWhyId(n)}
-          accessibilityLabel={`Add why for D${n}`}
+          accessibilityLabel={`Add why for ${id}`}
           multiline
           value={s.note}
           onChangeText={onNote}
@@ -230,13 +236,6 @@ function Decision({
   );
 }
 
-function labelOf(decisions: InboxDecisionDto[]): string {
-  const first = decisions[0];
-  const last = decisions[decisions.length - 1];
-  if (first === undefined || last === undefined) return 'decisions';
-  return first.number === last.number ? `D${first.number}` : `D${first.number}–D${last.number}`;
-}
-
 // Every open decision on the item with its recommended answer chosen. Change offers the alternatives and an own answer,
 // Add why takes a typed reason. Confirm N dispatches one review action; nothing is sent before it.
 export function ReviewSheet({ item, scrollToConfirm, projectId, onClose }: ReviewSheetProps) {
@@ -245,11 +244,12 @@ export function ReviewSheet({ item, scrollToConfirm, projectId, onClose }: Revie
   const actions = useInboxActions();
   const { height } = useWindowDimensions();
   const decisions = openDecisions(item);
+  const labels = decisionLabels(item);
   const [state, setState] = useState<ReviewState>(() => initialReview(decisions));
   const [editing, setEditing] = useState<ReadonlySet<number>>(new Set());
   const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
+  const scrolled = useRef(false);
   const off = decisions.length === 0 || !canConfirm(state);
-  const changed = changedCount(state);
 
   const confirm = () => {
     if (off) return;
@@ -259,7 +259,7 @@ export function ReviewSheet({ item, scrollToConfirm, projectId, onClose }: Revie
 
   return (
     <BottomSheet
-      title={`Confirm ${labelOf(decisions)} on ${item.key}`}
+      title={reviewTitle(item, labels)}
       open
       onClose={onClose}
       testID={inboxIds.reviewSheet}
@@ -269,8 +269,11 @@ export function ReviewSheet({ item, scrollToConfirm, projectId, onClose }: Revie
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ gap: theme.space[3] }}
       >
-        <Text style={{ color: colors.muted, fontSize: theme.font.size.sm }}>
-          {item.title}. The recommended answers are chosen; change any you disagree with.
+        <Text
+          testID={inboxIds.reviewLead}
+          style={{ color: colors.muted, fontSize: theme.font.size.sm }}
+        >
+          {reviewLead(item)}
         </Text>
         <ScrollView
           ref={scroll}
@@ -278,13 +281,17 @@ export function ReviewSheet({ item, scrollToConfirm, projectId, onClose }: Revie
           style={{ maxHeight: height * 0.55 }}
           keyboardShouldPersistTaps="handled"
           onContentSizeChange={() => {
-            if (scrollToConfirm) scroll.current?.scrollToEnd({ animated: false });
+            if (scrollToConfirm && !scrolled.current) {
+              scrolled.current = true;
+              scroll.current?.scrollToEnd({ animated: false });
+            }
           }}
         >
           {decisions.map((d) => (
             <Decision
               key={d.number}
               decision={d}
+              id={labels.get(d.number) ?? `D${d.number}`}
               state={state}
               editing={editing.has(d.number)}
               onEdit={() => setEditing((e) => new Set(e).add(d.number))}
@@ -300,7 +307,7 @@ export function ReviewSheet({ item, scrollToConfirm, projectId, onClose }: Revie
               paddingVertical: theme.space[3],
             }}
           >
-            {`Posted on ${item.key} as your answers: ${decisions.length - changed} recommended, ${changed} changed. The next agent to pick up ${item.key} reads them.`}
+            {reviewNote(item, labels, state)}
           </Text>
         </ScrollView>
         <View style={{ flexDirection: 'row', gap: theme.space[2] }}>
