@@ -1,9 +1,13 @@
 import type { AnsweredDto, InboxDto } from '@shiplean/core/api/inbox';
 import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
-import { aProject } from '../test-support/builders';
+import { outboxKey } from '../actions/outbox';
+import { scopeOf } from '../actions/scope';
+import type { Pending } from '../actions/types';
+import { TEST_ORIGIN, aMe, aProject } from '../test-support/builders';
 import type { ApiHandler } from '../test-support/fakeApi';
 import { anAnswered, anAnsweredRow, inboxApi } from '../test-support/inbox';
 import { designInbox } from '../test-support/inboxDesign';
+import { signedInApi } from '../test-support/signedInApi';
 import { setConnected } from '../test-support/netInfo';
 import { renderApp } from '../test-support/renderApp';
 import { kvValues } from '../test-support/storage';
@@ -13,6 +17,7 @@ import { screenIds, tabIds } from '../screens/testIds';
 import { optionId } from '../ui/testIds';
 import {
   answeredNextId,
+  answeredPendingStatusId,
   answeredRowId,
   inboxBtnId,
   inboxIds,
@@ -73,8 +78,8 @@ afterEach(async () => {
 const tap = (testID: string) => fireEvent.press(screen.getByTestId(testID));
 const passSeconds = (s: number) => act(() => jest.advanceTimersByTimeAsync(s * 1000));
 // The phone's connection and the server's reach move together: while down, the Inbox's own routes and the confirm
-// route get no response, as fetch does with no connection. The projects list stays reachable: it is not kept on the
-// phone, so a restart with every route down cannot even open the project (reported, not worked around here).
+// route get no response, as fetch does with no connection. The projects list and the rest of the signed-in reads fail
+// too: a cold start offline opens the project from the list kept on the phone, never from the network.
 let down = false;
 const unlessDown =
   <T,>(answer: () => T): ApiHandler =>
@@ -90,7 +95,21 @@ const goOnline = () => {
   down = false;
   return act(async () => setConnected(true));
 };
-const pendingStatus = () => screen.getByTestId(/^answered-pending-status-/);
+// What the outbox holds for the signed-in test user, as the runner wrote it to the kv store.
+const pendingStatus = () => screen.getByTestId(answeredPendingStatusId(outboxItems()[0]!.id));
+const outboxItems = (): Pending[] => {
+  const scope = scopeOf({ origin: TEST_ORIGIN, email: aMe().email }) as string;
+  const raw = kvValues.get(outboxKey(scope));
+  return raw === undefined ? [] : (JSON.parse(raw) as { items: Pending[] }).items;
+};
+// Every signed-in read (me, projects, health) goes down with the connection.
+const signedInUnlessDown = (): Record<string, ApiHandler> =>
+  Object.fromEntries(
+    Object.entries(signedInApi()).map(([route, body]) => [
+      route,
+      unlessDown(() => body) as ApiHandler,
+    ]),
+  );
 
 async function openInbox(api: ReturnType<typeof inboxApi>) {
   const app = await renderApp({ url: URL, api });
@@ -109,6 +128,7 @@ describe('the Inbox offline', () => {
     let confirmed = false;
     const api = inboxApi(
       {
+        ...signedInUnlessDown(),
         [CONFIRM]: unlessDown(() => {
           confirmed = true;
           return { status: 204 };
@@ -127,26 +147,29 @@ describe('the Inbox offline', () => {
     expect(pendingStatus()).toHaveTextContent('Sends when you’re online');
     expect(screen.getByTestId(inboxIds.offlineBanner)).toBeOnTheScreen();
     expect(api.callsTo(CONFIRM)).toHaveLength(0);
-    const queuedId = pendingStatus().props.testID as string;
+    const queuedId = answeredPendingStatusId(outboxItems()[0]!.id);
 
-    // 2. Restart over the same kv store, with the connection back but the Inbox and the send held at the server (a
-    // restart with no connection at all cannot open the project: see the comment on `down`). renderApp empties the
-    // query cache, so the row can only be the one kept on the phone, and the answer only the one in the outbox.
+    // 2. Restart over the same kv store with no connection at all: the project opens from the kept projects list, and
+    // the kept Inbox shows with the offline banner and the queued answer. renderApp empties the query cache, so the row
+    // can only be the one kept on the phone, and the answer only the one in the outbox.
     await first.unmount();
-    await goOnline();
-    api.hang(INBOX_ROUTE);
-    api.hang(CONFIRM);
     await renderApp({ url: URL, api });
     expect(await screen.findByTestId(inboxRowId(ITEM))).toBeOnTheScreen();
+    expect(screen.getByTestId(inboxIds.offlineBanner)).toBeOnTheScreen();
     await tap(optionId(inboxIds.segment, 'answered'));
-    expect(screen.getByTestId(queuedId)).toHaveTextContent('Sending…');
-    await waitFor(() => expect(api.callsTo(CONFIRM)).toHaveLength(1));
+    expect(screen.getByTestId(queuedId)).toHaveTextContent('Sends when you’re online');
+    expect(api.callsTo(CONFIRM)).toHaveLength(0);
 
-    // 3. The send answers: it went out exactly once, and the restart did not queue a second.
-    api.release(INBOX_ROUTE);
-    api.release(CONFIRM);
+    // Ten seconds offline later, still nothing sent.
+    await passSeconds(10);
+    expect(api.callsTo(CONFIRM)).toHaveLength(0);
+
+    // The connection comes back: the answer goes out once, and the restart queued no second.
+    await goOnline();
     await passSeconds(5);
     expect(api.callsTo(CONFIRM)).toHaveLength(1);
+
+    // 3. The send answered: it went out exactly once.
     expect(api.callsTo(CONFIRM)[0]!.body).toEqual({ numbers: [10] });
 
     // 4. Answered refetches: the server's row says who picked it up, and the queued line is gone.
@@ -176,7 +199,6 @@ describe('the Inbox offline', () => {
       { inbox },
     );
     const app = await openInbox(api);
-    const loads = api.callsTo(INBOX_ROUTE).length;
 
     await approveD10();
     await passSeconds(5);
@@ -184,19 +206,26 @@ describe('the Inbox offline', () => {
     // It is uncertain: sent once, no response, nothing resent.
     expect(api.callsTo(CONFIRM)).toHaveLength(1);
     await tap(optionId(inboxIds.segment, 'answered'));
+    const queuedId = answeredPendingStatusId(outboxItems()[0]!.id);
     expect(pendingStatus()).toHaveTextContent('Sending…');
+    // 'Sending…' is shared by sending and uncertain: the outbox says which.
+    expect(outboxItems().map((p) => p.state)).toEqual(['uncertain']);
 
     // The connection returns: reconcile reads a fresh Inbox, sees D10 closed and settles it as sent, with no resend.
     await goOffline();
     await goOnline();
     await passSeconds(5);
-    expect(api.callsTo(INBOX_ROUTE).length).toBeGreaterThan(loads);
+    expect(outboxItems().filter((p) => p.state !== 'sent')).toEqual([]);
     expect(api.callsTo(CONFIRM)).toHaveLength(1);
-    expect(screen.queryByTestId(/^answered-pending-status-/)).toBeNull();
+    expect(screen.queryByTestId(queuedId)).toBeNull();
     await tap(optionId(inboxIds.segment, 'waiting'));
     expect(screen.queryByTestId(inboxBtnId(ITEM, 'D10', 'approve'))).toBeNull();
 
-    // A restart sends nothing more.
+    // Another reconnect once settled sends nothing; nor does a restart.
+    await goOffline();
+    await goOnline();
+    await passSeconds(5);
+    expect(api.callsTo(CONFIRM)).toHaveLength(1);
     await app.unmount();
     await renderApp({ url: URL, api });
     await screen.findByTestId(inboxRowId(ITEM));

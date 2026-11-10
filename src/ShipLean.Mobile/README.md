@@ -96,7 +96,7 @@ Answers wait 5 seconds so Undo can catch them, then send. With no connection the
 
 - [ ] Answer each kind: approve or change a decision, answer a question, reply to a mention and mark one Seen, and confirm the status line is still true.
 - [ ] Undo inside 5 seconds: the ask comes back to Waiting and nothing is sent.
-- [ ] Airplane mode on, answer a decision, wait 5 seconds: Answered shows "Sends when you're online" and the offline banner shows. Force-stop and reopen the app (still offline if the project opens; otherwise open it online and go offline again), then airplane mode off: the answer sends once (check the item on the web: one confirmation, not two), and Answered shows who picked it up.
+- [ ] Airplane mode on, answer a decision, wait 5 seconds: Answered shows "Sends when you're online" and the offline banner shows. Force-stop and reopen the app in airplane mode: the Inbox and the waiting answer are both there. Then airplane mode off: the answer sends once (check the item on the web: one confirmation, not two), and Answered shows who picked it up.
 - [ ] The Inbox tab badge drops by one when you answer, and comes back if the send fails.
 - [ ] Dark mode: set the phone to dark and check the rows, the sheets and the banner.
 - [ ] Tap a row's header: the app's Work item screen opens for that item.

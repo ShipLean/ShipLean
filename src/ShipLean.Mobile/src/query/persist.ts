@@ -1,5 +1,6 @@
 import type { KeyValueStore } from '@shiplean/core/platform';
 import { inboxKeys } from '@shiplean/core/api/inbox';
+import { projectsKey } from '@shiplean/core/api/projects';
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 import type { Persister } from '@tanstack/react-query-persist-client';
 import type { Query, QueryClient } from '@tanstack/react-query';
@@ -10,14 +11,24 @@ export const INBOX_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const INBOX_ROOT = inboxKeys.inbox('')[0];
 
 // Restored queries have no observer until their screen opens, and the default gcTime (5 minutes) would drop them from
-// the cache long before maxAge. Keep Inbox queries as long as the persister does.
+// the cache long before maxAge. Keep the kept queries as long as the persister does.
 export function keepInboxQueries(client: QueryClient): void {
   client.setQueryDefaults([INBOX_ROOT], { gcTime: INBOX_MAX_AGE_MS });
+  client.setQueryDefaults(projectsKey, { gcTime: INBOX_MAX_AGE_MS });
 }
 
-// Only the Inbox and Answered queries are kept on the phone (both keys start with the Inbox root).
+// The Inbox and Answered queries (both keys start with the Inbox root).
 export const isInboxQuery = (query: Pick<Query, 'queryKey' | 'state'>): boolean =>
   query.queryKey[0] === INBOX_ROOT && query.state.status === 'success';
+
+// The projects list is kept too: useProject reads the open project from it, so a cold start with no connection (where
+// react-query pauses the list) can still open the kept Inbox. It lives in the same kv entry as the Inbox, so sign-out
+// (clearInboxStorage) and a lost session clear it with them.
+export const isKeptQuery = (query: Pick<Query, 'queryKey' | 'state'>): boolean =>
+  isInboxQuery(query) ||
+  (query.queryKey.length === projectsKey.length &&
+    query.queryKey[0] === projectsKey[0] &&
+    query.state.status === 'success');
 
 // The sync persister over the kv store. The kv key is the session's now (null: signed out with no server, so nothing is
 // kept). An empty cache serialises to '' and removes the entry instead of writing one, so a save that lands after a
@@ -54,6 +65,6 @@ export function inboxPersistOptions(persister: Persister, buster: string) {
     persister,
     maxAge: INBOX_MAX_AGE_MS,
     buster,
-    dehydrateOptions: { shouldDehydrateQuery: isInboxQuery },
+    dehydrateOptions: { shouldDehydrateQuery: isKeptQuery },
   };
 }

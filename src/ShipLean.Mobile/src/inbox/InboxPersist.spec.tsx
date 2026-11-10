@@ -3,7 +3,7 @@ import { QueryClient, dehydrate } from '@tanstack/react-query';
 import { act, screen, waitFor } from '@testing-library/react-native';
 import Constants from 'expo-constants';
 import { queryClient } from '../queryClient';
-import { INBOX_MAX_AGE_MS, isInboxQuery } from '../query/persist';
+import { INBOX_MAX_AGE_MS, isKeptQuery } from '../query/persist';
 import { signOutNow } from '../screens/account/signOutNow';
 import { lostSession } from '../session/lostSession';
 import { TEST_ORIGIN, aMe, aProject } from '../test-support/builders';
@@ -32,7 +32,7 @@ function seedKeptInbox() {
     JSON.stringify({
       buster: Constants.expoConfig?.version ?? '',
       timestamp: Date.now(),
-      clientState: dehydrate(earlier, { shouldDehydrateQuery: isInboxQuery }),
+      clientState: dehydrate(earlier, { shouldDehydrateQuery: isKeptQuery }),
     }),
   );
 }
@@ -52,7 +52,7 @@ describe('the Inbox across restarts and sign-out', () => {
       (q: { queryKey: unknown }) => q.queryKey,
     );
     expect(keys).toContainEqual(inboxKeys.inbox(project.id));
-    expect(keys.every((k: unknown[]) => k[0] === 'inbox')).toBe(true);
+    expect(keys.every((k: unknown[]) => k[0] === 'inbox' || k[0] === 'projects')).toBe(true);
   });
 
   it('keeps Inbox and Answered queries in the cache for as long as they are persisted', async () => {
