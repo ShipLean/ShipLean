@@ -9,7 +9,7 @@ Usage: python3 -I store/check_listing.py [--store <dir>] [--staged <dir>]
           text is byte for byte the en-US text
 
 Prints one `ok` or `BAD` line per item and exits 1 when any item is BAD.
-Limits are the ones in design/appstore/listing.md.
+Limits are the ones in store/assets/listing.md.
 """
 import argparse
 import importlib.util

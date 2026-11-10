@@ -4,7 +4,7 @@
 
 Builds, for deliver:
     <out>/ios/metadata/         a copy of store/ios/metadata
-    <out>/ios/screenshots/en-US/ the iPhone sets from design/appstore/exports
+    <out>/ios/screenshots/en-US/ the iPhone sets from store/assets/exports
 and, for supply:
     <out>/android/metadata/     a copy of store/android/metadata plus en-US/images/
 
@@ -21,7 +21,7 @@ import shutil
 import sys
 
 STORE = os.path.dirname(os.path.abspath(__file__))
-DEFAULT_EXPORTS = os.path.join(os.path.dirname(STORE), "design", "appstore", "exports")
+DEFAULT_EXPORTS = os.path.join(STORE, "assets", "exports")
 IOS_METADATA = os.path.join(STORE, "ios", "metadata")
 ANDROID_METADATA = os.path.join(STORE, "android", "metadata")
 
@@ -160,7 +160,7 @@ def stage(exports, out):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("out", help="empty or missing folder to build fastlane's layout in")
-    parser.add_argument("--exports", default=DEFAULT_EXPORTS, help="the design/appstore/exports folder")
+    parser.add_argument("--exports", default=DEFAULT_EXPORTS, help="the store/assets/exports folder")
     args = parser.parse_args(argv)
     try:
         summary = stage(os.path.abspath(args.exports), os.path.abspath(args.out))

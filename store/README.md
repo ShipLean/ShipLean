@@ -11,7 +11,8 @@ Everything the App Store and Google Play listings show for the phone app, kept i
 | `ios/metadata/review_information/notes.txt` | Notes for App Review. Only the notes: the contact and demo login are set by hand (the repo is public). |
 | `ios/age_rating.json` | The age-rating answers, in App Store Connect's attribute names (fastlane's `app_rating_config_path` file). |
 | `android/metadata/en-US/` | Play text: `title.txt`, `short_description.txt`, `full_description.txt`, and `changelogs/default.txt` (release notes for any version without its own `changelogs/<versionCode>.txt`). The listing push doesn't send them: release notes belong to a release, and it sends no binary. |
-| `stage_images.py` | Stages the text and the images from `design/appstore/exports/` into fastlane's layout at run time, for each locale (below). |
+| `assets/` | Every image the stores show (icons, screenshots, the Play feature graphic), drawn by `assets/asset.html` and written to `assets/exports/` by `assets/export.sh`, plus `assets/listing.md` (captions, the stores' limits, decisions D1–D10). See `assets/README.md`. |
+| `stage_images.py` | Stages the text and the images from `assets/exports/` into fastlane's layout at run time, for each locale (below). |
 | `push_listing.sh` | The only place fastlane is called: `push_listing.sh <ios\|android> <push\|verify>`. |
 | `tests/` | `python3 -I -m unittest discover -s store/tests -v` |
 
@@ -21,7 +22,7 @@ The listing is published in English (US) and English (Australia), `en-US` and `e
 
 Text files have no trailing newline or spaces: `supply` sends a file's bytes as they are, so a trailing newline counts against Play's limits (`deliver` strips them). `tests/test_layout.py` checks it.
 
-The screenshots, the Play icon and the feature graphic stay in `design/appstore/exports/` (SHIP-930) and are not copied into `store/`. The screenshot captions and the notes on the stores' limits are in `design/appstore/listing.md`.
+The screenshots, the Play icon and the feature graphic are in `assets/exports/` (SHIP-930). The screenshot captions and the notes on the stores' limits are in `assets/listing.md`. The app's own icon and splash files in `src/ShipLean.Mobile/assets/` are copies the Expo build reads from inside the app; re-copy them there when the icons change.
 
 ### Staging
 
@@ -38,8 +39,8 @@ It exits 1, naming the path, when `ios/metadata/en-US/` or `android/metadata/en-
 
 ## Changing the listing
 
-1. Edit the text here, or re-export the images in `design/appstore/` (its README), in a pull request.
-2. The **Store listing** check runs on every pull request that touches `store/` or `design/appstore/exports/`: it checks the stores' limits and the images, and runs a dry run against both stores. It isn't a required check (it's path-filtered), so read it before merging.
+1. Edit the text here, or re-export the images in `assets/` (its README), in a pull request.
+2. The **Store listing** check runs on every pull request that touches `store/`: it checks the stores' limits and the images, and runs a dry run against both stores. It isn't a required check (it's path-filtered), so read it before merging.
 3. Merging changes nothing in the stores. The next release pushes it.
 
 ### What the dry run proves

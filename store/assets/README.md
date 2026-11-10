@@ -1,6 +1,6 @@
 # App Store and Google Play assets (SHIP-930)
 
-Icons, splash images, the Play feature graphic, store screenshots and listing text for the phone app (epic SHIP-905). Everything is drawn from `../logo` (the boat glyph, copied unchanged) and the mock-ups in `../mobileapp`.
+Icons, splash images, the Play feature graphic, store screenshots and listing text for the phone app (epic SHIP-905). Everything is drawn from `design/logo` (the boat glyph, copied unchanged) and the mock-ups in `design/mobileapp`; `assets.js` loads them from there.
 
 | File | What it is |
 |---|---|
