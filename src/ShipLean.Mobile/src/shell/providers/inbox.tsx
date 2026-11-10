@@ -1,6 +1,12 @@
+import { InboxActionsProvider } from '../../inbox/InboxActions';
+import { InboxSheetsProvider } from '../../inbox/InboxSheets';
 import type { ProjectSlotProps } from './types';
 
-// TODO: the Inbox provider (its actions and persisted query) replaces this pass-through.
+// The Inbox slot: its actions (the executor on the runner) and the two sheets every screen opens.
 export function InboxProvider({ children }: ProjectSlotProps) {
-  return children;
+  return (
+    <InboxActionsProvider>
+      <InboxSheetsProvider>{children}</InboxSheetsProvider>
+    </InboxActionsProvider>
+  );
 }
