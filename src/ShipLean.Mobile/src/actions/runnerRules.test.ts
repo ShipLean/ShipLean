@@ -370,9 +370,12 @@ describe('createActionRunner', () => {
       offline: true,
       scope: scopeOf({ origin: 'https://shiplean.test', email: 'amy@example.com' }) as string,
     });
+    // pending() lists an area's actions once it registers, so each restarted runner registers before it is read.
+    amy.runner.register(workItemExecutor());
     expect(amy.runner.pending()).toEqual([]);
 
     const tomAgain = world({ store, offline: true });
+    tomAgain.runner.register(workItemExecutor());
     expect(tomAgain.runner.pending().map((p) => [p.action, p.state])).toEqual([
       [act('setState', '1'), 'queued'],
     ]);
@@ -391,6 +394,7 @@ describe('createActionRunner', () => {
 
     const restartAt = T0 + 60_000;
     const after = world({ store, offline: true, at: restartAt });
+    after.runner.register(workItemExecutor());
 
     expect(after.runner.pending().map((p) => [p.state, p.undoUntil])).toEqual([
       ['undo', new Date(restartAt + UNDO.tap.ms).toISOString()],

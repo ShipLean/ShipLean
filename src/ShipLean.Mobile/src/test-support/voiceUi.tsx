@@ -1,13 +1,20 @@
 // Voice for screen specs: a fake voice state any screen can render with, or the real provider over fake engines.
-import { useSyncExternalStore, type ReactElement, type ReactNode } from 'react';
+import { useState, useSyncExternalStore, type ReactElement, type ReactNode } from 'react';
 import type { ActionRunner } from '../actions/types';
 import type { Scheme } from '../theme/themes';
 import { configureEngines, notReadyEngines } from '../voice/engines';
-import type { RetryChange, VoiceApi, VoiceUiState } from '../voice/internals';
+import {
+  VoiceInternalsContext,
+  type RetryChange,
+  type VoiceApi,
+  type VoiceInternals,
+  type VoiceUiState,
+} from '../voice/internals';
 import { clearComposerRequest } from '../voice/typed/composerRequest';
 import { VoiceContext, VoiceProvider } from '../voice/VoiceProvider';
 import type { FakeRunner } from './actions';
 import { renderWithRunner } from './renderWithRunner';
+import { fakeInternals } from './voiceInternals';
 import { FakeCommandModel, FakeMicPermission, FakeModelStore, FakeRecognizer } from './voice';
 
 export interface FakeVoice {
@@ -62,10 +69,26 @@ export function fakeVoice(
   };
 }
 
-// useVoice() under it returns the fake's api, and follows set().
-export function FakeVoiceProvider({ voice, children }: { voice: FakeVoice; children: ReactNode }) {
+// useVoice() under it returns the fake's api, and follows set(); useVoiceInternals() returns the internals (a
+// fakeInternals() unless given), as it does under the real provider.
+export function FakeVoiceProvider({
+  voice,
+  internals,
+  children,
+}: {
+  voice: FakeVoice;
+  internals?: VoiceInternals;
+  children: ReactNode;
+}) {
   const api = useSyncExternalStore(voice.subscribe, () => voice.api);
-  return <VoiceContext.Provider value={api}>{children}</VoiceContext.Provider>;
+  const [fallback] = useState(() => fakeInternals());
+  return (
+    <VoiceContext.Provider value={api}>
+      <VoiceInternalsContext.Provider value={internals ?? fallback}>
+        {children}
+      </VoiceInternalsContext.Provider>
+    </VoiceContext.Provider>
+  );
 }
 
 export interface FakeEngines {
@@ -101,6 +124,8 @@ export interface RenderWithVoiceOptions<R extends ActionRunner> {
   voice?: FakeVoice;
   // The real VoiceProvider over fake engines, with these overrides.
   engines?: Partial<FakeEngines>;
+  // The internals the fake voice path provides (fakeInternals() unless given), e.g. to register a screen spec.
+  internals?: VoiceInternals;
   runner?: R;
   scheme?: Scheme;
 }
@@ -108,7 +133,7 @@ export interface RenderWithVoiceOptions<R extends ActionRunner> {
 // renderWithRunner with voice: the real provider when engines are given, else a FakeVoiceProvider.
 export async function renderWithVoice<R extends ActionRunner = FakeRunner>(
   ui: ReactElement,
-  { voice, engines, runner, scheme }: RenderWithVoiceOptions<R> = {},
+  { voice, engines, internals, runner, scheme }: RenderWithVoiceOptions<R> = {},
 ) {
   if (engines !== undefined) {
     const fakes = installFakeEngines(engines);
@@ -120,7 +145,9 @@ export async function renderWithVoice<R extends ActionRunner = FakeRunner>(
   }
   const fake = voice ?? fakeVoice();
   const result = await renderWithRunner<R>(
-    <FakeVoiceProvider voice={fake}>{ui}</FakeVoiceProvider>,
+    <FakeVoiceProvider voice={fake} internals={internals}>
+      {ui}
+    </FakeVoiceProvider>,
     {
       runner,
       scheme,

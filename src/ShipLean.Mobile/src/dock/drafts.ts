@@ -10,6 +10,28 @@ export interface Draft {
 }
 
 const PREFIX = 'shiplean.dockDraft';
+// The item ids that hold a draft in a scope. The store cannot list its keys, so sign-out clears through this.
+const INDEX_PREFIX = 'shiplean.dockDraftIndex';
+
+function indexKey(scope: string): string {
+  return `${INDEX_PREFIX}\n${scope}`;
+}
+
+function readIndex(store: KeyValueStore, scope: string): string[] {
+  const raw = store.getItem(indexKey(scope));
+  if (raw === null) return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeIndex(store: KeyValueStore, scope: string, ids: string[]): void {
+  if (ids.length === 0) store.removeItem(indexKey(scope));
+  else store.setItem(indexKey(scope), JSON.stringify(ids));
+}
 
 export function draftKey(scope: string, itemId: string): string {
   return `${PREFIX}\n${scope}\n${itemId}`;
@@ -40,8 +62,24 @@ export function saveDraft(store: KeyValueStore, scope: string, itemId: string, d
     return;
   }
   store.setItem(draftKey(scope, itemId), JSON.stringify(draft));
+  const ids = readIndex(store, scope);
+  if (!ids.includes(itemId)) writeIndex(store, scope, [...ids, itemId]);
 }
 
 export function clearDraft(store: KeyValueStore, scope: string, itemId: string): void {
   store.removeItem(draftKey(scope, itemId));
+  const ids = readIndex(store, scope);
+  if (ids.includes(itemId)) {
+    writeIndex(
+      store,
+      scope,
+      ids.filter((id) => id !== itemId),
+    );
+  }
+}
+
+// An explicit sign-out: every draft of that scope goes. A lost session keeps them (nothing is lost).
+export function clearAllDrafts(store: KeyValueStore, scope: string): void {
+  for (const id of readIndex(store, scope)) store.removeItem(draftKey(scope, id));
+  store.removeItem(indexKey(scope));
 }

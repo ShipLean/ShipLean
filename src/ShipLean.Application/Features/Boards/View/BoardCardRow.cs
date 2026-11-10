@@ -38,7 +38,8 @@ public sealed record BoardCardRow(
     string? ChangedByName,
     DateTimeOffset StateChangedAt,
     string? OriginalSystem,
-    string? OriginalSystemId)
+    string? OriginalSystemId,
+    string? Health)
 {
     public IReadOnlyList<string> TagNames => [.. (string[])Tags];
 }

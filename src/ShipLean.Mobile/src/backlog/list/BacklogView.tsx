@@ -256,11 +256,13 @@ export function BacklogView(props: BacklogViewProps) {
           }}
         />
       )}
-      {moving === null ? null : (
+      {moving === null || projectId === undefined ? null : (
         <MoveSheet
+          projectId={projectId}
           row={moving}
           rows={rows ?? []}
           level={level}
+          filtering={filtering}
           open
           onClose={() => setMoving(null)}
         />

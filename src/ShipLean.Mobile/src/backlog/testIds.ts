@@ -33,6 +33,28 @@ export const backlogIds = {
 
 // B2
 export const moveSheetId = 'sheet-move';
+// The row being moved: "SHIP-906 · rank 4 of 7 Features".
+export const moveItemId = 'move-item';
+export type MoveChoice = 'top' | 'bottom' | 'up' | 'down' | 'other';
+export const moveOptionId = (choice: MoveChoice) => `move-option-${choice}`;
+// The rank a choice lands on ("to 3"), or why it is off ("Already at the top").
+export const moveOptionToId = (choice: MoveChoice) => `move-option-${choice}-to`;
+export const moveFilteredId = 'move-filtered';
+// Segmented's options are optionId('move-side', 'above' | 'below').
+export const moveSideId = 'move-side';
+export const movePickId = (key: string) => `move-pick-${key}`;
+export const movePreviewId = 'move-preview';
+export const movePreviewRowId = (key: string) => `move-preview-row-${key}`;
+// "4 → 2" on a preview row.
+export const movePreviewPosId = (key: string) => `move-preview-pos-${key}`;
+export const moveWarningId = 'move-warning';
+export const moveApplyId = 'move-apply';
+export const moveBackId = 'move-back';
 
 // B3
 export const addRowId = 'backlog-add-row';
+export const addRowLabelId = 'backlog-add-label';
+export const addRowInputId = 'backlog-add-input';
+// Segmented's options are optionId('backlog-add-type', 'story' | 'bug'); only at the Stories level.
+export const addRowTypeId = 'backlog-add-type';
+export const addRowErrorId = 'backlog-add-error';

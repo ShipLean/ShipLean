@@ -32,6 +32,6 @@ public sealed class BacklogRows(IReadOnlyList<TagColourJson> tagColours)
     private BacklogRowDto Build(StackRowDto row, BacklogRowKind kind, int depth, int? rank, IReadOnlyList<RollupCountDto> rollups, decimal? childPoints, bool sumWarn) =>
         new(kind, row.Id, row.Key, row.Type, row.Title, row.State, row.Assignee, row.Points, childPoints, sumWarn, row.Sprint, row.Parent, depth, rank,
             [.. row.Tags.Select(tag => new CardTagDto(tag, _colours.TryGetValue(tag, out var colour) ? colour : null))], rollups, row.Revision,
-            // TODO: read health from work_item.health, count open asks for NeedsYou and read open blocked-by keys.
+            // Health, NeedsYou and BlockedBy are filled per view by BacklogRowExtras.
             null, null, []);
 }

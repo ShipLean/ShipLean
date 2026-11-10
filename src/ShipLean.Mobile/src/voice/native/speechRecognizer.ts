@@ -92,38 +92,69 @@ export class NativeSpeechRecognizer implements SpeechRecognizer {
   private follow(): void {
     const phase = this.deps?.models.status().phase;
     if (phase === 'ready') {
-      this.load().catch(() => {
-        // Not ready: start() tries again and rejects with the reason.
-        this.loading = null;
-      });
-    } else if (phase === 'none' && this.engine !== null) {
+      // A failed load resets itself, so the next start() tries again.
+      this.load().catch(() => undefined);
+    } else if (phase === 'none') {
       const engine = this.engine;
+      const loading = this.loading;
       this.engine = null;
       this.loading = null;
-      void engine.destroy();
+      if (engine !== null) void engine.destroy();
+      // A load still in flight is freed the moment it finishes.
+      else if (loading !== null)
+        void loading.then(
+          (loaded) => loaded.destroy(),
+          () => undefined,
+        );
+      this.removeVocab();
     }
+  }
+
+  // The folder the Parakeet files are in: the one files.path('parakeet-tokens') points into.
+  private modelDir(files: ModelFiles): string {
+    const tokens = new File(fileUri(files.path(PARAKEET_TOKENS)));
+    return tokens.uri.slice(0, tokens.uri.lastIndexOf('/'));
+  }
+
+  // The bpe vocab is derived text; it goes with the models.
+  private removeVocab(): void {
+    if (this.deps === undefined) return;
+    const vocab = new File(this.modelDir(this.deps.files), BPE_VOCAB);
+    if (vocab.exists) vocab.delete();
   }
 
   private load(): Promise<SttEngine> {
     if (this.deps === undefined)
       return Promise.reject(new Error('Speech recognition is not set up'));
-    const { files } = this.deps;
-    this.loading ??= (async () => {
-      const tokens = new File(fileUri(files.path(PARAKEET_TOKENS)));
-      const modelDir = tokens.uri.slice(0, tokens.uri.lastIndexOf('/'));
-      const vocab = new File(modelDir, BPE_VOCAB);
-      vocab.write(bpeVocabFromTokens(await tokens.text()));
-      const engine = await createSTT({
-        modelPath: { type: 'file', path: nativePath(modelDir) },
-        modelType: 'nemo_transducer',
-        preferInt8: true,
-        modelingUnit: 'bpe',
-        bpeVocab: nativePath(vocab.uri),
-      });
-      this.engine = engine;
-      return engine;
-    })();
+    if (this.loading === null) {
+      const loading: Promise<SttEngine> = this.createEngine(this.deps.files).then(
+        (engine) => {
+          // Only a load that is still wanted becomes the engine; deleteAll may have dropped it meanwhile.
+          if (this.loading === loading) this.engine = engine;
+          return engine;
+        },
+        (error: unknown) => {
+          if (this.loading === loading) this.loading = null;
+          throw error;
+        },
+      );
+      this.loading = loading;
+    }
     return this.loading;
+  }
+
+  private async createEngine(files: ModelFiles): Promise<SttEngine> {
+    const tokens = new File(fileUri(files.path(PARAKEET_TOKENS)));
+    const modelDir = this.modelDir(files);
+    const vocab = new File(modelDir, BPE_VOCAB);
+    vocab.write(bpeVocabFromTokens(await tokens.text()));
+    return createSTT({
+      modelPath: { type: 'file', path: nativePath(modelDir) },
+      modelType: 'nemo_transducer',
+      preferInt8: true,
+      modelingUnit: 'bpe',
+      bpeVocab: nativePath(vocab.uri),
+    });
   }
 
   // The screen's words as hotwords for this hold. Only their text is written, under the cache directory.
@@ -135,11 +166,20 @@ export class NativeSpeechRecognizer implements SpeechRecognizer {
       file.write(text);
       hotwordsFile = nativePath(file.uri);
     }
-    await engine.setConfig({
-      decodingMethod: 'modified_beam_search',
-      maxActivePaths: 4,
-      hotwordsFile,
-    });
+    try {
+      await engine.setConfig({
+        decodingMethod: 'modified_beam_search',
+        maxActivePaths: 4,
+        hotwordsFile,
+      });
+    } catch {
+      // sherpa rejects a hotwords file it can't use. Never fail recognition over it: carry on without hotwords.
+      await engine.setConfig({
+        decodingMethod: 'modified_beam_search',
+        maxActivePaths: 4,
+        hotwordsFile: '',
+      });
+    }
   }
 }
 
@@ -176,7 +216,13 @@ async function startSession(engine: SttEngine): Promise<RecognitionSession> {
     listener.remove();
     stream.stop();
   };
-  await stream.start();
+  try {
+    await stream.start();
+  } catch (error) {
+    endStream();
+    await partials.stop().catch(() => undefined);
+    throw error;
+  }
 
   return {
     onPartial(cb) {

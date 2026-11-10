@@ -1,7 +1,7 @@
 import { memoryStore } from '@shiplean/core/platform';
 import { describe, expect, it } from 'vitest';
 import { scopeOf } from '../actions/scope';
-import { clearDraft, draftKey, loadDraft, saveDraft } from './drafts';
+import { clearAllDrafts, clearDraft, draftKey, loadDraft, saveDraft } from './drafts';
 
 const joel = scopeOf({ origin: 'https://shiplean.test', email: 'joel@example.com' })!;
 
@@ -40,5 +40,20 @@ describe('drafts', () => {
     expect(loadDraft(store, otherEmail, 'item-1')).toBeNull();
     expect(loadDraft(store, otherServer, 'item-1')).toBeNull();
     expect(loadDraft(store, joel, 'item-1')).toEqual({ text: 'only mine', mode: 'note' });
+  });
+
+  it('clears every draft of a scope on sign-out and leaves other scopes alone', () => {
+    const store = memoryStore();
+    const tom = scopeOf({ origin: 'https://shiplean.test', email: 'tom@example.com' })!;
+    saveDraft(store, joel, 'item-1', { text: 'one', mode: 'note' });
+    saveDraft(store, joel, 'item-2', { text: 'two', mode: 'command' });
+    saveDraft(store, tom, 'item-1', { text: 'tom', mode: 'note' });
+    clearDraft(store, joel, 'item-2');
+
+    clearAllDrafts(store, joel);
+
+    expect(loadDraft(store, joel, 'item-1')).toBeNull();
+    expect(store.getItem(draftKey(joel, 'item-1'))).toBeNull();
+    expect(loadDraft(store, tom, 'item-1')).toEqual({ text: 'tom', mode: 'note' });
   });
 });

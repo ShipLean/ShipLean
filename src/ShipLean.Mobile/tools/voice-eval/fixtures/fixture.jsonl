@@ -1,0 +1,7 @@
+{"screen":"fixture","utterance":"comment on SHIP-12 the build is green again","calls":[{"action":"comment","args":{"key":"SHIP-12"},"noteSpan":{"start":19,"end":43}}],"note":"the build is green again"}
+{"screen":"fixture","utterance":"note on ship 40: waiting for the design review","calls":[{"action":"comment","args":{"key":"SHIP-40"},"noteSpan":{"start":17,"end":46}}],"note":"waiting for the design review"}
+{"screen":"fixture","utterance":"say on SHIP-40 merged after the retro","calls":[{"action":"comment","args":{"key":"SHIP-40"},"noteSpan":{"start":15,"end":37}}],"note":"merged after the retro"}
+{"screen":"fixture","utterance":"comment on SHIP-12 needs a second reviewer","calls":[{"action":"comment","args":{"key":"SHIP-12"},"noteSpan":{"start":19,"end":42}}],"note":"needs a second reviewer"}
+{"screen":"fixture","utterance":"note on SHIP-12 blocked on the API change","calls":[{"action":"comment","args":{"key":"SHIP-12"},"noteSpan":{"start":16,"end":41}}],"note":"blocked on the API change"}
+{"screen":"fixture","utterance":"move SHIP-40 to done","calls":[{"action":"setState","args":{"key":"SHIP-40","state":"Done"}}],"note":null}
+{"screen":"fixture","utterance":"what's the weather like","calls":[],"note":null}

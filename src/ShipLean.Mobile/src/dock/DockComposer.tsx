@@ -4,7 +4,16 @@
 import { getMembers, projectMetaKeys } from '@shiplean/core/api/projectMeta';
 import { platform } from '@shiplean/core/platform';
 import { skipToken, useQuery } from '@tanstack/react-query';
-import { useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { NavigationContext } from 'expo-router/react-navigation';
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from 'react';
 import { Keyboard, Pressable, Text, TextInput, View } from 'react-native';
 import { useActionRunner } from '../actions/ActionRunnerProvider';
 import { scopeOf } from '../actions/scope';
@@ -14,7 +23,7 @@ import { useTheme } from '../theme';
 import { Chip } from '../ui/Chip';
 import { layout } from '../ui/layout';
 import { primitiveIds } from '../ui/testIds';
-import { VoiceInternalsContext } from '../voice/internals';
+import { useVoiceInternals } from '../voice/internals';
 import { CommandComposer } from '../voice/typed/CommandComposer';
 import {
   useComposerRequest,
@@ -39,6 +48,25 @@ export interface DockComposerProps {
   mic: ReactNode;
 }
 
+// Whether this screen is the focused one. A stack keeps earlier screens mounted, so only the focused screen's dock
+// may take a composer request. Outside a navigator there is no focus to lose, so it counts as focused.
+function useScreenFocused(): boolean {
+  const nav = useContext(NavigationContext);
+  const subscribe = useCallback(
+    (onChange: () => void) => {
+      if (nav === undefined) return () => undefined;
+      const offFocus = nav.addListener('focus', onChange);
+      const offBlur = nav.addListener('blur', onChange);
+      return () => {
+        offFocus();
+        offBlur();
+      };
+    },
+    [nav],
+  );
+  return useSyncExternalStore(subscribe, () => nav?.isFocused() ?? true);
+}
+
 const MODE_LABEL: Record<ComposerMode, string> = { note: 'Note', command: 'Command' };
 
 export function DockComposer({
@@ -53,8 +81,9 @@ export function DockComposer({
   const { colors } = theme;
   const runner = useActionRunner();
   const voice = useVoice();
-  // The focused screen's registered spec gives the nudge its words. Outside a VoiceProvider no spec is registered.
-  const internals = useContext(VoiceInternalsContext);
+  // The focused screen's registered spec gives the nudge its words.
+  const internals = useVoiceInternals();
+  const focused = useScreenFocused();
   const { request, consume } = useComposerRequest();
   const { origin, email } = useSession();
   const scope = scopeOf({ origin, email });
@@ -73,9 +102,11 @@ export function DockComposer({
   const view = modeView(chosen, voice.state);
 
   // Type instead and Edit open the composer on Command with their text; nothing else switches the mode. The state is
-  // taken while rendering (once per request), and the request is consumed after.
+  // taken while rendering (once per request), and the request is consumed after. Only the focused screen's dock
+  // takes it: an earlier screen in the stack is still mounted and must not open or keep a draft.
+  // TODO: 'note' and 'reply' requests are taken by SHIP-1253 (dock reply mode).
   const [taken, setTaken] = useState<ComposerRequest | null>(null);
-  if (request !== null && request.mode === 'command' && request !== taken) {
+  if (focused && request !== null && request.mode === 'command' && request !== taken) {
     setTaken(request);
     setChosen('command');
     setText(request.text);
@@ -84,14 +115,14 @@ export function DockComposer({
     setOpen(true);
   }
   useEffect(() => {
-    if (taken !== null && request === taken) consume();
-  }, [taken, request, consume]);
+    if (focused && taken !== null && request === taken) consume();
+  }, [focused, taken, request, consume]);
 
   // The draft follows the text and its mode; blank text clears it.
   useEffect(() => {
     if (scope === null || itemId === undefined) return;
-    saveDraft(store, scope, itemId, { text, mode: view.mode });
-  }, [store, scope, itemId, text, view.mode]);
+    saveDraft(store, scope, itemId, { text, mode: chosen });
+  }, [store, scope, itemId, text, chosen]);
 
   // Closing the keyboard closes the composer and leaves the draft in the dock.
   useEffect(() => {
@@ -108,10 +139,15 @@ export function DockComposer({
   const mention = view.mode === 'note' ? mentionAt(text, caret) : null;
   const hits = mention === null ? [] : suggestMentions(people, mention.query);
 
-  const hotwords = internals?.spec()?.hotwords() ?? [];
+  const hotwords = internals.spec()?.hotwords() ?? [];
   const nudge = view.mode === 'note' ? nudgeFor(text, hotwords) : null;
 
-  const canPost = text.trim() !== '' && itemId !== undefined && itemKey !== undefined;
+  const canPost =
+    text.trim() !== '' &&
+    itemId !== undefined &&
+    itemKey !== undefined &&
+    projectId !== undefined &&
+    projectId !== '';
 
   const change = (next: string) => {
     setText(next);
@@ -131,6 +167,7 @@ export function DockComposer({
     if (!canPost) return;
     const note: WorkItemAction = {
       area: 'workItem',
+      projectId,
       itemId,
       key: itemKey,
       kind: 'addNote',
@@ -173,7 +210,7 @@ export function DockComposer({
               height: theme.touch.control,
               borderRadius: layout.dockFieldRadius,
               paddingLeft: theme.space[4],
-              paddingRight: draft === null ? theme.space[4] : theme.space[4] + 80,
+              paddingRight: draft === null ? theme.space[4] : theme.space[4] + layout.dockDraftRoom,
               backgroundColor: colors.surface2,
               color: colors.text,
               fontSize: theme.font.size.body15,
@@ -214,7 +251,7 @@ export function DockComposer({
           paddingHorizontal: theme.space[3],
           borderRadius: theme.radius.sm,
           backgroundColor: on ? colors.surface : 'transparent',
-          opacity: enabled ? 1 : 0.45,
+          opacity: enabled ? 1 : layout.disabledOpacity,
         }}
       >
         <Text
@@ -339,15 +376,14 @@ export function DockComposer({
             value={text}
             onChangeText={change}
             onSelectionChange={(e) => setCaret(e.nativeEvent.selection.end)}
-            onBlur={() => setOpen(false)}
             placeholder="Type a note. @ mentions someone"
             placeholderTextColor={colors.muted}
             accessibilityLabel="Note"
             style={{
               minHeight: theme.touch.control,
-              borderWidth: 1.5,
+              borderWidth: layout.noteFieldBorder,
               borderColor: colors.accent,
-              borderRadius: theme.radius.lg + 4,
+              borderRadius: theme.radius.lg + layout.noteFieldRadiusExtra,
               paddingHorizontal: theme.space[3],
               paddingVertical: theme.space[2],
               backgroundColor: colors.surface,

@@ -1,3 +1,5 @@
+import { asksKeys } from '@shiplean/core/api/asks';
+import { useQueryClient } from '@tanstack/react-query';
 import { createContext, useContext, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { useActionRunner, usePending } from '../actions/ActionRunnerProvider';
 import type { AppAction, Pending } from '../actions/types';
@@ -54,9 +56,11 @@ export function InboxActionsProvider({ children }: { children: ReactNode }) {
 }
 
 // When every part of a batch has been sent, the project's Inbox and Answered are refreshed once. A batch already sent
-// when first seen (kept from before a restart) refreshes nothing: the queries load fresh then.
+// when first seen (kept from before a restart) refreshes nothing: the queries load fresh then. Each sent part's work item
+// reads its asks again too, so a Work item's Needs you is not left stale by an answer from the Inbox.
 function useInvalidateOnSent(pending: InboxPending[]) {
   const invalidate = useInvalidateInbox();
+  const client = useQueryClient();
   const seen = useRef(new Map<string, boolean>());
   useEffect(() => {
     const batches = new Map<string, InboxPending[]>();
@@ -65,14 +69,19 @@ function useInvalidateOnSent(pending: InboxPending[]) {
       const sent = parts.every((p) => p.state === 'sent');
       const before = seen.current.get(batchId);
       seen.current.set(batchId, sent);
-      if (sent && before === false)
+      if (sent && before === false) {
         for (const projectId of new Set(parts.map((p) => p.action.projectId)))
           void invalidate(projectId);
+        for (const p of parts)
+          void client.invalidateQueries({
+            queryKey: asksKeys.item(p.action.projectId, p.action.key),
+          });
+      }
     }
     // Forget batches the runner no longer holds.
     for (const batchId of seen.current.keys())
       if (!batches.has(batchId)) seen.current.delete(batchId);
-  }, [pending, invalidate]);
+  }, [pending, invalidate, client]);
 }
 
 export function useInboxActions(): InboxActions {

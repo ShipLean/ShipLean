@@ -2,15 +2,30 @@
 export const inboxIds = {
   // A1a: the row (inboxRowId, inboxAskId, inboxMoreId, inboxBtnId below)
   // A1b: the screen
-  segmentWaiting: 'inbox-segment-waiting',
-  segmentAnswered: 'inbox-segment-answered',
+  // Segmented derives its options: optionId(inboxIds.segment, 'waiting' | 'answered').
+  segment: 'inbox-segment',
+  list: 'inbox-list',
+  empty: 'inbox-empty',
+  emptyNew: 'inbox-empty-new',
+  today: 'inbox-today',
+  kinds: 'inbox-kinds',
   // A2a: the runner's undo toast is UndoToastHost's (toast-undo), not the Inbox's.
   // A2b
   offlineBanner: 'inbox-offline-banner',
   // A3a
   answerSheet: 'sheet-answer',
+  answerWhere: 'sheet-answer-where',
+  answerQuote: 'sheet-answer-quote',
+  answerField: 'sheet-answer-field',
+  answerError: 'sheet-answer-error',
+  answerApply: 'sheet-answer-apply',
   // A3b
   reviewSheet: 'sheet-review',
+  reviewScroll: 'sheet-review-scroll',
+  reviewLead: 'sheet-review-lead',
+  reviewNote: 'sheet-review-note',
+  reviewCancel: 'sheet-review-cancel',
+  reviewConfirm: 'sheet-review-confirm',
   // A4 (answeredRowId below)
   answeredList: 'answered-list',
 } as const;
@@ -31,3 +46,19 @@ export const inboxOpenId = (key: string) => `inbox-open-${key}`;
 
 // A4
 export const answeredRowId = (key: string) => `answered-row-${key}`;
+export const answeredNextId = (key: string) => `answered-next-${key}`;
+// An answer still on the phone: its row, its status line and its Retry (id is the pending answer's id).
+export const answeredPendingId = (id: string) => `answered-pending-${id}`;
+export const answeredPendingStatusId = (id: string) => `answered-pending-status-${id}`;
+export const answeredRetryId = (id: string) => `answered-retry-${id}`;
+
+// A3a
+export const answerQuickId = (index: number) => `sheet-answer-quick-${index}`;
+
+// A3b: one decision's block, its Change button, its radios (choice is 'recommended', 'alt-<index>' or 'own'), the own
+// answer's field and the typed Add why field.
+export const reviewDecisionId = (n: number) => `sheet-review-d${n}`;
+export const reviewChangeId = (n: number) => `sheet-review-d${n}-change`;
+export const reviewChoiceId = (n: number, choice: string) => `sheet-review-d${n}-${choice}`;
+export const reviewOwnId = (n: number) => `sheet-review-d${n}-own-field`;
+export const reviewWhyId = (n: number) => `sheet-review-d${n}-why`;

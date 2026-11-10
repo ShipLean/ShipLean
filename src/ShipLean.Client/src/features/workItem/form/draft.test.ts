@@ -183,4 +183,30 @@ describe('draft', () => {
     const to = { ...from, statusLine: 'Theirs' };
     expect(rebase(from, mine, to)).toMatchObject({ goal: 'Mine', statusLine: 'Theirs' });
   });
+
+  it('sends health in changes when only health changed', () => {
+    const changes = changesOf(draftOf(feature), { ...draftOf(feature), health: 'blocked' });
+    expect(changes.health).toEqual({ value: 'blocked' });
+    expect(changes.statusLine).toBeNull();
+    const risky = draftOf({ ...feature, health: 'atRisk' });
+    expect(changesOf(risky, { ...risky, health: null }).health).toEqual({ value: null });
+  });
+
+  it('leaves health null in changes when unchanged', () => {
+    const base = draftOf({ ...feature, health: 'atRisk' });
+    const changes = changesOf(base, { ...base, goal: 'Two taps' });
+    expect(changes.health).toBeNull();
+    expect(changes.goal).toEqual({ value: 'Two taps' });
+  });
+
+  it('rebases health like the status line', () => {
+    const from = draftOf({ ...feature, health: 'onTrack' });
+    const mine = { ...from, health: 'blocked' as const };
+    expect(rebase(from, mine, { ...from, health: 'atRisk', statusLine: 'Theirs' })).toMatchObject({
+      health: 'blocked',
+      statusLine: 'Theirs',
+    });
+    const untouched = rebase(from, { ...from, goal: 'Mine' }, { ...from, health: 'atRisk' });
+    expect(untouched).toMatchObject({ health: 'atRisk', goal: 'Mine' });
+  });
 });

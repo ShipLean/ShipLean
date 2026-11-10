@@ -108,7 +108,8 @@ export interface PreparedScreen {
 export interface CommandModel {
   ready(): boolean;
   prepare(spec: ScreenVoiceSpec): Promise<PreparedScreen>;
-  parse(p: PreparedScreen, t: Transcript): Promise<ParsedCall[]>;
+  // spec is the screen's current spec: its context() and hotwords are read here, never frozen at prepare (amendment 25).
+  parse(p: PreparedScreen, t: Transcript, spec?: ScreenVoiceSpec): Promise<ParsedCall[]>;
 }
 
 export type ModelChoice = 'auto' | 'qwen3-1.7b' | 'qwen3-4b';

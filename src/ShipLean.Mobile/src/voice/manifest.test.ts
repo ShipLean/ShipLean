@@ -19,11 +19,24 @@ describe('manifest', () => {
     expect(chooseModel(3.7)).toEqual({ auto: null, fourB: 'blocked', reason: 'lowMemory' });
   });
 
-  it('lists one file per model with its licence', () => {
-    expect(MODEL_FILES.map((f) => [f.model, f.licence])).toEqual([
-      ['parakeet', 'CC-BY-4.0'],
-      ['qwen3-1.7b', 'Apache-2.0'],
-      ['qwen3-4b', 'Apache-2.0'],
+  it('lists every file with its model and licence', () => {
+    expect(MODEL_FILES.map((f) => [f.id, f.model, f.fileName, f.licence])).toEqual([
+      ['parakeet-encoder', 'parakeet', 'encoder.int8.onnx', 'CC-BY-4.0'],
+      ['parakeet-decoder', 'parakeet', 'decoder.int8.onnx', 'CC-BY-4.0'],
+      ['parakeet-joiner', 'parakeet', 'joiner.int8.onnx', 'CC-BY-4.0'],
+      ['parakeet-tokens', 'parakeet', 'tokens.txt', 'CC-BY-4.0'],
+      ['qwen3-1.7b-q4_k_m', 'qwen3-1.7b', 'Qwen3-1.7B-Q4_K_M.gguf', 'Apache-2.0'],
+      ['qwen3-4b-q4_k_m', 'qwen3-4b', 'Qwen3-4B-Q4_K_M.gguf', 'Apache-2.0'],
     ]);
+  });
+
+  it('pins every file to a Hugging Face revision with its size and SHA-256', () => {
+    for (const f of MODEL_FILES) {
+      expect(f.url).toMatch(/^https:\/\/huggingface\.co\/[^/]+\/[^/]+\/resolve\/[0-9a-f]{40}\//);
+      expect(f.url.endsWith(`/${f.fileName}`)).toBe(true);
+      expect(f.sha256).toMatch(/^[0-9a-f]{64}$/);
+      expect(f.bytes).toBeGreaterThan(0);
+      expect(f.link).toMatch(/^https:\/\/huggingface\.co\//);
+    }
   });
 });

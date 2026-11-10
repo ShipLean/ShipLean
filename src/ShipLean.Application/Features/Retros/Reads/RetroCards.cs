@@ -3,6 +3,7 @@ using Dapper;
 using Npgsql;
 using ShipLean.Application.Identity;
 using ShipLean.Application.Sprints;
+using ShipLean.Contracts;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Retros;
 using ShipLean.Core;
@@ -11,7 +12,7 @@ namespace ShipLean.Application.Features.Retros.Reads;
 
 // Retros as cards. A person's point (a point of a retro whose role is person) can be archived; an agent's never can.
 // Recurring is false here, because the views that know the sprint history set it.
-public sealed class RetroCards(NpgsqlDataSource dataSource, TimeProvider clock) : IRetroCards
+public sealed class RetroCards(NpgsqlDataSource dataSource, TimeProvider clock, ICurrentUser currentUser) : IRetroCards
 {
     public async Task<IReadOnlyList<RetroCardDto>> LoadAsync(IReadOnlyList<Guid> retroIds, CancellationToken cancellationToken)
     {
@@ -25,20 +26,25 @@ public sealed class RetroCards(NpgsqlDataSource dataSource, TimeProvider clock) 
         var today = SprintLabels.Today(clock);
         var retros = (await connection.QueryAsync<RetroRow>(new CommandDefinition(RetroSql, new { ids }, cancellationToken: cancellationToken))).ToDictionary(row => row.Id);
         var points = (await connection.QueryAsync<PointRow>(new CommandDefinition(PointSql, new { ids }, cancellationToken: cancellationToken))).ToLookup(row => row.RetroId);
+        var pointIds = points.SelectMany(group => group).Select(row => row.Id).ToArray();
+        var supporterRows = (await connection.QueryAsync<SupporterRow>(new CommandDefinition(SupporterSql, new { pointIds }, cancellationToken: cancellationToken))).ToList();
+        var supporters = supporterRows.ToLookup(row => row.PointId);
+        // Read the caller only when somebody supports a point: with no supporter nothing is "mine", and a reader with no request user can still load cards.
+        var callerId = supporterRows.Count == 0 ? Guid.Empty : currentUser.Id;
         var sources = (await connection.QueryAsync<SourceRow>(new CommandDefinition(SourceSql, new { ids }, cancellationToken: cancellationToken))).ToLookup(row => row.RetroId);
         var failures = (await connection.QueryAsync<FailureRow>(new CommandDefinition(FailureSql, new { ids }, cancellationToken: cancellationToken))).ToLookup(row => row.RetroId);
 
-        return [.. retroIds.Where(retros.ContainsKey).Select(id => ToCard(retros[id], points[id], sources[id], failures[id], today, clock))];
+        return [.. retroIds.Where(retros.ContainsKey).Select(id => ToCard(retros[id], points[id], supporters, sources[id], failures[id], today, clock, callerId))];
     }
 
-    private static RetroCardDto ToCard(RetroRow retro, IEnumerable<PointRow> points, IEnumerable<SourceRow> sources, IEnumerable<FailureRow> failures, DateOnly today, TimeProvider clock)
+    private static RetroCardDto ToCard(RetroRow retro, IEnumerable<PointRow> points, ILookup<Guid, SupporterRow> supporters, IEnumerable<SourceRow> sources, IEnumerable<FailureRow> failures, DateOnly today, TimeProvider clock, Guid callerId)
     {
         var role = ParseEnum<RetroRole>(retro.Role);
         var workItem = retro.ItemId is { } itemId ? new RetroItemRefDto(itemId, retro.ItemKey!, ToTypeRef(retro.ItemType!), retro.ItemTitle!) : null;
         var sprint = ToSprint(retro.SprintId, retro.SprintName, retro.SprintStart, retro.SprintEnd, today);
         var author = new RetroAuthorDto(new UserRef(retro.UserId, retro.UserName, retro.UserInitials, retro.UserColour, retro.UserPhotoUrl), retro.AgentName, role);
         var isFeature = retro.ItemType == "feature";
-        var dtos = points.Select(point => ToPoint(point, role, workItem, sprint, isFeature, today, clock)).ToList();
+        var dtos = points.Select(point => ToPoint(point, supporters[point.Id], role, workItem, sprint, isFeature, today, clock, callerId)).ToList();
         var log = failures.ToList();
         var createdAt = new DateTimeOffset(DateTime.SpecifyKind(retro.CreatedAt, DateTimeKind.Utc));
         return new RetroCardDto(
@@ -57,7 +63,7 @@ public sealed class RetroCards(NpgsqlDataSource dataSource, TimeProvider clock) 
                 [.. log.Where(row => row.Kind == "friction").Select(row => row.Text)]));
     }
 
-    private static RetroPointDto ToPoint(PointRow point, RetroRole role, RetroItemRefDto? workItem, SprintRef? sprint, bool isFeature, DateOnly today, TimeProvider clock)
+    private static RetroPointDto ToPoint(PointRow point, IEnumerable<SupporterRow> supporters, RetroRole role, RetroItemRefDto? workItem, SprintRef? sprint, bool isFeature, DateOnly today, TimeProvider clock, Guid callerId)
     {
         var theme = point.ThemeId is { } themeId ? new RetroThemeRefDto(themeId, point.ThemeName!, ParseEnum<RetroTone>(point.ThemeTone!)) : null;
         RetroActionRefDto? action = null;
@@ -96,9 +102,8 @@ public sealed class RetroCards(NpgsqlDataSource dataSource, TimeProvider clock) 
             role == RetroRole.Person,
             decision,
             notNeeded,
-            // TODO: read supporters from retro_point_support.
-            [],
-            false);
+            [.. supporters.Select(row => new UserRef(row.UserId, row.UserName, row.UserInitials, row.UserColour, row.UserPhotoUrl))],
+            supporters.Any(row => row.UserId == callerId));
     }
 
     private static RetroDecision? Decide(string category, RetroActionRefDto? action, string? notNeededReason)
@@ -175,6 +180,15 @@ public sealed class RetroCards(NpgsqlDataSource dataSource, TimeProvider clock) 
         ORDER BY p.position, p.created_at, p.id
         """;
 
+    // Live +1s of every loaded point in one read, oldest first; a withdrawn row is not a supporter.
+    private static readonly string SupporterSql = $"""
+        SELECT s.point_id AS pointId, {UserColumns}
+        FROM retro_point_support s
+        JOIN app_user u ON u.id = s.user_id
+        WHERE s.point_id = ANY(@pointIds) AND s.withdrawn_at IS NULL
+        ORDER BY s.created_at, s.id
+        """;
+
     private const string SourceSql = """
         SELECT s.retrospective_id AS retroId, w.id AS itemId, w.key AS itemKey, w.type AS itemType, w.title AS itemTitle
         FROM retrospective_source s
@@ -201,6 +215,8 @@ public sealed class RetroCards(NpgsqlDataSource dataSource, TimeProvider clock) 
         string? ActionFixType, int? ActionPointCount,
         string? NotNeededReason, string? DecidedAgentName, DateTime? DecidedAt,
         Guid? DeciderId, string? DeciderName, string? DeciderInitials, string? DeciderColour, string? DeciderPhotoUrl);
+
+    private sealed record SupporterRow(Guid PointId, Guid UserId, string UserName, string UserInitials, string UserColour, string? UserPhotoUrl);
 
     private sealed record SourceRow(Guid RetroId, Guid ItemId, string ItemKey, string ItemType, string ItemTitle);
 

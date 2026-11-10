@@ -1,4 +1,5 @@
 // The jest-expo specs' setup (jest.config.js setupFilesAfterEnv): native modules the app binds, faked in memory.
+import { queryClient } from '../queryClient';
 import { restoreFetch } from './fakeApi';
 
 jest.mock('expo-secure-store', () => {
@@ -67,6 +68,11 @@ afterEach(() => {
   restoreFetch();
   jest.clearAllMocks();
 });
+
+// renderApp's screens read through the app's one query cache (renderScreen's own clients never collect). Each query
+// whose screen unmounts schedules its garbage collection on a real timer (5 minutes; 7 days for the Inbox), so the
+// last spec of a file left jest unable to exit (SHIP-1328). Dropping the cache once the file is done clears them.
+afterAll(() => queryClient.clear());
 
 // Native voice modules (T0v): llama.rn, react-native-sherpa-onnx, expo-audio, expo-file-system and expo-device. Their
 // settable state is in nativeMocks.ts; the local model-files module's mock is in mocks/modelFiles.ts.
@@ -213,11 +219,14 @@ jest.mock('expo-file-system', () => {
     parts
       .map((p) => (typeof p === 'string' ? p : (p as { uri: string }).uri))
       .join('/')
-      .replace(/([^:])\/+/g, '$1/');
+      .replace(/([^:/])\/+/g, '$1/');
   class File {
     readonly uri: string;
     constructor(...parts: unknown[]) {
       this.uri = join(parts);
+    }
+    get name() {
+      return this.uri.slice(this.uri.lastIndexOf('/') + 1);
     }
     get exists() {
       return native.files.has(this.uri);
@@ -244,6 +253,14 @@ jest.mock('expo-file-system', () => {
       return true;
     }
     create() {}
+    // The files directly under this directory.
+    list() {
+      return [...native.files.keys()]
+        .filter(
+          (uri) => uri.startsWith(`${this.uri}/`) && !uri.slice(this.uri.length + 1).includes('/'),
+        )
+        .map((uri) => new File(uri));
+    }
   }
   return {
     __esModule: true,

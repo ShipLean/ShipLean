@@ -1,6 +1,9 @@
-import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 import { platform } from '@shiplean/core/platform';
+import { NavigationContext } from 'expo-router/react-navigation';
 import type { ReactElement } from 'react';
+import { Keyboard, View } from 'react-native';
+import { scopeOf } from '../actions/scope';
 import { UNDO } from '../actions/undo';
 import { session } from '../session/session';
 import { TEST_ORIGIN, TEST_SECRET, aMe, aMember, aProject } from '../test-support/builders';
@@ -14,10 +17,10 @@ import { themes } from '../theme';
 import { Dock } from '../ui/Dock';
 import { primitiveIds } from '../ui/testIds';
 import type { ScreenVoiceSpec } from '../voice/contracts';
-import { VoiceInternalsContext } from '../voice/internals';
 import type { CommandComposerProps } from '../voice/typed/CommandComposer';
 import { commandComposerId } from '../voice/typed/CommandComposer.testIds';
 import type { ComposerRequest } from '../voice/typed/composerRequest';
+import { loadDraft, saveDraft } from './drafts';
 import { dockIds, mentionOptionId } from './testIds';
 
 // The Command side is R2b's: record what the dock hands it.
@@ -87,11 +90,9 @@ interface Options {
 async function renderDock({ scheme, voice = fakeVoice(), hotwords = [], onSubmitted }: Options) {
   const internals = fakeInternals({ spec: () => aSpec(hotwords) });
   const ui: ReactElement = (
-    <VoiceInternalsContext.Provider value={internals}>
-      <Dock {...ITEM} projectId={projectId} placeholder="Type a note" onSubmitted={onSubmitted} />
-    </VoiceInternalsContext.Provider>
+    <Dock {...ITEM} projectId={projectId} placeholder="Type a note" onSubmitted={onSubmitted} />
   );
-  const result = await renderWithVoice(ui, { scheme, voice });
+  const result = await renderWithVoice(ui, { scheme, voice, internals });
   // The members read starts with the dock: let it land before the test goes on.
   await waitFor(() => expect(result.queryClient.isFetching()).toBe(0));
   return result;
@@ -101,7 +102,16 @@ const open = () => fireEvent.press(screen.getByTestId(dockIds.open));
 const type = (text: string) => fireEvent.changeText(screen.getByTestId(dockIds.noteField), text);
 const disabled = (id: string) => screen.getByTestId(id).props.accessibilityState?.disabled === true;
 
+// The keyboard: the composer closes when it hides. The listeners the dock registers are kept to be called.
+const keyboardHideListeners = new Set<() => void>();
+const hideKeyboard = () => act(() => [...keyboardHideListeners].forEach((cb) => cb()));
+
 beforeEach(() => {
+  keyboardHideListeners.clear();
+  jest.spyOn(Keyboard, 'addListener').mockImplementation(((event: string, cb: () => void) => {
+    if (event === 'keyboardDidHide') keyboardHideListeners.add(cb);
+    return { remove: () => keyboardHideListeners.delete(cb) };
+  }) as never);
   kvValues.clear();
   mockRequest = null;
   mockCommandProps.length = 0;
@@ -116,6 +126,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  jest.restoreAllMocks();
   setConnected(true);
 });
 
@@ -139,7 +150,14 @@ describe.each(['light', 'dark'] as const)('Dock composer (%s)', (scheme) => {
 
     expect(runner.dispatched).toHaveLength(1);
     expect(runner.dispatched[0]!.batch).toEqual([
-      { area: 'workItem', itemId: ITEM.itemId, key: ITEM.itemKey, kind: 'addNote', body: words },
+      {
+        area: 'workItem',
+        projectId,
+        itemId: ITEM.itemId,
+        key: ITEM.itemKey,
+        kind: 'addNote',
+        body: words,
+      },
     ]);
     expect(runner.dispatched[0]!.opts).toEqual({
       undo: UNDO.typed,
@@ -168,6 +186,7 @@ describe.each(['light', 'dark'] as const)('Dock composer (%s)', (scheme) => {
       [
         {
           area: 'workItem',
+          projectId,
           itemId: ITEM.itemId,
           key: ITEM.itemKey,
           kind: 'addNote',
@@ -182,7 +201,7 @@ describe.each(['light', 'dark'] as const)('Dock composer (%s)', (scheme) => {
     const first = await renderDock({ scheme });
     await open();
     await type('Sam says the checksum fix lands tomorrow');
-    await fireEvent(screen.getByTestId(dockIds.noteField), 'blur');
+    await hideKeyboard();
 
     // Closed, the dock shows the draft with its mode.
     expect(screen.queryByTestId(dockIds.composer)).toBeNull();
@@ -330,5 +349,105 @@ describe.each(['light', 'dark'] as const)('Dock composer (%s)', (scheme) => {
     expect(screen.getByTestId(commandComposerId)).toBeOnTheScreen();
     expect(mockCommandProps.at(-1)).toMatchObject({ text: 'give this to Priya', reason: 'micOff' });
     expect(mockConsume).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('Dock composer, focus, keyboard and drafts', () => {
+  const scope = () => scopeOf({ origin: TEST_ORIGIN, email: aMe().email })!;
+
+  // A minimal navigation prop: focus and blur listeners, and which of them is focused now.
+  function fakeNav(focused: boolean) {
+    const listeners: Record<string, Set<() => void>> = { focus: new Set(), blur: new Set() };
+    const nav = {
+      focused,
+      isFocused: () => nav.focused,
+      addListener: (type: 'focus' | 'blur', cb: () => void) => {
+        listeners[type]!.add(cb);
+        return () => {
+          listeners[type]!.delete(cb);
+        };
+      },
+      emit(type: 'focus' | 'blur') {
+        nav.focused = type === 'focus';
+        for (const cb of [...listeners[type]!]) cb();
+      },
+    };
+    return nav;
+  }
+
+  it('takes a composer request only in the focused screen', async () => {
+    mockRequest = {
+      mode: 'command',
+      text: 'give this to Priya',
+      reason: null,
+      questionNumber: null,
+    };
+    const background = fakeNav(false);
+    const other = { itemId: '0199f000-0000-7000-8000-00000000c002', itemKey: 'SHIP-907' };
+    const ui = (
+      <>
+        <View testID="front">
+          <Dock {...ITEM} projectId={projectId} placeholder="Type a note" />
+        </View>
+        <NavigationContext.Provider value={background as never}>
+          <View testID="back">
+            <Dock {...other} projectId={projectId} placeholder="Type a note" />
+          </View>
+        </NavigationContext.Provider>
+      </>
+    );
+    const result = await renderWithVoice(ui, { voice: fakeVoice() });
+    await waitFor(() => expect(result.queryClient.isFetching()).toBe(0));
+
+    // Only the focused dock opens on Command with the text; the other keeps no draft.
+    expect(within(screen.getByTestId('front')).getByTestId(dockIds.composer)).toBeOnTheScreen();
+    expect(within(screen.getByTestId('back')).queryByTestId(dockIds.composer)).toBeNull();
+    expect(mockConsume).toHaveBeenCalledTimes(1);
+    const store = platform().persistentStore();
+    expect(loadDraft(store, scope(), ITEM.itemId)).toEqual({
+      text: 'give this to Priya',
+      mode: 'command',
+    });
+    expect(
+      [...kvValues.keys()].filter(
+        (k) => k.includes(other.itemId) && k.startsWith('shiplean.dockDraft'),
+      ),
+    ).toEqual([]);
+
+    // Coming back to the screen takes the request it left alone.
+    await act(() => background.emit('focus'));
+    expect(within(screen.getByTestId('back')).getByTestId(dockIds.composer)).toBeOnTheScreen();
+  });
+
+  it('closes the composer on keyboardDidHide, and a blur alone leaves it open', async () => {
+    await renderDock({ scheme: 'light' });
+    await open();
+    await type('half a note');
+    expect(keyboardHideListeners.size).toBe(1);
+
+    await fireEvent(screen.getByTestId(dockIds.noteField), 'blur');
+    expect(screen.getByTestId(dockIds.composer)).toBeOnTheScreen();
+
+    await hideKeyboard();
+    expect(screen.queryByTestId(dockIds.composer)).toBeNull();
+    expect(screen.getByTestId(dockIds.draftLabel)).toHaveTextContent('Note draft');
+    // Closed, the dock no longer listens.
+    expect(keyboardHideListeners.size).toBe(0);
+  });
+
+  it('keeps a Command draft as Command while Command is greyed', async () => {
+    const store = platform().persistentStore();
+    saveDraft(store, scope(), ITEM.itemId, { text: 'approve D10', mode: 'command' });
+    const voice = fakeVoice({ kind: 'disabled', reason: 'downloading', permission: 'granted' });
+    await renderDock({ scheme: 'light', voice });
+    await open();
+
+    // Greyed, the dock shows Note, but the saved draft still says Command.
+    expect(screen.getByTestId(dockIds.noteField)).toHaveProp('value', 'approve D10');
+    expect(loadDraft(store, scope(), ITEM.itemId)?.mode).toBe('command');
+
+    // The models arrive: it opens on Command again.
+    await act(() => voice.set({ kind: 'idle', permission: 'granted' }));
+    expect(screen.getByTestId(commandComposerId)).toBeOnTheScreen();
   });
 });

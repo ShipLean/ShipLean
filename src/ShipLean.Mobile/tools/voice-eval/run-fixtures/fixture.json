@@ -1,0 +1,148 @@
+{
+  "screen": "fixture",
+  "systemPrompt": "You turn one spoken command into calls to the actions of ShipLean's fixture screen.\nReply with a JSON array of calls and nothing else: [{\"action\": \"<name>\", \"args\": {...}}]. Reply [] when the command asks for none of these actions.\nRules:\n- Use only the actions below, with the arguments their schemas allow.\n- Take item keys, people and states from the screen context in the user message. Never invent one.\n- A command can ask for several things: give one call for each, in the order they were said.\n- noteSpan is {\"start\": s, \"end\": e}: character offsets in the command, counted from 0, with e one past the last character of the note. The note is the words after \"note\", \"comment\" or \"say\" that are to be posted as they were said.\nActions:\n- comment: Post a note on an item. Args: {\"type\":\"object\",\"properties\":{\"key\":{\"type\":\"string\",\"enum\":[\"SHIP-12\",\"SHIP-40\"]},\"body\":{\"type\":\"string\"}},\"required\":[\"key\",\"body\"]}. Its body is never written: give noteSpan, where the note is in the command.\n- setState: Move an item to another state. Args: {\"type\":\"object\",\"properties\":{\"key\":{\"type\":\"string\",\"enum\":[\"SHIP-12\",\"SHIP-40\"]},\"state\":{\"type\":\"string\",\"enum\":[\"Active\",\"Done\"]}},\"required\":[\"key\",\"state\"]}.\n/no_think",
+  "grammar": "root ::= ws \"[\" ws ( call ( ws \",\" ws call )* )? ws \"]\" ws\ncall ::= call-0 | call-1\ncall-0 ::= \"{\" ws \"\\\"action\\\"\" ws \":\" ws \"\\\"comment\\\"\" ws \",\" ws \"\\\"args\\\"\" ws \":\" ws \"{\" ws \"\\\"key\\\"\" ws \":\" ws ( \"\\\"SHIP-12\\\"\" | \"\\\"SHIP-40\\\"\" ) ws \"}\" ws \",\" ws \"\\\"noteSpan\\\"\" ws \":\" ws notespan ws \"}\"\ncall-1 ::= \"{\" ws \"\\\"action\\\"\" ws \":\" ws \"\\\"setState\\\"\" ws \",\" ws \"\\\"args\\\"\" ws \":\" ws \"{\" ws \"\\\"key\\\"\" ws \":\" ws ( \"\\\"SHIP-12\\\"\" | \"\\\"SHIP-40\\\"\" ) ws \",\" ws \"\\\"state\\\"\" ws \":\" ws ( \"\\\"Active\\\"\" | \"\\\"Done\\\"\" ) ws \"}\" ws \"}\"\nnotespan ::= \"{\" ws \"\\\"start\\\"\" ws \":\" ws natural ws \",\" ws \"\\\"end\\\"\" ws \":\" ws natural ws \"}\"\nnatural ::= \"0\" | [1-9] [0-9]{0,9}\ninteger ::= \"-\"? ( \"0\" | [1-9] [0-9]{0,15} )\nnumber ::= integer ( \".\" [0-9]+ )? ( [eE] [-+]? [0-9]+ )?\nstring ::= \"\\\"\" ( [^\"\\\\\\x7F\\x00-\\x1F] | \"\\\\\" ( [\"\\\\/bfnrt] | \"u\" [0-9a-fA-F]{4} ) )* \"\\\"\"\nws ::= | \" \" | \"\\n\" [ \\t]{0,20}",
+  "hotwords": ["SHIP-12", "SHIP-40", "Active", "Done"],
+  "rows": [
+    {
+      "screen": "fixture",
+      "utterance": "comment on SHIP-12 the build is green again",
+      "calls": [
+        {
+          "action": "comment",
+          "args": {
+            "key": "SHIP-12"
+          },
+          "noteSpan": {
+            "start": 19,
+            "end": 43
+          }
+        }
+      ],
+      "note": "the build is green again",
+      "context": {
+        "items": ["SHIP-12", "SHIP-40"],
+        "states": ["Active", "Done"]
+      },
+      "userTurn": "Screen context: {\"items\":[\"SHIP-12\",\"SHIP-40\"],\"states\":[\"Active\",\"Done\"]}\nCommand: comment on SHIP-12 the build is green again"
+    },
+    {
+      "screen": "fixture",
+      "utterance": "note on ship 40: waiting for the design review",
+      "calls": [
+        {
+          "action": "comment",
+          "args": {
+            "key": "SHIP-40"
+          },
+          "noteSpan": {
+            "start": 17,
+            "end": 46
+          }
+        }
+      ],
+      "note": "waiting for the design review",
+      "context": {
+        "items": ["SHIP-12", "SHIP-40"],
+        "states": ["Active", "Done"]
+      },
+      "userTurn": "Screen context: {\"items\":[\"SHIP-12\",\"SHIP-40\"],\"states\":[\"Active\",\"Done\"]}\nCommand: note on ship 40: waiting for the design review"
+    },
+    {
+      "screen": "fixture",
+      "utterance": "say on SHIP-40 merged after the retro",
+      "calls": [
+        {
+          "action": "comment",
+          "args": {
+            "key": "SHIP-40"
+          },
+          "noteSpan": {
+            "start": 15,
+            "end": 37
+          }
+        }
+      ],
+      "note": "merged after the retro",
+      "context": {
+        "items": ["SHIP-12", "SHIP-40"],
+        "states": ["Active", "Done"]
+      },
+      "userTurn": "Screen context: {\"items\":[\"SHIP-12\",\"SHIP-40\"],\"states\":[\"Active\",\"Done\"]}\nCommand: say on SHIP-40 merged after the retro"
+    },
+    {
+      "screen": "fixture",
+      "utterance": "comment on SHIP-12 needs a second reviewer",
+      "calls": [
+        {
+          "action": "comment",
+          "args": {
+            "key": "SHIP-12"
+          },
+          "noteSpan": {
+            "start": 19,
+            "end": 42
+          }
+        }
+      ],
+      "note": "needs a second reviewer",
+      "context": {
+        "items": ["SHIP-12", "SHIP-40"],
+        "states": ["Active", "Done"]
+      },
+      "userTurn": "Screen context: {\"items\":[\"SHIP-12\",\"SHIP-40\"],\"states\":[\"Active\",\"Done\"]}\nCommand: comment on SHIP-12 needs a second reviewer"
+    },
+    {
+      "screen": "fixture",
+      "utterance": "note on SHIP-12 blocked on the API change",
+      "calls": [
+        {
+          "action": "comment",
+          "args": {
+            "key": "SHIP-12"
+          },
+          "noteSpan": {
+            "start": 16,
+            "end": 41
+          }
+        }
+      ],
+      "note": "blocked on the API change",
+      "context": {
+        "items": ["SHIP-12", "SHIP-40"],
+        "states": ["Active", "Done"]
+      },
+      "userTurn": "Screen context: {\"items\":[\"SHIP-12\",\"SHIP-40\"],\"states\":[\"Active\",\"Done\"]}\nCommand: note on SHIP-12 blocked on the API change"
+    },
+    {
+      "screen": "fixture",
+      "utterance": "move SHIP-40 to done",
+      "calls": [
+        {
+          "action": "setState",
+          "args": {
+            "key": "SHIP-40",
+            "state": "Done"
+          }
+        }
+      ],
+      "note": null,
+      "context": {
+        "items": ["SHIP-12", "SHIP-40"],
+        "states": ["Active", "Done"]
+      },
+      "userTurn": "Screen context: {\"items\":[\"SHIP-12\",\"SHIP-40\"],\"states\":[\"Active\",\"Done\"]}\nCommand: move SHIP-40 to done"
+    },
+    {
+      "screen": "fixture",
+      "utterance": "what's the weather like",
+      "calls": [],
+      "note": null,
+      "context": {
+        "items": ["SHIP-12", "SHIP-40"],
+        "states": ["Active", "Done"]
+      },
+      "userTurn": "Screen context: {\"items\":[\"SHIP-12\",\"SHIP-40\"],\"states\":[\"Active\",\"Done\"]}\nCommand: what's the weather like"
+    }
+  ]
+}

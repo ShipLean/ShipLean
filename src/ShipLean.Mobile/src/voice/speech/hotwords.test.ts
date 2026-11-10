@@ -48,6 +48,13 @@ describe('hotwords', () => {
     expect(out).toHaveLength(MAX_HOTWORDS);
   });
 
+  it('drops a line with no letter, which sherpa rejects the whole file for', () => {
+    expect(toHotwords(['42', '#1', '2024-11-10', '', 'Priya', 'SHIP-7'])).toBe(
+      'Priya\nSHIP-7\nship seven',
+    );
+    expect(toHotwords(['42', '#1'])).toBe('');
+  });
+
   it('gives one phrase per line with no blank lines and no score suffix', () => {
     expect(toHotwords(['', '  ', 'Needs: review', 'Tom\nLee'])).toBe('Needs review\nTom Lee');
     expect(toHotwords([])).toBe('');

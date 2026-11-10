@@ -48,6 +48,12 @@ export const layout = {
   keyTile: { minWidth: 34, height: 28, padding: 6 },
   // .row: a list row's minimum height.
   listRow: 60,
+  // The dock composer: room the closed field keeps for its draft label, the note field's radius over the large
+  // radius and its border width, and the faded look of a greyed Command segment.
+  dockDraftRoom: 80,
+  noteFieldRadiusExtra: 4,
+  noteFieldBorder: 1.5,
+  disabledOpacity: 0.45,
 } as const;
 
 // Hex colour with an alpha byte: the design's colour-mix(<c> 14%, transparent) tints.

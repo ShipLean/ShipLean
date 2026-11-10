@@ -78,7 +78,6 @@ export interface VoiceInternals {
 export const VoiceInternalsContext = createContext<VoiceInternals | null>(null);
 
 // The provider's internals, for the flows and the sheets host.
-// TODO: the listening, thinking and preview machine fills the state these internals drive.
 export function useVoiceInternals(): VoiceInternals {
   const internals = useContext(VoiceInternalsContext);
   if (internals === null) throw new Error('useVoiceInternals needs a VoiceProvider above it.');
