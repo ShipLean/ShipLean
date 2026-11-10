@@ -4,9 +4,16 @@ name: Mobile release
 # Play internal track as a draft (src/ShipLean.Mobile/eas.json, submit.production).
 # Run by hand only: every run uses EAS build credits and bumps the build number.
 #
-# Needs one repository secret, EXPO_TOKEN (an Expo robot token for the dickos-team account).
-# The signing credentials, the App Store Connect API key and the Play service account key
-# live on EAS, set up once with `eas credentials`; none of them are GitHub secrets.
+# Needs these GitHub secrets and variable:
+#   EXPO_TOKEN                        an Expo robot token for the dickos-team account (build job).
+#   ASC_API_KEY_ID, ASC_API_KEY_ISSUER_ID, ASC_API_KEY_P8
+#                                     the App Store Connect API key (listing-ios job).
+#   GOOGLE_PLAY_SERVICE_ACCOUNT_JSON  the Play service account key (listing-android job).
+#   STORE_IOS_RUNNER (variable)       runner label for listing-ios; empty means ubuntu-latest.
+# The build's signing credentials and its store submission keys live on EAS, set up once with
+# `eas credentials`; they are not GitHub secrets. The listing jobs push store/ and the exported
+# images with fastlane (see store/README.md); Apple takes name, subtitle, keywords and
+# screenshots only on an editable version.
 on:
   workflow_dispatch:
     inputs:
@@ -15,8 +22,18 @@ on:
         type: choice
         options: [all, ios, android]
         default: all
+      build:
+        description: Build the app on EAS (untick for a listing-only run)
+        type: boolean
+        default: true
       submit:
         description: Submit to TestFlight / Play internal testing when the build finishes
+        type: boolean
+        default: true
+      listing:
+        description: >-
+          Push the store listing (store/ and the exported images) to the App Store and Google
+          Play. Apple takes name, subtitle, keywords and screenshots only on an editable version.
         type: boolean
         default: true
 
@@ -28,7 +45,18 @@ permissions:
   contents: read
 
 jobs:
-  release:
+  guard:
+    if: ${{ !inputs.build && !inputs.listing }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - run: |
+          echo "::error::Nothing to do: tick build, listing or both."
+          exit 1
+
+  build:
+    if: ${{ inputs.build }}
     runs-on: ubuntu-latest
     steps:
       - name: Check EXPO_TOKEN
@@ -67,3 +95,63 @@ jobs:
             args+=(--auto-submit)
           fi
           eas build "${args[@]}"
+
+  # The listing jobs do not need the build: --no-wait ends the build job once EAS has queued the
+  # builds, so it finishing proves no binary exists, and Play takes listing changes without one.
+  listing-android:
+    if: ${{ inputs.listing && inputs.platform != 'ios' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check GOOGLE_PLAY_SERVICE_ACCOUNT_JSON
+        env:
+          PLAY_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -z "$PLAY_JSON" ]; then
+            echo "::error::Add the GOOGLE_PLAY_SERVICE_ACCOUNT_JSON repository secret first."
+            exit 1
+          fi
+      - uses: ./.github/actions/store-listing-setup
+        id: setup
+        with:
+          play_json: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+      - name: Push the Google Play listing
+        env:
+          STAGED: ${{ steps.setup.outputs.staged }}
+          PLAY_KEY_PATH: ${{ steps.setup.outputs.play_key_path }}
+        run: store/push_listing.sh android push
+
+  listing-ios:
+    if: ${{ inputs.listing && inputs.platform != 'android' }}
+    runs-on: ${{ vars.STORE_IOS_RUNNER || 'ubuntu-latest' }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the App Store Connect secrets
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_API_KEY_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+        run: |
+          missing=()
+          [ -n "$ASC_KEY_ID" ] || missing+=(ASC_API_KEY_ID)
+          [ -n "$ASC_ISSUER_ID" ] || missing+=(ASC_API_KEY_ISSUER_ID)
+          [ -n "$ASC_KEY_P8" ] || missing+=(ASC_API_KEY_P8)
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error::Add the missing repository secret(s) first: ${missing[*]}"
+            exit 1
+          fi
+      - uses: ./.github/actions/store-listing-setup
+        id: setup
+        with:
+          asc_key_id: ${{ secrets.ASC_API_KEY_ID }}
+          asc_issuer_id: ${{ secrets.ASC_API_KEY_ISSUER_ID }}
+          asc_key_p8: ${{ secrets.ASC_API_KEY_P8 }}
+      - name: Push the App Store listing
+        env:
+          STAGED: ${{ steps.setup.outputs.staged }}
+          ASC_KEY_PATH: ${{ steps.setup.outputs.asc_key_path }}
+        run: store/push_listing.sh ios push
