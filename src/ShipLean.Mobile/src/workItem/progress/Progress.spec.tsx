@@ -294,7 +294,8 @@ describe.each(['light', 'dark'] as const)('Work item progress (%s)', (scheme) =>
     await fireEvent.press(screen.getByTestId(ids.progressRetryId));
 
     expect(await screen.findByTestId(ids.progressTallyId('tasks'))).toHaveTextContent('Tasks7/15');
-    expect(screen.queryByTestId(ids.progressErrorId)).toBeNull();
+    // The error and the tally are separate parts of the screen: wait for the error to clear, as for the tally.
+    await waitFor(() => expect(screen.queryByTestId(ids.progressErrorId)).toBeNull());
     expect(screen.getByTestId(ids.progressCountsId)).toHaveTextContent(/ · tasks 7\/15$/);
   });
 });
