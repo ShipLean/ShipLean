@@ -22,7 +22,8 @@ UPDATE revision
 SET changes = jsonb_insert(changes, '{3}', jsonb_build_object('field', 'assignee', 'from', NULL::jsonb,
                                                               'to', to_jsonb('00000001-0000-4000-8000-000000000003'::uuid),
                                                               'fromLabel', NULL::text, 'toLabel', 'Tom Okafor'))
-WHERE work_item_id IN ('00000005-0000-4000-8001-000000000102', '00000005-0000-4000-8001-000000000108') AND rev = 1;
+WHERE work_item_id IN ('00000005-0000-4000-8001-000000000102', '00000005-0000-4000-8001-000000000108') AND rev = 1
+  AND NOT changes @> '[{"field":"assignee"}]'::jsonb;
 
 -- Joel's person retro on Sprint 24 (current), written yesterday at 10:00 UTC, with one improve point; Priya supports it at 12:00.
 INSERT INTO retrospective (id, project_id, sprint_id, author_user_id, role, created_at, updated_at)
