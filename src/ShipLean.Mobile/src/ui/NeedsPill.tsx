@@ -17,7 +17,6 @@ export function NeedsPill({ needs }: NeedsPillProps) {
   const total = needs.questions + needs.decisions;
   if (total === 0) return null;
   const { warn } = theme.colors;
-  const sizes = layout(theme);
   return (
     <View
       testID={primitiveIds.needsPill}
@@ -26,9 +25,9 @@ export function NeedsPill({ needs }: NeedsPillProps) {
         flexDirection: 'row',
         alignSelf: 'flex-start',
         alignItems: 'center',
-        height: sizes.pill,
+        height: layout.pill,
         paddingHorizontal: theme.space[2],
-        borderRadius: sizes.pill / 2,
+        borderRadius: layout.pill / 2,
         backgroundColor: tint(warn, 0.14),
       }}
     >

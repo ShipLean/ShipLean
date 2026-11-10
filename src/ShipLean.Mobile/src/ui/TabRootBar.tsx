@@ -1,6 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme';
+import { layout } from './layout';
 import { primitiveIds } from './testIds';
 
 export interface TabRootBarProps {
@@ -49,9 +50,9 @@ export function TabRootBar({ projectKey, title, subtitle, onTilePress }: TabRoot
       >
         <View
           style={{
-            minWidth: theme.touch.control - theme.space[3] + 2,
-            height: theme.space[5] + theme.space[1],
-            paddingHorizontal: theme.space[1] + 2,
+            minWidth: layout.keyTile.minWidth,
+            height: layout.keyTile.height,
+            paddingHorizontal: layout.keyTile.padding,
             borderRadius: theme.radius.md,
             alignItems: 'center',
             justifyContent: 'center',

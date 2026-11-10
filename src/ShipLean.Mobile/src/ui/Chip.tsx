@@ -15,21 +15,20 @@ export interface ChipProps {
 export function Chip({ label, count, selected, onPress, testID }: ChipProps) {
   const theme = useTheme();
   const { colors } = theme;
-  const sizes = layout(theme);
   return (
     <Pressable
       testID={testID}
       accessibilityRole="button"
       accessibilityState={{ selected }}
-      hitSlop={{ top: sizes.compactSlop, bottom: sizes.compactSlop }}
+      hitSlop={{ top: layout.compactSlop, bottom: layout.compactSlop }}
       onPress={onPress}
       style={{
-        height: sizes.compact,
+        height: layout.compact,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: theme.space[1] + 2,
+        gap: layout.chipGap,
         paddingHorizontal: theme.space[3],
-        borderRadius: sizes.compact / 2,
+        borderRadius: layout.compact / 2,
         borderWidth: 1,
         borderColor: selected ? 'transparent' : colors.border,
         backgroundColor: selected ? colors.accentSoft : colors.surface,

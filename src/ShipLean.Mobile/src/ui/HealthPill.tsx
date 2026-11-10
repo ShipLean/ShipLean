@@ -1,5 +1,6 @@
 import { Text, View } from 'react-native';
 import { useTheme } from '../theme';
+import { layout } from './layout';
 import { primitiveIds } from './testIds';
 
 // TODO: import FeatureHealth from @shiplean/core/api/screens once it lands there.
@@ -19,13 +20,13 @@ export function HealthPill({ health }: HealthPillProps) {
   return (
     <View
       testID={primitiveIds.healthPill}
-      style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space[1] + 1 }}
+      style={{ flexDirection: 'row', alignItems: 'center', gap: layout.stateGap }}
     >
       <View
         style={{
-          width: theme.space[2],
-          height: theme.space[2],
-          borderRadius: theme.space[1],
+          width: layout.healthDot,
+          height: layout.healthDot,
+          borderRadius: layout.healthDot / 2,
           backgroundColor: colour,
         }}
       />

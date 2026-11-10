@@ -26,7 +26,6 @@ export function Segmented<T extends string>({
 }: SegmentedProps<T>) {
   const theme = useTheme();
   const { colors } = theme;
-  const sizes = layout(theme);
   return (
     <View
       testID={testID}
@@ -34,7 +33,7 @@ export function Segmented<T extends string>({
       style={{
         flexDirection: 'row',
         flex: 1,
-        padding: 2,
+        padding: layout.segmentedPadding,
         borderRadius: theme.radius.md,
         backgroundColor: colors.surface2,
       }}
@@ -47,11 +46,11 @@ export function Segmented<T extends string>({
             testID={optionId(testID, o.value)}
             accessibilityRole="tab"
             accessibilityState={{ selected: on }}
-            hitSlop={{ top: sizes.compactSlop, bottom: sizes.compactSlop }}
+            hitSlop={{ top: layout.compactSlop, bottom: layout.compactSlop }}
             onPress={() => onChange(o.value)}
             style={{
               flex: 1,
-              height: sizes.compact,
+              height: layout.compact,
               flexDirection: 'row',
               gap: theme.space[1],
               alignItems: 'center',

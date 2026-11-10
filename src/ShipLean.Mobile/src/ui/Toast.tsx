@@ -41,13 +41,13 @@ export function Toast({ text, action, onDismiss }: ToastProps) {
       accessibilityRole="alert"
       accessibilityLiveRegion="polite"
       style={{
-        minHeight: theme.touch.control + theme.space[1],
+        minHeight: layout.toast,
         flexDirection: 'row',
         alignItems: 'center',
         gap: theme.space[2],
-        paddingLeft: theme.space[3] + 2,
-        paddingRight: theme.space[2],
-        borderRadius: theme.radius.lg + 2,
+        paddingLeft: layout.toastPaddingLeft,
+        paddingRight: layout.toastPaddingRight,
+        borderRadius: layout.toastRadius,
         backgroundColor: colors.text,
       }}
     >
@@ -62,7 +62,7 @@ export function Toast({ text, action, onDismiss }: ToastProps) {
           }}
           style={{
             minHeight: theme.touch.control,
-            paddingHorizontal: theme.space[2] + 2,
+            paddingHorizontal: layout.toastActionPadding,
             justifyContent: 'center',
           }}
         >
@@ -127,7 +127,7 @@ export function ToastHost({ children }: { children: ReactNode }) {
               position: 'absolute',
               left: theme.space[4],
               right: theme.space[4],
-              bottom: insets.bottom + layout(theme).tabBar + theme.space[2],
+              bottom: insets.bottom + layout.tabBar + layout.toastGap,
             }}
           >
             <Toast key={shown.seq} text={shown.text} action={shown.action} onDismiss={dismiss} />

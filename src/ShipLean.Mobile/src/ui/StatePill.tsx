@@ -19,18 +19,18 @@ export function StatePill({ state }: StatePillProps) {
         flexDirection: 'row',
         alignSelf: 'flex-start',
         alignItems: 'center',
-        gap: theme.space[1] + 1,
-        height: layout(theme).pill,
+        gap: layout.stateGap,
+        height: layout.pill,
         paddingHorizontal: theme.space[2],
-        borderRadius: layout(theme).pill / 2,
+        borderRadius: layout.pill / 2,
         backgroundColor: tint(colour, 0.14),
       }}
     >
       <View
         style={{
-          width: theme.space[1] + 2,
-          height: theme.space[1] + 2,
-          borderRadius: theme.radius.xs,
+          width: layout.stateDot,
+          height: layout.stateDot,
+          borderRadius: layout.stateDot / 2,
           backgroundColor: colour,
         }}
       />

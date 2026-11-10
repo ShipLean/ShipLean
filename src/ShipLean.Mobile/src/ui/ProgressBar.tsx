@@ -1,6 +1,7 @@
 import type { RollupCountDto } from '@shiplean/core/api/views';
 import { View } from 'react-native';
 import { useTheme } from '../theme';
+import { layout } from './layout';
 import { countStoryLevelUnder } from './progress';
 import { primitiveIds } from './testIds';
 
@@ -30,7 +31,7 @@ export function ProgressBar({ rollups }: ProgressBarProps) {
       accessibilityValue={{ min: 0, max: total, now: closed }}
       style={{
         flexDirection: 'row',
-        height: theme.space[1] + 2,
+        height: layout.progress,
         borderRadius: theme.radius.xs,
         overflow: 'hidden',
         backgroundColor: colors.surface2,

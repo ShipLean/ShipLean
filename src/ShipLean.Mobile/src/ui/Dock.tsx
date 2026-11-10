@@ -19,17 +19,16 @@ export function Dock({ placeholder }: DockProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { colors } = theme;
-  const sizes = layout(theme);
   return (
     <View
       testID={primitiveIds.dock}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
-        gap: theme.space[2] + 2,
-        paddingTop: theme.space[2] + 2,
+        gap: layout.dockGap,
+        paddingTop: layout.dockPaddingTop,
         paddingHorizontal: theme.space[4],
-        paddingBottom: insets.bottom + theme.space[1],
+        paddingBottom: insets.bottom + layout.dockPaddingBottom,
         backgroundColor: colors.surface,
         borderTopWidth: 1,
         borderTopColor: colors.border,
@@ -45,7 +44,7 @@ export function Dock({ placeholder }: DockProps) {
         style={{
           flex: 1,
           height: theme.touch.control,
-          borderRadius: theme.touch.control / 2,
+          borderRadius: layout.dockFieldRadius,
           paddingHorizontal: theme.space[4],
           backgroundColor: colors.surface2,
           color: colors.text,
@@ -57,9 +56,9 @@ export function Dock({ placeholder }: DockProps) {
         accessibilityLabel="Microphone"
         accessibilityState={{ disabled: true }}
         style={{
-          width: sizes.dockMic,
-          height: sizes.dockMic,
-          borderRadius: sizes.dockMic / 2,
+          width: layout.dockMic,
+          height: layout.dockMic,
+          borderRadius: layout.dockMic / 2,
           backgroundColor: colors.surface2,
         }}
       />

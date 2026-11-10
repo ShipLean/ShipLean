@@ -26,7 +26,6 @@ export interface TabBarProps {
 export function TabBar({ tabs, active, onPress, center }: TabBarProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const sizes = layout(theme);
   const half = Math.ceil(tabs.length / 2);
   const tab = (t: TabBarTab) => (
     <TabButton key={t.id} tab={t} active={t.id === active} onPress={() => onPress(t.id)} />
@@ -36,7 +35,7 @@ export function TabBar({ tabs, active, onPress, center }: TabBarProps) {
       testID={primitiveIds.tabBar}
       accessibilityRole="tablist"
       style={{
-        height: sizes.tabBar + insets.bottom,
+        height: layout.tabBar + insets.bottom,
         paddingBottom: insets.bottom,
         flexDirection: 'row',
         alignItems: 'stretch',
@@ -48,7 +47,7 @@ export function TabBar({ tabs, active, onPress, center }: TabBarProps) {
       {tabs.slice(0, half).map(tab)}
       <View
         testID={primitiveIds.tabMic}
-        style={{ width: sizes.micSlot, alignItems: 'center', justifyContent: 'center' }}
+        style={{ width: layout.micSlot, alignItems: 'center', justifyContent: 'center' }}
       >
         {center}
       </View>
@@ -97,12 +96,12 @@ function TabButton({
           testID={tabBadgeId(tab.id)}
           style={{
             position: 'absolute',
-            top: theme.space[1],
+            top: layout.badgeTop,
             left: '50%',
-            marginLeft: theme.space[2] - 2,
-            minWidth: theme.space[4] + 1,
-            height: theme.space[4] + 1,
-            paddingHorizontal: theme.space[1] + 1,
+            marginLeft: layout.badgeOffset,
+            minWidth: layout.badge,
+            height: layout.badge,
+            paddingHorizontal: layout.badgePadding,
             borderRadius: theme.radius.lg,
             alignItems: 'center',
             justifyContent: 'center',

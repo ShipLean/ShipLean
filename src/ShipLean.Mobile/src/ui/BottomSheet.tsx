@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Modal, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme';
+import { layout } from './layout';
 import { primitiveIds, sheetTitleId } from './testIds';
 
 export interface BottomSheetProps {
@@ -39,8 +40,8 @@ export function BottomSheet({ title, open, onClose, children, testID }: BottomSh
           testID={testID}
           style={{
             backgroundColor: colors.surface,
-            borderTopLeftRadius: theme.radius.lg * 2,
-            borderTopRightRadius: theme.radius.lg * 2,
+            borderTopLeftRadius: layout.sheetRadius,
+            borderTopRightRadius: layout.sheetRadius,
             paddingTop: theme.space[2],
             paddingHorizontal: theme.space[4],
             paddingBottom: insets.bottom + theme.space[3],
@@ -49,10 +50,10 @@ export function BottomSheet({ title, open, onClose, children, testID }: BottomSh
           <View
             style={{
               alignSelf: 'center',
-              width: theme.space[5] + theme.space[3],
-              height: theme.space[1] + 1,
-              borderRadius: theme.radius.xs,
-              marginBottom: theme.space[3],
+              width: layout.grab.width,
+              height: layout.grab.height,
+              borderRadius: layout.grab.height / 2,
+              marginBottom: layout.grabGap,
               backgroundColor: colors.border,
             }}
           />

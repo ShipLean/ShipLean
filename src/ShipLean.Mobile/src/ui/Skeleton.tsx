@@ -11,7 +11,6 @@ export interface SkeletonProps {
 export function Skeleton({ rows }: SkeletonProps) {
   const theme = useTheme();
   const { colors } = theme;
-  const sizes = layout(theme);
   const bar = (width: `${number}%`, height: number) => (
     <View
       style={{ width, height, borderRadius: theme.radius.xs, backgroundColor: colors.surface2 }}
@@ -34,7 +33,7 @@ export function Skeleton({ rows }: SkeletonProps) {
           key={i}
           testID={primitiveIds.skeletonRow}
           style={{
-            minHeight: sizes.listRow,
+            minHeight: layout.listRow,
             justifyContent: 'center',
             gap: theme.space[2],
             paddingHorizontal: theme.space[4],
