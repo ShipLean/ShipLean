@@ -43,7 +43,7 @@ export const RETRO_ACTIONS: VoiceActionSpec[] = [
   {
     name: 'add_point',
     description: 'Add a retro point, word for word. Pick the category if none was said.',
-    args: { properties: { note: { type: 'string' }, category }, required: ['note'] },
+    args: { properties: { note: { type: 'string' }, category }, required: ['note', 'category'] },
     noteArg: 'note',
   },
   {
@@ -168,12 +168,21 @@ export function retroVoiceSpec(ctx: RetroVoiceContext): ScreenVoiceSpec<RetroAct
   }
   const isOutcome = (v: RetroPointDto | Outcome): v is Outcome => 'ok' in v;
 
-  // A dictated point needs words before the note (a start phrase or a category name), so the command is never in it.
+  // A dictated point needs a start phrase before the note ("retro note", "add a point" or a category name), so the command is never in it.
+  const START_PHRASES = ['retro note', 'add a point', ...Object.values(CATEGORY_LABELS)].map((p) =>
+    p.toLowerCase(),
+  );
+  const hasStartPhrase = (lead: string): boolean => {
+    const heard = ` ${lead.toLowerCase().replace(/\bcolon\b/gu, ':')} `;
+    return START_PHRASES.some((p) =>
+      new RegExp(`[^\\p{L}\\p{N}]${p}[^\\p{L}\\p{N}]`, 'u').test(heard),
+    );
+  };
   function noteOf(call: ParsedCall, transcript: Transcript): string | VoiceFailure {
     const span = call.noteSpan;
     const text = span === undefined ? null : copyNoteSpan(transcript, span);
     const lead = span === undefined ? '' : transcript.text.slice(0, span.start);
-    return text === null || !/[\p{L}\p{N}]/u.test(lead)
+    return text === null || !hasStartPhrase(lead)
       ? { kind: 'unclear', detail: { heard: transcript.text } }
       : text;
   }
@@ -317,7 +326,7 @@ export function retroVoiceSpec(ctx: RetroVoiceContext): ScreenVoiceSpec<RetroAct
           key: '',
           title: `${p.from.name} into ${p.into.name}`,
         }));
-        if (ctx.proposals.length === 0) return refuse(call.action, 'none');
+        if (ctx.proposals.length === 0) return refuse(call.action, 'notAllowed');
         let chosen: RetroMergeProposalDto | undefined;
         if (a.proposal === undefined) {
           if (ctx.proposals.length !== 1) return ask(call, list);
