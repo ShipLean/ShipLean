@@ -161,10 +161,6 @@ export function createActionRunner(deps: ActionRunnerDeps): SessionRunner {
       else set(update(box, p.id, { state: 'uncertain', ...mapped, failure: null }));
       return;
     }
-    if (!(e instanceof ApiRequestError)) {
-      set(update(box, p.id, { state: 'failed', ...mapped }));
-      return;
-    }
     set(update(box, p.id, { state: 'failed', ...mapped }));
     if (mapped.failure === 'conflict') {
       const lines = ofBatch(p.batchId).map((q) => describe(q.action));
@@ -315,7 +311,7 @@ export function createActionRunner(deps: ActionRunnerDeps): SessionRunner {
         } else if (current.state === 'sent') {
           outcome = await undoSent(current);
           set(update(box, p.id, { undoOutcome: outcome, undoUntil: null }));
-        } else if (current.state === 'uncertain') {
+        } else if (current.state === 'uncertain' || current.state === 'sending') {
           // It may have gone through: it can't be reversed, and reconcile must not resend it.
           outcome = 'failed';
           set(update(box, p.id, { undoOutcome: outcome }));
@@ -327,7 +323,8 @@ export function createActionRunner(deps: ActionRunnerDeps): SessionRunner {
 
     retry(id: string): void {
       const p = find(id);
-      if (p === undefined) return;
+      // Undone by the user: never sent again.
+      if (p === undefined || p.undoOutcome !== null) return;
       if (p.state === 'uncertain' && executors.get(p.action.area)?.reconcile !== undefined) {
         void reconcile(p.action.area, [id]);
         return;

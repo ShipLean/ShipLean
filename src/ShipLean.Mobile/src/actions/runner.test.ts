@@ -355,6 +355,63 @@ describe('ActionRunner', () => {
     expect(shown('4')).toEqual(['uncertain', null, true]);
   });
 
+  it('stops a live all-or-nothing batch at an executor error, and reverses a voice batch for it', async () => {
+    let rec = recorder();
+    let runner = runnerWith(rec);
+    rec.sendFails.set('2', new Error('boom'));
+    runner.dispatch([act('setState', '1'), act('setState', '2'), act('setState', '3')], {
+      undo: UNDO.typed,
+      origin: 'typed',
+      allOrNothing: true,
+    });
+    await flush();
+    expect(rec.calls).toEqual(['send 1', 'send 2']);
+    expect(byItem(runner, '3')).toMatchObject({ state: 'failed' });
+
+    rec = recorder();
+    runner = runnerWith(rec);
+    rec.sendFails.set('2', new Error('boom'));
+    runner.dispatch([act('setState', '1'), act('setState', '2'), act('setState', '3')], {
+      undo: UNDO.voice,
+      origin: 'voice',
+      allOrNothing: true,
+    });
+    await flush();
+    expect(rec.calls).toEqual(['send 1', 'send 2', 'undo 1']);
+    expect(byItem(runner, '2')?.error).toBe("Nothing changed. Didn't send.");
+  });
+
+  it('never resends an action the user undid while it was sending or uncertain, even on retry', async () => {
+    const rec = recorder();
+    const { runner, goOnline } = build(rec);
+    let answer: (() => void) | undefined;
+    rec.executor.send = (a) => {
+      rec.calls.push(`send ${a.itemId}`);
+      return new Promise((_, reject) => {
+        answer = () => reject(new TypeError('Network request failed'));
+      });
+    };
+    rec.executor.reconcile = async (items) => items.map(() => 'notSent' as const);
+    const batchId = runner.dispatch([act('setState', '1')], {
+      undo: UNDO.typed,
+      origin: 'typed',
+      allOrNothing: false,
+    });
+    await flush();
+    expect(byItem(runner, '1')?.state).toBe('sending');
+
+    expect(await runner.undo(batchId)).toEqual([
+      { id: byItem(runner, '1')?.id, outcome: 'failed' },
+    ]);
+    answer?.();
+    await flush();
+    const id = byItem(runner, '1')?.id as string;
+    runner.retry(id);
+    goOnline();
+    await flush();
+    expect(rec.calls).toEqual(['send 1']);
+  });
+
   it('holds a later action of a batch behind an earlier queued one whose area has no executor yet', async () => {
     const rec = recorder();
     const { runner } = build(rec);
