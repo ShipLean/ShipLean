@@ -14,6 +14,7 @@ import {
 } from '../../test-support/backlog';
 import { apiError, fakeApi, type FakeApi } from '../../test-support/fakeApi';
 import { signedInApi } from '../../test-support/signedInApi';
+import { BacklogActionsProvider } from '../BacklogActions';
 import { renderWithVoice } from '../../test-support/voiceUi';
 import { primitiveIds, countId, optionId, uiIds } from '../../ui/testIds';
 import {
@@ -77,7 +78,12 @@ interface Opts {
 }
 
 async function renderBacklog({ scheme, ...link }: Opts = {}) {
-  return renderWithVoice(<BacklogScreen projectKey="SHIP" {...link} />, { scheme });
+  return renderWithVoice(
+    <BacklogActionsProvider>
+      <BacklogScreen projectKey="SHIP" {...link} />
+    </BacklogActionsProvider>,
+    { scheme },
+  );
 }
 
 // The query string of a call, parsed.

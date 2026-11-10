@@ -74,10 +74,8 @@ describe.each<Scheme>(['light', 'dark'])('Backlog add row (%s)', (scheme) => {
     await type('A story');
     await fireEvent.press(screen.getByTestId(optionId(addRowTypeId, 'bug')));
     await type('A bug');
-    expect(runner.dispatched.map((d) => (d.batch[0] as { type: string }).type)).toEqual([
-      'story',
-      'bug',
-    ]);
+    expect(runner.dispatched[0].batch[0]).toMatchObject({ type: 'story' });
+    expect(runner.dispatched[1].batch[0]).toMatchObject({ type: 'bug' });
   });
 
   it('uses the filtered Feature as the parent', async () => {
