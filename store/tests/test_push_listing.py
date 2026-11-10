@@ -36,7 +36,8 @@ class PushListingTests(unittest.TestCase):
             with open(path, "w") as handle:
                 handle.write("{}")
         self.staged = os.path.join(tmp, "staged")
-        os.mkdir(self.staged)
+        # What stage_images.py writes and the iOS push runs from.
+        os.makedirs(os.path.join(self.staged, "ios", "metadata"))
 
     def tearDown(self):
         self._tmp.cleanup()
@@ -61,10 +62,10 @@ class PushListingTests(unittest.TestCase):
         env = dict(line.split("=", 1) for line in lines[:2])
         return env, lines[2:]
 
-    def assert_fastlane(self, result, tool, expected_args):
+    def assert_fastlane(self, result, tool, expected_args, pwd=REPO, gemfile="store/Gemfile"):
         self.assertEqual(result.returncode, 0, result.stderr)
         env, argv = self.bundle_call()
-        self.assertEqual(env, {"PWD": REPO, "BUNDLE_GEMFILE": "store/Gemfile"})
+        self.assertEqual(env, {"PWD": pwd, "BUNDLE_GEMFILE": gemfile})
         self.assertEqual(argv[:3], ["exec", "fastlane", tool])
         self.assertEqual(argv[3:], expected_args)
 
@@ -79,14 +80,23 @@ class PushListingTests(unittest.TestCase):
             "--app_version", app_version(),
             "--metadata_path", self.staged + "/ios/metadata",
             "--screenshots_path", self.staged + "/ios/screenshots",
-            "--app_rating_config_path", "store/ios/age_rating.json",
+            "--app_rating_config_path", os.path.join(REPO, "store", "ios", "age_rating.json"),
             "--skip_binary_upload", "true",
             "--overwrite_screenshots", "true",
             "--submit_for_review", "false",
             "--automatic_release", "false",
             "--force", "true",
             "--run_precheck_before_submit", "false",
-        ])
+        ], pwd=self.staged + "/ios", gemfile=os.path.join(REPO, "store", "Gemfile"))
+
+    # Mutation caught: run deliver from the repo root, where it has no ./metadata and asks to set
+    # itself up, which crashes a non-interactive run (the first Mobile release, 10 Nov 2026).
+    def test_ios_push_runs_where_deliver_finds_metadata(self):
+        result = self.run_script("ios", "push", **self.keys())
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        env, _ = self.bundle_call()
+        self.assertTrue(os.path.isdir(os.path.join(env["PWD"], "metadata")), env["PWD"])
 
     # Mutation caught: call plain `deliver` instead of `deliver download_metadata`.
     def test_ios_verify_downloads_only(self):
