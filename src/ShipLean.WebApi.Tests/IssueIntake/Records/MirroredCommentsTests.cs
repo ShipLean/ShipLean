@@ -7,6 +7,7 @@ using ShipLean.Application.Features.WorkItemDetails.Comments;
 using ShipLean.Application.Markdown;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Events;
+using ShipLean.Contracts.Inbox;
 using ShipLean.Contracts.IssueIntake;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Contracts.Sprints;
@@ -100,7 +101,8 @@ public class MirroredCommentsTests : ApiFixture
         var dataSource = scope.ServiceProvider.GetRequiredService<NpgsqlDataSource>();
         var store = new CommentStore(
             dataSource, new FixedCurrentUser(SeedIds.Users.Joel), AgentIdentity.None,
-            scope.ServiceProvider.GetRequiredService<MarkdownRenderer>(), TimeProvider.System, events);
+            scope.ServiceProvider.GetRequiredService<MarkdownRenderer>(), TimeProvider.System, events,
+            scope.ServiceProvider.GetRequiredService<IMentionRecorder>());
         return new DbMirroredComments(dataSource, store);
     }
 

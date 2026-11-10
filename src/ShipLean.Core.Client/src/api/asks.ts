@@ -1,5 +1,6 @@
 // Decisions and questions on work items. C#: ShipLean.Contracts.Asks. Nothing is omitted on the wire: absent values are
 // null and lists are []. Timestamps are ISO 8601 strings with a UTC offset, each next to a server-formatted label.
+import { api } from './client';
 import type { UserRef, WorkItemTypeId } from './refs';
 
 export const DECISION_STATES = ['open', 'confirmed', 'changed', 'withdrawn'] as const;
@@ -48,6 +49,8 @@ export interface QuestionDto {
   /** "Q1". */
   label: string;
   text: string;
+  /** Quick answers it offers (at most 6); [] when none. */
+  options: string[];
   state: QuestionState;
   askedBy: UserRef;
   /** The agent that asked it for askedBy; null when a person did. */
@@ -189,3 +192,56 @@ export interface DiscussDecisionRequest {
   /** Markdown. */
   body: string;
 }
+
+// The reads and writes, copied from the SPA's asksApi (routes unchanged). Reads return DTOs; every write returns 204 and
+// the caller refetches.
+
+export const asksKeys = {
+  /** Under the work item's own key, so refreshing the item refreshes its asks. */
+  item: (projectId: string, itemKey: string) =>
+    ['projects', projectId, 'work-items', itemKey, 'asks'] as const,
+  waiting: ['me', 'waiting'] as const,
+};
+
+const itemPath = (workItemId: string) => `/api/work-items/${encodeURIComponent(workItemId)}`;
+
+export const getItemAsks = (workItemId: string) =>
+  api.get<ItemAsksDto>(`${itemPath(workItemId)}/asks`);
+
+export const getWaiting = () => api.get<WaitingDto>('/api/me/waiting');
+
+/** Numbers no longer open are skipped by the server. */
+export const confirmDecisions = (workItemId: string, numbers: number[]) =>
+  api.post<void>(`${itemPath(workItemId)}/decisions/confirm`, {
+    numbers,
+  } satisfies ConfirmDecisionsRequest);
+
+export const changeDecision = (
+  workItemId: string,
+  number: number,
+  request: ChangeDecisionRequest,
+) =>
+  api.post<void>(`${itemPath(workItemId)}/decisions/${number}/change`, {
+    kind: request.kind,
+    alternativeIndex: request.alternativeIndex,
+    text: request.text,
+    note: request.note,
+  } satisfies ChangeDecisionRequest);
+
+export const withdrawDecision = (workItemId: string, number: number) =>
+  api.post<void>(`${itemPath(workItemId)}/decisions/${number}/withdraw`);
+
+/** body is Markdown; it is posted to Discussion tagged "On D<n>". */
+export const discussDecision = (workItemId: string, number: number, body: string) =>
+  api.post<void>(`${itemPath(workItemId)}/decisions/${number}/discuss`, {
+    body,
+  } satisfies DiscussDecisionRequest);
+
+/** body is Markdown; it is posted to Discussion tagged "Answer to Q<n>". */
+export const answerQuestion = (workItemId: string, number: number, body: string) =>
+  api.post<void>(`${itemPath(workItemId)}/questions/${number}/answer`, {
+    body,
+  } satisfies AnswerQuestionRequest);
+
+export const withdrawQuestion = (workItemId: string, number: number) =>
+  api.post<void>(`${itemPath(workItemId)}/questions/${number}/withdraw`);

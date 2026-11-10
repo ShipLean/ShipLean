@@ -96,6 +96,7 @@ function card(parentType: 'epic' | 'feature' | null): CardDto {
     styleRuleId: null,
     extraFields: [],
     revision: 1,
+    health: null,
   } as CardDto;
 }
 

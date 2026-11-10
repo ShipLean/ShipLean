@@ -170,7 +170,8 @@
         "offerDone": false,
         "styleRuleId": null,
         "extraFields": [],
-        "revision": 7
+        "revision": 7,
+        "health": null
       },
       "offerResolve": false,
       "cells": [
@@ -208,7 +209,8 @@
               "offerDone": false,
               "styleRuleId": null,
               "extraFields": [],
-              "revision": 1
+              "revision": 1,
+              "health": null
             }
           ]
         },
@@ -252,7 +254,8 @@
               "offerDone": false,
               "styleRuleId": "rule-priority-1",
               "extraFields": [],
-              "revision": 1
+              "revision": 1,
+              "health": null
             }
           ]
         },
@@ -296,7 +299,8 @@
               "offerDone": false,
               "styleRuleId": null,
               "extraFields": [],
-              "revision": 1
+              "revision": 1,
+              "health": null
             }
           ]
         },
@@ -310,7 +314,8 @@
         "id": "00000004-0000-4000-8001-000000000024",
         "name": "Sprint 24",
         "status": "current"
-      }
+      },
+      "needsYou": null
     },
     {
       "parent": {
@@ -363,7 +368,8 @@
         "offerDone": false,
         "styleRuleId": null,
         "extraFields": [],
-        "revision": 1
+        "revision": 1,
+        "health": null
       },
       "offerResolve": false,
       "cells": [
@@ -419,7 +425,8 @@
               "offerDone": false,
               "styleRuleId": null,
               "extraFields": [],
-              "revision": 1
+              "revision": 1,
+              "health": null
             }
           ]
         }
@@ -429,7 +436,8 @@
         "id": "00000004-0000-4000-8001-000000000024",
         "name": "Sprint 24",
         "status": "current"
-      }
+      },
+      "needsYou": null
     },
     {
       "parent": {
@@ -477,7 +485,8 @@
         "offerDone": false,
         "styleRuleId": null,
         "extraFields": [],
-        "revision": 3
+        "revision": 3,
+        "health": null
       },
       "offerResolve": true,
       "cells": [
@@ -538,7 +547,8 @@
               "offerDone": false,
               "styleRuleId": null,
               "extraFields": [],
-              "revision": 1
+              "revision": 1,
+              "health": null
             },
             {
               "id": "00000005-0000-4000-8001-000000000176",
@@ -577,7 +587,8 @@
               "offerDone": false,
               "styleRuleId": null,
               "extraFields": [],
-              "revision": 1
+              "revision": 1,
+              "health": null
             }
           ]
         }
@@ -587,7 +598,8 @@
         "id": "00000004-0000-4000-8001-000000000024",
         "name": "Sprint 24",
         "status": "current"
-      }
+      },
+      "needsYou": null
     },
     {
       "parent": {
@@ -644,7 +656,8 @@
         "offerDone": false,
         "styleRuleId": "rule-blocked",
         "extraFields": [],
-        "revision": 4
+        "revision": 4,
+        "health": null
       },
       "offerResolve": false,
       "cells": [
@@ -687,7 +700,8 @@
               "offerDone": false,
               "styleRuleId": "rule-blocked",
               "extraFields": [],
-              "revision": 1
+              "revision": 1,
+              "health": null
             }
           ]
         },
@@ -731,7 +745,8 @@
               "offerDone": false,
               "styleRuleId": null,
               "extraFields": [],
-              "revision": 1
+              "revision": 1,
+              "health": null
             }
           ]
         },
@@ -779,7 +794,8 @@
               "offerDone": false,
               "styleRuleId": null,
               "extraFields": [],
-              "revision": 1
+              "revision": 1,
+              "health": null
             },
             {
               "id": "00000005-0000-4000-8001-000000000180",
@@ -818,7 +834,8 @@
               "offerDone": false,
               "styleRuleId": null,
               "extraFields": [],
-              "revision": 1
+              "revision": 1,
+              "health": null
             }
           ]
         }
@@ -828,7 +845,8 @@
         "id": "00000004-0000-4000-8001-000000000024",
         "name": "Sprint 24",
         "status": "current"
-      }
+      },
+      "needsYou": null
     },
     {
       "parent": {
@@ -876,7 +894,8 @@
         "offerDone": false,
         "styleRuleId": null,
         "extraFields": [],
-        "revision": 1
+        "revision": 1,
+        "health": null
       },
       "offerResolve": false,
       "cells": [
@@ -932,13 +951,15 @@
               "offerDone": false,
               "styleRuleId": null,
               "extraFields": [],
-              "revision": 1
+              "revision": 1,
+              "health": null
             }
           ]
         }
       ],
       "featureId": "00000005-0000-4000-8001-000000000111",
-      "sprint": null
+      "sprint": null,
+      "needsYou": null
     }
   ],
   "peopleRows": [
@@ -980,7 +1001,8 @@
               "offerDone": false,
               "styleRuleId": null,
               "extraFields": [],
-              "revision": 1
+              "revision": 1,
+              "health": null
             },
             {
               "id": "00000005-0000-4000-8001-000000000179",
@@ -1018,7 +1040,8 @@
               "offerDone": false,
               "styleRuleId": "rule-blocked",
               "extraFields": [],
-              "revision": 1
+              "revision": 1,
+              "health": null
             }
           ]
         },
@@ -1094,7 +1117,8 @@
               "offerDone": false,
               "styleRuleId": null,
               "extraFields": [],
-              "revision": 1
+              "revision": 1,
+              "health": null
             }
           ]
         },
@@ -1166,7 +1190,8 @@
               "offerDone": false,
               "styleRuleId": null,
               "extraFields": [],
-              "revision": 1
+              "revision": 1,
+              "health": null
             },
             {
               "id": "00000005-0000-4000-8001-000000000176",
@@ -1205,7 +1230,8 @@
               "offerDone": false,
               "styleRuleId": null,
               "extraFields": [],
-              "revision": 1
+              "revision": 1,
+              "health": null
             }
           ]
         }
@@ -1265,7 +1291,8 @@
               "offerDone": false,
               "styleRuleId": "rule-priority-1",
               "extraFields": [],
-              "revision": 1
+              "revision": 1,
+              "health": null
             }
           ]
         },
@@ -1318,7 +1345,8 @@
               "offerDone": false,
               "styleRuleId": null,
               "extraFields": [],
-              "revision": 1
+              "revision": 1,
+              "health": null
             }
           ]
         }
@@ -1378,7 +1406,8 @@
               "offerDone": false,
               "styleRuleId": null,
               "extraFields": [],
-              "revision": 1
+              "revision": 1,
+              "health": null
             }
           ]
         },
@@ -1426,7 +1455,8 @@
               "offerDone": false,
               "styleRuleId": null,
               "extraFields": [],
-              "revision": 1
+              "revision": 1,
+              "health": null
             }
           ]
         }
@@ -1494,7 +1524,8 @@
               "offerDone": false,
               "styleRuleId": null,
               "extraFields": [],
-              "revision": 1
+              "revision": 1,
+              "health": null
             },
             {
               "id": "00000005-0000-4000-8001-000000000181",
@@ -1533,7 +1564,8 @@
               "offerDone": false,
               "styleRuleId": null,
               "extraFields": [],
-              "revision": 1
+              "revision": 1,
+              "health": null
             }
           ]
         }

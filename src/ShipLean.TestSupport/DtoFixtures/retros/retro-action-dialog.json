@@ -25,7 +25,9 @@
       "action": null,
       "canArchive": false,
       "decision": "undecided",
-      "notNeeded": null
+      "notNeeded": null,
+      "supporters": [],
+      "supportedByMe": false
     }
   ],
   "offered": [
@@ -54,7 +56,9 @@
       "action": null,
       "canArchive": true,
       "decision": "undecided",
-      "notNeeded": null
+      "notNeeded": null,
+      "supporters": [],
+      "supportedByMe": false
     },
     {
       "id": "00000011-0000-4000-8001-000000000004",
@@ -81,7 +85,9 @@
       "action": null,
       "canArchive": false,
       "decision": "undecided",
-      "notNeeded": null
+      "notNeeded": null,
+      "supporters": [],
+      "supportedByMe": false
     }
   ],
   "openActions": [

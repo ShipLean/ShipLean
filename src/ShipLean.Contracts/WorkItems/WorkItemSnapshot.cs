@@ -1,5 +1,6 @@
 using ShipLean.Contracts.Persisted;
 using ShipLean.Contracts.Refs;
+using ShipLean.Contracts.Screens;
 
 namespace ShipLean.Contracts.WorkItems;
 
@@ -43,4 +44,8 @@ public sealed record WorkItemSnapshot(
     string? StatusVerifiedAgent = null,
     string? StatusVerifiedVia = null,
     string? Slug = null,
-    DateOnly? StartedOn = null);
+    DateOnly? StartedOn = null,
+    FeatureHealth? Health = null,
+    DateTimeOffset? HealthSetAt = null,
+    Guid? HealthSetBy = null,
+    string? HealthSetAgent = null);

@@ -10,13 +10,14 @@ internal static class WorkItemProposals
         item.Id, item.ProjectId, item.Type, item.Title, item.Description, item.AcceptanceCriteria, item.ReproSteps, item.Severity,
         item.StateId, item.AssigneeId, item.SprintId, item.Priority, item.Points, item.ParentId, item.Tags,
         item.ColumnId, item.ColumnDone, item.LaneId, item.ColumnOrder, item.BacklogOrder,
-        item.Goal, item.StatusLine, item.StatusVerifiedAt);
+        item.Goal, item.StatusLine, item.StatusVerifiedAt, Health: item.Health, HealthSetAt: item.HealthSetAt);
 
     // A client may send null for a list (an explicit "addLinks": null): that is an empty list.
     public static WorkItemChanges? Clean(WorkItemChanges? changes)
         => changes is null ? null : changes with { AddLinks = changes.AddLinks ?? [], RemoveLinkIds = changes.RemoveLinkIds ?? [] };
 
-    // at is the moment this write stamps: writing the status line (even unchanged) or confirming it verifies the status then.
+    // at is the moment this write stamps: writing the status line (even unchanged) or confirming it verifies the status then,
+    // and writing the health (even unchanged) stamps it set then; clearing the health clears its stamp.
     public static ProposedChange Apply(ProposedChange change, WorkItemChanges? changes, DateTimeOffset at)
     {
         if (changes is null)
@@ -41,11 +42,19 @@ internal static class WorkItemProposals
             Goal = changes.Goal is { } goal ? goal.Value ?? "" : change.Goal,
             StatusLine = changes.StatusLine is { } statusLine ? statusLine.Value ?? "" : change.StatusLine,
             StatusVerifiedAt = changes.StatusLine is not null || changes.ConfirmStatus ? at : change.StatusVerifiedAt,
+            Health = changes.Health is { } health ? health.Value : change.Health,
+            HealthSetAt = changes.Health switch
+            {
+                null => change.HealthSetAt,
+                { Value: null } => null,
+                _ => at,
+            },
         };
     }
 
     public static WorkItemFieldView ViewOf(ProposedChange p, IReadOnlyList<LinkSnapshot> links) => new(
         p.Title, p.Type, p.StateId, p.AssigneeId, p.Priority, p.Points, p.Tags, p.SprintId, p.ParentId, p.Severity,
         WorkItemFieldView.NullIfEmpty(p.Description), p.AcceptanceCriteria, WorkItemFieldView.NullIfEmpty(p.ReproSteps), [.. links.Select(l => l.Value)],
-        WorkItemFieldView.NullIfEmpty(p.Goal), WorkItemFieldView.NullIfEmpty(p.StatusLine), WorkItemFieldView.Instant(p.StatusVerifiedAt));
+        WorkItemFieldView.NullIfEmpty(p.Goal), WorkItemFieldView.NullIfEmpty(p.StatusLine), WorkItemFieldView.Instant(p.StatusVerifiedAt),
+        WorkItemFieldView.HealthValue(p.Health));
 }

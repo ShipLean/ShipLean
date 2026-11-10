@@ -59,6 +59,10 @@ export const story: WorkItemDto = {
   slug: null,
   startedOn: null,
   startedLabel: null,
+  health: null,
+  healthSet: null,
+  rollups: [],
+  needsYou: null,
 };
 
 export const bug: WorkItemDto = {

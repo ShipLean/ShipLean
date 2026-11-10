@@ -49,6 +49,15 @@ export interface RetroActionDialogQuery {
   sprintId?: string;
 }
 
+export const retroKeys = {
+  sprint: (sprintId: string) => ['retro', 'sprint', sprintId] as const,
+  insights: (projectId: string, range: RetroRange) =>
+    ['projects', projectId, 'retros', 'insights', range] as const,
+  features: (projectId: string) => ['projects', projectId, 'retros', 'features'] as const,
+  actionDialog: (projectId: string, query: RetroActionDialogQuery) =>
+    ['projects', projectId, 'retros', 'actionDialog', query] as const,
+};
+
 const projectPath = (projectId: string) => `/api/projects/${encodeURIComponent(projectId)}`;
 const actionPath = (workItemId: string) => `/api/retros/actions/${encodeURIComponent(workItemId)}`;
 const proposalPath = (proposalId: string) =>
@@ -148,3 +157,10 @@ export const renameRetroTheme = (themeId: string, rename: RetroThemeRename) =>
 
 export const mergeRetroThemes = (projectId: string, merge: RetroThemeMerge) =>
   api.post<void>(`${projectPath(projectId)}/retros/themes/merge`, merge);
+
+/** Adds the caller's support to a point. 204. */
+export const supportPoint = (pointId: string) => api.post<void>(`${pointPath(pointId)}/support`);
+
+/** Removes it again: the Undo of supportPoint. 204. */
+export const unsupportPoint = (pointId: string) =>
+  api.delete<void>(`${pointPath(pointId)}/support`);

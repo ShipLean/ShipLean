@@ -20,6 +20,7 @@ public sealed class QuestionBuilder(Guid workItemId)
     private DateTimeOffset? _answeredAt;
     private Guid? _withdrawnBy;
     private DateTimeOffset? _withdrawnAt;
+    private string[] _options = [];
 
     public QuestionBuilder Number(int number)
     {
@@ -65,14 +66,22 @@ public sealed class QuestionBuilder(Guid workItemId)
         return this;
     }
 
+    // The answers the asker offers (question.options), in order. At most 6; the schema refuses more.
+    public QuestionBuilder WithOptions(params string[] options)
+    {
+        _options = options;
+        return this;
+    }
+
     public async Task<(Guid Id, int Number)> BuildAsync(NpgsqlConnection connection)
     {
         var number = await connection.ExecuteScalarAsync<int>(
             """
             INSERT INTO question (id, work_item_id, number, text, state, created_by_user_id, created_agent_name, created_at,
-                                  answer_comment_id, answered_by_user_id, answered_at, withdrawn_by_user_id, withdrawn_at)
+                                  answer_comment_id, answered_by_user_id, answered_at, withdrawn_by_user_id, withdrawn_at, options)
             SELECT @id, @workItemId, coalesce(@number::int, (SELECT coalesce(max(number), 0) + 1 FROM question WHERE work_item_id = @workItemId)),
-                   @text, @state, @askedBy, @askedAgent, @askedAt, @answerCommentId, @answeredBy, @answeredAt, @withdrawnBy, @withdrawnAt
+                   @text, @state, @askedBy, @askedAgent, @askedAt, @answerCommentId, @answeredBy, @answeredAt, @withdrawnBy, @withdrawnAt,
+                   to_jsonb(@options::text[])
             RETURNING number
             """,
             new
@@ -80,7 +89,7 @@ public sealed class QuestionBuilder(Guid workItemId)
                 id = _id, workItemId, number = _number, text = _text, state = _state,
                 askedBy = _askedBy, askedAgent = _askedAgent, askedAt = _askedAt.ToUniversalTime(),
                 answerCommentId = _answerCommentId, answeredBy = _answeredBy, answeredAt = _answeredAt?.ToUniversalTime(),
-                withdrawnBy = _withdrawnBy, withdrawnAt = _withdrawnAt?.ToUniversalTime(),
+                withdrawnBy = _withdrawnBy, withdrawnAt = _withdrawnAt?.ToUniversalTime(), options = _options,
             });
         return (_id, number);
     }

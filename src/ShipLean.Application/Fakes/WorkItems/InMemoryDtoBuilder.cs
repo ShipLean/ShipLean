@@ -1,6 +1,8 @@
 using ShipLean.Application.Markdown;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Refs;
+using ShipLean.Contracts.Screens;
+using ShipLean.Contracts.Views;
 using ShipLean.Contracts.WorkItems;
 using ShipLean.Core;
 
@@ -92,7 +94,38 @@ internal sealed class InMemoryDtoBuilder(
                 : null,
             item.Slug,
             item.StartedOn,
-            item.StartedOn is { } started ? DisplayDate.ShortDay(DisplayDate.StartOfDay(started, time.LocalTimeZone), time.GetUtcNow(), time.LocalTimeZone) : null);
+            item.StartedOn is { } started ? DisplayDate.ShortDay(DisplayDate.StartOfDay(started, time.LocalTimeZone), time.GetUtcNow(), time.LocalTimeZone) : null,
+            item.Health,
+            item.HealthSetAt is { } healthSet ? new HealthSetDto(healthSet, DisplayDate.Relative(healthSet, time), UserOrNull(item.HealthSetBy), item.HealthSetAgent) : null,
+            Rollups(item, project),
+            // TODO: count open asks for NeedsYou; the fake has no asks, so nothing waits on anyone.
+            null);
+    }
+
+    // The descendants of an Epic, Feature or Story by type, at any depth: a Story's are its tasks and an Epic's or Feature's leave tasks out. Closed is the Completed category;
+    // Removed ones are not counted. The fake has no sprint dates, so the sprint splits are 0.
+    private List<RollupCountDto> Rollups(WorkItemSnapshot item, InMemoryProject project)
+    {
+        if (item.Type is not (WorkItemTypeId.Epic or WorkItemTypeId.Feature or WorkItemTypeId.Story))
+        {
+            return [];
+        }
+        var below = new List<WorkItemSnapshot>();
+        var pending = new Queue<Guid>([item.Id]);
+        while (pending.Count > 0)
+        {
+            var parent = pending.Dequeue();
+            foreach (var child in world.Items.Values.Where(i => i.ParentId == parent))
+            {
+                below.Add(child);
+                pending.Enqueue(child.Id);
+            }
+        }
+        return [.. below
+            .Select(i => (i.Type, project.States.First(s => s.Id == i.StateId).Category))
+            .Where(x => x.Category != StateCategory.Removed && (item.Type == WorkItemTypeId.Story || x.Type != WorkItemTypeId.Task))
+            .GroupBy(x => x.Type)
+            .Select(g => new RollupCountDto(g.Key, g.Count(x => x.Category != StateCategory.Completed), g.Count(x => x.Category == StateCategory.Completed), 0, 0))];
     }
 
     private static TypeRef TypeRef(WorkItemTypeId type) => new(type, TypeNames[type]);

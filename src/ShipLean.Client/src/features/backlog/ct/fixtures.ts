@@ -44,6 +44,9 @@ export function itemRow(overrides: Partial<BacklogRowDto> & { key: string }): Ba
     tags: [],
     rollups: [],
     revision: 1,
+    health: null,
+    needsYou: null,
+    blockedBy: [],
     ...overrides,
   };
 }

@@ -347,6 +347,14 @@ public sealed partial class InMemoryWorkItemStore(IWorkItemRules rules, ICurrent
             snapshot = snapshot with { StatusVerifiedBy = stamp.By, StatusVerifiedAgent = stamp.AgentName, StatusVerifiedVia = stamp.Via };
         }
 
+        // Writing the health (even unchanged) stamps who set it; clearing it clears the stamp, as the store does.
+        if (proposed.HealthSetAt != baseline.HealthSetAt)
+        {
+            snapshot = proposed.HealthSetAt is null
+                ? snapshot with { HealthSetBy = null, HealthSetAgent = null }
+                : snapshot with { HealthSetBy = stamp.By, HealthSetAgent = stamp.AgentName };
+        }
+
         world.Items[snapshot.Id] = snapshot;
         if (written)
         {
@@ -386,6 +394,8 @@ public sealed partial class InMemoryWorkItemStore(IWorkItemRules rules, ICurrent
         Goal = p.Goal,
         StatusLine = p.StatusLine,
         StatusVerifiedAt = p.StatusVerifiedAt,
+        Health = p.Health,
+        HealthSetAt = p.HealthSetAt,
         ColumnId = p.ColumnId,
         ColumnDone = p.ColumnDone,
         LaneId = p.LaneId,
@@ -397,7 +407,8 @@ public sealed partial class InMemoryWorkItemStore(IWorkItemRules rules, ICurrent
     private static WorkItemFieldView ViewOf(ProposedChange p, IReadOnlyList<LinkSnapshot> links) => new(
         p.Title, p.Type, p.StateId, p.AssigneeId, p.Priority, p.Points, p.Tags, p.SprintId, p.ParentId, p.Severity,
         WorkItemFieldView.NullIfEmpty(p.Description), p.AcceptanceCriteria, WorkItemFieldView.NullIfEmpty(p.ReproSteps), [.. links.Select(l => l.Value)],
-        WorkItemFieldView.NullIfEmpty(p.Goal), WorkItemFieldView.NullIfEmpty(p.StatusLine), WorkItemFieldView.Instant(p.StatusVerifiedAt));
+        WorkItemFieldView.NullIfEmpty(p.Goal), WorkItemFieldView.NullIfEmpty(p.StatusLine), WorkItemFieldView.Instant(p.StatusVerifiedAt),
+        WorkItemFieldView.HealthValue(p.Health));
 
     private WorkItemFieldLabels LabelsFor(InMemoryWorld world) => new(
         id => world.Projects.Values.SelectMany(p => p.States).FirstOrDefault(s => s.Id == id)?.Name,

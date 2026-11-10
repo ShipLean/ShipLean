@@ -1,4 +1,5 @@
 using ShipLean.Contracts.Persisted;
+using ShipLean.Contracts.Screens;
 
 namespace ShipLean.Contracts.WorkItems;
 
@@ -35,6 +36,9 @@ public sealed record WorkItemChanges
     public FieldSet<string>? StatusLine { get; init; }
 
     public bool ConfirmStatus { get; init; }
+
+    // Feature only. { "value": null } clears the health.
+    public FieldSet<FeatureHealth?>? Health { get; init; }
 
     public IReadOnlyList<LinkValue> AddLinks { get; init; } = [];
 

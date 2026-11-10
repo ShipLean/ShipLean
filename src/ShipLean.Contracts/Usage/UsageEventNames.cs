@@ -103,6 +103,14 @@ public static class UsageEventNames
     public const string QuestionAnswered = "question.answered";
     public const string QuestionWithdrawn = "question.withdrawn";
 
+    // The phone app's screens (SHIP-916 N3, SHIP-926 K5). Setting a Feature's health is a work item PATCH, tracked as
+    // work_item.updated, so it has no name here.
+    public const string RetroPointSupported = "retro.point_supported";
+    public const string RetroPointUnsupported = "retro.point_unsupported";
+    public const string FeatureDigestSeen = "feature.digest_seen";
+    public const string MentionSeen = "mention.seen";
+    public const string MentionReplied = "mention.replied";
+
     public const string ImportStarted = "import.started";
     public const string ImportJobChanged = "import.job_changed";
     public const string ImportJiraConnected = "import.jira_connected";

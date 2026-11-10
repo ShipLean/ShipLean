@@ -1,5 +1,6 @@
 using ShipLean.Contracts.Persisted;
 using ShipLean.Contracts.Refs;
+using ShipLean.Contracts.Screens;
 
 namespace ShipLean.Application.WorkItems.History;
 
@@ -22,11 +23,27 @@ public sealed record WorkItemFieldView(
     IReadOnlyList<LinkValue> Links,
     string? Goal = null,
     string? StatusLine = null,
-    string? StatusVerifiedAt = null)
+    string? StatusVerifiedAt = null,
+    string? Health = null)
 {
     public static WorkItemFieldView Blank { get; } = new(null, null, null, null, null, null, [], null, null, null, null, [], null, []);
 
     public static string? NullIfEmpty(string value) => value.Length == 0 ? null : value;
+
+    // A Feature's health as it is stored and as history holds it: the camelCase name (onTrack, atRisk, blocked).
+    public static string? HealthValue(FeatureHealth? value) => value switch
+    {
+        FeatureHealth.OnTrack => "onTrack",
+        FeatureHealth.AtRisk => "atRisk",
+        FeatureHealth.Blocked => "blocked",
+        _ => null,
+    };
+
+    public static FeatureHealth? ParseHealth(string? value) => value is null ? null : Enum.Parse<FeatureHealth>(value, ignoreCase: true);
+
+    // The words history shows for a stored health ("On track", "At risk", "Blocked"): the health field's values in FieldIds.
+    public static string? HealthLabel(string value)
+        => FieldIds.All.Single(f => f.Id == FieldIds.Health).Values!.FirstOrDefault(v => v.Value.GetString() == value)?.Label;
 
     // An instant as history stores it: ISO 8601 UTC with a Z, the fraction only when there is one.
     public static string? Instant(DateTimeOffset? value)

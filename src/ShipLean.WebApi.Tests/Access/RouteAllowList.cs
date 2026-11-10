@@ -58,6 +58,8 @@ public static class RouteAllowList
         new("DELETE", "api/auth/device-sessions/{id:guid}", "Signs out one of the caller's own phones; another user's is not_found."),
         new("DELETE", "api/auth/device-sessions/current", "Ends the device session the request used; a browser's is not_found."),
         new("GET", "api/agents/mcp-url", "The server's own /mcp address; names nothing about a project."),
+        new("POST", "api/mentions/{id:guid}/seen", "The caller's own mention: the mention's own user and project are checked inside, and anyone else's is not_found."),
+        new("POST", "api/mentions/{id:guid}/reply", "The caller's own mention: the mention's own user and project are checked inside, and anyone else's is not_found.", Body: """{"body":"Sweep reply"}"""),
     ];
 
     // Allow-listed entries with a route parameter, other than the caller-owned and any-user routes below. A parameter usually means an
@@ -73,6 +75,8 @@ public static class RouteAllowList
         "api/me/agents/{id:guid}",
         "api/agents/consent/{id:guid}",
         "api/auth/device-sessions/{id:guid}",
+        "api/mentions/{id:guid}/seen",
+        "api/mentions/{id:guid}/reply",
     ];
 
     // The parameter names any user, and every signed-in user may read it (v1: one organisation per instance); an unknown id is not_found.

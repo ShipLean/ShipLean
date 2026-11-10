@@ -1,4 +1,5 @@
 // The app's theme values, light and dark (K6 shape).
+import { Platform } from 'react-native';
 import { generatedTokens as t } from './tokens.generated';
 
 // Values come from tokens.generated.ts (design/tokens.json via scripts/generate-theme.mjs).
@@ -19,6 +20,11 @@ export interface Colors {
   info: string;
   danger: string;
   purple: string;
+  // Progress bar: open work in the current sprint, and in another sprint.
+  progressCurrentSprint: string;
+  progressOtherSprint: string;
+  // The dim over the screen behind a sheet.
+  scrim: string;
 }
 
 export type StateCategory = 'proposed' | 'inProgress' | 'resolved' | 'completed' | 'removed';
@@ -34,9 +40,12 @@ export interface Theme {
       sm: number;
       base: number;
       md: number;
+      body15: number;
       lg: number;
       input: number;
     };
+    // Monospace family for keys: iOS has no family called 'monospace'.
+    mono: string;
     weight: { regular: '400'; medium: '500'; semibold: '600'; bold: '700' };
   };
   // Touch sizes: the top bar's height, a control's minimum height, a row's minimum height.
@@ -51,7 +60,7 @@ function theme(scheme: Scheme): Theme {
   return {
     scheme,
     colors,
-    font: t.font,
+    font: { ...t.font, mono: Platform.select({ ios: 'Menlo', default: 'monospace' }) },
     touch: t.touch,
     space: t.space,
     radius: t.radius,

@@ -1,11 +1,10 @@
 import { configurePlatform } from '@shiplean/core/platform';
-import { QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 import { connectReactQuery, mobilePlatform } from '../src/mobilePlatform';
-import { queryClient } from '../src/queryClient';
 import { useSession } from '../src/session/useSession';
+import { AppProviders } from '../src/shell/AppProviders';
 import { useTheme } from '../src/theme/useTheme';
 
 // Before anything renders or fetches. index.ts has already loaded the crypto polyfill the core reads.
@@ -22,18 +21,22 @@ export default function RootLayout() {
   const theme = useTheme();
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-      <QueryClientProvider client={queryClient}>
+      <AppProviders>
         <StatusBar style={theme.scheme === 'dark' ? 'light' : 'dark'} />
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Protected guard={signedIn}>
             <Stack.Screen name="index" />
             <Stack.Screen name="account" options={{ presentation: 'formSheet' }} />
+            <Stack.Screen name="p/[key]" />
+            <Stack.Screen name="settings/voice" />
+            <Stack.Screen name="settings/voice/licences" />
+            <Stack.Screen name="setup/[step]" />
           </Stack.Protected>
           <Stack.Protected guard={!signedIn}>
             <Stack.Screen name="sign-in" />
           </Stack.Protected>
         </Stack>
-      </QueryClientProvider>
+      </AppProviders>
     </SafeAreaProvider>
   );
 }

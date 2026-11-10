@@ -383,7 +383,9 @@
         "action": null,
         "canArchive": false,
         "decision": "undecided",
-        "notNeeded": null
+        "notNeeded": null,
+        "supporters": [],
+        "supportedByMe": false
       }
     },
     {

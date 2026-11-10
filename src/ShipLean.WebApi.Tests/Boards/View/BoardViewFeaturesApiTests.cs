@@ -51,7 +51,7 @@ public class BoardViewFeaturesApiTests : ApiFixture
         var reporting = board.Cards().Single(c => c.Key == "SHIP-103");
         reporting.Rollups.ShouldContain(r => r.Type == WorkItemTypeId.Feature && r.Open == 1 && r.Closed == 0);
         reporting.Rollups.ShouldNotContain(r => r.Type == WorkItemTypeId.Task);
-        reporting.Assignee.ShouldBeNull();
+        reporting.Assignee!.Id.ShouldBe(SeedIds.Users.Tom);
     }
 
     [Test]
@@ -79,8 +79,11 @@ public class BoardViewFeaturesApiTests : ApiFixture
         byEpic.Cards().Select(c => c.Key).ShouldBe(["SHIP-101"]);
         byEpic.Columns.Select(c => c.Count).ShouldBe(all.Columns.Select(c => c.Count));
         (await Api.BoardAsync(Features, "?epic=none")).Cards().ShouldBeEmpty();
-        (await Api.BoardAsync(Features, "?owner=none")).Cards().Count().ShouldBe(all.Cards().Count());
-        (await Api.BoardAsync(Features, $"?owner=none&owner={Guid.NewGuid()}")).Cards().Count().ShouldBe(all.Cards().Count());
+        // The seed gives Tom Features (SHIP-916), so "no owner" must hide some cards.
+        var unowned = all.Cards().Where(c => c.Assignee is null).Select(c => c.Key).ToList();
+        unowned.Count.ShouldBeLessThan(all.Cards().Count());
+        (await Api.BoardAsync(Features, "?owner=none")).Cards().Select(c => c.Key).ShouldBe(unowned, ignoreOrder: true);
+        (await Api.BoardAsync(Features, $"?owner=none&owner={Guid.NewGuid()}")).Cards().Select(c => c.Key).ShouldBe(unowned, ignoreOrder: true);
     }
 
     [Test]

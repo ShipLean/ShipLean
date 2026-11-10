@@ -1,3 +1,5 @@
 node_modules/
 .expo/
 expo-env.d.ts
+tools/voice-eval/.venv/
+tools/voice-eval/out/

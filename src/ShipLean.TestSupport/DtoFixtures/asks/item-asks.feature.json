@@ -17,6 +17,7 @@
       "number": 1,
       "label": "Q1",
       "text": "Is Checkout v2 behind a feature flag?",
+      "options": [],
       "state": "withdrawn",
       "askedBy": {
         "id": "00000001-0000-4000-8000-000000000002",

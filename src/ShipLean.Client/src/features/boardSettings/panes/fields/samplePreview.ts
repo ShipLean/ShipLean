@@ -162,5 +162,6 @@ export function previewCard(setting: CardFieldSettingJson): CardDto {
       .map((id) => ({ fieldId: id, label: fieldLabel(id), text: sample.fields[id] ?? null }))
       .filter((field) => field.text !== null || setting.showEmptyFields),
     revision: 1,
+    health: null,
   };
 }

@@ -1,0 +1,9 @@
+# What the host eval needs besides the phone's model files (those come from out/manifest.json).
+# One file per line: <path in the cache> <url> <sha256>. Blank lines and # comments are skipped.
+# An archive (.tar.gz, .tar.bz2) is unpacked into <path without the extension>/ once its SHA-256 is checked.
+
+# llama.cpp b10256, the build llama.rn 0.12.9 bundles (its cpp/common/build-info.cpp), CPU for x86-64 Linux.
+llama.cpp/llama-b10256-bin-ubuntu-x64.tar.gz https://github.com/ggml-org/llama.cpp/releases/download/b10256/llama-b10256-bin-ubuntu-x64.tar.gz aae348ab1d00c6724e299c1ee23645dfd363a6636655429c09b3eff0004a1484
+
+# sherpa-onnx's Piper voice (en_US amy, low) to synthesise test audio from the rows' utterances.
+tts/vits-piper-en_US-amy-low.tar.bz2 https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-amy-low.tar.bz2 c70f5284a09a7fd4ed203b39b2ff51cac1432b422b852eb647b481dade3cf639

@@ -10,7 +10,7 @@ public sealed class McpServerServices : IServiceModule
         + "When someone has an idea or asks you to research something that might become work, search for its Feature or create "
         + "one in a Proposed state with create_feature, put findings on it with attach_markdown, and end each session with comment and set_status. "
         + "When you work on a plan's items, put progress, reports, decisions and brief changes back into ShipLean. "
-        + "Record decisions you make on an item with record_decisions and ask its owner with ask, not in Markdown or a comment; carry on with your recommended answers and never wait: the owner answers on the item, and the next agent to pick it up reads the answers with get_work_item or get_brief. "
+        + "Record decisions you make on an item with record_decisions and ask its owner with ask (give up to 6 options for a pick-one question), not in Markdown or a comment; carry on with your recommended answers and never wait: the owner answers on the item, and the next agent to pick it up reads the answers with get_work_item or get_brief. "
         + "Name things the way the team does: a work item by its key (SHIP-123), a sprint as current, next or by its name, "
         + "a state by its name, a person by name or email, and a project by its key. Leave project out on a read and you get "
         + "the user's most recent project; a write that cannot tell the project from an item key needs it when the user is in "

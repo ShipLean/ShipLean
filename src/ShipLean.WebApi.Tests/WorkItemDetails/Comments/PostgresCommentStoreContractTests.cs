@@ -1,6 +1,7 @@
 using ShipLean.WebApi.Tests.Boards.Settings;
 using Npgsql;
 using ShipLean.Application.Database;
+using ShipLean.Application.Features.Inbox;
 using ShipLean.Application.Features.WorkItemDetails.Comments;
 using ShipLean.Application.Markdown;
 using ShipLean.Contracts;
@@ -55,5 +56,6 @@ public class PostgresCommentStoreContractTests : CommentStoreContract
     }
 
     private CommentStore CreateStore(Guid actorId, ICurrentAgent agent)
-        => new(_dataSource, new FixedCurrentUser(actorId), agent, new MarkdownRenderer(), TimeProvider.System, new DiscardingProjectEvents());
+        => new(_dataSource, new FixedCurrentUser(actorId), agent, new MarkdownRenderer(), TimeProvider.System, new DiscardingProjectEvents(),
+            new MentionRecorder(TimeProvider.System));
 }

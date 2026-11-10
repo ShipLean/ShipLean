@@ -1,0 +1,202 @@
+{
+  "parent": {
+    "id": "00000005-0000-4000-8001-000000000141",
+    "key": "SHIP-141",
+    "type": {
+      "id": "story",
+      "name": "User Story"
+    },
+    "title": "Pay with saved card",
+    "state": {
+      "id": "00000003-0000-4000-8001-000000000302",
+      "name": "Active",
+      "category": "inProgress"
+    },
+    "assignee": {
+      "id": "00000001-0000-4000-8000-000000000002",
+      "name": "Priya Shah",
+      "initials": "PS",
+      "avatarColour": "#2f7fd8",
+      "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"
+    },
+    "points": 5,
+    "childPoints": null,
+    "sumWarn": false,
+    "parent": {
+      "id": "00000005-0000-4000-8001-000000000101",
+      "key": "SHIP-101",
+      "type": {
+        "id": "feature",
+        "name": "Feature"
+      },
+      "title": "Checkout v2"
+    },
+    "tags": [
+      {
+        "name": "Payments",
+        "colour": "accent"
+      }
+    ],
+    "rollups": [
+      {
+        "type": "task",
+        "open": 3,
+        "closed": 0,
+        "inCurrentSprint": 0,
+        "inOtherSprint": 0
+      }
+    ],
+    "offerDone": false,
+    "styleRuleId": null,
+    "extraFields": [],
+    "revision": 7,
+    "health": null
+  },
+  "offerResolve": false,
+  "cells": [
+    {
+      "stateId": "00000003-0000-4000-8001-000000000501",
+      "tasks": [
+        {
+          "id": "00000005-0000-4000-8001-000000000173",
+          "key": "SHIP-173",
+          "type": {
+            "id": "task",
+            "name": "Task"
+          },
+          "title": "E2E test",
+          "state": {
+            "id": "00000003-0000-4000-8001-000000000501",
+            "name": "New",
+            "category": "proposed"
+          },
+          "assignee": null,
+          "points": 1,
+          "childPoints": null,
+          "sumWarn": false,
+          "parent": {
+            "id": "00000005-0000-4000-8001-000000000141",
+            "key": "SHIP-141",
+            "type": {
+              "id": "story",
+              "name": "User Story"
+            },
+            "title": "Pay with saved card"
+          },
+          "tags": [],
+          "rollups": [],
+          "offerDone": false,
+          "styleRuleId": null,
+          "extraFields": [],
+          "revision": 1,
+          "health": null
+        }
+      ]
+    },
+    {
+      "stateId": "00000003-0000-4000-8001-000000000502",
+      "tasks": [
+        {
+          "id": "00000005-0000-4000-8001-000000000172",
+          "key": "SHIP-172",
+          "type": {
+            "id": "task",
+            "name": "Task"
+          },
+          "title": "UI: saved card picker",
+          "state": {
+            "id": "00000003-0000-4000-8001-000000000502",
+            "name": "Active",
+            "category": "inProgress"
+          },
+          "assignee": {
+            "id": "00000001-0000-4000-8000-000000000004",
+            "name": "Mei Lin",
+            "initials": "ML",
+            "avatarColour": "#7b4fc9",
+            "photoUrl": null
+          },
+          "points": 2,
+          "childPoints": null,
+          "sumWarn": false,
+          "parent": {
+            "id": "00000005-0000-4000-8001-000000000141",
+            "key": "SHIP-141",
+            "type": {
+              "id": "story",
+              "name": "User Story"
+            },
+            "title": "Pay with saved card"
+          },
+          "tags": [],
+          "rollups": [],
+          "offerDone": false,
+          "styleRuleId": "rule-priority-1",
+          "extraFields": [],
+          "revision": 1,
+          "health": null
+        }
+      ]
+    },
+    {
+      "stateId": "00000003-0000-4000-8001-000000000503",
+      "tasks": [
+        {
+          "id": "00000005-0000-4000-8001-000000000171",
+          "key": "SHIP-171",
+          "type": {
+            "id": "task",
+            "name": "Task"
+          },
+          "title": "API: tokenised card lookup",
+          "state": {
+            "id": "00000003-0000-4000-8001-000000000503",
+            "name": "In review",
+            "category": "resolved"
+          },
+          "assignee": {
+            "id": "00000001-0000-4000-8000-000000000002",
+            "name": "Priya Shah",
+            "initials": "PS",
+            "avatarColour": "#2f7fd8",
+            "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"
+          },
+          "points": 2,
+          "childPoints": null,
+          "sumWarn": false,
+          "parent": {
+            "id": "00000005-0000-4000-8001-000000000141",
+            "key": "SHIP-141",
+            "type": {
+              "id": "story",
+              "name": "User Story"
+            },
+            "title": "Pay with saved card"
+          },
+          "tags": [],
+          "rollups": [],
+          "offerDone": false,
+          "styleRuleId": null,
+          "extraFields": [],
+          "revision": 1,
+          "health": null
+        }
+      ]
+    },
+    {
+      "stateId": "00000003-0000-4000-8001-000000000504",
+      "tasks": []
+    }
+  ],
+  "featureId": "00000005-0000-4000-8001-000000000101",
+  "sprint": {
+    "id": "00000004-0000-4000-8001-000000000024",
+    "name": "Sprint 24",
+    "status": "current"
+  },
+  "needsYou": {
+    "questions": 1,
+    "decisions": 1,
+    "onChildren": false
+  }
+}

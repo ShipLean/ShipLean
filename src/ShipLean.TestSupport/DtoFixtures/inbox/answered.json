@@ -1,0 +1,66 @@
+{
+  "answeredToday": 2,
+  "pickedUpToday": 1,
+  "rows": [
+    {
+      "itemId": "00000005-0000-4000-8001-000000000141",
+      "key": "SHIP-141",
+      "type": "story",
+      "title": "Pick a saved card",
+      "kind": "mention",
+      "labels": "@",
+      "summary": "Replied to Priya Shah",
+      "answeredAt": "2026-11-06T09:05:00+00:00",
+      "answeredAtLabel": "09:05",
+      "next": {
+        "kind": "personReplied",
+        "by": {
+          "id": "00000001-0000-4000-8000-000000000002",
+          "name": "Priya Shah",
+          "initials": "PS",
+          "avatarColour": "#2f7fd8",
+          "photoUrl": null
+        },
+        "agentName": null,
+        "at": "2026-11-06T09:30:00+00:00",
+        "atLabel": "09:30"
+      }
+    },
+    {
+      "itemId": "00000005-0000-4000-8001-000000000140",
+      "key": "SHIP-140",
+      "type": "feature",
+      "title": "Saved cards at checkout",
+      "kind": "decision",
+      "labels": "D1–D8",
+      "summary": "Approved D1–D8",
+      "answeredAt": "2026-11-06T08:40:00+00:00",
+      "answeredAtLabel": "08:40",
+      "next": {
+        "kind": "agentPickedUp",
+        "by": {
+          "id": "0199f000-0000-7000-8000-000000000001",
+          "name": "Joel Dickson",
+          "initials": "JD",
+          "avatarColour": "#5b6b8c",
+          "photoUrl": null
+        },
+        "agentName": "Claude Code (claude.ai)",
+        "at": "2026-11-06T08:52:00+00:00",
+        "atLabel": "08:52"
+      }
+    },
+    {
+      "itemId": "00000005-0000-4000-8001-000000000150",
+      "key": "SHIP-150",
+      "type": "bug",
+      "title": "Card list flickers on refresh",
+      "kind": "question",
+      "labels": "Q1",
+      "summary": "Answered Q1",
+      "answeredAt": "2026-11-04T17:10:00+00:00",
+      "answeredAtLabel": "4 Nov",
+      "next": null
+    }
+  ]
+}

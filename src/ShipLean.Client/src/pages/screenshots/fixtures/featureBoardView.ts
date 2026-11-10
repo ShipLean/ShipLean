@@ -18,6 +18,7 @@ const rows: FeatureBoardRowDto[] = TASKBOARD_VIEW.rows.flatMap((row, i) =>
           cells: row.cells,
           featureId: 'f-checkout',
           sprint: SPRINT_OF[i] ?? null,
+          needsYou: null,
         },
       ],
 );

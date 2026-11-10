@@ -486,6 +486,20 @@ export const FIELD_IDS = [
     values: null,
   },
   {
+    id: 'health',
+    label: 'Health',
+    kind: 'text',
+    appliesTo: ['feature'],
+    nullable: true,
+    usedIn: ['history'],
+    ops: [],
+    values: [
+      { value: 'onTrack', label: 'On track' },
+      { value: 'atRisk', label: 'At risk' },
+      { value: 'blocked', label: 'Blocked' },
+    ],
+  },
+  {
     id: 'links',
     label: 'Links',
     kind: 'links',

@@ -5,6 +5,7 @@ using ShipLean.Contracts;
 using ShipLean.Contracts.Boards;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Refs;
+using ShipLean.Contracts.Screens;
 using ShipLean.Contracts.Views;
 using ShipLean.Contracts.WorkItems.Reads.Tree;
 
@@ -15,7 +16,8 @@ namespace ShipLean.Application.Features.Taskboard.FeatureBoard;
 // rows returned (a section counts its own rows only), so the header always matches the board. Callers read it as a member.
 [RegisterPerRequest]
 public sealed class FeatureBoardViews(
-    IProjectAccess access, IBoardSettingsStore boards, IWorkTreeReads tree, TaskboardTasks tasks, TaskboardCards cards, NpgsqlDataSource dataSource)
+    IProjectAccess access, IBoardSettingsStore boards, IWorkTreeReads tree, TaskboardTasks tasks, TaskboardCards cards, NpgsqlDataSource dataSource,
+    INeedsYouCounts needsYou, ICurrentUser currentUser)
 {
     public async Task<FeatureBoardViewDto> GetAsync(Guid projectId, string itemKey, CancellationToken cancellationToken)
     {
@@ -36,6 +38,7 @@ public sealed class FeatureBoardViews(
         var parents = storyIds.Select(id => stack[id]).ToList();
         var taskRows = await tasks.ForParentsAsync(projectId, storyIds, null, cancellationToken);
         var rollups = await tree.RollupsAsync(projectId, storyIds, null, cancellationToken);
+        var waiting = await needsYou.ForItemsAsync(currentUser.Id, storyIds, cancellationToken);
         var byId = await cards.BuildAsync([.. parents, .. taskRows], rollups, board.Settings, cancellationToken);
 
         var states = TaskboardGrid.TaskStates(board);
@@ -45,7 +48,7 @@ public sealed class FeatureBoardViews(
         {
             var parent = stack[r.Story];
             var rowTasks = tasksByParent[parent.Id].ToList();
-            return new FeatureBoardRowDto(byId[parent.Id], TaskboardGrid.OfferResolve(parent, rowTasks), TaskboardGrid.Cells(rowTasks, states), r.Section, parent.Sprint);
+            return new FeatureBoardRowDto(byId[parent.Id], TaskboardGrid.OfferResolve(parent, rowTasks), TaskboardGrid.Cells(rowTasks, states), r.Section, parent.Sprint, waiting.GetValueOrDefault(parent.Id));
         }).ToList();
 
         var rowsBySection = rows.ToLookup(r => r.FeatureId);

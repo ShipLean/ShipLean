@@ -6,3 +6,6 @@ allowBuilds:
   agoda-devfeedback-common: false
   # Jest's file watcher (via jest-expo). Prebuilt binaries ship as optional packages; CI never watches.
   '@parcel/watcher': false
+  # The app's on-device command model: its postinstall downloads the prebuilt Android jniLibs and iOS xcframework
+  # of the pinned release, which the native build links.
+  llama.rn: true

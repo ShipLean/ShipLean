@@ -24,12 +24,14 @@ public sealed class BacklogRows(IReadOnlyList<TagColourJson> tagColours)
         Build(row, BacklogRowKind.Group, depth, null, rollups, childPoints, SumExceeds(row.Points, childPoints));
 
     public static BacklogRowDto NoParent(IReadOnlyList<RollupCountDto> rollups, decimal? childPoints) =>
-        new(BacklogRowKind.NoParentGroup, Guid.Empty, string.Empty, null, "No parent", null, null, null, childPoints, false, null, null, 0, null, [], rollups, 0);
+        new(BacklogRowKind.NoParentGroup, Guid.Empty, string.Empty, null, "No parent", null, null, null, childPoints, false, null, null, 0, null, [], rollups, 0, null, null, []);
 
     // A Feature or Epic whose children's points exceed its own by more than a quarter.
     private static bool SumExceeds(decimal? own, decimal? children) => own is > 0 && children > own * 1.25m;
 
     private BacklogRowDto Build(StackRowDto row, BacklogRowKind kind, int depth, int? rank, IReadOnlyList<RollupCountDto> rollups, decimal? childPoints, bool sumWarn) =>
         new(kind, row.Id, row.Key, row.Type, row.Title, row.State, row.Assignee, row.Points, childPoints, sumWarn, row.Sprint, row.Parent, depth, rank,
-            [.. row.Tags.Select(tag => new CardTagDto(tag, _colours.TryGetValue(tag, out var colour) ? colour : null))], rollups, row.Revision);
+            [.. row.Tags.Select(tag => new CardTagDto(tag, _colours.TryGetValue(tag, out var colour) ? colour : null))], rollups, row.Revision,
+            // Health, NeedsYou and BlockedBy are filled per view by BacklogRowExtras.
+            null, null, []);
 }

@@ -1,0 +1,200 @@
+{
+  "projectId": "00000002-0000-4000-8000-000000000001",
+  "sinceLabel": "since Mon 09:12",
+  "changedSince": 3,
+  "groups": [
+    {
+      "stateCategory": "inProgress",
+      "label": "Active",
+      "folded": false,
+      "count": 2,
+      "rows": [
+        {
+          "id": "00000005-0000-4000-8001-000000000100",
+          "key": "SHIP-100",
+          "title": "Pay with saved cards",
+          "revision": 6,
+          "state": {
+            "id": "00000003-0000-4000-8001-000000000202",
+            "name": "Active",
+            "category": "inProgress"
+          },
+          "health": "atRisk",
+          "statusLine": "Saved cards work end to end on staging; Apple Pay waits on the merchant account.",
+          "statusVerified": {
+            "at": "2026-10-22T09:30:00+00:00",
+            "atLabel": "22 Oct",
+            "stale": false,
+            "by": {
+              "id": "00000001-0000-4000-8000-000000000002",
+              "name": "Priya Shah",
+              "initials": "PS",
+              "avatarColour": "#2f7fd8",
+              "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"
+            },
+            "agent": "Claude Code (claude.ai)",
+            "via": "set_status"
+          },
+          "statusStale": false,
+          "rollups": [
+            {
+              "type": "story",
+              "open": 1,
+              "closed": 0,
+              "inCurrentSprint": 1,
+              "inOtherSprint": 0
+            }
+          ],
+          "needsYou": {
+            "questions": 1,
+            "decisions": 2,
+            "onChildren": true
+          },
+          "rank": 1,
+          "epic": {
+            "id": "00000005-0000-4000-8001-000000000090",
+            "key": "SHIP-90",
+            "type": {
+              "id": "epic",
+              "name": "Epic"
+            },
+            "title": "Checkout conversion"
+          }
+        },
+        {
+          "id": "00000005-0000-4000-8001-000000000101",
+          "key": "SHIP-101",
+          "title": "Checkout v2",
+          "revision": 1,
+          "state": {
+            "id": "00000003-0000-4000-8001-000000000202",
+            "name": "Active",
+            "category": "inProgress"
+          },
+          "health": "blocked",
+          "statusLine": "Waiting on the fraud check API.",
+          "statusVerified": {
+            "at": "2026-10-15T10:00:00+00:00",
+            "atLabel": "15 Oct",
+            "stale": false,
+            "by": {
+              "id": "00000001-0000-4000-8000-000000000003",
+              "name": "Tom Okafor",
+              "initials": "TO",
+              "avatarColour": "#16a089",
+              "photoUrl": null
+            },
+            "agent": null,
+            "via": null
+          },
+          "statusStale": true,
+          "rollups": [
+            {
+              "type": "story",
+              "open": 5,
+              "closed": 3,
+              "inCurrentSprint": 0,
+              "inOtherSprint": 0
+            },
+            {
+              "type": "bug",
+              "open": 1,
+              "closed": 1,
+              "inCurrentSprint": 0,
+              "inOtherSprint": 0
+            }
+          ],
+          "needsYou": null,
+          "rank": 2,
+          "epic": null
+        }
+      ]
+    },
+    {
+      "stateCategory": "resolved",
+      "label": "Resolved",
+      "folded": false,
+      "count": 1,
+      "rows": [
+        {
+          "id": "00000005-0000-4000-8001-000000000102",
+          "key": "SHIP-102",
+          "title": "Order history export",
+          "revision": 4,
+          "state": {
+            "id": "00000003-0000-4000-8001-000000000203",
+            "name": "Resolved",
+            "category": "resolved"
+          },
+          "health": "onTrack",
+          "statusLine": "Export ships in the next release.",
+          "statusVerified": {
+            "at": "2026-10-23T08:00:00+00:00",
+            "atLabel": "Yesterday",
+            "stale": false,
+            "by": {
+              "id": "00000001-0000-4000-8000-000000000006",
+              "name": "Ana Costa",
+              "initials": "AC",
+              "avatarColour": "#b83d7a",
+              "photoUrl": null
+            },
+            "agent": null,
+            "via": null
+          },
+          "statusStale": false,
+          "rollups": [
+            {
+              "type": "story",
+              "open": 0,
+              "closed": 4,
+              "inCurrentSprint": 0,
+              "inOtherSprint": 0
+            }
+          ],
+          "needsYou": {
+            "questions": 1,
+            "decisions": 0,
+            "onChildren": false
+          },
+          "rank": 1,
+          "epic": null
+        }
+      ]
+    },
+    {
+      "stateCategory": "proposed",
+      "label": "New",
+      "folded": false,
+      "count": 1,
+      "rows": [
+        {
+          "id": "00000005-0000-4000-8001-000000000104",
+          "key": "SHIP-104",
+          "title": "Gift cards",
+          "revision": 1,
+          "state": {
+            "id": "00000003-0000-4000-8001-000000000201",
+            "name": "New",
+            "category": "proposed"
+          },
+          "health": null,
+          "statusLine": null,
+          "statusVerified": null,
+          "statusStale": false,
+          "rollups": [],
+          "needsYou": null,
+          "rank": 1,
+          "epic": null
+        }
+      ]
+    },
+    {
+      "stateCategory": "completed",
+      "label": "Closed",
+      "folded": true,
+      "count": 7,
+      "rows": []
+    }
+  ]
+}

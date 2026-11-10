@@ -12,6 +12,7 @@ public sealed class CommentBuilder(Guid workItemId)
     private string _body = "Arranged comment";
     private DateTimeOffset? _createdAt;
     private bool _archived;
+    private string? _agentName;
 
     public CommentBuilder WithId(Guid id)
     {
@@ -37,6 +38,13 @@ public sealed class CommentBuilder(Guid workItemId)
         return this;
     }
 
+    // The agent that wrote it for the author (comment.agent_name), as an agent's comment is stored.
+    public CommentBuilder WithAgentName(string agentName)
+    {
+        _agentName = agentName;
+        return this;
+    }
+
     public CommentBuilder Archived()
     {
         _archived = true;
@@ -47,11 +55,11 @@ public sealed class CommentBuilder(Guid workItemId)
     {
         await connection.ExecuteAsync(
             """
-            INSERT INTO comment (id, work_item_id, author_id, body, created_at, updated_at, archived_at)
+            INSERT INTO comment (id, work_item_id, author_id, body, created_at, updated_at, archived_at, agent_name)
             VALUES (@id, @workItemId, @authorId::uuid, @body, coalesce(@createdAt::timestamptz, now()), coalesce(@createdAt::timestamptz, now()),
-                    CASE WHEN @archived THEN now() END)
+                    CASE WHEN @archived THEN now() END, @agentName::text)
             """,
-            new { id = _id, workItemId, authorId = _authorId, body = _body, createdAt = _createdAt?.ToUniversalTime(), archived = _archived });
+            new { id = _id, workItemId, authorId = _authorId, body = _body, createdAt = _createdAt?.ToUniversalTime(), archived = _archived, agentName = _agentName });
         return _id;
     }
 }

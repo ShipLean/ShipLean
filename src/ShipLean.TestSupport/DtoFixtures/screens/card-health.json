@@ -1,0 +1,42 @@
+{
+  "id": "00000005-0000-4000-8001-000000000106",
+  "key": "SHIP-106",
+  "type": {
+    "id": "feature",
+    "name": "Feature"
+  },
+  "title": "Order tracking page",
+  "state": {
+    "id": "00000003-0000-4000-8001-000000000201",
+    "name": "New",
+    "category": "proposed"
+  },
+  "assignee": null,
+  "points": null,
+  "childPoints": null,
+  "sumWarn": false,
+  "parent": {
+    "id": "00000005-0000-4000-8001-000000000090",
+    "key": "SHIP-90",
+    "type": {
+      "id": "epic",
+      "name": "Epic"
+    },
+    "title": "Checkout conversion"
+  },
+  "tags": [],
+  "rollups": [
+    {
+      "type": "story",
+      "open": 2,
+      "closed": 0,
+      "inCurrentSprint": 0,
+      "inOtherSprint": 0
+    }
+  ],
+  "offerDone": false,
+  "styleRuleId": null,
+  "extraFields": [],
+  "revision": 1,
+  "health": "onTrack"
+}

@@ -12,6 +12,7 @@ public sealed class LevelBacklogServices : IServiceModule
     public void AddServices(IServiceCollection services, IConfiguration configuration)
     {
         services.TryAddScoped<BacklogTriage>();
+        services.TryAddScoped<BacklogRowExtras>();
         services.AddScoped<ILevelBacklogReads, LevelBacklogReads>();
     }
 }

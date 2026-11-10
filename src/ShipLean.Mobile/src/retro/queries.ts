@@ -1,0 +1,59 @@
+import { getMembers, getSprints, projectMetaKeys } from '@shiplean/core/api/projectMeta';
+import {
+  fetchRetroActionDialog,
+  fetchRetroFeatures,
+  fetchRetroInsights,
+  fetchSprintRetro,
+  retroKeys,
+  type RetroActionDialogQuery,
+  type RetroRange,
+} from '@shiplean/core/api/retrosApi';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
+
+export const useSprintsQuery = (projectId: string) =>
+  useQuery({ queryKey: projectMetaKeys.sprints(projectId), queryFn: () => getSprints(projectId) });
+
+// A null sprint reads nothing.
+export const useSprintRetroQuery = (sprintId: string | null) =>
+  useQuery({
+    queryKey: retroKeys.sprint(sprintId ?? ''),
+    queryFn: () => fetchSprintRetro(sprintId ?? ''),
+    enabled: sprintId !== null,
+  });
+
+export const useRetroMembersQuery = (projectId: string) =>
+  useQuery({ queryKey: projectMetaKeys.members(projectId), queryFn: () => getMembers(projectId) });
+
+export const useRetroInsightsQuery = (projectId: string, range: RetroRange) =>
+  useQuery({
+    queryKey: retroKeys.insights(projectId, range),
+    queryFn: () => fetchRetroInsights(projectId, range),
+  });
+
+export const useRetroFeaturesQuery = (projectId: string) =>
+  useQuery({
+    queryKey: retroKeys.features(projectId),
+    queryFn: () => fetchRetroFeatures(projectId),
+  });
+
+export const useRetroActionDialogQuery = (projectId: string, query: RetroActionDialogQuery) =>
+  useQuery({
+    queryKey: retroKeys.actionDialog(projectId, query),
+    queryFn: () => fetchRetroActionDialog(projectId, query),
+  });
+
+// Refreshes every Retro read of the project: the sprint retros, insights, features and action dialogs.
+export function useInvalidateRetro(): (projectId: string) => Promise<void> {
+  const queryClient = useQueryClient();
+  return useCallback(
+    async (projectId) => {
+      // The factories' own prefixes: ['retro', 'sprint'] and ['projects', p, 'retros'].
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: retroKeys.sprint('').slice(0, 2) }),
+        queryClient.invalidateQueries({ queryKey: retroKeys.features(projectId).slice(0, 3) }),
+      ]);
+    },
+    [queryClient],
+  );
+}

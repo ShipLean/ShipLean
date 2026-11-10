@@ -191,6 +191,10 @@ function item(
     slug: null,
     startedOn: null,
     startedLabel: null,
+    health: null,
+    healthSet: null,
+    rollups: [],
+    needsYou: null,
   };
 }
 

@@ -184,7 +184,8 @@
               "offerDone": false,
               "styleRuleId": null,
               "extraFields": [],
-              "revision": 1
+              "revision": 1,
+              "health": null
             }
           ],
           "olderCount": 0,
@@ -258,7 +259,8 @@
               "offerDone": false,
               "styleRuleId": null,
               "extraFields": [],
-              "revision": 12
+              "revision": 12,
+              "health": null
             }
           ],
           "olderCount": 0,
@@ -374,7 +376,8 @@
               "offerDone": false,
               "styleRuleId": null,
               "extraFields": [],
-              "revision": 1
+              "revision": 1,
+              "health": null
             }
           ],
           "olderCount": 0,
@@ -465,7 +468,8 @@
               "offerDone": false,
               "styleRuleId": null,
               "extraFields": [],
-              "revision": 1
+              "revision": 1,
+              "health": null
             }
           ],
           "olderCount": 0,
@@ -527,7 +531,8 @@
               "offerDone": false,
               "styleRuleId": null,
               "extraFields": [],
-              "revision": 1
+              "revision": 1,
+              "health": null
             }
           ],
           "olderCount": 0,
@@ -629,7 +634,8 @@
               "offerDone": false,
               "styleRuleId": null,
               "extraFields": [],
-              "revision": 1
+              "revision": 1,
+              "health": null
             }
           ],
           "olderCount": 0,

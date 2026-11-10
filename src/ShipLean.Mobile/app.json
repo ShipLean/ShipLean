@@ -21,6 +21,9 @@
           "NSAllowsLocalNetworking": true
         },
         "ITSAppUsesNonExemptEncryption": false
+      },
+      "entitlements": {
+        "com.apple.developer.kernel.increased-memory-limit": true
       }
     },
     "android": {
@@ -29,7 +32,13 @@
         "foregroundImage": "./assets/android-adaptive-foreground.png",
         "backgroundImage": "./assets/android-adaptive-background.png",
         "monochromeImage": "./assets/android-monochrome.png"
-      }
+      },
+      "allowBackup": false,
+      "permissions": ["RECORD_AUDIO", "FOREGROUND_SERVICE", "FOREGROUND_SERVICE_DATA_SYNC"],
+      "blockedPermissions": [
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+        "android.permission.FOREGROUND_SERVICE_MICROPHONE"
+      ]
     },
     "plugins": [
       "expo-router",
@@ -49,7 +58,21 @@
       "expo-status-bar",
       "expo-secure-store",
       "expo-sqlite",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Voice listens only while you hold the button. What you say is turned into text on this phone.",
+          "enableBackgroundPlayback": false,
+          "enableBackgroundRecording": false
+        }
+      ],
+      [
+        "llama.rn",
+        {
+          "enableEntitlements": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

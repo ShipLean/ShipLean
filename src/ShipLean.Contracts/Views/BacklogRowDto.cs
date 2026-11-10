@@ -1,5 +1,6 @@
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.WorkItems;
+using ShipLean.Contracts.Screens;
 
 namespace ShipLean.Contracts.Views;
 
@@ -8,7 +9,8 @@ namespace ShipLean.Contracts.Views;
 // count the children that pass the view's filter (ChildPoints sums the open and closed points of the filtered stories and bugs; the header labels it "Σ pts"). Depth is the indent in tree mode (0 in list and planning). Rank restarts in each planning section
 // (null on a tree group row). Rollups, ChildPoints and SumWarn are set on Features, Epics and the NoParentGroup row (SumWarn false there), empty / null / false on the rest.
 // The sprint counts on Rollups (InCurrentSprint, InOtherSprint) come from the tree roll-up; the NoParentGroup rows, counted in C#
-// from the rows they head, send 0 and 0.
+// from the rows they head, send 0 and 0. Health is a Feature row's (null elsewhere); NeedsYou is null when nothing waits on the caller;
+// BlockedBy holds the keys of open blocked-by links, [] when none.
 public sealed record BacklogRowDto(
     BacklogRowKind Kind,
     Guid Id,
@@ -26,4 +28,7 @@ public sealed record BacklogRowDto(
     int? Rank,
     IReadOnlyList<CardTagDto> Tags,
     IReadOnlyList<RollupCountDto> Rollups,
-    int Revision);
+    int Revision,
+    FeatureHealth? Health,
+    NeedsYouDto? NeedsYou,
+    IReadOnlyList<string> BlockedBy);

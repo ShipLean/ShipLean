@@ -10,6 +10,7 @@ import type {
 } from './persisted';
 import type { ForecastDto, VelocityDto } from './sprints';
 import type { SprintRef, StateRef, TypeRef, UserRef, WorkItemTypeId } from './refs';
+import type { FeatureHealth, NeedsYouDto } from './screens';
 import type { ParentRefDto } from './workItems';
 
 export const BOARD_LANE_KINDS = ['criteria', 'manual', 'default', 'epic', 'noEpic'] as const;
@@ -64,6 +65,8 @@ export interface CardDto {
   styleRuleId: string | null;
   extraFields: CardFieldDto[];
   revision: number;
+  /** Set on Features board cards; null on other cards. */
+  health: FeatureHealth | null;
 }
 
 export interface ColumnStateDto {
@@ -167,6 +170,8 @@ export interface FeatureBoardRowDto {
   cells: TaskboardCellDto[];
   featureId: string;
   sprint: SprintRef | null;
+  /** Null when nothing waits on the caller. */
+  needsYou: NeedsYouDto | null;
 }
 
 /** depth 0 is the board's Feature; parentFeature is set from depth 2. Counts cover the section's own rows; points are null when none has any. */
@@ -234,6 +239,12 @@ export interface BacklogRowDto {
   tags: CardTagDto[];
   rollups: RollupCountDto[];
   revision: number;
+  /** A Feature row's health; null elsewhere. */
+  health: FeatureHealth | null;
+  /** Null when nothing waits on the caller. */
+  needsYou: NeedsYouDto | null;
+  /** Keys of open blocked-by links; [] when none. */
+  blockedBy: string[];
 }
 
 /** sprint is null for the Backlog section; capacity is null when none is entered. */
