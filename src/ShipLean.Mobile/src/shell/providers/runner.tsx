@@ -11,12 +11,11 @@ import type { ProjectSlotProps } from './types';
 // TODO: createActionRunner (the persistent outbox) replaces InMemoryActionRunner, which never sends.
 export function RunnerProvider({ children }: ProjectSlotProps) {
   const { origin, email } = useSession();
-  const signedIn = origin !== null && email !== '';
+  // The session scope (origin + email) is the runner's identity.
+  const scope = origin !== null && email !== '' ? `${origin}\n${email}` : null;
   const runner = useMemo(
-    () => (signedIn ? new InMemoryActionRunner({ now: systemNow }) : null),
-    // The runner is keyed by the session, so origin and email are the memo's identity.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [signedIn, origin, email],
+    () => (scope === null ? null : new InMemoryActionRunner({ now: systemNow })),
+    [scope],
   );
   if (runner === null) return children;
   return (
