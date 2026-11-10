@@ -57,7 +57,7 @@ describe('workItemApi', () => {
 
     expect((await getItemByKey(project, 'SHIP-906')).health).toBe('atRisk');
     expect((await getItemByKey(project, 'SHIP-921')).rollups[0].type).toBe('task');
-    expect((await getItemAsks(feature.id)).openDecisions).toBe(1);
+    expect((await getItemAsks(feature.id)).openDecisions).toBe(2);
     expect((await getHistory(feature.id)).revisions.length).toBeGreaterThan(0);
     expect(await listComments(feature.id)).toEqual([]);
     expect((await getChildren(story.id)).length).toBe(story.children.length);
@@ -76,11 +76,16 @@ describe('workItemApi', () => {
     expect(note).toMatchObject({ body: 'A note.', workItemId: feature.id });
     expect(await listComments(feature.id)).toHaveLength(1);
     await expect(archiveComment(note.id)).resolves.toBeUndefined();
+    expect(await listComments(feature.id)).toEqual([]);
 
     await expect(discussDecision(feature.id, 1, 'Why?')).resolves.toBeUndefined();
     await expect(answerQuestion(feature.id, 1, 'Yes.')).resolves.toBeUndefined();
+    // The server posts a comment for a discussion and for an answer.
+    expect((await listComments(feature.id)).map((c) => c.body)).toEqual(['Why?', 'Yes.']);
     await expect(confirmDecisions(feature.id, [1])).resolves.toBeUndefined();
     const asks = await getItemAsks(feature.id);
+    expect(asks.openDecisions).toBe(1);
+    expect(asks.openQuestions).toBe(0);
     expect(asks.decisions[0].state).toBe('confirmed');
     expect(asks.questions[0].state).toBe('answered');
 
@@ -107,6 +112,9 @@ describe('workItemApi', () => {
 
     await confirmDecisions(feature.id, [1]);
     expect((await rejection(confirmDecisions(feature.id, [1]))).status).toBe(409);
+    // Several numbers: the server skips the ones no longer open and answers 204.
+    await expect(confirmDecisions(feature.id, [1, 2])).resolves.toBeUndefined();
+    expect((await getItemAsks(feature.id)).decisions[1].state).toBe('confirmed');
     await answerQuestion(feature.id, 1, 'Yes.');
     expect((await rejection(answerQuestion(feature.id, 1, 'Again.'))).status).toBe(409);
     // changeDecision has no fake route: an unlisted request answers 404.

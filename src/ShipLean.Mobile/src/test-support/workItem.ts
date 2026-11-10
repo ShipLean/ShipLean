@@ -41,7 +41,7 @@ export function aFeatureItem(overrides: Partial<WorkItemDto> = {}): WorkItemDto 
       'Parakeet runs at 1.4x real time on the S22; the 4 GB phone fallback is still open.',
     health: 'atRisk',
     rollups: [{ type: 'story', open: 7, closed: 2, inCurrentSprint: 5, inOtherSprint: 2 }],
-    needsYou: { questions: 1, decisions: 0, onChildren: true },
+    needsYou: { questions: 1, decisions: 1, onChildren: false },
     ...overrides,
   });
 }
@@ -160,7 +160,7 @@ export interface WorkItemApiOptions {
   projectId?: string;
   // Defaults to SHIP-906 and SHIP-921.
   items?: WorkItemDto[];
-  // Defaults to one open decision and one open question on the first item, none on the rest.
+  // Defaults to two open decisions and one open question on the first item, none on the rest.
   asks?: ItemAsksDto[];
   comments?: CommentDto[];
   history?: HistoryDto;
@@ -170,6 +170,7 @@ export interface WorkItemApiOptions {
 
 // Comments the fake POST answers with, so the archive route (the Undo of a note) is a known path.
 const noteId = (n: number): string => `00000008-0000-4000-8001-0000000000f${n}`;
+// A fake allows nine posted notes (an archived one's id is not reused).
 export const NOTE_IDS = [1, 2, 3, 4, 5, 6, 7, 8, 9].map(noteId);
 
 const validation = (message: string, field: string): ApiReply => ({
@@ -216,6 +217,17 @@ export function workItemApi(table: ApiTable = {}, opts: WorkItemApiOptions = {})
     return null;
   };
 
+  // Discussing a decision and answering a question each post a comment on the server too.
+  const postComment = (itemId: string, body: string, id?: string): CommentDto => {
+    const comment = aComment(itemId, {
+      ...(id === undefined ? {} : { id }),
+      body,
+      bodyHtml: `<p>${body}</p>\n`,
+    });
+    comments.set(itemId, [...(comments.get(itemId) ?? []), comment]);
+    return comment;
+  };
+
   const routes: ApiTable = {
     ...signedInApi(),
     [`GET ${project}/states`]: states as StateDto[],
@@ -230,45 +242,57 @@ export function workItemApi(table: ApiTable = {}, opts: WorkItemApiOptions = {})
       aWriteResult({ id: item.id, key: item.key, revision: revisions.get(item.id) });
     routes[`POST ${path}/status/confirm`] = (request: FakeRequest) =>
       write(item, (request.body as { revision?: unknown }).revision) ?? current(item);
-    routes[`GET ${path}/children`] = opts.children ?? item.children;
+    routes[`GET ${path}/children`] = (request: FakeRequest) => {
+      const type = new URL(request.url, 'https://shiplean.test').searchParams.get('type');
+      return (opts.children ?? item.children).filter((c) => type === null || c.type.id === type);
+    };
     routes[`GET ${path}/history`] = opts.history ?? aHistory();
-    routes[`GET ${path}/asks`] = () => structuredClone(asks.get(item.id));
+    routes[`GET ${path}/asks`] = () => {
+      const a = structuredClone(asks.get(item.id));
+      if (a === undefined) return apiError(404, 'not_found', 'That work item does not exist.');
+      a.openDecisions = a.decisions.filter((d) => d.state === 'open').length;
+      a.openQuestions = a.questions.filter((q) => q.state === 'open').length;
+      return a;
+    };
     routes[`GET ${path}/comments`] = () => comments.get(item.id);
     routes[`POST ${path}/comments`] = (request: FakeRequest) => {
-      if (blank(request.body)) return validation('Write something to post.', 'body');
-      const comment = aComment(item.id, {
-        id: NOTE_IDS[nextNote++ % NOTE_IDS.length],
-        body: (request.body as { body: string }).body,
-        bodyHtml: `<p>${(request.body as { body: string }).body}</p>\n`,
-      });
+      if (blank(request.body)) return apiError(400, 'validation', 'A comment cannot be empty.');
+      if (nextNote >= NOTE_IDS.length) throw new Error('The fake posts at most 9 notes.');
+      const comment = postComment(
+        item.id,
+        (request.body as { body: string }).body,
+        NOTE_IDS[nextNote++],
+      );
       added.add(comment.id);
-      comments.set(item.id, [...(comments.get(item.id) ?? []), comment]);
       return comment;
     };
     routes[`POST ${path}/decisions/confirm`] = (request: FakeRequest) => {
       const numbers = (request.body as { numbers?: number[] }).numbers;
       if (numbers === undefined || numbers.length === 0)
         return validation('Choose at least one decision.', 'numbers');
-      for (const number of numbers) {
+      const unique = [...new Set(numbers)];
+      for (const number of unique) {
         const decision = asks.get(item.id)?.decisions.find((d) => d.number === number);
         if (decision === undefined)
           return apiError(404, 'not_found', `D${number} does not exist on that work item.`);
-        if (decision.state !== 'open')
+        // One number must be open; with several, the server skips the ones no longer open.
+        if (unique.length === 1 && decision.state !== 'open')
           return apiError(
             409,
             'conflict',
             `D${number} is ${decision.state}: only an open decision can be confirmed.`,
           );
       }
-      for (const number of numbers) settle(asks, item.id, number);
+      for (const number of unique) settle(asks, item.id, number);
       return { status: 204 };
     };
     for (let number = 1; number <= 9; number++) {
       routes[`POST ${path}/decisions/${number}/discuss`] = (request: FakeRequest) => {
         if (blank(request.body)) return validation('Write something to post.', 'body');
-        return asks.get(item.id)?.decisions.some((d) => d.number === number)
-          ? { status: 204 }
-          : apiError(404, 'not_found', `D${number} does not exist on that work item.`);
+        if (!asks.get(item.id)?.decisions.some((d) => d.number === number))
+          return apiError(404, 'not_found', `D${number} does not exist on that work item.`);
+        postComment(item.id, (request.body as { body: string }).body);
+        return { status: 204 };
       };
       routes[`POST ${path}/questions/${number}/answer`] = (request: FakeRequest) => {
         if (blank(request.body)) return validation('Write an answer.', 'body');
@@ -282,6 +306,7 @@ export function workItemApi(table: ApiTable = {}, opts: WorkItemApiOptions = {})
             `Q${number} is ${question.state}: only an open question can change.`,
           );
         question.state = 'answered';
+        postComment(item.id, (request.body as { body: string }).body);
         return { status: 204 };
       };
     }
@@ -290,6 +315,11 @@ export function workItemApi(table: ApiTable = {}, opts: WorkItemApiOptions = {})
     routes[`POST /api/comments/${id}/archive`] = () => {
       if (!added.has(id)) return apiError(404, 'not_found', 'That comment does not exist.');
       added.delete(id);
+      for (const [k, list] of comments)
+        comments.set(
+          k,
+          list.filter((c) => c.id !== id),
+        );
       return { status: 204 };
     };
   }
@@ -297,7 +327,20 @@ export function workItemApi(table: ApiTable = {}, opts: WorkItemApiOptions = {})
 }
 
 function openAsks(): { decisions: DecisionDto[]; questions: QuestionDto[] } {
-  return { decisions: [aDecision()], questions: [aQuestion()] };
+  return {
+    decisions: [
+      aDecision(),
+      aDecision({
+        number: 2,
+        label: 'D2',
+        question: 'Which model runs on a phone with 4 GB?',
+        recommended: 'Qwen3 0.6B',
+        alternatives: [],
+        currentAnswer: 'Qwen3 0.6B',
+      }),
+    ],
+    questions: [aQuestion()],
+  };
 }
 
 function settle(asks: Map<string, ItemAsksDto>, itemId: string, number: number): void {
