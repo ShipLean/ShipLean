@@ -16,6 +16,22 @@ export const newStatusId = 'wi-new-status';
 
 // WI2
 export const needsYouSectionId = 'wi-needs-you';
+export const needsYouTitleId = 'wi-needs-title';
+export const needsYouErrorId = 'wi-needs-error';
+export const needsYouRetryId = 'wi-needs-retry';
+// One card per open ask, by its label ("D10", "Q1"); a waiting child by its key.
+export const needsCardId = (label: string) => `wi-needs-card-${label}`;
+export const needsAskTextId = (label: string) => `wi-needs-text-${label}`;
+export const needsKindId = (label: string) => `wi-needs-kind-${label}`;
+export const needsFromId = (label: string) => `wi-needs-from-${label}`;
+export const needsAgentTagId = (label: string) => `wi-needs-agent-${label}`;
+export const needsSayId = (label: string) => `wi-needs-say-${label}`;
+export const needsBtnId = (label: string, action: 'approve' | 'discuss' | 'reply') =>
+  `wi-needs-btn-${label}-${action}`;
+export const needsPendingId = (label: string) => `wi-needs-pending-${label}`;
+export const needsUndoId = (label: string) => `wi-needs-undo-${label}`;
+export const needsRetryAnswerId = (label: string) => `wi-needs-retry-${label}`;
+export const needsChildId = (key: string) => `wi-needs-child-${key}`;
 
 // WI3
 export const compactProgressId = 'wi-progress-compact';
