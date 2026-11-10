@@ -10,6 +10,8 @@ export interface BatchInfo {
   // Dispatched while online and not yet waiting for a connection: an allOrNothing batch stops at its first failure.
   // A batch that waited (offline, or loaded after a restart) sends each action on its own and carries on.
   live: boolean;
+  // discardUnsent: nothing more of the batch is sent, and a part reconcile finds wasn't sent is dropped, not requeued.
+  discarded?: boolean;
 }
 
 export interface Outbox {
@@ -97,6 +99,21 @@ export function notLive(o: Outbox): Outbox {
   const batches: Record<string, BatchInfo> = {};
   for (const [id, b] of Object.entries(o.batches)) batches[id] = { ...b, live: false };
   return { ...o, batches };
+}
+
+// discardUnsent: the batch's queued and held parts go, and the batch is marked so nothing of it is sent again.
+export function discard(o: Outbox, batchId: string): Outbox {
+  const dropped = o.items
+    .filter((p) => p.batchId === batchId && (p.state === 'queued' || p.state === 'undo'))
+    .map((p) => p.id);
+  const left = remove(o, dropped);
+  const batch = left.batches[batchId];
+  if (batch === undefined) return left;
+  return { ...left, batches: { ...left.batches, [batchId]: { ...batch, discarded: true } } };
+}
+
+export function isDiscarded(o: Outbox, batchId: string): boolean {
+  return o.batches[batchId]?.discarded === true;
 }
 
 export function remove(o: Outbox, ids: string[]): Outbox {

@@ -3,7 +3,9 @@ import type { KeyValueStore } from '@shiplean/core/platform';
 import { isNoAnswer, sendError } from './errors';
 import {
   addBatch,
+  discard,
   emptyOutbox,
+  isDiscarded,
   load,
   markSent,
   notLive,
@@ -157,7 +159,13 @@ export function createActionRunner(deps: ActionRunnerDeps): SessionRunner {
     if (!(e instanceof ApiRequestError) && isNoAnswer(e)) {
       // Offline: it never got out, so it waits for the connection. Online: it may have gone through, so it is
       // uncertain with no failure yet; onOnline, its area registering or retry(id) settles it.
-      if (deps.isOffline()) set(update(box, p.id, { state: 'queued', ...mapped }));
+      // A discarded batch sends nothing more: a part that never got out goes.
+      if (deps.isOffline())
+        set(
+          isDiscarded(box, p.batchId)
+            ? remove(box, [p.id])
+            : update(box, p.id, { state: 'queued', ...mapped }),
+        );
       else set(update(box, p.id, { state: 'uncertain', ...mapped, failure: null }));
       return;
     }
@@ -220,9 +228,13 @@ export function createActionRunner(deps: ActionRunnerDeps): SessionRunner {
       if (find(p.id)?.state !== 'uncertain') return;
       // Only an explicit verdict settles it; a missing one keeps it uncertain.
       if (verdicts[i] === 'sent') set(markSent(box, p.id, null, now()));
-      // The user undid it while it was uncertain: it is dropped, not resent.
+      // The user undid it while it was uncertain, or discarded its batch: it is dropped, not resent.
       else if (verdicts[i] === 'notSent')
-        set(p.undoOutcome === null ? requeue(box, p.id) : remove(box, [p.id]));
+        set(
+          p.undoOutcome === null && !isDiscarded(box, p.batchId)
+            ? requeue(box, p.id)
+            : remove(box, [p.id]),
+        );
     });
     void pump();
   }
@@ -337,8 +349,20 @@ export function createActionRunner(deps: ActionRunnerDeps): SessionRunner {
         return;
       }
       if (p.state !== 'uncertain' && p.state !== 'failed') return;
+      // Discarded: nothing of the batch is sent again.
+      if (isDiscarded(box, p.batchId)) return;
       set(requeue(box, id));
       void pump();
+    },
+
+    discardUnsent(batchId: string): void {
+      if (ofBatch(batchId).length === 0) return;
+      // A hold that is dropped has no window left to end.
+      if (ofBatch(batchId).some((p) => p.state === 'undo')) {
+        clearTimeout(timers.get(batchId));
+        timers.delete(batchId);
+      }
+      set(discard(box, batchId));
     },
 
     // An area's actions wait, unsent and unlisted, until its executor registers: a batch the outbox kept from before a

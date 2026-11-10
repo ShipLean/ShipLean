@@ -4,12 +4,13 @@ import type { Pending, PreviewLine } from '../../actions/types';
 import { useTheme } from '../../theme';
 import { Button } from '../../ui/Button';
 import { layout } from '../../ui/layout';
-import { applyGroup, type ApplyGroup } from '../flows/applyFailed';
+import { applyGroup, batchRefused, type ApplyGroup } from '../flows/applyFailed';
 import type { VoiceUiStateOf } from '../internals';
 import { HeardQuote } from './HeardQuote';
 import { heardQuoteId } from './HeardQuote.testIds';
 import {
   applyFailedDiscardId,
+  applyFailedDiscardNoteId,
   applyFailedGroupId,
   applyFailedHeadingId,
   applyFailedLineId,
@@ -29,22 +30,32 @@ export interface ApplyFailedSheetProps {
 
 const GROUPS: { group: ApplyGroup; title: string }[] = [
   { group: 'stillApplied', title: 'Still applied' },
+  { group: 'reversing', title: 'Being reversed' },
   { group: 'reversed', title: 'Reversed' },
   { group: 'notSent', title: 'Not sent' },
 ];
 
 // An applied voice batch that failed: what stayed applied, what was reversed and what wasn't sent, read live from the
-// runner (it may still be reversing). "Nothing was changed" only when nothing stayed applied. Then the reason, and
-// Try again and Send when online when sending again can help; Discard sends nothing more.
+// runner (it may still be reversing). "Nothing was changed" only when nothing stayed applied, and not while the runner
+// is still reversing. Then the reason, and Try again and Send when online when sending again can help; Discard sends
+// nothing more.
 export function ApplyFailedSheet({ state, onRetry, onQueue, onDiscard }: ApplyFailedSheetProps) {
   const theme = useTheme();
   const { colors } = theme;
   const parts = usePending((p) => p.batchId === state.batchId);
-  // lines[i] is parts[i]: onApplyFailed builds one line per part, in the runner's order.
-  const rows = state.lines.map((line, i) => ({ line, part: parts[i] as Pending | undefined }));
+  // Each line carries its part's id (onApplyFailed): pending() may drop or prune parts, so never pair by index.
+  const rows = state.lines.map((line) => ({ line, part: parts.find((p) => p.id === line.id) }));
+  const refused = batchRefused(parts);
   const groupOf = (part: Pending | undefined): ApplyGroup =>
-    part === undefined ? 'notSent' : applyGroup(part);
+    part === undefined ? 'notSent' : applyGroup(part, refused);
+  const reversing = rows.some((r) => groupOf(r.part) === 'reversing');
   const stayed = rows.some((r) => groupOf(r.part) === 'stillApplied');
+  const uncertain = rows.some((r) => r.part?.state === 'uncertain');
+  const heading = reversing
+    ? 'Reversing what was sent'
+    : stayed
+      ? 'Some changes stayed applied'
+      : 'Nothing was changed';
 
   return (
     <View
@@ -81,7 +92,7 @@ export function ApplyFailedSheet({ state, onRetry, onQueue, onDiscard }: ApplyFa
             fontWeight: theme.font.weight.semibold,
           }}
         >
-          {stayed ? 'Some changes stayed applied' : 'Nothing was changed'}
+          {heading}
         </Text>
         <Text
           testID={applyFailedReasonId}
@@ -126,6 +137,14 @@ export function ApplyFailedSheet({ state, onRetry, onQueue, onDiscard }: ApplyFa
         </View>
       ) : null}
       <Button label="Discard" variant="ghost" onPress={onDiscard} testID={applyFailedDiscardId} />
+      <Text
+        testID={applyFailedDiscardNoteId}
+        style={{ color: colors.muted, fontSize: theme.font.size.sm, textAlign: 'center' }}
+      >
+        {uncertain
+          ? 'Discard: nothing more will be sent. A change with no answer stays if it landed.'
+          : 'Discard: nothing more will be sent.'}
+      </Text>
     </View>
   );
 }

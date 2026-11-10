@@ -31,6 +31,8 @@ export interface FakeRunner extends ActionRunner {
   readonly dispatched: { batch: AppAction[]; opts: DispatchOptions; batchId: string }[];
   readonly undone: string[];
   readonly retried: string[];
+  // Every discardUnsent batch id, in order.
+  readonly discarded: string[];
   readonly registered: Executor<AppAction>[];
   // Replaces what pending() returns and notifies subscribers.
   setPending(items: Pending[]): void;
@@ -44,6 +46,7 @@ export function fakeRunner(): FakeRunner {
   const dispatched: FakeRunner['dispatched'] = [];
   const undone: string[] = [];
   const retried: string[] = [];
+  const discarded: string[] = [];
   const registered: Executor<AppAction>[] = [];
   const listeners = new Set<() => void>();
   const conflictListeners = new Set<(batchId: string, lines: PreviewLine[]) => void>();
@@ -56,6 +59,7 @@ export function fakeRunner(): FakeRunner {
     dispatched,
     undone,
     retried,
+    discarded,
     registered,
     register: (e) => {
       registered.push(e as unknown as Executor<AppAction>);
@@ -74,6 +78,16 @@ export function fakeRunner(): FakeRunner {
     },
     retry: (id) => {
       retried.push(id);
+    },
+    // Drops the batch's queued and held items, as the real runner does.
+    discardUnsent: (batchId) => {
+      discarded.push(batchId);
+      const kept = items.filter(
+        (p) => p.batchId !== batchId || (p.state !== 'queued' && p.state !== 'undo'),
+      );
+      if (kept.length === items.length) return;
+      items = kept;
+      notify();
     },
     pending: () => items,
     subscribe: (cb) => {

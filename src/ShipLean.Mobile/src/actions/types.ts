@@ -93,6 +93,12 @@ export interface ActionRunner {
   dispatch(batch: AppAction[], opts: DispatchOptions): string;
   undo(batchId: string): Promise<UndoOutcome[]>;
   retry(id: string): void;
+  // Sends nothing more of the batch, and reverses nothing (unlike undo): its queued and still-held parts go at once,
+  // and the batch is marked discarded (kept in the outbox, so it survives a restart). A part with no answer
+  // (uncertain) is asked about as usual: if reconcile says it went through it stays sent, which is the truth; if not,
+  // it is removed instead of queued again. Sent and failed parts are left as they are, and retry(id) no longer queues
+  // a part of the batch to send. Subscribers are told.
+  discardUnsent(batchId: string): void;
   // Only the actions of areas whose executor has registered, so describe() takes each of them. The others are kept and
   // not sent until their area registers.
   pending(): Pending[];
