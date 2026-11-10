@@ -1,11 +1,16 @@
-import { TabPlaceholder } from '../shell/TabPlaceholder';
+import { RetroView } from '../retro/notes/RetroView';
+import { Screen } from '../ui/Screen';
 import { screenIds } from './testIds';
 
 export interface RetroScreenProps {
   projectKey: string;
 }
 
-// TODO: the sprint Retro replaces this placeholder.
+// The Retro tab: the sprint's points by category and theme.
 export function RetroScreen({ projectKey }: RetroScreenProps) {
-  return <TabPlaceholder projectKey={projectKey} title="Retro" testID={screenIds.retro} />;
+  return (
+    <Screen testID={screenIds.retro}>
+      <RetroView projectKey={projectKey} />
+    </Screen>
+  );
 }
