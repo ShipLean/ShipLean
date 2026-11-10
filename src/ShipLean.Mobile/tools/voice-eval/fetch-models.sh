@@ -67,7 +67,7 @@ fetch() { # <path> <url> <sha>
     rm -f "$target"
     if ! { [ -f "$part" ] && [ "$(sha_of "$part")" = "$sha" ]; }; then
       echo "downloading $path"
-      curl -fL --retry 3 -C - -o "$part" "$url" || {
+      curl -fsSL --retry 3 -C - -o "$part" "$url" || {
         echo "download of $path stopped; rerun to resume from $part (or delete it to start again)" >&2
         exit 1
       }
