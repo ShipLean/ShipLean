@@ -1,10 +1,8 @@
+import type { FeatureHealth } from '@shiplean/core/api/screens';
 import { Text, View } from 'react-native';
 import { useTheme } from '../theme';
 import { layout } from './layout';
 import { primitiveIds } from './testIds';
-
-// TODO: import FeatureHealth from @shiplean/core/api/screens once it lands there.
-export type FeatureHealth = 'onTrack' | 'atRisk' | 'blocked';
 
 export interface HealthPillProps {
   health: FeatureHealth | null;
