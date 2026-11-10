@@ -38,3 +38,22 @@ test('TaskboardGrid_WhenItsScrollerScrolls_ShouldKeepTheColumnHeadersAtTheTop', 
   // Narrow: the same scroller scrolls sideways, so no column is lost.
   expect(await scroller.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
 });
+
+test('TaskboardGrid_WhenATaskTitleHasAWordWiderThanTheCard_ShouldWrapItInsideTheCard', async ({
+  mount,
+  page,
+}) => {
+  await page.setViewportSize({ width: 600, height: 500 });
+  const longWord = 'AskOwnerSql_WhenOwnerIsALiveMember_ShouldCoalesceToOrAcrossEveryAgeBoundary';
+  await mount(
+    <GridHarness rowIndexes={[2]} retitle={{ 'SHIP-182': `Mutation evidence for ${longWord}` }} />,
+    route,
+  );
+  const card = page.getByTestId(ids.card);
+  const title = page.getByTestId(ids.cardTitle);
+
+  const cardBox = (await card.boundingBox())!;
+  const titleBox = (await title.boundingBox())!;
+  expect(titleBox.x + titleBox.width).toBeLessThanOrEqual(cardBox.x + cardBox.width);
+  expect(await title.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+});
