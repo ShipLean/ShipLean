@@ -1,4 +1,5 @@
 import { fireEvent, screen } from '@testing-library/react-native';
+import { Platform } from 'react-native';
 import { renderScreen } from '../test-support/renderScreen';
 import { installFakeEngines } from '../test-support/voiceUi';
 import { FakeModelStore } from '../test-support/voice';
@@ -78,5 +79,18 @@ describe('MicrophoneStep', () => {
     models.set({ phase: 'skipped' });
     await renderScreen(<MicrophoneStep onContinue={jest.fn()} onNotNow={jest.fn()} />);
     expect(screen.queryByTestId(microphoneStepIds.downloadLine)).toBeNull();
+  });
+
+  it.each([
+    ['ios', 'Settings.'],
+    ['android', "the app's settings."],
+  ] as const)('on %s says where to change it later', async (os, where) => {
+    const platform = jest.replaceProperty(Platform, 'OS', os);
+    installFakeEngines();
+    await renderScreen(<MicrophoneStep onContinue={jest.fn()} onNotNow={jest.fn()} />);
+    expect(screen.getByTestId(microphoneStepIds.next)).toHaveTextContent(
+      new RegExp(`change it any time in ${where.replace('.', '\\.')}$`),
+    );
+    platform.restore();
   });
 });

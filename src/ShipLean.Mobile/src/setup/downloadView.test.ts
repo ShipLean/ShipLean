@@ -121,6 +121,10 @@ describe('noSpaceView', () => {
     expect(view?.smaller).toBeNull();
   });
 
+  it('throws when the stopped model has no manifest entry', () => {
+    expect(() => noSpaceView(stopped(300_000_000, []), [])).toThrow(/manifest has no/);
+  });
+
   it('is null when the download did not stop for space', () => {
     expect(noSpaceView(status({ reason: 'network' }), FILES)).toBeNull();
   });

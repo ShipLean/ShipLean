@@ -18,6 +18,8 @@ export const downloadingStepIds = {
   tryAgain: 'setup-downloading-try-again',
   openStorage: 'setup-downloading-open-storage',
   useSmaller: 'setup-downloading-use-smaller',
+  // A download that failed for another reason (checksum, network).
+  failedTryAgain: 'setup-downloading-failed-try-again',
   // Nothing is downloading.
   idle: 'setup-downloading-idle',
   setUp: 'setup-downloading-set-up',

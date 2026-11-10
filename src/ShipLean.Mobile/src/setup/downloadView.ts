@@ -154,7 +154,8 @@ export function noSpaceView(
   const stopped = status.resolved;
   const view = downloadView(status, files);
   const row = view.rows.find((r) => r.state === 'stopped' && r.model !== 'parakeet');
-  const model = row?.name ?? files.find((f) => f.model === stopped)?.name ?? 'The model';
+  const model = row?.name ?? files.find((f) => f.model === stopped)?.name;
+  if (model === undefined) throw new Error(`The manifest has no ${stopped}.`);
   let smaller: NoSpaceView['smaller'] = null;
   if (stopped === 'qwen3-4b') {
     const small = files.filter((f) => f.model === 'qwen3-1.7b');
