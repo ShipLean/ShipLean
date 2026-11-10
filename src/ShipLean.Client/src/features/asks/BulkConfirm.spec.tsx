@@ -3,8 +3,9 @@ import type { ItemAsksDto } from '@shiplean/core/api/asks';
 import { BulkConfirm } from './BulkConfirm';
 import type { AsksItem } from './regions';
 import { asksTestIds as ids } from './testIds';
-import { waiting } from './ct/fixtures';
+import { answered, waiting } from './ct/fixtures';
 import { RegionHarness } from './ct/RegionHarness';
+import { LiveBulkConfirm } from './ct/LiveBulkConfirm';
 import { stubAsks } from './ct/stubAsks';
 
 const item: AsksItem = {
@@ -51,4 +52,19 @@ test('BulkConfirm_WhenOneOpen_ShouldNotShow', async ({ mount }) => {
     </RegionHarness>,
   );
   await expect(component.getByTestId(ids.bulkConfirm)).toHaveCount(0);
+});
+
+test('BulkConfirm_WhenConfirmLeavesFewerThanTwoOpen_ShouldStillToast', async ({ mount, page }) => {
+  const stub = await stubAsks(page, waiting);
+  const open = waiting.decisions.filter((decision) => decision.state === 'open');
+  const component = await mount(
+    <RegionHarness>
+      <LiveBulkConfirm item={item} initial={waiting} />
+    </RegionHarness>,
+  );
+  // The server's state after the write: nothing waiting, so the section folds and AsksHeader unmounts BulkConfirm.
+  stub.setAsks(answered);
+  await component.getByTestId(ids.bulkConfirm).click();
+  await expect(component.getByTestId(ids.bulkConfirm)).toHaveCount(0);
+  await expect(page.getByText(`${open.length} decisions confirmed as recommended`)).toBeVisible();
 });
