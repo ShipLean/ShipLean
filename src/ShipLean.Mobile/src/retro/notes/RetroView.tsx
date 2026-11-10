@@ -326,10 +326,11 @@ function RetroTab({ projectKey, projectId }: RetroTabProps) {
           category={segment === 'notes' ? category : null}
         />
       )}
-      {deciding === null ? null : (
+      {deciding === null || retro === undefined ? null : (
         <DecideSheet
           point={deciding}
           projectId={projectId}
+          sprintId={retro.sprint.id}
           open
           onClose={() => setDeciding(null)}
         />

@@ -28,7 +28,7 @@ const REASON = {
   wifi: 'waiting for Wi-Fi',
   space: 'waiting for space',
   network: 'waiting for the network',
-  checksum: 'checking again',
+  checksum: 'failed its check',
   memory: 'waiting',
 } as const;
 
@@ -63,6 +63,7 @@ export function VoiceSettings() {
   const [changing, setChanging] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [micSheet, setMicSheet] = useState(false);
+  const [deleteFailed, setDeleteFailed] = useState(false);
   const memory = store.deviceMemory();
   const choiceView = modelChoiceView(memory);
   const card = voiceStatusView(status, mic, {
@@ -123,6 +124,13 @@ export function VoiceSettings() {
               }`}
             </Text>
             <ProgressLine testID={voiceSettingsIds.changeBar} fraction={underWay.percent / 100} />
+            {underWay.reason === 'checksum' ? (
+              <Button
+                testID={voiceSettingsIds.changeRetry}
+                label="Try again"
+                onPress={() => store.download()}
+              />
+            ) : null}
           </View>
         )}
         <Row
@@ -189,8 +197,19 @@ export function VoiceSettings() {
             label="Delete models"
             variant="danger"
             disabled={storage.totalBytes === 0}
-            onPress={() => setDeleting(true)}
+            onPress={() => {
+              setDeleteFailed(false);
+              setDeleting(true);
+            }}
           />
+          {deleteFailed ? (
+            <Text
+              testID={voiceSettingsIds.deleteError}
+              style={{ ...small, color: colors.warn, paddingHorizontal: theme.space[4] }}
+            >
+              Could not delete the models. Try again.
+            </Text>
+          ) : null}
         </View>
       </Group>
 
@@ -248,7 +267,7 @@ export function VoiceSettings() {
             variant="danger"
             onPress={() => {
               setDeleting(false);
-              void store.deleteAll();
+              store.deleteAll().catch(() => setDeleteFailed(true));
             }}
           />
           <Button

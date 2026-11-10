@@ -1,8 +1,15 @@
+import type {
+  RetroActionDetailDto,
+  RetroActionRefDto,
+  RetroPointDto,
+  SprintRetroDto,
+} from '@shiplean/core/api/retros';
 import { afterEach, describe, expect, it } from 'vitest';
+import actionDetail from '../../../../ShipLean.TestSupport/DtoFixtures/retros/retro-action-detail.json';
 import type { Api } from '../../actions/types';
 import { aPending } from '../../test-support/actions';
-import { aProject } from '../../test-support/builders';
-import { restoreFetch } from '../../test-support/fakeApi';
+import { aMember, aProject } from '../../test-support/builders';
+import { apiError, restoreFetch } from '../../test-support/fakeApi';
 import { designRetro, retroApi } from '../../test-support/retro';
 import type { DecisionAction } from '../actions';
 import { retroExecutor } from '../executor';
@@ -14,7 +21,6 @@ afterEach(restoreFetch);
 const api = {} as Api;
 const projectId = aProject().id;
 const ACTIONS = `POST /api/projects/${projectId}/retros/actions`;
-const DIALOG = `GET /api/projects/${projectId}/retros/action-dialog`;
 const WORK_ITEM = 'work-item-958';
 
 const retro = designRetro();
@@ -23,6 +29,26 @@ const badly = retro.categories
   .find((c) => c.category === 'wentBadly')!
   .groups.flatMap((g) => g.points)[0];
 
+const SPRINT_RETRO = `GET /api/sprints/${retro.sprint.id}/retro`;
+const made: RetroActionRefDto = {
+  ...(actionDetail as RetroActionDetailDto).action,
+  workItemId: WORK_ITEM,
+  key: 'SHIP-958',
+};
+const priya = { ...aMember().user, id: 'user-priya', name: 'Priya Shah' };
+
+// The sprint retro as the server shows it once a point is decided.
+const withDecided = (pointId: string, changes: Partial<RetroPointDto>): SprintRetroDto => ({
+  ...retro,
+  categories: retro.categories.map((c) => ({
+    ...c,
+    groups: c.groups.map((g) => ({
+      ...g,
+      points: g.points.map((p) => (p.id === pointId ? { ...p, ...changes } : p)),
+    })),
+  })),
+});
+
 const newAction = (overrides: Partial<Extract<DecisionAction, { kind: 'newAction' }>> = {}) =>
   ({
     area: 'retro',
@@ -30,6 +56,7 @@ const newAction = (overrides: Partial<Extract<DecisionAction, { kind: 'newAction
     itemId: null,
     key: null,
     projectId,
+    sprintId: retro.sprint.id,
     pointIds: [badly.id],
     title: badly.text,
     ownerId: 'user-priya',
@@ -42,6 +69,7 @@ const addToAction = (): DecisionAction => ({
   kind: 'addToAction',
   itemId: WORK_ITEM,
   key: 'SHIP-958',
+  projectId,
   pointIds: [badly.id],
 });
 const notNeeded = (reason: string, pointId: string = badly.id): DecisionAction => ({
@@ -49,6 +77,8 @@ const notNeeded = (reason: string, pointId: string = badly.id): DecisionAction =
   kind: 'notNeeded',
   itemId: null,
   key: null,
+  projectId,
+  sprintId: retro.sprint.id,
   pointId,
   reason,
 });
@@ -135,52 +165,87 @@ describe('retro decision executor', () => {
   });
 
   it('reconciles an uncertain newAction as sent when the points already have an action, so no duplicate is made', async () => {
-    const decided = retroApi(
-      { [DIALOG]: { selected: [], offered: [], openActions: [], suggestedTheme: null } },
-      { projectId, retro },
-    );
-    const pending = aPending({ action: newAction(), state: 'uncertain' });
+    const pending = aPending({
+      action: newAction({ ownerId: null, ownerName: null }),
+      state: 'uncertain',
+    });
+    const fake = retroApi({}, { projectId, retro: withDecided(badly.id, { action: made }) });
     await expect(reconcileDecision([pending], api)).resolves.toEqual(['sent']);
-    expect(decided.callsTo(DIALOG)).toHaveLength(1);
+    expect(fake.callsTo(SPRINT_RETRO)).toHaveLength(1);
 
-    // Still listed to decide: the create never happened, so a resend is safe.
-    retroApi(
-      { [DIALOG]: { selected: [badly], offered: [], openActions: [], suggestedTheme: null } },
-      { projectId, retro },
-    );
+    // Still undecided: the create never happened, so a resend is safe.
+    retroApi({}, { projectId, retro });
     await expect(reconcileDecision([pending], api)).resolves.toEqual(['notSent']);
   });
 
-  it('reconciles addToAction by the action item and notNeeded by the points still open', async () => {
+  it('reconciles a newAction with an owner as sent only when the action is assigned to the owner', async () => {
+    const pending = aPending({ action: newAction(), state: 'uncertain' });
+    const unassigned = withDecided(badly.id, { action: made });
+    retroApi({}, { projectId, retro: unassigned });
+    await expect(reconcileDecision([pending], api)).resolves.toEqual(['notSent']);
+
+    const assigned: SprintRetroDto = {
+      ...unassigned,
+      actionItems: [{ action: made, theme: null, raisedIn: null, owner: priya, impact: null }],
+    };
+    retroApi({}, { projectId, retro: assigned });
+    await expect(reconcileDecision([pending], api)).resolves.toEqual(['sent']);
+  });
+
+  it('reconciles addToAction by the action item and notNeeded by the sprint retro, read once', async () => {
     const detail = {
       action: { workItemId: WORK_ITEM, key: 'SHIP-958' },
       points: [badly],
     };
     const fake = retroApi(
-      {
-        [`GET /api/retros/actions/${WORK_ITEM}`]: detail,
-        'GET /api/projects': [aProject()],
-        [DIALOG]: { selected: [first], offered: [], openActions: [], suggestedTheme: null },
-      },
-      { projectId, retro },
+      { [`GET /api/retros/actions/${WORK_ITEM}`]: detail },
+      { projectId, retro: withDecided(badly.id, { decision: 'notNeeded' }) },
     );
     const add = aPending({ action: addToAction(), state: 'uncertain' });
-    const notNeededPending = aPending({ action: notNeeded('x'), state: 'uncertain' });
-    const stillOpen = aPending({
-      action: notNeeded('x', first.id),
-      state: 'uncertain',
-    });
-    await expect(reconcileDecision([add, notNeededPending, stillOpen], api)).resolves.toEqual([
+    const decided = aPending({ action: notNeeded('x'), state: 'uncertain' });
+    const undecided = aPending({ action: notNeeded('x', first.id), state: 'uncertain' });
+    await expect(reconcileDecision([add, decided, undecided], api)).resolves.toEqual([
       'sent',
       'sent',
       'notSent',
     ]);
-    expect(fake.callsTo(DIALOG)).toHaveLength(1);
+    expect(fake.callsTo(SPRINT_RETRO)).toHaveLength(1);
+    expect(fake.callsTo('GET /api/projects')).toHaveLength(0);
 
+    // A point decided another way (an action item) is not a Not needed.
     retroApi(
       { [`GET /api/retros/actions/${WORK_ITEM}`]: { ...detail, points: [second] } },
-      { projectId, retro },
+      { projectId, retro: withDecided(badly.id, { decision: 'actioned' }) },
     );
+    await expect(reconcileDecision([decided], api)).resolves.toEqual(['notSent']);
     await expect(reconcileDecision([add], api)).resolves.toEqual(['notSent']);
+  });
+
+  it('retries a newAction whose owner assign failed without making a second action item', async () => {
+    const fake = retroApi(
+      {},
+      { projectId, retro, newAction: { workItemId: WORK_ITEM, key: 'SHIP-958' } },
+    );
+    fake.failNext(
+      `PATCH /api/work-items/${WORK_ITEM}`,
+      apiError(500, 'server', 'The assign failed.'),
+    );
+    await expect(sendDecision(newAction(), api)).rejects.toThrow();
+    expect(fake.callsTo(ACTIONS)).toHaveLength(1);
+
+    // The server now shows the points carrying the action item the first send made.
+    const after = retroApi(
+      {},
+      {
+        projectId,
+        retro: withDecided(badly.id, { action: made }),
+        newAction: { workItemId: WORK_ITEM, key: 'SHIP-958' },
+      },
+    );
+    await sendDecision(newAction(), api);
+    expect(after.callsTo(ACTIONS)).toHaveLength(0);
+    const patches = after.callsTo(`PATCH /api/work-items/${WORK_ITEM}`);
+    expect(patches).toHaveLength(1);
+    expect(patches[0].body).toMatchObject({ changes: { assignee: { value: 'user-priya' } } });
   });
 });
