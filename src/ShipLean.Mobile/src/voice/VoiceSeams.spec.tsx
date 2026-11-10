@@ -373,20 +373,23 @@ describe('voice seams', () => {
       expect(internals().spec()).toBe(inbox);
     });
 
-    it('a focused screen keeps its place when it re-renders, and its spec stays current', async () => {
+    it('an older screen that re-renders keeps its place under the newer one, with its spec current', async () => {
       const older = fakeNav(true);
       const newer = fakeNav(true);
       await renderWithVoice(
         <>
-          <Screen nav={older} of={inbox} />
-          <BackgroundHost nav={newer} />
+          <BackgroundHost nav={older} />
+          <Screen nav={newer} of={inbox} />
           <InternalsProbe />
         </>,
         { engines: {} },
       );
-      expect(internals().spec()).toBe(backlog);
+      expect(internals().spec()).toBe(inbox);
       const retro = specOf('retro');
       await act(async () => hostRef.rerender(retro));
+      expect(internals().spec()).toBe(inbox);
+
+      await act(async () => newer.emit('blur'));
       expect(internals().spec()).toBe(retro);
     });
   });
