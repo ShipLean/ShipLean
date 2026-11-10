@@ -2,7 +2,8 @@ name: Mobile release
 
 # Builds the phone app on EAS and, by default, submits it: iOS to TestFlight, Android to the
 # Play internal track as a draft (src/ShipLean.Mobile/eas.json, submit.production).
-# Run by hand only: every run uses EAS build credits and bumps the build number.
+# With `listing` it also pushes the store listing from store/.
+# Run by hand only: a run with `build` uses EAS build credits and bumps the build number.
 #
 # Needs these GitHub secrets and variable:
 #   EXPO_TOKEN                        an Expo robot token for the dickos-team account (build job).
@@ -97,7 +98,8 @@ jobs:
           eas build "${args[@]}"
 
   # The listing jobs do not need the build: --no-wait ends the build job once EAS has queued the
-  # builds, so it finishing proves no binary exists, and Play takes listing changes without one.
+  # builds, so waiting for it would not mean this run's binary exists. The listing goes to the
+  # current editable version, and Play takes listing changes without a new binary.
   listing-android:
     if: ${{ inputs.listing && inputs.platform != 'ios' }}
     runs-on: ubuntu-latest
