@@ -3,6 +3,7 @@ using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.WorkItems;
 using ShipLean.Contracts.WorkItems.Reads.Changes;
 using ShipLean.TestSupport;
+using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Contracts.WorkItems;
 
 namespace ShipLean.WebApi.Tests.WorkItems.Reads.Changes;
@@ -27,6 +28,28 @@ public class WorkItemChangesTests : WorkItemChangesTestBase
         page.Entries.ShouldBeEmpty();
         page.More.ShouldBeFalse();
         page.Cursor.ShouldBe(cursor);
+    }
+
+    [Test]
+    public async Task ChangesSince_WhenAgentWroteTheRevision_ShouldCarryAgentName()
+    {
+        var project = await Arrangement.ArrangeProjectAsync();
+        var item = await AddItemAsync(project, b => b.WithType("feature"));
+        var at = TestDates.Today.AddHours(8);
+        await using (var connection = await Arrangement.Database.OpenAsync())
+        {
+            await new RevisionBuilder(item).WithRev(2).WithChangedAt(at).WithChangedBy(SeedIds.Users.Priya).WithAgent("Claude Code")
+                .WithChanges("""[{"field":"points","from":null,"to":3,"fromLabel":null,"toLabel":null}]""").InsertAsync(connection);
+            await new CommentBuilder(item).WithBody("Pushed").WithCreatedAt(at.AddMinutes(1)).WithAuthor(SeedIds.Users.Priya).WithAgentName("Claude Code (claude.ai)").InsertAsync(connection);
+        }
+
+        await AddRevisionAsync(item, 3, at.AddMinutes(2), SeedIds.Users.Priya);
+        await AddCommentAsync(item, "By a person", at.AddMinutes(3), SeedIds.Users.Priya);
+
+        var entries = (await Changes.SinceTimeAsync(project.ProjectId, at, 100, null)).Entries;
+
+        entries.Where(e => e.At >= at && e.At <= at.AddMinutes(3)).Select(e => (e.Comment ?? $"rev {e.Revision}", e.AgentName, e.Type))
+            .ShouldBe([("rev 2", "Claude Code", "feature"), ("Pushed", "Claude Code (claude.ai)", "feature"), ("rev 3", null, "feature"), ("By a person", null, "feature")]);
     }
 
     [Test]
