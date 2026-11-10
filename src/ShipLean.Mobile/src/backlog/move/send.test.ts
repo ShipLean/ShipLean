@@ -66,7 +66,6 @@ describe('backlog move executor', () => {
       items: [{ id: moved.id, expectedRevision: 3, changes: null, placement: action.placement }],
     });
   });
-  });
 
   it('throws a 409 when the result reports a stale row', async () => {
     const { action, moved } = world();
