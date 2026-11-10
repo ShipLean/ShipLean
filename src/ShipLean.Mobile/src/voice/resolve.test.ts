@@ -155,6 +155,10 @@ describe('copyNoteSpan (trimming)', () => {
     const u = aTranscript({ text: 'comment that retries double the load' });
     expect(copyNoteSpan(u, { start: 7, end: 36 })).toBe('retries double the load');
   });
+  it('takes off at most one leading "that", after leading spaces and punctuation', () => {
+    const t = aTranscript({ text: 'comment , that that test is flaky' });
+    expect(copyNoteSpan(t, { start: 7, end: 33 })).toBe('that test is flaky');
+  });
   it('refuses a span that cuts a word in half', () => {
     const t = aTranscript({ text: 'add a note: the API returns 500 on retry' });
     expect(copyNoteSpan(t, { start: 13, end: 40 })).toBeNull();
@@ -411,6 +415,35 @@ describe('resolveCommand', () => {
     ).toEqual({
       ok: false,
       failure: { kind: 'noValidAction', detail: { action: 'delete', reason: 'none' } },
+    });
+  });
+
+  it('a batch the spec refuses together fails even when each call works alone', () => {
+    const base = featureSpec();
+    const spec: ScreenVoiceSpec<FeatureAction> = {
+      ...base,
+      toActions(calls, tr) {
+        if (calls.length >= 2)
+          return {
+            ok: false,
+            failure: { kind: 'noValidAction', detail: { action: null, reason: 'none' } },
+          };
+        return base.toActions(calls, tr);
+      },
+    };
+    const t = aTranscript({ text: 'set it to active and closed' });
+    expect(
+      resolveCommand(
+        spec,
+        [
+          { action: 'setState', args: { state: 'active' } },
+          { action: 'setState', args: { state: 'closed' } },
+        ],
+        t,
+      ),
+    ).toEqual({
+      ok: false,
+      failure: { kind: 'noValidAction', detail: { action: 'setState', reason: 'none' } },
     });
   });
 });

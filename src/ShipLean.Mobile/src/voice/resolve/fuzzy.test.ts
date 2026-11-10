@@ -26,6 +26,20 @@ describe('fuzzy', () => {
     expect(findPerson('Pria', people)).toBe(people[0]);
     expect(findPerson('Priya Shaw', people)).toBe(people[0]);
   });
+  it('prefers an exact surname over a near one', () => {
+    const kents = [
+      { id: 'u1', name: 'Clark Kent' },
+      { id: 'u2', name: 'Immanuel Kant' },
+    ];
+    expect(findPerson('Kent', kents)).toBe(kents[0]);
+  });
+  it('prefers an exact first name over a near one', () => {
+    const anns = [
+      { id: 'u1', name: 'Ann Lee' },
+      { id: 'u2', name: 'Anna Ng' },
+    ];
+    expect(findPerson('Ann', anns)).toBe(anns[0]);
+  });
   it('finds nobody for a shared first name, a stranger, or a short name with a slip', () => {
     expect(findPerson('Tom', people)).toBeNull();
     expect(findPerson('Ana', people)).toBeNull();

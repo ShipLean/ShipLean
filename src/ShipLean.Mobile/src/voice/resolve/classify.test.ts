@@ -46,6 +46,26 @@ describe('classify', () => {
     expect(result.actions.map((a) => a.key)).toEqual(['SHIP-1', 'SHIP-2']);
     expect(result.lines.map((l) => l.id)).toEqual(['line-SHIP-1', 'line-SHIP-2']);
   });
+  it('gives two notes on the same item two distinct line ids, each still with its action', () => {
+    const note = (text: string): Outcome<AppAction> => ({
+      ok: true,
+      result: {
+        ok: true,
+        actions: [action(text)],
+        lines: [{ id: 'comment:SHIP-906', icon: 'note', text, removable: true }],
+        rejected: [],
+        view: null,
+      },
+    });
+    const result = classify([note('a'), note('b'), note('c')], t);
+    if (!result.ok) throw new Error('expected ok');
+    expect(result.lines.map((l) => l.id)).toEqual([
+      'comment:SHIP-906',
+      'comment:SHIP-906#2',
+      'comment:SHIP-906#3',
+    ]);
+    expect(result.lines.map((l) => l.text)).toEqual(result.actions.map((a) => a.key));
+  });
   it('fails with the first rejection when every call is rejected', () => {
     const webOnly = { kind: 'webOnly' as const, detail: { action: 'split', where: 'the web' } };
     const split = { action: 'split', args: {} };
