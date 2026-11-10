@@ -83,3 +83,7 @@ export const stateSheetErrorId = 'wi-state-error';
 export const ownerOptionId = (userId: string) => `wi-owner-option-${userId}`;
 export const noOwnerOptionId = 'wi-owner-option-none';
 export const ownerSheetErrorId = 'wi-owner-error';
+
+// SHIP-1325: a tapped or typed change that didn't send, by its Pending id; the Retry or Dismiss is `${id}-action`.
+export const refusedChangesId = 'wi-refused';
+export const refusedChangeId = (pendingId: string) => `wi-refused-${pendingId}`;
