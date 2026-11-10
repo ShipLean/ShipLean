@@ -127,6 +127,9 @@ describe('backlog voice spec', () => {
   it('gives the model the level and visible rows, and hotwords for keys, levels, people, top and bottom', () => {
     const spec = features();
     expect(spec.context()).toMatchObject({ level: 'features', people: ['Tom', 'Priya'] });
+    expect(spec.context().rows).toEqual(FEATURES.map((r) => ({ key: r.key, title: r.title })));
+    expect(spec.context().states).toEqual([]);
+    expect(spec.context().key).toBeNull();
     const hot = spec.hotwords();
     expect(hot).toEqual(
       expect.arrayContaining(['SHIP-906', 'epics', 'stories', 'Tom', 'Priya', 'top', 'bottom']),
