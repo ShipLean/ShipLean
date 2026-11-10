@@ -1,5 +1,5 @@
 import { useState, type FunctionComponent } from 'react';
-import { Text, View } from 'react-native';
+import { Platform, Text, View } from 'react-native';
 import { useTheme } from '../theme';
 import { Button } from '../ui/Button';
 import { engines } from '../voice/engines';
@@ -76,7 +76,9 @@ export const MicrophoneStep: FunctionComponent<MicrophoneStepProps> = ({
           testID={microphoneStepIds.next}
           style={{ color: theme.colors.muted, fontSize: theme.font.size.base }}
         >
-          Next, your phone asks for permission. You can change it any time in Settings.
+          {`Next, your phone asks for permission. You can change it any time in ${
+            Platform.OS === 'android' ? "the app's settings" : 'Settings'
+          }.`}
         </Text>
       </StepBody>
       <StepFoot>
