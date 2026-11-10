@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { aPending } from '../../test-support/actions';
 import { aTranscript } from '../../test-support/voice';
 import { flowHarness } from '../../test-support/voiceFlows';
-import { applyGroup, discardApply, onApplyFailed, retryApply } from './applyFailed';
+import { applyGroup, discardApply, onApplyFailed, queueApply, retryApply } from './applyFailed';
 
 const HEARD = 'set it to active, approve D10 and note it runs warm';
 
@@ -68,10 +68,10 @@ describe('applyFailed', () => {
       heard: HEARD,
       source: 'voice',
       lines: [
-        { id: 'state', icon: 'flag', text: 'State: New → Active', removable: true },
-        { id: 'approve-D10', icon: 'check', text: 'Approve D10', removable: true },
+        { id: 'p1', icon: 'flag', text: 'State: New → Active', removable: true },
+        { id: 'p2', icon: 'check', text: 'Approve D10', removable: true },
         {
-          id: 'note',
+          id: 'p3',
           icon: 'note',
           text: 'Note on SHIP-906',
           detail: 'it runs warm',
@@ -103,6 +103,104 @@ describe('applyFailed', () => {
 
     expect(runner.dispatched).toHaveLength(1);
     await expect.poll(() => v.state().kind).toBe('idle');
+  });
+
+  it('a batch refused with a conflict is left to onConflict', async () => {
+    const { v, runner } = failedBatch();
+    await v.resolve(aTranscript({ text: HEARD }), { source: 'voice' });
+    const batchId = v.dispatch(['state', 'approve-D10']);
+    const [setState, approve] = runner.dispatched[0].batch;
+    const parts = [
+      aPending({
+        id: 'p1',
+        batchId,
+        action: setState,
+        origin: 'voice',
+        state: 'failed',
+        failure: 'conflict',
+        error: 'Someone else changed this.',
+      }),
+      aPending({ id: 'p2', batchId, action: approve, origin: 'voice', state: 'failed' }),
+    ];
+    runner.setPending(parts);
+    const preview = v.state();
+
+    onApplyFailed(v, batchId, parts);
+
+    expect(v.state()).toBe(preview);
+    expect(v.state().kind).toBe('preview');
+  });
+
+  it('Try again asks the runner about a part that got no answer and sends nothing again', async () => {
+    const { v, runner } = failedBatch();
+    await v.resolve(aTranscript({ text: HEARD }), { source: 'voice' });
+    const batchId = v.dispatch(['state', 'approve-D10']);
+    const [setState, approve] = runner.dispatched[0].batch;
+    const parts = [
+      aPending({
+        id: 'p-uncertain',
+        batchId,
+        action: setState,
+        origin: 'voice',
+        state: 'uncertain',
+        error: 'No answer from ShipLean.',
+        retryable: true,
+      }),
+      aPending({ id: 'p-queued', batchId, action: approve, origin: 'voice', state: 'queued' }),
+    ];
+    runner.setPending(parts);
+    onApplyFailed(v, batchId, parts);
+
+    retryApply(v);
+
+    expect(runner.retried).toEqual(['p-uncertain']);
+    expect(runner.dispatched).toHaveLength(1);
+    await expect.poll(() => v.state().kind).toBe('idle');
+  });
+
+  it('Send when online leaves a part that got no answer, and the parts behind it, to the runner', async () => {
+    const { v, runner } = failedBatch();
+    await v.resolve(aTranscript({ text: HEARD }), { source: 'voice' });
+    const batchId = v.dispatch(['state', 'approve-D10']);
+    const [setState, approve] = runner.dispatched[0].batch;
+    const parts = [
+      aPending({
+        id: 'p-uncertain',
+        batchId,
+        action: setState,
+        origin: 'voice',
+        state: 'uncertain',
+        retryable: true,
+      }),
+      aPending({ id: 'p-queued', batchId, action: approve, origin: 'voice', state: 'queued' }),
+    ];
+    runner.setPending(parts);
+    onApplyFailed(v, batchId, parts);
+
+    queueApply(v);
+
+    expect(runner.dispatched).toHaveLength(1);
+    expect(runner.retried).toEqual([]);
+    await expect.poll(() => v.state().kind).toBe('idle');
+  });
+
+  it('gives each line its part id, so a part that left pending() moves no other line', async () => {
+    const { v, runner } = failedBatch();
+    await v.resolve(aTranscript({ text: HEARD }), { source: 'voice' });
+    const batchId = v.dispatch(['state', 'approve-D10']);
+    const [setState, approve] = runner.dispatched[0].batch;
+    const parts = [
+      aPending({ id: 'p1', batchId, action: setState, origin: 'voice', state: 'failed' }),
+      aPending({ id: 'p2', batchId, action: approve, origin: 'voice', state: 'failed' }),
+    ];
+
+    onApplyFailed(v, batchId, parts);
+
+    const s = v.state();
+    expect(s.kind === 'applyFailed' && s.lines.map((l) => [l.id, l.text])).toEqual([
+      ['p1', 'State: New → Active'],
+      ['p2', 'Approve D10'],
+    ]);
   });
 
   it('Discard sends nothing and closes the sheet', async () => {
