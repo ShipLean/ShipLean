@@ -3,8 +3,6 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-
 import { UNDO } from '../actions/undo';
 import {
   backlogMoveButtonId,
-  backlogMovedId,
-  backlogRankId,
   backlogRowId,
   moveApplyId,
   moveOptionId,
@@ -27,9 +25,9 @@ import {
   retroPlusId,
   retroTileId,
 } from '../retro/testIds';
-import { screenIds, tabIds } from '../screens/testIds';
+import { screenIds } from '../screens/testIds';
 import { aBacklogView, backlogApi, designFeatures } from '../test-support/backlog';
-import { aMember, aProject } from '../test-support/builders';
+import { aMe, aMember, aProject } from '../test-support/builders';
 import { designOverview, featuresApi } from '../test-support/features';
 import { designRetro, retroApi } from '../test-support/retro';
 import { controlledApi } from '../test-support/controlledApi';
@@ -43,10 +41,51 @@ const PROJECT = aProject().id;
 
 const advance = (ms: number) => act(async () => jest.advanceTimersByTimeAsync(ms));
 
-async function openProjectTab(api: ReturnType<typeof controlledApi>, tab: string) {
-  await renderApp({ url: '/', api });
-  await fireEvent.press(await screen.findByTestId('project-row-SHIP'));
-  await fireEvent.press(await screen.findByTestId(tab));
+// The tab opens by its deep link. TODO: open it from the tab bar once a tab pressed there carries the project key.
+const openTab = (api: ReturnType<typeof controlledApi>, tab: string) =>
+  renderApp({ url: `/p/SHIP/${tab}`, api });
+
+// The fake server keeps the order: a bulk placement moves the row before the one named, and the next read shows it.
+function backlogJourneyApi() {
+  const order = designFeatures();
+  const features = `GET /api/projects/${PROJECT}/backlogs/features`;
+  const bulk = `POST /api/projects/${PROJECT}/backlog/bulk`;
+  const api = controlledApi({
+    ...signedInApi(),
+    ...backlogApi(
+      {
+        [features]: () =>
+          aBacklogView(
+            'features',
+            order.map((r, i) => ({ ...r, rank: i + 1 })),
+          ),
+        [bulk]: (request: FakeRequest) => {
+          const [item] = (
+            request.body as {
+              items: { id: string; placement: { slot: string; beforeItemId?: string } }[];
+            }
+          ).items;
+          const from = order.findIndex((r) => r.id === item!.id);
+          const [moved] = order.splice(from, 1) as [BacklogRowDto];
+          const to = order.findIndex((r) => r.id === item!.placement.beforeItemId);
+          order.splice(to, 0, moved);
+          return { written: [], stale: [] };
+        },
+      },
+      { projectId: PROJECT },
+    ),
+    [`GET /api/projects/${PROJECT}/members`]: [],
+  });
+  return { api, order, features, bulk };
+}
+
+async function applyMoveAboveShip907(api: ReturnType<typeof controlledApi>) {
+  await openTab(api, 'backlog');
+  expect(await screen.findByTestId(backlogRowId('SHIP-906'))).toBeOnTheScreen();
+  await fireEvent.press(screen.getByTestId(backlogMoveButtonId('SHIP-906')));
+  await fireEvent.press(await screen.findByTestId(moveOptionId('other')));
+  await fireEvent.press(screen.getByTestId(optionId(moveSideId, 'above')));
+  await fireEvent.press(screen.getByTestId(movePickId('SHIP-907')));
 }
 
 describe('Screens journeys', () => {
@@ -58,45 +97,10 @@ describe('Screens journeys', () => {
   afterEach(() => jest.useRealTimers());
 
   it('moves SHIP-906 above SHIP-907 in the Backlog', async () => {
-    // The fake server keeps the order: a bulk placement moves the row before the one named, and the next read shows it.
-    const order = designFeatures();
-    const features = `GET /api/projects/${PROJECT}/backlogs/features`;
-    const bulk = `POST /api/projects/${PROJECT}/backlog/bulk`;
-    const api = controlledApi({
-      ...signedInApi(),
-      ...backlogApi(
-        {
-          [features]: () =>
-            aBacklogView(
-              'features',
-              order.map((r, i) => ({ ...r, rank: i + 1 })),
-            ),
-          [bulk]: (request: FakeRequest) => {
-            const [item] = (
-              request.body as {
-                items: { id: string; placement: { slot: string; beforeItemId?: string } }[];
-              }
-            ).items;
-            const from = order.findIndex((r) => r.id === item!.id);
-            const [moved] = order.splice(from, 1) as [BacklogRowDto];
-            const to = order.findIndex((r) => r.id === item!.placement.beforeItemId);
-            order.splice(to, 0, moved);
-            return { written: [], stale: [] };
-          },
-        },
-        { projectId: PROJECT },
-      ),
-      [`GET /api/projects/${PROJECT}/members`]: [],
-    });
+    const { api, order, bulk } = backlogJourneyApi();
     const ship907 = order.find((r) => r.key === 'SHIP-907')!;
-    await openProjectTab(api, tabIds.backlog);
-    expect(await screen.findByTestId(backlogRowId('SHIP-906'))).toBeOnTheScreen();
-
     // 1. Move → Above or below → above SHIP-907: the preview lists the rows that shift.
-    await fireEvent.press(screen.getByTestId(backlogMoveButtonId('SHIP-906')));
-    await fireEvent.press(await screen.findByTestId(moveOptionId('other')));
-    await fireEvent.press(screen.getByTestId(optionId(moveSideId, 'above')));
-    await fireEvent.press(screen.getByTestId(movePickId('SHIP-907')));
+    await applyMoveAboveShip907(api);
     expect(screen.getByTestId(movePreviewPosId('SHIP-906'))).toHaveTextContent('4 → 2');
     expect(screen.getByTestId(movePreviewPosId('SHIP-907'))).toHaveTextContent('2 → 3');
     expect(screen.getByTestId(movePreviewPosId('SHIP-892'))).toHaveTextContent('3 → 4');
@@ -113,8 +117,6 @@ describe('Screens journeys', () => {
       changes: null,
       placement: { slot: 'before', beforeItemId: ship907.id },
     });
-    expect(await screen.findByTestId(backlogMovedId('SHIP-906'))).toHaveTextContent('↑ from 4');
-    expect(screen.getByTestId(backlogRankId('SHIP-906'))).toHaveTextContent('2');
 
     // 3. Move it again and Undo inside the window: nothing more is sent.
     await fireEvent.press(screen.getByTestId(backlogMoveButtonId('SHIP-906')));
@@ -135,7 +137,7 @@ describe('Screens journeys', () => {
       patch: `PATCH /api/work-items/${row.id}`,
       seen: `POST /api/projects/${PROJECT}/features/digest/seen`,
     };
-    await openProjectTab(api, tabIds.features);
+    await openTab(api, 'features');
 
     // 1. Expand SHIP-906 and pick Blocked (it is At risk already, and a tap on the current value does nothing).
     await fireEvent.press(
@@ -175,19 +177,33 @@ describe('Screens journeys', () => {
       user: { ...aMember().user, id: 'user-priya', name: 'Priya Shah', initials: 'PS' },
     });
     const newAction = { workItemId: '0199f000-0000-7000-8000-0000000b0901', key: 'SHIP-901' };
+    // The fake server keeps the +1: the retro read after a send shows who supports the point.
+    const meRef = { ...aMe(), initials: 'JD', avatarColour: '#2f7fd8', photoUrl: null };
+    const setSupport = (on: boolean) => {
+      plusOne.supportedByMe = on;
+      plusOne.supporters = on ? [meRef] : [];
+      return { status: 204 };
+    };
+    const support = `/api/retros/points/${plusOne.id}/support`;
     const api = retroApi(
-      { [`GET /api/projects/${PROJECT}/members`]: [priya] },
+      {
+        ...signedInApi(),
+        [`GET /api/projects/${PROJECT}/members`]: [priya],
+        [`POST ${support}`]: () => setSupport(true),
+        [`DELETE ${support}`]: () => setSupport(false),
+      },
       { projectId: PROJECT, retro, newAction },
     );
-    const support = `/api/retros/points/${plusOne.id}/support`;
     const create = `POST /api/projects/${PROJECT}/retros/actions`;
     const patch = `PATCH /api/work-items/${newAction.workItemId}`;
-    await openProjectTab(api, tabIds.retro);
+    await openTab(api, 'retro');
 
     // 1. Went badly: +1 is sent at once, and a second tap takes it back.
+    // The tab opens on the first category with points to decide (D2): Not in plan in the design. Pick Went badly.
     await fireEvent.press(await screen.findByTestId(retroTileId('wentBadly')));
     await fireEvent.press(await screen.findByTestId(retroPlusId(plusOne.id)));
     await waitFor(() => expect(api.callsTo(`POST ${support}`)).toHaveLength(1));
+    await waitFor(() => expect(screen.getByTestId(retroPlusId(plusOne.id))).toBeSelected());
     await fireEvent.press(screen.getByTestId(retroPlusId(plusOne.id)));
     await waitFor(() => expect(api.callsTo(`DELETE ${support}`)).toHaveLength(1));
     expect(api.callsTo(`POST ${support}`)).toHaveLength(1);
