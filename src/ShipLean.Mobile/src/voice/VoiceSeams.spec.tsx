@@ -1,5 +1,6 @@
 import { act, fireEvent, screen } from '@testing-library/react-native';
 import { useEffect, useState, type ReactNode } from 'react';
+import { NavigationContext } from 'expo-router/react-navigation';
 import { Pressable, Text } from 'react-native';
 import { useActionRunner } from '../actions/ActionRunnerProvider';
 import type { ActionRunner, PreviewLine } from '../actions/types';
@@ -275,6 +276,119 @@ describe('voice seams', () => {
 
     await fireEvent.press(screen.getByTestId('leave'));
     expect(internals().spec()).toBeNull();
+  });
+
+  describe('useScreenVoice follows focus', () => {
+    const specOf = (screenName: ScreenVoiceSpec['screen']): ScreenVoiceSpec => ({
+      ...spec,
+      screen: screenName,
+    });
+    const inbox = specOf('inbox');
+    const backlog = specOf('backlog');
+
+    // A minimal navigation prop: focus and blur listeners, and which of them is focused now.
+    function fakeNav(focused: boolean) {
+      const listeners: Record<string, Set<() => void>> = { focus: new Set(), blur: new Set() };
+      const nav = {
+        focused,
+        isFocused: () => nav.focused,
+        addListener: (type: 'focus' | 'blur', cb: () => void) => {
+          listeners[type]!.add(cb);
+          return () => {
+            listeners[type]!.delete(cb);
+          };
+        },
+        emit(type: 'focus' | 'blur') {
+          nav.focused = type === 'focus';
+          for (const cb of [...listeners[type]!]) cb();
+        },
+      };
+      return nav;
+    }
+    type FakeNav = ReturnType<typeof fakeNav>;
+
+    function Screen({ nav, of }: { nav: FakeNav; of: ScreenVoiceSpec }) {
+      return (
+        <NavigationContext.Provider value={nav as never}>
+          <Inner of={of} />
+        </NavigationContext.Provider>
+      );
+    }
+    function Inner({ of }: { of: ScreenVoiceSpec }) {
+      useScreenVoice(of);
+      return null;
+    }
+    const hostRef: { rerender: (of: ScreenVoiceSpec) => void } = { rerender: noop };
+    function BackgroundHost({ nav }: { nav: FakeNav }) {
+      const [of, setOf] = useState(backlog);
+      useEffect(() => {
+        hostRef.rerender = setOf;
+      }, []);
+      return <Screen nav={nav} of={of} />;
+    }
+
+    it('two mounted screens: the newest wins, and a focus change moves the mic back', async () => {
+      const first = fakeNav(true);
+      const second = fakeNav(false);
+      await renderWithVoice(
+        <>
+          <Screen nav={first} of={inbox} />
+          <Screen nav={second} of={backlog} />
+          <InternalsProbe />
+        </>,
+        { engines: {} },
+      );
+      // Only the focused screen has registered.
+      expect(internals().spec()).toBe(inbox);
+
+      await act(async () => {
+        first.emit('blur');
+        second.emit('focus');
+      });
+      expect(internals().spec()).toBe(backlog);
+
+      await act(async () => {
+        second.emit('blur');
+        first.emit('focus');
+      });
+      expect(internals().spec()).toBe(inbox);
+
+      await act(async () => first.emit('blur'));
+      expect(internals().spec()).toBeNull();
+    });
+
+    it('a background screen that re-renders with a new spec does not take the mic', async () => {
+      const visible = fakeNav(true);
+      const background = fakeNav(false);
+      await renderWithVoice(
+        <>
+          <Screen nav={visible} of={inbox} />
+          <BackgroundHost nav={background} />
+          <InternalsProbe />
+        </>,
+        { engines: {} },
+      );
+      expect(internals().spec()).toBe(inbox);
+      await act(async () => hostRef.rerender(specOf('retro')));
+      expect(internals().spec()).toBe(inbox);
+    });
+
+    it('a focused screen keeps its place when it re-renders, and its spec stays current', async () => {
+      const older = fakeNav(true);
+      const newer = fakeNav(true);
+      await renderWithVoice(
+        <>
+          <Screen nav={older} of={inbox} />
+          <BackgroundHost nav={newer} />
+          <InternalsProbe />
+        </>,
+        { engines: {} },
+      );
+      expect(internals().spec()).toBe(backlog);
+      const retro = specOf('retro');
+      await act(async () => hostRef.rerender(retro));
+      expect(internals().spec()).toBe(retro);
+    });
   });
 
   it('fix, submitTyped, retryWith and a reported conflict reach their flows', async () => {

@@ -6,10 +6,12 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useSyncExternalStore,
   type ReactNode,
 } from 'react';
+import { NavigationContext } from 'expo-router/react-navigation';
 import { useActionRunner } from '../actions/ActionRunnerProvider';
 import { UNDO } from '../actions/undo';
 import type {
@@ -263,12 +265,40 @@ export function useVoice(): VoiceApi {
   return useContext(VoiceContext);
 }
 
-// Registers the screen's spec and its view handler while it is mounted; the newest registration is the focused one.
-// TODO: register again on focus and drop on blur, so a revisited tab (tabs stay mounted) takes the mic back.
+// Registers the screen's spec and its view handler while the screen is focused; the newest registration wins.
+// It registers once per mount and keeps the spec and onView current through a stable entry, so a re-render never
+// moves a screen up the stack. Inside a navigator it follows focus and blur (tabs stay mounted, so a background tab
+// must not hold the mic); NavigationContext is undefined outside one, and then mount and unmount decide.
 export function useScreenVoice(spec: ScreenVoiceSpec, opts?: ScreenVoiceOptions): void {
   const register = useContext(RegisterContext);
+  const nav = useContext(NavigationContext);
   const onView = opts?.onView;
-  useEffect(() => register?.({ spec, onView }), [register, spec, onView]);
+  const entry = useRef<ScreenEntry>({ spec, onView });
+  useEffect(() => {
+    entry.current.spec = spec;
+    entry.current.onView = onView;
+  });
+  useEffect(() => {
+    if (register === null) return;
+    const mine = entry.current;
+    if (nav === undefined) return register(mine);
+    let drop: (() => void) | null = null;
+    const take = () => {
+      drop ??= register(mine);
+    };
+    const give = () => {
+      drop?.();
+      drop = null;
+    };
+    if (nav.isFocused()) take();
+    const offFocus = nav.addListener('focus', take);
+    const offBlur = nav.addListener('blur', give);
+    return () => {
+      offFocus();
+      offBlur();
+      give();
+    };
+  }, [register, nav]);
 }
 
 // The model status from the provider's engines, or the configured ones outside a provider.
