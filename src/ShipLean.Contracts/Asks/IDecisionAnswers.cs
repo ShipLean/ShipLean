@@ -6,11 +6,13 @@ public interface IDecisionAnswers
 {
     // Confirm: open only, else Conflict. Change: open, confirmed or changed (withdrawn is Conflict); from confirmed or changed
     // it also posts a comment tagged `changed` in the same transaction.
-    // A Change to kind recommended is allowed from open, confirmed or changed; it makes the state confirmed and records a
-    // changed event. A change from withdrawn is a Conflict. Withdraw: anything except withdrawn, else Conflict.
+    // A Change to kind recommended is allowed from open or changed; it makes the state confirmed and records a changed
+    // event. From confirmed it is a Conflict (nothing would change). A change from withdrawn is a Conflict.
+    // Withdraw: anything except withdrawn, else Conflict.
     Task AnswerAsync(Guid workItemId, DecisionAnswer answer, CancellationToken cancellationToken = default);
 
     // Confirms the listed numbers that are still open and skips the rest. Returns the numbers it confirmed.
+    // Any number that does not exist on the item is NotFound for the whole call, and nothing is confirmed.
     Task<IReadOnlyList<int>> ConfirmOpenAsync(Guid workItemId, IReadOnlyList<int> numbers, CancellationToken cancellationToken = default);
 
     // Posts a comment tagged `about` the decision; the decision is unchanged.
