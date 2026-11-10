@@ -61,8 +61,12 @@ export function ProjectsScreen() {
           )
         }
         renderItem={({ item }) => (
-          // TODO: open the project's tabs here, with the first product feature.
-          <Row title={item.name} subtitle={item.key} testID={projectRowId(item.key)} />
+          <Row
+            title={item.name}
+            subtitle={item.key}
+            testID={projectRowId(item.key)}
+            onPress={() => router.push(links.inbox(item.key))}
+          />
         )}
       />
     </Screen>
