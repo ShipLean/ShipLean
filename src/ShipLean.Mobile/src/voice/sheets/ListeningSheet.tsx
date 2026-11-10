@@ -8,6 +8,7 @@ export interface ListeningSheetProps {
 
 // While the mic is held: the words so far, with hotword matches marked, and the level.
 // TODO: the partial text through highlight(), the level meter and the input name replace this empty sheet.
+// Recorded PCM stays in memory for recognition only; never write, keep or upload it.
 export function ListeningSheet({ state }: ListeningSheetProps) {
   void state;
   return <View testID={listeningSheetId} />;

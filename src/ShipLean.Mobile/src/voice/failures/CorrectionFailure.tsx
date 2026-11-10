@@ -20,6 +20,7 @@ export interface CorrectionFailureProps {
 
 // No match, a misheard key, no valid action, web only or ambiguous: nothing was changed; offer the correction.
 // TODO: the heard quote with the miss underlined and each kind's suggestions or "where to do it" replace this.
+// Follow 'What a failure must always do' (voice-failures-agent-notes.md).
 export function CorrectionFailure({
   failure,
   heard,

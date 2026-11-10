@@ -9,6 +9,7 @@ export interface AnswerSheetProps {
 
 // A question's answer, shown on screen (never read aloud).
 // TODO: the lead line and the rows (key, title, counts) replace this empty sheet.
+// On screen only: no read-aloud, TTS or sound; copy never promises anyone is notified.
 export function AnswerSheet({ content, onClose }: AnswerSheetProps) {
   void content;
   void onClose;

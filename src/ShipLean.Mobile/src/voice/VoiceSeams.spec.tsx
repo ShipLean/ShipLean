@@ -256,6 +256,18 @@ describe('voice seams', () => {
     expect(shownState()).toEqual({ kind: 'idle', permission: 'granted' });
   });
 
+  it('a ready model with a denied mic is disabled with micOff', async () => {
+    const engines = installFakeEngines();
+    engines.mic.set('deniedFinal');
+    await renderWithVoice(<VoiceProbe />, { engines });
+    await act(async () => {});
+    expect(shownState()).toEqual({
+      kind: 'disabled',
+      reason: 'micOff',
+      permission: 'deniedFinal',
+    });
+  });
+
   it('useScreenVoice registers the focused screen spec and drops it on unmount', async () => {
     function Screen() {
       useScreenVoice(spec);

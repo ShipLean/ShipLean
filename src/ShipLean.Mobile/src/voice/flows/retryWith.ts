@@ -2,6 +2,7 @@
 import type { RetryChange, VoiceInternals } from '../internals';
 
 // TODO: rerun the last parse with the span replaced (or the whole heard text as a note) and show the result.
+// { asNote } posts the heard text word for word (copyNoteSpan); never reword it.
 export async function retryWith(v: VoiceInternals, change: RetryChange): Promise<void> {
   void v;
   void change;

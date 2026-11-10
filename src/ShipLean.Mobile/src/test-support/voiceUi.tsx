@@ -4,6 +4,7 @@ import type { ActionRunner } from '../actions/types';
 import type { Scheme } from '../theme/themes';
 import { configureEngines, notReadyEngines } from '../voice/engines';
 import type { RetryChange, VoiceApi, VoiceUiState } from '../voice/internals';
+import { clearComposerRequest } from '../voice/typed/composerRequest';
 import { VoiceContext, VoiceProvider } from '../voice/VoiceProvider';
 import type { FakeRunner } from './actions';
 import { renderWithRunner } from './renderWithRunner';
@@ -74,13 +75,12 @@ export interface FakeEngines {
   mic: FakeMicPermission;
 }
 
-let installed = false;
-
-// The engines go back to not ready after every test that installed fakes.
+// After every test the engines go back to not ready (also when a test called configureEngines itself) and no
+// composer request is left pending. Import this file at the top of a spec: Jest refuses a hook registered from a
+// require inside a test body.
 afterEach(() => {
-  if (!installed) return;
-  installed = false;
   configureEngines(notReadyEngines());
+  clearComposerRequest();
 });
 
 // Configures T0r's fakes (ready, mic granted) as the engines every VoiceProvider mounted in this test reads.
@@ -93,7 +93,6 @@ export function installFakeEngines(overrides: Partial<FakeEngines> = {}): FakeEn
     ...overrides,
   };
   configureEngines(fakes);
-  installed = true;
   return fakes;
 }
 

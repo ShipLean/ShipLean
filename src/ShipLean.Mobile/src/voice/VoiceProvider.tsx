@@ -233,10 +233,12 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
     () => ({
       state,
       // TODO: hold to talk: start the recognizer with the focused screen's hotwords, and stop or cancel it.
+      // Recorded PCM stays in memory for recognition only; never write, keep or upload it.
       holdStart: noop,
       holdEnd: noop,
       cancel: () => store.setMachine(restingState(e.models.status(), store.permission)),
       // TODO: dispatch the preview's kept lines and show applying, then the undo toast.
+      // Through internals.dispatch only (the session runner), never a core write.
       apply: (lineIds) => {
         void lineIds;
       },

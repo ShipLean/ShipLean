@@ -31,6 +31,11 @@ export function requestComposer(req: ComposerRequest): void {
   notify();
 }
 
+// Forget a request nobody consumed: on sign-out, on a project switch, and between tests.
+export function clearComposerRequest(): void {
+  consume();
+}
+
 function consume(): void {
   if (current === null) return;
   current = null;

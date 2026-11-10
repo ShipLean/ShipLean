@@ -19,6 +19,7 @@ export interface HeardFailureProps {
 // Too short, nothing heard, or heard but unclear: nothing was changed, and the words are kept.
 // TODO: the small message for a tap or silence, and for unclear the heard quote with Save as note, Type instead and
 // What can I say?, replace this empty view.
+// Save as note copies the heard text word for word (copyNoteSpan); follow 'What a failure must always do'.
 export function HeardFailure({
   failure,
   heard,
