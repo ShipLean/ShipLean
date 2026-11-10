@@ -17,6 +17,10 @@
       "number": 1,
       "label": "Q1",
       "text": "Should a card that expires this month still be selectable?",
+      "options": [
+        "Yes, until it expires",
+        "No, hide it"
+      ],
       "state": "open",
       "askedBy": {
         "id": "0199f000-0000-7000-8000-000000000001",
@@ -37,6 +41,7 @@
       "number": 2,
       "label": "Q2",
       "text": "Is there a design for the empty state, when the customer has no saved cards?",
+      "options": [],
       "state": "answered",
       "askedBy": {
         "id": "0199f000-0000-7000-8000-000000000001",

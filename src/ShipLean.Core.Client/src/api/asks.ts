@@ -48,6 +48,8 @@ export interface QuestionDto {
   /** "Q1". */
   label: string;
   text: string;
+  /** Quick answers it offers (at most 6); [] when none. */
+  options: string[];
   state: QuestionState;
   askedBy: UserRef;
   /** The agent that asked it for askedBy; null when a person did. */

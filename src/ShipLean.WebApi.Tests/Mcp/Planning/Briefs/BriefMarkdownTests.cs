@@ -96,7 +96,7 @@ public class BriefMarkdownTests
             kind, index, state, Joel, null, DateTimeOffset.UnixEpoch, "", null, null, null, null, false, []);
 
     private static QuestionDto Question(int number, QuestionState state, string? answer = null)
-        => new(Guid.NewGuid(), number, $"Q{number}", $"Ask {number}?", state, Joel, null, DateTimeOffset.UnixEpoch, "",
+        => new(Guid.NewGuid(), number, $"Q{number}", $"Ask {number}?", [], state, Joel, null, DateTimeOffset.UnixEpoch, "",
             answer is null ? null : new QuestionAnswerDto(Guid.NewGuid(), answer, "<p/>", Joel, null, DateTimeOffset.UnixEpoch, ""), null, null);
 
     [Test]

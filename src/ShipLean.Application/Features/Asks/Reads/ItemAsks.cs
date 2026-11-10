@@ -82,8 +82,9 @@ public sealed class ItemAsks(NpgsqlDataSource dataSource, ICurrentUser currentUs
             new { ids = userIds.ToArray() }, cancellationToken: cancellationToken))).ToDictionary(u => u.Id);
         UserRef? User(Guid? id) => id is { } value ? users.GetValueOrDefault(value) : null;
 
+        // TODO: read options from question.options
         var questionDtos = questions.Select(q => new QuestionDto(
-            q.Id, q.Number, $"Q{q.Number}", q.Text, Enum.Parse<QuestionState>(q.State, true), users[q.AskedBy], q.AgentName,
+            q.Id, q.Number, $"Q{q.Number}", q.Text, [], Enum.Parse<QuestionState>(q.State, true), users[q.AskedBy], q.AgentName,
             q.AskedAt, DisplayDate.Relative(q.AskedAt, clock),
             q.AnswerCommentId is { } commentId && q.AnswerAt is { } answerAt
                 ? Answer(commentId, q.AnswerBody!, User(q.AnswerAuthor), q.AnswerAgentName, answerAt)
