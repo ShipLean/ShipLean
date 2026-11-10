@@ -283,7 +283,8 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
         let calls: ParsedCall[];
         try {
           const prepared = await store.cache.get(e.model, spec);
-          calls = await e.model.parse(prepared, t);
+          // The spec goes too: the model reads the screen's context as it is now, not as it was when prepared (amendment 25).
+          calls = await e.model.parse(prepared, t, spec);
         } catch {
           // A model that fails to prepare or parse leaves a way forward, never a stuck 'thinking'.
           if (store.turn === turn)

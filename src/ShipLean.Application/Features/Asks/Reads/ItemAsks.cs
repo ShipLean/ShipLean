@@ -29,7 +29,7 @@ public sealed class ItemAsks(NpgsqlDataSource dataSource, ICurrentUser currentUs
         // The answer comment is joined with no archived filter: an archived comment still shows as the answer.
         var questions = (await connection.QueryAsync<QuestionRow>(new CommandDefinition(
             """
-            SELECT q.id, q.number, q.text, q.state, q.created_by_user_id AS askedBy, q.created_agent_name AS agentName, q.created_at AS askedAt,
+            SELECT q.id, q.number, q.text, q.options::text AS options, q.state, q.created_by_user_id AS askedBy, q.created_agent_name AS agentName, q.created_at AS askedAt,
                    q.withdrawn_at AS withdrawnAt, q.answer_comment_id AS answerCommentId,
                    c.body AS answerBody, c.author_id AS answerAuthor, c.agent_name AS answerAgentName, c.created_at AS answerAt
             FROM question q LEFT JOIN comment c ON c.id = q.answer_comment_id
@@ -82,9 +82,8 @@ public sealed class ItemAsks(NpgsqlDataSource dataSource, ICurrentUser currentUs
             new { ids = userIds.ToArray() }, cancellationToken: cancellationToken))).ToDictionary(u => u.Id);
         UserRef? User(Guid? id) => id is { } value ? users.GetValueOrDefault(value) : null;
 
-        // TODO: read options from question.options
         var questionDtos = questions.Select(q => new QuestionDto(
-            q.Id, q.Number, $"Q{q.Number}", q.Text, [], Enum.Parse<QuestionState>(q.State, true), users[q.AskedBy], q.AgentName,
+            q.Id, q.Number, $"Q{q.Number}", q.Text, JsonSerializer.Deserialize<string[]>(q.Options)!, Enum.Parse<QuestionState>(q.State, true), users[q.AskedBy], q.AgentName,
             q.AskedAt, DisplayDate.Relative(q.AskedAt, clock),
             q.AnswerCommentId is { } commentId && q.AnswerAt is { } answerAt
                 ? Answer(commentId, q.AnswerBody!, User(q.AnswerAuthor), q.AnswerAgentName, answerAt)
@@ -114,7 +113,7 @@ public sealed class ItemAsks(NpgsqlDataSource dataSource, ICurrentUser currentUs
     private sealed record ItemRow(string Type, Guid? AssignedTo, Guid? CreatedBy);
 
     private sealed record QuestionRow(
-        Guid Id, int Number, string Text, string State, Guid AskedBy, string? AgentName, DateTimeOffset AskedAt, DateTimeOffset? WithdrawnAt,
+        Guid Id, int Number, string Text, string Options, string State, Guid AskedBy, string? AgentName, DateTimeOffset AskedAt, DateTimeOffset? WithdrawnAt,
         Guid? AnswerCommentId, string? AnswerBody, Guid? AnswerAuthor, string? AnswerAgentName, DateTimeOffset? AnswerAt);
 
     private sealed record DecisionRow(

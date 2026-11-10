@@ -70,7 +70,11 @@ function AddPointForm({ projectId, sprintId, onClose, category }: AddPointSheetP
   const body = text.trim();
   const about = aboutOf(body, projectKey, sprintId);
   const canAdd =
-    picked !== null && body !== '' && (about.key !== null || about.sprintId !== null) && !sending;
+    projectKey !== undefined &&
+    picked !== null &&
+    body !== '' &&
+    (about.key !== null || about.sprintId !== null) &&
+    !sending;
 
   const add = () => {
     if (picked === null || !canAdd) return;

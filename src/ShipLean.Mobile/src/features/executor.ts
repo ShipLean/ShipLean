@@ -4,13 +4,11 @@ import type { BulkPlacement, BulkWriteResult } from '@shiplean/core/api/backlogW
 import { ApiRequestError } from '@shiplean/core/api/client';
 import { addComment, archiveComment, listComments } from '@shiplean/core/api/commentsApi';
 import { markDigestSeen } from '@shiplean/core/api/featuresOverview';
-import { getHistory } from '@shiplean/core/api/history';
 import { getMe } from '@shiplean/core/api/me';
 import { setStatusLine } from '@shiplean/core/api/status';
 import type { BacklogRowDto } from '@shiplean/core/api/views';
-import { patchItem } from '@shiplean/core/api/workItem';
-import type { FieldChange } from '@shiplean/core/api/persisted';
-import type { RevisionDto, WorkItemChanges } from '@shiplean/core/api/workItems';
+import { getItemByKey, patchItem } from '@shiplean/core/api/workItem';
+import type { WorkItemChanges, WorkItemDto } from '@shiplean/core/api/workItems';
 import type { Api, Executor, Pending, PreviewLine, SendReceipt } from '../actions/types';
 import type { FeaturesAction } from './actions';
 
@@ -86,47 +84,32 @@ export function stillPlaced(
   return fits ? ranked[i] : null;
 }
 
-// The newest revision that changed the field (history is newest first), and the revision the item is at now.
-interface FieldNow {
-  revision: number;
-  change: FieldChange | null;
-  at: RevisionDto | null;
-}
-
-async function fieldNow(itemId: string, field: string): Promise<FieldNow> {
-  const { revisions } = await getHistory(itemId);
-  const at = revisions.find((r) => r.changes.some((c) => c.field === field)) ?? null;
-  return {
-    revision: revisions[0]?.rev ?? 0,
-    change: at?.changes.find((c) => c.field === field) ?? null,
-    at,
-  };
-}
-
-// Undo of a field change. The send moved the revision, so read where the item is now: if the field no longer holds what
-// the send wrote, someone changed it since and Undo writes nothing; otherwise put the old value back at the current
-// revision (a 409 fails too, never a blind retry). The actions carry no project id, so the item's own history is read.
-async function undoField<V>(
-  itemId: string,
-  key: string,
-  field: string,
-  sent: V,
+// Undo of a field change. The send moved the revision, so read the item again: if the field no longer holds what the
+// send wrote, someone changed it since and Undo writes nothing; otherwise put the old value back at the item's own
+// revision (a 409 fails too, never a blind retry).
+async function undoField(
+  a: Of<'setState' | 'setHealth' | 'setStatus'>,
+  holds: (item: WorkItemDto) => boolean,
   write: (revision: number) => Promise<unknown>,
 ): Promise<void> {
-  const now = await fieldNow(itemId, field);
-  if (now.change === null || now.change.to !== sent)
-    throw new Error(`${key} has changed since, so the change can't be undone.`);
-  await write(now.revision);
+  const item = await getItemByKey(a.projectId, a.key);
+  if (!holds(item)) throw new Error(`${a.key} has changed since, so the change can't be undone.`);
+  await write(item.revision);
 }
 
-// Whether an uncertain field change went through: the newest revision that touched the field is after the one the
-// action was built on, and wrote the new value.
-async function fieldSent(itemId: string, field: string, revision: number, sent: unknown) {
-  const now = await fieldNow(itemId, field);
-  return now.at !== null && now.at.rev > revision && now.change?.to === sent;
+// Whether an uncertain field change went through: the item holds the sent value.
+async function fieldSent(
+  a: Of<'setState' | 'setHealth' | 'setStatus'>,
+  holds: (item: WorkItemDto) => boolean,
+): Promise<boolean> {
+  return holds(await getItemByKey(a.projectId, a.key));
 }
 
-const stories = (n: number) => `${n} ${n === 1 ? 'story' : 'stories'} still open`;
+const holdsState = (a: Of<'setState'>) => (item: WorkItemDto) => item.state.id === a.stateId;
+const holdsHealth = (a: Of<'setHealth'>) => (item: WorkItemDto) => item.health === a.health;
+const holdsStatus = (a: Of<'setStatus'>) => (item: WorkItemDto) => item.statusLine === a.text;
+
+const stillOpen = (n: number) => `${n} still open under it`;
 
 const healthLabel = (health: Of<'setHealth'>['health']): string =>
   health === 'onTrack'
@@ -171,7 +154,7 @@ function describe(a: FeaturesAction): PreviewLine {
         id: `features:${a.itemId}:setState`,
         icon: 'flag',
         text: `${a.key}: ${a.fromStateName} → ${a.stateName}`,
-        warning: a.closing && a.openStories > 0 ? stories(a.openStories) : undefined,
+        warning: a.closing && a.openStories > 0 ? stillOpen(a.openStories) : undefined,
         removable: true,
       };
     case 'setHealth':
@@ -234,16 +217,16 @@ function describe(a: FeaturesAction): PreviewLine {
 async function undo(a: FeaturesAction, receipt?: SendReceipt | null): Promise<void> {
   switch (a.kind) {
     case 'setState':
-      return undoField(a.itemId, a.key, 'state', a.stateId, (revision) =>
+      return undoField(a, holdsState(a), (revision) =>
         patchItem(a.itemId, revision, { ...NO_CHANGES, state: { value: a.fromStateId } }),
       );
     case 'setHealth':
-      return undoField(a.itemId, a.key, 'health', a.health, (revision) =>
+      return undoField(a, holdsHealth(a), (revision) =>
         patchItem(a.itemId, revision, { ...NO_CHANGES, health: { value: a.from } }),
       );
     case 'setStatus':
       // A Feature that had no line has it cleared.
-      return undoField(a.itemId, a.key, 'statusLine', a.text, (revision) =>
+      return undoField(a, holdsStatus(a), (revision) =>
         setStatusLine(a.itemId, revision, a.from ?? ''),
       );
     case 'moveRank': {
@@ -274,11 +257,11 @@ async function reconcileOne(
     case 'markDigestSeen':
       return 'notSent';
     case 'setState':
-      return (await fieldSent(a.itemId, 'state', a.revision, a.stateId)) ? 'sent' : 'notSent';
+      return (await fieldSent(a, holdsState(a))) ? 'sent' : 'notSent';
     case 'setHealth':
-      return (await fieldSent(a.itemId, 'health', a.revision, a.health)) ? 'sent' : 'notSent';
+      return (await fieldSent(a, holdsHealth(a))) ? 'sent' : 'notSent';
     case 'setStatus':
-      return (await fieldSent(a.itemId, 'statusLine', a.revision, a.text)) ? 'sent' : 'notSent';
+      return (await fieldSent(a, holdsStatus(a))) ? 'sent' : 'notSent';
     case 'moveRank': {
       const view = await getBacklog(a.projectId, 'features', LEVEL);
       return stillPlaced(view.rows, a) === null ? 'notSent' : 'sent';

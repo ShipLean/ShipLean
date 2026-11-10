@@ -2,6 +2,7 @@
 
 // F1
 export const featureRowId = (key: string) => `feature-row-${key}`;
+export const featureRowExpandId = (key: string) => `feature-expand-${key}`;
 export const featureGroupId = (category: string) => `feature-group-${category}`;
 export const featureGroupCountId = (category: string) => `feature-group-${category}-count`;
 export const featureWhoId = (key: string) => `feature-who-${key}`;
@@ -50,6 +51,63 @@ export const featureHealthOptionId = (health: string) => `feature-health-option-
 
 // F3
 export const featureBoardStoryId = (key: string) => `feature-board-story-${key}`;
+export const featureBoardIds = {
+  scroll: 'feature-board-scroll',
+  back: 'feature-board-back',
+  header: 'feature-board-header',
+  key: 'feature-board-key',
+  title: 'feature-board-title',
+  status: 'feature-board-status',
+  statusBy: 'feature-board-status-by',
+  statusStale: 'feature-board-status-stale',
+  figureStories: 'feature-board-figure-stories',
+  figureBugs: 'feature-board-figure-bugs',
+  figureTasks: 'feature-board-figure-tasks',
+  figurePoints: 'feature-board-figure-points',
+  percent: 'feature-board-percent',
+  webLink: 'feature-board-web-link',
+} as const;
+// A section of a Feature with Features under it (depth-first), and one state group inside it. `scope` is the section's
+// key, or 'all' on a Feature with no Features under it.
+export const featureBoardSectionId = (key: string) => `feature-board-section-${key}`;
+export const featureBoardSectionEmptyId = (key: string) => `feature-board-section-empty-${key}`;
+export const featureBoardGroupId = (scope: string, category: string) =>
+  `feature-board-group-${scope}-${category}`;
+export const featureBoardGroupCountId = (scope: string, category: string) =>
+  `feature-board-group-count-${scope}-${category}`;
+// A story row: its parts, and its task bar with the done, doing and to do segments and the text.
+export const featureBoardTypeId = (key: string) => `feature-board-type-${key}`;
+export const featureBoardSprintId = (key: string) => `feature-board-sprint-${key}`;
+export const featureBoardOwnerId = (key: string) => `feature-board-owner-${key}`;
+export const featureBoardTaskBarId = (key: string) => `feature-board-tasks-${key}`;
+export const featureBoardTaskDoneId = (key: string) => `feature-board-tasks-done-${key}`;
+export const featureBoardTaskDoingId = (key: string) => `feature-board-tasks-doing-${key}`;
+export const featureBoardTaskTextId = (key: string) => `feature-board-tasks-text-${key}`;
 
 // F4
 export const featureDigestItemId = (key: string) => `feature-digest-item-${key}`;
+export const featureDigestIds = {
+  back: 'feature-digest-back',
+  seenTop: 'feature-digest-seen-top',
+  seenBottom: 'feature-digest-seen-bottom',
+  scroll: 'feature-digest-scroll',
+  since: 'feature-digest-since',
+  needsYou: 'feature-digest-needs-you',
+  changed: 'feature-digest-changed',
+  empty: 'feature-digest-empty',
+  loadingMore: 'feature-digest-loading-more',
+  pageRetry: 'feature-digest-page-retry',
+} as const;
+export const featureDigestItemTypeId = (key: string) => `feature-digest-item-type-${key}`;
+export const featureDigestLineId = (key: string, index: number) =>
+  `feature-digest-line-${key}-${index}`;
+export const featureDigestLineKindId = (key: string, index: number) =>
+  `feature-digest-line-kind-${key}-${index}`;
+export const featureDigestLineTextId = (key: string, index: number) =>
+  `feature-digest-line-text-${key}-${index}`;
+export const featureDigestLineWhoId = (key: string, index: number) =>
+  `feature-digest-line-who-${key}-${index}`;
+export const featureDigestLineAgentTagId = (key: string, index: number) =>
+  `feature-digest-line-agent-${key}-${index}`;
+export const featureDigestLineAtId = (key: string, index: number) =>
+  `feature-digest-line-at-${key}-${index}`;

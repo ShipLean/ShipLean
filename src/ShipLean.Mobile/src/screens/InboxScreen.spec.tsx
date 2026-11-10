@@ -1,5 +1,5 @@
 import type { AnsweredDto, InboxDto } from '@shiplean/core/api/inbox';
-import { act, fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { AppState, Text, type AppStateStatus } from 'react-native';
 import { InboxActionsProvider } from '../inbox/InboxActions';
 import { InboxSheetsProvider } from '../inbox/InboxSheets';
@@ -57,6 +57,8 @@ const rowKeys = () =>
   screen
     .getAllByTestId(/^inbox-row-/)
     .map((n) => String(n.props.testID).slice('inbox-row-'.length));
+
+afterEach(() => jest.restoreAllMocks());
 
 describe.each<Scheme>(['light', 'dark'])('InboxScreen (%s)', (scheme) => {
   const design = () => designInbox(project.id);
@@ -118,6 +120,7 @@ describe.each<Scheme>(['light', 'dark'])('InboxScreen (%s)', (scheme) => {
     const api = inboxApi({}, { inbox: design() });
     api.hang(INBOX_ROUTE);
     await mount(design(), { scheme, api });
+    await waitFor(() => expect(api.callsTo(INBOX_ROUTE)).toHaveLength(1));
     expect(await screen.findByTestId(primitiveIds.skeleton)).toBeTruthy();
     expect(screen.queryByTestId(uiIds.errorState)).toBeNull();
     expect(screen.getByTestId('badge-probe').props.children).toBe('null');
@@ -237,9 +240,24 @@ describe('InboxScreen in the app', () => {
   });
 
   it('opens the Work item screen when a row is tapped', async () => {
-    await openInbox();
+    const api = await openInbox();
     await fireEvent.press(await screen.findByTestId(inboxRowId('SHIP-743')));
     expect(await screen.findByTestId(screenIds.workItem)).toBeOnTheScreen();
+    await waitFor(() =>
+      expect(
+        api.callsTo(`GET /api/projects/${project.id}/work-items/by-key/SHIP-743`),
+      ).toHaveLength(1),
+    );
+  });
+
+  it('refetches the Inbox when the tab is opened again', async () => {
+    const api = await openInbox();
+    await screen.findByTestId(inboxRowId('SHIP-743'));
+    const before = api.callsTo(INBOX_ROUTE).length;
+    await fireEvent.press(screen.getByTestId(tabIds.backlog));
+    expect(await screen.findByTestId(screenIds.backlog)).toBeOnTheScreen();
+    await fireEvent.press(screen.getByTestId(tabIds.inbox));
+    await waitFor(() => expect(api.callsTo(INBOX_ROUTE)).toHaveLength(before + 1));
   });
 
   it('shows the ask count as the Inbox tab badge', async () => {

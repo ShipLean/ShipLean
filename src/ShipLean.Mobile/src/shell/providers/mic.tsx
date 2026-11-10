@@ -1,6 +1,14 @@
+import { ToastHost } from '../../ui/Toast';
+import { MicPermissionWatcher } from '../../voice/mic/MicPermissionWatcher';
 import type { AppSlotProps } from './types';
 
-// TODO: the microphone permission and level provider replaces this pass-through.
+// The microphone permission, watched app-wide. It sits above every project's ToastHost, so it has its own for the
+// toast that says the microphone is back.
 export function MicProvider({ children }: AppSlotProps) {
-  return children;
+  return (
+    <ToastHost>
+      <MicPermissionWatcher />
+      {children}
+    </ToastHost>
+  );
 }

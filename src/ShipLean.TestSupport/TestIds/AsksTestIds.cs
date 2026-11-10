@@ -59,6 +59,8 @@ public static class AsksTestIds
     // W1
     public const string QuestionReplyError = "asks-question-reply-error";
     public const string QuestionWithdrawError = "asks-question-withdraw-error";
+    // SHIP-916 W2
+    public const string QuestionQuickAnswer = "asks-question-quick-answer";
     // W2a
     // W2b
     public const string ChangeError = "asks-change-error";

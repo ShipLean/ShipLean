@@ -43,6 +43,7 @@ export function ChangeStateSheet({ row, projectId, open, onClose }: ChangeStateS
     dispatch({
       area: 'features',
       kind: 'setState',
+      projectId,
       itemId: row.id,
       key: row.key,
       revision: row.revision,

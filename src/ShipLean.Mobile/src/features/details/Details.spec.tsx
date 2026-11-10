@@ -291,6 +291,7 @@ describe.each(['light', 'dark'] as const)('Expanded Feature (%s)', (scheme) => {
       {
         area: 'features',
         kind: 'setState',
+        projectId: PROJECT.id,
         itemId: ID,
         key: KEY,
         revision: 6,
@@ -327,6 +328,7 @@ describe.each(['light', 'dark'] as const)('Expanded Feature (%s)', (scheme) => {
       {
         area: 'features',
         kind: 'setHealth',
+        projectId: PROJECT.id,
         itemId: ID,
         key: KEY,
         revision: 3,
@@ -336,6 +338,7 @@ describe.each(['light', 'dark'] as const)('Expanded Feature (%s)', (scheme) => {
       {
         area: 'features',
         kind: 'setHealth',
+        projectId: PROJECT.id,
         itemId: ID,
         key: KEY,
         revision: 3,

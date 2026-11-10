@@ -11,12 +11,15 @@ import {
   FakeRecognizer,
 } from '../test-support/voice';
 import { renderWithVoice } from '../test-support/voiceUi';
+import { ToastHost } from '../ui/Toast';
+import { primitiveIds } from '../ui/testIds';
 import type { ParsedCall, RecognitionSession, ScreenVoiceSpec, ViewIntent } from './contracts';
 import { onApplyFailed } from './flows/applyFailed';
 import { onConflict } from './flows/conflict';
+import { tooShortToast } from './failures/heardCopy';
 import { fixHeard, startFix } from './flows/fix';
 import { submitTyped } from './flows/typed';
-import { useVoiceInternals, type VoiceInternals } from './internals';
+import { useVoiceInternals, type VoiceInternals, type VoiceUiState } from './internals';
 import {
   answerDoneId,
   answerLeadId,
@@ -74,7 +77,11 @@ const VIEWS: Record<string, ViewIntent> = {
 // Each call is one change (its line worded from TEXT), or, when it names a view, that view with no change.
 const workItemSpec: ScreenVoiceSpec = {
   screen: 'SHIP-906 Voice commands',
-  actions: [],
+  actions: [...Object.keys(TEXT), ...Object.keys(VIEWS)].map((name) => ({
+    name,
+    description: name,
+    args: { type: 'object' },
+  })),
   context: () => ({}),
   hotwords: () => ['SHIP-906', 'Active'],
   toActions: (calls: ParsedCall[]) => {
@@ -95,9 +102,15 @@ const workItemSpec: ScreenVoiceSpec = {
   },
 };
 
-const probe: { voice: VoiceApi | null; internals: VoiceInternals | null } = {
+// states: every state the screen rendered, so a state a sheet closes at once (a toast) is still seen.
+const probe: {
+  voice: VoiceApi | null;
+  internals: VoiceInternals | null;
+  states: VoiceUiState[];
+} = {
   voice: null,
   internals: null,
+  states: [],
 };
 // freshSpec builds the spec on every render, as the screens do.
 function Screen({ onView, freshSpec }: { onView?: ScreenViewHandler; freshSpec?: boolean }) {
@@ -107,6 +120,7 @@ function Screen({ onView, freshSpec }: { onView?: ScreenViewHandler; freshSpec?:
   useEffect(() => {
     probe.voice = voice;
     probe.internals = internals;
+    probe.states.push(voice.state);
   });
   return (
     <>
@@ -132,12 +146,19 @@ async function mount(onView?: ScreenViewHandler, freshSpec = false) {
   const model = new FakeCommandModel();
   const mic = new FakeMicPermission();
   const runner = fakeRunner();
+  probe.states = [];
   // Words to hear unless a test scripts others.
   recognizer.script([], 'do it');
-  await renderWithVoice(<Screen onView={onView} freshSpec={freshSpec} />, {
-    engines: { recognizer, model, mic },
-    runner,
-  });
+  // In the app the session's ToastHost is above every screen: a tap or a silent hold is a toast.
+  await renderWithVoice(
+    <ToastHost>
+      <Screen onView={onView} freshSpec={freshSpec} />
+    </ToastHost>,
+    {
+      engines: { recognizer, model, mic },
+      runner,
+    },
+  );
   return { recognizer, model, mic, runner };
 }
 
@@ -178,6 +199,8 @@ describe('VoiceProvider', () => {
     expect(model.parsed.map((p) => p.transcript.text)).toEqual([
       'set this to Active and add a note: fine for v1',
     ]);
+    // The model gets the screen's current spec with the transcript (amendment 25).
+    expect(model.parsed[0]?.spec).toBe(workItemSpec);
     expect(screen.getByTestId(previewSheetId)).toBeOnTheScreen();
     expect(screen.getByTestId(previewLineId('setState'))).toHaveTextContent(/^State: New → Active/);
     expect(screen.getByTestId(previewLineId('addNote'))).toHaveTextContent(/^Note on SHIP-906/);
@@ -190,7 +213,7 @@ describe('VoiceProvider', () => {
   it('a short press is tooShort, and the mic is read again before a hold', async () => {
     const { recognizer, model, mic } = await mount();
     await hold(200);
-    expect(internals().state()).toEqual({
+    expect(probe.states).toContainEqual({
       kind: 'failure',
       failure: { kind: 'tooShort', detail: { heldMs: 200 } },
       heard: null,
@@ -198,8 +221,10 @@ describe('VoiceProvider', () => {
     });
     expect(recognizer.cancelled).toBe(1);
     expect(model.parsed).toEqual([]);
+    // A tap is a toast and no sheet (voice D2): the toast closes the failure.
+    expect(screen.getByTestId(primitiveIds.toast)).toHaveTextContent(tooShortToast().text);
+    expect(kind()).toBe('idle');
 
-    await act(async () => voice().dismiss());
     mic.set('deniedFinal');
     await act(async () => voice().holdStart());
     expect(internals().state()).toEqual({
@@ -352,14 +377,15 @@ describe('VoiceProvider', () => {
     model.respond(SET_STATE);
     jest.spyOn(recognizer, 'start').mockResolvedValueOnce(brokenSession());
     await hold();
-    expect(internals().state()).toEqual({
+    expect(probe.states).toContainEqual({
       kind: 'failure',
       failure: { kind: 'nothingHeard', detail: {} },
       heard: null,
       source: 'voice',
     });
+    // A silent hold is a toast and no sheet (voice D1): the toast closes the failure, never back to listening.
+    expect(kind()).toBe('idle');
 
-    await act(async () => voice().dismiss());
     await hold();
     const preview = internals().state();
     expect(preview.kind).toBe('preview');

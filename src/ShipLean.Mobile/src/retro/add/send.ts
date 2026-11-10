@@ -1,4 +1,5 @@
 // Senders for addPoint, support and unsupport (RT2).
+import { ApiRequestError } from '@shiplean/core/api/client';
 import { getItemByKey } from '@shiplean/core/api/workItem';
 import { getMe } from '@shiplean/core/api/me';
 import type { RetroPointDto } from '@shiplean/core/api/retros';
@@ -45,6 +46,7 @@ export async function sendPoint(a: PointAction, api: Api): Promise<SendReceipt |
 }
 
 export function describePoint(a: PointAction): PreviewLine {
+  // TODO: the sprint name and the point's text, once the action carries them (contract change).
   if (a.kind !== 'addPoint')
     return {
       id: `retro:${a.kind}:${a.pointId}`,
@@ -54,7 +56,7 @@ export function describePoint(a: PointAction): PreviewLine {
     };
   const about = a.key !== null ? ` · about ${a.key}` : ' · about this sprint';
   return {
-    id: `retro:addPoint:${a.text}`,
+    id: `retro:addPoint:${a.category}:${a.text}`,
     icon: 'note',
     text: `${CATEGORY_LABELS[a.category]}: "${a.text}"${about}`,
     ...(a.categoryGuessed ? { detail: 'Category picked for you' } : {}),
@@ -77,29 +79,46 @@ export async function undoPoint(
   return archiveRetroPoint(receipt.createdId);
 }
 
-// The points a retro read holds for an add: the sprint's retro, or the item's cards.
-async function pointsFor(a: AddPoint): Promise<RetroPointDto[]> {
+// The points a retro read holds for an add: the sprint's retro, or the item's cards. An item key nobody has is a
+// 404 and nothing was created about it, so that pending alone has no points (null).
+async function pointsFor(a: AddPoint): Promise<RetroPointDto[] | null> {
   if (a.sprintId !== null && a.key === null && a.itemId === null)
     return (await fetchSprintRetro(a.sprintId)).categories.flatMap((c) =>
       c.groups.flatMap((g) => g.points),
     );
-  const itemId = await itemOf(a);
+  let itemId: string | null;
+  try {
+    itemId = await itemOf(a);
+  } catch (e) {
+    if (a.itemId === null && e instanceof ApiRequestError && e.status === 404) return null;
+    throw e;
+  }
   if (itemId === null) return [];
   return (await fetchWorkItemRetros(itemId)).cards.flatMap((c) => c.points);
 }
 
 // An uncertain addPoint went through when the retro now holds a point by you with exactly that text and category.
-// +1 and -1 are idempotent, so a resend is safe and they say notSent.
+// +1 and -1 are idempotent, so a resend is safe and they say notSent. Each sprint retro or item is read once.
 export async function reconcilePoint(items: Pending[], api: Api): Promise<('sent' | 'notSent')[]> {
   void api;
   const adding = items.some((p) => (p.action as PointAction).kind === 'addPoint');
   const me = adding ? (await getMe()).id : null;
+  const reads = new Map<string, Promise<RetroPointDto[] | null>>();
+  const read = (a: AddPoint) => {
+    const key =
+      a.sprintId !== null && a.key === null && a.itemId === null
+        ? `sprint:${a.sprintId}`
+        : `item:${a.itemId ?? a.key}`;
+    const found = reads.get(key) ?? pointsFor(a);
+    reads.set(key, found);
+    return found;
+  };
   return Promise.all(
     items.map(async (p): Promise<'sent' | 'notSent'> => {
       const a = p.action as PointAction;
       if (a.kind !== 'addPoint') return 'notSent';
-      const points = await pointsFor(a);
-      return points.some(
+      const points = await read(a);
+      return points?.some(
         (pt) => pt.author.user.id === me && pt.category === a.category && pt.text === a.text.trim(),
       )
         ? 'sent'

@@ -32,8 +32,8 @@ public sealed class InboxReader(
         var itemIds = asksByItem.Keys.ToArray();
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var items = (await connection.QueryAsync<ItemRow>(new CommandDefinition(
-            "SELECT id, key, type, title, revision, parent_id AS parentId, parent_type AS parentType FROM work_item WHERE id = ANY(@itemIds)",
-            new { itemIds }, cancellationToken: cancellationToken))).ToDictionary(i => i.Id);
+            "SELECT id, key, type, title, revision, parent_id AS parentId, parent_type AS parentType FROM work_item WHERE id = ANY(@itemIds) AND project_id = @projectId",
+            new { itemIds, projectId }, cancellationToken: cancellationToken))).ToDictionary(i => i.Id);
         var blocked = await WaitedOnByAsync(connection, itemIds, cancellationToken);
         var otherProjectKeys = await ProjectKeysAsync(connection, counts, projectId, cancellationToken);
 

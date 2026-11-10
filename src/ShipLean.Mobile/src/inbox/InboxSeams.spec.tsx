@@ -10,6 +10,7 @@ import { InboxProvider } from '../shell/providers/inbox';
 import { aPending, fakeRunner } from '../test-support/actions';
 import { TEST_ORIGIN, TEST_SECRET, aMe } from '../test-support/builders';
 import {
+  aDecisionAsk,
   aQuestionAsk,
   anAnswered,
   anInbox,
@@ -115,10 +116,13 @@ describe('the Inbox seams', () => {
   });
 
   it('openAnswer shows sheet-answer and openReview shows sheet-review', async () => {
+    // The sheets answer through the Inbox's actions.
     const screen = await renderWithRunner(
-      <InboxSheetsProvider>
-        <Opener />
-      </InboxSheetsProvider>,
+      <InboxActionsContext.Provider value={fakeInboxActions()}>
+        <InboxSheetsProvider>
+          <Opener />
+        </InboxSheetsProvider>
+      </InboxActionsContext.Provider>,
     );
     expect(screen.queryByTestId(inboxIds.answerSheet)).toBeNull();
     await fireEvent.press(screen.getByTestId('answer'));
@@ -132,31 +136,37 @@ describe('the Inbox seams', () => {
   });
 
   it('each stub renders its root id from its props', async () => {
-    const story = anInboxItem({ key: 'SHIP-924', type: 'story', underKey: 'SHIP-907' });
+    // A decision for the review sheet and a question for the answer sheet: the real sheets read the ask they are given.
+    const question = aQuestionAsk();
+    const story = anInboxItem({
+      key: 'SHIP-924',
+      type: 'story',
+      underKey: 'SHIP-907',
+      asks: [aDecisionAsk(), question],
+    });
     const noop = () => undefined;
+    // The row, the sheets and Answered all read the Inbox's actions.
     const screen = await renderWithRunner(
-      <>
-        <InboxActionsContext.Provider value={fakeInboxActions()}>
-          <InboxSheetsContext.Provider value={fakeInboxSheets()}>
-            <InboxRow
-              projectId="p1"
-              item={story}
-              pending={[]}
-              indented
-              expanded={false}
-              onToggleExpanded={noop}
-              onOpenItem={noop}
-            />
-          </InboxSheetsContext.Provider>
-        </InboxActionsContext.Provider>
+      <InboxActionsContext.Provider value={fakeInboxActions()}>
+        <InboxSheetsContext.Provider value={fakeInboxSheets()}>
+          <InboxRow
+            projectId="p1"
+            item={story}
+            pending={[]}
+            indented
+            expanded={false}
+            onToggleExpanded={noop}
+            onOpenItem={noop}
+          />
+        </InboxSheetsContext.Provider>
         <AnswerSheet
-          request={{ mode: 'question', item: story, ask: story.asks[0], projectId: 'p1' }}
+          request={{ mode: 'question', item: story, ask: question, projectId: 'p1' }}
           onClose={noop}
         />
         <ReviewSheet item={story} scrollToConfirm={false} projectId="p1" onClose={noop} />
         <OfflineBanner loadedAtLabel="09:12" />
         <AnsweredList projectId="project-1" />
-      </>,
+      </InboxActionsContext.Provider>,
     );
     expect(screen.getByTestId(inboxRowId('SHIP-924')).props['data-indented']).toBe(true);
     for (const id of [inboxIds.answerSheet, inboxIds.reviewSheet, inboxIds.answeredList]) {

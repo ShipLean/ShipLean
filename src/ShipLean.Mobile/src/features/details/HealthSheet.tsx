@@ -8,6 +8,7 @@ import { featureHealthOptionId, featureHealthSheetId } from '../testIds';
 
 export interface HealthSheetProps {
   row: FeatureRowDto;
+  projectId: string;
   open: boolean;
   onClose: () => void;
 }
@@ -20,7 +21,7 @@ const OPTIONS: { health: FeatureHealth | null; id: string; label: string }[] = [
 ];
 
 // A Feature's health is set by hand (D2), never worked out. A pick sends at once, as a tap does.
-export function HealthSheet({ row, open, onClose }: HealthSheetProps) {
+export function HealthSheet({ row, projectId, open, onClose }: HealthSheetProps) {
   const theme = useTheme();
   const { colors } = theme;
   const { dispatch } = useFeaturesActions();
@@ -44,6 +45,7 @@ export function HealthSheet({ row, open, onClose }: HealthSheetProps) {
                 dispatch({
                   area: 'features',
                   kind: 'setHealth',
+                  projectId,
                   itemId: row.id,
                   key: row.key,
                   revision: row.revision,

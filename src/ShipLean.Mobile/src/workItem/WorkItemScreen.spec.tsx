@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 import type { WorkItemDto } from '@shiplean/core/api/workItems';
 import { QueryClient } from '@tanstack/react-query';
 import type { ReactElement } from 'react';
@@ -6,14 +6,16 @@ import { WorkItemScreen } from '../screens/WorkItemScreen';
 import { InboxActionsContext } from '../inbox/InboxActions';
 import { InboxSheetsContext } from '../inbox/InboxSheets';
 import { links } from '../links';
+import { aPending, fakeRunner, type FakeRunner } from '../test-support/actions';
 import { aProject } from '../test-support/builders';
 import { apiError } from '../test-support/fakeApi';
 import { fakeInboxActions, fakeInboxSheets } from '../test-support/inbox';
 import { fakeVoice, renderWithVoice } from '../test-support/voiceUi';
 import { aFeatureItem, aStoryItem, workItemApi } from '../test-support/workItem';
 import { themes } from '../theme';
-import { primitiveIds, uiIds } from '../ui/testIds';
+import { actionId, primitiveIds, uiIds } from '../ui/testIds';
 import * as ids from './testIds';
+import { WorkItemActionsProvider } from './WorkItemActions';
 
 jest.mock('expo-router', () => ({
   ...jest.requireActual('expo-router'),
@@ -28,6 +30,7 @@ interface Rendered {
   actions: ReturnType<typeof fakeInboxActions>;
   sheets: ReturnType<typeof fakeInboxSheets>;
   queryClient: QueryClient;
+  runner: FakeRunner;
 }
 
 async function open(
@@ -35,6 +38,7 @@ async function open(
   api: ReturnType<typeof workItemApi>,
   scheme: 'light' | 'dark',
   voice = fakeVoice(),
+  runner: FakeRunner = fakeRunner(),
 ): Promise<Rendered> {
   api.install();
   const actions = fakeInboxActions();
@@ -42,14 +46,17 @@ async function open(
   const ui: ReactElement = (
     <InboxActionsContext.Provider value={actions}>
       <InboxSheetsContext.Provider value={sheets}>
-        <WorkItemScreen projectKey="SHIP" itemKey={itemKey} />
+        <WorkItemActionsProvider>
+          <WorkItemScreen projectKey="SHIP" itemKey={itemKey} />
+        </WorkItemActionsProvider>
       </InboxSheetsContext.Provider>
     </InboxActionsContext.Provider>
   );
-  const { queryClient } = await renderWithVoice(ui, { scheme, voice });
+  const rendered = await renderWithVoice(ui, { scheme, voice, runner });
+  const { queryClient } = rendered;
   // The asks, states and members reads start with the item: wait for every read to land before the test goes on.
   await waitFor(() => expect(queryClient.isFetching()).toBe(0));
-  return { actions, sheets, queryClient };
+  return { actions, sheets, queryClient, runner };
 }
 
 // Test ids in document order, to assert the section order.
@@ -352,4 +359,130 @@ describe.each(['light', 'dark'] as const)('Work item screen (%s)', (scheme) => {
 
     expect(api.callsTo(BY_KEY('SHIP-906'))).toHaveLength(2);
   });
+
+  // SHIP-1325. Red when the provider refreshes only on pull down, or also for a change already settled when it mounted.
+  it('reads the item again when a change to it is sent or refused, and not for one settled before', async () => {
+    const item = aFeatureItem({ projectId });
+    const api = workItemApi({}, { projectId, items: [item] });
+    const setState = (id: string, state: 'undo' | 'sent' | 'failed') =>
+      aPending({
+        id,
+        batchId: `batch-${id}`,
+        state,
+        action: stateChange(item),
+      });
+    // A change already sent before the screen mounts (kept from before a restart): it reads nothing again.
+    const seeded = fakeRunner();
+    seeded.setPending([setState('seed', 'sent')]);
+    const { runner } = await open('SHIP-906', api, scheme, fakeVoice(), seeded);
+    await screen.findByTestId(ids.workItemHeaderId);
+    expect(api.callsTo(BY_KEY('SHIP-906'))).toHaveLength(1);
+
+    await act(async () => runner.setPending([setState('seed', 'sent'), setState('a', 'undo')]));
+    await act(async () => runner.setPending([setState('seed', 'sent'), setState('a', 'sent')]));
+    await waitFor(() => expect(api.callsTo(BY_KEY('SHIP-906'))).toHaveLength(2));
+
+    await act(async () =>
+      runner.setPending([setState('seed', 'sent'), setState('a', 'sent'), setState('b', 'failed')]),
+    );
+    await waitFor(() => expect(api.callsTo(BY_KEY('SHIP-906'))).toHaveLength(3));
+  });
+
+  // SHIP-1335. Red when each change in a batch invalidates on its own, so one item is read once per change.
+  it('reads the item once when a batch of changes to it settles together', async () => {
+    const item = aFeatureItem({ projectId });
+    const api = workItemApi({}, { projectId, items: [item] });
+    const sent = (id: string) =>
+      aPending({ id, batchId: 'batch-1', state: 'sent', action: stateChange(item) });
+    const { runner, queryClient } = await open('SHIP-906', api, scheme);
+    await screen.findByTestId(ids.workItemHeaderId);
+    expect(api.callsTo(BY_KEY('SHIP-906'))).toHaveLength(1);
+
+    await act(async () => runner.setPending([sent('a'), sent('b'), sent('c')]));
+    await waitFor(() => expect(queryClient.isFetching()).toBe(0));
+
+    expect(api.callsTo(BY_KEY('SHIP-906'))).toHaveLength(2);
+  });
+
+  // SHIP-1335. Red when a refusal is remembered after a Retry, so the same change refused again reads nothing.
+  it('reads the item again when a change is refused, retried and refused again', async () => {
+    const item = aFeatureItem({ projectId });
+    const api = workItemApi({}, { projectId, items: [item] });
+    const change = (state: 'queued' | 'failed') =>
+      aPending({ id: 'a', state, retryable: true, action: stateChange(item) });
+    const { runner, queryClient } = await open('SHIP-906', api, scheme);
+    await screen.findByTestId(ids.workItemHeaderId);
+
+    await act(async () => runner.setPending([change('failed')]));
+    await waitFor(() => expect(queryClient.isFetching()).toBe(0));
+    expect(api.callsTo(BY_KEY('SHIP-906'))).toHaveLength(2);
+
+    await act(async () => runner.setPending([change('queued')]));
+    await act(async () => runner.setPending([change('failed')]));
+    await waitFor(() => expect(queryClient.isFetching()).toBe(0));
+    expect(api.callsTo(BY_KEY('SHIP-906'))).toHaveLength(3);
+  });
+
+  // SHIP-1325 (voice D18: a banner on the item). Red when a refused change shows nowhere, without the runner's reason,
+  // or offers Retry for a send the runner won't repeat.
+  it('shows a refused change with the runner reason, Dismiss when final and Retry when it can be sent again', async () => {
+    const item = aFeatureItem({ projectId });
+    const api = workItemApi({}, { projectId, items: [item] });
+    const { runner } = await open('SHIP-906', api, scheme);
+    await screen.findByTestId(ids.workItemHeaderId);
+    expect(screen.queryByTestId(ids.refusedChangesId)).toBeNull();
+
+    await act(async () =>
+      runner.setPending([
+        aPending({
+          id: 'conflict',
+          state: 'failed',
+          failure: 'conflict',
+          error: 'Changed on the server. Open SHIP-906 to check.',
+          action: stateChange(item),
+        }),
+        aPending({
+          id: 'offline',
+          batchId: 'batch-2',
+          state: 'failed',
+          failure: 'network',
+          retryable: true,
+          error: 'No answer from ShipLean.',
+          action: stateChange(item),
+        }),
+        aPending({ id: 'voice', origin: 'voice', state: 'failed', action: stateChange(item) }),
+      ]),
+    );
+
+    const conflict = screen.getByTestId(ids.refusedChangeId('conflict'));
+    expect(
+      within(conflict).getByText(
+        "Didn't send “State: New → Active”. Changed on the server. Open SHIP-906 to check.",
+      ),
+    ).toBeOnTheScreen();
+    expect(screen.getByTestId(actionId(ids.refusedChangeId('conflict')))).toHaveTextContent(
+      'Dismiss',
+    );
+    expect(screen.getByTestId(actionId(ids.refusedChangeId('offline')))).toHaveTextContent('Retry');
+    expect(screen.queryByTestId(ids.refusedChangeId('voice'))).toBeNull();
+    await fireEvent.press(screen.getByTestId(actionId(ids.refusedChangeId('offline'))));
+    expect(runner.retried).toEqual(['offline']);
+    await fireEvent.press(screen.getByTestId(actionId(ids.refusedChangeId('conflict'))));
+    expect(screen.queryByTestId(ids.refusedChangeId('conflict'))).toBeNull();
+  });
 });
+
+function stateChange(item: WorkItemDto) {
+  return {
+    area: 'workItem' as const,
+    projectId: item.projectId,
+    itemId: item.id,
+    key: item.key,
+    kind: 'setState' as const,
+    revision: item.revision,
+    stateId: 's-active',
+    stateName: 'Active',
+    fromStateId: 's-new',
+    fromStateName: 'New',
+  };
+}

@@ -52,7 +52,7 @@ export function inboxCounts(inbox: InboxDto, pending: PendingAnswer[]): InboxCou
   for (const item of inbox.items) {
     const left = remainingAsks(item, pending);
     asks -= item.asks.length - left;
-    if (left === 0) items -= 1;
+    if (item.asks.length > 0 && left === 0) items -= 1;
   }
   return { asks: Math.max(0, asks), items: Math.max(0, items) };
 }

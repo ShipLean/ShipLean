@@ -276,7 +276,7 @@ C# DTOs in `ShipLean.Contracts.Backups`, round-tripped per example by the C# DTO
 6. **Operators:** the design draws `=`, `≠` (stored `<>`), contains, not contains, `>`, `<` and All/Any. `in`, `isEmpty` and `isNotEmpty` were added because the brief asked for them, and the filters' Unassigned / Backlog choices need "empty". There's no `>=`/`<=` and no nesting.
 7. **Board filter bars aren't pinned as criteria.** The keyword spans title, key and tags, and no single field covers that. If the board stores them as criteria: people → `assignee in [..., null]`, Epic → `epic =`.
 8. **All string comparisons are case-insensitive.** The design doesn't say.
-9. **`blocked` isn't a field.** Blocked is a tag (and the `blockedBy` link type).
+9. **A Feature's health can be blocked; other items use the blocked tag and the blockedBy link.**
 10. **Added beyond the brief's kinds:** `markdown`, `checklist`, `links`. Added fields: `severity`, `description`, `acceptanceCriteria`, `reproSteps`, `links`, `createdBy`, `changedBy`, `epic` (derived, for the Features filter) and `originalUrl`. `id` is in the vocabulary, but no builder offers it.
 11. **History labels are stored snapshots** for user/state/sprint/work item and derived for everything else.
 12. **Revision 1 stores the initial values.** The design shows only "Created as …" for it.

@@ -53,3 +53,8 @@ export const moveBackId = 'move-back';
 
 // B3
 export const addRowId = 'backlog-add-row';
+export const addRowLabelId = 'backlog-add-label';
+export const addRowInputId = 'backlog-add-input';
+// Segmented's options are optionId('backlog-add-type', 'story' | 'bug'); only at the Stories level.
+export const addRowTypeId = 'backlog-add-type';
+export const addRowErrorId = 'backlog-add-error';

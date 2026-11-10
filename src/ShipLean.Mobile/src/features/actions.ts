@@ -5,6 +5,8 @@ import type { FeatureHealth } from '@shiplean/core/api/screens';
 export type FeaturesAction = { area: 'features' } & (
   | {
       kind: 'setState';
+      // The item's project, so Undo and reconcile can read the item by key.
+      projectId: string;
       itemId: string;
       key: string;
       revision: number;
@@ -18,6 +20,8 @@ export type FeaturesAction = { area: 'features' } & (
     }
   | {
       kind: 'setHealth';
+      // The item's project, so Undo and reconcile can read the item by key.
+      projectId: string;
       itemId: string;
       key: string;
       revision: number;
@@ -47,6 +51,8 @@ export type FeaturesAction = { area: 'features' } & (
   // setStatusLine; Undo PATCHes `from` back.
   | {
       kind: 'setStatus';
+      // The item's project, so Undo and reconcile can read the item by key.
+      projectId: string;
       itemId: string;
       key: string;
       revision: number;

@@ -17,6 +17,7 @@ import { TopBar } from '../ui/TopBar';
 import { useScreenVoice } from '../voice/VoiceProvider';
 import { AcceptanceCriteria } from '../workItem/details/AcceptanceCriteria';
 import { GoalDetails } from '../workItem/details/GoalDetails';
+import { RefusedChanges } from '../workItem/header/RefusedChanges';
 import { StatusLine } from '../workItem/header/StatusLine';
 import { WorkItemHeader } from '../workItem/header/WorkItemHeader';
 import { ItemActionsRow } from '../workItem/actionsRow/ItemActionsRow';
@@ -140,6 +141,7 @@ function Loaded({ item, projectId, projectKey }: LoadedProps) {
 
   return (
     <View style={{ flex: 1 }}>
+      <RefusedChanges itemId={item.id} />
       <ScrollView
         testID={workItemScrollId}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void refresh()} />}
