@@ -17,7 +17,6 @@ import {
   movePreviewId,
   movePreviewPosId,
   movePreviewRowId,
-  moveSheetId,
   moveSideId,
   moveWarningId,
 } from '../testIds';
@@ -53,7 +52,6 @@ const text = (testID: string) => screen.getByTestId(testID);
 describe.each<Scheme>(['light', 'dark'])('Move sheet (%s)', (scheme) => {
   it('renders the move state with the rank each choice lands on', async () => {
     await open('SHIP-906', scheme);
-    expect(text(moveSheetId)).toBeTruthy();
     expect(text(moveItemId)).toHaveTextContent('SHIP-906 · rank 4 of 7 Features');
     expect(text(moveOptionToId('top'))).toHaveTextContent('to 1');
     expect(text(moveOptionToId('bottom'))).toHaveTextContent('to 7');

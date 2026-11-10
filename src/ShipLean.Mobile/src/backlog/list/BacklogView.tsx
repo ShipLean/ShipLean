@@ -262,6 +262,7 @@ export function BacklogView(props: BacklogViewProps) {
           row={moving}
           rows={rows ?? []}
           level={level}
+          filtering={filtering}
           open
           onClose={() => setMoving(null)}
         />

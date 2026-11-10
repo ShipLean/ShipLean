@@ -1,11 +1,13 @@
 import { bulkPlace, getBacklog, type BacklogFilter } from '@shiplean/core/api/backlog';
 import type { BulkPlacement, BulkWriteResult } from '@shiplean/core/api/backlogWrites';
 import { ApiRequestError } from '@shiplean/core/api/client';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import type { Api, Pending, PreviewLine } from '../../actions/types';
 import type { BacklogMove } from '../actions';
 
-// The list the Backlog screen opens on: open items only, no criteria filter. Ranks are read from it.
-const LEVEL: BacklogFilter = { mode: 'list', filter: '', includeCompleted: false };
+// The whole level, closed rows included. A row's rank depends on includeCompleted, so the checks below
+// compare places, never rank numbers, and then they hold whichever list the person was looking at.
+const LEVEL: BacklogFilter = { mode: 'list', filter: '', includeCompleted: true };
 
 // A stale row is not an error to the bulk route; it is one to the runner, which turns the 409 into a conflict.
 function refuseStale(result: BulkWriteResult): void {
@@ -42,17 +44,33 @@ export function describeMove(a: BacklogMove): PreviewLine {
   };
 }
 
+// The moved item's row, if it still sits where the move put it: first, last, or just above the row it was placed before.
+export function stillPlaced(rows: BacklogRowDto[], a: BacklogMove): BacklogRowDto | null {
+  const ranked = rows
+    .filter((r): r is BacklogRowDto & { rank: number } => r.rank !== null)
+    .sort((x, y) => x.rank - y.rank);
+  const i = ranked.findIndex((r) => r.id === a.itemId);
+  if (i < 0) return null;
+  const { slot, beforeItemId } = a.placement;
+  const fits =
+    slot === 'first'
+      ? i === 0
+      : slot === 'last'
+        ? i === ranked.length - 1
+        : ranked[i + 1]?.id === beforeItemId;
+  return fits ? ranked[i] : null;
+}
+
 // Puts the row back above its old neighbour, but only while it is still where the move left it.
 export async function undoMove(a: BacklogMove, api: Api): Promise<void> {
   void api;
   const view = await getBacklog(a.projectId, a.level, LEVEL);
-  const row = view.rows.find((r) => r.id === a.itemId);
-  if (row === undefined || row.rank !== a.toRank)
-    throw new Error(`${a.key} has moved since, so the move can't be undone.`);
+  const row = stillPlaced(view.rows, a);
+  if (row === null) throw new Error(`${a.key} has moved since, so the move can't be undone.`);
   await place(a, a.undoPlacement, row.revision);
 }
 
-// An uncertain move went through when its item now sits at the rank it was moved to. Each level is read once.
+// An uncertain move went through when its item still sits where the move put it. Each level is read once.
 export async function reconcileMove(items: Pending[], api: Api): Promise<('sent' | 'notSent')[]> {
   void api;
   const levels = new Map<string, ReturnType<typeof getBacklog>>();
@@ -62,8 +80,7 @@ export async function reconcileMove(items: Pending[], api: Api): Promise<('sent'
       const scope = `${a.projectId}|${a.level}`;
       const read = levels.get(scope) ?? getBacklog(a.projectId, a.level, LEVEL);
       levels.set(scope, read);
-      const row = (await read).rows.find((r) => r.id === a.itemId);
-      return row?.rank === a.toRank ? 'sent' : 'notSent';
+      return stillPlaced((await read).rows, a) === null ? 'notSent' : 'sent';
     }),
   );
 }

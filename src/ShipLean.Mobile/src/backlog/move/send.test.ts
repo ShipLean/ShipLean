@@ -102,7 +102,8 @@ describe('backlog move executor', () => {
 
   it('fails the undo when the item has moved since', async () => {
     const { action, after } = world();
-    const fake = controlledApi(backlogApi({}, { rows: { features: after(5) } }));
+    // Now ranked last: SHIP-906 no longer sits just above SHIP-907.
+    const fake = controlledApi(backlogApi({}, { rows: { features: after(7) } }));
     await expect(undoMove(action, api)).rejects.toThrow('SHIP-906 has moved since');
     expect(fake.callsTo(BULK)).toHaveLength(0);
   });
@@ -136,6 +137,26 @@ describe('backlog move executor', () => {
     restoreFetch();
     controlledApi(backlogApi({}, { rows: { features: before } }));
     expect(await reconcileMove([pendings[0]], api)).toEqual(['notSent']);
+  });
+
+  it('undoes and reconciles a move made with closed rows shown', async () => {
+    const { action, after, moved } = world();
+    // A closed row ranked above SHIP-906 numbers it toRank + 1 in the whole-level read.
+    const closed = aBacklogRow({
+      key: 'SHIP-1',
+      rank: 1,
+      state: { id: 'c', name: 'Closed', category: 'completed' },
+    });
+    const rows = [closed, ...after(2, 6).map((r) => ({ ...r, rank: (r.rank ?? 0) + 1 }))];
+    expect(rows.find((r) => r.id === moved.id)!.rank).toBe(action.toRank + 1);
+    const fake = controlledApi(backlogApi({}, { rows: { features: rows } }));
+    expect(await reconcileMove([aPending({ id: 'a', action })], api)).toEqual(['sent']);
+    await undoMove(action, api);
+    expect(fake.callsTo(BULK)).toHaveLength(1);
+    const query = (call: { url: string }) =>
+      new URLSearchParams(call.url.slice(call.url.indexOf('?') + 1));
+    for (const call of fake.callsTo(FEATURES))
+      expect(query(call).get('includeCompleted')).toBe('true');
   });
 
   it('describes the move with its shifted rows and the warning', () => {
