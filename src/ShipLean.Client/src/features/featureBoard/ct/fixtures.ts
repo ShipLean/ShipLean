@@ -15,6 +15,7 @@ const rows: FeatureBoardRowDto[] = [
     cells: open.cells,
     featureId: FEATURE_ID,
     sprint: CURRENT,
+    needsYou: null,
   },
   {
     parent: done.parent!,
@@ -22,6 +23,7 @@ const rows: FeatureBoardRowDto[] = [
     cells: done.cells,
     featureId: FEATURE_ID,
     sprint: null,
+    needsYou: null,
   },
 ];
 
@@ -98,6 +100,7 @@ const widgetRow: FeatureBoardRowDto = {
   cells: own.cells.map((c) => ({ ...c, tasks: c.stateId === 't-new' ? [WIDGET_TASK] : [] })),
   featureId: 'f-widgets',
   sprint: null,
+  needsYou: null,
 };
 const section = (id: string, key: string, title: string, depth: number) => ({
   id,

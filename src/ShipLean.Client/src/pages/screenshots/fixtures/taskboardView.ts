@@ -34,6 +34,7 @@ function card(key: string, type: TypeRef, state: StateRef, over: Partial<CardDto
     styleRuleId: null,
     extraFields: [],
     revision: 1,
+    health: null,
     ...over,
   };
 }

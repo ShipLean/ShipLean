@@ -61,6 +61,7 @@ export function task(key: string, state: StateRef, overrides: Partial<CardDto> =
     styleRuleId: null,
     extraFields: [],
     revision: 1,
+    health: null,
     ...overrides,
   };
 }

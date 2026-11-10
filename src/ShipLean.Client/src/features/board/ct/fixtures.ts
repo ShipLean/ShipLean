@@ -49,6 +49,7 @@ export function card(overrides: Partial<CardDto> & { key: string }): CardDto {
     styleRuleId: null,
     extraFields: [],
     revision: 1,
+    health: null,
     ...overrides,
   };
 }
