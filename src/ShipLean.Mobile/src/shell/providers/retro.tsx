@@ -1,6 +1,12 @@
+import { RetroActionsProvider } from '../../retro/RetroActions';
+import { RetroSelectionProvider } from '../../retro/lastTouched';
 import type { ProjectSlotProps } from './types';
 
-// TODO: the Retro provider replaces this pass-through.
+// The Retro slot: its actions (the executor) and the last touched point.
 export function RetroProvider({ children }: ProjectSlotProps) {
-  return children;
+  return (
+    <RetroActionsProvider>
+      <RetroSelectionProvider>{children}</RetroSelectionProvider>
+    </RetroActionsProvider>
+  );
 }
