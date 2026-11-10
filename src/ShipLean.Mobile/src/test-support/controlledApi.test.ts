@@ -39,10 +39,15 @@ describe('controlledApi', () => {
     expect(settled).toBe(true);
   });
 
-  it('answers an unlisted route 404', async () => {
-    controlledApi({});
+  it('answers an unlisted route 404, also after a hang is released', async () => {
+    const fake = controlledApi({});
     const error = await api.get('/api/nope').catch((e: unknown) => e);
     expect(error).toBeInstanceOf(ApiRequestError);
     expect(error).toMatchObject({ status: 404, code: 'not_found' });
+
+    fake.hang('GET /api/later');
+    const later = api.get('/api/later').catch((e: unknown) => e);
+    fake.release('GET /api/later');
+    expect(await later).toMatchObject({ status: 404, code: 'not_found' });
   });
 });

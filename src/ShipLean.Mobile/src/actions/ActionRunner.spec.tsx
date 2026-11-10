@@ -15,8 +15,8 @@ function RunnerProbe({ seen }: { seen: (r: ActionRunner) => void }) {
   return null;
 }
 
-function ToastProbe() {
-  const toast = useUndoToast(now);
+function ToastProbe({ at = now }: { at?: () => Date }) {
+  const toast = useUndoToast(at);
   if (toast === null) return <Text testID="no-toast">none</Text>;
   return (
     <Pressable testID="toast-undo" onPress={() => void toast.undo()}>
@@ -83,5 +83,24 @@ describe('ActionRunnerProvider', () => {
     });
     expect(runner.pending().some((p) => p.batchId === newest)).toBe(false);
     expect(screen.getByTestId('toast-text')).toHaveTextContent('SHIP-1 → Active');
+  });
+
+  it('useUndoToast shows nothing once every window has closed', async () => {
+    const runner = new InMemoryActionRunner({ now });
+    runner.register(executor);
+    runner.dispatch([action('SHIP-1', 'Active')], {
+      undo: UNDO.tap,
+      origin: 'tap',
+      allOrNothing: true,
+    });
+    runner.dispatch([action('SHIP-2', 'Done')], {
+      undo: UNDO.voice,
+      origin: 'voice',
+      allOrNothing: true,
+    });
+
+    await renderWithRunner(<ToastProbe at={() => new Date(T0 + UNDO.voice.ms)} />, { runner });
+
+    expect(screen.getByTestId('no-toast')).toBeOnTheScreen();
   });
 });
