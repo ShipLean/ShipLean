@@ -17,7 +17,7 @@ const feature = aFeatureItem({ projectId: PROJECT, revision: 7 });
 const ITEM = feature.id;
 const KEY = feature.key;
 const PATCH = `PATCH /api/work-items/${ITEM}`;
-const base = { area: 'workItem' as const, itemId: ITEM, key: KEY };
+const base = { area: 'workItem' as const, projectId: PROJECT, itemId: ITEM, key: KEY };
 const bodyOf = (call: FakeRequest) =>
   call.body as { expectedRevision: number; changes: Record<string, unknown> };
 

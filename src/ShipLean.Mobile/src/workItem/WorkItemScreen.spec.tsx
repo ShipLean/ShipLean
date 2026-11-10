@@ -1,4 +1,3 @@
-import { WorkItemActionsProvider } from './WorkItemActions';
 import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import type { WorkItemDto } from '@shiplean/core/api/workItems';
 import { QueryClient } from '@tanstack/react-query';
@@ -15,6 +14,7 @@ import { aFeatureItem, aStoryItem, workItemApi } from '../test-support/workItem'
 import { themes } from '../theme';
 import { primitiveIds, uiIds } from '../ui/testIds';
 import * as ids from './testIds';
+import { WorkItemActionsProvider } from './WorkItemActions';
 
 jest.mock('expo-router', () => ({
   ...jest.requireActual('expo-router'),

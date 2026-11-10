@@ -29,6 +29,7 @@ export const AssignSheet: FC<AssignSheetProps> = ({ item, open, onClose }) => {
     if (userId === currentId) return;
     dispatch({
       area: 'workItem',
+      projectId: item.projectId,
       kind: 'assign',
       itemId: item.id,
       key: item.key,

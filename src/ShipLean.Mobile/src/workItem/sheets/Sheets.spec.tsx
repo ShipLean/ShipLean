@@ -99,6 +99,7 @@ describe.each<Scheme>(['light', 'dark'])('Work item sheets (%s)', (scheme) => {
     expect(runner.dispatched[0].batch).toEqual([
       {
         area: 'workItem',
+        projectId: PROJECT,
         kind: 'setState',
         itemId: item.id,
         key: item.key,
@@ -129,6 +130,7 @@ describe.each<Scheme>(['light', 'dark'])('Work item sheets (%s)', (scheme) => {
     const [first, second] = runner.dispatched.map((d) => d.batch[0]);
     expect(first).toMatchObject({
       kind: 'assign',
+      projectId: PROJECT,
       itemId: item.id,
       revision: 7,
       userId: people[0].replace('wi-owner-option-', ''),
