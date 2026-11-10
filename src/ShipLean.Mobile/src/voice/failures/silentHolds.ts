@@ -27,9 +27,8 @@ export function recordFailure(failure: VoiceFailure, now: number = Date.now()): 
   return count;
 }
 
-// A hold that was understood, or the person left the mic check.
-// TODO: the voice provider calls this when a hold resolves to a preview, so a success between silent holds resets the
-// count; today only a failure that isn't silence resets it.
+// A hold that was understood (the voice provider calls this when a hold resolves to a preview or an answer), or the
+// person left the mic check.
 export function resetSilentHolds(): void {
   count = 0;
   lastAt = 0;

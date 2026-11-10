@@ -13,6 +13,7 @@ import { Chip } from '../../ui/Chip';
 import { Segmented } from '../../ui/Segmented';
 import { Skeleton } from '../../ui/Skeleton';
 import { TabRootBar } from '../../ui/TabRootBar';
+import { VoiceSendFailedBanner } from '../../voice/after/VoiceSendFailedBanner';
 import { backlogVoiceSpec } from '../voiceSpec';
 import { useScreenVoice } from '../../voice/VoiceProvider';
 import { AddRow } from '../add/AddRow';
@@ -170,6 +171,7 @@ export function BacklogView(props: BacklogViewProps) {
         subtitle={project?.name}
         onTilePress={() => router.dismissTo(links.projects())}
       />
+      <VoiceSendFailedBanner />
       <View
         style={{
           paddingHorizontal: theme.space[4],

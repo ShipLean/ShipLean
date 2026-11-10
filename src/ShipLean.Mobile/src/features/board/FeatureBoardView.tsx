@@ -26,6 +26,7 @@ import { featuresVoiceSpec } from '../voiceSpec';
 import { BoardHeader } from './BoardHeader';
 import { boardFigures, groupRows, sectionLayout, sectionTitle, type RowGroup } from './boardModel';
 import { StoryRow } from './StoryRow';
+import { DownloadBanner } from '../../voice/DownloadBanner';
 
 export interface FeatureBoardViewProps {
   projectKey: string;
@@ -118,6 +119,7 @@ function FeatureBoard({ projectId, projectKey, featureKey }: FeatureBoardProps) 
       testID={featureBoardIds.scroll}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void refresh()} />}
     >
+      <DownloadBanner placement="detail" />
       <BoardHeader
         projectKey={projectKey}
         featureKey={featureKey}

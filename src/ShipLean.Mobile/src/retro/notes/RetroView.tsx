@@ -17,6 +17,7 @@ import { ErrorState } from '../../ui/ErrorState';
 import { Segmented } from '../../ui/Segmented';
 import { Skeleton } from '../../ui/Skeleton';
 import { TabRootBar } from '../../ui/TabRootBar';
+import { VoiceSendFailedBanner } from '../../voice/after/VoiceSendFailedBanner';
 import { useScreenVoice } from '../../voice/VoiceProvider';
 import { AddPointSheet } from '../add/AddPointSheet';
 import { DecideSheet } from '../decide/DecideSheet';
@@ -284,6 +285,7 @@ function RetroTab({ projectKey, projectId }: RetroTabProps) {
         }
         onTilePress={() => router.dismissTo(links.projects())}
       />
+      <VoiceSendFailedBanner />
       {retro === undefined ? null : (
         <View
           style={{

@@ -1,5 +1,7 @@
 import type { CommandModel, MicPermission, SpeechRecognizer } from '../contracts';
+import { FakeModelFiles } from '../../test-support/modelFiles';
 import { setTotalMemory } from '../../test-support/nativeMocks';
+import { FakeModelStore } from '../../test-support/voice';
 import { LlamaCommandModel } from './commandModel';
 import { deviceMemoryBytes } from './deviceMemory';
 import { nativeAdapters } from './index';
@@ -41,13 +43,20 @@ describe('native adapters', () => {
     expect(deviceMemoryBytes()).toBe(0);
   });
 
-  it('nativeAdapters returns every port', () => {
+  it('nativeAdapters returns every port, the recognizer and the model as factories over the model store', () => {
     setTotalMemory(8 * 1024 ** 3);
+    const models = new FakeModelStore();
+    models.set({ phase: 'none', resolved: null });
 
     const adapters = nativeAdapters();
 
-    expect(adapters.recognizer).toBeInstanceOf(NativeSpeechRecognizer);
-    expect(adapters.model).toBeInstanceOf(LlamaCommandModel);
+    const recognizer = adapters.recognizer({ files: new FakeModelFiles(), models });
+    const model = adapters.model({ files: new FakeModelFiles(), models });
+    expect(recognizer).toBeInstanceOf(NativeSpeechRecognizer);
+    expect(model).toBeInstanceOf(LlamaCommandModel);
+    // With no model files there is nothing to load yet.
+    expect(recognizer.ready()).toBe(false);
+    expect(model.ready()).toBe(false);
     expect(adapters.mic).toBeInstanceOf(ExpoMicPermission);
     expect(adapters.files).toBeInstanceOf(ExpoModelFiles);
     expect(adapters.network).toBeInstanceOf(NetInfoNetworkKind);
