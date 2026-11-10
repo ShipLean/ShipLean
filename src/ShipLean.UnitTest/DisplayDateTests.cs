@@ -73,6 +73,31 @@ public class DisplayDateTests
         DisplayDate.Age(now.AddDays(-20), now).ShouldBe("2w");
     }
 
+    // Off the boundary: a value just under the next unit rounds down, never up.
+    [Test]
+    public void Age_WhenOneHourFiftyNineMinutes_ShouldSay1h()
+    {
+        var now = TestDates.Today.AddHours(12);
+
+        DisplayDate.Age(now.AddHours(-1).AddMinutes(-59), now).ShouldBe("1h");
+    }
+
+    [Test]
+    public void Age_WhenOneDayTwentyThreeHours_ShouldSay1d()
+    {
+        var now = TestDates.Today.AddHours(12);
+
+        DisplayDate.Age(now.AddDays(-1).AddHours(-23), now).ShouldBe("1d");
+    }
+
+    [Test]
+    public void Age_WhenThirteenDays_ShouldSay1w()
+    {
+        var now = TestDates.Today.AddHours(12);
+
+        DisplayDate.Age(now.AddDays(-13), now).ShouldBe("1w");
+    }
+
     [Test]
     public void Format_WhenUtc_ReturnsMinutePrecisionUtcLabel()
     {

@@ -96,6 +96,18 @@ public class ScreensSqlTests
         (await ScreensRows.DigestSeenAsync(connection, SeedIds.Users.Tom, project)).ShouldBe(TestDates.Today.AddHours(9));
     }
 
+    [Test]
+    public async Task DigestSeen_WhenAnEarlierTimeIsInsertedSecond_ShouldKeepTheLaterTime()
+    {
+        await using var connection = await _database.OpenAsync();
+        var project = SeedIds.Projects.Ship;
+        await new DigestSeenBuilder(SeedIds.Users.Priya, project).WithSeenAt(TestDates.Today.AddHours(9)).InsertAsync(connection);
+
+        await new DigestSeenBuilder(SeedIds.Users.Priya, project).WithSeenAt(TestDates.Today.AddDays(-3)).InsertAsync(connection);
+
+        (await ScreensRows.DigestSeenAsync(connection, SeedIds.Users.Priya, project)).ShouldBe(TestDates.Today.AddHours(9));
+    }
+
     // A fresh improve point on a person retro of Joel's on Sprint 24, so tests never share a point.
     private static async Task<Guid> PointAsync(NpgsqlConnection connection)
     {
