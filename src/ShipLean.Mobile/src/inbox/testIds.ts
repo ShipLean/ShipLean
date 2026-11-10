@@ -2,8 +2,13 @@
 export const inboxIds = {
   // A1a: the row (inboxRowId, inboxAskId, inboxMoreId, inboxBtnId below)
   // A1b: the screen
-  segmentWaiting: 'inbox-segment-waiting',
-  segmentAnswered: 'inbox-segment-answered',
+  // Segmented derives its options: optionId(inboxIds.segment, 'waiting' | 'answered').
+  segment: 'inbox-segment',
+  list: 'inbox-list',
+  empty: 'inbox-empty',
+  emptyNew: 'inbox-empty-new',
+  today: 'inbox-today',
+  kinds: 'inbox-kinds',
   // A2a: the runner's undo toast is UndoToastHost's (toast-undo), not the Inbox's.
   // A2b
   offlineBanner: 'inbox-offline-banner',
