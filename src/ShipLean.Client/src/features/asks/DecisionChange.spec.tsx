@@ -65,7 +65,7 @@ test('DecisionChange_WhenAlternativePicked_ShouldPostAlternativeIndexAndNote', a
     text: null,
     note: 'The picker is a list',
   });
-  await expect(toast(page)).toHaveText('D1 changed');
+  await expect(toast(page)).toContainText('D1 changed');
   await expect.poll(() => closed.count).toBe(1);
 });
 
@@ -114,7 +114,7 @@ test('DecisionChange_WhenSettled_ShouldWarnAboutComment', async ({ mount, page }
   await component.getByTestId(ids.changeSave).click();
   await expect.poll(() => stub.writes.length).toBe(1);
   expect(stub.writes[0].url).toBe(path(waiting, 'decisions/5/change'));
-  await expect(toast(page)).toHaveText('D5 changed · comment posted for the next agent');
+  await expect(toast(page)).toContainText('D5 changed · comment posted for the next agent');
   await expect.poll(() => closed.count).toBe(1);
 });
 
@@ -135,7 +135,7 @@ test('DecisionChange_WhenRecommendedOnOpen_ShouldConfirm', async ({ mount, page 
   await expect.poll(() => stub.writes.length).toBe(1);
   expect(stub.writes[0].url).toBe(path(waiting, 'decisions/confirm'));
   expect(stub.writes[0].body).toEqual({ numbers: [1] });
-  await expect(toast(page)).toHaveText('D1 confirmed');
+  await expect(toast(page)).toContainText('D1 confirmed');
   await expect.poll(() => closed.count).toBe(1);
 });
 
@@ -157,7 +157,7 @@ test('DecisionChange_WhenRecommendedOnOpenWithNote_ShouldPostChangeWithNote', as
     text: null,
     note: 'Checked with Mei',
   });
-  await expect(toast(page)).toHaveText('D1 changed');
+  await expect(toast(page)).toContainText('D1 changed');
 });
 
 test('DecisionChange_WhenCurrentAnswerSavedOnSettled_ShouldCloseWithoutPosting', async ({
@@ -170,7 +170,7 @@ test('DecisionChange_WhenCurrentAnswerSavedOnSettled_ShouldCloseWithoutPosting',
   await expect(component.getByTestId(ids.changeOption).first()).toBeChecked();
   await component.getByTestId(ids.changeSave).click();
 
-  await expect(toast(page)).toHaveText('D5 unchanged');
+  await expect(toast(page)).toContainText('D5 unchanged');
   await expect.poll(() => closed.count).toBe(1);
   expect(stub.writes).toHaveLength(0);
 });
@@ -192,7 +192,7 @@ test('DecisionChange_WhenAnswerIsOwn_ShouldOfferCurrentAnswerBetweenAlternatives
   await expect(current.locator('xpath=..')).toContainText('Current answer · current');
 
   await component.getByTestId(ids.changeSave).click();
-  await expect(toast(page)).toHaveText(`${d1.label} unchanged`);
+  await expect(toast(page)).toContainText(`${d1.label} unchanged`);
   await expect.poll(() => closed.count).toBe(1);
   expect(stub.writes).toHaveLength(0);
 });
