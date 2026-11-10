@@ -5,6 +5,7 @@ import { links } from '../../links';
 import { FeaturesScreen } from '../../screens/FeaturesScreen';
 import { screenIds } from '../../screens/testIds';
 import { InboxActionsContext } from '../../inbox/InboxActions';
+import { FeaturesActionsProvider } from '../FeaturesActions';
 import { InboxSheetsContext } from '../../inbox/InboxSheets';
 import { aProject } from '../../test-support/builders';
 import {
@@ -90,7 +91,9 @@ async function renderTab({ overview, items = [], table = {}, scheme }: Opts = {}
   const result = await renderWithVoice(
     <InboxActionsContext.Provider value={actions}>
       <InboxSheetsContext.Provider value={sheets}>
-        <FeaturesScreen projectKey="SHIP" />
+        <FeaturesActionsProvider>
+          <FeaturesScreen projectKey="SHIP" />
+        </FeaturesActionsProvider>
       </InboxSheetsContext.Provider>
     </InboxActionsContext.Provider>,
     { scheme },
