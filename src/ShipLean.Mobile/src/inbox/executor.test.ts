@@ -236,7 +236,7 @@ describe('inbox executor', () => {
         confirm: [1],
         changes: [{ number: 3, alternativeIndex: 0, ownText: null, note: null }],
       }),
-    ).toBe('D1, D3 decided');
+    ).toBe('D1, D3: 1 recommended, D3 changed');
     expect(text({ ...at, kind: 'chooseOption', number: 1, optionIndex: 0, option: 'x' })).toBe(
       'Answered Q1',
     );

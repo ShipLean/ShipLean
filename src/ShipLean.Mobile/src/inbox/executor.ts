@@ -4,13 +4,16 @@ import {
   confirmDecisions,
   discussDecision,
 } from '@shiplean/core/api/asks';
+import { listComments } from '@shiplean/core/api/commentsApi';
 import { getInbox, markMentionSeen, replyToMention } from '@shiplean/core/api/inbox';
+import { getMe } from '@shiplean/core/api/me';
 import { confirmStatus, setStatusLine } from '@shiplean/core/api/status';
 import { getItemByKey } from '@shiplean/core/api/workItem';
 import type { AppAction, Executor, PreviewLine } from '../actions/types';
 import { labelsOf, type InboxAction, type InboxKind } from './actions';
 import { reconcileAnswer } from './reconcile';
 import { compressLabels } from './rowModel';
+import type { InboxPending } from './reviewBatch';
 
 // Only a new status line has a reverse (the previous line is written back). Every other answer is posted on the item
 // and stays (decisions A.2).
@@ -90,7 +93,10 @@ function wording(a: InboxAction): { icon: string; text: string } {
     case 'review':
       return {
         icon: 'check',
-        text: `${labels} ${a.changes.length === 0 ? 'confirmed' : 'decided'}`,
+        text:
+          a.changes.length === 0
+            ? `${labels} confirmed`
+            : `${labels}: ${a.confirm.length} recommended, ${compressLabels(a.changes.map((c) => `D${c.number}`))} changed`,
       };
     case 'chooseOption':
     case 'answer':
@@ -131,13 +137,26 @@ export const inboxExecutor: Executor<InboxAction> = {
     if (item.statusLine !== a.text) throw new Error('The status line has changed since.');
     await setStatusLine(a.itemId, item.revision, a.from);
   },
-  // P5: one fresh Inbox per project; an answer whose asks are all closed went through, otherwise it is sent again.
+  // P5: one fresh Inbox per project. An answer whose asks are all closed went through, otherwise it is sent again. A
+  // discussion is judged by its comment (once per item, with the caller's id read once), never resent blindly.
   async reconcile(items) {
-    const actions = items.map((p) => asInbox(p.action));
-    const projectIds = [...new Set(actions.map((a) => a.projectId))];
+    const inbox = items.map((p) => ({ p, a: asInbox(p.action) }));
+    const projectIds = [...new Set(inbox.map(({ a }) => a.projectId))];
     const inboxes = new Map(
       await Promise.all(projectIds.map(async (p) => [p, await getInbox(p)] as const)),
     );
-    return actions.map((a) => reconcileAnswer(a, inboxes.get(a.projectId)!));
+    const discussed = [
+      ...new Set(inbox.filter(({ a }) => a.kind === 'discuss').map(({ a }) => a.itemId)),
+    ];
+    const callerId = discussed.length > 0 ? (await getMe()).id : '';
+    const comments = new Map(
+      await Promise.all(discussed.map(async (id) => [id, await listComments(id)] as const)),
+    );
+    return inbox.map(({ p, a }) =>
+      reconcileAnswer(p as InboxPending, inboxes.get(a.projectId)!, {
+        callerId,
+        comments: comments.get(a.itemId) ?? [],
+      }),
+    );
   },
 };

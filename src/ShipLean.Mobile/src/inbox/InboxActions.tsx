@@ -27,7 +27,8 @@ export function InboxActionsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     runner.register(inboxExecutor);
   }, [runner]);
-  const pending = usePending().filter(isInboxPending);
+  const all = usePending();
+  const pending = useMemo(() => all.filter(isInboxPending), [all]);
   useInvalidateOnSent(pending);
   const actions = useMemo<InboxActions>(
     () => ({
@@ -68,6 +69,9 @@ function useInvalidateOnSent(pending: InboxPending[]) {
         for (const projectId of new Set(parts.map((p) => p.action.projectId)))
           void invalidate(projectId);
     }
+    // Forget batches the runner no longer holds.
+    for (const batchId of seen.current.keys())
+      if (!batches.has(batchId)) seen.current.delete(batchId);
   }, [pending, invalidate]);
 }
 

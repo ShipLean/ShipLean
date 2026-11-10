@@ -4,7 +4,9 @@ import { Pressable, Text } from 'react-native';
 import type { Api, Executor, PendingState } from '../actions/types';
 import { aPending, fakeRunner, type FakeRunner } from '../test-support/actions';
 import { restoreFetch } from '../test-support/fakeApi';
-import { aDecisionAsk, anInbox, anInboxItem, inboxApi } from '../test-support/inbox';
+import { aMe } from '../test-support/builders';
+import { aDecisionAsk, anInbox, anInboxItem, aUser, inboxApi } from '../test-support/inbox';
+import { aComment } from '../test-support/workItem';
 import { renderWithRunner } from '../test-support/renderWithRunner';
 import type { InboxAction } from './actions';
 import { InboxActionsProvider, useInboxActions } from './InboxActions';
@@ -195,21 +197,55 @@ describe('InboxActions', () => {
     });
 
     it('the executor reconciles an uncertain answer as sent when its asks are closed', async () => {
-      // D10 is answered; only D11 is still open on the item.
+      // D10 is answered; D11 is still open on the item.
       const inbox = anInbox({
         projectId: at.projectId,
         items: [{ ...item, asks: [aDecisionAsk({ number: 11 })] }],
       });
       const fake = inboxApi({}, { inbox });
       const reconcile = (await executor()).reconcile!;
-      const discussD11: InboxAction = { ...at, kind: 'discuss', number: 11, body: 'Why?' };
 
-      await expect(reconcile([uncertain(approve), uncertain(discussD11)], api)).resolves.toEqual([
-        'sent',
-        'notSent',
-      ]);
-      // One fresh Inbox for both.
+      await expect(reconcile([uncertain(approve)], api)).resolves.toEqual(['sent']);
       expect(fake.callsTo(`GET /api/projects/${at.projectId}/inbox`)).toHaveLength(1);
+    });
+
+    describe('an uncertain discuss', () => {
+      const discussD11: InboxAction = { ...at, kind: 'discuss', number: 11, body: 'Why?' };
+      const inbox = anInbox({
+        projectId: at.projectId,
+        items: [{ ...item, asks: [aDecisionAsk({ number: 11 })] }],
+      });
+      const pending = aPending({
+        id: 'discuss',
+        state: 'uncertain',
+        action: discussD11,
+        createdAt: '2030-01-01T09:00:00.000Z',
+      });
+      const commentsRoute = `GET /api/work-items/${at.itemId}/comments`;
+
+      it("is sent when the caller's comment is on the item, checking once per item", async () => {
+        const mine = aComment(at.itemId, {
+          author: { ...aUser(), id: aMe().id },
+          body: 'Why?',
+          createdAt: '2030-01-01T09:00:03.000Z',
+        });
+        const fake = inboxApi({ [commentsRoute]: [mine] }, { inbox });
+        const reconcile = (await executor()).reconcile!;
+
+        await expect(reconcile([pending, { ...pending, id: 'again' }], api)).resolves.toEqual([
+          'sent',
+          'sent',
+        ]);
+        expect(fake.callsTo(commentsRoute)).toHaveLength(1);
+        expect(fake.callsTo('GET /api/me')).toHaveLength(1);
+      });
+
+      it('is notSent when the comment is absent', async () => {
+        inboxApi({ [commentsRoute]: [] }, { inbox });
+        const reconcile = (await executor()).reconcile!;
+
+        await expect(reconcile([pending], api)).resolves.toEqual(['notSent']);
+      });
     });
   });
 });
