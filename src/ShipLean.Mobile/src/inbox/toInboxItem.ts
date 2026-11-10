@@ -86,3 +86,21 @@ export function toInboxItem(item: WorkItemDto, asks: ItemAsksDto | null): InboxI
     asks: all,
   };
 }
+
+// An empty status line as an ask, so a Feature that has none can get its first one from the answer sheet (web parity:
+// the status band always offers Edit status). Not part of toInboxItem: the Inbox must not list a status ask on every
+// line-less Feature. at is the Feature's creation and from is empty, as for a line that was never verified.
+export function newStatusAsk(item: WorkItemDto): InboxAskDto {
+  return {
+    kind: 'status',
+    label: 'Status',
+    at: item.createdAt,
+    atLabel: item.createdAtLabel,
+    from: null,
+    agentName: null,
+    decision: null,
+    question: null,
+    mention: null,
+    status: { statusLine: '', verifiedAt: null },
+  };
+}

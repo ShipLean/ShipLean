@@ -5,7 +5,6 @@ import { useTheme } from '../../theme';
 import {
   newStatusId,
   statusLineId,
-  statusSayId,
   statusTextId,
   statusVerifiedById,
   statusVerifiedId,
@@ -15,14 +14,11 @@ import {
 export interface StatusLineProps {
   item: WorkItemDto;
   onStillTrue: () => void;
-  // Absent when the line has no ask to answer yet (nothing to replace).
   onNewStatus?: () => void;
-  // The "Or say" hint is off while the models download (D10).
-  showSay: boolean;
 }
 
 // A Feature's status line and who verified it, worded as the web's VerifiedChip does. The server says when it is stale.
-export const StatusLine: FC<StatusLineProps> = ({ item, onStillTrue, onNewStatus, showSay }) => {
+export const StatusLine: FC<StatusLineProps> = ({ item, onStillTrue, onNewStatus }) => {
   const theme = useTheme();
   const { colors } = theme;
   const verified = item.statusVerified;
@@ -106,11 +102,6 @@ export const StatusLine: FC<StatusLineProps> = ({ item, onStillTrue, onNewStatus
         {link(stillTrueId, 'Still true', onStillTrue)}
         {onNewStatus === undefined ? null : link(newStatusId, 'New status', onNewStatus)}
       </View>
-      {showSay ? (
-        <Text testID={statusSayId} style={{ color: colors.muted, fontSize: theme.font.size.sm }}>
-          Or say “still true”
-        </Text>
-      ) : null}
     </View>
   );
 };

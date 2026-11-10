@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useInboxActions } from '../inbox/InboxActions';
 import { useInboxSheets } from '../inbox/InboxSheets';
-import { statusAsk, toInboxItem } from '../inbox/toInboxItem';
+import { newStatusAsk, statusAsk, toInboxItem } from '../inbox/toInboxItem';
 import { useProject } from '../shell/useProject';
 import { useTheme } from '../theme';
 import { Dock } from '../ui/Dock';
@@ -14,7 +14,7 @@ import { ErrorState } from '../ui/ErrorState';
 import { Screen } from '../ui/Screen';
 import { Skeleton } from '../ui/Skeleton';
 import { TopBar } from '../ui/TopBar';
-import { useScreenVoice, useVoice } from '../voice/VoiceProvider';
+import { useScreenVoice } from '../voice/VoiceProvider';
 import { AcceptanceCriteria } from '../workItem/details/AcceptanceCriteria';
 import { GoalDetails } from '../workItem/details/GoalDetails';
 import { StatusLine } from '../workItem/header/StatusLine';
@@ -112,7 +112,6 @@ function Loaded({ item, projectId, projectKey }: LoadedProps) {
   const [refreshing, setRefreshing] = useState(false);
   const actions = useInboxActions();
   const sheets = useInboxSheets();
-  const voice = useVoice();
   const asks = useItemAsksQuery(projectId, item.key, item.id);
   const states = useTypeStatesQuery(projectId, item.type.id);
   const members = useMembersQuery(projectId);
@@ -137,8 +136,7 @@ function Loaded({ item, projectId, projectKey }: LoadedProps) {
 
   const feature = item.type.id === 'feature';
   const story = item.type.id === 'story';
-  const ask = statusAsk(item);
-  const hintsOff = voice.state.kind === 'disabled' && voice.state.reason === 'downloading';
+  const ask = statusAsk(item) ?? newStatusAsk(item);
 
   return (
     <View style={{ flex: 1 }}>
@@ -153,7 +151,6 @@ function Loaded({ item, projectId, projectKey }: LoadedProps) {
         {feature ? (
           <StatusLine
             item={item}
-            showSay={!hintsOff}
             onStillTrue={() =>
               actions.dispatch({
                 area: 'inbox',
@@ -164,16 +161,13 @@ function Loaded({ item, projectId, projectKey }: LoadedProps) {
                 revision: item.revision,
               })
             }
-            onNewStatus={
-              ask === null
-                ? undefined
-                : () =>
-                    sheets.openAnswer({
-                      mode: 'status',
-                      item: toInboxItem(item, asks.data ?? null),
-                      ask,
-                      projectId,
-                    })
+            onNewStatus={() =>
+              sheets.openAnswer({
+                mode: 'status',
+                item: toInboxItem(item, asks.data ?? null),
+                ask,
+                projectId,
+              })
             }
           />
         ) : null}

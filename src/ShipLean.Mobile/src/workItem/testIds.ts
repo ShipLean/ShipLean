@@ -13,7 +13,6 @@ export const statusVerifiedId = 'wi-status-verified';
 export const statusVerifiedById = 'wi-status-verified-by';
 export const stillTrueId = 'wi-still-true';
 export const newStatusId = 'wi-new-status';
-export const statusSayId = 'wi-status-say';
 
 // WI2
 export const needsYouSectionId = 'wi-needs-you';

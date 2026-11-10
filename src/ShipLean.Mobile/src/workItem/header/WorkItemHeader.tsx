@@ -24,6 +24,7 @@ export const WorkItemHeader: FC<WorkItemHeaderProps> = ({ item, projectKey }) =>
   const theme = useTheme();
   const router = useRouter();
   const { colors } = theme;
+  const parent = item.parent;
   return (
     <View
       testID={workItemHeaderId}
@@ -45,16 +46,16 @@ export const WorkItemHeader: FC<WorkItemHeaderProps> = ({ item, projectKey }) =>
       >
         {item.type.name} · {item.key}
       </Text>
-      {item.parent === null ? null : (
+      {parent === null ? null : (
         <Pressable
           testID={workItemParentId}
           accessibilityRole="link"
-          accessibilityLabel={`Parent ${item.parent.key} ${item.parent.title}`}
-          onPress={() => router.push(links.item(projectKey, item.parent?.key ?? ''))}
+          accessibilityLabel={`Parent ${parent.key} ${parent.title}`}
+          onPress={() => router.push(links.item(projectKey, parent.key))}
           style={{ minHeight: theme.touch.control, justifyContent: 'center' }}
         >
           <Text numberOfLines={1} style={{ color: colors.accent, fontSize: theme.font.size.md }}>
-            {item.parent.type.name} {item.parent.key} {item.parent.title}
+            {parent.type.name} {parent.key} {parent.title}
           </Text>
         </Pressable>
       )}

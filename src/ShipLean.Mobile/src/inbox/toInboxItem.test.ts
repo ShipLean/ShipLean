@@ -2,7 +2,7 @@ import type { ItemAsksDto } from '@shiplean/core/api/asks';
 import { describe, expect, it } from 'vitest';
 import storyAsks from '../../../ShipLean.TestSupport/DtoFixtures/asks/item-asks.story.json';
 import { aStory, aWorkItem } from '../test-support/builders';
-import { statusAsk, toInboxItem } from './toInboxItem';
+import { newStatusAsk, statusAsk, toInboxItem } from './toInboxItem';
 
 describe('toInboxItem', () => {
   it('makes open decisions and questions asks labelled Dn and Qn, and a Feature status line a Status ask', () => {
@@ -49,5 +49,26 @@ describe('toInboxItem', () => {
     });
     expect(statusAsk(aWorkItem({ statusLine: '' }))).toBeNull();
     expect(statusAsk(aWorkItem({ statusVerified: null }))?.at).toBe(feature.createdAt);
+  });
+});
+
+describe('newStatusAsk', () => {
+  it('is a status ask with an empty line and no verifier, dated from the Feature creation', () => {
+    const feature = aWorkItem({ statusLine: '', statusVerified: null });
+    expect(statusAsk(feature)).toBeNull();
+    expect(newStatusAsk(feature)).toEqual({
+      kind: 'status',
+      label: 'Status',
+      at: feature.createdAt,
+      atLabel: feature.createdAtLabel,
+      from: null,
+      agentName: null,
+      decision: null,
+      question: null,
+      mention: null,
+      status: { statusLine: '', verifiedAt: null },
+    });
+    // The Inbox row still has no status ask for a line-less Feature.
+    expect(toInboxItem(feature, null).asks).toEqual([]);
   });
 });

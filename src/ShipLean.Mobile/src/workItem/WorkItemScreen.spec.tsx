@@ -1,19 +1,18 @@
-import { act, fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import type { WorkItemDto } from '@shiplean/core/api/workItems';
 import { QueryClient } from '@tanstack/react-query';
 import type { ReactElement } from 'react';
 import { WorkItemScreen } from '../screens/WorkItemScreen';
 import { InboxActionsContext } from '../inbox/InboxActions';
 import { InboxSheetsContext } from '../inbox/InboxSheets';
+import { links } from '../links';
 import { aProject } from '../test-support/builders';
 import { apiError } from '../test-support/fakeApi';
 import { fakeInboxActions, fakeInboxSheets } from '../test-support/inbox';
-import { renderWithVoice } from '../test-support/voiceUi';
-import { fakeVoice } from '../test-support/voiceUi';
+import { fakeVoice, renderWithVoice } from '../test-support/voiceUi';
 import { aFeatureItem, aStoryItem, workItemApi } from '../test-support/workItem';
 import { themes } from '../theme';
-import { primitiveIds } from '../ui/testIds';
-import { uiIds } from '../ui/testIds';
+import { primitiveIds, uiIds } from '../ui/testIds';
 import * as ids from './testIds';
 
 jest.mock('expo-router', () => ({
@@ -48,6 +47,8 @@ async function open(
     </InboxActionsContext.Provider>
   );
   const { queryClient } = await renderWithVoice(ui, { scheme, voice });
+  // The asks, states and members reads start with the item: wait for every read to land before the test goes on.
+  await waitFor(() => expect(queryClient.isFetching()).toBe(0));
   return { actions, sheets, queryClient };
 }
 
@@ -74,12 +75,6 @@ async function pullDown(): Promise<void> {
 
 describe.each(['light', 'dark'] as const)('Work item screen (%s)', (scheme) => {
   beforeEach(() => mockPush.mockClear());
-  // The asks, states and members reads start with the item: let them land inside act before the next test.
-  afterEach(async () => {
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 50));
-    });
-  });
 
   // Red when the status line moves below Needs you, or Needs you is not first after it.
   it('renders the feature state: header, status line, Still true, then Needs you first', async () => {
@@ -180,27 +175,31 @@ describe.each(['light', 'dark'] as const)('Work item screen (%s)', (scheme) => {
 
     await pullDown();
 
-    expect(await screen.findByText('Active')).toBeOnTheScreen();
-    expect(screen.queryByText('New')).toBeNull();
+    await waitFor(() =>
+      expect(screen.getByTestId(primitiveIds.statePill)).toHaveTextContent('Active'),
+    );
   });
 
-  it('shows the Or say hint when voice is ready', async () => {
-    const api = workItemApi({}, { projectId });
-    await open('SHIP-906', api, scheme);
-    expect(await screen.findByTestId(ids.statusSayId)).toBeOnTheScreen();
-  });
-
-  // Red when the hint is drawn whatever the voice state is.
+  // Red when the screen is hidden or Still true is disabled while the models download, or an "Or say" hint is drawn.
   it('hides the Or say hints in the downloading state', async () => {
     const voice = fakeVoice({
       kind: 'disabled',
       reason: 'downloading',
       permission: 'undetermined',
     });
-    await open('SHIP-906', workItemApi({}, { projectId }), scheme, voice);
+    const feature = aFeatureItem({ projectId });
+    const { actions } = await open(
+      'SHIP-906',
+      workItemApi({}, { projectId, items: [feature] }),
+      scheme,
+      voice,
+    );
+
     expect(await screen.findByTestId(ids.statusLineId)).toBeOnTheScreen();
-    expect(screen.queryByTestId(ids.statusSayId)).toBeNull();
-    expect(screen.getByTestId(ids.stillTrueId)).toBeOnTheScreen();
+    expect(screen.getByTestId(primitiveIds.dock)).toBeOnTheScreen();
+    await fireEvent.press(screen.getByTestId(ids.stillTrueId));
+    expect(actions.dispatched.map((d) => d.kind)).toEqual(['stillTrue']);
+    expect(screen.queryByText(/^Or say/)).toBeNull();
   });
 
   // Red when health shows for onTrack, or is hidden for atRisk and blocked.
@@ -265,11 +264,39 @@ describe.each(['light', 'dark'] as const)('Work item screen (%s)', (scheme) => {
   // Red when a Feature with no verification shows a Verified chip, or a blank line shows nothing.
   it('shows Not verified yet and No status yet for a Feature never verified', async () => {
     const feature = aFeatureItem({ projectId, statusLine: '', statusVerified: null });
-    await open('SHIP-906', workItemApi({}, { projectId, items: [feature] }), scheme);
+    const { sheets } = await open(
+      'SHIP-906',
+      workItemApi({}, { projectId, items: [feature] }),
+      scheme,
+    );
 
     expect(await screen.findByTestId(ids.statusTextId)).toHaveTextContent('No status yet.');
     expect(screen.getByTestId(ids.statusVerifiedId)).toHaveTextContent('Not verified yet');
     expect(screen.queryByTestId(ids.statusVerifiedById)).toBeNull();
+    expect(screen.getByTestId(ids.newStatusId)).toBeOnTheScreen();
+    await fireEvent.press(screen.getByTestId(ids.newStatusId));
+    expect(sheets.calls).toHaveLength(1);
+    const call = sheets.calls[0];
+    if (call.kind !== 'answer') throw new Error('expected the answer sheet');
+    expect(call.request.mode).toBe('status');
+    expect(call.request.ask.status?.statusLine).toBe('');
+    expect(call.request.ask.from).toBeNull();
+  });
+
+  // Red when the parent tap goes to another key, or a missing owner shows blank.
+  it('opens the parent on tap and shows No owner when there is no assignee', async () => {
+    const base = aFeatureItem({ projectId });
+    const feature = {
+      ...base,
+      assignee: null,
+      parent: { id: 'parent-1', key: 'SHIP-905', type: base.type, title: 'Mobile App' },
+    };
+    await open('SHIP-906', workItemApi({}, { projectId, items: [feature] }), scheme);
+
+    await fireEvent.press(await screen.findByTestId(ids.workItemParentId));
+
+    expect(mockPush).toHaveBeenCalledWith(links.item('SHIP', 'SHIP-905'));
+    expect(screen.getByTestId(ids.workItemOwnerId)).toHaveTextContent('No owner');
   });
 
   it('shows a stale verification in the warn colour', async () => {
@@ -319,9 +346,7 @@ describe.each(['light', 'dark'] as const)('Work item screen (%s)', (scheme) => {
     const api = workItemApi({}, { projectId });
     await open('SHIP-906', api, scheme);
     await screen.findByTestId(ids.workItemHeaderId);
-    expect(
-      api.callsTo(BY_KEY('SHIP-906').replace('GET ', 'GET ').replace(/^GET /, 'GET ')),
-    ).toHaveLength(1);
+    expect(api.callsTo(BY_KEY('SHIP-906'))).toHaveLength(1);
 
     await pullDown();
 
