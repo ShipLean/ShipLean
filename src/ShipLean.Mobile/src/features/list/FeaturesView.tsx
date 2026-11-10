@@ -24,6 +24,7 @@ import {
   chipCounts,
   chipFromView,
   epicsOf,
+  groupInboxByFeature,
   isFiltered,
   shownGroups,
   type FeatureChip,
@@ -36,17 +37,41 @@ export interface FeaturesViewProps {
   projectKey: string;
 }
 
-// The Features tab: every Feature grouped by state, narrowed by chips.
+// The Features tab: resolves the project, then mounts the list with a real project id so no read is sent before it.
 export function FeaturesView({ projectKey }: FeaturesViewProps) {
+  const router = useRouter();
+  const { project, isLoading, error } = useProject(projectKey);
+  if (project !== undefined) return <FeaturesList projectId={project.id} projectKey={projectKey} />;
+  return (
+    <>
+      <TabRootBar
+        projectKey={projectKey}
+        title="Features"
+        onTilePress={() => router.dismissTo(links.projects())}
+      />
+      {isLoading && error === null ? (
+        <Skeleton rows={6} />
+      ) : (
+        <ErrorState title="Couldn't load the Features." />
+      )}
+    </>
+  );
+}
+
+interface FeaturesListProps {
+  projectId: string;
+  projectKey: string;
+}
+
+function FeaturesList({ projectId, projectKey }: FeaturesListProps) {
   const theme = useTheme();
   const router = useRouter();
   const { project } = useProject(projectKey);
-  const projectId = project?.id;
-  const overviewQuery = useFeaturesOverviewQuery(projectId ?? '');
+  const overviewQuery = useFeaturesOverviewQuery(projectId);
   const inbox = useInboxQuery(projectId);
-  const states = useFeatureStatesQuery(projectId ?? '');
+  const states = useFeatureStatesQuery(projectId);
   const members = useFeatureMembers(projectId);
-  const overview = projectId === undefined ? undefined : overviewQuery.data;
+  const overview = overviewQuery.data;
 
   const [chip, setChip] = useState<FeatureChip>('all');
   const [epicId, setEpicId] = useState<string | null>(null);
@@ -63,6 +88,15 @@ export function FeaturesView({ projectKey }: FeaturesViewProps) {
     [overview, chip, epicId, filter],
   );
   const visibleRows = useMemo(() => groups.flatMap((g) => g.rows), [groups]);
+  const inboxItems = useMemo(() => inbox.data?.items ?? [], [inbox.data]);
+  // The Features whose headers show: with Needs you on, those with an ask waiting.
+  const shownFeatures = useMemo(
+    () =>
+      chip === 'needsYou'
+        ? groupInboxByFeature(visibleRows, inboxItems).map((g) => g.feature)
+        : visibleRows,
+    [chip, visibleRows, inboxItems],
+  );
   const counts = overview === undefined ? null : chipCounts(overview);
   const epics = useMemo(() => (overview === undefined ? [] : epicsOf(overview)), [overview]);
   const epic = epics.find((e) => e.id === epicId) ?? null;
@@ -75,13 +109,13 @@ export function FeaturesView({ projectKey }: FeaturesViewProps) {
 
   useScreenVoice(
     featuresVoiceSpec({
-      projectId: projectId ?? '',
+      projectId,
       board: false,
       focus: allRows.find((r) => r.key === expandedKey) ?? null,
-      rows: visibleRows,
+      rows: shownFeatures,
       order: allRows,
       states: states.data ?? [],
-      asks: inbox.data?.items ?? [],
+      asks: inboxItems,
       members: members.data ?? [],
       projectKey,
       filtering: isFiltered(filter),
@@ -122,7 +156,7 @@ export function FeaturesView({ projectKey }: FeaturesViewProps) {
         />
       );
     }
-    if (overview === undefined || projectId === undefined) return <Skeleton rows={6} />;
+    if (overview === undefined) return <Skeleton rows={6} />;
     if (allRows.length === 0 && overview.groups.every((g) => g.count === 0)) {
       return <EmptyState title="No Features yet." />;
     }

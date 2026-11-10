@@ -23,7 +23,12 @@ export const isFiltered = (filter: FeatureFilter): boolean =>
   filter.chip !== 'all' || filter.epicId !== null;
 
 // What a voice screen view can turn on: `command: 'filter'` with the chip's name in args.chip.
-export function chipFromView(command: string, args: Record<string, unknown>): FeatureChip | null {
+export type FeatureViewArgs = { chip: FeatureChip };
+
+export function chipFromView(
+  command: string,
+  args: { [K in keyof FeatureViewArgs]?: unknown },
+): FeatureChip | null {
   return command === 'filter' && CHIPS.includes(args.chip) ? (args.chip as FeatureChip) : null;
 }
 
@@ -117,16 +122,36 @@ export type RankMove = { from: number; up: boolean };
 export const ranksOf = (rows: FeatureRowDto[]): Map<string, number> =>
   new Map(rows.map((row) => [row.key, row.rank]));
 
-// The rows whose rank differs from the last read, by key. A row not in the last read isn't a move.
+// The rows that moved since the last read, by key, with the rank they came from: the rows outside the longest run of
+// rows that kept their relative order (one row for a single move). Of two equal runs the earlier one is kept. A row not
+// in the last read isn't a move.
 export function rankMoves(
   last: ReadonlyMap<string, number>,
   rows: FeatureRowDto[],
 ): Map<string, RankMove> {
+  const known = rows.flatMap((row) => {
+    const was = last.get(row.key);
+    return was === undefined ? [] : [{ key: row.key, before: was, now: row.rank }];
+  });
+  // Longest strictly increasing run of old ranks, in the new order.
+  const length: number[] = [];
+  const link: number[] = [];
+  for (let i = 0; i < known.length; i++) {
+    length[i] = 1;
+    link[i] = -1;
+    for (let j = 0; j < i; j++) {
+      if (known[j]!.before < known[i]!.before && length[j]! + 1 > length[i]!) {
+        length[i] = length[j]! + 1;
+        link[i] = j;
+      }
+    }
+  }
+  const kept = new Set<string>();
+  let at = length.reduce((best, len, i) => (len > length[best]! ? i : best), 0);
+  for (; known.length > 0 && at >= 0; at = link[at]!) kept.add(known[at]!.key);
   const moves = new Map<string, RankMove>();
-  for (const row of rows) {
-    const before = last.get(row.key);
-    if (before === undefined || before === row.rank) continue;
-    moves.set(row.key, { from: before, up: row.rank < before });
+  for (const { key, before, now } of known) {
+    if (!kept.has(key)) moves.set(key, { from: before, up: now < before });
   }
   return moves;
 }

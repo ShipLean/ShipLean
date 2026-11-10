@@ -72,17 +72,27 @@ describe('features filters', () => {
     expect(chipFromView('level', { chip: 'blocked' })).toBeNull();
   });
 
-  it('marks the rows whose rank changed since the last read', () => {
+  it('marks one row for a swap: the later of the pair, the earlier one kept', () => {
     const before = [aFeatureRow({ key: 'A', rank: 1 }), aFeatureRow({ key: 'B', rank: 2 })];
     const after = [
       aFeatureRow({ key: 'B', rank: 1 }),
       aFeatureRow({ key: 'A', rank: 2 }),
       aFeatureRow({ key: 'C', rank: 3 }),
     ];
-    expect([...rankMoves(ranksOf(before), after)]).toEqual([
-      ['B', { from: 2, up: true }],
+    expect([...rankMoves(ranksOf(before), after)]).toEqual([['A', { from: 1, up: false }]]);
+  });
+
+  it('marks only the row that jumped three places, not the rows it passed', () => {
+    const rank = (keys: string[]) => keys.map((key, i) => aFeatureRow({ key, rank: i + 1 }));
+    const last = ranksOf(rank(['A', 'B', 'C', 'D', 'E']));
+
+    expect([...rankMoves(last, rank(['A', 'E', 'B', 'C', 'D']))]).toEqual([
+      ['E', { from: 5, up: true }],
+    ]);
+    expect([...rankMoves(last, rank(['B', 'C', 'D', 'A', 'E']))]).toEqual([
       ['A', { from: 1, up: false }],
     ]);
+    expect([...rankMoves(last, rank(['A', 'B', 'C', 'D', 'E']))]).toHaveLength(0);
   });
 
   it('words the roll-ups and who wrote the status line', () => {

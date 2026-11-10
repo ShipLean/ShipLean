@@ -5,6 +5,6 @@ import { skipToken, useQuery } from '@tanstack/react-query';
 export function useFeatureMembers(projectId: string | undefined) {
   return useQuery({
     queryKey: projectMetaKeys.members(projectId ?? ''),
-    queryFn: projectId === undefined ? skipToken : () => getMembers(projectId),
+    queryFn: projectId === undefined || projectId === '' ? skipToken : () => getMembers(projectId),
   });
 }

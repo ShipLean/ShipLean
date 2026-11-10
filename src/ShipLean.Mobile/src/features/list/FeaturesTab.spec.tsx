@@ -53,6 +53,18 @@ jest.mock('../../voice/VoiceProvider', () => {
   };
 });
 
+const mockSpec = jest.fn();
+jest.mock('../voiceSpec', () => {
+  const actual = jest.requireActual('../voiceSpec');
+  return {
+    ...actual,
+    featuresVoiceSpec: (ctx: unknown) => {
+      mockSpec(ctx);
+      return actual.featuresVoiceSpec(ctx);
+    },
+  };
+});
+
 const PROJECT = aProject();
 const project = `/api/projects/${PROJECT.id}`;
 const OVERVIEW = `GET ${project}/features/overview`;
@@ -90,6 +102,12 @@ const rowKeys = () =>
   screen
     .getAllByTestId(/^feature-row-/)
     .map((row) => row.props.testID.slice('feature-row-'.length));
+
+beforeEach(() => {
+  mockPush.mockClear();
+  mockVoice.mockClear();
+  mockSpec.mockClear();
+});
 
 describe.each(['light', 'dark'] as const)('Features tab (%s)', (scheme) => {
   it('renders the board state: Active, Resolved, New, then Closed folded to one line', async () => {
@@ -187,28 +205,9 @@ describe.each(['light', 'dark'] as const)('Features tab (%s)', (scheme) => {
     await fireEvent.press(screen.getByTestId(featuresIds.chipAll));
     expect(rowKeys()).toHaveLength(5);
   });
-});
-
-describe('Features tab', () => {
-  beforeEach(() => {
-    mockPush.mockClear();
-    mockVoice.mockClear();
-  });
-
-  it("narrows to an Epic from the rows' epic", async () => {
-    const { api } = await renderTab();
-    await fireEvent.press(await screen.findByTestId(featuresIds.chipEpic));
-    await fireEvent.press(await screen.findByTestId(featureEpicOptionId('SHIP-700')));
-
-    expect(rowKeys()).toEqual(['SHIP-906', 'SHIP-707']);
-    expect(screen.getByTestId(featuresIds.chipEpic)).toHaveTextContent('SHIP-700');
-    // No read of the backlog: the choices and the rows are the overview's.
-    expect(api.calls.filter((c) => c.path.includes('/backlog'))).toEqual([]);
-    expect(api.callsTo(OVERVIEW)).toHaveLength(1);
-  });
 
   it('opens the digest from the since banner', async () => {
-    await renderTab();
+    await renderTab({ scheme });
     await fireEvent.press(await screen.findByTestId(`${featuresIds.sinceBanner}-action`));
 
     expect(mockPush).toHaveBeenCalledWith(links.digest('SHIP'));
@@ -216,7 +215,7 @@ describe('Features tab', () => {
 
   it('shows No changes when nothing changed', async () => {
     const overview = { ...designOverview(), changedSince: 0, sinceLabel: 'since yesterday' };
-    await renderTab({ overview });
+    await renderTab({ scheme, overview });
 
     expect(await screen.findByTestId(featuresIds.sinceBanner)).toHaveTextContent(
       'No changes since yesterday',
@@ -233,6 +232,7 @@ describe('Features tab', () => {
       after.groups[0]!.rows = [c!, a!, b!].map((r, i) => ({ ...r, rank: i + 1 }));
       let reads = 0;
       const { queryClient } = await renderTab({
+        scheme,
         overview: before,
         table: { [OVERVIEW]: () => (reads++ === 0 ? before : after) },
       });
@@ -244,7 +244,8 @@ describe('Features tab', () => {
       });
 
       expect(await screen.findByTestId(featureMovedId('SHIP-707'))).toHaveTextContent('↑ from 3');
-      expect(screen.getByTestId(featureMovedId('SHIP-906'))).toHaveTextContent('↓ from 1');
+      expect(screen.queryByTestId(featureMovedId('SHIP-906'))).toBeNull();
+      expect(screen.queryByTestId(featureMovedId('SHIP-743'))).toBeNull();
 
       await act(async () => {
         jest.advanceTimersByTime(HIGHLIGHT_MS);
@@ -255,10 +256,36 @@ describe('Features tab', () => {
     }
   });
 
+  it('shows no health pill on an on-track Feature', async () => {
+    await renderTab({ scheme });
+
+    const onTrack = await screen.findByTestId(featureRowId('SHIP-707'));
+    expect(within(onTrack).queryByTestId(primitiveIds.healthPill)).toBeNull();
+    expect(
+      within(screen.getByTestId(featureRowId('SHIP-906'))).getByTestId(primitiveIds.healthPill),
+    ).toHaveTextContent('At risk');
+  });
+});
+
+describe('Features tab', () => {
+  it("narrows to an Epic from the rows' epic", async () => {
+    const { api } = await renderTab();
+    await fireEvent.press(await screen.findByTestId(featuresIds.chipEpic));
+    await fireEvent.press(await screen.findByTestId(featureEpicOptionId('SHIP-700')));
+
+    expect(rowKeys()).toEqual(['SHIP-906', 'SHIP-707']);
+    expect(screen.getByTestId(featuresIds.chipEpic)).toHaveTextContent('SHIP-700');
+    // No read of the backlog: the choices and the rows are the overview's.
+    expect(api.calls.filter((c) => c.path.includes('/backlog'))).toEqual([]);
+    expect(api.callsTo(OVERVIEW)).toHaveLength(1);
+  });
+
   it('applies a screen view from voice by turning on the Blocked chip', async () => {
     await renderTab();
     await screen.findByTestId(featureRowId('SHIP-906'));
     const onView = mockVoice.mock.calls.at(-1)![1].onView as (v: unknown) => void;
+    // No chip is on yet, so voice rank moves are allowed.
+    expect(mockSpec.mock.calls.at(-1)![0].filtering).toBe(false);
 
     await act(async () => {
       onView({ kind: 'screen', command: 'filter', args: { chip: 'blocked' } });
@@ -267,17 +294,7 @@ describe('Features tab', () => {
     expect(screen.getByTestId(featuresIds.chipBlocked)).toBeSelected();
     expect(rowKeys()).toEqual(['SHIP-743']);
     // The spec is told a chip is on, so voice rank moves are refused.
-    expect(mockVoice.mock.calls.at(-1)![0].context().projectKey).toBe('SHIP');
-  });
-
-  it('shows no health pill on an on-track Feature', async () => {
-    await renderTab();
-
-    const onTrack = await screen.findByTestId(featureRowId('SHIP-707'));
-    expect(within(onTrack).queryByTestId(primitiveIds.healthPill)).toBeNull();
-    expect(
-      within(screen.getByTestId(featureRowId('SHIP-906'))).getByTestId(primitiveIds.healthPill),
-    ).toHaveTextContent('At risk');
+    expect(mockSpec.mock.calls.at(-1)![0].filtering).toBe(true);
   });
 
   it('expands one row at a time', async () => {
@@ -310,6 +327,22 @@ describe('Features tab', () => {
     await fireEvent.press(await screen.findByTestId(featuresIds.chipBlocked));
 
     expect(screen.getByText('Nothing matches this filter')).toBeOnTheScreen();
+  });
+
+  it('sends no read with an empty project id while the projects read is pending', async () => {
+    const { api } = await renderTab({
+      table: { 'GET /api/projects': () => new Promise(() => {}) },
+    });
+
+    expect(await screen.findByTestId(screenIds.features)).toBeOnTheScreen();
+    expect(api.calls.filter((c) => c.path.includes('/projects//'))).toEqual([]);
+    expect(api.calls.filter((c) => c.path.includes('/features/'))).toEqual([]);
+  });
+
+  it('shows the error state when the project is not in the projects list', async () => {
+    await renderTab({ table: { 'GET /api/projects': [] } });
+
+    expect(await screen.findByText("Couldn't load the Features.")).toBeOnTheScreen();
   });
 
   it('shows the error state', async () => {
