@@ -19,11 +19,12 @@ permissions:
   actions: write
 
 jobs:
-  # Changes CI cannot see: top-level *.md (Markdown under src/ and db/ is test or app input), docs/,
-  # store/ (the store listing; the Store listing workflow checks it) and docker-publish.yml. A pull
-  # request with only those sets code=false, and the jobs below skip, which the ruleset counts as passing (acceptance skips its steps instead: a skipped matrix job
-  # reports an unexpanded name). A hand run has no base and always runs. If this job fails, code is
-  # empty and everything runs.
+  # Changes CI cannot see: top-level *.md (Markdown under src/ and db/ is test or app input),
+  # docs/, store/ (the store listing; the Store listing workflow checks it) and
+  # docker-publish.yml. A pull request with only those sets code=false, and the jobs below skip,
+  # which the ruleset counts as passing (acceptance skips its steps instead: a skipped matrix
+  # job reports an unexpanded name). A hand run has no base and always runs. If this job fails,
+  # code is empty and everything runs.
   changes:
     runs-on: ubuntu-latest
     outputs:
