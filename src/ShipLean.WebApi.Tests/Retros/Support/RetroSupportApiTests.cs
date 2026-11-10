@@ -8,6 +8,7 @@ using ShipLean.Contracts.Retros;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Fixtures;
+using ShipLean.TestSupport.Hosting;
 using ShipLean.TestSupport.Retros;
 using ShipLean.TestSupport.Screens;
 
@@ -135,7 +136,8 @@ public sealed class RetroSupportApiTests : ApiFixture
         using var response = await Api.ActingAs(TestUser.Tom).PostJsonAsync(Url(point));
 
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
-        (await RowsAsync(point)).ShouldHaveSingleItem().UserId.ShouldBe(SeedIds.Users.Tom);
+        var row = (await RowsAsync(point)).ShouldHaveSingleItem();
+        row.UserId.ShouldBe(SeedIds.Users.Tom);
     }
 
     private static string Url(Guid point) => $"api/retros/points/{point}/support";
