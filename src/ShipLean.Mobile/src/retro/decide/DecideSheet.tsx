@@ -19,6 +19,8 @@ import { seedTitle } from './actionTitle';
 export interface DecideSheetProps {
   point: RetroPointDto;
   projectId: string;
+  // The sprint retro the point is in.
+  sprintId: string;
   open: boolean;
   onClose: () => void;
 }
@@ -48,7 +50,7 @@ export function DecideSheet(props: DecideSheetProps) {
   );
 }
 
-function DecideForm({ point, projectId, onClose }: DecideSheetProps) {
+function DecideForm({ point, projectId, sprintId, onClose }: DecideSheetProps) {
   const theme = useTheme();
   const { dispatch } = useRetroActions();
   const [mode, setMode] = useState<Mode>('action');
@@ -68,11 +70,11 @@ function DecideForm({ point, projectId, onClose }: DecideSheetProps) {
         />
       </View>
       {mode === 'action' ? (
-        <NewActionForm point={point} projectId={projectId} onDone={done} />
+        <NewActionForm point={point} projectId={projectId} sprintId={sprintId} onDone={done} />
       ) : mode === 'existing' ? (
         <ExistingActionForm point={point} projectId={projectId} onDone={done} />
       ) : (
-        <NotNeededForm point={point} onDone={done} />
+        <NotNeededForm point={point} projectId={projectId} sprintId={sprintId} onDone={done} />
       )}
     </View>
   );
@@ -83,7 +85,12 @@ interface FormProps {
   onDone: (a: Parameters<ReturnType<typeof useRetroActions>['dispatch']>[0]) => void;
 }
 
-function NewActionForm({ point, projectId, onDone }: FormProps & { projectId: string }) {
+function NewActionForm({
+  point,
+  projectId,
+  sprintId,
+  onDone,
+}: FormProps & { projectId: string; sprintId: string }) {
   const theme = useTheme();
   const members = useRetroMembersQuery(projectId);
   const [title, setTitle] = useState(() => seedTitle(point.text));
@@ -125,9 +132,16 @@ function NewActionForm({ point, projectId, onDone }: FormProps & { projectId: st
         ))}
       </View>
       {members.error !== null ? (
-        <Text testID={retroIds.decideMembersError} style={{ color: theme.colors.danger }}>
-          Couldn't load the members.
-        </Text>
+        <View testID={retroIds.decideMembersError}>
+          <ErrorState
+            title="Couldn't load the members."
+            action={{
+              label: 'Retry',
+              busy: members.isFetching,
+              onPress: () => void members.refetch(),
+            }}
+          />
+        </View>
       ) : null}
       <Text style={{ color: theme.colors.muted, fontSize: theme.font.size.sm }}>
         Starts in New, no sprint.
@@ -143,6 +157,7 @@ function NewActionForm({ point, projectId, onDone }: FormProps & { projectId: st
             itemId: null,
             key: null,
             projectId,
+            sprintId,
             pointIds: [point.id],
             title: text,
             ownerId: owner?.id ?? null,
@@ -196,6 +211,7 @@ function ExistingActionForm({ point, projectId, onDone }: FormProps & { projectI
             kind: 'addToAction',
             itemId: chosen.workItemId,
             key: chosen.key,
+            projectId,
             pointIds: [point.id],
           })
         }
@@ -204,7 +220,12 @@ function ExistingActionForm({ point, projectId, onDone }: FormProps & { projectI
   );
 }
 
-function NotNeededForm({ point, onDone }: FormProps) {
+function NotNeededForm({
+  point,
+  projectId,
+  sprintId,
+  onDone,
+}: FormProps & { projectId: string; sprintId: string }) {
   const theme = useTheme();
   const [reason, setReason] = useState('');
   return (
@@ -224,6 +245,8 @@ function NotNeededForm({ point, onDone }: FormProps) {
             kind: 'notNeeded',
             itemId: null,
             key: null,
+            projectId,
+            sprintId,
             pointId: point.id,
             reason: reason.trim(),
           })
