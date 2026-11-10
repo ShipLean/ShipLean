@@ -2,6 +2,18 @@
 
 // WI1
 export const workItemHeaderId = 'wi-header';
+export const workItemScrollId = 'wi-scroll';
+export const workItemTypeId = 'wi-type';
+export const workItemParentId = 'wi-parent';
+export const workItemTitleId = 'wi-title';
+export const workItemOwnerId = 'wi-owner';
+export const statusLineId = 'wi-status';
+export const statusTextId = 'wi-status-text';
+export const statusVerifiedId = 'wi-status-verified';
+export const statusVerifiedById = 'wi-status-verified-by';
+export const stillTrueId = 'wi-still-true';
+export const newStatusId = 'wi-new-status';
+export const statusSayId = 'wi-status-say';
 
 // WI2
 export const needsYouSectionId = 'wi-needs-you';
