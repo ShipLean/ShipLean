@@ -175,7 +175,20 @@ export function designOverview(): FeaturesOverviewDto {
       aFeatureGroup('inProgress', active),
       aFeatureGroup('resolved', resolved),
       aFeatureGroup('proposed', proposed),
-      aFeatureGroup('completed', [], { count: 2 }),
+      aFeatureGroup('completed', [
+        aFeatureRow({
+          key: 'SHIP-742',
+          title: 'GitHub issues sync',
+          state: stateRef('completed'),
+          rank: 6,
+        }),
+        aFeatureRow({
+          key: 'SHIP-745',
+          title: 'Remember the theme before first paint',
+          state: stateRef('completed'),
+          rank: 7,
+        }),
+      ]),
     ],
     { changedSince: 3 },
   );
