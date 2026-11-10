@@ -2,9 +2,12 @@ import { fireEvent, screen } from '@testing-library/react-native';
 import { useState } from 'react';
 import { Pressable, Text } from 'react-native';
 import { UNDO } from '../actions/undo';
+import { InboxActionsContext } from '../inbox/InboxActions';
+import { InboxSheetsContext } from '../inbox/InboxSheets';
 import { fakeRunner } from '../test-support/actions';
+import { fakeInboxActions, fakeInboxSheets } from '../test-support/inbox';
 import { FeaturesProvider } from '../shell/providers/features';
-import { aFeatureRow } from '../test-support/features';
+import { aFeatureGroup, aFeatureRow, anOverview, featuresApi } from '../test-support/features';
 import { renderWithRunner } from '../test-support/renderWithRunner';
 import type { FeaturesAction } from './actions';
 import { FeatureDetails } from './details/FeatureDetails';
@@ -43,7 +46,22 @@ function Host() {
 describe('Features seams', () => {
   it('the expanded-row stub renders its root id from its props', async () => {
     const row = aFeatureRow({ key: 'SHIP-906' });
-    await renderWithRunner(<FeatureDetails row={row} projectId="p" projectKey="SHIP" />);
+    featuresApi(
+      {},
+      {
+        projectId: 'p',
+        overview: anOverview([aFeatureGroup('inProgress', [row])], { projectId: 'p' }),
+      },
+    );
+    await renderWithRunner(
+      <InboxActionsContext.Provider value={fakeInboxActions()}>
+        <InboxSheetsContext.Provider value={fakeInboxSheets()}>
+          <FeaturesActionsProvider>
+            <FeatureDetails row={row} projectId="p" projectKey="SHIP" />
+          </FeaturesActionsProvider>
+        </InboxSheetsContext.Provider>
+      </InboxActionsContext.Provider>,
+    );
     expect(screen.getByTestId(featureDetailsId('SHIP-906'))).toBeTruthy();
   });
 
