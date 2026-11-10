@@ -435,11 +435,17 @@ export function backlogVoiceSpec(ctx: BacklogVoiceContext): ScreenVoiceSpec<Back
         const isMove = ['move_relative', 'move_to', 'move_by'].includes(call.action);
         if (isMove && firstMove !== null) {
           extraMove = true;
+          rejected.push({
+            call,
+            failure: {
+              kind: 'noValidAction',
+              detail: { action: call.action, reason: 'notAllowed' },
+            },
+          });
           continue;
         }
         const out = resolveOne(call, transcript);
         if (!out.ok) {
-          if (isMove) firstMove = -1;
           rejected.push({ call, failure: out.failure });
           continue;
         }
@@ -448,7 +454,7 @@ export function backlogVoiceSpec(ctx: BacklogVoiceContext): ScreenVoiceSpec<Back
         lines.push(...out.done.lines);
         intent ??= out.done.view;
       }
-      if (extraMove && firstMove !== null && firstMove >= 0) {
+      if (extraMove && firstMove !== null) {
         const line = lines[firstMove];
         lines[firstMove] = {
           ...line,

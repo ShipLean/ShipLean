@@ -35,7 +35,9 @@ export function answerFor(
       };
     }
     case 'howFar': {
-      const open = ordered.filter((r) => r.state.category !== 'completed');
+      // A named Feature answers with its progress whatever its state; the list answers with the open ones.
+      const open =
+        only !== null ? ordered : ordered.filter((r) => r.state.category !== 'completed');
       return {
         lead:
           open.length === 0
