@@ -47,6 +47,14 @@ export function CommandComposer({ text, onChangeText, reason, onSent }: CommandC
           {mode.greyed}
         </Text>
       ) : null}
+      {why !== null ? (
+        <Text
+          testID={commandComposerReasonId}
+          style={{ color: colors.muted, fontSize: theme.font.size.xs }}
+        >
+          {why}
+        </Text>
+      ) : null}
       <TextInput
         testID={commandComposerFieldId}
         accessibilityLabel="Command"
@@ -68,14 +76,6 @@ export function CommandComposer({ text, onChangeText, reason, onSent }: CommandC
           fontSize: theme.font.size.input,
         }}
       />
-      {why !== null ? (
-        <Text
-          testID={commandComposerReasonId}
-          style={{ color: colors.muted, fontSize: theme.font.size.xs }}
-        >
-          {why}
-        </Text>
-      ) : null}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space[3] }}>
         <Text
           testID={commandComposerRouteId}

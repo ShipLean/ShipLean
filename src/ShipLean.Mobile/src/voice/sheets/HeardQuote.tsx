@@ -107,7 +107,7 @@ export function HeardQuote({ text, source, misses, fixedFrom, testID }: HeardQuo
           <Text
             testID={heardQuoteFixedFromId(testID)}
             style={{
-              color: colors.text,
+              color: colors.muted,
               fontSize: theme.font.size.body15,
               fontStyle: voice ? 'italic' : 'normal',
             }}

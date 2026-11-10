@@ -66,7 +66,7 @@ describe('HeardQuote', () => {
       const { colors } = themes[scheme];
       const first = screen.getByTestId(heardQuoteFixedFromId(heardQuoteId));
       expect(first).toHaveTextContent('“Approve D10 and set this to active”', { exact: true });
-      expect(first).toHaveStyle({ color: colors.text, fontStyle: 'italic' });
+      expect(first).toHaveStyle({ color: colors.muted, fontStyle: 'italic' });
       const fix = screen.getByTestId(heardQuoteTextId(heardQuoteId));
       expect(fix).toHaveTextContent('Fix: “No, D11, not D10”', { exact: true });
       expect(fix).toHaveStyle({ color: colors.accent, fontStyle: 'normal' });
