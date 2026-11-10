@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using ShipLean.AcceptanceTests.Harness;
 using ShipLean.TestSupport.TestIds;
 
@@ -38,10 +39,10 @@ public sealed class DecisionsPanel(IPage page, Guid itemId)
     public ILocator QuestionRows => page.GetByTestId(AsksTestIds.QuestionRow);
 
     public ILocator DecisionRow(int n) =>
-        DecisionRows.Filter(new() { Has = page.GetByTestId(AsksTestIds.DecisionLabel).GetByText($"D{n}", new() { Exact = true }) });
+        DecisionRows.Filter(new() { Has = page.GetByTestId(AsksTestIds.DecisionLabel).Filter(new() { HasTextRegex = new Regex($"^D{n}$") }) });
 
     public ILocator QuestionRow(int q) =>
-        QuestionRows.Filter(new() { Has = page.GetByTestId(AsksTestIds.QuestionLabel).GetByText($"Q{q}", new() { Exact = true }) });
+        QuestionRows.Filter(new() { Has = page.GetByTestId(AsksTestIds.QuestionLabel).Filter(new() { HasTextRegex = new Regex($"^Q{q}$") }) });
 
     // Inside one decision row
     public ILocator Answer(int n) => DecisionRow(n).GetByTestId(AsksTestIds.DecisionAnswer);
