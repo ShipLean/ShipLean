@@ -1,5 +1,6 @@
 import type { BacklogLevelParam } from '../links';
-import { TabPlaceholder } from '../shell/TabPlaceholder';
+import { BacklogView } from '../backlog/list/BacklogView';
+import { Screen } from '../ui/Screen';
 import { screenIds } from './testIds';
 
 export interface BacklogScreenProps {
@@ -10,7 +11,17 @@ export interface BacklogScreenProps {
   feature?: string;
 }
 
-// TODO: the Backlog (its levels, filtered by an Epic or a Feature) replaces this placeholder.
-export function BacklogScreen({ projectKey }: BacklogScreenProps) {
-  return <TabPlaceholder projectKey={projectKey} title="Backlog" testID={screenIds.backlog} />;
+// The Backlog tab. A link's level, epic and feature say where it opens; a new link opens afresh.
+export function BacklogScreen({ projectKey, level, epic, feature }: BacklogScreenProps) {
+  return (
+    <Screen testID={screenIds.backlog}>
+      <BacklogView
+        key={`${projectKey}|${level ?? ''}|${epic ?? ''}|${feature ?? ''}`}
+        projectKey={projectKey}
+        level={level}
+        epic={epic}
+        feature={feature}
+      />
+    </Screen>
+  );
 }
