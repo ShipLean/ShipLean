@@ -1,0 +1,3 @@
+The app needs a ShipLean account. Use the demo account given in App Review Information, on the server prod.shiplean.app. The app opens the server's own sign-in page in the browser.
+
+Voice commands need a voice model, downloaded once in the app's setup. Speech is recognised on the phone. Every voice command shows its changes on screen and applies nothing until you tap Apply or say "yes".

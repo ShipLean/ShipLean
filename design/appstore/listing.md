@@ -1,70 +1,26 @@
-# Store listing text (SHIP-930)
+# Store listing (SHIP-930)
 
-Draft for the first release, in English. The same text goes to both stores where the fields match. Limits are the stores' own. Count Apple's keywords in bytes. All the others are character counts.
+The listing text lives in [`store/`](../../store/README.md), in fastlane's layout, and is pushed to both stores from CI (SHIP-1060). Change the text there, in a pull request. This file keeps the screenshot captions, the stores' limits and Joel's decisions.
 
-The description lists only what the app does in the mock-ups (SHIP-916 and the areas after it). Before submitting, trim anything the first release doesn't ship.
+## Limits
 
-## Both stores
+The stores' own limits, which the Store listing check enforces on `store/`. Count Apple's keywords in bytes. All the others are character counts.
 
-| Field | Limit | Text |
-|---|---|---|
-| App name | 30 | ShipLean: Backlog by Voice |
+| Field | Store | Limit | File in `store/` |
+|---|---|---|---|
+| App name | both | 30 | `ios/metadata/en-US/name.txt`, `android/metadata/en-US/title.txt` |
+| Subtitle | iOS | 30 | `ios/metadata/en-US/subtitle.txt` |
+| Promotional text | iOS | 170 | `ios/metadata/en-US/promotional_text.txt` |
+| Keywords | iOS | 100 bytes | `ios/metadata/en-US/keywords.txt` |
+| What's New | iOS | 4000 | none for the first version |
+| Short description | Play | 80 | `android/metadata/en-US/short_description.txt` |
+| Description | both | 4000 | `ios/metadata/en-US/description.txt`, `android/metadata/en-US/full_description.txt` |
 
-## App Store (iOS)
-
-| Field | Limit | Text |
-|---|---|---|
-| Subtitle | 30 | Plan with your team and agents |
-| Promotional text | 170 | Answer the questions and decisions waiting on you, see how every Feature is going, and move work by voice. Every change shows on screen before it applies. |
-| Keywords | 100 bytes | agile,scrum,sprint,kanban,planning,roadmap,retro,retrospective,features,project,approval,inbox,notes |
-| Primary category | | Productivity |
-| Secondary category | | Developer Tools |
-| What's New | 4000 | (not shown for the first version) |
+The same text goes to both stores where the fields match. The description lists only what the app does in the mock-ups (SHIP-916 and the areas after it). Before submitting, trim anything the first release doesn't ship.
 
 Keywords leave out the words already in the name and subtitle (ShipLean, backlog, voice, team, agents), because Apple indexes those already.
 
-## Google Play
-
-| Field | Limit | Text |
-|---|---|---|
-| Short description | 80 | Answer what's waiting on you, see progress and move work by voice. |
-| Category | | Productivity |
-
-## Description (both stores, 4000)
-
-```
-Keep up with your team's work, answer what's waiting on you, and change priorities by voice.
-
-ShipLean is a lean planning tool for small teams and the agents that work with them. The phone app is for the times you're away from your desk: checking progress, answering questions, approving decisions and moving work up or down the backlog.
-
-HOLD TO TALK
-• Hold the mic and say what you want: "move SHIP-12 above SHIP-9", "add a note: customers want this before Friday", "what's left on this Feature?"
-• Keys, names and states on the screen are matched as you speak.
-• Every command shows its changes before anything happens. Nothing changes until you tap Apply or say "yes", and you can undo it.
-• Speech is recognised on the phone, with voice models you download once.
-
-EVERYTHING WAITING ON YOU
-• The Inbox lists the questions, decisions and approvals waiting on you, from people and agents, longest waiting first.
-• Answer from the list: tap a quick answer, approve, or hold to reply.
-• Your answer goes on the work item, for the next person or agent who picks it up.
-
-SEE HOW THINGS ARE GOING
-• Features shows progress across every Feature: on track, at risk or blocked, and what needs you.
-• "Since yesterday" sums up what changed.
-• Backlogs for Epics, Features and Stories, in rank order.
-
-RETROS
-• Add retro notes by voice during the sprint, and decide which ones become action items.
-
-FIND ANY WORK ITEM
-• The same search as ShipLean on the web, typed or spoken.
-
-WORKS WITH YOUR SERVER
-• Sign in to prod.shiplean.app or your own ShipLean server. The app uses your server's own sign-in page, in the browser.
-• Switch between your projects, choose light or dark, and get a notification when someone asks you something by name.
-
-You need a ShipLean account to use the app.
-```
+Categories (D7): Productivity, with Developer Tools second on iOS. Play takes one category, Productivity, set by hand in Play Console.
 
 ## Screenshot captions
 
