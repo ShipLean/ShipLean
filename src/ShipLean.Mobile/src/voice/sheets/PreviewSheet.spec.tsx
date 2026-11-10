@@ -131,6 +131,7 @@ describe('PreviewSheet', () => {
         batchId: 'batch-1',
       },
     ]);
+    expect(runner.dispatched[0].opts.undo).toBe(UNDO.voice);
     expect(screen.queryByTestId(previewSheetId)).toBeNull();
   });
 
@@ -153,6 +154,8 @@ describe('PreviewSheet', () => {
         batchId: 'batch-1',
       },
     ]);
+    // UNDO.typed and UNDO.voice hold the same window today, so check which one was passed.
+    expect(runner.dispatched[0].opts.undo).toBe(UNDO.typed);
   });
 
   it('saying yes while the preview is open applies without calling the model', async () => {
