@@ -9,14 +9,21 @@ import { session } from '../session/session';
 import { InboxProvider } from '../shell/providers/inbox';
 import { aPending, fakeRunner } from '../test-support/actions';
 import { TEST_ORIGIN, TEST_SECRET, aMe } from '../test-support/builders';
-import { aQuestionAsk, anAnswered, anInbox, anInboxItem } from '../test-support/inbox';
+import {
+  aQuestionAsk,
+  anAnswered,
+  anInbox,
+  anInboxItem,
+  fakeInboxActions,
+  fakeInboxSheets,
+} from '../test-support/inbox';
 import { renderInbox } from '../test-support/renderInbox';
 import { renderWithRunner } from '../test-support/renderWithRunner';
 import { kvValues } from '../test-support/storage';
 import type { InboxAction } from './actions';
 import { AnsweredList } from './AnsweredList';
-import { InboxActionsProvider, useInboxActions } from './InboxActions';
-import { InboxSheetsProvider, useInboxSheets } from './InboxSheets';
+import { InboxActionsContext, InboxActionsProvider, useInboxActions } from './InboxActions';
+import { InboxSheetsContext, InboxSheetsProvider, useInboxSheets } from './InboxSheets';
 import { InboxRow } from './InboxRow';
 import { OfflineBanner } from './OfflineBanner';
 import { AnswerSheet } from './sheets/AnswerSheet';
@@ -129,15 +136,19 @@ describe('the Inbox seams', () => {
     const noop = () => undefined;
     const screen = await renderWithRunner(
       <>
-        <InboxRow
-          projectId="p1"
-          item={story}
-          pending={[]}
-          indented
-          expanded={false}
-          onToggleExpanded={noop}
-          onOpenItem={noop}
-        />
+        <InboxActionsContext.Provider value={fakeInboxActions()}>
+          <InboxSheetsContext.Provider value={fakeInboxSheets()}>
+            <InboxRow
+              projectId="p1"
+              item={story}
+              pending={[]}
+              indented
+              expanded={false}
+              onToggleExpanded={noop}
+              onOpenItem={noop}
+            />
+          </InboxSheetsContext.Provider>
+        </InboxActionsContext.Provider>
         <AnswerSheet
           request={{ mode: 'question', item: story, ask: story.asks[0], projectId: 'p1' }}
           onClose={noop}
