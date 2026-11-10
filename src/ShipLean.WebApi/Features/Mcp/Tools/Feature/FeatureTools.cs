@@ -44,7 +44,7 @@ internal sealed class FeatureTools(
         var changes = new WorkItemChanges
         {
             StatusLine = new FieldSet<string>(status ?? string.Empty),
-            State = target is { } t && t.Id != snapshot.StateId ? new FieldSet<Guid>(t.Id) : null,
+            State = MovedTo(target?.Id, snapshot.StateId),
             Health = parsedHealth is { } h ? new FieldSet<FeatureHealth?>(h) : null,
         };
         var written = await writes.PatchAsync(resolved.Id, resolved.Key, changes, snapshot.Revision, false, SetStatusVia, cancellationToken);
@@ -86,11 +86,7 @@ internal sealed class FeatureTools(
 
         var create = new WorkItemCreate(
             resolved.Id, WorkItemTypeId.Feature, title.Trim(), parent?.Id, null,
-            target is null && parsedHealth is null ? null : new WorkItemChanges
-            {
-                State = target is null ? null : new FieldSet<Guid>(target.Id),
-                Health = parsedHealth is { } h ? new FieldSet<FeatureHealth?>(h) : null,
-            })
+            InitialChanges(target?.Id, parsedHealth))
         {
             Goal = goal ?? string.Empty,
             StatusLine = hasStatus ? status! : string.Empty,
@@ -107,13 +103,37 @@ internal sealed class FeatureTools(
         return CaptureSupport.Reply(result, $"Created Feature {written.Key} \"{result.Title}\" with slug {result.Slug}.");
     }
 
+    private static FieldSet<Guid>? MovedTo(Guid? target, Guid current) => target is { } id && id != current ? new FieldSet<Guid>(id) : null;
+
+    private static WorkItemChanges? InitialChanges(Guid? stateId, FeatureHealth? health)
+    {
+        if (stateId is null && health is null)
+        {
+            return null;
+        }
+
+        return new WorkItemChanges
+        {
+            State = stateId is { } id ? new FieldSet<Guid>(id) : null,
+            Health = health is { } h ? new FieldSet<FeatureHealth?>(h) : null,
+        };
+    }
+
     // Case-insensitive; anything else is a validation error on health. The rules about where health may be set are the store's.
     private static FeatureHealth? ParseHealth(string? health)
-        => string.IsNullOrWhiteSpace(health)
-            ? null
-            : Enum.TryParse<FeatureHealth>(health.Trim(), ignoreCase: true, out var parsed) && Enum.IsDefined(parsed)
-                ? parsed
-                : throw ApiException.Validation("Health is onTrack, atRisk or blocked.", "health");
+    {
+        if (string.IsNullOrWhiteSpace(health))
+        {
+            return null;
+        }
+
+        if (Enum.TryParse<FeatureHealth>(health.Trim(), ignoreCase: true, out var parsed) && Enum.IsDefined(parsed))
+        {
+            return parsed;
+        }
+
+        throw ApiException.Validation("Health is onTrack, atRisk or blocked.", "health");
+    }
 
     private static string? ByName(ItemNames names, WorkItemSnapshot after)
         => after.StatusVerifiedBy is { } who && names.Users.TryGetValue(who, out var name) ? name : null;
