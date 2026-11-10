@@ -10,11 +10,23 @@ const NO_FACES: ReadonlySet<string> = new Set();
 export function GridHarness({
   rowIndexes,
   scrollerHeight,
+  retitle = {},
 }: {
   rowIndexes: number[];
   /** Puts the grid in a scroller this tall, as the shell's main area is. */
   scrollerHeight?: number;
+  /** New titles for tasks, by key. */
+  retitle?: Record<string, string>;
 }) {
+  const rows = rowIndexes
+    .map((i) => VIEW.rows[i])
+    .map((row) => ({
+      ...row,
+      cells: row.cells.map((cell) => ({
+        ...cell,
+        tasks: cell.tasks.map((t) => ({ ...t, title: retitle[t.key] ?? t.title })),
+      })),
+    }));
   const grid = (
     <TaskboardDnd
       projectId={PROJECT.id}
@@ -29,7 +41,7 @@ export function GridHarness({
         projectId={PROJECT.id}
         scope={scope}
         view={VIEW}
-        rows={rowIndexes.map((i) => VIEW.rows[i])}
+        rows={rows}
         grouping="stories"
         faces={NO_FACES}
         me={undefined}

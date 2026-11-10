@@ -12,7 +12,7 @@ Hand in the report with `report_task` on your task, once per stop, whether you f
 - `red_tests`: each red test with the task that owns it, or leave out.
 - `context_used_k`: about how much context you used, in thousands of tokens.
 - `public_surface`: the types, tools, endpoints and signatures you added that others build on. Signatures only.
-- `decisions`: anything a later task would otherwise have to rediscover.
+- `decisions`: anything a later task would otherwise have to rediscover. Each one the owner should confirm is also recorded with `record_decisions` on your task.
 - `gotchas`: what cost you time, and what not to touch.
 - `left_undone`: each item with why. Each one becomes an orphan task, so name it so it can be planned.
 - `temporary_behaviour`: each file, what its TODO stands in for, and who replaces it.

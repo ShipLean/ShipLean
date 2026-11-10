@@ -58,7 +58,7 @@ export function TaskCardFace({
       data-key={card.key}
       data-state={card.state.id}
       data-style-rule={rule?.id}
-      className="paper paper-postit paper-sheet group relative grid gap-1 rounded-[2px] border p-2"
+      className="paper paper-postit paper-sheet group relative grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1 rounded-[2px] border p-2 [overflow-wrap:anywhere]"
       style={{
         ...style,
         ...ruleCardStyle(rule ?? null, 12),

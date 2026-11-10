@@ -40,7 +40,7 @@ const badgeTone: Partial<Record<AskHistoryLineDto['kind'], string>> = {
   withdrawn: 'border-dashed border-accent/45 text-ink-muted',
 };
 
-// One ask event in the History rail: its D or Q badge, who (an agent first, when one acted), when, and the wording.
+// One ask event in the History rail: its D or Q badge (a folded raise "D1–D7" shows its first label, as the design does), who (an agent first, when one acted), when, and the wording.
 export function AskHistoryLine({ line }: AskHistoryLineProps) {
   const { verb, before, detail } = wording(line);
   return (
@@ -54,7 +54,7 @@ export function AskHistoryLine({ line }: AskHistoryLineProps) {
         title={line.badge}
         className={`-ml-0.5 grid h-5.5 w-6.5 place-items-center rounded-control border bg-surface font-mono text-[length:var(--text-2xs)] font-semibold ${badgeTone[line.kind] ?? 'border-accent/45'}`}
       >
-        {line.badge}
+        {line.badge.split('–')[0]}
       </span>
       <div className="grid grid-cols-[minmax(0,1fr)] gap-1">
         <div className="flex flex-wrap items-center gap-1.5 text-[length:var(--text-sm)]">
