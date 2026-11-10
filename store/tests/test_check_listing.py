@@ -427,9 +427,10 @@ class CiSkipsListingOnlyPullRequests(unittest.TestCase):
 
     def test_store_files_skip_and_code_does_not(self):
         pattern = self.regex()
-        for path in ("store/README.md", "store/ios/metadata/en-US/name.txt", "store/check_listing.py"):
+        for path in ("store/README.md", "store/ios/metadata/en-US/name.txt", "store/check_listing.py",
+                     "store/assets/exports/play/icon-512.png"):
             self.assertTrue(pattern.match(path), path)
-        for path in ("design/appstore/exports/a.png", "src/App.cs", "storefront/a.txt", "store.txt"):
+        for path in ("design/mobileapp/app.js", "src/App.cs", "storefront/a.txt", "store.txt"):
             self.assertFalse(pattern.match(path), path)
 
 

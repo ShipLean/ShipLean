@@ -65,7 +65,7 @@
         <h1 style="font-size:${fs}px">${(aw !== 390 && sh.th) || sh.h}</h1><p style="font-size:${ss}px">${(aw !== 390 && sh.ts) || sh.s}</p>
       </div>
       <div class="screen" style="width:${sw}px;height:${shH}px;border-radius:${Math.round(Math.min(sw, 390 * k) * 0.075)}px">
-        <iframe src="../mobileapp/${sh.page}.html?state=${sh.state}&theme=${theme}${size}" width="${aw}" height="${ah}" scrolling="no" style="transform:scale(${k})"></iframe>
+        <iframe src="../../design/mobileapp/${sh.page}.html?state=${sh.state}&theme=${theme}${size}" width="${aw}" height="${ah}" scrolling="no" style="transform:scale(${k})"></iframe>
       </div>
     </div>`;
   }
@@ -73,7 +73,7 @@
   // Google Play feature graphic: no alpha, no store badges, no claims; key content away from the edges.
   function feature() {
     const k = 0.62;
-    const phone = (page, state, x, y) => `<div class="screen fg" style="left:${x}px;top:${y}px;width:${390 * k}px;height:${844 * k}px;border-radius:${Math.round(390 * k * 0.075)}px"><iframe src="../mobileapp/${page}.html?state=${state}&theme=light" width="390" height="844" scrolling="no" style="transform:scale(${k})"></iframe></div>`;
+    const phone = (page, state, x, y) => `<div class="screen fg" style="left:${x}px;top:${y}px;width:${390 * k}px;height:${844 * k}px;border-radius:${Math.round(390 * k * 0.075)}px"><iframe src="../../design/mobileapp/${page}.html?state=${state}&theme=light" width="390" height="844" scrolling="no" style="transform:scale(${k})"></iframe></div>`;
     return `<div class="feature" style="width:1024px;height:500px">
       <div class="brand">${svg(76, 76, '0 0 26 26', `<rect width="26" height="26" rx="7" fill="#fff"/><g fill="#2563c9">${GLYPH}</g>`)}<span>ShipLean</span></div>
       <h1>Your backlog,<br>by voice.</h1>

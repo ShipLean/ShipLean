@@ -7,7 +7,6 @@ on:
   pull_request:
     paths:
       - store/**
-      - design/appstore/exports/**
       - .github/workflows/store-listing.yml
       - .github/actions/store-listing-setup/**
   workflow_dispatch:
