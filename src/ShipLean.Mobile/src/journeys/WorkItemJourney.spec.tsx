@@ -141,6 +141,11 @@ describe('Inbox to Work item journey', () => {
       changes: { state: { value: active!.id } },
     });
     expect(now.state).toBe(active);
+    await waitFor(() =>
+      expect(
+        within(screen.getByTestId(workItemHeaderId)).getByTestId(primitiveIds.statePill),
+      ).toHaveTextContent(active!.name),
+    );
   });
 
   it('undoes a typed note by archiving it', async () => {
@@ -181,8 +186,8 @@ describe('Inbox to Work item journey', () => {
     return { ...built, route, reads };
   };
 
-  // Red on purpose (SHIP-1195): WorkItemScreen reads the item again only on pull down (Loaded.refresh,
-  // screens/WorkItemScreen.tsx:111-124); nothing refreshes it when a setState is sent, so the header keeps the old state.
+  // SHIP-1195 found it, SHIP-1325 fixed it: a sent setState reads the item again (WorkItemActionsProvider), so the
+  // header shows the new state. Red if the provider stops refreshing on a sent change.
   it('SHIP-1195 shows Active in the header after the state change is sent', async () => {
     const { api, item } = build();
     await openFeatureFromInbox(api);
@@ -197,15 +202,15 @@ describe('Inbox to Work item journey', () => {
     );
   });
 
-  // Red on purpose (SHIP-1195): the same missing refresh; a refused send leaves the screen as it was.
+  // A refused send reads the item again too, so the screen shows what the server holds. Red if only sent changes
+  // refresh.
   it('SHIP-1195 re-reads the screen after a 409 on a state change', async () => {
     const { api, route, reads } = await stateChangeRefused();
     await waitFor(() => expect(api.callsTo(route.read).length).toBeGreaterThan(reads));
   });
 
-  // Red on purpose (SHIP-1195): nothing on the Work item screen shows a failed setState. The runner's pending entry
-  // carries "Changed on the server. Open SHIP-906 to check.", but only the Needs you cards, the Inbox rows and the
-  // voice banner read a failed entry.
+  // The refused change shows on the item with the runner's reason, "Changed on the server. Open SHIP-906 to check."
+  // (workItem/header/RefusedChanges). Red if the screen drops the banner.
   it('SHIP-1195 shows the conflict copy after a 409 on a state change', async () => {
     await stateChangeRefused();
     expect(await screen.findByText(/Changed on the server/)).toBeOnTheScreen();
