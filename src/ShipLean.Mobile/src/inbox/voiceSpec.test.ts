@@ -56,6 +56,7 @@ describe('inboxVoiceSpec', () => {
     );
     expect(r.actions).toEqual([{ ...base('SHIP-906'), kind: 'approve', numbers: [10] }]);
     expect(r.lines).toHaveLength(1);
+    expect(r.lines[0].text).toBe('Confirm D10 on SHIP-906');
     expect(r.lines[0].warning).toBeUndefined();
   });
 
@@ -111,6 +112,37 @@ describe('inboxVoiceSpec', () => {
         option: 'Personal team',
       },
     ]);
+    const second = done(
+      run('Go with wait for org on SHIP-924, Q1', [
+        ['chooseDecision', { key: 'SHIP-924', label: 'Q1', option: 'Wait for org' }],
+      ]),
+    );
+    expect(second.actions[0]).toMatchObject({
+      kind: 'chooseOption',
+      optionIndex: 1,
+      option: 'Wait for org',
+    });
+  });
+
+  it('credits an agent ask to the agent, not to the person who ran it', () => {
+    const r = done(
+      run('Answer SHIP-924: ship it', [['answer', { key: 'SHIP-924', note: 'x' }]], 'ship it'),
+    );
+    expect(r.lines[0].text).toBe('Answer Claude Code on SHIP-924');
+    const ctx = spec.context() as {
+      items: { key: string; asks: { label: string; from: string }[] }[];
+    };
+    expect(ctx.items.find((i) => i.key === 'SHIP-924')!.asks[0].from).toBe('Claude Code');
+    const words = 'ship it';
+    const byName = run(
+      `Answer Claude Code: ${words}`,
+      [['answer', { person: 'Claude Code', note: 'x' }]],
+      words,
+    );
+    const f = failed(byName);
+    expect(f.kind).toBe('ambiguous');
+    if (f.kind === 'ambiguous')
+      expect(f.detail.candidates.map((c) => c.key).sort()).toEqual(['SHIP-906', 'SHIP-924']);
   });
 
   it('answers Priya Shah on SHIP-892 with the words copied exactly', () => {
@@ -350,6 +382,10 @@ describe('inboxVoiceSpec', () => {
         );
         if (row.calls.length === 0) {
           expect(failed(result).kind, row.utterance).toBe('unclear');
+          continue;
+        }
+        if (row.utterance === 'Approve D1 on SHIP-12') {
+          failed(result);
           continue;
         }
         if (FAILS[row.utterance] !== undefined) {
