@@ -18,7 +18,7 @@ export function QuickAnswers({
           key={`${index}-${option}`}
           type="button"
           data-testid={ids.questionQuickAnswer}
-          className="h-7 max-w-full rounded-control border border-edge bg-sunken px-3 text-left text-[length:var(--text-sm)] text-ink hover:bg-signal-soft"
+          className="min-h-7 max-w-full rounded-control border border-edge bg-sunken px-3 py-1 text-left [overflow-wrap:anywhere] text-[length:var(--text-sm)] text-ink hover:bg-signal-soft"
           onClick={() => onChoose(option)}
         >
           {option}
