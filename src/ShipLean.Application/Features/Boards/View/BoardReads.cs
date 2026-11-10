@@ -27,7 +27,8 @@ public sealed class BoardReads(NpgsqlDataSource dataSource, ICurrentUser current
                w.column_order AS columnOrder, w.revision AS revision,
                w.created_at AS createdAt, cb.id AS createdById, cb.name AS createdByName,
                w.changed_at AS changedAt, ch.id AS changedById, ch.name AS changedByName,
-               w.state_changed_at AS stateChangedAt, w.original_system AS originalSystem, w.original_system_id AS originalSystemId
+               w.state_changed_at AS stateChangedAt, w.original_system AS originalSystem, w.original_system_id AS originalSystemId,
+               w.health AS health
         FROM work_item w
         JOIN state s ON s.id = w.state_id
         LEFT JOIN sprint sp ON sp.id = w.sprint_id

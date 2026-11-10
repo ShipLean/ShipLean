@@ -1,5 +1,6 @@
 using Agoda.IoC.Core;
 using ShipLean.Application.Markdown;
+using ShipLean.Application.WorkItems.History;
 using ShipLean.Contracts.Boards;
 using ShipLean.Contracts.Criteria;
 using ShipLean.Contracts.Persisted;
@@ -135,8 +136,7 @@ public sealed class BoardViewBuilder(
             board.Settings.StyleRules.FirstOrDefault(r => r.Enabled && evaluator.Matches(r.Criteria, values))?.Id,
             extraFields.For(row, type, board.Settings.CardFields),
             row.Revision,
-            // TODO: read health from work_item.health on Features board cards.
-            null);
+            type == WorkItemTypeId.Feature ? WorkItemFieldView.ParseHealth(row.Health) : null);
     }
 
     // The points of every story-level item below the card, nested Features included; null when none of them has points.

@@ -96,4 +96,112 @@ public class FeatureToolsTests : McpFixture
         error.GetProperty("code").GetString().ShouldBe(ApiErrorCodes.Validation);
         error.GetProperty("field").GetString().ShouldBe("slug");
     }
+    private async Task<(int Revision, string? Health, string StatusLine, string? Agent)> HealthStateAsync(string key)
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var row = await connection.QuerySingleAsync("SELECT revision, health, status_line AS statusLine, health_set_agent AS agent FROM work_item WHERE key = @key", new { key });
+        return ((int)row.revision, (string?)row.health, (string)row.statusline ?? string.Empty, (string?)row.agent);
+    }
+
+    private async Task<string> NewFeatureKeyAsync(string title)
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var id = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("feature").WithTitle(title).InsertAsync(connection);
+        return await connection.QuerySingleAsync<string>("SELECT key FROM work_item WHERE id = @id", new { id });
+    }
+
+    [Test]
+    public async Task SetStatus_WhenHealthGiven_ShouldSetHealthInTheSameRevision()
+    {
+        var token = await TokenAsync(TestUser.Joel, ReadWrite);
+        var key = await NewFeatureKeyAsync("Health in one write");
+        var before = await HealthStateAsync(key);
+
+        var reply = await CallToolAsync(token, "set_status", $$"""{"feature":"{{key}}","status":"Vendor slipped","health":"atRisk"}""");
+
+        reply.IsToolError().ShouldBeFalse(reply.ResultText());
+        var after = await HealthStateAsync(key);
+        after.Health.ShouldBe("atRisk");
+        after.StatusLine.ShouldBe("Vendor slipped");
+        after.Revision.ShouldBe(before.Revision + 1);
+    }
+
+    [Test]
+    public async Task SetStatus_WhenHealthCaseDiffers_ShouldStillSetIt()
+    {
+        var token = await TokenAsync(TestUser.Joel, ReadWrite);
+        var key = await NewFeatureKeyAsync("Health case");
+
+        var reply = await CallToolAsync(token, "set_status", $$"""{"feature":"{{key}}","status":"Stuck","health":"BLOCKED"}""");
+
+        reply.IsToolError().ShouldBeFalse(reply.ResultText());
+        (await HealthStateAsync(key)).Health.ShouldBe("blocked");
+    }
+
+    [Test]
+    public async Task SetStatus_WhenHealthInvalid_ShouldReturnValidationOnHealth()
+    {
+        var token = await TokenAsync(TestUser.Joel, ReadWrite);
+        var key = await NewFeatureKeyAsync("Health invalid");
+        var before = await HealthStateAsync(key);
+
+        var reply = await CallToolAsync(token, "set_status", $$"""{"feature":"{{key}}","status":"Fine","health":"sunny"}""");
+
+        reply.IsToolError().ShouldBeTrue();
+        var error = reply.Structured().GetProperty("error");
+        error.GetProperty("code").GetString().ShouldBe(ApiErrorCodes.Validation);
+        error.GetProperty("field").GetString().ShouldBe("health");
+        (await HealthStateAsync(key)).ShouldBe(before);
+    }
+
+    [Test]
+    public async Task SetStatus_WhenHealthGiven_ShouldStampTheAgent()
+    {
+        var token = await TokenAsync(TestUser.Joel, ReadWrite);
+        var key = await NewFeatureKeyAsync("Health agent");
+
+        var reply = await CallToolAsync(token, "set_status", $$"""{"feature":"{{key}}","status":"On it","health":"onTrack"}""");
+
+        reply.IsToolError().ShouldBeFalse(reply.ResultText());
+        (await HealthStateAsync(key)).Agent.ShouldBe("Test Agent (unverified)");
+    }
+
+    [Test]
+    public async Task SetStatus_WhenHealthOmitted_ShouldLeaveHealthAlone()
+    {
+        var token = await TokenAsync(TestUser.Joel, ReadWrite);
+        var key = await NewFeatureKeyAsync("Health kept");
+        (await CallToolAsync(token, "set_status", $$"""{"feature":"{{key}}","status":"One","health":"atRisk"}""")).IsToolError().ShouldBeFalse();
+
+        var reply = await CallToolAsync(token, "set_status", $$"""{"feature":"{{key}}","status":"Two, blocked on the vendor"}""");
+
+        reply.IsToolError().ShouldBeFalse(reply.ResultText());
+        (await HealthStateAsync(key)).Health.ShouldBe("atRisk");
+    }
+
+    [Test]
+    public async Task CreateFeature_WhenHealthGiven_ShouldCreateWithHealth()
+    {
+        var token = await TokenAsync(TestUser.Joel, ReadWrite);
+
+        var reply = await CallToolAsync(token, "create_feature", """{"project":"SHIP","title":"Born at risk","goal":"Prove health at create.","health":"atRisk"}""");
+
+        reply.IsToolError().ShouldBeFalse(reply.ResultText());
+        var key = reply.Structured().GetProperty("key").GetString()!;
+        var created = await HealthStateAsync(key);
+        created.Health.ShouldBe("atRisk");
+        created.Revision.ShouldBe(1);
+        created.Agent.ShouldBe("Test Agent (unverified)");
+    }
+
+    [Test]
+    public async Task CreateFeature_WhenHealthOmitted_ShouldLeaveHealthNull()
+    {
+        var token = await TokenAsync(TestUser.Joel, ReadWrite);
+
+        var reply = await CallToolAsync(token, "create_feature", """{"project":"SHIP","title":"Born plain","goal":"No health."}""");
+
+        reply.IsToolError().ShouldBeFalse(reply.ResultText());
+        (await HealthStateAsync(reply.Structured().GetProperty("key").GetString()!)).Health.ShouldBeNull();
+    }
 }
