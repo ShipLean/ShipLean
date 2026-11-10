@@ -1,6 +1,7 @@
 // The phone app's Inbox: everything in a project waiting on the signed-in person, and what they answered. C#:
 // ShipLean.Contracts.Inbox. Nothing is omitted on the wire: absent values are null and lists are []. Timestamps are ISO
 // 8601 strings with a UTC offset, each next to a server-formatted label.
+import { api, type RequestOptions } from './client';
 import type { UserRef, WorkItemTypeId } from './refs';
 
 export const INBOX_ASK_KINDS = ['decision', 'question', 'mention', 'status'] as const;
@@ -136,3 +137,25 @@ export interface AnsweredNextDto {
 export interface MentionReplyRequest {
   body: string;
 }
+
+export const inboxKeys = {
+  inbox: (projectId: string) => ['inbox', projectId] as const,
+  answered: (projectId: string) => ['inbox', projectId, 'answered'] as const,
+};
+
+const projectInbox = (projectId: string) => `/api/projects/${encodeURIComponent(projectId)}/inbox`;
+const mentionPath = (mentionId: string) => `/api/mentions/${encodeURIComponent(mentionId)}`;
+
+export const getInbox = (projectId: string, options?: RequestOptions) =>
+  api.get<InboxDto>(projectInbox(projectId), options);
+
+export const getAnswered = (projectId: string, options?: RequestOptions) =>
+  api.get<AnsweredDto>(`${projectInbox(projectId)}/answered`, options);
+
+/** 204. An open mention becomes seen; any other state is left as it is. */
+export const markMentionSeen = (mentionId: string) =>
+  api.post<void>(`${mentionPath(mentionId)}/seen`);
+
+/** 204. body is Markdown, posted as a comment that starts "@<their full name>, ". */
+export const replyToMention = (mentionId: string, body: string) =>
+  api.post<void>(`${mentionPath(mentionId)}/reply`, { body } satisfies MentionReplyRequest);

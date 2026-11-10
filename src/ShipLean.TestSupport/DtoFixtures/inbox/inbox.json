@@ -1,0 +1,175 @@
+{
+  "projectId": "00000002-0000-4000-8000-000000000001",
+  "openAsks": 5,
+  "openItems": 2,
+  "everWaited": true,
+  "loadedAtLabel": "9:12",
+  "items": [
+    {
+      "id": "00000005-0000-4000-8001-000000000140",
+      "key": "SHIP-140",
+      "type": "feature",
+      "title": "Saved cards at checkout",
+      "revision": 12,
+      "underKey": null,
+      "oldestAt": "2026-11-02T08:30:00+00:00",
+      "ageLabel": "4d",
+      "longWait": true,
+      "waitedOnBy": [
+        {
+          "key": "SHIP-152",
+          "title": "Express checkout button"
+        },
+        {
+          "key": "SHIP-153",
+          "title": "Card expiry reminders"
+        },
+        {
+          "key": "SHIP-154",
+          "title": "One-tap reorder"
+        }
+      ],
+      "waitedOnByMore": 2,
+      "asks": [
+        {
+          "kind": "decision",
+          "label": "D1",
+          "at": "2026-11-04T10:05:00+00:00",
+          "atLabel": "4 Nov",
+          "from": {
+            "id": "0199f000-0000-7000-8000-000000000001",
+            "name": "Joel Dickson",
+            "initials": "JD",
+            "avatarColour": "#5b6b8c",
+            "photoUrl": null
+          },
+          "agentName": "Claude Code (claude.ai)",
+          "decision": {
+            "number": 1,
+            "question": "Where do saved cards live?",
+            "recommended": "In the payments service",
+            "alternatives": [
+              "In the customer profile",
+              "In a new cards service"
+            ]
+          },
+          "question": null,
+          "mention": null,
+          "status": null
+        },
+        {
+          "kind": "status",
+          "label": "Status",
+          "at": "2026-11-02T08:30:00+00:00",
+          "atLabel": "2 Nov",
+          "from": {
+            "id": "00000001-0000-4000-8000-000000000005",
+            "name": "Sam Lee",
+            "initials": "SL",
+            "avatarColour": "#3f9b6e",
+            "photoUrl": null
+          },
+          "agentName": null,
+          "decision": null,
+          "question": null,
+          "mention": null,
+          "status": {
+            "statusLine": "Card list built; expiry rules waiting on Q1.",
+            "verifiedAt": "2026-11-02T08:30:00+00:00"
+          }
+        }
+      ]
+    },
+    {
+      "id": "00000005-0000-4000-8001-000000000141",
+      "key": "SHIP-141",
+      "type": "story",
+      "title": "Pick a saved card",
+      "revision": 7,
+      "underKey": "SHIP-140",
+      "oldestAt": "2026-11-05T14:00:00+00:00",
+      "ageLabel": "1d",
+      "longWait": false,
+      "waitedOnBy": [],
+      "waitedOnByMore": 0,
+      "asks": [
+        {
+          "kind": "question",
+          "label": "Q1",
+          "at": "2026-11-05T14:00:00+00:00",
+          "atLabel": "5 Nov",
+          "from": {
+            "id": "0199f000-0000-7000-8000-000000000001",
+            "name": "Joel Dickson",
+            "initials": "JD",
+            "avatarColour": "#5b6b8c",
+            "photoUrl": null
+          },
+          "agentName": "Claude Code (claude.ai)",
+          "decision": null,
+          "question": {
+            "number": 1,
+            "text": "How large can a card image be?",
+            "options": [
+              "20 MB",
+              "50 MB"
+            ]
+          },
+          "mention": null,
+          "status": null
+        },
+        {
+          "kind": "mention",
+          "label": "@1",
+          "at": "2026-11-05T16:20:00+00:00",
+          "atLabel": "5 Nov",
+          "from": {
+            "id": "00000001-0000-4000-8000-000000000002",
+            "name": "Priya Shah",
+            "initials": "PS",
+            "avatarColour": "#2f7fd8",
+            "photoUrl": null
+          },
+          "agentName": null,
+          "decision": null,
+          "question": null,
+          "mention": {
+            "mentionId": "0000000c-0000-4000-8001-000000000001",
+            "commentId": "00000005-0000-4000-8002-000000000901",
+            "excerpt": "@Tom Okafor can you check the card art with design before we ship?"
+          },
+          "status": null
+        },
+        {
+          "kind": "mention",
+          "label": "@2",
+          "at": "2026-11-06T09:00:00+00:00",
+          "atLabel": "06:00",
+          "from": {
+            "id": "00000001-0000-4000-8000-000000000002",
+            "name": "Priya Shah",
+            "initials": "PS",
+            "avatarColour": "#2f7fd8",
+            "photoUrl": null
+          },
+          "agentName": "Claude Code (claude.ai)",
+          "decision": null,
+          "question": null,
+          "mention": {
+            "mentionId": "0000000c-0000-4000-8001-000000000002",
+            "commentId": "00000005-0000-4000-8002-000000000902",
+            "excerpt": "@Tom Okafor the expiry banner copy is ready for a look…"
+          },
+          "status": null
+        }
+      ]
+    }
+  ],
+  "otherProjects": [
+    {
+      "projectId": "00000002-0000-4000-8000-000000000002",
+      "projectKey": "OPS",
+      "openAsks": 3
+    }
+  ]
+}
