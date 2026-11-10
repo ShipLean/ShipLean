@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using ShipLean.AcceptanceTests.Harness;
 using ShipLean.AcceptanceTests.Pages.WorkItem;
 using ShipLean.TestSupport;
@@ -55,6 +54,7 @@ public class DecisionsTests : SeededAcceptanceTest
         await Expect(panel.Toasts.Filter(new() { HasText = "D1 withdrawn. It stays listed." })).ToBeVisibleAsync();
         await Page.ReloadAsync();
         await Expect(panel.DecisionRow(1)).ToHaveAttributeAsync("data-state", "withdrawn");
+        await Expect(panel.DecisionRow(1)).ToBeVisibleAsync();
         await Expect(panel.Answer(1)).ToHaveCSSAsync("text-decoration-line", "line-through");
     }
 
