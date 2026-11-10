@@ -16,20 +16,21 @@ using ShipLean.TestSupport.Hosting;
 
 namespace ShipLean.WebApi.Tests.Inbox;
 
-// GET inbox/answered through the real host and Postgres. The clock is pinned at 12:00 UTC on 10 Nov in a UTC+7 zone, so the
-// server's day began at 17:00 UTC on 9 Nov. Every test arranges its own signed-in user, items and events: the seed already
+// GET inbox/answered through the real host and Postgres. The clock is pinned at 12:00 UTC today in a UTC+7 zone, so the
+// server's day began at 17:00 UTC yesterday. Every test arranges its own signed-in user, items and events: the seed already
 // holds answers for Tom.
 [TestFixture]
 public class AnsweredReaderTests : ApiFixture
 {
     private const string Agent = "Claude Code (test)";
+    private const string OtherAgent = "Claude Code (other)";
 
     private static readonly JsonSerializerOptions Wire = new(JsonSerializerDefaults.Web)
     {
         Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, allowIntegerValues: false) },
     };
 
-    private static readonly DateTimeOffset Now = new(2026, 11, 10, 12, 0, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset Now = TestDates.Today.AddHours(12);
 
     private static readonly TimeZoneInfo Zone = TimeZoneInfo.CreateCustomTimeZone("UTC+7", TimeSpan.FromHours(7), "UTC+7", "UTC+7");
 
@@ -161,15 +162,15 @@ public class AnsweredReaderTests : ApiFixture
         var answeredAt = Now.AddHours(-5);
         await DecisionEventsAsync(connection, item, me, "confirmed", answeredAt, 1);
         // The earliest qualifying event wins, whatever else follows it, and an earlier comment doesn't count.
-        await new CommentBuilder(item).WithAuthor(SeedIds.Users.Priya).WithAgentName("Codex").WithCreatedAt(answeredAt.AddMinutes(-1)).InsertAsync(connection);
+        await new CommentBuilder(item).WithAuthor(SeedIds.Users.Priya).WithAgentName(OtherAgent).WithCreatedAt(answeredAt.AddMinutes(-1)).InsertAsync(connection);
         var pickedUpAt = answeredAt.AddMinutes(20);
-        await new CommentBuilder(item).WithAuthor(SeedIds.Users.Priya).WithAgentName("Codex").WithCreatedAt(pickedUpAt).InsertAsync(connection);
+        await new CommentBuilder(item).WithAuthor(SeedIds.Users.Priya).WithAgentName(OtherAgent).WithCreatedAt(pickedUpAt).InsertAsync(connection);
         await new CommentBuilder(item).WithAuthor(SeedIds.Users.Priya).WithCreatedAt(answeredAt.AddHours(1)).InsertAsync(connection);
 
         var next = (await GetAsync(me)).Rows.Single().Next!;
 
         next.Kind.ShouldBe(AnsweredNextKind.AgentPickedUp);
-        next.AgentName.ShouldBe("Codex");
+        next.AgentName.ShouldBe(OtherAgent);
         next.By!.Id.ShouldBe(SeedIds.Users.Priya);
         next.At.ShouldBe(pickedUpAt);
         next.AtLabel.ShouldBe(DisplayDate.Relative(pickedUpAt, Clock));
@@ -211,6 +212,26 @@ public class AnsweredReaderTests : ApiFixture
         next.By!.Id.ShouldBe(SeedIds.Users.Priya);
         next.AgentName.ShouldBeNull();
         next.At.ShouldBe(repliedAt);
+    }
+
+    [Test]
+    public async Task GetAnswered_WhenAnotherPersonChangesDecisionAfter_ShouldSetPersonReplied()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var me = await MemberAsync(connection);
+        var item = await ItemAsync(connection);
+        var answeredAt = Now.AddHours(-5);
+        await DecisionEventsAsync(connection, item, me, "confirmed", answeredAt, 1);
+        var (decision, _) = await new DecisionBuilder(item).Number(2).BuildAsync(connection);
+        var changedAt = answeredAt.AddMinutes(10);
+        var changed = await new CommentBuilder(item).WithAuthor(SeedIds.Users.Priya).WithCreatedAt(changedAt).InsertAsync(connection);
+        await new AskTagBuilder().Comment(changed).Kind("changed").Decision(decision).BuildAsync(connection);
+
+        var next = (await GetAsync(me)).Rows.Single().Next!;
+
+        next.Kind.ShouldBe(AnsweredNextKind.PersonReplied);
+        next.By!.Id.ShouldBe(SeedIds.Users.Priya);
+        next.At.ShouldBe(changedAt);
     }
 
     [Test]
@@ -329,7 +350,7 @@ public class AnsweredReaderTests : ApiFixture
         var replied = await ItemAsync(connection, "Replied");
         var yesterdayPickedUp = await ItemAsync(connection, "Yesterday picked up");
         var today = DisplayDate.StartOfDay(DisplayDate.Today(Now, Zone), Zone);
-        today.ShouldBe(new DateTimeOffset(2026, 11, 9, 17, 0, 0, TimeSpan.Zero));
+        today.ShouldBe(TestDates.Today.AddHours(-7));
 
         // Just after the server's midnight counts as today (a UTC midnight would call it yesterday), and one minute before is not.
         var justToday = today.AddMinutes(1);
