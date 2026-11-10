@@ -27,7 +27,6 @@ public static class ActionUsageMap
         Add(ActionUsage.Track(UsageEventNames.AuthSignedOut), "Auth.Logout");
         Add(ActionUsage.Track(UsageEventNames.AuthPasswordChanged), "Auth.ChangePassword");
         Add(ActionUsage.Track(UsageEventNames.AuthOtherSessionsSignedOut), "Auth.SignOutOthers");
-        Add(ActionUsage.Untracked("An operator switch (SHIPLEAN_SIGNUP_ENABLED), on for minutes to make one account such as a store reviewer's; not a product feature to measure."), "Auth.SignUp");
         Add(ActionUsage.Track(UsageEventNames.AgentRevoked), "ConnectedAgents.Revoke");
         Add(ActionUsage.Track(UsageEventNames.AgentSessionStarted), "AgentSession.Start");
         Add(ActionUsage.Track(UsageEventNames.AgentSessionStopped), "AgentSession.Stop");

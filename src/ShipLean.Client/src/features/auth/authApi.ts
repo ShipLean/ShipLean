@@ -19,10 +19,6 @@ export const fetchInstance = () => api.get<InstanceDto>('/api/auth/instance');
 export const login = (email: string, password: string) =>
   api.post<MeDto>('/api/auth/login', { email, password });
 
-// 404 while SHIPLEAN_SIGNUP_ENABLED is off on the server.
-export const signUp = (name: string, email: string, password: string) =>
-  api.post<MeDto>('/api/auth/signup', { name, email, password });
-
 export const changePassword = (current: string, next: string) =>
   api.post<MeDto>('/api/auth/password', { current, new: next });
 
