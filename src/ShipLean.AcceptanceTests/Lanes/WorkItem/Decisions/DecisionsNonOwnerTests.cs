@@ -1,6 +1,7 @@
 using ShipLean.AcceptanceTests.Harness;
 using ShipLean.AcceptanceTests.Pages.WorkItem;
 using ShipLean.TestSupport;
+using ShipLean.TestSupport.Hosting;
 
 namespace ShipLean.AcceptanceTests.Lanes.WorkItem.Decisions;
 
