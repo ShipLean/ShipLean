@@ -1,6 +1,6 @@
 import type { BacklogLevel } from '@shiplean/core/api/backlog';
 import type { BacklogRowDto } from '@shiplean/core/api/views';
-import { act, fireEvent, screen, within } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 import { links } from '../../links';
 import { BacklogScreen } from '../../screens/BacklogScreen';
 import { screenIds } from '../../screens/testIds';
@@ -53,6 +53,7 @@ jest.mock('../../voice/VoiceProvider', () => {
 
 const PROJECT = aProject();
 const FEATURES = `GET /api/projects/${PROJECT.id}/backlogs/features`;
+const EPICS = `GET /api/projects/${PROJECT.id}/backlogs/epics`;
 const STORIES = `GET /api/projects/${PROJECT.id}/backlog`;
 
 const anEpic = (key: string, title: string) =>
@@ -184,13 +185,6 @@ describe.each(['light', 'dark'] as const)('Backlog tab (%s)', (scheme) => {
     expect(health('SHIP-907')).toHaveTextContent('At risk');
     expect(health('SHIP-891')).toHaveTextContent('Blocked');
   });
-});
-
-describe('Backlog tab', () => {
-  beforeEach(() => {
-    mockPush.mockClear();
-    mockVoice.mockClear();
-  });
 
   it('renders the applied state: SHIP-906 at rank 2 marked up from 4', async () => {
     const before = designFeatures();
@@ -209,7 +203,7 @@ describe('Backlog tab', () => {
       {},
       { [FEATURES]: () => ({ ...aBacklogView('features', reads++ === 0 ? before : after) }) },
     );
-    const { queryClient } = await renderBacklog();
+    const { queryClient } = await renderBacklog({ scheme });
     await screen.findByTestId(backlogRowId('SHIP-707'));
     expect(screen.queryByTestId(backlogMovedId('SHIP-906'))).toBeNull();
 
@@ -219,8 +213,15 @@ describe('Backlog tab', () => {
 
     expect(await screen.findByTestId(backlogMovedId('SHIP-906'))).toHaveTextContent('↑ from 4');
     expect(screen.getByTestId(backlogRankId('SHIP-906'))).toHaveTextContent('2');
-    expect(screen.getByTestId(backlogMovedId('SHIP-907'))).toHaveTextContent('↓ from 2');
+    expect(screen.queryByTestId(backlogMovedId('SHIP-907'))).toBeNull();
     expect(screen.queryByTestId(backlogMovedId('SHIP-707'))).toBeNull();
+  });
+});
+
+describe('Backlog tab', () => {
+  beforeEach(() => {
+    mockPush.mockClear();
+    mockVoice.mockClear();
   });
 
   it('drops the moved marker after 3 s', async () => {
@@ -367,6 +368,35 @@ describe('Backlog tab', () => {
     expect(within(error).getByText('The filter is not valid.')).toBeOnTheScreen();
   });
 
+  it('shows the error, no rows and no unfiltered read when the Epics read fails under an Epic link', async () => {
+    const api = makeApi({}, { [EPICS]: () => apiError(500, 'internal_error') });
+    await renderBacklog({ level: 'features', epic: 'SHIP-3' });
+
+    expect(await screen.findByTestId(uiIds.errorState)).toBeOnTheScreen();
+    expect(screen.queryAllByTestId(/^backlog-row-/)).toHaveLength(0);
+    expect(screen.queryAllByTestId(/^backlog-move-/)).toHaveLength(0);
+    expect(api.callsTo(FEATURES).filter((c) => queryOf(c).get('filter') === '')).toHaveLength(0);
+    expect(api.callsTo(FEATURES)).toHaveLength(0);
+  });
+
+  it('shows no cached unfiltered rows while the Epic of a voice filter is still being read', async () => {
+    const epics = new Promise<never>(() => {});
+    makeApi({}, { [EPICS]: () => epics });
+    await renderBacklog({ feature: 'SHIP-906' });
+    await screen.findByTestId(backlogRowId('SHIP-921'));
+    const onView = () => mockVoice.mock.calls.at(-1)![1].onView as (v: unknown) => void;
+    await act(async () => {
+      onView()({ kind: 'screen', command: 'level', args: { level: 'features' } });
+    });
+    await screen.findByTestId(backlogRowId('SHIP-707'));
+
+    await act(async () => {
+      onView()({ kind: 'screen', command: 'filter', args: { chip: 'epic', key: 'SHIP-3' } });
+    });
+
+    expect(screen.queryAllByTestId(/^backlog-row-/)).toHaveLength(0);
+  });
+
   it('opens the Move sheet stub for the row', async () => {
     makeApi();
     await renderBacklog();
@@ -402,7 +432,7 @@ describe('Backlog tab', () => {
 
   it('pull down refetches the list', async () => {
     const api = makeApi();
-    await renderBacklog();
+    const { queryClient } = await renderBacklog();
     await screen.findByTestId(backlogRowId('SHIP-707'));
     expect(api.callsTo(FEATURES)).toHaveLength(1);
 
@@ -410,7 +440,8 @@ describe('Backlog tab', () => {
       screen.getByTestId(backlogIds.list).props.refreshControl.props.onRefresh();
     });
 
-    await screen.findByTestId(backlogRowId('SHIP-707'));
+    await waitFor(() => expect(queryClient.isFetching()).toBe(0));
+    expect(await screen.findByTestId(backlogRowId('SHIP-707'))).toBeOnTheScreen();
     expect(api.callsTo(FEATURES)).toHaveLength(2);
   });
 

@@ -75,10 +75,20 @@ describe('backlog filters', () => {
       aBacklogRow({ key: 'SHIP-3', rank: 4 }),
       aBacklogRow({ key: 'SHIP-9', rank: 5 }),
     ];
-    expect([...rankMoves(last, after)]).toEqual([
-      ['SHIP-4', { from: 4, up: true }],
-      ['SHIP-2', { from: 2, up: false }],
-      ['SHIP-3', { from: 3, up: false }],
+    expect([...rankMoves(last, after)]).toEqual([['SHIP-4', { from: 4 }]]);
+  });
+
+  it('marks one row for one move, up or down', () => {
+    const last = ranksOf(rows);
+    const order = (keys: string[]) => keys.map((key, i) => aBacklogRow({ key, rank: i + 1 }));
+
+    expect([...rankMoves(last, order(['SHIP-1', 'SHIP-2', 'SHIP-4', 'SHIP-3']))]).toHaveLength(1);
+    expect([...rankMoves(last, order(['SHIP-2', 'SHIP-3', 'SHIP-4', 'SHIP-1']))]).toEqual([
+      ['SHIP-1', { from: 1 }],
     ]);
+    expect([...rankMoves(last, order(['SHIP-4', 'SHIP-1', 'SHIP-2', 'SHIP-3']))]).toEqual([
+      ['SHIP-4', { from: 4 }],
+    ]);
+    expect([...rankMoves(last, order(['SHIP-1', 'SHIP-2', 'SHIP-3', 'SHIP-4']))]).toHaveLength(0);
   });
 });
