@@ -40,7 +40,12 @@ internal static class InMemoryChanges
             StatusLine = changes.StatusLine is { } statusLine ? statusLine.Value ?? "" : change.StatusLine,
             StatusVerifiedAt = changes.StatusLine is not null || changes.ConfirmStatus ? at : change.StatusVerifiedAt,
             Health = changes.Health is { } health ? health.Value : change.Health,
-            HealthSetAt = changes.Health is { } setHealth ? (setHealth.Value is null ? null : at) : change.HealthSetAt,
+            HealthSetAt = changes.Health switch
+            {
+                null => change.HealthSetAt,
+                { Value: null } => null,
+                _ => at,
+            },
         };
     }
 
