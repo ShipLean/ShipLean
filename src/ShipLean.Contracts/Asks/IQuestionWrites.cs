@@ -4,7 +4,8 @@ namespace ShipLean.Contracts.Asks;
 // throws NotFound. Every write publishes AsksChanged after commit, and CommentsChanged when it posted a comment.
 public interface IQuestionWrites
 {
-    Task<AskedQuestion> AskAsync(Guid workItemId, string text, CancellationToken cancellationToken = default);
+    Task<AskedQuestion> AskAsync(
+        Guid workItemId, string text, IReadOnlyList<string>? options = null, CancellationToken cancellationToken = default);
 
     // Posts a comment tagged `answer` and marks the question answered, in one transaction. Returns the comment's id.
     // A question that isn't open throws Conflict.

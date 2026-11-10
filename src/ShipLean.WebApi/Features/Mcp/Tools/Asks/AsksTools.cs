@@ -72,7 +72,7 @@ internal sealed class AsksTools(ItemResolver itemResolver, MemberResolver member
         CancellationToken cancellationToken = default)
     {
         var resolved = await itemResolver.ResolveAsync(item, ProjectRole.Member, cancellationToken: cancellationToken);
-        var asked = await questions.AskAsync(resolved.Id, text ?? string.Empty, cancellationToken);
+        var asked = await questions.AskAsync(resolved.Id, text ?? string.Empty, cancellationToken: cancellationToken);
         var project = await support.ProjectOfAsync(resolved, cancellationToken);
         var result = new AskResult(
             project.Key, await OpenUrlAsync(resolved, project, $"#Q{asked.Number}", cancellationToken), resolved.Key, asked.Number, asked.Label);

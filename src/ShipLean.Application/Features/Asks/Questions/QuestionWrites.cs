@@ -21,8 +21,10 @@ public sealed class QuestionWrites(
 {
     private const int MaxText = 2000;
 
-    public async Task<AskedQuestion> AskAsync(Guid workItemId, string text, CancellationToken cancellationToken = default)
+    public async Task<AskedQuestion> AskAsync(
+        Guid workItemId, string text, IReadOnlyList<string>? options = null, CancellationToken cancellationToken = default)
     {
+        // TODO: store options in question.options, refusing more than InboxRules.MaxQuestionOptions or a blank or duplicate one.
         var cleaned = text?.Trim();
         if (string.IsNullOrEmpty(cleaned))
         {
