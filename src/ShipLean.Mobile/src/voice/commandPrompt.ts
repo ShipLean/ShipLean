@@ -158,14 +158,33 @@ export function parseModelOutput(text: string): ParsedCall[] {
   return calls.every((c): c is ParsedCall => c !== null) ? calls : [];
 }
 
-// The system prompt for a screen: instructions, the action list and the screen's context.
-export function buildSystemPrompt(spec: ScreenVoiceSpec): string {
-  void spec;
-  throw new Error('TODO: the system prompt wording');
+function actionLine(action: VoiceActionSpec): string {
+  const note =
+    action.noteArg === undefined
+      ? ''
+      : ` Its ${action.noteArg} is never written: give noteSpan, where the note is in the command.`;
+  return `- ${action.name}: ${action.description} Args: ${JSON.stringify(action.args)}.${note}`;
 }
 
-// The user turn for one transcript.
-export function userTurn(transcript: Transcript): string {
-  void transcript;
-  throw new Error('TODO: the user turn wording');
+// The system prompt for a screen: short instructions and the action list. It depends only on the screen and its
+// actions, so the phone evaluates it once per screen and keeps it (the cached prefix). The screen's context changes
+// between commands, so it goes in the user turn.
+export function buildSystemPrompt(spec: Pick<ScreenVoiceSpec, 'screen' | 'actions'>): string {
+  return [
+    `You turn one spoken command into calls to the actions of ShipLean's ${spec.screen} screen.`,
+    'Reply with a JSON array of calls and nothing else: [{"action": "<name>", "args": {...}}]. Reply [] when the command asks for none of these actions.',
+    'Rules:',
+    '- Use only the actions below, with the arguments their schemas allow.',
+    '- Take item keys, people and states from the screen context in the user message. Never invent one.',
+    '- A command can ask for several things: give one call for each, in the order they were said.',
+    '- noteSpan is {"start": s, "end": e}: character offsets in the command, counted from 0, with e one past the last character of the note. The note is the words after "note", "comment" or "say" that are to be posted as they were said.',
+    'Actions:',
+    ...spec.actions.map(actionLine),
+    '/no_think',
+  ].join('\n');
+}
+
+// The user turn for one command: the screen's context as it is now, then the transcript word for word, last.
+export function userTurn(transcript: Transcript, context: Record<string, unknown>): string {
+  return `Screen context: ${JSON.stringify(context)}\nCommand: ${transcript.text}`;
 }
