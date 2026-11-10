@@ -26,6 +26,7 @@ public class DecisionsNonOwnerTests : SeededAcceptanceTest
         await Expect(panel.Toasts.Filter(new() { HasText = "D1 confirmed: “Postgres”" })).ToBeVisibleAsync();
         await Expect(panel.Summary).ToContainTextAsync("you can answer too");
         await Page.ReloadAsync();
+        await Expect(panel.FoldToggle).ToBeVisibleAsync();
         await panel.ExpandAsync();
         await Expect(panel.DecisionRow(1)).ToHaveAttributeAsync("data-state", "confirmed");
     }
