@@ -4,6 +4,8 @@ name: Mobile release
 # Play internal track as a draft (src/ShipLean.Mobile/eas.json, submit.production).
 # With `listing` it also pushes the store listing from store/.
 # Run by hand only: a run with `build` uses EAS build credits and bumps the build number.
+# The build job waits for EAS and saves what it built (the Android .aab, the iOS .ipa) as the
+# run's `app-builds` artifact, kept 90 days, so a release's files can be downloaded and inspected.
 #
 # Needs these GitHub secrets and variable:
 #   EXPO_TOKEN                        an Expo robot token for the dickos-team account (build job).
@@ -84,21 +86,64 @@ jobs:
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
-      # --no-wait ends the job once EAS has queued the builds; follow them (and the submissions) on expo.dev.
+      # --wait keeps the job until EAS has finished the builds (and, with submit, the submissions), so
+      # their files can be saved below. --json prints the finished builds on stdout, each with its
+      # file's URL (artifacts.buildUrl); progress goes to stderr. eas-cli prints the JSON before it
+      # exits non-zero for a failed build or submission, so the status is kept and the files saved
+      # first.
       - name: Build${{ inputs.submit && ' and submit' || '' }}
+        id: eas
         working-directory: src/ShipLean.Mobile
         env:
           PLATFORM: ${{ inputs.platform }}
           SUBMIT: ${{ inputs.submit }}
         run: |
-          args=(--platform "$PLATFORM" --profile production --non-interactive --no-wait)
+          args=(--platform "$PLATFORM" --profile production --non-interactive --wait --json)
           if [ "$SUBMIT" = "true" ]; then
             args+=(--auto-submit)
           fi
-          eas build "${args[@]}"
+          status=0
+          eas build "${args[@]}" > "$RUNNER_TEMP/builds.json" || status=$?
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+      - name: Download the built files
+        if: ${{ !cancelled() && steps.eas.outcome == 'success' }}
+        run: |
+          python3 -I - "$RUNNER_TEMP/builds.json" "$RUNNER_TEMP/app-builds" <<'PY'
+          import json, os, posixpath, sys, urllib.parse, urllib.request
+          source, out = sys.argv[1], sys.argv[2]
+          text = open(source).read().strip()
+          builds = json.loads(text) if text else []
+          os.makedirs(out, exist_ok=True)
+          for build in builds:
+              url = (build.get("artifacts") or {}).get("buildUrl")
+              if not url:
+                  print("No file for build {} ({})".format(build.get("id"), build.get("status")))
+                  continue
+              platform = build["platform"].lower()
+              extension = posixpath.splitext(urllib.parse.urlsplit(url).path)[1] or ".bin"
+              name = "shiplean-{}-{}-{}{}".format(platform, build.get("appVersion"), build.get("appBuildVersion"), extension)
+              with urllib.request.urlopen(url) as response, open(os.path.join(out, name), "wb") as handle:
+                  while chunk := response.read(1 << 20):
+                      handle.write(chunk)
+              print("Saved", name)
+          PY
+      - name: Save the built files
+        if: ${{ !cancelled() && steps.eas.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-builds
+          path: ${{ runner.temp }}/app-builds
+          if-no-files-found: warn
+          retention-days: 90
+      - name: Fail when EAS failed
+        if: ${{ steps.eas.outputs.status != '0' }}
+        env:
+          STATUS: ${{ steps.eas.outputs.status }}
+        run: |
+          echo "::error::eas build exited with $STATUS: a build or submission failed (see the Build step and expo.dev)."
+          exit 1
 
-  # The listing jobs do not need the build: --no-wait ends the build job once EAS has queued the
-  # builds, so waiting for it would not mean this run's binary exists. The listing goes to the
+  # The listing jobs do not need the build, so they run beside it: the listing goes to the
   # current editable version, and Play takes listing changes without a new binary.
   listing-android:
     if: ${{ inputs.listing && inputs.platform != 'ios' }}
