@@ -27,7 +27,8 @@ import {
   retroPlusId,
   retroTileId,
 } from '../retro/testIds';
-import { screenIds } from '../screens/testIds';
+import { projectRowId } from '../screens/projects/testIds';
+import { screenIds, tabIds } from '../screens/testIds';
 import { aBacklogView, backlogApi, designFeatures } from '../test-support/backlog';
 import { aMe, aMember, aProject } from '../test-support/builders';
 import { designOverview, featuresApi } from '../test-support/features';
@@ -43,9 +44,15 @@ const PROJECT = aProject().id;
 
 const advance = (ms: number) => act(async () => jest.advanceTimersByTimeAsync(ms));
 
-// The tab opens by its deep link. TODO: open it from the tab bar once a tab pressed there carries the project key.
-const openTab = (api: ReturnType<typeof controlledApi>, tab: string) =>
-  renderApp({ url: `/p/SHIP/${tab}`, api });
+// From Projects: tap SHIP, then the tab in the tab bar.
+async function openTab(
+  api: ReturnType<typeof controlledApi>,
+  tab: 'backlog' | 'features' | 'retro',
+) {
+  await renderApp({ url: '/', api });
+  await fireEvent.press(await screen.findByTestId(projectRowId('SHIP')));
+  await fireEvent.press(await screen.findByTestId(tabIds[tab]));
+}
 
 // The fake server keeps the order: a bulk placement moves the row before the one named, and the next read shows it.
 function backlogJourneyApi() {
