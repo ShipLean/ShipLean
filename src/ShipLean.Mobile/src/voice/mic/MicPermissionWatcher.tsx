@@ -1,4 +1,4 @@
-import { usePathname, useRootNavigationState, router } from 'expo-router';
+import { router, usePathname, useRootNavigationState } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { kvStore } from '../../session/session';
@@ -18,12 +18,15 @@ export function MicPermissionWatcher() {
   const toast = useToast();
   const pathname = usePathname();
   const navigationReady = useRootNavigationState()?.key !== undefined;
-  const [restoreTo, setRestoreTo] = useState<string | null>(null);
-  // The screen kept before this launch, read once; the screen is only stored once the first read is done.
-  const stored = useRef(readLastRoute(kvStore));
+  // The screen is only stored once the first read is done, so the screen kept before this launch isn't overwritten.
   const [tracking, setTracking] = useState(false);
-  const toastRef = useRef(toast);
-  toastRef.current = toast;
+  const stored = useRef(readLastRoute(kvStore));
+  // Where to go once the navigator exists, after a cold start that found the microphone back on.
+  const waiting = useRef<string | null>(null);
+  const latest = useRef({ toast, pathname, navigationReady });
+  useEffect(() => {
+    latest.current = { toast, pathname, navigationReady };
+  });
 
   useEffect(() => {
     let live = true;
@@ -33,8 +36,8 @@ export function MicPermissionWatcher() {
       const back = cameBackOn(readLastMic(kvStore), now);
       writeLastMic(kvStore, now);
       if (back) {
-        toastRef.current.show({ text: BACK_ON, ms: TOAST_MS });
-        if (coldStart) setRestoreTo(stored.current);
+        latest.current.toast.show({ text: BACK_ON, ms: TOAST_MS });
+        if (coldStart) waiting.current = stored.current;
       }
       setTracking(true);
     };
@@ -51,14 +54,15 @@ export function MicPermissionWatcher() {
   }, []);
 
   useEffect(() => {
-    if (restoreTo === null || !navigationReady) return;
-    setRestoreTo(null);
-    if (restoreTo !== pathname) router.replace(restoreTo);
-  }, [restoreTo, navigationReady, pathname]);
+    const to = waiting.current;
+    if (!tracking || to === null || !navigationReady) return;
+    waiting.current = null;
+    if (to !== pathname) router.replace(to);
+  }, [tracking, navigationReady, pathname]);
 
   useEffect(() => {
-    if (tracking && restoreTo === null) writeLastRoute(kvStore, pathname);
-  }, [pathname, restoreTo, tracking]);
+    if (tracking && waiting.current === null) writeLastRoute(kvStore, pathname);
+  }, [tracking, pathname]);
 
   return null;
 }

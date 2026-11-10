@@ -1,6 +1,7 @@
 import { act, screen } from '@testing-library/react-native';
 import { AppState, type AppStateStatus } from 'react-native';
 import { kvStore } from '../../session/session';
+import { kvValues } from '../../test-support/storage';
 import { renderScreen } from '../../test-support/renderScreen';
 import { installFakeEngines } from '../../test-support/voiceUi';
 import { primitiveIds } from '../../ui/testIds';
@@ -21,6 +22,7 @@ jest.mock('expo-router', () => ({
 const listeners: ((s: AppStateStatus) => void)[] = [];
 
 beforeEach(() => {
+  kvValues.clear();
   jest.useFakeTimers();
   mockPath = '/';
   mockNavKey = 'root';
