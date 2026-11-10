@@ -134,6 +134,8 @@ export interface ModelStore {
   download(): void;
   pause(): void;
   useMobileDataOnce(): void;
+  // The Wi-Fi only switch (setup's model screen and Settings › Voice); status().wifiOnly reads it.
+  setWifiOnly(on: boolean): void;
   skip(): void;
   deleteAll(): Promise<void>;
   deviceMemory(): { reportedGb: number; soldGb: number };

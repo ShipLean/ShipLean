@@ -125,6 +125,7 @@ export class FakeCommandModel implements CommandModel {
 export type ModelStoreCall =
   | { method: 'choose'; choice: ModelChoice }
   | { method: 'download' | 'pause' | 'useMobileDataOnce' | 'skip' | 'deleteAll' }
+  | { method: 'setWifiOnly'; on: boolean }
   | { method: 'reportLoadFailure'; reason: 'memory' };
 
 // Starts ready on the 1.7B model of an 8 GB phone. set() changes the status and notifies; every call is recorded.
@@ -178,6 +179,10 @@ export class FakeModelStore implements ModelStore {
 
   useMobileDataOnce(): void {
     this.calls.push({ method: 'useMobileDataOnce' });
+  }
+
+  setWifiOnly(on: boolean): void {
+    this.calls.push({ method: 'setWifiOnly', on });
   }
 
   skip(): void {

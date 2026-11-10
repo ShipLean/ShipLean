@@ -33,6 +33,7 @@ export function notReadyEngines(): VoiceEngines {
       download: () => {},
       pause: () => {},
       useMobileDataOnce: () => {},
+      setWifiOnly: () => {},
       skip: () => {},
       deleteAll: () => Promise.resolve(),
       deviceMemory: () => ({ reportedGb: 0, soldGb: 0 }),

@@ -24,11 +24,8 @@ export interface ModelStoreDeps {
   clock: () => Date;
 }
 
-// N9 has no way to change Wi-Fi only, so the store the app builds adds one for the switch on the model screen and in
-// Settings › Voice.
-export interface LocalModelStore extends ModelStore {
-  setWifiOnly(on: boolean): void;
-}
+// N9's ModelStore, as the app builds it (setWifiOnly is part of N9 since wave amendment 21).
+export type LocalModelStore = ModelStore;
 
 type PauseReason = 'wifi' | 'space' | 'network' | 'user';
 
