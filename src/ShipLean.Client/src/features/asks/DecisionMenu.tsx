@@ -20,10 +20,14 @@ export function DecisionMenu({
 }) {
   const copyLink = async () => {
     const path = routePath('workItem', { key: item.projectKey, itemKey: item.key });
-    await navigator.clipboard.writeText(
-      new URL(`${path}#${decision.label}`, document.baseURI).href,
-    );
-    showToast(`Link to ${decision.label} copied`);
+    try {
+      await navigator.clipboard.writeText(
+        new URL(`${path}#${decision.label}`, document.baseURI).href,
+      );
+      showToast(`Copied a link to ${item.key} ${decision.label}`);
+    } catch {
+      showToast('Could not copy the link', { tone: 'danger' });
+    }
   };
   return (
     <FieldMenu

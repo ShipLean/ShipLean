@@ -24,22 +24,37 @@ function AnswerTag({ decision }: { decision: DecisionDto }) {
         ? 'Own answer'
         : 'Alternative';
   return (
-    <span data-testid={ids.decisionTag}>
+    <span
+      data-testid={ids.decisionTag}
+      title={
+        decision.answerKind === 'own'
+          ? 'Written by a person, not one of the listed options (D12)'
+          : undefined
+      }
+    >
       <Chip tone={decision.answerKind === 'recommended' ? 'accent' : 'muted'}>{tag}</Chip>
     </span>
   );
 }
 
-function StateLine({ decision }: { decision: DecisionDto }) {
+// An agent's write shows the agent's name (design: AI avatar), not the person whose token it used.
+function SettledBy({ decision }: { decision: DecisionDto }) {
   const who = decision.answeredBy;
-  const by = who ? (
+  const agent = decision.answeredAgentName;
+  if (!who && !agent) return null;
+  return (
     <>
-      <Avatar {...who} />
+      {agent ? <Avatar name={`Agent: ${agent}`} initials="AI" /> : who ? <Avatar {...who} /> : null}
       <span>
-        {who.name} · {decision.answeredAtLabel}
+        {agent ?? who?.name} · {decision.answeredAtLabel}
       </span>
     </>
-  ) : null;
+  );
+}
+
+function StateLine({ decision }: { decision: DecisionDto }) {
+  const by = <SettledBy decision={decision} />;
+  const withdrawnNote = [...decision.history].reverse().find((e) => e.kind === 'withdrawn')?.note;
   switch (decision.state) {
     case 'open':
       return (
@@ -48,7 +63,9 @@ function StateLine({ decision }: { decision: DecisionDto }) {
             <Chip tone="warn">Going with recommended</Chip>
           </span>
           <span>
-            raised by {decision.raisedBy.name} · {decision.raisedAtLabel}
+            raised by {decision.raisedAgentName ?? decision.raisedBy.name}
+            {decision.raisedAgentName ? <Chip tone="purple">Agent</Chip> : null} ·{' '}
+            {decision.raisedAtLabel}
           </span>
         </>
       );
@@ -75,9 +92,13 @@ function StateLine({ decision }: { decision: DecisionDto }) {
       return (
         <>
           <Chip>Withdrawn</Chip>
-          {who ? (
+          {decision.answeredAgentName || decision.answeredBy ? (
             <span>
-              {who.name} · {decision.answeredAtLabel}
+              {decision.answeredAgentName
+                ? `${decision.answeredAgentName} (agent)`
+                : decision.answeredBy?.name}{' '}
+              · {decision.answeredAtLabel}
+              {withdrawnNote ? ` · “${withdrawnNote}”` : ''}
             </span>
           ) : null}
         </>
@@ -154,7 +175,10 @@ export function DecisionRow({ item, asks, decision }: AsksRegionProps & { decisi
               item={item}
               decision={decision}
               onWithdraw={() =>
-                writes.withdrawDecision.mutate(decision.number, { onError: failed })
+                writes.withdrawDecision.mutate(decision.number, {
+                  onSuccess: () => showToast(`${decision.label} withdrawn. It stays listed.`),
+                  onError: failed,
+                })
               }
             />
           </>

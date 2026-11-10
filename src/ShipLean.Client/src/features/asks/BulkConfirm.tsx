@@ -15,10 +15,11 @@ export function BulkConfirm({ item, asks }: AsksRegionProps) {
       data-testid={ids.bulkConfirm}
       title="Confirm every decision that's going with its recommended answer"
       disabled={writes.confirm.isPending}
-      className="inline-flex h-[22px] items-center rounded-control border border-edge bg-panel px-[7px] text-[length:var(--text-xs)] font-medium text-ink hover:bg-signal-soft disabled:opacity-45"
+      className="inline-flex h-8 items-center rounded-control border border-edge bg-panel px-2.5 text-[length:var(--text-sm)] font-medium text-ink hover:bg-signal-soft disabled:opacity-45"
       onClick={() =>
         writes.confirm.mutate(numbers, {
-          onSuccess: () => showToast(`${numbers.length} decisions confirmed`, { tone: 'ok' }),
+          onSuccess: () =>
+            showToast(`${numbers.length} decisions confirmed as recommended`, { tone: 'ok' }),
           onError: (error) => showToast(error.message, { tone: 'danger' }),
         })
       }

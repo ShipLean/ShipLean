@@ -32,6 +32,10 @@ test('DecisionRow_WhenOpen_ShouldSayGoingWithRecommended', async ({ mount }) => 
   const row = rowOf(component, 'D1');
   await expect(row.getByTestId(ids.decisionState)).toContainText('Going with recommended');
   await expect(row.getByTestId(ids.decisionTag)).toHaveText('Recommended');
+  await expect(row.getByTestId(ids.decisionState)).toContainText(
+    'raised by Claude Code (claude.ai)Agent',
+  );
+  await expect(row.getByTestId(ids.decisionState)).not.toContainText('Joel Dickson');
   await expect(row.getByTestId(ids.decisionConfirm)).toBeVisible();
   await expect(rowOf(component, 'D5').getByTestId(ids.decisionState)).toContainText('✓ Confirmed');
   await expect(rowOf(component, 'D6').getByTestId(ids.decisionState)).toContainText('Changed');
@@ -63,6 +67,13 @@ test('DecisionRow_WhenWithdrawn_ShouldStrikeThroughAndHideConfirm', async ({ mou
     'text-decoration-line',
     'line-through',
   );
+  await expect(row.getByTestId(ids.decisionState)).toContainText(
+    'Claude Code (claude.ai) (agent) · ',
+  );
+  await expect(row.getByTestId(ids.decisionState)).toContainText(
+    '“Card management is out of scope for this Story.”',
+  );
+  await expect(row.getByTestId(ids.decisionState)).not.toContainText('Joel Dickson');
   await expect(row.getByTestId(ids.decisionConfirm)).toHaveCount(0);
   await expect(row.getByTestId(ids.decisionMore)).toHaveCount(0);
 });
@@ -108,9 +119,14 @@ test('DecisionMenu_WhenWithdrawChosen_ShouldPostWithdraw', async ({ mount, page 
   await row.getByTestId(ids.decisionWithdraw).click();
   await expect.poll(() => stub.writes.length).toBe(1);
   expect(stub.writes[0].url).toBe(`/api/work-items/${waiting.workItemId}/decisions/2/withdraw`);
+  await expect(page.getByText('D2 withdrawn. It stays listed.')).toBeVisible();
 });
 
-test('DecisionMenu_WhenCopyLinkChosen_ShouldToast', async ({ mount, page, context }) => {
+test('DecisionMenu_WhenCopyLinkChosen_ShouldToastAndCopyAbsoluteLink', async ({
+  mount,
+  page,
+  context,
+}) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   const component = await mount(
     <RegionHarness>
@@ -120,9 +136,40 @@ test('DecisionMenu_WhenCopyLinkChosen_ShouldToast', async ({ mount, page, contex
   const row = rowOf(component, 'D3');
   await row.getByTestId(ids.decisionMore).click();
   await row.getByTestId(ids.decisionCopyLink).click();
-  await expect(page.getByText('Link to D3 copied')).toBeVisible();
+  await expect(page.getByText('Copied a link to SHIP-141 D3')).toBeVisible();
   const copied = await page.evaluate(() => navigator.clipboard.readText());
   expect(copied.endsWith('/p/SHIP/items/SHIP-141#D3')).toBe(true);
+  expect(new URL(copied).origin).toBe(new URL(page.url()).origin);
+});
+
+test('DecisionMenu_WhenClipboardRejects_ShouldToastDanger', async ({ mount, page }) => {
+  const component = await mount(
+    <RegionHarness>
+      <DecisionList item={itemFor(waiting)} asks={waiting} />
+    </RegionHarness>,
+  );
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: () => Promise.reject(new Error('denied')) },
+    });
+  });
+  const row = rowOf(component, 'D3');
+  await row.getByTestId(ids.decisionMore).click();
+  await row.getByTestId(ids.decisionCopyLink).click();
+  await expect(page.getByText('Could not copy the link')).toBeVisible();
+});
+
+test('DecisionRow_WhenOwnAnswer_ShouldExplainTheTag', async ({ mount }) => {
+  const component = await mount(
+    <RegionHarness>
+      <DecisionList item={itemFor(feature)} asks={feature} />
+    </RegionHarness>,
+  );
+  await expect(rowOf(component, 'D1').getByTestId(ids.decisionTag)).toHaveAttribute(
+    'title',
+    'Written by a person, not one of the listed options (D12)',
+  );
 });
 
 test('DecisionHistory_WhenOpened_ShouldListChangesWithFromAndTo', async ({ mount }) => {

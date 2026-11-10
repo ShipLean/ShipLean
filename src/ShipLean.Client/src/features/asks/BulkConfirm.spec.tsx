@@ -41,6 +41,7 @@ test('BulkConfirm_WhenTwoOpen_ShouldConfirmBoth', async ({ mount, page }) => {
     url: `/api/work-items/${waiting.workItemId}/decisions/confirm`,
     body: { numbers: open.map((decision) => decision.number) },
   });
+  await expect(page.getByText(`${open.length} decisions confirmed as recommended`)).toBeVisible();
 });
 
 test('BulkConfirm_WhenOneOpen_ShouldNotShow', async ({ mount }) => {

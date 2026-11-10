@@ -34,7 +34,7 @@ export function DecisionHistory({ decision }: { decision: DecisionDto }) {
           />
           <span>
             <span className="text-ink">
-              <b>{event.by?.name ?? event.agentName ?? 'An agent'}</b>
+              <b>{event.agentName ?? event.by?.name}</b>
               {event.agentName ? ' (agent)' : ''} {verb[event.kind] ?? event.kind}
               {event.to ? ` “${event.to}”` : ''}
             </span>
