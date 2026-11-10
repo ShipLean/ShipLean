@@ -42,7 +42,7 @@ const pendingAnswer = (
     key: 'SHIP-906',
     kind: 'answer',
     number: 1,
-    text: 'Fifty megabytes',
+    body: 'Fifty megabytes',
   },
   labels: ['Q1'],
   ...overrides,
@@ -109,9 +109,7 @@ describe.each<Scheme>(['light', 'dark'])('AnsweredList (%s)', (scheme) => {
   it('shows Sending for an uncertain answer', async () => {
     const actions = fakeInboxActions([pendingAnswer('p1', 'uncertain')]);
     await openAnswered({ answered: anAnswered({ rows: [] }), actions }, scheme);
-    expect(await screen.findByTestId(answeredPendingStatusId('p1'))).toHaveTextContent(
-      'Sending…',
-    );
+    expect(await screen.findByTestId(answeredPendingStatusId('p1'))).toHaveTextContent('Sending…');
   });
 
   it('shows Retry for a retryable failure and retries it', async () => {
