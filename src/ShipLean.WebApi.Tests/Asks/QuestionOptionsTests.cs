@@ -50,15 +50,12 @@ public class QuestionOptionsTests : ApiFixture
         return JsonSerializer.Deserialize<ItemAsksDto>(text, WireOptions)!.Questions;
     }
 
-    private async Task ShouldRefuseAsync(string[] options)
+    private async Task<(ApiException Thrown, int Stored)> RefusedAsync(string[] options)
     {
         var item = await NewItemAsync();
-
         var thrown = await Should.ThrowAsync<ApiException>(() => AskAsync(item, options));
-
-        (thrown.Code, thrown.Field).ShouldBe((ApiErrorCodes.Validation, "options"));
         await using var connection = await OpenDatabaseAsync();
-        (await connection.ExecuteScalarAsync<int>("SELECT count(*)::int FROM question WHERE work_item_id = @item", new { item })).ShouldBe(0);
+        return (thrown, await connection.ExecuteScalarAsync<int>("SELECT count(*)::int FROM question WHERE work_item_id = @item", new { item }));
     }
 
     [Test]
@@ -74,19 +71,22 @@ public class QuestionOptionsTests : ApiFixture
     [Test]
     public async Task AskAsync_WhenSevenOptions_ShouldReturnValidationOnOptions()
     {
-        await ShouldRefuseAsync(["1", "2", "3", "4", "5", "6", "7"]);
+        var (thrown, stored) = await RefusedAsync(["1", "2", "3", "4", "5", "6", "7"]);
+        (thrown.Code, thrown.Field, stored).ShouldBe((ApiErrorCodes.Validation, "options", 0));
     }
 
     [Test]
     public async Task AskAsync_WhenOptionBlank_ShouldReturnValidationOnOptions()
     {
-        await ShouldRefuseAsync(["Yes", "   "]);
+        var (thrown, stored) = await RefusedAsync(["Yes", "   "]);
+        (thrown.Code, thrown.Field, stored).ShouldBe((ApiErrorCodes.Validation, "options", 0));
     }
 
     [Test]
     public async Task AskAsync_WhenOptionsDuplicateIgnoringCase_ShouldReturnValidationOnOptions()
     {
-        await ShouldRefuseAsync(["Yes", " yes "]);
+        var (thrown, stored) = await RefusedAsync(["Yes", " yes "]);
+        (thrown.Code, thrown.Field, stored).ShouldBe((ApiErrorCodes.Validation, "options", 0));
     }
 
     [Test]
