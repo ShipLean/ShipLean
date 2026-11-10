@@ -39,7 +39,7 @@ export function matchPerson<P extends { id: string; name: string }>(
   if (heard === '') return { kind: 'none' };
   const full = people.filter((p) => words(p.name) === heard);
   if (full.length > 0) return only(full);
-  return only(people.filter((p) => words(p.name).split(' ')[0] === heard));
+  return only(people.filter((p) => words(p.name.trim().split(/\s+/)[0]) === heard));
 }
 
 export function matchState<S extends { id: string; name: string }>(

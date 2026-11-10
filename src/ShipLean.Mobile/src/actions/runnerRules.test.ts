@@ -132,12 +132,15 @@ describe('createActionRunner', () => {
       const conflicts = vi.fn();
       runner.subscribeConflicts(conflicts);
 
+      const reported = new Promise<void>((resolve) => runner.subscribeConflicts(() => resolve()));
+
       const batchId = runner.dispatch(batch, {
         undo: UNDO.none,
-        origin: 'voice',
+        origin: 'tap',
         allOrNothing: true,
       });
-      await until(runner, (p) => byItem(p, '2')?.state === 'failed');
+      await reported;
+      await settle();
 
       expect(byItem(runner.pending(), '2')).toMatchObject({
         failure: 'conflict',
@@ -219,6 +222,7 @@ describe('createActionRunner', () => {
         act('approve', '2'),
         act('setState', '3'),
         act('setState', '4'),
+        act('setState', '5'),
       ];
       const api = controlledApi(
         Object.fromEntries(
@@ -228,7 +232,7 @@ describe('createActionRunner', () => {
           ]),
         ),
       );
-      api.failNext(sendRoute(batch[2]), {
+      api.failNext(sendRoute(batch[3]), {
         status: 400,
         body: { error: 'Bad.', code: 'validation' },
       });
@@ -236,21 +240,28 @@ describe('createActionRunner', () => {
       runner.register(workItemExecutor());
 
       runner.dispatch(batch, { undo: UNDO.voice, origin: 'voice', allOrNothing: true });
-      await until(runner, (p) => byItem(p, '1')?.undoOutcome === 'undone');
+      await until(
+        runner,
+        (p) => byItem(p, '1')?.undoOutcome === 'undone' && byItem(p, '3')?.undoOutcome === 'undone',
+      );
       await settle();
 
       expect(api.calls.map((c) => `${c.method} ${c.path}`)).toEqual([
         sendRoute(batch[0]),
         sendRoute(batch[1]),
         sendRoute(batch[2]),
+        sendRoute(batch[3]),
+        undoRoute(batch[2]),
         undoRoute(batch[0]),
       ]);
+      expect(byItem(runner.pending(), '1')?.undoOutcome).toBe('undone');
       expect(byItem(runner.pending(), '2')?.undoOutcome).toBe('irreversible');
-      expect(byItem(runner.pending(), '3')).toMatchObject({
+      expect(byItem(runner.pending(), '3')?.undoOutcome).toBe('undone');
+      expect(byItem(runner.pending(), '4')).toMatchObject({
         state: 'failed',
         failure: 'validation',
       });
-      expect(stateOf(runner, '4')).not.toBe('sent');
+      expect(stateOf(runner, '5')).not.toBe('sent');
     },
   );
 

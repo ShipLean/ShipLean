@@ -7,6 +7,7 @@ const people = [
   { id: 'u1', name: 'Priya Shah' },
   { id: 'u2', name: 'Tom Reed' },
   { id: 'u3', name: 'Tom Hall' },
+  { id: 'u4', name: 'Mary-Ann Lee' },
 ];
 const states = [
   { id: 's1', name: 'Active' },
@@ -40,6 +41,11 @@ describe('matchPerson', () => {
   });
   it('matches with a hyphen for a space', () => {
     expect(matchPerson('tom-hall', people)).toEqual({ kind: 'match', value: people[2] });
+  });
+  it('matches a hyphenated first name whole, and not by its first part', () => {
+    expect(matchPerson('Mary-Ann', people)).toEqual({ kind: 'match', value: people[3] });
+    expect(matchPerson('mary ann', people)).toEqual({ kind: 'match', value: people[3] });
+    expect(matchPerson('Mary', people)).toEqual({ kind: 'none' });
   });
   it('finds none for a shared first name or a stranger', () => {
     expect(matchPerson('Tom', people)).toEqual({ kind: 'none' });

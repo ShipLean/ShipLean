@@ -15,6 +15,7 @@ export interface InMemoryActionRunnerDeps {
 
 // Records dispatches and holds each batch in `undo` until its window ends, then marks it queued. It never sends.
 // TODO: the real runner (createActionRunner) sends, queues offline, reconciles and undoes sent actions.
+// TODO: pending() works out the end of an undo window lazily and doesn't notify subscribers when it ends; the real runner does.
 export class InMemoryActionRunner implements ActionRunner {
   private readonly now: () => Date;
   private readonly executors = new Map<Area, Executor<AppAction>>();
