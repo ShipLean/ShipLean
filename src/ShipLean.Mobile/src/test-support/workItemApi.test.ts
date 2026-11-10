@@ -181,8 +181,8 @@ describe('workItemApi', () => {
   it('filters the children by ?type= (N7)', async () => {
     const story = aStoryItem({ projectId: project });
     const [first] = story.children;
-    const task = { ...first, id: 'c-task', type: { ...first.type, id: 'task' } };
-    const bug = { ...first, id: 'c-bug', type: { ...first.type, id: 'bug' } };
+    const task = { ...first, id: 'c-task', type: { ...first.type, id: 'task' as const } };
+    const bug = { ...first, id: 'c-bug', type: { ...first.type, id: 'bug' as const } };
     workItemApi({}, { items: [story], children: [task, bug] });
 
     expect((await getChildren(story.id)).map((c) => c.id)).toEqual(['c-task', 'c-bug']);
