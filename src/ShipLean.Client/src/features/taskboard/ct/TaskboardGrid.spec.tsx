@@ -57,3 +57,17 @@ test('TaskboardGrid_WhenATaskTitleHasAWordWiderThanTheCard_ShouldWrapItInsideThe
   expect(titleBox.x + titleBox.width).toBeLessThanOrEqual(cardBox.x + cardBox.width);
   expect(await title.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
 });
+
+test('TaskboardGrid_WhenParentCrumbIsShort_ShouldKeepWordsWhole', async ({ mount, page }) => {
+  await page.setViewportSize({ width: 600, height: 500 });
+  await mount(<GridHarness rowIndexes={[2]} peopleFeatureTitle="Reporting" />, route);
+  const feature = page.getByTestId(ids.cardParentFeature).first();
+
+  // One line: a Range over the word has a single client rect, and the element is no taller than a line of its text.
+  const lines = await feature.evaluate((el) => {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    return range.getClientRects().length;
+  });
+  expect(lines).toBe(1);
+});
