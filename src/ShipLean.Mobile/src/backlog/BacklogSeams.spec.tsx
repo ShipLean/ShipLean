@@ -1,9 +1,9 @@
 import { screen, fireEvent } from '@testing-library/react-native';
+import { useState } from 'react';
 import { Text, Pressable } from 'react-native';
 import { fakeRunner } from '../test-support/actions';
 import { aBacklogRow } from '../test-support/backlog';
 import { renderWithRunner } from '../test-support/renderWithRunner';
-import { ActionRunnerProvider } from '../actions/ActionRunnerProvider';
 import { UNDO } from '../actions/undo';
 import type { BacklogAction } from './actions';
 import { BacklogActionsProvider, useBacklogActions } from './BacklogActions';
@@ -26,6 +26,18 @@ function Tapper() {
     <Pressable testID="tap" onPress={() => dispatch(note)}>
       <Text>tap</Text>
     </Pressable>
+  );
+}
+
+// Renders the provider again with new children, the way a parent's update does.
+function Host() {
+  const [n, setN] = useState(0);
+  return (
+    <BacklogActionsProvider>
+      <Pressable testID="bump" onPress={() => setN(n + 1)}>
+        <Text>{n}</Text>
+      </Pressable>
+    </BacklogActionsProvider>
   );
 }
 
@@ -58,7 +70,7 @@ describe('Backlog seams', () => {
       </BacklogActionsProvider>,
       { runner },
     );
-    fireEvent.press(screen.getByTestId('tap'));
+    await fireEvent.press(screen.getByTestId('tap'));
     expect(runner.dispatched).toHaveLength(1);
     expect(runner.dispatched[0].batch).toEqual([note]);
     expect(runner.dispatched[0].opts).toEqual({
@@ -70,14 +82,9 @@ describe('Backlog seams', () => {
 
   it('registers the executor once', async () => {
     const runner = fakeRunner();
-    const ui = (
-      <BacklogActionsProvider>
-        <Tapper />
-      </BacklogActionsProvider>
-    );
-    const view = await renderWithRunner(ui, { runner });
-    view.rerender(<ActionRunnerProvider runner={runner}>{ui}</ActionRunnerProvider>);
-    fireEvent.press(screen.getByTestId('tap'));
+    await renderWithRunner(<Host />, { runner });
+    await fireEvent.press(screen.getByTestId('bump'));
+    await fireEvent.press(screen.getByTestId('bump'));
     expect(runner.registered).toHaveLength(1);
     expect(runner.registered[0].area).toBe('backlog');
   });
