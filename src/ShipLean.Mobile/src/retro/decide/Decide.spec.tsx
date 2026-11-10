@@ -44,7 +44,13 @@ async function renderSheet(scheme: Scheme, table: Parameters<typeof retroApi>[0]
   const onClose = jest.fn();
   const rendered = await renderWithRunner(
     <RetroActionsProvider>
-      <DecideSheet point={point} projectId={project.id} open onClose={onClose} />
+      <DecideSheet
+        point={point}
+        projectId={project.id}
+        sprintId={retro.sprint.id}
+        open
+        onClose={onClose}
+      />
     </RetroActionsProvider>,
     { runner, scheme },
   );
@@ -72,6 +78,7 @@ describe.each<Scheme>(['light', 'dark'])('Retro decide sheet (%s)', (scheme) => 
         itemId: null,
         key: null,
         projectId: project.id,
+        sprintId: retro.sprint.id,
         pointIds: [point.id],
         title: point.text.slice(0, 80),
         ownerId: 'user-priya',
@@ -118,6 +125,7 @@ describe.each<Scheme>(['light', 'dark'])('Retro decide sheet (%s)', (scheme) => 
         kind: 'addToAction',
         itemId: 'wi-940',
         key: 'SHIP-940',
+        projectId: project.id,
         pointIds: [point.id],
       },
     ]);
@@ -135,6 +143,8 @@ describe.each<Scheme>(['light', 'dark'])('Retro decide sheet (%s)', (scheme) => 
         kind: 'notNeeded',
         itemId: null,
         key: null,
+        projectId: project.id,
+        sprintId: retro.sprint.id,
         pointId: point.id,
         reason: '',
       },
@@ -151,7 +161,7 @@ describe.each<Scheme>(['light', 'dark'])('Retro decide sheet (%s)', (scheme) => 
   });
 
   it('shows the action dialog read error with Retry', async () => {
-    const { fake } = await renderSheet(scheme, {
+    await renderSheet(scheme, {
       [DIALOG]: apiError(500, 'server', 'The action dialog failed.'),
     });
     await mode('existing');
@@ -159,7 +169,7 @@ describe.each<Scheme>(['light', 'dark'])('Retro decide sheet (%s)', (scheme) => 
     expect(screen.getByText("Couldn't load the open action items.")).toBeTruthy();
     expect(screen.queryByTestId(retroIds.decideSubmit)).toBeNull();
 
-    retroApi(
+    const retried = retroApi(
       {
         [MEMBERS]: [priya],
         [DIALOG]: {
@@ -171,10 +181,9 @@ describe.each<Scheme>(['light', 'dark'])('Retro decide sheet (%s)', (scheme) => 
       },
       { projectId: project.id, retro },
     );
-    const reads = fake.callsTo(DIALOG).length;
     await fireEvent.press(screen.getByTestId(uiIds.errorStateAction));
     await screen.findByTestId(retroDecideExistingId('SHIP-958'));
-    expect(reads).toBeGreaterThan(0);
+    expect(retried.callsTo(DIALOG).length).toBeGreaterThanOrEqual(1);
     await waitFor(() => expect(screen.queryByTestId(uiIds.errorState)).toBeNull());
   });
 });
