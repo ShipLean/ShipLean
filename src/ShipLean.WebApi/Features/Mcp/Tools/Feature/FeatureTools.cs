@@ -36,8 +36,8 @@ internal sealed class FeatureTools(
         [Description(HealthDescription)] string? health = null,
         CancellationToken cancellationToken = default)
     {
-        var parsedHealth = ParseHealth(health);
         var resolved = await itemResolver.ResolveAsync(feature, ProjectRole.Member, field: "feature", cancellationToken: cancellationToken);
+        var parsedHealth = ParseHealth(health);
         var snapshot = await store.GetAsync(resolved.Id, cancellationToken);
         var target = string.IsNullOrWhiteSpace(state) ? null : await states.ResolveAsync(snapshot.ProjectId, snapshot.Type, state, cancellationToken: cancellationToken);
 
@@ -72,9 +72,9 @@ internal sealed class FeatureTools(
         [Description(McpPayloadTargets.ArgumentDescription)] string? payload = null,
         CancellationToken cancellationToken = default)
     {
-        var parsedHealth = ParseHealth(health);
         var resolved = await projects.ResolveAsync(project, forWrite: true, cancellationToken);
         await access.RequireAsync(resolved.Id, ProjectRole.Member, cancellationToken);
+        var parsedHealth = ParseHealth(health);
         if (string.IsNullOrWhiteSpace(title))
         {
             throw ApiException.Validation("A Feature needs a title.", "title");
@@ -119,7 +119,7 @@ internal sealed class FeatureTools(
         };
     }
 
-    // Case-insensitive; anything else is a validation error on health. The rules about where health may be set are the store's.
+    // Only the three names, case-insensitive (no numbers, no comma lists); anything else is a validation error on health. The rules about where health may be set are the store's.
     private static FeatureHealth? ParseHealth(string? health)
     {
         if (string.IsNullOrWhiteSpace(health))
@@ -127,9 +127,10 @@ internal sealed class FeatureTools(
             return null;
         }
 
-        if (Enum.TryParse<FeatureHealth>(health.Trim(), ignoreCase: true, out var parsed) && Enum.IsDefined(parsed))
+        var trimmed = health.Trim();
+        if (Enum.GetNames<FeatureHealth>().Contains(trimmed, StringComparer.OrdinalIgnoreCase))
         {
-            return parsed;
+            return Enum.Parse<FeatureHealth>(trimmed, ignoreCase: true);
         }
 
         throw ApiException.Validation("Health is onTrack, atRisk or blocked.", "health");

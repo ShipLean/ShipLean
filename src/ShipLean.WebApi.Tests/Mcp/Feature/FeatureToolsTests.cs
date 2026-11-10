@@ -96,6 +96,7 @@ public class FeatureToolsTests : McpFixture
         error.GetProperty("code").GetString().ShouldBe(ApiErrorCodes.Validation);
         error.GetProperty("field").GetString().ShouldBe("slug");
     }
+
     private async Task<(int Revision, string? Health, string StatusLine, string? Agent)> HealthStateAsync(string key)
     {
         await using var connection = await OpenDatabaseAsync();
@@ -138,14 +139,16 @@ public class FeatureToolsTests : McpFixture
         (await HealthStateAsync(key)).Health.ShouldBe("blocked");
     }
 
-    [Test]
-    public async Task SetStatus_WhenHealthInvalid_ShouldReturnValidationOnHealth()
+    [TestCase("sunny")]
+    [TestCase("1")]
+    [TestCase("onTrack,atRisk")]
+    public async Task SetStatus_WhenHealthInvalid_ShouldReturnValidationOnHealth(string health)
     {
         var token = await TokenAsync(TestUser.Joel, ReadWrite);
         var key = await NewFeatureKeyAsync("Health invalid");
         var before = await HealthStateAsync(key);
 
-        var reply = await CallToolAsync(token, "set_status", $$"""{"feature":"{{key}}","status":"Fine","health":"sunny"}""");
+        var reply = await CallToolAsync(token, "set_status", $$"""{"feature":"{{key}}","status":"Fine","health":"{{health}}"}""");
 
         reply.IsToolError().ShouldBeTrue();
         var error = reply.Structured().GetProperty("error");
@@ -203,5 +206,35 @@ public class FeatureToolsTests : McpFixture
 
         reply.IsToolError().ShouldBeFalse(reply.ResultText());
         (await HealthStateAsync(reply.Structured().GetProperty("key").GetString()!)).Health.ShouldBeNull();
+    }
+
+    [Test]
+    public async Task SetStatus_WhenNonMemberSendsInvalidHealth_ShouldReturnNotFound()
+    {
+        var token = await TokenAsync(TestUser.Joel, ReadWrite);
+        var foreignKey = await ForeignFeatureKeyAsync();
+
+        var reply = await CallToolAsync(token, "set_status", $$"""{"feature":"{{foreignKey}}","status":"Fine","health":"sunny"}""");
+
+        reply.IsToolError().ShouldBeTrue();
+        reply.Structured().GetProperty("error").GetProperty("code").GetString().ShouldBe(ApiErrorCodes.NotFound);
+    }
+
+    [Test]
+    public async Task CreateFeature_WhenNonMemberSendsInvalidHealth_ShouldReturnNotFound()
+    {
+        var token = await TokenAsync(TestUser.Joel, ReadWrite);
+
+        var reply = await CallToolAsync(token, "create_feature", """{"project":"PART","title":"Not yours","goal":"x","health":"sunny"}""");
+
+        reply.IsToolError().ShouldBeTrue();
+        reply.Structured().GetProperty("error").GetProperty("code").GetString().ShouldBe(ApiErrorCodes.NotFound);
+    }
+
+    private async Task<string> ForeignFeatureKeyAsync()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var id = await new WorkItemBuilder(SeedIds.Projects.Part).WithType("feature").WithTitle("Foreign feature").InsertAsync(connection);
+        return await connection.QuerySingleAsync<string>("SELECT key FROM work_item WHERE id = @id", new { id });
     }
 }
