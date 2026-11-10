@@ -15,7 +15,7 @@ ShipLean is the record from the moment something might become work until it is d
 | Stage | In ShipLean | Tools |
 |---|---|---|
 | **Idea** | A Feature in the first Proposed state (New on the default workflow), with a goal. Search first so an existing Feature is reused | `search`, `create_feature` |
-| **Research** | Each finding (an analysis, a comparison, notes from a source) is a Markdown attachment on the Feature. The body holds the key facts and decisions. Every session ends with a log comment and a status line | `attach_markdown`, `attach_file` (charts), `link` (sources, PRs), `comment`, `set_status` |
+| **Research** | Each finding (an analysis, a comparison, notes from a source) is a Markdown attachment on the Feature. The body holds the key facts; decisions go in with `record_decisions`. Every session ends with a log comment and a status line | `attach_markdown`, `attach_file` (charts), `link` (sources, PRs), `comment`, `set_status` |
 | **Evaluate** | A decision on the Feature: go on (move to In Progress), park it (status says why and what would revive it), or remove it. The reasoning goes in the body | `set_status` with state, `refine_work_item` |
 | **Plan and break down** | The same Feature, planned by its key. Its research attachments are the input; do not create another Feature | `planning_guide`, `plan_feature`, `capture_plan` |
 | **Build** | Briefs, amendments, notes for later waves, reports and reviews live on the plan's items | `get_brief`, `report_task`, `comment`, `plan_status` |
@@ -32,9 +32,9 @@ When you stop work on an item (done or not), call `log_retrospective` on it (on 
 Keep four blocks in the description (plain Markdown):
 
 1. **Goal** — use the Goal field, not a heading in the description.
-2. **Key facts and decisions** — what is known and what was decided.
+2. **Key facts** — what is known. Record each decision with `record_decisions` on the Feature, not in the body; one nobody has answered stands as recommended.
 3. **Next** — the very next step for whoever picks this up.
-4. **Open questions** — what still needs a person or more research.
+4. **Open questions** — ask each with `ask` on the Feature; the owner answers on the item, and the next session reads the answer with `get_work_item`. Never wait for it.
 
 A new Feature's description opens with a `## Why` section of four bullets: Problem, Who, We believe and Measure (a measure not yet agreed says "to confirm"). `create_sprint_demo` narrates it.
 

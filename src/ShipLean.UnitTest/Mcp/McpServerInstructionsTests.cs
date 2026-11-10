@@ -41,4 +41,12 @@ public class McpServerInstructionsTests
             allowed.ShouldContain(token);
         }
     }
+
+    [Test]
+    public void Instructions_ShouldNameRecordDecisionsAndAsk()
+    {
+        McpServerServices.Instructions.ShouldContain("record_decisions");
+        McpServerServices.Instructions.ShouldContain("with ask");
+        McpServerServices.Instructions.ShouldContain("never wait");
+    }
 }
