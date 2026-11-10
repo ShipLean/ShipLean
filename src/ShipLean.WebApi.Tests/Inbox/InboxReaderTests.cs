@@ -183,7 +183,7 @@ public class InboxReaderTests : ApiFixture
         var inbox = await GetAsync(
             [],
             new Dictionary<Guid, int> { [SeedIds.Projects.Part] = 2, [SeedIds.Projects.Ship] = 9 },
-            second: new FakeInboxAskSource(counts: new Dictionary<Guid, int> { [SeedIds.Projects.Part] = 3, [Guid.NewGuid()] = 0 }));
+            second: new FakeInboxAskSource(counts: new Dictionary<Guid, int> { [SeedIds.Projects.Part] = 3, [SeedIds.Projects.Mob] = 0 }));
 
         var other = inbox.OtherProjects.ShouldHaveSingleItem();
         other.ProjectId.ShouldBe(SeedIds.Projects.Part);
@@ -209,9 +209,11 @@ public class InboxReaderTests : ApiFixture
     {
         var none = await GetAsync([]);
         var some = await GetAsync([], second: new FakeInboxAskSource(ever: true));
+        var firstOnly = await GetAsync([], ever: true);
 
         none.EverWaited.ShouldBeFalse();
         some.EverWaited.ShouldBeTrue();
+        firstOnly.EverWaited.ShouldBeTrue();
     }
 
     [Test]
