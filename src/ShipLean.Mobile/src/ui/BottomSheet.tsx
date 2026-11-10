@@ -40,7 +40,6 @@ export function BottomSheet({ title, open, onClose, children, testID }: BottomSh
         />
         <View
           testID={testID}
-          accessibilityViewIsModal
           style={{
             backgroundColor: colors.surface,
             borderTopLeftRadius: theme.radius.lg * 2,
