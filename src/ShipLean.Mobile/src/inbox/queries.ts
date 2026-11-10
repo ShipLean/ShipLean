@@ -1,5 +1,6 @@
 import { getAnswered, getInbox, inboxKeys } from '@shiplean/core/api/inbox';
 import { skipToken, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
 
 // The project's Inbox; waits until the project id is known.
 export const useInboxQuery = (projectId: string | undefined) =>
@@ -15,8 +16,11 @@ export const useAnsweredQuery = (projectId: string | undefined) =>
     queryFn: projectId === undefined ? skipToken : () => getAnswered(projectId),
   });
 
-// Refreshes the project's Inbox and Answered (the Inbox key is the prefix of both).
+// Refreshes the project's Inbox and Answered (the Inbox key is the prefix of both). The function is stable.
 export function useInvalidateInbox(): (projectId: string) => Promise<void> {
   const queryClient = useQueryClient();
-  return (projectId) => queryClient.invalidateQueries({ queryKey: inboxKeys.inbox(projectId) });
+  return useCallback(
+    (projectId: string) => queryClient.invalidateQueries({ queryKey: inboxKeys.inbox(projectId) }),
+    [queryClient],
+  );
 }
