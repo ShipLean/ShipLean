@@ -8,6 +8,7 @@ import { primitiveIds } from '../../ui/testIds';
 import { ToastHost } from '../../ui/Toast';
 import { writeLastMic, writeLastRoute } from './lastPlace';
 import { MicPermissionWatcher } from './MicPermissionWatcher';
+import { recheckMic } from './permissionEvents';
 
 let mockPath = '/';
 let mockNavKey: string | undefined = 'root';
@@ -66,6 +67,20 @@ describe('MicPermissionWatcher', () => {
     expect(screen.queryByTestId(primitiveIds.toast)).toBeNull();
     await foreground();
     expect(screen.queryByTestId(primitiveIds.toast)).toBeNull();
+  });
+
+  it('a yes in the permission sheet shows the toast without the app leaving the front', async () => {
+    const { mic } = installFakeEngines();
+    mic.set('undetermined');
+    await mount();
+    expect(screen.queryByTestId(primitiveIds.toast)).toBeNull();
+
+    mic.set('granted');
+    await act(async () => recheckMic());
+    expect(screen.getByTestId(primitiveIds.toast)).toHaveTextContent(
+      'Microphone on · hold to talk',
+    );
+    expect(mockReplace).not.toHaveBeenCalled();
   });
 
   it('a normal foreground with no change shows nothing', async () => {

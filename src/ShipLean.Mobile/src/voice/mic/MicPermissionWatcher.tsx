@@ -20,7 +20,9 @@ export function MicPermissionWatcher() {
   const navigationReady = useRootNavigationState()?.key !== undefined;
   // The screen is only stored once the first read is done, so the screen kept before this launch isn't overwritten.
   const [tracking, setTracking] = useState(false);
-  const stored = useRef(readLastRoute(kvStore));
+  // Read once: the kv store is not read again on every render.
+  const stored = useRef<ReturnType<typeof readLastRoute> | undefined>(undefined);
+  if (stored.current === undefined) stored.current = readLastRoute(kvStore);
   // Where to go once the navigator exists, after a cold start that found the microphone back on.
   const waiting = useRef<string | null>(null);
   const latest = useRef({ toast, pathname, navigationReady });
@@ -37,7 +39,7 @@ export function MicPermissionWatcher() {
       writeLastMic(kvStore, now);
       if (back) {
         latest.current.toast.show({ text: BACK_ON, ms: TOAST_MS });
-        if (coldStart) waiting.current = stored.current;
+        if (coldStart) waiting.current = stored.current ?? null;
       }
       setTracking(true);
     };
