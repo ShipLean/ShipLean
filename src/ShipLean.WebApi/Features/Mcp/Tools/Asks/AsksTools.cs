@@ -18,7 +18,7 @@ namespace ShipLean.WebApi.Features.Mcp.Tools.Asks;
 internal sealed class AsksTools(ItemResolver itemResolver, MemberResolver members, IDecisionRecorder recorder, IDecisionAnswers answers, IQuestionWrites questions, IItemAsks asks, CaptureSupport support)
 {
     [McpServerTool(Name = "record_decisions"), McpScope(McpScopes.Write)]
-    [Description("Record the decisions you made on a work item, each with the answer you are going with and the alternatives, for the item's owner to confirm or change. Leave number out to take the next D-number; an open number is edited. A settled or withdrawn number is refused and nothing is written.")]
+    [Description("Record the decisions you made on a work item, each with the answer you are going with and the alternatives, for the item's owner to confirm or change. Leave number out to take the next D-number; an open number is edited. A settled or withdrawn number is refused and nothing is written. Carry on with your recommended answers; the owner confirms or changes them on the item and the next agent reads that.")]
     public async Task<CallToolResult> RecordDecisions(
         [Description("The item's key, such as SHIP-12.")] string item,
         [Description("The decisions to record, in order.")] IReadOnlyList<DecisionArg> decisions,
@@ -58,13 +58,14 @@ internal sealed class AsksTools(ItemResolver itemResolver, MemberResolver member
         var labels = string.Join(", ", touched.Select(t => $"D{t.Number}"));
         var summary = $"Recorded {labels} on {resolved.Key} ({string.Join(", ", counts)})";
         var anchor = touched.Count > 0 ? $"#D{touched[0].Number}" : "";
+        var project = await support.ProjectOfAsync(resolved, cancellationToken);
         var result = new RecordDecisionsResult(
-            (await support.ProjectOfAsync(resolved, cancellationToken)).Key, await OpenUrlAsync(resolved, anchor, cancellationToken), resolved.Key, recorded.Created, recorded.Updated);
+            project.Key, await OpenUrlAsync(resolved, project, anchor, cancellationToken), resolved.Key, recorded.Created, recorded.Updated);
         return AsksReply.Of(result, summary, string.Join("\n", lines));
     }
 
     [McpServerTool(Name = "ask"), McpScope(McpScopes.Write)]
-    [Description("Ask the item's owner a question you need answered before you can go on. The next agent to pick the item up reads the answer; do not wait for it.")]
+    [Description("Ask the item's owner a question. The owner answers on the item and the next agent to pick it up reads the answer; carry on with what you can, or hand back. Never wait for it.")]
     public async Task<CallToolResult> Ask(
         [Description("The item's key, such as SHIP-12.")] string item,
         [Description("The question.")] string text,
@@ -72,13 +73,14 @@ internal sealed class AsksTools(ItemResolver itemResolver, MemberResolver member
     {
         var resolved = await itemResolver.ResolveAsync(item, ProjectRole.Member, cancellationToken: cancellationToken);
         var asked = await questions.AskAsync(resolved.Id, text ?? string.Empty, cancellationToken);
+        var project = await support.ProjectOfAsync(resolved, cancellationToken);
         var result = new AskResult(
-            (await support.ProjectOfAsync(resolved, cancellationToken)).Key, await OpenUrlAsync(resolved, $"#Q{asked.Number}", cancellationToken), resolved.Key, asked.Number, asked.Label);
-        return AsksReply.Of(result, $"Asked {asked.Label} on {resolved.Key}.");
+            project.Key, await OpenUrlAsync(resolved, project, $"#Q{asked.Number}", cancellationToken), resolved.Key, asked.Number, asked.Label);
+        return AsksReply.Of(result, $"Asked {asked.Label} on {resolved.Key}; the owner answers on the item and the next agent to pick it up reads it.");
     }
 
     [McpServerTool(Name = "answer_decision"), McpScope(McpScopes.Write)]
-    [Description("Answer a decision on an item as its owner: confirm the recommended answer, change it, or withdraw the decision. For change, answer is recommended, alternative:<n> (1 is the first alternative) or your own words.")]
+    [Description("Answer a decision on an item for the person you work for: confirm the recommended answer (only on an open decision), change it, or withdraw the decision. For change, answer is recommended, alternative:<n> (1 is the first alternative) or your own words.")]
     public async Task<CallToolResult> AnswerDecision(
         [Description("The item's key, such as SHIP-12.")] string item,
         [Description("The decision's number (3 for D3).")] int number,
@@ -93,8 +95,9 @@ internal sealed class AsksTools(ItemResolver itemResolver, MemberResolver member
 
         var row = (await asks.GetAsync(resolved.Id, cancellationToken)).Decisions.Single(d => d.Number == number);
         var state = row.State.ToString().ToLowerInvariant();
+        var project = await support.ProjectOfAsync(resolved, cancellationToken);
         var result = new AnswerDecisionResult(
-            (await support.ProjectOfAsync(resolved, cancellationToken)).Key, await OpenUrlAsync(resolved, $"#D{number}", cancellationToken), resolved.Key, number, state, row.CurrentAnswer);
+            project.Key, await OpenUrlAsync(resolved, project, $"#D{number}", cancellationToken), resolved.Key, number, state, row.CurrentAnswer);
         return AsksReply.Of(result, $"D{number} on {resolved.Key} is now {state}.");
     }
 
@@ -107,9 +110,15 @@ internal sealed class AsksTools(ItemResolver itemResolver, MemberResolver member
         CancellationToken cancellationToken = default)
     {
         var resolved = await itemResolver.ResolveAsync(item, ProjectRole.Member, cancellationToken: cancellationToken);
-        var commentId = await questions.AnswerAsync(resolved.Id, number, answer ?? string.Empty, cancellationToken);
+        if (string.IsNullOrWhiteSpace(answer))
+        {
+            throw ApiException.Validation("Write an answer.", "answer");
+        }
+
+        var commentId = await questions.AnswerAsync(resolved.Id, number, answer, cancellationToken);
+        var project = await support.ProjectOfAsync(resolved, cancellationToken);
         var result = new AnswerQuestionResult(
-            (await support.ProjectOfAsync(resolved, cancellationToken)).Key, await OpenUrlAsync(resolved, $"#Q{number}", cancellationToken), resolved.Key, number, commentId);
+            project.Key, await OpenUrlAsync(resolved, project, $"#Q{number}", cancellationToken), resolved.Key, number, commentId);
         return AsksReply.Of(result, $"Answered Q{number} on {resolved.Key}.");
     }
 
@@ -205,9 +214,8 @@ internal sealed class AsksTools(ItemResolver itemResolver, MemberResolver member
         return (AnswerKind.Own, null, text);
     }
 
-    private async Task<string> OpenUrlAsync(ResolvedItem resolved, string anchor, CancellationToken cancellationToken)
+    private async Task<string> OpenUrlAsync(ResolvedItem resolved, ResolvedProject project, string anchor, CancellationToken cancellationToken)
     {
-        var project = await support.ProjectOfAsync(resolved, cancellationToken);
         return McpOpenUrls.WorkItem(await support.BaseUrlAsync(cancellationToken), project.Key, resolved.Key) + anchor;
     }
 }
