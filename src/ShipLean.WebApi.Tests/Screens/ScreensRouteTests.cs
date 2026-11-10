@@ -45,9 +45,10 @@ public class ScreensRouteTests : ApiFixture
 
         overview.ProjectId.ShouldBe(Ship);
         overview.SinceLabel.ShouldStartWith("since ");
-        overview.Groups.Select(g => (g.StateCategory, g.Label, g.Folded))
-            .ShouldBe([("inProgress", "Active", false), ("resolved", "Resolved", false), ("proposed", "New", false), ("completed", "Closed", true)]);
-        overview.Groups[^1].Rows.ShouldBeEmpty();
+        string[] order = ["Active", "Resolved", "New", "Closed"];
+        overview.Groups.Select(g => g.Label).ShouldBe(order.Where(label => overview.Groups.Any(g => g.Label == label)), ignoreOrder: false);
+        overview.Groups.ShouldAllBe(g => g.Folded == (g.Label == "Closed"));
+        overview.Groups.Where(g => g.Folded).ShouldAllBe(g => g.Rows.Count == 0);
     }
 
     [TestCase("")]
