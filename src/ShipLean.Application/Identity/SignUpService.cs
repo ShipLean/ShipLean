@@ -10,8 +10,10 @@ using ShipLean.Core.People;
 namespace ShipLean.Application.Identity;
 
 // POST /api/auth/signup: anyone who can reach ShipLean creates a password user, while SHIPLEAN_SIGNUP_ENABLED is true
-// (docs/auth.md). Off by default and meant to be turned on briefly, for example to make a store reviewer's account.
-// Any value but true (any case) is off.
+// (docs/auth.md). Meant to be on briefly, for example to make a store reviewer's account. Any value but true (any
+// case) is off.
+// TODO: unset counts as on, so prod (where the variable can't be set right now) gets sign-up for the Play reviewer's
+// account. Replace with unset = off (IsEnabled reading only "true") in the follow-up revert PR on SHIP-1347.
 [RegisterSingleton]
 public sealed class SignUpService(NpgsqlDataSource dataSource, Passwords passwords, IConfiguration configuration, TimeProvider clock)
 {
@@ -19,7 +21,8 @@ public sealed class SignUpService(NpgsqlDataSource dataSource, Passwords passwor
     public const string Off = "Sign-up is turned off on this ShipLean.";
     public const string Taken = "An account with this email already exists. Sign in instead.";
 
-    public bool IsEnabled => string.Equals(configuration[EnabledKey]?.Trim(), "true", StringComparison.OrdinalIgnoreCase);
+    public bool IsEnabled => configuration[EnabledKey]?.Trim() is not { Length: > 0 } value
+        || string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
 
     // The id of the new user, who is signed in by the caller. An existing email, in any case, is refused and never
     // adopted: taking over an account an admin added would need proof of the address, and sign-up has none.
