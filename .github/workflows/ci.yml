@@ -147,6 +147,69 @@ jobs:
           fi
           pnpm run build
 
+  # The phone app's Android debug build from prebuild, so a native module or config plugin that doesn't compile fails CI.
+  # On a pull request it runs only when the diff reaches the native side: the app's package.json, the lockfile, the
+  # workspace file (allowBuilds decides which native postinstalls run), app.json or app.config.ts, the app's local
+  # modules, or ci.yml. Otherwise it passes with a message. android/ is generated here and never committed.
+  # arm64-v8a is the phones; x86_64 is the emulator. Both are the ABIs llama.rn ships prebuilt.
+  mobile-android-build:
+    name: mobile android build
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: native
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            changed=$(git diff --name-only "$BASE_SHA")
+            if ! grep -Eq '^(src/ShipLean\.Mobile/(package\.json|app\.json|app\.config\.ts|modules/.*)|src/(pnpm-lock\.yaml|pnpm-workspace\.yaml)|\.github/workflows/ci\.yml)$' <<<"$changed"; then
+              echo "Skipping the Android build: this pull request changes nothing native (the app's package.json, the lockfile, the workspace file, app.json, app.config.ts, modules/ or ci.yml)"
+              echo "run=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+          echo "run=true" >> "$GITHUB_OUTPUT"
+      - uses: pnpm/action-setup@v4
+        if: steps.native.outputs.run == 'true'
+        with:
+          package_json_file: src/package.json
+      - uses: actions/setup-node@v4
+        if: steps.native.outputs.run == 'true'
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: src/pnpm-lock.yaml
+      - uses: actions/setup-java@v4
+        if: steps.native.outputs.run == 'true'
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: actions/cache@v4
+        if: steps.native.outputs.run == 'true'
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ github.job }}-${{ hashFiles('src/pnpm-lock.yaml', 'src/ShipLean.Mobile/app.json') }}
+          restore-keys: gradle-${{ github.job }}-
+      - run: pnpm install --frozen-lockfile
+        if: steps.native.outputs.run == 'true'
+        working-directory: src
+      - run: npx expo prebuild --platform android --no-install --clean
+        if: steps.native.outputs.run == 'true'
+        working-directory: src/ShipLean.Mobile
+      - run: ./gradlew assembleDebug --no-daemon -PreactNativeArchitectures=arm64-v8a,x86_64
+        if: steps.native.outputs.run == 'true'
+        working-directory: src/ShipLean.Mobile/android
+
   unit:
     name: unit tests
     needs: changes
