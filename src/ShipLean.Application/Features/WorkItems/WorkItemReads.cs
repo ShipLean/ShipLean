@@ -18,7 +18,7 @@ namespace ShipLean.Application.Features.WorkItems;
 // The work item read model by SQL: WorkItemDto with its refs, rendered markdown, children, links and labels. Callers check
 // IProjectAccess first. The store reuses it (inside its transaction) to build the conflict body.
 [RegisterPerRequest]
-public sealed class WorkItemReads(NpgsqlDataSource dataSource, MarkdownRenderer renderer, TimeProvider time, WorkItemExtras extras)
+public sealed class WorkItemReads(NpgsqlDataSource dataSource, MarkdownRenderer renderer, TimeProvider time, IWorkItemExtras extras)
 {
     public async Task<WorkItemDto> GetAsync(Guid id, CancellationToken cancellationToken = default)
     {

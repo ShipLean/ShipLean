@@ -37,7 +37,7 @@ public sealed class PostgresWorkItemStoreArrangement : IAsyncDisposable
     public WorkItemStore CreateStore(IWorkItemRules rules, Guid actorId)
         => new(_dataSource, new FixedCurrentUser(actorId), rules, Events, new MarkdownRenderer(), TimeProvider.System, AgentIdentity.None);
 
-    public WorkItemReads CreateReads() => new(_dataSource, new MarkdownRenderer(), TimeProvider.System);
+    public WorkItemReads CreateReads() => new(_dataSource, new MarkdownRenderer(), TimeProvider.System, new WorkItemExtras());
 
     public async Task<ArrangedProject> ArrangeProjectAsync()
     {
