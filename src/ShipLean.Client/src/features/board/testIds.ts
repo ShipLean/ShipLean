@@ -81,4 +81,7 @@ export const boardTestIds = {
   childAddCancel: 'board-child-add-cancel',
   childAddError: 'board-child-add-error',
   locationProbe: 'board-location-probe',
+
+  // SHIP-916 W1
+  cardHealth: 'board-card-health',
 } as const;
