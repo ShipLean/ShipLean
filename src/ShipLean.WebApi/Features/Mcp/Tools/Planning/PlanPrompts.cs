@@ -79,7 +79,7 @@ internal sealed class PlanPrompts(ItemResolver items, FeatureKind features)
             Content = new TextContentBlock
             {
                 Text = $"""
-                    Call planning_guide with part work and follow it for {what}. Search first; reuse an existing Feature or create one in a Proposed state with create_feature. Read what is already there with get_work_item and read_attachment. Do the research, attach findings with attach_markdown, update the Feature body's key facts and decisions, link sources with link when helpful, then end with comment and set_status. Do not keep research in local files.
+                    Call planning_guide with part work and follow it for {what}. Search first; reuse an existing Feature or create one in a Proposed state with create_feature. Read what is already there with get_work_item and read_attachment. Do the research, attach findings with attach_markdown, update the Feature body's key facts, record decisions with record_decisions, link sources with link when helpful, then end with comment and set_status. Do not keep research in local files.
                     """,
             },
         };

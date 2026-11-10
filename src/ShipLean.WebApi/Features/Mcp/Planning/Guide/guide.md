@@ -20,6 +20,7 @@ ShipLean holds progress for a plan run. Do not write amendments, notes for later
 - Notes for a later wave: a `comment` on that wave's story or on the Feature, tagged so `get_brief` includes it.
 - Reports: `report_task` only.
 - Reviews: `comment` on the task starting with `Review · `.
+- Decisions: `record_decisions` on the Feature for plan decisions, and on the task for an implementer's. One nobody has answered stands as recommended. Never write a D-table in Markdown. `get_work_item` and `get_brief` show the answers.
 - Fix rounds: comments on the task.
 - Facts that differ per machine (paths, SDK location, concurrency caps): say so in a `comment` so the next host re-checks them instead of trusting them.
 
@@ -138,7 +139,7 @@ Run these checks and fix what they find:
 4. **File ownership.** No two concurrent tasks own the same file. List owned files per task, including test infrastructure: page objects, test helpers, fixtures and route tables.
 5. **Context budget.** Every task, and every orchestrator, conductor and lead, has an estimate under about 100k (Step 2).
 6. **Definition of ready.** The plan is not handed over until the briefs and the common brief exist and have passed the plan review (any edit after the review is re-reviewed).
-7. **Open questions.** Anything whose answer changes the work (where data comes from, which environment, who approves) goes to the user now, batched in one set of questions. Do not build something you might throw away to find out.
+7. **Open questions.** Anything whose answer changes the work (where data comes from, which environment, who approves) goes to the user now, batched in one set of questions. When nobody is in session, `ask` each one on the Feature or the item it blocks, and carry on with what does not depend on it. The next agent to pick the item up reads the answer. Do not build something you might throw away to find out.
 8. **Concurrency.** Size each wave's parallel sub-agents to the machine's test load (containers, browsers, cores), not a fixed agent count.
 9. **Test commands.** The common brief names the exact build and test commands (the filtered inner-loop command and each affected project's full run) and how long each took. Commands that ran green on the same host recently may be reused without a fresh run; say in the common brief when and where they last ran, and record it as a known gap in the plan. Run them before launch only when nothing recent exists, the host is new, or the plan changes test infrastructure. Do not block a Direct or small Orchestrated plan on a fresh full run.
 

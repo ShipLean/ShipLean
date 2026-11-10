@@ -16,12 +16,16 @@ import {
 // refetches all three. A refused write leaves its ApiRequestError on the mutation (error) for the region to show.
 export function useAskWrites(projectId: string, itemKey: string, workItemId: string) {
   const queryClient = useQueryClient();
-  const refetch = () =>
-    Promise.all([
+  // Started, not awaited: TanStack Query awaits a hook-level onSuccess before it runs the caller's mutate(…, { onSuccess })
+  // callbacks, and skips them if the refetch unmounts the caller (the last open decision folds the section). The toast
+  // must not wait for, or depend on, the refetch.
+  const refetch = () => {
+    void Promise.all([
       queryClient.invalidateQueries({ queryKey: asksKey(projectId, itemKey) }),
       queryClient.invalidateQueries({ queryKey: workItemHistoryKey(projectId, itemKey) }),
       queryClient.invalidateQueries({ queryKey: workItemCommentsKey(projectId, itemKey) }),
     ]);
+  };
   return {
     confirm: useMutation<void, ApiRequestError, number[]>({
       mutationFn: (numbers) => confirmDecisions(workItemId, numbers),

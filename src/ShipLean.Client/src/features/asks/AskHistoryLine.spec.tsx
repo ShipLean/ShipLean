@@ -56,7 +56,7 @@ test('AskHistoryLine_WhenFoldedRaise_ShouldShowRangeBadge', async ({ mount }) =>
   );
 
   const row = component.getByTestId(ids.historyLine);
-  await expect(row).toContainText('D1–D7');
+  await expect(row.getByTitle('D1–D7')).toHaveText('D1');
   await expect(row).toContainText('raised D1–D7');
   await expect(row).toContainText('Claude Code (claude.ai)');
   await expect(row.getByTitle('Agent: Claude Code (claude.ai)')).toBeVisible();
