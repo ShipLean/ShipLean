@@ -208,6 +208,34 @@ public class AskToolsTests : McpFixture
     }
 
     [Test]
+    public async Task Ask_WhenOptionsPassed_ShouldRecordThem()
+    {
+        var (id, key) = await NewItemAsync();
+        var token = await TokenAsync(TestUser.Joel, ReadWrite);
+
+        var reply = await CallToolAsync(token, "ask", $$"""{"item":"{{key}}","text":"Which colour?","options":[" Red ","Blue"]}""");
+
+        reply.IsToolError().ShouldBeFalse(reply.Body);
+        await using var connection = await OpenDatabaseAsync();
+        (await connection.QuerySingleAsync<string>(
+            "SELECT options::text FROM question WHERE work_item_id = @id AND number = 1", new { id })).ShouldBe("""["Red", "Blue"]""");
+    }
+
+    [Test]
+    public async Task Ask_WhenSevenOptionsPassed_ShouldReturnValidationError()
+    {
+        var (id, key) = await NewItemAsync();
+        var token = await TokenAsync(TestUser.Joel, ReadWrite);
+
+        var reply = await CallToolAsync(token, "ask", $$"""{"item":"{{key}}","text":"Which?","options":["1","2","3","4","5","6","7"]}""");
+
+        reply.IsToolError().ShouldBeTrue();
+        ShouldBeValidation(reply.Structured().GetProperty("error"), "options");
+        await using var connection = await OpenDatabaseAsync();
+        (await connection.ExecuteScalarAsync<int>("SELECT count(*)::int FROM question WHERE work_item_id = @id", new { id })).ShouldBe(0);
+    }
+
+    [Test]
     public async Task AnswerDecision_WhenConfirm_ShouldConfirm()
     {
         var (id, key) = await NewItemAsync();

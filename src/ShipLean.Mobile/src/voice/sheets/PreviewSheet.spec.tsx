@@ -45,7 +45,7 @@ const TEXT: Record<string, string> = {
 // One change per call, its line worded from TEXT: lines[i] describes actions[i].
 const workItemSpec: ScreenVoiceSpec = {
   screen: 'SHIP-906 Voice commands',
-  actions: [],
+  actions: Object.keys(TEXT).map((name) => ({ name, description: name, args: { type: 'object' } })),
   context: () => ({}),
   hotwords: () => ['SHIP-906'],
   toActions: (calls: ParsedCall[]) => ({

@@ -1,5 +1,5 @@
 import { useEffect, useState, type FunctionComponent } from 'react';
-import { Platform, Text, View } from 'react-native';
+import { AppState, Platform, Text, View } from 'react-native';
 import { useTheme } from '../theme';
 import { Button } from '../ui/Button';
 import type { ModelStatus } from '../voice/contracts';
@@ -112,6 +112,7 @@ function NoSpacePanel({ space }: { space: NoSpaceView }) {
   const theme = useTheme();
   const { colors } = theme;
   const store = engines().models;
+  const smaller = space.smaller;
   return (
     <View
       testID={downloadingStepIds.noSpace}
@@ -152,20 +153,18 @@ function NoSpacePanel({ space }: { space: NoSpaceView }) {
           onPress={() => void openPhoneStorage()}
         />
       </View>
-      {space.smaller === null ? null : (
+      {smaller === null ? null : (
         <Button
           testID={downloadingStepIds.useSmaller}
-          label={`Switch to ${space.smaller.name}`}
+          label={`Switch to ${smaller.name}`}
           variant="ghost"
-          onPress={() => {
-            store.choose(space.smaller?.model ?? 'auto');
-            store.download();
-          }}
+          // A download is already wanted, so choose() restarts it on the smaller model by itself.
+          onPress={() => store.choose(smaller.model)}
         />
       )}
-      {space.smaller === null ? null : (
+      {smaller === null ? null : (
         <Text style={{ color: colors.muted, fontSize: theme.font.size.base }}>
-          {`${space.smaller.name} is ${formatGb(space.smaller.bytes)} and fits once the ${space.model} download is removed.`}
+          {`${smaller.name} is ${formatGb(smaller.bytes)} and fits once the ${space.model} download is removed.`}
         </Text>
       )}
     </View>
@@ -182,15 +181,22 @@ export const DownloadingStep: FunctionComponent<DownloadingStepProps> = ({ onUse
   const [mic, setMic] = useState<MicState | null>(null);
   const [samples, setSamples] = useState<Sample[]>([]);
 
+  // Read on mount, and again when the app comes back to the front (after Open Settings).
   useEffect(() => {
     let live = true;
-    void engines()
-      .mic.status()
-      .then((s) => {
-        if (live) setMic(s);
-      });
+    const read = () =>
+      void engines()
+        .mic.status()
+        .then((s) => {
+          if (live) setMic(s);
+        });
+    read();
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next === 'active') read();
+    });
     return () => {
       live = false;
+      sub.remove();
     };
   }, []);
 
@@ -361,10 +367,17 @@ export const DownloadingStep: FunctionComponent<DownloadingStepProps> = ({ onUse
             variant="ghost"
             onPress={() => store.pause()}
           />
-        ) : status.phase === 'paused' ? (
+        ) : status.phase === 'paused' && space === null ? (
           <Button
             testID={downloadingStepIds.resume}
             label="Resume download"
+            variant="ghost"
+            onPress={() => store.download()}
+          />
+        ) : status.phase === 'failed' && space === null ? (
+          <Button
+            testID={downloadingStepIds.failedTryAgain}
+            label="Try again"
             variant="ghost"
             onPress={() => store.download()}
           />
