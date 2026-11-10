@@ -261,6 +261,27 @@ describe('backlog voice spec', () => {
     expect(r.lines[0].warning).toBe(ONE_MOVE_WARNING);
   });
 
+  it('keeps the first move that works when an earlier move fails', () => {
+    const r = done(
+      run(features(), 'Put SHIP-999 at the top and SHIP-246 at the top and SHIP-256 at the top', [
+        ['move_to', { item: 'SHIP-999', position: 'top' }],
+        ['move_to', { item: 'SHIP-246', position: 'top' }],
+        ['move_to', { item: 'SHIP-256', position: 'top' }],
+      ]),
+    );
+    expect(r.actions).toHaveLength(1);
+    expect(r.actions[0].key).toBe('SHIP-246');
+    expect(r.lines[0].warning).toBe(ONE_MOVE_WARNING);
+    expect(r.rejected.map((x) => x.call.args)).toEqual([
+      { item: 'SHIP-999', position: 'top' },
+      { item: 'SHIP-256', position: 'top' },
+    ]);
+    expect(r.rejected[1].failure).toEqual({
+      kind: 'noValidAction',
+      detail: { action: 'move_to', reason: 'notAllowed' },
+    });
+  });
+
   it('resolves the capture state: a new Story under SHIP-906 at the top, title word for word', () => {
     const utterance = 'Add a story to SHIP-906: show a banner while the models download';
     const r = done(
@@ -304,14 +325,14 @@ describe('backlog voice spec', () => {
     const r = done(
       run(
         stories(),
-        'Add a bug under SHIP-907: the sign in button does nothing',
-        [['add_item', { type: 'bug', parent: 'SHIP-907' }]],
+        'Add a story under SHIP-907: the sign in button does nothing',
+        [['add_item', { type: 'story', parent: 'SHIP-907' }]],
         'the sign in button does nothing',
       ),
     );
     const feature = FEATURES.find((f) => f.key === 'SHIP-907');
     expect(r.actions[0]).toMatchObject({
-      type: 'bug',
+      type: 'story',
       parentId: feature?.id,
       parentKey: 'SHIP-907',
     });
@@ -606,8 +627,10 @@ describe('backlog test set', () => {
       expect(
         rows.filter((r) => r.calls.some((c) => c.action === a.name)).length,
       ).toBeGreaterThanOrEqual(3);
-    expect(Object.values(FAILS).filter((k) => k === 'ambiguous')).toHaveLength(4);
-    expect(rows.filter((r) => r.calls.length === 0).length + 1).toBeGreaterThanOrEqual(4);
+    expect(rows.filter((r) => FAILS[r.utterance] === 'ambiguous')).toHaveLength(4);
+    expect(
+      rows.filter((r) => r.calls.length === 0 || FAILS[r.utterance] === 'noValidAction').length,
+    ).toBeGreaterThanOrEqual(4);
   });
 
   it('replays every test-set row through toActions to its expected calls and note text', () => {
@@ -615,6 +638,7 @@ describe('backlog test set', () => {
       const level = row.context?.level === 'stories' ? 'stories' : 'features';
       const filters = { ...NO_FILTERS, ...((row.context?.filters as object | undefined) ?? {}) };
       const spec = backlogVoiceSpec(context(level, { filters }));
+      if (row.context !== undefined) expect(row.context, row.utterance).toEqual(spec.context());
       const result = run(
         spec,
         row.utterance,

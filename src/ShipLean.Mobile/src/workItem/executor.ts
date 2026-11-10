@@ -254,11 +254,12 @@ async function reconcileOne(
       return holdsHealth(a)(await item()) ? 'sent' : 'notSent';
     case 'setStatus':
       return holdsStatus(a)(await item()) ? 'sent' : 'notSent';
-    case 'confirmStatus':
-      // A confirmation changes no field, but it is a revision of its own (StatusConfirm.cs). The action carries no
-      // earlier verified stamp to compare with, so the rule is the revision: past a.revision means it went through.
-      // If someone else's change moved it instead, a resend at a.revision would only be a 409, so 'sent' loses nothing.
-      return (await item()).revision > a.revision ? 'sent' : 'notSent';
+    case 'confirmStatus': {
+      // A confirmation stamps statusVerified.at with the server's time (StatusConfirm.cs). Another edit moving the
+      // revision says nothing about the confirm, so only a stamp from after the send counts.
+      const verified = (await item()).statusVerified;
+      return verified !== null && Date.parse(verified.at) >= since ? 'sent' : 'notSent';
+    }
   }
 }
 
