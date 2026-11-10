@@ -52,9 +52,9 @@ Only `*.test.ts` and `*.spec.tsx` may import it.
 - **Jest setup** (`jest.setup.ts`) fakes expo-secure-store and kv-store in memory (`storage.ts`), expo-web-browser (`jest.mocked(openAuthSessionAsync)`), NetInfo (`setConnected(false)` from `netInfo.ts`), the colour scheme and the safe area.
 - Specs assert root ids and test ids, never placeholder text.
 
-## Expo Go or a development build
+## A development build
 
-- **Expo Go** (from the app store) runs the app with no native build: `pnpm start` and scan the QR code. It only works while this SDK's Expo Go is the one in the store.
+- **Expo Go can't run the app.** `index.ts` configures the voice engines at start-up, and their native modules (ShipLeanModelFiles, SherpaOnnx, RNLlama) aren't in Expo Go, so it stops at start with "Cannot find native module". Use a development build.
 - **A development build** has the app's own native code: `npx expo prebuild`, then `npx expo run:android` or `npx expo run:ios`. That needs the Android SDK or Xcode on your machine. `android/` and `ios/` are generated and gitignored. To run it on a real phone over USB, use `npx expo run:android --device` or `npx expo run:ios --device`; `docs/device-check.md` is the script for that. Store builds and signing (EAS) aren't set up yet.
 
 ## Running against a dev server

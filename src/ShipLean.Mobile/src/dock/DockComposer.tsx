@@ -26,6 +26,7 @@ import { primitiveIds } from '../ui/testIds';
 import { useVoiceInternals } from '../voice/internals';
 import { CommandComposer } from '../voice/typed/CommandComposer';
 import {
+  registerDock,
   useComposerRequest,
   type ComposerReason,
   type ComposerRequest,
@@ -85,6 +86,8 @@ export function DockComposer({
   const internals = useVoiceInternals();
   const focused = useScreenFocused();
   const { request, consume } = useComposerRequest();
+  // While this screen is focused it is where a composer request opens.
+  useEffect(() => (focused ? registerDock() : undefined), [focused]);
   const { origin, email } = useSession();
   const scope = scopeOf({ origin, email });
   const store = platform().persistentStore();
