@@ -216,10 +216,15 @@ describe('work item executor', () => {
     ]);
   });
 
-  it('reconciles an uncertain confirmStatus as sent once the revision moved past it', async () => {
-    now(8);
+  it('reconciles an uncertain confirmStatus from the verified stamp, not the revision', async () => {
+    const stamp = (at: string) => ({
+      statusVerified: { at, atLabel: 'just now', stale: false, by: null, agent: null, via: null },
+    });
+    now(8, stamp('2030-01-01T09:00:30.000Z'));
     expect(await reconcile(confirmStatus)).toEqual(['sent']);
-    now(7);
+    now(8, stamp('2029-12-20T09:00:00.000Z'));
+    expect(await reconcile(confirmStatus)).toEqual(['notSent']);
+    now(8, { statusVerified: null });
     expect(await reconcile(confirmStatus)).toEqual(['notSent']);
   });
 
