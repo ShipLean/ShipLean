@@ -11,7 +11,7 @@ namespace ShipLean.WebApi.Features.Mcp.Planning;
 // capture_plan cannot create. Sizes are UTF-8 bytes.
 public sealed partial class PlanShapeRules : IPlanShapeRules
 {
-    public const int MaxItems = 60;
+    public const int MaxItems = 150;
     public const int MaxTaskBriefBytes = 10 * 1024;
     public const int MaxCommonBriefBytes = 64 * 1024;
     public const int MaxPlanMarkdownBytes = 200 * 1024;

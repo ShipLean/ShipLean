@@ -111,7 +111,7 @@ Agents on REST, not MCP, follow the same rule: progress, reports, decisions and 
 - `shared_branch` and `common_brief` are required. The branch is put in every brief's git commands, so it is a plain git name: letters, digits, `.`, `_`, `-` and `/`, at most 200 characters, not starting with `-`, `.` or `/`, with no `..` or `//`, and not ending with `/`, `.` or `.lock`;
 - titles (feature, story, task) are one line of at most 255 characters; `lane` and `model` are short words (letters, digits, `.`, `_`, `-`; at most 64), since they become tags and land in briefs;
 - a plan has at least one story; every task has a `title`, a `brief`, a `model` role and a `context_k` of at least 1, which is a warning over 100 and an error over 150;
-- at most 60 items (the Feature when new, the stories and the tasks);
+- at most 150 items (the Feature when new, the stories and the tasks);
 - sizes in UTF-8 bytes: a brief up to 10 KB, the common brief up to 64 KB, `plan_markdown` up to 200 KB, and descriptions within the Markdown render limit. A plan still has to fit in one `/mcp` body.
 
 **Markers** (`PlanMarkers`): comments start `Report · `, `Review · ` or `Retro · `, and links are titled `commit <sha7> <subject>` or `PR <title or url>`. A reviewer records each review round as a `Review · ` comment, and a lead closes its story with `update_progress` once every task has passed review, which is what moves the plan on to the next wave.
