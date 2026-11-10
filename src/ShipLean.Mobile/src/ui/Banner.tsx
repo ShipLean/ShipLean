@@ -1,5 +1,6 @@
 import { Pressable, Text, View } from 'react-native';
 import { useTheme } from '../theme';
+import { tint } from './layout';
 import { actionId, primitiveIds } from './testIds';
 
 export type BannerTone = 'info' | 'warn' | 'danger';
@@ -33,10 +34,8 @@ export function Banner({ tone, text, action, testID = primitiveIds.banner }: Ban
         minHeight: theme.touch.control,
         borderRadius: theme.radius.lg,
         borderWidth: 1,
-        borderColor: colors.border,
-        borderLeftWidth: 3,
-        borderLeftColor: toneColour,
-        backgroundColor: colors.surface,
+        borderColor: 'transparent',
+        backgroundColor: tint(toneColour, 0.14),
       }}
     >
       <Text style={{ flex: 1, color: colors.text, fontSize: theme.font.size.base }}>{text}</Text>
