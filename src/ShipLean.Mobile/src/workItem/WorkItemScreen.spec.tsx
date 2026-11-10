@@ -159,7 +159,10 @@ describe.each(['light', 'dark'] as const)('Work item screen (%s)', (scheme) => {
 
   // Red when the header keeps the state of its first read instead of the cached item.
   it('renders the applied state: the header shows the state from a refetched item', async () => {
-    const feature = aFeatureItem({ projectId });
+    const feature = aFeatureItem({
+      projectId,
+      state: { id: 's-new', name: 'New', category: 'proposed' },
+    });
     const active = { ...feature.state, name: 'Active', category: 'inProgress' as const };
     let reads = 0;
     const api = workItemApi(
@@ -172,13 +175,13 @@ describe.each(['light', 'dark'] as const)('Work item screen (%s)', (scheme) => {
       { projectId, items: [feature] },
     );
     await open('SHIP-906', api, scheme);
-    const header = await screen.findByTestId(ids.workItemHeaderId);
-    expect(screen.getByTestId(primitiveIds.statePill)).toHaveTextContent(feature.state.name);
+    await screen.findByTestId(ids.workItemHeaderId);
+    expect(screen.getByTestId(primitiveIds.statePill)).toHaveTextContent('New');
 
     await pullDown();
 
     expect(await screen.findByText('Active')).toBeOnTheScreen();
-    expect(header).toBeOnTheScreen();
+    expect(screen.queryByText('New')).toBeNull();
   });
 
   it('shows the Or say hint when voice is ready', async () => {
