@@ -26,8 +26,8 @@ public class InboxOrderingTests
     {
         var (feature, story, other) = (Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
 
-        // The story (30h) waited longer than the other item (20h), but the Feature (40h) is first and the story follows it.
-        Placed(Entry(story, 30, feature), Entry(other, 20), Entry(feature, 40)).ToList()
+        // The other item (35h) waited longer than the story (30h), but the story follows its Feature (40h).
+        Placed(Entry(story, 30, feature), Entry(other, 35), Entry(feature, 40)).ToList()
             .ShouldBe([(feature, (Guid?)null), (story, feature), (other, null)]);
     }
 

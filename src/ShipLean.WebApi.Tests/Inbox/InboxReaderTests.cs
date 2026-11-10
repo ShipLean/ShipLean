@@ -56,11 +56,12 @@ public class InboxReaderTests : ApiFixture
     private static InboxAskDto Status(DateTimeOffset at) => new(
         InboxAskKind.Status, "Status", at, "now", null, null, null, null, null, new InboxStatusDto("On track", null));
 
-    private async Task<Guid> ItemAsync(string type = "story", string title = "Arranged item", Guid? parent = null)
+    private async Task<Guid> ItemAsync(string type = "story", string title = "Arranged item", Guid? parent = null, string? state = null, Guid? project = null)
     {
         await using var connection = await OpenDatabaseAsync();
-        var builder = new WorkItemBuilder(SeedIds.Projects.Ship).WithType(type).WithTitle(title);
-        return await (parent is { } p ? builder.WithParent(p) : builder).InsertAsync(connection);
+        var builder = new WorkItemBuilder(project ?? SeedIds.Projects.Ship).WithType(type).WithTitle(title);
+        builder = parent is { } p ? builder.WithParent(p) : builder;
+        return await (state is null ? builder : builder.WithStateNamed(state)).InsertAsync(connection);
     }
 
     private async Task<InboxDto> GetAsync(
@@ -98,6 +99,51 @@ public class InboxReaderTests : ApiFixture
         inbox.OpenAsks.ShouldBe(1);
         inbox.OpenItems.ShouldBe(1);
         inbox.LoadedAtLabel.ShouldMatch(@"^\d\d:\d\d$");
+        // Rows are the caller's, for this project: each source was asked as Tom, for Ship.
+        foreach (var source in new[] { Source, Second })
+        {
+            source.CalledWith.ShouldBe((SeedIds.Users.Tom, SeedIds.Projects.Ship));
+        }
+    }
+
+    [Test]
+    public async Task GetInbox_WhenStoryAskIsOlderThanItsFeatureAsk_ShouldListStoryUnderFeature()
+    {
+        var feature = await ItemAsync("feature", "The Feature");
+        var story = await ItemAsync("story", "Its Story", parent: feature);
+
+        var inbox = await GetAsync(
+            [new InboxAskRow(feature, Question(1, Now.AddHours(-5))), new InboxAskRow(story, Question(1, Now.AddHours(-9)))]);
+
+        inbox.Items.Select(i => i.Id).ShouldBe([feature, story]);
+        inbox.Items[1].UnderKey.ShouldBe(await KeyOfAsync(feature));
+        inbox.Items[0].UnderKey.ShouldBeNull();
+    }
+
+    [Test]
+    public async Task GetInbox_WhenTaskIsUnderStoryWithRow_ShouldStandAlone()
+    {
+        var story = await ItemAsync("story", "The Story");
+        var task = await ItemAsync("task", "Its Task", parent: story);
+
+        var inbox = await GetAsync(
+            [new InboxAskRow(story, Question(1, Now.AddHours(-5))), new InboxAskRow(task, Question(1, Now.AddHours(-9)))]);
+
+        inbox.Items.Select(i => i.Id).ShouldBe([task, story]);
+        inbox.Items.ShouldAllBe(i => i.UnderKey == null);
+    }
+
+    [Test]
+    public async Task GetInbox_WhenSourceReturnsAnotherProjectsItem_ShouldFailRatherThanLeakIt()
+    {
+        var elsewhere = await ItemAsync("story", "Not in Ship", project: SeedIds.Projects.Part);
+        Source.Current = new FakeInboxAskSource([new InboxAskRow(elsewhere, Question(1, Now.AddHours(-1)))]);
+        Second.Current = new FakeInboxAskSource();
+
+        using var response = await Api.ActingAs(TestUser.Tom).GetAsync($"api/projects/{SeedIds.Projects.Ship}/inbox");
+
+        response.StatusCode.ShouldBe(HttpStatusCode.InternalServerError);
+        (await response.Content.ReadAsStringAsync()).ShouldNotContain("Not in Ship");
     }
 
     [Test]
@@ -155,6 +201,21 @@ public class InboxReaderTests : ApiFixture
         item.WaitedOnBy.Select(r => r.Title).ShouldBe(["Waiting 1", "Waiting 2", "Waiting 3"]);
         item.WaitedOnBy[0].Key.ShouldBe(await KeyOfAsync(blocked[0]));
         item.WaitedOnByMore.ShouldBe(1);
+    }
+
+    [Test]
+    public async Task GetInbox_WhenWaitingItemIsCompleted_ShouldLeaveItOutOfWaitedOnBy()
+    {
+        var blocker = await ItemAsync("story", "Blocker");
+        var open = await ItemAsync("story", "Still waiting");
+        var done = await ItemAsync("story", "Already closed", state: "Closed");
+        await BlockAsync([open, done], blocker);
+
+        var inbox = await GetAsync([new InboxAskRow(blocker, Question(1, Now.AddHours(-2)))]);
+
+        var item = inbox.Items.ShouldHaveSingleItem();
+        item.WaitedOnBy.Select(r => r.Title).ShouldBe(["Still waiting"]);
+        item.WaitedOnByMore.ShouldBe(0);
     }
 
     [Test]
@@ -243,8 +304,14 @@ public class InboxReaderTests : ApiFixture
     {
         public FakeInboxAskSource Current { get; set; } = new();
 
-        public Task<IReadOnlyList<InboxAskRow>> OpenAsync(Guid userId, Guid projectId, CancellationToken cancellationToken = default) =>
-            Current.OpenAsync(userId, projectId, cancellationToken);
+        // The user and project of the last OpenAsync call.
+        public (Guid UserId, Guid ProjectId) CalledWith { get; private set; }
+
+        public Task<IReadOnlyList<InboxAskRow>> OpenAsync(Guid userId, Guid projectId, CancellationToken cancellationToken = default)
+        {
+            CalledWith = (userId, projectId);
+            return Current.OpenAsync(userId, projectId, cancellationToken);
+        }
 
         public Task<IReadOnlyDictionary<Guid, int>> OpenCountsByProjectAsync(Guid userId, CancellationToken cancellationToken = default) =>
             Current.OpenCountsByProjectAsync(userId, cancellationToken);

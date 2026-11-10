@@ -22,11 +22,12 @@ public static class InboxOrdering
             .Where(e => e.FeatureId is not { } featureId || !ids.Contains(featureId))
             .Select(head =>
             {
-                var children = childrenOf[head.Id].OrderBy(c => c.OldestAt).ToList();
+                var children = childrenOf[head.Id].OrderBy(c => c.OldestAt).ThenBy(c => c.Id).ToList();
                 var sits = children.Count == 0 ? head.OldestAt : new[] { head.OldestAt, children[0].OldestAt }.Min();
                 return (Sits: sits, Head: head, Children: children);
             })
-            .OrderBy(g => g.Sits);
+            .OrderBy(g => g.Sits)
+            .ThenBy(g => g.Head.Id);
         var placed = new List<InboxPlacement>();
         foreach (var (_, head, children) in groups)
         {
