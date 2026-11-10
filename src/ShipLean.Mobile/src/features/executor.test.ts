@@ -1,6 +1,5 @@
 import type { BulkPlacement } from '@shiplean/core/api/backlogWrites';
-import type { FieldChange } from '@shiplean/core/api/persisted';
-import type { HistoryDto, RevisionDto } from '@shiplean/core/api/workItems';
+import type { WorkItemDto } from '@shiplean/core/api/workItems';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { Api } from '../actions/types';
 import { aPending } from '../test-support/actions';
@@ -21,39 +20,24 @@ const project = `/api/projects/${PROJECT}`;
 const ITEM = 'item-id-906';
 const KEY = 'SHIP-906';
 const PATCH = `PATCH /api/work-items/${ITEM}`;
-const HISTORY = `GET /api/work-items/${ITEM}/history`;
+const BY_KEY = `GET ${project}/work-items/by-key/${KEY}`;
 const BULK = `POST ${project}/backlog/bulk`;
 const BACKLOG = `GET ${project}/backlogs/features`;
 
 const base = { area: 'features' as const, itemId: ITEM, key: KEY };
+const field = { ...base, projectId: PROJECT };
 const bodyOf = (call: FakeRequest) =>
   call.body as { expectedRevision: number; changes: Record<string, unknown> };
 
-const change = (
-  field: string,
-  to: FieldChange['to'],
-  from: FieldChange['from'] = null,
-): FieldChange => ({
-  field,
-  from,
-  to,
-  fromLabel: null,
-  toLabel: null,
+// The item as the by-key read returns it now.
+const itemNow = (revision: number, fields: Partial<WorkItemDto> = {}): WorkItemDto =>
+  aWorkItem({ id: ITEM, key: KEY, revision, ...fields });
+const inState = (id: string): Partial<WorkItemDto> => ({
+  state: { id, name: id, category: 'inProgress' },
 });
-const revision = (rev: number, ...changes: FieldChange[]): RevisionDto => ({
-  rev,
-  changedBy: null,
-  changedAt: '2030-01-01T09:00:00+00:00',
-  changedAtLabel: '1 Jan',
-  origin: 'user',
-  changes,
-  agentName: null,
-  webhook: null,
-});
-const history = (...revisions: RevisionDto[]): HistoryDto => ({ revisions, asks: [] });
 
 const setState: FeaturesAction = {
-  ...base,
+  ...field,
   kind: 'setState',
   revision: 7,
   stateId: 'state-active',
@@ -64,7 +48,7 @@ const setState: FeaturesAction = {
   openStories: 0,
 };
 const setHealth: FeaturesAction = {
-  ...base,
+  ...field,
   kind: 'setHealth',
   revision: 7,
   health: 'atRisk',
@@ -73,7 +57,7 @@ const setHealth: FeaturesAction = {
 const STATUS_TEXT = 'Blocked on the sign-in decision.';
 const NOTE_BODY = 'The S22 runs hot after a minute';
 const setStatus: FeaturesAction = {
-  ...base,
+  ...field,
   kind: 'setStatus',
   revision: 7,
   text: 'Blocked on the sign-in decision.',
@@ -151,13 +135,10 @@ describe('features executor', () => {
   });
 
   it('undoes health only when it still holds the new value', async () => {
+    // The send wrote atRisk; the item is now at revision 9 (a note moved it on).
     const fake = world({
       [PATCH]: aWriteResult({ id: ITEM, key: KEY }),
-      // The send wrote atRisk at revision 8; a note at 9 did not touch health.
-      [HISTORY]: history(
-        revision(9, change('title', 'x')),
-        revision(8, change('health', 'atRisk', 'onTrack')),
-      ),
+      [BY_KEY]: itemNow(9, { health: 'atRisk' }),
     });
     await undo(setHealth);
     const [call] = fake.callsTo(PATCH);
@@ -165,19 +146,14 @@ describe('features executor', () => {
     expect(bodyOf(call).changes.health).toEqual({ value: 'onTrack' });
 
     // Someone set it to blocked since: nothing is written.
-    const changed = world({
-      [HISTORY]: history(
-        revision(9, change('health', 'blocked', 'atRisk')),
-        revision(8, change('health', 'atRisk')),
-      ),
-    });
+    const changed = world({ [BY_KEY]: itemNow(9, { health: 'blocked' }) });
     await expect(undo(setHealth)).rejects.toThrow(/changed since/);
     expect(changed.callsTo(PATCH)).toEqual([]);
 
     // A 409 on the undo PATCH is a failure, never retried.
     const stale = world({
       [PATCH]: aWriteResult(),
-      [HISTORY]: history(revision(8, change('health', 'atRisk', 'onTrack'))),
+      [BY_KEY]: itemNow(8, { health: 'atRisk' }),
     });
     stale.failNext(PATCH, { status: 409, body: aConflict(aWorkItem({ id: ITEM })) });
     await expect(undo(setHealth)).rejects.toMatchObject({ status: 409 });
@@ -186,13 +162,24 @@ describe('features executor', () => {
     // The same rule undoes a state change.
     const states = world({
       [PATCH]: aWriteResult(),
-      [HISTORY]: history(revision(8, change('state', 'state-active', 'state-new'))),
+      [BY_KEY]: itemNow(8, inState('state-active')),
     });
     await undo(setState);
     expect(bodyOf(states.callsTo(PATCH)[0]).changes.state).toEqual({ value: 'state-new' });
-    const moved = world({ [HISTORY]: history(revision(8, change('state', 'state-resolved'))) });
+    const moved = world({ [BY_KEY]: itemNow(8, inState('state-resolved')) });
     await expect(undo(setState)).rejects.toThrow(/changed since/);
     expect(moved.callsTo(PATCH)).toEqual([]);
+  });
+
+  it('fails the undo when the state differs at an unchanged revision', async () => {
+    // A removed state's items are reassigned with no revision bump and no history row: the revision is the one the
+    // send produced, yet the state is not the one it wrote.
+    const fake = world({
+      [PATCH]: aWriteResult({ id: ITEM, key: KEY }),
+      [BY_KEY]: itemNow(8, inState('state-reassigned')),
+    });
+    await expect(undo(setState)).rejects.toThrow(/changed since/);
+    expect(fake.callsTo(PATCH)).toEqual([]);
   });
 
   it('sends moveRank as a position-only bulkPlace and undoes it', async () => {
@@ -280,12 +267,7 @@ describe('features executor', () => {
   it('undoes a note by archiving it and a status line by patching the previous one back', async () => {
     const fake = world({
       [PATCH]: aWriteResult({ id: ITEM, key: KEY }),
-      [HISTORY]: history(
-        revision(
-          9,
-          change('statusLine', 'Blocked on the sign-in decision.', 'D1–D8 wait for Joel.'),
-        ),
-      ),
+      [BY_KEY]: itemNow(9, { statusLine: STATUS_TEXT }),
     });
     await undo(addNote, { createdId: NOTE_ID });
     expect(fake.callsTo(`POST /api/comments/${NOTE_ID}/archive`)).toHaveLength(1);
@@ -300,7 +282,7 @@ describe('features executor', () => {
 
     // A line that was edited by someone else since is left alone.
     const edited = world({
-      [HISTORY]: history(revision(9, change('statusLine', 'Someone else wrote this.'))),
+      [BY_KEY]: itemNow(9, { statusLine: 'Someone else wrote this.' }),
     });
     await expect(undo(setStatus)).rejects.toThrow(/changed since/);
     expect(edited.callsTo(PATCH)).toEqual([]);
@@ -308,7 +290,7 @@ describe('features executor', () => {
     // A Feature that had no line has it cleared.
     const first = world({
       [PATCH]: aWriteResult(),
-      [HISTORY]: history(revision(9, change('statusLine', STATUS_TEXT))),
+      [BY_KEY]: itemNow(9, { statusLine: STATUS_TEXT }),
     });
     await undo({ ...setStatus, from: null } as FeaturesAction);
     expect(bodyOf(first.callsTo(PATCH)[0]).changes).toEqual({ statusLine: { value: '' } });
@@ -348,7 +330,7 @@ describe('features executor', () => {
       closing: true,
       openStories: 3,
     } as FeaturesAction);
-    expect(closing.warning).toBe('3 stories still open');
+    expect(closing.warning).toBe('3 still open under it');
     expect(lines(setHealth).text).toBe('SHIP-906 health: On track → At risk');
     expect(lines({ ...setHealth, health: null } as FeaturesAction).text).toBe(
       'SHIP-906 health: On track → Not set',
@@ -380,14 +362,12 @@ describe('features executor', () => {
       aPending({ action, createdAt: '2030-01-01T09:00:00.000Z' });
     const reconcile = (...items: ReturnType<typeof pending>[]) =>
       featuresExecutor.reconcile!(items, api);
-    world({
-      [HISTORY]: history(revision(8, change('health', 'atRisk', 'onTrack'))),
-    });
-    // Health went through (a later revision holds it); state did not (no revision touched it).
+    world({ [BY_KEY]: itemNow(8, { health: 'atRisk' }) });
+    // Health went through (the item holds it); state did not (the item is still in its old state).
     expect(await reconcile(pending(setHealth), pending(setState))).toEqual(['sent', 'notSent']);
 
-    // A revision at or before the action's own is not the send.
-    world({ [HISTORY]: history(revision(7, change('health', 'atRisk', 'onTrack'))) });
+    // An item that still holds the old health was not sent.
+    world({ [BY_KEY]: itemNow(7, { health: 'onTrack' }) });
     expect(await reconcile(pending(setHealth))).toEqual(['notSent']);
 
     // A note is sent when the caller's own comment with that body came after it was dispatched.

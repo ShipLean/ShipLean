@@ -229,7 +229,12 @@ export function FeatureDetails({ row, projectId, projectKey }: FeatureDetailsPro
         open={stateOpen}
         onClose={() => setStateOpen(false)}
       />
-      <HealthSheet row={row} open={healthOpen} onClose={() => setHealthOpen(false)} />
+      <HealthSheet
+        row={row}
+        projectId={projectId}
+        open={healthOpen}
+        onClose={() => setHealthOpen(false)}
+      />
     </View>
   );
 }
