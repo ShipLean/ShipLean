@@ -53,7 +53,7 @@ describe('Backlog seams', () => {
           onMove={() => {}}
           onOpen={() => {}}
         />
-        <MoveSheet row={row} rows={[row]} level="features" open onClose={() => {}} />
+        <MoveSheet projectId="p" row={row} rows={[row]} level="features" open onClose={() => {}} />
         <AddRow projectId="p" level="stories" parent={{ id: 'f', key: 'SHIP-906' }} />
       </>,
     );
