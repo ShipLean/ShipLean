@@ -44,11 +44,12 @@ and is renamed into place only once it matches, so the cache never holds a wrong
 serialises runs, checked files are skipped, and a stopped download resumes from its `.part`. Its test needs no
 network: `bash tools/voice-eval/fetch-models.test.sh`.
 
-## Run
+## Run and score
 
-```bash
-cd src/ShipLean.Mobile
-pnpm exec vitest run --config tools/voice-eval/vitest.config.ts
-```
+`run.py` runs a screen pack through Qwen3 on the host's CPU (text, or synthesised audio through Parakeet first), in
+chunks under `--max-seconds` that resume where they stopped; `score.ts` turns the runs into a Markdown report of
+right action, right args, exact note and CPU latency per screen and action. [RUN.md](RUN.md) has the commands, the
+memory rules and how to resume.
 
-TODO: what a run reports and how to read it.
+The eval's own tests: `pnpm exec vitest run --config tools/voice-eval/vitest.config.ts` (TypeScript) and
+`<venv>/bin/python -I -m pytest tools/voice-eval -q` (run.py, models faked).

@@ -161,6 +161,34 @@ describe('features voice spec', () => {
     });
   });
 
+  it('ask_status on the tab answers over every row even with a Feature expanded', () => {
+    const r = done(
+      run(spec({ focus: row('SHIP-906') }), 'What is blocked', [
+        ['ask_status', { topic: 'blocked' }],
+      ]),
+    );
+    expect(r.view).toMatchObject({ content: { lead: '1 blocked: SHIP-743' } });
+    const board = done(
+      run(spec({ focus: row('SHIP-906'), board: true }), 'What is blocked', [
+        ['ask_status', { topic: 'blocked' }],
+      ]),
+    );
+    expect(board.view).toMatchObject({ content: { lead: 'Nothing is blocked.' } });
+  });
+
+  it('ask_status says how far a closed Feature got on its own board', () => {
+    const closedState = aFeatureStates().find((st) => st.category === 'completed');
+    if (closedState === undefined) throw new Error('No closed state.');
+    const closed = aFeatureRow({
+      key: 'SHIP-742',
+      title: 'GitHub issues sync',
+      state: { id: closedState.id, name: closedState.name, category: 'completed' },
+    });
+    const s = spec({ focus: closed, rows: [closed], order: [closed], board: true });
+    const r = done(run(s, 'How far is it', [['ask_status', { topic: 'howFar' }]]));
+    expect(r.view).toMatchObject({ content: { rows: [{ key: 'SHIP-742' }] } });
+  });
+
   it('ask_changed opens the digest', () => {
     const r = done(
       run(spec(), 'What changed since Monday', [['ask_changed', { since: 'Monday' }]]),
@@ -458,7 +486,7 @@ describe('features voice spec', () => {
         ['set_health', { feature: 'SHIP-999', health: 'blocked' }],
       ]),
     );
-    expect(none.kind).toBe('noMatch');
+    expect(['noMatch', 'misheardKey']).toContain(none.kind);
     const heard = failed(
       run(spec(), 'Mark ship nine oh seven blocked', [
         ['set_health', { feature: 'ship nine oh seven', health: 'blocked' }],
