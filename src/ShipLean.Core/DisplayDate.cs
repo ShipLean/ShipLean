@@ -45,6 +45,10 @@ public static class DisplayDate
     public static string Clock(DateTimeOffset value, TimeProvider clock) =>
         TimeZoneInfo.ConvertTime(value, clock.LocalTimeZone).ToString("HH:mm", CultureInfo.InvariantCulture);
 
+    // The weekday in the clock's local time zone ("Mon"), for lines such as "since Mon 09:12".
+    public static string Weekday(DateTimeOffset value, TimeProvider clock) =>
+        TimeZoneInfo.ConvertTime(value, clock.LocalTimeZone).ToString("ddd", CultureInfo.InvariantCulture);
+
     // How long something has waited, for an Inbox row ("now", "14h", "4d", "3w"): whole units, always rounded down. Under an hour
     // (or a value in the future, clock skew) is "now"; then hours under a day, days under a week, and weeks after that.
     public static string Age(DateTimeOffset at, DateTimeOffset now)

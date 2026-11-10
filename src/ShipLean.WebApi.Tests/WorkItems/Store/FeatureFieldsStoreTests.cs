@@ -41,7 +41,7 @@ public class FeatureFieldsStoreTests : PostgresWorkItemStoreTestBase
         await PatchAsync(store, feature.Id, 1, new WorkItemChanges { StatusLine = new("Going well") });
         clock.Advance(TimeSpan.FromDays(days) + TimeSpan.FromMinutes(minutes));
 
-        var dto = await new WorkItemReads(_dataSource, new MarkdownRenderer(), clock).GetAsync(feature.Id);
+        var dto = await new WorkItemReads(_dataSource, new MarkdownRenderer(), clock, new WorkItemExtras()).GetAsync(feature.Id);
 
         var verified = dto.StatusVerified.ShouldNotBeNull();
         verified.Stale.ShouldBe(stale);
@@ -80,7 +80,7 @@ public class FeatureFieldsStoreTests : PostgresWorkItemStoreTestBase
         WorkItemContractSupport.Written(await store.PatchAsync(
             feature.Id, new WorkItemPatch(1, new WorkItemChanges { StatusLine = new("Agent says so") }), new WriteOptions(null, RevisionOrigin.User, Via: "set_status")));
 
-        var verified = (await new WorkItemReads(_dataSource, new MarkdownRenderer(), clock).GetAsync(feature.Id)).StatusVerified.ShouldNotBeNull();
+        var verified = (await new WorkItemReads(_dataSource, new MarkdownRenderer(), clock, new WorkItemExtras()).GetAsync(feature.Id)).StatusVerified.ShouldNotBeNull();
         verified.Agent.ShouldBe("Claude Code (claude.ai)");
         verified.Via.ShouldBe("set_status");
         verified.AtLabel.ShouldBe("just now");

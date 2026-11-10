@@ -18,13 +18,14 @@ namespace ShipLean.Application.Features.WorkItems;
 // The work item read model by SQL: WorkItemDto with its refs, rendered markdown, children, links and labels. Callers check
 // IProjectAccess first. The store reuses it (inside its transaction) to build the conflict body.
 [RegisterPerRequest]
-public sealed class WorkItemReads(NpgsqlDataSource dataSource, MarkdownRenderer renderer, TimeProvider time)
+public sealed class WorkItemReads(NpgsqlDataSource dataSource, MarkdownRenderer renderer, TimeProvider time, WorkItemExtras extras)
 {
     public async Task<WorkItemDto> GetAsync(Guid id, CancellationToken cancellationToken = default)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var rows = await WorkItemQueries.RowsAsync(connection, null, $"{WorkItemRow.Select} WHERE w.id = @id", new { id }, cancellationToken);
-        return (await BuildAsync(connection, null, rows, cancellationToken)).SingleOrDefault() ?? throw ApiException.NotFound("Work item not found.");
+        var item = (await BuildAsync(connection, null, rows, cancellationToken)).SingleOrDefault() ?? throw ApiException.NotFound("Work item not found.");
+        return await extras.ApplyAsync(item, cancellationToken);
     }
 
     // The key is matched exactly (keys are stored upper case); an unknown key and another project's key are both not found.
@@ -32,7 +33,8 @@ public sealed class WorkItemReads(NpgsqlDataSource dataSource, MarkdownRenderer 
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var rows = await WorkItemQueries.RowsAsync(connection, null, $"{WorkItemRow.Select} WHERE w.project_id = @projectId AND w.key = @key", new { projectId, key = key.ToUpperInvariant() }, cancellationToken);
-        return (await BuildAsync(connection, null, rows, cancellationToken)).SingleOrDefault() ?? throw ApiException.NotFound("Work item not found.");
+        var item = (await BuildAsync(connection, null, rows, cancellationToken)).SingleOrDefault() ?? throw ApiException.NotFound("Work item not found.");
+        return await extras.ApplyAsync(item, cancellationToken);
     }
 
     // Backlog order; items in the Removed category are left out.
