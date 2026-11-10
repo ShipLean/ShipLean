@@ -2,12 +2,18 @@ import { getHealth } from '@shiplean/core/api/health';
 import { getMe, meKey } from '@shiplean/core/api/me';
 import { useQuery } from '@tanstack/react-query';
 import { openBrowserAsync } from 'expo-web-browser';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
+import { links } from '../links';
+import { useMicStatus } from '../setup/useMicStatus';
+import { useModelStatus } from '../setup/useModelStatus';
+import { accountVoiceValue } from '../setup/voiceSettingsView';
 import { useSession } from '../session/useSession';
 import { Button } from '../ui/Button';
 import { Row } from '../ui/Row';
 import { Sheet } from '../ui/Sheet';
+import { useTheme } from '../theme';
 import { accountIds } from './account/testIds';
 import { signOutNow } from './account/signOutNow';
 import { screenIds } from './testIds';
@@ -23,6 +29,10 @@ export function AccountSheet() {
   const health = useQuery({ queryKey: ['health'], queryFn: () => getHealth() });
   const [confirming, setConfirming] = useState(false);
   const host = hostOf(origin);
+  const router = useRouter();
+  const theme = useTheme();
+  const modelStatus = useModelStatus();
+  const { mic } = useMicStatus();
 
   if (confirming) {
     return (
@@ -68,6 +78,19 @@ export function AccountSheet() {
         title={health.isError ? UNAVAILABLE : (health.data?.version ?? '')}
         subtitle="Server version"
         testID={accountIds.version}
+      />
+      <Row
+        title="Voice"
+        testID={accountIds.voice}
+        right={
+          <Text
+            testID={accountIds.voiceValue}
+            style={{ color: theme.colors.muted, fontSize: theme.font.size.base }}
+          >
+            {accountVoiceValue(modelStatus, mic)}
+          </Text>
+        }
+        onPress={() => router.push(links.settingsVoice())}
       />
       <Row
         title="Profile, password and devices"
