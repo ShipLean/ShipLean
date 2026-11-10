@@ -41,7 +41,12 @@ function beforeNext(order: RankRow[], index: number): BulkPlacement {
 }
 
 // Where the row ends up, as an index in the list without the row. null when the target names no row.
-function targetIndex(rest: RankRow[], from: number, target: RankTarget): number | null {
+function targetIndex(
+  rows: RankRow[],
+  rest: RankRow[],
+  from: number,
+  target: RankTarget,
+): number | null {
   switch (target.to) {
     case 'top':
       return 0;
@@ -58,8 +63,9 @@ function targetIndex(rest: RankRow[], from: number, target: RankTarget): number 
       return target.to === 'above' ? at : at + 1;
     }
     case 'rank': {
-      const at = rest.findIndex((r) => r.rank >= target.rank);
-      return at < 0 ? rest.length : at;
+      // Rank n names a slot in the list as it is now, so look it up there, then clamp to the list without the row.
+      const at = rows.findIndex((r) => r.rank >= target.rank);
+      return at < 0 ? rest.length : Math.min(at, rest.length);
     }
   }
 }
@@ -70,7 +76,7 @@ export function rankPlan(rows: RankRow[], itemId: string, target: RankTarget): R
   if (from < 0) return null;
   const item = rows[from];
   const rest = rows.filter((r) => r.id !== itemId);
-  const to = targetIndex(rest, from, target);
+  const to = targetIndex(rows, rest, from, target);
   if (to === null || to === from) return null;
 
   const order = [...rest.slice(0, to), item, ...rest.slice(to)];

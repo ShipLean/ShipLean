@@ -58,7 +58,7 @@ describe('backlogApi', () => {
     const api = controlledApi(backlogApi());
     const route = `GET /api/projects/${PROJECT}/backlogs/features`;
     api.failNext(route, { status: 500, body: { error: 'x', code: 'server' } });
-    await expect(getBacklog(PROJECT, 'features', list)).rejects.toBeDefined();
+    await expect(getBacklog(PROJECT, 'features', list)).rejects.toMatchObject({ status: 500 });
     await expect(getBacklog(PROJECT, 'features', list)).resolves.toMatchObject({
       level: 'features',
     });

@@ -60,6 +60,10 @@ describe('rankPlan', () => {
       toRank: 2,
       placement: before('B'),
     });
+    expect(rankPlan(rows, 'id-B', { to: 'rank', rank: 4 })).toMatchObject({
+      toRank: 4,
+      placement: before('E'),
+    });
     expect(rankPlan(rows, 'id-C', { to: 'rank', rank: 99 })).toMatchObject({
       toRank: 5,
       placement: last,
@@ -79,6 +83,10 @@ describe('rankPlan', () => {
     expect(rankPlan(rows, 'id-B', { to: 'up', by: 0 })).toBeNull();
     expect(rankPlan(rows, 'id-missing', { to: 'top' })).toBeNull();
     expect(rankPlan(rows, 'id-B', { to: 'above', otherId: 'id-missing' })).toBeNull();
+    expect(rankPlan(rows, 'id-B', { to: 'above', otherId: 'id-B' })).toBeNull();
+    const one = [rows[0]];
+    expect(rankPlan(one, 'id-A', { to: 'bottom' })).toBeNull();
+    expect(rankPlan(one, 'id-A', { to: 'down', by: 3 })).toBeNull();
   });
 
   it('gives the undo placement that puts it back', () => {

@@ -65,10 +65,10 @@ describe('backlogExecutor', () => {
     backlogExecutor.describe(actions.addItem);
     backlogExecutor.describe(actions.approve);
     backlogExecutor.describe(actions.addNote);
-    expect(move.describeMove).toHaveBeenCalledOnce();
-    expect(add.describeAddItem).toHaveBeenCalledOnce();
-    expect(item.describeApprove).toHaveBeenCalledOnce();
-    expect(item.describeAddNote).toHaveBeenCalledOnce();
+    expect(move.describeMove).toHaveBeenCalledExactlyOnceWith(actions.move);
+    expect(add.describeAddItem).toHaveBeenCalledExactlyOnceWith(actions.addItem);
+    expect(item.describeApprove).toHaveBeenCalledExactlyOnceWith(actions.approve);
+    expect(item.describeAddNote).toHaveBeenCalledExactlyOnceWith(actions.addNote);
 
     await backlogExecutor.undo?.(actions.move, api);
     await backlogExecutor.undo?.(actions.addItem, api);
