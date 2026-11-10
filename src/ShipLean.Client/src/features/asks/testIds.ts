@@ -58,5 +58,7 @@ export const asksTestIds = {
   questionWithdrawError: 'asks-question-withdraw-error',
   // W2a
   // W2b
+  changeError: 'asks-change-error',
+  discussError: 'asks-discuss-error',
   // W3
 } as const;

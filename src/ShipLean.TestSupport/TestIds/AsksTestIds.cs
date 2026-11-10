@@ -61,5 +61,7 @@ public static class AsksTestIds
     public const string QuestionWithdrawError = "asks-question-withdraw-error";
     // W2a
     // W2b
+    public const string ChangeError = "asks-change-error";
+    public const string DiscussError = "asks-discuss-error";
     // W3
 }
