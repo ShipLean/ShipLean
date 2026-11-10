@@ -14,13 +14,14 @@ namespace ShipLean.WebApi.Features.Auth;
 
 // Sign in and out, change my password, end my other sessions, the instance's name for the sign-in page.
 // POST /api/auth/login           LoginRequest -> MeDto (anonymous, rate limited; sets the session cookie)
+// POST /api/auth/signup          SignUpRequest -> MeDto (anonymous, rate limited, 404 unless SHIPLEAN_SIGNUP_ENABLED; sets the session cookie)
 // POST /api/auth/logout          -> 204 (clears the cookie)
 // POST /api/auth/password        ChangePasswordRequest -> MeDto (fresh cookie; every other session ends)
 // POST /api/auth/sign-out-others -> 204 (fresh cookie; every other session ends)
 // GET  /api/auth/instance        -> InstanceDto (anonymous)
 [Route("api/auth")]
 public sealed class AuthController(
-    SignInService signIn, CookieSession cookie, MeReader me, IUserAccounts accounts, ICurrentUser currentUser,
+    SignInService signIn, SignUpService signUp, CookieSession cookie, MeReader me, IUserAccounts accounts, ICurrentUser currentUser,
     IUsageEvents events, TimeProvider time) : ApiControllerBase
 {
     [AllowAnonymous]
@@ -37,6 +38,23 @@ public sealed class AuthController(
         var userId = await signIn.SignInAsync(request, ct);
         await cookie.SignInAsync(userId, ct);
         SelfEmittedUsage.TrackOk(events, time, started, UsageEventNames.AuthSignedIn, userId, "api:Auth.Login");
+        return await me.GetAsync(userId, ct);
+    }
+
+    [AllowAnonymous]
+    [PasswordSignInOnly]
+    [EnableRateLimiting(AuthServices.LoginRateLimit)]
+    [HttpPost("signup")]
+    [ProducesResponseType<MeDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ApiError>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ApiError>(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType<ApiError>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ApiError>(StatusCodes.Status409Conflict)]
+    [ProducesResponseType<ApiError>(StatusCodes.Status429TooManyRequests)]
+    public async Task<MeDto> SignUp(SignUpRequest request, CancellationToken ct)
+    {
+        var userId = await signUp.SignUpAsync(request, ct);
+        await cookie.SignInAsync(userId, ct);
         return await me.GetAsync(userId, ct);
     }
 

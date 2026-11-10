@@ -4,6 +4,7 @@ import { MobileSignInPage } from './features/mobileSignIn/MobileSignInPage';
 import { AuthorizePage } from './pages/AuthorizePage';
 import { LoginPage } from './features/auth/LoginPage';
 import { RootRedirect } from './features/auth/RootRedirect';
+import { SignUpPage } from './features/auth/SignUpPage';
 import { BacklogPage } from './pages/BacklogPage';
 import { BoardPage } from './pages/BoardPage';
 import { CapacityPage } from './pages/CapacityPage';
@@ -33,6 +34,7 @@ export function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignUpPage />} />
       <Route path={routePattern('mobileSignIn')} element={<MobileSignInPage />} />
       <Route element={<Shell />}>
         <Route path={routePattern('newProject')} element={<NewProjectPage />} />

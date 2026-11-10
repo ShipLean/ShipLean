@@ -13,6 +13,10 @@ public static class AuthTestIds
     public const string RevealPassword = "auth-reveal-password";
     public const string SignInSubmit = "auth-sign-in-submit";
     public const string GoogleSignIn = "auth-google-sign-in";
+    public const string SignUpForm = "auth-sign-up-form";
+    public const string SignUpName = "auth-sign-up-name";
+    public const string SignUpSubmit = "auth-sign-up-submit";
+    public const string SignInInstead = "auth-sign-in-instead";
     public const string ChangeForm = "auth-change-form";
     public const string NewPassword = "auth-new-password";
     public const string ConfirmPassword = "auth-confirm-password";
