@@ -82,8 +82,12 @@ jobs:
           cache: pnpm
           cache-dependency-path: src/pnpm-lock.yaml
       - run: dotnet build src/ShipLean.slnx --configuration Release
+      # llama.rn's postinstall downloads ~770 MB of native Android and iOS libraries. This job runs jest and a JS bundle
+      # only, so it skips them; mobile-android-build installs without the flag and gets them.
       - run: pnpm install --frozen-lockfile
         working-directory: src
+        env:
+          RNLLAMA_SKIP_POSTINSTALL: '1'
       # The platform-neutral core the SPA (and the phone app) import as @shiplean/core. Its tests are few and run in
       # plain Node, so they always run in full.
       - name: Core format, lint, typecheck, test
