@@ -10,6 +10,7 @@ import {
   type FeatureDigestDto,
   type FeaturesOverviewDto,
 } from './featuresOverview';
+import { noContent, ok, sent, stubFetch } from '../test-support/fetchStub';
 
 // Typecheck fails if the fixture lacks a field, has one of the wrong type, or has one the type doesn't declare.
 type DeepWiden<T> = T extends string
@@ -36,24 +37,6 @@ type NoExtraKeys<U, T> = U extends readonly (infer UE)[]
 function typed<T>() {
   return <U extends DeepWiden<T>>(value: U & NoExtraKeys<U, DeepWiden<T>>): DeepWiden<T> => value;
 }
-
-function stubFetch(response: Response) {
-  const fetchStub = vi.fn().mockResolvedValue(response);
-  vi.stubGlobal('fetch', fetchStub);
-  return fetchStub;
-}
-
-function sent(fetchStub: ReturnType<typeof stubFetch>) {
-  const [url, init] = fetchStub.mock.calls[0] as [string, RequestInit];
-  return {
-    url,
-    method: init.method,
-    body: init.body === undefined ? undefined : (JSON.parse(String(init.body)) as unknown),
-  };
-}
-
-const ok = (body: unknown = {}, status = 200) => new Response(JSON.stringify(body), { status });
-const noContent = () => new Response(null, { status: 204 });
 
 afterEach(() => {
   vi.unstubAllGlobals();

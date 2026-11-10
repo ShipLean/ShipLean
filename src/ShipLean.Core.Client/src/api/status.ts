@@ -1,7 +1,7 @@
 // A Feature's status line: confirm it is still true, or write a new one. C#: StatusConfirmRequest and the work item PATCH.
 // The SPA keeps its own copy in its status feature.
 import { api } from './client';
-import type { WorkItemDto, WriteResult } from './workItems';
+import type { WorkItemChanges, WorkItemDto, WriteResult } from './workItems';
 
 /** 200 with the item as it is now; a stale revision is 409 with a ConflictDto (read it with conflictOf). */
 export const confirmStatus = (itemId: string, revision: number) =>
@@ -17,4 +17,4 @@ export const setStatusLine = (itemId: string, expectedRevision: number, text: st
   api.patch<WriteResult>(`/api/work-items/${encodeURIComponent(itemId)}`, {
     expectedRevision,
     changes: { statusLine: { value: text } },
-  });
+  } satisfies { expectedRevision: number; changes: Pick<WorkItemChanges, 'statusLine'> });

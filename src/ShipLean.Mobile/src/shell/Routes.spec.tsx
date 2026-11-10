@@ -62,7 +62,10 @@ describe('routes', () => {
     await renderApp({ url: pathOf(link) });
     expect(await screen.findByTestId(root)).toBeOnTheScreen();
 
-    expect(router.canGoBack()).toBe(true);
+    await act(async () => router.back());
+
+    expect(screen.queryByTestId(root)).toBeNull();
+    expect(screen.getByTestId(screenIds.inbox)).toBeOnTheScreen();
   });
 
   it('keeps the routes behind sign-in', async () => {

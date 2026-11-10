@@ -3,21 +3,7 @@ import history from '../../../ShipLean.TestSupport/DtoFixtures/workItems/conflic
 import { ApiRequestError } from './client';
 import { confirmStatus, setStatusLine } from './status';
 import { conflictOf, type WorkItemDto, type WriteResult } from './workItems';
-
-function stubFetch(response: Response) {
-  const fetchStub = vi.fn().mockResolvedValue(response);
-  vi.stubGlobal('fetch', fetchStub);
-  return fetchStub;
-}
-
-function sent(fetchStub: ReturnType<typeof stubFetch>) {
-  const [url, init] = fetchStub.mock.calls[0] as [string, RequestInit];
-  return {
-    url,
-    method: init.method,
-    body: init.body === undefined ? undefined : JSON.parse(String(init.body)),
-  };
-}
+import { sent, stubFetch } from '../test-support/fetchStub';
 
 afterEach(() => vi.unstubAllGlobals());
 

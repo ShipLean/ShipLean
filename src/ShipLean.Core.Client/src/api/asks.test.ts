@@ -22,6 +22,7 @@ import {
   type WaitingDto,
 } from './asks';
 import type { HistoryDto } from './workItems';
+import { sent, stubFetch } from '../test-support/fetchStub';
 
 // Typecheck fails if a fixture lacks a field, has one of the wrong type, or has one the type doesn't declare.
 type DeepWiden<T> = T extends string
@@ -89,21 +90,6 @@ test('asks_ShouldCoverEveryWireEnumValue', () => {
     [...ASK_EVENT_KINDS].sort(),
   );
 });
-
-function stubFetch(response: Response) {
-  const fetchStub = vi.fn().mockResolvedValue(response);
-  vi.stubGlobal('fetch', fetchStub);
-  return fetchStub;
-}
-
-function sent(fetchStub: ReturnType<typeof stubFetch>) {
-  const [url, init] = fetchStub.mock.calls[0] as [string, RequestInit];
-  return {
-    url,
-    method: init.method,
-    body: init.body === undefined ? undefined : JSON.parse(String(init.body)),
-  };
-}
 
 const noContent = () => stubFetch(new Response(null, { status: 204 }));
 
