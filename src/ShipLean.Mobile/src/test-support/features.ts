@@ -13,12 +13,12 @@ import type {
 import type { StateDto } from '@shiplean/core/api/projects';
 import type { StateCategory, StateRef } from '@shiplean/core/api/refs';
 import type { FeatureBoardViewDto } from '@shiplean/core/api/views';
+import type { WorkItemChanges } from '@shiplean/core/api/workItems';
 import commentFixtures from '../../../ShipLean.TestSupport/DtoFixtures/comments/comments.json';
-import states from '../../../ShipLean.TestSupport/DtoFixtures/projects/states.json';
 import featureBoard from '../../../ShipLean.TestSupport/DtoFixtures/views/feature-board-view.json';
-import { aProject, aWriteResult } from './builders';
+import { aProject, aWorkItem, aWriteResult } from './builders';
 import { controlledApi, type ControlledApi } from './controlledApi';
-import type { ApiTable, FakeRequest } from './fakeApi';
+import { apiError, type ApiTable, type FakeRequest } from './fakeApi';
 import { signedInApi } from './signedInApi';
 
 const uuid = (): string => globalThis.crypto.randomUUID();
@@ -31,11 +31,23 @@ const STATES: Record<StateCategory, string> = {
   removed: 'Removed',
 };
 
-const stateRef = (category: StateCategory): StateRef => ({
+// The project's Feature states, ids made once so a row's state is one of them.
+const ORDER: StateCategory[] = ['proposed', 'inProgress', 'resolved', 'completed', 'removed'];
+export const FEATURE_STATES: StateDto[] = ORDER.map((category, i) => ({
   id: uuid(),
+  type: 'feature',
   name: STATES[category],
   category,
-});
+  order: i + 1,
+  itemCount: 0,
+}));
+
+export const aFeatureStates = (): StateDto[] => FEATURE_STATES.map((state) => ({ ...state }));
+
+const stateRef = (category: StateCategory): StateRef => {
+  const state = FEATURE_STATES.find((s) => s.category === category) as StateDto;
+  return { id: state.id, name: state.name, category };
+};
 
 export function aFeatureRow(overrides: Partial<FeatureRowDto> = {}): FeatureRowDto {
   return {
@@ -305,7 +317,7 @@ export function featuresApi(table: ApiTable = {}, opts: FeaturesApiOptions = {})
     [`GET ${project}/features/overview`]: overview,
     [`GET ${project}/features/digest`]: opts.digest ?? aDigest(),
     [`POST ${project}/features/digest/seen`]: { status: 204 },
-    [`GET ${project}/states`]: (states as StateDto[]).filter((state) => state.type === 'feature'),
+    [`GET ${project}/states`]: aFeatureStates(),
     [`POST ${project}/backlog/bulk`]: (request: FakeRequest): BulkWriteResult => ({
       written: (request.body as { items: { id: string }[] }).items.map((i) =>
         aWriteResult({ id: i.id }),
@@ -319,8 +331,41 @@ export function featuresApi(table: ApiTable = {}, opts: FeaturesApiOptions = {})
   }
   for (const row of rows) {
     const item = `/api/work-items/${row.id}`;
-    routes[`PATCH ${item}`] = aWriteResult({ id: row.id, key: row.key });
-    routes[`POST ${item}/decisions/confirm`] = { status: 204 };
+    routes[`GET ${project}/work-items/by-key/${row.key}`] = aWorkItem({
+      id: row.id,
+      key: row.key,
+      revision: row.revision,
+      title: row.title,
+      health: row.health,
+    });
+    routes[`PATCH ${item}`] = (request: FakeRequest) => {
+      const changes = (request.body as { changes: WorkItemChanges }).changes;
+      const text = changes.statusLine?.value;
+      // The server's FeatureFieldRules: one line of at most 500 characters.
+      if (typeof text === 'string' && (text.length > 500 || /[\r\n]/.test(text))) {
+        return {
+          status: 400,
+          body: {
+            error: 'The status is one line of at most 500 characters.',
+            code: 'validation',
+            field: 'statusLine',
+          },
+        };
+      }
+      // The server's WorkItemChecks: the state must belong to the item's type.
+      const state = changes.state?.value;
+      if (state && !FEATURE_STATES.some((s) => s.id === state)) {
+        return apiError(400, 'validation', "That state doesn't belong to this type of work item.");
+      }
+      return aWriteResult({ id: row.id, key: row.key });
+    };
+    routes[`POST ${item}/decisions/confirm`] = (request: FakeRequest) =>
+      (request.body as { numbers: number[] }).numbers.length === 0
+        ? {
+            status: 400,
+            body: { error: 'Choose at least one decision.', code: 'validation', field: 'numbers' },
+          }
+        : { status: 204 };
     for (let number = 1; number <= 9; number++) {
       routes[`POST ${item}/questions/${number}/answer`] = { status: 204 };
     }
