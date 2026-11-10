@@ -52,8 +52,9 @@ describe('provider slots', () => {
     for (let i = 1; i < ids.length; i++) {
       const outer = screen.getByTestId(ids[i - 1]!);
       expect(within(outer).getByTestId(ids[i]!)).toBeOnTheScreen();
-      // The inner slot is directly inside the outer one: nothing between them, nothing skipped.
-      expect(within(outer).queryByTestId(ids[i - 1]!)).toBeNull();
+      // The inner slot is a direct child of the outer one: nothing between them, nothing skipped.
+      const children = outer.children.filter((child) => typeof child !== 'string');
+      expect(children.map((child) => child.props.testID)).toEqual([ids[i]]);
     }
   });
 });

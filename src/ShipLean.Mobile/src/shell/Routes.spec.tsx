@@ -10,6 +10,10 @@ async function open(link: AnyLink) {
   await act(async () => router.push(link as Parameters<typeof router.push>[0]));
 }
 
+function pathOf(link: AnyLink) {
+  return link.pathname.replace(/\[(\w+)\]/g, (_m, name: string) => link.params[name] ?? '');
+}
+
 describe('routes', () => {
   it('opens each stack and settings route on its root id', async () => {
     const routes: [AnyLink, string][] = [
@@ -39,6 +43,26 @@ describe('routes', () => {
       await act(async () => router.dismissTo(links.projects()));
       expect(screen.queryByTestId(root)).toBeNull();
     }
+  });
+
+  it('opens a step that does not exist on the projects list', async () => {
+    await renderApp();
+    expect(await screen.findByTestId(screenIds.projects)).toBeOnTheScreen();
+
+    await open({ pathname: links.setup('models').pathname, params: { step: 'nope' } });
+
+    expect(await screen.findByTestId(screenIds.projects)).toBeOnTheScreen();
+  });
+
+  it.each([
+    ['an item', links.item('SHIP', 'SHIP-141'), screenIds.workItem],
+    ['a Feature board', links.featureBoard('SHIP', 'SHIP-12'), screenIds.featureBoard],
+    ['the digest', links.digest('SHIP'), screenIds.digest],
+  ])('opens with the tabs underneath when a cold link opens %s', async (_name, link, root) => {
+    await renderApp({ url: pathOf(link) });
+    expect(await screen.findByTestId(root)).toBeOnTheScreen();
+
+    expect(router.canGoBack()).toBe(true);
   });
 
   it('keeps the routes behind sign-in', async () => {
