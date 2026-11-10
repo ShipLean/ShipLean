@@ -1,6 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme';
+import { DownloadBanner } from '../voice/DownloadBanner';
 import { layout } from './layout';
 import { primitiveIds } from './testIds';
 
@@ -18,76 +19,79 @@ export function TabRootBar({ projectKey, title, subtitle, onTilePress }: TabRoot
   const insets = useSafeAreaInsets();
   const { colors } = theme;
   return (
-    <View
-      testID={primitiveIds.tabRootBar}
-      accessibilityRole="header"
-      style={{
-        height: theme.touch.bar + insets.top,
-        paddingTop: insets.top,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: theme.space[1],
-        paddingLeft: Math.max(theme.space[2], insets.left),
-        paddingRight: Math.max(theme.space[2], insets.right),
-        backgroundColor: colors.surface,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.border,
-      }}
-    >
-      <Pressable
-        testID={primitiveIds.tabRootTile}
-        accessibilityRole="button"
-        accessibilityLabel={`${projectKey}, back to Projects`}
-        onPress={onTilePress}
-        style={({ pressed }) => ({
-          minWidth: theme.touch.control,
-          minHeight: theme.touch.control,
-          paddingHorizontal: theme.space[1],
+    <>
+      <View
+        testID={primitiveIds.tabRootBar}
+        accessibilityRole="header"
+        style={{
+          height: theme.touch.bar + insets.top,
+          paddingTop: insets.top,
+          flexDirection: 'row',
           alignItems: 'center',
-          justifyContent: 'center',
-          opacity: pressed ? 0.8 : 1,
-        })}
+          gap: theme.space[1],
+          paddingLeft: Math.max(theme.space[2], insets.left),
+          paddingRight: Math.max(theme.space[2], insets.right),
+          backgroundColor: colors.surface,
+          borderBottomWidth: 1,
+          borderBottomColor: colors.border,
+        }}
       >
-        <View
-          style={{
-            minWidth: layout.keyTile.minWidth,
-            height: layout.keyTile.height,
-            paddingHorizontal: layout.keyTile.padding,
-            borderRadius: theme.radius.md,
+        <Pressable
+          testID={primitiveIds.tabRootTile}
+          accessibilityRole="button"
+          accessibilityLabel={`${projectKey}, back to Projects`}
+          onPress={onTilePress}
+          style={({ pressed }) => ({
+            minWidth: theme.touch.control,
+            minHeight: theme.touch.control,
+            paddingHorizontal: theme.space[1],
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: colors.accent,
-          }}
+            opacity: pressed ? 0.8 : 1,
+          })}
         >
-          <Text
+          <View
             style={{
-              color: colors.accentFg,
-              fontSize: theme.font.size.xxs,
-              fontWeight: theme.font.weight.bold,
-              fontFamily: theme.font.mono,
+              minWidth: layout.keyTile.minWidth,
+              height: layout.keyTile.height,
+              paddingHorizontal: layout.keyTile.padding,
+              borderRadius: theme.radius.md,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: colors.accent,
             }}
           >
-            {projectKey}
+            <Text
+              style={{
+                color: colors.accentFg,
+                fontSize: theme.font.size.xxs,
+                fontWeight: theme.font.weight.bold,
+                fontFamily: theme.font.mono,
+              }}
+            >
+              {projectKey}
+            </Text>
+          </View>
+        </Pressable>
+        <View style={{ flex: 1, minWidth: 0, paddingHorizontal: theme.space[1] }}>
+          <Text
+            numberOfLines={1}
+            style={{
+              color: colors.text,
+              fontSize: theme.font.size.lg,
+              fontWeight: theme.font.weight.semibold,
+            }}
+          >
+            {title}
           </Text>
+          {subtitle ? (
+            <Text numberOfLines={1} style={{ color: colors.muted, fontSize: theme.font.size.sm }}>
+              {subtitle}
+            </Text>
+          ) : null}
         </View>
-      </Pressable>
-      <View style={{ flex: 1, minWidth: 0, paddingHorizontal: theme.space[1] }}>
-        <Text
-          numberOfLines={1}
-          style={{
-            color: colors.text,
-            fontSize: theme.font.size.lg,
-            fontWeight: theme.font.weight.semibold,
-          }}
-        >
-          {title}
-        </Text>
-        {subtitle ? (
-          <Text numberOfLines={1} style={{ color: colors.muted, fontSize: theme.font.size.sm }}>
-            {subtitle}
-          </Text>
-        ) : null}
       </View>
-    </View>
+      <DownloadBanner placement="list" />
+    </>
   );
 }

@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 import { links } from '../links';
+import { useSetupGate } from '../setup/setupGate';
 import { EmptyState } from '../ui/EmptyState';
 import { ErrorState } from '../ui/ErrorState';
 import { Row } from '../ui/Row';
@@ -13,6 +14,7 @@ import { projectRowId, projectsIds } from './projects/testIds';
 import { screenIds } from './testIds';
 
 export function ProjectsScreen() {
+  useSetupGate();
   const router = useRouter();
   const projects = useQuery({ queryKey: projectsKey, queryFn: listProjects });
   const me = useQuery({ queryKey: meKey, queryFn: getMe });
