@@ -10,14 +10,17 @@ namespace ShipLean.AcceptanceTests.Harness;
 // the fixture's connection string (protected on AcceptanceFixture, so a test hands it in). Seed before opening the page.
 public static class AskSeeding
 {
-    // A fresh work item in project SHIP, so a test owns its asks. Pass parentId for a child (a story under a Feature).
+    // A fresh work item in project SHIP, so a test owns its asks. Pass parentId for a child (a story under a Feature), and
+    // assignee to give it an owner (an ask is for the assignee, or the creator; builder items have no creator).
     public static async Task<(Guid Id, string Key)> SeedItemAsync(
-        string connectionString, string type = "story", string title = "Arranged asks item", Guid? parentId = null)
+        string connectionString, string type = "story", string title = "Arranged asks item", Guid? parentId = null,
+        Guid? assignee = null)
     {
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();
         var builder = new WorkItemBuilder(SeedIds.Projects.Ship).WithType(type).WithTitle(title);
         if (parentId is { } parent) builder.WithParent(parent);
+        if (assignee is { } userId) builder.WithAssignee(userId);
         var id = await builder.InsertAsync(connection);
         var key = await connection.QuerySingleAsync<string>("SELECT key FROM work_item WHERE id = @id", new { id });
         return (id, key);
