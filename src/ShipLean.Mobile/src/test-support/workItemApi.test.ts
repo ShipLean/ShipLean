@@ -153,4 +153,40 @@ describe('workItemApi', () => {
     await sent;
     expect(settled).toBe(true);
   });
+
+  it('refuses a blank comment with a 400 that names no field (N1)', async () => {
+    const feature = aFeatureItem({ projectId: project });
+    workItemApi({}, { items: [feature] });
+
+    const blank = await rejection(addComment(feature.id, '   '));
+    expect(blank.status).toBe(400);
+    expect(blank.code).toBe('validation');
+    expect(blank.body).not.toHaveProperty('field');
+    // A blank reply, by contrast, names the body field.
+    const reply = await rejection(discussDecision(feature.id, 1, ''));
+    expect(reply.body).toMatchObject({ field: 'body' });
+  });
+
+  it('posts nine notes and throws on the tenth (N4)', async () => {
+    const feature = aFeatureItem({ projectId: project });
+    workItemApi({}, { items: [feature] });
+
+    for (let n = 1; n <= 9; n++) await addComment(feature.id, `Note ${n}.`);
+    expect(await listComments(feature.id)).toHaveLength(9);
+    await expect(addComment(feature.id, 'One too many.')).rejects.toThrow(
+      'The fake posts at most 9 notes.',
+    );
+  });
+
+  it('filters the children by ?type= (N7)', async () => {
+    const story = aStoryItem({ projectId: project });
+    const [first] = story.children;
+    const task = { ...first, id: 'c-task', type: { ...first.type, id: 'task' } };
+    const bug = { ...first, id: 'c-bug', type: { ...first.type, id: 'bug' } };
+    workItemApi({}, { items: [story], children: [task, bug] });
+
+    expect((await getChildren(story.id)).map((c) => c.id)).toEqual(['c-task', 'c-bug']);
+    expect((await getChildren(story.id, 'bug')).map((c) => c.id)).toEqual(['c-bug']);
+    expect(await getChildren(story.id, 'feature')).toEqual([]);
+  });
 });
