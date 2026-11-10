@@ -1,0 +1,57 @@
+{"screen":"workItem","utterance":"Add a note: Parakeet needs 1.4 GB of free memory on the S22.","calls":[{"action":"add_note","args":{"note":"x"}}],"note":"Parakeet needs 1.4 GB of free memory on the S22."}
+{"screen":"workItem","utterance":"Note that SHIP-141 is waiting on the Android build, 3 days late","calls":[{"action":"add_note","args":{"note":"x"}}],"note":"SHIP-141 is waiting on the Android build, 3 days late"}
+{"screen":"workItem","utterance":"Leave a note saying we agreed on the 4 GB fallback, see D2.","calls":[{"action":"add_note","args":{"note":"x"}}],"note":"we agreed on the 4 GB fallback, see D2."}
+{"screen":"workItem","utterance":"Comment: don't ship before Friday!","calls":[{"action":"add_note","args":{"note":"x"}}],"note":"don't ship before Friday!"}
+{"screen":"workItem","utterance":"Move this to Done","calls":[{"action":"set_state","args":{"state":"Done"}}],"note":null}
+{"screen":"workItem","utterance":"Set the state to new","calls":[{"action":"set_state","args":{"state":"New"}}],"note":null}
+{"screen":"workItem","utterance":"Mark it as active","calls":[{"action":"set_state","args":{"state":"Active"}}],"note":null}
+{"screen":"workItem","utterance":"Approve D1","calls":[{"action":"approve_decision","args":{"decisions":[1]}}],"note":null}
+{"screen":"workItem","utterance":"Approve decisions 1 and 2","calls":[{"action":"approve_decision","args":{"decisions":[1,2]}}],"note":null}
+{"screen":"workItem","utterance":"Confirm D2","calls":[{"action":"approve_decision","args":{"decisions":[2]}}],"note":null}
+{"screen":"workItem","utterance":"Let's discuss D2: the 4 GB number looks too low","calls":[{"action":"discuss_decision","args":{"decision":2,"note":"x"}}],"note":"the 4 GB number looks too low"}
+{"screen":"workItem","utterance":"Discuss decision 1, I want to see the RAM table first","calls":[{"action":"discuss_decision","args":{"decision":1,"note":"x"}}],"note":"I want to see the RAM table first"}
+{"screen":"workItem","utterance":"On D1 say we should check the S22 first.","calls":[{"action":"discuss_decision","args":{"decision":1,"note":"x"}}],"note":"we should check the S22 first."}
+{"screen":"workItem","utterance":"Reply yes, use the small model","calls":[{"action":"reply","args":{"note":"x"}}],"note":"yes, use the small model"}
+{"screen":"workItem","utterance":"Answer Q1: no, wait for the 2nd benchmark","calls":[{"action":"reply","args":{"question":1,"note":"x"}}],"note":"no, wait for the 2nd benchmark"}
+{"screen":"workItem","utterance":"Reply to question 1 with use Qwen3 1.7B for everyone","calls":[{"action":"reply","args":{"question":1,"note":"x"}}],"note":"use Qwen3 1.7B for everyone"}
+{"screen":"workItem","utterance":"Tell the agent: yes, but only on Wi-Fi","calls":[{"action":"reply","args":{"note":"x"}}],"note":"yes, but only on Wi-Fi"}
+{"screen":"workItem","utterance":"Confirm the status","calls":[{"action":"confirm_status","args":{}}],"note":null}
+{"screen":"workItem","utterance":"The status is still true","calls":[{"action":"confirm_status","args":{}}],"note":null}
+{"screen":"workItem","utterance":"Yes, the status line is still right","calls":[{"action":"confirm_status","args":{}}],"note":null}
+{"screen":"workItem","utterance":"Set the status to Parakeet is at 1.4x on the S22, fallback still open","calls":[{"action":"set_status","args":{"note":"x"}}],"note":"Parakeet is at 1.4x on the S22, fallback still open"}
+{"screen":"workItem","utterance":"Update the status: shipped to TestFlight on 12 Nov","calls":[{"action":"set_status","args":{"note":"x"}}],"note":"shipped to TestFlight on 12 Nov"}
+{"screen":"workItem","utterance":"Status: Blocked on the Play Store review","calls":[{"action":"set_status","args":{"note":"x"}}],"note":"Blocked on the Play Store review"}
+{"screen":"workItem","utterance":"New status line: waiting on SHIP-141 and SHIP-142","calls":[{"action":"set_status","args":{"note":"x"}}],"note":"waiting on SHIP-141 and SHIP-142"}
+{"screen":"workItem","utterance":"Mark this at risk","calls":[{"action":"set_health","args":{"health":"atRisk"}}],"note":null}
+{"screen":"workItem","utterance":"This is on track now","calls":[{"action":"set_health","args":{"health":"onTrack"}}],"note":null}
+{"screen":"workItem","utterance":"Mark it blocked","calls":[{"action":"set_health","args":{"health":"blocked"}}],"note":null}
+{"screen":"workItem","utterance":"Assign this to Joel","calls":[{"action":"assign","args":{"person":"Joel"}}],"note":null}
+{"screen":"workItem","utterance":"Give it to Priya Shah","calls":[{"action":"assign","args":{"person":"Priya Shah"}}],"note":null}
+{"screen":"workItem","utterance":"Set the owner to Joel Dickson","calls":[{"action":"assign","args":{"person":"Joel Dickson"}}],"note":null}
+{"screen":"workItem","utterance":"What's left?","calls":[{"action":"ask","args":{"topic":"whatsLeft"}}],"note":null}
+{"screen":"workItem","utterance":"What's blocked?","calls":[{"action":"ask","args":{"topic":"whatsBlocked"}}],"note":null}
+{"screen":"workItem","utterance":"Who owns this?","calls":[{"action":"ask","args":{"topic":"whoOwns"}}],"note":null}
+{"screen":"workItem","utterance":"What needs me?","calls":[{"action":"ask","args":{"topic":"whatNeedsMe"}}],"note":null}
+{"screen":"workItem","utterance":"Open SHIP-141","calls":[{"action":"open","args":{"key":"SHIP-141"}}],"note":null}
+{"screen":"workItem","utterance":"Go to ship one forty one","calls":[{"action":"open","args":{"key":"ship one forty one"}}],"note":null}
+{"screen":"workItem","utterance":"Show me Ship 141","calls":[{"action":"open","args":{"key":"Ship 141"}}],"note":null}
+{"screen":"workItem","utterance":"Change the title to something shorter","calls":[{"action":"edit_fields","args":{}}],"note":null}
+{"screen":"workItem","utterance":"Move the tasks to Done","calls":[{"action":"move_tasks","args":{}}],"note":null}
+{"screen":"workItem","utterance":"Set it to Active, approve D1 and note that Qwen is cached","calls":[{"action":"set_state","args":{"state":"Active"}},{"action":"approve_decision","args":{"decisions":[1]}},{"action":"add_note","args":{"note":"x"}}],"note":"Qwen is cached"}
+{"screen":"workItem","utterance":"Approve D1 and D2 and assign it to Joel","calls":[{"action":"approve_decision","args":{"decisions":[1,2]}},{"action":"assign","args":{"person":"Joel"}}],"note":null}
+{"screen":"workItem","utterance":"Mark this at risk and reply yes, use the small model","calls":[{"action":"set_health","args":{"health":"atRisk"}},{"action":"reply","args":{"note":"x"}}],"note":"yes, use the small model"}
+{"screen":"workItem","utterance":"Mark this at risk and set the status to the 4 GB fallback is still open","calls":[{"action":"set_health","args":{"health":"atRisk"}},{"action":"set_status","args":{"note":"x"}}],"note":"the 4 GB fallback is still open"}
+{"screen":"workItem","utterance":"Assign this to Priya and move it to Done","calls":[{"action":"assign","args":{"person":"Priya"}},{"action":"set_state","args":{"state":"Done"}}],"note":null}
+{"screen":"workItem","utterance":"Confirm the status and approve D2","calls":[{"action":"confirm_status","args":{}},{"action":"approve_decision","args":{"decisions":[2]}}],"note":null}
+{"screen":"workItem","utterance":"Approve D5","calls":[{"action":"approve_decision","args":{"decisions":[5]}}],"note":null}
+{"screen":"workItem","utterance":"Discuss D7: the number is wrong","calls":[{"action":"discuss_decision","args":{"decision":7,"note":"x"}}],"note":"the number is wrong"}
+{"screen":"workItem","utterance":"Reply to question 4: yes please","calls":[{"action":"reply","args":{"question":4,"note":"x"}}],"note":"yes please"}
+{"screen":"workItem","utterance":"Approve D1 and D9","calls":[{"action":"approve_decision","args":{"decisions":[1,9]}}],"note":null}
+{"screen":"workItem","utterance":"Move this to Triaged","calls":[{"action":"set_state","args":{"state":"Triaged"}}],"note":null}
+{"screen":"workItem","utterance":"Set it to Cancelled","calls":[{"action":"set_state","args":{"state":"Cancelled"}}],"note":null}
+{"screen":"workItem","utterance":"Mark it as flying","calls":[{"action":"set_state","args":{"state":"Flying"}}],"note":null}
+{"screen":"workItem","utterance":"Put it in the review column","calls":[{"action":"set_state","args":{"state":"Review"}}],"note":null}
+{"screen":"workItem","utterance":"Um","calls":[],"note":null}
+{"screen":"workItem","utterance":"Mm hmm okay","calls":[],"note":null}
+{"screen":"workItem","utterance":"Never mind","calls":[],"note":null}
+{"screen":"workItem","utterance":"What","calls":[],"note":null}
