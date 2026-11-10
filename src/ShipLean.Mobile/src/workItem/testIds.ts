@@ -38,6 +38,21 @@ export const progressSectionId = 'wi-progress';
 export const storyTasksId = 'wi-story-tasks';
 export const goalDetailsId = 'wi-goal';
 export const acceptanceCriteriaId = 'wi-criteria';
+export const progressCountsId = 'wi-progress-counts';
+export const progressBlockedId = 'wi-progress-blocked';
+export const progressLegendId = (part: 'done' | 'current' | 'other' | 'notPlanned') =>
+  `wi-progress-legend-${part}`;
+export const progressTallyId = (row: 'stories' | 'tasks') => `wi-progress-tally-${row}`;
+export const progressErrorId = 'wi-progress-error';
+export const progressRetryId = 'wi-progress-retry';
+export const storyCountsId = 'wi-story-counts';
+export const storyBlockedTaskId = (key: string) => `wi-story-blocked-${key}`;
+export const storyBoardNoteId = 'wi-story-board-note';
+export const goalTextId = 'wi-goal-text';
+export const goalLinksId = 'wi-goal-links';
+export const goalToggleId = 'wi-goal-toggle';
+export const goalDescriptionId = 'wi-goal-description';
+export const criterionId = (index: number) => `wi-criterion-${index}`;
 
 // WI4
 export const timelineId = 'wi-timeline';
