@@ -29,6 +29,11 @@ export const featureTestIds = {
   statusEditCancel: 'feature-status-edit-cancel',
   statusError: 'feature-status-error',
 
+  // SHIP-916 W1 health
+  statusHealth: 'feature-status-health',
+  statusHealthSetBy: 'feature-status-health-set-by',
+  statusHealthSelect: 'feature-status-health-select',
+
   // F2 goal, Feature strip, stories and bugs
   goalView: 'feature-goal-view',
   goalEdit: 'feature-goal-edit',

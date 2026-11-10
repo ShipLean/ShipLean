@@ -8,6 +8,8 @@ import { workItemHistoryKey, workItemKey } from '../../workItem/workItemApi';
 import type { FeatureRegionProps } from '../FeatureRegionProps';
 import { featureTestIds as ids } from '../testIds';
 import { confirmStatus } from './statusApi';
+import { HealthPill } from './HealthPill';
+import { HealthSelect } from './HealthSelect';
 import { StatusEditor } from './StatusEditor';
 import { VerifiedChip } from './VerifiedChip';
 
@@ -46,7 +48,12 @@ export function StatusBand({ item, draft, dirty, setField, saveError }: FeatureR
     setField({ state: item.state, statusLine: item.statusLine });
     setEditing(false);
   };
-  const statusError = saveError?.field === 'statusLine' ? saveError.message : confirmError;
+  const statusError =
+    saveError?.field === 'statusLine' || saveError?.field === 'health'
+      ? saveError.message
+      : confirmError;
+  const { healthSet } = item;
+  const setBy = healthSet === null ? null : (healthSet.agent ?? healthSet.by?.name ?? null);
 
   return (
     <section
@@ -105,6 +112,21 @@ export function StatusBand({ item, draft, dirty, setField, saveError }: FeatureR
           </div>
         </div>
       )}
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <HealthPill health={draft.health} testId={ids.statusHealth} />
+        {healthSet !== null &&
+        draft.health === item.health &&
+        (draft.health === 'atRisk' || draft.health === 'blocked') ? (
+          <span
+            data-testid={ids.statusHealthSetBy}
+            className="text-[length:var(--text-xs)] text-ink-muted"
+          >
+            Set {setBy === null ? '' : `by ${setBy} `}
+            {healthSet.atLabel}
+          </span>
+        ) : null}
+        <HealthSelect health={draft.health} onChange={(health) => setField({ health })} />
+      </div>
       {statusError === null ? null : (
         <p
           data-testid={ids.statusError}

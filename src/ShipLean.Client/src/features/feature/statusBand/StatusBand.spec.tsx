@@ -44,8 +44,12 @@ const featureStates: StateDto[] = [
   },
 ];
 
-async function stubAll(page: StubbedPage, item = feature) {
-  const api = await stubApi(page, item);
+async function stubAll(
+  page: StubbedPage,
+  item = feature,
+  respondToPatch?: Parameters<typeof stubApi>[2],
+) {
+  const api = await stubApi(page, item, respondToPatch);
   await stubSide(page, priya, [], []);
   await stubComments(page, priya, []);
   await stubFeature(page);
@@ -105,4 +109,110 @@ test('StatusBand_WhenEditStatusSaved_ShouldSendStateAndStatus', async ({ mount, 
   const changes = (api.patches[0] as WorkItemPatch).changes;
   expect(changes.state).toEqual({ value: 's-blocked' });
   expect(changes.statusLine).toEqual({ value: 'Waiting on the vault rate limit.' });
+});
+
+const priyaRef = feature.healthSet?.by ?? null;
+const atRisk = (agent: string | null = null) => ({
+  ...feature,
+  health: 'atRisk' as const,
+  healthSet: {
+    at: '2026-10-19T09:12:00+00:00',
+    atLabel: '19 Oct',
+    by: agent === null ? priyaRef : null,
+    agent,
+  },
+});
+
+for (const scheme of ['light', 'dark'] as const) {
+  test(`StatusBand_WhenHealthAtRisk_ShouldShowPillAndWhoSetIt_${scheme}`, async ({
+    mount,
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: scheme });
+    await stubAll(page, atRisk());
+    const screen = await mount(<WorkItemFormHarness itemKey="SHIP-100" />, route);
+
+    await expect(screen.getByTestId(ids.statusHealth)).toHaveText('At risk');
+    await expect(screen.getByTestId(ids.statusHealthSetBy)).toHaveText('Set by Priya Shah 19 Oct');
+    await expect(screen.getByTestId(ids.statusHealthSelect)).toHaveValue('atRisk');
+    await expect(screen.getByTestId(ids.statusBand)).toHaveScreenshot(
+      `status-band-health-at-risk-${scheme}.png`,
+    );
+  });
+}
+
+test('StatusBand_WhenNoHealthOrOnTrack_ShouldShowNoPill', async ({ mount, page }) => {
+  await stubAll(page, { ...feature, health: 'onTrack' });
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-100" />, route);
+  await expect(screen.getByTestId(ids.statusHealthSelect)).toHaveValue('onTrack');
+  await expect(screen.getByTestId(ids.statusHealthSelect).locator('option:checked')).toHaveText(
+    'On track',
+  );
+  await expect(screen.getByTestId(ids.statusHealth)).toHaveCount(0);
+  await expect(screen.getByTestId(ids.statusHealthSetBy)).toHaveCount(0);
+});
+
+test('StatusBand_WhenNoHealth_ShouldShowNoPill', async ({ mount, page }) => {
+  await stubAll(page, { ...feature, health: null, healthSet: null });
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-100" />, route);
+  await expect(screen.getByTestId(ids.statusHealthSelect)).toHaveValue('');
+  await expect(screen.getByTestId(ids.statusHealth)).toHaveCount(0);
+});
+
+test('StatusBand_WhenHealthChosenAndSaved_ShouldSendHealthInPatch', async ({ mount, page }) => {
+  const api = await stubAll(page);
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-100" />, route);
+
+  await screen.getByTestId(ids.statusHealthSelect).selectOption('blocked');
+  await expect(screen.getByTestId(ids.statusHealth)).toHaveText('Blocked');
+  expect(api.patches).toHaveLength(0);
+  await screen.getByTestId(workItemTestIds.save).click();
+
+  await expect(screen.getByTestId(workItemTestIds.saveState)).toHaveText(
+    `Saved · revision ${feature.revision + 1}`,
+  );
+  expect(api.patches).toHaveLength(1);
+  const changes = (api.patches[0] as WorkItemPatch).changes;
+  expect(changes.health).toEqual({ value: 'blocked' });
+  expect(changes.statusLine).toBeNull();
+});
+
+test('StatusBand_WhenHealthCleared_ShouldSendNullValue', async ({ mount, page }) => {
+  const api = await stubAll(page, atRisk());
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-100" />, route);
+
+  await screen.getByTestId(ids.statusHealthSelect).selectOption({ label: 'No health' });
+  await screen.getByTestId(workItemTestIds.save).click();
+
+  await expect(screen.getByTestId(workItemTestIds.saveState)).toHaveText(
+    `Saved · revision ${feature.revision + 1}`,
+  );
+  expect((api.patches[0] as WorkItemPatch).changes.health).toEqual({ value: null });
+});
+
+test('StatusBand_WhenServerRejectsHealth_ShouldShowErrorInBand', async ({ mount, page }) => {
+  await stubAll(page, feature, () => ({
+    status: 400,
+    body: {
+      error: 'Health must be On track, At risk or Blocked.',
+      code: 'validation',
+      field: 'health',
+    },
+  }));
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-100" />, route);
+
+  await screen.getByTestId(ids.statusHealthSelect).selectOption('blocked');
+  await screen.getByTestId(workItemTestIds.save).click();
+
+  await expect(screen.getByTestId(ids.statusError)).toHaveText(
+    'Health must be On track, At risk or Blocked.',
+  );
+});
+
+test('StatusBand_WhenSetByAgent_ShouldNameTheAgent', async ({ mount, page }) => {
+  await stubAll(page, atRisk('Claude Code (claude.ai)'));
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-100" />, route);
+  await expect(screen.getByTestId(ids.statusHealthSetBy)).toHaveText(
+    'Set by Claude Code (claude.ai) 19 Oct',
+  );
 });
